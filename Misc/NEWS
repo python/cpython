@@ -363,6 +363,9 @@ Library
 - Fix logging.handlers.SysLogHandler protocol when using UNIX domain sockets.
   See SF patch #642974.
 
+- The dospath module was deleted.  Use the ntpath module when manipulating
+  DOS paths from other platforms.
+
 Tools/Demos
 -----------
 
