@@ -60,6 +60,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <errno.h>
 
+#ifdef macintosh
+/*
+** For the mac, there's a function macstrerror in macosmodule.c. We can't
+** call it strerror(), though, since that is already defined (for Think C)
+** in ANSI
+*/
+#define strerror macstrerror
+#include "macdefs.h"    /* For CW to find EINTR */
+#endif /* macintosh */
+
 extern char *strerror PROTO((int));
 
 /* Last exception stored by err_setval() */
