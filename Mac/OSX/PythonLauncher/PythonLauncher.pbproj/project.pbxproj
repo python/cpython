@@ -57,6 +57,7 @@
 		1058C7A6FEA54F5311CA2CBB = {
 			children = (
 				1058C7A7FEA54F5311CA2CBB,
+				F5AA9D0102F807EE0110C447,
 			);
 			isa = PBXGroup;
 			name = "Linked Frameworks";
@@ -179,7 +180,9 @@
 		};
 		2A37F4AFFDCFA73011CA2CEA = {
 			children = (
+				F5AA9C6A02F8042D0110C447,
 				2A37F4B0FDCFA73011CA2CEA,
+				F5AAA21D02F8115D0110C447,
 			);
 			isa = PBXGroup;
 			name = "Other Sources";
@@ -401,6 +404,7 @@
 				F52A90D002EB5C6A01000102,
 				F5A4C14202F2055D01000102,
 				F5A4C14702F2070D01000102,
+				F5AA9C6C02F8042D0110C447,
 			);
 			isa = PBXHeadersBuildPhase;
 		};
@@ -432,6 +436,7 @@
 				F52A90CF02EB5C6A01000102,
 				F5A4C14302F2055D01000102,
 				F5A4C14602F2070D01000102,
+				F5AAA21E02F8115D0110C447,
 			);
 			isa = PBXSourcesBuildPhase;
 		};
@@ -455,6 +460,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1058C7A9FEA54F5311CA2CBB,
+				F5AA9D9B02F807EF0110C447,
 			);
 			isa = PBXFrameworksBuildPhase;
 		};
@@ -603,6 +609,40 @@
 		};
 		F5A4C14702F2070D01000102 = {
 			fileRef = F5A4C14502F2070D01000102;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5AA9C6A02F8042D0110C447 = {
+			isa = PBXFileReference;
+			path = doscript.h;
+			refType = 4;
+		};
+		F5AA9C6C02F8042D0110C447 = {
+			fileRef = F5AA9C6A02F8042D0110C447;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5AA9D0102F807EE0110C447 = {
+			isa = PBXFrameworkReference;
+			name = Carbon.framework;
+			path = /System/Library/Frameworks/Carbon.framework;
+			refType = 0;
+		};
+		F5AA9D9B02F807EF0110C447 = {
+			fileRef = F5AA9D0102F807EE0110C447;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F5AAA21D02F8115D0110C447 = {
+			isa = PBXFileReference;
+			path = doscript.m;
+			refType = 4;
+		};
+		F5AAA21E02F8115D0110C447 = {
+			fileRef = F5AAA21D02F8115D0110C447;
 			isa = PBXBuildFile;
 			settings = {
 			};
