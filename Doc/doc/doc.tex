@@ -366,6 +366,11 @@ distribution, to create or maintain whole documents or sections.
       string value.  The character will be typeset as with \macro{samp}.
     \end{macrodesc}
 
+    \begin{macrodesc}{citetitle}{\op{url}\p{title}}
+      A title for a referenced publication.  If \var{url} is specified,
+      the title will be made into a hyperlink when formatted as HTML.
+    \end{macrodesc}
+
     \begin{macrodesc}{class}{\p{name}}
       A class name; a dotted name may be used.
     \end{macrodesc}
@@ -484,6 +489,10 @@ distribution, to create or maintain whole documents or sections.
       file name for the executable for some platforms.  In particular, 
       the \file{.exe} (or other) extension should be omitted for DOS
       and Windows programs.
+    \end{macrodesc}
+
+    \begin{macrodesc}{programopt}{\p{option}}
+      A command-line option to an executable program.
     \end{macrodesc}
 
     \begin{macrodesc}{refmodule}{\op{key}\p{name}}
