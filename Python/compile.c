@@ -2593,6 +2593,7 @@ optimize(c)
 			cur_instr[1] = i & 0xff;
 			cur_instr[2] = (i>>8) & 0xff;
 			fast_reserved = 1;
+			DECREF(localmap);
 			continue;
 		}
 		if (!fast_reserved)
