@@ -1,0 +1,61 @@
+\section{Standard Module \sectcode{MiniAEFrame}}
+\stmodindex{MiniAEFrame}
+\label{module-MiniAEFrame}
+
+The module \var{MiniAEFrame} provides a framework for an application
+that can function as an OSA server, i.e. receive and process
+AppleEvents. It can be used in conjunction with \var{FrameWork} or
+standalone.
+
+This module is temporary, it will eventually be replaced by a module
+that handles argument names better and possibly automates making your
+application scriptable.
+
+The \var{MiniAEFrame} module defines the following classes:
+
+\setindexsubitem{(in module MiniAEFrame)}
+
+\begin{funcdesc}{AEServer}{}
+A class that handles AppleEvent dispatch. Your application should
+subclass this class together with either
+\code{MiniAEFrame.MiniApplication} or
+\code{FrameWork.Application}. Your \code{__init__} method should call
+the \code{__init__} method for both classes.
+\end{funcdesc}
+
+\begin{funcdesc}{MiniApplication}{}
+A class that is more or less compatible with
+\code{FrameWork.Application} but with less functionality. Its
+eventloop supports the apple menu, command-dot and AppleEvents, other
+events are passed on to the Python interpreter and/or Sioux.
+Useful if your application wants to use \code{AEServer} but does not
+provide its own windows, etc.
+\end{funcdesc}
+
+\subsection{AEServer Objects}
+
+\setindexsubitem{(AEServer method)}
+
+\begin{funcdesc}{installaehandler}{classe\, type\, callback}
+Installs an AppleEvent handler. \code{Classe} and \code{type} are the
+four-char OSA Class and Type designators, \code{'****'} wildcards are
+allowed. When a matching AppleEvent is received the parameters are
+decoded and your callback is invoked.
+\end{funcdesc}
+
+\begin{funcdesc}{callback}{_object\, **kwargs}
+Your callback is called with the OSA Direct Object as first positional
+parameter. The other parameters are passed as keyword arguments, with
+the 4-char designator as name. Three extra keyword parameters are
+passed: \code{_class} and \code{_type} are the Class and Type
+designators and \code{_attributes} is a dictionary with the AppleEvent
+attributes.
+
+The return value of your method is packed with
+\code{aetools.packevent} and sent as reply.
+\end{funcdesc}
+
+Note that there are some serious problems with the current
+design. AppleEvents which have non-identifier 4-char designators for
+arguments are not implementable, and it is not possible to return an
+error to the originator. This will be addressed in a future release.
