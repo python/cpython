@@ -120,6 +120,15 @@ class InvalidAccessErr(DOMException):
 class ValidationErr(DOMException):
     code = VALIDATION_ERR
 
+class UserDataHandler:
+    """Class giving the operation constants for UserDataHandler.handle()."""
+
+    # Based on DOM Level 3 (WD 9 April 2002)
+
+    NODE_CLONED   = 1
+    NODE_IMPORTED = 2
+    NODE_DELETED  = 3
+    NODE_RENAMED  = 4
 
 XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace"
 XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/"
