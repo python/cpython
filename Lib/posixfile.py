@@ -174,11 +174,15 @@ class _posixfile_:
 	elif len(args) > 3:
 	    raise TypeError, 'too many arguments'
 
-	# Hack by davem@magnet.com to get locking to go on freebsd
+	# Hack by davem@magnet.com to get locking to go on freebsd;
+	# additions for AIX by Vladimir.Marangozov@imag.fr
         import sys, os
         if sys.platform == 'freebsd2':
 	    flock = struct.pack('lxxxxlxxxxlhh', \
 		  l_start, l_len, os.getpid(), l_type, l_whence) 
+        elif sys.platform in ['aix3', 'aix4']:
+            flock = struct.pack('hhlllii', \
+                  l_type, l_whence, l_start, l_len, 0, 0, 0)
 	else:
 	    flock = struct.pack('hhllhh', \
 		  l_type, l_whence, l_start, l_len, 0, 0)
@@ -189,6 +193,9 @@ class _posixfile_:
 	    if sys.platform == 'freebsd2':
 		l_start, l_len, l_pid, l_type, l_whence = \
 		    struct.unpack('lxxxxlxxxxlhh', flock)
+            elif sys.platform in ['aix3', 'aix4']:
+                l_type, l_whence, l_start, l_len, l_sysid, l_pid, l_vfs = \
+                    struct.unpack('hhlllii', flock)
 	    else:
 		l_type, l_whence, l_start, l_len, l_sysid, l_pid = \
 		    struct.unpack('hhllhh', flock)
