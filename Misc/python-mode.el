@@ -502,8 +502,11 @@ farther right than the distance the line would be indented by
 current line."
   (interactive
    (let ((p (point))
-	 (m (mark)))
-     (list (min p m) (max p m) (prefix-numeric-value current-prefix-arg))))
+	 (m (mark))
+	 (arg (prefix-numeric-value current-prefix-arg)))
+     (if m
+	 (list (min p m) (max p m) arg)
+       (list p m arg))))
   (let ((pos (- (point-max) (point)))
 	(end (save-excursion
 	       (goto-char (or end (1+ start)))
@@ -535,8 +538,11 @@ farther left than column zero.  With no active region, outdent only
 the current line."
   (interactive
    (let ((p (point))
-	 (m (mark)))
-     (list (min p m) (max p m) (prefix-numeric-value current-prefix-arg))))
+	 (m (mark))
+	 (arg (prefix-numeric-value current-prefix-arg)))
+     (if m
+	 (list (min p m) (max p m) arg)
+       (list p m arg))))
   (let ((pos (- (point-max) (point)))
 	(end (save-excursion
 	       (goto-char (or end (1+ start)))
