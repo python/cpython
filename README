@@ -4,16 +4,81 @@ This is Python release 1.5 beta 1
 What's new in this release?
 ---------------------------
 
-Too much has changed to list it all here.  There's a loooong list of
-changes since release 1.4 in the file Misc/NEWS.  If you were an alpha
-tester, the list of changes since 1.5a4 is presented at the end of
-that file.
+There's a loooong list of changes since release 1.4 in the file
+Misc/NEWS.  Some highlights:
 
-Most relevant changes since 1.5a4 (of course all known bugs have been
-fixed, leaks plugged, and documentation has been added):
+  - It's much faster (almost twice for the Lib/test/pystone.py
+  benchmark.)
 
-  - Package directories now *require* the presence of __init__.py.
-  Packages can now contain shared libraries.
+  - There is now an assert statement: ``assert <condition>'' or
+  ``assert <condition>, <errormessage>''.  It raises AssertionError if
+  the condition evaluates to false.  The default error message is
+  empty; the source text of the assertion statement is printed as part
+  of the traceback.
+
+  - There is now built-in support for importing hierarchical module
+  names (e.g. "import spam.ham.eggs"); ni is declared obsolete.  Note
+  that the built-in package support is somewhat simpler (no __ and
+  __domain__) and differs in one crucial aspect: __init__.py is
+  required, and loaded in the package's namespace instead of as a
+  submodule.  For more information, see
+  http://grail.cnri.reston.va.us/python/essays/packages.html.
+
+  - The new "re" module (Perl style regular expressions) is here.  It
+  is based on Philip Hazel's pcre code; the Python interfaces were put
+  together by Andrew Kuchling.  The regex module is declared obsolete.
+
+  - In support of the re module, a new form of string literals is
+  introduced, "raw strings": e.g. r"\n" is equal to "\\n".
+
+  - All standard exceptions and most exceptions defined in standard
+  extension modules are now classes.  Use python -X to revert back to
+  string exceptions.  See
+    http://grail.cnri.reston.va.us/python/essays/stdexceptions.html
+  for more info.
+
+  - Comparisons can now raise exceptions (previously, exceptions
+  occuring during comparisons were swept under the rug).
+
+  - New dictionary methods: .clear(), .copy(), .update(), .get().  The
+  first two are obvious; d1.update(d2) is equivalent to the for loop
+  ``for k in d2.keys(): d1[k] = d2[k]''; and d.get(k) returns d[k] if
+  it exists and None (or the optional second argument) if not.
+
+  - There is a new regression test harness, which tests many more
+  modules.  (To run the tests, do "import tes.autotest".)
+
+  - The interpreter is much smarter about the initial value for
+  sys.path; you can control it easier using $PYTHONHOME (see the usage
+  message, e.g. try ``python -h'').  In most situations, the
+  interpreter can be installed at an arbitrary location without having
+  to recompile.
+
+  - The build process now builds a single library (libpython1.5.a)
+  which contains everything except for the main() entry point.  This
+  makes life much easier for applications that embed Python.
+
+  - There is much better support for embedding, including threads,
+  multiple interpreters(!), uninitialization, and access to the global
+  interpreter lock.
+
+  - There is a -O option that removes SET_LINENO instructions, assert
+  statements and code prefixed with ``if __debug__: ...''.  (It still
+  only makes a few percent difference, so don't get all worked up
+  about this.)
+
+  - The Grand Renaming is completed: all linker-visible symbols
+  defined by Python now have a "Py" or "_Py" prefix, and the same is
+  true for most macros and typedefs.
+
+If you were an alpha tester, here are the most relevant changes since
+1.5a4 (of course all known bugs have been fixed, leaks plugged, and
+some documentation has been added).  The full list of changes since
+1.5a4 is presented at the end of the Misc/NEWS file.
+
+  - Package directories now *require* the presence of __init__.py (or
+  .pyc/.pyo as applicable).  Packages can now contain shared
+  library modules.
 
   - New module 'fileinput' to iterate over the lines of a list of files.
 
@@ -31,65 +96,6 @@ fixed, leaks plugged, and documentation has been added):
   - New Python mode for Emacs.
 
   - OS/2 support.
-
-Other important changes, if this is the first release you see since
-1.4:
-
-  - It's much faster (almost twice for the Lib/test/pystone.py
-  benchmark.)
-
-  - There's an assert statement: assert <condition> or
-  assert <condition>, <errormessage>.  It raises AssertionError if the
-  condition evaluates to false.
-
-  - There is now built-in support for importing hierarchical module
-  names (e.g. "import spam.ham.eggs"); ni is declared obsolete.  Note
-  that the built-in package support is somewhat simpler (no __ and
-  __domain__) and differs in one crucial aspect: __init__.py is loaded
-  in the package's namespace instead of as a submodule.  See
-    http://grail.cnri.reston.va.us/python/essays/packages.html
-  for more info.
-
-  - The new "re" module (Perl style regular expressions) is here.  It
-  is based on Philip Hazel's pcre code; the Python interfaces were put
-  together by Andrew Kuchling.  The regex module is declared obsolete.
-
-  - In support of the re module, a new form of string literals is
-  introduced, "raw strings": e.g. r"\n" is equal to "\\n".
-
-  - All standard exceptions and most exceptions defined in standard
-  extension modules are now classes.  Use python -X to revert back to
-  string exceptions.  See
-    http://grail.cnri.reston.va.us/python/essays/stdexceptions.html
-  for more info.
-
-  - Comparisons can now raise exceptions.
-
-  - New dictionary methods: .clear(), .update(), .copy(), .get().
-
-  - New regression test harness tests more.
-
-  - It's much smarter about the initial value for sys.path; you can
-  control it easier using $PYTHONHOME (see the usage message, e.g. try
-  ``python -h'').  In most situations, the interpreter can be
-  installed at an arbitrary location without having to recompile.
-
-  - The build process now builds a single library (libpython1.5.a)
-  which contains everything except for the main() entry point.  This
-  makes life much easier for applications that embed Python.
-
-  - Much better support for embedding, including threads, multiple
-  interpreters(!), uninitialization, and access to the global
-  interpreter lock.
-
-  - There's a -O option that removes SET_LINENO instructions, assert
-  statements and code prefixed with ``if __debug__: ...''.  (It still
-  only makes a few percent difference, so don't get all worked up
-  about this.)
-
-  - The Grand Renaming is completed: all linker-visible symbols
-  defined by Python now have a "Py" or "_Py" prefix, and the same is
-  true for most macros and typedefs.
 
 
 If you don't read instructions
