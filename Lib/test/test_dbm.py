@@ -4,11 +4,12 @@
 """
 import dbm
 from dbm import error
-from test_support import verbose
+from test_support import verbose, verify
 
 filename = '/tmp/delete_me'
 
 d = dbm.open(filename, 'c')
+verify(d.keys() == [])
 d['a'] = 'b'
 d['12345678910'] = '019237410982340912840198242'
 d.keys()

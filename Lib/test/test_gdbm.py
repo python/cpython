@@ -5,11 +5,12 @@
 
 import gdbm
 from gdbm import error
-from test_support import verbose, TestFailed
+from test_support import verbose, verify, TestFailed
 
 filename= '/tmp/delete_me'
 
 g = gdbm.open(filename, 'c')
+verify(g.keys() == [])
 g['a'] = 'b'
 g['12345678910'] = '019237410982340912840198242'
 a = g.keys()
