@@ -78,6 +78,16 @@ def windowbounds(width, height):
 	next_window_x, next_window_y = next_window_x + 8, next_window_y + 20	# jvr
 	return l, t, r, b
 
+_watch = None
+def setwatchcursor():
+	global _watch
+	
+	if _watch == None:
+		_watch = GetCursor(4).data
+	SetCursor(_watch)
+	
+def setarrowcursor():
+	SetCursor(qd.arrow)
 
 class Application:
 	
