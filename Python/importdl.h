@@ -1,3 +1,10 @@
+#ifndef Py_IMPORTDL_H
+#define Py_IMPORTDL_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************
 Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
 The Netherlands.
@@ -42,14 +49,32 @@ enum filetype {
 	PY_CODERESOURCE /* Mac only */
 };
 
-extern struct filedescr {
+struct filedescr {
 	char *suffix;
 	char *mode;
 	enum filetype type;
-} _PyImport_Filetab[];
+};
+extern struct filedescr * _PyImport_Filetab;
+extern const struct filedescr _PyImport_DynLoadFiletab[];
 
 extern PyObject *_PyImport_LoadDynamicModule
 	Py_PROTO((char *name, char *pathname, FILE *));
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12
+
+#ifdef MS_WINDOWS
+typedef FARPROC dl_funcptr;
+#else
+#ifdef PYOS_OS2
+typedef int (* APIENTRY dl_funcptr)();
+#else
+typedef void (*dl_funcptr)(void);
+#endif
+#endif
+
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_IMPORTDL_H */
