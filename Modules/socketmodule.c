@@ -1090,7 +1090,12 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 {
 	PySocketSockObject *s;
-	int fd, family, type, proto;
+#ifdef _MSC_VER
+	SOCKET fd;
+#else
+	int fd;
+#endif
+	int family, type, proto;
 	proto = 0;
 	if (!PyArg_Parse(args, "(ii)", &family, &type)) {
 		PyErr_Clear();
@@ -1100,7 +1105,11 @@ BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 	Py_BEGIN_ALLOW_THREADS
 	fd = socket(family, type, proto);
 	Py_END_ALLOW_THREADS
+#ifdef _MSC_VER
+	if (fd == INVALID_SOCKET)
+#else
 	if (fd < 0)
+#endif
 		return PySocket_Err();
 	s = PySocketSock_New(fd, family, type, proto);
 	/* If the object can't be created, don't forget to close the
@@ -1146,6 +1155,50 @@ BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self, PyObject *,args)
 }
 #endif /* NO_DUP */
 
+static PyObject * PySocket_WSAStartup(self, args)
+	PyObject *self, *args;
+{
+#ifdef _MSC_VER
+	WSADATA WSAData;
+	int ret;
+
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	ret = WSAStartup(0x0101, &WSAData);	/* request version 1.1 */
+	switch(ret){
+	case WSASYSNOTREADY:
+		PyErr_SetString(PySocket_Error,
+			"WSAStartup failed: Network not ready\n");
+		break;
+	case WSAVERNOTSUPPORTED:
+	case WSAEINVAL:
+		PyErr_SetString(PySocket_Error,
+			"WSAStartup failed: Requested version not supported");
+		break;
+	case 0:	/* no error */
+		break;
+	default:
+		PyErr_SetString(PySocket_Error,
+			"WSAStartup failed");
+		break;
+	}
+#endif
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject * PySocket_WSACleanup(self, args)
+	PyObject *self, *args;
+{
+	if (!PyArg_NoArgs(args))
+		return NULL;
+#ifdef _MSC_VER
+	WSACleanup();
+#endif
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 /* List of functions exported by this module. */
 
 static PyMethodDef PySocket_methods[] = {
@@ -1154,6 +1207,8 @@ static PyMethodDef PySocket_methods[] = {
 	{"gethostname",		PySocket_gethostname},
 	{"getservbyname",	PySocket_getservbyname},
 	{"socket",		PySocket_socket},
+	{"WSAStartup",		PySocket_WSAStartup},
+	{"WSACleanup",		PySocket_WSACleanup},
 #ifndef NO_DUP
 	{"fromfd",		PySocket_fromfd},
 #endif
@@ -1445,34 +1500,7 @@ initsocket()
 
 #ifdef MS_WIN16
 /* All windows sockets require a successful WSAStartup() before use */
-	{
-		const int opt = SO_SYNCHRONOUS_NONALERT;
-		WSADATA WSAData;
-		int ret;
-		ret = WSAStartup(0x0101, &WSAData);	/* request version 1.1 */
-		switch(ret){
-		case WSASYSNOTREADY:
-			PyErr_SetString(PySocket_Error,
-				"WSAStartup failed: Network not ready\n");
-			break;
-		case WSAVERNOTSUPPORTED:
-		case WSAEINVAL:
-			PyErr_SetString(PySocket_Error,
-				"WSAStartup failed: Requested version not supported");
-			break;
-		case 0:
-			/* Setup sockets in non-overlapped mode by default */
-			if (setsockopt(INVALID_SOCKET,SOL_SOCKET,SO_OPENTYPE,
-			(const char *)&opt,sizeof(opt)) != 0)
-				PyErr_SetString(PySocket_Error,
-					"setsockopt failed in initsocket");
-			break;
-		default:
-			PyErr_SetString(PySocket_Error,
-				"WSAStartup failed");
-			break;
-		}
-	}
+	Py_XDECREF(PySocket_WSAStartup(NULL, NULL));
 #endif
 }
 
