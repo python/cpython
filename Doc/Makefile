@@ -88,24 +88,26 @@ BUILDINDEX=$(TOOLSDIR)/buildindex.py
 PYTHONDOCS="See <i><a href=\"about.html\">About this document...</a></i> for information on suggesting changes."
 HTMLBASE=  file:`pwd`
 
+WHATSNEW=whatsnew23
+
 # what's what
 MANDVIFILES=	paper-$(PAPER)/api.dvi paper-$(PAPER)/ext.dvi \
 		paper-$(PAPER)/lib.dvi paper-$(PAPER)/mac.dvi \
 		paper-$(PAPER)/ref.dvi paper-$(PAPER)/tut.dvi
 HOWTODVIFILES=	paper-$(PAPER)/doc.dvi paper-$(PAPER)/inst.dvi \
-		paper-$(PAPER)/dist.dvi
+		paper-$(PAPER)/dist.dvi paper-$(PAPER)/$(WHATSNEW).dvi
 
 MANPDFFILES=	paper-$(PAPER)/api.pdf paper-$(PAPER)/ext.pdf \
 		paper-$(PAPER)/lib.pdf paper-$(PAPER)/mac.pdf \
 		paper-$(PAPER)/ref.pdf paper-$(PAPER)/tut.pdf
 HOWTOPDFFILES=	paper-$(PAPER)/doc.pdf paper-$(PAPER)/inst.pdf \
-		paper-$(PAPER)/dist.pdf
+		paper-$(PAPER)/dist.pdf paper-$(PAPER)/$(WHATSNEW).pdf
 
 MANPSFILES=	paper-$(PAPER)/api.ps paper-$(PAPER)/ext.ps \
 		paper-$(PAPER)/lib.ps paper-$(PAPER)/mac.ps \
 		paper-$(PAPER)/ref.ps paper-$(PAPER)/tut.ps
 HOWTOPSFILES=	paper-$(PAPER)/doc.ps paper-$(PAPER)/inst.ps \
-		paper-$(PAPER)/dist.ps
+		paper-$(PAPER)/dist.ps paper-$(PAPER)/$(WHATSNEW).ps
 
 DVIFILES=	$(MANDVIFILES) $(HOWTODVIFILES)
 PDFFILES=	$(MANPDFFILES) $(HOWTOPDFFILES)
@@ -141,7 +143,8 @@ INDEXFILES=html/api/api.html \
 	html/ref/ref.html \
 	html/tut/tut.html \
 	html/inst/inst.html \
-	html/dist/dist.html
+	html/dist/dist.html \
+	html/whatsnew/$(WHATSNEW).html
 
 ALLHTMLFILES=$(INDEXFILES) html/index.html html/modindex.html html/acks.html
 
@@ -271,6 +274,13 @@ paper-$(PAPER)/tut.dvi: $(TUTFILES)
 paper-$(PAPER)/tut.pdf: $(TUTFILES)
 	cd paper-$(PAPER) && $(MKPDF) ../tut/tut.tex
 
+# What's New in Python X.Y
+paper-$(PAPER)/$(WHATSNEW).dvi:
+	cd paper-$(PAPER) && $(MKDVI) ../whatsnew/$(WHATSNEW).tex
+
+paper-$(PAPER)/$(WHATSNEW).pdf:
+	cd paper-$(PAPER) && $(MKPDF) ../whatsnew/$(WHATSNEW).tex
+
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
 
@@ -359,6 +369,10 @@ dist: html/dist/dist.html html/dist/dist.css
 html/dist/dist.html: $(DISTFILES) perl/distutils.perl
 	$(MKHTML) --dir html/dist --split 4 dist/dist.tex
 
+whatsnew: html/whatsnew/$(WHATSNEW).html
+html/whatsnew/$(WHATSNEW).html: whatsnew/$(WHATSNEW).tex
+	$(MKHTML) --dir html/whatsnew --split 4 whatsnew/$(WHATSNEW).tex
+
 
 # The iSilo format is used by the iSilo document reader for PalmOS devices.
 
@@ -446,6 +460,9 @@ isilo/inst/inst.html: $(INSTFILES) perl/distutils.perl
 
 isilo/dist/dist.html: $(DISTFILES) perl/distutils.perl
 	$(MKISILOHTML) --dir isilo/dist dist/dist.tex
+
+isilo/whatsnew/$(WHATSNEW).html: whatsnew/$(WHATSNEW).tex
+	$(MKISILOHTML) --dir isilo/whatsnew whatsnew/$(WHATSNEW).tex
 
 # These are useful if you need to transport the iSilo-ready HTML to
 # another machine to perform the conversion:
