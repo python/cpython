@@ -414,11 +414,9 @@ readinst(char *buf, int buf_size, PyObject *meth)
     PyObject *str = NULL;
     int len = -1;
 
-    if ((bytes = PyInt_FromLong(buf_size)) == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_SetNone(PyExc_EOFError);
+    if ((bytes = PyInt_FromLong(buf_size)) == NULL)
         goto finally;
-    }
+
     if ((arg = PyTuple_New(1)) == NULL)
         goto finally;
 
