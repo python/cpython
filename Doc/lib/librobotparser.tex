@@ -35,7 +35,7 @@ Parses the lines argument.
 \end{methoddesc}
 
 \begin{methoddesc}{can_fetch}{useragent, url}
-Returns true if the \var{useragent} is allowed to fetch the \var{url}
+Returns \code{True} if the \var{useragent} is allowed to fetch the \var{url}
 according to the rules contained in the parsed \file{robots.txt} file.
 \end{methoddesc}
 
@@ -60,7 +60,7 @@ The following example demonstrates basic use of the RobotFileParser class.
 >>> rp.set_url("http://www.musi-cal.com/robots.txt")
 >>> rp.read()
 >>> rp.can_fetch("*", "http://www.musi-cal.com/cgi-bin/search?city=San+Francisco")
-0
+False
 >>> rp.can_fetch("*", "http://www.musi-cal.com/")
-1
+True
 \end{verbatim}

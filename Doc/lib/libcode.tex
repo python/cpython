@@ -80,18 +80,18 @@ The input is incorrect; \function{compile_command()} raised an
 exception (\exception{SyntaxError} or \exception{OverflowError}).  A
 syntax traceback will be printed by calling the
 \method{showsyntaxerror()} method.  \method{runsource()} returns
-\code{0}.
+\code{False}.
 
 \item
 The input is incomplete, and more input is required;
 \function{compile_command()} returned \code{None}.
-\method{runsource()} returns \code{1}.
+\method{runsource()} returns \code{True}.
 
 \item
 The input is complete; \function{compile_command()} returned a code
 object.  The code is executed by calling the \method{runcode()} (which
 also handles run-time exceptions, except for \exception{SystemExit}).
-\method{runsource()} returns \code{0}.
+\method{runsource()} returns \code{False}.
 \end{itemize}
 
 The return value can be used to decide whether to use
@@ -155,8 +155,8 @@ newlines.  The line is appended to a buffer and the interpreter's
 of the buffer as source.  If this indicates that the command was
 executed or invalid, the buffer is reset; otherwise, the command is
 incomplete, and the buffer is left as it was after the line was
-appended.  The return value is \code{1} if more input is required,
-\code{0} if the line was dealt with in some way (this is the same as
+appended.  The return value is \code{True} if more input is required,
+\code{False} if the line was dealt with in some way (this is the same as
 \method{runsource()}).
 \end{methoddesc}
 

@@ -118,14 +118,14 @@ def handle_write(self):
 \begin{methoddesc}{readable}{}
   Each time through the \method{select()} loop, the set of sockets 
   is scanned, and this method is called to see if there is any 
-  interest in reading.  The default method simply returns \code{1}, 
+  interest in reading.  The default method simply returns \code{True}, 
   indicating that by default, all channels will be interested.
 \end{methoddesc}
 
 \begin{methoddesc}{writable}{}
   Each time through the \method{select()} loop, the set of sockets 
   is scanned, and this method is called to see if there is any 
-  interest in writing.  The default method simply returns \code{1}, 
+  interest in writing.  The default method simply returns \code{True}, 
   indicating that by default, all channels will be interested.
 \end{methoddesc}
 
