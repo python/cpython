@@ -16,25 +16,15 @@ FILL = 'red'
 
 stop = 0                                # Set when main loop exits
 
-lock = threading.Lock()                 # Protects the random generator
-
 def particle(canvas):
     r = RADIUS
-    lock.acquire()
-    try:
-        x = random.gauss(WIDTH/2.0, SIGMA)
-        y = random.gauss(HEIGHT/2.0, SIGMA)
-    finally:
-        lock.release()
+    x = random.gauss(WIDTH/2.0, SIGMA)
+    y = random.gauss(HEIGHT/2.0, SIGMA)
     p = canvas.create_oval(x-r, y-r, x+r, y+r, fill=FILL)
     while not stop:
-        lock.acquire()
-        try:
-            dx = random.gauss(0, BUZZ)
-            dy = random.gauss(0, BUZZ)
-            dt = random.expovariate(LAMBDA)
-        finally:
-            lock.release()
+        dx = random.gauss(0, BUZZ)
+        dy = random.gauss(0, BUZZ)
+        dt = random.expovariate(LAMBDA)
         try:
             canvas.move(p, dx, dy)
         except TclError:
