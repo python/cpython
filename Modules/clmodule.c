@@ -365,8 +365,10 @@ doParams(clobject *self, object *args, int (*func)(CL_Handle, int *, int),
 
 	error_handler_called = 0;
 	(*func)(self->ob_compressorHdl, PVbuffer, length);
-	if (error_handler_called)
+	if (error_handler_called) {
+		DEL(PVbuffer);
 		return NULL;
+	}
 
 	if (modified) {
 		for (i = 0; i < length; i++) {

@@ -137,6 +137,7 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	else {
 		f = free_list;
 		free_list = free_list->f_back;
+		f->ob_type = &Frametype;
 		NEWREF(f);
 	}
 	if (f != NULL) {
