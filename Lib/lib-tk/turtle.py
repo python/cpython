@@ -11,6 +11,7 @@ class RawPen:
         self._canvas = canvas
         self._items = []
         self._tracing = 1
+        self._arrow = 0
         self.degrees()
         self.reset()
 
@@ -48,9 +49,15 @@ class RawPen:
         self._items = []
         for item in items:
             canvas.delete(item)
+        self._delete_turtle()
+        self._draw_turtle()
+
 
     def tracer(self, flag):
         self._tracing = flag
+        if not self._tracing:
+            self._delete_turtle()
+        self._draw_turtle()
 
     def forward(self, distance):
         x0, y0 = start = self._position
@@ -63,6 +70,7 @@ class RawPen:
 
     def left(self, angle):
         self._angle = (self._angle + angle) % self._fullcircle
+        self._draw_turtle()
 
     def right(self, angle):
         self.left(-angle)
@@ -87,7 +95,7 @@ class RawPen:
                     id = self._canvas.create_line(0, 0, 0, 0, fill=color)
                 except Tkinter.TclError:
                     raise Error, "bad color string: %s" % `color`
-                self._color = color
+                self._set_color(color)
                 return
             try:
                 r, g, b = color
@@ -103,7 +111,12 @@ class RawPen:
         assert 0 <= b <= 1
         x = 255.0
         y = 0.5
-        self._color = "#%02x%02x%02x" % (int(r*x+y), int(g*x+y), int(b*x+y))
+        self._set_color("#%02x%02x%02x" % (int(r*x+y), int(g*x+y), int(b*x+y)))
+
+    def _set_color(self,color):
+        self._color = color
+        self._draw_turtle()
+
 
     def write(self, arg, move=0):
         x, y = start = self._position
@@ -115,6 +128,7 @@ class RawPen:
         if move:
             x0, y0, x1, y1 = self._canvas.bbox(item)
             self._goto(x1, y1)
+        self._draw_turtle()
 
     def fill(self, flag):
         if self._filling:
@@ -205,20 +219,20 @@ class RawPen:
         if self._filling:
             self._path.append(self._position)
         if self._drawing:
-            if self._tracing:
+            if self._tracing:                
                 dx = float(x1 - x0)
                 dy = float(y1 - y0)
                 distance = hypot(dx, dy)
                 nhops = int(distance)
                 item = self._canvas.create_line(x0, y0, x0, y0,
                                                 width=self._width,
-                                                arrow="last",
                                                 capstyle="round",
                                                 fill=self._color)
                 try:
                     for i in range(1, 1+nhops):
                         x, y = x0 + dx*i/nhops, y0 + dy*i/nhops
                         self._canvas.coords(item, x0, y0, x, y)
+                        self._draw_turtle((x,y))
                         self._canvas.update()
                         self._canvas.after(10)
                     # in case nhops==0
@@ -233,6 +247,30 @@ class RawPen:
                                                 capstyle="round",
                                                 fill=self._color)
             self._items.append(item)
+        self._draw_turtle()
+
+    def _draw_turtle(self,position=[]):
+        if not self._tracing:
+            return
+        if position == []:
+            position = self._position
+        x,y = position
+        distance = 8
+        dx = distance * cos(self._angle*self._invradian)
+        dy = distance * sin(self._angle*self._invradian)
+        self._delete_turtle()
+        self._arrow = _canvas.create_line(x-dx,y+dy,x,y,
+                                          width=self._width,
+                                          arrow="last",
+                                          capstyle="round",
+                                          fill=self._color)
+        self._canvas.update()
+
+    def _delete_turtle(self):
+        if self._arrow != 0:
+            self._canvas.delete(self._arrow)
+        self._arrow = 0
+
 
 
 _root = None
