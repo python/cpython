@@ -237,7 +237,7 @@ class PosixPathTest(unittest.TestCase):
                     ),
                     True
                 )
-                # If we don't have links, assume that os.stat doesn't return resonable 
+                # If we don't have links, assume that os.stat doesn't return resonable
                 # inode information and thus, that samefile() doesn't work
                 if hasattr(os, "symlink"):
                     os.symlink(
@@ -288,7 +288,7 @@ class PosixPathTest(unittest.TestCase):
                 ),
                 True
             )
-            # If we don't have links, assume that os.stat() doesn't return resonable 
+            # If we don't have links, assume that os.stat() doesn't return resonable
             # inode information and thus, that samefile() doesn't work
             if hasattr(os, "symlink"):
                 if hasattr(os, "symlink"):

@@ -208,7 +208,7 @@ class ComplexTest(unittest.TestCase):
             self.assertRaises(ValueError, complex, unicode("x"))
 
         class EvilExc(Exception):
-             pass
+            pass
 
         class evilcomplex:
             def __complex__(self):

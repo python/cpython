@@ -325,7 +325,7 @@ def getfile(object):
         object = object.f_code
     if iscode(object):
         return object.co_filename
-    raise TypeError('arg is not a module, class, method, ' 
+    raise TypeError('arg is not a module, class, method, '
                     'function, traceback, frame, or code object')
 
 def getmoduleinfo(path):

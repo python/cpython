@@ -9,7 +9,7 @@ at the top of your script.  The optional arguments to enable() are:
     display     - if true, tracebacks are displayed in the web browser
     logdir      - if set, tracebacks are written to files in this directory
     context     - number of lines of source code to show for each stack frame
-    format	- 'text' or 'html' controls the output format
+    format      - 'text' or 'html' controls the output format
 
 By default, tracebacks are displayed but not saved, the context is 5 lines
 and the output format is 'html' (for backwards compatibility with the

@@ -329,17 +329,17 @@ class BoolTest(unittest.TestCase):
             def __nonzero__(self):
                 return self
         check(Foo())
-        
+
         class Bar(object):
             def __nonzero__(self):
                 return "Yes"
         check(Bar())
-        
+
         class Baz(int):
             def __nonzero__(self):
                 return self
         check(Baz())
-        
+
 
 def test_main():
     test_support.run_unittest(BoolTest)
