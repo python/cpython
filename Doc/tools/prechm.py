@@ -80,7 +80,7 @@ Title=Python %(version)s Documentation
 
 [WINDOWS]
 %(arch)s="Python %(version)s Documentation","%(arch)s.hhc","%(arch)s.hhk",\
-"index.html","index.html",,,,,0x63520,220,0x10384e,[271,372,740,718],,,,,,,0
+"index.html","index.html",,,,,0x63520,220,0x10384e,[0,0,1024,768],,,,,,,0
 
 [FILES]
 '''
