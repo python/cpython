@@ -368,7 +368,7 @@ _PySys_CheckInterval
 _PySys_ProfileFunc
 _PySys_TraceFunc
 _PyTuple_Resize
-_Py_EllipsesObject
+_Py_EllipsisObject
 _Py_MD5Final
 _Py_MD5Init
 _Py_MD5Update
