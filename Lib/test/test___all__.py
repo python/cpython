@@ -3,7 +3,12 @@ import sys
 
 def check_all(modname):
     names = {}
-    exec "import %s" % modname in names
+    try:
+        exec "import %s" % modname in names
+    except ImportError:
+        # silent fail here seems the best route since some modules
+        # may not be available in all environments
+        return
     verify(hasattr(sys.modules[modname], "__all__"),
            "%s has no __all__ attribute" % modname)
     names = {}
@@ -48,13 +53,7 @@ check_all("commands")
 check_all("compileall")
 check_all("copy")
 check_all("copy_reg")
-try:
-    import bsddb
-except ImportError:
-    if verbose:
-        print "can't import bsddb, so skipping dbhash"
-else:
-    check_all("dbhash")
+check_all("dbhash")
 check_all("dircache")
 check_all("dis")
 check_all("doctest")
@@ -85,4 +84,7 @@ check_all("macpath")
 check_all("macurl2path")
 check_all("mailbox")
 check_all("mhlib")
+check_all("mimetools")
+check_all("mimetypes")
+check_all("mimify")
 check_all("robotparser")
