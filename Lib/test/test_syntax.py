@@ -1,7 +1,7 @@
 import re
 import unittest
 
-import test_support
+from test import test_support
 
 class SyntaxTestCase(unittest.TestCase):
 

@@ -1,6 +1,6 @@
 # Test enhancements related to descriptors and new-style classes
 
-from test_support import verify, vereq, verbose, TestFailed, TESTFN
+from test.test_support import verify, vereq, verbose, TestFailed, TESTFN
 from copy import deepcopy
 import warnings
 

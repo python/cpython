@@ -1,6 +1,6 @@
 # Test various flavors of legal and illegal future statements
 
-from test_support import unload
+from test.test_support import unload
 import re
 
 rx = re.compile('\((\S+).py, line (\d+)')

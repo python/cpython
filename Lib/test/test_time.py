@@ -1,4 +1,4 @@
-import test_support
+from test import test_support
 import time
 import unittest
 

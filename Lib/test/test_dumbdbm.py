@@ -4,10 +4,10 @@
 """
 
 import os
-import test_support
 import unittest
 import dumbdbm
 import tempfile
+from test import test_support
 
 _fname = tempfile.mktemp()
 

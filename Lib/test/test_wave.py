@@ -1,4 +1,4 @@
-from test_support import TestFailed
+from test.test_support import TestFailed
 import os, tempfile
 import wave
 

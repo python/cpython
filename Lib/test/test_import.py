@@ -1,4 +1,4 @@
-from test_support import TESTFN, TestFailed
+from test.test_support import TESTFN, TestFailed
 
 import os
 import random

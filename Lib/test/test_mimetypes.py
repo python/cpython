@@ -2,7 +2,7 @@ import mimetypes
 import StringIO
 import unittest
 
-import test_support
+from test import test_support
 
 # Tell it we don't know about external files:
 mimetypes.knownfiles = []

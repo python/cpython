@@ -2,7 +2,7 @@
 
 import rgbimg, os, uu
 
-from test_support import verbose, unlink, findfile
+from test.test_support import verbose, unlink, findfile
 
 class error(Exception):
     pass

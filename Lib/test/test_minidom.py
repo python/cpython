@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 
-from test_support import verbose
+from test.test_support import verbose
 
 import xml.dom
 import xml.parsers.expat

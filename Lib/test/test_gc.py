@@ -1,4 +1,4 @@
-from test_support import verify, verbose, TestFailed
+from test.test_support import verify, verbose, TestFailed
 import sys
 import gc
 

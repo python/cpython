@@ -1,7 +1,7 @@
 # Python test set -- math module
 # XXXX Should not do tests around zero only
 
-from test_support import *
+from test.test_support import *
 
 seps='1e-05'
 eps = eval(seps)

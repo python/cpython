@@ -1,7 +1,7 @@
 import sys
 sys.path = ['.'] + sys.path
 
-from test_support import verify, verbose, TestFailed
+from test.test_support import verify, verbose, TestFailed
 import re
 import sys, os, traceback
 

@@ -1,5 +1,5 @@
 # Minimal test of the quote function
-from test_support import verify, verbose
+from test.test_support import verify, verbose
 import urllib
 
 chars = 'abcdefghijklmnopqrstuvwxyz'\

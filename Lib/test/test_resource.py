@@ -1,7 +1,7 @@
 import os
 import resource
 
-from test_support import TESTFN
+from test.test_support import TESTFN
 
 # This test is checking a few specific problem spots.  RLIMIT_FSIZE
 # should be RLIM_INFINITY, which will be a really big number on a

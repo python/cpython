@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
-import test_support
+from test import test_support
 
 import socket
 import select

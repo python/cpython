@@ -6,7 +6,7 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-from test_support import verify, verbose
+from test.test_support import verify, verbose
 
 print 'Testing General Unicode Character Name, and case insensitivity...',
 

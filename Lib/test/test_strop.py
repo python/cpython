@@ -3,8 +3,8 @@ warnings.filterwarnings("ignore", "strop functions are obsolete;",
                         DeprecationWarning,
                         r'test_strop|unittest')
 import strop
-import test_support
 import unittest
+from test import test_support
 
 
 class StropFunctionTestCase(unittest.TestCase):

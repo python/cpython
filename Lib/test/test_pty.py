@@ -1,5 +1,5 @@
 import pty, os, sys
-from test_support import verbose, TestFailed, TestSkipped
+from test.test_support import verbose, TestFailed, TestSkipped
 
 TEST_STRING_1 = "I wish to buy a fish license.\n"
 TEST_STRING_2 = "For my pet fish, Eric.\n"

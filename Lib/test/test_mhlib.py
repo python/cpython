@@ -7,7 +7,7 @@
 ###      mhlib.  It should.
 
 import unittest
-from test_support import run_unittest, TESTFN, TestSkipped
+from test.test_support import run_unittest, TESTFN, TestSkipped
 import os, StringIO
 import sys
 import mhlib

@@ -1,7 +1,7 @@
 # Test iterators.
 
 import unittest
-from test_support import run_unittest, TESTFN, unlink, have_unicode
+from test.test_support import run_unittest, TESTFN, unlink, have_unicode
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),

@@ -483,6 +483,7 @@ A->A B->G C->A D->G E->G F->A G->G H->G I->A J->G K->A L->A M->G
 merged A into G
 A->G B->G C->G D->G E->G F->G G->G H->G I->G J->G K->G L->G M->G
 """
+# Emacs turd '
 
 # Fun tests (for sufficiently warped notions of "fun").
 
@@ -1370,7 +1371,8 @@ __test__ = {"tut":      tutorial_tests,
 # Note that doctest and regrtest both look in sys.argv for a "-v" argument,
 # so this works as expected in both ways of running regrtest.
 def test_main(verbose=None):
-    import doctest, test_support, test_generators
+    import doctest
+    from test import test_support, test_generators
     if 0:   # change to 1 to run forever (to check for leaks)
         while 1:
             doctest.master = None

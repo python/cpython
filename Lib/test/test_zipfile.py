@@ -1,6 +1,6 @@
 import zlib # implied prerequisite
 import zipfile, os, StringIO, tempfile
-from test_support import TestFailed
+from test.test_support import TestFailed
 
 srcname = "junk9630"+os.extsep+"tmp"
 zipname = "junk9708"+os.extsep+"tmp"

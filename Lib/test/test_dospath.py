@@ -1,6 +1,6 @@
 import dospath
-import test_support
 import unittest
+from test import test_support
 
 
 class DOSPathTestCase(unittest.TestCase):

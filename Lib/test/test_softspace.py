@@ -1,4 +1,4 @@
-import test_support
+from test import test_support
 import StringIO
 
 # SF bug 480215:  softspace confused in nested print

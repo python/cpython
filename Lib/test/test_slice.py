@@ -1,6 +1,6 @@
 # tests for slice objects; in particular the indices method.
 
-from test_support import vereq
+from test.test_support import vereq
 
 vereq(slice(None           ).indices(10), (0, 10,  1))
 vereq(slice(None,  None,  2).indices(10), (0, 10,  2))

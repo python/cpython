@@ -17,7 +17,7 @@ import warnings
 warnings.filterwarnings("ignore", ".* xmllib .* obsolete.*",
                         DeprecationWarning, r'xmllib$')
 
-import test_support
+from test import test_support
 import unittest
 import xmllib
 

@@ -1,5 +1,5 @@
 import unittest
-from test_support import run_unittest
+from test.test_support import run_unittest
 
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C

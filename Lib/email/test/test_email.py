@@ -32,7 +32,7 @@ from email import base64MIME
 from email import quopriMIME
 
 from test.test_support import findfile, run_unittest
-from test.test_support import __file__ as test_support_file
+from email.test import __file__ as landmark
 
 
 NL = '\n'
@@ -45,7 +45,7 @@ warnings.filterwarnings('ignore', '', DeprecationWarning, __name__)
 
 
 def openfile(filename):
-    path = os.path.join(os.path.dirname(test_support_file), 'data', filename)
+    path = os.path.join(os.path.dirname(landmark), 'data', filename)
     return open(path)
 
 

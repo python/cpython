@@ -62,7 +62,7 @@ class FesteringGob(MalodorousPervert, ParrotDroppings):
 # getsourcefile, getcomments, getsource, getclasstree, getargspec,
 # getargvalues, formatargspec, formatargvalues, currentframe, stack, trace
 
-from test_support import TestFailed, TESTFN
+from test.test_support import TestFailed, TESTFN
 import sys, imp, os, string
 
 def test(assertion, message, *args):

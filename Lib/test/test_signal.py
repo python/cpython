@@ -1,5 +1,5 @@
 # Test the signal module
-from test_support import verbose, TestSkipped, TestFailed
+from test.test_support import verbose, TestSkipped, TestFailed
 import signal
 import os, sys, time
 

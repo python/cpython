@@ -2,8 +2,8 @@
 #   iff a==b then hash(a)==hash(b)
 #
 
-import test_support
 import unittest
+from test import test_support
 
 
 class HashEqualityTestCase(unittest.TestCase):

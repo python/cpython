@@ -1,8 +1,8 @@
 # Tests universal newline support for both reading and parsing files.
 import unittest
-import test_support
 import os
 import sys
+from test import test_support
 
 if not hasattr(sys.stdin, 'newlines'):
     raise test_support.TestSkipped, \

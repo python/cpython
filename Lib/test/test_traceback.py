@@ -1,7 +1,7 @@
 """Test cases for traceback module"""
 
 import unittest
-from test_support import run_unittest
+from test.test_support import run_unittest
 
 import traceback
 

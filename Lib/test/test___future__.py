@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-from test_support import verbose, verify
+from test.test_support import verbose, verify
 from types import TupleType, StringType, IntType
 import __future__
 

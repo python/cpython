@@ -14,7 +14,7 @@ import curses, sys, tempfile
 # 'curses' resource be given on the regrtest command line using the -u
 # option.  If not available, nothing after this line will be executed.
 
-import test_support
+from test import test_support
 test_support.requires('curses')
 
 def window_funcs(stdscr):

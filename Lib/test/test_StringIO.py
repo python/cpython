@@ -4,7 +4,7 @@ import unittest
 import StringIO
 import cStringIO
 import types
-import test_support
+from test import test_support
 
 
 class TestGenericStringIO(unittest.TestCase):

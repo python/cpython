@@ -1,6 +1,6 @@
 import hmac
 import unittest
-import test_support
+from test import test_support
 
 class TestVectorsTestCase(unittest.TestCase):
     def test_vectors(self):

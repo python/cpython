@@ -6,7 +6,7 @@
 import pyexpat
 from xml.parsers import expat
 
-from test_support import sortdict, TestFailed
+from test.test_support import sortdict, TestFailed
 
 class Outputter:
     def StartElementHandler(self, name, attrs):

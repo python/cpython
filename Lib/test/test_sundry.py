@@ -8,7 +8,7 @@ warnings.filterwarnings('ignore', r".*statcache module",
 warnings.filterwarnings('ignore', r".*'re' module",
                         DeprecationWarning, 'pre$')
 
-from test_support import verbose
+from test.test_support import verbose
 
 import BaseHTTPServer
 import CGIHTTPServer

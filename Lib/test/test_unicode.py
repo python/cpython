@@ -5,7 +5,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
 """#"
-from test_support import verify, verbose, TestFailed
+from test.test_support import verify, verbose, TestFailed
 import sys, string
 
 if not sys.platform.startswith('java'):

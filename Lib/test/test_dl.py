@@ -4,7 +4,7 @@
 """
 
 import dl
-from test_support import verbose,TestSkipped
+from test.test_support import verbose,TestSkipped
 
 sharedlibs = [
     ('/usr/lib/libc.so', 'getpid'),

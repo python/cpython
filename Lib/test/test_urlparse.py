@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import test_support
+from test import test_support
 import unittest
 import urlparse
 

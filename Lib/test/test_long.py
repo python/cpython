@@ -1,4 +1,4 @@
-from test_support import verify, verbose, TestFailed, fcmp
+from test.test_support import verify, verbose, TestFailed, fcmp
 from string import join
 from random import random, randint
 

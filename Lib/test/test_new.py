@@ -1,4 +1,4 @@
-from test_support import verbose, verify
+from test.test_support import verbose, verify
 import sys
 import new
 

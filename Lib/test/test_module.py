@@ -1,6 +1,6 @@
 # Test the module type
 
-from test_support import verify, vereq, verbose, TestFailed
+from test.test_support import verify, vereq, verbose, TestFailed
 
 import sys
 module = type(sys)

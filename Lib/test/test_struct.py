@@ -1,4 +1,4 @@
-from test_support import TestFailed, verbose, verify
+from test.test_support import TestFailed, verbose, verify
 import struct
 ## import pdb
 

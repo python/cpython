@@ -1,4 +1,4 @@
-from test_support import verbose
+from test.test_support import verbose
 
 class XReader:
     def __init__(self):

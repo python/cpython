@@ -1,6 +1,6 @@
 import unittest
 
-import test_support
+from test import test_support
 
 seq, res = 'abc', [(0,'a'), (1,'b'), (2,'c')]
 
