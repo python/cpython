@@ -34,6 +34,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
+/* config.h may or may not define DL_IMPORT */
+#ifndef DL_IMPORT	/* declarations for DLL import/export */
+#define DL_IMPORT(RTYPE) RTYPE
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
@@ -49,7 +54,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "myproto.h"
 #include "mymalloc.h"
 
-extern void Py_FatalError Py_PROTO((char *));
+#include "pydebug.h"
 
 #ifdef __cplusplus
 }
