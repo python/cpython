@@ -116,12 +116,12 @@ class Profile:
            It is used so that a function call will not have to access the
            timing data for the parent frame.
     [ 1] = Total time spent in this frame's function, excluding time in
-           subfunctions
-    [ 2] = Cumulative time spent in this frame's function, including time in
-           all subfunctions to this frame.
+           subfunctions (this latter is tallied in cur[2]).
+    [ 2] = Total time spent in subfunctions, excluding time execute the
+           frame's function (this latter is tallied in cur[1]).
     [-3] = Name of the function that corresponds to this frame.
-    [-2] = Actual frame that we correspond to (used to sync exception handling)
-    [-1] = Our parent 6-tuple (corresponds to frame.f_back)
+    [-2] = Actual frame that we correspond to (used to sync exception handling).
+    [-1] = Our parent 6-tuple (corresponds to frame.f_back).
 
     Timing data for each function is stored as a 5-tuple in the dictionary
     self.timings[].  The index is always the name stored in self.cur[-3].
@@ -239,18 +239,24 @@ class Profile:
             self.t = get_time() - t # put back unrecorded delta
         return
 
+    # In the event handlers, the first 3 elements of self.cur are unpacked
+    # into vrbls w/ 3-letter names.  The last two characters are meant to be
+    # mnemonic:
+    #     _pt  self.cur[0] "parent time"   time to be charged to parent frame
+    #     _it  self.cur[1] "internal time" time spent directly in the function
+    #     _et  self.cur[2] "external time" time spent in subfunctions
 
     def trace_dispatch_exception(self, frame, t):
-        rt, rtt, rct, rfn, rframe, rcur = self.cur
+        rpt, rit, ret, rfn, rframe, rcur = self.cur
         if (rframe is not frame) and rcur:
             return self.trace_dispatch_return(rframe, t)
-        self.cur = rt, rtt+t, rct, rfn, rframe, rcur
+        self.cur = rpt, rit+t, ret, rfn, rframe, rcur
         return 1
 
 
     def trace_dispatch_call(self, frame, t):
         if self.cur and frame.f_back is not self.cur[-2]:
-            rt, rtt, rct, rfn, rframe, rcur = self.cur
+            rpt, rit, ret, rfn, rframe, rcur = self.cur
             if not isinstance(rframe, Profile.fake_frame):
                 assert rframe.f_back is frame.f_back, ("Bad call", rfn,
                                                        rframe, rframe.f_back,
@@ -275,21 +281,26 @@ class Profile:
             assert frame is self.cur[-2].f_back, ("Bad return", self.cur[-3])
             self.trace_dispatch_return(self.cur[-2], 0)
 
-        # Prefix "r" means part of the Returning or exiting frame
-        # Prefix "p" means part of the Previous or older frame
+        # Prefix "r" means part of the Returning or exiting frame.
+        # Prefix "p" means part of the Previous or Parent or older frame.
 
-        rt, rtt, rct, rfn, frame, rcur = self.cur
-        rtt = rtt + t
-        sft = rtt + rct
+        rpt, rit, ret, rfn, frame, rcur = self.cur
+        rit = rit + t
+        frame_total = rit + ret
 
-        pt, ptt, pct, pfn, pframe, pcur = rcur
-        self.cur = pt, ptt+rt, pct+sft, pfn, pframe, pcur
+        ppt, pit, pet, pfn, pframe, pcur = rcur
+        self.cur = ppt, pit + rpt, pet + frame_total, pfn, pframe, pcur
 
         timings = self.timings
         cc, ns, tt, ct, callers = timings[rfn]
         if not ns:
-            ct = ct + sft
+            # This is the only occurrence of the function on the stack.
+            # Else this is a (directly or indirectly) recursive call, and
+            # its cumulative time will get updated when the topmost call to
+            # it returns.
+            ct = ct + frame_total
             cc = cc + 1
+
         if callers.has_key(pfn):
             callers[pfn] = callers[pfn] + 1  # hack: gather more
             # stats such as the amount of time added to ct courtesy
@@ -297,7 +308,8 @@ class Profile:
             # courtesy of this call.
         else:
             callers[pfn] = 1
-        timings[rfn] = cc, ns - 1, tt+rtt, ct, callers
+
+        timings[rfn] = cc, ns - 1, tt + rit, ct, callers
 
         return 1
 
