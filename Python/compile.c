@@ -3108,7 +3108,7 @@ com_arglist(c, n)
 		if (nameval == NULL) {
 			c->c_errors++;
 		}
-                if (PyDict_GetItem(c->c_locals, nameval)) {
+		if (PyDict_GetItem(c->c_locals, nameval)) {
 			com_error(c, PyExc_SyntaxError,"duplicate argument in function definition");
 		}
 		com_newlocal_o(c, nameval);
