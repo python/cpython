@@ -15,157 +15,157 @@ else:
 tstfile = os.path.join(os.path.dirname(base), "test.xml")
 del base
 
-def confirm( test, testname="Test" ):
+def confirm(test, testname = "Test"):
     if test: 
         print "Passed " + testname
     else: 
         print "Failed " + testname
         raise Exception
 
-Node._debug=1
+Node._debug = 1
 
 def testParseFromFile():
     from StringIO import StringIO
-    dom=parse( StringIO( open( tstfile ).read() ) )
+    dom = parse(StringIO(open(tstfile).read()))
     dom.unlink()
     confirm(isinstance(dom,Document))
 
-def testGetElementsByTagName( ):
-    dom=parse( tstfile )
-    confirm( dom.getElementsByTagName( "LI" )==\
-            dom.documentElement.getElementsByTagName( "LI" ) )
+def testGetElementsByTagName():
+    dom = parse(tstfile)
+    confirm(dom.getElementsByTagName("LI") == \
+            dom.documentElement.getElementsByTagName("LI"))
     dom.unlink()
 
-def testInsertBefore( ):
-    dom=parse( tstfile )
-    docel=dom.documentElement
+def testInsertBefore():
+    dom = parse(tstfile)
+    docel = dom.documentElement
     #docel.insertBefore( dom.createProcessingInstruction("a", "b"),
     #                        docel.childNodes[1])
                             
     #docel.insertBefore( dom.createProcessingInstruction("a", "b"),
     #                        docel.childNodes[0])
 
-    #confirm( docel.childNodes[0].tet=="a" )
-    #confirm( docel.childNodes[2].tet=="a" )
+    #confirm( docel.childNodes[0].tet == "a")
+    #confirm( docel.childNodes[2].tet == "a")
     dom.unlink()
 
 def testAppendChild():
-    dom=parse( tstfile )
-    dom.documentElement.appendChild( dom.createComment( u"Hello" ))
-    confirm( dom.documentElement.childNodes[-1].nodeName=="#comment" )
-    confirm( dom.documentElement.childNodes[-1].data=="Hello" )
+    dom = parse(tstfile)
+    dom.documentElement.appendChild(dom.createComment(u"Hello"))
+    confirm(dom.documentElement.childNodes[-1].nodeName == "#comment")
+    confirm(dom.documentElement.childNodes[-1].data == "Hello")
     dom.unlink()
 
 def testNonZero():
-    dom=parse( tstfile )
-    confirm( dom )# should not be zero
-    dom.appendChild( dom.createComment( "foo" ) )
-    confirm( not dom.childNodes[-1].childNodes )
+    dom = parse(tstfile)
+    confirm(dom)# should not be zero
+    dom.appendChild(dom.createComment("foo"))
+    confirm(not dom.childNodes[-1].childNodes)
     dom.unlink()
 
 def testUnlink():
-    dom=parse( tstfile )
+    dom = parse(tstfile)
     dom.unlink()
 
 def testElement():
-    dom=Document()
-    dom.appendChild( dom.createElement( "abc" ) )
-    confirm( dom.documentElement )
+    dom = Document()
+    dom.appendChild(dom.createElement("abc"))
+    confirm(dom.documentElement)
     dom.unlink()
 
 def testAAA():
-    dom=parseString( "<abc/>" )
-    el=dom.documentElement
-    el.setAttribute( "spam", "jam2" )
+    dom = parseString("<abc/>")
+    el = dom.documentElement
+    el.setAttribute("spam", "jam2")
     dom.unlink()
 
 def testAAB():
-    dom=parseString( "<abc/>" )
-    el=dom.documentElement
-    el.setAttribute( "spam", "jam" )
-    el.setAttribute( "spam", "jam2" )
+    dom = parseString("<abc/>")
+    el = dom.documentElement
+    el.setAttribute("spam", "jam")
+    el.setAttribute("spam", "jam2")
     dom.unlink()
 
 def testAddAttr():
-    dom=Document()
-    child=dom.appendChild( dom.createElement( "abc" ) )
+    dom = Document()
+    child = dom.appendChild(dom.createElement("abc"))
 
-    child.setAttribute( "def", "ghi" )
-    confirm( child.getAttribute( "def" )=="ghi" )
-    confirm( child.attributes["def"].value=="ghi" )
+    child.setAttribute("def", "ghi")
+    confirm(child.getAttribute("def") == "ghi")
+    confirm(child.attributes["def"].value == "ghi")
 
-    child.setAttribute( "jkl", "mno" )
-    confirm( child.getAttribute( "jkl" )=="mno" )
-    confirm( child.attributes["jkl"].value=="mno" )
+    child.setAttribute("jkl", "mno")
+    confirm(child.getAttribute("jkl") == "mno")
+    confirm(child.attributes["jkl"].value == "mno")
 
-    confirm( len( child.attributes )==2 )
+    confirm(len(child.attributes) == 2)
 
-    child.setAttribute( "def", "newval" )
-    confirm( child.getAttribute( "def" )=="newval" )
-    confirm( child.attributes["def"].value=="newval" )
+    child.setAttribute("def", "newval")
+    confirm(child.getAttribute("def") == "newval")
+    confirm(child.attributes["def"].value == "newval")
 
-    confirm( len( child.attributes )==2 )
+    confirm(len(child.attributes) == 2)
     dom.unlink()
 
 def testDeleteAttr():
-    dom=Document()
-    child=dom.appendChild( dom.createElement( "abc" ) )
+    dom = Document()
+    child = dom.appendChild(dom.createElement("abc"))
 
-    confirm( len( child.attributes)==0 )
-    child.setAttribute( "def", "ghi" )
-    confirm( len( child.attributes)==1 )
+    confirm(len(child.attributes) == 0)
+    child.setAttribute("def", "ghi")
+    confirm(len(child.attributes) == 1)
     del child.attributes["def"]
-    confirm( len( child.attributes)==0 )
+    confirm(len(child.attributes) == 0)
     dom.unlink()
 
 def testRemoveAttr():
-    dom=Document()
-    child=dom.appendChild( dom.createElement( "abc" ) )
+    dom = Document()
+    child = dom.appendChild(dom.createElement("abc"))
 
-    child.setAttribute( "def", "ghi" )
-    confirm( len( child.attributes)==1 )
-    child.removeAttribute("def" )
-    confirm( len( child.attributes)==0 )
+    child.setAttribute("def", "ghi")
+    confirm(len(child.attributes) == 1)
+    child.removeAttribute("def")
+    confirm(len(child.attributes) == 0)
 
     dom.unlink()
 
 def testRemoveAttrNS():
-    dom=Document()
-    child=dom.appendChild( 
-            dom.createElementNS( "http://www.python.org", "python:abc" ) )
-    child.setAttributeNS( "http://www.w3.org", "xmlns:python", 
-                                            "http://www.python.org" )
-    child.setAttributeNS( "http://www.python.org", "python:abcattr", "foo" )
-    confirm( len( child.attributes )==2 )
-    child.removeAttributeNS( "http://www.python.org", "abcattr" )
-    confirm( len( child.attributes )==1 )
+    dom = Document()
+    child = dom.appendChild(
+            dom.createElementNS("http://www.python.org", "python:abc"))
+    child.setAttributeNS("http://www.w3.org", "xmlns:python", 
+                                            "http://www.python.org")
+    child.setAttributeNS("http://www.python.org", "python:abcattr", "foo")
+    confirm(len(child.attributes) == 2)
+    child.removeAttributeNS("http://www.python.org", "abcattr")
+    confirm(len(child.attributes) == 1)
 
     dom.unlink()
     
 def testRemoveAttributeNode():
-    dom=Document()
-    child=dom.appendChild( dom.createElement( "foo" ) )
-    child.setAttribute( "spam", "jam" )
-    confirm( len( child.attributes )==1 )
-    node=child.getAttributeNode( "spam" )
-    child.removeAttributeNode( node )
-    confirm( len( child.attributes )==0 )
+    dom = Document()
+    child = dom.appendChild(dom.createElement("foo"))
+    child.setAttribute("spam", "jam")
+    confirm(len(child.attributes) == 1)
+    node = child.getAttributeNode("spam")
+    child.removeAttributeNode(node)
+    confirm(len(child.attributes) == 0)
 
     dom.unlink()
 
 def testChangeAttr():
-    dom=parseString( "<abc/>" )
-    el=dom.documentElement
-    el.setAttribute( "spam", "jam" )
-    confirm( len( el.attributes )==1 )
-    el.setAttribute( "spam", "bam" )
-    confirm( len( el.attributes )==1 )
-    el.attributes["spam"]="ham"
-    confirm( len( el.attributes )==1 )
-    el.setAttribute( "spam2", "bam" )
-    confirm( len( el.attributes )==2 )
-    el.attributes[ "spam2"]= "bam2"
-    confirm( len( el.attributes )==2 )
+    dom = parseString("<abc/>")
+    el = dom.documentElement
+    el.setAttribute("spam", "jam")
+    confirm(len(el.attributes) == 1)
+    el.setAttribute("spam", "bam")
+    confirm(len(el.attributes) == 1)
+    el.attributes["spam"] = "ham"
+    confirm(len(el.attributes) == 1)
+    el.setAttribute("spam2", "bam")
+    confirm(len(el.attributes) == 2)
+    el.attributes[ "spam2"] = "bam2"
+    confirm(len(el.attributes) == 2)
     dom.unlink()
 
 def testGetAttrList():
@@ -186,41 +186,41 @@ def testGetElementsByTagNameNS(): pass
 def testGetEmptyNodeListFromElementsByTagNameNS(): pass
 
 def testElementReprAndStr():
-    dom=Document()
-    el=dom.appendChild( dom.createElement( "abc" ) )
-    string1=repr( el )
-    string2=str( el )
-    confirm( string1==string2 )
+    dom = Document()
+    el = dom.appendChild(dom.createElement("abc"))
+    string1 = repr(el)
+    string2 = str(el)
+    confirm(string1 == string2)
     dom.unlink()
 
 # commented out until Fredrick's fix is checked in
 def _testElementReprAndStrUnicode():
-    dom=Document()
-    el=dom.appendChild( dom.createElement( u"abc" ) )
-    string1=repr( el )
-    string2=str( el )
-    confirm( string1==string2 )
+    dom = Document()
+    el = dom.appendChild(dom.createElement(u"abc"))
+    string1 = repr(el)
+    string2 = str(el)
+    confirm(string1 == string2)
     dom.unlink()
 
 # commented out until Fredrick's fix is checked in
 def _testElementReprAndStrUnicodeNS():
-    dom=Document()
-    el=dom.appendChild(
-        dom.createElementNS( u"http://www.slashdot.org", u"slash:abc" ))
-    string1=repr( el )
-    string2=str( el )
-    confirm( string1==string2 )
-    confirm( string1.find("slash:abc" )!=-1 )
+    dom = Document()
+    el = dom.appendChild(
+        dom.createElementNS(u"http://www.slashdot.org", u"slash:abc"))
+    string1 = repr(el)
+    string2 = str(el)
+    confirm(string1 == string2)
+    confirm(string1.find("slash:abc") != -1)
     dom.unlink()
-    confirm( len( Node.allnodes )==0 )
+    confirm(len(Node.allnodes) == 0)
 
 def testAttributeRepr():
-    dom=Document()
-    el=dom.appendChild( dom.createElement( u"abc" ) )
-    node=el.setAttribute( "abc", "def" )
-    confirm( str( node ) == repr( node ) )
+    dom = Document()
+    el = dom.appendChild(dom.createElement(u"abc"))
+    node = el.setAttribute("abc", "def")
+    confirm(str(node) == repr(node))
     dom.unlink()
-    confirm( len( Node.allnodes )==0 )
+    confirm(len(Node.allnodes) == 0)
 
 def testTextNodeRepr(): pass
 
@@ -230,7 +230,7 @@ def testWriteXML():
     domstr = dom.toxml()
     dom.unlink()
     confirm(str == domstr)
-    confirm( len( Node.allnodes )==0 )
+    confirm(len(Node.allnodes) == 0)
 
 def testProcessingInstruction(): pass
 
@@ -375,20 +375,20 @@ def testNonNSElements():
 
 # --- MAIN PROGRAM
     
-names=globals().keys()
+names = globals().keys()
 names.sort()
 
-works=1
+works = 1
 
 for name in names:
-    if name.startswith( "test" ):
-        func=globals()[name]
+    if name.startswith("test"):
+        func = globals()[name]
         try:
             func()
             print "Test Succeeded", name
             confirm(len(Node.allnodes) == 0,
                     "assertion: len(Node.allnodes) == 0")
-            if len( Node.allnodes ):
+            if len(Node.allnodes):
                 print "Garbage left over:"
                 if verbose:
                     print Node.allnodes.items()[0:10]
@@ -396,13 +396,13 @@ for name in names:
                     # Don't print specific nodes if repeatable results
                     # are needed
                     print len(Node.allnodes)
-            Node.allnodes={}
-        except Exception, e :
-            works=0
+            Node.allnodes = {}
+        except Exception, e:
+            works = 0
             print "Test Failed: ", name
-            apply( traceback.print_exception, sys.exc_info() )
+            traceback.print_exception(*sys.exc_info())
             print `e`
-            Node.allnodes={}
+            Node.allnodes = {}
 
 if works:
     print "All tests succeeded"
