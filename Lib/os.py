@@ -198,7 +198,7 @@ sys.modules['os.path'] = path
 # (Inspired by Eric Raymond; the doc strings are mostly his)
 
 def makedirs(name, mode=0777):
-    """makedirs(path [, mode=0777]) -> None
+    """makedirs(path [, mode=0777])
 
     Super-mkdir; create a leaf directory and all intermediate ones.
     Works like mkdir, except that any intermediate path segment (not
@@ -214,7 +214,7 @@ def makedirs(name, mode=0777):
     mkdir(name, mode)
 
 def removedirs(name):
-    """removedirs(path) -> None
+    """removedirs(path)
 
     Super-rmdir; remove a leaf directory and empty all intermediate
     ones.  Works like rmdir except that, if the leaf directory is
@@ -236,7 +236,7 @@ def removedirs(name):
         head, tail = path.split(head)
 
 def renames(old, new):
-    """renames(old, new) -> None
+    """renames(old, new)
 
     Super-rename; create directories as necessary and delete any left
     empty.  Works like rename, except creation of any intermediate
