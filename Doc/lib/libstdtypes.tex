@@ -62,10 +62,13 @@ These are the Boolean operations, ordered by ascending priority:
 \indexii{Boolean}{operations}
 
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineiii{\var{x} or \var{y}}{if \var{x} is false, then \var{y}, else \var{x}}{(1)}
-  \lineiii{\var{x} and \var{y}}{if \var{x} is false, then \var{x}, else \var{y}}{(1)}
+  \lineiii{\var{x} or \var{y}}
+          {if \var{x} is false, then \var{y}, else \var{x}}{(1)}
+  \lineiii{\var{x} and \var{y}}
+          {if \var{x} is false, then \var{x}, else \var{y}}{(1)}
   \hline
-  \lineiii{not \var{x}}{if \var{x} is false, then \code{1}, else \code{0}}{(2)}
+  \lineiii{not \var{x}}
+          {if \var{x} is false, then \code{1}, else \code{0}}{(2)}
 \end{tableiii}
 \opindex{and}
 \opindex{or}
@@ -591,45 +594,51 @@ Return a copy of the string converted to uppercase.
 \index{printf-style formatting}
 \index{sprintf-style formatting}
 
-String objects have one unique built-in operation: the \code{\%}
-operator (modulo) with a string left argument interprets this string
-as a C \cfunction{sprintf()} format string to be applied to the
-right argument, and returns the string resulting from this formatting
-operation.
+String and Unicode objects have one unique built-in operation: the
+\code{\%} operator (modulo).  Given \code{\var{format} \%
+\var{values}} (where \var{format} is a string or Unicode object),
+\code{\%} conversion specifications in \var{format} are replaced with
+zero or more elements of \var{values}.  The effect is similar to the
+using \cfunction{sprintf()} in the C language.  If \var{format} is a
+Unicode object, or if any of the objects being converted using the
+\code{\%s} conversion are Unicode objects, the result will be a
+Unicode object as well.
 
-The right argument should be a tuple with one item for each argument
-required by the format string; if the string requires a single
-argument, the right argument may also be a single non-tuple
-object.\footnote{A tuple object in this case should be a singleton.
-}  The following format characters are understood: \code{\%},
-\code{c}, \code{r}, \code{s}, \code{i}, \code{d}, \code{u}, \code{o},
-\code{x}, \code{X}, \code{e}, \code{E}, \code{f}, \code{g}, \code{G}.
-Width and precision may be a \code{*} to specify that an integer argument
-specifies the actual width or precision.  The flag characters
-\code{-}, \code{+}, blank, \code{\#} and \code{0} are understood.  The 
-size specifiers \code{h}, \code{l} or \code{L} may be present but are
-ignored.  The \code{\%s} conversion takes any Python object and
-converts it to a string using \code{str()} before formatting it; the
-\code{\%r} conversion is similar but applies the \function{repr()}
-function instead.  The
-ANSI features \code{\%p} and \code{\%n} are not supported.  Since
-Python strings have an explicit length, \code{\%s} conversions don't
-assume that \code{'\e0'} is the end of the string.
+If \var{format} requires a single argument, \var{values} may be a
+single non-tuple object. \footnote{A tuple object in this case should
+  be a singleton.}  Otherwise, \var{values} must be a tuple with
+exactly the number of items specified by the format string, or a
+single mapping object (for example, a dictionary).
 
-For safety reasons, floating point precisions are clipped to 50;
-\code{\%f} conversions for numbers whose absolute value is over 1e25
-are replaced by \code{\%g} conversions.\footnote{
-  These numbers are fairly arbitrary.  They are intended to
-  avoid printing endless strings of meaningless digits without hampering
-  correct use and without having to know the exact precision of floating
-  point values on a particular machine.
-}  All other errors raise exceptions.
+A conversion specifier contains two or more characters and has the
+following components, which must occur in this order:
+
+\begin{enumerate}
+  \item  The \character{\%} character, which marks the start of the
+         specifier.
+  \item  Mapping key value (optional), consisting of an identifier in
+         parentheses (for example, \code{(somename)}).
+  \item  Conversion flags (optional), which affect the result of some
+         conversion types.
+  \item  Minimum field width (optional).  If specified as an
+         \character{*} (asterisk), the actual width is read from the
+         next element of the tuple in \var{values}, and the object to
+         convert comes after the minimum field width and optional
+         precision.
+  \item  Precision (optional), given as a \character{.} (dot) followed
+         by the precision.  If specified as \character{*} (an
+         asterisk), the actual width is read from the next element of
+         the tuple in \var{values}, and the value to convert comes after
+         the precision.
+  \item  Length modifier (optional).
+  \item  Conversion type.
+\end{enumerate}
 
 If the right argument is a dictionary (or any kind of mapping), then
-the formats in the string must have a parenthesized key into that
-dictionary inserted immediately after the \character{\%} character,
-and each format formats the corresponding entry from the mapping.
-For example:
+the formats in the string \emph{must} have a parenthesized key into
+that dictionary inserted immediately after the \character{\%}
+character, and each format formats the corresponding entry from the
+mapping.  For example:
 
 \begin{verbatim}
 >>> count = 2
@@ -640,6 +649,66 @@ Python has 002 quote types.
 
 In this case no \code{*} specifiers may occur in a format (since they
 require a sequential parameter list).
+
+The conversion flag characters are:
+
+\begin{tableii}{c|l}{character}{Flag}{Meaning}
+  \lineii{\#}{The value conversion will use the ``alternate form''
+              (where defined below).}
+  \lineii{0}{The conversion will be zero padded.}
+  \lineii{-}{The converted value is left adjusted (overrides
+             \character{-}).}
+  \lineii{{~}}{(a space) A blank should be left before a positive number
+             (or empty string) produced by a signed conversion.}
+  \lineii{+}{A sign character (\character{+} or \character{-}) will
+             precede the conversion (overrides a "space" flag).}
+\end{tableii}
+
+The length modifier may be \code{h}, \code{l}, and \code{L} may be
+present, but are ignored as they are not necessary for Python.
+
+The conversion types are:
+
+\begin{tableii}{c|l}{character}{Conversion}{Meaning}
+  \lineii{d}{Signed integer decimal.}
+  \lineii{i}{Signed integer decimal.}
+  \lineii{o}{Unsigned octal.}
+  \lineii{u}{Unsigned decimal.}
+  \lineii{x}{Unsigned hexidecimal (lowercase).}
+  \lineii{X}{Unsigned hexidecimal (uppercase).}
+  \lineii{e}{Floating point exponential format (lowercase).}
+  \lineii{E}{Floating point exponential format (uppercase).}
+  \lineii{f}{Floating point decimal format.}
+  \lineii{F}{Floating point decimal format.}
+  \lineii{g}{Same as \character{e} if exponent is greater than -4 or
+             less than precision, \character{f} otherwise.}
+  \lineii{G}{Same as \character{E} if exponent is greater than -4 or
+             less than precision, \character{F} otherwise.}
+  \lineii{c}{Single character (accepts integer or single character
+             string).}
+  \lineii{r}{String (converts any python object using
+             \function{repr()}).}
+  \lineii{s}{String (converts any python object using
+             \function{str()}).}
+  \lineii{\%}{No argument is converted, results in a \character{\%}
+              character in the result.  (The complete specification is
+              \code{\%\%}.)}
+\end{tableii}
+
+% XXX Examples?
+
+
+Since Python strings have an explicit length, \code{\%s} conversions
+do not assume that \code{'\e0'} is the end of the string.
+
+For safety reasons, floating point precisions are clipped to 50;
+\code{\%f} conversions for numbers whose absolute value is over 1e25
+are replaced by \code{\%g} conversions.\footnote{
+  These numbers are fairly arbitrary.  They are intended to
+  avoid printing endless strings of meaningless digits without hampering
+  correct use and without having to know the exact precision of floating
+  point values on a particular machine.
+}  All other errors raise exceptions.
 
 Additional string operations are defined in standard module
 \refmodule{string} and in built-in module \refmodule{re}.
