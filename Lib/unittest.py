@@ -616,7 +616,7 @@ class TextTestRunner:
         self.stream.writeln(result.separator2)
         run = result.testsRun
         self.stream.writeln("Ran %d test%s in %.3fs" %
-                            (run, run == 1 and "" or "s", timeTaken))
+                            (run, run != 1 and "s" or "", timeTaken))
         self.stream.writeln()
         if not result.wasSuccessful():
             self.stream.write("FAILED (")
