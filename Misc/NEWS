@@ -47,6 +47,11 @@ Core
 - Comparing dictionary objects via == and != is faster, and now works even
   if the keys and values don't support comparisons other than ==.
 
+- Comparing dictionaries in ways other than == and != is slower:  there were
+  insecurities in the dict comparison implementation that could cause Python
+  to crash if the element comparison routines for the dict keys and/or
+  values mutated the dicts.  Making the code bulletproof slowed it down.
+
 
 What's New in Python 2.1 (final)?
 =================================
