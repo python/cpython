@@ -1,10 +1,11 @@
 import ntpath
-from test_support import verbose
+from test_support import verbose, TestFailed
 import os
 
 errors = 0
 
 def tester(fn, wantResult):
+    global errors
     fn = fn.replace("\\", "\\\\")
     gotResult = eval(fn)
     if wantResult != gotResult:
@@ -13,7 +14,6 @@ def tester(fn, wantResult):
         print "should be: " + str(wantResult)
         print " returned: " + str(gotResult)
         print ""
-        global errors
         errors = errors + 1
 
 tester('ntpath.splitdrive("c:\\foo\\bar")',
@@ -50,7 +50,23 @@ tester('ntpath.commonprefix(["\\home\\swen\\spam", "\\home\\swen\\eggs"])',
 tester('ntpath.commonprefix(["/home/swen/spam", "/home/swen/spam"])',
        "/home/swen/spam")
 
+tester('ntpath.join("")', '')
+tester('ntpath.join("", "", "")', '')
+tester('ntpath.join("a")', 'a')
+tester('ntpath.join("/a")', '/a')
+tester('ntpath.join("\\a")', '\\a')
+tester('ntpath.join("a:")', 'a:')
+tester('ntpath.join("a:", "b")', 'a:b')
+tester('ntpath.join("a:", "/b")', 'a:/b')
+tester('ntpath.join("a:", "\\b")', 'a:\\b')
+tester('ntpath.join("a", "/b")', '/b')
+tester('ntpath.join("a", "\\b")', '\\b')
+tester('ntpath.join("a", "b", "c")', 'a\\b\\c')
+tester('ntpath.join("a\\", "b", "c")', 'a\\b\\c')
+tester('ntpath.join("a", "b\\", "c")', 'a\\b\\c')
+tester('ntpath.join("a", "b", "\\c")', '\\c')
+
 if errors:
-    print str(errors) + " errors."
+    raise TestFailed(str(errors) + " errors.")
 elif verbose:
     print "No errors.  Thank your lucky stars."
