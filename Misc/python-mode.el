@@ -1945,10 +1945,12 @@ local bindings to py-newline-and-indent."))
     (set-buffer pbuf)
     (goto-char (point-max))
     (move-marker (process-mark process) (point))
-    (if (not py-this-is-emacs-19-p)
+    (if (not (or py-this-is-emacs-19-p
+		 py-this-is-lucid-emacs-p))
 	(move-marker last-input-start (point))) ; muck w/ shell-mode
     (funcall (process-filter process) process string)
-    (if (not py-this-is-emacs-19-p)
+    (if (not (or py-this-is-emacs-19-p
+		 py-this-is-lucid-emacs-p))
 	(move-marker last-input-end (point))) ; muck w/ shell-mode
     (set-buffer cbuf))
   (sit-for 0))
