@@ -820,7 +820,11 @@ build_node_tree(tuple)
 }   /* build_node_tree() */
 
 
+#ifdef HAVE_OLD_CPP
+#define VALIDATER(n)    static int validate_/**/n()
+#else
 #define	VALIDATER(n)	static int validate_##n()
+#endif
 
 
 /*
