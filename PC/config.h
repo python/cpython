@@ -308,6 +308,9 @@ typedef int pid_t;
 /* Define to `unsigned' if <sys/types.h> doesn't define.  */
 /* #undef size_t */
 
+/* Define to `int' if <sys/types.h> doesn't define.  */
+#define socklen_t int
+
 /* Define if you have the ANSI C header files.  */
 #define STDC_HEADERS 1
 
