@@ -69,14 +69,15 @@ time_time(self, args)
 	if (!getnoarg(args))
 		return NULL;
 	time(&secs);
-#ifdef THINK_C
-#ifndef THINK_C_3_0
+#ifdef applec /* MPW */
 /* Difference in origin between Mac and Unix clocks: */
+/* For THINK C 3.0 add a correction like 5*3600;
+   it converts to UCT from local assuming EST */
 #define TIMEDIFF ((time_t) \
 	(((1970-1904)*365L + (1970-1904)/4) * 24 * 3600))
 	secs -= TIMEDIFF;
-#endif
-#endif
+/* XXX It's almost better to directly fetch the Mac clock... */
+#endif /* applec */
 	return newintobject((long)secs);
 }
 
@@ -112,9 +113,9 @@ time_sleep(self, args)
 	return None;
 }
 
-#ifdef THINK_C
+#ifdef macintosh
 #define DO_MILLI
-#endif /* THINK_C */
+#endif
 
 #ifdef AMOEBA
 #define DO_MILLI
@@ -189,7 +190,7 @@ inittime()
 }
 
 
-#ifdef THINK_C
+#ifdef macintosh
 
 #define MacTicks	(* (long *)0x16A)
 
@@ -225,7 +226,7 @@ millitimer()
 	return MacTicks * 50 / 3; /* MacTicks * 1000 / 60 */
 }
 
-#endif /* THINK_C */
+#endif /* macintosh */
 
 
 #ifdef BSD_TIME
