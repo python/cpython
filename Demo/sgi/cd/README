@@ -19,5 +19,10 @@ recvcd.py	Receive UDP packets containing CD audio data (from
 		speaker or audio jack.  Needs module al.  (Doesn't
 		actually use module cd.)
 
+cdaiff.py	Dump CD audio to disk in AIFF format.
+
+readcd.py	Utility module to make it easy to specify play lists
+		for a CD player (used by cdaiff.py).
+
 Note that to read *data* CD-ROMs you must open /dev/rdsk/dks0d4s7 or
 some such special file...
