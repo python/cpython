@@ -17,7 +17,7 @@ __revision__ = "$Id$"
 import sys, os
 from distutils.errors import \
      DistutilsExecError, DistutilsPlatformError, \
-     CompileError, LibError, LinkError
+     CompileError, LibError, LinkError, UnknownFileError
 from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
 from distutils.file_util import write_file
