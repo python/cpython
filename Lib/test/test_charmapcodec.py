@@ -16,7 +16,7 @@ def check(a, b):
         print '%s == %s: OK' % (repr(a), repr(b))
 
 # test codec's full path name (see test/testcodec.py)
-codecname = 'testcodec'
+codecname = 'test.testcodec'
     
 check(unicode('abc', codecname), u'abc')
 check(unicode('xdef', codecname), u'abcdef')
