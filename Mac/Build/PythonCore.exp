@@ -431,6 +431,10 @@ PyList_New
 PyLong_Type
 PyLong_FromUnicode
 PyLong_FromString
+PyLong_AsUnsignedLongLong
+PyLong_AsLongLong
+PyLong_FromUnsignedLongLong
+PyLong_FromLongLong
 PyLong_AsVoidPtr
 PyLong_FromVoidPtr
 PyLong_AsDouble
@@ -2102,7 +2106,6 @@ set_new_handler__3stdFPFv_v		# std::set_new_handler(void (*)(void))
 __throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
 __dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
 qd
-exit
 __console_exit
 __stdio_exit
 __aborting
