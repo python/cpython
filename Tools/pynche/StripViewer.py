@@ -355,7 +355,7 @@ class StripViewer:
 
         # create the black button
         blackbtn = Button(frame2,
-                          text='<- Black',
+                          text='Black',
                           command=self.__toblack)
         blackbtn.grid(row=0, column=0, rowspan=2, sticky=W, padx=padx)
 
@@ -388,7 +388,7 @@ class StripViewer:
 
         # create the white button
         whitebtn = Button(frame2,
-                          text='White ->',
+                          text='White',
                           command=self.__towhite)
         whitebtn.grid(row=0, column=2, rowspan=2, sticky=E, padx=padx)
 
