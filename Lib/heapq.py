@@ -126,6 +126,8 @@ Believe me, real good tape sorts were quite spectacular to watch!
 From all times, sorting has always been a Great Art! :-)
 """
 
+__all__ = ['heappush', 'heappop', 'heapify', 'heapreplace']
+
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
     heap.append(item)
