@@ -398,6 +398,34 @@ Mac OS X 10.0: Run configure with "OPT='-no-cpp-precomp' ./configure
         expected to work on a Unix UFS filesystem (how to check for
         this on Mac OS X?).
 
+Mac OS X 10.1: Run configure with 
+        "./configure --with-suffix=.x --with-dyld". 
+        This generates executable file: 'python.x' 
+        (it cannot be named 'python' on an HFS or HFS+ 
+        disk as the file name clashes with directory 'Python').
+
+        The makefile is set up to correctly handle two-
+        level namespaces for Mac OS X v10.1 and 10.0.x
+        systems. However, running the prebinding tool on
+        Mac OS X 10.0.x again will cause the tool to break
+        as it cannot handle two level namespaces.
+
+        The default Mac OS X has a default stacksize
+        of 512K which causes the regular expression
+        tests (RE and SRE) to SEGV. To temporarily
+        increase the stacksize, type 'limit stacksize 2M' in
+        the terminal window before running 'make test'.
+
+        The test_largefile test will work on HFS+ and
+        UFS filesystem, providing you have enough space
+        and time.
+
+        After sudo 'make installation', do the following
+        commands:
+        cd /usr/local/bin/
+        sudo mv python.x python
+        sudo mv python2.1.x python2.1
+
 Cygwin: Cygwin Python builds OOTB when configured as follows:
 
             configure --with-threads=no
