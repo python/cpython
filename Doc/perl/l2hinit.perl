@@ -235,7 +235,7 @@ sub get_version_text() {
 sub top_navigation_panel() {
     return "\n<div id='top-navigation-panel'>\n"
            . make_nav_panel()
-           . "<br /><hr /></div>\n";
+           . "<hr /></div>\n";
 }
 
 sub bot_navigation_panel() {
