@@ -12,6 +12,7 @@
 #define USE_ARGV0_CHDIR		/* Workaround for OSXDP4: change dir to argv[0] dir */
 #define USE_GUSI2		/* Stdio implemented with GUSI 2 */
 /* # define USE_GUSI1	/* Stdio implemented with GUSI 1 */
+#define WITH_THREAD		/* Use thread support (needs GUSI 2, not GUSI 1) */
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
 #define USE_TOOLBOX		/* Include toolbox modules in core Python */
 /* #define USE_CORE_TOOLBOX		/* Include minimal set of toolbox modules in core Python */
