@@ -586,6 +586,8 @@ mac_write(self, args)
 }
 
 #ifdef USE_MALLOC_DEBUG
+void *mstats(char *);
+
 static PyObject *
 mac_mstats(self, args)
 	PyObject*self;
