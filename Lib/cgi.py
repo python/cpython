@@ -478,6 +478,10 @@ log = initlog		# The current logging function
 # Parsing functions
 # =================
 
+# Maximum input we will accept when REQUEST_METHOD is POST
+# 0 ==> unlimited input
+maxlen = 0
+
 def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
     """Parse a query in the environment or from a file (default stdin)
 
@@ -508,6 +512,8 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
 	    return parse_multipart(fp, pdict)
 	elif ctype == 'application/x-www-form-urlencoded':
 	    clength = string.atoi(environ['CONTENT_LENGTH'])
+	    if maxlen and clength > maxlen:
+		raise ValueError, 'Maximum content length exceeded'
 	    qs = fp.read(clength)
 	else:
 	    qs = ''			# Unknown content-type
@@ -610,6 +616,8 @@ def parse_multipart(fp, pdict):
 		except string.atoi_error:
 		    pass
 	    if bytes > 0:
+		if maxlen and bytes > maxlen:
+		    raise ValueError, 'Maximum content length exceeded'
 		data = fp.read(bytes)
 	    else:
 		data = ""
@@ -829,6 +837,8 @@ class FieldStorage:
 		clen = string.atoi(self.headers['content-length'])
 	    except:
 		pass
+	    if maxlen and clen > maxlen:
+		raise ValueError, 'Maximum content length exceeded'
 	self.length = clen
 
 	self.list = self.file = None
@@ -1183,6 +1193,19 @@ def test(environ=os.environ):
 	    f()
 	print "<H3>What follows is a test, not an actual exception:</H3>"
 	g()
+    except:
+	print_exception()
+
+    # Second try with a small maxlen...
+    global maxlen
+    maxlen = 50
+    try:
+	form = FieldStorage()	# Replace with other classes to test those
+	print_form(form)
+	print_environ(environ)
+	print_directory()
+	print_arguments()
+	print_environ_usage()
     except:
 	print_exception()
 
