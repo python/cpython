@@ -20,7 +20,6 @@ from rfc822 import mktime_tz
 # We need wormarounds for bugs in these methods in older Pythons (see below)
 from rfc822 import parsedate as _parsedate
 from rfc822 import parsedate_tz as _parsedate_tz
-from rfc822 import parseaddr as _parseaddr
 
 from quopri import decodestring as _qdecode
 import base64
@@ -237,7 +236,7 @@ def parsedate_tz(data):
 
 
 def parseaddr(addr):
-    realname, emailaddr = _parseaddr(addr)
-    if realname == '' and emailaddr is None:
+    addrs = _AddressList(addr).addresslist
+    if not addrs:
         return '', ''
-    return realname, emailaddr
+    return addrs[0]
