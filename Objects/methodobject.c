@@ -38,21 +38,31 @@ PERFORMANCE OF THIS SOFTWARE.
 typedef struct {
 	PyObject_HEAD
 	PyMethodDef *m_ml;
-	PyObject	*m_self;
+	PyObject    *m_self;
 } PyCFunctionObject;
+
+static PyCFunctionObject *free_list = NULL;
 
 PyObject *
 PyCFunction_New(ml, self)
 	PyMethodDef *ml;
 	PyObject *self;
 {
-	PyCFunctionObject *op = PyObject_NEW(PyCFunctionObject,
-					     &PyCFunction_Type);
+	PyCFunctionObject *op;
+	op = free_list;
 	if (op != NULL) {
-		op->m_ml = ml;
-		Py_XINCREF(self);
-		op->m_self = self;
+		free_list = (PyCFunctionObject *)(op->m_self);
+		op->ob_type = &PyCFunction_Type;
+		_Py_NewReference(op);
 	}
+	else {
+		op = PyObject_NEW(PyCFunctionObject, &PyCFunction_Type);
+		if (op == NULL)
+			return NULL;
+	}
+	op->m_ml = ml;
+	Py_XINCREF(self);
+	op->m_self = self;
 	return (PyObject *)op;
 }
 
@@ -96,7 +106,8 @@ meth_dealloc(m)
 	PyCFunctionObject *m;
 {
 	Py_XDECREF(m->m_self);
-	free((char *)m);
+	m->m_self = (PyObject *)free_list;
+	free_list = m;
 }
 
 static PyObject *
@@ -266,4 +277,16 @@ Py_FindMethod(methods, self, name)
 	chain.methods = methods;
 	chain.link = NULL;
 	return Py_FindMethodInChain(&chain, self, name);
+}
+
+/* Clear out the free list */
+
+void
+PyCFunction_Fini()
+{
+	while (free_list) {
+		PyCFunctionObject *v = free_list;
+		free_list = (PyCFunctionObject *)(v->m_self);
+		PyMem_DEL(v);
+	}
 }
