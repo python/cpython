@@ -1,12 +1,26 @@
-# Module 'packmail' -- create a shell script out of some files.
+# Module 'packmail' -- create a self-unpacking shell archive.
+
+# This module works on UNIX and on the Mac; the archives can unpack
+# themselves only on UNIX.
 
 import os
 from stat import ST_MTIME
 import string
 
+# Print help
+def help():
+	print 'All fns have a file open for writing as first parameter'
+	print 'pack(f, fullname, name): pack fullname as name'
+	print 'packsome(f, directory, namelist): selected files from directory'
+	print 'packall(f, directory): pack all files from directory'
+	print 'packnotolder(f, directory, name): pack all files from directory'
+	print '                        that are not older than a file there'
+	print 'packtree(f, directory): pack entire directory tree'
+
 # Pack one file
 def pack(outfp, file, name):
 	fp = open(file, 'r')
+	outfp.write('echo ' + name + '\n')
 	outfp.write('sed "s/^X//" >' + name + ' <<"!"\n')
 	while 1:
 		line = fp.readline()
@@ -15,6 +29,7 @@ def pack(outfp, file, name):
 			line = line + '\n'
 		outfp.write('X' + line)
 	outfp.write('!\n')
+	fp.close()
 
 # Pack some files from a directory
 def packsome(outfp, dirname, names):
@@ -64,7 +79,7 @@ def packtree(outfp, dirname):
 		packtree(outfp, subdirname)
 
 def unixfix(name):
-	comps = string.splitfields(name, ':')
+	comps = string.splitfields(name, os.sep)
 	res = ''
 	for comp in comps:
 		if comp:
