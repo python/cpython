@@ -1,7 +1,7 @@
 "Framework for command line interfaces like CVS.  See class CmdFrameWork."
 
 
-class CmdFrameWork:
+class CommandFrameWork:
 
 	"""Framework class for command line interfaces like CVS.
 
@@ -28,6 +28,8 @@ class CmdFrameWork:
 	UsageMessage = \
 	  "usage: (name)s [flags] subcommand [subflags] [argument] ..."
 
+	PostUsageMessage = None
+
 	GlobalFlags = ''
 
 	def __init__(self):
@@ -44,6 +46,7 @@ class CmdFrameWork:
 			return self.usage(msg)
 		self.options(opts)
 		if not args:
+			self.ready()
 			return self.default()
 		else:
 			cmd = args[0]
@@ -62,6 +65,7 @@ class CmdFrameWork:
 			except getopt.error, msg:
 				return self.usage(
 					"subcommand %s: " % cmd + str(msg))
+			self.ready()
 			return method(opts, args)
 
 	def options(self, opts):
@@ -73,6 +77,10 @@ class CmdFrameWork:
 			for o, a in opts:
 				print 'option', o, 'value', `a`
 			print "-"*40
+
+	def ready(self):
+		"""Called just before calling the subcommand."""
+		pass
 
 	def usage(self, msg = None):
 		"""Print usage message.  Return suitable exit code (2)."""
@@ -100,6 +108,8 @@ class CmdFrameWork:
 			names.sort()
 			for name in names:
 				print docstrings[name]
+		if self.PostUsageMessage:
+			print self.PostUsageMessage
 		return 2
 
 	def default(self):
@@ -111,7 +121,7 @@ class CmdFrameWork:
 def test():
 	"""Test script -- called when this module is run as a script."""
 	import sys
-	class Hello(CmdFrameWork):
+	class Hello(CommandFrameWork):
 		def do_hello(self, opts, args):
 			"hello -- print 'hello world', needs no arguments"
 			print "Hello, world"
