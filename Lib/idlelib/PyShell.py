@@ -29,6 +29,7 @@ import idlever
 import rpc
 import RemoteDebugger
 
+# Preserve 2.2 compatibility for Mac OS X:
 import boolcheck
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
@@ -1169,6 +1170,10 @@ def main():
             dir = os.path.abspath(dir)
             if not dir in sys.path:
                 sys.path.insert(0, dir)
+    else:
+        dir = os.getcwd()
+        if not dir in sys.path:
+            sys.path.insert(0, dir)
     # check the IDLE settings configuration (but command line overrides)
     edit_start = idleConf.GetOption('main', 'General',
                                     'editor-on-startup', type='bool') 
