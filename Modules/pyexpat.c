@@ -113,7 +113,9 @@ set_error(xmlparseobject *self)
     int column = XML_GetErrorColumnNumber(parser);
     enum XML_Error code = XML_GetErrorCode(parser);
 
-    PyOS_snprintf(buffer, sizeof(buffer), "%.200s: line %i, column %i",
+    /* There is no risk of overflowing this buffer, since
+       even for 64-bit integers, there is sufficient space. */
+    sprintf(buffer, "%.200s: line %i, column %i",
             XML_ErrorString(code), lineno, column);
     err = PyObject_CallFunction(ErrorObject, "s", buffer);
     if (  err != NULL
