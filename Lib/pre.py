@@ -367,10 +367,12 @@ class RegexObject:
         end = len(source)
 
         if type(repl) is type(''):
-            # See if repl contains group references
+            # See if repl contains group references (if it does,
+            # pcre_expand will attempt to call _Dummy.group, which
+            # results in a TypeError)
             try:
                 repl = pcre_expand(_Dummy, repl)
-            except error:
+            except (error, TypeError):
                 m = MatchObject(self, source, 0, end, [])
                 repl = lambda m, repl=repl, expand=pcre_expand: expand(m, repl)
             else:
