@@ -28,7 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define USE_MARSHAL	1	/* This is linked anyway */
 #define USE_MATH	1
 #define USE_STRUCT	1
-#define USE_STROP	1
 #define USE_TIME	1
 
 #ifdef macintosh
@@ -36,8 +35,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define USE_IMAGEOP	1
 #define USE_MAC		1
 #define USE_REGEX	1
-#define USE_ROTOR	1
 #define USE_STDWIN	1	/* You may turn this off */
+#define USE_STROP
 #endif
 
 #ifdef unix
@@ -48,10 +47,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define USE_SOCKET	1
 #endif
 
+#ifdef MSDOS
+#define USE_POSIX	1	/* Subset defined in posixmodule.c */
+#define USE_REGEX	1
+#define USE_STROP	1
+#define USE_PC		1
+#endif
+
 #include <stdio.h>
 
 #include "PROTO.h"
 #include "mymalloc.h"
+#include "osdefs.h"
 
 #include "patchlevel.h"
 
@@ -116,12 +123,25 @@ donecalls()
 }
 
 #ifndef PYTHONPATH
+
 #ifdef macintosh
 /* On the Mac, the search path is a space-separated list of directories */
 #define PYTHONPATH ": :lib :demo"
-#else /* !macintosh */
+#endif /* macintosh */
+
+#ifdef unix
 #define PYTHONPATH ".:/usr/local/lib/python"
-#endif /* !macintosh */
+#endif /* unix */
+
+#ifdef MSDOS
+/* In MS-DOS, the delimiter is a semicolon */
+#define PYTHONPATH ".;C\\python\\lib"
+#endif /* MSDOS */
+
+#ifndef PYTHONPATH
+ERROR; ERROR; On what kind of system are you?;
+#endif
+
 #endif /* !PYTHONPATH */
 
 extern char *getenv();
@@ -135,6 +155,7 @@ getpythonpath()
 	char *path = getenv("PYTHONPATH");
 	char *defpath = PYTHONPATH;
 	char *buf;
+	char *p;
 	int n;
 
 	if (path == 0 || *path == '\0')
@@ -144,8 +165,9 @@ getpythonpath()
 	if (buf == NULL)
 		return path; /* XXX too bad -- but not likely */
 	strcpy(buf, path);
-	strcat(buf, ":");
-	strcat(buf, defpath);
+	p = buf + strlen(buf);
+	*p++ = DELIM;
+	strcpy(p, defpath);
 	return buf;
 #endif /* !macintosh */
 }

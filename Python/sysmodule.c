@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -154,6 +154,23 @@ static struct methodlist sys_methods[] = {
 
 static object *sysin, *sysout, *syserr;
 
+static object *
+list_builtin_module_names()
+{
+	object *list = newlistobject(0);
+	int i;
+	if (list == NULL)
+		return NULL;
+	for (i = 0; inittab[i].name != NULL; i++) {
+		object *name = newstringobject(inittab[i].name);
+		if (name == NULL)
+			break;
+		addlistitem(list, name);
+		DECREF(name);
+	}
+	return list;
+}
+
 void
 initsys()
 {
@@ -175,6 +192,8 @@ initsys()
 	dictinsert(sysdict, "stderr", syserr);
 	dictinsert(sysdict, "version", v);
 	dictinsert(sysdict, "modules", get_modules());
+	dictinsert(sysdict, "builtin_module_names",
+		   list_builtin_module_names());
 	if (err_occurred())
 		fatal("can't insert sys.* objects in sys dict");
 	DECREF(v);

@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -394,11 +394,6 @@ doneimport()
 
 
 /* Initialize built-in modules when first imported */
-
-extern struct {
-	char *name;
-	void (*initfunc)();
-} inittab[];
 
 static int
 init_builtin(name)

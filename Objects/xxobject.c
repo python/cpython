@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -80,7 +80,7 @@ xx_demo(self, args)
 }
 
 static struct methodlist xx_methods[] = {
-	"demo",		xx_demo,
+	{"demo",	xx_demo},
 	{NULL,		NULL}		/* sentinel */
 };
 
