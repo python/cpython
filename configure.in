@@ -398,7 +398,7 @@ then
     esac
     case $ac_sys_system in
     Darwin*)
-    	OPT="$OPT -no-cpp-precomp";;
+    	OPT="$OPT -Wno-long-double -no-cpp-precomp";;
     esac
 fi
 
