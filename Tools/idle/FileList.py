@@ -24,15 +24,6 @@ class FileList:
         self.inversedict = {}
         self.vars = {} # For EditorWindow.getrawvar (shared Tcl variables)
 
-
-    def goodname(self, filename):
-        filename = self.canonize(filename)
-        key = os.path.normcase(filename)
-        if self.dict.has_key(key):
-            edit = self.dict[key]
-            filename = edit.io.filename or filename
-        return filename
-
     def open(self, filename):
         assert filename
         filename = self.canonize(filename)
@@ -53,6 +44,11 @@ class FileList:
                 "Opening non-existent file %s" % `filename`,
                 master=self.root)
         return self.EditorWindow(self, filename, key)
+
+    def gotofileline(self, filename, lineno=None):
+        edit = self.open(filename)
+        if edit is not None and lineno is not None:
+            edit.gotoline(lineno)
 
     def new(self):
         return self.EditorWindow(self)
@@ -123,7 +119,7 @@ class FileList:
         return os.path.normpath(filename)
 
 
-def test():
+def _test():
     from EditorWindow import fixwordbreaks
     import sys
     root = Tk()
@@ -139,4 +135,4 @@ def test():
         root.mainloop()
 
 if __name__ == '__main__':
-    test()
+    _test()
