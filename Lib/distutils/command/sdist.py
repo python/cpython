@@ -14,7 +14,7 @@ from distutils.util import \
      create_tree, remove_tree, newer, write_file, \
      check_archive_formats
 from distutils.text_file import TextFile
-from distutils.errors import DistutilsExecError, DistutilsOptionError
+from distutils.errors import *
 from distutils.filelist import FileList
 
 
@@ -227,6 +227,8 @@ class sdist (Command):
                            "(using default file list)") %
                           self.template)
 
+            self.filelist.findall()
+
             # Add default file set to 'files'
             if self.use_defaults:
                 self.add_defaults()
@@ -335,7 +337,12 @@ class sdist (Command):
             if line is None:            # end of file
                 break
 
-            self.filelist.process_template_line(line)
+            try:
+                self.filelist.process_template_line(line)
+            except DistutilsTemplateError, msg:
+                self.warn("%s, line %d: %s" % (template.filename,
+                                               template.current_line,
+                                               msg))
 
     # read_template ()
 
