@@ -78,9 +78,19 @@ main(argc, argv)
 	exit(1);
     }
     while( !feof(stdin) ) {
-	gets(lbuf);
-	if ( feof(stdin) ) break;
-	puts(lbuf);
+	{   int t, s;
+	    gets(lbuf);
+	    if ( feof(stdin) ) break;
+	    if ( sscanf(lbuf, "%d,%d", &t,&s) == 2) {
+		if ( s != h*w*4 ) {
+		    fprintf(stderr, "Size changed from %d to %d: %s\n",4*h*w,s, lbuf);
+		    exit(1);
+		}
+		printf("%d, %d\n", t, nh*nw*4);
+	    } else {
+		puts(lbuf);
+	    }
+	}
 	fprintf(stderr, "Reading %d\n", h*w*sizeof(long));
 	if ( (i=fread(bm, 1, h*w*sizeof(long), stdin)) != h*w*sizeof(long)) {
 	    fprintf(stderr, "%s: short read, %d wanted %d\n", argv[0],
