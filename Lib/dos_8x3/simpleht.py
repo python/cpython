@@ -10,7 +10,6 @@ __version__ = "0.3"
 
 
 import os
-import pwd
 import sys
 import time
 import socket
@@ -18,17 +17,6 @@ import string
 import posixpath
 import SocketServer
 import BaseHTTPServer
-
-
-def nobody_uid():
-    """Internal routine to get nobody's uid"""
-    try:
-	nobody = pwd.getpwnam('nobody')[2]
-    except pwd.error:
-	nobody = 1 + max(map(lambda x: x[2], pwd.getpwall()))
-    return nobody
-
-nobody = nobody_uid()
 
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
