@@ -254,7 +254,7 @@ class test__mkstemp_inner(TC):
         file = self.do_create()
         mode = stat.S_IMODE(os.stat(file.name).st_mode)
         expected = 0600
-        if sys.platform in ('win32',):
+        if sys.platform in ('win32', 'os2emx'):
             # There's no distinction among 'user', 'group' and 'world';
             # replicate the 'user' bits.
             user = expected >> 6
@@ -458,7 +458,7 @@ class test_mkdtemp(TC):
         try:
             mode = stat.S_IMODE(os.stat(dir).st_mode)
             expected = 0700
-            if sys.platform in ('win32',):
+            if sys.platform in ('win32', 'os2emx'):
                 # There's no distinction among 'user', 'group' and 'world';
                 # replicate the 'user' bits.
                 user = expected >> 6
