@@ -63,6 +63,7 @@ PyFunction_New(code, globals)
 		Py_INCREF(doc);
 		op->func_doc = doc;
 	}
+	PyObject_GC_Init(op);
 	return (PyObject *)op;
 }
 
@@ -186,6 +187,7 @@ static void
 func_dealloc(op)
 	PyFunctionObject *op;
 {
+	PyObject_GC_Fini(op);
 	Py_DECREF(op->func_code);
 	Py_DECREF(op->func_globals);
 	Py_DECREF(op->func_name);
@@ -277,7 +279,7 @@ PyTypeObject PyFunction_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"function",
-	sizeof(PyFunctionObject) + PyGC_INFO_SIZE,
+	sizeof(PyFunctionObject) + PyGC_HEAD_SIZE,
 	0,
 	(destructor)func_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/

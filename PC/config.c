@@ -43,6 +43,9 @@ extern void initbinascii();
 #endif
 extern void initcmath();
 extern void initerrno();
+#ifdef WITH_CYCLE_GC
+extern void initgc();
+#endif
 #ifndef MS_WIN64
 extern void initimageop();
 #endif
@@ -89,6 +92,9 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
         {"cmath", initcmath},
         {"errno", initerrno},
+#ifdef WITH_CYCLE_GC
+        {"gc", initgc},
+#endif
 #ifndef MS_WIN64
         {"imageop", initimageop},
 #endif

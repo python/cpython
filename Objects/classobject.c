@@ -132,6 +132,7 @@ PyClass_New(bases, dict, name)
 	Py_XINCREF(op->cl_getattr);
 	Py_XINCREF(op->cl_setattr);
 	Py_XINCREF(op->cl_delattr);
+	PyObject_GC_Init(op);
 	return (PyObject *) op;
 }
 
@@ -141,6 +142,7 @@ static void
 class_dealloc(op)
 	PyClassObject *op;
 {
+	PyObject_GC_Fini(op);
 	Py_DECREF(op->cl_bases);
 	Py_DECREF(op->cl_dict);
 	Py_XDECREF(op->cl_name);
@@ -428,7 +430,7 @@ PyTypeObject PyClass_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"class",
-	sizeof(PyClassObject) + PyGC_INFO_SIZE,
+	sizeof(PyClassObject) + PyGC_HEAD_SIZE,
 	0,
 	(destructor)class_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
@@ -490,6 +492,7 @@ PyInstance_New(class, arg, kw)
 	if (inst == NULL)
 		return NULL;
 	inst->in_dict = PyDict_New();
+	PyObject_GC_Init(inst);
 	if (inst->in_dict == NULL) {
 		PyObject_DEL(inst);
 		return NULL;
@@ -539,11 +542,12 @@ instance_dealloc(inst)
 	PyObject *error_type, *error_value, *error_traceback;
 	PyObject *del;
 	static PyObject *delstr;
+	extern long _Py_RefTotal;
+	PyObject_GC_Fini(inst);
 	/* Call the __del__ method if it exists.  First temporarily
 	   revive the object and save the current exception, if any. */
 #ifdef Py_TRACE_REFS
 	/* much too complicated if Py_TRACE_REFS defined */
-	extern long _Py_RefTotal;
 	inst->ob_type = &PyInstance_Type;
 	_Py_NewReference((PyObject *)inst);
 	_Py_RefTotal--;		/* compensate for increment in NEWREF */
@@ -591,6 +595,7 @@ instance_dealloc(inst)
 #ifdef COUNT_ALLOCS
 		inst->ob_type->tp_free--;
 #endif
+		PyObject_GC_Init((PyObject *)inst);
 		return; /* __del__ added a reference; don't delete now */
 	}
 #ifdef Py_TRACE_REFS
@@ -598,7 +603,9 @@ instance_dealloc(inst)
 	inst->ob_type->tp_free--;	/* compensate for increment in UNREF */
 #endif
 	_Py_ForgetReference((PyObject *)inst);
+#ifndef WITH_CYCLE_GC
 	inst->ob_type = NULL;
+#endif
 #endif /* Py_TRACE_REFS */
 	Py_DECREF(inst->in_class);
 	Py_XDECREF(inst->in_dict);
@@ -1510,7 +1517,7 @@ PyTypeObject PyInstance_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"instance",
-	sizeof(PyInstanceObject) + PyGC_INFO_SIZE,
+	sizeof(PyInstanceObject) + PyGC_HEAD_SIZE,
 	0,
 	(destructor)instance_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
@@ -1568,6 +1575,7 @@ PyMethod_New(func, self, class)
 	im->im_self = self;
 	Py_INCREF(class);
 	im->im_class = class;
+	PyObject_GC_Init(im);
 	return (PyObject *)im;
 }
 
@@ -1643,6 +1651,7 @@ static void
 instancemethod_dealloc(im)
 	register PyMethodObject *im;
 {
+	PyObject_GC_Fini(im);
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
 	Py_DECREF(im->im_class);
@@ -1745,7 +1754,7 @@ PyTypeObject PyMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"instance method",
-	sizeof(PyMethodObject) + PyGC_INFO_SIZE,
+	sizeof(PyMethodObject) + PyGC_HEAD_SIZE,
 	0,
 	(destructor)instancemethod_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/

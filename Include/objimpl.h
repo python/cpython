@@ -203,7 +203,6 @@ extern DL_IMPORT(void) _PyObject_Del Py_PROTO((PyObject *));
 ( (type *) PyObject_InitVar( \
 	(PyVarObject *) PyObject_MALLOC( _PyObject_VAR_SIZE((typeobj),(n)) ),\
 	(typeobj), (n)) )
-#define PyObject_DEL(op) PyObject_FREE(op)
 
 /* This example code implements an object constructor with a custom
    allocator, where PyObject_New is inlined, and shows the important
@@ -234,11 +233,67 @@ extern DL_IMPORT(void) _PyObject_Del Py_PROTO((PyObject *));
    the 1st step is performed automatically for you, so in a C++ class
    constructor you would start directly with PyObject_Init/InitVar. */
 
+/*
+ * Garbage Collection Support
+ * ==========================
+ */
 
+/* To make a new object participate in garbage collection use
+   PyObject_{New, VarNew, Del} to manage the memory.  Set the type flag
+   Py_TPFLAGS_GC and define the type method tp_recurse.  You should also
+   add the method tp_clear if your object is mutable.  Include
+   PyGC_INFO_SIZE in the calculation of tp_basicsize.  Call
+   PyObject_GC_Init after the pointers followed by tp_recurse become
+   valid (usually just before returning the object from the allocation
+   method.  Call PyObject_GC_Fini before those pointers become invalid
+   (usually at the top of the deallocation method).  */
 
 #ifndef WITH_CYCLE_GC
-#define PyGC_INFO_SIZE 0
-#endif
+
+#define PyGC_HEAD_SIZE 0
+#define PyObject_GC_Init(op)
+#define PyObject_GC_Fini(op)
+#define PyObject_AS_GC(op) (op)
+#define PyObject_FROM_GC(op) (op)
+#define PyObject_DEL(op) PyObject_FREE(op)
+ 
+#else
+
+/* Add the object into the container set */
+extern DL_IMPORT(void) _PyGC_Insert Py_PROTO((PyObject *));
+
+/* Remove the object from the container set */
+extern DL_IMPORT(void) _PyGC_Remove Py_PROTO((PyObject *));
+
+#define PyObject_GC_Init(op) _PyGC_Insert((PyObject *)op)
+#define PyObject_GC_Fini(op) _PyGC_Remove((PyObject *)op)
+
+/* Structure *prefixed* to container objects participating in GC */ 
+typedef struct _gc_head {
+	struct _gc_head *gc_next;
+	struct _gc_head *gc_prev;
+	int gc_refs;
+} PyGC_Head;
+
+#define PyGC_HEAD_SIZE sizeof(PyGC_Head)
+
+/* Test if a type has a GC head */
+#define PyType_IS_GC(t) PyType_HasFeature((t), Py_TPFLAGS_GC)
+
+/* Test if an object has a GC head */
+#define PyObject_IS_GC(o) PyType_IS_GC((o)->ob_type)
+
+/* Get an object's GC head */
+#define PyObject_AS_GC(o) ((PyGC_Head *)(o)-1)
+
+/* Get the object given the PyGC_Head */
+#define PyObject_FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
+
+#define PyObject_DEL(op) PyObject_FREE( PyObject_IS_GC(op) ? \
+					(ANY *)PyObject_AS_GC(op) : \
+					(ANY *)(op) )
+
+#endif /* WITH_CYCLE_GC */
 
 #ifdef __cplusplus
 }
