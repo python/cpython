@@ -13,6 +13,7 @@ class install_lib (Command):
     user_options = [
         ('install-dir=', 'd', "directory to install to"),
         ('build-dir=','b', "build directory (where to install from)"),
+        ('force', 'f', "force installation (overwrite existing files)"),
         ('compile', 'c', "compile .py to .pyc"),
         ('optimize', 'o', "compile .py to .pyo (optimized)"),
         ('skip-build', None, "skip the build steps"),
@@ -23,6 +24,7 @@ class install_lib (Command):
         # let the 'install' command dictate our installation directory
         self.install_dir = None
         self.build_dir = None
+        self.force = 0
         self.compile = 1
         self.optimize = 1
         self.skip_build = None
@@ -35,6 +37,7 @@ class install_lib (Command):
         self.set_undefined_options ('install',
                                     ('build_lib', 'build_dir'),
                                     ('install_lib', 'install_dir'),
+                                    ('force', 'force'),
                                     ('compile_py', 'compile'),
                                     ('optimize_py', 'optimize'),
                                     ('skip_build', 'skip_build'),

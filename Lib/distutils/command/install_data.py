@@ -22,18 +22,21 @@ class install_data (Command):
          "(default: installation base dir)"),
         ('root=', None,
          "install everything relative to this alternate root directory"),
+        ('force', 'f', "force installation (overwrite existing files)"),
         ]
 
     def initialize_options (self):
         self.install_dir = None
         self.outfiles = []
         self.root = None
+        self.force = 0
         self.data_files = self.distribution.data_files
 
     def finalize_options (self):
         self.set_undefined_options('install',
 	                           ('install_data', 'install_dir'),
 				   ('root', 'root'),
+                                   ('force', 'force'),
 				  )
 
     def run (self):
