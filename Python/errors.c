@@ -330,30 +330,51 @@ PyErr_Format(exception, format, va_alist)
 
 PyObject *
 PyErr_NewException(name, base, dict)
-	char *name;
+	char *name; /* modulename.classname */
 	PyObject *base;
 	PyObject *dict;
 {
-	PyObject *nname = PyString_InternFromString(name);
-	PyObject *ndict = NULL;
-	PyObject *nbases = NULL;
+	char *dot;
+	PyObject *modulename = NULL;
+	PyObject *classname = NULL;
+	PyObject *mydict = NULL;
+	PyObject *bases = NULL;
 	PyObject *result = NULL;
-	if (nname == NULL)
+	dot = strrchr(name, '.');
+	if (dot == NULL) {
+		PyErr_SetString(PyExc_SystemError,
+			"PyErr_NewException: name must be module.class");
 		return NULL;
-	if (dict == NULL) {
-		dict = ndict = PyDict_New();
-		if (dict == NULL)
-			goto failure;
 	}
 	if (base == NULL)
 		base = PyExc_Exception;
-	nbases = Py_BuildValue("(O)", base);
-	if (nbases == NULL)
+	if (!PyClass_Check(base)) {
+		/* Must be using string-based standard exceptions (-X) */
+		return PyString_FromString(name);
+	}
+	if (dict == NULL) {
+		dict = mydict = PyDict_New();
+		if (dict == NULL)
+			goto failure;
+	}
+	if (PyDict_GetItemString(dict, "__module__") == NULL) {
+		modulename = PyString_FromStringAndSize(name, (int)(dot-name));
+		if (modulename == NULL)
+			goto failure;
+		if (PyDict_SetItemString(dict, "__module__", modulename) != 0)
+			goto failure;
+	}
+	classname = PyString_FromString(dot+1);
+	if (classname == NULL)
 		goto failure;
-	result = PyClass_New(nbases, dict, nname);
+	bases = Py_BuildValue("(O)", base);
+	if (bases == NULL)
+		goto failure;
+	result = PyClass_New(bases, dict, classname);
   failure:
-	Py_XDECREF(nbases);
-	Py_XDECREF(ndict);
-	Py_XDECREF(nname);
+	Py_XDECREF(bases);
+	Py_XDECREF(mydict);
+	Py_XDECREF(classname);
+	Py_XDECREF(modulename);
 	return result;
 }
