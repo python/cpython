@@ -371,12 +371,14 @@ static PyObject *
 make_pair(PyObject *v, PyObject *w)
 {
 	PyObject *pair;
+	Py_uintptr_t iv = (Py_uintptr_t)v;
+	Py_uintptr_t iw = (Py_uintptr_t)w;
 
 	pair = PyTuple_New(2);
 	if (pair == NULL) {
 		return NULL;
 	}
-	if (v <= w) {
+	if (iv <= iw) {
 		PyTuple_SET_ITEM(pair, 0, PyLong_FromVoidPtr((void *)v));
 		PyTuple_SET_ITEM(pair, 1, PyLong_FromVoidPtr((void *)w));
 	} else {
@@ -487,7 +489,9 @@ PyObject_Compare(PyObject *v, PyObject *w)
 		return strcmp(vname, wname);
 	}
 	if (vtp->tp_compare == NULL) {
-		return (v < w) ? -1 : 1;
+		Py_uintptr_t iv = (Py_uintptr_t)v;
+		Py_uintptr_t iw = (Py_uintptr_t)w;
+		return (iv < iw) ? -1 : 1;
 	}
 	_PyCompareState_nesting++;
 	if (_PyCompareState_nesting > NESTING_LIMIT
