@@ -2,6 +2,8 @@
 # binhextree - Recursively descend a directory and
 # pack all resource files.
 #
+# Actually it doesn't binhex anymore, it only copies projects.
+#
 # Jack Jansen, CWI, August 1995.
 #
 
@@ -187,8 +189,8 @@ def copycwexpfile(path, name):
 		macostools.copy(path, dstfile)	
 
 extensions = [
-	('.rsrc', binhexit),
-	('.gif', binhexit),
+##	('.rsrc', binhexit),
+##	('.gif', binhexit),
 	('.µ', copycwproject),
 	('.prj', copycwproject),
 	('.prj.exp', copycwexpfile),
@@ -211,8 +213,8 @@ def dodir(name):
 	TOP = name
 	os.path.walk(name, walker, None)
 	
-	for creator in project_files.keys():
-		hexbincwprojects(creator)
+##	for creator in project_files.keys():
+##		hexbincwprojects(creator)
 	project_files = {}
 				
 def main():
