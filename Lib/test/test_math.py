@@ -181,3 +181,5 @@ try:
     x = math.sqrt(-1.0)
 except ValueError:
     pass
+else:
+    raise TestFailed("sqrt(-1) didn't raise ValueError")
