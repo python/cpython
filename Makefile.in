@@ -103,9 +103,8 @@ SHELL=		/bin/sh
 EXE=
 
 # Modes for directories, executables and data files created by the
-# install process.  Default to group-writable directories but
-# user-only-writable for executables and data files.
-DIRMODE=	775
+# install process.  Default to user-only-writable for all file types.
+DIRMODE=	755
 EXEMODE=	755
 FILEMODE=	644
 
@@ -318,6 +317,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 				case $$i in \
 				*CVS) ;; \
 				*.py[co]) ;; \
+				*.orig) ;; \
 				*~) ;; \
 				*) \
 					if test -d $$i; then continue; fi; \
