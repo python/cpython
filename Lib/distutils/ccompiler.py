@@ -742,20 +742,30 @@ default_compiler = { 'posix': 'unix',
 # Map compiler types to (module_name, class_name) pairs -- ie. where to
 # find the code that implements an interface to this compiler.  (The module
 # is assumed to be in the 'distutils' package.)
-compiler_class = { 'unix': ('unixccompiler', 'UnixCCompiler',"standard UNIX-style compiler"),
-                   'msvc': ('msvccompiler', 'MSVCCompiler',"Microsoft Visual C++"),
-                   'cygwin':  ('cygwinccompiler', 'CygwinCCompiler',"Cygwin-Gnu-Win32-C-Compiler"),
-                   'mingw32': ('cygwinccompiler', 'Mingw32CCompiler',"MinGW32-C-Compiler (or cygwin in this mode)"),
+compiler_class = { 'unix':    ('unixccompiler', 'UnixCCompiler',
+                               "standard UNIX-style compiler"),
+                   'msvc':    ('msvccompiler', 'MSVCCompiler',
+                               "Microsoft Visual C++"),
+                   'cygwin':  ('cygwinccompiler', 'CygwinCCompiler',
+                               "Cygwin port of GNU C Compiler for Win32"),
+                   'mingw32': ('cygwinccompiler', 'Mingw32CCompiler',
+                               "Mingw32 port of GNU C Compiler for Win32"),
                  }
 
-# prints all possible arguments to --compiler
 def show_compilers():
+    """Print list of available compilers (used by the "--help-compiler"
+    options to "build", "build_ext", "build_clib").
+    """
+    # XXX this "knows" that the compiler option it's describing is
+    # "--compiler", which just happens to be the case for the three
+    # commands that use it.
     from distutils.fancy_getopt import FancyGetopt 
-    list_of_compilers=[]
+    compilers = []
     for compiler in compiler_class.keys():
-	list_of_compilers.append(("compiler="+compiler,None,compiler_class[compiler][2]))
-    list_of_compilers.sort()
-    pretty_printer=FancyGetopt(list_of_compilers)
+	compilers.append(("compiler="+compiler, None,
+                          compiler_class[compiler][2]))
+    compilers.sort()
+    pretty_printer = FancyGetopt(compilers)
     pretty_printer.print_help("List of available compilers:")
     
 
@@ -783,7 +793,7 @@ def new_compiler (plat=None,
         if compiler is None:
             compiler = default_compiler[plat]
         
-        (module_name, class_name,long_description) = compiler_class[compiler]
+        (module_name, class_name, long_description) = compiler_class[compiler]
     except KeyError:
         msg = "don't know how to compile C/C++ code on platform '%s'" % plat
         if compiler is not None:

@@ -21,7 +21,7 @@ class bdist (Command):
     user_options = [('bdist-base=', 'b',
                      "temporary directory for creating built distributions"),
                     ('formats=', None,
-                     "formats for distribution"),
+                     "formats for distribution (comma-separated list)"),
                    ]
 
     # The following commands do not take a format option from bdist
@@ -32,22 +32,24 @@ class bdist (Command):
     default_format = { 'posix': 'gztar',
                        'nt': 'zip', }
 
-    format_command = { 'gztar': ('bdist_dumb',"gzipped tar-file"),
-                       'bztar': ('bdist_dumb',"bzip2-ed tar-file"),
-                       'ztar':  ('bdist_dumb',"compressed tar-file"),
-                       'tar':   ('bdist_dumb',"tar-file"),
-                       'rpm':   ('bdist_rpm',"rpm distribution"),
-                       'zip':   ('bdist_dumb',"zip-file"),
+    format_command = { 'rpm':   ('bdist_rpm',  "RPM distribution"),
+                       'gztar': ('bdist_dumb', "gzip'ed tar file"),
+                       'bztar': ('bdist_dumb', "bzip2'ed tar file"),
+                       'ztar':  ('bdist_dumb', "compressed tar file"),
+                       'tar':   ('bdist_dumb', "tar file"),
+                       'zip':   ('bdist_dumb', "ZIP file"),
 		        }
 
-    # prints all possible arguments to --format
-    def show_formats():
+    def show_formats ():
+        """Print list of available formats (arguments to "--format" option).
+        """
 	from distutils.fancy_getopt import FancyGetopt 
-	list_of_formats=[]
+	formats=[]
 	for format in bdist.format_command.keys():
-	    list_of_formats.append(("formats="+format,None,bdist.format_command[format][1]))
-	list_of_formats.sort()
-	pretty_printer=FancyGetopt(list_of_formats)
+	    formats.append(("formats="+format, None,
+                            bdist.format_command[format][1]))
+	formats.sort()
+	pretty_printer = FancyGetopt(formats)
 	pretty_printer.print_help("List of available distribution formats:")
 
     help_options = [
@@ -87,7 +89,6 @@ class bdist (Command):
     def run (self):
 
         for format in self.formats:
-
             try:
                 cmd_name = self.format_command[format][0]
             except KeyError:

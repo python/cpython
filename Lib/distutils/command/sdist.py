@@ -36,7 +36,7 @@ class sdist (Command):
         ('force-manifest', 'f',
          "forcibly regenerate the manifest and carry on as usual"),
         ('formats=', None,
-         "formats for source distribution"),
+         "formats for source distribution (comma-separated list)"),
         ('keep-tree', 'k',
          "keep the distribution tree around after creating " +
          "archive file(s)"),
@@ -61,7 +61,7 @@ class sdist (Command):
 
     help_options = [
         ('help-formats', None,
-         "lists available distribution formats", show_formats),
+         "list available distribution formats", show_formats),
 	]
 
     negative_opts = {'use-defaults': 'no-defaults'}
