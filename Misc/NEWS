@@ -5,6 +5,8 @@ Release date: 26-Mar-2002
 There were a bunch of mostly minor fixes between 2.2.1c1 and 2.2.1c2,
 including:
 
+- I remembered to run autoconf before cutting the release tarball. 
+
 Core and builtins
 
 - The floating point behavoiur fix-up continued into complex_pow.
