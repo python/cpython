@@ -9,21 +9,20 @@ access to mail messages in a (unix) mailbox.
 
 \begin{funcdesc}{UnixMailbox}{fp}
 Access a classic \UNIX{}-style mailbox, where all messages are contained
-in a single file and separated by ``From name time'' lines. \var{Fp}
-is the file object pointing to the mailbox file.
+in a single file and separated by ``From name time'' lines.
+The file object \var{fp} points to the mailbox file.
 \end{funcdesc}
 
 \begin{funcdesc}{MmdfMailbox}{fp}
 Access an MMDF-style mailbox, where all messages are contained
 in a single file and separated by lines consisting of 4 control-A
-characters. \var{Fp}
-is the file object pointing to the mailbox file.
+characters.  The file object \var{fp} points to the mailbox file.
 \end{funcdesc}
 
 \begin{funcdesc}{MHMailbox}{dirname}
 Access an MH mailbox, a directory with each message in a separate
-file with a numeric name. \var{Dirname}
-is the name of the mailbox directory.
+file with a numeric name.
+The name of the mailbox directory is passed in \var{dirname}.
 \end{funcdesc}
 
 \subsection{Mailbox Objects}
@@ -38,4 +37,3 @@ object may be a true file object or a class instance simulating a file object,
 taking care of things like message boundaries if multiple mail messages are
 contained in a single file, etc.
 \end{funcdesc}
-
