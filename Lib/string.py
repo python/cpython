@@ -104,7 +104,7 @@ class _TemplateMetaclass(type):
     (?P<escaped>%(delim)s{2})       |   # Escape sequence of two delimiters
     %(delim)s(?P<named>%(id)s)      |   # delimiter and a Python identifier
     %(delim)s{(?P<braced>%(id)s)}   |   # delimiter and a braced identifier
-    (?P<bogus>%(delim)s)                # Other ill-formed delimiter exprs
+    (?P<invalid>%(delim)s)              # Other ill-formed delimiter exprs
     """
 
     def __init__(cls, name, bases, dct):
@@ -131,8 +131,8 @@ class Template:
 
     # Search for $$, $identifier, ${identifier}, and any bare $'s
 
-    def _bogus(self, mo):
-        i = mo.start('bogus')
+    def _invalid(self, mo):
+        i = mo.start('invalid')
         lines = self.template[:i].splitlines(True)
         if not lines:
             colno = 1
@@ -154,14 +154,17 @@ class Template:
             mapping = args[0]
         # Helper function for .sub()
         def convert(mo):
+            # Check the most common path first.
+            named = mo.group('named') or mo.group('braced')
+            if named is not None:
+                val = mapping[named]
+                # We use this idiom instead of str() because the latter will
+                # fail if val is a Unicode containing non-ASCII characters.
+                return '%s' % val
             if mo.group('escaped') is not None:
                 return '$'
-            if mo.group('bogus') is not None:
-                self._bogus(mo)
-            val = mapping[mo.group('named') or mo.group('braced')]
-            # We use this idiom instead of str() because the latter will fail
-            # if val is a Unicode containing non-ASCII characters.
-            return '%s' % val
+            if mo.group('invalid') is not None:
+                self._invalid(mo)
         return self.pattern.sub(convert, self.template)
 
     def safe_substitute(self, *args, **kws):
@@ -175,10 +178,6 @@ class Template:
             mapping = args[0]
         # Helper function for .sub()
         def convert(mo):
-            if mo.group('escaped') is not None:
-                return '$'
-            if mo.group('bogus') is not None:
-                self._bogus(mo)
             named = mo.group('named')
             if named is not None:
                 try:
@@ -192,6 +191,10 @@ class Template:
                 return '%s' % mapping[braced]
             except KeyError:
                 return '${' + braced + '}'
+            if mo.group('escaped') is not None:
+                return '$'
+            if mo.group('invalid') is not None:
+                self._invalid(mo)
         return self.pattern.sub(convert, self.template)
 
 
