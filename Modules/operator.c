@@ -143,7 +143,7 @@ op_getslice(s,a)
         PyObject *s, *a;
 {
         PyObject *a1;
-        long a2,a3;
+        int a2,a3;
 
         if (!PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3))
                 return NULL;
@@ -155,7 +155,7 @@ op_setslice(s,a)
         PyObject *s, *a;
 {
         PyObject *a1, *a4;
-        long a2,a3;
+        int a2,a3;
 
         if (!PyArg_ParseTuple(a,"OiiO",&a1,&a2,&a3,&a4))
                 return NULL;
@@ -172,7 +172,7 @@ op_delslice(s,a)
         PyObject *s, *a;
 {
         PyObject *a1;
-        long a2,a3;
+        int a2,a3;
 
         if(! PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3))
                 return NULL;
