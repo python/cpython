@@ -359,7 +359,7 @@ float_rem(v, w)
 	PyFloatObject *w;
 {
 	double vx, wx;
-	double /* div, */ mod;
+	double mod;
 	wx = w->ob_fval;
 	if (wx == 0.0) {
 		PyErr_SetString(PyExc_ZeroDivisionError, "float modulo");
@@ -368,10 +368,10 @@ float_rem(v, w)
 	PyFPE_START_PROTECT("modulo", return 0)
 	vx = v->ob_fval;
 	mod = fmod(vx, wx);
-	/* div = (vx - mod) / wx; */
-	if (wx*mod < 0) {
+	/* note: checking mod*wx < 0 is incorrect -- underflows to
+	   0 if wx < sqrt(smallest nonzero double) */
+	if (mod && ((wx < 0) != (mod < 0))) {
 		mod += wx;
-		/* div -= 1.0; */
 	}
 	PyFPE_END_PROTECT(mod)
 	return PyFloat_FromDouble(mod);
@@ -383,7 +383,7 @@ float_divmod(v, w)
 	PyFloatObject *w;
 {
 	double vx, wx;
-	double div, mod;
+	double div, mod, floordiv;
 	wx = w->ob_fval;
 	if (wx == 0.0) {
 		PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
@@ -392,13 +392,25 @@ float_divmod(v, w)
 	PyFPE_START_PROTECT("divmod", return 0)
 	vx = v->ob_fval;
 	mod = fmod(vx, wx);
+	/* fmod is typically exact, so vx-mod is *mathemtically* an
+	   exact multiple of wx.  But this is fp arithmetic, and fp
+	   vx - mod is an approximation; the result is that div may
+	   not be an exact integral value after the division, although
+	   it will always be very close to one.
+	*/
 	div = (vx - mod) / wx;
-	if (wx*mod < 0) {
+	/* note: checking mod*wx < 0 is incorrect -- underflows to
+	   0 if wx < sqrt(smallest nonzero double) */
+	if (mod && ((wx < 0) != (mod < 0))) {
 		mod += wx;
 		div -= 1.0;
 	}
+	/* snap quotient to nearest integral value */
+	floordiv = floor(div);
+	if (div - floordiv > 0.5)
+		floordiv += 1.0;
 	PyFPE_END_PROTECT(div)
-	return Py_BuildValue("(dd)", div, mod);
+	return Py_BuildValue("(dd)", floordiv, mod);
 }
 
 static double powu(x, n)
