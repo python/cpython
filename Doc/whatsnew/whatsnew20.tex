@@ -289,6 +289,75 @@ words, \code{s.join(seq)} is equivalent to the old
 \code{string.join(seq, s)}.
 
 % ======================================================================
+\section{Optional Collection of Cycles}
+
+The C implementation of Python uses reference counting to implement
+garbage collection.  Every Python object maintains a count of the
+number of references pointing to itself, and adjusts the count as
+references are created or destroyed.  Once the reference count reaches
+zero, the object is no longer accessible, since you need to have a
+reference to an object to access it, and if the count is zero, no
+references exist any longer.  
+
+Reference counting has some pleasant properties: it's easy to
+understand and implement, and the resulting implementation is
+portable, fairly fast, and reacts well with other libraries that
+implement their own memory handling schemes.  The major problem with
+reference counting is that it sometimes doesn't realise that objects
+are no longer accessible, resulting in a memory leak.  This happens
+when there are cycles of references.
+
+Consider the simplest possible cycle, 
+a class instance which has a reference to itself:
+
+\begin{verbatim}
+instance = SomeClass()
+instance.myself = instance
+\end{verbatim}
+
+After the above two lines of code have been executed, the reference
+count of \code{instance} is 2; one reference is from the variable
+named \samp{'instance'}, and the other is from the \samp{myself}
+attribute of the instance.  
+
+If the next line of code is \code{del instance}, what happens?  The
+reference count of \code{instance} is decreased by 1, so it has a
+reference count of 1; the reference in the \samp{myself} attribute
+still exists.  Yet the instance is no longer accessible through Python
+code, and it could be deleted.  Several objects can participate in a
+cycle if they have references to each other, causing all of the
+objects to be leaked.
+
+An experimental step has been made toward fixing this problem.  When
+compiling Python, the \verb|--with-cycle-gc| option can be specified.
+This causes a cycle detection algorithm to be periodically executed,
+which looks for inaccessible cycles and deletes the objects involved.
+A new \module{gc} module provides functions to perform a garbage
+collection, obtain debugging statistics, and tuning the collector's parameters.
+
+Why isn't cycle detection enabled by default?  Running the cycle detection
+algorithm takes some time, and some tuning will be required to
+minimize the overhead cost.  It's not yet obvious how much performance
+is lost, because benchmarking this is tricky and depends crucially
+on how often the program creates and destroys objects. 
+
+Several people tackled this problem and contributed to a solution.  An
+early implementation of the cycle detection approach was written by
+Toby Kelsey.  The current algorithm was suggested by Eric Tiedemann
+during a visit to CNRI, and Guido van Rossum and Neil Schemenauer
+wrote two different implementations, which were later integrated by
+Neil.  Lots of other people offered suggestions along the way; the
+March 2000 archives of the python-dev mailing list contain most of the
+relevant discussion, especially in the threads titled ``Reference
+cycle collection for Python'' and ``Finalization again''.
+
+
+% ======================================================================
+\section{New XML Code}
+
+XXX write this section...
+
+% ======================================================================
 \section{Porting to 2.0}
 
 New Python releases try hard to be compatible with previous releases,
@@ -376,70 +445,6 @@ and Fredrik Lundh.
 %\class{RegexObject} or \class{MatchObject}, but that shouldn't be much
 %of a problem since no one should have been doing that in the first
 %place.
-
-% ======================================================================
-\section{Optional Collection of Cycles}
-
-The C implementation of Python uses reference counting to implement
-garbage collection.  Every Python object maintains a count of the
-number of references pointing to itself, and adjusts the count as
-references are created or destroyed.  Once the reference count reaches
-zero, the object is no longer accessible, since you need to have a
-reference to an object to access it, and if the count is zero, no
-references exist any longer.  
-
-Reference counting has some pleasant properties: it's easy to
-understand and implement, and the resulting implementation is
-portable, fairly fast, and reacts well with other libraries that
-implement their own memory handling schemes.  The major problem with
-reference counting is that it sometimes doesn't realise that objects
-are no longer accessible, resulting in a memory leak.  This happens
-when there are cycles of references.
-
-Consider the simplest possible cycle, 
-a class instance which has a reference to itself:
-
-\begin{verbatim}
-instance = SomeClass()
-instance.myself = instance
-\end{verbatim}
-
-After the above two lines of code have been executed, the reference
-count of \code{instance} is 2; one reference is from the variable
-named \samp{'instance'}, and the other is from the \samp{myself}
-attribute of the instance.  
-
-If the next line of code is \code{del instance}, what happens?  The
-reference count of \code{instance} is decreased by 1, so it has a
-reference count of 1; the reference in the \samp{myself} attribute
-still exists.  Yet the instance is no longer accessible through Python
-code, and it could be deleted.  Several objects can participate in a
-cycle if they have references to each other, causing all of the
-objects to be leaked.
-
-An experimental step has been made toward fixing this problem.  When
-compiling Python, the \verb|--with-cycle-gc| option can be specified.
-This causes a cycle detection algorithm to be periodically executed,
-which looks for inaccessible cycles and deletes the objects involved.
-A new \module{gc} module provides functions to perform a garbage
-collection, obtain debugging statistics, and tuning the collector's parameters.
-
-Why isn't cycle detection enabled by default?  Running the cycle detection
-algorithm takes some time, and some tuning will be required to
-minimize the overhead cost.  It's not yet obvious how much performance
-is lost, because benchmarking this is tricky and depends crucially
-on how often the program creates and destroys objects. 
-
-Several people tackled this problem and contributed to a solution.  An
-early implementation of the cycle detection approach was written by
-Toby Kelsey.  The current algorithm was suggested by Eric Tiedemann
-during a visit to CNRI, and Guido van Rossum and Neil Schemenauer
-wrote two different implementations, which were later integrated by
-Neil.  Lots of other people offered suggestions along the way; the
-March 2000 archives of the python-dev mailing list contain most of the
-relevant discussion, especially in the threads titled ``Reference
-cycle collection for Python'' and ``Finalization again''.
-
 
 % ======================================================================
 \section{Core Changes}
@@ -672,8 +677,8 @@ the function to be called on exit.
 \module{dircmp} modules, which have now become deprecated.
 (Contributed by Gordon MacMillan and Moshe Zadka.)
 
-\item{\module{linuxaudio}:} Support for the \file{/dev/audio} device on Linux,
-a twin to the existing \module{sunaudiodev} module.
+\item{\module{linuxaudiodev}:} Support for the \file{/dev/audio}
+device on Linux, a twin to the existing \module{sunaudiodev} module.
 (Contributed by Peter Bosch.)
 
 \item{\module{mmap}:} An interface to memory-mapped files on both
@@ -684,7 +689,7 @@ functions that expect ordinary strings, such as the \module{re}
 module. (Contributed by Sam Rushing, with some extensions by
 A.M. Kuchling.)
 
-\item{\module{PyExpat}:} An interface to the Expat XML parser.
+\item{\module{pyexpat}:} An interface to the Expat XML parser.
 (Contributed by Paul Prescod.)
 
 \item{\module{robotparser}:} Parse a \file{robots.txt} file, which is
