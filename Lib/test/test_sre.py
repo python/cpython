@@ -152,9 +152,10 @@ try:
     assert sre.split("(?::*)", ":a:b::c") == ['', 'a', 'b', 'c']
     assert sre.split("(:)*", ":a:b::c") == ['', ':', 'a', ':', 'b', ':', 'c']
     assert sre.split("([b:]+)", ":a:b::c") == ['', ':', 'a', ':b::', 'c']
-# FIXME: group problem
-#    assert sre.split("(b)|(:+)", ":a:b::c") == \
-#           ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
+##     print sre.split("(b)|(:+)", ":a:b::c")
+##     print ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
+##     assert sre.split("(b)|(:+)", ":a:b::c") == \
+##            ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
     assert sre.split("(?:b)|(?::+)", ":a:b::c") == ['', 'a', '', '', 'c']
 except AssertionError:
     raise TestFailed, "sre.split"
@@ -377,8 +378,8 @@ for t in tests:
             if result==None:
                 print '=== Fails on locale-sensitive match', t
 
-            # Try the match with UNICODE enabled, and check that it
-            # still succeeds.
+            # Try the match with UNICODE locale enabled, and check
+            # that it still succeeds.
             obj=sre.compile(pattern, sre.UNICODE)
             result=obj.search(s)
             if result==None:
