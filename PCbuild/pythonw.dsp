@@ -18,8 +18,8 @@ CFG=pythonw - Win32 Alpha Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "pythonw - Win32 x86 Release" (based on "Win32 (x86) Application")
-!MESSAGE "pythonw - Win32 x86 Debug" (based on "Win32 (x86) Application")
+!MESSAGE "pythonw - Win32 Release" (based on "Win32 (x86) Application")
+!MESSAGE "pythonw - Win32 Debug" (based on "Win32 (x86) Application")
 !MESSAGE "pythonw - Win32 Alpha Debug" (based on "Win32 (ALPHA) Application")
 !MESSAGE "pythonw - Win32 Alpha Release" (based on "Win32 (ALPHA) Application")
 !MESSAGE 
@@ -29,7 +29,7 @@ CFG=pythonw - Win32 Alpha Debug
 # PROP Scc_ProjName "pythonw"
 # PROP Scc_LocalPath "..\pc"
 
-!IF  "$(CFG)" == "pythonw - Win32 x86 Release"
+!IF  "$(CFG)" == "pythonw - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -59,7 +59,7 @@ LINK32=link.exe
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /base:"0x1e190000" /subsystem:windows /debug /machine:I386 /libpath:"Release"
 # SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "pythonw - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "pythonw - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -157,8 +157,8 @@ LINK32=link.exe
 
 # Begin Target
 
-# Name "pythonw - Win32 x86 Release"
-# Name "pythonw - Win32 x86 Debug"
+# Name "pythonw - Win32 Release"
+# Name "pythonw - Win32 Debug"
 # Name "pythonw - Win32 Alpha Debug"
 # Name "pythonw - Win32 Alpha Release"
 # Begin Source File
@@ -169,9 +169,9 @@ SOURCE=..\PC\python_exe.rc
 
 SOURCE=..\PC\WinMain.c
 
-!IF  "$(CFG)" == "pythonw - Win32 x86 Release"
+!IF  "$(CFG)" == "pythonw - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "pythonw - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "pythonw - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "pythonw - Win32 Alpha Debug"
 

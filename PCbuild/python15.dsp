@@ -18,8 +18,8 @@ CFG=python15 - Win32 Alpha Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "python15 - Win32 x86 Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "python15 - Win32 x86 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "python15 - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "python15 - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "python15 - Win32 Alpha Debug" (based on "Win32 (ALPHA) Dynamic-Link Library")
 !MESSAGE "python15 - Win32 Alpha Release" (based on "Win32 (ALPHA) Dynamic-Link Library")
 !MESSAGE 
@@ -29,7 +29,7 @@ CFG=python15 - Win32 Alpha Debug
 # PROP Scc_ProjName "python15"
 # PROP Scc_LocalPath ".."
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -60,7 +60,7 @@ LINK32=link.exe
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib largeint.lib winmm.lib /nologo /base:"0x1e100000" /subsystem:windows /dll /debug /machine:I386 /nodefaultlib:"libc" /libpath:"Release"
 # SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -159,17 +159,17 @@ LINK32=link.exe
 
 # Begin Target
 
-# Name "python15 - Win32 x86 Release"
-# Name "python15 - Win32 x86 Debug"
+# Name "python15 - Win32 Release"
+# Name "python15 - Win32 Debug"
 # Name "python15 - Win32 Alpha Debug"
 # Name "python15 - Win32 Alpha Release"
 # Begin Source File
 
 SOURCE=..\Modules\_localemodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -182,9 +182,9 @@ SOURCE=..\Modules\_localemodule.c
 
 SOURCE=..\Objects\abstract.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -197,9 +197,9 @@ SOURCE=..\Objects\abstract.c
 
 SOURCE=..\Parser\acceler.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -212,9 +212,9 @@ SOURCE=..\Parser\acceler.c
 
 SOURCE=..\Modules\arraymodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -227,9 +227,9 @@ SOURCE=..\Modules\arraymodule.c
 
 SOURCE=..\Modules\audioop.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -242,9 +242,9 @@ SOURCE=..\Modules\audioop.c
 
 SOURCE=..\Modules\binascii.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -257,9 +257,9 @@ SOURCE=..\Modules\binascii.c
 
 SOURCE=..\Parser\bitset.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -272,9 +272,9 @@ SOURCE=..\Parser\bitset.c
 
 SOURCE=..\Python\bltinmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -287,9 +287,9 @@ SOURCE=..\Python\bltinmodule.c
 
 SOURCE=..\Objects\bufferobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -302,9 +302,9 @@ SOURCE=..\Objects\bufferobject.c
 
 SOURCE=..\Python\ceval.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -317,9 +317,9 @@ SOURCE=..\Python\ceval.c
 
 SOURCE=..\Objects\classobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -332,9 +332,9 @@ SOURCE=..\Objects\classobject.c
 
 SOURCE=..\Modules\cmathmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -347,9 +347,9 @@ SOURCE=..\Modules\cmathmodule.c
 
 SOURCE=..\Objects\cobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -362,9 +362,9 @@ SOURCE=..\Objects\cobject.c
 
 SOURCE=..\Python\compile.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -377,9 +377,9 @@ SOURCE=..\Python\compile.c
 
 SOURCE=..\Objects\complexobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -392,9 +392,9 @@ SOURCE=..\Objects\complexobject.c
 
 SOURCE=..\PC\config.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -407,9 +407,9 @@ SOURCE=..\PC\config.c
 
 SOURCE=..\Modules\cPickle.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -422,9 +422,9 @@ SOURCE=..\Modules\cPickle.c
 
 SOURCE=..\Modules\cStringIO.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -437,9 +437,9 @@ SOURCE=..\Modules\cStringIO.c
 
 SOURCE=..\Objects\dictobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -452,9 +452,9 @@ SOURCE=..\Objects\dictobject.c
 
 SOURCE=..\PC\dl_nt.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -467,9 +467,9 @@ SOURCE=..\PC\dl_nt.c
 
 SOURCE=..\Python\dynload_win.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -482,9 +482,9 @@ SOURCE=..\Python\dynload_win.c
 
 SOURCE=..\Modules\errnomodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -497,9 +497,9 @@ SOURCE=..\Modules\errnomodule.c
 
 SOURCE=..\Python\errors.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -512,9 +512,9 @@ SOURCE=..\Python\errors.c
 
 SOURCE=..\Objects\fileobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -527,9 +527,9 @@ SOURCE=..\Objects\fileobject.c
 
 SOURCE=..\Objects\floatobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -542,9 +542,9 @@ SOURCE=..\Objects\floatobject.c
 
 SOURCE=..\Modules\fpectlmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -557,9 +557,9 @@ SOURCE=..\Modules\fpectlmodule.c
 
 SOURCE=..\Modules\fpetestmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -572,9 +572,9 @@ SOURCE=..\Modules\fpetestmodule.c
 
 SOURCE=..\Objects\frameobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -587,9 +587,9 @@ SOURCE=..\Objects\frameobject.c
 
 SOURCE=..\Python\frozen.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -602,9 +602,9 @@ SOURCE=..\Python\frozen.c
 
 SOURCE=..\Objects\funcobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -617,9 +617,9 @@ SOURCE=..\Objects\funcobject.c
 
 SOURCE=..\Python\getargs.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -632,9 +632,9 @@ SOURCE=..\Python\getargs.c
 
 SOURCE=..\Modules\getbuildinfo.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -647,9 +647,9 @@ SOURCE=..\Modules\getbuildinfo.c
 
 SOURCE=..\Python\getcompiler.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -662,9 +662,9 @@ SOURCE=..\Python\getcompiler.c
 
 SOURCE=..\Python\getcopyright.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -677,9 +677,9 @@ SOURCE=..\Python\getcopyright.c
 
 SOURCE=..\Python\getmtime.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -692,9 +692,9 @@ SOURCE=..\Python\getmtime.c
 
 SOURCE=..\Python\getopt.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -707,9 +707,9 @@ SOURCE=..\Python\getopt.c
 
 SOURCE=..\PC\getpathp.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -722,9 +722,9 @@ SOURCE=..\PC\getpathp.c
 
 SOURCE=..\Python\getplatform.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -737,9 +737,9 @@ SOURCE=..\Python\getplatform.c
 
 SOURCE=..\Python\getversion.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -752,9 +752,9 @@ SOURCE=..\Python\getversion.c
 
 SOURCE=..\Python\graminit.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -767,9 +767,9 @@ SOURCE=..\Python\graminit.c
 
 SOURCE=..\Parser\grammar1.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -782,9 +782,9 @@ SOURCE=..\Parser\grammar1.c
 
 SOURCE=..\Modules\imageop.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -797,9 +797,9 @@ SOURCE=..\Modules\imageop.c
 
 SOURCE=..\Python\import.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -812,11 +812,11 @@ SOURCE=..\Python\import.c
 
 SOURCE=..\PC\import_nt.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
 # ADD CPP /I "..\Python"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 # ADD CPP /I "..\Python"
 
@@ -837,9 +837,9 @@ SOURCE=..\PC\import_nt.c
 
 SOURCE=..\Python\importdl.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -852,9 +852,9 @@ SOURCE=..\Python\importdl.c
 
 SOURCE=..\Objects\intobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -867,9 +867,9 @@ SOURCE=..\Objects\intobject.c
 
 SOURCE=..\Parser\listnode.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -882,9 +882,9 @@ SOURCE=..\Parser\listnode.c
 
 SOURCE=..\Objects\listobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -897,9 +897,9 @@ SOURCE=..\Objects\listobject.c
 
 SOURCE=..\Objects\longobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -912,9 +912,9 @@ SOURCE=..\Objects\longobject.c
 
 SOURCE=..\Modules\main.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -927,9 +927,9 @@ SOURCE=..\Modules\main.c
 
 SOURCE=..\Python\marshal.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -942,9 +942,9 @@ SOURCE=..\Python\marshal.c
 
 SOURCE=..\Modules\mathmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -957,9 +957,9 @@ SOURCE=..\Modules\mathmodule.c
 
 SOURCE=..\Modules\md5c.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -972,9 +972,9 @@ SOURCE=..\Modules\md5c.c
 
 SOURCE=..\Modules\md5module.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -987,9 +987,9 @@ SOURCE=..\Modules\md5module.c
 
 SOURCE=..\Parser\metagrammar.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1002,9 +1002,9 @@ SOURCE=..\Parser\metagrammar.c
 
 SOURCE=..\Objects\methodobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1017,9 +1017,9 @@ SOURCE=..\Objects\methodobject.c
 
 SOURCE=..\Python\modsupport.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1032,9 +1032,9 @@ SOURCE=..\Python\modsupport.c
 
 SOURCE=..\Objects\moduleobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1047,9 +1047,9 @@ SOURCE=..\Objects\moduleobject.c
 
 SOURCE=..\PC\msvcrtmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1062,9 +1062,9 @@ SOURCE=..\PC\msvcrtmodule.c
 
 SOURCE=..\Parser\myreadline.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1077,9 +1077,9 @@ SOURCE=..\Parser\myreadline.c
 
 SOURCE=..\Python\mystrtoul.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1092,9 +1092,9 @@ SOURCE=..\Python\mystrtoul.c
 
 SOURCE=..\Modules\newmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1107,9 +1107,9 @@ SOURCE=..\Modules\newmodule.c
 
 SOURCE=..\Parser\node.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1122,9 +1122,9 @@ SOURCE=..\Parser\node.c
 
 SOURCE=..\Objects\object.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1137,9 +1137,9 @@ SOURCE=..\Objects\object.c
 
 SOURCE=..\Modules\operator.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1152,9 +1152,9 @@ SOURCE=..\Modules\operator.c
 
 SOURCE=..\Parser\parser.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1167,9 +1167,9 @@ SOURCE=..\Parser\parser.c
 
 SOURCE=..\Parser\parsetok.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1182,9 +1182,9 @@ SOURCE=..\Parser\parsetok.c
 
 SOURCE=..\Modules\pcremodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1197,9 +1197,9 @@ SOURCE=..\Modules\pcremodule.c
 
 SOURCE=..\Modules\posixmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1212,9 +1212,9 @@ SOURCE=..\Modules\posixmodule.c
 
 SOURCE=..\Python\pyfpe.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1227,9 +1227,9 @@ SOURCE=..\Python\pyfpe.c
 
 SOURCE=..\Modules\pypcre.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1242,9 +1242,9 @@ SOURCE=..\Modules\pypcre.c
 
 SOURCE=..\Python\pystate.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1261,9 +1261,9 @@ SOURCE=..\PC\python_nt.rc
 
 SOURCE=..\Python\pythonrun.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1276,9 +1276,9 @@ SOURCE=..\Python\pythonrun.c
 
 SOURCE=..\Objects\rangeobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1291,9 +1291,9 @@ SOURCE=..\Objects\rangeobject.c
 
 SOURCE=..\Modules\regexmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1306,9 +1306,9 @@ SOURCE=..\Modules\regexmodule.c
 
 SOURCE=..\Modules\regexpr.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1321,9 +1321,9 @@ SOURCE=..\Modules\regexpr.c
 
 SOURCE=..\Modules\rgbimgmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1336,9 +1336,9 @@ SOURCE=..\Modules\rgbimgmodule.c
 
 SOURCE=..\Modules\rotormodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1351,9 +1351,9 @@ SOURCE=..\Modules\rotormodule.c
 
 SOURCE=..\Modules\selectmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1366,9 +1366,9 @@ SOURCE=..\Modules\selectmodule.c
 
 SOURCE=..\Modules\shamodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1381,9 +1381,9 @@ SOURCE=..\Modules\shamodule.c
 
 SOURCE=..\Modules\signalmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1396,9 +1396,9 @@ SOURCE=..\Modules\signalmodule.c
 
 SOURCE=..\Objects\sliceobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1411,9 +1411,9 @@ SOURCE=..\Objects\sliceobject.c
 
 SOURCE=..\Modules\socketmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1426,9 +1426,9 @@ SOURCE=..\Modules\socketmodule.c
 
 SOURCE=..\Modules\soundex.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1441,9 +1441,9 @@ SOURCE=..\Modules\soundex.c
 
 SOURCE=..\Objects\stringobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1456,9 +1456,9 @@ SOURCE=..\Objects\stringobject.c
 
 SOURCE=..\Modules\stropmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1471,9 +1471,9 @@ SOURCE=..\Modules\stropmodule.c
 
 SOURCE=..\Python\structmember.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1486,9 +1486,9 @@ SOURCE=..\Python\structmember.c
 
 SOURCE=..\Modules\structmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1501,9 +1501,9 @@ SOURCE=..\Modules\structmodule.c
 
 SOURCE=..\Python\sysmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1516,9 +1516,9 @@ SOURCE=..\Python\sysmodule.c
 
 SOURCE=..\Python\thread.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1531,9 +1531,9 @@ SOURCE=..\Python\thread.c
 
 SOURCE=..\Modules\threadmodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1546,9 +1546,9 @@ SOURCE=..\Modules\threadmodule.c
 
 SOURCE=..\Modules\timemodule.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1561,9 +1561,9 @@ SOURCE=..\Modules\timemodule.c
 
 SOURCE=..\Parser\tokenizer.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1576,9 +1576,9 @@ SOURCE=..\Parser\tokenizer.c
 
 SOURCE=..\Python\traceback.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1591,9 +1591,9 @@ SOURCE=..\Python\traceback.c
 
 SOURCE=..\Objects\tupleobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1606,9 +1606,9 @@ SOURCE=..\Objects\tupleobject.c
 
 SOURCE=..\Objects\typeobject.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1621,9 +1621,9 @@ SOURCE=..\Objects\typeobject.c
 
 SOURCE=..\PC\winsound.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
@@ -1636,9 +1636,9 @@ SOURCE=..\PC\winsound.c
 
 SOURCE=..\Modules\yuvconvert.c
 
-!IF  "$(CFG)" == "python15 - Win32 x86 Release"
+!IF  "$(CFG)" == "python15 - Win32 Release"
 
-!ELSEIF  "$(CFG)" == "python15 - Win32 x86 Debug"
+!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
 
 !ELSEIF  "$(CFG)" == "python15 - Win32 Alpha Debug"
 
