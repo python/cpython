@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="make_versioninfo"
+	RootNamespace="make_versioninfo"
 	SccProjectName="make_versioninfo"
 	SccLocalPath="..">
 	<Platforms>
@@ -57,7 +58,8 @@
 				TypeLibraryName=".\./make_versioninfo.tlb"
 				HeaderFileName=""/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				CommandLine="$(TargetFileName) &gt; ..\PC\python_nt.h"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -122,7 +124,8 @@
 				TypeLibraryName=".\./make_versioninfo.tlb"
 				HeaderFileName=""/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				CommandLine="$(TargetFileName) &gt; ..\PC\python_nt_d.h"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
