@@ -70,14 +70,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define DATE ">= 29 Jul 1993"
 #endif
 
-#ifdef USE_STDWIN
-#ifdef macintosh
-#include ":::stdwin:H:stdwin.h"
-#else /* !macintosh */
-#include "stdwin.h"
-#endif /* !macintosh */
-#endif /* USE_STDWIN */
-
 char version[80];
 
 char *argv0; /* For dynamic loading in import.c */
@@ -94,12 +86,6 @@ initargs(p_argc, p_argv)
 
 	argv0 = **p_argv;
 
-#ifdef USE_STDWIN
-#ifdef THINK_C_3_0
-	wsetstdio(1);
-#endif
-	wargs(p_argc, p_argv);
-#endif /* USE_STDWIN */
 #ifdef USE_FROZEN
 	if (verbose)
 #else
@@ -120,9 +106,6 @@ initcalls()
 void
 donecalls()
 {
-#ifdef USE_STDWIN
-	wdone();
-#endif
 #ifdef USE_AUDIO
 	asa_done();
 #endif

@@ -191,20 +191,22 @@ get_module(m, name, m_ret)
 		  p = (dl_funcptr) dlsym(handle, funcname);
 		}
 #else
+		if (verbose)
+			fprintf(stderr,
+				"import %s # dynamically loaded from \"%s\"\n",
+				name, namebuf);
 		p =  dl_loadmod(argv0, namebuf, funcname);
 #endif /* SUN_SHLIB */
 		if (p == NULL) {
-			D(fprintf(stderr, "dl_loadmod failed\n"));
+			err_setstr(SystemError,
+			   "dynamic module does not define init function");
+			return NULL;
 		} else {
-			if (verbose)
-				fprintf(stderr,
-			"import %s # dynamically loaded from \"%s\"\n",
-					name, namebuf);
 			(*p)();
 			*m_ret = m = dictlookup(modules, name);
 			if (m == NULL) {
 				err_setstr(SystemError,
-					   "dynamic module missing");
+				   "dynamic module not initialized properly");
 				return NULL;
 			} else {
 				D(fprintf(stderr,
