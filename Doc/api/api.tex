@@ -2457,7 +2457,8 @@ Returns true if the object \var{o} is a string object.
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromString}{const char *v}
 Returns a new string object with the value \var{v} on success, and
-\NULL{} on failure.
+\NULL{} on failure.  The parameter \var{v} must not be \NULL; it
+will not be checked.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_FromStringAndSize}{const char *v,
