@@ -2087,7 +2087,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
 		COPYSLOT(tp_descr_get);
 		COPYSLOT(tp_descr_set);
-		COPYSLOT(tp_dictoffset);
 		COPYSLOT(tp_init);
 		COPYSLOT(tp_alloc);
 		COPYSLOT(tp_free);
