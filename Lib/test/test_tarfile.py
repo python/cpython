@@ -10,7 +10,8 @@ from test import test_support
 # Check for our compression modules.
 try:
     import gzip
-except ImportError:
+    gzip.GzipFile
+except (ImportError, AttributeError):
     gzip = None
 try:
     import bz2
