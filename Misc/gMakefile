@@ -12,9 +12,9 @@
 pyinstalldir=	$(PYTHONHOME)
 installdir=	$(PYTHONHOME)
 exec_installdir=$(pyinstalldir)
-INCLUDEPY=	$(pyinstalldir)/include/Py
+INCLUDEPY=	$(pyinstalldir)/include/python1.4
 LIBP=		$(exec_installdir)/lib/python
-LIBPL=		$(LIBP)/lib
+LIBPL=		$(LIBP)/config
 PYMAKE=		make -f $(LIBPL)/Makefile
 
 # LIBSO is the location of platform-dependent dynamically linked 
