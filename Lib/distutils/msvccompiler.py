@@ -166,9 +166,9 @@ class MSVCCompiler (CCompiler) :
         if versions:
             version = versions[0]  # highest version
 
-            self.cc   = _find_exe("cl.exe", version)
-            self.link = _find_exe("link.exe", version)
-            self.lib  = _find_exe("lib.exe", version)
+            self.cc   = find_exe("cl.exe", version)
+            self.link = find_exe("link.exe", version)
+            self.lib  = find_exe("lib.exe", version)
             set_path_env_var ('lib', version)
             set_path_env_var ('include', version)
             path=get_msvc_paths('path', version)
