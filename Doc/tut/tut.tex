@@ -4763,6 +4763,296 @@ data interchange between python applications and other tools.
 
 
 
+\chapter{Brief Tour of the Standard Library -- Part II\label{briefTourTwo}}
+
+
+\section{Output Formatting\label{output-formatting}}
+
+The \ulink{\module{repr}}{../lib/module-repr.html} module provides an
+version of \function{repr()} for abbreviated displays of large or deeply
+nested containers:
+
+\begin{verbatim}
+    >>> import repr   
+    >>> repr.repr(set('supercalifragilisticexpialidocious'))
+    "set(['a', 'c', 'd', 'e', 'f', 'g', ...])"
+\end{verbatim}
+
+The \ulink{\module{pprint}}{../lib/module-pprint.html} module offers
+more sophisticated control over printing both built-in and user defined
+objects in a way that is readable by the interpreter.  When the result
+is longer than one line, the ``pretty printer'' adds line breaks and
+indentation to more clearly reveal data structure:
+
+\begin{verbatim}
+    >>> import pprint
+    >>> t = [[[['black', 'cyan'], 'white', ['green', 'red']], [['magenta',
+    ...     'yellow'], 'blue']]]
+    ...
+    >>> pprint.pprint(t, width=30)
+    [[[['black', 'cyan'],
+       'white',
+       ['green', 'red']],
+      [['magenta', 'yellow'],
+       'blue']]]
+\end{verbatim}
+
+The \ulink{\module{textwrap}}{../lib/module-textwrap.html} module
+formats paragraphs of text to fit a given screen width:
+
+\begin{verbatim}
+    >>> import textwrap
+    >>> doc = """The wrap() method is just like fill() except that it returns
+    ... a list of strings instead of one big string with newlines to separate
+    ... the wrapped lines."""
+    ...
+    >>> print textwrap.fill(doc, width=40)
+    The wrap() method is just like fill()
+    except that it returns a list of strings
+    instead of one big string with newlines
+    to separate the wrapped lines.
+\end{verbatim}
+
+The \ulink{\module{locale}}{../lib/module-locale.html} module accesses
+a database of culture specific data formats.  The grouping attribute
+of locale's format function provides a direct way of formatting numbers
+with group separators:
+
+\begin{verbatim}
+    >>> import locale
+    >>> locale.setlocale(locale.LC_ALL, 'English_United States.1252')
+    'English_United States.1252'
+    >>> conv = locale.localeconv()          # get a mapping of conventions
+    >>> x = 1234567.8
+    >>> locale.format("%d", x, grouping=True)
+    '1,234,567'
+    >>> locale.format("%s%.*f", (conv['currency_symbol'],
+    ...	      conv['int_frac_digits'], x), grouping=True)
+    '$1,234,567.80'
+\end{verbatim}
+
+
+\section{Working with Binary Data Record Layouts\label{binary-formats}}
+
+The \ulink{\module{struct}}{../lib/module-struct.html} module provides
+\function{pack()} and \function{unpack()} functions for working with
+variable length binary record formats.  The following example shows how
+to loop through header information in a ZIP file (with pack codes
+\code{"H"} and \code{"L"} representing two and four byte unsigned
+numbers respectively):
+
+\begin{verbatim}
+    import struct
+
+    data = open('myfile.zip', 'rb').read()
+    start = 0
+    for i in range(3):                      # show the first 3 file headers
+        start += 14
+        fields = struct.unpack('LLLHH', data[start:start+16])
+        crc32, comp_size, uncomp_size, filenamesize, extra_size =  fields
+
+        start += 16
+        filename = data[start:start+filenamesize]
+        start += filenamesize
+        extra = data[start:start+extra_size]
+        print filename, hex(crc32), comp_size, uncomp_size
+
+        start += extra_size + comp_size     # skip to the next header
+\end{verbatim}
+
+
+\section{Multi-threading\label{multi-threading}}
+
+Threading is a technique for decoupling tasks which are not sequentially
+dependent.  Python threads are driven by the operating system and run
+in a single process and share memory space in a single interpreter.
+
+Threads can be used to improve the responsiveness of applications that
+accept user input while other tasks run in the background.  The
+following code shows how the high level
+\ulink{\module{threading}}{../lib/module-threading.html} module can run
+tasks in background while the main program continues to run:
+
+\begin{verbatim}
+    import threading, zipfile
+
+    class AsyncZip(threading.Thread):
+        def __init__(self, infile, outfile):
+            threading.Thread.__init__(self)        
+            self.infile = infile
+            self.outfile = outfile
+        def run(self):
+            f = zipfile.ZipFile(self.outfile, 'w', zipfile.ZIP_DEFLATED)
+            f.write(self.infile)
+            f.close()
+            print 'Finished background zip of: ', self.infile
+
+    AsyncZip('mydata.txt', 'myarchive.zip').start()
+    print 'The main program continues to run'
+\end{verbatim}
+
+The principal challenge of multi-thread applications is coordinating
+threads that share data or other resources.  To that end, the threading
+module provides a number of synchronization primitives including locks,
+events, condition variables, and semaphores.
+
+While those tools are powerful, minor design errors can result in
+problems that are difficult to reproduce.  A simpler and more robust
+approach to task coordination is concentrating all access to a resource
+in a single thread and then using the
+\ulink{\module{Queue}}{../lib/module-Queue.html} module to feed that
+thread with requests from other threads.  Applications that use
+\class{Queue} objects for inter-thread communication and coordination
+tend to be easier to design, more readable, and more reliable.
+
+
+\section{Logging\label{logging}}
+
+The \ulink{\module{logging}}{../lib/module-logging.html} module offers
+a full featured and flexible logging system.  At its simplest, log
+messages are sent to a file or to \code{sys.stderr}:
+
+\begin{verbatim}
+    import logging
+    logging.debug('Debugging information')
+    logging.info('Informational message')
+    logging.warning('Warning:config file %s not found', 'server.conf')
+    logging.error('Error occurred')
+    logging.critical('Critical error -- shutting down')
+\end{verbatim}
+
+This produces the following output: 
+
+\begin{verbatim}
+    WARNING:root:Warning:config file server.conf not found
+    ERROR:root:Error occurred
+    CRITICAL:root:Critical error -- shutting down
+\end{verbatim}
+
+By default, informational and debugging messages are suppressed and the
+output is sent to standard error.  Other output options include routing
+messages through email, datagrams, sockets, or to an HTTP Server.  New
+filters select different routing based on message priority:  DEBUG,
+INFO, WARNING, ERROR, and CRITICAL.
+
+The logging system can be configured directly from Python or can be
+loaded from a user editable configuration file for customized logging
+without altering the application.
+
+
+\section{Weak References\label{weak-references}}
+
+Python does automatic memory management (reference counting for most
+objects and garbage collection to eliminate cycles).  The memory is
+freed shortly after the last reference to it has been eliminated.
+
+This approach works fine for most applications but occasionally there
+is a need to track objects only as long as they are being used by
+something else.  Unfortunately, just tracking them creates a reference
+that makes them permanent.  The
+\ulink{\module{weakref}}{../lib/module-weakref.html} module provides
+tools for tracking objects without creating a reference.  When the
+object is no longer needed, it is automatically removed from a weakref
+table and a callback is triggered for weakref objects.  Typical
+applications include caching objects that are expensive to create:
+
+\begin{verbatim}
+    >>> import weakref, gc
+    >>> class A:
+    ...     def __init__(self, value):
+    ...             self.value = value
+    ...     def __repr__(self):
+    ...             return str(self.value)
+    ...
+    >>> a = A(10)		    # create a reference
+    >>> d = weakref.WeakValueDictionary()
+    >>> d['primary'] = a            # does not create a reference
+    >>> d['primary']		    # fetch the object if it is still alive
+    10
+    >>> del a			    # remove the one reference
+    >>> gc.collect()                # run garbage collection right away
+    0
+    >>> d['primary']                # entry was automatically removed
+    Traceback (most recent call last):
+      File "<pyshell#108>", line 1, in -toplevel-
+        d['primary']                # entry was automatically removed
+      File "C:/PY24/lib/weakref.py", line 46, in __getitem__
+        o = self.data[key]()
+    KeyError: 'primary'
+\end{verbatim}
+
+\section{Tools for Working with Lists\label{list-tools}}
+
+Many data structure needs can be met with the built-in list type.
+However, sometimes there is a need for alternative implementations
+with different performance trade-offs.
+
+The \ulink{\module{array}}{../lib/module-array.html} module provides an
+\class{array()} object that is like a list that stores only homogenous
+data but stores it more compactly.  The following example shows an array
+of numbers stored as two byte unsigned binary numbers (typecode
+\code{"H"}) rather than the usual 16 bytes per entry for regular lists
+of python int objects:
+
+\begin{verbatim}
+    >>> from array import array
+    >>> a = array('H', [4000, 10, 700, 22222])
+    >>> sum(a)
+    26932
+    >>> a[1:3]
+    array('H', [10, 700])
+\end{verbatim}
+
+The \ulink{\module{collections}}{../lib/module-collections.html} module
+provides a \class{deque()} object that is like a list with faster
+appends and pops from the left side but slower lookups in the middle.
+These objects are well suited for implementing queues and breadth first
+tree searches:
+
+\begin{verbatim}
+    >>> from collections import deque
+    >>> d = deque(["task1", "task2", "task3"])
+    >>> d.append("task4")
+    >>> print "Handling", d.popleft()
+    Handling task1
+
+    unsearched = deque([starting_node])
+    def breadth_first_search(unsearched):
+        node = unsearched.popleft()
+        for m in gen_moves(node):
+            if is_goal(m):
+                return m
+            unsearched.append(m)
+\end{verbatim}
+
+In addition to alternative list implementations, the library also offers
+other tools such as the \ulink{\module{bisect}}{../lib/module-bisect.html}
+module with functions for manipulating sorted lists:
+
+\begin{verbatim}
+    >>> import bisect
+    >>> scores = [(100, 'perl'), (200, 'tcl'), (400, 'lua'), (500, 'python')]
+    >>> bisect.insort(scores, (300, 'ruby'))
+    >>> scores
+    [(100, 'perl'), (200, 'tcl'), (300, 'ruby'), (400, 'lua'), (500, 'python')]
+\end{verbatim}
+
+The \ulink{\module{heapq}}{../lib/module-heapq.html} module provides
+functions for implementing heaps based on regular lists.  The lowest
+valued entry is always kept at position zero.  This is useful for
+applications which repeatedly access the smallest element but do not
+want to run a full list sort:
+
+\begin{verbatim}
+    >>> from heapq import heapify, heappop, heappush
+    >>> data = [1, 3, 5, 7, 9, 2, 4, 6, 8, 0]
+    >>> heapify(data)                      # rearrange the list into heap order
+    >>> heappush(data, -5)                 # add a new entry
+    >>> [heappop(data) for i in range(3)]  # fetch the three smallest entries
+    [-5, 0, 1]
+\end{verbatim}
+
+
 \chapter{What Now? \label{whatNow}}
 
 Reading this tutorial has probably reinforced your interest in using
