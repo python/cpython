@@ -68,8 +68,8 @@ hasname = []
 hasjrel = []
 hasjabs = []
 
-opname = range(256)
-for op in opname: opname[op] = '<' + `op` + '>'
+opname = [''] * 256
+for op in range(256): opname[op] = '<' + `op` + '>'
 
 def def_op(name, op):
 	opname[op] = name

@@ -24,16 +24,19 @@ print '1.1.2.1 Plain integers'
 if 0xff <> 255: raise TestFailed, 'hex int'
 if 0377 <> 255: raise TestFailed, 'octal int'
 if  2147483647   != 017777777777: raise TestFailed, 'max positive int'
-if -2147483647-1 != 020000000000: raise TestFailed, 'max negative int'
-# XXX -2147483648
-if 037777777777 != -1: raise TestFailed, 'oct -1'
-if 0xffffffff != -1: raise TestFailed, 'hex -1'
-for s in '2147483648', '040000000000', '0x100000000':
-	try:
-		x = eval(s)
-	except OverflowError:
-		continue
-	raise TestFailed, 'No OverflowError on huge integer literal ' + `s`
+# Change the following line to "if 0:" if you have 64-bit integers
+if 1:
+	if -2147483647-1 != 020000000000: raise TestFailed, 'max negative int'
+	# XXX -2147483648
+	if 037777777777 != -1: raise TestFailed, 'oct -1'
+	if 0xffffffff != -1: raise TestFailed, 'hex -1'
+	for s in '2147483648', '040000000000', '0x100000000':
+		try:
+			x = eval(s)
+		except OverflowError:
+			continue
+		raise TestFailed, \
+			  'No OverflowError on huge integer literal ' + `s`
 
 print '1.1.2.2 Long integers'
 x = 0L

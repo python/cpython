@@ -73,12 +73,15 @@ dir
 divmod
 eval
 execfile
+filter
 float
 getattr
 hex
 int
+lambda
 len
 long
+map
 max
 min
 test_b2
@@ -90,6 +93,7 @@ range
 input and raw_input
 testing
 testing
+reduce
 reload
 repr
 round

@@ -90,6 +90,14 @@ f.close()
 execfile(TESTFN)
 unlink(TESTFN)
 
+print 'filter'
+if filter("c: 'a' <= c <= 'z'", 'Hello World') <> 'elloorld':
+	raise TestFailed, 'filter (filter a string)'
+if filter(None, [1, 'hello', [], [3], '', None, 9, 0]) <> [1, 'hello', [3], 9]:
+	raise TestFailed, 'filter (remove false values)'
+if filter('x: x > 0', [1, -3, 9, 0, 2]) <> [1, 9, 2]:
+	raise TestFailed, 'filter (keep positives)'
+
 print 'float'
 if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
 if float(314) <> 314.0: raise TestFailed, 'float(314)'
@@ -112,6 +120,11 @@ if int(314) <> 314: raise TestFailed, 'int(314)'
 if int(3.14) <> 3: raise TestFailed, 'int(3.14)'
 if int(314L) <> 314: raise TestFailed, 'int(314L)'
 
+print 'lambda'
+binary_plus = lambda('x, y: x+y')
+if binary_plus(2, 10) <> 12:
+	raise TestFailed, 'binary_plus(2, 10)'
+
 print 'len'
 if len('123') <> 3: raise TestFailed, 'len(\'123\')'
 if len(()) <> 0: raise TestFailed, 'len(())'
@@ -124,6 +137,32 @@ print 'long'
 if long(314) <> 314L: raise TestFailed, 'long(314)'
 if long(3.14) <> 3L: raise TestFailed, 'long(3.14)'
 if long(314L) <> 314L: raise TestFailed, 'long(314L)'
+
+print 'map'
+if map(None, 'hello world') <> ['h','e','l','l','o',' ','w','o','r','l','d']:
+	raise TestFailed, 'map(None, \'hello world\')'
+if map(None, 'abcd', 'efg') <> \
+	  [('a', 'e'), ('b', 'f'), ('c', 'g'), ('d', None)]:
+	raise TestFailed, 'map(None, \'abcd\', \'efg\')'
+if map(None, range(10)) <> [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
+	raise TestFailed, 'map(None, range(10))'
+if map('x: x*x', range(1,4)) <> [1, 4, 9]:
+	raise TestFailed, 'map(\'x: x*x\', range(1,4))'
+from math import sqrt
+if map('x: map(sqrt,x)', [[16, 4], [81, 9]]) <> [[4.0, 2.0], [9.0, 3.0]]:
+	raise TestFailed, map('x: map(sqrt,x)', [[16, 4], [81, 9]])
+if map('x,y: x+y', [1,3,2], [9,1,4]) <> [10, 4, 6]:
+	raise TestFailed, 'map(\'x,y: x+y\', [1,3,2], [9,1,4])'
+def plus(*v):
+	accu = 0
+	for i in v: accu = accu + i
+	return accu
+if map(plus, [1, 3, 7]) <> [1, 3, 7]:
+	raise TestFailed, 'map(plus, [1, 3, 7])'
+if map(plus, [1, 3, 7], [4, 9, 2]) <> [1+4, 3+9, 7+2]:
+	raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2])'
+if map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0]) <> [1+4+1, 3+9+1, 7+2+0]:
+	raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0])'
 
 print 'max'
 if max('123123') <> '3': raise TestFailed, 'max(\'123123\')'
