@@ -492,6 +492,39 @@ class EditorWindow:
                 idleConf.GetOption('main','EditorWindow','font-size'),
                 fontWeight))
 
+    def ResetKeybindings(self):
+        #this function is called from configDialog.py
+        #to update the keybindings if they are changed
+        self.Bindings.default_keydefs=idleConf.GetCurrentKeySet()
+        keydefs = self.Bindings.default_keydefs
+        for event, keylist in keydefs.items():
+            self.text.event_delete(event)
+        self.apply_bindings()
+        #update menu accelerators
+        menuEventDict={}
+        for menu in self.Bindings.menudefs:
+            menuEventDict[menu[0]]={}
+            for item in menu[1]:
+                if item:
+                    menuEventDict[menu[0]][prepstr(item[0])[1]]=item[1]
+        for menubarItem in self.menudict.keys():
+            menu=self.menudict[menubarItem]
+            end=menu.index(END)+1
+            for index in range(0,end):
+                if menu.type(index)=='command':
+                    accel=menu.entrycget(index,'accelerator')
+                    if accel:
+                        itemName=menu.entrycget(index,'label')
+                        event=''
+                        if menuEventDict.has_key(menubarItem):
+                            if menuEventDict[menubarItem].has_key(itemName):
+                                event=menuEventDict[menubarItem][itemName]
+                        if event:
+                            #print 'accel was:',accel
+                            accel=get_accelerator(keydefs, event)
+                            menu.entryconfig(index,accelerator=accel)
+                            #print 'accel now:',accel,'\n'
+
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()

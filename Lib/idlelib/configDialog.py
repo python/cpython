@@ -1096,6 +1096,7 @@ class ConfigDialog(Toplevel):
         for instance in winInstances:
             instance.ResetColorizer()
             instance.ResetFont()
+            instance.ResetKeybindings()
         
     def Cancel(self):
         self.destroy()
