@@ -45,11 +45,14 @@ def urlopen(url):
 	if not _urlopener:
 		_urlopener = FancyURLopener()
 	return _urlopener.open(url)
-def urlretrieve(url):
+def urlretrieve(url, filename=None):
 	global _urlopener
 	if not _urlopener:
 		_urlopener = FancyURLopener()
-	return _urlopener.retrieve(url)
+	if filename:
+	    return _urlopener.retrieve(url, filename)
+	else:
+	    return _urlopener.retrieve(url)
 def urlcleanup():
 	if _urlopener:
 		_urlopener.cleanup()
@@ -134,7 +137,7 @@ class URLopener:
 	# External interface
 	# retrieve(url) returns (filename, None) for a local object
 	# or (tempfilename, headers) for a remote object
-	def retrieve(self, url):
+	def retrieve(self, url, filename=None):
 		if self.tempcache and self.tempcache.has_key(url):
 			return self.tempcache[url]
 		url1 = unwrap(url)
@@ -142,7 +145,7 @@ class URLopener:
 			self.tempcache[url] = self.tempcache[url1]
 			return self.tempcache[url1]
 		type, url1 = splittype(url1)
-		if not type or type == 'file':
+		if not filename and (not type or type == 'file'):
 			try:
 				fp = self.open_local_file(url1)
 				del fp
@@ -151,12 +154,13 @@ class URLopener:
 				pass
 		fp = self.open(url)
 		headers = fp.info()
-		import tempfile
-		tfn = tempfile.mktemp()
-		result = tfn, headers
+		if not filename:
+		    import tempfile
+		    filename = tempfile.mktemp()
+		result = filename, headers
 		if self.tempcache is not None:
 			self.tempcache[url] = result
-		tfp = open(tfn, 'w')
+		tfp = open(filename, 'w')
 		bs = 1024*8
 		block = fp.read(bs)
 		while block:
