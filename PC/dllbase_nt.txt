@@ -15,15 +15,15 @@ Python.exe/Pythonw.exe     - 1d000000 - 1e000000 (-1)
 Python.dll                 - 1e000000 - 1e100000 (-1)
 
 Standard Extension Modules 1e100000 - 1e200000  ""
- - _symtable                 1e100000 - 1e110000
- - bsddb                     1e180000 - 1e188000  ""
+ - _symtable                 1e100000 - 1e110000    pyd removed in 2.4
+ - bsddb                     1e180000 - 1e188000
  - _tkinter                  1e190000 - 1e1A0000
- - parser                    1e1A0000 - 1e1B0000
+ - parser                    1e1A0000 - 1e1B0000    pyd removed in 2.4
  - zlib                      1e1B0000 - 1e1C0000
- - winreg                    1e1C0000 - 1e1D0000
+ - winreg                    1e1C0000 - 1e1D0000    pyd removed in 2.4
  - _socket                   1e1D0000 - 1e1E0000
- - _sre                      1e1E0000 - 1e1F0000
- - mmap                      1e1F0000 - 1e1FFFFF
+ - _sre                      1e1E0000 - 1e1F0000    pyd removed in 2.4
+ - mmap                      1e1F0000 - 1e1FFFFF    pyd removed in 2.4
 
 More standard extensions 1D100000 - 1e000000
  - pyexpat                   1D100000 - 1D110000
@@ -31,8 +31,8 @@ More standard extensions 1D100000 - 1e000000
  - unicodedata               1D120000 - 1D160000
  - winsound                  1D160000 - 1D170000
  - bZ2                       1D170000 - 1D180000
- - datetime                  1D180000 - 1D190000
- - _csv                      1D190000 - 1D1A0000
+ - datetime                  1D180000 - 1D190000    pyd removed in 2.4
+ - _csv                      1D190000 - 1D1A0000    pyd removed in 2.4
 
 Other extension modules
  - win32api                  1e200000 - 1e220000
