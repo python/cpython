@@ -116,19 +116,27 @@ def main():
         d = do_test(orig, "POST")
         assert d == expect, "Error parsing %s" % repr(orig)
 
-        d = {'QUERY_STRING': orig}
-        fcd = cgi.FormContentDict(d)
-        sd = cgi.SvFormContentDict(d)
+        env = {'QUERY_STRING': orig}
+        fcd = cgi.FormContentDict(env)
+        sd = cgi.SvFormContentDict(env)
+        fs = cgi.FieldStorage(environ=env)
         if type(expect) == type({}):
             # test dict interface
             assert len(expect) == len(fcd)
             assert norm(expect.keys()) == norm(fcd.keys())
             assert norm(expect.values()) == norm(fcd.values())
             assert norm(expect.items()) == norm(fcd.items())
+            assert fcd.get("nonexistent field", "default") == "default"
+            assert len(sd) == len(fs)
+            assert norm(sd.keys()) == norm(fs.keys())
+            assert fs.getvalue("nonexistent field", "default") == "default"
+            # test individual fields
             for key in expect.keys():
                 expect_val = expect[key]
                 assert fcd.has_key(key)
                 assert norm(fcd[key]) == norm(expect[key])
+                assert fcd.get(key, "default") == fcd[key]
+                assert fs.has_key(key)
                 if len(expect_val) > 1:
                     single_value = 0
                 else:
@@ -137,9 +145,11 @@ def main():
                     val = sd[key]
                 except IndexError:
                     assert not single_value
+                    assert fs.getvalue(key) == expect_val
                 else:
                     assert single_value
                     assert val == expect_val[0]
+                    assert fs.getvalue(key) == expect_val[0]
                 assert norm(sd.getlist(key)) == norm(expect_val)
                 if single_value:
                     assert norm(sd.values()) == \

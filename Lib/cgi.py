@@ -19,7 +19,7 @@ written in Python.
 # responsible for its maintenance.
 # 
 
-__version__ = "2.2"
+__version__ = "2.3"
 
 
 # Imports
@@ -31,6 +31,7 @@ import os
 import urllib
 import mimetools
 import rfc822
+import UserDict
 from StringIO import StringIO
 
 
@@ -166,11 +167,10 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
     """
     dict = {}
     for name, value in parse_qsl(qs, keep_blank_values, strict_parsing):
-        if len(value) or keep_blank_values:
-            if dict.has_key(name):
-                dict[name].append(value)
-            else:
-                dict[name] = [value]
+        if dict.has_key(name):
+            dict[name].append(value)
+        else:
+            dict[name] = [value]
     return dict
 
 def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
@@ -201,9 +201,10 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
             if strict_parsing:
                 raise ValueError, "bad query field: %s" % `name_value`
             continue
-        name = urllib.unquote(string.replace(nv[0], '+', ' '))
-        value = urllib.unquote(string.replace(nv[1], '+', ' '))
-        r.append((name, value))
+        if len(nv[1]) or keep_blank_values:
+            name = urllib.unquote(string.replace(nv[0], '+', ' '))
+            value = urllib.unquote(string.replace(nv[1], '+', ' '))
+            r.append((name, value))
 
     return r
 
@@ -537,6 +538,17 @@ class FieldStorage:
         else:
             return found
 
+    def getvalue(self, key, default=None):
+        """Dictionary style get() method, including 'value' lookup."""
+        if self.has_key(key):
+            value = self[key]
+            if type(value) is type([]):
+                return map(lambda v: v.value, value)
+            else:
+                return value.value
+        else:
+            return default
+
     def keys(self):
         """Dictionary style keys() method."""
         if self.list is None:
@@ -706,7 +718,7 @@ class FieldStorage:
 # Backwards Compatibility Classes
 # ===============================
 
-class FormContentDict:
+class FormContentDict(UserDict.UserDict):
     """Basic (multiple values per field) form content as dictionary.
 
     form = FormContentDict()
@@ -720,20 +732,8 @@ class FormContentDict:
 
     """
     def __init__(self, environ=os.environ):
-        self.dict = parse(environ=environ)
+        self.dict = self.data = parse(environ=environ)
         self.query_string = environ['QUERY_STRING']
-    def __getitem__(self,key):
-        return self.dict[key]
-    def keys(self):
-        return self.dict.keys()
-    def has_key(self, key):
-        return self.dict.has_key(key)
-    def values(self):
-        return self.dict.values()
-    def items(self):
-        return self.dict.items() 
-    def __len__( self ):
-        return len(self.dict)
 
 
 class SvFormContentDict(FormContentDict):
