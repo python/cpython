@@ -1,0 +1,8 @@
+.purify
+config.log
+config.h
+config.cache
+config.status
+Makefile
+buildno
+python
