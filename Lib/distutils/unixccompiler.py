@@ -17,7 +17,7 @@ the "typical" Unix-style command-line C compiler:
 
 __revision__ = "$Id$"
 
-import string, re, os
+import string, re, os, sys
 from types import *
 from copy import copy
 from distutils import sysconfig
@@ -61,6 +61,9 @@ class UnixCCompiler (CCompiler):
                    'archiver'     : ["ar", "-cr"],
                    'ranlib'       : None,
                   }
+
+    if sys.platform[:6] == "darwin":
+        executables['ranlib'] = ["ranlib"]
 
     # Needed for the filename generation methods provided by the base
     # class, CCompiler.  NB. whoever instantiates/uses a particular
