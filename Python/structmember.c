@@ -28,6 +28,29 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "structmember.h"
 
+static object *
+listmembers(mlist)
+	struct memberlist *mlist;
+{
+	int i, n;
+	object *v;
+	for (n = 0; mlist[n].name != NULL; n++)
+		;
+	v = newlistobject(n);
+	if (v != NULL) {
+		for (i = 0; i < n; i++)
+			setlistitem(v, i, newstringobject(mlist[i].name));
+		if (err_occurred()) {
+			DECREF(v);
+			v = NULL;
+		}
+		else {
+			sortlist(v);
+		}
+	}
+	return v;
+}
+
 object *
 getmember(addr, mlist, name)
 	char *addr;
@@ -36,6 +59,8 @@ getmember(addr, mlist, name)
 {
 	struct memberlist *l;
 	
+	if (strcmp(name, "__members__") == 0)
+		return listmembers(mlist);
 	for (l = mlist; l->name != NULL; l++) {
 		if (strcmp(l->name, name) == 0) {
 			object *v;
