@@ -6,42 +6,37 @@ This works as a Grail applet too!  E.g.
 
   <APPLET CODE=wcgui.py NAME=CheckerWindow></APPLET>
 
-Checkpoints are not (yet?) supported.
+Checkpoints are not (yet???  ever???) supported.
 
 User interface:
 
 Enter a root to check in the text entry box.  To enter more than one root, 
-enter each root and press <Return>.
+enter them one at a time and press <Return> for each one.
 
 Command buttons Start, Stop and "Check one" govern the checking process in 
 the obvious way.  Start and "Check one" also enter the root from the text 
-entry box if one is present.
+entry box if one is present.  There's also a check box (enabled by default)
+to decide whether actually to follow external links (since this can slow
+the checking down considerably).  Finally there's a Quit button.
 
 A series of checkbuttons determines whether the corresponding output panel 
 is shown.  List panels are also automatically shown or hidden when their 
 status changes between empty to non-empty.  There are six panels:
 
 Log        -- raw output from the checker (-v, -q affect this)
-To check   -- local links discovered but not yet checked
-Off site   -- links discovered that point off site
-Checked    -- local links that have been checked
+To check   -- links discovered but not yet checked
+Checked    -- links that have been checked
 Bad links  -- links that failed upon checking
+Errors     -- pages containing at least one bad link
 Details    -- details about one URL; double click on a URL in any of
-              the aboce list panels (not in Log) will show that URL
-
-XXX There ought to be a list of pages known to contain at least one
-bad link.
-
-XXX The checking of off site links should be made more similar to the 
-checking of local links (even if they are checked after all local links are 
-checked).
+              the above list panels (not in Log) will show details
+              for that URL
 
 Use your window manager's Close command to quit.
 
 Command line options:
 
 -m bytes  -- skip HTML pages larger than this size (default %(MAXPAGE)d)
--n        -- reports only, no checking (use with -R)
 -q        -- quiet operation (also suppresses external links report)
 -v        -- verbose operation; repeating -v will increase verbosity
 
@@ -50,11 +45,11 @@ Command line arguments:
 rooturl   -- URL to start checking
              (default %(DEFROOT)s)
 
-XXX The command line options should all be GUI accessible.
+XXX The command line options (-m, -q, -v) should be GUI accessible.
 
 XXX The roots should be visible as a list (?).
 
-XXX The multipanel user interface is bogus.
+XXX The multipanel user interface is clumsy.
 
 """
 
@@ -104,39 +99,66 @@ class CheckerWindow(webchecker.Checker):
 
     def __init__(self, parent, root=webchecker.DEFROOT):
 	self.__parent = parent
-	self.__controls = Frame(parent)
-	self.__controls.pack(side=TOP, fill=X)
-	self.__label = Label(self.__controls, text="Root URL:")
+
+	self.__topcontrols = Frame(parent)
+	self.__topcontrols.pack(side=TOP, fill=X)
+	self.__label = Label(self.__topcontrols, text="Root URL:")
 	self.__label.pack(side=LEFT)
-	self.__rootentry = Entry(self.__controls, width=60)
+	self.__rootentry = Entry(self.__topcontrols, width=60)
 	self.__rootentry.pack(side=LEFT)
 	self.__rootentry.bind('<Return>', self.enterroot)
 	self.__rootentry.focus_set()
+
+	self.__controls = Frame(parent)
+	self.__controls.pack(side=TOP, fill=X)
 	self.__running = 0
 	self.__start = Button(self.__controls, text="Run", command=self.start)
 	self.__start.pack(side=LEFT)
 	self.__stop = Button(self.__controls, text="Stop", command=self.stop,
 			     state=DISABLED)
 	self.__stop.pack(side=LEFT)
-	self.__step = Button(self.__controls, text="Check one", command=self.step)
+	self.__step = Button(self.__controls, text="Check one",
+			     command=self.step)
 	self.__step.pack(side=LEFT)
+	self.__cv = BooleanVar()
+	self.__cv.set(1)
+	self.__checkext = Checkbutton(self.__controls, variable=self.__cv,
+				      text="Check nonlocal links")
+	self.__checkext.pack(side=LEFT)
+	self.__reset = Button(self.__controls, text="Start over", command=self.reset)
+	self.__reset.pack(side=LEFT)
+	if __name__ == '__main__': # No Quit button under Grail!
+	    self.__quit = Button(self.__controls, text="Quit",
+				 command=self.__parent.quit)
+	    self.__quit.pack(side=RIGHT)
+
 	self.__status = Label(parent, text="Status: initial", anchor=W)
 	self.__status.pack(side=TOP, fill=X)
-	self.__checking = Label(parent, text="Checking: none", anchor=W)
+	self.__checking = Label(parent, text="Idle", anchor=W)
 	self.__checking.pack(side=TOP, fill=X)
 	self.__mp = mp = MultiPanel(parent)
 	sys.stdout = self.__log = LogPanel(mp, "Log")
 	self.__todo = ListPanel(mp, "To check", self.showinfo)
-	self.__ext = ListPanel(mp, "Off site", self.showinfo)
 	self.__done = ListPanel(mp, "Checked", self.showinfo)
 	self.__bad = ListPanel(mp, "Bad links", self.showinfo)
+	self.__errors = ListPanel(mp, "Pages w/ bad links", self.showinfo)
 	self.__details = LogPanel(mp, "Details")
-	self.__extodo = []
 	webchecker.Checker.__init__(self)
+	del self.checkext # See __getattr__ below
 	if root:
 	    root = string.strip(str(root))
 	    if root:
 		self.suggestroot(root)
+	self.newstatus()
+
+    def __getattr__(self, name):
+	if name != 'checkext': raise AttributeError, name
+	return self.__cv.get()
+
+    def reset(self):
+	webchecker.Checker.reset(self)
+	for p in self.__todo, self.__done, self.__bad, self.__errors:
+	    p.clear()
 
     def suggestroot(self, root):
 	self.__rootentry.delete(0, END)
@@ -147,7 +169,10 @@ class CheckerWindow(webchecker.Checker):
 	root = self.__rootentry.get()
 	root = string.strip(root)
 	if root:
+	    self.__checking.config(text="Adding root "+root)
+	    self.__checking.update_idletasks()
 	    self.addroot(root)
+	    self.__checking.config(text="Idle")
 	    try:
 		i = self.__todo.items.index(root)
 	    except (ValueError, IndexError):
@@ -167,7 +192,7 @@ class CheckerWindow(webchecker.Checker):
 	self.go()
 
     def stop(self):
-	self.__stop.config(state=DISABLED)
+	self.__stop.config(state=DISABLED, relief=SUNKEN)
 	self.__running = 0
 
     def step(self):
@@ -181,8 +206,9 @@ class CheckerWindow(webchecker.Checker):
 	if self.__running:
 	    self.__parent.after_idle(self.dosomething)
 	else:
-	    self.__checking.config(text="Checking: none")
+	    self.__checking.config(text="Idle")
 	    self.__start.config(state=NORMAL, relief=RAISED)
+	    self.__stop.config(state=DISABLED, relief=RAISED)
 	    self.__step.config(state=NORMAL, relief=RAISED)
 
     __busy = 0
@@ -199,18 +225,9 @@ class CheckerWindow(webchecker.Checker):
 		self.__todo.list.select_set(i)
 	    self.__todo.list.yview(i)
 	    url = self.__todo.items[i]
-	    self.__checking.config(text="Checking: "+url)
+	    self.__checking.config(text="Checking "+url)
 	    self.__parent.update()
 	    self.dopage(url)
-	elif self.__extodo:
-	    # XXX Should have an indication of these in the todo window...
-	    ##i = random.randint(0, len(self.__extodo)-1)
-	    i = 0
-	    url = self.__extodo[i]
-	    del self.__extodo[i]
-	    self.__checking.config(text="Checking: "+url)
-	    self.__parent.update()
-	    self.checkextpage(url)
 	else:
 	    self.stop()
 	self.__busy = 0
@@ -219,33 +236,34 @@ class CheckerWindow(webchecker.Checker):
     def showinfo(self, url):
 	d = self.__details
 	d.clear()
-	d.write("URL:    %s\n" % url)
+	d.put("URL:    %s\n" % url)
 	if self.bad.has_key(url):
-	    d.write("Error:  %s\n" % str(self.bad[url]))
+	    d.put("Error:  %s\n" % str(self.bad[url]))
 	if url in self.roots:
-	    d.write("Note:   This is a root URL\n")
+	    d.put("Note:   This is a root URL\n")
 	if self.done.has_key(url):
-	    d.write("Status: checked\n")
+	    d.put("Status: checked\n")
 	    o = self.done[url]
 	elif self.todo.has_key(url):
-	    d.write("Status: to check\n")
+	    d.put("Status: to check\n")
 	    o = self.todo[url]
-	elif self.ext.has_key(url):
-	    d.write("Status: off site\n")
-	    o = self.ext[url]
 	else:
-	    d.write("Status: unknown (!)\n")
+	    d.put("Status: unknown (!)\n")
 	    o = []
+	if self.errors.has_key(url):
+	    d.put("Bad links from this page:\n")
+	    for triple in self.errors[url]:
+		link, rawlink, msg = triple
+		d.put("  HREF  %s" % link)
+		if link != rawlink: d.put(" (%s)" %rawlink)
+		d.put("\n")
+		d.put("  error %s\n" % str(msg))
 	self.__mp.showpanel("Details")
 	for source, rawlink in o:
-	    d.write("Origin: %s" % source)
+	    d.put("Origin: %s" % source)
 	    if rawlink != url:
-		d.write(" (%s)" % rawlink)
-	    d.write("\n")
-
-    def newstatus(self):
-	self.__status.config(text="Status: "+self.status()[1:-1])
-	self.__parent.update()
+		d.put(" (%s)" % rawlink)
+	    d.put("\n")
 
     def setbad(self, url, msg):
 	webchecker.Checker.setbad(self, url, msg)
@@ -257,14 +275,8 @@ class CheckerWindow(webchecker.Checker):
 	self.__bad.remove(url)
 	self.newstatus()
 
-    def newextlink(self, url, origin):
-	webchecker.Checker.newextlink(self, url, origin)
-	self.__extodo.append(url)
-	self.__ext.insert(url)
-	self.newstatus()
-
-    def newintlink(self, url, origin):
-	webchecker.Checker.newintlink(self, url, origin)
+    def newlink(self, url, origin):
+	webchecker.Checker.newlink(self, url, origin)
 	if self.done.has_key(url):
 	    self.__done.insert(url)
 	elif self.todo.has_key(url):
@@ -276,6 +288,15 @@ class CheckerWindow(webchecker.Checker):
 	self.__done.insert(url)
 	self.__todo.remove(url)
 	self.newstatus()
+
+    def seterror(self, url, triple):
+	webchecker.Checker.seterror(self, url, triple)
+	self.__errors.insert(url)
+	self.newstatus()
+
+    def newstatus(self):
+	self.__status.config(text="Status: "+self.status())
+	self.__parent.update()
 
 
 class ListPanel:
@@ -291,6 +312,11 @@ class ListPanel:
 	if showinfo:
 	    self.list.bind('<Double-Button-1>', self.doubleclick)
 	self.items = []
+
+    def clear(self):
+	self.items = []
+	self.list.delete(0, END)
+	self.mp.hidepanel(self.name)
 
     def doubleclick(self, event):
 	l = self.selectedindices()
@@ -309,7 +335,7 @@ class ListPanel:
 	    # (I tried sorting alphabetically, but the display is too jumpy)
 	    i = len(self.items)
 	    self.list.insert(i, url)
-##	    self.list.yview(i)
+	    self.list.yview(i)
 	    self.items.insert(i, url)
 
     def remove(self, url):
@@ -341,6 +367,11 @@ class LogPanel:
     def clear(self):
 	self.text.delete("1.0", END)
 	self.text.yview("1.0")
+
+    def put(self, s):
+	self.text.insert(END, s)
+	if '\n' in s:
+	    self.text.yview(END)
 
     def write(self, s):
 	self.text.insert(END, s)
