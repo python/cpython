@@ -208,7 +208,7 @@ equal <number>, `tab-width' is set to <number>, a message saying so is
 displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
-(defconst python-font-lock-keywords
+(defvar python-font-lock-keywords
   (let* ((keywords '("and"        "break"      "class"
 		     "continue"   "def"        "del"        "elif"
 		     "else:"      "except"     "except:"    "exec"
@@ -234,6 +234,8 @@ the Emacs bell is also rung as a warning.")
        1 font-lock-function-name-face)
      ))
   "Additional expressions to highlight in Python mode.")
+(put 'python-mode 'font-lock-defaults '(python-font-lock-keywords))
+
 
 (defvar imenu-example--python-show-method-args-p nil 
   "*Controls echoing of arguments of functions & methods in the imenu buffer.
@@ -716,7 +718,6 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   (setq major-mode             'python-mode
 	mode-name              "Python"
 	local-abbrev-table     python-mode-abbrev-table
-	font-lock-defaults     '(python-font-lock-keywords)
 	paragraph-separate     "^[ \t]*$"
 	paragraph-start        "^[ \t]*$"
 	require-final-newline  t
