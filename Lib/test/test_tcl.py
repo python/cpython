@@ -97,6 +97,7 @@ class TclTest(unittest.TestCase):
         fd.write(script)
         fd.close()
         tcl.evalfile(filename)
+        os.remove(filename)
         self.assertEqual(tcl.eval('set a'),'1')
         self.assertEqual(tcl.eval('set b'),'2')
         self.assertEqual(tcl.eval('set c'),'3')
