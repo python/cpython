@@ -2061,7 +2061,7 @@ newPicklerobject(PyObject *file, int bin) {
     if (file)
       Py_INCREF(file);
     else
-      file=Pdata_New(0);
+      file=Pdata_New();
 
     self->file = file;
 
@@ -3586,6 +3586,7 @@ noload_build(Unpicklerobject *self) {
 
   if (self->stack->length < 1) return stackUnderflow();
   Pdata_clear(self->stack, self->stack->length-1);
+  return 0;
 }
 
 
@@ -4274,7 +4275,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
     return 0;
 }
 
-void
+DL_EXPORT(void)
 initcPickle() {
     PyObject *m, *d, *v;
     char *rev="1.61";
