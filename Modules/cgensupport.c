@@ -171,7 +171,7 @@ getistringarg(args, nargs, i, p_arg)
 {
 	object *v;
 	if (!getiobjectarg(args, nargs, i, &v))
-		return NULL;
+		return 0;
 	if (!is_stringobject(v)) {
 		return err_badarg();
 	}
