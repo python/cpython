@@ -696,7 +696,7 @@ def mktime_tz(data):
     
     """
     t = time.mktime(data[:8] + (0,))
-    return t + data[9] - time.timezone
+    return t - data[9] - time.timezone
 
 
 # When used as script, run a small test program.
