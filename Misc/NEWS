@@ -3,6 +3,11 @@ What's New in Python 2.2a0?
 
 Core
 
+- The UTF-16 codec was modified to be more RFC compliant. It will now
+  only remove BOM characters at the start of the string and then
+  only if running in native mode (UTF-16-LE and -BE won't remove a
+  leading BMO character).
+
 - Strings now have a new method .decode() to complement the already
   existing .encode() method. These two methods provide direct access
   to the corresponding decoders and encoders of the registered codecs.
