@@ -49,20 +49,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define BASE_ID 228
 
-/* The alert for "No Python directory, where is it?" (OBSOLETE) */
-#define NOPYTHON_ALERT	BASE_ID+0
-#define YES_ITEM		1
-#define NO_ITEM			2
-#define CURWD_ITEM		3
-
 /* The alert for "this is an applet template" */
 #define NOPYC_ALERT		BASE_ID+1
-
-/* The dialog for our GetDirectory and PromptGetFile call */
-#define GETDIR_ID 		BASE_ID+2		/* Resource ID for our "get directory" */
-#define GETFILEPROMPT_ID BASE_ID+4		/* Resource id for prompted get file */
-#define PROMPT_ITEM		10				/* The prompt, at the top */
-#define SELECTCUR_ITEM	11				/* "Select current directory" button */
 
 
 /* The dialog for interactive options */
