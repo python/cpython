@@ -16,7 +16,7 @@ typedef struct {
 	int firstpass;
 } cycleobject;
 
-PyTypeObject cycle_type;
+static PyTypeObject cycle_type;
 
 static PyObject *
 cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -111,7 +111,7 @@ PyDoc_STRVAR(cycle_doc,
 Return elements from the iterable until it is exhausted.\n\
 Then repeat the sequence indefinitely.");
 
-PyTypeObject cycle_type = {
+static PyTypeObject cycle_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.cycle",		/* tp_name */
@@ -166,7 +166,7 @@ typedef struct {
 	long	 start;
 } dropwhileobject;
 
-PyTypeObject dropwhile_type;
+static PyTypeObject dropwhile_type;
 
 static PyObject *
 dropwhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -260,7 +260,7 @@ PyDoc_STRVAR(dropwhile_doc,
 Drop items from the iterable while predicate(item) is true.\n\
 Afterwards, return every element until the iterable is exhausted.");
 
-PyTypeObject dropwhile_type = {
+static PyTypeObject dropwhile_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.dropwhile",		/* tp_name */
@@ -315,7 +315,7 @@ typedef struct {
 	long	 stop;
 } takewhileobject;
 
-PyTypeObject takewhile_type;
+static PyTypeObject takewhile_type;
 
 static PyObject *
 takewhile_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -408,7 +408,7 @@ PyDoc_STRVAR(takewhile_doc,
 Return successive entries from an iterable as long as the \n\
 predicate evaluates to true for each entry.");
 
-PyTypeObject takewhile_type = {
+static PyTypeObject takewhile_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.takewhile",		/* tp_name */
@@ -465,7 +465,7 @@ typedef struct {
 	long	cnt;
 } isliceobject;
 
-PyTypeObject islice_type;
+static PyTypeObject islice_type;
 
 static PyObject *
 islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -598,7 +598,7 @@ specified as another value, step determines how many values are \n\
 skipped between successive calls.  Works like a slice() on a list\n\
 but returns an iterator.");
 
-PyTypeObject islice_type = {
+static PyTypeObject islice_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.islice",		/* tp_name */
@@ -652,7 +652,7 @@ typedef struct {
 	PyObject *it;
 } starmapobject;
 
-PyTypeObject starmap_type;
+static PyTypeObject starmap_type;
 
 static PyObject *
 starmap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -737,7 +737,7 @@ PyDoc_STRVAR(starmap_doc,
 Return an iterator whose values are returned from the function evaluated\n\
 with a argument tuple taken from the given sequence.");
 
-PyTypeObject starmap_type = {
+static PyTypeObject starmap_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.starmap",		/* tp_name */
@@ -791,7 +791,7 @@ typedef struct {
 	PyObject *func;
 } imapobject;
 
-PyTypeObject imap_type;
+static PyTypeObject imap_type;
 
 static PyObject *
 imap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -924,7 +924,7 @@ an iterator instead of a list and that it stops when the shortest\n\
 iterable is exhausted instead of filling in None for shorter\n\
 iterables.");
 
-PyTypeObject imap_type = {
+static PyTypeObject imap_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.imap",		/* tp_name */
@@ -979,7 +979,7 @@ typedef struct {
 	PyObject *ittuple;		/* tuple of iterators */
 } chainobject;
 
-PyTypeObject chain_type;
+static PyTypeObject chain_type;
 
 static PyObject *
 chain_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1061,7 +1061,7 @@ Return a chain object whose .next() method returns elements from the\n\
 first iterable until it is exhausted, then elements from the next\n\
 iterable, until all of the iterables are exhausted.");
 
-PyTypeObject chain_type = {
+static PyTypeObject chain_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.chain",		/* tp_name */
@@ -1115,7 +1115,7 @@ typedef struct {
 	PyObject *it;
 } ifilterobject;
 
-PyTypeObject ifilter_type;
+static PyTypeObject ifilter_type;
 
 static PyObject *
 ifilter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1210,7 +1210,7 @@ PyDoc_STRVAR(ifilter_doc,
 Return those items of sequence for which function(item) is true.\n\
 If function is None, return the items that are true.");
 
-PyTypeObject ifilter_type = {
+static PyTypeObject ifilter_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.ifilter",		/* tp_name */
@@ -1264,7 +1264,7 @@ typedef struct {
 	PyObject *it;
 } ifilterfalseobject;
 
-PyTypeObject ifilterfalse_type;
+static PyTypeObject ifilterfalse_type;
 
 static PyObject *
 ifilterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1359,7 +1359,7 @@ PyDoc_STRVAR(ifilterfalse_doc,
 Return those items of sequence for which function(item) is false.\n\
 If function is None, return the items that are false.");
 
-PyTypeObject ifilterfalse_type = {
+static PyTypeObject ifilterfalse_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.ifilterfalse",	/* tp_name */
@@ -1412,7 +1412,7 @@ typedef struct {
 	long	cnt;
 } countobject;
 
-PyTypeObject count_type;
+static PyTypeObject count_type;
 
 static PyObject *
 count_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1444,7 +1444,7 @@ PyDoc_STRVAR(count_doc,
 Return a count object whose .next() method returns consecutive\n\
 integers starting from zero or, if specified, from firstval.");
 
-PyTypeObject count_type = {
+static PyTypeObject count_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.count",		/* tp_name */
@@ -1499,7 +1499,7 @@ typedef struct {
 	PyObject *result;
 } izipobject;
 
-PyTypeObject izip_type;
+static PyTypeObject izip_type;
 
 static PyObject *
 izip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1637,7 +1637,7 @@ is exhausted and then it raises StopIteration.  Works like the zip()\n\
 function but consumes less memory by returning an iterator instead of\n\
 a list.");
 
-PyTypeObject izip_type = {
+static PyTypeObject izip_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.izip",		/* tp_name */
@@ -1691,7 +1691,7 @@ typedef struct {
 	long cnt;
 } repeatobject;
 
-PyTypeObject repeat_type;
+static PyTypeObject repeat_type;
 
 static PyObject *
 repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -1747,7 +1747,7 @@ PyDoc_STRVAR(repeat_doc,
 for the specified number of times.  If not specified, returns the element\n\
 endlessly.");
 
-PyTypeObject repeat_type = {
+static PyTypeObject repeat_type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/* ob_size */
 	"itertools.repeat",		/* tp_name */
