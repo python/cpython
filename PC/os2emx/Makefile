@@ -40,8 +40,6 @@ HAVE_ZLIB=	no
 HAVE_UFC=	no
 # Do you have the Tcl/Tk library installed?
 HAVE_TCLTK=	no
-# Do you have the GNU multiprecision library installed?
-HAVE_GMPZ=	no
 # Do you have the GNU readline library installed?
 # NOTE: I'm using a modified version of Kai Uwe Rommel's port that 
 #       - is compiled with multithreading enabled
@@ -251,7 +249,6 @@ DESCRIPTION.$(PGEN.EXE)=	Python object-oriented programming language parser gene
 DESCRIPTION.zlib$(MODULE.EXT)=		Python Extension DLL for accessing the InfoZip compression library
 DESCRIPTION.crypt$(MODULE.EXT)=		Python Extension DLL implementing the crypt$(BRO)$(BRC) function
 DESCRIPTION._tkinter$(MODULE.EXT)=	Python Extension DLL for access to Tcl/Tk Environment
-DESCRIPTION.mpz$(MODULE.EXT)=		Python Extension DLL for access to GNU multi-precision library
 DESCRIPTION.readline$(MODULE.EXT)=	Python Extension DLL for access to GNU ReadLine library
 DESCRIPTION.bsddb185$(MODULE.EXT)=	Python Extension DLL for access to BSD DB (v1.85) library
 DESCRIPTION._curses$(MODLIB.EXT)=	Python Extension DLL for access to ncurses library
@@ -301,7 +298,6 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/timemodule.c \
 		Modules/timingmodule.c \
 		Modules/_weakref.c \
-		Modules/xreadlinesmodule.c \
 		Modules/xxsubtype.c \
 		Modules/zipimport.c)
 SRC.PARSE1=	$(addprefix $(TOP), \
@@ -422,7 +418,6 @@ EASYEXTMODULES=	fpectl \
 		fpetest \
 		parser \
 		pwd \
-		rotor \
 		select 
 
 # Python modules to be dynamically loaded that need explicit build rules
@@ -448,9 +443,6 @@ ifeq ($(HAVE_TCLTK),yes)
   HARDEXTMODULES+=	_tkinter
   CFLAGS+=		-DHAS_DIRENT -I/TclTk80/include
   TK_LIBS+=		-L/TclTk80/lib -ltcl80 -ltk80
-endif
-ifeq ($(HAVE_GMPZ),yes)
-  HARDEXTMODULES+=	mpz
 endif
 ifeq ($(HAVE_GREADLINE),yes)
   HARDEXTMODULES+=	readline
@@ -635,8 +627,6 @@ dbm$(MODULE.EXT): $(OUT)dbmmodule$O $(OUT)dbm_m.def $(PYTHON.IMPLIB)
 gdbm$(MODULE.EXT): $(OUT)gdbmmodule$O $(OUT)gdbm_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lgdbm
 
-mpz$(MODULE.EXT): $(OUT)mpzmodule$O $(OUT)mpz_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) -lgmp
 
 # Expat is now distributed with Python, so use the included version
 $(OUT)pyexpat$O:	../../Modules/pyexpat.c
