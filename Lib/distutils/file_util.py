@@ -36,6 +36,13 @@ def _copy_file_contents (src, dst, buffer_size=16*1024):
             raise DistutilsFileError, \
                   "could not open '%s': %s" % (src, errstr)
 
+        if os.path.exists(dst):
+            try:
+                os.unlink(dst)
+            except os.error, (errno, errstr):
+                raise DistutilsFileError, \
+                      "could not delete '%s': %s" % (dst, errstr)
+        
         try:
             fdst = open(dst, 'wb')
         except os.error, (errno, errstr):
