@@ -174,6 +174,7 @@ zipimporter_dealloc(ZipImporter *self)
 {
 	PyObject_GC_UnTrack(self);
 	Py_XDECREF(self->archive);
+	Py_XDECREF(self->prefix);
 	Py_XDECREF(self->files);
 	self->ob_type->tp_free((PyObject *)self);
 }
@@ -1025,9 +1026,9 @@ get_mtime_of_source(ZipImporter *self, char *path)
 	toc_entry = PyDict_GetItemString(self->files, path);
 	if (toc_entry != NULL && PyTuple_Check(toc_entry) &&
 	    PyTuple_Size(toc_entry) == 8) {
-	    	/* fetch the time stamp of the .py file for comparison
-	    	   with an embedded pyc time stamp */
-	    	int time, date;
+		/* fetch the time stamp of the .py file for comparison
+		   with an embedded pyc time stamp */
+		int time, date;
 		time = PyInt_AsLong(PyTuple_GetItem(toc_entry, 5));
 		date = PyInt_AsLong(PyTuple_GetItem(toc_entry, 6));
 		mtime = parse_dostime(time, date);
@@ -1176,7 +1177,7 @@ initzipimport(void)
 	if (PyModule_AddObject(mod, "zipimporter",
 			       (PyObject *)&ZipImporter_Type) < 0)
 		return;
-	
+
 	zip_directory_cache = PyDict_New();
 	if (zip_directory_cache == NULL)
 		return;
