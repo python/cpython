@@ -162,8 +162,10 @@ Logs a message with level \constant{DEBUG} on the root logger.
 The \var{msg} is the message format string, and the \var{args} are the
 arguments which are merged into \var{msg}. The only keyword argument in
 \var{kwargs} which is inspected is \var{exc_info} which, if it does not
-evaluate as false, causes exception information (via a call to
-\function{sys.exc_info()}) to be added to the logging message.
+evaluate as false, causes exception information to be added to the logging
+message. If an exception tuple (in the format returned by
+\function{sys.exc_info()}) is provided, it is used; otherwise,
+\function{sys.exc_info()} is called to get the exception information.
 \end{funcdesc}
 
 \begin{funcdesc}{info}{msg\optional{, *args\optional{, **kwargs}}}
@@ -310,8 +312,10 @@ Logs a message with level \constant{DEBUG} on this logger.
 The \var{msg} is the message format string, and the \var{args} are the
 arguments which are merged into \var{msg}. The only keyword argument in
 \var{kwargs} which is inspected is \var{exc_info} which, if it does not
-evaluate as false, causes exception information (via a call to
-\function{sys.exc_info()}) to be added to the logging message.
+evaluate as false, causes exception information to be added to the logging
+message. If an exception tuple (as provided by \function{sys.exc_info()})
+is provided, it is used; otherwise, \function{sys.exc_info()} is called
+to get the exception information.
 \end{methoddesc}
 
 \begin{methoddesc}{info}{msg\optional{, *args\optional{, **kwargs}}}
