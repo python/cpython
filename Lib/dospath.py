@@ -102,18 +102,26 @@ def dirname(p):
     return split(p)[0]
 
 
-def commonprefix(m):
-    """Return the longest prefix of all list elements."""
+# Return the longest prefix of all list elements.
 
+def commonprefix(m):
+    "Given a list of pathnames, returns the longest common leading component"
     if not m: return ''
-    prefix = m[0]
-    for item in m:
+    n = m[:]
+    for i in range(len(n)):
+        n[i] = n[i].split(os.sep)
+        # if os.sep didn't have any effect, try os.altsep
+        if os.altsep and len(n[i]) == 1:
+            n[i] = n[i].split(os.altsep)
+            
+    prefix = n[0]
+    for item in n:
         for i in range(len(prefix)):
             if prefix[:i+1] <> item[:i+1]:
                 prefix = prefix[:i]
                 if i == 0: return ''
                 break
-    return prefix
+    return os.sep.join(prefix)
 
 
 # Get size, mtime, atime of files.
