@@ -9,28 +9,16 @@ The following are the LaTeX source files:
 	qua.tex, quabib.bib		Article published in CWI Quarterly
 
 All except qua.tex use the style option file "myformat.sty".  This
-contains some simple macro definitions and sets style parameters.  You
-can easily edit it to change the paper size (the default is European
-paper, "A4" or 21 x 29.7 cm).
+contains some macro definitions and sets style parameters.  You can
+easily edit it to change the paper size (the default is European
+paper, "A4": 21 x 29.7 cm).
 
-To format a document, run latex on it, twice, to get the forward
-references right, then use dvips and lpr to print it, e.g.:
+There's a Makefile to call latex and other utilities (makeindex and
+bibtex) in the right order and the right number of times.  This will
+produce dvi files for each document made; to preview them, use xdvi.
+Printing depends on local conventions; at my site, I use dvips and
+lpr.  For example:
 
-	latex lib
-	latex lib
-	dvips lib | lpr
-
-Before calling dvips and lpr, you should really preview the dvi file,
-e.g.
-
-	xdvi lib
-
-The qua document (which is not user documentation but a somewhat more
-abstract review of Python and some work for which it was used) needs
-a little more work:
-
-	latex qua
-	latex qua
-	bibtex qua
-	latex qua
-	dvips qua | lpr
+	make ref			# creates ref.dvi
+	xdvi ref			# preview it
+	dvips -Ppsc ref | lpr -Ppsc	# print it on printer "psc".
