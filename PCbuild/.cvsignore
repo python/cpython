@@ -2,6 +2,7 @@
 *.bsc
 *.dbg
 *.dll
+*.exe
 *.exp
 *.ilk
 *.lib
@@ -10,4 +11,4 @@
 *.pdb
 *.plg
 *.pyd
-temp-*
+*-temp-*
