@@ -193,8 +193,8 @@ paper-$(PAPER)/api.dvi: $(ANNOAPIFILES)
 paper-$(PAPER)/api.pdf: $(ANNOAPIFILES)
 	cd paper-$(PAPER) && $(MKPDF) api.tex
 
-paper-$(PAPER)/api.tex: api/api.tex $(ANNOAPI)
-	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/api.tex
+paper-$(PAPER)/api.tex: api/api.tex
+	cp api/api.tex $@
 
 paper-$(PAPER)/abstract.tex: api/abstract.tex $(ANNOAPI)
 	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/abstract.tex
@@ -208,8 +208,8 @@ paper-$(PAPER)/exceptions.tex: api/exceptions.tex $(ANNOAPI)
 paper-$(PAPER)/init.tex: api/init.tex $(ANNOAPI)
 	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/init.tex
 
-paper-$(PAPER)/intro.tex: api/intro.tex $(ANNOAPI)
-	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/intro.tex
+paper-$(PAPER)/intro.tex: api/intro.tex
+	cp api/intro.tex $@
 
 paper-$(PAPER)/memory.tex: api/memory.tex $(ANNOAPI)
 	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/memory.tex
