@@ -34,10 +34,6 @@
  * other compatibility work.
  */
 
-#ifdef __SUNPRO_C
-#pragma error_messages (off,E_END_OF_LOOP_CODE_NOT_REACHED)
-#endif
-
 #ifndef SRE_RECURSIVE
 
 static char copyright[] =
