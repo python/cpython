@@ -1165,3 +1165,32 @@ Py_FdIsInteractive(FILE *fp, char *filename)
 	       (strcmp(filename, "<stdin>") == 0) ||
 	       (strcmp(filename, "???") == 0);
 }
+
+
+#if defined(USE_STACKCHECK) 
+#if defined(WIN32) && defined(_MSC_VER)
+
+/* Stack checking for Microsoft C */
+
+#include <malloc.h>
+#include <excpt.h>
+
+int
+PyOS_CheckStack()
+{
+	__try {
+		/* _alloca throws a stack overflow exception if there's
+		   not enough space left on the stack */
+		_alloca(PYOS_STACK_MARGIN * sizeof(void*));
+		return 0;
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		/* just ignore all errors */
+	}
+	return 1;
+}
+
+#endif /* WIN32 && _MSC_VER */
+
+/* Alternate implementations can be added here... */
+
+#endif /* USE_STACKCHECK */
