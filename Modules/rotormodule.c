@@ -157,49 +157,35 @@ newrotorobject(num_rotors, key)
 	xp = NEWOBJ(rotorobject, &Rotortype);
 	if (xp == NULL)
 		return NULL;
-	set_key(xp,key);
+	set_key(xp, key);
 
 	xp->size = 256;
 	xp->size_mask = xp->size - 1;
 	xp->size_mask = 0;
 	xp->rotors = num_rotors;
+	xp->e_rotor = NULL;
+	xp->d_rotor = NULL;
+	xp->positions = NULL;
+	xp->advances = NULL;
 
-	xp->e_rotor   = (unsigned char *)malloc((num_rotors * (xp->size * sizeof(char))));
-	if (xp->e_rotor == (unsigned char *)NULL) {
-		err_nomem();
-		DEL(xp);
-		xp = (object *)NULL;
-		goto done;
-	}
-	xp->d_rotor   = (unsigned char *)malloc((num_rotors * (xp->size * sizeof(char))));
-	if (xp->d_rotor == (unsigned char *)NULL) {
-		err_nomem();
-		free(xp->e_rotor);
-		DEL(xp);
-		xp = (object *)NULL;
-		goto done;
-	}
+	xp->e_rotor =
+	     (unsigned char *)malloc((num_rotors * (xp->size * sizeof(char))));
+	if (xp->e_rotor == (unsigned char *)NULL)
+		goto fail;
+	xp->d_rotor =
+	     (unsigned char *)malloc((num_rotors * (xp->size * sizeof(char))));
+	if (xp->d_rotor == (unsigned char *)NULL)
+		goto fail;
 	xp->positions = (unsigned char *)malloc(num_rotors * sizeof(char));
-	if (xp->positions == (unsigned char *)NULL) {
-		err_nomem();
-		free(xp->e_rotor);
-		free(xp->d_rotor);
-		DEL(xp);
-		xp = (object *)NULL;
-		goto done;
-	}
+	if (xp->positions == (unsigned char *)NULL)
+		goto fail;
 	xp->advances  = (unsigned char *)malloc(num_rotors * sizeof(char));
-	if (xp->advances == (unsigned char *)NULL) {
-		err_nomem();
-		free(xp->e_rotor);
-		free(xp->d_rotor);
-		free(xp->positions);
-		DEL(xp);
-		xp = (object *)NULL;
-		goto done;
-	}
-done:
+	if (xp->advances == (unsigned char *)NULL)
+		goto fail;
 	return xp;
+fail:
+	DECREF(xp);
+	return (rotorobject *)err_nomem();
 }
 
 /* These routines impliment the rotor itself */
@@ -594,10 +580,10 @@ static void
 rotor_dealloc(xp)
 	rotorobject *xp;
 {
-	free(xp->e_rotor);
-	free(xp->d_rotor);
-	free(xp->positions);
-	free(xp->advances);
+	XDEL(xp->e_rotor);
+	XDEL(xp->d_rotor);
+	XDEL(xp->positions);
+	XDEL(xp->advances);
 	DEL(xp);
 }
 
