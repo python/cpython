@@ -1,5 +1,6 @@
 
 #include "Python.h"
+#include "structmember.h"
 
 /* Itertools module written and maintained 
    by Raymond D. Hettinger <python@rcn.com>
