@@ -3120,11 +3120,11 @@ formatfloat(char *buf, size_t buflen, int flags,
 	   worst case length = 3 + 10 (len of INT_MAX) + 1 = 14 (use 20)*/
 	char fmt[20];
 	double x;
-	v = PyNumber_Float(v);
-	if (!v)
+	x = PyFloat_AsDouble(v);
+	if (x == -1.0 && PyErr_Occurred()) {
+		PyErr_SetString(PyExc_TypeError, "float argument required");
 		return -1;
-	x = PyFloat_AS_DOUBLE(v);
-	Py_DECREF(v);
+	}
 	if (prec < 0)
 		prec = 6;
 	if (type == 'f' && fabs(x)/1e25 >= 1e25)
@@ -3299,11 +3299,11 @@ formatint(char *buf, size_t buflen, int flags,
 	char fmt[64];	/* plenty big enough! */
 	long x;
 
-	v = PyNumber_Int(v);
-	if (!v)
+	x = PyInt_AsLong(v);
+	if (x == -1 && PyErr_Occurred()) {
+		PyErr_SetString(PyExc_TypeError, "int argument required");
 		return -1;
-	x = PyInt_AS_LONG(v);
-	Py_DECREF(v);
+	}
 	if (prec < 0)
 		prec = 1;
 
