@@ -305,10 +305,10 @@ success, a new \class{SSLObject} is returned.
 
 \begin{funcdesc}{socketpair}{\optional{family\optional{, type\optional{, proto}}}}
 Build a pair of connected socket objects using the given address
-family, socket type and protocol number.  Address family, socket type
+family, socket type, and protocol number.  Address family, socket type,
 and protocol number are as for the \function{socket()} function above.
-The default family is AF_UNIX if defined for the platform, otherwise
-the default is AF_INET.
+The default family is \constant{AF_UNIX} if defined on the platform;
+otherwise, the default is \constant{AF_INET}.
 Availability: \UNIX.  \versionadded{2.4}
 \end{funcdesc}
 
