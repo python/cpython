@@ -4,8 +4,7 @@ import types
 import traceback
 from Tkinter import *
 from WindowList import ListedToplevel
-
-import StackViewer
+from ScrolledList import ScrolledList
 
 
 class Idb(bdb.Bdb):
@@ -16,6 +15,9 @@ class Idb(bdb.Bdb):
 
     def user_line(self, frame):
         # get the currently executing function
+        ##print>>sys.__stderr__, "*function: ", frame.f_code.co_name
+        ##print>>sys.__stderr__, "*file: ", frame.f_code.co_filename        
+        ##print>>sys.__stderr__, "*line number: ", frame.f_code.co_firstlineno
         co_filename = frame.f_code.co_filename
         co_name = frame.f_code.co_name 
         try:
@@ -247,8 +249,7 @@ class Debugger:
 
     def show_stack(self):
         if not self.stackviewer and self.vstack.get():
-            self.stackviewer = sv = StackViewer.StackViewer(
-                self.fstack, self.flist, self)
+            self.stackviewer = sv = StackViewer(self.fstack, self.flist, self)
             if self.frame:
                 stack, i = self.idb.get_stack(self.frame, None)
                 sv.load_stack(stack, i)
@@ -264,7 +265,6 @@ class Debugger:
             self.sync_source_line()
 
     def show_frame(self, (frame, lineno)):
-        # Called from OldStackViewer
         self.frame = frame
         self.show_variables()
 
@@ -275,8 +275,7 @@ class Debugger:
         lv = self.localsviewer
         if self.vlocals.get():
             if not lv:
-                self.localsviewer = StackViewer.NamespaceViewer(
-                    self.flocals, "Locals")
+                self.localsviewer = NamespaceViewer(self.flocals, "Locals")
         else:
             if lv:
                 self.localsviewer = None
@@ -288,8 +287,7 @@ class Debugger:
         gv = self.globalsviewer
         if self.vglobals.get():
             if not gv:
-                self.globalsviewer = StackViewer.NamespaceViewer(
-                    self.fglobals, "Globals")
+                self.globalsviewer = NamespaceViewer(self.fglobals, "Globals")
         else:
             if gv:
                 self.globalsviewer = None
@@ -352,3 +350,160 @@ class Debugger:
             text.bell()
             return
         text.tag_delete("BREAK")
+
+
+class StackViewer(ScrolledList):
+
+    def __init__(self, master, flist, gui):
+        ScrolledList.__init__(self, master, width=80)
+        self.flist = flist
+        self.gui = gui
+        self.stack = []
+
+    def load_stack(self, stack, index=None):
+        self.stack = stack
+        self.clear()
+        for i in range(len(stack)):
+            frame, lineno = stack[i]
+            try:
+                modname = frame.f_globals["__name__"]
+            except:
+                modname = "?"
+            code = frame.f_code
+            filename = code.co_filename
+            funcname = code.co_name
+            import linecache
+            sourceline = linecache.getline(filename, lineno)
+            import string
+            sourceline = string.strip(sourceline)
+            if funcname in ("?", "", None):
+                item = "%s, line %d: %s" % (modname, lineno, sourceline)
+            else:
+                item = "%s.%s(), line %d: %s" % (modname, funcname,
+                                                 lineno, sourceline)
+            if i == index:
+                item = "> " + item
+            self.append(item)
+        if index is not None:
+            self.select(index)
+
+    def popup_event(self, event):
+        "override base method"
+        if self.stack:
+            return ScrolledList.popup_event(self, event)
+
+    def fill_menu(self):
+        "override base method"
+        menu = self.menu
+        menu.add_command(label="Go to source line",
+                         command=self.goto_source_line)
+        menu.add_command(label="Show stack frame",
+                         command=self.show_stack_frame)
+
+    def on_select(self, index):
+        "override base method"
+        if 0 <= index < len(self.stack):
+            self.gui.show_frame(self.stack[index])
+
+    def on_double(self, index):
+        "override base method"
+        self.show_source(index)
+
+    def goto_source_line(self):
+        index = self.listbox.index("active")
+        self.show_source(index)
+
+    def show_stack_frame(self):
+        index = self.listbox.index("active")
+        if 0 <= index < len(self.stack):
+            self.gui.show_frame(self.stack[index])
+
+    def show_source(self, index):
+        if not (0 <= index < len(self.stack)):
+            return
+        frame, lineno = self.stack[index]
+        code = frame.f_code
+        filename = code.co_filename
+        if os.path.isfile(filename):
+            edit = self.flist.open(filename)
+            if edit:
+                edit.gotoline(lineno)
+
+
+class NamespaceViewer:
+
+    def __init__(self, master, title, dict=None):
+        width = 0
+        height = 40
+        if dict:
+            height = 20*len(dict) # XXX 20 == observed height of Entry widget
+        self.master = master
+        self.title = title
+        import repr
+        self.repr = repr.Repr()
+        self.repr.maxstring = 60
+        self.repr.maxother = 60
+        self.frame = frame = Frame(master)
+        self.frame.pack(expand=1, fill="both")
+        self.label = Label(frame, text=title, borderwidth=2, relief="groove")
+        self.label.pack(fill="x")
+        self.vbar = vbar = Scrollbar(frame, name="vbar")
+        vbar.pack(side="right", fill="y")
+        self.canvas = canvas = Canvas(frame,
+                                      height=min(300, max(40, height)),
+                                      scrollregion=(0, 0, width, height))
+        canvas.pack(side="left", fill="both", expand=1)
+        vbar["command"] = canvas.yview
+        canvas["yscrollcommand"] = vbar.set
+        self.subframe = subframe = Frame(canvas)
+        self.sfid = canvas.create_window(0, 0, window=subframe, anchor="nw")
+        self.load_dict(dict)
+
+    dict = -1
+
+    def load_dict(self, dict, force=0, rpc_client=None):
+        if dict is self.dict and not force:
+            return
+        subframe = self.subframe
+        frame = self.frame
+        for c in subframe.children.values():
+            c.destroy()
+        self.dict = None
+        if not dict:
+            l = Label(subframe, text="None")
+            l.grid(row=0, column=0)
+        else:
+            names = dict.keys()
+            names.sort()
+            row = 0
+            for name in names:
+                value = dict[name]
+                svalue = self.repr.repr(value) # repr(value)
+                # Strip extra quotes caused by calling repr on the (already)
+                # repr'd value sent across the RPC interface:
+                if rpc_client:
+                    svalue = svalue[1:-1]
+                l = Label(subframe, text=name)
+                l.grid(row=row, column=0, sticky="nw")
+    ##            l = Label(subframe, text=svalue, justify="l", wraplength=300)
+                l = Entry(subframe, width=0, borderwidth=0)
+                l.insert(0, svalue)
+    ##            l["state"] = "disabled"
+                l.grid(row=row, column=1, sticky="nw")
+                row = row+1
+        self.dict = dict
+        # XXX Could we use a <Configure> callback for the following?
+        subframe.update_idletasks() # Alas!
+        width = subframe.winfo_reqwidth()
+        height = subframe.winfo_reqheight()
+        canvas = self.canvas
+        self.canvas["scrollregion"] = (0, 0, width, height)
+        if height > 300:
+            canvas["height"] = 300
+            frame.pack(expand=1)
+        else:
+            canvas["height"] = height
+            frame.pack(expand=0)
+
+    def close(self):
+        self.frame.destroy()
