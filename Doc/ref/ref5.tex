@@ -137,7 +137,7 @@ occurrences of the empty tuple may or may not yield the same object).
 
 Note that tuples are not formed by the parentheses, but rather by use
 of the comma operator.  The exception is the empty tuple, for which
-parentheses {\em are} required --- allowing unparenthesized ``nothing''
+parentheses \emph{are} required --- allowing unparenthesized ``nothing''
 in expressions would cause ambiguities and allow common typos to
 pass uncaught.
 \index{comma}
@@ -687,7 +687,7 @@ C, \code{!=} is preferred; where \code{!=} is mentioned below
 The operators {\tt "<", ">", "==", ">=", "<="}, and {\tt "!="} compare
 the values of two objects.  The objects needn't have the same type.
 If both are numbers, they are coverted to a common type.  Otherwise,
-objects of different types {\em always} compare unequal, and are
+objects of different types \emph{always} compare unequal, and are
 ordered consistently but arbitrarily.
 
 (This unusual definition of comparison was used to simplify the
@@ -834,7 +834,7 @@ list.  The expressions are evaluated from left to right.
 \obindex{tuple}
 
 The trailing comma is required only to create a single tuple (a.k.a. a
-{\em singleton}); it is optional in all other cases.  A single
+\emph{singleton}); it is optional in all other cases.  A single
 expression (expression) without a trailing comma doesn't create a
 tuple, but rather yields the value of that expression (expression).
 (To create an empty tuple, use an empty pair of parentheses:
@@ -850,46 +850,46 @@ the syntax is explicitly given, operators are binary.  Operators in
 the same box group left to right (except for comparisons, which
 chain from left to right --- see above).
 
-\begin{center}
-\begin{tabular}{|c|c|}
+\begin{tableii}{c|c}{textrm}{Operator}{Description}
+    \lineii{\keyword{lambda}}			{Lambda expression}
+  \hline
+    \lineii{\keyword{or}}			{Boolean OR}
+  \hline
+    \lineii{\keyword{and}}			{Boolean AND}
+  \hline
+    \lineii{\keyword{not} \var{x}}		{Boolean NOT}
+  \hline
+    \lineii{\keyword{in}, \keyword{not} \keyword{in}}{Membership tests}
+    \lineii{\keyword{is}, \keyword{is not}}{Identity tests}
+    \lineii{\code{<}, \code{<=}, \code{>}, \code{>=},
+            \code{<>}, \code{!=}, \code{==}}%
+	   {Comparisons}
+  \hline
+    \lineii{\code{|}}				{Bitwise OR}
+  \hline
+    \lineii{\code{\^}}				{Bitwise XOR}
+  \hline
+    \lineii{\code{\&}}				{Bitwise AND}
+  \hline
+    \lineii{\code{<<}, \code{>>}}		{Shifts}
+  \hline
+    \lineii{\code{+}, \code{-}}{Addition and subtraction}
+  \hline
+    \lineii{\code{*}, \code{/}, \code{\%}}%
+           {Multiplication, division, remainder}
+  \hline
+    \lineii{\code{**}}				{Exponentiation}
+  \hline
+    \lineii{\code{+\var{x}}, \code{-\var{x}}}	{Positive, negative}
+    \lineii{\code{\~\var{x}}}			{Bitwise not}
+  \hline
+    \lineii{\code{\var{x}.\var{attribute}}}	{Attribute reference}
+    \lineii{\code{\var{x}[\var{index}]}}	{Subscription}
+    \lineii{\code{\var{x}[\var{index}:\var{index}]}}	{Slicing}
+    \lineii{\code{\var{f}(\var{arguments}...)}}	{Function call}
 \hline
-\keyword{or} & Boolean OR \\
-\hline
-\keyword{and} & Boolean AND \\
-\hline
-\keyword{not} \var{x} & Boolean NOT \\
-\hline
-\keyword{in}, \keyword{not} \keyword{in} & Membership tests \\
-\keyword{is}, \keyword{is not} & Identity tests \\
-\code{<}, \code{<=}, \code{>}, \code{>=}, \code{<>}, \code{!=}, \code{==} &
-	Comparisons \\
-\hline
-\code{|} & Bitwise OR \\
-\hline
-\code{\^} & Bitwise XOR \\
-\hline
-\code{\&} & Bitwise AND \\
-\hline
-\code{<<}, \code{>>} & Shifts \\
-\hline
-\code{+}, \code{-} & Addition and subtraction \\
-\hline
-\code{*}, \code{/}, \code{\%} & Multiplication, division, remainder \\
-\hline
-\code{**} & Power \\
-\hline
-\code{+\var{x}}, \code{-\var{x}} & Positive, negative \\
-\code{\~\var{x}} & Bitwise not \\
-\hline
-\code{\var{x}.\var{attribute}} & Attribute reference \\
-\code{\var{x}[\var{index}]} &  Subscription \\
-\code{\var{x}[\var{index}:\var{index}]} &  Slicing \\
-\code{\var{f}(\var{arguments}...)} & Function call \\
-\hline
-\code{(\var{expressions}\ldots)} & Binding or tuple display \\
-\code{[\var{expressions}\ldots]} & List display \\
-\code{\{\var{key}:\var{datum}\ldots\}} & Dictionary display \\
-\code{`\var{expressions}\ldots`} & String conversion \\
-\hline
-\end{tabular}
-\end{center}
+    \lineii{\code{(\var{expressions}\ldots)}}	{Binding or tuple display}
+    \lineii{\code{[\var{expressions}\ldots]}}	{List display}
+    \lineii{\code{\{\var{key}:\var{datum}\ldots\}}}{Dictionary display}
+    \lineii{\code{`\var{expressions}\ldots`}}	{String conversion}
+\end{tableii}
