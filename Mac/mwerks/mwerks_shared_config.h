@@ -35,3 +35,8 @@
 #define MSL_USE_PRECOMPILED_HEADERS 0	/* Don't use precomp headers: we include our own */
 #include <ansi_prefix.mac.h>
 #endif
+/* Missing declarations. Should these go to pyport.h? */
+#ifdef USE_GUSI2
+#include <stdio.h>
+extern int fileno(FILE *);
+#endif
