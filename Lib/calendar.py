@@ -1,4 +1,9 @@
-"""Calendar printing functions"""
+"""Calendar printing functions
+
+Note when comparing these calendars to the ones printed by cal(1): By
+default, these calendars have Monday as the first day of the week, and
+Sunday as the last (the European convention). Use setfirstweekday() to
+set the first day of the week (0=Monday, 6=Sunday)."""
 
 # Revision 2: uses functions from built-in time module
 
@@ -7,10 +12,6 @@ from time import localtime, mktime
 
 # Exception raised for bad input (with string parameter for details)
 error = ValueError
-
-# Note when comparing these calendars to the ones printed by cal(1):
-# My calendars have Monday as the first day of the week, and Sunday as
-# the last!  (I believe this is the European convention.)
 
 # Constants for months referenced later
 January = 1
@@ -31,35 +32,54 @@ month_name = ['', 'January', 'February', 'March', 'April',
 month_abbr = ['   ', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+# Constants for weekdays
+(MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY) = range(7)
+
+_firstweekday = 0                       # 0 = Monday, 6 = Sunday
+
+def firstweekday():
+    return _firstweekday
+
+def setfirstweekday(weekday):
+    """Set weekday (Monday=0, Sunday=6) to start each week."""
+    global _firstweekday
+    if not MONDAY <= weekday <= SUNDAY:
+        raise ValueError, \
+              'bad weekday number; must be 0 (Monday) to 6 (Sunday)'
+    _firstweekday = weekday
+
 def isleap(year):
     """Return 1 for leap years, 0 for non-leap years."""
     return year % 4 == 0 and (year % 100 <> 0 or year % 400 == 0)
 
 def leapdays(y1, y2):
     """Return number of leap years in range [y1, y2).
-    Assume y1 <= y2 and no funny (non-leap century) years."""
+       Assume y1 <= y2 and no funny (non-leap century) years."""
     return (y2+3)/4 - (y1+3)/4
 
 def weekday(year, month, day):
-    """Return weekday (0-6 ~ Mon-Sun) for year (1970-...), month (1-12), day (1-31)."""
+    """Return weekday (0-6 ~ Mon-Sun) for year (1970-...), month (1-12),
+       day (1-31)."""
     secs = mktime((year, month, day, 0, 0, 0, 0, 0, 0))
     tuple = localtime(secs)
     return tuple[6]
 
 def monthrange(year, month):
-    """Return weekday (0-6 ~ Mon-Sun) and number of days (28-31) for year, month."""
-    if not 1 <= month <= 12: raise ValueError, 'bad month number'
+    """Return weekday (0-6 ~ Mon-Sun) and number of days (28-31) for
+       year, month."""
+    if not 1 <= month <= 12:
+        raise ValueError, 'bad month number'
     day1 = weekday(year, month, 1)
     ndays = mdays[month] + (month == February and isleap(year))
     return day1, ndays
 
-def _monthcalendar(year, month):
+def monthcalendar(year, month):
     """Return a matrix representing a month's calendar.
-    Each row represents a week; days outside this month are zero."""
+       Each row represents a week; days outside this month are zero."""
     day1, ndays = monthrange(year, month)
     rows = []
     r7 = range(7)
-    day = 1 - day1
+    day = (_firstweekday - day1 + 6) % 7 - 5   # for leading 0's in first week
     while day <= ndays:
         row = [0, 0, 0, 0, 0, 0, 0]
         for i in r7:
@@ -68,87 +88,102 @@ def _monthcalendar(year, month):
         rows.append(row)
     return rows
 
-_mc_cache = {}
-def monthcalendar(year, month):
-    """Caching interface to _monthcalendar."""
-    key = (year, month)
-    if _mc_cache.has_key(key):
-        return _mc_cache[key]
-    else:
-        _mc_cache[key] = ret = _monthcalendar(year, month)
-        return ret
-
 def _center(str, width):
     """Center a string in a field."""
     n = width - len(str)
-    if n <= 0: return str
+    if n <= 0:
+        return str
     return ' '*((n+1)/2) + str + ' '*((n)/2)
 
-# XXX The following code knows that print separates items with space!
-
-def prweek(week, width):
+def prweek(theweek, width):
     """Print a single week (no newline)."""
-    for day in week:
-        if day == 0: s = ''
-        else: s = `day`
-        print _center(s, width),
+    print week(theweek, width),
+
+def week(theweek, width):
+    """Returns a single week in a string (no newline)."""
+    days = []
+    for day in theweek:
+        if day == 0:
+            s = ''
+        else:
+            s = '%2i' % day             # right-align single-digit days
+        days.append(_center(s, width))
+    return ' '.join(days)
 
 def weekheader(width):
     """Return a header for a week."""
-    str = ''
-    if width >= 9: names = day_name
-    else: names = day_abbr
-    for i in range(7):
-        if str: str = str + ' '
-        str = str + _center(names[i%7][:width], width)
-    return str
+    if width >= 9:
+        names = day_name
+    else:
+        names = day_abbr
+    days = []
+    for i in range(_firstweekday, _firstweekday + 7):
+        days.append(_center(names[i%7][:width], width))
+    return ' '.join(days)
 
-def prmonth(year, month, w = 0, l = 0):
+def prmonth(theyear, themonth, w=0, l=0):
     """Print a month's calendar."""
+    print month(theyear, themonth, w, l),
+
+def month(theyear, themonth, w=0, l=0):
+    """Return a month's calendar string (multi-line)."""
     w = max(2, w)
     l = max(1, l)
-    print _center(month_name[month] + ' ' + `year`, 7*(w+1) - 1),
-    print '\n'*l,
-    print weekheader(w),
-    print '\n'*l,
-    for week in monthcalendar(year, month):
-        prweek(week, w)
-        print '\n'*l,
+    s = (_center(month_name[themonth] + ' ' + `theyear`, 
+                 7 * (w + 1) - 1).rstrip() +
+         '\n' * l + weekheader(w).rstrip() + '\n' * l)
+    for aweek in monthcalendar(theyear, themonth):
+        s = s + week(aweek, w).rstrip() + '\n' * l
+    return s[:-l] + '\n'
 
-# Spacing of month columns
+# Spacing of month columns for 3-column year calendar
 _colwidth = 7*3 - 1         # Amount printed by prweek()
-_spacing = ' '*4            # Spaces between columns
+_spacing = 6                # Number of spaces between columns
 
-def format3c(a, b, c):
-    """3-column formatting for year calendars"""
-    print _center(a, _colwidth),
-    print _spacing,
-    print _center(b, _colwidth),
-    print _spacing,
-    print _center(c, _colwidth)
+def format3c(a, b, c, colwidth=_colwidth, spacing=_spacing):
+    """Prints 3-column formatting for year calendars"""
+    print format3cstring(a, b, c, colwidth, spacing)
 
-def prcal(year):
+def format3cstring(a, b, c, colwidth=_colwidth, spacing=_spacing):
+    """Returns a string formatted from 3 strings, centered within 3 columns."""
+    return (_center(a, colwidth) + ' ' * spacing + _center(b, colwidth) +
+            ' ' * spacing + _center(c, colwidth))
+
+def prcal(year, w=0, l=0, c=_spacing):
     """Print a year's calendar."""
-    header = weekheader(2)
-    format3c('', `year`, '')
+    print calendar(year, w, l, c),
+
+def calendar(year, w=0, l=0, c=_spacing):
+    """Returns a year's calendar as a multi-line string."""
+    w = max(2, w)
+    l = max(1, l)
+    c = max(2, c)
+    colwidth = (w + 1) * 7 - 1
+    s = _center(`year`, colwidth * 3 + c * 2).rstrip() + '\n' * l
+    header = weekheader(w)
+    header = format3cstring(header, header, header, colwidth, c).rstrip()
     for q in range(January, January+12, 3):
-        print
-        format3c(month_name[q], month_name[q+1], month_name[q+2])
-        format3c(header, header, header)
+        s = (s + '\n' * l +
+             format3cstring(month_name[q], month_name[q+1], month_name[q+2],
+                            colwidth, c).rstrip() + 
+             '\n' * l + header + '\n' * l)
         data = []
         height = 0
-        for month in range(q, q+3):
-            cal = monthcalendar(year, month)
-            if len(cal) > height: height = len(cal)
+        for amonth in range(q, q + 3):
+            cal = monthcalendar(year, amonth)
+            if len(cal) > height:
+                height = len(cal)
             data.append(cal)
         for i in range(height):
+            weeks = []
             for cal in data:
                 if i >= len(cal):
-                    print ' '*_colwidth,
+                    weeks.append('')
                 else:
-                    prweek(cal[i], 2)
-                print _spacing,
-            print
+                    weeks.append(week(cal[i], w))
+            s = s + format3cstring(weeks[0], weeks[1], weeks[2], 
+                                   colwidth, c).rstrip() + '\n' * l
+    return s[:-l] + '\n'
 
 EPOCH = 1970
 def timegm(tuple):
