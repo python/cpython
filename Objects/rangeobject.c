@@ -9,51 +9,6 @@ typedef struct {
 	long	len;
 } rangeobject;
 
-/* XXX PyRange_New should be deprecated.  It's not documented.  It's not
- * used in the core.  Its error-checking is akin to Swiss cheese:  accepts
- * step == 0; accepts len < 0; ignores that (len - 1) * step may overflow;
- * raises a baffling "integer addition" exception if it thinks the last
- * item is "too big"; and doesn't compute whether "last item is too big"
- * correctly even if the multiplication doesn't overflow.
- */
-PyObject *
-PyRange_New(long start, long len, long step, int reps)
-{
-	rangeobject *obj;
-
-	if (reps != 1) {
-		PyErr_SetString(PyExc_ValueError,
-			"PyRange_New's 'repetitions' argument must be 1");
-		return NULL;
-	}
-
-	obj = PyObject_New(rangeobject, &PyRange_Type);
-	if (obj == NULL)
-		return NULL;
-
-	if (len == 0) {
-		start = 0;
-		len = 0;
-		step = 1;
-	}
-	else {
-		long last = start + (len - 1) * step;
-		if ((step > 0) ?
-		    (last > (PyInt_GetMax() - step)) :
-		    (last < (-1 - PyInt_GetMax() - step))) {
-			PyErr_SetString(PyExc_OverflowError,
-					"integer addition");
-			Py_DECREF(obj);
-			return NULL;
-		}
-	}
-	obj->start = start;
-	obj->len   = len;
-	obj->step  = step;
-
-	return (PyObject *) obj;
-}
-
 /* Return number of items in range/xrange (lo, hi, step).  step > 0
  * required.  Return a value < 0 if & only if the true value is too
  * large to fit in a signed long.
