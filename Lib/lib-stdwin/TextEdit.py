@@ -14,6 +14,9 @@ class TextEdit():
 		self.editor = 0
 		return self
 	#
+	def settext(self, text):
+		self.editor.settext(text)
+	#
 	# Downcalls from parent to child
 	#
 	def destroy(self):
@@ -35,7 +38,7 @@ class TextEdit():
 	def realize(self):
 		self.window = self.parent.getwindow()
 		self.editor = self.window.textcreate(self.bounds)
-		self.editor.replace(self.text)
+		self.editor.settext(self.text)
 		self.parent.need_mouse(self)
 		self.parent.need_keybd(self)
 		self.parent.need_altdraw(self)
