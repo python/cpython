@@ -1,5 +1,8 @@
 #! /usr/local/bin/python
 
+import addpack
+addpack.addpack('/home/guido/pdist')
+
 import rrcs
 
 rrcs.main()
