@@ -176,10 +176,15 @@ def run_method_tests(test):
     test('strip', 'hello', 'hello', 'xyz')
 
     # strip/lstrip/rstrip with unicode arg
-    test('strip', 'xyzzyhelloxyzzy', u'hello', u'xyz')
-    test('lstrip', 'xyzzyhelloxyzzy', u'helloxyzzy', u'xyz')
-    test('rstrip', 'xyzzyhelloxyzzy', u'xyzzyhello', u'xyz')
-    test('strip', 'hello', u'hello', u'xyz')
+    if have_unicode:
+        test('strip', 'xyzzyhelloxyzzy', 
+             unicode('hello', 'ascii'), unicode('xyz', 'ascii'))
+        test('lstrip', 'xyzzyhelloxyzzy', 
+             unicode('helloxyzzy', 'ascii'), unicode('xyz', 'ascii'))
+        test('rstrip', 'xyzzyhelloxyzzy',
+             unicode('xyzzyhello', 'ascii'), unicode('xyz', 'ascii'))
+        test('strip', 'hello', 
+             unicode('hello', 'ascii'), unicode('xyz', 'ascii'))
 
     test('swapcase', 'HeLLo cOmpUteRs', 'hEllO CoMPuTErS')
     test('translate', 'xyzabcdef', 'xyzxyz', transtable, 'def')
