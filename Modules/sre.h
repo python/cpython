@@ -1,5 +1,4 @@
 /*
- *
  * Secret Labs' Regular Expression Engine
  *
  * regular expression matching engine
@@ -44,17 +43,14 @@ typedef struct {
 
 typedef unsigned int (*SRE_TOLOWER_HOOK)(unsigned int ch);
 
-typedef struct {
-    /* stack elements */
-    SRE_CODE* pattern;
-    void* ptr;
-    int mark;
-    void* mark0;
-    void* mark1;
-} SRE_STACK;
-
 /* FIXME: <fl> shouldn't be a constant, really... */
 #define SRE_MARK_SIZE 200
+
+typedef struct SRE_REPEAT_T {
+    int count;
+    SRE_CODE* pattern; /* points to REPEAT operator arguments */
+    struct SRE_REPEAT_T *prev; /* points to previous repeat context */
+} SRE_REPEAT;
 
 typedef struct {
     /* string pointers */
@@ -71,16 +67,16 @@ typedef struct {
     int lastindex;
     int lastmark;
     void* mark[SRE_MARK_SIZE];
-    /* backtracking stack */
-    SRE_STACK* stack;
-    int stacksize;
-    int stackbase;
+    /* dynamically allocated stuff */
+    void** mark_stack;
+    int mark_stack_size;
+    int mark_stack_base;
+    SRE_REPEAT *repeat; /* current repeat context */
     /* hooks */
     SRE_TOLOWER_HOOK lower;
 } SRE_STATE;
 
 typedef struct {
-    /* scanner (internal helper object) */
     PyObject_HEAD
     PyObject* pattern;
     SRE_STATE state;

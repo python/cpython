@@ -5,9 +5,7 @@
 #
 # Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
 #
-# Portions of this engine have been developed in cooperation with
-# CNRI.  Hewlett-Packard provided funding for 2.0 integration and
-# other compatibility work.
+# See the sre.py file for information on usage and redistribution.
 #
 
 import _sre
@@ -124,6 +122,7 @@ def _compile(code, pattern, flags):
                 emit(CHCODES[CATEGORY_NOT_LINEBREAK])
         elif op in (REPEAT, MIN_REPEAT, MAX_REPEAT):
             if flags & SRE_FLAG_TEMPLATE:
+                raise error, "internal: unsupported template operator"
                 emit(OPCODES[REPEAT])
                 skip = len(code); emit(0)
                 emit(av[0])
@@ -136,9 +135,8 @@ def _compile(code, pattern, flags):
                 if lo == 0:
                     raise error, "nothing to repeat"
                 if 0 and lo == hi == 1 and op is MAX_REPEAT:
-                    # FIXME: <fl> need a better way to figure out when
-                    # it's safe to use this one (in the parser, probably)
-                    emit(OPCODES[MAX_REPEAT_ONE])
+                    # FIXME: <fl> fast and wrong (but we'll fix that)
+                    emit(OPCODES[REPEAT_ONE])
                     skip = len(code); emit(0)
                     emit(av[0])
                     emit(av[1])
@@ -146,29 +144,24 @@ def _compile(code, pattern, flags):
                     emit(OPCODES[SUCCESS])
                     code[skip] = len(code) - skip
                 else:
-                    emit(OPCODES[op])
+                    emit(OPCODES[REPEAT])
                     skip = len(code); emit(0)
                     emit(av[0])
                     emit(av[1])
-                    mark = MAXCODE
-                    if av[2][0][0] == SUBPATTERN:
-                        # repeated subpattern
-                        gid, foo = av[2][0][1]
-                        if gid:
-                            mark = (gid-1)*2
-                    emit(mark)
                     _compile(code, av[2], flags)
-                    emit(OPCODES[SUCCESS])
                     code[skip] = len(code) - skip
+                    if op == MAX_REPEAT:
+                        emit(OPCODES[MAX_UNTIL])
+                    else:
+                        emit(OPCODES[MIN_UNTIL])
         elif op is SUBPATTERN:
-            gid = av[0]
-            if gid:
+            if av[0]:
                 emit(OPCODES[MARK])
-                emit((gid-1)*2)
+                emit((av[0]-1)*2)
             _compile(code, av[1], flags)
-            if gid:
+            if av[0]:
                 emit(OPCODES[MARK])
-                emit((gid-1)*2+1)
+                emit((av[0]-1)*2+1)
         elif op in (SUCCESS, FAILURE):
             emit(OPCODES[op])
         elif op in (ASSERT, ASSERT_NOT):
@@ -197,11 +190,10 @@ def _compile(code, pattern, flags):
             else:
                 emit(ATCODES[av])
         elif op is BRANCH:
+            emit(OPCODES[op])
             tail = []
             for av in av[1]:
-                emit(OPCODES[op])
                 skip = len(code); emit(0)
-                emit(MAXCODE) # save mark
                 _compile(code, av, flags)
                 emit(OPCODES[JUMP])
                 tail.append(len(code)); emit(0)
@@ -223,9 +215,6 @@ def _compile(code, pattern, flags):
             else:
                 emit(OPCODES[op])
             emit(av-1)
-        elif op in (MARK, INDEX):
-            emit(OPCODES[op])
-            emit(av)
         else:
             raise ValueError, ("unsupported operand type", op)
 
@@ -294,16 +283,7 @@ try:
 except NameError:
     pass
 
-def compile(p, flags=0):
-    # internal: convert pattern list to internal format
-
-    # compile, as necessary
-    if type(p) in STRING_TYPES:
-        import sre_parse
-        pattern = p
-        p = sre_parse.parse(p, flags)
-    else:
-        pattern = None
+def _compile1(p, flags):
 
     flags = p.pattern.flags | flags
     code = []
@@ -315,6 +295,20 @@ def compile(p, flags=0):
     _compile(code, p.data, flags)
 
     code.append(OPCODES[SUCCESS])
+
+    return code
+
+def compile(p, flags=0):
+    # internal: convert pattern list to internal format
+
+    if type(p) in STRING_TYPES:
+        import sre_parse
+        pattern = p
+        p = sre_parse.parse(p, flags)
+    else:
+        pattern = None
+
+    code = _compile1(p, flags)
 
     # print code
 
