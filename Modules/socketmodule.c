@@ -375,6 +375,8 @@ sock_avail(s, args)
 	struct timeval timeout;
 	fd_set readers;
 	int n;
+	if (!getnoarg(args))
+		return NULL;
 	timeout.tv_sec = 0;
 	timeout.tv_usec = 0;
 	FD_ZERO(&readers);
@@ -529,7 +531,8 @@ sock_recvfrom(s, args)
 		return socket_error();
 	if (resizestring(&buf, n) < 0)
 		return NULL;
-	return makepair(buf, makesockaddr(addrbuf, addrlen));
+	return makepair(buf,
+			makesockaddr((struct sockaddr *)addrbuf, addrlen));
 }
 
 
@@ -677,7 +680,7 @@ socket_gethostname(self, args)
 	char buf[1024];
 	if (!getnoarg(args))
 		return NULL;
-	if (gethostname(buf, sizeof buf - 1) < 0)
+	if (gethostname(buf, (int) sizeof buf - 1) < 0)
 		return socket_error();
 	buf[sizeof buf - 1] = '\0';
 	return newstringobject(buf);
@@ -691,7 +694,6 @@ socket_gethostbyname(self, args)
 	object *args;
 {
 	object *name;
-	struct hostent *hp;
 	struct sockaddr_in addrbuf;
 	if (!getStrarg(args, &name))
 		return NULL;
