@@ -30,10 +30,112 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* This code implemented by Dag.Gruneau@elsa.preseco.comm.se */
+/* Fast NonRecursiveMutex support by Yakov Markovitch, markovitch@iso.ru */
 
 #include <windows.h>
 #include <limits.h>
 #include <process.h>
+
+typedef struct NRMUTEX {
+	LONG   owned ;
+	DWORD  thread_id ;
+	HANDLE hevent ;
+} NRMUTEX, *PNRMUTEX ;
+
+
+typedef PVOID WINAPI interlocked_cmp_xchg_t(PVOID *dest, PVOID exc, PVOID comperand) ;
+
+/* Sorry mate, but we haven't got InterlockedCompareExchange in Win95! */
+static PVOID WINAPI interlocked_cmp_xchg(PVOID *dest, PVOID exc, PVOID comperand)
+{
+	static LONG spinlock = 0 ;
+	PVOID result ;
+
+	/* Acqire spinlock (yielding control to other threads if cant aquire for the moment) */
+	while(InterlockedExchange(&spinlock, 1)) Sleep(0) ;
+	result = *dest ;
+	if (result == comperand)
+		*dest = exc ;
+	/* Release spinlock */
+	spinlock = 0 ;
+	return result ;
+} ;
+
+static interlocked_cmp_xchg_t *ixchg ;
+BOOL InitializeNonRecursiveMutex(PNRMUTEX mutex)
+{
+	if (!ixchg)
+	{
+		/* Sorely, Win95 has no InterlockedCompareExchange API (Win98 has), so we have to use emulation */
+		HANDLE kernel = GetModuleHandle("kernel32.dll") ;
+		if (!kernel || (ixchg = (interlocked_cmp_xchg_t *)GetProcAddress(kernel, "InterlockedCompareExchange")) == NULL)
+			ixchg = interlocked_cmp_xchg ;
+	}
+
+	mutex->owned = -1 ;  /* No threads have entered NonRecursiveMutex */
+	mutex->thread_id = 0 ;
+	mutex->hevent = CreateEvent(NULL, FALSE, FALSE, NULL) ;
+	return mutex->hevent != NULL ;	/* TRUE if the mutex is created */
+}
+
+#define InterlockedCompareExchange(dest,exchange,comperand) (ixchg((dest), (exchange), (comperand)))
+
+VOID DeleteNonRecursiveMutex(PNRMUTEX mutex)
+{
+	/* No in-use check */
+	CloseHandle(mutex->hevent) ;
+	mutex->hevent = NULL ; /* Just in case */
+}
+
+DWORD EnterNonRecursiveMutex(PNRMUTEX mutex, BOOL wait)
+{
+	/* Assume that the thread waits successfully */
+	DWORD ret ;
+
+	/* InterlockedIncrement(&mutex->owned) == 0 means that no thread currently owns the mutex */
+	if (!wait)
+	{
+		if (InterlockedCompareExchange((PVOID *)&mutex->owned, (PVOID)0, (PVOID)-1) != (PVOID)-1)
+			return WAIT_TIMEOUT ;
+		ret = WAIT_OBJECT_0 ;
+	}
+	else
+		ret = InterlockedIncrement(&mutex->owned) ?
+			/* Some thread owns the mutex, let's wait... */
+			WaitForSingleObject(mutex->hevent, INFINITE) : WAIT_OBJECT_0 ;
+
+	mutex->thread_id = GetCurrentThreadId() ; /* We own it */
+	return ret ;
+}
+
+BOOL LeaveNonRecursiveMutex(PNRMUTEX mutex)
+{
+	/* We don't own the mutex */
+	mutex->thread_id = 0 ;
+	return
+		InterlockedDecrement(&mutex->owned) < 0 ||
+		SetEvent(mutex->hevent) ; /* Other threads are waiting, wake one on them up */
+}
+
+PNRMUTEX AllocNonRecursiveMutex()
+{
+	PNRMUTEX mutex = (PNRMUTEX)malloc(sizeof(NRMUTEX)) ;
+	if (mutex && !InitializeNonRecursiveMutex(mutex))
+	{
+		free(mutex) ;
+		mutex = NULL ;
+	}
+	return mutex ;
+}
+
+void FreeNonRecursiveMutex(PNRMUTEX mutex)
+{
+	if (mutex)
+	{
+		DeleteNonRecursiveMutex(mutex) ;
+		free(mutex) ;
+	}
+}
 
 long PyThread_get_thread_ident(void);
 
@@ -65,7 +167,7 @@ int PyThread_start_new_thread(void (*func)(void *), void *arg)
  
 	if (rv != -1) {
 		success = 1;
-		dprintf(("%ld: PyThread_start_new_thread succeeded: %ld\n", PyThread_get_thread_ident(), rv));
+		dprintf(("%ld: PyThread_start_new_thread succeeded: %ld\n", PyThread_get_thread_ident(), aThreadId));
 	}
 
 	return success;
@@ -79,7 +181,7 @@ long PyThread_get_thread_ident(void)
 {
 	if (!initialized)
 		PyThread_init_thread();
-        
+
 	return GetCurrentThreadId();
 }
 
@@ -133,17 +235,13 @@ void PyThread__exit_prog _P1(int status)
  */
 PyThread_type_lock PyThread_allocate_lock(void)
 {
-	HANDLE aLock;
+	PNRMUTEX aLock;
 
 	dprintf(("PyThread_allocate_lock called\n"));
 	if (!initialized)
 		PyThread_init_thread();
 
-		aLock = CreateSemaphore(NULL,           /* Security attributes          */
-                         1,                     /* Initial value                */
-                         1,                     /* Maximum value                */
-                         NULL);       
-  /* Name of semaphore            */
+	aLock = AllocNonRecursiveMutex() ;
 
 	dprintf(("%ld: PyThread_allocate_lock() -> %lx\n", PyThread_get_thread_ident(), (long)aLock));
 
@@ -154,7 +252,7 @@ void PyThread_free_lock(PyThread_type_lock aLock)
 {
 	dprintf(("%ld: PyThread_free_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
 
-	CloseHandle((HANDLE) aLock);
+	FreeNonRecursiveMutex(aLock) ;
 }
 
 /*
@@ -165,16 +263,11 @@ void PyThread_free_lock(PyThread_type_lock aLock)
  */
 int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 {
-	int success = 1;
-	DWORD waitResult;
+	int success ;
 
 	dprintf(("%ld: PyThread_acquire_lock(%lx, %d) called\n", PyThread_get_thread_ident(),(long)aLock, waitflag));
 
-	waitResult = WaitForSingleObject((HANDLE) aLock, (waitflag == 1 ? INFINITE : 0));
-
-	if (waitResult != WAIT_OBJECT_0) {
-		success = 0;    /* We failed */
-	}
+	success = aLock && EnterNonRecursiveMutex((PNRMUTEX) aLock, (waitflag == 1 ? INFINITE : 0)) == WAIT_OBJECT_0 ;
 
 	dprintf(("%ld: PyThread_acquire_lock(%lx, %d) -> %d\n", PyThread_get_thread_ident(),(long)aLock, waitflag, success));
 
@@ -185,13 +278,8 @@ void PyThread_release_lock(PyThread_type_lock aLock)
 {
 	dprintf(("%ld: PyThread_release_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
 
-	if (!ReleaseSemaphore(
-                        (HANDLE) aLock,                         /* Handle of semaphore                          */
-                        1,                                      /* increment count by one                       */
-                        NULL))                                  /* not interested in previous count             */
-		{
+	if (!(aLock && LeaveNonRecursiveMutex((PNRMUTEX) aLock)))
 		dprintf(("%ld: Could not PyThread_release_lock(%lx) error: %l\n", PyThread_get_thread_ident(), (long)aLock, GetLastError()));
-		}
 }
 
 /*
@@ -206,9 +294,9 @@ PyThread_type_sema PyThread_allocate_sema(int value)
 		PyThread_init_thread();
 
 	aSemaphore = CreateSemaphore( NULL,           /* Security attributes          */
-                                  value,          /* Initial value                */
-                                  INT_MAX,        /* Maximum value                */
-                                  NULL);          /* Name of semaphore            */
+	                              value,          /* Initial value                */
+	                              INT_MAX,        /* Maximum value                */
+	                              NULL);          /* Name of semaphore            */
 
 	dprintf(("%ld: PyThread_allocate_sema() -> %lx\n", PyThread_get_thread_ident(), (long)aSemaphore));
 
