@@ -43,20 +43,20 @@ name:           lc_letter (lc_letter | "_")*
 lc_letter:      "a"..."z"
 \end{verbatim}
 
-The first line says that a \verb@name@ is an \verb@lc_letter@ followed by
-a sequence of zero or more \verb@lc_letter@s and underscores.  An
-\verb@lc_letter@ in turn is any of the single characters `a' through `z'.
-(This rule is actually adhered to for the names defined in lexical and
-grammar rules in this document.)
+The first line says that a \code{name} is an \code{lc_letter} followed by
+a sequence of zero or more \code{lc_letter}s and underscores.  An
+\code{lc_letter} in turn is any of the single characters \character{a}
+through \character{z}.  (This rule is actually adhered to for the
+names defined in lexical and grammar rules in this document.)
 
 Each rule begins with a name (which is the name defined by the rule)
-and a colon.  A vertical bar (\verb@|@) is used to separate
+and a colon.  A vertical bar (\code{|}) is used to separate
 alternatives; it is the least binding operator in this notation.  A
-star (\verb@*@) means zero or more repetitions of the preceding item;
-likewise, a plus (\verb@+@) means one or more repetitions, and a
-phrase enclosed in square brackets (\verb@[ ]@) means zero or one
+star (\code{*}) means zero or more repetitions of the preceding item;
+likewise, a plus (\code{+}) means one or more repetitions, and a
+phrase enclosed in square brackets (\code{[ ]}) means zero or one
 occurrences (in other words, the enclosed phrase is optional).  The
-\verb@*@ and \verb@+@ operators bind as tightly as possible;
+\code{*} and \code{+} operators bind as tightly as possible;
 parentheses are used for grouping.  Literal strings are enclosed in
 quotes.  White space is only meaningful to separate tokens.
 Rules are normally contained on a single line; rules with many
@@ -66,11 +66,11 @@ first beginning with a vertical bar.
 In lexical definitions (as the example above), two more conventions
 are used: Two literal characters separated by three dots mean a choice
 of any single character in the given (inclusive) range of \ASCII{}
-characters.  A phrase between angular brackets (\verb@<...>@) gives an
+characters.  A phrase between angular brackets (\code{<...>}) gives an
 informal description of the symbol defined; e.g. this could be used
 to describe the notion of `control character' if needed.
 \index{lexical definitions}
-\index{ASCII}
+\index{ASCII@\ASCII{}}
 
 Even though the notation used is almost the same, there is a big
 difference between the meaning of lexical and syntactic definitions:
