@@ -1046,8 +1046,8 @@ short for `else if', and is useful to avoid excessive indentation.  An
 \keyword{if} \ldots\ \keyword{elif} \ldots\ \keyword{elif} \ldots\ sequence
 %    Weird spacings happen here if the wrapping of the source text
 %    gets changed in the wrong way.
-is a substitute for the  \emph{switch} or
-\emph{case} statements found in other languages.
+is a substitute for the \keyword{switch} or
+\keyword{case} statements found in other languages.
 
 
 \section{\keyword{for} Statements \label{for}}
@@ -2600,7 +2600,7 @@ The value of x is 31.4, and y is 40000...
 ... p = [x, y]
 >>> ps = repr(p)
 >>> ps
-'[31.4, 40000]'
+'[31.400000000000002, 40000]'
 >>> # Converting a string adds string quotes and backslashes:
 ... hello = 'hello, world\n'
 >>> hellos = `hello`
@@ -2608,7 +2608,7 @@ The value of x is 31.4, and y is 40000...
 'hello, world\012'
 >>> # The argument of reverse quotes may be a tuple:
 ... `x, y, ('spam', 'eggs')`
-"(31.4, 40000, ('spam', 'eggs'))"
+"(31.400000000000002, 40000, ('spam', 'eggs'))"
 \end{verbatim}
 
 Here are two ways to write a table of squares and cubes:
@@ -2967,8 +2967,8 @@ exception happened, in the form of a stack backtrace.
 In general it contains a stack backtrace listing source lines; however,
 it will not display lines read from standard input.
 
-The \emph{Python Library Reference} lists the built-in exceptions and
-their meanings.
+The \citetitle[../lib/module-exceptions.html]{Python Library
+Reference} lists the built-in exceptions and their meanings.
 
 
 \section{Handling Exceptions \label{handling}}
