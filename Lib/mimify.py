@@ -214,8 +214,8 @@ def unmimify(infile, outfile, decode_base64 = 0):
 	unmimify_part(nifile, ofile, decode_base64)
 	ofile.flush()
 
-mime_char = re.compile('[=\240-\377]') # quote these chars in body
-mime_header_char = re.compile('[=?\240-\377]') # quote these in header
+mime_char = re.compile('[=\177-\377]') # quote these chars in body
+mime_header_char = re.compile('[=?\177-\377]') # quote these in header
 
 def mime_encode(line, header):
 	'''Code a single line as quoted-printable.
@@ -249,7 +249,7 @@ def mime_encode(line, header):
 		line = line[i:]
 	return newline + line
 
-mime_header = re.compile('([ \t(]|^)([-a-zA-Z0-9_+]*[\240-\377][-a-zA-Z0-9_+\240-\377]*)([ \t)]|\n)')
+mime_header = re.compile('([ \t(]|^)([-a-zA-Z0-9_+]*[\177-\377][-a-zA-Z0-9_+\177-\377]*)([ \t)]|\n)')
 
 def mime_encode_header(line):
 	'''Code a single header line as quoted-printable.'''
@@ -267,7 +267,7 @@ def mime_encode_header(line):
 
 mv = re.compile('^mime-version:', re.I)
 cte = re.compile('^content-transfer-encoding:', re.I)
-iso_char = re.compile('[\240-\377]')
+iso_char = re.compile('[\177-\377]')
 
 def mimify_part(ifile, ofile, is_mime):
 	'''Convert an 8bit part of a MIME mail message to quoted-printable.'''
