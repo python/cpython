@@ -133,7 +133,7 @@ def fileConfig(fname, defaults=None):
             if "level" in opts:
                 level = cp.get(sectname, "level")
                 log.setLevel(logging._levelNames[level])
-            for h in root.handlers:
+            for h in root.handlers[:]:
                 root.removeHandler(h)
             hlist = cp.get(sectname, "handlers")
             if len(hlist):
@@ -165,7 +165,7 @@ def fileConfig(fname, defaults=None):
                 if "level" in opts:
                     level = cp.get(sectname, "level")
                     logger.setLevel(logging._levelNames[level])
-                for h in logger.handlers:
+                for h in logger.handlers[:]:
                     logger.removeHandler(h)
                 logger.propagate = propagate
                 logger.disabled = 0
