@@ -653,9 +653,9 @@ has failed.  When the conversion fails, the \var{converter} function
 should raise an exception.
 
 \item[\samp{S} (string) {[PyStringObject *]}]
-Like \samp{O} but raises a \code{TypeError} exception that the object
-is a string object.  The \C{} variable may also be declared as
-\code{PyObject *}.
+Like \samp{O} but requires that the Python object is a string object.
+Raises a \code{TypeError} exception if the object is not a string
+object.  The \C{} variable may also be declared as \code{PyObject *}.
 
 \item[\samp{(\var{items})} (tuple) {[\var{matching-items}]}]
 The object must be a Python tuple whose length is the number of format
