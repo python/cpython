@@ -150,6 +150,8 @@ NEWFALSE        = '\x89'  # push False
 LONG1           = '\x8a'  # push long from < 256 bytes
 LONG4           = '\x8b'  # push really big long
 
+_tuplesize2code = [EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3]
+
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
 del x
@@ -256,14 +258,6 @@ class Pickler:
         d = id(object)
 
         t = type(object)
-
-        # XXX Why are tuples a special case here?
-        if (t is TupleType) and (len(object) == 0):
-            if self.bin:
-                self.save_empty_tuple(object)
-            else:
-                self.save_tuple(object)
-            return
 
         if d in memo:
             self.write(self.get(memo[d][0]))
@@ -463,6 +457,24 @@ class Pickler:
         write = self.write
         save  = self.save
         memo  = self.memo
+        proto = self.proto
+
+        if proto >= 1:
+            n = len(object)
+            if n <= 3:
+                if not object:
+                    write(EMPTY_TUPLE)
+                    return
+                if proto >= 2:
+                    for element in object:
+                        save(element)
+                    # Subtle.  Same as in the big comment below
+                    if id(object) in memo:
+                        get = self.get(memo[id(object)][0])
+                        write(POP_MARK + get)
+                    else:
+                        write(_tuplesize2code[n])
+                    return
 
         write(MARK)
         for element in object:
@@ -477,15 +489,15 @@ class Pickler:
             # could have been done in the "for element" loop instead, but
             # recursive tuples are a rare thing.
             get = self.get(memo[id(object)][0])
-            if self.bin:
+            if proto:
                 write(POP_MARK + get)
             else:   # proto 0 -- POP_MARK not available
                 write(POP * (len(object) + 1) + get)
             return
 
-        # No recursion (including the empty-tuple case).
+        # No recursion (including the empty-tuple case for protocol 0).
         self.write(TUPLE)
-        self.memoize(object)
+        self.memoize(object) # XXX shouldn't memoize empty tuple?!
 
     dispatch[TupleType] = save_tuple
 
@@ -875,6 +887,18 @@ class Unpickler:
     def load_empty_tuple(self):
         self.stack.append(())
     dispatch[EMPTY_TUPLE] = load_empty_tuple
+
+    def load_tuple1(self):
+        self.stack[-1] = (self.stack[-1],)
+    dispatch[TUPLE1] = load_tuple1
+
+    def load_tuple2(self):
+        self.stack[-2:] = [(self.stack[-2], self.stack[-1])]
+    dispatch[TUPLE2] = load_tuple2
+
+    def load_tuple3(self):
+        self.stack[-3:] = [(self.stack[-3], self.stack[-2], self.stack[-1])]
+    dispatch[TUPLE3] = load_tuple3
 
     def load_empty_list(self):
         self.stack.append([])
