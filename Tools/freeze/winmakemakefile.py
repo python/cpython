@@ -13,6 +13,7 @@ def realwork(vars, files, target):
     print
     print "target =", target
     print "pythonhome =", vars['prefix']
+    # XXX The following line is fishy and may need manual fixing
     print "pythonlib =", vars['exec_prefix'] + "/pcbuild/release/python15.lib"
     print "subsystem =", vars['subsystem']
     print
