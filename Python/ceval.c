@@ -737,8 +737,8 @@ eval_code(co, globals, locals, owner, arg)
 			    !suppress_print) {
 				flushline();
 				x = sysget("stdout");
-				softspace(x, 1);
 				err = writeobject(v, x, 0);
+				softspace(x, 1);
 				flushline();
 			}
 			DECREF(v);
@@ -1692,7 +1692,7 @@ object *
 getbuiltins()
 {
 	if (current_frame == NULL)
-		return getbuiltindict();
+		return getbuiltinmod();
 	else
 		return current_frame->f_builtins;
 }
