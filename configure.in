@@ -17,6 +17,13 @@ AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 	esac], [without_gcc=no])
 AC_MSG_RESULT($without_gcc)
 
+# If the user switches compilers, we can't believe the cache
+if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
+then
+  AC_ERROR(cached CC is different -- throw away $cache_file
+(it is also a good idea to do 'make clean' before compiling))
+fi
+
 AC_PROG_CC
 AC_PROG_RANLIB
 AC_SUBST(AR)
