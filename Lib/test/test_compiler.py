@@ -2,6 +2,7 @@ import compiler
 import os
 import test.test_support
 import unittest
+from random import random
 
 class CompilerTest(unittest.TestCase):
 
@@ -18,6 +19,8 @@ class CompilerTest(unittest.TestCase):
             for basename in os.listdir(dir):
                 if not basename.endswith(".py"):
                     continue
+                if not TEST_ALL and random() < 0.98:
+                    continue
                 path = os.path.join(dir, basename)
                 if test.test_support.verbose:
                     print "compiling", path
@@ -31,7 +34,8 @@ class CompilerTest(unittest.TestCase):
                     compiler.compile(buf, basename, "exec")
 
 def test_main():
-    test.test_support.requires("compiler")
+    global TEST_ALL
+    TEST_ALL = test.test_support.is_resource_enabled("compiler")
     test.test_support.run_unittest(CompilerTest)
 
 if __name__ == "__main__":
