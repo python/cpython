@@ -194,6 +194,9 @@
    (shared library plus accessory files). */
 #undef WITH_NEXT_FRAMEWORK
 
+/* Define if you want to use MacPython modules on MacOSX in unix-Python */
+#undef USE_TOOLBOX_OBJECT_GLUE
+
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
    ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
