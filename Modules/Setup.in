@@ -322,12 +322,24 @@ parser parsermodule.c
 cStringIO cStringIO.c
 cPickle cPickle.c
 
+
 # Lee Busby's SIGFPE modules.
 # The library to link fpectl with is platform specific.
-# See instructions in fpectlmodule.c.
+# Choose *one* of the options below for fpectl:
 
-#fpectl fpectlmodule.c
+# For SGI IRIX (tested on 5.3):
+#fpectl fpectlmodule.c -lfpe
+
+# For Solaris with SunPro compiler (tested on 2.5):
+# (Without the compile you don't have -lsunmath.)
+#fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
+
+# For other systems: see instructions in fpectlmodule.c.
+#fpectl fpectlmodule.c ...
+
+# Test module for fpectl.  No extra libraries needed.
 #fpetest fpetestmodule.c
+
 
 # Example -- included for reference only:
 # xx xxmodule.c
