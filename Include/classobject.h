@@ -71,7 +71,7 @@ extern PyObject *PyMethod_Class Py_PROTO((PyObject *));
 
 extern int PyClass_IsSubclass Py_PROTO((PyObject *, PyObject *));
 
-extern PyObject *instancebinop
+extern PyObject *PyInstance_DoBinOp
 	Py_PROTO((PyObject *, PyObject *,
 		  char *, char *,
 		  PyObject * (*) Py_PROTO((PyObject *, PyObject *)) ));
