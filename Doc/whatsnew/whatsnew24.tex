@@ -367,6 +367,12 @@ Several modules now take advantage of \class{collections.deque} for
 improved performance:  \module{Queue}, \module{mutex}, \module{shlex}
 \module{threading}, and \module{pydoc}.
 
+\item The \module{ConfigParser} classes have been enhanced slightly.
+   The \method{read()} method now returns a list of the files that
+   were successfully parsed, and the \method{set()} method raises
+   \exception{TypeError} if passed a \var{value} argument that isn't a
+   string.
+
 \item The \module{heapq} module has been converted to C.  The resulting
    tenfold improvement in speed makes the module suitable for handling
    high volumes of data.
