@@ -164,7 +164,9 @@ if sys.exec_prefix != sys.prefix:
     prefixes.append(sys.exec_prefix)
 for prefix in prefixes:
     if prefix:
-        if os.sep == '/':
+        if sys.platform == 'os2emx':
+            sitedirs = [os.path.join(prefix, "Lib", "site-packages")]
+        elif os.sep == '/':
             sitedirs = [os.path.join(prefix,
                                      "lib",
                                      "python" + sys.version[:3],

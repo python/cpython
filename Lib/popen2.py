@@ -112,7 +112,7 @@ class Popen4(Popen3):
         _active.append(self)
 
 
-if sys.platform[:3] == "win":
+if sys.platform[:3] == "win" or sys.platform == "os2emx":
     # Some things don't make sense on non-Unix platforms.
     del Popen3, Popen4
 
