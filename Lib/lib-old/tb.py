@@ -1,5 +1,6 @@
 # Print tracebacks, with a dump of local variables.
 # Also an interactive stack trace browser.
+# Note -- this module is obsolete -- use pdb.pm() instead.
 
 import sys
 import os
@@ -71,7 +72,7 @@ def browserexec(tb, cmd):
 	locals = tb.tb_frame.f_locals
 	globals = tb.tb_frame.f_globals
 	try:
-		exec(cmd+'\n', globals, locals)
+		exec cmd+'\n' in globals, locals
 	except:
 		print '*** Exception:',
 		if type(sys.exc_type) == type(''):
