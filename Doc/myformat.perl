@@ -1,4 +1,4 @@
-# myformat.perl by Guido van Rossum <guido@cwi.nl> 25 Jan 1994
+# myformat.perl by Guido van Rossum <guido@cwi.nl> 25 Jan 1994	-*- perl -*-
 #
 # Extension to LaTeX2HTML for documents using myformat.sty.
 # Subroutines of the form do_cmd_<name> here define translations
