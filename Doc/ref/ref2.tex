@@ -75,7 +75,7 @@ Comments are ignored by the syntax; they are not tokens.
 \subsection{Encoding declarations\label{encodings}}
 
 If a comment in the first or second line of the Python script matches
-the regular expression "coding[=:]\s*([\w-_.]+)", this comment is
+the regular expression \regexp{coding[=:]\e s*([\e w-_.]+)}, this comment is
 processed as an encoding declaration; the first group of this
 expression names the encoding of the source code file. The recommended
 forms of this expression are
@@ -91,9 +91,9 @@ which is recognized also by GNU Emacs, and
 \end{verbatim}
 
 which is recognized by Bram Moolenar's VIM. In addition, if the first
-bytes of the file are the UTF-8 signature ($'\xef\xbb\xbf'$), the
-declared file encoding is UTF-8 (this is supported, among others, by
-Microsoft's notepad.exe).
+bytes of the file are the UTF-8 byte-order mark
+(\code{'\e xef\e xbb\e xbf'}), the declared file encoding is UTF-8
+(this is supported, among others, by Microsoft's \program{notepad}).
 
 If an encoding is declared, the encoding name must be recognized by
 Python. % XXX there should be a list of supported encodings.
