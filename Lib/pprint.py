@@ -188,65 +188,54 @@ class PrettyPrinter:
 # Return triple (repr_string, isreadable, isrecursive).
 
 def _safe_repr(object, context, maxlevels=None, level=0):
-    level = level + 1
+    level += 1
     typ = type(object)
     if not (typ in (DictType, ListType, TupleType) and object):
         rep = `object`
         return rep, (rep and (rep[0] != '<')), 0
+
     if context.has_key(id(object)):
         return `_Recursion(object)`, 0, 1
     objid = id(object)
     context[objid] = 1
+
     readable = 1
     recursive = 0
-    if typ is DictType:
-        if maxlevels and level >= maxlevels:
-            s = "{...}"
-            readable = 0
-        else:
-            items = object.items()
-            k, v = items[0]
+    startchar, endchar = {ListType:  "[]",
+                          TupleType: "()",
+                          DictType:  "{}"}[typ]
+    if maxlevels and level > maxlevels:
+        with_commas = "..."
+        readable = 0
+
+    elif typ is DictType:
+        components = []
+        for k, v in object.iteritems():
             krepr, kreadable, krecur = _safe_repr(k, context, maxlevels,
                                                   level)
             vrepr, vreadable, vrecur = _safe_repr(v, context, maxlevels,
                                                   level)
+            components.append("%s: %s" % (krepr, vrepr))
             readable = readable and kreadable and vreadable
             recursive = recursive or krecur or vrecur
-            s = "{%s: %s" % (krepr, vrepr)
-            for k, v in items[1:]:
-                krepr, kreadable, krecur = _safe_repr(k, context, maxlevels,
-                                                      level)
-                vrepr, vreadable, vrecur = _safe_repr(v, context, maxlevels,
-                                                      level)
-                readable = readable and kreadable and vreadable
-                recursive = recursive or krecur or vrecur
-                s = "%s, %s: %s" % (s, krepr, vrepr)
-            s = s + "}"
-    else:
-        s, term = (typ is ListType) and ('[', ']') or ('(', ')')
-        if maxlevels and level >= maxlevels:
-            s = s + "..."
-            readable = 0
-        else:
+        with_commas = ", ".join(components)
+
+    else: # list or tuple
+        assert typ in (ListType, TupleType)
+        components = []
+        for element in object:
             subrepr, subreadable, subrecur = _safe_repr(
-                object[0], context, maxlevels, level)
+                  element, context, maxlevels, level)
+            components.append(subrepr)
             readable = readable and subreadable
             recursive = recursive or subrecur
-            s = s + subrepr
-            tail = object[1:]
-            if not tail:
-                if typ is TupleType:
-                    s = s + ','
-            for ent in tail:
-                subrepr, subreadable, subrecur = _safe_repr(
-                    ent, context, maxlevels, level)
-                readable = readable and subreadable
-                recursive = recursive or subrecur
-                s = "%s, %s" % (s, subrepr)
-        s = s + term
+        if len(components) == 1 and typ is TupleType:
+            components[0] += ","
+        with_commas = ", ".join(components)
+
+    s = "%s%s%s" % (startchar, with_commas, endchar)
     del context[objid]
     return s, readable and not recursive, recursive
-
 
 class _Recursion:
     # represent a recursive relationship; really only used for the __repr__()

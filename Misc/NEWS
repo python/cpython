@@ -92,6 +92,8 @@ Library
 - pprint.isrecursive(object) didn't correctly identify recursive objects.
   Now it does.
 
+- pprint functions now much faster for large containers (tuple, list, dict).
+
 Tests
 
 - New test_mutants.py runs dict comparisons where the key and value
@@ -100,7 +102,8 @@ Tests
   of heart:  it can also cause Win9x to freeze or reboot!).
 
 - New test_pprint.py verfies that pprint.isrecursive() and
-  pprint.isreadable() return sensible results.
+  pprint.isreadable() return sensible results.  Also verifies that simple
+  cases produce correct output.
 
 
 What's New in Python 2.1 (final)?

@@ -12,7 +12,7 @@ class QueryTestCase(unittest.TestCase):
         self.a[-12] = self.b
 
     def test_basic(self):
-        # Verify that .isrecursive() and .isreadable() work.
+        # Verify that .isrecursive() and .isreadable() work w/o recursion.
         verify = self.assert_
         for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, u"yaddayadda",
                      self.a, self.b):
@@ -22,6 +22,7 @@ class QueryTestCase(unittest.TestCase):
                    "expected isreadable for " + `safe`)
 
     def test_knotted(self):
+        # Verify that .isrecursive() and .isreadable() work w/ recursion.
         # Tie a knot.
         self.b[67] = self.a
         # Messy dict.
@@ -54,5 +55,20 @@ class QueryTestCase(unittest.TestCase):
             verify(not pprint.isreadable(unreadable),
                    "expected not isreadable for " + `unreadable`)
 
+    def test_same_as_repr(self):
+        "Simple objects and small containers that should be same as repr()."
+        verify = self.assert_
+        for simple in (0, 0L, 0+0j, 0.0, "", u"", (), [], {}, verify, pprint,
+                       -6, -6L, -6-6j, -1.5, "x", u"x", (3,), [3], {3: 6},
+                       (1,2), [3,4], {5: 6, 7: 8},
+                       {"xy\tab\n": (3,), 5: [[]], (): {}},
+                       range(10, -11, -1)
+                      ):
+            native = repr(simple)
+            for function in "pformat", "saferepr":
+                f = getattr(pprint, function)
+                got = f(simple)
+                verify(native == got, "expected %s got %s from pprint.%s" %
+                                      (native, got, function))
 
 test_support.run_unittest(QueryTestCase)
