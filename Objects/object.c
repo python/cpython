@@ -335,7 +335,7 @@ getattr(v, name)
 {
 	if (v->ob_type->tp_getattro != NULL) {
 		object *w, *res;
-		w = newstringobject(name);
+		w = PyString_InternFromString(name);
 		if (w == NULL)
 			return NULL;
 		res = (*v->ob_type->tp_getattro)(v, w);
@@ -375,7 +375,7 @@ setattr(v, name, w)
 	if (v->ob_type->tp_setattro != NULL) {
 		object *s;
 		int res;
-		s = newstringobject(name);
+		s = PyString_InternFromString(name);
 		if (s == NULL)
 			return -1;
 		res = (*v->ob_type->tp_setattro)(v, s, w);
