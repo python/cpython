@@ -47,7 +47,9 @@ functions that have no yet been defined, but we need to be able to
 refer to it, hence the declaration.
 
 The \code{staticforward} is required to placate various brain dead
-compilers.
+compilers.  The actual definition of the object declared using
+\code{staticforward} should use \code{statichere} instead of
+\keyword{static}.
 
 \begin{verbatim}
 typedef struct {
@@ -154,7 +156,7 @@ Python objects, one would decref them here.
 Moving on, we come to the crunch --- the type object.
 
 \begin{verbatim}
-static PyTypeObject noddy_NoddyType = {
+statichere PyTypeObject noddy_NoddyType = {
     PyObject_HEAD_INIT(NULL)
     0,                          /* ob_size */
     "Noddy",                    /* tp_name */
@@ -172,6 +174,9 @@ static PyTypeObject noddy_NoddyType = {
     0,                          /* tp_hash */
 };
 \end{verbatim}
+
+(Note the use of \code{statichere} instead of \keyword{static}, since
+we used \code{staticforward} in the declaration.)
 
 Now if you go and look up the definition of \ctype{PyTypeObject} in
 \file{object.h} you'll see that it has many, many more fields that the
@@ -404,7 +409,7 @@ my_dealloc(PyObject *obj)
 \end{verbatim}
 
 
-\subsection{Object Representation}
+\subsection{Object Presentation}
 
 In Python, there are three ways to generate a textual representation
 of an object: the \function{repr()}\bifuncindex{repr} function (or
@@ -911,6 +916,29 @@ one.  If the iteration has reached the end, it may return \NULL{}
 without setting an exception or it may set \exception{StopIteration};
 avoiding the exception can yield slightly better performance.  If an
 actual error occurs, it should set an exception and return \NULL.
+
+
+\subsection{Cycle Collector Support
+            \label{example-cycle-support}}
+
+This example shows only enough of the implementation of an extension
+type to show how the garbage collector support needs to be added.  It
+shows the definition of the object structure, the
+\member{tp_traverse}, \member{tp_clear} and \member{tp_dealloc}
+implementations, the type structure, and a constructor --- the module
+initialization needed to export the constructor to Python is not shown
+as there are no special considerations there for the collector.  To
+make this interesting, assume that the module exposes ways for the
+\member{container} field of the object to be modified.  Note that
+since no checks are made on the type of the object used to initialize
+\member{container}, we have to assume that it may be a container.
+
+\verbatiminput{cycle-gc.c}
+
+Full details on the APIs related to the cycle detector are in
+\ulink{Supporting Cyclic Garbarge
+Collection}{../api/supporting-cycle-detection.html} in the
+\citetitle[../api/api.html]{Python/C API Reference Manual}.
 
 
 \subsection{More Suggestions}
