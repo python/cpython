@@ -137,8 +137,8 @@ sub get_my_icon($) {
         $name = 'blank';
     }
     my $iconserver = ($ICONSERVER eq '.') ? '' : "$ICONSERVER/";
-    return "<img src=\"$iconserver$name.$IMAGE_TYPE\"\n  border=\"0\""
-           . " height=\"32\"\n  alt=\"$text\" width=\"32\">";
+    return "<img src='$iconserver$name.$IMAGE_TYPE'\n  border='0'"
+           . " height='32'  alt='$text' width='32'>";
 }
 
 sub use_my_icon($) {
@@ -613,37 +613,41 @@ sub make_head_and_body($$) {
     if ($MY_PARTIAL_HEADER eq '') {
         $STYLESHEET = $FILE.".css" unless $STYLESHEET;
         $MY_PARTIAL_HEADER = join('',
-            ($CHARSET && $HTML_VERSION ge "2.1"
-             ? ('<meta http-equiv="Content-Type" content="text/html; '
-                . "charset=$CHARSET\">\n")
-             : ''),
+            ($DOCTYPE ? $DTDcomment : ''),
+            "<html>\n<head>\n",
             ($BASE ? "<base href=\"$BASE\">\n" : ''),
             "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\" type='text/css'>\n",
             "<link rel=\"first\" href=\"$FILE.html\">\n",
+            ($FAVORITES_ICON
+             ? ('<link rel="SHORTCUT ICON" href="' . "$FAVORITES_ICON\">\n")
+             : ''),
             ($HAVE_TABLE_OF_CONTENTS
              ? ('<link rel="contents" href="contents.html" title="Contents">'
-                . "\n")
+                . ($HAVE_GENERAL_INDEX ? "\n" : ''))
              : ''),
             ($HAVE_GENERAL_INDEX
-             ? '<link rel="index" href="genindex.html" title="Index">'
+             ? '<link rel="index" href="genindex.html" title="Index">' . "\n"
              : ''),
             # disable for now -- Mozilla doesn't do well with multiple indexes
             # ($HAVE_MODULE_INDEX
             #  ? '<link rel="index" href="modindex.html" title="Module Index">'
             #    . "\n"
             #  : ''),
-            $more_links_mark);
+            $more_links_mark,
+            ($CHARSET && $HTML_VERSION ge "2.1"
+             ? ('<meta http-equiv="Content-Type" content="text/html; '
+                . "charset=$CHARSET\">\n")
+             : ''),
+            ($AESOP_META_TYPE
+             ? "<meta name='aesop' content='$AESOP_META_TYPE'>\n" : ''));
     }
 
     if (!$charset && $CHARSET) { $charset = $CHARSET; $charset =~ s/_/\-/go; }
 
-    join('', ($DOCTYPE ? $DTDcomment : '' )
-         , "<html>\n<head>\n<title>", $title, "</title>\n"
-         , &meta_information($title)
-         , $MY_PARTIAL_HEADER
-         , ($AESOP_META_TYPE eq '' ? ''
-            : "\n<meta name='aesop' content='$AESOP_META_TYPE'>")
-         , "\n</head>\n<body$body>");
+    join('',
+         $MY_PARTIAL_HEADER,
+         &meta_information($title),
+         "<title>", $title, "</title>\n</head>\n<body$body>");
 }
 
 1;	# This must be the last line
