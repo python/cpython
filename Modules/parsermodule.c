@@ -26,6 +26,9 @@
 					/* ISTERMINAL() / ISNONTERMINAL() */
 #include "compile.h"			/* PyNode_Compile()		  */
 
+#ifdef macintosh
+char *strdup Py_PROTO((char *));
+#endif
 
 /*  String constants used to initialize module attributes.
  *
