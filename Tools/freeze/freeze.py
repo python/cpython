@@ -335,10 +335,7 @@ def main():
     if python_entry_is_main:
         mf.run_script(scriptfile)
     else:
-        if modargs:
-            mf.import_hook(scriptfile)
-        else:
-            mf.load_file(scriptfile)
+        mf.load_file(scriptfile)
 
     if debug > 0:
         mf.report()
