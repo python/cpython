@@ -12,6 +12,7 @@ from types import *
 from copy import copy
 from distutils.errors import *
 from distutils.spawn import spawn
+from distutils.util import move_file
 
 
 class CCompiler:
@@ -61,6 +62,10 @@ class CCompiler:
 
         self.verbose = verbose
         self.dry_run = dry_run
+
+        # 'output_dir': a common output directory for object, library,
+        # shared object, and shared library files
+        self.output_dir = None
 
         # 'macros': a list of macro definitions (or undefinitions).  A
         # macro definition is a 2-tuple (name, value), where the value is
@@ -244,6 +249,7 @@ class CCompiler:
 
     def compile (self,
                  sources,
+                 output_dir=None,
                  macros=None,
                  includes=None):
         """Compile one or more C/C++ source files.  'sources' must be
@@ -270,6 +276,7 @@ class CCompiler:
     def link_static_lib (self,
                          objects,
                          output_libname,
+                         output_dir=None,
                          libraries=None,
                          library_dirs=None):
         """Link a bunch of stuff together to create a static library
@@ -317,6 +324,7 @@ class CCompiler:
     def link_shared_lib (self,
                          objects,
                          output_libname,
+                         output_dir=None,
                          libraries=None,
                          library_dirs=None,
                          build_info=None):
@@ -330,25 +338,37 @@ class CCompiler:
     def link_shared_object (self,
                             objects,
                             output_filename,
+                            output_dir=None,
                             libraries=None,
                             library_dirs=None,
                             build_info=None):
         """Link a bunch of stuff together to create a shared object
-           file.  Much like 'link_shared_lib()', except the output
-           filename is explicitly supplied as 'output_filename'."""
+           file.  Much like 'link_shared_lib()', except the output filename
+           is explicitly supplied as 'output_filename'.  If 'output_dir' is
+           supplied, 'output_filename' is relative to it
+           (i.e. 'output_filename' can provide directoriy components if
+           needed)."""
         pass
 
 
     # -- Filename mangling methods -------------------------------------
 
-    def object_filenames (self, source_filenames):
+    # General principle for the filename-mangling methods: by default,
+    # don't include a directory component, no matter what the caller
+    # supplies.  Eg. for UnixCCompiler, a source file of "foo/bar/baz.c"
+    # becomes "baz.o" or "baz.so", etc.  (That way, it's easiest for the
+    # caller to decide where it wants to put/find the output file.)  The
+    # 'output_dir' parameter overrides this, of course -- the directory
+    # component of the input filenames is replaced by 'output_dir'.
+
+    def object_filenames (self, source_filenames, output_dir=None):
         """Return the list of object filenames corresponding to each
            specified source filename."""
         pass
 
     def shared_object_filename (self, source_filename):
         """Return the shared object filename corresponding to a
-           specified source filename."""
+           specified source filename (assuming the same directory)."""
         pass    
 
     def library_filename (self, libname):
@@ -362,7 +382,7 @@ class CCompiler:
            specified library name."""
         pass
 
-    
+    # XXX ugh -- these should go!
     def object_name (self, inname):
         """Given a name with no extension, return the name + object extension"""
         return inname + self._obj_ext
@@ -373,8 +393,15 @@ class CCompiler:
 
     # -- Utility methods -----------------------------------------------
 
+    def announce (self, msg, level=1):
+        if self.verbose >= level:
+            print msg
+
     def spawn (self, cmd):
         spawn (cmd, verbose=self.verbose, dry_run=self.dry_run)
+
+    def move_file (self, src, dst):
+        return move_file (src, dst, verbose=self.verbose, dry_run=self.dry_run)
 
 
 # class CCompiler
@@ -393,7 +420,7 @@ def new_compiler (plat=None,
         return UnixCCompiler (verbose, dry_run)
     elif plat == 'nt':
         from msvccompiler import MSVCCompiler
-        return MSVCCompiler ( verbose, dry_run )
+        return MSVCCompiler (verbose, dry_run)
     else:
         raise DistutilsPlatformError, \
               "don't know how to compile C/C++ code on platform %s" % plat
