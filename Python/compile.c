@@ -570,7 +570,13 @@ try_set_conversion(unsigned char *codestr, PyObject *consts)
 		return 0;
 	}
 
-	/* Append new constant onto consts list.*/
+	/* Append new constant onto consts list or replace existing constant
+	   if there are no other references to it.*/
+	if (constant->ob_refcnt == 1) {
+		PyList_SET_ITEM(consts, arg, newconst);
+		Py_DECREF(constant);
+		return 1;
+	}
 	len_consts = PyList_GET_SIZE(consts);
 	if (PyList_Append(consts, newconst)) {
 		Py_DECREF(newconst);
