@@ -6,8 +6,13 @@
 # This is a bit of a mess.  The main documents are:
 #   tut -- Tutorial (file tut.tex)
 #   lib -- Library Reference (file lib.tex, inputs lib*.tex)
-#   ref -- Language Reference (file ref.tex, inputs ref*.tex)
 #   ext -- Extending and Embedding (file ext.tex)
+#
+# The Reference Manual is now maintained as a FrameMaker document.
+# See the subdirectory ref; PostScript is included as ref/ref.ps.
+# (In the future, the Tutorial will also be converted to FrameMaker;
+# the other documents will be maintained in a text format such
+# as LaTeX or perhaps TIM.)
 #
 # The main target "make all" creates DVI and PostScript for these
 # four.  You can also do "make lib" (etc.) to process individual
@@ -74,20 +79,19 @@ DOCDESTDIR=	$LIBDEST/doc
 # Main target
 all:	all-ps
 
-all-dvi: tut.dvi lib.dvi ref.dvi ext.dvi
-all-ps:	tut.ps lib.ps ref.ps ext.ps
+all-dvi: tut.dvi lib.dvi ext.dvi
+all-ps:	tut.ps lib.ps ext.ps
 
 # Individual document fake targets
 tut:	tut.ps
 lib:	lib.ps
-ref:	ref.ps
 ext:	ext.ps
 
 # CWI Quarterly document fake target
 qua:	qua.ps
 
 # Dependencies
-tut.dvi lib.dvi ref.dvi ext.dvi: myformat.sty fix_hack
+tut.dvi lib.dvi ext.dvi: myformat.sty fix_hack
 
 # Tutorial document
 tut.dvi: tut.tex 
@@ -96,18 +100,6 @@ tut.dvi: tut.tex
 
 tut.ps:	tut.dvi
 	$(DVIPS) tut >tut.ps
-
-# Reference document
-ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
-						     ref7.tex ref8.tex 
-	touch ref.ind
-	$(LATEX) ref
-	./fix_hack ref.idx
-	$(MAKEINDEX) ref
-	$(LATEX) ref
-
-ref.ps:	ref.dvi
-	$(DVIPS) ref >ref.ps
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib.tex \
@@ -215,11 +207,6 @@ l2htut: tut.dvi
 	$(L2H) $(L2HARGS) tut.tex
 	@rm -rf python-tut
 	mv tut python-tut
-
-l2href: ref.dvi
-	$(L2H) $(L2HARGS) ref.tex
-	@rm -rf python-ref
-	mv ref python-ref
 
 l2hext: ext.dvi
 	$(L2H) $(L2HARGS) ext.tex
