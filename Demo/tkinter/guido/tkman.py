@@ -1,3 +1,4 @@
+#! /home/guido/bin.sgi/python
 #! /usr/local/bin/python
 
 # Tk man page browser -- currently only shows the Tcl/Tk man pages
@@ -14,6 +15,8 @@ from ManPage import ManPage
 
 MANNDIR = '/usr/local/man/mann'
 MAN3DIR = '/usr/local/man/man3'
+MANNDIR = '/depot/sundry/man/mann'
+MAN3DIR = '/depot/sundry/man/man3'
 
 def listmanpages(mandir):
 	files = os.listdir(mandir)
@@ -61,7 +64,7 @@ class SelectionBox:
 		self.listbox = Listbox(self.rightsubframe,
 				       {'name': 'listbox',
 					'relief': 'sunken', 'bd': 2,
-					'geometry': '20x5',
+					'width': 20, 'height': 5,
 					Pack: {'expand': 1, 'fill': 'both'}})
 		self.l1 = Button(self.leftsubframe,
 				{'name': 'l1',
@@ -102,6 +105,7 @@ class SelectionBox:
 					 {'name': 'text',
 					  'relief': 'sunken', 'bd': 2,
 					  'wrap': 'none', 'width': 72,
+					  'selectbackground': 'pink',
 					  Pack: {'expand': 1, 'fill': 'both'}})
 
 		self.entry.bind('<Return>', self.entry_cb)
@@ -158,6 +162,8 @@ class SelectionBox:
 		key = self.entry.get()
 		ok = filter(lambda name, key=key, n=len(key): name[:n]==key,
 			 self.choices)
+		if not ok:
+			self.frame.bell()
 		self.listbox.delete(0, AtEnd())
 		exactmatch = 0
 		for item in ok:
@@ -165,7 +171,8 @@ class SelectionBox:
 			self.listbox.insert(AtEnd(), item)
 		if exactmatch:
 			return key
-		elif self.listbox.size() == 1:
+		n = self.listbox.size()
+		if n == 1:
 			return self.listbox.get(0)
 		# Else return None, meaning not a unique selection
 
@@ -185,6 +192,7 @@ class SelectionBox:
 
 	def search_string(self, search):
 		if not search:
+			self.frame.bell()
 			print 'Empty search string'
 			return
 		if self.frame.tk.getvar('casesense') != '1':
@@ -197,6 +205,7 @@ class SelectionBox:
 			else:
 				prog = regex.compile(search)
 		except regex.error, msg:
+			self.frame.bell()
 			print 'Regex error:', msg
 			return
 		here = self.text.index(AtInsert())
@@ -204,6 +213,7 @@ class SelectionBox:
 		end = self.text.index(AtEnd())
 		endlineno = string.atoi(end[:string.find(end, '.')])
 		wraplineno = lineno
+		found = 0
 		while 1:
 			lineno = lineno + 1
 			if lineno > endlineno:
@@ -216,6 +226,7 @@ class SelectionBox:
 					     '%d.0 lineend' % lineno)
 			i = prog.search(line)
 			if i >= 0:
+				found = 1
 				n = max(1, len(prog.group(0)))
 				try:
 					self.text.tag_remove('sel',
@@ -230,6 +241,8 @@ class SelectionBox:
 						   '%d.%d' % (lineno, i))
 				self.text.yview_pickplace(AtInsert())
 				break
+		if not found:
+			self.frame.bell()
 
 def main():
 	root = Tk()
