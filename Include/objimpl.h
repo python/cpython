@@ -97,7 +97,7 @@ DL_IMPORT(void *) _PyObject_DebugRealloc(void *p, size_t nbytes);
 DL_IMPORT(void) _PyObject_DebugFree(void *p);
 DL_IMPORT(void) _PyObject_DebugDumpAddress(const void *p);
 DL_IMPORT(void) _PyObject_DebugCheckAddress(const void *p);
-DL_IMPORT(void) _PyObject_DebugDumpStats(void);
+DL_IMPORT(void) _PyObject_DebugMallocStats(void);
 #define PyObject_MALLOC		_PyObject_DebugMalloc
 #define PyObject_Malloc		_PyObject_DebugMalloc
 #define PyObject_REALLOC	_PyObject_DebugRealloc

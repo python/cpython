@@ -448,6 +448,11 @@ new_arena(void)
 	if (bp == NULL)
 		return NULL;
 
+#ifdef PYMALLOC_DEBUG
+	if (Py_GETENV("PYTHONMALLOCSTATS"))
+		_PyObject_DebugMallocStats();
+#endif
+
 	/* arenabase <- first pool-aligned address in the arena
 	   nfreepools <- number of whole pools that fit after alignment */
 	arenabase = bp;
@@ -1216,7 +1221,7 @@ printone(const char* msg, ulong value)
 
 /* Print summary info to stderr about the state of pymalloc's structures. */
 void
-_PyObject_DebugDumpStats(void)
+_PyObject_DebugMallocStats(void)
 {
 	uint i;
 	const uint numclasses = SMALL_REQUEST_THRESHOLD >> ALIGNMENT_SHIFT;
@@ -1245,8 +1250,6 @@ _PyObject_DebugDumpStats(void)
 
 	fprintf(stderr, "Small block threshold = %d, in %u size classes.\n",
 		SMALL_REQUEST_THRESHOLD, numclasses);
-	fprintf(stderr, "pymalloc malloc+realloc called %lu times.\n",
-		serialno);
 
 	for (i = 0; i < numclasses; ++i)
 		numpools[i] = numblocks[i] = numfreeblocks[i] = 0;
@@ -1312,6 +1315,7 @@ _PyObject_DebugDumpStats(void)
 		quantization += p * ((POOL_SIZE - POOL_OVERHEAD) % size);
 	}
 	fputc('\n', stderr);
+	(void)printone("# times object malloc called", serialno);
 
 	PyOS_snprintf(buf, sizeof(buf),
 		"%u arenas * %d bytes/arena", narenas, ARENA_SIZE);
@@ -1320,12 +1324,12 @@ _PyObject_DebugDumpStats(void)
 	fputc('\n', stderr);
 
 	total = printone("# bytes in allocated blocks", allocated_bytes);
+	total += printone("# bytes in available blocks", available_bytes);
 
 	PyOS_snprintf(buf, sizeof(buf),
 		"%u unused pools * %d bytes", numfreepools, POOL_SIZE);
 	total += printone(buf, (ulong)numfreepools * POOL_SIZE);
 
-	total += printone("# bytes in available blocks", available_bytes);
 	total += printone("# bytes lost to pool headers", pool_header_bytes);
 	total += printone("# bytes lost to quantization", quantization);
 	total += printone("# bytes lost to arena alignment", arena_alignment);

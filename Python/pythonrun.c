@@ -276,6 +276,11 @@ Py_Finalize(void)
 
 	PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
 
+#ifdef PYMALLOC_DEBUG
+	if (Py_GETENV("PYTHONMALLOCSTATS"))
+		_PyObject_DebugMallocStats();
+#endif
+
 	call_ll_exitfuncs();
 
 #ifdef Py_TRACE_REFS
