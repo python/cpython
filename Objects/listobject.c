@@ -159,7 +159,7 @@ ins1(PyListObject *self, int where, PyObject *v)
 			"cannot add more objects to list");
 		return -1;
 	}
-	
+
 	if (list_resize(self, n+1) == -1)
 		return -1;
 
@@ -238,8 +238,8 @@ list_dealloc(PyListObject *op)
 	}
 	if (num_free_lists < MAXFREELISTS && PyList_CheckExact(op))
 		free_lists[num_free_lists++] = op;
-	else 
-		op->ob_type->tp_free((PyObject *)op);		
+	else
+		op->ob_type->tp_free((PyObject *)op);
 	Py_TRASHCAN_SAFE_END(op)
 }
 
@@ -545,7 +545,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 		memcpy(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
 		p += ihigh - ilow;
 		if (d < 0) {
-			memmove(&item[ihigh+d], &item[ihigh], 
+			memmove(&item[ihigh+d], &item[ihigh],
 				(a->ob_size - ihigh)*sizeof(PyObject *));
 			list_resize(a, a->ob_size + d);
 			item = a->ob_item;
@@ -617,7 +617,7 @@ list_inplace_repeat(PyListObject *self, int n)
 		return (PyObject *)self;
 	}
 
-	if (list_resize(self, size*n) == -1) 
+	if (list_resize(self, size*n) == -1)
 		return NULL;
 
 	p = size;
@@ -682,8 +682,8 @@ listextend(PyListObject *self, PyObject *b)
 	PyObject *(*iternext)(PyObject *);
 
 	/* Special cases:
-	   1) lists and tuples which can use PySequence_Fast ops 
-	   2) extending self to self requires making a copy first 
+	   1) lists and tuples which can use PySequence_Fast ops
+	   2) extending self to self requires making a copy first
 	*/
 	if (PyList_CheckExact(b) || PyTuple_CheckExact(b) || (PyObject *)self == b) {
 		PyObject **src, **dest;
@@ -1721,9 +1721,9 @@ merge_compute_minrun(int n)
 
 /* Special wrapper to support stable sorting using the decorate-sort-undecorate
    pattern.  Holds a key which is used for comparisions and the original record
-   which is returned during the undecorate phase.  By exposing only the key 
-   during comparisons, the underlying sort stability characteristics are left 
-   unchanged.  Also, if a custom comparison function is used, it will only see 
+   which is returned during the undecorate phase.  By exposing only the key
+   during comparisons, the underlying sort stability characteristics are left
+   unchanged.  Also, if a custom comparison function is used, it will only see
    the key instead of a full record. */
 
 typedef struct {
@@ -1738,7 +1738,7 @@ static PyObject *
 sortwrapper_richcompare(sortwrapperobject *a, sortwrapperobject *b, int op)
 {
 	if (!PyObject_TypeCheck(b, &sortwrapper_type)) {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 			"expected a sortwrapperobject");
 		return NULL;
 	}
@@ -1777,7 +1777,7 @@ static PyTypeObject sortwrapper_type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | 
+	Py_TPFLAGS_DEFAULT |
 	Py_TPFLAGS_HAVE_RICHCOMPARE, 		/* tp_flags */
 	sortwrapper_doc,			/* tp_doc */
 	0,					/* tp_traverse */
@@ -1792,7 +1792,7 @@ static PyObject *
 build_sortwrapper(PyObject *key, PyObject *value)
 {
 	sortwrapperobject *so;
-	
+
 	so = PyObject_New(sortwrapperobject, &sortwrapper_type);
 	if (so == NULL)
 		return NULL;
@@ -1808,7 +1808,7 @@ sortwrapper_getvalue(PyObject *so)
 	PyObject *value;
 
 	if (!PyObject_TypeCheck(so, &sortwrapper_type)) {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 			"expected a sortwrapperobject");
 		return NULL;
 	}
@@ -1842,7 +1842,7 @@ cmpwrapper_call(cmpwrapperobject *co, PyObject *args, PyObject *kwds)
 		return NULL;
 	if (!PyObject_TypeCheck(x, &sortwrapper_type) ||
 	    !PyObject_TypeCheck(y, &sortwrapper_type)) {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 			"expected a sortwrapperobject");
 		return NULL;
 	}
@@ -1883,7 +1883,7 @@ static PyObject *
 build_cmpwrapper(PyObject *cmpfunc)
 {
 	cmpwrapperobject *co;
-	
+
 	co = PyObject_New(cmpwrapperobject, &cmpwrapper_type);
 	if (co == NULL)
 		return NULL;
@@ -1948,7 +1948,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	if (keyfunc != NULL) {
 		for (i=0 ; i < saved_ob_size ; i++) {
 			value = saved_ob_item[i];
-			key = PyObject_CallFunctionObjArgs(keyfunc, value, 
+			key = PyObject_CallFunctionObjArgs(keyfunc, value,
 							   NULL);
 			if (key == NULL) {
 				for (i=i-1 ; i>=0 ; i--) {
@@ -1957,7 +1957,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 					saved_ob_item[i] = value;
 					Py_DECREF(kvpair);
 				}
-				if (self->ob_item != empty_ob_item 
+				if (self->ob_item != empty_ob_item
 				    || self->ob_size) {
 					/* If the list changed *as well* we
 					   have two errors.  We let the first
@@ -1968,7 +1968,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 						self, 0, self->ob_size,
 						(PyObject *)NULL);
 				}
-				
+
 				goto dsu_fail;
 			}
 			kvpair = build_sortwrapper(key, value);
@@ -2502,7 +2502,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 					lim = self->ob_size - cur - 1;
 				}
 
-				memmove(self->ob_item + cur - i, 
+				memmove(self->ob_item + cur - i,
 					self->ob_item + cur + 1,
 					lim * sizeof(PyObject *));
 			}
@@ -2534,7 +2534,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 						   PyList_GET_SIZE(value));
 			}
 			else {
-				seq = PySequence_Fast(value, 
+				seq = PySequence_Fast(value,
 					"must assign iterable to extended slice");
 				if (!seq)
 					return -1;
