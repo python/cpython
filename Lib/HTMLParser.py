@@ -148,8 +148,6 @@ class HTMLParser(markupbase.ParserBase):
                     k = self.parse_starttag(i)
                 elif startswith("</", i):
                     k = self.parse_endtag(i)
-                    if k >= 0:
-                        self.clear_cdata_mode()
                 elif startswith("<!--", i):
                     k = self.parse_comment(i)
                 elif startswith("<?", i):
@@ -329,6 +327,7 @@ class HTMLParser(markupbase.ParserBase):
             self.error("bad end tag: %s" % `rawdata[i:j]`)
         tag = match.group(1)
         self.handle_endtag(tag.lower())
+        self.clear_cdata_mode()
         return j
 
     # Overridable -- finish processing of start+end tag: <tag.../>
