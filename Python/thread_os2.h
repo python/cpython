@@ -101,82 +101,113 @@ PyThread__exit_prog(int status)
 #endif /* NO_EXIT_PROG */
 
 /*
- * Lock support. It has too be implemented as semaphores.
- * I [Dag] tried to implement it with mutex but I could find a way to
- * tell whether a thread already own the lock or not.
+ * Lock support.  This is implemented with an event semaphore and critical
+ * sections to make it behave more like a posix mutex than its OS/2 
+ # counterparts.
  */
+
+typedef struct os2_lock_t {
+  int is_set;
+  HEV changed;
+} *type_os2_lock;
+
 PyThread_type_lock 
 PyThread_allocate_lock(void)
 {
-  HMTX   aLock;
   APIRET rc;
+  type_os2_lock lock = (type_os2_lock)malloc(sizeof(struct os2_lock_t));
 
   dprintf(("PyThread_allocate_lock called\n"));
   if (!initialized)
     PyThread_init_thread();
 
-  DosCreateMutexSem(NULL,  /* Sem name      */
-                    &aLock, /* the semaphore */
-                    0,     /* shared ?      */
-                    0);    /* initial state */  
+  lock->is_set = 0;
 
-  dprintf(("%ld: PyThread_allocate_lock() -> %p\n", PyThread_get_thread_ident(), aLock));
+  DosCreateEventSem(NULL, &lock->changed, 0, 0);
 
-  return (PyThread_type_lock) aLock;
+  dprintf(("%ld: PyThread_allocate_lock() -> %p\n", 
+           PyThread_get_thread_ident(), 
+           lock->changed));
+
+  return (PyThread_type_lock) lock;
 }
 
 void 
 PyThread_free_lock(PyThread_type_lock aLock)
 {
+  type_os2_lock lock = (type_os2_lock)aLock;
   dprintf(("%ld: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
-  DosCloseMutexSem((HMTX)aLock);
+  DosCloseEventSem(lock->changed);
+  free(aLock);
 }
 
 /*
  * Return 1 on success if the lock was acquired
  *
- * and 0 if the lock was not acquired. This means a 0 is returned
- * if the lock has already been acquired by this thread!
+ * and 0 if the lock was not acquired.
  */
 int 
 PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 {
-  int   success = 1;
-  ULONG rc, count;
+  int   done = 0;
+  ULONG count;
   PID   pid = 0;
   TID   tid = 0;
+  type_os2_lock lock = (type_os2_lock)aLock;
 
   dprintf(("%ld: PyThread_acquire_lock(%p, %d) called\n", PyThread_get_thread_ident(),
            aLock, waitflag));
 
-  DosQueryMutexSem((HMTX)aLock,&pid,&tid,&count);
-  if( tid == PyThread_get_thread_ident() ) { /* if we own this lock */
-    success = 0;
-  } else {
-    rc = DosRequestMutexSem((HMTX) aLock,
-                            (waitflag == 1 ? SEM_INDEFINITE_WAIT : 0));
-    
-    if( rc != 0) {
-      success = 0;                /* We failed */
+  while (!done) {
+    /* if the lock is currently set, we have to wait for the state to change */
+    if (lock->is_set) {
+      if (!waitflag)
+        return 0;
+      DosWaitEventSem(lock->changed, SEM_INDEFINITE_WAIT);
     }
+    
+    /* 
+     * enter a critical section and try to get the semaphore.  If
+     * it is still locked, we will try again.
+     */
+    if (DosEnterCritSec())
+      return 0;
+
+    if (!lock->is_set) {
+      lock->is_set = 1;
+      DosResetEventSem(lock->changed, &count);
+      done = 1;
+    }
+
+    DosExitCritSec();
   }
 
-  dprintf(("%ld: PyThread_acquire_lock(%p, %d) -> %d\n",
-           PyThread_get_thread_ident(),aLock, waitflag, success));
-
-  return success;
+  return 1;
 }
 
-void 
-PyThread_release_lock(PyThread_type_lock aLock)
+void PyThread_release_lock(PyThread_type_lock aLock)
 {
+  type_os2_lock lock = (type_os2_lock)aLock;
   dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
-  if ( DosReleaseMutexSem( (HMTX) aLock ) != 0 ) {
+  if (!lock->is_set) {
     dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n",
              PyThread_get_thread_ident(), aLock, GetLastError()));
+    return;
   }
+
+
+  if (DosEnterCritSec()) {
+    dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n",
+             PyThread_get_thread_ident(), aLock, GetLastError()));
+    return;
+  }
+  
+  lock->is_set = 0;
+  DosPostEventSem(lock->changed);
+  
+  DosExitCritSec();
 }
 
 /*
