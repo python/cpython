@@ -226,13 +226,12 @@ class TimeRE(dict):
         matching when 'abcdef' should have been the match).
 
         """
+        to_convert = sorted(to_convert, key=len, reverse=True)
         for value in to_convert:
             if value != '':
                 break
         else:
             return ''
-        to_convert = to_convert[:]
-        to_convert.sort(key=len, reverse=True)
         regex = '|'.join(re_escape(stuff) for stuff in to_convert)
         regex = '(?P<%s>%s' % (directive, regex)
         return '%s)' % regex
