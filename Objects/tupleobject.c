@@ -139,8 +139,8 @@ tupledealloc(register PyTupleObject *op)
 {
 	register int i;
 	register int len =  op->ob_size;
+	PyObject_GC_UnTrack(op);
 	Py_TRASHCAN_SAFE_BEGIN(op)
-	_PyObject_GC_UNTRACK(op);
 	if (len > 0) {
 		i = len;
 		while (--i >= 0)

@@ -67,8 +67,8 @@ frame_dealloc(PyFrameObject *f)
 	PyObject **fastlocals;
 	PyObject **p;
 
+ 	PyObject_GC_UnTrack(f);
 	Py_TRASHCAN_SAFE_BEGIN(f)
-	_PyObject_GC_UNTRACK(f);
 	/* Kill all local variables */
 	slots = f->f_nlocals + f->f_ncells + f->f_nfreevars;
 	fastlocals = f->f_localsplus;
