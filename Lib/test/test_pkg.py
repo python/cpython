@@ -56,7 +56,7 @@ def runtest(hier, code):
     root = tempfile.mkdtemp()
     mkhier(root, hier)
     savepath = sys.path[:]
-    fd, fname = tempfile.mkstemp(binary=False)
+    fd, fname = tempfile.mkstemp(text=True)
     os.write(fd, code)
     os.close(fd)
     try:
