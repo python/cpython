@@ -411,7 +411,7 @@ def _split_ascii(s, firstlen, restlen, continuation_ws, splitchars):
         # syntax; we just try to break on semi-colons, then commas, then
         # whitespace.
         for ch in splitchars:
-            if line.find(ch) >= 0:
+            if ch in line:
                 break
         else:
             # There's nothing useful to split the line on, not even spaces, so
