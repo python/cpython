@@ -732,6 +732,7 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
         }
         s += n;
 nextChar:
+	/* empty */;
     }
 
     /* Adjust length */
