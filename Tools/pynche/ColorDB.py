@@ -145,7 +145,7 @@ def get_colordb(file, filetype=X_RGB_TXT):
 
 
 _namedict = {}
-def rrggbb_to_triplet(color):
+def rrggbb_to_triplet(color, atoi=string.atoi):
     """Converts a #rrggbb color to the tuple (red, green, blue)."""
     rgbtuple = _namedict.get(color)
     if rgbtuple is None:
@@ -153,7 +153,7 @@ def rrggbb_to_triplet(color):
 	red = color[1:3]
 	green = color[3:5]
 	blue = color[5:7]
-	rgbtuple = tuple(map(lambda v: string.atoi(v, 16), (red, green, blue)))
+	rgbtuple = (atoi(red, 16), atoi(green, 16), atoi(blue, 16))
 	_namedict[color] = rgbtuple
     return rgbtuple
 
@@ -161,14 +161,9 @@ def rrggbb_to_triplet(color):
 _tripdict = {}
 def triplet_to_rrggbb(rgbtuple):
     """Converts a (red, green, blue) tuple to #rrggbb."""
-    def hexify(v):
-	hexstr = hex(v)[2:4]
-	if len(hexstr) < 2:
-	    hexstr = '0' + hexstr
-	return hexstr
     hexname = _tripdict.get(rgbtuple)
     if hexname is None:
-	hexname = '#%s%s%s' % tuple(map(hexify, rgbtuple))
+	hexname = '#%02x%02x%02x' % rgbtuple
 	_tripdict[rgbtuple] = hexname
     return hexname
 
