@@ -364,7 +364,7 @@ complex_div(v, w)
 	c_error = 0;
 	quot = c_quot(v->cval,w->cval);
 	if (c_error == 1) {
-		err_setstr(ZeroDivisionError, "float division");
+		err_setstr(ZeroDivisionError, "complex division");
 		return NULL;
 	}
 	return newcomplexobject(quot);
@@ -375,13 +375,42 @@ complex_remainder(v, w)
 	complexobject *v;
 	complexobject *w;
 {
-	err_setstr(TypeError, 
-		"remainder and divmod not implemented for complex numbers");
-	return NULL;
+        Py_complex div, mod;
+	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
+	if (c_error == 1) {
+		err_setstr(ZeroDivisionError, "complex remainder");
+		return NULL;
+	}
+	div.real = floor(div.real); /* Use the floor of the real part. */
+	div.imag = 0.0;
+	mod = c_diff(v->cval, c_prod(w->cval, div));
+
+	return newcomplexobject(mod);
 }
 
-#define complex_divmod complex_remainder
 
+static object *
+complex_divmod(v, w)
+	complexobject *v;
+	complexobject *w;
+{
+        Py_complex div, mod;
+	PyObject *d, *m, *z;
+	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
+	if (c_error == 1) {
+		err_setstr(ZeroDivisionError, "complex divmod()");
+		return NULL;
+	}
+	div.real = floor(div.real); /* Use the floor of the real part. */
+	div.imag = 0.0;
+	mod = c_diff(v->cval, c_prod(w->cval, div));
+	d = newcomplexobject(div);
+	m = newcomplexobject(mod);
+	z = mkvalue("(OO)", d, m);
+	Py_XDECREF(d);
+	Py_XDECREF(m);
+	return z;
+}
 
 static object *
 complex_pow(v, w, z)
