@@ -1300,7 +1300,8 @@ posix_rmdir(PyObject *self, PyObject *args)
 
 
 static char posix_stat__doc__[] =
-"stat(path) -> (mode,ino,dev,nlink,uid,gid,size,atime,mtime,ctime)\n\
+"stat(path) -> (st_mode, st_ino, st_dev, st_nlink, st_uid, st_gid,\n\
+                st_size, st_atime, st_mtime, st_ctime)\n\
 Perform a stat system call on the given path.";
 
 static PyObject *
@@ -3368,7 +3369,8 @@ posix_wait(PyObject *self, PyObject *args)
 
 
 static char posix_lstat__doc__[] =
-"lstat(path) -> (mode,ino,dev,nlink,uid,gid,size,atime,mtime,ctime)\n\
+"lstat(path) -> (st_mode, st_ino, st_dev, st_nlink, st_uid, st_gid,\n\
+                 st_size, st_atime, st_mtime, st_ctime)\n\
 Like stat(path), but do not follow symbolic links.";
 
 static PyObject *
