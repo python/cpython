@@ -242,8 +242,8 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 			if (restore_error)
 				PyErr_Restore(err_type, err_value, err_tb);
 			return ep;
-                }
-                else if (ep->me_hash == hash) {
+		}
+		else if (ep->me_hash == hash) {
 			if (!checked_error) {
 				checked_error = 1;
 				if (PyErr_Occurred()) {
@@ -289,7 +289,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
-        cmpfunc compare = PyString_Type.tp_compare;
+	cmpfunc compare = PyString_Type.tp_compare;
 
 	/* make sure this function doesn't have to handle non-string keys */
 	if (!PyString_Check(key)) {
@@ -312,7 +312,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 		freeslot = ep;
 	else {
 		if (ep->me_hash == hash
-                    && compare(ep->me_key, key) == 0) {
+		    && compare(ep->me_key, key) == 0) {
 			return ep;
 		}
 		freeslot = NULL;
@@ -338,7 +338,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 			 || (ep->me_hash == hash
 			     && compare(ep->me_key, key) == 0)) {
 			return ep;
-                }
+		}
 		/* Cycle through GF(2^n)-{0} */
 		incr = incr << 1;
 		if (incr > mask)
@@ -454,11 +454,19 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	return (mp->ma_lookup)(mp, key, hash)->me_value;
 }
 
+/* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
+ * dictionary if it is merely replacing the value for an existing key.
+ * This is means that it's safe to loop over a dictionary with
+ * PyDict_Next() and occasionally replace a value -- but you can't
+ * insert new keys or remove them.
+ */
 int
 PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 {
 	register dictobject *mp;
 	register long hash;
+	register int n_used;
+
 	if (!PyDict_Check(op)) {
 		PyErr_BadInternalCall();
 		return -1;
@@ -486,18 +494,30 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 		if (hash == -1)
 			return -1;
 	}
-	/* If fill >= 2/3 size, adjust size.  Normally, this doubles the
-	 * size, but it's also possible for the dict to shrink (if ma_fill is
-	 * much larger than ma_used, meaning a lot of dict keys have been
-	 * deleted).
-	 * CAUTION: this resize logic must match the logic in PyDict_Next.
-	 */
-	if (mp->ma_fill*3 >= mp->ma_size*2 &&
-	    dictresize(mp, mp->ma_used*2) != 0)
-		return -1;
+	if (mp->ma_fill >= mp->ma_size) {
+		/* No room for a new key.
+		 * This only happens when the dict is empty.
+		 * Let dictresize() create a minimal dict.
+		 */
+		assert(mp->ma_used == 0);
+		if (dictresize(mp, 0) != 0)
+			return -1;
+		assert(mp->ma_fill < mp->ma_size);
+	}
+	n_used = mp->ma_used;
 	Py_INCREF(value);
 	Py_INCREF(key);
 	insertdict(mp, key, hash, value);
+	/* If we added a key, we can safely resize.  Otherwise skip this!
+	 * If fill >= 2/3 size, adjust size.  Normally, this doubles the
+	 * size, but it's also possible for the dict to shrink (if ma_fill is
+	 * much larger than ma_used, meaning a lot of dict keys have been
+	 * deleted).
+	 */
+	if (mp->ma_used > n_used && mp->ma_fill*3 >= mp->ma_size*2) {
+		if (dictresize(mp, mp->ma_used*2) != 0)
+			return -1;
+	}
 	return 0;
 }
 
@@ -580,23 +600,6 @@ PyDict_Next(PyObject *op, int *ppos, PyObject **pkey, PyObject **pvalue)
 	i = *ppos;
 	if (i < 0)
 		return 0;
-
-	/* A hack to support loops that merely change values.
-	 * The problem:  PyDict_SetItem() can either grow  or shrink the dict
-	 * even when passed a key that's already in the dict.  This was a
-	 * repeated source of subtle bugs, bad enough to justify a hack here.
-	 * Approach:  If this is the first time PyDict_Next() is being called
-	 * (i==0), first figure out whether PyDict_SetItem() *will* change the
-	 * size, and if so get it changed before we start passing out internal
-	 * indices.
-	 */
-	if (i == 0) {
-		/* This must be a clone of PyDict_SetItem's resize logic. */
-		if (mp->ma_fill*3 >= mp->ma_size*2 &&
-		    dictresize(mp, mp->ma_used*2) != 0)
-			return -1;
-	}
-
 	while (i < mp->ma_size && mp->ma_table[i].me_value == NULL)
 		i++;
 	*ppos = i+1;
@@ -757,17 +760,27 @@ static PyObject *
 dict_keys(register dictobject *mp, PyObject *args)
 {
 	register PyObject *v;
-	register int i, j;
+	register int i, j, n;
+
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	v = PyList_New(mp->ma_used);
+  again:
+	n = mp->ma_used;
+	v = PyList_New(n);
 	if (v == NULL)
 		return NULL;
+	if (n != mp->ma_used) {
+		/* Durnit.  The allocations caused the dict to resize.
+		 * Just start over, this shouldn't normally happen.
+		 */
+		Py_DECREF(v);
+		goto again;
+	}
 	for (i = 0, j = 0; i < mp->ma_size; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
 			PyObject *key = mp->ma_table[i].me_key;
 			Py_INCREF(key);
-			PyList_SetItem(v, j, key);
+			PyList_SET_ITEM(v, j, key);
 			j++;
 		}
 	}
@@ -778,17 +791,27 @@ static PyObject *
 dict_values(register dictobject *mp, PyObject *args)
 {
 	register PyObject *v;
-	register int i, j;
+	register int i, j, n;
+
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	v = PyList_New(mp->ma_used);
+  again:
+	n = mp->ma_used;
+	v = PyList_New(n);
 	if (v == NULL)
 		return NULL;
+	if (n != mp->ma_used) {
+		/* Durnit.  The allocations caused the dict to resize.
+		 * Just start over, this shouldn't normally happen.
+		 */
+		Py_DECREF(v);
+		goto again;
+	}
 	for (i = 0, j = 0; i < mp->ma_size; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
 			PyObject *value = mp->ma_table[i].me_value;
 			Py_INCREF(value);
-			PyList_SetItem(v, j, value);
+			PyList_SET_ITEM(v, j, value);
 			j++;
 		}
 	}
@@ -799,29 +822,49 @@ static PyObject *
 dict_items(register dictobject *mp, PyObject *args)
 {
 	register PyObject *v;
-	register int i, j;
+	register int i, j, n;
+	PyObject *item, *key, *value;
+
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	v = PyList_New(mp->ma_used);
+	/* Preallocate the list of tuples, to avoid allocations during
+	 * the loop over the items, which could trigger GC, which
+	 * could resize the dict. :-(
+	 */
+  again:
+	n = mp->ma_used;
+	v = PyList_New(n);
 	if (v == NULL)
 		return NULL;
+	for (i = 0; i < n; i++) {
+		item = PyTuple_New(2);
+		if (item == NULL) {
+			Py_DECREF(v);
+			return NULL;
+		}
+		PyList_SET_ITEM(v, i, item);
+	}
+	if (n != mp->ma_used) {
+		/* Durnit.  The allocations caused the dict to resize.
+		 * Just start over, this shouldn't normally happen.
+		 */
+		Py_DECREF(v);
+		goto again;
+	}
+	/* Nothing we do below makes any function calls. */
 	for (i = 0, j = 0; i < mp->ma_size; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
-			PyObject *key = mp->ma_table[i].me_key;
-			PyObject *value = mp->ma_table[i].me_value;
-			PyObject *item = PyTuple_New(2);
-			if (item == NULL) {
-				Py_DECREF(v);
-				return NULL;
-			}
+			key = mp->ma_table[i].me_key;
+			value = mp->ma_table[i].me_value;
+			item = PyList_GET_ITEM(v, j);
 			Py_INCREF(key);
-			PyTuple_SetItem(item, 0, key);
+			PyTuple_SET_ITEM(item, 0, key);
 			Py_INCREF(value);
-			PyTuple_SetItem(item, 1, value);
-			PyList_SetItem(v, j, item);
+			PyTuple_SET_ITEM(item, 1, value);
 			j++;
 		}
 	}
+	assert(j == n);
 	return v;
 }
 
@@ -830,7 +873,7 @@ dict_update(register dictobject *mp, PyObject *args)
 {
 	register int i;
 	dictobject *other;
-        dictentry *entry;
+	dictentry *entry;
 	if (!PyArg_Parse(args, "O!", &PyDict_Type, &other))
 		return NULL;
 	if (other == mp || other->ma_used == 0)
@@ -870,7 +913,7 @@ PyDict_Copy(PyObject *o)
 	register dictobject *mp;
 	register int i;
 	dictobject *copy;
-        dictentry *entry;
+	dictentry *entry;
 
 	if (o == NULL || !PyDict_Check(o)) {
 		PyErr_BadInternalCall();
@@ -1117,6 +1160,15 @@ dict_popitem(dictobject *mp, PyObject *args)
 				"popitem(): dictionary is empty");
 		return NULL;
 	}
+	/* Allocate the result tuple first.  Believe it or not,
+	 * this allocation could trigger a garbage collection which
+	 * could resize the dict, which would invalidate the pointer
+	 * (ep) into the dict calculated below.
+	 * So we have to do this first.
+	 */
+	res = PyTuple_New(2);
+	if (res == NULL)
+		return NULL;
 	/* Set ep to "the first" dict entry with a value.  We abuse the hash
 	 * field of slot 0 to hold a search finger:
 	 * If slot 0 has a value, use slot 0.
@@ -1141,17 +1193,14 @@ dict_popitem(dictobject *mp, PyObject *args)
 				i = 1;
 		}
 	}
-	res = PyTuple_New(2);
-	if (res != NULL) {
-		PyTuple_SET_ITEM(res, 0, ep->me_key);
-		PyTuple_SET_ITEM(res, 1, ep->me_value);
-		Py_INCREF(dummy);
-		ep->me_key = dummy;
-		ep->me_value = NULL;
-		mp->ma_used--;
-		assert(mp->ma_table[0].me_value == NULL);
-		mp->ma_table[0].me_hash = i + 1;  /* next place to start */
-	}
+	PyTuple_SET_ITEM(res, 0, ep->me_key);
+	PyTuple_SET_ITEM(res, 1, ep->me_value);
+	Py_INCREF(dummy);
+	ep->me_key = dummy;
+	ep->me_value = NULL;
+	mp->ma_used--;
+	assert(mp->ma_table[0].me_value == NULL);
+	mp->ma_table[0].me_hash = i + 1;  /* next place to start */
 	return res;
 }
 
