@@ -36,9 +36,9 @@ static Py_complex c_pi2 = {M_PI/2., 0.};
 #endif
 
 /* forward declarations */
-staticforward Py_complex c_log();
-staticforward Py_complex c_prodi();
-staticforward Py_complex c_sqrt();
+staticforward Py_complex c_log(Py_Complex);
+staticforward Py_complex c_prodi(Py_Complex);
+staticforward Py_complex c_sqrt(Py_Complex);
 
 
 static Py_complex c_acos(Py_complex x)
