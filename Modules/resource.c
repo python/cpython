@@ -142,7 +142,8 @@ resource_setrlimit(PyObject *self, PyObject *args)
 	int resource;
 	PyObject *curobj, *maxobj;
 
-	if (!PyArg_ParseTuple(args, "i(OO):setrlimit", &resource, &curobj, &maxobj))
+	if (!PyArg_ParseTuple(args, "i(OO):setrlimit", 
+			      &resource, &curobj, &maxobj))
 		return NULL;
 
 	if (resource < 0 || resource >= RLIM_NLIMITS) {
@@ -153,13 +154,21 @@ resource_setrlimit(PyObject *self, PyObject *args)
 
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 	rl.rlim_cur = PyInt_AsLong(curobj);
+	if (rl.rlim_cur == -1 && PyErr_Occurred())
+	    return NULL;
 	rl.rlim_max = PyInt_AsLong(maxobj);
+	if (rl.rlim_max == -1 && PyErr_Occurred())
+	    return NULL;
 #else
 	/* The limits are probably bigger than a long */
 	rl.rlim_cur = PyLong_Check(curobj) ?
 		PyLong_AsLongLong(curobj) : PyInt_AsLong(curobj);
+	if (rl.rlim_cur == -1 && PyErr_Occurred())
+	    return NULL;
 	rl.rlim_max = PyLong_Check(maxobj) ?
 		PyLong_AsLongLong(maxobj) : PyInt_AsLong(maxobj);
+	if (rl.rlim_max == -1 && PyErr_Occurred())
+	    return NULL;
 #endif
 
 	rl.rlim_cur = rl.rlim_cur & RLIM_INFINITY;
