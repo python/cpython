@@ -35,7 +35,8 @@ OBJS=		abstract.o bufferobject.o \
 		longobject.o dictobject.o methodobject.o \
 		moduleobject.o object.o rangeobject.o \
 		sliceobject.o stringobject.o \
-		tupleobject.o typeobject.o
+		tupleobject.o typeobject.o \
+		unicodeobject.o unicodectype.o
 
 SRCS=		abstract.c bufferobject.c \
 		classobject.c cobject.c complexobject.c \
@@ -44,7 +45,8 @@ SRCS=		abstract.c bufferobject.c \
 		longobject.c dictobject.c methodobject.c \
 		moduleobject.c object.c rangeobject.c \
 		sliceobject.c stringobject.c \
-		tupleobject.c typeobject.c
+		tupleobject.c typeobject.c \
+		unicodeobject.c unicodectype.c
 
 LIBRARY=	../libpython$(VERSION).a
 
@@ -94,6 +96,8 @@ sliceobject.o: sliceobject.c
 stringobject.o: stringobject.c
 tupleobject.o: tupleobject.c
 typeobject.o: typeobject.c
+unicodeobject.o: unicodeobject.c
+unicodectype.o: unicodectype.c
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
