@@ -74,9 +74,9 @@ specified, this module first looks in the environment variable
 
 \var{mode} is one of \code{'r'} for read-only (record) access,
 \code{'w'} for write-only (playback) access and \code{'rw'} for both.
-Since many soundcards only allow one process to have the recorder or
-player open at a time it is a good idea to open the device only for the
-activity needed.  Further, some soundcards are half-duplex: they can be
+Since many sound cards only allow one process to have the recorder or
+player open at a time, it is a good idea to open the device only for the
+activity needed.  Further, some sound cards are half-duplex: they can be
 opened for reading or writing, but not both at once.
 
 Note the unusual calling syntax: the \emph{first} argument is optional,
@@ -109,7 +109,7 @@ Alternately, you can use the \method{setparameters()} method to set all
 three audio parameters at once.  This is more convenient, but may not be
 as flexible in all cases.
 
-The audio device objects are returned by \function{open()} define the
+The audio device objects returned by \function{open()} define the
 following methods:
 
 \begin{methoddesc}[audio device]{close}{}
@@ -138,24 +138,25 @@ mode, some data may not be written---see \method{writeall()}.
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{writeall}{data}
-Write the entire Python string \var{data} to the audio device.  If the
-device is in blocking mode (the default), behaves identically to
-\method{write()}; in non-blocking mode, \method{writeall()} waits until the
-audio device is able to accept data, writes as much data as it will
-accept, and repeats until \var{data} has been completely written.  Has
-no return value, since the amount of data written is always equal to the
-amount of data supplied.
+Write the entire Python string \var{data} to the audio device: waits
+until the audio device is able to accept data, writes as much data as it
+will accept, and repeats until \var{data} has been completely written.
+If the device is in blocking mode (the default), this has the same
+effect as \method{write()}; \method{writeall()} is only useful in
+non-blocking mode.  Has no return value, since the amount of data
+written is always equal to the amount of data supplied.
 \end{methoddesc}
 
 The following methods each map to exactly one
-\function{ioctl()} system call.  If the underlying \function{ioctl()}
-fails, they all raise \exception{IOError}.
+\function{ioctl()} system call.  The correspondence is obvious: for
+example, \method{setfmt()} corresponds to the \code{SNDCTL_DSP_SETFMT}
+ioctl, and \method{sync()} to \code{SNDCTL_DSP_SYNC} (this can be useful
+when consulting the OSS documentation).  If the underlying
+\function{ioctl()} fails, they all raise \exception{IOError}.
 
 \begin{methoddesc}[audio device]{nonblock}{}
 Put the device into non-blocking mode.  Once in non-blocking mode, there
 is no way to return it to blocking mode.
-
-Corresponds to the \code{SNDCTL_DSP_NONBLOCK} ioctl.
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{getfmts}{}
@@ -189,23 +190,19 @@ soundcard.  On a typical Linux system, these formats are:
 Most systems support only a subset of these formats.  Many devices only
 support \constant{AFMT_U8}; the most common format used today is
 \constant{AFMT_S16_LE}.
-
-Corresponds to the \code{SNDCTL_DSP_GETFMTS} ioctl.
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{setfmt}{format}
 Try to set the current audio format to \var{format}---see
-\method{getfmts()} for a list.  Return the audio format that the device
+\method{getfmts()} for a list.  Returns the audio format that the device
 was set to, which may not be the requested format.  May also be used to
 return the current audio format---do this by passing an ``audio format''
 of
 \constant{AFMT_QUERY}.  
-
-Corresponds to the \code{SNDCTL_DSP_SETFMT} ioctl.
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{channels}{num_channels}
-Sets the number of output channels to \var{num_channels}.  A value of 1
+Set the number of output channels to \var{num_channels}.  A value of 1
 indicates monophonic sound, 2 stereophonic.  Some devices may have more
 than 2 channels, and some high-end devices may not support mono.
 Returns the number of channels the device was set to.
@@ -225,23 +222,23 @@ support arbitrary sampling rates.  Common rates are:
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{sync}{}
-Waits until the sound device has played every byte in its buffer and
-returns.  This also occurs when the sound device is closed.  The OSS
-documentation recommends simply closing and re-opening the device rather
-than using \method{sync()}.
+Wait until the sound device has played every byte in its buffer.  (This
+happens implicitly when the device is closed.)  The OSS documentation
+recommends closing and re-opening the device rather than using
+\method{sync()}.
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{reset}{}
-Immediately stops and playing or recording and returns the device to a
+Immediately stop playing or recording and return the device to a
 state where it can accept commands.  The OSS documentation recommends
 closing and re-opening the device after calling \method{reset()}.
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{post}{}
-To be used like a lightweight \method{sync()}, the \method{post()}
-IOCTL informs the audio device that there is a likely to be a pause in
-the audio output---i.e., after playing a spot sound effect, before
-waiting for user input, or before doing disk I/O.
+Tell the driver that there is likely to be a pause in the output, making
+it possible for the device to handle the pause more intelligently.  You
+might use this after playing a spot sound effect, before waiting for
+user input, or before doing disk I/O.
 \end{methoddesc}
 
 Convenience methods
