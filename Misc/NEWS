@@ -3,6 +3,12 @@ What's New in Python 2.1 alpha 1?
 
 Core language, builtins, and interpreter
 
+- Functions and methods now support getting and setting arbitrarily
+  named attributes (PEP 232).  Functions have a new __dict__
+  (a.k.a. func_dict) which hold the function attributes.  Methods get
+  and set attributes on their underlying im_func.  It is a TypeError
+  to set an attribute on a bound method.
+
 - The xrange() object implementation has been improved so that
   xrange(sys.maxint) can be used on 64-bit platforms.  There's still a
   limitation that in this case len(xrange(sys.maxint)) can't be
