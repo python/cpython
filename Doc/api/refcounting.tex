@@ -46,10 +46,10 @@ of Python objects.
   Decrement the reference count for object \var{o}.  The object may be
   \NULL, in which case the macro has no effect; otherwise the effect
   is the same as for \cfunction{Py_DECREF()}, except that the argument
-  is also set to \NULL.  The warning for \cfunction{Py_DECREF()}, does
+  is also set to \NULL.  The warning for \cfunction{Py_DECREF()} does
   not apply with respect to the object passed because the macro
   carefully uses a temporary variable and sets the argument to \NULL
-  before decrementing it's reference count.
+  before decrementing its reference count.
 
   It is a good idea to use this macro whenever decrementing the value
   of a variable that might be traversed during garbage collection.
