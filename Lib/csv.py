@@ -389,7 +389,7 @@ class Sniffer:
                     try:
                         thisType(row[col])
                         break
-                    except ValueError, OverflowError:
+                    except (ValueError, OverflowError):
                         pass
                 else:
                     # fallback to length of string
