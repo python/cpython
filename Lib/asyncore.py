@@ -102,7 +102,7 @@ def poll2 (timeout=0.0):
 			if s.writable():
 				flags = flags | poll.POLLOUT
 			if flags:
-				l.append (fd, flags)
+				l.append ((fd, flags))
 		r = poll.poll (l, timeout)
 		for fd, flags in r:
 			s = fd_map[fd]
@@ -394,11 +394,11 @@ def compact_traceback ():
 	t,v,tb = sys.exc_info()
 	tbinfo = []
 	while 1:
-		tbinfo.append (
+		tbinfo.append ((
 			tb.tb_frame.f_code.co_filename,
-			tb.tb_frame.f_code.co_name,				
+			tb.tb_frame.f_code.co_name,
 			str(tb.tb_lineno)
-			)
+			))
 		tb = tb.tb_next
 		if not tb:
 			break
