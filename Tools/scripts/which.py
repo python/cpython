@@ -4,6 +4,9 @@
 # On stderr, near and total misses are reported.
 # '-l<flags>' argument adds ls -l<flags> of each file found.
 
+import sys
+if sys.path[0] in (".", ""): del sys.path[0]
+
 import sys, os, string
 from stat import *
 
