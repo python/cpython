@@ -52,12 +52,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <sys/timeb.h>
 #endif
 
+#ifdef __WATCOMC__
+#include <i86.h>
+#else
 #ifdef _M_IX86
 #include <windows.h>
 #define timezone _timezone
 #define tzname _tzname
 #define daylight _daylight
 #define altzone _altzone
+#endif
 #endif
 
 /* Forward declarations */
@@ -268,9 +272,17 @@ time_mktime(self, args)
 	object *args;
 {
 	struct tm buf;
+	time_t tt;
+	tt = time(&tt);
+	buf = *localtime(&tt);
 	if (!gettmarg(args, &buf))
 		return NULL;
-	return newintobject((long)mktime(&buf));
+	tt = mktime(&buf);
+	if (tt == (time_t)(-1)) {
+		err_setstr(OverflowError, "mktime argument out of range");
+		return NULL;
+	}
+	return newfloatobject((double)tt);
 }
 
 static struct methodlist time_methods[] = {
@@ -423,6 +435,10 @@ floatsleep(secs)
 			return -1;
 	}
 #else /* !macintosh */
+#ifdef __WATCOMC__
+	/* XXX Can't interrupt this sleep */
+	delay((int)(secs * 1000 + 0.5));  /* delay() uses milliseconds */
+#else /* !__WATCOMC__ */
 #ifdef MSDOS
 	struct timeb t1, t2;
 	double frac;
@@ -459,6 +475,7 @@ floatsleep(secs)
 	sleep((int)secs);
 #endif /* _M_IX86 */
 #endif /* !MSDOS */
+#endif /* !__WATCOMC__ */
 #endif /* !macintosh */
 #endif /* !HAVE_SELECT */
 	return 0;
