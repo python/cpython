@@ -6,6 +6,7 @@ The output file has an extension of '.bkm' instead of '.out', since hyperref
 already uses that extension.  Let's avoid clashing.
 """
 
+import getopt
 import os
 import re
 import string
@@ -38,10 +39,10 @@ _transition_map = {
     ('subsubsection', 'chapter'): 3,
     }
 
-def parse_toc(fp):
+def parse_toc(fp, bigpart=None):
     toc = top = []
     stack = [toc]
-    level = 'chapter'
+    level = bigpart or 'chapter'
     lineno = 0
     while 1:
 	line = fp.readline()
@@ -105,10 +106,18 @@ def write_toc_entry(entry, fp, layer):
 
 
 def main():
-    base, ext = os.path.splitext(sys.argv[1])
-    ext = ext or ".toc"
-    toc = parse_toc(open(base + ext))
-    write_toc(toc, open(base + ".bkm", "w"))
+    bigpart = None
+    opts, args = getopt.getopt(sys.argv[1:], "c:")
+    if opts:
+	bigpart = opts[0][1]
+    if not args:
+	usage()
+	sys.exit(2)
+    for filename in args:
+	base, ext = os.path.splitext(filename)
+	ext = ext or ".toc"
+	toc = parse_toc(open(base + ext), bigpart)
+	write_toc(toc, open(base + ".bkm", "w"))
 
 
 if __name__ == "__main__":
