@@ -783,7 +783,9 @@ class Wm:
 		return self.tk.call('wm', 'client', self._w, name)
 	client = wm_client
 	def wm_colormapwindows(self, *wlist):
-		args = ('wm', 'colormapwindows', self._w) + _flatten(wlist)
+		if len(wlist) > 1:
+			wlist = (wlist,) # Tk needs a list of windows here
+		args = ('wm', 'colormapwindows', self._w) + wlist
 		return map(self._nametowidget, self.tk.call(args))
 	colormapwindows = wm_colormapwindows
 	def wm_command(self, value=None):
