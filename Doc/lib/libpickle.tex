@@ -103,7 +103,9 @@ desirable to have a constructor that requires arguments; it is a
 If it is desirable that the \code{__init__} method be called on
 unpickling, a class can define a method \code{__getinitargs__()},
 which should return a {\em tuple} containing the arguments to be
-passed to the class constructor (\code{__init__()}).
+passed to the class constructor (\code{__init__()}).  This method is
+called at pickle time; the tuple it returns is incorporated in the
+pickle for the instance.
 \ttindex{__getinitargs__}
 \ttindex{__init__}
 
