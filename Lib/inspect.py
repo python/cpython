@@ -762,8 +762,8 @@ def getinnerframes(tb, context=1):
 def currentframe():
     """Return the frame object for the caller's stack frame."""
     try:
-        raise 'catch me'
-    except:
+        1/0
+    except ZeroDivisionError:
         return sys.exc_traceback.tb_frame.f_back
 
 if hasattr(sys, '_getframe'): currentframe = sys._getframe
