@@ -24,6 +24,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Socket module */
 
+/* XXX Ought to fix getStr*arg calls to use getargs(args, "s#", ...) */
+
 /*
 This module provides an interface to Berkeley socket IPC.
 
@@ -275,7 +277,7 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 		static struct sockaddr_un addr;
 		object *path;
 		int len;
-		if (!getstrarg(args, &path))
+		if (!getStrarg(args, &path))
 			return 0;
 		if ((len = getstringsize(path)) > sizeof addr.sun_path) {
 			err_setstr(SocketError, "AF_UNIX path too long");
@@ -293,7 +295,7 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 		static struct sockaddr_in addr;
 		object *host;
 		int port;
-		if (!getstrintarg(args, &host, &port))
+		if (!getStrintarg(args, &host, &port))
 			return 0;
 		if (setipaddr(getstringvalue(host), &addr) < 0)
 			return 0;
@@ -471,7 +473,7 @@ sock_makefile(s, args)
 	object *mode;
 	int fd;
 	FILE *fp;
-	if (!getstrarg(args, &mode))
+	if (!getStrarg(args, &mode))
 		return NULL;
 	if ((fd = dup(s->sock_fd)) < 0 ||
 	    (fp = fdopen(fd, getstringvalue(mode))) == NULL)
@@ -540,9 +542,9 @@ sock_send(s, args)
 {
 	object *buf;
 	int len, n, flags;
-	if (!getstrintarg(args, &buf, &flags)) {
+	if (!getStrintarg(args, &buf, &flags)) {
 		err_clear();
-		if (!getstrarg(args, &buf))
+		if (!getStrarg(args, &buf))
 			return NULL;
 		flags = 0;
 	}
@@ -569,7 +571,7 @@ sock_sendto(s, args)
 		err_badarg();
 		return NULL;
 	}
-	if (!getstrarg(gettupleitem(args, 0), &buf) ||
+	if (!getStrarg(gettupleitem(args, 0), &buf) ||
 	    !getsockaddrarg(s, gettupleitem(args, 1), &addr, &addrlen))
 		return NULL;
 	len = getstringsize(buf);
@@ -691,7 +693,7 @@ socket_gethostbyname(self, args)
 	object *name;
 	struct hostent *hp;
 	struct sockaddr_in addrbuf;
-	if (!getstrarg(args, &name))
+	if (!getStrarg(args, &name))
 		return NULL;
 	if (setipaddr(getstringvalue(name), &addrbuf) < 0)
 		return NULL;
@@ -711,7 +713,7 @@ socket_getservbyname(self, args)
 {
 	object *name, *proto;
 	struct servent *sp;
-	if (!getstrstrarg(args, &name, &proto))
+	if (!getStrStrarg(args, &name, &proto))
 		return NULL;
 	sp = getservbyname(getstringvalue(name), getstringvalue(proto));
 	if (sp == NULL) {
