@@ -25,11 +25,23 @@ Core language, builtins, and interpreter
 
 - Even if you don't use file.xreadlines(), you may expect a speedup on
   line-by-line input.  The file.readline() method has been optimized
-  quite a bit in platform-specific ways, both on Windows (using an
-  incredibly complex, but nevertheless thread-safe), and on systems
-  (like Linux) that support flockfile(), getc_unlocked(), and
-  funlockfile().  In addition, the fileinput module, while still slow,
-  has been sped up too, by using file.readlines(sizehint).
+  quite a bit in platform-specific ways:  on systems (like Linux) that
+  support flockfile(), getc_unlocked(), and funlockfile(), those are
+  used by default.  On systems (like Windows) without getc_unlocked(),
+  a complicated (but still thread-safe) method using fgets() is used by
+  default.
+
+  You can force use of the fgets() method by #define'ing 
+  USE_FGETS_IN_GETLINE at build time (it may be faster than 
+  getc_unlocked()).
+
+  You can force fgets() not to be used by #define'ing 
+  DONT_USE_FGETS_IN_GETLINE (this is the first thing to try if std test 
+  test_bufio.py fails -- and let us know if it does!).
+
+- In addition, the fileinput module, while still slower than the other
+  methods on most platforms, has been sped up too, by using
+  file.readlines(sizehint).
 
 - Support for run-time warnings has been added, including a new
   command line option (-W) to specify the disposition of warnings.
