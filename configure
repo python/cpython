@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.215 
+# From configure.in Revision: 1.216 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -569,7 +569,7 @@ fi
 
 # Set VERSION so we only need to edit in one place (i.e., here)
 
-VERSION=2.1
+VERSION=2.2
 
 # Arguments passed to configure.
 
