@@ -5,10 +5,8 @@ modules may raise standard exceptions; in particular, SystemExit is
 usually raised for errors that are obviously the end-user's fault
 (eg. bad command-line arguments).
 
-This module safe to use in "from ... import *" mode; it only exports
+This module is safe to use in "from ... import *" mode; it only exports
 symbols whose names start with "Distutils" and end with "Error"."""
-
-# created 1999/03/03, Greg Ward
 
 __revision__ = "$Id$"
 
