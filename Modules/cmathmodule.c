@@ -41,8 +41,7 @@ staticforward Py_complex c_prodi();
 staticforward Py_complex c_sqrt();
 
 
-static Py_complex c_acos(x)
-	Py_complex x;
+static Py_complex c_acos(Py_complex x)
 {
 	return c_neg(c_prodi(c_log(c_sum(x,c_prod(c_i,
 		    c_sqrt(c_diff(c_1,c_prod(x,x))))))));
@@ -54,8 +53,7 @@ static char c_acos_doc [] =
 Return the arc cosine of x.";
 
 
-static Py_complex c_acosh(x)
-	Py_complex x;
+static Py_complex c_acosh(Py_complex x)
 {
 	Py_complex z;
 	z = c_sqrt(c_half);
@@ -70,8 +68,7 @@ static char c_acosh_doc [] =
 Return the hyperbolic arccosine of x.";
 
 
-static Py_complex c_asin(x)
-	Py_complex x;
+static Py_complex c_asin(Py_complex x)
 {
 	Py_complex z;
 	z = c_sqrt(c_half);
@@ -86,8 +83,7 @@ static char c_asin_doc [] =
 Return the arc sine of x.";
 
 
-static Py_complex c_asinh(x)
-	Py_complex x;
+static Py_complex c_asinh(Py_complex x)
 {
 	/* Break up long expression for WATCOM */
 	Py_complex z;
@@ -101,8 +97,7 @@ static char c_asinh_doc [] =
 Return the hyperbolic arc sine of x.";
 
 
-static Py_complex c_atan(x)
-	Py_complex x;
+static Py_complex c_atan(Py_complex x)
 {
 	return c_prod(c_i2,c_log(c_quot(c_sum(c_i,x),c_diff(c_i,x))));
 }
@@ -113,8 +108,7 @@ static char c_atan_doc [] =
 Return the arc tangent of x.";
 
 
-static Py_complex c_atanh(x)
-	Py_complex x;
+static Py_complex c_atanh(Py_complex x)
 {
 	return c_prod(c_half,c_log(c_quot(c_sum(c_1,x),c_diff(c_1,x))));
 }
@@ -125,8 +119,7 @@ static char c_atanh_doc [] =
 Return the hyperbolic arc tangent of x.";
 
 
-static Py_complex c_cos(x)
-	Py_complex x;
+static Py_complex c_cos(Py_complex x)
 {
 	Py_complex r;
 	r.real = cos(x.real)*cosh(x.imag);
@@ -140,8 +133,7 @@ static char c_cos_doc [] =
 Return the cosine of x.";
 
 
-static Py_complex c_cosh(x)
-	Py_complex x;
+static Py_complex c_cosh(Py_complex x)
 {
 	Py_complex r;
 	r.real = cos(x.imag)*cosh(x.real);
@@ -155,8 +147,7 @@ static char c_cosh_doc [] =
 Return the hyperbolic cosine of x.";
 
 
-static Py_complex c_exp(x)
-	Py_complex x;
+static Py_complex c_exp(Py_complex x)
 {
 	Py_complex r;
 	double l = exp(x.real);
@@ -171,8 +162,7 @@ static char c_exp_doc [] =
 Return the exponential value e**x.";
 
 
-static Py_complex c_log(x)
-	Py_complex x;
+static Py_complex c_log(Py_complex x)
 {
 	Py_complex r;
 	double l = hypot(x.real,x.imag);
@@ -187,8 +177,7 @@ static char c_log_doc [] =
 Return the natural logarithm of x.";
 
 
-static Py_complex c_log10(x)
-	Py_complex x;
+static Py_complex c_log10(Py_complex x)
 {
 	Py_complex r;
 	double l = hypot(x.real,x.imag);
@@ -204,8 +193,7 @@ Return the base-10 logarithm of x.";
 
 
 /* internal function not available from Python */
-static Py_complex c_prodi(x)
-     Py_complex x;
+static Py_complex c_prodi(Py_complex x)
 {
 	Py_complex r;
 	r.real = -x.imag;
@@ -214,8 +202,7 @@ static Py_complex c_prodi(x)
 }
 
 
-static Py_complex c_sin(x)
-	Py_complex x;
+static Py_complex c_sin(Py_complex x)
 {
 	Py_complex r;
 	r.real = sin(x.real)*cosh(x.imag);
@@ -229,8 +216,7 @@ static char c_sin_doc [] =
 Return the sine of x.";
 
 
-static Py_complex c_sinh(x)
-	Py_complex x;
+static Py_complex c_sinh(Py_complex x)
 {
 	Py_complex r;
 	r.real = cos(x.imag)*sinh(x.real);
@@ -244,8 +230,7 @@ static char c_sinh_doc [] =
 Return the hyperbolic sine of x.";
 
 
-static Py_complex c_sqrt(x)
-	Py_complex x;
+static Py_complex c_sqrt(Py_complex x)
 {
 	Py_complex r;
 	double s,d;
@@ -276,8 +261,7 @@ static char c_sqrt_doc [] =
 Return the square root of x.";
 
 
-static Py_complex c_tan(x)
-	Py_complex x;
+static Py_complex c_tan(Py_complex x)
 {
 	Py_complex r;
 	double sr,cr,shi,chi;
@@ -303,8 +287,7 @@ static char c_tan_doc [] =
 Return the tangent of x.";
 
 
-static Py_complex c_tanh(x)
-	Py_complex x;
+static Py_complex c_tanh(Py_complex x)
 {
 	Py_complex r;
 	double si,ci,shr,chr;
@@ -345,9 +328,7 @@ math_error()
 }
 
 static PyObject *
-math_1(args, func)
-	PyObject *args;
-	Py_complex (*func)(Py_complex);
+math_1(PyObject *args, Py_complex (*func)(Py_complex))
 {
 	Py_complex x;
 	if (!PyArg_ParseTuple(args, "D", &x))
@@ -365,7 +346,7 @@ math_1(args, func)
 }
 
 #define FUNC1(stubname, func) \
-	static PyObject * stubname(self, args) PyObject *self, *args; { \
+	static PyObject * stubname(PyObject *self, PyObject *args) { \
 		return math_1(args, func); \
 	}
 
