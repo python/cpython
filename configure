@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.135 
+# From configure.in Revision: 1.136 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -5604,33 +5604,44 @@ fi
 # or fills with zeros (like the Cray J90, according to Tim Peters).
 echo $ac_n "checking whether right shift extends the sign bit""... $ac_c" 1>&6
 echo "configure:5607: checking whether right shift extends the sign bit" >&5
+if eval "test \"`echo '$''{'ac_cv_rshift_extends_sign'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
 if test "$cross_compiling" = yes; then
     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
 else
   cat > conftest.$ac_ext <<EOF
-#line 5612 "configure"
+#line 5616 "configure"
 #include "confdefs.h"
 
 int main()
 {
-	return ((-1)>>3 == -1) ? 1 : 0;
+	exit(((-1)>>3 == -1) ? 0 : 1);
 }
 
 EOF
-if { (eval echo configure:5621: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:5625: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  ac_cv_rshift_extends_sign=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  ac_cv_rshift_extends_sign=no
+fi
+rm -fr conftest*
+fi
+
+fi
+
+echo "$ac_t""$ac_cv_rshift_extends_sign" 1>&6
+if test "$ac_cv_rshift_extends_sign" = no
 then
   cat >> confdefs.h <<\EOF
 #define SIGNED_RIGHT_SHIFT_ZERO_FILLS 1
 EOF
 
- echo "$ac_t""yes" 1>&6
-else
-  echo "configure: failed program was:" >&5
-  cat conftest.$ac_ext >&5
-  rm -fr conftest*
-  echo "$ac_t""no" 1>&6
-fi
-rm -fr conftest*
 fi
 
 
@@ -5642,12 +5653,12 @@ cat >> confdefs.h <<\EOF
 #endif
 EOF
 echo $ac_n "checking for socklen_t""... $ac_c" 1>&6
-echo "configure:5646: checking for socklen_t" >&5
+echo "configure:5657: checking for socklen_t" >&5
 if eval "test \"`echo '$''{'ac_cv_type_socklen_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 5651 "configure"
+#line 5662 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 #if STDC_HEADERS
