@@ -106,7 +106,6 @@ class PyclbrTest(unittest.TestCase):
                                  '_ismodule',
                                  '_classify_class_attrs'])
         self.checkModule('rfc822')
-        self.checkModule('xmllib')
         self.checkModule('difflib')
 
     def test_others(self):
