@@ -1,4 +1,182 @@
 ========================================================================
+Release of 1.0.1 (Feb 15 1994)
+========================================================================
+
+Tue Feb 15 11:32:42 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/string.py (atof): force the result to be float
+
+	* Python/modsupport.c (do_arg): don't use a local object va --
+	this doesn't work on some compilers (e.g. WATCOM)
+
+Mon Feb 14 10:52:01 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/dospath.py: proper version by Jaap Vermeulen
+
+	* Makefile.in (Makefiles): add semicolon after ) which some Make
+	versions need
+
+	* Doc/libposix.tex: added doc for posix.fdopen
+
+	* README: add Sequent and NeXT to list of platforms; add
+	troubleshooting section; add hist about -Dindex for readline
+
+	* Lib/os.py: generalize to many os specific modules using a
+	dictionary
+
+	* Lib/ospath.py: now obsolete; use os.name to import the right one
+
+	* configure.in: change order of -lsocket and -lnsl and insert
+	-linet in between, so it works on Sequent (it still works on
+	Solaris 2 -- hope it still works elsewhere as well); add test for
+	_NEXT_SOURCE (then define _POSIX_SOURCE); remove test for dlopen;
+
+	* configure.in, acconfig.h, */modsupport.[ch]: rename
+	HAVE_VARARGS_PROTOTYPES to HAVE_STDARG_PROTOTYPES, to avoid
+	confusion
+
+	* Include/modsupport.h: no prototypes for getargs() and mkvalue()
+	in case no varargs prototypes
+
+	* Lib/test/test_grammar.py: don't import sleep from time, but time
+	(since sleep has portability problems)
+
+Fri Feb 11 23:47:46 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Parser/intrcheck.c: added QUICKWIN version (doesn't really
+	work); fixed MSDOS version to also set a SIGINT handler.
+
+	* Modules/timemodule.c (time_sleep): declare sigsave 'auto' hoping
+	this will avoid restoring its pre-setjmp value.  On non-threaded
+	systems declare it 'static' since at least Microsoft C still puts
+	the auto variable in a register causing a bug...  Also implement
+	the MSDOS version of floatsleep() using a busy-wait loop calling
+	intrcheck()
+
+Wed Feb  9 11:43:11 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/rfc822.py: added parsedate() and parseaddr() utility
+	functions and getdate(), getaddr(), getaddrlist() methods; added
+	test code when run as script
+
+	* Include/pythonrun.h, Python/pythonrun.c: cleanup() is now
+	externally visible, for the benefits of embedded use.
+
+	* Lib/dospath.py: new module for dos stuff
+
+Mon Feb  7 09:50:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/makesetup: add -n option between Setup files (suppresses
+	making of .o files but keeps processing of libraries and module
+	names)
+
+	* Makefile.in (libainstall): install Setup, makesetup, config.c.in
+
+	* Modules/Setup*: added -lX11_s to line for gl module
+
+	* Demo/scripts/unbirthday.py: new script, print unbirthday count
+
+	* Modules/audioopmodule.c: removed hack for signed on sun
+	(there's now a test in the configure script); check that if
+	'signed' is defined away characters aren't unsigned
+
+	* Modules/posixmodule.c: include mytime.h (for clock_t on NeXT)
+
+	* acconfig.h: add entry for 'signed' keyword
+
+	* configure.in: remove const from check for exec prototypes; add
+	check for signed keyword and check for whether chars are unsigned
+
+Fri Feb  4 13:07:03 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/makesetup: added usage message, -c and -m options to
+	specify config.c.in and Makefile.pre input files, -s option to
+	specify source directory, added comments
+
+	* Modules/Setup.in: remove -lm from imgfile entry
+
+	* Modules/nismodule.c: only define YPPROC_MAPLIST, YPPROG and
+	YPVERS if not already defined
+
+	* configure.in, acconfig.h, Include/modsupport.h,
+	Python/modsupport.c: added separate check for varargs prototypes
+	(HAVE_VARARGS_PROTOTYPES)
+
+Thu Feb  3 11:00:26 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/bltinmodule.c (filterstring): fix core dump of func ==
+	None
+
+	* Lib/string.py: replace atoi_error, atof_error, atol_error by
+	ValueError when the strop versions are used
+
+	* Modules/stropmodule.c: added atol(), added optional base
+	argument to atoi() and atol()
+
+	* Objects/longobject.c, Include/longobject.h: added long_escan
+	(like long_scan but raises exception for bad base and stores end
+	of string into return argument)
+
+	* Objects/rangeobject.c (range_repr): repr must use "xrange..."
+
+Wed Feb  2 12:28:04 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/stropmodule.c: added atoi() and atof()
+
+	* Python/modsupport.c: use stdarg.h / varargs.h depending on
+	presence of prototypes
+
+	* Modules/timemodule.c (floattime): try ftime() or time() if
+	gettime() fails
+
+Tue Feb  1 14:41:04 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/Makefile (python-lib.info): change makeinfo option style
+	from +foo to --foo
+
+	* Doc/README: remove invalid reference to ../misc/FTP; update
+	description of making the info version
+
+	* Doc/{fix.el,fix_hack,whichlibs}: minor updates/corrections
+
+Mon Jan 31 11:16:38 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/import.c: only use shared libraries if HAVE_DLOPEN *and*
+	HAVE_DLFCN_H are defined; define symbol USE_SHLIB then
+
+	* Doc/tut.tex: lots of small changes by Tim Peters: typos,
+	out-of-date examples, restrictions lifted, new and better ways to
+	do some things...
+
+Fri Jan 28 10:59:48 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* README: added Minix note
+
+	* Lib/sunau.py: correct byte count calculation from frame rate
+
+	* Lib/aifc.py: rate should be an integer
+
+Thu Jan 27 12:55:17 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/ext.tex: removed obsolete reminder in line 1; correct typo
+
+	* Misc/FAQ: fixed some out of date info, added question on module
+	run as script
+
+	* Modules/rgbimgmodule.c (initrgbimg): exception string should
+	contain dot not comma
+
+	* Modules/md5module.c: fix compiler warnings about (unsigned) char
+
+	* Makefile.in: libinstall and maninstall should use $(srcdir)
+
+	* Lib/tzparse.py: don't run test() on import
+
+	* Lib/filewin.py: moved into Lib/stdwin
+
+	* Modules/cdmodule.c: fix wrong cast of cdparser_getattr
+
+========================================================================
 Release of 1.0.0 (Jan 26 1994)
 ========================================================================
 
