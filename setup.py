@@ -273,8 +273,6 @@ class PyBuildExt(build_ext):
         exts.append( Extension('pwd', ['pwdmodule.c']) )
         # grp(3)
         exts.append( Extension('grp', ['grpmodule.c']) )
-        # posix (UNIX) errno values
-        exts.append( Extension('errno', ['errnomodule.c']) )
         # select(2); not on ancient System V
         exts.append( Extension('select', ['selectmodule.c']) )
 
