@@ -1,1 +1,10 @@
 test_zlib
+-440295136 1136044692
+198574839 198574839
+expecting Bad compression level
+expecting Invalid initialization option
+expecting Invalid initialization option
+normal compression/decompression succeeded
+compress/decompression obj succeeded
+decompress with init options succeeded
+decompressobj with init options succeeded
