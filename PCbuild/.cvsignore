@@ -12,3 +12,4 @@
 *.plg
 *.pyd
 *-temp-*
+*.suo
