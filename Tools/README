@@ -21,6 +21,9 @@ scripts		A number of useful single-file programs, e.g. tabnanny.py
 		(by Tim Peters), which checks for inconsistent mixing
 		of tabs and spaces.
 
+unicode		Tools used to generate unicode database files for
+		Python 2.0 (by Fredrik Lundh).
+
 versioncheck	A tool to automate checking whether you have the latest
 		version of a package (by Jack Jansen).
 
