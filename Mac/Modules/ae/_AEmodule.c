@@ -98,6 +98,9 @@ static PyObject *AEDesc_AECoerceDesc(AEDescObject *_self, PyObject *_args)
 	OSErr _err;
 	DescType toType;
 	AEDesc result;
+#ifndef AECoerceDesc
+	PyMac_PRECHECK(AECoerceDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &toType))
 		return NULL;
@@ -115,6 +118,9 @@ static PyObject *AEDesc_AEDuplicateDesc(AEDescObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEDesc result;
+#ifndef AEDuplicateDesc
+	PyMac_PRECHECK(AEDuplicateDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AEDuplicateDesc(&_self->ob_itself,
@@ -130,6 +136,9 @@ static PyObject *AEDesc_AECountItems(AEDescObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	long theCount;
+#ifndef AECountItems
+	PyMac_PRECHECK(AECountItems);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AECountItems(&_self->ob_itself,
@@ -149,6 +158,9 @@ static PyObject *AEDesc_AEPutPtr(AEDescObject *_self, PyObject *_args)
 	char *dataPtr__in__;
 	long dataPtr__len__;
 	int dataPtr__in_len__;
+#ifndef AEPutPtr
+	PyMac_PRECHECK(AEPutPtr);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&s#",
 	                      &index,
 	                      PyMac_GetOSType, &typeCode,
@@ -171,6 +183,9 @@ static PyObject *AEDesc_AEPutDesc(AEDescObject *_self, PyObject *_args)
 	OSErr _err;
 	long index;
 	AEDesc theAEDesc;
+#ifndef AEPutDesc
+	PyMac_PRECHECK(AEPutDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &index,
 	                      AEDesc_Convert, &theAEDesc))
@@ -195,6 +210,9 @@ static PyObject *AEDesc_AEGetNthPtr(AEDescObject *_self, PyObject *_args)
 	char *dataPtr__out__;
 	long dataPtr__len__;
 	int dataPtr__in_len__;
+#ifndef AEGetNthPtr
+	PyMac_PRECHECK(AEGetNthPtr);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&i",
 	                      &index,
 	                      PyMac_GetOSType, &desiredType,
@@ -230,6 +248,9 @@ static PyObject *AEDesc_AEGetNthDesc(AEDescObject *_self, PyObject *_args)
 	DescType desiredType;
 	AEKeyword theAEKeyword;
 	AEDesc result;
+#ifndef AEGetNthDesc
+	PyMac_PRECHECK(AEGetNthDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &index,
 	                      PyMac_GetOSType, &desiredType))
@@ -253,6 +274,9 @@ static PyObject *AEDesc_AESizeOfNthItem(AEDescObject *_self, PyObject *_args)
 	long index;
 	DescType typeCode;
 	Size dataSize;
+#ifndef AESizeOfNthItem
+	PyMac_PRECHECK(AESizeOfNthItem);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &index))
 		return NULL;
@@ -272,6 +296,9 @@ static PyObject *AEDesc_AEDeleteItem(AEDescObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	long index;
+#ifndef AEDeleteItem
+	PyMac_PRECHECK(AEDeleteItem);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &index))
 		return NULL;
@@ -292,6 +319,9 @@ static PyObject *AEDesc_AEPutParamPtr(AEDescObject *_self, PyObject *_args)
 	char *dataPtr__in__;
 	long dataPtr__len__;
 	int dataPtr__in_len__;
+#ifndef AEPutParamPtr
+	PyMac_PRECHECK(AEPutParamPtr);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&s#",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &typeCode,
@@ -314,6 +344,9 @@ static PyObject *AEDesc_AEPutParamDesc(AEDescObject *_self, PyObject *_args)
 	OSErr _err;
 	AEKeyword theAEKeyword;
 	AEDesc theAEDesc;
+#ifndef AEPutParamDesc
+	PyMac_PRECHECK(AEPutParamDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      AEDesc_Convert, &theAEDesc))
@@ -337,6 +370,9 @@ static PyObject *AEDesc_AEGetParamPtr(AEDescObject *_self, PyObject *_args)
 	char *dataPtr__out__;
 	long dataPtr__len__;
 	int dataPtr__in_len__;
+#ifndef AEGetParamPtr
+	PyMac_PRECHECK(AEGetParamPtr);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&i",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &desiredType,
@@ -369,6 +405,9 @@ static PyObject *AEDesc_AEGetParamDesc(AEDescObject *_self, PyObject *_args)
 	AEKeyword theAEKeyword;
 	DescType desiredType;
 	AEDesc result;
+#ifndef AEGetParamDesc
+	PyMac_PRECHECK(AEGetParamDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &desiredType))
@@ -390,6 +429,9 @@ static PyObject *AEDesc_AESizeOfParam(AEDescObject *_self, PyObject *_args)
 	AEKeyword theAEKeyword;
 	DescType typeCode;
 	Size dataSize;
+#ifndef AESizeOfParam
+	PyMac_PRECHECK(AESizeOfParam);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &theAEKeyword))
 		return NULL;
@@ -409,6 +451,9 @@ static PyObject *AEDesc_AEDeleteParam(AEDescObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEKeyword theAEKeyword;
+#ifndef AEDeleteParam
+	PyMac_PRECHECK(AEDeleteParam);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &theAEKeyword))
 		return NULL;
@@ -430,6 +475,9 @@ static PyObject *AEDesc_AEGetAttributePtr(AEDescObject *_self, PyObject *_args)
 	char *dataPtr__out__;
 	long dataPtr__len__;
 	int dataPtr__in_len__;
+#ifndef AEGetAttributePtr
+	PyMac_PRECHECK(AEGetAttributePtr);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&i",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &desiredType,
@@ -462,6 +510,9 @@ static PyObject *AEDesc_AEGetAttributeDesc(AEDescObject *_self, PyObject *_args)
 	AEKeyword theAEKeyword;
 	DescType desiredType;
 	AEDesc result;
+#ifndef AEGetAttributeDesc
+	PyMac_PRECHECK(AEGetAttributeDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &desiredType))
@@ -483,6 +534,9 @@ static PyObject *AEDesc_AESizeOfAttribute(AEDescObject *_self, PyObject *_args)
 	AEKeyword theAEKeyword;
 	DescType typeCode;
 	Size dataSize;
+#ifndef AESizeOfAttribute
+	PyMac_PRECHECK(AESizeOfAttribute);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &theAEKeyword))
 		return NULL;
@@ -506,6 +560,9 @@ static PyObject *AEDesc_AEPutAttributePtr(AEDescObject *_self, PyObject *_args)
 	char *dataPtr__in__;
 	long dataPtr__len__;
 	int dataPtr__in_len__;
+#ifndef AEPutAttributePtr
+	PyMac_PRECHECK(AEPutAttributePtr);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&s#",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      PyMac_GetOSType, &typeCode,
@@ -528,6 +585,9 @@ static PyObject *AEDesc_AEPutAttributeDesc(AEDescObject *_self, PyObject *_args)
 	OSErr _err;
 	AEKeyword theAEKeyword;
 	AEDesc theAEDesc;
+#ifndef AEPutAttributeDesc
+	PyMac_PRECHECK(AEPutAttributeDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theAEKeyword,
 	                      AEDesc_Convert, &theAEDesc))
@@ -547,6 +607,9 @@ static PyObject *AEDesc_AEGetDescDataSize(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Size _rv;
+#ifndef AEGetDescDataSize
+	PyMac_PRECHECK(AEGetDescDataSize);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = AEGetDescDataSize(&_self->ob_itself);
@@ -564,6 +627,9 @@ static PyObject *AEDesc_AESend(AEDescObject *_self, PyObject *_args)
 	AESendMode sendMode;
 	AESendPriority sendPriority;
 	long timeOutInTicks;
+#ifndef AESend
+	PyMac_PRECHECK(AESend);
+#endif
 	if (!PyArg_ParseTuple(_args, "lhl",
 	                      &sendMode,
 	                      &sendPriority,
@@ -586,6 +652,9 @@ static PyObject *AEDesc_AEResetTimer(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef AEResetTimer
+	PyMac_PRECHECK(AEResetTimer);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AEResetTimer(&_self->ob_itself);
@@ -599,6 +668,9 @@ static PyObject *AEDesc_AESuspendTheCurrentEvent(AEDescObject *_self, PyObject *
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef AESuspendTheCurrentEvent
+	PyMac_PRECHECK(AESuspendTheCurrentEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AESuspendTheCurrentEvent(&_self->ob_itself);
@@ -615,6 +687,9 @@ static PyObject *AEDesc_AEResumeTheCurrentEvent(AEDescObject *_self, PyObject *_
 	AppleEvent reply;
 	AEEventHandlerUPP dispatcher__proc__ = upp_GenericEventHandler;
 	PyObject *dispatcher;
+#ifndef AEResumeTheCurrentEvent
+	PyMac_PRECHECK(AEResumeTheCurrentEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O",
 	                      AEDesc_Convert, &reply,
 	                      &dispatcher))
@@ -633,6 +708,9 @@ static PyObject *AEDesc_AEGetTheCurrentEvent(AEDescObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef AEGetTheCurrentEvent
+	PyMac_PRECHECK(AEGetTheCurrentEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AEGetTheCurrentEvent(&_self->ob_itself);
@@ -646,6 +724,9 @@ static PyObject *AEDesc_AESetTheCurrentEvent(AEDescObject *_self, PyObject *_arg
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef AESetTheCurrentEvent
+	PyMac_PRECHECK(AESetTheCurrentEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AESetTheCurrentEvent(&_self->ob_itself);
@@ -661,6 +742,9 @@ static PyObject *AEDesc_AEResolve(AEDescObject *_self, PyObject *_args)
 	OSErr _err;
 	short callbackFlags;
 	AEDesc theToken;
+#ifndef AEResolve
+	PyMac_PRECHECK(AEResolve);
+#endif
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &callbackFlags))
 		return NULL;
@@ -815,6 +899,9 @@ static PyObject *AE_AECoercePtr(PyObject *_self, PyObject *_args)
 	int dataPtr__in_len__;
 	DescType toType;
 	AEDesc result;
+#ifndef AECoercePtr
+	PyMac_PRECHECK(AECoercePtr);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s#O&",
 	                      PyMac_GetOSType, &typeCode,
 	                      &dataPtr__in__, &dataPtr__in_len__,
@@ -840,6 +927,9 @@ static PyObject *AE_AECreateDesc(PyObject *_self, PyObject *_args)
 	long dataPtr__len__;
 	int dataPtr__in_len__;
 	AEDesc result;
+#ifndef AECreateDesc
+	PyMac_PRECHECK(AECreateDesc);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s#",
 	                      PyMac_GetOSType, &typeCode,
 	                      &dataPtr__in__, &dataPtr__in_len__))
@@ -863,6 +953,9 @@ static PyObject *AE_AECreateList(PyObject *_self, PyObject *_args)
 	int factoringPtr__in_len__;
 	Boolean isRecord;
 	AEDescList resultList;
+#ifndef AECreateList
+	PyMac_PRECHECK(AECreateList);
+#endif
 	if (!PyArg_ParseTuple(_args, "s#b",
 	                      &factoringPtr__in__, &factoringPtr__in_len__,
 	                      &isRecord))
@@ -887,6 +980,9 @@ static PyObject *AE_AECreateAppleEvent(PyObject *_self, PyObject *_args)
 	AEReturnID returnID;
 	AETransactionID transactionID;
 	AppleEvent result;
+#ifndef AECreateAppleEvent
+	PyMac_PRECHECK(AECreateAppleEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&hl",
 	                      PyMac_GetOSType, &theAEEventClass,
 	                      PyMac_GetOSType, &theAEEventID,
@@ -917,6 +1013,9 @@ static PyObject *AE_AEReplaceDescData(PyObject *_self, PyObject *_args)
 	long dataPtr__len__;
 	int dataPtr__in_len__;
 	AEDesc theAEDesc;
+#ifndef AEReplaceDescData
+	PyMac_PRECHECK(AEReplaceDescData);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&s#",
 	                      PyMac_GetOSType, &typeCode,
 	                      &dataPtr__in__, &dataPtr__in_len__))
@@ -937,6 +1036,9 @@ static PyObject *AE_AEProcessAppleEvent(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	EventRecord theEventRecord;
+#ifndef AEProcessAppleEvent
+	PyMac_PRECHECK(AEProcessAppleEvent);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetEventRecord, &theEventRecord))
 		return NULL;
@@ -952,6 +1054,9 @@ static PyObject *AE_AEGetInteractionAllowed(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEInteractAllowed level;
+#ifndef AEGetInteractionAllowed
+	PyMac_PRECHECK(AEGetInteractionAllowed);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AEGetInteractionAllowed(&level);
@@ -966,6 +1071,9 @@ static PyObject *AE_AESetInteractionAllowed(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEInteractAllowed level;
+#ifndef AESetInteractionAllowed
+	PyMac_PRECHECK(AESetInteractionAllowed);
+#endif
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &level))
 		return NULL;
@@ -981,6 +1089,9 @@ static PyObject *AE_AEInteractWithUser(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	long timeOutInTicks;
+#ifndef AEInteractWithUser
+	PyMac_PRECHECK(AEInteractWithUser);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &timeOutInTicks))
 		return NULL;
@@ -1001,6 +1112,9 @@ static PyObject *AE_AEInstallEventHandler(PyObject *_self, PyObject *_args)
 	AEEventID theAEEventID;
 	AEEventHandlerUPP handler__proc__ = upp_GenericEventHandler;
 	PyObject *handler;
+#ifndef AEInstallEventHandler
+	PyMac_PRECHECK(AEInstallEventHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O",
 	                      PyMac_GetOSType, &theAEEventClass,
 	                      PyMac_GetOSType, &theAEEventID,
@@ -1023,6 +1137,9 @@ static PyObject *AE_AERemoveEventHandler(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	AEEventClass theAEEventClass;
 	AEEventID theAEEventID;
+#ifndef AERemoveEventHandler
+	PyMac_PRECHECK(AERemoveEventHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theAEEventClass,
 	                      PyMac_GetOSType, &theAEEventID))
@@ -1045,6 +1162,9 @@ static PyObject *AE_AEGetEventHandler(PyObject *_self, PyObject *_args)
 	AEEventID theAEEventID;
 	AEEventHandlerUPP handler__proc__ = upp_GenericEventHandler;
 	PyObject *handler;
+#ifndef AEGetEventHandler
+	PyMac_PRECHECK(AEGetEventHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetOSType, &theAEEventClass,
 	                      PyMac_GetOSType, &theAEEventID))
@@ -1065,6 +1185,9 @@ static PyObject *AE_AEInstallSpecialHandler(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEKeyword functionClass;
+#ifndef AEInstallSpecialHandler
+	PyMac_PRECHECK(AEInstallSpecialHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &functionClass))
 		return NULL;
@@ -1082,6 +1205,9 @@ static PyObject *AE_AERemoveSpecialHandler(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEKeyword functionClass;
+#ifndef AERemoveSpecialHandler
+	PyMac_PRECHECK(AERemoveSpecialHandler);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &functionClass))
 		return NULL;
@@ -1100,6 +1226,9 @@ static PyObject *AE_AEManagerInfo(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	AEKeyword keyWord;
 	long result;
+#ifndef AEManagerInfo
+	PyMac_PRECHECK(AEManagerInfo);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &keyWord))
 		return NULL;
@@ -1115,6 +1244,9 @@ static PyObject *AE_AEObjectInit(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef AEObjectInit
+	PyMac_PRECHECK(AEObjectInit);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AEObjectInit();
@@ -1129,6 +1261,9 @@ static PyObject *AE_AEDisposeToken(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEDesc theToken;
+#ifndef AEDisposeToken
+	PyMac_PRECHECK(AEDisposeToken);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = AEDisposeToken(&theToken);
@@ -1148,6 +1283,9 @@ static PyObject *AE_AECallObjectAccessor(PyObject *_self, PyObject *_args)
 	DescType keyForm;
 	AEDesc keyData;
 	AEDesc token;
+#ifndef AECallObjectAccessor
+	PyMac_PRECHECK(AECallObjectAccessor);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&",
 	                      PyMac_GetOSType, &desiredClass,
 	                      AEDesc_Convert, &containerToken,
