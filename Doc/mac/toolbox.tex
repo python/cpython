@@ -13,6 +13,13 @@ and return values, and for additional description you are referred to
 \citetitle[http://developer.apple.com/techpubs/macos8/mac8.html]{Inside
 Macintosh} or similar works.
 
+These modules all live in a package called \module{Carbon}. Despite the
+name Carbon they are also available under classic PPC MacPython.
+The normal use pattern is
+
+\begin{verbatim}
+from Carbon import AE
+\end{verbatim}
 
 \strong{Warning!}  These modules are not yet documented.  If you
 wish to contribute documentation of any of these modules, please get
@@ -24,77 +31,116 @@ in touch with \email{python-docs@python.org}.
 %\section{Argument Handling for Toolbox Modules}
 
 
-\section{\module{AE} --- Apple Events}
-\declaremodule{standard}{AE}
+\section{\module{Carbon.AE} --- Apple Events}
+\declaremodule{standard}{Carbon.AE}
   \platform{Mac}
 \modulesynopsis{Interface to the Apple Events toolbox}
 
 
-\section{\module{Cm} --- Component Manager}
-\declaremodule{standard}{Cm}
+\section{\module{Carbon.App} --- Appearance Manager}
+\declaremodule{standard}{Carbon.App}
+  \platform{Mac}
+\modulesynopsis{Interface to the Appearance Manager}
+
+
+\section{\module{Carbon.CF} --- Core Foundation}
+\declaremodule{standard}{Carbon.CF}
+  \platform{Mac}
+\modulesynopsis{Interface to the Core Foundation}
+
+This module is only available under Carbon MacPython. The
+\code{CFBase}, \code{CFArray}, \code{CFData}, \code{CFDictionary},
+\code{CFString} and \code{CFURL} objects are supported, some
+only partially.
+
+\section{\module{Carbon.Cm} --- Component Manager}
+\declaremodule{standard}{Carbon.Cm}
   \platform{Mac}
 \modulesynopsis{Interface to the Component Manager}
 
 
-\section{\module{Ctl} --- Control Manager}
-\declaremodule{standard}{Ctl}
+\section{\module{Carbon.Ctl} --- Control Manager}
+\declaremodule{standard}{Carbon.Ctl}
   \platform{Mac}
 \modulesynopsis{Interface to the Control Manager}
 
 
-\section{\module{Dlg} --- Dialog Manager}
-\declaremodule{standard}{Dlg}
+\section{\module{Carbon.Dlg} --- Dialog Manager}
+\declaremodule{standard}{Carbon.Dlg}
   \platform{Mac}
 \modulesynopsis{Interface to the Dialog Manager}
 
 
-\section{\module{Evt} --- Event Manager}
-\declaremodule{standard}{Evt}
+\section{\module{Carbon.Evt} --- Event Manager}
+\declaremodule{standard}{Carbon.Evt}
   \platform{Mac}
 \modulesynopsis{Interface to the Event Manager}
 
 
-\section{\module{Fm} --- Font Manager}
-\declaremodule{standard}{Fm}
+\section{\module{Carbon.Fm} --- Font Manager}
+\declaremodule{standard}{Carbon.Fm}
   \platform{Mac}
 \modulesynopsis{Interface to the Font Manager}
 
 
-\section{\module{List} --- List Manager}
-\declaremodule{standard}{List}
+\section{\module{Carbon.Help} --- Help Manager}
+\declaremodule{standard}{Carbon.Help}
+  \platform{Mac}
+\modulesynopsis{Interface to the Balloon Help Manager}
+
+This module is only available under MacOS9 and earlier in
+classic PPC MacPython.
+
+\section{\module{Carbon.List} --- List Manager}
+\declaremodule{standard}{Carbon.List}
   \platform{Mac}
 \modulesynopsis{Interface to the List Manager}
 
 
-\section{\module{Menu} --- Menu Manager}
-\declaremodule{standard}{Menu}
+\section{\module{Carbon.Menu} --- Menu Manager}
+\declaremodule{standard}{Carbon.Menu}
   \platform{Mac}
 \modulesynopsis{Interface to the Menu Manager}
 
 
-\section{\module{Qd} --- QuickDraw}
-\declaremodule{builtin}{Qd}
+\section{\module{Carbon.Mlte} --- MultiLingual Text Editor}
+\declaremodule{standard}{Carbon.Mlte}
+  \platform{Mac}
+\modulesynopsis{Interface to the MultiLingual Text Editor}
+
+
+\section{\module{Carbon.Qd} --- QuickDraw}
+\declaremodule{builtin}{Carbon.Qd}
   \platform{Mac}
 \modulesynopsis{Interface to the QuickDraw toolbox}
 
 
-\section{\module{Qt} --- QuickTime}
-\declaremodule{standard}{Qt}
+\section{\module{Carbon.Qdoffs} --- QuickDraw Offscreen}
+\declaremodule{builtin}{Carbon.Qdoffs}
+  \platform{Mac}
+\modulesynopsis{Interface to the QuickDraw Offscreen APIs}
+
+
+\section{\module{Carbon.Qt} --- QuickTime}
+\declaremodule{standard}{Carbon.Qt}
   \platform{Mac}
 \modulesynopsis{Interface to the QuickTime toolbox}
 
 
-\section{\module{Res} --- Resource Manager and Handles}
-\declaremodule{standard}{Res}
+\section{\module{Carbon.Res} --- Resource Manager and Handles}
+\declaremodule{standard}{Carbon.Res}
   \platform{Mac}
 \modulesynopsis{Interface to the Resource Manager and Handles}
 
 
-\section{\module{Scrap} --- Scrap Manager}
-\declaremodule{standard}{Scrap}
+\section{\module{Carbon.Scrap} --- Scrap Manager}
+\declaremodule{standard}{Carbon.Scrap}
   \platform{Mac}
 \modulesynopsis{The Scrap Manager provides basic services for
                 implementing cut \&\ paste and clipboard operations.}
+
+This module is only fully available on MacOS9 and earlier under classic PPC
+MacPython. Very limited functionality is available under Carbon MacPython.
 
 \begin{seealso}
   \seetitle[http://developer.apple.com/techpubs/mac/MoreToolbox/MoreToolbox-109.html]{Scrap
@@ -104,31 +150,19 @@ in touch with \email{python-docs@python.org}.
 \end{seealso}
 
 
-\section{\module{Snd} --- Sound Manager}
-\declaremodule{standard}{Snd}
+\section{\module{Carbon.Snd} --- Sound Manager}
+\declaremodule{standard}{Carbon.Snd}
   \platform{Mac}
 \modulesynopsis{Interface to the Sound Manager }
 
 
-\section{\module{TE} --- TextEdit}
-\declaremodule{standard}{TE}
+\section{\module{Carbon.TE} --- TextEdit}
+\declaremodule{standard}{Carbon.TE}
   \platform{Mac}
 \modulesynopsis{Interface to TextEdit}
 
 
-\section{\module{waste} --- non-Apple \program{TextEdit} replacement}
-\declaremodule{standard}{waste}
-  \platform{Mac}
-\modulesynopsis{Interface to the ``WorldScript-Aware Styled Text Engine.''}
-
-\begin{seealso}
-  \seetitle[http://www.merzwaren.com/waste/]{About WASTE}{Information
-            about the WASTE widget and library, including
-            documentation and downloads.}
-\end{seealso}
-
-
-\section{\module{Win} --- Window Manager}
-\declaremodule{standard}{Win}
+\section{\module{Carbon.Win} --- Window Manager}
+\declaremodule{standard}{Carbon.Win}
   \platform{Mac}
 \modulesynopsis{Interface to the Window Manager}
