@@ -22,6 +22,9 @@ DL_IMPORT(PyObject *) PyEval_CallFunction(PyObject *obj, char *format, ...);
 DL_IMPORT(PyObject *) PyEval_CallMethod(PyObject *obj,
                                         char *methodname, char *format, ...);
 
+DL_IMPORT(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
+DL_IMPORT(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
+
 DL_IMPORT(PyObject *) PyEval_GetBuiltins(void);
 DL_IMPORT(PyObject *) PyEval_GetGlobals(void);
 DL_IMPORT(PyObject *) PyEval_GetLocals(void);
