@@ -16,8 +16,12 @@
    family of functions must indicate this by defining
    _POSIX_SEMAPHORES. */   
 #ifdef _POSIX_SEMAPHORES
+#if _POSIX_SEMAPHORES == -1
+#define HAVE_BROKEN_POSIX_SEMAPHORES
+#else
 #include <semaphore.h>
 #include <errno.h>
+#endif
 #endif
 
 #if !defined(pthread_attr_default)
