@@ -428,15 +428,15 @@ Instance methods:
 \end{methoddesc}
 
 \begin{methoddesc}{timetuple}{}
-  Return a 9-element tuple of the form returned by
+  Return a \class{time.struct_time} such as returned by
   \function{time.localtime()}.  The hours, minutes and seconds are
   0, and the DST flag is -1.
   \code{\var{d}.timetuple()} is equivalent to
-      \code{(\var{d}.year, \var{d}.month, \var{d}.day,
+      \code{time.struct_time((\var{d}.year, \var{d}.month, \var{d}.day,
              0, 0, 0, 
              \var{d}.weekday(), 
              \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
-            -1)}
+            -1))}
 \end{methoddesc}
 
 \begin{methoddesc}{toordinal}{}
@@ -858,14 +858,14 @@ Instance methods:
 \end{methoddesc}
 
 \begin{methoddesc}{timetuple}{}
-  Return a 9-element tuple of the form returned by
+  Return a \class{time.struct_time} such as returned by
   \function{time.localtime()}.
   \code{\var{d}.timetuple()} is equivalent to
-  \code{(\var{d}.year, \var{d}.month, \var{d}.day,
+  \code{time.struct_time((\var{d}.year, \var{d}.month, \var{d}.day,
          \var{d}.hour, \var{d}.minute, \var{d}.second,
          \var{d}.weekday(),
          \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
-         dst)}
+         dst))}
   The \member{tm_isdst} flag of the result is set according to
   the \method{dst()} method:  \member{tzinfo} is \code{None} or
   \method{dst()} returns \code{None},
@@ -881,7 +881,7 @@ Instance methods:
   for a UTC time.
 
   If \var{d} is aware, \var{d} is normalized to UTC time, by subtracting
-  \code{\var{d}.utcoffset()}, and a timetuple for the
+  \code{\var{d}.utcoffset()}, and a \class{time.struct_time} for the
   normalized time is returned.  \member{tm_isdst} is forced to 0.
   Note that the result's \member{tm_year} member may be
   \constant{MINYEAR}-1 or \constant{MAXYEAR}+1, if \var{d}.year was
