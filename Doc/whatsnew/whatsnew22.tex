@@ -268,10 +268,10 @@ own class and storing all the local variables of the generator as
 instance variables.  For example, returning a list of integers could
 be done by setting \code{self.count} to 0, and having the
 \method{next()} method increment \code{self.count} and return it.
-because it would be easy to write a Python class.  However, for a
-moderately complicated generator, writing a corresponding class would
-be much messier.  \file{Lib/test/test_generators.py} contains a number
-of more interesting examples.  The simplest one implements an in-order
+However, for a moderately complicated generator, writing a
+corresponding class would be much messier.
+\file{Lib/test/test_generators.py} contains a number of more
+interesting examples.  The simplest one implements an in-order
 traversal of a tree using generators recursively.
 
 \begin{verbatim}
@@ -640,6 +640,6 @@ slot, or raise an exception if that's \NULL.
 
 The author would like to thank the following people for offering
 suggestions and corrections to various drafts of this article: Fred
-L. Drake, Jr., Tim Peters, Neil Schemenauer.  
+Bremmer, Fred L. Drake, Jr., Tim Peters, Neil Schemenauer.  
 
 \end{document}
