@@ -732,7 +732,7 @@ PyObject_Compare(PyObject *v, PyObject *w)
 #if defined(USE_STACKCHECK)
 	if (PyOS_CheckStack()) {
 		PyErr_SetString(PyExc_MemoryError, "Stack overflow");
-        return -1;
+		return -1;
 	}
 #endif
 	if (v == NULL || w == NULL) {
