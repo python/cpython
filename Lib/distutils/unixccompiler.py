@@ -105,24 +105,12 @@ class UnixCCompiler(CCompiler):
             except DistutilsExecError, msg:
                 raise CompileError, msg
 
-    def compile(self, sources,
-                output_dir=None, macros=None, include_dirs=None, debug=0,
-                extra_preargs=None, extra_postargs=None, depends=None):
-        
-        macros, objects, extra_postargs, pp_opts, build = \
-                self._setup_compile(output_dir, macros, include_dirs, sources,
-                                    depends, extra_postargs)
-        cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
-
-        for obj, (src, ext) in build.items():
-            try:
-                self.spawn(self.compiler_so + cc_args +
-                           [src, '-o', obj] + extra_postargs)
-            except DistutilsExecError, msg:
-                raise CompileError, msg
-
-        # Return *all* object filenames, not just the ones we just built.
-        return objects
+    def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
+        try:
+            self.spawn(self.compiler_so + cc_args + [src, '-o', obj] +
+                       extra_postargs)
+        except DistutilsExecError, msg:
+            raise CompileError, msg
 
     def create_static_lib(self, objects, output_libname,
                           output_dir=None, debug=0):
