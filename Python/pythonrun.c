@@ -98,9 +98,8 @@ Py_Initialize()
 	PyObject *bimod, *sysmod;
 	char *p;
 
-	if (initialized)
-		Py_FatalError("Py_Initialize: already initialized");
-	initialized = 1;
+	if (++initialized > 1)
+		return;
 	
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
 		Py_DebugFlag = 1;
@@ -166,9 +165,10 @@ Py_Finalize()
 
 	call_sys_exitfunc();
 
-	if (!initialized)
+	if (--initialized > 0)
+		return;
+	if (initialized < 0)
 		Py_FatalError("Py_Finalize: not initialized");
-	initialized = 0;
 
 	tstate = PyThreadState_Get();
 	interp = tstate->interp;

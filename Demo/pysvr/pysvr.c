@@ -168,6 +168,7 @@ main_thread(int port)
 		PyEval_AcquireThread(gtstate);
 		gtstate = NULL;
 		Py_Finalize();
+		Py_Finalize();
 	}
 	exit(0);
 }
@@ -212,6 +213,7 @@ init_python()
 {
 	if (gtstate)
 		return;
+	Py_Initialize(); /* Initialize the interpreter */
 	Py_Initialize(); /* Initialize the interpreter */
 	PyEval_InitThreads(); /* Create (and acquire) the interpreter lock */
 	gtstate = PyEval_SaveThread(); /* Release the thread state */
