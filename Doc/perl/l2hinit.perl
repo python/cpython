@@ -284,7 +284,7 @@ sub add_module_idx{
 	$key =~ s/<tt>([a-zA-Z0-9._]*)<\/tt>/\1/;
 	my $plat = "$ModulePlatforms{$key}";
 	$plat = ''
-	  if $IGNORE_PLATFORM_ANNOTATION;
+	  if ($plat eq $IGNORE_PLATFORM_ANNOTATION);
 	if (!$first) {
 	    $allthesame = 0
 	      if ($prevplat ne $plat);
