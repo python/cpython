@@ -619,8 +619,8 @@ dict_dealloc(register dictobject *mp)
 {
 	register int i;
 	register dictentry *ep;
-	Py_TRASHCAN_SAFE_BEGIN(mp)
 	PyObject_GC_Fini(mp);
+	Py_TRASHCAN_SAFE_BEGIN(mp)
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
 		if (ep->me_key != NULL) {
 			Py_DECREF(ep->me_key);

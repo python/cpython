@@ -87,12 +87,14 @@ gc_list_append(PyGC_Head *node, PyGC_Head *list)
 static void
 gc_list_remove(PyGC_Head *node)
 {
+	if (node->gc_next == NULL)
+		return;
 	node->gc_prev->gc_next = node->gc_next;
 	node->gc_next->gc_prev = node->gc_prev;
 #ifdef Py_DEBUG
 	node->gc_prev = NULL;
-	node->gc_next = NULL;
 #endif
+	node->gc_next = NULL;
 }
 
 static void 

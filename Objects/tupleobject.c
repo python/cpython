@@ -143,8 +143,8 @@ tupledealloc(register PyTupleObject *op)
 {
 	register int i;
 	register int len =  op->ob_size;
-	Py_TRASHCAN_SAFE_BEGIN(op)
 	PyObject_GC_Fini(op);
+	Py_TRASHCAN_SAFE_BEGIN(op)
 	if (len > 0) {
 		i = len;
 		while (--i >= 0)
