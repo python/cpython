@@ -1104,7 +1104,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             /* see if the tail matches */
             state->repeat = rp->prev;
             /* FIXME: the following fix doesn't always work (#133283) */
-            if (0 && rp->pattern[2] == 65535) {
+            if (rp->pattern[2] == 65535) {
                 /* unbounded repeat */
                 for (;;) {
                     i = SRE_MATCH(state, pattern, level + 1);

@@ -245,7 +245,7 @@ if verbose:
 # implementation of repeated groups.
 test("sre.match('(x)*', 50000*'x').span()", (0, 50000), RuntimeError)
 test("sre.match(r'(x)*y', 50000*'x'+'y').span()", (0, 50001), RuntimeError)
-test("sre.match(r'(x)*?y', 50000*'x'+'y').span()", (0, 50001), RuntimeError)
+test("sre.match(r'(x)*?y', 50000*'x'+'y').span()", (0, 50001))
 
 from re_tests import *
 
