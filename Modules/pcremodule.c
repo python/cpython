@@ -257,35 +257,27 @@ PyPcre_expand_escape(pattern, pattern_len, indexptr, typeptr)
 	case('t'):
 		*indexptr=index;
 		return Py_BuildValue("c", (char)9);
-		break;
 	case('n'):
 		*indexptr = index;
 		return Py_BuildValue("c", (char)10);
-		break;
 	case('v'):
 		*indexptr = index;
 		return Py_BuildValue("c", (char)11);
-		break;
 	case('r'):
 		*indexptr = index;
 		return Py_BuildValue("c", (char)13);
-		break;
 	case('f'):
 		*indexptr = index;
 		return Py_BuildValue("c", (char)12);
-		break;
 	case('a'):
 		*indexptr = index;
 		return Py_BuildValue("c", (char)7);
-		break;
 	case('b'):
 		*indexptr=index;
 		return Py_BuildValue("c", (char)8);
-		break;
 	case('\\'):
 		*indexptr=index;
 		return Py_BuildValue("c", '\\');
-		break;
 
 	case('x'):
 	{
@@ -468,7 +460,6 @@ PyPcre_expand_escape(pattern, pattern_len, indexptr, typeptr)
 		*typeptr = STRING;
 		*indexptr = index;
 		return Py_BuildValue("s#", pattern+index-2, 2);
-		break;
 	}
 }
 
