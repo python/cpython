@@ -24,3 +24,8 @@ C.load('Customer="WILE_E_COYOTE"; Version=1; Path=/acme')
 assert C['Customer'].value == 'WILE_E_COYOTE'
 assert C['Customer']['version'] == '1'
 assert C['Customer']['path'] == '/acme'
+
+print C.output(['path'])
+print C.js_output()
+print C.js_output(['path'])
+
