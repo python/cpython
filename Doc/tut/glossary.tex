@@ -40,7 +40,7 @@ Any class which does not inherit from \class{object}.  See
 
 The implicit conversion of an instance of one type to another during an
 operation which involves two arguments of the same type.  For example,
-{}\code{int(3.15)} converts the floating point number to the integer,
+{}\code{int(3.15)} converts the floating point number to the integer
 {}\code{3}, but in {}\code{3+4.5}, each argument is of a different type (one
 int, one float), and both must be converted to the same type before they can
 be added or it will raise a {}\code{TypeError}.  Coercion between two
@@ -169,7 +169,7 @@ sophisticated, multi-platform GUI application.
 An object with fixed value.  Immutable objects are numbers, strings or
 tuples (and more).  Such an object cannot be altered.  A new object
 has to be created if a different value has to be stored.  They play an
-important role in places where a constant hash value is needed.  For
+important role in places where a constant hash value is needed, for
 example as a key in a dictionary.
 
 \index{integer division}
@@ -189,7 +189,7 @@ operator.  See also \emph{__future__}.
 \index{interactive}
 \item[interactive]
 Python has an interactive interpreter which means that you can try out
-things and directly see its result.  Just launch \code{python} with no
+things and immediately see their results.  Just launch \code{python} with no
 arguments (possibly by selecting it from your computer's main menu).
 It is a very powerful way to test out new ideas or inspect modules and
 packages (remember \code{help(x)}).
@@ -235,7 +235,7 @@ code that attempts multiple iteration passes.  A container object
 (such as a \class{list}) produces a fresh new iterator each time you
 pass it to the \function{iter()} function or use it in a
 {}\keyword{for} loop.  Attempting this with an iterator will just
-return the same exhausted iterator object from the second iteration
+return the same exhausted iterator object used in the previous iteration
 pass, making it appear like an empty container.
 
 \index{list comprehension}
@@ -245,7 +245,15 @@ return a list with the results.  \code{result = ["0x\%02x"
 \% x for x in range(256) if x \% 2 == 0]} generates a list of strings
 containing hex numbers (0x..) that are even and in the range from 0 to 255.
 The \keyword{if} clause is optional.  If omitted, all elements in
-{}\code{range(256)} are processed in that case.
+{}\code{range(256)} are processed.
+
+
+\index{LBYL}
+\item[LBYL]
+Look before you leap.  This coding style explicitly tests for
+pre-conditions before making calls or lookups.  This style contrasts
+with the \emph{EAFP} approach and is characterized by the presence of
+many \keyword{if} statements.
 
 \index{mapping}
 \item[mapping]
@@ -265,13 +273,6 @@ have been used for logging attribute access, adding thread-safety,
 tracking object creation, implementing singletons, and many other
 tasks.
 
-\index{LBYL}
-\item[LBYL]
-Look before you leap.  This coding style explicitly tests for
-pre-conditions before making calls or lookups.  This style contrasts
-with the \emph{EAFP} approach and is characterized the presence of
-many \keyword{if} statements.
-
 \index{mutable}
 \item[mutable]
 Mutable objects can change their value but keep their \function{id()}.
@@ -280,8 +281,8 @@ See also \emph{immutable}.
 \index{namespace}
 \item[namespace]
 The place where a variable is stored.  Namespaces are implemented as
-dictionary.  There is the local, global and builtins namespace and the
-nested namespaces in objects (in methods).  Namespaces support
+dictionaries.  There are the local, global and builtin namespaces
+as well asnested namespaces in objects (in methods).  Namespaces support
 modularity by preventing naming conflicts.  For instance, the
 functions \function{__builtin__.open()} and \function{os.open()} are
 distinguished by their namespaces.  Namespaces also aid readability
@@ -312,7 +313,7 @@ classes can use Python's newer, versatile features like
 
 \index{Python3000}
 \item[Python3000]
-A mythical python release, allowed not to be backward compatible, with
+A mythical python release, not required be backward compatible, with
 telepathic interface.
 
 \index{__slots__}
@@ -321,7 +322,7 @@ A declaration inside a \emph{new-style class} that saves memory by
 pre-declaring space for instance attributes and eliminating instance
 dictionaries.  Though popular, the technique is somewhat tricky to get
 right and is best reserved for rare cases where there are large
-numbers of instances in a memory critical application.
+numbers of instances in a memory-critical application.
 
 \index{sequence}
 \item[sequence]

@@ -2175,7 +2175,7 @@ pattern, list comprehensions can compactly specify the key-value list.
 \begin{verbatim}
 >>> dict([('sape', 4139), ('guido', 4127), ('jack', 4098)])
 {'sape': 4139, 'jack': 4098, 'guido': 4127}
->>> dict([(x, x**2) for x in (2, 4, 6))     # use a list comprehension
+>>> dict([(x, x**2) for x in (2, 4, 6)])     # use a list comprehension
 {2: 4, 4: 16, 6: 36}
 \end{verbatim}
 
@@ -4193,6 +4193,7 @@ in this case (the instance will have a single copy of ``instance
 variables'' or data attributes used by the common base class), it is
 not clear that these semantics are in any way useful.
 
+%% XXX Add rules for new-style MRO?
 
 \section{Private Variables \label{private}}
 
@@ -4201,9 +4202,9 @@ identifiers.  Any identifier of the form \code{__spam} (at least two
 leading underscores, at most one trailing underscore) is textually
 replaced with \code{_classname__spam}, where \code{classname} is the
 current class name with leading underscore(s) stripped.  This mangling
-is done without regard of the syntactic position of the identifier, so
+is done without regard to the syntactic position of the identifier, so
 it can be used to define class-private instance and class variables,
-methods, as well as globals, and even to store instance variables
+methods, variables stored in globals, and even variables stored in instances.
 private to this class on instances of \emph{other} classes.  Truncation
 may occur when the mangled name would be longer than 255 characters.
 Outside classes, or when the class name consists of only underscores,
@@ -4232,7 +4233,7 @@ when referencing \code{__dict__} directly.
 \section{Odds and Ends \label{odds}}
 
 Sometimes it is useful to have a data type similar to the Pascal
-``record'' or C ``struct'', bundling together a couple of named data
+``record'' or C ``struct'', bundling together a few named data
 items.  An empty class definition will do nicely:
 
 \begin{verbatim}
@@ -4251,7 +4252,7 @@ A piece of Python code that expects a particular abstract data type
 can often be passed a class that emulates the methods of that data
 type instead.  For instance, if you have a function that formats some
 data from a file object, you can define a class with methods
-\method{read()} and \method{readline()} that gets the data from a string
+\method{read()} and \method{readline()} that get the data from a string
 buffer instead, and pass it as an argument.%  (Unfortunately, this
 %technique has its limitations: a class can't define operations that
 %are accessed by special syntax such as sequence subscripting or
@@ -4261,7 +4262,7 @@ buffer instead, and pass it as an argument.%  (Unfortunately, this
 
 
 Instance method objects have attributes, too: \code{m.im_self} is the
-object of which the method is an instance, and \code{m.im_func} is the
+instance object with the method \method{m}, and \code{m.im_func} is the
 function object corresponding to the method.
 
 
@@ -4530,7 +4531,7 @@ wildcard searches:
 
 \section{Command Line Arguments\label{command-line-arguments}}
 
-Common utility scripts often invoke processing command line arguments.
+Common utility scripts often need to process command line arguments.
 These arguments are stored in the
 \ulink{\module{sys}}{../lib/module-sys.html}\ module's \var{argv}
 attribute as a list.  For instance the following output results from
@@ -4557,7 +4558,7 @@ module also has attributes for \var{stdin}, \var{stdout}, and
 messages to make them visible even when \var{stdout} has been redirected:
 
 \begin{verbatim}
->>> sys.stderr.write('Warning, log file not found starting a new one')
+>>> sys.stderr.write('Warning, log file not found starting a new one\n')
 Warning, log file not found starting a new one
 \end{verbatim}
 
@@ -4636,7 +4637,7 @@ for sending mail:
 >>> import smtplib
 >>> server = smtplib.SMTP('localhost')
 >>> server.sendmail('soothsayer@example.org', 'jceasar@example.org',
-"""To: jceasar@example.org
+"""To: jcaesar@example.org
 From: soothsayer@example.org
 
 Beware the Ides of March.
@@ -4660,8 +4661,8 @@ that are time zone aware.
 >>> now = date.today()
 >>> now
 datetime.date(2003, 12, 2)
->>> now.strftime("%m-%d-%y or %d%b %Y is a %A on the %d day of %B")
-'12-02-03 or 02Dec 2003 is a Tuesday on the 02 day of December'
+>>> now.strftime("%m-%d-%y. %d %b %Y is a %A on the %d day of %B.")
+'12-02-03. 02 Dec 2003 is a Tuesday on the 02 day of December.'
 
 # dates support calendar arithmetic
 >>> birthday = date(1964, 7, 31)
@@ -4691,8 +4692,8 @@ by modules including:
 37
 >>> zlib.decompress(t)
 'witch which has which witches wrist watch'
->>> zlib.crc32(t)
--1438085031
+>>> zlib.crc32(s)
+226805979
 \end{verbatim}
 
 
@@ -5219,7 +5220,7 @@ Decimal("0.142857142857142857142857142857142857")
 \chapter{What Now? \label{whatNow}}
 
 Reading this tutorial has probably reinforced your interest in using
-Python --- you should be eager to apply Python to solve your
+Python --- you should be eager to apply Python to solving your
 real-world problems.  Now what should you do?
 
 You should read, or at least page through, the
@@ -5382,7 +5383,7 @@ A more capable startup file might look like this example.  Note that
 this deletes the names it creates once they are no longer needed; this
 is done since the startup file is executed in the same namespace as
 the interactive commands, and removing the names avoids creating side
-effects in the interactive environments.  You may find it convenient
+effects in the interactive environment.  You may find it convenient
 to keep some of the imported modules, such as
 \ulink{\module{os}}{../lib/module-os.html}, which turn
 out to be needed in most sessions with the interpreter.
@@ -5474,7 +5475,7 @@ or, better,
 
 and so on.  No matter how many digits you're willing to write down, the
 result will never be exactly 1/3, but will be an increasingly better
-approximation to 1/3.
+approximation of 1/3.
 
 In the same way, no matter how many base 2 digits you're willing to
 use, the decimal value 0.1 cannot be represented exactly as a base 2
@@ -5520,7 +5521,7 @@ turns out that's enough (on most machines) so that
 \var{x}, but rounding to 16 digits is not enough to make that true.
 
 Note that this is in the very nature of binary floating-point: this is
-not a bug in Python, it is not a bug in your code either, and you'll
+not a bug in Python, it is not a bug in your code either.  You'll
 see the same kind of thing in all languages that support your
 hardware's floating-point arithmetic (although some languages may
 not \emph{display} the difference by default, or in all output modes).
@@ -5634,7 +5635,7 @@ and recalling that \var{J} has exactly 53 bits (is \code{>= 2**52} but
 \code{< 2**53}), the best value for \var{N} is 56:
 
 \begin{verbatim}
->>> 2L**52
+>>> 2**52
 4503599627370496L
 >>> 2L**53
 9007199254740992L
