@@ -51,6 +51,7 @@ def test_main():        # magic name!  see above
         done.acquire()
         if verbose:
             print "OK."
+    done.release()
 
 if __name__ == "__main__":
     test_main()
