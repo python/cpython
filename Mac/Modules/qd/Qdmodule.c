@@ -3838,9 +3838,9 @@ static PyObject *Qd_SetPort(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	WindowPtr thePort;
+	GrafPtr thePort;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      WinObj_Convert, &thePort))
+	                      GrafObj_Convert, &thePort))
 		return NULL;
 	SetPort(thePort);
 	Py_INCREF(Py_None);
@@ -4783,7 +4783,7 @@ static PyMethodDef Qd_methods[] = {
 	{"CharExtra", (PyCFunction)Qd_CharExtra, 1,
 	 "(Fixed extra) -> None"},
 	{"SetPort", (PyCFunction)Qd_SetPort, 1,
-	 "(WindowPtr thePort) -> None"},
+	 "(GrafPtr thePort) -> None"},
 	{"GetCursor", (PyCFunction)Qd_GetCursor, 1,
 	 "(short cursorID) -> (CursHandle _rv)"},
 	{"SetCursor", (PyCFunction)Qd_SetCursor, 1,
