@@ -405,7 +405,44 @@ can look at the head of a lazy list any number of times).
 [81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
 [200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
+
+Heh.  Here's one way to get a shared list, complete with an excruciating
+namespace renaming trick.  The *pretty* part is that the times() and merge()
+functions can be reused as-is, because they only assume their stream
+arguments are iterable -- a LazyList is the same as a generator to times().
+
+>>> class LazyList:
+...     def __init__(self, g):
+...         self.sofar = []
+...         self.fetch = g.next
+...
+...     def __getitem__(self, i):
+...         sofar, fetch = self.sofar, self.fetch
+...         while i >= len(sofar):
+...             sofar.append(fetch())
+...         return sofar[i]
+
+>>> def m235():
+...     yield 1
+...     # Gack:  m235  below actually refers to a LazyList.
+...     me_times2 = times(2, m235)
+...     me_times3 = times(3, m235)
+...     me_times5 = times(5, m235)
+...     for i in merge(merge(me_times2,
+...                          me_times3),
+...                    me_times5):
+...         yield i
+
+>>> m235 = LazyList(m235())
+>>> for i in range(5):
+...     print [m235[j] for j in range(15*i, 15*(i+1))]
+[1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
+[25, 27, 30, 32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80]
+[81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
+[200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
+[400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
 """
+
 
 __test__ = {"tut": tutorial_tests,
             "pep": pep_tests,
