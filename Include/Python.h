@@ -50,11 +50,10 @@
 #include <stdlib.h>
 #endif
 
-#ifndef Py_DEBUG
-#ifndef NDEBUG
-#define NDEBUG 1
-#endif
-#endif
+/* CAUTION:  Build setups should ensure that NDEBUG is defined on the
+ * compiler command line when building Python in release mode; else
+ * assert() calls won't be removed.
+ */
 #include <assert.h>
 
 #include "pyport.h"
