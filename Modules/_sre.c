@@ -2616,6 +2616,7 @@ init_sre(void)
 {
     PyObject* m;
     PyObject* d;
+    PyObject* x;
 
     /* Patch object types */
     Pattern_Type.ob_type = Match_Type.ob_type =
@@ -2625,12 +2626,14 @@ init_sre(void)
     d = PyModule_GetDict(m);
 
     PyDict_SetItemString(
-        d, "MAGIC", (PyObject*) PyInt_FromLong(SRE_MAGIC)
+        d, "MAGIC", (x = (PyObject*) PyInt_FromLong(SRE_MAGIC))
         );
+    Py_XDECREF(x);
 
     PyDict_SetItemString(
-        d, "copyright", (PyObject*) PyString_FromString(copyright)
+	d, "copyright", (x = (PyObject*)PyString_FromString(copyright))
         );
+    Py_XDECREF(x);
 
 }
 
