@@ -305,7 +305,7 @@ class Wave_read:
 			self._data_seek_needed = 0
 		if nframes == 0:
 			return ''
-		if self._sampwidth > 1:
+		if self._sampwidth > 1 and big_endian:
 			# unfortunately the fromfile() method does not take
 			# something that only looks like a file object, so
 			# we have to reach into the innards of the chunk object
@@ -316,8 +316,7 @@ class Wave_read:
 				nitems = (self._data_chunk.chunksize - self._data_chunk.size_read) / self._sampwidth
 			data.fromfile(self._data_chunk.file, nitems)
 			self._data_chunk.size_read = self._data_chunk.size_read + nitems * self._sampwidth
-			if big_endian:
-				data.byteswap()
+			data.byteswap()
 			data = data.tostring()
 		else:
 			data = self._data_chunk.read(nframes * self._framesize)
@@ -487,11 +486,10 @@ class Wave_write:
 		nframes = len(data) / (self._sampwidth * self._nchannels)
 		if self._convert:
 			data = self._convert(data)
-		if self._sampwidth > 1:
+		if self._sampwidth > 1 and big_endian:
 			import array
 			data = array.array(_array_fmts[self._sampwidth], data)
-			if big_endian:
-				data.byteswap()
+			data.byteswap()
 			data.tofile(self._file)
 			self._datawritten = self._datawritten + len(data) * self._sampwidth
 		else:
