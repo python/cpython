@@ -1,0 +1,75 @@
+# NOTE: Makefile.in is converted into Makefile by the configure script
+# in the parent directory.  Once configure has run, you can recreate
+# the Makefile by running just config.status.
+
+# === Variables set by config.stat ===
+
+srcdir=		@srcdir@
+VPATH=		@srcdir@
+
+CC=		@CC@
+RANLIB=		@RANLIB@
+
+
+# === Other things that are customizable but not by configure ===
+
+AR=		ar
+MKDEP=		mkdep
+SHELL=		/bin/sh
+
+INCLDIR=	$(srcdir)/../Py
+OPT=		-g
+CFLAGS=		$(OPT) -I$(INCLDIR)
+
+
+# === Fixed definitions ===
+
+SRCS=		\
+		bltinmodule.c ceval.c cgensupport.c compile.c \
+		errors.c fmod.c frozenmain.c getcwd.c graminit.c \
+		import.c marshal.c mathmodule.o modsupport.c posixmodule.c \
+		pythonrun.c strerror.c strtod.c strtol.c \
+		structmember.c structmodule.c \
+		sysmodule.c timemodule.c traceback.c
+
+OBJS=		\
+		bltinmodule.o ceval.o cgensupport.o compile.o \
+		errors.o fmod.o frozenmain.o getcwd.o graminit.o \
+		import.o marshal.o mathmodule.o modsupport.o posixmodule.o \
+		pythonrun.o strerror.o strtod.o strtol.o \
+		structmember.o structmodule.o \
+		sysmodule.o timemodule.o traceback.o
+
+LIB=		libObjects.a
+
+MYLIBS=		$(LIB) ../Objects/libObjects.a ../Parser/libParser.a
+
+SYSLIBS=	-lm
+
+
+# === Rules ===
+
+all:		$(LIB) python
+
+$(LIB):		$(OBJS)
+		$(AR) cr $(LIB) $(OBJS)
+
+python:		pythonmain.o config.o $(MYLIBS)
+		$(CC) pythonmain.o config.o $(MYLIBS) $(SYSLIBS) -o python
+
+clean:
+		-rm -f $(OBJS)
+		-rm -f core *~ [@,#]* *.old *.orig *.rej
+
+clobber:	clean
+		-rm -f $(LIB) tags TAGS
+
+Makefile:	Makefile.in ../config.status
+		(cd ..; $(SHELL) config.status)
+
+depend:		$(SRCS)
+		$(MKDEP) $(CFLAGS) $(SRCS) $(PGENSRCS)
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
