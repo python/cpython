@@ -61,6 +61,7 @@ PYTHONPATH   : '%c'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
 PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n\
                The default module search path uses %s.\n\
+PYTHONCASEOK : ignore case in 'import' statements (Windows).\n\
 ";
 
 
