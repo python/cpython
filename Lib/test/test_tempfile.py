@@ -84,67 +84,6 @@ class test_exports(TC):
 test_classes.append(test_exports)
 
 
-class test__once(TC):
-    """Test the internal function _once."""
-
-    def setUp(self):
-        tempfile.once_var = None
-        self.already_called = 0
-
-    def tearDown(self):
-        del tempfile.once_var
-
-    def callMeOnce(self):
-        self.failIf(self.already_called, "callMeOnce called twice")
-        self.already_called = 1
-        return 24
-
-    def do_once(self):
-        tempfile._once('once_var', self.callMeOnce)
-
-    def test_once_initializes(self):
-        """_once initializes its argument"""
-
-        self.do_once()
-
-        self.assertEqual(tempfile.once_var, 24,
-                         "once_var=%d, not 24" % tempfile.once_var)
-        self.assertEqual(self.already_called, 1,
-                         "already_called=%d, not 1" % self.already_called)
-
-    def test_once_means_once(self):
-        """_once calls the callback just once"""
-
-        self.do_once()
-        self.do_once()
-        self.do_once()
-        self.do_once()
-
-    def test_once_namespace_safe(self):
-        """_once does not modify anything but its argument"""
-
-        env_copy = tempfile.__dict__.copy()
-
-        self.do_once()
-
-        env = tempfile.__dict__
-
-        a = env.keys()
-        a.sort()
-        b = env_copy.keys()
-        b.sort()
-
-        self.failIf(len(a) != len(b))
-        for i in xrange(len(a)):
-            self.failIf(a[i] != b[i])
-
-            key = a[i]
-            if key != 'once_var':
-                self.failIf(env[key] != env_copy[key])
-
-test_classes.append(test__once)
-
-
 class test__RandomNameSequence(TC):
     """Test the internal iterator object _RandomNameSequence."""
 
