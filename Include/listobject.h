@@ -73,7 +73,8 @@ extern int PyList_Reverse Py_PROTO((PyObject *));
 extern PyObject *PyList_AsTuple Py_PROTO((PyObject *));
 
 /* Macro, trading safety for speed */
-#define PyList_GET_ITEM(op, i) ((op)->ob_item[i])
+#define PyList_GET_ITEM(op, i) (((PyListObject *)(op))->ob_item[i])
+#define PyList_GET_SIZE(op)    (((PyListObject *)(op))->ob_size)
 
 #ifdef __cplusplus
 }
