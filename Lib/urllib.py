@@ -404,7 +404,7 @@ class URLopener:
 
     def open_file(self, url):
         """Use local file or FTP depending on form of URL."""
-        if url[:2] == '//' and url[2:3] != '/':
+        if url[:2] == '//' and url[2:3] != '/' and url[2:12] != 'localhost/':
             return self.open_ftp(url)
         else:
             return self.open_local_file(url)
