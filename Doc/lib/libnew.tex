@@ -15,10 +15,9 @@ to the interpreter, so care must be exercised when using this module.
 The \module{new} module defines the following functions:
 
 \begin{funcdesc}{instance}{class, dict}
-This function creates an instance of \class{class} with dictionary
+This function creates an instance of \var{class} with dictionary
 \var{dict} without calling the \method{__init__()} constructor. Note that
-this means that there are no guarantees that the object will be in a
-consistent state.
+there are no guarantees that the object will be in a consistent state.
 \end{funcdesc}
 
 \begin{funcdesc}{instancemethod}{function, instance, class}
