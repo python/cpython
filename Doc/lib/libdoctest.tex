@@ -790,7 +790,7 @@ for better documentation.
 
 The functions \function{testmod()} and \function{testfile()} provide a
 simple interface to doctest that should be sufficient for most basic
-uses.  For a more informal introduction to these two functions, see
+uses.  For a less formal introduction to these two functions, see
 sections \ref{doctest-simple-testmod} and
 \ref{doctest-simple-testfile}.
 
@@ -811,15 +811,15 @@ sections \ref{doctest-simple-testmod} and
 
   \begin{itemize}
   \item If \var{module_relative} is \code{True} (the default), then
-        \var{filename} specifies an os-independent module-relative
+        \var{filename} specifies an OS-independent module-relative
         path.  By default, this path is relative to the calling
         module's directory; but if the \var{package} argument is
         specified, then it is relative to that package.  To ensure
-        os-independence, \var{filename} should use \code{/} characters
+        OS-independence, \var{filename} should use \code{/} characters
         to separate path segments, and may not be an absolute path
         (i.e., it may not begin with \code{/}).
   \item If \var{module_relative} is \code{False}, then \var{filename}
-        specifies an os-specific path.  The path may be absolute or
+        specifies an OS-specific path.  The path may be absolute or
         relative; relative paths are resolved with respect to the
         current working directory.
   \end{itemize}
@@ -835,9 +835,9 @@ sections \ref{doctest-simple-testmod} and
   if \var{module_relative} is \code{False}.
 
   Optional argument \var{globs} gives a dict to be used as the globals
-  when executing examples; by default, or if \code{None},
-  \code{\var{m}.__dict__} is used.  A new shallow copy of this dict is
+  when executing examples.  A new shallow copy of this dict is
   created for the doctest, so its examples start with a clean slate.
+  By default, or if \code{None}, a new empty dict is used.
 
   Optional argument \var{extraglobs} gives a dict merged into the
   globals used to execute examples.  This works like
@@ -880,8 +880,8 @@ sections \ref{doctest-simple-testmod} and
   specified in keyword form.
 
   Test examples in docstrings in functions and classes reachable
-  from module \var{m} (or the current module if \var{m} is not supplied
-  or is \code{None}), starting with \code{\var{m}.__doc__}.
+  from module \var{m} (or module \module{__main__} if \var{m} is not
+  supplied or is \code{None}), starting with \code{\var{m}.__doc__}.
 
   Also test examples reachable from dict \code{\var{m}.__test__}, if it
   exists and is not \code{None}.  \code{\var{m}.__test__} maps
@@ -897,40 +897,6 @@ sections \ref{doctest-simple-testmod} and
   Optional argument \var{name} gives the name of the module; by default,
   or if \code{None}, \code{\var{m}.__name__} is used.
 
-  Optional argument \var{globs} gives a dict to be used as the globals
-  when executing examples; by default, or if \code{None},
-  \code{\var{m}.__dict__} is used.  A new shallow copy of this dict is
-  created for each docstring with examples, so that each docstring's
-  examples start with a clean slate.
-
-  Optional argument \var{extraglobs} gives a dict merged into the
-  globals used to execute examples.  This works like
-  \method{dict.update()}:  if \var{globs} and \var{extraglobs} have a
-  common key, the associated value in \var{extraglobs} appears in the
-  combined dict.  By default, or if \code{None}, no extra globals are
-  used.  This is an advanced feature that allows parameterization of
-  doctests.  For example, a doctest can be written for a base class, using
-  a generic name for the class, then reused to test any number of
-  subclasses by passing an \var{extraglobs} dict mapping the generic
-  name to the subclass to be tested.
-
-  Optional argument \var{verbose} prints lots of stuff if true, and prints
-  only failures if false; by default, or if \code{None}, it's true
-  if and only if \code{'-v'} is in \code{sys.argv}.
-
-  Optional argument \var{report} prints a summary at the end when true,
-  else prints nothing at the end.  In verbose mode, the summary is
-  detailed, else the summary is very brief (in fact, empty if all tests
-  passed).
-
-  Optional argument \var{optionflags} or's together option flags.  See
-  see section~\ref{doctest-options}.
-
-  Optional argument \var{raise_on_error} defaults to false.  If true,
-  an exception is raised upon the first failure or unexpected exception
-  in an example.  This allows failures to be post-mortem debugged.
-  Default behavior is to continue running examples.
-
   Optional argument \var{exclude_empty} defaults to false.  If true,
   objects for which no doctests are found are excluded from consideration.
   The default is a backward compatibility hack, so that code still
@@ -938,6 +904,11 @@ sections \ref{doctest-simple-testmod} and
   \function{testmod()} continues to get output for objects with no tests.
   The \var{exclude_empty} argument to the newer \class{DocTestFinder}
   constructor defaults to true.
+
+  Optional arguments \var{extraglobs}, \var{verbose}, \var{report},
+  \var{optionflags}, \var{raise_on_error}, and \var{globs} are the same as
+  for function \function{testfile()} above, except that \var{globs}
+  defaults to \code{\var{m}.__dict__}.
 
   Optional argument \var{isprivate} specifies a function used to
   determine whether a name is private.  The default function treats
@@ -988,15 +959,15 @@ suites can then be run using \module{unittest} test runners:
 
   \begin{itemize}
   \item If \var{module_relative} is \code{True} (the default), then
-        each filename specifies an os-independent module-relative
+        each filename specifies an OS-independent module-relative
         path.  By default, this path is relative to the calling
         module's directory; but if the \var{package} argument is
         specified, then it is relative to that package.  To ensure
-        os-independence, each filename should use \code{/} characters
+        OS-independence, each filename should use \code{/} characters
         to separate path segments, and may not be an absolute path
         (i.e., it may not begin with \code{/}).
   \item If \var{module_relative} is \code{False}, then each filename
-        specifies an os-specific path.  The path may be absolute or
+        specifies an OS-specific path.  The path may be absolute or
         relative; relative paths are resolved with respect to the
         current working directory.
   \end{itemize}
