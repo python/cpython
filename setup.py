@@ -484,94 +484,118 @@ class PyBuildExt(build_ext):
         # Sleepycat Berkeley DB interface.  http://www.sleepycat.com
         #
         # This requires the Sleepycat DB code. The earliest supported version
-        # of that library is 3.2, the latest supported version is 4.2.  A list
+        # of that library is 3.2, the latest supported version is 4.3.  A list
         # of available releases can be found at
         #
         # http://www.sleepycat.com/update/index.html
 
-        # when sorted in reverse order, keys for this dict must appear in the
-        # order you wish to search - e.g., search for db4 before db3
-        db_try_this = {
-            'db4': {'libs': ('db-4.2', 'db42', 'db-4.1', 'db41', 'db-4.0', 'db4',),
-                    'libdirs': ('/usr/local/BerkeleyDB.4.2/lib',
-                                '/usr/local/BerkeleyDB.4.1/lib',
-                                '/usr/local/BerkeleyDB.4.0/lib',
-                                '/usr/local/lib',
-                                '/opt/sfw',
-                                '/sw/lib',
-                                ),
-                    'incdirs': ('/usr/local/BerkeleyDB.4.2/include',
-                                '/usr/local/include/db42',
-                                '/usr/local/BerkeleyDB.4.1/include',
-                                '/usr/local/include/db41',
-                                '/usr/local/BerkeleyDB.4.0/include',
-                                '/usr/local/include/db4',
-                                '/opt/sfw/include/db4',
-                                '/sw/include/db4',
-                                '/usr/include/db4',
-                                )},
-            'db3': {'libs': ('db-3.3', 'db-3.2', 'db3',),
-                    'libdirs': ('/usr/local/BerkeleyDB.3.3/lib',
-                                '/usr/local/BerkeleyDB.3.2/lib',
-                                '/usr/local/lib',
-                                '/opt/sfw/lib',
-                                '/sw/lib',
-                                ),
-                    'incdirs': ('/usr/local/BerkeleyDB.3.3/include',
-                                '/usr/local/BerkeleyDB.3.2/include',
-                                '/usr/local/include/db3',
-                                '/opt/sfw/include/db3',
-                                '/sw/include/db3',
-                                '/usr/include/db3',
-                                )},
-            }
+        max_db_ver = (4, 3)
+        min_db_ver = (3, 2)
+        db_setup_debug = False   # verbose debug prints from this script?
 
-        db_search_order = db_try_this.keys()
-        db_search_order.sort()
-        db_search_order.reverse()
+        # construct a list of paths to look for the header file in on
+        # top of the normal inc_dirs.
+        db_inc_paths = [
+            '/usr/include/db4',
+            '/usr/local/include/db4',
+            '/opt/sfw/include/db4',
+            '/sw/include/db4',
+            '/usr/include/db3',
+            '/usr/local/include/db3',
+            '/opt/sfw/include/db3',
+            '/sw/include/db3',
+        ]
+        # 4.x minor number specific paths
+        for x in (0,1,2,3):
+            db_inc_paths.append('/usr/include/db4%d' % x)
+            db_inc_paths.append('/usr/local/BerkeleyDB.4.%d/include' % x)
+            db_inc_paths.append('/usr/local/include/db4%d' % x)
+            db_inc_paths.append('/pkg/db-4.%d/include' % x)
+        # 3.x minor number specific paths
+        for x in (2,3):
+            db_inc_paths.append('/usr/include/db3%d' % x)
+            db_inc_paths.append('/usr/local/BerkeleyDB.3.%d/include' % x)
+            db_inc_paths.append('/usr/local/include/db3%d' % x)
+            db_inc_paths.append('/pkg/db-3.%d/include' % x)
 
-        class found(Exception): pass
+        db_ver_inc_map = {}
+
+        class db_found(Exception): pass
         try:
             # See whether there is a Sleepycat header in the standard
             # search path.
-            std_dbinc = None
-            for d in inc_dirs:
+            for d in inc_dirs + db_inc_paths:
                 f = os.path.join(d, "db.h")
+                if db_setup_debug: print "db: looking for db.h in", f
                 if os.path.exists(f):
                     f = open(f).read()
-                    m = re.search(r"#define\WDB_VERSION_MAJOR\W([1-9]+)", f)
+                    m = re.search(r"#define\WDB_VERSION_MAJOR\W(\d+)", f)
                     if m:
-                        std_dbinc = 'db' + m.group(1)
-            for dbkey in db_search_order:
-                dbd = db_try_this[dbkey]
-                for dblib in dbd['libs']:
-                    # Prefer version-specific includes over standard
-                    # include locations.
-                    db_incs = find_file('db.h', [], dbd['incdirs'])
-                    dblib_dir = find_library_file(self.compiler,
-                                                  dblib,
-                                                  lib_dirs,
-                                                  list(dbd['libdirs']))
-                    if (db_incs or dbkey == std_dbinc) and \
-                           dblib_dir is not None:
-                        dblibs = [dblib]
-                        raise found
-        except found:
+                        db_major = int(m.group(1))
+                        m = re.search(r"#define\WDB_VERSION_MINOR\W(\d+)", f)
+                        db_minor = int(m.group(1))
+                        db_ver = (db_major, db_minor)
+
+                        if ( (not db_ver_inc_map.has_key(db_ver)) and
+                           (db_ver <= max_db_ver and db_ver >= min_db_ver) ):
+                            # save the include directory with the db.h version
+                            # (first occurrance only)
+                            db_ver_inc_map[db_ver] = d
+                            print "db.h: found", db_ver, "in", d
+                        else:
+                            # we already found a header for this library version
+                            if db_setup_debug: print "db.h: ignoring", d
+                    else:
+                        # ignore this header, it didn't contain a version number
+                        if db_setup_debug: print "db.h: unsupported version", db_ver, "in", d
+
+            db_found_vers = db_ver_inc_map.keys()
+            db_found_vers.sort()
+
+            while db_found_vers:
+                db_ver = db_found_vers.pop()
+                db_incdir = db_ver_inc_map[db_ver]
+
+                # check lib directories parallel to the location of the header
+                db_dirs_to_check = [
+                    os.path.join(db_incdir, '..', 'lib64'),
+                    os.path.join(db_incdir, '..', 'lib'),
+                    os.path.join(db_incdir, '..', '..', 'lib64'),
+                    os.path.join(db_incdir, '..', '..', 'lib'),
+                ]
+                db_dirs_to_check = filter(os.path.isdir, db_dirs_to_check)
+
+                # Look for a version specific db-X.Y before an ambiguoius dbX
+                # XXX should we -ever- look for a dbX name?  Do any
+                # systems really not name their library by version and
+                # symlink to more general names?
+                for dblib in (('db-%d.%d' % db_ver), ('db%d' % db_ver[0])):
+                    dblib_file = self.compiler.find_library_file(
+                                    db_dirs_to_check + lib_dirs, dblib )
+                    if dblib_file:
+                        dblib_dir = [ os.path.abspath(os.path.dirname(dblib_file)) ]
+                        raise db_found
+                    else:
+                        if db_setup_debug: print "db lib: ", dblib, "not found"
+
+        except db_found:
+            print "db lib: using", db_ver, dblib
+            if db_setup_debug: print "db: lib dir", dblib_dir, "inc dir", db_incdir
+            db_incs = [db_incdir]
             dblibs = [dblib]
-            # A default source build puts Berkeley DB in something like
-            # /usr/local/Berkeley.3.3 and the lib dir under that isn't
-            # normally on ld.so's search path, unless the sysadmin has hacked
-            # /etc/ld.so.conf.  We add the directory to runtime_library_dirs
-            # so the proper -R/--rpath flags get passed to the linker.  This
-            # is usually correct and most trouble free, but may cause problems
-            # in some unusual system configurations (e.g. the directory is on
-            # an NFS server that goes away).
+            # We add the runtime_library_dirs argument because the
+            # BerkeleyDB lib we're linking against often isn't in the
+            # system dynamic library search path.  This is usually
+            # correct and most trouble free, but may cause problems in
+            # some unusual system configurations (e.g. the directory
+            # is on an NFS server that goes away).
             exts.append(Extension('_bsddb', ['_bsddb.c'],
                                   library_dirs=dblib_dir,
                                   runtime_library_dirs=dblib_dir,
                                   include_dirs=db_incs,
                                   libraries=dblibs))
         else:
+            if db_setup_debug: print "db: no appropriate library found"
             db_incs = None
             dblibs = []
             dblib_dir = None
