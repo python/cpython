@@ -42,7 +42,7 @@ Congratulations on getting this far. :-)
 
 To start building right away (on UNIX): type "./configure" in the
 current directory and when it finishes, type "make".  The section
-`Build Instructions' below is still recommended reading, especially
+`Build instructions' below is still recommended reading, especially
 the part on customizing Modules/Setup.
 
 
@@ -148,32 +148,36 @@ efficient way to ask public questions.
 Build instructions
 ==================
 
-Before you can build Python, you must first configure it.  Fortunately,
-the configuration and build process has been streamlined for most Unix
-installations, so all you have to do is type a few commands,
-optionally edit one file, and sit back.  There are some platforms
-where things are not quite as smooth; see the platform specific notes
-below.  If you want to build for multiple platforms sharing the same
-source tree, see the section on VPATH below.
+Before you can build Python, you must first configure it.
+Fortunately, the configuration and build process has been automated
+for Unix and Linux installations, so all you usually have to do is
+type a few commands and sit back.  There are some platforms where
+things are not quite as smooth; see the platform specific notes below.
+If you want to build for multiple platforms sharing the same source
+tree, see the section on VPATH below.
 
-Start by running the script "./configure", which determines your system
-configuration and creates the Makefile.  (It takes a minute or two --
-please be patient!)  You may want to pass options to the configure
-script or edit the Modules/Setup file after running configure -- see the
-section below on configuration options and variables.  When it's done,
-you are ready to run make.
+Start by running the script "./configure", which determines your
+system configuration and creates the Makefile.  (It takes a minute or
+two -- please be patient!)  You may want to pass options to the
+configure script -- see the section below on configuration options and
+variables.  When it's done, you are ready to run make.
 
-To build Python, you normally type "make" in the toplevel directory.  If
-you have changed the configuration or have modified Modules/Setup, the
-Makefile may have to be rebuilt.  In this case you may have to run make
-again to correctly build your desired target.  The interpreter
-executable is built in the top level directory.
+To build Python, you normally type "make" in the toplevel directory.
+If you have changed the configuration, the Makefile may have to be
+rebuilt.  In this case you may have to run make again to correctly
+build your desired target.  The interpreter executable is built in the
+top level directory.
 
 Once you have built a Python interpreter, see the subsections below on
-testing, configuring additional modules, and installation.  If you run
-into trouble, see the next section.  Editing the Modules/Setup file
-after running make is supported; just run "make" again after making
-the desired changes.
+testing and installation.  If you run into trouble, see the next
+section.
+
+Previous versions of Python used a manual configuration process that
+involved editing the file Modules/Setup.  While this file still exists
+and manual configuration is still supported, it is rarely needed any
+more: almost all modules are automatically built as appropriate under
+guidance of the setup.py script, which is run by Make after the
+interpreter has been built.
 
 
 Troubleshooting
@@ -225,6 +229,7 @@ submit a documentation bug report to SourceForge (see Bug Reports
 above) so we can remove them!)
 
 64-bit platforms: The modules audioop, imageop and rgbimg don't work.
+	The setup.py script disables them on 64-bit installations.
 	Don't try to enable them in the Modules/Setup file.  They
 	contain code that is quite wordsize sensitive.  (If you have a
 	fix, let us know!)
@@ -241,9 +246,8 @@ Linux:  A problem with threads and fork() was tracked down to a bug in
 	problem and solution reported by Pablo Bleyer.
 
 	Under Linux systems using GNU libc 2 (aka libc6), the crypt
-	module now needs the -lcrypt option.  Uncomment this flag in
-	Modules/Setup, or comment out the crypt module in the same
-	file. Most modern Linux systems use glibc2.
+	module now needs the -lcrypt option.  The setup.py script
+	takes care of this automatically.
 
 FreeBSD 3.x and probably platforms with NCurses that use libmytinfo or
 	similar: When using cursesmodule, the linking is not done in
@@ -549,7 +553,12 @@ Configuring additional built-in modules
 Starting with Python 2.1, the setup.py script at the top of the source
 distribution attempts to detect which modules can be built and
 automatically compiles them.  Autodetection doesn't always work, so
-you can customize the configuration by editing the Modules/Setup file.
+you can still customize the configuration by editing the Modules/Setup
+file; but this should be considered a last resort.  The rest of this
+section only applies if you decide to edit the Modules/Setup file.
+You also need this to enable static linking of certain modules (which
+is needed to enable profiling on some systems).
+
 This file is initially copied from Setup.dist by the configure script;
 if it does not exist yet, create it by copying Modules/Setup.dist
 yourself (configure will never overwrite it).  Never edit Setup.dist
@@ -617,8 +626,7 @@ To test the interpreter, type "make test" in the top-level directory.
 This runs the test set twice (once with no compiled files, once with
 the compiled files left by the previous test run).  The test set
 produces some output.  You can generally ignore the messages about
-skipped tests due to optional features which can't be imported.  (If
-you want to test those modules, edit Modules/Setup to configure them.)
+skipped tests due to optional features which can't be imported.
 If a message is printed about a failed test or a traceback or core
 dump is produced, something is wrong.  On some Linux systems (those
 that are not yet using glibc 6), test_strftime fails due to a
@@ -721,8 +729,8 @@ Modules/getpath.o.
 	than re-running the configure script if you change your mind
 	about the install prefix.
 
---with-readline: This option is no longer supported.  To use GNU
-	readline, enable module "readline" in the Modules/Setup file.
+--with-readline: This option is no longer supported.  GNU
+	readline is automatically enabled by setup.py when present.
 
 --with-threads: On most Unix systems, you can now use multiple
 	threads, and support for this is enabled by default.  To
@@ -877,25 +885,12 @@ files.  (Newer versions of Emacs or XEmacs may already come with the
 latest version of python-mode.)
 
 
-The Tk interface
-----------------
+Tkinter
+-------
 
-Tk (the user interface component of John Ousterhout's Tcl language) is
-also usable from Python.  Since this requires that you first build and
-install Tcl/Tk, the Tk interface is not enabled by default when
-building Python from source.  Python supports Tcl/Tk version 8.0 and
+The setup.py script automatically configures this when it detects a
+usable Tcl/Tk installation.  This requires Tcl/Tk version 8.0 or
 higher.
-
-See http://dev.ajubasolutions.com/ for more info on Tcl/Tk, including
-the on-line manual pages.
-
-
-To enable the Python/Tk interface, once you've built and installed
-Tcl/Tk, load the file Modules/Setup into your favorite text editor and
-search for the string "_tkinter".  Then follow the instructions found
-there.  If you have installed Tcl/Tk or X11 in unusual places, you
-will have to edit the first line to fix or add the -I and -L options.
-(Also see the general instructions at the top of that file.)
 
 For more Tkinter information, see the Tkinter Resource page:
 http://www.python.org/topics/tkinter/
@@ -908,15 +903,11 @@ Note that there's a Python module called "Tkinter" (capital T) which
 lives in Lib/lib-tk/Tkinter.py, and a C module called "_tkinter"
 (lower case t and leading underscore) which lives in
 Modules/_tkinter.c.  Demos and normal Tk applications import only the
-Python Tkinter module -- the latter uses the C _tkinter module
-directly.  In order to find the C _tkinter module, it must be compiled
-and linked into the Python interpreter -- the _tkinter line in the
-Setup file does this.  In order to find the Python Tkinter module,
-sys.path must be set correctly -- the TKPATH assignment in the Setup
-file takes care of this, but only if you install Python properly
-("make install libinstall").  (You can also use dynamic loading for
-the C _tkinter module, in which case you must manually fix up sys.path
-or set $PYTHONPATH for the Python Tkinter module.)
+Python Tkinter module -- only the latter imports the C _tkinter
+module.  In order to find the C _tkinter module, it must be compiled
+and linked into the Python interpreter -- the setup.py script does
+this.  In order to find the Python Tkinter module, sys.path must be
+set correctly -- normal installation takes care of this.
 
 
 Distribution structure
