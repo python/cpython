@@ -1,0 +1,719 @@
+This file documents the ibrowse program.  -*-Text-*-
+The H command of ibrowse goes to the node Help in this file.
+
+File: ibrowse	Node: Top	Up: (DIR)	Next: Expert
+
+Ibrowse is a program for reading documentation, which you are using now.
+** Ibrowse uses the file format of the Emacs Info program, and its
+** commands are similar, but not identical.
+
+To learn how to use Ibrowse, type the command "h".  It will bring you
+to a programmed instruction sequence.
+
+* Menu:
+
+* Expert::	Advanced Ibrowse commands: c, k, g, s, 1 - 9, arrows.
+* Add::		Describes how to add new nodes to the hierarchy.
+		Also tells what nodes look like.
+* Menus::	How to add to or create menus in Info nodes.
+* Cross-refs::	How to add cross-references to Info nodes.
+* Tags::	How to make tag tables for Info files.
+* Checking::	How to check the consistency of an Info file.
+* Texinfo: (texinfo).
+		How to generate an Info file and a printed manual
+		from the same source file.
+
+File: ibrowse	Node: Summary			Next: Help
+
+Ibrowse is a Python program for browsing through the Emacs Info
+documentation tree.  Documentation in Info is divided into "nodes",
+each of which discusses one topic and contains references to other
+nodes which discuss related topics.  Ibrowse has commands to follow the
+references and show you other nodes.
+
+h	Invoke the Ibrowse tutorial.
+?	Display this Summary node.
+q	Quit Ibrowse.
+w	Close current window.
+
+Selecting other nodes:
+n	Move to the "next" node of this node.
+p	Move to the "previous" node of this node.
+m	Pick menu item specified by name (or abbreviation).
+1-9	Pick first..ninth in node's menu.
+	Menu items select nodes that are "subsections" of this node.
+u	Move "up" from this node (i.e., from a subsection to a section).
+f	Follow a cross reference by name (or abbrev).  Type `l' to get back.
+l	Move back to the last node you were in.
+
+Moving within a node:
+Space	Scroll forward a full screen.     DEL, BS Scroll backward.
+b	Go to beginning of node.          
+
+Advanced commands:
+k	Clone current window (create an independent duplicate).
+c	Copy text selection to clipboard (for paste in another application).
+g	Move to node specified by name.
+	You may include a filename as well, as (FILENAME)NODENAME.
+d	Go to the main directory of Info files.
+t	Go to Top node of this file.
+s	Search through this Info file for node with specified regexp.
+
+File: ibrowse	Node: Help-Small-Screen		Next: Help
+
+Since your terminal has an unusually small number of lines on its
+screen, it is necessary to give you special advice at the beginning.
+
+If you see the text "--All----" at near the bottom right corner of
+the screen, it means the entire text you are looking at fits on the
+screen.  If you see "--Top----" instead, it means that there is more
+text below that does not fit.  To move forward through the text and
+see another screen full, press the Space bar.  To move back up, press
+the key labeled Rubout or Delete or DEL.
+
+Here are 40 lines of junk, so you can try Spaces and Rubout and
+see what they do.  At the end are instructions of what you should do
+next.
+
+This is line 17
+This is line 18
+This is line 19
+This is line 20
+This is line 21
+This is line 22
+This is line 23
+This is line 24
+This is line 25
+This is line 26
+This is line 27
+This is line 28
+This is line 29
+This is line 30
+This is line 31
+This is line 32
+This is line 33
+This is line 34
+This is line 35
+This is line 36
+This is line 37
+This is line 38
+This is line 39
+This is line 40
+This is line 41
+This is line 42
+This is line 43
+This is line 44
+This is line 45
+This is line 46
+This is line 47
+This is line 48
+This is line 49
+This is line 50
+This is line 51
+This is line 52
+This is line 53
+This is line 54
+This is line 55
+This is line 56
+
+If you have managed to get here, go back to the beginning with
+Rubout, and come back here again, then you understand Space and
+Rubout.  So now type an "n"--just one character; don't type the
+quotes and don't type a Return afterward-- to get to the normal start
+of the course.
+
+File: ibrowse	Node: Help	Next: Help-P	Previous: Help-Small-Screen
+
+You are talking to the program Ibrowse, for reading documentation.
+
+  Right now you are looking at one "Node" of Information.
+A node contains text describing a specific topic at a specific
+level of detail.  This node's topic is "how to use Ibrowse".
+
+  The top line of a node is its "header".  This node's header (look at
+it now) says that it is the node named "Help" in the file "ibrowse".
+It says that the Next node after this one is the node called "Help-P".
+An advanced Ibrowse command lets you go to any node whose name you know.
+
+  Besides a "Next", a node can have a "Previous" or an "Up".
+This node has a "Previous" but no "Up", as you can see.
+
+  Now it's time to move on to the Next node, named "Help-P".
+
+>> Type "n" to move there.  Type just one character;
+   don't type the quotes and don't type a Return afterward.
+
+">>" in the margin means it is really time to try a command.
+
+File: ibrowse	Node: Help-P	Next: Help-Page	Previous: Help
+
+This node is called "Help-P".  The "Previous" node, as you see, is
+"Help", which is the one you just came from using the "N" command.
+Another "N" command now would take you to the Next node, "Help-Page".
+
+>> But don't do that yet.  First, try the "p" command, which takes
+you to the Previous node.  When you get there, you can do an "n"
+again to return here.
+
+  This all probably seems insultingly simple so far, but DON'T be
+led into skimming.  Things will get more complicated soon.  Also,
+don't try a new command until you are told it's time to.  Otherwise,
+you may make Ibrowse skip past an important warning that was coming up.
+
+>> Now do an "n" to get to the node "Help-Page" and learn more.
+
+File: ibrowse	Node: Help-Page	Next: Help-M	Previous: Help-P
+
+Space, Backspace, and B commands.
+
+  This node's header tells you that you are now at node "Help-Page", and
+that "P" would get you back to "Help-P".  The line starting "Space,"
+is a "Title", saying what the node is about (most nodes have titles).
+
+  This is a big node and it doesn't all fit on your display screen.
+You can tell that there is more that isn't visible because you
+the scroll bar on the side of the window has become active (gray).
+
+  The Space, Backspace and B commands exist to allow you to "move
+around" in a node that doesn't all fit on the screen at once.
+Space moves forward, to show what was below the bottom of the screen.
+Backspace moves backward, to show what was above the top of the screen
+(there isn't anything above the top until you have typed some spaces).
+
+>> Now try typing a Space (afterward, type a Backspace to return here).
+
+  When you type the space, the two lines that were at the bottom of the 
+screen appear at the top, followed by more lines.  Backspace takes the
+two lines from the top and moves them to the bottom, USUALLY, but if
+there are not a full screen's worth of lines above them they may not
+make it all the way to the bottom.
+
+  If you type a Space when there is no more to see, it will ring the
+bell and otherwise do nothing.  The same goes for a Backspace when
+the header of the node is visible.
+
+  Of course you can use the mouse and directly move the scroll bar
+as well, but Ibrowse has keyboard commands for almost everything,
+including scrolling.  These keyboard commands are called "shortcuts",
+because it generally takes less effort to press a key on the
+keyboard than to move the mouse.  On the other hand, if you are
+an infrequent user of Ibrowse, you can do everything with the
+mouse that you can do with the keyboard.  Just look in the menus
+(I'm sure you must know how to use the menus on this system, or
+else you couldn't have gotten this far...).  In fact you'll see that
+the commands and shortcuts listed in the menus are the same as those
+described in this course.  You can use the shortcuts either with or
+without the "Command" or "Meta" key.
+
+  Two menus are always available: the "Ibrowse" menu contains commands
+pertaining to the Ibrowse program at large, while the "Navigation" menu
+contains commands that move around between nodes.  There may be other
+menus; these will be explained later.
+
+  To move back to the beginning of the node you are on, you can type
+a lot of Backspaces.  You can also type simply "b" for beginning.
+>> Try that now.  (I have put in enough verbiage to make sure you are
+   not on the first screenful now).  Then come back, with Spaces.
+
+  You have just learned a considerable number of commands.  If you
+want to use one but have trouble remembering which, just pull down
+the menus to get a summary of commands and shortcuts.  Some additional
+shortcuts (not listed in the menus) are listed by the "Short help"
+command.  This brings up a dialog box which you can acknowledge
+by clicking the OK button or pressing the Return key.
+
+  From now on, you will encounter large nodes without warning, and
+will be expected to know how to use Space and Backspace to move
+around in them without being told.  Since you could change the
+size of the window used, it would be impossible to warn you anyway.
+
+>> Now type "n" to see the description of the "m" command.
+
+File: ibrowse	Node: Help-M	Next: Help-Adv	Previous: Help-Page
+
+Menus and the "m" command
+
+  With only the "n" and "p" commands for moving between nodes, nodes
+are restricted to a linear sequence.  Menus allow a branching
+structure.  A menu is a list of other nodes you can move to.  It is
+actually just part of the text of the node formatted specially so that
+Ibrowse can interpret it.  The beginning of a menu is always identified
+by a line which starts with "* Menu:".  A node contains a menu if and
+only if it has a line in it which starts that way.  The only menu you
+can use at any moment is the one in the node you are in.  To use a
+menu in any other node, you must move to that node first.
+
+  (There is an unfortunate confusion of terms here.  "Menu" may refer
+to one of the Ibrowse menus at the top, such as as the "Ibrowse" and
+"Navigation" menus explained in the previous node, or to the menu in
+a node.  Where confusion is possible, these will be disambiguated by
+calling them "Ibrowse menus" or "node menu".)
+
+  After the start of the menu, each line that starts with a "*"
+identifies one subtopic.  The line will usually contain a brief name
+for the subtopic (followed by a ":"), the name of the node that talks
+about that subtopic, and optionally some further description of the
+subtopic.  Lines in the menu that don't start with a "*" have no
+special meaning - they are only for the human reader's benefit and do
+not define additional subtopics.  Here is an example:
+* Foo:	FOO's Node	This tells about FOO
+The subtopic name is Foo, and the node describing it is "FOO's Node".
+The rest of the line is just for the reader's Information.
+[[ But this line is not a real menu item, simply because there is
+no line above it which starts with "* Menu:".]]
+
+  When you use a menu to go to another node (in a way that will be
+described soon), what you specify is the subtopic name, the first
+thing in the menu line.  Ibrowse uses it to find the menu line, extracts
+the node name from it, and goes to that node.  The reason that there
+is both a subtopic name and a node name is that the node name must be
+meaningful to the computer and may therefore have to be ugly looking.
+The subtopic name can be chosen just to be convenient for the user to
+specify.  Often the node name is convenient for the user to specify
+and so both it and the subtopic name are the same.  There is an
+abbreviation for this:
+* Foo::   This tells about FOO
+This means that the subtopic name and node name are the same; they are
+both "Foo".
+
+>>  Now use Spaces to find the menu in this node, then come back to
+the front with a "b".  As you see, a menu is actually visible
+in its node.  If you can't find a menu in a node by looking at it,
+then the node doesn't have a menu and the "m" command is not available.
+
+  (Actually, a quicker way to see if there is a node menu, is to look
+for an Ibrowse menu at the top named "Menu".)
+
+  The command to go to one of the subnodes is "m" - but DON'T DO IT
+YET!  Before you use "m", you must understand the difference between
+commands and arguments.  So far, you have learned several commands
+that do not need arguments.  When you type one, Ibrowse processes it and
+is instantly ready for another command.  The "m" command is different:
+it is incomplete without the NAME OF THE SUBTOPIC.  Once you have
+typed "m", Ibrowse wants to read the subtopic name.
+
+  Thanks to modern user interface technology, this will be obvious:
+you are prompted for the subtopic name in a dialog box.  When you are
+finished typing the name, press Return or click the OK button.  You can
+cancel the dialog box by clicking the Cancel button.  The first subtopic
+is provided as a default choice, so if you want to go there, you can
+just press Return.
+
+  You can abbreviate the subtopic name.  If the abbreviation is not
+unique, the first matching subtopic is chosen.  Some menus will put
+the shortest possible abbreviation for each subtopic name in capital
+letters, so you can see how much you need to type.  It does not
+matter whether you use upper case or lower case when you type the
+subtopic.  You should not put any spaces at the end, or inside of the
+item name, except for one space where a space appears in the item in
+the menu.
+
+  Here is a menu to give you a chance to practice.
+
+* Menu:	   The menu starts here.
+
+This menu gives you three ways of going to one place, Help-FOO.
+
+* Foo:	Help-FOO	A node you can visit for fun
+* Bar:	Help-FOO	Strange!  two ways to get to the same place.
+* Help-FOO::		And yet another!
+
+>> Now type just an "m" and see what happens. (Read ahead before
+>> trying this out, as the dialog box will probably cover these
+>> instructions!)
+
+  Now you are "inside" an "m" command.  Commands can't be used now;
+the next thing you will type must be the name of a subtopic.
+
+  You can change your mind about doing the "m" by clicking the Cancel
+button.
+>> Try that now;  notice the dialog box disappear.
+>> Then type another "m".
+
+>> Now type "BAR", the item name.  Don't type Return yet.
+
+  While you are typing the item name, you can use the Backspace
+key to cancel one character at a time if you make a mistake.
+>> Type one to cancel the "R".  You could type another "R" to
+replace it.  You don't have to, since "BA" is a valid abbreviation.
+>> Now you are ready to go.  Type a Return.
+
+  After visiting Help-FOO, you should return here (it will tell how).
+
+>> Type "n" to see more commands.
+
+File: ibrowse	Node: Help-FOO	Up: Help-M
+
+The "u" command
+
+  Congratulations!  This is the node Help-FOO.  Unlike the other
+nodes you have seen, this one has an "Up": "Help-M", the node you
+just came from via the "m" command.  This is the usual convention--
+the nodes you reach from a menu have Ups that lead back to the menu.
+Menus move Down in the tree, and Up moves Up.  Previous, on the other
+hand, is usually used to "stay on the same level but go backwards".
+
+  You can go back to the node Help-M by typing the command
+"u" for "Up".  That will put you at the FRONT of the node - to get
+back to where you were reading you will have to type some Spaces.
+
+>> Now type "u" to move back up to Help-M.
+
+File: ibrowse	Node: Help-Adv	Next: Help-Q	Previous: Help-M
+
+Some advanced Ibrowse commands
+
+  The course is almost over, so please stick with it to the end.
+
+  If you have been moving around to different nodes and wish to
+retrace your steps, the "l" command ("l" for "last") will do that, one
+node at a time.  If you have been following directions, an "l" command
+now will get you back to Help-M.  Another "l" command would undo the "u"
+and get you back to Help-FOO.  Another "l" would undo the M and get you
+back to Help-M.
+
+>> Try typing three "l"'s, pausing in between to see what each "l" does.
+Then follow directions again and you will end up back here.
+
+  Note the difference between "l" and "p":  "l" moves to where YOU
+last were, whereas "p" always moves to the node which the header says
+is the "Previous" node (from this node, to Help-M).
+
+  The "d" command gets you instantly to the Directory node.
+This node, which is the first one you saw when you entered Ibrowse,
+has a menu which leads (directly, or indirectly through other menus),
+to all the nodes that exist.
+
+>> Try doing a "d", then do an "l" to return here (yes, DO return).
+
+  Sometimes, in Ibrowse documentation, you will see a cross reference.
+Cross references look like this: *Note Cross: Help-Cross.  That is a
+real, live cross reference which is named "Cross" and points at the
+node named "Help-Cross".
+
+  If you wish to follow a cross reference, you must use the "f"
+command.  The "f" prompts for the cross reference name (in this case,
+"Cross") with a dialog box.
+
+>> Type "f", followed by "Cross", and a Return.
+
+  The "f" command allows abbreviations just like "m".
+
+  To get a list of all the cross references in the current node,
+look in the Ibrowse menu at the top labeled "Footnotes".  This menu is
+only present if there are cross references in the current node, and
+can be used to directly follow a cross reference, just like the "Menu"
+menu is another way to choose an item of the node's menu.
+
+>> Now type "n" to see the last node of the course.
+
+File: ibrowse	Node: Help-Cross
+
+  This is the node reached by the cross reference named "Cross".
+
+  While this node is specifically intended to be reached by a cross
+reference, most cross references lead to nodes that "belong" someplace
+else far away in the structure of Ibrowse.  So you can't expect the
+footnote to have a Next, Previous or Up pointing back to where you
+came from.  In general, the "l" (el) command is the only way to get
+back there.
+
+>> Type "l" to return to the node where the cross reference was.
+
+File: ibrowse	Node: Help-Q	Previous: Help-Adv	Up: Top
+
+  To get out of Ibrowse, type "q" for "Quit".  All Ibrowse windows
+will be closed (on UNIX, only those managed by the same process).
+To close just one window, use the standard method of closing windows
+on your system; you can also use "w".
+
+  This is the end of the course on using Ibrowse.  There are some other
+commands that are not essential or meant for experienced users;  they
+are useful, and you can find them by looking in the directory for
+documentation on Ibrowse.  Finding them will be a good exercise in using
+Ibrowse in the usual manner.
+
+>> Close this window and find back the window where you typed "h"
+   to enter this tutorial.
+   Then type "d" to go to the Ibrowse directory node if necessary,
+   and choose the "Ibrowse" menu item, to get to the node about
+   Ibrowse and see what other help is available.
+
+File: ibrowse,  Node: Expert,  Up: Top,  Previous: Top,  Next: Add
+
+Some Advanced Ibrowse Commands ("c", "k", "g", "s", "1" - "9", arrows).
+
+The "c" command lets you copy text from the window to the clipboard.
+You must first select the text to be copied with the mouse.
+
+The "k" command means "klone" (we are running out of letters now...).
+It creates a new Ibrowse window, showing the same node as the current.
+You can then make an excursion in the new window to different nodes or
+files, while the old window keeps showing the original node.  Each
+window has its own history for use by the "l" command.
+
+If you know a node's name, you can go there with the "g" command.
+This prompts for a node name with a dialog box.  Entering, "Top"
+would go to the node called Top in this file (its directory node).
+Pressing "g" again and entering "Expert" would come back here.
+
+Unlike "m", "g" does not allow the use of abbreviations.
+
+To go to a node in another file, you can include the filename in the
+node name by putting it at the front, in parentheses.  Thus,
+"(dir)Top" would go to the Ibrowse Directory node, which is
+node Top in the file dir.
+
+The node name "*" specifies the whole file.  So you can look at all
+of the current file by typing "*" or all of any other file
+with "(FILENAME)*".
+
+File names are converted to lower case before they are tried; this
+is necessary to be compatible with Emacs Info.  (File names are
+generally relative to the Info directory, but needn't be.)
+
+The "s" command allows you to search a whole file for a regular
+expression.  Unlike the corresponding Emacs Info command, it will
+not search beyond the end of the current node.
+
+Regular expressions are like in UNIX egrep; if you don't know what
+regular expressions are, limit your search strings to letters, digits
+and spaces.  Searches in Ibrowse are case-sensitive; searching for
+"foo" will not find "Foo" or "FOO"!
+
+A description of regular expressions as they occur in Emacs is
+available.  (*Note Emacs Regular Expressions: (regex)syntax.)
+Ibrowse regular expressions are slightly different: the meaning
+of \( \| \) is swapped with that of ( | ), and there are no
+escapes to handle "words" specially.
+
+Searching starts after the current focus position.  The "B" command
+resets the focus to the beginning of the file, but space and backspace
+leave it unchanged (so they may render the focus invisible).
+
+If you grudge the system each character of type-in it requires,
+you might like to use the commands "1", "2", "3", through "9".
+They are short for the first nine entries of the node menu.
+
+The left, right and up arrow keys are duplicates of "p", "n" and "u".
+
+The down arrow key, as well as the Return key, goes to the first item
+of the node's menu if there is one, else it executes "n".  This is a
+quick way to visit all nodes in a tree in pre-order: use Return to go
+down and right as far as possible, then use "u" and "n" to go right
+at the next higher level.
+
+File: ibrowse,  Node: Add,  Up: Top,  Previous: Expert,  Next: Menus
+
+To add a new topic to the list in the directory, you must
+ 1) enter the Emacs text editor.  *Note Emacs: (emacs).
+ 2) create a node, in some file, to document that topic.
+ 3) put that topic in the menu in the directory.  *Note Menu: Menus.
+
+  The new node can live in an existing documentation file, or in a new
+one.  It must have a ^_ character before it (invisible to the user;
+this node has one but you can't see it), and it ends with either a ^_,
+or the end of file.  A nice way to make a node boundary be a
+page boundary as well is to put a ^L RIGHT AFTER the ^_.
+
+  The ^_ starting a node must be followed by a newline or a ^L newline,
+after which comes the node's header line.  The header line must give
+the node's name (by which Ibrowse will find it), and state the names of
+the Next, Previous, and Up nodes (if there are any).  As you can see,
+this node's Up node is the node Top, which points at all the
+documentation for Ibrowse.  The Next node is "Menus".
+
+  The keywords "Node", "Previous", "Up" and "Next",  may appear in
+any order, anywhere in the header line, but the recommended order is
+the one in this sentence.  Each keyword must be followed by a colon,
+spaces and tabs, and then the appropriate name.  The name may be
+terminated with a tab, a comma, or a newline.  A space does not end
+it; node names may contain spaces.  The case of letters in the names
+is insignificant.  "Previous" can be abbreviated to "Prev".
+
+  A node name has two forms.  A node in the current file is named by
+what appears after the "Node: " in that node's first line.  For
+example, this node's name is "Add".  A node in another file is named
+by "(FILENAME)NODE-WITHIN-FILE", as in "(ibrowse)Add" for this node.
+If the file name is relative, it is taken starting from the standard
+Info file directory of your site.  The name "(FILENAME)Top" can be
+abbreviated to just "(FILENAME)".  By convention, the name "Top" is
+used for the "highest" node in any single file - the node whose "Up"
+points out of the file.  The Directory node is "(dir)".  The Top node
+of a document file listed in the Directory should have an "Up: (dir)"
+in it.
+
+  The node name "*" is special: it refers to the entire file.  Thus,
+g* will show you the whole current file.  The use of the node * is to
+make it possible to make old-fashioned, unstructured files into nodes
+of the tree.  Footnotes and node menus appearing in a file are disabled
+when it is viewed in this way.
+
+  The "Node:" name, in which a node states its own name, must not
+contain a filename, since Ibrowse when searching for a node does not
+expect one to be there.  The Next, Previous and Up names may contain
+them.  In this node, since the Up node is in the same file, it was not
+necessary to use one. 
+
+  Note that the nodes in this file have a File name in the header
+line.  The File names are ignored by Ibrowse, but they serve as
+comments to help identify the node for the user.
+
+File: ibrowse, Node: Menus, Previous: Add, Up: Top, Next: Cross-refs
+
+How to Create Menus:
+
+  Any node in the Ibrowse hierarchy may have a MENU--a list of subnodes. 
+The "m" command searches the current node's menu for the topic which it
+reads from the terminal.
+
+  A menu begins with a line starting with "* Menu:".  The rest of the
+line is a comment.  After the starting line, every line that begins
+with a "* " lists a single topic.  The name of the topic--the arg
+that the user must give to the "m" command to select this topic--
+comes right after the star and space, and is followed by 
+a colon, spaces and tabs, and the name of the node which discusses
+that topic.  The node name, like node names following Next,
+Previous and Up, may be terminated with a tab, comma, or newline;
+it may also be terminated with a period.
+
+  If the node name and topic name are the same, than rather than
+giving the name twice, the abbreviation "* NAME::" may be used
+(and should be used, whenever possible, as it reduces the visual
+clutter in the menu).
+
+  It is considerate to choose the topic names so that they differ
+from each other very near the beginning--this allows the user to type
+short abbreviations.  In a long menu, it is a good idea to capitalize
+the beginning of each item name which is the minimum acceptable
+abbreviation for it (a long menu is more than 5 or so entries).
+
+  The node's listed in a node's menu are called its "subnodes", and
+it is their "superior".  They should each have an "Up:" pointing at
+the superior.  It is often useful to arrange all or most of the
+subnodes in a sequence of Next's/Previous's so that someone who
+wants to see them all need not keep revisiting the Menu.
+
+  The Info Directory is simply the menu of the node "(dir)Top"--that
+is, node Top in file .../info/dir.  You can put new entries in that
+menu just like any other menu.  The Info Directory is NOT the same as
+the file directory called "info".  It happens that many of Ibrowse's
+files live on that file directory, but they don't have to; and files
+on that directory are not automatically listed in the Info Directory
+node.
+
+  The Ibrowse program uses a second directory called .../ibrowse,
+which contains versions of the "dir" and "info" files adapted to
+Ibrowse (the latter renamed to "ibrowse", obviously).  It searches
+any file first in the "ibrowse", then in the "info" directory.
+(Actually, the search path is configurable.)
+
+  Also, although the Info node graph is claimed to be a "hierarchy",
+in fact it can be ANY directed graph.  Shared structures and pointer
+cycles are perfectly possible, and can be used if they are
+appropriate to the meaning to be expressed.  There is no need for all
+the nodes in a file to form a connected structure.  In fact, this
+file has two connected components.  You are in one of them, which is
+under the node Top;  the other contains the node Help which the "h"
+command goes to.  In fact, since there is no garbage collector,
+nothing terrible happens if a substructure is not pointed to, but
+such a substructure will be rather useless since nobody will ever
+find out that it exists.
+
+File: ibrowse, Node: Cross-refs, Previous: Menus, Up: Top, Next: Tags
+
+Creating Cross References:
+
+  A cross reference can be placed anywhere in the text, unlike a menu
+item which must go at the front of a line.  A cross reference looks
+like a menu item except that it has "*note" instead of "*".  It CANNOT
+be terminated by a ")", because ")"'s are so often part of node names.
+If you wish to enclose a cross reference in parentheses, terminate it
+with a period first.  Here are two examples of cross references pointers:
+
+     *Note details: commands.  (See *note 3: Full Proof.)
+
+They are just examples.  The places they "lead to" don't really exist!
+
+File: ibrowse,  Node: Tags,  Previous: Cross-refs,  Up: Top,  Next: Checking
+
+Tag Tables for Info Files:
+
+  You can speed up the access to nodes of a large Info file by giving
+it a tag table.  Unlike the tag table for a program, the tag table for
+an Info file lives inside the file itself and will automatically be
+used whenever Ibrowse reads in the file.
+
+  To make a tag table, go to a node in the file using Emacs Info and type
+M-x Info-tagify.  Then you must use C-x C-s to save the file.
+
+  Once the Info file has a tag table, you must make certain it is up
+to date.  If, as a result of deletion of text, any node moves back
+more than a thousand characters in the file from the position
+recorded in the tag table, Ibrowse will no longer be able to find that
+node.  To update the tag table, use the Info-tagify command again.
+
+  An Info file tag table appears at the end of the file and looks like
+this:
+
+^_^L
+Tag Table:
+File: ibrowse, Node: Cross-refs21419
+File: ibrowse,  Node: Tags22145
+^_
+End Tag Table
+
+Note that it contains one line per node, and this line contains
+the beginning of the node's header (ending just after the node name),
+a rubout (DEL) character, and the character position in the file of the
+beginning of the node.  The words "Tag Table" may occur in lower case
+as well.
+
+It is also possible for an extra level of indirection to be present.
+In this case, the first line of the Tag table contains the string
+"(Indirect)", and preceding the tag table is another "pseudo node"
+whose header reads "Indirect:".  Each following line has the form
+"filename: offset", meaning that nodes at that offset or larger (but
+less than the offset in the next line) really occur in the file named
+here, and that the file's offset should be subtracted from the node's
+offset.  (Indirect tables are created by texinfo for large files.
+*Note Texinfo: (texinfo).  *Note Splitting files: (texinfo)Splitting.)
+
+File: ibrowse,  Node: Checking,  Previous: Tags,  Up: Top
+
+Checking an Info File:
+
+  When creating an Info file, it is easy to forget the name of a node
+when you are making a pointer to it from another node.  If you put in
+the wrong name for a node, this will not be detected until someone
+tries to go through the pointer using Ibrowse.  Verification of the Info
+file is an automatic process which checks all pointers to nodes and
+reports any pointers which are invalid.  Every Next, Previous, and Up
+is checked, as is every menu item and every cross reference.  In addition,
+any Next which doesn't have a Previous pointing back is reported.
+Only pointers within the file are checked, because checking pointers
+to other files would be terribly slow.  But those are usually few.
+
+  To check an Info file, do M-x Info-validate while looking at any
+node of the file with Emacs Info.
+
+Tag table:
+Node: Top117
+Node: Summary952
+Node: Help-Small-Screen997
+Node: Help2628
+Node: Help-P3588
+Node: Help-Page4348
+Node: Help-M7763
+Node: Help-FOO13183
+Node: Help-Adv13887
+Node: Help-Cross15923
+Node: Help-Q16443
+Node: Expert17326
+Node: Add20280
+Node: Menus23273
+Node: Cross-refs26394
+Node: Tags27050
+Node: Checking28966
+
+End tag table
