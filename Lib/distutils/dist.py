@@ -12,6 +12,7 @@ import sys, os, string, re
 from types import *
 from copy import copy
 from distutils.errors import *
+from distutils import sysconfig
 from distutils.fancy_getopt import FancyGetopt, longopt_xlate
 from distutils.util import check_environ
 
