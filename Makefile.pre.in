@@ -161,8 +161,7 @@ PYTHON=		python$(EXEEXT)
 MODULE_OBJS=	\
 		Modules/config.o \
 		Modules/getpath.o \
-		Modules/main.o \
-		Modules/getbuildinfo.o
+		Modules/main.o
 
 # Used of signalmodule.o is not available
 SIGNAL_OBJS=	@SIGNAL_OBJS@
@@ -268,13 +267,13 @@ OBJECT_OBJS=	\
 ##########################################################################
 # objects that get linked into the Python library
 LIBRARY_OBJS=	\
+		Modules/getbuildinfo.o \
 		$(PARSER_OBJS) \
 		$(OBJECT_OBJS) \
 		$(PYTHON_OBJS) \
 		$(MODULE_OBJS) \
 		$(SIGNAL_OBJS) \
 		$(MODOBJS)
-
 
 #########################################################################
 # Rules
@@ -284,13 +283,8 @@ all:		$(PYTHON) sharedmods
 
 # Build the interpreter
 $(PYTHON):	$(MAINOBJ) $(LDLIBRARY)
-		expr `cat buildno` + 1 >buildno1
-		mv -f buildno1 buildno
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ $(MAINOBJ) \
 			$(LDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
-
-buildno:
-	echo 1 >buildno
 
 platform: $(PYTHON)
 	./$(PYTHON) -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
@@ -300,10 +294,24 @@ platform: $(PYTHON)
 sharedmods: $(PYTHON)
 	./$(PYTHON) $(srcdir)/setup.py build
 
+# buildno should really depend on something like LIBRARY_SRC
+buildno: $(PARSER_OBJS) \
+		$(OBJECT_OBJS) \
+		$(PYTHON_OBJS) \
+		$(MODULE_OBJS) \
+		$(SIGNAL_OBJS) \
+		$(MODOBJS) \
+		$(srcdir)/Modules/getbuildinfo.c
+	if test -f buildno; then \
+		expr `cat buildno` + 1 >buildno1; \
+		mv -f buildno1 buildno; \
+	else echo 1 >buildno; fi
+
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
 	# avoid long command lines, same as LIBRARY_OBJS
+	$(AR) cr $@ Modules/getbuildinfo.o
 	$(AR) cr $@ $(PARSER_OBJS)
 	$(AR) cr $@ $(OBJECT_OBJS)
 	$(AR) cr $@ $(PYTHON_OBJS)
@@ -684,7 +692,7 @@ libainstall:	all
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall:
-	./python$(EXE) $(srcdir)/setup.py install \
+	./python$(EXEEXT) $(srcdir)/setup.py install \
 		--install-platlib=$(DESTSHARED)
 
 # Build the toplevel Makefile
