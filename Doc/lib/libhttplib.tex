@@ -137,12 +137,13 @@ Here is an example session that shows how to \samp{POST} requests:
 >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
 >>> h = httplib.HTTP("www.musi-cal.com:80")
 >>> h.putrequest("POST", "/cgi-bin/query")
+>>> h.putheader("Content-type", "application/x-www-form-urlencoded")
 >>> h.putheader("Content-length", "%d" % len(params))
 >>> h.putheader('Accept', 'text/plain')
 >>> h.putheader('Host', 'www.musi-cal.com')
 >>> h.endheaders()
->>> h.send(paramstring)
+>>> h.send(params)
 >>> reply, msg, hdrs = h.getreply()
->>> print errcode # should be 200
+>>> print reply # should be 200
 >>> data = h.getfile().read() # get the raw HTML
 \end{verbatim}
