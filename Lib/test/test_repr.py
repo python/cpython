@@ -78,6 +78,11 @@ class ReprTests(unittest.TestCase):
         i3 = ClassWithFailingRepr()
         eq(r(i3), ("<ClassWithFailingRepr instance at %x>"%id(i3)))
 
+        s = r(ClassWithFailingRepr)
+        self.failUnless(s.startswith("<class "))
+        self.failUnless(s.endswith(">"))
+        self.failUnless(s.find("...") == 8)
+
     def test_file(self):
         fp = open(unittest.__file__)
         self.failUnless(repr(fp).startswith(
