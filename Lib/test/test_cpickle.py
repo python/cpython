@@ -81,8 +81,12 @@ class cPickleFastPicklerTests(AbstractPickleTests):
                           self)
 
     def test_nonrecursive_deep(self):
+        # If it's not cyclic, it should pickle OK even if the nesting
+        # depth exceeds PY_CPICKLE_FAST_LIMIT.  That happens to be
+        # 50 today.  Jack Jansen reported stack overflow on Mac OS 9
+        # at 64.
         a = []
-        for i in range(100):
+        for i in range(60):
             a = [a]
         b = self.loads(self.dumps(a))
         self.assertEqual(a, b)
