@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Change the #! line occurring in Python scripts.  The new interpreter
 # pathname must be given with a -i option.
@@ -139,12 +139,11 @@ def fix(filename):
 	# Return succes
 	return 0
 
-prog = regex.compile('\(#![ \t]*\)\(/[^ \t\n]*\)\(.*\n\)')
-
 def fixline(line):
-	if prog.match(line) < 0:
+	if line[:2] != '#!':
 		return line
-	head, tail = prog.group(1, 3)
-	return head + new_interpreter + tail
+	if string.find(line, "python") < 0:
+		return line
+	return '#! %s\n' % new_interpreter
 
 main()
