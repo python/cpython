@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <OSUtils.h> /* for Set(Current)A5 */
 #include <Files.h>
 #include <Aliases.h>
+#include <Folders.h>
 #include <StandardFile.h>
 #include <Resources.h>
 #include <Memory.h>
@@ -378,18 +379,50 @@ PyMac_GetPythonDir()
     AliasHandle handle;
     FSSpec dirspec;
     int ok = 0, exists = 0;
-    Boolean modified = 0;
+    Boolean modified = 0, cannotmodify = 0;
     StandardFileReply sfreply;
+    short oldrh, prefrh;
+    short prefdirRefNum;
+    long prefdirDirID;
     
-    handle = (AliasHandle)GetResource('alis', 128);
+    /*
+    ** Remember old resource file and try to open preferences file
+    ** in the preferences folder. If it doesn't exist we try to create
+    ** it. If anything fails here we limp on, but set cannotmodify so
+    ** we don't try to store things later on.
+    */
+    oldrh = CurResFile();
+    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
+    				&prefdirDirID) != noErr ) {
+    	/* Something wrong with preferences folder */
+    	cannotmodify = 1;
+    } else {
+    	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
+		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
+		if ( prefrh == -1 ) {
+			/* It doesn't exist. Try to create it */
+			FSpCreateResFile(&dirspec, 'PYTH', 'pref', NULL);
+	  		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
+			if ( prefrh == -1 ) {
+				cannotmodify = 1;
+			} else {
+				UseResFile(prefrh);
+    		}
+    	}
+    }
+    /* So, we've opened our preferences file, we hope. Look for the alias */
+    handle = (AliasHandle)Get1Resource('alis', 128);
     if ( handle ) {
+    	/* It exists. Resolve it (possibly updating it) */
     	if ( ResolveAlias(NULL, handle, &dirspec, &modified) == noErr )
     		ok = 1;
     		exists = 1;
     }
     if ( !ok ) {
+    	/* No luck, so far. ask the user for help */
 	    item = Alert(NOPYTHON_ALERT, NULL);
 	    if ( item == YES_ITEM ) {
+	    	/* The user wants to point us to a directory. Let her do so */
 	    	StandardGetFile(NULL, 0, NULL, &sfreply);
 	    	if ( sfreply.sfGood ) {
 	    		if ( sfreply.sfIsFolder ) {
@@ -406,6 +439,7 @@ PyMac_GetPythonDir()
 	    		}
 	    	}
 	    } else if ( item == CURWD_ITEM ) {
+	    	/* The user told us the current directory is fine. Build an FSSpec for it */
 	    	if ( getwd(name) ) {
 	    		if ( FSMakeFSSpec(0, 0, Pstring(name), &dirspec) == 0 ) {
 	    			ok = 1;
@@ -414,15 +448,23 @@ PyMac_GetPythonDir()
 	    	}
 	    }
     }
-    if ( ok && modified ) {
+    if ( ok && modified && !cannotmodify) {
+    	/* We have a new, valid fsspec and we can update the preferences file. Do so. */
     	if ( !exists ) {
     		if (NewAlias(NULL, &dirspec, &handle) == 0 )
     			AddResource((Handle)handle, 'alis', 128, "\p");
     	} else {
     		ChangedResource((Handle)handle);
     	}
-    	UpdateResFile(CurResFile());
+    	UpdateResFile(prefrh);
     }
+    if ( !cannotmodify ) {
+    	/* This means we have the resfile open. Close it. */
+    	CloseResFile(prefrh);
+    }
+    /* Back to the old resource file */
+    UseResFile(oldrh);
+    /* Now turn the fsspec into a path to give back to our caller */
     if ( ok ) {
     	ok = (nfullpath(&dirspec, name) == 0);
     	if ( ok ) strcat(name, ":");
