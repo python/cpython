@@ -217,7 +217,8 @@ up to Python 1.4 (i.e., no hierarchical module names).  (This
 \function{load_module()} has been added in 1.4.)
 
 \begin{verbatim}
-import imp import sys
+import imp
+import sys
 
 def __import__(name, globals=None, locals=None, fromlist=None):
     # Fast path: see if the module has already been imported.
