@@ -31,7 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
-#ifdef __SC__
+#ifdef MPW
 #define bufferIsSmall -607	/*error returns from Post and Accept */
 #endif
 
