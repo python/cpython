@@ -2,6 +2,10 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- Windows:  file.truncate(size) failed on large files when size didn't
+  fit in 32 bits.  This was fixed by backporting new Windows truncation
+  code and tests from 2.3.
+
 - It is no longer possible to use object.__setattr__ to circumvent the
   restrictions on setting attributes of type objects.
 

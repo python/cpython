@@ -8,10 +8,12 @@
 #include <sys/types.h>
 #endif /* DONT_HAVE_SYS_TYPES_H */
 
-#ifdef MS_WIN32
+#ifdef MS_WINDOWS
 #define fileno _fileno
-/* can (almost fully) duplicate with _chsize, see file_truncate */
+/* can simulate truncate with Win32 API functions; see file_truncate */
 #define HAVE_FTRUNCATE
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #endif
 
 #ifdef macintosh
@@ -388,6 +390,9 @@ file_truncate(PyFileObject *f, PyObject *args)
 	newsizeobj = NULL;
 	if (!PyArg_ParseTuple(args, "|O:truncate", &newsizeobj))
 		return NULL;
+
+	/* Set newsize to current postion if newsizeobj NULL, else to the
+	   specified value. */
 	if (newsizeobj != NULL) {
 #if !defined(HAVE_LARGEFILE_SUPPORT)
 		newsize = PyInt_AsLong(newsizeobj);
@@ -398,37 +403,80 @@ file_truncate(PyFileObject *f, PyObject *args)
 #endif
 		if (PyErr_Occurred())
 			return NULL;
-	} else {
+	}
+	else {
 		/* Default to current position*/
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 		newsize = _portable_ftell(f->f_fp);
 		Py_END_ALLOW_THREADS
-		if (newsize == -1) {
-		        PyErr_SetFromErrno(PyExc_IOError);
-			clearerr(f->f_fp);
-			return NULL;
-		}
+		if (newsize == -1)
+			goto onioerror;
 	}
+
+	/* Flush the file. */
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
 	ret = fflush(f->f_fp);
 	Py_END_ALLOW_THREADS
-	if (ret != 0) goto onioerror;
+	if (ret != 0)
+		goto onioerror;
 
-#ifdef MS_WIN32
-	/* can use _chsize; if, however, the newsize overflows 32-bits then
-	   _chsize is *not* adequate; in this case, an OverflowError is raised */
-	if (newsize > LONG_MAX) {
-		PyErr_SetString(PyExc_OverflowError,
-			"the new size is too long for _chsize (it is limited to 32-bit values)");
-		return NULL;
-	} else {
+#ifdef MS_WINDOWS
+	/* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
+	   so don't even try using it. */
+	{
+		Py_off_t current;	/* current file position */
+		HANDLE hFile;
+		int error;
+
+		/* current <- current file postion. */
+		if (newsizeobj == NULL)
+			current = newsize;
+		else {
+			Py_BEGIN_ALLOW_THREADS
+			errno = 0;
+			current = _portable_ftell(f->f_fp);
+			Py_END_ALLOW_THREADS
+			if (current == -1)
+				goto onioerror;
+		}
+
+		/* Move to newsize. */
+		if (current != newsize) {
+			Py_BEGIN_ALLOW_THREADS
+			errno = 0;
+			error = _portable_fseek(f->f_fp, newsize, SEEK_SET)
+				!= 0;
+			Py_END_ALLOW_THREADS
+			if (error)
+				goto onioerror;
+		}
+
+		/* Truncate.  Note that this may grow the file! */
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-		ret = _chsize(fileno(f->f_fp), (long)newsize);
+		hFile = (HANDLE)_get_osfhandle(fileno(f->f_fp));
+		error = hFile == (HANDLE)-1;
+		if (!error) {
+			error = SetEndOfFile(hFile) == 0;
+			if (error)
+				errno = EACCES;
+		}
 		Py_END_ALLOW_THREADS
-		if (ret != 0) goto onioerror;
+		if (error)
+			goto onioerror;
+
+		/* Restore original file position. */
+		if (current != newsize) {
+			Py_BEGIN_ALLOW_THREADS
+			errno = 0;
+			error = _portable_fseek(f->f_fp, current, SEEK_SET)
+				!= 0;
+			Py_END_ALLOW_THREADS
+			if (error)
+				goto onioerror;
+		}
 	}
 #else
 	Py_BEGIN_ALLOW_THREADS
@@ -436,7 +484,7 @@ file_truncate(PyFileObject *f, PyObject *args)
 	ret = ftruncate(fileno(f->f_fp), newsize);
 	Py_END_ALLOW_THREADS
 	if (ret != 0) goto onioerror;
-#endif /* !MS_WIN32 */
+#endif /* !MS_WINDOWS */
 
 	Py_INCREF(Py_None);
 	return Py_None;
