@@ -6,7 +6,7 @@ UC Irvine, June 1995.
 
 # Standard/builtin Python modules
 import string
-from string import joinfields, splitfields, rfind
+from string import join, split, rfind
 
 # A classification of schemes ('' means apply by default)
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
@@ -37,9 +37,9 @@ MAX_CACHE_SIZE = 20
 _parse_cache = {}
 
 def clear_cache():
-    """Clear the parse cache."""
-    global _parse_cache
-    _parse_cache = {}
+	"""Clear the parse cache."""
+	global _parse_cache
+	_parse_cache = {}
 
 
 def urlparse(url, scheme = '', allow_fragments = 1):
@@ -53,7 +53,7 @@ def urlparse(url, scheme = '', allow_fragments = 1):
 	if cached:
 		return cached
 	if len(_parse_cache) >= MAX_CACHE_SIZE:	# avoid runaway growth
-	    clear_cache()
+		clear_cache()
 	find = string.find
 	netloc = path = params = query = fragment = ''
 	i = find(url, ':')
@@ -151,10 +151,8 @@ def urljoin(base, url, allow_fragments = 1):
 	if not path:
 		return urlunparse((scheme, netloc, bpath,
 				   params, query or bquery, fragment))
-	i = rfind(bpath, '/')
-	if i >= 0:
-		path = bpath[:i] + '/' + path
-	segments = splitfields(path, '/')
+	segments = split(bpath, '/')[:-1] + split(path, '/')
+	# XXX The stuff below is bogus in various ways...
 	if segments[-1] == '.':
 		segments[-1] = ''
 	while '.' in segments:
@@ -173,19 +171,19 @@ def urljoin(base, url, allow_fragments = 1):
 		segments[-1] = ''
 	elif len(segments) >= 2 and segments[-1] == '..':
 		segments[-2:] = ['']
-	return urlunparse((scheme, netloc, joinfields(segments, '/'),
+	return urlunparse((scheme, netloc, join(segments, '/'),
 			   params, query, fragment))
 
 def urldefrag(url):
-    """Removes any existing fragment from URL.
+	"""Removes any existing fragment from URL.
 
-    Returns a tuple of the defragmented URL and the fragment.  If
-    the URL contained no fragments, the second element is the
-    empty string.
-    """
-    s, n, p, a, q, frag = urlparse(url)
-    defrag = urlunparse((s, n, p, a, q, ''))
-    return defrag, frag
+	Returns a tuple of the defragmented URL and the fragment.  If
+	the URL contained no fragments, the second element is the
+	empty string.
+	"""
+	s, n, p, a, q, frag = urlparse(url)
+	defrag = urlunparse((s, n, p, a, q, ''))
+	return defrag, frag
 
 
 test_input = """
