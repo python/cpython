@@ -745,12 +745,20 @@ Availability: \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{waitpid}{pid, options}
-Wait for completion of a child process given by process id, and return
-a tuple containing its process id and exit status indication (encoded
-as for \function{wait()}).  The semantics of the call are affected by
-the value of the integer \var{options}, which should be \code{0} for
-normal operation.
+Wait for completion of a child process given by process id \var{pid},
+and return a tuple containing its process id and exit status
+indication (encoded as for \function{wait()}).  The semantics of the
+call are affected by the value of the integer \var{options}, which
+should be \code{0} for normal operation.
 Availability: \UNIX{}.
+
+If \var{pid} is greater than \code{0}, \function{waitpid()} requests
+status information for that specific process.  If \var{pid} is
+\code{0}, the request is for the status of any child in the process
+group of the current process.  If \var{pid} is \code{-1}, the request
+pertains to any child of the current process.  If \var{pid} is less
+than \code{-1}, status is requested for any process in the process
+group \code{-\var{pid}} (the absolute value of \var{pid}).
 \end{funcdesc}
 
 \begin{datadesc}{WNOHANG}
