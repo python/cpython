@@ -201,7 +201,7 @@ PyUnicodeObject *_PyUnicode_New(int length)
         PyObject_INIT(unicode, &PyUnicode_Type);
     }
     else {
-        unicode = PyObject_NEW(PyUnicodeObject, &PyUnicode_Type);
+        unicode = PyMalloc_New(PyUnicodeObject, &PyUnicode_Type);
         if (unicode == NULL)
             return NULL;
 	unicode->str = PyMem_NEW(Py_UNICODE, length + 1);
@@ -219,7 +219,7 @@ PyUnicodeObject *_PyUnicode_New(int length)
 
  onError:
     _Py_ForgetReference((PyObject *)unicode);
-    PyObject_DEL(unicode);
+    PyMalloc_Del(unicode);
     return NULL;
 }
 
@@ -5711,7 +5711,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	pnew->str = PyMem_NEW(Py_UNICODE, n+1);
 	if (pnew->str == NULL) {
 		_Py_ForgetReference((PyObject *)pnew);
-		PyObject_DEL(pnew);
+		PyMalloc_Del(pnew);
 		return NULL;
 	}
 	Py_UNICODE_COPY(pnew->str, tmp->str, n+1);
@@ -5769,7 +5769,7 @@ PyTypeObject PyUnicode_Type = {
     0,					/* tp_init */
     0,					/* tp_alloc */
     unicode_new,			/* tp_new */
-    _PyObject_Del,			/* tp_free */
+    _PyMalloc_Del,			/* tp_free */
 };
 
 /* Initialize the Unicode implementation */
@@ -5811,7 +5811,7 @@ _PyUnicode_Fini(void)
 	if (v->str)
 	    PyMem_DEL(v->str);
 	Py_XDECREF(v->defenc);
-	PyObject_DEL(v);
+	PyMalloc_Del(v);
     }
     unicode_freelist = NULL;
     unicode_freelist_size = 0;

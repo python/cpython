@@ -829,7 +829,7 @@ _PyObject_GC_Malloc(PyTypeObject *tp, int nitems)
 	const size_t basicsize = _PyObject_VAR_SIZE(tp, nitems);
 #ifdef WITH_CYCLE_GC
 	const size_t nbytes = sizeof(PyGC_Head) + basicsize;
-	PyGC_Head *g = PyObject_MALLOC(nbytes);
+	PyGC_Head *g = _PyMalloc_MALLOC(nbytes);
 	if (g == NULL)
 		return (PyObject *)PyErr_NoMemory();
 	g->gc.gc_next = NULL;
@@ -845,7 +845,7 @@ _PyObject_GC_Malloc(PyTypeObject *tp, int nitems)
 	}
 	op = FROM_GC(g);
 #else
-	op = PyObject_MALLOC(basicsize);
+	op = _PyMalloc_MALLOC(basicsize);
 	if (op == NULL)
 		return (PyObject *)PyErr_NoMemory();
 
@@ -896,9 +896,9 @@ _PyObject_GC_Del(PyObject *op)
 	if (allocated > 0) {
 		allocated--;
 	}
-	PyObject_FREE(g);
+	_PyMalloc_FREE(g);
 #else
-	PyObject_FREE(op);
+	_PyMalloc_FREE(op);
 #endif
 }
 
