@@ -103,7 +103,7 @@ def keysubst(arguments, keydict):
 			
 def enumsubst(arguments, key, edict):
 	"""Substitute a single enum keyword argument, if it occurs"""
-	if not arguments.has_key(key):
+	if not arguments.has_key(key) or edict is None:
 		return
 	v = arguments[key]
 	ok = edict.values()
@@ -129,8 +129,9 @@ def decodeerror(arguments):
 
 class TalkTo:
 	"""An AE connection to an application"""
+	_signature = None	# Can be overridden by subclasses
 	
-	def __init__(self, signature, start=0, timeout=0):
+	def __init__(self, signature=None, start=0, timeout=0):
 		"""Create a communication channel with a particular application.
 		
 		Addressing the application is done by specifying either a
@@ -138,6 +139,8 @@ class TalkTo:
 		to an AEDesc.
 		"""
 		self.target_signature = None
+		if signature is None:
+			signature = self._signature
 		if type(signature) == AEDescType:
 			self.target = signature
 		elif type(signature) == InstanceType and hasattr(signature, '__aepack__'):

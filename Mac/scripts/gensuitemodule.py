@@ -667,16 +667,17 @@ class ObjectCompiler:
 			return
 		pname = identify(name)
 		if self.namemappers[0].hascode('property', code):
-			# XXXX Why don't we handle these the same as classes??
+			# plural forms and such
+			othername, dummy, dummy = self.namemappers[0].findcodename('property', code)
 			if self.fp:
-				self.fp.write("# repeated property %s %s\n"%(pname, what[1]))
+				self.fp.write("\n%s = %s\n"%(pname, othername))
 		else:
 			if self.fp:
 				self.fp.write("class %s(aetools.NProperty):\n" % pname)
 				self.fp.write('\t"""%s - %s """\n' % (name, what[1]))
 				self.fp.write("\twhich = %s\n" % `code`)
 				self.fp.write("\twant = %s\n" % `what[0]`)
-			self.namemappers[0].addnamecode('property', pname, code)
+		self.namemappers[0].addnamecode('property', pname, code)
 	
 	def compileelement(self, elem):
 		[code, keyform] = elem
@@ -747,7 +748,7 @@ class ObjectCompiler:
 		name, fullname, module = self.findcodename('enum', enum)
 		if not name:
 			if self.fp:
-				self.fp.write("# XXXX enum %s not found!!\n"%(enum))
+				self.fp.write("_Enum_%s = None # XXXX enum %s not found!!\n"%(identify(enum), enum))
 			return
 		if module:
 			if self.fp:
