@@ -8,8 +8,6 @@ typedef struct {
 	long	start;
 	long	step;
 	long	len;
-	long	index;
-	int	used;	/* Set to 1 if called by range_getiter */	
 } rangeobject;
 
 PyObject *
@@ -45,8 +43,6 @@ PyRange_New(long start, long len, long step, int reps)
 	obj->start = start;
 	obj->len   = len;
 	obj->step  = step;
-	obj->index = 0;
-	obj->used = 0;	
 
 	return (PyObject *) obj;
 }
@@ -90,44 +86,6 @@ range_repr(rangeobject *r)
 	return rtn;
 }
 
-static PyObject *
-range_getiter(rangeobject *r)
-{
-	rangeobject *obj;
-	if (r->used == 0 || r->index >= r->len) { 
-		Py_INCREF(r);
-		r->used = 1;
-		r->index = 0;
-		return (PyObject *)r;
-	}
-
-	obj = PyObject_NEW(rangeobject, &PyRange_Type);
-	if (obj == NULL)
-		return NULL;
-
-	obj->start = r->start;
-	obj->len   = r->len;
-	obj->step  = r->step;
-	obj->index = 0;
-	obj->used = 1;
-	return (PyObject *) obj;
-}
-
-static PyObject *
-range_next(rangeobject *r)
-{
-	if (r->index < r->len) 
-		return PyInt_FromLong(r->start + (r->index++) * r->step);
-	PyErr_SetObject(PyExc_StopIteration, Py_None);
-	return NULL;
-}
-
-static PyMethodDef range_methods[] = {
-        {"next",        (PyCFunction)range_next, METH_NOARGS,
-         "it.next() -- get the next value, or raise StopIteration"},
-        {NULL,          NULL}           /* sentinel */
-};
-
 static PySequenceMethods range_as_sequence = {
 	(inquiry)range_length,	/* sq_length */
 	0,			/* sq_concat */
@@ -135,6 +93,8 @@ static PySequenceMethods range_as_sequence = {
 	(intargfunc)range_item, /* sq_item */
 	0,			/* sq_slice */
 };
+
+staticforward PyObject * range_iter(PyObject *seq);
 
 PyTypeObject PyRange_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -154,7 +114,7 @@ PyTypeObject PyRange_Type = {
 	0,				/* tp_hash */
 	0,				/* tp_call */
 	0,				/* tp_str */
-	PyObject_GenericGetAttr,	/* tp_getattro */
+	0,				/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,		/* tp_flags */
@@ -163,7 +123,92 @@ PyTypeObject PyRange_Type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	(getiterfunc)range_getiter,	/* tp_iter */
-	(iternextfunc)range_next,	/* tp_iternext */
-	range_methods,			/* tp_methods */	
+	(getiterfunc)range_iter,	/* tp_iter */	
 };
+
+/*********************** Xrange Iterator **************************/
+
+typedef struct {
+	PyObject_HEAD
+	long	index;
+	long	start;
+	long	step;
+	long	len;
+} rangeiterobject;
+
+PyTypeObject Pyrangeiter_Type;
+
+PyObject *
+range_iter(PyObject *seq)
+{
+	rangeiterobject *it;
+
+	if (!PyRange_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_New(rangeiterobject, &Pyrangeiter_Type);
+	if (it == NULL)
+		return NULL;
+	it->index = 0;
+	it->start = ((rangeobject *)seq)->start;
+	it->step = ((rangeobject *)seq)->step;
+	it->len = ((rangeobject *)seq)->len;
+	return (PyObject *)it;
+}
+
+static PyObject *
+rangeiter_getiter(PyObject *it)
+{
+	Py_INCREF(it);
+	return it;
+}
+
+static PyObject *
+rangeiter_next(rangeiterobject *r)
+{
+	if (r->index < r->len) 
+		return PyInt_FromLong(r->start + (r->index++) * r->step);
+	PyErr_SetObject(PyExc_StopIteration, Py_None);
+	return NULL;
+}
+
+static PyMethodDef rangeiter_methods[] = {
+	{"next",        (PyCFunction)rangeiter_next,     METH_NOARGS,
+	 "it.next() -- get the next value, or raise StopIteration"},
+	{NULL,          NULL}           /* sentinel */
+};
+
+PyTypeObject Pyrangeiter_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,                                      /* ob_size */
+	"rangeiterator",                         /* tp_name */
+	sizeof(rangeiterobject),                 /* tp_basicsize */
+	0,                                      /* tp_itemsize */
+	/* methods */
+	(destructor)PyObject_Del,		/* tp_dealloc */
+	0,                                      /* tp_print */
+	0,                                      /* tp_getattr */
+	0,                                      /* tp_setattr */
+	0,                                      /* tp_compare */
+	0,                                      /* tp_repr */
+	0,                                      /* tp_as_number */
+	0,                                      /* tp_as_sequence */
+	0,                                      /* tp_as_mapping */
+	0,                                      /* tp_hash */
+	0,                                      /* tp_call */
+	0,                                      /* tp_str */
+	PyObject_GenericGetAttr,                /* tp_getattro */
+	0,                                      /* tp_setattro */
+	0,                                      /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,                                      /* tp_doc */
+	0,					/* tp_traverse */
+	0,                                      /* tp_clear */
+	0,                                      /* tp_richcompare */
+	0,                                      /* tp_weaklistoffset */
+	(getiterfunc)rangeiter_getiter,		/* tp_iter */
+	(iternextfunc)rangeiter_next,		/* tp_iternext */
+	rangeiter_methods,			/* tp_methods */
+};
+
