@@ -30,7 +30,7 @@ static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
 	if (callback == NULL)
 		return 0; /* Default behavior */
 	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
-	args = Py_BuildValue("O&O&", WinObj_WhichWindow, dialog, PyMac_BuildEventRecord, event);
+	args = Py_BuildValue("O&O&", DlgObj_WhichDialog, dialog, PyMac_BuildEventRecord, event);
 	if (args == NULL)
 		res = NULL;
 	else {
@@ -81,7 +81,7 @@ static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
 	if (Dlg_UserItemProc_callback == NULL)
 		return; /* Default behavior */
 	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
-	args = Py_BuildValue("O&h", WinObj_WhichWindow, dialog, item);
+	args = Py_BuildValue("O&h", DlgObj_WhichDialog, dialog, item);
 	if (args == NULL)
 		res = NULL;
 	else {
@@ -96,7 +96,7 @@ static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
 	return;
 }
 
-#if 1
+#if 0
 /*
 ** Treating DialogObjects as WindowObjects is (I think) illegal under Carbon.
 ** However, as they are still identical under MacOS9 Carbon this is a problem, even
@@ -922,7 +922,7 @@ static PyMethodDef DlgObj_methods[] = {
 	{NULL, NULL, 0}
 };
 
-PyMethodChain DlgObj_chain = { DlgObj_methods, &WinObj_chain };
+PyMethodChain DlgObj_chain = { DlgObj_methods, NULL };
 
 static PyObject *DlgObj_getattr(self, name)
 	DialogObject *self;
@@ -933,11 +933,21 @@ static PyObject *DlgObj_getattr(self, name)
 
 #define DlgObj_setattr NULL
 
-#define DlgObj_compare NULL
+static int DlgObj_compare(self, other)
+	DialogObject *self, *other;
+{
+	if ( self->ob_itself > other->ob_itself ) return 1;
+	if ( self->ob_itself < other->ob_itself ) return -1;
+	return 0;
+}
 
 #define DlgObj_repr NULL
 
-#define DlgObj_hash NULL
+static int DlgObj_hash(self)
+	DialogObject *self;
+{
+	return (int)self->ob_itself;
+}
 
 PyTypeObject Dialog_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -1107,7 +1117,7 @@ static PyObject *Dlg_DialogSelect(_self, _args)
 	                   &itemHit);
 	_res = Py_BuildValue("bO&h",
 	                     _rv,
-	                     WinObj_WhichWindow, theDialog,
+	                     DlgObj_WhichDialog, theDialog,
 	                     itemHit);
 	return _res;
 }
@@ -1462,6 +1472,36 @@ DlgObj_ConvertToWindow(self)
 	if ( DlgObj_Check(self) )
 		return GetDialogWindow(((DialogObject *)self)->ob_itself);
 	return NULL;
+}
+/* Return the object corresponding to the dialog, or None */
+
+PyObject *
+DlgObj_WhichDialog(d)
+	DialogPtr d;
+{
+	PyObject *it;
+	
+	if (d == NULL) {
+		it = Py_None;
+		Py_INCREF(it);
+	} else {
+		WindowPtr w = GetDialogWindow(d);
+		
+		it = (PyObject *) GetWRefCon(w);
+		if (it == NULL || ((DialogObject *)it)->ob_itself != d || !DlgObj_Check(it)) {
+#if 0
+			/* Should do this, but we don't have an ob_freeit for dialogs yet. */
+			it = WinObj_New(w);
+			((WindowObject *)it)->ob_freeit = NULL;
+#else
+			it = Py_None;
+			Py_INCREF(it);
+#endif
+		} else {
+			Py_INCREF(it);
+		}
+	}
+	return it;
 }
 
 

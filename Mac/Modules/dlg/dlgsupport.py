@@ -53,7 +53,7 @@ static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
 	if (callback == NULL)
 		return 0; /* Default behavior */
 	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
-	args = Py_BuildValue("O&O&", WinObj_WhichWindow, dialog, PyMac_BuildEventRecord, event);
+	args = Py_BuildValue("O&O&", DlgObj_WhichDialog, dialog, PyMac_BuildEventRecord, event);
 	if (args == NULL)
 		res = NULL;
 	else {
@@ -104,7 +104,7 @@ static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
 	if (Dlg_UserItemProc_callback == NULL)
 		return; /* Default behavior */
 	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
-	args = Py_BuildValue("O&h", WinObj_WhichWindow, dialog, item);
+	args = Py_BuildValue("O&h", DlgObj_WhichDialog, dialog, item);
 	if (args == NULL)
 		res = NULL;
 	else {
@@ -119,7 +119,7 @@ static pascal void Dlg_UnivUserItemProc(DialogPtr dialog,
 	return;
 }
 
-#if 1
+#if 0
 /*
 ** Treating DialogObjects as WindowObjects is (I think) illegal under Carbon.
 ** However, as they are still identical under MacOS9 Carbon this is a problem, even
@@ -144,6 +144,36 @@ DlgObj_ConvertToWindow(self)
 		return GetDialogWindow(((DialogObject *)self)->ob_itself);
 	return NULL;
 }
+/* Return the object corresponding to the dialog, or None */
+
+PyObject *
+DlgObj_WhichDialog(d)
+	DialogPtr d;
+{
+	PyObject *it;
+	
+	if (d == NULL) {
+		it = Py_None;
+		Py_INCREF(it);
+	} else {
+		WindowPtr w = GetDialogWindow(d);
+		
+		it = (PyObject *) GetWRefCon(w);
+		if (it == NULL || ((DialogObject *)it)->ob_itself != d || !DlgObj_Check(it)) {
+#if 0
+			/* Should do this, but we don't have an ob_freeit for dialogs yet. */
+			it = WinObj_New(w);
+			((WindowObject *)it)->ob_freeit = NULL;
+#else
+			it = Py_None;
+			Py_INCREF(it);
+#endif
+		} else {
+			Py_INCREF(it);
+		}
+	}
+	return it;
+}
 """
 
 
@@ -153,16 +183,42 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		GlobalObjectDefinition.__init__(self, name, prefix, itselftype)
 ## This won't work in Carbon, so we disable it for all MacPythons:-(
 ## But see the comment above:-((
-		self.basechain = "&WinObj_chain"
+##		self.basechain = "&WinObj_chain"
+
 	def outputInitStructMembers(self):
 		GlobalObjectDefinition.outputInitStructMembers(self)
 		Output("SetWRefCon(GetDialogWindow(itself), (long)it);")
+
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return Py_None;")
+
 	def outputCheckConvertArg(self):
 		Output("if (v == Py_None) { *p_itself = NULL; return 1; }")
 		Output("if (PyInt_Check(v)) { *p_itself = (DialogPtr)PyInt_AsLong(v);")
 		Output("                      return 1; }")
+
+	def outputCompare(self):
+		Output()
+		Output("static int %s_compare(self, other)", self.prefix)
+		IndentLevel()
+		Output("%s *self, *other;", self.objecttype)
+		DedentLevel()
+		OutLbrace()
+		Output("if ( self->ob_itself > other->ob_itself ) return 1;")
+		Output("if ( self->ob_itself < other->ob_itself ) return -1;")
+		Output("return 0;")
+		OutRbrace()
+		
+	def outputHash(self):
+		Output()
+		Output("static int %s_hash(self)", self.prefix)
+		IndentLevel()
+		Output("%s *self;", self.objecttype)
+		DedentLevel()
+		OutLbrace()
+		Output("return (int)self->ob_itself;")
+		OutRbrace()
+		
 	def outputFreeIt(self, itselfname):
 		Output("DisposeDialog(%s);", itselfname)
 
