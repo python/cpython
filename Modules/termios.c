@@ -536,10 +536,10 @@ static struct constant {
 	{"VSTOP", VSTOP},
 	{"VSUSP", VSUSP},
 	{"VEOL", VEOL},
-#ifndef VREPRINT
+#ifdef VREPRINT
 	{"VREPRINT", VREPRINT},
 #endif
-#ifndef VDISCARD
+#ifdef VDISCARD
 	{"VDISCARD", VDISCARD},
 #endif
 	{"VWERASE", VWERASE},
