@@ -526,7 +526,7 @@ class MatchObject:
         
         Return the index of the start of the substring matched by
         group; group defaults to zero (meaning the whole matched
-        substring). Return None if group exists but did not contribute
+        substring). Return -1 if group exists but did not contribute
         to the match.
 
         """
@@ -542,7 +542,7 @@ class MatchObject:
         
         Return the indices of the end of the substring matched by
         group; group defaults to zero (meaning the whole matched
-        substring). Return None if group exists but did not contribute
+        substring). Return -1 if group exists but did not contribute
         to the match.
 
         """
@@ -557,8 +557,8 @@ class MatchObject:
         """span([group=0]) -> tuple
         
         Return the 2-tuple (m.start(group), m.end(group)). Note that
-        if group did not contribute to the match, this is (None,
-        None). Group defaults to zero (meaning the whole matched
+        if group did not contribute to the match, this is (-1,
+        -1). Group defaults to zero (meaning the whole matched
         substring).
 
         """
