@@ -66,7 +66,6 @@ class GlobTests(unittest.TestCase):
 
     def test_glob_literal(self):
         eq = self.assertSequencesEqual_noorder
-        np = lambda *f: norm(self.tempdir, *f)
         eq(self.glob('a'), [self.norm('a')])
         eq(self.glob('a', 'D'), [self.norm('a', 'D')])
         eq(self.glob('aab'), [self.norm('aab')])
@@ -74,7 +73,6 @@ class GlobTests(unittest.TestCase):
 
     def test_glob_one_directory(self):
         eq = self.assertSequencesEqual_noorder
-        np = lambda *f: norm(self.tempdir, *f)
         eq(self.glob('a*'), map(self.norm, ['a', 'aab', 'aaa']))
         eq(self.glob('*a'), map(self.norm, ['a', 'aaa']))
         eq(self.glob('aa?'), map(self.norm, ['aaa', 'aab']))
@@ -83,7 +81,6 @@ class GlobTests(unittest.TestCase):
 
     def test_glob_nested_directory(self):
         eq = self.assertSequencesEqual_noorder
-        np = lambda *f: norm(self.tempdir, *f)
         if os.path.normcase("abCD") == "abCD":
             # case-sensitive filesystem
             eq(self.glob('a', 'bcd', 'E*'), [self.norm('a', 'bcd', 'EF')])
@@ -95,7 +92,6 @@ class GlobTests(unittest.TestCase):
 
     def test_glob_directory_names(self):
         eq = self.assertSequencesEqual_noorder
-        np = lambda *f: norm(self.tempdir, *f)
         eq(self.glob('*', 'D'), [self.norm('a', 'D')])
         eq(self.glob('*', '*a'), [])
         eq(self.glob('a', '*', '*', '*a'),
