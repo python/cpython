@@ -204,7 +204,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.C)   obj=`basename $src .C`.o; cc='$(CXX)';;
 			*.cxx) obj=`basename $src .cxx`.o; cc='$(CXX)';;
 			*.cpp) obj=`basename $src .cpp`.o; cc='$(CXX)';;
-			*.m)   obj=`basename $src .m`.o; cc='$(CXX)';; # Obj-C
+			*.m)   obj=`basename $src .m`.o; cc='$(CC)';; # Obj-C
 			*)     continue;;
 			esac
 			obj="$srcdir/$obj"
