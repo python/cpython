@@ -2864,12 +2864,16 @@ If nesting level is zero, return nil."
   "Go to the beginning of the triple quoted string we find ourselves in.
 DELIM is the TQS string delimiter character we're searching backwards
 for."
-  (let ((skip (and delim (make-string 1 delim))))
+  (let ((skip (and delim (make-string 1 delim)))
+	(continue t))
     (when skip
       (save-excursion
-	(py-safe (search-backward skip))
-	(if (and (eq (char-before) delim)
-		 (eq (char-before (1- (point))) delim))
+	(while continue
+	  (py-safe (search-backward skip))
+	  (setq continue (and (not (bobp))
+			      (= (char-before) ?\\))))
+	(if (and (= (char-before) delim)
+		 (= (char-before (1- (point))) delim))
 	    (setq skip (make-string 3 delim))))
       ;; we're looking at a triple-quoted string
       (py-safe (search-backward skip)))))
