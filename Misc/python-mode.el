@@ -64,7 +64,7 @@
 
 ;; FOR MORE INFORMATION:
 
-;; Please see <http://www.python.org/ftp/emacs/pmdetails.html> for the
+;; Please see <http://www.python.org/emacs/python-mode/> for the
 ;; latest information and compatibility notes.
 
 ;; BUG REPORTING:
@@ -212,7 +212,7 @@ if possible, a faster algorithm is used (i.e. X/Emacs 19 and beyond).
 
 When t, lines that begin with a single `#' are a hint to subsequent
 line indentation.  If the previous line is such a comment line (as
-opposed to one that starts with `py-block-comment-prefix'), then it's
+opposed to one that starts with `py-block-comment-prefix'), then its
 indentation is used as a hint for this line's indentation.  Lines that
 begin with `py-block-comment-prefix' are ignored for indentation
 purposes.
@@ -554,8 +554,8 @@ Currently-active file is at the head of the list.")
 (defvar python-mode-hook nil
   "*Hook called by `python-mode'.")
 
-;; in previous version of python-mode.el, the hook was incorrectly
-;; called py-mode-hook, and was not defvar'd.  deprecate its use.
+;; In previous version of python-mode.el, the hook was incorrectly
+;; called py-mode-hook, and was not defvar'd.  Deprecate its use.
 (and (fboundp 'make-obsolete-variable)
      (make-obsolete-variable 'py-mode-hook 'python-mode-hook))
 
@@ -824,7 +824,7 @@ the function \\[imenu-example--create-python-index].
 It works recursively by looking for all definitions at the current
 indention level.  When it finds one, it adds it to the alist.  If it
 finds a definition at a greater indentation level, it removes the
-previous definition from the alist. In it's place it adds all
+previous definition from the alist. In its place it adds all
 definitions found at the next indentation level.  When it finds a
 definition that is less indented then the current level, it retuns the
 alist it has created thus far.
@@ -991,7 +991,7 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   ;; Now do the automagical guessing
   (if py-smart-indentation
     (let ((offset py-indent-offset))
-      ;; Its okay if this fails to guess a good value
+      ;; It's okay if this fails to guess a good value
       (if (and (py-safe (py-guess-indent-offset))
 	       (<= py-indent-offset 8)
 	       (>= py-indent-offset 2))
@@ -1047,7 +1047,7 @@ Electric behavior is inhibited inside a string or comment."
 	      (setq outdent py-indent-offset))
 	  ;; Don't indent, only outdent.  This assumes that any lines that
 	  ;; are already outdented relative to py-compute-indentation were
-	  ;; put there on purpose.  Its highly annoying to have `:' indent
+	  ;; put there on purpose.  It's highly annoying to have `:' indent
 	  ;; for you.  Use TAB, C-c C-l or C-c C-r to adjust.  TBD: Is
 	  ;; there a better way to determine this???
 	  (if (< (current-indentation) indent) nil
@@ -1300,7 +1300,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
 	 (file (expand-file-name temp py-temp-directory)))
     (write-region start end file nil 'nomsg)
     (cond
-     ;; always run the code in it's own asynchronous subprocess
+     ;; always run the code in its own asynchronous subprocess
      (async
       (let* ((buf (generate-new-buffer-name py-output-buffer)))
 	(start-process "Python" buf py-python-command "-u" file)
@@ -1660,7 +1660,7 @@ the new line indented."
        ;; purposes.
 
        ;; Are we looking at a comment-only line which is *not* an
-       ;; indenting comment line?  If so, we assume that its been
+       ;; indenting comment line?  If so, we assume that it's been
        ;; placed at the desired indentation, so leave it alone.
        ;; Indenting comment lines are aligned as statements down
        ;; below.
@@ -2609,7 +2609,7 @@ local bindings to py-newline-and-indent."))
 	(beginning-of-line)
 	;; In XEmacs, we have a much better way to test for whether
 	;; we're in a triple-quoted string or not.  Emacs does not
-	;; have this built-in function, which is it's loss because
+	;; have this built-in function, which is its loss because
 	;; without scanning from the beginning of the buffer, there's
 	;; no accurate way to determine this otherwise.
 	(if (not (fboundp 'buffer-syntactic-context))
@@ -2748,9 +2748,9 @@ local bindings to py-newline-and-indent."))
       (py-mark-block nil 'just-move)
     (py-goto-beyond-final-line)))
 
-;; go to start of first statement (not blank or comment or
-;; continuation line) at or preceding point.  returns t if there is
-;; one, else nil
+;; Go to start of first statement (not blank or comment or
+;; continuation line) at or preceding point.  Returns t if there is
+;; one, else nil.
 (defun py-goto-statement-at-or-above ()
   (py-goto-initial-line)
   (if (looking-at py-blank-or-comment-re)
@@ -2762,9 +2762,9 @@ local bindings to py-newline-and-indent."))
 	nil)
     t))
 
-;; go to start of first statement (not blank or comment or
-;; continuation line) following the statement containing point returns
-;; t if there is one, else nil
+;; Go to start of first statement (not blank or comment or
+;; continuation line) following the statement containing point.
+;; Returns t if there is one, else nil.
 (defun py-goto-statement-below ()
   (beginning-of-line)
   (let ((start (point)))
@@ -2777,7 +2777,7 @@ local bindings to py-newline-and-indent."))
 	(progn (goto-char start) nil)
       t)))
 
-;; go to start of statement, at or preceding point, starting with
+;; Go to start of statement, at or preceding point, starting with
 ;; keyword KEY.  Skips blank lines and non-indenting comments upward
 ;; first.  If that statement starts with KEY, done, else go back to
 ;; first enclosing block starting with KEY.  If successful, leaves
