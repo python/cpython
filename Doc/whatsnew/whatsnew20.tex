@@ -9,6 +9,11 @@
 
 \section{Introduction}
 
+{\large This is a draft document; please report inaccuracies and 
+omissions to the authors. \\
+XXX marks locations where fact-checking or rewriting is still needed.
+}
+
 A new release of Python, version 1.6, will be released some time this
 summer.  Alpha versions are already available from
 \url{http://www.python.org/1.6/}.  This article talks about the
@@ -229,7 +234,7 @@ packages, and Solaris .pkg files have been discussed and are in
 various stages of development.
 
 All this is documented in a new manual, \textit{Distributing Python
-Modules}, that will be added to the basic set of Python documentation.
+Modules}, that joins the basic set of Python documentation.
 
 % ======================================================================
 \section{String Methods}
@@ -348,8 +353,12 @@ formatting precision than \function{str()}.  \function{repr()} uses
 \function{str()} uses ``%.12g'' as before.  The effect is that
 \function{repr()} may occasionally show more decimal places than 
 \function{str()}, for numbers 
-XXX need example value here to demonstrate problem.
+For example, the number 8.1 can't be represented exactly in binary, so
+\code{repr(8.1)} is \code{'8.0999999999999996'}, while str(8.1) is
+\code{'8.1'}.
 
+%The \code{-X} command-line option, which turns all standard exceptions
+%into strings instead of classes, has been removed.  
 
 % ======================================================================
 \section{Core Changes}
@@ -455,6 +464,12 @@ Some of the changes are under the covers, and will only be apparent to
 people writing C extension modules, or embedding a Python interpreter
 in a larger application.  If you aren't dealing with Python's C API,
 you can safely skip this section.
+
+The version number of the Python C API was incremented, so C
+extensions compiled for 1.5.2 must be recompiled in order to work with
+1.6.  On Windows, attempting to import a third party extension built
+for Python 1.5.x usually results in an immediate crash; there's not
+much we can do about this.  (XXX can anyone tell me why it crashes?)
 
 Users of Jim Fulton's ExtensionClass module will be pleased to find
 out that hooks have been added so that ExtensionClasses are now
@@ -572,6 +587,8 @@ the fetchability of a given URL.  (Contributed by Skip Montanaro.)
 checks Python source code for ambiguous indentation.
 (Contributed by Tim Peters.)
 
+\item{\module{UserString}:} A base class useful for deriving objects that behave like strings.  
+
 \item{\module{winreg}:} An interface to the Windows registry.
 \module{winreg} has been part of PythonWin since 1995, but now has
 been added to the core distribution, and enhanced to support Unicode.
@@ -590,7 +607,8 @@ module)
 % ======================================================================
 \section{IDLE Improvements}
 
-XXX IDLE -- complete overhaul; what are the changes?
+XXX IDLE -- complete overhaul.  I don't use IDLE; can anyone tell me
+what the changes are?
 
 % ======================================================================
 \section{Deleted and Deprecated Modules}
@@ -599,12 +617,16 @@ A few modules have been dropped because they're obsolete, or because
 there are now better ways to do the same thing.  The \module{stdwin}
 module is gone; it was for a platform-independent windowing toolkit
 that's no longer developed.  
-The \module{cmp} and \module{dircmp} modules have been moved to the 
-\file{lib-old} subdirectory; 
 
-If you have code which relies on modules that have been moved to
+A number of modules have been moved to the
+\file{lib-old} subdirectory:
+\module{cmp}, \module{cmpcache}, \module{dircmp}, \module{dump}, 
+\module{find}, \module{grep}, \module{packmail}, 
+\module{poly}, \module{util}, \module{whatsound}, \module{zmod}. 
+If you have code which relies on a module  that's been moved to
 \file{lib-old}, you can simply add that directory to \code{sys.path}  
-to get them back.
+to get them back, but you're encouraged to update any code that uses
+these modules.
 
 XXX any others deleted?
 
