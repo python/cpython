@@ -939,6 +939,30 @@ sub do_env_cfuncdesc{
            . '</dl>';
 }
 
+sub do_cmd_cmemberline{
+    local($_) = @_;
+    my $container = next_argument();
+    my $type = next_argument();
+    my $name = next_argument();
+    my $idx = make_str_index_entry("<tt class=\"cmember\">$name</tt>"
+                                   . " ($type member)");
+    $idx =~ s/ \(.*\)//;
+    return "<dt>$type <b>$idx</b>\n<dd>"
+           . $_;
+}
+sub do_env_cmemberdesc{
+    local($_) = @_;
+    my $container = next_argument();
+    my $type = next_argument();
+    my $name = next_argument();
+    my $idx = make_str_index_entry("<tt class=\"cmember\">$name</tt>"
+                                   . " ($type member)");
+    $idx =~ s/ \(.*\)//;
+    return "<dl><dt>$type <b>$idx</b>\n<dd>"
+           . $_
+           . '</dl>';
+}
+
 sub do_env_csimplemacrodesc{
     local($_) = @_;
     my $name = next_argument();
