@@ -1,11 +1,3 @@
-/***********************************************************
-Copyright (c) 2000, BeOpen.com.
-All rights reserved.
-
-See the file "Misc/COPYRIGHT" for information on usage and
-redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-******************************************************************/
-
 #ifndef Py_PYPORT_H
 #define Py_PYPORT_H
 
