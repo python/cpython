@@ -28,6 +28,7 @@
 #include "Python.h"                     /* general Python API             */
 #include "graminit.h"                   /* symbols defined in the grammar */
 #include "node.h"                       /* internal parser structure      */
+#include "errcode.h"                    /* error codes for PyNode_*()     */
 #include "token.h"                      /* token definitions              */
                                         /* ISTERMINAL() / ISNONTERMINAL() */
 #include "compile.h"                    /* PyNode_Compile()               */
@@ -598,11 +599,15 @@ parser_tuple2st(PyST_Object *self, PyObject *args, PyObject *kw)
             /*  Might be an eval form.  */
             if (validate_expr_tree(tree))
                 st = parser_newstobject(tree, PyST_EXPR);
+            else
+                PyNode_Free(tree);
         }
         else if (start_sym == file_input) {
             /*  This looks like an exec form so far.  */
             if (validate_file_input(tree))
                 st = parser_newstobject(tree, PyST_SUITE);
+            else
+                PyNode_Free(tree);
         }
         else {
             /*  This is a fragment, at best. */
@@ -632,7 +637,7 @@ static node*
 build_node_children(PyObject *tuple, node *root, int *line_num)
 {
     int len = PyObject_Size(tuple);
-    int i;
+    int i, err;
 
     for (i = 1; i < len; ++i) {
         /* elem must always be a sequence, however simple */
@@ -713,7 +718,17 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
             Py_XDECREF(elem);
             return (0);
         }
-        PyNode_AddChild(root, type, strn, *line_num);
+        err = PyNode_AddChild(root, type, strn, *line_num);
+        if (err == E_NOMEM) {
+            PyMem_DEL(strn);
+            return (node *) PyErr_NoMemory();
+        }
+        if (err == E_OVERFLOW) {
+            PyMem_DEL(strn);
+            PyErr_SetString(PyExc_ValueError,
+                            "unsupported number of child nodes");
+            return NULL;
+        }
 
         if (ISNONTERMINAL(type)) {
             node* new_child = CHILD(root, i - 1);
@@ -758,9 +773,11 @@ build_node_tree(PyObject *tuple)
         int line_num = 0;
 
         res = PyNode_New(num);
-        if (res != build_node_children(tuple, res, &line_num)) {
-            PyNode_Free(res);
-            res = 0;
+        if (res != NULL) {
+            if (res != build_node_children(tuple, res, &line_num)) {
+                PyNode_Free(res);
+                res = NULL;
+            }
         }
     }
     else
