@@ -13,6 +13,15 @@ class ParserBase:
     """Parser base class which provides some common support methods used
     by the SGML/HTML and XHTML parsers."""
 
+    def __init__(self):
+        if self.__class__ is ParserBase:
+            raise RuntimeError(
+                "markupbase.ParserBase must be subclassed")
+
+    def error(self, message):
+        raise NotImplementedError(
+            "subclasses of ParserBase must override error()")
+
     def reset(self):
         self.lineno = 1
         self.offset = 0
@@ -46,7 +55,6 @@ class ParserBase:
         # deployed," this should only be the document type
         # declaration ("<!DOCTYPE html...>").
         rawdata = self.rawdata
-        import sys
         j = i + 2
         assert rawdata[i:j] == "<!", "unexpected call to parse_declaration"
         if rawdata[j:j+1] in ("-", ""):
@@ -162,12 +170,11 @@ class ParserBase:
 
     # Internal -- scan past <!ELEMENT declarations
     def _parse_doctype_element(self, i, declstartpos):
-        rawdata = self.rawdata
-        n = len(rawdata)
         name, j = self._scan_name(i, declstartpos)
         if j == -1:
             return -1
         # style content model; just skip until '>'
+        rawdata = self.rawdata
         if '>' in rawdata[j:]:
             return string.find(rawdata, ">", j) + 1
         return -1
@@ -304,3 +311,7 @@ class ParserBase:
         else:
             self.updatepos(declstartpos, i)
             self.error("expected name token")
+
+    # To be overridden -- handlers for unknown objects
+    def unknown_decl(self, data):
+        pass

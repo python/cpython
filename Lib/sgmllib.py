@@ -423,7 +423,6 @@ class SGMLParser(markupbase.ParserBase):
     def unknown_endtag(self, tag): pass
     def unknown_charref(self, ref): pass
     def unknown_entityref(self, ref): pass
-    def unknown_decl(self, data): pass
 
 
 class TestSGMLParser(SGMLParser):
