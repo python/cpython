@@ -345,15 +345,15 @@ class VideoParams:
 		if self.format <> 'compress':
 			return data
 		if not self.decompressor:
-			import cl, CL
+			import cl
 			scheme = cl.QueryScheme(self.compressheader)
 			self.decompressor = cl.OpenDecompressor(scheme)
 			headersize = self.decompressor.ReadHeader(self.compressheader)
-			width = self.decompressor.GetParam(CL.IMAGE_WIDTH)
-			height = self.decompressor.GetParam(CL.IMAGE_HEIGHT)
-			params = [CL.ORIGINAL_FORMAT, CL.RGBX, \
-				  CL.ORIENTATION, CL.BOTTOM_UP, \
-				  CL.FRAME_BUFFER_SIZE, width*height*CL.BytesPerPixel(CL.RGBX)]
+			width = self.decompressor.GetParam(cl.IMAGE_WIDTH)
+			height = self.decompressor.GetParam(cl.IMAGE_HEIGHT)
+			params = [cl.ORIGINAL_FORMAT, cl.RGBX, \
+				  cl.ORIENTATION, cl.BOTTOM_UP, \
+				  cl.FRAME_BUFFER_SIZE, width*height*cl.BytesPerPixel(cl.RGBX)]
 			self.decompressor.SetParams(params)
 		data = self.decompressor.Decompress(1, data)
 		return data
