@@ -167,7 +167,7 @@ class build_ext (Command):
         # directory where we put them is in the library search path for
         # linking extensions.
         if self.distribution.has_c_libraries():
-            build_clib = self.find_peer ('build_clib')
+            build_clib = self.get_finalized_command ('build_clib')
             self.libraries.extend (build_clib.get_library_names() or [])
             self.library_dirs.append (build_clib.build_clib)
 
@@ -294,7 +294,7 @@ class build_ext (Command):
                 package = string.join (modpath[0:-1], '.')
                 base = modpath[-1]
 
-                build_py = self.find_peer ('build_py')
+                build_py = self.get_finalized_command ('build_py')
                 package_dir = build_py.get_package_dir (package)
                 ext_filename = os.path.join (package_dir,
                                              self.get_ext_filename(base))

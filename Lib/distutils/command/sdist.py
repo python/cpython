@@ -223,15 +223,15 @@ class sdist (Command):
                 self.files.extend (files)
 
         if self.distribution.has_pure_modules():
-            build_py = self.find_peer ('build_py')
+            build_py = self.get_finalized_command ('build_py')
             self.files.extend (build_py.get_source_files ())
 
         if self.distribution.has_ext_modules():
-            build_ext = self.find_peer ('build_ext')
+            build_ext = self.get_finalized_command ('build_ext')
             self.files.extend (build_ext.get_source_files ())
 
         if self.distribution.has_c_libraries():
-            build_clib = self.find_peer ('build_clib')
+            build_clib = self.get_finalized_command ('build_clib')
             self.files.extend (build_clib.get_source_files ())
 
 
@@ -441,7 +441,7 @@ class sdist (Command):
         # while loop over lines of template file
 
         # Prune away the build and source distribution directories
-        build = self.find_peer ('build')
+        build = self.get_finalized_command ('build')
         exclude_pattern (self.files, None, prefix=build.build_base)
 
         base_dir = self.distribution.get_fullname()

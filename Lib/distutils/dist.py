@@ -681,7 +681,7 @@ class Distribution:
 
         self.announce ("running " + command)
         cmd_obj = self.get_command_obj (command)
-        cmd_obj.ensure_ready ()
+        cmd_obj.ensure_finalized ()
         cmd_obj.run ()
         self.have_run[command] = 1
 

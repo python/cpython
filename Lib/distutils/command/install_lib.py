@@ -46,9 +46,9 @@ class install_lib (Command):
         # Make sure we have built everything we need first
         if not self.skip_build:
             if self.distribution.has_pure_modules():
-                self.run_peer ('build_py')
+                self.run_command ('build_py')
             if self.distribution.has_ext_modules():
-                self.run_peer ('build_ext')
+                self.run_command ('build_ext')
 
         # Install everything: simply dump the entire contents of the build
         # directory to the installation directory (that's the beauty of
@@ -85,7 +85,7 @@ class install_lib (Command):
         if not has_any:
             return []
 
-        build_cmd = self.find_peer (build_cmd)
+        build_cmd = self.get_finalized_command (build_cmd)
         build_files = build_cmd.get_outputs()
         build_dir = getattr (build_cmd, cmd_option)
 
@@ -138,11 +138,11 @@ class install_lib (Command):
         inputs = []
         
         if self.distribution.has_pure_modules():
-            build_py = self.find_peer ('build_py')
+            build_py = self.get_finalized_command ('build_py')
             inputs.extend (build_py.get_outputs())
 
         if self.distribution.has_ext_modules():
-            build_ext = self.find_peer ('build_ext')
+            build_ext = self.get_finalized_command ('build_ext')
             inputs.extend (build_ext.get_outputs())
 
         return inputs

@@ -35,7 +35,7 @@ class install_scripts (Command):
 
     def run (self):
         if not self.skip_build:
-            self.run_peer('build_scripts')
+            self.run_command('build_scripts')
         self.outfiles = self.copy_tree (self.build_dir, self.install_dir)
         if os.name == 'posix':
             # Set the executable bits (owner, group, and world) on

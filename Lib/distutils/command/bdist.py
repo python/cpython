@@ -53,7 +53,7 @@ class bdist (Command):
         # temporary directories (eg. we'll probably have
         # "build/bdist.<plat>/dumb", "build/bdist.<plat>/rpm", etc.)
         if self.bdist_base is None:
-            build_base = self.find_peer('build').build_base
+            build_base = self.get_finalized_command('build').build_base
             plat = get_platform()
             self.bdist_base = os.path.join (build_base, 'bdist.' + plat)
 
@@ -79,9 +79,9 @@ class bdist (Command):
                   "invalid archive format '%s'" % self.format
 
         if cmd_name not in self.no_format_option:
-            sub_cmd = self.find_peer (cmd_name)
+            sub_cmd = self.get_finalized_command (cmd_name)
             sub_cmd.format = self.format
-        self.run_peer (cmd_name)
+        self.run_command (cmd_name)
 
     # run()
 

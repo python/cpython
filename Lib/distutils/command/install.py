@@ -454,11 +454,11 @@ class install (Command):
 
         # Obviously have to build before we can install
         if not self.skip_build:
-            self.run_peer ('build')
+            self.run_command ('build')
 
         # Run all sub-commands (at least those that need to be run)
         for cmd_name in self.get_sub_commands():
-            self.run_peer (cmd_name)
+            self.run_command (cmd_name)
 
         if self.path_file:
             self.create_path_file ()
@@ -507,7 +507,7 @@ class install (Command):
         # get the outputs of all its sub-commands.
         outputs = []
         for cmd_name in self.get_sub_commands():
-            cmd = self.find_peer (cmd_name)
+            cmd = self.get_finalized_command (cmd_name)
             outputs.extend (cmd.get_outputs())
 
         return outputs
@@ -517,7 +517,7 @@ class install (Command):
         # XXX gee, this looks familiar ;-(
         inputs = []
         for cmd_name in self.get_sub_commands():
-            cmd = self.find_peer (cmd_name)
+            cmd = self.get_finalized_command (cmd_name)
             inputs.extend (cmd.get_inputs())
 
         return inputs
