@@ -32,6 +32,11 @@ try:
 except:
     pass
 
+def g():
+    yield 1
+GeneratorType = type(g())
+del g
+
 class _C:
     def _m(self): pass
 ClassType = type(_C)
