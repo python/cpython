@@ -26,6 +26,14 @@ import tempfile
 
 import cvsinfo
 
+try:
+    __file__
+except NameError:
+    __file__ = sys.argv[0]
+
+tools = os.path.dirname(os.path.abspath(__file__))
+Doc = os.path.dirname(tools)
+patchlevel_tex = os.path.join(Doc, "commontex", "patchlevel.tex")
 
 quiet = 0
 rx = re.compile(r":ext:(?:[a-zA-Z0-9]+@)?cvs\.([a-zA-Z0-9]+).sourceforge.net:"
@@ -105,8 +113,19 @@ def main():
           # remove CVS directories
           for p in ('*/CVS', '*/*/CVS', '*/*/*/CVS'):
                map(shutil.rmtree, glob.glob(p))
-          for f in ('.cvsignore', '*/.cvsignore'):
-               map(os.unlink, glob.glob(f))
+     for f in ('.cvsignore', '*/.cvsignore'):
+          map(os.unlink, glob.glob(f))
+
+     # Copy in the version informtation, if we're not just going to
+     # rip it back out:
+     if not tools:
+          if not os.path.exists(patchlevel_tex):
+               run(os.path.join(here, "getversioninfo"))
+          dest = os.path.join("Python-Docs-" + release, "commontex",
+                              "patchlevel.tex")
+          shutil.copyfile(patchlevel_tex, dest)
+
+     # Copy in the license file:
      LICENSE = os.path.normpath(
           os.path.join(mydir, os.pardir, os.pardir, "LICENSE"))
      shutil.copyfile(LICENSE, "LICENSE")
@@ -114,7 +133,7 @@ def main():
           archive = "doctools-" + release
           # we don't want the actual documents in this case:
           for d in ("api", "dist", "doc", "ext", "inst",
-                    "lib", "mac", "ref", "tut"):
+                    "lib", "mac", "ref", "tut", "commontex"):
                shutil.rmtree(os.path.join(pkgdir, d))
      else:
           archive = "latex-" + release

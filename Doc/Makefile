@@ -64,9 +64,14 @@ PAPER=letter
 INFODIR=	info
 TOOLSDIR=	tools
 
-# This is the *documentation* release, and is used to construct the file
-# names of the downloadable tarballs.
-RELEASE=2.3.3c1
+# This is the *documentation* release, and is used to construct the
+# file names of the downloadable tarballs.  It is initialized by the
+# getversioninfo script to ensure that the right version number is
+# used; the script will also write commontex/patchlevel.tex if that
+# doesn't exist or needs to be changed.  Documents which depend on the
+# version number should use \input{patchlevel} and include
+# commontex/patchlevel.tex in their dependencies.
+RELEASE=$(shell $(PYTHON) tools/getversioninfo)
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
