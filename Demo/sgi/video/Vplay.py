@@ -23,7 +23,7 @@ def process(filename):
 	
 	gl.foreground()
 	gl.prefsize(vin.width, vin.height)
-	win = gl.winopen(filename)
+	win = gl.winopen('* ' + filename)
 	vin.initcolormap()
 
 	gl.qdevice(ESCKEY)
@@ -39,7 +39,7 @@ def process(filename):
 				t, data, chromdata = vin.getnextframe()
 			except EOFError:
 				running = 0
-				gl.wintitle('(done)')
+				gl.wintitle(filename)
 		if running:
 			dt = t + t0 - time.millitimer()
 			if dt > 0:
