@@ -67,6 +67,8 @@ marked with [*] and at the bottom of the list.
 - PythonInterpreterCarbon and PythonInterpreterClassic are now files of type "Atmp", not
   "APPL", so there should not be any confusion as to what the real application is
   (PythonInterpreter). [*]
+- PythonIDE used to burn CPU cycles when idle, this has been fixed. PythonInterpreter
+  still has the problem. [*]
 
 
 What is not in this distribution
@@ -83,7 +85,15 @@ This list is far from complete, more problems may be listed on the MacPython hom
 http://www.cwi.nl/~jack/macpython.html.
 
 - The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
+- After running a Tkinter program your menubar may end up dead, with command-alt-escape
+  the only way to terminate Python.
+- Tkinter file events do not work, unless you have opened the file through Tcl (but then
+  you cannot access it from Python).
 - Aliases do not work in sys.path entries.
 - The menu bar isn't always correctly restored before MacPython turns to <<terminated>>.
 - Under Carbon only you may occasionally see a spurious KeyboardInterrupt. I have absolutely
   no clue as to what is causing this.
+- PythonInterpreter used interactively will eat a lot of processor cycles. You should use
+  PythonIDE for interactive work and PythonInterpreter for scripts only.
+- Under MacOSX applets have to live in the Python folder, otherwise they cannot find
+  PythonCore. This is being worked on.
