@@ -26,7 +26,7 @@ parser = OptionParser()
 parser.add_option("-f", "--file", dest="filename",
                   help="write report to FILE", metavar="FILE")
 parser.add_option("-q", "--quiet",
-                  action="store_false", dest="verbose", default=1,
+                  action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 
 (options, args) = parser.parse_args()
@@ -43,7 +43,7 @@ $ <yourscript> --quiet --file outfile
 \end{verbatim}
 
 (All of these result in \code{options.filename == "outfile"} and
-\code{options.verbose == 0} ...just as you might expect.)
+\code{options.verbose == False}, just as you might expect.)
 
 Even niftier, users can run one of
 \begin{verbatim}
@@ -393,11 +393,11 @@ value for each destination, which is assigned before the command-line
 is parsed.
 
 First, consider the verbose/quiet example.  If we want
-\module{optparse} to set \var{verbose} to 1 unless \programopt{-q} is
-seen, then we can do this:
+\module{optparse} to set \var{verbose} to \code{True} unless
+\programopt{-q} is seen, then we can do this:
 
 \begin{verbatim}
-parser.add_option("-v", action="store_true", dest="verbose", default=1)
+parser.add_option("-v", action="store_true", dest="verbose", default=True)
 parser.add_option("-q", action="store_false", dest="verbose")
 \end{verbatim}
 
@@ -405,7 +405,7 @@ Oddly enough, this is exactly equivalent:
 
 \begin{verbatim}
 parser.add_option("-v", action="store_true", dest="verbose")
-parser.add_option("-q", action="store_false", dest="verbose", default=1)
+parser.add_option("-q", action="store_false", dest="verbose", default=True)
 \end{verbatim}
 
 Those are equivalent because you're supplying a default value for the
@@ -415,11 +415,11 @@ destination (the \var{verbose} variable).
 Consider this:
 
 \begin{verbatim}
-parser.add_option("-v", action="store_true", dest="verbose", default=0)
-parser.add_option("-q", action="store_false", dest="verbose", default=1)
+parser.add_option("-v", action="store_true", dest="verbose", default=False)
+parser.add_option("-q", action="store_false", dest="verbose", default=True)
 \end{verbatim}
 
-Again, the default value for \var{verbose} will be 1: the last
+Again, the default value for \var{verbose} will be \code{True}: the last
 default value supplied for any particular destination attribute is the
 one that counts.
 
@@ -435,7 +435,7 @@ options:
 usage = "usage: %prog [options] arg1 arg2"
 parser = OptionParser(usage=usage)
 parser.add_option("-v", "--verbose",
-                  action="store_true", dest="verbose", default=1,
+                  action="store_true", dest="verbose", default=True,
                   help="make lots of noise [default]")
 parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", 
@@ -864,12 +864,11 @@ values.verbose = 2
 
 \term{store_true} [required: \var{dest}]
 
-A special case of ``store_const'' that stores a true value
-(specifically, the integer 1) to \var{dest}.
+A special case of ``store_const'' that stores \code{True} to \var{dest}.
 
 \term{store_false} [required: \var{dest}]
 
-Like ``store_true'', but stores a false value (the integer 0).
+Like ``store_true'', but stores a \code{False}
 
 Example:
 
