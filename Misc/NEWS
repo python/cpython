@@ -1,7 +1,11 @@
-What's New in Python 2.1.2 (rc1) ?
-==============================
+What's New in Python 2.1.2 (rc1)?
+=================================
 
-- The socket object gained a new method, 'sendall()'. This method 
+- The 32-bit Windows installer (new for 2.2) is now used for 2.1.2
+  too.  This works much better on Windows 2000 and XP, especially
+  if you don't have Administrator privileges.
+
+- The socket object gained a new method, 'sendall()'. This method
   is guaranteed to send all data - this is not guaranteed by the
   'send()' method. See also SF patch #474307. The standard library
   has been updated to use this method where appropriate.
@@ -13,7 +17,7 @@ notable fixes:
   This bug could cause python to crash. It was related to using a 'continue'
   inside a 'try' block.
 
-- SF bug #422004: Py_Initialise fix that allows reload(exceptions) to 
+- SF bug #422004: Py_Initialise fix that allows reload(exceptions) to
   work - this is apparently very important for embedded python working
   with multiple interpreters.
 
@@ -27,13 +31,13 @@ notable fixes:
 - Largefile support was added (but not on by default, you'll need to follow
   the instructions in the documentation of the posix module).
 
-- SF bug #443120: Fix a cgi.py denial-of-service attack, 
+- SF bug #443120: Fix a cgi.py denial-of-service attack,
 
-- socketmodule's SSL_read and SSL_write now release the global interpreter 
+- socketmodule's SSL_read and SSL_write now release the global interpreter
   lock.
 
-- threading uses the PTHREAD_SCOPE_SYSTEM attribute where available. 
-  This should remove the need to add tiny sleeps at the start of threads 
+- threading uses the PTHREAD_SCOPE_SYSTEM attribute where available.
+  This should remove the need to add tiny sleeps at the start of threads
   to allow other threads to be scheduled.
 
 - Lib/asyncore is now more defensive in select()
@@ -359,7 +363,7 @@ Tools
 - IDLE: syntax warnings in interactive mode are changed into errors.
 
 - Some improvements to Tools/webchecker (ignore some more URL types,
-  follow some more links). 
+  follow some more links).
 
 - Brought the Tools/compiler package up to date.
 
@@ -447,23 +451,23 @@ Python/C API
   in Flags and take an extra argument, a PyCompilerFlags *; examples:
   PyRun_AnyFileExFlags(), PyRun_InteractiveLoopFlags().  These
   variants may be removed in Python 2.2, when nested scopes are
-  mandatory. 
+  mandatory.
 
 Distutils
 
 - the sdist command now writes a PKG-INFO file, as described in PEP 241,
   into the release tree.
 
-- several enhancements to the bdist_wininst command from Thomas Heller 
+- several enhancements to the bdist_wininst command from Thomas Heller
   (an uninstaller, more customization of the installer's display)
 
 - from Jack Jansen: added Mac-specific code to generate a dialog for
   users to specify the command-line (because providing a command-line with
-  MacPython is awkward).  Jack also made various fixes for the Mac 
+  MacPython is awkward).  Jack also made various fixes for the Mac
   and the Metrowerks compiler.
-  
-- added 'platforms' and 'keywords' to the set of metadata that can be 
-  specified for a distribution.  
+
+- added 'platforms' and 'keywords' to the set of metadata that can be
+  specified for a distribution.
 
 - applied patches from Jason Tishler to make the compiler class work with
   Cygwin.
