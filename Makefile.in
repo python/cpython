@@ -200,10 +200,11 @@ Modules:	Parser Python Objects
 # Test the interpreter (twice, once without .pyc files, once with)
 TESTOPTS=	
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
+TESTPYTHON=	./python
 test:		python
 		-rm -f $(srcdir)/Lib/test/*.pyc
-		-PYTHONPATH= ./python $(TESTPROG) $(TESTOPTS)
-		PYTHONPATH= ./python $(TESTPROG) $(TESTOPTS)
+		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
+		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 
 # Install everything
 install:	altinstall bininstall maninstall
