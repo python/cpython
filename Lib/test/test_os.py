@@ -202,11 +202,93 @@ class EnvironTests(TestMappingProtocol):
         os.environ.clear()
         os.environ.update(self.__save)
 
+class WalkTests(unittest.TestCase):
+    """Tests for os.walk()."""
+
+    def test_traversal(self):
+        import os
+        from os.path import join
+
+        # Build:
+        #     TESTFN/               a file kid and two directory kids
+        #         tmp1
+        #         SUB1/             a file kid and a directory kid
+        #             tmp2
+        #             SUB11/        no kids
+        #         SUB2/             just a file kid
+        #             tmp3
+        sub1_path = join(TESTFN, "SUB1")
+        sub11_path = join(sub1_path, "SUB11")
+        sub2_path = join(TESTFN, "SUB2")
+        tmp1_path = join(TESTFN, "tmp1")
+        tmp2_path = join(sub1_path, "tmp2")
+        tmp3_path = join(sub2_path, "tmp3")
+
+        # Create stuff.
+        os.makedirs(sub11_path)
+        os.makedirs(sub2_path)
+        for path in tmp1_path, tmp2_path, tmp3_path:
+            f = file(path, "w")
+            f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
+            f.close()
+
+        # Walk top-down.
+        all = list(os.walk(TESTFN))
+        self.assertEqual(len(all), 4)
+        # We can't know which order SUB1 and SUB2 will appear in.
+        # Not flipped:  TESTFN, SUB1, SUB11, SUB2
+        #     flipped:  TESTFN, SUB2, SUB1, SUB11
+        flipped = all[0][1][0] != "SUB1"
+        all[0][1].sort()
+        self.assertEqual(all[0], (TESTFN, ["SUB1", "SUB2"], ["tmp1"]))
+        self.assertEqual(all[1 + flipped], (sub1_path, ["SUB11"], ["tmp2"]))
+        self.assertEqual(all[2 + flipped], (sub11_path, [], []))
+        self.assertEqual(all[3 - 2 * flipped], (sub2_path, [], ["tmp3"]))
+
+        # Prune the search.
+        all = []
+        for root, dirs, files in os.walk(TESTFN):
+            all.append((root, dirs, files))
+            # Don't descend into SUB1.
+            if 'SUB1' in dirs:
+                # Note that this also mutates the dirs we appended to all!
+                dirs.remove('SUB1')
+        self.assertEqual(len(all), 2)
+        self.assertEqual(all[0], (TESTFN, ["SUB2"], ["tmp1"]))
+        self.assertEqual(all[1], (sub2_path, [], ["tmp3"]))
+
+        # Walk bottom-up.
+        all = list(os.walk(TESTFN, topdown=False))
+        self.assertEqual(len(all), 4)
+        # We can't know which order SUB1 and SUB2 will appear in.
+        # Not flipped:  SUB11, SUB1, SUB2, TESTFN
+        #     flipped:  SUB2, SUB11, SUB1, TESTFN
+        flipped = all[3][1][0] != "SUB1"
+        all[3][1].sort()
+        self.assertEqual(all[3], (TESTFN, ["SUB1", "SUB2"], ["tmp1"]))
+        self.assertEqual(all[flipped], (sub11_path, [], []))
+        self.assertEqual(all[flipped + 1], (sub1_path, ["SUB11"], ["tmp2"]))
+        self.assertEqual(all[2 - 2 * flipped], (sub2_path, [], ["tmp3"]))
+
+        # Tear everything down.  This is a decent use for bottom-up on
+        # Windows, which doesn't have a recursive delete command.  The
+        # (not so) subtlety is that rmdir will fail unless the dir's
+        # kids are removed first, so bottom up is essential.
+        for root, dirs, files in os.walk(TESTFN, topdown=False):
+            for name in files:
+                os.remove(join(root, name))
+            for name in dirs:
+                os.rmdir(join(root, name))
+        os.rmdir(TESTFN)
+
 def test_main():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TemporaryFileTests))
-    suite.addTest(unittest.makeSuite(StatAttributeTests))
-    suite.addTest(unittest.makeSuite(EnvironTests))
+    for cls in (TemporaryFileTests,
+                StatAttributeTests,
+                EnvironTests,
+                WalkTests,
+               ):
+        suite.addTest(unittest.makeSuite(cls))
     run_suite(suite)
 
 if __name__ == "__main__":
