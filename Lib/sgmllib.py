@@ -34,7 +34,7 @@ commentclose = re.compile(r'--\s*>')
 tagfind = re.compile('[a-zA-Z][-_.a-zA-Z0-9]*')
 attrfind = re.compile(
     r'\s*([a-zA-Z_][-:.a-zA-Z_0-9]*)(\s*=\s*'
-    r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./:;+*%?!&$\(\)_#=~\'"]*))?')
+    r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./,:;+*%?!&$\(\)_#=~\'"]*))?')
 
 
 class SGMLParseError(RuntimeError):
