@@ -530,7 +530,7 @@ PyErr_Print()
 	PyErr_Fetch(&exception, &v, &tb);
 	if (exception == NULL)
 		return;
-	if (exception == PyExc_SystemExit) {
+	if (PyErr_GivenExceptionMatches(exception, PyExc_SystemExit)) {
 		err = Py_FlushLine();
 		fflush(stdout);
 		if (v == NULL || v == Py_None)
@@ -555,7 +555,9 @@ PyErr_Print()
 		fflush(stdout);
 		if (err == 0)
 			err = PyTraceBack_Print(tb, f);
-		if (err == 0 && exception == PyExc_SyntaxError) {
+		if (err == 0 &&
+		    PyErr_GivenExceptionMatches(exception, PyExc_SyntaxError))
+		{
 			PyObject *message;
 			char *filename, *text;
 			int lineno, offset;
