@@ -2237,7 +2237,13 @@ variable \code{sys.path} which is initialized from the directory
 containing the input script (or the current directory),
 \envvar{PYTHONPATH} and the installation-dependent default.  This allows
 Python programs that know what they're doing to modify or replace the 
-module search path.  See the section on Standard Modules later.
+module search path.  Note that because the directory containing the
+script being run is on the search path, it is important that the
+script not have the same name as a standard module, or Python will
+attempt to load the script as a module when that module is imported.
+This will generally be an error.  See section~\ref{standardModules},
+``Standard Modules.'' for more information.
+
 
 \subsection{``Compiled'' Python files}
 
@@ -2363,9 +2369,15 @@ a module defines.  It returns a sorted list of strings:
 >>> dir(fibo)
 ['__name__', 'fib', 'fib2']
 >>> dir(sys)
-['__name__', 'argv', 'builtin_module_names', 'copyright', 'exit',
-'maxint', 'modules', 'path', 'ps1', 'ps2', 'setprofile', 'settrace',
-'stderr', 'stdin', 'stdout', 'version']
+['__displayhook__', '__doc__', '__excepthook__', '__name__', '__stderr__',
+ '__stdin__', '__stdout__', '_getframe', 'argv', 'builtin_module_names',
+ 'byteorder', 'copyright', 'displayhook', 'exc_info', 'exc_type',
+ 'excepthook', 'exec_prefix', 'executable', 'exit', 'getdefaultencoding',
+ 'getdlopenflags', 'getrecursionlimit', 'getrefcount', 'hexversion',
+ 'maxint', 'maxunicode', 'modules', 'path', 'platform', 'prefix', 'ps1',
+ 'ps2', 'setcheckinterval', 'setdlopenflags', 'setprofile',
+ 'setrecursionlimit', 'settrace', 'stderr', 'stdin', 'stdout', 'version',
+ 'version_info', 'warnoptions']
 \end{verbatim}
 
 Without arguments, \function{dir()} lists the names you have defined
@@ -2388,15 +2400,27 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
 \begin{verbatim}
 >>> import __builtin__
 >>> dir(__builtin__)
-['AccessError', 'AttributeError', 'ConflictError', 'EOFError', 'IOError',
-'ImportError', 'IndexError', 'KeyError', 'KeyboardInterrupt',
-'MemoryError', 'NameError', 'None', 'OverflowError', 'RuntimeError',
-'SyntaxError', 'SystemError', 'SystemExit', 'TypeError', 'ValueError',
-'ZeroDivisionError', '__name__', 'abs', 'apply', 'chr', 'cmp', 'coerce',
-'compile', 'dir', 'divmod', 'eval', 'execfile', 'filter', 'float',
-'getattr', 'hasattr', 'hash', 'hex', 'id', 'input', 'int', 'len', 'long',
-'map', 'max', 'min', 'oct', 'open', 'ord', 'pow', 'range', 'raw_input',
-'reduce', 'reload', 'repr', 'round', 'setattr', 'str', 'type', 'xrange']
+['ArithmeticError', 'AssertionError', 'AttributeError',
+ 'DeprecationWarning', 'EOFError', 'Ellipsis', 'EnvironmentError',
+ 'Exception', 'FloatingPointError', 'IOError', 'ImportError',
+ 'IndentationError', 'IndexError', 'KeyError', 'KeyboardInterrupt',
+ 'LookupError', 'MemoryError', 'NameError', 'None', 'NotImplemented',
+ 'NotImplementedError', 'OSError', 'OverflowError', 'OverflowWarning',
+ 'ReferenceError', 'RuntimeError', 'RuntimeWarning', 'StandardError',
+ 'StopIteration', 'SyntaxError', 'SyntaxWarning', 'SystemError',
+ 'SystemExit', 'TabError', 'TypeError', 'UnboundLocalError',
+ 'UnicodeError', 'UserWarning', 'ValueError', 'Warning',
+ 'ZeroDivisionError', '_', '__debug__', '__doc__', '__import__',
+ '__name__', 'abs', 'apply', 'buffer', 'callable', 'chr', 'classmethod',
+ 'cmp', 'coerce', 'compile', 'complex', 'copyright', 'credits', 'delattr',
+ 'dict', 'dir', 'divmod', 'eval', 'execfile', 'exit', 'file', 'filter',
+ 'float', 'getattr', 'globals', 'hasattr', 'hash', 'help', 'hex', 'id',
+ 'input', 'int', 'intern', 'isinstance', 'issubclass', 'iter', 'len',
+ 'license', 'list', 'locals', 'long', 'map', 'max', 'min', 'object',
+ 'oct', 'open', 'ord', 'pow', 'property', 'quit', 'range', 'raw_input',
+ 'reduce', 'reload', 'repr', 'round', 'setattr', 'slice', 'staticmethod',
+ 'str', 'super', 'tuple', 'type', 'unichr', 'unicode', 'vars', 'xrange',
+ 'zip']
 \end{verbatim}
 
 
