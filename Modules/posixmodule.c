@@ -1408,7 +1408,7 @@ posix_read(self, args)
 	object *self;
 	object *args;
 {
-	int fd, size;
+	int fd, size, n;
 	object *buffer;
 	if (!getargs(args, "(ii)", &fd, &size))
 		return NULL;
@@ -1416,13 +1416,14 @@ posix_read(self, args)
 	if (buffer == NULL)
 		return NULL;
 	BGN_SAVE
-	size = read(fd, getstringvalue(buffer), size);
+	n = read(fd, getstringvalue(buffer), size);
 	END_SAVE
-	if (size < 0) {
+	if (n < 0) {
 		DECREF(buffer);
 		return posix_error();
 	}
-	resizestring(&buffer, size);
+	if (n != size)
+		resizestring(&buffer, n);
 	return buffer;
 }
 
