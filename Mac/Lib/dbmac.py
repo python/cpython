@@ -29,6 +29,12 @@ class _Database:
 		self._dirfile = file + '.dir'
 		self._datfile = file + '.dat'
 		self._bakfile = file + '.bak'
+		# Mod by Jack: create data file if needed
+		try:
+			f = _open(self._datfile, 'r')
+		except IOError:
+			f = _open(self._datfile, 'w')
+		f.close()
 		self._update()
 	
 	def _update(self):
@@ -67,8 +73,13 @@ class _Database:
 		f = _open(self._datfile, 'rb+')
 		f.seek(0, 2)
 		pos = f.tell()
-		pos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
-		f.seek(pos)
+## Does not work under MW compiler
+##		pos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
+##		f.seek(pos)
+		npos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
+		f.write('\0'*(npos-pos))
+		pos = npos
+		
 		f.write(val)
 		f.close()
 		return (pos, len(val))
