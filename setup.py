@@ -407,13 +407,13 @@ class PyBuildExt(build_ext):
         # These don't work for 64-bit platforms!!!
         # These represent audio samples or images as strings:
 
+        # Operations on audio samples
         # According to #993173, this one should actually work fine on 
         # 64-bit platforms.
         exts.append( Extension('audioop', ['audioop.c']) )
 
         # Disabled on 64-bit platforms
         if sys.maxint != 9223372036854775807L:
-            # Operations on audio samples
             # Operations on images
             exts.append( Extension('imageop', ['imageop.c']) )
             # Read SGI RGB image files (but coded portably)
