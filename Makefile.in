@@ -170,8 +170,8 @@ TESTOPTS=
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 test:		python
 		-rm -f $(srcdir)/Lib/test/*.pyc
-		./python $(TESTPROG) $(TESTOPTS)
-		./python $(TESTPROG) $(TESTOPTS)
+		PYTHONPATH= ./python $(TESTPROG) $(TESTOPTS)
+		PYTHONPATH= ./python $(TESTPROG) $(TESTOPTS)
 
 # Install everything
 install:	altinstall bininstall maninstall
