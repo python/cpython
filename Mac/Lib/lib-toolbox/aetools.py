@@ -151,7 +151,6 @@ class TalkTo:
 		
 	def start(self):
 		"""Start the application, if it is not running yet"""
-		self.send_flags = AppleEvents.kAENoReply
 		_launch(self.target_signature)
 			
 	def newevent(self, code, subcode, parameters = {}, attributes = {}):
