@@ -125,60 +125,18 @@ PyImport_GetModuleDict()
 }
 
 
-/* Helper for PyImport_Cleanup */
-
-static void
-clear_carefully(d)
-	PyObject *d;
-{
-	/* To make the execution order of destructors for global
-	   objects a bit more predictable, we first zap all objects
-	   whose name starts with a single underscore, before we clear
-	   the entire dictionary.  We zap them by replacing them with
-	   None, rather than deleting them from the dictionary, to
-	   avoid rehashing the dictionary (to some extent). */
-
-	int pos;
-	PyObject *key, *value;
-
-	Py_INCREF(d); /* Prevent it from being deleted recursively */
-
-	/* First, clear only names starting with a single underscore */
-	pos = 0;
-	while (PyDict_Next(d, &pos, &key, &value)) {
-		if (value != Py_None && PyString_Check(key)) {
-			char *s = PyString_AsString(key);
-			if (s[0] == '_' && s[1] != '_') {
-				if (Py_VerboseFlag > 1)
-				    fprintf(stderr, "#   clear[1] %s\n", s);
-				PyDict_SetItem(d, key, Py_None);
-			}
-		}
-	}
-
-	/* Next, clear all names except those starting with two underscores */
-	pos = 0;
-	while (PyDict_Next(d, &pos, &key, &value)) {
-		if (value != Py_None && PyString_Check(key)) {
-			char *s = PyString_AsString(key);
-			if (s[0] != '_' || s[1] != '_') {
-				if (Py_VerboseFlag > 1)
-				    fprintf(stderr, "#   clear[2] %s\n", s);
-				PyDict_SetItem(d, key, Py_None);
-			}
-		}
-	}
-
-	PyDict_Clear(d); /* Finally, clear all names */
-
-	Py_DECREF(d); /* Match INCREF at top */
-}
-
-
 /* List of names to clear in sys */
 static char* sys_deletes[] = {
+	"path", "argv", "ps1", "ps2", "exitfunc",
 	"exc_type", "exc_value", "exc_traceback",
 	"last_type", "last_value", "last_traceback",
+	NULL
+};
+
+static char* sys_files[] = {
+	"stdin", "__stdin__",
+	"stdout", "__stdout__",
+	"stderr", "__stderr__",
 	NULL
 };
 
@@ -213,12 +171,30 @@ PyImport_Cleanup()
 	value = PyDict_GetItemString(modules, "sys");
 	if (value != NULL && PyModule_Check(value)) {
 		char **p;
+		PyObject *v;
 		dict = PyModule_GetDict(value);
 		for (p = sys_deletes; *p != NULL; p++) {
 			if (Py_VerboseFlag)
 				fprintf(stderr, "# clear sys.%s\n", *p);
 			PyDict_SetItemString(dict, *p, Py_None);
 		}
+		for (p = sys_files; *p != NULL; p+=2) {
+			if (Py_VerboseFlag)
+				fprintf(stderr, "# restore sys.%s\n", *p);
+			v = PyDict_GetItemString(dict, *(p+1));
+			if (v == NULL)
+				v = Py_None;
+			PyDict_SetItemString(dict, *p, v);
+		}
+	}
+
+	/* First, delete __main__ */
+	value = PyDict_GetItemString(modules, "__main__");
+	if (value != NULL && PyModule_Check(value)) {
+		if (Py_VerboseFlag)
+			fprintf(stderr, "# cleanup __main__\n");
+		_PyModule_Clear(value);
+		PyDict_SetItemString(modules, "__main__", Py_None);
 	}
 
 	/* The special treatment of __builtin__ here is because even
@@ -235,7 +211,7 @@ PyImport_Cleanup()
 	   also marks them as "non existent" so they won't be
 	   re-imported. */
 
-	/* First, repeatedly delete modules with a reference count of
+	/* Next, repeatedly delete modules with a reference count of
 	   one (skipping __builtin__ and sys) and delete them */
 	do {
 		ndone = 0;
@@ -245,7 +221,6 @@ PyImport_Cleanup()
 				continue;
 			if (PyModule_Check(value)) {
 				name = PyString_AsString(key);
-				dict = PyModule_GetDict(value);
 				if (strcmp(name, "__builtin__") == 0)
 					continue;
 				if (strcmp(name, "sys") == 0)
@@ -253,36 +228,25 @@ PyImport_Cleanup()
 				if (Py_VerboseFlag)
 					fprintf(stderr,
 						"# cleanup[1] %s\n", name);
-				clear_carefully(dict);
+				_PyModule_Clear(value);
 				PyDict_SetItem(modules, key, Py_None);
 				ndone++;
 			}
 		}
 	} while (ndone > 0);
 
-	/* Next, delete __main__ if it's still there */
-	value = PyDict_GetItemString(modules, "__main__");
-	if (value != NULL && PyModule_Check(value)) {
-		dict = PyModule_GetDict(value);
-		if (Py_VerboseFlag)
-			fprintf(stderr, "# cleanup __main__\n");
-		clear_carefully(dict);
-		PyDict_SetItemString(modules, "__main__", Py_None);
-	}
-
 	/* Next, delete all modules (still skipping __builtin__ and sys) */
 	pos = 0;
 	while (PyDict_Next(modules, &pos, &key, &value)) {
 		if (PyModule_Check(value)) {
 			name = PyString_AsString(key);
-			dict = PyModule_GetDict(value);
 			if (strcmp(name, "__builtin__") == 0)
 				continue;
 			if (strcmp(name, "sys") == 0)
 				continue;
 			if (Py_VerboseFlag)
 				fprintf(stderr, "# cleanup[2] %s\n", name);
-			clear_carefully(dict);
+			_PyModule_Clear(value);
 			PyDict_SetItem(modules, key, Py_None);
 		}
 	}
@@ -290,18 +254,16 @@ PyImport_Cleanup()
 	/* Next, delete sys and __builtin__ (in that order) */
 	value = PyDict_GetItemString(modules, "sys");
 	if (value != NULL && PyModule_Check(value)) {
-		dict = PyModule_GetDict(value);
 		if (Py_VerboseFlag)
 			fprintf(stderr, "# cleanup sys\n");
-		clear_carefully(dict);
+		_PyModule_Clear(value);
 		PyDict_SetItemString(modules, "sys", Py_None);
 	}
 	value = PyDict_GetItemString(modules, "__builtin__");
 	if (value != NULL && PyModule_Check(value)) {
-		dict = PyModule_GetDict(value);
 		if (Py_VerboseFlag)
 			fprintf(stderr, "# cleanup __builtin__\n");
-		clear_carefully(dict); /* XXX Is this necessary? */
+		_PyModule_Clear(value);
 		PyDict_SetItemString(modules, "__builtin__", Py_None);
 	}
 
