@@ -43,6 +43,8 @@ CHARSETS = {
     'iso-2022-jp': (BASE64,    None,    None),
     'koi8-r':      (BASE64,    BASE64,  None),
     'utf-8':       (SHORTEST,  BASE64, 'utf-8'),
+    # We're making this one up to represent raw unencoded 8-bit
+    '8bit':        (None,      BASE64, 'utf-8'),
     }
 
 # Aliases for other commonly-used names for character sets.  Map
