@@ -29,7 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 #ifndef PYTHONPATH
-#define PYTHONPATH ".:/usr/local/lib/python"
+#define PYTHONPATH "/usr/local/lib/python"
 #endif
 
 #ifndef PREFIX
@@ -37,7 +37,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifndef EXEC_PREFIX
-#define EXEC_PREFIX "/usr/local"
+#define EXEC_PREFIX PREFIX
 #endif
 
 
