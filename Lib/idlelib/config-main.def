@@ -28,8 +28,6 @@
 
 [General]
 editor-on-startup= 1
-user-help-browser= 0
-user-help-browser-command= 
 
 [EditorWindow]
 width= 80

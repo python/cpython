@@ -367,11 +367,13 @@ class ConfigDialog(Toplevel):
                 width=8,command=self.HelpListItemAdd)
         self.buttonHelpListRemove=Button(frameHelpListButtons,text='Remove',
                 state=DISABLED,width=8,command=self.HelpListItemRemove)
-        checkHelpBrowser=Checkbutton(frameHelp,variable=self.userHelpBrowser,
-            onvalue=1,offvalue=0,text='user specified (html) help browser:',
-            command=self.OnCheckUserHelpBrowser)
-        self.entryHelpBrowser=Entry(frameHelp,textvariable=self.helpBrowser,
-                width=40)
+        # the following is better handled by the BROWSER environment
+        # variable under unix/linux
+        #checkHelpBrowser=Checkbutton(frameHelp,variable=self.userHelpBrowser,
+        #    onvalue=1,offvalue=0,text='user specified (html) help browser:',
+        #    command=self.OnCheckUserHelpBrowser)
+        #self.entryHelpBrowser=Entry(frameHelp,textvariable=self.helpBrowser,
+        #        width=40)
         #widget packing
         #body
         frameRun.pack(side=TOP,padx=5,pady=5,fill=X)
@@ -398,8 +400,8 @@ class ConfigDialog(Toplevel):
         self.buttonHelpListEdit.pack(side=TOP,anchor=W,pady=5)
         self.buttonHelpListAdd.pack(side=TOP,anchor=W)
         self.buttonHelpListRemove.pack(side=TOP,anchor=W,pady=5)
-        checkHelpBrowser.pack(side=TOP,anchor=W,padx=5)
-        self.entryHelpBrowser.pack(side=TOP,anchor=W,padx=5,pady=5)
+        #checkHelpBrowser.pack(side=TOP,anchor=W,padx=5)
+        #self.entryHelpBrowser.pack(side=TOP,anchor=W,padx=5,pady=5)
         return frame
 
     def AttachVarCallbacks(self):
@@ -870,7 +872,7 @@ class ConfigDialog(Toplevel):
     def HelpListItemEdit(self):
         itemIndex=self.listHelp.index(ANCHOR)
         helpSource=self.userHelpList[itemIndex]
-        newHelpSource=GetHelpSourceDialog(self,'New Help Source',
+        newHelpSource=GetHelpSourceDialog(self,'Edit Help Source',
                 menuItem=helpSource[0],filePath=helpSource[1]).result
         if (not newHelpSource) or (newHelpSource==helpSource):
             return #no changes
@@ -1013,11 +1015,11 @@ class ConfigDialog(Toplevel):
         for helpItem in self.userHelpList:
             self.listHelp.insert(END,helpItem[0]+'  '+helpItem[1])
         self.SetHelpListButtonStates()
-        self.userHelpBrowser.set(idleConf.GetOption('main','General',
-                'user-help-browser',default=0,type='bool'))
-        self.helpBrowser.set(idleConf.GetOption('main','General',
-                'user-help-browser-command',default=''))
-        self.OnCheckUserHelpBrowser()
+        #self.userHelpBrowser.set(idleConf.GetOption('main','General',
+        #        'user-help-browser',default=0,type='bool'))
+        #self.helpBrowser.set(idleConf.GetOption('main','General',
+        #        'user-help-browser-command',default=''))
+        #self.OnCheckUserHelpBrowser()
     
     def LoadConfigs(self):
         """
@@ -1070,9 +1072,12 @@ class ConfigDialog(Toplevel):
         """
         save all configuration changes to user config files.
         """
-        if self.changedItems['main'].has_key('HelpFiles'):
-            #this section gets completely replaced
-            idleConf.userCfg['main'].remove_section('HelpFiles')
+        #if self.changedItems['main'].has_key('HelpFiles'):
+        #this section gets completely replaced
+        print idleConf.GetAllExtraHelpSourcesList()
+        idleConf.userCfg['main'].remove_section('HelpFiles')
+        idleConf.userCfg['main'].Save()
+        print idleConf.GetAllExtraHelpSourcesList()
         for configType in self.changedItems.keys():
             cfgTypeHasChanges=0
             for section in self.changedItems[configType].keys():
@@ -1081,6 +1086,7 @@ class ConfigDialog(Toplevel):
                     if self.SetUserValue(configType,section,item,value):
                         cfgTypeHasChanges=1
             if cfgTypeHasChanges: 
+                print configType,'- changed'
                 idleConf.userCfg[configType].Save()                
         self.ResetChangedItems() #clear the changed items dict
          
@@ -1097,6 +1103,7 @@ class ConfigDialog(Toplevel):
             instance.ResetColorizer()
             instance.ResetFont()
             instance.ResetKeybindings()
+            instance.ResetExtraHelpMenu()
         
     def Cancel(self):
         self.destroy()

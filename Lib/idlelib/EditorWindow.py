@@ -98,13 +98,13 @@ class EditorWindow:
         self.flist = flist
         root = root or flist.root
         self.root = root
-        if flist:
-            self.vars = flist.vars
         self.menubar = Menu(root)
         self.top = top = self.Toplevel(root, menu=self.menubar)
-        #self.top.instanceDict makes flist.inversedict avalable to
-        #configDialog.py so it can access all EditorWindow instaces
-        self.top.instanceDict=flist.inversedict
+        if flist:
+            self.vars = flist.vars
+            #self.top.instanceDict makes flist.inversedict avalable to
+            #configDialog.py so it can access all EditorWindow instaces
+            self.top.instanceDict=flist.inversedict
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text_frame = text_frame = Frame(top)
         self.text = text = Text(text_frame, name='text', padx=5, wrap=None,
@@ -213,7 +213,7 @@ class EditorWindow:
         if self.extensions.has_key('AutoIndent'):
             self.extensions['AutoIndent'].set_indentation_params(
                 self.ispythonsource(filename))
-
+ 
     def set_status_bar(self):
         self.status_bar = self.MultiStatusBar(self.top)
         self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
@@ -253,6 +253,7 @@ class EditorWindow:
             menudict[name] = menu = Menu(mbar, name=name)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
         self.fill_menus()
+        self.ResetExtraHelpMenu()
 
     def postwindowsmenu(self):
         # Only called when Windows menu exists
@@ -323,7 +324,10 @@ class EditorWindow:
         del fn
 
     def python_docs(self, event=None):
-        webbrowser.open(self.help_url)
+        self.display_docs(self.help_url)
+
+    def display_docs(self, url):
+        webbrowser.open(url)
 
     def select_all(self, event=None):
         self.text.tag_add("sel", "1.0", "end-1c")
@@ -525,6 +529,25 @@ class EditorWindow:
                             menu.entryconfig(index,accelerator=accel)
                             #print 'accel now:',accel,'\n'
 
+    def ResetExtraHelpMenu(self):
+        #load or update the Extra Help menu if required
+        menuList=idleConf.GetAllExtraHelpSourcesList()
+        helpMenu=self.menudict['help']
+        cascadeIndex=helpMenu.index(END)-1
+        if menuList:
+            if not hasattr(self,'menuExtraHelp'):
+                self.menuExtraHelp=Menu(self.menubar)
+                helpMenu.insert_cascade(cascadeIndex,label='Extra Help',
+                        underline=1,menu=self.menuExtraHelp)
+            self.menuExtraHelp.delete(1,END)
+            for menuItem in menuList:
+                self.menuExtraHelp.add_command(label=menuItem[0],
+                        command=lambda:self.display_docs(menuItem[1]))
+        else: #no extra help items
+            if hasattr(self,'menuExtraHelp'): 
+                helpMenu.delete(cascadeIndex-1)                    
+                del(self.menuExtraHelp)
+                    
     def saved_change_hook(self):
         short = self.short_title()
         long = self.long_title()
