@@ -1758,6 +1758,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
 	    (ch == (Py_UNICODE) PyString_AS_STRING(repr)[1] || ch == '\\')) {
             *p++ = '\\';
             *p++ = (char) ch;
+	    continue;
         } 
 
 #ifdef Py_UNICODE_WIDE
