@@ -7,11 +7,23 @@ What's New in IDLEfork 0.9b1?
 
 *Release date: XX-XXX-2003*
 
+- Improve the error message a user gets when saving a file with non-ASCII
+  characters and no source encoding is specified.  Done by adding a dialog
+  'EncodingMessage', which contains the line to add in a fixed-font entry
+  widget, and which has a button to add that line to the file automatically.
+  Also, add a configuration option 'EditorWindow/encoding', which has three
+  possible values: none, utf-8, and locale. None is the default: IDLE will show
+  this dialog when non-ASCII characters are encountered. utf-8 means that files
+  with non-ASCII characters are saved as utf-8-with-bom. locale means that
+  files are saved in the locale's encoding; the dialog is only displayed if the
+  source contains characters outside the locale's charset.  SF 710733 - Loewis
+
 - Improved I/O response by tweaking the wait parameter in various
   calls to signal.signal().
 
 - Implemented a threaded subprocess which allows interrupting a pass 
-  loop in user code using the 'interrupt' extension.
+  loop in user code using the 'interrupt' extension.  User code runs
+  in MainThread, while the RPCServer is handled by SockThread.
 
 - Implemented the 'interrupt' extension module, which allows a subthread
   to raise a KeyboardInterrupt in the main thread.
