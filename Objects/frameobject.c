@@ -401,9 +401,9 @@ frame_dealloc(PyFrameObject *f)
 	}
 	
 	Py_XDECREF(f->f_back);
-	Py_XDECREF(f->f_code);
-	Py_XDECREF(f->f_builtins);
-	Py_XDECREF(f->f_globals);
+	Py_DECREF(f->f_code);
+	Py_DECREF(f->f_builtins);
+	Py_DECREF(f->f_globals);
 	Py_XDECREF(f->f_locals);
 	Py_XDECREF(f->f_trace);
 	Py_XDECREF(f->f_exc_type);
@@ -525,21 +525,23 @@ PyTypeObject PyFrame_Type = {
 	0,					/* tp_dict */
 };
 
+static PyObject *builtin_object;
+
+int PyFrame_Init()
+{
+	builtin_object = PyString_InternFromString("__builtins__");
+	return (builtin_object != NULL);
+}
+
 PyFrameObject *
 PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals, 
 	    PyObject *locals)
 {
 	PyFrameObject *back = tstate->frame;
-	static PyObject *builtin_object;
 	PyFrameObject *f;
 	PyObject *builtins;
 	int extras, ncells, nfrees;
 
-	if (builtin_object == NULL) {
-		builtin_object = PyString_InternFromString("__builtins__");
-		if (builtin_object == NULL)
-			return NULL;
-	}
 #ifdef Py_DEBUG
 	if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
 	    (locals != NULL && !PyDict_Check(locals))) {
@@ -802,4 +804,6 @@ PyFrame_Fini(void)
 		--numfree;
 	}
 	assert(numfree == 0);
+	Py_XDECREF(builtin_object);
+	builtin_object = NULL;
 }

@@ -124,6 +124,12 @@ Py_Initialize(void)
 
 	_Py_ReadyTypes();
 
+	if (!PyFrame_Init())
+		Py_FatalError("Py_Initialize: can't init frames");
+
+	if (!PyInt_Init())
+		Py_FatalError("Py_Initialize: can't init ints");
+
 	interp->modules = PyDict_New();
 	if (interp->modules == NULL)
 		Py_FatalError("Py_Initialize: can't make modules dictionary");

@@ -78,7 +78,7 @@ fill_free_list(void)
 #define NSMALLPOSINTS		100
 #endif
 #ifndef NSMALLNEGINTS
-#define NSMALLNEGINTS		1
+#define NSMALLNEGINTS		5
 #endif
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
 /* References to small integers are saved in this array so that they
@@ -97,8 +97,8 @@ PyInt_FromLong(long ival)
 {
 	register PyIntObject *v;
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
-	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS &&
-	    (v = small_ints[ival + NSMALLNEGINTS]) != NULL) {
+	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
+		v = small_ints[ival + NSMALLNEGINTS];
 		Py_INCREF(v);
 #ifdef COUNT_ALLOCS
 		if (ival >= 0)
@@ -118,13 +118,6 @@ PyInt_FromLong(long ival)
 	free_list = (PyIntObject *)v->ob_type;
 	PyObject_INIT(v, &PyInt_Type);
 	v->ob_ival = ival;
-#if NSMALLNEGINTS + NSMALLPOSINTS > 0
-	if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
-		/* save this one for a following allocation */
-		Py_INCREF(v);
-		small_ints[ival + NSMALLNEGINTS] = v;
-	}
-#endif
 	return (PyObject *) v;
 }
 
@@ -944,6 +937,26 @@ PyTypeObject PyInt_Type = {
 	int_new,				/* tp_new */
 	(freefunc)int_free,           		/* tp_free */
 };
+
+int
+PyInt_Init(void)
+{
+	PyIntObject *v;
+	int ival;
+#if NSMALLNEGINTS + NSMALLPOSINTS > 0
+	for (ival = -NSMALLNEGINTS; ival < NSMALLPOSINTS; ival++) {
+		if ((free_list = fill_free_list()) == NULL)
+			return 0;
+		/* PyObject_New is inlined */
+		v = free_list;
+		free_list = (PyIntObject *)v->ob_type;
+		PyObject_INIT(v, &PyInt_Type);
+		v->ob_ival = ival;
+		small_ints[ival + NSMALLNEGINTS] = v;
+	}
+#endif
+	return 1;
+}
 
 void
 PyInt_Fini(void)
