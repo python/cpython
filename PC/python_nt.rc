@@ -8,7 +8,7 @@
 #include "modsupport.h"
 #include "patchlevel.h"
 
-#define MS_DLL_ID "1.5.0"
+#define MS_DLL_ID "1.5.1"
 
 #define PYTHON_VERSION MS_DLL_ID "." PYTHON_API_STRING "\0"
 
@@ -48,7 +48,7 @@ BEGIN
             VALUE "FileDescription", "Python Core\0"
             VALUE "FileVersion", PYTHON_VERSION
             VALUE "InternalName", "Python DLL\0"
-            VALUE "LegalCopyright", "Copyright © 1991-1996 Stichting Mathematisch Centrum, Amsterdam\0"
+            VALUE "LegalCopyright", "Copyright © 1991-1995 Stichting Mathematisch Centrum, Amsterdam\0"
             VALUE "OriginalFilename", PYTHON_DLL_NAME "\0"
             VALUE "ProductName", "Python\0"
             VALUE "ProductVersion", PYTHON_VERSION
