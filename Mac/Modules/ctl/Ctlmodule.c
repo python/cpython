@@ -178,18 +178,18 @@ static PyObject *CtlObj_DragControl(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Point startPt;
+	Point startPoint;
 	Rect limitRect;
 	Rect slopRect;
 	DragConstraint axis;
 	if (!PyArg_ParseTuple(_args, "O&O&O&h",
-	                      PyMac_GetPoint, &startPt,
+	                      PyMac_GetPoint, &startPoint,
 	                      PyMac_GetRect, &limitRect,
 	                      PyMac_GetRect, &slopRect,
 	                      &axis))
 		return NULL;
 	DragControl(_self->ob_itself,
-	            startPt,
+	            startPoint,
 	            &limitRect,
 	            &slopRect,
 	            axis);
@@ -204,12 +204,12 @@ static PyObject *CtlObj_TestControl(_self, _args)
 {
 	PyObject *_res = NULL;
 	ControlPartCode _rv;
-	Point thePt;
+	Point thePoint;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetPoint, &thePt))
+	                      PyMac_GetPoint, &thePoint))
 		return NULL;
 	_rv = TestControl(_self->ob_itself,
-	                  thePt);
+	                  thePoint);
 	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
@@ -457,9 +457,9 @@ static PyMethodDef CtlObj_methods[] = {
 	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
 	 "(Point thePoint) -> (ControlPartCode _rv)"},
 	{"DragControl", (PyCFunction)CtlObj_DragControl, 1,
-	 "(Point startPt, Rect limitRect, Rect slopRect, DragConstraint axis) -> None"},
+	 "(Point startPoint, Rect limitRect, Rect slopRect, DragConstraint axis) -> None"},
 	{"TestControl", (PyCFunction)CtlObj_TestControl, 1,
-	 "(Point thePt) -> (ControlPartCode _rv)"},
+	 "(Point thePoint) -> (ControlPartCode _rv)"},
 	{"MoveControl", (PyCFunction)CtlObj_MoveControl, 1,
 	 "(SInt16 h, SInt16 v) -> None"},
 	{"SizeControl", (PyCFunction)CtlObj_SizeControl, 1,
