@@ -3,6 +3,7 @@ A library of useful helper classes to the SAX classes, for the
 convenience of application and driver writers.
 """
 
+import os, urlparse, urllib
 import handler
 import xmlreader
 
@@ -181,3 +182,24 @@ class XMLFilterBase(xmlreader.XMLReader):
 
     def setProperty(self, name, value):
         self._parent.setProperty(name, value)
+
+# --- Utility functions
+
+def prepare_input_source(source, base = ""):
+    """This function takes an InputSource and an optional base URL and
+    returns a fully resolved InputSource object ready for reading."""
+    
+    if type(source) == type(""):
+        source = xmlreader.InputSource(source)
+
+    if source.getByteStream() == None:
+        sysid = source.getSystemId()
+        if urlparse.urlparse(sysid)[0] == '':
+            basehead = os.path.split(os.path.normpath(base))[0]
+            source.setSystemId(os.path.join(basehead, sysid))
+        else:
+            source.setSystemId(urlparse.urljoin(base, sysid))
+            
+        source.setByteStream(urllib.urlopen(source.getSystemId()))
+        
+    return source
