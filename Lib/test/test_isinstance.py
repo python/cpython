@@ -7,7 +7,7 @@ import test_support
 
 
 
-class TestIsInstanceWhitebox(unittest.TestCase):
+class TestIsInstanceExceptions(unittest.TestCase):
     # Test to make sure that an AttributeError when accessing the instance's
     # class's bases is masked.  This was actually a bug in Python 2.2 and
     # 2.2.1 where the exception wasn't caught but it also wasn't being cleared
@@ -86,7 +86,7 @@ class TestIsInstanceWhitebox(unittest.TestCase):
 # These tests are similar to above, but tickle certain code paths in
 # issubclass() instead of isinstance() -- really PyObject_IsSubclass()
 # vs. PyObject_IsInstance().
-class TestIsSubclassWhitebox(unittest.TestCase):
+class TestIsSubclassExceptions(unittest.TestCase):
     def test_dont_mask_non_attribute_error(self):
         class C(object):
             def getbases(self):
@@ -133,10 +133,99 @@ class TestIsSubclassWhitebox(unittest.TestCase):
 
 
 
+# meta classes for creating abstract classes and instances
+class AbstractClass(object):
+    def __init__(self, bases):
+        self.bases = bases
+
+    def getbases(self):
+        return self.bases
+    __bases__ = property(getbases)
+
+    def __call__(self):
+        return AbstractInstance(self)
+
+class AbstractInstance(object):
+    def __init__(self, klass):
+        self.klass = klass
+
+    def getclass(self):
+        return self.klass
+    __class__ = property(getclass)
+
+# abstract classes
+AbstractSuper = AbstractClass(bases=())
+
+AbstractChild = AbstractClass(bases=(AbstractSuper,))
+
+# normal classes
+class Super:
+    pass
+
+class Child(Super):
+    pass
+
+
+
+class TestIsInstanceIsSubclass(unittest.TestCase):
+    # Tests to ensure that isinstance and issubclass work on abstract
+    # classes and instances.  Before the 2.2 release, TypeErrors were
+    # raised when boolean values should have been returned.  The bug was
+    # triggered by mixing 'normal' classes and instances were with
+    # 'abstract' classes and instances.  This case tries to test all
+    # combinations.
+
+    def test_isinstance_normal(self):
+        # normal instances   
+        self.assertEqual(True, isinstance(Super(), Super))
+        self.assertEqual(False, isinstance(Super(), Child))
+        self.assertEqual(False, isinstance(Super(), AbstractSuper))
+        self.assertEqual(False, isinstance(Super(), AbstractChild))
+
+        self.assertEqual(True, isinstance(Child(), Super))
+        self.assertEqual(False, isinstance(Child(), AbstractSuper))
+
+    def test_isinstance_abstract(self):
+        # abstract instances   
+        self.assertEqual(True, isinstance(AbstractSuper(), AbstractSuper))
+        self.assertEqual(False, isinstance(AbstractSuper(), AbstractChild))
+        self.assertEqual(False, isinstance(AbstractSuper(), Super))
+        self.assertEqual(False, isinstance(AbstractSuper(), Child))
+
+        self.assertEqual(True, isinstance(AbstractChild(), AbstractChild))
+        self.assertEqual(True, isinstance(AbstractChild(), AbstractSuper))
+        self.assertEqual(False, isinstance(AbstractChild(), Super))
+        self.assertEqual(False, isinstance(AbstractChild(), Child))
+    
+    def test_subclass_normal(self):
+        # normal classes
+        self.assertEqual(True, issubclass(Super, Super))
+        self.assertEqual(False, issubclass(Super, AbstractSuper))
+        self.assertEqual(False, issubclass(Super, Child))
+
+        self.assertEqual(True, issubclass(Child, Child))
+        self.assertEqual(True, issubclass(Child, Super))
+        self.assertEqual(False, issubclass(Child, AbstractSuper))
+
+    def test_subclass_abstract(self):
+        # abstract classes
+        self.assertEqual(True, issubclass(AbstractSuper, AbstractSuper))
+        self.assertEqual(False, issubclass(AbstractSuper, AbstractChild))
+        self.assertEqual(False, issubclass(AbstractSuper, Child))
+
+        self.assertEqual(True, issubclass(AbstractChild, AbstractChild))
+        self.assertEqual(True, issubclass(AbstractChild, AbstractSuper))
+        self.assertEqual(False, issubclass(AbstractChild, Super))
+        self.assertEqual(False, issubclass(AbstractChild, Child))
+ 
+
+
+
 def test_main():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestIsInstanceWhitebox))
-    suite.addTest(unittest.makeSuite(TestIsSubclassWhitebox))
+    suite.addTest(unittest.makeSuite(TestIsInstanceExceptions))
+    suite.addTest(unittest.makeSuite(TestIsSubclassExceptions))
+    suite.addTest(unittest.makeSuite(TestIsInstanceIsSubclass))
     test_support.run_suite(suite)
 
 
