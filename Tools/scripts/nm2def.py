@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """nm2def.py
 
 Helpers to extract symbols from Unix libs and auto-generate
