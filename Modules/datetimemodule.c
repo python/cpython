@@ -334,7 +334,7 @@ check_delta_day_range(int days)
 		return 0;
 	PyErr_Format(PyExc_OverflowError,
 		     "days=%d; must have magnitude <= %d",
-		     days);
+		     days, MAX_DELTA_DAYS);
 	return -1;
 }
 
@@ -1025,7 +1025,7 @@ isoformat_time(PyDateTime_DateTime *dt, char buffer[], int bufflen)
 
 /* Call time.time() and return its result (a Python float). */
 static PyObject *
-time_time()
+time_time(void)
 {
 	PyObject *result = NULL;
 	PyObject *time = PyImport_ImportModule("time");
@@ -4141,7 +4141,7 @@ statichere PyTypeObject PyDateTime_TimeTZType = {
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
         Py_TPFLAGS_BASETYPE,			/* tp_flags */
-	time_doc,				/* tp_doc */
+	timetz_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
