@@ -21,7 +21,8 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
-
+#ifndef Py_MACGLUE_H
+#define Py_MACGLUE_H
 #ifdef WITHOUT_FRAMEWORKS
 #include <Types.h>
 #include <Files.h>
@@ -136,4 +137,5 @@ long PyMac_DummyWriteHandler(char *, long);
 
 #ifdef __cplusplus
 	}
+#endif
 #endif

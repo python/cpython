@@ -21,6 +21,8 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
 OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
+#ifndef Py_GETAPPLBYCREATOR_H
+#define Py_GETALLPBYCREATOR_H
 
 #ifdef WITHOUT_FRAMEWORKS
 #include <Types.h>
@@ -29,4 +31,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Carbon/Carbon.h>
 #endif
 
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
 extern OSErr FindApplicationFromCreator(OSType, FSSpecPtr);
+
+#ifdef __cplusplus
+}
+#endif
+#endif

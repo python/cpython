@@ -2,6 +2,8 @@
    look-alike file system access functions on the Macintosh.
    Public domain by Guido van Rossum, CWI, Amsterdam (July 1987).
 */
+#ifndef Py_MACDEFS_H
+#define Py_MACDEFS_H
 
 #include <Types.h>
 #include <Files.h>
@@ -12,6 +14,10 @@
 #ifdef __MWERKS__
 #include "errno_unix.h"
 #include <TextUtils.h>
+#endif
+
+#ifdef __cplusplus
+	extern "C" {
 #endif
 
 /* We may be able to use a std routine in think, don't know */
@@ -33,3 +39,8 @@ extern int sync(void);
 #endif
 #define EOS '\0'
 #define SEP ':'
+
+#ifdef __cplusplus
+}
+#endif
+#endif

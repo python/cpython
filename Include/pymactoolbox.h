@@ -1,7 +1,8 @@
 /*
 ** pymactoolbox.h - globals defined in mactoolboxglue.c
 */
-
+#ifndef Py_PYMACTOOLBOX_H
+#define Py_PYMACTOOLBOX_H
 #ifdef __cplusplus
 	extern "C" {
 #endif
@@ -196,4 +197,5 @@ extern int OptionalCFURLRefObj_Convert(PyObject *, CFURLRef *);
 
 #ifdef __cplusplus
 	}
+#endif
 #endif
