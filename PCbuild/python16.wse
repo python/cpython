@@ -686,6 +686,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\pcbuild\winreg.pyd
+  Destination=%MAINDIR%\DLLs\winreg.pyd
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\pcbuild\python16.dll
   Destination=%DLLDEST%\python16.dll
   Flags=0000000000000010
