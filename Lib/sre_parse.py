@@ -446,6 +446,7 @@ def _parse(source, state):
                 min, max = 0, 1
             elif this == "*":
                 min, max = 0, MAXREPEAT
+
             elif this == "+":
                 min, max = 1, MAXREPEAT
             elif this == "{":
@@ -475,6 +476,8 @@ def _parse(source, state):
             if subpattern:
                 item = subpattern[-1:]
             else:
+                item = None
+            if not item or (len(item) == 1 and item[0][0] == AT):
                 raise error, "nothing to repeat"
             if item[0][0] in (MIN_REPEAT, MAX_REPEAT):
                 raise error, "multiple repeat"

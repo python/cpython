@@ -636,4 +636,6 @@ xyzabc
     (r'(?i)m+', 'MMM', SUCCEED, 'found', 'MMM'),
     (r'(?i)[M]+', 'MMM', SUCCEED, 'found', 'MMM'),
     (r'(?i)[m]+', 'MMM', SUCCEED, 'found', 'MMM'),
+    # bug 130748: ^* should be an error (nothing to repeat)
+    (r'^*', '', SYNTAX_ERROR),
 ]
