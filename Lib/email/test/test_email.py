@@ -1325,6 +1325,42 @@ hello world
         msg = self._msgobj('msg_37.txt')
         self.assertEqual(len(msg.get_payload()), 3)
 
+    def test_nested_inner_contains_outer_boundary(self):
+        eq = self.ndiffAssertEqual
+        # msg_38.txt has an inner part that contains outer boundaries.  My
+        # interpretation of RFC 2046 (based on sections 5.1 and 5.1.2) say
+        # these are illegal and should be interpreted as unterminated inner
+        # parts.
+        msg = self._msgobj('msg_38.txt')
+        sfp = StringIO()
+        Iterators._structure(msg, sfp)
+        eq(sfp.getvalue(), """\
+multipart/mixed
+    multipart/mixed
+        multipart/alternative
+            text/plain
+        text/plain
+    text/plain
+    text/plain
+""")
+
+    def test_nested_with_same_boundary(self):
+        eq = self.ndiffAssertEqual
+        # msg 39.txt is similarly evil in that it's got inner parts that use
+        # the same boundary as outer parts.  Again, I believe the way this is
+        # parsed is closest to the spirit of RFC 2046
+        msg = self._msgobj('msg_39.txt')
+        sfp = StringIO()
+        Iterators._structure(msg, sfp)
+        eq(sfp.getvalue(), """\
+multipart/mixed
+    multipart/mixed
+        multipart/alternative
+        application/octet-stream
+        application/octet-stream
+    text/plain
+""")
+
 
 
 # Test some badly formatted messages
