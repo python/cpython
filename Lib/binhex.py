@@ -26,10 +26,10 @@ import struct
 import string
 import binascii
 
-DEBUG=1
-
-testf = open('@xx', 'w')	# XXXX
-
+DEBUG=0
+if DEBUG:
+	testf=open('@binhex.dbg.out', 'w')
+	
 Error = 'binhex.Error'
 
 # States (what have we written)
@@ -144,7 +144,8 @@ class _Rlecoderengine:
 		self.data = ''
 
     def write(self, data):
-		testf.write(data) # XXXX
+    	if DEBUG:
+			testf.write(data) # XXXX
 		self.data = self.data + data
 		if len(self.data) < REASONABLY_LARGE:
 		    return
@@ -469,7 +470,7 @@ def hexbin(inp, out):
 
 def _test():
 	if os.name == 'mac':
-		fss, ok = macfs.StandardGetFile()
+		fss, ok = macfs.PromptGetFile('File to convert:')
 		if not ok:
 			sys.exit(0)
 		fname = fss.as_pathname()
