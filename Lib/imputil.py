@@ -28,11 +28,19 @@ class ImportManager:
         if isinstance(namespace, _ModuleType):
             namespace = vars(namespace)
 
-        ### Note that we have no notion of "uninstall" or "chaining"
+        # Note: we have no notion of "chaining"
 
+        # Record the previous import hook, then install our own.
+        self.previous_importer = namespace['__import__']
+        self.namespace = namespace
         namespace['__import__'] = self._import_hook
+
         ### fix this
         #namespace['reload'] = self._reload_hook
+
+    def uninstall(self):
+        "Restore the previous import mechanism."
+        self.namespace['__import__'] = self.previous_importer
 
     def add_suffix(self, suffix, importFunc):
         assert callable(importFunc)
