@@ -351,7 +351,7 @@ class Pickler:
 
     def save_reduce(self, func, args, state=None,
                     listitems=None, dictitems=None, obj=None):
-        # This API is be called by some subclasses
+        # This API is called by some subclasses
 
         # Assert that args is a tuple or None
         if not isinstance(args, TupleType):
