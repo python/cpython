@@ -50,12 +50,13 @@ needs to be created.  It defaults to \class{Message} (see
 arguments.
 
 The optional \var{strict} flag specifies whether strict or lax parsing
-should be performed.  Normally, when things like MIME terminating
+should be performed.  When things like MIME terminating
 boundaries are missing, or when messages contain other formatting
 problems, the \class{Parser} will raise a
-\exception{MessageParseError}.  However, when lax parsing is enabled,
-the \class{Parser} will attempt to work around such broken formatting
-to produce a usable message structure (this doesn't mean
+\exception{MessageParseError}, if the \var{strict} flag is \code{True}.
+However, when lax parsing is enabled (i.e. \var{strict} is \code{False}),
+the \class{Parser} will attempt to work around such broken formatting to
+produce a usable message structure (this doesn't mean
 \exception{MessageParseError}s are never raised; some ill-formatted
 messages just can't be parsed).  The \var{strict} flag defaults to
 \code{False} since lax parsing usually provides the most convenient
