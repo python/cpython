@@ -1,9 +1,9 @@
 <HTML>
 <HEAD>
-<TITLE>Using Python on the Macintosh</TITLE>
+<TITLE>Using Python 1.4 on the Macintosh</TITLE>
 </HEAD>
 <BODY>
-<H1>Using Python on the Macintosh</H1>
+<H1>Using Python 1.4 on the Macintosh</H1>
 <HR>
 
 This document is an introduction to using Python on the Apple
@@ -13,6 +13,13 @@ HREF="http://www.python.org/doc/tut/tut.html">Python Tutorial</A> by
 Guido van Rossum. This guide more-or-less replaces chapter two of the
 tutorial, and provides some additional material. <p>
 
+The tutorial, along with other indispensible documentation like the
+library reference and such, is also available in a number of different
+formats at <a href="ftp://ftp.python.org/pub/python/doc">
+ftp://ftp.python.org/pub/python/doc</a>. The Adobe Acrobat <code>.pdf</code>
+files are probably a good choice for reading or printing the documents
+from your mac. <p>
+
 There is currently no good tutorial for the mac-specific features of
 Python, but to whet your appetite: it has interfaces to many MacOS
 toolboxes (quickdraw, sound, quicktime, open scripting, etc) and
@@ -21,15 +28,12 @@ numbers, image manipulation, etc). Some <A HREF="index.html">
 annotated sample programs</A> are available to give you an idea of
 Python's power. <P>
 
-The document refers to Python 1.3.3 or higher, some of the features
-(like setting applet options) will not work in earlier versions of
-Python. <p>
-
 <h2>Invoking the interpreter</h2>
 
 The name of the interpreter may differ on different installations: it
 may be called <CODE>Python</CODE>, <CODE>PythonPPC</CODE> (for powerpc
-macs) or <CODE>Python68K</CODE> (indeed, for 68K macs). It will always
+macs), <CODE>PythonCFM68K</CODE> or<CODE>Python68K</CODE> (both for 68K macs). 
+It will always
 be recognizable by the "16 ton" icon, though. You start the
 interpreter in interactive mode by double-clicking its icon: <p>
 
@@ -83,6 +87,12 @@ and in which you can type input if the script requires it. Normally
 the interpreter will close the window and quit as soon as the script
 is done executing, see below under <A HREF="#startup">startup
 options</A> for a way to change this. <p>
+
+<blockquote>
+There is a BBEdit extension available that allows you to run Python
+scripts more-or-less straight from your bbedit source window. Check
+out the <code>Mac:Tools:BBPy</code> folder.
+</blockquote>
 
 It is a good idea to have the names of all your scripts end in
 <CODE>.py</CODE>. While this is not necessary for standalone scripts
@@ -300,10 +310,11 @@ sub-dialog.
 
 An applet is a fullblown application written in Python, similar to an
 AppleScript applet (and completely different from a Java
-applet). Applets are currently only supported on PowerPC macintoshes,
+applet). Applets are currently supported on PowerPC macintoshes and on
+68K macintoshes if you use the CFM68K version of the interpreter,
 and are created using the <CODE>mkapplet</CODE> program. You create an
-applet by dropping the python source script onto mkapplet.  The
-<CODE>Demo</CODE> folder contains an example of a more involved applet
+applet by dropping the python source script onto mkapplet.
+<a href="example2.html">Example 2</a> is a more involved applet
 with its own resource file, etc. <p>
 
 Note that while an applet behaves as a fullblown Macintosh application
@@ -324,7 +335,7 @@ defaults. <p>
 Actually, not only applets but also the interpreter itself can have
 non-default settings for path and options. If you make a copy of the
 interpreter and drop this copy onto EditPythonPrefs you will have an
-interpreter that has a different set of default settings.
+interpreter that has a different set of default settings. <p>
 
 <h2>Where to go from here</h2>
 
@@ -339,7 +350,8 @@ There are some <A HREF="index.html">annotated sample programs</A>
 available that show some mac-specific issues, like use of various
 toolboxes and creation of Python applets. <p>
 
-Finally, the <CODE>Demo</CODE> folder in the Macintosh distribution
+Finally, the <CODE>Demo</CODE> and <CODE>Mac:Demo</CODE>
+folders in the Macintosh distribution
 contains a number of other example programs. Most of these are only
 very lightly documented, but they may help you to understand some
 aspects of using Python. <p>
@@ -385,7 +397,7 @@ Python attempts to keep its preferences file up-to-date even when you
 move the Python folder around, etc. If this fails the effect will be
 that Python cannot start or, worse, that it does work but it cannot find
 any standard modules. In this case, start Python examine <code>sys.path</code>.
-If it is incorrect remove the Python preferences file from the system
+If it is incorrect remove any Python preferences file from the system
 folder and start the interpreter <em>while the interpreter sits in the main
 Python folder</em>. This will regenerate the preferences file. <p>
 
@@ -395,7 +407,7 @@ The next section to check out is the <a href="index.html">annotated sample progr
 
 <HR>
 <A HREF="http://www.cwi.nl/~jack">Jack Jansen</A>,
-<A HREF="mailto:jack@cwi.nl">jack@cwi.nl</A>, 05-Sep-1996.
+<A HREF="mailto:jack@cwi.nl">jack@cwi.nl</A>, 20-Nov-1996.
 
 </BODY>
 </HTML>
