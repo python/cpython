@@ -42,13 +42,13 @@
 ** does make the performance sub-optimal. Oh well, too bad...
 **
 ** Jack Jansen, CWI, July 1995.
-** 
+**
 ** Added support for quoted-printable encoding, based on rfc 1521 et al
-** quoted-printable encoding specifies that non printable characters (anything 
+** quoted-printable encoding specifies that non printable characters (anything
 ** below 32 and above 126) be encoded as =XX where XX is the hexadecimal value
 ** of the character.  It also specifies some other behavior to enable 8bit data
-** in a mail message with little difficulty (maximum line sizes, protecting 
-** some cases of whitespace, etc).    
+** in a mail message with little difficulty (maximum line sizes, protecting
+** some cases of whitespace, etc).
 **
 ** Brandon Long, September 2001.
 */
@@ -190,7 +190,7 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 	unsigned int leftchar = 0;
 	PyObject *rv;
 	int ascii_len, bin_len;
-	
+
 	if ( !PyArg_ParseTuple(args, "t#:a2b_uu", &ascii_data, &ascii_len) )
 		return NULL;
 
@@ -202,7 +202,7 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 	if ( (rv=PyString_FromStringAndSize(NULL, bin_len)) == NULL )
 		return NULL;
 	bin_data = (unsigned char *)PyString_AsString(rv);
-	
+
 	for( ; bin_len > 0 ; ascii_len--, ascii_data++ ) {
 		this_ch = *ascii_data;
 		if ( this_ch == '\n' || this_ch == '\r' || ascii_len <= 0) {
@@ -255,7 +255,7 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(doc_b2a_uu, "(bin) -> ascii. Uuencode line of data");
-	
+
 static PyObject *
 binascii_b2a_uu(PyObject *self, PyObject *args)
 {
@@ -265,7 +265,7 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
 	unsigned int leftchar = 0;
 	PyObject *rv;
 	int bin_len;
-	
+
 	if ( !PyArg_ParseTuple(args, "s#:b2a_uu", &bin_data, &bin_len) )
 		return NULL;
 	if ( bin_len > 45 ) {
@@ -281,7 +281,7 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
 
 	/* Store the length */
 	*ascii_data++ = ' ' + (bin_len & 077);
-	
+
 	for( ; bin_len > 0 || leftbits != 0 ; bin_len--, bin_data++ ) {
 		/* Shift the data (or padding) into our buffer */
 		if ( bin_len > 0 )	/* Data */
@@ -298,7 +298,7 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
 		}
 	}
 	*ascii_data++ = '\n';	/* Append a courtesy newline */
-	
+
 	_PyString_Resize(&rv, (ascii_data -
 			       (unsigned char *)PyString_AsString(rv)));
 	return rv;
@@ -308,7 +308,7 @@ binascii_b2a_uu(PyObject *self, PyObject *args)
 static int
 binascii_find_valid(unsigned char *s, int slen, int num)
 {
-	/* Finds & returns the (num+1)th 
+	/* Finds & returns the (num+1)th
 	** valid character for base64, or -1 if none.
 	*/
 
@@ -342,7 +342,7 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 	PyObject *rv;
 	int ascii_len, bin_len;
 	int quad_pos = 0;
-	
+
 	if ( !PyArg_ParseTuple(args, "t#:a2b_base64", &ascii_data, &ascii_len) )
 		return NULL;
 
@@ -418,7 +418,7 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(doc_b2a_base64, "(bin) -> ascii. Base64-code line of data");
-	
+
 static PyObject *
 binascii_b2a_base64(PyObject *self, PyObject *args)
 {
@@ -428,14 +428,14 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
 	unsigned int leftchar = 0;
 	PyObject *rv;
 	int bin_len;
-	
+
 	if ( !PyArg_ParseTuple(args, "s#:b2a_base64", &bin_data, &bin_len) )
 		return NULL;
 	if ( bin_len > BASE64_MAXBIN ) {
 		PyErr_SetString(Error, "Too much data for base64 line");
 		return NULL;
 	}
-	
+
 	/* We're lazy and allocate too much (fixed up later).
 	   "+3" leaves room for up to two pad characters and a trailing
 	   newline.  Note that 'b' gets encoded as 'Yg==\n' (1 in, 5 out). */
@@ -462,9 +462,9 @@ binascii_b2a_base64(PyObject *self, PyObject *args)
 	} else if ( leftbits == 4 ) {
 		*ascii_data++ = table_b2a_base64[(leftchar&0xf) << 2];
 		*ascii_data++ = BASE64_PAD;
-	} 
+	}
 	*ascii_data++ = '\n';	/* Append a courtesy newline */
-	
+
 	_PyString_Resize(&rv, (ascii_data -
 			       (unsigned char *)PyString_AsString(rv)));
 	return rv;
@@ -482,7 +482,7 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 	PyObject *rv;
 	int len;
 	int done = 0;
-	
+
 	if ( !PyArg_ParseTuple(args, "t#:a2b_hqx", &ascii_data, &len) )
 		return NULL;
 
@@ -516,7 +516,7 @@ binascii_a2b_hqx(PyObject *self, PyObject *args)
 			leftchar &= ((1 << leftbits) - 1);
 		}
 	}
-	
+
 	if ( leftbits && !done ) {
 		PyErr_SetString(Incomplete,
 				"String has incomplete number of bytes");
@@ -543,7 +543,7 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
 	PyObject *rv;
 	unsigned char ch;
 	int in, inend, len;
-	
+
 	if ( !PyArg_ParseTuple(args, "s#:rlecode_hqx", &in_data, &len) )
 		return NULL;
 
@@ -551,7 +551,7 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
 	if ( (rv=PyString_FromStringAndSize(NULL, len*2)) == NULL )
 		return NULL;
 	out_data = (unsigned char *)PyString_AsString(rv);
-	
+
 	for( in=0; in<len; in++) {
 		ch = in_data[in];
 		if ( ch == RUNCHAR ) {
@@ -582,7 +582,7 @@ binascii_rlecode_hqx(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(doc_b2a_hqx, "Encode .hqx data");
-	
+
 static PyObject *
 binascii_b2a_hqx(PyObject *self, PyObject *args)
 {
@@ -592,7 +592,7 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
 	unsigned int leftchar = 0;
 	PyObject *rv;
 	int len;
-	
+
 	if ( !PyArg_ParseTuple(args, "s#:b2a_hqx", &bin_data, &len) )
 		return NULL;
 
@@ -600,7 +600,7 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
 	if ( (rv=PyString_FromStringAndSize(NULL, len*2)) == NULL )
 		return NULL;
 	ascii_data = (unsigned char *)PyString_AsString(rv);
-	
+
 	for( ; len > 0 ; len--, bin_data++ ) {
 		/* Shift into our buffer, and output any 6bits ready */
 		leftchar = (leftchar << 8) | *bin_data;
@@ -622,7 +622,7 @@ binascii_b2a_hqx(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(doc_rledecode_hqx, "Decode hexbin RLE-coded string");
-	
+
 static PyObject *
 binascii_rledecode_hqx(PyObject *self, PyObject *args)
 {
@@ -658,7 +658,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
 		 } \
 		 b = *in_data++; \
 	} while(0)
-	    
+
 #define OUTBYTE(b) \
 	do { \
 		 if ( --out_len_left < 0 ) { \
@@ -692,7 +692,7 @@ binascii_rledecode_hqx(PyObject *self, PyObject *args)
 	} else {
 		OUTBYTE(in_byte);
 	}
-	
+
 	while( in_len > 0 ) {
 		INBYTE(in_byte);
 
@@ -726,7 +726,7 @@ binascii_crc_hqx(PyObject *self, PyObject *args)
 	unsigned char *bin_data;
 	unsigned int crc;
 	int len;
-	
+
 	if ( !PyArg_ParseTuple(args, "s#i:crc_hqx", &bin_data, &len, &crc) )
 		return NULL;
 
@@ -758,49 +758,49 @@ PyDoc_STRVAR(doc_crc32,
 
  Copyright (C) 1986 Gary S. Brown.  You may use this program, or
  code or tables extracted from it, as desired without restriction.
- 
- First, the polynomial itself and its table of feedback terms.  The  
- polynomial is                                                       
- X^32+X^26+X^23+X^22+X^16+X^12+X^11+X^10+X^8+X^7+X^5+X^4+X^2+X^1+X^0 
- Note that we take it "backwards" and put the highest-order term in  
- the lowest-order bit.  The X^32 term is "implied"; the LSB is the   
- X^31 term, etc.  The X^0 term (usually shown as "+1") results in    
- the MSB being 1.                                                    
 
- Note that the usual hardware shift register implementation, which   
- is what we're using (we're merely optimizing it by doing eight-bit  
- chunks at a time) shifts bits into the lowest-order term.  In our   
- implementation, that means shifting towards the right.  Why do we   
- do it this way?  Because the calculated CRC must be transmitted in  
- order from highest-order term to lowest-order term.  UARTs transmit 
- characters in order from LSB to MSB.  By storing the CRC this way,  
- we hand it to the UART in the order low-byte to high-byte; the UART 
- sends each low-bit to hight-bit; and the result is transmission bit 
- by bit from highest- to lowest-order term without requiring any bit 
- shuffling on our part.  Reception works similarly.                  
+ First, the polynomial itself and its table of feedback terms.  The
+ polynomial is
+ X^32+X^26+X^23+X^22+X^16+X^12+X^11+X^10+X^8+X^7+X^5+X^4+X^2+X^1+X^0
+ Note that we take it "backwards" and put the highest-order term in
+ the lowest-order bit.  The X^32 term is "implied"; the LSB is the
+ X^31 term, etc.  The X^0 term (usually shown as "+1") results in
+ the MSB being 1.
 
- The feedback terms table consists of 256, 32-bit entries.  Notes:   
-                                                                     
-  1. The table can be generated at runtime if desired; code to do so 
-     is shown later.  It might not be obvious, but the feedback      
-     terms simply represent the results of eight shift/xor opera-    
-     tions for all combinations of data and CRC register values.     
-                                                                     
-  2. The CRC accumulation logic is the same for all CRC polynomials, 
-     be they sixteen or thirty-two bits wide.  You simply choose the 
-     appropriate table.  Alternatively, because the table can be     
-     generated at runtime, you can start by generating the table for 
-     the polynomial in question and use exactly the same "updcrc",   
-     if your application needn't simultaneously handle two CRC       
-     polynomials.  (Note, however, that XMODEM is strange.)          
-                                                                     
-  3. For 16-bit CRCs, the table entries need be only 16 bits wide;   
-     of course, 32-bit entries work OK if the high 16 bits are zero. 
-                                                                     
-  4. The values must be right-shifted by eight bits by the "updcrc"  
-     logic; the shift must be unsigned (bring in zeroes).  On some   
-     hardware you could probably optimize the shift in assembler by  
-     using byte-swap instructions.                                   
+ Note that the usual hardware shift register implementation, which
+ is what we're using (we're merely optimizing it by doing eight-bit
+ chunks at a time) shifts bits into the lowest-order term.  In our
+ implementation, that means shifting towards the right.  Why do we
+ do it this way?  Because the calculated CRC must be transmitted in
+ order from highest-order term to lowest-order term.  UARTs transmit
+ characters in order from LSB to MSB.  By storing the CRC this way,
+ we hand it to the UART in the order low-byte to high-byte; the UART
+ sends each low-bit to hight-bit; and the result is transmission bit
+ by bit from highest- to lowest-order term without requiring any bit
+ shuffling on our part.  Reception works similarly.
+
+ The feedback terms table consists of 256, 32-bit entries.  Notes:
+
+  1. The table can be generated at runtime if desired; code to do so
+     is shown later.  It might not be obvious, but the feedback
+     terms simply represent the results of eight shift/xor opera-
+     tions for all combinations of data and CRC register values.
+
+  2. The CRC accumulation logic is the same for all CRC polynomials,
+     be they sixteen or thirty-two bits wide.  You simply choose the
+     appropriate table.  Alternatively, because the table can be
+     generated at runtime, you can start by generating the table for
+     the polynomial in question and use exactly the same "updcrc",
+     if your application needn't simultaneously handle two CRC
+     polynomials.  (Note, however, that XMODEM is strange.)
+
+  3. For 16-bit CRCs, the table entries need be only 16 bits wide;
+     of course, 32-bit entries work OK if the high 16 bits are zero.
+
+  4. The values must be right-shifted by eight bits by the "updcrc"
+     logic; the shift must be unsigned (bring in zeroes).  On some
+     hardware you could probably optimize the shift in assembler by
+     using byte-swap instructions.
 ********************************************************************/
 
 static unsigned long crc_32_tab[256] = {
@@ -865,23 +865,29 @@ binascii_crc32(PyObject *self, PyObject *args)
 	unsigned long crc = 0UL;	/* initial value of CRC */
 	int len;
 	long result;
-	
+
 	if ( !PyArg_ParseTuple(args, "s#|l:crc32", &bin_data, &len, &crc) )
 		return NULL;
 
-	crc = crc ^ 0xFFFFFFFFUL;
-	while(len--)
+	crc = ~ crc;
+#if SIZEOF_LONG > 4
+	/* only want the trailing 32 bits */
+	crc &= 0xFFFFFFFFUL;
+#endif
+	while (len--)
 		crc = crc_32_tab[(crc ^ *bin_data++) & 0xffUL] ^ (crc >> 8);
 		/* Note:  (crc >> 8) MUST zero fill on left */
 
 	result = (long)(crc ^ 0xFFFFFFFFUL);
-	/* If long is > 32 bits, extend the sign bit.  This is one way to
-	 * ensure the result is the same across platforms.  The other way
-	 * would be to return an unbounded long, but the evidence suggests
-	 * that lots of code outside this treats the result as if it were
-	 * a signed 4-byte integer.
+#if SIZEOF_LONG > 4
+	/* Extend the sign bit.  This is one way to ensure the result is the
+	 * same across platforms.  The other way would be to return an
+	 * unbounded unsigned long, but the evidence suggests that lots of
+	 * code outside this treats the result as if it were a signed 4-byte
+	 * integer.
 	 */
 	result |= -(result & (1L << 31));
+#endif
 	return PyInt_FromLong(result);
 }
 
@@ -929,7 +935,7 @@ This function is also available as \"hexlify()\".");
 
 
 static int
-to_int(int c) 
+to_int(int c)
 {
 	if (isdigit(c))
 		return c - '0';
@@ -1011,7 +1017,7 @@ static int table_hex[128] = {
 
 PyDoc_STRVAR(doc_a2b_qp, "Decode a string of qp-encoded data");
 
-static PyObject* 
+static PyObject*
 binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	unsigned int in, out;
@@ -1022,7 +1028,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 	static char *kwlist[] = {"data", "header", NULL};
 	int header = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|i", kwlist, &data, 
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|i", kwlist, &data,
 	      &datalen, &header))
 		return NULL;
 
@@ -1040,7 +1046,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 			in++;
 			if (in >= datalen) break;
 			/* Soft line breaks */
-			if ((data[in] == '\n') || (data[in] == '\r') || 
+			if ((data[in] == '\n') || (data[in] == '\r') ||
 			    (data[in] == ' ') || (data[in] == '\t')) {
 				if (data[in] != '\n') {
 					while (in < datalen && data[in] != '\n') in++;
@@ -1052,7 +1058,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 				odata[out++] = '=';
 				in++;
 			}
-			else if (((data[in] >= 'A' && data[in] <= 'F') || 
+			else if (((data[in] >= 'A' && data[in] <= 'F') ||
 			          (data[in] >= 'a' && data[in] <= 'f') ||
 				  (data[in] >= '0' && data[in] <= '9')) &&
 			         ((data[in+1] >= 'A' && data[in+1] <= 'F') ||
@@ -1087,7 +1093,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 	return rv;
 }
 
-static int 
+static int
 to_hex (unsigned char ch, unsigned char *s)
 {
 	unsigned int uvalue = ch;
@@ -1109,7 +1115,7 @@ both encoded.  When quotetabs is set, space and tabs are encoded.");
 /* XXX: This is ridiculously complicated to be backward compatible
  * (mostly) with the quopri module.  It doesn't re-create the quopri
  * module bug where text ending in CRLF has the CR encoded */
-static PyObject* 
+static PyObject*
 binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 {
 	unsigned int in, out;
@@ -1125,7 +1131,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 	int crlf = 0;
 	unsigned char *p;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iii", kwlist, &data, 
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|iii", kwlist, &data,
 	      &datalen, &quotetabs, &istext, &header))
 		return NULL;
 
@@ -1140,14 +1146,14 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 	/* First, scan to see how many characters need to be encoded */
 	in = 0;
 	while (in < datalen) {
-		if ((data[in] > 126) || 
+		if ((data[in] > 126) ||
 		    (data[in] == '=') ||
 		    (header && data[in] == '_') ||
 		    ((data[in] == '.') && (linelen == 1)) ||
 		    (!istext && ((data[in] == '\r') || (data[in] == '\n'))) ||
 		    ((data[in] == '\t' || data[in] == ' ') && (in + 1 == datalen)) ||
-		    ((data[in] < 33) && 
-		     (data[in] != '\r') && (data[in] != '\n') && 
+		    ((data[in] < 33) &&
+		     (data[in] != '\r') && (data[in] != '\n') &&
 		     (quotetabs && ((data[in] != '\t') || (data[in] != ' ')))))
 		{
 			if ((linelen + 3) >= MAXLINESIZE) {
@@ -1162,7 +1168,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 			in++;
 		}
 		else {
-		  	if (istext && 
+		  	if (istext &&
 			    ((data[in] == '\n') ||
 			     ((in+1 < datalen) && (data[in] == '\r') &&
 			     (data[in+1] == '\n'))))
@@ -1181,7 +1187,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 					in++;
 			}
 			else {
-				if ((in + 1 != datalen) && 
+				if ((in + 1 != datalen) &&
 				    (data[in+1] != '\n') &&
 				    (linelen + 1) >= MAXLINESIZE) {
 					linelen = 0;
@@ -1206,14 +1212,14 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 
 	in = out = linelen = 0;
 	while (in < datalen) {
-		if ((data[in] > 126) || 
+		if ((data[in] > 126) ||
 		    (data[in] == '=') ||
 		    (header && data[in] == '_') ||
 		    ((data[in] == '.') && (linelen == 1)) ||
 		    (!istext && ((data[in] == '\r') || (data[in] == '\n'))) ||
 		    ((data[in] == '\t' || data[in] == ' ') && (in + 1 == datalen)) ||
-		    ((data[in] < 33) && 
-		     (data[in] != '\r') && (data[in] != '\n') && 
+		    ((data[in] < 33) &&
+		     (data[in] != '\r') && (data[in] != '\n') &&
 		     (quotetabs && ((data[in] != '\t') || (data[in] != ' ')))))
 		{
 			if ((linelen + 3 )>= MAXLINESIZE) {
@@ -1229,7 +1235,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 			linelen += 3;
 		}
 		else {
-		  	if (istext && 
+		  	if (istext &&
 			    ((data[in] == '\n') ||
 			     ((in+1 < datalen) && (data[in] == '\r') &&
 			     (data[in+1] == '\n'))))
@@ -1242,7 +1248,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 					to_hex(ch, &odata[out]);
 					out += 2;
 				}
-					
+
 				if (crlf) odata[out++] = '\r';
 				odata[out++] = '\n';
 				if (data[in] == '\r')
@@ -1251,7 +1257,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 					in++;
 			}
 			else {
-				if ((in + 1 != datalen) && 
+				if ((in + 1 != datalen) &&
 				    (data[in+1] != '\n') &&
 				    (linelen + 1) >= MAXLINESIZE) {
 					odata[out++] = '=';
@@ -1296,9 +1302,9 @@ static struct PyMethodDef binascii_module_methods[] = {
 	 doc_rledecode_hqx},
 	{"crc_hqx",    binascii_crc_hqx,    METH_VARARGS, doc_crc_hqx},
 	{"crc32",      binascii_crc32,      METH_VARARGS, doc_crc32},
-	{"a2b_qp", (PyCFunction)binascii_a2b_qp, METH_VARARGS | METH_KEYWORDS, 
+	{"a2b_qp", (PyCFunction)binascii_a2b_qp, METH_VARARGS | METH_KEYWORDS,
 	  doc_a2b_qp},
-	{"b2a_qp", (PyCFunction)binascii_b2a_qp, METH_VARARGS | METH_KEYWORDS, 
+	{"b2a_qp", (PyCFunction)binascii_b2a_qp, METH_VARARGS | METH_KEYWORDS,
           doc_b2a_qp},
 	{NULL, NULL}			     /* sentinel */
 };
