@@ -1398,7 +1398,7 @@ the lexicographical comparison is carried out recursively.  If all
 items of two sequences compare equal, the sequences are considered
 equal.  If one sequence is an initial subsequence of the other, the
 shorted sequence is the smaller one.  Lexicographical ordering for
-strings uses the ASCII ordering for individual characters.  Some
+strings uses the \ASCII{} ordering for individual characters.  Some
 examples of comparisons between sequences with the same types:
 
 \bcode\begin{verbatim}
@@ -3301,7 +3301,7 @@ Note that \code{pickle} does not open or close any files --- it can be
 used equally well for moving objects around on a network or store them
 in a database.  For ease of debugging, and the inevitable occasional
 manual patch-up, the constructed byte streams consist of printable
-ASCII characters only (though it's not designed to be pretty).
+\ASCII{} characters only (though it's not designed to be pretty).
 
 The module \code{shelve} provides a simple model for storing objects
 on files.  The operation \code{shelve.open(filename)} returns a

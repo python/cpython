@@ -211,7 +211,7 @@ character type; a character is represented by a string of one element.
 Characters represent (at least) 8-bit bytes.  The built-in
 functions \verb@chr()@ and \verb@ord()@ convert between characters
 and nonnegative integers representing the byte values.
-Bytes with the values 0-127 represent the corresponding ASCII values.
+Bytes with the values 0-127 represent the corresponding \ASCII{} values.
 The string data type is also used to represent arrays of bytes, e.g.
 to hold data read from a file.
 \obindex{string}
@@ -221,10 +221,10 @@ to hold data read from a file.
 \bifuncindex{chr}
 \bifuncindex{ord}
 
-(On systems whose native character set is not ASCII, strings may use
+(On systems whose native character set is not \ASCII{}, strings may use
 EBCDIC in their internal representation, provided the functions
-\verb@chr()@ and \verb@ord()@ implement a mapping between ASCII and
-EBCDIC, and string comparison preserves the ASCII order.
+\verb@chr()@ and \verb@ord()@ implement a mapping between \ASCII{} and
+EBCDIC, and string comparison preserves the \ASCII{} order.
 Or perhaps someone can propose a better rule?)
 \index{ASCII}
 \index{EBCDIC}
