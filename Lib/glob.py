@@ -2,10 +2,15 @@
 
 import os
 import fnmatch
+import regex
 
 
 def glob(pathname):
-	if not has_magic(pathname): return [pathname]
+	if not has_magic(pathname):
+		if os.path.exists(pathname):
+			return [pathname]
+		else:
+			return []
 	dirname, basename = os.path.split(pathname)
 	if has_magic(dirname):
 		list = glob(dirname)
@@ -34,9 +39,13 @@ def glob1(dirname, pattern):
 		return []
 	result = []
 	for name in names:
-		if name[0] <> '.' or pattern[0] == '.':
-			if fnmatch.fnmatch(name, pattern): result.append(name)
+		if name[0] != '.' or pattern[0] == '.':
+			if fnmatch.fnmatch(name, pattern):
+				result.append(name)
 	return result
 
+
+magic_check = regex.compile('[*?[]')
+
 def has_magic(s):
-	return '*' in s or '?' in s or '[' in s
+	return magic_check.search(s) >= 0
