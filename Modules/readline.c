@@ -38,7 +38,7 @@ extern Function *rl_event_hook;
 #endif
 
 /* Pointers needed from outside (but not declared in a header file). */
-extern int (*PyOS_InputHook)();
+extern int (*PyOS_InputHook)(void);
 extern char *(*PyOS_ReadlineFunctionPointer)(char *);
 
 
@@ -431,6 +431,9 @@ static RETSIGTYPE
 onintr(int sig)
 {
 	longjmp(jbuf, 1);
+#if RETSIGTYPE != void
+	return 0;
+#endif
 }
 
 
@@ -441,7 +444,7 @@ call_readline(char *prompt)
 {
 	size_t n;
 	char *p, *q;
-	RETSIGTYPE (*old_inthandler)();
+	RETSIGTYPE (*old_inthandler)(int);
 	old_inthandler = signal(SIGINT, onintr);
 	if (setjmp(jbuf)) {
 #ifdef HAVE_SIGRELSE
