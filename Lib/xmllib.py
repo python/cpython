@@ -88,11 +88,11 @@ class XMLParser:
 
     # Interface -- initialize and reset this instance
     def __init__(self):
+        self.__fixed = 0
         self.reset()
-        if self.elements is XMLParser.elements:
-            self.__fixelements()
 
     def __fixelements(self):
+        self.__fixed = 1
         self.elements = {}
         self.__fixdict(self.__dict__)
         self.__fixclass(self.__class__)
@@ -127,6 +127,10 @@ class XMLParser:
         self.__seen_starttag = 0
         self.__use_namespaces = 0
         self.__namespaces = {'xml':None}   # xml is implicitly declared
+        # backward compatipibility hack: if elements not overridden,
+        # fill it in ourselves
+        if self.elements is XMLParser.elements:
+            self.__fixelements()
 
     # For derived classes only -- enter literal mode (CDATA) till EOF
     def setnomoretags(self):
@@ -147,6 +151,10 @@ class XMLParser:
     # Interface -- handle the remaining data
     def close(self):
         self.goahead(1)
+        if self.__fixed:
+            self.__fixed = 0
+            # remove self.elements so that we don't leak
+            del self.elements
 
     # Interface -- translate references
     def translate_references(self, data, all = 1):
@@ -179,7 +187,7 @@ class XMLParser:
                     data = pre + self.entitydefs[str] + post
                     i = res.start(0)    # rescan substituted text
                 else:
-                    self.syntax_error('reference to unknown entity')
+                    self.syntax_error("reference to unknown entity `&%s;'" % str)
                     # can't do it, so keep the entity ref in
                     data = pre + '&' + str + ';' + post
                     i = res.start(0) + len(str) + 2
@@ -327,7 +335,7 @@ class XMLParser:
                         n = len(rawdata)
                         i = res.start(0)
                     else:
-                        self.syntax_error('reference to unknown entity')
+                        self.syntax_error("reference to unknown entity `&%s;'" % name)
                         self.unknown_entityref(name)
                     self.lineno = self.lineno + string.count(res.group(0), '\n')
                     continue
