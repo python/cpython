@@ -119,6 +119,10 @@ non-GUI and GUI python scripts from the command line, respectively.
 6. How do I create a binary distribution?
 -----------------------------------------
 
+First go to Mac/OSX and run "python fixversions.py -a" with the Python
+you are going to distribute. This will fix the version numbers and copyright
+strings in the various Info.plist files.
+
 Go to the Mac/OSX/Dist directory. There you find a script "build" that
 does all the work: it configures and builds a framework Python, installs
 it, creates the installer package file and packs this in a DMG image.
@@ -156,4 +160,4 @@ macresource module and the Mac/OSX/Makefile cater for this, and create
 ".rsrc.df.rsrc" files on the fly that are normal datafork-based resource
 files.
 
-	Jack Jansen, Jack.Jansen@cwi.nl, 20-Jun-2003.
+	Jack Jansen, Jack.Jansen@cwi.nl, 15-Jul-2004.
