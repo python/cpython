@@ -62,12 +62,12 @@ class Test_StreamWriter(unittest.TestCase):
         pass
 
     def test_nullcoding(self):
-        self.assertEqual(''.decode('utf-8'), u'')
-        self.assertEqual(unicode('', 'utf-8'), u'')
-        self.assertEqual(u''.encode('utf-8'), '')
+        self.assertEqual(''.decode('gb18030'), u'')
+        self.assertEqual(unicode('', 'gb18030'), u'')
+        self.assertEqual(u''.encode('gb18030'), '')
 
     def test_str_decode(self):
-        self.assertEqual('abcd'.encode('utf-8'), 'abcd')
+        self.assertEqual('abcd'.encode('gb18030'), 'abcd')
 
 def test_main():
     suite = unittest.TestSuite()
