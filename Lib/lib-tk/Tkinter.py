@@ -510,7 +510,17 @@ class Widget(Misc, Pack, Place):
 		if master.children.has_key(name):
 			 master.children[name].destroy()
 		master.children[name] = self
-	def config(self, cnf={}):
+	def config(self, cnf=None):
+		if cnf is None:
+			cnf = {}
+			for x in self.tk.split(
+				self.tk.call(self._w, 'configure')):
+				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+			return cnf
+		if type(cnf) == StringType:
+			x = self.tk.split(self.tk.call(
+				self._w, 'configure', '-'+cnf))
+			return (x[0][1:],) + x[1:]
 		for k in cnf.keys():
 			if type(k) == ClassType:
 				k.config(self, cnf[k])
@@ -523,6 +533,9 @@ class Widget(Misc, Pack, Place):
 		return v[4]
 	def __setitem__(self, key, value):
 		Widget.config(self, {key: value})
+	def keys(self):
+		return map(lambda x: x[0][1:],
+			   self.tk.split(self.tk.call(self._w, 'configure')))
 	def __str__(self):
 		return self._w
 	def destroy(self):
@@ -585,8 +598,22 @@ class Canvas(Widget):
 		Widget.__init__(self, master, 'canvas', cnf)
 	def addtag(self, *args):
 		self._do('addtag', args)
+	def addtag_above(self, tagOrId):
+		self.addtag('above', tagOrId)
+	def addtag_all(self):
+		self.addtag('all')
+	def addtag_below(self, tagOrId):
+		self.addtag('below', tagOrId)
+	def addtag_closest(self, x, y, halo=None, start=None):
+		self.addtag('closest', x, y, halo, start)
+	def addtag_enclosed(self, x1, y1, x2, y2):
+		self.addtag('enclosed', x1, y1, x2, y2)
+	def addtag_overlapping(self, x1, y1, x2, y2):
+		self.addtag('overlapping', x1, y1, x2, y2)
+	def addtag_withtag(self, tagOrId):
+		self.addtag('withtag', tagOrId)
 	def bbox(self, *args):
-		return self._getints(self._do('bbox', args))
+		return self._getints(self._do('bbox', args)) or None
 	def bind(self, tagOrId, sequence, func, add=''):
 		if add: add='+'
 		name = self._register(func, self._substitute)
@@ -635,6 +662,20 @@ class Canvas(Widget):
 		self._do('dtag', args)
 	def find(self, *args):
 		return self._getints(self._do('find', args))
+	def find_above(self, tagOrId):
+		return self.find('above', tagOrId)
+	def find_all(self):
+		return self.find('all')
+	def find_below(self, tagOrId):
+		return self.find('below', tagOrId)
+	def find_closest(self, x, y, halo=None, start=None):
+		return self.find('closest', x, y, halo, start)
+	def find_enclosed(self, x1, y1, x2, y2):
+		return self.find('enclosed', x1, y1, x2, y2)
+	def find_overlapping(self, x1, y1, x2, y2):
+		return self.find('overlapping', x1, y1, x2, y2)
+	def find_withtag(self, tagOrId):
+		return self.find('withtag', tagOrId)
 	def focus(self, *args):
 		return self._do('focus', args)
 	def gettags(self, *args):
@@ -647,11 +688,15 @@ class Canvas(Widget):
 		self._do('insert', args)
 	def itemconfig(self, tagOrId, cnf=None):
 		if cnf is None:
-			return self.tk.split(self._do('itemconfigure',
-						      (tagOrId)))
+			cnf = {}
+			for x in self.tk.split(
+				self._do('itemconfigure', (tagOrId))):
+				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+			return cnf
 		if type(cnf) == StringType:
-			return self.tk.split(self._do('itemconfigure',
-						      (tagOrId, '-'+cnf,)))
+			x = self.tk.split(self._do('itemconfigure',
+						   (tagOrId, '-'+cnf,)))
+			return (x[0][1:],) + x[1:]
 		self._do('itemconfigure', (tagOrId,) + self._options(cnf))
 	def lower(self, *args):
 		self._do('lower', args)
