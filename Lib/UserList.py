@@ -12,11 +12,17 @@ class UserList:
             else:
                 self.data = list(initlist)
     def __repr__(self): return repr(self.data)
+    def __lt__(self, other): return self.data <  self.__cast(other)
+    def __le__(self, other): return self.data <= self.__cast(other)
+    def __eq__(self, other): return self.data == self.__cast(other)
+    def __ne__(self, other): return self.data != self.__cast(other)
+    def __gt__(self, other): return self.data >  self.__cast(other)
+    def __ge__(self, other): return self.data >= self.__cast(other)
+    def __cast(self, other):
+        if isinstance(other, UserList): return other.data
+        else: return other
     def __cmp__(self, other):
-        if isinstance(other, UserList):
-            return cmp(self.data, other.data)
-        else:
-            return cmp(self.data, other)
+        raise RuntimeError, "UserList.__cmp__() is obsolete"
     def __contains__(self, item): return item in self.data
     def __len__(self): return len(self.data)
     def __getitem__(self, i): return self.data[i]
