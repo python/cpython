@@ -32,13 +32,13 @@ PyRange_New(long start, long len, long step, int reps)
 	else {
 		long last = start + (len - 1) * step;
 		if ((step > 0) ?
-		    (last > (PyInt_GetMax() - step)) : 
+		    (last > (PyInt_GetMax() - step)) :
 		    (last < (-1 - PyInt_GetMax() - step))) {
 			PyErr_SetString(PyExc_OverflowError,
 					"integer addition");
 			Py_DECREF(obj);
 			return NULL;
-		}			
+		}
 	}
 	obj->start = start;
 	obj->len   = len;
@@ -145,7 +145,7 @@ static PyObject *
 range_repr(rangeobject *r)
 {
 	PyObject *rtn;
-	
+
 	if (r->start == 0 && r->step == 1)
 		rtn = PyString_FromFormat("xrange(%ld)",
 					  r->start + r->len * r->step);
@@ -211,7 +211,7 @@ PyTypeObject PyRange_Type = {
 	0,				/* tp_weaklistoffset */
 	(getiterfunc)range_iter,	/* tp_iter */
 	0,				/* tp_iternext */
-	range_methods,			/* tp_methods */	
+	range_methods,			/* tp_methods */
 	0,				/* tp_members */
 	0,				/* tp_getset */
 	0,				/* tp_base */
@@ -284,7 +284,7 @@ range_reverse(PyObject *seq)
 static PyObject *
 rangeiter_next(rangeiterobject *r)
 {
-	if (r->index < r->len) 
+	if (r->index < r->len)
 		return PyInt_FromLong(r->start + (r->index++) * r->step);
 	return NULL;
 }
