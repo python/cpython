@@ -483,25 +483,24 @@ PyGILState_Release(PyGILState_STATE oldstate)
 	--tcur->gilstate_counter;
 	assert(tcur->gilstate_counter >= 0); /* illegal counter value */
 
-	/* If we are about to destroy this thread-state, we must
-	   clear it while the lock is held, as destructors may run
-	*/
+	/* If we're going to destroy this thread-state, we must
+	 * clear it while the GIL is held, as destructors may run.
+	 */
 	if (tcur->gilstate_counter == 0) {
 		/* can't have been locked when we created it */
 		assert(oldstate == PyGILState_UNLOCKED);
 		PyThreadState_Clear(tcur);
-	}
-
-	/* Release the lock if necessary */
-	if (oldstate == PyGILState_UNLOCKED)
-		PyEval_ReleaseThread(tcur);
-
-	/* Now complete destruction of the thread if necessary */
-	if (tcur->gilstate_counter == 0) {
-		/* Delete this thread from our TLS */
+		/* Delete the thread-state.  Note this releases the GIL too!
+		 * It's vital that the GIL be held here, to avoid shutdown
+		 * races; see bugs 225673 and 1061968 (that nasty bug has a
+		 * habit of coming back).
+		 */
+		PyThreadState_DeleteCurrent();
+		/* Delete this thread from our TLS. */
 		PyThread_delete_key_value(autoTLSkey);
-		/* Delete the thread-state */
-		PyThreadState_Delete(tcur);
 	}
+	/* Release the lock if necessary */
+	else if (oldstate == PyGILState_UNLOCKED)
+		PyEval_ReleaseThread(tcur);
 }
 #endif /* WITH_THREAD */
