@@ -80,6 +80,7 @@ TESTPATH=
 MACHDEPPATH=:plat-$(MACHDEP)
 
 # Path component for the Tkinter-related modules
+# The TKPATH variable is always enabled, to save you the effort.
 TKPATH=:lib-tk
 
 COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(TKPATH)
@@ -99,5 +100,370 @@ _sre _sre.c			# Fredrik Lundh's new regular expressions
 # The signal module can't be compiled as a dynamically linked module.
 signal signalmodule.c           # signal(2)
 
-# The rest of the modules previously listed in this file are built
-# by the setup.py script in Python 2.1.
+# The rest of the modules listed in this file are all commented out by
+# default.  Usually they can be detected and built as dynamically
+# loaded modules by the new setup.py script added in Python 2.1.  If
+# you're on a platform that doesn't support dynamic loading, want to 
+# compile modules statically into the Python binary, or need to 
+# specify some odd set of compiler switches, you can uncomment the 
+# appropriate lines below.
+
+# ======================================================================
+
+# The SGI specific GL module:
+
+GLHACK=-Dclear=__GLclear
+#gl glmodule.c cgensupport.c -I$(srcdir) $(GLHACK) -lgl -lX11
+
+# Pure module.  Cannot be linked dynamically.
+# -DWITH_QUANTIFY, -DWITH_PURIFY, or -DWITH_ALL_PURE
+#WHICH_PURE_PRODUCTS=-DWITH_ALL_PURE
+#PURE_INCLS=-I/usr/local/include
+#PURE_STUBLIBS=-L/usr/local/lib -lpurify_stubs -lquantify_stubs
+#pure puremodule.c $(WHICH_PURE_PRODUCTS) $(PURE_INCLS) $(PURE_STUBLIBS)
+
+# Uncommenting the following line tells makesetup that all following
+# modules are to be built as shared libraries (see above for more
+# detail; also note that *static* reverses this effect):
+
+#*shared*
+
+# GNU readline.  Unlike previous Python incarnations, GNU readline is
+# now incorporated in an optional module, configured in the Setup file
+# instead of by a configure script switch.  You may have to insert a
+# -L option pointing to the directory where libreadline.* lives,
+# and you may have to change -ltermcap to -ltermlib or perhaps remove
+# it, depending on your system -- see the GNU readline instructions.
+# It's okay for this to be a shared library, too.
+
+#readline readline.c -lreadline -ltermcap
+
+
+# Modules that should always be present (non UNIX dependent):
+
+#array arraymodule.c	# array objects
+#cmath cmathmodule.c # -lm # complex math library functions
+#math mathmodule.c # -lm # math library functions, e.g. sin()
+#struct structmodule.c	# binary structure packing/unpacking
+#time timemodule.c # -lm # time operations and variables
+#operator operator.c	# operator.add() and similar goodies
+#_codecs _codecsmodule.c	# access to the builtin codecs and codec registry
+
+#unicodedata unicodedata.c unicodedatabase.c
+                        # static Unicode character database
+#ucnhash ucnhash.c # Unicode Character Name expansion hash table
+
+#_locale _localemodule.c  # access to ISO C locale support
+
+
+# Modules with some UNIX dependencies -- on by default:
+# (If you have a really backward UNIX, select and socket may not be
+# supported...)
+
+#fcntl fcntlmodule.c	# fcntl(2) and ioctl(2)
+#pwd pwdmodule.c		# pwd(3) 
+#grp grpmodule.c		# grp(3)
+#errno errnomodule.c	# posix (UNIX) errno values
+#select selectmodule.c	# select(2); not on ancient System V
+
+# Memory-mapped files (also works on Win32).
+#mmap mmapmodule.c
+
+# Dynamic readlines
+#xreadlines xreadlinesmodule.c
+
+# for socket(2), without SSL support.
+#_socket socketmodule.c
+
+# Socket module compiled with SSL support; you must comment out the other
+# socket line above, and possibly edit the SSL variable:
+#SSL=/usr/local/ssl
+#_socket socketmodule.c \
+#	-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \
+#	-L$(SSL)/lib -lssl -lcrypto
+
+# The crypt module is now disabled by default because it breaks builds
+# on many systems (where -lcrypt is needed), e.g. Linux (I believe).
+#
+# First, look at Setup.config; configure may have set this for you.
+
+#crypt cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
+
+
+# Some more UNIX dependent modules -- off by default, since these
+# are not supported by all UNIX systems:
+
+#nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
+#termios termios.c	# Steen Lumholt's termios module
+#resource resource.c	# Jeremy Hylton's rlimit interface
+
+
+# Multimedia modules -- off by default.
+# These don't work for 64-bit platforms!!!
+# These represent audio samples or images as strings:
+
+#audioop audioop.c	# Operations on audio samples
+#imageop imageop.c	# Operations on images
+#rgbimg rgbimgmodule.c	# Read SGI RGB image files (but coded portably)
+
+
+# The md5 module implements the RSA Data Security, Inc. MD5
+# Message-Digest Algorithm, described in RFC 1321.  The necessary files
+# md5c.c and md5.h are included here.
+
+#md5 md5module.c md5c.c
+
+
+# The sha module implements the SHA checksum algorithm.
+# (NIST's Secure Hash Algorithm.)
+#sha shamodule.c
+
+
+# The mpz module interfaces to the GNU Multiple Precision library.
+# You need to ftp the GNU MP library.  
+# The GMP variable must point to the GMP source directory.
+# This was originally written and tested against GMP 1.2 and 1.3.2.
+# It has been modified by Rob Hooft to work with 2.0.2 as well, but I
+# haven't tested it recently.
+
+# A compatible MP library unencombered by the GPL also exists.  It was
+# posted to comp.sources.misc in volume 40 and is widely available from
+# FTP archive sites. One URL for it is:
+# ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/volume40/fgmp/part01.Z
+
+#GMP=/ufs/guido/src/gmp
+#mpz mpzmodule.c -I$(GMP) $(GMP)/libgmp.a
+
+
+# SGI IRIX specific modules -- off by default.
+
+# These module work on any SGI machine:
+
+# *** gl must be enabled higher up in this file ***
+#fm fmmodule.c $(GLHACK) -lfm -lgl		# Font Manager
+#sgi sgimodule.c			# sgi.nap() and a few more
+
+# This module requires the header file
+# /usr/people/4Dgifts/iristools/include/izoom.h:
+#imgfile imgfile.c -limage -lgutil -lgl -lm	# Image Processing Utilities
+
+
+# These modules require the Multimedia Development Option (I think):
+
+#al almodule.c -laudio			# Audio Library
+#cd cdmodule.c -lcdaudio -lds -lmediad	# CD Audio Library
+#cl clmodule.c -lcl -lawareaudio	# Compression Library
+#sv svmodule.c yuvconvert.c -lsvideo -lXext -lX11	# Starter Video
+
+
+# The FORMS library, by Mark Overmars, implements user interface
+# components such as dialogs and buttons using SGI's GL and FM
+# libraries.  You must ftp the FORMS library separately from
+# ftp://ftp.cs.ruu.nl/pub/SGI/FORMS.  It was tested with FORMS 2.2a.
+# NOTE: if you want to be able to use FORMS and curses simultaneously
+# (or both link them statically into the same binary), you must
+# compile all of FORMS with the cc option "-Dclear=__GLclear".
+
+# The FORMS variable must point to the FORMS subdirectory of the forms
+# toplevel directory:
+
+#FORMS=/ufs/guido/src/forms/FORMS
+#fl flmodule.c -I$(FORMS) $(GLHACK) $(FORMS)/libforms.a -lfm -lgl
+
+
+# SunOS specific modules -- off by default:
+
+#sunaudiodev sunaudiodev.c
+
+
+# Linux specific modules -- off by default:
+
+#linuxaudiodev linuxaudiodev.c
+
+
+# George Neville-Neil's timing module:
+
+#timing timingmodule.c
+
+
+# The _tkinter module.
+#
+# The command for _tkinter is long and site specific.  Please
+# uncomment and/or edit those parts as indicated.  If you don't have a
+# specific extension (e.g. Tix or BLT), leave the corresponding line
+# commented out.  (Leave the trailing backslashes in!  If you
+# experience strange errors, you may want to join all uncommented
+# lines and remove the backslashes -- the backslash interpretation is
+# done by the shell's "read" command and it may not be implemented on
+# every system.
+
+# *** Always uncomment this (leave the leading underscore in!):
+# _tkinter _tkinter.c tkappinit.c -DWITH_APPINIT \
+# *** Uncomment and edit to reflect where your Tcl/Tk headers are:
+#	-I/usr/local/include \
+# *** Uncomment and edit to reflect where your X11 header files are:
+#	-I/usr/X11R6/include \
+# *** Or uncomment this for Solaris:
+#	-I/usr/openwin/include \
+# *** Uncomment and edit for Tix extension only:
+#	-DWITH_TIX -ltix4.1.8.0 \
+# *** Uncomment and edit for BLT extension only:
+#	-DWITH_BLT -I/usr/local/blt/blt8.0-unoff/include -lBLT8.0 \
+# *** Uncomment and edit for PIL (TkImaging) extension only:
+#     (See http://www.pythonware.com/products/pil/ for more info)
+#	-DWITH_PIL -I../Extensions/Imaging/libImaging  tkImaging.c \
+# *** Uncomment and edit for TOGL extension only:
+#	-DWITH_TOGL togl.c \
+# *** Uncomment and edit to reflect where your Tcl/Tk libraries are:
+#	-L/usr/local/lib \
+# *** Uncomment and edit to reflect your Tcl/Tk versions:
+#	-ltk8.0 -ltcl8.0 \
+# *** Uncomment and edit to reflect where your X11 libraries are:
+#	-L/usr/X11R6/lib \
+# *** Or uncomment this for Solaris:
+#	-L/usr/openwin/lib \
+# *** Uncomment these for TOGL extension only:
+#	-lGL -lGLU -lXext -lXmu \
+# *** Uncomment for AIX:
+#	-lld \
+# *** Always uncomment this; X11 libraries to link with:
+#	-lX11
+
+# Lance Ellinghaus's modules:
+
+#rotor rotormodule.c		# enigma-inspired encryption
+#syslog syslogmodule.c		# syslog daemon interface
+
+
+# Curses support, requring the System V version of curses, often
+# provided by the ncurses library.  e.g. on Linux, link with -lncurses
+# instead of -lcurses; on SunOS 4.1.3, insert -I/usr/5include
+# -L/usr/5lib before -lcurses).
+#
+# First, look at Setup.config; configure may have set this for you.
+
+#_curses _cursesmodule.c -lcurses -ltermcap
+# Wrapper for the panel library that's part of ncurses and SYSV curses.
+#_curses_panel _curses_panel.c -lpanel -lncurses 
+
+
+# Tommy Burnette's 'new' module (creates new empty objects of certain kinds):
+
+#new newmodule.c
+
+
+# Generic (SunOS / SVR4) dynamic loading module.
+# This is not needed for dynamic loading of Python modules --
+# it is a highly experimental and dangerous device for calling
+# *arbitrary* C functions in *arbitrary* shared libraries:
+
+#dl dlmodule.c
+
+
+# Modules that provide persistent dictionary-like semantics.  You will
+# probably want to arrange for at least one of them to be available on
+# your machine, though none are defined by default because of library
+# dependencies.  The Python module anydbm.py provides an
+# implementation independent wrapper for these; dumbdbm.py provides
+# similar functionality (but slower of course) implemented in Python.
+
+# The standard Unix dbm module has been moved to Setup.config so that
+# it will be compiled as a shared library by default.  Compiling it as
+# a built-in module causes conflicts with the pybsddb3 module since it
+# creates a static dependency on an out-of-date version of db.so.
+#
+# First, look at Setup.config; configure may have set this for you.
+
+#dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
+
+# Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
+#
+# First, look at Setup.config; configure may have set this for you.
+
+#gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
+
+
+# Berkeley DB interface.
+#
+# This requires the Berkeley DB code, see
+# ftp://ftp.cs.berkeley.edu/pub/4bsd/db.1.85.tar.gz
+#
+# Edit the variables DB and DBPORT to point to the db top directory
+# and the subdirectory of PORT where you built it.
+#
+# (See http://electricrain.com/greg/python/bsddb3/ for an interface to
+# BSD DB 3.x.)
+
+# Note: If a db.h file is found by configure, bsddb will be enabled
+# automatically via Setup.config.in.  It only needs to be enabled here
+# if it is not automatically enabled there; check the generated
+# Setup.config before enabling it here.
+
+#DB=/depot/sundry/src/berkeley-db/db.1.85
+#DBPORT=$(DB)/PORT/irix.5.3
+#bsddb bsddbmodule.c -I$(DBPORT)/include -I$(DBPORT) $(DBPORT)/libdb.a
+
+
+
+# David Wayne Williams' soundex module (obsolete -- this will disappear!)
+#soundex soundex.c
+
+# Helper module for various ascii-encoders
+#binascii binascii.c
+
+# Fred Drake's interface to the Python parser
+#parser parsermodule.c
+
+# Digital Creations' cStringIO and cPickle
+#cStringIO cStringIO.c
+#cPickle cPickle.c
+
+
+# Lee Busby's SIGFPE modules.
+# The library to link fpectl with is platform specific.
+# Choose *one* of the options below for fpectl:
+
+# For SGI IRIX (tested on 5.3):
+#fpectl fpectlmodule.c -lfpe
+
+# For Solaris with SunPro compiler (tested on Solaris 2.5 with SunPro C 4.2):
+# (Without the compiler you don't have -lsunmath.)
+#fpectl fpectlmodule.c -R/opt/SUNWspro/lib -lsunmath -lm
+
+# For other systems: see instructions in fpectlmodule.c.
+#fpectl fpectlmodule.c ...
+
+# Test module for fpectl.  No extra libraries needed.
+#fpetest fpetestmodule.c
+
+# Andrew Kuchling's zlib module.
+# This require zlib 1.1.3 (or later).
+# See http://www.cdrom.com/pub/infozip/zlib/
+#zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
+
+# Interface to the Expat XML parser
+#
+# Expat is written by James Clark and must be downloaded separately
+# (see below).  The pyexpat module was written by Paul Prescod after a
+# prototype by Jack Jansen.
+#
+# The Expat dist includes Windows .lib and .dll files.  Home page is at
+# http://www.jclark.com/xml/expat.html, the current production release is
+# always ftp://ftp.jclark.com/pub/xml/expat.zip.
+#
+# EXPAT_DIR, below, should point to the expat/ directory created by
+# unpacking the Expat source distribution.
+#
+# Note: the expat build process doesn't yet build a libexpat.a; you can
+# do this manually while we try convince the author to add it.  To do so,
+# cd to EXPAT_DIR, run "make" if you have not done so, then run:
+#
+#    ar cr libexpat.a xmltok/*.o xmlparse/*.o
+#
+#EXPAT_DIR=/usr/local/src/expat
+#pyexpat pyexpat.c -I$(EXPAT_DIR)/xmlparse -L$(EXPAT_DIR) -lexpat
+
+
+# Example -- included for reference only:
+# xx xxmodule.c
+
