@@ -327,7 +327,7 @@ it does not have a \method{write()} method, a \exception{RuntimeError}
 exception is raised.
 \indexii{standard}{output}
 \refbimodindex{sys}
-\ttindex{stdout}
+\withsubitem{(in module sys)}{\ttindex{stdout}}
 \exindex{RuntimeError}
 
 \section{The \keyword{return} statement\label{return}}
@@ -468,7 +468,7 @@ of the module searching and loading process are implementation and
 platform specific.  It generally involves searching for a ``built-in''
 module with the given name and then searching a list of locations
 given as \code{sys.path}.
-\ttindex{modules}
+\withsubitem{(in module sys)}{\ttindex{modules}}
 \ttindex{sys.modules}
 \indexii{module}{name}
 \indexii{built-in}{module}
@@ -511,7 +511,7 @@ Names bound by \keyword{import} statements may not occur in
 
 The \keyword{from} form with \code{*} may only occur in a module scope.
 \kwindex{from}
-\ttindex{from ... import *}
+\stindex{from}
 
 (The current implementation does not enforce the latter two
 restrictions, but programs should not abuse this freedom, as future
