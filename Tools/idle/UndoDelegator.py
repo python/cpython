@@ -49,6 +49,7 @@ class UndoDelegator(Delegator):
         self.was_saved = -1
         self.pointer = 0
         self.undolist = []
+        self.undoblock = 0  # or a CommandSequence instance
         self.set_saved(1)
 
     def set_saved(self, flag):
@@ -82,8 +83,40 @@ class UndoDelegator(Delegator):
     def delete(self, index1, index2=None):
         self.addcmd(DeleteCommand(index1, index2))
 
-    def addcmd(self, cmd):
-        cmd.do(self.delegate)
+    # Clients should call undo_block_start() and undo_block_stop()
+    # around a sequence of editing cmds to be treated as a unit by
+    # undo & redo.  Nested matching calls are OK, and the inner calls
+    # then act like nops.  OK too if no editing cmds, or only one
+    # editing cmd, is issued in between:  if no cmds, the whole
+    # sequence has no effect; and if only one cmd, that cmd is entered
+    # directly into the undo list, as if undo_block_xxx hadn't been
+    # called.  The intent of all that is to make this scheme easy
+    # to use:  all the client has to worry about is making sure each
+    # _start() call is matched by a _stop() call.
+
+    def undo_block_start(self):
+        if self.undoblock == 0:
+            self.undoblock = CommandSequence()
+        self.undoblock.bump_depth()
+
+    def undo_block_stop(self):
+        if self.undoblock.bump_depth(-1) == 0:
+            cmd = self.undoblock
+            self.undoblock = 0
+            if len(cmd) > 0:
+                if len(cmd) == 1:
+                    # no need to wrap a single cmd
+                    cmd = cmd.getcmd(0)
+                # this blk of cmds, or single cmd, has already
+                # been done, so don't execute it again
+                self.addcmd(cmd, 0)
+
+    def addcmd(self, cmd, execute=1):
+        if execute:
+            cmd.do(self.delegate)
+        if self.undoblock != 0:
+            self.undoblock.append(cmd)
+            return
         if self.can_merge and self.pointer > 0:
             lastcmd = self.undolist[self.pointer-1]
             if lastcmd.merge(cmd):
@@ -264,6 +297,44 @@ class DeleteCommand(Command):
         text.see('insert')
         ##sys.__stderr__.write("undo: %s\n" % self)
 
+class CommandSequence(Command):
+
+    # Wrapper for a sequence of undoable cmds to be undone/redone
+    # as a unit
+
+    def __init__(self):
+        self.cmds = []
+        self.depth = 0
+
+    def __repr__(self):
+        s = self.__class__.__name__
+        strs = []
+        for cmd in self.cmds:
+            strs.append("    " + `cmd`)
+        return s + "(\n" + string.join(strs, ",\n") + "\n)"
+
+    def __len__(self):
+        return len(self.cmds)
+
+    def append(self, cmd):
+        self.cmds.append(cmd)
+
+    def getcmd(self, i):
+        return self.cmds[i]
+
+    def redo(self, text):
+        for cmd in self.cmds:
+            cmd.redo(text)
+
+    def undo(self, text):
+        cmds = self.cmds[:]
+        cmds.reverse()
+        for cmd in cmds:
+            cmd.undo(text)
+
+    def bump_depth(self, incr=1):
+        self.depth = self.depth + incr
+        return self.depth
 
 def main():
     from Percolator import Percolator
