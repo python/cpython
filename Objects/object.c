@@ -308,96 +308,226 @@ PyObject_Str(PyObject *v)
 	return res;
 }
 
-#define NEW_STYLE_NUMBER(o) PyType_HasFeature((o)->ob_type, \
-				Py_TPFLAGS_NEWSTYLENUMBER)
+/* Map rich comparison operators to their swapped version, e.g. LT --> GT */
+static int swapped_op[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
+/* Try a genuine rich comparison, returning an object.  Return:
+   NULL for exception;
+   NotImplemented if this particular rich comparison is not implemented or
+     undefined;
+   some object not equal to NotImplemented if it is implemented
+     (this latter object may not be a Boolean).
+*/
+static PyObject *
+try_rich_compare(PyObject *v, PyObject *w, int op)
+{
+	richcmpfunc f;
+	PyObject *res;
+
+	if ((f = v->ob_type->tp_richcompare) != NULL) {
+		res = (*f)(v, w, op);
+		if (res != Py_NotImplemented)
+			return res;
+		Py_DECREF(res);
+	}
+	if ((f = w->ob_type->tp_richcompare) != NULL) {
+		return (*f)(w, v, swapped_op[op]);
+	}
+	res = Py_NotImplemented;
+	Py_INCREF(res);
+	return res;
+}
+
+/* Try a genuine rich comparison, returning an int.  Return:
+   -1 for exception (including the case where try_rich_compare() returns an
+      object that's not a Boolean);
+   0 if the outcome is false;
+   1 if the outcome is true;
+   2 if this particular rich comparison is not implemented or undefined.
+*/
 static int
-cmp_to_int(PyObject *result)
+try_rich_compare_bool(PyObject *v, PyObject *w, int op)
+{
+	PyObject *res;
+	int ok;
+
+	if (v->ob_type->tp_richcompare == NULL &&
+	    w->ob_type->tp_richcompare == NULL)
+		return 2; /* Shortcut, avoid INCREF+DECREF */
+	res = try_rich_compare(v, w, op);
+	if (res == NULL)
+		return -1;
+	if (res == Py_NotImplemented) {
+		Py_DECREF(res);
+		return 2;
+	}
+	ok = PyObject_IsTrue(res);
+	Py_DECREF(res);
+	return ok;
+}
+
+/* Try rich comparisons to determine a 3-way comparison.  Return:
+   -2 for an exception;
+   -1 if v < w;
+   0 if v == w;
+   1 if v > w;
+   2 if this particular rich comparison is not implemented or undefined.
+*/
+static int
+try_rich_to_3way_compare(PyObject *v, PyObject *w)
+{
+	if (v->ob_type->tp_richcompare == NULL &&
+	    w->ob_type->tp_richcompare == NULL)
+		return 2; /* Shortcut */
+	switch (try_rich_compare_bool(v, w, Py_LT)) {
+	case -1: /* Error */
+		return -1;
+	case 0: /* False: not less */
+		break;
+	case 1: /* True: less */
+		return -1;
+	case 2: /* NotImplemented */
+		break;
+	}
+	switch (try_rich_compare_bool(v, w, Py_GT)) {
+	case -1: /* Error */
+		return -1;
+	case 0: /* False: not greater */
+		break;
+	case 1: /* True: greater */
+		return 1;
+	case 2: /* NotImplemented */
+		break;
+	}
+	switch (try_rich_compare_bool(v, w, Py_EQ)) {
+	case -1: /* Error */
+		return -1;
+	case 0: /* False: not equal */
+		break;
+	case 1: /* True: equal */
+		return 0;
+	case 2: /* NotImplemented */
+		break;
+	}
+	return 2; /* XXX Even if all three returned FALSE?! */
+}
+
+/* Try a 3-way comparison, returning an int.  Return:
+   -2 for an exception;
+   -1 if v < w;
+   0 if v == w;
+   1 if v > w;
+   2 if this particular 3-way comparison is not implemented or undefined.
+*/
+static int
+try_3way_compare(PyObject *v, PyObject *w)
 {
 	int c;
-	if (result == NULL)
-		return -1;
-	if (!PyInt_Check(result)) {
-	    PyErr_SetString(PyExc_TypeError,
-			"comparison did not return an int");
-	    return -1;
+	cmpfunc f;
+
+	/* Comparisons involving instances are given to instance_compare,
+	   which has the same return conventions as this function. */
+
+	if (PyInstance_Check(v))
+		return (*v->ob_type->tp_compare)(v, w);
+	if (PyInstance_Check(w))
+		return (*w->ob_type->tp_compare)(v, w);
+
+	/* If the types are equal, don't bother with coercions etc. */
+	if (v->ob_type == w->ob_type) {
+		if ((f = v->ob_type->tp_compare) == NULL)
+			return 2;
+		c = (*f)(v, w);
+		if (PyErr_Occurred())
+			return -2;
+		return c < 0 ? -1 : c > 0 ? 1 : 0;
 	}
-	c = PyInt_AS_LONG(result);
-	Py_DECREF(result);
-	return (c < 0) ? -1 : (c > 0) ? 1 : 0;	
+
+	/* Try coercion; if it fails, give up */
+	c = PyNumber_CoerceEx(&v, &w);
+	if (c < 0)
+		return -2;
+	if (c > 0)
+		return 2;
+
+	/* Try v's comparison, if defined */
+	if ((f = v->ob_type->tp_compare) != NULL) {
+		c = (*f)(v, w);
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (PyErr_Occurred())
+			return -2;
+		return c < 0 ? -1 : c > 0 ? 1 : 0;
+	}
+
+	/* Try w's comparison, if defined */
+	if ((f = w->ob_type->tp_compare) != NULL) {
+		c = (*f)(w, v); /* swapped! */
+		Py_DECREF(v);
+		Py_DECREF(w);
+		if (PyErr_Occurred())
+			return -2;
+		return c < 0 ? 1 : c > 0 ? -1 : 0; /* negated! */
+	}
+
+	/* No comparison defined */
+	Py_DECREF(v);
+	Py_DECREF(w);
+	return 2;
 }
+
+/* Final fallback 3-way comparison, returning an int.  Return:
+   -2 if an error occurred;
+   -1 if v < w;
+   0 if v == w;
+   1 if v > w.
+*/
+static int
+default_3way_compare(PyObject *v, PyObject *w)
+{
+	int c;
+
+	if (v->ob_type == w->ob_type) {
+		/* same type: compare pointers */
+		void *vv = v;
+		void *ww = w;
+		return (vv < ww) ? -1 : (vv > ww) ? 1 : 0;
+	}
+
+	/* Special case for Unicode */
+	if (PyUnicode_Check(v) || PyUnicode_Check(w)) {
+		c = PyUnicode_Compare(v, w);
+		if (!PyErr_Occurred())
+			return c;
+		/* TypeErrors are ignored: if Unicode coercion fails due
+		   to one of the arguments not having the right type, we
+		   continue as defined by the coercion protocol (see
+		   above).  Luckily, decoding errors are reported as
+		   ValueErrors and are not masked by this technique. */
+		if (!PyErr_ExceptionMatches(PyExc_TypeError))
+			return -2;
+		PyErr_Clear();
+	}
+
+	/* different type: compare type names */
+	c = strcmp(v->ob_type->tp_name, w->ob_type->tp_name);
+	return (c < 0) ? -1 : (c > 0) ? 1 : 0;
+}
+
+#define CHECK_TYPES(o) PyType_HasFeature((o)->ob_type, Py_TPFLAGS_CHECKTYPES)
 
 static int
 do_cmp(PyObject *v, PyObject *w)
 {
-	PyNumberMethods *mv, *mw;
-	PyObject *x;
 	int c;
 
-	/* new style nb_cmp gets priority */
-	mv = v->ob_type->tp_as_number;
-	if (mv != NULL && NEW_STYLE_NUMBER(v) && mv->nb_cmp) {
-		x = (*mv->nb_cmp)(v, w);
-		if (x != Py_NotImplemented)
-			return cmp_to_int(x);
-		Py_DECREF(x);
-	}
-	mw = w->ob_type->tp_as_number;
-	if (mw != NULL && NEW_STYLE_NUMBER(w) && mw->nb_cmp) {
-		x = (*mw->nb_cmp)(v, w);
-		if (x != Py_NotImplemented)
-			return cmp_to_int(x);
-		Py_DECREF(x);
-	}
-	/* fall back to tp_compare */
-	if (v->ob_type == w->ob_type) {
-		if (v->ob_type->tp_compare != NULL) {
-			return (*v->ob_type->tp_compare)(v, w);
-		}
-		else {
-			Py_uintptr_t iv = (Py_uintptr_t)v;
-			Py_uintptr_t iw = (Py_uintptr_t)w;
-			return (iv < iw) ? -1 : (iv > iw) ? 1 : 0;
-		}
-	}
-	if (PyUnicode_Check(v) || PyUnicode_Check(w)) {
-	    c = PyUnicode_Compare(v, w);
-	    if (c == -1 &&
-		PyErr_Occurred() &&
-		PyErr_ExceptionMatches(PyExc_TypeError))
-		/* TypeErrors are ignored: if Unicode coercion
-		fails due to one of the arguments not having
-		the right type, we continue as defined by the
-		coercion protocol (see above). Luckily,
-		decoding errors are reported as ValueErrors and
-		are not masked by this technique. */
-		PyErr_Clear();
-	    else
+	c = try_rich_to_3way_compare(v, w);
+	if (c < 2)
 		return c;
-	}
-	/* fall back to coercion */
-	if (mv && mw && (!NEW_STYLE_NUMBER(v) || !NEW_STYLE_NUMBER(w))) {
-		/* old style operand, both operations numeric, coerce  */
-		int err = PyNumber_CoerceEx(&v, &w);
-		if (err < 0)
-			return -1;
-		if (err == 0) {
-			if (v->ob_type->tp_compare) {
-				c = (*v->ob_type->tp_compare)(v, w);
-			}
-			else {
-				Py_uintptr_t iv = (Py_uintptr_t)v;
-				Py_uintptr_t iw = (Py_uintptr_t)w;
-				c = (iv < iw) ? -1 : (iv > iw) ? 1 : 0;
-			}
-			Py_DECREF(v);
-			Py_DECREF(w);
-			return c;
-		}
-	}
-	/* last resort, use type names */
-	c = strcmp(v->ob_type->tp_name, w->ob_type->tp_name);
-	return (c < 0) ? -1: (c > 0) ? 1 : 0;
+	c = try_3way_compare(v, w);
+	if (c < 2)
+		return c;
+	return default_3way_compare(v, w);
 }
 
 PyObject *_PyCompareState_Key;
@@ -514,9 +644,92 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	}
 exit_cmp:
 	_PyCompareState_nesting--;
+	return result < 0 ? -1 : result;
+}
+
+static PyObject *
+try_3way_to_rich_compare(PyObject *v, PyObject *w, int op)
+{
+	int c;
+	PyObject *result;
+
+	c = try_3way_compare(v, w);
+	if (c <= -2)
+		return NULL;
+	if (c >= 2)
+		c = default_3way_compare(v, w);
+	switch (op) {
+	case Py_LT: c = c <  0; break;
+	case Py_LE: c = c <= 0; break;
+	case Py_EQ: c = c == 0; break;
+	case Py_NE: c = c != 0; break;
+	case Py_GT: c = c >  0; break;
+	case Py_GE: c = c >= 0; break;
+	}
+	result = c ? Py_True : Py_False;
+	Py_INCREF(result);
 	return result;
 }
 
+PyObject *
+do_richcmp(PyObject *v, PyObject *w, int op)
+{
+	PyObject *res;
+
+	res = try_rich_compare(v, w, op);
+	if (res != Py_NotImplemented)
+		return res;
+	Py_DECREF(res);
+
+	return try_3way_to_rich_compare(v, w, op);
+}
+
+PyObject *
+PyObject_RichCompare(PyObject *v, PyObject *w, int op)
+{
+	PyObject *res;
+
+	assert(Py_LT <= op && op <= Py_GE);
+
+	if (_PyCompareState_nesting > NESTING_LIMIT) {
+		/* Too deeply nested -- assume equal */
+		/* XXX This is an unfair shortcut!
+		   Should use the same logic as PyObject_Compare. */
+		switch (op) {
+		case Py_LT:
+		case Py_NE:
+		case Py_GT:
+			res = Py_False;
+			break;
+		case Py_LE:
+		case Py_EQ:
+		case Py_GE:
+			res = Py_True;
+			break;
+		}
+		Py_INCREF(res);
+		return res;
+	}
+
+	_PyCompareState_nesting++;
+	res = do_richcmp(v, w, op);
+	_PyCompareState_nesting--;
+
+	return res;
+}
+
+int
+PyObject_RichCompareBool(PyObject *v, PyObject *w, int op)
+{
+	PyObject *res = PyObject_RichCompare(v, w, op);
+	int ok;
+
+	if (res == NULL)
+		return -1;
+	ok = PyObject_IsTrue(res);
+	Py_DECREF(res);
+	return ok;
+}
 
 /* Set of hash utility functions to help maintaining the invariant that
 	iff a==b then hash(a)==hash(b)
@@ -804,10 +1017,11 @@ PyObject_Not(PyObject *v)
 
 /* Coerce two numeric types to the "larger" one.
    Increment the reference count on each argument.
-   Return -1 and raise an exception if no coercion is possible
-   (and then no reference count is incremented).
+   Return value:
+   -1 if an error occurred;
+   0 if the coercion succeeded (and then the reference counts are increased);
+   1 if no coercion is possible (and no error is raised).
 */
-
 int
 PyNumber_CoerceEx(PyObject **pv, PyObject **pw)
 {
@@ -833,6 +1047,11 @@ PyNumber_CoerceEx(PyObject **pv, PyObject **pw)
 	return 1;
 }
 
+/* Coerce two numeric types to the "larger" one.
+   Increment the reference count on each argument.
+   Return -1 and raise an exception if no coercion is possible
+   (and then no reference count is incremented).
+*/
 int
 PyNumber_Coerce(PyObject **pv, PyObject **pw)
 {
