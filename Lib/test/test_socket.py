@@ -284,22 +284,34 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1L<<34)
 
-    def testGetServByName(self):
-        # Testing getservbyname()
-        # try a few protocols - not everyone has telnet enabled
-        for proto in ("telnet", "ssh", "www", "ftp"):
+    def testGetServBy(self):
+        eq = self.assertEqual
+        # Find one service that exists, then check all the related interfaces.
+        # I've ordered this by protocols that have both a tcp and udp
+        # protocol, at least for modern Linuxes.
+        for service in ('ssh', 'www', 'echo', 'imap2'):
             try:
-                socket.getservbyname(proto, 'tcp')
-                break
-            except socket.error:
-                pass
-            try:
-                socket.getservbyname(proto, 'udp')
+                port = socket.getservbyname(service, 'tcp')
                 break
             except socket.error:
                 pass
         else:
             raise socket.error
+        # Try same call with optional protocol omitted
+        port2 = socket.getservbyname(service)
+        eq(port, port2)
+        # Try udp, but don't barf it it doesn't exist
+        try:
+            udpport = socket.getservbyname(service, 'udp')
+        except socket.error:
+            udpport = None
+        else:
+            eq(udpport, port)
+        # Now make sure the lookup by port returns the same service name
+        eq(socket.getservbyport(port2), service)
+        eq(socket.getservbyport(port, 'tcp'), service)
+        if udpport is not None:
+            eq(socket.getservbyport(udpport, 'udp'), service)
 
     def testDefaultTimeout(self):
         # Testing default timeout

@@ -25,7 +25,8 @@ Module interface:
 - socket.gethostbyaddr(IP address) --> (hostname, [alias, ...], [IP addr, ...])
 - socket.gethostname() --> host name (string: 'spam' or 'spam.domain.com')
 - socket.getprotobyname(protocolname) --> protocol number
-- socket.getservbyname(servicename, protocolname) --> port number
+- socket.getservbyname(servicename[, protocolname]) --> port number
+- socket.getservbyport(portnumber[, protocolname]) --> service name
 - socket.socket([family[, type [, proto]]]) --> new socket object
 - socket.ntohs(16 bit value) --> new int object
 - socket.ntohl(32 bit value) --> new int object
@@ -2884,9 +2885,9 @@ for a host.  The host argument is a string giving a host name or IP number.");
 static PyObject *
 socket_getservbyname(PyObject *self, PyObject *args)
 {
-	char *name, *proto;
+	char *name, *proto=NULL;
 	struct servent *sp;
-	if (!PyArg_ParseTuple(args, "ss:getservbyname", &name, &proto))
+	if (!PyArg_ParseTuple(args, "s|s:getservbyname", &name, &proto))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	sp = getservbyname(name, proto);
@@ -2899,11 +2900,42 @@ socket_getservbyname(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(getservbyname_doc,
-"getservbyname(servicename, protocolname) -> integer\n\
+"getservbyname(servicename[, protocolname]) -> integer\n\
 \n\
 Return a port number from a service name and protocol name.\n\
-The protocol name should be 'tcp' or 'udp'.");
+The optional protocol name, if given, should be 'tcp' or 'udp',\n\
+otherwise any protocol will match.");
 
+
+/* Python interface to getservbyport(port).
+   This only returns the service name, since the other info is already
+   known or not useful (like the list of aliases). */
+
+/*ARGSUSED*/
+static PyObject *
+socket_getservbyport(PyObject *self, PyObject *args)
+{
+	int port;
+	char *proto=NULL;
+	struct servent *sp;
+	if (!PyArg_ParseTuple(args, "i|s:getservbyport", &port, &proto))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	sp = getservbyport(htons(port), proto);
+	Py_END_ALLOW_THREADS
+	if (sp == NULL) {
+		PyErr_SetString(socket_error, "port/proto not found");
+		return NULL;
+	}
+	return PyString_FromString(sp->s_name);
+}
+
+PyDoc_STRVAR(getservbyport_doc,
+"getservbyport(port[, protocolname]) -> string\n\
+\n\
+Return the service name from a port number and protocol name.\n\
+The optional protocol name, if given, should be 'tcp' or 'udp',\n\
+otherwise any protocol will match.");
 
 /* Python interface to getprotobyname(name).
    This only returns the protocol number, since the other info is
@@ -3530,6 +3562,8 @@ static PyMethodDef socket_methods[] = {
 	 METH_VARARGS, gethostname_doc},
 	{"getservbyname",	socket_getservbyname,
 	 METH_VARARGS, getservbyname_doc},
+	{"getservbyport",	socket_getservbyport,
+	 METH_VARARGS, getservbyport_doc},
 	{"getprotobyname",	socket_getprotobyname,
 	 METH_VARARGS,getprotobyname_doc},
 #ifndef NO_DUP
