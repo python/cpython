@@ -143,3 +143,16 @@ def zfill(x, width):
 	if s[0] in ('-', '+'):
 		sign, s = s[0], s[1:]
 	return sign + '0'*(width-n) + s
+
+# Expand tabs in a string.
+# Doesn't take non-printing chars into account, but does understand \n.
+def expandtabs(s, tabsize):
+	res = line = ''
+	for c in s:
+		if c == '\t':
+			c = ' '*(tabsize - len(line)%tabsize)
+		line = line + c
+		if c == '\n':
+			res = res + line
+			line = ''
+	return res + line
