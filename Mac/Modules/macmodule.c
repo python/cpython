@@ -52,7 +52,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <fcntl.h>
 #endif
 
-#ifdef __MWERKS__
+#if defined(__MWERKS__) && defined(__powerc)
 #define MALLOC_DEBUG
 #endif
 
