@@ -58,6 +58,13 @@ def missed(ae):
 
 def unpackevent(ae):
 	parameters = {}
+	try:
+		dirobj = ae.AEGetParamDesc('----', '****')
+	except AE.Error:
+		pass
+	else:
+		parameters['----'] = unpack(dirobj)
+		del dirobj
 	while 1:
 		key = missed(ae)
 		if not key: break
