@@ -1224,8 +1224,6 @@ def test():
     if hasattr(socket, 'ssl'):
 
         for host, selector in (('sourceforge.net', '/projects/python'),
-                               ('dbserv2.theopalgroup.com', '/mediumfile'),
-                               ('dbserv2.theopalgroup.com', '/smallfile'),
                                ):
             print "https://%s%s" % (host, selector)
             hs = HTTPS()
@@ -1241,37 +1239,6 @@ def test():
             if headers:
                 for header in headers.headers: print header.strip()
             print
-
-    # Test a buggy server -- returns garbled status line.
-    # http://www.yahoo.com/promotions/mom_com97/supermom.html
-    c = HTTPConnection("promotions.yahoo.com")
-    c.set_debuglevel(1)
-    c.connect()
-    c.request("GET", "/promotions/mom_com97/supermom.html")
-    r = c.getresponse()
-    print r.status, r.version
-    lines = r.read().split("\n")
-    print "\n".join(lines[:5])
-
-    c = HTTPConnection("promotions.yahoo.com", strict=1)
-    c.set_debuglevel(1)
-    c.connect()
-    c.request("GET", "/promotions/mom_com97/supermom.html")
-    try:
-        r = c.getresponse()
-    except BadStatusLine, err:
-        print "strict mode failed as expected"
-        print err
-    else:
-        print "XXX strict mode should have failed"
-
-    for strict in 0, 1:
-        h = HTTP(strict=strict)
-        h.connect("promotions.yahoo.com")
-        h.putrequest('GET', "/promotions/mom_com97/supermom.html")
-        h.endheaders()
-        status, reason, headers = h.getreply()
-        assert (strict and status == -1) or status == 200, (strict, status)
 
 if __name__ == '__main__':
     test()
