@@ -1006,9 +1006,8 @@ dict_items(register dictobject *mp)
 	ep = mp->ma_table;
 	mask = mp->ma_mask;
 	for (i = 0, j = 0; i <= mask; i++) {
-		if (ep[i].me_value != NULL) {
+		if ((value=ep[i].me_value) != NULL) {
 			key = ep[i].me_key;
-			value = ep[i].me_value;
 			item = PyList_GET_ITEM(v, j);
 			Py_INCREF(key);
 			PyTuple_SET_ITEM(item, 0, key);
