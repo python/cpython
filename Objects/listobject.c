@@ -357,8 +357,17 @@ list_ass_slice(a, ilow, ihigh, v)
 #define b ((listobject *)v)
 	if (v == NULL)
 		n = 0;
-	else if (is_listobject(v))
+	else if (is_listobject(v)) {
 		n = b->ob_size;
+		if (a == b) {
+			/* Special case "a[i:j] = a" -- copy b first */
+			int ret;
+			v = list_slice(b, 0, n);
+			ret = list_ass_slice(a, ilow, ihigh, v);
+			DECREF(v);
+			return ret;
+		}
+	}
 	else {
 		err_badarg();
 		return -1;
