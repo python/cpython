@@ -27,7 +27,7 @@ files), and \var{type} is the file type, which has one of the values
 below.
 \end{funcdesc}
 
-\begin{funcdesc}{find_module}{name\, \optional{path}}
+\begin{funcdesc}{find_module}{name\optional{, path}}
 Try to find the module \var{name} on the search path \var{path}.  If
 \var{path} is a list of directory names, each directory is searched
 for files with any of the suffixes returned by \code{get_suffixes()}
@@ -86,7 +86,7 @@ is raised.  This is best done using a try-finally statement.
 
 \begin{funcdesc}{new_module}{name}
 Return a new empty module object called \var{name}.  This object is
-{\em not} inserted in \code{sys.modules}.
+\emph{not} inserted in \code{sys.modules}.
 \end{funcdesc}
 
 The following constants with integer values, defined in this module,
@@ -118,7 +118,7 @@ The module was found as a built-in module.
 \end{datadesc}
 
 \begin{datadesc}{PY_FROZEN}
-The module was found as a frozen module (see \code{init_frozen}).
+The module was found as a frozen module (see \code{init_frozen()}).
 \end{datadesc}
 
 The following constant and functions are obsolete; their functionality
@@ -132,7 +132,7 @@ Unused.
 \begin{funcdesc}{init_builtin}{name}
 Initialize the built-in module called \var{name} and return its module
 object.  If the module was already initialized, it will be initialized
-{\em again}.  A few modules cannot be initialized twice --- attempting
+\emph{again}.  A few modules cannot be initialized twice --- attempting
 to initialize these again will raise an \code{ImportError} exception.
 If there is no
 built-in module called \var{name}, \code{None} is returned.
@@ -141,30 +141,30 @@ built-in module called \var{name}, \code{None} is returned.
 \begin{funcdesc}{init_frozen}{name}
 Initialize the frozen module called \var{name} and return its module
 object.  If the module was already initialized, it will be initialized
-{\em again}.  If there is no frozen module called \var{name},
+\emph{again}.  If there is no frozen module called \var{name},
 \code{None} is returned.  (Frozen modules are modules written in
 Python whose compiled byte-code object is incorporated into a
 custom-built Python interpreter by Python's \code{freeze} utility.
-See \code{Tools/freeze} for now.)
+See \file{Tools/freeze} for now.)
 \end{funcdesc}
 
 \begin{funcdesc}{is_builtin}{name}
 Return \code{1} if there is a built-in module called \var{name} which can be
 initialized again.  Return \code{-1} if there is a built-in module
 called \var{name} which cannot be initialized again (see
-\code{init_builtin}).  Return \code{0} if there is no built-in module
+\code{init_builtin()}).  Return \code{0} if there is no built-in module
 called \var{name}.
 \end{funcdesc}
 
 \begin{funcdesc}{is_frozen}{name}
-Return \code{1} if there is a frozen module (see \code{init_frozen})
+Return \code{1} if there is a frozen module (see \code{init_frozen()})
 called \var{name}, \code{0} if there is no such module.
 \end{funcdesc}
 
-\begin{funcdesc}{load_compiled}{name\, pathname\, file}
+\begin{funcdesc}{load_compiled}{name, pathname, file}
 Load and initialize a module implemented as a byte-compiled code file
 and return its module object.  If the module was already initialized,
-it will be initialized {\em again}.  The \var{name} argument is used
+it will be initialized \emph{again}.  The \var{name} argument is used
 to create or access a module object.  The \var{pathname} argument
 points to the byte-compiled code file.  The \var{file}
 argument is the byte-compiled code file, open for reading in binary
@@ -173,10 +173,10 @@ It must currently be a real file object, not a
 user-defined class emulating a file.
 \end{funcdesc}
 
-\begin{funcdesc}{load_dynamic}{name\, pathname\, \optional{file}}
+\begin{funcdesc}{load_dynamic}{name, pathname\optional{, file}}
 Load and initialize a module implemented as a dynamically loadable
 shared library and return its module object.  If the module was
-already initialized, it will be initialized {\em again}.  Some modules
+already initialized, it will be initialized \emph{again}.  Some modules
 don't like that and may raise an exception.  The \var{pathname}
 argument must point to the shared library.  The \var{name} argument is
 used to construct the name of the initialization function: an external
@@ -189,7 +189,7 @@ support it.)
 \begin{funcdesc}{load_source}{name\, pathname\, file}
 Load and initialize a module implemented as a Python source file and
 return its module object.  If the module was already initialized, it
-will be initialized {\em again}.  The \var{name} argument is used to
+will be initialized \emph{again}.  The \var{name} argument is used to
 create or access a module object.  The \var{pathname} argument points
 to the source file.  The \var{file} argument is the source
 file, open for reading as text, from the beginning.
@@ -231,5 +231,6 @@ def __import__(name, globals=None, locals=None, fromlist=None):
 
 A more complete example that implements hierarchical module names and
 includes a \code{reload()} function can be found in the standard
-module \code{knee} (which is intended as an example only -- don't rely
-on any part of it being a standard interface).
+module \code{knee}\refstmodindex{knee} (which is intended as an
+example only -- don't rely on any part of it being a standard
+interface).
