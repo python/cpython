@@ -396,7 +396,7 @@ class ZipFile:
             zinfo = ZipInfo(filename, date_time)
         else:
             zinfo = ZipInfo(arcname, date_time)
-        zinfo.external_attr = st[0] << 16L      # Unix attributes
+        zinfo.external_attr = (st[0] & 0xFFFF) << 16L      # Unix attributes
         if compress_type is None:
             zinfo.compress_type = self.compression
         else:
