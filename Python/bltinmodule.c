@@ -87,32 +87,6 @@ builtin_apply(self, args)
 	return call_object(func, arglist);
 }
 
-static int
-callable(x)
-	object *x;
-{
-	if (x == NULL)
-		return 0;
-	if (x->ob_type->tp_call != NULL ||
-	    is_funcobject(x) ||
-	    is_instancemethodobject(x) ||
-	    is_methodobject(x) ||
-	    is_classobject(x))
-		return 1;
-	if (is_instanceobject(x)) {
-		object *call = getattr(x, "__call__");
-		if (call == NULL) {
-			err_clear();
-			return 0;
-		}
-		/* Could test recursively but don't, for fear of endless
-		   recursion if some joker sets self.__call__ = self */
-		DECREF(call);
-		return 1;
-	}
-	return 0;
-}
-
 static object *
 builtin_callable(self, args)
 	object *self;
@@ -420,8 +394,6 @@ builtin_execfile(self, args)
 	object *globals = None, *locals = None;
 	object *res;
 	FILE* fp;
-	char *s;
-	int n;
 
 	if (!newgetargs(args, "s|O!O!:execfile",
 			&filename,
@@ -1050,7 +1022,6 @@ builtin_xrange(self, args)
 {
 	long ilow = 0, ihigh = 0, istep = 1;
 	long n;
-	object *v;
 
 	if (gettuplesize(args) <= 1) {
 		if (!newgetargs(args,
