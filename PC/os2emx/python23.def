@@ -257,6 +257,9 @@ EXPORTS
   "PyDict_Type"
   "PyDictIter_Type"
 
+; From python23_s.lib(enumobject)
+  "PyEnum_Type"
+
 ; From python23_s.lib(fileobject)
   "PyFile_AsFile"
   "PyFile_Name"
@@ -536,6 +539,7 @@ EXPORTS
   "PyUnicodeUCS2_Compare"
   "PyUnicodeUCS2_Contains"
   "PyUnicodeUCS2_Concat"
+  "_PyUnicode_XStrip"
   "PyUnicodeUCS2_Replace"
   "PyUnicodeUCS2_Split"
   "PyUnicodeUCS2_Format"
