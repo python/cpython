@@ -723,8 +723,9 @@ Noddy_traverse(Noddy *self, visitproc visit, void *arg)
 \end{verbatim}
 
 For each subobject that can participate in cycles, we need to call the
-\cfunction{visit} function passed to the traversal method passing the
-subobject and the extra argument passed to the traversal method.
+\cfunction{visit} function, which is passed to the traversal method.
+The \cfunction{visit} function takes as arguments the subobject and
+the extra argument \var{arg} passed to the traversal method.
 
 We also need to provide a method for clearing any subobjects that can
 participate in cycles.  We implement the method and reimplement the
@@ -757,7 +758,7 @@ Finally, we add the \constant{Py_TPFLAGS_HAVE_GC} flag to the class flags:
 \end{verbatim}
 
 That's pretty much it.  If we had written custom \member{tp_alloc} or
-\member{tp_free} slots, we'd need to modify then for cyclic-garbage
+\member{tp_free} slots, we'd need to modify them for cyclic-garbage
 collection. Most extensions will use the versions automatically
 provided.
 
