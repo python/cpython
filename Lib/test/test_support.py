@@ -79,3 +79,12 @@ def verify(condition, reason='test failed'):
 
     if not condition:
         raise TestFailed(reason)
+
+def check_syntax(statement):
+    try:
+        compile(statement, '<string>', 'exec')
+    except SyntaxError:
+        pass
+    else:
+        print 'Missing SyntaxError: "%s"' % statement
+

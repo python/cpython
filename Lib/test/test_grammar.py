@@ -3,14 +3,6 @@
 
 from test_support import *
 
-def check_syntax(statement):
-    try:
-        compile(statement, '<string>', 'exec')
-    except SyntaxError:
-        print 'SyntaxError expected for "%s"' % statement
-    else:
-        print 'Missing SyntaxError: "%s"' % statement
-
 print '1. Parser'
 
 print '1.1 Tokens'
@@ -279,6 +271,9 @@ x = y = z = 1, 2, 3
 x, y, z = 1, 2, 3
 abc = a, b, c = x, y, z = xyz = 1, 2, (3, 4)
 # NB these variables are deleted below
+
+check_syntax("x + 1 = 1")
+check_syntax("a + 1 = b + 2")
 
 print 'print_stmt' # 'print' (test ',')* [test]
 print 1, 2, 3
