@@ -105,7 +105,8 @@ expressions no longer produce a warning and instead produce a
 different result that's usually a long integer.
 
 The problematic expressions are primarily left shifts and lengthy
-hexadecimal and octal constants.  For example, \code{2 << 32} results
+hexadecimal and octal constants.  For example,
+\code{2 \textless{}\textless{} 32} results
 in a warning in 2.3, evaluating to 0 on 32-bit platforms.  In Python
 2.4, this expression now returns the correct answer, 8589934592.
 
@@ -368,7 +369,7 @@ floating-point number and not a \class{Decimal}.  Instances also have a \method{
 >>> cmath.sqrt(-d)
 351364.18288201344j
 >>> d.sqrt()
-Decimal(``351364.1828820134592177245001'')
+Decimal("351364.1828820134592177245001")
 \end{verbatim}
 
 
@@ -396,10 +397,10 @@ to alter the default precision, rounding, or trap handling.
 >>> decimal.getcontext().prec
 28
 >>> decimal.Decimal(1) / decimal.Decimal(7)
-Decimal(``0.1428571428571428571428571429'')
+Decimal("0.1428571428571428571428571429")
 >>> decimal.getcontext().prec = 9 
 >>> decimal.Decimal(1) / decimal.Decimal(7)
-Decimal(``0.142857143'')
+Decimal("0.142857143")
 \end{verbatim}
 
 The default action for error conditions is to return a special value
@@ -408,7 +409,7 @@ be raised:
 
 \begin{verbatim}
 >>> decimal.Decimal(1) / decimal.Decimal(0)
-Decimal(``Infinity'')
+Decimal("Infinity")
 >>> decimal.getcontext().trap_enablers[decimal.DivisionByZero] = True
 >>> decimal.Decimal(1) / decimal.Decimal(0)
 Traceback (most recent call last):
@@ -425,7 +426,7 @@ numbers such as \method{to_eng_string()} and \method{to_sci_string()}.
 \seepep{327}{Decimal Data Type}{Written by Facundo Batista and implemented
   by Facundo Batista, Eric Price, Raymond Hettinger, Aahz, and Tim Peters.}
 
-\seeurl{http://research.microsoft.com/~hollasch/cgindex/coding/ieeefloat.html}
+\seeurl{http://research.microsoft.com/\textasciitilde hollasch/cgindex/coding/ieeefloat.html}
 {A more detailed overview of the IEEE-754 representation.}
 
 \seeurl{http://www.lahey.com/float.htm}
@@ -436,7 +437,7 @@ that floating-point inaccuracy can cause.}
 {A description of a decimal-based representation.  This representation
 is being proposed as a standard, and underlies the new Python decimal
 type.  Much of this material was written by Mike Cowlishaw, designer of the
-REXX language.}
+Rexx language.}
 
 \end{seealso}      
 
@@ -584,7 +585,7 @@ Previously this had to be a regular Python dictionary.
 
 \begin{itemize}
 
-\item The inner loops for list and tupleslicing
+\item The inner loops for list and tuple slicing
  were optimized and now run about one-third faster.  The inner
  loops were also optimized for dictionaries with performance
  boosts to \method{keys()}, \method{values()}, \method{items()},
@@ -857,7 +858,7 @@ tranmitting multiple XML-RPC calls in a single HTTP operation.
 
 
 %======================================================================
-% whole new modules get described in \subsections here
+% whole new modules get described in subsections here
 
 \subsection{cookielib}
 
