@@ -492,7 +492,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     behaviour of only calling it on flush() is preserved.*/
   if (err == Z_STREAM_END) {
     Py_XDECREF(self->unused_data);  /* Free the original, empty string */
-    self->unused_data = PyString_FromStringAndSize(self->zst.next_in,
+    self->unused_data = PyString_FromStringAndSize((char *)self->zst.next_in,
 						   self->zst.avail_in);
     if (self->unused_data == NULL) {
       PyErr_SetString(PyExc_MemoryError,
