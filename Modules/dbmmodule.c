@@ -7,7 +7,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+/* Some Linux systems install gdbm/ndbm.h, but not ndbm.h.  This supports
+ * whichever configure was able to locate.
+ */
+#if defined(HAVE_NDBM_H)
 #include <ndbm.h>
+#elif defined(HAVE_GDBM_NDBM_H)
+#include <gdbm/ndbm.h>
+#else
+#error "No ndbm.h available!"
+#endif
 
 typedef struct {
 	PyObject_HEAD
