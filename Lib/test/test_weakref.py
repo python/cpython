@@ -216,6 +216,14 @@ class ReferencesTestCase(TestBase):
         self.assert_(weakref.getweakrefs(o) == [ref1],
                      "list of refs does not match")
 
+    def test_newstyle_number_ops(self):
+        class F(float):
+            pass
+        f = F(2.0)
+        p = weakref.proxy(f)
+        self.assert_(p + 1.0 == 3.0)
+        self.assert_(1.0 + p == 3.0)  # this used to SEGV
+
 
 class Object:
     def __init__(self, arg):
