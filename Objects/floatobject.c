@@ -257,7 +257,11 @@ float_add(v, w)
 	floatobject *v;
 	floatobject *w;
 {
-	return newfloatobject(v->ob_fval + w->ob_fval);
+	double result;
+	PyFPE_START_PROTECT("add", return 0)
+	result = v->ob_fval + w->ob_fval;
+	PyFPE_END_PROTECT
+	return newfloatobject(result);
 }
 
 static object *
@@ -265,7 +269,11 @@ float_sub(v, w)
 	floatobject *v;
 	floatobject *w;
 {
-	return newfloatobject(v->ob_fval - w->ob_fval);
+	double result;
+	PyFPE_START_PROTECT("subtract", return 0)
+	result = v->ob_fval - w->ob_fval;
+	PyFPE_END_PROTECT
+	return newfloatobject(result);
 }
 
 static object *
@@ -273,7 +281,12 @@ float_mul(v, w)
 	floatobject *v;
 	floatobject *w;
 {
-	return newfloatobject(v->ob_fval * w->ob_fval);
+	double result;
+
+	PyFPE_START_PROTECT("multiply", return 0)
+	result = v->ob_fval * w->ob_fval;
+	PyFPE_END_PROTECT
+	return newfloatobject(result);
 }
 
 static object *
@@ -281,11 +294,15 @@ float_div(v, w)
 	floatobject *v;
 	floatobject *w;
 {
+	double result;
 	if (w->ob_fval == 0) {
 		err_setstr(ZeroDivisionError, "float division");
 		return NULL;
 	}
-	return newfloatobject(v->ob_fval / w->ob_fval);
+	PyFPE_START_PROTECT("divide", return 0)
+	result = v->ob_fval / w->ob_fval;
+	PyFPE_END_PROTECT
+	return newfloatobject(result);
 }
 
 static object *
@@ -300,6 +317,7 @@ float_rem(v, w)
 		err_setstr(ZeroDivisionError, "float modulo");
 		return NULL;
 	}
+	PyFPE_START_PROTECT("modulo", return 0)
 	vx = v->ob_fval;
 	mod = fmod(vx, wx);
 	/* div = (vx - mod) / wx; */
@@ -307,6 +325,7 @@ float_rem(v, w)
 		mod += wx;
 		/* div -= 1.0; */
 	}
+	PyFPE_END_PROTECT
 	return newfloatobject(mod);
 }
 
@@ -322,6 +341,7 @@ float_divmod(v, w)
 		err_setstr(ZeroDivisionError, "float divmod()");
 		return NULL;
 	}
+	PyFPE_START_PROTECT("divmod", return 0)
 	vx = v->ob_fval;
 	mod = fmod(vx, wx);
 	div = (vx - mod) / wx;
@@ -329,6 +349,7 @@ float_divmod(v, w)
 		mod += wx;
 		div -= 1.0;
 	}
+	PyFPE_END_PROTECT
 	return mkvalue("(dd)", div, mod);
 }
 
@@ -367,18 +388,22 @@ float_pow(v, w, z)
 	if (iw == intw && -10000 < intw && intw < 10000) {
 		/* Sort out special cases here instead of relying on pow() */
 		if (intw == 0) { 		/* x**0 is 1, even 0**0 */
+			PyFPE_START_PROTECT("pow", return 0)
 		 	if ((object *)z!=None) {
 			 	ix=fmod(1.0, z->ob_fval);
 			 	if (ix!=0 && z->ob_fval<0) ix+=z->ob_fval;
 			}
 		 	else ix=1.0;
+			PyFPE_END_PROTECT
 	    		return newfloatobject(ix); 
 		}
 		errno = 0;
+		PyFPE_START_PROTECT("pow", return 0)
 		if (intw > 0)
 			ix = powu(iv, intw);
 		else
 			ix = 1./powu(iv, -intw);
+		PyFPE_END_PROTECT
 	}
 	else {
 		/* Sort out special cases here instead of relying on pow() */
@@ -396,7 +421,9 @@ float_pow(v, w, z)
 			return NULL;
 		}
 		errno = 0;
+		PyFPE_START_PROTECT("pow", return 0)
 		ix = pow(iv, iw);
+		PyFPE_END_PROTECT
 	}
 	CHECK(ix);
 	if (errno != 0) {
@@ -405,11 +432,13 @@ float_pow(v, w, z)
 		return NULL;
 	}
  	if ((object *)z!=None) {
+		PyFPE_START_PROTECT("pow", return 0)
 	 	ix=fmod(ix, z->ob_fval);	/* XXX To Be Rewritten */
 	 	if ( ix!=0 &&
 		      ((iv<0 && z->ob_fval>0) || (iv>0 && z->ob_fval<0) )) {
 		     ix+=z->ob_fval;
 		    }
+		PyFPE_END_PROTECT
 	}
 	return newfloatobject(ix);
 }
