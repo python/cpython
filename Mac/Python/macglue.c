@@ -826,6 +826,20 @@ PyMac_GetStr255(PyObject *v, Str255 pbuf)
 PyObject *
 PyMac_BuildStr255(Str255 s)
 {
+	if ( s == NULL ) {
+		PyErr_SetString(PyExc_SystemError, "Str255 pointer is NULL");
+		return NULL;
+	}
+	return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
+}
+
+PyObject *
+PyMac_BuildOptStr255(Str255 s)
+{
+	if ( s == NULL ) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
 	return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
 }
 
