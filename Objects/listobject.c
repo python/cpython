@@ -630,9 +630,12 @@ insertionsort(array, size, compare)
 }
 
 /* MINSIZE is the smallest array we care to partition; smaller arrays
-   are sorted using a straight insertion sort (above).  You may want
-   to play with this to tune it for your system.  It must be at least
-   2; more than 20 probably doesn't make sense. */
+   are sorted using a straight insertion sort (above).  It must be at
+   least 2 for the quicksort implementation to work.  Assuming that
+   comparisons are more expensive than everything else (and this is a
+   good assumption for Python), it should be 10, which is the cutoff
+   point: quicksort requires more comparisons than insertion sort for
+   smaller arrays. */
 #define MINSIZE 10
 
 /* STACKSIZE is the size of our work stack.  A rough estimate is that
