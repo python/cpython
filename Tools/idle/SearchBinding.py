@@ -84,7 +84,6 @@ class SearchBinding:
         return "break"
 
     def goto_line_event(self, event):
-        print event
         text = self.editwin.text
         lineno = tkSimpleDialog.askinteger("Goto",
                                            "Go to line number:",
