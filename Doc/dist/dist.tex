@@ -1462,27 +1462,23 @@ The installation script runs embedded in the windows installer, every
 output (\code{sys.stdout}, \code{sys.stderr}) is redirected into a
 buffer and will be displayed in the GUI after the script has finished.
 
-Some functions especially useful in this context are available in the
-installation script.
+Some functions especially useful in this context are available as
+additional built-in functions in the installation script.
 
-\begin{verbatim}
-directory_created(pathname)
-file_created(pathname)
-\end{verbatim}
+\begin{funcdesc}{directory_created}{path}
+\funcline{file_created}{path}
+  These functions should be called when a directory or file is created
+  by the postinstall script at installation time.  It will register
+  \var{path} with the uninstaller, so that it will be removed when the
+  distribution is uninstalled.  To be safe, directories are only removed
+  if they are empty.
+\end{funcdesc}
 
-These functions should be called when a directory or file is created
-by the postinstall script at installation time.  It will register the
-pathname with the uninstaller, so that it will be removed when the
-distribution is uninstalled.  To be safe, directories are only removed
-if they are empty.
-
-\begin{verbatim}
-get_special_folder_path(csidl_string)
-\end{verbatim}
-
-This function can be used to retrieve special folder locations on
-Windows like the Start Menu or the Desktop.  It returns the full path
-to the folder.  'csidl_string' must be one of the following strings:
+\begin{funcdesc}{get_special_folder_path}{csidl_string}
+  This function can be used to retrieve special folder locations on
+  Windows like the Start Menu or the Desktop.  It returns the full
+  path to the folder.  \var{csidl_string} must be one of the following
+  strings:
 
 \begin{verbatim}
 "CSIDL_APPDATA"
@@ -1502,27 +1498,30 @@ to the folder.  'csidl_string' must be one of the following strings:
 "CSIDL_FONTS"
 \end{verbatim}
 
-If the folder cannot be retrieved, \exception{OSError} is raised.
+  If the folder cannot be retrieved, \exception{OSError} is raised.
 
-Which folders are available depends on the exact Windows version, and probably
-also the configuration. For details refer to Microsoft's documentation of the
-\cfunction{SHGetSpecialFolderPath()} function.
+  Which folders are available depends on the exact Windows version,
+  and probably also the configuration.  For details refer to
+  Microsoft's documentation of the
+  \cfunction{SHGetSpecialFolderPath()} function.
+\end{funcdesc}
 
-\begin{verbatim}
-create_shortcut(target, description, filename[, arguments[,
-                workdir[, iconpath[, iconindex]]]])
-\end{verbatim}
-
-This function creates a shortcut.
-\var{target} is the path to the program to be started by the shortcut.
-\var{description} is the description of the sortcut.
-\var{filename} is the title of the shortcut that the user will see.
-\var{arguments} specifies the command line arguments, if any.
-\var{workdir} is the working directory for the program.
-\var{iconpath} is the file containing the icon for the shortcut,
-and \var{iconindex} is the index of the icon in the file
-\var{iconpath}.  Again, for details consult the Microsoft
-documentation for the \class{IShellLink} interface.
+\begin{funcdesc}{create_shortcut}{target, description,
+                                  filename\optional{,
+                                  arguments\optional{,
+                                  workdir\optional{,
+                                  iconpath\optional{, iconindex}}}}}
+  This function creates a shortcut.
+  \var{target} is the path to the program to be started by the shortcut.
+  \var{description} is the description of the sortcut.
+  \var{filename} is the title of the shortcut that the user will see.
+  \var{arguments} specifies the command line arguments, if any.
+  \var{workdir} is the working directory for the program.
+  \var{iconpath} is the file containing the icon for the shortcut,
+  and \var{iconindex} is the index of the icon in the file
+  \var{iconpath}.  Again, for details consult the Microsoft
+  documentation for the \class{IShellLink} interface.
+\end{funcdesc}
 
 \section{Registering with the Package Index}
 \label{package-index}
