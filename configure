@@ -4316,6 +4316,106 @@ rm -f conftest*
 echo "$as_me:$LINENO: result: $was_it_defined" >&5
 echo "${ECHO_T}$was_it_defined" >&6
 
+# Check whether using makedev requires defining _OSF_SOURCE
+echo "$as_me:$LINENO: checking for makedev" >&5
+echo $ECHO_N "checking for makedev... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+ #include <sys/types.h>
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+ makedev(0, 0)
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_has_makedev=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_has_makedev=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_has_makedev" = "no"; then
+    # we didn't link, try if _OSF_SOURCE will allow us to link
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+    #define _OSF_SOURCE 1
+    #include <sys/types.h>
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+ makedev(0, 0)
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_has_makedev=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_has_makedev=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+    if test "$ac_cv_has_makedev" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define _OSF_SOURCE 1
+_ACEOF
+
+    fi
+fi
+echo "$as_me:$LINENO: result: $ac_cv_has_makedev" >&5
+echo "${ECHO_T}$ac_cv_has_makedev" >&6
+if test "$ac_cv_has_makedev" = "yes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MAKEDEV 1
+_ACEOF
+
+fi
+
 # Two defines needed to enable largefile support on various platforms
 # These may affect some typedefs
 

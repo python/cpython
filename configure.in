@@ -623,6 +623,30 @@ AC_EGREP_HEADER(clock_t, time.h, was_it_defined=yes, [
 ])
 AC_MSG_RESULT($was_it_defined)
 
+# Check whether using makedev requires defining _OSF_SOURCE
+AC_MSG_CHECKING(for makedev)
+AC_TRY_LINK([ #include <sys/types.h> ],
+	    [ makedev(0, 0) ],
+	    ac_cv_has_makedev=yes,
+	    ac_cv_has_makedev=no)
+if test "$ac_cv_has_makedev" = "no"; then
+    # we didn't link, try if _OSF_SOURCE will allow us to link
+    AC_TRY_LINK([
+    #define _OSF_SOURCE 1
+    #include <sys/types.h>
+    ],
+    [ makedev(0, 0) ],
+    ac_cv_has_makedev=yes,
+    ac_cv_has_makedev=no)
+    if test "$ac_cv_has_makedev" = "yes"; then
+        AC_DEFINE(_OSF_SOURCE, 1, [Define _OSF_SOURCE to get the makedev macro.])
+    fi
+fi
+AC_MSG_RESULT($ac_cv_has_makedev)
+if test "$ac_cv_has_makedev" = "yes"; then
+    AC_DEFINE(HAVE_MAKEDEV, 1, [Define this if you have the makedev macro.])
+fi
+
 # Two defines needed to enable largefile support on various platforms
 # These may affect some typedefs
 AC_DEFINE(_LARGEFILE_SOURCE, 1, 
