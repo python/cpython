@@ -317,6 +317,7 @@ builtin_input(self, v)
 	FILE *out = sysgetfile("stdout", stdout);
 	node *n;
 	int err;
+	int c;
 	object *m, *d;
 	flushline();
 	if (v != NULL) {
@@ -325,6 +326,9 @@ builtin_input(self, v)
 	}
 	m = add_module("__main__");
 	d = getmoduledict(m);
+	while ((c = getc(in)) != EOF && (c == ' ' || c == '\t'))
+		;
+	ungetc(c, in);
 	return run_file(in, "<stdin>", expr_input, d, d);
 }
 
