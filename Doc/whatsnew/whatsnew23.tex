@@ -1796,10 +1796,10 @@ Any breakage caused by this change should be reported as a bug.
 to convert between a Unicode domain name and the ASCII-compatible
 encoding (ACE).
 
-\begin{verbatim}
->>> u"www.Alliancefran\,caise.nu".encode("idna")
+\begin{alltt}
+>>> u"www.Alliancefran\c{c}aise.nu".encode("idna")
 'www.xn--alliancefranaise-npb.nu'
-\end{verbatim}
+\end{alltt}
 
 In addition, the \module{socket} has been extended to transparently
 convert Unicode hostnames to the ACE before passing them to the C
