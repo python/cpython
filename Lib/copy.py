@@ -97,44 +97,26 @@ def copy(x):
 
 _copy_dispatch = d = {}
 
-def _copy_atomic(x):
+def _copy_immutable(x):
     return x
-d[types.NoneType] = _copy_atomic
-d[types.IntType] = _copy_atomic
-d[types.LongType] = _copy_atomic
-d[types.FloatType] = _copy_atomic
-d[types.BooleanType] = _copy_atomic
-try:
-    d[types.ComplexType] = _copy_atomic
-except AttributeError:
-    pass
-d[types.StringType] = _copy_atomic
-try:
-    d[types.UnicodeType] = _copy_atomic
-except AttributeError:
-    pass
-try:
-    d[types.CodeType] = _copy_atomic
-except AttributeError:
-    pass
-d[types.TypeType] = _copy_atomic
-d[types.XRangeType] = _copy_atomic
-d[types.ClassType] = _copy_atomic
-d[types.BuiltinFunctionType] = _copy_atomic
+for t in (types.NoneType, int, long, float, bool, str, tuple,
+          frozenset, type, xrange, types.ClassType,
+          types.BuiltinFunctionType):
+    d[t] = _copy_immutable
+for name in ("ComplexType", "UnicodeType", "CodeType"):
+    t = getattr(types, name, None)
+    if t is not None:
+        d[t] = _copy_immutable
 
-def _copy_list(x):
-    return x[:]
-d[types.ListType] = _copy_list
+def _copy_with_constructor(x):
+    return type(x)(x)
+for t in (list, dict, set):
+    d[t] = _copy_with_constructor
 
-def _copy_tuple(x):
-    return x[:]
-d[types.TupleType] = _copy_tuple
-
-def _copy_dict(x):
+def _copy_with_copy_method(x):
     return x.copy()
-d[types.DictionaryType] = _copy_dict
 if PyStringMap is not None:
-    d[PyStringMap] = _copy_dict
+    d[PyStringMap] = _copy_with_copy_method
 
 def _copy_inst(x):
     if hasattr(x, '__copy__'):
