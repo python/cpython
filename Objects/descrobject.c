@@ -673,7 +673,7 @@ proxy_getiter(proxyobject *pp)
 	return PyObject_GetIter(pp->dict);
 }
 
-PyObject *
+static PyObject *
 proxy_str(proxyobject *pp)
 {
 	return PyObject_Str(pp->dict);
@@ -693,7 +693,7 @@ proxy_traverse(PyObject *self, visitproc visit, void *arg)
 	return 0;
 }
 
-PyTypeObject proxytype = {
+static PyTypeObject proxytype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"dict-proxy",				/* tp_name */
@@ -827,7 +827,7 @@ wrapper_traverse(PyObject *self, visitproc visit, void *arg)
 	return 0;
 }
 
-PyTypeObject wrappertype = {
+static PyTypeObject wrappertype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"method-wrapper",			/* tp_name */
