@@ -6,6 +6,8 @@ This module has intimate knowledge of the format of .pyc files.
 import imp
 MAGIC = imp.get_magic()
 
+__all__ = ["compile"]
+
 def wr_long(f, x):
     """Internal; write a 32-bit int to a file in little-endian order."""
     f.write(chr( x        & 0xff))

@@ -59,6 +59,8 @@ import imp
 import re
 import string
 
+__all__ = ["readmodule"]
+
 TABWIDTH = 8
 
 _getnext = re.compile(r"""

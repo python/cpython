@@ -10,6 +10,8 @@ from select import select
 import os, FCNTL
 import tty
 
+__all__ = ["openpty","fork","spawn"]
+
 STDIN_FILENO = 0
 STDOUT_FILENO = 1
 STDERR_FILENO = 2

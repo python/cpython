@@ -13,6 +13,11 @@ for manipulation of the pathname component of URLs.
 import os
 import stat
 
+__all__ = ["normcase","isabs","join","splitdrive","split","splitext",
+           "basename","dirname","commonprefix","getsize","getmtime",
+           "getatime","islink","exists","isdir","isfile","ismount",
+           "walk","expanduser","expandvars","normpath","abspath",
+           "samefile","sameopenfile","samestat"]
 
 # Normalize the case of a pathname.  Trivial in Posix, string.lower on Mac.
 # On MS-DOS this may also turn slashes into backslashes; however, other

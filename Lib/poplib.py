@@ -14,6 +14,8 @@ Based on the J. Myers POP3 draft, Jan. 96
 
 import re, socket
 
+__all__ = ["POP3","error_proto"]
+
 # Exception raised when an error or invalid response is received:
 
 class error_proto(Exception): pass
