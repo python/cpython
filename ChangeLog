@@ -1,3 +1,146 @@
+Thu Jan 26 00:42:29 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Lib/mhlib.py: fix bogus test for matching regex
+
+	* stdwinmodule.c: (re)move some unused variables
+
+	* Python/pythonrun.c (run_pyc_file): made static
+	(fatal): loop forever on Mac, so error message remains visible
+
+	* Python/import.c (doneimport): no need to dictclear() the
+	module's dictionary (that's done automatically when the module is
+	actually deleted)
+
+	* Objects/classobject.c (instancebinop): removed unused variables
+
+	* Objects/moduleobject.c (module_dealloc): explicitly erase a
+	module's dictionary when the module object disappears -- this was
+	formerly done in import's doneimport()
+
+	* Objects/object.c, Python/bltinmodule.c: moved callable() to
+	object.c (from static in bltinmodule.c) since it is generally
+	useful (and I needed it :-)
+
+Wed Jan 25 13:20:52 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Modules/posixmodule.c (posix_utime): Be more robust in the light
+	of unusual types for uname struct members and 64-bit longs
+
+	* Python/ceval.c (eval_code): mods to allow using classes as
+        exceptions (R Lindsay Todd)
+
+Mon Jan 23 20:48:16 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* configure.in (LDSHARED): add case for OSF/1 (Bob Kras);
+	(socket libraries): add conditional for IRIX 5, where -lsocket
+	exists but doesn't seem to work properly
+
+	* Python/compile.c (get_docstring): add missing case for
+	file_input, so __doc__ strings in modules work
+
+Sun Jan 22 20:45:40 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Modules/regexmodule.c (reg_dealloc): free the compiled pattern
+	buffer -- plugs a memory leak
+
+Sun Jan 22 01:44:01 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Modules/signalmodule.c (sigcheck): renamed to PyErr_CheckSignals
+	-- signal checking was broken because of this!
+
+Sat Jan 21 15:10:08 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Python/getargs.c (seterror): don't overwrite error if one is
+	already set (e.g. by O& handler)
+	(convertsimple1): return "(unspecified)" instead of empty string
+	for type description of "O&" object
+
+Fri Jan 20 15:27:51 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Modules/Makefile.pre.in (sharedinstall): add command to make the
+	$(DESTSHARED) directory
+
+	* README: change NeXT hint to add -posix to C compiler flags
+
+	* Python/import.c: document the fact that almost all functions
+	returning a module object (except add_module()) increment its
+	reference count, and add missing INCREF calls here and there
+
+	* Python/bltinmodule.c (builtin___import__): don't INCREF the
+	module -- import_module() has already done that
+
+	* Python/ceval.c (eval_code, RAISE_EXCEPTION): add missing INCREF
+	after gettupleitem() call (R Lindsay Todd)
+
+	* configure.in: added check for working getopt (R Lindsay Todd);
+	modernize all tests to use cache and report outcome (John
+	Interrante)
+
+	* Include/{classobject.h,listobject.h}: corrected two unconverted
+	names (found by John Interrante)
+
+Thu Jan 19 01:31:46 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* configure.in (LDSHARED): added case for Sequent DYNIX (Jaap
+	Vermeulen)
+
+	* Mac/macglue.c (Pstring): truncate string to 255 bytes
+
+	* Objects/listobject.c (list_dealloc): Fix NULL dereference in
+	case of out-of-memory condition (Jack)
+
+	* Parser/intrcheck.c (intrpeek): new Mac specific routine to test
+	for interrupt without clearing the interrupt flag (Jack)
+
+	* Python/errors.c (strerror): #undef it first on the Mac (Jack)
+
+	* Lib/ftplib.py: don't break if os.environ doesn't exist (Jack)
+
+	* Modules/timemodule.c (inittime): fix memory leaks (should decref
+	new objects passed to dictinsert)
+
+	* Python/compile.c (optimize): fix memory leak (forgot to decref
+        localmap)
+
+	* Objects/funcobject.c (func_dealloc): fix memory leak (forgot to
+	decref func_name)
+
+	* Python/importdl.c: added changes for NetBSD dynamic linking
+	(David Hobley); removed shared linking for NeXT (incompatible with
+	the -posix flag)
+
+	* Modules/mathmodule.c: removed empty #ifdef macintosh...#endif
+
+	* Parser/parsetok.c (parsetok): avoid uninitialized memory read
+
+	* Mac: various stuff to port Jack's mods back to THINK C, as well
+	as my own changes for apple events
+
+	* Python/modsupport.c: support "O&" taking an object constructor
+	and a void* (sort of inverse of O& in getargs)
+
+	* configure.in, Makefile.in: mods to define and use
+	INSTALL_PROGRAM and INSTALL_DATA as well as INSTALL (John
+	Interrante)
+
+Wed Jan 18 12:01:20 1995  Guido van Rossum  <guido@zeus.cwi.nl>
+
+	* Mac: lots of new stuff checked in by jack
+
+	* configure.in: added test for genuine getopt (R Lindsay Todd)
+
+	* Python/Makefile.in: removed getopt.o from OBJS (but left in
+	getopt.o: getopt.c rule)
+
+	* Python/getopt.c: don't use function prototypes (Anthony Baxter)
+
+	* Modules/arraymodule.c: make the routines static now that their
+	forward declarations are! (Anthony Baxter)
+
+========================================
+==> Release 1.2 BETA 2 (17 Jan 1995) <==
+========================================
+
 Tue Jan 17 11:24:23 1995  Guido van Rossum  <guido@zeus.cwi.nl>
 
 	* Include/patchlevel.h: set version to 1.2-beta-2
