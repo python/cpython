@@ -731,7 +731,7 @@ pointer to an integer (\var{*buffer_length}, the buffer length).
 The encoding name must map to a registered codec. If set to \NULL{},
 the default encoding is used.
 
-\cfuntion{PyArg_ParseTuple()} will allocate a buffer of the needed
+\cfunction{PyArg_ParseTuple()} will allocate a buffer of the needed
 size using \cfunction{PyMem_NEW()}, copy the encoded data into this
 buffer and adjust \var{*buffer} to reference the newly allocated
 storage. The caller is responsible for calling
@@ -753,14 +753,14 @@ the default encoding is used.
 There are two modes of operation: 
 
 If \var{*buffer} points a \NULL{} pointer,
-\cfuntion{PyArg_ParseTuple()} will allocate a buffer of the needed
+\cfunction{PyArg_ParseTuple()} will allocate a buffer of the needed
 size using \cfunction{PyMem_NEW()}, copy the encoded data into this
 buffer and adjust \var{*buffer} to reference the newly allocated
 storage. The caller is responsible for calling
 \cfunction{PyMem_Free()} to free the allocated buffer after usage.
 
 If \var{*buffer} points to a non-\NULL{} pointer (an already allocated
-buffer), \cfuntion{PyArg_ParseTuple()} will use this location as
+buffer), \cfunction{PyArg_ParseTuple()} will use this location as
 buffer and interpret \var{*buffer_length} as buffer size. It will then
 copy the encoded data into the buffer and 0-terminate it. Buffer
 overflow is signalled with an exception.
