@@ -176,7 +176,7 @@ PyObject *PyString_Decode(const char *s,
     }
     if (!PyString_Check(str)) {
         PyErr_Format(PyExc_TypeError,
-                     "decoder did not return an string object (type=%.400s)",
+                     "decoder did not return a string object (type=%.400s)",
                      str->ob_type->tp_name);
         Py_DECREF(str);
         goto onError;
