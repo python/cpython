@@ -669,7 +669,7 @@ if test "$have_pthread_t" = yes ; then
   AC_MSG_CHECKING(size of pthread_t)
   AC_CACHE_VAL(ac_cv_sizeof_pthread_t,
   [AC_TRY_RUN([#include <stdio.h>
-  #include <pthread.h>
+#include <pthread.h>
   main()
   {
     FILE *f=fopen("conftestval", "w");
@@ -1059,9 +1059,9 @@ else
     AC_MSG_CHECKING(for _POSIX_THREADS in unistd.h)
     AC_EGREP_CPP(yes,
     [#include <unistd.h>
-     #ifdef _POSIX_THREADS
-     yes
-     #endif
+#ifdef _POSIX_THREADS
+yes
+#endif
     ], unistd_defines_pthreads=yes, unistd_defines_pthreads=no)
     AC_MSG_RESULT($unistd_defines_pthreads)
 
