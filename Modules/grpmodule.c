@@ -49,7 +49,13 @@ static object *mkgrent(p)
 	v = mkvalue("(sslO)",
 		       p->gr_name,
 		       p->gr_passwd,
+#if defined(NeXT) && defined(_POSIX_SOURCE) && defined(__LITTLE_ENDIAN__)
+/* Correct a bug present on Intel machines in NextStep 3.2 and 3.3;
+   for later versions you may have to remove this */
+		       (long)p->gr_short_pad, /* ugh-NeXT broke the padding */
+#else
 		       (long)p->gr_gid,
+#endif
 		       w);
 	DECREF(w);
 	return v;
