@@ -174,7 +174,7 @@ float_div(v, w)
 		return NULL;
 	}
 	if (((floatobject *)w) -> ob_fval == 0) {
-		err_setstr(ZeroDivisionError, "float division by zero");
+		err_setstr(ZeroDivisionError, "float division");
 		return NULL;
 	}
 	return newfloatobject(v->ob_fval / ((floatobject *)w) -> ob_fval);
@@ -192,7 +192,7 @@ float_rem(v, w)
 	}
 	wx = ((floatobject *)w) -> ob_fval;
 	if (wx == 0.0) {
-		err_setstr(ZeroDivisionError, "float division by zero");
+		err_setstr(ZeroDivisionError, "float remainder");
 		return NULL;
 	}
 	return newfloatobject(fmod(v->ob_fval, wx));
@@ -212,7 +212,7 @@ float_divmod(v, w)
 	}
 	wx = ((floatobject *)w) -> ob_fval;
 	if (wx == 0.0) {
-		err_setstr(ZeroDivisionError, "float division by zero");
+		err_setstr(ZeroDivisionError, "float divmod()");
 		return NULL;
 	}
 	vx = v->ob_fval;
@@ -251,13 +251,13 @@ float_pow(v, w)
 		return newfloatobject(1.0); /* x**0 is 1, even 0**0 */
 	if (iv == 0.0) {
 		if (iw < 0.0) {
-			err_setstr(RuntimeError, "0.0 to the negative power");
+			err_setstr(ValueError, "0.0 to the negative power");
 			return NULL;
 		}
 		return newfloatobject(0.0);
 	}
 	if (iv < 0.0) {
-		err_setstr(RuntimeError, "negative float to float power");
+		err_setstr(ValueError, "negative float to float power");
 		return NULL;
 	}
 	errno = 0;
