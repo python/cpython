@@ -4,6 +4,10 @@ while building or extending Python.
 bgen		Generate complete extension modules from a
 		description.  Still under development!
 
+faqwiz		FAQ Wizard.
+		See http://grail.cnri.reston.va.us/cgi-bin/faqw.py
+		for a live example.
+
 freeze		Create a stand-alone executable from a Python program.
 
 modulator	Interactively generate boiler plate for an extension
@@ -12,3 +16,5 @@ modulator	Interactively generate boiler plate for an extension
 scripts		A number of useful single-file programs, e.g. for
 		converting old Python sources to the current language
 		definition.
+
+webchecker	A link checker for web sites.
