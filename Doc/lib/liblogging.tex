@@ -397,9 +397,9 @@ the example below:
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
-										format='%(asctime)s %(levelname)s %(message)s',
-										filename='/tmp/myapp.log',
-										filemode='w')
+                    format='%(asctime)s %(levelname)s %(message)s',
+                    filename='/tmp/myapp.log',
+                    filemode='w')
 logging.debug('A debug message')
 logging.info('Some information')
 logging.warning('A shot across the bows')
@@ -444,10 +444,10 @@ To change the date/time format, you can pass an additional keyword parameter,
 import logging
 
 logging.basicConfig(level=logging.DEBUG,
-										format='%(asctime)s %(levelname)-8s %(message)s',
-										datefmt='%a, %d %b %Y %H:%M:%S',
-										filename='/temp/myapp.log',
-										filemode='w')
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%a, %d %b %Y %H:%M:%S',
+                    filename='/temp/myapp.log',
+                    filemode='w')
 logging.debug('A debug message')
 logging.info('Some information')
 logging.warning('A shot across the bows')
