@@ -211,6 +211,22 @@ It is always available.
   \versionadded{2.2}
 \end{funcdesc}
 
+\begin{funcdesc}{getfilesystemencoding}{}
+  Return the name of the encoding used to convert Unicode filenames
+  into system file names, or \code{None} if the system default encoding
+  is used. The result value depends on the operating system:
+\begin{itemize}
+\item On Windows 9x, the encoding is ``mbcs''.
+\item On Mac OS X, the encoding is ``utf-8''.
+\item On Unix, the encoding is the user's preference 
+      according to the result of nl_langinfo(CODESET), or None if
+      the nl_langinfo(CODESET) failed.
+\item On Windows NT+, file names are Unicode natively, so no conversion
+      is performed.
+\end{itemize}
+  \versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{getrefcount}{object}
   Return the reference count of the \var{object}.  The count returned
   is generally one higher than you might expect, because it includes

@@ -12,6 +12,8 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- sys.getfilesystemencoding() was added to expose
+  Py_FileSystemDefaultEncoding.
 
 - New function sys.exc_clear() clears the current exception.  This is
   rarely needed, but can sometimes be useful to release objects
