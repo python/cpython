@@ -225,6 +225,9 @@ reversed_next(reversedobject *ro)
 			ro->index--;
 			return item;
 		}
+		if (PyErr_ExceptionMatches(PyExc_IndexError) ||
+		    PyErr_ExceptionMatches(PyExc_StopIteration))
+			PyErr_Clear();
 	}
 	ro->index = -1;
 	if (ro->seq != NULL) {
@@ -242,7 +245,15 @@ PyDoc_STRVAR(reversed_doc,
 static int
 reversed_len(reversedobject *ro)
 {
-	return ro->index + 1;
+	int position, seqsize;
+
+	if (ro->seq == NULL)
+		return 0;
+	seqsize = PySequence_Size(ro->seq);
+	if (seqsize == -1)
+		return -1;
+	position = ro->index + 1;
+	return (seqsize < position)  ?  0  :  position;
 }
 
 static PySequenceMethods reversed_as_sequence = {

@@ -770,6 +770,7 @@ dequeiter_next(dequeiterobject *it)
 
 	if (it->len != it->deque->len) {
 		it->len = -1; /* Make this state sticky */
+		it->counter = 0;
 		PyErr_SetString(PyExc_RuntimeError,
 				"deque changed size during iteration");
 		return NULL;
@@ -860,6 +861,7 @@ dequereviter_next(dequeiterobject *it)
 
 	if (it->len != it->deque->len) {
 		it->len = -1; /* Make this state sticky */
+		it->counter = 0;
 		PyErr_SetString(PyExc_RuntimeError,
 				"deque changed size during iteration");
 		return NULL;
