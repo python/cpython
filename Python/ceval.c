@@ -680,6 +680,7 @@ eval_frame(PyFrameObject *f)
 #endif
 		}
 
+	fast_next_opcode:
 		/* Extract opcode and argument */
 
 #if defined(Py_DEBUG) || defined(LLTRACE)
@@ -724,10 +725,53 @@ eval_frame(PyFrameObject *f)
 
 		/* case STOP_CODE: this is an error! */
 
+		case SET_LINENO:
+#ifdef LLTRACE
+			if (lltrace)
+				printf("--- %s:%d \n", filename, oparg);
+#endif
+			f->f_lineno = oparg;
+			if (tstate->c_tracefunc == NULL || tstate->tracing)
+				goto fast_next_opcode;
+			/* Trace each line of code reached */
+			f->f_lasti = INSTR_OFFSET();
+			/* Inline call_trace() for performance: */
+			tstate->tracing++;
+			tstate->use_tracing = 0;
+			err = (tstate->c_tracefunc)(tstate->c_traceobj, f,
+						    PyTrace_LINE, Py_None);
+			tstate->use_tracing = (tstate->c_tracefunc
+					       || tstate->c_profilefunc);
+			tstate->tracing--;
+			break;
+
+		case LOAD_FAST:
+			x = GETLOCAL(oparg);
+			if (x != NULL) {
+				Py_INCREF(x);
+				PUSH(x);
+				goto fast_next_opcode;
+			}
+			format_exc_check_arg(PyExc_UnboundLocalError,
+				UNBOUNDLOCAL_ERROR_MSG,
+				PyTuple_GetItem(co->co_varnames, oparg));
+			break;
+
+		case LOAD_CONST:
+			x = GETCONST(oparg);
+			Py_INCREF(x);
+			PUSH(x);
+			goto fast_next_opcode;
+
+		case STORE_FAST:
+			v = POP();
+			SETLOCAL(oparg, v);
+			goto fast_next_opcode;
+
 		case POP_TOP:
 			v = POP();
 			Py_DECREF(v);
-			continue;
+			goto fast_next_opcode;
 
 		case ROT_TWO:
 			v = POP();
@@ -1617,12 +1661,6 @@ eval_frame(PyFrameObject *f)
 				    PyExc_NameError, GLOBAL_NAME_ERROR_MSG, w);
 			break;
 
-		case LOAD_CONST:
-			x = GETCONST(oparg);
-			Py_INCREF(x);
-			PUSH(x);
-			break;
-
 		case LOAD_NAME:
 			w = GETNAMEV(oparg);
 			if ((x = f->f_locals) == NULL) {
@@ -1663,23 +1701,6 @@ eval_frame(PyFrameObject *f)
 			Py_INCREF(x);
 			PUSH(x);
 			break;
-
-		case LOAD_FAST:
-			x = GETLOCAL(oparg);
-			if (x != NULL) {
-				Py_INCREF(x);
-				PUSH(x);
-				continue;
-			}
-			format_exc_check_arg(PyExc_UnboundLocalError,
-				UNBOUNDLOCAL_ERROR_MSG,
-				PyTuple_GetItem(co->co_varnames, oparg));
-			break;
-
-		case STORE_FAST:
-			v = POP();
-			SETLOCAL(oparg, v);
-			continue;
 
 		case DELETE_FAST:
 			x = GETLOCAL(oparg);
@@ -1948,26 +1969,6 @@ eval_frame(PyFrameObject *f)
 			PyFrame_BlockSetup(f, opcode, INSTR_OFFSET() + oparg,
 					   STACK_LEVEL());
 			continue;
-
-		case SET_LINENO:
-#ifdef LLTRACE
-			if (lltrace)
-				printf("--- %s:%d \n", filename, oparg);
-#endif
-			f->f_lineno = oparg;
-			if (tstate->c_tracefunc == NULL || tstate->tracing)
-				continue;
-			/* Trace each line of code reached */
-			f->f_lasti = INSTR_OFFSET();
-			/* Inline call_trace() for performance: */
-			tstate->tracing++;
-			tstate->use_tracing = 0;
-			err = (tstate->c_tracefunc)(tstate->c_traceobj, f,
-						    PyTrace_LINE, Py_None);
-			tstate->use_tracing = (tstate->c_tracefunc
-					       || tstate->c_profilefunc);
-			tstate->tracing--;
-			break;
 
 		case CALL_FUNCTION:
 		{
