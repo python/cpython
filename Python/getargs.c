@@ -670,7 +670,7 @@ convertsimple1(arg, p_format, p_va)
 			
 			/* Get 's' parameter: the output buffer to use */
 			if (*format != 's')
-				return "(unkown parser marker combination)";
+				return "(unknown parser marker combination)";
 			buffer = (char **)va_arg(*p_va, char **);
 			format++;
 			if (buffer == NULL)
@@ -756,7 +756,7 @@ convertsimple1(arg, p_format, p_va)
 				   after usage
 
 				 */
-				if (strlen(PyString_AS_STRING(s)) != size)
+				if ((int)strlen(PyString_AS_STRING(s)) != size)
 					return "(encoded string without "\
 					       "NULL bytes)";
 				*buffer = PyMem_NEW(char, size + 1);
