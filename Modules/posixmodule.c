@@ -3295,7 +3295,7 @@ popen(const char *command, const char *mode, int pipesize, int *err)
 		return NULL;
 	}
 
-	/* setup the pipe
+	/* setup the pipe */
 	if ((rc = DosCreatePipe(&pipeh[0], &pipeh[1], pipesize)) != NO_ERROR) {
 		*err = rc;
 		return NULL;
