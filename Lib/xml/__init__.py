@@ -13,10 +13,27 @@ sax -- The Simple API for XML, developed by XML-Dev, led by David
 """
 
 
+__all__ = ["dom", "parsers", "sax"]
+
+__version__ = "$Revision$"[1:-1].split()[1]
+
+
+_MINIMUM_XMLPLUS_VERSION = (0, 6, 1)
+
+
 try:
     import _xmlplus
 except ImportError:
     pass
 else:
-    import sys
-    sys.modules[__name__] = _xmlplus
+    try:
+        v = _xmlplus.version_info
+    except AttributeError:
+        # _xmlplue is too old; ignore it
+        pass
+    else:
+        if v >= _MINIMUM_XMLPLUS_VERSION:
+            import sys
+            sys.modules[__name__] = _xmlplus
+        else:
+            del v
