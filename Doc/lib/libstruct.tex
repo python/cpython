@@ -6,9 +6,9 @@
 
 \indexii{C@\C{}}{structures}
 
-This module performs conversions between Python values and C
+This module performs conversions between Python values and \C{}
 structs represented as Python strings.  It uses \dfn{format strings}
-(explained below) as compact descriptions of the lay-out of the C
+(explained below) as compact descriptions of the lay-out of the \C{}
 structs and the intended conversion to/from Python values.
 
 The module defines the following exception and functions:
@@ -19,19 +19,19 @@ The module defines the following exception and functions:
   describing what is wrong.
 \end{excdesc}
 
-\begin{funcdesc}{pack}{fmt, v1, v2, {\rm \ldots}}
+\begin{funcdesc}{pack}{fmt, v1, v2, \textrm{\ldots}}
   Return a string containing the values
-  \code{\var{v1}, \var{v2}, {\rm \ldots}} packed according to the given
+  \code{\var{v1}, \var{v2}, \textrm{\ldots}} packed according to the given
   format.  The arguments must match the values required by the format
   exactly.
 \end{funcdesc}
 
 \begin{funcdesc}{unpack}{fmt, string}
-  Unpack the string (presumably packed by \code{pack(\var{fmt}, {\rm \ldots})})
-  according to the given format.  The result is a tuple even if it
-  contains exactly one item.  The string must contain exactly the
-  amount of data required by the format (i.e.  \code{len(\var{string})} must
-  equal \code{calcsize(\var{fmt})}).
+  Unpack the string (presumably packed by \code{pack(\var{fmt},
+  \textrm{\ldots})}) according to the given format.  The result is a
+  tuple even if it contains exactly one item.  The string must contain
+  exactly the amount of data required by the format (i.e.
+  \code{len(\var{string})} must equal \code{calcsize(\var{fmt})}).
 \end{funcdesc}
 
 \begin{funcdesc}{calcsize}{fmt}
@@ -39,29 +39,30 @@ The module defines the following exception and functions:
   corresponding to the given format.
 \end{funcdesc}
 
-Format characters have the following meaning; the conversion between C
-and Python values should be obvious given their types:
+Format characters have the following meaning; the conversion between
+\C{} and Python values should be obvious given their types:
 
 \begin{tableiii}{c|l|l}{samp}{Format}{C Type}{Python}
   \lineiii{x}{pad byte}{no value}
-  \lineiii{c}{char}{string of length 1}
-  \lineiii{b}{signed char}{integer}
-  \lineiii{B}{unsigned char}{integer}
-  \lineiii{h}{short}{integer}
-  \lineiii{H}{unsigned short}{integer}
-  \lineiii{i}{int}{integer}
-  \lineiii{I}{unsigned int}{integer}
-  \lineiii{l}{long}{integer}
-  \lineiii{L}{unsigned long}{integer}
-  \lineiii{f}{float}{float}
-  \lineiii{d}{double}{float}
-  \lineiii{s}{char[]}{string}
-  \lineiii{p}{char[]}{string}
-  \lineiii{P}{void *}{integer}
+  \lineiii{c}{\ctype{char}}{string of length 1}
+  \lineiii{b}{\ctype{signed char}}{integer}
+  \lineiii{B}{\ctype{unsigned char}}{integer}
+  \lineiii{h}{\ctype{short}}{integer}
+  \lineiii{H}{\ctype{unsigned short}}{integer}
+  \lineiii{i}{\ctype{int}}{integer}
+  \lineiii{I}{\ctype{unsigned int}}{integer}
+  \lineiii{l}{\ctype{long}}{integer}
+  \lineiii{L}{\ctype{unsigned long}}{integer}
+  \lineiii{f}{\ctype{float}}{float}
+  \lineiii{d}{\ctype{double}}{float}
+  \lineiii{s}{\ctype{char[]}}{string}
+  \lineiii{p}{\ctype{char[]}}{string}
+  \lineiii{P}{\ctype{void *}}{integer}
 \end{tableiii}
 
-A format character may be preceded by an integral repeat count; e.g.\
-the format string \code{'4h'} means exactly the same as \code{'hhhh'}.
+A format character may be preceded by an integral repeat count;
+e.g.\ the format string \code{'4h'} means exactly the same as
+\code{'hhhh'}.
 
 Whitespace characters between formats are ignored; a count and its
 format must not contain whitespace though.
@@ -88,16 +89,16 @@ value is a Python long integer.
 
 For the \character{P} format character, the return value is a Python
 integer or long integer, depending on the size needed to hold a
-pointer when it has been cast to an integer type.  A NULL pointer will
-always be returned as the Python integer 0. When packing pointer-sized
+pointer when it has been cast to an integer type.  A \NULL{} pointer will
+always be returned as the Python integer \code{0}. When packing pointer-sized
 values, Python integer or long integer objects may be used.  For
 example, the Alpha and Merced processors use 64-bit pointer values,
 meaning a Python long integer will be used to hold the pointer; other
 platforms use 32-bit pointers and will use a Python integer.
 
-By default, C numbers are represented in the machine's native format
+By default, \C{} numbers are represented in the machine's native format
 and byte order, and properly aligned by skipping pad bytes if
-necessary (according to the rules used by the C compiler).
+necessary (according to the rules used by the \C{} compiler).
 
 Alternatively, the first character of the format string can be used to
 indicate the byte order, size and alignment of the packed data,
@@ -117,16 +118,19 @@ Native byte order is big-endian or little-endian, depending on the
 host system (e.g. Motorola and Sun are big-endian; Intel and DEC are
 little-endian).
 
-Native size and alignment are determined using the C compiler's sizeof
-expression.  This is always combined with native byte order.
+Native size and alignment are determined using the \C{} compiler's
+\keyword{sizeof} expression.  This is always combined with native byte
+order.
 
 Standard size and alignment are as follows: no alignment is required
-for any type (so you have to use pad bytes); short is 2 bytes; int and
-long are 4 bytes.  Float and double are 32-bit and 64-bit IEEE floating
-point numbers, respectively.
+for any type (so you have to use pad bytes); \ctype{short} is 2 bytes;
+\ctype{int} and \ctype{long} are 4 bytes.  \ctype{float} and
+\ctype{double} are 32-bit and 64-bit IEEE floating point numbers,
+respectively.
 
-Note the difference between \character{@} and \character{=}: both use native
-byte order, but the size and alignment of the latter is standardized.
+Note the difference between \character{@} and \character{=}: both use
+native byte order, but the size and alignment of the latter is
+standardized.
 
 The form \character{!} is available for those poor souls who claim they
 can't remember whether network byte order is big-endian or
@@ -156,7 +160,7 @@ big-endian machine):
 8
 >>> 
 \end{verbatim}
-%
+
 Hint: to align the end of a structure to the alignment requirement of
 a particular type, end the format with the code for that type with a
 repeat count of zero, e.g.\ the format \code{'llh0l'} specifies two
