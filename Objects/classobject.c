@@ -65,15 +65,25 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 			return NULL;
 	}
 	else {
-		int i;
+		int i, n;
+		PyObject *base;
 		if (!PyTuple_Check(bases)) {
 			PyErr_SetString(PyExc_TypeError,
 					"PyClass_New: bases must be a tuple");
 			return NULL;
 		}
-		i = PyTuple_Size(bases);
-		while (--i >= 0) {
-			if (!PyClass_Check(PyTuple_GetItem(bases, i))) {
+		n = PyTuple_Size(bases);
+		for (i = 0; i < n; i++) {
+			base = PyTuple_GET_ITEM(bases, i);
+			if (!PyClass_Check(base)) {
+				if (PyCallable_Check(
+					(PyObject *) base->ob_type))
+					return PyObject_CallFunction(
+						(PyObject *) base->ob_type,
+						"OOO",
+						name,
+						bases,
+						dict);
 				PyErr_SetString(PyExc_TypeError,
 					"PyClass_New: base must be a class");
 				return NULL;
