@@ -3123,14 +3123,17 @@ to newline-and-indent in the global keymap, and shadows them with
 local bindings to py-newline-and-indent."))
 
 (require 'info-look)
-(info-lookup-maybe-add-help
- :mode 'python-mode
- :regexp "[a-zA-Z0-9_]+"
- :doc-spec '(("(python-lib)Module Index")
-	     ("(python-lib)Class-Exception-Object Index")
-	     ("(python-lib)Function-Method-Variable Index")
-	     ("(python-lib)Miscellaneous Index")))
-
+;; The info-look package does not always provide this function (it
+;; appears this is the case with XEmacs 21.1)
+(when (fboundp 'info-lookup-maybe-add-help)
+  (info-lookup-maybe-add-help
+   :mode 'python-mode
+   :regexp "[a-zA-Z0-9_]+"
+   :doc-spec '(("(python-lib)Module Index")
+	       ("(python-lib)Class-Exception-Object Index")
+	       ("(python-lib)Function-Method-Variable Index")
+	       ("(python-lib)Miscellaneous Index")))
+  )
 
 
 ;; Helper functions
