@@ -491,6 +491,27 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
+static char classmethod_doc[] =
+"classmethod(function) -> method\n\
+\n\
+Convert a function to be a class method.\n\
+\n\
+A class method receives the class as implicit first argument,\n\
+just like an instance method receives the instance.\n\
+To declare a class method, use this idiom:\n\
+\n\
+  class C:\n\
+      def f(cls, arg1, arg2, ...): ...\n\
+      f = classmethod(f)\n\
+\n\
+It can be called either on the class (e.g. C.f()) or on an instance\n\
+(e.g. C().f()).  The instance is ignored except for its class.\n\
+If a class method is called for a derived class, the derived class\n\
+object is passed as the implied first argument.\n\
+
+Class methods are different than C++ or Java static methods.\n\
+If you want those, see the staticmethod builtin.";
+
 PyTypeObject PyClassMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -513,7 +534,7 @@ PyTypeObject PyClassMethod_Type = {
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	0,					/* tp_doc */
+	classmethod_doc,			/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
@@ -602,6 +623,24 @@ sm_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
+static char staticmethod_doc[] =
+"staticmethod(function) -> method\n\
+\n\
+Convert a function to be a static method.\n\
+\n\
+A static method does not receive an implicit first argument.\n\
+To declare a static method, use this idiom:\n\
+\n\
+     class C:\n\
+         def f(arg1, arg2, ...): ...\n\
+	 f = staticmethod(f)\n\
+\n\
+It can be called either on the class (e.g. C.f()) or on an instance\n\
+(e.g. C().f()).  The instance is ignored except for its class.\n\
+\n\
+Static methods in Python are similar to those found in Java or C++.\n\
+For a more advanced concept, see the classmethod builtin.";
+
 PyTypeObject PyStaticMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -624,7 +663,7 @@ PyTypeObject PyStaticMethod_Type = {
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-	0,					/* tp_doc */
+	staticmethod_doc,			/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
