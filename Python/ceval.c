@@ -1000,23 +1000,36 @@ static object *
 add(v, w)
 	object *v, *w;
 {
-	if (v->ob_type->tp_as_number != NULL)
-		v = (*v->ob_type->tp_as_number->nb_add)(v, w);
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		x = (*v->ob_type->tp_as_number->nb_add)(v, w);
+		DECREF(v);
+		DECREF(w);
+		return x;
+	}
 	else if (v->ob_type->tp_as_sequence != NULL)
-		v = (*v->ob_type->tp_as_sequence->sq_concat)(v, w);
+		return (*v->ob_type->tp_as_sequence->sq_concat)(v, w);
 	else {
 		err_setstr(TypeError, "+ not supported by operands");
 		return NULL;
 	}
-	return v;
 }
 
 static object *
 sub(v, w)
 	object *v, *w;
 {
-	if (v->ob_type->tp_as_number != NULL)
-		return (*v->ob_type->tp_as_number->nb_subtract)(v, w);
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		x = (*v->ob_type->tp_as_number->nb_subtract)(v, w);
+		DECREF(v);
+		DECREF(w);
+		return x;
+	}
 	err_setstr(TypeError, "bad operand type(s) for -");
 	return NULL;
 }
@@ -1033,8 +1046,15 @@ mul(v, w)
 		w = tmp;
 	}
 	tp = v->ob_type;
-	if (tp->tp_as_number != NULL)
-		return (*tp->tp_as_number->nb_multiply)(v, w);
+	if (tp->tp_as_number != NULL) {
+		object *x;
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		x = (*v->ob_type->tp_as_number->nb_multiply)(v, w);
+		DECREF(v);
+		DECREF(w);
+		return x;
+	}
 	if (tp->tp_as_sequence != NULL) {
 		if (!is_intobject(w)) {
 			err_setstr(TypeError,
@@ -1052,8 +1072,15 @@ static object *
 divide(v, w)
 	object *v, *w;
 {
-	if (v->ob_type->tp_as_number != NULL)
-		return (*v->ob_type->tp_as_number->nb_divide)(v, w);
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		x = (*v->ob_type->tp_as_number->nb_divide)(v, w);
+		DECREF(v);
+		DECREF(w);
+		return x;
+	}
 	err_setstr(TypeError, "bad operand type(s) for /");
 	return NULL;
 }
@@ -1062,8 +1089,15 @@ static object *
 rem(v, w)
 	object *v, *w;
 {
-	if (v->ob_type->tp_as_number != NULL)
-		return (*v->ob_type->tp_as_number->nb_remainder)(v, w);
+	if (v->ob_type->tp_as_number != NULL) {
+		object *x;
+		if (coerce(&v, &w) != 0)
+			return NULL;
+		x = (*v->ob_type->tp_as_number->nb_remainder)(v, w);
+		DECREF(v);
+		DECREF(w);
+		return x;
+	}
 	err_setstr(TypeError, "bad operand type(s) for %");
 	return NULL;
 }
