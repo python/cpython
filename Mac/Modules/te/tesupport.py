@@ -79,7 +79,7 @@ initstuff = initstuff + """
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(TEHandle, TEObj_Convert);
 """
 
-class TEMethodGenerator(OSErrMethodGenerator):
+class TEMethodGenerator(OSErrWeakLinkMethodGenerator):
 	"""Similar to MethodGenerator, but has self as last argument"""
 
 	def parseArgumentList(self, args):
@@ -150,7 +150,7 @@ object = MyObjectDefinition(OBJECTNAME, OBJECTPREFIX, OBJECTTYPE)
 module.addobject(object)
 
 # Create the generator classes used to populate the lists
-Function = OSErrFunctionGenerator
+Function = OSErrWeakLinkFunctionGenerator
 Method = TEMethodGenerator
 
 # Create and populate the lists

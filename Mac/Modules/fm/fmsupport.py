@@ -70,7 +70,7 @@ FMetricRecPtr = OpaqueType('FMetricRec', 'FMRec')
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
 
 # Create the generator classes used to populate the lists
-Function = OSErrFunctionGenerator
+Function = OSErrWeakLinkFunctionGenerator
 
 # Create and populate the lists
 functions = []
