@@ -354,11 +354,11 @@ r_long64(p)
 #else
 	if (r_long(p) != 0) {
 		PyObject *f = PySys_GetObject("stderr");
-		PyErr_Clear();
 		if (f != NULL)
-			PyFile_WriteString(
+			(void) PyFile_WriteString(
 			    "Warning: un-marshal 64-bit int in 32-bit mode\n",
 			    f);
+		PyErr_Clear();
 	}
 #endif
 	return x;
