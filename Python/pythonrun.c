@@ -20,7 +20,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "compile.h"
 #include "eval.h"
 #include "marshal.h"
-#include "osdefs.h"			/* SEP */
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

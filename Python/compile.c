@@ -31,7 +31,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "compile.h"
 #include "opcode.h"
 #include "structmember.h"
-#include "osdefs.h"			/* SEP */
 
 #include <ctype.h>
 #ifdef HAVE_LIMITS_H
