@@ -515,9 +515,11 @@ class Transformer:
 
     def testlist(self, nodelist):
         # testlist: expr (',' expr)* [',']
+        # testlist_safe: test [(',' test)+ [',']]
         # exprlist: expr (',' expr)* [',']
         return self.com_binary(Tuple, nodelist)
 
+    testlist_safe = testlist # XXX
     exprlist = testlist
 
     def test(self, nodelist):
@@ -1254,6 +1256,7 @@ class Transformer:
 _doc_nodes = [
     symbol.expr_stmt,
     symbol.testlist,
+    symbol.testlist_safe,
     symbol.test,
     symbol.and_test,
     symbol.not_test,
@@ -1306,6 +1309,7 @@ _legal_node_types = [
     symbol.try_stmt,
     symbol.suite,
     symbol.testlist,
+    symbol.testlist_safe,
     symbol.test,
     symbol.and_test,
     symbol.not_test,
