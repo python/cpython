@@ -271,10 +271,10 @@ tut html/tut/tut.html: $(TUTFILES)
 	$(MKHTML) --dir html/tut --numeric --split 3 tut/tut.tex
 
 inst html/inst/inst.html: $(INSTFILES) perl/distutils.perl
-	$(MKHTML) --dir html/inst inst/inst.tex
+	$(MKHTML) --dir html/inst --split 4 inst/inst.tex
 
 dist html/dist/dist.html: $(DISTFILES) perl/distutils.perl
-	$(MKHTML) --dir html/dist dist/dist.tex
+	$(MKHTML) --dir html/dist --split 4 dist/dist.tex
 
 
 # webchecker needs an extra flag to process the huge index from the libref
