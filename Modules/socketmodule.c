@@ -91,8 +91,12 @@ Socket methods:
 #undef HAVE_GETHOSTBYNAME_R_5_ARG
 #undef HAVE_GETHOSTBYNAME_R_6_ARG
 
+#ifndef WITH_THREAD
+#undef HAVE_GETHOSTBYNAME_R
+#endif
+
 #ifdef HAVE_GETHOSTBYNAME_R
-#if defined(_AIX)
+#if defined(_AIX) || defined(__osf__)
 #define HAVE_GETHOSTBYNAME_R_3_ARG
 #elif defined(__sun__) || defined(__sgi)
 #define HAVE_GETHOSTBYNAME_R_5_ARG
