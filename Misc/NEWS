@@ -10,6 +10,9 @@ What's New in Python 2.3 release candidate?
 Core and builtins
 -----------------
 
+- The new function sys.getcheckinterval() returns the last value set
+  by sys.setcheckinterval().
+
 - The Windows implementation of PyThread_start_new_thread() never
   checked error returns from Windows functions correctly.  As a result,
   it could claim to start a new thread even when the Microsoft

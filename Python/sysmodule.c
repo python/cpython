@@ -432,6 +432,16 @@ n instructions.  This also affects how often thread switches occur."
 );
 
 static PyObject *
+sys_getcheckinterval(PyObject *self, PyObject *args)
+{
+	return PyInt_FromLong(_Py_CheckInterval);
+}
+
+PyDoc_STRVAR(getcheckinterval_doc,
+"getcheckinterval() -> current check interval; see setcheckinterval()."
+);
+
+static PyObject *
 sys_setrecursionlimit(PyObject *self, PyObject *args)
 {
 	int new_limit;
@@ -723,6 +733,8 @@ static PyMethodDef sys_methods[] = {
 #endif
 	{"setcheckinterval",	sys_setcheckinterval, METH_VARARGS,
 	 setcheckinterval_doc}, 
+	{"getcheckinterval",	sys_getcheckinterval, METH_NOARGS,
+	 getcheckinterval_doc}, 
 #ifdef HAVE_DLOPEN
 	{"setdlopenflags", sys_setdlopenflags, METH_VARARGS, 
 	 setdlopenflags_doc},

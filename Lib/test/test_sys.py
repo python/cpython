@@ -172,8 +172,10 @@ class SysModuleTest(unittest.TestCase):
 
     def test_setcheckinterval(self):
         self.assertRaises(TypeError, sys.setcheckinterval)
-        sys.setcheckinterval(120)
-        sys.setcheckinterval(100)
+        orig = sys.getcheckinterval()
+        for n in 0, 100, 120, orig: # orig last to restore starting state
+            sys.setcheckinterval(n)
+            self.assertEquals(sys.getcheckinterval(), n)
 
     def test_recursionlimit(self):
         self.assertRaises(TypeError, sys.getrecursionlimit, 42)
