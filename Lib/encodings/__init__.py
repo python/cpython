@@ -48,15 +48,22 @@ def search_function(encoding):
     modname = encoding.replace('-', '_')
     modname = aliases.aliases.get(modname,modname)
     try:
-        mod = __import__('encodings.'+modname,globals(),locals(),'*')
+        mod = __import__(modname,globals(),locals(),'*')
     except ImportError,why:
         # cache misses
+        _cache[encoding] = None
+        return None
+
+    try:
+        getregentry = mod.getregentry
+    except AttributeError:
+        # Not a codec module
         _cache[encoding] = None
         return None
     
     # Now ask the module for the registry entry
     try:
-        entry = tuple(mod.getregentry())
+        entry = tuple(getregentry())
     except AttributeError:
         entry = ()
     if len(entry) != 4:
