@@ -2076,8 +2076,8 @@ unpack_sequence(v, argcnt, sp)
 				"unpack sequence of wrong size");
 	/* fall through */
 finally:
-	for (; i > 0; i--)
-		Py_DECREF(*sp++);
+	for (; i > 0; i--, sp++)
+		Py_DECREF(*sp);
 
 	return 0;
 }
