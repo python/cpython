@@ -131,3 +131,22 @@ def exists(s):
 
 def normpath(s):
 	return s
+
+# Directory tree walk.
+# For each directory under top (including top itself),
+# func(arg, dirname, filenames) is called, where
+# dirname is the name of the directory and filenames is the list
+# of files (and subdirectories etc.) in the directory.
+# The func may modify the filenames list, to implement a filter,
+# or to impose a different order of visiting.
+
+def walk(top, func, arg):
+	try:
+		names = mac.listdir(top)
+	except mac.error:
+		return
+	func(arg, top, names)
+	for name in names:
+		name = join(top, name)
+		if isdir(name):
+			walk(name, func, arg)
