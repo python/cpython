@@ -84,8 +84,9 @@ not exist or is inaccessible.
 \end{funcdesc}
 
 \begin{funcdesc}{getctime}{path}
-Return the time of most recent content modification or metadata change
-for \var{path}.  The return
+Return the system's ctime which, on some systems (like \UNIX) is the
+time of the last change, and, on others (like Windows), is the
+creation time for \var{path}.  The return
 value is a number giving the number of seconds since the epoch (see the 
 \refmodule{time} module).  Raise \exception{os.error} if the file does
 not exist or is inaccessible.
