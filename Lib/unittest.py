@@ -560,8 +560,8 @@ class _WritelnDecorator:
     def __getattr__(self, attr):
         return getattr(self.stream,attr)
 
-    def writeln(self, *args):
-        if args: self.write(*args)
+    def writeln(self, arg=None):
+        if arg: self.write(arg)
         self.write('\n') # text-mode streams translate to \r\n if needed
 
 
