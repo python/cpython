@@ -834,6 +834,56 @@ Implemented by Just van~Rossum.
 
 
 %======================================================================
+\section{PEP 305: Comma-separated Files \label{section-pep305}}
+
+Comma-separated files are a format frequently used for exporting data
+from databases and spreadsheets.  Python 2.3 adds a parser for
+comma-separated files.
+The format is deceptively simple at first glance:
+
+\begin{verbatim}
+Costs,150,200,3.95
+\end{verbatim}
+
+Read a line and call \code{line.split(',')}: what could be simpler?
+But toss in string data that can contain commas, and things get more
+complicated:
+
+\begin{verbatim}
+"Costs",150,200,3.95,"Includes taxes, shipping, and sundry items"
+\end{verbatim}
+
+A big ugly regular expression can parse this, but using the new 
+\module{csv} package is much simpler:
+
+\begin{verbatim}
+from csv import csv
+
+input = open('datafile', 'rb')
+reader = csv.reader(input)
+for line in reader:
+    print line
+\end{verbatim}
+
+The \function{reader} function takes a number of different options.
+The field separator isn't limited to the comma and can be changed to
+any character, and so can the quoting and line-ending characters.
+
+Different dialects of comma-separated files can be defined and
+registered; currently there are two, both for Microsoft Excel.
+A separate \class{csv.writer} class will generate comma-separated files
+from a succession of tuples or lists, quoting strings that contain the
+delimiter.  
+
+\begin{seealso}
+
+\seepep{305}{CSV File API}{Written and implemented 
+by Kevin Altis, Dave Cole, Andrew McNamara, Skip Montanaro, Cliff Wells.
+}
+
+\end{seealso}
+
+%======================================================================
 \section{Extended Slices\label{section-slices}}
 
 Ever since Python 1.4, the slicing syntax has supported an optional
