@@ -231,7 +231,7 @@ class StripWidget:
 	    self.__leftarrow.move_to(-100)
 	# and set the chip's outline
         brightness = ColorDB.triplet_to_brightness(rgbtuple)
-	if brightness <= 0.5:
+	if brightness <= 128:
 	    outline = 'white'
 	else:
 	    outline = 'black'
