@@ -2413,12 +2413,12 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
 			    repsize += 2+2+1;
 			else if (*p<1000)
 			    repsize += 2+3+1;
-#ifndef Py_UNICODE_WIDE
-			else
-			    repsize += 2+4+1;
-#else
 			else if (*p<10000)
 			    repsize += 2+4+1;
+#ifndef Py_UNICODE_WIDE
+			else
+			    repsize += 2+5+1;
+#else
 			else if (*p<100000)
 			    repsize += 2+5+1;
 			else if (*p<1000000)
