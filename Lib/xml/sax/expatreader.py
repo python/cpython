@@ -145,6 +145,8 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         pair = string.split(name)
         if len(pair) == 1:
             pair = (None, name)
+        else:
+            pair = tuple(pair)
 
         newattrs = {}
         for (aname, value) in attrs.items():
