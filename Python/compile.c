@@ -666,7 +666,8 @@ com_add(c, list, v)
 		if (v->ob_type == w->ob_type && PyObject_Compare(v, w) == 0)
 			return i;
 	}
-	if (PyList_Append(list, v) != 0)
+	/* Check for error from PyObject_Compare */
+	if (PyErr_Occurred() || PyList_Append(list, v) != 0)
 		c->c_errors++;
 	return n;
 }

@@ -456,6 +456,9 @@ eval_code2(co, globals, locals,
 				if (PyObject_Compare(keyword, nm) == 0)
 					break;
 			}
+			/* Check errors from Compare */
+			if (PyErr_Occurred())
+				goto fail;
 			if (j >= co->co_argcount) {
 				if (kwdict == NULL) {
 					PyErr_Format(PyExc_TypeError,
@@ -2475,6 +2478,8 @@ cmp_member(v, w)
 		Py_XDECREF(x);
 		if (cmp == 0)
 			return 1;
+		if (PyErr_Occurred())
+			return -1;
 	}
 	return 0;
 }
@@ -2507,6 +2512,8 @@ cmp_outcome(op, v, w)
 		break;
 	default:
 		cmp = PyObject_Compare(v, w);
+		if (cmp && PyErr_Occurred())
+			return NULL;
 		switch (op) {
 		case LT: res = cmp <  0; break;
 		case LE: res = cmp <= 0; break;

@@ -255,13 +255,17 @@ static PyObject *
 do_cmp(v, w)
 	PyObject *v, *w;
 {
+	long c;
 	/* __rcmp__ actually won't be called unless __cmp__ isn't defined,
 	   because the check in cmpobject() reverses the objects first.
 	   This is intentional -- it makes no sense to define cmp(x,y)
 	   different than -cmp(y,x). */
 	if (PyInstance_Check(v) || PyInstance_Check(w))
 		return PyInstance_DoBinOp(v, w, "__cmp__", "__rcmp__", do_cmp);
-	return PyInt_FromLong((long)PyObject_Compare(v, w));
+	c = PyObject_Compare(v, w);
+	if (c && PyErr_Occurred())
+		return NULL;
+	return PyInt_FromLong(c);
 }
 
 int
@@ -269,25 +273,25 @@ PyObject_Compare(v, w)
 	PyObject *v, *w;
 {
 	PyTypeObject *tp;
+	if (v == NULL || w == NULL) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
 	if (v == w)
 		return 0;
-	if (v == NULL)
-		return -1;
-	if (w == NULL)
-		return 1;
 	if (PyInstance_Check(v) || PyInstance_Check(w)) {
 		PyObject *res;
 		int c;
 		if (!PyInstance_Check(v))
 			return -PyObject_Compare(w, v);
 		res = do_cmp(v, w);
-		if (res == NULL) {
-			PyErr_Clear();
-			return (v < w) ? -1 : 1;
-		}
+		if (res == NULL)
+			return -1;
 		if (!PyInt_Check(res)) {
 			Py_DECREF(res);
-			return (v < w) ? -1 : 1;
+			PyErr_SetString(PyExc_TypeError,
+					"comparison did not return an int");
+			return -1;
 		}
 		c = PyInt_AsLong(res);
 		Py_DECREF(res);
@@ -296,11 +300,8 @@ PyObject_Compare(v, w)
 	if ((tp = v->ob_type) != w->ob_type) {
 		if (tp->tp_as_number != NULL &&
 				w->ob_type->tp_as_number != NULL) {
-			if (PyNumber_Coerce(&v, &w) != 0) {
-				PyErr_Clear();
-				/* XXX Should report the error,
-				   XXX but the interface isn't there... */
-			}
+			if (PyNumber_Coerce(&v, &w) != 0)
+				return -1;
 			else {
 				int cmp = (*v->ob_type->tp_compare)(v, w);
 				Py_DECREF(v);

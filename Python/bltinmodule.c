@@ -245,10 +245,14 @@ builtin_cmp(self, args)
 	PyObject *args;
 {
 	PyObject *a, *b;
+	long c;
 
 	if (!PyArg_ParseTuple(args, "OO:cmp", &a, &b))
 		return NULL;
-	return PyInt_FromLong((long)PyObject_Compare(a, b));
+	c = PyObject_Compare(a, b);
+	if (c && PyErr_Occurred())
+		return NULL;
+	return PyInt_FromLong(c);
 }
 
 static PyObject *
@@ -1073,7 +1077,13 @@ min_max(args, sign)
 		if (w == NULL)
 			w = x;
 		else {
-			if (PyObject_Compare(x, w) * sign > 0) {
+			int c = PyObject_Compare(x, w);
+			if (c && PyErr_Occurred()) {
+				Py_DECREF(x);
+				Py_XDECREF(w);
+				return NULL;
+			}
+			if (c * sign > 0) {
 				Py_DECREF(w);
 				w = x;
 			}
@@ -1360,8 +1370,8 @@ builtin_raw_input(self, args)
 			PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
 			return NULL;
 		}
-		Py_FlushLine();
-		if (PyFile_WriteObject(v, f, Py_PRINT_RAW) != 0)
+		if (Py_FlushLine() != 0 ||
+		    PyFile_WriteObject(v, f, Py_PRINT_RAW) != 0)
 			return NULL;
 	}
 	f = PySys_GetObject("stdin");

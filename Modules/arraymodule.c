@@ -484,10 +484,8 @@ array_compare(v, w)
 			cmp = -1;
 		Py_XDECREF(ai);
 		Py_XDECREF(bi);
-		if (cmp != 0) {
-			PyErr_Clear(); /* XXX Can't report errors here */
+		if (cmp != 0)
 			return cmp;
-		}
 	}
 	return v->ob_size - w->ob_size;
 }
@@ -823,6 +821,7 @@ array_index(self, args)
 	for (i = 0; i < self->ob_size; i++) {
 		if (PyObject_Compare(self->ob_item[i], args) == 0)
 			return PyInt_FromLong((long)i);
+		/* XXX PyErr_Occurred */
 	}
 	PyErr_SetString(PyExc_ValueError, "array.index(x): x not in array");
 	return NULL;
@@ -845,6 +844,7 @@ array_count(self, args)
 	for (i = 0; i < self->ob_size; i++) {
 		if (PyObject_Compare(self->ob_item[i], args) == 0)
 			count++;
+		/* XXX PyErr_Occurred */
 	}
 	return PyInt_FromLong((long)count);
 }
@@ -870,7 +870,7 @@ array_remove(self, args)
 			Py_INCREF(Py_None);
 			return Py_None;
 		}
-			
+		/* XXX PyErr_Occurred */
 	}
 	PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in array");
 	return NULL;
