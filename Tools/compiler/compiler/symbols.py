@@ -25,6 +25,7 @@ class Scope:
         # nested is true if the class could contain free variables,
         # i.e. if it is nested within another function.
         self.nested = None
+        self.generator = None
         self.klass = None
         if klass is not None:
             for i in range(len(klass)):
@@ -287,6 +288,27 @@ class SymbolVisitor:
                 name = name[:i]
             scope.add_def(asname or name)
 
+    def visitGlobal(self, node, scope):
+        for name in node.names:
+            scope.add_global(name)
+
+    def visitAssign(self, node, scope):
+        """Propagate assignment flag down to child nodes.
+
+        The Assign node doesn't itself contains the variables being
+        assigned to.  Instead, the children in node.nodes are visited
+        with the assign flag set to true.  When the names occur in
+        those nodes, they are marked as defs.
+
+        Some names that occur in an assignment target are not bound by
+        the assignment, e.g. a name occurring inside a slice.  The
+        visitor handles these nodes specially; they do not propagate
+        the assign flag to their children.
+        """
+        for n in node.nodes:
+            self.visit(n, scope, 1)
+        self.visit(node.expr, scope)
+
     def visitAssName(self, node, scope, assign=1):
         scope.add_def(node.name)
 
@@ -297,6 +319,13 @@ class SymbolVisitor:
         self.visit(node.expr, scope, 0)
         for n in node.subs:
             self.visit(n, scope, 0)
+
+    def visitSlice(self, node, scope, assign=0):
+        self.visit(node.expr, scope, assign)
+        if node.lower:
+            self.visit(node.lower, scope, 0)
+        if node.upper:
+            self.visit(node.upper, scope, 0)
             
     def visitAugAssign(self, node, scope):
         # If the LHS is a name, then this counts as assignment.
@@ -305,15 +334,6 @@ class SymbolVisitor:
         if isinstance(node.node, ast.Name):
             self.visit(node.node, scope, 1) # XXX worry about this
         self.visit(node.expr, scope)
-
-    def visitAssign(self, node, scope):
-        for n in node.nodes:
-            self.visit(n, scope, 1)
-        self.visit(node.expr, scope)
-
-    def visitGlobal(self, node, scope):
-        for name in node.names:
-            scope.add_global(name)
 
     # prune if statements if tests are false
 
@@ -329,6 +349,12 @@ class SymbolVisitor:
             self.visit(body, scope)
         if node.else_:
             self.visit(node.else_, scope)
+
+    # a yield statement signals a generator
+
+    def visitYield(self, node, scope):
+        self.generator = 1
+        self.visit(node.value, scope)
 
 def sort(l):
     l = l[:]
