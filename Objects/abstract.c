@@ -1,6 +1,5 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
-
 #include "Python.h"
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
@@ -2093,16 +2092,20 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 	int retval;
 
 	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
-		if (!check_class(derived, "issubclass() arg 1 must be a class"))
+		if (!check_class(derived,
+				 "issubclass() arg 1 must be a class"))
 			return -1;
 
 		if (PyTuple_Check(cls)) {
 			int i;
 			int n = PyTuple_GET_SIZE(cls);
 			for (i = 0; i < n; ++i) {
-				retval = PyObject_IsSubclass(derived, PyTuple_GET_ITEM(cls, i));
-				if (retval != 0) /* either found it, or got an error */
+				retval = PyObject_IsSubclass(
+					derived, PyTuple_GET_ITEM(cls, i));
+				if (retval != 0) {
+					/* either found it, or got an error */
 					return retval;
+				}
 			}
 			return 0;
 		}
