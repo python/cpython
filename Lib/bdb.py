@@ -1,10 +1,4 @@
-# A generic Python debugger base class.
-# This class takes care of details of the trace facility;
-# a derived class should implement user interaction.
-# There are two debuggers based upon this:
-# 'pdb', a text-oriented debugger not unlike dbx or gdb;
-# and 'wdb', a window-oriented debugger.
-# And of course... you can roll your own!
+# Debugger basics
 
 import sys
 import types
@@ -12,8 +6,15 @@ import types
 BdbQuit = 'bdb.BdbQuit' # Exception to give up completely
 
 
-class Bdb: # Basic Debugger
+class Bdb:
 	
+	"""Generic Python debugger base class.
+
+	This class takes care of details of the trace facility;
+	a derived class should implement user interaction.
+	The standard debugger class (pdb.Pdb) is an example.
+	"""
+
 	def __init__(self):
 		self.breaks = {}
 	
@@ -193,40 +194,46 @@ class Bdb: # Basic Debugger
 		import linecache # Import as late as possible
 		line = linecache.getline(filename, lineno)
 		if not line:
-			return 'That line does not exist!'
+			return 'Line %s:%d does not exist' % (filename,
+							       lineno)
 		if not self.breaks.has_key(filename):
 			self.breaks[filename] = []
 		list = self.breaks[filename]
 		if not lineno in list:
 			list.append(lineno)
 		bp = Breakpoint(filename, lineno, temporary, cond)
-		print 'Breakpoint %d, at %s:%d.' %(bp.number, filename, lineno)
 
-	def clear_break(self, arg):
-		try:
-			number = int(arg)
-			bp = Breakpoint.bpbynumber[int(arg)]
-		except:
-			return 'Invalid argument'
-		if not bp:
-			return 'Breakpoint already deleted'
-		filename = bp.file
-		lineno = bp.line
+	def clear_break(self, filename, lineno):
 		if not self.breaks.has_key(filename):
-			return 'There are no breakpoints in that file!'
+			return 'There are no breakpoints in %s' % filename
 		if lineno not in self.breaks[filename]:
-			return 'There is no breakpoint there!'
+			return 'There is no breakpoint at %s:%d' % (filename,
+								    lineno)
 		# If there's only one bp in the list for that file,line
 		# pair, then remove the breaks entry
-		if len(Breakpoint.bplist[filename, lineno]) == 1:
+		for bp in Breakpoint.bplist[filename, lineno][:]:
+			bp.deleteMe()
+		if not Breakpoint.bplist.has_key((filename, lineno)):
 			self.breaks[filename].remove(lineno)
 		if not self.breaks[filename]:
 			del self.breaks[filename]
-		bp.deleteMe()
 	
+	def clear_bpbynumber(self, arg):
+		try:
+			number = int(arg)
+		except:
+			return 'Non-numeric breakpoint number (%s)' % arg
+		try:
+			bp = Breakpoint.bpbynumber[number]
+		except IndexError:
+			return 'Breakpoint number (%d) out of range' % number
+		if not bp:
+			return 'Breakpoint (%d) already deleted' % number
+		self.clear_break(bp.file, bp.line)
+
 	def clear_all_file_breaks(self, filename):
 		if not self.breaks.has_key(filename):
-			return 'There are no breakpoints in that file!'
+			return 'There are no breakpoints in %s' % filename
 		for line in self.breaks[filename]:
 			blist = Breakpoint.bplist[filename, line]
 			for bp in blist:
@@ -235,7 +242,7 @@ class Bdb: # Basic Debugger
 	
 	def clear_all_breaks(self):
 		if not self.breaks:
-			return 'There are no breakpoints!'
+			return 'There are no breakpoints'
 		for bp in Breakpoint.bpbynumber:
 			if bp:
 				bp.deleteMe()
@@ -244,6 +251,11 @@ class Bdb: # Basic Debugger
 	def get_break(self, filename, lineno):
 		return self.breaks.has_key(filename) and \
 			lineno in self.breaks[filename]
+	
+	def get_breaks(self, filename, lineno):
+		return self.breaks.has_key(filename) and \
+			lineno in self.breaks[filename] and \
+			Breakpoint.bplist[filename, line] or []
 	
 	def get_file_breaks(self, filename):
 		if self.breaks.has_key(filename):
@@ -381,6 +393,8 @@ class Breakpoint:
 
 	"""
 
+	# XXX Keeping state in the class is a mistake -- this means
+	# you cannot have more than one active Bdb instance.
 
 	next = 1		# Next bp to be assigned
 	bplist = {}		# indexed by (file, lineno) tuple
