@@ -59,46 +59,48 @@ def make_tarball (base_name, base_dir, compress="gzip",
 
 def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
     """Create a zip file from all the files under 'base_dir'.  The output
-    zip file will be named 'base_dir' + ".zip".  Uses either the InfoZIP
-    "zip" utility (if installed and found on the default search path) or
-    the "zipfile" Python module (if available).  If neither tool is
-    available, raises DistutilsExecError.  Returns the name of the output
-    zip file.
+    zip file will be named 'base_dir' + ".zip".  Uses either the "zipfile"
+    Python module (if available) or the InfoZIP "zip" utility (if installed
+    and found on the default search path).  If neither tool is available,
+    raises DistutilsExecError.  Returns the name of the output zip file.
     """
-    # This initially assumed the Unix 'zip' utility -- but
-    # apparently InfoZIP's zip.exe works the same under Windows, so
-    # no changes needed!
-
+    try:
+        import zipfile
+    except ImportError:
+        zipfile = None
+        
     zip_filename = base_name + ".zip"
     mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
-    try:
-        spawn(["zip", "-rq", zip_filename, base_dir],
-              dry_run=dry_run)
-    except DistutilsExecError:
 
-        # XXX really should distinguish between "couldn't find
-        # external 'zip' command" and "zip failed" -- shouldn't try
-        # again in the latter case.  (I think fixing this will
-        # require some cooperation from the spawn module -- perhaps
-        # a utility function to search the path, so we can fallback
-        # on zipfile.py without the failed spawn.)
-        try:
-            import zipfile
-        except ImportError:
-            raise DistutilsExecError, \
-                  ("unable to create zip file '%s': " +
-                   "could neither find a standalone zip utility nor " +
-                   "import the 'zipfile' module") % zip_filename
-
+    # If zipfile module is not available, try spawning an external
+    # 'zip' command.
+    if zipfile is None:
+        if verbose:
+            zipoptions = "-r"
+        else:
+            zipoptions = "-rq"
         
-        log.info("creating '%s' and adding '%s' to it", 
+        try:
+            spawn(["zip", zipoptions, zip_filename, base_dir],
+                  dry_run=dry_run)
+        except DistutilsExecError:
+            # XXX really should distinguish between "couldn't find
+            # external 'zip' command" and "zip failed".
+            raise DistutilsExecError, \
+                  ("unable to create zip file '%s': "
+                   "could neither import the 'zipfile' module nor "
+                   "find a standalone zip utility") % zip_filename
+
+    else:
+        log.info("creating '%s' and adding '%s' to it",
                  zip_filename, base_dir)
-         
+
         def visit (z, dirname, names):
             for name in names:
                 path = os.path.normpath(os.path.join(dirname, name))
                 if os.path.isfile(path):
                     z.write(path, path)
+                    log.info("adding '%s'" % path)
 
         if not dry_run:
             z = zipfile.ZipFile(zip_filename, "w",
