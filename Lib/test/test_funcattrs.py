@@ -1,4 +1,5 @@
-from test_support import verbose, TestFailed
+from test_support import verbose, TestFailed, verify
+import types
 
 class F:
     def a(self):
@@ -210,3 +211,159 @@ d[foo] = 1
 foo.func_code = temp.func_code
 
 d[foo]
+
+# Test all predefined function attributes systematically
+
+def test_func_closure():
+    a = 12
+    def f(): print a
+    c = f.func_closure
+    verify(isinstance(c, tuple))
+    verify(len(c) == 1)
+    verify(c[0].__class__.__name__ == "cell") # don't have a type object handy
+    try:
+        f.func_closure = c
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to set func_closure"
+    try:
+        del a.func_closure
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to del func_closure"
+
+def test_func_doc():
+    def f(): pass
+    verify(f.__doc__ is None)
+    verify(f.func_doc is None)
+    f.__doc__ = "hello"
+    verify(f.__doc__ == "hello")
+    verify(f.func_doc == "hello")
+    del f.__doc__
+    verify(f.__doc__ is None)
+    verify(f.func_doc is None)
+    f.func_doc = "world"
+    verify(f.__doc__ == "world")
+    verify(f.func_doc == "world")
+    del f.func_doc
+    verify(f.func_doc is None)
+    verify(f.__doc__ is None)
+
+def test_func_globals():
+    def f(): pass
+    verify(f.func_globals is globals())
+    try:
+        f.func_globals = globals()
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to set func_globals"
+    try:
+        del f.func_globals
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to del func_globals"
+
+def test_func_name():
+    def f(): pass
+    verify(f.__name__ == "f")
+    verify(f.func_name == "f")
+    try:
+        f.func_name = "f"
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to set func_name"
+    try:
+        f.__name__ = "f"
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to set __name__"
+    try:
+        del f.func_name
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to del func_name"
+    try:
+        del f.__name__
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to del __name__"
+
+def test_func_code():
+    def f(): pass
+    def g(): print 12
+    verify(type(f.func_code) is types.CodeType)
+    f.func_code = g.func_code
+    try:
+        del f.func_code
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to del func_code"
+
+def test_func_defaults():
+    def f(a, b): return (a, b)
+    verify(f.func_defaults is None)
+    f.func_defaults = (1, 2)
+    verify(f.func_defaults == (1, 2))
+    verify(f(10) == (10, 2))
+    def g(a=1, b=2): return (a, b)
+    verify(g.func_defaults == (1, 2))
+    del g.func_defaults
+    verify(g.func_defaults is None)
+    try:
+        g()
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to call g() w/o defaults"
+
+def test_func_dict():
+    def f(): pass
+    a = f.__dict__
+    b = f.func_dict
+    verify(a == {})
+    verify(a is b)
+    f.hello = 'world'
+    verify(a == {'hello': 'world'})
+    verify(f.func_dict is a is f.__dict__)
+    f.func_dict = {}
+    try:
+        f.hello
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "hello attribute should have disappeared"
+    f.__dict__ = {'world': 'hello'}
+    verify(f.world == "hello")
+    verify(f.__dict__ is f.func_dict == {'world': 'hello'})
+    try:
+        del f.func_dict
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to delete func_dict"
+    try:
+        del f.__dict__
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be allowed to delete __dict__"
+
+def testmore():
+    test_func_closure()
+    test_func_doc()
+    test_func_globals()
+    test_func_name()
+    test_func_code()
+    test_func_defaults()
+    test_func_dict()
+
+testmore()

@@ -127,98 +127,144 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
 
 #define OFF(x) offsetof(PyFunctionObject, x)
 
+#define RR ()
+
 static struct memberlist func_memberlist[] = {
-        {"func_code",     T_OBJECT,     OFF(func_code)},
-        {"func_globals",  T_OBJECT,     OFF(func_globals),      READONLY},
+        {"func_closure",  T_OBJECT,     OFF(func_closure),
+	 RESTRICTED|READONLY},
+        {"func_doc",      T_OBJECT,     OFF(func_doc), WRITE_RESTRICTED},
+        {"__doc__",       T_OBJECT,     OFF(func_doc), WRITE_RESTRICTED},
+        {"func_globals",  T_OBJECT,     OFF(func_globals),
+	 RESTRICTED|READONLY},
         {"func_name",     T_OBJECT,     OFF(func_name),         READONLY},
         {"__name__",      T_OBJECT,     OFF(func_name),         READONLY},
-        {"func_closure",  T_OBJECT,     OFF(func_closure),      READONLY},
-        {"func_defaults", T_OBJECT,     OFF(func_defaults)},
-        {"func_doc",      T_OBJECT,     OFF(func_doc)},
-        {"__doc__",       T_OBJECT,     OFF(func_doc)},
-        {"func_dict",     T_OBJECT,     OFF(func_dict)},
-        {"__dict__",      T_OBJECT,     OFF(func_dict)},
         {NULL}  /* Sentinel */
 };
 
-static PyObject *
-func_getattro(PyObject *op, PyObject *name)
+static int
+restricted(void)
 {
-	char *sname = PyString_AsString(name);
-	
-	if (sname[0] != '_' && PyEval_GetRestricted()) {
-		PyErr_SetString(PyExc_RuntimeError,
-		  "function attributes not accessible in restricted mode");
+	if (!PyEval_GetRestricted())
+		return 0;
+	PyErr_SetString(PyExc_RuntimeError,
+		"function attributes not accessible in restricted mode");
+	return 1;
+}
+
+static PyObject *
+func_get_dict(PyFunctionObject *op)
+{
+	if (restricted())
 		return NULL;
-	}
-	/* If func_dict is being accessed but no attribute has been set
-	 * yet, then initialize it to the empty dictionary.
-	 */
-	if ((!strcmp(sname, "func_dict") || !strcmp(sname, "__dict__"))
-	     && ((PyFunctionObject*)op)->func_dict == NULL)
-	{
-		PyFunctionObject* funcop = (PyFunctionObject*)op;
-		
-		funcop->func_dict = PyDict_New();
-		if (funcop->func_dict == NULL)
+	if (op->func_dict == NULL) {
+		op->func_dict = PyDict_New();
+		if (op->func_dict == NULL)
 			return NULL;
 	}
-	return PyObject_GenericGetAttr(op, name);
+	Py_INCREF(op->func_dict);
+	return op->func_dict;
 }
 
 static int
-func_setattro(PyObject *op, PyObject *name, PyObject *value)
+func_set_dict(PyFunctionObject *op, PyObject *value)
 {
-	char *sname = PyString_AsString(name);
+	PyObject *tmp;
 
-	if (PyEval_GetRestricted()) {
-		PyErr_SetString(PyExc_RuntimeError,
-		  "function attributes not settable in restricted mode");
+	if (restricted())
+		return -1;
+	/* It is illegal to del f.func_dict */
+	if (value == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+				"function's dictionary may not be deleted");
 		return -1;
 	}
-	if (strcmp(sname, "func_code") == 0) {
-		/* not legal to del f.func_code or to set it to anything
-		 * other than a code object.
-		 */
-		if (value == NULL || !PyCode_Check(value)) {
-			PyErr_SetString(
-				PyExc_TypeError,
-				"func_code must be set to a code object");
-			return -1;
-		}
-	}
-	else if (strcmp(sname, "func_defaults") == 0) {
-		/* legal to del f.func_defaults.  Can only set
-		 * func_defaults to NULL or a tuple.
-		 */
-		if (value == Py_None)
-			value = NULL;
-		if (value != NULL && !PyTuple_Check(value)) {
-			PyErr_SetString(
-				PyExc_TypeError,
-				"func_defaults must be set to a tuple object");
-			return -1;
-		}
-	}
-	else if (!strcmp(sname, "func_dict") || !strcmp(sname, "__dict__")) {
-		/* It is illegal to del f.func_dict.  Can only set
-		 * func_dict to a dictionary.
-		 */
-		if (value == NULL) {
-			PyErr_SetString(
-				PyExc_TypeError,
-				"function's dictionary may not be deleted");
-			return -1;
-		}
-		if (!PyDict_Check(value)) {
-			PyErr_SetString(
-				PyExc_TypeError,
+	/* Can only set func_dict to a dictionary */
+	if (!PyDict_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
 				"setting function's dictionary to a non-dict");
-			return -1;
-		}
+		return -1;
 	}
-	return PyObject_GenericSetAttr(op, name, value);
+	tmp = op->func_dict;
+	Py_INCREF(value);
+	op->func_dict = value;
+	Py_XDECREF(tmp);
+	return 0;
 }
+
+static PyObject *
+func_get_code(PyFunctionObject *op)
+{
+	if (restricted())
+		return NULL;
+	Py_INCREF(op->func_code);
+	return op->func_code;
+}
+
+static int
+func_set_code(PyFunctionObject *op, PyObject *value)
+{
+	PyObject *tmp;
+
+	if (restricted())
+		return -1;
+	/* Not legal to del f.func_code or to set it to anything
+	 * other than a code object. */
+	if (value == NULL || !PyCode_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
+				"func_code must be set to a code object");
+		return -1;
+	}
+	tmp = op->func_code;
+	Py_INCREF(value);
+	op->func_code = value;
+	Py_DECREF(tmp);
+	return 0;
+}
+
+static PyObject *
+func_get_defaults(PyFunctionObject *op)
+{
+	if (restricted())
+		return NULL;
+	if (op->func_defaults == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	Py_INCREF(op->func_defaults);
+	return op->func_defaults;
+}
+
+static int
+func_set_defaults(PyFunctionObject *op, PyObject *value)
+{
+	PyObject *tmp;
+
+	if (restricted())
+		return -1;
+	/* Legal to del f.func_defaults.
+	 * Can only set func_defaults to NULL or a tuple. */
+	if (value == Py_None)
+		value = NULL;
+	if (value != NULL && !PyTuple_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
+				"func_defaults must be set to a tuple object");
+		return -1;
+	}
+	tmp = op->func_defaults;
+	Py_XINCREF(value);
+	op->func_defaults = value;
+	Py_XDECREF(tmp);
+	return 0;
+}
+
+static struct getsetlist func_getsetlist[] = {
+        {"func_code", (getter)func_get_code, (setter)func_set_code},
+        {"func_defaults", (getter)func_get_defaults,
+	 (setter)func_set_defaults},
+	{"func_dict", (getter)func_get_dict, (setter)func_set_dict},
+	{"__dict__", (getter)func_get_dict, (setter)func_set_dict},
+	{NULL} /* Sentinel */
+};
 
 static void
 func_dealloc(PyFunctionObject *op)
@@ -365,8 +411,8 @@ PyTypeObject PyFunction_Type = {
 	0,					/* tp_hash */
 	function_call,				/* tp_call */
 	0,					/* tp_str */
-	func_getattro,				/* tp_getattro */
-	func_setattro,				/* tp_setattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,					/* tp_doc */
@@ -378,7 +424,7 @@ PyTypeObject PyFunction_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	func_memberlist,			/* tp_members */
-	0,					/* tp_getset */
+	func_getsetlist,			/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	func_descr_get,				/* tp_descr_get */
