@@ -1556,7 +1556,11 @@ PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 {
     PyObject *v;
     unsigned char *p;
+#ifdef Py_UNICODE_WIDE
     int i, pairs;
+#else
+    const int pairs = 0;
+#endif
     /* Offsets from p for storing byte pairs in the right order. */
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
     int ihi = 1, ilo = 0;
@@ -1571,9 +1575,11 @@ PyUnicode_EncodeUTF16(const Py_UNICODE *s,
         p += 2;                         \
     } while(0)
 
+#ifdef Py_UNICODE_WIDE
     for (i = pairs = 0; i < size; i++)
 	if (s[i] >= 0x10000)
 	    pairs++;
+#endif
     v = PyString_FromStringAndSize(NULL,
 		  2 * (size + pairs + (byteorder == 0)));
     if (v == NULL)
@@ -1599,10 +1605,12 @@ PyUnicode_EncodeUTF16(const Py_UNICODE *s,
     while (size-- > 0) {
 	Py_UNICODE ch = *s++;
 	Py_UNICODE ch2 = 0;
+#ifdef Py_UNICODE_WIDE
 	if (ch >= 0x10000) {
 	    ch2 = 0xDC00 | ((ch-0x10000) & 0x3FF);
 	    ch  = 0xD800 | ((ch-0x10000) >> 10);
 	}
+#endif
         STORECHAR(ch);
         if (ch2)
             STORECHAR(ch2);
@@ -2203,7 +2211,7 @@ PyObject *PyUnicode_DecodeLatin1(const char *s,
     Py_UNICODE *p;
 
     /* Latin-1 is equivalent to the first 256 ordinals in Unicode. */
-    if (size == 1 && *(unsigned char*)s < 256) {
+    if (size == 1) {
 	Py_UNICODE r = *(unsigned char*)s;
 	return PyUnicode_FromUnicode(&r, 1);
     }
@@ -2405,6 +2413,10 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
 			    repsize += 2+2+1;
 			else if (*p<1000)
 			    repsize += 2+3+1;
+#ifndef Py_UNICODE_WIDE
+			else
+			    repsize += 2+4+1;
+#else
 			else if (*p<10000)
 			    repsize += 2+4+1;
 			else if (*p<100000)
@@ -2413,6 +2425,7 @@ static PyObject *unicode_encode_ucs1(const Py_UNICODE *p,
 			    repsize += 2+6+1;
 			else
 			    repsize += 2+7+1;
+#endif
 		    }
 		    requiredsize = respos+repsize+(endp-collend);
 		    if (requiredsize > ressize) {
