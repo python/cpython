@@ -67,8 +67,18 @@ div.warning             { background-color: #fffaf0;
                           margin-left: 2em;
                           margin-right: 2em; }
 
-div.warning .label      { font-size: 110%;
+div.warning .label      { font-family: sans-serif;
+                          font-size: 110%;
                           margin-right: 0.5em; }
+
+div.note                { background-color: #fffaf0;
+                          border: thin solid black;
+                          padding: 0.5em;
+                          margin-left: 2em;
+                          margin-right: 2em; }
+
+div.note .label         { margin-right: 0.5em;
+                          font-family: sans-serif; }
 
 .release-info           { font-style: italic; }
 
