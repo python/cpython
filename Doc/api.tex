@@ -2374,9 +2374,9 @@ Return the default module search path; this is computed from the
 program name (set by \code{Py_SetProgramName()} above) and some 
 environment variables.  The returned string consists of a series of 
 directory names separated by a platform dependent delimiter character.  
-The delimiter character is \code{':'} on \UNIX{}, \code{';'} on 
-DOS/Windows, and \code{'\\n'} (the ASCII newline character) on 
-Macintosh.  The returned string points into static storage; the caller 
+The delimiter character is \code{':'} on \UNIX{}, \code{';'} on
+DOS/Windows, and \code{'\\n'} (the \ASCII{} newline character) on
+Macintosh.  The returned string points into static storage; the caller
 should not modify its value.  The value is available to Python code 
 as the list \code{sys.path}, which may be modified to change the 
 future search path for loaded modules.
