@@ -11,57 +11,29 @@ import sys
 import os
 import macfs
 import MacOS
-verbose=0
 
-SPLASH_LOCATE=512
-SPLASH_REMOVE=513
-SPLASH_CFM68K=514
-SPLASH_PPC=515
-SPLASH_NUMPY=516
+SPLASH_COPYCORE=512
+SPLASH_COPYCARBON=513
+SPLASH_COPYCLASSIC=514
+SPLASH_BUILDAPPLETS=515
+
+ALERT_NOCORE=516
 ALERT_NONBOOT=517
 ALERT_NONBOOT_COPY=1
 ALERT_NONBOOT_ALIAS=2
 
-ppc_goals = [
+APPLET_LIST=[
+		(":Mac:scripts:EditPythonPrefs.py", "EditPythonPrefs", None),
+		(":Mac:scripts:BuildApplet.py", "BuildApplet", None),
+		(":Mac:scripts:BuildApplication.py", "BuildApplication", None),
+##		(":Mac:scripts:ConfigurePython.py", "ConfigurePython", None),
+##		(":Mac:scripts:ConfigurePython.py", "ConfigurePythonCarbon", "PythonInterpreterCarbon"),
+##		(":Mac:scripts:ConfigurePython.py", "ConfigurePythonClassic", "PythonInterpreterClassic"),
+		(":Mac:Tools:IDE:PythonIDE.py", "Python IDE", None),
+		(":Mac:Tools:CGI:PythonCGISlave.py", ":Mac:Tools:CGI:PythonCGISlave", None),
+		(":Mac:Tools:CGI:BuildCGIApplet.py", ":Mac:Tools:CGI:BuildCGIApplet", None),
 ]
 
-def gotopluginfolder():
-	"""Go to the plugin folder, assuming we are somewhere in the Python tree"""
-	import os
-	
-	while not os.path.isdir(":Mac:PlugIns"):
-		os.chdir("::")
-	os.chdir(":Mac:PlugIns")
-	if verbose: print "current directory is", os.getcwd()
-	
-def loadtoolboxmodules():
-	"""Attempt to load the Res module"""
-	try:
-		import Res
-	except ImportError, arg:
-		err1 = arg
-		pass
-	else:
-		if verbose: print 'imported Res the standard way.'
-		return
-	
-	# We cannot import it. Try a manual load
-	try:
-		dummy = imp.load_dynamic('Res', 'toolboxmodules.ppc.slb')
-	except ImportError, arg:
-		err3 = arg
-		pass
-	else:
-		if verbose:  print 'Loaded Res from toolboxmodules.ppc.slb.'
-		return
-	
-	# Tough luck....
-	print "I cannot import the Res module, nor load it from either of"
-	print "toolboxmodules shared libraries. The errors encountered were:"
-	print "import Res:", err1
-	print "load from toolboxmodules.ppc.slb:", err3
-	sys.exit(1)
-	
 def getextensiondirfile(fname):
 	import macfs
 	import MACFS
@@ -76,7 +48,6 @@ def mkcorealias(src, altsrc):
 	dst = getextensiondirfile(src+ ' ' + version)
 	if not os.path.exists(os.path.join(sys.exec_prefix, src)):
 		if not os.path.exists(os.path.join(sys.exec_prefix, altsrc)):
-			if verbose:  print '*', src, 'not found'
 			return 0
 		src = altsrc
 	try:
@@ -96,63 +67,67 @@ def mkcorealias(src, altsrc):
 		macostools.copy(os.path.join(sys.exec_prefix, src), dst)
 	else:
 		macostools.mkalias(os.path.join(sys.exec_prefix, src), dst)
-	if verbose:  print ' ', dst, '->', src
 	return 1
-	
+
+# Copied from fullbuild, should probably go to buildtools
+def buildapplet(top, dummy, list):
+	"""Create python applets"""
+	import buildtools
+	for src, dst, tmpl in list:
+		template = buildtools.findtemplate(tmpl)
+		if src[-3:] != '.py':
+			raise 'Should end in .py', src
+		base = os.path.basename(src)
+		src = os.path.join(top, src)
+		dst = os.path.join(top, dst)
+		try:
+			os.unlink(dst)
+		except os.error:
+			pass
+		try:
+			buildtools.process(template, src, dst, 1)
+		except buildtools.BuildError, arg:
+			print '**', dst, arg
+		
+def buildcopy(top, dummy, list):
+	import macostools
+	for src, dst in list:
+		src = os.path.join(top, src)
+		dst = os.path.join(top, dst)
+		import pdb ; pdb.set_trace()
+		macostools.copy(src, dst)
 
 def main():
-	MacOS.splash(SPLASH_LOCATE)
-	gotopluginfolder()
-	
-	loadtoolboxmodules()
+	os.chdir(sys.prefix)
 	
 	sys.path.append('::Mac:Lib')
 	import macostools
-		
-	# Remove old .slb aliases and collect a list of .slb files
-	didsplash = 0
-	LibFiles = []
-	allfiles = os.listdir(':')
-	if verbose:  print 'Removing old aliases...'
-	for f in allfiles:
-		if f[-4:] == '.slb':
-			finfo = macfs.FSSpec(f).GetFInfo()
-			if finfo.Flags & 0x8000:
-				if not didsplash:
-					MacOS.splash(SPLASH_REMOVE)
-					didsplash = 1
-				if verbose:  print '  Removing', f
-				os.unlink(f)
-			else:
-				LibFiles.append(f)
-				if verbose:  print '  Found', f
-	if verbose:  print
-	
-	# Create the new PPC aliases.
-	didsplash = 0
-	if verbose:  print 'Creating PPC aliases...'
-	for dst, src in ppc_goals:
-		if src in LibFiles:
-			if not didsplash:
-				MacOS.splash(SPLASH_PPC)
-				didsplash = 1
-			macostools.mkalias(src, dst)
-			if verbose:  print ' ', dst, '->', src
-		else:
-			if verbose:  print '*', dst, 'not created:', src, 'not found'
-	if verbose:  print
 				
 	# Create the PythonCore alias(es)
-	if verbose:  print 'Creating PythonCore aliases in Extensions folder...'
-	os.chdir('::')
+	MacOS.splash(SPLASH_COPYCORE)
 	n = 0
 	n = n + mkcorealias('PythonCore', 'PythonCore')
 	n = n + mkcorealias('PythonCoreCarbon', 'PythonCoreCarbon')
-	
-	if verbose and n == 0:
+	if n == 0:
+		Dlg.CautionAlert(ALERT_NOCORE, None)
+		return
+	if sys.argv[0][-7:] == 'Classic':
+		do_classic = 1
+	elif sys.argv[0][-6:] == 'Carbon':
+		do_classic = 0
+	elif sys.argv[0][-15:] == 'ConfigurePython' or sys.argv[0][-18:] == 'ConfigurePython.py':
+		return
+	else:
+		print "I don't know the sys.argv[0] function", sys.argv[0]
 		sys.exit(1)
-			
+	if do_classic:
+		MacOS.splash(SPLASH_COPYCLASSIC)
+		buildcopy(sys.prefix, None, [("PythonInterpreterClassic", "PythonInterpreter")])
+	else:
+		MacOS.splash(SPLASH_COPYCARBON)
+		buildcopy(sys.prefix, None, [("PythonInterpreterCarbon", "PythonInterpreter")])
+	MacOS.splash(SPLASH_BUILDAPPLETS)
+	buildapplet(sys.prefix, None, APPLET_LIST)
+
 if __name__ == '__main__':
-	if len(sys.argv) > 1 and sys.argv[1] == '-v':
-		verbose = 1
 	main()
