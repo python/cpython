@@ -400,7 +400,15 @@ class Checker:
         if local_fragment and self.nonames:
             self.markdone(url_pair)
             return
-        page = self.getpage(url_pair)
+        try:
+            page = self.getpage(url_pair)
+        except sgmllib.SGMLParseError, msg:
+            msg = self.sanitize(msg)
+            self.note(0, "Error parsing %s: %s",
+                          self.format_url(url_pair), msg)
+            # Dont actually mark the URL as bad - it exists, just
+            # we can't parse it!
+            page = None
         if page:
             # Store the page which corresponds to this URL.
             self.name_table[url] = page
