@@ -7,6 +7,7 @@ from Tkinter import *
 import tkSimpleDialog
 import tkMessageBox
 import idlever
+import WindowList
 
 # File menu
 
@@ -159,7 +160,7 @@ class EditorWindow:
                 menu.add_separator()
                 end = end + 1
             self.wmenu_end = end
-            menu.configure(postcommand=self.postwindowsmenu)
+            WindowList.register_callback(self.postwindowsmenu)
 
     def wakeup(self):
         if self.top.wm_state() == "iconic":
@@ -196,7 +197,6 @@ class EditorWindow:
             end = -1
         if end > self.wmenu_end:
             menu.delete(self.wmenu_end+1, end)
-        import WindowList
         WindowList.add_windows_to_menu(menu)
 
     rmenu = None
@@ -441,6 +441,7 @@ class EditorWindow:
         self.top.tkraise()
         reply = self.maybesave()
         if reply != "cancel":
+            WindowList.unregister_callback(self.postwindowsmenu)
             if self.close_hook:
                 self.close_hook()
             colorizing = 0
@@ -450,6 +451,7 @@ class EditorWindow:
                 self.color.close(doh) # Cancel colorization
             if not colorizing:
                 self.top.destroy()
+            self.top.after_idle(WindowList.call_callbacks)
         return reply
 
     def load_extensions(self):
