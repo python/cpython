@@ -4,7 +4,7 @@ Building and using a framework-based Python on Mac OS X.
 This document provides a quick introduction to framework-based Python, its
 advantages, and how to build it.
 
-1. Why would I want a framework Python in stead of a normal static Python?
+1. Why would I want a framework Python instead of a normal static Python?
 --------------------------------------------------------------------------
 
 The main reason is because you want to create GUI programs in Python. With the
