@@ -158,14 +158,17 @@ def __import__(name, globals=None, locals=None, fromlist=None):
     fp, pathname, (suffix, mode, type) = imp.find_module(name)
 
     # See what we got.
-    # Note that fp will be closed automatically when we return.
-    if type == imp.C_EXTENSION:
-        return imp.load_dynamic(name, pathname)
-    if type == imp.PY_SOURCE:
-        return imp.load_source(name, pathname, fp)
-    if type == imp.PY_COMPILED:
-        return imp.load_compiled(name, pathname, fp)
+    try:
+        if type == imp.C_EXTENSION:
+            return imp.load_dynamic(name, pathname)
+        if type == imp.PY_SOURCE:
+            return imp.load_source(name, pathname, fp)
+        if type == imp.PY_COMPILED:
+            return imp.load_compiled(name, pathname, fp)
 
-    # Shouldn't get here at all.
-    raise ImportError, '%s: unknown module type (%d)' % (name, type)
+        # Shouldn't get here at all.
+        raise ImportError, '%s: unknown module type (%d)' % (name, type)
+    finally:
+        # Since we may exit via an exception, close fp explicitly.
+        fp.close()
 \end{verbatim}
