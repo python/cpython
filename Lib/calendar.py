@@ -54,8 +54,10 @@ def isleap(year):
 
 def leapdays(y1, y2):
     """Return number of leap years in range [y1, y2).
-       Assume y1 <= y2 and no funny (non-leap century) years."""
-    return (y2+3)/4 - (y1+3)/4
+       Assume y1 <= y2."""
+    y1 -= 1
+    y2 -= 1
+    return (y2/4 - y1/4) - (y2/100 - y1/100) + (y2/400 - y1/400)
 
 def weekday(year, month, day):
     """Return weekday (0-6 ~ Mon-Sun) for year (1970-...), month (1-12),
