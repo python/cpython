@@ -732,9 +732,11 @@ class PyBuildExt(build_ext):
                                ))                        
 
         # Dynamic loading module
-        dl_inc = find_file('dlfcn.h', [], inc_dirs)
-        if (dl_inc is not None) and (platform not in ['atheos']):
-            exts.append( Extension('dl', ['dlmodule.c']) )
+        if sys.maxint == 0x7fffffff:
+            # This requires sizeof(int) == sizeof(long) == sizeof(char*)
+            dl_inc = find_file('dlfcn.h', [], inc_dirs)
+            if (dl_inc is not None) and (platform not in ['atheos']):
+                exts.append( Extension('dl', ['dlmodule.c']) )
 
         # Platform-specific libraries
         if platform == 'linux2':
