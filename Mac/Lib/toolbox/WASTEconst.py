@@ -1,4 +1,4 @@
-# Generated from ':::::Waste 1.2a5:WASTE C/C++ Headers:WASTE.h'
+# Generated from ':::::Waste 1.2 distribution:WASTE C/C++ Headers:WASTE.h'
 
 weCantUndoErr = -10015
 weEmptySelectionErr = -10013
@@ -56,6 +56,7 @@ weCharTypeHook = 'ctyp'
 weClickLoop = 'clik'
 weCurrentDrag = 'drag'
 weDrawTextHook = 'draw'
+weHiliteDropAreaHook = 'hidr'
 weLineBreakHook = 'lbrk'
 wePixelToCharHook = 'p2c '
 wePort = 'port'
