@@ -9,7 +9,7 @@ including:
 
 Core and builtins
 
-- The floating point behavoiur fix-up continued into complex_pow.
+- The floating point behavior fix-up continued into complex_pow.
 
 Library
 
