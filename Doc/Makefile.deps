@@ -244,3 +244,7 @@ MACFILES= $(HOWTOSTYLES) $(COMMONTEX) \
 	../mac/libmacic.tex \
 	../mac/libframework.tex \
 	../mac/libminiae.tex
+
+INSTFILES = $(HOWTOSTYLES) $(COMMONTEX) ../inst/inst.tex
+
+DISTFILES = $(HOWTOSTYLES) $(COMMONTEX) ../dist/dist.tex

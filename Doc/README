@@ -20,6 +20,8 @@ The following are the LaTeX source files:
 	mac/*.tex	Macintosh Library Modules
 	ref/*.tex	Python Reference Manual
 	tut/*.tex	Python Tutorial
+        inst/*.tex      Installing Python Modules
+        dist/*.tex      Distributing Python Modules
 
 Most use the "manual" document class and "python" package, derived from 
 the old "myformat.sty" style file.  The Macintosh Library Modules

@@ -20,13 +20,13 @@ MKPDF=		TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh --pdf
 
 # what's what
 MANDVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
-HOWTODVIFILES=	doc.dvi mac.dvi
+HOWTODVIFILES=	doc.dvi mac.dvi inst.dvi dist.dvi
 
 MANPDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
-HOWTOPDFFILES=	doc.pdf mac.pdf
+HOWTOPDFFILES=	doc.pdf mac.pdf inst.pdf dist.pdf
 
 MANPSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
-HOWTOPSFILES=	doc.ps mac.ps
+HOWTOPSFILES=	doc.ps mac.ps inst.ps dist.ps
 
 DVIFILES=	$(MANDVIFILES) $(HOWTODVIFILES)
 PDFFILES=	$(MANPDFFILES) $(HOWTOPDFFILES)
@@ -72,6 +72,13 @@ api.pdf: api.tex $(APIFILES)
 api.tex: ../api/api.tex ../api/refcounts.dat ../tools/anno-api.py
 	$(PYTHON) ../tools/anno-api.py -o $@ ../api/api.tex
 
+# Distributing Python Modules
+dist.dvi: $(DISTFILES)
+	$(MKHOWTO) --dvi ../dist/dist.tex
+
+dist.pdf: $(DISTFILES)
+	$(MKHOWTO) --pdf ../dist/dist.tex
+
 # Documenting Python
 doc.dvi: $(DOCFILES)
 	$(MKHOWTO) --dvi ../doc/doc.tex
@@ -85,6 +92,13 @@ ext.dvi: $(EXTFILES)
 
 ext.pdf: $(EXTFILES)
 	$(MKPDF) ext
+
+# Installing Python Modules
+inst.dvi: $(INSTFILES)
+	$(MKHOWTO) --dvi ../inst/inst.tex
+
+inst.pdf: $(INSTFILES)
+	$(MKHOWTO) --pdf ../inst/inst.tex
 
 # Python Library Reference
 lib.dvi: $(LIBFILES)
