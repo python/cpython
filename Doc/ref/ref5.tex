@@ -184,7 +184,11 @@ case, the elements of the new list are those that would be produced
 by considering each of the \keyword{for} or \keyword{if} clauses a block,
 nesting from
 left to right, and evaluating the expression to produce a list element
-each time the innermost block is reached.
+each time the innermost block is reached\footnote{In Python 2.3, a
+list comprehension "leaks" the control variables of each
+\samp{for} it contains into the containing scope.  However, this
+behavior is deprecated, and relying on it will not work once this
+bug is fixed in a future release}.
 \obindex{list}
 \indexii{empty}{list}
 
