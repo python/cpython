@@ -1394,7 +1394,7 @@ def test(args=[]):
             '/etc/passwd',
             'file:/etc/passwd',
             'file://localhost/etc/passwd',
-            'ftp://ftp.python.org/etc/passwd',
+            'ftp://ftp.python.org/pub/python/README',
 ##          'gopher://gopher.micro.umn.edu/1/',
             'http://www.python.org/index.html',
             ]
