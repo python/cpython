@@ -1,6 +1,6 @@
 # test asynchat -- requires threading
 
-import asyncore, asynchat, socket, threading
+import asyncore, asynchat, socket, threading, time
 
 HOST = "127.0.0.1"
 PORT = 54321
@@ -32,8 +32,6 @@ class echo_client(asynchat.async_chat):
         self.connect((HOST, PORT))
         self.set_terminator("\n")
         self.buffer = ""
-        self.send("hello ")
-        self.send("world\n")
 
     def handle_connect(self):
         print "Connected"
@@ -49,7 +47,10 @@ class echo_client(asynchat.async_chat):
 def main():
     s = echo_server()
     s.start()
+    time.sleep(1) # Give server time to initialize
     c = echo_client()
+    c.push("hello ")
+    c.push("world\n")
     asyncore.loop()
 
 main()
