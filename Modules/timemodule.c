@@ -3,6 +3,7 @@
 
 #include "Python.h"
 #include "structseq.h"
+#include "timefuncs.h"
 
 #include <ctype.h>
 
@@ -84,11 +85,8 @@ static double floattime(void);
 /* For Y2K check */
 static PyObject *moddict;
 
-/* Cast double x to time_t, but raise ValueError if x is too large
- * to fit in a time_t.  ValueError is set on return iff the return
- * value is (time_t)-1 and PyErr_Occurred().
- */
-static time_t
+/* Exposed in timefuncs.h. */
+time_t
 _PyTime_DoubleToTimet(double x)
 {
 	time_t result;
@@ -382,7 +380,7 @@ time_strftime(PyObject *self, PyObject *args)
         /* Checks added to make sure strftime() does not crash Python by
             indexing blindly into some array for a textual representation
             by some bad index (fixes bug #897625).
-        
+
             No check for year since handled in gettmarg().
         */
         if (buf.tm_mon < 0 || buf.tm_mon > 11) {
@@ -583,7 +581,7 @@ time_tzset(PyObject *self, PyObject *args)
 	/* Reset timezone, altzone, daylight and tzname */
 	inittimezone(m);
 	Py_DECREF(m);
-	
+
 	Py_INCREF(Py_None);
 	return Py_None;
 }

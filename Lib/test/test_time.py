@@ -176,6 +176,14 @@ class TimeTestCase(unittest.TestCase):
                 del environ['TZ']
             time.tzset()
 
+    def test_insane_timestamps(self):
+        # It's possible that some platform maps time_t to double,
+        # and that this test will fail there.  This test should
+        # exempt such platforms (provided they return reasonable
+        # results!).
+        for func in time.ctime, time.gmtime, time.localtime:
+            for unreasonable in -1e200, 1e200:
+                self.assertRaises(ValueError, func, unreasonable)
 
 def test_main():
     test_support.run_unittest(TimeTestCase)

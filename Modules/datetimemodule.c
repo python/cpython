@@ -8,6 +8,7 @@
 
 #include <time.h>
 
+#include "timefuncs.h"
 #include "datetime.h"
 
 /* We require that C int be at least 32 bits, and use int virtually
@@ -2226,11 +2227,15 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 /* Return new date from localtime(t). */
 static PyObject *
-date_local_from_time_t(PyObject *cls, time_t t)
+date_local_from_time_t(PyObject *cls, double ts)
 {
 	struct tm *tm;
+	time_t t;
 	PyObject *result = NULL;
 
+	t = _PyTime_DoubleToTimet(ts);
+	if (t == (time_t)-1 && PyErr_Occurred())
+		return NULL;
 	tm = localtime(&t);
 	if (tm)
 		result = PyObject_CallFunction(cls, "iii",
@@ -2278,7 +2283,7 @@ date_fromtimestamp(PyObject *cls, PyObject *args)
 	PyObject *result = NULL;
 
 	if (PyArg_ParseTuple(args, "d:fromtimestamp", &timestamp))
-		result = date_local_from_time_t(cls, (time_t)timestamp);
+		result = date_local_from_time_t(cls, timestamp);
 	return result;
 }
 
@@ -3654,10 +3659,15 @@ static PyObject *
 datetime_from_timestamp(PyObject *cls, TM_FUNC f, double timestamp,
 			PyObject *tzinfo)
 {
-	time_t timet = (time_t)timestamp;
-	double fraction = timestamp - (double)timet;
-	int us = (int)round_to_long(fraction * 1e6);
+	time_t timet;
+	double fraction;
+	int us;
 
+	timet = _PyTime_DoubleToTimet(timestamp);
+	if (timet == (time_t)-1 && PyErr_Occurred())
+		return NULL;
+	fraction = timestamp - (double)timet;
+	us = (int)round_to_long(fraction * 1e6);
 	return datetime_from_timet_and_us(cls, f, timet, us, tzinfo);
 }
 
