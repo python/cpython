@@ -1,5 +1,7 @@
 /* Return a string representing the compiler name */
 
+#include "config.h"
+
 #ifdef THINK_C
 #define COMPILER " [THINK C]"
 #endif
