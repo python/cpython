@@ -407,7 +407,7 @@ class PyShell(OutputWindow):
 
     def begin(self):
         self.resetoutput()
-        self.write("Python %s on %s\n%s\nIDLE %s\n" %
+        self.write("Python %s on %s\n%s\nIDLE %s -- press F1 for help\n" %
                    (sys.version, sys.platform, sys.copyright,
                     idlever.IDLE_VERSION))
         try:
