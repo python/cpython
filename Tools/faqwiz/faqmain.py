@@ -465,6 +465,8 @@ class FAQServer:
 	    """ % sts
 	    if output:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
+	print '<HR>'
+	print '<A HREF="faq.py?req=show&name=%s">Reload this entry.</A>' % name
 
     def showedit(self, name, title, text):
 	print """
@@ -556,14 +558,14 @@ class FAQServer:
 		except KeyError:
 		    pass
 		else:
-		    s = '(last changed on %s by <A HREF="%s">%s</A>)'
+		    s = '/ Last changed on %s by <A HREF="%s">%s</A>'
 		    print s % (date, email, author)
 	    print '<P>'
 	print "<HR>"
 
     def getversion(self, name):
 	p = os.popen("/depot/gnu/plat/bin/rlog -h %s </dev/null 2>&1" % name)
-	head = ""
+	head = "*new*"
 	while 1:
 	    line = p.readline()
 	    if not line:
@@ -594,7 +596,7 @@ class FAQServer:
 	<HR>
 	<A HREF="http://www.python.org">Python home</A> /
 	<A HREF="faq.py">FAQ home</A> /
-	<A HREF="mailto:guido@python.org">GvR</A>
+	Feedback to <A HREF="mailto:guido@python.org">GvR</A>
 	</BODY>
 	</HTML>
 	'''
