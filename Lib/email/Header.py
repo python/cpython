@@ -92,7 +92,7 @@ def decode_header(header):
             if unenc:
                 # Should we continue a long line?
                 if decoded and decoded[-1][1] is None:
-                    decoded[-1] = (decoded[-1][0] + dec, None)
+                    decoded[-1] = (decoded[-1][0] + SPACE + unenc, None)
                 else:
                     decoded.append((unenc, None))
             if parts:
