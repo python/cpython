@@ -164,6 +164,7 @@ class FunctionGenerator(BaseFunctionGenerator):
 	
 	def functionbody(self):
 		self.declarations()
+		self.precheck()
 		self.getargs()
 		self.callit()
 		self.checkit()
@@ -194,6 +195,9 @@ class FunctionGenerator(BaseFunctionGenerator):
 				continue
 			if arg.mode in (InMode, InOutMode):
 				arg.getargsCheck()
+	
+	def precheck(self):
+		pass
 
 	def callit(self):
 		args = ""
