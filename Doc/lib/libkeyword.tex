@@ -6,8 +6,15 @@
 
 
 This module allows a Python program to determine if a string is a
-keyword.  A single function is provided:
+keyword.
 
 \begin{funcdesc}{iskeyword}{s}
 Return true if \var{s} is a Python keyword.
 \end{funcdesc}
+
+\begin{datadesc}{kwlist}
+Sequence containing all the keywords defined for the interpreter.  If
+any keywords are defined to only be active when particular
+\module{__future__} statements are in effect, these will be included
+as well.
+\end{datadesc}
