@@ -270,36 +270,59 @@ class Bdb: # Basic Debugger
 	# The following two methods can be called by clients to use
 	# a debugger to debug a statement, given as a string.
 	
-	def run(self, cmd):
-		import __main__
-		dict = __main__.__dict__
-		self.runctx(cmd, dict, dict)
-	
-	def runctx(self, cmd, globals, locals):
+	def run(self, cmd, globals=None, locals=None):
+		if globals is None:
+			import __main__
+			globals = __main__.__dict__
+		if locals is None:
+			locals = globals
 		self.reset()
 		sys.settrace(self.trace_dispatch)
 		try:
 			try:
-				exec(cmd + '\n', globals, locals)
+				exec cmd + '\n' in globals, locals
 			except BdbQuit:
 				pass
 		finally:
 			self.quitting = 1
 			sys.settrace(None)
+	
+	def runeval(self, expr, globals=None, locals=None):
+		if globals is None:
+			import __main__
+			globals = __main__.__dict__
+		if locals is None:
+			locals = globals
+		self.reset()
+		sys.settrace(self.trace_dispatch)
+		try:
+			try:
+				return eval(expr + '\n', globals, locals)
+			except BdbQuit:
+				pass
+		finally:
+			self.quitting = 1
+			sys.settrace(None)
+
+	def runctx(self, cmd, globals, locals):
+		# B/W compatibility
+		self.run(cmd, globals, locals)
 
 	# This method is more useful to debug a single function call.
 
 	def runcall(self, func, *args):
 		self.reset()
 		sys.settrace(self.trace_dispatch)
+		res = None
 		try:
 			try:
-				apply(func, args)
+				res = apply(func, args)
 			except BdbQuit:
 				pass
 		finally:
 			self.quitting = 1
 			sys.settrace(None)
+		return res
 
 
 def set_trace():

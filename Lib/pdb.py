@@ -55,7 +55,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		# This function is called if an exception occurs,
 		# but only if we are to stop at or just below this level
 		frame.f_locals['__exception__'] = exc_type, exc_value
-		print exc_type + ':', repr.repr(exc_value)
+		if type(exc_type) == type(''):
+			exc_type_name = exc_type
+		else: exc_type_name = exc_type.__name__
+		print exc_type_name + ':', repr.repr(exc_value)
 		self.interaction(frame, exc_traceback)
 	
 	# General interaction function
@@ -74,7 +77,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		try:
 			exec(line + '\n', globals, locals)
 		except:
-			print '***', sys.exc_type + ':', sys.exc_value
+			if type(sys.exc_type) == type(''):
+				exc_type_name = sys.exc_type
+			else: exc_type_name = sys.exc_type.__name__
+			print '***', exc_type_name + ':', sys.exc_value
 
 	# Command definitions, called by cmdloop()
 	# The argument is the remaining string on the command line
@@ -199,7 +205,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			value = eval(arg, self.curframe.f_globals, \
 					self.curframe.f_locals)
 		except:
-			print '***', sys.exc_type + ':', `sys.exc_value`
+			if type(sys.exc_type) == type(''):
+				exc_type_name = sys.exc_type
+			else: exc_type_name = sys.exc_type.__name__
+			print '***', exc_type_name + ':', `sys.exc_value`
 			return
 
 		print `value`
@@ -254,7 +263,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			value = eval(arg, self.curframe.f_globals, \
 					self.curframe.f_locals)
 		except:
-			print '***', sys.exc_type + ':', `sys.exc_value`
+			if type(sys.exc_type) == type(''):
+				exc_type_name = sys.exc_type
+			else: exc_type_name = sys.exc_type.__name__
+			print '***', exc_type_name + ':', `sys.exc_value`
 			return
 		code = None
 		# Is it a function?
@@ -429,14 +441,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
 # Simplified interface
 
-def run(statement):
-	Pdb().run(statement)
+def run(statement, globals=None, locals=None):
+	Pdb().run(statement, globals, locals)
+
+def runeval(expression, globals=None, locals=None):
+	return Pdb().runeval(expression, globals, locals)
 
 def runctx(statement, globals, locals):
-	Pdb().runctx(statement, globals, locals)
+	# B/W compatibility
+	run(statement, globals, locals)
 
 def runcall(*args):
-	apply(Pdb().runcall, args)
+	return apply(Pdb().runcall, args)
 
 def set_trace():
 	Pdb().set_trace()
