@@ -8,3 +8,7 @@ lib.texi
 *.ps
 *.idx
 *.ilg
+api
+ext
+lib
+tut
