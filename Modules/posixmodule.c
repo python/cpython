@@ -560,7 +560,7 @@ posix_1str(PyObject *args, char *format, int (*func)(const char*),
 			res = (*wfunc)(PyUnicode_AS_UNICODE(po));
 			Py_END_ALLOW_THREADS
 			if (res < 0)
-				return posix_error();
+				return posix_error_with_unicode_filename(PyUnicode_AS_UNICODE(po));
 			Py_INCREF(Py_None);
 			return Py_None;
 		}
