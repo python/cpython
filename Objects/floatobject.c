@@ -236,9 +236,16 @@ float_hash(v)
 		x = (long)intpart;
 	}
 	else {
+		/* Note -- if you change this code, also change the copy
+		   in complexobject.c */
+		long hipart;
 		fractpart = frexp(fractpart, &expo);
-		fractpart = fractpart*2147483648.0; /* 2**31 */
-		x = (long) (intpart + fractpart) ^ expo; /* Rather arbitrary */
+		fractpart = fractpart * 2147483648.0; /* 2**31 */
+		hipart = (long)fractpart; /* Take the top 32 bits */
+		fractpart = (fractpart - (double)hipart) * 2147483648.0;
+						/* Get the next 32 bits */
+		x = hipart + (long)fractpart + (long)intpart + (expo << 15);
+						/* Combine everything */
 	}
 	if (x == -1)
 		x = -2;
