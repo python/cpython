@@ -155,7 +155,6 @@ class TEWindow(ScrolledWindow):
 		self.parent.updatemenubar()
 		
 	def menu_paste(self):
-		print 'SCRAP', Scrap.InfoScrap(), `Scrap.InfoScrap()[1].data`
 		TE.TEFromScrap()
 		self.ted.TESelView()
 		self.ted.TEPaste()
@@ -224,7 +223,11 @@ class Ped(Application):
 					m.enable(on)
 				self.focusgroup_on = on
 				changed = 1
-			on = (Scrap.InfoScrap()[0] <> 0)
+			if hasattr(Scrap, 'InfoScrap'):
+				on = (Scrap.InfoScrap()[0] <> 0)
+			else:
+				# Not there yet on Carbon, simply always enable
+				on = 1
 			if on <> self.pastegroup_on:
 				self.pasteitem.enable(on)
 				self.pastegroup_on = on
