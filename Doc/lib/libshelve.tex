@@ -13,7 +13,7 @@ instances, recursive data types, and objects containing lots of shared
 sub-objects.  The keys are ordinary strings.
 \refstmodindex{pickle}
 
-\begin{funcdesc}{open}{filename\optional{,flag='c'\optional{,protocol=\code{None}\optional{,writeback=\code{False}\optional{,binary=\code{None}}}}}}
+\begin{funcdesc}{open}{filename\optional{,flag='c'\optional{,protocol=\code{None}\optional{,writeback=\code{False}}}}}
 Open a persistent dictionary.  The filename specified is the base filename
 for the underlying database.  As a side-effect, an extension may be added to
 the filename and more than one file may be created.  By default, the
@@ -24,8 +24,7 @@ parameter of \function{anydbm.open}.
 By default, version 0 pickles are used to serialize values. 
 The version of the pickle protocol can be specified with the
 \var{protocol} parameter. \versionchanged[The \var{protocol}
-parameter was added. The \var{binary} parameter is deprecated
-and provided for backwards compatibility only]{2.3}
+parameter was added]{2.3}
 
 By default, mutations to persistent-dictionary mutable entries are not
 automatically written back.  If the optional \var{writeback} parameter
@@ -76,7 +75,7 @@ requires knowledge about the database implementation used.
 
 \end{itemize}
 
-\begin{classdesc}{Shelf}{dict\optional{, protocol=None\optional{, writeback=False\optional{, binary=None}}}}
+\begin{classdesc}{Shelf}{dict\optional{, protocol=None\optional{, writeback=False}}}
 A subclass of \class{UserDict.DictMixin} which stores pickled values in the
 \var{dict} object.  
 
@@ -84,8 +83,7 @@ By default, version 0 pickles are used to serialize values.  The
 version of the pickle protocol can be specified with the
 \var{protocol} parameter. See the \module{pickle} documentation for a
 discussion of the pickle protocols. \versionchanged[The \var{protocol}
-parameter was added. The \var{binary} parameter is deprecated and
-provided for backwards compatibility only]{2.3}
+parameter was added]{2.3}
 
 If the \var{writeback} parameter is \code{True}, the object will hold a
 cache of all entries accessed and write them back to the \var{dict} at
@@ -93,7 +91,7 @@ sync and close times.  This allows natural operations on mutable entries,
 but can consume much more memory and make sync and close take a long time.
 \end{classdesc}
 
-\begin{classdesc}{BsdDbShelf}{dict\optional{, protocol=None\optional{, writeback=False\optional{, binary=None}}}}
+\begin{classdesc}{BsdDbShelf}{dict\optional{, protocol=None\optional{, writeback=False}}}
 
 A subclass of \class{Shelf} which exposes \method{first},
 \method{next}, \method{previous}, \method{last} and
@@ -102,19 +100,19 @@ but not in other database modules.  The \var{dict} object passed to
 the constructor must support those methods.  This is generally
 accomplished by calling one of \function{bsddb.hashopen},
 \function{bsddb.btopen} or \function{bsddb.rnopen}.  The optional
-\var{protocol}, \var{writeback}, and \var{binary} parameters have the
+\var{protocol} and \var{writeback} parameters have the
 same interpretation as for the \class{Shelf} class.
 
 \end{classdesc}
 
-\begin{classdesc}{DbfilenameShelf}{filename\optional{, flag='c'\optional{, protocol=None\optional{, writeback=False\optional{, binary=None}}}}}
+\begin{classdesc}{DbfilenameShelf}{filename\optional{, flag='c'\optional{, protocol=None\optional{, writeback=False}}}}
 
 A subclass of \class{Shelf} which accepts a \var{filename} instead of
 a dict-like object.  The underlying file will be opened using
 {}\function{anydbm.open}.  By default, the file will be created and
 opened for both read and write.  The optional \var{flag} parameter has
 the same interpretation as for the \function{open} function.  The
-optional \var{protocol}, \var{writeback}, and \var{binary} parameters
+optional \var{protocol} and \var{writeback} parameters
 have the same interpretation as for the \class{Shelf} class.
  
 \end{classdesc}

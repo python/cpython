@@ -10,7 +10,7 @@ class TestCase(unittest.TestCase):
 
     def test_ascii_file_shelf(self):
         try:
-            s = shelve.open(self.fn, binary=False)
+            s = shelve.open(self.fn, protocol=0)
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
             s.close()
@@ -20,7 +20,7 @@ class TestCase(unittest.TestCase):
 
     def test_binary_file_shelf(self):
         try:
-            s = shelve.open(self.fn, binary=True)
+            s = shelve.open(self.fn, protocol=1)
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
             s.close()
@@ -40,12 +40,12 @@ class TestCase(unittest.TestCase):
 
     def test_in_memory_shelf(self):
         d1 = {}
-        s = shelve.Shelf(d1, binary=False)
+        s = shelve.Shelf(d1, protocol=0)
         s['key1'] = (1,2,3,4)
         self.assertEqual(s['key1'], (1,2,3,4))
         s.close()
         d2 = {}
-        s = shelve.Shelf(d2, binary=True)
+        s = shelve.Shelf(d2, protocol=1)
         s['key1'] = (1,2,3,4)
         self.assertEqual(s['key1'], (1,2,3,4))
         s.close()
@@ -102,19 +102,19 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
                 os.unlink(f)
 
 class TestAsciiFileShelve(TestShelveBase):
-    _args={'binary':False}
+    _args={'protocol':0}
     _in_mem = False
 class TestBinaryFileShelve(TestShelveBase):
-    _args={'binary':True}
+    _args={'protocol':1}
     _in_mem = False
 class TestProto2FileShelve(TestShelveBase):
     _args={'protocol':2}
     _in_mem = False
 class TestAsciiMemShelve(TestShelveBase):
-    _args={'binary':False}
+    _args={'protocol':0}
     _in_mem = True
 class TestBinaryMemShelve(TestShelveBase):
-    _args={'binary':True}
+    _args={'protocol':1}
     _in_mem = True
 class TestProto2MemShelve(TestShelveBase):
     _args={'protocol':2}
