@@ -27,7 +27,7 @@ Misc variables:
 __version__ = "$Revision$"       # Code version
 
 from types import *
-from copy_reg import dispatch_table, _reconstructor, _better_reduce
+from copy_reg import dispatch_table
 from copy_reg import _extension_registry, _inverted_registry, _extension_cache
 import marshal
 import sys
