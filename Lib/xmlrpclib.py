@@ -8,10 +8,7 @@
 # implement XML-RPC servers.
 #
 # Notes:
-# this version is designed to work with Python 1.5.2 or newer.
-# unicode encoding support requires at least Python 1.6.
-# experimental HTTPS requires Python 2.0 built with SSL sockets.
-# expat parser support requires Python 2.0 with pyexpat support.
+# this version is designed to work with Python 2.1 or newer.
 #
 # History:
 # 1999-01-14 fl  Created
@@ -51,6 +48,7 @@
 # 2003-06-15 gn  Add support for time.struct_time
 # 2003-07-12 gp  Correct marshalling of Faults
 # 2003-10-31 mvl Add multicall support
+# 2004-08-20 mvl Bump minimum supported Python version to 2.1
 #
 # Copyright (c) 1999-2002 by Secret Labs AB.
 # Copyright (c) 1999-2002 by Fredrik Lundh.
