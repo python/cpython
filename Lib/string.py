@@ -55,10 +55,23 @@ def strip(s):
 	while i < j and s[j-1] in whitespace: j = j-1
 	return s[i:j]
 
+# Strip leading tabs and spaces
+def lstrip(s):
+	i, j = 0, len(s)
+	while i < j and s[i] in whitespace: i = i+1
+	return s[i:j]
+
+# Strip trailing tabs and spaces
+def rstrip(s):
+	i, j = 0, len(s)
+	while i < j and s[j-1] in whitespace: j = j-1
+	return s[i:j]
+
+
 # Split a string into a list of space/tab-separated words
 # NB: split(s) is NOT the same as splitfields(s, ' ')!
-def split(s, sep=None):
-	if sep is not None: return splitfields(s, sep)
+def split(s, sep=None, maxsplit=0):
+	if sep is not None: return splitfields(s, sep, maxsplit)
 	res = []
 	i, n = 0, len(s)
 	while i < n:
@@ -73,18 +86,23 @@ def split(s, sep=None):
 # Split a list into fields separated by a given string
 # NB: splitfields(s, ' ') is NOT the same as split(s)!
 # splitfields(s, '') returns [s] (in analogy with split() in nawk)
-def splitfields(s, sep=None):
-	if sep is None: return split(s)
+def splitfields(s, sep=None, maxsplit=0):
+	if sep is None: return split(s, None, maxsplit)
 	res = []
 	nsep = len(sep)
 	if nsep == 0:
 		return [s]
 	ns = len(s)
 	i = j = 0
+	count = 0
 	while j+nsep <= ns:
 		if s[j:j+nsep] == sep:
+			count = count + 1
 			res.append(s[i:j])
 			i = j = j + nsep
+			if (maxsplit and (count >= maxsplit)):
+			    break
+			   
 		else:
 			j = j + 1
 	res.append(s[i:])
