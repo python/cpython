@@ -24,7 +24,7 @@ TOP=''
 # Where to put CW projects, relative to TOP
 CWDIR=':Mac:mwerks:projects'
 # From which folders to put projects there
-CWDIRDIRS=['build.macppc.stand', 'build.macppc.shared', 'build.mac68k.stand', 'build.mac68k.shared', 'PlugIns']
+CWDIRDIRS=['build.mac', 'build.macstand', 'PlugIns']
 
 # Helper routines
 def binhexit(path, name):
@@ -72,16 +72,14 @@ project_files = {}
 
 def hexbincwprojects(creator):
 	"""Compact and hexbin all files remembered with a given creator"""
-	try:
-		mgr = MwShell(creator, start=1)
-	except 'foo':
-		print 'Not handled:', creator
-		return
+	cw_running = 0
 	for fss in project_files[creator]:
 		srcfile = fss.as_pathname()
 		
+		old_style = 0
 		if srcfile[-1] == 'µ':
 			dstfile = srcfile[:-1]+'mu.hqx'
+			old_style = 1
 		elif srcfile[-3] == '.mu':
 			dstfile = srcfile + '.hqx'
 		elif ord(srcfile[-1]) >= 128:
@@ -94,14 +92,23 @@ def hexbincwprojects(creator):
 			print 'Skip', dstfile,'- Up-to-date'
 			continue
 		print 'Compacting', dstfile
-		mgr.open(fss)
-		mgr.Reset_File_Paths()
-		mgr.Remove_Binaries()
-		mgr.Close_Project()
+		if old_style:
+			if not cw_running:
+				try:
+					mgr = MwShell(creator, start=1)
+				except 'foo':
+					print 'Not handled:', creator
+					return
+				cw_running = 1
+			mgr.open(fss)
+			mgr.Reset_File_Paths()
+			mgr.Remove_Binaries()
+			mgr.Close_Project()
 		
 		print 'Binhexing', dstfile
 		binhex.binhex(srcfile, dstfile)
-	mgr.quit()
+	if cw_running:
+		mgr.quit()
 	
 def copycwproject(path, name):
 	"""Copy CW project (if needed) and remember for hexbinning"""
@@ -119,19 +126,25 @@ def copycwproject(path, name):
 			return
 		dstfile = os.path.join(dstdir, os.path.join(srcdir, name))
 	else:
-		if path[-2:] != '.µ':
+		if path[-2:] == '.µ':
+			dstfile = path[:-2]+ '.mu'
+		elif path[-4:] == '.prj':
+			dstfile = None
+		else:
 			return
-		dstfile = path[:-2]+ '.mu'
 
-	# If the destination doesn't exists or is older that the source
-	# we copy and remember it
-	
-	if os.path.exists(dstfile) and \
-			os.stat(dstfile)[8] >= os.stat(path)[8]:
-		print 'Not copying', path,'- Up-to-date'
+	if dstfile:
+		# If the destination doesn't exists or is older that the source
+		# we copy and remember it
+		
+		if os.path.exists(dstfile) and \
+				os.stat(dstfile)[8] >= os.stat(path)[8]:
+			print 'Not copying', path,'- Up-to-date'
+		else:
+			print 'Copy', path
+			macostools.copy(path, dstfile)
 	else:
-		print 'Copy', path
-		macostools.copy(path, dstfile)
+		dstfile = path
 	
 	fss = macfs.FSSpec(dstfile)
 	creator = fss.GetCreatorType()[0]
@@ -177,6 +190,8 @@ extensions = [
 	('.rsrc', binhexit),
 	('.gif', binhexit),
 	('.µ', copycwproject),
+	('.prj', copycwproject),
+	('.prj.exp', copycwexpfile),
 	('.µ.exp', copycwexpfile)
 	]
 
