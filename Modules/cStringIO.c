@@ -578,9 +578,14 @@ newIobject(PyObject *s) {
   Iobject *self;
   char *buf;
   int size;
-	
-  UNLESS(buf=PyString_AsString(s)) return NULL;
-  UNLESS(-1 != (size=PyString_Size(s))) return NULL;
+
+  if (!PyString_Check(s)) {
+      PyErr_Format(PyExc_TypeError, "expected string, %.200s found",
+		   s->ob_type->tp_name);
+      return NULL;
+  }
+  buf = PyString_AS_STRING(s);
+  size = PyString_GET_SIZE(s);
   UNLESS(self = PyObject_NEW(Iobject, &Itype)) return NULL;
   Py_INCREF(s);
   self->buf=buf;
@@ -603,7 +608,8 @@ static PyObject *
 IO_StringIO(PyObject *self, PyObject *args) {
   PyObject *s=0;
 
-  UNLESS(PyArg_ParseTuple(args, "|O:StringIO", &s)) return NULL;
+  if (!PyArg_ParseTuple(args, "|O:StringIO", &s))
+      return NULL;
   if(s) return newIobject(s);
   return newOobject(128);
 }
