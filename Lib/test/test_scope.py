@@ -1,4 +1,4 @@
-from test.test_support import verify, TestFailed
+from test.test_support import verify, TestFailed, check_syntax
 
 print "1. simple nesting"
 
@@ -176,14 +176,6 @@ verify(f(6) == 720)
 
 
 print "11. unoptimized namespaces"
-
-def check_syntax(s):
-    try:
-        compile(s, '?', 'exec')
-    except SyntaxError:
-        pass
-    else:
-        raise TestFailed
 
 check_syntax("""def unoptimized_clash1(strip):
     def f(s):
