@@ -97,7 +97,7 @@ BLDSHARED=	@BLDSHARED@
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # Executable suffix (.exe on Windows and Mac OS X)
-EXEEXT=		@EXEEXT@
+EXE=		@EXEEXT@
 
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
@@ -139,7 +139,7 @@ LIBOBJS=	@LIBOBJS@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
 
-PYTHON=		python$(EXEEXT)
+PYTHON=		python$(EXE)
 
 # === Definitions added by makesetup ===
 
@@ -164,7 +164,7 @@ GRAMMAR_INPUT=	$(srcdir)/Grammar/Grammar
 
 ##########################################################################
 # Parser
-PGEN=		Parser/pgen$(EXEEXT)
+PGEN=		Parser/pgen$(EXE)
 
 POBJS=		\
 		Parser/acceler.o \
@@ -507,7 +507,7 @@ bininstall:	altbininstall
 	then rm -f $(BINDIR)/$(PYTHON); \
 	else true; \
 	fi
-	(cd $(BINDIR); $(LN) python$(VERSION)$(EXEEXT) python$(EXEEXT))
+	(cd $(BINDIR); $(LN) python$(VERSION)$(EXE) $(PYTHON))
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
@@ -520,7 +520,7 @@ altbininstall:	$(PYTHON)
 		else	true; \
 		fi; \
 	done
-	$(INSTALL_PROGRAM) $(PYTHON) $(BINDIR)/python$(VERSION)$(EXEEXT)
+	$(INSTALL_PROGRAM) $(PYTHON) $(BINDIR)/python$(VERSION)$(EXE)
 	if test -f libpython$(VERSION).so; then \
 		$(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR); \
 	else	true; \
@@ -549,7 +549,7 @@ MACHDEPS=	$(PLATDIR)
 XMLLIBSUBDIRS=  xml xml/dom xml/parsers xml/sax
 LIBSUBDIRS=	lib-old lib-tk site-packages test test/output encodings \
 		distutils distutils/command $(XMLLIBSUBDIRS) curses $(MACHDEPS)
-libinstall:	python $(srcdir)/Lib/$(PLATDIR)
+libinstall:	$(PYTHON) $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
 		if test ! -d $$i; then \
@@ -615,7 +615,7 @@ $(srcdir)/Lib/$(PLATDIR):
 	cp $(srcdir)/Lib/plat-generic/regen $(srcdir)/Lib/$(PLATDIR)/regen
 	export PATH; PATH="`pwd`:$$PATH"; \
 	export PYTHONPATH; PYTHONPATH="`pwd`/Lib"; \
-	export EXEEXT; EXEEXT="$(EXEEXT)"; \
+	export EXE; EXE="$(EXE)"; \
 	cd $(srcdir)/Lib/$(PLATDIR); ./regen
 
 # Install the include files
@@ -692,7 +692,7 @@ libainstall:	all
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall:
-	PYTHONPATH= ./python$(EXEEXT) $(srcdir)/setup.py install \
+	PYTHONPATH= ./$(PYTHON) $(srcdir)/setup.py install \
 		--install-platlib=$(DESTSHARED)
 
 # Build the toplevel Makefile
