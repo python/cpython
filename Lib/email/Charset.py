@@ -85,7 +85,7 @@ CODEC_MAP = {
 
 # Convenience functions for extending the above mappings
 def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
-    """Add charset properties to the global map.
+    """Add character set properties to the global registry.
 
     charset is the input character set, and must be the canonical name of a
     character set.
@@ -104,7 +104,7 @@ def add_charset(charset, header_enc=None, body_enc=None, output_charset=None):
 
     Both input_charset and output_charset must have Unicode codec entries in
     the module's charset-to-codec mapping; use add_codec(charset, codecname)
-    to add codecs the module does not know about.  See the codec module's
+    to add codecs the module does not know about.  See the codecs module's
     documentation for more information.
     """
     if body_enc == SHORTEST:
@@ -126,7 +126,7 @@ def add_codec(charset, codecname):
 
     charset is the canonical name of a character set.  codecname is the name
     of a Python codec, as appropriate for the second argument to the unicode()
-    built-in, or to the .encode() method of a Unicode string.
+    built-in, or to the encode() method of a Unicode string.
     """
     CODEC_MAP[charset] = codecname
 
@@ -138,8 +138,9 @@ class Charset:
     This class provides information about the requirements imposed on email
     for a specific character set.  It also provides convenience routines for
     converting between character sets, given the availability of the
-    applicable codecs.  Given an character set, it will do its best to provide
-    information on how to use that character set in an email.
+    applicable codecs.  Given a character set, it will do its best to provide
+    information on how to use that character set in an email in an
+    RFC-compliant way.
 
     Certain character sets must be encoded with quoted-printable or base64
     when used in email headers or bodies.  Certain character sets must be
@@ -209,7 +210,7 @@ class Charset:
         This is either the string `quoted-printable' or `base64' depending on
         the encoding used, or it is a function in which case you should call
         the function with a single argument, the Message object being
-        encoded.  The function should then set the Content-Transfer-Encoding:
+        encoded.  The function should then set the Content-Transfer-Encoding
         header itself to whatever is appropriate.
 
         Returns "quoted-printable" if self.body_encoding is QP.
@@ -235,10 +236,10 @@ class Charset:
         """Convert a possibly multibyte string to a safely splittable format.
 
         Uses the input_codec to try and convert the string to Unicode, so it
-        can be safely split on character boundaries (even for double-byte
+        can be safely split on character boundaries (even for multibyte
         characters).
 
-        Returns the string untouched if we don't know how to convert it to
+        Returns the string as-is if it isn't known how to convert it to
         Unicode with the input_charset.
 
         Characters that could not be converted to Unicode will be replaced
@@ -256,10 +257,9 @@ class Charset:
     def from_splittable(self, ustr, to_output=True):
         """Convert a splittable string back into an encoded string.
 
-        Uses the proper codec to try and convert the string from
-        Unicode back into an encoded format.  Return the string as-is
-        if it is not Unicode, or if it could not be encoded from
-        Unicode.
+        Uses the proper codec to try and convert the string from Unicode back
+        into an encoded format.  Return the string as-is if it is not Unicode,
+        or if it could not be converted from Unicode.
 
         Characters that could not be converted from Unicode will be replaced
         with an appropriate character (usually '?').
@@ -282,7 +282,7 @@ class Charset:
     def get_output_charset(self):
         """Return the output character set.
 
-        This is self.output_charset if that is set, otherwise it is
+        This is self.output_charset if that is not None, otherwise it is
         self.input_charset.
         """
         return self.output_charset or self.input_charset
