@@ -1,7 +1,7 @@
 # Run the _testcapi module tests (tests for the Python/C API):  by defn,
 # these are all functions _testcapi exports whose name begins with 'test_'.
 
-import sys
+import sys, unittest
 from test import test_support
 import _testcapi
 
@@ -35,6 +35,12 @@ def TestThreadState():
         raise test_support.TestFailed, \
               "Couldn't find main thread correctly in the list"
 
+# Tests which use _testcapi helpers
+class OtherTests(unittest.TestCase):
+    def test_exc_L(self):
+        # This used to raise a SystemError(bad internal call)
+        self.assertRaises(TypeError, _testcapi.getargs_L, "String")
+
 try:
     _testcapi._test_thread_state
     have_thread_state = True
@@ -46,3 +52,9 @@ if have_thread_state:
     import threading
     t=threading.Thread(target=TestThreadState)
     t.start()
+
+def test_main():
+    test_support.run_unittest(OtherTests)
+
+if __name__=='__main__':
+    test_main()

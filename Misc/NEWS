@@ -12,6 +12,8 @@ What's New in Python 2.4.1?
 Core and builtins
 -----------------
 
+- Bug #723201: Raise a TypeError for passing bad objects to 'L' format.
+
 - Bug #1124295: the __name__ attribute of file objects was
   inadvertently made inaccessible in restricted mode.
 
