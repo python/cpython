@@ -46,31 +46,46 @@ class install_lib (Command):
     def run (self):
 
         # Make sure we have built everything we need first
+        self.build()
+        
+        # Install everything: simply dump the entire contents of the build
+        # directory to the installation directory (that's the beauty of
+        # having a build directory!)
+        outfiles = self.install()
+
+        # (Optionally) compile .py to .pyc
+        self.bytecompile(outfiles)
+
+    # run ()
+
+
+    # -- Top-level worker functions ------------------------------------
+    # (called from 'run()')
+
+    def build (self):
         if not self.skip_build:
             if self.distribution.has_pure_modules():
                 self.run_command('build_py')
             if self.distribution.has_ext_modules():
                 self.run_command('build_ext')
-
-        # Install everything: simply dump the entire contents of the build
-        # directory to the installation directory (that's the beauty of
-        # having a build directory!)
+        
+    def install (self):
         if os.path.isdir(self.build_dir):
             outfiles = self.copy_tree(self.build_dir, self.install_dir)
         else:
             self.warn("'%s' does not exist -- no Python modules to install" %
                       self.build_dir)
             return
+        return outfiles
 
-        # (Optionally) compile .py to .pyc
+    def bytecompile (self, files):
         # XXX hey! we can't control whether we optimize or not; that's up
         # to the invocation of the current Python interpreter (at least
         # according to the py_compile docs).  That sucks.
-
         if self.compile:
             from py_compile import compile
 
-            for f in outfiles:
+            for f in files:
                 # only compile the file if it is actually a .py file
                 if f[-3:] == '.py':
                     out_fn = f + (__debug__ and "c" or "o")
@@ -79,8 +94,9 @@ class install_lib (Command):
                     skip_msg = "skipping byte-compilation of %s" % f
                     self.make_file(f, out_fn, compile, (f,),
                                    compile_msg, skip_msg)
-    # run ()
 
+
+    # -- Utility methods -----------------------------------------------
 
     def _mutate_outputs (self, has_any, build_cmd, cmd_option, output_dir):
 
@@ -108,6 +124,10 @@ class install_lib (Command):
 
         return bytecode_files
         
+
+    # -- External interface --------------------------------------------
+    # (called by outsiders)
+
     def get_outputs (self):
         """Return the list of files that would be installed if this command
         were actually run.  Not affected by the "dry-run" flag or whether
