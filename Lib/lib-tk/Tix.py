@@ -78,7 +78,7 @@ class Form:
     form = config
 
     def __setitem__(self, key, value):
-        Form.form({key: value})
+        Form.form(self, {key: value})
 
     def check(self):
         return self.tk.call('tixForm', 'check', self._w)
@@ -328,7 +328,7 @@ class DisplayStyle:
                     (self.stylename, 'configure') + self._options(cnf,kw))))
  
     def __getitem__(self,key):
-       return self.tk.call(self.stylename, 'cget', '-%s'%key, value)
+       return self.tk.call(self.stylename, 'cget', '-%s'%key)
 
 
 ######################################################
