@@ -1896,7 +1896,9 @@ format.
   parameters \var{pkey} and \var{pvalue} should either point to
   \ctype{PyObject*} variables that will be filled in with each key and
   value, respectively, or may be \NULL.  Any references returned through
-  them are borrowed.
+  them are borrowed.  \var{ppos} should not be altered during iteration.
+  Its value represents offsets within the internal dictionary structure,
+  and since the structure is sparse, the offsets are not consecutive.
 
   For example:
 
