@@ -6,6 +6,7 @@ import Evt
 import Events
 import Qd
 import Win
+import Lists
 
 
 class List(Wbase.SelectableWidget):
@@ -14,7 +15,7 @@ class List(Wbase.SelectableWidget):
 	
 	LDEF_ID = 0
 	
-	def __init__(self, possize, items = None, callback = None, flags = 0, cols = 1):
+	def __init__(self, possize, items = None, callback = None, flags = 0, cols = 1, typingcasesens=0):
 		if items is None:
 			items = []
 		self.items = items
@@ -25,6 +26,7 @@ class List(Wbase.SelectableWidget):
 		self._cols = cols
 		self._callback = callback
 		self._flags = flags
+		self.typingcasesens = typingcasesens
 		self.lasttyping = ""
 		self.lasttime = Evt.TickCount()
 		self.timelimit = 30
@@ -89,7 +91,7 @@ class List(Wbase.SelectableWidget):
 	def close(self):
 		self._list = None
 		self._callback = None
-		self.items[:] = []
+		self.items = []
 		Wbase.SelectableWidget.close(self)
 	
 	def set(self, items):
@@ -137,11 +139,14 @@ class List(Wbase.SelectableWidget):
 			modifiers = 0
 			if (self.lasttime + self.timelimit) < Evt.TickCount():
 				self.lasttyping = ""
-			self.lasttyping = self.lasttyping + string.lower(char)
+			if self.typingcasesens:
+				self.lasttyping = self.lasttyping + char
+			else:
+				self.lasttyping = self.lasttyping + string.lower(char)
 			self.lasttime = Evt.TickCount()
 			i = self.findmatch(self.lasttyping)
 			newselection = [i]
-		if modifiers & Events.shiftKey:
+		if modifiers & Events.shiftKey and not self._list.selFlags & Lists.lOnlyOne:
 			newselection = newselection + sel
 		self.setselection(newselection)
 		self._list.LAutoScroll()
@@ -150,11 +155,14 @@ class List(Wbase.SelectableWidget):
 	def findmatch(self, tag):
 		lower = string.lower
 		items = self.items
+		typingcasesens = self.typingcasesens
 		taglen = len(tag)
 		match = '\377' * 100
 		match_i = -1
 		for i in range(len(items)):
-			item = lower(str(items[i]))
+			item = str(items[i])
+			if not typingcasesens:
+				item = lower(item)
 			if tag <= item < match:
 				match = item
 				match_i = i
@@ -179,10 +187,14 @@ class List(Wbase.SelectableWidget):
 	def domenu_selectall(self, *args):
 		self.selectall()
 	
+	def can_selectall(self, *args):
+		return not self._list.selFlags & Lists.lOnlyOne
+	
 	def selectall(self):
-		self.setselection(range(len(self.items)))
-		self._list.LAutoScroll()
-		self.click((-1, -1), 0)
+		if not self._list.selFlags & Lists.lOnlyOne:
+			self.setselection(range(len(self.items)))
+			self._list.LAutoScroll()
+			self.click((-1, -1), 0)
 	
 	def getselection(self):
 		if not self._parent or not self._list:
