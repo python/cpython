@@ -816,7 +816,9 @@ class C(object):
   Apply \var{function} of two arguments cumulatively to the items of
   \var{sequence}, from left to right, so as to reduce the sequence to
   a single value.  For example, \code{reduce(lambda x, y: x+y, [1, 2,
-  3, 4, 5])} calculates \code{((((1+2)+3)+4)+5)}.  If the optional
+  3, 4, 5])} calculates \code{((((1+2)+3)+4)+5)}.  The left argument,
+  \var{x}, is the accumulated value and the right argument, \var{y},
+  is the update value from the \var{sequence}.  If the optional
   \var{initializer} is present, it is placed before the items of the
   sequence in the calculation, and serves as a default when the
   sequence is empty.  If \var{initializer} is not given and
