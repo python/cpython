@@ -165,7 +165,10 @@ PyFile_SetBufSize(f, bufsize)
 		}
 		setvbuf(((PyFileObject *)f)->f_fp, (char *)NULL,
 			type, bufsize);
-#endif /* HAVE_SETVBUF */
+#else /* !HAVE_SETVBUF */
+		if (bufsize <= 1)
+			setbuf(((PyFileObject *)f)->f_fp, (char *)NULL);
+#endif /* !HAVE_SETVBUF */
 	}
 }
 
