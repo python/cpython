@@ -19,7 +19,7 @@ dstfilename = os.path.join(sys.exec_prefix, "Python IDE")
 
 buildtools.process(template, mainfilename, dstfilename, 1)
 
-targetref = Res.OpenResFile(dstfilename)
+targetref = Res.FSpOpenResFile(dstfilename, 3)
 Res.UseResFile(targetref)
 
 files = os.listdir(ide_home)
@@ -36,6 +36,6 @@ for name in files:
 		ispackage=0)
 
 # add W resources
-wresref = Res.OpenResFile(os.path.join(ide_home, "Widgets.rsrc"))
+wresref = Res.FSpOpenResFile(os.path.join(ide_home, "Widgets.rsrc"), 1)
 buildtools.copyres(wresref, targetref, [], 0)
 

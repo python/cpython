@@ -114,7 +114,7 @@ class Editor(W.Window):
 	
 	def readwindowsettings(self):
 		try:
-			resref = Res.OpenResFile(self.path)
+			resref = Res.FSpOpenResFile(self.path, 1)
 		except Res.Error:
 			return
 		try:
@@ -127,10 +127,10 @@ class Editor(W.Window):
 		
 	def writewindowsettings(self):
 		try:
-			resref = Res.OpenResFile(self.path)
+			resref = Res.FSpOpenResFile(self.path, 3)
 		except Res.Error:
 			Res.CreateResFile(self.path)
-			resref = Res.OpenResFile(self.path)
+			resref = Res.FSpOpenResFile(self.path, 3)
 		try:
 			data = Res.Resource(marshal.dumps(self.settings))
 			Res.UseResFile(resref)

@@ -260,7 +260,7 @@ def Initialize():
 		dummy = Res.GetResource('DLOG', ID_MODULES)
 	except Res.Error:
 		try:
-			Res.OpenResFile("Twit.rsrc")
+			Res.FSpOpenResFile("Twit.rsrc", 1)
 		except Res.Error, arg:
 			EasyDialogs.Message("Cannot open Twit.rsrc: "+arg[1])
 			sys.exit(1)

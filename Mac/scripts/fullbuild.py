@@ -270,7 +270,7 @@ def incbuildno(filename):
 				
 def main():
 	try:
-		h = Res.OpenResFile('fullbuild.rsrc')
+		h = Res.FSpOpenResFile('fullbuild.rsrc', 1)
 	except Res.Error:
 		pass	# Assume we already have acces to our own resource
 

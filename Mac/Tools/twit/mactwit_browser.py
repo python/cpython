@@ -61,7 +61,7 @@ def Initialize():
 		ourparentdir = os.path.split(openresfile.func_code.co_filename)[0]
 		os.chdir(ourparentdir)		
 		try:
-			Res.OpenResFile("mactwit_browse.rsrc")
+			Res.FSpOpenResFile("mactwit_browse.rsrc", 1)
 		except Res.Error, arg:
 			EasyDialogs.Message("Cannot open mactwit_browse.rsrc: "+arg[1])
 			sys.exit(1)

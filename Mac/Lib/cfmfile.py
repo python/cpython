@@ -34,7 +34,7 @@ def mergecfmfiles(srclist, dst, architecture = 'fat'):
 		dst = dst.as_pathname()
 	
 	dstfile = open(dst, "wb")
-	rf = Res.OpenResFile(dst)
+	rf = Res.FSpOpenResFile(dst, 3)
 	try:
 		dstcfrg = CfrgResource()
 		for src in srclist:
@@ -64,7 +64,7 @@ class CfrgResource:
 		self.path = path
 		if path is not None and os.path.exists(path):
 			currentresref = Res.CurResFile()
-			resref = Res.OpenResFile(path)
+			resref = Res.FSpOpenResFile(path, 1)
 			Res.UseResFile(resref)
 			try:
 				try:

@@ -60,7 +60,7 @@ def dialog(script=None):
 		d = None
 	if d == None:
 		try:
-			Res.OpenResFile('macfreeze.rsrc')
+			Res.FSpOpenResFile('macfreeze.rsrc', 1)
 		except Res.Error:
 			d = None
 		else:

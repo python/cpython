@@ -321,7 +321,7 @@ def GetType():
 			
 def InitUI():
 	"""Initialize stuff needed by UI (a resource file)"""
-	Res.OpenResFile('MkDistr.rsrc')
+	Res.FSpOpenResFile('MkDistr.rsrc', 1)
 
 class _testerhelp:
 	def __init__(self, which):
@@ -340,7 +340,7 @@ class _testerhelp:
 class _test:
 	def __init__(self):
 		import sys
-		Res.OpenResFile('MkDistr.rsrc')
+		Res.FSpOpenResFile('MkDistr.rsrc', 1)
 		self.inc = _testerhelp('include')
 		self.exc = _testerhelp('exclude')
 		self.ui = MkDistrUI(self)

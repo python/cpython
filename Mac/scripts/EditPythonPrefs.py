@@ -170,7 +170,7 @@ def edit_applet(name):
 
 def main():
 	try:
-		h = OpenResFile('EditPythonPrefs.rsrc')
+		h = FSpOpenResFile('EditPythonPrefs.rsrc', 1)
 	except Res.Error:
 		pass	# Assume we already have acces to our own resource
 	
