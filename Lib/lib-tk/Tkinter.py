@@ -763,7 +763,7 @@ class Wm:
 	def geometry(self, newGeometry=None):
 		return self.tk.call('wm', 'geometry', self._w, newGeometry)
 	def grid(self,
-		 baseWidht=None, baseHeight=None, 
+		 baseWidth=None, baseHeight=None, 
 		 widthInc=None, heightInc=None):
 		return self._getints(self.tk.call(
 			'wm', 'grid', self._w,
