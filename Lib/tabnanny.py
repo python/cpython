@@ -12,7 +12,6 @@ __version__ = "6"
 
 import os
 import sys
-import string
 import getopt
 import tokenize
 
