@@ -5,11 +5,11 @@ import imgfile
      
 def main():       
 
-    getimage('test.rgb')
-    getimage('greytest.rgb')
+    testimage('test.rgb')
+    testimage('greytest.rgb')
 
 
-def getimage(name):
+def testimage(name):
     """return a tuple consisting of
        image (in 'imgfile' format) width, height, size
     """
