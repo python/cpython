@@ -3,23 +3,34 @@
 
 import al, AL
 from socket import *
+from CD import CDDA_DATASIZE
 
-PORT = 50505 # Must match the port in sendcd.py
+PORT = 50505				# Must match the port in sendcd.py
 
 def main():
 	s = socket(AF_INET, SOCK_DGRAM)
 	s.bind('', PORT)
 
-	c = al.newconfig()
-	c.setchannels(2)
-	c.setwidth(2)
-	p = al.openport('Audio from CD', 'w', c)
-	al.setparams(AL.DEFAULT_DEVICE, [AL.OUTPUT_RATE, AL.RATE_44100])
+	oldparams = [AL.OUTPUT_RATE, 0]
+	params = oldparams[:]
+	al.getparams(AL.DEFAULT_DEVICE, oldparams)
+	params[1] = AL.RATE_44100
+	try:
+		al.setparams(AL.DEFAULT_DEVICE, params)
+		config = al.newconfig()
+		config.setwidth(AL.SAMPLE_16)
+		config.setchannels(AL.STEREO)
+		port = al.openport('CD Player', 'w', config)
 
-	N = 2352
-	while 1:
-		data = s.recv(N)
-		if not data:
-			print 'EOF'
-			break
-		p.writesamps(data)
+		while 1:
+			data = s.recv(CDDA_DATASIZE)
+			if not data:
+				print 'EOF'
+				break
+			port.writesamps(data)
+	except KeyboardInterrupt:
+		pass
+
+	al.setparams(AL.DEFAULT_DEVICE, oldparams)
+
+main()
