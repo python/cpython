@@ -1,11 +1,11 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Events.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Events.h'
 
 f = Function(UInt32, 'GetCaretTime',
 )
 functions.append(f)
 
 f = Function(void, 'SetEventMask',
-    (MacOSEventMask, 'value', InMode),
+    (EventMask, 'value', InMode),
 )
 functions.append(f)
 
@@ -14,13 +14,13 @@ f = Function(UInt32, 'GetDblTime',
 functions.append(f)
 
 f = Function(Boolean, 'GetNextEvent',
-    (MacOSEventMask, 'eventMask', InMode),
+    (EventMask, 'eventMask', InMode),
     (EventRecord, 'theEvent', OutMode),
 )
 functions.append(f)
 
 f = Function(Boolean, 'WaitNextEvent',
-    (MacOSEventMask, 'eventMask', InMode),
+    (EventMask, 'eventMask', InMode),
     (EventRecord, 'theEvent', OutMode),
     (UInt32, 'sleep', InMode),
     (RgnHandle, 'mouseRgn', InMode),
@@ -28,7 +28,7 @@ f = Function(Boolean, 'WaitNextEvent',
 functions.append(f)
 
 f = Function(Boolean, 'EventAvail',
-    (MacOSEventMask, 'eventMask', InMode),
+    (EventMask, 'eventMask', InMode),
     (EventRecord, 'theEvent', OutMode),
 )
 functions.append(f)
@@ -60,26 +60,26 @@ f = Function(UInt32, 'TickCount',
 functions.append(f)
 
 f = Function(OSErr, 'PostEvent',
-    (MacOSEventKind, 'eventNum', InMode),
+    (EventKind, 'eventNum', InMode),
     (UInt32, 'eventMsg', InMode),
 )
 functions.append(f)
 
 f = Function(Boolean, 'OSEventAvail',
-    (MacOSEventMask, 'mask', InMode),
+    (EventMask, 'mask', InMode),
     (EventRecord, 'theEvent', OutMode),
 )
 functions.append(f)
 
 f = Function(Boolean, 'GetOSEvent',
-    (MacOSEventMask, 'mask', InMode),
+    (EventMask, 'mask', InMode),
     (EventRecord, 'theEvent', OutMode),
 )
 functions.append(f)
 
 f = Function(void, 'FlushEvents',
-    (MacOSEventMask, 'whichMask', InMode),
-    (MacOSEventMask, 'stopMask', InMode),
+    (EventMask, 'whichMask', InMode),
+    (EventMask, 'stopMask', InMode),
 )
 functions.append(f)
 

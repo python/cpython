@@ -59,7 +59,7 @@ static PyObject *Evt_SetEventMask(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	MacOSEventMask value;
+	EventMask value;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &value))
 		return NULL;
@@ -89,7 +89,7 @@ static PyObject *Evt_GetNextEvent(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	MacOSEventMask eventMask;
+	EventMask eventMask;
 	EventRecord theEvent;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &eventMask))
@@ -108,7 +108,7 @@ static PyObject *Evt_WaitNextEvent(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	MacOSEventMask eventMask;
+	EventMask eventMask;
 	EventRecord theEvent;
 	UInt32 sleep;
 	if (!PyArg_ParseTuple(_args, "hl",
@@ -131,7 +131,7 @@ static PyObject *Evt_EventAvail(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	MacOSEventMask eventMask;
+	EventMask eventMask;
 	EventRecord theEvent;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &eventMask))
@@ -235,7 +235,7 @@ static PyObject *Evt_PostEvent(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	MacOSEventKind eventNum;
+	EventKind eventNum;
 	UInt32 eventMsg;
 	if (!PyArg_ParseTuple(_args, "hl",
 	                      &eventNum,
@@ -255,7 +255,7 @@ static PyObject *Evt_OSEventAvail(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	MacOSEventMask mask;
+	EventMask mask;
 	EventRecord theEvent;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &mask))
@@ -274,7 +274,7 @@ static PyObject *Evt_GetOSEvent(_self, _args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
-	MacOSEventMask mask;
+	EventMask mask;
 	EventRecord theEvent;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &mask))
@@ -292,8 +292,8 @@ static PyObject *Evt_FlushEvents(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	MacOSEventMask whichMask;
-	MacOSEventMask stopMask;
+	EventMask whichMask;
+	EventMask stopMask;
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &whichMask,
 	                      &stopMask))
@@ -356,15 +356,15 @@ static PyMethodDef Evt_methods[] = {
 	{"GetCaretTime", (PyCFunction)Evt_GetCaretTime, 1,
 	 "() -> (UInt32 _rv)"},
 	{"SetEventMask", (PyCFunction)Evt_SetEventMask, 1,
-	 "(MacOSEventMask value) -> None"},
+	 "(EventMask value) -> None"},
 	{"GetDblTime", (PyCFunction)Evt_GetDblTime, 1,
 	 "() -> (UInt32 _rv)"},
 	{"GetNextEvent", (PyCFunction)Evt_GetNextEvent, 1,
-	 "(MacOSEventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
-	 "(MacOSEventMask eventMask, UInt32 sleep) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(EventMask eventMask, UInt32 sleep) -> (Boolean _rv, EventRecord theEvent)"},
 	{"EventAvail", (PyCFunction)Evt_EventAvail, 1,
-	 "(MacOSEventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"GetMouse", (PyCFunction)Evt_GetMouse, 1,
 	 "() -> (Point mouseLoc)"},
 	{"Button", (PyCFunction)Evt_Button, 1,
@@ -378,13 +378,13 @@ static PyMethodDef Evt_methods[] = {
 	{"TickCount", (PyCFunction)Evt_TickCount, 1,
 	 "() -> (UInt32 _rv)"},
 	{"PostEvent", (PyCFunction)Evt_PostEvent, 1,
-	 "(MacOSEventKind eventNum, UInt32 eventMsg) -> None"},
+	 "(EventKind eventNum, UInt32 eventMsg) -> None"},
 	{"OSEventAvail", (PyCFunction)Evt_OSEventAvail, 1,
-	 "(MacOSEventMask mask) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(EventMask mask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"GetOSEvent", (PyCFunction)Evt_GetOSEvent, 1,
-	 "(MacOSEventMask mask) -> (Boolean _rv, EventRecord theEvent)"},
+	 "(EventMask mask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"FlushEvents", (PyCFunction)Evt_FlushEvents, 1,
-	 "(MacOSEventMask whichMask, MacOSEventMask stopMask) -> None"},
+	 "(EventMask whichMask, EventMask stopMask) -> None"},
 	{"SystemClick", (PyCFunction)Evt_SystemClick, 1,
 	 "(EventRecord theEvent, WindowPtr theWindow) -> None"},
 	{"SystemTask", (PyCFunction)Evt_SystemTask, 1,

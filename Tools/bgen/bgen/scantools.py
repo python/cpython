@@ -29,8 +29,8 @@ except ImportError:
 # Default preferences
 #CREATOR = 'KAHL'		# Guido's favorite text editor on the Mac
 #INCLUDEDIR = "D:Development:THINK C:Mac #includes:Apple #includes:"
-CREATOR = 'MPCC'		# Jack's favorite text editor on the Mac
-INCLUDEDIR = "Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:"
+CREATOR = 'CWIE'		# Jack's favorite text editor on the Mac
+INCLUDEDIR = "Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:"
 
 
 Error = "scantools.Error"

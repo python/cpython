@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Sound.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Sound.h'
 
 f = SndFunction(void, 'SetSoundVol',
     (short, 'level', InMode),
@@ -44,7 +44,7 @@ f = SndFunction(OSErr, 'SndControl',
 )
 functions.append(f)
 
-f = SndFunction(NumVersion, 'SndSoundManagerVersion',
+f = SndFunction(long, 'SndSoundManagerVersion',
 )
 functions.append(f)
 
@@ -94,7 +94,7 @@ f = SndFunction(OSErr, 'SndSetSysBeepState',
 )
 functions.append(f)
 
-f = SndFunction(NumVersion, 'MACEVersion',
+f = SndFunction(long, 'MACEVersion',
 )
 functions.append(f)
 
