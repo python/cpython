@@ -1,29 +1,39 @@
-	Release notes for MacPython 1.5a3
+	Release notes for MacPython 1.5a4
 	---------------------------------
 
 Here are the mac-specific changes since MacPython 1.4, with end-user-visible
 changes near the top and API changes and other things that are developer-only
 more to the bottom. Changes marked with a [*] are new changes, since
-1.5a2. And, of course, all Guido's 1.5a3 changes are incorporated.
+1.5a3. And, of course, all Guido's 1.5a4 changes are incorporated.
 
-- Installation is now through an installer [*]
+- Balloon help in set-preferences dialog and EditPythonPrefs [*]
+- An interface to the Help Maganer has been added [*]
+- New modules "preferences" and "pythonprefs" which allow access to
+  Python preferences and implements a general preference-handling
+  framework. New EditPythonPrefs uses this. [*]
+- Applescript suite modules are now in a separate Mac:Lib:scripting
+  folder [*]
+- Most modules now export their type objects [*]
+- MacOS.SysBeep() and MacOS.GetTicks() added [*]
+- sys.prefix and sys.exec_prefix are now set correctly [*]
+- Installation is now through an installer 
 - mkapplet and MkPluginAliases have been renamed to BuildApplet and
-  ConfigurePython [*]
+  ConfigurePython 
 - Applescript classes and properties are now exported by suites. Very
-  sketchy documentation added to applescript.html [*]
-- Tkinter now uses tcl/tk 8.0 [*]
-- imports should be faster due to caching path information [*]
-- Generated suites now live in Mac:Lib:scripting [*]
-- Added zlib module [*]
-- Tkinter setfilehandler() did not work for sockets, fixed [*]
+  sketchy documentation added to applescript.html 
+- Tkinter now uses tcl/tk 8.0 
+- imports should be faster due to caching path information 
+- Generated suites now live in Mac:Lib:scripting 
+- Added zlib module 
+- Tkinter setfilehandler() did not work for sockets, fixed 
 - "Delay console window" option didn't work, fixed. Also check out the
-  quietconsole.py module [*]
+  quietconsole.py module 
 - Menu bar is restored (if needed) when keeping console open after
-  exit [*]
+  exit 
 - Influencing command-. and event processing (formerly MacOS.SetYield
-  and MacOS.SetScheduleTimes) has been changed, see the manual [*]
+  and MacOS.SetScheduleTimes) has been changed, see the manual 
 - FrameWork (or your own windowing code) can use asynchronous
-  callbacks to keep user interface responsive during long computations [*]
+  callbacks to keep user interface responsive during long computations 
 - Module to interface to Internet Config added
 - Module calldll added that allows calling of arbitrary C routines
   from MacOS toolboxes
@@ -57,8 +67,9 @@ more to the bottom. Changes marked with a [*] are new changes, since
 - img: better error handling for truncated images and such
 - img: imgop.unpack() can unpack formats with multiple pixels per byte
 
-- We now use CW Pro 1, with multitarget projects and such goodies [*]
-- fixed xx plugin project for cfm68k [*]
+- build numbers work and are maintained in macbuildno.h by fullbuild.py [*]
+- We now use CW Pro 1, with multitarget projects and such goodies 
+- fixed xx plugin project for cfm68k 
 - All files updated to new Py_ naming convention
 - Toolbox modules regenerated from new Universal Headers
 - nfullpath() merged into PyMac_GetFullPath()
