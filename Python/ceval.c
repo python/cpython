@@ -2864,7 +2864,9 @@ find_from_args(PyFrameObject *f, int nexti)
 	} else {
 		do {
 			oparg = (next_instr[1]<<8) + next_instr[0];
-			next_instr += 2;
+			/* Jump over our own argument, the next instruction
+			   (which is a STORE), and its argument.*/
+			next_instr += 5;
 			name = Getnamev(f, oparg);
 			if (PyList_Append(list, name) < 0) {
 				Py_DECREF(list);
