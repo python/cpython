@@ -28,6 +28,6 @@ def typed_subpart_iterator(msg, maintype='text', subtype=None):
     omitted, only the main type is matched.
     """
     for subpart in msg.walk():
-        if subpart.get_main_type() == maintype:
-            if subtype is None or subpart.get_subtype() == subtype:
+        if subpart.get_main_type('text') == maintype:
+            if subtype is None or subpart.get_subtype('plain') == subtype:
                 yield subpart
