@@ -133,6 +133,13 @@ class SimpleRecnoTestCase(unittest.TestCase):
         if verbose:
             print rec
 
+        # test that non-existant key lookups work (and that
+        # DBC_set_range doesn't have a memleak under valgrind)
+        rec = c.set_range(999999)
+        assert rec == None
+        if verbose:
+            print rec
+
         c.close()
         d.close()
 
@@ -177,6 +184,8 @@ class SimpleRecnoTestCase(unittest.TestCase):
         """
         source = os.path.join(os.path.dirname(sys.argv[0]),
                               'db_home/test_recno.txt')
+        if not os.path.isdir('db_home'):
+            os.mkdir('db_home')
         f = open(source, 'w') # create the file
         f.close()
 
