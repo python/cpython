@@ -98,7 +98,18 @@ for a few symbols, default values are provided.
 \begin{funcdesc}{gethostbyname}{hostname}
 Translate a host name to IP address format.  The IP address is
 returned as a string, e.g.,  \code{'100.50.200.5'}.  If the host name
-is an IP address itself it is returned unchanged.
+is an IP address itself it is returned unchanged.  See
+\code{gethostbyname_ex} for a more complete interface.
+\end{funcdesc}
+
+\begin{funcdesc}{gethostbyname_ex}{hostname}
+Translate a host name to IP address format, extended interface.
+Return a triple \code{(hostname, aliaslist, ipaddrlist)} where
+\code{hostname} is the primary host name responding to the given
+\var{ip_address}, \code{aliaslist} is a (possibly empty) list of
+alternative host names for the same address, and \code{ipaddrlist} is
+a list of IP addresses for the same interface on the same
+host (often but not always a single address).
 \end{funcdesc}
 
 \begin{funcdesc}{gethostname}{}
