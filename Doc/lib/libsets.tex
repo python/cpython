@@ -199,14 +199,14 @@ construct sets of sets.
 A similar mechanism is needed by the \method{__contains__()} and
 \method{remove()} methods which need to hash an element to check
 for membership in a set.  Those methods check an element for hashability
-and, if not, check for a \method{_as_Temporarily_Immutable()} method
+and, if not, check for a \method{_as_temporarily_immutable()} method
 which returns the element wrapped by a class that provides temporary
 methods for \method{__hash__()}, \method{__eq__()}, and \method{__ne__()}.
 
 The alternate mechanism spares the need to build a separate copy of
 the original mutable object.
 
-\class{Set} objects implement the \method{_as_Temporarily_Immutable()}
+\class{Set} objects implement the \method{_as_temporarily_immutable()}
 method which returns the \class{Set} object wrapped by a new class
 \class{_TemporarilyImmutableSet}.
 
