@@ -100,7 +100,8 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
-\item Detailed changes are listed here.
+\item The \cfunction{PyRange_New()} function was removed.  It was never documented,
+never used in the core code, and had dangerously lax error checking.  
 
 \end{itemize}
 
