@@ -19,8 +19,6 @@ from string import strip
 from types import *
 import AE
 from AppleEvents import *
-from AERegistry import *
-from AEObjects import *
 import MacOS
 import macfs
 import StringIO
