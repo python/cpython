@@ -345,20 +345,24 @@ parser_free(ast)
  *
  */
 static PyObject*
-parser_ast2tuple(self, args)
+parser_ast2tuple(self, args, kw)
      PyAST_Object *self;
      PyObject *args;
+     PyObject *kw;
 {
     PyObject *line_option = 0;
     PyObject *res = 0;
     int ok;
 
+    static char *keywords[] = {"ast", "line_info", NULL};
+
     if (self == NULL) {
-	ok = PyArg_ParseTuple(
-		args, "O!|O:ast2tuple", &PyAST_Type, &self, &line_option);
+	ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O:ast2tuple", keywords,
+                                         &PyAST_Type, &self, &line_option);
     }
     else
-	ok = PyArg_ParseTuple(args, "|O:totuple", &line_option);
+	ok = PyArg_ParseTupleAndKeywords(args, kw, "|O:totuple", &keywords[1],
+                                         &line_option);
     if (ok != 0) {
 	int lineno = 0;
 	if (line_option != NULL) {
@@ -383,19 +387,23 @@ parser_ast2tuple(self, args)
  *
  */
 static PyObject*
-parser_ast2list(self, args)
+parser_ast2list(self, args, kw)
      PyAST_Object *self;
      PyObject *args;
+     PyObject *kw;
 {
     PyObject *line_option = 0;
     PyObject *res = 0;
     int ok;
 
+    static char *keywords[] = {"ast", "line_info", NULL};
+
     if (self == NULL)
-	ok = PyArg_ParseTuple(
-		args, "O!|O:ast2list", &PyAST_Type, &self, &line_option);
+	ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|O:ast2list", keywords,
+                                         &PyAST_Type, &self, &line_option);
     else
-	ok = PyArg_ParseTuple(args, "|O:tolist", &line_option);
+ 	ok = PyArg_ParseTupleAndKeywords(args, kw, "|O:tolist", &keywords[1],
+                                         &line_option);
     if (ok) {
 	int lineno = 0;
 	if (line_option != 0) {
@@ -420,19 +428,23 @@ parser_ast2list(self, args)
  *
  */
 static PyObject*
-parser_compileast(self, args)
+parser_compileast(self, args, kw)
      PyAST_Object *self;
      PyObject *args;
+     PyObject *kw;
 {
     PyObject*     res = 0;
     char*	  str = "<ast>";
     int ok;
 
+    static char *keywords[] = {"ast", "filename", NULL};
+
     if (self == NULL)
-	ok = PyArg_ParseTuple(
-		args, "O!|s:compileast", &PyAST_Type, &self, &str);
+	ok = PyArg_ParseTupleAndKeywords(args, kw, "O!|s:compileast", keywords,
+                                         &PyAST_Type, &self, &str);
     else
-	ok = PyArg_ParseTuple(args, "|s:compile", &str);
+	ok = PyArg_ParseTupleAndKeywords(args, kw, "|s:compile", &keywords[1],
+                                         &str);
 
     if (ok)
 	res = (PyObject *)PyNode_Compile(self->ast_node, str);
@@ -450,17 +462,21 @@ parser_compileast(self, args)
  *
  */
 static PyObject*
-parser_isexpr(self, args)
+parser_isexpr(self, args, kw)
      PyAST_Object *self;
      PyObject *args;
+     PyObject *kw;
 {
     PyObject* res = 0;
     int ok;
 
+    static char *keywords[] = {"ast", NULL};
+
     if (self == NULL)
-	ok = PyArg_ParseTuple(args, "O!:isexpr", &PyAST_Type, &self);
+	ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:isexpr", keywords,
+                                         &PyAST_Type, &self);
     else
-	ok = PyArg_ParseTuple(args, ":isexpr");
+	ok = PyArg_ParseTupleAndKeywords(args, kw, ":isexpr", &keywords[1]);
 
     if (ok) {
 	/* Check to see if the AST represents an expression or not. */
@@ -473,17 +489,21 @@ parser_isexpr(self, args)
 
 
 static PyObject*
-parser_issuite(self, args)
+parser_issuite(self, args, kw)
      PyAST_Object *self;
      PyObject *args;
+     PyObject *kw;
 {
     PyObject* res = 0;
     int ok;
 
+    static char *keywords[] = {"ast", NULL};
+
     if (self == NULL)
-	ok = PyArg_ParseTuple(args, "O!:issuite", &PyAST_Type, &self);
+	ok = PyArg_ParseTupleAndKeywords(args, kw, "O!:issuite", keywords,
+                                         &PyAST_Type, &self);
     else
-	ok = PyArg_ParseTuple(args, ":issuite");
+	ok = PyArg_ParseTupleAndKeywords(args, kw, ":issuite", &keywords[1]);
 
     if (ok) {
 	/* Check to see if the AST represents an expression or not. */
@@ -495,24 +515,23 @@ parser_issuite(self, args)
 }   /* parser_issuite() */
 
 
+#define PUBLIC_METHOD_TYPE (METH_VARARGS|METH_KEYWORDS)
+
 static PyMethodDef
 parser_methods[] = {
-    {"compile",		(PyCFunction)parser_compileast,	METH_VARARGS,
+    {"compile",		(PyCFunction)parser_compileast,	PUBLIC_METHOD_TYPE,
 	"Compile this AST object into a code object."},
-    {"isexpr",		(PyCFunction)parser_isexpr,	METH_VARARGS,
+    {"isexpr",		(PyCFunction)parser_isexpr,	PUBLIC_METHOD_TYPE,
 	"Determines if this AST object was created from an expression."},
-    {"issuite",		(PyCFunction)parser_issuite,	METH_VARARGS,
+    {"issuite",		(PyCFunction)parser_issuite,	PUBLIC_METHOD_TYPE,
 	"Determines if this AST object was created from a suite."},
-    {"tolist",		(PyCFunction)parser_ast2list,	METH_VARARGS,
+    {"tolist",		(PyCFunction)parser_ast2list,	PUBLIC_METHOD_TYPE,
 	"Creates a list-tree representation of this AST."},
-    {"totuple",		(PyCFunction)parser_ast2tuple,	METH_VARARGS,
+    {"totuple",		(PyCFunction)parser_ast2tuple,	PUBLIC_METHOD_TYPE,
 	"Creates a tuple-tree representation of this AST."},
 
     {NULL, NULL, 0, NULL}
 };
-
-static PyObject*
-parser_method_list = NULL;
 
 
 static PyObject*
@@ -520,10 +539,6 @@ parser_getattr(self, name)
      PyObject *self;
      char *name;
 {
-    if (strcmp(name, "__methods__") == 0) {
-	Py_INCREF(parser_method_list);
-	return (parser_method_list);
-    }
     return (Py_FindMethod(parser_methods, self, name));
 
 }   /* parser_getattr() */
@@ -550,14 +565,18 @@ err_string(message)
  *
  */
 static PyObject*
-parser_do_parse(args, type)
+parser_do_parse(args, kw, argspec, type)
      PyObject *args;
+     PyObject *kw;
+     char *argspec;
      int type;
 {
     char*     string = 0;
     PyObject* res    = 0;
 
-    if (PyArg_ParseTuple(args, "s", &string)) {
+    static char *keywords[] = {"source", NULL};
+
+    if (PyArg_ParseTupleAndKeywords(args, kw, argspec, keywords, &string)) {
 	node* n = PyParser_SimpleParseString(string,
 					     (type == PyAST_EXPR)
 					     ? eval_input : file_input);
@@ -581,23 +600,25 @@ parser_do_parse(args, type)
  *
  */
 static PyObject*
-parser_expr(self, args)
+parser_expr(self, args, kw)
      PyObject *self;
      PyObject *args;
+     PyObject *kw;
 {
     NOTE(ARGUNUSED(self))
-    return (parser_do_parse(args, PyAST_EXPR));
+    return (parser_do_parse(args, kw, "s:expr", PyAST_EXPR));
 
 }   /* parser_expr() */
 
 
 static PyObject*
-parser_suite(self, args)
+parser_suite(self, args, kw)
      PyObject *self;
      PyObject *args;
+     PyObject *kw;
 {
     NOTE(ARGUNUSED(self))
-    return (parser_do_parse(args, PyAST_SUITE));
+    return (parser_do_parse(args, kw, "s:suite", PyAST_SUITE));
 
 }   /* parser_suite() */
 
@@ -639,9 +660,10 @@ staticforward int   validate_file_input Py_PROTO((node *tree));
  *
  */
 static PyObject*
-parser_tuple2ast(self, args)
+parser_tuple2ast(self, args, kw)
      PyObject *self;
      PyObject *args;
+     PyObject *kw;
 {
     NOTE(ARGUNUSED(self))
     PyObject *ast = 0;
@@ -650,7 +672,10 @@ parser_tuple2ast(self, args)
     int ok;
     int start_sym = 0;
 
-    if (!PyArg_ParseTuple(args, "O:tuple2ast", &tuple))
+    static char *keywords[] = {"sequence", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "O:tuple2ast", keywords,
+                                     &tuple))
 	return (0);
     if (!PySequence_Check(tuple)) {
 	PyErr_SetString(PyExc_ValueError,
@@ -2719,23 +2744,23 @@ parser__pickler(self, args)
  *  inheritance.
  */
 static PyMethodDef parser_functions[] =  {
-    {"ast2tuple",	(PyCFunction)parser_ast2tuple,	METH_VARARGS,
+    {"ast2tuple",	(PyCFunction)parser_ast2tuple,	PUBLIC_METHOD_TYPE,
 	"Creates a tuple-tree representation of an AST."},
-    {"ast2list",	(PyCFunction)parser_ast2list,	METH_VARARGS,
+    {"ast2list",	(PyCFunction)parser_ast2list,	PUBLIC_METHOD_TYPE,
 	"Creates a list-tree representation of an AST."},
-    {"compileast",	(PyCFunction)parser_compileast,	METH_VARARGS,
+    {"compileast",	(PyCFunction)parser_compileast,	PUBLIC_METHOD_TYPE,
 	"Compiles an AST object into a code object."},
-    {"expr",		(PyCFunction)parser_expr,	METH_VARARGS,
+    {"expr",		(PyCFunction)parser_expr,	PUBLIC_METHOD_TYPE,
 	"Creates an AST object from an expression."},
-    {"isexpr",		(PyCFunction)parser_isexpr,	METH_VARARGS,
+    {"isexpr",		(PyCFunction)parser_isexpr,	PUBLIC_METHOD_TYPE,
 	"Determines if an AST object was created from an expression."},
-    {"issuite",		(PyCFunction)parser_issuite,	METH_VARARGS,
+    {"issuite",		(PyCFunction)parser_issuite,	PUBLIC_METHOD_TYPE,
 	"Determines if an AST object was created from a suite."},
-    {"suite",		(PyCFunction)parser_suite,	METH_VARARGS,
+    {"suite",		(PyCFunction)parser_suite,	PUBLIC_METHOD_TYPE,
 	"Creates an AST object from a suite."},
-    {"sequence2ast",	(PyCFunction)parser_tuple2ast,	METH_VARARGS,
+    {"sequence2ast",	(PyCFunction)parser_tuple2ast,	PUBLIC_METHOD_TYPE,
 	"Creates an AST object from a tree representation."},
-    {"tuple2ast",	(PyCFunction)parser_tuple2ast,	METH_VARARGS,
+    {"tuple2ast",	(PyCFunction)parser_tuple2ast,	PUBLIC_METHOD_TYPE,
 	"Creates an AST object from a tree representation."},
 
     /* private stuff: support pickle module */
@@ -2756,7 +2781,10 @@ initparser()
     module = Py_InitModule("parser", parser_functions);
     dict = PyModule_GetDict(module);
 
-    parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);
+    if (parser_error == 0)
+        parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);
+    else
+        puts("parser module initialized more than once!");
 
     if ((parser_error == 0)
 	|| (PyDict_SetItemString(dict, "ParserError", parser_error) != 0)) {
@@ -2777,20 +2805,6 @@ initparser()
 			 PyString_FromString(parser_doc_string));
     PyDict_SetItemString(dict, "__version__",
 			 PyString_FromString(parser_version_string));
-
-    parser_method_list = PyList_New(0);
-    if (parser_method_list != NULL) {
-	PyMethodDef *mdef = parser_methods;
-
-	while (mdef->ml_name != NULL) {
-	    PyObject *temp = PyString_FromString(mdef->ml_name);
-	    if (temp != NULL) {
-		PyList_Append(parser_method_list, temp);
-		Py_DECREF(temp);
-	    }
-	    ++mdef;
-	}
-    }
 
     /* register to support pickling */
     module = PyImport_ImportModule("copy_reg");
