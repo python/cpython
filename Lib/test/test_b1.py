@@ -72,6 +72,33 @@ if fcmp(coerce(1L, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1L, 1.1)'
 print 'compile'
 compile('print 1\n', '', 'exec')
 
+print 'complex'
+if complex(1,10) <> 1+10j: raise TestFailed, 'complex(1,10)'
+if complex(1,10L) <> 1+10j: raise TestFailed, 'complex(1,10L)'
+if complex(1,10.0) <> 1+10j: raise TestFailed, 'complex(1,10.0)'
+if complex(1L,10) <> 1+10j: raise TestFailed, 'complex(1L,10)'
+if complex(1L,10L) <> 1+10j: raise TestFailed, 'complex(1L,10L)'
+if complex(1L,10.0) <> 1+10j: raise TestFailed, 'complex(1L,10.0)'
+if complex(1.0,10) <> 1+10j: raise TestFailed, 'complex(1.0,10)'
+if complex(1.0,10L) <> 1+10j: raise TestFailed, 'complex(1.0,10L)'
+if complex(1.0,10.0) <> 1+10j: raise TestFailed, 'complex(1.0,10.0)'
+if complex(3.14+0j) <> 3.14+0j: raise TestFailed, 'complex(3.14)'
+if complex(3.14) <> 3.14+0j: raise TestFailed, 'complex(3.14)'
+if complex(314) <> 314.0+0j: raise TestFailed, 'complex(314)'
+if complex(314L) <> 314.0+0j: raise TestFailed, 'complex(314L)'
+if complex(3.14+0j, 0j) <> 3.14+0j: raise TestFailed, 'complex(3.14, 0j)'
+if complex(3.14, 0.0) <> 3.14+0j: raise TestFailed, 'complex(3.14, 0.0)'
+if complex(314, 0) <> 314.0+0j: raise TestFailed, 'complex(314, 0)'
+if complex(314L, 0L) <> 314.0+0j: raise TestFailed, 'complex(314L, 0L)'
+if complex(0j, 3.14j) <> -3.14+0j: raise TestFailed, 'complex(0j, 3.14j)'
+if complex(0.0, 3.14j) <> -3.14+0j: raise TestFailed, 'complex(0.0, 3.14j)'
+if complex(0j, 3.14) <> 3.14j: raise TestFailed, 'complex(0j, 3.14)'
+if complex(0.0, 3.14) <> 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
+class Z:
+    def __complex__(self): return 3.14j
+z = Z()
+if complex(z) <> 3.14j: raise TestFailed, 'complex(classinstance)'
+
 print 'delattr'
 import sys
 sys.spam = 1
@@ -200,6 +227,12 @@ print 'int'
 if int(314) <> 314: raise TestFailed, 'int(314)'
 if int(3.14) <> 3: raise TestFailed, 'int(3.14)'
 if int(314L) <> 314: raise TestFailed, 'int(314L)'
+# Check that conversion from float truncates towards zero
+if int(-3.14) <> -3: raise TestFailed, 'int(-3.14)'
+if int(3.9) <> 3: raise TestFailed, 'int(3.9)'
+if int(-3.9) <> -3: raise TestFailed, 'int(-3.9)'
+if int(3.5) <> 3: raise TestFailed, 'int(3.5)'
+if int(-3.5) <> -3: raise TestFailed, 'int(-3.5)'
 
 print 'len'
 if len('123') <> 3: raise TestFailed, 'len(\'123\')'
@@ -213,6 +246,12 @@ print 'long'
 if long(314) <> 314L: raise TestFailed, 'long(314)'
 if long(3.14) <> 3L: raise TestFailed, 'long(3.14)'
 if long(314L) <> 314L: raise TestFailed, 'long(314L)'
+# Check that conversion from float truncates towards zero
+if long(-3.14) <> -3L: raise TestFailed, 'long(-3.14)'
+if long(3.9) <> 3L: raise TestFailed, 'long(3.9)'
+if long(-3.9) <> -3L: raise TestFailed, 'long(-3.9)'
+if long(3.5) <> 3L: raise TestFailed, 'long(3.5)'
+if long(-3.5) <> -3L: raise TestFailed, 'long(-3.5)'
 
 print 'map'
 if map(None, 'hello world') <> ['h','e','l','l','o',' ','w','o','r','l','d']:
