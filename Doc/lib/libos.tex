@@ -68,7 +68,7 @@ or \code{None} if only one separator character exists.  This is set to
 
 \begin{datadesc}{pathsep}
 The character conventionally used by the OS to separate search patch
-components (as in \code{\$PATH}), e.g.\ \code{':'} for \POSIX{} or
+components (as in \code{\$PATH}), e.g.\ \code{':'} for \POSIX{} or % $
 \code{';'} for MS-DOS.
 \end{datadesc}
 
@@ -83,6 +83,35 @@ e.g. \code{'\e r\e n'} for MS-DOS.
 The default search path used by \code{exec*p*()} if the environment
 doesn't have a \code{'PATH'} key.
 \end{datadesc}
+
+\begin{funcdesc}{makedirs}{path\optional{, mode}}
+Recursive directory creation function.  Like \function{mkdir()},
+but makes all intermediate-level directories needed to contain the
+leaf directory.  Throws an \exception{os.error} exception if the leaf
+directory already exists or cannot be created.  The default \var{mode}
+is \code{0777} (octal).
+\end{funcdesc}
+
+\begin{funcdesc}{removedirs}{path}
+Recursive directory removal function.  Works like
+\function{rmdir()} except that, if the leaf directory is
+successfully removed, directories corresponding to rightmost path
+segments will be pruned way until either the whole path is consumed or
+an error is raised (which is ignored, because it generally means that
+a parent directory is not empty).  Throws an \exception{os.error}
+exception if the leaf directory could not be successfully removed.
+\end{funcdesc}
+
+\begin{funcdesc}{renames}{path}
+Recursive directory or file renaming function.
+Works like \function{rename()}, except creation of any intermediate
+directories needed to make the new pathname good is attempted first.
+After the rename, directories corresponding to rightmost path segments
+of the old name will be pruned away using \function{removedirs()}.
+
+Note: this function can fail with the new directory structure made if
+you lack permissions needed to remove the leaf directory or file.
+\end{funcdesc}
 
 \begin{funcdesc}{execl}{path, arg0, arg1, ...}
 This is equivalent to
