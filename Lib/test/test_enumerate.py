@@ -143,8 +143,8 @@ class TestReversed(unittest.TestCase):
 
     def test_len(self):
         # This is an implementation detail, not an interface requirement
-        s = 'hello'
-        self.assertEqual(len(reversed(s)), len(s))
+        for s in ('hello', tuple('hello'), list('hello'), xrange(5)):
+            self.assertEqual(len(reversed(s)), len(s))
 
 def test_main(verbose=None):
     testclasses = (EnumerateTestCase, SubclassTestCase, TestEmpty, TestBig,

@@ -217,29 +217,33 @@ static PyObject *
 reversed_next(reversedobject *ro)
 {
 	PyObject *item;
+	long index = ro->index;
 
-	if (ro->index < 0)
-		return NULL;
-
-	assert(PySequence_Check(ro->seq));
-	item = PySequence_GetItem(ro->seq, ro->index);
-	if (item == NULL)
-		return NULL;
-
-	ro->index--;
-	return item;
-}
-
-static int
-reversed_len(reversedobject *ro)
-{
-	return PyObject_Size(ro->seq);
+	if (index >= 0) {
+		item = PySequence_GetItem(ro->seq, index);
+		if (item != NULL) {
+			ro->index--;
+			return item;
+		}
+	}
+	ro->index = -1;
+	if (ro->seq != NULL) {
+		Py_DECREF(ro->seq);
+		ro->seq = NULL;
+	}
+	return NULL;
 }
 
 PyDoc_STRVAR(reversed_doc,
 "reverse(sequence) -> reverse iterator over values of the sequence\n"
 "\n"
 "Return a reverse iterator");
+
+static int
+reversed_len(reversedobject *ro)
+{
+	return ro->index + 1;
+}
 
 static PySequenceMethods reversed_as_sequence = {
 	(inquiry)reversed_len,		/* sq_length */
