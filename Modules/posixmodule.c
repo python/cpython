@@ -1771,7 +1771,7 @@ posix_listdir(PyObject *self, PyObject *args)
     return d;
 #else
 
-	char *name;
+	char *name = NULL;
 	PyObject *d, *v;
 	DIR *dirp;
 	struct dirent *ep;
@@ -1784,10 +1784,11 @@ posix_listdir(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "et:listdir", Py_FileSystemDefaultEncoding, &name))
 		return NULL;
 	if ((dirp = opendir(name)) == NULL) {
-		return posix_error_with_filename(name);
+		return posix_error_with_allocated_filename(name);
 	}
 	if ((d = PyList_New(0)) == NULL) {
 		closedir(dirp);
+		PyMem_Free(name);
 		return NULL;
 	}
 	while ((ep = readdir(dirp)) != NULL) {
@@ -1826,6 +1827,7 @@ posix_listdir(PyObject *self, PyObject *args)
 		Py_DECREF(v);
 	}
 	closedir(dirp);
+	PyMem_Free(name);
 
 	return d;
 
