@@ -465,6 +465,6 @@ tests = [
     ('a(?:b|c|d)(.)', 'ace', SUCCEED, 'g1', 'e'),
     ('a(?:b|c|d)*(.)', 'ace', SUCCEED, 'g1', 'e'),
     ('a(?:b|c|d)+?(.)', 'ace', SUCCEED, 'g1', 'e'),
-    ('a(?:b|(c|e){1,2}?|d)+?(.)', 'ace', SUCCEED, 'g1g2', 'ce'),
+    ('a(?:b|(c|e){1,2}?|d)+?(.)', 'ace', SUCCEED, 'g1+"-"+g2', 'c-e'),
     ('^(.+)?B', 'AB', SUCCEED, 'g1', 'A'),
 ]
