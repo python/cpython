@@ -30,7 +30,7 @@ def verify(name, expected):
 
 # -------------------- normal distribution --------------------
 
-NV_MAGICCONST = 4*exp(-0.5)/sqrt(2)
+NV_MAGICCONST = 4*exp(-0.5)/sqrt(2.0)
 verify('NV_MAGICCONST', 1.71552776992141)
 def normalvariate(mu, sigma):
 	# mu = mean, sigma = standard deviation
@@ -44,7 +44,7 @@ def normalvariate(mu, sigma):
 		u1 = random()
 		u2 = random()
 		z = NV_MAGICCONST*(u1-0.5)/u2
-		zz = z*z/4
+		zz = z*z/4.0
 		if zz <= -log(u2):
 			break
 	return mu+z*sigma
@@ -75,7 +75,7 @@ def expovariate(lambd):
 
 # -------------------- von Mises distribution --------------------
 
-TWOPI = 2*pi
+TWOPI = 2.0*pi
 verify('TWOPI', 6.28318530718)
 
 def vonmisesvariate(mu, kappa):
@@ -86,15 +86,15 @@ def vonmisesvariate(mu, kappa):
 	if kappa <= 1e-6:
 		return TWOPI * random()
 
-	a = 1.0 + sqrt(1 + 4 * kappa * kappa)
-	b = (a - sqrt(2 * a))/(2 * kappa)
-	r = (1 + b * b)/(2 * b)
+	a = 1.0 + sqrt(1.0 + 4.0 * kappa * kappa)
+	b = (a - sqrt(2.0 * a))/(2.0 * kappa)
+	r = (1.0 + b * b)/(2.0 * b)
 
 	while 1:
 		u1 = random()
 
 		z = cos(pi * u1)
-		f = (1 + r * z)/(r + z)
+		f = (1.0 + r * z)/(r + z)
 		c = kappa * (r - f)
 
 		u2 = random()
@@ -112,15 +112,15 @@ def vonmisesvariate(mu, kappa):
 
 # -------------------- gamma distribution --------------------
 
-LOG4 = log(4)
+LOG4 = log(4.0)
 verify('LOG4', 1.38629436111989)
 
 def gammavariate(alpha, beta):
         # beta times standard gamma
-	ainv = sqrt(2 * alpha - 1)
+	ainv = sqrt(2.0 * alpha - 1.0)
 	return beta * stdgamma(alpha, ainv, alpha - LOG4, alpha + ainv)
 
-SG_MAGICCONST = 1+log(4.5)
+SG_MAGICCONST = 1.0 + log(4.5)
 verify('SG_MAGICCONST', 2.50407739677627)
 
 def stdgamma(alpha, ainv, bbb, ccc):
@@ -140,11 +140,11 @@ def stdgamma(alpha, ainv, bbb, ccc):
 		while 1:
 			u1 = random()
 			u2 = random()
-			v = log(u1/(1-u1))/ainv
+			v = log(u1/(1.0-u1))/ainv
 			x = alpha*exp(v)
 			z = u1*u1*u2
 			r = bbb+ccc*v-x
-			if r + SG_MAGICCONST - 4.5*z >= 0 or r >= log(z):
+			if r + SG_MAGICCONST - 4.5*z >= 0.0 or r >= log(z):
 				return x
 
 	elif alpha == 1.0:
@@ -176,17 +176,21 @@ def stdgamma(alpha, ainv, bbb, ccc):
 
 # -------------------- Gauss (faster alternative) --------------------
 
-# When x and y are two variables from [0, 1), uniformly distributed, then
-#
-#    cos(2*pi*x)*log(1-y)
-#    sin(2*pi*x)*log(1-y)
-#
-# are two *independent* variables with normal distribution (mu = 0, sigma = 1).
-# (Lambert Meertens)
-
 gauss_next = None
 def gauss(mu, sigma):
+
+	# When x and y are two variables from [0, 1), uniformly
+	# distributed, then
+	#
+	#    cos(2*pi*x)*log(1-y)
+	#    sin(2*pi*x)*log(1-y)
+	#
+	# are two *independent* variables with normal distribution
+	# (mu = 0, sigma = 1).
+	# (Lambert Meertens)
+
 	global gauss_next
+
 	if gauss_next != None:
 		z = gauss_next
 		gauss_next = None
@@ -195,23 +199,30 @@ def gauss(mu, sigma):
 		log1_y = log(1.0 - random())
 		z = cos(x2pi) * log1_y
 		gauss_next = sin(x2pi) * log1_y
+
 	return mu + z*sigma
 
 # -------------------- beta --------------------
 
 def betavariate(alpha, beta):
+
+	# Discrete Event Simulation in C, pp 87-88.
+
 	y = expovariate(alpha)
 	z = expovariate(1.0/beta)
 	return z/(y+z)
 
 # -------------------- test program --------------------
 
-def test():
+def test(*args):
 	print 'TWOPI         =', TWOPI
 	print 'LOG4          =', LOG4
 	print 'NV_MAGICCONST =', NV_MAGICCONST
 	print 'SG_MAGICCONST =', SG_MAGICCONST
 	N = 200
+	if args:
+		if args[1:]: print 'Excess test() arguments ignored'
+		N = args[0]
 	test_generator(N, 'random()')
 	test_generator(N, 'normalvariate(0.0, 1.0)')
 	test_generator(N, 'lognormvariate(0.0, 1.0)')
@@ -234,7 +245,7 @@ def test_generator(n, funccall):
 	sum = 0.0
 	sqsum = 0.0
 	smallest = 1e10
-	largest = 1e-10
+	largest = -1e10
 	t0 = time.time()
 	for i in range(n):
 		x = eval(code)
