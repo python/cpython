@@ -799,7 +799,7 @@
 
 /* Define on UNIX to activate XPG/5 features.  */
 #ifndef _XOPEN_SOURCE
-# define _XOPEN_SOURCE 500
+# undef _XOPEN_SOURCE
 #endif
 
 /* Define to activate Unix95-and-earlier features */
