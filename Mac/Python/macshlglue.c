@@ -9,6 +9,7 @@
 #include <Resources.h>
 
 #ifdef __MWERKS__
+#ifdef PRE_CW8
 /*
 ** This part is copied from MW Startup.c, which is
 **	Copyright © 1993 metrowerks inc. All Rights Reserved.
@@ -25,6 +26,7 @@ jmp_buf __program_exit;				/*	exit() does a longjmp() to here		*/
 void (*__atexit_hook)(void);		/*	atexit()  sets this up if it is ever called	*/
 void (*___atexit_hook)(void);		/*	_atexit() sets this up if it is ever called	*/
 int __aborting;						/*	abort() sets this and longjmps to __program_exit	*/
+#endif
 #endif
 
 /*
