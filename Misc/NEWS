@@ -94,6 +94,8 @@ Extension modules
 Library
 -------
 
+- Xmlrpclib.py now supports the builtin boolean type.
+
 - py_compile has a new 'doraise' flag and a new PyCompileError
   exception.
 
