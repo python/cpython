@@ -6,19 +6,29 @@ this file as a string constant.
 
 XXX TO DO
 
+XXX User Features TO DO
+
 - next/prev/index links in do_show?
-- customize rcs command pathnames
 - explanation of editing somewhere
-- various embellishments, GIFs, crosslinks, hints, etc.
+- embellishments, GIFs, crosslinks, hints, etc.
+- make references to other Q's and whole sections into links
+- support adding annotations, too
+
+XXX Management Features TO DO
+
 - create new sections
 - rearrange entries
 - delete entries
-- send email on changes
+- send email on changes?
+- send email on ERRORS!
 - optional staging of entries until reviewed?
 - freeze entries
-- username/password for editors
-- Change references to other Q's and whole sections
-- support adding annotations, too
+- username/password for authors
+- read section titles from a file (could be a Python file: import faqcustom)
+
+XXX Code organization TO DO
+
+- customize rcs command pathnames (and everything else)
 - make it more generic (so you can create your own FAQ)
 - more OO structure, e.g. add a class representing one FAQ entry
 
@@ -27,7 +37,6 @@ XXX TO DO
 NAMEPAT = "faq??.???.htp"
 NAMEREG = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
 
-# Like so many other things, this should come from a file.
 SECTIONS = {
     "1": "General information and availability",
     "2": "Python in the real world",
@@ -377,8 +386,11 @@ class FAQServer:
 	    return
 	self.prologue("Info for %s" % name)
 	print '<PRE>'
-	sys.stdout.flush()
-	os.system("/depot/gnu/plat/bin/rlog -r %s </dev/null 2>&1" % self.name)
+	p = os.popen("/depot/gnu/plat/bin/rlog -r %s </dev/null 2>&1" %
+		     self.name)
+	output = p.read()
+	p.close()
+	print cgi.escape(output)
 	print '</PRE>'
 	print '<A HREF="faq.py?req=rlog&name=%s">View full rcs log</A>' % name
 
@@ -390,8 +402,10 @@ class FAQServer:
 	    return
 	self.prologue("RCS log for %s" % name)
 	print '<PRE>'
-	sys.stdout.flush()
-	os.system("/depot/gnu/plat/bin/rlog %s </dev/null 2>&1" % self.name)
+	p = os.popen("/depot/gnu/plat/bin/rlog %s </dev/null 2>&1" % self.name)
+	output = p.read()
+	p.close()
+	print cgi.escape(output)
 	print '</PRE>'
 
     def checkin(self):
@@ -508,8 +522,12 @@ class FAQServer:
 	value = "%s;%s" % (author, email)
 	import urllib
 	value = urllib.quote(value)
+	try:
+	    hostname = os.environ['HTTP_HOST']
+	except KeyError:
+	    hostname = os.environ['SERVER_NAME']
 	print "Set-Cookie: %s=%s; path=/cgi-bin/;" % (name, value),
-	print "domain=%s;" % os.environ['HTTP_HOST'],
+	print "domain=%s;" % hostname,
 	print "expires=Sat, 01-Jan-2000 00:00:00 GMT"
 
     def get_cookie(self):
@@ -541,7 +559,7 @@ class FAQServer:
 	    email = email or e
 	print """
 	Title: <INPUT TYPE=text SIZE=70 NAME=title VALUE="%s"><BR>
-	<TEXTAREA COLS=80 ROWS=20 NAME=text>""" % title
+	<TEXTAREA COLS=80 ROWS=20 NAME=text>""" % self.escape(title)
 	print cgi.escape(string.strip(text))
 	print """</TEXTAREA>
 	<BR>
@@ -553,7 +571,19 @@ class FAQServer:
 	<BR>
 	Log message (reason for the change):<BR>
 	<TEXTAREA COLS=80 ROWS=5 NAME=log>%s\n</TEXTAREA>
-	""" % (author, email, self.log)
+	""" % (self.escape(author), self.escape(email), self.escape(self.log))
+
+    def escape(self, s):
+	import regsub
+	if '&' in s:
+	    s = regsub.gsub("&", "&amp;", s)	# Must be done first!
+	if '<' in s:
+	    s = regsub.gsub("<", "&lt;", s)
+	if '>' in s:
+	    s = regsub.gsub(">", "&gt;", s)
+	if '"' in s:
+	    s = regsub.gsub('"', "&quot;", s)
+	return s
 
     def showheaders(self, headers):
 	print "<UL>"
@@ -709,9 +739,9 @@ class FAQServer:
 	    list.append(cgi.escape(text[i:j]))
 	    i = j
 	    url = prog.group(0)
-	    while url[-1] in ");:,.?":
+	    while url[-1] in ");:,.?'\"":
 		url = url[:-1]
-	    url = cgi.escape(url)
+	    url = self.escape(url)
 	    if ':' in url:
 		repl = '<A HREF="%s">%s</A>' % (url, url)
 	    else:
