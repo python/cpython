@@ -131,7 +131,7 @@ I have no answers.  Garbage Collection may also become a problem here.)
 __version__ = "1.8"                     # Code version
 
 from types import *
-from copy_reg import *
+from copy_reg import dispatch_table, safe_constructors
 import string, marshal
 
 format_version = "1.2"                  # File format version we write
@@ -290,6 +290,9 @@ class Pickler:
                                      "by %s must be a tuple" % reduce
 
             self.save_reduce(callable, arg_tup, state) 
+	    memo_len = len(memo)
+	    self.write(self.put(memo_len))
+	    memo[d] = (memo_len, object)
             return
 
         f(self, object)
@@ -489,9 +492,7 @@ class Pickler:
         if (self.bin):
             write(OBJ + self.put(memo_len))
         else:
-            module = whichmodule(cls, cls.__name__)
-            name = cls.__name__
-            write(INST + module + '\n' + name + '\n' +
+            write(INST + cls.__module__ + '\n' + cls.__name__ + '\n' +
                 self.put(memo_len))
 
         memo[d] = (memo_len, object)
@@ -514,7 +515,10 @@ class Pickler:
         if (name is None):
             name = object.__name__
 
-        module = whichmodule(object, name)
+	try:
+	    module = object.__module__
+	except AttributeError:
+	    module = whichmodule(object, name)
 
         memo_len = len(memo)
         write(GLOBAL + module + '\n' + name + '\n' +
@@ -544,6 +548,7 @@ def _keep_alive(x, memo):
 
 classmap = {}
 
+# This is no longer used to find classes, but still for functions
 def whichmodule(cls, clsname):
     """Figure out the module in which a class occurs.
 
