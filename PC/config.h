@@ -44,6 +44,10 @@ compiler specific".  Therefore, these should be very rare.
 #define PREFIX ""
 #define EXEC_PREFIX ""
 
+#ifndef WIN32_PATCH_LEVEL
+#define WIN32_PATCH_LEVEL "14"
+#endif
+
 /* Microsoft C defines _MSC_VER */
 
 #if defined(_MSC_VER) && _MSC_VER > 850
@@ -52,12 +56,16 @@ compiler specific".  Therefore, these should be very rare.
 #define MS_WIN32
 #define MS_WINDOWS
 
-#ifdef MS_COREDLL	/* Python core is in a DLL */
+/* For NT the Python core is in a DLL by default.  Test the
+standard macro MS_COREDLL to find out.  If you have an exception
+you must define MS_NO_COREDLL (do not test this macro) */
+#ifndef MS_NO_COREDLL
+#define MS_COREDLL	/* Python core is in a DLL */
 #define main Py_Main
 #ifndef USE_DL_EXPORT
 #define USE_DL_IMPORT
 #endif /* !USE_DL_EXPORT */
-#endif /* MS_COREDLL */
+#endif /* !MS_NO_COREDLL */
 
 #ifdef _M_IX86
 #define COMPILER "[MSC 32 bit (Intel)]"
@@ -282,6 +290,12 @@ typedef int pid_t;
 
 /* Define this if your time.h defines altzone */
 /* #define HAVE_ALTZONE */
+
+/* Define if you have the putenv function.  */
+#ifdef MS_WIN32
+/* Does this exist on Win16? */
+#define HAVE_PUTENV
+#endif
 
 /* Define if your compiler supports function prototypes */
 #define HAVE_PROTOTYPES

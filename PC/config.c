@@ -33,7 +33,6 @@ extern void initarray();
 extern void initaudioop();
 extern void initbinascii();
 extern void initcmath();
-extern void initenvironment();
 extern void initerrno();
 extern void initimageop();
 extern void initmath();
@@ -65,7 +64,6 @@ struct _inittab inittab[] = {
 #endif
         {"binascii", initbinascii},
         {"cmath", initcmath},
-        {"environment", initenvironment},
         {"errno", initerrno},
         {"imageop", initimageop},
         {"math", initmath},

@@ -1,6 +1,6 @@
 /********************************************************************
 
- importnt.c 
+ import_nt.c 
 
   Win32 specific import code.
 
@@ -11,10 +11,6 @@
 #include <windows.h>
 #include "import.h"
 #include "importdl.h"
-
-#ifndef WIN32_PATCH_LEVEL
-#define WIN32_PATCH_LEVEL "000"
-#endif
 
 extern BOOL PyWin_IsWin32s();
 

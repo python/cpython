@@ -2,10 +2,6 @@
 #include "osdefs.h"
 #include <windows.h>
 
-#ifndef WIN32_PATCH_LEVEL
-#define WIN32_PATCH_LEVEL "000"
-#endif
-
 /* PREFIX and EXEC_PREFIX are meaningless on Windows */
 
 #ifndef PREFIX

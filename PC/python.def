@@ -231,3 +231,8 @@ EXPORTS
 	PyTuple_GetItem
 	PyTuple_SetItem
 	PyTuple_GetSlice
+	Py_Main
+	PySlice_Type DATA
+	PySlice_New
+	PySlice_GetIndices
+	Py_GetProgramName
