@@ -1135,9 +1135,7 @@ DB_close(DBObject* self, PyObject* args)
     if (self->db != NULL) {
         if (self->myenvobj)
             CHECK_ENV_NOT_CLOSED(self->myenvobj);
-        MYDB_BEGIN_ALLOW_THREADS;
         err = self->db->close(self->db, flags);
-        MYDB_END_ALLOW_THREADS;
         self->db = NULL;
         RETURN_IF_ERR();
     }
@@ -1707,9 +1705,8 @@ DB_remove(DBObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
     CHECK_DB_NOT_CLOSED(self);
 
-    MYDB_BEGIN_ALLOW_THREADS;
     err = self->db->remove(self->db, filename, database, flags);
-    MYDB_END_ALLOW_THREADS;
+    self->db = NULL;
     RETURN_IF_ERR();
     RETURN_NONE();
 }
