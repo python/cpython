@@ -42,4 +42,3 @@ try:
     import test_future7
 except SyntaxError, msg:
     check_error_location(str(msg))
-
