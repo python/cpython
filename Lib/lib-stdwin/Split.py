@@ -1,5 +1,7 @@
 # Generic Split implementation.
 # Use as a base class for other splits.
+# Derived classes should at least implement the methods that call
+# unimpl() below: minsize(), getbounds() and setbounds().
 
 Error = 'Split.Error'	# Exception
 
@@ -23,21 +25,22 @@ class Split():
 	# Downcalls from parent to child
 	#
 	def destroy(self):
-		self.parent = 0
+		self.parent = None
 		for child in self.children:
 			child.destroy()
-		self.children[:] = []
-		self.mouse_interest[:] = []
-		self.timer_interest[:] = []
-		self.mouse_focus = 0
+		del self.children[:]
+		del self.mouse_interest[:]
+		del self.timer_interest[:]
+		self.mouse_focus = None
 	#
 	def minsize(self, m): return unimpl()
 	def getbounds(self): return unimpl()
 	def setbounds(self, bounds): unimpl()
-	def draw(self, args):
+	#
+	def draw(self, d_detail):
 		# (Could avoid calls to children outside the area)
 		for child in self.children:
-			child.draw(args)
+			child.draw(d_detail)
 	#
 	# Downcalls only made after certain upcalls
 	#
@@ -107,7 +110,7 @@ class Split():
 	#
 	def change(self, area):
 		self.parent.change(area)
-	def scroll(self, args):
-		self.parent.scroll(args)
+	def scroll(self, area_vector):
+		self.parent.scroll(area_vector)
 	def settimer(self, itimer):
 		self.parent.settimer(itimer)
