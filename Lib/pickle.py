@@ -42,11 +42,7 @@ mdumps = marshal.dumps
 mloads = marshal.loads
 
 class PickleError(Exception):
-    """A common base class for the other pickling exceptions.
-
-    Inherits from \exception{Exception}.
-
-    """
+    """A common base class for the other pickling exceptions."""
     pass
 
 class PicklingError(PickleError):
