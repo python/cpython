@@ -1899,8 +1899,6 @@ EventHook()
 #ifndef MS_WINDOWS
 	FHANDLE tfile;
 #endif
-	if (PyThreadState_Swap(NULL) != NULL)
-		Py_FatalError("EventHook with non-NULL tstate\n");
 	PyEval_RestoreThread(event_tstate);
 	stdin_ready = 0;
 	errorInCmd = 0;
