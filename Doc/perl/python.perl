@@ -229,8 +229,8 @@ sub do_cmd_rfc{
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
-    return ("<span class=rfc><a name=\"$id\"\nhref=\"$href\">"
-	    . "RFC $rfcnumber</a></span>" .$_);
+    return ("<a class=rfc name=\"$id\"\nhref=\"$href\">RFC $rfcnumber</a>"
+            . $_);
 }
 
 sub do_cmd_deprecated{
