@@ -513,7 +513,7 @@ void
 fatal(msg)
 	char *msg;
 {
-	fprintf(stderr, "Fatal error: %s\n", msg);
+	fprintf(stderr, "Fatal Python error: %s\n", msg);
 	abort();
 }
 
