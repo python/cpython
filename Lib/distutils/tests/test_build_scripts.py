@@ -72,3 +72,6 @@ class BuildScriptsTestCase(support.TempdirManager, unittest.TestCase):
 
 def test_suite():
     return unittest.makeSuite(BuildScriptsTestCase)
+
+if __name__ == "__main__":
+    unittest.main(defaultTest="test_suite")
