@@ -10,14 +10,15 @@ __revision__ = "$Id$"
 import os, string
 from types import *
 from distutils.core import Command
+from distutils.errors import *
 
 
 class bdist (Command):
 
     description = "create a built (binary) distribution"
 
-    user_options = [('formats=', 'f',
-                     "formats for distribution (tar, ztar, gztar, zip, ... )"),
+    user_options = [('format=', 'f',
+                     "format for distribution (tar, ztar, gztar, zip, ... )"),
                    ]
 
     # This won't do in reality: will need to distinguish RPM-ish Linux,
@@ -32,21 +33,21 @@ class bdist (Command):
 
 
     def initialize_options (self):
-        self.formats = None
+        self.format = None
 
     # initialize_options()
 
 
     def finalize_options (self):
-        if self.formats is None:
+        if self.format is None:
             try:
-                self.formats = [self.default_format[os.name]]
+                self.format = self.default_format[os.name]
             except KeyError:
                 raise DistutilsPlatformError, \
                       "don't know how to create built distributions " + \
                       "on platform %s" % os.name
-        elif type (self.formats) is StringType:
-            self.formats = string.split (self.formats, ',')
+        #elif type (self.format) is StringType:
+        #    self.format = string.split (self.format, ',')
             
 
     # finalize_options()
@@ -54,19 +55,14 @@ class bdist (Command):
 
     def run (self):
 
-        for format in self.formats:
-            cmd_name = self.format_command[format]
-            sub_cmd = self.find_peer (cmd_name)
-            sub_cmd.set_option ('format', format)
+        try:
+            cmd_name = self.format_command[self.format]
+        except KeyError:
+            raise DistutilsOptionError, \
+                  "invalid archive format '%s'" % self.format
 
-            # XXX blecchhh!! should formalize this: at least a
-            # 'forget_run()' (?)  method, possibly complicate the
-            # 'have_run' dictionary to include some command state as well
-            # as the command name -- eg. in this case we might want
-            # ('bdist_dumb','zip') to be marked "have run", but not
-            # ('bdist_dumb','gztar').
-            self.distribution.have_run[cmd_name] = 0
-            self.run_peer (cmd_name)
+        sub_cmd = self.find_peer (cmd_name)
+        sub_cmd.set_option ('format', self.format)
 
     # run()
 
