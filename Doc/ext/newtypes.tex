@@ -30,66 +30,7 @@ type object.
 This sort of thing can only be explained by example, so here's a
 minimal, but complete, module that defines a new type:
 
-\begin{verbatim}
-#include <Python.h>
-
-staticforward PyTypeObject noddy_NoddyType;
-
-typedef struct {
-    PyObject_HEAD
-} noddy_NoddyObject;
-
-static PyObject*
-noddy_new_noddy(PyObject* self, PyObject* args)
-{
-    noddy_NoddyObject* noddy;
-
-    if (!PyArg_ParseTuple(args,":new_noddy")) 
-        return NULL;
-
-    noddy = PyObject_New(noddy_NoddyObject, &noddy_NoddyType);
-
-    return (PyObject*)noddy;
-}
-
-static void
-noddy_noddy_dealloc(PyObject* self)
-{
-    PyObject_Del(self);
-}
-
-static PyTypeObject noddy_NoddyType = {
-    PyObject_HEAD_INIT(NULL)
-    0,
-    "Noddy",
-    sizeof(noddy_NoddyObject),
-    0,
-    noddy_noddy_dealloc, /*tp_dealloc*/
-    0,          /*tp_print*/
-    0,          /*tp_getattr*/
-    0,          /*tp_setattr*/
-    0,          /*tp_compare*/
-    0,          /*tp_repr*/
-    0,          /*tp_as_number*/
-    0,          /*tp_as_sequence*/
-    0,          /*tp_as_mapping*/
-    0,          /*tp_hash */
-};
-
-static PyMethodDef noddy_methods[] = {
-    {"new_noddy", noddy_new_noddy, METH_VARARGS,
-     "Create a new Noddy object."},
-    {NULL, NULL, 0, NULL}
-};
-
-DL_EXPORT(void)
-initnoddy(void) 
-{
-    noddy_NoddyType.ob_type = &PyType_Type;
-
-    Py_InitModule("noddy", noddy_methods);
-}
-\end{verbatim}
+\verbatiminput{noddy.c}
 
 Now that's quite a bit to take in at once, but hopefully bits will
 seem familiar from the last chapter.
@@ -150,9 +91,10 @@ noddy_new_noddy(PyObject* self, PyObject* args)
 
 This is in fact just a regular module function, as described in the
 last chapter.  The reason it gets special mention is that this is
-where we create our Noddy object.  Defining PyTypeObject structures is
-all very well, but if there's no way to actually \emph{create} one
-of the wretched things it is not going to do anyone much good.
+where we create our Noddy object.  Defining \ctype{PyTypeObject}
+structures is all very well, but if there's no way to actually
+\emph{create} one of the wretched things it is not going to do anyone
+much good.
 
 Almost always, you create objects with a call of the form:
 
@@ -161,10 +103,22 @@ PyObject_New(<type>, &<type object>);
 \end{verbatim}
 
 This allocates the memory and then initializes the object (sets
-the reference count to one, makes the \cdata{ob_type} pointer point at
+the reference count to one, makes the \member{ob_type} pointer point at
 the right place and maybe some other stuff, depending on build options).
 You \emph{can} do these steps separately if you have some reason to
 --- but at this level we don't bother.
+
+Note that \cfunction{PyObject_New()} is a polymorphic macro rather
+than a real function.  The first parameter is the name of the C
+structure that represents an object of our new type, and the return
+value is a pointer to that type.  This would be
+\ctype{noddy_NoddyObject} in our example:
+
+\begin{verbatim}
+    noddy_NoddyObject *my_noddy;
+
+    my_noddy = PyObject_New(noddy_NoddyObject, &noddy_NoddyType);
+\end{verbatim}
 
 We cast the return value to a \ctype{PyObject*} because that's what
 the Python runtime expects.  This is safe because of guarantees about
@@ -236,14 +190,17 @@ This line is a bit of a wart; what we'd like to write is:
 
 as the type of a type object is ``type'', but this isn't strictly
 conforming C and some compilers complain.  So instead we fill in the
-\cdata{ob_type} field of \cdata{noddy_NoddyType} at the earliest
+\member{ob_type} field of \cdata{noddy_NoddyType} at the earliest
 oppourtunity --- in \cfunction{initnoddy()}.
 
 \begin{verbatim}
     0,
 \end{verbatim}
 
-XXX why does the type info struct start PyObject_*VAR*_HEAD??
+The \member{ob_size} field of the header is not used; it's presence in
+the type structure is a historical artifact that is maintained for
+binary compatibility with extension modules compiled for older
+versions of Python.  Always set this field to zero.
 
 \begin{verbatim}
     "Noddy",
@@ -282,8 +239,8 @@ the deallocation function.
     noddy_noddy_dealloc, /*tp_dealloc*/
 \end{verbatim}
 
-From here, all the type methods are nil so I won't go over them yet -
-that's for the next section!
+From here, all the type methods are \NULL, so I won't go over them yet
+--- that's for the next section!
 
 Everything else in the file should be familiar, except for this line
 in \cfunction{initnoddy}:
@@ -302,15 +259,15 @@ file called \file{noddymodule.c} and
 
 \begin{verbatim}
 from distutils.core import setup, Extension
-setup(name = "noddy", version = "1.0",
-    ext_modules = [Extension("noddy", ["noddymodule.c"])])
+setup(name="noddy", version="1.0",
+      ext_modules=[Extension("noddy", ["noddymodule.c"])])
 \end{verbatim}
 
 in a file called \file{setup.py}; then typing
 
 \begin{verbatim}
-$ python setup.py build%$
-\end{verbatim}
+$ python setup.py build
+\end{verbatim} %$ <-- bow to font-lock  ;-(
 
 at a shell should produce a file \file{noddy.so} in a subdirectory;
 move to that directory and fire up Python --- you should be able to
@@ -328,81 +285,7 @@ you can implement and what they do.
 Here is the definition of \ctype{PyTypeObject}, with some fields only
 used in debug builds omitted:
 
-\begin{verbatim}
-typedef struct _typeobject {
-    PyObject_VAR_HEAD
-    char *tp_name; /* For printing */
-    int tp_basicsize, tp_itemsize; /* For allocation */
-
-    /* Methods to implement standard operations */
-
-    destructor tp_dealloc;
-    printfunc tp_print;
-    getattrfunc tp_getattr;
-    setattrfunc tp_setattr;
-    cmpfunc tp_compare;
-    reprfunc tp_repr;
-
-    /* Method suites for standard classes */
-
-    PyNumberMethods *tp_as_number;
-    PySequenceMethods *tp_as_sequence;
-    PyMappingMethods *tp_as_mapping;
-
-    /* More standard operations (here for binary compatibility) */
-
-    hashfunc tp_hash;
-    ternaryfunc tp_call;
-    reprfunc tp_str;
-    getattrofunc tp_getattro;
-    setattrofunc tp_setattro;
-
-    /* Functions to access object as input/output buffer */
-    PyBufferProcs *tp_as_buffer;
-
-    /* Flags to define presence of optional/expanded features */
-    long tp_flags;
-
-    char *tp_doc; /* Documentation string */
-
-    /* Assigned meaning in release 2.0 */
-    /* call function for all accessible objects */
-    traverseproc tp_traverse;
-
-    /* delete references to contained objects */
-    inquiry tp_clear;
-
-    /* Assigned meaning in release 2.1 */
-    /* rich comparisons */
-    richcmpfunc tp_richcompare;
-
-    /* weak reference enabler */
-    long tp_weaklistoffset;
-
-    /* Added in release 2.2 */
-    /* Iterators */
-    getiterfunc tp_iter;
-    iternextfunc tp_iternext;
-
-    /* Attribute descriptor and subclassing stuff */
-    struct PyMethodDef *tp_methods;
-    struct memberlist *tp_members;
-    struct getsetlist *tp_getset;
-    struct _typeobject *tp_base;
-    PyObject *tp_dict;
-    descrgetfunc tp_descr_get;
-    descrsetfunc tp_descr_set;
-    long tp_dictoffset;
-    initproc tp_init;
-    allocfunc tp_alloc;
-    newfunc tp_new;
-    destructor tp_free; /* Low-level free-memory routine */
-    PyObject *tp_bases;
-    PyObject *tp_mro; /* method resolution order */
-    PyObject *tp_defined;
-
-} PyTypeObject;
-\end{verbatim}
+\verbatiminput{typestruct.h}
 
 Now that's a \emph{lot} of methods.  Don't worry too much though - if
 you have a type you want to define, the chances are very good that you
@@ -432,7 +315,7 @@ Try to choose something that will be helpful in such a situation!
 These fields tell the runtime how much memory to allocate when new
 objects of this typed are created.  Python has some builtin support
 for variable length structures (think: strings, lists) which is where
-the \cdata{tp_itemsize} field comes in.  This will be dealt with
+the \member{tp_itemsize} field comes in.  This will be dealt with
 later.
 
 \begin{verbatim}
