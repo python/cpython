@@ -4015,18 +4015,26 @@ get_ref_type(struct compiling *c, char *name)
 	return -1; /* can't get here */
 }
 
-/* Helper function to issue symbol table warnings */
+/* Helper functions to issue warnings */
+
+static int
+issue_warning(char *msg, char *filename, int lineno)
+{
+	if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, filename,
+			       lineno, NULL, NULL) < 0)	{
+		if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+			PyErr_SetString(PyExc_SyntaxError, msg);
+			PyErr_SyntaxLocation(filename, lineno);
+		}
+		return -1;
+	}
+	return 0;
+}
 
 static int
 symtable_warn(struct symtable *st, char *msg)
 {
-	if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, st->st_filename,
-			       st->st_cur->ste_lineno, NULL, NULL) < 0)	{
-		if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
-			PyErr_SetString(PyExc_SyntaxError, msg);
-			PyErr_SyntaxLocation(st->st_filename,
-					     st->st_cur->ste_lineno);
-		}
+	if (issue_warning(msg, st->st_filename, st->st_cur->ste_lineno) < 0) {
 		st->st_errors++;
 		return -1;
 	}
@@ -4195,11 +4203,9 @@ symtable_check_unoptimized(struct compiling *c,
 		PyErr_SyntaxLocation(c->c_symtable->st_filename,
 				     ste->ste_lineno);
 		return -1;
-	} else {
-		/* XXX if the warning becomes an exception, we should
-		   attached more info to it. */
-		if (PyErr_Warn(PyExc_SyntaxWarning, buf) < 0)
-			return -1;
+	}
+	else {
+		return issue_warning(buf, c->c_filename, ste->ste_lineno);
 	}
 	return 0;
 }
