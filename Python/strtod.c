@@ -47,8 +47,8 @@ static	char	MDMINFRAC[]	= "494065645841246544";
 static	double	ZERO		= 0.0;
 
 static	int	MDMAXEXPT	= { 309};
-static	char	MDMAXFRAC[]	= "17976931348623147";
-static	double	HUGE		= 1.7976931348623147e308;
+static	char	MDMAXFRAC[]	= "17976931348623157";
+static	double	HUGE		= 1.7976931348623157e308;
 
 extern	double	atof();		/* Only called when result known to be ok */
 
