@@ -1276,14 +1276,17 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 			c = tok_nextc(tok);
 			if (c == '\n') {
 				if (!triple) {
-					tok->done = E_TOKEN;
+					tok->done = E_EOLS;
 					tok_backup(tok, c);
 					return ERRORTOKEN;
 				}
 				tripcount = 0;
 			}
 			else if (c == EOF) {
-				tok->done = E_TOKEN;
+				if (triple)
+					tok->done = E_EOFS;
+				else
+					tok->done = E_EOLS;
 				tok->cur = tok->inp;
 				return ERRORTOKEN;
 			}
@@ -1305,7 +1308,7 @@ tok_get(register struct tok_state *tok, char **p_start, char **p_end)
 				tripcount = 0;
 				c = tok_nextc(tok);
 				if (c == EOF) {
-					tok->done = E_TOKEN;
+					tok->done = E_EOLS;
 					tok->cur = tok->inp;
 					return ERRORTOKEN;
 				}
