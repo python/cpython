@@ -1,5 +1,10 @@
 /* File object implementation */
 
+/* XXX This should become a built-in module 'io'.  It should support more
+   functionality, better exception handling for invalid calls, etc.
+   It should also cooperate with posix to support popen(), which should
+   share most code but have a special close function. */
+
 #include <stdio.h>
 
 #include "PROTO.h"
@@ -142,7 +147,7 @@ fileread(f, args)
 		return NULL;
 	}
 	n = getintvalue(args);
-	if (n <= 0 /* || n > 0x7fff /*XXX*/ ) {
+	if (n < 0) {
 		errno = EDOM;
 		return NULL;
 	}
