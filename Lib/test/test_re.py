@@ -405,7 +405,7 @@ class ReTests(unittest.TestCase):
                          20003)
         self.assertEqual(re.match('.*?cd', 20000*'abc'+'de').end(0), 60001)
         # non-simple '*?' still used to hit the recursion limit, before the
-        # non-recursive scheme was implemented. 
+        # non-recursive scheme was implemented.
         self.assertEqual(re.search('(a|b)*?c', 10000*'ab'+'cd').end(0), 20001)
 
     def test_bug_612074(self):

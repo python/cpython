@@ -230,4 +230,3 @@ def register_skip_expected(*cases):
             break
     else:
         sys.modules[case.__module__].skip_expected = False
-

@@ -365,7 +365,7 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     # be able to tell what timezone has daylight savings
                     if time.tzname[0] == time.tzname[1] and \
                        time.daylight:
-                            break
+                        break
                     else:
                         tz = value
                         break

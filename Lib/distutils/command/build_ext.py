@@ -171,7 +171,8 @@ class build_ext (Command):
             # Append the source distribution include and library directories,
             # this allows distutils on windows to work in the source tree
             self.include_dirs.append(os.path.join(sys.exec_prefix, 'PC'))
-            self.library_dirs.append(os.path.join(sys.exec_prefix, 'PCBuild'))
+            self.library_dirs.append(os.path.join(sys.exec_prefix, 'PC', 'VC6'))
+            #self.library_dirs.append(os.path.join(sys.exec_prefix, 'PCBuild'))
 
         # OS/2 (EMX) doesn't support Debug vs Release builds, but has the 
         # import libraries in its "Config" subdirectory

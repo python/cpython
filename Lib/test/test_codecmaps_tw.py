@@ -36,4 +36,3 @@ def test_main():
 test_multibytecodec_support.register_skip_expected(TestBIG5Map, TestCP950Map)
 if __name__ == "__main__":
     test_main()
-

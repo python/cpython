@@ -219,7 +219,7 @@ def format_exc(limit=None):
         return ''.join(format_exception(etype, value, tb, limit))
     finally:
         etype = value = tb = None
-    
+
 
 def print_last(limit=None, file=None):
     """This is a shorthand for 'print_exception(sys.last_type,

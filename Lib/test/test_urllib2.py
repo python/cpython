@@ -269,6 +269,14 @@ class OpenerDirectorTests(unittest.TestCase):
                              isinstance(args[1], MockResponse))
 
 
+def sanepathname2url(path):
+    import urllib
+    urlpath = urllib.pathname2url(path)
+    if os.name == "nt" and urlpath.startswith("///"):
+        urlpath = urlpath[2:]
+    # XXX don't ask me about the mac...
+    return urlpath
+
 class HandlerTests(unittest.TestCase):
 
     def test_ftp(self):
@@ -323,19 +331,17 @@ class HandlerTests(unittest.TestCase):
         h = urllib2.FileHandler()
         o = h.parent = MockOpener()
 
-        #from test_support import TESTFN
-        TESTFN = "test.txt"
+        TESTFN = test_support.TESTFN
+        urlpath = sanepathname2url(os.path.abspath(TESTFN))
         towrite = "hello, world\n"
         for url in [
-            "file://localhost%s/%s" % (os.getcwd(), TESTFN),
-            "file://%s/%s" % (os.getcwd(), TESTFN),
-            "file://%s%s/%s" % (socket.gethostbyname('localhost'),
-                                os.getcwd(), TESTFN),
-            "file://%s%s/%s" % (socket.gethostbyname(socket.gethostname()),
-                                os.getcwd(), TESTFN),
-            # XXX Windows / Mac format(s), ... ?
+            "file://localhost%s" % urlpath,
+            "file://%s" % urlpath,
+            "file://%s%s" % (socket.gethostbyname('localhost'), urlpath),
+            "file://%s%s" % (socket.gethostbyname(socket.gethostname()),
+                             urlpath),
             ]:
-            f = open(TESTFN, "w")
+            f = open(TESTFN, "wb")
             try:
                 try:
                     f.write(towrite)
@@ -345,25 +351,21 @@ class HandlerTests(unittest.TestCase):
                 r = h.file_open(Request(url))
                 try:
                     data = r.read()
-                    read_time = time.time()
                     headers = r.info()
                     newurl = r.geturl()
                 finally:
                     r.close()
+                stats = os.stat(TESTFN)
+                modified = rfc822.formatdate(stats.st_mtime)
             finally:
                 os.remove(TESTFN)
             self.assertEqual(data, towrite)
             self.assertEqual(headers["Content-type"], "text/plain")
             self.assertEqual(headers["Content-length"], "13")
-            # Fudge Last-modified string comparison by one second to
-            # prevent spurious failure on crossing a second boundary while
-            # executing this test.
-            unfudged = rfc822.formatdate(read_time)
-            fudged = rfc822.formatdate(read_time-1)
-            self.assert_(headers["Last-modified"] in [unfudged, fudged])
+            self.assertEqual(headers["Last-modified"], modified)
 
         for url in [
-            "file://localhost:80%s/%s" % (os.getcwd(), TESTFN),
+            "file://localhost:80%s" % urlpath,
 # XXXX bug: these fail with socket.gaierror, should be URLError
 ##             "file://%s:80%s/%s" % (socket.gethostbyname('localhost'),
 ##                                    os.getcwd(), TESTFN),
@@ -371,7 +373,7 @@ class HandlerTests(unittest.TestCase):
 ##             (os.getcwd(), TESTFN),
             ]:
             try:
-                f = open(TESTFN, "w")
+                f = open(TESTFN, "wb")
                 try:
                     f.write(towrite)
                 finally:

@@ -177,7 +177,7 @@ class Random(_random.Random):
             # compatibility).
 
             if width >= maxwidth:
-                    return int(istart + self._randbelow(width))
+                return int(istart + self._randbelow(width))
             return int(istart + int(self.random()*width))
         if step == 1:
             raise ValueError, "empty range for randrange() (%d,%d, %d)" % (istart, istop, width)

@@ -204,7 +204,7 @@ def unit_tests():
                          ]:
         if ascii.unctrl(ch) != expected:
             print 'curses.unctrl fails on character', repr(ch)
-            
+
 
 
 def main(stdscr):
@@ -215,7 +215,7 @@ def main(stdscr):
     finally:
         curses.resetty()
 
-    
+
 if __name__ == '__main__':
     curses.wrapper(main)
     unit_tests()

@@ -55,7 +55,7 @@ class IntTestCase(unittest.TestCase):
             new = marshal.load(file(test_support.TESTFN, "rb"))
             self.assertEqual(b, new)
             self.assertEqual(type(b), type(new))
-            
+
 class FloatTestCase(unittest.TestCase):
     def test_floats(self):
         # Test a few floats
@@ -122,7 +122,7 @@ class StringTestCase(unittest.TestCase):
             marshal.load(file(test_support.TESTFN, "rb"))
             self.assertEqual(s, new)
         os.unlink(test_support.TESTFN)
-            
+
 class ExceptionTestCase(unittest.TestCase):
     def test_exceptions(self):
         new = marshal.loads(marshal.dumps(StopIteration))
@@ -151,7 +151,7 @@ class ContainerTestCase(unittest.TestCase):
         marshal.load(file(test_support.TESTFN, "rb"))
         self.assertEqual(self.d, new)
         os.unlink(test_support.TESTFN)
-        
+
     def test_list(self):
         lst = self.d.items()
         new = marshal.loads(marshal.dumps(lst))
@@ -169,7 +169,7 @@ class ContainerTestCase(unittest.TestCase):
         marshal.load(file(test_support.TESTFN, "rb"))
         self.assertEqual(t, new)
         os.unlink(test_support.TESTFN)
-        
+
 class BugsTestCase(unittest.TestCase):
     def test_bug_5888452(self):
         # Simple-minded check for SF 588452: Debug build crashes

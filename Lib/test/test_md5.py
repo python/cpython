@@ -26,9 +26,9 @@ class MD5_Test(unittest.TestCase):
         eq('abc', '900150983cd24fb0d6963f7d28e17f72')
         eq('message digest', 'f96b697d7cb7938d525a2f31aaf161d0')
         eq('abcdefghijklmnopqrstuvwxyz', 'c3fcd3d76192e4007dfb496cca67e13b')
-        eq('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789', 
+        eq('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
            'd174ab98d277d9f5a5611c2c9f419d9f')
-        eq('12345678901234567890123456789012345678901234567890123456789012345678901234567890', 
+        eq('12345678901234567890123456789012345678901234567890123456789012345678901234567890',
            '57edf4a22be3c955ac49da2e2107b67a')
 
     def test_hexdigest(self):

@@ -87,4 +87,3 @@ test_multibytecodec_support.register_skip_expected(TestCP932Map,
     TestSJISX0213Map)
 if __name__ == "__main__":
     test_main()
-
