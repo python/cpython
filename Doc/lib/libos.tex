@@ -44,32 +44,32 @@ more portable than \code{posixpath.split(\var{file})}.
 
 \begin{datadesc}{curdir}
 The constant string used by the OS to refer to the current directory,
-e.g. \code{'.'} for \POSIX{} or \code{':'} for the Macintosh.
+e.g.\ \code{'.'} for \POSIX{} or \code{':'} for the Macintosh.
 \end{datadesc}
 
 \begin{datadesc}{pardir}
 The constant string used by the OS to refer to the parent directory,
-e.g. \code{'..'} for \POSIX{} or \code{'::'} for the Macintosh.
+e.g.\ \code{'..'} for \POSIX{} or \code{'::'} for the Macintosh.
 \end{datadesc}
 
 \begin{datadesc}{sep}
 The character used by the OS to separate pathname components,
-e.g. \code{'/'} for \POSIX{} or \code{':'} for the Macintosh.  Note that
-knowing this is not sufficient to be able to parse or concatenate
-pathnames --- better use \function{os.path.split()} and
-\function{os.path.join()}---but it is occasionally useful.
+e.g.\ \character{/} for \POSIX{} or \character{:} for the Macintosh.
+Note that knowing this is not sufficient to be able to parse or
+concatenate pathnames --- use \function{os.path.split()} and
+\function{os.path.join()} --- but it is occasionally useful.
 \end{datadesc}
 
 \begin{datadesc}{altsep}
 An alternative character used by the OS to separate pathname components,
 or \code{None} if only one separator character exists.  This is set to
-\code{'/'} on DOS/Windows systems where \code{sep} is a backslash.
+\character{/} on DOS/Windows systems where \code{sep} is a backslash.
 \end{datadesc}
 
 \begin{datadesc}{pathsep}
 The character conventionally used by the OS to separate search patch
-components (as in \code{\$PATH}), e.g.\ \code{':'} for \POSIX{} or % $
-\code{';'} for MS-DOS.
+components (as in \envvar{PATH}), e.g.\ \character{:} for \POSIX{} or
+\character{;} for MS-DOS.
 \end{datadesc}
 
 \begin{datadesc}{linesep}
@@ -80,7 +80,7 @@ e.g. \code{'\e r\e n'} for MS-DOS.
 \end{datadesc}
 
 \begin{datadesc}{defpath}
-The default search path used by \code{exec*p*()} if the environment
+The default search path used by \function{exec*p*()} if the environment
 doesn't have a \code{'PATH'} key.
 \end{datadesc}
 
@@ -118,21 +118,21 @@ you lack permissions needed to remove the leaf directory or file.
 
 \begin{funcdesc}{execl}{path, arg0, arg1, ...}
 This is equivalent to
-\code{execv(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
+\samp{execv(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
 \end{funcdesc}
 
 \begin{funcdesc}{execle}{path, arg0, arg1, ..., env}
 This is equivalent to
-\code{execve(\var{path}, (\var{arg0}, \var{arg1}, ...), \var{env})}.
+\samp{execve(\var{path}, (\var{arg0}, \var{arg1}, ...), \var{env})}.
 \end{funcdesc}
 
 \begin{funcdesc}{execlp}{path, arg0, arg1, ...}
 This is equivalent to
-\code{execvp(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
+\samp{execvp(\var{path}, (\var{arg0}, \var{arg1}, ...))}.
 \end{funcdesc}
 
 \begin{funcdesc}{execvp}{path, args}
-This is like \code{execv(\var{path}, \var{args})} but duplicates
+This is like \samp{execv(\var{path}, \var{args})} but duplicates
 the shell's actions in searching for an executable file in a list of
 directories.  The directory list is obtained from
 \code{environ['PATH']}.
@@ -143,7 +143,7 @@ This is a cross between \function{execve()} and \function{execvp()}.
 The directory list is obtained from \code{\var{env}['PATH']}.
 \end{funcdesc}
 
-(The functions \code{execv()} and \code{execve()} are not
+(The functions \function{execv()} and \function{execve()} are not
 documented here, since they are implemented by the OS dependent
 module.  If the OS dependent module doesn't define either of these,
 the functions that rely on it will raise an exception.  They are
