@@ -361,7 +361,15 @@ has_finalizer(PyObject *op)
 		return 0;
 }
 
-/* Move all objects out of unreachable and into collectable or finalizers.
+/* Move all objects out of unreachable, into collectable or finalizers.
+ * It's possible that some objects will get collected (via refcount falling
+ * to 0), or resurrected, as a side effect of checking for __del__ methods.
+ * After, finalizers contains all the objects from unreachable that haven't
+ * been collected by magic, and that have a finalizer.  gc_refs is
+ * GC_REACHABLE for all of those.  collectable contains all the remaining
+ * objects from unreachable, and gc_refs remains GC_TENTATIVELY_UNREACHABLE
+ * for those (we're still not sure they're reclaimable after this!  Some
+ * may yet by reachable *from* the objects in finalizers).
  */
 static void
 move_finalizers(PyGC_Head *unreachable, PyGC_Head *collectable,
@@ -372,36 +380,19 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *collectable,
 		PyObject *op = FROM_GC(gc);
 		int finalizer;
 
-		if (PyInstance_Check(op)) {
-			/* The HasAttr() check may run enough Python
-			   code to deallocate the object or make it
-			   reachable again.  INCREF the object before
-			   calling HasAttr() to guard against the client
-			   code deallocating the object.
-			*/
-			Py_INCREF(op);
-			finalizer = PyObject_HasAttr(op, delstr);
-			if (op->ob_refcnt == 1) {
-				/* The object will be deallocated.
-				   Nothing left to do.
-				 */
-				Py_DECREF(op);
-				continue;
+		assert(IS_TENTATIVELY_UNREACHABLE(op));
+
+		finalizer = has_finalizer(op);
+		if (unreachable->gc.gc_next == gc) {
+			gc_list_remove(gc);
+			if (finalizer) {
+				gc_list_append(gc, finalizers);
+				gc->gc.gc_refs = GC_REACHABLE;
 			}
-			Py_DECREF(op);
+			else
+				gc_list_append(gc, collectable);
 		}
-		else
-			finalizer = has_finalizer(op);
-		if (finalizer) {
-			gc_list_remove(gc);
-			gc_list_append(gc, finalizers);
-			gc->gc.gc_refs = GC_REACHABLE;
-		}
-		else {
-			gc_list_remove(gc);
-			gc_list_append(gc, collectable);
-			/* XXX change gc_refs? */
-		}
+		/* else has_finalizer() deleted op via side effect */
 	}
 }
 
