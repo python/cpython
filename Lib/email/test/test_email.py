@@ -2307,7 +2307,7 @@ class TestParsers(TestEmailBase):
         self.failIf(msg.is_multipart())
         self.failUnless(isinstance(msg.get_payload(), str))
 
-    def test_whitespace_continuaton(self):
+    def test_whitespace_continuation(self):
         eq = self.assertEqual
         # This message contains a line after the Subject: header that has only
         # whitespace, but it is not empty!
@@ -2318,6 +2318,24 @@ Subject: the next line has a space on it
 \x20
 Date: Mon, 8 Apr 2002 15:09:19 -0400
 Message-ID: spam
+
+Here's the message body
+""")
+        eq(msg['subject'], 'the next line has a space on it\n ')
+        eq(msg['message-id'], 'spam')
+        eq(msg.get_payload(), "Here's the message body\n")
+
+    def test_whitespace_continuation_last_header(self):
+        eq = self.assertEqual
+        # Like the previous test, but the subject line is the last
+        # header.
+        msg = email.message_from_string("""\
+From: aperson@dom.ain
+To: bperson@dom.ain
+Date: Mon, 8 Apr 2002 15:09:19 -0400
+Message-ID: spam
+Subject: the next line has a space on it
+\x20
 
 Here's the message body
 """)
@@ -2380,6 +2398,17 @@ Here's the message body
                  'Date: Tue, 20 Aug 2002 16:43:45 +1000']
         msg = email.message_from_string(NL.join(lines))
         self.assertEqual(msg['date'], 'Tue, 20 Aug 2002 16:43:45 +1000')
+
+    def test_strip_line_feed_and_carriage_return_in_headers(self):
+        eq = self.assertEqual
+        # For [ 1002475 ] email message parser doesn't handle \r\n correctly
+        value1 = 'text'
+        value2 = 'more text'
+        m = 'Header: %s\r\nNext-Header: %s\r\n\r\nBody\r\n\r\n' % (
+            value1, value2)
+        msg = email.message_from_string(m)
+        eq(msg.get('Header'), value1)
+        eq(msg.get('Next-Header'), value2)
 
 
 

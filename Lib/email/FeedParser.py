@@ -415,7 +415,8 @@ class FeedParser:
                 continue
             if lastheader:
                 # XXX reconsider the joining of folded lines
-                self._cur[lastheader] = EMPTYSTRING.join(lastvalue)[:-1]
+                lhdr = EMPTYSTRING.join(lastvalue)[:-1].rstrip('\r\n')
+                self._cur[lastheader] = lhdr
                 lastheader, lastvalue = '', []
             # Check for envelope header, i.e. unix-from
             if line.startswith('From '):
@@ -449,4 +450,4 @@ class FeedParser:
         # Done with all the lines, so handle the last header.
         if lastheader:
             # XXX reconsider the joining of folded lines
-            self._cur[lastheader] = EMPTYSTRING.join(lastvalue).rstrip()
+            self._cur[lastheader] = EMPTYSTRING.join(lastvalue).rstrip('\r\n')
