@@ -26,6 +26,14 @@ compiler specific".  Therefore, these should be very rare.
 
 */
 
+/* Suggested by Rene Liebscher <R.Liebscher@gmx.de> to avoid a GCC 2.91.*
+   bug that requires structure imports.  More recent versions of the
+   compiler don't exhibit this bug.
+*/
+#if (__GNUC__==2) && (__GNUC_MINOR__<=91)
+#error "Please use an up-to-date version of gcc"
+#endif
+
 /*
  Some systems require special declarations for data items imported
  or exported from dynamic link libraries.  Note that the definition
