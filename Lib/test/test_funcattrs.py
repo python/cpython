@@ -100,3 +100,41 @@ else:
 
 if f2.a.one <> f1.a.one <> F.a.one <> 11:
     raise TestFailed
+
+# im_func may not be a Python method!
+import new
+F.id = new.instancemethod(id, None, F)
+
+eff = F()
+if eff.id() <> id(eff):
+    raise TestFailed
+
+try:
+    F.id.foo
+except AttributeError: pass
+else: raise TestFailed
+
+try:
+    F.id.foo = 12
+except TypeError: pass
+else: raise TestFailed
+
+try:
+    F.id.foo
+except AttributeError: pass
+else: raise TestFailed
+
+try:
+    eff.id.foo
+except AttributeError: pass
+else: raise TestFailed
+
+try:
+    eff.id.foo = 12
+except TypeError: pass
+else: raise TestFailed
+
+try:
+    eff.id.foo
+except AttributeError: pass
+else: raise TestFailed
