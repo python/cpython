@@ -62,8 +62,9 @@ static char *argv0;
 static char **orig_argv;
 static int  orig_argc;
 
+extern int realmain PROTO((int, char**));
+
 #if defined(__cplusplus)
-int realmain(int, char**);
 main(int argc, char **argv)
 #else
 main(argc, argv)
