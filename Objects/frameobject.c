@@ -38,6 +38,8 @@ static struct memberlist frame_memberlist[] = {
 	{"f_code",	T_OBJECT,	OFF(f_code)},
 	{"f_globals",	T_OBJECT,	OFF(f_globals)},
 	{"f_locals",	T_OBJECT,	OFF(f_locals)},
+	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals)},
+	{"f_localmap",	T_OBJECT,	OFF(f_localmap)},
 	{"f_lasti",	T_INT,		OFF(f_lasti)},
 	{"f_lineno",	T_INT,		OFF(f_lineno)},
 	{NULL}	/* Sentinel */
@@ -82,6 +84,8 @@ frame_dealloc(f)
 	XDECREF(f->f_code);
 	XDECREF(f->f_globals);
 	XDECREF(f->f_locals);
+	XDECREF(f->f_fastlocals);
+	XDECREF(f->f_localmap);
 	f->f_back = free_list;
 	free_list = f;
 }
@@ -142,6 +146,8 @@ newframeobject(back, code, globals, locals, nvalues, nblocks)
 		f->f_globals = globals;
 		INCREF(locals);
 		f->f_locals = locals;
+		f->f_fastlocals = NULL;
+		f->f_localmap = NULL;
 		if (nvalues > f->f_nvalues || f->f_valuestack == NULL) {
 			XDEL(f->f_valuestack);
 			f->f_valuestack = NEW(object *, nvalues+1);

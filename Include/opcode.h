@@ -72,10 +72,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define RAISE_EXCEPTION	81
 #define LOAD_LOCALS	82
 #define RETURN_VALUE	83
-/*
-#define REQUIRE_ARGS	84
-#define REFUSE_ARGS	85
-*/
+
 #define BUILD_FUNCTION	86
 #define POP_BLOCK	87
 #define END_FINALLY	88
@@ -113,13 +110,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define LOAD_LOCAL	115	/* Index in name list */
 #define LOAD_GLOBAL	116	/* Index in name list */
 
-#define LOAD_FAST	117	/* Local variable number */
-#define STORE_FAST	118	/* Local variable number */
-#define RESERVE_FAST	119	/* Number of local variables */
-
 #define SETUP_LOOP	120	/* Target address (absolute) */
 #define SETUP_EXCEPT	121	/* "" */
 #define SETUP_FINALLY	122	/* "" */
+
+#define RESERVE_FAST	123	/* Number of local variables */
+#define LOAD_FAST	124	/* Local variable number */
+#define STORE_FAST	125	/* Local variable number */
+#define DELETE_FAST	126	/* Local variable number */
 
 #define SET_LINENO	127	/* Current line number */
 

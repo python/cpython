@@ -81,6 +81,7 @@ static int cmp_member PROTO((object *, object *));
 static object *cmp_outcome PROTO((int, object *, object *));
 static int import_from PROTO((object *, object *, object *));
 static object *build_class PROTO((object *, object *));
+static void locals_2_fast PROTO((frameobject *, int));
 
 
 /* Pointer to current frame, used to link new frames to */
@@ -994,19 +995,51 @@ eval_code(co, globals, locals, arg)
 			break;
 
 		case RESERVE_FAST:
-			if (oparg > 0) {
-				XDECREF(fastlocals);
-				x = newlistobject(oparg);
-				fastlocals = (listobject *) x;
+			x = GETCONST(oparg);
+			if (x == None)
+				break;
+			if (x == NULL || !is_dictobject(x)) {
+				fatal("bad RESERVE_FAST");
+				err_setstr(SystemError, "bad RESERVE_FAST");
+				x = NULL;
+				break;
 			}
+			XDECREF(f->f_fastlocals);
+			XDECREF(f->f_localmap);
+			INCREF(x);
+			f->f_localmap = x;
+			f->f_fastlocals = x = newlistobject(
+			    x->ob_type->tp_as_mapping->mp_length(x));
+			fastlocals = (listobject *) x;
 			break;
 
 		case LOAD_FAST:
-			/* NYI */
+			x = GETLISTITEM(fastlocals, oparg);
+			if (x == NULL) {
+				err_setstr(NameError,
+					   "undefined local variable");
+				break;
+			}
+			INCREF(x);
+			PUSH(x);
 			break;
 
 		case STORE_FAST:
-			/* NYI */
+			w = GETLISTITEM(fastlocals, oparg);
+			XDECREF(w);
+			w = POP();
+			GETLISTITEM(fastlocals, oparg) = w;
+			break;
+
+		case DELETE_FAST:
+			x = GETLISTITEM(fastlocals, oparg);
+			if (x == NULL) {
+				err_setstr(NameError,
+					   "undefined local variable");
+				break;
+			}
+			DECREF(x);
+			GETLISTITEM(fastlocals, oparg) = NULL;
 			break;
 		
 		case BUILD_TUPLE:
@@ -1068,6 +1101,7 @@ eval_code(co, globals, locals, arg)
 			w = GETNAMEV(oparg);
 			v = TOP();
 			err = import_from(f->f_locals, v, w);
+			locals_2_fast(f, 0);
 			break;
 		
 		case JUMP_FORWARD:
@@ -1299,8 +1333,6 @@ eval_code(co, globals, locals, arg)
 	
 	current_frame = f->f_back;
 	DECREF(f);
-
-	XDECREF(fastlocals);
 	
 	return retval;
 }
@@ -1418,10 +1450,92 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 object *
 getlocals()
 {
-	if (current_frame == NULL)
+	/* Merge f->f_fastlocals into f->f_locals, then return the latter */
+	frameobject *f;
+	object *locals, *fast, *map;
+	int i;
+	f = current_frame;
+	if (f == NULL)
 		return NULL;
-	else
-		return current_frame->f_locals;
+	locals = f->f_locals;
+	fast = f->f_fastlocals;
+	map = f->f_localmap;
+	if (locals == NULL || fast == NULL || map == NULL)
+		return locals;
+	if (!is_dictobject(locals) || !is_listobject(fast) ||
+	    !is_dictobject(map))
+		return locals;
+	i = getdictsize(map);
+	while (--i >= 0) {
+		object *key;
+		object *value;
+		int j;
+		key = getdict2key(map, i);
+		if (key == NULL)
+			continue;
+		value = dict2lookup(map, key);
+		if (value == NULL || !is_intobject(value))
+			continue;
+		j = getintvalue(value);
+		value = getlistitem(fast, j);
+		if (value == NULL) {
+			err_clear();
+			if (dict2remove(locals, key) != 0)
+				err_clear();
+		}
+		else {
+			if (dict2insert(locals, key, value) != 0)
+				err_clear();
+		}
+	}
+	return locals;
+}
+
+static void
+locals_2_fast(f, clear)
+	frameobject *f;
+	int clear;
+{
+	/* Merge f->f_locals into f->f_fastlocals */
+	object *locals, *fast, *map;
+	int i;
+	if (f == NULL)
+		return;
+	locals = f->f_locals;
+	fast = f->f_fastlocals;
+	map = f->f_localmap;
+	if (locals == NULL || fast == NULL || map == NULL)
+		return;
+	if (!is_dictobject(locals) || !is_listobject(fast) ||
+	    !is_dictobject(map))
+		return;
+	i = getdictsize(map);
+	while (--i >= 0) {
+		object *key;
+		object *value;
+		int j;
+		key = getdict2key(map, i);
+		if (key == NULL)
+			continue;
+		value = dict2lookup(map, key);
+		if (value == NULL || !is_intobject(value))
+			continue;
+		j = getintvalue(value);
+		value = dict2lookup(locals, key);
+		if (value == NULL)
+			err_clear();
+		else
+			INCREF(value);
+		if (value != NULL || clear)
+			if (setlistitem(fast, j, value) != 0)
+				err_clear();
+	}
+}
+
+void
+mergelocals()
+{
+	locals_2_fast(current_frame, 1);
 }
 
 object *
