@@ -219,16 +219,24 @@ def readmodule_ex(module, path=[], inpackage=False):
             elif token == 'import' and start[1] == 0:
                 modules = _getnamelist(g)
                 for mod, mod2 in modules:
-                    readmodule_ex(mod, path, inpackage)
+                    try:
+                        # Recursively read the imported module
+                        readmodule_ex(mod, path, inpackage)
+                    except:
+                        # If we can't find or parse the imported module,
+                        # too bad -- don't die here.
+                        pass
             elif token == 'from' and start[1] == 0:
                 mod, token = _getname(g)
                 if not mod or token != "import":
                     continue
                 names = _getnamelist(g)
                 try:
-                    # recursively read the imported module
+                    # Recursively read the imported module
                     d = readmodule_ex(mod, path, inpackage)
                 except:
+                    # If we can't find or parse the imported module,
+                    # too bad -- don't die here.
                     continue
                 # add any classes that were defined in the imported module
                 # to our name space if they were mentioned in the list
