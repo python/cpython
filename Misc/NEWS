@@ -1,14 +1,214 @@
+=====================================
+==> Release 1.4 (October 25 1996) <==
+=====================================
+
+(XXX Sorry, this is in totally random order.  I hope I can find the
+time to fix it.)
+
+- Changed copyright.
+
+- SyntaxError exceptions detected during code generation
+(e.g. assignment to an expression) now include a line number.
+
+- Don't leave trailing / or \ in script directory inserted in front of
+sys.path.
+
+- Added a note to Tools/scripts/classfix.py abouts its historical
+importance.
+
+- Added Misc/Makefile.pre.in, a universal Makefile for extensions
+built outside the distribution.
+
+- Rewritten Misc/faq2html.py, by Ka-Ping Yee.
+
+- Install shared modules with mode 555 (needed for performance on some
+platforms).
+
+- Some changes to standard library modules to avoid calling append()
+with more than one argument -- while supported, this should be
+outlawed, and I don't want to set a bad example.
+
+- bdb.py (and hence pdb.py) supports calling run() with a code object
+instead of a code string.
+
+- Fixed an embarrassing bug cgi.py which prevented correct uploading
+of binary files from Netscape (which doesn't distinguish between
+binary and text files).  Also added dormant logging support, which
+makes it easier to debug the cgi module itself.
+
+- Added default writer to constructor of NullFormatter class.
+
+- Use binary mode for socket.makefile() calls in ftplib.py.
+
+- The ihooks module no longer "installs" itself upon import -- this
+was an experimental feature that helped ironing out some bugs but that
+slowed down code that imported it without the need to install it
+(e.g. the rexec module).  Also close the file in some cases and add
+the __file__ attribute to loaded modules.
+
+- The test program for mailbox.py is now more useful.
+
+- Added getparamnames() to Message class in mimetools.py -- it returns
+the names of parameters to the content-type header.
+
+- Fixed a typo in ni that broke the loop stripping "__." from names.
+
+- Fix sys.path[0] for scripts run via pdb.py's new main program.
+
+- profile.py can now also run a script, like pdb.
+
+- Fix a small bug in pyclbr -- don't add names starting with _ when
+emulating from ... import *.
+
+- Fixed a series of embarrassing typos in rexec's handling of standard
+I/O redirection.  Added some more "safe" built-in modules: cmath,
+errno, operator.
+
+- Fixed embarrassing typo in shelve.py.
+
+- Added SliceType and EllipsisType to types.py.
+
+- In urllib.py, added handling for error 301 (same as 302); added
+geturl() method to get the URL after redirection.
+
+- Fixed embarrassing typo in xdrlib.py.  Also fixed typo in Setup.in
+for _xdrmodule.c and removed redundant #include from _xdrmodule.c.
+
+- Fixed bsddbmodule.c to add binary mode indicator on platforms that
+have it.  This should make it working on Windows NT.
+
+- Changed last uses of #ifdef NT to #ifdef MS_WINDOWS or MS_WIN32,
+whatever applies.  Also rationalized some other tests for various MS
+platforms.
+
+- Added the sources for the NT installer script used for Python
+1.4beta3.  Not tested with this release, but better than nothing.
+
+- A compromise in pickle's defenses against Trojan horses: a
+user-defined function is now okay where a class is expected.  A
+built-in function is not okay, to prevent pickling something that
+will execute os.system("rm -f *") when unpickling.
+
+- dis.py will print the name of local variables referenced by local
+load/store/delete instructions.
+
+- Improved portability of SimpleHttpServer module to non-Unix
+platform.
+
+- The thread.h interface adds an extra argument to down_sema().  This
+only affects other C code that uses thread.c; the Python thread module
+doesn't use semaphores (which aren't provided on all platforms where
+Python threads are supported).  Note: on NT, this change is not
+implemented.
+
+- Fixed some typos in abstract.h; corrected signature of
+PyNumber_Coerce, added PyMapping_DelItem.  Also fixed a bug in
+abstract.c's PyObject_CallMethod().
+
+- apply(classname, (), {}) now works even if the class has no
+__init__() method.
+
+- Implemented complex remainder and divmod() (these would dump core!).
+Conversion of complex numbers to int, long int or float now raises an
+exception, since there is no meaningful way to do it without losing
+information.
+
+- Fixed bug in built-in complex() function which gave the wrong result
+for two real arguments.
+
+- Change the hash algorithm for strings -- the multiplier is now
+1000003 instead of 3, which gives better spread for short strings.
+
+- New default path for Windows NT, the registry structure now supports
+default paths for different install packages.  (Mark Hammond -- the
+next PythonWin release will use this.)
+
+- Added more symbols to the python_nt.def file.
+
+- When using GNU readline, set rl_readline_name to "python".
+
+- The Ellipses built-in name has been renamed to Ellipsis -- this is
+the correct singular form.  Thanks to Ka-Ping Yee, who saved us from
+eternal embarrassment.
+
+- Bumped the PYTHON_API_VERSION to 1006, due to the Ellipses ->
+Ellipsis name change.
+
+- Updated the library reference manual.  Added documentation of
+restricted mode (rexec, Bastion) and the formatter module (for use
+with the htmllib module).  Fixed the documentation of htmllib
+(finally).
+
+- The reference manual is now maintained in FrameMaker.
+
+- Upgraded scripts Doc/partparse.py and Doc/texi2html.py.
+
+- Slight improvements to Doc/Makefile.
+
+- Added fcntl.lockf(). This should be used for Unix file locking
+instead of the posixfile module; lockf() is more portable.
+
+- The getopt module now supports long option names, thanks to Lars
+Wizenius.
+
+- Plenty of changes to Tkinter and Canvas, mostly due to Fred Drake
+and Nils Fischbeck.
+
+- Use more bits of time.time() in whrandom's default seed().
+
+- Performance hack for regex module's regs attribute.
+
+- Don't close already closed socket in socket module.
+
+- Correctly handle separators containing embedded nulls in
+strop.split, strop.find and strop.rfind.  Also added more detail to
+error message for strop.atoi and friends.
+
+- Moved fallback definition for hypot() to Python/hypot.c.
+
+- Added fallback definition for strdup, in Python/strdup.c.
+
+- Fixed some bugs where a function would return 0 to indicate an error
+where it should return -1.
+
+- Test for error returned by time.localtime(), and rationalized its MS
+tests.
+
+- Added Modules/Setup.local file, which is processed after Setup.
+
+- Corrected bug in toplevel Makefile.in -- execution of regen script
+would not use the right PATH and PYTHONPATH.
+
+- Various and sundry NeXT configuration changes (sigh).
+
+- Support systems where libreadline needs neither termcap nor curses.
+
+- Improved ld_so_aix script and python.exp file (for AIX).
+
+- More stringent test for working <stdarg.h> in configure script.
+
+- Removed Demo/www subdirectory -- it was totally out of date.
+
+- Improved demos and docs for Fred Drake's parser module; fixed one
+typo in the module itself.
+
+
 =========================================
 ==> Release 1.4beta3 (August 26 1996) <==
 =========================================
 
 
-(XXX This is less readable that it should.  I promis to restructure it
-for the final 1.4 release.)
+(XXX This is less readable that it should.  I promise to restructure
+it for the final 1.4 release.)
 
 
 What's new in 1.4beta3 (since beta2)?
 -------------------------------------
+
+- Name mangling to implement a simple form of class-private variables.
+A name of the form "__spam" can't easily be used outside the class.
+(This was added in 1.4beta3, but left out of the 1.4beta3 release
+message.)
 
 - In urllib.urlopen(): HTTP URLs containing user:passwd@host are now
 handled correctly when using a proxy server.
@@ -88,9 +288,9 @@ permission).  This is required on HP-UX and won't hurt on other systems.
 - The objc.c module is no longer part of the distribution.  Objective-C 
 support may become available as contributed software on the ftp site.
 
-- The sybase module is no longer part of the distribution.  May John 
-Redford rot in hell.  A much improved sybase module is available as 
-contributed software from the ftp site.
+- The sybase module is no longer part of the distribution.  A much
+improved sybase module is available as contributed software from the
+ftp site.
 
 - _tkinter is now compatible with Tcl 7.5 / Tk 4.1 patch1 on Windows and 
 Mac (don't use unpatched Tcl/Tk!).  The default line in the Setup.in file 
