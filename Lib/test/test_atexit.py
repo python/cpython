@@ -27,7 +27,7 @@ f = file(fname, "w")
 f.write(input)
 f.close()
 
-p = popen("%s %s" % (executable, fname))
+p = popen('"%s" %s' % (executable, fname))
 output = p.read()
 p.close()
 vereq(output, """\
@@ -55,7 +55,7 @@ f = file(fname, "w")
 f.write(input)
 f.close()
 
-p = popen("%s %s" % (executable, fname))
+p = popen('"%s" %s' % (executable, fname))
 output = p.read()
 p.close()
 vereq(output, """\
