@@ -238,9 +238,6 @@ tb_printinternal(tracebackobject *tb, PyObject *f, int limit)
 	}
 	while (tb != NULL && err == 0) {
 		if (depth <= limit) {
-			if (Py_OptimizeFlag)
-				tb->tb_lineno = PyCode_Addr2Line(
-					tb->tb_frame->f_code, tb->tb_lasti);
 			err = tb_displayline(f,
 			    PyString_AsString(
 				    tb->tb_frame->f_code->co_filename),
