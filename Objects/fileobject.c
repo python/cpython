@@ -660,9 +660,9 @@ get_line(PyFileObject *f, int n)
 		n1 = getline(&buf, &size, fp);
 		Py_END_ALLOW_THREADS
 		if (n1 == -1) {
-                        if (buf){
-                                free(buf);
-                        }
+			if (buf){
+				free(buf);
+			}
 			clearerr(fp);
 			if (PyErr_CheckSignals()) {
 				return NULL;
