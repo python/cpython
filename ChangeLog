@@ -1,5 +1,13 @@
 Wed May  4 00:53:11 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
+	* README: version 1.0.2
+
+	* Objects/fileobject.c (setfilebufsize): less error checking
+
+	* configure.in: test for withval != yes (autoconf 1.8 change)
+
+	* Makefile.in: don't remove config.status on "make clobber"
+
 	* Python/ceval.c (eval_code): removed last traces of killprint (-k
 	option)
 
