@@ -61,11 +61,8 @@
 
   The constructor for this class is:
 
-  \begin{funcdesc}{__init__}{
-    \optional{, tabsize
-    \optional{, wrapcolumn
-    \optional{, linejunk
-    \optional{, charjunk}}}}}
+  \begin{funcdesc}{__init__}{\optional{tabsize}\optional{,
+    wrapcolumn}\optional{, linejunk}\optional{, charjunk}}
 
     Initializes instance of \class{HtmlDiff}.
 
@@ -86,10 +83,8 @@
   The following methods are public:
 
   \begin{funcdesc}{make_file}{fromlines, tolines
-    \optional{, fromdesc
-    \optional{, todesc
-    \optional{, context
-    \optional{, numlines}}}}}
+    \optional{, fromdesc}\optional{, todesc}\optional{, context}\optional{,
+    numlines}}
     Compares \var{fromlines} and \var{tolines} (lists of strings) and returns
     a string which is a complete HTML file containing a table showing line by
     line differences with inter-line and intra-line changes highlighted.
@@ -110,16 +105,14 @@
   \end{funcdesc}
 
   \begin{funcdesc}{make_table}{fromlines, tolines
-    \optional{, fromdesc
-    \optional{, todesc
-    \optional{, context}}}}
+    \optional{, fromdesc}\optional{, todesc}\optional{, context}\optional{,
+    numlines}}
     Compares \var{fromlines} and \var{tolines} (lists of strings) and returns
     a string which is a complete HTML table showing line by line differences
     with inter-line and intra-line changes highlighted.
 
-    The arguments of this method are a subset of those for the
-    \code{make_file} method.  Refer to the \code{make_file} method
-    documentation.
+    The arguments for this method are the same as those for the
+    \method{make_file()} method.
   \end{funcdesc}
 
   \file{Tools/scripts/diff.py} is a command-line front-end to this class
@@ -128,9 +121,9 @@
   \versionadded{2.4}
 \end{classdesc*}
 
-\begin{funcdesc}{context_diff}{a, b\optional{, fromfile\optional{, tofile
-	\optional{, fromfiledate\optional{, tofiledate\optional{, n
-	\optional{, lineterm}}}}}}}
+\begin{funcdesc}{context_diff}{a, b\optional{, fromfile}\optional{,
+    tofile}\optional{, fromfiledate}\optional{, tofiledate}\optional{,
+    n}\optional{, lineterm}}
   Compare \var{a} and \var{b} (lists of strings); return a
   delta (a generator generating the delta lines) in context diff
   format.
@@ -162,7 +155,7 @@
 \end{funcdesc}
 
 \begin{funcdesc}{get_close_matches}{word, possibilities\optional{,
-                 n\optional{, cutoff}}}
+                 n}\optional{, cutoff}}
   Return a list of the best ``good enough'' matches.  \var{word} is a
   sequence for which close matches are desired (typically a string),
   and \var{possibilities} is a list of sequences against which to
@@ -191,8 +184,7 @@
 \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{ndiff}{a, b\optional{, linejunk\optional{,
-                 charjunk}}}
+\begin{funcdesc}{ndiff}{a, b\optional{, linejunk}\optional{, charjunk}}
   Compare \var{a} and \var{b} (lists of strings); return a
   \class{Differ}-style delta (a generator generating the delta lines).
 
@@ -260,9 +252,9 @@ emu
 
 \end{funcdesc}
 
-\begin{funcdesc}{unified_diff}{a, b\optional{, fromfile\optional{, tofile
-	\optional{, fromfiledate\optional{, tofiledate\optional{, n
-	\optional{, lineterm}}}}}}}
+\begin{funcdesc}{unified_diff}{a, b\optional{, fromfile}\optional{,
+    tofile}\optional{, fromfiledate}\optional{, tofiledate}\optional{,
+    n}\optional{, lineterm}}
   Compare \var{a} and \var{b} (lists of strings); return a
   delta (a generator generating the delta lines) in unified diff
   format.
