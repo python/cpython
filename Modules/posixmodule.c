@@ -2006,7 +2006,7 @@ static char posix_putenv__doc__[] =
 Change or add an environment variable.";
 
 static PyObject * 
-posix_putenv(self,args)
+posix_putenv(self, args)
 	PyObject *self;
 	PyObject *args;
 {
@@ -2026,7 +2026,32 @@ posix_putenv(self,args)
 	Py_INCREF(Py_None);
         return Py_None;
 }
-#endif
+#endif /* putenv */
+
+#ifdef HAVE_STRERROR
+static char posix_strerror__doc__[] =
+"strerror(code) -> string\n\
+Translate an error code to a message string.";
+
+PyObject *
+posix_strerror(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int code;
+	char *message;
+	if (!PyArg_ParseTuple(args, "i", &code))
+		return NULL;
+	message = strerror(code);
+	if (message == NULL) {
+		PyErr_SetString(PyExc_ValueError,
+				"strerror code out of range");
+		return NULL;
+	}
+	return PyString_FromString(message);
+}
+#endif /* strerror */
+
 
 static PyMethodDef posix_methods[] = {
 	{"chdir",	posix_chdir, 0, posix_chdir__doc__},
@@ -2151,6 +2176,9 @@ static PyMethodDef posix_methods[] = {
 #endif
 #ifdef HAVE_PUTENV
 	{"putenv",	posix_putenv, 1, posix_putenv__doc__},
+#endif
+#ifdef HAVE_STRERROR
+	{"strerror",	posix_strerror, 1, posix_strerror__doc__},
 #endif
 	{NULL,		NULL}		 /* Sentinel */
 };
