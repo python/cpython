@@ -3484,8 +3484,9 @@ call_function(PyObject ***pp_stack, int oparg
 	*/
 	if (PyCFunction_Check(func) && nk == 0) {
 		int flags = PyCFunction_GET_FLAGS(func);
-		PCALL(PCALL_CFUNCTION);
 		PyThreadState *tstate = PyThreadState_GET();
+
+		PCALL(PCALL_CFUNCTION);
 		if (flags & (METH_NOARGS | METH_O)) {
 			PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 			PyObject *self = PyCFunction_GET_SELF(func);
