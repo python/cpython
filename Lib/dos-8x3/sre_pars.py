@@ -12,8 +12,6 @@ import string, sys
 
 from sre_constants import *
 
-MAXREPEAT = 65535
-
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS = "*+?{"
 
@@ -393,6 +391,8 @@ def _parse(source, state):
                     # potential range
                     this = source.get()
                     if this == "]":
+                        if code1[0] is IN:
+                            code1 = code1[1][0]
                         set.append(code1)
                         set.append((LITERAL, ord("-")))
                         break
@@ -592,6 +592,11 @@ def parse(str, flags=0, pattern=None):
         raise error, "bogus characters at end of regular expression"
 
     # p.dump()
+
+    if not (flags & SRE_FLAG_VERBOSE) and p.pattern.flags & SRE_FLAG_VERBOSE:
+        # the VERBOSE flag was switched on inside the pattern.  to be
+        # on the safe side, we'll parse the whole thing again...
+        return parse(str, p.pattern.flags)
 
     return p
 
