@@ -1,0 +1,34 @@
+"Long HTML" Version of the Python Documentation
+===============================================
+
+  This package provides an alternate HTML formatting of the Python
+  documentation.  Each HTML file represents one chapter from a manual,
+  or the entirety of a "How-To" document.  This mwans there are far
+  fewer individual HTML files than the normal formatting.
+
+  The purpose of this alternate formatting is to provide on-demand
+  publishers with a format that is easier to convert to the
+  proprietary formats used in printing.  This allows the printed
+  versions of the documentation to be kept up-to-date more easily than
+  would be the case if only the more user-centric HTML format were
+  provided.
+
+  Anyone is free to use this version for any purpose, so long as the
+  copyrights are maintained according to the license statement.  These
+  files are available to all users, including competing on-demand
+  publishers and re-packagers.
+
+
+Contact Information
+-------------------
+
+  If you have questions regarding this distribution, please send email
+  to:
+
+                        python-docs@python.org
+
+  Additional information and formats of these documents are available
+  on the Internet.  For current packages of these documents and links
+  to additional materials, please see:
+
+                      http://www.python.org/doc/
