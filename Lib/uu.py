@@ -85,18 +85,25 @@ def decode(in_file, out_file=None, mode=None):
     elif type(in_file) == type(''):
 	in_file = open(in_file)
     #
-    # Read the header line, and fill in optional args if needed
+    # Read until a begin is encountered or we've exhausted the file
     #
-    hdr = in_file.readline()
-    if not hdr:
-	raise Error, 'Empty input file'
-    hdrfields = string.split(hdr)
-    if len(hdrfields) <> 3 or hdrfields[0] <> 'begin':
-	raise Error, ('Incorrect uu header line', hdr)
+    while (1):
+	hdr = in_file.readline()
+	if not hdr:
+	    raise Error, 'No valid begin line found in input file'
+	if hdr[:5] != 'begin':
+	    continue
+	hdrfields = string.split(hdr)
+	if len(hdrfields) == 3 and hdrfields[0] == 'begin':
+	    try:
+		string.atoi(hdrfields[1], 8)
+		break
+	    except ValueError:
+		pass
     if out_file == None:
 	out_file = hdrfields[2]
     if mode == None:
-	mode = string.atoi(hdrfields[1])
+	mode = string.atoi(hdrfields[1], 8)
     #
     # Open the output file
     #
