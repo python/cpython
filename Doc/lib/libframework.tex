@@ -123,7 +123,7 @@ window, for instance). This is needed so that update events and such
 can be passed on to other windows like the Sioux console window.
 Calling \code{MacOS.HandleEvent} is not allowed within \var{our_dispatch}
 or its callees, since this may result in an infinite loop if the
-code is called through the python inner-loop event handler.
+code is called through the Python inner-loop event handler.
 \end{funcdesc}
 
 \begin{funcdesc}{asyncevents}{onoff}
