@@ -87,6 +87,10 @@ type_module(PyTypeObject *type, void *context)
 
 	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
 		mod = PyDict_GetItemString(type->tp_dict, "__module__");
+		if (!mod) { 
+			PyErr_Format(PyExc_AttributeError, "__module__");
+			return 0;
+		}
 		Py_XINCREF(mod);
 		return mod;
 	}

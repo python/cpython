@@ -12,6 +12,10 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #966623. classes created with type() in an exec(, {}) don't
+  have a __module__, but code in typeobject assumed it would always
+  be there.
+
 - Python no longer relies on the LC_NUMERIC locale setting to be
   the "C" locale; as a result, it no longer tries to prevent changing
   the LC_NUMERIC category.
