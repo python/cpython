@@ -50,6 +50,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 typedef struct {
 	FILE *fp;
+	int error;
 	/* If fp == NULL, the following are valid: */
 	object *str;
 	char *ptr;
@@ -220,6 +221,7 @@ w_object(v, p)
 	}
 	else {
 		w_byte(TYPE_UNKNOWN, p);
+		p->error = 1;
 	}
 }
 
@@ -230,6 +232,7 @@ wr_long(x, fp)
 {
 	WFILE wf;
 	wf.fp = fp;
+	wf.error = 0;
 	w_long(x, &wf);
 }
 
@@ -240,6 +243,7 @@ wr_object(x, fp)
 {
 	WFILE wf;
 	wf.fp = fp;
+	wf.error = 0;
 	w_object(x, &wf);
 }
 
@@ -429,10 +433,10 @@ r_object(p)
 			object *key, *val;
 			key = r_object(p);
 			if (key == NULL)
-				break; /* XXXX and how about memory errors? */
+				break; /* XXX Assume TYPE_NULL, not an error */
 			val = r_object(p);
-			/* XXXX error check? */
-			dict2insert(v, key, val);
+			if (val != NULL)
+				dict2insert(v, key, val);
 			DECREF(key);
 			XDECREF(val);
 		}
@@ -476,8 +480,10 @@ r_object(p)
 		return v;
 	
 	default:
-		err_setstr(TypeError, "read unknown object");
-		return NULL;
+		/* Bogus data got written, which isn't ideal.
+		   This will let you keep working and recover. */
+		INCREF(None);
+		return None;
 	
 	}
 }
@@ -541,7 +547,12 @@ marshal_dump(self, args)
 	wf.fp = getfilefile(f);
 	wf.str = NULL;
 	wf.ptr = wf.end = NULL;
+	wf.error = 0;
 	w_object(x, &wf);
+	if (wf.error) {
+		err_setstr(ValueError, "unmarshallable object");
+		return NULL;
+	}
 	INCREF(None);
 	return None;
 }
@@ -587,10 +598,16 @@ marshal_dumps(self, args)
 		return NULL;
 	wf.ptr = GETSTRINGVALUE((stringobject *)wf.str);
 	wf.end = wf.ptr + getstringsize(wf.str);
+	wf.error = 0;
 	w_object(x, &wf);
 	if (wf.str != NULL)
 		resizestring(&wf.str,
 		    (int) (wf.ptr - GETSTRINGVALUE((stringobject *)wf.str)));
+	if (wf.error) {
+		XDECREF(wf.str);
+		err_setstr(ValueError, "unmarshallable object");
+		return NULL;
+	}
 	return wf.str;
 }
 
