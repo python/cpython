@@ -53,7 +53,7 @@ non-terminal elements in the grammar always have a length greater than
 one.  The first element is an integer which identifies a production in
 the grammar.  These integers are given symbolic names in the C header
 file \file{Include/graminit.h} and the Python module
-\file{Lib/symbol.py}.  Each additional element of the sequence represents
+\code{symbol}.  Each additional element of the sequence represents
 a component of the production as recognized in the input string: these
 are always sequences which have the same form as the parent.  An
 important aspect of this structure which should be noted is that
@@ -72,7 +72,7 @@ any child elements and the addition of the source text which was
 identified.  The example of the \code{if} keyword above is
 representative.  The various types of terminal symbols are defined in
 the C header file \file{Include/token.h} and the Python module
-\file{Lib/token.py}.
+\code{token}.
 
 The AST objects are not required to support the functionality of this
 module, but are provided for three purposes: to allow an application
@@ -676,6 +676,56 @@ module.  If information is required which is not extracted by the code
 of this example, the code may be extended at clearly defined points to
 provide additional capabilities.
 
+
+\section{Standard Module \sectcode{symbol}}
+\stmodindex{symbol}
+
+This module provides constants which represent the numeric values of
+internal nodes of the parse tree.  Unlike most Python constants, these
+use lower-case names.  Refer to the file \file{Grammar/Grammar} in the
+Python distribution for the defintions of the names in the context of
+the language grammar.  The specific numeric values which the names map
+to may change between Python versions.
+
+This module also provides one additional data object:
+
+\begin{datadesc}{sym_name}
+Dictionary mapping the numeric values of the constants defined in this
+module back to name strings, allowing more human-readable
+representation of parse trees to be generated.
+\end{datadesc}
+
+
+\section{Standard Module \sectcode{token}}
+\stmodindex{token}
+
+This module provides constants which represent the numeric values of
+leaf nodes of the parse tree (terminal tokens).  Refer to the file
+\file{Grammar/Grammar} in the Python distribution for the defintions
+of the names in the context of the language grammar.  The specific
+numeric values which the names map to may change between Python
+versions.
+
+This module also provides one data object and some functions.  The
+functions mirror definitions in the Python C header files.
+
+\begin{datadesc}{tok_name}
+Dictionary mapping the numeric values of the constants defined in this
+module back to name strings, allowing more human-readable
+representation of parse trees to be generated.
+\end{datadesc}
+
+\begin{funcdesc}{ISTERMINAL}{x}
+Return true for terminal token values.
+\end{funcdesc}
+
+\begin{funcdesc}{ISNONTERMINAL}{x}
+Return true for non-terminal token values.
+\end{funcdesc}
+
+\begin{funcdesc}{ISEOF}{x}
+Return true if \var{x} is the marker indicating the end of input.
+\end{funcdesc}
 
 %%
 %%  end of file
