@@ -194,9 +194,15 @@ void _PyObject_Dump(PyObject* op)
 	if (op == NULL)
 		fprintf(stderr, "NULL\n");
 	else {
+		fprintf(stderr, "object  : ");
 		(void)PyObject_Print(op, stderr, 0);
-		fprintf(stderr, "\nrefcounts: %d\n", op->ob_refcnt);
-		fprintf(stderr, "address    : %p\n", op);
+		fprintf(stderr, "\n"
+			"type    : %s\n"
+			"refcount: %d\n"
+			"address : %p\n",
+			op->ob_type==NULL ? "NULL" : op->ob_type->tp_name,
+			op->ob_refcnt,
+			op);
 	}
 }
 
