@@ -456,7 +456,7 @@ struct compiling {
 	PyObject *c_const_dict; /* inverse of c_consts */
 	PyObject *c_names;	/* list of strings (names) */
 	PyObject *c_name_dict;  /* inverse of c_names */
-	PyObject *c_globals;	/* dictionary (value=None) */
+	PyObject *c_globals;	/* dictionary (value=None or True) */
 	PyObject *c_locals;	/* dictionary (value=localID) */
 	PyObject *c_varnames;	/* list (inverse of c_locals) */
 	PyObject *c_freevars;	/* dictionary (value=None) */
@@ -4658,18 +4658,12 @@ symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
 static int
 symtable_load_symbols(struct compiling *c)
 {
-	static PyObject *implicit = NULL;
 	struct symtable *st = c->c_symtable;
 	PySymtableEntryObject *ste = st->st_cur;
 	PyObject *name, *varnames, *v;
 	int i, flags, pos;
 	struct symbol_info si;
 
-	if (implicit == NULL) {
-		implicit = PyInt_FromLong(1);
-		if (implicit == NULL)
-			return -1;
-	}
 	v = NULL;
 
 	if (symtable_init_compiling_symbols(c) < 0)
@@ -4726,7 +4720,7 @@ symtable_load_symbols(struct compiling *c)
 				goto fail;
 		} else if (flags & DEF_FREE_GLOBAL) {
 			si.si_nimplicit++;
-			if (PyDict_SetItem(c->c_globals, name, implicit) < 0)
+			if (PyDict_SetItem(c->c_globals, name, Py_True) < 0)
 				goto fail;
 		} else if ((flags & DEF_LOCAL) && !(flags & DEF_PARAM)) {
 			v = PyInt_FromLong(si.si_nlocals++);
@@ -4749,7 +4743,7 @@ symtable_load_symbols(struct compiling *c)
 			} else {
 				si.si_nimplicit++;
  				if (PyDict_SetItem(c->c_globals, name,
- 						   implicit) < 0)
+ 						   Py_True) < 0)
  					goto fail;
  				if (st->st_nscopes != 1) {
  					v = PyInt_FromLong(flags);
