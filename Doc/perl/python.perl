@@ -187,8 +187,7 @@ sub do_cmd_refmodule{
 sub do_cmd_newsgroup{
     local($_) = @_;
     my $newsgroup = next_argument();
-    my $stuff = "<span class=newsgroup><a href=\"news:$newsgroup\">"
-      . "$newsgroup</a></span>";
+    my $stuff = "<a class=newsgroup href=\"news:$newsgroup\">$newsgroup</a>";
     return $stuff . $_;
 }
 
@@ -201,7 +200,8 @@ sub do_cmd_envvar{
     add_index_entry("environment variables!$envvar@<tt>\$$envvar</tt>",
 		    $ahref);
     add_index_entry("$envvar@\$$envvar", $ahref);
-    return "<span class=envvar>$aname\$$envvar</a></span>" . $_;
+    $aname =~ s/<a/<a class=envvar/;
+    return "$aname\$$envvar</a>" . $_;
 }
 
 sub do_cmd_url{
@@ -209,7 +209,7 @@ sub do_cmd_url{
     local($_) = @_;
     my $url = next_argument();
     $url =~ s/~/&#126;/g;
-    return "<span class=url><a href=\"$url\">$url</a></span>" . $_;
+    return "<a class=url href=\"$url\">$url</a>" . $_;
 }
 
 sub do_cmd_manpage{
