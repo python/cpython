@@ -646,28 +646,27 @@ list_ass_item(PyListObject *a, int i, PyObject *v)
 }
 
 static PyObject *
-ins(PyListObject *self, int where, PyObject *v)
-{
-	if (ins1(self, where, v) != 0)
-		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static PyObject *
 listinsert(PyListObject *self, PyObject *args)
 {
 	int i;
 	PyObject *v;
 	if (!PyArg_ParseTuple(args, "iO:insert", &i, &v))
 		return NULL;
-	return ins(self, i, v);
+	if (ins1(self, i, v) == 0) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return NULL;
 }
 
 static PyObject *
 listappend(PyListObject *self, PyObject *v)
 {
-	return ins(self, (int) self->ob_size, v);
+	if (app1(self, v) == 0) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return NULL;
 }
 
 static PyObject *
