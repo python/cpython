@@ -503,7 +503,7 @@ decode_str(const char *str, struct tok_state *tok)
 	if (!check_bom(buf_getc, buf_ungetc, buf_setreadl, tok))
 		return NULL;
 	str = tok->str;		/* string after BOM if any */
-	assert(r);
+	assert(str);
 	if (tok->enc != NULL) {
 		utf8 = translate_into_utf8(str, tok->enc);
 		if (utf8 == NULL)
