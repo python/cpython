@@ -234,6 +234,8 @@ class Charset:
     def __str__(self):
         return self.input_charset.lower()
 
+    __repr__ = __str__
+
     def __eq__(self, other):
         return str(self) == str(other).lower()
 
@@ -358,14 +360,14 @@ class Charset:
         if self.header_encoding == BASE64:
             return email.base64MIME.header_encode(s, cset)
         elif self.header_encoding == QP:
-            return email.quopriMIME.header_encode(s, cset)
+            return email.quopriMIME.header_encode(s, cset, maxlinelen=None)
         elif self.header_encoding == SHORTEST:
             lenb64 = email.base64MIME.base64_len(s)
             lenqp = email.quopriMIME.header_quopri_len(s)
             if lenb64 < lenqp:
                 return email.base64MIME.header_encode(s, cset)
             else:
-                return email.quopriMIME.header_encode(s, cset)
+                return email.quopriMIME.header_encode(s, cset, maxlinelen=None)
         else:
             return s
 
