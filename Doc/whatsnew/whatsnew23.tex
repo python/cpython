@@ -896,6 +896,13 @@ In 2.3, you get this:
 <type '_socket.socket'>
 \end{verbatim}
 
+\item One of the noted incompatibilities between old- and new-style
+  classes has been removed: you can now assign to the
+  \member{__name__} and \member{__bases__} attributes of new-style
+  classes.  There are some restrictions on what can be assigned to
+  \member{__bases__} along the lines of those relating to assigning to
+  an instance's \member{__class__} attribute.
+
 \end{itemize}
 
 
