@@ -8,7 +8,7 @@
 ;; Created:    Feb 1992
 ;; Keywords:   python languages oop
 
-(defconst py-version "$Revision$"
+(defconst py-version "3.51"
   "`python-mode' version number.")
 
 ;; This software is provided as-is, without express or implied
@@ -1633,8 +1633,7 @@ the new line indented."
 	;; if we landed inside a string, go to the beginning of that
 	;; string. this handles triple quoted, multi-line spanning
 	;; strings.
-	(let* ((pps3 (nth 3 (parse-partial-sexp bod (point))))
-	       (delim (and pps3 (int-to-char pps3)))
+	(let* ((delim (nth 3 (parse-partial-sexp bod (point))))
 	       (skip (and delim (make-string 1 delim))))
 	  (when skip
 	    (save-excursion
@@ -2551,8 +2550,8 @@ local bindings to py-newline-and-indent."))
 	;; no accurate way to determine this otherwise.
 	(if (not (fboundp 'buffer-syntactic-context))
 	    ;; Emacs
-	    (save-excursion
-	      (setq pps (parse-partial-sexp (point) here))
+	    (progn
+	      (save-excursion (setq pps (parse-partial-sexp (point) here)))
 	      ;; make sure we don't land inside a triple-quoted string
 	      (setq done (or (not (nth 3 pps))
 			     (bobp))))
