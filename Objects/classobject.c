@@ -1973,7 +1973,7 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 	im->im_func = func;
 	Py_XINCREF(self);
 	im->im_self = self;
-	Py_INCREF(class);
+	Py_XINCREF(class);
 	im->im_class = class;
 	PyObject_GC_Init(im);
 	return (PyObject *)im;
@@ -2040,7 +2040,7 @@ instancemethod_dealloc(register PyMethodObject *im)
 	PyObject_GC_Fini(im);
 	Py_DECREF(im->im_func);
 	Py_XDECREF(im->im_self);
-	Py_DECREF(im->im_class);
+	Py_XDECREF(im->im_class);
 	im->im_self = (PyObject *)free_list;
 	free_list = im;
 }
