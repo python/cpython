@@ -44,6 +44,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #endif
 
+#ifdef THINK_C
+#include <console.h>
+#endif
+
 extern char *getpythonpath();
 
 extern grammar gram; /* From graminit.c */
@@ -637,6 +641,10 @@ goaway(sts)
 	}
 #endif /* TRACE_REFS */
 
+#ifdef THINK_C
+	if (sts == 0)
+		console_options.pause_atexit = 0;
+#endif
 	exit(sts);
 #endif /* WITH_THREAD */
 	/*NOTREACHED*/
