@@ -292,7 +292,7 @@ nis_maplist ()
 	nisresp_maplist *list;
 	char *dom;
 	CLIENT *cl, *clnt_create();
-	char *server = "";
+	char *server = NULL;
 	int mapi = 0;
         int err;
 
@@ -301,25 +301,32 @@ nis_maplist ()
 		return NULL;
 	}
 
-	while (!strcmp("", server) && aliases[mapi].map != 0L) {
+	while (!server && aliases[mapi].map != 0L) {
 		yp_master (dom, aliases[mapi].map, &server);
 		mapi++;
 	}
-        if (!strcmp("", server)) {
+        if (!server) {
             PyErr_SetString(NisError, "No NIS master found for any map");
             return NULL;
         }
 	cl = clnt_create(server, YPPROG, YPVERS, "tcp");
 	if (cl == NULL) {
 		PyErr_SetString(NisError, clnt_spcreateerror(server));
-		return NULL;
+		goto finally;
 	}
 	list = nisproc_maplist_2 (&dom, cl);
+	clnt_destroy(cl);
 	if (list == NULL)
-		return NULL;
+		goto finally;
 	if (list->stat != NIS_TRUE)
-		return NULL;
+		goto finally;
+
+	PyMem_DEL(server);
 	return list->maps;
+
+  finally:
+	PyMem_DEL(server);
+	return NULL;
 }
 
 static PyObject *
@@ -337,12 +344,14 @@ nis_maps (self, args)
 	if ((list = PyList_New(0)) == NULL)
 		return NULL;
 	for (maps = maps->next; maps; maps = maps->next) {
-		if (PyList_Append (list, PyString_FromString (maps->map)) < 0)
+		PyObject *str = PyString_FromString(maps->map);
+		if (!str || PyList_Append(list, str) < 0)
 		{
 			Py_DECREF(list);
 			list = NULL;
 			break;
 		}
+		Py_DECREF(str);
 	}
 	/* XXX Shouldn't we free the list of maps now? */
 	return list;

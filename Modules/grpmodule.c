@@ -51,6 +51,7 @@ static PyObject *mkgrent(p)
 			Py_DECREF(w);
 			return NULL;
 		}
+		Py_DECREF(x);
 	}
 	v = Py_BuildValue("(sslO)",
 		       p->gr_name,
@@ -112,6 +113,7 @@ static PyObject *grp_getgrall(self, args)
 			Py_DECREF(d);
 			return NULL;
 		}
+		Py_DECREF(v);
 	}
 	return d;
 }

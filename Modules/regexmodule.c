@@ -518,6 +518,8 @@ symcomp(pattern, gdict)
 					    Py_XDECREF(npattern);
 					    return NULL;
 				    }
+				    Py_DECREF(group_name);
+				    Py_DECREF(group_index);
 				    ++o;     /* eat the '>' */
 				    break;
 				}
@@ -573,6 +575,7 @@ regex_symcomp(self, args)
 	PyObject *tran = NULL;
 	PyObject *gdict = NULL;
 	PyObject *npattern;
+	PyObject *retval = NULL;
 
 	if (!PyArg_ParseTuple(args, "S|S", &pattern, &tran))
 		return NULL;
@@ -583,7 +586,9 @@ regex_symcomp(self, args)
 		Py_DECREF(pattern);
 		return NULL;
 	}
-	return newregexobject(npattern, tran, pattern, gdict);
+	retval = newregexobject(npattern, tran, pattern, gdict);
+	Py_DECREF(npattern);
+	return retval;
 }
 
 

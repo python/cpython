@@ -109,6 +109,7 @@ pwd_getpwall(self, args)
 			Py_DECREF(d);
 			return NULL;
 		}
+		Py_DECREF(v);
 	}
 	return d;
 }
