@@ -663,6 +663,11 @@ mmap_ass_slice(mmap_object *self, int ilow, int ihigh, PyObject *v)
 	else if ((size_t)ihigh > self->size)
 		ihigh = self->size;
     
+	if (v == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+			"mmap object doesn't support slice deletion");
+		return -1;
+	}
 	if (! (PyString_Check(v)) ) {
 		PyErr_SetString(PyExc_IndexError, 
 				"mmap slice assignment must be a string");
@@ -686,6 +691,11 @@ mmap_ass_item(mmap_object *self, int i, PyObject *v)
 	CHECK_VALID(-1);
 	if (i < 0 || (size_t)i >= self->size) {
 		PyErr_SetString(PyExc_IndexError, "mmap index out of range");
+		return -1;
+	}
+	if (v == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+			"mmap object doesn't support item deletion");
 		return -1;
 	}
 	if (! (PyString_Check(v) && PyString_Size(v)==1) ) {
