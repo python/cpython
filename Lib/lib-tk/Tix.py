@@ -26,7 +26,6 @@
 # appreciate the advantages.
 #
 
-import string
 from Tkinter import *
 from Tkinter import _flatten, _cnfmerge, _default_root
 
@@ -35,7 +34,7 @@ if TkVersion < 3.999:
     raise ImportError, "This version of Tix.py requires Tk 4.0 or higher"
 
 import _tkinter # If this fails your Python may not be configured for Tk
-# TixVersion = string.atof(tkinter.TIX_VERSION) # If this fails your Python may not be configured for Tix
+# TixVersion = float(tkinter.TIX_VERSION) # If this fails your Python may not be configured for Tix
 # WARNING - TixVersion is a limited precision floating point number
 
 # Some more constants (for consistency with Tkinter)
@@ -391,7 +390,7 @@ class TixSubWidget(TixWidget):
             path = master._subwidget_name(name)
             try:
                 path = path[len(master._w)+1:]
-                plist = string.splitfields(path, '.')
+                plist = path.split('.')
             except:
                 plist = []
 
@@ -402,7 +401,7 @@ class TixSubWidget(TixWidget):
             # Ensure that the intermediate widgets exist
             parent = master
             for i in range(len(plist) - 1):
-                n = string.joinfields(plist[:i+1], '.')
+                n = '.'.join(plist[:i+1])
                 try:
                     w = master._nametowidget(n)
                     parent = w
