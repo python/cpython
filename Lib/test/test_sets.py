@@ -219,6 +219,10 @@ class TestUpdateOps(unittest.TestCase):
         self.set |= Set([8])
         assert self.set == Set([2, 4, 6, 8]), "Non-overlapping union"
 
+    def test_union_method_call(self):
+        self.set.union_update(Set([3, 4, 5]))
+        assert self.set == Set([2, 3, 4, 5, 6]), "Union method call"
+
     def test_intersection_subset(self):
         self.set &= Set((2, 4))
         assert self.set == Set((2, 4)), "Subset intersection"
@@ -235,6 +239,10 @@ class TestUpdateOps(unittest.TestCase):
         self.set &= Set([8])
         assert self.set == empty_set, "Non-overlapping intersection"
 
+    def test_intersection_method_call(self):
+        self.set.intersection_update(Set([3, 4, 5]))
+        assert self.set == Set([4]), "Intersection method call"
+
     def test_sym_difference_subset(self):
         self.set ^= Set((2, 4))
         assert self.set == Set([6]), "Subset symmetric difference"
@@ -250,6 +258,30 @@ class TestUpdateOps(unittest.TestCase):
     def test_sym_difference_non_overlap(self):
         self.set ^= Set([8])
         assert self.set == Set([2, 4, 6, 8]), "Non-overlapping symmetric difference"
+
+    def test_sym_difference_method_call(self):
+        self.set.symmetric_difference_update(Set([3, 4, 5]))
+        assert self.set == Set([2, 3, 5, 6]), "Symmetric difference method call"
+
+    def test_difference_subset(self):
+        self.set -= Set((2, 4))
+        assert self.set == Set([6]), "Subset difference"
+
+    def test_difference_superset(self):
+        self.set -= Set((2, 4, 6, 8))
+        assert self.set == Set([]), "Superset difference"
+
+    def test_difference_overlap(self):
+        self.set -= Set((3, 4, 5))
+        assert self.set == Set([2, 6]), "Overlapping difference"
+
+    def test_difference_non_overlap(self):
+        self.set -= Set([8])
+        assert self.set == Set([2, 4, 6]), "Non-overlapping difference"
+
+    def test_difference_method_call(self):
+        self.set.difference_update(Set([3, 4, 5]))
+        assert self.set == Set([2, 6]), "Difference method call"
 
 #==============================================================================
 

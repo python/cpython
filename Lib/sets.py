@@ -363,15 +363,17 @@ class Set(BaseSet):
 
     # In-place union, intersection, differences
 
-    def union_update(self, other):
+    def __ior__(self, other):
         """Update a set with the union of itself and another."""
         self._binary_sanity_check(other)
         self._data.update(other._data)
         return self
 
-    __ior__ = union_update
+    def union_update(self, other):
+        """Update a set with the union of itself and another."""
+        self |= other
 
-    def intersection_update(self, other):
+    def __iand__(self, other):
         """Update a set with the intersection of itself and another."""
         self._binary_sanity_check(other)
         for elt in self._data.keys():
@@ -379,9 +381,11 @@ class Set(BaseSet):
                 del self._data[elt]
         return self
 
-    __iand__ = intersection_update
+    def intersection_update(self, other):
+        """Update a set with the intersection of itself and another."""
+        self &= other
 
-    def symmetric_difference_update(self, other):
+    def __ixor__(self, other):
         """Update a set with the symmetric difference of itself and another."""
         self._binary_sanity_check(other)
         data = self._data
@@ -393,9 +397,11 @@ class Set(BaseSet):
                 data[elt] = value
         return self
 
-    __ixor__ = symmetric_difference_update
+    def symmetric_difference_update(self, other):
+        """Update a set with the symmetric difference of itself and another."""
+        self ^= other
 
-    def difference_update(self, other):
+    def __isub__(self, other):
         """Remove all elements of another set from this set."""
         self._binary_sanity_check(other)
         data = self._data
@@ -404,7 +410,9 @@ class Set(BaseSet):
                 del data[elt]
         return self
 
-    __isub__ = difference_update
+    def difference_update(self, other):
+        """Remove all elements of another set from this set."""
+        self -= other
 
     # Python dict-like mass mutations: update, clear
 
