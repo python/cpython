@@ -234,8 +234,8 @@ specification, and are replaced by the indicated characters in the
   \lineiii{\%j}{Day of the year as a decimal number [001,366].}{}
   \lineiii{\%m}{Month as a decimal number [01,12].}{}
   \lineiii{\%M}{Minute as a decimal number [00,59].}{}
-  \lineiii{\%p}{Locale's equivalent of either AM or PM.}{}
-  \lineiii{\%S}{Second as a decimal number [00,61].}{(1)}
+  \lineiii{\%p}{Locale's equivalent of either AM or PM.}{(1)}
+  \lineiii{\%S}{Second as a decimal number [00,61].}{(2)}
   \lineiii{\%U}{Week number of the year (Sunday as the first day of the
                 week) as a decimal number [00,53].  All days in a new year
                 preceding the first Sunday are considered to be in week 0.}{}
@@ -256,6 +256,10 @@ Notes:
 
 \begin{description}
   \item[(1)]
+    When used with the \function{strptime()} function, the \code{\%p}
+    directive only affects the output hour field if the \code{\%I} directive
+    is used to parse the hour.
+  \item[(2)]
     The range really is \code{0} to \code{61}; this accounts for leap
     seconds and the (very rare) double leap seconds.
 \end{description}
