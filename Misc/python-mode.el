@@ -165,6 +165,33 @@ equal <number>, `tab-width' is set to <number>, a message saying so is
 displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
+(defvar python-font-lock-keywords
+  (purecopy
+   (list
+    (cons
+     (concat
+      "\\<\\("
+      (mapconcat
+       'identity
+       '(
+	 "access"   "and"    "break"
+	 "continue" "del"    "elif"
+	 "else:"    "except" "except:" "exec"
+	 "finally:" "for"    "from"    "global"
+	 "if"       "import" "in"      "is"
+	 "lambda"   "not"    "or"      "pass"
+	 "print"    "raise"  "return"  "try:"
+	 "while"
+	 )
+       "\\|")
+      "\\)\\>")
+     1)
+    ;; functions
+    '("\\bdef\\s +\\(\\sw+\\)(" 1 font-lock-function-name-face)
+    ;; classes
+    '("\\bclass\\s +\\(\\sw+\\)[(:]" 1 font-lock-function-name-face)
+    )
+   "*Additional keywords to highlight `python-mode' buffers."))
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
