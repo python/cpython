@@ -1511,7 +1511,7 @@ Python source code distribution).
 
 
 \chapter{Building C and \Cpp{} Extensions on \UNIX{}
-         \label{building-extensions}}
+         \label{building-on-unix}}
 
 \sectionauthor{Fim Fulton}{jim@Digicool.com}
 
@@ -1678,6 +1678,55 @@ people who do not have a source distribution of Python.
 
 Do not distribute a make file.  People building your modules
 should use \file{Makefile.pre.in} to build their own make file.
+
+
+\chapter{Building C and \Cpp{} Extensions on Windows
+         \label{building-on-unix}}
+
+\sectionauthor{Neil Schemenauer}{neil_schemenauer@transcanada.com}
+
+
+This chapter briefly explains how to create a Windows extension module
+for Python using Microsoft Visual \Cpp{}.
+
+Grab the binary installer from \url{http://www.python.org/} and
+install Python.  The binary installer has all of the required header
+files except for \file{config.h}.
+
+Get the source distribution and extract it into a convenient location.
+Copy the \file{config.h} from the \file{PC/} directory into the
+\file{include/} directory created by the installer.
+
+Create a \file{Setup} file for your extension module, as described in
+Chapter \ref{building-on-unix}.
+
+Get David Ascher's \file{compile.py} script from
+\url{http://starship.skyport.net/~da/compile/}.  Run the script to
+create Microsoft Visual \Cpp{} project files.
+
+Open the DSW file in V\Cpp{} and select \strong{Build}.
+
+If your module creates a new type, you may have trouble with this line:
+
+\begin{verbatim}
+    PyObject_HEAD_INIT(&PyType_Type)
+\end{verbatim}
+
+Change it to:
+
+\begin{verbatim}
+    PyObject_HEAD_INIT(NULL)
+\end{verbatim}
+
+and add the following to the module initialization function:
+
+\begin{verbatim}
+    MyObject_Type.ob_type = &PyType_Type;
+\end{verbatim}
+
+Refer to section 3 of the Python FAQ
+(\url{http://www.python.org/doc/FAQ.html}) for details on why you must
+do this.
 
 
 \chapter{Embedding Python in Another Application
