@@ -1840,18 +1840,81 @@ com_power(struct compiling *c, node *n)
 }
 
 static void
+com_invert_constant(struct compiling *c, node *n)
+{
+	/* Compute the inverse of int and longs and use them directly,
+	   but be prepared to generate code for all other
+	   possibilities (invalid numbers, floats, complex).
+	*/
+	PyObject *num, *inv = NULL;
+	int i;
+
+	REQ(n, NUMBER);
+	num = parsenumber(c, STR(n));
+	if (num == NULL) 
+		i = 255;
+	else {
+		inv = PyNumber_Invert(num);
+		if (inv == NULL) {
+			PyErr_Clear();
+			i = com_addconst(c, num);
+		} else {
+			i = com_addconst(c, inv);
+			Py_DECREF(inv);
+		}
+		Py_DECREF(num);
+	}
+	com_addoparg(c, LOAD_CONST, i);
+	com_push(c, 1);
+	if (num != NULL && inv == NULL)
+		com_addbyte(c, UNARY_INVERT);
+}
+
+static void
 com_factor(struct compiling *c, node *n)
 {
+	int childtype = TYPE(CHILD(n, 0));
 	REQ(n, factor);
-	if (TYPE(CHILD(n, 0)) == PLUS) {
+	/* If the unary +, -, or ~ operator is applied to a constant,
+	   don't generate a UNARY_xxx opcode. Just store the
+	   approriate value as a constant.  If the value is negative,
+	   extend the string containing the constant and insert a
+	   negative in the 0th position. 
+	 */
+	if ((childtype == PLUS || childtype == MINUS || childtype == TILDE)
+	    && TYPE(CHILD(n, 1)) == factor
+	    && TYPE(CHILD(CHILD(n, 1), 0)) == power
+	    && TYPE(CHILD(CHILD(CHILD(n, 1), 0), 0)) == atom
+	    && TYPE(CHILD(CHILD(CHILD(CHILD(n, 1), 0), 0), 0)) == NUMBER) {
+		node *constant = CHILD(CHILD(CHILD(n, 1), 0), 0);
+		if (childtype == TILDE) {
+			com_invert_constant(c, CHILD(constant, 0));
+			return;
+		}
+		if (childtype == MINUS) {
+			node *numnode = CHILD(constant, 0);
+			char *s = malloc(strlen(STR(numnode)) + 2);
+			if (s == NULL) {
+				com_error(c, PyExc_MemoryError, "");
+				com_addbyte(c, 255);
+				return;
+			}
+			s[0] = '-';
+			strcpy(s + 1, STR(numnode));
+			free(STR(numnode));
+			STR(numnode) = s;
+		}
+		com_atom(c, constant);
+	}
+	else if (childtype == PLUS) {
 		com_factor(c, CHILD(n, 1));
 		com_addbyte(c, UNARY_POSITIVE);
 	}
-	else if (TYPE(CHILD(n, 0)) == MINUS) {
+	else if (childtype == MINUS) {
 		com_factor(c, CHILD(n, 1));
 		com_addbyte(c, UNARY_NEGATIVE);
 	}
-	else if (TYPE(CHILD(n, 0)) == TILDE) {
+	else if (childtype == TILDE) {
 		com_factor(c, CHILD(n, 1));
 		com_addbyte(c, UNARY_INVERT);
 	}
