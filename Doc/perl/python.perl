@@ -1895,7 +1895,7 @@ sub do_cmd_seemodule{
     if ($text =~ /\.$/) {
         $period = '';
     }
-    return ('<dl compact class="seemodule">'
+    return ('<dl compact="compact" class="seemodule">'
             . "\n    <dt>Module <b><tt class=\"module\">"
             . "<a href=\"module-$key.html\">$module</a></tt>:</b>"
             . "\n    <dd>$text$period\n  </dl>"
@@ -1918,7 +1918,7 @@ sub handle_rfclike_reference($$$){
     my $url = get_rfc_url($rfcnum, $format);
     my $icon = get_link_icon($url);
     my $attrtitle = strip_html_markup($title);
-    return '<dl compact class="seerfc">'
+    return '<dl compact="compact" class="seerfc">'
       . "\n    <dt><a href=\"$url\""
       . "\n        title=\"$attrtitle\""
       . "\n        >$what $rfcnum, <em>$title</em>$icon</a>"
@@ -1942,13 +1942,13 @@ sub do_cmd_seetitle{
     my $text = next_argument();
     if ($url) {
         my $icon = get_link_icon($url);
-        return '<dl compact class="seetitle">'
+        return '<dl compact="compact" class="seetitle">'
           . "\n    <dt><em class=\"citetitle\"><a href=\"$url\""
           . "\n        >$title$icon</a></em></dt>"
           . "\n    <dd>$text</dd>\n  </dl>"
           . $_;
     }
-    return '<dl compact class="seetitle">'
+    return '<dl compact="compact" class="seetitle">'
       . "\n    <dt><em class=\"citetitle\""
       . "\n        >$title</em></dt>"
       . "\n    <dd>$text</dd>\n  </dl>"
@@ -1961,7 +1961,7 @@ sub do_cmd_seelink{
     my $linktext = next_argument();
     my $text = next_argument();
     my $icon = get_link_icon($url);
-    return '<dl compact class="seeurl">'
+    return '<dl compact="compact" class="seeurl">'
       . "\n    <dt><a href='$url'"
       . "\n        >$linktext$icon</a></dt>"
       . "\n    <dd>$text</dd>\n  </dl>"
@@ -1973,7 +1973,7 @@ sub do_cmd_seeurl{
     my $url = next_argument();
     my $text = next_argument();
     my $icon = get_link_icon($url);
-    return '<dl compact class="seeurl">'
+    return '<dl compact="compact" class="seeurl">'
       . "\n    <dt><a href=\"$url\""
       . "\n        class=\"url\">$url$icon</a></dt>"
       . "\n    <dd>$text</dd>\n  </dl>"
