@@ -615,6 +615,8 @@ newtcpsobject(bufsize)
 		return NULL;
 	}
 	INCREF(None);
+	self->localhost = 0;
+	self->localport = 0;
 	self->asr = None;
 	self->async_busy = 0;
 	self->async_err = 0;
