@@ -3434,7 +3434,7 @@ def do_this_first():
     # (before PyType_Ready(tuple) is called)
     type.mro(tuple)
 
-def mutable_bases():
+def test_mutable_bases():
     # stuff that should work:
     class C(object):
         pass
@@ -3523,6 +3523,80 @@ def mutable_bases():
     else:
         raise TestFailed, "new-style class must have a new-style base"
 
+def test_mutable_bases_with_failing_mro():
+    class WorkOnce(type):
+        def __new__(self, name, bases, ns):
+            self.flag = 0
+            return super(WorkOnce, self).__new__(WorkOnce, name, bases, ns)
+        def mro(self):
+            if self.flag > 0:
+                raise RuntimeError, "bozo"
+            else:
+                self.flag += 1
+                return type.mro(self)
+
+    class WorkAlways(type):
+        def mro(self):
+            # this is here to make sure that .mro()s aren't called
+            # with an exception set (which was possible at one point).
+            # An error message will be printed in a debug build.
+            # What's a good way to test for this?
+            return type.mro(self)
+
+    class C(object):
+        pass
+
+    class C2(object):
+        pass
+
+    class D(C):
+        pass
+
+    class E(D):
+        pass
+
+    class F(D):
+        __metaclass__ = WorkOnce
+
+    class G(D):
+        __metaclass__ = WorkAlways
+
+    # Immediate subclasses have their mro's adjusted in alphabetical
+    # order, so E's will get adjusted before adjusting F's fails.  We
+    # check here that E's gets restored.
+    
+    E_mro_before = E.__mro__
+
+    try:
+        D.__bases__ = (C2,)
+    except RuntimeError:
+        vereq(E.__mro__, E_mro_before)
+    else:
+        raise TestFailed, "exception not propagated"
+
+def test_mutable_bases_catch_mro_conflict():
+    class A(object):
+        pass
+
+    class B(object):
+        pass
+
+    class C(A, B):
+        pass
+
+    class D(A, B):
+        pass
+
+    class E(C, D):
+        pass
+
+    try:
+        C.__bases__ = (B, A)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "didn't catch MRO conflict"
+    
 def mutable_names():
     class C(object):
         pass
@@ -3608,8 +3682,11 @@ def test_main():
     slotmultipleinheritance()
     testrmul()
     testipow()
-    mutable_bases()
+    test_mutable_bases()
+    test_mutable_bases_with_failing_mro()
+    test_mutable_bases_catch_mro_conflict()
     mutable_names()
+
     if verbose: print "All OK"
 
 if __name__ == "__main__":
