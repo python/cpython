@@ -676,6 +676,7 @@ def convert(ifp, ofp):
         "lineii": ("row", {}),
         "lineiii": ("row", {}),
         "lineiv": ("row", {}),
+        "refmodule": ("module", {"link": "link"}),
         })
     fixup_table_structures(doc)
     fixup_rfc_references(doc)
