@@ -506,7 +506,15 @@ distribution, to create or maintain whole documents or sections.
     \end{macrodesc}
 
     \begin{macrodesc}{programopt}{\p{option}}
-      A command-line option to an executable program.
+      A command-line option to an executable program.  Use this only
+      for ``shot'' options, and include the leading hyphen.
+    \end{macrodesc}
+
+    \begin{macrodesc}{longprogramopt}{\p{option}}
+      A long command-line option to an executable program.  This
+      should only be used for long option names which will be prefixed
+      by two hyphens; the hyphens should not be provided as part of
+      \var{option}.
     \end{macrodesc}
 
     \begin{macrodesc}{refmodule}{\op{key}\p{name}}
@@ -987,7 +995,7 @@ distribution, to create or maintain whole documents or sections.
 	symbolic link to it or run it in place; the actual script file 
 	must be stored as part of the documentation source tree,
 	though it may be used to format documents outside the
-	tree.  Use \program{mkhowto} \programopt{-}\programopt{-help}
+	tree.  Use \program{mkhowto} \longprogramopt{help}
         for a list of
         command line options.
 
