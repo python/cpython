@@ -541,18 +541,18 @@ getline(f, n)
 	for (;;) {
 		if ((c = getc(fp)) == EOF) {
 			clearerr(fp);
+			Py_BLOCK_THREADS
 			if (PyErr_CheckSignals()) {
-				Py_BLOCK_THREADS
 				Py_DECREF(v);
 				return NULL;
 			}
 			if (n < 0 && buf == BUF(v)) {
-				Py_BLOCK_THREADS
 				Py_DECREF(v);
 				PyErr_SetString(PyExc_EOFError,
 					   "EOF when reading a line");
 				return NULL;
 			}
+			Py_UNBLOCK_THREADS
 			break;
 		}
 		if ((*buf++ = c) == '\n') {
