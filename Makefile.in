@@ -131,7 +131,7 @@ CFLAGS=		$(OPT) -I. $(DEFS)
 
 LIBRARY=	libpython$(VERSION).a
 LDLIBRARY=      @LDLIBRARY@
-@SET_DLLLIBRARY@
+DLLLIBRARY=	@DLLLIBRARY@
 
 # Default target
 all:		$(LIBRARY) python$(EXE) sharedmods
