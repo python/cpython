@@ -177,6 +177,7 @@ extern void init_locale();
 extern void init_sre();
 extern void initxreadlines();
 extern void initzipimport();
+extern void inititertools();
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -301,6 +302,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_sre", init_sre},
 	{"xreadlines", initxreadlines},
 	{"zipimport", initzipimport},
+	{"itertools", inititertools},
 /* -- ADDMODULE MARKER 2 -- */
 
 	/* This module "lives in" with marshal.c */
