@@ -22,8 +22,8 @@ class SAXException(Exception):
         self._exception = exception
 
     def getMessage(self):
-	"Return a message for this exception."
-	return self._msg
+        "Return a message for this exception."
+        return self._msg
 
     def getException(self):
         "Return the embedded exception, or None if there was none."
@@ -60,21 +60,21 @@ class SAXParseException(SAXException):
         self._locator = locator
         
     def getColumnNumber(self):
-	"""The column number of the end of the text where the exception
+        """The column number of the end of the text where the exception
 	occurred."""
-	return self._locator.getColumnNumber()
+        return self._locator.getColumnNumber()
 
     def getLineNumber(self):
-	"The line number of the end of the text where the exception occurred."
-	return self._locator.getLineNumber()
+        "The line number of the end of the text where the exception occurred."
+        return self._locator.getLineNumber()
 
     def getPublicId(self):
-	"Get the public identifier of the entity where the exception occurred."
-	return self._locator.getPublicId()
+        "Get the public identifier of the entity where the exception occurred."
+        return self._locator.getPublicId()
 
     def getSystemId(self):
-	"Get the system identifier of the entity where the exception occurred."
-	return self._locator.getSystemId()
+        "Get the system identifier of the entity where the exception occurred."
+        return self._locator.getSystemId()
 
     def __str__(self):
         "Create a string representation of the exception."
