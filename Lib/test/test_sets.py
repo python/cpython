@@ -12,63 +12,63 @@ class TestBasicOps(unittest.TestCase):
 
     def test_repr(self):
         if self.repr is not None:
-            assert `self.set` == self.repr, "Wrong representation for " + self.case
+            self.assertEqual(`self.set`, self.repr)
 
     def test_length(self):
-        assert len(self.set) == self.length, "Wrong length for " + self.case
+        self.assertEqual(len(self.set), self.length)
 
     def test_self_equality(self):
-        assert self.set == self.set, "Self-equality failed for " + self.case
+        self.assertEqual(self.set, self.set)
 
     def test_equivalent_equality(self):
-        assert self.set == self.dup, "Equivalent equality failed for " + self.case
+        self.assertEqual(self.set, self.dup)
 
     def test_copy(self):
-        assert self.set.copy() == self.dup, "Copy and comparison failed for " + self.case
+        self.assertEqual(self.set.copy(), self.dup)
 
     def test_self_union(self):
         result = self.set | self.set
-        assert result == self.dup, "Self-union failed for " + self.case
+        self.assertEqual(result, self.dup)
 
     def test_empty_union(self):
         result = self.set | empty_set
-        assert result == self.dup, "Union with empty failed for " + self.case
+        self.assertEqual(result, self.dup)
 
     def test_union_empty(self):
         result = empty_set | self.set
-        assert result == self.dup, "Union with empty failed for " + self.case
+        self.assertEqual(result, self.dup)
 
     def test_self_intersection(self):
         result = self.set & self.set
-        assert result == self.dup, "Self-intersection failed for " + self.case
+        self.assertEqual(result, self.dup)
 
     def test_empty_intersection(self):
         result = self.set & empty_set
-        assert result == empty_set, "Intersection with empty failed for " + self.case
+        self.assertEqual(result, empty_set)
 
     def test_intersection_empty(self):
         result = empty_set & self.set
-        assert result == empty_set, "Intersection with empty failed for " + self.case
+        self.assertEqual(result, empty_set)
 
     def test_self_symmetric_difference(self):
         result = self.set ^ self.set
-        assert result == empty_set, "Self-symdiff failed for " + self.case
+        self.assertEqual(result, empty_set)
 
     def checkempty_symmetric_difference(self):
         result = self.set ^ empty_set
-        assert result == self.set, "Symdiff with empty failed for " + self.case
+        self.assertEqual(result, self.set)
 
     def test_self_difference(self):
         result = self.set - self.set
-        assert result == empty_set, "Self-difference failed for " + self.case
+        self.assertEqual(result, empty_set)
 
     def test_empty_difference(self):
         result = self.set - empty_set
-        assert result == self.dup, "Difference with empty failed for " + self.case
+        self.assertEqual(result, self.dup)
 
     def test_empty_difference_rev(self):
         result = empty_set - self.set
-        assert result == empty_set, "Difference from empty failed for " + self.case
+        self.assertEqual(result, empty_set)
 
     def test_iteration(self):
         for v in self.set:
@@ -151,51 +151,51 @@ class TestBinaryOps(unittest.TestCase):
 
     def test_union_subset(self):
         result = self.set | Set([2])
-        assert result == Set((2, 4, 6)), "Subset union"
+        self.assertEqual(result, Set((2, 4, 6)))
 
     def test_union_superset(self):
         result = self.set | Set([2, 4, 6, 8])
-        assert result == Set([2, 4, 6, 8]), "Superset union"
+        self.assertEqual(result, Set([2, 4, 6, 8]))
 
     def test_union_overlap(self):
         result = self.set | Set([3, 4, 5])
-        assert result == Set([2, 3, 4, 5, 6]), "Overlapping union"
+        self.assertEqual(result, Set([2, 3, 4, 5, 6]))
 
     def test_union_non_overlap(self):
         result = self.set | Set([8])
-        assert result == Set([2, 4, 6, 8]), "Non-overlapping union"
+        self.assertEqual(result, Set([2, 4, 6, 8]))
 
     def test_intersection_subset(self):
         result = self.set & Set((2, 4))
-        assert result == Set((2, 4)), "Subset intersection"
+        self.assertEqual(result, Set((2, 4)))
 
     def test_intersection_superset(self):
         result = self.set & Set([2, 4, 6, 8])
-        assert result == Set([2, 4, 6]), "Superset intersection"
+        self.assertEqual(result, Set([2, 4, 6]))
 
     def test_intersection_overlap(self):
         result = self.set & Set([3, 4, 5])
-        assert result == Set([4]), "Overlapping intersection"
+        self.assertEqual(result, Set([4]))
 
     def test_intersection_non_overlap(self):
         result = self.set & Set([8])
-        assert result == empty_set, "Non-overlapping intersection"
+        self.assertEqual(result, empty_set)
 
     def test_sym_difference_subset(self):
         result = self.set ^ Set((2, 4))
-        assert result == Set([6]), "Subset symmetric difference"
+        self.assertEqual(result, Set([6]))
 
     def test_sym_difference_superset(self):
         result = self.set ^ Set((2, 4, 6, 8))
-        assert result == Set([8]), "Superset symmetric difference"
+        self.assertEqual(result, Set([8]))
 
     def test_sym_difference_overlap(self):
         result = self.set ^ Set((3, 4, 5))
-        assert result == Set([2, 3, 5, 6]), "Overlapping symmetric difference"
+        self.assertEqual(result, Set([2, 3, 5, 6]))
 
     def test_sym_difference_non_overlap(self):
         result = self.set ^ Set([8])
-        assert result == Set([2, 4, 6, 8]), "Non-overlapping symmetric difference"
+        self.assertEqual(result, Set([2, 4, 6, 8]))
 
 #==============================================================================
 
@@ -205,83 +205,83 @@ class TestUpdateOps(unittest.TestCase):
 
     def test_union_subset(self):
         self.set |= Set([2])
-        assert self.set == Set((2, 4, 6)), "Subset union"
+        self.assertEqual(self.set, Set((2, 4, 6)))
 
     def test_union_superset(self):
         self.set |= Set([2, 4, 6, 8])
-        assert self.set == Set([2, 4, 6, 8]), "Superset union"
+        self.assertEqual(self.set, Set([2, 4, 6, 8]))
 
     def test_union_overlap(self):
         self.set |= Set([3, 4, 5])
-        assert self.set == Set([2, 3, 4, 5, 6]), "Overlapping union"
+        self.assertEqual(self.set, Set([2, 3, 4, 5, 6]))
 
     def test_union_non_overlap(self):
         self.set |= Set([8])
-        assert self.set == Set([2, 4, 6, 8]), "Non-overlapping union"
+        self.assertEqual(self.set, Set([2, 4, 6, 8]))
 
     def test_union_method_call(self):
         self.set.union_update(Set([3, 4, 5]))
-        assert self.set == Set([2, 3, 4, 5, 6]), "Union method call"
+        self.assertEqual(self.set, Set([2, 3, 4, 5, 6]))
 
     def test_intersection_subset(self):
         self.set &= Set((2, 4))
-        assert self.set == Set((2, 4)), "Subset intersection"
+        self.assertEqual(self.set, Set((2, 4)))
 
     def test_intersection_superset(self):
         self.set &= Set([2, 4, 6, 8])
-        assert self.set == Set([2, 4, 6]), "Superset intersection"
+        self.assertEqual(self.set, Set([2, 4, 6]))
 
     def test_intersection_overlap(self):
         self.set &= Set([3, 4, 5])
-        assert self.set == Set([4]), "Overlapping intersection"
+        self.assertEqual(self.set, Set([4]))
 
     def test_intersection_non_overlap(self):
         self.set &= Set([8])
-        assert self.set == empty_set, "Non-overlapping intersection"
+        self.assertEqual(self.set, empty_set)
 
     def test_intersection_method_call(self):
         self.set.intersection_update(Set([3, 4, 5]))
-        assert self.set == Set([4]), "Intersection method call"
+        self.assertEqual(self.set, Set([4]))
 
     def test_sym_difference_subset(self):
         self.set ^= Set((2, 4))
-        assert self.set == Set([6]), "Subset symmetric difference"
+        self.assertEqual(self.set, Set([6]))
 
     def test_sym_difference_superset(self):
         self.set ^= Set((2, 4, 6, 8))
-        assert self.set == Set([8]), "Superset symmetric difference"
+        self.assertEqual(self.set, Set([8]))
 
     def test_sym_difference_overlap(self):
         self.set ^= Set((3, 4, 5))
-        assert self.set == Set([2, 3, 5, 6]), "Overlapping symmetric difference"
+        self.assertEqual(self.set, Set([2, 3, 5, 6]))
 
     def test_sym_difference_non_overlap(self):
         self.set ^= Set([8])
-        assert self.set == Set([2, 4, 6, 8]), "Non-overlapping symmetric difference"
+        self.assertEqual(self.set, Set([2, 4, 6, 8]))
 
     def test_sym_difference_method_call(self):
         self.set.symmetric_difference_update(Set([3, 4, 5]))
-        assert self.set == Set([2, 3, 5, 6]), "Symmetric difference method call"
+        self.assertEqual(self.set, Set([2, 3, 5, 6]))
 
     def test_difference_subset(self):
         self.set -= Set((2, 4))
-        assert self.set == Set([6]), "Subset difference"
+        self.assertEqual(self.set, Set([6]))
 
     def test_difference_superset(self):
         self.set -= Set((2, 4, 6, 8))
-        assert self.set == Set([]), "Superset difference"
+        self.assertEqual(self.set, Set([]))
 
     def test_difference_overlap(self):
         self.set -= Set((3, 4, 5))
-        assert self.set == Set([2, 6]), "Overlapping difference"
+        self.assertEqual(self.set, Set([2, 6]))
 
     def test_difference_non_overlap(self):
         self.set -= Set([8])
-        assert self.set == Set([2, 4, 6]), "Non-overlapping difference"
+        self.assertEqual(self.set, Set([2, 4, 6]))
 
     def test_difference_method_call(self):
         self.set.difference_update(Set([3, 4, 5]))
-        assert self.set == Set([2, 6]), "Difference method call"
+        self.assertEqual(self.set, Set([2, 6]))
 
 #==============================================================================
 
@@ -292,11 +292,11 @@ class TestMutate(unittest.TestCase):
 
     def test_add_present(self):
         self.set.add("c")
-        assert self.set == Set(("a", "b", "c")), "Adding present element"
+        self.assertEqual(self.set, Set(("a", "b", "c")))
 
     def test_add_absent(self):
         self.set.add("d")
-        assert self.set == Set(("a", "b", "c", "d")), "Adding missing element"
+        self.assertEqual(self.set, Set(("a", "b", "c", "d")))
 
     def test_add_until_full(self):
         tmp = Set()
@@ -304,12 +304,12 @@ class TestMutate(unittest.TestCase):
         for v in self.values:
             tmp.add(v)
             expected_len += 1
-            assert len(tmp) == expected_len, "Adding values one by one to temporary"
-        assert tmp == self.set, "Adding values one by one"
+            self.assertEqual(len(tmp), expected_len)
+        self.assertEqual(tmp, self.set)
 
     def test_remove_present(self):
         self.set.remove("b")
-        assert self.set == Set(("a", "c")), "Removing present element"
+        self.assertEqual(self.set, Set(("a", "c")))
 
     def test_remove_absent(self):
         try:
@@ -327,35 +327,35 @@ class TestMutate(unittest.TestCase):
 
     def test_discard_present(self):
         self.set.discard("c")
-        assert self.set == Set(("a", "b")), "Discarding present element"
+        self.assertEqual(self.set, Set(("a", "b")))
 
     def test_discard_absent(self):
         self.set.discard("d")
-        assert self.set == Set(("a", "b", "c")), "Discarding missing element"
+        self.assertEqual(self.set, Set(("a", "b", "c")))
 
     def test_clear(self):
         self.set.clear()
-        assert len(self.set) == 0, "Clearing set"
+        self.assertEqual(len(self.set), 0)
 
     def test_pop(self):
         popped = {}
         while self.set:
             popped[self.set.pop()] = None
-        assert len(popped) == len(self.values), "Popping items"
+        self.assertEqual(len(popped), len(self.values))
         for v in self.values:
             assert v in popped, "Popping items"
 
     def test_update_empty_tuple(self):
         self.set.update(())
-        assert self.set == Set(self.values), "Updating with empty tuple"
+        self.assertEqual(self.set, Set(self.values))
 
     def test_update_unit_tuple_overlap(self):
         self.set.update(("a",))
-        assert self.set == Set(self.values), "Updating with overlapping unit tuple"
+        self.assertEqual(self.set, Set(self.values))
 
     def test_update_unit_tuple_non_overlap(self):
         self.set.update(("a", "z"))
-        assert self.set == Set(self.values + ["z"]), "Updating with non-overlapping unit tuple"
+        self.assertEqual(self.set, Set(self.values + ["z"]))
 
 #==============================================================================
 
