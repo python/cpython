@@ -44,8 +44,11 @@ class TexinfoParser:
 	# Initialize an instance
 	def __init__(self):
 		self.unknown = {}	# statistics about unknown @-commands
+		self.filenames = {}	# Check for identical filenames
 		self.debugging = 0	# larger values produce more output
 		self.nodefp = None	# open file we're writing to
+		self.nodelineno = 0	# Linenumber relative to node
+		self.links = None	# Links from current node
 		self.savetext = None	# If not None, save text head instead
 		self.dirname = 'tmp'	# directory where files are created
 		self.includedir = '.'	# directory to search @include files
@@ -56,6 +59,8 @@ class TexinfoParser:
 		self.contents = []	# Reset table of contents
 		self.numbering = []	# Reset section numbering counters
 		self.nofill = 0		# Normal operation: fill paragraphs
+		self.goodset=['html']	# Names that should be parsed in ifset
+		self.stackinfo={}	# Keep track of state in the stack
 		# XXX The following should be reset per node?!
 		self.footnotes = []	# Reset list of footnotes
 		self.itemarg = None	# Reset command used by @item
@@ -90,6 +95,7 @@ class TexinfoParser:
 		accu = []
 		while not self.done:
 			line = fp.readline()
+			self.nodelineno = self.nodelineno + 1
 			if not line:
 				if accu:
 					if not self.skip: self.process(accu)
@@ -109,12 +115,14 @@ class TexinfoParser:
 							self.process(accu)
 						accu = []
 					self.command(line)
-			elif blprog.match(line) >= 0:
+			elif blprog.match(line) >= 0 and \
+			     'format' not in self.stack and \
+			     'example' not in self.stack:
 				if accu:
 					if not self.skip:
 						self.process(accu)
 						self.write('<P>\n')
-					accu = []
+						accu = []
 			else:
 				# Append the line including trailing \n!
 				accu.append(line)
@@ -153,6 +161,16 @@ class TexinfoParser:
 		if self.footnotes:
 			self.writefootnotes()
 		if self.nodefp:
+			if self.nodelineno > 20:
+				self.write ('<HR>\n')
+				[name, next, prev, up] = self.nodelinks[:4]
+				self.link('Next', next)
+				self.link('Prev', prev)
+				self.link('Up', up)
+				if self.nodename <> self.topname:
+					self.link('Top', self.topname)
+				self.write ('<HR>\n')
+			self.write('</BODY>\n')
 			self.nodefp.close()
 		self.nodefp = None
 		self.nodename = ''
@@ -339,14 +357,13 @@ class TexinfoParser:
 	def open_dots(self): self.write('...')
 	def close_dots(self): pass
 
-	def open_bullet(self): self.write('&bullet;')
+	def open_bullet(self): pass
 	def close_bullet(self): pass
 
 	def open_TeX(self): self.write('TeX')
 	def close_TeX(self): pass
 
-	def open_copyright(self): self.write('(C)')
-	def close_copyright(self): pass
+	def handle_copyright(self): self.write('(C)')
 
 	def open_minus(self): self.write('-')
 	def close_minus(self): pass
@@ -502,6 +519,9 @@ class TexinfoParser:
 	open_titlefont = open_
 	close_titlefont = close_
 
+	def open_small(self): pass
+	def close_small(self): pass
+	
 	def command(self, line):
 		a, b = cmprog.regs[1]
 		cmd = line[a:b]
@@ -573,6 +593,36 @@ class TexinfoParser:
 	def bgn_tex(self, args): self.skip = self.skip + 1
 	def end_tex(self): self.skip = self.skip - 1
 
+	def bgn_set(self, args):
+		if args not in self.goodset:
+			self.gooset.append(args)
+			
+	def bgn_clear(self, args):
+		if args in self.goodset:
+			self.gooset.remove(args)
+			
+	def bgn_ifset(self, args):
+		if args not in self.goodset:
+			self.skip = self.skip + 1
+			self.stackinfo[len(self.stack)] = 1
+		else:
+			self.stackinfo[len(self.stack)] = 0
+	def end_ifset(self):
+		print self.stack
+		print self.stackinfo
+		if self.stackinfo[len(self.stack) + 1]:
+			self.skip = self.skip - 1
+		del self.stackinfo[len(self.stack) + 1]
+
+	def bgn_ifclear(self, args):
+		if args in self.goodset:
+			self.skip = self.skip + 1
+			self.stackinfo[len(self.stack)] = 1
+		else:
+			self.stackinfo[len(self.stack)] = 0
+		
+	end_ifclear = end_ifset
+	
 	# --- Beginning a file ---
 
 	do_finalout = do_comment
@@ -582,6 +632,8 @@ class TexinfoParser:
 	def do_settitle(self, args):
 		self.title = args
 
+	def do_parskip(self, args): pass
+	
 	# --- Ending a file ---
 
 	def do_bye(self, args):
@@ -594,7 +646,9 @@ class TexinfoParser:
 
 	def do_center(self, args):
 		# Actually not used outside title page...
-		self.write('<H1>', args, '</H1>\n')
+		self.write('<H1>')
+		self.expand (args)
+		self.write ('</H1>\n')
 	do_title = do_center
 	do_subtitle = do_center
 	do_author = do_center
@@ -618,24 +672,36 @@ class TexinfoParser:
 	# --- Nodes ---
 
 	def do_node(self, args):
+		self.endnode()
+		self.nodelineno = 0
 		parts = string.splitfields(args, ',')
 		while len(parts) < 4: parts.append('')
 		for i in range(4): parts[i] = string.strip(parts[i])
+		self.nodelinks = parts
 		[name, next, prev, up] = parts[:4]
-		self.endnode()
 		file = self.dirname + '/' + makefile(name)
-		if self.debugging: print '--- writing', file
+		if self.filenames.has_key(file):
+			print '*** Filename already in use: ', file
+		else:
+			if self.debugging: print '--- writing', file
+		self.filenames[file] = 1
 		self.nodefp = open(file, 'w')
 		self.nodename = name
 		if not self.topname: self.topname = name
 		title = name
 		if self.title: title = title + ' -- ' + self.title
+		# No idea what this means, but this is what latex2html writes
+		self.write('<!DOCTYPE HTML PUBLIC "-//W3O//DTD W3 HTML 2.0//EN">\n')
+		self.write('<!- Converted with texi2html and Python>\n')
+		self.write ('<P>\n<HEAD>\n')
 		self.write('<TITLE>', title, '</TITLE>\n')
+		self.write ('</HEAD>\n<BODY>\n<P>\n<BR> <HR>\n')
 		self.link('Next', next)
 		self.link('Prev', prev)
 		self.link('Up', up)
 		if self.nodename <> self.topname:
 			self.link('Top', self.topname)
+		self.write ('<BR> <HR> <P>\n')
 
 	def link(self, label, nodename):
 		if nodename:
@@ -749,6 +815,9 @@ class TexinfoParser:
 			n = 1
 		self.write('<P>\n'*max(n, 0))
 
+	def do_hline(self, args):
+		self.write ('<HR>')
+	
 	# --- Function and variable definitions ---
 
 	def bgn_deffn(self, args):
@@ -763,6 +832,16 @@ class TexinfoParser:
 
 	def end_deffn(self):
 		self.write('</DL>\n')
+
+	def do_deffnx(self, args):
+		self.write('<DT>')
+		words = splitwords(args, 2)
+		[category, name], rest = words[:2], words[2:]
+		self.expand('@b{' + name + '}')
+		for word in rest: self.expand(' ' + makevar(word))
+		self.expand(' -- ' + category)
+		self.write('<DD>\n')
+		self.index('fn', name)
 
 	def bgn_defun(self, args): self.bgn_deffn('Function ' + args)
 	end_defun = end_deffn
@@ -878,12 +957,17 @@ class TexinfoParser:
 	# --- Making Lists and Tables
 
 	def bgn_enumerate(self, args):
-		if not args: args = '1'
-		self.itemnumber = args
-		self.write('<UL>\n')
+		if not args:
+			self.write('<OL>\n')
+			self.stackinfo[len(self.stack)] = '</OL>\n'
+		else:
+			self.itemnumber = args
+			self.write('<UL>\n')
+			self.stackinfo[len(self.stack)] = '</UL>\n'
 	def end_enumerate(self):
 		self.itemnumber = None
-		self.write('</UL>\n')
+		self.write(self.stackinfo[len(self.stack) + 1])
+		del self.stackinfo[len(self.stack) + 1]
 
 	def bgn_itemize(self, args):
 		self.itemarg = args
@@ -936,9 +1020,9 @@ class TexinfoParser:
 
 	def bgn_example(self, args):
 		self.nofill = self.nofill + 1
-		self.write('<UL COMPACT><CODE>')
+		self.write('<PRE><CODE>')
 	def end_example(self):
-		self.write('</CODE></UL>\n')
+		self.write('</CODE></PRE>')
 		self.nofill = self.nofill - 1
 
 	bgn_lisp = bgn_example # Synonym when contents are executable lisp code
@@ -952,16 +1036,16 @@ class TexinfoParser:
 
 	def bgn_display(self, args):
 		self.nofill = self.nofill + 1
-		self.write('<UL COMPACT>\n')
+		self.write('<PRE>\n')
 	def end_display(self):
-		self.write('</UL>\n')
+		self.write('</PRE>\n')
 		self.nofill = self.nofill - 1
 
 	def bgn_format(self, args):
 		self.nofill = self.nofill + 1
-		self.write('<UL COMPACT>\n')
+		self.write('<PRE><CODE>\n')
 	def end_format(self):
-		self.write('</UL>\n')
+		self.write('</CODE></PRE>\n')
 		self.nofill = self.nofill - 1
 
 	def do_exdent(self, args): self.expand(args + '\n')
@@ -969,9 +1053,9 @@ class TexinfoParser:
 
 	def bgn_flushleft(self, args):
 		self.nofill = self.nofill + 1
-		self.write('<UL COMPACT>\n')
+		self.write('<PRE>\n')
 	def end_flushleft(self):
-		self.write('</UL>\n')
+		self.write('</PRE>\n')
 		self.nofill = self.nofill - 1
 
 	def bgn_flushright(self, args):
@@ -1088,8 +1172,7 @@ class TexinfoParser:
 
 # Put @var{} around alphabetic substrings
 def makevar(str):
-	# XXX This breaks if str contains @word{...}
-	return regsub.gsub('\([a-zA-Z_][a-zA-Z0-9_]*\)', '@var{\\1}', str)
+	return '@var{'+str+'}'
 
 
 # Split a string in "words" according to findwordend
@@ -1124,7 +1207,7 @@ def findwordend(str, i, n):
 
 # Convert a node name into a file name
 def makefile(nodename):
-	return string.lower(fixfunnychars(nodename)) + '.html'
+	return fixfunnychars(nodename) + '.html'
 
 
 # Characters that are perfectly safe in filenames and hyperlinks
