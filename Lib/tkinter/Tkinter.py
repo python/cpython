@@ -52,6 +52,24 @@ GROOVE='groove'
 HORIZONTAL='horizontal'
 VERTICAL='vertical'
 
+# -tabs
+NUMERIC='numeric'
+
+# -wrap
+CHAR='char'
+WORD='word'
+
+# -align
+BASELINE='baseline'
+
+# Special tags, marks and insert positions
+SEL='sel'
+SEL_FIRST='sel.first'
+SEL_LAST='sel.last'
+END='end'
+INSERT='insert'
+CURRENT='current'
+
 def _flatten(tuple):
 	res = ()
 	for item in tuple:
