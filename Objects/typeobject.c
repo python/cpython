@@ -1169,8 +1169,14 @@ PyType_Ready(PyTypeObject *type)
 	PyTypeObject *base;
 	int i, n;
 
-	if (type->tp_dict != NULL)
-		return 0; /* Already initialized */
+	if (type->tp_flags & Py_TPFLAGS_READY) {
+		assert(type->tp_dict != NULL);
+		return 0;
+	}
+	assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
+	assert(type->tp_dict == NULL);
+
+	type->tp_flags |= Py_TPFLAGS_READYING;
 
 	/* Initialize tp_base (defaults to BaseObject unless that's us) */
 	base = type->tp_base;
@@ -1185,14 +1191,14 @@ PyType_Ready(PyTypeObject *type)
 		else
 			bases = Py_BuildValue("(O)", base);
 		if (bases == NULL)
-			return -1;
+			goto error;
 		type->tp_bases = bases;
 	}
 
 	/* Initialize the base class */
 	if (base && base->tp_dict == NULL) {
 		if (PyType_Ready(base) < 0)
-			return -1;
+			goto error;
 	}
 
 	/* Initialize tp_defined */
@@ -1200,24 +1206,24 @@ PyType_Ready(PyTypeObject *type)
 	if (dict == NULL) {
 		dict = PyDict_New();
 		if (dict == NULL)
-			return -1;
+			goto error;
 		type->tp_defined = dict;
 	}
 
 	/* Add type-specific descriptors to tp_defined */
 	if (add_operators(type) < 0)
-		return -1;
+		goto error;
 	if (type->tp_methods != NULL) {
 		if (add_methods(type, type->tp_methods) < 0)
-			return -1;
+			goto error;
 	}
 	if (type->tp_members != NULL) {
 		if (add_members(type, type->tp_members) < 0)
-			return -1;
+			goto error;
 	}
 	if (type->tp_getset != NULL) {
 		if (add_getset(type, type->tp_getset) < 0)
-			return -1;
+			goto error;
 	}
 
 	/* Temporarily make tp_dict the same object as tp_defined.
@@ -1228,7 +1234,7 @@ PyType_Ready(PyTypeObject *type)
 
 	/* Calculate method resolution order */
 	if (mro_internal(type) < 0) {
-		return -1;
+		goto error;
 	}
 
 	/* Initialize tp_dict properly */
@@ -1240,7 +1246,7 @@ PyType_Ready(PyTypeObject *type)
 		Py_DECREF(type->tp_dict);
 		type->tp_dict = PyDict_New();
 		if (type->tp_dict == NULL)
-			return -1;
+			goto error;
 		bases = type->tp_mro;
 		assert(bases != NULL);
 		assert(PyTuple_Check(bases));
@@ -1250,16 +1256,23 @@ PyType_Ready(PyTypeObject *type)
 			assert(PyType_Check(base));
 			x = base->tp_defined;
 			if (x != NULL && PyDict_Update(type->tp_dict, x) < 0)
-				return -1;
+				goto error;
 		}
 	}
 
 	/* Inherit slots from direct base */
 	if (type->tp_base != NULL)
 		if (inherit_slots(type, type->tp_base) < 0)
-			return -1;
+			goto error;
 
+	assert(type->tp_dict != NULL);
+	type->tp_flags =
+		(type->tp_flags & ~Py_TPFLAGS_READYING) | Py_TPFLAGS_READY;
 	return 0;
+
+  error:
+	type->tp_flags &= ~Py_TPFLAGS_READYING;
+	return -1;
 }
 
 
