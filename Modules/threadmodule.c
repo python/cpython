@@ -141,12 +141,18 @@ static char locked_doc[] =
 Return whether the lock is in the locked state.";
 
 static PyMethodDef lock_methods[] = {
-	{"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock, 0, acquire_doc},
-	{"acquire",      (PyCFunction)lock_PyThread_acquire_lock, 0, acquire_doc},
-	{"release_lock", (PyCFunction)lock_PyThread_release_lock, 0, release_doc},
-	{"release",      (PyCFunction)lock_PyThread_release_lock, 0, release_doc},
-	{"locked_lock",  (PyCFunction)lock_locked_lock,  0, locked_doc},
-	{"locked",       (PyCFunction)lock_locked_lock,  0, locked_doc},
+	{"acquire_lock", (PyCFunction)lock_PyThread_acquire_lock, 
+	 METH_OLDARGS, acquire_doc},
+	{"acquire",      (PyCFunction)lock_PyThread_acquire_lock, 
+	 METH_OLDARGS, acquire_doc},
+	{"release_lock", (PyCFunction)lock_PyThread_release_lock, 
+	 METH_OLDARGS, release_doc},
+	{"release",      (PyCFunction)lock_PyThread_release_lock, 
+	 METH_OLDARGS, release_doc},
+	{"locked_lock",  (PyCFunction)lock_locked_lock,  
+	 METH_OLDARGS, locked_doc},
+	{"locked",       (PyCFunction)lock_locked_lock,  
+	 METH_OLDARGS, locked_doc},
 	{NULL,           NULL}		/* sentinel */
 };
 
@@ -343,16 +349,16 @@ static PyMethodDef thread_methods[] = {
 	{"start_new",		(PyCFunction)thread_PyThread_start_new_thread, 
 	                        METH_VARARGS,
 				start_new_doc},
-	{"allocate_lock",	(PyCFunction)thread_PyThread_allocate_lock, 0,
-				allocate_doc},
-	{"allocate",		(PyCFunction)thread_PyThread_allocate_lock, 0,
-				allocate_doc},
-	{"exit_thread",		(PyCFunction)thread_PyThread_exit_thread, 0,
-				exit_doc},
-	{"exit",		(PyCFunction)thread_PyThread_exit_thread, 0,
-				exit_doc},
-	{"get_ident",		(PyCFunction)thread_get_ident, 0,
-				get_ident_doc},
+	{"allocate_lock",	(PyCFunction)thread_PyThread_allocate_lock, 
+	 METH_OLDARGS, allocate_doc},
+	{"allocate",		(PyCFunction)thread_PyThread_allocate_lock, 
+	 METH_OLDARGS, allocate_doc},
+	{"exit_thread",		(PyCFunction)thread_PyThread_exit_thread, 
+	 METH_OLDARGS, exit_doc},
+	{"exit",		(PyCFunction)thread_PyThread_exit_thread, 
+	 METH_OLDARGS, exit_doc},
+	{"get_ident",		(PyCFunction)thread_get_ident, 
+	 METH_OLDARGS, get_ident_doc},
 #ifndef NO_EXIT_PROG
 	{"exit_prog",		(PyCFunction)thread_PyThread_exit_prog},
 #endif

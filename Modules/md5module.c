@@ -126,9 +126,12 @@ Return a copy (``clone'') of the md5 object.";
 
 
 static PyMethodDef md5_methods[] = {
-	{"update",		(PyCFunction)md5_update, 0, update_doc},
-	{"digest",		(PyCFunction)md5_digest, 0, digest_doc},
-	{"copy",		(PyCFunction)md5_copy, 0, copy_doc},
+	{"update",		(PyCFunction)md5_update, 
+	 METH_OLDARGS, update_doc},
+	{"digest",		(PyCFunction)md5_digest, 
+	 METH_OLDARGS, digest_doc},
+	{"copy",		(PyCFunction)md5_copy, 
+	 METH_OLDARGS, copy_doc},
 	{NULL,			NULL}		/* sentinel */
 };
 

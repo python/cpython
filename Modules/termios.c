@@ -278,12 +278,18 @@ termios_tcflow(PyObject *self, PyObject *args)
 
 static PyMethodDef termios_methods[] =
 {
-	{"tcgetattr", termios_tcgetattr, 0, termios_tcgetattr__doc__},
-	{"tcsetattr", termios_tcsetattr, 0, termios_tcsetattr__doc__},
-	{"tcsendbreak", termios_tcsendbreak, 0, termios_tcsendbreak__doc__},
-	{"tcdrain", termios_tcdrain, 0, termios_tcdrain__doc__},
-	{"tcflush", termios_tcflush, 0, termios_tcflush__doc__},
-	{"tcflow", termios_tcflow, 0, termios_tcflow__doc__},
+	{"tcgetattr", termios_tcgetattr, 
+	 METH_OLDARGS, termios_tcgetattr__doc__},
+	{"tcsetattr", termios_tcsetattr, 
+	 METH_OLDARGS, termios_tcsetattr__doc__},
+	{"tcsendbreak", termios_tcsendbreak, 
+	 METH_OLDARGS, termios_tcsendbreak__doc__},
+	{"tcdrain", termios_tcdrain, 
+	 METH_OLDARGS, termios_tcdrain__doc__},
+	{"tcflush", termios_tcflush, 
+	 METH_OLDARGS, termios_tcflush__doc__},
+	{"tcflow", termios_tcflow, 
+	 METH_OLDARGS, termios_tcflow__doc__},
 	{NULL, NULL}
 };
 
