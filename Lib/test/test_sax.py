@@ -181,7 +181,6 @@ class TestEntityResolver:
         return inpsrc
 
 def test_expat_entityresolver():
-    return 1 # disabling this until pyexpat.c has been fixed
     parser = create_parser()
     parser.setEntityResolver(TestEntityResolver())
     result = StringIO()
