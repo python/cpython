@@ -690,9 +690,9 @@ sub do_env_memberdesc{
     # Predefined $opt_arg_rx & $optional_arg_rx don't work because they
     # require the argument to be there.
     my $opt_arg_rx = "^\\s*(\\[([^]]*)\\])?";
-    my $funcdesc_rx = "$opt_arg_rx$any_next_pair_rx3$any_next_pair_rx5";
-    /$funcdesc_rx/o;
-    my($class,$member,$arg_list) = ($2, $4, $6);
+    my $funcdesc_rx = "$opt_arg_rx$any_next_pair_rx3";
+    s/$funcdesc_rx//o;
+    my($class,$member) = ($2, $4);
     $class = $THIS_CLASS
         unless $class;
     $extra = " ($class_name attribute)"
@@ -700,7 +700,7 @@ sub do_env_memberdesc{
     my $idx = make_str_index_entry($3, "<tt>$member()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
-    "<dl><dt><b>$idx</b>\n<dd>$'</dl>";
+    "<dl><dt><b>$idx</b>\n<dd>" . $_ . "</dl>";
 }
 
 
