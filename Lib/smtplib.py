@@ -38,10 +38,14 @@ Example:
   (250, "Somebody OverHere <somebody@here.my.org>")
   >>> s.quit()
 
+Bugs/TODO:
+    - Exceptions should be classes
+
 '''
 
 import socket
-import string, re
+import string
+import re
 import rfc822
 import types
 
