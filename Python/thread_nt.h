@@ -148,7 +148,7 @@ static void PyThread__init_thread(void)
 
 typedef struct {
 	void (*func)(void*);
-	void *arg;			
+	void *arg;
 	long id;
 	HANDLE done;
 } callobj;
@@ -167,35 +167,42 @@ bootstrap(void *call)
 	return 0;
 }
 
-long PyThread_start_new_thread(void (*func)(void *), void *arg)
+long
+PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	unsigned long rv;
-	int success = 0;
-	callobj *obj;
-	int id;
+	callobj obj;
 
-	dprintf(("%ld: PyThread_start_new_thread called\n", PyThread_get_thread_ident()));
+	dprintf(("%ld: PyThread_start_new_thread called\n",
+		 PyThread_get_thread_ident()));
 	if (!initialized)
 		PyThread_init_thread();
 
-	obj = malloc(sizeof(callobj)); 
-	obj->func = func;
-	obj->arg = arg;
-	obj->done = CreateSemaphore(NULL, 0, 1, NULL);
+	obj.id = -1;	/* guilty until proved innocent */
+	obj.func = func;
+	obj.arg = arg;
+	obj.done = CreateSemaphore(NULL, 0, 1, NULL);
+	if (obj.done == NULL)
+		return -1;
 
-	rv = _beginthread(bootstrap, 0, obj); /* use default stack size */
- 
-	if (rv != (unsigned long)-1) {
-		success = 1;
-		dprintf(("%ld: PyThread_start_new_thread succeeded: %p\n", PyThread_get_thread_ident(), rv));
+	rv = _beginthread(bootstrap, 0, &obj); /* use default stack size */
+	if (rv == (unsigned long)-1) {
+		/* I've seen errno == EAGAIN here, which means "there are
+		 * too many threads".
+		 */
+		dprintf(("%ld: PyThread_start_new_thread failed: %p errno %d\n",
+		         PyThread_get_thread_ident(), rv, errno));
+		obj.id = -1;
 	}
-
-	/* wait for thread to initialize and retrieve id */
-	WaitForSingleObject(obj->done, 5000);  /* maybe INFINITE instead of 5000? */
-	CloseHandle((HANDLE)obj->done);
-	id = obj->id;
-	free(obj);
-	return id;
+	else {
+		dprintf(("%ld: PyThread_start_new_thread succeeded: %p\n",
+		         PyThread_get_thread_ident(), rv));
+		/* wait for thread to initialize, so we can get its id */
+		WaitForSingleObject(obj.done, INFINITE);
+		assert(obj.id != -1);
+	}
+	CloseHandle((HANDLE)obj.done);
+	return obj.id;
 }
 
 /*
