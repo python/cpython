@@ -146,6 +146,7 @@ def build(master=None, initialcolor=None, initfile=None, ignore=None):
     app = PyncheWidget(__version__, s, master=master)
     w = app.window()
 
+    # these built-in viewers live inside the main Pynche window
     s.add_view(StripViewer(s, w))
     s.add_view(ChipViewer(s, w))
     s.add_view(TypeinViewer(s, w))
