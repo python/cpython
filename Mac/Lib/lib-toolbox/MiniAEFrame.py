@@ -128,7 +128,6 @@ class AEServer:
 		if _parameters.has_key('----'):
 			_object = _parameters['----']
 			del _parameters['----']
-			print 'XXX', (_function, (_object,), _parameters)
 			try:
 				rv = apply(_function, (_object,), _parameters)
 			except TypeError, name:
