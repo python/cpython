@@ -367,7 +367,14 @@ def mimify_part(ifile, ofile, is_mime):
 	line = message_end
 	while multipart:
 		if line == multipart + '--\n':
-			return
+			# read bit after the end of the last part
+			while 1:
+				line = ifile.readline()
+				if not line:
+					return
+				if must_quote_body:
+					line = mime_encode(line, 0)
+				ofile.write(line)
 		if line == multipart + '\n':
 			nifile = File(ifile, multipart)
 			mimify_part(nifile, ofile, 1)
