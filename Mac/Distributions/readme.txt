@@ -50,8 +50,10 @@ distribution when I'm fed up with it. They were last updated for 2.2b1.
    python-announce@python.org
    archivist@info-mac.org
    adcnews@apple.com
+   news@macnn.com
    http://www.macupdate.com
    http://guide.apple.com/usindex.lasso
+   http://www.apple.com/downloads/macosx/submit
    http://www.versiontracker.com/ (userid Jack.Jansen@oratrix.com)
 - Open PythonX.Y.vct again, use the "remove compressed files" command to trim down
   the size, commit.
