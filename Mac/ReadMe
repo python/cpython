@@ -1,0 +1,149 @@
+How to install Python 1.5a3 on your Macintosh
+-------------------------------------------
+
+If this is your first encounter with Python: you definitely need the
+common user documentation (common to all platforms). You can find this
+(in various forms) on www.python.org and ftp.python.org. Through
+there, or via http://www.cwi.nl/~jack/macpython.html you can also find
+the most recent MacPython distribution.
+
+Mac-specific documentation is included in this distribution in folder
+Mac:Demo. The documentation is sparse, but it will have to serve for
+now. The documentation is in HTML format, start with index.html.
+
+What to install
+---------------
+
+There are three flavors of Python: PowerPC, cfm68k and Classic 68k (the
+FAT flavor is just a combination of the first two, which is handy if you
+want to install Python on a fileserver or so). 68K-mac owners should
+definitely use the cfm68k version if possible, since it enables the use
+of applets and dynamically loaded modules and usually has a smaller
+memory footprint. It does however need the CFM68K Runtime Enabler which
+is available from Apple (available for free from
+<http://support.info.apple.com/ftp/swhome.html>, included since MacOS
+7.6.1). If your machine is pre-68020 you cannot use cfm68k and you can
+install the classic 68k Python.
+
+If you have a pre-system 7 macintosh: sorry, this release will not work
+on your system. Too many sys7 features are used to make a sys6 python
+easy to create.
+
+If you don't have enough memory: the sizes choosen are somewhat
+arbitrary. Try lowering the application sizes in the finder "get info"
+window, and seeing whether the resulting python is still usable. Some
+modules (Tkinter comes to mind) need a lot of memory, so it may also be
+necessary to increase the application size.
+
+A final note to CFM68K (and possibly PPC) users: the Code Fragment
+Manager can (incorrectly) produce "library not found" and other strange
+error messages when it really means that there is not enough room in the
+system heap. Decreasing (yes, *de*creasing) the size of the interpreter
+and/or enabling virtual memory may solve these problems.
+
+After installing
+----------------
+
+It is probably a good idea to run "autotest.py" from :Lib:test at this
+point, this should not give any errors. It will, however, print some
+messages about optional features not supported. Running testall.py is
+done by double-clicking it or dropping it onto the interpreter.
+
+NOTE: as of 1.5a3 the tests test_time, test_strftime and test_rotor will
+fail. This is due to a problem with the tests. test_socket may also fail
+if you have no internet connection.
+
+Next, try "compileall.py" from :Lib to create all .pyc files (but this
+isn't really important).
+
+PPC and CFM68K users have a couple of applets in the main folder they
+may want to try, (68K users can use the corresponding scripts from the
+"scripts" folder):
+
+- EditPythonPrefs allows you to edit the preferences file, to change the
+python home folder or modify the initial sys.path setting. The default
+settings are somewhat arbitrary, you can remove tkinter if you don't use
+it and possibly add Extensions:img:Lib. - mkapplet creates a python
+applet, a tiny application written in python. Drop a python source on it
+and out comes the application. More information can be found in the
+"Mac:Demo" folder.
+
+PPC and CFM68K users will see one more file in the python folder:
+PythonApplet. This is the template for building applets, leave it alone.
+The applet is "fat", containing both PPC and CFM68K code. Hence, applets
+built with it can be transported to machines with the other
+architecture.
+
+Things to see
+-------------
+
+There are some readme files in the "Read me files" folder that may
+contain useful information. There is also a first stab at documentation
+(plus examples) in the Mac:Demo folder. The toplevel Demo folder has
+machine-independent demos. See the file Readme-mac for mac-specific
+notes. The Mac:Lib:test folder also has some programs that show simple
+capabilities of various modules.
+
+The "scripts" folder has some sample scripts. Some are useful, some are
+just interesting to look at to see how various things work. The MkDistr,
+mkapplet and fullbuild scripts (plus the ones mentioned above) may help
+you to understand how to use AppleEvents and various other toolboxes
+from python.
+
+The 'img' group of modules, which handles I/O of many different image
+formats (not pict yet, sigh:-) is included, but without documentation.
+You can find docs at ftp://ftp.cwi.nl/pub/jack/python/img (or somewhere
+around there).
+
+Upgrading from older Python releases
+------------------------------------
+
+Since release 1.4 Python releases are independent of each other, with
+separate Preferences files, shared library names, etc. The good news is
+that this means you can keep your older version around if you are unsure
+whether to upgrade. The bad news is that your old preference settings
+are lost and you have to set them again.
+
+After you are satisfied that 1.5a3 works as expected you can trash
+anything in the system folder that has "python" in the name and not
+"1.5a3".
+
+The installer
+-------------
+
+The installer for this product was created using Installer VISE Lite
+from MindVision Software. For more information on Installer VISE Lite,
+
+contact:
+MindVision Software
+7201 North 7th Street
+Lincoln, NE 68521-8913
+Voice: 402-477-3269
+Fax: 402-477-1395
+Internet: mindvision@mindvision.com
+http://www.mindvision.com
+
+
+Feedback
+--------
+
+Send bug reports, suggestions, contributions and fanmail to
+<jack@cwi.nl>. Be warned however that I'm pretty busy, so I may not
+always respond immedeately.
+
+A better way to discuss MacPython is to join the
+<pythonmac-sig@python.org> mailing list, which is explicitly meant for
+this purpose.
+
+Alternatively, you can try sending to comp.lang.python or
+python-list@cwi.nl, but since I read the newsgroup, not the mailinglist,
+I may miss it there (but other people may know quite a bit more than me
+anyway:-).
+
+Jack Jansen
+Centrum voor Wiskunde en Informatica
+Kruislaan 413
+1098 SJ Amsterdam
+the Netherlands
+
+<jack@cwi.nl>, http://www.cwi.nl/~jack
