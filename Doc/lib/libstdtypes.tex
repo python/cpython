@@ -817,6 +817,9 @@ arbitrary objects):
           {\code{\var{a}[\var{k}]} if \code{\var{a}.has_key(\var{k})},
            else \var{x} (also setting it)}
           {(5)}
+  \lineiii{\var{a}.popitem()}
+          {remove and return an arbitrary (\var{key}, \var{value}) pair}
+          {(6)}
 \end{tableiii}
 
 \noindent
@@ -841,6 +844,9 @@ provided and \var{k} is not in the map, \code{None} is returned.
 \item[(5)] \function{setdefault()} is like \function{get()}, except
 that if \var{k} is missing, \var{x} is both returned and inserted into
 the dictionary as the value of \var{k}.
+
+\item[(6)] \function{popitem()} is useful to destructively iterate
+over a dictionary, as often used in set algorithms.
 \end{description}
 
 
