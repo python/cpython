@@ -132,7 +132,7 @@ clean:
 		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej add2lib
 
 clobber:	clean
-		-rm -f *.a tags TAGS config.c glmodule.c Makefile.pre
+		-rm -f *.a tags TAGS config.c Makefile.pre
 		-rm -f *.so *.sl so_locations
 
 getpath.o:	getpath.c Makefile
