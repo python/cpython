@@ -204,6 +204,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libsched.tex \
 	../lib/libstatvfs.tex \
 	../lib/libtty.tex \
+	../lib/libasyncore.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
