@@ -26,7 +26,7 @@ tok_name[NL] = 'NL'
 #     Imagnumber is new.  Expfloat is corrected to reject '0e4'.
 # Note: to quote a backslash in a regex, it must be doubled in a r'aw' string.
 
-def group(*choices): return '(' + string.join(choices, '|') + ')'
+def group(*choices): return '(' + '|'.join(choices) + ')'
 def any(*choices): return apply(group, choices) + '*'
 def maybe(*choices): return apply(group, choices) + '?'
 
