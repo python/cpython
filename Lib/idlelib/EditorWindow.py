@@ -60,11 +60,10 @@ class EditorWindow:
                     basepath = '/usr/share/doc/'  # standard location
                     dochome = os.path.join(basepath, pyver,
                                            'Doc', 'index.html')
-            elif sys.platform.count('win') or sys.platform.count('nt'):
+            elif sys.platform[:3] == 'win':
                 chmfile = os.path.join(sys.prefix, "Python%d%d.chm" % sys.version_info[:2])
                 if os.path.isfile(chmfile):
                     dochome = chmfile
-                    print "dochome =", dochome
             dochome = os.path.normpath(dochome)
             if os.path.isfile(dochome):
                 EditorWindow.help_url = dochome
@@ -314,20 +313,11 @@ class EditorWindow:
         textView.TextViewer(self.top,'Help',fn)
 
     def python_docs(self, event=None):
-        if sys.platform.count('win') or sys.platform.count('nt'):
+        if sys.platform[:3] == 'win':
             os.startfile(self.help_url)
-            return "break"
         else:
             webbrowser.open(self.help_url)
-            return "break"
-
-    def display_docs(self, url):
-        if not (url.startswith('www') or url.startswith('http')):
-            url = os.path.normpath(url)
-        if sys.platform.count('win') or sys.platform.count('nt'):
-            os.startfile(url)
-        else:
-            webbrowser.open(url)
+        return "break"
 
     def cut(self,event):
         self.text.event_generate("<<Cut>>")
@@ -578,7 +568,12 @@ class EditorWindow:
     def __extra_help_callback(self, helpfile):
         "Create a callback with the helpfile value frozen at definition time"
         def display_extra_help(helpfile=helpfile):
-            self.display_docs(helpfile)
+            if not (helpfile.startswith('www') or helpfile.startswith('http')):
+                url = os.path.normpath(helpfile)
+            if sys.platform[:3] == 'win':
+                os.startfile(helpfile)
+            else:
+                webbrowser.open(helpfile)
         return display_extra_help
 
     def update_recent_files_list(self, new_file=None):
