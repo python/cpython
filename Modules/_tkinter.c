@@ -20,8 +20,6 @@ void		GUSIwithSIOUXSockets (void);
 #endif
 #endif
 
-#define PyInit__tkinter init_tkinter
-
 #include <tcl.h>
 #include <tk.h>
 
@@ -1228,7 +1226,7 @@ Tkinter_Cleanup ()
 }
 
 void
-PyInit__tkinter ()
+init_tkinter ()
 {
   static inited = 0;
 
