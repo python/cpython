@@ -122,9 +122,24 @@ class build_ext (Command):
         if type (self.libraries) is StringType:
             self.libraries = [self.libraries]
 
-        # XXX how the heck are 'self.define' and 'self.undef' supposed to
-        # be set?
+        # Life is easier if we're not forever checking for None, so
+        # simplify these options to empty lists if unset
+        if self.libraries is None:
+            self.libraries = []
+        if self.library_dirs is None:
+            self.library_dirs = []
+        if self.rpath is None:
+            self.rpath = []
 
+        # for extensions under windows use different directories
+        # for Release and Debug builds.
+        # also Python's library directory must be appended to library_dirs
+        if os.name == 'nt':
+            self.library_dirs.append (os.path.join(sys.exec_prefix, 'libs'))
+            if self.debug:
+                self.build_temp = os.path.join (self.build_temp, "Debug")
+            else:
+                self.build_temp = os.path.join (self.build_temp, "Release")
     # finalize_options ()
     
 
@@ -142,15 +157,6 @@ class build_ext (Command):
 
         if not self.extensions:
             return
-
-        # Simplify the following logic (eg. don't have to worry about
-        # appending to None)
-        if self.libraries is None:
-            self.libraries = []
-        if self.library_dirs is None:
-            self.library_dirs = []
-        if self.rpath is None:
-            self.rpath = []
 
         # If we were asked to build any C/C++ libraries, make sure that the
         # directory where we put them is in the library search path for
@@ -313,6 +319,14 @@ class build_ext (Command):
                 else:
                     modname = string.split (extension_name, '.')[-1]
                     extra_args.append('/export:init%s'%modname)
+
+                # The MSVC linker generates unneeded .lib and .exp files,
+                # which cannot be suppressed by any linker switches.  So
+                # make sure they are generated in the temporary build
+                # directory.
+                implib_dir = os.path.join(self.build_temp,\
+                                          self.get_ext_libname(extension_name))
+                extra_args.append ('/IMPLIB:' + implib_dir)
             # if MSVC
 
             fullname = self.get_ext_fullname (extension_name)
@@ -351,6 +365,17 @@ class build_ext (Command):
     def get_ext_filename (self, ext_name):
         from distutils import sysconfig
         ext_path = string.split (ext_name, '.')
+        # extensions in debug_mode are named 'module_d.pyd' under windows
+        if os.name == 'nt' and self.debug:
+            return apply (os.path.join, ext_path) + '_d' + sysconfig.SO
         return apply (os.path.join, ext_path) + sysconfig.SO
+
+    def get_ext_libname (self, ext_name):
+        # create a filename for the (unneeded) lib-file.
+        # extensions in debug_mode are named 'module_d.pyd' under windows
+        ext_path = string.split (ext_name, '.')
+        if os.name == 'nt' and self.debug:
+            return apply (os.path.join, ext_path) + '_d.lib'
+        return apply (os.path.join, ext_path) + '.lib'
 
 # class BuildExt
