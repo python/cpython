@@ -54,7 +54,9 @@ The \module{csv} module defines the following functions:
 Return a reader object which will iterate over lines in the given
 {}\var{csvfile}.  \var{csvfile} can be any object which supports the
 iterator protocol and returns a string each time its \method{next}
-method is called.  An optional \var{dialect} parameter can be given
+method is called.  If \var{csvfile} is a file object, it must be opened with
+the 'b' flag on platforms where that makes a difference.  An optional
+{}\var{dialect} parameter can be given
 which is used to define a set of parameters specific to a particular CSV
 dialect.  It may be an instance of a subclass of the \class{Dialect}
 class or one of the strings returned by the \function{list_dialects}
@@ -71,7 +73,10 @@ conversion is performed.
 \begin{funcdesc}{writer}{csvfile\optional{,
                          dialect=\code{'excel'}\optional{, fmtparam}}}
 Return a writer object responsible for converting the user's data into
-delimited strings on the given file-like object.  An optional
+delimited strings on the given file-like object.  \var{csvfile} can be any
+object with a \function{write} method.  If \var{csvfile} is a file object,
+it must be opened with the 'b' flag on platforms where that makes a
+difference.  An optional
 {}\var{dialect} parameter can be given which is used to define a set of
 parameters specific to a particular CSV dialect.  It may be an instance
 of a subclass of the \class{Dialect} class or one of the strings
@@ -125,7 +130,7 @@ read has more fields than the fieldnames sequence, the remaining data is
 added as a sequence keyed by the value of \var{restkey}.  If the row read
 has fewer fields than the fieldnames sequence, the remaining keys take the
 value of the optiona \var{restval} parameter.  All other parameters are
-interpreted as for regular readers.
+interpreted as for \class{reader} objects.
 \end{classdesc}
 
 
@@ -143,7 +148,7 @@ method contains a key not found in \var{fieldnames}, the optional
 \var{extrasaction} parameter indicates what action to take.  If it is set
 to \code{'raise'} a \exception{ValueError} is raised.  If it is set to
 \code{'ignore'}, extra values in the dictionary are ignored.  All other
-parameters are interpreted as for regular writers.
+parameters are interpreted as for \class{writer} objects.
 \end{classdesc}
 
 \begin{classdesc*}{Dialect}{}
