@@ -167,6 +167,11 @@ where DIRECTORY is the absolute pathname of the directory where you've
 built the readline library.  Some hints on building and using the
 readline library:
 
+    - If you have already built Python without readline and then
+    decide to add it, you have to rerun configure adding the
+    --with-readline flag, AND you have to remove the object file
+    Modules/myreadline.o (same if you go the other way)
+
     - On SGI IRIX 5, you may have to add the following
     to rldefs.h:
 
@@ -371,6 +376,7 @@ Objects/	Implementation of most built-in object types
 Parser/		The parser and tokenizer and their input handling
 Python/		The "compiler" and interpreter
 README		The file you're reading now
+Tools/		Some useful programs written in Python
 acconfig.h	Additional input for the autoheader program
 config.h	Configuration header (generated)
 config.h.in	Source from which config.status creates config.h
