@@ -374,7 +374,7 @@ tuplerepeat(a, n)
 		return (PyObject *)a;
 	}
 	size = a->ob_size * n;
-	if (size/n != a->ob_size)
+	if (size/a->ob_size != n)
 		return PyErr_NoMemory();
 	np = (PyTupleObject *) PyTuple_New(size);
 	if (np == NULL)
