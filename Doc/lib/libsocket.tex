@@ -140,6 +140,7 @@ used for the second argument to \function{socket()}.
 \dataline{EAI_*}
 \dataline{AI_*}
 \dataline{NI_*}
+\dataline{TCP_*}
 Many constants of these forms, documented in the \UNIX{} documentation on
 sockets and/or the IP protocol, are also defined in the socket module.
 They are generally used in arguments to the \method{setsockopt()} and
@@ -325,8 +326,9 @@ If the IPv4 address string passed to this function is invalid,
 valid depends on the underlying C implementation of
 \cfunction{inet_aton()}.
 
-\function{inet_aton} does not support IPv6, and
-\function{getnameinfo()} should be used instead for IPv4/v6 dual stack support.
+\function{inet_aton()} does not support IPv6, and
+\function{getnameinfo()} should be used instead for IPv4/v6 dual stack
+support.
 \end{funcdesc}
 
 \begin{funcdesc}{inet_ntoa}{packed_ip}
@@ -341,8 +343,9 @@ for the 32-bit packed binary this function takes as an argument.
 If the string passed to this function is not exactly 4 bytes in
 length, \exception{socket.error} will be raised.
 
-\function{inet_ntoa} does not support IPv6, and
-\function{getnameinfo()} should be used instead for IPv4/v6 dual stack support.
+\function{inet_ntoa()} does not support IPv6, and
+\function{getnameinfo()} should be used instead for IPv4/v6 dual stack
+support.
 \end{funcdesc}
 
 \begin{datadesc}{SocketType}
@@ -455,7 +458,6 @@ closed or garbage-collected independently.
 and \var{bufsize} arguments are interpreted the same way as by the
 built-in \function{file()} function; see ``Built-in Functions''
 (section \ref{built-in-funcs}) for more information.
-Availability: \UNIX.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{recv}{bufsize\optional{, flags}}
