@@ -7,8 +7,6 @@ import thread
 import threading
 import Queue
 
-import boolcheck
-
 import CallTips
 import RemoteDebugger
 import RemoteObjectBrowser
