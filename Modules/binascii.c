@@ -204,7 +204,8 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 	bin_data = (unsigned char *)PyString_AsString(rv);
 
 	for( ; bin_len > 0 ; ascii_len--, ascii_data++ ) {
-		this_ch = *ascii_data;
+		/* XXX is it really best to add NULs if there's no more data */
+		this_ch = (ascii_len > 0) ? *ascii_data : 0;
 		if ( this_ch == '\n' || this_ch == '\r' || ascii_len <= 0) {
 			/*
 			** Whitespace. Assume some spaces got eaten at
