@@ -2074,7 +2074,7 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
  fork fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
- getpriority getpwent getwd \
+ getpriority getpwent getsid getwd \
  kill killpg lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink realpath \

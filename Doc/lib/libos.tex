@@ -254,6 +254,12 @@ Set the current process's real and effective group ids.
 Availability: \UNIX.
 \end{funcdesc}
 
+\begin{funcdesc}{getsid}{pid}
+Calls the system call \cfunction{getsid()}.  See the \UNIX{} manual
+for the semantics.
+Availability: \UNIX.
+\end{funcdesc}
+
 \begin{funcdesc}{setsid}{}
 Calls the system call \cfunction{setsid()}.  See the \UNIX{} manual
 for the semantics.
