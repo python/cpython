@@ -5,7 +5,7 @@
 try:
 	import posix, path
 	os = posix
-except NameError:
+except ImportError:
 	import mac, macpath
 	os = mac
 	path = macpath
@@ -16,7 +16,7 @@ from Buttons import PushButton
 from WindowParent import WindowParent
 from HVSplit import HSplit, VSplit
 
-class DirList() = VSplit():
+class DirList(VSplit):
 	#
 	def create(self, (parent, dirname)):
 		self = VSplit.create(self, parent)
@@ -32,7 +32,7 @@ class DirList() = VSplit():
 		return self
 	#
 
-class DirListWindow() = WindowParent():
+class DirListWindow(WindowParent):
 	#
 	def create(self, dirname):
 		self = WindowParent.create(self, (dirname, (0, 0)))
@@ -41,7 +41,7 @@ class DirListWindow() = WindowParent():
 		return self
 	#
 
-class SubdirButton() = PushButton():
+class SubdirButton(PushButton):
 	#
 	def drawpict(self, d):
 		PushButton.drawpict(self, d)
@@ -51,13 +51,13 @@ class SubdirButton() = PushButton():
 		window = DirListWindow().create(self.text)
 	#
 
-class FileButton() = PushButton():
+class FileButton(PushButton):
 	#
 	def up_trigger(self):
 		stdwin.fleep()
 	#
 
-class ModuleButton() = FileButton():
+class ModuleButton(FileButton):
 	#
 	def drawpict(self, d):
 		PushButton.drawpict(self, d)
