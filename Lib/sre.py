@@ -14,7 +14,7 @@
 # other compatibility work.
 #
 
-"""Support for regular expressions (RE).
+r"""Support for regular expressions (RE).
 
 This module provides regular expression matching operations similar to
 those found in Perl. It's 8-bit clean: the strings being processed may
@@ -56,20 +56,20 @@ The special characters are:
 The special sequences consist of "\\" and a character from the list
 below. If the ordinary character is not on the list, then the
 resulting RE will match the second character.
-    \\number  Matches the contents of the group of the same number.
-    \\A       Matches only at the start of the string.
-    \\Z       Matches only at the end of the string.
-    \\b       Matches the empty string, but only at the start or end of a word.
-    \\B       Matches the empty string, but not at the start or end of a word.
-    \\d       Matches any decimal digit; equivalent to the set [0-9].
-    \\D       Matches any non-digit character; equivalent to the set [^0-9].
-    \\s       Matches any whitespace character; equivalent to [ \\t\\n\\r\\f\\v].
-    \\S       Matches any non-whitespace character; equiv. to [^ \\t\\n\\r\\f\\v].
-    \\w       Matches any alphanumeric character; equivalent to [a-zA-Z0-9_].
+    \number  Matches the contents of the group of the same number.
+    \A       Matches only at the start of the string.
+    \Z       Matches only at the end of the string.
+    \b       Matches the empty string, but only at the start or end of a word.
+    \B       Matches the empty string, but not at the start or end of a word.
+    \d       Matches any decimal digit; equivalent to the set [0-9].
+    \D       Matches any non-digit character; equivalent to the set [^0-9].
+    \s       Matches any whitespace character; equivalent to [ \t\n\r\f\v].
+    \S       Matches any non-whitespace character; equiv. to [^ \t\n\r\f\v].
+    \w       Matches any alphanumeric character; equivalent to [a-zA-Z0-9_].
              With LOCALE, it will match the set [0-9_] plus characters defined
              as letters for the current locale.
-    \\W       Matches the complement of \\w.
-    \\\\       Matches a literal backslash.
+    \W       Matches the complement of \w.
+    \\       Matches a literal backslash.
 
 This module exports the following functions:
     match    Match a regular expression pattern to the beginning of a string.
