@@ -13,6 +13,7 @@ LIBDEST=$(prefix)/lib/python$(VERSION)
 bindir=$(dstroot)/usr/local/bin
 PYTHONAPPSDIR=$(dstroot)/Applications/Python
 APPINSTALLDIR=$(prefix)/Resources/Python.app
+PTHFILE=$(srcdir)/Mac/OSX/Mac.pth
 
 # Variables for installing the "normal" unix binaries
 INSTALLED_PYTHON=$(prefix)/bin/python
@@ -27,22 +28,23 @@ INSTALL_SCRIPT= ${INSTALL_PROGRAM}
 INSTALL_DATA=	${INSTALL} -m 644
 LN=ln
 STRIPFLAG=-s
-OPT=-g -O3 -Wall -Wstrict-prototypes -Wno-long-double -no-cpp-precomp \
-	-fno-common -dynamic
-INCLUDES=-I$(builddir) -I$(srcdir)/Include -I$(srcdir)/Mac/Include
-DEFINES=
-
-CFLAGS=$(OPT) $(DEFINES) $(INCLUDES)
-LDFLAGS=-F$(builddir) -framework System -framework Python -framework Carbon \
-	-framework Foundation
-CC=cc
-LD=cc
+##OPT=-g -O3 -Wall -Wstrict-prototypes -Wno-long-double -no-cpp-precomp \
+##	-fno-common -dynamic
+##INCLUDES=-I$(builddir) -I$(srcdir)/Include -I$(srcdir)/Mac/Include
+##DEFINES=
+##
+##CFLAGS=$(OPT) $(DEFINES) $(INCLUDES)
+##LDFLAGS=-F$(builddir) -framework System -framework Python -framework Carbon \
+##	-framework Foundation
+##CC=cc
+##LD=cc
 CPMAC=/Developer/Tools/CpMac
 
 PYTHON=$(builddir)/python.exe
 APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
 CACHERSRC=$(srcdir)/Mac/scripts/cachersrc.py
+compileall=$(srcdir)/Lib/compileall.py
 
 installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE install_IDLE
 
@@ -94,14 +96,17 @@ install_Python: $(PYTHON)
 	
 	
 install_IDE: $(INSTALLED_PYTHONW)
-	@if $(INSTALLED_PYTHONW) -c "import waste"; then : ; else \
+	@if ! $(INSTALLED_PYTHONW) -c "import waste"; then  \
 		echo PythonIDE needs the \"waste\" extension module; \
 		echo See Mac/OSX/README for details; \
-		exit 1; \
+	else \
+		echo $(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
+			--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
+			$(srcdir)/Mac/Tools/IDE/PythonIDE.py ; \
+		$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
+			--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
+			$(srcdir)/Mac/Tools/IDE/PythonIDE.py; \
 	fi
-	$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
-		--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
-		$(srcdir)/Mac/Tools/IDE/PythonIDE.py
 
 install_IDLE: $(INSTALLED_PYTHONW)
 	@if ! $(INSTALLED_PYTHONW) -c "import _tkinter"; then \
@@ -250,15 +255,17 @@ installmacsubtree:
 		done; \
 	done
 	
-	$(INSTALL_DATA) $(srcdir)/Mac/OSX/Mac.pth $(LIBDEST)/site-packages/
+	$(INSTALL_DATA) $(PTHFILE) $(LIBDEST)/site-packages/
 
 	$(PYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
-	$(PYTHON) -Wi -tt $(srcdir)/Lib/compileall.py -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
-	$(PYTHON) -O -Wi -tt $(srcdir)/Lib/compileall.py -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
+	$(PYTHON) -Wi -tt $(compileall) -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
+	$(PYTHON) -O -Wi -tt $(compileall) -x badsyntax $(MACLIBDEST) $(MACTOOLSDEST)
 
-	
-# Put symlinks "python" and "pythonw" in the standard place
-$(INSTALLED_PYTHONW): install_Python
+#
+# We use the full name here in stead of $(INSTALLED_PYTHONW), because
+# the latter may be overridden by Makefile.jaguar when building for a pre-installed
+# /usr/bin/python
+$(APPINSTALLDIR)/Contents/MacOS/python: install_Python
 
 # $(INSTALLED_PYTHON) has to be done by the main Makefile, we cannot do that here.
 # At least this rule will give an error if it doesn't exist.
