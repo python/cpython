@@ -85,7 +85,7 @@ index used on a mapping or sequence is invalid: \code{IndexError},
 \code{KeyError}.
 \end{excdesc}
 
-\renewcommand{\indexsubitem}{(built-in exception base class)}
+\renewcommand{\indexsubitem}{(built-in exception)}
 
 The following exceptions are the exceptions that are actually raised.
 They are class objects, except when the \code{-X} option is used to
@@ -242,7 +242,7 @@ When class exceptions are used, the instance has an attribute
 \code{code} which is set to the proposed exit status or error message
 (defaulting to \code{None}).
   
-  A call to \code{sys.exit} is translated into an exception so that
+  A call to \code{sys.exit()} is translated into an exception so that
   clean-up handlers (\code{finally} clauses of \code{try} statements)
   can be executed, and so that a debugger can execute a script without
   running the risk of losing control.  The \code{os._exit()} function
