@@ -1,10 +1,10 @@
 test_doctest
 Running doctest.__doc__
-Trying: 1/0
+Trying: [1, 2, 3].remove(42)
 Expecting:
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-ZeroDivisionError: integer division or modulo by zero
+ValueError: list.remove(x): x not in list
 ok
 Trying: x = 12
 Expecting: nothing
