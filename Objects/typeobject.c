@@ -142,11 +142,11 @@ static void remove_subclass(PyTypeObject *, PyTypeObject *);
 static void update_all_slots(PyTypeObject *);
 
 static int
-mro_subclasses(PyTypeObject *type)
+mro_subclasses(PyTypeObject *type, PyObject* temp)
 {
 	PyTypeObject *subclass;
 	PyObject *ref, *subclasses, *old_mro;
-	int i, n, r = 0;
+	int i, n;
 
 	subclasses = type->tp_subclasses;
 	if (subclasses == NULL)
@@ -164,22 +164,27 @@ mro_subclasses(PyTypeObject *type)
 		old_mro = subclass->tp_mro;
 		if (mro_internal(subclass) < 0) {
 			subclass->tp_mro = old_mro;
-			r = -1;
+			return -1;
 		}
 		else {
-			Py_DECREF(old_mro);
+			PyObject* tuple;
+			tuple = Py_BuildValue("OO", subclass, old_mro);
+			if (!tuple)
+				return -1;
+			if (PyList_Append(temp, tuple) < 0)
+				return -1;
 		}
-		if (mro_subclasses(subclass) < 0)
-			r = -1;
+		if (mro_subclasses(subclass, temp) < 0)
+			return -1;
 	}
-	return r;
+	return 0;
 }
 
 static int
 type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 {
 	int i, r = 0;
-	PyObject* ob;
+	PyObject *ob, *temp;
 	PyTypeObject *new_base, *old_base;
 	PyObject *old_bases, *old_mro;
 
@@ -247,8 +252,25 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 		return -1;
 	}
 
-	if (mro_subclasses(type) < 0)
-		r = -1;
+	temp = PyList_New(0);
+
+	r = mro_subclasses(type, temp);
+
+	if (r < 0) {
+		for (i = 0; i < PyList_Size(temp); i++) {
+			PyTypeObject* cls;
+			PyObject* mro;
+			PyArg_ParseTuple(PyList_GetItem(temp, i),
+					 "OO", &cls, &mro);
+			Py_DECREF(cls->tp_mro);
+			cls->tp_mro = mro;
+			Py_INCREF(cls->tp_mro);
+		}
+		Py_DECREF(temp);
+		return r;
+	}
+
+	Py_DECREF(temp);
 
 	/* any base that was in __bases__ but now isn't, we
 	   need to remove |type| from it's tp_subclasses.
