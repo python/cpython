@@ -264,7 +264,7 @@ PyThreadState_Swap(PyThreadState *new)
 	   to be used for a thread.  Check this the best we can in debug 
 	   builds.
 	*/
-#if defined(Py_DEBUG)
+#if defined(Py_DEBUG) && defined(WITH_THREAD)
 	if (new) {
 		PyThreadState *check = PyGILState_GetThisThreadState();
 		if (check && check != new)
