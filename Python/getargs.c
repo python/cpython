@@ -400,7 +400,9 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 {
 	char *format = *p_format;
 	char c = *format++;
+#ifdef Py_USING_UNICODE
 	PyObject *uarg;
+#endif
 	
 	switch (c) {
 	
