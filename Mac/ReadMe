@@ -187,8 +187,8 @@ course. Mac-specific thanks go to the pythonmac-sig, Just van Rossum,
 Corran Webster, Tony Ingraldi, Erik van Blokland, Bill Bedford, Chris
 Stern, Gordon Worley, Oliver Steele, M. Papillon, Steven Majewski, David
 Goodger, Chris Barker, Luc Lefebvre, Tattoo Mabonzo K., Russell Finn,
-Tom Bridgman, Russel Owen, Pascal Oberndoerfer and all the other people
-who provided feedback, code or both!
+Tom Bridgman, Russel Owen, Pascal Oberndoerfer, Dean Draayer
+and all the other people who provided feedback, code or both!
 
 MacPython includes waste, a TextEdit replacement which is (c) 1998 Marco Piovanelli.
 
