@@ -36,8 +36,6 @@
 #
 
 import string
-import sys
-import linecache
 
 PROMPT = '(Cmd) '
 IDENTCHARS = string.letters + string.digits + '_'
