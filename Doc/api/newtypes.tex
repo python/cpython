@@ -221,7 +221,9 @@ The \member{ml_flags} field is a bitfield which can include the
 following flags.  The individual flags indicate either a calling
 convention or a binding convention.  Of the calling convention flags,
 only \constant{METH_VARARGS} and \constant{METH_KEYWORDS} can be
-combined.  Any of the calling convention flags can be combined with a
+combined (but note that \constant{METH_KEYWORDS} alone is equivalent
+to \code{\constant{METH_VARARGS} | \constant{METH_KEYWORDS}}).
+Any of the calling convention flags can be combined with a
 binding flag.
 
 \begin{datadesc}{METH_VARARGS}
@@ -335,11 +337,12 @@ the definition found there:
 
 \verbatiminput{typestruct.h}
 
-The type object structure extends the \ctype{PyVarObject} structure,
-though it does not actually need the the \member{ob_size} field.  The
-inclusion of this field is a historical accident that must be
-maintained to ensure binary compatibility between new versions of
-Python and older compiled extensions.
+The type object structure extends the \ctype{PyVarObject} structure.
+The \member{ob_size} field is used for dynamic types (created
+by  \function{type_new()}, usually called from a class statement).
+Note that \cdata{PyType_Type} (the metatype) initializes
+\member{tp_itemsize}, which means that its instances (i.e. type
+objects) \emph{must} have the \member{ob_size} field.
 
 \begin{cmemberdesc}{PyObject}{PyObject*}{_ob_next}
 \cmemberline{PyObject}{PyObject*}{_ob_prev}
@@ -1488,6 +1491,7 @@ to be able to test for its presence before using it.}
 
 \begin{ctypedesc}[getcharbufferproc]{int (*getcharbufferproc)
                             (PyObject *self, int segment, const char **ptrptr)}
+[Guido: the description is missing!]
 \end{ctypedesc}
 
 
