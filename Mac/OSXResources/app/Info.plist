@@ -30,7 +30,9 @@
 	<string>2.3</string>
 
 	<key>CFBundleHelpBookFolder</key>
-	<string>Documentation</string>
+	<array>
+		<string>Documentation</string>
+	</array>
 	<key>CFBundleHelpBookName</key>
 	<string>Python Help</string>
 	<key>CFBundleHelpTOCFile</key>
