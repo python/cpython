@@ -1,5 +1,19 @@
 import sys, os, string
 
+WINMAINTEMPLATE = """
+#include <windows.h>
+
+int WINAPI WinMain(
+    HINSTANCE hInstance,      // handle to current instance
+    HINSTANCE hPrevInstance,  // handle to previous instance
+    LPSTR lpCmdLine,          // pointer to command line
+    int nCmdShow              // show state of window
+    )
+{
+    return main(__argc, __argv);
+}
+"""
+
 def makemakefile(outfp, vars, files, target):
     save = sys.stdout
     try:
