@@ -19,38 +19,19 @@ class GroupDatabaseTestCase(unittest.TestCase):
         self.assertEqual(value[3], value.gr_mem)
         self.assert_(isinstance(value.gr_mem, list))
 
-    def valueseq(self, value1, value2):
-        # are two grp tuples equal (don't compare passwords)
-        return value1.gr_name==value2.gr_name and \
-            value1.gr_gid==value2.gr_gid and value1.gr_mem==value2.gr_mem
-
     def test_values(self):
         entries = grp.getgrall()
-        entriesbygid = {}
-        entriesbyname = {}
-
-        # we can't use the same strategy as in test_pwd, because
-        # we can't compare gr_passwd (Mac OS X returns
-        # "*" in getgrall() and "" in getgrgid())
 
         for e in entries:
             self.check_value(e)
-            entriesbygid.setdefault(e.gr_gid, []).append(e)
-            entriesbyname.setdefault(e.gr_name, []).append(e)
 
         for e in entries:
             e2 = grp.getgrgid(e.gr_gid)
             self.check_value(e2)
-            # make sure that at least one of the entries
-            # for this gid compares equal to e2
-            self.assert_(max([self.valueseq(e2, x) \
-                for x in entriesbygid[e.gr_gid]]))
+            self.assertEqual(e2.gr_gid, e.gr_gid)
             e2 = grp.getgrnam(e.gr_name)
             self.check_value(e2)
-            # make sure that at least one of the entries
-            # for this name compares equal to e2
-            self.assert_(max([self.valueseq(e2, x) \
-                for x in entriesbyname[e.gr_name]]))
+            self.assertEqual(e2.gr_name, e.gr_name)
 
     def test_errors(self):
         self.assertRaises(TypeError, grp.getgrgid)
