@@ -1935,7 +1935,9 @@ PyObject *PyExc_AssertionError;
 PyObject *PyExc_AttributeError;
 PyObject *PyExc_EOFError;
 PyObject *PyExc_FloatingPointError;
+PyObject *PyExc_EnvironmentError;
 PyObject *PyExc_IOError;
+PyObject *PyExc_OSError;
 PyObject *PyExc_ImportError;
 PyObject *PyExc_IndexError;
 PyObject *PyExc_KeyError;
@@ -1968,7 +1970,9 @@ bltin_exc[] = {
 	{"AttributeError",     &PyExc_AttributeError,     1},
 	{"EOFError",           &PyExc_EOFError,           1},
 	{"FloatingPointError", &PyExc_FloatingPointError, 1},
+	{"EnvironmentError",   &PyExc_EnvironmentError,   1},
 	{"IOError",            &PyExc_IOError,            1},
+	{"OSError",            &PyExc_OSError,            1},
 	{"ImportError",        &PyExc_ImportError,        1},
 	{"IndexError",         &PyExc_IndexError,         1},
 	{"KeyError",           &PyExc_KeyError,           1},
@@ -2078,11 +2082,11 @@ initerrors(dict)
 				newstdexception(dict, bltin_exc[i].name);
 	}
 
-	/* This is kind of bogus because we special case the three new
-	   exceptions to be nearly forward compatible.  But this means we
-	   hard code knowledge about exceptions.py into C here.  I don't
-	   have a better solution, though
-	*/
+	/* This is kind of bogus because we special case the some of the
+	 * new exceptions to be nearly forward compatible.  But this means
+	 * we hard code knowledge about exceptions.py into C here.  I don't
+	 * have a better solution, though.
+	 */
 	PyExc_LookupError = PyTuple_New(2);
 	Py_INCREF(PyExc_IndexError);
 	PyTuple_SET_ITEM(PyExc_LookupError, 0, PyExc_IndexError);
@@ -2098,6 +2102,13 @@ initerrors(dict)
 	Py_INCREF(PyExc_FloatingPointError);
 	PyTuple_SET_ITEM(PyExc_ArithmeticError, 2, PyExc_FloatingPointError);
 	PyDict_SetItemString(dict, "ArithmeticError", PyExc_ArithmeticError);
+
+	PyExc_EnvironmentError = PyTuple_New(2);
+	Py_INCREF(PyExc_IOError);
+	PyTuple_SET_ITEM(PyExc_EnvironmentError, 0, PyExc_IOError);
+	Py_INCREF(PyExc_OSError);
+	PyTuple_SET_ITEM(PyExc_EnvironmentError, 1, PyExc_OSError);
+	PyDict_SetItemString(dict, "EnvironmentError", PyExc_EnvironmentError);
 
 	PyExc_StandardError = PyTuple_New(exccnt-2);
 	for (i = 2; bltin_exc[i].name; i++) {
