@@ -669,7 +669,7 @@ get(Picklerobject *self, PyObject *id) {
 
     if (!self->bin) {
         s[0] = GET;
-        sprintf(s + 1, "%ld\n", c_value);
+        PyOS_snprintf(s + 1, sizeof(s) - 1, "%ld\n", c_value);
         len = strlen(s);
     }
     else if (Pdata_Check(self->file)) {
@@ -744,7 +744,7 @@ put2(Picklerobject *self, PyObject *ob) {
 
     if (!self->bin) {
         c_str[0] = PUT;
-        sprintf(c_str + 1, "%d\n", p);
+        PyOS_snprintf(c_str + 1, sizeof(c_str) - 1, "%d\n", p);
         len = strlen(c_str);
     }
     else if (Pdata_Check(self->file)) {
@@ -958,7 +958,7 @@ save_int(Picklerobject *self, PyObject *args) {
          * signed BININT format:  store as a string.
          */
         c_str[0] = INT;
-        sprintf(c_str + 1, "%ld\n", l);
+        PyOS_snprintf(c_str + 1, sizeof(c_str) - 1, "%ld\n", l);
         if ((*self->write_func)(self, c_str, strlen(c_str)) < 0)
             return -1;
     }
@@ -1121,7 +1121,7 @@ save_float(Picklerobject *self, PyObject *args) {
     else {
         char c_str[250];
         c_str[0] = FLOAT;
-        sprintf(c_str + 1, "%.17g\n", x);
+        PyOS_snprintf(c_str + 1, sizeof(c_str) - 1, "%.17g\n", x);
 
         if ((*self->write_func)(self, c_str, strlen(c_str)) < 0)
             return -1;
