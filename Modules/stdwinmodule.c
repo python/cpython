@@ -277,6 +277,7 @@ drawing_close(dp)
 	INCREF(None);
 	return None;
 }
+
 static void
 drawing_dealloc(dp)
 	drawingobject *dp;
@@ -760,11 +761,15 @@ static struct methodlist drawing_methods[] = {
 };
 
 static object *
-drawing_getattr(wp, name)
-	drawingobject *wp;
+drawing_getattr(dp, name)
+	drawingobject *dp;
 	char *name;
 {
-	return findmethod(drawing_methods, (object *)wp, name);
+	if (dp->d_ref == NULL) {
+		err_setstr(StdwinError, "drawing object already closed");
+		return NULL;
+	}
+	return findmethod(drawing_methods, (object *)dp, name);
 }
 
 typeobject Drawingtype = {
@@ -1062,10 +1067,10 @@ static struct methodlist text_methods[] = {
 	{"draw",	text_draw},
 	{"event",	text_event},
 	{"getfocus",	text_getfocus},
-	{"getfocustext",	text_getfocustext},
+	{"getfocustext",text_getfocustext},
 	{"getrect",	text_getrect},
 	{"gettext",	text_gettext},
-	{"move",		text_move},
+	{"move",	text_move},
 	{"replace",	text_replace},
 	{"setactive",	text_setactive},
 	{"setfocus",	text_setfocus},
@@ -1080,6 +1085,10 @@ text_getattr(tp, name)
 	char *name;
 {
 	object *v = NULL;
+	if (tp->t_ref == NULL) {
+		err_setstr(StdwinError, "text object already closed");
+		return NULL;
+	}
 	if (strcmp(name, "__dict__") == 0) {
 		v = tp->t_attr;
 		if (v == NULL)
@@ -1175,10 +1184,29 @@ menu_dealloc(mp)
 	if (id >= 0 && id < MAXNMENU && menulist[id] == mp) {
 		menulist[id] = NULL;
 	}
-	wmenudelete(mp->m_menu);
-	if (mp->m_attr != NULL)
-		DECREF(mp->m_attr);
+	if (mp->m_menu != NULL)
+		wmenudelete(mp->m_menu);
+	XDECREF(mp->m_attr);
 	DEL(mp);
+}
+
+static object *
+menu_close(mp, args)
+	menuobject *mp;
+	object *args;
+{
+	int id = mp->m_id - IDOFFSET;
+	if (id >= 0 && id < MAXNMENU && menulist[id] == mp) {
+		menulist[id] = NULL;
+	}
+	mp->m_id = -1;
+	if (mp->m_menu != NULL)
+		wmenudelete(mp->m_menu);
+	mp->m_menu = NULL;
+	XDECREF(mp->m_attr);
+	mp->m_attr = NULL;
+	INCREF(None);
+	return None;
 }
 
 static object *
@@ -1255,6 +1283,7 @@ static struct methodlist menu_methods[] = {
 	{"setitem",	menu_setitem},
 	{"enable",	menu_enable},
 	{"check",	menu_check},
+	{"close",	menu_close},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1264,6 +1293,10 @@ menu_getattr(mp, name)
 	char *name;
 {
 	object *v = NULL;
+	if (mp->m_menu == NULL) {
+		err_setstr(StdwinError, "menu object already closed");
+		return NULL;
+	}
 	if (strcmp(name, "__dict__") == 0) {
 		v = mp->m_attr;
 		if (v == NULL)
@@ -1647,6 +1680,10 @@ window_getattr(wp, name)
 	char *name;
 {
 	object *v = NULL;
+	if (wp->w_win == NULL) {
+		err_setstr(StdwinError, "window already closed");
+		return NULL;
+	}
 	if (strcmp(name, "__dict__") == 0) {
 		v = wp->w_attr;
 		if (v == NULL)
