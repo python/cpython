@@ -20,9 +20,6 @@
     }} while(0)
 
 
-#ifndef PyDoc_STR
-#define PyDoc_STR(x) (x)
-#endif
 #include <Carbon/Carbon.h>
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE

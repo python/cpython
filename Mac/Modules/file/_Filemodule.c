@@ -1757,8 +1757,6 @@ static PyObject *FSRef_FSOpenFork(FSRefObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_OSX
-
 static PyObject *FSRef_FNNotify(FSRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1777,7 +1775,6 @@ static PyObject *FSRef_FNNotify(FSRefObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *FSRef_FSNewAliasMinimal(FSRefObject *_self, PyObject *_args)
 {
@@ -1836,26 +1833,9 @@ static PyObject *FSRef_as_pathname(FSRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
-#if TARGET_API_MAC_OSX
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_res = FSRef_FSRefMakePath(_self, _args);
-#else
-	char strbuf[1024];
-	OSErr err;
-	FSSpec fss;
-
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	if ( !PyMac_GetFSSpec((PyObject *)_self, &fss))
-		return NULL;
-	err = PyMac_GetFullPathname(&fss, strbuf, sizeof(strbuf));
-	if ( err ) {
-		PyMac_Error(err);
-		return NULL;
-	}
-	_res = PyString_FromString(strbuf);
-#endif
 	return _res;
 
 }
@@ -1887,11 +1867,8 @@ static PyMethodDef FSRef_methods[] = {
 	 PyDoc_STR("(Buffer forkNameLength) -> None")},
 	{"FSOpenFork", (PyCFunction)FSRef_FSOpenFork, 1,
 	 PyDoc_STR("(Buffer forkNameLength, SInt8 permissions) -> (SInt16 forkRefNum)")},
-
-#if TARGET_API_MAC_OSX
 	{"FNNotify", (PyCFunction)FSRef_FNNotify, 1,
 	 PyDoc_STR("(FNMessage message, OptionBits flags) -> None")},
-#endif
 	{"FSNewAliasMinimal", (PyCFunction)FSRef_FSNewAliasMinimal, 1,
 	 PyDoc_STR("() -> (AliasHandle inAlias)")},
 	{"FSIsAliasFile", (PyCFunction)FSRef_FSIsAliasFile, 1,
@@ -2726,8 +2703,6 @@ static PyObject *File_FSPathMakeRef(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_OSX
-
 static PyObject *File_FNNotifyByPath(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2748,9 +2723,6 @@ static PyObject *File_FNNotifyByPath(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_OSX
 
 static PyObject *File_FNNotifyAll(PyObject *_self, PyObject *_args)
 {
@@ -2769,7 +2741,6 @@ static PyObject *File_FNNotifyAll(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *File_NewAlias(PyObject *_self, PyObject *_args)
 {
@@ -3106,16 +3077,10 @@ static PyMethodDef File_methods[] = {
 	 PyDoc_STR("() -> (HFSUniStr255 resourceForkName)")},
 	{"FSPathMakeRef", (PyCFunction)File_FSPathMakeRef, 1,
 	 PyDoc_STR("(UInt8 * path) -> (FSRef ref, Boolean isDirectory)")},
-
-#if TARGET_API_MAC_OSX
 	{"FNNotifyByPath", (PyCFunction)File_FNNotifyByPath, 1,
 	 PyDoc_STR("(UInt8 * path, FNMessage message, OptionBits flags) -> None")},
-#endif
-
-#if TARGET_API_MAC_OSX
 	{"FNNotifyAll", (PyCFunction)File_FNNotifyAll, 1,
 	 PyDoc_STR("(FNMessage message, OptionBits flags) -> None")},
-#endif
 	{"NewAlias", (PyCFunction)File_NewAlias, 1,
 	 PyDoc_STR("(FSSpec fromFile, FSSpec target) -> (AliasHandle alias)")},
 	{"NewAliasMinimalFromFullPath", (PyCFunction)File_NewAliasMinimalFromFullPath, 1,
@@ -3167,32 +3132,10 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 		return 1;
 	}
 	PyErr_Clear();
-#if !TARGET_API_MAC_OSX
-	/* On OS9 we now try a pathname */
-	if ( PyString_Check(v) ) {
-		/* It's a pathname */
-		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
-			return 0;
-		refnum = 0; /* XXXX Should get CurWD here?? */
-		parid = 0;
-		err = FSMakeFSSpec(refnum, parid, path, spec);
-		if ( err && err != fnfErr ) {
-			PyMac_Error(err);
-			return 0;
-		}
-		return 1;
-	}
-	PyErr_Clear();
-#endif
 	/* Otherwise we try to go via an FSRef. On OSX we go all the way,
 	** on OS9 we accept only a real FSRef object
 	*/
-#if TARGET_API_MAC_OSX
 	if ( PyMac_GetFSRef(v, &fsr) ) {
-#else
-	if (FSRef_Check(v)) {
-		fsr = ((FSRefObject *)v)->ob_itself;
-#endif	
 		err = FSGetCatalogInfo(&fsr, kFSCatInfoNone, NULL, NULL, spec, NULL);
 		if (err != noErr) {
 			PyMac_Error(err);
@@ -3200,9 +3143,6 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 		}
 		return 1;
 	}
-#if !TARGET_API_MAC_OSX
-	PyErr_SetString(PyExc_TypeError, "FSSpec, FSRef, pathname or (refnum, parid, path) required");
-#endif
 	return 0;
 }
 
@@ -3217,7 +3157,6 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 		return 1;
 	}
 
-#if TARGET_API_MAC_OSX
 	/* On OSX we now try a pathname */
 	if ( PyString_Check(v) || PyUnicode_Check(v)) {
 		char *path = NULL;
@@ -3230,14 +3169,9 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 		return 1;
 	}
 	/* XXXX Should try unicode here too */
-#endif
 	/* Otherwise we try to go via an FSSpec */
-#if TARGET_API_MAC_OSX
 	if (FSSpec_Check(v)) {
 		fss = ((FSSpecObject *)v)->ob_itself;
-#else
-	if (PyMac_GetFSSpec(v, &fss)) {
-#endif
 		if ((err=FSpMakeFSRef(&fss, fsr)) == 0)
 			return 1;
 		PyMac_Error(err);

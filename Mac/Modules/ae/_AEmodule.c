@@ -20,9 +20,6 @@
     }} while(0)
 
 
-#ifndef PyDoc_STR
-#define PyDoc_STR(x) (x)
-#endif
 #include <Carbon/Carbon.h>
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
@@ -44,12 +41,6 @@ static pascal Boolean AEIdleProc(EventRecord *theEvent, long *sleepTime, RgnHand
 {
 	if ( PyOS_InterruptOccurred() )
 		return 1;
-#if !TARGET_API_MAC_OSX
-	if ( PyMac_HandleEvent(theEvent) < 0 ) {
-		PySys_WriteStderr("Exception in user event handler during AE processing\n");
-		PyErr_Clear();
-	}
-#endif
 	return 0;
 }
 

@@ -33,7 +33,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 char *PyMac_getscript()
 {
-#if TARGET_API_MAC_OSX
     CFStringEncoding enc = CFStringGetSystemEncoding();
     static CFStringRef name = NULL;
     /* Return the code name for the encodings for which we have codecs. */
@@ -50,36 +49,6 @@ char *PyMac_getscript()
         name = CFStringConvertEncodingToIANACharSetName(enc);
     }
     return (char *)CFStringGetCStringPtr(name, 0); 
-#else
-   int font, script, lang;
-    font = 0;
-    font = GetSysFont();
-    script = FontToScript(font);
-    switch (script) {
-    case smRoman:
-        lang = GetScriptVariable(script, smScriptLang);
-        if (lang == langIcelandic)
-            return "mac-iceland";
-        else if (lang == langTurkish)
-            return "mac-turkish";
-        else if (lang == langGreek)
-            return "mac-greek";
-        else
-            return "mac-roman";
-        break;
-#if 0
-    /* We don't have a codec for this, so don't return it */
-    case smJapanese:
-        return "mac-japan";
-#endif
-    case smGreek:
-        return "mac-greek";
-    case smCyrillic:
-        return "mac-cyrillic";
-    default:
-        return "ascii"; /* better than nothing */
-    }
-#endif /* TARGET_API_MAC_OSX */
 }
 
 /* Like strerror() but for Mac OS error numbers */
@@ -177,7 +146,6 @@ PyMac_Error(OSErr err)
 }
 
 
-#if TARGET_API_MAC_OSX
 OSErr
 PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 {
@@ -215,7 +183,6 @@ PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 	return 0;
 }
 
-#endif /* TARGET_API_MAC_OSX */
 
 #ifdef WITH_NEXT_FRAMEWORK
 /*
@@ -232,11 +199,7 @@ locateResourcePy(CFStringRef resourceType, CFStringRef resourceName, char *resou
     CFArrayRef arrayRef = NULL;
     int success = 0;
     
-#if TARGET_API_MAC_OSX
 	CFURLPathStyle thePathStyle = kCFURLPOSIXPathStyle;
-#else
-	CFURLPathStyle thePathStyle = kCFURLHFSPathStyle;
-#endif
 
     /* Get a reference to our main bundle */
     mainBundle = CFBundleGetMainBundle();

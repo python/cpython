@@ -70,13 +70,7 @@ class MyScanner(Scanner):
 			'GetWindowGoAwayFlag',
 			'GetWindowSpareFlag',
 			]
-			
-	def makegreylist(self):
-		return [
-			('#if TARGET_API_MAC_OSX', [
-				'TransitionWindowAndParent',
-			])]
-			
+						
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',

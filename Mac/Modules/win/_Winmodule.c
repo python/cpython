@@ -1358,8 +1358,6 @@ static PyObject *WinObj_TransitionWindow(WindowObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_OSX
-
 static PyObject *WinObj_TransitionWindowAndParent(WindowObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1387,7 +1385,6 @@ static PyObject *WinObj_TransitionWindowAndParent(WindowObject *_self, PyObject 
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *WinObj_MacMoveWindow(WindowObject *_self, PyObject *_args)
 {
@@ -2451,11 +2448,8 @@ static PyMethodDef WinObj_methods[] = {
 	 PyDoc_STR("(Boolean hilited) -> None")},
 	{"TransitionWindow", (PyCFunction)WinObj_TransitionWindow, 1,
 	 PyDoc_STR("(WindowTransitionEffect effect, WindowTransitionAction action, Rect rect) -> None")},
-
-#if TARGET_API_MAC_OSX
 	{"TransitionWindowAndParent", (PyCFunction)WinObj_TransitionWindowAndParent, 1,
 	 PyDoc_STR("(WindowPtr parentWindow, WindowTransitionEffect effect, WindowTransitionAction action, Rect rect) -> None")},
-#endif
 	{"MacMoveWindow", (PyCFunction)WinObj_MacMoveWindow, 1,
 	 PyDoc_STR("(short hGlobal, short vGlobal, Boolean front) -> None")},
 	{"SizeWindow", (PyCFunction)WinObj_SizeWindow, 1,

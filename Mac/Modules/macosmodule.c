@@ -33,11 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
-#ifdef TARGET_API_MAC_OSX
 #define PATHNAMELEN 1024
-#else
-#define PATHNAMELEN 256
-#endif
 
 /* ----------------------------------------------------- */
 
@@ -337,94 +333,6 @@ MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-#if !TARGET_API_MAC_OSX
-static char schedparams_doc[] = "Set/return mainloop interrupt check flag, etc";
-
-/*
-** Set scheduler parameters
-*/
-static PyObject *
-MacOS_SchedParams(PyObject *self, PyObject *args)
-{
-	PyMacSchedParams old, new;
-	
-	PyMac_GetSchedParams(&old);
-	new = old;
-	if (!PyArg_ParseTuple(args, "|iiidd", &new.check_interrupt, &new.process_events,
-			&new.besocial, &new.check_interval, &new.bg_yield))
-		return NULL;
-	PyMac_SetSchedParams(&new);
-	return Py_BuildValue("iiidd", old.check_interrupt, old.process_events,
-			old.besocial, old.check_interval, old.bg_yield);
-}
-
-static char appswitch_doc[] = "Obsolete, use SchedParams";
-
-/* Obsolete, for backward compatability */
-static PyObject *
-MacOS_EnableAppswitch(PyObject *self, PyObject *args)
-{
-	int new, old;
-	PyMacSchedParams schp;
-	
-	if (!PyArg_ParseTuple(args, "i", &new))
-		return NULL;
-	PyMac_GetSchedParams(&schp);
-	if ( schp.process_events )
-		old = 1;
-	else if ( schp.check_interrupt )
-		old = 0;
-	else
-		old = -1;
-	if ( new > 0 ) {
-		schp.process_events = mDownMask|keyDownMask|osMask;
-		schp.check_interrupt = 1;
-	} else if ( new == 0 ) {
-		schp.process_events = 0;
-		schp.check_interrupt = 1;
-	} else {
-		schp.process_events = 0;
-		schp.check_interrupt = 0;
-	}
-	PyMac_SetSchedParams(&schp);
-	return Py_BuildValue("i", old);
-}
-
-static char setevh_doc[] = "Set python event handler to be called in mainloop";
-
-static PyObject *
-MacOS_SetEventHandler(PyObject *self, PyObject *args)
-{
-	PyObject *evh = NULL;
-	
-	if (!PyArg_ParseTuple(args, "|O", &evh))
-		return NULL;
-	if (evh == Py_None)
-		evh = NULL;
-	if ( evh && !PyCallable_Check(evh) ) {
-		PyErr_SetString(PyExc_ValueError, "SetEventHandler argument must be callable");
-		return NULL;
-	}
-	if ( !PyMac_SetEventHandler(evh) )
-		return NULL;
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static char handleev_doc[] = "Pass event to other interested parties like sioux";
-
-static PyObject *
-MacOS_HandleEvent(PyObject *self, PyObject *args)
-{
-	EventRecord ev;
-	
-	if (!PyArg_ParseTuple(args, "O&", PyMac_GetEventRecord, &ev))
-		return NULL;
-	PyMac_HandleEventIntern(&ev);
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-#endif /* !TARGET_API_MAC_OSX */
 
 static char geterr_doc[] = "Convert OSErr number to string";
 
@@ -523,7 +431,6 @@ MacOS_WMAvailable(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if (!rv) {
-#if TARGET_API_MAC_OSX
 		ProcessSerialNumber psn;
 		
 		/*
@@ -543,9 +450,6 @@ MacOS_WMAvailable(PyObject *self, PyObject *args)
 				rv = Py_True;
 			}
 		}
-#else
-		rv = Py_True;
-#endif
 	}
 	Py_INCREF(rv);
 	return rv;
@@ -619,83 +523,10 @@ MacOS_openrf(PyObject *self, PyObject *args)
 	return (PyObject *)fp;
 }
 
-#if !TARGET_API_MAC_OSX
-static char FreeMem_doc[] = "Return the total amount of free space in the heap";
-
-static PyObject *
-MacOS_FreeMem(PyObject *self, PyObject *args)
-{
-	long rv;
-		
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
-	rv = FreeMem();
-	return Py_BuildValue("l", rv);
-}
-
-static char MaxBlock_doc[] = "Return the largest contiguous block of free space in the heap";
-
-static PyObject *
-MacOS_MaxBlock(PyObject *self, PyObject *args)
-{
-	long rv;
-		
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
-	rv = MaxBlock();
-	return Py_BuildValue("l", rv);
-}
-
-static char CompactMem_doc[] = "(wanted size)->actual largest block after compacting";
-
-static PyObject *
-MacOS_CompactMem(PyObject *self, PyObject *args)
-{
-	long value;
-	long rv;
-		
-	if (!PyArg_ParseTuple(args, "l", &value))
-		return NULL;
-	rv = CompactMem(value);
-	return Py_BuildValue("l", rv);
-}
-
-static char KeepConsole_doc[] = "(flag) Keep console open 0:never, 1:on output 2:on error, 3:always";
-
-static PyObject *
-MacOS_KeepConsole(PyObject *self, PyObject *args)
-{
-	int value;
-	
-	if (!PyArg_ParseTuple(args, "i", &value))
-		return NULL;
-	PyMac_options.keep_console = value;
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-static char OutputSeen_doc[] = "Call to reset the 'unseen output' flag for the keep-console-open option";
-
-static PyObject *
-MacOS_OutputSeen(PyObject *self, PyObject *args)
-{
-	if (!PyArg_ParseTuple(args, ""))
-		return NULL;
-	PyMac_OutputSeen();
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-#endif /* !TARGET_API_MAC_OSX */
 
 static PyMethodDef MacOS_Methods[] = {
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1,	getcrtp_doc},
 	{"SetCreatorAndType",		MacOS_SetCreatorAndType, 1,	setcrtp_doc},
-#if !TARGET_API_MAC_OSX
-	{"SchedParams",			MacOS_SchedParams,	1,	schedparams_doc},
-	{"EnableAppswitch",		MacOS_EnableAppswitch,	1,	appswitch_doc},
-	{"SetEventHandler",		MacOS_SetEventHandler,	1,	setevh_doc},
-	{"HandleEvent",			MacOS_HandleEvent,	1,	handleev_doc},
-#endif
 	{"GetErrorString",		MacOS_GetErrorString,	1,	geterr_doc},
 	{"openrf",			MacOS_openrf, 		1, 	openrf_doc},
 	{"splash",			MacOS_splash,		1, 	splash_doc},
@@ -703,13 +534,6 @@ static PyMethodDef MacOS_Methods[] = {
 	{"GetTicks",			MacOS_GetTicks,		1,	GetTicks_doc},
 	{"SysBeep",			MacOS_SysBeep,		1,	SysBeep_doc},
 	{"WMAvailable",			MacOS_WMAvailable,		1,	WMAvailable_doc},
-#if !TARGET_API_MAC_OSX
-	{"FreeMem",			MacOS_FreeMem,		1,	FreeMem_doc},
-	{"MaxBlock",		MacOS_MaxBlock,		1,	MaxBlock_doc},
-	{"CompactMem",		MacOS_CompactMem,	1,	CompactMem_doc},
-	{"KeepConsole",		MacOS_KeepConsole,	1,	KeepConsole_doc},
-	{"OutputSeen",		MacOS_OutputSeen,	1,	OutputSeen_doc},
-#endif
 	{NULL,				NULL}		 /* Sentinel */
 };
 
@@ -742,19 +566,11 @@ initMacOS(void)
 		if( PyDict_SetItemString(d, "string_id_to_buffer", Py_BuildValue("i", off)) != 0)
 			return;
 	}
-#if TARGET_API_MAC_OSX
 #define PY_RUNTIMEMODEL "macho"
-#elif TARGET_API_MAC_CARBON
-#define PY_RUNTIMEMODEL "carbon"
-#else
-#error "None of the TARGET_API_MAC_XXX I know about is set"
-#endif
 	if (PyDict_SetItemString(d, "runtimemodel", 
 				Py_BuildValue("s", PY_RUNTIMEMODEL)) != 0)
 		return;
-#if !TARGET_API_MAC_OSX
-#define PY_LINKMODEL "cfm"
-#elif defined(WITH_NEXT_FRAMEWORK)
+#if defined(WITH_NEXT_FRAMEWORK)
 #define PY_LINKMODEL "framework"
 #elif defined(Py_ENABLE_SHARED)
 #define PY_LINKMODEL "shared"

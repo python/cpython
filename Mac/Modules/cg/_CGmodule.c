@@ -22,113 +22,6 @@
 
 #include <ApplicationServices/ApplicationServices.h>
 
-#if !TARGET_API_MAC_OSX
-	/* This code is adapted from the CallMachOFramework demo at:
-       http://developer.apple.com/samplecode/Sample_Code/Runtime_Architecture/CallMachOFramework.htm
-       It allows us to call Mach-O functions from CFM apps. */
-
-	#include <Folders.h>
-	#include "CFMLateImport.h"
-
-	static OSStatus LoadFrameworkBundle(CFStringRef framework, CFBundleRef *bundlePtr)
-		// This routine finds a the named framework and creates a CFBundle 
-		// object for it.  It looks for the framework in the frameworks folder, 
-		// as defined by the Folder Manager.  Currently this is 
-		// "/System/Library/Frameworks", but we recommend that you avoid hard coded 
-		// paths to ensure future compatibility.
-		//
-		// You might think that you could use CFBundleGetBundleWithIdentifier but 
-		// that only finds bundles that are already loaded into your context. 
-		// That would work in the case of the System framework but it wouldn't 
-		// work if you're using some other, less-obvious, framework.
-	{
-		OSStatus 	err;
-		FSRef 		frameworksFolderRef;
-		CFURLRef	baseURL;
-		CFURLRef	bundleURL;
-		
-		*bundlePtr = nil;
-		
-		baseURL = nil;
-		bundleURL = nil;
-		
-		// Find the frameworks folder and create a URL for it.
-		
-		err = FSFindFolder(kOnAppropriateDisk, kFrameworksFolderType, true, &frameworksFolderRef);
-		if (err == noErr) {
-			baseURL = CFURLCreateFromFSRef(kCFAllocatorSystemDefault, &frameworksFolderRef);
-			if (baseURL == nil) {
-				err = coreFoundationUnknownErr;
-			}
-		}
-		
-		// Append the name of the framework to the URL.
-		
-		if (err == noErr) {
-			bundleURL = CFURLCreateCopyAppendingPathComponent(kCFAllocatorSystemDefault, baseURL, framework, false);
-			if (bundleURL == nil) {
-				err = coreFoundationUnknownErr;
-			}
-		}
-		
-		// Create a bundle based on that URL and load the bundle into memory.
-		// We never unload the bundle, which is reasonable in this case because 
-		// the sample assumes that you'll be calling functions from this 
-		// framework throughout the life of your application.
-		
-		if (err == noErr) {
-			*bundlePtr = CFBundleCreate(kCFAllocatorSystemDefault, bundleURL);
-			if (*bundlePtr == nil) {
-				err = coreFoundationUnknownErr;
-			}
-		}
-		if (err == noErr) {
-		    if ( ! CFBundleLoadExecutable( *bundlePtr ) ) {
-				err = coreFoundationUnknownErr;
-		    }
-		}
-
-		// Clean up.
-		
-		if (err != noErr && *bundlePtr != nil) {
-			CFRelease(*bundlePtr);
-			*bundlePtr = nil;
-		}
-		if (bundleURL != nil) {
-			CFRelease(bundleURL);
-		}	
-		if (baseURL != nil) {
-			CFRelease(baseURL);
-		}	
-		
-		return err;
-	}
-
-
-
-	// The CFMLateImport approach requires that you define a fragment 
-	// initialisation routine that latches the fragment's connection 
-	// ID and locator.  If your code already has a fragment initialiser 
-	// you will have to integrate the following into it.
-
-	static CFragConnectionID 			gFragToFixConnID;
-	static FSSpec 						gFragToFixFile;
-	static CFragSystem7DiskFlatLocator 	gFragToFixLocator;
-
-	extern OSErr FragmentInit(const CFragInitBlock *initBlock);
-	extern OSErr FragmentInit(const CFragInitBlock *initBlock)
-	{
-		__initialize(initBlock); /* call the "original" initializer */
-		gFragToFixConnID	= (CFragConnectionID) initBlock->closureID;
-		gFragToFixFile 		= *(initBlock->fragLocator.u.onDisk.fileSpec);
-		gFragToFixLocator 	= initBlock->fragLocator.u.onDisk;
-		gFragToFixLocator.fileSpec = &gFragToFixFile;
-		
-		return noErr;
-	}
-
-#endif
-
 extern int GrafObj_Convert(PyObject *, GrafPtr *);
 
 /*
@@ -1368,23 +1261,6 @@ void init_CG(void)
 	PyObject *d;
 
 
-
-#if !TARGET_API_MAC_OSX
-	CFBundleRef sysBundle;
-	OSStatus err;
-
-	if (&LoadFrameworkBundle == NULL) {
-		PyErr_SetString(PyExc_ImportError, "CoreCraphics not supported");
-		return;
-	}
-	err = LoadFrameworkBundle(CFSTR("ApplicationServices.framework"), &sysBundle);
-	if (err == noErr)
-		err = CFMLateImportBundle(&gFragToFixLocator, gFragToFixConnID, FragmentInit, "\pCGStubLib", sysBundle);
-	if (err != noErr) {
-		PyErr_SetString(PyExc_ImportError, "CoreCraphics not supported");
-		return;
-	};
-#endif  /* !TARGET_API_MAC_OSX */
 
 
 	m = Py_InitModule("_CG", CG_methods);
