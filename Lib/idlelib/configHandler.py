@@ -1,14 +1,25 @@
-"""
-Provides access to stored idle configuration information.
-"""
-# Throughout this module there is an emphasis on returning useable defaults
-# when a problem occurs in returning a requested configuration value back to
-# idle. This is to allow idle to continue to function in spite of errors in
-# the retrieval of config information. When a default is returned instead of
-# a requested config value, a message is printed to stderr to aid in
-# configuration problem notification and resolution.
+"""Provides access to stored IDLE configuration information.
 
-import os, sys, string
+Refer to the comments at the beginning of config-main.def for a description of
+the available configuration files and the design implemented to update user
+configuration information.  In particular, user configuration choices which
+duplicate the defaults will be removed from the user's configuration files,
+and if a file becomes empty, it will be deleted.  
+
+The contents of the user files may be altered using the Options/Configure IDLE
+menu to access the configuration GUI (configDialog.py), or manually.
+
+Throughout this module there is an emphasis on returning useable defaults
+when a problem occurs in returning a requested configuration value back to
+idle. This is to allow IDLE to continue to function in spite of errors in
+the retrieval of config information. When a default is returned instead of
+a requested config value, a message is printed to stderr to aid in
+configuration problem notification and resolution.
+
+"""
+import os
+import sys
+import string
 from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
 class InvalidConfigType(Exception): pass
@@ -123,9 +134,11 @@ class IdleUserConfParser(IdleConfParser):
             os.remove(self.file)
 
     def Save(self):
-        """
-        If config isn't empty, write file to disk. If config is empty,
-        remove the file from disk if it exists.
+        """Update user configuration file.
+
+        Remove empty sections. If resulting config isn't empty, write the file
+        to disk. If config is empty, remove the file from disk if it exists.
+
         """
         if not self.IsEmpty():
             cfgFile=open(self.file,'w')
@@ -555,11 +568,14 @@ class IdleConf:
         return keyBindings
 
     def GetExtraHelpSourceList(self,configSet):
-        """
-        Returns a list of tuples containing the details of any additional
-        help sources configured in the requested configSet ('user' or 'default')
-        , or an empty list if there are none. Returned tuples are of the form
-        form (menu_item , path_to_help_file , option).
+        """Fetch list of extra help sources from a given configSet.
+        
+        Valid configSets are 'user' or 'default'.  Return a list of tuples of
+        the form (menu_item , path_to_help_file , option), or return the empty
+        list.  'option' is the sequence number of the help resource.  'option'
+        values determine the position of the menu items on the Help menu,
+        therefore the returned list must be sorted by 'option'.
+
         """
         helpSources=[]
         if configSet=='user':
@@ -580,7 +596,16 @@ class IdleConf:
                 helpPath=value[1].strip()
             if menuItem and helpPath: #neither are empty strings
                 helpSources.append( (menuItem,helpPath,option) )
+        helpSources.sort(self.__helpsort)
         return helpSources
+
+    def __helpsort(self, h1, h2):
+        if int(h1[2]) < int(h2[2]):
+            return -1
+        elif int(h1[2]) > int(h2[2]):
+            return 1
+        else:
+            return 0
 
     def GetAllExtraHelpSourcesList(self):
         """

@@ -677,7 +677,8 @@ class ConfigDialog(Toplevel):
     def DeleteCustomKeys(self):
         keySetName=self.customKeys.get()
         if not tkMessageBox.askyesno('Delete Key Set','Are you sure you wish '+
-                'to delete the key set '+`keySetName`+' ?'):
+                                     'to delete the key set '+`keySetName`+' ?',
+                                     parent=self):
             return
         #remove key set from config
         idleConf.userCfg['keys'].remove_section(keySetName)
@@ -703,7 +704,8 @@ class ConfigDialog(Toplevel):
     def DeleteCustomTheme(self):
         themeName=self.customTheme.get()
         if not tkMessageBox.askyesno('Delete Theme','Are you sure you wish '+
-                'to delete the theme '+`themeName`+' ?'):
+                                     'to delete the theme '+`themeName`+' ?',
+                                     parent=self):
             return
         #remove theme from config
         idleConf.userCfg['highlight'].remove_section(themeName)
@@ -874,7 +876,7 @@ class ConfigDialog(Toplevel):
         helpSource=GetHelpSourceDialog(self,'New Help Source').result
         if helpSource:
             self.userHelpList.append( (helpSource[0],helpSource[1]) )
-            self.listHelp.insert(END,helpSource[0]+'  '+helpSource[1])
+            self.listHelp.insert(END,helpSource[0])
             self.UpdateUserHelpChangedItems()
         self.SetHelpListButtonStates()
 
@@ -887,7 +889,7 @@ class ConfigDialog(Toplevel):
             return #no changes
         self.userHelpList[itemIndex]=newHelpSource
         self.listHelp.delete(itemIndex)
-        self.listHelp.insert(itemIndex,newHelpSource[0]+'  '+newHelpSource[1])
+        self.listHelp.insert(itemIndex,newHelpSource[0])
         self.UpdateUserHelpChangedItems()
         self.SetHelpListButtonStates()
 
@@ -899,12 +901,11 @@ class ConfigDialog(Toplevel):
         self.SetHelpListButtonStates()
 
     def UpdateUserHelpChangedItems(self):
-        #clear and rebuild the HelpFiles section in self.changedItems
-        if self.changedItems['main'].has_key('HelpFiles'):
-            del(self.changedItems['main']['HelpFiles'])
+        "Clear and rebuild the HelpFiles section in self.changedItems"
+        self.changedItems['main']['HelpFiles'] = {}
         for num in range(1,len(self.userHelpList)+1):
             self.AddChangedItem('main','HelpFiles',str(num),
-                    string.join(self.userHelpList[num-1],';'))
+                    string.join(self.userHelpList[num-1][:2],';'))
 
     def LoadFontCfg(self):
         ##base editor font selection list
@@ -1019,10 +1020,10 @@ class ConfigDialog(Toplevel):
         #initial window size
         self.winWidth.set(idleConf.GetOption('main','EditorWindow','width'))
         self.winHeight.set(idleConf.GetOption('main','EditorWindow','height'))
-        #help browsing
-        self.userHelpList=idleConf.GetExtraHelpSourceList('user')
+        # additional help sources
+        self.userHelpList = idleConf.GetAllExtraHelpSourcesList()
         for helpItem in self.userHelpList:
-            self.listHelp.insert(END,helpItem[0]+'  '+helpItem[1])
+            self.listHelp.insert(END,helpItem[0])
         self.SetHelpListButtonStates()
         #self.userHelpBrowser.set(idleConf.GetOption('main','General',
         #        'user-help-browser',default=0,type='bool'))
@@ -1086,6 +1087,7 @@ class ConfigDialog(Toplevel):
                 if section == 'HelpFiles':
                     #this section gets completely replaced
                     idleConf.userCfg['main'].remove_section('HelpFiles')
+                    cfgTypeHasChanges = True
                 for item in self.changedItems[configType][section].keys():
                     value = self.changedItems[configType][section][item]
                     if self.SetUserValue(configType,section,item,value):
@@ -1107,7 +1109,7 @@ class ConfigDialog(Toplevel):
             instance.ResetColorizer()
             instance.ResetFont()
             instance.ResetKeybindings()
-            instance.ResetExtraHelpMenu()
+            instance.reset_help_menu_entries()
 
     def Cancel(self):
         self.destroy()

@@ -1,14 +1,19 @@
 "Dialog to specify or edit the parameters for a user configured help source."
 
+import os
+
 from Tkinter import *
 import tkMessageBox
-import os
+import tkFileDialog
 
 class GetHelpSourceDialog(Toplevel):
     def __init__(self, parent, title, menuItem='', filePath=''):
-        """
-        menuItem - string, the menu item to edit, if any
-        filePath - string, the help file path to edit, if any
+        """Get menu entry and url/ local file location for Additional Help
+
+        User selects a name for the Help resource and provides a web url
+        or a local file as its source.  The user can enter a url or browse
+        for the file.
+
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
@@ -39,7 +44,7 @@ class GetHelpSourceDialog(Toplevel):
         self.menu = StringVar(self)
         self.path = StringVar(self)
         self.fontSize = StringVar(self)
-        self.frameMain = Frame(self, borderwidth=2, relief=SUNKEN)
+        self.frameMain = Frame(self, borderwidth=2, relief=GROOVE)
         self.frameMain.pack(side=TOP, expand=TRUE, fill=BOTH)
         labelMenu = Label(self.frameMain, anchor=W, justify=LEFT,
                           text='Menu Item:')
@@ -47,7 +52,7 @@ class GetHelpSourceDialog(Toplevel):
                                width=30)
         self.entryMenu.focus_set()
         labelPath = Label(self.frameMain, anchor=W, justify=LEFT,
-                          text='Help File Path:')
+                          text='Help File Path: Enter URL or browse for file')
         self.entryPath = Entry(self.frameMain, textvariable=self.path,
                                width=40)
         self.entryMenu.focus_set()
@@ -55,17 +60,41 @@ class GetHelpSourceDialog(Toplevel):
         self.entryMenu.pack(anchor=W, padx=5, pady=3)
         labelPath.pack(anchor=W, padx=5, pady=3)
         self.entryPath.pack(anchor=W, padx=5, pady=3)
+        browseButton = Button(self.frameMain, text='Browse', width=8,
+                              command=self.browseFile)
+        browseButton.pack(pady=3)
         frameButtons = Frame(self)
         frameButtons.pack(side=BOTTOM, fill=X)
         self.buttonOk = Button(frameButtons, text='OK',
                                width=8, default=ACTIVE,  command=self.Ok)
         self.buttonOk.grid(row=0, column=0, padx=5,pady=5)
-        self.buttonOk.bind('<Return>', self.Ok)
-        #self.buttonOk.focus()
         self.buttonCancel = Button(frameButtons, text='Cancel',
                                    width=8, command=self.Cancel)
         self.buttonCancel.grid(row=0, column=1, padx=5, pady=5)
 
+    def browseFile(self):
+        filetypes = [
+            ("HTML Files", "*.htm *.html", "TEXT"),
+            ("PDF Files", "*.pdf", "TEXT"),
+            ("Windows Help Files", "*.chm"),
+            ("Text Files", "*.txt", "TEXT"),
+            ("All Files", "*")]
+        path = self.path.get()
+        if path:
+            dir, base = os.path.split(path)
+        else:
+            base = None
+            if sys.platform.count('win') or sys.platform.count('nt'):
+                dir = os.path.join(os.path.dirname(sys.executable), 'Doc')
+                if not os.path.isdir(dir):
+                    dir = os.getcwd()
+            else:
+                dir = os.getcwd()
+        opendialog = tkFileDialog.Open(parent=self, filetypes=filetypes)
+        file = opendialog.show(initialdir=dir, initialfile=base)
+        if file:
+            self.path.set(file)
+        
     def MenuOk(self):
         "Simple validity check for a sensible menu item name"
         menuOk = True
@@ -97,6 +126,8 @@ class GetHelpSourceDialog(Toplevel):
                                    parent=self)
             self.entryPath.focus_set()
             pathOk = False
+        elif path.startswith('www.') or path.startswith('http'):
+            pathOk = True
         elif not os.path.exists(path):
             tkMessageBox.showerror(title='File Path Error',
                                    message='Help file path does not exist.',

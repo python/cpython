@@ -63,16 +63,16 @@ class GetCfgSectionNameDialog(Toplevel):
         name.strip()
         if not name: #no name specified
             tkMessageBox.showerror(title='Name Error',
-                    message='No name specified.')
+                    message='No name specified.', parent=self)
             nameOk=0
         elif len(name)>30: #name too long
             tkMessageBox.showerror(title='Name Error',
                     message='Name too long. It should be no more than '+
-                    '30 characters.')
+                    '30 characters.', parent=self)
             nameOk=0
         elif name in self.usedNames:
             tkMessageBox.showerror(title='Name Error',
-                    message='This name is already in use.')
+                    message='This name is already in use.', parent=self)
             nameOk=0
         return nameOk
 
