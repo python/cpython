@@ -1,65 +1,369 @@
 #!/usr/local/bin/python
 
-# XXX TODO
-# - proper doc strings instead of this rambling dialogue style
-# - more utilities, e.g.
-#   - print_header(type="test/html", blankline=1) -- print MIME header
-#   - utility to format a nice error message in HTML
-#   - utility to format a Location: ... response, including HTML
-#   - utility to catch errors and display traceback
+"""Support module for CGI (Common Gateway Interface) scripts.
 
-#
-# A class for wrapping the WWW Forms Common Gateway Interface (CGI) 
-# Michael McLay, NIST  mclay@eeel.nist.gov  6/14/94
-# 
-# modified by Steve Majewski <sdm7g@Virginia.EDU> 12/5/94 
-#
-# now maintained as part of the Python distribution
-
-# Several classes to parse the name/value pairs that are passed to 
-# a server's CGI by GET, POST or PUT methods by a WWW FORM. This 
-# module is based on Mike McLay's original cgi.py after discussing
-# changes with him and others on the comp.lang.python newsgroup, and
-# at the NIST Python workshop. 
-#
-# The rationale for changes was:
-#    The original FormContent class was almost, but not quite like
-#    a dictionary object. Besides adding some extra access methods,
-#    it had a values() method with different arguments and semantics
-#    from the standard values() method of a mapping object. Also, 
-#    it provided several different access methods that may be necessary
-#    or useful, but made it a little more confusing to figure out how
-#    to use. Also, we wanted to make the most typical cases the simplest
-#    and most convenient access methods. ( Most form fields just return
-#    a single value, and in practice, a lot of code was just assuming
-#    a single value and ignoring all others. On the other hand, the 
-#    protocol allows multiple values to be returned. 
-#
-#  The new base class (FormContentDict) is just like a dictionary.
-#  In fact, if you just want a dictionary, all of the stuff that was
-#  in __init__ has been extracted into a cgi.parse() function that will
-#  return the "raw" dictionary, but having a class allows you to customize 
-#  it further. 
-#   Mike McLay's original FormContent class is reimplemented as a 
-#  subclass of FormContentDict.
-#   There are two additional sub-classes, but I'm not yet too sure 
-#  whether they are what I want. 
-# 
-
-import string,regsub,sys,os,urllib
-# since os.environ may often be used in cgi code, we name it in this module.
-from os import environ
+This module defines a number of utilities for use by CGI scripts written in 
+Python.
 
 
-def parse():
-	"""Parse the query passed in the environment or on stdin"""
+Introduction
+------------
+
+A CGI script is invoked by an HTTP server, usually to process user input 
+submitted through an HTML <FORM> or <ISINPUT> element.
+
+Most often, CGI scripts live in the server's special cgi-bin directory.  
+The HTTP server places all sorts of information about the request (such as 
+the client's hostname, the requested URL, the query string, and lots of 
+other goodies) in the script's shell environment, executes the script, and 
+sends the script's output back to the client.
+
+The script's input is connected to the client too, and sometimes the form 
+data is read this way; at other times the form data is passed via the 
+"query string" part of the URL.  This module (cgi.py) is intended to take 
+care of the different cases and provide a simpler interface to the Python 
+script.  It also provides a number of utilities that help in debugging 
+scripts, and the latest addition is support for file uploads from a form
+(if your browser supports it -- Grail 0.3 and Netscape 2.0 do).
+
+The output of a CGI script should consist of two sections, separated by a 
+blank line.  The first section contains a number of headers, telling the 
+client what kind of data is following.  Python code to generate a minimal 
+header section looks like this:
+
+	print "Content-type: text/html"		# HTML is following
+	print					# blank line, end of headers
+
+The second section is usually HTML, which allows the client software to 
+display nicely formatted text with header, in-line images, etc.  Here's 
+Python code that prints a simple piece of HTML:
+
+	print "<TITLE>CGI script output</TITLE>"
+	print "<H1>This is my first CGI script</H1>"
+	print "Hello, world!"
+
+(It may not be fully legal HTML according to the letter of the standard, 
+but any browser will understand it.)
+
+
+Using the cgi module
+--------------------
+
+Begin by writing "import cgi".  Don't use "from cgi import *" -- the module 
+defines all sorts of names for its own use that you don't want in your 
+namespace.
+
+If you have a standard form, it's best to use the SvFormContentDict class.  
+Instantiate the SvFormContentDict class exactly once: it consumes any input 
+on standard input, which can't be wound back (it's a network connection, 
+not a disk file).
+
+The SvFormContentDict instance can be accessed as if it were a Python 
+dictionary.  For instance, the following code checks that the fields 
+"name" and "addr" are both set to a non-empty string:
+
+	form = SvFormContentDict()
+	form_ok = 0
+	if form.has_key("name") and form.has_key("addr"):
+		if form["name"] != "" and form["addr"] != "":
+			form_ok = 1
+	if not form_ok:
+		print "<H1>Error</H1>"
+		print "Please fill in the name and addr fields."
+		return
+	...actual form processing here...
+
+If you have an input item of type "file" in your form and the client 
+supports file uploads, the value for that field, if present in the form, 
+is not a string but a tuple of (filename, content-type, data).
+
+
+Overview of classes
+-------------------
+
+SvFormContentDict: single value form content as dictionary; described 
+above.
+
+FormContentDict: multiple value form content as dictionary (the form items 
+are lists of values).  Useful if your form contains multiple fields with 
+the same name.
+
+Other classes (FormContent, InterpFormContentDict) are present for 
+backwards compatibility only.
+
+
+Overview of functions
+---------------------
+
+These are useful if you want more control, or if you want to employ some 
+of the algorithms implemented in this module in other circumstances.
+
+parse(): parse a form into a Python dictionary.
+
+parse_qs(qs): parse a query string.
+
+parse_multipart(...): parse input of type multipart/form-data (for file 
+uploads).
+
+parse_header(string): parse a header like Content-type into a main value 
+and a dictionary of parameters.
+
+test(): complete test program.
+
+print_environ(): format the shell environment in HTML.
+
+print_form(form): format a form in HTML.
+
+print_environ_usage(): print a list of useful environment variables in HTML.
+
+escape(): convert the characters "&", "<" and ">" to HTML-safe sequences.
+
+
+Caring about security
+---------------------
+
+There's one important rule: if you invoke an external program (e.g.  via 
+the os.system() or os.popen() functions), make very sure you don't pass 
+arbitrary strings received from the client to the shell.  This is a 
+well-known security hole whereby clever hackers anywhere on the web can 
+exploit a gullible CGI script to invoke arbitrary shell commands.  Even 
+parts of the URL or field names cannot be trusted, since the request 
+doesn't have to come from your form!
+
+To be on the safe side, if you must pass a string gotten from a form to a 
+shell command, you should make sure the string contains only alphanumeric 
+characters, dashes, underscores, and periods.
+
+
+Installing your CGI script on a Unix system
+-------------------------------------------
+
+Read the documentation for your HTTP server and check with your local 
+system administrator to find the directory where CGI scripts should be 
+installed; usually this is in a directory cgi-bin in the server tree.
+
+Make sure that your script is readable and executable by "others"; the Unix 
+file mode should be 755 (use "chmod 755 filename").  Make sure that the 
+first line of the script contains "#!" starting in column 1 followed by the 
+pathname of the Python interpreter, for instance:
+
+	#!/usr/local/bin/python
+
+Make sure the Python interpreter exists and is executable by "others".  
+
+Make sure that any files your script needs to read or write are readable or 
+writable, respectively, by "others" -- their mode should be 644 for 
+readable and 666 for writable.  This is because, for security reasons, the 
+HTTP server executes your script as user "nobody", without any special 
+privileges.  It can only read (write, execute) files that everybody can 
+read (write, execute).  The current directory at execution time is also 
+different (it is usually the server's cgi-bin directory) and the set of 
+environment variables is also different from what you get at login.  in 
+particular, don't count on the shell's search path for executables ($PATH) 
+or the Python module search path ($PYTHONPATH) to be set to anything 
+interesting.
+
+If you need to load modules from a directory which is not on Python's 
+default module search path, you can change the path in your script, before 
+importing other modules, e.g.:
+
+	import sys
+	sys.path.insert(0, "/usr/home/joe/lib/python")
+	sys.path.insert(0, "/usr/local/lib/python")
+
+(This way, the directory inserted last will be searched first!)
+
+Instructions for non-Unix systems will vary; check your HTTP server's 
+documentation (it will usually have a section on CGI scripts).
+
+
+Testing your CGI script
+-----------------------
+
+Unfortunately, a CGI script will generally not run when you try it from the 
+command line, and a script that works perfectly from the command line may 
+fail mysteriously when run from the server.  There's one reason why you 
+should still test your script from the command line: if it contains a 
+syntax error, the python interpreter won't execute it at all, and the HTTP 
+server will most likely send a cryptic error to the client.
+
+Assuming your script has no syntax errors, yet it does not work, you have 
+no choice but to read the next section:
+
+
+Debugging CGI scripts
+---------------------
+
+First of all, check for trivial installation errors -- reading the section 
+above on installing your CGI script carefully can save you a lot of time.  
+If you wonder whether you have understood the installation procedure 
+correctly, try installing a copy of this module file (cgi.py) as a CGI 
+script.  When invoked as a script, the file will dump its environment and 
+the contents of the form in HTML form.  Give it the right mode etc, and 
+send it a request.  If it's installed in the standard cgi-bin directory, it 
+should be possible to send it a request by entering a URL into your browser 
+of the form:
+
+	http://yourhostname/cgi-bin/cgi.py?name=Joe+Blow&addr=At+Home
+
+If this gives an error of type 404, the server cannot find the script -- 
+perhaps you need to install it in a different directory.  If it gives 
+another error (e.g.  500), there's an installation problem that you should 
+fix before trying to go any further.  If you get a nicely formatted listing 
+of the environment and form content (in this example, the fields should be 
+listed as "addr" with value "At Home" and "name" with value "Joe Blow"), 
+the cgi.py script has been installed correctly.  If you follow the same 
+procedure for your own script, you should now be able to debug it.
+
+The next step could be to call the cgi module's test() function from your 
+script: replace its main code with the single statement
+
+	cgi.test()
+	
+This should produce the same results as those gotten from installing the 
+cgi.py file itself.
+
+When an ordinary Python script raises an unhandled exception (e.g. because 
+of a typo in a module name, a file that can't be opened, etc.), the Python 
+interpreter prints a nice traceback and exits.  While the Python 
+interpreter will still do this when your CGI script raises an exception, 
+most likely the traceback will end up in one of the HTTP server's log 
+file, or be discarded altogether.
+
+Fortunately, once you have managed to get your script to execute *some* 
+code, it is easy to catch exceptions and cause a traceback to be printed.
+The test() function below in this module is an example.  Here are the 
+rules:
+
+	1. Import the traceback module (before entering the try-except!)
+	
+	2. Make sure you finish printing the headers and the blank line early
+	
+	3. Assign sys.stderr to sys.stdout
+	
+	3. Wrap all remaining code in a try-except statement
+	
+	4. In the except clause, call traceback.print_exc()
+
+For example:
+
+	import sys
+	import traceback
+	print "Content-type: text/html"
+	print
+	sys.stderr = sys.stdout
+	try:
+		...your code here...
+	except:
+		print "\n\n<PRE>"
+		traceback.print_exc()
+
+Notes: The assignment to sys.stderr is needed because the traceback prints 
+to sys.stderr.  The print "\n\n<PRE>" statement is necessary to disable the 
+word wrapping in HTML.
+
+If you suspect that there may be a problem in importing the traceback 
+module, you can use an even more robust approach (which only uses built-in 
+modules):
+
+	import sys
+	sys.stderr = sys.stdout
+	print "Content-type: text/plain"
+	print
+	...your code here...
+
+This relies on the Python interpreter to print the traceback.  The content 
+type of the output is set to plain text, which disables all HTML 
+processing.  If your script works, the raw HTML will be displayed by your 
+client.  If it raises an exception, most likely after the first two lines 
+have been printed, a traceback will be displayed.  Because no HTML 
+interpretation is going on, the traceback will readable.
+
+Good luck!
+
+
+Common problems and solutions
+-----------------------------
+
+- Most HTTP servers buffer the output from CGI scripts until the script is 
+completed.  This means that it is not possible to display a progress report 
+on the client's display while the script is running.
+
+- Check the installation instructions above.
+
+- Check the HTTP server's log files.  ("tail -f logfile" in a separate 
+window may be useful!)
+
+- Always check a script for syntax errors first, by doing something like 
+"python script.py".
+
+- When using any of the debugging techniques, don't forget to add
+"import sys" to the top of the script.
+
+- When invoking external programs, make sure they can be found.  Usually, 
+this means using absolute path names -- $PATH is usually not set to a 
+very useful value in a CGI script.
+
+- When reading or writing external files, make sure they can be read or 
+written by every user on the system.
+
+- Don't try to give a CGI script a set-uid mode.  This doesn't work on most 
+systems, and is a security liability as well.
+
+
+History
+-------
+
+Michael McLay started this module.  Steve Majewski changed the interface to 
+SvFormContentDict and FormContentDict.  The multipart parsing was inspired 
+by code submitted by Andreas Paepcke.  Guido van Rossum rewrote, 
+reformatted and documented the module and is currently responsible for its 
+maintenance.
+
+"""
+
+
+# Imports
+# =======
+
+import string
+import regsub
+import sys
+import os
+import urllib
+
+
+# A shorthand for os.environ
+environ = os.environ
+
+
+# Parsing functions
+# =================
+
+def parse(fp=None):
+	"""Parse a query in the environment or from a file (default stdin)"""
+	if not fp:
+		fp = sys.stdin
+	if not environ.has_key('REQUEST_METHOD'):
+		environ['REQUEST_METHOD'] = 'GET'	# For testing
 	if environ['REQUEST_METHOD'] == 'POST':
-		qs = sys.stdin.read(string.atoi(environ['CONTENT_LENGTH']))
+		ctype, pdict = parse_header(environ['CONTENT_TYPE'])
+		if ctype == 'multipart/form-data':
+			return parse_multipart(fp, ctype, pdict)
+		elif ctype == 'application/x-www-form-urlencoded':
+			clength = string.atoi(environ['CONTENT_LENGTH'])
+			qs = fp.read(clength)
+		else:
+			qs = ''		# Bad content-type
 		environ['QUERY_STRING'] = qs
 	elif environ.has_key('QUERY_STRING'):
 		qs = environ['QUERY_STRING']
 	else:
-		environ['QUERY_STRING'] = qs = ''
+		if sys.argv[1:]:
+			qs = sys.argv[1]
+		else:
+			qs = ""
+		environ['QUERY_STRING'] = qs
 	return parse_qs(qs)
 
 
@@ -81,21 +385,129 @@ def parse_qs(qs):
 	return dict
 
 
+def parse_multipart(fp, ctype, pdict):
+	"""Parse multipart input.
 
-# The FormContent constructor creates a dictionary from the name/value pairs
-# passed through the CGI interface.
+	Arguments:
+	fp   : input file
+	ctype: content-type
+	pdict: dictionary containing other parameters of conten-type header
+
+	Returns a dictionary just like parse_qs() (keys are the field
+	names, each value is a list of values for that field) except
+	that if the value was an uploaded file, it is a tuple of the
+	form (filename, content-type, data).  Note that content-type
+	is the raw, unparsed contents of the content-type header.
+
+	XXX Should we parse further when the content-type is
+	multipart/*?
+
+	"""
+	import mimetools
+	if pdict.has_key('boundary'):
+		boundary = pdict['boundary']
+	else:
+		boundary = ""
+	nextpart = "--" + boundary
+	lastpart = "--" + boundary + "--"
+	partdict = {}
+	terminator = ""
+
+	while terminator != lastpart:
+		bytes = -1
+		data = None
+		if terminator:
+			# At start of next part.  Read headers first.
+			headers = mimetools.Message(fp)
+			clength = headers.getheader('content-length')
+			if clength:
+				try:
+					bytes = string.atoi(clength)
+				except string.atoi_error:
+					pass
+			if bytes > 0:
+				data = fp.read(bytes)
+			else:
+				data = ""
+		# Read lines until end of part.
+		lines = []
+		while 1:
+			line = fp.readline()
+			if not line:
+				terminator = lastpart # End outer loop
+				break
+			if line[:2] == "--":
+				terminator = string.strip(line)
+				if terminator in (nextpart, lastpart):
+					break
+			if line[-2:] == '\r\n':
+				line = line[:-2]
+			elif line[-1:] == '\n':
+				line = line[:-1]
+			lines.append(line)
+		# Done with part.
+		if data is None:
+			continue
+		if bytes < 0:
+			data = string.joinfields(lines, "\n")
+		line = headers['content-disposition']
+		if not line:
+			continue
+		key, params = parse_header(line)
+		if key != 'form-data':
+			continue
+		if params.has_key('name'):
+			name = params['name']
+		else:
+			continue
+		if params.has_key('filename'):
+			data = (params['filename'],
+				headers.getheader('content-type'), data)
+		if partdict.has_key(name):
+			partdict[name].append(data)
+		else:
+			partdict[name] = [data]
+
+	return partdict
 
 
-#
-#  form['key'] 
-#  form.__getitem__('key') 
-#  form.has_key('key')
-#  form.keys()
-#  form.values()
-#  form.items()
-#  form.dict
+def parse_header(line):
+	"""Parse a Content-type like header.
+	
+	Return the main content-type and a dictionary of options.
+	
+	"""
+	plist = map(string.strip, string.splitfields(line, ';'))
+	key = string.lower(plist[0])
+	del plist[0]
+	pdict = {}
+	for p in plist:
+		i = string.find(p, '=')
+		if i >= 0:
+			name = string.lower(string.strip(p[:i]))
+			value = string.strip(p[i+1:])
+			if len(value) >= 2 and value[0] == value[-1] == '"':
+				value = value[1:-1]
+			pdict[name] = value
+	return key, pdict
+
+
+# Main classes
+# ============
 
 class FormContentDict:
+	"""Basic (multiple values per field) form content as dictionary.
+	
+	form = FormContentDict()
+	
+	form[key] -> [value, value, ...]
+	form.has_key(key) -> Boolean
+	form.keys() -> [key, key, ...]
+	form.values() -> [[val, val, ...], [val, val, ...], ...]
+	form.items() ->  [(key, [val, val, ...]), (key, [val, val, ...]), ...]
+	form.dict == {key: [val, val, ...], ...}
+
+	"""
 	def __init__( self ):
 		self.dict = parse()
 		self.query_string = environ['QUERY_STRING']
@@ -113,45 +525,42 @@ class FormContentDict:
 		return len(self.dict)
 
 
-# This is the "strict" single-value expecting version. 
-# IF you only expect a single value for each field, then form[key]
-# will return that single value ( the [0]-th ), and raise an 
-# IndexError if that expectation is not true. 
-# IF you expect a field to have possible multiple values, than you
-# can use form.getlist( key ) to get all of the values. 
-# values() and items() are a compromise: they return single strings
-#  where there is a single value, and lists of strings otherwise. 
-
 class SvFormContentDict(FormContentDict):
-	def __getitem__( self, key ):
-		if len( self.dict[key] ) > 1 : 
+	"""Strict single-value expecting form content as dictionary.
+	
+	IF you only expect a single value for each field, then form[key]
+	will return that single value.
+	It will raise an IndexError if that expectation is not true. 
+	IF you expect a field to have possible multiple values, than you
+	can use form.getlist(key) to get all of the values. 
+	values() and items() are a compromise: they return single strings
+	where there is a single value, and lists of strings otherwise.
+	
+	"""
+	def __getitem__(self, key):
+		if len(self.dict[key]) > 1: 
 			raise IndexError, 'expecting a single value' 
 		return self.dict[key][0]
-	def getlist( self, key ):
+	def getlist(self, key):
 		return self.dict[key]
-	def values( self ):
+	def values(self):
 		lis = []
-		for each in self.dict.values() : 
+		for each in self.dict.values(): 
 			if len( each ) == 1 : 
-				lis.append( each[0] )
-			else: lis.append( each )
+				lis.append(each[0])
+			else: lis.append(each)
 		return lis
-	def items( self ):
+	def items(self):
 		lis = []
 		for key,value in self.dict.items():
 			if len(value) == 1 :
-				lis.append( (key,value[0]) )
-			else:	lis.append( (key,value) )
+				lis.append((key, value[0]))
+			else:	lis.append((key, value))
 		return lis
 
 
-# And this sub-class is similar to the above, but it will attempt to 
-# interpret numerical values. This is here as mostly as an example,
-# but I think the real way to handle typed-data from a form may be
-# to make an additional table driver parsing stage that has a table
-# of allowed input patterns and the output conversion types - it 
-# would signal type-errors on parse, not on access. 
 class InterpFormContentDict(SvFormContentDict):
+	"""This class is present for backwards compatibility only.""" 
 	def __getitem__( self, key ):
 		v = SvFormContentDict.__getitem__( self, key )
 		if v[0] in string.digits+'+-.' : 
@@ -178,28 +587,8 @@ class InterpFormContentDict(SvFormContentDict):
 		return lis
 
 
-# class FormContent parses the name/value pairs that are passed to a
-# server's CGI by GET, POST, or PUT methods by a WWW FORM. several 
-# specialized FormContent dictionary access methods have been added 
-# for convenience.
-
-# function                   return value
-#
-# form.keys()                     all keys in dictionary
-# form.has_key('key')             test keys existance
-# form[key]                       returns list associated with key
-# form.values('key')              key's list (same as form.[key])
-# form.indexed_value('key' index) nth element in key's value list
-# form.value(key)                 key's unstripped value 
-# form.length(key)                number of elements in key's list
-# form.stripped(key)              key's value with whitespace stripped
-# form.pars()                     full dictionary 
-
-
-
 class FormContent(FormContentDict):
-# This is the original FormContent semantics of values,
-# not the dictionary like semantics. 
+	"""This class is present for backwards compatibility only.""" 
 	def values(self,key):
 		if self.dict.has_key(key):return self.dict[key]
 		else: return None
@@ -221,14 +610,66 @@ class FormContent(FormContentDict):
 		return self.dict
 
 
+# Test/debug code
+# ===============
 
+def test():
+	"""Robust test CGI script.
+	
+	Dump all information provided to the script in HTML form.
 
+	"""
+	import traceback
+	print "Content-type: text/html"
+	print
+	sys.stderr = sys.stdout
+	try:
+		print_environ()
+		print_form(FormContentDict())
+		print
+		print "<H3>Current Working Directory</H3>"
+		try:
+			pwd = os.getcwd()
+		except os.error, msg:
+			print "os.error:", escape(str(msg))
+		else:
+			print escape(pwd)
+		print
+	except:
+		print "\n\n<PRE>"	# Turn of word wrap
+		traceback.print_exc()
 
+def print_environ():
+	"""Dump the shell environment in HTML form."""
+	keys = environ.keys()
+	keys.sort()
+	print
+	print "<H3>Shell environment:</H3>"
+	print "<DL>"
+	for key in keys:
+		print "<DT>", escape(key), "<DD>", escape(environ[key])
+	print "</DL>" 
+	print
+
+def print_form(form):
+	"""Dump the contents of a form in HTML form."""
+	keys = form.keys()
+	keys.sort()
+	print
+	print "<H3>Form contents:</H3>"
+	print "<DL>"
+	for key in keys:
+		print "<DT>" + escape(key) + ":",
+		print "<i>" + escape(`type(form[key])`) + "</i>"
+		print "<DD>" + escape(`form[key]`)
+	print "</DL>"
+	print
 
 def print_environ_usage():
+	"""Print a list of environment variables used by the CGI protocol."""
 	print """
-<H3>These operating system environment variables could have been 
-set:</H3> <UL>
+<H3>These environment variables could have been set:</H3>
+<UL>
 <LI>AUTH_TYPE
 <LI>CONTENT_LENGTH
 <LI>CONTENT_TYPE
@@ -257,47 +698,21 @@ set:</H3> <UL>
 </UL>
 """
 
-def print_environ():
-	skeys = environ.keys()
-	skeys.sort()
-	print '<h3> The following environment variables ' \
-	      'were set by the CGI script: </h3>'
-	print '<dl>'
-	for key in skeys:
-		print '<dt>', escape(key), '<dd>', escape(environ[key])
-	print '</dl>' 
 
-def print_form( form ):
-	skeys = form.keys()
-	skeys.sort()
-	print '<h3> The following name/value pairs ' \
-	      'were entered in the form: </h3>'
-	print '<dl>'
-	for key in skeys:
-		print '<dt>', escape(key), ':',
-		print '<i>', escape(`type(form[key])`), '</i>',
-		print '<dd>', escape(`form[key]`)
-	print '</dl>'
+# Utilities
+# =========
 
-def escape( s ):
-	s = regsub.gsub('&', '&amp;', s) # Must be done first
-	s = regsub.gsub('<', '&lt;', s)
-	s = regsub.gsub('>', '&gt;', s)
+def escape(s):
+	"""Replace special characters '&', '<' and '>' by SGML entities."""
+	s = regsub.gsub("&", "&amp;", s)	# Must be done first!
+	s = regsub.gsub("<", "&lt;", s)
+	s = regsub.gsub(">", "&gt;", s)
 	return s
 
-def test( what ):
-	label = escape(str(what))
-	print 'Content-type: text/html\n\n'
-	print '<HEADER>\n<TITLE>' + label + '</TITLE>\n</HEADER>\n'
-	print '<BODY>\n' 
-	print "<H1>" + label +"</H1>\n"
-	form = what()
-	print_form( form )
-	print_environ()
-	print_environ_usage() 
-	print '</body>'
 
-if __name__ == '__main__' : 
-	test_classes = ( FormContent, FormContentDict, SvFormContentDict, InterpFormContentDict )
-	test( test_classes[0] )	# by default, test compatibility with 
-				# old version, change index to test others.
+# Invoke mainline
+# ===============
+
+# Call test() when this file is run as a script (not imported as a module)
+if __name__ == '__main__': 
+	test()
