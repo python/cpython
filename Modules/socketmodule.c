@@ -265,7 +265,7 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 #endif /* HAVE_GETHOSTBYNAME_R */
 
 	if (hp == NULL) {
-#ifndef NT
+#ifdef HAVE_HSTRERROR
 	        /* Let's get real error message to return */
 	        extern int h_errno;
 		PyErr_SetString(PySocket_Error, (char *)hstrerror(h_errno));
@@ -1026,7 +1026,7 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 			  sizeof(addr.sin_addr),
 			  AF_INET);
 	if (h == NULL) {
-#ifndef NT
+#ifdef HAVE_HSTRERROR
 	        /* Let's get real error message to return */
 	        extern int h_errno;
 		PyErr_SetString(PySocket_Error, (char *)hstrerror(h_errno));
