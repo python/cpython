@@ -169,10 +169,8 @@ extern void initcStringIO();
 extern void init_codecs();
 extern void initsha();
 extern void init_locale();
-#ifdef USE_UCNHASH
-extern void initucnhash();
-#endif
 extern void init_sre();
+extern void initxreadlines();
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -295,10 +293,8 @@ struct _inittab _PyImport_Inittab[] = {
 	{"cPickle",	initcPickle},
 	{"cStringIO",	initcStringIO},
 	{"_locale", init_locale},
-#ifdef USE_UCNHASH
-	{"ucnhash", initucnhash},
-#endif
 	{"_sre", init_sre},
+	{"xreadlines", initxreadlines},
 /* -- ADDMODULE MARKER 2 -- */
 
 	/* This module "lives in" with marshal.c */
