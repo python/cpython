@@ -16,7 +16,7 @@ Simple usage:
         def testAdd(self):  ## test method names begin 'test*'
             self.assertEquals((1 + 2), 3)
             self.assertEquals(0 + 1, 1)
-        def testMultiply(self);
+        def testMultiply(self):
             self.assertEquals((0 * 10), 0)
             self.assertEquals((5 * 8), 40)
 
@@ -67,8 +67,8 @@ class TestResult:
 
     Each instance holds the total number of tests run, and collections of
     failures and errors that occurred among those test runs. The collections
-    contain tuples of (testcase, exceptioninfo), where exceptioninfo is a
-    tuple of values as returned by sys.exc_info().
+    contain tuples of (testcase, exceptioninfo), where exceptioninfo is the
+    formatted traceback of the error that occurred
     """
     def __init__(self):
         self.failures = []
@@ -85,12 +85,15 @@ class TestResult:
         pass
 
     def addError(self, test, err):
-        "Called when an error has occurred"
-        self.errors.append((test, err))
+        """Called when an error has occurred. 'err' is a tuple of values as
+        returned by sys.exc_info().
+        """
+        self.errors.append((test, self._exc_info_to_string(err)))
 
     def addFailure(self, test, err):
-        "Called when a failure has occurred"
-        self.failures.append((test, err))
+        """Called when an error has occurred. 'err' is a tuple of values as
+        returned by sys.exc_info()."""
+        self.failures.append((test, self._exc_info_to_string(err)))
 
     def addSuccess(self, test):
         "Called when a test has completed successfully"
@@ -103,6 +106,10 @@ class TestResult:
     def stop(self):
         "Indicates that the tests should be aborted"
         self.shouldStop = 1
+
+    def _exc_info_to_string(self, err):
+        """Converts a sys.exc_info()-style tuple of values into a string."""
+        return string.join(apply(traceback.format_exception, err), '')
 
     def __repr__(self):
         return "<%s run=%i errors=%i failures=%i>" % \
@@ -575,9 +582,7 @@ class _TextTestResult(TestResult):
             self.stream.writeln(self.separator1)
             self.stream.writeln("%s: %s" % (flavour,self.getDescription(test)))
             self.stream.writeln(self.separator2)
-            for line in apply(traceback.format_exception, err):
-                for l in string.split(line,"\n")[:-1]:
-                    self.stream.writeln("%s" % l)
+            self.stream.writeln("%s" % err)
 
 
 class TextTestRunner:
