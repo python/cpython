@@ -21,10 +21,10 @@ from distutils.cmd import Command
 # and per-command help.
 usage = """\
 usage: %s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
-   or: %s --help
+   or: %s --help [cmd1 cmd2 ...]
    or: %s --help-commands
    or: %s cmd --help
-""" % ((sys.argv[0],) * 4)
+""" % ((os.path.basename(sys.argv[0]),) * 4)
 
 
 def setup (**attrs):
