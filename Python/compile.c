@@ -121,13 +121,11 @@ code_repr(co)
 {
 	char buf[500];
 	int lineno = -1;
-	unsigned char *p;
 	char *filename = "???";
 	char *name = "???";
 
-	_PyCode_GETCODEPTR(co, &p);
-	if (*p == SET_LINENO)
-		lineno = (p[1] & 0xff) | ((p[2] & 0xff) << 8);
+	if (co->co_firstlineno != 0)
+		lineno = co->co_firstlineno;
 	if (co->co_filename && PyString_Check(co->co_filename))
 		filename = PyString_AsString(co->co_filename);
 	if (co->co_name && PyString_Check(co->co_name))
