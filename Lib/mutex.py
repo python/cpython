@@ -43,7 +43,7 @@ class mutex:
 		if self.testandset():
 			function(argument)
 		else:
-			self.queue.append(function, argument)
+			self.queue.append((function, argument))
 	#
 	# Unlock a mutex.  If the queue is not empty, call the next
 	# function with its argument.
