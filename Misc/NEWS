@@ -13,13 +13,13 @@ Core and builtins
 -----------------
 
 - Patch #550732: Add PyArg_VaParseTupleAndKeywords().  Analogous to
-PyArg_VaParse().  Both are now documented.  Thanks Greg Chapman.
+  PyArg_VaParse().  Both are now documented.  Thanks Greg Chapman.
 
 - Allow string and unicode return types from .encode()/.decode()
-  methods on string and unicode objects. Added unicode.decode()
+  methods on string and unicode objects.  Added unicode.decode()
   which was missing for no apparent reason.
 
-- An attempt to fix the mess that is Python's behaviour with 
+- An attempt to fix the mess that is Python's behaviour with
   signal handlers and threads, complicated by readline's behaviour.
   It's quite possible that there are still bugs here.
 
@@ -29,9 +29,9 @@ Extension modules
 Library
 -------
 
-- Bug #979794: difflib.get_grouped_opcodes() now handles the case of when it is
-  comparing two empty lists.  Was affecting both context_diff() and
-  unified_diff().  Was also a duplicate of bug #980117.
+- Bugs #979794 and #980117: difflib.get_grouped_opcodes() now handles the
+  case of comparing two empty lists.  This affected both context_diff() and
+  unified_diff(),
 
 - Bug #980938: smtplib now prints debug output to sys.stderr.
 
@@ -47,7 +47,7 @@ Library
   for file sizes (compressed and uncompressed) was being stored as signed
   instead of unsigned.
 
-- decimal.py now only uses signals in the spec.  The other conditions are
+- decimal.py now only uses signals in the IBM spec.  The other conditions are
   no longer part of the public API.
 
 - codecs module now has two new generic APIs: encode() and decode()
@@ -57,7 +57,7 @@ Library
 - asyncore's dispatcher.set_reuse_addr() now works correctly on Windows.
   SF patch 982681.
 
-- Non-blocking SSL sockets work again; they were broken in Python 2.3. 
+- Non-blocking SSL sockets work again; they were broken in Python 2.3.
   SF patch 945642.
 
 Tools/Demos
@@ -68,6 +68,9 @@ Build
 
 C API
 -----
+
+- A large pile of datetime field-extraction macros is now documented,
+  thanks to Anthony Tuininga (patch #986010).
 
 New platforms
 -------------
@@ -438,7 +441,7 @@ Extension modules
 
 Library
 -------
-  
+
 - Bug #981530: Fix UnboundLocalError in shutil.rmtree().  This affects
   the documented behavior: the function passed to the onerror()
   handler can now also be os.listdir.

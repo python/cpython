@@ -2656,72 +2656,76 @@ module.  Before using any of these functions, the header file
 not include by \file{Python.h}), and macro \cfunction{PyDateTime_IMPORT()}
 must be invoked.  The macro arranges to put a pointer to a C structure
 in a static variable \code{PyDateTimeAPI}, which is used by the following
-macros:
+macros.
 
-\begin{cfuncdesc}{int}{PyDate_Check}{ob}
+Type-check macros:
+
+\begin{cfuncdesc}{int}{PyDate_Check}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_DateType} or
   a subtype of \cdata{PyDateTime_DateType}.  \var{ob} must not be
   \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDate_CheckExact}{ob}
+\begin{cfuncdesc}{int}{PyDate_CheckExact}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_DateType}.
   \var{ob} must not be \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDateTime_Check}{ob}
+\begin{cfuncdesc}{int}{PyDateTime_Check}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_DateTimeType} or
   a subtype of \cdata{PyDateTime_DateTimeType}.  \var{ob} must not be
   \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDateTime_CheckExact}{ob}
+\begin{cfuncdesc}{int}{PyDateTime_CheckExact}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_DateTimeType}.
   \var{ob} must not be \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyTime_Check}{ob}
+\begin{cfuncdesc}{int}{PyTime_Check}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_TimeType} or
   a subtype of \cdata{PyDateTime_TimeType}.  \var{ob} must not be
   \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyTime_CheckExact}{ob}
+\begin{cfuncdesc}{int}{PyTime_CheckExact}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_TimeType}.
   \var{ob} must not be \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDelta_Check}{ob}
+\begin{cfuncdesc}{int}{PyDelta_Check}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_DeltaType} or
   a subtype of \cdata{PyDateTime_DeltaType}.  \var{ob} must not be
   \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyDelta_CheckExact}{ob}
+\begin{cfuncdesc}{int}{PyDelta_CheckExact}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_DeltaType}.
   \var{ob} must not be \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyTZInfo_Check}{ob}
+\begin{cfuncdesc}{int}{PyTZInfo_Check}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_TZInfoType} or
   a subtype of \cdata{PyDateTime_TZInfoType}.  \var{ob} must not be
   \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyTZInfo_CheckExact}{ob}
+\begin{cfuncdesc}{int}{PyTZInfo_CheckExact}{PyObject *ob}
   Return true if \var{ob} is of type \cdata{PyDateTime_TZInfoType}.
   \var{ob} must not be \NULL{}.
   \versionadded{2.4}
 \end{cfuncdesc}
+
+Macros to create objects:
 
 \begin{cfuncdesc}{PyObject*}{PyDate_FromDate}{int year, int month, int day}
   Return a \code{datetime.date} object with the specified year, month
@@ -2752,18 +2756,84 @@ macros:
   \versionadded{2.4}
 \end{cfuncdesc}
 
+Macros to extract fields from date objects.  The argument must an
+instance of \cdata{PyDateTime_Date}, including subclasses (such as
+\cdata{PyDateTime_DateTime}).  The argument must not be \NULL{}, and
+the type is not checked:
+
+\begin{cfuncdesc}{int}{PyDateTime_GET_YEAR}{PyDateTime_Date *o}
+  Return the year, as a positive int.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDateTime_GET_MONTH}{PyDateTime_Date *o}
+  Return the month, as an int from 1 through 12.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDateTime_GET_DAY}{PyDateTime_Date *o}
+  Return the day, as an int from 1 through 31.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+Macros to extract fields from datetime objects.  The argument must an
+instance of \cdata{PyDateTime_DateTime}, including subclasses.
+The argument must not be \NULL{}, and the type is not checked:
+
+\begin{cfuncdesc}{int}{PyDateTime_DATE_GET_HOUR}{PyDateTime_DateTime *o}
+  Return the hour, an an int from 0 though 23.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDateTime_DATE_GET_MINUTE}{PyDateTime_DateTime *o}
+  Return the minute, as an int from 0 through 59.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDateTime_DATE_GET_SECOND}{PyDateTime_DateTime *o}
+  Return the second, as an int from 0 through 59.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDateTime_DATE_GET_MICROSECOND}{PyDateTime_DateTime *o}
+  Return the microsecond, as an int from 0 through 999999.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+Macros to extract fields from time objects.  The argument must an
+instance of \cdata{PyDateTime_Time}, including subclasses.
+The argument must not be \NULL{}, and the type is not checked:
+
+\begin{cfuncdesc}{int}{PyDateTime_TIME_GET_HOUR}{PyDateTime_Time *o}
+  Return the hour, as an int from 0 though 23.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDateTime_TIME_GET_MINUTE}{PyDateTime_Time *o}
+  Return the minute, as an int from 0 through 59.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDateTime_TIME_GET_SECOND}{PyDateTime_Time *o}
+  Return the second, as an int from 0 through 59.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDateTime_TIME_GET_MICROSECOND}{PyDateTime_Time *o}
+  Return the microsecond, as an int from 0 through 999999.
+  \versionadded{2.4}
+\end{cfuncdesc}
+
+Macros for the convenience of modules implementing the DB API:
+
 \begin{cfuncdesc}{PyObject*}{PyDateTime_FromTimestamp}{PyObject *args}
   Create and return a new \code{datetime.datetime} object given an argument
   tuple suitable for passing to \code{datetime.datetime.fromtimestamp()}.
-  This macro is included for the convenience of modules implementing the
-  DB API.
   \versionadded{2.4}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDate_FromTimestamp}{PyObject *args}
   Create and return a new \code{datetime.date} object given an argument
   tuple suitable for passing to \code{datetime.date.fromtimestamp()}.
-  This macro is included for the convenience of modules implementing the
-  DB API.
   \versionadded{2.4}
 \end{cfuncdesc}
