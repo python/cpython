@@ -526,9 +526,9 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
   \lineiii{\var{a}.has_key(\var{k})}{\code{1} if \var{a} has a key \var{k}, else \code{0}}{}
   \lineiii{\var{a}.items()}{a copy of \var{a}'s list of (key, item) pairs}{(2)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
-  \lineiii{\var{a}.update(b)}{\code{for k, v in b.items(): a[k] = v}}{(3)}
+  \lineiii{\var{a}.update(\var{b})}{\code{for k, v in \var{b}.items(): \var{a}[k] = v}}{(3)}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
-  \lineiii{\var{a}.get(k, f)}{the item of \var{a} with key \var{k}}{(4)}
+  \lineiii{\var{a}.get(\var{k}, \var{f})}{the item of \var{a} with key \var{k}}{(4)}
 \end{tableiii}
 \indexiii{operations on}{mapping}{types}
 \indexiii{operations on}{dictionary}{type}
