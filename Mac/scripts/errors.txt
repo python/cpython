@@ -579,12 +579,12 @@
 32	EPIPE	Broken pipe
 33	EDOM	Numerical argument out of domain
 34	ERANGE	Result too large
-35	EAGAIN	Resource temporarily unavailable
-36	EINPROGRESS	Operation now in progress
-37	EALREADY	Operation already in progress
-38	ENOTSOCK	Socket operation on non-socket
-39	EDESTADDRREQ	Destination address required
-40	EMSGSIZE	Message too long
+35	EFPOS	File positioning error
+36	ESIGPARM	Signal argument error
+37	ENOMEM	Cannot allocate memory
+38	EACCES	Permission denied
+39	ENOENT	No such file or directory
+40	ENOSYS	Function not implemented
 41	EPROTOTYPE	Protocol wrong type for socket
 42	ENOPROTOOPT	Protocol not available
 43	EPROTONOSUPPORT	Protocol not supported
@@ -624,3 +624,8 @@
 77	ENOLCK	No locks available
 78	ENOSYS	Function not implemented
 79	EFTYPE	Inappropriate file type or format
+136	EINPROGRESS	Operation now in progress
+137	EALREADY	Operation already in progress
+138	ENOTSOCK	Socket operation on non-socket
+139	EDESTADDRREQ	Destination address required
+140	EMSGSIZE	Message too long
