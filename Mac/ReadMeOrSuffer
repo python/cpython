@@ -22,8 +22,10 @@ compatability calls yourself and send me the results.
 If you don't have enough memory: the sizes choosen are somewhat arbitrary.
 Try lowering them and seeing whether the resulting python is still usable.
 Note, however, that python running out of memory may result in your mac
-freezing. I don't fully understand yet why the mac freezes instead of doing
-something a little less drastic.
+freezing. If this happens I would like to hear of it.
+
+Note that if you're using Tk you might want to raise the memory size, tcl
+and tk are quite a memory hog.
 
 PowerPC Macintosh instructions
 ------------------------------
