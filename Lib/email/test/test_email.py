@@ -1687,6 +1687,15 @@ class TestMiscellaneous(unittest.TestCase):
         b = 'person@dom.ain'
         self.assertEqual(Utils.parseaddr(Utils.formataddr((a, b))), (a, b))
 
+    def test_name_with_dot(self):
+        x = 'John X. Doe <jxd@example.com>'
+        y = '"John X. Doe" <jxd@example.com>'
+        a, b = ('John X. Doe', 'jxd@example.com')
+        self.assertEqual(Utils.parseaddr(x), (a, b))
+        self.assertEqual(Utils.parseaddr(y), (a, b))
+        # formataddr() quotes the name if there's a dot in it
+        self.assertEqual(Utils.formataddr((a, b)), y)
+
     def test_quote_dump(self):
         self.assertEqual(
             Utils.formataddr(('A Silly; Person', 'person@dom.ain')),
