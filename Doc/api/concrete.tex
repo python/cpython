@@ -36,12 +36,27 @@ This section describes Python type objects and the singleton object
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyType_Check}{PyObject *o}
-  Returns true is the object \var{o} is a type object.
+  Returns true if the object \var{o} is a type object, including
+  instances of types derived from the standard type object.  Returns
+  false in all other cases.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyType_CheckExact}{PyObject *o}
+  Returns true if the object \var{o} is a type object, but not a
+  subtype of the standard type object.  Returns false in all other
+  cases.
+  \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyType_HasFeature}{PyObject *o, int feature}
   Returns true if the type object \var{o} sets the feature
   \var{feature}.  Type features are denoted by single bit flags.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyType_IS_GC}{PyObject *o}
+  Return true if the type object includes support for the cycle
+  detector; this tests the type flag \constant{Py_TPFLAGS_HAVE_GC}.
+  \versionadded{2.0}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyType_IsSubtype}{PyTypeObject *a, PyTypeObject *b}
