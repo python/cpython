@@ -1029,6 +1029,22 @@ def urlencode(dict):
 
 
 # Proxy handling
+def getproxies_environment():
+    """Return a dictionary of scheme -> proxy server URL mappings.
+
+    Scan the environment for variables named <scheme>_proxy;
+    this seems to be the standard convention.  If you need a
+    different way, you can pass a proxies dictionary to the
+    [Fancy]URLopener constructor.
+
+    """
+    proxies = {}
+    for name, value in os.environ.items():
+        name = string.lower(name)
+        if value and name[-6:] == '_proxy':
+            proxies[name[:-6]] = value
+    return proxies
+
 if os.name == 'mac':
     def getproxies():
         """Return a dictionary of scheme -> proxy server URL mappings.
@@ -1059,23 +1075,55 @@ if os.name == 'mac':
         # FTP: XXXX To be done.
         # Gopher: XXXX To be done.
         return proxies
-                
-else:
-    def getproxies():
+
+elif os.name == 'nt':
+    def getproxies_registry():
         """Return a dictionary of scheme -> proxy server URL mappings.
-    
-        Scan the environment for variables named <scheme>_proxy;
-        this seems to be the standard convention.  If you need a
-        different way, you can pass a proxies dictionary to the
-        [Fancy]URLopener constructor.
-    
+
+        Win32 uses the registry to store proxies.
+
         """
         proxies = {}
-        for name, value in os.environ.items():
-            name = string.lower(name)
-            if value and name[-6:] == '_proxy':
-                proxies[name[:-6]] = value
+        try:
+            import _winreg
+        except ImportError:
+            # Std module, so should be around - but you never know!
+            return proxies
+        try:
+            internetSettings = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, 
+                'Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings')
+            proxyEnable = _winreg.QueryValueEx(internetSettings,
+                                               'ProxyEnable')[0]
+            if proxyEnable:
+                # Returned as Unicode but problems if not converted to ASCII
+                proxyServer = str(_winreg.QueryValueEx(internetSettings,
+                                                       'ProxyServer')[0])
+                if ';' in proxyServer:        # Per-protocol settings
+                    for p in proxyServer.split(';'):
+                        protocol, address = p.split('=')
+                        proxies[protocol] = '%s://%s' % (protocol, address)
+                else:        # Use one setting for all protocols
+                    proxies['http'] = 'http://%s' % proxyServer
+                    proxies['ftp'] = 'ftp://%s' % proxyServer
+            internetSettings.Close()
+        except (WindowsError, ValueError, TypeError):
+            # Either registry key not found etc, or the value in an
+            # unexpected format.
+            # proxies already set up to be empty so nothing to do
+            pass
         return proxies
+
+    def getproxies():
+        """Return a dictionary of scheme -> proxy server URL mappings.
+
+        Returns settings gathered from the environment, if specified,
+        or the registry.
+
+        """
+        return getproxies_environment() or getproxies_registry()
+else:
+    # By default use environment variables
+    getproxies = getproxies_environment
 
 
 # Test and time quote() and unquote()
