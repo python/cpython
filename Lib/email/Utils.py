@@ -21,7 +21,24 @@ from rfc822 import mktime_tz
 from rfc822 import parsedate as _parsedate
 from rfc822 import parsedate_tz as _parsedate_tz
 
-from quopri import decodestring as _qdecode
+try:
+    from quopri import decodestring as _qdecode
+except ImportError:
+    # Python 2.1 doesn't have quopri.decodestring()
+    def _qdecode(s):
+        import quopri as _quopri
+
+        if not s:
+            return s
+        hasnewline = (s[-1] == '\n')
+        infp = StringIO(s)
+        outfp = StringIO()
+        _quopri.decode(infp, outfp)
+        value = outfp.getvalue()
+        if not hasnewline and value[-1] =='\n':
+            return value[:-1]
+        return value
+
 import base64
 
 # Intrapackage imports
