@@ -405,6 +405,8 @@ test('splitlines', u"\nabc\ndef\r\nghi\n\r", [u'\n', u'abc\n', u'def\r\n', u'ghi
 test('translate', u"abababc", u'bbbc', {ord('a'):None})
 test('translate', u"abababc", u'iiic', {ord('a'):None, ord('b'):ord('i')})
 test('translate', u"abababc", u'iiix', {ord('a'):None, ord('b'):ord('i'), ord('c'):u'x'})
+test('translate', u"abababc", u'<i><i><i>c', {ord('a'):None, ord('b'):u'<i>'})
+test('translate', u"abababc", u'c', {ord('a'):None, ord('b'):u''})
 
 # Contains:
 print 'Testing Unicode contains method...',
