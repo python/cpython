@@ -638,6 +638,13 @@ class Distribution:
                 not self.has_ext_modules() and
                 not self.has_c_libraries())
 
+    def get_name (self):
+        return self.name or "UNKNOWN"
+
+    def get_full_name (self):
+        return "%s-%s" % ((self.name or "UNKNOWN"), (self.version or "???"))
+    
+
 # class Distribution
 
 
@@ -887,7 +894,7 @@ class Command:
         """Find or create the command object for 'command', and return
            its 'option' option."""
 
-        cmd_obj = self.distribution.find_command_obj (command)
+        cmd_obj = self.find_peer (command)
         return cmd_obj.get_option (option)
 
 
@@ -939,12 +946,13 @@ class Command:
 
 
     def copy_file (self, infile, outfile,
-                   preserve_mode=1, preserve_times=1, level=1):
+                   preserve_mode=1, preserve_times=1, link=None, level=1):
         """Copy a file respecting verbose, dry-run and force flags."""
 
         return util.copy_file (infile, outfile,
                                preserve_mode, preserve_times,
                                not self.force,
+                               link,
                                self.verbose >= level,
                                self.dry_run)
 
@@ -974,6 +982,12 @@ class Command:
         spawn (cmd, search_path,
                self.verbose >= level,
                self.dry_run)
+
+
+    def make_archive (self, base_name, format,
+                      root_dir=None, base_dir=None):
+        util.make_archive (base_name, format, root_dir, base_dir,
+                           self.verbose, self.dry_run)
 
 
     def make_file (self, infiles, outfile, func, args,
