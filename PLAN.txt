@@ -89,6 +89,15 @@ overridable, as metamethod mro().  I believe that closes this topic
 for now.  I expect that some warts will only be really debugged when
 we try to use this for some, eh, interesting types such as tuples. ***
 
+    There was a sequel to the __new__ story (see checkins).  There
+    still is a problem: object.__new__ now no longer exists, because
+    it was inherited by certain extension types that could break.  But
+    now when I write
+
+        class C(object):
+            def __new__(cls, *args):
+                "How do I call the default __new__ implementation???"
+
 More -- I'm sure new issues will crop up as we go.
 
 
