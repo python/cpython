@@ -8,9 +8,7 @@
 #include "timing.h"
 
 static PyObject *
-start_timing(self, args)
-	PyObject *self;
-	PyObject *args;
+start_timing(PyObject *self, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
@@ -21,9 +19,7 @@ start_timing(self, args)
 }
 
 static PyObject *
-finish_timing(self, args)
-	PyObject *self;
-	PyObject *args;
+finish_timing(PyObject *self, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
@@ -34,9 +30,7 @@ finish_timing(self, args)
 }
 
 static PyObject *
-seconds(self, args)
-	PyObject *self;
-	PyObject *args;
+seconds(PyObject *self, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
@@ -46,9 +40,7 @@ seconds(self, args)
 }
 
 static PyObject *
-milli(self, args)
-	PyObject *self;
-	PyObject *args;
+milli(PyObject *self, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
@@ -57,9 +49,7 @@ milli(self, args)
 
 }
 static PyObject *
-micro(self, args)
-	PyObject *self;
-	PyObject *args;
+micro(PyObject *self, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
