@@ -318,6 +318,7 @@ typedef struct Picklerobject {
     int buf_size;
     PyObject *dispatch_table;
     int fast_container; /* count nested container dumps */
+    PyObject *fast_memo;
 } Picklerobject;
 
 #define FAST_LIMIT 2000
@@ -887,6 +888,51 @@ whichmodule(PyObject *global, PyObject *global_name) {
 
 
 static int
+fast_save_enter(Picklerobject *self, PyObject *obj)
+{
+    /* if fast_container < 0, we're doing an error exit. */
+    if (++self->fast_container >= FAST_LIMIT) {
+	PyObject *key = NULL;
+	if (self->fast_memo == NULL) {
+	    self->fast_memo = PyDict_New();
+	    if (self->fast_memo == NULL) {
+		self->fast_container = -1;
+		return 0;
+	    }
+	}
+	key = PyLong_FromVoidPtr(obj);
+	if (key == NULL)
+	    return 0;
+	if (PyDict_GetItem(self->fast_memo, key)) {
+	    PyErr_Format(PyExc_ValueError,
+ "fast mode: can't pickle cyclic objects including object type %s at %p",
+			 obj->ob_type->tp_name, obj);
+	    self->fast_container = -1;
+	    return 0;
+	}
+	if (PyDict_SetItem(self->fast_memo, key, Py_None) < 0) {
+	    self->fast_container = -1;
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+int 
+fast_save_leave(Picklerobject *self, PyObject *obj)
+{
+    if (self->fast_container-- >= FAST_LIMIT) {
+	PyObject *key = PyLong_FromVoidPtr(obj);
+	if (key == NULL)
+	    return 0;
+	if (PyDict_DelItem(self->fast_memo, key) < 0) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+static int
 save_none(Picklerobject *self, PyObject *args) {
     static char none = NONE;
     if ((*self->write_func)(self, &none, 1) < 0)
@@ -1357,15 +1403,13 @@ save_empty_tuple(Picklerobject *self, PyObject *args) {
 static int
 save_list(Picklerobject *self, PyObject *args) {
     PyObject *element = 0;
-    int s_len, len, i, using_appends, res = -1, unfast = 0;
+    int s_len, len, i, using_appends, res = -1;
     char s[3];
 
     static char append = APPEND, appends = APPENDS;
 
-    if (self->fast && self->fast_container++ > FAST_LIMIT) {
-	self->fast = 0;
-	unfast = 1;
-    }
+    if (self->fast && !fast_save_enter(self, args))
+	goto finally;
 
     if (self->bin) {
         s[0] = EMPTY_LIST;
@@ -1417,11 +1461,8 @@ save_list(Picklerobject *self, PyObject *args) {
     res = 0;
 
 finally:
-    if (self->fast || unfast) {
-	self->fast_container--;
-	if (unfast && self->fast_container < FAST_LIMIT)
-	    self->fast = 1;
-    }
+    if (self->fast && !fast_save_leave(self, args))
+	res = -1;
 
     return res;
 }
@@ -1430,15 +1471,13 @@ finally:
 static int
 save_dict(Picklerobject *self, PyObject *args) {
     PyObject *key = 0, *value = 0;
-    int i, len, res = -1, using_setitems, unfast = 0;
+    int i, len, res = -1, using_setitems;
     char s[3];
 
     static char setitem = SETITEM, setitems = SETITEMS;
 
-    if (self->fast && self->fast_container++ > FAST_LIMIT) {
-	self->fast = 0;
-	unfast = 1;
-    }
+    if (self->fast && !fast_save_enter(self, args))
+	goto finally;
 
     if (self->bin) {
         s[0] = EMPTY_DICT;
@@ -1491,12 +1530,8 @@ save_dict(Picklerobject *self, PyObject *args) {
     res = 0;
 
 finally:
-    if (self->fast || unfast) {
-	self->fast_container--;
-	if (unfast && self->fast_container < FAST_LIMIT)
-	    self->fast = 1;
-    }
-
+    if (self->fast && !fast_save_leave(self, args))
+	res = -1;
 
     return res;
 }
@@ -1507,14 +1542,12 @@ save_inst(Picklerobject *self, PyObject *args) {
     PyObject *class = 0, *module = 0, *name = 0, *state = 0,
              *getinitargs_func = 0, *getstate_func = 0, *class_args = 0;
     char *module_str, *name_str;
-    int module_size, name_size, res = -1, unfast = 0;
+    int module_size, name_size, res = -1;
 
     static char inst = INST, obj = OBJ, build = BUILD;
 
-    if (self->fast && self->fast_container++ > FAST_LIMIT) {
-	self->fast = 0;
-	unfast = 1;
-    }
+    if (self->fast && !fast_save_enter(self, args))
+	goto finally;
 
     if ((*self->write_func)(self, &MARKv, 1) < 0)
         goto finally;
@@ -1622,11 +1655,8 @@ save_inst(Picklerobject *self, PyObject *args) {
     res = 0;
 
 finally:
-    if (self->fast || unfast) {
-	self->fast_container--;
-	if (unfast && self->fast_container < FAST_LIMIT)
-	    self->fast = 1;
-    }
+    if (self->fast && !fast_save_leave(self, args))
+	res = -1;
 
     Py_XDECREF(module);
     Py_XDECREF(class);
@@ -1669,7 +1699,7 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name) {
     mod = PyImport_ImportModule(module_str);
     if (mod == NULL) {
         /* Py_ErrClear(); ?? */
-        cPickle_ErrFormat(PicklingError,
+	cPickle_ErrFormat(PicklingError,
 			  "Can't pickle %s: it's not found as %s.%s",
 			  "OSS", args, module, global_name);
 	goto finally;
@@ -2251,6 +2281,7 @@ newPicklerobject(PyObject *file, int bin) {
     self->bin = bin;
     self->fast = 0;
     self->fast_container = 0;
+    self->fast_memo = NULL;
     self->buf_size = 0;
     self->dispatch_table = NULL;
 
@@ -2339,6 +2370,7 @@ static void
 Pickler_dealloc(Picklerobject *self) {
     Py_XDECREF(self->write);
     Py_XDECREF(self->memo);
+    Py_XDECREF(self->fast_memo);
     Py_XDECREF(self->arg);
     Py_XDECREF(self->file);
     Py_XDECREF(self->pers_func);
