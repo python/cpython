@@ -180,9 +180,12 @@ class ColorDelegator(Delegator):
 
             chars = ""
             mark = head
+            lines_to_get = 1
             is_ok = was_ok = 0
             while not (was_ok and is_ok):
-                next = self.index(mark + " lineend +1c")
+                next = self.index(mark + "+%d lines linestart" %
+                                         lines_to_get)
+                lines_to_get = min(lines_to_get * 2, 100)
                 was_ok = "SYNC" in self.tag_names(next + "-1c")
                 line = self.get(mark, next)
                 ##print head, "get", mark, next, "->", `line`
