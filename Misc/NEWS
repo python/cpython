@@ -188,9 +188,6 @@ _tkinter and NumPy support (XXX)
 
 - parser module adapted to new grammar, complete w/ Doc & Demo (XXX)
 
-- Name mangling to support class-private variables: __spam is translated to 
-_ClassName__spam (XXX)
-
 - regen script fixed (XXX)
 
 - new machdep subdirectories Lib/{aix3,aix4,next3_3,freebsd2,linux2} (XXX)
