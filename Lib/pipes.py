@@ -110,7 +110,7 @@ class Template:
 
 	def append(self, cmd, kind):
 		"""t.append(cmd, kind) adds a new step at the end."""
-		if type(cmd) <> type(''):
+		if type(cmd) is not type(''):
 			raise TypeError, \
 			      'Template.append: cmd must be a string'
 		if kind not in stepkinds:
@@ -119,7 +119,7 @@ class Template:
 		if kind == SOURCE:
 			raise ValueError, \
 			      'Template.append: SOURCE can only be prepended'
-		if self.steps <> [] and self.steps[-1][1] == SINK:
+		if self.steps and self.steps[-1][1] == SINK:
 			raise ValueError, \
 			      'Template.append: already ends with SINK'
 		if kind[0] == 'f' and not re.search('\$IN\b', cmd):
@@ -132,7 +132,7 @@ class Template:
 
 	def prepend(self, cmd, kind):
 		"""t.prepend(cmd, kind) adds a new step at the front."""
-		if type(cmd) <> type(''):
+		if type(cmd) is not type(''):
 			raise TypeError, \
 			      'Template.prepend: cmd must be a string'
 		if kind not in stepkinds:
@@ -141,7 +141,7 @@ class Template:
 		if kind == SINK:
 			raise ValueError, \
 			      'Template.prepend: SINK can only be appended'
-		if self.steps <> [] and self.steps[0][1] == SOURCE:
+		if self.steps and self.steps[0][1] == SOURCE:
 			raise ValueError, \
 			      'Template.prepend: already begins with SOURCE'
 		if kind[0] == 'f' and not re.search('\$IN\b', cmd):
@@ -165,7 +165,7 @@ class Template:
 	def open_r(self, file):
 		"""t.open_r(file) and t.open_w(file) implement
 		t.open(file, 'r') and t.open(file, 'w') respectively."""
-		if self.steps == []:
+		if not self.steps:
 			return open(file, 'r')
 		if self.steps[-1][1] == SINK:
 			raise ValueError, \
@@ -174,7 +174,7 @@ class Template:
 		return os.popen(cmd, 'r')
 
 	def open_w(self, file):
-		if self.steps == []:
+		if not self.steps:
 			return open(file, 'w')
 		if self.steps[0][1] == SOURCE:
 			raise ValueError, \
@@ -203,7 +203,7 @@ def makepipeline(infile, steps, outfile):
 	#
 	# Make sure there is at least one step
 	#
-	if list == []:
+	if not list:
 		list.append(['', 'cat', '--', ''])
 	#
 	# Take care of the input and output ends

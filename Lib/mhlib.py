@@ -305,7 +305,7 @@ class Folder:
             line = f.readline()
             if not line: break
             fields = string.splitfields(line, ':')
-            if len(fields) <> 2:
+            if len(fields) != 2:
                 self.error('bad sequence in %s: %s' %
                           (fullname, string.strip(line)))
             key = string.strip(fields[0])

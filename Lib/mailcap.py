@@ -173,7 +173,7 @@ def subst(field, MIMEtype, filename, plist=[]):
     i, n = 0, len(field)
     while i < n:
         c = field[i]; i = i+1
-        if c <> '%':
+        if c != '%':
             if c == '\\':
                 c = field[i:i+1]; i = i+1
             res = res + c
@@ -187,7 +187,7 @@ def subst(field, MIMEtype, filename, plist=[]):
                 res = res + MIMEtype
             elif c == '{':
                 start = i
-                while i < n and field[i] <> '}':
+                while i < n and field[i] != '}':
                     i = i+1
                 name = field[start:i]
                 i = i+1

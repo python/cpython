@@ -124,7 +124,7 @@ def capwords(str, pat='[^a-zA-Z0-9_]+'):
 cache = {}
 
 def compile(pat):
-	if type(pat) <> type(''):
+	if type(pat) != type(''):
 		return pat		# Assume it is a compiled regex
 	key = (pat, regex.get_syntax())
 	if cache.has_key(key):
@@ -153,7 +153,7 @@ def expand(repl, regs, str):
 	ord0 = ord('0')
 	while i < len(repl):
 		c = repl[i]; i = i+1
-		if c <> '\\' or i >= len(repl):
+		if c != '\\' or i >= len(repl):
 			new = new + c
 		else:
 			c = repl[i]; i = i+1
@@ -182,7 +182,7 @@ def test():
 		if not line: break
 		if line[-1] == '\n': line = line[:-1]
 		fields = split(line, delpat)
-		if len(fields) <> 3:
+		if len(fields) != 3:
 			print 'Sorry, not three fields'
 			print 'split:', `fields`
 			continue

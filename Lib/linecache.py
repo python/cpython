@@ -50,7 +50,7 @@ def checkcache():
         except os.error:
             del cache[filename]
             continue
-        if size <> stat[ST_SIZE] or mtime <> stat[ST_MTIME]:
+        if size != stat[ST_SIZE] or mtime != stat[ST_MTIME]:
             del cache[filename]
 
 

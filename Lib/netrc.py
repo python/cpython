@@ -17,7 +17,7 @@ class netrc:
         while 1:
             # Look for a machine, default, or macdef top-level keyword
             toplevel = tt = lexer.get_token()
-            if tt == '' or tt == None:
+            if not tt:
                 break
             elif tt == 'machine':
                 entryname = lexer.get_token()

@@ -30,7 +30,7 @@ class _Mailbox:
             start = self.fp.tell()
             self._search_end()
             self.seekp = stop = self.fp.tell()
-            if start <> stop:
+            if start != stop:
                 break
         return rfc822.Message(_Subfile(self.fp, start, stop))
 

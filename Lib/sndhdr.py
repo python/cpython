@@ -56,7 +56,7 @@ tests = []
 
 def test_aifc(h, f):
 	import aifc
-	if h[:4] <> 'FORM':
+	if h[:4] != 'FORM':
 		return None
 	if h[8:12] == 'AIFC':
 		fmt = 'aifc'
@@ -105,7 +105,7 @@ tests.append(test_au)
 
 
 def test_hcom(h, f):
-	if h[65:69] <> 'FSSD' or h[128:132] <> 'HCOM':
+	if h[65:69] != 'FSSD' or h[128:132] != 'HCOM':
 		return None
 	divisor = get_long_be(h[128+16:128+20])
 	return 'hcom', 22050/divisor, 1, -1, 8
@@ -114,7 +114,7 @@ tests.append(test_hcom)
 
 
 def test_voc(h, f):
-	if h[:20] <> 'Creative Voice File\032':
+	if h[:20] != 'Creative Voice File\032':
 		return None
 	sbseek = get_short_le(h[20:22])
 	rate = 0
@@ -128,7 +128,7 @@ tests.append(test_voc)
 
 def test_wav(h, f):
 	# 'RIFF' <len> 'WAVE' 'fmt ' <len>
-	if h[:4] <> 'RIFF' or h[8:12] <> 'WAVE' or h[12:16] <> 'fmt ':
+	if h[:4] != 'RIFF' or h[8:12] != 'WAVE' or h[12:16] != 'fmt ':
 		return None
 	style = get_short_le(h[20:22])
 	nchannels = get_short_le(h[22:24])
@@ -140,7 +140,7 @@ tests.append(test_wav)
 
 
 def test_8svx(h, f):
-	if h[:4] <> 'FORM' or h[8:12] <> '8SVX':
+	if h[:4] != 'FORM' or h[8:12] != '8SVX':
 		return None
 	# Should decode it to get #channels -- assume always 1
 	return '8svx', 0, 1, 0, 8

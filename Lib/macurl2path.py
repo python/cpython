@@ -12,7 +12,7 @@ def url2pathname(pathname):
     # XXXX The .. handling should be fixed...
     #
     tp = urllib.splittype(pathname)[0]
-    if tp and tp <> 'file':
+    if tp and tp != 'file':
         raise RuntimeError, 'Cannot convert non-local URL to pathname'
     # Turn starting /// into /, an empty hostname means current host
     if pathname[:3] == '///':
@@ -29,7 +29,7 @@ def url2pathname(pathname):
                                   components[i-1] not in ('', '..'):
             del components[i-1:i+1]
             i = i-1
-        elif components[i] == '' and i > 0 and components[i-1] <> '':
+        elif components[i] == '' and i > 0 and components[i-1] != '':
             del components[i]
         else:
             i = i+1

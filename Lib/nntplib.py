@@ -258,7 +258,7 @@ class NNTP:
 		- name: the group name"""
 
 		resp = self.shortcmd('GROUP ' + name)
-		if resp[:3] <> '211':
+		if resp[:3] != '211':
 			raise NNTPReplyError(resp)
 		words = string.split(resp)
 		count = first = last = 0
@@ -282,7 +282,7 @@ class NNTP:
 
 	def statparse(self, resp):
 		"""Internal: parse the response of a STAT, NEXT or LAST command."""
-		if resp[:2] <> '22':
+		if resp[:2] != '22':
 			raise NNTPReplyError(resp)
 		words = string.split(resp)
 		nr = 0
@@ -429,7 +429,7 @@ class NNTP:
 		path: directory path to article"""
 
 		resp = self.shortcmd("XPATH " + id)
-		if resp[:3] <> '223':
+		if resp[:3] != '223':
 			raise NNTPReplyError(resp)
 		try:
 			[resp_num, path] = string.split(resp)
@@ -447,7 +447,7 @@ class NNTP:
 		time: Time suitable for newnews/newgroups commands etc."""
 
 		resp = self.shortcmd("DATE")
-		if resp[:3] <> '111':
+		if resp[:3] != '111':
 			raise NNTPReplyError(resp)
 		elem = string.split(resp)
 		if len(elem) != 2:
@@ -467,7 +467,7 @@ class NNTP:
 
 		resp = self.shortcmd('POST')
 		# Raises error_??? if posting is not allowed
-		if resp[0] <> '3':
+		if resp[0] != '3':
 			raise NNTPReplyError(resp)
 		while 1:
 			line = f.readline()
@@ -491,7 +491,7 @@ class NNTP:
 
 		resp = self.shortcmd('IHAVE ' + id)
 		# Raises error_??? if the server already has it
-		if resp[0] <> '3':
+		if resp[0] != '3':
 			raise NNTPReplyError(resp)
 		while 1:
 			line = f.readline()

@@ -63,7 +63,7 @@ def toaiff(filename):
 		ret = _toaiff(filename, temps)
 	finally:
 		for temp in temps[:]:
-			if temp <> ret:
+			if temp != ret:
 				try:
 					os.unlink(temp)
 				except os.error:
@@ -88,12 +88,12 @@ def _toaiff(filename, temps):
 		if type(msg) == type(()) and len(msg) == 2 and \
 			type(msg[0]) == type(0) and type(msg[1]) == type(''):
 			msg = msg[1]
-		if type(msg) <> type(''):
+		if type(msg) != type(''):
 			msg = `msg`
 		raise error, filename + ': ' + msg
 	if ftype == 'aiff':
 		return fname
-	if ftype == None or not table.has_key(ftype):
+	if ftype is None or not table.has_key(ftype):
 		raise error, \
 			filename + ': unsupported audio file type ' + `ftype`
 	temp = tempfile.mktemp()

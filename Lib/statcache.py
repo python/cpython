@@ -43,10 +43,10 @@ def forget_prefix(prefix):
 def forget_dir(prefix):
 	"""Forget about a directory and all entries in it, but not about
 	entries in subdirectories."""
-	if prefix[-1:] == '/' and prefix <> '/':
+	if prefix[-1:] == '/' and prefix != '/':
 		prefix = prefix[:-1]
 	forget(prefix)
-	if prefix[-1:] <> '/':
+	if prefix[-1:] != '/':
 		prefix = prefix + '/'
 	n = len(prefix)
 	for path in cache.keys():
@@ -62,7 +62,7 @@ def forget_except_prefix(prefix):
 	Normally used with prefix = '/' after a chdir()."""
 	n = len(prefix)
 	for path in cache.keys():
-		if path[:n] <> prefix:
+		if path[:n] != prefix:
 			del cache[path]
 
 

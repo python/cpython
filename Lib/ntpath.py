@@ -160,7 +160,7 @@ def commonprefix(m):
     prefix = m[0]
     for item in m:
         for i in range(len(prefix)):
-            if prefix[:i+1] <> item[:i+1]:
+            if prefix[:i+1] != item[:i+1]:
                 prefix = prefix[:i]
                 if i == 0: return ''
                 break
@@ -283,7 +283,7 @@ def expanduser(path):
     """Expand ~ and ~user constructs.
 
     If user or $HOME is unknown, do nothing."""
-    if path[:1] <> '~':
+    if path[:1] != '~':
         return path
     i, n = 1, len(path)
     while i < n and path[i] not in '/\\':
@@ -387,7 +387,7 @@ def normpath(path):
         elif comps[i] == '..' and i > 0 and comps[i-1] not in ('', '..'):
             del comps[i-1:i+1]
             i = i - 1
-        elif comps[i] == '' and i > 0 and comps[i-1] <> '':
+        elif comps[i] == '' and i > 0 and comps[i-1] != '':
             del comps[i]
         else:
             i = i + 1

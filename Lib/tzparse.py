@@ -16,7 +16,7 @@ def tzparse(tzstr):
 	timezone, and 'daystart'/'hourstart' and 'dayend'/'hourend'
 	specify the starting and ending points for daylight saving time."""
 	global tzprog
-	if tzprog == None:
+	if tzprog is None:
 		import re
 		tzprog = re.compile(tzpat)
 	match = tzprog.match(tzstr)

@@ -185,7 +185,7 @@ class SGMLParser:
     # Internal -- parse comment, return length or -1 if not terminated
     def parse_comment(self, i):
         rawdata = self.rawdata
-        if rawdata[i:i+4] <> '<!--':
+        if rawdata[i:i+4] != '<!--':
             raise RuntimeError, 'unexpected call to handle_comment'
         match = commentclose.search(rawdata, i+4)
         if not match:
@@ -198,7 +198,7 @@ class SGMLParser:
     # Internal -- parse processing instr, return length or -1 if not terminated
     def parse_pi(self, i):
         rawdata = self.rawdata
-        if rawdata[i:i+2] <> '<?':
+        if rawdata[i:i+2] != '<?':
             raise RuntimeError, 'unexpected call to handle_pi'
         match = piclose.search(rawdata, i+2)
         if not match:

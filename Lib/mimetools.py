@@ -22,7 +22,7 @@ class Message(rfc822.Message):
 
 	def parsetype(self):
 		str = self.typeheader
-		if str == None:
+		if str is None:
 			str = 'text/plain'
 		if ';' in str:
 			i = string.index(str, ';')
@@ -75,7 +75,7 @@ class Message(rfc822.Message):
 		return result
 
 	def getencoding(self):
-		if self.encodingheader == None:
+		if self.encodingheader is None:
 			return '7bit'
 		return string.lower(self.encodingheader)
 
@@ -109,7 +109,7 @@ def choose_boundary():
 	global _prefix
 	import time
 	import random
-	if _prefix == None:
+	if _prefix is None:
 		import socket
 		import os
 		hostid = socket.gethostbyname(socket.gethostname())

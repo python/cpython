@@ -59,7 +59,7 @@ def split(p):
     everything after the final slash.  Either part may be empty."""
     i = p.rfind('/') + 1
     head, tail = p[:i], p[i:]
-    if head and head <> '/'*len(head):
+    if head and head != '/'*len(head):
         while head[-1] == '/':
             head = head[:-1]
     return head, tail
@@ -120,7 +120,7 @@ def commonprefix(m):
     prefix = m[0]
     for item in m:
         for i in range(len(prefix)):
-            if prefix[:i+1] <> item[:i+1]:
+            if prefix[:i+1] != item[:i+1]:
                 prefix = prefix[:i]
                 if i == 0: return ''
                 break
@@ -281,10 +281,10 @@ def walk(top, func, arg):
 def expanduser(path):
     """Expand ~ and ~user constructions.  If user or $HOME is unknown, 
     do nothing."""
-    if path[:1] <> '~':
+    if path[:1] != '~':
         return path
     i, n = 1, len(path)
-    while i < n and path[i] <> '/':
+    while i < n and path[i] != '/':
         i = i + 1
     if i == 1:
         if not os.environ.has_key('HOME'):

@@ -19,7 +19,7 @@ def listdir(path):
         mtime = os.stat(path)[8]
     except os.error:
         return []
-    if mtime <> cached_mtime:
+    if mtime != cached_mtime:
         try:
             list = os.listdir(path)
         except os.error:
