@@ -50,8 +50,10 @@ def gsub(pat, repl, str):
 # Split string str in fields separated by delimiters matching pattern
 # pat.  Only non-empty matches for the pattern are considered, so e.g.
 # split('abc', '') returns ['abc'].
+# When the optional 3rd argument is true, the separators are also
+# inserted to the list.
 
-def split(str, pat):
+def split(str, pat, retain = 0):
 	prog = compile(pat)
 	res = []
 	start = next = 0
@@ -64,9 +66,21 @@ def split(str, pat):
 				break
 		else:
 			res.append(str[start:a])
+			if retain:
+				res.append(str[a:b])
 			start = next = b
 	res.append(str[start:])
 	return res
+
+
+# Capitalize words split using a pattern
+
+def capwords(str, pat):
+	import string
+	words = split(str, pat, 1)
+	for i in range(0, len(words), 2):
+		words[i] = string.capitalize(words[i])
+	return string.joinfields(words, "")
 
 
 # Internal subroutines:
