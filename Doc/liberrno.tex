@@ -5,10 +5,15 @@
 
 This module makes available standard errno system symbols.
 The value of each symbol is the corresponding integer value.
-The names and descriptions are borrowed from linux/include/errno.h,
+The names and descriptions are borrowed from \file{linux/include/errno.h},
 which should be pretty all-inclusive.  Of the following list, symbols
 that are not used on the current platform are not defined by the
 module.
+
+The module also defines the dictionary variable \code{errorcode} which
+maps numeric error codes back to their symbol names, so that e.g.
+\code{errno.errorcode[errno.EPERM] == 'EPERM'}.  To translate a
+numeric error code to an error message, use \code{os.strerror()}.
 
 Symbols available can include:
 \begin{datadesc}{EPERM} Operation not permitted \end{datadesc}
