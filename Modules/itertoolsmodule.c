@@ -235,10 +235,12 @@ static PyObject *
 dropwhile_next(dropwhileobject *lz)
 {
 	PyObject *item, *good;
+	PyObject *it = lz->it;
 	long ok;
 
 	for (;;) {
-		item = PyIter_Next(lz->it);
+		assert(PyIter_Check(it));
+		item = (*it->ob_type->tp_iternext)(it);
 		if (item == NULL)
 			return NULL;
 		if (lz->start == 1)
@@ -389,12 +391,14 @@ static PyObject *
 takewhile_next(takewhileobject *lz)
 {
 	PyObject *item, *good;
+	PyObject *it = lz->it;
 	long ok;
 
 	if (lz->stop == 1)
 		return NULL;
 
-	item = PyIter_Next(lz->it);
+	assert(PyIter_Check(it));
+	item = (*it->ob_type->tp_iternext)(it);
 	if (item == NULL)
 		return NULL;
 
@@ -560,10 +564,12 @@ static PyObject *
 islice_next(isliceobject *lz)
 {
 	PyObject *item;
+	PyObject *it = lz->it;
 	long oldnext;
 
 	while (lz->cnt < lz->next) {
-		item = PyIter_Next(lz->it);
+		assert(PyIter_Check(it));
+		item = (*it->ob_type->tp_iternext)(it);
 		if (item == NULL)
 			return NULL;
 		Py_DECREF(item);
@@ -571,7 +577,8 @@ islice_next(isliceobject *lz)
 	}
 	if (lz->cnt >= lz->stop)
 		return NULL;
-	item = PyIter_Next(lz->it);
+	assert(PyIter_Check(it));
+	item = (*it->ob_type->tp_iternext)(it);
 	if (item == NULL)
 		return NULL;
 	lz->cnt++;
@@ -715,8 +722,10 @@ starmap_next(starmapobject *lz)
 {
 	PyObject *args;
 	PyObject *result;
+	PyObject *it = lz->it;
 
-	args = PyIter_Next(lz->it);
+	assert(PyIter_Check(it));
+	args = (*it->ob_type->tp_iternext)(it);
 	if (args == NULL)
 		return NULL;
 	if (!PyTuple_CheckExact(args)) {
@@ -1194,10 +1203,12 @@ static PyObject *
 ifilter_next(ifilterobject *lz)
 {
 	PyObject *item;
+	PyObject *it = lz->it;
 	long ok;
 
 	for (;;) {
-		item = PyIter_Next(lz->it);
+		assert(PyIter_Check(it));
+		item = (*it->ob_type->tp_iternext)(it);
 		if (item == NULL)
 			return NULL;
 
@@ -1348,10 +1359,12 @@ static PyObject *
 ifilterfalse_next(ifilterfalseobject *lz)
 {
 	PyObject *item;
+	PyObject *it = lz->it;
 	long ok;
 
 	for (;;) {
-		item = PyIter_Next(lz->it);
+		assert(PyIter_Check(it));
+		item = (*it->ob_type->tp_iternext)(it);
 		if (item == NULL)
 			return NULL;
 
@@ -1626,7 +1639,8 @@ izip_next(izipobject *lz)
 	if (result->ob_refcnt == 1) {
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
-			item = PyIter_Next(it);
+			assert(PyIter_Check(it));
+			item = (*it->ob_type->tp_iternext)(it);
 			if (item == NULL)
 				return NULL;
 			Py_DECREF(PyTuple_GET_ITEM(result, i));
@@ -1639,7 +1653,8 @@ izip_next(izipobject *lz)
 			return NULL;
 		for (i=0 ; i < tuplesize ; i++) {
 			it = PyTuple_GET_ITEM(lz->ittuple, i);
-			item = PyIter_Next(it);
+			assert(PyIter_Check(it));
+			item = (*it->ob_type->tp_iternext)(it);
 			if (item == NULL) {
 				Py_DECREF(result);
 				return NULL;
