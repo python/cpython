@@ -1,0 +1,512 @@
+\chapter{Simple statements}
+\indexii{simple}{statement}
+
+Simple statements are comprised within a single logical line.
+Several simple statements may occur on a single line separated
+by semicolons.  The syntax for simple statements is:
+
+\begin{verbatim}
+simple_stmt:    expression_stmt
+              | assignment_stmt
+              | pass_stmt
+              | del_stmt
+              | print_stmt
+              | return_stmt
+              | raise_stmt
+              | break_stmt
+              | continue_stmt
+              | import_stmt
+              | global_stmt
+              | exec_stmt
+\end{verbatim}
+
+\section{Expression statements}
+\indexii{expression}{statement}
+
+Expression statements are used (mostly interactively) to compute and
+write a value, or (usually) to call a procedure (a function that
+returns no meaningful result; in Python, procedures return the value
+\code{None}):
+
+\begin{verbatim}
+expression_stmt: condition_list
+\end{verbatim}
+
+An expression statement evaluates the condition list (which may be a
+single condition).
+\indexii{expression}{list}
+
+In interactive mode, if the value is not \code{None}, it is converted
+to a string using the rules for string conversions (expressions in
+reverse quotes), and the resulting string is written to standard
+output (see section \ref{print}) on a line by itself.
+(The exception for \code{None} is made so that procedure calls, which
+are syntactically equivalent to expressions, do not cause any output.)
+\ttindex{None}
+\indexii{string}{conversion}
+\index{output}
+\indexii{standard}{output}
+\indexii{writing}{values}
+\indexii{procedure}{call}
+
+\section{Assignment statements}
+\indexii{assignment}{statement}
+
+Assignment statements are used to (re)bind names to values and to
+modify attributes or items of mutable objects:
+\indexii{binding}{name}
+\indexii{rebinding}{name}
+\obindex{mutable}
+\indexii{attribute}{assignment}
+
+\begin{verbatim}
+assignment_stmt: (target_list "=")+ expression_list
+target_list:     target ("," target)* [","]
+target:          identifier | "(" target_list ")" | "[" target_list "]"
+               | attributeref | subscription | slicing
+\end{verbatim}
+
+(See section \ref{primaries} for the syntax definitions for the last
+three symbols.)
+
+An assignment statement evaluates the expression list (remember that
+this can be a single expression or a comma-separated list, the latter
+yielding a tuple) and assigns the single resulting object to each of
+the target lists, from left to right.
+\indexii{expression}{list}
+
+Assignment is defined recursively depending on the form of the target
+(list).  When a target is part of a mutable object (an attribute
+reference, subscription or slicing), the mutable object must
+ultimately perform the assignment and decide about its validity, and
+may raise an exception if the assignment is unacceptable.  The rules
+observed by various types and the exceptions raised are given with the
+definition of the object types (see section \ref{types}).
+\index{target}
+\indexii{target}{list}
+
+Assignment of an object to a target list is recursively defined as
+follows.
+\indexiii{target}{list}{assignment}
+
+\begin{itemize}
+\item
+If the target list is a single target: the object is assigned to that
+target.
+
+\item
+If the target list is a comma-separated list of targets: the object
+must be a tuple with the same number of items as the list contains
+targets, and the items are assigned, from left to right, to the
+corresponding targets.
+
+\end{itemize}
+
+Assignment of an object to a single target is recursively defined as
+follows.
+
+\begin{itemize} % nested
+
+\item
+If the target is an identifier (name):
+
+\begin{itemize}
+
+\item
+If the name does not occur in a \keyword{global} statement in the current
+code block: the name is bound to the object in the current local name
+space.
+\stindex{global}
+
+\item
+Otherwise: the name is bound to the object in the current global name
+space.
+
+\end{itemize} % nested
+
+The name is rebound if it was already bound.
+
+\item
+If the target is a target list enclosed in parentheses: the object is
+assigned to that target list as described above.
+
+\item
+If the target is a target list enclosed in square brackets: the object
+must be a list with the same number of items as the target list
+contains targets, and its items are assigned, from left to right, to
+the corresponding targets.
+
+\item
+If the target is an attribute reference: The primary expression in the
+reference is evaluated.  It should yield an object with assignable
+attributes; if this is not the case, \exception{TypeError} is raised.  That
+object is then asked to assign the assigned object to the given
+attribute; if it cannot perform the assignment, it raises an exception
+(usually but not necessarily \exception{AttributeError}).
+\indexii{attribute}{assignment}
+
+\item
+If the target is a subscription: The primary expression in the
+reference is evaluated.  It should yield either a mutable sequence
+(list) object or a mapping (dictionary) object.  Next, the subscript
+expression is evaluated.
+\indexii{subscription}{assignment}
+\obindex{mutable}
+
+If the primary is a mutable sequence object (a list), the subscript
+must yield a plain integer.  If it is negative, the sequence's length
+is added to it.  The resulting value must be a nonnegative integer
+less than the sequence's length, and the sequence is asked to assign
+the assigned object to its item with that index.  If the index is out
+of range, \exception{IndexError} is raised (assignment to a subscripted
+sequence cannot add new items to a list).
+\obindex{sequence}
+\obindex{list}
+
+If the primary is a mapping (dictionary) object, the subscript must
+have a type compatible with the mapping's key type, and the mapping is
+then asked to create a key/datum pair which maps the subscript to
+the assigned object.  This can either replace an existing key/value
+pair with the same key value, or insert a new key/value pair (if no
+key with the same value existed).
+\obindex{mapping}
+\obindex{dictionary}
+
+\item
+If the target is a slicing: The primary expression in the reference is
+evaluated.  It should yield a mutable sequence object (e.g. a list).  The
+assigned object should be a sequence object of the same type.  Next,
+the lower and upper bound expressions are evaluated, insofar they are
+present; defaults are zero and the sequence's length.  The bounds
+should evaluate to (small) integers.  If either bound is negative, the
+sequence's length is added to it.  The resulting bounds are clipped to
+lie between zero and the sequence's length, inclusive.  Finally, the
+sequence object is asked to replace the slice with the items of the
+assigned sequence.  The length of the slice may be different from the
+length of the assigned sequence, thus changing the length of the
+target sequence, if the object allows it.
+\indexii{slicing}{assignment}
+
+\end{itemize}
+	
+(In the current implementation, the syntax for targets is taken
+to be the same as for expressions, and invalid syntax is rejected
+during the code generation phase, causing less detailed error
+messages.)
+
+WARNING: Although the definition of assignment implies that overlaps
+between the left-hand side and the right-hand side are `safe' (e.g.
+\verb@a, b = b, a@ swaps two variables), overlaps within the
+collection of assigned-to variables are not safe!  For instance, the
+following program prints \code@[0, 2]@:
+
+\begin{verbatim}
+x = [0, 1]
+i = 0
+i, x[i] = 1, 2
+print x
+\end{verbatim}
+
+
+\section{The {\tt pass} statement}
+\stindex{pass}
+
+\begin{verbatim}
+pass_stmt:      "pass"
+\end{verbatim}
+
+\keyword{pass} is a null operation --- when it is executed, nothing
+happens.  It is useful as a placeholder when a statement is
+required syntactically, but no code needs to be executed, for example:
+\indexii{null}{operation}
+
+\begin{verbatim}
+def f(arg): pass    # a function that does nothing (yet)
+
+class C: pass       # a class with no methods (yet)
+\end{verbatim}
+
+\section{The {\tt del} statement}
+\stindex{del}
+
+\begin{verbatim}
+del_stmt:       "del" target_list
+\end{verbatim}
+
+Deletion is recursively defined very similar to the way assignment is
+defined. Rather that spelling it out in full details, here are some
+hints.
+\indexii{deletion}{target}
+\indexiii{deletion}{target}{list}
+
+Deletion of a target list recursively deletes each target, from left
+to right.
+
+Deletion of a name removes the binding of that name (which must exist)
+from the local or global name space, depending on whether the name
+occurs in a \keyword{global} statement in the same code block.
+\stindex{global}
+\indexii{unbinding}{name}
+
+Deletion of attribute references, subscriptions and slicings
+is passed to the primary object involved; deletion of a slicing
+is in general equivalent to assignment of an empty slice of the
+right type (but even this is determined by the sliced object).
+\indexii{attribute}{deletion}
+
+\section{The {\tt print} statement} \label{print}
+\stindex{print}
+
+\begin{verbatim}
+print_stmt:     "print" [ condition ("," condition)* [","] ]
+\end{verbatim}
+
+\keyword{print} evaluates each condition in turn and writes the resulting
+object to standard output (see below).  If an object is not a string,
+it is first converted to a string using the rules for string
+conversions.  The (resulting or original) string is then written.  A
+space is written before each object is (converted and) written, unless
+the output system believes it is positioned at the beginning of a
+line.  This is the case: (1) when no characters have yet been written
+to standard output; or (2) when the last character written to standard
+output is \verb/\n/; or (3) when the last write operation on standard
+output was not a \keyword{print} statement.  (In some cases it may be
+functional to write an empty string to standard output for this
+reason.)
+\index{output}
+\indexii{writing}{values}
+
+A \verb/"\n"/ character is written at the end, unless the \keyword{print}
+statement ends with a comma.  This is the only action if the statement
+contains just the keyword \keyword{print}.
+\indexii{trailing}{comma}
+\indexii{newline}{suppression}
+
+Standard output is defined as the file object named \verb@stdout@
+in the built-in module \verb@sys@.  If no such object exists,
+or if it is not a writable file, a \exception{RuntimeError} exception is raised.
+(The original implementation attempts to write to the system's original
+standard output instead, but this is not safe, and should be fixed.)
+\indexii{standard}{output}
+\refbimodindex{sys}
+\ttindex{stdout}
+\exindex{RuntimeError}
+
+\section{The {\tt return} statement}
+\stindex{return}
+
+\begin{verbatim}
+return_stmt:    "return" [condition_list]
+\end{verbatim}
+
+\keyword{return} may only occur syntactically nested in a function
+definition, not within a nested class definition.
+\indexii{function}{definition}
+\indexii{class}{definition}
+
+If a condition list is present, it is evaluated, else \code{None}
+is substituted.
+
+\keyword{return} leaves the current function call with the condition
+list (or \code{None}) as return value.
+
+When \keyword{return} passes control out of a \keyword{try} statement
+with a finally clause, that finally clause is executed
+before really leaving the function.
+\kwindex{finally}
+
+\section{The {\tt raise} statement}
+\stindex{raise}
+
+\begin{verbatim}
+raise_stmt:     "raise" condition ["," condition ["," condition]]
+\end{verbatim}
+
+\keyword{raise} evaluates its first condition, which must yield
+a string, class, or instance object.  If there is a second condition,
+this is evaluated, else \code{None} is substituted.  If the first
+condition is a class object, then the second condition must be an
+instance of that class or one of its derivatives.  If the first
+condition is an instance object, the second condition must be
+\code{None}.
+\index{exception}
+\indexii{raising}{exception}
+
+If the first object is a class or string, it then raises the exception
+identified by the first object, with the second one (or \code{None})
+as its parameter.  If the first object is an instance, it raises the
+exception identified by the class of the object, with the instance as
+its parameter (and there should be no second object, or the second
+object should be \code{None}).
+
+If a third object is present, and it it not \code{None}, it should be
+a traceback object (see section \ref{traceback}), and it is
+substituted instead of the current location as the place where the
+exception occurred.  This is useful to re-raise an exception
+transparently in an except clause.
+\obindex{traceback}
+
+\section{The {\tt break} statement}
+\stindex{break}
+
+\begin{verbatim}
+break_stmt:     "break"
+\end{verbatim}
+
+\keyword{break} may only occur syntactically nested in a \keyword{for}
+or \keyword{while} loop, but not nested in a function or class definition
+within that loop.
+\stindex{for}
+\stindex{while}
+\indexii{loop}{statement}
+
+It terminates the nearest enclosing loop, skipping the optional
+else clause if the loop has one.
+\kwindex{else}
+
+If a \keyword{for} loop is terminated by \keyword{break}, the loop control
+target keeps its current value.
+\indexii{loop control}{target}
+
+When \keyword{break} passes control out of a \keyword{try} statement
+with a finally clause, that finally clause is executed
+before really leaving the loop.
+\kwindex{finally}
+
+\section{The {\tt continue} statement}
+\stindex{continue}
+
+\begin{verbatim}
+continue_stmt:  "continue"
+\end{verbatim}
+
+\keyword{continue} may only occur syntactically nested in a \keyword{for} or
+\keyword{while} loop, but not nested in a function or class definition or
+\keyword{try} statement within that loop.\footnote{Except that it may
+currently occur within an {\tt except} clause.}
+\stindex{for}
+\stindex{while}
+\indexii{loop}{statement}
+\kwindex{finally}
+
+It continues with the next cycle of the nearest enclosing loop.
+
+\section{The {\tt import} statement} \label{import}
+\stindex{import}
+
+\begin{verbatim}
+import_stmt:    "import" identifier ("," identifier)*
+              | "from" identifier "import" identifier ("," identifier)*
+              | "from" identifier "import" "*"
+\end{verbatim}
+
+Import statements are executed in two steps: (1) find a module, and
+initialize it if necessary; (2) define a name or names in the local
+name space (of the scope where the \keyword{import} statement occurs).
+The first form (without \keyword{from}) repeats these steps for each
+identifier in the list, the \keyword{from} form performs them once, with
+the first identifier specifying the module name.
+\indexii{importing}{module}
+\indexii{name}{binding}
+\kwindex{from}
+
+The system maintains a table of modules that have been initialized,
+indexed by module name.  (The current implementation makes this table
+accessible as \code{sys.modules}.)  When a module name is found in
+this table, step (1) is finished.  If not, a search for a module
+definition is started.  This first looks for a built-in module
+definition, and if no built-in module if the given name is found, it
+searches a user-specified list of directories for a file whose name is
+the module name with extension \file{.py}.  (The current
+implementation uses the list of strings \code{sys.path} as the search
+path; it is initialized from the shell environment variable
+\envvar{PYTHONPATH}, with an installation-dependent default.)
+\ttindex{modules}
+\ttindex{sys.modules}
+\indexii{module}{name}
+\indexii{built-in}{module}
+\indexii{user-defined}{module}
+\refbimodindex{sys}
+\ttindex{path}
+\ttindex{sys.path}
+\indexii{filename}{extension}
+
+If a built-in module is found, its built-in initialization code is
+executed and step (1) is finished.  If no matching file is found,
+\exception{ImportError} is raised.  If a file is found, it is parsed,
+yielding an executable code block.  If a syntax error occurs,
+\exception{SyntaxError} is raised.  Otherwise, an empty module of the given
+name is created and inserted in the module table, and then the code
+block is executed in the context of this module.  Exceptions during
+this execution terminate step (1).
+\indexii{module}{initialization}
+\exindex{SyntaxError}
+\exindex{ImportError}
+\index{code block}
+
+When step (1) finishes without raising an exception, step (2) can
+begin.
+
+The first form of \keyword{import} statement binds the module name in the
+local name space to the module object, and then goes on to import the
+next identifier, if any.  The \keyword{from} from does not bind the
+module name: it goes through the list of identifiers, looks each one
+of them up in the module found in step (1), and binds the name in the
+local name space to the object thus found.  If a name is not found,
+\exception{ImportError} is raised.  If the list of identifiers is replaced
+by a star (\verb@*@), all names defined in the module are bound,
+except those beginning with an underscore(\verb@_@).
+\indexii{name}{binding}
+\exindex{ImportError}
+
+Names bound by import statements may not occur in \keyword{global}
+statements in the same scope.
+\stindex{global}
+
+The \keyword{from} form with \verb@*@ may only occur in a module scope.
+\kwindex{from}
+\ttindex{from ... import *}
+
+(The current implementation does not enforce the latter two
+restrictions, but programs should not abuse this freedom, as future
+implementations may enforce them or silently change the meaning of the
+program.)
+
+\section{The {\tt global} statement} \label{global}
+\stindex{global}
+
+\begin{verbatim}
+global_stmt:    "global" identifier ("," identifier)*
+\end{verbatim}
+
+The \keyword{global} statement is a declaration which holds for the
+entire current code block.  It means that the listed identifiers are to be
+interpreted as globals.  While {\em using} global names is automatic
+if they are not defined in the local scope, {\em assigning} to global
+names would be impossible without \keyword{global}.
+\indexiii{global}{name}{binding}
+
+Names listed in a \keyword{global} statement must not be used in the same
+code block before that \keyword{global} statement is executed.
+
+Names listed in a \keyword{global} statement must not be defined as formal
+parameters or in a \keyword{for} loop control target, \keyword{class}
+definition, function definition, or \keyword{import} statement.
+
+(The current implementation does not enforce the latter two
+restrictions, but programs should not abuse this freedom, as future
+implementations may enforce them or silently change the meaning of the
+program.)
+
+Note: the \keyword{global} is a directive to the parser.  Therefore, it
+applies only to code parsed at the same time as the \keyword{global}
+statement.  In particular, a \keyword{global} statement contained in an
+\keyword{exec} statement does not affect the code block {\em containing}
+the \keyword{exec} statement, and code contained in an \keyword{exec}
+statement is unaffected by \keyword{global} statements in the code
+containing the \keyword{exec} statement.  The same applies to the
+\function{eval()}, \function{execfile()} and \function{compile()} functions.
+\stindex{exec}
+\bifuncindex{eval}
+\bifuncindex{execfile}
+\bifuncindex{compile}

@@ -1,0 +1,56 @@
+\documentclass{manual}
+
+\title{Python Reference Manual}
+
+\input{boilerplate}
+
+\makeindex
+
+\begin{document}
+
+\maketitle
+
+\input{copyright}
+
+\begin{abstract}
+
+\noindent
+Python is a simple, yet powerful, interpreted programming language
+that bridges the gap between C and shell programming, and is thus
+ideally suited for ``throw-away programming'' and rapid prototyping.
+Its syntax is put together from constructs borrowed from a variety of
+other languages; most prominent are influences from ABC, C, Modula-3
+and Icon.
+
+The Python interpreter is easily extended with new functions and data
+types implemented in C.  Python is also suitable as an extension
+language for highly customizable C applications such as editors or
+window managers.
+
+Python is available for various operating systems, amongst which
+several flavors of {\UNIX} (including Linux), the Apple Macintosh O.S.,
+MS-DOS, MS-Windows 3.1, Windows NT, and OS/2.
+
+This reference manual describes the syntax and ``core semantics'' of
+the language.  It is terse, but attempts to be exact and complete.
+The semantics of non-essential built-in object types and of the
+built-in functions and modules are described in the {\em Python
+Library Reference}.  For an informal introduction to the language, see
+the {\em Python Tutorial}.
+
+\end{abstract}
+
+\tableofcontents
+
+\include{ref1}		% Introduction
+\include{ref2}		% Lexical analysis
+\include{ref3}		% Data model
+\include{ref4}		% Execution model
+\include{ref5}		% Expressions and conditions
+\include{ref6}		% Simple statements
+\include{ref7}		% Compound statements
+\include{ref8}		% Top-level components
+
+\input{ref.ind}
+
+\end{document}
