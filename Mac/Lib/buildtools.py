@@ -228,7 +228,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 	dest_finfo = dest_fss.GetFInfo()
 	dest_finfo.Creator = ownertype
 	dest_finfo.Type = 'APPL'
-	dest_finfo.Flags = dest_finfo.Flags | MACFS.kHasBundle
+	dest_finfo.Flags = dest_finfo.Flags | MACFS.kHasBundle | MACFS.kIsShared
 	dest_finfo.Flags = dest_finfo.Flags & ~MACFS.kHasBeenInited
 	dest_fss.SetFInfo(dest_finfo)
 	
