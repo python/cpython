@@ -1,4 +1,4 @@
-;;; Major mode for editing Python programs, version 1.08ay
+;;; Major mode for editing Python programs, version 1.08az
 ;; by: Tim Peters <tim@ksr.com>
 ;; after an original idea by: Michael A. Guravage
 ;;
@@ -514,33 +514,25 @@ the new line indented."
 	      endpos searching found)
 	 (if open-bracket-pos
 	     (progn
-	       ;; if preceding line in same structure, presumably the
-	       ;; user already has an indentation they like for this
-	       ;; structure, so just copy it
-	       (forward-line -1)
-	       (while (looking-at "[ \t]*[#\n]")
-		 (forward-line -1))	; ignore noise lines
-	       (if (eq open-bracket-pos (py-nesting-level))
-		   (current-indentation)
-		 ;; else copy the indentation of the first item (if
-		 ;; any) in this structure
-		 (goto-char startpos)
-		 (condition-case nil
-		     (progn (backward-list) (setq found t))
-		   (error nil))		; no preceding item
-		 (goto-char (1+ open-bracket-pos)) ; just beyond bracket
-		 (if found
-		     (progn
-		       (while (looking-at "[ \t]*[#\n\\\\]")
-			 (forward-line 1))
-		       (skip-chars-forward " \t")
-		       (current-column))
-		   ;; else to first real character (not whitespace or
-		   ;; comment hash) after open bracket; if none, to
-		   ;; 1 beyond the open bracket
-		   (and (looking-at "[ \t]*[^ \t\n#]")
-			(goto-char (1- (match-end 0))))
-		   (current-column))))
+	       ;; align with first item in list; else a normal
+	       ;; indent beyond the line with the open bracket
+	       (goto-char (1+ open-bracket-pos)) ; just beyond bracket
+	       ;; is the first list item on the same line?
+	       (skip-chars-forward " \t")
+	       (if (null (memq (following-char) '(?\n ?# ?\\)))
+		   ; yes, so line up with it
+		   (current-column)
+		 ;; first list item on another line, or doesn't exist yet
+		 (forward-line 1)
+		 (while (and (< (point) startpos)
+			     (looking-at "[ \t]*[#\n\\\\]")) ; skip noise
+		   (forward-line 1))
+		 (if (< (point) startpos)
+		     ;; again mimic the first list item
+		     (current-indentation)
+		   ;; else they're about to enter the first item
+		   (goto-char open-bracket-pos)
+		   (+ (current-indentation) py-indent-offset))))
 
 	   ;; else on backslash continuation line
 	   (forward-line -1)
@@ -569,7 +561,7 @@ the new line indented."
 		       (setq searching nil) ; done searching in any case
 		       (setq found
 			     (not (or
-				   (eq (char-after (point)) ?=)
+				   (eq (following-char) ?=)
 				   (memq (char-after (- (point) 2))
 					 '(?< ?> ?!)))))))))
 	     (if (or (not found)	; not an assignment
@@ -1318,13 +1310,11 @@ mode will strive to indent later lines of the statement in the same way.
 
 If a line is a continuation line by virtue of being in an unclosed
 paren/bracket/brace structure (`list', for short), the suggested
-indentation depends on whether the current line will contain the first
-item in the list.  If it is the first item, it's indented to line up with
-the first non-whitespace and non-comment character following the list's
-opening bracket; if no such character exists, it's indented to one column
-beyond the opening bracket.  If you don't like that, change it by hand.
-The remaining items in the list will mimic whatever indentation you gave
-to the first item.
+indentation depends on whether the current line contains the first item
+in the list.  If it does, it's indented py-indent-offset columns beyond
+the indentation of the line containing the open bracket.  If you don't
+like that, change it by hand.  The remaining items in the list will mimic
+whatever indentation you give to the first item.
 
 If a line is a continuation line because the line preceding it ends with
 a backslash, the third and following lines of the statement inherit their
