@@ -1,0 +1,24 @@
+% Style parameters and macros used by all documents here
+
+% Page lay-out parameters
+\textwidth =      150mm
+\textheight =     240mm
+\topmargin =      -11mm
+\oddsidemargin =    5mm
+\evensidemargin =   5mm
+
+% Macros for e.g. and E.g. if you want them italicized:
+% \newcommand{\eg}{{\it e.g.}}
+% \newcommand{\Eg}{{\it E.g.}}
+% If you don't want them italicized:
+\newcommand{\eg}{e.g.}
+\newcommand{\Eg}{E.g.}
+
+% Frequently used system names
+\newcommand{\Python}{Python}
+\newcommand{\UNIX}{U{\sc nix}}
+
+% Code environment (use together with verbatim!)
+\newenvironment{code}%
+{\nopagebreak\begin{list}{\nopagebreak}{\nopagebreak}\nopagebreak}%
+{\nopagebreak\end{list}\nopagebreak}
