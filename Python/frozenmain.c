@@ -51,6 +51,7 @@ Py_FrozenMain(argc, argv)
 		unbuffered = 1;
 
 	if (unbuffered) {
+		setbuf(stdin, (char *)NULL);
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
 	}
