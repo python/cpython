@@ -760,9 +760,9 @@ reverse_slice(PyObject **lo, PyObject **hi)
  */
 
 /* Comparison function.  Takes care of calling a user-supplied
- * comparison function (any callable Python object).  Calls the
- * standard comparison function, PyObject_RichCompareBool(), if the user-
- * supplied function is NULL.
+ * comparison function (any callable Python object), which must not be
+ * NULL (use the ISLT macro if you don't know, or call PyObject_RichCompareBool
+ * with Py_LT if you know it's NULL).
  * Returns -1 on error, 1 if x < y, 0 if x >= y.
  */
 static int
@@ -772,9 +772,7 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 	PyObject *args;
 	int i;
 
-	if (compare == NULL)
-		return PyObject_RichCompareBool(x, y, Py_LT);
-
+	assert(compare != NULL);
 	/* Call the user's comparison function and translate the 3-way
 	 * result into true or false (or error).
 	 */
@@ -800,11 +798,20 @@ islt(PyObject *x, PyObject *y, PyObject *compare)
 	return i < 0;
 }
 
-/* Compare X to Y via islt().  Goto "fail" if the comparison raises an
+/* If COMPARE is NULL, calls PyObject_RichCompareBool with Py_LT, else calls
+ * islt.  This avoids a layer of function call in the usual case, and
+ * sorting does many comparisons.
+ * Returns -1 on error, 1 if x < y, 0 if x >= y.
+ */
+#define ISLT(X, Y, COMPARE) ((COMPARE) == NULL ?			\
+			     PyObject_RichCompareBool(X, Y, Py_LT) :	\
+			     islt(X, Y, COMPARE))
+
+/* Compare X to Y via "<".  Goto "fail" if the comparison raises an
    error.  Else "k" is set to true iff X<Y, and an "if (k)" block is
    started.  It makes more sense in context <wink>.  X and Y are PyObject*s.
 */
-#define IFLT(X, Y) if ((k = islt(X, Y, compare)) < 0) goto fail;  \
+#define IFLT(X, Y) if ((k = ISLT(X, Y, compare)) < 0) goto fail;  \
 		   if (k)
 
 /* binarysort is the best method for sorting small arrays: it does
@@ -1241,7 +1248,7 @@ merge_lo(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 		 * appears to win consistently.
 		 */
  		for (;;) {
-	 		k = islt(*pb, *pa, compare);
+	 		k = ISLT(*pb, *pa, compare);
 			if (k) {
 				if (k < 0)
 					goto Fail;
@@ -1369,7 +1376,7 @@ merge_hi(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 		 * appears to win consistently.
 		 */
  		for (;;) {
-	 		k = islt(*pb, *pa, compare);
+	 		k = ISLT(*pb, *pa, compare);
 			if (k) {
 				if (k < 0)
 					goto Fail;
@@ -1683,6 +1690,7 @@ fail:
 	return result;
 }
 #undef IFLT
+#undef ISLT
 
 int
 PyList_Sort(PyObject *v)
