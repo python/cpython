@@ -62,7 +62,17 @@ class MyScanner(Scanner):
 
 
 	def writeinitialdefs(self):
-		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("""
+def FOUR_CHAR_CODE(x): return x
+normal						= 0
+bold						= 1
+italic						= 2
+underline					= 4
+outline						= 8
+shadow						= 0x10
+condense					= 0x20
+extend						= 0x40
+""")
 
 	def makeblacklistnames(self):
 		return [
