@@ -31,12 +31,12 @@ class FileList:
 
 
     def goodname(self, filename):
-            filename = self.canonize(filename)
-            key = os.path.normcase(filename)
-            if self.dict.has_key(key):
-                edit = self.dict[key]
-                filename = edit.io.filename or filename
-            return filename
+        filename = self.canonize(filename)
+        key = os.path.normcase(filename)
+        if self.dict.has_key(key):
+            edit = self.dict[key]
+            filename = edit.io.filename or filename
+        return filename
 
     def open(self, filename, action=None):
         assert filename
