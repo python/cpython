@@ -725,9 +725,6 @@ strop_atoi(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
-	extern long PyOS_strtol Py_PROTO((const char *, char **, int));
-	extern unsigned long
-                PyOS_strtoul Py_PROTO((const char *, char **, int));
 	char *s, *end;
 	int base = 10;
 	long x;
