@@ -24,7 +24,6 @@ extern void initregex(void);
 #ifndef MS_WIN64
 extern void initrgbimg(void);
 #endif
-extern void initrotor(void);
 extern void initsignal(void);
 extern void initsha(void);
 extern void initstrop(void);
@@ -38,7 +37,6 @@ extern void initmsvcrt(void);
 extern void init_locale(void);
 #endif
 extern void init_codecs(void);
-extern void initxreadlines(void);
 extern void init_weakref(void);
 extern void init_hotshot(void);
 extern void initxxsubtype(void);
@@ -93,7 +91,6 @@ struct _inittab _PyImport_Inittab[] = {
 #ifndef MS_WIN64
         {"rgbimg", initrgbimg},
 #endif
-        {"rotor", initrotor},
         {"signal", initsignal},
         {"sha", initsha},
         {"strop", initstrop},
@@ -110,7 +107,6 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 
         {"_codecs", init_codecs},
-	{"xreadlines", initxreadlines},
 	{"_weakref", init_weakref},
 	{"_hotshot", init_hotshot},
 	{"_random", init_random},
