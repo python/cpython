@@ -2043,7 +2043,22 @@ A very long line that must get split to something other than at the
         h = Header(hstr, maxlinelen=1024, header_name='Subject')
         eq(h.encode(), hstr)
 
+    def test_us_ascii_header(self):
+        eq = self.assertEqual
+        s = 'hello'
+        x = decode_header(s)
+        eq(x, [('hello', None)])
+        h = make_header(x)
+        eq(s, h.encode())
 
+    def test_string_charset(self):
+        eq = self.assertEqual
+        h = Header()
+        h.append('hello', 'iso-8859-1')
+        eq(h, '=?iso-8859-1?q?hello?=')
+
+
+
 # Test RFC 2231 header parameters decoding
 class TestRFC2231(TestEmailBase):
     def test_get_param(self):
