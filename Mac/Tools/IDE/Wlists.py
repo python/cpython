@@ -5,6 +5,8 @@ from Carbon import Evt, Events, Fm, Lists, Qd, Scrap, Win
 from Carbon.List import LNew, CreateCustomList, GetListPort
 from Carbon.Lists import kListDefUserProcType, lInitMsg, lDrawMsg, lHiliteMsg, lCloseMsg
 from Carbon.QuickDraw import hilitetransfermode
+from Carbon import App
+from Carbon.Appearance import kThemeStateActive, kThemeStateInactive, kThemeStatePressed
 
 
 class List(Wbase.SelectableWidget):
@@ -253,22 +255,24 @@ class List(Wbase.SelectableWidget):
 			if not visRgn:
 				visRgn = self._parentwindow.wid.GetWindowPort().visRgn
 			self._list.LUpdate(visRgn)
-			Qd.FrameRect(self._bounds)
-			if self._selected and self._activated:
-				self.drawselframe(1)
+			App.DrawThemeListBoxFrame(self._bounds, kThemeStateActive)
+			#if self._selected and self._activated:
+			#	self.drawselframe(1)
 	
 	def select(self, onoff, isclick = 0):
 		if Wbase.SelectableWidget.select(self, onoff):
 			return
 		self.SetPort()
-		self.drawselframe(onoff)
+		state = [kThemeStateActive, kThemeStatePressed][onoff]
+		App.DrawThemeListBoxFrame(self._bounds, kThemeStateActive)
+		#self.drawselframe(onoff)
 	
 	def activate(self, onoff):
 		self._activated = onoff
 		if self._visible:
 			self._list.LActivate(onoff)
-			if self._selected:
-				self.drawselframe(onoff)
+			#if self._selected:
+			#	self.drawselframe(onoff)
 	
 	def get(self):
 		return self.items
@@ -449,6 +453,7 @@ class TwoLineList(CustomList):
 				Qd.MoveTo(left + 4, top + ascent + linefeed)
 				Qd.DrawText(line2, 0, len(line2))
 			Qd.PenPat("\x11\x11\x11\x11\x11\x11\x11\x11")
+			bottom = top + theList.cellSize[1]
 			Qd.MoveTo(left, bottom - 1)
 			Qd.LineTo(right, bottom - 1)
 		if selected:
