@@ -26,6 +26,8 @@ Library
   arbitrary shell code can't be executed because a bogus URL was
   passed in.
 
+- gettext.translation has an optional fallback argument.
+
 Tools/Demos
 
 Build
