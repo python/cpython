@@ -1515,6 +1515,11 @@ load_next(mod, altmod, p_name, buf, p_buflen)
 		*p_name = dot+1;
 		len = dot-name;
 	}
+	if (len == 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"Empty module name");
+		return NULL;
+	}
 
 	p = buf + *p_buflen;
 	if (p != buf)
