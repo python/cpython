@@ -1086,11 +1086,8 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
 		return NULL;
 
 	s->sock_blocking = block;
-
-	/* If we're not using timeouts, actually set the blocking to give
-	   old python behavior. */
-	if (s->sock_timeout < 0.0)
-		internal_setblocking(s, block);
+	s->sock_timeout = -1.0; /* Always clear the timeout */
+	internal_setblocking(s, block);
 
 	Py_INCREF(Py_None);
 	return Py_None;
