@@ -1357,6 +1357,7 @@ half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 
 	args = Py_BuildValue("(O)", w);
 	if (args == NULL) {
+		Py_DECREF(coercefunc);
 		return NULL;
 	}
 	coerced = PyEval_CallObject(coercefunc, args);
@@ -1553,8 +1554,10 @@ half_cmp(PyObject *v, PyObject *w)
 	}
 
 	args = Py_BuildValue("(O)", w);
-	if (args == NULL)
+	if (args == NULL) {
+		Py_DECREF(cmp_func);
 		return -2;
+	}
 
 	result = PyEval_CallObject(cmp_func, args);
 	Py_DECREF(args);
