@@ -74,13 +74,14 @@ def tabulate(r):
     *sort: random data
     \sort: descending data
     /sort: ascending data
-    3sort: ascending data but with 3 random exchanges
+    3sort: ascending, then 3 random exchanges
+    +sort: ascending, then 10 random at the end
     ~sort: many duplicates
     =sort: all equal
     !sort: worst case scenario
 
     """
-    cases = ("*sort", "\\sort", "/sort", "3sort", "~sort", "=sort", "!sort")
+    cases = tuple([ch + "sort" for ch in r"*\/3+~=!"])
     fmt = ("%2s %7s" + " %6s"*len(cases))
     print fmt % (("i", "2**i") + cases)
     for i in r:
@@ -100,6 +101,11 @@ def tabulate(r):
             L[i1], L[i2] = L[i2], L[i1]
         doit(L) # 3sort
 
+        # Replace the last 10 with random floats.
+        if n >= 10:
+            L[-10:] = [random.random() for dummy in range(10)]
+        doit(L) # +sort
+
         # Arrange for lots of duplicates.
         if n > 4:
             del L[4:]
@@ -117,10 +123,7 @@ def tabulate(r):
 
         # This one looks like [3, 2, 1, 0, 0, 1, 2, 3].  It was a bad case
         # for an older implementation of quicksort, which used the median
-        # of the first, last and middle elements as the pivot.  It's still
-        # a worse-than-average case for samplesort, but on the order of a
-        # measly 5% worse, not a quadratic-time disaster as it was with
-        # quicksort.
+        # of the first, last and middle elements as the pivot.
         half = n // 2
         L = range(half - 1, -1, -1)
         L.extend(range(half))
