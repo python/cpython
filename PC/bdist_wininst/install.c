@@ -1511,8 +1511,14 @@ static HINSTANCE LoadPythonDll(char *fname)
 {
 	char fullpath[_MAX_PATH];
 	char subkey_name[80];
+	char buffer[260 + 12];
 	LONG size = sizeof(fullpath);
-	HINSTANCE h = LoadLibrary(fname);
+	HINSTANCE h;
+
+	/* make sure PYTHONHOME is set, to that sys.path is initialized correctly */
+	wsprintf(buffer, "PYTHONHOME=%s", python_dir);
+	_putenv(buffer);
+	h = LoadLibrary(fname);
 	if (h)
 		return h;
 	wsprintf(subkey_name,
