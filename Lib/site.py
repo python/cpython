@@ -107,6 +107,18 @@ for prefix in prefixes:
             if os.path.isdir(sitedir):
                 addsitedir(sitedir)
 
+# Define new built-ins 'quit' and 'exit'.
+# These are simply strings that display a hint on how to exit.
+if os.sep == ':':
+    exit = 'Use Cmd-Q to quit.'
+elif os.sep == '\\':
+    exit = 'Use Ctrl-Z plus Return to exit.'
+else:
+    exit = 'Use Ctrl-D (i.e. EOF) to exit.'
+import __builtin__
+__builtin__.quit = __builtin__.exit = exit
+del exit
+
 try:
     import sitecustomize                # Run arbitrary site specific code
 except ImportError:
