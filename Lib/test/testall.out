@@ -180,4 +180,5 @@ test_cmath
 test_crypt
 Test encryption:  abeTm2pJKypwA
 test_dbm
+test_new
 Passed all tests.
