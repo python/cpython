@@ -102,9 +102,6 @@ def header_encode(header, charset='iso-8859-1', keep_eols=False,
     max_encoded = maxlinelen - len(charset) - MISC_LEN
     max_unencoded = _floordiv(max_encoded * 3, 4)
 
-    # BAW: Ben's original code used a step of max_unencoded, but I think it
-    # ought to be max_encoded.  Otherwise, where's max_encoded used?  I'm
-    # still not sure what the
     for i in range(0, len(header), max_unencoded):
         base64ed.append(b2a_base64(header[i:i+max_unencoded]))
 
