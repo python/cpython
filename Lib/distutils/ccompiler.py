@@ -828,7 +828,7 @@ def show_compilers():
     from distutils.fancy_getopt import FancyGetopt 
     compilers = []
     for compiler in compiler_class.keys():
-	compilers.append(("compiler="+compiler, None,
+        compilers.append(("compiler="+compiler, None,
                           compiler_class[compiler][2]))
     compilers.sort()
     pretty_printer = FancyGetopt(compilers)

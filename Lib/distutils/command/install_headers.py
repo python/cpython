@@ -22,7 +22,7 @@ class install_headers (Command):
 
     def initialize_options (self):
         self.install_dir = None
-	self.outfiles = []
+        self.outfiles = []
 
     def finalize_options (self):
         self.set_undefined_options('install',
