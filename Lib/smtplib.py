@@ -48,12 +48,65 @@ import types
 SMTP_PORT = 25
 CRLF="\r\n"
 
-# used for exceptions 
-class SMTPException(Exception): pass
-class SMTPServerDisconnected(SMTPException): pass
-class SMTPSenderRefused(SMTPException): pass
-class SMTPRecipientsRefused(SMTPException): pass
-class SMTPDataError(SMTPException): pass
+# Exception classes used by this module. 
+class SMTPException(Exception):
+    """Base class for all exceptions raised by this module."""
+
+class SMTPServerDisconnected(SMTPException):
+    """Not connected to any SMTP server.
+
+    This exception is raised when the server unexpectedly disconnects,
+    or when an attempt is made to use the SMTP instance before
+    connecting it to a server.
+    """
+
+class SMTPResponseException(SMTPException):
+    """Base class for all exceptions that include an SMTP error code.
+
+    These exceptions are generated in some instances when the SMTP
+    server returns an error code.  The error code is stored in the
+    `smtp_code' attribute of the error, and the `smtp_error' attribute
+    is set to the error message.
+    """
+
+    def __init__(self, code, msg):
+        self.smtp_code = code
+        self.smtp_error = msg
+        self.args = (code, msg)
+
+class SMTPSenderRefused(SMTPResponseException):
+    """Sender address refused.
+    In addition to the attributes set by on all SMTPResponseException
+    exceptions, this sets `sender' to the string that the SMTP refused
+    """
+
+    def __init__(self, code, msg, sender):
+        self.smtp_code = code
+        self.smtp_error = msg
+        self.sender = sender
+        self.args = (code, msg, sender)
+
+class SMTPRecipientsRefused(SMTPResponseException):
+    """All recipient  addresses refused.
+    The errors for each recipient are accessable thru the attribute
+    'recipients', which is a dictionary of exactly the same sort as 
+    SMTP.sendmail() returns.  
+    """
+
+    def __init__(self, recipients):
+        self.recipients = recipients
+        self.args = ( recipients,)
+
+
+
+class SMTPDataError(SMTPResponseException):
+    """The SMTP server didn't accept the data."""
+
+class SMTPConnectError(SMTPResponseException):
+    """Error during connection establishment"""
+
+class SMTPHeloError(SMTPResponseException):
+    """The server refused our HELO reply"""
 
 def quoteaddr(addr):
     """Quote a subset of the email addresses defined by RFC 821.
@@ -120,11 +173,15 @@ class SMTP:
 
         If specified, `host' is the name of the remote host to which to
         connect.  If specified, `port' specifies the port to which to connect.
-        By default, smtplib.SMTP_PORT is used.
+        By default, smtplib.SMTP_PORT is used.  An SMTPConnectError is
+        raised if the specified `host' doesn't respond correctly.
 
         """
         self.esmtp_features = {}
-        if host: self.connect(host, port)
+        if host:
+            (code, msg) = self.connect(host, port)
+            if code != 220:
+                raise SMTPConnectError(code, msg)
     
     def set_debuglevel(self, debuglevel):
         """Set the debug output level.
@@ -159,7 +216,7 @@ class SMTP:
         self.sock.connect(host, port)
         (code,msg)=self.getreply()
         if self.debuglevel >0 : print "connect:", msg
-        return msg
+        return (code,msg)
     
     def send(self, str):
         """Send `str' to the server."""
@@ -191,23 +248,23 @@ class SMTP:
         Raises SMTPServerDisconnected if end-of-file is reached.
         """
         resp=[]
-	if self.file is None:
-	    self.file = self.sock.makefile('rb')
+        if self.file is None:
+            self.file = self.sock.makefile('rb')
         while 1:
             line = self.file.readline()
-	    if line == '':
-		self.close()
-		raise SMTPServerDisconnected("Connection unexpectedly closed")
+            if line == '':
+                self.close()
+                raise SMTPServerDisconnected("Connection unexpectedly closed")
             if self.debuglevel > 0: print 'reply:', `line`
             resp.append(string.strip(line[4:]))
             code=line[:3]
-	    # Check that the error code is syntactically correct.
-	    # Don't attempt to read a continuation line if it is broken.
-	    try:
-		errcode = string.atoi(code)
-	    except ValueError:
-		errcode = -1
-		break
+            # Check that the error code is syntactically correct.
+            # Don't attempt to read a continuation line if it is broken.
+            try:
+                errcode = string.atoi(code)
+            except ValueError:
+                errcode = -1
+                break
             # Check if multiline response.
             if line[3:4]!="-":
                 break
@@ -220,8 +277,7 @@ class SMTP:
     def docmd(self, cmd, args=""):
         """Send a command, and return its response code."""
         self.putcmd(cmd,args)
-        (code,msg)=self.getreply()
-        return code
+        return self.getreply()
 
     # std smtp commands
     def helo(self, name=''):
@@ -235,7 +291,7 @@ class SMTP:
         self.putcmd("helo",name)
         (code,msg)=self.getreply()
         self.helo_resp=msg
-        return code
+        return (code,msg)
 
     def ehlo(self, name=''):
         """ SMTP 'ehlo' command.
@@ -254,7 +310,7 @@ class SMTP:
             raise SMTPServerDisconnected("Server not connected")
         self.ehlo_resp=msg
         if code<>250:
-            return code
+            return (code,msg)
         self.does_esmtp=1
         #parse the ehlo responce -ddm
         resp=string.split(self.ehlo_resp,'\n')
@@ -265,7 +321,7 @@ class SMTP:
                 feature=string.lower(m.group("feature"))
                 params=string.strip(m.string[m.end("feature"):])
                 self.esmtp_features[feature]=params
-        return code
+        return (code,msg)
 
     def has_extn(self, opt):
         """Does the server support a given SMTP service extension?"""
@@ -275,18 +331,15 @@ class SMTP:
         """SMTP 'help' command.
         Returns help text from server."""
         self.putcmd("help", args)
-        (code,msg)=self.getreply()
-        return msg
+        return self.getreply()
 
     def rset(self):
         """SMTP 'rset' command -- resets session."""
-        code=self.docmd("rset")
-        return code
+        return self.docmd("rset")
 
     def noop(self):
         """SMTP 'noop' command -- doesn't do anything :>"""
-        code=self.docmd("noop")
-        return code
+        return self.docmd("noop")
 
     def mail(self,sender,options=[]):
         """SMTP 'mail' command -- begins mail xfer session."""
@@ -306,19 +359,23 @@ class SMTP:
 
     def data(self,msg):
         """SMTP 'DATA' command -- sends message data to server. 
+
         Automatically quotes lines beginning with a period per rfc821.
+        Raises SMTPDataError if there is an unexpected reply to the
+        DATA command; the return value from this method is the final
+        response code received when the all data is sent.
         """
         self.putcmd("data")
         (code,repl)=self.getreply()
         if self.debuglevel >0 : print "data:", (code,repl)
         if code <> 354:
-            return -1
+            raise SMTPDataError(code,repl)
         else:
             self.send(quotedata(msg))
             self.send("%s.%s" % (CRLF, CRLF))
             (code,msg)=self.getreply()
             if self.debuglevel >0 : print "data:", (code,msg)
-            return code
+            return (code,msg)
 
     def verify(self, address):
         """SMTP 'verify' command -- checks for address validity."""
@@ -353,11 +410,23 @@ class SMTP:
         fails, HELO will be tried and ESMTP options suppressed.
 
         This method will return normally if the mail is accepted for at least
-        one recipient.  Otherwise it will throw an exception (either
-        SMTPSenderRefused, SMTPRecipientsRefused, or SMTPDataError) That is,
-        if this method does not throw an exception, then someone should get
-        your mail.  If this method does not throw an exception, it returns a
-        dictionary, with one entry for each recipient that was refused.
+        one recipient. It returns a dictionary, with one entry for each
+        recipient that was refused.  Each entry contains a tuple of
+        the SMTP error code and the accompanying error message sent by
+        the server.
+
+        This method may raise the following exceptions:
+
+         SMTPHeloError          The server didn't reply properly to
+                                the helo greeting. 
+         SMTPRecipientsRefused  The server rejected for ALL recipients
+                                (no mail was sent).
+         SMTPSenderRefused      The server didn't accept the from_addr.
+         SMTPDataError          The server replied with an unexpected
+                                error code (other than a refusal of
+                                a recipient).
+
+        Note: the connection will be open even after an exception is raised.
 
         Example:
       
@@ -379,9 +448,11 @@ class SMTP:
         empty dictionary.
 
         """
-        if not self.helo_resp and not self.ehlo_resp:
-            if self.ehlo() >= 400:
-                self.helo()
+        if self.helo_resp is None and self.ehlo_resp is None:
+            if not (200 <= self.ehlo()[0] <= 299):
+                (code,resp) = self.helo()
+                if not (200 <= code <= 299):
+                    raise SMTPHeloError(code, resp)
         esmtp_opts = []
         if self.does_esmtp:
             # Hmmm? what's this? -ddm
@@ -394,7 +465,7 @@ class SMTP:
         (code,resp) = self.mail(from_addr, esmtp_opts)
         if code <> 250:
             self.rset()
-            raise SMTPSenderRefused('%s: %s' % (from_addr, resp))
+            raise SMTPSenderRefused(code, resp, from_addr)
         senderrs={}
         if type(to_addrs) == types.StringType:
             to_addrs = [to_addrs]
@@ -405,13 +476,11 @@ class SMTP:
         if len(senderrs)==len(to_addrs):
             # the server refused all our recipients
             self.rset()
-            raise SMTPRecipientsRefused(string.join(
-		map(lambda x:"%s: %s" % (x[0], x[1][1]), senderrs.items()),
-					'; '))
-        code=self.data(msg)
-        if code <>250 :
+            raise SMTPRecipientsRefused(senderrs)
+        (code,resp)=self.data(msg)
+        if code <> 250:
             self.rset()
-            raise SMTPDataError('data transmission error: %s' % code)
+            raise SMTPDataError(code, resp)
         #if we got here then somebody got our mail
         return senderrs         
 
