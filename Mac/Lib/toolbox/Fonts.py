@@ -1,4 +1,4 @@
-# Generated from 'flap:CW9 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Fonts.h'
+# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Fonts.h'
 
 systemFont = 0
 applFont = 1

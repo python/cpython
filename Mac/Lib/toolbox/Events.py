@@ -1,4 +1,4 @@
-# Generated from 'sap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Events.h'
+# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Events.h'
 
 nullEvent = 0
 mouseDown = 1

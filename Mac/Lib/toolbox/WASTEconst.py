@@ -1,4 +1,4 @@
-# Generated from ':::::Waste 1.2 distribution:WASTE C/C++ Headers:WASTE.h'
+# Generated from ':::::Waste 1.2 Distribution:WASTE C/C++ Headers:WASTE.h'
 
 weCantUndoErr = -10015
 weEmptySelectionErr = -10013
