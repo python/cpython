@@ -14,17 +14,20 @@ change a substring by assigning to a slice:
 data starting at the current file position, and \method{seek()}
 through the file to different positions.
 
-A memory-mapped file is created by the following function, which is
-different on Unix and on Windows.
+A memory-mapped file is created by the \function{mmap()} function,
+which is different on \UNIX{} and on Windows.  In either case you must
+provide a file descriptor for a file opened for update.
+If you wish to map an existing Python file object, use its
+\method{fileno()} method to obtain the correct value for the
+\var{fileno} parameter.  Otherwise, you can open the file using the
+\function{os.open()} function, which returns a file descriptor
+directly (the file still needs to be closed when done).
 
 \begin{funcdesc}{mmap}{fileno, length\optional{, tagname}}
 \strong{(Windows version)}  Maps \var{length} bytes from the file
 specified by the file handle \var{fileno}, and returns a mmap object.
 If \var{length} is \code{0}, the maximum length of the map will be the
 current size of the file when \function{mmap()} is called.
-If you wish to map an existing Python file object, use its
-\method{fileno()} method to obtain the correct value for the
-\var{fileno} parameter.  The file must be opened for update.
 
 \var{tagname}, if specified and not \code{None}, is a string giving a
 tag name for the mapping.  Windows allows you to have many different
@@ -35,12 +38,9 @@ created without a name.  Avoiding the use of the tag parameter will
 assist in keeping your code portable between \UNIX{} and Windows.
 \end{funcdesc}
 
-\begin{funcdesc}{mmap}{fileno, size\optional{, flags, prot}}
+\begin{funcdesc}{mmap}{fileno, length\optional{, flags\optional{, prot}}}
 \strong{(\UNIX{} version)}  Maps \var{length} bytes from the file
-specified by the file handle \var{fileno}, and returns a mmap object.
-If you wish to map an existing Python file object, use its
-\method{fileno()} method to obtain the correct value for the
-\var{fileno} parameter.  The file must be opened for update.
+specified by the file descriptor \var{fileno}, and returns a mmap object.
 
 \var{flags} specifies the nature of the mapping.  
 \constant{MAP_PRIVATE} creates a private copy-on-write mapping, so
@@ -54,6 +54,7 @@ most useful values are \constant{PROT_READ} and \constant{PROT_WRITE},
 to specify that the pages may be read or written.
 \var{prot} defaults to \constant{PROT_READ | PROT_WRITE}.
 \end{funcdesc}
+
 
 Memory-mapped file objects support the following methods:
 
