@@ -136,8 +136,8 @@ object
 A \class{timedelta} object represents a duration, the difference
 between two dates or times.
 
-\begin{funcdesc}{timedelta}{days=0, seconds=0, microseconds=0,
-                            milliseconds=0, minutes=0, hours=0, weeks=0}
+\begin{classdesc}{timedelta}{days=0, seconds=0, microseconds=0,
+                             milliseconds=0, minutes=0, hours=0, weeks=0}
 
   All arguments are optional.  Arguments may be ints, longs, or floats,
   and may be positive or negative.
@@ -178,19 +178,25 @@ A week is converted to 7 days.
 >>> (d.days, d.seconds, d.microseconds)
 (-1, 86399, 999999)
 \end{verbatim}
-\end{funcdesc}
+\end{classdesc}
 
 Class attributes are:
 
-\begin{tableii}{c|l}{code}{Attribute}{Value}
-  \lineii{min}{The most negative \class{timedelta} object,
-               \code{timedelta(-999999999)}}
-  \lineii{max}{The most positive \class{timedelta} object,
-        timedelta(days=999999999, hours=23, minutes=59, seconds=59,
-                  microseconds=999999)}
-  \lineii{resolution}{The smallest possible difference between non-equal
-        \class{timedelta} objects, \code{timedelta(microseconds=1)}}
-\end{tableii}
+\begin{memberdesc}{min}
+  The most negative \class{timedelta} object,
+  \code{timedelta(-999999999)}.
+\end{memberdesc}
+
+\begin{memberdesc}{max}
+  The most positive \class{timedelta} object,
+  \code{timedelta(days=999999999, hours=23, minutes=59, seconds=59,
+                  microseconds=999999)}.
+\end{memberdesc}
+
+\begin{memberdesc}{resolution}
+  The smallest possible difference between non-equal
+  \class{timedelta} objects, \code{timedelta(microseconds=1)}.
+\end{memberdesc}
 
 Note that, because of normalization, \code{timedelta.max} \textgreater
 \code{-timedelta.min}.  \code{-timedelta.max} is not representable as
@@ -277,7 +283,7 @@ directions.  January 1 of year 1 is called day number 1, January 2 of year
 computations.  See the book for algorithms for converting between
 proleptic Gregorian ordinals and many other calendar systems.
 
-\begin{funcdesc}{date}{year, month, day}
+\begin{classdesc}{date}{year, month, day}
   All arguments are required.  Arguments may be ints or longs, in the
   following ranges:
 
@@ -289,7 +295,7 @@ proleptic Gregorian ordinals and many other calendar systems.
 
   If an argument outside those ranges is given, \exception{ValueError}
   is raised.
-\end{funcdesc}
+\end{classdesc}
 
 Other constructors, all class methods:
 
@@ -487,8 +493,8 @@ calendar extended in both directions; like a time object,
 \class{datetime} assumes there are exactly 3600*24 seconds in every
 day.
 
-\begin{funcdesc}{datetime}{year, month, day,
-                           hour=0, minute=0, second=0, microsecond=0}
+\begin{classdesc}{datetime}{year, month, day,
+                            hour=0, minute=0, second=0, microsecond=0}
   The year, month and day arguments are required.  Arguments may be
   ints or longs, in the following ranges:
 
@@ -504,7 +510,7 @@ day.
 
   If an argument outside those ranges is given, \exception{ValueError}
   is raised.
-\end{funcdesc}
+\end{classdesc}
 
 Other constructors, all class methods:
 
@@ -752,9 +758,9 @@ Instance methods:
 A \class{time} object represents an idealized time of day, independent
 of day and timezone.
 
-\begin{funcdesc}{time}{hour=0, minute=0, second=0, microsecond=0}
-All arguments are optional.  They may be ints or longs, in the
-following ranges:
+\begin{classdesc}{time}{hour=0, minute=0, second=0, microsecond=0}
+  All arguments are optional.  They may be ints or longs, in the
+  following ranges:
 
 \begin{itemize}
   \item \code{0 <= \var{hour} < 24}
@@ -763,9 +769,9 @@ following ranges:
   \item \code{0 <= \var{microsecond} < 1000000}
 \end{itemize}
 
-If an argument outside those ranges is given, \exception{ValueError} is
-raised.
-\end{funcdesc}
+  If an argument outside those ranges is given, \exception{ValueError}
+  is raised.
+\end{classdesc}
 
 Class attributes:
 
@@ -948,21 +954,22 @@ particular day, and subject to adjustment via a \class{tzinfo} object.
 
 Constructor:
 
-\begin{funcdesc}{time}{hour=0, minute=0, second=0, microsecond=0, tzinfo=None}
+\begin{classdesc}{time}{hour=0, minute=0, second=0, microsecond=0,
+                        tzinfo=None}
   All arguments are optional.  \var{tzinfo} may be \code{None}, or
   an instance of a \class{tzinfo} subclass.  The remaining arguments
   may be ints or longs, in the following ranges:
 
-\begin{itemize}
-  \item \code{0 <= \var{hour} < 24}
-  \item \code{0 <= \var{minute} < 60}
-  \item \code{0 <= \var{second} < 60}
-  \item \code{0 <= \var{microsecond} < 1000000}.
-\end{itemize}
+  \begin{itemize}
+    \item \code{0 <= \var{hour} < 24}
+    \item \code{0 <= \var{minute} < 60}
+    \item \code{0 <= \var{second} < 60}
+    \item \code{0 <= \var{microsecond} < 1000000}.
+  \end{itemize}
 
   If an argument outside those ranges is given,
   \exception{ValueError} is raised.
-\end{funcdesc}
+\end{classdesc}
 
 Class attributes:
 
@@ -1092,9 +1099,9 @@ from a \class{date} object and a \class{timetz} object.
 
 Constructor:
 
-\begin{funcdesc}{datetimetz}{year, month, day,
-                             hour=0, minute=0, second=0, microsecond=0,
-                             tzinfo=None}
+\begin{classdesc}{datetimetz}{year, month, day,
+                              hour=0, minute=0, second=0, microsecond=0,
+                              tzinfo=None}
   The year, month and day arguments are required.  \var{tzinfo} may
   be \code{None}, or an instance of a \class{tzinfo} subclass.  The
   remaining arguments may be ints or longs, in the following ranges:
@@ -1111,7 +1118,7 @@ Constructor:
 
   If an argument outside those ranges is given,
   \exception{ValueError} is raised.
-\end{funcdesc}
+\end{classdesc}
 
 Other constructors (class methods):
 
