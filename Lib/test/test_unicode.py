@@ -11,7 +11,8 @@ from test import test_support, string_tests
 
 class UnicodeTest(
     string_tests.CommonTest,
-    string_tests.MixinStrUnicodeUserStringTest
+    string_tests.MixinStrUnicodeUserStringTest,
+    string_tests.MixinUnicodeUserStringTest
     ):
     type2test = unicode
 
@@ -290,26 +291,6 @@ class UnicodeTest(
         self.checkequalnofix(False, u'0123456789a', 'isnumeric')
 
         self.assertRaises(TypeError, u"abc".isnumeric, 42)
-
-    def test_iswide(self):
-        self.checkequalnofix(False, u'', 'iswide')
-        self.checkequalnofix(False, u'\x1f', 'iswide') # Neutral
-        self.checkequalnofix(False, u'\x20', 'iswide') # Narrow
-        self.checkequalnofix(True, u'\u2329', 'iswide') # Wide
-        self.checkequalnofix(False, u'\uff64', 'iswide') # Half
-        self.checkequalnofix(True, u'\u3000', 'iswide') # Full
-        self.checkequalnofix(False, u'\u2460', 'iswide') # Ambiguous
-        self.checkequalnofix(True, u'\ud55c\uae00', 'iswide')
-        self.checkequalnofix(False, u'\ud55c\u2606\uae00', 'iswide')
-
-    def test_width(self):
-        self.assertEqual(u''.width(), 0)
-        self.assertEqual(u'abcd'.width(), 4)
-        self.assertEqual(u'\u0187\u01c9'.width(), 2)
-        self.assertEqual(u'\u2460\u2329'.width(), 3)
-        self.assertEqual(u'\u2329\u2460'.width(), 3)
-        self.assertEqual(u'\ud55c\uae00'.width(), 4)
-        self.assertEqual(u'\ud55c\u2606\uae00'.width(), 5)
 
     def test_contains(self):
         # Testing Unicode contains method
