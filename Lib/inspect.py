@@ -501,6 +501,8 @@ class BlockFinder:
         elif type == tokenize.DEDENT:
             self.indent = self.indent - 1
             if self.indent == 0: raise EndOfBlock, self.last
+        elif type == tokenize.NAME and scol == 0:
+            raise EndOfBlock, self.last
 
 def getblock(lines):
     """Extract the block of code at the top of the given list of lines."""
