@@ -23,6 +23,7 @@ tests = ['test_grammar',
 	 'test_strftime',
 	 'test_struct',
 	 'test_errno',
+	 'test_dl',
 	 ]
 
 if __name__ == '__main__':
