@@ -606,7 +606,7 @@ def main():
                       action="store_false", dest="verbose")
 
     options, args = parser.parse_args()
-    if len(args) != 1:
+    if len(args) != 2:
         parser.error("incorrect number of arguments")
 
     if options.verbose:
