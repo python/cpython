@@ -90,6 +90,7 @@ def help():
 
 
 if os.name == "mac":
+    import MacOS
     def _get_time_mac(timer=MacOS.GetTicks):
         return timer() / 60.0
 
