@@ -18,6 +18,7 @@ import locale
 import calendar
 from re import compile as re_compile
 from re import IGNORECASE
+from re import escape as re_escape
 from datetime import date as datetime_date
 
 __author__ = "Brett Cannon"
@@ -367,7 +368,7 @@ class TimeRE(dict):
         else:
             return ''
         to_convert.sort(sorter)
-        regex = '|'.join(to_convert)
+        regex = '|'.join([re_escape(stuff) for stuff in to_convert])
         regex = '(?P<%s>%s' % (directive, regex)
         return '%s)' % regex
 

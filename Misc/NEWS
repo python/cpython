@@ -53,6 +53,8 @@ Extension modules
 Library
 -------
 
+- Bug #1039270: Locale data is now escaped for regex metacharacters.
+
 - Bug #807871: Fix tkMessageBox.askyesno result.
 
 - Patch #1014992: In tarfile.readline, never return more than a line.
