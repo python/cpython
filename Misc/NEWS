@@ -336,6 +336,10 @@ Core and builtins
 - Fixed bug #521782: when a file was in non-blocking mode, file.read()
   could silently lose data or wrongly throw an unknown error.
 
+- The sq_repeat, sq_inplace_repeat, sq_concat and sq_inplace_concat
+  slots are now always tried after trying the corresponding nb_* slots.
+  This fixes a number of minor bugs (see bug #624807).
+
 Extension modules
 -----------------
 
