@@ -30,6 +30,7 @@ Windows
 - The installer now installs Start menu shortcuts under (the local
   equivalent of) "All Users" when doing an Admin install.
 
+- A bug fix that makes SSL support work on Windows was added.
 
 What's New in Python 2.1.2 (final)?
 ===================================
