@@ -10,6 +10,21 @@ Type/class unification and new-style classes
   with finalizers.  (The "get attribute" and "set attribute" methods
   are still called __get__ and __set__, respectively.)
 
+- Some subtle issues with the super built-in were fixed:
+
+  (a) When super itself is subclassed, its __get__ method would still
+      return an instance of the base class (i.e., of super).
+
+  (b) super(C, C()).__class__ would return C rather than super.  This
+      is confusing.  To fix this, I decided to change the semantics of
+      super so that it only applies to code attributes, not to data
+      attributes.  After all, overriding data attributes is not
+      supported anyway.
+
+  (c) The __get__ method didn't check whether the argument was an
+      instance of the type used in creation of the super instance.
+
+
 Core and builtins
 
 Extension modules
