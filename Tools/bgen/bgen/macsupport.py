@@ -16,6 +16,11 @@ ScriptCode = Type("ScriptCode", "h")
 Size = Type("Size", "l")
 Style = Type("Style", "b")
 
+UInt16 = Type("UInt16", "h")
+SInt16 = Type("SInt16", "h")
+UInt32 = Type("UInt32", "l")
+SInt32 = Type("SInt32", "l")
+
 # Pascal strings
 ConstStr255Param = OpaqueArrayType("Str255", "PyMac_BuildStr255", "PyMac_GetStr255")
 Str255 = OpaqueArrayType("Str255", "PyMac_BuildStr255", "PyMac_GetStr255")

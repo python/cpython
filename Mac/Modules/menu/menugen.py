@@ -1,4 +1,4 @@
-# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Menus.h'
+# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Menus.h'
 
 f = Function(short, 'GetMBarHeight',
 )
@@ -174,7 +174,7 @@ methods.append(f)
 f = Method(void, 'GetItemStyle',
     (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
-    (unsigned_char, 'chStyle', OutMode),
+    (Style, 'chStyle', OutMode),
 )
 methods.append(f)
 

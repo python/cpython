@@ -34,7 +34,8 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
-			"KeyTranslate"
+			"KeyTranslate",
+			"GetEventMask",		# I cannot seem to find this routine...
 			]
 
 	def makeblacklisttypes(self):

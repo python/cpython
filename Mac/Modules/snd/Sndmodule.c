@@ -496,15 +496,14 @@ static PyObject *Snd_Comp3to1(_self, _args)
 	char *buffer__out__;
 	long buffer__len__;
 	int buffer__in_len__;
-	char *state__in__;
-	char state__out__[128];
-	int state__len__;
+	StateBlock *state__in__;
+	StateBlock state__out__;
 	int state__in_len__;
 	unsigned long numChannels;
 	unsigned long whichChannel;
 	if (!PyArg_ParseTuple(_args, "s#s#ll",
 	                      &buffer__in__, &buffer__in_len__,
-	                      &state__in__, &state__in_len__,
+	                      (char **)&state__in__, &state__in_len__,
 	                      &numChannels,
 	                      &whichChannel))
 		return NULL;
@@ -514,19 +513,18 @@ static PyObject *Snd_Comp3to1(_self, _args)
 		goto buffer__error__;
 	}
 	buffer__len__ = buffer__in_len__;
-	if (state__in_len__ != 128)
+	if (state__in_len__ != sizeof(StateBlock))
 	{
-		PyErr_SetString(PyExc_TypeError, "buffer length should be 128");
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(StateBlock)");
 		goto state__error__;
 	}
-	state__len__ = state__in_len__;
 	Comp3to1(buffer__in__, buffer__out__, (long)buffer__len__,
-	         state__in__, state__out__,
+	         state__in__, &state__out__,
 	         numChannels,
 	         whichChannel);
 	_res = Py_BuildValue("s#s#",
 	                     buffer__out__, (int)buffer__len__,
-	                     state__out__, (int)128);
+	                     (char *)&state__out__, (int)sizeof(StateBlock));
  state__error__: ;
 	free(buffer__out__);
  buffer__error__: ;
@@ -542,15 +540,14 @@ static PyObject *Snd_Exp1to3(_self, _args)
 	char *buffer__out__;
 	long buffer__len__;
 	int buffer__in_len__;
-	char *state__in__;
-	char state__out__[128];
-	int state__len__;
+	StateBlock *state__in__;
+	StateBlock state__out__;
 	int state__in_len__;
 	unsigned long numChannels;
 	unsigned long whichChannel;
 	if (!PyArg_ParseTuple(_args, "s#s#ll",
 	                      &buffer__in__, &buffer__in_len__,
-	                      &state__in__, &state__in_len__,
+	                      (char **)&state__in__, &state__in_len__,
 	                      &numChannels,
 	                      &whichChannel))
 		return NULL;
@@ -560,19 +557,18 @@ static PyObject *Snd_Exp1to3(_self, _args)
 		goto buffer__error__;
 	}
 	buffer__len__ = buffer__in_len__;
-	if (state__in_len__ != 128)
+	if (state__in_len__ != sizeof(StateBlock))
 	{
-		PyErr_SetString(PyExc_TypeError, "buffer length should be 128");
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(StateBlock)");
 		goto state__error__;
 	}
-	state__len__ = state__in_len__;
 	Exp1to3(buffer__in__, buffer__out__, (long)buffer__len__,
-	        state__in__, state__out__,
+	        state__in__, &state__out__,
 	        numChannels,
 	        whichChannel);
 	_res = Py_BuildValue("s#s#",
 	                     buffer__out__, (int)buffer__len__,
-	                     state__out__, (int)128);
+	                     (char *)&state__out__, (int)sizeof(StateBlock));
  state__error__: ;
 	free(buffer__out__);
  buffer__error__: ;
@@ -588,15 +584,14 @@ static PyObject *Snd_Comp6to1(_self, _args)
 	char *buffer__out__;
 	long buffer__len__;
 	int buffer__in_len__;
-	char *state__in__;
-	char state__out__[128];
-	int state__len__;
+	StateBlock *state__in__;
+	StateBlock state__out__;
 	int state__in_len__;
 	unsigned long numChannels;
 	unsigned long whichChannel;
 	if (!PyArg_ParseTuple(_args, "s#s#ll",
 	                      &buffer__in__, &buffer__in_len__,
-	                      &state__in__, &state__in_len__,
+	                      (char **)&state__in__, &state__in_len__,
 	                      &numChannels,
 	                      &whichChannel))
 		return NULL;
@@ -606,19 +601,18 @@ static PyObject *Snd_Comp6to1(_self, _args)
 		goto buffer__error__;
 	}
 	buffer__len__ = buffer__in_len__;
-	if (state__in_len__ != 128)
+	if (state__in_len__ != sizeof(StateBlock))
 	{
-		PyErr_SetString(PyExc_TypeError, "buffer length should be 128");
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(StateBlock)");
 		goto state__error__;
 	}
-	state__len__ = state__in_len__;
 	Comp6to1(buffer__in__, buffer__out__, (long)buffer__len__,
-	         state__in__, state__out__,
+	         state__in__, &state__out__,
 	         numChannels,
 	         whichChannel);
 	_res = Py_BuildValue("s#s#",
 	                     buffer__out__, (int)buffer__len__,
-	                     state__out__, (int)128);
+	                     (char *)&state__out__, (int)sizeof(StateBlock));
  state__error__: ;
 	free(buffer__out__);
  buffer__error__: ;
@@ -634,15 +628,14 @@ static PyObject *Snd_Exp1to6(_self, _args)
 	char *buffer__out__;
 	long buffer__len__;
 	int buffer__in_len__;
-	char *state__in__;
-	char state__out__[128];
-	int state__len__;
+	StateBlock *state__in__;
+	StateBlock state__out__;
 	int state__in_len__;
 	unsigned long numChannels;
 	unsigned long whichChannel;
 	if (!PyArg_ParseTuple(_args, "s#s#ll",
 	                      &buffer__in__, &buffer__in_len__,
-	                      &state__in__, &state__in_len__,
+	                      (char **)&state__in__, &state__in_len__,
 	                      &numChannels,
 	                      &whichChannel))
 		return NULL;
@@ -652,19 +645,18 @@ static PyObject *Snd_Exp1to6(_self, _args)
 		goto buffer__error__;
 	}
 	buffer__len__ = buffer__in_len__;
-	if (state__in_len__ != 128)
+	if (state__in_len__ != sizeof(StateBlock))
 	{
-		PyErr_SetString(PyExc_TypeError, "buffer length should be 128");
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(StateBlock)");
 		goto state__error__;
 	}
-	state__len__ = state__in_len__;
 	Exp1to6(buffer__in__, buffer__out__, (long)buffer__len__,
-	        state__in__, state__out__,
+	        state__in__, &state__out__,
 	        numChannels,
 	        whichChannel);
 	_res = Py_BuildValue("s#s#",
 	                     buffer__out__, (int)buffer__len__,
-	                     state__out__, (int)128);
+	                     (char *)&state__out__, (int)sizeof(StateBlock));
  state__error__: ;
 	free(buffer__out__);
  buffer__error__: ;
@@ -776,13 +768,13 @@ static PyMethodDef Snd_methods[] = {
 	{"MACEVersion", (PyCFunction)Snd_MACEVersion, 1,
 	 "() -> (NumVersion _rv)"},
 	{"Comp3to1", (PyCFunction)Snd_Comp3to1, 1,
-	 "(Buffer buffer, Buffer state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, Buffer state)"},
+	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
 	{"Exp1to3", (PyCFunction)Snd_Exp1to3, 1,
-	 "(Buffer buffer, Buffer state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, Buffer state)"},
+	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
 	{"Comp6to1", (PyCFunction)Snd_Comp6to1, 1,
-	 "(Buffer buffer, Buffer state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, Buffer state)"},
+	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
 	{"Exp1to6", (PyCFunction)Snd_Exp1to6, 1,
-	 "(Buffer buffer, Buffer state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, Buffer state)"},
+	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
 	{"GetSysBeepVolume", (PyCFunction)Snd_GetSysBeepVolume, 1,
 	 "() -> (long level)"},
 	{"SetSysBeepVolume", (PyCFunction)Snd_SetSysBeepVolume, 1,

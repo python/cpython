@@ -86,6 +86,172 @@ static void CtlObj_dealloc(self)
 	PyMem_DEL(self);
 }
 
+static PyObject *CtlObj_DisposeControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	DisposeControl(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_ShowControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	ShowControl(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_HideControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	HideControl(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_Draw1Control(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	Draw1Control(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_HiliteControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ControlPartCode hiliteState;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &hiliteState))
+		return NULL;
+	HiliteControl(_self->ob_itself,
+	              hiliteState);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_TrackControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ControlPartCode _rv;
+	Point thePoint;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &thePoint))
+		return NULL;
+	_rv = TrackControl(_self->ob_itself,
+	                   thePoint,
+	                   (ControlActionUPP)0);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_DragControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Point startPt;
+	Rect limitRect;
+	Rect slopRect;
+	DragConstraint axis;
+	if (!PyArg_ParseTuple(_args, "O&O&O&h",
+	                      PyMac_GetPoint, &startPt,
+	                      PyMac_GetRect, &limitRect,
+	                      PyMac_GetRect, &slopRect,
+	                      &axis))
+		return NULL;
+	DragControl(_self->ob_itself,
+	            startPt,
+	            &limitRect,
+	            &slopRect,
+	            axis);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_TestControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ControlPartCode _rv;
+	Point thePt;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &thePt))
+		return NULL;
+	_rv = TestControl(_self->ob_itself,
+	                  thePt);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_MoveControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt16 h;
+	SInt16 v;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &h,
+	                      &v))
+		return NULL;
+	MoveControl(_self->ob_itself,
+	            h,
+	            v);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_SizeControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt16 w;
+	SInt16 h;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &w,
+	                      &h))
+		return NULL;
+	SizeControl(_self->ob_itself,
+	            w,
+	            h);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *CtlObj_SetControlTitle(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -118,134 +284,12 @@ static PyObject *CtlObj_GetControlTitle(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_DisposeControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	DisposeControl(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *CtlObj_HideControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	HideControl(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *CtlObj_ShowControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	ShowControl(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *CtlObj_Draw1Control(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	Draw1Control(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *CtlObj_HiliteControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short hiliteState;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &hiliteState))
-		return NULL;
-	HiliteControl(_self->ob_itself,
-	              hiliteState);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *CtlObj_MoveControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short h;
-	short v;
-	if (!PyArg_ParseTuple(_args, "hh",
-	                      &h,
-	                      &v))
-		return NULL;
-	MoveControl(_self->ob_itself,
-	            h,
-	            v);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *CtlObj_SizeControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short w;
-	short h;
-	if (!PyArg_ParseTuple(_args, "hh",
-	                      &w,
-	                      &h))
-		return NULL;
-	SizeControl(_self->ob_itself,
-	            w,
-	            h);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *CtlObj_SetControlValue(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short theValue;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &theValue))
-		return NULL;
-	SetControlValue(_self->ob_itself,
-	                theValue);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *CtlObj_GetControlValue(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
+	SInt16 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlValue(_self->ob_itself);
@@ -254,17 +298,17 @@ static PyObject *CtlObj_GetControlValue(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlMinimum(_self, _args)
+static PyObject *CtlObj_SetControlValue(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short minValue;
+	SInt16 newValue;
 	if (!PyArg_ParseTuple(_args, "h",
-	                      &minValue))
+	                      &newValue))
 		return NULL;
-	SetControlMinimum(_self->ob_itself,
-	                  minValue);
+	SetControlValue(_self->ob_itself,
+	                newValue);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -275,7 +319,7 @@ static PyObject *CtlObj_GetControlMinimum(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
+	SInt16 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlMinimum(_self->ob_itself);
@@ -284,17 +328,17 @@ static PyObject *CtlObj_GetControlMinimum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlMaximum(_self, _args)
+static PyObject *CtlObj_SetControlMinimum(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short maxValue;
+	SInt16 newMinimum;
 	if (!PyArg_ParseTuple(_args, "h",
-	                      &maxValue))
+	                      &newMinimum))
 		return NULL;
-	SetControlMaximum(_self->ob_itself,
-	                  maxValue);
+	SetControlMinimum(_self->ob_itself,
+	                  newMinimum);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -305,7 +349,7 @@ static PyObject *CtlObj_GetControlMaximum(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
+	SInt16 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetControlMaximum(_self->ob_itself);
@@ -314,32 +358,32 @@ static PyObject *CtlObj_GetControlMaximum(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_SetControlReference(_self, _args)
+static PyObject *CtlObj_SetControlMaximum(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long data;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &data))
+	SInt16 newMaximum;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &newMaximum))
 		return NULL;
-	SetControlReference(_self->ob_itself,
-	                    data);
+	SetControlMaximum(_self->ob_itself,
+	                  newMaximum);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *CtlObj_GetControlReference(_self, _args)
+static PyObject *CtlObj_GetControlVariant(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
+	SInt16 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetControlReference(_self->ob_itself);
-	_res = Py_BuildValue("l",
+	_rv = GetControlVariant(_self->ob_itself);
+	_res = Py_BuildValue("h",
 	                     _rv);
 	return _res;
 }
@@ -358,125 +402,81 @@ static PyObject *CtlObj_SetControlAction(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_DragControl(_self, _args)
+static PyObject *CtlObj_SetControlReference(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Point startPt;
-	Rect limitRect;
-	Rect slopRect;
-	short axis;
-	if (!PyArg_ParseTuple(_args, "O&O&O&h",
-	                      PyMac_GetPoint, &startPt,
-	                      PyMac_GetRect, &limitRect,
-	                      PyMac_GetRect, &slopRect,
-	                      &axis))
+	SInt32 data;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &data))
 		return NULL;
-	DragControl(_self->ob_itself,
-	            startPt,
-	            &limitRect,
-	            &slopRect,
-	            axis);
+	SetControlReference(_self->ob_itself,
+	                    data);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *CtlObj_TestControl(_self, _args)
+static PyObject *CtlObj_GetControlReference(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
-	Point thePt;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetPoint, &thePt))
-		return NULL;
-	_rv = TestControl(_self->ob_itself,
-	                  thePt);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *CtlObj_GetControlVariant(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short _rv;
+	SInt32 _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetControlVariant(_self->ob_itself);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *CtlObj_TrackControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short _rv;
-	Point thePoint;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetPoint, &thePoint))
-		return NULL;
-	_rv = TrackControl(_self->ob_itself,
-	                   thePoint,
-	                   (ControlActionUPP)0);
-	_res = Py_BuildValue("h",
+	_rv = GetControlReference(_self->ob_itself);
+	_res = Py_BuildValue("l",
 	                     _rv);
 	return _res;
 }
 
 static PyMethodDef CtlObj_methods[] = {
-	{"SetControlTitle", (PyCFunction)CtlObj_SetControlTitle, 1,
-	 "(Str255 title) -> None"},
-	{"GetControlTitle", (PyCFunction)CtlObj_GetControlTitle, 1,
-	 "(Str255 title) -> None"},
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
 	 "() -> None"},
-	{"HideControl", (PyCFunction)CtlObj_HideControl, 1,
-	 "() -> None"},
 	{"ShowControl", (PyCFunction)CtlObj_ShowControl, 1,
+	 "() -> None"},
+	{"HideControl", (PyCFunction)CtlObj_HideControl, 1,
 	 "() -> None"},
 	{"Draw1Control", (PyCFunction)CtlObj_Draw1Control, 1,
 	 "() -> None"},
 	{"HiliteControl", (PyCFunction)CtlObj_HiliteControl, 1,
-	 "(short hiliteState) -> None"},
+	 "(ControlPartCode hiliteState) -> None"},
+	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
+	 "(Point thePoint) -> (ControlPartCode _rv)"},
+	{"DragControl", (PyCFunction)CtlObj_DragControl, 1,
+	 "(Point startPt, Rect limitRect, Rect slopRect, DragConstraint axis) -> None"},
+	{"TestControl", (PyCFunction)CtlObj_TestControl, 1,
+	 "(Point thePt) -> (ControlPartCode _rv)"},
 	{"MoveControl", (PyCFunction)CtlObj_MoveControl, 1,
-	 "(short h, short v) -> None"},
+	 "(SInt16 h, SInt16 v) -> None"},
 	{"SizeControl", (PyCFunction)CtlObj_SizeControl, 1,
-	 "(short w, short h) -> None"},
-	{"SetControlValue", (PyCFunction)CtlObj_SetControlValue, 1,
-	 "(short theValue) -> None"},
+	 "(SInt16 w, SInt16 h) -> None"},
+	{"SetControlTitle", (PyCFunction)CtlObj_SetControlTitle, 1,
+	 "(Str255 title) -> None"},
+	{"GetControlTitle", (PyCFunction)CtlObj_GetControlTitle, 1,
+	 "(Str255 title) -> None"},
 	{"GetControlValue", (PyCFunction)CtlObj_GetControlValue, 1,
-	 "() -> (short _rv)"},
-	{"SetControlMinimum", (PyCFunction)CtlObj_SetControlMinimum, 1,
-	 "(short minValue) -> None"},
+	 "() -> (SInt16 _rv)"},
+	{"SetControlValue", (PyCFunction)CtlObj_SetControlValue, 1,
+	 "(SInt16 newValue) -> None"},
 	{"GetControlMinimum", (PyCFunction)CtlObj_GetControlMinimum, 1,
-	 "() -> (short _rv)"},
-	{"SetControlMaximum", (PyCFunction)CtlObj_SetControlMaximum, 1,
-	 "(short maxValue) -> None"},
+	 "() -> (SInt16 _rv)"},
+	{"SetControlMinimum", (PyCFunction)CtlObj_SetControlMinimum, 1,
+	 "(SInt16 newMinimum) -> None"},
 	{"GetControlMaximum", (PyCFunction)CtlObj_GetControlMaximum, 1,
-	 "() -> (short _rv)"},
-	{"SetControlReference", (PyCFunction)CtlObj_SetControlReference, 1,
-	 "(long data) -> None"},
-	{"GetControlReference", (PyCFunction)CtlObj_GetControlReference, 1,
-	 "() -> (long _rv)"},
+	 "() -> (SInt16 _rv)"},
+	{"SetControlMaximum", (PyCFunction)CtlObj_SetControlMaximum, 1,
+	 "(SInt16 newMaximum) -> None"},
+	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
+	 "() -> (SInt16 _rv)"},
 	{"SetControlAction", (PyCFunction)CtlObj_SetControlAction, 1,
 	 "() -> None"},
-	{"DragControl", (PyCFunction)CtlObj_DragControl, 1,
-	 "(Point startPt, Rect limitRect, Rect slopRect, short axis) -> None"},
-	{"TestControl", (PyCFunction)CtlObj_TestControl, 1,
-	 "(Point thePt) -> (short _rv)"},
-	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
-	 "() -> (short _rv)"},
-	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
-	 "(Point thePoint) -> (short _rv)"},
+	{"SetControlReference", (PyCFunction)CtlObj_SetControlReference, 1,
+	 "(SInt32 data) -> None"},
+	{"GetControlReference", (PyCFunction)CtlObj_GetControlReference, 1,
+	 "() -> (SInt32 _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -517,11 +517,11 @@ static PyObject *Ctl_NewControl(_self, _args)
 	Rect boundsRect;
 	Str255 title;
 	Boolean visible;
-	short value;
-	short min;
-	short max;
-	short procID;
-	long refCon;
+	SInt16 value;
+	SInt16 min;
+	SInt16 max;
+	SInt16 procID;
+	SInt32 refCon;
 	if (!PyArg_ParseTuple(_args, "O&O&O&bhhhhl",
 	                      WinObj_Convert, &theWindow,
 	                      PyMac_GetRect, &boundsRect,
@@ -553,7 +553,7 @@ static PyObject *Ctl_GetNewControl(_self, _args)
 {
 	PyObject *_res = NULL;
 	ControlHandle _rv;
-	short controlID;
+	SInt16 controlID;
 	WindowPtr owner;
 	if (!PyArg_ParseTuple(_args, "hO&",
 	                      &controlID,
@@ -617,7 +617,7 @@ static PyObject *Ctl_FindControl(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
+	ControlPartCode _rv;
 	Point thePoint;
 	WindowPtr theWindow;
 	ControlHandle theControl;
@@ -636,9 +636,9 @@ static PyObject *Ctl_FindControl(_self, _args)
 
 static PyMethodDef Ctl_methods[] = {
 	{"NewControl", (PyCFunction)Ctl_NewControl, 1,
-	 "(WindowPtr theWindow, Rect boundsRect, Str255 title, Boolean visible, short value, short min, short max, short procID, long refCon) -> (ControlHandle _rv)"},
+	 "(WindowPtr theWindow, Rect boundsRect, Str255 title, Boolean visible, SInt16 value, SInt16 min, SInt16 max, SInt16 procID, SInt32 refCon) -> (ControlHandle _rv)"},
 	{"GetNewControl", (PyCFunction)Ctl_GetNewControl, 1,
-	 "(short controlID, WindowPtr owner) -> (ControlHandle _rv)"},
+	 "(SInt16 controlID, WindowPtr owner) -> (ControlHandle _rv)"},
 	{"KillControls", (PyCFunction)Ctl_KillControls, 1,
 	 "(WindowPtr theWindow) -> None"},
 	{"DrawControls", (PyCFunction)Ctl_DrawControls, 1,
@@ -646,7 +646,7 @@ static PyMethodDef Ctl_methods[] = {
 	{"UpdateControls", (PyCFunction)Ctl_UpdateControls, 1,
 	 "(WindowPtr theWindow) -> None"},
 	{"FindControl", (PyCFunction)Ctl_FindControl, 1,
-	 "(Point thePoint, WindowPtr theWindow) -> (short _rv, ControlHandle theControl)"},
+	 "(Point thePoint, WindowPtr theWindow) -> (ControlPartCode _rv, ControlHandle theControl)"},
 	{NULL, NULL, 0}
 };
 

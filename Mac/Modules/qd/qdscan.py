@@ -78,6 +78,7 @@ class MyScanner(Scanner):
 			'ColorSearchProcPtr',
 			'ColorSearchUPP',
 			'ConstPatternParam',
+			'Pattern_ptr',
 			'Cursor_ptr',
 			'DeviceLoopDrawingProcPtr',
 			'DeviceLoopFlags',

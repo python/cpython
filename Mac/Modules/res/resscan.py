@@ -40,6 +40,7 @@ class ResourcesScanner(Scanner):
 		return [
 			"ReadPartialResource",
 			"WritePartialResource",
+			"TempInsertROMMap",
 ##			"RmveResource",		# RemoveResource
 ##			"SizeResource",		# GetResourceSizeOnDisk
 ##			"MaxSizeRsrc",		# GetMaxResourceSize

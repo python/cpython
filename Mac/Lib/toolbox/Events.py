@@ -1,4 +1,4 @@
-# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Events.h'
+# Generated from 'Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Events.h'
 
 nullEvent = 0
 mouseDown = 1
@@ -36,6 +36,9 @@ shiftKey = 0x0200
 alphaLock = 0x0400
 optionKey = 0x0800
 controlKey = 0x1000
+rightShiftKey = 0x2000
+rightOptionKey = 0x4000
+rightControlKey = 0x8000
 networkEvt = 10
 driverEvt = 11
 app1Evt = 12
