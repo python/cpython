@@ -4,6 +4,8 @@
 \declaremodule{standard}{HTMLParser}
 \modulesynopsis{A simple parser that can handle HTML and XHTML.}
 
+\versionadded{2.2}
+
 This module defines a class \class{HTMLParser} which serves as the
 basis for parsing text files formatted in HTML\index{HTML} (HyperText
 Mark-up Language) and XHTML.\index{XHTML}  Unlike the parser in
@@ -22,6 +24,17 @@ Unlike the parser in \refmodule{htmllib}, this parser does not check
 that end tags match start tags or call the end-tag handler for
 elements which are closed implicitly by closing an outer element.
 \end{classdesc}
+
+An exception is defined as well:
+
+\begin{excdesc}{HTMLParseError}
+Exception raised by the \class{HTMLParser} class when it encounters an
+error while parsing.  This exception provides three attributes:
+\member{msg} is a brief message explaining the error, \member{lineno}
+is the number of the line on which the broken construct was detected,
+and \member{offset} is the number of characters into the line at which
+the construct starts.
+\end{excdesc}
 
 
 \class{HTMLParser} instances have the following methods:
