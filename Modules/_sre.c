@@ -879,11 +879,10 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             /* <MARK> <gid> */
             TRACE(("|%p|%p|MARK %d\n", pattern, ptr, pattern[0]));
             i = pattern[0];
-            if (i > state->lastmark) {
+            if (i & 1)
+                state->lastindex = i/2 + 1;
+            if (i > state->lastmark)
                 state->lastmark = i;
-                if (i & 1)
-                    state->lastindex = i/2 + 1;
-            }
             state->mark[i] = ptr;
             pattern++;
             break;
@@ -1139,9 +1138,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 if (i)
                     return i;
                 i = mark_restore(state, 0, lastmark);
+                state->lastmark = lastmark;
                 if (i < 0)
                     return i;
-                lastmark_restore(state, lastmark);
                 rp->count = count - 1;
                 state->ptr = ptr;
             }
