@@ -1,25 +1,22 @@
-This is Python release 1.4 beta 3
-=================================
+This is Python release 1.4 (final)
+==================================
 
-It's a beta release.  Use this if you want to help me iron the last
-wrinkles out of the distribution before I release the real version
-1.4.  In particular, I'm interested in porting experiences to Unix
-boxes.  Python should build out of the box using "./configure; make".
-Also try running configue with the --with-thread and --with-readline
-options (described below).
-
-I really expect this to be the last beta release.  I declare a
-*FEATURE FREEZE* until 1.4 final is released (in a couple of weeks).
-Changes in 1.4 final will be restricted to urgent bugfixes,
-portability enhancements, and added documentation only.
+I appreciate everybody's patience...  This is the official, final
+release of Python 1.4.  You can throw away your copies of 1.3 and the
+1.4 betas now!
 
 
 What's new in this release?
 ---------------------------
 
-A list of (nearly) everything that changed in each of the 1.4 beta
-releases can be found in the file Misc/NEWS -- together this comprises
-a list of everything that's changed since 1.3.
+An exhaustive list of (nearly) everything that changed since the
+release of Python 1.3, over a year ago, can be found in the file
+Misc/NEWS.  (A history of all changes before that time is kept in
+Misc/HISTORY.)  An overview of the most important user-visible changes
+is appended as a new chapter to the Tutorial (Doc/tut.tex).  Perhaps
+the most visible changes are the new power operator, complex numbers,
+new slicing and indexing syntax, and class-private names of the form
+__spam (an experimental feature).
 
 
 What is Python anyway?
@@ -29,6 +26,31 @@ Python is an interpreted object-oriented programming language, and is
 often compared to Tcl, Perl, Scheme or Java.  For a quick summary of
 what Python can mean for a UNIX/C programmer, read Misc/BLURB.LUTZ.
 If you have web access, point your browser to http://www.python.org.
+
+
+How do I learn Python?
+----------------------
+
+The official tutorial is still a good place to start (in the Doc
+directory as tut.tex; and http://www.python.org/doc/tut/tut.html).
+Aaron Watters wrote a second tutorial, that may be more accessible for
+some: http://www.wcmh.com/uworld/archives/95/tutorial/005.html.
+
+There are now also two books on Python.  While these are still based
+on Python 1.3 or 1.4beta2, the language is so stable now that you'd be
+hard pressed to find places where the books are out of date.  The
+books, both first published in October 1996 and both including a
+CD-ROM, form excellent companions to each other:
+
+	Internet Programming with Python
+	by Aaron Watters, Guido van Rossum, and James Ahlstrom
+	MIS Press/Henry Holt publishers
+	ISBN: 1-55851-484-8
+
+	Programming Python
+	by Mark Lutz
+	O'Reilly & Associates
+	ISBN: 1-56592-197-6
 
 
 If you don't read instructions
@@ -57,16 +79,15 @@ packages, GPL-free public domain versions also exist.
 A modest plug
 =============
 
-*************************************************************************
-*                                                                       *
-*     If you use Python, please consider joining the Python Software    *
-*     Activity (PSA).  See http://www.python.org/psa/.                  *
-*                                                                       *
-*     Organizations that make heavy use of Python are especially        *
-*     encouraged to become corporate members!                           *
-*                                                                       *
-*************************************************************************
+*********************************************************************
+* Without your help, I won't be able to continue to support Python! *
+*********************************************************************
 
+If you use Python, please consider joining the Python Software
+Activity (PSA).  See http://www.python.org/psa/.
+
+Organizations that make heavy use of Python are especially encouraged
+to become corporate members!
 
 
 Build instructions
@@ -529,9 +550,7 @@ Bug reports
 Bugs are best reported to the comp.lang.python newsgroup or the Python
 mailing list -- see the section "Newsgroup and mailing list" above.
 Before posting, check the newsgroup archives (see above) to see if
-your bug has already been reported!  If you specifically don't want to
-involve the newsgroup or mailing list, send them to
-python-bugs@python.org.
+your bug has already been reported!
 
 
 Questions
@@ -549,9 +568,11 @@ The Tk interface
 Tk (the user interface component of John Ousterhout's Tcl language) is
 also usable from Python.  Since this requires that you first build and
 install Tcl/Tk, the Tk interface is not enabled by default.  It works
-with Tcl 7.5 and Tk 4.1 as well as with Tcl 7.4 and Tk 4.0.
+with Tcl 7.5 and Tk 4.1 as well as with Tcl 7.4 and Tk 4.0.  I didn't
+have the time to test it with Tcl 7.6 and Tk 4.2 yet, but it might
+well work.
 
-See http://www.smli.com/research/tcl/ for more info on where to get
+See http://www.sunlabs.com/research/tcl/ for more info on where to get
 Tcl/Tk.
 
 To enable the Python/Tk interface, once you've built and installed
@@ -597,7 +618,6 @@ Most subdirectories have their own README file.  Most files have
 comments.
 
 BUGS            A list of known bugs (not completely up-to-date)
-TODO            A list of things that could be done (not up-to-date)
 Demo/           Demonstration scripts, modules and programs
 Doc/            Documentation (LaTeX sources)
 Grammar/        Input for the parser generator
@@ -607,9 +627,11 @@ Makefile.in     Source from which config.status creates Makefile
 Misc/           Miscellaneous files
 Modules/        Implementation of most built-in modules
 Objects/        Implementation of most built-in object types
+PC/             PC porting files (DOS, Windows, NT, OS/2)
 Parser/         The parser and tokenizer and their input handling
 Python/         The "compiler" and interpreter
 README          The file you're reading now
+TODO            A list of things that could be done (not up-to-date)
 Tools/          Some useful programs written in Python
 acconfig.h      Additional input for the autoheader program
 config.h.in     Source from which config.status creates config.h
@@ -659,16 +681,23 @@ documentation for any purpose and without fee is hereby granted,
 provided that the above copyright notice appear in all copies and that
 both that copyright notice and this permission notice appear in
 supporting documentation, and that the names of Stichting Mathematisch
-Centrum or CWI not be used in advertising or publicity pertaining to
-distribution of the software without specific, written prior permission.
+Centrum or CWI or Corporation for National Research Initiatives or
+CNRI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior
+permission.
 
-STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
-THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
-FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
-FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
-OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+While CWI is the initial source for this software, a modified version
+is made available by the Corporation for National Research Initiatives
+(CNRI) at the Internet address ftp://ftp.python.org.
+
+STICHTING MATHEMATISCH CENTRUM AND CNRI DISCLAIM ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH
+CENTRUM OR CNRI BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
+DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
 ----------------------------------------------------------------------
 
 
