@@ -31,6 +31,7 @@
 #      Colin Kong, Trent Mick
 #
 #    History:
+#    1.0.1 - reformatted to make doc.py happy
 #    1.0.0 - reformatted a bit and checked into Python CVS
 #    0.8.0 - added sys.version parser and various new access
 #            APIs (python_version(), python_compiler(), etc.)
@@ -101,22 +102,21 @@ __copyright__ = """
 
 """
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 import sys,string,os,re
 
 ### Platform specific APIs
 
+_libc_search = re.compile(r'(__libc_init)'
+                          '|'
+                          '(GLIBC_([0-9.]+))' 
+                          '|' 
+                          '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)')
+
 def libc_ver(executable=sys.executable,lib='',version='',
 
-             chunksize=2048,
-             libc_search=re.compile(r'(__libc_init)'
-                                     '|'
-                                     '(GLIBC_([0-9.]+))' 
-                                     '|' 
-                                     '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)'
-                                    )
-         ):
+             chunksize=2048):
 
     """ Tries to determine the libc version against which the
         file executable (defaults to the Python interpreter) is linked.
@@ -135,7 +135,7 @@ def libc_ver(executable=sys.executable,lib='',version='',
     binary = f.read(chunksize)
     pos = 0
     while 1:
-        m = libc_search.search(binary,pos)
+        m = _libc_search.search(binary,pos)
         if not m:
             binary = f.read(chunksize)
             if not binary:
@@ -212,11 +212,12 @@ def _dist_try_harder(distname,version,id):
 
     return distname,version,id
 
+_release_filename = re.compile(r'(\w+)[-_](release|version)')
+_release_version = re.compile(r'([\d.]+)[^(]*(?:\((.+)\))?')
+
 def dist(distname='',version='',id='',
 
-         supported_dists=('SuSE','debian','redhat','mandrake'),
-         release_filename=re.compile(r'(\w+)[-_](release|version)'),
-         release_version=re.compile(r'([\d.]+)[^(]*(?:\((.+)\))?')):
+         supported_dists=('SuSE','debian','redhat','mandrake')):
 
     """ Tries to determine the name of the OS distribution name
 
@@ -234,7 +235,7 @@ def dist(distname='',version='',id='',
         # Probably not a Unix system
         return distname,version,id
     for file in etc:
-        m = release_filename.match(file)
+        m = _release_filename.match(file)
         if m:
             _distname,dummy = m.groups()
             if _distname in supported_dists:
@@ -245,7 +246,7 @@ def dist(distname='',version='',id='',
     f = open('/etc/'+file,'r')
     firstline = f.readline()
     f.close()
-    m = release_version.search(firstline)
+    m = _release_version.search(firstline)
     if m:
         _version,_id = m.groups()
         if _version:
@@ -365,12 +366,13 @@ def _norm_version(version,build=''):
     version = string.join(strings[:3],'.')
     return version
 
+_ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
+                         '.*'
+                         'Version ([\d.]+))')
+
 def _syscmd_ver(system='',release='',version='',
 
-               supported_platforms=('win32','win16','dos','os2'),
-               ver_output=re.compile(r'(?:([\w ]+) ([\w.]+) '
-                                      '.*'
-                                      'Version ([\d.]+))')):
+               supported_platforms=('win32','win16','dos','os2')):
 
     """ Tries to figure out the OS version used and returns
         a tuple (system,release,version).
@@ -407,7 +409,7 @@ def _syscmd_ver(system='',release='',version='',
 
     # Parse the output
     info = string.strip(info)
-    m = ver_output.match(info)
+    m = _ver_output.match(info)
     if m:
         system,release,version = m.groups()
         # Strip trailing dots from version and release
@@ -808,9 +810,9 @@ _default_architecture = {
     'dos': ('','MSDOS'),
 }
 
-def architecture(executable=sys.executable,bits='',linkage='',
+_architecture_split = re.compile(r'[\s,]').split
 
-                 split=re.compile(r'[\s,]').split):
+def architecture(executable=sys.executable,bits='',linkage=''):
 
     """ Queries the given executable (defaults to the Python interpreter
         binary) for various architecture informations.
@@ -858,7 +860,7 @@ def architecture(executable=sys.executable,bits='',linkage='',
         return bits,linkage
 
     # Split the output into a list of strings omitting the filename
-    fileout = split(output)[1:]
+    fileout = _architecture_split(output)[1:]
     
     if 'executable' not in fileout:
         # Format not supported
