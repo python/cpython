@@ -123,9 +123,8 @@ class Generator:
         # self._handle_<maintype>_<subtype>().  If there's no handler for the
         # full MIME type, then dispatch to self._handle_<maintype>().  If
         # that's missing too, then dispatch to self._writeBody().
-        ctype = msg.get_content_type()
-        # We do have a Content-Type: header.
-        main, sub = ctype.split('/')
+        main = msg.get_content_maintype()
+        sub = msg.get_content_subtype()
         specific = UNDERSCORE.join((main, sub)).replace('-', '_')
         meth = getattr(self, '_handle_' + specific, None)
         if meth is None:
