@@ -184,9 +184,12 @@ Example:
 
 \begin{verbatim}
 >>> import locale
->>> locale.open(locale.LC_ALL,"de") #setting locale to German
->>> locale.strcoll("f\344n","foo")  #comparing a string containing an umlaut 
->>> can.close()
+>>> loc = locale.setlocale(locale.LC_ALL) # get current locale
+>>> locale.setlocale(locale.LC_ALL, "de") # use German locale
+>>> locale.strcoll("f\344n", "foo") # compare a string containing an umlaut 
+>>> locale.setlocale(locale.LC_ALL, "") # use user's preferred locale
+>>> locale.setlocale(locale.LC_ALL, "C") # use default (C) locale
+>>> locale.setlocale(locale.LC_ALL, loc) # restore saved locale
 \end{verbatim}
 
 \subsection{Background, details, hints, tips and caveats}
