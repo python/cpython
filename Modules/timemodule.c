@@ -55,6 +55,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef _M_IX86
 #include <windows.h>
 #define timezone _timezone
+#define tzname _tzname
+#define daylight _daylight
+#define altzone _altzone
 #endif
 
 /* Forward declarations */
