@@ -1,10 +1,11 @@
 \section{\module{xmllib} ---
-         A parser for XML documents.}
+         A parser for XML documents}
+
 \declaremodule{standard}{xmllib}
+\modulesynopsis{A parser for XML documents.}
 \moduleauthor{Sjoerd Mullender}{Sjoerd.Mullender@cwi.nl}
 \sectionauthor{Sjoerd Mullender}{Sjoerd.Mullender@cwi.nl}
 
-\modulesynopsis{A parser for XML documents.}
 
 \index{XML}
 \index{Extensible Markup Language}
@@ -225,10 +226,12 @@ intended to be overridden by a derived class; the base class
 implementation does nothing.
 \end{methoddesc}
 
-\subsection{XML Namespaces}
+
+\subsection{XML Namespaces \label{xml-namespace}}
 
 This module has support for XML namespaces as defined in the XML
 Namespaces proposed recommendation.
+\indexii{XML}{namespaces}
 
 Tag and attribute names that are defined in an XML namespace are
 handled as if the name of the tag or element consisted of the
