@@ -99,6 +99,7 @@ print 'new.code()'
 # bogus test of new.code()
 # Note: Jython will never have new.code()
 if hasattr(new, 'code'):
+    # XXX should use less criminally bogus arguments!
     d = new.code(3, 3, 3, 3, codestr, (), (), (),
                  "<string>", "<name>", 1, "", (), ())
     # test backwards-compatibility version with no freevars or cellvars
