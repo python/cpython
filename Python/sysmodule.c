@@ -1023,11 +1023,18 @@ mywrite(char *name, FILE *fp, const char *format, va_list va)
 		vfprintf(fp, format, va);
 	else {
 		char buffer[1001];
-		if (vsprintf(buffer, format, va) >= sizeof(buffer))
-		    Py_FatalError("PySys_WriteStdout/err: buffer overrun");
+		int written = PyOS_vsnprintf(buffer, sizeof(buffer), 
+					     format, va);
 		if (PyFile_WriteString(buffer, file) != 0) {
 			PyErr_Clear();
 			fputs(buffer, fp);
+		}
+		if (written == -1 || written > sizeof(buffer)) {
+			const char *truncated = "... truncated";
+			if (PyFile_WriteString(truncated, file) != 0) {
+				PyErr_Clear();
+				fputs(truncated, fp);
+			}
 		}
 	}
 	PyErr_Restore(error_type, error_value, error_traceback);
