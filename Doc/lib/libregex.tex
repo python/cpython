@@ -40,8 +40,8 @@ they are followed by an unrecognized escape character.
 \emph{However}, if you want to include a literal \dfn{backslash} in a
 regular expression represented as a string literal, you have to
 \emph{quadruple} it or enclose it in a singleton character class.
-E.g.\  to extract \LaTeX\ \samp{\e section\{{\rm
-\ldots}\}} headers from a document, you can use this pattern:
+E.g.\  to extract \LaTeX\ \samp{\e section\{\textrm{\ldots}\}} headers
+from a document, you can use this pattern:
 \code{'[\e ]section\{\e (.*\e )\}'}.  \emph{Another exception:}
 the escape sequece \samp{\e b} is significant in string literals
 (where it means the ASCII bell character) as well as in Emacs regular
