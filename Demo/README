@@ -8,9 +8,10 @@ scripts		Some useful Python scripts that I put in my bin
 sockets		Examples for the new built-in module 'socket'.
 
 sgi		Demos that only run on Silicon Graphics machines.
-		Require the built-in modules 'audio' and/or 'gl'
-		and/or 'stdwin'.
-		(This is split in corresponding subdirectories.)
+		These require at least one of the optional built-in
+		modules that only make sense for the SGI, such as
+		the modules 'gl' and 'al'.  Split in subdirectories
+		per subject.
 
 stdwin		Demos that use the STDWIN library.  Require the 'stdwin'
 		built-in module.
