@@ -169,6 +169,9 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libgetpass.tex \
 	../lib/libshutil.tex \
 	../lib/librepr.tex \
+	../lib/libmsvcrt.tex \
+	../lib/libwinsound.tex \
+	../lib/windows.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
