@@ -1,6 +1,7 @@
 import sys
 import time
 import socket
+import __main__
 import rpc
 
 def main():
@@ -55,11 +56,18 @@ class Executive:
 
     def __init__(self, rpchandler):
         self.rpchandler = rpchandler
-        import __main__
-        self.locals = __main__.__dict__
+        self.base_env_keys = __main__.__dict__.keys()
 
     def runcode(self, code):
-        exec code in self.locals
+       exec code in __main__.__dict__
+        
+    def clear_the_environment(self):
+        global __main__
+        env = __main__.__dict__
+        for key in env.keys():
+            if key not in self.base_env_keys:
+                del env[key]
+        env['__doc__'] = None
 
     def start_the_debugger(self, gui_adap_oid):
         import RemoteDebugger
