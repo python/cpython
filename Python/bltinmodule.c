@@ -615,6 +615,7 @@ object *OverflowError;
 object *RuntimeError;
 object *SyntaxError;
 object *SystemError;
+object *SystemExit;
 object *TypeError;
 object *ValueError;
 object *ZeroDivisionError;
@@ -645,6 +646,7 @@ initerrors()
 	RuntimeError = newstdexception("RuntimeError");
 	SyntaxError = newstdexception("SyntaxError");
 	SystemError = newstdexception("SystemError");
+	SystemExit = newstdexception("SystemExit");
 	TypeError = newstdexception("TypeError");
 	ValueError = newstdexception("ValueError");
 	ZeroDivisionError = newstdexception("ZeroDivisionError");
