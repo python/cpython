@@ -576,25 +576,11 @@ listinsert(PyListObject *self, PyObject *args)
 	return ins(self, i, v);
 }
 
-/* Define NO_STRICT_LIST_APPEND to enable multi-argument append() */
-
-#ifndef NO_STRICT_LIST_APPEND
-#define PyArg_ParseTuple_Compat1 PyArg_ParseTuple
-#else
-#define PyArg_ParseTuple_Compat1(args, format, ret) \
-( \
-	PyTuple_GET_SIZE(args) > 1 ? (*ret = args, 1) : \
-	PyTuple_GET_SIZE(args) == 1 ? (*ret = PyTuple_GET_ITEM(args, 0), 1) : \
-	PyArg_ParseTuple(args, format, ret) \
-)
-#endif
-
-
 static PyObject *
 listappend(PyListObject *self, PyObject *args)
 {
 	PyObject *v;
-	if (!PyArg_ParseTuple_Compat1(args, "O:append", &v))
+	if (!PyArg_ParseTuple(args, "O:append", &v))
 		return NULL;
 	return ins(self, (int) self->ob_size, v);
 }
@@ -1361,7 +1347,7 @@ listindex(PyListObject *self, PyObject *args)
 	int i;
 	PyObject *v;
 
-	if (!PyArg_ParseTuple_Compat1(args, "O:index", &v))
+	if (!PyArg_ParseTuple(args, "O:index", &v))
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
@@ -1381,7 +1367,7 @@ listcount(PyListObject *self, PyObject *args)
 	int i;
 	PyObject *v;
 
-	if (!PyArg_ParseTuple_Compat1(args, "O:count", &v))
+	if (!PyArg_ParseTuple(args, "O:count", &v))
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
@@ -1399,7 +1385,7 @@ listremove(PyListObject *self, PyObject *args)
 	int i;
 	PyObject *v;
 
-	if (!PyArg_ParseTuple_Compat1(args, "O:remove", &v))
+	if (!PyArg_ParseTuple(args, "O:remove", &v))
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
