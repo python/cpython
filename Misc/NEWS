@@ -534,6 +534,14 @@ Library
   has changed slightly so that an explicit maxlinelen value is always
   honored.
 
+- distutils' build_ext command now links c++ extensions with the c++
+  compiler available in the Makefile or CXX environment variable, if
+  running under *nix.
+
+- New module bz2: provides a comprehensive interface for the bz2 compression
+  library.  It implements a complete file interface, one-shot (de)compression
+  functions, and types for sequential (de)compression.
+
 Tools/Demos
 -----------
 

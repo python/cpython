@@ -227,6 +227,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libcommands.tex \
 	lib/libcmath.tex \
 	lib/libgzip.tex \
+	lib/libbz2.tex \
 	lib/libzipfile.tex \
 	lib/libpprint.tex \
 	lib/libcode.tex \
