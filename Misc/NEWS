@@ -25,7 +25,7 @@ Core
     reduce()
     string.join()
     tuple()
-    XXX TODO unicode.join()
+    unicode.join()
     XXX TODO zip()
     XXX TODO 'x in y'
 

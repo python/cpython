@@ -861,8 +861,15 @@ string_join(PyStringObject *self, PyObject *args)
 		item = PySequence_Fast_GET_ITEM(seq, i);
 		if (!PyString_Check(item)){
 			if (PyUnicode_Check(item)) {
+				/* Defer to Unicode join.
+				 * CAUTION:  There's no gurantee that the
+				 * original sequence can be iterated over
+				 * again, so we must pass seq here.
+				 */
+				PyObject *result;
+				result = PyUnicode_Join((PyObject *)self, seq);
 				Py_DECREF(seq);
-				return PyUnicode_Join((PyObject *)self, orig);
+				return result;
 			}
 			PyErr_Format(PyExc_TypeError,
 				     "sequence item %i: expected string,"
