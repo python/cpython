@@ -109,6 +109,7 @@ $icons{'blank'} = 'blank.' . $IMAGE_TYPE;
 
 $CUSTOM_BUTTONS = '';
 $BLANK_ICON = "\n<td>" . img_tag('blank.' . $IMAGE_TYPE) . "</td>";
+$BLANK_ICON =~ s/alt="blank"/alt=""/;
 $NAV_BGCOLOR = " bgcolor=\"#99CCFF\"";
 
 sub make_nav_sectref{
@@ -121,7 +122,8 @@ sub make_nav_sectref{
 }
 
 sub make_nav_panel{
-    return ("<table width=\"100%\" cellpadding=0 cellspacing=2>\n<tr>"
+    return ("<table align=center width=\"100%\" cellpadding=0 cellspacing=2>"
+	    . "\n<tr>"
 	    . "\n<td>$NEXT</td>"
 	    . "\n<td>$UP</td>"
 	    . "\n<td>$PREVIOUS</td>"
@@ -201,6 +203,8 @@ sub img_tag {
 	my $nav_border = "$NAV_BORDER";
 	if ($icon =~ /($alt)/) {
 	    $alt = $1;
+	    $alt = ""
+	      if ($alt eq "blank");
 	}
 	else {
 	    $nav_border = '1';
