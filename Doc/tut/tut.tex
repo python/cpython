@@ -2211,6 +2211,20 @@ function.
 1
 \end{verbatim}
 
+To loop over a sequence in sorted order, use the \function{sorted()}
+function which returns a new sorted list while leaving the source
+unaltered.
+
+\begin{verbatim}
+>>> basket = ['apple', 'orange', 'apple', 'pear', 'orange', 'banana']
+>>> for f in sorted(set(basket)):
+...     print f
+... 	
+apple
+banana
+orange
+pear
+\end{verbatim}
 
 \section{More on Conditions \label{conditions}}
 
