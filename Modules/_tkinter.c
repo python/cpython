@@ -852,6 +852,9 @@ Tkapp_CreateFileHandler (self, args)
 {
   PyObject *file, *func, *data;
   int mask, id;
+#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+  Tcl_File tfile;
+#endif
 
   if (!PyArg_Parse (args, "(OiO)", &file, &mask, &func))
     return NULL;
@@ -867,7 +870,13 @@ Tkapp_CreateFileHandler (self, args)
   /* ClientData is: (func, file) */
   data = Py_BuildValue ("(OO)", func, file);
 
+#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+  tfile = Tcl_GetFile((ClientData)id, TCL_UNIX_FD);
+  /* Oughtta check for null Tcl_File object... */
+  Tcl_CreateFileHandler (tfile, mask, FileHandler, (ClientData) data);
+#else
   Tk_CreateFileHandler ((ClientData) id, mask, FileHandler, (ClientData) data);
+#endif
   /* XXX fileHandlerDict */
 
   Py_INCREF (Py_None);
@@ -881,14 +890,23 @@ Tkapp_DeleteFileHandler (self, args)
 {
   PyObject *file;
   int id;
-
+#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+  Tcl_File tfile;
+#endif
+  
   if (!PyArg_Parse (args, "O", &file))
     return NULL;
   id = GetFileNo (file);
   if (id < 0)
     return NULL;
 
+#if (TK_MAJOR_VERSION*1000 + TK_MINOR_VERSION) >= 4001
+  tfile = Tcl_GetFile((ClientData) id, TCL_UNIX_FD);
+  /* Oughtta check for null Tcl_File object... */
+  Tcl_DeleteFileHandler(tfile);
+#else
   Tk_DeleteFileHandler ((ClientData) id);
+#endif
   /* XXX fileHandlerDict */
   Py_INCREF (Py_None);
   return Py_None;
