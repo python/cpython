@@ -704,6 +704,14 @@ PyObject_InitVar:PyVarObject*:op:0:
 PyObject_Length:int:::
 PyObject_Length:PyObject*:o:0:
 
+PyObject_NEW:PyObject*::+1:
+
+PyObject_New:PyObject*::+1:
+
+PyObject_NEW_VAR:PyObject*::+1:
+
+PyObject_NewVar:PyObject*::+1:
+
 PyObject_Print:int:::
 PyObject_Print:PyObject*:o:0:
 PyObject_Print:FILE*:fp::
@@ -1338,7 +1346,7 @@ _PyObject_Del:PyObject*:op:0:
 _PyObject_New:PyObject*::+1:
 _PyObject_New:PyTypeObject*:type:0:
 
-_PyObject_NewVar:PyVarObject*::+1:
+_PyObject_NewVar:PyObject*::+1:
 _PyObject_NewVar:PyTypeObject*:type:0:
 _PyObject_NewVar:int:size::
 
