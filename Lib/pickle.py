@@ -115,6 +115,9 @@ class Pickler:
         self.memo = {}
         self.bin = bin
 
+    def clear_memo(self):
+        self.memo.clear()
+
     def dump(self, object):
         self.save(object)
         self.write(STOP)
