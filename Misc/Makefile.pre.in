@@ -117,6 +117,7 @@ LINKCC=		@LINKCC@
 SGI_ABI=	@SGI_ABI@
 OPT=		@OPT@
 LDFLAGS=	@LDFLAGS@
+LDLAST=		@LDLAST@
 DEFS=		@DEFS@
 LIBS=		@LIBS@
 LIBM=		@LIBM@
@@ -190,9 +191,10 @@ sharedmods:	$(SHAREDMODS)
 # Build a static Python binary containing our extension modules
 static:		$(TARGET)
 $(TARGET):	$(ADDOBJS) lib.a $(PYTHONLIBS) Makefile $(BASELIB)
-		$(CC) $(LDFLAGS) $(ADDOBJS) lib.a $(PYTHONLIBS) \
+		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) \
+		 $(ADDOBJS) lib.a $(PYTHONLIBS) \
 		 $(LINKPATH) $(BASELIB) $(MODLIBS) $(LIBS) $(SYSLIBS) \
-		 -o $(TARGET)
+		 -o $(TARGET) $(LDLAST)
 
 install:	sharedmods
 		if test ! -d $(DESTSHARED) ; then \
