@@ -1684,9 +1684,9 @@ PyDoc_STRVAR(list_doc,
 "list() -> new list\n"
 "list(sequence) -> new list initialized from sequence's items");
 
-staticforward PyObject * list_iter(PyObject *seq);
+static PyObject *list_iter(PyObject *seq);
 
-static PyObject*
+static PyObject *
 list_subscript(PyListObject* self, PyObject* item)
 {
 	if (PyInt_Check(item)) {
