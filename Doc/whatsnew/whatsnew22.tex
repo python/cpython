@@ -114,7 +114,7 @@ be possible in pure Python, and to my mind that's all for the better.
 
 I'm not going to attempt to cover every single corner case and small
 change that were required to make the new features work.  Instead this
-section will paint only the broad strokes.  See section~\cite{sect-rellinks},
+section will paint only the broad strokes.  See section~\ref{sect-rellinks},
 ``Related Links'', for further sources of information about Python 2.2's new
 object model.
 
@@ -144,10 +144,10 @@ class C(object):
 \end{verbatim}
 
 This means that \keyword{class} statements that don't have any base
-classes are always classic classes in Python 2.2.  There's actually a
-way to make new-style classes without any base classes, by setting the
-\member{__metaclass__} variable to XXX (What do you set it to?), but
-it's easier to just subclass \keyword{object}.
+classes are always classic classes in Python 2.2.  (Actually you can
+also change this by setting a module-level variable named
+\member{__metaclass__} --- see \pep{253} for the details --- but it's
+easier to just subclass \keyword{object}.)
 
 The type objects for the built-in types are available as built-ins,
 named using a clever trick.  Python has always had built-in functions
@@ -429,7 +429,7 @@ AttributeError: 'C' object has no attribute 'templtae'
 
 
 \subsection{Related Links}
-\ref{sect-rellinks}
+\label{sect-rellinks}
 
 This section has just been a quick overview of the new features,
 giving enough of an explanation to start you programming, but many
@@ -639,7 +639,7 @@ preserved.  On the next call to the generator's \code{.next()} method,
 the function will resume executing immediately after the
 \keyword{yield} statement.  (For complicated reasons, the
 \keyword{yield} statement isn't allowed inside the \keyword{try} block
-of a \code{try...finally} statement; read PEP 255 for a full
+of a \code{try...finally} statement; read \pep{255} for a full
 explanation of the interaction between \keyword{yield} and
 exceptions.)
 
@@ -803,14 +803,14 @@ and whether it's worth breaking existing code to fix this.  It's
 caused endless discussions on python-dev and in July erupted into an
 storm of acidly sarcastic postings on \newsgroup{comp.lang.python}. I
 won't argue for either side here and will stick to describing what's 
-implemented in 2.2.  Read PEP 238 for a summary of arguments and
+implemented in 2.2.  Read \pep{238} for a summary of arguments and
 counter-arguments.)  
 
 Because this change might break code, it's being introduced very
 gradually.  Python 2.2 begins the transition, but the switch won't be
 complete until Python 3.0.
 
-First, I'll borrow some terminology from PEP 238.  ``True division'' is the
+First, I'll borrow some terminology from \pep{238}.  ``True division'' is the
 division that most non-programmers are familiar with: 3/2 is 1.5, 1/4
 is 0.25, and so forth.  ``Floor division'' is what Python's \code{/}
 operator currently does when given integer operands; the result is the
@@ -843,7 +843,13 @@ of \code{/} will not change until Python 3.0.
 C level, there are also slots in the \code{PyNumberMethods} structure
 so extension types can define the two operators.
 
-% XXX a warning someday?
+\item Python 2.2 supports some command-line arguments for testing
+whether code will works with the changed division semantics.  Running
+python with \programopt{-Q warn} will cause a warning to be issued
+whenever division is applied to two integers.  You can use this to
+find code that's affected by the change and fix it.  By default,
+Python 2.2 will simply perform classic division without a warning; the
+warning will be turned on by default in Python 2.3.
 
 \end{itemize}
 
@@ -871,7 +877,7 @@ Python''), values greater than 65535 will still cause
 \function{unichr()} to raise a \exception{ValueError} exception.
 
 % XXX is this still unimplemented?
-All this is the province of the still-unimplemented PEP 261, ``Support
+All this is the province of the still-unimplemented \pep{261}, ``Support
 for `wide' Unicode characters''; consult it for further details, and
 please offer comments on the PEP and on your experiences with the
 2.2 beta releases.
@@ -910,12 +916,12 @@ end
 \end{verbatim}
 
 To convert a class instance to Unicode, a \method{__unicode__} method
-can be defined, analogous to \method{__str__}.
-% XXX who implemented that?
+can be defined by a class, analogous to \method{__str__}.
 
-\method{encode()} and \method{decode()} were implemented by
-Marc-Andr\'e Lemburg.  The changes to support using UCS-4 internally
-were implemented by Fredrik Lundh and Martin von L\"owis.
+\method{encode()}, \method{decode()}, and \method{__unicode__} were
+implemented by Marc-Andr\'e Lemburg.  The changes to support using
+UCS-4 internally were implemented by Fredrik Lundh and Martin von
+L\"owis.
 
 \begin{seealso}
 
@@ -923,6 +929,7 @@ were implemented by Fredrik Lundh and Martin von L\"owis.
 Paul Prescod.  Not yet accepted or fully implemented.}
 
 \end{seealso}
+
 
 %======================================================================
 \section{PEP 227: Nested Scopes}
@@ -1146,8 +1153,6 @@ embedding the interpreter, or just hacking on the interpreter itself.
 If you only write Python code, none of the changes described here will
 affect you very much.
 
-% XXX PyArg_UnpackTuple()
-
 \begin{itemize}
 
   \item Profiling and tracing functions can now be implemented in C,
@@ -1180,7 +1185,14 @@ affect you very much.
   encoding and converts them to the specified new encoding.
   (Contributed by M.-A. Lemburg, and used for the MBCS support on
   Windows described in the following section.)
- 
+
+  \item A different argument parsing function,
+  \cfunction{PyArg_UnpackTuple()}, has been added that's simpler and
+  presumably faster.  Instead of specifying a format string, the
+  caller simply gives the minimum and maximum number of arguments
+  expected, and a set of pointers to \code{PyObject*} variables that
+  will be filled in with argument values.  
+
   \item Two new flags \constant{METH_NOARGS} and \constant{METH_O} are
    available in method definition tables to simplify implementation of
    methods with no arguments or a single untyped argument. Calling
