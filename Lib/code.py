@@ -133,12 +133,7 @@ class InteractiveInterpreter:
                 pass
             else:
                 # Stuff in the right filename
-                try:
-                    # Assume SyntaxError is a class exception
-                    value = SyntaxError(msg, (filename, lineno, offset, line))
-                except:
-                    # If that failed, assume SyntaxError is a string
-                    value = msg, (filename, lineno, offset, line)
+                value = SyntaxError(msg, (filename, lineno, offset, line))
                 sys.last_value = value
         list = traceback.format_exception_only(type, value)
         map(self.write, list)
@@ -302,7 +297,7 @@ def interact(banner=None, readfunc=None, local=None):
     else:
         try:
             import readline
-        except:
+        except ImportError:
             pass
     console.interact(banner)
 
