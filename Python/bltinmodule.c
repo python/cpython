@@ -1627,18 +1627,23 @@ builtin_isinstance(self, args)
 
 	if (!PyArg_ParseTuple(args, "OO", &inst, &cls))
 		return NULL;
-	if (!PyClass_Check(cls)) {
-		PyErr_SetString(PyExc_TypeError,
-				"second argument must be a class");
-		return NULL;
+	if (PyType_Check(cls)) {
+		retval = (inst->ob_type == cls);
 	}
-
-	if (!PyInstance_Check(inst))
-		retval = 0;
 	else {
-		PyObject *inclass =
-			(PyObject*)((PyInstanceObject*)inst)->in_class;
-		retval = PyClass_IsSubclass(inclass, cls);
+		if (!PyClass_Check(cls)) {
+			PyErr_SetString(PyExc_TypeError,
+					"second argument must be a class");
+			return NULL;
+		}
+
+		if (!PyInstance_Check(inst))
+			retval = 0;
+		else {
+			PyObject *inclass =
+				(PyObject*)((PyInstanceObject*)inst)->in_class;
+			retval = PyClass_IsSubclass(inclass, cls);
+		}
 	}
 	return PyInt_FromLong(retval);
 }
