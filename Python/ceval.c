@@ -1428,9 +1428,9 @@ eval_frame(PyFrameObject *f)
 				    s[len-1] == ' ')
 				    PyFile_SoftSpace(w, 1);
 			    }
+#endif
 			    else
 			    	PyFile_SoftSpace(w, 1);
-#endif
 			}
 			Py_DECREF(v);
 			Py_XDECREF(stream);
