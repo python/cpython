@@ -588,11 +588,15 @@ set_ixor(PySetObject *so, PyObject *other)
 static PyObject *
 set_issubset(PySetObject *so, PyObject *other)
 {
-	PyObject *otherdata, *it, *item;
+	PyObject *otherdata, *it, *item, *tmp, *result;
 
 	if (!PyAnySet_Check(other)) {
-		PyErr_SetString(PyExc_TypeError, "can only compare to a set");
-		return NULL;
+		tmp = make_new_set(&PySet_Type, other);
+		if (tmp == NULL)
+			return NULL;
+		result = set_issubset(so, tmp);
+		Py_DECREF(tmp);
+		return result;
 	}
 	if (set_len(so) > set_len((PySetObject *)other)) 
 		Py_RETURN_FALSE;
@@ -621,9 +625,15 @@ PyDoc_STRVAR(issubset_doc, "Report whether another set contains this set.");
 static PyObject *
 set_issuperset(PySetObject *so, PyObject *other)
 {
+	PyObject *tmp, *result;
+
 	if (!PyAnySet_Check(other)) {
-		PyErr_SetString(PyExc_TypeError, "can only compare to a set");
-		return NULL;
+		tmp = make_new_set(&PySet_Type, other);
+		if (tmp == NULL)
+			return NULL;
+		result = set_issuperset(so, tmp);
+		Py_DECREF(tmp);
+		return result;
 	}
 	return set_issubset((PySetObject *)other, (PyObject *)so);
 }

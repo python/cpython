@@ -143,6 +143,10 @@ class TestJointOps(unittest.TestCase):
         self.failIf(q <= r)
         self.failIf(q > r)
         self.failIf(q >= r)
+        self.assert_(set('a').issubset('abc'))
+        self.assert_(set('abc').issuperset('a'))
+        self.failIf(set('a').issubset('cbs'))
+        self.failIf(set('cbs').issuperset('a'))
 
     def test_pickling(self):
         p = pickle.dumps(self.s)
