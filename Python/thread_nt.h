@@ -223,7 +223,10 @@ void free_sema(type_sema aSemaphore)
 	CloseHandle((HANDLE) aSemaphore);
 }
 
-void down_sema(type_sema aSemaphore)
+/*
+  XXX must do something about waitflag
+ */
+int down_sema(type_sema aSemaphore, int waitflag)
 {
 	DWORD waitResult;
 
@@ -232,6 +235,7 @@ void down_sema(type_sema aSemaphore)
 	waitResult = WaitForSingleObject( (HANDLE) aSemaphore, INFINITE);
 
 	dprintf(("%ld: down_sema(%lx) return: %l\n", get_thread_ident(),(long) aSemaphore, waitResult));
+	return 0;
 }
 
 void up_sema(type_sema aSemaphore)

@@ -423,12 +423,19 @@ void free_sema _P1(sema, type_sema sema)
 	usfreesema((usema_t *) sema, shared_arena);
 }
 
-void down_sema _P1(sema, type_sema sema)
+int down_sema _P2(sema, type_sema sema, waitflag, int waitflag)
 {
+	int success;
+
 	dprintf(("down_sema(%lx) called\n", (long) sema));
-	if (uspsema((usema_t *) sema) < 0)
-		perror("uspsema");
+	if (waitflag)
+		success = uspsema((usema_t *) sema);
+	else
+		success = uscpsema((usema_t *) sema);
+	if (success < 0)
+		perror(waitflag ? "uspsema" : "uscpsema");
 	dprintf(("down_sema(%lx) return\n", (long) sema));
+	return success;
 }
 
 void up_sema _P1(sema, type_sema sema)
