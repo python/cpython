@@ -3840,6 +3840,22 @@ def proxysuper():
     p = Proxy(obj)
     vereq(C.__dict__["f"](p), "B.f->C.f")
 
+def verrecarlo():
+    if verbose:
+        print "Testing prohibition of Verre Carlo's hack..."
+    try:
+        object.__setattr__(str, "foo", 42)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "Verre Carlo __setattr__ suceeded!"
+    try:
+        object.__delattr__(str, "lower")
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "Verre Carlo __delattr__ succeeded!"
+
 
 def test_main():
     do_this_first()
@@ -3929,6 +3945,7 @@ def test_main():
     meth_class_get()
     isinst_isclass()
     proxysuper()
+    verrecarlo()
 
     if verbose: print "All OK"
 
