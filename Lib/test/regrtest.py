@@ -506,7 +506,7 @@ def printlist(x, width=70, indent=4):
 #     test_normalization
 #         Whether a skip is expected here depends on whether a large test
 #         input file has been downloaded.  test_normalization.skip_expected
-#         controls that
+#         controls that.
 
 _expectations = {
     'win32':
