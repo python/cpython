@@ -824,7 +824,7 @@ builtin_getattr(PyObject *self, PyObject *args)
 	PyObject *v, *result, *dflt = NULL;
 	PyObject *name;
 
-	if (!PyArg_ParseTuple(args, "OS|O:getattr", &v, &name, &dflt))
+	if (!PyArg_ParseTuple(args, "OO|O:getattr", &v, &name, &dflt))
 		return NULL;
 	result = PyObject_GetAttr(v, name);
 	if (result == NULL && dflt != NULL) {
@@ -867,7 +867,7 @@ builtin_hasattr(PyObject *self, PyObject *args)
 	PyObject *v;
 	PyObject *name;
 
-	if (!PyArg_ParseTuple(args, "OS:hasattr", &v, &name))
+	if (!PyArg_ParseTuple(args, "OO:hasattr", &v, &name))
 		return NULL;
 	v = PyObject_GetAttr(v, name);
 	if (v == NULL) {
@@ -1076,7 +1076,7 @@ builtin_setattr(PyObject *self, PyObject *args)
 	PyObject *name;
 	PyObject *value;
 
-	if (!PyArg_ParseTuple(args, "OSO:setattr", &v, &name, &value))
+	if (!PyArg_ParseTuple(args, "OOO:setattr", &v, &name, &value))
 		return NULL;
 	if (PyObject_SetAttr(v, name, value) != 0)
 		return NULL;
@@ -1097,7 +1097,7 @@ builtin_delattr(PyObject *self, PyObject *args)
 	PyObject *v;
 	PyObject *name;
 
-	if (!PyArg_ParseTuple(args, "OS:delattr", &v, &name))
+	if (!PyArg_ParseTuple(args, "OO:delattr", &v, &name))
 		return NULL;
 	if (PyObject_SetAttr(v, name, (PyObject *)NULL) != 0)
 		return NULL;
