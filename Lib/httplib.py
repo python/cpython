@@ -79,7 +79,7 @@ except ImportError:
 __all__ = ["HTTP", "HTTPResponse", "HTTPConnection", "HTTPSConnection",
            "HTTPException", "NotConnected", "UnknownProtocol",
            "UnknownTransferEncoding", "IllegalKeywordArgument",
-           "UnimplementedFileMode", "IncompleteRead",
+           "UnimplementedFileMode", "IncompleteRead", "InvalidURL",
            "ImproperConnectionState", "CannotSendRequest", "CannotSendHeader",
            "ResponseNotReady", "BadStatusLine", "error"]
 
