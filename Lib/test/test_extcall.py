@@ -86,6 +86,31 @@ class Nothing:
             raise IndexError, i
 g(*Nothing())
 
+class Nothing:
+    def __init__(self):
+        self.c = 0
+    def __iter__(self):
+        return self
+try:
+    g(*Nothing())
+except TypeError, attr:
+    pass
+else:
+    print "should raise TypeError"
+
+class Nothing:
+    def __init__(self):
+        self.c = 0
+    def __iter__(self):
+        return self
+    def next(self):
+        if self.c == 4:
+            raise StopIteration
+        c = self.c
+        self.c += 1
+        return c
+g(*Nothing())
+
 # make sure the function call doesn't stomp on the dictionary?
 d = {'a': 1, 'b': 2, 'c': 3}
 d2 = d.copy()
