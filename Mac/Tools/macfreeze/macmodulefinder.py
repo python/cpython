@@ -19,7 +19,7 @@ except ImportError:
 # Modules that must be included, and modules that need not be included
 # (but are if they are found)
 #
-MAC_INCLUDE_MODULES=['site', 'macfsn']
+MAC_INCLUDE_MODULES=['site']
 MAC_MAYMISS_MODULES=['posix', 'os2', 'nt', 'ntpath', 'dos', 'dospath', 
 		'win32api', 'ce', '_winreg',
 		'nturl2path', 'pwd', 'sitecustomize',
