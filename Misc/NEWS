@@ -7,7 +7,7 @@ Python News
 What's New in Python 2.3 alpha 2?
 =================================
 
-*Release date: XX-XXX-2003*
+*Release date: 19-Feb-2003*
 
 Core and builtins
 -----------------
@@ -346,19 +346,17 @@ C API
   'B', 'h', 'H', 'i', and 'l' codes).  Future versions of Python will
   raise a TypeError.
 
-
-New platforms
--------------
-
-TBD
-
 Tests
 -----
 
-TBD
+- Several tests weren't being run.  Now they are.
 
 Windows
 -------
+
+- The timeout code for socket connect() didn't work right; this has
+  now been fixed.  test_timeout.py should pass (at least most of the
+  time).
 
 - distutils' msvccompiler class now passes the preprocessor options to
   the resource compiler.  See SF patch #669198.
