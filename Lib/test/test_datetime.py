@@ -479,37 +479,6 @@ class TestDateOnly(unittest.TestCase):
         dt2 = dt - delta
         self.assertEqual(dt2, dt - days)
 
-    def test_subclass_date(self):
-
-        # XXX When datetime becomes usably subclassable, uncomment the
-        # XXX "self.theclass" lines and move this into TestDate.
-        # class C(self.theclass):
-        class C(date):
-            theAnswer = 42
-
-            def __new__(cls, *args, **kws):
-                temp = kws.copy()
-                extra = temp.pop('extra')
-                # result = self.theclass.__new__(cls, *args, **temp)
-                result = date.__new__(cls, *args, **temp)
-                result.extra = extra
-                return result
-
-            def newmeth(self, start):
-                return start + self.year + self.month
-
-        args = 2003, 4, 14
-
-        # dt1 = self.theclass(*args)
-        dt1 = date(*args)
-        dt2 = C(*args, **{'extra': 7})
-
-        self.assertEqual(dt2.__class__, C)
-        self.assertEqual(dt2.theAnswer, 42)
-        self.assertEqual(dt2.extra, 7)
-        self.assertEqual(dt1.toordinal(), dt2.toordinal())
-        self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month - 7)
-
 class TestDate(HarmlessMixedComparison):
     # Tests here should pass for both dates and datetimes, except for a
     # few tests that TestDateTime overrides.
@@ -1002,6 +971,32 @@ class TestDate(HarmlessMixedComparison):
         base = cls(2000, 2, 29)
         self.assertRaises(ValueError, base.replace, year=2001)
 
+    def test_subclass_date(self):
+
+        class C(self.theclass):
+            theAnswer = 42
+
+            def __new__(cls, *args, **kws):
+                temp = kws.copy()
+                extra = temp.pop('extra')
+                result = self.theclass.__new__(cls, *args, **temp)
+                result.extra = extra
+                return result
+
+            def newmeth(self, start):
+                return start + self.year + self.month
+
+        args = 2003, 4, 14
+
+        dt1 = self.theclass(*args)
+        dt2 = C(*args, **{'extra': 7})
+
+        self.assertEqual(dt2.__class__, C)
+        self.assertEqual(dt2.theAnswer, 42)
+        self.assertEqual(dt2.extra, 7)
+        self.assertEqual(dt1.toordinal(), dt2.toordinal())
+        self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month - 7)
+
 
 #############################################################################
 # datetime tests
@@ -1426,6 +1421,33 @@ class TestDateTime(TestDate):
         alsobog = AlsoBogus()
         self.assertRaises(ValueError, dt.astimezone, alsobog) # also naive
 
+    def test_subclass_datetime(self):
+
+        class C(self.theclass):
+            theAnswer = 42
+
+            def __new__(cls, *args, **kws):
+                temp = kws.copy()
+                extra = temp.pop('extra')
+                result = self.theclass.__new__(cls, *args, **temp)
+                result.extra = extra
+                return result
+
+            def newmeth(self, start):
+                return start + self.year + self.month + self.second
+
+        args = 2003, 4, 14, 12, 13, 41
+
+        dt1 = self.theclass(*args)
+        dt2 = C(*args, **{'extra': 7})
+
+        self.assertEqual(dt2.__class__, C)
+        self.assertEqual(dt2.theAnswer, 42)
+        self.assertEqual(dt2.extra, 7)
+        self.assertEqual(dt1.toordinal(), dt2.toordinal())
+        self.assertEqual(dt2.newmeth(-7), dt1.year + dt1.month +
+                                          dt1.second - 7)
+
 class TestTime(HarmlessMixedComparison):
 
     theclass = time
@@ -1659,6 +1681,32 @@ class TestTime(HarmlessMixedComparison):
         self.assertRaises(ValueError, base.replace, minute=-1)
         self.assertRaises(ValueError, base.replace, second=100)
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
+
+    def test_subclass_time(self):
+
+        class C(self.theclass):
+            theAnswer = 42
+
+            def __new__(cls, *args, **kws):
+                temp = kws.copy()
+                extra = temp.pop('extra')
+                result = self.theclass.__new__(cls, *args, **temp)
+                result.extra = extra
+                return result
+
+            def newmeth(self, start):
+                return start + self.hour + self.second
+
+        args = 4, 5, 6
+
+        dt1 = self.theclass(*args)
+        dt2 = C(*args, **{'extra': 7})
+
+        self.assertEqual(dt2.__class__, C)
+        self.assertEqual(dt2.theAnswer, 42)
+        self.assertEqual(dt2.extra, 7)
+        self.assertEqual(dt1.isoformat(), dt2.isoformat())
+        self.assertEqual(dt2.newmeth(-7), dt1.hour + dt1.second - 7)
 
 # A mixin for classes with a tzinfo= argument.  Subclasses must define
 # theclass as a class atribute, and theclass(1, 1, 1, tzinfo=whatever)
@@ -2041,6 +2089,32 @@ class TestTimeTZ(TestTime, TZInfoBase):
         # But if they're not identical, it isn't ignored.
         t2 = t2.replace(tzinfo=Varies())
         self.failUnless(t1 < t2)  # t1's offset counter still going up
+
+    def test_subclass_timetz(self):
+
+        class C(self.theclass):
+            theAnswer = 42
+
+            def __new__(cls, *args, **kws):
+                temp = kws.copy()
+                extra = temp.pop('extra')
+                result = self.theclass.__new__(cls, *args, **temp)
+                result.extra = extra
+                return result
+
+            def newmeth(self, start):
+                return start + self.hour + self.second
+
+        args = 4, 5, 6, 500, FixedOffset(-300, "EST", 1)
+
+        dt1 = self.theclass(*args)
+        dt2 = C(*args, **{'extra': 7})
+
+        self.assertEqual(dt2.__class__, C)
+        self.assertEqual(dt2.theAnswer, 42)
+        self.assertEqual(dt2.extra, 7)
+        self.assertEqual(dt1.utcoffset(), dt2.utcoffset())
+        self.assertEqual(dt2.newmeth(-7), dt1.hour + dt1.second - 7)
 
 
 # Testing datetime objects with a non-None tzinfo.
@@ -2624,6 +2698,32 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         # But if they're not identical, it isn't ignored.
         t2 = t2.replace(tzinfo=Varies())
         self.failUnless(t1 < t2)  # t1's offset counter still going up
+
+    def test_subclass_datetimetz(self):
+
+        class C(self.theclass):
+            theAnswer = 42
+
+            def __new__(cls, *args, **kws):
+                temp = kws.copy()
+                extra = temp.pop('extra')
+                result = self.theclass.__new__(cls, *args, **temp)
+                result.extra = extra
+                return result
+
+            def newmeth(self, start):
+                return start + self.hour + self.year
+
+        args = 2002, 12, 31, 4, 5, 6, 500, FixedOffset(-300, "EST", 1)
+
+        dt1 = self.theclass(*args)
+        dt2 = C(*args, **{'extra': 7})
+
+        self.assertEqual(dt2.__class__, C)
+        self.assertEqual(dt2.theAnswer, 42)
+        self.assertEqual(dt2.extra, 7)
+        self.assertEqual(dt1.utcoffset(), dt2.utcoffset())
+        self.assertEqual(dt2.newmeth(-7), dt1.hour + dt1.year - 7)
 
 # Pain to set up DST-aware tzinfo classes.
 

@@ -1235,38 +1235,42 @@ cmperror(PyObject *a, PyObject *b)
 }
 
 /* ---------------------------------------------------------------------------
- * Basic object allocation.  These allocate Python objects of the right
- * size and type, and do the Python object-initialization bit.  If there's
- * not enough memory, they return NULL after setting MemoryError.  All
- * data members remain uninitialized trash.
+ * Basic object allocation:  tp_alloc implementatiosn.  These allocate
+ * Python objects of the right size and type, and do the Python object-
+ * initialization bit.  If there's not enough memory, they return NULL after
+ * setting MemoryError.  All data members remain uninitialized trash.
+ *
+ * We abuse the tp_alloc "nitems" argument to communicate whether a tzinfo
+ * member is needed.  This is ugly.
  */
-static PyDateTime_Time *
-alloc_time(int aware)
-{
-	PyDateTime_Time *self;
 
-	self = (PyDateTime_Time *)
+static PyObject *
+time_alloc(PyTypeObject *type, int aware)
+{
+	PyObject *self;
+
+	self = (PyObject *)
 		PyObject_MALLOC(aware ?
 				sizeof(PyDateTime_Time) :
 				sizeof(_PyDateTime_BaseTime));
 	if (self == NULL)
-		return (PyDateTime_Time *)PyErr_NoMemory();
-	PyObject_INIT(self, &PyDateTime_TimeType);
+		return (PyObject *)PyErr_NoMemory();
+	PyObject_INIT(self, type);
 	return self;
 }
 
-static PyDateTime_DateTime *
-alloc_datetime(int aware)
+static PyObject *
+datetime_alloc(PyTypeObject *type, int aware)
 {
-	PyDateTime_DateTime *self;
+	PyObject *self;
 
-	self = (PyDateTime_DateTime *)
+	self = (PyObject *)
 		PyObject_MALLOC(aware ?
 				sizeof(PyDateTime_DateTime) :
 				sizeof(_PyDateTime_BaseDateTime));
 	if (self == NULL)
-		return (PyDateTime_DateTime *)PyErr_NoMemory();
-	PyObject_INIT(self, &PyDateTime_DateTimeType);
+		return (PyObject *)PyErr_NoMemory();
+	PyObject_INIT(self, type);
 	return self;
 }
 
@@ -1302,17 +1306,17 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
 }
 
 #define new_date(year, month, day) \
-	(new_date_ex(year, month, day, &PyDateTime_DateType))
+	new_date_ex(year, month, day, &PyDateTime_DateType)
 
 /* Create a datetime instance with no range checking. */
 static PyObject *
-new_datetime(int year, int month, int day, int hour, int minute,
-	     int second, int usecond, PyObject *tzinfo)
+new_datetime_ex(int year, int month, int day, int hour, int minute,
+	     int second, int usecond, PyObject *tzinfo, PyTypeObject *type)
 {
 	PyDateTime_DateTime *self;
 	char aware = tzinfo != Py_None;
 
-	self = alloc_datetime(aware);
+	self = (PyDateTime_DateTime *) (type->tp_alloc(type, aware));
 	if (self != NULL) {
 		self->hastzinfo = aware;
 		set_date_fields((PyDateTime_Date *)self, year, month, day);
@@ -1328,14 +1332,19 @@ new_datetime(int year, int month, int day, int hour, int minute,
 	return (PyObject *)self;
 }
 
+#define new_datetime(y, m, d, hh, mm, ss, us, tzinfo)		\
+	new_datetime_ex(y, m, d, hh, mm, ss, us, tzinfo,	\
+			&PyDateTime_DateTimeType)
+
 /* Create a time instance with no range checking. */
 static PyObject *
-new_time(int hour, int minute, int second, int usecond, PyObject *tzinfo)
+new_time_ex(int hour, int minute, int second, int usecond,
+	    PyObject *tzinfo, PyTypeObject *type)
 {
 	PyDateTime_Time *self;
 	char aware = tzinfo != Py_None;
 
-	self = alloc_time(aware);
+	self = (PyDateTime_Time *) (type->tp_alloc(type, aware));
 	if (self != NULL) {
 		self->hastzinfo = aware;
 		self->hashcode = -1;
@@ -1350,6 +1359,9 @@ new_time(int hour, int minute, int second, int usecond, PyObject *tzinfo)
 	}
 	return (PyObject *)self;
 }
+
+#define new_time(hh, mm, ss, us, tzinfo)		\
+	new_time_ex(hh, mm, ss, us, tzinfo, &PyDateTime_TimeType)
 
 /* Create a timedelta instance.  Normalize the members iff normalize is
  * true.  Passing false is a speed optimization, if you know for sure
@@ -3014,7 +3026,8 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 			}
 		}
 		aware = (char)(tzinfo != Py_None);
-		me = alloc_time(aware);
+		me = (PyDateTime_Time *) time_alloc(&PyDateTime_TimeType,
+						    aware);
 		if (me != NULL) {
 			char *pdata = PyString_AS_STRING(state);
 
@@ -3036,7 +3049,8 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 			return NULL;
 		if (check_tzinfo_subclass(tzinfo) < 0)
 			return NULL;
-		self = new_time(hour, minute, second, usecond, tzinfo);
+		self = new_time_ex(hour, minute, second, usecond, tzinfo,
+				   type);
 	}
 	return self;
 }
@@ -3439,7 +3453,7 @@ statichere PyTypeObject PyDateTime_TimeType = {
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
-	0,					/* tp_alloc */
+	time_alloc,				/* tp_alloc */
 	time_new,				/* tp_new */
 	0,					/* tp_free */
 };
@@ -3534,7 +3548,9 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 			}
 		}
 		aware = (char)(tzinfo != Py_None);
-		me = alloc_datetime(aware);
+		me = (PyDateTime_DateTime *) datetime_alloc(
+						&PyDateTime_DateTimeType,
+				     		aware);
 		if (me != NULL) {
 			char *pdata = PyString_AS_STRING(state);
 
@@ -3558,9 +3574,9 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 			return NULL;
 		if (check_tzinfo_subclass(tzinfo) < 0)
 			return NULL;
-		self = new_datetime(year, month, day,
-				    hour, minute, second, usecond,
-				    tzinfo);
+		self = new_datetime_ex(year, month, day,
+				    	hour, minute, second, usecond,
+				    	tzinfo, type);
 	}
 	return self;
 }
@@ -4460,7 +4476,7 @@ statichere PyTypeObject PyDateTime_DateTimeType = {
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
-	0,					/* tp_alloc */
+	datetime_alloc,				/* tp_alloc */
 	datetime_new,				/* tp_new */
 	0,					/* tp_free */
 };
