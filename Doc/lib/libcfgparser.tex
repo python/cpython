@@ -97,6 +97,7 @@ allowed recursion depth.
                     for application configuration files.}
 \end{seealso}
 
+
 \subsection{ConfigParser Objects \label{ConfigParser-objects}}
 
 \class{ConfigParser} instances have the following methods:
@@ -189,3 +190,12 @@ Remove the specified \var{section} from the configuration.
 If the section in fact existed, return 1.  Otherwise return 0.
 \end{methoddesc}
 
+\begin{methoddesc}{optionxform}{option}
+Transforms the option name \var{option} as found in an input file or
+as passed in by  client code to the form that should be used in the
+internal structures.  The default implementation returns a lower-case
+version of \var{option}; subclasses may override this or client code
+can set an attribute of this name on instances to affect this
+behavior.  Setting this to \function{str()}, for example, would make
+option names case sensitive.
+\end{methoddesc}
