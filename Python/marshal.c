@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -48,86 +48,133 @@ extern int errno;
 #define TYPE_CODE	'C'
 #define TYPE_UNKNOWN	'?'
 
-#define wr_byte(c, fp) putc((c), (fp))
+typedef struct {
+	FILE *fp;
+	/* If fp == NULL, the following are valid: */
+	object *str;
+	char *ptr;
+	char *end;
+} WFILE;
 
-void
-wr_short(x, fp)
+#define w_byte(c, p) if (((p)->fp)) putc((c), (p)->fp); \
+		      else if ((p)->ptr != (p)->end) *(p)->ptr++ = (c); \
+			   else w_more(c, p)
+
+static void
+w_more(c, p)
+	char c;
+	WFILE *p;
+{
+	int size, newsize;
+	if (p->str == NULL)
+		return; /* An error already occurred */
+	size = getstringsize(p->str);
+	newsize = size + 1024;
+	if (resizestring(&p->str, newsize) != 0) {
+		p->ptr = p->end = NULL;
+	}
+	else {
+		p->ptr = GETSTRINGVALUE((stringobject *)p->str) + size;
+		p->end = GETSTRINGVALUE((stringobject *)p->str) + newsize;
+		*p->ptr++ = c;
+	}
+}
+
+static void
+w_string(s, n, p)
+	char *s;
+	int n;
+	WFILE *p;
+{
+	if (p->fp != NULL) {
+		fwrite(s, 1, n, p->fp);
+	}
+	else {
+		while (--n >= 0) {
+			w_byte(*s, p);
+			s++;
+		}
+	}
+}
+
+static void
+w_short(x, p)
 	int x;
-	FILE *fp;
+	WFILE *p;
 {
-	wr_byte( x      & 0xff, fp);
-	wr_byte((x>> 8) & 0xff, fp);
+	w_byte( x      & 0xff, p);
+	w_byte((x>> 8) & 0xff, p);
 }
 
-void
-wr_long(x, fp)
+static void
+w_long(x, p)
 	long x;
-	FILE *fp;
+	WFILE *p;
 {
-	wr_byte((int)( x      & 0xff), fp);
-	wr_byte((int)((x>> 8) & 0xff), fp);
-	wr_byte((int)((x>>16) & 0xff), fp);
-	wr_byte((int)((x>>24) & 0xff), fp);
+	w_byte((int)( x      & 0xff), p);
+	w_byte((int)((x>> 8) & 0xff), p);
+	w_byte((int)((x>>16) & 0xff), p);
+	w_byte((int)((x>>24) & 0xff), p);
 }
 
-void
-wr_object(v, fp)
+static void
+w_object(v, p)
 	object *v;
-	FILE *fp;
+	WFILE *p;
 {
 	long i, n;
 	
 	if (v == NULL)
-		wr_byte(TYPE_NULL, fp);
+		w_byte(TYPE_NULL, p);
 	else if (v == None)
-		wr_byte(TYPE_NONE, fp);
+		w_byte(TYPE_NONE, p);
 	else if (is_intobject(v)) {
-		wr_byte(TYPE_INT, fp);
-		wr_long(getintvalue(v), fp);
+		w_byte(TYPE_INT, p);
+		w_long(getintvalue(v), p);
 	}
 	else if (is_longobject(v)) {
 		longobject *ob = (longobject *)v;
-		wr_byte(TYPE_LONG, fp);
+		w_byte(TYPE_LONG, p);
 		n = ob->ob_size;
-		wr_long((long)n, fp);
+		w_long((long)n, p);
 		if (n < 0)
 			n = -n;
 		for (i = 0; i < n; i++)
-			wr_short(ob->ob_digit[i], fp);
+			w_short(ob->ob_digit[i], p);
 	}
 	else if (is_floatobject(v)) {
 		extern void float_buf_repr PROTO((char *, floatobject *));
 		char buf[256]; /* Plenty to format any double */
 		float_buf_repr(buf, (floatobject *)v);
 		n = strlen(buf);
-		wr_byte(TYPE_FLOAT, fp);
-		wr_byte((int)n, fp);
-		fwrite(buf, 1, (int)n, fp);
+		w_byte(TYPE_FLOAT, p);
+		w_byte((int)n, p);
+		w_string(buf, (int)n, p);
 	}
 	else if (is_stringobject(v)) {
-		wr_byte(TYPE_STRING, fp);
+		w_byte(TYPE_STRING, p);
 		n = getstringsize(v);
-		wr_long(n, fp);
-		fwrite(getstringvalue(v), 1, (int)n, fp);
+		w_long(n, p);
+		w_string(getstringvalue(v), (int)n, p);
 	}
 	else if (is_tupleobject(v)) {
-		wr_byte(TYPE_TUPLE, fp);
+		w_byte(TYPE_TUPLE, p);
 		n = gettuplesize(v);
-		wr_long(n, fp);
+		w_long(n, p);
 		for (i = 0; i < n; i++) {
-			wr_object(gettupleitem(v, (int)i), fp);
+			w_object(gettupleitem(v, (int)i), p);
 		}
 	}
 	else if (is_listobject(v)) {
-		wr_byte(TYPE_LIST, fp);
+		w_byte(TYPE_LIST, p);
 		n = getlistsize(v);
-		wr_long(n, fp);
+		w_long(n, p);
 		for (i = 0; i < n; i++) {
-			wr_object(getlistitem(v, (int)i), fp);
+			w_object(getlistitem(v, (int)i), p);
 		}
 	}
 	else if (is_dictobject(v)) {
-		wr_byte(TYPE_DICT, fp);
+		w_byte(TYPE_DICT, p);
 		/* This one is NULL object terminated! */
 		n = getdictsize(v);
 		for (i = 0; i < n; i++) {
@@ -135,58 +182,96 @@ wr_object(v, fp)
 			key = getdict2key(v, (int)i);
 			if (key != NULL) {
 				val = dict2lookup(v, key); /* Can't be NULL */
-				wr_object(key, fp);
-				wr_object(val, fp);
+				w_object(key, p);
+				w_object(val, p);
 			}
 		}
-		wr_object((object *)NULL, fp);
+		w_object((object *)NULL, p);
 	}
 	else if (is_codeobject(v)) {
 		codeobject *co = (codeobject *)v;
-		wr_byte(TYPE_CODE, fp);
-		wr_object((object *)co->co_code, fp);
-		wr_object(co->co_consts, fp);
-		wr_object(co->co_names, fp);
-		wr_object(co->co_filename, fp);
+		w_byte(TYPE_CODE, p);
+		w_object((object *)co->co_code, p);
+		w_object(co->co_consts, p);
+		w_object(co->co_names, p);
+		w_object(co->co_filename, p);
 	}
 	else {
-		wr_byte(TYPE_UNKNOWN, fp);
+		w_byte(TYPE_UNKNOWN, p);
 	}
 }
 
-#define rd_byte(fp) getc(fp)
-
-int
-rd_short(fp)
+void
+wr_long(x, fp)
+	long x;
 	FILE *fp;
 {
+	WFILE wf;
+	wf.fp = fp;
+	w_long(x, &wf);
+}
+
+void
+wr_object(x, fp)
+	object *x;
+	FILE *fp;
+{
+	WFILE wf;
+	wf.fp = fp;
+	w_object(x, &wf);
+}
+
+typedef WFILE RFILE; /* Same struct with different invariants */
+
+#define r_byte(p) ((p)->fp ? getc((p)->fp) \
+			  : ((p)->ptr != (p)->end) ? *(p)->ptr++ : EOF)
+
+static int
+r_string(s, n, p)
+	char *s;
+	int n;
+	RFILE *p;
+{
+	if (p->fp != NULL)
+		return fread(s, 1, n, p->fp);
+	if (p->end - p->ptr < n)
+		n = p->end - p->ptr;
+	memcpy(s, p->ptr, n);
+	p->ptr += n;
+	return n;
+}
+
+static int
+r_short(p)
+	RFILE *p;
+{
 	register short x;
-	x = rd_byte(fp);
-	x |= rd_byte(fp) << 8;
+	x = r_byte(p);
+	x |= r_byte(p) << 8;
 	/* XXX If your short is > 16 bits, add sign-extension here!!! */
 	return x;
 }
 
-long
-rd_long(fp)
-	FILE *fp;
+static long
+r_long(p)
+	RFILE *p;
 {
 	register long x;
-	x = rd_byte(fp);
-	x |= (long)rd_byte(fp) << 8;
-	x |= (long)rd_byte(fp) << 16;
-	x |= (long)rd_byte(fp) << 24;
+	x = r_byte(p);
+	x |= (long)r_byte(p) << 8;
+	x |= (long)r_byte(p) << 16;
+	x |= (long)r_byte(p) << 24;
 	/* XXX If your long is > 32 bits, add sign-extension here!!! */
 	return x;
 }
 
-object *
-rd_object(fp)
-	FILE *fp;
+static object *
+r_object(p)
+	RFILE *p;
 {
 	object *v;
 	long i, n;
-	int type = rd_byte(fp);
+	int type = r_byte(p);
 	
 	switch (type) {
 	
@@ -202,20 +287,20 @@ rd_object(fp)
 		return None;
 	
 	case TYPE_INT:
-		return newintobject(rd_long(fp));
+		return newintobject(r_long(p));
 	
 	case TYPE_LONG:
 		{
 			int size;
 			longobject *ob;
-			n = rd_long(fp);
+			n = r_long(p);
 			size = n<0 ? -n : n;
 			ob = alloclongobject(size);
 			if (ob == NULL)
 				return NULL;
 			ob->ob_size = n;
 			for (i = 0; i < size; i++)
-				ob->ob_digit[i] = rd_short(fp);
+				ob->ob_digit[i] = r_short(p);
 			return (object *)ob;
 		}
 	
@@ -225,8 +310,8 @@ rd_object(fp)
 			char buf[256];
 			double res;
 			char *end;
-			n = rd_byte(fp);
-			if (fread(buf, 1, (int)n, fp) != n) {
+			n = r_byte(p);
+			if (r_string(buf, (int)n, p) != n) {
 				err_setstr(EOFError,
 					"EOF read where object expected");
 				return NULL;
@@ -247,10 +332,10 @@ rd_object(fp)
 		}
 	
 	case TYPE_STRING:
-		n = rd_long(fp);
+		n = r_long(p);
 		v = newsizedstringobject((char *)NULL, n);
 		if (v != NULL) {
-			if (fread(getstringvalue(v), 1, (int)n, fp) != n) {
+			if (r_string(getstringvalue(v), (int)n, p) != n) {
 				DECREF(v);
 				v = NULL;
 				err_setstr(EOFError,
@@ -260,21 +345,21 @@ rd_object(fp)
 		return v;
 	
 	case TYPE_TUPLE:
-		n = rd_long(fp);
+		n = r_long(p);
 		v = newtupleobject((int)n);
 		if (v == NULL)
 			return v;
 		for (i = 0; i < n; i++)
-			settupleitem(v, (int)i, rd_object(fp));
+			settupleitem(v, (int)i, r_object(p));
 		return v;
 	
 	case TYPE_LIST:
-		n = rd_long(fp);
+		n = r_long(p);
 		v = newlistobject((int)n);
 		if (v == NULL)
 			return v;
 		for (i = 0; i < n; i++)
-			setlistitem(v, (int)i, rd_object(fp));
+			setlistitem(v, (int)i, r_object(p));
 		return v;
 	
 	case TYPE_DICT:
@@ -283,10 +368,10 @@ rd_object(fp)
 			return NULL;
 		for (;;) {
 			object *key, *val;
-			key = rd_object(fp);
+			key = r_object(p);
 			if (key == NULL)
 				break;
-			val = rd_object(fp);
+			val = r_object(p);
 			dict2insert(v, key, val);
 			DECREF(key);
 			XDECREF(val);
@@ -295,10 +380,10 @@ rd_object(fp)
 	
 	case TYPE_CODE:
 		{
-			object *code = rd_object(fp);
-			object *consts = rd_object(fp);
-			object *names = rd_object(fp);
-			object *filename = rd_object(fp);
+			object *code = r_object(p);
+			object *consts = r_object(p);
+			object *names = r_object(p);
+			object *filename = r_object(p);
 			if (!err_occurred()) {
 				v = (object *) newcodeobject(code,
 						consts, names, filename);
@@ -320,39 +405,113 @@ rd_object(fp)
 	}
 }
 
+long
+rd_long(fp)
+	FILE *fp;
+{
+	RFILE rf;
+	rf.fp = fp;
+	return r_long(&rf);
+}
+
+object *
+rd_object(fp)
+	FILE *fp;
+{
+	RFILE rf;
+	rf.fp = fp;
+	return r_object(&rf);
+}
+
 /* And an interface for Python programs... */
 
 static object *
-dump(self, args)
+marshal_dump(self, args)
 	object *self;
 	object *args;
 {
+	WFILE wf;
+	object *x;
 	object *f;
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
-		err_badarg();
+	if (!getargs(args, "(OO)", &x, &f))
+		return NULL;
+	if (!is_fileobject(f)) {
+		err_setstr(TypeError, "marshal.dump() 2nd arg must be file");
 		return NULL;
 	}
-	f = gettupleitem(args, 1);
-	if (f == NULL || !is_fileobject(f)) {
-		err_badarg();
-		return NULL;
-	}
-	wr_object(gettupleitem(args, 0), getfilefile(f));
+	wf.fp = getfilefile(f);
+	wf.str = NULL;
+	wf.ptr = wf.end = NULL;
+	w_object(x, &wf);
 	INCREF(None);
 	return None;
 }
 
 static object *
-load(self, f)
+marshal_load(self, args)
 	object *self;
-	object *f;
+	object *args;
 {
+	RFILE rf;
+	object *f;
 	object *v;
-	if (f == NULL || !is_fileobject(f)) {
-		err_badarg();
+	if (!getargs(args, "O", &f))
+		return NULL;
+	if (!is_fileobject(f)) {
+		err_setstr(TypeError, "marshal.load() arg must be file");
 		return NULL;
 	}
-	v = rd_object(getfilefile(f));
+	rf.fp = getfilefile(f);
+	rf.str = NULL;
+	rf.ptr = rf.end = NULL;
+	err_clear();
+	v = r_object(&rf);
+	if (err_occurred()) {
+		XDECREF(v);
+		v = NULL;
+	}
+	return v;
+}
+
+static object *
+marshal_dumps(self, args)
+	object *self;
+	object *args;
+{
+	WFILE wf;
+	object *x;
+	if (!getargs(args, "O", &x))
+		return NULL;
+	wf.fp = NULL;
+	wf.str = newsizedstringobject((char *)NULL, 50);
+	if (wf.str == NULL)
+		return NULL;
+	wf.ptr = GETSTRINGVALUE((stringobject *)wf.str);
+	wf.end = wf.ptr + getstringsize(wf.str);
+	w_object(x, &wf);
+	if (wf.str != NULL)
+		resizestring(&wf.str,
+		    (int) (wf.ptr - GETSTRINGVALUE((stringobject *)wf.str)));
+	return wf.str;
+}
+
+static object *
+marshal_loads(self, args)
+	object *self;
+	object *args;
+{
+	RFILE rf;
+	object *v;
+	char *s;
+	int n;
+	if (!getargs(args, "s#", &s, &n))
+		return NULL;
+	rf.fp = NULL;
+	rf.str = args;
+	rf.ptr = s;
+	rf.end = s + n;
+	err_clear();
+	v = r_object(&rf);
 	if (err_occurred()) {
 		XDECREF(v);
 		v = NULL;
@@ -361,8 +520,10 @@ load(self, f)
 }
 
 static struct methodlist marshal_methods[] = {
-	{"dump",	dump},
-	{"load",	load},
+	{"dump",	marshal_dump},
+	{"load",	marshal_load},
+	{"dumps",	marshal_dumps},
+	{"loads",	marshal_loads},
 	{NULL,		NULL}		/* sentinel */
 };
 

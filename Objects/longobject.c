@@ -606,8 +606,11 @@ long_compare(a, b)
 			;
 		if (i < 0)
 			sign = 0;
-		else
+		else {
 			sign = (int)a->ob_digit[i] - (int)b->ob_digit[i];
+			if (a->ob_size < 0)
+				sign = -sign;
+		}
 	}
 	return sign < 0 ? -1 : sign > 0 ? 1 : 0;
 }
