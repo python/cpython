@@ -9,6 +9,13 @@
 # Additional modifications were contribed by Marc-Andre Lemburg and
 # Gordon McMillan.
 #
+# This module is maintained by Greg and is available at:
+#    http://www.lyra.org/greg/python/imputil.py
+#
+# Since this isn't in the Python distribution yet, we'll use the CVS ID
+# for tracking:
+#   $Id$
+#
 
 __version__ = '0.3'
 
