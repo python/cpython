@@ -135,7 +135,7 @@ AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 		x86)
 			CC="gcc -I$PWD/BeOS"
 			without_gcc=no
-			OPT="-DUSE_DL_EXPORT -O3 -mpentiumpro"
+			OPT="-DUSE_DL_EXPORT -O"
 			CCSHARED=-UUSE_DL_EXPORT
 
 			AR="$PWD/BeOS/ar-fake"
