@@ -1,0 +1,394 @@
+\section{\module{curses} ---
+         Terminal independant console handling}
+
+\declaremodule{extension}{curses}
+\sectionauthor{Moshe Zadka}{mzadka@geocities.com}
+\modulesynopsis{An interface to the curses library.}
+
+The \module{curses} module provides an interface to the curses \UNIX{}
+library, the de-facto standard for portable advanced terminal
+handling.
+
+While curses is most widely used in the \UNIX{} environment, versions
+are available for DOS, OS/2, and possibly other systems as well.  The
+extension module has not been tested with all available versions of
+curses.
+
+\begin{seealso}
+  \seetext{Tutorial material on using curses with Python is available
+           on the Python Web site as Andrew Kuchling's \emph{Curses
+           Programming with Python}, at
+           \url{http://www.python.org/doc/howto/curses/curses.html}.}
+\end{seealso}
+
+
+\subsection{Constants and Functions \label{curses-functions}}
+
+The \module{curses} module defines the following data members:
+
+\begin{datadesc}{version}
+A string representing the current version of the module.
+\end{datadesc}
+
+\begin{datadesc}{A_NORMAL}
+Normal attribute.
+\end{datadesc}
+
+\begin{datadesc}{A_STANDOUT}
+Standout mode.
+\end{datadesc}
+
+\begin{datadesc}{A_UNDERLINE}
+Underline mode.
+\end{datadesc}
+
+\begin{datadesc}{A_BLINK}
+Blink mode.
+\end{datadesc}
+
+\begin{datadesc}{A_DIM}
+Dim mode.
+\end{datadesc}
+
+\begin{datadesc}{A_BOLD}
+Bold mode.
+\end{datadesc}
+
+\begin{datadesc}{A_ALTCHARSET}
+Alternate character set mode.
+\end{datadesc}
+
+\begin{datadesc}{KEY_*}
+Names for various keys. The exact names available are system dependant.
+\end{datadesc}
+
+\begin{datadesc}{ACS_*}
+Names for various characters:
+\constant{ACS_ULCORNER}, \constant{ACS_LLCORNER},
+\constant{ACS_URCORNER}, \constant{ACS_LRCORNER}, \constant{ACS_RTEE},
+\constant{ACS_LTEE}, \constant{ACS_BTEE}, \constant{ACS_TTEE},
+\constant{ACS_HLINE}, \constant{ACS_VLINE}, \constant{ACS_PLUS},
+\constant{ACS_S1}, \constant{ACS_S9}, \constant{ACS_DIAMOND},
+\constant{ACS_CKBOARD}, \constant{ACS_DEGREE}, \constant{ACS_PLMINUS},
+\constant{ACS_BULLET}, \constant{ACS_LARROW}, \constant{ACS_RARROW},
+\constant{ACS_DARROW}.
+
+\strong{Note:} These are available only after \function{initscr()} has 
+been called.
+\end{datadesc}
+
+The module \module{curses} defines the following exception:
+\begin{excdesc}{error}
+Curses function returned an error status.
+\end{excdesc}
+
+The module \module{curses} defines the following functions:
+
+\begin{funcdesc}{initscr}{}
+Initialize the library. Returns a \class{WindowObject} which represents
+the whole screen.
+\end{funcdesc}
+
+\begin{funcdesc}{endwin}{}
+De-initialize the library, and return terminal to normal status.
+\end{funcdesc}
+
+\begin{funcdesc}{isendwin}{}
+Returns true if \function{endwin()} has been called.
+\end{funcdesc}
+
+\begin{funcdesc}{doupdate}{}
+Update the screen.
+\end{funcdesc}
+
+\begin{funcdesc}{newwin}{\optional{nlines, ncols,} begin_y, begin_x}
+Return a new window, whose left-upper corner is at 
+\code{(\var{begin_y}, \var{begin_x})}, and whose height/width is 
+\var{nlines}/\var{ncols}.  By default, the window will extend from the 
+specified position to the lower right corner of the screen.
+\end{funcdesc}
+
+\begin{funcdesc}{beep}{}
+Emit a short sound.
+\end{funcdesc}
+
+\begin{funcdesc}{flash}{}
+Flash the screen.
+\end{funcdesc}
+
+\begin{funcdesc}{ungetch}{ch}
+Push \var{ch} so the next \method{getch()} will return it; \var{ch} is 
+an integer specifying the character to be pushed.
+\strong{Note:} only one \var{ch} can be pushed before \method{getch()}
+is called.
+\end{funcdesc}
+
+\begin{funcdesc}{flushinp}{}
+Flush all input buffers.
+\end{funcdesc}
+
+\begin{funcdesc}{cbreak}{}
+Enter cbreak mode.
+\end{funcdesc}
+
+\begin{funcdesc}{nocbreak}{}
+Leave cbreak mode.
+\end{funcdesc}
+
+\begin{funcdesc}{echo}{}
+Enter echo mode.
+\end{funcdesc}
+
+\begin{funcdesc}{noecho}{}
+Leave echo mode.
+\end{funcdesc}
+
+\begin{funcdesc}{nl}{}
+Enter nl mode.
+\end{funcdesc}
+
+\begin{funcdesc}{nonl}{}
+Leave nl mode.
+\end{funcdesc}
+
+\begin{funcdesc}{raw}{}
+Enter raw mode.
+\end{funcdesc}
+
+\begin{funcdesc}{noraw}{}
+Leave raw mode.
+\end{funcdesc}
+
+\begin{funcdesc}{meta}{yes}
+If \var{yes} is 1, allow 8-bit characters. If \var{yes} is 0, 
+allow only 7-bit chars.
+\end{funcdesc}
+
+\begin{funcdesc}{keyname}{k}
+Return the name of the key numbered \var{k}.
+\end{funcdesc}
+
+
+\subsection{Window Objects \label{curses-window-objects}}
+
+Window objects, as returned by \function{initscr()} and
+\function{newwin()} above, have the
+following methods:
+
+\begin{methoddesc}{refresh}{}
+Do refresh (sync actual screen with previous drawing/deleting 
+methods.)
+\end{methoddesc}
+
+\begin{methoddesc}{nooutrefresh}{}
+Mark for refresh but wait.
+\end{methoddesc}
+
+\begin{methoddesc}{mvwin}{new_y, new_x}
+Move the window so its upper-left corner is at \code{(new_y, new_x)}.
+\end{methoddesc}
+
+\begin{methoddesc}{move}{new_y, new_x}
+Move cursor to \code{(\var{new_y}, \var{new_x})}.
+\end{methoddesc}
+
+\begin{methoddesc}{subwin}{nlines=HEIGTH-begin_y, ncols=WIDTH-begin_x,
+                           begin_y, begin_y}
+Return a sub-window, whose upper-left corner is at
+\code{(\var{begin_y}, \var{begin_x})}, and whose width/height is
+\var{ncols}/\var{nlines}.
+\end{methoddesc}
+
+\begin{methoddesc}{addch}{\optional{y, x,} ch\optional{, attr}}
+\strong{Note:} A \emph{character} means a C character (i.e., an
+\ASCII{} code), rather then a Python character (a string of length 1).
+(This note is true whenever the documentation mentions a character.)
+
+Paint character \var{ch} at \code{(\var{y}, \var{x})} with attributes
+\var{attr}, overwriting any character previously painter at that
+location.  By default, the character position and attributes are the
+current settings for the window object.
+\end{methoddesc}
+
+\begin{methoddesc}{insch}{\optional{y, x,} ch\optional{, attr}}
+Paint character \var{ch} at \code{(\var{y}, \var{x})} with attributes
+\var{attr}, moving the line from position \var{x} right by one
+character.
+\end{methoddesc}
+
+\begin{methoddesc}{delch}{\optional{x, y}}
+Delete any character at \code{(y,x)}.
+\end{methoddesc}
+
+\begin{methoddesc}{echochar}{ch\optional{, attr}}
+Add character \var{ch} with attribute \var{attr}, and immediately 
+call \method{refresh}.
+\end{methoddesc}
+
+\begin{methoddesc}{addstr}{\optional{y, x,} str\optional{, attr}}
+Paint string \var{str} at \code{(y,x)} with attributes \var{attr}, overwriting
+anything previously on the display.
+\end{methoddesc}
+
+\begin{methoddesc}{attron}{attr}
+Turn on attribute \var{attr} at current cursor location.
+\end{methoddesc}
+
+\begin{methoddesc}{attroff}{attr}
+Turn off attribute \var{attr} at current cursor location.
+\end{methoddesc}
+
+\begin{methoddesc}{setattr}{attr}
+Set the attributes at the current cursor location to \var{attr}.
+\end{methoddesc}
+
+\begin{methoddesc}{standend}{}
+Turn off all attributes at current cusor location.
+\end{methoddesc}
+
+\begin{methoddesc}{standout}{}
+Turn on attribute \var{A_STANDOUT}.
+\end{methoddesc}
+
+\begin{methoddesc}{border}{ls\code{ = ACS_VLINE}, rs\code{ = ACS_VLINE}, 
+                           ts\code{ = ACS_HLINE}, bs\code{ = ACS_HLINE}, 
+                           tl\code{ = ACS_ULCORNER}, tr\code{ = ACS_URCORNER}, 
+                           bl\code{ = ACS_BLCORNER}, br\code{ = ACS_BRCORNER}}
+Draw a border around the edges of the window. The arguments are
+respectively, the character to use for the left side, the right side
+the top side, the bottom side, the top-left corner, the top-right
+corner, the bottom-left corner and the bottom-right corner.
+\end{methoddesc}
+
+\begin{methoddesc}{box}{vertch\code{ = ACS_VLINE}, horch\code{ = ACS_HLINE}}
+Same as \method{border}, but both \var{ls} and \var{rs} are \var{vertch}
+and both \var{ts} and {bs} are \var{horch}. The corners are non-overridable
+by this function.
+\end{methoddesc}
+
+\begin{methoddesc}{hline}{\optional{y, x,} ch, n}
+Display a horizontal line starting at \code{(\var{y}, \var{x})} with
+length \var{n} consisting of the character \var{ch}.
+\end{methoddesc}
+
+\begin{methoddesc}{vline}{\optional{y, x,} ch, n}
+Display a vertical line starting at \code{(\var{y}, \var{x})} with
+length \var{n} consisting of the character \var{ch}.
+\end{methoddesc}
+
+\begin{methoddesc}{erase}{}
+Clear the screen.
+\end{methoddesc}
+
+\begin{methoddesc}{deletln}{}
+Delete the line under the cursor. All following lines are moved up
+by 1 line.
+\end{methoddesc}
+
+\begin{methoddesc}{insertln}{}
+Insert a blank line under the cursor. All following lines are moved
+down by 1 line.
+\end{methoddesc}
+
+\begin{methoddesc}{getyx}{}
+Return a tuple \code{(\var{y}, \var{x})} of current cursor position.
+\end{methoddesc}
+
+\begin{methoddesc}{getbegyx}{}
+Return a tuple \code{(\var{y}, \var{x})} of co-ordinates of upper-left
+corner.
+\end{methoddesc}
+
+\begin{methoddesc}{getmaxyx}{}
+Return a tuple \code{(\var{y}, \var{x})} of the height and width of
+the window.
+\end{methoddesc}
+
+\begin{methoddesc}{clear}{}
+Like \method{erase()}, but also causes the whole screen to be repainted
+upon next call to \method{refresh()}.
+\end{methoddesc}
+
+\begin{methoddesc}{clrtobot}{}
+Erase from cursor to the end of the screen: all lines below the cursor
+are deleted, and then the equivalent of \method{clrtoeol()} is performed.
+\end{methoddesc}
+
+\begin{methoddesc}{clrtoeol}{}
+Erase from cursor to the end of the line.
+\end{methoddesc}
+
+\begin{methoddesc}{scroll}{\optional{lines\code{ = 1}}}
+Scroll the screen upward by \var{lines} lines.
+\end{methoddesc}
+
+\begin{methoddesc}{touchwin}{}
+Pretend the whole window has been changed, for purposes of drawing
+optimizations.
+\end{methoddesc}
+
+\begin{methoddesc}{touchline}{start, count}
+Pretend \var{count} lines have been changed, starting with line
+\var{start}.
+\end{methoddesc}
+
+\begin{methoddesc}{getch}{\optional{x, y}}
+Get a character. Note that the integer returned does \emph{not} have to
+be in \ASCII{} range: function keys, keypad keys and so on return numbers
+higher then 256. In no-delay mode, an exception is raised if there is 
+no input.
+\end{methoddesc}
+
+\begin{methoddesc}{getstr}{\optional{x, y}}
+Read a string from the user, with primitive line editing capacity.
+\end{methoddesc}
+
+\begin{methoddesc}{inch}{\optional{x, y}}
+Return the character at the given position in the window. The bottom
+8 bits are the character proper, and upper bits are the attributes.
+\end{methoddesc}
+
+\begin{methoddesc}{clearok}{yes}
+If \var{yes} is 1, the next call to \method{refresh()}
+will clear the screen completely.
+\end{methoddesc}
+
+\begin{methoddesc}{idlok}{yes}
+If called with \var{yes} equal to 1, \module{curses} will try and use
+hardware line editing facilities. Otherwise, line insertion/deletion
+are disabled.
+\end{methoddesc}
+
+\begin{methoddesc}{leaveok}{yes}
+If \var{yes} is 1,
+cursor is left where it is, instead of being at ``cursor position.''
+This reduces cursor movement where possible. If possible it will be made
+invisible.
+
+If \var{yes} is 0, cursor will always be at
+``cursor position'' after an update.
+\end{methoddesc}
+
+\begin{methoddesc}{setscrreg}{top, bottom}
+Set the scrolling region from line \var{top} to line \var{bottom}. All
+scrolling actions will take place in this region.
+\end{methoddesc}
+
+\begin{methoddesc}{keypad}{yes}
+If \var{yes} is 1, escape sequences generated by some keys (keypad, 
+function keys) will be interpreted by \module{curses}.
+
+If \var{yes} is 0, escape sequences will be left as is in the input
+stream.
+\end{methoddesc}
+
+\begin{methoddesc}{nodelay}{yes}
+If \var{yes} is 1, \method{getch()} will be non-blocking.
+\end{methoddesc}
+
+\begin{methoddesc}{notimeout}{yes}
+If \var{yes} is 1, escape sequences will not be timed out.
+
+If \var{yes} is 0, after a few milliseconds, an escape sequence will
+not be interpreted, and will be left in the input stream as is.
+\end{methoddesc}
