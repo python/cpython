@@ -17,7 +17,7 @@ from distutils.util import get_platform
 def show_formats ():
     """Print list of available formats (arguments to "--format" option).
     """
-    from distutils.fancy_getopt import FancyGetopt 
+    from distutils.fancy_getopt import FancyGetopt
     formats=[]
     for format in bdist.format_commands:
         formats.append(("formats=" + format, None,
@@ -104,7 +104,7 @@ class bdist (Command):
 
         if self.dist_dir is None:
             self.dist_dir = "dist"
-            
+
     # finalize_options()
 
 

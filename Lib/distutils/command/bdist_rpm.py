@@ -101,7 +101,7 @@ class bdist_rpm (Command):
                     'no-rpm-opt-flags': 'use-rpm-opt-flags',
                     'rpm2-mode': 'rpm3-mode'}
 
-                    
+
     def initialize_options (self):
         self.bdist_base = None
         self.rpm_base = None
@@ -184,7 +184,7 @@ class bdist_rpm (Command):
         self.ensure_string('vendor',
                            "%s <%s>" % (self.distribution.get_contact(),
                                         self.distribution.get_contact_email()))
-        self.ensure_string('packager') 
+        self.ensure_string('packager')
         self.ensure_string_list('doc_files')
         if type(self.doc_files) is ListType:
             for readme in ('README', 'README.txt'):
@@ -201,7 +201,7 @@ class bdist_rpm (Command):
         self.changelog = self._format_changelog(self.changelog)
 
         self.ensure_filename('icon')
-        
+
         self.ensure_filename('prep_script')
         self.ensure_filename('build_script')
         self.ensure_filename('install_script')
@@ -275,7 +275,7 @@ class bdist_rpm (Command):
             else:
                 raise DistutilsFileError, \
                       "icon file '%s' does not exist" % self.icon
-        
+
 
         # build package
         self.announce('building RPMs')
@@ -368,17 +368,17 @@ class bdist_rpm (Command):
                 spec_file.append('%s: %s' % (field, string.join(val)))
             elif val is not None:
                 spec_file.append('%s: %s' % (field, val))
-                
-                      
+
+
         if self.distribution.get_url() != 'UNKNOWN':
             spec_file.append('Url: ' + self.distribution.get_url())
 
         if self.distribution_name:
-             spec_file.append('Distribution: ' + self.distribution_name)
+            spec_file.append('Distribution: ' + self.distribution_name)
 
         if self.build_requires:
-             spec_file.append('BuildRequires: ' +
-                              string.join(self.build_requires))
+            spec_file.append('BuildRequires: ' +
+                             string.join(self.build_requires))
 
         if self.icon:
             spec_file.append('Icon: ' + os.path.basename(self.icon))
@@ -473,11 +473,11 @@ class bdist_rpm (Command):
                 new_changelog.append(line)
             else:
                 new_changelog.append('  ' + line)
-                
+
         # strip trailing newline inserted by first changelog entry
         if not new_changelog[0]:
             del new_changelog[0]
-        
+
         return new_changelog
 
     # _format_changelog()

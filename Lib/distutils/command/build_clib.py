@@ -156,7 +156,7 @@ class build_clib (Command):
                       "must be a string (the library name)"
             if '/' in lib[0] or (os.sep != '/' and os.sep in lib[0]):
                 raise DistutilsSetupError, \
-                      ("bad library name '%s': " + 
+                      ("bad library name '%s': " +
                        "may not contain directory separators") % \
                       lib[0]
 
@@ -195,7 +195,7 @@ class build_clib (Command):
                       ("in 'libraries' option (library '%s'), "
                        "'sources' must be present and must be "
                        "a list of source filenames") % lib_name
-            
+
             filenames.extend(sources)
 
         return filenames

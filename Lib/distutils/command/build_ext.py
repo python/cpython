@@ -28,7 +28,7 @@ def show_compilers ():
 
 
 class build_ext (Command):
-    
+
     description = "build C/C++ extensions (compile/link to build directory)"
 
     # XXX thoughts on how to deal with complex command-line options like
@@ -123,7 +123,7 @@ class build_ext (Command):
             self.package = self.distribution.ext_package
 
         self.extensions = self.distribution.ext_modules
-        
+
 
         # Make sure Python's include directories (for Python.h, pyconfig.h,
         # etc.) are in the include search path.
@@ -181,7 +181,7 @@ class build_ext (Command):
         # it has to be a list of 2-tuples.  All the preprocessor symbols
         # specified by the 'define' option will be set to '1'.  Multiple
         # symbols can be separated with commas.
-        
+
         if self.define:
             defines = string.split(self.define, ',')
             self.define = map(lambda symbol: (symbol, '1'), defines)
@@ -193,7 +193,7 @@ class build_ext (Command):
             self.undef = string.split(self.undef, ',')
 
     # finalize_options ()
-    
+
 
     def run (self):
 
@@ -202,7 +202,7 @@ class build_ext (Command):
         # 'self.extensions', as supplied by setup.py, is a list of
         # Extension instances.  See the documentation for Extension (in
         # distutils.extension) for details.
-        # 
+        #
         # For backwards compatibility with Distutils 0.8.2 and earlier, we
         # also allow the 'extensions' list to be a list of tuples:
         #    (ext_name, build_info)
@@ -271,7 +271,7 @@ class build_ext (Command):
         if type(extensions) is not ListType:
             raise DistutilsSetupError, \
                   "'ext_modules' option must be a list of Extension instances"
-        
+
         for i in range(len(extensions)):
             ext = extensions[i]
             if isinstance(ext, Extension):
@@ -280,7 +280,7 @@ class build_ext (Command):
 
             (ext_name, build_info) = ext
             self.warn(("old-style (ext_name, build_info) tuple found in "
-                       "ext_modules for extension '%s'" 
+                       "ext_modules for extension '%s'"
                        "-- please convert to Extension instance" % ext_name))
             if type(ext) is not TupleType and len(ext) != 2:
                 raise DistutilsSetupError, \
@@ -465,12 +465,12 @@ class build_ext (Command):
 
 
         self.compiler.link_shared_object(
-            objects, ext_filename, 
+            objects, ext_filename,
             libraries=self.get_libraries(ext),
             library_dirs=ext.library_dirs,
             runtime_library_dirs=ext.runtime_library_dirs,
             extra_postargs=extra_args,
-            export_symbols=self.get_export_symbols(ext), 
+            export_symbols=self.get_export_symbols(ext),
             debug=self.debug,
             build_temp=self.build_temp)
 
@@ -549,7 +549,7 @@ class build_ext (Command):
                    "on platform '%s'") % os.name
 
     # find_swig ()
-    
+
     # -- Name generators -----------------------------------------------
     # (extension names, filenames, whatever)
 

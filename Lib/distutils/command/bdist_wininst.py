@@ -196,7 +196,7 @@ class bdist_wininst (Command):
         file.write(self.get_exe_bytes())
         if bitmap:
             file.write(bitmapdata)
-            
+
         file.write(cfgdata)
         header = struct.pack("<iii",
                              0x1234567A,       # tag

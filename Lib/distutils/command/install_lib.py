@@ -20,7 +20,7 @@ class install_lib (Command):
     #   4) compile "level 1" .pyo only (--no-compile --optimize)
     #   5) compile .pyc and "level 2" .pyo (--compile --optimize-more)
     #   6) compile "level 2" .pyo only (--no-compile --optimize-more)
-    # 
+    #
     # The UI for this is two option, 'compile' and 'optimize'.
     # 'compile' is strictly boolean, and only decides whether to
     # generate .pyc files.  'optimize' is three-way (0, 1, or 2), and
@@ -38,7 +38,7 @@ class install_lib (Command):
          "-O2 for \"python -OO\", and -O0 to disable [default: -O0]"),
         ('skip-build', None, "skip the build steps"),
         ]
-               
+
     boolean_options = ['force', 'compile', 'skip-build']
     negative_opt = {'no-compile' : 'compile'}
 
@@ -82,7 +82,7 @@ class install_lib (Command):
 
         # Make sure we have built everything we need first
         self.build()
-        
+
         # Install everything: simply dump the entire contents of the build
         # directory to the installation directory (that's the beauty of
         # having a build directory!)
@@ -104,7 +104,7 @@ class install_lib (Command):
                 self.run_command('build_py')
             if self.distribution.has_ext_modules():
                 self.run_command('build_ext')
-        
+
     def install (self):
         if os.path.isdir(self.build_dir):
             outfiles = self.copy_tree(self.build_dir, self.install_dir)
@@ -164,7 +164,7 @@ class install_lib (Command):
                 bytecode_files.append(py_file + "o")
 
         return bytecode_files
-        
+
 
     # -- External interface --------------------------------------------
     # (called by outsiders)
@@ -199,7 +199,7 @@ class install_lib (Command):
         filenames returned by 'get_outputs()'.
         """
         inputs = []
-        
+
         if self.distribution.has_pure_modules():
             build_py = self.get_finalized_command('build_py')
             inputs.extend(build_py.get_outputs())
