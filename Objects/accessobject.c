@@ -25,14 +25,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Access object implementation */
 
 /* XXX TO DO LIST
-   - need a "super user" mechanism for debugger etc.
    - __init__ and __del__ (and all other similar methods)
-     should be usable even when private, not ignored
-   - "from foo import bar" should check access of bar
+     should be usable even when private, not ignored (???)
 */
 
 #include "allobjects.h"
-
+#include "ceval.h"
 #include "structmember.h"
 #include "modsupport.h"		/* For getargs() etc. */
 
@@ -112,9 +110,9 @@ hasaccessvalue(op)
 }
 
 object *
-getaccessvalue(op, owner)
+getaccessvalue(op, caller)
 	object *op;
-	object *owner;
+	object *caller;
 {
 	register accessobject *ap;
 	if (!is_accessobject(op)) {
@@ -123,7 +121,7 @@ getaccessvalue(op, owner)
 	}
 	ap = (accessobject *)op;
 	
-	if (!ownercheck(owner, ap->ac_owner, AC_R, ap->ac_mode)) {
+	if (!ownercheck(caller, ap->ac_owner, AC_R, ap->ac_mode)) {
 		err_setstr(AccessError, "read access denied");
 		return NULL;
 	}
@@ -137,9 +135,9 @@ getaccessvalue(op, owner)
 }
 
 int
-setaccessvalue(op, owner, value)
+setaccessvalue(op, caller, value)
 	object *op;
-	object *owner;
+	object *caller;
 	object *value;
 {
 	register accessobject *ap;
@@ -149,7 +147,7 @@ setaccessvalue(op, owner, value)
 	}
 	ap = (accessobject *)op;
 	
-	if (!ownercheck(owner, ap->ac_owner, AC_W, ap->ac_mode)) {
+	if (!ownercheck(caller, ap->ac_owner, AC_W, ap->ac_mode)) {
 		err_setstr(AccessError, "write access denied");
 		return -1;
 	}
@@ -230,6 +228,19 @@ typecheck(value, type)
 }
 
 static int
+isprivileged(caller)
+	object *caller;
+{
+	object *g;
+	if (caller != NULL && hasattr(caller, "__privileged__"))
+		return 1;
+	g = getglobals();
+	if (g != NULL && dictlookup(g, "__privileged__"))
+		return 1;
+	return 0;
+}
+
+static int
 ownercheck(caller, owner, access, mode)
 	object *caller;
 	object *owner;
@@ -237,12 +248,13 @@ ownercheck(caller, owner, access, mode)
 	int mode;
 {
 	int mask = AC_PUBLIC;
-	if (owner != NULL) {
-		if (caller == owner)
-			mask |= AC_PRIVATE | AC_PROTECTED;
-		else if (is_classobject(owner) && issubclass(caller, owner))
+	if (caller == owner || isprivileged(caller))
+		mask |= AC_PRIVATE | AC_PROTECTED;
+	else if (caller != NULL && owner != NULL &&
+		 is_classobject(owner) && is_classobject(caller) &&
+		 (issubclass(caller, owner) ||
+		  issubclass(owner, caller)))
 			mask |= AC_PROTECTED;
-	}
 	return access & mode & mask;
 }
 

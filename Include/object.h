@@ -203,6 +203,7 @@ extern int printobject PROTO((object *, FILE *, int));
 extern object * reprobject PROTO((object *));
 extern int cmpobject PROTO((object *, object *));
 extern object *getattr PROTO((object *, char *));
+extern int hasattr PROTO((object *, char *));
 extern object *getattro PROTO((object *, object *));
 extern int setattro PROTO((object *, object *, object *));
 extern long hashobject PROTO((object *));
