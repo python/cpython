@@ -473,7 +473,7 @@ object NoObject = {
 };
 
 
-#ifdef TRACE_REFS
+#ifdef Py_TRACE_REFS
 
 static object refchain = {&refchain, &refchain};
 
@@ -576,3 +576,7 @@ getobjects(self, args)
 
 /* Hack to force loading of cobject.o */
 static PyTypeObject *cobject_hack = &PyCObject_Type;
+
+
+/* Hack to force loading of abstract.o */
+static int (*abstract_hack) FPROTO((PyObject *)) = &PyObject_Length;
