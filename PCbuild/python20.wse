@@ -12,10 +12,10 @@ item: Global
   Log Pathname=%MAINDIR%\INSTALL.LOG
   Message Font=MS Sans Serif
   Font Size=8
-  Pages Modified=00010000011101000000000100000011
+  Pages Modified=00010000011101000000000100000111
   Extra Pages=00000000000000000000000010110010
   Disk Filename=SETUP
-  Patch Flags=0000000000000001
+  Patch Flags=0000000000001001
   Patch Threshold=85
   Patch Memory=4000
   EXE Filename=Python-2.2a1.exe
@@ -25,7 +25,7 @@ item: Global
   Version Copyright=©2001 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
   Crystal Format=10111100101100000010001001001001
-  Step View=&Properties
+  Step View=&All
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
@@ -702,7 +702,7 @@ item: Custom Dialog Set
       Text French=N&on
       Text French=
       Text German=&Ja
-      Text German=N&ein  
+      Text German=N&ein
       Text German=
       Text Portuguese=&Sim
       Text Portuguese=Nã&o
@@ -875,7 +875,7 @@ item: Custom Dialog Set
       Flags=0000000000000001
       Text=Cancel
       Text French=Annuler
-      Text German=Abbrechen 
+      Text German=Abbrechen
       Text Portuguese=Cancelar
       Text Spanish=Cancelar
       Text Italian=Annulla
@@ -945,25 +945,21 @@ item: Custom Dialog Set
       Text French=Python HTML docs
       Text French=Python utility scripts (Tools/)
       Text French=Python test suite (Lib/test/)
-      Text French=Register file extensons (requires Admin privs)
       Text French=
       Text German=Python interpreter, library and IDLE
       Text German=Python HTML docs
       Text German=Python utility scripts (Tools/)
       Text German=Python test suite (Lib/test/)
-      Text German=Register file extensons (requires Admin privs)
       Text German=
       Text Spanish=Python interpreter, library and IDLE
       Text Spanish=Python HTML docs
       Text Spanish=Python utility scripts (Tools/)
       Text Spanish=Python test suite (Lib/test/)
-      Text Spanish=Register file extensons (requires Admin privs)
       Text Spanish=
       Text Italian=Python interpreter, library and IDLE
       Text Italian=Python HTML docs
       Text Italian=Python utility scripts (Tools/)
       Text Italian=Python test suite (Lib/test/)
-      Text Italian=Register file extensons (requires Admin privs)
       Text Italian=
     end
     item: Static
@@ -1181,10 +1177,10 @@ item: Custom Dialog Set
       Name=Times New Roman
       Font Style=-24 0 0 0 700 255 0 0 0 3 2 1 18
       Text=Select Start Menu Group
-      Text French=Sélectionner le groupe du Gestionnaire de programme 
+      Text French=Sélectionner le groupe du Gestionnaire de programme
       Text German=Bestimmung der Programm-Managergruppe
       Text Spanish=Seleccione grupo del Administrador de programas
-      Text Italian=Selezionare il gruppo ProgMan 
+      Text Italian=Selezionare il gruppo ProgMan
     end
     item: Static
       Rectangle=86 44 256 68
@@ -1356,7 +1352,7 @@ end
 item: End Block
 end
 item: Remark
-  Text=Begin writing to the INSTALL.LOG 
+  Text=Begin writing to the INSTALL.LOG
 end
 item: Open/Close INSTALL.LOG
 end
@@ -1552,6 +1548,24 @@ item: Install File
   Source=..\misc\news
   Destination=%MAINDIR%\NEWS.txt
   Flags=0000000000000010
+end
+item: Remark
+  Text=Icons -- always install so that the uninstaller can use them for its own display.
+end
+item: Install File
+  Source=..\pc\pycon.ico
+  Destination=%MAINDIR%\pycon.ico
+  Flags=0000000010000010
+end
+item: Install File
+  Source=..\pc\pyc.ico
+  Destination=%MAINDIR%\pyc.ico
+  Flags=0000000010000010
+end
+item: Install File
+  Source=..\pc\py.ico
+  Destination=%MAINDIR%\py.ico
+  Flags=0000000010000010
 end
 item: Remark
 end
@@ -1774,17 +1788,6 @@ end
 item: Install File
   Source=.\python%_pymajor_%%_pyminor_%.dll
   Destination=%DLLDEST%\python%_PYMAJOR_%%_PYMINOR_%.dll
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Remark
-  Text=Icons
-end
-item: Install File
-  Source=..\pc\*.ico
-  Destination=%MAINDIR%
-  Description=Icons
   Flags=0000000000000010
 end
 item: Remark
@@ -2594,6 +2597,13 @@ item: Edit Registry
   Value Name=DisplayVersion
   Root=2
 end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=%MAINDIR%\py.ico,-0
+  Value Name=DisplayIcon
+  Root=2
+end
 item: Else Statement
 end
 item: Edit Registry
@@ -2622,6 +2632,13 @@ item: Edit Registry
   Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
   New Value=%PYVER_STRING%
   Value Name=DisplayVersion
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\Microsoft\Windows\CurrentVersion\Uninstall\%APPTITLE%
+  New Value=%MAINDIR%\py.ico,-0
+  Value Name=DisplayIcon
   Root=1
 end
 item: End Block
@@ -2701,6 +2718,11 @@ item: Remark
 end
 item: Self-Register OCXs/DLLs
   Description=Updating System Configuration, Please Wait...
+end
+item: Remark
+end
+item: Add Text to INSTALL.LOG
+  Text=Delete in-use files: On
 end
 item: Remark
 end
