@@ -23,11 +23,6 @@ Meaning:  To be defined iff i>>j does not extend the sign bit when i is a
           signed integral type and i < 0.
 Used in:  Py_ARITHMETIC_RIGHT_SHIFT
 
-RETSIGTYPE
-Meaning:  Expands to void or int, depending on what the platform wants
-          signal handlers to return.  Note that only void is ANSI!
-Used in:  Py_RETURN_FROM_SIGNAL_HANDLER
-
 Py_DEBUG
 Meaning:  Extra checks compiled in for debug mode.
 Used in:  Py_SAFE_DOWNCAST
@@ -65,18 +60,6 @@ extern "C" {
  * token-pasting to work as desired in some cases.
  */
 #define Py_FORCE_EXPANSION(X) X
-
-/* Py_RETURN_FROM_SIGNAL_HANDLER
- * The return from a signal handler varies depending on whether RETSIGTYPE
- * is int or void.  The macro Py_RETURN_FROM_SIGNAL_HANDLER(VALUE) expands
- * to
- *     return VALUE
- * if RETSIGTYPE is int, else to nothing if RETSIGTYPE is void.
- */
-#define int_PySIGRETURN(VALUE) return VALUE
-#define void_PySIGRETURN(VALUE)
-#define Py_RETURN_FROM_SIGNAL_HANDLER(VALUE) \
-        Py_FORCE_EXPANSION(RETSIGTYPE) ## _PySIGRETURN(VALUE)
 
 /* Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW)
  * Cast VALUE to type NARROW from type WIDE.  In Py_DEBUG mode, this

@@ -26,7 +26,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include <signal.h>
 
 #ifndef SIG_ERR
-#define SIG_ERR ((RETSIGTYPE (*)(int))-1)
+#define SIG_ERR ((void (*)(int))-1)
 #endif
 
 #if defined(PYOS_OS2)
@@ -92,7 +92,7 @@ static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
 static PyObject *IntHandler;
 
-static RETSIGTYPE (*old_siginthandler)(int) = SIG_DFL;
+static void (*old_siginthandler)(int) = SIG_DFL;
 
 
 
@@ -117,7 +117,7 @@ checksignals_witharg(void * unused)
 	return PyErr_CheckSignals();
 }
 
-static RETSIGTYPE
+static void
 signal_handler(int sig_num)
 {
 #ifdef WITH_THREAD
@@ -136,14 +136,13 @@ signal_handler(int sig_num)
 		   reset until explicit re-instated.
 		   Don't clear the 'func' field as it is our pointer
 		   to the Python handler... */
-		Py_RETURN_FROM_SIGNAL_HANDLER(0);
+		return;
 	}
 #endif
 #ifdef HAVE_SIGINTERRUPT
 	siginterrupt(sig_num, 1);
 #endif
 	signal(sig_num, signal_handler);
-	Py_RETURN_FROM_SIGNAL_HANDLER(0);
 }
 
 
@@ -198,7 +197,7 @@ signal_signal(PyObject *self, PyObject *args)
 	PyObject *obj;
 	int sig_num;
 	PyObject *old_handler;
-	RETSIGTYPE (*func)(int);
+	void (*func)(int);
 	if (!PyArg_Parse(args, "(iO)", &sig_num, &obj))
 		return NULL;
 #ifdef WITH_THREAD
@@ -355,7 +354,7 @@ initsignal(void)
 
 	Handlers[0].tripped = 0;
 	for (i = 1; i < NSIG; i++) {
-		RETSIGTYPE (*t)(int);
+		void (*t)(int);
 #ifdef HAVE_SIGACTION
 		struct sigaction act;
 		sigaction(i,  0, &act);
