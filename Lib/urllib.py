@@ -629,9 +629,11 @@ def unwrap(url):
 	if url[:4] == 'URL:': url = string.strip(url[4:])
 	return url
 
-_typeprog = regex.compile('^\([^/:]+\):\(.*\)$')
+_typeprog = regex.compile('^\([^/:]+\):')
 def splittype(url):
-	if _typeprog.match(url) >= 0: return _typeprog.group(1, 2)
+	if _typeprog.match(url) >= 0:
+		scheme = _typeprog.group(1)
+		return scheme, url[len(scheme) + 1:]
 	return None, url
 
 _hostprog = regex.compile('^//\([^/]+\)\(.*\)$')
