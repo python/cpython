@@ -167,6 +167,7 @@ PyMember_Set(addr, mlist, name, v)
 	PyObject *v;
 {
 	struct memberlist *l;
+	PyObject *oldv;
 	
 	for (l = mlist; l->name != NULL; l++) {
 		if (strcmp(l->name, name) == 0) {
@@ -253,9 +254,10 @@ PyMember_Set(addr, mlist, name, v)
 				}
 				break;
 			case T_OBJECT:
-				Py_XDECREF(*(PyObject **)addr);
 				Py_XINCREF(v);
+				oldv = *(PyObject **)addr;
 				*(PyObject **)addr = v;
+				Py_XDECREF(oldv);
 				break;
 			case T_CHAR:
 				if (PyString_Check(v) &&
