@@ -1,15 +1,16 @@
-import handler
-
 """An XML Reader is the SAX 2 name for an XML parser. XML Parsers
 should be based on this code. """
+
+import handler
+
 # ===== XMLREADER =====
 
 class XMLReader:
     def __init__(self):
         self._cont_handler = handler.ContentHandler()
-        #self._dtd_handler  = handler.DTDHandler()
-        #self._ent_handler  = handler.EntityResolver()
-        self._err_handler  = handler.ErrorHandler()
+        #self._dtd_handler = handler.DTDHandler()
+        #self._ent_handler = handler.EntityResolver()
+        self._err_handler = handler.ErrorHandler()
 
     def parse(self, source):
         "Parse an XML document from a system identifier or an InputSource."
@@ -92,21 +93,28 @@ class IncrementalParser(XMLReader):
     interface using the feed, close and reset methods of the
     IncrementalParser interface as a convenience to SAX 2.0 driver
     writers."""
-    def __init__(self, bufsize=2**16 ):
-        self._bufsize=bufsize
-        XMLReader.__init__( self )
-    
-    def parse(self, source):
-        self.prepareParser(source)
-        #FIXME: do some type checking: could be already stream, URL or
-        #       filename
-        inf=open( source )
-        buffer = inf.read(self._bufsize)
+
+    def __init__(self, bufsize=2**16):
+        self._bufsize = bufsize
+        XMLReader.__init__(self)
+
+    def _parseOpenFile(self, source):
+        buffer = source.read(self._bufsize)
         while buffer != "":
             self.feed(buffer)
-            buffer = inf.read(self._bufsize)
+            buffer = source.read(self._bufsize)
         self.close()
         self.reset()
+
+    def parse(self, source):
+        if hasattr(source, "read"):
+            self._parseOpenFile(source)
+        else:
+            #FIXME: how to recognize if it is a URL instead of filename?
+            self.prepareParser(source)
+            file = open(source)
+            self._parseOpenFile(file)
+            file.close()
 
     def feed(self, data):        
         """This method gives the raw XML data in the data parameter to
@@ -116,6 +124,7 @@ class IncrementalParser(XMLReader):
 
         feed may raise SAXException."""
         raise NotImplementedError("This method must be implemented!")
+
     def prepareParser(self, source):
         """This method is called by the parse implementation to allow
         the SAX 2.0 driver to prepare itself for parsing."""
@@ -215,11 +224,12 @@ class AttributesImpl:
     def values(self):
         return self._attrs.values()
 
+
 def _test():
     XMLReader()
     IncrementalParser()
     Locator()
     AttributesImpl()
 
-if __name__=="__main__":
+if __name__ == "__main__":
     _test()
