@@ -41,7 +41,7 @@ class install_headers (Command):
 
         self.mkpath(self.install_dir)
         for header in headers:
-            out = self.copy_file(header, self.install_dir)
+            (out, _) = self.copy_file(header, self.install_dir)
             self.outfiles.append(out)
 
     def get_inputs (self):
