@@ -147,6 +147,13 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 	obj = type->tp_new(type, args, kwds);
 	if (obj != NULL) {
+		/* Ugly exception: when the call was type(something),
+		   don't call tp_init on the result. */
+		if (type == &PyType_Type &&
+		    PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
+		    (kwds == NULL ||
+		     (PyDict_Check(kwds) && PyDict_Size(kwds) == 0)))
+			return obj;
 		type = obj->ob_type;
 		if (type->tp_init != NULL &&
 		    type->tp_init(obj, args, kwds) < 0) {

@@ -716,6 +716,18 @@ def metaclass():
             return "D" + self.__super._get_x()
     vereq(D().x, "DCBA")
 
+    # Make sure type(x) doesn't call x.__class__.__init__
+    class T(type):
+        counter = 0
+        def __init__(self, *args):
+            T.counter += 1
+    class C:
+        __metaclass__ = T
+    vereq(T.counter, 1)
+    a = C()
+    vereq(type(a), C)
+    vereq(T.counter, 1)
+
 def pymods():
     if verbose: print "Testing Python subclass of module..."
     log = []
