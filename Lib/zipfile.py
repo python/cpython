@@ -327,7 +327,7 @@ class ZipFile:
         for zinfo in self.filelist:
             try:
                 self.read(zinfo.filename)       # Check CRC-32
-            except:
+            except BadZipfile:
                 return zinfo.filename
 
     def getinfo(self, name):

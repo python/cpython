@@ -76,3 +76,24 @@ except IOError:
 else:
     raise TestFailed("expected creation of readable ZipFile without\n"
                      "  a file to raise an IOError.")
+
+
+# Verify that testzip() doesn't swallow inappropriate exceptions.
+data = StringIO.StringIO()
+zipf = zipfile.ZipFile(data, mode="w")
+zipf.writestr("foo.txt", "O, for a Muse of Fire!")
+zipf.close()
+zipf = zipfile.ZipFile(data, mode="r")
+zipf.close()
+try:
+    zipf.testzip()
+except RuntimeError:
+    # This is correct; calling .read on a closed ZipFile should throw
+    # a RuntimeError, and so should calling .testzip.  An earlier
+    # version of .testzip would swallow this exception (and any other)
+    # and report that the first file in the archive was corrupt.
+    pass
+else:
+    raise TestFailed("expected calling .testzip on a closed ZipFile"
+                     " to raise a RuntimeError")
+del data, zipf
