@@ -1189,6 +1189,11 @@ item: Set Variable
 end
 item: End Block
 end
+item: Remark
+end
+item: Remark
+  Text=Install the license even if they deselect everything <wink>.
+end
 item: Install File
   Source=..\license
   Destination=%MAINDIR%\LICENSE.txt
@@ -1203,6 +1208,20 @@ item: Install File
   Source=..\misc\news
   Destination=%MAINDIR%\NEWS.txt
   Flags=0000000000000010
+end
+item: Remark
+end
+item: Remark
+  Text=These arrange to (recursively!) delete all .pyc and .pyo files at uninstall time.
+end
+item: Remark
+  Text=This "does the right thing":  any directories left empty at the end are removed.
+end
+item: Add Text to INSTALL.LOG
+  Text=File Tree: %MAINDIR%\*.pyc
+end
+item: Add Text to INSTALL.LOG
+  Text=File Tree: %MAINDIR%\*.pyo
 end
 item: Remark
 end
@@ -1429,14 +1448,6 @@ end
 item: Remark
   Text=Libraries (Lib/)
 end
-item: Remark
-  Text=Remove entire Lib directory at uninstall time.
-end
-item: Add Text to INSTALL.LOG
-  Text=File Tree: %MAINDIR%\Lib\*.*
-end
-item: Remark
-end
 item: Install File
   Source=..\lib\*.py
   Destination=%MAINDIR%\Lib
@@ -1607,14 +1618,6 @@ item: If/While Statement
   Variable=COMPONENTS
   Value=C
   Flags=00001010
-end
-item: Remark
-  Text=Delete entire Tools directory at uninstall time.
-end
-item: Add Text to INSTALL.LOG
-  Text=File Tree: %MAINDIR%\Tools\*.*
-end
-item: Remark
 end
 item: Install File
   Source=..\tools\scripts\*.py
