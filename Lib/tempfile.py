@@ -24,6 +24,14 @@ def gettempdir():
     if os.name == 'nt':
 	attempdirs.insert(0, 'C:\\TEMP')
 	attempdirs.insert(0, '\\TEMP')
+    elif os.name == 'mac':
+    	import macfs, MACFS
+    	try:
+    	     refnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, MACFS.kTemporaryFolderType, 0)
+    	     dirname = macfs.FSSpec((refnum, dirid, '')).as_pathname()
+    	     attempdirs.insert(0, dirname)
+	except macfs.error:
+	    pass
     if os.environ.has_key('TMPDIR'):
 	attempdirs.insert(0, os.environ['TMPDIR'])
     testfile = gettempprefix() + 'test'
@@ -51,6 +59,8 @@ def gettempprefix():
 	if template == None:
 		if os.name == 'posix':
 			template = '@' + `os.getpid()` + '.'
+		elif os.name == 'mac':
+			template = 'Python-Tmp-'
 		else:
 			template = 'tmp' # XXX might choose a better one
 	return template
