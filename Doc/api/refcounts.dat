@@ -918,6 +918,14 @@ PyString_FromStringAndSize:PyObject*::+1:
 PyString_FromStringAndSize:const char*:v::
 PyString_FromStringAndSize:int:len::
 
+PyString_FromFormat:PyObject*::+1:
+PyString_FromFormat:const char*:format::
+PyString_FromFormat::...::
+
+PyString_FromFormatV:PyObject*::+1:
+PyString_FromFormatV:const char*:format::
+PyString_FromFormatV:va_list:vargs::
+
 PyString_GET_SIZE:int:::
 PyString_GET_SIZE:PyObject*:string:0:
 
