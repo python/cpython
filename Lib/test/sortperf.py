@@ -74,12 +74,13 @@ def tabulate(r):
     *sort: random data
     \sort: descending data
     /sort: ascending data
+    3sort: ascending data but with 3 random exchanges
     ~sort: many duplicates
     =sort: all equal
     !sort: worst case scenario
 
     """
-    cases = ("*sort", "\\sort", "/sort", "~sort", "=sort", "!sort")
+    cases = ("*sort", "\\sort", "/sort", "3sort", "~sort", "=sort", "!sort")
     fmt = ("%2s %7s" + " %6s"*len(cases))
     print fmt % (("i", "2**i") + cases)
     for i in r:
@@ -91,6 +92,13 @@ def tabulate(r):
         L.reverse()
         doit(L) # \sort
         doit(L) # /sort
+
+        # Do 3 random exchanges.
+        for dummy in range(3):
+            i1 = random.randrange(n)
+            i2 = random.randrange(n)
+            L[i1], L[i2] = L[i2], L[i1]
+        doit(L) # 3sort
 
         # Arrange for lots of duplicates.
         if n > 4:
