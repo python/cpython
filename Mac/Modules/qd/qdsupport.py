@@ -45,8 +45,12 @@ GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 BitMap_ptr = OpaqueByValueType("BitMapPtr", "BMObj")
 RGBColor = OpaqueType('RGBColor', 'QdRGB')
 RGBColor_ptr = RGBColor
-Cursor = StructInputBufferType('Cursor')
-Cursor_ptr = Cursor
+
+Cursor_ptr = StructInputBufferType('Cursor')
+Pattern = StructOutputBufferType('Pattern')
+Pattern_ptr = StructInputBufferType('Pattern')
+PenState = StructOutputBufferType('PenState')
+PenState_ptr = StructInputBufferType('PenState')
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
@@ -87,6 +91,22 @@ variablestuff = """
 	o = PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
 	if (o == NULL || PyDict_SetItemString(d, "arrow", o) != 0)
 		Py_FatalError("can't initialize Qd.arrow");
+	o = PyString_FromStringAndSize((char *)&qd.black, sizeof(qd.black));
+	if (o == NULL || PyDict_SetItemString(d, "black", o) != 0)
+		Py_FatalError("can't initialize Qd.black");
+	o = PyString_FromStringAndSize((char *)&qd.white, sizeof(qd.white));
+	if (o == NULL || PyDict_SetItemString(d, "white", o) != 0)
+		Py_FatalError("can't initialize Qd.white");
+	o = PyString_FromStringAndSize((char *)&qd.gray, sizeof(qd.gray));
+	if (o == NULL || PyDict_SetItemString(d, "gray", o) != 0)
+		Py_FatalError("can't initialize Qd.gray");
+	o = PyString_FromStringAndSize((char *)&qd.ltGray, sizeof(qd.ltGray));
+	if (o == NULL || PyDict_SetItemString(d, "ltGray", o) != 0)
+		Py_FatalError("can't initialize Qd.ltGray");
+	o = PyString_FromStringAndSize((char *)&qd.dkGray, sizeof(qd.dkGray));
+	if (o == NULL || PyDict_SetItemString(d, "dkGray", o) != 0)
+		Py_FatalError("can't initialize Qd.dkGray");
+	/* thePort, screenBits and randSeed still missing... */
 }
 """
 

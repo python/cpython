@@ -53,6 +53,11 @@ f = Function(void, 'ClipRect',
 )
 functions.append(f)
 
+f = Function(void, 'BackPat',
+    (Pattern_ptr, 'pat', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'InitCursor',
 )
 functions.append(f)
@@ -87,6 +92,16 @@ f = Function(void, 'GetPen',
 )
 functions.append(f)
 
+f = Function(void, 'GetPenState',
+    (PenState, 'pnState', OutMode),
+)
+functions.append(f)
+
+f = Function(void, 'SetPenState',
+    (PenState_ptr, 'pnState', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'PenSize',
     (short, 'width', InMode),
     (short, 'height', InMode),
@@ -95,6 +110,11 @@ functions.append(f)
 
 f = Function(void, 'PenMode',
     (short, 'mode', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'PenPat',
+    (Pattern_ptr, 'pat', InMode),
 )
 functions.append(f)
 
@@ -209,6 +229,12 @@ f = Function(void, 'InvertRect',
 )
 functions.append(f)
 
+f = Function(void, 'FillRect',
+    (Rect_ptr, 'r', InMode),
+    (Pattern_ptr, 'pat', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'FrameOval',
     (Rect_ptr, 'r', InMode),
 )
@@ -226,6 +252,12 @@ functions.append(f)
 
 f = Function(void, 'InvertOval',
     (Rect_ptr, 'r', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'FillOval',
+    (Rect_ptr, 'r', InMode),
+    (Pattern_ptr, 'pat', InMode),
 )
 functions.append(f)
 
@@ -257,6 +289,14 @@ f = Function(void, 'InvertRoundRect',
 )
 functions.append(f)
 
+f = Function(void, 'FillRoundRect',
+    (Rect_ptr, 'r', InMode),
+    (short, 'ovalWidth', InMode),
+    (short, 'ovalHeight', InMode),
+    (Pattern_ptr, 'pat', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'FrameArc',
     (Rect_ptr, 'r', InMode),
     (short, 'startAngle', InMode),
@@ -282,6 +322,14 @@ f = Function(void, 'InvertArc',
     (Rect_ptr, 'r', InMode),
     (short, 'startAngle', InMode),
     (short, 'arcAngle', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'FillArc',
+    (Rect_ptr, 'r', InMode),
+    (short, 'startAngle', InMode),
+    (short, 'arcAngle', InMode),
+    (Pattern_ptr, 'pat', InMode),
 )
 functions.append(f)
 
@@ -414,6 +462,12 @@ f = Function(void, 'InvertRgn',
 )
 functions.append(f)
 
+f = Function(void, 'FillRgn',
+    (RgnHandle, 'rgn', InMode),
+    (Pattern_ptr, 'pat', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'ScrollRect',
     (Rect_ptr, 'r', InMode),
     (short, 'dh', InMode),
@@ -506,6 +560,12 @@ functions.append(f)
 
 f = Function(void, 'InvertPoly',
     (PolyHandle, 'poly', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'FillPoly',
+    (PolyHandle, 'poly', InMode),
+    (Pattern_ptr, 'pat', InMode),
 )
 functions.append(f)
 
@@ -856,6 +916,13 @@ functions.append(f)
 f = Function(void, 'ScreenRes',
     (short, 'scrnHRes', OutMode),
     (short, 'scrnVRes', OutMode),
+)
+functions.append(f)
+
+f = Function(void, 'GetIndPattern',
+    (Pattern, 'thePat', OutMode),
+    (short, 'patternListID', InMode),
+    (short, 'index', InMode),
 )
 functions.append(f)
 

@@ -415,6 +415,28 @@ static PyObject *Qd_ClipRect(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_BackPat(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "s#",
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	BackPat(pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
+	return _res;
+}
+
 static PyObject *Qd_InitCursor(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -530,6 +552,43 @@ static PyObject *Qd_GetPen(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_GetPenState(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PenState pnState__out__;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetPenState(&pnState__out__);
+	_res = Py_BuildValue("s#",
+	                     (char *)&pnState__out__, (int)sizeof(PenState));
+ pnState__error__: ;
+	return _res;
+}
+
+static PyObject *Qd_SetPenState(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PenState *pnState__in__;
+	int pnState__in_len__;
+	if (!PyArg_ParseTuple(_args, "s#",
+	                      (char **)&pnState__in__, &pnState__in_len__))
+		return NULL;
+	if (pnState__in_len__ != sizeof(PenState))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(PenState)");
+		goto pnState__error__;
+	}
+	SetPenState(pnState__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pnState__error__: ;
+	return _res;
+}
+
 static PyObject *Qd_PenSize(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -560,6 +619,28 @@ static PyObject *Qd_PenMode(_self, _args)
 	PenMode(mode);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_PenPat(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "s#",
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	PenPat(pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
 	return _res;
 }
 
@@ -898,6 +979,31 @@ static PyObject *Qd_InvertRect(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_FillRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&s#",
+	                      PyMac_GetRect, &r,
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	FillRect(&r,
+	         pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
+	return _res;
+}
+
 static PyObject *Qd_FrameOval(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -955,6 +1061,31 @@ static PyObject *Qd_InvertOval(_self, _args)
 	InvertOval(&r);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_FillOval(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&s#",
+	                      PyMac_GetRect, &r,
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	FillOval(&r,
+	         pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
 	return _res;
 }
 
@@ -1042,6 +1173,37 @@ static PyObject *Qd_InvertRoundRect(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_FillRoundRect(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	short ovalWidth;
+	short ovalHeight;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&hhs#",
+	                      PyMac_GetRect, &r,
+	                      &ovalWidth,
+	                      &ovalHeight,
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	FillRoundRect(&r,
+	              ovalWidth,
+	              ovalHeight,
+	              pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
+	return _res;
+}
+
 static PyObject *Qd_FrameArc(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1123,6 +1285,37 @@ static PyObject *Qd_InvertArc(_self, _args)
 	          arcAngle);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_FillArc(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect r;
+	short startAngle;
+	short arcAngle;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&hhs#",
+	                      PyMac_GetRect, &r,
+	                      &startAngle,
+	                      &arcAngle,
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	FillArc(&r,
+	        startAngle,
+	        arcAngle,
+	        pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
 	return _res;
 }
 
@@ -1521,6 +1714,31 @@ static PyObject *Qd_InvertRgn(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_FillRgn(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle rgn;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&s#",
+	                      ResObj_Convert, &rgn,
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	FillRgn(rgn,
+	        pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
+	return _res;
+}
+
 static PyObject *Qd_ScrollRect(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1808,6 +2026,31 @@ static PyObject *Qd_InvertPoly(_self, _args)
 	InvertPoly(poly);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_FillPoly(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PolyHandle poly;
+	Pattern *pat__in__;
+	int pat__in_len__;
+	if (!PyArg_ParseTuple(_args, "O&s#",
+	                      ResObj_Convert, &poly,
+	                      (char **)&pat__in__, &pat__in_len__))
+		return NULL;
+	if (pat__in_len__ != sizeof(Pattern))
+	{
+		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(Pattern)");
+		goto pat__error__;
+	}
+	FillPoly(poly,
+	         pat__in__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ pat__error__: ;
 	return _res;
 }
 
@@ -2875,6 +3118,27 @@ static PyObject *Qd_ScreenRes(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_GetIndPattern(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Pattern thePat__out__;
+	short patternListID;
+	short index;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &patternListID,
+	                      &index))
+		return NULL;
+	GetIndPattern(&thePat__out__,
+	              patternListID,
+	              index);
+	_res = Py_BuildValue("s#",
+	                     (char *)&thePat__out__, (int)sizeof(Pattern));
+ thePat__error__: ;
+	return _res;
+}
+
 static PyObject *Qd_TextFont(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -3154,6 +3418,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(RgnHandle rgn) -> None"},
 	{"ClipRect", (PyCFunction)Qd_ClipRect, 1,
 	 "(Rect r) -> None"},
+	{"BackPat", (PyCFunction)Qd_BackPat, 1,
+	 "(Pattern pat) -> None"},
 	{"InitCursor", (PyCFunction)Qd_InitCursor, 1,
 	 "() -> None"},
 	{"SetCursor", (PyCFunction)Qd_SetCursor, 1,
@@ -3170,10 +3436,16 @@ static PyMethodDef Qd_methods[] = {
 	 "() -> None"},
 	{"GetPen", (PyCFunction)Qd_GetPen, 1,
 	 "(Point pt) -> (Point pt)"},
+	{"GetPenState", (PyCFunction)Qd_GetPenState, 1,
+	 "() -> (PenState pnState)"},
+	{"SetPenState", (PyCFunction)Qd_SetPenState, 1,
+	 "(PenState pnState) -> None"},
 	{"PenSize", (PyCFunction)Qd_PenSize, 1,
 	 "(short width, short height) -> None"},
 	{"PenMode", (PyCFunction)Qd_PenMode, 1,
 	 "(short mode) -> None"},
+	{"PenPat", (PyCFunction)Qd_PenPat, 1,
+	 "(Pattern pat) -> None"},
 	{"PenNormal", (PyCFunction)Qd_PenNormal, 1,
 	 "() -> None"},
 	{"MoveTo", (PyCFunction)Qd_MoveTo, 1,
@@ -3212,6 +3484,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Rect r) -> None"},
 	{"InvertRect", (PyCFunction)Qd_InvertRect, 1,
 	 "(Rect r) -> None"},
+	{"FillRect", (PyCFunction)Qd_FillRect, 1,
+	 "(Rect r, Pattern pat) -> None"},
 	{"FrameOval", (PyCFunction)Qd_FrameOval, 1,
 	 "(Rect r) -> None"},
 	{"PaintOval", (PyCFunction)Qd_PaintOval, 1,
@@ -3220,6 +3494,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Rect r) -> None"},
 	{"InvertOval", (PyCFunction)Qd_InvertOval, 1,
 	 "(Rect r) -> None"},
+	{"FillOval", (PyCFunction)Qd_FillOval, 1,
+	 "(Rect r, Pattern pat) -> None"},
 	{"FrameRoundRect", (PyCFunction)Qd_FrameRoundRect, 1,
 	 "(Rect r, short ovalWidth, short ovalHeight) -> None"},
 	{"PaintRoundRect", (PyCFunction)Qd_PaintRoundRect, 1,
@@ -3228,6 +3504,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Rect r, short ovalWidth, short ovalHeight) -> None"},
 	{"InvertRoundRect", (PyCFunction)Qd_InvertRoundRect, 1,
 	 "(Rect r, short ovalWidth, short ovalHeight) -> None"},
+	{"FillRoundRect", (PyCFunction)Qd_FillRoundRect, 1,
+	 "(Rect r, short ovalWidth, short ovalHeight, Pattern pat) -> None"},
 	{"FrameArc", (PyCFunction)Qd_FrameArc, 1,
 	 "(Rect r, short startAngle, short arcAngle) -> None"},
 	{"PaintArc", (PyCFunction)Qd_PaintArc, 1,
@@ -3236,6 +3514,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Rect r, short startAngle, short arcAngle) -> None"},
 	{"InvertArc", (PyCFunction)Qd_InvertArc, 1,
 	 "(Rect r, short startAngle, short arcAngle) -> None"},
+	{"FillArc", (PyCFunction)Qd_FillArc, 1,
+	 "(Rect r, short startAngle, short arcAngle, Pattern pat) -> None"},
 	{"NewRgn", (PyCFunction)Qd_NewRgn, 1,
 	 "() -> (RgnHandle _rv)"},
 	{"OpenRgn", (PyCFunction)Qd_OpenRgn, 1,
@@ -3280,6 +3560,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(RgnHandle rgn) -> None"},
 	{"InvertRgn", (PyCFunction)Qd_InvertRgn, 1,
 	 "(RgnHandle rgn) -> None"},
+	{"FillRgn", (PyCFunction)Qd_FillRgn, 1,
+	 "(RgnHandle rgn, Pattern pat) -> None"},
 	{"ScrollRect", (PyCFunction)Qd_ScrollRect, 1,
 	 "(Rect r, short dh, short dv, RgnHandle updateRgn) -> None"},
 	{"CopyBits", (PyCFunction)Qd_CopyBits, 1,
@@ -3312,6 +3594,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(PolyHandle poly) -> None"},
 	{"InvertPoly", (PyCFunction)Qd_InvertPoly, 1,
 	 "(PolyHandle poly) -> None"},
+	{"FillPoly", (PyCFunction)Qd_FillPoly, 1,
+	 "(PolyHandle poly, Pattern pat) -> None"},
 	{"SetPt", (PyCFunction)Qd_SetPt, 1,
 	 "(Point pt, short h, short v) -> (Point pt)"},
 	{"LocalToGlobal", (PyCFunction)Qd_LocalToGlobal, 1,
@@ -3432,6 +3716,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Rect shieldRect, Point offsetPt) -> None"},
 	{"ScreenRes", (PyCFunction)Qd_ScreenRes, 1,
 	 "() -> (short scrnHRes, short scrnVRes)"},
+	{"GetIndPattern", (PyCFunction)Qd_GetIndPattern, 1,
+	 "(short patternListID, short index) -> (Pattern thePat)"},
 	{"TextFont", (PyCFunction)Qd_TextFont, 1,
 	 "(short font) -> None"},
 	{"TextFace", (PyCFunction)Qd_TextFace, 1,
@@ -3487,6 +3773,22 @@ void initQd()
 		o = PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
 		if (o == NULL || PyDict_SetItemString(d, "arrow", o) != 0)
 			Py_FatalError("can't initialize Qd.arrow");
+		o = PyString_FromStringAndSize((char *)&qd.black, sizeof(qd.black));
+		if (o == NULL || PyDict_SetItemString(d, "black", o) != 0)
+			Py_FatalError("can't initialize Qd.black");
+		o = PyString_FromStringAndSize((char *)&qd.white, sizeof(qd.white));
+		if (o == NULL || PyDict_SetItemString(d, "white", o) != 0)
+			Py_FatalError("can't initialize Qd.white");
+		o = PyString_FromStringAndSize((char *)&qd.gray, sizeof(qd.gray));
+		if (o == NULL || PyDict_SetItemString(d, "gray", o) != 0)
+			Py_FatalError("can't initialize Qd.gray");
+		o = PyString_FromStringAndSize((char *)&qd.ltGray, sizeof(qd.ltGray));
+		if (o == NULL || PyDict_SetItemString(d, "ltGray", o) != 0)
+			Py_FatalError("can't initialize Qd.ltGray");
+		o = PyString_FromStringAndSize((char *)&qd.dkGray, sizeof(qd.dkGray));
+		if (o == NULL || PyDict_SetItemString(d, "dkGray", o) != 0)
+			Py_FatalError("can't initialize Qd.dkGray");
+		/* thePort, screenBits and randSeed still missing... */
 	}
 
 
