@@ -26,6 +26,11 @@
 static char **orig_argv;
 static int  orig_argc;
 
+/* For my_readline when running under RISCOS */
+#ifdef RISCOS
+extern int Py_RISCOSWimpFlag;
+#endif
+
 /* Short usage message (with %s for argv0) */
 static char *usage_line =
 "usage: %s [option] ... [-c cmd | file | -] [arg] ...\n";
@@ -98,6 +103,10 @@ Py_Main(int argc, char **argv)
 	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
 
+#ifdef RISCOS
+	Py_RISCOSWimpFlag = 0;
+#endif
+
 	if ((p = getenv("PYTHONINSPECT")) && *p != '\0')
 		inspect = 1;
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
@@ -105,7 +114,11 @@ Py_Main(int argc, char **argv)
 
 	PySys_ResetWarnOptions();
 
+#ifdef RISCOS
+	while ((c = getopt(argc, argv, "c:diOStuUvwxXhV")) != EOF) {
+#else
 	while ((c = _PyOS_GetOpt(argc, argv, "c:diOStuUvxXhVW:")) != EOF) {
+#endif
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
@@ -149,6 +162,12 @@ Py_Main(int argc, char **argv)
 		case 'v':
 			Py_VerboseFlag++;
 			break;
+
+#ifdef RISCOS
+		case 'w':
+			Py_RISCOSWimpFlag = 1;
+			break;
+#endif
 
 		case 'x':
 			skipfirstline = 1;
@@ -301,6 +320,10 @@ Py_Main(int argc, char **argv)
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
 	Py_Finalize();
+#ifdef RISCOS
+	if(Py_RISCOSWimpFlag)
+                fprintf(stderr, "\x0cq\x0c"); /* make frontend quit */
+#endif
 
 #ifdef __INSURE__
 	/* Insure++ is a memory analysis tool that aids in discovering
