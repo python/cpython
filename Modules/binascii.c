@@ -343,11 +343,11 @@ binascii_a2b_base64(self, args)
 	bin_data = (unsigned char *)PyString_AsString(rv);
 	bin_len = 0;
 	for( ; ascii_len > 0 ; ascii_len--, ascii_data++ ) {
-		/*
-		** XXXX I don't do any checks on the chars, ignoring
-		** any illegal chars. Hope this is correct...
-		*/
+		/* Skip some punctuation */
 		this_ch = (*ascii_data & 0x7f);
+		if ( this_ch == '\r' || this_ch == '\n' || this_ch == ' ' )
+			continue;
+		
 		if ( this_ch == BASE64_PAD )
 			npad++;
 		this_ch = table_a2b_base64[(*ascii_data) & 0x7f];
@@ -626,7 +626,7 @@ binascii_rledecode_hqx(self, args)
 		_PyString_Resize(&rv, 2*out_len); \
 		if ( rv == NULL ) return NULL; \
 		out_data = (unsigned char *)PyString_AsString(rv) + out_len; \
-		out_len_left = out_len; \
+		out_len_left = out_len-1; \
 		out_len = out_len * 2; \
 	} \
 	*out_data++ = b; \
