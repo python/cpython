@@ -42,7 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static PyInterpreterState *interp_head = NULL;
 
-static PyThreadState *current_tstate = NULL;
+PyThreadState *_PyThreadState_Current = NULL;
 
 
 PyInterpreterState *
@@ -180,7 +180,7 @@ PyThreadState_Delete(tstate)
 	PyThreadState **p;
 	if (tstate == NULL)
 		Py_FatalError("PyThreadState_Delete: NULL tstate");
-	if (tstate == current_tstate)
+	if (tstate == _PyThreadState_Current)
 		Py_FatalError("PyThreadState_Delete: tstate is still current");
 	interp = tstate->interp;
 	if (interp == NULL)
@@ -200,10 +200,10 @@ PyThreadState_Delete(tstate)
 PyThreadState *
 PyThreadState_Get()
 {
-	if (current_tstate == NULL)
+	if (_PyThreadState_Current == NULL)
 		Py_FatalError("PyThreadState_Get: no current thread");
 
-	return current_tstate;
+	return _PyThreadState_Current;
 }
 
 
@@ -211,9 +211,9 @@ PyThreadState *
 PyThreadState_Swap(new)
 	PyThreadState *new;
 {
-	PyThreadState *old = current_tstate;
+	PyThreadState *old = _PyThreadState_Current;
 
-	current_tstate = new;
+	_PyThreadState_Current = new;
 
 	return old;
 }
@@ -227,10 +227,10 @@ PyThreadState_Swap(new)
 PyObject *
 PyThreadState_GetDict()
 {
-	if (current_tstate == NULL)
+	if (_PyThreadState_Current == NULL)
 		Py_FatalError("PyThreadState_GetDict: no current thread");
 
-	if (current_tstate->dict == NULL)
-		current_tstate->dict = PyDict_New();
-	return current_tstate->dict;
+	if (_PyThreadState_Current->dict == NULL)
+		_PyThreadState_Current->dict = PyDict_New();
+	return _PyThreadState_Current->dict;
 }
