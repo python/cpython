@@ -2,7 +2,6 @@
 /* audioopmodule - Module to detect peak values in arrays */
 
 #include "Python.h"
-#include <math.h>
 
 #if SIZEOF_INT == 4
 typedef int Py_Int32;
@@ -981,46 +980,32 @@ audioop_ratecv(PyObject *self, PyObject *args)
 		/* There are len input frames, so we need (mathematically)
 		   ceiling(len*outrate/inrate) output frames, and each frame
 		   requires bytes_per_frame bytes.  Computing this
-		   without spurious overflow is the challenge. */
-		int ceiling;   /* the number of output frames, eventually */
+		   without spurious overflow is the challenge; we can
+		   settle for a reasonable upper bound, though. */
+		int ceiling;   /* the number of output frames */
 		int nbytes;    /* the number of output bytes needed */
 		int q = len / inrate;
-		int r = len - q * inrate;
-		/* Now len = q * inrate + r exactly, so
-		   len*outrate/inrate =
-		   (q*inrate+r)*outrate/inrate =
-		   (q*inrate*outrate + r*outrate)/inrate =
-		   q*outrate + r*outrate/inrate exactly.
-		   q*outrate is an exact integer, so the ceiling we're after is
-		   q*outrate + ceiling(r*outrate/inrate). */
-		ceiling = q * outrate;
-		if (ceiling / outrate != q) {
-			PyErr_SetString(PyExc_MemoryError,
-				"not enough memory for output buffer");
-			goto exit;
-		}
-		/* Since r = len % inrate, in particular r < inrate.  So
-		   r * outrate / inrate = (r / inrate) * outrate < outrate,
-		   so ceiling(r * outrate / inrate) <= outrate:  the final
-		   result fits in an int -- it can't overflow. */
-		assert(r < inrate);
-		q = (int)ceil((double)r * (double)outrate / (double)inrate);
-		assert(q <= outrate);
-		ceiling += q;
-		if (ceiling < 0) {
-			PyErr_SetString(PyExc_MemoryError,
-				"not enough memory for output buffer");
-			goto exit;
-		}
+		/* Now len = q * inrate + r exactly (with r = len % inrate),
+		   and this is less than q * inrate + inrate = (q+1)*inrate.
+		   So a reasonable upper bound on len*outrate/inrate is
+		   ((q+1)*inrate)*outrate/inrate =
+		   (q+1)*outrate.
+		*/
+		ceiling = (q+1) * outrate;
 		nbytes = ceiling * bytes_per_frame;
-		if (nbytes / bytes_per_frame != ceiling) {
+		/* See whether anything overflowed; if not, get the space. */
+		if (q+1 < 0 ||
+		    ceiling / outrate != q+1 ||
+		    nbytes / bytes_per_frame != ceiling)
+			str = NULL;
+		else
+			str = PyString_FromStringAndSize(NULL, nbytes);
+
+		if (str == NULL) {
 			PyErr_SetString(PyExc_MemoryError,
 				"not enough memory for output buffer");
 			goto exit;
 		}
-		str = PyString_FromStringAndSize(NULL, nbytes);
-		if (str == NULL)
-			goto exit;
 	}
 	ncp = PyString_AsString(str);
 
