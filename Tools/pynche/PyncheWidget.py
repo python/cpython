@@ -108,8 +108,7 @@ Pynche %s
 The PYthonically Natural
 Color and Hue Editor
 
-Copyright (C) 1998
-Barry A. Warsaw
+Copyright (C) 1998 CNRI
 All rights reserved
 
 For information about Pynche
