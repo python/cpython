@@ -1202,7 +1202,7 @@ PythonCmd(clientData, interp, argc, argv)
 		PyObject *s = PyString_FromString(argv[i + 1]);
 		if (!s || PyTuple_SetItem(arg, i, s)) {
 			Py_DECREF(arg);
-			PythonCmd_Error(interp);
+			return PythonCmd_Error(interp);
 		}
 	}
 	res = PyEval_CallObject(func, arg);
