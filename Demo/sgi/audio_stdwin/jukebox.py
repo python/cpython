@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/bin/env python
 
 # JUKEBOX: browse directories full of sampled sound files.
 #

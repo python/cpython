@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 class Markov:
 	def __init__(self, histsize, choice):

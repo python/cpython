@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # www1.py -- print the contents of a URL on stdout
 

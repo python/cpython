@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 """Turn a pile of RCS log output into ChangeLog file entries.
 

@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#! /usr/bin/env python
 
 """Classes to handle Unix style, MMDF style, and MH style mailboxes."""
 

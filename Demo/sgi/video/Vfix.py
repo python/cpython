@@ -1,4 +1,4 @@
-#!/ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Copy a video file, fixing the line width to be a multiple of 4
 

@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Variant of "which".
 # On stderr, near and total misses are reported.

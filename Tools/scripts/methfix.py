@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Fix Python source files to avoid using 
 #	def method(self, (arg1, ..., argn)):

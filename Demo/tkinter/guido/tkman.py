@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Tk man page browser -- currently only shows the Tcl/Tk man pages
 

@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Print the values of all values that can be inquired with getgdesc().
 # See man getgdesc() for a description.

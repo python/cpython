@@ -1,4 +1,4 @@
-#! /projects/python/Python-1.4b2/python
+#! /usr/bin/env python
 #  (Force the script to use the latest build.)
 #
 #  test_parser.py

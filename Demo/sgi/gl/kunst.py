@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 # Simulate the artwork in the hall.
 # Jack Jansen, Feb 91.
 

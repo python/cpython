@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Selectively preprocess #ifdef / #ifndef statements.
 # Usage:

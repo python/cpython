@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Read #define's and translate to Python code.
 # Handle #include statements.

@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 # script.py -- Make typescript of terminal session.
 # Usage:
 #	-a	Append to typescript.

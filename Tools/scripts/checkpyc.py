@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 # Check that all ".pyc" files exist and are up-to-date
 # Uses module 'os'
 

@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # A STDWIN-based front end for the Python interpreter.
 #

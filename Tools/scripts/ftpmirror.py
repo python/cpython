@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Mirror a remote ftp subtree into a local directory tree.
 # Basic usage: ftpmirror [options] host remotedir localdir

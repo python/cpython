@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # A Python program implementing rmt, an application for remotely
 # controlling other Tk applications.

@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/bin/env python
 
 # Convert CMIF movie file(s) to a sequence of rgb images
 

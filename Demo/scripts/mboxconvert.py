@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # Convert  MH directories (1 message per file) or MMDF mailboxes (4x^A
 # delimited) to unix mailbox (From ... delimited) on stdout.

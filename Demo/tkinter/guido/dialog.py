@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # A Python function that generates dialog boxes with a text message,
 # optional bitmap, and any number of buttons.
