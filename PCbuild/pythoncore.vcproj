@@ -154,6 +154,9 @@
 	</References>
 	<Files>
 		<File
+			RelativePath="..\Modules\cjkcodecs\_big5.c">
+		</File>
+		<File
 			RelativePath="..\Modules\_bisectmodule.c">
 		</File>
 		<File
@@ -176,7 +179,34 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\Modules\cjkcodecs\_cp932.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_cp949.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_cp950.c">
+		</File>
+		<File
 			RelativePath="..\Modules\_csv.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_euc_jisx0213.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_euc_jp.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_euc_kr.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_gb18030.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_gb2312.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_gbk.c">
 		</File>
 		<File
 			RelativePath="..\Modules\_hotshot.c">
@@ -196,6 +226,30 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_hz.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_iso2022_jp.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_iso2022_jp_1.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_iso2022_jp_2.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_iso2022_jp_3.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_iso2022_jp_ext.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_iso2022_kr.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_johab.c">
 		</File>
 		<File
 			RelativePath="..\Modules\_localemodule.c">
@@ -234,6 +288,12 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_shift_jis.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\_shift_jisx0213.c">
 		</File>
 		<File
 			RelativePath="..\Modules\_sre.c">
@@ -1366,6 +1426,18 @@
 			</FileConfiguration>
 		</File>
 		<File
+			RelativePath="..\Modules\cjkcodecs\mapdata_ja_JP.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\mapdata_ko_KR.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\mapdata_zh_CN.c">
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\mapdata_zh_TW.c">
+		</File>
+		<File
 			RelativePath="..\Python\marshal.c">
 			<FileConfiguration
 				Name="Release|Win32">
@@ -1538,6 +1610,9 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="_DEBUG;USE_DL_EXPORT;WIN32;_WINDOWS;$(NoInherit)"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\Modules\cjkcodecs\multibytecodec.c">
 		</File>
 		<File
 			RelativePath="..\Parser\myreadline.c">
