@@ -60,9 +60,15 @@ typedef struct {
     int ordered_attributes;     /* Return attributes as a list. */
     int specified_attributes;   /* Report only specified attributes. */
     int in_callback;            /* Is a callback active? */
+    XML_Char *buffer;           /* Buffer used when accumulating characters */
+                                /* NULL if not enabled */
+    int buffer_size;            /* Size of buffer, in XML_Char units */
+    int buffer_used;            /* Buffer units in use */
     PyObject *intern;           /* Dictionary to intern strings */
     PyObject **handlers;
 } xmlparseobject;
+
+#define CHARACTER_DATA_BUFFER_SIZE 8192
 
 staticforward PyTypeObject Xmlparsetype;
 
@@ -313,6 +319,85 @@ string_intern(xmlparseobject *self, const char* str)
     return value;
 }
 
+/* Return 0 on success, -1 on exception.
+ * flag_error() will be called before return if needed.
+ */
+static int
+call_character_handler(xmlparseobject *self, const XML_Char *buffer, int len)
+{
+    PyObject *args;
+    PyObject *temp;
+
+    args = PyTuple_New(1);
+    if (args == NULL)
+        return -1;
+#ifdef Py_USING_UNICODE
+    temp = (self->returns_unicode 
+            ? conv_string_len_to_unicode(buffer, len) 
+            : conv_string_len_to_utf8(buffer, len));
+#else
+    temp = conv_string_len_to_utf8(buffer, len);
+#endif
+    if (temp == NULL) {
+        Py_DECREF(args);
+        flag_error(self);
+        return -1;
+    }
+    PyTuple_SET_ITEM(args, 0, temp);
+    /* temp is now a borrowed reference; consider it unused. */
+    self->in_callback = 1;
+    temp = call_with_frame(getcode(CharacterData, "CharacterData", __LINE__),
+                           self->handlers[CharacterData], args);
+    /* temp is an owned reference again, or NULL */
+    self->in_callback = 0;
+    Py_DECREF(args);
+    if (temp == NULL) {
+        flag_error(self);
+        return -1;
+    }
+    Py_DECREF(temp);
+    return 0;
+}
+
+static int
+flush_character_buffer(xmlparseobject *self)
+{
+    int rc;
+    if (self->buffer == NULL || self->buffer_used == 0)
+        return 0;
+    rc = call_character_handler(self, self->buffer, self->buffer_used);
+    self->buffer_used = 0;
+    return rc;
+}
+
+static void
+my_CharacterDataHandler(void *userData, const XML_Char *data, int len) 
+{
+    xmlparseobject *self = (xmlparseobject *) userData;
+    if (self->buffer == NULL)
+        call_character_handler(self, data, len);
+    else {
+        if ((self->buffer_used + len) > self->buffer_size) {
+            if (flush_character_buffer(self) < 0)
+                return;
+            /* handler might have changed; drop the rest on the floor
+             * if there isn't a handler anymore
+             */
+            if (!have_handler(self, CharacterData))
+                return;
+        }
+        if (len > self->buffer_size) {
+            call_character_handler(self, data, len);
+            self->buffer_used = 0;
+        }
+        else {
+            memcpy(self->buffer + self->buffer_used,
+                   data, len * sizeof(XML_Char));
+            self->buffer_used += len;
+        }
+    }
+}
+
 static void
 my_StartElementHandler(void *userData,
                        const XML_Char *name, const XML_Char *atts[])
@@ -323,6 +408,8 @@ my_StartElementHandler(void *userData,
         PyObject *container, *rv, *args;
         int i, max;
 
+        if (flush_character_buffer(self) < 0)
+            return;
         /* Set max to the number of slots filled in atts[]; max/2 is
          * the number of attributes we need to process.
          */
@@ -402,6 +489,8 @@ my_##NAME##Handler PARAMS {\
     INIT \
 \
     if (have_handler(self, NAME)) { \
+        if (flush_character_buffer(self) < 0) \
+            return RETURN; \
         args = Py_BuildValue PARAM_FORMAT ;\
         if (!args) { flag_error(self); return RETURN;} \
         self->in_callback = 1; \
@@ -437,18 +526,6 @@ VOID_HANDLER(ProcessingInstruction,
               const XML_Char *target,
               const XML_Char *data),
              ("(NO&)", string_intern(self, target), STRING_CONV_FUNC,data))
-
-#ifndef Py_USING_UNICODE
-VOID_HANDLER(CharacterData,
-             (void *userData, const XML_Char *data, int len),
-             ("(N)", conv_string_len_to_utf8(data,len)))
-#else
-VOID_HANDLER(CharacterData,
-             (void *userData, const XML_Char *data, int len),
-             ("(N)", (self->returns_unicode
-                      ? conv_string_len_to_unicode(data,len)
-                      : conv_string_len_to_utf8(data,len))))
-#endif
 
 VOID_HANDLER(UnparsedEntityDecl,
              (void *userData,
@@ -673,6 +750,9 @@ get_parse_result(xmlparseobject *self, int rv)
     if (rv == 0) {
         return set_error(self);
     }
+    if (flush_character_buffer(self) < 0) {
+        return NULL;
+    }
     return PyInt_FromLong(rv);
 }
 
@@ -890,6 +970,17 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
 
     if (new_parser == NULL)
         return NULL;
+    new_parser->buffer_size = self->buffer_size;
+    new_parser->buffer_used = 0;
+    if (self->buffer != NULL) {
+        new_parser->buffer = malloc(new_parser->buffer_size);
+        if (new_parser->buffer == NULL) {
+            PyObject_GC_Del(new_parser);
+            return PyErr_NoMemory();
+        }
+    }
+    else
+        new_parser->buffer = NULL;
     new_parser->returns_unicode = self->returns_unicode;
     new_parser->ordered_attributes = self->ordered_attributes;
     new_parser->specified_attributes = self->specified_attributes;
@@ -913,10 +1004,10 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     XML_SetUserData(new_parser->itself, (void *)new_parser);
 
     /* allocate and clear handlers first */
-    for(i = 0; handler_info[i].name != NULL; i++)
+    for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
 
-    new_parser->handlers = malloc(sizeof(PyObject *)*i);
+    new_parser->handlers = malloc(sizeof(PyObject *) * i);
     if (!new_parser->handlers) {
         Py_DECREF(new_parser);
         return PyErr_NoMemory();
@@ -1053,6 +1144,9 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
 
     self->returns_unicode = 1;
 #endif
+    self->buffer = NULL;
+    self->buffer_size = CHARACTER_DATA_BUFFER_SIZE;
+    self->buffer_used = 0;
     self->ordered_attributes = 0;
     self->specified_attributes = 0;
     self->in_callback = 0;
@@ -1081,7 +1175,7 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     XML_SetUnknownEncodingHandler(self->itself, (XML_UnknownEncodingHandler) PyUnknownEncodingHandler, NULL);
 #endif
 
-    for(i = 0; handler_info[i].name != NULL; i++)
+    for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
 
     self->handlers = malloc(sizeof(PyObject *)*i);
@@ -1117,6 +1211,10 @@ xmlparse_dealloc(xmlparseobject *self)
         }
         free(self->handlers);
         self->handlers = NULL;
+    }
+    if (self->buffer != NULL) {
+        free(self->buffer);
+        self->buffer = NULL;
     }
     Py_XDECREF(self->intern);
 #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
@@ -1179,6 +1277,14 @@ xmlparse_getattr(xmlparseobject *self, char *name)
             return PyInt_FromLong((long)
                                   XML_GetErrorByteIndex(self->itself));
     }
+    if (name[0] == 'b') {
+        if (strcmp(name, "buffer_size") == 0)
+            return PyInt_FromLong((long) self->buffer_size);
+        if (strcmp(name, "buffer_text") == 0)
+            return get_pybool(self->buffer != NULL);
+        if (strcmp(name, "buffer_used") == 0)
+            return PyInt_FromLong((long) self->buffer_used);
+    }
     if (strcmp(name, "ordered_attributes") == 0)
         return get_pybool(self->ordered_attributes);
     if (strcmp(name, "returns_unicode") == 0)
@@ -1206,6 +1312,9 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         PyList_Append(rc, PyString_FromString("ErrorLineNumber"));
         PyList_Append(rc, PyString_FromString("ErrorColumnNumber"));
         PyList_Append(rc, PyString_FromString("ErrorByteIndex"));
+        PyList_Append(rc, PyString_FromString("buffer_size"));
+        PyList_Append(rc, PyString_FromString("buffer_text"));
+        PyList_Append(rc, PyString_FromString("buffer_used"));
         PyList_Append(rc, PyString_FromString("ordered_attributes"));
         PyList_Append(rc, PyString_FromString("returns_unicode"));
         PyList_Append(rc, PyString_FromString("specified_attributes"));
@@ -1246,6 +1355,25 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
         PyErr_SetString(PyExc_RuntimeError, "Cannot delete attribute");
         return -1;
     }
+    if (strcmp(name, "buffer_text") == 0) {
+        if (PyObject_IsTrue(v)) {
+            if (self->buffer == NULL) {
+                self->buffer = malloc(self->buffer_size);
+                if (self->buffer == NULL) {
+                    PyErr_NoMemory();
+                    return -1;
+                }
+                self->buffer_used = 0;
+            }
+        }
+        else if (self->buffer != NULL) {
+            if (flush_character_buffer(self) < 0)
+                return -1;
+            free(self->buffer);
+            self->buffer = NULL;
+        }
+        return 0;
+    }
     if (strcmp(name, "ordered_attributes") == 0) {
         if (PyObject_IsTrue(v))
             self->ordered_attributes = 1;
@@ -1273,6 +1401,15 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
         else
             self->specified_attributes = 0;
         return 0;
+    }
+    if (strcmp(name, "CharacterDataHandler") == 0) {
+        /* If we're changing the character data handler, flush all
+         * cached data with the old handler.  Not sure there's a
+         * "right" thing to do, though, but this probably won't
+         * happen.
+         */
+        if (flush_character_buffer(self) < 0)
+            return -1;
     }
     if (sethandler(self, name, v)) {
         return 0;
@@ -1658,16 +1795,16 @@ statichere struct HandlerInfo handler_info[] = {
      (xmlhandler)my_CharacterDataHandler},
     {"UnparsedEntityDeclHandler",
      (xmlhandlersetter)XML_SetUnparsedEntityDeclHandler,
-     (xmlhandler)my_UnparsedEntityDeclHandler },
+     (xmlhandler)my_UnparsedEntityDeclHandler},
     {"NotationDeclHandler",
      (xmlhandlersetter)XML_SetNotationDeclHandler,
-     (xmlhandler)my_NotationDeclHandler },
+     (xmlhandler)my_NotationDeclHandler},
     {"StartNamespaceDeclHandler",
      (xmlhandlersetter)XML_SetStartNamespaceDeclHandler,
-     (xmlhandler)my_StartNamespaceDeclHandler },
+     (xmlhandler)my_StartNamespaceDeclHandler},
     {"EndNamespaceDeclHandler",
      (xmlhandlersetter)XML_SetEndNamespaceDeclHandler,
-     (xmlhandler)my_EndNamespaceDeclHandler },
+     (xmlhandler)my_EndNamespaceDeclHandler},
     {"CommentHandler",
      (xmlhandlersetter)XML_SetCommentHandler,
      (xmlhandler)my_CommentHandler},
@@ -1688,7 +1825,7 @@ statichere struct HandlerInfo handler_info[] = {
      (xmlhandler)my_NotStandaloneHandler},
     {"ExternalEntityRefHandler",
      (xmlhandlersetter)XML_SetExternalEntityRefHandler,
-     (xmlhandler)my_ExternalEntityRefHandler },
+     (xmlhandler)my_ExternalEntityRefHandler},
     {"StartDoctypeDeclHandler",
      (xmlhandlersetter)XML_SetStartDoctypeDeclHandler,
      (xmlhandler)my_StartDoctypeDeclHandler},
