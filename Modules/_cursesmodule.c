@@ -1654,7 +1654,7 @@ PyCurses_EraseChar(PyObject *self, PyObject *args)
 
   ch = erasechar();
 
-  return PyString_FromString(&ch);
+  return PyString_FromStringAndSize(&ch, 1);
 }
 
 static PyObject *
@@ -2012,7 +2012,7 @@ PyCurses_KillChar(PyObject *self, PyObject *args)
 
   ch = killchar();  
 
-  return PyString_FromString(&ch);  
+  return PyString_FromStringAndSize(&ch, 1);  
 }  
 
 static PyObject *
