@@ -41,17 +41,19 @@ extern int ftime(struct timeb *);
 #else
 #ifdef MS_WINDOWS
 #include <windows.h>
-#ifdef MS_WIN16
+#if defined(MS_WIN16) || defined(__BORLANDC__)
 /* These overrides not needed for Win32 */
 #define timezone _timezone
 #define tzname _tzname
 #define daylight _daylight
+#endif /* MS_WIN16 || __BORLANDC__ */
+#ifdef MS_WIN16
 #define altzone _altzone
 #endif /* MS_WIN16 */
 #endif /* MS_WINDOWS */
 #endif /* !__WATCOMC__ || __QNX__ */
 
-#if defined(MS_WIN32) && !defined(MS_WIN64)
+#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(__BORLANDC__)
 /* Win32 has better clock replacement
    XXX Win64 does not yet, but might when the platform matures. */
 #include <largeint.h>
@@ -146,7 +148,7 @@ time_clock(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_CLOCK */
 
-#if defined(MS_WIN32) && !defined(MS_WIN64)
+#if defined(MS_WIN32) && !defined(MS_WIN64) && !defined(__BORLANDC__)
 /* Due to Mark Hammond */
 static PyObject *
 time_clock(PyObject *self, PyObject *args)
