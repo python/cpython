@@ -27,6 +27,13 @@ Core language, builtins, and interpreter
   fit in an int.  In 1.6 and earlier, a negative long formatted
   via %u raised an error if it was too big to fit in an int.
 
+- Dictionary objects have an odd new method, popitem().  This removes
+  an arbitrary item from the dictionary and returns it (in the form of
+  a (key, value) pair).  This can be useful for algorithms that use a
+  dictionary as a bag of "to do" items and repeatedly need to pick one
+  item.  Such algorithms normally end up running in quadratic time;
+  using popitem() they can usually be made to run in linear time.
+
 Windows changes
 
 - select module:  By default under Windows, a select() call
