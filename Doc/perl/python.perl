@@ -1497,6 +1497,14 @@ sub do_cmd_seemodule{
       . $_;
 }
 
+sub strip_html_markup($){
+    my $str = @_[0];
+    my $s = "$str";
+    $s =~ s/<[a-zA-Z0-9]+(\s+[a-zA-Z0-9]+(\s*=\s*(\'[^\']*\'|\"[^\"]*\"|[a-zA-Z0-9]+))?)*\s*>//g;
+    $s =~ s/<\/[a-zA-Z0-9]+>//g;
+    return $s;
+}
+
 sub handle_rfclike_reference{
     local($_, $what, $format) = @_;
     my $rfcnum = next_argument();
@@ -1504,9 +1512,10 @@ sub handle_rfclike_reference{
     my $text = next_argument();
     my $url = get_rfc_url($rfcnum, $format);
     my $icon = get_link_icon($url);
+    my $attrtitle = strip_html_markup($title);
     return '<dl compact class="seerfc">'
       . "\n    <dt><a href=\"$url\""
-      . "\n        title=\"$title\""
+      . "\n        title=\"$attrtitle\""
       . "\n        >$what $rfcnum, <em>$title</em>$icon</a>"
       . "\n    <dd>$text\n  </dl>"
       . $_;
