@@ -907,7 +907,7 @@ x_divrem(v1, w1, prem)
 static void long_dealloc Py_PROTO((PyObject *));
 static PyObject *long_repr Py_PROTO((PyObject *));
 static int long_compare Py_PROTO((PyLongObject *, PyLongObject *));
-static LONG_LONG_hash Py_PROTO((PyLongObject *));
+static long long_hash Py_PROTO((PyLongObject *));
 
 static PyObject *long_add Py_PROTO((PyLongObject *, PyLongObject *));
 static PyObject *long_sub Py_PROTO((PyLongObject *, PyLongObject *));
