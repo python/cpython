@@ -21,7 +21,7 @@
 import imp
 import sys
 import strop
-import __builtin__	### why this instead of just using __builtins__ ??
+import __builtin__
 
 # for the DirectoryImporter
 import struct
@@ -588,10 +588,11 @@ class DirectoryImporter(Importer):
 
 ######################################################################
 #
-# Emulate the standard sys.path import mechanism
+# Emulate the standard path-style import mechanism
 #
-class SysPathImporter(Importer):
-  def __init__(self):
+class PathImporter(Importer):
+  def __init__(self, path=sys.path):
+    self.path = path
 
     # we're definitely going to be importing something in the future,
     # so let's just load the OS-related facilities.
@@ -604,7 +605,7 @@ class SysPathImporter(Importer):
       return _fs_import(parent.__pkgdir__, modname)
 
     # scan sys.path, looking for the requested module
-    for dir in sys.path:
+    for dir in self.path:
       result = _fs_import(dir, modname)
       if result:
         return result
@@ -649,7 +650,7 @@ def _test_dir():
 def _test_revamp():
   "Debug/test function for the revamped import system."
   BuiltinImporter().install()
-  SysPathImporter().install()
+  PathImporter().install()
 
 def _print_importers():
   items = sys.modules.items()
