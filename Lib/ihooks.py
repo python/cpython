@@ -322,7 +322,13 @@ class FancyModuleLoader(ModuleLoader):
         if path:
             m.__path__ = path
         m.__file__ = filename
-        exec code in m.__dict__
+        try:
+            exec code in m.__dict__
+        except:
+            d = self.hooks.modules_dict()
+            if name in d:
+                del d[name]
+            raise
         return m
 
 

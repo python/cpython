@@ -297,7 +297,12 @@ class Importer:
 
         # execute the code within the module's namespace
         if not is_module:
-            exec code in module.__dict__
+            try:
+                exec code in module.__dict__
+            except:
+                if fqname in sys.modules:
+                    del sys.modules[fqname]
+                raise
 
         # fetch from sys.modules instead of returning module directly.
         # also make module's __name__ agree with fqname, in case
