@@ -562,7 +562,7 @@ posix_utime(self, args)
 	if (!getargs(args, "(s(ll))", &path, &atime, &mtime))
 		return NULL;
 	ATIME = atime;
-	MTIME = utime;
+	MTIME = mtime;
 	BGN_SAVE
 	res = utime(path, UTIME_ARG);
 	END_SAVE
