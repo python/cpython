@@ -105,6 +105,8 @@ clean_environ(void)
 			**p = 'X';
 		else if (strncmp(*p, "_RLD", 4) == 0)
 			**p = 'X';
+		else if (strncmp(*p, "PYTHON", 6) == 0)
+			**p = 'X';
 		else if (strncmp(*p, "IFS=", 4) == 0)
 			*p = def_IFS;
 		else if (strncmp(*p, "CDPATH=", 7) == 0)
