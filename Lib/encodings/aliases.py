@@ -17,7 +17,7 @@
 """
 aliases = {
 
-    # Please keep this list sorted alphabetically !
+    # Please keep this list sorted alphabetically by value !
 
     # ascii codec
     '646'                : 'ascii',
@@ -373,6 +373,18 @@ aliases = {
     'l5'                 : 'iso8859_9',
     'latin5'             : 'iso8859_9',
 
+    # iso8859_11 codec
+    'thai'               : 'iso8859_11',
+    'iso_8859_11'        : 'iso8859_11',
+    'iso_8859_11_2001'   : 'iso8859_11',
+
+    # iso8859_16 codec
+    'iso_8859_16'        : 'iso8859_16',
+    'iso_8859_16_2001'   : 'iso8859_16',
+    'iso_ir_226'         : 'iso8859_16',
+    'l10'                : 'iso8859_16',
+    'latin10'            : 'iso8859_16',
+
     # johab codec
     'cp1361'             : 'johab',
     'ms1361'             : 'johab',
@@ -447,6 +459,13 @@ aliases = {
 
     # tactis codec
     'tis260'             : 'tactis',
+
+    # tis_620 codec
+    'tis620'             : 'tis_620',
+    'tis_620_0'          : 'tis_620',
+    'tis_620_2529_0'     : 'tis_620',
+    'tis_620_2529_1'     : 'tis_620',
+    'iso_ir_166'         : 'tis_620',
 
     # utf_16 codec
     'u16'                : 'utf_16',
