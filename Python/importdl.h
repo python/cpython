@@ -42,9 +42,8 @@ extern struct filedescr {
 	enum filetype type;
 } _PyImport_Filetab[];
 
-extern PyObject *_PyImport_Modules;
-
 extern PyObject *_PyImport_LoadDynamicModule
 	Py_PROTO((char *name, char *pathname, FILE *));
 
-extern int _PyImport_MaxSuffixSize;
+/* Max length of module suffix searched for -- accommodates "module.slb" */
+#define MAXSUFFIXSIZE 12
