@@ -7,10 +7,7 @@
 #  To update the symbols in this file, 'cd' to the top directory of
 #  the python source tree after building the interpreter and run:
 #
-#    PYTHONPATH=./Lib ./python Lib/token.py
-#
-#  (this path allows the import of string.py and regexmodule.so
-#  for a site with no installation in place)
+#    python Lib/token.py
 
 #--start constants--
 ENDMARKER = 0
@@ -73,7 +70,7 @@ def ISEOF(x):
 
 
 def main():
-    import regex
+    import re
     import string
     import sys
     args = sys.argv[1:]
@@ -88,13 +85,14 @@ def main():
 	sys.exit(1)
     lines = string.splitfields(fp.read(), "\n")
     fp.close()
-    re = regex.compile(
-	"#define[ \t][ \t]*\([A-Z][A-Z_]*\)[ \t][ \t]*\([0-9][0-9]*\)",
-	regex.casefold)
+    prog = re.compile(
+	"#define[ \t][ \t]*([A-Z][A-Z_]*)[ \t][ \t]*([0-9][0-9]*)",
+	re.IGNORECASE)
     tokens = {}
     for line in lines:
-	if re.match(line) > -1:
-	    name, val = re.group(1, 2)
+	match = prog.match(line)
+	if match:
+	    name, val = match.group(1, 2)
 	    val = string.atoi(val)
 	    tokens[val] = name		# reverse so we can sort them...
     keys = tokens.keys()

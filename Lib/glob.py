@@ -2,7 +2,7 @@
 
 import os
 import fnmatch
-import regex
+import re
 
 
 def glob(pathname):
@@ -50,7 +50,7 @@ def glob1(dirname, pattern):
 	return result
 
 
-magic_check = regex.compile('[*?[]')
+magic_check = re.compile('[*?[]')
 
 def has_magic(s):
-	return magic_check.search(s) >= 0
+	return magic_check.search(s) is not None

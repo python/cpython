@@ -38,7 +38,7 @@
 # There are also some utility functions here.
 
 
-import regex
+import re
 import string
 import time
 
@@ -311,7 +311,7 @@ def unquote(str):
 
 error = 'parseaddr.error'
 
-specials = regex.compile('[][()<>,.;:@\\" \000-\037\177-\377]')
+specials = re.compile(r'[][()<>,.;:@\" \000-\037\177-\377]')
 
 def quote(str):
 	return '"%s"' % string.join(
@@ -408,7 +408,7 @@ def parseaddr(address):
 				else:
 					name.append(token[1])
 			elif token[0] == 1 and cur is addr:
-				if specials.search(token[1]) >= 0:
+				if specials.search(token[1]):
 					cur.append(quote(token[1]))
 				else:
 					cur.append(token[1])
@@ -423,7 +423,7 @@ def parseaddr(address):
 			if token[0] == 2:
 				name.append(token[1])
 			elif token[0] == 1:
-				if specials.search(token[1]) >= 0:
+				if specials.search(token[1]):
 					addr.append(quote(token[1]))
 				else:
 					addr.append(token[1])
@@ -563,4 +563,3 @@ if __name__ == '__main__':
 	print 'keys =', m.keys()
 	print 'values =', m.values()
 	print 'items =', m.items()
-	

@@ -11,11 +11,11 @@
 # digits_behind: number of digits behind the decimal point
 
 
-import regex
+import re
 
 # Compiled regular expression to "decode" a number
-decoder = regex.compile( \
-	'^\([-+]?\)0*\([0-9]*\)\(\(\.[0-9]*\)?\)\(\([eE][-+]?[0-9]+\)?\)$')
+decoder = re.compile( \
+	'^([-+]?)0*([0-9]*)((\.[0-9]*)?)(([eE][-+]?[0-9]+)?)$')
 # \0 the whole thing
 # \1 leading sign or empty
 # \2 digits left of decimal point
@@ -30,10 +30,9 @@ NotANumber = 'fpformat.NotANumber'
 # fraction is 0 or more digits
 # expo is an integer
 def extract(s):
-	if decoder.match(s) < 0: raise NotANumber
-	(a1, b1), (a2, b2), (a3, b3), (a4, b4), (a5, b5) = decoder.regs[1:6]
-	sign, intpart, fraction, exppart = \
-		s[a1:b1], s[a2:b2], s[a3:b3], s[a5:b5]
+	m = decoder.match(s)
+	if not m: raise NotANumber
+	sign, intpart, fraction, exppart = m.group(1, 2, 3, 5)
 	if sign == '+': sign = ''
 	if fraction: fraction = fraction[1:]
 	if exppart: expo = eval(exppart[1:])

@@ -5,7 +5,6 @@
 
 import rfc822
 import os
-import regex
 
 class _Mailbox:
 	def __init__(self, fp):
@@ -117,12 +116,13 @@ class MmdfMailbox(_Mailbox):
 
 class MHMailbox:
     def __init__(self, dirname):
-	pat = regex.compile('^[0-9][0-9]*$')
+	import re
+	pat = re.compile('^[0-9][0-9]*$')
 	self.dirname = dirname
 	files = os.listdir(self.dirname)
 	self.boxes = []
 	for f in files:
-	    if pat.match(f) == len(f):
+	    if pat.match(f):
 		self.boxes.append(f)
 
     def next(self):
@@ -187,6 +187,7 @@ def _test():
 		if not msg:
 			break
 		msgs.append(msg)
+		msg.fp = None
 	if len(args) > 1:
 		num = string.atoi(args[1])
 		print 'Message %d body:'%num

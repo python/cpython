@@ -39,8 +39,8 @@ class Cdplayer:
 			f = open(posix.environ['HOME'] + '/' + cdplayerrc, 'r')
 		except IOError:
 			return
-		import regex
-		reg = regex.compile('^\\([^:]*\\):\t\\(.*\\)')
+		import re
+		reg = re.compile(r'^([^:]*):\t(.*)')
 		s = self.id + '.'
 		l = len(s)
 		while 1:
@@ -49,11 +49,11 @@ class Cdplayer:
 				break
 			if line[:l] == s:
 				line = line[l:]
-				if reg.match(line) == -1:
+				match = reg.match(line)
+				if not match:
 					print 'syntax error in ~/' + cdplayerrc
 					continue
-				name = line[reg.regs[1][0]:reg.regs[1][1]]
-				value = line[reg.regs[2][0]:reg.regs[2][1]]
+				name, valye = match.group(1, 2)
 				if name == 'title':
 					self.title = value
 				elif name == 'artist':

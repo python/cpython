@@ -61,7 +61,7 @@
 
 
 import sys
-import regex
+import re
 
 import os
 import tempfile
@@ -124,10 +124,10 @@ class Template:
 		if self.steps <> [] and self.steps[-1][1] == SINK:
 			raise ValueError, \
 			      'Template.append: already ends with SINK'
-		if kind[0] == 'f' and regex.search('\$IN', cmd) < 0:
+		if kind[0] == 'f' and not re.search('\$IN\b', cmd):
 			raise ValueError, \
 			      'Template.append: missing $IN in cmd'
-		if kind[1] == 'f' and regex.search('\$OUT', cmd) < 0:
+		if kind[1] == 'f' and not re.search('\$OUT\b', cmd):
 			raise ValueError, \
 			      'Template.append: missing $OUT in cmd'
 		self.steps.append((cmd, kind))
@@ -146,10 +146,10 @@ class Template:
 		if self.steps <> [] and self.steps[0][1] == SOURCE:
 			raise ValueError, \
 			      'Template.prepend: already begins with SOURCE'
-		if kind[0] == 'f' and regex.search('\$IN\>', cmd) < 0:
+		if kind[0] == 'f' and not re.search('\$IN\b', cmd):
 			raise ValueError, \
 			      'Template.prepend: missing $IN in cmd'
-		if kind[1] == 'f' and regex.search('\$OUT\>', cmd) < 0:
+		if kind[1] == 'f' and not re.search('\$OUT\b', cmd):
 			raise ValueError, \
 			      'Template.prepend: missing $OUT in cmd'
 		self.steps.insert(0, (cmd, kind))

@@ -10,6 +10,8 @@ The function translate(PATTERN) returns a regular expression
 corresponding to PATTERN.  (It does not compile it.)
 """
 
+import re
+
 _cache = {}
 
 def fnmatch(name, pat):
@@ -42,11 +44,8 @@ def fnmatchcase(name, pat):
 	
 	if not _cache.has_key(pat):
 		res = translate(pat)
-		import regex
-		save_syntax = regex.set_syntax(0)
-		_cache[pat] = regex.compile(res)
-		save_syntax = regex.set_syntax(save_syntax)
-	return _cache[pat].match(name) == len(name)
+		_cache[pat] = re.compile(res)
+	return _cache[pat].match(name) is not None
 
 def translate(pat):
 	"""Translate a shell PATTERN to a regular expression.
@@ -85,8 +84,6 @@ def translate(pat):
 						stuff = stuff[1:] + stuff[0]
 					stuff = '[' + stuff + ']'
 				res = res + stuff
-		elif c in '\\.+^$':
-			res = res + ('\\' + c)
 		else:
-			res = res + c
-	return res
+			res = res + re.escape(c)
+	return res + "$"

@@ -193,17 +193,20 @@ def rfind(s, sub, i = 0, last=None):
 	return r
 
 # Convert string to float
+re = None
 def atof(str):
-	import regex
+	global re
+	if re is None:
+		import re
 	sign = ''
-	s = str
+	s = strip(str)
 	if s and s[0] in '+-':
 		sign = s[0]
 		s = s[1:]
 	if not s:
 		raise ValueError, 'non-float argument to string.atof'
 	while s[0] == '0' and len(s) > 1 and s[1] in digits: s = s[1:]
-	if regex.match('[0-9]*\(\.[0-9]*\)?\([eE][-+]?[0-9]+\)?', s) != len(s):
+	if not re.match('[0-9]*(\.[0-9]*)?([eE][-+]?[0-9]+)?$', s):
 		raise ValueError, 'non-float argument to string.atof'
 	try:
 		return float(eval(sign + s))
