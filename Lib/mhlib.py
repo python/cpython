@@ -382,7 +382,7 @@ class Folder:
 					if not seq:
 						del sequences[name]
 		if changed:
-			self.putsequences()
+			self.putsequences(sequences)
 
 	# Return the last message number
 	def getlast(self):
