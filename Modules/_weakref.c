@@ -736,7 +736,6 @@ cleanup_helper(PyObject *object)
         || !PyType_SUPPORTS_WEAKREFS(object->ob_type)
         || object->ob_refcnt != 0) {
         PyErr_BadInternalCall();
-        /* not sure what we should return here */
         return;
     }
     list = GET_WEAKREFS_LISTPTR(object);
@@ -792,7 +791,6 @@ cleanup_helper(PyObject *object)
             Py_DECREF(tuple);
         }
     }
-    return;
 }
 
 
