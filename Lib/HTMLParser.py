@@ -269,17 +269,18 @@ class HTMLParser:
             return -1
         # in practice, this should look like: ((name|stringlit) S*)+ '>'
         n = len(rawdata)
-        decltype = None
-        extrachars = ""
+        decltype, j = self.scan_name(j, i)
+        if j < 0:
+            return j
+        if decltype.lower() != "doctype":
+            raise HTMLParseError("unknown declaration: '%s'" % decltype,
+                                 self.getpos())
         while j < n:
             c = rawdata[j]
             if c == ">":
                 # end of declaration syntax
                 data = rawdata[i+2:j]
-                if decltype == "doctype":
-                    self.handle_decl(data)
-                else:
-                    self.unknown_decl(data)
+                self.handle_decl(data)
                 return j + 1
             if c in "\"'":
                 m = declstringlit.match(rawdata, j)
@@ -287,30 +288,15 @@ class HTMLParser:
                     return -1 # incomplete
                 j = m.end()
             elif c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                m = declname.match(rawdata, j)
-                if not m:
-                    return -1 # incomplete
-                j = m.end()
-                if decltype is None:
-                    decltype = m.group(0).rstrip().lower()
-                    if decltype != "doctype":
-                        extrachars = "="
+                name, j = self.scan_name(j, i)
             elif c == "[" and decltype == "doctype":
                 j = self.parse_doctype_subset(j + 1, i)
-                if j < 0:
-                    return j
-            elif c in extrachars:
-                j = j + 1
-                while j < n and rawdata[j] in string.whitespace:
-                    j = j + 1
-                if j == n:
-                    # end of buffer while in declaration
-                    return -1
             else:
                 raise HTMLParseError(
                     "unexpected char in declaration: %s" % `rawdata[j]`,
                     self.getpos())
-            decltype = decltype or ''
+            if j < 0:
+                return j
         return -1 # incomplete
 
     # Internal -- scan past the internal subset in a <!DOCTYPE declaration,
@@ -359,11 +345,9 @@ class HTMLParser:
                 if (j + 1) == n:
                     # end of buffer; incomplete
                     return -1
-                m = declname.match(rawdata, j + 1)
-                s = m.group()
-                if s == rawdata[j+1:]:
-                    return -1
-                j = j + 1 + len(s.rstrip())
+                s, j = self.scan_name(j + 1, declstartpos)
+                if j < 0:
+                    return j
                 if rawdata[j] == ";":
                     j = j + 1
             elif c == "]":
@@ -383,8 +367,9 @@ class HTMLParser:
                 j = j + 1
             else:
                 self.updatepos(declstartpos, j)
-                raise HTMLParseError("unexpected char in internal subset",
-                                     self.getpos())
+                raise HTMLParseError(
+                    "unexpected char %s in internal subset" % `c`,
+                    self.getpos())
         # end of buffer reached
         return -1
 
