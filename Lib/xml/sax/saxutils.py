@@ -189,7 +189,7 @@ class XMLFilterBase(xmlreader.XMLReader):
         self._cont_handler.endElement(name)
 
     def startElementNS(self, name, qname, attrs):
-        self._cont_handler.startElement(name, attrs)
+        self._cont_handler.startElementNS(name, qname, attrs)
 
     def endElementNS(self, name, qname):
         self._cont_handler.endElementNS(name, qname)
