@@ -11,6 +11,7 @@ from FrameWork import *
 import Win
 import Qd
 import List
+import Lists
 import os
 
 class ListWindow(Window):
@@ -22,6 +23,7 @@ class ListWindow(Window):
 		Qd.SetPort(w)
 		self.wid = w
 		self.list = List.LNew(r2, (0, 0, 1, 1), (0,0), 0, w, 0, 1, 1, 1)
+		self.list.selFlags = Lists.lOnlyOne
 		self.filllist()
 		w.DrawGrowIcon()
 		self.do_postopen()
