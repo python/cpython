@@ -256,11 +256,11 @@ def f():
         yield i
 vereq(list(tuple(f())), range(1000))
 
-# Verify that __getitem__ overrides are recognized by __iter__
+# Verify that __getitem__ overrides are not recognized by __iter__
 class T(tuple):
   def __getitem__(self, key):
      return str(key) + '!!!'
-vereq(iter(T()).next(), '0!!!')
+vereq(iter(T((1,2))).next(), 1)
 
 print '6.5.3 Lists'
 # calling built-in types without argument must return empty
@@ -453,11 +453,11 @@ a = range(10)
 a[::2] = tuple(range(5))
 vereq(a, [0, 1, 1, 3, 2, 5, 3, 7, 4, 9])
 
-# Verify that __getitem__ overrides are recognized by __iter__
+# Verify that __getitem__ overrides are not recognized by __iter__
 class L(list):
   def __getitem__(self, key):
      return str(key) + '!!!'
-vereq(iter(L()).next(), '0!!!')
+vereq(iter(L([1,2])).next(), 1)
 
 
 print '6.6 Mappings == Dictionaries'
