@@ -134,7 +134,6 @@ structmember.o: structmember.c
 sysmodule.o: sysmodule.c ../Include/patchlevel.h
 thread.o: thread.c
 traceback.o: traceback.c
-version.o: version.c
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
 # DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
