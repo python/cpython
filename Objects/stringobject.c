@@ -3921,8 +3921,11 @@ PyString_Format(PyObject *format, PyObject *args)
 			case 'e':
 			case 'E':
 			case 'f':
+			case 'F':
 			case 'g':
 			case 'G':
+				if (c == 'F')
+					c = 'f';
 				pbuf = formatbuf;
 				len = formatfloat(pbuf, sizeof(formatbuf),
 						  flags, prec, c, v);

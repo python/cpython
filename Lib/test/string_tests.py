@@ -550,6 +550,7 @@ class MixinStrUnicodeUserStringTest:
 
         self.checkequal(' 42', '%3ld', '__mod__', 42)
         self.checkequal('0042.00', '%07.2f', '__mod__', 42)
+        self.checkequal('0042.00', '%07.2F', '__mod__', 42)
 
         self.checkraises(TypeError, 'abc', '__mod__')
         self.checkraises(TypeError, '%(foo)s', '__mod__', 42)
