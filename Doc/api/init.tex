@@ -677,9 +677,12 @@ interpreter lock has been created.
 \begin{cfuncdesc}{PyObject*}{PyThreadState_GetDict}{}
   Return a dictionary in which extensions can store thread-specific
   state information.  Each extension should use a unique key to use to
-  store state in the dictionary.  If this function returns \NULL, an
-  exception has been raised and the caller should allow it to
-  propagate.
+  store state in the dictionary.  It is okay to call this function
+  when no current thread state is available.
+  If this function returns \NULL, no exception has been raised and the
+  caller should assume no current thread state is available.
+  \versionchanged[Previously this could only be called when a current
+  thread is active, and \NULL meant that an exception was raised]{2.3}
 \end{cfuncdesc}
 
 

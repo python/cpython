@@ -280,14 +280,6 @@ Py_Finalize(void)
 	/* Clear interpreter state */
 	PyInterpreterState_Clear(interp);
 
-#ifdef Py_TRACE_REFS
-	/* Dump references -- this may implicitly need the thread state,
-	   so this is the last possible place where we can do this. */
-	if (Py_GETENV("PYTHONDUMPREFS")) {
-		_Py_PrintReferences(stderr);
-	}
-#endif /* Py_TRACE_REFS */
-
 	/* Delete current thread */
 	PyThreadState_Swap(NULL);
 	PyInterpreterState_Delete(interp);
@@ -313,6 +305,14 @@ Py_Finalize(void)
 	*/
 
 	PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+
+#ifdef Py_TRACE_REFS
+	/* Dump references -- this may implicitly need the thread state,
+	   so this is the last possible place where we can do this. */
+	if (Py_GETENV("PYTHONDUMPREFS")) {
+		_Py_PrintReferences(stderr);
+	}
+#endif /* Py_TRACE_REFS */
 
 #ifdef PYMALLOC_DEBUG
 	if (Py_GETENV("PYTHONMALLOCSTATS"))

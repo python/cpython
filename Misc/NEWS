@@ -150,6 +150,10 @@ Build
 C API
 -----
 
+- PyThreadState_GetDict() was changed not to raise an exception or
+  issue a fatal error when no current thread state is available.  This
+  makes it possible to print dictionaries when no thread is active.
+
 - LONG_LONG was renamed to PY_LONG_LONG.
 
 - Added PyObject_SelfIter() to fill the tp_iter slot for the

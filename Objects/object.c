@@ -2119,7 +2119,7 @@ Py_ReprEnter(PyObject *obj)
 
 	dict = PyThreadState_GetDict();
 	if (dict == NULL)
-		return -1;
+		return 0;
 	list = PyDict_GetItemString(dict, KEY);
 	if (list == NULL) {
 		list = PyList_New(0);
