@@ -164,13 +164,14 @@ class ConfigParser:
 	The section DEFAULT is special.
 	"""
 	try:
-	    d = self.__sections[section].copy()
+	    sectdict = self.__sections[section].copy()
 	except KeyError:
 	    if section == DEFAULTSECT:
-		d = {}
+		sectdict = {}
 	    else:
 		raise NoSectionError(section)
-	d.update(self.__defaults)
+	d = self.__defaults.copy()
+	d.update(sectdict)
 	option = string.lower(option)
 	try:
 	    rawval = d[option]
