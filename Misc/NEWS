@@ -18,6 +18,9 @@ Core and builtins
   via intern() will raise a TypeError.  Internal operations that attempt
   to intern a string subclass will have no effect.
 
+- Bug 1003935:  xrange() could report bogus OverflowErrors.  Documented
+  what xrange() intends, and repaired tests accordingly.
+
 Extension modules
 -----------------
 
@@ -37,7 +40,6 @@ Library
   you want to filter out tests, the new DocTestFinder class can be used
   to return a list of all doctests, and you can filter that list by
   any computable criteria before passing it to a DocTestRunner instance.
-
 
 Tools/Demos
 -----------
