@@ -46,6 +46,8 @@ Extension modules
 Library
 -------
 
+- Various improvements to unittest.py, realigned with PyUnit CVS.
+
 - dircache now passes exceptions to the caller, instead of returning
   empty lists.
 
