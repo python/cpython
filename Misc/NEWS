@@ -6,6 +6,11 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Deprecated features of xrange objects have been removed as
+  promised.  The start, stop, and step attributes and the tolist()
+  method no longer exist.  xrange repetition and slicing have been
+  removed.
+
 - New builtin function enumerate(x), from PEP 279.  Example:
   enumerate("abc") is an iterator returning (0,"a"), (1,"b"), (2,"c").
   The argument can be an arbitrary iterable object.
@@ -181,6 +186,10 @@ Build
   well as Unix.
 
 C API
+
+- PyRange_New() now raises ValueError if the fourth argument is not 1.
+  This is part of the removal of deprecated features of the xrange
+  object.
 
 - PyNumber_Coerce() and PyNumber_CoerceEx() now also invoke the type's
   coercion if both arguments have the same type but this type has the
