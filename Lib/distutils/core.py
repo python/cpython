@@ -12,6 +12,11 @@ __revision__ = "$Id$"
 
 import sys, os
 from types import *
+
+# If DISTUTILS_DEBUG is anything other than the empty string, we run in
+# debug mode.
+DEBUG = os.environ.get('DISTUTILS_DEBUG')
+
 from distutils.errors import *
 from distutils.util import grok_environment_error
 
@@ -31,11 +36,6 @@ usage: %(script)s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
    or: %(script)s --help-commands
    or: %(script)s cmd --help
 """
-
-
-# If DISTUTILS_DEBUG is anything other than the empty string, we run in
-# debug mode.
-DEBUG = os.environ.get('DISTUTILS_DEBUG')
 
 def gen_usage (script_name):
     script = os.path.basename(script_name)
