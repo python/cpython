@@ -62,18 +62,17 @@ int _PyUnicode_IsLinebreak(Py_UNICODE ch)
 Py_UNICODE _PyUnicode_ToTitlecase(register Py_UNICODE ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
+    int delta;
 
     if (ctype->title)
-        ch += ctype->title;
+        delta = ctype->title;
     else
-	ch += ctype->upper;
+	delta = ctype->upper;
 
-#ifdef Py_UNICODE_WIDE
-    /* The database assumes that the values wrap around at 0x10000. */
-    if (ch > 0x10000)
-	ch -= 0x10000;
-#endif
-    return ch;
+    if (delta >= 32768)
+	    delta -= 65536;
+
+    return ch + delta;
 }
 
 /* Returns 1 for Unicode characters having the category 'Lt', 0
@@ -358,14 +357,10 @@ int _PyUnicode_IsUppercase(Py_UNICODE ch)
 Py_UNICODE _PyUnicode_ToUppercase(Py_UNICODE ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
-
-    ch += ctype->upper;
-#ifdef Py_UNICODE_WIDE
-    /* The database assumes that the values wrap around at 0x10000. */
-    if (ch > 0x10000)
-	ch -= 0x10000;
-#endif
-    return ch;
+    int delta = ctype->upper;
+    if (delta >= 32768)
+	    delta -= 65536;
+    return ch + delta;
 }
 
 /* Returns the lowercase Unicode characters corresponding to ch or just
@@ -374,14 +369,10 @@ Py_UNICODE _PyUnicode_ToUppercase(Py_UNICODE ch)
 Py_UNICODE _PyUnicode_ToLowercase(Py_UNICODE ch)
 {
     const _PyUnicode_TypeRecord *ctype = gettyperecord(ch);
-
-    ch += ctype->lower;
-#ifdef Py_UNICODE_WIDE
-    /* The database assumes that the values wrap around at 0x10000. */
-    if (ch > 0x10000)
-	ch -= 0x10000;
-#endif
-    return ch;
+    int delta = ctype->lower;
+    if (delta >= 32768)
+	    delta -= 65536;
+    return ch + delta;
 }
 
 /* Returns 1 for Unicode characters having the category 'Ll', 'Lu', 'Lt',
