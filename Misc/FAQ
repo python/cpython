@@ -1,3 +1,7 @@
+NOTE -- THIS FAQ HAS NOT BEEN UPDATED TO REFLECT RELEASE 1.1 YET.  FOR
+1.1 RELATED PROBLEMS PLEASE WATCH THE NEWSGROUP / MAILING LIST OR
+CHECK THE FTP SITE.
+
 Subject: FAQ: Python -- an object-oriented language
 Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
@@ -6,8 +10,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.14
-Last-modified: 23 September 1994
+Version: 1.15
+Last-modified: 6 October 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -42,7 +46,7 @@ message to mail-server@rtfm.mit.edu containing the single word help in
 the message body to receive instructions.
 
 Skip Montanaro <skip@automatrix.com> maintains an HTML version of this
-FAQ.  The URL is "http://www.automatrix.com/~skip/python-faq.html".
+FAQ.  The URL is <http://www.automatrix.com/~skip/python-faq.html>.
 
 This FAQ is divided in the following chapters:
 
@@ -122,10 +126,10 @@ Here's an overview of the questions per chapter:
         script?
   4.11. Q. I try to run a program from the Demo directory but it fails with
         ImportError: No module named ...; what gives?
-  4.12. Q. I have successfully built Python with STDWIN but it can't find some
-        modules (e.g. stdwinevents).
+  4.12. Q. I have successfully built Python with STDWIN but it can't
+        find some modules (e.g. stdwinevents).
   4.13. Q. What GUI toolkits exist for Python?
-  4.14. Q. Are there any interfaces to commercial database in Python?
+  4.14. Q. Are there any interfaces to database packages in Python?
   4.15. Q. Is it possible to write obfuscated one-liners in Python?
   4.16. Q. Is there an equivalent of C's "?:" ternary operator?
   4.17. Q. My class defines __del__ but it is not called when I delete the
@@ -143,7 +147,10 @@ Here's an overview of the questions per chapter:
   4.25. Q. How can I organize my code to make it easier to change the base
         class?
   4.26. Q. How can I find the methods or attributes of an object?
-  4.27. an't seem to use os.read() on a pipe created with os.popen().
+  4.27. Q. I can't seem to use os.read() on a pipe created with os.popen().
+  4.28. Q. How can I create a stand-alone binary from a Python script?
+  4.29. Q. Is there a special lib for writing CGI scripts in Python?
+  4.30. Q. What other WWW tools are there for Python?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -175,8 +182,11 @@ Here's an overview of the questions per chapter:
        files)?
   6.9. Q. Why must 'self' be declared and used explicitly in method
        definitions and calls?
-  6.10. 't you emulate threads in the interpreter instead of relying on
-        an OS-specific thread implementation?
+  6.10. Q. Can't you emulate threads in the interpreter instead of
+        relying on an OS-specific thread implementation?
+  6.11. Q. Why can't lambda forms contain statements?
+  6.12. Q. Why is there no more efficient way of iterating over a dictionary
+        than first constructing the list of keys()?
 
  7. Using Python on non-UNIX platforms
   7.1. Q. Is there a Mac version of Python?
@@ -269,24 +279,33 @@ ftp.funet.fi		128.214.6.100	/pub/languages/python
 ftp.fu-berlin.de	130.133.1.18	/unix/languages/python (*python* only)
 ftp.sunet.se		130.238.127.3	/pub/lang/python
 unix.hensa.ac.uk	129.12.43.16	/uunet/languages/python
+ftp.sterlng.com         192.124.9.3     /programming/languages/python
 
-Or try archie on e.g. python1.0 to locate the nearest copy of that
+Or try archie on e.g. "python1." to locate the nearest copy of that
 version...
 
 1.6. Q. Is there a newsgroup or mailing list devoted to Python?
 
 A. There is a newsgroup, comp.lang.python, and a mailing list.  The
 newsgroup and mailing list are gatewayed into each other -- if you can
-read news it is not necessary to subscribe to the mailing list.  Send
+read news it's unnecessary to subscribe to the mailing list.  Send
 e-mail to python-list-request@cwi.nl to (un)subscribe to the mailing
 list.  Once you're on, send e-mail tp python-list@cwi.nl to send mail
-to the entire mailing list and newsgroup.
+to the entire mailing list and newsgroup.  Hypermail archives of
+(nearly) everything posted to the mailing list (and thus the
+newsgroup) are available -- the URL for the complete set of archives
+is <http://www.cwi.nl/~guido/hypermail/index.html>.  The raw archives
+are also available by ftp from ftp.cwi.nl in /pub/python (and most
+mirrors), files mail*.gz.  The uncompressed versions of these files
+can be read with the standard UNIX Mail program ("Mail -f file") or
+with nn ("nn file").  To read them using MH, you could use "inc -file
+file".
 
 1.7. Q. Is there a book on Python, or will there be one out soon?
 
-A. Unfortunately, not yet.  Mark Lutz and I are planning to write one,
-but we are still a in very preliminary stage.  If you would like to
-beat us at it and get rich from book royalties, go ahead!
+A. I am writing one.  Addison-Wesley is interested.  Optimistically,
+it will be published by mid-1995.  Other authors are also working on
+books...  (Do you guys want your name mentioned here?)
 
 1.8. Q. Are there any published articles about Python that I can quote?
 
@@ -304,7 +323,7 @@ A more recent high-level description of Python is:
 
     Guido van Rossum, "An Introduction to Python for UNIX/C
     Programmers", in the proceedings of the NLUUG najaarsconferentie
-    1993 (dutch UNIX users group meeting november 1993).
+    1993 (dutch UNIX users group meeting November 1993).
     
 PostScript for this paper and for the slides used for the accompanying
 presentation can be found in the ftp directory mentioned a few
@@ -374,9 +393,9 @@ considering to use Python in a future product.
 
 The furthest is Sunrise Software, who already have a product out using
 Python -- they use Python for a GUI management application and an SNMP
-network manangement application.  Contact: <info@sunrise.com>.
+network management application.  Contact: <info@sunrise.com>.
 
-Infoseek is using python to implement their commercial WWW information
+Infoseek is using Python to implement their commercial WWW information
 retrieval service.  Contact: <info@infoseek.com>.
 
 Michael Powers of daVinci Time & Space is "writing tons-o-python for
@@ -459,9 +478,18 @@ semantics of C floating point operations.  Until someone donates a
 better floating point test set, you will have to comment out the
 offending floating point tests and execute similar tests manually.
 
-3.3. Q. Link errors building Python with STDWIN on SGI IRIX.
+3.3. Q. Link errors building Python with STDWIN 0.9.8. on SGI IRIX.
 
-A. Rebuild STDWIN, specifying "CC=cc -cckr" in the Makefile.
+A. Get STDWIN 0.9.9 from ftp://ftp.cwi.nl/pub/stdwin/stdwin0.9.9.tar.gz.
+
+Q. Link errors building Python with STDWIN 0.9.9.
+
+A. Probably routines liek 'tereate', 'tenew' etc.  The STDWIN 0.9.9
+distribution requires that you add TWO libraries from stdwin to the
+line for stdwin in the Setupfile.  Use something like this (all on one
+line!):
+
+stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Packs/textedit/libtextedit.a $(STDWIN)/Ports/x11/libstdwin.a -lX11
 
 3.4. Q. Link errors after rerunning the configure script.
 
@@ -539,10 +567,10 @@ Makefile for several values of foo.
 
 - The readline library requires use of the termcap library. A
 known problem with this is that it contains entry points which
-cause conflicts with the STDWIN and SGI GL libraries. The stdwin
+cause conflicts with the STDWIN and SGI GL libraries. The STDWIN
 conflict can be solved (and will be, in the next release of
-stdwin) by adding a line saying '#define werase w_erase' to the
-stdwin.h file (in the stdwin distribution, subdirectory H). The
+STDWIN) by adding a line saying '#define werase w_erase' to the
+stdwin.h file (in the STDWIN distribution, subdirectory H). The
 GL conflict has been solved in the Python configure script by a
 hack that forces use of the static version of the termcap library.
 
@@ -684,7 +712,7 @@ You can now simply write:
 	for x in Rev(list):
 		<do something with x>
 
-Unfortunately, this solution is slowest of all, due the the method
+Unfortunately, this solution is slowest of all, due to the method
 call overhead...
 
 4.7. Q. My program is too slow.  How do I speed it up?
@@ -724,7 +752,7 @@ will continue to work with the old version of the imported objects.
 
 4.9. Q. How do I find the current module name?
 
-A. A module can find out its own module name by alooking at the
+A. A module can find out its own module name by looking at the
 (predefined) global variable __name__.  If this has the value
 '__main__' you are running as a script.  
 
@@ -741,27 +769,31 @@ running as a script:
 4.11. Q. I try to run a program from the Demo directory but it fails with
 ImportError: No module named ...; what gives?
 
-A. This is probably an optional module which hasn't been configured on
-your system.  This especially happens with modules like "stdwin",
-"gl", "Xt" or "Xm".  For stdwin and many other modules, see
-Modules/Setup.in for info on how to add these modules to your Python,
-if it is possible at all.  Sometimes you will have to ftp and build
-another package first (e.g. stdwin).  Sometimes the module only works
-on specific platforms (e.g. gl only works on SGI machines).  For
-X-related modules (Xt and Xm) you will have to do more work: they are
-currently not part of the standard Python distribution.  You will have
-to ftp the file "extensions.tar.gz" file from a Python ftp repository
-(e.g. ftp.cwi.nl) and follow the instructions there.  Note: the X
-related modules are still somewhat flakey, so don't try this unless
-you know a bit or two about building X applications on your platform.
+A. This is probably an optional module (written in C!) which hasn't
+been configured on your system.  This especially happens with modules
+like "stdwin", "gl", "Xt" or "Xm".  For STDWIN and many other modules,
+see Modules/Setup.in for info on how to add these modules to your
+Python, if it is possible at all.  Sometimes you will have to ftp and
+build another package first (e.g. STDWIN).  Sometimes the module only
+works on specific platforms (e.g. gl only works on SGI machines).
 
-4.12. Q. I have successfully built Python with STDWIN but it can't find some
-modules (e.g. stdwinevents).
+For X-related modules (Xt and Xm) you will have to do more work: they
+are currently not part of the standard Python distribution.  You will
+have to ftp the file "extensions.tar.gz" file from a Python ftp
+repository (e.g. ftp.cwi.nl) and follow the instructions there.  Note:
+the X related modules are still somewhat flakey, so don't try this
+unless you alread know a bit or two about building X applications on
+your platform.
+
+See also the next question.
+
+4.12. Q. I have successfully built Python with STDWIN but it can't
+find some modules (e.g. stdwinevents).
 
 A. There's a subdirectory of the library directory named 'stdwin'
 which should be in the default module search path.  There's a line in
 Modules/Setup(.in) that you have to enable for this purpose --
-unfortuunately in the latest release it's not near the other
+unfortunately in the latest release it's not near the other
 STDWIN-related lines so it's easy to miss it.
 
 4.13. Q. What GUI toolkits exist for Python?
@@ -775,7 +807,7 @@ and use, and the most complete widget set.
 
 - The standard Python distribution comes with an interface to STDWIN,
 a platform-independent low-level windowing interface (you have to ftp
-the source for stdwin separately, e.g. from ftp.cwi.nl in pub/stdwin
+the source for STDWIN separately, e.g. from ftp.cwi.nl in pub/stdwin
 or gatekeeper.dec.com in pub/misc/stdwin).  STDWIN runs under X11 or
 the Mac; a Windows port has been attempted but I can't seem to get it
 working.  Note that STDWIN is really not powerful enough to implement
@@ -806,7 +838,7 @@ Athena widget sets.  Last I heard about it it was included in the
 WAFE 1.0 prerelease, ftp'able from ftp.wu-wien.ac.at as
 pub/src/X11/wafe/wafe-1.0.tar.gz-prerelease.
 
-4.14. Q. Are there any interfaces to commercial database in Python?
+4.14. Q. Are there any interfaces to database packages in Python?
 
 A. There's an interface to SYBASE by John Redford
 <jredford@lehman.com>.
@@ -873,9 +905,9 @@ __del__ is called.
 - If your data structures contain circular links (e.g. a tree where
 each child has a parent pointer and each parent has a list of
 children) the reference counts will never go back to zero.  You'll
-have to define an explicit close() method which remvoes those
+have to define an explicit close() method which removes those
 pointers.  Please don't ever call __del__ directly -- __del__ should
-call close() and close() should make sure that it can be called mor
+call close() and close() should make sure that it can be called more
 than once for the same object.
 
 - If the object has ever been a local variable (or argument, which is
@@ -890,7 +922,7 @@ instead.
 - There is code that deletes all objects when the interpreter exits,
 but if your Python has been configured to support threads, it is not
 called (because other threads may still be active).  You can define
-your own cleanp function using sys.exitfunc (see question 4.4).
+your own cleanup function using sys.exitfunc (see question 4.4).
 
 4.18. Q. How do I change the shell environment for programs called using
 os.popen() or os.system()?  Changing os.environ doesn't work.
@@ -942,7 +974,7 @@ A. An unbound method is a method defined in a class that is not yet
 bound to an instance.  You get an unbound method if you ask for a
 class attribute that happens to be a function. You get a bound method
 if you ask for an instance attribute.  A bound method knows which
-instance it belongs to and calling it supplies the instance automatic;
+instance it belongs to and calling it supplies the instance automatically;
 an unbound method only knows which class it wants for its first
 argument (a derived class is also OK).  Calling an unbound method
 doesn't "magically" derive the first argument from the context -- you
@@ -961,7 +993,7 @@ the base class?
 
 A. DON'T DO THIS.  REALLY.  I MEAN IT.  It appears that you could call
 self.__class__.__bases__[0].meth(self, arguments...) but this fails when
-a doubly-derived method is derived from your clas: for its instances,
+a doubly-derived method is derived from your class: for its instances,
 self.__class__.__bases__[0] is your class, not its base class -- so
 (assuming you are doing this from within Derived.meth) you would start
 a recursive call.
@@ -1006,6 +1038,57 @@ small integer).  os.popen() creates a high-level file object -- the
 same type used for sys.std{in,out,err} and returned by the builtin
 open() function.  Thus, to read n bytes from a pipe p created with
 os.popen(), you need to use p.read(n).
+
+4.28. Q. How can I create a stand-alone binary from a Python script?
+
+The demo script "Demo/scripts/freeze.py" does what you want.  (It's
+actually not a demo but a support tool -- there is some extra code in
+the interpreter to accommodate it.)  It requires that you have the
+Python build tree handy, complete with all the lib*.a files.
+
+This works by scanning your source recursively for import statements
+(both forms) and looking for the modules on the standard Python path
+as well as in the source directory (for built-in modules).  It then
+"compiles" the modules written in Python to C code (array initializers
+that can be turned into code objects using the marshal module) and
+creates a custom-made config file that only contains those built-in
+modules which are actually used in the program.  It then compiles the
+generated C code and links it with the rest of the Python interpreter
+to form a self-contained binary which acts exactly like your script.
+
+Unfortunately, the current version is very platform-specific, because
+each platform has its own compilation flags and libraries to link
+with.  You will probably have to edit the freeze.py file to point it
+to the right directories and tell it about the compilation and link
+flags for your platform.  A new version will be released with Python
+1.1 -- if you want a peek write to my colleague <Jack.Jansen@cwi.nl>.
+
+4.29. Q. Is there a special lib for writing CGI scripts in Python?
+
+A. There's documentation and code for a cgi.py module by Michael McLay
+<mclay@eeel.nist.gov> available from:
+
+	http://www.eeel.nist.gov/python/
+
+(For the curious: CGI or Common Gateway Interface is the protocol
+between HTTP servers (WWW servers) and programs/scripts they run to
+perform queries and other tasks that require returning a dynamically
+generated document.)
+
+4.30. Q. What other WWW tools are there for Python?
+
+A. The standard library has a module urllib, which can retrieve most
+commonly used URL types (file, ftp, http, gopher).
+
+The Demo2/www directory (Demo2 has to be retrieved separately from the
+Python ftp sites) contains some (really old) code to parse HTML and to
+display it.
+
+Steve Miale <smiale@cs.indiana.edu> has written a modular WWW browser
+called Dancer.  An alpha version can be FTP'ed from
+ftp.cs.indiana.edu:/pub/smiale/dancer.tar.gz.  (There are a few
+articles about Dancer in the (hyper)mail archive.)
+
 
 5. Extending Python
 ===================
@@ -1118,15 +1201,15 @@ A. (Due to Mark Hammond):
 
 * in Python code, define an object that supports the "write()" method.
 FWIW, there seems to be a small problem that requires the 'softspace'
-attribute to be defined too (I cant remember exact details of the
+attribute to be defined too (I can't remember exact details of the
 problem).
 
 * redirect sys.stdout and sys.stderr to this object.
 
-* call print_error, or just allow the standard traceback mechansim to
+* call print_error, or just allow the standard traceback mechanism to
 work.
 
-Then, the output will go whereever your write() method sends it.
+Then, the output will go wherever your write() method sends it.
 
 5.10. Q. How do I access a module written in Python from C?
 
@@ -1189,7 +1272,7 @@ persistent global name.
 
 A. You can do this easily enough with a sequence of
 if... elif... elif... else.  There have been some proposals for switch
-statement syntax, but there is no concensus (yet) on whether and how
+statement syntax, but there is no consensus (yet) on whether and how
 to do range tests.
 
 6.4. Q. Why does Python use indentation for grouping of statements?
@@ -1233,7 +1316,7 @@ it certainly helps!
 A. There are two advantages.  One is performance: knowing that a
 string is immutable makes it easy to lay it out at construction time
 -- fixed and unchanging storage requirements.  (This is also one of
-the reasons for the the distinction between tuples and lists.)  The
+the reasons for the distinction between tuples and lists.)  The
 other is that strings in Python are considered as "elemental" as
 numbers.  No amount of activity will change the value 8 to anything
 else, and in Python, no amount of activity will change the string
@@ -1288,7 +1371,7 @@ instance attribute instead of a local variable.  Reading "self.x" or
 "self.meth()" makes it absolutely clear that an instance variable or
 method is used even if you don't know the class definition by heart.
 In C++, you can sort of tell by the lack of a local variable
-declaration (assuming globals are rare or reasily recognizable) -- but
+declaration (assuming globals are rare or easily recognizable) -- but
 in Python, there are no local variable declarations, so you'd have to
 look up the class definition to be sure.
 
@@ -1322,6 +1405,52 @@ A. Unfortunately, the interpreter pushes at least one C stack frame
 for each Python stack frame.  Also, extensions can call back into
 Python at almost random moments.  Therefore a complete threads
 implementation requires thread support for C.
+
+6.11. Q. Why can't lambda forms contain statements?
+
+A. Python lambda forms cannot contain statements because Python's
+syntactic framework can't handle statements nested inside functions.
+
+However, in Python, this is not a serious problem.  Unlike lambda
+forms in other languages, where they add functionality, Python lambdas
+are only a shorthand notation if you're too lazy to define a function.
+
+Functions are already first class objects in Python, and can be
+declared in a local scope.  Therefore the only advantage of using a
+lambda form instead of a locally-defined function is that you'll have
+to invent a name for the function -- but that's just a local variable
+to which the function object (which is exactly the same type of object
+that a lambda form yields) is assigned!
+
+6.12. Q. Why is there no more efficient way of iterating over a dictionary
+than first constructing the list of keys()?
+
+A. Have you tried it?  I bet it's fast enough for your purposes!  In
+most cases such a list takes only a few percent of the space occupied
+by the dictionary -- it needs only 4 bytes (the size of a pointer) per
+key -- a dictionary costs 8 bytes per key plus between 30 and 70
+percent hash table overhead, plus the space for the keys and values --
+by necessity all keys are unique objects and a string object (the most
+common key type) costs at least 18 bytes plus the length of the
+string.  Add to that the values contained in the dictionary, and you
+see that 4 bytes more per item really isn't that much more memory...
+
+A call to dict.keys() makes one fast scan over the dictionary
+(internally, the iteration function does exist) copying the pointers
+to the key objects into a pre-allocated list object of the right size.
+The iteration time isn't lost (since you'll have to iterate anyway --
+unless in the majority of cases your loop terminates very prematurely
+(which I doubt since you're getting the keys in random order).
+
+I don't expose the dictionary iteration operation to Python
+programmers because the dictionary shouldn't be modified during the
+entire iteration -- if it is, there's a very small chance that the
+dictionary is reorganized because the hash table becomes too full, and
+then the iteration may miss some items and see others twice.  Exactly
+because this only occurs rarely, it would lead to hidden bugs in
+programs: it's easy never to have it happen during test runs if you
+only insert or delete a few items per iteration -- but your users will 
+surely hit upon it sooner or later.
 
 
 7. Using Python on non-UNIX platforms
@@ -1375,6 +1504,15 @@ prerelease (source and binaries) can be ftp'ed from
 ftp.cwi.nl:/pub/python/nt/ -- most mirrors will also have this.  A
 thread module is also planned but currently low on Mark's list of
 priorities.
+
+To build Python for the Windows NT on the DEC Alpha AXP, retrieve a
+zipfile with Makefiles for NT from the following URL:
+"ftp://ftp.ksc.nasa.gov/pub.win3.private.proto/python-make.zip".  This
+was contributed by Sam Rushing <rushing@squirl.oau.org>.
+
+Note that currently there is no unified compilation environment for
+all NT platforms -- hopefully Microsoft will fix this with the release
+of Visual C++ 2.0.
 
 7.5. Q. Is there an OS/2 version of Python?
 
