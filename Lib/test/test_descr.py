@@ -870,6 +870,11 @@ def dynamics():
     # Test dynamic instances
     class C(object):
         __dynamic__ = 1
+        # XXX Ideally the following def shouldn't be necessary,
+        # but it's too much of a performance burden.
+        # See XXX comment in slot_tp_getattr_hook.
+        def __getattr__(self, name):
+            raise AttributeError, name
     a = C()
     verify(not hasattr(a, "foobar"))
     C.foobar = 2
