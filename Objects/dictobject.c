@@ -207,15 +207,15 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 				restore_error = 1;
 				PyErr_Fetch(&err_type, &err_value, &err_tb);
 			}
-			cmp = PyObject_Compare(ep->me_key, key);
-			if (PyErr_Occurred())
-				PyErr_Clear();
-			else if (cmp == 0) {
+			cmp = PyObject_RichCompareBool(ep->me_key, key, Py_EQ);
+			if (cmp > 0) {
 				if (restore_error)
 					PyErr_Restore(err_type, err_value,
 						      err_tb);
 				return ep;
 			}
+			else if (cmp < 0)
+				PyErr_Clear();
 		}
 		freeslot = NULL;
 	}
@@ -252,15 +252,15 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 						    &err_tb);
 				}
 			}
-			cmp = PyObject_Compare(ep->me_key, key);
-			if (PyErr_Occurred())
-				PyErr_Clear();
-			else if (cmp == 0) {
+			cmp = PyObject_RichCompareBool(ep->me_key, key, Py_EQ);
+			if (cmp > 0) {
 				if (restore_error)
 					PyErr_Restore(err_type, err_value,
 						      err_tb);
 				return ep;
 			}
+			else if (cmp < 0)
+				PyErr_Clear();
 		}
 		/* Cycle through GF(2^n)-{0} */
 		incr = incr << 1;
@@ -912,10 +912,6 @@ PyDict_Items(PyObject *mp)
 	return dict_items((dictobject *)mp, (PyObject *)NULL);
 }
 
-#define NEWCMP
-
-#ifdef NEWCMP
-
 /* Subroutine which returns the smallest key in a for which b's value
    is different or absent.  The value is returned too, through the
    pval argument.  No reference counts are incremented. */
@@ -924,20 +920,30 @@ static PyObject *
 characterize(dictobject *a, dictobject *b, PyObject **pval)
 {
 	PyObject *diff = NULL;
-	int i;
+	int i, cmp;
 
 	*pval = NULL;
 	for (i = 0; i < a->ma_size; i++) {
 		if (a->ma_table[i].me_value != NULL) {
 			PyObject *key = a->ma_table[i].me_key;
 			PyObject *aval, *bval;
-			/* XXX What if PyObject_Compare raises an exception? */
-			if (diff != NULL && PyObject_Compare(key, diff) > 0)
+			if (diff != NULL) {
+			    cmp = PyObject_RichCompareBool(diff, key, Py_LT);
+			    if (cmp < 0)
+				return NULL;
+			    if (cmp > 0)
 				continue;
+			}
 			aval = a->ma_table[i].me_value;
 			bval = PyDict_GetItem((PyObject *)b, key);
-			/* XXX What if PyObject_Compare raises an exception? */
-			if (bval == NULL || PyObject_Compare(aval, bval) != 0)
+			if (bval == NULL)
+				cmp = 0;
+			else {
+			    cmp = PyObject_RichCompareBool(aval, bval, Py_EQ);
+			    if (cmp < 0)
+				return NULL;
+			}
+			if (cmp == 0)
 			{
 				diff = key;
 				*pval = aval;
@@ -960,12 +966,12 @@ dict_compare(dictobject *a, dictobject *b)
 		return 1;	/* b is shorter */
 	/* Same length -- check all keys */
 	adiff = characterize(a, b, &aval);
-	if (PyErr_Occurred())
+	if (adiff == NULL && PyErr_Occurred())
 		return -1;
 	if (adiff == NULL)
 		return 0;	/* a is a subset with the same length */
 	bdiff = characterize(b, a, &bval);
-	if (PyErr_Occurred())
+	if (bdiff == NULL && PyErr_Occurred())
 		return -1;
 	/* bdiff == NULL would be impossible now */
 	res = PyObject_Compare(adiff, bdiff);
@@ -973,86 +979,6 @@ dict_compare(dictobject *a, dictobject *b)
 		res = PyObject_Compare(aval, bval);
 	return res;
 }
-
-#else /* !NEWCMP */
-
-static int
-dict_compare(dictobject *a, dictobject *b)
-{
-	PyObject *akeys, *bkeys;
-	int i, n, res;
-	if (a == b)
-		return 0;
-	if (a->ma_used == 0) {
-		if (b->ma_used != 0)
-			return -1;
-		else
-			return 0;
-	}
-	else {
-		if (b->ma_used == 0)
-			return 1;
-	}
-	akeys = dict_keys(a, (PyObject *)NULL);
-	bkeys = dict_keys(b, (PyObject *)NULL);
-	if (akeys == NULL || bkeys == NULL) {
-		/* Oops, out of memory -- what to do? */
-		/* For now, sort on address! */
-		Py_XDECREF(akeys);
-		Py_XDECREF(bkeys);
-		if (a < b)
-			return -1;
-		else
-			return 1;
-	}
-	PyList_Sort(akeys);
-	PyList_Sort(bkeys);
-	n = a->ma_used < b->ma_used ? a->ma_used : b->ma_used; /* smallest */
-	res = 0;
-	for (i = 0; i < n; i++) {
-		PyObject *akey, *bkey, *aval, *bval;
-		long ahash, bhash;
-		akey = PyList_GetItem(akeys, i);
-		bkey = PyList_GetItem(bkeys, i);
-		res = PyObject_Compare(akey, bkey);
-		if (res != 0)
-			break;
-#ifdef CACHE_HASH
-		if (!PyString_Check(akey) ||
-		    (ahash = ((PyStringObject *) akey)->ob_shash) == -1)
-#endif
-		{
-			ahash = PyObject_Hash(akey);
-			if (ahash == -1)
-				PyErr_Clear(); /* Don't want errors here */
-		}
-#ifdef CACHE_HASH
-		if (!PyString_Check(bkey) ||
-		    (bhash = ((PyStringObject *) bkey)->ob_shash) == -1)
-#endif
-		{
-			bhash = PyObject_Hash(bkey);
-			if (bhash == -1)
-				PyErr_Clear(); /* Don't want errors here */
-		}
-		aval = (a->ma_lookup)(a, akey, ahash) -> me_value;
-		bval = (b->ma_lookup)(b, bkey, bhash) -> me_value;
-		res = PyObject_Compare(aval, bval);
-		if (res != 0)
-			break;
-	}
-	if (res == 0) {
-		if (a->ma_used < b->ma_used)
-			res = -1;
-		else if (a->ma_used > b->ma_used)
-			res = 1;
-	}
-	Py_DECREF(akeys);
-	Py_DECREF(bkeys);
-	return res;
-}
-
-#endif /* !NEWCMP */
 
 static PyObject *
 dict_has_key(register dictobject *mp, PyObject *args)
@@ -1298,25 +1224,26 @@ PyTypeObject PyDict_Type = {
 	"dictionary",
 	sizeof(dictobject) + PyGC_HEAD_SIZE,
 	0,
-	(destructor)dict_dealloc, /*tp_dealloc*/
-	(printfunc)dict_print, /*tp_print*/
-	(getattrfunc)dict_getattr, /*tp_getattr*/
-	0,			/*tp_setattr*/
-	(cmpfunc)dict_compare, /*tp_compare*/
-	(reprfunc)dict_repr, /*tp_repr*/
-	0,			/*tp_as_number*/
-	0,			/*tp_as_sequence*/
-	&dict_as_mapping,	/*tp_as_mapping*/
-	0,		/* tp_hash */
-	0,		/* tp_call */
-	0,		/* tp_str */
-	0,		/* tp_getattro */
-	0,		/* tp_setattro */
-	0,		/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
-	0,		/* tp_doc */
-	(traverseproc)dict_traverse,	/* tp_traverse */
-	(inquiry)dict_tp_clear,		/* tp_clear */
+	(destructor)dict_dealloc,		/* tp_dealloc */
+	(printfunc)dict_print,			/* tp_print */
+	(getattrfunc)dict_getattr,		/* tp_getattr */
+	0,					/* tp_setattr */
+	(cmpfunc)dict_compare,			/* tp_compare */
+	(reprfunc)dict_repr,			/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	&dict_as_mapping,			/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	0,					/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	0,					/* tp_doc */
+	(traverseproc)dict_traverse,		/* tp_traverse */
+	(inquiry)dict_tp_clear,			/* tp_clear */
+	0,					/* tp_richcompare */
 };
 
 /* For backward compatibility with old dictionary interface */
