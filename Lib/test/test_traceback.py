@@ -41,7 +41,8 @@ class TracebackCases(unittest.TestCase):
         self.assert_(err[1].strip() == "[x for x in x] = x")
 
     def test_bug737473(self):
-        import sys, os, tempfile
+        import sys, os, tempfile, time
+
         savedpath = sys.path[:]
         testdir = tempfile.mkdtemp()
         try:
@@ -51,8 +52,10 @@ class TracebackCases(unittest.TestCase):
 def test():
     raise ValueError"""
 
+            # XXX Unclear why we're doing this next bit.
             if hasattr(os, 'utime'):
-                os.utime(testfile, (0, 0))
+                past = time.time() - 3
+                os.utime(testfile, (past, past))
             else:
                 import time
                 time.sleep(3) # not to stay in same mtime.
