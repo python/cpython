@@ -76,6 +76,12 @@ static void call_ll_exitfuncs Py_PROTO((void));
 int _Py_AskYesNo(char *prompt);
 #endif
 
+extern void _PyUnicode_Init();
+extern void _PyUnicode_Fini();
+extern void _PyCodecRegistry_Init();
+extern void _PyCodecRegistry_Fini();
+
+
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
@@ -136,6 +142,12 @@ Py_Initialize()
 	interp->modules = PyDict_New();
 	if (interp->modules == NULL)
 		Py_FatalError("Py_Initialize: can't make modules dictionary");
+
+	/* Init codec registry */
+	_PyCodecRegistry_Init();
+
+	/* Init Unicode implementation; relies on the codec registry */
+	_PyUnicode_Init();
 
 	bimod = _PyBuiltin_Init_1();
 	if (bimod == NULL)
@@ -205,6 +217,12 @@ Py_Finalize()
 
 	/* Destroy PyExc_MemoryErrorInst */
 	_PyBuiltin_Fini_1();
+
+	/* Cleanup Unicode implementation */
+	_PyUnicode_Fini();
+
+	/* Cleanup Codec registry */
+	_PyCodecRegistry_Fini();
 
 	/* Destroy all modules */
 	PyImport_Cleanup();
