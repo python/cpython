@@ -459,7 +459,7 @@ fi],
 AC_SUBST(OPT)
 if test -z "$OPT"
 then
-	case $GCC in
+	case "$GCC" in
 	yes)
 		case $ac_cv_prog_cc_g in
 	yes)
