@@ -80,7 +80,6 @@ static int call_trace Py_PROTO((PyObject **, PyObject **,
 static PyObject *call_builtin Py_PROTO((PyObject *, PyObject *, PyObject *));
 static PyObject *call_function Py_PROTO((PyObject *, PyObject *, PyObject *));
 static PyObject *loop_subscript Py_PROTO((PyObject *, PyObject *));
-static int slice_index Py_PROTO((PyObject *, int *));
 static PyObject *apply_slice Py_PROTO((PyObject *, PyObject *, PyObject *));
 static int assign_slice Py_PROTO((PyObject *, PyObject *,
 				  PyObject *, PyObject *));
@@ -2587,8 +2586,12 @@ loop_subscript(v, w)
 	return NULL;
 }
 
-static int
-slice_index(v, pi)
+/* Extract a slice index from a PyInt or PyLong, the index is bound to
+   the range [-INT_MAX+1, INTMAX]. Returns 0 and an exception if there is
+   and error. Returns 1 on success.*/
+
+int
+_PyEval_SliceIndex(v, pi)
 	PyObject *v;
 	int *pi;
 {
@@ -2604,7 +2607,7 @@ slice_index(v, pi)
 				if (!PyErr_ExceptionMatches( PyExc_OverflowError ) ) {
 					/* It's not an overflow error, so just 
 					   signal an error */
-					return -1;
+					return 0;
 				}
 
 				/* It's an overflow error, so we need to 
@@ -2614,7 +2617,7 @@ slice_index(v, pi)
 
 				/* Create a long integer with a value of 0 */
 				long_zero = PyLong_FromLong( 0L );
-				if (long_zero == NULL) return -1;
+				if (long_zero == NULL) return 0;
 
 				/* Check sign */
 				if (PyObject_Compare(long_zero, v) < 0)
@@ -2630,7 +2633,7 @@ slice_index(v, pi)
 		} else {
 			PyErr_SetString(PyExc_TypeError,
 					"slice index must be int");
-			return -1;
+			return 0;
 		}
 		/* Truncate -- very long indices are truncated anyway */
 		if (x > INT_MAX)
@@ -2639,7 +2642,7 @@ slice_index(v, pi)
 			x = 0;
 		*pi = x;
 	}
-	return 0;
+	return 1;
 }
 
 static PyObject *
@@ -2647,9 +2650,9 @@ apply_slice(u, v, w) /* return u[v:w] */
 	PyObject *u, *v, *w;
 {
 	int ilow = 0, ihigh = INT_MAX;
-	if (slice_index(v, &ilow) != 0)
+	if (!_PyEval_SliceIndex(v, &ilow))
 		return NULL;
-	if (slice_index(w, &ihigh) != 0)
+	if (!_PyEval_SliceIndex(w, &ihigh))
 		return NULL;
 	return PySequence_GetSlice(u, ilow, ihigh);
 }
@@ -2659,9 +2662,9 @@ assign_slice(u, v, w, x) /* u[v:w] = x */
 	PyObject *u, *v, *w, *x;
 {
 	int ilow = 0, ihigh = INT_MAX;
-	if (slice_index(v, &ilow) != 0)
+	if (!_PyEval_SliceIndex(v, &ilow))
 		return -1;
-	if (slice_index(w, &ihigh) != 0)
+	if (!_PyEval_SliceIndex(w, &ihigh))
 		return -1;
 	if (x == NULL)
 		return PySequence_DelSlice(u, ilow, ihigh);
