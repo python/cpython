@@ -294,7 +294,7 @@ class Job:
                         "Could not locate support images of type %s."
                         % `self.options.image_type`)
                 for fn in imgs:
-                    new_fn = os.path.join(self.doc, os.path.basename(fn))
+                    new_fn = os.path.join(self.builddir, os.path.basename(fn))
                     shutil.copyfile(fn, new_fn)
         if "text" in formats:
             self.require_temps()
