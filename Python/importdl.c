@@ -21,7 +21,7 @@ extern dl_funcptr _PyImport_GetDynLoadFunc(const char *name,
 PyObject *
 _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
 {
-	PyObject *m, *d, *s;
+	PyObject *m;
 	char *lastdot, *shortname, *packagecontext, *oldcontext;
 	dl_funcptr p;
 
@@ -64,11 +64,8 @@ _PyImport_LoadDynamicModule(char *name, char *pathname, FILE *fp)
 		return NULL;
 	}
 	/* Remember the filename as the __file__ attribute */
-	d = PyModule_GetDict(m);
-	s = PyString_FromString(pathname);
-	if (s == NULL || PyDict_SetItemString(d, "__file__", s) != 0)
+	if (PyModule_AddStringConstant(m, "__file__", pathname) < 0)
 		PyErr_Clear(); /* Not important enough to report */
-	Py_XDECREF(s);
 	if (Py_VerboseFlag)
 		PySys_WriteStderr(
 			"import %s # dynamically loaded from %s\n",
