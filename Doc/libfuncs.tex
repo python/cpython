@@ -22,11 +22,12 @@ build your own \code{__import__()} function.
 \refstmodindex{rexec}
 \refbimodindex{imp}
 
-For example, the statement \code{import spam} results in the following
-call:
-\code{__import__('spam', globals(), locals(), [])};
-the statement \code{from spam.ham import eggs} results in
-\code{__import__('spam.ham', globals(), locals(), ['eggs'])}.
+For example, the statement \code{import} \code{spam} results in the
+following call:
+\code{__import__('spam',} \code{globals(),} \code{locals(), [])};
+the statement \code{from} \code{spam.ham import} \code{eggs} results
+in \code{__import__('spam.ham',} \code{globals(),} \code{locals(),}
+\code{['eggs'])}.
 Note that even though \code{locals()} and \code{['eggs']} are passed
 in as arguments, the \code{__import__()} function does not set the
 local variable named \code{eggs}; this is done by subsequent code that
