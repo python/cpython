@@ -3,9 +3,6 @@
 # The purpose of this file is to conditionally enable certain modules
 # based on configure-time options.
 
-# Garbage collection enabled with --with-cycle-gc
-@USE_GC_MODULE@gc gcmodule.c
-
 # Threading
 @USE_THREAD_MODULE@thread threadmodule.c
 
