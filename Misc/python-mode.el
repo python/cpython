@@ -410,6 +410,26 @@ This is only used by `py-current-defun' to find the name for add-log.el.")
 If you change this, you probably have to change `py-current-defun' as well.
 This is only used by `py-current-defun' to find the name for add-log.el.")
 
+;; As of 30-Jan-1997, Emacs 19.34 works but XEmacs 19.15b90 and
+;; previous does not.  It is suspected that Emacsen before 19.34 are
+;; also broken.
+(defvar py-parse-partial-sexp-works-p
+  (let ((buf (get-buffer-create " ---*---pps---*---"))
+	state status)
+    (save-excursion
+      (set-buffer buf)
+      (erase-buffer)
+      (insert "(line1\n line2)\nline3")
+      (lisp-mode)
+      (goto-char (point-min))
+      (setq state (parse-partial-sexp (point) (save-excursion
+						(forward-line 1)
+						(point))))
+      (parse-partial-sexp (point) (point-max) 0 nil state)
+      (setq status (not (= (point) (point-max))))
+      (kill-buffer buf)
+      status))
+  "Does `parse-partial-sexp' work in this Emacs?")
 
 
 ;; Menu definitions, only relevent if you have the easymenu.el package
@@ -2203,9 +2223,9 @@ local bindings to py-newline-and-indent."))
       (if (and (not (zerop (car state)))
 	       (not (eobp)))
 	  (progn
-	    ;; BUG ALERT: I could swear, from reading the docs, that
-	    ;; the 3rd argument should be plain 0
-	    (parse-partial-sexp (point) (point-max) (- 0 (car state))
+	    (parse-partial-sexp (point) (point-max)
+				(if py-parse-partial-sexp-works-p
+				    0 (- 0 (car state)))
 				nil state)
 	    (forward-line 1))))))
 
