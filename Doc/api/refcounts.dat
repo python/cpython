@@ -811,6 +811,9 @@ PyObject_GetItem:PyObject*::+1:
 PyObject_GetItem:PyObject*:o:0:
 PyObject_GetItem:PyObject*:key:0:
 
+PyObject_GetIter:PyObject*::+1:
+PyObject_GetIter:PyObject*:o:0:
+
 PyObject_HasAttr:int:::
 PyObject_HasAttr:PyObject*:o:0:
 PyObject_HasAttr:PyObject*:attr_name:0:
