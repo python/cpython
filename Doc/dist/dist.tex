@@ -116,7 +116,7 @@ setup script, \file{setup.py}, containing the above code, and run:
 \begin{verbatim}
 python setup.py sdist
 \end{verbatim}
-which will create an archive file (e.g., tarball on Unix, zip file on
+which will create an archive file (e.g., tarball on \UNIX, ZIP file on
 Windows) containing your setup script, \file{setup.py}, and your module,
 \file{foo.py}.  The archive file will be named \file{Foo-1.0.tar.gz} (or
 \file{.zip}), and will unpack into a directory \file{Foo-1.0}.
@@ -194,12 +194,12 @@ following glossary of common Python terms:
   single \file{.py} file (and possibly associated \file{.pyc} and/or
   \file{.pyo} files).  Sometimes referred to as a ``pure module.''
 \item[extension module] a module written in the low-level language of
-  the Python implemention: C/C++ for CPython, Java for JPython.
+  the Python implemention: C/C++ for Python, Java for JPython.
   Typically contained in a single dynamically loadable pre-compiled
-  file, e.g. a shared object (\file{.so}) file for CPython extensions on
-  Unix, a DLL (given the \file{.pyd} extension) for CPython extensions
+  file, e.g. a shared object (\file{.so}) file for Python extensions on
+  \UNIX, a DLL (given the \file{.pyd} extension) for Python extensions
   on Windows, or a Java class file for JPython extensions.  (Note that
-  currently, the Distutils only handles C/C++ extensions for CPython.)
+  currently, the Distutils only handles C/C++ extensions for Python.)
 \item[package] a module that contains other modules; typically contained
   in a directory in the filesystem and distinguished from other
   directories by the presence of a file \file{\_\_init\_\_.py}.
@@ -282,15 +282,15 @@ list of every module would be tedious to generate and difficult to
 maintain.
 
 Note that any pathnames (files or directories) supplied in the setup
-script should be written using the Unix convention, i.e.
+script should be written using the \UNIX{} convention, i.e.
 slash-separated.  The Distutils will take care of converting this
 platform-neutral representation into whatever is appropriate on your
 current platform before actually using the pathname.  This makes your
 setup script portable across operating systems, which of course is one
 of the major goals of the Distutils.  In this spirit, all pathnames in
-this document are slash-separated (Mac OS programmers should keep in
+this document are slash-separated (MacOS programmers should keep in
 mind that the \emph{absence} of a leading slash indicates a relative
-path, the opposite of the Mac OS convention with colons).
+path, the opposite of the MacOS convention with colons).
 
 
 \subsection{Listing whole packages}
@@ -436,7 +436,7 @@ The second argument to the \class{Extension} constructor is a list of
 source files.  Since the Distutils currently only support C/C++
 extensions, these are normally C/C++ source files.  (Be sure to use
 appropriate extensions to distinguish C++ source files: \file{.cc} and
-\file{.cpp} seem to be recognized by both Unix and Windows compilers.)
+\file{.cpp} seem to be recognized by both \UNIX{} and Windows compilers.)
 
 However, you can also include SWIG interface (\file{.i}) files in the
 list; the \command{build\_ext} command knows how to deal with SWIG
@@ -468,7 +468,7 @@ Extension("foo", ["foo.c"], include_dirs=["include"])
 \end{verbatim}
 
 You can specify absolute directories there; if you know that your
-extension will only be built on Unix systems with X11R6 installed to
+extension will only be built on \UNIX{} systems with X11R6 installed to
 \file{/usr}, you can get away with
 \begin{verbatim}
 Extension("foo", ["foo.c"], include_dirs=["/usr/include/X11"])
@@ -480,7 +480,7 @@ distribute your code: it's probably better to write your code to include
 If you need to include header files from some other Python extension,
 you can take advantage of the fact that the Distutils install extension
 header files in a consistent way.  For example, the Numerical Python
-header files are installed (on a standard Unix installation) to
+header files are installed (on a standard \UNIX{} installation) to
 \file{/usr/local/include/python1.5/Numerical}.  (The exact location will
 differ according to your platform and Python installation.)  Since the
 Python include directory---\file{/usr/local/include/python1.5} in this
@@ -634,7 +634,7 @@ is spelled \option{foo\_bar} in configuration files.
 
 For example, say you want your extensions to be built
 ``in-place''---that is, you have an extension \module{pkg.ext}, and you
-want the compiled extension file (\file{ext.so} on Unix, say) to be put
+want the compiled extension file (\file{ext.so} on \UNIX, say) to be put
 in the same source directory as your pure Python modules
 \module{pkg.mod1} and \module{pkg.mod2}.  You can always use the
 \longprogramopt{inplace} option on the command-line to ensure this:
@@ -694,8 +694,8 @@ python setup.py sdist
 (assuming you haven't specified any \command{sdist} options in the setup
 script or config file), \command{sdist} creates the archive of the
 default format for the current platform.  The default format is gzip'ed
-tar file (\file{.tar.gz}) on Unix, and ZIP file on Windows. \XXX{no Mac
-  OS support here}
+tar file (\file{.tar.gz}) on \UNIX, and ZIP file on Windows.
+\XXX{no MacOS support here}
 
 You can specify as many formats as you like using the
 \longprogramopt{formats} option, for example:
@@ -715,7 +715,7 @@ to create a gzipped tarball and a zip file.  The available formats are:
 \noindent Notes:
 \begin{description}
 \item[(1)] default on Windows
-\item[(2)] default on Unix
+\item[(2)] default on \UNIX
 \item[(3)] requires either external \program{zip} utility or
   \module{zipfile} module (not part of the standard Python library)
 \item[(4)] requires external utilities: \program{tar} and possibly one
@@ -911,11 +911,11 @@ then the Distutils builds my module distribution (the Distutils itself
 in this case), does a ``fake'' installation (also in the \file{build}
 directory), and creates the default type of built distribution for my
 platform.  The default format for built distributions is a ``dumb'' tar
-file on Unix, and an simple executable installer on Windows.  (That tar
+file on \UNIX, and an simple executable installer on Windows.  (That tar
 file is considered ``dumb'' because it has to be unpacked in a specific
 location to work.)
 
-Thus, the above command on a Unix system creates
+Thus, the above command on a \UNIX{} system creates
 \file{Distutils-0.9.1.\filevar{plat}.tar.gz}; unpacking this tarball
 from the right place installs the Distutils just as though you had
 downloaded the source distribution and run \code{python setup.py
@@ -937,7 +937,7 @@ types of built distribution to generate: for example,
 \begin{verbatim}
 python setup.py bdist --format=zip
 \end{verbatim}
-would, when run on a Unix system, create
+would, when run on a \UNIX{} system, create
 \file{Distutils-0.8.\filevar{plat}.zip}---again, this archive would be
 unpacked from the root directory to install the Distutils.
 
@@ -956,7 +956,7 @@ The available formats for built distributions are:
 
 \noindent Notes:
 \begin{description}
-\item[(1)] default on Unix
+\item[(1)] default on \UNIX
 \item[(2)] default on Windows \XXX{to-do!}
 \item[(3)] requires external utilities: \program{tar} and possibly one
   of \program{gzip}, \program{bzip2}, or \program{compress}
@@ -1195,7 +1195,8 @@ This command installs all (Python) scripts in the distribution.
 \label{clean-cmd}
 
 
-\subsection{Creating a source distribution: the \protect\command{sdist} command}
+\subsection{Creating a source distribution: the
+            \protect\command{sdist} command}
 \label{sdist-cmd}
 
 
@@ -1220,15 +1221,15 @@ The manifest template commands are:
   \lineii{prune \var{dir}}{exclude all files under \var{dir}}
   \lineii{graft \var{dir}}{include all files under \var{dir}}
 \end{tableii}
-The patterns here are Unix-style ``glob'' patterns: \code{*} matches any
+The patterns here are \UNIX-style ``glob'' patterns: \code{*} matches any
 sequence of regular filename characters, \code{?} matches any single
 regular filename character, and \code{[\var{range}]} matches any of the
 characters in \var{range} (e.g., \code{a-z}, \code{a-zA-Z},
 \code{a-f0-9\_.}).  The definition of ``regular filename character'' is
-platform-specific: on Unix it is anything except slash; on Windows
-anything except backslash or colon; on Mac OS anything except colon.
+platform-specific: on \UNIX{} it is anything except slash; on Windows
+anything except backslash or colon; on MacOS anything except colon.
 
-\XXX{Windows and Mac OS support not there yet}
+\XXX{Windows and MacOS support not there yet}
 
 
 \subsection{Creating a ``built'' distribution: the
