@@ -792,3 +792,59 @@ The regular expression object whose \method{match()} or
 \begin{memberdesc}[MatchObject]{string}
 The string passed to \function{match()} or \function{search()}.
 \end{memberdesc}
+
+\subsection{Examples}
+
+%\begin{list}{}{\leftmargin 0.7in \labelwidth 0.65in}
+
+%\item[Simulating scanf]
+
+\leftline{\strong{Simulating \cfunction{scanf()}}}
+
+Python does not currently have an equivalent to \cfunction{scanf()}.
+\ttindex{scanf()}
+Regular expressions are generally more powerful, though also more
+verbose, than \cfunction{scanf()} format strings.  The table below
+offers some more-or-less equivalent mappings between
+\cfunction{scanf()} format tokens and regular expressions.
+
+\begin{tableii}{l|l}{textrm}{\cfunction{scanf()} Token}{Regular Expression}
+  \lineii{\code{\%c}}
+         {\regexp{.}}
+  \lineii{\code{\%5c}}
+         {\regexp{.\{5\}}}
+  \lineii{\code{\%d}}
+         {\regexp{[-+]\e d+}}
+  \lineii{\code{\%e}, \code{\%E}, \code{\%f}, \code{\%g}}
+         {\regexp{[-+](\e d+(\e.\e d*)?|\e d*\e.\e d+)([eE]\e d+)?}}
+  \lineii{\code{\%i}}
+         {\regexp{[-+](0[xX][\e dA-Fa-f]+|0[0-7]*|\e d+)}}
+  \lineii{\code{\%o}}
+         {\regexp{0[0-7]*}}
+  \lineii{\code{\%s}}
+         {\regexp{[\textasciicircum\e s]+}}
+  \lineii{\code{\%u}}
+         {\regexp{\e d+}}
+  \lineii{\code{\%x}, \code{\%X}}
+         {\regexp{0[xX][\e dA-Fa-f]}}
+\end{tableii}
+
+To extract the filename and numbers from a string like
+
+\begin{verbatim}
+    /usr/sbin/sendmail - 0 errors, 4 warnings
+\end{verbatim}
+
+you would use a \cfunction{scanf()} format like
+
+\begin{verbatim}
+    %s - %d errors, %d warnings
+\end{verbatim}
+
+The equivalent regular expression would be
+
+\begin{verbatim}
+    ([^\s]+) - (\d+) errors, (\d+) warnings
+\end{verbatim}
+
+%\end{list}
