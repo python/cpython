@@ -5080,7 +5080,8 @@ formatfloat(Py_UNICODE *buf,
 	prec = 6;
     if (type == 'f' && (fabs(x) / 1e25) >= 1e25)
 	type = 'g';
-    sprintf(fmt, "%%%s.%d%c", (flags & F_ALT) ? "#" : "", prec, type);
+    PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
+		  (flags & F_ALT) ? "#" : "", prec, type);
     /* worst case length calc to ensure no buffer overrun:
          fmt = %#.<prec>g
          buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
@@ -5151,15 +5152,16 @@ formatint(Py_UNICODE *buf,
      */
     if (x == 0 && (flags & F_ALT) && (type == 'x' || type == 'X')) {
         /* Only way to know what the platform does is to try it. */
-        sprintf(fmt, type == 'x' ? "%#x" : "%#X", 0);
+        PyOS_snprintf(fmt, sizeof(fmt), type == 'x' ? "%#x" : "%#X", 0);
         if (fmt[1] != (char)type) {
             /* Supply our own leading 0x/0X -- needed under std C */
             use_native_c_format = 0;
-            sprintf(fmt, "0%c%%#.%dl%c", type, prec, type);
+            PyOS_snprintf(fmt, sizeof(fmt), "0%c%%#.%dl%c", type, prec, type);
         }
     }
     if (use_native_c_format)
-         sprintf(fmt, "%%%s.%dl%c", (flags & F_ALT) ? "#" : "", prec, type);
+         PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
+		       (flags & F_ALT) ? "#" : "", prec, type);
     return usprintf(buf, fmt, x);
 }
 
