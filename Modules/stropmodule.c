@@ -618,6 +618,80 @@ strop_capitalize(self, args)
 }
 
 
+static char expandtabs__doc__[] =
+"expandtabs(string, [tabsize]) -> string\n\
+\n\
+
+Expand tabs in a string, i.e. replace them by one or more spaces,\n\
+depending on the current column and the given tab size (default 8).\n\
+The column number is reset to zero after each newline occurring in the\n\
+string.  This doesn't understand other non-printing characters.";
+
+static PyObject *
+strop_expandtabs(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	/* Original by Fredrik Lundh */
+	char* e;
+	char* p;
+	char* q;
+	int i, j;
+	PyObject* out;
+	char* string;
+	int stringlen;
+	int tabsize = 8;
+
+	/* Get arguments */
+	if (!PyArg_ParseTuple(args, "s#|i", &string, &stringlen, &tabsize))
+		return NULL;
+	if (tabsize < 1) {
+		PyErr_SetString(PyExc_ValueError,
+				"tabsize must be at least 1");
+		return NULL;
+	}
+
+	/* First pass: determine size of output string */
+	i = j = 0; /* j: current column; i: total of previous lines */
+	e = string + stringlen;
+	for (p = string; p < e; p++) {
+		if (*p == '\t')
+			j += tabsize - (j%tabsize);
+		else {
+			j++;
+			if (*p == '\n') {
+				i += j;
+				j = 0;
+			}
+		}
+	}
+
+	/* Second pass: create output string and fill it */
+	out = PyString_FromStringAndSize(NULL, i+j);
+	if (out == NULL)
+		return NULL;
+
+	i = 0;
+	q = PyString_AS_STRING(out);
+
+	for (p = string; p < e; p++) {
+		if (*p == '\t') {
+			j = tabsize - (i%tabsize);
+			i += j;
+			while (j-- > 0)
+				*q++ = ' ';
+		} else {
+			*q++ = *p;
+			i++;
+			if (*p == '\n')
+				i = 0;
+		}
+	}
+
+	return out;
+}
+
+
 static char count__doc__[] =
 "count(s, sub[, start[, end]]) -> int\n\
 \n\
@@ -1167,6 +1241,7 @@ strop_methods[] = {
 	{"atol",	strop_atol, 1, atol__doc__},
 	{"capitalize",	strop_capitalize, 0, capitalize__doc__},
 	{"count",	strop_count, 1, count__doc__},
+	{"expandtabs",	strop_expandtabs, 1, expandtabs__doc__},
 	{"find",	strop_find, 1, find__doc__},
 	{"join",	strop_joinfields, 1, joinfields__doc__},
 	{"joinfields",	strop_joinfields, 1, joinfields__doc__},
