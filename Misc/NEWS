@@ -77,7 +77,7 @@ Build issues
   -Wstrict-prototypes.  Users compiling Python with GCC should see
   exactly one warning, except if they have passed configure the
   --with-pydebug flag.  The expected warning is for getopt() in
-  Modules/main.c.  This will warning will be fixed for Python 2.1.
+  Modules/main.c.  This warning will be fixed for Python 2.1.
 
 - Fixed configure to add -threads argument during linking on OSF1. 
 
