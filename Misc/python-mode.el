@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 1992,1993,1994  Tim Peters
 
-;; Author: 1995-1996 Barry A. Warsaw
+;; Author: 1995-1997 Barry A. Warsaw
 ;;         1992-1994 Tim Peters
 ;; Maintainer:    python-mode@python.org
 ;; Created:       Feb 1992
