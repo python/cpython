@@ -70,6 +70,22 @@ def mkcorealias(src, altsrc):
 		os.unlink(dst)
 	except os.error:
 		pass
+	do_copy = ask_copy()
+	if do_copy:
+		macostools.copy(os.path.join(sys.exec_prefix, src), dst)
+	else:
+		macostools.mkalias(os.path.join(sys.exec_prefix, src), dst)
+	return 1
+	
+do_copy = None
+def ask_copy():
+	global do_copy
+	if do_copy != None:
+		return do_copy
+	# On OSX always copy
+	if gestalt.gestalt('sysv') > 0x9ff:
+		do_copy = 1
+		return do_copy
 	do_copy = 0
 	if macfs.FSSpec(sys.exec_prefix).as_tuple()[0] != -1: # XXXX
 		try:
@@ -79,11 +95,8 @@ def mkcorealias(src, altsrc):
 				do_copy = 1
 		except ImportError:
 			pass
-	if do_copy:
-		macostools.copy(os.path.join(sys.exec_prefix, src), dst)
-	else:
-		macostools.mkalias(os.path.join(sys.exec_prefix, src), dst)
-	return 1
+	return do_copy
+	
 
 # Copied from fullbuild, should probably go to buildtools
 def buildapplet(top, dummy, list):
