@@ -20,8 +20,8 @@
 # thanks /F
 #
 
-# engine = "sre"
-engine = "pre"
+engine = "sre"
+# engine = "pre"
 
 if engine == "sre":
     # New unicode-aware engine
