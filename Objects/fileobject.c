@@ -415,46 +415,59 @@ file_truncate(PyFileObject *f, PyObject *args)
 
 #ifdef MS_WIN32
 	/* MS _chsize doesn't work if newsize doesn't fit in 32 bits,
-	   so don't even try using it.  truncate() should never grow the
-	   file, but MS SetEndOfFile will grow a file, so we need to
-	   compare the specified newsize to the actual size.  Some
-	   optimization could be done here when newsizeobj is NULL. */
+	   so don't even try using it. */
 	{
-		Py_off_t currentEOF;	/* actual size */
+		Py_off_t current;	/* current file position */
 		HANDLE hFile;
 		int error;
 
-		/* First move to EOF, and set currentEOF to the size. */
-		errno = 0;
-		if (_portable_fseek(f->f_fp, 0, SEEK_END) != 0)
-			goto onioerror;
-		errno = 0;
-		currentEOF = _portable_ftell(f->f_fp);
-		if (currentEOF == -1)
-			goto onioerror;
-
-		if (newsize > currentEOF)
-			newsize = currentEOF;	/* never grow the file */
-
-		/* Move to newsize, and truncate the file there. */
-		if (newsize != currentEOF) {
-			errno = 0;
-			if (_portable_fseek(f->f_fp, newsize, SEEK_SET) != 0)
-				goto onioerror;
+		/* current <- current file postion. */
+		if (newsizeobj == NULL)
+			current = newsize;
+		else {
 			Py_BEGIN_ALLOW_THREADS
 			errno = 0;
-			hFile = (HANDLE)_get_osfhandle(fileno(f->f_fp));
-			error = hFile == (HANDLE)-1;
-			if (!error) {
-				error = SetEndOfFile(hFile) == 0;
-				if (error)
-					errno = EACCES;
-			}
+			current = _portable_ftell(f->f_fp);
+			Py_END_ALLOW_THREADS
+			if (current == -1)
+				goto onioerror;
+		}
+
+		/* Move to newsize. */
+		if (current != newsize) {
+			Py_BEGIN_ALLOW_THREADS
+			errno = 0;
+			error = _portable_fseek(f->f_fp, newsize, SEEK_SET)
+				!= 0;
 			Py_END_ALLOW_THREADS
 			if (error)
 				goto onioerror;
 		}
 
+		/* Truncate.  Note that this may grow the file! */
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		hFile = (HANDLE)_get_osfhandle(fileno(f->f_fp));
+		error = hFile == (HANDLE)-1;
+		if (!error) {
+			error = SetEndOfFile(hFile) == 0;
+			if (error)
+				errno = EACCES;
+		}
+		Py_END_ALLOW_THREADS
+		if (error)
+			goto onioerror;
+
+		/* Restore original file position. */
+		if (current != newsize) {
+			Py_BEGIN_ALLOW_THREADS
+			errno = 0;
+			error = _portable_fseek(f->f_fp, current, SEEK_SET)
+				!= 0;
+			Py_END_ALLOW_THREADS
+			if (error)
+				goto onioerror;
+		}
 	}
 #else
 	Py_BEGIN_ALLOW_THREADS
