@@ -32,6 +32,9 @@
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #endif
 
+/* check if the int_value can't be written in 15 bits (signed) */
+#define CANT_WRITE(int_value) (int_value > 32767)
+
 extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 						/* In getmtime.c */
 
@@ -668,6 +671,18 @@ static void
 write_compiled_module(PyCodeObject *co, char *cpathname, long mtime)
 {
 	FILE *fp;
+
+	if (CANT_WRITE(co->co_argcount) ||
+	    CANT_WRITE(co->co_nlocals) ||
+	    CANT_WRITE(co->co_stacksize) ||
+	    CANT_WRITE(co->co_flags) ||
+	    CANT_WRITE(co->co_firstlineno)) {
+		if (Py_VerboseFlag)
+			PySys_WriteStderr(
+				"# code too large: can't write %s\n",
+				cpathname);
+		return;
+	}
 
 	fp = open_exclusive(cpathname);
 	if (fp == NULL) {
