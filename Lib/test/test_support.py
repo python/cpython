@@ -109,8 +109,7 @@ elif os.name != 'riscos':
             TESTFN_UNICODE="@test-\xe0\xf2"
         else:
             TESTFN_UNICODE=unicode("@test-\xe0\xf2", "latin-1") # 2 latin characters.
-        if os.name=="nt":
-            TESTFN_ENCODING="mbcs"
+        TESTFN_ENCODING=sys.getfilesystemencoding()
 else:
     TESTFN = 'test'
 

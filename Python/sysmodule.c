@@ -236,6 +236,22 @@ PyDoc_STRVAR(setdefaultencoding_doc,
 Set the current default string encoding used by the Unicode implementation."
 );
 
+static PyObject *
+sys_getfilesystemencoding(PyObject *self)
+{
+	if (Py_FileSystemDefaultEncoding)
+		return PyString_FromString(Py_FileSystemDefaultEncoding);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(getfilesystemencoding_doc,
+"getfilesystemencoding() -> string\n\
+\n\
+Return the encoding used to convert Unicode filenames in\n\
+operating system filenames."
+);
+
 #endif
 
 /*
@@ -648,6 +664,10 @@ static PyMethodDef sys_methods[] = {
 #endif
 #ifdef DYNAMIC_EXECUTION_PROFILE
 	{"getdxp",	_Py_GetDXProfile, METH_VARARGS},
+#endif
+#ifdef Py_USING_UNICODE
+	{"getfilesystemencoding", (PyCFunction)sys_getfilesystemencoding,
+	 METH_NOARGS, getfilesystemencoding_doc}, 
 #endif
 #ifdef Py_TRACE_REFS
 	{"getobjects",	_Py_GetObjects, METH_VARARGS},

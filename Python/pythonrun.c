@@ -17,6 +17,11 @@
 #include <signal.h>
 #endif
 
+#ifdef HAVE_LANGINFO_H
+#include <locale.h>
+#include <langinfo.h>
+#endif
+
 #ifdef MS_WINDOWS
 #undef BYTE
 #include "windows.h"
@@ -181,6 +186,29 @@ Py_Initialize(void)
 		initsite(); /* Module site */
 
 	PyModule_WarningsModule = PyImport_ImportModule("warnings");
+
+#if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
+	/* On Unix, set the file system encoding according to the
+	   user's preference, if the CODESET names a well-known
+	   Python codec, and Py_FileSystemDefaultEncoding isn't
+	   initialized by other means.  */
+	if (!Py_FileSystemDefaultEncoding) {
+		char *saved_locale = setlocale(LC_CTYPE, NULL);
+		char *codeset;
+		setlocale(LC_CTYPE, "");
+		codeset = nl_langinfo(CODESET);
+		PyObject *enc = NULL;
+		if (*codeset) {
+			enc = PyCodec_Encoder(codeset);
+			if (enc) {
+				Py_FileSystemDefaultEncoding = strdup(codeset);
+				Py_DECREF(enc);
+			} else
+				PyErr_Clear();
+		}
+		setlocale(LC_CTYPE, saved_locale);
+	}
+#endif
 }
 
 #ifdef COUNT_ALLOCS
