@@ -1,11 +1,13 @@
 Welcome to the "PC" subdirectory of the Python distribution!
 ************************************************************
 
-(NOTE: the project files for MS VC++ 5.x are now in the PCbuild
-directory.  See the file readme.txt there for instructions.)
+*** Note: the project files for MS VC++ 5.0 and 6.0 are now in the
+*** PCbuild directory.  See the file readme.txt there for build
+*** instructions.  There is some information below that might
+*** still be relevant.
 
 This "PC" subdirectory contains complete project files to make
-several PC ports of Python, as well as all the PC-specific
+several older PC ports of Python, as well as all the PC-specific
 Python source files.  It should be located in the root of the
 Python distribution, and there should be directories "Modules",
 "Objects", "Python", etc. in the parent directory of this "PC"
@@ -66,59 +68,8 @@ src         A subdirectory used only for VC++ version 1.5 Python
             directories instead.
 
 
-Microsoft Visual C++ Version 4.x (32-bit Windows)
-=================================================
-
-(For historic reasons this uses the filename "vc40"; it has been tested
-most recently with VC 4.2.  See ../PCbuild for VC 5.x.)
-
-NOTE: VC 4.2 support is eroding, as I no longer have a VC 4.2
-installation.  Some newer files need to be added to the project.
-
-The distributed Makefile is vc40.mak.  This file is distributed with
-CRLF line separators, otherwise Developer Studio won't like it.  It
-will NOT work from this PC directory.  To use it, first copy it to the
-Python distribution directory, e.g. with this command:
-    copy vc40.mak ..
-To convert the Makefile into a project file, start Developer Studio,
-choose Open Workspace, change the file name pattern to *.mak, find and
-select the file vc40.mak, and click OK.  Developer Studio will create
-additional project files vc40.ncb and vc40.mdp when you use the
-project.  The project contains six targets, which should be built in
-this order:
-
-python15    The Python core as a DLL, named python15.dll.
-
-python      The Python main program, named python.exe.  This should
-            work as a console program under Windows 95 or NT, as well
-            as under Windows 3.1(1) when using win32s.  It uses
-            python15.dll.
-
-_tkinter    The optional _tkinter extension, _tkinter.dll; see below.
-
-All end products of the compilation are placed in the subdirectory
-vc40 (which Developer Studio creates); object files are placed in
-vc40/tmp.  There are no separate Release and Debug project variants.
-Note that the python and _tkinter projects require that the
-python15.lib file exists in the vc40 subdirectory before they can be
-built.
-
-*** How to build the _tkinter extension ***
-
-This assumes that you have installed the Tcl/Tk binary distribution for
-Windows 95/NT with version numbers 7.5p1/4.1p1, in the default
-installation location (C:\tcl).  (Ftp to ftp.sunlabs.com in /pub/tcl,
-file win41p1.exe.)  You must also fetch and unpack the zip file
-vclibs41.zip which contains the files tcl75.lib and tk41.lib, and place
-those files in the PC subdirectory.  In order to use _tkinter, the
-Tkinter.py module must be on PYTHONPATH.  It is found in the
-Lib\tkinter subdirectory.
-
-
 Additional files and subdirectories for 32-bit Windows
 ======================================================
-
-python_nt.def  Exports definition file for python15.dll.
 
 python_nt.rc   Resource compiler input for python15.dll.
 
@@ -129,12 +80,6 @@ getpathp.c     Default sys.path calculations (for all PC platforms).
 
 dllbase_nt.txt A (manually maintained) list of base addresses for
                various DLLs, to avoid run-time relocation.
-
-_tkinter.def   The export definitions file for _tkinter.dll.
-	       (No longer needed; the /export:init_tkinter takes care
-	       of this.)
-
-make_nt.in     Include file for nmake-based builds (unsupported).
 
 example_nt     A subdirectory showing how to build an extension as a
                DLL.
