@@ -17,6 +17,30 @@ def gettempdir():
     global tempdir
     if tempdir is not None:
         return tempdir
+
+    # _gettempdir_inner deduces whether a candidate temp dir is usable by
+    # trying to create a file in it, and write to it.  If that succeeds,
+    # great, it closes the file and unlinks it.  There's a race, though:
+    # the *name* of the test file it tries is the same across all threads
+    # under most OSes (Linux is an exception), and letting multiple threads
+    # all try to open, write to, close, and unlink a single file can cause
+    # a variety of bogus errors (e.g., you cannot unlink a file under
+    # Windows if anyone has it open, and two threads cannot create the
+    # same file in O_EXCL mode under Unix).  The simplest cure is to serialize
+    # calls to _gettempdir_inner.  This isn't a real expense, because the
+    # first thread to succeed sets the global tempdir, and all subsequent
+    # calls to gettempdir() reuse that without trying _gettempdir_inner.
+    _tempdir_lock.acquire()
+    try:
+        return _gettempdir_inner()
+    finally:
+        _tempdir_lock.release()
+
+def _gettempdir_inner():
+    """Function to calculate the directory to use."""
+    global tempdir
+    if tempdir is not None:
+        return tempdir
     try:
         pwd = os.getcwd()
     except (AttributeError, os.error):
@@ -169,8 +193,24 @@ def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
         except:
             os.close(fd)
             raise
+    elif os.name == 'nt':
+        # Windows -- can't unlink an open file, but O_TEMPORARY creates a
+        # file that "deletes itself" when the last handle is closed.
+        # O_NOINHERIT ensures processes created via spawn() don't get a
+        # handle to this too.  That would be a security hole, and, on my
+        # Win98SE box, when an O_TEMPORARY file is inherited by a spawned
+        # process, the fd in the spawned process seems to lack the
+        # O_TEMPORARY flag, so the file doesn't go away by magic then if the
+        # spawning process closes it first.
+        flags = (os.O_RDWR | os.O_CREAT | os.O_EXCL |
+                 os.O_TEMPORARY | os.O_NOINHERIT)
+        if 'b' in mode:
+            flags |= os.O_BINARY
+        fd = os.open(name, flags, 0700)
+        return os.fdopen(fd, mode, bufsize)
     else:
-        # Non-unix -- can't unlink file that's still open, use wrapper
+        # Assume we can't unlink a file that's still open, or arrange for
+        # an automagically self-deleting file -- use wrapper.
         file = open(name, mode, bufsize)
         return TemporaryFileWrapper(file, name)
 
@@ -179,8 +219,8 @@ def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
 # multiple threads will never see the same integer).  The integer will
 # usually be a Python int, but if _counter.get_next() is called often
 # enough, it will become a Python long.
-# Note that the only name that survives this next block of code
-# is "_counter".
+# Note that the only names that survive this next block of code
+# are "_counter" and "_tempdir_lock".
 
 class _ThreadSafeCounter:
     def __init__(self, mutex, initialvalue=0):
@@ -209,10 +249,12 @@ except ImportError:
         release = acquire
 
     _counter = _ThreadSafeCounter(_DummyMutex())
+    _tempdir_lock = _DummyMutex()
     del _DummyMutex
 
 else:
     _counter = _ThreadSafeCounter(thread.allocate_lock())
+    _tempdir_lock = thread.allocate_lock()
     del thread
 
 del _ThreadSafeCounter
