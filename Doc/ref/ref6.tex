@@ -300,24 +300,24 @@ right type (but even this is determined by the sliced object).
 print_stmt:     "print" [ expression ("," expression)* [","] ]
 \end{verbatim}
 
-\keyword{print} evaluates each expression in turn and writes the resulting
-object to standard output (see below).  If an object is not a string,
-it is first converted to a string using the rules for string
+\keyword{print} evaluates each expression in turn and writes the
+resulting object to standard output (see below).  If an object is not
+a string, it is first converted to a string using the rules for string 
 conversions.  The (resulting or original) string is then written.  A
-space is written before each object is (converted and) written, unless
+space is written before each object is (converted and) written, unless 
 the output system believes it is positioned at the beginning of a
 line.  This is the case (1) when no characters have yet been written
 to standard output, (2) when the last character written to standard
-output is \character{\\n}, or (3) when the last write operation on standard
-output was not a \keyword{print} statement.  (In some cases it may be
-functional to write an empty string to standard output for this
-reason.)
+output is \character{\e n}, or (3) when the last write operation on
+standard output was not a \keyword{print} statement.  (In some cases
+it may be functional to write an empty string to standard output for
+this reason.)
 \index{output}
 \indexii{writing}{values}
 
-A \character{\\n} character is written at the end, unless the \keyword{print}
-statement ends with a comma.  This is the only action if the statement
-contains just the keyword \keyword{print}.
+A \character{\e n} character is written at the end, unless the
+\keyword{print} statement ends with a comma.  This is the only action
+if the statement contains just the keyword \keyword{print}.
 \indexii{trailing}{comma}
 \indexii{newline}{suppression}
 
