@@ -826,6 +826,13 @@ pyexpat_ParserCreate(PyObject *notused, PyObject *args, PyObject *kw)
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|zz:ParserCreate", kwlist,
 					 &encoding, &namespace_separator))
 		return NULL;
+	if (namespace_separator != NULL
+	    && strlen(namespace_separator) != 1) {
+		PyErr_SetString(PyExc_ValueError,
+				"namespace_separator must be one character,"
+				" omitted, or None");
+		return NULL;
+	}
 	return (PyObject *)newxmlparseobject(encoding, namespace_separator);
 }
 
@@ -913,6 +920,8 @@ initpyexpat(void)
         ErrorObject = PyErr_NewException("xml.parsers.expat.error",
                                          NULL, NULL);
     PyModule_AddObject(m, "error", ErrorObject);
+    Py_INCREF(&Xmlparsetype);
+    PyModule_AddObject(m, "XMLParserType", (PyObject *) &Xmlparsetype);
 
     PyModule_AddObject(m, "__version__",
                        PyString_FromStringAndSize(rev+11, strlen(rev+11)-2));
