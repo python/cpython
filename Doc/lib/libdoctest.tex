@@ -85,17 +85,18 @@ if __name__ == "__main__":
     _test()
 \end{verbatim}
 
-If you run \file{example.py} directly from the command line, doctest works
-its magic:
+If you run \file{example.py} directly from the command line,
+\module{doctest} works its magic:
 
 \begin{verbatim}
 $ python example.py
 $
 \end{verbatim}
 
-There's no output!  That's normal, and it means all the examples worked.
-Pass \programopt{-v} to the script, and doctest prints a detailed log
-of what it's trying, and prints a summary at the end:
+There's no output!  That's normal, and it means all the examples
+worked.  Pass \programopt{-v} to the script, and \module{doctest}
+prints a detailed log of what it's trying, and prints a summary at the
+end:
 
 \begin{verbatim}
 $ python example.py -v
@@ -135,9 +136,10 @@ Test passed.
 $
 \end{verbatim}
 
-That's all you need to know to start making productive use of doctest!  Jump
-in.  The docstrings in doctest.py contain detailed information about all
-aspects of doctest, and we'll just cover the more important points here.
+That's all you need to know to start making productive use of
+\module{doctest}!  Jump in.  The docstrings in \file{doctest.py} contain
+detailed information about all aspects of \module{doctest}, and we'll
+just cover the more important points here.
 
 \subsection{Normal Usage}
 
@@ -285,8 +287,8 @@ are run.
 \end{funcdesc}
 
 \begin{funcdesc}{DocTestSuite}{\optional{module}}
-  Convert doctest tests for a module to a \refmodule{unittest}
-  \class{TestSuite}.
+  Convert doctest tests for a module to a
+  \class{\refmodule{unittest}.TestSuite}.
 
   The returned \class{TestSuite} is to be run by the unittest framework
   and runs each doctest in the module.  If any of the doctests fail,
@@ -320,10 +322,11 @@ are run.
 
 \subsection{How are Docstring Examples Recognized?}
 
-In most cases a copy-and-paste of an interactive console session works fine
---- just make sure the leading whitespace is rigidly consistent (you can mix
-tabs and spaces if you're too lazy to do it right, but doctest is not in
-the business of guessing what you think a tab means).
+In most cases a copy-and-paste of an interactive console session works
+fine---just make sure the leading whitespace is rigidly consistent
+(you can mix tabs and spaces if you're too lazy to do it right, but
+\module{doctest} is not in the business of guessing what you think a tab
+means).
 
 \begin{verbatim}
 >>> # comments are ignored
@@ -486,25 +489,27 @@ def _test():
 
 \subsection{Soapbox}
 
-The first word in doctest is "doc", and that's why the author wrote
-doctest:  to keep documentation up to date.  It so happens that doctest
-makes a pleasant unit testing environment, but that's not its primary
-purpose.
+The first word in ``doctest'' is ``doc,'' and that's why the author
+wrote \refmodule{doctest}: to keep documentation up to date.  It so
+happens that \refmodule{doctest} makes a pleasant unit testing
+environment, but that's not its primary purpose.
 
-Choose docstring examples with care.  There's an art to this that needs to
-be learned --- it may not be natural at first.  Examples should add genuine
-value to the documentation.  A good example can often be worth many words.
-If possible, show just a few normal cases, show endcases, show interesting
-subtle cases, and show an example of each kind of exception that can be
-raised.  You're probably testing for endcases and subtle cases anyway in an
-interactive shell:  doctest wants to make it as easy as possible to capture
-those sessions, and will verify they continue to work as designed forever
-after.
+Choose docstring examples with care.  There's an art to this that
+needs to be learned---it may not be natural at first.  Examples should
+add genuine value to the documentation.  A good example can often be
+worth many words.  If possible, show just a few normal cases, show
+endcases, show interesting subtle cases, and show an example of each
+kind of exception that can be raised.  You're probably testing for
+endcases and subtle cases anyway in an interactive shell:
+\refmodule{doctest} wants to make it as easy as possible to capture
+those sessions, and will verify they continue to work as designed
+forever after.
 
-If done with care, the examples will be invaluable for your users, and will
-pay back the time it takes to collect them many times over as the years go
-by and "things change".  I'm still amazed at how often one of my doctest
-examples stops working after a "harmless" change.
+If done with care, the examples will be invaluable for your users, and
+will pay back the time it takes to collect them many times over as the
+years go by and things change.  I'm still amazed at how often one of
+my \refmodule{doctest} examples stops working after a ``harmless''
+change.
 
 For exhaustive testing, or testing boring cases that add no value to the
 docs, define a \code{__test__} dict instead.  That's what it's for.
