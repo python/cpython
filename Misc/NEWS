@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Fixed string.startswith and string.endswith builtin methods
+  so they accept negative indices.  [SF bug 493951]
+
 - Fixed a bug with a continue inside a try block and a yield in the
   finally clause.  [SF bug 567538]
 

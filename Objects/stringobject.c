@@ -1310,6 +1310,21 @@ _PyString_Join(PyObject *sep, PyObject *x)
 	return string_join((PyStringObject *)sep, x);
 }
 
+static void
+string_adjust_indices(int *start, int *end, int len)
+{
+	if (*end > len)
+		*end = len;
+	else if (*end < 0)
+		*end += len;
+	if (*end < 0)
+		*end = 0;
+	if (*start < 0)
+		*start += len;
+	if (*start < 0)
+		*start = 0;
+}
+
 static long
 string_find_internal(PyStringObject *self, PyObject *args, int dir)
 {
@@ -1332,16 +1347,7 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return -2;
 
-	if (last > len)
-		last = len;
-	if (last < 0)
-		last += len;
-	if (last < 0)
-		last = 0;
-	if (i < 0)
-		i += len;
-	if (i < 0)
-		i = 0;
+	string_adjust_indices(&i, &last, len);
 
 	if (dir > 0) {
 		if (n == 0 && i <= last)
@@ -1763,16 +1769,8 @@ string_count(PyStringObject *self, PyObject *args)
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return NULL;
 
-	if (last > len)
-		last = len;
-	if (last < 0)
-		last += len;
-	if (last < 0)
-		last = 0;
-	if (i < 0)
-		i += len;
-	if (i < 0)
-		i = 0;
+	string_adjust_indices(&i, &last, len);
+
 	m = last + 1 - n;
 	if (n == 0)
 		return PyInt_FromLong((long) (m-i));
@@ -2169,7 +2167,7 @@ string_startswith(PyStringObject *self, PyObject *args)
 	const char* prefix;
 	int plen;
 	int start = 0;
-	int end = -1;
+	int end = INT_MAX;
 	PyObject *subobj;
 
 	if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
@@ -2193,23 +2191,15 @@ string_startswith(PyStringObject *self, PyObject *args)
 	else if (PyObject_AsCharBuffer(subobj, &prefix, &plen))
 		return NULL;
 
-	/* adopt Java semantics for index out of range.  it is legal for
-	 * offset to be == plen, but this only returns true if prefix is
-	 * the empty string.
-	 */
-	if (start < 0 || start+plen > len)
+	string_adjust_indices(&start, &end, len);
+
+	if (start+plen > len)
 		return PyBool_FromLong(0);
 
-	if (!memcmp(str+start, prefix, plen)) {
-		/* did the match end after the specified end? */
-		if (end < 0)
-			return PyBool_FromLong(1);
-		else if (end - start < plen)
-			return PyBool_FromLong(0);
-		else
-			return PyBool_FromLong(1);
-	}
-	else return PyBool_FromLong(0);
+	if (end-start >= plen)
+		return PyBool_FromLong(!memcmp(str+start, prefix, plen));
+	else
+		return PyBool_FromLong(0);
 }
 
 
@@ -2228,8 +2218,7 @@ string_endswith(PyStringObject *self, PyObject *args)
 	const char* suffix;
 	int slen;
 	int start = 0;
-	int end = -1;
-	int lower, upper;
+	int end = INT_MAX;
 	PyObject *subobj;
 
 	if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &subobj,
@@ -2253,15 +2242,17 @@ string_endswith(PyStringObject *self, PyObject *args)
 	else if (PyObject_AsCharBuffer(subobj, &suffix, &slen))
 		return NULL;
 
-	if (start < 0 || start > len || slen > len)
+	string_adjust_indices(&start, &end, len);
+
+	if (end-start < slen || start > len)
 		return PyBool_FromLong(0);
 
-	upper = (end >= 0 && end <= len) ? end : len;
-	lower = (upper - slen) > start ? (upper - slen) : start;
-
-	if (upper-lower >= slen && !memcmp(str+lower, suffix, slen))
-		return PyBool_FromLong(1);
-	else return PyBool_FromLong(0);
+	if (end-slen > start)
+		start = end - slen;
+	if (end-start >= slen)
+		return PyBool_FromLong(!memcmp(str+start, suffix, slen));
+	else
+		return PyBool_FromLong(0);
 }
 
 
