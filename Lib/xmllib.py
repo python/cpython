@@ -5,7 +5,7 @@ import re
 import string
 
 
-version = '0.2'
+version = '0.3'
 
 # Regular expressions used for parsing
 
@@ -78,17 +78,29 @@ xmlns = re.compile('xmlns(?::(?P<ncname>'+_NCName+'))?$')
 # special names to handle tags: start_foo and end_foo to handle <foo>
 # and </foo>, respectively.  The data between tags is passed to the
 # parser by calling self.handle_data() with some data as argument (the
-# data may be split up in arbutrary chunks).  Entity references are
-# passed by calling self.handle_entityref() with the entity reference
-# as argument.
+# data may be split up in arbutrary chunks).
 
 class XMLParser:
     attributes = {}                     # default, to be overridden
     elements = {}                       # default, to be overridden
 
+    # parsing options, settable using keyword args in __init__
+    __accept_unquoted_attributes = 0
+    __accept_missing_endtag_name = 0
+    __map_case = 0
+    __accept_utf8 = 0
+
     # Interface -- initialize and reset this instance
-    def __init__(self):
+    def __init__(self, **kw):
         self.__fixed = 0
+        if kw.has_key('accept_unquoted_attributes'):
+            self.__accept_unquoted_attributes = kw['accept_unquoted_attributes']
+        if kw.has_key('accept_missing_endtag_name'):
+            self.__accept_missing_endtag_name = kw['accept_missing_endtag_name']
+        if kw.has_key('map_case'):
+            self.__map_case = kw['map_case']
+        if kw.has_key('accept_utf8'):
+            self.__accept_utf8 = kw['accept_utf8']
         self.reset()
 
     def __fixelements(self):
@@ -223,7 +235,7 @@ class XMLParser:
                 self.__at_start = 0
                 if not self.stack and space.match(data) is None:
                     self.syntax_error('data not in content')
-                if illegal.search(data):
+                if not self.__accept_utf8 and illegal.search(data):
                     self.syntax_error('illegal character in content')
                 self.handle_data(data)
                 self.lineno = self.lineno + string.count(data, '\n')
@@ -303,6 +315,8 @@ class XMLParser:
                     k = self.parse_doctype(res)
                     if k < 0: break
                     self.__seen_doctype = res.group('name')
+                    if self.__map_case:
+                        self.__seen_doctype = string.lower(self.__seen_doctype)
                     self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
                     i = k
                     continue
@@ -330,12 +344,13 @@ class XMLParser:
                         self.syntax_error("`;' missing in entityref")
                         i = i-1
                     name = res.group('name')
+                    if self.__map_case:
+                        name = string.lower(name)
                     if self.entitydefs.has_key(name):
                         self.rawdata = rawdata = rawdata[:res.start(0)] + self.entitydefs[name] + rawdata[i:]
                         n = len(rawdata)
                         i = res.start(0)
                     else:
-                        self.syntax_error("reference to unknown entity `&%s;'" % name)
                         self.unknown_entityref(name)
                     self.lineno = self.lineno + string.count(res.group(0), '\n')
                     continue
@@ -363,7 +378,7 @@ class XMLParser:
         if end and i < n:
             data = rawdata[i]
             self.syntax_error("bogus `%s'" % data)
-            if illegal.search(data):
+            if not self.__accept_utf8 and illegal.search(data):
                 self.syntax_error('illegal character in content')
             self.handle_data(data)
             self.lineno = self.lineno + string.count(data, '\n')
@@ -390,7 +405,8 @@ class XMLParser:
             self.syntax_error("`--' inside comment")
         if rawdata[res.start(0)-1] == '-':
             self.syntax_error('comment cannot end in three dashes')
-        if illegal.search(rawdata, i+4, res.start(0)):
+        if not self.__accept_utf8 and \
+           illegal.search(rawdata, i+4, res.start(0)):
             self.syntax_error('illegal character in comment')
         self.handle_comment(rawdata[i+4: res.start(0)])
         return res.end(0)
@@ -400,6 +416,8 @@ class XMLParser:
         rawdata = self.rawdata
         n = len(rawdata)
         name = res.group('name')
+        if self.__map_case:
+            name = string.lower(name)
         pubid, syslit = res.group('pubid', 'syslit')
         if pubid is not None:
             pubid = pubid[1:-1]         # remove quotes
@@ -449,7 +467,8 @@ class XMLParser:
         res = cdataclose.search(rawdata, i+9)
         if res is None:
             return -1
-        if illegal.search(rawdata, i+9, res.start(0)):
+        if not self.__accept_utf8 and \
+           illegal.search(rawdata, i+9, res.start(0)):
             self.syntax_error('illegal character in CDATA')
         if not self.stack:
             self.syntax_error('CDATA not in content')
@@ -464,13 +483,15 @@ class XMLParser:
         if end is None:
             return -1
         j = end.start(0)
-        if illegal.search(rawdata, i+2, j):
+        if not self.__accept_utf8 and illegal.search(rawdata, i+2, j):
             self.syntax_error('illegal character in processing instruction')
         res = tagfind.match(rawdata, i+2)
         if res is None:
             raise RuntimeError, 'unexpected call to parse_proc'
         k = res.end(0)
         name = res.group(0)
+        if self.__map_case:
+            name = string.lower(name)
         if name == 'xml:namespace':
             self.syntax_error('old-fashioned namespace declaration')
             self.__use_namespaces = -1
@@ -510,6 +531,8 @@ class XMLParser:
             if res is None:
                 break
             attrname, attrvalue = res.group('name', 'value')
+            if self.__map_case:
+                attrname = string.lower(attrname)
             i = res.end(0)
             if attrvalue is None:
                 self.syntax_error("no value specified for attribute `%s'" % attrname)
@@ -517,7 +540,7 @@ class XMLParser:
             elif attrvalue[:1] == "'" == attrvalue[-1:] or \
                  attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
-            else:
+            elif not self.__accept_unquoted_attributes:
                 self.syntax_error("attribute `%s' value not quoted" % attrname)
             res = xmlns.match(attrname)
             if res is not None:
@@ -547,6 +570,8 @@ class XMLParser:
             self.syntax_error('garbage in starttag')
             return end.end(0)
         nstag = tagname = tag.group('tagname')
+        if self.__map_case:
+            nstag = tagname = string.lower(nstag)
         if not self.__seen_starttag and self.__seen_doctype and \
            tagname != self.__seen_doctype:
             self.syntax_error('starttag does not match DOCTYPE')
@@ -581,6 +606,8 @@ class XMLParser:
                 res = qname.match(key)
                 if res is not None:
                     aprefix, key = res.group('prefix', 'local')
+                    if self.__map_case:
+                        key = string.lower(key)
                     if aprefix is None:
                         aprefix = ''
                     ans = None
@@ -622,11 +649,14 @@ class XMLParser:
             if self.literal:
                 self.handle_data(rawdata[i])
                 return i+1
-            self.syntax_error('no name specified in end tag')
-            tag = ''
+            if not self.__accept_missing_endtag_name:
+                self.syntax_error('no name specified in end tag')
+                tag = self.stack[-1][0]
             k = i+2
         else:
             tag = res.group(0)
+            if self.__map_case:
+                tag = string.lower(tag)
             if self.literal:
                 if not self.stack or tag != self.stack[-1][0]:
                     self.handle_data(rawdata[i])
@@ -718,15 +748,6 @@ class XMLParser:
                   'apos': '&#39;',
                   }
 
-    # Example -- handle entity reference, no need to override
-    def handle_entityref(self, name):
-        table = self.entitydefs
-        if table.has_key(name):
-            self.handle_data(table[name])
-        else:
-            self.unknown_entityref(name)
-            return
-
     # Example -- handle data, should be overridden
     def handle_data(self, data):
         pass
@@ -751,14 +772,15 @@ class XMLParser:
     def unknown_starttag(self, tag, attrs): pass
     def unknown_endtag(self, tag): pass
     def unknown_charref(self, ref): pass
-    def unknown_entityref(self, ref): pass
+    def unknown_entityref(self, name):
+        self.syntax_error("reference to unknown entity `&%s;'" % name)
 
 
 class TestXMLParser(XMLParser):
 
-    def __init__(self):
+    def __init__(self, **kw):
         self.testdata = ""
-        XMLParser.__init__(self)
+        apply(XMLParser.__init__, (self,), kw)
 
     def handle_xml(self, encoding, standalone):
         self.flush()
@@ -767,10 +789,6 @@ class TestXMLParser(XMLParser):
     def handle_doctype(self, tag, pubid, syslit, data):
         self.flush()
         print 'DOCTYPE:',tag, `data`
-
-    def handle_entity(self, name, strval, pubid, syslit, ndata):
-        self.flush()
-        print 'ENTITY:',`data`
 
     def handle_data(self, data):
         self.testdata = self.testdata + data
