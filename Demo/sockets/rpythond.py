@@ -19,7 +19,7 @@ def main():
 	else:
 		port = PORT
 	s = socket(AF_INET, SOCK_STREAM)
-	s.bind('', port)
+	s.bind(('', port))
 	s.listen(1)
 	while 1:
 		conn, (remotehost, remoteport) = s.accept()

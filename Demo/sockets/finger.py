@@ -23,7 +23,7 @@ FINGER_PORT = 79
 #
 def finger(host, args):
 	s = socket(AF_INET, SOCK_STREAM)
-	s.connect(host, FINGER_PORT)
+	s.connect((host, FINGER_PORT))
 	s.send(args + '\n')
 	while 1:
 		buf = s.recv(1024)

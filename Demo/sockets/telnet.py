@@ -51,7 +51,7 @@ def main():
 	s = socket(AF_INET, SOCK_STREAM)
 	#
 	try:
-		s.connect(host, port)
+		s.connect((host, port))
 	except error, msg:
 		sys.stderr.write('connect failed: ' + `msg` + '\n')
 		sys.exit(1)
