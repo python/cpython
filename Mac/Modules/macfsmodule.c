@@ -41,7 +41,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern int _PyMac_GetFSSpec(PyObject *, FSSpec *);
+extern PyObject *_PyMac_BuildFSRef(FSRef *);
+extern int _PyMac_GetFSSpec(PyObject *, FSSpec *);
+extern PyObject *_PyMac_BuildFSRef(FSRef *);
 #define PyMac_GetFSSpec _PyMac_GetFSSpec
+#define PyMac_BuildFSSpec _PyMac_BuildFSSpec
+#define PyMac_GetFSRef _PyMac_GetFSRef
+#define PyMac_BuildFSRef _PyMac_BuildFSRef
 #endif
 static PyObject *ErrorObject;
 
@@ -1207,6 +1213,9 @@ initmacfs(void)
 	PyObject *m, *d;
 
 		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSSpec, PyMac_GetFSSpec);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSRef, PyMac_GetFSRef);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(FSSpec *, PyMac_BuildFSSpec);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(FSRef *, PyMac_BuildFSRef);
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("macfs", mfs_methods);

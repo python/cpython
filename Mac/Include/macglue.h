@@ -102,13 +102,6 @@ void PyMac_Initialize(void);			/* Initialize function for embedding Python */
 short PyMac_OpenPrefFile(void);			/* From macgetpath.c, open and return preference file */
 #endif
 
-/* from macfsmodule.c: */
-int PyMac_GetFSSpec(PyObject *, FSSpec *);	/* argument parser for FSSpec */
-PyObject *PyMac_BuildFSSpec(FSSpec *);		/* Convert FSSpec to PyObject */
-
-int PyMac_GetFSRef(PyObject *, FSRef *);	/* argument parser for FSRef */
-PyObject *PyMac_BuildFSRef(FSRef *);		/* Convert FSRef to PyObject */
-
 
 /* From macfiletype.c: */
 
