@@ -282,6 +282,21 @@ class Module(Node):
     def __repr__(self):
         return "Module(%s, %s)" % (repr(self.doc), repr(self.node))
 
+class Expression(Node):
+    # Expression is an artifical node class to support "eval"
+    nodes["expression"] = "Expression"
+    def __init__(self, node):
+        self.node = node
+
+    def getChildren(self):
+        return self.node,
+
+    def getChildNodes(self):
+        return self.node,
+
+    def __repr__(self):
+        return "Expression(%s)" % (repr(self.node))
+
 class UnaryAdd(Node):
     nodes["unaryadd"] = "UnaryAdd"
     def __init__(self, expr):

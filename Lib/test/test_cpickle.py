@@ -80,6 +80,13 @@ class cPickleFastPicklerTests(AbstractPickleTests):
                           AbstractPickleTests.test_recursive_multi,
                           self)
 
+    def test_nonrecursive_deep(self):
+        a = []
+        for i in range(100):
+            a = [a]
+        b = self.loads(self.dumps(a))
+        self.assertEqual(a, b)
+
 def test_main():
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
