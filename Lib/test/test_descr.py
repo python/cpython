@@ -3306,6 +3306,16 @@ def testrmul():
     vereq(2*a, "rmul")
     vereq(2.2*a, "rmul")
 
+def testipow():
+    # [SF bug 620179]
+    if verbose:
+        print "Testing correct invocation of __ipow__..."
+    class C(object):
+        def __ipow__(self, other):
+            pass
+    a = C()
+    a **= 2
+
 def do_this_first():
     if verbose:
         print "Testing SF bug 551412 ..."
@@ -3401,6 +3411,7 @@ def test_main():
     slottrash()
     slotmultipleinheritance()
     testrmul()
+    testipow()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
