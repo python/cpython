@@ -276,10 +276,9 @@ class URLopener:
             return addinfourl(fp, headers, "http:" + url)
         else:
             if data is None:
-                return self.http_error(url, fp, errcode, errmsg,
-                                       headers, data)
-            else:
                 return self.http_error(url, fp, errcode, errmsg, headers)
+            else:
+                return self.http_error(url, fp, errcode, errmsg, headers, data)
 
     # Handle http errors.
     # Derived class can override this, or provide specific handlers
