@@ -290,6 +290,139 @@ test_L_code(PyObject *self)
 
 #endif	/* ifdef HAVE_LONG_LONG */
 
+/* Call PyArg_ParseTuple, and return the result as unsigned long */
+static PyObject *
+getargs_ul(PyObject *self, PyObject *args)
+{
+	PyObject *ob, *result = NULL, *argtuple;
+	char *fmt;
+	unsigned long value = 0;
+
+	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
+		return NULL;
+	argtuple = PyTuple_New(1);
+	Py_INCREF(ob);
+	PyTuple_SET_ITEM(argtuple, 0, ob);
+	if (PyArg_ParseTuple(argtuple, fmt, &value))
+		result = PyLong_FromUnsignedLong(value);
+	Py_DECREF(argtuple);
+	return result;
+}
+
+/* Call PyArg_ParseTuple, and return the result as signed long */
+static PyObject *
+getargs_l(PyObject *self, PyObject *args)
+{
+	PyObject *ob, *result = NULL, *argtuple;
+	char *fmt;
+	long value = 0;
+
+	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
+		return NULL;
+	argtuple = PyTuple_New(1);
+	Py_INCREF(ob);
+	PyTuple_SET_ITEM(argtuple, 0, ob);
+	if (PyArg_ParseTuple(argtuple, fmt, &value))
+		result = PyLong_FromLong(value);
+	Py_DECREF(argtuple);
+	return result;
+}
+
+#ifdef HAVE_LONG_LONG
+/* Call PyArg_ParseTuple, and return the result as signed long long */
+static PyObject *
+getargs_ll(PyObject *self, PyObject *args)
+{
+	PyObject *ob, *result = NULL, *argtuple;
+	char *fmt;
+	PY_LONG_LONG value = 0;
+
+	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
+		return NULL;
+	argtuple = PyTuple_New(1);
+	Py_INCREF(ob);
+	PyTuple_SET_ITEM(argtuple, 0, ob);
+	if (PyArg_ParseTuple(argtuple, fmt, &value))
+		result = PyLong_FromLongLong(value);
+	Py_DECREF(argtuple);
+	return result;
+}
+
+/* Call PyArg_ParseTuple, and return the result as unsigned long long */
+static PyObject *
+getargs_ull(PyObject *self, PyObject *args)
+{
+	PyObject *ob, *result = NULL, *argtuple;
+	char *fmt;
+	unsigned PY_LONG_LONG value = 0;
+
+	if (!PyArg_ParseTuple(args, "sO", &fmt, &ob))
+		return NULL;
+	argtuple = PyTuple_New(1);
+	Py_INCREF(ob);
+	PyTuple_SET_ITEM(argtuple, 0, ob);
+	if (PyArg_ParseTuple(argtuple, fmt, &value))
+		result = PyLong_FromUnsignedLongLong(value);
+	Py_DECREF(argtuple);
+	return result;
+}
+#endif
+
+/* This function not only tests the 'k' getargs code, but also the
+   PyInt_AsUnsignedLongMask() and PyInt_AsUnsignedLongMask() functions. */
+static PyObject *
+test_k_code(PyObject *self)
+{
+	PyObject *tuple, *num;
+	unsigned long value;
+
+        tuple = PyTuple_New(1);
+        if (tuple == NULL)
+        	return NULL;
+
+	/* a number larger than UINT_MAX even on 64-bit platforms */
+        num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
+        if (num == NULL)
+        	return NULL;
+
+	value = PyInt_AsUnsignedLongMask(num);
+	if (value != UINT_MAX)
+        	return raiseTestError("test_k_code",
+	    "PyInt_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+
+        PyTuple_SET_ITEM(tuple, 0, num);
+
+        value = -1;
+        if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
+        	return NULL;
+        if (value != UINT_MAX)
+        	return raiseTestError("test_k_code",
+			"k code returned wrong value for long 0xFFF...FFF");
+
+	Py_DECREF(num);
+        num = PyLong_FromString("-FFFFFFFF000000000000000042", NULL, 16);
+        if (num == NULL)
+        	return NULL;
+
+	value = PyInt_AsUnsignedLongMask(num);
+	if (value != (unsigned long)-0x42)
+        	return raiseTestError("test_k_code",
+	    "PyInt_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+
+        PyTuple_SET_ITEM(tuple, 0, num);
+
+	value = -1;
+        if (PyArg_ParseTuple(tuple, "k:test_k_code", &value) < 0)
+        	return NULL;
+        if (value != (unsigned long)-0x42)
+        	return raiseTestError("test_k_code",
+			"k code returned wrong value for long -0xFFF..000042");
+
+	Py_DECREF(tuple);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 #ifdef Py_USING_UNICODE
 
 /* Test the u and u# codes for PyArg_ParseTuple. May leak memory in case
@@ -409,7 +542,12 @@ static PyMethodDef TestMethods[] = {
 	{"test_dict_iteration",	(PyCFunction)test_dict_iteration,METH_NOARGS},
 	{"test_long_api",	(PyCFunction)test_long_api,	 METH_NOARGS},
 	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
+	{"test_k_code",		(PyCFunction)test_k_code,	 METH_NOARGS},
+	{"getargs_ul",		(PyCFunction)getargs_ul,	 METH_VARARGS},
+	{"getargs_l",		(PyCFunction)getargs_l,		 METH_VARARGS},
 #ifdef HAVE_LONG_LONG
+	{"getargs_ll",		(PyCFunction)getargs_ll,	 METH_VARARGS},
+	{"getargs_ull",		(PyCFunction)getargs_ull,	 METH_VARARGS},
 	{"test_longlong_api",	(PyCFunction)test_longlong_api,	 METH_NOARGS},
 	{"test_L_code",		(PyCFunction)test_L_code,	 METH_NOARGS},
 #endif
@@ -419,12 +557,23 @@ static PyMethodDef TestMethods[] = {
 	{NULL, NULL} /* sentinel */
 };
 
+#define AddSym(d, n, f, v) {PyObject *o = f(v); PyDict_SetItemString(d, n, o); Py_DECREF(o);}
+
 PyMODINIT_FUNC
 init_testcapi(void)
 {
 	PyObject *m;
 
 	m = Py_InitModule("_testcapi", TestMethods);
+
+	PyModule_AddObject(m, "UCHAR_MAX", PyInt_FromLong(UCHAR_MAX));
+	PyModule_AddObject(m, "USHRT_MAX", PyInt_FromLong(USHRT_MAX));
+	PyModule_AddObject(m, "UINT_MAX",  PyLong_FromUnsignedLong(UINT_MAX));
+	PyModule_AddObject(m, "ULONG_MAX", PyLong_FromUnsignedLong(ULONG_MAX));
+	PyModule_AddObject(m, "INT_MIN", PyInt_FromLong(INT_MIN));
+	PyModule_AddObject(m, "LONG_MIN", PyInt_FromLong(LONG_MIN));
+	PyModule_AddObject(m, "INT_MAX", PyInt_FromLong(INT_MAX));
+	PyModule_AddObject(m, "LONG_MAX", PyInt_FromLong(LONG_MAX));
 
 	TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
 	Py_INCREF(TestError);

@@ -19,6 +19,7 @@ PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLong(unsigned long);
 PyAPI_FUNC(PyObject *) PyLong_FromDouble(double);
 PyAPI_FUNC(long) PyLong_AsLong(PyObject *);
 PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
+PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLongMask(PyObject *);
 
 /* _PyLong_AsScaledDouble returns a double x and an exponent e such that
    the true value is approximately equal to x * 2**(SHIFT*e).  e is >= 0.
@@ -37,6 +38,7 @@ PyAPI_FUNC(PyObject *) PyLong_FromLongLong(PY_LONG_LONG);
 PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG);
 PyAPI_FUNC(PY_LONG_LONG) PyLong_AsLongLong(PyObject *);
 PyAPI_FUNC(unsigned PY_LONG_LONG) PyLong_AsUnsignedLongLong(PyObject *);
+PyAPI_FUNC(unsigned PY_LONG_LONG) PyLong_AsUnsignedLongLongMask(PyObject *);
 #endif /* HAVE_LONG_LONG */
 
 PyAPI_FUNC(PyObject *) PyLong_FromString(char *, char **, int);
