@@ -61,61 +61,61 @@ import sys, os
 
 def addsitedir(sitedir):
     if sitedir not in sys.path:
-	sys.path.append(sitedir)	# Add path component
+        sys.path.append(sitedir)        # Add path component
     try:
-	names = os.listdir(sitedir)
+        names = os.listdir(sitedir)
     except os.error:
-	return
+        return
     names = map(os.path.normcase, names)
     names.sort()
     for name in names:
-	if name[-4:] == ".pth":
-	    addpackage(sitedir, name)
+        if name[-4:] == ".pth":
+            addpackage(sitedir, name)
 
 def addpackage(sitedir, name):
     fullname = os.path.join(sitedir, name)
     try:
-	f = open(fullname)
+        f = open(fullname)
     except IOError:
-	return
+        return
     while 1:
-	dir = f.readline()
-	if not dir:
-	    break
-	if dir[0] == '#':
-	    continue
-	if dir[-1] == '\n':
-	    dir = dir[:-1]
-	dir = os.path.join(sitedir, dir)
-	if dir not in sys.path and os.path.exists(dir):
-	    sys.path.append(dir)
+        dir = f.readline()
+        if not dir:
+            break
+        if dir[0] == '#':
+            continue
+        if dir[-1] == '\n':
+            dir = dir[:-1]
+        dir = os.path.join(sitedir, dir)
+        if dir not in sys.path and os.path.exists(dir):
+            sys.path.append(dir)
 
 prefixes = [sys.prefix]
 if sys.exec_prefix != sys.prefix:
     prefixes.append(sys.exec_prefix)
 for prefix in prefixes:
     if prefix:
-	if os.sep == '/':
-	    sitedirs = [os.path.join(prefix,
-				     "lib",
-				     "python" + sys.version[:3],
-				     "site-packages"),
-			os.path.join(prefix, "lib", "site-python")]
-	else:
-	    sitedirs = [prefix]
-	for sitedir in sitedirs:
-	    if os.path.isdir(sitedir):
-		addsitedir(sitedir)
+        if os.sep == '/':
+            sitedirs = [os.path.join(prefix,
+                                     "lib",
+                                     "python" + sys.version[:3],
+                                     "site-packages"),
+                        os.path.join(prefix, "lib", "site-python")]
+        else:
+            sitedirs = [prefix]
+        for sitedir in sitedirs:
+            if os.path.isdir(sitedir):
+                addsitedir(sitedir)
 
 try:
-    import sitecustomize		# Run arbitrary site specific code
+    import sitecustomize                # Run arbitrary site specific code
 except ImportError:
-    pass				# No site customization module
+    pass                                # No site customization module
 
 def _test():
     print "sys.path = ["
     for dir in sys.path:
-	print "    %s," % `dir`
+        print "    %s," % `dir`
     print "]"
 
 if __name__ == '__main__':

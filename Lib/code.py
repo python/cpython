@@ -32,32 +32,32 @@ def compile_command(source, filename="<input>", symbol="single"):
     code = code1 = code2 = None
 
     try:
-	code = compile(source, filename, symbol)
+        code = compile(source, filename, symbol)
     except SyntaxError, err:
-	pass
+        pass
 
     try:
-	code1 = compile(source + "\n", filename, symbol)
+        code1 = compile(source + "\n", filename, symbol)
     except SyntaxError, err1:
-	pass
+        pass
 
     try:
-	code2 = compile(source + "\n\n", filename, symbol)
+        code2 = compile(source + "\n\n", filename, symbol)
     except SyntaxError, err2:
-	pass
+        pass
 
     if code:
-	return code
+        return code
     try:
-	e1 = err1.__dict__
+        e1 = err1.__dict__
     except AttributeError:
-	e1 = err1
+        e1 = err1
     try:
-	e2 = err2.__dict__
+        e2 = err2.__dict__
     except AttributeError:
-	e2 = err2
+        e2 = err2
     if not code1 and e1 == e2:
-	raise SyntaxError, err1
+        raise SyntaxError, err1
 
 
 def interact(banner=None, readfunc=raw_input, local=None):
@@ -70,41 +70,41 @@ def interact(banner=None, readfunc=raw_input, local=None):
     sys.ps1 = '>>> '
     sys.ps2 = '... '
     if banner:
-	print banner
+        print banner
     else:
-	print "Python Interactive Console", sys.version
-	print sys.copyright
+        print "Python Interactive Console", sys.version
+        print sys.copyright
     buf = []
     while 1:
-	if buf: prompt = sys.ps2
-	else: prompt = sys.ps1
-	try: line = readfunc(prompt)
-	except KeyboardInterrupt:
-	    print "\nKeyboardInterrupt"
-	    buf = []
-	    continue
-	except EOFError: break
-	buf.append(line)
-	try: x = compile_command(string.join(buf, "\n"))
-	except SyntaxError:
-	    traceback.print_exc(0)
-	    buf = []
-	    continue
-	if x == None: continue
-	else:
-	    try: exec x in local
-	    except:
-		exc_type, exc_value, exc_traceback = \
-			sys.exc_type, sys.exc_value, \
-			sys.exc_traceback
-		l = len(traceback.extract_tb(sys.exc_traceback))
-		try: 1/0
-		except:
-		    m = len(traceback.extract_tb(
-			    sys.exc_traceback))
-		traceback.print_exception(exc_type,
-			exc_value, exc_traceback, l-m)
-	    buf = []
-		
+        if buf: prompt = sys.ps2
+        else: prompt = sys.ps1
+        try: line = readfunc(prompt)
+        except KeyboardInterrupt:
+            print "\nKeyboardInterrupt"
+            buf = []
+            continue
+        except EOFError: break
+        buf.append(line)
+        try: x = compile_command(string.join(buf, "\n"))
+        except SyntaxError:
+            traceback.print_exc(0)
+            buf = []
+            continue
+        if x == None: continue
+        else:
+            try: exec x in local
+            except:
+                exc_type, exc_value, exc_traceback = \
+                        sys.exc_type, sys.exc_value, \
+                        sys.exc_traceback
+                l = len(traceback.extract_tb(sys.exc_traceback))
+                try: 1/0
+                except:
+                    m = len(traceback.extract_tb(
+                            sys.exc_traceback))
+                traceback.print_exception(exc_type,
+                        exc_value, exc_traceback, l-m)
+            buf = []
+                
 if __name__ == '__main__':
     interact()

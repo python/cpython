@@ -11,21 +11,21 @@ def _group(s):
     if not grouping:return s
     result=""
     while s and grouping:
-	# if grouping is -1, we are done 
-	if grouping[0]==CHAR_MAX:
-	    break
-	# 0: re-use last group ad infinitum
-	elif grouping[0]!=0:
-	    #process last group
-	    group=grouping[0]
-	    grouping=grouping[1:]
-	if result:
-	    result=s[-group:]+conv['thousands_sep']+result
-	else:
-	    result=s[-group:]
-	s=s[:-group]
+        # if grouping is -1, we are done 
+        if grouping[0]==CHAR_MAX:
+            break
+        # 0: re-use last group ad infinitum
+        elif grouping[0]!=0:
+            #process last group
+            group=grouping[0]
+            grouping=grouping[1:]
+        if result:
+            result=s[-group:]+conv['thousands_sep']+result
+        else:
+            result=s[-group:]
+        s=s[:-group]
     if s and result:
-	result=s+conv['thousands_sep']+result
+        result=s+conv['thousands_sep']+result
     return result
 
 def format(f,val,grouping=0):
@@ -35,13 +35,13 @@ def format(f,val,grouping=0):
     result = f % val
     fields = string.splitfields(result,".")
     if grouping:
-	fields[0]=_group(fields[0])
+        fields[0]=_group(fields[0])
     if len(fields)==2:
-	return fields[0]+localeconv()['decimal_point']+fields[1]
+        return fields[0]+localeconv()['decimal_point']+fields[1]
     elif len(fields)==1:
-	return fields[0]
+        return fields[0]
     else:
-	raise Error,"Too many decimal points in result string"
+        raise Error,"Too many decimal points in result string"
     
 def str(val):
     """Convert float to integer, taking the locale into account."""

@@ -20,9 +20,9 @@ def compile(file, cfile=None, dfile=None):
 
     file:  source filename
     cfile: target filename; defaults to source with 'c' or 'o' appended
-	   ('c' normally, 'o' in optimizing mode, giving .pyc or .pyo)
+           ('c' normally, 'o' in optimizing mode, giving .pyc or .pyo)
     dfile: purported filename; defaults to source (this is the filename
-	   that will show up in error messages)
+           that will show up in error messages)
 
     Note that it isn't necessary to byte-compile Python modules for
     execution efficiency -- Python itself byte-compiles a module when
@@ -44,16 +44,16 @@ def compile(file, cfile=None, dfile=None):
     import os, marshal, __builtin__
     f = open(file)
     try:
-	timestamp = os.fstat(file.fileno())
+        timestamp = os.fstat(file.fileno())
     except AttributeError:
-	timestamp = long(os.stat(file)[8])
+        timestamp = long(os.stat(file)[8])
     codestring = f.read()
     f.close()
     if codestring and codestring[-1] != '\n':
-	codestring = codestring + '\n'
+        codestring = codestring + '\n'
     codeobject = __builtin__.compile(codestring, dfile or file, 'exec')
     if not cfile:
-	cfile = file + (__debug__ and 'c' or 'o')
+        cfile = file + (__debug__ and 'c' or 'o')
     fc = open(cfile, 'wb')
     fc.write('\0\0\0\0')
     wr_long(fc, timestamp)
@@ -63,6 +63,6 @@ def compile(file, cfile=None, dfile=None):
     fc.write(MAGIC)
     fc.close()
     if os.name == 'mac':
-	import macfs
-	macfs.FSSpec(cfile).SetCreatorType('Pyth', 'PYC ')
-	macfs.FSSpec(file).SetCreatorType('Pyth', 'TEXT')
+        import macfs
+        macfs.FSSpec(cfile).SetCreatorType('Pyth', 'PYC ')
+        macfs.FSSpec(file).SetCreatorType('Pyth', 'TEXT')

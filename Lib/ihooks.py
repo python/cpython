@@ -69,22 +69,22 @@ FROZEN_MODULE = 33
 class _Verbose:
 
     def __init__(self, verbose = 0):
-	self.verbose = verbose
+        self.verbose = verbose
 
     def get_verbose(self):
-	return self.verbose
+        return self.verbose
 
     def set_verbose(self, verbose):
-	self.verbose = verbose
+        self.verbose = verbose
 
     # XXX The following is an experimental interface
 
     def note(self, *args):
-	if self.verbose:
-	    apply(self.message, args)
+        if self.verbose:
+            apply(self.message, args)
 
     def message(self, format, *args):
-	print format%args
+        print format%args
 
 
 class BasicModuleLoader(_Verbose):
@@ -105,49 +105,49 @@ class BasicModuleLoader(_Verbose):
     """
 
     def find_module(self, name, path = None):
-	if path is None: 
-	    path = [None] + self.default_path()
-	for dir in path:
-	    stuff = self.find_module_in_dir(name, dir)
-	    if stuff: return stuff
-	return None
+        if path is None: 
+            path = [None] + self.default_path()
+        for dir in path:
+            stuff = self.find_module_in_dir(name, dir)
+            if stuff: return stuff
+        return None
 
     def default_path(self):
-	return sys.path
+        return sys.path
 
     def find_module_in_dir(self, name, dir):
-	if dir is None:
-	    return self.find_builtin_module(name)
-	else:
-	    try:
-		return imp.find_module(name, [dir])
-	    except ImportError:
-		return None
+        if dir is None:
+            return self.find_builtin_module(name)
+        else:
+            try:
+                return imp.find_module(name, [dir])
+            except ImportError:
+                return None
 
     def find_builtin_module(self, name):
-	if imp.is_builtin(name):
-	    return None, '', ('', '', BUILTIN_MODULE)
-	if imp.is_frozen(name):
-	    return None, '', ('', '', FROZEN_MODULE)
-	return None
+        if imp.is_builtin(name):
+            return None, '', ('', '', BUILTIN_MODULE)
+        if imp.is_frozen(name):
+            return None, '', ('', '', FROZEN_MODULE)
+        return None
 
     def load_module(self, name, stuff):
-	file, filename, (suff, mode, type) = stuff
-	try:
-	    if type == BUILTIN_MODULE:
-		return imp.init_builtin(name)
-	    if type == FROZEN_MODULE:
-		return imp.init_frozen(name)
-	    if type == C_EXTENSION:
-		return imp.load_dynamic(name, filename, file)
-	    if type == PY_SOURCE:
-		return imp.load_source(name, filename, file)
-	    if type == PY_COMPILED:
-		return imp.load_compiled(name, filename, file)
-	finally:
-	    if file: file.close()
-	raise ImportError, "Unrecognized module type (%s) for %s" % \
-			   (`type`, name)
+        file, filename, (suff, mode, type) = stuff
+        try:
+            if type == BUILTIN_MODULE:
+                return imp.init_builtin(name)
+            if type == FROZEN_MODULE:
+                return imp.init_frozen(name)
+            if type == C_EXTENSION:
+                return imp.load_dynamic(name, filename, file)
+            if type == PY_SOURCE:
+                return imp.load_source(name, filename, file)
+            if type == PY_COMPILED:
+                return imp.load_compiled(name, filename, file)
+        finally:
+            if file: file.close()
+        raise ImportError, "Unrecognized module type (%s) for %s" % \
+                           (`type`, name)
 
 
 class Hooks(_Verbose):
@@ -170,17 +170,17 @@ class Hooks(_Verbose):
     def init_frozen(self, name): return imp.init_frozen(name)
     def get_frozen_object(self, name): return imp.get_frozen_object(name)
     def load_source(self, name, filename, file=None):
-	return imp.load_source(name, filename, file)
+        return imp.load_source(name, filename, file)
     def load_compiled(self, name, filename, file=None):
-	return imp.load_compiled(name, filename, file)
+        return imp.load_compiled(name, filename, file)
     def load_dynamic(self, name, filename, file=None):
-	return imp.load_dynamic(name, filename, file)
+        return imp.load_dynamic(name, filename, file)
 
     def add_module(self, name):
-	d = self.modules_dict()
-	if d.has_key(name): return d[name]
-	d[name] = m = self.new_module(name)
-	return m
+        d = self.modules_dict()
+        if d.has_key(name): return d[name]
+        d[name] = m = self.new_module(name)
+        return m
 
     # sys interface
     def modules_dict(self): return sys.modules
@@ -215,61 +215,61 @@ class ModuleLoader(BasicModuleLoader):
     """
 
     def __init__(self, hooks = None, verbose = 0):
-	BasicModuleLoader.__init__(self, verbose)
-	self.hooks = hooks or Hooks(verbose)
+        BasicModuleLoader.__init__(self, verbose)
+        self.hooks = hooks or Hooks(verbose)
 
     def default_path(self):
-	return self.hooks.default_path()
+        return self.hooks.default_path()
 
     def modules_dict(self):
-	return self.hooks.modules_dict()
+        return self.hooks.modules_dict()
 
     def get_hooks(self):
-	return self.hooks
+        return self.hooks
 
     def set_hooks(self, hooks):
-	self.hooks = hooks
+        self.hooks = hooks
 
     def find_builtin_module(self, name):
-	if self.hooks.is_builtin(name):
-	    return None, '', ('', '', BUILTIN_MODULE)
-	if self.hooks.is_frozen(name):
-	    return None, '', ('', '', FROZEN_MODULE)
-	return None
+        if self.hooks.is_builtin(name):
+            return None, '', ('', '', BUILTIN_MODULE)
+        if self.hooks.is_frozen(name):
+            return None, '', ('', '', FROZEN_MODULE)
+        return None
 
     def find_module_in_dir(self, name, dir):
-	if dir is None:
-	    return self.find_builtin_module(name)
-	for info in self.hooks.get_suffixes():
-	    suff, mode, type = info
-	    fullname = self.hooks.path_join(dir, name+suff)
-	    try:
-		fp = self.hooks.openfile(fullname, mode)
-		return fp, fullname, info
-	    except self.hooks.openfile_error:
-		pass
-	return None
+        if dir is None:
+            return self.find_builtin_module(name)
+        for info in self.hooks.get_suffixes():
+            suff, mode, type = info
+            fullname = self.hooks.path_join(dir, name+suff)
+            try:
+                fp = self.hooks.openfile(fullname, mode)
+                return fp, fullname, info
+            except self.hooks.openfile_error:
+                pass
+        return None
 
     def load_module(self, name, stuff):
-	file, filename, (suff, mode, type) = stuff
-	try:
-	    if type == BUILTIN_MODULE:
-		return self.hooks.init_builtin(name)
-	    if type == FROZEN_MODULE:
-		return self.hooks.init_frozen(name)
-	    if type == C_EXTENSION:
-		m = self.hooks.load_dynamic(name, filename, file)
-	    elif type == PY_SOURCE:
-		m = self.hooks.load_source(name, filename, file)
-	    elif type == PY_COMPILED:
-		m = self.hooks.load_compiled(name, filename, file)
-	    else:
-		raise ImportError, "Unrecognized module type (%s) for %s" % \
-		      (`type`, name)
-	finally:
-	    if file: file.close()
-	m.__file__ = filename
-	return m
+        file, filename, (suff, mode, type) = stuff
+        try:
+            if type == BUILTIN_MODULE:
+                return self.hooks.init_builtin(name)
+            if type == FROZEN_MODULE:
+                return self.hooks.init_frozen(name)
+            if type == C_EXTENSION:
+                m = self.hooks.load_dynamic(name, filename, file)
+            elif type == PY_SOURCE:
+                m = self.hooks.load_source(name, filename, file)
+            elif type == PY_COMPILED:
+                m = self.hooks.load_compiled(name, filename, file)
+            else:
+                raise ImportError, "Unrecognized module type (%s) for %s" % \
+                      (`type`, name)
+        finally:
+            if file: file.close()
+        m.__file__ = filename
+        return m
 
 
 class FancyModuleLoader(ModuleLoader):
@@ -277,22 +277,22 @@ class FancyModuleLoader(ModuleLoader):
     """Fancy module loader -- parses and execs the code itself."""
 
     def load_module(self, name, stuff):
-	file, filename, (suff, mode, type) = stuff
-	if type == FROZEN_MODULE:
-	    code = self.hooks.get_frozen_object(name)
-	elif type == PY_COMPILED:
-	    import marshal
-	    file.seek(8)
-	    code = marshal.load(file)
-	elif type == PY_SOURCE:
-	    data = file.read()
-	    code = compile(data, filename, 'exec')
-	else:
-	    return ModuleLoader.load_module(self, name, stuff)
-	m = self.hooks.add_module(name)
-	m.__file__ = filename
-	exec code in m.__dict__
-	return m
+        file, filename, (suff, mode, type) = stuff
+        if type == FROZEN_MODULE:
+            code = self.hooks.get_frozen_object(name)
+        elif type == PY_COMPILED:
+            import marshal
+            file.seek(8)
+            code = marshal.load(file)
+        elif type == PY_SOURCE:
+            data = file.read()
+            code = compile(data, filename, 'exec')
+        else:
+            return ModuleLoader.load_module(self, name, stuff)
+        m = self.hooks.add_module(name)
+        m.__file__ = filename
+        exec code in m.__dict__
+        return m
 
 
 class ModuleImporter(_Verbose):
@@ -305,57 +305,57 @@ class ModuleImporter(_Verbose):
     """
 
     def __init__(self, loader = None, verbose = 0):
-	_Verbose.__init__(self, verbose)
-	self.loader = loader or ModuleLoader(None, verbose)
-	self.modules = self.loader.modules_dict()
+        _Verbose.__init__(self, verbose)
+        self.loader = loader or ModuleLoader(None, verbose)
+        self.modules = self.loader.modules_dict()
 
     def get_loader(self):
-	return self.loader
+        return self.loader
 
     def set_loader(self, loader):
-	self.loader = loader
+        self.loader = loader
 
     def get_hooks(self):
-	return self.loader.get_hooks()
+        return self.loader.get_hooks()
 
     def set_hooks(self, hooks):
-	return self.loader.set_hooks(hooks)
+        return self.loader.set_hooks(hooks)
 
     def import_module(self, name, globals={}, locals={}, fromlist=[]):
-	if self.modules.has_key(name):
-	    return self.modules[name] # Fast path
-	stuff = self.loader.find_module(name)
-	if not stuff:
-	    raise ImportError, "No module named %s" % name
-	return self.loader.load_module(name, stuff)
+        if self.modules.has_key(name):
+            return self.modules[name] # Fast path
+        stuff = self.loader.find_module(name)
+        if not stuff:
+            raise ImportError, "No module named %s" % name
+        return self.loader.load_module(name, stuff)
 
     def reload(self, module, path = None):
-	name = module.__name__
-	stuff = self.loader.find_module(name, path)
-	if not stuff:
-	    raise ImportError, "Module %s not found for reload" % name
-	return self.loader.load_module(name, stuff)
+        name = module.__name__
+        stuff = self.loader.find_module(name, path)
+        if not stuff:
+            raise ImportError, "Module %s not found for reload" % name
+        return self.loader.load_module(name, stuff)
 
     def unload(self, module):
-	del self.modules[module.__name__]
-	# XXX Should this try to clear the module's namespace?
+        del self.modules[module.__name__]
+        # XXX Should this try to clear the module's namespace?
 
     def install(self):
-	self.save_import_module = __builtin__.__import__
-	self.save_reload = __builtin__.reload
-	if not hasattr(__builtin__, 'unload'):
-	    __builtin__.unload = None
-	self.save_unload = __builtin__.unload
-	__builtin__.__import__ = self.import_module
-	__builtin__.reload = self.reload
-	__builtin__.unload = self.unload
+        self.save_import_module = __builtin__.__import__
+        self.save_reload = __builtin__.reload
+        if not hasattr(__builtin__, 'unload'):
+            __builtin__.unload = None
+        self.save_unload = __builtin__.unload
+        __builtin__.__import__ = self.import_module
+        __builtin__.reload = self.reload
+        __builtin__.unload = self.unload
 
     def uninstall(self):
-	__builtin__.__import__ = self.save_import_module
-	__builtin__.reload = self.save_reload
-	__builtin__.unload = self.save_unload
-	if not __builtin__.unload:
-	    del __builtin__.unload
+        __builtin__.__import__ = self.save_import_module
+        __builtin__.reload = self.save_reload
+        __builtin__.unload = self.save_unload
+        if not __builtin__.unload:
+            del __builtin__.unload
 
 
 default_importer = None

@@ -600,7 +600,7 @@ class AddrlistClass:
 # Parse a date field
 
 _monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-	       'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+               'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 _daynames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 # The timezone table does not include the military time zones defined
@@ -610,12 +610,12 @@ _daynames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 # instead of timezone names.
 
 _timezones = {'UT':0, 'UTC':0, 'GMT':0, 'Z':0, 
-	      'AST': -400, 'ADT': -300,  # Atlantic standard
-	      'EST': -500, 'EDT': -400,  # Eastern
-	      'CST': -600, 'CDT':-500,   # Centreal
-	      'MST':-700, 'MDT':-600,    # Mountain
-	      'PST':-800, 'PDT':-700     # Pacific
-	      }    
+              'AST': -400, 'ADT': -300,  # Atlantic standard
+              'EST': -500, 'EDT': -400,  # Eastern
+              'CST': -600, 'CDT':-500,   # Centreal
+              'MST':-700, 'MDT':-600,    # Mountain
+              'PST':-800, 'PDT':-700     # Pacific
+              }    
 
 
 def parsedate_tz(data):
@@ -672,12 +672,12 @@ def parsedate_tz(data):
             pass
     # Convert a timezone offset into seconds ; -0500 -> -18000
     if tzoffset:
-	if tzoffset < 0:
-	    tzsign = -1
-	    tzoffset = -tzoffset
-	else:
-	    tzsign = 1
-	tzoffset = tzsign * ( (tzoffset/100)*3600 + (tzoffset % 100)*60)
+        if tzoffset < 0:
+            tzsign = -1
+            tzoffset = -tzoffset
+        else:
+            tzsign = 1
+        tzoffset = tzsign * ( (tzoffset/100)*3600 + (tzoffset % 100)*60)
     tuple = (yy, mm, dd, thh, tmm, tss, 0, 0, 0, tzoffset)
     return tuple
 
@@ -700,11 +700,11 @@ def mktime_tz(data):
     
     """
     if data[9] is None:
-	# No zone info, so localtime is better assumption than GMT
-	return time.mktime(data[:8] + (-1,))
+        # No zone info, so localtime is better assumption than GMT
+        return time.mktime(data[:8] + (-1,))
     else:
-	t = time.mktime(data[:8] + (0,))
-	return t - data[9] - time.timezone
+        t = time.mktime(data[:8] + (0,))
+        return t - data[9] - time.timezone
 
 
 # When used as script, run a small test program.

@@ -89,7 +89,7 @@ class Pickler:
         self.write(STOP)
 
     def dump_special(self, callable, args, state = None):
-	if type(args) is not TupleType and args is not None:
+        if type(args) is not TupleType and args is not None:
             raise PicklingError, "Second argument to dump_special " \
                                  "must be a tuple"
 
@@ -121,8 +121,8 @@ class Pickler:
         memo = self.memo
 
         if (not pers_save):
-	    pid = self.persistent_id(object)
-	    if (pid is not None):
+            pid = self.persistent_id(object)
+            if (pid is not None):
                 self.save_pers(pid)
                 return
 
@@ -130,8 +130,8 @@ class Pickler:
  
         t = type(object)
 
-	if ((t is TupleType) and (len(object) == 0)):
-	    if (self.bin):
+        if ((t is TupleType) and (len(object) == 0)):
+            if (self.bin):
                 self.save_empty_tuple(object)
             else:
                 self.save_tuple(object)
@@ -162,9 +162,9 @@ class Pickler:
             else:
                 tup = reduce(object)
 
-	    if type(tup) is StringType:
-		self.save_global(object, tup)
-		return
+            if type(tup) is StringType:
+                self.save_global(object, tup)
+                return
 
             if (type(tup) is not TupleType):
                 raise PicklingError, "Value returned by %s must be a " \
@@ -172,7 +172,7 @@ class Pickler:
 
             l = len(tup)
    
-	    if ((l != 2) and (l != 3)):
+            if ((l != 2) and (l != 3)):
                 raise PicklingError, "tuple returned by %s must contain " \
                                      "only two or three elements" % reduce
 
@@ -189,9 +189,9 @@ class Pickler:
                                      "by %s must be a tuple" % reduce
 
             self.save_reduce(callable, arg_tup, state) 
-	    memo_len = len(memo)
-	    self.write(self.put(memo_len))
-	    memo[d] = (memo_len, object)
+            memo_len = len(memo)
+            self.write(self.put(memo_len))
+            memo[d] = (memo_len, object)
             return
 
         f(self, object)
@@ -217,7 +217,7 @@ class Pickler:
         save(arg_tup)
         write(REDUCE)
         
-	if (state is not None):
+        if (state is not None):
             save(state)
             write(BUILD)
 
@@ -284,7 +284,7 @@ class Pickler:
             save(element)
 
         if (len(object) and memo.has_key(d)):
-	    if (self.bin):
+            if (self.bin):
                 write(POP_MARK + self.get(memo[d][0]))
                 return
            
@@ -306,7 +306,7 @@ class Pickler:
         save  = self.save
         memo  = self.memo
 
-	if (self.bin):
+        if (self.bin):
             write(EMPTY_LIST)
         else:
             write(MARK + LIST)
@@ -337,7 +337,7 @@ class Pickler:
         save  = self.save
         memo  = self.memo
 
-	if (self.bin):
+        if (self.bin):
             write(EMPTY_DICT)
         else:
             write(MARK + DICT)
@@ -375,7 +375,7 @@ class Pickler:
         if hasattr(object, '__getinitargs__'):
             args = object.__getinitargs__()
             len(args) # XXX Assert it's a sequence
-	    _keep_alive(args, memo)
+            _keep_alive(args, memo)
         else:
             args = ()
 
@@ -402,7 +402,7 @@ class Pickler:
             stuff = object.__dict__
         else:
             stuff = getstate()
-	    _keep_alive(stuff, memo)
+            _keep_alive(stuff, memo)
         save(stuff)
         write(BUILD)
     dispatch[InstanceType] = save_inst
@@ -414,10 +414,10 @@ class Pickler:
         if (name is None):
             name = object.__name__
 
-	try:
-	    module = object.__module__
-	except AttributeError:
-	    module = whichmodule(object, name)
+        try:
+            module = object.__module__
+        except AttributeError:
+            module = whichmodule(object, name)
 
         memo_len = len(memo)
         write(GLOBAL + module + '\n' + name + '\n' +
@@ -439,10 +439,10 @@ def _keep_alive(x, memo):
     the memo itself...
     """
     try:
-	memo[id(memo)].append(x)
+        memo[id(memo)].append(x)
     except KeyError:
-	# aha, this is the first one :-)
-	memo[id(memo)]=[x]
+        # aha, this is the first one :-)
+        memo[id(memo)]=[x]
 
 
 classmap = {}
@@ -461,8 +461,8 @@ def whichmodule(cls, clsname):
     import sys
 
     for name, module in sys.modules.items():
-	if name != '__main__' and \
-	    hasattr(module, clsname) and \
+        if name != '__main__' and \
+            hasattr(module, clsname) and \
             getattr(module, clsname) is cls:
             break
     else:
@@ -601,18 +601,18 @@ class Unpickler:
         module = self.readline()[:-1]
         name = self.readline()[:-1]
         klass = self.find_class(module, name)
-	instantiated = 0
-	if (not args and type(klass) is ClassType and
-	    not hasattr(klass, "__getinitargs__")):
-	    try:
-		value = _EmptyClass()
-		value.__class__ = klass
-	    except RuntimeError:
-		# In restricted execution, assignment to inst.__class__ is
-		# prohibited
-		pass
-	if not instantiated:
-	    value = apply(klass, args)
+        instantiated = 0
+        if (not args and type(klass) is ClassType and
+            not hasattr(klass, "__getinitargs__")):
+            try:
+                value = _EmptyClass()
+                value.__class__ = klass
+            except RuntimeError:
+                # In restricted execution, assignment to inst.__class__ is
+                # prohibited
+                pass
+        if not instantiated:
+            value = apply(klass, args)
         self.append(value)
     dispatch[INST] = load_inst
 
@@ -623,19 +623,19 @@ class Unpickler:
         del stack[k + 1]
         args = tuple(stack[k + 1:]) 
         del stack[k:]
-	instantiated = 0
-	if (not args and type(klass) is ClassType and
-	    not hasattr(klass, "__getinitargs__")):
-	    try:
-		value = _EmptyClass()
-		value.__class__ = klass
-		instantiated = 1
-	    except RuntimeError:
-		# In restricted execution, assignment to inst.__class__ is
-		# prohibited
-		pass
-	if not instantiated:
-	    value = apply(klass, args)
+        instantiated = 0
+        if (not args and type(klass) is ClassType and
+            not hasattr(klass, "__getinitargs__")):
+            try:
+                value = _EmptyClass()
+                value.__class__ = klass
+                instantiated = 1
+            except RuntimeError:
+                # In restricted execution, assignment to inst.__class__ is
+                # prohibited
+                pass
+        if not instantiated:
+            value = apply(klass, args)
         self.append(value)
     dispatch[OBJ] = load_obj                
 
@@ -663,11 +663,11 @@ class Unpickler:
 
         callable = stack[-2]
         arg_tup  = stack[-1]
-	del stack[-2:]
+        del stack[-2:]
 
-	if type(callable) is not ClassType:
-	    if not safe_constructors.has_key(callable):
-		try:
+        if type(callable) is not ClassType:
+            if not safe_constructors.has_key(callable):
+                try:
                     safe = callable.__safe_for_unpickling__
                 except AttributeError:
                     safe = None
@@ -676,10 +676,10 @@ class Unpickler:
                    raise UnpicklingError, "%s is not safe for " \
                                           "unpickling" % callable
 
-	if arg_tup is None:
-	    value = callable.__basicnew__()
-	else:
-	    value = apply(callable, arg_tup)
+        if arg_tup is None:
+            value = callable.__basicnew__()
+        else:
+            value = apply(callable, arg_tup)
         self.append(value)
     dispatch[REDUCE] = load_reduce
 
@@ -689,7 +689,7 @@ class Unpickler:
 
     def load_pop_mark(self):
         k = self.marker()
-	del self.stack[k:]
+        del self.stack[k:]
     dispatch[POP_MARK] = load_pop_mark
 
     def load_dup(self):
@@ -736,7 +736,7 @@ class Unpickler:
         stack = self.stack
         mark = self.marker()
         list = stack[mark - 1]
-	for i in range(mark + 1, len(stack)):
+        for i in range(mark + 1, len(stack)):
             list.append(stack[i])
 
         del stack[mark:]
@@ -755,7 +755,7 @@ class Unpickler:
         stack = self.stack
         mark = self.marker()
         dict = stack[mark - 1]
-	for i in range(mark + 1, len(stack), 2):
+        for i in range(mark + 1, len(stack), 2):
             dict[stack[i]] = stack[i + 1]
 
         del stack[mark:]
@@ -769,15 +769,15 @@ class Unpickler:
         try:
             setstate = inst.__setstate__
         except AttributeError:
-	    try:
-		inst.__dict__.update(value)
-	    except RuntimeError:
-		# XXX In restricted execution, the instance's __dict__ is not
-		# accessible.  Use the old way of unpickling the instance
-		# variables.  This is a semantic different when unpickling in
-		# restricted vs. unrestricted modes.
-		for k, v in value.items():
-		    setattr(inst, k, v)
+            try:
+                inst.__dict__.update(value)
+            except RuntimeError:
+                # XXX In restricted execution, the instance's __dict__ is not
+                # accessible.  Use the old way of unpickling the instance
+                # variables.  This is a semantic different when unpickling in
+                # restricted vs. unrestricted modes.
+                for k, v in value.items():
+                    setattr(inst, k, v)
         else:
             setstate(value)
     dispatch[BUILD] = load_build
