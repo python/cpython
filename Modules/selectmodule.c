@@ -470,7 +470,7 @@ poll_poll(pollObject *self, PyObject *args)
 		tout = PyNumber_Int(tout);
 		if (!tout)
 			return NULL;
-		timeout = PyInt_AS_LONG(tout);
+		timeout = PyInt_AsLong(tout);
 		Py_DECREF(tout);
 	}
 
