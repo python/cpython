@@ -222,6 +222,7 @@ class dispatcher:
         if map.has_key(fd):
             #self.log_info('closing channel %d:%s' % (fd, self))
             del map[fd]
+        self._fileno = None
 
     def create_socket(self, family, type):
         self.family_and_type = family, type
