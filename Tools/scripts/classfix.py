@@ -1,11 +1,12 @@
 #! /ufs/guido/bin/sgi/python
 #! /usr/local/python
 
-# Fix Python source files to use the new class definition syntax,
-# i.e.,
-#	class C(base, base, ...): ...
-# instead of
+# Fix Python source files to use the new class definition syntax, i.e.,
 #	class C() = base(), base(), ...: ...
+# is changed to
+#	class C(base, base, ...): ...
+# The script uses heuristics to find class definitions that usually
+# work but occasionally can fail; carefully check the output!
 #
 # Command line arguments are files or directories to be processed.
 # Directories are searched recursively for files whose name looks
@@ -77,7 +78,7 @@ def recursedown(dirname):
 	return bad
 
 def fix(filename):
-	dbg('fix(' + `filename` + ')\n')
+##	dbg('fix(' + `filename` + ')\n')
 	try:
 		f = open(filename, 'r')
 	except IOError, msg:
