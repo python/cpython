@@ -307,90 +307,129 @@ def unquote(str):
 
 
 # Parse an address into (name, address) tuple
+# (By Sjoerd Mullender)
+
+error = 'parseaddr.error'
+
+specials = regex.compile('[][()<>,.;:@\\" \000-\037\177-\377]')
+
+def quote(str):
+	return '"%s"' % string.join(
+	    string.split(
+		string.join(
+		    string.split(str, '\\'),
+		    '\\\\'),
+		'"'),
+	    '\\"')
 
 def parseaddr(address):
-	import string
-	str = ''
-	email = ''
-	comment = ''
+	token = []			# the current token
+	tokens = []			# the list of tokens
 	backslash = 0
 	dquote = 0
+	was_quoted = 0
 	space = 0
 	paren = 0
-	bracket = 0
-	seen_bracket = 0
 	for c in address:
 		if backslash:
-			str = str + c
+			token.append(c)
 			backslash = 0
-			continue
 		if c == '\\':
 			backslash = 1
+			was_quoted = 1
 			continue
 		if dquote:
 			if c == '"':
 				dquote = 0
 			else:
-				str = str + c
+				token.append(c)
 			continue
 		if c == '"':
 			dquote = 1
+			was_quoted = 1
+			continue
+		if paren:
+			if c == '(':
+				paren = paren + 1
+			elif c == ')':
+				paren = paren - 1
+				if paren == 0:
+					token = string.join(token, '')
+					tokens.append((2, token))
+					token = []
+					continue
+			token.append(c)
+			continue
+		if c == '(':
+			paren = 1
+			token = string.join(token, '')
+			tokens.append((was_quoted, token))
+			was_quoted = 0
+			token = []
 			continue
 		if c in string.whitespace:
 			space = 1
 			continue
-		if space:
-			str = str + ' '
+		if c in '<>@,;:.[]':
+			token = string.join(token, '')
+			tokens.append((was_quoted, token))
+			was_quoted = 0
+			token = []
+			tokens.append((0, c))
 			space = 0
-		if paren:
-			if c == '(':
-				paren = paren + 1
-				str = str + c
-				continue
-			if c == ')':
-				paren = paren - 1
-				if paren == 0:
-					comment = comment + str
-					str = ''
-					continue
-		if c == '(':
-			paren = paren + 1
-			if bracket:
-				email = email + str
-				str = ''
-			elif not seen_bracket:
-				email = email + str
-				str = ''
 			continue
-		if bracket:
-			if c == '>':
-				bracket = 0
-				email = email + str
-				str = ''
+		if space:
+			token = string.join(token, '')
+			tokens.append((was_quoted, token))
+			was_quoted = 0
+			token = []
+			space = 0
+		token.append(c)
+	token = string.join(token, '')
+	tokens.append((was_quoted, token))
+	if (0, '<') in tokens:
+		name = []
+		addr = []
+		cur = name
+		for token in tokens:
+			if token[1] == '':
 				continue
-		if c == '<':
-			bracket = 1
-			seen_bracket = 1
-			comment = comment + str
-			str = ''
-			email = ''
-			continue
-		if c == '#' and not bracket and not paren:
-			# rest is comment
-			break
-		str = str + c
-	if str:
-		if seen_bracket:
-			if bracket:
-				email = str
+			if token == (0, '<'):
+				if addr:
+					raise error, 'syntax error'
+				cur = addr
+			elif token == (0, '>'):
+				if cur is not addr:
+					raise error, 'syntax error'
+				cur = name
+			elif token[0] == 2:
+				if cur is name:
+					name.append('(' + token[1] + ')')
+				else:
+					name.append(token[1])
+			elif token[0] == 1 and cur is addr:
+				if specials.search(token[1]) >= 0:
+					cur.append(quote(token[1]))
+				else:
+					cur.append(token[1])
 			else:
-				comment = comment + str
-		else:
-			if paren:
-				comment = comment + str
+				cur.append(token[1])
+	else:
+		name = []
+		addr = []
+		for token in tokens:
+			if token[1] == '':
+				continue
+			if token[0] == 2:
+				name.append(token[1])
+			elif token[0] == 1:
+				if specials.search(token[1]) >= 0:
+					addr.append(quote(token[1]))
+				else:
+					addr.append(token[1])
 			else:
-				email = email + str
-	return string.strip(comment), string.strip(email)
+				addr.append(token[1])
+	return string.join(name, ' '), string.join(addr, '')
 
 
 # Parse a date field
