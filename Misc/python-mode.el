@@ -8,7 +8,7 @@
 ;; Created:    Feb 1992
 ;; Keywords:   python languages oop
 
-(defconst py-version "3.0"
+(defconst py-version "$Revision$"
   "`python-mode' version number.")
 
 ;; This software is provided as-is, without express or implied
@@ -231,16 +231,19 @@ the Emacs bell is also rung as a warning."
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
 
-(defconst py-emacs-features ()
+(defconst py-emacs-features
+  (let (features)
+   ;; NTEmacs 19.34.6 has a broken make-temp-name; it always returns
+   ;; the same string.
+   (let ((tmp1 (make-temp-name ""))
+	 (tmp2 (make-temp-name "")))
+     (if (string-equal tmp1 tmp2)
+	 (push 'broken-temp-names features)))
+   ;; return the features
+   features)
   "A list of features extant in the Emacs you are using.
 There are many flavors of Emacs out there, each with different
-features supporting those needed by CC Mode.  Here's the current
-supported list, along with the values for this variable:
-
- XEmacs 19: ()
- XEmacs 20: ()
- Emacs 19:  ()
-")
+features supporting those needed by CC Mode.")
 
 (defvar python-font-lock-keywords
   (let* ((keywords '("and"        "assert"     "break"      "class"
@@ -1009,6 +1012,9 @@ filter."
     (setq py-file-queue nil)
     (message "%d pending files de-queued." n)))
 
+;; only used when (memq 'broken-temp-names py-emacs-features)
+(defvar py-serial-number 0)
+
 (defun py-execute-region (start end &optional async)
   "Execute the the region in a Python interpreter.
 The region is first copied into a temporary file (in the directory
@@ -1032,7 +1038,11 @@ is inserted at the end.  See also the command `py-clear-queue'."
   (or (< start end)
       (error "Region is empty"))
   (let* ((proc (get-process "Python"))
-	 (temp (make-temp-name "python"))
+	 (temp (if (memq 'broken-temp-names py-emacs-features)
+		   (prog1
+		       (format "python-%d" py-serial-number)
+		     (setq py-serial-number (1+ py-serial-number)))
+		 (make-temp-name "python")))
 	 (file (concat (file-name-as-directory py-temp-directory) temp))
 	 (outbuf "*Python Output*"))
     (write-region start end file nil 'nomsg)
