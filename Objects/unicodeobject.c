@@ -5610,8 +5610,9 @@ PyDoc_STRVAR(translate__doc__,
 \n\
 Return a copy of the string S, where all characters have been mapped\n\
 through the given translation table, which must be a mapping of\n\
-Unicode ordinals to Unicode ordinals or None. Unmapped characters\n\
-are left untouched. Characters mapped to None are deleted.");
+Unicode ordinals to Unicode ordinals, Unicode strings or None.\n\
+Unmapped characters are left untouched. Characters mapped to None\n\
+are deleted.");
 
 static PyObject*
 unicode_translate(PyUnicodeObject *self, PyObject *table)
