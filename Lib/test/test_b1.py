@@ -101,6 +101,17 @@ print 'compile'
 compile('print 1\n', '', 'exec')
 
 print 'complex'
+class OS:
+   def __complex__(self): return 1+10j
+class NS(object):
+   def __complex__(self): return 1+10j
+if complex(OS()) != 1+10j: raise TestFailed, '__complex__ in old style class'
+if complex(NS()) != 1+10j: raise TestFailed, '__complex__ in new style class'
+if complex("1+10j") != 1+10j: raise TestFailed, 'complex("1+10j")'
+if complex(10) != 10+0j: raise TestFailed, 'complex(10)'
+if complex(10.0) != 10+0j: raise TestFailed, 'complex(10.0)'
+if complex(10L) != 10+0j: raise TestFailed, 'complex(10L)'
+if complex(10+0j) != 10+0j: raise TestFailed, 'complex(10+0j)'
 if complex(1,10) != 1+10j: raise TestFailed, 'complex(1,10)'
 if complex(1,10L) != 1+10j: raise TestFailed, 'complex(1,10L)'
 if complex(1,10.0) != 1+10j: raise TestFailed, 'complex(1,10.0)'

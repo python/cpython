@@ -903,7 +903,7 @@ PyNumber_Int(PyObject *o)
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return int_from_string((char*)buffer, buffer_len);
 
-	return type_error("object can't be converted to int");
+	return type_error("int() argument must be a string or a number");
 }
 
 /* Add a check for embedded NULL-bytes in the argument. */
@@ -960,7 +960,7 @@ PyNumber_Long(PyObject *o)
 	if (!PyObject_AsCharBuffer(o, &buffer, &buffer_len))
 		return long_from_string(buffer, buffer_len);
 
-	return type_error("object can't be converted to long");
+	return type_error("long() argument must be a string or a number");
 }
 
 PyObject *

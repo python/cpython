@@ -811,10 +811,11 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 static PyObject *
 complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *r, *i, *tmp;
+	PyObject *r, *i, *tmp, *f;
 	PyNumberMethods *nbr, *nbi = NULL;
 	Py_complex cr, ci;
 	int own_r = 0;
+	static PyObject *complexstr;
 	static char *kwlist[] = {"real", "imag", 0};
 
 	r = Py_False;
@@ -837,38 +838,34 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
+	/* XXX Hack to support classes with __complex__ method */
+	if (complexstr == NULL) {
+		complexstr = PyString_InternFromString("__complex__");
+		if (complexstr == NULL)
+			return NULL;
+	}
+	f = PyObject_GetAttr(r, complexstr);
+	if (f == NULL)
+		PyErr_Clear();
+	else {
+		PyObject *args = Py_BuildValue("()");
+		if (args == NULL)
+			return NULL;
+		r = PyEval_CallObject(f, args);
+		Py_DECREF(args);
+		Py_DECREF(f);
+		if (r == NULL)
+			return NULL;
+		own_r = 1;
+	}
 	nbr = r->ob_type->tp_as_number;
 	if (i != NULL)
 		nbi = i->ob_type->tp_as_number;
 	if (nbr == NULL || nbr->nb_float == NULL ||
 	    ((i != NULL) && (nbi == NULL || nbi->nb_float == NULL))) {
 		PyErr_SetString(PyExc_TypeError,
-			   "complex() arg can't be converted to complex");
+			   "complex() argument must be a string or a number");
 		return NULL;
-	}
-	/* XXX Hack to support classes with __complex__ method */
-	if (PyInstance_Check(r)) {
-		static PyObject *complexstr;
-		PyObject *f;
-		if (complexstr == NULL) {
-			complexstr = PyString_InternFromString("__complex__");
-			if (complexstr == NULL)
-				return NULL;
-		}
-		f = PyObject_GetAttr(r, complexstr);
-		if (f == NULL)
-			PyErr_Clear();
-		else {
-			PyObject *args = Py_BuildValue("()");
-			if (args == NULL)
-				return NULL;
-			r = PyEval_CallObject(f, args);
-			Py_DECREF(args);
-			Py_DECREF(f);
-			if (r == NULL)
-				return NULL;
-			own_r = 1;
-		}
 	}
 	if (PyComplex_Check(r)) {
 		/* Note that if r is of a complex subtype, we're only
