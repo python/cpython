@@ -2016,7 +2016,7 @@ raises \exception{TypeError} with \var{m} as the message text.
 Return the \var{i}th element of \var{o}, assuming that \var{o} was
 returned by \cfunction{PySequence_Fast()}, and that \var{i} is within
 bounds.  The caller is expected to get the length of the sequence by
-calling \cfunction{PyObject_Size()} on \var{o}, since lists and tuples
+calling \cfunction{PySequence_Size()} on \var{o}, since lists and tuples
 are guaranteed to always return their true length.
 \end{cfuncdesc}
 
