@@ -427,6 +427,7 @@ list_ass_slice(a, ilow, ihigh, v)
 	else { /* Insert d items; recycle ihigh-ilow items */
 		RESIZE(item, object *, a->ob_size + d);
 		if (item == NULL) {
+			XDEL(recycle);
 			err_nomem();
 			return -1;
 		}
@@ -610,6 +611,21 @@ listreverse(self, args)
 	
 	INCREF(None);
 	return None;
+}
+
+int
+reverselist(v)
+	object *v;
+{
+	if (v == NULL || !is_listobject(v)) {
+		err_badcall();
+		return -1;
+	}
+	v = listreverse((listobject *)v, (object *)NULL);
+	if (v == NULL)
+		return -1;
+	DECREF(v);
+	return 0;
 }
 
 int
