@@ -1731,12 +1731,12 @@ richcmp_##NAME(PyObject *self, PyObject *args, void *wrapped) \
 	return wrap_richcmpfunc(self, args, wrapped, OP); \
 }
 
-RICHCMP_WRAPPER(lt, Py_LT);
-RICHCMP_WRAPPER(le, Py_LE);
-RICHCMP_WRAPPER(eq, Py_EQ);
-RICHCMP_WRAPPER(ne, Py_NE);
-RICHCMP_WRAPPER(gt, Py_GT);
-RICHCMP_WRAPPER(ge, Py_GE);
+RICHCMP_WRAPPER(lt, Py_LT)
+RICHCMP_WRAPPER(le, Py_LE)
+RICHCMP_WRAPPER(eq, Py_EQ)
+RICHCMP_WRAPPER(ne, Py_NE)
+RICHCMP_WRAPPER(gt, Py_GT)
+RICHCMP_WRAPPER(ge, Py_GE)
 
 #undef RICHCMP_ENTRY
 #define RICHCMP_ENTRY(NAME, EXPR) \
@@ -2045,10 +2045,10 @@ slot_sq_length(PyObject *self)
 	return (int)PyInt_AsLong(res);
 }
 
-SLOT1(sq_concat, add, PyObject *, O);
-SLOT1(sq_repeat, mul, int, i);
-SLOT1(sq_item, getitem, int, i);
-SLOT2(sq_slice, getslice, int, int, ii);
+SLOT1(sq_concat, add, PyObject *, O)
+SLOT1(sq_repeat, mul, int, i)
+SLOT1(sq_item, getitem, int, i)
+SLOT2(sq_slice, getslice, int, int, ii)
 
 static int
 slot_sq_ass_item(PyObject *self, int index, PyObject *value)
@@ -2095,12 +2095,12 @@ slot_sq_contains(PyObject *self, PyObject *value)
 	return r;
 }
 
-SLOT1(sq_inplace_concat, iadd, PyObject *, O);
-SLOT1(sq_inplace_repeat, imul, int, i);
+SLOT1(sq_inplace_concat, iadd, PyObject *, O)
+SLOT1(sq_inplace_repeat, imul, int, i)
 
 #define slot_mp_length slot_sq_length
 
-SLOT1(mp_subscript, getitem, PyObject *, O);
+SLOT1(mp_subscript, getitem, PyObject *, O)
 
 static int
 slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
@@ -2120,16 +2120,16 @@ slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
 
 /* XXX the numerical slots should call the reverse operators too;
    but how do they know their type? */
-SLOT1(nb_add, add, PyObject *, O);
-SLOT1(nb_subtract, sub, PyObject *, O);
-SLOT1(nb_multiply, mul, PyObject *, O);
-SLOT1(nb_divide, div, PyObject *, O);
-SLOT1(nb_remainder, mod, PyObject *, O);
-SLOT1(nb_divmod, divmod, PyObject *, O);
-SLOT2(nb_power, pow, PyObject *, PyObject *, OO);
-SLOT0(nb_negative, neg);
-SLOT0(nb_positive, pos);
-SLOT0(nb_absolute, abs);
+SLOT1(nb_add, add, PyObject *, O)
+SLOT1(nb_subtract, sub, PyObject *, O)
+SLOT1(nb_multiply, mul, PyObject *, O)
+SLOT1(nb_divide, div, PyObject *, O)
+SLOT1(nb_remainder, mod, PyObject *, O)
+SLOT1(nb_divmod, divmod, PyObject *, O)
+SLOT2(nb_power, pow, PyObject *, PyObject *, OO)
+SLOT0(nb_negative, neg)
+SLOT0(nb_positive, pos)
+SLOT0(nb_absolute, abs)
 
 static int
 slot_nb_nonzero(PyObject *self)
@@ -2141,29 +2141,29 @@ slot_nb_nonzero(PyObject *self)
 	return (int)PyInt_AsLong(res);
 }
 
-SLOT0(nb_invert, invert);
-SLOT1(nb_lshift, lshift, PyObject *, O);
-SLOT1(nb_rshift, rshift, PyObject *, O);
-SLOT1(nb_and, and, PyObject *, O);
-SLOT1(nb_xor, xor, PyObject *, O);
-SLOT1(nb_or, or, PyObject *, O);
+SLOT0(nb_invert, invert)
+SLOT1(nb_lshift, lshift, PyObject *, O)
+SLOT1(nb_rshift, rshift, PyObject *, O)
+SLOT1(nb_and, and, PyObject *, O)
+SLOT1(nb_xor, xor, PyObject *, O)
+SLOT1(nb_or, or, PyObject *, O)
 /* Not coerce() */
-SLOT0(nb_int, int);
-SLOT0(nb_long, long);
-SLOT0(nb_float, float);
-SLOT0(nb_oct, oct);
-SLOT0(nb_hex, hex);
-SLOT1(nb_inplace_add, iadd, PyObject *, O);
-SLOT1(nb_inplace_subtract, isub, PyObject *, O);
-SLOT1(nb_inplace_multiply, imul, PyObject *, O);
-SLOT1(nb_inplace_divide, idiv, PyObject *, O);
-SLOT1(nb_inplace_remainder, imod, PyObject *, O);
-SLOT2(nb_inplace_power, ipow, PyObject *, PyObject *, OO);
-SLOT1(nb_inplace_lshift, ilshift, PyObject *, O);
-SLOT1(nb_inplace_rshift, irshift, PyObject *, O);
-SLOT1(nb_inplace_and, iand, PyObject *, O);
-SLOT1(nb_inplace_xor, ixor, PyObject *, O);
-SLOT1(nb_inplace_or, ior, PyObject *, O);
+SLOT0(nb_int, int)
+SLOT0(nb_long, long)
+SLOT0(nb_float, float)
+SLOT0(nb_oct, oct)
+SLOT0(nb_hex, hex)
+SLOT1(nb_inplace_add, iadd, PyObject *, O)
+SLOT1(nb_inplace_subtract, isub, PyObject *, O)
+SLOT1(nb_inplace_multiply, imul, PyObject *, O)
+SLOT1(nb_inplace_divide, idiv, PyObject *, O)
+SLOT1(nb_inplace_remainder, imod, PyObject *, O)
+SLOT2(nb_inplace_power, ipow, PyObject *, PyObject *, OO)
+SLOT1(nb_inplace_lshift, ilshift, PyObject *, O)
+SLOT1(nb_inplace_rshift, irshift, PyObject *, O)
+SLOT1(nb_inplace_and, iand, PyObject *, O)
+SLOT1(nb_inplace_xor, ixor, PyObject *, O)
+SLOT1(nb_inplace_or, ior, PyObject *, O)
 
 static int
 slot_tp_compare(PyObject *self, PyObject *other)
@@ -2178,7 +2178,7 @@ slot_tp_compare(PyObject *self, PyObject *other)
 	return (int)r;
 }
 
-SLOT0(tp_repr, repr);
+SLOT0(tp_repr, repr)
 
 static long
 slot_tp_hash(PyObject *self)
@@ -2207,7 +2207,7 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 	return res;
 }
 
-SLOT0(tp_str, str);
+SLOT0(tp_str, str)
 
 static PyObject *
 slot_tp_getattro(PyObject *self, PyObject *name)
@@ -2271,7 +2271,7 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 	return res;
 }
 
-SLOT0(tp_iter, iter);
+SLOT0(tp_iter, iter)
 
 static PyObject *
 slot_tp_iternext(PyObject *self)
@@ -2279,7 +2279,7 @@ slot_tp_iternext(PyObject *self)
 	return PyObject_CallMethod(self, "next", "");
 }
 
-SLOT2(tp_descr_get, get, PyObject *, PyObject *, OO);
+SLOT2(tp_descr_get, get, PyObject *, PyObject *, OO)
 
 static int
 slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
