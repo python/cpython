@@ -829,18 +829,22 @@ find_module(name, path, buf, buflen, p_fp)
 	FILE **p_fp;
 {
 	int i, npath, len, namelen;
+	struct _frozen *f;
 	struct filedescr *fdp = NULL;
 	FILE *fp = NULL;
 	struct stat statbuf;
+	static struct filedescr fd_frozen = {"", "", PY_FROZEN};
+	static struct filedescr fd_builtin = {"", "", C_BUILTIN};
+	static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
 
 	if (path == NULL) {
 		if (is_builtin(name)) {
-			static struct filedescr fd = {"", "", C_BUILTIN};
-			return &fd;
+			strcpy(buf, name);
+			return &fd_builtin;
 		}
-		if (find_frozen(name) != NULL) {
-			static struct filedescr fd = {"", "", PY_FROZEN};
-			return &fd;
+		if ((f = find_frozen(name)) != NULL) {
+			strcpy(buf, name);
+			return &fd_frozen;
 		}
 
 #ifdef MS_COREDLL
@@ -850,14 +854,28 @@ find_module(name, path, buf, buflen, p_fp)
 			return fdp;
 		}
 #endif
+		path = PySys_GetObject("path");
+	}
+	else if (PyString_Check(path)) {
+		/* Submodule of frozen package */
+		if (PyString_Size(path) + 1 + strlen(name) >= buflen) {
+			PyErr_SetString(PyExc_ImportError,
+					"full frozen module name too long");
+			return NULL;
+		}
+		strcpy(buf, PyString_AsString(path));
+		strcat(buf, ".");
+		strcat(buf, name);
+		if (find_frozen(buf) != NULL)
+			return &fd_frozen;
+		PyErr_Format(PyExc_ImportError,
+			     "frozen module %.200s not found", buf);
+		return NULL;
 	}
 
-
-	if (path == NULL)
-		path = PySys_GetObject("path");
 	if (path == NULL || !PyList_Check(path)) {
 		PyErr_SetString(PyExc_ImportError,
-			   "sys.path must be a list of directory names");
+				"sys.path must be a list of directory names");
 		return NULL;
 	}
 	npath = PyList_Size(path);
@@ -915,7 +933,6 @@ find_module(name, path, buf, buflen, p_fp)
 		}
 #ifdef HAVE_STAT
 		if (stat(buf, &statbuf) == 0) {
-			static struct filedescr fd = {"", "", PKG_DIRECTORY};
 			if (S_ISDIR(statbuf.st_mode)) {
 				if (find_init_module(buf)) {
 #ifdef CHECK_IMPORT_CASE
@@ -923,7 +940,7 @@ find_module(name, path, buf, buflen, p_fp)
 							name))
 						return NULL;
 #endif
-					return &fd;
+					return &fd_package;
 				}
 			}
 		}
@@ -1141,6 +1158,8 @@ load_module(name, fp, buf, type)
 
 	case C_BUILTIN:
 	case PY_FROZEN:
+		if (buf != NULL && buf[0] != '\0')
+			name = buf;
 		if (type == C_BUILTIN)
 			err = init_builtin(name);
 		else
@@ -1239,6 +1258,7 @@ get_frozen_object(name)
 	char *name;
 {
 	struct _frozen *p = find_frozen(name);
+	int size;
 
 	if (p == NULL) {
 		PyErr_Format(PyExc_ImportError,
@@ -1246,7 +1266,10 @@ get_frozen_object(name)
 			     name);
 		return NULL;
 	}
-	return PyMarshal_ReadObjectFromString((char *)p->code, p->size);
+	size = p->size;
+	if (size < 0)
+		size = -size;
+	return PyMarshal_ReadObjectFromString((char *)p->code, size);
 }
 
 /* Initialize a frozen module.
@@ -1261,12 +1284,19 @@ PyImport_ImportFrozenModule(name)
 	struct _frozen *p = find_frozen(name);
 	PyObject *co;
 	PyObject *m;
+	int ispackage;
+	int size;
 
 	if (p == NULL)
 		return 0;
+	size = p->size;
+	ispackage = (size < 0);
+	if (ispackage)
+		size = -size;
 	if (Py_VerboseFlag)
-		fprintf(stderr, "import %s # frozen\n", name);
-	co = PyMarshal_ReadObjectFromString((char *)p->code, p->size);
+		fprintf(stderr, "import %s # frozen%s\n",
+			name, ispackage ? " package" : "");
+	co = PyMarshal_ReadObjectFromString((char *)p->code, size);
 	if (co == NULL)
 		return -1;
 	if (!PyCode_Check(co)) {
@@ -1275,6 +1305,22 @@ PyImport_ImportFrozenModule(name)
 			     "frozen object %.200s is not a code object",
 			     name);
 		return -1;
+	}
+	if (ispackage) {
+		/* Set __path__ to the package name */
+		PyObject *d, *s;
+		int err;
+		m = PyImport_AddModule(name);
+		if (m == NULL)
+			return -1;
+		d = PyModule_GetDict(m);
+		s = PyString_InternFromString(name);
+		if (s == NULL)
+			return -1;
+		err = PyDict_SetItemString(d, "__path__", s);
+		Py_DECREF(s);
+		if (err != 0)
+			return err;
 	}
 	m = PyImport_ExecCodeModuleEx(name, co, "<frozen>");
 	Py_DECREF(co);
