@@ -597,8 +597,8 @@ class SafeConfigParser(ConfigParser):
             elif c == "(":
                 m = self._interpvar_match(rest)
                 if m is None:
-                    raise InterpolationSyntaxError(
-                        "bad interpolation variable reference", rest)
+                    raise InterpolationSyntaxError(option, section,
+                        "bad interpolation variable reference %r" % rest)
                 var = m.group(1)
                 rest = rest[m.end():]
                 try:
@@ -613,5 +613,5 @@ class SafeConfigParser(ConfigParser):
                     accum.append(v)
             else:
                 raise InterpolationSyntaxError(
-                    option, section, rest,
+                    option, section,
                     "'%' must be followed by '%' or '(', found: " + `rest`)
