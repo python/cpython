@@ -55,7 +55,8 @@ void Py_Exit Py_PROTO((int));
 
 void Py_Cleanup Py_PROTO((void));
 
-void Py_FatalError Py_PROTO((char *));
+void PyImport_Init	Py_PROTO((void));
+void PyBuiltin_Init	Py_PROTO((void));
 
 #ifdef __cplusplus
 }
