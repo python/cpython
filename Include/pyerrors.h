@@ -60,6 +60,13 @@ extern DL_IMPORT(PyObject *) PyExc_WindowsError;
 
 extern DL_IMPORT(PyObject *) PyExc_MemoryErrorInst;
 
+/* Predefined warning categories */
+extern DL_IMPORT(PyObject *) PyExc_Warning;
+extern DL_IMPORT(PyObject *) PyExc_UserWarning;
+extern DL_IMPORT(PyObject *) PyExc_DeprecationWarning;
+extern DL_IMPORT(PyObject *) PyExc_SyntaxWarning;
+extern DL_IMPORT(PyObject *) PyExc_RuntimeWarning;
+
 
 /* Convenience functions */
 
@@ -84,6 +91,9 @@ extern DL_IMPORT(void) _PyErr_BadInternalCall(char *filename, int lineno);
 DL_IMPORT(PyObject *) PyErr_NewException(char *name, PyObject *base,
                                          PyObject *dict);
 extern DL_IMPORT(void) PyErr_WriteUnraisable(PyObject *);
+
+/* Issue a warning or exception */
+extern DL_IMPORT(int) PyErr_Warn(PyObject *, char *);
 
 /* In sigcheck.c or signalmodule.c */
 extern DL_IMPORT(int) PyErr_CheckSignals(void);
