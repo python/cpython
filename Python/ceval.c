@@ -84,7 +84,6 @@ static int slice_index Py_PROTO((PyObject *, int *));
 static PyObject *apply_slice Py_PROTO((PyObject *, PyObject *, PyObject *));
 static int assign_slice Py_PROTO((PyObject *, PyObject *,
 				  PyObject *, PyObject *));
-static int cmp_exception Py_PROTO((PyObject *, PyObject *));
 static int cmp_member Py_PROTO((PyObject *, PyObject *));
 static PyObject *cmp_outcome Py_PROTO((int, PyObject *, PyObject *));
 static int import_from Py_PROTO((PyObject *, PyObject *, PyObject *));
@@ -1872,6 +1871,9 @@ set_exc_info(tstate, type, value, tb)
 {
 	PyFrameObject *frame;
 	PyObject *tmp_type, *tmp_value, *tmp_tb;
+
+	PyErr_NormalizeException(&type, &value, &tb);
+
 	frame = tstate->frame;
 	if (frame->f_exc_type == NULL) {
 		/* This frame didn't catch an exception before */
@@ -2000,44 +2002,12 @@ do_raise(type, value, tb)
 		Py_DECREF(tmp);
 	}
 
-	/* Now switch on the exception's type */
-	if (PyString_Check(type)) {
+	if (PyString_Check(type))
 		;
-	}
-	else if (PyClass_Check(type)) {
-		/* Raising a class.  If the value is an instance, it
-		   better be an instance of the class.  If it is not,
-		   it will be used to create an instance. */
-		if (PyInstance_Check(value)) {
-			PyObject *inclass = (PyObject*)
-				(((PyInstanceObject*)value)->in_class);
-			if (!PyClass_IsSubclass(inclass, type)) {
-				PyErr_SetString(PyExc_TypeError,
- "raise <class>, <instance> requires that <instance> is a member of <class>");
-				goto raise_error;
-			}
-		}
-		else {
-			/* Go instantiate the class */
-			PyObject *args, *res;
-			if (value == Py_None)
-				args = Py_BuildValue("()");
-			else if (PyTuple_Check(value)) {
-				Py_INCREF(value);
-				args = value;
-			}
-			else
-				args = Py_BuildValue("(O)", value);
-			if (args == NULL)
-				goto raise_error;
-			res = PyEval_CallObject(type, args);
-			Py_DECREF(args);
-			if (res == NULL)
-				goto raise_error;
-			Py_DECREF(value);
-			value = res;
-		}
-	}
+
+	else if (PyClass_Check(type))
+		PyErr_NormalizeException(&type, &value, &tb);
+
 	else if (PyInstance_Check(type)) {
 		/* Raising an instance.  The value should be a dummy. */
 		if (value != Py_None) {
@@ -2465,7 +2435,7 @@ loop_subscript(v, w)
 	v = (*sq->sq_item)(v, i);
 	if (v)
 		return v;
-	if (PyErr_Occurred() == PyExc_IndexError)
+	if (PyErr_ExceptionMatches(PyExc_IndexError))
 		PyErr_Clear();
 	return NULL;
 }
@@ -2518,25 +2488,6 @@ assign_slice(u, v, w, x) /* u[v:w] = x */
 		return PySequence_DelSlice(u, ilow, ihigh);
 	else
 		return PySequence_SetSlice(u, ilow, ihigh, x);
-}
-
-static int
-cmp_exception(err, v)
-	PyObject *err, *v;
-{
-	if (PyTuple_Check(v)) {
-		int i, n;
-		n = PyTuple_Size(v);
-		for (i = 0; i < n; i++) {
-			/* Test recursively */
-			if (cmp_exception(err, PyTuple_GET_ITEM(v, i)))
-				return 1;
-		}
-		return 0;
-	}
-	if (PyClass_Check(v) && PyClass_Check(err))
-		return PyClass_IsSubclass(err, v);
-	return err == v;
 }
 
 static int
@@ -2613,7 +2564,7 @@ cmp_outcome(op, v, w)
 			res = !res;
 		break;
 	case EXC_MATCH:
-		res = cmp_exception(v, w);
+		res = PyErr_GivenExceptionMatches(v, w);
 		break;
 	default:
 		cmp = PyObject_Compare(v, w);
