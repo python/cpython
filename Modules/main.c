@@ -47,12 +47,6 @@ extern char *optarg;
 extern int getopt(); /* PROTO((int, char **, char *)); -- not standardized */
 
 
-/* Subroutines that live in their own file */
-extern char *Py_GetVersion();
-extern char *Py_GetPlatform();
-extern char *Py_GetCopyright();
-
-
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
 static int  orig_argc;

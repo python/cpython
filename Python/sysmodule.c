@@ -274,13 +274,6 @@ list_builtin_module_names()
 void
 PySys_Init()
 {
-	extern long PyInt_GetMax Py_PROTO((void));
-	extern char *Py_GetVersion Py_PROTO((void));
-	extern char *Py_GetCopyright Py_PROTO((void));
-	extern char *Py_GetPlatform Py_PROTO((void));
-	extern char *Py_GetProgramFullPath Py_PROTO((void));
-	extern char *Py_GetPrefix Py_PROTO((void));
-	extern char *Py_GetExecPrefix Py_PROTO((void));
 	extern int fclose Py_PROTO((FILE *));
 	PyObject *m = Py_InitModule("sys", sys_methods);
 	PyObject *v;
