@@ -208,7 +208,7 @@ class Options:
                 self.global_module_index = arg
             elif opt == "--dir":
                 if os.sep == "\\":
-                    arg = re.sub("/", "\\", arg)
+                    arg = re.sub("/", "\\\\", arg)
                 self.builddir = os.path.expanduser(arg)
             elif opt == "--paper":
                 self.paper = arg
