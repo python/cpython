@@ -154,6 +154,9 @@ geteventarg(v, ep)
 				&ep->u.where.mask);
 	case WE_MENU:
 		return getmenudetail(detail, ep);
+	case WE_KEY:
+		return getargs(detail, "(ii)",
+			       &ep->u.key.code, &ep->u.key.mask);
 	default:
 		return 1;
 	}
@@ -1779,6 +1782,9 @@ stdwin_get_poll_event(poll, args)
 			DECREF(v);
 			goto again;
 		}
+		break;
+	case WE_KEY:
+		w = mkvalue("(ii)", e.u.key.code, e.u.key.mask);
 		break;
 	case WE_LOST_SEL:
 		w = newintobject((long)e.u.sel);
