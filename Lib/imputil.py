@@ -10,7 +10,7 @@
 # Gordon McMillan.
 #
 # This module is maintained by Greg and is available at:
-#    http://www.lyra.org/greg/python/imputil.py
+#    http://www.lyra.org/greg/python/
 #
 # Since this isn't in the Python distribution yet, we'll use the CVS ID
 # for tracking:
@@ -28,20 +28,21 @@ import struct
 import marshal
 
 _StringType = type('')
-_ModuleType = type(sys)
+_ModuleType = type(sys)		### doesn't work in JPython...
 
 class ImportManager:
   "Manage the import process."
 
-  def install(self):
-    ### warning: Python 1.6 will have a different hook mechanism; this
-    ### code will need to change.
-    self.__chain_import = __builtin__.__import__
-    self.__chain_reload = __builtin__.reload
-    __builtin__.__import__ = self._import_hook
+  def install(self, namespace=vars(__builtin__)):
+    "Install this ImportManager into the specified namespace."
+
+    if isinstance(namespace, _ModuleType):
+      namespace = vars(namespace)
+
+    ### Note that we have no notion of "uninstall" or "chaining"
+    namespace['__import__'] = self._import_hook
     ### fix this
-    #__builtin__.reload = None
-    #__builtin__.reload = self._reload_hook
+    #namespace['reload'] = self._reload_hook
 
   def add_suffix(self, suffix, importer):
     assert isinstance(importer, SuffixImporter)
@@ -94,7 +95,6 @@ class ImportManager:
       if not top_module:
         # the topmost module wasn't found at all.
         raise ImportError, 'No module named ' + fqname
-        return self.__chain_import(name, globals, locals, fromlist)
 
     # fast-path simple imports
     if len(parts) == 1:
@@ -125,7 +125,6 @@ class ImportManager:
     # means that something else imported the module, and we have no knowledge
     # of how to get sub-modules out of the thing.
     raise ImportError, 'No module named ' + fqname
-    return self.__chain_import(name, globals, locals, fromlist)
 
   def _determine_import_context(self, globals):
     """Returns the context in which a module should be imported.
@@ -170,7 +169,7 @@ class ImportManager:
     # scan sys.path looking for a location in the filesystem that contains
     # the module, or an Importer object that can import the module.
     for item in sys.path:
-      if type(item) == _StringType:
+      if isinstance(item, _StringType):
         module = self.fs_imp.import_from_dir(item, name)
       else:
         module = item.import_top(name)
@@ -185,7 +184,8 @@ class ImportManager:
     # importer), but at least we can validate that it's ours to reload
     importer = module.__dict__.get('__importer__')
     if not importer:
-      return self.__chain_reload(module)
+      ### oops. now what...
+      pass
 
     # okay. it is using the imputil system, and we must delegate it, but
     # we don't know what to do (yet)
@@ -269,7 +269,7 @@ class Importer:
 
   def _process_result(self, (ispkg, code, values), fqname):
     # did get_code() return an actual module? (rather than a code object)
-    is_module = type(code) is _ModuleType
+    is_module = isinstance(code, _ModuleType)
 
     # use the returned module, or create a new one to exec code into
     if is_module:
@@ -379,14 +379,11 @@ class Importer:
 # Some handy stuff for the Importers
 #
 
-# byte-compiled file suffic character
+# byte-compiled file suffix character
 _suffix_char = __debug__ and 'c' or 'o'
 
 # byte-compiled file suffix
 _suffix = '.py' + _suffix_char
-
-# the C_EXTENSION suffixes
-_c_suffixes = filter(lambda x: x[2] == imp.C_EXTENSION, imp.get_suffixes())
 
 def _compile(pathname, timestamp):
   """Compile (and cache) a Python source file.
@@ -482,202 +479,6 @@ def _timestamp(pathname):
   except OSError:
     return None
   return long(s[8])
-
-def _fs_import(dir, modname, fqname):
-  "Fetch a module from the filesystem."
-
-  pathname = _os_path_join(dir, modname)
-  if _os_path_isdir(pathname):
-    values = { '__pkgdir__' : pathname, '__path__' : [ pathname ] }
-    ispkg = 1
-    pathname = _os_path_join(pathname, '__init__')
-  else:
-    values = { }
-    ispkg = 0
-
-    # look for dynload modules
-    for desc in _c_suffixes:
-      file = pathname + desc[0]
-      try:
-        fp = open(file, desc[1])
-      except IOError:
-        pass
-      else:
-        module = imp.load_module(fqname, fp, file, desc)
-        values['__file__'] = file
-        return 0, module, values
-
-  t_py = _timestamp(pathname + '.py')
-  t_pyc = _timestamp(pathname + _suffix)
-  if t_py is None and t_pyc is None:
-    return None
-  code = None
-  if t_py is None or (t_pyc is not None and t_pyc >= t_py):
-    file = pathname + _suffix
-    f = open(file, 'rb')
-    if f.read(4) == imp.get_magic():
-      t = struct.unpack('<I', f.read(4))[0]
-      if t == t_py:
-        code = marshal.load(f)
-    f.close()
-  if code is None:
-    file = pathname + '.py'
-    code = _compile(file, t_py)
-
-  values['__file__'] = file
-  return ispkg, code, values
-
-
-######################################################################
-#
-# Simple function-based importer
-#
-class FuncImporter(Importer):
-  "Importer subclass to use a supplied function rather than method overrides."
-  def __init__(self, func):
-    self.func = func
-  def get_code(self, parent, modname, fqname):
-    return self.func(parent, modname, fqname)
-
-def install_with(func):
-  FuncImporter(func).install()
-
-
-######################################################################
-#
-# Base class for archive-based importing
-#
-class PackageArchiveImporter(Importer):
-  """Importer subclass to import from (file) archives.
-
-  This Importer handles imports of the style <archive>.<subfile>, where
-  <archive> can be located using a subclass-specific mechanism and the
-  <subfile> is found in the archive using a subclass-specific mechanism.
-
-  This class defines two hooks for subclasses: one to locate an archive
-  (and possibly return some context for future subfile lookups), and one
-  to locate subfiles.
-  """
-
-  def get_code(self, parent, modname, fqname):
-    if parent:
-      # the Importer._finish_import logic ensures that we handle imports
-      # under the top level module (package / archive).
-      assert parent.__importer__ == self
-
-      # if a parent "package" is provided, then we are importing a sub-file
-      # from the archive.
-      result = self.get_subfile(parent.__archive__, modname)
-      if result is None:
-        return None
-      if type(result) == type(()):
-        return (0,) + result
-      return 0, result
-
-    # no parent was provided, so the archive should exist somewhere on the
-    # default "path".
-    archive = self.get_archive(modname)
-    if archive is None:
-      return None
-    return 1, "", {'__archive__':archive}
-
-  def get_archive(self, modname):
-    """Get an archive of modules.
-
-    This method should locate an archive and return a value which can be
-    used by get_subfile to load modules from it. The value may be a simple
-    pathname, an open file, or a complex object that caches information
-    for future imports.
-
-    Return None if the archive was not found.
-    """
-    raise RuntimeError, "get_archive not implemented"
-
-  def get_subfile(self, archive, modname):
-    """Get code from a subfile in the specified archive.
-
-    Given the specified archive (as returned by get_archive()), locate
-    and return a code object for the specified module name.
-
-    A 2-tuple may be returned, consisting of a code object and a dict
-    of name/values to place into the target module.
-
-    Return None if the subfile was not found.
-    """
-    raise RuntimeError, "get_subfile not implemented"
-
-
-class PackageArchive(PackageArchiveImporter):
-  "PackageArchiveImporter subclass that refers to a specific archive."
-
-  def __init__(self, modname, archive_pathname):
-    self.__modname = modname
-    self.__path = archive_pathname
-
-  def get_archive(self, modname):
-    if modname == self.__modname:
-      return self.__path
-    return None
-
-  # get_subfile is passed the full pathname of the archive
-
-
-######################################################################
-#
-# Emulate the standard directory-based import mechanism
-#
-class DirectoryImporter(Importer):
-  "Importer subclass to emulate the standard importer."
-
-  def __init__(self, dir):
-    self.dir = dir
-
-  def get_code(self, parent, modname, fqname):
-    if parent:
-      dir = parent.__pkgdir__
-    else:
-      dir = self.dir
-
-    # defer the loading of OS-related facilities
-    if not _os_stat:
-      _os_bootstrap()
-
-    # Return the module (and other info) if found in the specified
-    # directory. Otherwise, return None.
-    return _fs_import(dir, modname, fqname)
-
-  def __repr__(self):
-    return '<%s.%s for "%s" at 0x%x>' % (self.__class__.__module__,
-                                         self.__class__.__name__,
-                                         self.dir,
-                                         id(self))
-
-######################################################################
-#
-# Emulate the standard path-style import mechanism
-#
-class PathImporter(Importer):
-  def __init__(self, path=sys.path):
-    self.path = path
-
-    # we're definitely going to be importing something in the future,
-    # so let's just load the OS-related facilities.
-    if not _os_stat:
-      _os_bootstrap()
-
-  def get_code(self, parent, modname, fqname):
-    if parent:
-      # we are looking for a module inside of a specific package
-      return _fs_import(parent.__pkgdir__, modname, fqname)
-
-    # scan sys.path, looking for the requested module
-    for dir in self.path:
-      result = _fs_import(dir, modname, fqname)
-      if result:
-        return result
-
-    # not found
-    return None
 
 
 ######################################################################
@@ -791,18 +592,6 @@ class DynLoadSuffixImporter(SuffixImporter):
 
 
 ######################################################################
-
-def _test_dir():
-  "Debug/test function to create DirectoryImporters from sys.path."
-  path = sys.path[:]
-  path.reverse()
-  for d in path:
-    DirectoryImporter(d).install()
-
-def _test_revamp():
-  "Debug/test function for the revamped import system."
-  PathImporter().install()
-  BuiltinImporter().install()
 
 def _print_importers():
   items = sys.modules.items()
