@@ -151,7 +151,8 @@ class config (Command):
                                       library_dirs=library_dirs,
                                       target_lang=lang)
 
-        prog = prog + self.compiler.exe_extension
+        if self.compiler.exe_extension is not None:
+            prog = prog + self.compiler.exe_extension
         self.temp_files.append(prog)
 
         return (src, obj, prog)
