@@ -9,6 +9,25 @@ AS_IS = None
 whitespace = '[' + string.whitespace + ']+'
 
 
+class NullFormatter:
+
+    def __init__(self): pass
+    def end_paragraph(self, blankline): pass
+    def add_line_break(self): pass
+    def add_hor_rule(self): pass
+    def add_label_data(self, format, counter): pass
+    def add_flowing_data(self, data): pass
+    def add_literal_data(self, data): pass
+    def flush_softspace(self): pass
+    def push_font(self, x): pass
+    def pop_font(self): pass
+    def push_margin(self, margin): pass
+    def pop_margin(self): pass
+    def set_spacing(self, spacing): pass
+    def push_style(self, style): pass
+    def pop_style(self): pass
+
+
 class AbstractFormatter:
 
     def __init__(self, writer):
@@ -17,8 +36,8 @@ class AbstractFormatter:
 	self.margin_stack = []		# Margin state
 	self.spacing = None		# Vertical spacing state
 	self.style_stack = []		# Other state, e.g. color
-	self.nospace = 1 # Should leading space be suppressed
-	self.softspace = 0 # Should a space be inserted
+	self.nospace = 1		# Should leading space be suppressed
+	self.softspace = 0		# Should a space be inserted
 
     def end_paragraph(self, blankline):
 	if not self.nospace:
