@@ -322,6 +322,7 @@ typedef struct methodlist PyMethodDef;
 #define PyArg_GetDoubleArray getidoublearray
 #define PyArg_GetFloat getifloatarg
 #define PyArg_GetFloatArray getifloatarray
+#define PyArg_GetInt getintarg
 #define PyArg_GetLong getilongarg
 #define PyArg_GetLongArray getilongarray
 #define PyArg_GetLongArraySize getilongarraysize
