@@ -795,6 +795,8 @@ files if \var{dir} is omitted or \code{None}.  If given and not
 filename.  Applications are responsible for properly creating and
 managing files created using paths returned by \function{tempnam()};
 no automatic cleanup is provided.
+\warning{Use of \function{tempnam()} is vulnerable to symlink attacks;
+consider using \function{tmpfile()} instead.}
 Availability: \UNIX, Windows.
 \end{funcdesc}
 
@@ -805,6 +807,8 @@ entry in a common location for temporary files.  Applications are
 responsible for properly creating and managing files created using
 paths returned by \function{tmpnam()}; no automatic cleanup is
 provided.
+\warning{Use of \function{tmpnam()} is vulnerable to symlink attacks;
+consider using \function{tmpfile()} instead.}
 Availability: \UNIX, Windows.
 \end{funcdesc}
 
@@ -1011,20 +1015,36 @@ Availability: \UNIX{}, Windows.
 \versionadded{1.6}
 \end{funcdesc}
 
-\begin{datadesc}{P_WAIT}
-\dataline{P_NOWAIT}
+\begin{datadesc}{P_NOWAIT}
 \dataline{P_NOWAITO}
-Possible values for the \var{mode} parameter to \function{spawnv()}
-and \function{spawnve()}.
+Possible values for the \var{mode} parameter to the \function{spawn*()}
+family of functions.  If either of these values is given, the
+\function{spawn*()} functions will return as soon as the new process
+has been created, with the process ID as the return value.
 Availability: \UNIX{}, Windows.
 \versionadded{1.6}
 \end{datadesc}
 
-\begin{datadesc}{P_OVERLAY}
-\dataline{P_DETACH}
-Possible values for the \var{mode} parameter to \function{spawnv()}
-and \function{spawnve()}.  These are less portable than those listed
-above.
+\begin{datadesc}{P_WAIT}
+Possible value for the \var{mode} parameter to the \function{spawn*()}
+family of functions.  If this is given as \var{mode}, the
+\function{spawn*()} functions will not return until the new process
+has run to completion and will return the exit code of the process the
+run is successful, or \code{-\var{signal}} if a signal kills the
+process.
+Availability: \UNIX{}, Windows.
+\versionadded{1.6}
+\end{datadesc}
+
+\begin{datadesc}{P_DETACH}
+\dataline{P_OVERLAY}
+Possible values for the \var{mode} parameter to the
+\function{spawn*()} family of functions.  These are less portable than
+those listed above.
+\constant{P_DETACH} is similar to \constant{P_NOWAIT}, but the new
+process is detached from the console of the calling process.
+If \constant{P_OVERLAY} is used, the current process will be replaced;
+the \function{spawn*()} function will not return.
 Availability: Windows.
 \versionadded{1.6}
 \end{datadesc}
