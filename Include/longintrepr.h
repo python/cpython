@@ -33,7 +33,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    And, at some places it is assumed that MASK fits in an int, as well. */
 
 typedef unsigned short digit;
+typedef unsigned int wdigit; /* digit widened to parameter size */
 typedef unsigned long twodigits;
+typedef long stwodigits; /* signed variant of twodigits */
 
 #define SHIFT	15
 #define BASE	((digit)1 << SHIFT)
@@ -61,9 +63,6 @@ typedef struct {
 /* Internal use only */
 longobject *alloclongobject PROTO((int));
 longobject *long_normalize PROTO((longobject *));
-longobject *mul1 PROTO((longobject *, digit));
-longobject *muladd1 PROTO((longobject *, digit, digit));
-longobject *divrem1 PROTO((longobject *, digit, digit *));
-
-/* Check for interrupts during operations on long ints >= this size */
-#define INTRLIMIT	20
+longobject *mul1 PROTO((longobject *, wdigit));
+longobject *muladd1 PROTO((longobject *, wdigit, wdigit));
+longobject *divrem1 PROTO((longobject *, wdigit, digit *));
