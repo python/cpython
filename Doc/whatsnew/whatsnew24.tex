@@ -838,8 +838,7 @@ tranmitting multiple XML-RPC calls in a single HTTP operation.
 
 The \module{cookielib} library supports client-side handling for HTTP
 cookies, just as the \module{Cookie} provides server-side cookie
-support in CGI scripts. This library manages cookies in a way similar
-to web browsers. Cookies are stored in cookie jars; the library
+support in CGI scripts. Cookies are stored in cookie jars; the library
 transparently stores cookies offered by the web server in the cookie
 jar, and fetches the cookie from the jar when connecting to the
 server. Similar to web browsers, policy objects control whether
@@ -874,16 +873,16 @@ Changes to Python's build process and to the C API include:
   during the look-up process.
 
   \item A new method flag, \constant{METH_COEXISTS}, allows a function
-  defined in slots to co-exist with a PyCFunction having the same name.
-  This can halve the access to time to a method such as
+  defined in slots to co-exist with a \ctype{PyCFunction} having the
+  same name.  This can halve the access time for a method such as
   \method{set.__contains__()}.
 
   \item Python can now be built with additional profiling for the interpreter
-   itself, useful if you're working on the Python core.  
+   itself.  This is intended for people developing on the Python core.  
    Providing \longprogramopt{--enable-profiling} to the  
    \program{configure} script will let you profile the interpreter with 
    \program{gprof}, and providing the \longprogramopt{--with-tsc} switch 
-   enables profiling using the Pentium's Time-Stamp-Counter.
+   enables profiling using the Pentium's Time-Stamp-Counter register.
 
   \item The \ctype{tracebackobject} type has been renamed to \ctype{PyTracebackObject}.
 
@@ -939,12 +938,12 @@ changes to your code:
 \item \function{dircache.listdir()} now passes exceptions to the caller
       instead of returning empty lists.
 
-\item \function{LexicalHandler.startDTD()} used to receive public and
-  system ID in the wrong order.  This has been corrected; applications
+\item \function{LexicalHandler.startDTD()} used to receive the public and
+  system IDs in the wrong order.  This has been corrected; applications
   relying on the wrong order need to be fixed.
 
-\item \function{fcntl.ioctl} now warns if the mutate arg is omitted
- and relevant.
+\item \function{fcntl.ioctl} now warns if the \var{mutate} 
+ argument is omitted and relevant.
 
 \end{itemize}
 
