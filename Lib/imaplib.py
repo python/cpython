@@ -1069,12 +1069,12 @@ def Time2Internaldate(date_time):
     Return string in form: '"DD-Mmm-YYYY HH:MM:SS +HHMM"'
     """
 
-    dttype = type(date_time)
-    if dttype is type(1) or dttype is type(1.1):
+    if isinstance(date_time, int) or isinstance(date_time, float):
         tt = time.localtime(date_time)
-    elif dttype is type(()):
+    elif isinstance(date_time, tuple) or \
+             isinstance(date_time, time.struct_time):
         tt = date_time
-    elif dttype is type(""):
+    elif isinstance(date_time, str):
         return date_time        # Assume in correct format
     else: raise ValueError
 
@@ -1085,7 +1085,7 @@ def Time2Internaldate(date_time):
         zone = -time.altzone
     else:
         zone = -time.timezone
-    return '"' + dt + " %+02d%02d" % divmod(zone/60, 60) + '"'
+    return '"' + dt + " %+03d%02d" % divmod(zone/60, 60) + '"'
 
 
 
