@@ -87,8 +87,20 @@ DL_IMPORT(void) PyOS_FiniInterrupts(void);
 DL_IMPORT(char *) PyOS_Readline(char *);
 extern DL_IMPORT(int) (*PyOS_InputHook)(void);
 extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer)(char *);
+
+/* Stack size, in "pointers" (so we get extra safety margins
+   on 64-bit platforms).  On a 32-bit platform, this translates
+   to a 8k margin. */
+#define PYOS_STACK_MARGIN 2048
+
+#if defined(WIN32) && defined(_MSC_VER)
+/* Enable stack checking under Microsoft C */
+#define USE_STACKCHECK
+#endif
+
 #ifdef USE_STACKCHECK
-int PyOS_CheckStack(void);		/* Check that we aren't overflowing our stack */
+/* Check that we aren't overflowing our stack */
+DL_IMPORT(int) PyOS_CheckStack(void);
 #endif
 
 #ifdef __cplusplus
