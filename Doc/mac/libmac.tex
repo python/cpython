@@ -1,4 +1,5 @@
 \chapter{Macintosh Specific Services}
+\label{macintosh}
 
 The modules in this chapter are available on the Apple Macintosh only.
 
@@ -26,12 +27,67 @@ If applicable the module will define a number of Python objects for
 the various structures declared by the toolbox, and operations will be
 implemented as methods of the object. Other operations will be
 implemented as functions in the module. Not all operations possible in
-C will also be possible in Python (callbacks are often a problem), and
+\C{} will also be possible in Python (callbacks are often a problem), and
 parameters will occasionally be different in Python (input and output
 buffers, especially). All methods and functions have a \code{__doc__}
 string describing their arguments and return values, and for
-additional description you are referred to Inside Mac or similar
-works.
+additional description you are referred to \emph{Inside Macintosh} or
+similar works.
+
+The following modules are documented here:
+
+\begin{itemize}
+
+\item[mac]
+--- Similar interfaces to the \module{posix} module.
+
+\item[macpath]
+--- Path manipulation functions; use via \code{os.path}.
+
+\item[ctb]
+--- Interfaces to the Communications Tool Box.  Only the Connection
+Manager is currently supported.
+
+\item[macconsole]
+--- Think C's console package is available using this module.
+
+\item[macdnr]
+--- Interfaces to the Macintosh Domain Name Resolver.
+
+\item[macfs]
+--- Support for FSSpec, the Alias Manager, \program{finder} aliases,
+and the Standard File package.
+
+\item[macic]
+--- Internet Config.
+
+\item[MacOS]
+--- Access to MacOS specific interpreter features.
+
+\item[macostools]
+--- Convenience routines for file manipulation.
+
+\item[findertools]
+--- Wrappers around the \program{finder}'s Apple Events interface.
+
+\item[mactcp]
+--- The MacTCP interfaces.
+
+\item[macspeech]
+--- Interface to the Macintosh Speech Manager.
+
+\item[EasyDialogs]
+--- Basic Macintosh dialogs.
+
+\item[FrameWork]
+--- Interactive application framework.
+
+\item[MiniAEFrame]
+--- Support to act as an Open Scripting Architecture (OSA) server
+(``Apple Events'').
+
+\end{itemize}
+
 
 \section{Built-in Module \sectcode{mac}}
 \label{module-mac}
