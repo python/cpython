@@ -46,7 +46,7 @@ def intersect(list):
 # This works with a list or tuple argument.
 #
 def union(list):
-	(left, top), (right, bottom) = empty
+	(left, top), (right, bottom) = list[0]
 	for (l, t), (r, b) in list[1:]:
 		if not is_empty(((l, t), (r, b))):
 			if l < left: left = l
