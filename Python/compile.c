@@ -1958,7 +1958,7 @@ com_factor(struct compiling *c, node *n)
 			return;
 		}
 		if (childtype == MINUS) {
-			char *s = malloc(strlen(STR(pnum)) + 2);
+			char *s = PyMem_Malloc(strlen(STR(pnum)) + 2);
 			if (s == NULL) {
 				com_error(c, PyExc_MemoryError, "");
 				com_addbyte(c, 255);
@@ -1966,7 +1966,7 @@ com_factor(struct compiling *c, node *n)
 			}
 			s[0] = '-';
 			strcpy(s + 1, STR(pnum));
-			free(STR(pnum));
+			PyMem_Free(STR(pnum));
 			STR(pnum) = s;
 		}
 		com_atom(c, patom);
