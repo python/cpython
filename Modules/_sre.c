@@ -27,6 +27,7 @@
  * 2001-01-15 fl  avoid recursion for MIN_UNTIL; fixed uppercase literal bug
  * 2001-01-16 fl  fixed memory leak in pattern destructor
  * 2001-03-20 fl  lots of fixes for 2.1b2
+ * 2001-04-15 fl  export copyright as Python attribute, not global
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -41,7 +42,8 @@
 
 #ifndef SRE_RECURSIVE
 
-char copyright[] = " SRE 2.1b2 Copyright (c) 1997-2001 by Secret Labs AB ";
+static char copyright[] =
+    " SRE 2.1b2 Copyright (c) 1997-2001 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -2427,6 +2429,11 @@ init_sre(void)
     PyDict_SetItemString(
         d, "MAGIC", (PyObject*) PyInt_FromLong(SRE_MAGIC)
         );
+
+    PyDict_SetItemString(
+        d, "copyright", (PyObject*) PyString_FromString(copyright)
+        );
+
 }
 
 #endif /* !defined(SRE_RECURSIVE) */
