@@ -38,7 +38,8 @@ enum filetype {
 	PY_RESOURCE, /* Mac only */
 	PKG_DIRECTORY,
 	C_BUILTIN,
-	PY_FROZEN
+	PY_FROZEN,
+	PY_CODERESOURCE /* Mac only */
 };
 
 extern struct filedescr {
