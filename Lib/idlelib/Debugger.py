@@ -84,7 +84,7 @@ class Debugger:
         pyshell = self.pyshell
         self.flist = pyshell.flist
         self.root = root = pyshell.root
-        self.top = top =ListedToplevel(root)
+        self.top = top = ListedToplevel(root)
         self.top.wm_title("Debug Control")
         self.top.wm_iconname("Debug")
         top.wm_protocol("WM_DELETE_WINDOW", self.close)
@@ -155,7 +155,6 @@ class Debugger:
         if self.vglobals.get():
             self.show_globals()
 
-
     def interaction(self, message, frame, info=None):
         self.frame = frame
         self.status.configure(text=message)
@@ -191,7 +190,7 @@ class Debugger:
         for b in self.buttons:
             b.configure(state="normal")
         #
-        self.top.tkraise()
+        self.top.wakeup()
         self.root.mainloop()
         #
         for b in self.buttons:

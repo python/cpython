@@ -75,7 +75,7 @@ class EditorWindow:
         root = root or flist.root
         self.root = root
         self.menubar = Menu(root)
-        self.top = top = self.Toplevel(root, menu=self.menubar)
+        self.top = top = WindowList.ListedToplevel(root, menu=self.menubar)
         if flist:
             self.tkinter_vars = flist.vars
             #self.top.instance_dict makes flist.inversedict avalable to
@@ -102,6 +102,7 @@ class EditorWindow:
                         'cursor',fgBg='fg'),
                 width=self.width,
                 height=idleConf.GetOption('main','EditorWindow','height') )
+        self.top.focused_widget = self.text
 
         self.createmenubar()
         self.apply_bindings()
@@ -235,13 +236,6 @@ class EditorWindow:
         line, column = self.text.index(INSERT).split('.')
         self.status_bar.set_label('column', 'Col: %s' % column)
         self.status_bar.set_label('line', 'Ln: %s' % line)
-
-    def wakeup(self):
-        if self.top.wm_state() == "iconic":
-            self.top.wm_deiconify()
-        else:
-            self.top.tkraise()
-        self.text.focus_set()
 
     menu_specs = [
         ("file", "_File"),

@@ -1,7 +1,23 @@
+What's New in IDLE 1.1a3?
+=========================
+
+*Release date: 02-SEP-2004*
+
+- Improve keyboard focus binding, especially in Windows menu.  Improve
+  window raising, especially in the Windows menu and in the debugger.
+  IDLEfork 763524.
+
+- If user passes a non-existant filename on the commandline, just
+  open a new file, don't raise a dialog.  IDLEfork 854928.
+
+
 What's New in IDLE 1.1a2?
 =========================
 
 *Release date: 05-AUG-2004*
+
+- EditorWindow.py was not finding the .chm help file on Windows.  Typo
+  at Rev 1.54.  Python Bug 990954
 
 - checking sys.platform for substring 'win' was breaking IDLE docs on Mac
   (darwin).  Also, Mac Safari browser requires full file:// URIs.  SF 900580.
