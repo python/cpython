@@ -1,37 +1,21 @@
 """Tests for distutils.command.install_scripts."""
 
 import os
-import shutil
-import tempfile
 import unittest
 
 from distutils.command.install_scripts import install_scripts
 from distutils.core import Distribution
 
+from distutils.tests import support
 
-class InstallScriptsTestCase(unittest.TestCase):
 
-    def setUp(self):
-        self.tempdirs = []
-
-    def tearDown(self):
-        while self.tempdirs:
-            d = self.tempdirs.pop()
-            shutil.rmtree(d)
-
-    def mkdtemp(self):
-        """Create a temporary directory that will be cleaned up.
-
-        Returns the path of the directory.
-        """
-        d = tempfile.mkdtemp()
-        self.tempdirs.append(d)
-        return d
+class InstallScriptsTestCase(support.TempdirManager, unittest.TestCase):
 
     def test_default_settings(self):
         dist = Distribution()
-        dist.command_obj["build"] = DummyCommand(build_scripts="/foo/bar")
-        dist.command_obj["install"] = DummyCommand(
+        dist.command_obj["build"] = support.DummyCommand(
+            build_scripts="/foo/bar")
+        dist.command_obj["install"] = support.DummyCommand(
             install_scripts="/splat/funk",
             force=1,
             skip_build=1,
@@ -71,8 +55,8 @@ class InstallScriptsTestCase(unittest.TestCase):
 
         target = self.mkdtemp()
         dist = Distribution()
-        dist.command_obj["build"] = DummyCommand(build_scripts=source)
-        dist.command_obj["install"] = DummyCommand(
+        dist.command_obj["build"] = support.DummyCommand(build_scripts=source)
+        dist.command_obj["install"] = support.DummyCommand(
             install_scripts=target,
             force=1,
             skip_build=1,
@@ -84,17 +68,6 @@ class InstallScriptsTestCase(unittest.TestCase):
         installed = os.listdir(target)
         for name in expected:
             self.assert_(name in installed)
-
-
-class DummyCommand:
-    """Class to store options for retrieval via set_undefined_options()."""
-
-    def __init__(self, **kwargs):
-        for kw, val in kwargs.items():
-            setattr(self, kw, val)
-
-    def ensure_finalized(self):
-        pass
 
 
 
