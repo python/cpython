@@ -29,19 +29,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Mapping object implementation; using a hash table */
-
-/* This file should really be called "dictobject.c", since "mapping"
-  is the generic name for objects with an unorderred arbitrary key
-  set (just like lists are sequences), but since it improves (and was
-  originally derived from) a file by that name I had to change its
-  name.  For the user these objects are still called "dictionaries". */
+/* Dictionaru object implementation using a hash table */
 
 #include "Python.h"
 
 
 /*
- * MINSIZE is the minimum size of a mapping.
+ * MINSIZE is the minimum size of a dictionary.
  */
 
 #define MINSIZE 4
@@ -84,7 +78,7 @@ static long polys[] = {
 };
 
 /* Object used as dummy key to fill deleted entries */
-static PyObject *dummy; /* Initialized by first call to newmappingobject() */
+static PyObject *dummy; /* Initialized by first call to newdictobject() */
 
 /*
 Invariant for entries: when in use, de_value is not NULL and de_key is
@@ -99,7 +93,7 @@ typedef struct {
 #ifdef USE_CACHE_ALIGNED
 	long	aligner;
 #endif
-} mappingentry;
+} dictentry;
 
 /*
 To ensure the lookup algorithm terminates, the table size must be a
@@ -115,19 +109,19 @@ typedef struct {
 	int ma_used;
 	int ma_size;
 	int ma_poly;
-	mappingentry *ma_table;
-} mappingobject;
+	dictentry *ma_table;
+} dictobject;
 
 PyObject *
 PyDict_New()
 {
-	register mappingobject *mp;
+	register dictobject *mp;
 	if (dummy == NULL) { /* Auto-initialize dummy */
 		dummy = PyString_FromString("<dummy key>");
 		if (dummy == NULL)
 			return NULL;
 	}
-	mp = PyObject_NEW(mappingobject, &PyDict_Type);
+	mp = PyObject_NEW(dictobject, &PyDict_Type);
 	if (mp == NULL)
 		return NULL;
 	mp->ma_size = 0;
@@ -159,20 +153,20 @@ where x is a root. The initial value is derived from sum, too.
 (This version is due to Reimer Behrends, some ideas are also due to
 Jyrki Alakuijala.)
 */
-static mappingentry *lookmapping Py_PROTO((mappingobject *, PyObject *, long));
-static mappingentry *
-lookmapping(mp, key, hash)
-	mappingobject *mp;
+static dictentry *lookdict Py_PROTO((dictobject *, PyObject *, long));
+static dictentry *
+lookdict(mp, key, hash)
+	dictobject *mp;
 	PyObject *key;
 	long hash;
 {
 	register int i;
 	register unsigned incr;
 	register unsigned long sum = (unsigned long) hash;
-	register mappingentry *freeslot = NULL;
+	register dictentry *freeslot = NULL;
 	register unsigned int mask = mp->ma_size-1;
-	mappingentry *ep0 = mp->ma_table;
-	register mappingentry *ep;
+	dictentry *ep0 = mp->ma_table;
+	register dictentry *ep;
 	/* We must come up with (i, incr) such that 0 <= i < ma_size
 	   and 0 < incr < ma_size and both are a function of hash */
 	i = (~sum) & mask;
@@ -227,18 +221,18 @@ Internal routine to insert a new item into the table.
 Used both by the internal resize routine and by the public insert routine.
 Eats a reference to key and one to value.
 */
-static void insertmapping
-	Py_PROTO((mappingobject *, PyObject *, long, PyObject *));
+static void insertdict
+	Py_PROTO((dictobject *, PyObject *, long, PyObject *));
 static void
-insertmapping(mp, key, hash, value)
-	register mappingobject *mp;
+insertdict(mp, key, hash, value)
+	register dictobject *mp;
 	PyObject *key;
 	long hash;
 	PyObject *value;
 {
 	PyObject *old_value;
-	register mappingentry *ep;
-	ep = lookmapping(mp, key, hash);
+	register dictentry *ep;
+	ep = lookdict(mp, key, hash);
 	if (ep->me_value != NULL) {
 		old_value = ep->me_value;
 		ep->me_value = value;
@@ -262,16 +256,16 @@ Restructure the table by allocating a new table and reinserting all
 items again.  When entries have been deleted, the new table may
 actually be smaller than the old one.
 */
-static int mappingresize Py_PROTO((mappingobject *));
+static int dictresize Py_PROTO((dictobject *));
 static int
-mappingresize(mp)
-	mappingobject *mp;
+dictresize(mp)
+	dictobject *mp;
 {
 	register int oldsize = mp->ma_size;
 	register int newsize, newpoly;
-	register mappingentry *oldtable = mp->ma_table;
-	register mappingentry *newtable;
-	register mappingentry *ep;
+	register dictentry *oldtable = mp->ma_table;
+	register dictentry *newtable;
+	register dictentry *ep;
 	register int i;
 	newsize = mp->ma_size;
 	for (i = 0, newsize = MINSIZE; ; i++, newsize <<= 1) {
@@ -285,7 +279,7 @@ mappingresize(mp)
 			break;
 		}
 	}
-	newtable = (mappingentry *) calloc(sizeof(mappingentry), newsize);
+	newtable = (dictentry *) calloc(sizeof(dictentry), newsize);
 	if (newtable == NULL) {
 		PyErr_NoMemory();
 		return -1;
@@ -300,7 +294,7 @@ mappingresize(mp)
 	   (and possible side effects) till the table is copied */
 	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
 		if (ep->me_value != NULL)
-			insertmapping(mp,ep->me_key,ep->me_hash,ep->me_value);
+			insertdict(mp,ep->me_key,ep->me_hash,ep->me_value);
 	}
 	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
 		if (ep->me_value == NULL)
@@ -321,7 +315,7 @@ PyDict_GetItem(op, key)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	if (((mappingobject *)op)->ma_table == NULL)
+	if (((dictobject *)op)->ma_table == NULL)
 		return NULL;
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
@@ -332,7 +326,7 @@ PyDict_GetItem(op, key)
 		if (hash == -1)
 			return NULL;
 	}
-	return lookmapping((mappingobject *)op, key, hash) -> me_value;
+	return lookdict((dictobject *)op, key, hash) -> me_value;
 }
 
 int
@@ -341,13 +335,13 @@ PyDict_SetItem(op, key, value)
 	PyObject *key;
 	PyObject *value;
 {
-	register mappingobject *mp;
+	register dictobject *mp;
 	register long hash;
 	if (!PyDict_Check(op)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
-	mp = (mappingobject *)op;
+	mp = (dictobject *)op;
 #ifdef CACHE_HASH
 	if (PyString_Check(key)) {
 #ifdef INTERN_STRINGS
@@ -372,14 +366,14 @@ PyDict_SetItem(op, key, value)
 	}
 	/* if fill >= 2/3 size, resize */
 	if (mp->ma_fill*3 >= mp->ma_size*2) {
-		if (mappingresize(mp) != 0) {
+		if (dictresize(mp) != 0) {
 			if (mp->ma_fill+1 > mp->ma_size)
 				return -1;
 		}
 	}
 	Py_INCREF(value);
 	Py_INCREF(key);
-	insertmapping(mp, key, hash, value);
+	insertdict(mp, key, hash, value);
 	return 0;
 }
 
@@ -388,9 +382,9 @@ PyDict_DelItem(op, key)
 	PyObject *op;
 	PyObject *key;
 {
-	register mappingobject *mp;
+	register dictobject *mp;
 	register long hash;
-	register mappingentry *ep;
+	register dictentry *ep;
 	PyObject *old_value, *old_key;
 
 	if (!PyDict_Check(op)) {
@@ -406,10 +400,10 @@ PyDict_DelItem(op, key)
 		if (hash == -1)
 			return -1;
 	}
-	mp = (mappingobject *)op;
-	if (((mappingobject *)op)->ma_table == NULL)
+	mp = (dictobject *)op;
+	if (((dictobject *)op)->ma_table == NULL)
 		goto empty;
-	ep = lookmapping(mp, key, hash);
+	ep = lookdict(mp, key, hash);
 	if (ep->me_value == NULL) {
 	empty:
 		PyErr_SetObject(PyExc_KeyError, key);
@@ -431,11 +425,11 @@ PyDict_Clear(op)
 	PyObject *op;
 {
 	int i, n;
-	register mappingentry *table;
-	mappingobject *mp;
+	register dictentry *table;
+	dictobject *mp;
 	if (!PyDict_Check(op))
 		return;
-	mp = (mappingobject *)op;
+	mp = (dictobject *)op;
 	table = mp->ma_table;
 	if (table == NULL)
 		return;
@@ -457,10 +451,10 @@ PyDict_Next(op, ppos, pkey, pvalue)
 	PyObject **pvalue;
 {
 	int i;
-	register mappingobject *mp;
+	register dictobject *mp;
 	if (!PyDict_Check(op))
 		return 0;
-	mp = (mappingobject *)op;
+	mp = (dictobject *)op;
 	i = *ppos;
 	if (i < 0)
 		return 0;
@@ -479,11 +473,11 @@ PyDict_Next(op, ppos, pkey, pvalue)
 /* Methods */
 
 static void
-mapping_dealloc(mp)
-	register mappingobject *mp;
+dict_dealloc(mp)
+	register dictobject *mp;
 {
 	register int i;
-	register mappingentry *ep;
+	register dictentry *ep;
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
 		if (ep->me_key != NULL)
 			Py_DECREF(ep->me_key);
@@ -495,14 +489,14 @@ mapping_dealloc(mp)
 }
 
 static int
-mapping_print(mp, fp, flags)
-	register mappingobject *mp;
+dict_print(mp, fp, flags)
+	register dictobject *mp;
 	register FILE *fp;
 	register int flags;
 {
 	register int i;
 	register int any;
-	register mappingentry *ep;
+	register dictentry *ep;
 	fprintf(fp, "{");
 	any = 0;
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
@@ -521,14 +515,14 @@ mapping_print(mp, fp, flags)
 }
 
 static PyObject *
-mapping_repr(mp)
-	mappingobject *mp;
+dict_repr(mp)
+	dictobject *mp;
 {
 	auto PyObject *v;
 	PyObject *sepa, *colon;
 	register int i;
 	register int any;
-	register mappingentry *ep;
+	register dictentry *ep;
 	v = PyString_FromString("{");
 	sepa = PyString_FromString(", ");
 	colon = PyString_FromString(": ");
@@ -549,15 +543,15 @@ mapping_repr(mp)
 }
 
 static int
-mapping_length(mp)
-	mappingobject *mp;
+dict_length(mp)
+	dictobject *mp;
 {
 	return mp->ma_used;
 }
 
 static PyObject *
-mapping_subscript(mp, key)
-	mappingobject *mp;
+dict_subscript(mp, key)
+	dictobject *mp;
 	register PyObject *key;
 {
 	PyObject *v;
@@ -575,7 +569,7 @@ mapping_subscript(mp, key)
 		if (hash == -1)
 			return NULL;
 	}
-	v = lookmapping(mp, key, hash) -> me_value;
+	v = lookdict(mp, key, hash) -> me_value;
 	if (v == NULL)
 		PyErr_SetObject(PyExc_KeyError, key);
 	else
@@ -584,8 +578,8 @@ mapping_subscript(mp, key)
 }
 
 static int
-mapping_ass_sub(mp, v, w)
-	mappingobject *mp;
+dict_ass_sub(mp, v, w)
+	dictobject *mp;
 	PyObject *v, *w;
 {
 	if (w == NULL)
@@ -594,15 +588,15 @@ mapping_ass_sub(mp, v, w)
 		return PyDict_SetItem((PyObject *)mp, v, w);
 }
 
-static PyMappingMethods mapping_as_mapping = {
-	(inquiry)mapping_length, /*mp_length*/
-	(binaryfunc)mapping_subscript, /*mp_subscript*/
-	(objobjargproc)mapping_ass_sub, /*mp_ass_subscript*/
+static PyMappingMethods dict_as_mapping = {
+	(inquiry)dict_length, /*mp_length*/
+	(binaryfunc)dict_subscript, /*mp_subscript*/
+	(objobjargproc)dict_ass_sub, /*mp_ass_subscript*/
 };
 
 static PyObject *
-mapping_keys(mp, args)
-	register mappingobject *mp;
+dict_keys(mp, args)
+	register dictobject *mp;
 	PyObject *args;
 {
 	register PyObject *v;
@@ -624,8 +618,8 @@ mapping_keys(mp, args)
 }
 
 static PyObject *
-mapping_values(mp, args)
-	register mappingobject *mp;
+dict_values(mp, args)
+	register dictobject *mp;
 	PyObject *args;
 {
 	register PyObject *v;
@@ -647,8 +641,8 @@ mapping_values(mp, args)
 }
 
 static PyObject *
-mapping_items(mp, args)
-	register mappingobject *mp;
+dict_items(mp, args)
+	register dictobject *mp;
 	PyObject *args;
 {
 	register PyObject *v;
@@ -686,7 +680,7 @@ PyDict_Size(mp)
 		PyErr_BadInternalCall();
 		return 0;
 	}
-	return ((mappingobject *)mp)->ma_used;
+	return ((dictobject *)mp)->ma_used;
 }
 
 PyObject *
@@ -697,7 +691,7 @@ PyDict_Keys(mp)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return mapping_keys((mappingobject *)mp, (PyObject *)NULL);
+	return dict_keys((dictobject *)mp, (PyObject *)NULL);
 }
 
 PyObject *
@@ -708,7 +702,7 @@ PyDict_Values(mp)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return mapping_values((mappingobject *)mp, (PyObject *)NULL);
+	return dict_values((dictobject *)mp, (PyObject *)NULL);
 }
 
 PyObject *
@@ -719,7 +713,7 @@ PyDict_Items(mp)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return mapping_items((mappingobject *)mp, (PyObject *)NULL);
+	return dict_items((dictobject *)mp, (PyObject *)NULL);
 }
 
 #define NEWCMP
@@ -732,8 +726,8 @@ PyDict_Items(mp)
 
 static PyObject *
 characterize(a, b, pval)
-	mappingobject *a;
-	mappingobject *b;
+	dictobject *a;
+	dictobject *b;
 	PyObject **pval;
 {
 	PyObject *diff = NULL;
@@ -759,8 +753,8 @@ characterize(a, b, pval)
 }
 
 static int
-mapping_compare(a, b)
-	mappingobject *a, *b;
+dict_compare(a, b)
+	dictobject *a, *b;
 {
 	PyObject *adiff, *bdiff, *aval, *bval;
 	int res;
@@ -785,8 +779,8 @@ mapping_compare(a, b)
 #else /* !NEWCMP */
 
 static int
-mapping_compare(a, b)
-	mappingobject *a, *b;
+dict_compare(a, b)
+	dictobject *a, *b;
 {
 	PyObject *akeys, *bkeys;
 	int i, n, res;
@@ -802,8 +796,8 @@ mapping_compare(a, b)
 		if (b->ma_used == 0)
 			return 1;
 	}
-	akeys = mapping_keys(a, (PyObject *)NULL);
-	bkeys = mapping_keys(b, (PyObject *)NULL);
+	akeys = dict_keys(a, (PyObject *)NULL);
+	bkeys = dict_keys(b, (PyObject *)NULL);
 	if (akeys == NULL || bkeys == NULL) {
 		/* Oops, out of memory -- what to do? */
 		/* For now, sort on address! */
@@ -844,8 +838,8 @@ mapping_compare(a, b)
 			if (bhash == -1)
 				PyErr_Clear(); /* Don't want errors here */
 		}
-		aval = lookmapping(a, akey, ahash) -> me_value;
-		bval = lookmapping(b, bkey, bhash) -> me_value;
+		aval = lookdict(a, akey, ahash) -> me_value;
+		bval = lookdict(b, bkey, bhash) -> me_value;
 		res = PyObject_Compare(aval, bval);
 		if (res != 0)
 			break;
@@ -864,8 +858,8 @@ mapping_compare(a, b)
 #endif /* !NEWCMP */
 
 static PyObject *
-mapping_has_key(mp, args)
-	register mappingobject *mp;
+dict_has_key(mp, args)
+	register dictobject *mp;
 	PyObject *args;
 {
 	PyObject *key;
@@ -882,13 +876,13 @@ mapping_has_key(mp, args)
 		if (hash == -1)
 			return NULL;
 	}
-	ok = mp->ma_size != 0 && lookmapping(mp, key, hash)->me_value != NULL;
+	ok = mp->ma_size != 0 && lookdict(mp, key, hash)->me_value != NULL;
 	return PyInt_FromLong(ok);
 }
 
 static PyObject *
-mapping_clear(mp, args)
-	register mappingobject *mp;
+dict_clear(mp, args)
+	register dictobject *mp;
 	PyObject *args;
 {
 	if (!PyArg_NoArgs(args))
@@ -899,17 +893,17 @@ mapping_clear(mp, args)
 }
 
 static PyMethodDef mapp_methods[] = {
-	{"clear",	(PyCFunction)mapping_clear},
-	{"has_key",	(PyCFunction)mapping_has_key},
-	{"items",	(PyCFunction)mapping_items},
-	{"keys",	(PyCFunction)mapping_keys},
-	{"values",	(PyCFunction)mapping_values},
+	{"clear",	(PyCFunction)dict_clear},
+	{"has_key",	(PyCFunction)dict_has_key},
+	{"items",	(PyCFunction)dict_items},
+	{"keys",	(PyCFunction)dict_keys},
+	{"values",	(PyCFunction)dict_values},
 	{NULL,		NULL}		/* sentinel */
 };
 
 static PyObject *
-mapping_getattr(mp, name)
-	mappingobject *mp;
+dict_getattr(mp, name)
+	dictobject *mp;
 	char *name;
 {
 	return Py_FindMethod(mapp_methods, (PyObject *)mp, name);
@@ -919,17 +913,17 @@ PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"dictionary",
-	sizeof(mappingobject),
+	sizeof(dictobject),
 	0,
-	(destructor)mapping_dealloc, /*tp_dealloc*/
-	(printfunc)mapping_print, /*tp_print*/
-	(getattrfunc)mapping_getattr, /*tp_getattr*/
+	(destructor)dict_dealloc, /*tp_dealloc*/
+	(printfunc)dict_print, /*tp_print*/
+	(getattrfunc)dict_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
-	(cmpfunc)mapping_compare, /*tp_compare*/
-	(reprfunc)mapping_repr, /*tp_repr*/
+	(cmpfunc)dict_compare, /*tp_compare*/
+	(reprfunc)dict_repr, /*tp_repr*/
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
-	&mapping_as_mapping,	/*tp_as_mapping*/
+	&dict_as_mapping,	/*tp_as_mapping*/
 };
 
 /* For backward compatibility with old dictionary interface */
