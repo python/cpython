@@ -926,37 +926,6 @@ PyTypeObject PyDict_Type = {
 	&dict_as_mapping,	/*tp_as_mapping*/
 };
 
-/* These belong in object.c now */
-
-PyObject *
-PyObject_GetAttr(v, name)
-	PyObject *v;
-	PyObject *name;
-{
-	if (v->ob_type->tp_getattro != NULL)
-		return (*v->ob_type->tp_getattro)(v, name);
-	else
-		return PyObject_GetAttrString(v, PyString_AsString(name));
-}
-
-int
-PyObject_SetAttr(v, name, value)
-	PyObject *v;
-	PyObject *name;
-	PyObject *value;
-{
-	int err;
-	Py_INCREF(name);
-	PyString_InternInPlace(&name);
-	if (v->ob_type->tp_setattro != NULL)
-		err = (*v->ob_type->tp_setattro)(v, name, value);
-	else
-		err = PyObject_SetAttrString(
-			v, PyString_AsString(name), value);
-	Py_DECREF(name);
-	return err;
-}
-
 /* For backward compatibility with old dictionary interface */
 
 PyObject *
@@ -984,7 +953,7 @@ PyDict_SetItemString(v, key, item)
 	int err;
 	kv = PyString_FromString(key);
 	if (kv == NULL)
-		return NULL;
+		return -1;
 	PyString_InternInPlace(&kv);
 	err = PyDict_SetItem(v, kv, item);
 	Py_DECREF(kv);
@@ -1000,7 +969,7 @@ PyDict_DelItemString(v, key)
 	int err;
 	kv = PyString_FromString(key);
 	if (kv == NULL)
-		return NULL;
+		return -1;
 	PyString_InternInPlace(&kv);
 	err = PyDict_DelItem(v, kv);
 	Py_DECREF(kv);
