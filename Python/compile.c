@@ -4853,6 +4853,35 @@ symtable_global(struct symtable *st, node *n)
 
 	for (i = 1; i < NCH(n); i += 2) {
 		char *name = STR(CHILD(n, i));
+		int flags;
+
+		flags = symtable_lookup(st, name);
+		if (flags && flags != DEF_GLOBAL) {
+			char buf[500];
+			if (flags & DEF_PARAM) {
+				PyErr_Format(PyExc_SyntaxError,
+				     "name '%.400s' is local and global",
+					     PyString_AS_STRING(name));
+				set_error_location(st->st_filename,
+						   st->st_cur->ste_lineno);
+				st->st_errors++;
+				return;
+			} else if (flags & DEF_LOCAL) {
+				sprintf(buf, GLOBAL_AFTER_ASSIGN, name);
+				if (PyErr_Warn(PyExc_SyntaxWarning,
+					       buf) < 0) {
+					/* XXX set line number? */
+					st->st_errors++;
+				}
+			} else {
+				sprintf(buf, GLOBAL_AFTER_USE, name);
+				if (PyErr_Warn(PyExc_SyntaxWarning,
+					       buf) < 0) {
+					/* XXX set line number? */
+					st->st_errors++;
+				}
+			}
+		}
 		symtable_add_def(st, name, DEF_GLOBAL);
 	}
 }
