@@ -49,7 +49,7 @@ def init():
 		# We are a fully frozen application
 		ide_path = sys.argv[0]
 	if ide_path not in sys.path:
-		sys.path.insert(0, ide_path)
+		sys.path.insert(1, ide_path)
 
 
 init()
