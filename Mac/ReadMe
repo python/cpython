@@ -9,6 +9,9 @@ need. Let me hear about problems in these areas.
 
 You should definitely read the Relnotes file too.
 
+A special note about the active installer: do not background it, it will hang
+your machine.
+
 ------
 
 If this is your first encounter with Python: you definitely need the
@@ -169,7 +172,8 @@ course. Mac-specific thanks go to the pythonmac-sig, Just van Rossum,
 Corran Webster, Tony Ingraldi, Erik van Blokland, Bill Bedford, Chris
 Stern, Gordon Worley, Oliver Steele, M. Papillon, Steven Majewski, David
 Goodger, Chris Barker, Luc Lefebvre, Tattoo Mabonzo K., Russell Finn,
-Tom Bridgman and all the other people who provided feedback, code or both!
+Tom Bridgman Russel Owen and all the other people who provided feedback,
+code or both!
 
 MacPython includes waste, a TextEdit replacement which is (c) 1998 Marco Piovanelli.
 
