@@ -3694,8 +3694,8 @@ def subclass_right_op():
         def __rdiv__(self, other):
             return "C.__rdiv__"
 
-    vereq(C(1) / 1, "C.__div__")
-    vereq(1 / C(1), "C.__rdiv__")
+    vereq(C() / 1, "C.__div__")
+    vereq(1 / C(), "C.__rdiv__")
 
     # Case 3: subclass of new-style class; here it gets interesting
 
@@ -3705,8 +3705,8 @@ def subclass_right_op():
         def __rdiv__(self, other):
             return "D.__rdiv__"
 
-    vereq(D(1) / C(1), "D.__div__")
-    vereq(C(1) / D(1), "D.__rdiv__")
+    vereq(D() / C(), "D.__div__")
+    vereq(C() / D(), "D.__rdiv__")
 
     # Case 4: this didn't work right in 2.2.2 and 2.3a1
 
@@ -3715,10 +3715,10 @@ def subclass_right_op():
 
     vereq(E.__rdiv__, C.__rdiv__)
 
-    vereq(E(1) / 1, "C.__div__")
-    vereq(1 / E(1), "C.__rdiv__")
-    vereq(E(1) / C(1), "C.__div__")
-    vereq(C(1) / E(1), "C.__div__") # This one would fail
+    vereq(E() / 1, "C.__div__")
+    vereq(1 / E(), "C.__rdiv__")
+    vereq(E() / C(), "C.__div__")
+    vereq(C() / E(), "C.__div__") # This one would fail
 
 def dict_type_with_metaclass():
     if verbose:

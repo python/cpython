@@ -33,11 +33,14 @@ def pickle_complex(c):
 
 pickle(type(1j), pickle_complex, complex)
 
-# Support for picking new-style objects
+# Support for pickling new-style objects
 
 def _reconstructor(cls, base, state):
-    obj = base.__new__(cls, state)
-    base.__init__(obj, state)
+    if base is object:
+        obj = object.__new__(cls)
+    else:
+        obj = base.__new__(cls, state)
+        base.__init__(obj, state)
     return obj
 
 _HEAPTYPE = 1<<9
