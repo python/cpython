@@ -521,9 +521,9 @@ static object *builtin_dict;
 
 object *
 getbuiltin(name)
-	char *name;
+	object *name;
 {
-	return dictlookup(builtin_dict, name);
+	return dict2lookup(builtin_dict, name);
 }
 
 /* Predefined exceptions */
