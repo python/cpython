@@ -2,10 +2,11 @@
 \label{module-fl}
 \bimodindex{fl}
 
-This module provides an interface to the FORMS Library by Mark
-Overmars.  The source for the library can be retrieved by anonymous
-ftp from host \samp{ftp.cs.ruu.nl}, directory \file{SGI/FORMS}.  It
-was last tested with version 2.0b.
+This module provides an interface to the FORMS Library\index{FORMS
+Library} by Mark Overmars\index{Overmars, Mark}.  The source for the
+library can be retrieved by anonymous ftp from host
+\samp{ftp.cs.ruu.nl}, directory \file{SGI/FORMS}.  It was last tested
+with version 2.0b.
 
 Most functions are literal translations of their \C{} equivalents,
 dropping the initial \samp{fl_} from their name.  Constants used by
@@ -43,8 +44,7 @@ Module \module{fl} defines the following functions.  For more
 information about what they do, see the description of the equivalent
 \C{} function in the FORMS documentation:
 
-\setindexsubitem{(in module fl)}
-\begin{funcdesc}{make_form}{type\, width\, height}
+\begin{funcdesc}{make_form}{type, width, height}
 Create a form with given type, width and height.  This returns a
 \dfn{form} object, whose methods are described below.
 \end{funcdesc}
@@ -65,20 +65,20 @@ interaction.
 Set the event callback function.
 \end{funcdesc}
 
-\begin{funcdesc}{set_graphics_mode}{rgbmode\, doublebuffering}
+\begin{funcdesc}{set_graphics_mode}{rgbmode, doublebuffering}
 Set the graphics modes.
 \end{funcdesc}
 
 \begin{funcdesc}{get_rgbmode}{}
-Return the current rgb mode.  This is the value of the C global
+Return the current rgb mode.  This is the value of the \C{} global
 variable \cdata{fl_rgbmode}.
 \end{funcdesc}
 
-\begin{funcdesc}{show_message}{str1\, str2\, str3}
+\begin{funcdesc}{show_message}{str1, str2, str3}
 Show a dialog box with a three-line message and an OK button.
 \end{funcdesc}
 
-\begin{funcdesc}{show_question}{str1\, str2\, str3}
+\begin{funcdesc}{show_question}{str1, str2, str3}
 Show a dialog box with a three-line message and YES and NO buttons.
 It returns \code{1} if the user pressed YES, \code{0} if NO.
 \end{funcdesc}
@@ -89,13 +89,13 @@ It returns the number of the button clicked by the user
 (\code{1}, \code{2} or \code{3}).
 \end{funcdesc}
 
-\begin{funcdesc}{show_input}{prompt\, default}
+\begin{funcdesc}{show_input}{prompt, default}
 Show a dialog box with a one-line prompt message and text field in
 which the user can enter a string.  The second argument is the default
 input string.  It returns the string value as edited by the user.
 \end{funcdesc}
 
-\begin{funcdesc}{show_file_selector}{message\, directory\, pattern\, default}
+\begin{funcdesc}{show_file_selector}{message, directory, pattern, default}
 Show a dialog box in which the user can select a file.  It returns
 the absolute filename selected by the user, or \code{None} if the user
 presses Cancel.
@@ -116,9 +116,9 @@ part only) selected by the user in the last
 \funcline{qread}{}
 %\funcline{blkqread}{?}
 \funcline{qreset}{}
-\funcline{qenter}{dev\, val}
+\funcline{qenter}{dev, val}
 \funcline{get_mouse}{}
-\funcline{tie}{button\, valuator1\, valuator2}
+\funcline{tie}{button, valuator1, valuator2}
 These functions are the FORMS interfaces to the corresponding GL
 functions.  Use these if you want to handle some GL events yourself
 when using \function{fl.do_events()}.  When a GL event is detected that
@@ -143,14 +143,14 @@ name is prefixed with \samp{fl_}; and whose first argument is a form
 pointer; please refer to the official FORMS documentation for
 descriptions.
 
-All the \samp{add_{\rm \ldots}} functions return a Python object
+All the \code{add_*()} functions return a Python object
 representing the FORMS object.  Methods of FORMS objects are described
 below.  Most kinds of FORMS object also have some methods specific to
 that kind; these methods are listed here.
 
 \begin{flushleft}
-\setindexsubitem{(form object method)}
-\begin{funcdesc}{show_form}{placement\, bordertype\, name}
+\setindexsubitem{(form method)}
+\begin{funcdesc}{show_form}{placement, bordertype, name}
   Show the form.
 \end{funcdesc}
 
@@ -162,7 +162,7 @@ that kind; these methods are listed here.
   Redraw the form.
 \end{funcdesc}
 
-\begin{funcdesc}{set_form_position}{x\, y}
+\begin{funcdesc}{set_form_position}{x, y}
 Set the form's position.
 \end{funcdesc}
 
@@ -200,21 +200,21 @@ Freeze the form.
 
 %---
 
-\begin{funcdesc}{add_box}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_box}{type, x, y, w, h, name}
 Add a box object to the form.
 No extra methods.
 \end{funcdesc}
 
-\begin{funcdesc}{add_text}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_text}{type, x, y, w, h, name}
 Add a text object to the form.
 No extra methods.
 \end{funcdesc}
 
-%\begin{funcdesc}{add_bitmap}{type\, x\, y\, w\, h\, name}
+%\begin{funcdesc}{add_bitmap}{type, x, y, w, h, name}
 %Add a bitmap object to the form.
 %\end{funcdesc}
 
-\begin{funcdesc}{add_clock}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_clock}{type, x, y, w, h, name}
 Add a clock object to the form. \\
 Method:
 \method{get_clock()}.
@@ -222,21 +222,21 @@ Method:
 
 %---
 
-\begin{funcdesc}{add_button}{type\, x\, y\, w\, h\,  name}
+\begin{funcdesc}{add_button}{type, x, y, w, h,  name}
 Add a button object to the form. \\
 Methods:
 \method{get_button()},
 \method{set_button()}.
 \end{funcdesc}
 
-\begin{funcdesc}{add_lightbutton}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_lightbutton}{type, x, y, w, h, name}
 Add a lightbutton object to the form. \\
 Methods:
 \method{get_button()},
 \method{set_button()}.
 \end{funcdesc}
 
-\begin{funcdesc}{add_roundbutton}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_roundbutton}{type, x, y, w, h, name}
 Add a roundbutton object to the form. \\
 Methods:
 \method{get_button()},
@@ -245,7 +245,7 @@ Methods:
 
 %---
 
-\begin{funcdesc}{add_slider}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_slider}{type, x, y, w, h, name}
 Add a slider object to the form. \\
 Methods:
 \method{set_slider_value()},
@@ -258,7 +258,7 @@ Methods:
 \method{set_slider_step()}.
 \end{funcdesc}
 
-\begin{funcdesc}{add_valslider}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_valslider}{type, x, y, w, h, name}
 Add a valslider object to the form. \\
 Methods:
 \method{set_slider_value()},
@@ -271,7 +271,7 @@ Methods:
 \method{set_slider_step()}.
 \end{funcdesc}
 
-\begin{funcdesc}{add_dial}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_dial}{type, x, y, w, h, name}
 Add a dial object to the form. \\
 Methods:
 \method{set_dial_value()},
@@ -280,7 +280,7 @@ Methods:
 \method{get_dial_bounds()}.
 \end{funcdesc}
 
-\begin{funcdesc}{add_positioner}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_positioner}{type, x, y, w, h, name}
 Add a positioner object to the form. \\
 Methods:
 \method{set_positioner_xvalue()},
@@ -293,7 +293,7 @@ Methods:
 \method{get_positioner_ybounds()}.
 \end{funcdesc}
 
-\begin{funcdesc}{add_counter}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_counter}{type, x, y, w, h, name}
 Add a counter object to the form. \\
 Methods:
 \method{set_counter_value()},
@@ -306,7 +306,7 @@ Methods:
 
 %---
 
-\begin{funcdesc}{add_input}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_input}{type, x, y, w, h, name}
 Add a input object to the form. \\
 Methods:
 \method{set_input()},
@@ -317,7 +317,7 @@ Methods:
 
 %---
 
-\begin{funcdesc}{add_menu}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_menu}{type, x, y, w, h, name}
 Add a menu object to the form. \\
 Methods:
 \method{set_menu()},
@@ -325,7 +325,7 @@ Methods:
 \method{addto_menu()}.
 \end{funcdesc}
 
-\begin{funcdesc}{add_choice}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_choice}{type, x, y, w, h, name}
 Add a choice object to the form. \\
 Methods:
 \method{set_choice()},
@@ -339,7 +339,7 @@ Methods:
 \method{set_choice_fontstyle()}.
 \end{funcdesc}
 
-\begin{funcdesc}{add_browser}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_browser}{type, x, y, w, h, name}
 Add a browser object to the form. \\
 Methods:
 \method{set_browser_topline()},
@@ -364,7 +364,7 @@ Methods:
 
 %---
 
-\begin{funcdesc}{add_timer}{type\, x\, y\, w\, h\, name}
+\begin{funcdesc}{add_timer}{type, x, y, w, h, name}
 Add a timer object to the form. \\
 Methods:
 \method{set_timer()},
@@ -392,8 +392,8 @@ documentation:
 Besides methods specific to particular kinds of FORMS objects, all
 FORMS objects also have the following methods:
 
-\setindexsubitem{(FORMS object method)}
-\begin{funcdesc}{set_call_back}{function\, argument}
+\setindexsubitem{(FORMS method)}
+\begin{funcdesc}{set_call_back}{function, argument}
 Set the object's callback function and argument.  When the object
 needs interaction, the callback function will be called with two
 arguments: the object, and the callback argument.  (FORMS objects
