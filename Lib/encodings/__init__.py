@@ -4,8 +4,8 @@
     directory.
 
     Codec modules must have names corresponding to standard lower-case
-    encoding names with hyphens mapped to underscores, e.g. 'utf-8' is
-    implemented by the module 'utf_8.py'.
+    encoding names with hyphens and periods mapped to underscores,
+    e.g. 'utf-8' is implemented by the module 'utf_8.py'.
 
     Each codec module must export the following interface:
 
@@ -28,10 +28,11 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import codecs,aliases,exceptions
+import codecs,exceptions
 
 _cache = {}
 _unknown = '--unknown--'
+_import_tail = ['*']
 
 class CodecRegistryError(exceptions.LookupError,
                          exceptions.SystemError):
@@ -40,19 +41,37 @@ class CodecRegistryError(exceptions.LookupError,
 def search_function(encoding):
     
     # Cache lookup
-    entry = _cache.get(encoding,_unknown)
+    entry = _cache.get(encoding, _unknown)
     if entry is not _unknown:
         return entry
 
-    # Import the module
+    # Import the module:
+    #
+    # First look in the encodings package, then try to lookup the
+    # encoding in the aliases mapping and retry the import using the
+    # default import module lookup scheme with the alias name.
+    #
     modname = encoding.replace('-', '_')
-    modname = aliases.aliases.get(modname,modname)
+    modname = modname.replace('.', '_')
     try:
-        mod = __import__(modname,globals(),locals(),'*')
+        mod = __import__('encodings.' + modname,
+                         globals(), locals(), _import_tail)
     except ImportError,why:
+        import aliases
+        modname = aliases.aliases.get(modname, _unknown)
+        if modname is not _unknown:
+            try:
+                mod = __import__(modname,
+                                 globals(), locals(), _import_tail)
+            except ImportError,why:
+                mod = None
+        else:
+            mod = None
+    if mod is None:
         # cache misses
         _cache[encoding] = None
         return None
+        
     
     # Now ask the module for the registry entry
     try:
@@ -79,6 +98,7 @@ def search_function(encoding):
     except AttributeError:
         pass
     else:
+        import aliases
         for alias in codecaliases:
             if not aliases.aliases.has_key(alias):
                 aliases.aliases[alias] = modname
