@@ -24,35 +24,33 @@ INDENT_PER_LEVEL
 MAX_WIDTH
     Maximum width of the display.  This is only used if the
     representation *can* be kept less than MAX_WIDTH characters wide.
-    May be set by the user before calling pprint().
+    May be set by the user before calling pprint() if needed.
 
-TAB_WIDTH
-    The width represented by a single tab.  This value is typically 8,
-    but 4 is the default under MacOS.  Can be changed by the user if
-    desired, but is probably not a good idea.
 """
 
 INDENT_PER_LEVEL = 1
 
 MAX_WIDTH = 80
 
-import os
-TAB_WIDTH = (os.name == 'mac' and 4) or 8
-del os
-
 from types import DictType, ListType, TupleType
 
 
-def _indentation(cols):
-    """Create tabbed indentation string.
+def pformat(seq):
+    """Format a Python object into a pretty-printed representation.
 
-    cols
-	Width of the indentation, in columns.
+    The representation is returned with no trailing newline.
+
     """
-    return ((cols / TAB_WIDTH) * '\t') + ((cols % TAB_WIDTH) * ' ')
+    import StringIO
+    sio = StringIO.StringIO()
+    pprint(seq, stream=sio)
+    str = sio.getvalue()
+    if str and str[-1] == '\n':
+	str = str[:-1]
+    return str
 
 
-def pprint(seq, stream = None, indent = 0, allowance = 0):
+def pprint(seq, stream=None, indent=0, allowance=0):
     """Pretty-print a list, tuple, or dictionary.
 
     seq
@@ -74,6 +72,7 @@ def pprint(seq, stream = None, indent = 0, allowance = 0):
     without error, given readable representations of all elements are
     available via `repr()'.  Output is restricted to `MAX_WIDTH'
     columns where possible.
+
     """
     if stream is None:
 	import sys
@@ -94,7 +93,7 @@ def pprint(seq, stream = None, indent = 0, allowance = 0):
 
 	    if len(seq) > 1:
 		for ent in seq[1:]:
-		    stream.write(',\n' + _indentation(indent))
+		    stream.write(',\n' + ' '*indent)
 		    pprint(ent, stream, indent, allowance + 1)
 
 	    indent = indent - INDENT_PER_LEVEL
@@ -117,7 +116,7 @@ def pprint(seq, stream = None, indent = 0, allowance = 0):
 	    if len(items) > 1:
 		for key, ent in items[1:]:
 		    rep = `key` + ': '
-		    stream.write(',\n' + _indentation(indent) + rep)
+		    stream.write(',\n' + ' '*indent + rep)
 		    pprint(ent, stream, indent + len(rep), allowance + 1)
 
 	    indent = indent - INDENT_PER_LEVEL
