@@ -881,7 +881,8 @@ def _slotnames(cls):
     names = []
     for c in cls.__mro__:
         if "__slots__" in c.__dict__:
-            names += list(c.__dict__["__slots__"])
+            names += [name for name in c.__dict__["__slots__"]
+                           if name not in ("__dict__", "__weakref__")]
     return names
 
 def _keep_alive(x, memo):
