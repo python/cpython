@@ -596,7 +596,11 @@ def _test(N=200):
     if r1 != r2:
         raise ValueError("jumpahead test failed " + `(N, r1, r2)`)
 
-# Initialize from current time.
+# Create one instance, seeded from current time, and export its methods
+# as module-level functions.  The functions are not threadsafe, and state
+# is shared across all uses (both in the user's code and in the Python
+# libraries), but that's fine for most programs and is easier for the
+# casual user than making them instantiate their own Random() instance.
 _inst = Random()
 seed = _inst.seed
 random = _inst.random
