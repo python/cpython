@@ -1,3 +1,152 @@
+Thu Mar  9 15:06:02 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Lib/pickle.py: added explicit exception for unpicklable object
+	type: PicklingError; raise EOFError when end of file read
+
+	* Lib/profile.py: runcall(): return the function's return value
+
+	* Lib/rexec.py: support calling __import__ with 4 args
+
+	* Lib/shelve.py: fix typo in close() (self.db should be self.dict)
+
+	* Python/{ceval.c,marshal.c}: optimized many calls to get/set
+	tuple items
+
+	* Include/{tupleobject.h,rename2.h}: added SETTUPLEITEM macro and
+	added cast to GETTUPLEITEM
+
+	* Objects/{stringobject.c,mappingobject.c}: a few peephole
+	optimizations
+
+	* configure(.in): added test for CC value not matching cache
+
+	* Modules/tkintermodule.c: add casts to malloc() calls"
+	tkintermodule.c
+
+	* Moved Demo/bgen, Demo/freeze, Demo/modulator and most of
+	Demo/script to new Tools/ directory
+
+	* Doc/ext.tex: revised for new naming; added new section on
+	reference counting
+
+	* Doc/lib*.tex: revised much of the library documentation
+
+	* Doc/ref*.tex: corrected typos and other small errors in the
+	reference manual
+
+	* Doc/tut.tex: corrected typos and small errors, and added a
+	chapter on new features in release 1.2
+
+	* Extensions/X11: MANY (incompatible) changes by Sjoerd
+
+	* Most header files, Include/allobjects.h: changed the way
+	DL_IMPORT is used -- it now has the object's type as a parameter
+	(this is done for Borland C)
+
+	* Many places: small changes for MPW and CFM-68K on the Mac
+
+	* Include/mymath.h: new header to be used instead of <math.h>
+
+	* Include/pythonrun.h: added decl for Py_FatalError()
+
+	* Include/rename2.h: added PyImport_ExecCodeModule
+
+	* Lib/cgi.py: general cleanup; translate & to "&amp;"
+
+	* Lib/{compileall.py,tb.py,traceback.py}: don't break on class
+        exceptions
+
+	* Lib/types.py: added DictType as alias for DictionaryType
+
+	* Lib/cddb.py: write track artist info if given
+
+	* Lib/{pdb.py,wdb.py,stdwin/wdbframewin.py}: don't break on class
+	exceptions; added runeval(), generalized run to allow optional
+	context; deprecate runctx()
+
+	* Lib/test/{test_b1.py,test_grammar.py}: cope with 'math' not
+        existing; don't fail if overflow check doesn't work
+
+	* Mac/*: too many changes to log; we now support about 5 compilers
+	(Think C, MPW, MPW with Symantec C, CodeWarrior 68K, CodeWarrior
+	PPC)
+
+	* Misc/python-mode.el: cope with triple-quoted strings (sez Barry)
+
+	* Modules/Makefile.pre.in: don't exit Make if 'sharedmods' for
+        loop fails
+
+	* Modules/Setup.in: move posix, signal, thread and gl permanently
+	ahead of #*noconfig*, to avoid confusion
+
+Mon Feb 20 13:48:50 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Objects/stringobject.c (formatstring): allow string without
+	formats and dictionary argument
+
+Fri Feb 17 12:00:29 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/bltinmodule.c (do_pow): fixed bogus test for negative
+	number to the float power
+
+	* Python/ceval.c (eval_code): fix SystemError in try-finally when
+	a class exception was raised
+
+	* Demo/stdwin/python.py, Lib/stdwin/wdbframewin.py, Lib/pdb.py,
+	Lib/tb.py, Lib/traceback.py: cope with class exceptions when
+	printing or formatting them (R Lindsay Todd)
+
+Thu Feb 16 11:21:45 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Lib/tkinter/Tkinter.py (Entry): rename select_view method to
+	view
+
+	* Lib/tkinter/Dialog.py: set widgetName so test for photo in
+	Tkinter works
+
+	* Doc/libshelve.tex: added/reorganized list of restrictions
+
+	* Doc/libsocket.tex: added quick list of new exported symbols
+
+	* Demo/sockets/{mcast.py,broadcast.py}: don't use modules SOCKET
+	or IN -- all symbols are now exported by the socket module itself
+
+	* Modules/socketmodule.c (initsocket): added INADDR_* symbols
+
+	* Include/object.h: added missing decls for PyObject_IsTrue() and
+	PyCallable_Check()
+
+Wed Feb 15 14:43:24 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/compile.c (com_addopname): use = instead of == for
+        assignment
+
+	* Modules/config.c.in (COMPILER): removed bogus ## in front of
+	__VERSION__
+
+	* Doc/{lib.tex,libpickle.tex,libcopy.tex,libshelve.tex}:
+	documented some new modules (cheaply -- by slightly reformatting
+	their __doc__ strings)
+
+	* Lib/builtin.py: got rid of it
+
+	* Doc/tut.tex: added sections on new stuff in release 1.2
+
+	* Doc/libsignal.tex: added a lot more details about how this
+	works.
+
+Tue Feb 14 13:57:28 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/marshal.c (w_object): change long i, n to int -- should
+	solve GCC problems on DEC Alpha (Paul Sijben)
+
+	* Python/{ceval.c,bltinmodule.c}: call __import__ with 4
+	arguments: modulename, globals, locals, list_of_from_names_or_None
+	(for Ken Manheimer)
+
+	* Python/ceval.c (eval_code): call locals_2_fast before doing
+	import from (Jim Roskind)
+
 ========================================
 ==> Release 1.2 BETA 3 (13 Feb 1995) <==
 ========================================
@@ -10,15 +159,8 @@ Mon Feb 13 12:39:16 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 	* Mac/config.c, Modules/config.c.in (getversion): tack compiler
         name and version (where known) onto version string
 
-	* Python/{ceval.c,bltinmodule.c}: call __import__ with 4
-	arguments: modulename, globals, locals, list_of_from_names_or_None
-	(for Ken Manheimer)
-
 	* Objects/floatobject.c: work-around for NeXT Sparc 3.3 prerelease
 	(Barry Warsaw)
-
-	* Python/ceval.c (eval_code): call locals_2_fast before doing
-	import from (Jim Roskind)
 
 Fri Feb 10 17:08:35 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
