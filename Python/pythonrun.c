@@ -56,12 +56,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "windows.h"
 #endif
 
-#ifdef HAVE_GETPID
-#ifndef MS_WINDOWS
-#define HAVE_KILL
-#endif
-#endif
-
 extern char *Py_GetPath();
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
@@ -260,7 +254,8 @@ PyRun_InteractiveOne(fp, filename)
 		return -1;
 	}
 	Py_DECREF(v);
-	Py_FlushLine();
+	if (Py_FlushLine())
+		PyErr_Clear();
 	return 0;
 }
 
@@ -302,7 +297,8 @@ PyRun_SimpleFile(fp, filename)
 		return -1;
 	}
 	Py_DECREF(v);
-	Py_FlushLine();
+	if (Py_FlushLine())
+		PyErr_Clear();
 	return 0;
 }
 
@@ -321,20 +317,22 @@ PyRun_SimpleString(command)
 		return -1;
 	}
 	Py_DECREF(v);
-	Py_FlushLine();
+	if (Py_FlushLine())
+		PyErr_Clear();
 	return 0;
 }
 
 void
 PyErr_Print()
 {
+	int err = 0;
 	PyObject *exception, *v, *tb, *f;
 	PyErr_Fetch(&exception, &v, &tb);
-	Py_FlushLine();
-	fflush(stdout);
 	if (exception == NULL)
-		Py_FatalError("PyErr_Print called but no exception");
+		return 0;
 	if (exception == PyExc_SystemExit) {
+		err = Py_FlushLine();
+		fflush(stdout);
 		if (v == NULL || v == Py_None)
 			Py_Exit(0);
 		if (PyInt_Check(v))
@@ -353,8 +351,11 @@ PyErr_Print()
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
-		PyTraceBack_Print(tb, f);
-		if (exception == PyExc_SyntaxError) {
+		err = Py_FlushLine();
+		fflush(stdout);
+		if (err == 0)
+			err = PyTraceBack_Print(tb, f);
+		if (err == 0 && exception == PyExc_SyntaxError) {
 			PyObject *message;
 			char *filename, *text;
 			int lineno, offset;
@@ -405,33 +406,43 @@ PyErr_Print()
 				Py_INCREF(message);
 				Py_DECREF(v);
 				v = message;
+				/* Can't be bothered to check all those
+				   PyFile_WriteString() calls */
+				if (PyErr_Occurred())
+					err = -1;
 			}
 		}
-		if (PyClass_Check(exception)) {
+		if (err) {
+			/* Don't do anything else */
+		}
+		else if (PyClass_Check(exception)) {
 			PyObject* className =
 				((PyClassObject*)exception)->cl_name;
 			if (className == NULL)
-				PyFile_WriteString("<unknown>", f);
-			else {
-				if (PyFile_WriteObject(className, f,
-						       Py_PRINT_RAW) != 0)
-					PyErr_Clear();
+				err = PyFile_WriteString("<unknown>", f);
+			else
+				err = PyFile_WriteObject(className, f,
+							 Py_PRINT_RAW);
+		}
+		else
+			err = PyFile_WriteObject(exception, f, Py_PRINT_RAW);
+		if (err == 0) {
+			if (v != NULL && v != Py_None) {
+				err = PyFile_WriteString(": ", f);
+				if (err == 0)
+				  err = PyFile_WriteObject(v, f, Py_PRINT_RAW);
 			}
-		} else {
-			if (PyFile_WriteObject(exception, f,
-					       Py_PRINT_RAW) != 0)
-				PyErr_Clear();
 		}
-		if (v != NULL && v != Py_None) {
-			PyFile_WriteString(": ", f);
-			if (PyFile_WriteObject(v, f, Py_PRINT_RAW) != 0)
-				PyErr_Clear();
-		}
-		PyFile_WriteString("\n", f);
+		if (err == 0)
+			err = PyFile_WriteString("\n", f);
 	}
 	Py_XDECREF(exception);
 	Py_XDECREF(v);
 	Py_XDECREF(tb);
+	/* If an error happened here, don't show it.
+	   XXX This is wrong, but too many callers rely on this behavior. */
+	if (err != 0)
+		PyErr_Clear();
 }
 
 PyObject *
