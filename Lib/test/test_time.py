@@ -16,8 +16,11 @@ tt = time.gmtime(t)
 for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
 		  'j', 'm', 'M', 'p', 'S',
 		  'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
-    format = '%' + directive
-    time.strftime(format, tt)
+    format = ' %' + directive
+    try:
+	time.strftime(format, tt)
+    except ValueError:
+	print 'conversion specifier:', format, ' failed.'
 
 time.timezone
 time.tzname
