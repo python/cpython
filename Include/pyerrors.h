@@ -115,6 +115,13 @@ extern DL_IMPORT(PyObject *) PyErr_ProgramText(char *, int);
 # define snprintf _snprintf
 # define vsnprintf _vsnprintf
 #endif
+
+/* Always enable the fallback solution during the 2.2.0 alpha cycle
+   for enhanced testing */
+#if PY_VERSION_HEX < 0x020200B0
+# undef HAVE_SNPRINTF
+#endif
+
 #ifndef HAVE_SNPRINTF
 #include <stdarg.h>
 extern DL_IMPORT(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...);
