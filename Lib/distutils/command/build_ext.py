@@ -403,6 +403,10 @@ class build_ext (Command):
             # command line args.  Hence we combine them in order:
             extra_args = ext.extra_compile_args or []
 
+            macros = ext.define_macros[:]
+            for undef in ext.undef_macros:
+                macros.append((undef,))
+
             # XXX and if we support CFLAGS, why not CC (compiler
             # executable), CPPFLAGS (pre-processor options), and LDFLAGS
             # (linker options) too?
@@ -413,7 +417,7 @@ class build_ext (Command):
                 
             objects = self.compiler.compile (sources,
                                              output_dir=self.build_temp,
-                                             #macros=macros,
+                                             macros=macros,
                                              include_dirs=ext.include_dirs,
                                              debug=self.debug,
                                              extra_postargs=extra_args)
