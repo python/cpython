@@ -34,13 +34,47 @@ class HookWatcher:
         return [item for item in self.events if item[2] not in disallowed]
 
 
-class ProfileHookTestCase(unittest.TestCase):
+class ProfileSimulator(HookWatcher):
+    def __init__(self):
+        self.stack = []
+        HookWatcher.__init__(self)
 
+    def callback(self, frame, event, arg):
+        self.dispatch[event](self, frame)
+
+    def trace_call(self, frame):
+        self.add_event('call', frame)
+        self.stack.append(frame)
+
+    def trace_return(self, frame):
+        self.add_event('return', frame)
+        self.stack.pop()
+
+    def trace_exception(self, frame):
+        if len(self.stack) >= 2 and frame is self.stack[-2]:
+            self.add_event('propogate-from', self.stack[-1])
+            self.stack.pop()
+        else:
+            self.add_event('ignore', frame)
+
+    dispatch = {
+        'call': trace_call,
+        'exception': trace_exception,
+        'return': trace_return,
+        }
+
+
+class TestCaseBase(unittest.TestCase):
     def check_events(self, callable, expected):
-        events = capture_events(callable)
+        events = capture_events(callable, self.new_watcher())
         if events != expected:
             self.fail("Expected events:\n%s\nReceived events:\n%s"
                       % (pprint.pformat(expected), pprint.pformat(events)))
+
+
+class ProfileHookTestCase(TestCaseBase):
+    def new_watcher(self):
+        return HookWatcher()
 
     def test_simple(self):
         def f(p):
@@ -159,6 +193,28 @@ class ProfileHookTestCase(unittest.TestCase):
                               ])
 
 
+class ProfileSimulatorTestCase(TestCaseBase):
+    def new_watcher(self):
+        return ProfileSimulator()
+
+    def test_simple(self):
+        def f(p):
+            pass
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'return', f_ident),
+                              ])
+
+    def test_basic_exception(self):
+        def f(p):
+            1/0
+        f_ident = ident(f)
+        self.check_events(f, [(1, 'call', f_ident),
+                              (1, 'ignore', f_ident),
+                              (1, 'propogate-from', f_ident),
+                              ])
+
+
 def ident(function):
     if hasattr(function, "f_code"):
         code = function.f_code
@@ -174,8 +230,9 @@ def protect(f, p):
 protect_ident = ident(protect)
 
 
-def capture_events(callable):
-    p = HookWatcher()
+def capture_events(callable, p=None):
+    if p is None:
+        p = HookWatcher()
     sys.setprofile(p.callback)
     protect(callable, p)
     sys.setprofile(None)
@@ -188,7 +245,11 @@ def show_events(callable):
 
 
 def test_main():
-    test_support.run_unittest(ProfileHookTestCase)
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    suite.addTest(loader.loadTestsFromTestCase(ProfileHookTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(ProfileSimulatorTestCase))
+    test_support.run_suite(suite)
 
 
 if __name__ == "__main__":
