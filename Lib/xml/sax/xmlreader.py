@@ -6,6 +6,17 @@ import handler
 # ===== XMLREADER =====
 
 class XMLReader:
+    """Interface for reading an XML document using callbacks. 
+
+    XMLReader is the interface that an XML parser's SAX2 driver must
+    implement. This interface allows an application to set and query
+    features and properties in the parser, to register event handlers
+    for document processing, and to initiate a document parse.
+
+    All SAX interfaces are assumed to be synchronous: the parse
+    methods must not return until parsing is complete, and readers
+    must wait for an event-handler callback to return before reporting
+    the next event."""
     
     def __init__(self):
         self._cont_handler = handler.ContentHandler()

@@ -16,9 +16,7 @@ saxutils -- Implementation of the convenience classes commonly used to
 xmlreader -- Base classes and constants which define the SAX 2 API for
              the parsers used with SAX for Python.
 
-expatreader -- Driver that allows use of the Expat parser with the
-               classes defined in saxlib.
-
+expatreader -- Driver that allows use of the Expat parser with SAX.
 """
 
 from xmlreader import InputSource

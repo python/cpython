@@ -1,6 +1,6 @@
 """
 SAX driver for the Pyexpat C module.  This driver works with
-pyexpat.__version__ == '1.5'.
+pyexpat.__version__ == '2.22'.
 """
 
 version = "0.20"
@@ -28,7 +28,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     # XMLReader methods
 
     def parse(self, source):
-        "Parse an XML document from a URL."
+        "Parse an XML document from a URL or an InputSource."
         source = saxutils.prepare_input_source(source)
 
         self._source = source
@@ -40,7 +40,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             error_code = self._parser.ErrorCode
             raise SAXParseException(expat.ErrorString(error_code), None, self)
             
-            self._cont_handler.endDocument()
+        self._cont_handler.endDocument()
 
     def prepareParser(self, source):
         if source.getSystemId() != None:
@@ -108,7 +108,10 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 #         self._parser.DefaultHandlerExpand = 
 #         self._parser.NotStandaloneHandler = 
         self._parser.ExternalEntityRefHandler = self.external_entity_ref
-    
+
+        self._parsing = 0
+        self._entity_stack = []
+        
     # Locator methods
 
     def getColumnNumber(self):
