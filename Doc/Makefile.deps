@@ -100,6 +100,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libobjs.tex \
 	lib/libstdtypes.tex \
 	lib/libexcs.tex \
+	lib/libconsts.tex \
 	lib/libfuncs.tex \
 	lib/libpython.tex \
 	lib/libsys.tex \
