@@ -926,10 +926,7 @@ PyTypeObject PyDict_Type = {
 	&dict_as_mapping,	/*tp_as_mapping*/
 };
 
-/* For backward compatibility with old dictionary interface */
-
-static PyObject *last_name_object;
-static char *last_name_char; /* NULL or == getstringvalue(last_name_object) */
+/* These belong in object.c now */
 
 PyObject *
 PyObject_GetAttr(v, name)
@@ -938,14 +935,8 @@ PyObject_GetAttr(v, name)
 {
 	if (v->ob_type->tp_getattro != NULL)
 		return (*v->ob_type->tp_getattro)(v, name);
-
-	if (name != last_name_object) {
-		Py_XDECREF(last_name_object);
-		Py_INCREF(name);
-		last_name_object = name;
-		last_name_char = PyString_AsString(name);
-	}
-	return PyObject_GetAttrString(v, last_name_char);
+	else
+		return PyObject_GetAttrString(v, PyString_AsString(name));
 }
 
 int
@@ -959,35 +950,28 @@ PyObject_SetAttr(v, name, value)
 	PyString_InternInPlace(&name);
 	if (v->ob_type->tp_setattro != NULL)
 		err = (*v->ob_type->tp_setattro)(v, name, value);
-	else {
-		if (name != last_name_object) {
-			Py_XDECREF(last_name_object);
-			Py_INCREF(name);
-			last_name_object = name;
-			last_name_char = PyString_AsString(name);
-		}
-		err = PyObject_SetAttrString(v, last_name_char, value);
-	}
+	else
+		err = PyObject_SetAttrString(
+			v, PyString_AsString(name), value);
 	Py_DECREF(name);
 	return err;
 }
+
+/* For backward compatibility with old dictionary interface */
 
 PyObject *
 PyDict_GetItemString(v, key)
 	PyObject *v;
 	char *key;
 {
-	if (key != last_name_char) {
-		Py_XDECREF(last_name_object);
-		last_name_object = PyString_FromString(key);
-		if (last_name_object == NULL) {
-			last_name_char = NULL;
-			return NULL;
-		}
-		PyString_InternInPlace(&last_name_object);
-		last_name_char = PyString_AsString(last_name_object);
-	}
-	return PyDict_GetItem(v, last_name_object);
+	PyObject *kv, *rv;
+	kv = PyString_FromString(key);
+	if (kv == NULL)
+		return NULL;
+	PyString_InternInPlace(&kv);
+	rv = PyDict_GetItem(v, kv);
+	Py_DECREF(kv);
+	return rv;
 }
 
 int
@@ -996,17 +980,15 @@ PyDict_SetItemString(v, key, item)
 	char *key;
 	PyObject *item;
 {
-	if (key != last_name_char) {
-		Py_XDECREF(last_name_object);
-		last_name_object = PyString_FromString(key);
-		if (last_name_object == NULL) {
-			last_name_char = NULL;
-			return -1;
-		}
-		PyString_InternInPlace(&last_name_object);
-		last_name_char = PyString_AsString(last_name_object);
-	}
-	return PyDict_SetItem(v, last_name_object, item);
+	PyObject *kv;
+	int err;
+	kv = PyString_FromString(key);
+	if (kv == NULL)
+		return NULL;
+	PyString_InternInPlace(&kv);
+	err = PyDict_SetItem(v, kv, item);
+	Py_DECREF(kv);
+	return err;
 }
 
 int
@@ -1014,14 +996,13 @@ PyDict_DelItemString(v, key)
 	PyObject *v;
 	char *key;
 {
-	if (key != last_name_char) {
-		Py_XDECREF(last_name_object);
-		last_name_object = PyString_FromString(key);
-		if (last_name_object == NULL) {
-			last_name_char = NULL;
-			return -1;
-		}
-		last_name_char = PyString_AsString(last_name_object);
-	}
-	return PyDict_DelItem(v, last_name_object);
+	PyObject *kv;
+	int err;
+	kv = PyString_FromString(key);
+	if (kv == NULL)
+		return NULL;
+	PyString_InternInPlace(&kv);
+	err = PyDict_DelItem(v, kv);
+	Py_DECREF(kv);
+	return err;
 }
