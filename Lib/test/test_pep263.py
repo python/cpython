@@ -1,4 +1,5 @@
 #! -*- coding: koi8-r -*-
+# This file is marked as binary in the CVS, to prevent MacCVS from recoding it.
 
 import unittest
 from test import test_support
