@@ -71,7 +71,7 @@ class Debugger(bdb.Bdb):
         self.vsource = BooleanVar(top)
         self.bsource = Checkbutton(cframe,
             text="Source", command=self.show_source, variable=self.vsource)
-        self.bsource.grid(row=0, column=0)
+        self.bsource.grid(row=0, column=1)
         self.vlocals = BooleanVar(top)
         self.blocals = Checkbutton(cframe,
             text="Locals", command=self.show_locals, variable=self.vlocals)
@@ -163,6 +163,8 @@ class Debugger(bdb.Bdb):
             self.stackviewer = sv = StackViewer.StackViewer(
                 self.top, self.flist, self)
             if self.frame:
+                stack, i = self.get_stack(self.frame, None)
+                sv.load_stack(stack, i)
         else:
             sv = self.stackviewer
             if sv and not self.vstack.get():
