@@ -10,6 +10,7 @@ __revision__ = "$Id$"
 import os
 from types import StringType
 from distutils.core import Command
+from distutils.util import change_root
 
 class install_data (Command):
 
@@ -46,7 +47,7 @@ class install_data (Command):
                 if not os.path.isabs(dir):
                     dir = os.path.join(self.install_dir, dir)
                 elif self.root:
-                    dir = os.path.join(self.root, dir[1:])
+                    dir = change_root(self.root, dir)
                 self.mkpath(dir)
                 for data in f[1]:
                     self.copy_file(data, dir)
