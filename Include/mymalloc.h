@@ -58,8 +58,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef __cplusplus
-// Move this down here since some C++ #include's don't like to be included
-// inside an extern "C"
+/* Move this down here since some C++ #include's don't like to be included
+   inside an extern "C" */
 extern "C" {
 #endif
 
@@ -96,6 +96,23 @@ extern void free Py_PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
 				       _PyMem_EXTRA + (n) * sizeof(type))
 #define PyMem_DEL(p) free((ANY *)p)
 #define PyMem_XDEL(p) if ((p) == NULL) ; else PyMem_DEL(p)
+
+
+/* Two sets of function wrappers around malloc and friends; useful if
+   you need to be sure that you are using the same memory allocator as
+   Python.  Note that the wrappers make sure that allocating 0 bytes
+   returns a non-NULL pointer, even if the underlying malloc doesn't.
+   The Python interpreter continues to use PyMem_NEW etc. */
+
+/* These wrappers around malloc call PyErr_NoMemory() on failure */
+extern ANY *Py_Malloc Py_PROTO((size_t));
+extern ANY *Py_Realloc Py_PROTO((ANY *, size_t));
+extern void Py_Free Py_PROTO((ANY *));
+
+/* These wrappers around malloc *don't* call anything on failure */
+extern ANY *PyMem_Malloc Py_PROTO((size_t));
+extern ANY *PyMem_Realloc Py_PROTO((ANY *, size_t));
+extern void PyMem_Free Py_PROTO((ANY *));
 
 #ifdef __cplusplus
 }
