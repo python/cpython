@@ -134,6 +134,37 @@ Library
   which return translation strings encoded in the preferred encoding,
   as informed by locale module's getpreferredencoding().
 
+- optparse module (and tests) upgraded to Optik 1.5a1.  Changes:
+
+  - Add expansion of default values in help text: the string
+    "%default" in an option's help string is expanded to str() of
+    that option's default value, or "none" if no default value.
+    
+  - Bug #955889: option default values that happen to be strings are
+    now processed in the same way as values from the command line; this
+    allows generation of nicer help when using custom types.  Can
+    be disabled with parser.set_process_default_values(False).
+
+  - Bug #960515: don't crash when generating help for callback
+    options that specify 'type', but not 'dest' or 'metavar'.
+
+  - Feature #815264: change the default help format for short options
+    that take an argument from e.g. "-oARG" to "-o ARG"; add
+    set_short_opt_delimiter() and set_long_opt_delimiter() methods to
+    HelpFormatter to allow (slight) customization of the formatting.
+
+  - Patch #736940: internationalize Optik: all built-in user-
+    targeted literal strings are passed through gettext.gettext().  (If
+    you want translations (.po files), they're not included with Python
+    -- you'll find them in the Optik source distribution from
+    http://optik.sourceforge.net/ .)
+
+  - Bug #878453: respect $COLUMNS environment variable for
+    wrapping help output.
+
+  - Feature #988122: expand "%prog" in the 'description' passed
+    to OptionParser, just like in the 'usage' and 'version' strings.
+    (This is *not* done in the 'description' passed to OptionGroup.)
 
 Tools/Demos
 -----------
