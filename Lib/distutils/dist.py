@@ -265,20 +265,23 @@ class Distribution:
         files = []
         check_environ()
 
-        if os.name=='posix':
-	    sys_dir = os.path.dirname(sys.modules['distutils'].__file__)
-	    user_filename = ".pydistutils.cfg"
-	else:
-	    sys_dir = sysconfig.PREFIX
-	    user_filename = "pydistutils.cfg"
-	
-        sys_file = os.path.join(sys_dir, "pydistutils.cfg")
+        # Where to look for the system-wide Distutils config file
+        sys_dir = os.path.dirname(sys.modules['distutils'].__file__)
+
+        # Look for the system config file
+        sys_file = os.path.join(sys_dir, "distutils.cfg")
         if os.path.isfile(sys_file):
             files.append(sys_file)
 
+        # What to call the per-user config file
+        if os.name == 'posix':
+	    user_filename = ".pydistutils.cfg"
+	else:
+	    user_filename = "pydistutils.cfg"
+	
+        # And look for the user config file
 	if os.environ.has_key('HOME'):
-    	    user_file = os.path.join(os.environ.get('HOME'),
-                                     user_filename)
+    	    user_file = os.path.join(os.environ.get('HOME'), user_filename)
             if os.path.isfile(user_file):
                 files.append(user_file)
 
