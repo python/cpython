@@ -809,8 +809,8 @@ dict_update(register dictobject *mp, PyObject *args)
         dictentry *entry;
 	if (!PyArg_Parse(args, "O!", &PyDict_Type, &other))
 		return NULL;
-	if (other == mp)
-		goto done; /* a.update(a); nothing to do */
+	if (other == mp || other->ma_used == 0)
+		goto done; /* a.update(a) or a.update({}); nothing to do */
 	/* Do one big resize at the start, rather than incrementally
 	   resizing as we insert new items.  Expect that there will be
 	   no (or few) overlapping keys. */
