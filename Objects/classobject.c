@@ -655,13 +655,21 @@ instance_repr(inst)
 	if (func == NULL) {
 		char buf[140];
 		PyObject *classname = inst->in_class->cl_name;
+		PyObject *mod = PyDict_GetItemString(
+			inst->in_class->cl_dict, "__module__");
 		char *cname;
 		if (classname != NULL && PyString_Check(classname))
 			cname = PyString_AsString(classname);
 		else
 			cname = "?";
 		PyErr_Clear();
-		sprintf(buf, "<%.100s instance at %lx>", cname, (long)inst);
+		if (mod == NULL || !PyString_Check(mod))
+			sprintf(buf, "<?.%.100s instance at %lx>",
+				cname, (long)inst);
+		else
+			sprintf(buf, "<%.50s.%.50s instance at %lx>",
+				PyString_AsString(mod),
+				cname, (long)inst);
 		return PyString_FromString(buf);
 	}
 	res = PyEval_CallObject(func, (PyObject *)NULL);
