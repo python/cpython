@@ -281,6 +281,18 @@ class AbstractPickleTests(unittest.TestCase):
         y = self.loads(s)
         self.assertEqual(x, y)
 
+    def test_short_tuples(self):
+        a = ()
+        b = (12,)
+        c = (6, 6)
+        d = (4, 4, 4)
+        e = (3, 3, 3, 3)
+        for proto in 0, 1, 2:
+            for x in a, b, c, d, e:
+                s = self.dumps(x, proto)
+                y = self.loads(s)
+                self.assertEqual(x, y, (proto, x, s, y))
+
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
