@@ -57,7 +57,7 @@ math_1(PyObject *args, double (*func) (double), char *argsfmt)
 	PyFPE_START_PROTECT("in math_1", return 0)
 	x = (*func)(x);
 	PyFPE_END_PROTECT(x)
-	Py_SET_ERANGE_IF_OVERFLOW(x);
+	Py_SET_ERRNO_ON_MATH_ERROR(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
@@ -74,7 +74,7 @@ math_2(PyObject *args, double (*func) (double, double), char *argsfmt)
 	PyFPE_START_PROTECT("in math_2", return 0)
 	x = (*func)(x, y);
 	PyFPE_END_PROTECT(x)
-	Py_SET_ERANGE_IF_OVERFLOW(x);
+	Py_SET_ERRNO_ON_MATH_ERROR(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
@@ -143,7 +143,7 @@ math_frexp(PyObject *self, PyObject *args)
 		return NULL;
 	errno = 0;
 	x = frexp(x, &i);
-	Py_SET_ERANGE_IF_OVERFLOW(x);
+	Py_SET_ERRNO_ON_MATH_ERROR(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
@@ -168,7 +168,7 @@ math_ldexp(PyObject *self, PyObject *args)
 	PyFPE_START_PROTECT("ldexp", return 0)
 	x = ldexp(x, exp);
 	PyFPE_END_PROTECT(x)
-	Py_SET_ERANGE_IF_OVERFLOW(x);
+	Py_SET_ERRNO_ON_MATH_ERROR(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
@@ -186,7 +186,7 @@ math_modf(PyObject *self, PyObject *args)
 		return NULL;
 	errno = 0;
 	x = modf(x, &y);
-	Py_SET_ERANGE_IF_OVERFLOW(x);
+	Py_SET_ERRNO_ON_MATH_ERROR(x);
 	if (errno && is_error(x))
 		return NULL;
 	else
