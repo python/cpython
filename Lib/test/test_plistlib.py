@@ -14,7 +14,7 @@ class TestPlistlib(unittest.TestCase):
             pass
 
     def _create(self):
-        pl = plistlib.Plist(
+        pl = plistlib.Dict(
             aString="Doodah",
             aList=["A", "B", 12, 32.1, [1, 2, 3]],
             aFloat = 0.1,
@@ -45,24 +45,24 @@ class TestPlistlib(unittest.TestCase):
 
     def test_io(self):
         pl = self._create()
-        pl.write(test_support.TESTFN)
-        pl2 = plistlib.Plist.fromFile(test_support.TESTFN)
+        plistlib.writePlist(pl, test_support.TESTFN)
+        pl2 = plistlib.readPlist(test_support.TESTFN)
         self.assertEqual(dict(pl), dict(pl2))
 
     def test_stringio(self):
         from StringIO import StringIO
         f = StringIO()
         pl = self._create()
-        pl.write(f)
-        pl2 = plistlib.Plist.fromFile(StringIO(f.getvalue()))
+        plistlib.writePlist(pl, f)
+        pl2 = plistlib.readPlist(StringIO(f.getvalue()))
         self.assertEqual(dict(pl), dict(pl2))
 
     def test_cstringio(self):
         from cStringIO import StringIO
         f = StringIO()
         pl = self._create()
-        pl.write(f)
-        pl2 = plistlib.Plist.fromFile(StringIO(f.getvalue()))
+        plistlib.writePlist(pl, f)
+        pl2 = plistlib.readPlist(StringIO(f.getvalue()))
         self.assertEqual(dict(pl), dict(pl2))
 
 
