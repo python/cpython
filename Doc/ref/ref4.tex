@@ -99,7 +99,7 @@ Module & n.s. for this module & same as global & \\
 Script & n.s. for \verb@__main__@ & same as global & \\
 Interactive command & n.s. for \verb@__main__@ & same as global & \\
 Class definition & global n.s. of containing block & new n.s. & \\
-Function body & global n.s. of containing block & new n.s. & \\
+Function body & global n.s. of containing block & new n.s. & (2) \\
 String passed to \verb@exec@ statement
 	& global n.s. of containing block
 		& local n.s. of containing block & (1) \\
@@ -122,6 +122,11 @@ Notes:
 
 \item[(1)] The global and local name space for these can be
 overridden with optional extra arguments.
+
+\item[(2)] The body of lambda forms (see section \ref{lambda}) is
+treated exactly the same as a (nested) function definition.  Lambda
+forms have their own name space consisting of their formal arguments.
+\indexii{lambda}{form}
 
 \end{description}
 
