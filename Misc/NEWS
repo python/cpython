@@ -39,6 +39,8 @@ TBD
 Build
 -----
 
+- Fix build problems when _iconv_codec failed.  (SF bug #690012.)
+
 - Fix problem building on OSF1 because the compiler only accepted
   preprocessor directives that start in column 1.  (SF bug #691793.)
 
