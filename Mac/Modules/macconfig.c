@@ -161,6 +161,9 @@ extern void initcPickle();
 extern void initcStringIO();
 extern void init_codecs();
 extern void init_locale();
+#ifdef USE_UCNHASH
+extern void initucnhash();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -169,6 +172,7 @@ extern void initimp();
 struct _inittab _PyImport_Inittab[] = {
 
 	{"array", initarray},
+	{"math", initmath},
 #ifndef WITHOUT_COMPLEX
 	{"cmath", initcmath},
 #endif
@@ -273,8 +277,10 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 	{"cPickle",	initcPickle},
 	{"cStringIO",	initcStringIO},
-	{"_codecs", init_codecs},
 	{"_locale", init_locale},
+#ifdef USE_UCNHASH
+	{"ucnhash", initucnhash},
+#endif
 
 /* -- ADDMODULE MARKER 2 -- */
 
