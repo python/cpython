@@ -55,7 +55,7 @@ int IBNibRefObj_Convert(PyObject *v, IBNibRef *p_itself)
 static void IBNibRefObj_dealloc(IBNibRefObject *self)
 {
 	DisposeNibReference(self->ob_itself);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *IBNibRefObj_CreateWindowFromNib(IBNibRefObject *_self, PyObject *_args)
@@ -67,11 +67,9 @@ static PyObject *IBNibRefObj_CreateWindowFromNib(IBNibRefObject *_self, PyObject
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &inName))
 		return NULL;
-	Py_BEGIN_ALLOW_THREADS
 	_err = CreateWindowFromNib(_self->ob_itself,
 	                           inName,
 	                           &outWindow);
-	Py_END_ALLOW_THREADS
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     WinObj_New, outWindow);
@@ -87,11 +85,9 @@ static PyObject *IBNibRefObj_CreateMenuFromNib(IBNibRefObject *_self, PyObject *
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &inName))
 		return NULL;
-	Py_BEGIN_ALLOW_THREADS
 	_err = CreateMenuFromNib(_self->ob_itself,
 	                         inName,
 	                         &outMenuRef);
-	Py_END_ALLOW_THREADS
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     MenuObj_New, outMenuRef);
@@ -107,11 +103,9 @@ static PyObject *IBNibRefObj_CreateMenuBarFromNib(IBNibRefObject *_self, PyObjec
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &inName))
 		return NULL;
-	Py_BEGIN_ALLOW_THREADS
 	_err = CreateMenuBarFromNib(_self->ob_itself,
 	                            inName,
 	                            &outMenuBar);
-	Py_END_ALLOW_THREADS
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     ResObj_New, outMenuBar);
@@ -126,10 +120,8 @@ static PyObject *IBNibRefObj_SetMenuBarFromNib(IBNibRefObject *_self, PyObject *
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &inName))
 		return NULL;
-	Py_BEGIN_ALLOW_THREADS
 	_err = SetMenuBarFromNib(_self->ob_itself,
 	                         inName);
-	Py_END_ALLOW_THREADS
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -194,10 +186,8 @@ static PyObject *IBCarbon_CreateNibReference(PyObject *_self, PyObject *_args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      CFStringRefObj_Convert, &inNibName))
 		return NULL;
-	Py_BEGIN_ALLOW_THREADS
 	_err = CreateNibReference(inNibName,
 	                          &outNibRef);
-	Py_END_ALLOW_THREADS
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     IBNibRefObj_New, outNibRef);

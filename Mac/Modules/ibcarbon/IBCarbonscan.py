@@ -5,7 +5,7 @@ import os
 import string
 import MacOS
 
-BGENDIR= '/Users/dp/python/dist/src/Tools/bgen/bgen'
+BGENDIR= '/Users/jack/src/python/Tools/bgen/bgen'
 sys.path.append(BGENDIR)
 print sys.path, sys.prefix
 from bgenlocations import TOOLBOXDIR
@@ -25,6 +25,7 @@ def main():
 	print "done"
 
 class IBCarbon_Scanner(Scanner_OSX):
+
 	def destination(self, type, name, arglist):
 		classname = "IBCarbonFunction"
 		listname = "functions"
@@ -40,6 +41,10 @@ class IBCarbon_Scanner(Scanner_OSX):
 			"DisposeNibReference",				# taken care of by destructor
 			"CreateNibReferenceWithCFBundle",  ## need to wrap CFBundle.h properly first
 			]
+			
+	def makerepairinstructions(self):
+		return []
+
 
 if __name__ == "__main__":
 	main()
