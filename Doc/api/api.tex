@@ -1690,6 +1690,7 @@ Python expression \code{type(\var{o})}.
 \begin{cfuncdesc}{int}{PyObject_TypeCheck}{PyObject *o, PyTypeObject *type}
 Return true if the object \var{o} is of type \var{type} or a subtype
 of \var{type}.  Both parameters must be non-\NULL.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_Length}{PyObject *o}
@@ -2339,14 +2340,21 @@ Returns true if the type object \var{o} sets the feature
 
 \begin{cfuncdesc}{int}{PyType_IsSubtype}{PyTypeObject *a, PyTypeObject *b}
 Returns true if \var{a} is a subtype of \var{b}.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyType_GenericAlloc}{PyTypeObject *type,
                                                   int nitems}
+\versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyType_GenericNew}{PyTypeObject *type,
                                             PyObject *args, PyObject *kwds}
+\versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyType_Ready}{PyTypeObject *type}
+\versionadded{2.2}
 \end{cfuncdesc}
 
 
@@ -3955,6 +3963,13 @@ Returns true if its argument is a \ctype{PyDictObject}.
 Returns a new empty dictionary, or \NULL{} on failure.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyDictProxy_New}{PyObject *dict}
+Return a proxy object for a mapping which enforces read-only
+behavior.  This is normally used to create a proxy to prevent
+modification of the dictionary for non-dynamic class types.
+\versionadded{2.2}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{void}{PyDict_Clear}{PyObject *p}
 Empties an existing dictionary of all key-value pairs.
 \end{cfuncdesc}
@@ -4381,27 +4396,31 @@ returned.
   Type object for iterator objects returned by
   \cfunction{PySeqIter_New()} and the one-argument form of the
   \function{iter()} built-in function for built-in sequence types.
+  \versionadded{2.2}
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PySeqIter_Check}{op}
   Return true if the type of \var{op} is \cdata{PySeqIter_Type}.
+  \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PySeqIter_New}{PyObject *seq}
   Return an iterator that works with a general sequence object,
   \var{seq}.  The iteration ends when the sequence raises
   \exception{IndexError} for the subscripting operation.
+  \versionadded{2.2}
 \end{cfuncdesc}
-
 
 \begin{cvardesc}{PyTypeObject}{PyCallIter_Type}
   Type object for iterator objects returned by
   \cfunction{PyCallIter_New()} and the two-argument form of the
   \function{iter()} built-in function.
+  \versionadded{2.2}
 \end{cvardesc}
 
 \begin{cfuncdesc}{int}{PyCallIter_Check}{op}
   Return true if the type of \var{op} is \cdata{PyCallIter_Type}.
+  \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyCallIter_New}{PyObject *callable,
@@ -4411,6 +4430,75 @@ returned.
   each call to it should return the next item in the iteration.  When
   \var{callable} returns a value equal to \var{sentinel}, the
   iteration will be terminated.
+  \versionadded{2.2}
+\end{cfuncdesc}
+
+
+\subsection{Descriptor Objects \label{descriptor-objects}}
+
+\begin{cvardesc}{PyTypeObject}{PyProperty_Type}
+  The type object for a descriptor.
+  \versionadded{2.2}
+\end{cvardesc}
+
+\begin{cfuncdesc}{PyObject*}{PyDescr_NewGetSet}{PyTypeObject *type,
+					        PyGetSetDef *getset}
+  \versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyDescr_NewMember}{PyTypeObject *type,
+					        PyMemberDef *meth}
+  \versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyDescr_NewMethod}{PyTypeObject *type,
+                                                PyMethodDef *meth}
+  \versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyDescr_NewWrapper}{PyTypeObject *type,
+						 struct wrapperbase *wrapper,
+                                                 void *wrapped}
+  \versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyDescr_IsData}{PyObject *descr}
+  Returns true if the descriptor objects \var{descr} describes a data
+  attribute, or false if it describes a method.  \var{descr} must be a
+  descriptor object; there is no error checking.
+  \versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyWrapper_New}{PyObject *, PyObject *}
+  \versionadded{2.2}
+\end{cfuncdesc}
+
+
+\subsection{Slice Objects \label{slice-objects}}
+
+\begin{cvardesc}{PyTypeObject}{PySlice_Type}
+  The type object for slice objects.  This is the same as
+  \code{types.SliceType}.
+  \withsubitem{(in module types)}{\ttindex{SliceType}}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PySlice_Check}{PyObject *ob}
+  Returns true if \var{ob} is a slice object; \var{ob} must not be
+  \NULL.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PySlice_New}{PyObject *start, PyObject *stop,
+                                          PyObject *step}
+  Return a new slice object with the given values.  The \var{start},
+  \var{stop}, and \var{step} parameters are used as the values of the
+  slice object attributes of the same names.  Any of the values may be
+  \NULL, in which case the \code{None} will be used for the
+  corresponding attribute.  Returns \NULL{} if the new object could
+  not be allocated.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySlice_GetIndices}{PySliceObject *slice, int length,
+                                           int *start, int *stop, int *step}
 \end{cfuncdesc}
 
 
