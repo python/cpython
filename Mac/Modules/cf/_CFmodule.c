@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -272,7 +276,7 @@ static int CFTypeRefObj_compare(CFTypeRefObject *self, CFTypeRefObject *other)
 static PyObject * CFTypeRefObj_repr(CFTypeRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFTypeRef type-%d object at 0x%8.8x for 0x%8.8x>", CFGetTypeID(self->ob_itself), (unsigned long)self, (unsigned long)self->ob_itself);
+	sprintf(buf, "<CFTypeRef type-%d object at 0x%8.8x for 0x%8.8x>", CFGetTypeID(self->ob_itself), (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -422,7 +426,7 @@ static int CFArrayRefObj_compare(CFArrayRefObject *self, CFArrayRefObject *other
 static PyObject * CFArrayRefObj_repr(CFArrayRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFArrayRef object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFArrayRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -575,7 +579,7 @@ static int CFMutableArrayRefObj_compare(CFMutableArrayRefObject *self, CFMutable
 static PyObject * CFMutableArrayRefObj_repr(CFMutableArrayRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFMutableArrayRef object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFMutableArrayRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -707,7 +711,7 @@ static int CFDictionaryRefObj_compare(CFDictionaryRefObject *self, CFDictionaryR
 static PyObject * CFDictionaryRefObj_repr(CFDictionaryRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFDictionaryRef object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFDictionaryRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -823,7 +827,7 @@ static int CFMutableDictionaryRefObj_compare(CFMutableDictionaryRefObject *self,
 static PyObject * CFMutableDictionaryRefObj_repr(CFMutableDictionaryRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFMutableDictionaryRef object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFMutableDictionaryRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -973,7 +977,7 @@ static int CFDataRefObj_compare(CFDataRefObject *self, CFDataRefObject *other)
 static PyObject * CFDataRefObj_repr(CFDataRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFDataRef object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFDataRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -1096,7 +1100,6 @@ static PyObject *CFMutableDataRefObj_CFDataAppendBytes(CFMutableDataRefObject *_
 	                  bytes__in__, bytes__len__);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- bytes__error__: ;
 	return _res;
 }
 
@@ -1118,7 +1121,6 @@ static PyObject *CFMutableDataRefObj_CFDataReplaceBytes(CFMutableDataRefObject *
 	                   newBytes__in__, newBytes__len__);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- newBytes__error__: ;
 	return _res;
 }
 
@@ -1171,7 +1173,7 @@ static int CFMutableDataRefObj_compare(CFMutableDataRefObject *self, CFMutableDa
 static PyObject * CFMutableDataRefObj_repr(CFMutableDataRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFMutableDataRef object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFMutableDataRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -1774,7 +1776,7 @@ static int CFStringRefObj_compare(CFStringRefObject *self, CFStringRefObject *ot
 static PyObject * CFStringRefObj_repr(CFStringRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFStringRef object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFStringRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -2061,7 +2063,7 @@ static int CFMutableStringRefObj_compare(CFMutableStringRefObject *self, CFMutab
 static PyObject * CFMutableStringRefObj_repr(CFMutableStringRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFMutableStringRef object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFMutableStringRef object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -2433,7 +2435,7 @@ static int CFURLRefObj_compare(CFURLRefObject *self, CFURLRefObject *other)
 static PyObject * CFURLRefObj_repr(CFURLRefObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<CFURL object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<CFURL object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -2590,7 +2592,6 @@ static PyObject *CF_CFDataCreate(PyObject *_self, PyObject *_args)
 	                   bytes__in__, bytes__len__);
 	_res = Py_BuildValue("O&",
 	                     CFDataRefObj_New, _rv);
- bytes__error__: ;
 	return _res;
 }
 
@@ -2611,7 +2612,6 @@ static PyObject *CF_CFDataCreateWithBytesNoCopy(PyObject *_self, PyObject *_args
 	                                  (CFAllocatorRef)NULL);
 	_res = Py_BuildValue("O&",
 	                     CFDataRefObj_New, _rv);
- bytes__error__: ;
 	return _res;
 }
 
@@ -2848,7 +2848,6 @@ static PyObject *CF_CFStringCreateWithBytes(PyObject *_self, PyObject *_args)
 	                              isExternalRepresentation);
 	_res = Py_BuildValue("O&",
 	                     CFStringRefObj_New, _rv);
- bytes__error__: ;
 	return _res;
 }
 
@@ -3038,7 +3037,6 @@ static PyObject *CF_CFURLCreateWithBytes(PyObject *_self, PyObject *_args)
 	                           baseURL);
 	_res = Py_BuildValue("O&",
 	                     CFURLRefObj_New, _rv);
- URLBytes__error__: ;
 	return _res;
 }
 

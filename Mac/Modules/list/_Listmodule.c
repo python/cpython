@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -361,7 +365,6 @@ static PyObject *ListObj_LAddToCell(ListObject *_self, PyObject *_args)
 	           _self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -439,7 +442,6 @@ static PyObject *ListObj_LSetCell(ListObject *_self, PyObject *_args)
 	         _self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -929,7 +931,8 @@ static PyObject *List_as_List(PyObject *_self, PyObject *_args)
 		return NULL;
 	l = (ListObject *)ListObj_New(as_List(h));
 	l->ob_must_be_disposed = 0;
-	return Py_BuildValue("O", l);
+	_res = Py_BuildValue("O", l);
+	return _res;
 
 }
 

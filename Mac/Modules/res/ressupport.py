@@ -61,7 +61,7 @@ PyObject *OptResObj_New(Handle itself)
 	return ResObj_New(itself);
 }
 
-OptResObj_Convert(PyObject *v, Handle *p_itself)
+int OptResObj_Convert(PyObject *v, Handle *p_itself)
 {
 	PyObject *tmp;
 	

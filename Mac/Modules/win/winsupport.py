@@ -179,7 +179,7 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<Window object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<Window object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 		
@@ -208,7 +208,8 @@ long ptr;
 
 if ( !PyArg_ParseTuple(_args, "i", &ptr) )
 	return NULL;
-return WinObj_WhichWindow((WindowPtr)ptr);
+_res = WinObj_WhichWindow((WindowPtr)ptr);
+return _res;
 """
 
 f = ManualGenerator("WhichWindow", whichwin_body)

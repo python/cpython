@@ -236,7 +236,8 @@ installtracking_body = """
     _err = InstallTrackingHandler(dragglue_TrackingHandlerUPP, theWindow, (void *)callback);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
-	return Py_None;
+	_res = Py_None;
+	return _res;
 """
 installtracking = ManualGenerator("InstallTrackingHandler", installtracking_body)
 module.add(installtracking)
@@ -252,7 +253,8 @@ installreceive_body = """
     _err = InstallReceiveHandler(dragglue_ReceiveHandlerUPP, theWindow, (void *)callback);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
-	return Py_None;
+	_res = Py_None;
+	return _res;
 """
 installreceive = ManualGenerator("InstallReceiveHandler", installreceive_body)
 module.add(installreceive)
@@ -266,7 +268,8 @@ removetracking_body = """
     _err = RemoveTrackingHandler(dragglue_TrackingHandlerUPP, theWindow);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
-	return Py_None;
+	_res = Py_None;
+	return _res;
 """
 removetracking = ManualGenerator("RemoveTrackingHandler", removetracking_body)
 module.add(removetracking)
@@ -280,7 +283,8 @@ removereceive_body = """
     _err = RemoveReceiveHandler(dragglue_ReceiveHandlerUPP, theWindow);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
-	return Py_None;
+	_res = Py_None;
+	return _res;
 """
 removereceive = ManualGenerator("RemoveReceiveHandler", removereceive_body)
 module.add(removereceive)

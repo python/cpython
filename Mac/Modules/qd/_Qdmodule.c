@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -442,7 +446,8 @@ static PyObject *BMObj_getdata(BitMapObject *_self, PyObject *_args)
 	if ( !PyArg_ParseTuple(_args, "ii", &from, &length) )
 		return NULL;
 	cp = _self->ob_itself->baseAddr+from;
-	return PyString_FromStringAndSize(cp, length);
+	_res = PyString_FromStringAndSize(cp, length);
+	return _res;
 
 }
 
@@ -458,7 +463,8 @@ static PyObject *BMObj_putdata(BitMapObject *_self, PyObject *_args)
 	cp = _self->ob_itself->baseAddr+from;
 	memcpy(cp, icp, length);
 	Py_INCREF(Py_None);
-	return Py_None;
+	_res = Py_None;
+	return _res;
 
 }
 
@@ -912,7 +918,6 @@ static PyObject *Qd_GetPenState(PyObject *_self, PyObject *_args)
 	GetPenState(&pnState__out__);
 	_res = Py_BuildValue("s#",
 	                     (char *)&pnState__out__, (int)sizeof(PenState));
- pnState__error__: ;
 	return _res;
 }
 
@@ -3470,7 +3475,6 @@ static PyObject *Qd_GetIndPattern(PyObject *_self, PyObject *_args)
 	              index);
 	_res = Py_BuildValue("s#",
 	                     (char *)&thePat__out__, (int)sizeof(Pattern));
- thePat__error__: ;
 	return _res;
 }
 
@@ -4116,7 +4120,6 @@ static PyObject *Qd_GetQDGlobalsArrow(PyObject *_self, PyObject *_args)
 	GetQDGlobalsArrow(&arrow__out__);
 	_res = Py_BuildValue("s#",
 	                     (char *)&arrow__out__, (int)sizeof(Cursor));
- arrow__error__: ;
 	return _res;
 }
 
@@ -4129,7 +4132,6 @@ static PyObject *Qd_GetQDGlobalsDarkGray(PyObject *_self, PyObject *_args)
 	GetQDGlobalsDarkGray(&dkGray__out__);
 	_res = Py_BuildValue("s#",
 	                     (char *)&dkGray__out__, (int)sizeof(Pattern));
- dkGray__error__: ;
 	return _res;
 }
 
@@ -4142,7 +4144,6 @@ static PyObject *Qd_GetQDGlobalsLightGray(PyObject *_self, PyObject *_args)
 	GetQDGlobalsLightGray(&ltGray__out__);
 	_res = Py_BuildValue("s#",
 	                     (char *)&ltGray__out__, (int)sizeof(Pattern));
- ltGray__error__: ;
 	return _res;
 }
 
@@ -4155,7 +4156,6 @@ static PyObject *Qd_GetQDGlobalsGray(PyObject *_self, PyObject *_args)
 	GetQDGlobalsGray(&gray__out__);
 	_res = Py_BuildValue("s#",
 	                     (char *)&gray__out__, (int)sizeof(Pattern));
- gray__error__: ;
 	return _res;
 }
 
@@ -4168,7 +4168,6 @@ static PyObject *Qd_GetQDGlobalsBlack(PyObject *_self, PyObject *_args)
 	GetQDGlobalsBlack(&black__out__);
 	_res = Py_BuildValue("s#",
 	                     (char *)&black__out__, (int)sizeof(Pattern));
- black__error__: ;
 	return _res;
 }
 
@@ -4181,7 +4180,6 @@ static PyObject *Qd_GetQDGlobalsWhite(PyObject *_self, PyObject *_args)
 	GetQDGlobalsWhite(&white__out__);
 	_res = Py_BuildValue("s#",
 	                     (char *)&white__out__, (int)sizeof(Pattern));
- white__error__: ;
 	return _res;
 }
 
@@ -4448,7 +4446,6 @@ static PyObject *Qd_MacDrawText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *textBuf__in__;
-	int textBuf__len__;
 	int textBuf__in_len__;
 	short firstByte;
 	short byteCount;
@@ -4457,12 +4454,13 @@ static PyObject *Qd_MacDrawText(PyObject *_self, PyObject *_args)
 	                      &firstByte,
 	                      &byteCount))
 		return NULL;
+	/* Fool compiler warnings */
+	textBuf__in_len__ = textBuf__in_len__;
 	MacDrawText(textBuf__in__,
 	            firstByte,
 	            byteCount);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- textBuf__error__: ;
 	return _res;
 }
 
@@ -4499,7 +4497,6 @@ static PyObject *Qd_TextWidth(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	short _rv;
 	char *textBuf__in__;
-	int textBuf__len__;
 	int textBuf__in_len__;
 	short firstByte;
 	short byteCount;
@@ -4508,12 +4505,13 @@ static PyObject *Qd_TextWidth(PyObject *_self, PyObject *_args)
 	                      &firstByte,
 	                      &byteCount))
 		return NULL;
+	/* Fool compiler warnings */
+	textBuf__in_len__ = textBuf__in_len__;
 	_rv = TextWidth(textBuf__in__,
 	                firstByte,
 	                byteCount);
 	_res = Py_BuildValue("h",
 	                     _rv);
- textBuf__error__: ;
 	return _res;
 }
 
@@ -4977,7 +4975,6 @@ static PyObject *Qd_DrawText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *textBuf__in__;
-	int textBuf__len__;
 	int textBuf__in_len__;
 	short firstByte;
 	short byteCount;
@@ -4986,12 +4983,13 @@ static PyObject *Qd_DrawText(PyObject *_self, PyObject *_args)
 	                      &firstByte,
 	                      &byteCount))
 		return NULL;
+	/* Fool compiler warnings */
+	textBuf__in_len__ = textBuf__in_len__;
 	DrawText(textBuf__in__,
 	         firstByte,
 	         byteCount);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- textBuf__error__: ;
 	return _res;
 }
 

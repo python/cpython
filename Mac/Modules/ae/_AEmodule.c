@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -158,7 +162,6 @@ static PyObject *AEDesc_AEPutPtr(AEDescObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -302,7 +305,6 @@ static PyObject *AEDesc_AEPutParamPtr(AEDescObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -517,7 +519,6 @@ static PyObject *AEDesc_AEPutAttributePtr(AEDescObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -827,7 +828,6 @@ static PyObject *AE_AECoercePtr(PyObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     AEDesc_New, &result);
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -851,7 +851,6 @@ static PyObject *AE_AECreateDesc(PyObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     AEDesc_New, &result);
- dataPtr__error__: ;
 	return _res;
 }
 
@@ -875,7 +874,6 @@ static PyObject *AE_AECreateList(PyObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     AEDesc_New, &resultList);
- factoringPtr__error__: ;
 	return _res;
 }
 
@@ -930,7 +928,6 @@ static PyObject *AE_AEReplaceDescData(PyObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     AEDesc_New, &theAEDesc);
- dataPtr__error__: ;
 	return _res;
 }
 #endif

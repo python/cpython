@@ -24,7 +24,11 @@ from macsupport import *
 
 class TextThingieClass(FixedInputBufferType):
 	def getargsCheck(self, name):
-		pass
+		Output("/* Fool compiler warnings */")
+		Output("%s__in_len__ = %s__in_len__;", name, name)
+
+	def declareSize(self, name):
+		Output("int %s__in_len__;", name)
 
 TextThingie = TextThingieClass(None)
 
@@ -566,7 +570,8 @@ char *cp;
 if ( !PyArg_ParseTuple(_args, "ii", &from, &length) )
 	return NULL;
 cp = _self->ob_itself->baseAddr+from;
-return PyString_FromStringAndSize(cp, length);
+_res = PyString_FromStringAndSize(cp, length);
+return _res;
 """
 f = ManualGenerator("getdata", getdata_body)
 f.docstring = lambda: """(int start, int size) -> string. Return bytes from the bitmap"""
@@ -582,7 +587,8 @@ if ( !PyArg_ParseTuple(_args, "is#", &from, &icp, &length) )
 cp = _self->ob_itself->baseAddr+from;
 memcpy(cp, icp, length);
 Py_INCREF(Py_None);
-return Py_None;
+_res = Py_None;
+return _res;
 """
 f = ManualGenerator("putdata", putdata_body)
 f.docstring = lambda: """(int start, string data). Store bytes into the bitmap"""

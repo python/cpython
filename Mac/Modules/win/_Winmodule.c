@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -2125,7 +2129,7 @@ static int WinObj_compare(WindowObject *self, WindowObject *other)
 static PyObject * WinObj_repr(WindowObject *self)
 {
 	char buf[100];
-	sprintf(buf, "<Window object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	sprintf(buf, "<Window object at 0x%8.8x for 0x%8.8x>", (unsigned)self, (unsigned)self->ob_itself);
 	return PyString_FromString(buf);
 }
 
@@ -2643,7 +2647,8 @@ static PyObject *Win_WhichWindow(PyObject *_self, PyObject *_args)
 
 	if ( !PyArg_ParseTuple(_args, "i", &ptr) )
 		return NULL;
-	return WinObj_WhichWindow((WindowPtr)ptr);
+	_res = WinObj_WhichWindow((WindowPtr)ptr);
+	return _res;
 
 }
 

@@ -190,7 +190,7 @@ class MyGlobalObjectDefinition(GlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFTypeRef type-%%d object at 0x%%8.8x for 0x%%8.8x>", CFGetTypeID(self->ob_itself), (unsigned long)self, (unsigned long)self->ob_itself);""")
+		Output("""sprintf(buf, "<CFTypeRef type-%%d object at 0x%%8.8x for 0x%%8.8x>", CFGetTypeID(self->ob_itself), (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
@@ -205,7 +205,7 @@ class CFArrayRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFArrayRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFArrayRef object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -217,7 +217,7 @@ class CFMutableArrayRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFMutableArrayRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFMutableArrayRef object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -229,7 +229,7 @@ class CFDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFDictionaryRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFDictionaryRef object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -241,7 +241,7 @@ class CFMutableDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFMutableDictionaryRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFMutableDictionaryRef object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -253,7 +253,7 @@ class CFDataRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFDataRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFDataRef object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 	
@@ -265,7 +265,7 @@ class CFMutableDataRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFMutableDataRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFMutableDataRef object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
@@ -296,7 +296,7 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFStringRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFStringRef object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
@@ -312,7 +312,7 @@ class CFMutableStringRefObjectDefinition(CFStringRefObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFMutableStringRef object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFMutableStringRef object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
@@ -324,7 +324,7 @@ class CFURLRefObjectDefinition(MyGlobalObjectDefinition):
 		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
-		Output("""sprintf(buf, "<CFURL object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("""sprintf(buf, "<CFURL object at 0x%%8.8x for 0x%%8.8x>", (unsigned)self, (unsigned)self->ob_itself);""")
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 

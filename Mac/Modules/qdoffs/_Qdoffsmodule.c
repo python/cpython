@@ -5,8 +5,12 @@
 
 
 
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -503,7 +507,8 @@ static PyObject *Qdoffs_GetPixMapBytes(PyObject *_self, PyObject *_args)
 	if ( !PyArg_ParseTuple(_args, "O&ii", ResObj_Convert, &pm, &from, &length) )
 		return NULL;
 	cp = GetPixBaseAddr(pm)+from;
-	return PyString_FromStringAndSize(cp, length);
+	_res = PyString_FromStringAndSize(cp, length);
+	return _res;
 
 }
 
@@ -520,7 +525,8 @@ static PyObject *Qdoffs_PutPixMapBytes(PyObject *_self, PyObject *_args)
 	cp = GetPixBaseAddr(pm)+from;
 	memcpy(cp, icp, length);
 	Py_INCREF(Py_None);
-	return Py_None;
+	_res = Py_None;
+	return _res;
 
 }
 
