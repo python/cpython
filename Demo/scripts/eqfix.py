@@ -31,8 +31,7 @@
 
 import sys
 import regex
-import posix
-import path
+import os
 from stat import *
 import string
 
@@ -46,9 +45,9 @@ def main():
 		err('usage: ' + argv[0] + ' file-or-directory ...\n')
 		sys.exit(2)
 	for arg in sys.argv[1:]:
-		if path.isdir(arg):
+		if os.path.isdir(arg):
 			if recursedown(arg): bad = 1
-		elif path.islink(arg):
+		elif os.path.islink(arg):
 			err(arg + ': will not process symbolic links\n')
 			bad = 1
 		else:
@@ -63,17 +62,17 @@ def recursedown(dirname):
 	dbg('recursedown(' + `dirname` + ')\n')
 	bad = 0
 	try:
-		names = posix.listdir(dirname)
-	except posix.error, msg:
+		names = os.listdir(dirname)
+	except os.error, msg:
 		err(dirname + ': cannot list directory: ' + `msg` + '\n')
 		return 1
 	names.sort()
 	subdirs = []
 	for name in names:
-		if name in ('.', '..'): continue
-		fullname = path.join(dirname, name)
-		if path.islink(fullname): pass
-		elif path.isdir(fullname):
+		if name in (os.curdir, os.pardir): continue
+		fullname = os.path.join(dirname, name)
+		if os.path.islink(fullname): pass
+		elif os.path.isdir(fullname):
 			subdirs.append(fullname)
 		elif ispython(name):
 			if fix(fullname): bad = 1
@@ -88,8 +87,8 @@ def fix(filename):
 	except IOError, msg:
 		err(filename + ': cannot open: ' + `msg` + '\n')
 		return 1
-	head, tail = path.split(filename)
-	tempname = path.join(head, '@' + tail)
+	head, tail = os.path.split(filename)
+	tempname = os.path.join(head, '@' + tail)
 	g = None
 	# If we find a match, we rewind the file and start over but
 	# now copy everything to a temp file.
@@ -145,19 +144,19 @@ def fix(filename):
 
 	# First copy the file's mode to the temp file
 	try:
-		statbuf = posix.stat(filename)
-		posix.chmod(tempname, statbuf[ST_MODE] & 07777)
-	except posix.error, msg:
+		statbuf = os.stat(filename)
+		os.chmod(tempname, statbuf[ST_MODE] & 07777)
+	except os.error, msg:
 		err(tempname + ': warning: chmod failed (' + `msg` + ')\n')
 	# Then make a backup of the original file as filename~
 	try:
-		posix.rename(filename, filename + '~')
-	except posix.error, msg:
+		os.rename(filename, filename + '~')
+	except os.error, msg:
 		err(filename + ': warning: backup failed (' + `msg` + ')\n')
 	# Now move the temp file to the original file
 	try:
-		posix.rename(tempname, filename)
-	except posix.error, msg:
+		os.rename(tempname, filename)
+	except os.error, msg:
 		err(filename + ': rename failed (' + `msg` + ')\n')
 		return 1
 	# Return succes
