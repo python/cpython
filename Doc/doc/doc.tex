@@ -549,6 +549,16 @@ This \UNIX\ is also followed by a space.
       be used in the description.
     \end{envdesc}
 
+    \begin{envdesc}{csimplemacrodesc}{\p{name}}
+      Documentation for a ``simple'' macro.  Simple macros are macros
+      which are used for code expansion, but which do not take
+      arguments so cannot be described as functions.  This is not to
+      be used for simple constant definitions.  Examples of it's use
+      in the Python documentation include
+      \csimplemacro{PyObject_HEAD} and
+      \csimplemacro{Py_BEGIN_ALLOW_THREADS}.
+    \end{envdesc}
+
     \begin{envdesc}{ctypedesc}{\op{tag}\p{name}}
       Environment used to described a C type.  The \var{name}
       parameter should be the \keyword{typedef} name.  If the type is
@@ -733,6 +743,16 @@ This \UNIX\ is also followed by a space.
       The name of a ``defined'' constant.  This may be a C-language
       \code{\#define} or a Python variable that is not intended to be
       changed.
+    \end{macrodesc}
+
+    \begin{macrodesc}{csimplemacro}{\p{name}}
+      The name of a ``simple'' macro.  Simple macros are macros
+      which are used for code expansion, but which do not take
+      arguments so cannot be described as functions.  This is not to
+      be used for simple constant definitions.  Examples of it's use
+      in the Python documentation include
+      \csimplemacro{PyObject_HEAD} and
+      \csimplemacro{Py_BEGIN_ALLOW_THREADS}.
     \end{macrodesc}
 
     \begin{macrodesc}{ctype}{\p{name}}
