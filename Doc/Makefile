@@ -13,8 +13,8 @@
 # The latex sources for each of these documents are in subdirectories
 # with the three-letter designations above as the directory names.
 #
-# The main target "make all" creates DVI and PostScript for these
-# four.  You can also do "make lib" (etc.) to process individual
+# The main target "make all" creates DVI and PostScript for the main
+# targets.  You can also do "make lib" (etc.) to process individual
 # documents.
 #
 # The document classes and styles are in the texinputs/ directory.
@@ -54,6 +54,8 @@ KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich tex
 MAKEINDEX=	makeindex -s $(srcdir)/texinputs/myindex.ist
 ACROREAD=	acroread
 L2HARGS=
+# HTMLDIR should not be '.'!
+HTMLDIR=	html
 PYTHON=		python
 WEBCHECKER=	$(PYTHON) $(srcdir)/../Tools/webchecker/webchecker.py
 
@@ -63,10 +65,7 @@ LIBDESTDIR=	$DESTDIR/lib
 LIBDEST=	$LIBDESTDIR/python$(VERSION)
 DOCDESTDIR=	$LIBDEST/doc
 
-# These is only used for .info generation:
-EMACS=		emacs
-MAKEINFO=	makeinfo
-PARTPARSE=	$(PYTHON) $(srcdir)/tools/partparse.py
+INFODIR=	info
 
 srcdir=.
 VPATH=.
@@ -77,12 +76,11 @@ RELEASE=1.5.1
 VERSION=1.5
 
 DVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
-INFOFILES=	python-lib.info
 PDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
 PSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
 
 # Be careful when messing with this one!
-TEXINPUTS=	.:$(srcdir)/texinputs:
+TEXINPUTS=	.:../texinputs:
 
 MKDVI=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh
 MKHTML=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkhtml.sh
@@ -92,13 +90,19 @@ MKPDF=		TEXINPUTS=$(TEXINPUTS) $(srcdir)/tools/mkdvi.sh --pdf
 all:	all-ps
 
 all-dvi:
-	(cd paper-$(PAPER); $(MAKE) all-dvi)
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile do-dvi)
 
 all-pdf:
-	(cd paper-$(PAPER); $(MAKE) all-pdf)
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile do-pdf)
 
 all-ps:
-	(cd paper-$(PAPER); $(MAKE) all-ps)
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile do-ps)
 
 world:	do-ps do-pdf l2h tarballs
 
@@ -233,34 +237,10 @@ tut.pdf: tut/tut.tex
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
 
-.PRECIOUS:	python-lib.texi
+.PHONY: info
 
-# The sed script in this target fixes a really nasty little condition in
-# libcgi.tex where \e has to be used in a group to get the right behavior,
-# and makeinfo can't handle a group without a leading @command.  But at
-# least the info file gets generated.
-
-lib1.texi: $(LIBFILES) texipre.dat texipost.dat tools/partparse.py
-	$(PARTPARSE) -o $@ `$(srcdir)/tools/whichlibs`
-	sed 's/"{\\}n{\\}n/"\\n\\n/' $@ >temp.texi
-	mv temp.texi $@
-
-python-lib.texi: lib1.texi tools/fix.el
-	cp lib1.texi temp.texi
-	$(EMACS) -batch -l $(srcdir)/tools/fix.el -f save-buffer -kill
-	mv temp.texi $@
-
-python-lib.info: python-lib.texi
-	$(MAKEINFO) --footnote-style end --fill-column 72 \
-		    --paragraph-indent 0 $<
-
-# this is needed to prevent a second set of info files from being generated,
-# at least when using GNU make
-.PHONY: lib.info lib.texi
-
-lib.info: python-lib.info
-
-lib.texi: python-lib.texi
+info:
+	(cd $(INFODIR); $(MAKE))
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
@@ -276,7 +256,7 @@ lib.texi: python-lib.texi
 COMMONPERL=perl/manual.perl perl/python.perl
 
 l2h:
-	(cd html; $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs)
+	(cd $(HTMLDIR); $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs)
 
 l2hapi: $(COMMONPERL)
 	$(MKHTML) api $(L2HARGS)
@@ -303,21 +283,21 @@ webcheck:
 	$(WEBCHECKER) file:`pwd`/ref/
 	$(WEBCHECKER) file:`pwd`/tut/
 
-lib-info-$(RELEASE).tar.gz: $(INFOFILES)
-	tar cf - python-???.info* | gzip -9 >$@
+lib-info-$(RELEASE).tar.gz: info
+	tar cf - -C $(INFODIR) python-???.info* | gzip -9 >$@
 
 latex-$(RELEASE).tar.gz:
 	$(srcdir)/tools/mktarball.sh
 
 # This snags a PDF version if available, but doesn't fail if not.
 pdf-$(RELEASE).tar.gz: $(PDFFILES)
-	tar cf - ???.pdf | gzip -9 >$@
+	tar cf - -C paper-$(PAPER) ???.pdf | gzip -9 >$@
 
 postscript-$(RELEASE).tar.gz: $(PSFILES)
-	tar cf - ???.ps | gzip -9 >$@
+	tar cf - -C paper-$(PAPER) ???.ps | gzip -9 >$@
 
 html-$(RELEASE).tar.gz:
-	tar cf - index.html ???/???.css ???/*.html */*.gif \
+	tar cf - -C $(HTMLDIR) index.html ???/???.css ???/*.html */*.gif \
 		| gzip -9 >html-$(RELEASE).tar.gz
 
 # convenience targets:
@@ -341,19 +321,20 @@ tarballs:  tarpdf tarps tarhtml tarlatex
 # - sources: .tex, .bib, .sty, *.cls
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
-	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.py[co]
-	rm -f *.bak *.orig lib1.texi *.out @webchecker.pickle *.bkm
+	(cd paper-$(PAPER); rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm)
+	rm -f *.bak *.orig lib1.texi
+	(cd $(HTMLDIR); rm -f @webchecker.pickle)
 	rm -f html-$(RELEASE).tar.gz info-$(RELEASE).tar.gz
 	rm -f pdf-$(RELEASE).tar.gz postscript-$(RELEASE).tar.gz
 	rm -f latex-$(RELEASE).tar.gz
 
 l2hclean:
-	rm -rf api ext lib tut
+	(cd $(HTMLDIR); rm -rf api ext lib ref tut)
 
 # Remove temporaries as well as final products
 clobber: clean l2hclean
-	rm -f $(DVIFILES) $(PSFILES) $(PDFFILES)
-	rm -f *.texi python-???.info python-???.info-[0-9]*
+	(cd paper-$(PAPER); rm -f $(DVIFILES) $(PSFILES) $(PDFFILES))
+	(cd $(HTMLDIR); rm -f *.texi python-???.info python-???.info-[0-9]*)
 
 realclean:  clobber
 distclean:  clobber
