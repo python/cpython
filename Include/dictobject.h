@@ -97,9 +97,27 @@ extern DL_IMPORT(PyObject *) PyDict_Values(PyObject *mp);
 extern DL_IMPORT(PyObject *) PyDict_Items(PyObject *mp);
 extern DL_IMPORT(int) PyDict_Size(PyObject *mp);
 extern DL_IMPORT(PyObject *) PyDict_Copy(PyObject *mp);
-extern DL_IMPORT(int) PyDict_Update(PyObject *mp, PyObject *other);
-extern DL_IMPORT(int) PyDict_Merge(PyObject *mp, PyObject *other, int override);
 
+/* PyDict_Update(mp, other) is equivalent to PyDict_Merge(mp, other, 1). */
+extern DL_IMPORT(int) PyDict_Update(PyObject *mp, PyObject *other);
+
+/* PyDict_Merge updates/merges from a mapping object (an object that
+   supports PyMapping_Keys() and PyObject_GetItem()).  If override is true,
+   the last occurrence of a key wins, else the first.  The Python
+   dict.update(other) is equivalent to PyDict_Merge(dict, other, 1).
+*/
+extern DL_IMPORT(int) PyDict_Merge(PyObject *mp,
+				   PyObject *other,
+				   int override);
+
+/* PyDict_MergeFromSeq2 updates/merges from an iterable object producing
+   iterable objects of length 2.  If override is true, the last occurrence
+   of a key wins, else the first.  The Python dict constructor dict(seq2)
+   is equivalent to dict={}; PyDict_MergeFromSeq(dict, seq2, 1).
+*/
+extern DL_IMPORT(int) PyDict_MergeFromSeq2(PyObject *d,
+					   PyObject *seq2,
+					   int override);
 
 extern DL_IMPORT(PyObject *) PyDict_GetItemString(PyObject *dp, char *key);
 extern DL_IMPORT(int) PyDict_SetItemString(PyObject *dp, char *key, PyObject *item);

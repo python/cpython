@@ -997,11 +997,11 @@ dict_update(PyObject *mp, PyObject *other)
 
    PyDict_{Update,Merge} update/merge from a mapping object.
 
-   PyDict_{Update,Merge}FromSeq2 update/merge from any iterable object
+   PyDict_MergeFromSeq2 updates/merges from any iterable object
    producing iterable objects of length 2.
 */
 
-static int
+int
 PyDict_MergeFromSeq2(PyObject *d, PyObject *seq2, int override)
 {
 	PyObject *it;	/* iter(seq2) */
@@ -1069,12 +1069,6 @@ Fail:
 Return:
 	Py_DECREF(it);
 	return i;
-}
-
-static int
-PyDict_UpdateFromSeq2(PyObject *d, PyObject *seq2)
-{
-	return PyDict_MergeFromSeq2(d, seq2, 1);
 }
 
 int

@@ -18,7 +18,7 @@ termination of the interpreter.}
 
 \section{Fundamental Objects \label{fundamental}}
 
-This section describes Python type objects and the singleton object 
+This section describes Python type objects and the singleton object
 \code{None}.
 
 
@@ -92,7 +92,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
 \end{ctypedesc}
 
 \begin{cvardesc}{PyTypeObject}{PyInt_Type}
-  This instance of \ctype{PyTypeObject} represents the Python plain 
+  This instance of \ctype{PyTypeObject} represents the Python plain
   integer type.  This is the same object as \code{types.IntType}.
   \withsubitem{(in modules types)}{\ttindex{IntType}}
 \end{cvardesc}
@@ -234,7 +234,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   \var{pylong}.  If \var{pylong} is greater than
   \constant{ULONG_MAX}\ttindex{ULONG_MAX}, an
   \exception{OverflowError} is raised.
-  \withsubitem{(built-in exception)}{\ttindex{OverflowError}} 
+  \withsubitem{(built-in exception)}{\ttindex{OverflowError}}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long long}{PyLong_AsLongLong}{PyObject *pylong}
@@ -427,8 +427,8 @@ typedef struct {
 \section{Sequence Objects \label{sequenceObjects}}
 
 \obindex{sequence}
-Generic operations on sequence objects were discussed in the previous 
-chapter; this section deals with the specific kinds of sequence 
+Generic operations on sequence objects were discussed in the previous
+chapter; this section deals with the specific kinds of sequence
 objects that are intrinsic to the Python language.
 
 
@@ -795,7 +795,7 @@ To create Unicode objects and access their basic sequence properties,
 use these APIs:
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_FromUnicode}{const Py_UNICODE *u,
-                                                    int size} 
+                                                    int size}
   Create a Unicode Object from the Py_UNICODE buffer \var{u} of the
   given size. \var{u} may be \NULL{} which causes the contents to be
   undefined. It is the user's responsibility to fill in the needed
@@ -1073,7 +1073,7 @@ These are the ``Raw Unicode Esacpe'' codec APIs:
   Returns \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
-% --- Latin-1 Codecs ----------------------------------------------------- 
+% --- Latin-1 Codecs -----------------------------------------------------
 
 These are the Latin-1 codec APIs:
 Latin-1 corresponds to the first 256 Unicode ordinals and only these
@@ -1101,7 +1101,7 @@ are accepted by the codecs during encoding.
   \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
-% --- ASCII Codecs ------------------------------------------------------- 
+% --- ASCII Codecs -------------------------------------------------------
 
 These are the \ASCII{} codec APIs.  Only 7-bit \ASCII{} data is
 accepted. All other codes generate errors.
@@ -1128,7 +1128,7 @@ accepted. All other codes generate errors.
   \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
 
-% --- Character Map Codecs ----------------------------------------------- 
+% --- Character Map Codecs -----------------------------------------------
 
 These are the mapping codec APIs:
 
@@ -1139,7 +1139,7 @@ codec uses mapping to encode and decode characters.
 
 Decoding mappings must map single string characters to single Unicode
 characters, integers (which are then interpreted as Unicode ordinals)
-or None (meaning "undefined mapping" and causing an error). 
+or None (meaning "undefined mapping" and causing an error).
 
 Encoding mappings must map single Unicode characters to single string
 characters, integers (which are then interpreted as Latin-1 ordinals)
@@ -1356,8 +1356,8 @@ be used by an object to expose its data in a raw, byte-oriented
 format. Clients of the object can use the buffer interface to access
 the object data directly, without needing to copy it first.
 
-Two examples of objects that support 
-the buffer interface are strings and arrays. The string object exposes 
+Two examples of objects that support
+the buffer interface are strings and arrays. The string object exposes
 the character contents in the buffer interface's byte-oriented
 form. An array can also expose its contents, but it should be noted
 that array elements may be multi-byte values.
@@ -1365,7 +1365,7 @@ that array elements may be multi-byte values.
 An example user of the buffer interface is the file object's
 \method{write()} method. Any object that can export a series of bytes
 through the buffer interface can be written to a file. There are a
-number of format codes to \cfunction{PyArg_ParseTuple()} that operate 
+number of format codes to \cfunction{PyArg_ParseTuple()} that operate
 against an object's buffer interface, returning data from the target
 object.
 
@@ -1546,7 +1546,7 @@ format.
   \code{-1} and sets \code{*\var{p}} to \NULL, and raises
   \exception{MemoryError} or
   \exception{SystemError}.
-  \versionchanged[Removed unused third parameter, \var{last_is_sticky}]{2.2} 
+  \versionchanged[Removed unused third parameter, \var{last_is_sticky}]{2.2}
 \end{cfuncdesc}
 
 
@@ -1817,22 +1817,45 @@ while (PyDict_Next(self->dict, &pos, &key, &value)) {
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_Merge}{PyObject *a, PyObject *b, int override}
-  Iterate over dictionary \var{b} adding key-value pairs to dictionary
-  \var{a}.  If \var{override} is true, existing pairs in \var{a} will
+  Iterate over mapping object \var{b} adding key-value pairs to dictionary
+  \var{a}.
+  \var{b} may be a dictionary, or any object supporting
+  \function{PyMapping_Keys()} and \function{PyObject_GetItem()}.
+  If \var{override} is true, existing pairs in \var{a} will
   be replaced if a matching key is found in \var{b}, otherwise pairs
   will only be added if there is not a matching key in \var{a}.
-  Returns \code{0} on success or \code{-1} if an exception was
+  Return \code{0} on success or \code{-1} if an exception was
   raised.
 \versionadded{2.2}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_Update}{PyObject *a, PyObject *b}
   This is the same as \code{PyDict_Merge(\var{a}, \var{b}, 1)} in C,
-  or \code{\var{a}.update(\var{b})} in Python.  Returns \code{0} on
+  or \code{\var{a}.update(\var{b})} in Python.  Return \code{0} on
   success or \code{-1} if an exception was raised.
   \versionadded{2.2}
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyDict_MergeFromSeq2}{PyObject *a, PyObject *seq2,
+                                             int override}
+  Update or merge into dictionary \var{a}, from the key-value pairs in
+  \var{seq2}.  \var{seq2} must be an iterable object producing
+  iterable objects of length 2, viewed as key-value pairs.  In case of
+  duplicate keys, the last wins if \var{override} is true, else the
+  first wins.
+  Return \code{0} on success or \code{-1} if an exception
+  was raised.
+  Equivalent Python (except for the return value):
+
+\begin{verbatim}
+def PyDict_MergeFromSeq2(a, seq2, override):
+    for key, value in seq2:
+        if override or key not in a:
+            a[key] = value
+\end{verbatim}
+
+  \versionadded{2.2}
+\end{cfuncdesc}
 
 \section{Other Objects \label{otherObjects}}
 
@@ -2300,7 +2323,7 @@ acts as a proxy for the original object as much as it can.
 
 \obindex{CObject}
 Refer to \emph{Extending and Embedding the Python Interpreter},
-section 1.12 (``Providing a C API for an Extension Module), for more 
+section 1.12 (``Providing a C API for an Extension Module), for more
 information on using these objects.
 
 
@@ -2317,7 +2340,7 @@ information on using these objects.
   Returns true if its argument is a \ctype{PyCObject}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyCObject_FromVoidPtr}{void* cobj, 
+\begin{cfuncdesc}{PyObject*}{PyCObject_FromVoidPtr}{void* cobj,
 	                                            void (*destr)(void *)}
   Creates a \ctype{PyCObject} from the \code{void *}\var{cobj}.  The
   \var{destr} function will be called when the object is reclaimed,
