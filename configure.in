@@ -214,7 +214,9 @@ AC_CHAR_UNSIGNED
 
 AC_CONST
 
-AC_COMPILE_CHECK([signed char], [], [signed char c;], [], AC_DEFINE(signed, []))
+AC_COMPILE_CHECK([lack of working volatile],[],[volatile int x; x = 0;],,AC_DEFINE(volatile,))
+
+AC_COMPILE_CHECK([lack of working signed char], [], [signed char c;],,AC_DEFINE(signed, []))
 
 AC_CHECKING(for prototypes)
 AC_TEST_PROGRAM([

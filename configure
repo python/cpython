@@ -1,5 +1,5 @@
 #!/bin/sh
-# From configure.in Revision: 1.6 
+# From configure.in Revision: 1.8 
 #!/bin/sh
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 1.11 
@@ -1916,7 +1916,34 @@ fi
 rm -f conftest*
 
 
-test -n "$silent" || echo "checking for signed char"
+test -n "$silent" || echo "checking for lack of working volatile"
+cat > conftest.${ac_ext} <<EOF
+#include "confdefs.h"
+
+int main() { return 0; }
+int t() { volatile int x; x = 0;; return 0; }
+EOF
+if eval $ac_compile; then
+  :
+else
+  rm -rf conftest*
+  
+{
+test -n "$verbose" && \
+echo "	defining" volatile to be empty
+echo "#define" volatile "" >> confdefs.h
+DEFS="$DEFS -Dvolatile="
+ac_sed_defs="${ac_sed_defs}\${ac_dA}volatile\${ac_dB}volatile\${ac_dC}\${ac_dD}
+\${ac_uA}volatile\${ac_uB}volatile\${ac_uC}\${ac_uD}
+\${ac_eA}volatile\${ac_eB}volatile\${ac_eC}\${ac_eD}
+"
+}
+
+fi
+rm -f conftest*
+
+
+test -n "$silent" || echo "checking for lack of working signed char"
 cat > conftest.${ac_ext} <<EOF
 #include "confdefs.h"
 

@@ -63,5 +63,8 @@
 /* Define if you want to use the GNU readline library */
 #undef WITH_READLINE
 
+/* Define to empty if the keyword does not work.  */
+#undef volatile
+
 
 /* Leave that blank line there-- autoheader needs it! */
