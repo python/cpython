@@ -187,20 +187,15 @@ class PrettyPrinter:
 
 def _safe_repr(object, context, maxlevels=None, level=0):
     level = level + 1
-    readable = 1
     typ = type(object)
     if not (typ in (DictType, ListType, TupleType) and object):
         rep = `object`
-        if rep:
-            if rep[0] == '<':
-                readable = 0
-        else:
-            readable = 0
-        return `object`, readable
+        return rep, (rep and (rep[0] != '<'))
     if context.has_key(id(object)):
         return `_Recursion(object)`, 0
     objid = id(object)
     context[objid] = 1
+    readable = 1
     if typ is DictType:
         if maxlevels and level >= maxlevels:
             s = "{...}"
