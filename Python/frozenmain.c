@@ -33,14 +33,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
-/* Subroutines that live in their own file */
-extern char *Py_GetVersion();
-extern char *Py_GetCopyright();
-
 /* Main program */
 
 int
-main(argc, argv)
+Py_FrozenMain(argc, argv)
 	int argc;
 	char **argv;
 {

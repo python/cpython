@@ -38,7 +38,7 @@ OBJS=		\
 		bltinmodule.o \
 		ceval.o compile.o \
 		errors.o \
-		frozen.o \
+		frozen.o frozenmain.o \
 		getargs.o getcompiler.o getcopyright.o getmtime.o \
 		getplatform.o getversion.o graminit.o \
 		import.o importdl.o \
