@@ -1150,18 +1150,13 @@ _PyObject_GetDictPtr(PyObject *obj)
 		return NULL;
 	if (dictoffset < 0) {
 		dictoffset += tp->tp_basicsize;
+		dictoffset += tp->tp_itemsize * ((PyVarObject *)obj)->ob_size;
 		assert(dictoffset > 0); /* Sanity check */
-		if (tp->tp_itemsize > 0) {
-			int n = ((PyVarObject *)obj)->ob_size;
-			if (n > 0) {
-				dictoffset += tp->tp_itemsize * n;
-				/* Round up, if necessary */
-				if (tp->tp_itemsize % PTRSIZE != 0) {
-					dictoffset += PTRSIZE - 1;
-					dictoffset /= PTRSIZE;
-					dictoffset *= PTRSIZE;
-				}
-			}
+		/* Round up, if necessary */
+		if (dictoffset % PTRSIZE != 0) {
+			dictoffset /= PTRSIZE;
+			dictoffset += 1;
+			dictoffset *= PTRSIZE;
 		}
 	}
 	return (PyObject **) ((char *)obj + dictoffset);
