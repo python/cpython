@@ -499,7 +499,10 @@ class FancyURLopener(URLopener):
         fp.close()
         # In case the server sent a relative URL, join with original:
         newurl = basejoin("http:" + url, newurl)
-        return self.open(newurl, data)
+        if data is None:
+            return self.open(newurl)
+        else:
+            return self.open(newurl, data)
 
     # Error 301 -- also relocated (permanently)
     http_error_301 = http_error_302
@@ -517,9 +520,12 @@ class FancyURLopener(URLopener):
                 scheme, realm = match.groups()
                 if string.lower(scheme) == 'basic':
                    name = 'retry_' + self.type + '_basic_auth'
-                   return getattr(self,name)(url, realm)
+                   if data is None:
+                       return getattr(self,name)(url, realm)
+                   else:
+                       return getattr(self,name)(url, realm, data)
 
-    def retry_http_basic_auth(self, url, realm, data):
+    def retry_http_basic_auth(self, url, realm, data=None):
         host, selector = splithost(url)
         i = string.find(host, '@') + 1
         host = host[i:]
@@ -527,9 +533,12 @@ class FancyURLopener(URLopener):
         if not (user or passwd): return None
         host = user + ':' + passwd + '@' + host
         newurl = 'http://' + host + selector
-        return self.open(newurl, data)
+        if data is None:
+            return self.open(newurl)
+        else:
+            return self.open(newurl, data)
    
-    def retry_https_basic_auth(self, url, realm):
+    def retry_https_basic_auth(self, url, realm, data=None):
             host, selector = splithost(url)
             i = string.find(host, '@') + 1
             host = host[i:]
