@@ -1,4 +1,4 @@
-.TH PYTHON "30 July 1996"
+.TH PYTHON "7 September, 1997"
 .SH NAME
 python \- an interpreted, interactive, object-oriented programming language
 .SH SYNOPSIS
@@ -10,12 +10,22 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-i
 ]
 [
+.B \-O
+]
+[
+.B \-S
+]
+[
 .B \-u
 ]
 [
 .B \-v
 ]
 [
+.B \-X
+]
+.br
+       [
 .B \-c
 .I command
 |
@@ -55,12 +65,30 @@ command.  It does not read the $PYTHONSTARTUP file.  This can be
 useful to inspect global variables or a stack trace when a script
 raises an exception.
 .TP
+.B \-O
+Turn on basic optimizations.  This changes the filename extension for
+compiled (bytecode) files from
+.I .pyc
+to
+.I pyo.
+.TP
+.B \-S
+Disable the import of the module
+.I site
+and the site-dependent manipulations of
+.I sys.path
+that it entails.
+.TP
 .B \-u
-Force stdout and stderr to be totally unbuffered.
+Force stdin, stdout and stderr to be totally unbuffered.
 .TP
 .B \-v
 Print a message each time a module is initialized, showing the place
 (filename or built-in module) from which it is loaded.
+.TP
+.B \-X
+Make the standard exceptions strings instead of classes.
+Use for backward compatibility with old code only.
 .TP
 .BI "\-c " command
 Specify the command to execute (see next section).
@@ -125,18 +153,25 @@ These are subject to difference depending on local installation
 conventions:
 .IP /usr/local/bin/python
 Recommended location of the interpreter.
-.IP /usr/local/lib/python1.4
+.IP /usr/local/lib/python<version>
 Recommended location of the directory containing the standard modules.
 .SH ENVIRONMENT VARIABLES
+.IP PYTHONHOME
+Change the location of the standard Python libraries.  By default, the
+libraries are searched in <prefix>/lib/python<version> and
+<exec_prefix>/lib/python<version>, where <prefix> and <exec_prefix>
+are installation-dependent directories, both defaulting to
+/usr/local.  When $PYTHONHOME is set to a single directory, its value
+replaces both <prefix> and <exec_prefix>.  To specify different values
+for these, set $PYTHONHOME to <prefix>:<exec_prefix>.
 .IP PYTHONPATH
 Augments the default search path for module files.
 The format is the same as the shell's $PATH: one or more directory
 pathnames separated by colons.
 Non-existant directories are silently ignored.
-The default search path is installation dependent, but always begins
-with `.', (for example,
-.I .:/usr/local/lib/python ).
-The default search path is appended to $PYTHONPATH.
+The default search path is installation dependent, but generally
+begins with <prefix>/lib/python<version> (see PYTHONHOME below).
+The default search path is always appended to $PYTHONPATH.
 If a script argument is given, the directory containing the script is
 inserted in the path in front of $PYTHONPATH.
 The search path can be manipulated from within a Python program as the
@@ -182,6 +217,8 @@ USA
 .PP
 E-mail: guido@cnri.reston.va.us, guido@python.org
 .fi
+.PP
+And a cast of thousands.
 .SH INTERNET RESOURCES
 Web site: http://www.python.org
 .br
