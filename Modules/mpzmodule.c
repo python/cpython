@@ -969,7 +969,7 @@ MPZ_mpz(self, args)
 		mpz_clear(&mplongdigit);
 	}
 	else if (PyString_Check(objp)) {
-		char *cp = PyString_AS_STRING(objp);
+		unsigned char *cp = (unsigned char *)PyString_AS_STRING(objp);
 		int len = PyString_GET_SIZE(objp);
 		MP_INT mplongdigit;
 
