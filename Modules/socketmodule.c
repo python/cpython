@@ -2820,7 +2820,7 @@ static PyMethodDef socket_methods[] = {
 	 METH_VARARGS, getaddrinfo_doc},
 	{"getnameinfo",		socket_getnameinfo,
 	 METH_VARARGS, getnameinfo_doc},
-	{"getdefaulttimeout",	socket_getdefaulttimeout,
+	{"getdefaulttimeout",	(PyCFunction)socket_getdefaulttimeout,
 	 METH_NOARGS, getdefaulttimeout_doc},
 	{"setdefaulttimeout",	socket_setdefaulttimeout,
 	 METH_O, setdefaulttimeout_doc},
