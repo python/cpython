@@ -79,7 +79,7 @@ for dir in sys.path:
     # if they only differ in case); turn relative paths into absolute
     # paths.
     dir, dircase = makepath(dir)
-    if not dircase in _dirs_in_sys_path:
+    if not dircase in _dirs_in_sys_path and os.path.exists(dir):
         L.append(dir)
         _dirs_in_sys_path[dircase] = 1
 sys.path[:] = L
