@@ -197,7 +197,10 @@ try:
     d[types.UnicodeType] = _deepcopy_atomic
 except AttributeError:
     pass
-d[types.CodeType] = _deepcopy_atomic
+try:
+    d[types.CodeType] = _deepcopy_atomic
+except AttributeError:
+    pass
 d[types.TypeType] = _deepcopy_atomic
 d[types.XRangeType] = _deepcopy_atomic
 
