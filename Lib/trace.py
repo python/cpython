@@ -50,6 +50,7 @@ import marshal
 import os
 import re
 import sys
+import threading
 import token
 import tokenize
 import types
@@ -317,9 +318,9 @@ class CoverageResults:
                 # #pragma: NO COVER
                 if lineno in lnotab and not PRAGMA_NOCOVER in lines[i]:
                     outfile.write(">>>>>> ")
+                    n_lines += 1
                 else:
                     outfile.write("       ")
-                n_lines += 1
             outfile.write(lines[i].expandtabs(8))
         outfile.close()
 
@@ -437,22 +438,26 @@ class Trace:
         dict = __main__.__dict__
         if not self.donothing:
             sys.settrace(self.globaltrace)
+            threading.settrace(self.globaltrace)
         try:
             exec cmd in dict, dict
         finally:
             if not self.donothing:
                 sys.settrace(None)
+                threading.settrace(None)
 
     def runctx(self, cmd, globals=None, locals=None):
         if globals is None: globals = {}
         if locals is None: locals = {}
         if not self.donothing:
             sys.settrace(self.globaltrace)
+            threading.settrace(self.globaltrace)
         try:
             exec cmd in globals, locals
         finally:
             if not self.donothing:
                 sys.settrace(None)
+                threading.settrace(None)
 
     def runfunc(self, func, *args, **kw):
         result = None
