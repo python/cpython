@@ -2438,28 +2438,8 @@ Methods may call other methods by using method attributes of the
 
 The instantiation operation (``calling'' a class object) creates an
 empty object.  Many classes like to create objects in a known initial
-state.  In early versions of Python, there was no special syntax to
-enforce this (see below), but a convention was widely used:
-add a method named \verb\init\ to the class,
-which initializes the instance (by assigning to some important data
-attributes) and returns the instance itself.  For example, class
-\verb\Bag\ above could have the following method:
-
-\begin{verbatim}
-                def init(self):
-                        self.empty()
-                        return self
-\end{verbatim}
-
-The client can then create and initialize an instance in one
-statement, as follows:
-
-\begin{verbatim}
-        x = Bag().init()
-\end{verbatim}
-
-In later versions of Python, a special method named \verb\__init__\ may be
-defined instead:
+state.  Therefore a class may define a special method named
+\verb\__init__\, like this:
 
 \begin{verbatim}
                 def __init__(self):
@@ -3050,6 +3030,101 @@ raise an exception.  For example:
                 else:
                         print arg, 'has', len(f.readlines()), 'lines'
                         f.close()
+\end{verbatim}
+
+
+\section{New Class Features in Release 1.1}
+
+Two changes have been made to classes: the operator overloading
+mechanism is more flexible, providing more support for non-numeric use
+of operators, and it is possible to trap attribute accesses.
+
+\subsection{New Operator Overloading}
+
+It is no longer necessary to coerce both sides of an operator to the
+same class or type.  A class may still provide a \code{__coerce__}
+method, but this method may return objects of different types or
+classes if it feels like it.  If no \code{__coerce__} is defined, any
+argument type or class is acceptable.
+
+In order to make it possible to implement binary operators where the
+right-hand side is a class instance but the left-hand side is not,
+without using coercions, right-hand versions of all binary operators
+may be defined.  These have an `r' prepended to their name,
+e.g. \code{__radd__}.
+
+For example, here's a very simple class for representing times.  Times
+are initialized from a number of seconds (like time.time()).  Times
+are printed like this: \code{Thu Oct 6 14:20:06 1994}.  Subtracting
+two Times gives their difference in seconds.  Adding or subtracting a
+Time and a number gives a new Time.  You can't add two times, nor can
+you subtract a Time from a number.
+
+\begin{verbatim}
+import time
+
+class Time:
+    def __init__(self, seconds):
+        self.seconds = seconds
+    def __repr__(self):
+        return time.ctime(self.seconds)
+    def __add__(self, x):
+        return Time(self.seconds + x)
+    __radd__ = __add__            # support for x+t
+    def __sub__(self, x):
+        if hasattr(x, 'seconds'): # test if x could be a Time
+            return self.seconds - x.seconds
+        else:
+            return self.seconds - x
+
+now = Time(time.time())
+tomorrow = 24*3600 + now
+yesterday = now - today
+print tomorrow - yesterday        # prints 172800
+\end{verbatim}
+
+\subsection{Trapping Attribute Access}
+
+You can define three new ``magic'' methods in a class now:
+\code{__getattr__(self, name)}, \code{__setattr__(self, name, value)}
+and \code{__delattr__(self, name)}.
+
+The \code{__getattr__} method is called when an attribute access fails,
+i.e. when an attribute access would otherwise raise AttributeError --
+this is {\em after} the instance's dictionary and its class hierarchy
+have been searched for the named attribute.  Note that if this method
+attempts to access any undefined instance attribute it will be called
+recursively!
+
+The \code{__setattr__} and \code{__delattr__} methods are called when
+assignment to, respectively deletion of an attribute are attempted.
+They are called {\em instead} of the normal action (which is to insert
+or delete the attribute in the instance dictionary).  If either of
+these methods most set or delete any attribute, they can only do so by
+using the instance dictionary directly -- \code{self.__dict__} -- else
+they would be called recursively.
+
+For example, here's a near-universal ``Wrapper'' class that passes all
+its attribute accesses to another object.  Note how the
+\code{__init__} method inserts the wrapped object in
+\code{self.__dict__} in order to avoid endless recursion
+(\code{__setattr__} would call \code{__getattr__} which would call
+itself recursively).
+
+\begin{verbatim}
+class Wrapper:
+    def __init__(self, wrapped):
+        self.__dict__['wrapped'] = wrapped
+    def __getattr__(self, name):
+        return getattr(self.wrapped, name)
+    def __setattr__(self, name, value):
+        setattr(self.wrapped, value)
+    def __delattr__(self, name):
+        delattr(self.wrapped, name)
+
+import sys
+f = Wrapper(sys.stdout)
+f.write('hello world\n')          # prints 'hello world'
 \end{verbatim}
 
 \end{document}
