@@ -381,6 +381,27 @@ string_slice(a, i, j)
 	return PyString_FromStringAndSize(a->ob_sval + i, (int) (j-i));
 }
 
+static int
+string_contains(a, el)
+PyObject *a, *el;
+{
+	register char *s, *end;
+	register char c;
+	if (!PyString_Check(el) || PyString_Size(el) != 1) {
+		PyErr_SetString(PyExc_TypeError,
+				"string member test needs char left operand");
+		return -1;
+	}
+	c = PyString_AsString(el)[0];
+	s = PyString_AsString(a);
+	end = s + PyString_Size(a);
+	while (s < end) {
+		if (c == *s++)
+			return 1;
+	}
+	return 0;
+}
+
 static PyObject *
 string_item(a, i)
 	PyStringObject *a;
@@ -516,6 +537,7 @@ static PySequenceMethods string_as_sequence = {
 	(intintargfunc)string_slice, /*sq_slice*/
 	0,		/*sq_ass_item*/
 	0,		/*sq_ass_slice*/
+	(objobjproc)string_contains /*sq_contains*/
 };
 
 static PyBufferProcs string_as_buffer = {
