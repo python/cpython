@@ -62,8 +62,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	
 	def interaction(self, frame, traceback):
 		self.setup(frame, traceback)
-		self.print_stack_entry(self.stack[self.curindex],
-				       line_prefix)
+		self.print_stack_entry(self.stack[self.curindex])
 		self.cmdloop()
 		self.forget()
 
@@ -288,7 +287,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		except KeyboardInterrupt:
 			pass
 	
-	def print_stack_entry(self, frame_lineno, prompt_prefix=''):
+	def print_stack_entry(self, frame_lineno, prompt_prefix=line_prefix):
 		frame, lineno = frame_lineno
 		if frame is self.curframe:
 			print '>',
