@@ -12,8 +12,9 @@
 # 2000-09-26 fl   added LINEBREAK, DECIMAL, and DIGIT flags/fields (2.0)
 # 2000-11-03 fl   expand first/last ranges
 # 2001-01-19 fl   added character name tables (2.1)
+# 2001-01-21 fl   added decomp compression; dynamic phrasebook threshold
 #
-# written by Fredrik Lundh (fredrik@pythonware.com), September 2000
+# written by Fredrik Lundh (fredrik@pythonware.com)
 #
 
 import sys
@@ -50,9 +51,9 @@ def maketables(trace=0):
 
     print len(filter(None, unicode.table)), "characters"
 
+    # makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
-    makeunicodetype(unicode, trace)
-    makeunicodename(unicode, trace)
+    # makeunicodetype(unicode, trace)
 
 # --------------------------------------------------------------------
 # unicode character properties
@@ -90,27 +91,45 @@ def makeunicodedata(unicode, trace):
 
     # 2) decomposition data
 
-    # FIXME: <fl> using the encoding stuff from unidb would save
-    # another 50k or so, but I'll leave that for 2.1...
-
-    decomp_data = [""]
+    decomp_data = [0]
+    decomp_prefix = [""]
     decomp_index = [0] * len(unicode.chars)
+    decomp_size = 0
 
     for char in unicode.chars:
         record = unicode.table[char]
         if record:
             if record[5]:
+                decomp = string.split(record[5])
+                # prefix
+                if decomp[0][0] == "<":
+                    prefix = decomp.pop(0)
+                else:
+                    prefix = ""
                 try:
-                    i = decomp_data.index(record[5])
+                    i = decomp_prefix.index(prefix)
+                except ValueError:
+                    i = len(decomp_prefix)
+                    decomp_prefix.append(prefix)
+                prefix = i
+                assert prefix < 256
+                # content
+                decomp = [prefix + (len(decomp)<<8)] +\
+                         map(lambda s: int(s, 16), decomp)
+                try:
+                    i = decomp_data.index(decomp)
                 except ValueError:
                     i = len(decomp_data)
-                    decomp_data.append(record[5])
+                    decomp_data.extend(decomp)
+                    decomp_size = decomp_size + len(decomp) * 2
             else:
                 i = 0
             decomp_index[char] = i
 
     print len(table), "unique properties"
-    print len(decomp_data), "unique decomposition entries"
+    print len(decomp_prefix), "unique decomposition prefixes"
+    print len(decomp_data), "unique decomposition entries:",
+    print decomp_size, "bytes"
 
     print "--- Writing", FILE, "..."
 
@@ -141,8 +160,8 @@ def makeunicodedata(unicode, trace):
     print >>fp, "    NULL"
     print >>fp, "};"
 
-    print >>fp, "static const char *decomp_data[] = {"
-    for name in decomp_data:
+    print >>fp, "static const char *decomp_prefix[] = {"
+    for name in decomp_prefix:
         print >>fp, "    \"%s\"," % name
     print >>fp, "    NULL"
     print >>fp, "};"
@@ -152,16 +171,19 @@ def makeunicodedata(unicode, trace):
 
     print >>fp, "/* index tables for the database records */"
     print >>fp, "#define SHIFT", shift
-    Array("index1", index1).dump(fp)
-    Array("index2", index2).dump(fp)
+    Array("index1", index1).dump(fp, trace)
+    Array("index2", index2).dump(fp, trace)
 
     # split decomposition index table
     index1, index2, shift = splitbins(decomp_index, trace)
 
+    print >>fp, "/* decomposition data */"
+    Array("decomp_data", decomp_data).dump(fp, trace)
+
     print >>fp, "/* index tables for the decomposition data */"
     print >>fp, "#define DECOMP_SHIFT", shift
-    Array("decomp_index1", index1).dump(fp)
-    Array("decomp_index2", index2).dump(fp)
+    Array("decomp_index1", index1).dump(fp, trace)
+    Array("decomp_index2", index2).dump(fp, trace)
 
     fp.close()
 
@@ -250,8 +272,8 @@ def makeunicodetype(unicode, trace):
 
     print >>fp, "/* type indexes */"
     print >>fp, "#define SHIFT", shift
-    Array("index1", index1).dump(fp)
-    Array("index2", index2).dump(fp)
+    Array("index1", index1).dump(fp, trace)
+    Array("index2", index2).dump(fp, trace)
 
     fp.close()
 
@@ -302,16 +324,28 @@ def makeunicodename(unicode, trace):
     # sort on falling frequency
     wordlist.sort(lambda a, b: len(b[1])-len(a[1]))
 
+    # figure out how many phrasebook escapes we need
+    escapes = 0
+    while escapes * 256 < len(wordlist):
+        escapes = escapes + 1
+    print escapes, "escapes"
+
+    short = 256 - escapes
+
+    assert short > 0
+
+    print short, "short indexes in lexicon"
+
     # statistics
     n = 0
-    for i in range(128):
+    for i in range(short):
         n = n + len(wordlist[i][1])
-    print n, "short words (7-bit indices)"
+    print n, "short indexes in phrasebook"
 
-    # pick the 128 most commonly used words, and sort the rest on
-    # falling length (to maximize overlap)
+    # pick the most commonly used words, and sort the rest on falling
+    # length (to maximize overlap)
 
-    wordlist, wordtail = wordlist[:128], wordlist[128:]
+    wordlist, wordtail = wordlist[:short], wordlist[short:]
     wordtail.sort(lambda a, b: len(b[0])-len(a[0]))
     wordlist.extend(wordtail)
 
@@ -334,11 +368,7 @@ def makeunicodename(unicode, trace):
             lexicon = lexicon + ww
             offset = offset + len(w)
         words[w] = len(lexicon_offset)
-        lexicon_offset.append(offset)
-
-    print len(words), "words in lexicon;", len(lexicon), "bytes"
-
-    assert len(words) < 32768 # 15-bit word indices
+        lexicon_offset.append(o)
 
     lexicon = map(ord, lexicon)
 
@@ -352,11 +382,14 @@ def makeunicodename(unicode, trace):
             phrasebook_offset[char] = len(phrasebook)
             for w in w:
                 i = words[w]
-                if i < 128:
-                    phrasebook.append(128+i)
+                if i < short:
+                    phrasebook.append(i)
                 else:
-                    phrasebook.append(i>>8)
+                    # store as two bytes
+                    phrasebook.append((i>>8) + short)
                     phrasebook.append(i&255)
+
+    assert getsize(phrasebook) == 1
 
     #
     # unicode name hash table
@@ -384,21 +417,22 @@ def makeunicodename(unicode, trace):
     print >>fp, "#define NAME_MAXLEN", 256
     print >>fp
     print >>fp, "/* lexicon */"
-    Array("lexicon", lexicon).dump(fp)
-    Array("lexicon_offset", lexicon_offset).dump(fp)
+    Array("lexicon", lexicon).dump(fp, trace)
+    Array("lexicon_offset", lexicon_offset).dump(fp, trace)
 
     # split decomposition index table
     offset1, offset2, shift = splitbins(phrasebook_offset, trace)
 
     print >>fp, "/* code->name phrasebook */"
     print >>fp, "#define phrasebook_shift", shift
+    print >>fp, "#define phrasebook_short", short
 
-    Array("phrasebook", phrasebook).dump(fp)
-    Array("phrasebook_offset1", offset1).dump(fp)
-    Array("phrasebook_offset2", offset2).dump(fp)
+    Array("phrasebook", phrasebook).dump(fp, trace)
+    Array("phrasebook_offset1", offset1).dump(fp, trace)
+    Array("phrasebook_offset2", offset2).dump(fp, trace)
 
     print >>fp, "/* name->code dictionary */"
-    codehash.dump(fp)
+    codehash.dump(fp, trace)
 
     fp.close()
 
@@ -527,9 +561,9 @@ class Hash:
         self.size = size
         self.poly = poly
 
-    def dump(self, file):
+    def dump(self, file, trace):
         # write data to file, as a C array
-        self.data.dump(file)
+        self.data.dump(file, trace)
         file.write("#define %s_magic %d\n" % (self.name, self.magic))
         file.write("#define %s_size %d\n" % (self.name, self.size))
         file.write("#define %s_poly %d\n" % (self.name, self.poly))
@@ -542,10 +576,11 @@ class Array:
         self.name = name
         self.data = data
 
-    def dump(self, file):
+    def dump(self, file, trace=0):
         # write data to file, as a C array
         size = getsize(self.data)
-        # print >>sys.stderr, self.name+":", size*len(self.data), "bytes"
+        if trace:
+            print >>sys.stderr, self.name+":", size*len(self.data), "bytes"
         file.write("static ")
         if size == 1:
             file.write("unsigned char")
