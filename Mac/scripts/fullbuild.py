@@ -219,7 +219,6 @@ I_PPC_EXTLIBS : (buildmwproject, "CWIE", [
 	]),
 	
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
-	(":Mac:Build:ucnhash.mcp", "ucnhash.ppc"),
 	(":Mac:Build:pyexpat.mcp", "pyexpat.ppc"),
 	(":Mac:Build:calldll.mcp", "calldll.ppc"),
 	(":Mac:Build:ctb.mcp", "ctb.ppc"),
@@ -247,7 +246,6 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	]),
 
 I_CARBON_PLUGINS :  (buildmwproject, "CWIE", [
-	(":Mac:Build:ucnhash.carbon.mcp", "ucnhash.carbon"),
 	(":Mac:Build:pyexpat.carbon.mcp", "pyexpat.carbon"),
 	(":Mac:Build:calldll.carbon.mcp", "calldll.carbon"),
 	(":Mac:Build:gdbm.carbon.mcp", "gdbm.carbon"),
