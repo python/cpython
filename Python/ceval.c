@@ -356,7 +356,7 @@ eval_code2(co, globals, locals,
 #define GETCONST(i)	Getconst(f, i)
 #define GETNAME(i)	Getname(f, i)
 #define GETNAMEV(i)	Getnamev(f, i)
-#define FIRST_INSTR()	(GETUSTRINGVALUE(f->f_code->co_code))
+#define FIRST_INSTR()	(GETUSTRINGVALUE(co->co_code))
 #define INSTR_OFFSET()	(next_instr - FIRST_INSTR())
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
@@ -410,9 +410,7 @@ eval_code2(co, globals, locals,
 		return NULL;
 
 	current_frame = f;
-
-	if (co->co_nlocals > 0)
-		fastlocals = f->f_localsplus;
+	fastlocals = f->f_localsplus;
 
 	if (co->co_argcount > 0 ||
 	    co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
@@ -544,7 +542,7 @@ eval_code2(co, globals, locals,
 		return NULL;
 	}
 
-	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
+	next_instr = GETUSTRINGVALUE(co->co_code);
 	stack_pointer = f->f_valuestack;
 	
 	why = WHY_NOT;
