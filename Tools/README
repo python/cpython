@@ -1,18 +1,18 @@
 This directory contains a number of Python programs that are useful
 while building or extending Python.
 
-audiopy         Audiopy is a program to control the Solaris audio
-                device, allowing you to choose both the input and
-                output devices, and to set the output volume, that can
-                be run either as a command-line script, or as a
-                Tkinter application.
+audiopy		Audiopy is a program to control the Solaris audio
+		device, allowing you to choose both the input and
+		output devices, and to set the output volume, that can
+		be run either as a command-line script, or as a
+		Tkinter application.
 
 bgen		Generate complete extension modules from a
 		description.  Still under development!
 
-compiler        A Python source to bytecode compiler written in
-                Python, including an interface for manipulating
-                abstract syntax trees.  Still under development.
+compiler	A Python source to bytecode compiler written in
+		Python, including an interface for manipulating
+		abstract syntax trees.	Still under development.
 
 faqwiz		FAQ Wizard.
 		See http://www.python.org/cgi-bin/faqw.py
@@ -20,17 +20,17 @@ faqwiz		FAQ Wizard.
 
 freeze		Create a stand-alone executable from a Python program.
 
-i18n            Tools for internationalization. pygettext.py 
-                parses Python source code and generates .pot files,
-                and msgfmt.py generates a binary message catalog 
-                from a catalog in text format.
+i18n		Tools for internationalization. pygettext.py 
+		parses Python source code and generates .pot files,
+		and msgfmt.py generates a binary message catalog 
+		from a catalog in text format.
 
-idle            A Tkinter-based Python IDE.
+idle		A Tkinter-based Python IDE.
 
 modulator	Interactively generate boiler plate for an extension
-		module.  Works easiest if you have Tk.
+		module.	 Works easiest if you have Tk.
 
-pynche          A Tkinter-based color editor.
+pynche		A Tkinter-based color editor.
 
 scripts		A number of useful single-file programs, e.g. tabnanny.py
 		(by Tim Peters), which checks for inconsistent mixing
@@ -44,7 +44,7 @@ versioncheck	A tool to automate checking whether you have the latest
 
 webchecker	A link checker for web sites.
 
-world           Script to take a list of Internet addresses and print
-                out where in the world those addresses originate from,
-                based on the top-level domain country code found in
-                the address. 
+world		Script to take a list of Internet addresses and print
+		out where in the world those addresses originate from,
+		based on the top-level domain country code found in
+		the address. 
