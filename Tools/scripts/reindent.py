@@ -157,6 +157,10 @@ class Reindenter:
         have2want = {}
         # Program after transformation.
         after = self.after = []
+        # Copy over initial empty lines -- there's nothing to do until
+        # we see a line with *something* on it.
+        i = stats[0][0]
+        after.extend(lines[1:i])
         for i in range(len(stats)-1):
             thisstmt, thislevel = stats[i]
             nextstmt = stats[i+1][0]
