@@ -325,7 +325,8 @@ intern_strings(PyObject *tuple)
 
 #define GETARG(arr, i) ((int)((arr[i+2]<<8) + arr[i+1]))
 #define UNCONDITIONAL_JUMP(op)  (op==JUMP_ABSOLUTE || op==JUMP_FORWARD)
-#define GETJUMPTGT(arr, i) (GETARG(arr,i) + (arr[i]==JUMP_ABSOLUTE ? 0 : i+3))
+#define ABSOLUTE_JUMP(op) (op==JUMP_ABSOLUTE || op==CONTINUE_LOOP)
+#define GETJUMPTGT(arr, i) (GETARG(arr,i) + (ABSOLUTE_JUMP(arr[i]) ? 0 : i+3))
 #define SETARG(arr, i, val) arr[i+2] = val>>8; arr[i+1] = val & 255
 
 static PyObject *
@@ -394,7 +395,7 @@ optimize_code(PyObject *code, PyObject* consts)
 			tgttgt = GETJUMPTGT(codestr, tgt);
 			if (opcode == JUMP_FORWARD) /* JMP_ABS can go backwards */
 				opcode = JUMP_ABSOLUTE;
-			if (opcode != JUMP_ABSOLUTE && opcode != CONTINUE_LOOP)
+			if (!ABSOLUTE_JUMP(opcode))
 				tgttgt -= i + 3;     /* Calc relative jump addr */
 			if (tgttgt < 0)           /* No backward relative jumps */
 				 continue;
