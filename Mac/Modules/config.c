@@ -133,6 +133,9 @@ extern void initselect();
 #ifdef USE_WASTE
 extern void initwaste();
 #endif
+#ifdef USE_GDBM
+extern void initgdbm();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -223,6 +226,9 @@ struct _inittab inittab[] = {
 #ifdef USE_WASTE
 	{"waste",	initwaste},
 #endif
+#ifdef USE_GDBM
+	{"gdbm",	initgdbm},
+#endif USE_GDBM
 
 /* -- ADDMODULE MARKER 2 -- */
 
