@@ -3112,7 +3112,7 @@ override_slots(PyTypeObject *type, PyObject *dict)
 
 typedef struct {
 	PyObject_HEAD
-	PyObject *type;
+	PyTypeObject *type;
 	PyObject *obj;
 } superobject;
 
@@ -3136,14 +3136,28 @@ super_getattro(PyObject *self, PyObject *name)
 		descrgetfunc f;
 		int i, n;
 
-		mro = ((PyTypeObject *)(su->obj->ob_type))->tp_mro;
+		mro = su->obj->ob_type->tp_mro;
 		assert(mro != NULL && PyTuple_Check(mro));
 		n = PyTuple_GET_SIZE(mro);
 		for (i = 0; i < n; i++) {
-			if (su->type == PyTuple_GET_ITEM(mro, i))
+			if ((PyObject *)(su->type) == PyTuple_GET_ITEM(mro, i))
 				break;
 		}
-		assert(i < n);
+		if (i >= n && PyType_Check(su->obj)) {
+			mro = ((PyTypeObject *)(su->obj))->tp_mro;
+			assert(mro != NULL && PyTuple_Check(mro));
+			n = PyTuple_GET_SIZE(mro);
+			for (i = 0; i < n; i++) {
+				if ((PyObject *)(su->type) ==
+				    PyTuple_GET_ITEM(mro, i))
+					break;
+			}
+			if (i >= n) {
+				PyErr_SetString(PyExc_TypeError,
+						"bogus super object");
+				return NULL;
+			}
+		}
 		i++;
 		res = NULL;
 		for (; i < n; i++) {
@@ -3191,16 +3205,20 @@ static int
 super_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	superobject *su = (superobject *)self;
-	PyObject *type, *obj = NULL;
+	PyTypeObject *type;
+	PyObject *obj = NULL;
 
 	if (!PyArg_ParseTuple(args, "O!|O:super", &PyType_Type, &type, &obj))
 		return -1;
 	if (obj == Py_None)
 		obj = NULL;
-	if (obj != NULL && !PyType_IsSubtype(obj->ob_type,
-					     (PyTypeObject *)type)) {
+	if (obj != NULL &&
+	    !PyType_IsSubtype(obj->ob_type, type) &&
+	    !(PyType_Check(obj) &&
+	      PyType_IsSubtype((PyTypeObject *)obj, type))) {
 		PyErr_SetString(PyExc_TypeError,
-			"super(type, obj) requires isinstance(obj, type)");
+			"super(type, obj): "
+			"obj must be an instance or subtype of type");
 		return -1;
 	}
 	Py_INCREF(type);
@@ -3213,6 +3231,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 static char super_doc[] =
 "super(type) -> unbound super object\n"
 "super(type, obj) -> bound super object; requires isinstance(obj, type)\n"
+"super(type, type2) -> bound super object; requires issubclass(type2, type)\n"
 "Typical use to call a cooperative superclass method:\n"
 "class C(B):\n"
 "    def meth(self, arg):\n"
