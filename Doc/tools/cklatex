@@ -1,0 +1,26 @@
+#! /bin/sh
+#  -*- ksh -*-
+
+# This script *helps* locate lines of normal content that end in '}';
+# this is useful since LaTeX2HTML (at least the old version that we
+# use) breaks on many lines that end that way.
+#
+# Usage: cklatex files... | less
+#
+# *Read* the output looking for suspicious lines!
+
+grep -n "[^ 	]}\$" $@ | \
+ grep -v '\\begin{' | \
+ grep -v '\\end{' | \
+ grep -v '\\input{' | \
+ grep -v '\\documentclass{' | \
+ grep -v '\\title{' | \
+ grep -v '\\chapter{' | \
+ grep -v '\\chapter\*{' | \
+ grep -v '\\section{' | \
+ grep -v '\\subsection{' | \
+ grep -v '\\subsubsection{' | \
+ grep -v '\\sectionauthor{' | \
+ grep -v '\\moduleauthor{'
+
+exit $?
