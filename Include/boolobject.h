@@ -24,7 +24,7 @@ extern DL_IMPORT(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
 #define Py_True ((PyObject *) &_Py_TrueStruct)
 
 /* Function to return a bool from a C long */
-PyObject *PyBool_FromLong(long);
+extern DL_IMPORT(PyObject *) PyBool_FromLong(long);
 
 #ifdef __cplusplus
 }
