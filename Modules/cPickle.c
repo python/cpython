@@ -3533,7 +3533,8 @@ load(Unpicklerobject *self) {
         break;
     }
 
-    if ((err = PyErr_Occurred()) == PyExc_EOFError) {
+    err = PyErr_Occurred();
+    if (err && PyErr_ExceptionMatches(PyExc_EOFError)) {
         PyErr_SetNone(PyExc_EOFError);
         goto err;
     }    
@@ -3830,7 +3831,8 @@ noload(Unpicklerobject *self) {
         break;
     }
 
-    if ((err = PyErr_Occurred()) == PyExc_EOFError) {
+    err = PyErr_Occurred();
+    if (err && PyErr_ExceptionMatches(PyExc_EOFError)) {
         PyErr_SetNone(PyExc_EOFError);
         goto err;
     }    
