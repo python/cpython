@@ -159,42 +159,47 @@ def _expand(pattern, match, template):
     template = sre_parse.parse_template(template, pattern)
     return sre_parse.expand_template(template, match)
 
-def _sub(pattern, template, string, count=0):
+def _sub(pattern, template, text, count=0):
     # internal: pattern.sub implementation hook
-    return _subn(pattern, template, string, count)[0]
+    return _subn(pattern, template, text, count, 1)[0]
 
-def _subn(pattern, template, string, count=0):
+def _subn(pattern, template, text, count=0, sub=0):
     # internal: pattern.subn implementation hook
     if callable(template):
         filter = template
     else:
         template = _compile_repl(template, pattern)
+        literals = template[1]
+        if (sub and not count and pattern._isliteral() and
+            len(literals) == 1 and literals[0]):
+            # shortcut: both pattern and string are literals
+            return string.replace(text, pattern.pattern, literals[0]), 0
         def filter(match, template=template):
             return sre_parse.expand_template(template, match)
     n = i = 0
     s = []
     append = s.append
-    c = pattern.scanner(string)
+    c = pattern.scanner(text)
     while not count or n < count:
         m = c.search()
         if not m:
             break
         b, e = m.span()
         if i < b:
-            append(string[i:b])
+            append(text[i:b])
         append(filter(m))
         i = e
         n = n + 1
-    append(string[i:])
-    return _join(s, string[:0]), n
+    append(text[i:])
+    return _join(s, text[:0]), n
 
-def _split(pattern, string, maxsplit=0):
+def _split(pattern, text, maxsplit=0):
     # internal: pattern.split implementation hook
     n = i = 0
     s = []
     append = s.append
     extend = s.extend
-    c = pattern.scanner(string)
+    c = pattern.scanner(text)
     g = pattern.groups
     while not maxsplit or n < maxsplit:
         m = c.search()
@@ -202,15 +207,15 @@ def _split(pattern, string, maxsplit=0):
             break
         b, e = m.span()
         if b == e:
-            if i >= len(string):
+            if i >= len(text):
                 break
             continue
-        append(string[i:b])
+        append(text[i:b])
         if g and b != e:
             extend(list(m.groups()))
         i = e
         n = n + 1
-    append(string[i:])
+    append(text[i:])
     return s
 
 # register myself for pickling
