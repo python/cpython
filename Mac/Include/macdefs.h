@@ -18,7 +18,9 @@
 extern unsigned char *Pstring(char *);
 extern char *getbootvol(void);
 extern char *getwd(char *);
+#ifndef USE_GUSI
 extern int sync(void);
+#endif
 
 /* Universal constants: */
 #define MAXPATH 256
