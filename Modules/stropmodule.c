@@ -382,8 +382,8 @@ initstrop()
 		if (isspace(c))
 			buf[n++] = c;
 	}
+	s = newsizedstringobject(buf, n);
 	if (s) {
-		s = newsizedstringobject(buf, n);
 		dictinsert(d, "whitespace", s);
 		DECREF(s);
 	}
