@@ -9,6 +9,7 @@ import Res
 import os
 from MACFS import *
 import MacOS
+import time
 try:
 	openrf = MacOS.openrf
 except AttributeError:
@@ -52,7 +53,18 @@ def mkdirs(dst):
 	mkdirs(head)
 	os.mkdir(dst, 0777)
 	
-def copy(src, dst, createpath=0):
+def touched(dst):
+	"""Tell the finder a file has changed"""
+	file_fss = macfs.FSSpec(dst)
+	vRefNum, dirID, name = file_fss.as_tuple()
+	dir_fss = macfs.FSSpec((vRefNum, dirID, ''))
+	crdate, moddate, bkdate = dir_fss.GetDates()
+	now = time.time()
+	if now == moddate:
+		now = now + 1
+	dir_fss.SetDates(crdate, now, bkdate)
+	
+def copy(src, dst, createpath=0, copydates=1):
 	"""Copy a file, including finder info, resource fork, etc"""
 	if createpath:
 		mkdirs(os.path.split(dst)[0])
@@ -82,13 +94,17 @@ def copy(src, dst, createpath=0):
 	df.Creator, df.Type = sf.Creator, sf.Type
 	df.Flags = (sf.Flags & (kIsStationary|kNameLocked|kHasBundle|kIsInvisible|kIsAlias))
 	dstfss.SetFInfo(df)
+	if copydates:
+		crdate, mddate, bkdate = srcfss.GetDates()
+		dstfss.SetDates(crdate, mddate, bkdate)
+	touched(dstfss)
 	
-def copytree(src, dst):
+def copytree(src, dst, copydates=1):
 	"""Copy a complete file tree to a new destination"""
 	if os.path.isdir(src):
 		mkdirs(dst)
 		files = os.listdir(src)
 		for f in files:
-			copytree(os.path.join(src, f), os.path.join(dst, f))
+			copytree(os.path.join(src, f), os.path.join(dst, f), copydates)
 	else:
-		copy(src, dst, 1)
+		copy(src, dst, 1, copydates)
