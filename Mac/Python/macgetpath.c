@@ -34,6 +34,36 @@
 :Lib:test\n\
 :Lib:mac"
 
+static void
+getpreffilefss(FSSpec *fssp)
+{
+	static int diditbefore=0;
+	static FSSpec fss;
+    short prefdirRefNum;
+    long prefdirDirID;
+    Handle namehandle;
+    
+    if ( !diditbefore ) {
+	    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
+	    				&prefdirDirID) != noErr ) {
+	    	/* Something wrong with preferences folder */
+	    	(void)StopAlert(NOPREFDIR_ID, NULL);
+	    	exit(1);
+	    }
+	    
+	    if ( (namehandle=GetNamedResource('STR ', PREFFILENAME_NAME)) == NULL ) {
+	    	(void)StopAlert(NOPREFNAME_ID, NULL);
+	    	exit(1);
+	    }
+	    
+	    HLock(namehandle);
+		(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, (unsigned char *)*namehandle, &fss);
+		HUnlock(namehandle);
+		ReleaseResource(namehandle);
+		diditbefore = 1;
+	}
+	*fssp = fss;
+}
 
 char *
 Py_GetPath()
@@ -44,21 +74,21 @@ Py_GetPath()
 	** - Add :
 	*/
 	static char *pythonpath;
-	char *curwd;
 	char *p, *endp;
 	int newlen;
+	char *curwd;
 	staticforward char *PyMac_GetPythonDir();
 #ifndef USE_BUILTIN_PATH
 	staticforward char *PyMac_GetPythonPath();
 #endif
 	
 	if ( pythonpath ) return pythonpath;
-	curwd = PyMac_GetPythonDir();
 #ifndef USE_BUILTIN_PATH
-	if ( pythonpath = PyMac_GetPythonPath(curwd) )
+	if ( pythonpath = PyMac_GetPythonPath() )
 		return pythonpath;
 	printf("Warning: No pythonpath resource found, using builtin default\n");
 #endif
+	curwd = PyMac_GetPythonDir();
 	p = PYTHONPATH;
 	endp = p;
 	pythonpath = malloc(2);
@@ -90,6 +120,7 @@ Py_GetPath()
 	return pythonpath;
 }
 
+
 /*
 ** Open/create the Python Preferences file, return the handle
 */
@@ -99,25 +130,16 @@ PyMac_OpenPrefFile()
     AliasHandle handle;
     FSSpec dirspec;
     short prefrh;
-    short prefdirRefNum;
-    long prefdirDirID;
-    short action;
     OSErr err;
 
-    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
-    				&prefdirDirID) != noErr ) {
-    	/* Something wrong with preferences folder */
-    	(void)StopAlert(NOPREFDIR_ID, NULL);
-    	exit(1);
-    }
-    
-	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
+	getpreffilefss(&dirspec);
 	prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 	if ( prefrh < 0 ) {
+#if 0
 		action = CautionAlert(NOPREFFILE_ID, NULL);
 		if ( action == NOPREFFILE_NO )
 			exit(1);
-	
+#endif
 		FSpCreateResFile(&dirspec, 'Pyth', 'pref', 0);
 		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 		if ( prefrh == -1 ) {
@@ -149,12 +171,16 @@ PyMac_OpenPrefFile()
 static char *
 PyMac_GetPythonDir()
 {
-    static char name[256];
+	static int diditbefore = 0;
+    static char name[256] = {':', '\0'};
     AliasHandle handle;
     FSSpec dirspec;
     Boolean modified = 0;
     short oldrh, prefrh = -1, homerh;
     
+    if ( diditbefore )
+    	return name;
+    	
     oldrh = CurResFile();
 
     /* First look for an override in the application file */
@@ -168,14 +194,16 @@ PyMac_GetPythonDir()
 	    handle = (AliasHandle)Get1Resource('alis', PYTHONHOME_ID);
 	    if ( handle == NULL ) {
 	    	(void)StopAlert(BADPREFFILE_ID, NULL);
-	    	exit(1);
+	    	diditbefore=1;
+	    	return ":";
 	    }
 	    homerh = prefrh;
     }
 	/* It exists. Resolve it (possibly updating it) */
 	if ( ResolveAlias(NULL, handle, &dirspec, &modified) != noErr ) {
     	(void)StopAlert(BADPREFFILE_ID, NULL);
-    	exit(1);
+    	diditbefore=1;
+    	return ":";
     }
     if ( modified ) {
    		ChangedResource((Handle)handle);
@@ -192,18 +220,16 @@ PyMac_GetPythonDir()
 		name[0] = 0;
 		(void)getwd(name);
 	}
+	diditbefore = 1;
 	return name;
 }
 
 #ifndef USE_BUILTIN_PATH
 static char *
-PyMac_GetPythonPath(dir)
-char *dir;
+PyMac_GetPythonPath()
 {
     FSSpec dirspec;
     short oldrh, prefrh = -1;
-    short prefdirRefNum;
-    long prefdirDirID;
     char *rv;
     int i, newlen;
     Str255 pathitem;
@@ -228,15 +254,9 @@ char *dir;
     SetResLoad(1);
     UseResFile(oldrh);
     
-    /*
-    ** Remember old resource file and try to open preferences file
-    ** in the preferences folder.
-    */
-    if ( FindFolder(kOnSystemDisk, 'pref', kDontCreateFolder, &prefdirRefNum,
-    				&prefdirDirID) == noErr ) {
-    	(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, "\pPython Preferences", &dirspec);
-		prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
-    }
+    /* Open the preferences file only if there is no override */
+    if ( resource_id != PYTHONPATHOVERRIDE_ID )
+	    prefrh = PyMac_OpenPrefFile();
     /* At this point, we may or may not have the preferences file open, and it
     ** may or may not contain a sys.path STR# resource. We don't care, if it doesn't
     ** exist we use the one from the application (the default).
@@ -252,6 +272,8 @@ char *dir;
     		break;
     	if ( pathitem[0] >= 9 && strncmp((char *)pathitem+1, "$(PYTHON)", 9) == 0 ) {
     		/* We have to put the directory in place */
+    		char *dir = PyMac_GetPythonDir();
+    		
     		newlen = strlen(rv) + strlen(dir) + (pathitem[0]-9) + 2;
     		if( (rv=realloc(rv, newlen)) == NULL)
     			goto out;
