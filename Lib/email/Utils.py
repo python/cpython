@@ -130,7 +130,8 @@ def formatdate(timeval=None, localtime=0):
             offset = time.altzone
         else:
             offset = time.timezone
-        zone = '%+03d%02d' % (offset / -3600, offset % 60)
+        hours, minutes = divmod(offset, -3600)
+        zone = '%+03d%02d' % (hours, minutes / -60)
     else:
         now = time.gmtime(timeval)
         # Timezone offset is always -0000
