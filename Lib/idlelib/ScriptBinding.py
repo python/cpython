@@ -11,7 +11,7 @@ This adds the following commands:
 
 XXX GvR Redesign this interface (yet again) as follows:
 
-- Present a dialog box for ``Run script''
+- Present a dialog box for ``Run Module''
 
 - Allow specify command line arguments in the dialog box
 
@@ -45,7 +45,7 @@ class ScriptBinding:
     menudefs = [
         ('run', [None,
                  ('Check Module', '<<check-module>>'),
-                 ('Run Script', '<<run-script>>'), ]), ]
+                 ('Run Module', '<<run-module>>'), ]), ]
 
     def __init__(self, editwin):
         self.editwin = editwin
@@ -113,8 +113,8 @@ class ScriptBinding:
             text.mark_set("insert", pos + "+1c")
         text.see(pos)
 
-    def run_script_event(self, event):
-        "Check syntax, if ok run the script in the shell top level"
+    def run_module_event(self, event):
+        "Check syntax, if ok run the module in the shell top level"
         filename = self.getfilename()
         if not filename:
             return
