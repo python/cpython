@@ -87,6 +87,11 @@ PyDoc_STRVAR(cPickle_module_documentation,
 #undef FALSE
 #define FALSE       "I00\n"
 
+/* Keep in synch with pickle.Pickler._BATCHSIZE.  This is how many elements
+ * batch_{list, dict} pump out before doing APPENDS/SETITEMS.
+ */
+#define BATCHSIZE 1000
+
 static char MARKv = MARK;
 
 static PyObject *PickleError;
@@ -1614,34 +1619,119 @@ save_tuple(Picklerobject *self, PyObject *args)
 	return res;
 }
 
+/* iter is an iterator giving items, and we batch up chunks of
+ *     MARK item item ... item APPENDS
+ * opcode sequences.  Calling code should have arranged to first create an
+ * empty list, or list-like object, for the APPENDS to operate on.
+ * Returns 0 on success, <0 on error.
+ */
+static int
+batch_list(Picklerobject *self, PyObject *iter)
+{
+	PyObject *obj;
+	PyObject *slice[BATCHSIZE];
+	int i, n;
+
+	static char append = APPEND;
+	static char appends = APPENDS;
+
+	assert(iter != NULL);
+
+	if (self->proto == 0) {
+		/* APPENDS isn't available; do one at a time. */
+		for (;;) {
+			obj = PyIter_Next(iter);
+			if (obj == NULL) {
+				if (PyErr_Occurred())
+					return -1;
+				break;
+			}
+			i = save(self, obj, 0);
+			Py_DECREF(obj);
+			if (i < 0)
+				return -1;
+			if (self->write_func(self, &append, 1) < 0)
+				return -1;
+
+		}
+		return 0;
+	}
+
+	/* proto > 0:  write in batches of BATCHSIZE. */
+	do {
+		/* Get next group of (no more than) BATCHSIZE elements. */
+		for (n = 0; n < BATCHSIZE; ++n) {
+			obj = PyIter_Next(iter);
+			if (obj == NULL) {
+				if (PyErr_Occurred())
+					goto BatchFailed;
+				break;
+			}
+			slice[n] = obj;
+		}
+
+		if (n > 1) {
+			/* Pump out MARK, slice[0:n], APPENDS. */
+			if (self->write_func(self, &MARKv, 1) < 0)
+				goto BatchFailed;
+			for (i = 0; i < n; ++i) {
+				if (save(self, slice[i], 0) < 0)
+					goto BatchFailed;
+			}
+			if (self->write_func(self, &appends, 1) < 0)
+				goto BatchFailed;
+		}
+		else if (n == 1) {
+			if (save(self, slice[0], 0) < 0)
+				goto BatchFailed;
+			if (self->write_func(self, &append, 1) < 0)
+				goto BatchFailed;
+		}
+
+		for (i = 0; i < n; ++i) {
+			Py_DECREF(slice[i]);
+		}
+	}while (n == BATCHSIZE);
+	return 0;
+
+BatchFailed:
+	while (--n >= 0) {
+		Py_DECREF(slice[n]);
+	}
+	return -1;
+}
+
 static int
 save_list(Picklerobject *self, PyObject *args)
 {
-	PyObject *element = 0;
-	int s_len, len, i, using_appends, res = -1;
+	int res = -1;
 	char s[3];
+	int len;
+	PyObject *iter;
 
-	static char append = APPEND, appends = APPENDS;
 
 	if (self->fast && !fast_save_enter(self, args))
 		goto finally;
 
+	/* Create an empty list. */
 	if (self->bin) {
 		s[0] = EMPTY_LIST;
-		s_len = 1;
+		len = 1;
 	}
 	else {
 		s[0] = MARK;
 		s[1] = LIST;
-		s_len = 2;
+		len = 2;
 	}
 
+	if (self->write_func(self, s, len) < 0)
+		goto finally;
+
+	/* Get list length, and bow out early if empty. */
 	if ((len = PyList_Size(args)) < 0)
 		goto finally;
 
-	if (self->write_func(self, s, s_len) < 0)
-		goto finally;
-
+	/* Memoize. */
 	if (len == 0) {
 		if (put(self, args) < 0)
 			goto finally;
@@ -1651,29 +1741,12 @@ save_list(Picklerobject *self, PyObject *args)
 			goto finally;
 	}
 
-	if ((using_appends = (self->bin && (len > 1))))
-		if (self->write_func(self, &MARKv, 1) < 0)
-			goto finally;
-
-	for (i = 0; i < len; i++) {
-		if (!( element = PyList_GET_ITEM((PyListObject *)args, i)))
-			goto finally;
-
-		if (save(self, element, 0) < 0)
-			goto finally;
-
-		if (!using_appends) {
-			if (self->write_func(self, &append, 1) < 0)
-				goto finally;
-		}
-	}
-
-	if (using_appends) {
-		if (self->write_func(self, &appends, 1) < 0)
-			goto finally;
-	}
-
-	res = 0;
+	/* Materialize the list elements. */
+	iter = PyObject_GetIter(args);
+	if (iter == NULL)
+		goto finally;
+	res = batch_list(self, iter);
+	Py_DECREF(iter);
 
   finally:
 	if (self->fast && !fast_save_leave(self, args))
