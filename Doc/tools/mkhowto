@@ -640,11 +640,9 @@ def uniqify_module_table(filename):
 
 def new_index(filename, label="genindex"):
     fp = open(filename, "w")
-    fp.write(r"""\
-\begin{theindex}
-\label{%s}
-\end{theindex}
-""" % label)
+    fp.write("\\begin{theindex}\n"
+             "\\label{%s}\n"
+             "\\end{theindex}\n" % label)
     fp.close()
 
 
