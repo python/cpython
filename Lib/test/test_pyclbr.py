@@ -151,7 +151,7 @@ class PyclbrTest(TestCase):
         #      if it were not commented out.
         #
         self.checkModule('test.pyclbr_input')
-        
+
     def test_others(self):
         cm = self.checkModule
 

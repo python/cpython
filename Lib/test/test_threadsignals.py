@@ -10,7 +10,7 @@ from test import test_support, TestSkipped
 if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
     raise TestSkipped, "Can't test signal on %s" % sys.platform
 
-signal_blackboard = { signal.SIGUSR1 : {'tripped': 0, 'tripped_by': 0 }, 
+signal_blackboard = { signal.SIGUSR1 : {'tripped': 0, 'tripped_by': 0 },
                       signal.SIGUSR2 : {'tripped': 0, 'tripped_by': 0 },
                       signal.SIGALRM : {'tripped': 0, 'tripped_by': 0 } }
 
@@ -28,7 +28,7 @@ def registerSignals((for_usr1, for_usr2, for_alrm)):
 # The signal handler. Just note that the signal occured and
 # from who.
 def handle_signals(sig,frame):
-    signal_blackboard[sig]['tripped'] += 1 
+    signal_blackboard[sig]['tripped'] += 1
     signal_blackboard[sig]['tripped_by'] = thread.get_ident()
 
 # a function that will be spawned as a separate thread.
@@ -55,20 +55,20 @@ class ThreadSignals(unittest.TestCase):
         # wait for it return.
         if signal_blackboard[signal.SIGUSR2]['tripped'] == 0 \
            or signal_blackboard[signal.SIGUSR2]['tripped'] == 0:
-             signal.alarm(1)
-             signal.pause()
-             signal.alarm(0)
+            signal.alarm(1)
+            signal.pause()
+            signal.alarm(0)
 
         self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped'], 1)
-        self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped_by'], 
+        self.assertEqual( signal_blackboard[signal.SIGUSR1]['tripped_by'],
                            thread.get_ident())
         self.assertEqual( signal_blackboard[signal.SIGUSR2]['tripped'], 1)
-        self.assertEqual( signal_blackboard[signal.SIGUSR2]['tripped_by'], 
+        self.assertEqual( signal_blackboard[signal.SIGUSR2]['tripped_by'],
                            thread.get_ident())
 
     def spawnSignallingThread(self):
         thread.start_new_thread(send_signals, ())
-        
+
 
 def test_main():
     oldsigs = registerSignals((handle_signals, handle_signals, handle_signals))

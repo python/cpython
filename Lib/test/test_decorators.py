@@ -22,8 +22,8 @@ class DbcheckError (Exception):
         # A real version of this would set attributes here
         Exception.__init__(self, "dbcheck %r failed (func=%s args=%s kwds=%s)" %
                            (exprstr, func, args, kwds))
-    
-    
+
+
 def dbcheck(exprstr, globals=None, locals=None):
     "Decorator to implement debugging assertions"
     def decorate(func):
@@ -66,7 +66,7 @@ def memoize(func):
             # Unhashable argument
             return func(*args)
     return call
-            
+
 # -----------------------------------------------
 
 class TestDecorators(unittest.TestCase):
@@ -80,7 +80,7 @@ class TestDecorators(unittest.TestCase):
 
     def test_staticmethod_function(self):
         @staticmethod
-        def notamethod(x): 
+        def notamethod(x):
             return x
         self.assertRaises(TypeError, notamethod, 1)
 
@@ -94,7 +94,7 @@ class TestDecorators(unittest.TestCase):
     def test_argforms(self):
         # A few tests of argument passing, as we use restricted form
         # of expressions for decorators.
-        
+
         def noteargs(*args, **kwds):
             def decorate(func):
                 setattr(func, 'dbval', (args, kwds))
@@ -129,7 +129,7 @@ class TestDecorators(unittest.TestCase):
         # XXX: This doesn't work unless memoize is the last decorator -
         #      see the comment in countcalls.
         counts = {}
-        @countcalls(counts) @memoize 
+        @countcalls(counts) @memoize
         def double(x):
             return x * 2
 
@@ -157,7 +157,7 @@ class TestDecorators(unittest.TestCase):
         for expr in [ "1+2", "x[3]", "(1, 2)" ]:
             # Sanity check: is expr is a valid expression by itself?
             compile(expr, "testexpr", "exec")
-            
+
             codestr = "@%s\ndef f(): pass" % expr
             self.assertRaises(SyntaxError, compile, codestr, "test", "exec")
 
@@ -166,7 +166,7 @@ class TestDecorators(unittest.TestCase):
         def unimp(func):
             raise NotImplementedError
         context = dict(nullval=None, unimp=unimp)
-        
+
         for expr, exc in [ ("undef", NameError),
                            ("nullval", TypeError),
                            ("nullval.attr", AttributeError),
