@@ -1,4 +1,10 @@
-# Grammar for Python, version 4
+# Grammar for Python, version 5
+
+# Changes compared to version 4:
+#	Semicolons can separate small statements
+#	'continue' statement
+#	Dictionary constructors: {key:value, key:value, ...}
+#	More tests instead of exprs
 
 # Changes compared to version 3:
 #	Removed 'dir' statement.
@@ -34,23 +40,25 @@ fplist: fpdef (',' fpdef)*
 fpdef: NAME | '(' fplist ')'
 
 stmt: simple_stmt | compound_stmt
-simple_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt
-expr_stmt: (exprlist '=')* exprlist NEWLINE
+simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
+small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt
+expr_stmt: (exprlist '=')* exprlist
 # For assignments, additional restrictions enforced by the interpreter
-print_stmt: 'print' (test ',')* [test] NEWLINE
-del_stmt: 'del' exprlist NEWLINE
-pass_stmt: 'pass' NEWLINE
-flow_stmt: break_stmt | return_stmt | raise_stmt
-break_stmt: 'break' NEWLINE
-return_stmt: 'return' [testlist] NEWLINE
-raise_stmt: 'raise' expr [',' expr] NEWLINE
-import_stmt: 'import' NAME (',' NAME)* NEWLINE | 'from' NAME 'import' ('*' | NAME (',' NAME)*) NEWLINE
+print_stmt: 'print' (test ',')* [test]
+del_stmt: 'del' exprlist
+pass_stmt: 'pass'
+flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt
+break_stmt: 'break'
+continue_stmt: 'continue'
+return_stmt: 'return' [testlist]
+raise_stmt: 'raise' test [',' test]
+import_stmt: 'import' NAME (',' NAME)* | 'from' NAME 'import' ('*' | NAME (',' NAME)*)
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 while_stmt: 'while' test ':' suite ['else' ':' suite]
-for_stmt: 'for' exprlist 'in' exprlist ':' suite ['else' ':' suite]
+for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 try_stmt: 'try' ':' suite (except_clause ':' suite)* ['finally' ':' suite]
-except_clause: 'except' [expr [',' expr]]
+except_clause: 'except' [test [',' test]]
 suite: simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
 
 test: and_test ('or' and_test)*
@@ -61,11 +69,12 @@ comp_op: '<'|'>'|'='|'>' '='|'<' '='|'<' '>'|'in'|'not' 'in'|'is'|'is' 'not'
 expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%') factor)*
 factor: ('+'|'-') factor | atom trailer*
-atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' '}' | '`' testlist '`' | NAME | NUMBER | STRING
+atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
 trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
-subscript: expr | [expr] ':' [expr]
+subscript: test | [test] ':' [test]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
+dictmaker: test ':' test (',' test ':' test)* [',']
 
 classdef: 'class' NAME parameters ['=' baselist] ':' suite
 baselist: atom arguments (',' atom arguments)*
