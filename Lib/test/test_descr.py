@@ -3019,7 +3019,23 @@ def string_exceptions():
     except:
         raise TestFailed, "string subclass allowed as exception"
 
+def do_this_first():
+    if verbose:
+        print "Testing SF bug 551412 ..."
+    # This dumps core when SF bug 551412 isn't fixed --
+    # but only when test_descr.py is run separately.
+    # (That can't be helped -- as soon as PyType_Ready()
+    # is called for PyLong_Type, the bug is gone.)
+    class UserLong(object):
+        def __pow__(self, *args):
+            pass
+    try:
+        pow(0L, UserLong(), 0L)
+    except:
+        pass
+
 def test_main():
+    do_this_first()
     class_docstrings()
     lists()
     dicts()
