@@ -68,6 +68,9 @@ def compile_dir(dir, maxlevels=10, ddir=None,
                 except py_compile.PyCompileError,err:
                     print err.msg
                     success = 0
+                except IOError, e:
+                    print "Sorry", e
+                    success = 0
                 else:
                     if ok == 0:
                         success = 0
