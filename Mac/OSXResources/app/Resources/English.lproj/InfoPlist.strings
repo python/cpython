@@ -1,6 +1,6 @@
 /* Localized versions of Info.plist keys */
 
-CFBundleName = "PythonW";
+CFBundleName = "Python";
 CFBundleShortVersionString = "Python Interpreter version 2.3";
 CFBundleGetInfoString = "Python Interpreter version 2.3, (c) 2002 Python Software Foundation.";
 CFBundleLongVersionString = "2.3, (c) 2002 Python Software Foundation.";
