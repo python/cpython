@@ -3537,7 +3537,7 @@ This chapter describes yet more recent additions to the Python
 language and library.
 
 
-\section{New Keyword Arguments}
+\section{Keyword Arguments}
 
 Functions and methods written in Python can now be called using
 keyword arguments of the form \code{\var{keyword} = \var{value}}.  For
@@ -3639,9 +3639,73 @@ reduced by a third.
 \item
 The format of \code{.pyc} files has changed (again).
 
+\item
+The \code{access} statement has been disabled.  The syntax is still
+recognized but no code is generated for it.  (There were some
+unpleasant interactions with changes for keyword arguments, and my
+plan is to get rid of \code{access} altogether in favor of a different
+approach.)
+
 \end{itemize}
 
-\section{Minor Changes}
+\section{Changes to the WWW and Internet tools}
+
+\begin{itemize}
+
+\item
+The \code{htmllib} module has been rewritten in an incompatible
+fashion.  The new version is considerably more complete (HTML 2.0
+except forms, but including all ISO-8859-1 entity definitions), and
+easy to use.  Small changes to \code{sgmllib} have also been made, to
+better match the tokenization of HTML as recognized by other web
+tools.
+
+\item
+A new module \code{formatter} has been added, for use with the new
+\code{htmllib} module.
+
+\item
+The \code{urllib}and \code{httplib} modules have been changed somewhat
+to allow overriding unknown URL types and to support authentication.
+They now use \code{mimetools.Message} instead of \code{rfc822.Message}
+to parse headers.  The \code{endrequest()} method has been removed
+from the HTTP class since it breaks the interaction with some servers.
+
+\item
+The \code{rfc822.Message} class has been changed to allow a flag to be
+passed in that says that the file is unseekable.
+
+\item
+The \code{ftplib} module has been fixed to be (hopefully) more robust
+on Linux.
+
+\item
+Several new operations that are optionally supported by servers have
+been added to \code{nntplib}: \code{xover}, \code{xgtitle},
+\code{xpath} and \code{date}. % thanks to Kevan Heydon
+
+\end{itemize}
+
+\section{Other Language Changes}
+
+\begin{itemize}
+
+\item
+The \code{raise} statement now takes an optional argument which
+specifies the traceback to be used when printing the exception's stack
+trace.  This must be a traceback object, such as found in
+\code{sys.exc_traceback}.  When omitted or given as \code{None}, the
+old behavior (to generate a stack trace entry for the current stack
+frame) is used.
+
+\item
+The tokenizer is now more tolerant of alien whitespace.  Control-L in
+the leading whitespace of a line resets the column number to zero,
+while Control-R just before the end of the line is ignored.
+
+\end{itemize}
+
+\section{Changes to Built-in Operations}
 
 \begin{itemize}
 
@@ -3672,36 +3736,70 @@ without an argument, and a module's global variables when called with
 an argument of type module.)
 
 \item
-The optional built-in modules \code{dbm} and \code{gdbm} are more
-coordinated --- their \code{open()} functions now take the same values
-for their \var{flag} argument, and the \var{flag} and \var{mode}
-argument have default values (to open the database for reading only,
-and to create the database with mode \code{0666} minuse the umask,
-respectively).
-
-\item
-A new dbm-like module, \code{dbhash}, has been added, which uses the
-BSD DB package's hash method.
-
-\item
-The \code{raise} statement now takes an optional argument which
-specifies the traceback to be used when printing the exception's stack
-trace.  This must be a traceback object, such as found in
-\code{sys.exc_traceback}.  When omitted or given as \code{None}, the
-old behavior (to generate a stack trace entry for the current stack
-frame) is used.
-
-\item
 The built-in function \code{compile()} now takes a third possible
 value for the kind of code to be compiled: specifying \code{'single'}
 generates code for a single interactive statement, which prints the
 output of expression statements that evaluate to something else than
 \code{None}.
 
+\end{itemize}
+
+\section{Library Changes}
+
+\begin{itemize}
+
 \item
-The tokenizer is now more tolerant of alien whitespace.  Control-L in
-the leading whitespace of a line resets the column number to zero,
-while Control-R just before the end of the line is ignored.
+The \code{string.split()} and \code{string.splitfields()} functions
+are now the same function (the presence or absence of the second
+argument determines which operation is invoked); similar for
+\code{string.join()} and \code{string.joinfields()}.
+
+\item
+The \code{Tkinter} module and its helper \code{Dialog} have been
+revamped to use keyword arguments.  Tk 4.0 is now the standard.  A new
+module \code{FileDialog} has been added which implements standard file
+selection dialogs.
+
+\item
+The optional built-in modules \code{dbm} and \code{gdbm} are more
+coordinated --- their \code{open()} functions now take the same values
+for their \var{flag} argument, and the \var{flag} and \var{mode}
+argument have default values (to open the database for reading only,
+and to create the database with mode \code{0666} minuse the umask,
+respectively).  The memory leaks have finally been fixed.
+
+\item
+A new dbm-like module, \code{bsddb}, has been added, which uses the
+BSD DB package's hash method. % thanks to David Ely
+
+\item
+A portable (though slow) dbm-clone, implemented in Python, has been
+added for systems where none of the above is provided.  It is aptly
+dubbed \code{dumbdbm}.
+
+\item
+The module \code{anydbm} provides a unified interface to \code{bsddb},
+\code{gdbm}, \code{dbm}, and \code{dumbdbm}, choosing the first one
+available.
+
+\item
+A new extension module, \code{binascii}, provides a variety of
+operations for conversion of text-encoded binary data.
+
+\item
+There are three new or rewritten companion modules implemented in
+Python that can encode and decode the most common such formats:
+\code{uu} (uuencode), \code{base64} and \code{binhex}.
+
+\item
+A module to handle the MIME encoding quoted-printable has also been
+added: \code{quopri}.
+
+\end{itemize}
+
+\section{Other Changes}
+
+\begin{itemize}
 
 \item
 The dynamic module loader recognizes the fact that different filenames
@@ -3713,6 +3811,9 @@ you can have a single shared library that defines multiple modules.
 Jim Fulton's ``abstract object interface'' has been incorporated into
 the run-time API.  For more detailes, read the files
 \code{Include/abstract.h} and \code{Objects/abstract.c}.
+
+\item
+The Macintosh version is much more robust now.
 
 \item
 Numerous things I have forgotten or that are so obscure no-one will
