@@ -157,10 +157,12 @@ python:		Makefiles
 
 # Test the interpreter (twice, once without .pyc files, once with)
 TESTPATH=	$(srcdir)/Lib:$(srcdir)/Lib/test:./Modules
+TESTOPTS=	
+TESTPROG=	Lib/test/regrtest.py
 test:		python
 		-rm -f $(srcdir)/Lib/test/*.pyc
-		PYTHONPATH=$(TESTPATH) ./python -c 'import autotest'
-		PYTHONPATH=$(TESTPATH) ./python -c 'import autotest'
+		PYTHONPATH=$(TESTPATH) ./python $(TESTPROG) $(TESTOPTS)
+		PYTHONPATH=$(TESTPATH) ./python $(TESTPROG) $(TESTOPTS)
 
 # Install everything
 install:	altinstall bininstall maninstall
