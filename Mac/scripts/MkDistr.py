@@ -1,24 +1,18 @@
 #
 # Interactively decide what to distribute
 #
-# The distribution type is signalled by a letter. The currently
-# defined letters are:
-# p		PPC normal distribution
-# P		PPC development distribution
-# m		68K normal distribution
-# M		68K development distribution
 #
 # The exclude file signals files to always exclude,
-# The pattern file records are of the form
-# ('pm', '*.c')
-# This excludes all files ending in .c for normal distributions.
+# The pattern file lines are of the form
+# *.c
+# This excludes all files ending in .c.
 #
 # The include file signals files and directories to include.
 # Records are of the form
-# ('pPmM', 'Lib')
-# This includes the Lib dir in all distributions
-# ('pPmM', 'Tools:bgen:AE:AppleEvents.py', 'Lib:MacToolbox:AppleEvents.py')
-# This includes the specified file, putting it in the given place.
+# ('Tools:bgen:AE:AppleEvents.py', 'Lib:MacToolbox:AppleEvents.py')
+# This includes the specified file, putting it in the given place, or
+# ('Tools:bgen:AE:AppleEvents.py', None)
+# This excludes the specified file.
 #
 from MkDistr_ui import *
 import fnmatch
@@ -33,8 +27,7 @@ SyntaxError='Include/exclude file syntax error'
 class Matcher:
 	"""Include/exclude database, common code"""
 	
-	def __init__(self, type, filename):
-		self.type = type
+	def __init__(self, filename):
 		self.filename = filename
 		self.rawdata = []
 		self.parse(filename)
@@ -55,25 +48,13 @@ class Matcher:
 			pat = self.parseline(d)
 			self.rawdata.append(pat)
 				
-	def parseline(self, line):
-		try:
-			data = eval(line)
-		except:
-			raise SyntaxError, line
-		if type(data) <> type(()) or len(data) not in (2,3):
-			raise SyntaxError, line
-		if len(data) == 2:
-			data = data + ('',)
-		return data
-		
 	def save(self):
 		fp = open(self.filename, 'w')
-		for d in self.rawdata:
-			fp.write(`d`+'\n')
+		self.savedata(fp, self.rawdata)
 		self.modified = 0
 			
 	def add(self, value):
-		if len(value) == 2:
+		if len(value) == 1:
 			value = value + ('',)
 		self.rawdata.append(value)
 		self.rebuild1(value)
@@ -82,7 +63,7 @@ class Matcher:
 	def delete(self, value):
 		key = value
 		for i in range(len(self.rawdata)):
-			if self.rawdata[i][1] == key:
+			if self.rawdata[i][0] == key:
 				del self.rawdata[i]
 				self.unrebuild1(i, key)
 				self.modified = 1
@@ -90,12 +71,12 @@ class Matcher:
 		print 'Not found!', key
 				
 	def getall(self):
-		return map(lambda x: x[1], self.rawdata)
+		return map(lambda x: x[0], self.rawdata)
 	
 	def get(self, value):
-		for t, src, dst in self.rawdata:
+		for src, dst in self.rawdata:
 			if src == value:
-				return t, src, dst
+				return src, dst
 		print 'Not found!', value
 				
 	def is_modified(self):
@@ -110,13 +91,28 @@ class IncMatcher(Matcher):
 		for v in self.rawdata:
 			self.rebuild1(v)
 			
-	def rebuild1(self, (tp, src, dst)):
-		if self.type in tp:
-			if dst == '':
-				dst = src
-			self.idict[src] = dst
+	def parseline(self, line):
+		try:
+			data = eval(line)
+		except:
+			raise SyntaxError, line
+		if type(data) <> type(()) or len(data) not in (1,2):
+			raise SyntaxError, line
+		if len(data) == 1:
+			data = data + ('',)
+		return data
+		
+	def savedata(self, fp, data):
+		for d in self.rawdata:
+			fp.write(`d`+'\n')
+		
+	def rebuild1(self, (src, dst)):
+		if dst == '':
+			dst = src
+		if dst == None:
+			self.edict[src] = None
 		else:
-			self.edict[src] = ''
+			self.idict[src] = dst
 			
 	def unrebuild1(self, num, src):
 		if self.idict.has_key(src):
@@ -140,7 +136,7 @@ class IncMatcher(Matcher):
 				# tack on our input filename
 				if dstpath[-1] == os.sep:
 					dir, file = os.path.split(path)
-					dstpath = os.path.join(dstpath, path)
+					dstpath = os.path.join(dstpath, file)
 				return dstpath
 			path, lastcomp = os.path.split(path)
 			if not path:
@@ -172,13 +168,17 @@ class ExcMatcher(Matcher):
 		for v in self.rawdata:
 			self.rebuild1(v)
 		
-	def rebuild1(self, (tp, src, dst)):
-		if self.type in tp:
-			pat = fnmatch.translate(src)
-			self.relist.append(regex.compile(pat))
-		else:
-			self.relist.append(None)
-			
+	def parseline(self, data):
+		return (data, None)
+
+	def savedata(self, fp, data):
+		for d in self.rawdata:
+			fp.write(d[0]+'\n')		
+		
+	def rebuild1(self, (src, dst)):
+		pat = fnmatch.translate(src)
+		self.relist.append(regex.compile(pat))
+		
 	def unrebuild1(self, num, src):
 		del self.relist[num]
 	
@@ -200,10 +200,11 @@ class Main:
 		if not ok:
 			sys.exit(0)
 		os.chdir(fss.as_pathname())
-		self.typedist = GetType()
-		print 'TYPE', self.typedist
-		self.inc = IncMatcher(self.typedist, '(MkDistr.include)')
-		self.exc = ExcMatcher(self.typedist, '(MkDistr.exclude)')
+		if not os.path.isdir(':(MkDistr)'):
+			os.mkdir(':(MkDistr)')
+		typedist = GetType()
+		self.inc = IncMatcher(':(MkDistr):%s.include'%typedist)
+		self.exc = ExcMatcher(':(MkDistr):%s.exclude'%typedist)
 		self.ui = MkDistrUI(self)
 		self.ui.mainloop()
 		
