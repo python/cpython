@@ -20,8 +20,12 @@
 #include <windows.h>
 #include <largeint.h>
 #include <direct.h>    /* for getcwd() */
-typedef LARGE_INTEGER hs_time;
-#define GETTIMEOFDAY(p) QueryPerformanceCounter(p)
+typedef __int64 hs_time;
+#define GETTIMEOFDAY(P_HS_TIME) \
+	{ LARGE_INTEGER _temp; \
+	  QueryPerformanceCounter(&_temp); \
+	  *(P_HS_TIME) = _temp.QuadPart; }
+	  
 
 #else
 #ifndef HAVE_GETTIMEOFDAY
@@ -664,12 +668,11 @@ get_tdelta(ProfilerObject *self)
     int tdelta;
 #ifdef MS_WIN32
     hs_time tv;
-    LARGE_INTEGER diff;
+    hs_time diff;
 
-    QueryPerformanceCounter(&tv);
-    diff = LargeIntegerSubtract(tv, self->prev_timeofday);
-
-    tdelta = diff.LowPart;
+    GETTIMEOFDAY(&tv);
+    diff = tv - self->prev_timeofday;
+    tdelta = (int)diff;
 #else
     struct timeval tv;
 
@@ -764,7 +767,7 @@ calibrate(void)
     hs_time tv1, tv2;
 
 #ifdef MS_WIN32
-    LARGE_INTEGER diff;
+    hs_time diff;
     QueryPerformanceFrequency(&frequency);
 #endif
 
@@ -772,9 +775,9 @@ calibrate(void)
     while (1) {
         GETTIMEOFDAY(&tv2);
 #ifdef MS_WIN32
-        diff = LargeIntegerSubtract(tv2, tv1);
-        if (!LargeIntegerEqualToZero(diff)) {
-            timeofday_diff = diff.LowPart;
+        diff = tv2 - tv1;
+        if (diff != 0) {
+            timeofday_diff = (unsigned long)diff;
             break;
         }
 #else
