@@ -5,27 +5,29 @@
 #include "compile.h"
 
 static char new_instance_doc[] =
-"Create an instance object from (CLASS, DICT) without calling its __init__().";
+"Create an instance object from (CLASS [, DICT]) without calling its\n\
+__init__() method.  DICT must be a dictionary or None.";
 
 static PyObject *
 new_instance(PyObject* unused, PyObject* args)
 {
-	PyObject* klass;
-	PyObject *dict;
-	PyInstanceObject *inst;
-	if (!PyArg_ParseTuple(args, "O!O!:instance",
-			      &PyClass_Type, &klass,
-			      &PyDict_Type, &dict))
+	PyObject *klass;
+	PyObject *dict = NULL;
+
+	if (!PyArg_ParseTuple(args, "O!|O:instance",
+			      &PyClass_Type, &klass, &dict))
 		return NULL;
-	inst = PyObject_New(PyInstanceObject, &PyInstance_Type);
-	if (inst == NULL)
+
+	if (dict == Py_None)
+		dict = NULL;
+	else if (dict == NULL)
+		/* do nothing */;
+	else if (!PyDict_Check(dict)) {
+		PyErr_SetString(PyExc_TypeError,
+		      "new.instance() second arg must be dictionary or None");
 		return NULL;
-	Py_INCREF(klass);
-	Py_INCREF(dict);
-	inst->in_class = (PyClassObject *)klass;
-	inst->in_dict = dict;
-	PyObject_GC_Init(inst);
-	return (PyObject *)inst;
+	}
+	return PyInstance_NewRaw(klass, dict);
 }
 
 static char new_im_doc[] =
