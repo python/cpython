@@ -1,15 +1,15 @@
-Changes in 2.1a3 since 2.0
+Changes in 2.1b1 since 2.0
 --------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
 for machine-independent changes. Changes since previous alfa/beta releases for 2.1 are
-marked with [*] and at the bottom of the list. Note that 2.1a3 is a Mac-only release.
-The machine-independent stuff is at a state somewhere between 2.1a2 and 2.1b1.
+marked with [*] and at the bottom of the list.
 
 - The good news: this release is Carbon-based, so it runs natively on MacOS 8.6 or
   later and MacOSX.
-- The bad news: this release is Carbon-only. The next alpha release will be both
-  Carbon and classic PPC.
+- Alternatively there is a classic PPC interpreter as well. There are two reasons you
+  might want to use this: (a) you have a pre-MacOS9 system and don't want to install
+  CarbonLib, or (b) you need Tkinter, for which no Carbon version is available yet.
 - Distutils is included and seems to work.
 - There's a new module (package, actually) mkcwproject which builds CodeWarrior
   projects from simple templates. See Distutils or :Mac:scripts:genpluginprojects.py
@@ -60,6 +60,13 @@ The machine-independent stuff is at a state somewhere between 2.1a2 and 2.1b1.
   favor of re. Code not fully tested. [*]
 - IDE could crash on some edit operations due to WEGetUndoInfo(). Fixed. [*]
 - time.time() again returns positive values. [*]
+- Classic PPC is included again. [*]
+- Numeric is included again. It is now built using distutils, and lives in :Lib:site-python.
+  This makes it a lot easier to replace Numeric with a new version (when one comes out). [*]
+- PIL is included again. [*]
+- PythonInterpreterCarbon and PythonInterpreterClassic are now files of type "Atmp", not
+  "APPL", so there should not be any confusion as to what the real application is
+  (PythonInterpreter). [*]
 
 
 What is not in this distribution
