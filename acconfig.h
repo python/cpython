@@ -78,6 +78,9 @@
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES
 
+/* Define if you have termios available */
+#undef HAVE_TERMIOS_H
+
 /* Define this if you have the type uintptr_t */
 #undef HAVE_UINTPTR_T
 
@@ -168,6 +171,9 @@
 
 /* Define if you want to use BSD db. */
 #undef WITH_LIBDB
+
+/* Define if you want to use ndbm. */
+#undef WITH_LIBNDBM
 
 /* Define if you want to produce an OpenStep/Rhapsody framework
    (shared library plus accessory files). */
