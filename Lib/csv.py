@@ -9,6 +9,11 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
                  QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE, \
                  __doc__
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
 __all__ = [ "QUOTE_MINIMAL", "QUOTE_ALL", "QUOTE_NONNUMERIC", "QUOTE_NONE",
             "Error", "Dialect", "excel", "excel_tab", "reader", "writer",
             "register_dialect", "get_dialect", "list_dialects", "Sniffer",
@@ -147,52 +152,39 @@ class DictWriter:
 class Sniffer:
     '''
     "Sniffs" the format of a CSV file (i.e. delimiter, quotechar)
-    Returns a csv.Dialect object.
+    Returns a Dialect object.
     '''
-    def __init__(self, sample = 16 * 1024):
+    def __init__(self):
         # in case there is more than one possible delimiter
         self.preferred = [',', '\t', ';', ' ', ':']
 
-        # amount of data (in bytes) to sample
-        self.sample = sample
 
-
-    def sniff(self, fileobj):
+    def sniff(self, sample):
         """
-        Takes a file-like object and returns a dialect (or None)
+        Returns a dialect (or None) corresponding to the sample
         """
-        self.fileobj = fileobj
-
-        data = fileobj.read(self.sample)
 
         quotechar, delimiter, skipinitialspace = \
-                   self._guessQuoteAndDelimiter(data)
+                   self._guess_quote_and_delimiter(sample)
         if delimiter is None:
-            delimiter, skipinitialspace = self._guessDelimiter(data)
+            delimiter, skipinitialspace = self._guess_delimiter(sample)
 
-        class SniffedDialect(Dialect):
+        class dialect(Dialect):
             _name = "sniffed"
             lineterminator = '\r\n'
             quoting = QUOTE_MINIMAL
             # escapechar = ''
             doublequote = False
-        SniffedDialect.delimiter = delimiter
-        SniffedDialect.quotechar = quotechar
-        SniffedDialect.skipinitialspace = skipinitialspace
 
-        self.dialect = SniffedDialect
-        return self.dialect
+        dialect.delimiter = delimiter
+        # _csv.reader won't accept a quotechar of ''
+        dialect.quotechar = quotechar or '"'
+        dialect.skipinitialspace = skipinitialspace
 
-
-    def hasHeaders(self):
-        return self._hasHeaders(self.fileobj, self.dialect)
+        return dialect
 
 
-    def register_dialect(self, name='sniffed'):
-        register_dialect(name, self.dialect)
-
-
-    def _guessQuoteAndDelimiter(self, data):
+    def _guess_quote_and_delimiter(self, data):
         """
         Looks for text enclosed between two identical quotes
         (the probable quotechar) which are preceded and followed
@@ -256,7 +248,7 @@ class Sniffer:
         return (quotechar, delim, skipinitialspace)
 
 
-    def _guessDelimiter(self, data):
+    def _guess_delimiter(self, data):
         """
         The delimiter /should/ occur the same number of times on
         each row. However, due to malformed data, it may not. We don't want
@@ -290,12 +282,12 @@ class Sniffer:
             iteration += 1
             for line in data[start:end]:
                 for char in ascii:
-                    metafrequency = charFrequency.get(char, {})
+                    metaFrequency = charFrequency.get(char, {})
                     # must count even if frequency is 0
                     freq = line.strip().count(char)
                     # value is the mode
-                    metafrequency[freq] = metafrequency.get(freq, 0) + 1
-                    charFrequency[char] = metafrequency
+                    metaFrequency[freq] = metaFrequency.get(freq, 0) + 1
+                    charFrequency[char] = metaFrequency
 
             for char in charFrequency.keys():
                 items = charFrequency[char].items()
@@ -356,7 +348,7 @@ class Sniffer:
         return (delim, skipinitialspace)
 
 
-    def _hasHeaders(self, fileobj, dialect):
+    def has_header(self, sample):
         # Creates a dictionary of types of data in each column. If any
         # column is of a single type (say, integers), *except* for the first
         # row, then the first row is presumed to be labels. If the type
@@ -373,23 +365,16 @@ class Sniffer:
             """
             return eval(item.replace('(', '').replace(')', ''))
 
-        # rewind the fileobj - this might not work for some file-like
-        # objects...
-        fileobj.seek(0)
+        rdr = reader(StringIO(sample), self.sniff(sample))
 
-        r = csv.reader(fileobj,
-                       delimiter=dialect.delimiter,
-                       quotechar=dialect.quotechar,
-                       skipinitialspace=dialect.skipinitialspace)
-
-        header = r.next() # assume first row is header
+        header = rdr.next() # assume first row is header
 
         columns = len(header)
         columnTypes = {}
         for i in range(columns): columnTypes[i] = None
 
         checked = 0
-        for row in r:
+        for row in rdr:
             # arbitrary number of rows to check, to keep it sane
             if checked > 20:
                 break
