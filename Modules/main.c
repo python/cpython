@@ -62,6 +62,7 @@ static char *usage_2 = "\
 -S     : don't imply 'import site' on initialization\n\
 -t     : issue warnings about inconsistent tab usage (-tt: issue errors)\n\
 -u     : unbuffered binary stdout and stderr (also PYTHONUNBUFFERED=x)\n\
+         see man page for details on internal buffering relating to "-u"\n\
 ";
 static char *usage_3 = "\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
