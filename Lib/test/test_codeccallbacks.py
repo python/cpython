@@ -70,13 +70,13 @@ class CodecCallbackTest(unittest.TestCase):
             "test.uninamereplace", uninamereplace)
 
         sin = u"\xac\u1234\u20ac\u8000"
-        sout = "\033[1mNOT SIGN, ETHIOPIC SYLLABLE SEE, EURO SIGN, 0x8000\033[0m"
+        sout = "\033[1mNOT SIGN, ETHIOPIC SYLLABLE SEE, EURO SIGN, CJK UNIFIED IDEOGRAPH-8000\033[0m"
         self.assertEqual(sin.encode("ascii", "test.uninamereplace"), sout)
 
-        sout = "\xac\033[1mETHIOPIC SYLLABLE SEE, EURO SIGN, 0x8000\033[0m"
+        sout = "\xac\033[1mETHIOPIC SYLLABLE SEE, EURO SIGN, CJK UNIFIED IDEOGRAPH-8000\033[0m"
         self.assertEqual(sin.encode("latin-1", "test.uninamereplace"), sout)
 
-        sout = "\xac\033[1mETHIOPIC SYLLABLE SEE\033[0m\xa4\033[1m0x8000\033[0m"
+        sout = "\xac\033[1mETHIOPIC SYLLABLE SEE\033[0m\xa4\033[1mCJK UNIFIED IDEOGRAPH-8000\033[0m"
         self.assertEqual(sin.encode("iso-8859-15", "test.uninamereplace"), sout)
 
     def test_backslashescape(self):
