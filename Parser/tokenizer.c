@@ -564,24 +564,39 @@ PyTokenizer_Get(tok, p_start, p_end)
 	/* Set start of current token */
 	tok->start = tok->cur - 1;
 	
-	/* Skip comment */
+	/* Skip comment, while looking for tab-setting magic */
 	if (c == '#') {
-		/* Hack to allow overriding the tabsize in the file.
-		   This is also recognized by vi, when it occurs near the
-		   beginning or end of the file.  (Will vi never die...?)
-		   For Python it must be at the beginning of the file! */
-		/* XXX The real vi syntax is actually different :-( */
-		/* XXX Should recognize Emacs syntax, too */
-		int x;
-		if (sscanf(tok->cur,
-				" vi:set tabsize=%d:", &x) == 1 &&
-						x >= 1 && x <= 40) {
-			/* PySys_WriteStderr("# vi:set tabsize=%d:\n", x); */
-			tok->tabsize = x;
-		}
+		static char *tabforms[] = {
+			"tab-width:",		/* Emacs */
+			":tabstop=",		/* vim, full form */
+			":ts=",			/* vim, abbreviated form */
+			"set tabsize=",		/* will vi never die? */
+		/* more templates can be added here to support other editors */
+		};
+		char cbuf[80];
+		char *tp, **cp;
+		tp = cbuf;
 		do {
+			*tp++ = c = tok_nextc(tok);
+		} while (c != EOF && c != '\n' &&
+			 tp - cbuf + 1 < sizeof(cbuf));
+		*tp = '\0';
+		for (cp = tabforms; 
+		     cp < tabforms + sizeof(tabforms)/sizeof(tabforms[0]);
+		     cp++) {
+			if ((tp = strstr(cbuf, *cp))) {
+				int newsize = atoi(tp + strlen(*cp));
+
+				if (newsize >= 1 && newsize <= 40) {
+					tok->tabsize = newsize;
+					PySys_WriteStderr(
+						"Tab size set to %d\n",
+						newsize);
+				}
+			}
+		}
+		while (c != EOF && c != '\n')
 			c = tok_nextc(tok);
-		} while (c != EOF && c != '\n');
 	}
 	
 	/* Check for EOF and errors now */
