@@ -145,7 +145,7 @@ typedef void (*dl_funcptr)();
 
 #ifdef USE_MAC_SHARED_LIBRARY
 #include <CodeFragments.h>
-#ifdef __SC__ /* Really just an older version of Universal Headers */
+#ifdef __CFM68K__ /* Really just an older version of Universal Headers */
 #define CFragConnectionID ConnectionID
 #define kLoadCFrag 0x01
 #endif
@@ -228,7 +228,7 @@ load_dynamic_module(name, pathname)
 		if ( err ) {
 			char buf[512];
 			
-			sprintf(buf, "%#s: %s", errMessage, PyMac_StrError(err));
+			sprintf(buf, "%.*s: %s", errMessage[0], errMessage+1, PyMac_StrError(err));
 			err_setstr(ImportError, buf);
 			return NULL;
 		}
