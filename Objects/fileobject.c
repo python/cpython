@@ -56,6 +56,32 @@ PyFile_Name(PyObject *f)
 		return ((PyFileObject *)f)->f_name;
 }
 
+/* On Unix, fopen will succeed for directories.
+   In Python, there should be no file objects referring to
+   directories, so we need a check.  */
+
+static PyFileObject*
+dircheck(PyFileObject* f)
+{
+#if defined(HAVE_FSTAT) && defined(S_IFDIR) && defined(EISDIR)
+	struct stat buf;
+	if (f->f_fp == NULL)
+		return f;
+	if (fstat(fileno(f->f_fp), &buf) == 0 &&
+	    S_ISDIR(buf.st_mode)) {
+#ifdef HAVE_STRERROR
+		char *msg = strerror(EISDIR);
+#else
+		char *msg = "Is a directory";
+#endif
+		PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(is)", EISDIR, msg);
+		PyErr_SetObject(PyExc_IOError, exc);
+		return NULL;
+	}
+#endif
+	return f;
+}
+
 
 static PyObject *
 fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
@@ -77,6 +103,7 @@ fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
 	if (f->f_name == NULL || f->f_mode == NULL)
 		return NULL;
 	f->f_fp = fp;
+        f = dircheck(f);
 	return (PyObject *) f;
 }
 
@@ -130,6 +157,8 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
 		f = NULL;
 	}
+	if (f != NULL) 
+		f = dircheck(f);
 	return (PyObject *)f;
 }
 
