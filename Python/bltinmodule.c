@@ -591,12 +591,18 @@ builtin_complex(PyObject *self, PyObject *args)
 		}
 	}
 	else {
-		tmp = (*nbr->nb_float)(r);
+		tmp = PyNumber_Float(r);
 		if (own_r) {
 			Py_DECREF(r);
 		}
 		if (tmp == NULL)
 			return NULL;
+		if (!PyFloat_Check(tmp)) {
+			PyErr_SetString(PyExc_TypeError,
+					"float(r) didn't return a float");
+			Py_DECREF(tmp);
+			return NULL;
+		}
 		cr.real = PyFloat_AsDouble(tmp);
 		Py_DECREF(tmp);
 		cr.imag = 0.0;
