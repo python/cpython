@@ -24,6 +24,17 @@ class Queue(object):
             return s
 
 class ReadTest(unittest.TestCase):
+    def test_seek(self):
+        # all codecs should be able to encode these
+        s = u"%s\n%s\n" % (100*u"abc123", 100*u"def456")
+        encoding = self.encoding
+        reader = codecs.getreader(encoding)(StringIO.StringIO(s.encode(encoding)))
+        for t in xrange(5):
+            # Test that calling seek resets the internal codec state and buffers
+            reader.seek(0, 0)
+            line = reader.readline()
+            self.assertEqual(s[:len(line)], line)
+
     def check_partial(self, input, partialresults):
         # get a StreamReader for the encoding and feed the bytestring version
         # of input to the reader byte by byte. Read every available from
