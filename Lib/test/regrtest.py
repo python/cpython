@@ -512,6 +512,42 @@ _expectations = {
         test_winreg
         test_winsound
         """,
+   'mac':
+   		"""
+		test_al
+		test_bsddb
+		test_cd
+		test_cl
+		test_commands
+		test_crypt
+		test_dbm
+		test_dl
+		test_fcntl
+		test_fork1
+		test_gl
+		test_grp
+		test_imgfile
+		test_largefile
+		test_linuxaudiodev
+		test_locale
+		test_mmap
+		test_nis
+		test_ntpath
+		test_openpty
+		test_poll
+		test_popen2
+		test_pty
+		test_pwd
+		test_signal
+		test_socket_ssl
+		test_socketserver
+		test_sunaudiodev
+		test_sundry
+		test_timing
+		test_unicode_file
+		test_winreg
+		test_winsound
+		""",
 }
 
 class _ExpectedSkips:
