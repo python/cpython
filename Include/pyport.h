@@ -33,7 +33,6 @@ Used in:  LONG_LONG
 
 
 /* For backward compatibility only. Obsolete, do not use. */
-#define ANY void
 #ifdef HAVE_PROTOTYPES
 #define Py_PROTO(x) x
 #else

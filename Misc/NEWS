@@ -16,6 +16,11 @@ Build
 
 C API
 
+- An old #define of ANY as void has been removed from pyport.h.  This
+  hasn't been used since Python's pre-ANSI days, and the #define has
+  been marked as obsolete since then.  SF bug 495548 says it created
+  conflicts with other packages, so keeping it around wasn't harmless.
+
 - Because Python's magic number scheme broke on January 1st, we decided
   to stop Python development.  Thanks for all the fish!
 
