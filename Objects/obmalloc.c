@@ -686,6 +686,7 @@ _PyMalloc_Free(void *p)
 		 * was full and is in no list -- it's not in the freeblocks
 		 * list in any case).
 		 */
+		assert(pool->ref.count > 0);	/* else it was empty */
 		*(block **)p = lastfree = pool->freeblock;
 		pool->freeblock = (block *)p;
 		if (lastfree) {
