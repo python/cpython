@@ -24,6 +24,11 @@ if [ ! -e /usr/bin/python ]; then
 	echo "No /usr/bin/python; this script expects to be run on 10.3 only"
 	exit 1
 fi
+vers=`/usr/bin/python -V 2>&1`
+if [ "$vers" != "Python 2.3" ]; then
+    echo "/usr/bin/python is not version 2.3; this script expects to be run on 10.3 only"
+    exit 1
+fi
 
 TMPDIR=/tmp/_py
 #TMPDIR=/projects/_py
@@ -62,10 +67,28 @@ ln -s $INSTALLROOT/Library/Python/$PYVER $INSTALLROOT/System/Library/Frameworks/
 
 pushd $PYTHONOSXDIR
 
+# Check that the Apple Python 2.3 Makefile fixes have been applied on this
+# machine
+if python fixapplepython23.py -n; then
+    :
+else
+    echo
+    echo The additions installer will also install a fix to Apple-installed 2.3
+    echo to make building extensions work in the face of other Pythons.
+    echo But this system needs to have that fix to be able to put it in the installer.
+    echo
+    echo Please run $PYTHONOSXDIR/fixapplepython23.py to install the fix.
+    exit
+fi
+
 make -f Makefile.panther DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT
 
 # Remove the temporary symlink
 rm -r $INSTALLROOT/System
+
+# Install the Makefile fixes
+config=System/Library/Frameworks/Python.framework/Versions/2.3/lib/python2.3/config
+(cd / ; tar cf - $config/Makefile $config/PantherPythonFix) | (cd $INSTALLROOT; tar xf -)
 
 # Unfortunately all the ...MODE arguments above still don't do the trick.
 # Cop out, and recursively set everything group-writeable.

@@ -1,4 +1,4 @@
-This package will install the third build of
+This package will install beta 1 of the third build of
 the MacPython 2.3 additions for Mac OS X 10.3. 
 
 Installation requires approximately 3.3 MB of disk
@@ -34,6 +34,11 @@ Changes since the second build:
   - fixed "run with commandline python" to use pythonw.
   - fixed a crash with very big scripts folders.
   - fixed the double-scroll problem when you single-clicked.
+- Python fixes:
+  - One fix is made to the Apple-installed Python itself.
+    As distributed the installation of a newer Python would
+    cause Apple python to have problems building extensions,
+    this is fixed.
   
 Changes since the first build:
 - The startup crash of the IDE some people experienced
@@ -43,6 +48,6 @@ Changes since the first build:
   through the Package Manager.
 
 More information on MacPython can be found at
-http://www.cwi.nl/~jack/macpython.html, more
+http://www.cwi.nl/~jack/macpython, more
 information on Python in general at
 http://www.python.org.
