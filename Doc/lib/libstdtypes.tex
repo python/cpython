@@ -995,23 +995,33 @@ Files have the following methods:
 
 \begin{methoddesc}[file]{close}{}
   Close the file.  A closed file cannot be read or written anymore.
+  Any operation which requires that the file be open will raise an
+  \exception{IOError} after the file has been closed.  Calling
+  \method{close()} more than once is allowed.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{flush}{}
-  Flush the internal buffer, like \code{stdio}'s \cfunction{fflush()}.
+  Flush the internal buffer, like \code{stdio}'s
+  \cfunction{fflush()}.  This may be a no-op on some file-like
+  objects.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{isatty}{}
-  Return \code{1} if the file is connected to a tty(-like) device, else
-  \code{0}.
+  Return true if the file is connected to a tty(-like) device, else
+  false.  \strong{Note:} If a file-like object is not associated
+  with a real file, this method should \emph{not} be implemented.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{fileno}{}
-Return the integer ``file descriptor'' that is used by the underlying
-implementation to request I/O operations from the operating system.
-This can be useful for other, lower level interfaces that use file
-descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
-\refbimodindex{fcntl}
+  \index{file descriptor}
+  \index{descriptor, file}
+  Return the integer ``file descriptor'' that is used by the
+  underlying implementation to request I/O operations from the
+  operating system.  This can be useful for other, lower level
+  interfaces that use file descriptors, e.g.\ module
+  \refmodule{fcntl}\refbimodindex{fcntl} or \function{os.read()} and
+  friends.  \strong{Note:} File-like objects which do not have a real
+  file descriptor should \emph{not} provide this method!
 \end{methoddesc}
 
 \begin{methoddesc}[file]{read}{\optional{size}}
@@ -1040,9 +1050,9 @@ descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
   non-negative, it is a maximum byte count (including the trailing
   newline) and an incomplete line may be returned.
   An empty string is returned when \EOF{} is hit
-  immediately.  Note: Unlike \code{stdio}'s \cfunction{fgets()}, the returned
-  string contains null characters (\code{'\e 0'}) if they occurred in the
-  input.
+  immediately.  Note: Unlike \code{stdio}'s \cfunction{fgets()}, the
+  returned string contains null characters (\code{'\e 0'}) if they
+  occurred in the input.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{readlines}{\optional{sizehint}}
@@ -1050,7 +1060,9 @@ descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
   the lines thus read.  If the optional \var{sizehint} argument is
   present, instead of reading up to \EOF{}, whole lines totalling
   approximately \var{sizehint} bytes (possibly after rounding up to an
-  internal buffer size) are read.
+  internal buffer size) are read.  Objects implementing a file-like
+  interface may choose to ignore \var{sizehint} if it cannot be
+  implemented, or cannot be implemented efficiently.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{seek}{offset\optional{, whence}}
@@ -1067,11 +1079,11 @@ descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{truncate}{\optional{size}}
-Truncate the file's size.  If the optional size argument present, the
-file is truncated to (at most) that size.  The size defaults to the
-current position.  Availability of this function depends on the
-operating system version (for example, not all \UNIX{} versions support this
-operation).
+  Truncate the file's size.  If the optional \var{size} argument
+  present, the file is truncated to (at most) that size.  The size
+  defaults to the current position.  Availability of this function
+  depends on the operating system version (for example, not all
+  \UNIX{} versions support this operation).
 \end{methoddesc}
 
 \begin{methoddesc}[file]{write}{str}
@@ -1087,24 +1099,28 @@ Write a list of strings to the file.  There is no return value.
 \end{methoddesc}
 
 
-File objects also offer the following attributes:
+File objects also offer a number of other interesting attributes.
+These are not required for file-like objects, but should be
+implemented if they make sense for the particular object.
 
 \begin{memberdesc}[file]{closed}
 Boolean indicating the current state of the file object.  This is a
 read-only attribute; the \method{close()} method changes the value.
+It may not be available on all file-like objects.
 \end{memberdesc}
 
 \begin{memberdesc}[file]{mode}
 The I/O mode for the file.  If the file was created using the
 \function{open()} built-in function, this will be the value of the
-\var{mode} parameter.  This is a read-only attribute.
+\var{mode} parameter.  This is a read-only attribute and may not be
+present on all file-like objects.
 \end{memberdesc}
 
 \begin{memberdesc}[file]{name}
 If the file object was created using \function{open()}, the name of
 the file.  Otherwise, some string that indicates the source of the
 file object, of the form \samp{<\mbox{\ldots}>}.  This is a read-only
-attribute.
+attribute and may not be present on all file-like objects.
 \end{memberdesc}
 
 \begin{memberdesc}[file]{softspace}
