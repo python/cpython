@@ -871,14 +871,25 @@ binarysort(PyObject **lo, PyObject **hi, PyObject **start, PyObject *compare)
 		l = lo;
 		r = start;
 		pivot = *r;
+		/* Invariants:
+		 * pivot >= all in [lo, l).
+		 * pivot  < all in [r, start).
+		 * The second is vacuously true at the start.
+		 */
+		assert(l < r);
 		do {
 			p = l + ((r - l) >> 1);
 			IFLT(pivot, *p)
 				r = p;
 			else
-				l = p + 1;
+				l = p+1;
 		} while (l < r);
-		/* Pivot should go at l -- slide over to make room.
+		assert(l == r);
+		/* The invariants still hold, so pivot >= all in [lo, l) and
+		   pivot < all in [l, start), so pivot belongs at l.  Note
+		   that if there are elements equal to pivot, l points to the
+		   first slot after them -- that's why this sort is stable.
+		   Slide over to make room.
 		   Caution: using memmove is much slower under MSVC 5;
 		   we're not usually moving many slots. */
 		for (p = start; p > l; --p)
