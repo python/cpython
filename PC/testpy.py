@@ -28,4 +28,5 @@ for dir in sys.path:
       # Add the "test" directory to PYTHONPATH.
       sys.path = sys.path + [test]
 
-import autotest	# Standard Python tester.
+import regrtest	# Standard Python tester.
+regrtest.main()
