@@ -1409,7 +1409,7 @@ half_cmp(PyObject *v, PyObject *w)
 {
 	static PyObject *cmp_obj;
 	PyObject *args;
-	PyObject *cmpfunc;
+	PyObject *cmp_func;
 	PyObject *result;
 	long l;
 
@@ -1421,8 +1421,8 @@ half_cmp(PyObject *v, PyObject *w)
 			return -2;
 	}
 
-	cmpfunc = PyObject_GetAttr(v, cmp_obj);
-	if (cmpfunc == NULL) {
+	cmp_func = PyObject_GetAttr(v, cmp_obj);
+	if (cmp_func == NULL) {
 		PyErr_Clear();
 		return 2;
 	}
@@ -1431,9 +1431,9 @@ half_cmp(PyObject *v, PyObject *w)
 	if (args == NULL)
 		return -2;
 
-	result = PyEval_CallObject(cmpfunc, args);
+	result = PyEval_CallObject(cmp_func, args);
 	Py_DECREF(args);
-	Py_DECREF(cmpfunc);
+	Py_DECREF(cmp_func);
 
 	if (result == NULL)
 		return -2;
