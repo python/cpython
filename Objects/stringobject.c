@@ -991,24 +991,27 @@ string_contains(PyObject *a, PyObject *el)
 {
 	const char *lhs, *rhs, *end;
 	int size;
+
+	if (!PyString_CheckExact(el)) {
 #ifdef Py_USING_UNICODE
-	if (PyUnicode_Check(el))
-		return PyUnicode_Contains(a, el);
+		if (PyUnicode_Check(el))
+			return PyUnicode_Contains(a, el);
 #endif
-	if (!PyString_Check(el)) {
-		PyErr_SetString(PyExc_TypeError,
-			      "'in <string>' requires string as left operand");
-		return -1;
+		if (!PyString_Check(el)) {
+			PyErr_SetString(PyExc_TypeError,
+			    "'in <string>' requires string as left operand");
+			return -1;
+		}
 	}
-	size = PyString_Size(el);
+	size = PyString_GET_SIZE(el);
 	rhs = PyString_AS_STRING(el);
 	lhs = PyString_AS_STRING(a);
 
 	/* optimize for a single character */
 	if (size == 1)
-		return memchr(lhs, *rhs, PyString_Size(a)) != NULL;
+		return memchr(lhs, *rhs, PyString_GET_SIZE(a)) != NULL;
 
-	end = lhs + (PyString_Size(a) - size);
+	end = lhs + (PyString_GET_SIZE(a) - size);
 	while (lhs <= end) {
 		if (memcmp(lhs++, rhs, size) == 0)
 			return 1;
