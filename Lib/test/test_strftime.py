@@ -80,18 +80,32 @@ nonstandard_expectations = (
     ('%s', '%d' % nowsecs, 'seconds since the Epoch in UCT'),
     ('%3y', '%03d' % (now[0]%100),
      'year without century rendered using fieldwidth'),
+    ('%n', '\n', 'newline character'),
+    ('%t', '\t', 'tab character'),
     )
 
 if verbose:
     print "Strftime test, platform: %s, Python version: %s" % \
 	  (sys.platform, string.split(sys.version)[0])
-    expectations = expectations + nonstandard_expectations
 
 for e in expectations:
     result = time.strftime(e[0], now)
     if result == e[1]: continue
     if result[0] == '%':
-	print "Does not appear to support '%s' format" % e[0]
+	print "Does not support standard '%s' format (%s)" % (e[0], e[2])
     else:
 	print "Conflict for %s (%s):" % (e[0], e[2])
 	print "  Expected %s, but got %s" % (e[1], result)
+
+for e in nonstandard_expectations:
+    result = time.strftime(e[0], now)
+    if result == e[1]:
+	if verbose:
+	    print "Supports nonstandard '%s' format (%s)" % (e[0], e[2])
+    elif result[0] == '%':
+	if verbose:
+	    print "Does not appear to support '%s' format" % e[0]
+    else:
+	if verbose:
+	    print "Conflict for %s (%s):" % (e[0], e[2])
+	    print "  Expected %s, but got %s" % (e[1], result)
