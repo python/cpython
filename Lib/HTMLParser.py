@@ -8,6 +8,7 @@
 # and CDATA (character data -- only end tags are special).
 
 
+import markupbase
 import re
 import string
 
@@ -21,12 +22,8 @@ entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
 charref = re.compile('&#(?:[0-9]+|[xX][0-9a-fA-F]+)[^0-9a-fA-F]')
 
 starttagopen = re.compile('<[a-zA-Z]')
-piopen = re.compile(r'<\?')
 piclose = re.compile('>')
 endtagopen = re.compile('</')
-declopen = re.compile('<!')
-special = re.compile('<![^<>]*>')
-commentopen = re.compile('<!--')
 commentclose = re.compile(r'--\s*>')
 tagfind = re.compile('[a-zA-Z][-.a-zA-Z0-9:_]*')
 attrfind = re.compile(
@@ -47,12 +44,8 @@ locatestarttagend = re.compile(r"""
    )*
   \s*                                # trailing whitespace
 """, re.VERBOSE)
-endstarttag = re.compile(r"\s*/?>")
 endendtag = re.compile('>')
 endtagfind = re.compile('</\s*([a-zA-Z][-.a-zA-Z0-9:_]*)\s*>')
-
-declname = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*')
-declstringlit = re.compile(r'(\'[^\']*\'|"[^"]*")\s*')
 
 
 class HTMLParseError(Exception):
@@ -73,7 +66,7 @@ class HTMLParseError(Exception):
         return result
 
 
-class HTMLParser:
+class HTMLParser(markupbase.ParserBase):
     """Find tags and other markup and call handler functions.
 
     Usage:
@@ -105,9 +98,8 @@ class HTMLParser:
         self.rawdata = ''
         self.stack = []
         self.lasttag = '???'
-        self.lineno = 1
-        self.offset = 0
         self.interesting = interesting_normal
+        markupbase.ParserBase.reset(self)
 
     def feed(self, data):
         """Feed data to the parser.
@@ -122,26 +114,8 @@ class HTMLParser:
         """Handle any buffered data."""
         self.goahead(1)
 
-    # Internal -- update line number and offset.  This should be
-    # called for each piece of data exactly once, in order -- in other
-    # words the concatenation of all the input strings to this
-    # function should be exactly the entire input.
-    def updatepos(self, i, j):
-        if i >= j:
-            return j
-        rawdata = self.rawdata
-        nlines = string.count(rawdata, "\n", i, j)
-        if nlines:
-            self.lineno = self.lineno + nlines
-            pos = string.rindex(rawdata, "\n", i, j) # Should not fail
-            self.offset = j-(pos+1)
-        else:
-            self.offset = self.offset + j-i
-        return j
-
-    def getpos(self):
-        """Return current line number and offset."""
-        return self.lineno, self.offset
+    def error(self, message):
+        raise HTMLParseError(message, self.getpos())
 
     __starttag_text = None
 
@@ -178,11 +152,11 @@ class HTMLParser:
                     k = self.parse_endtag(i)
                     if k >= 0:
                         self.clear_cdata_mode()
-                elif commentopen.match(rawdata, i): # <!--
+                elif rawdata.startswith("<!--", i): # <!--
                     k = self.parse_comment(i)
-                elif piopen.match(rawdata, i): # <?
+                elif rawdata.startswith("<?", i): # <?
                     k = self.parse_pi(i)
-                elif declopen.match(rawdata, i): # <!
+                elif rawdata.startswith("<!", i): # <!
                     k = self.parse_declaration(i)
                 elif (i + 1) < n:
                     self.handle_data("<")
@@ -191,8 +165,7 @@ class HTMLParser:
                     break
                 if k < 0:
                     if end:
-                        raise HTMLParseError("EOF in middle of construct",
-                                             self.getpos())
+                        self.error("EOF in middle of construct")
                     break
                 i = self.updatepos(i, k)
             elif rawdata[i:i+2] == "&#":
@@ -222,9 +195,7 @@ class HTMLParser:
                     # match.group() will contain at least 2 chars
                     rest = rawdata[i:]
                     if end and match.group() == rest:
-                        raise HTMLParseError(
-                            "EOF in middle of entity or char ref",
-                            self.getpos())
+                        self.error("EOF in middle of entity or char ref")
                     # incomplete
                     break
                 elif (i + 1) < n:
@@ -254,263 +225,6 @@ class HTMLParser:
             self.handle_comment(rawdata[i+4: j])
         j = match.end()
         return j
-
-    # Internal -- parse declaration.
-    def parse_declaration(self, i):
-        # This is some sort of declaration; in "HTML as
-        # deployed," this should only be the document type
-        # declaration ("<!DOCTYPE html...>").
-        rawdata = self.rawdata
-        j = i + 2
-        assert rawdata[i:j] == "<!", "unexpected call to parse_declaration"
-        if rawdata[j:j+1] in ("-", ""):
-            # Start of comment followed by buffer boundary,
-            # or just a buffer boundary.
-            return -1
-        # in practice, this should look like: ((name|stringlit) S*)+ '>'
-        n = len(rawdata)
-        decltype, j = self.scan_name(j, i)
-        if j < 0:
-            return j
-        if decltype.lower() != "doctype":
-            raise HTMLParseError("unknown declaration: '%s'" % decltype,
-                                 self.getpos())
-        while j < n:
-            c = rawdata[j]
-            if c == ">":
-                # end of declaration syntax
-                data = rawdata[i+2:j]
-                self.handle_decl(data)
-                return j + 1
-            if c in "\"'":
-                m = declstringlit.match(rawdata, j)
-                if not m:
-                    return -1 # incomplete
-                j = m.end()
-            elif c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                name, j = self.scan_name(j, i)
-            elif c == "[" and decltype == "doctype":
-                j = self.parse_doctype_subset(j + 1, i)
-            else:
-                raise HTMLParseError(
-                    "unexpected char in declaration: %s" % `rawdata[j]`,
-                    self.getpos())
-            if j < 0:
-                return j
-        return -1 # incomplete
-
-    # Internal -- scan past the internal subset in a <!DOCTYPE declaration,
-    # returning the index just past any whitespace following the trailing ']'.
-    def parse_doctype_subset(self, i, declstartpos):
-        rawdata = self.rawdata
-        n = len(rawdata)
-        j = i
-        while j < n:
-            c = rawdata[j]
-            if c == "<":
-                s = rawdata[j:j+2]
-                if s == "<":
-                    # end of buffer; incomplete
-                    return -1
-                if s != "<!":
-                    self.updatepos(declstartpos, j + 1)
-                    raise HTMLParseError("unexpect char in internal subset",
-                                         self.getpos())
-                if (j + 2) == n:
-                    # end of buffer; incomplete
-                    return -1
-                if (j + 4) > n:
-                    # end of buffer; incomplete
-                    return -1
-                if rawdata[j:j+4] == "<!--":
-                    j = self.parse_comment(j, report=0)
-                    if j < 0:
-                        return j
-                    continue
-                name, j = self.scan_name(j + 2, declstartpos)
-                if j == -1:
-                    return -1
-                if name not in ("attlist", "element", "entity", "notation"):
-                    self.updatepos(declstartpos, j + 2)
-                    raise HTMLParseError(
-                        "unknown declaration %s in internal subset" % `name`,
-                        self.getpos())
-                # handle the individual names
-                meth = getattr(self, "parse_doctype_" + name)
-                j = meth(j, declstartpos)
-                if j < 0:
-                    return j
-            elif c == "%":
-                # parameter entity reference
-                if (j + 1) == n:
-                    # end of buffer; incomplete
-                    return -1
-                s, j = self.scan_name(j + 1, declstartpos)
-                if j < 0:
-                    return j
-                if rawdata[j] == ";":
-                    j = j + 1
-            elif c == "]":
-                j = j + 1
-                while j < n and rawdata[j] in string.whitespace:
-                    j = j + 1
-                if j < n:
-                    if rawdata[j] == ">":
-                        return j
-                    self.updatepos(declstartpos, j)
-                    raise HTMLParseError(
-                        "unexpected char after internal subset",
-                        self.getpos())
-                else:
-                    return -1
-            elif c in string.whitespace:
-                j = j + 1
-            else:
-                self.updatepos(declstartpos, j)
-                raise HTMLParseError(
-                    "unexpected char %s in internal subset" % `c`,
-                    self.getpos())
-        # end of buffer reached
-        return -1
-
-    def parse_doctype_element(self, i, declstartpos):
-        rawdata = self.rawdata
-        n = len(rawdata)
-        name, j = self.scan_name(i, declstartpos)
-        if j == -1:
-            return -1
-        # style content model; just skip until '>'
-        if '>' in rawdata[j:]:
-            return string.find(rawdata, ">", j) + 1
-        return -1
-
-    def parse_doctype_attlist(self, i, declstartpos):
-        rawdata = self.rawdata
-        name, j = self.scan_name(i, declstartpos)
-        c = rawdata[j:j+1]
-        if c == "":
-            return -1
-        if c == ">":
-            return j + 1
-        while 1:
-            # scan a series of attribute descriptions; simplified:
-            #   name type [value] [#constraint]
-            name, j = self.scan_name(j, declstartpos)
-            if j < 0:
-                return j
-            c = rawdata[j:j+1]
-            if c == "":
-                return -1
-            if c == "(":
-                # an enumerated type; look for ')'
-                if ")" in rawdata[j:]:
-                    j = string.find(rawdata, ")", j) + 1
-                else:
-                    return -1
-                while rawdata[j:j+1] in string.whitespace:
-                    j = j + 1
-                if not rawdata[j:]:
-                    # end of buffer, incomplete
-                    return -1
-            else:
-                name, j = self.scan_name(j, declstartpos)
-            c = rawdata[j:j+1]
-            if not c:
-                return -1
-            if c in "'\"":
-                m = declstringlit.match(rawdata, j)
-                if m:
-                    j = m.end()
-                else:
-                    return -1
-                c = rawdata[j:j+1]
-                if not c:
-                    return -1
-            if c == "#":
-                if rawdata[j:] == "#":
-                    # end of buffer
-                    return -1
-                name, j = self.scan_name(j + 1, declstartpos)
-                if j < 0:
-                    return j
-                c = rawdata[j:j+1]
-                if not c:
-                    return -1
-            if c == '>':
-                # all done
-                return j + 1
-
-    def parse_doctype_notation(self, i, declstartpos):
-        name, j = self.scan_name(i, declstartpos)
-        if j < 0:
-            return j
-        rawdata = self.rawdata
-        while 1:
-            c = rawdata[j:j+1]
-            if not c:
-                # end of buffer; incomplete
-                return -1
-            if c == '>':
-                return j + 1
-            if c in "'\"":
-                m = declstringlit.match(rawdata, j)
-                if not m:
-                    return -1
-                j = m.end()
-            else:
-                name, j = self.scan_name(j, declstartpos)
-                if j < 0:
-                    return j
-
-    def parse_doctype_entity(self, i, declstartpos):
-        rawdata = self.rawdata
-        if rawdata[i:i+1] == "%":
-            j = i + 1
-            while 1:
-                c = rawdata[j:j+1]
-                if not c:
-                    return -1
-                if c in string.whitespace:
-                    j = j + 1
-                else:
-                    break
-        else:
-            j = i
-        name, j = self.scan_name(j, declstartpos)
-        if j < 0:
-            return j
-        while 1:
-            c = self.rawdata[j:j+1]
-            if not c:
-                return -1
-            if c in "'\"":
-                m = declstringlit.match(rawdata, j)
-                if m:
-                    j = m.end()
-                else:
-                    return -1    # incomplete
-            elif c == ">":
-                return j + 1
-            else:
-                name, j = self.scan_name(j, declstartpos)
-                if j < 0:
-                    return j
-
-    def scan_name(self, i, declstartpos):
-        rawdata = self.rawdata
-        n = len(rawdata)
-        if i == n:
-            return None, -1
-        m = declname.match(rawdata, i)
-        if m:
-            s = m.group()
-            name = s.strip()
-            if (i + len(s)) == n:
-                return None, -1  # end of buffer
-            return name.lower(), m.end()
-        else:
-            self.updatepos(declstartpos, i)
-            raise HTMLParseError("expected name token", self.getpos())
 
     # Internal -- parse processing instr, return end or -1 if not terminated
     def parse_pi(self, i):
@@ -563,9 +277,8 @@ class HTMLParser:
                          - string.rfind(self.__starttag_text, "\n")
             else:
                 offset = offset + len(self.__starttag_text)
-            raise HTMLParseError("junk characters in start tag: %s"
-                                 % `rawdata[k:endpos][:20]`,
-                                 (lineno, offset))
+            self.error("junk characters in start tag: %s"
+                       % `rawdata[k:endpos][:20]`)
         if end[-2:] == '/>':
             # XHTML-style empty tag: <span attr="value" />
             self.handle_startendtag(tag, attrs)
@@ -594,8 +307,7 @@ class HTMLParser:
                     return -1
                 # else bogus input
                 self.updatepos(i, j + 1)
-                raise HTMLParseError("malformed empty start tag",
-                                     self.getpos())
+                self.error("malformed empty start tag")
             if next == "":
                 # end of input
                 return -1
@@ -605,8 +317,8 @@ class HTMLParser:
                 # '/' from a '/>' ending
                 return -1
             self.updatepos(i, j)
-            raise HTMLParseError("malformed start tag", self.getpos())
-        raise AssertionError("we should not gt here!")
+            self.error("malformed start tag")
+        raise AssertionError("we should not get here!")
 
     # Internal -- parse endtag, return end or -1 if incomplete
     def parse_endtag(self, i):
@@ -618,8 +330,7 @@ class HTMLParser:
         j = match.end()
         match = endtagfind.match(rawdata, i) # </ + tag + >
         if not match:
-            raise HTMLParseError("bad end tag: %s" % `rawdata[i:j]`,
-                                 self.getpos())
+            self.error("bad end tag: %s" % `rawdata[i:j]`)
         tag = match.group(1)
         self.handle_endtag(string.lower(tag))
         return j
@@ -660,6 +371,9 @@ class HTMLParser:
     # Overridable -- handle processing instruction
     def handle_pi(self, data):
         pass
+
+    def unknown_decl(self, data):
+        self.error("unknown declaration: " + `data`)
 
     # Internal -- helper to remove special character quoting
     def unescape(self, s):
