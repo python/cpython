@@ -331,7 +331,7 @@ class DumbWriter(NullWriter):
         self.atbreak = 0
 
     def send_paragraph(self, blankline):
-        self.file.write('\n' + '\n'*blankline)
+        self.file.write('\n'*blankline)
         self.col = 0
         self.atbreak = 0
 
