@@ -1,9 +1,13 @@
+What's New in Python 2.2.2 (final) ?
+Release date: dd-Mmm-yyyy
+====================================
+
 What's New in Python 2.2.2b1?
 Release date: 7-Oct-2002
 =============================
 
 Almost everything in this release is a pure bugfix and is backported
-from a corresponding bugfix alrady applied to Python 2.3.  While at
+from a corresponding bugfix already applied to Python 2.3.  While at
 the time of writing, Python 2.3 is still in pre-alpha form, only
 accessible via CVS, it receives continuous and extensive testing by
 its developers.  The list below is not a complete list of fixed bugs;
