@@ -6,7 +6,6 @@
 import stdwin
 from stdwinevents import *
 import rect
-from minmax import min, max
 from Buttons import *
 
 
