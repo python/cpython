@@ -1282,8 +1282,7 @@ class DocTestRunner:
         Report that the given example failed.
         """
         out(self._failure_header(test, example) +
-            self._checker.output_difference(example.want, got,
-                                            self.optionflags))
+            self._checker.output_difference(example, got, self.optionflags))
 
     def report_unexpected_exception(self, out, test, example, exc_info):
         """
@@ -1608,13 +1607,14 @@ class OutputChecker:
         # The other diff types need at least a few lines to be helpful.
         return want.count('\n') > 2 and got.count('\n') > 2
 
-    def output_difference(self, want, got, optionflags):
+    def output_difference(self, example, got, optionflags):
         """
         Return a string describing the differences between the
-        expected output for an example (`want`) and the actual output
-        (`got`).  `optionflags` is the set of option flags used to
-        compare `want` and `got`.
+        expected output for a given example (`example`) and the actual
+        output (`got`).  `optionflags` is the set of option flags used
+        to compare `want` and `got`.
         """
+        want = example.want
         # If <BLANKLINE>s are being used, then replace blank lines
         # with <BLANKLINE> in the actual output string.
         if not (optionflags & DONT_ACCEPT_BLANKLINE):
