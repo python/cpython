@@ -20,6 +20,7 @@ from Tkinter import *
 import imp
 
 import ZoomHeight
+from configHandler import idleConf
 
 ICONDIR = "Icons"
 
@@ -249,10 +250,11 @@ class TreeNode:
         except AttributeError:
             # padding carefully selected (on Windows) to match Entry widget:
             self.label = Label(self.canvas, text=text, bd=0, padx=2, pady=2)
+        theme = idleConf.GetOption('main','Theme','name')
         if self.selected:
-            self.label.configure(fg="white", bg="darkblue")
+            self.label.configure(idleConf.GetHighlight(theme, 'hilite'))
         else:
-            self.label.configure(fg="black", bg="white")
+            self.label.configure(idleConf.GetHighlight(theme, 'normal'))
         id = self.canvas.create_window(textx, texty,
                                        anchor="nw", window=self.label)
         self.label.bind("<1>", self.select_or_edit)

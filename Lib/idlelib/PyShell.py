@@ -528,7 +528,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         item = RemoteObjectBrowser.StubObjectTreeItem(self.rpcclt, oid)
         from TreeWidget import ScrolledCanvas, TreeNode
         top = Toplevel(self.tkconsole.root)
-        sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
+        theme = idleConf.GetOption('main','Theme','name')
+        background = idleConf.GetHighlight(theme, 'normal')['background']
+        sc = ScrolledCanvas(top, bg=background, highlightthickness=0)
         sc.frame.pack(expand=1, fill="both")
         node = TreeNode(sc.canvas, None, item)
         node.expand()
