@@ -7,8 +7,8 @@ from Tkinter import *
 
 def _clear_entry_widget(event):
     try:
-	widget = event.widget
-	widget.delete(0, INSERT)
+        widget = event.widget
+        widget.delete(0, INSERT)
     except: pass
 def install_keybindings(root):
     root.bind_class('Entry', '<Control-u>', _clear_entry_widget)
@@ -23,12 +23,12 @@ def make_toplevel(master, title=None, class_=None):
     """
 
     if class_:
-	widget = Toplevel(master, class_=class_)
+        widget = Toplevel(master, class_=class_)
     else:
-	widget = Toplevel(master)
+        widget = Toplevel(master)
     if title:
-	widget.title(title)
-	widget.iconname(title)
+        widget.title(title)
+        widget.iconname(title)
     return widget
 
 def set_transient(widget, master, relx=0.5, rely=0.3, expose=1):
@@ -43,26 +43,26 @@ def set_transient(widget, master, relx=0.5, rely=0.3, expose=1):
     widget.transient(master)
     widget.update_idletasks() # Actualize geometry information
     if master.winfo_ismapped():
-	m_width = master.winfo_width()
-	m_height = master.winfo_height()
-	m_x = master.winfo_rootx()
-	m_y = master.winfo_rooty()
+        m_width = master.winfo_width()
+        m_height = master.winfo_height()
+        m_x = master.winfo_rootx()
+        m_y = master.winfo_rooty()
     else:
-	m_width = master.winfo_screenwidth()
-	m_height = master.winfo_screenheight()
-	m_x = m_y = 0
+        m_width = master.winfo_screenwidth()
+        m_height = master.winfo_screenheight()
+        m_x = m_y = 0
     w_width = widget.winfo_reqwidth()
     w_height = widget.winfo_reqheight()
     x = m_x + (m_width - w_width) * relx
     y = m_y + (m_height - w_height) * rely
     widget.geometry("+%d+%d" % (x, y))
     if expose:
-	widget.deiconify()	# Become visible at the desired location
+        widget.deiconify()      # Become visible at the desired location
     return widget
 
 
 def make_scrollbars(parent, hbar, vbar, pack=1, class_=None, name=None,
-		    takefocus=0):
+                    takefocus=0):
 
     """Subroutine to create a frame with scrollbars.
 
@@ -76,38 +76,38 @@ def make_scrollbars(parent, hbar, vbar, pack=1, class_=None, name=None,
 
     """
     if class_:
-	if name: frame = Frame(parent, class_=class_, name=name)
-	else: frame = Frame(parent, class_=class_)
+        if name: frame = Frame(parent, class_=class_, name=name)
+        else: frame = Frame(parent, class_=class_)
     else:
-	if name: frame = Frame(parent, name=name)
-	else: frame = Frame(parent)
+        if name: frame = Frame(parent, name=name)
+        else: frame = Frame(parent)
 
     if pack:
-	frame.pack(fill=BOTH, expand=1)
+        frame.pack(fill=BOTH, expand=1)
 
     corner = None
     if vbar:
-	if not hbar:
-	    vbar = Scrollbar(frame, takefocus=takefocus)
-	    vbar.pack(fill=Y, side=RIGHT)
-	else:
-	    vbarframe = Frame(frame, borderwidth=0)
-	    vbarframe.pack(fill=Y, side=RIGHT)
-	    vbar = Scrollbar(frame, name="vbar", takefocus=takefocus)
-	    vbar.pack(in_=vbarframe, expand=1, fill=Y, side=TOP)
-	    sbwidth = vbar.winfo_reqwidth()
-	    corner = Frame(vbarframe, width=sbwidth, height=sbwidth)
-	    corner.propagate(0)
-	    corner.pack(side=BOTTOM)
+        if not hbar:
+            vbar = Scrollbar(frame, takefocus=takefocus)
+            vbar.pack(fill=Y, side=RIGHT)
+        else:
+            vbarframe = Frame(frame, borderwidth=0)
+            vbarframe.pack(fill=Y, side=RIGHT)
+            vbar = Scrollbar(frame, name="vbar", takefocus=takefocus)
+            vbar.pack(in_=vbarframe, expand=1, fill=Y, side=TOP)
+            sbwidth = vbar.winfo_reqwidth()
+            corner = Frame(vbarframe, width=sbwidth, height=sbwidth)
+            corner.propagate(0)
+            corner.pack(side=BOTTOM)
     else:
-	vbar = None
+        vbar = None
 
     if hbar:
-	hbar = Scrollbar(frame, orient=HORIZONTAL, name="hbar",
-			 takefocus=takefocus)
-	hbar.pack(fill=X, side=BOTTOM)
+        hbar = Scrollbar(frame, orient=HORIZONTAL, name="hbar",
+                         takefocus=takefocus)
+        hbar.pack(fill=X, side=BOTTOM)
     else:
-	hbar = None
+        hbar = None
 
     return hbar, vbar, frame
 
@@ -121,20 +121,20 @@ def set_scroll_commands(widget, hbar, vbar):
     """
 
     if vbar:
-	widget['yscrollcommand'] = (vbar, 'set')
-	vbar['command'] = (widget, 'yview')
+        widget['yscrollcommand'] = (vbar, 'set')
+        vbar['command'] = (widget, 'yview')
 
     if hbar:
-	widget['xscrollcommand'] = (hbar, 'set')
-	hbar['command'] = (widget, 'xview')
+        widget['xscrollcommand'] = (hbar, 'set')
+        hbar['command'] = (widget, 'xview')
 
     widget.vbar = vbar
     widget.hbar = hbar
 
 
 def make_text_box(parent, width=0, height=0, hbar=0, vbar=1,
-		  fill=BOTH, expand=1, wrap=WORD, pack=1,
-		  class_=None, name=None, takefocus=None):
+                  fill=BOTH, expand=1, wrap=WORD, pack=1,
+                  class_=None, name=None, takefocus=None):
 
     """Subroutine to create a text box.
 
@@ -148,8 +148,8 @@ def make_text_box(parent, width=0, height=0, hbar=0, vbar=1,
 
     """
     hbar, vbar, frame = make_scrollbars(parent, hbar, vbar, pack,
-					class_=class_, name=name,
-					takefocus=takefocus)
+                                        class_=class_, name=name,
+                                        takefocus=takefocus)
 
     widget = Text(frame, wrap=wrap, name="text")
     if width: widget.config(width=width)
@@ -162,16 +162,16 @@ def make_text_box(parent, width=0, height=0, hbar=0, vbar=1,
 
 
 def make_list_box(parent, width=0, height=0, hbar=0, vbar=1,
-		  fill=BOTH, expand=1, pack=1, class_=None, name=None,
-		  takefocus=None):
+                  fill=BOTH, expand=1, pack=1, class_=None, name=None,
+                  takefocus=None):
 
     """Subroutine to create a list box.
 
     Like make_text_box().
     """
     hbar, vbar, frame = make_scrollbars(parent, hbar, vbar, pack,
-					class_=class_, name=name,
-					takefocus=takefocus)
+                                        class_=class_, name=name,
+                                        takefocus=takefocus)
 
     widget = Listbox(frame, name="listbox")
     if width: widget.config(width=width)
@@ -184,8 +184,8 @@ def make_list_box(parent, width=0, height=0, hbar=0, vbar=1,
 
 
 def make_canvas(parent, width=0, height=0, hbar=1, vbar=1,
-		fill=BOTH, expand=1, pack=1, class_=None, name=None,
-		takefocus=None):
+                fill=BOTH, expand=1, pack=1, class_=None, name=None,
+                takefocus=None):
 
     """Subroutine to create a canvas.
 
@@ -194,8 +194,8 @@ def make_canvas(parent, width=0, height=0, hbar=1, vbar=1,
     """
 
     hbar, vbar, frame = make_scrollbars(parent, hbar, vbar, pack,
-					class_=class_, name=name,
-					takefocus=takefocus)
+                                        class_=class_, name=name,
+                                        takefocus=takefocus)
 
     widget = Canvas(frame, scrollregion=(0, 0, width, height), name="canvas")
     if width: widget.config(width=width)
@@ -228,9 +228,9 @@ def make_form_entry(parent, label, borderwidth=None):
     label.pack(side=LEFT)
 
     if borderwidth is None:
-	entry = Entry(frame, relief=SUNKEN)
+        entry = Entry(frame, relief=SUNKEN)
     else:
-	entry = Entry(frame, relief=SUNKEN, borderwidth=borderwidth)
+        entry = Entry(frame, relief=SUNKEN, borderwidth=borderwidth)
     entry.pack(side=LEFT, fill=X, expand=1)
 
     return entry, frame
@@ -243,8 +243,8 @@ def make_form_entry(parent, label, borderwidth=None):
 # expandable while still aligning the colons.  This doesn't work yet.
 #
 def make_labeled_form_entry(parent, label, entrywidth=20, entryheight=1,
-			    labelwidth=0, borderwidth=None,
-			    takefocus=None):
+                            labelwidth=0, borderwidth=None,
+                            takefocus=None):
     """Subroutine to create a form entry.
 
     Create:
@@ -261,32 +261,32 @@ def make_labeled_form_entry(parent, label, entrywidth=20, entryheight=1,
     label = Label(frame, text=label, width=labelwidth, anchor=E)
     label.pack(side=LEFT)
     if entryheight == 1:
-	if borderwidth is None:
-	    entry = Entry(frame, relief=SUNKEN, width=entrywidth)
-	else:
-	    entry = Entry(frame, relief=SUNKEN, width=entrywidth,
-			  borderwidth=borderwidth)
-	entry.pack(side=RIGHT, expand=1, fill=X)
-	frame.pack(fill=X)
+        if borderwidth is None:
+            entry = Entry(frame, relief=SUNKEN, width=entrywidth)
+        else:
+            entry = Entry(frame, relief=SUNKEN, width=entrywidth,
+                          borderwidth=borderwidth)
+        entry.pack(side=RIGHT, expand=1, fill=X)
+        frame.pack(fill=X)
     else:
-	entry = make_text_box(frame, entrywidth, entryheight, 1, 1,
-			      takefocus=takefocus)
-	frame.pack(fill=BOTH, expand=1)
+        entry = make_text_box(frame, entrywidth, entryheight, 1, 1,
+                              takefocus=takefocus)
+        frame.pack(fill=BOTH, expand=1)
 
     return entry, frame, label
 
 
 def make_double_frame(master=None, class_=None, name=None, relief=RAISED,
-		      borderwidth=1):
+                      borderwidth=1):
     """Create a pair of frames suitable for 'hosting' a dialog."""
     if name:
-	if class_: frame = Frame(master, class_=class_, name=name)
-	else: frame = Frame(master, name=name)
+        if class_: frame = Frame(master, class_=class_, name=name)
+        else: frame = Frame(master, name=name)
     else:
-	if class_: frame = Frame(master, class_=class_)
-	else: frame = Frame(master)
+        if class_: frame = Frame(master, class_=class_)
+        else: frame = Frame(master)
     top = Frame(frame, name="topframe", relief=relief,
-		borderwidth=borderwidth)
+                borderwidth=borderwidth)
     bottom = Frame(frame, name="bottomframe")
     bottom.pack(fill=X, padx='1m', pady='1m', side=BOTTOM)
     top.pack(expand=1, fill=BOTH, padx='1m', pady='1m')
@@ -298,7 +298,7 @@ def make_double_frame(master=None, class_=None, name=None, relief=RAISED,
 
 
 def make_group_frame(master, name=None, label=None, fill=Y,
-		     side=None, expand=None, font=None):
+                     side=None, expand=None, font=None):
     """Create nested frames with a border and optional label.
 
     The outer frame is only used to provide the decorative border, to
@@ -311,7 +311,7 @@ def make_group_frame(master, name=None, label=None, fill=Y,
     outer = Frame(master, borderwidth=2, relief=GROOVE)
     outer.pack(expand=expand, fill=fill, side=side)
     if label:
-	Label(outer, text=label, font=font, anchor=W).pack(fill=X)
+        Label(outer, text=label, font=font, anchor=W).pack(fill=X)
     inner = Frame(master, borderwidth='1m', name=name)
     inner.pack(expand=1, fill=BOTH, in_=outer)
     inner.forget = outer.forget
@@ -326,20 +326,20 @@ def unify_button_widths(*buttons):
     """
     wid = 0
     for btn in buttons:
-	wid = max(wid, len(btn["text"]))
+        wid = max(wid, len(btn["text"]))
     for btn in buttons:
-	btn["width"] = wid
+        btn["width"] = wid
 
 
 def flatten(msg):
     """Turn a list or tuple into a single string -- recursively."""
     t = type(msg)
     if t in (ListType, TupleType):
-	msg = string.join(map(flatten, msg))
+        msg = string.join(map(flatten, msg))
     elif t is ClassType:
-	msg = msg.__name__
+        msg = msg.__name__
     else:
-	msg = str(msg)
+        msg = str(msg)
     return msg
 
 
@@ -356,8 +356,8 @@ def test():
     entry, eframe = make_form_entry(root, 'Boolean:')
     text, tframe = make_text_box(root)
     def enter(event, entry=entry, text=text):
-	s = boolean(entry.get()) and '\nyes' or '\nno'
-	text.insert('end', s)
+        s = boolean(entry.get()) and '\nyes' or '\nno'
+        text.insert('end', s)
     entry.bind('<Return>', enter)
     entry.insert(END, flatten(sys.argv))
     root.mainloop()
