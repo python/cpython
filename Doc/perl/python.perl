@@ -58,11 +58,14 @@ sub do_cmd_varvars{
     $_;
 }
 
-sub do_cmd_pytype{
+sub use_current{
     local($_) = @_;
     s|$next_pair_pr_rx|\2|;
     $_;
 }
+
+sub do_cmd_pytype{ use_current(); }
+sub do_cmd_makevar{ use_current(); }
 
 # Logical formatting (some based on texinfo), needs to be converted to
 # minimalist HTML.  The "minimalist" is primarily to reduce the size of
