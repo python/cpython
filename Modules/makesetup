@@ -132,6 +132,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			-[IDUC]*)	cpps="$cpps $arg";;
 			-[A-Zl]*)	libs="$libs $arg";;
 			*.a)		libs="$libs $arg";;
+			*.so)		libs="$libs $arg";;
+			*.sl)		libs="$libs $arg";;
 			*.o)		srcs="$srcs `basename $arg .o`.c";;
 			*.[cC])		srcs="$srcs $arg";;
 			*.cc)		srcs="$srcs $arg";;
