@@ -33,6 +33,8 @@ How to change the Windows build number:
 
 Windows Python BUILD numbers
 ----------------------------
+  55    2.4.0a2
+        4-Aug-2004
   54    2.4.0a1
         8-Jul-2004
   53    2.3.4 (final)
