@@ -39,6 +39,7 @@ extern DL_IMPORT(int) Py_DebugFlag;
 extern DL_IMPORT(int) Py_VerboseFlag;
 extern DL_IMPORT(int) Py_InteractiveFlag;
 extern DL_IMPORT(int) Py_OptimizeFlag;
+extern DL_IMPORT(int) Py_NoSiteFlag;
 extern DL_IMPORT(int) Py_UseClassExceptionsFlag;
 
 void Py_FatalError	Py_PROTO((char *));
