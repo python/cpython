@@ -1842,7 +1842,6 @@ PyImport_Import(PyObject *module_name)
 	static PyObject *silly_list = NULL;
 	static PyObject *builtins_str = NULL;
 	static PyObject *import_str = NULL;
-	static PyObject *standard_builtins = NULL;
 	PyObject *globals = NULL;
 	PyObject *import = NULL;
 	PyObject *builtins = NULL;
@@ -1873,15 +1872,10 @@ PyImport_Import(PyObject *module_name)
 		/* No globals -- use standard builtins, and fake globals */
 		PyErr_Clear();
 
-		if (standard_builtins == NULL) {
-			standard_builtins =
-				PyImport_ImportModule("__builtin__");
-			if (standard_builtins == NULL)
-				return NULL;
-		}
-
-		builtins = standard_builtins;
-		Py_INCREF(builtins);
+		builtins = PyImport_ImportModuleEx("__builtin__",
+		                                   NULL, NULL, NULL);
+		if (builtins == NULL)
+			return NULL;
 		globals = Py_BuildValue("{OO}", builtins_str, builtins);
 		if (globals == NULL)
 			goto err;
