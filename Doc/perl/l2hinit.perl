@@ -8,6 +8,7 @@
 
 $INFO = 1;              # 0 = do not make a "About this document..." section
 $MAX_LINK_DEPTH = 3;
+$ADDRESS = '';
 
 $NUMBERED_FOOTNOTES = 1;
 
