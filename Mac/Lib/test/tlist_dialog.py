@@ -28,7 +28,7 @@ def dodialog(items):
 	# Draw it.
 	#
 	list.LSetDrawingMode(1)
-	list.LUpdate(self.wid.GetWindowPort().visRgn)
+	list.LUpdate(d.GetDialogWindow().GetWindowPort().visRgn)
 	#
 	# Do the (modeless) dialog
 	#
@@ -41,7 +41,7 @@ def dodialog(items):
 		if what == updateEvt:
 			# XXXX We just always update our list (sigh...)
 			SetPort(window)
-			list.LUpdate(self.wid.GetWindowPort().visRgn)
+			list.LUpdate(d.GetDialogWindow().GetWindowPort().visRgn)
 		if IsDialogEvent(ev):
 			# It is a dialog event. See if it's ours.
 			ok, window, item = DialogSelect(ev)
