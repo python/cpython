@@ -193,24 +193,30 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def spawn_subprocess(self):
         port = 8833
         addr = ("localhost", port)
+        # Spawn the Python execution "server"
         w = ['-W' + s for s in sys.warnoptions]
         args = [sys.executable] + w + ["-c", "__import__('run').main()",
                                        str(port)]
         self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
-        for i in range(5):
+        # Idle starts listening for connection on localhost, retry since
+        # Idle may be restarted before port is available for rebinding
+        # XXX 25 July 2002 KBK Find out what is causing the delayed release!
+        for i in range(12):
             time.sleep(i)
             try:
                 self.rpcclt = rpc.RPCClient(addr)
                 break
             except socket.error, err:
-                if i > 3:
-                    print >>sys.__stderr__, "Socket error:", err, "; retry..."
+                if i < 5:
+                    print>>sys.__stderr__, ". ",
+                else:
+                    print>>sys.__stderr__,"\nIdle socket error: " + err[1]\
+                                                    + ", retrying..."
         else:
-            # XXX Make this a dialog?  #GvR
-            print >>sys.__stderr__, "Can't spawn subprocess!"
-            # XXX Add Stephen's error msg, resolve the two later... KBK 09Jun02
             display_port_binding_error()
             return
+        # Accept the connection from the Python execution server
+        self.rpcclt.accept()
         self.rpcclt.register("stdin", self.tkconsole)
         self.rpcclt.register("stdout", self.tkconsole.stdout)
         self.rpcclt.register("stderr", self.tkconsole.stderr)
