@@ -28,6 +28,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 
+#ifdef HAVE_SELECT
+#include "mymath.h"
+#endif
+
 #ifdef macintosh
 #include <time.h>
 #else
@@ -415,8 +419,6 @@ floatsleep(secs)
 #ifdef HAVE_SELECT
 	struct timeval t;
 	double frac;
-	extern double fmod PROTO((double, double));
-	extern double floor PROTO((double));
 	frac = fmod(secs, 1.0);
 	secs = floor(secs);
 	t.tv_sec = (long)secs;
