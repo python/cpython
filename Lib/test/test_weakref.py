@@ -249,6 +249,10 @@ class ReferencesTestCase(TestBase):
         self.assert_(weakref.getweakrefcount(o) == 4,
                      "got wrong number of weak reference objects")
 
+        # assumes ints do not support weakrefs
+        self.assert_(weakref.getweakrefcount(1) == 0,
+                     "got wrong number of weak reference objects for int")
+
     def test_getweakrefs(self):
         o = C()
         ref1 = weakref.ref(o, self.callback)
@@ -263,6 +267,10 @@ class ReferencesTestCase(TestBase):
         del ref2
         self.assert_(weakref.getweakrefs(o) == [ref1],
                      "list of refs does not match")
+
+        # assumes ints do not support weakrefs
+        self.assert_(weakref.getweakrefs(1) == [],
+                     "list of refs does not match for int")
 
     def test_newstyle_number_ops(self):
         class F(float):
