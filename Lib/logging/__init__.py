@@ -36,8 +36,8 @@ except ImportError:
 
 __author__  = "Vinay Sajip <vinay_sajip@red-dove.com>"
 __status__  = "beta"
-__version__ = "0.4.9.1"
-__date__    = "21 February 2004"
+__version__ = "0.4.9.2"
+__date__    = "28 February 2004"
 
 #---------------------------------------------------------------------------
 #   Miscellaneous module data
@@ -723,8 +723,8 @@ class FileHandler(StreamHandler):
 class PlaceHolder:
     """
     PlaceHolder instances are used in the Manager logger hierarchy to take
-    the place of nodes for which no loggers have been defined [FIXME add
-    example].
+    the place of nodes for which no loggers have been defined. This class is
+    intended for internal use only and not as part of the public API.
     """
     def __init__(self, alogger):
         """
