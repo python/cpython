@@ -2831,7 +2831,15 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us)
 	PyObject *result = NULL;
 
 	tm = f(&timet);
-	if (tm)
+	if (tm) {
+		/* The platform localtime/gmtime may insert leap seconds,
+		 * indicated by tm->tm_sec > 59.  We don't care about them,
+		 * except to the extent that passing them on to the datetime
+		 * constructor would raise ValueError for a reason that
+		 * made no sense to the user.
+		 */
+		if (tm->tm_sec > 59)
+			tm->tm_sec = 59;
 		result = PyObject_CallFunction(cls, "iiiiiii",
 					       tm->tm_year + 1900,
 					       tm->tm_mon + 1,
@@ -2840,6 +2848,7 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us)
 					       tm->tm_min,
 					       tm->tm_sec,
 					       us);
+	}
 	else
 		PyErr_SetString(PyExc_ValueError,
 				"timestamp out of range for "

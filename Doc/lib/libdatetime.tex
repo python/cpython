@@ -314,8 +314,9 @@ Other constructors, all class methods:
   \exception{ValueError}, if the timestamp is out of the range of
   values supported by the platform C \cfunction{localtime()}
   function.  It's common for this to be restricted to years from 1970
-  through 2038.
-\end{methoddesc}
+  through 2038.  Note that on non-POSIX systems that include leap
+  seconds in their notion of a timestamp, leap seconds are ignored by
+  \method{fromtimestamp()}.
 
 \begin{methoddesc}{fromordinal}{ordinal}
   Return the date corresponding to the proleptic Gregorian ordinal,
@@ -546,6 +547,11 @@ Other constructors, all class methods:
   range of values supported by the platform C
   \cfunction{localtime()} function.  It's common for this to be
   restricted to years in 1970 through 2038.
+  Note that on non-POSIX systems that include leap seconds in their
+  notion of a timestamp, leap seconds are ignored by
+  \method{fromtimestamp()}, and then it's possible to have two timestamps
+  differing by a second that yield identical \class{datetime} objects.
+\end{methoddesc}
   See also \method{utcfromtimestamp()}.
 \end{methoddesc}
 
@@ -988,16 +994,18 @@ April, and ends the minute after 1:59 (EDT) on the last Sunday in October:
 
 When DST starts (the "start" line), the local wall clock leaps from 1:59
 to 3:00.  A wall time of the form 2:MM doesn't really make sense on that
-day, so astimezone(Eastern) won't deliver a result with hour=2 on the
-day DST begins.  How an Eastern class chooses to interpret 2:MM on
-that day is its business.  The example Eastern class above chose to
+day, so \code{astimezone(Eastern)} won't deliver a result with
+\code{hour==2} on the
+day DST begins.  How an Eastern instance chooses to interpret 2:MM on
+that day is its business.  The example Eastern implementation above
+chose to
 consider it as a time in EDT, simply because it "looks like it's
 after 2:00", and so synonymous with the EST 1:MM times on that day.
 Your Eastern class may wish, for example, to raise an exception instead
-when it sees a 2:MM time on the day Eastern begins.
+when it sees a 2:MM time on the day EDT begins.
 
 When DST ends (the "end" line), there's a potentially worse problem:
-there's an hour that can't be spelled at all in local wall time, the
+there's an hour that can't be spelled unambiguously in local wall time, the
 hour beginning at the moment DST ends.  In this example, that's times of
 the form 6:MM UTC on the day daylight time ends.  The local wall clock
 leaps from 1:59 (daylight time) back to 1:00 (standard time) again.
@@ -1005,11 +1013,12 @@ leaps from 1:59 (daylight time) back to 1:00 (standard time) again.
 2:MM is taken as standard time (it's "after 2:00"), so maps to 7:MM UTC.
 There is no local time that maps to 6:MM UTC on this day.
 
-Just as the wall clock does, astimezone(Eastern) maps both UTC hours 5:MM
+Just as the wall clock does, \code{astimezone(Eastern)} maps both UTC
+hours 5:MM
 and 6:MM to Eastern hour 1:MM on this day.  However, this result is
 ambiguous (there's no way for Eastern to know which repetition of 1:MM
-is intended).  Applications that can't bear such ambiguity even one hour
-per year should avoid using hybrid tzinfo classes; there are no
+is intended).  Applications that can't bear such ambiguity
+should avoid using hybrid tzinfo classes; there are no
 ambiguities when using UTC, or any other fixed-offset tzinfo subclass
 (such as a class representing only EST (fixed offset -5 hours), or only
 EDT (fixed offset -4 hours)).
@@ -1354,19 +1363,24 @@ Instance methods:
 \end{methoddesc}
 
 \begin{methoddesc}{astimezone}{tz}
-  Return a \class{datetimetz} with new tzinfo member \var{tz}.  \var{tz}
-  must be \code{None}, or an instance of a \class{tzinfo} subclass.  If
-  \var{tz} is \code{None}, self is naive, or
+  Return a \class{datetimetz} object with new \membar{tzinfo} member
+  \var{tz}.
+  \var{tz} must be \code{None}, or an instance of a \class{tzinfo} subclass.
+  If \var{tz} is \code{None}, \var{self} is naive,
   \code{tz.utcoffset(self)} returns \code{None},
+  or \code{self.tzinfo}\ is \var{tz},
   \code{self.astimezone(tz)} is equivalent to
   \code{self.replace(tzinfo=tz)}:  a new timezone object is attached
-  without any conversion of date or time fields.  If self is aware and
-  \code{tz.utcoffset(self)} does not return \code{None}, the date and
-  time fields are adjusted so that the result is local time in timezone
-  tz, representing the same UTC time as self.
-  XXX [The treatment of endcases remains unclear:  for DST-aware
-  classes, one hour per year has two spellings in local time, and
-  another hour has no spelling in local time.] XXX
+  without any conversion of date or time fields.  Else \code{self.tzinfo}
+  and \var{tz} must implement the \method{utcoffset()} and \method{dst()}
+  \class{tzinfo} methods, and the date and time fields are adjusted so
+  that the result is local time in time zone \var{tz}, representing the
+  same UTC time as \var{self}:  after \code{astz = dt.astimezone(tz)},
+  \code{astz - astz.utcoffset()} will usually have the same date and time
+  members as \code{dt - dt.utcoffset()}.  The discussion of class
+  \class{tzinfo} explains the cases at Daylight Saving Time
+  transition boundaries where this cannot be achieved (an issue only if
+  \var{tz} models both standard and daylight time).
 \end{methoddesc}
 
 \begin{methoddesc}{utcoffset}{}

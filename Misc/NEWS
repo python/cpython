@@ -50,6 +50,12 @@ Extension modules
   time), this case can arise one hour per year, at the hour daylight time
   ends.  See new docs for details.
 
+  The constructors building a datetime from a timestamp could raise
+  ValueError if the platform C localtime()/gmtime() inserted "leap
+  seconds".  Leap seconds are ignored now.  On such platforms, it's
+  possible to have timestamps that differ by a second, yet where
+  datetimes constructed from them are equal.
+
 Library
 -------
 
