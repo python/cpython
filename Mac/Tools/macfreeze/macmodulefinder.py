@@ -48,8 +48,12 @@ class ModuleFinder(modulefinder.ModuleFinder):
         self.modules[fqname] = m = Module(fqname)
         return m
         
-def process(program, modules=[], module_files = [], debug=0):
-	error = []
+def process(program, modules=None, module_files=None, debug=0):
+	if modules is None:
+		modules = []
+	if module_files is None:
+		module_files = []
+	missing = []
 	#
 	# Add the standard modules needed for startup
 	#
@@ -89,7 +93,7 @@ def process(program, modules=[], module_files = [], debug=0):
 		if not m in maymiss:
 			if debug > 0:
 				print 'Missing', m
-			error.append(m)
+			missing.append(m)
 	#
 	# Warn the user about unused builtins
 	#
@@ -103,6 +107,4 @@ def process(program, modules=[], module_files = [], debug=0):
 			# XXXX Can this happen?
 			if debug > 0:
 				print 'Conflict', m
-	if error:
-		raise Missing, error
-	return module_dict
+	return module_dict, missing
