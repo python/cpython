@@ -230,10 +230,10 @@ def generate(type, func, database):
 	# Stub header
 	#
 	print
-	print 'static object *'
+	print 'static PyObject *'
 	print 'gl_' + func + '(self, args)'
-	print '\tobject *self;'
-	print '\tobject *args;'
+	print '\tPyObject *self;'
+	print '\tPyObject *args;'
 	print '{'
 	#
 	# Declare return value if any
@@ -317,11 +317,11 @@ def generate(type, func, database):
 				print '\tif ((arg' + `i+1`, '=',
 				if a_factor:
 					print '('+a_type+'(*)['+a_factor+'])',
-				print 'NEW(' + a_type, ',',
+				print 'PyMem_NEW(' + a_type, ',',
 				if a_factor:
 					print a_factor, '*',
 				print a_sub, ')) == NULL)'
-				print '\t\treturn err_nomem();'
+				print '\t\treturn PyErr_NoMemory();'
 			print '\tif',
 			if a_factor or a_sub: # Get a fixed-size array array
 				print '(!geti' + xtype + 'array(args,',
@@ -368,7 +368,7 @@ def generate(type, func, database):
 	for i in range(len(database)):
 		a_type, a_mode, a_factor, a_sub = database[i]
 		if a_mode == 's' and a_sub and not isnum(a_sub):
-			print '\tDEL(arg' + `i+1` + ');'
+			print '\tPyMem_DEL(arg' + `i+1` + ');'
 	#
 	# Return
 	#
@@ -388,19 +388,19 @@ def generate(type, func, database):
 			print '\treturn',
 			print mkobject(a_type, 'arg' + `i+1`) + ';'
 		else:
-			print '\t{ object *v = newtupleobject(',
+			print '\t{ PyObject *v = PyTuple_New(',
 			print n_out_args, ');'
 			print '\t  if (v == NULL) return NULL;'
 			i_out = 0
 			if type <> 'void':
-				print '\t  settupleitem(v,',
+				print '\t  PyTuple_SetItem(v,',
 				print `i_out` + ',',
 				print mkobject(type, 'retval') + ');'
 				i_out = i_out + 1
 			for i in range(len(database)):
 				a_type, a_mode, a_factor, a_sub = database[i]
 				if a_mode == 'r':
-					print '\t  settupleitem(v,',
+					print '\t  PyTuple_SetItem(v,',
 					print `i_out` + ',',
 					s = mkobject(a_type, 'arg' + `i+1`)
 					print s + ');'
@@ -413,8 +413,8 @@ def generate(type, func, database):
 		# Return None or return value
 		#
 		if type == 'void':
-			print '\tINCREF(None);'
-			print '\treturn None;'
+			print '\tPy_INCREF(Py_None);'
+			print '\treturn Py_None;'
 		else:
 			print '\treturn', mkobject(type, 'retval') + ';'
 	#
@@ -527,7 +527,7 @@ while 1:
 
 
 print
-print 'static struct methodlist gl_methods[] = {'
+print 'static struct PyMethodDef gl_methods[] = {'
 for func in functions:
 	print '\t{"' + func + '", gl_' + func + '},'
 print '\t{NULL, NULL} /* Sentinel */'
@@ -536,5 +536,5 @@ print
 print 'void'
 print 'initgl()'
 print '{'
-print '\tinitmodule("gl", gl_methods);'
+print '\tPy_InitModule("gl", gl_methods);'
 print '}'
