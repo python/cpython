@@ -40,9 +40,8 @@ mailbox format files.
 Optional \var{maxheaderlen} specifies the longest length for a
 non-continued header.  When a header line is longer than
 \var{maxheaderlen} (in characters, with tabs expanded to 8 spaces),
-the header will be broken on semicolons and continued as per
-\rfc{2822}.  If no semicolon is found, then the header is left alone.
-Set to zero to disable wrapping headers.  Default is 78, as
+the header will be split as defined in the \module{email.Header}
+class.  Set to zero to disable header wrapping.  The default is 78, as
 recommended (but not required) by \rfc{2822}.
 \end{classdesc}
 
