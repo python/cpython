@@ -1,9 +1,26 @@
-# Python test set -- supporting definitions.
+"""Supporting definitions for the Python regression test."""
 
-class TestFailed(Exception):
-	pass
+
+class Error(Exception):
+        """Base class for regression test exceptions."""
+
+class TestFailed(Error):
+        """Test failed."""
+
+class TestSkipped(Error):
+        """Test skipped.
+
+        This can be raised to indicate that a test was deliberatly
+        skipped, but not because a feature wasn't available.  For
+        example, if some resource can't be used, such as the network
+        appears to be unavailable, this should be raised instead of
+        TestFailed.
+
+        """
+
 
 verbose = 1				# Flag set to 0 by regrtest.py
+use_large_resources = 1 # Flag set to 0 by regrtest.py
 
 def unload(name):
 	import sys
