@@ -11,7 +11,10 @@ import sys
 
 __all__ = ["popen2", "popen3", "popen4"]
 
-MAXFD = 256     # Max number of file descriptors (os.getdtablesize()???)
+try:
+    MAXFD = os.sysconf('SC_OPEN_MAX')
+except (AttributeError, ValueError):
+    MAXFD = 256
 
 _active = []
 
