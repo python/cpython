@@ -1825,12 +1825,15 @@ void mp_free( ptr, size )
 void
 initmpz()
 {
+	PyObject *module;
+	PyObject *dict;
+
 #ifdef MPZ_DEBUG
 	fputs( "initmpz() called...\n", stderr );
 #endif /* def MPZ_DEBUG */
 
 	mp_set_memory_functions( mp_allocate, mp_reallocate, mp_free );
-	(void)Py_InitModule("mpz", mpz_functions);
+	module = Py_InitModule("mpz", mpz_functions);
 
 	/* create some frequently used constants */
 	if ((mpz_value_zero = newmpzobject()) == NULL)
@@ -1844,6 +1847,11 @@ initmpz()
 	if ((mpz_value_mone = newmpzobject()) == NULL)
 		Py_FatalError("initmpz: can't initialize mpz constants");
 	mpz_set_si(&mpz_value_mone->mpz, (long)-1);
+
+	dict = PyModule_GetDict(module);
+	if (dict != NULL) {
+		PyDict_SetItemString(dict, "MPZType", (PyObject*)&MPZtype);
+	}
 
 } /* initmpz() */
 #ifdef MAKEDUMMYINT
