@@ -27,10 +27,10 @@ struct _inittab _PyImport_Inittab[] = {
 
 /* -- ADDMODULE MARKER 2 -- */
 
-	/* This module "lives in" with marshal.c */
+	/* This module lives in marshal.c */
 	{"marshal", PyMarshal_Init},
 
-	/* This lives it with import.c */
+	/* This lives in import.c */
 	{"imp", initimp},
 
 	/* These entries are here for sys.builtin_module_names */
