@@ -355,6 +355,10 @@ def test_dir():
     except TypeError:
         pass
 
+    # Two essentially featureless objects, just inheriting stuff from
+    # object.
+    vereq(dir(None), dir(Ellipsis))
+
 binops = {
     'add': '+',
     'sub': '-',
