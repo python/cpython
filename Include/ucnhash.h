@@ -1,5 +1,5 @@
 
-#include <Python.h>
+#include "Python.h"
 #include <stdlib.h>
 
 /* --- C API ----------------------------------------------------*/

@@ -66,7 +66,7 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
 
 #include "mymath.h"
 #include "unicodeobject.h"
-#include <ucnhash.h>
+#include "ucnhash.h"
 
 #if defined(HAVE_LIMITS_H)
 #include <limits.h>
