@@ -12,12 +12,8 @@ preferences to make it extract C sources with creator CWIE
 and .py files as text files with creator Pyth, this will save
 you work later.
 
-You will also need CodeWarrior 8. If you have another development
+You will also need CodeWarrior 11. If you have another development
 environment you are on your own, basically.
-
-You may also need the img distribution and the stdwin distribution.
-If you don't want them you may have to edit some of the projects
-to remove references to them.
 
 When you've extracted everything you may have to unpack the
 .hqx files in Mac:Resources and Mac:mwerks:Projects (but suntar
@@ -25,6 +21,7 @@ may have done this for you already).
 
 You have to remove Modules:fmmodule.c, the SGI fm module, which has a
 name conflict with the Mac Fmmodule.c.
+
 
 Next, create your build directories. I use the following naming
 convention:
@@ -39,47 +36,8 @@ Move MWCPythonCoreRuntime.µ, PythonCore.µ, PythonPPC.µ and
 PythonApplet.µ (from the Mac:mwerks:projects folder) to
 build.macppc.shared, move Python68K.µ to build.mac68k.stand.
 
-Build the projects. For the PPC projects, keep the order given above.
-Do *not* run the python interpreter yet. First, move the interpreter
-to the main python folder. For PPC, also move PythonCore to the main
-python folder.
+Now, your folder structure more-or-less resembles that of what comes
+with the mac source distribution. Read the file Mac:Demo:building.html
+for further instructions.
 
-Now try your python interpreter, this will create an initial
-preferences file.
-
-For 68K python you are now done.
-
-For PPC Python, don't try complicated scripts yet, you first have to
-create the dynamically loadable modules. Create a folder PlugIns (in
-the toplevel python folder) and move all the projects that have
-"module" or "modules" in their name there. Build these projects. This
-will create a number of ".exp" files, edit these files to contain only
-all the "init" modules, and build the projects again. This latter step
-isn't really essential, so feel free to skip it.
-
-The next step is to create aliases for the various modules that "live
-together" in one shared library. For this, take MkPluginAliases.py and
-MkPluginAliases.rsrc from the Mac:scripts folder and move or copy them
-to the python home folder.  Run the script from there.
-
-If you haven't created all plugins you'll get some errors about files
-not existing, don't worry. Don't forget to move the scripts back.
-
-Next, make an alias of PythonCore (also named PythonCore) and put it
-in System Folder:Extensions. This will ensure that you can run python
-anywhere, not just from the folder where PythonCore lives.
-
-Most of your environment is now setup. You can try it by running
-EditPythonPrefs.py (in Mac:scripts), it should now work from there.
-
-Lastly, you should setup some stuff needed for applet creation. First,
-you should put PythonApplet (or an alias to it) in the python home
-folder. Next, you should turn mkapplet.py (from mac:scripts) into an
-applet itself: double-click it and give it itself as input in the
-input file dialog.
-
-Now that you have created mkapplet you can use this as a droplet:
-drag-and-drop python sources onto it (EditPythonPrefs.py and
-RunLibScript.py come to mind) and the applets will be created.
-
-			Jack Jansen, CWI, 18 March 1996. 
+			Jack Jansen, CWI, 28 May 1997.
