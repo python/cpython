@@ -361,7 +361,10 @@ class Set(BaseSet):
         # We inherit object.__hash__, so we must deny this explicitly
         raise TypeError, "Can't hash a Set, only an ImmutableSet."
 
-    # In-place union, intersection, differences
+    # In-place union, intersection, differences.
+    # Subtle:  The xyz_update() functions deliberately return None,
+    # as do all mutating operations on built-in container types.
+    # The __xyz__ spellings have to return self, though.
 
     def __ior__(self, other):
         """Update a set with the union of itself and another."""
