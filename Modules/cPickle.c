@@ -5235,7 +5235,7 @@ initcPickle(void)
 		"1.1",	/* Protocol 0 + INST */
 		"1.2",	/* Original protocol 1 */
 		"1.3",	/* Protocol 1 + BINFLOAT */
-		"2.0");	/* Oritinal potocol 2 */
+		"2.0");	/* Original protocol 2 */
 	PyDict_SetItemString(d, "format_version", format_version);
 	PyDict_SetItemString(d, "compatible_formats", compatible_formats);
 	Py_XDECREF(format_version);
