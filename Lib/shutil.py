@@ -1,6 +1,6 @@
 """Utility functions for copying files.
 
-XXX The functions here don't copy the data fork or other metadata on Mac.
+XXX The functions here don't copy the resource fork or other metadata on Mac.
 
 """
 
