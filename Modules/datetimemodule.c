@@ -5496,7 +5496,7 @@ Now some derived rules, where k is a duration (timedelta).
 1. x.o = x.s + x.d
    This follows from the definition of x.s.
 
-2. If x and y have the same tzinfo member, x.s == y.s.
+2. If x and y have the same tzinfo member, x.s = y.s.
    This is actually a requirement, an assumption we need to make about
    sane tzinfo classes.
 
@@ -5506,7 +5506,7 @@ Now some derived rules, where k is a duration (timedelta).
 4. (x+k).s = x.s
    This follows from #2, and that datimetimetz+timedelta preserves tzinfo.
 
-5. (y+k).n = y.n + k
+5. (x+k).n = x.n + k
    Again follows from how arithmetic is defined.
 
 Now we can explain x.astimezone(tz).  Let's assume it's an interesting case
@@ -5546,12 +5546,22 @@ magnitude less than 24 hours.  For that reason, if y is firmly in std time,
 
 In any case, the new value is
 
-    z.n = y.n + y.o - y.d - x.o
+    z = y + y.o - y.d - x.o                     [4]
 
-If
-    z.n - z.o = x.n - x.o                       [4]
+It's helpful to step back at look at [4] from a higher level:  rewrite it as
 
-then, we have an equivalent time, and are almost done.  The insecurity here is
+    z = (y - x.o) + (y.o - y.d)
+
+(y - x.o).n = [by #5] y.n - x.o = [since y.n=x.n] x.n - x.o = [by #3] x's
+UTC equivalent time.  So the y-x.o part essentially converts x to UTC.  Then
+the y.o-y.d part essentially converts x's UTC equivalent into tz's standard
+time (y.o-y.d=y.s by #1).
+
+At this point, if
+
+    z.n - z.o = x.n - x.o                       [5]
+
+we have an equivalent time, and are almost done.  The insecurity here is
 at the start of daylight time.  Picture US Eastern for concreteness.  The wall
 time jumps from 1:59 to 3:00, and wall hours of the form 2:MM don't make good
 sense then.  A sensible Eastern tzinfo class will consider such a time to be
@@ -5559,79 +5569,42 @@ EDT (because it's "after 2"), which is a redundant spelling of 1:MM EST on the
 day DST starts.  We want to return the 1:MM EST spelling because that's
 the only spelling that makes sense on the local wall clock.
 
-Claim:  When [4] is true, we have "the right" spelling in this endcase.  No
-further adjustment is necessary.
+In fact, if [5] holds at this point, we do have the standard-time spelling,
+but that takes a bit of proof.  We first prove a stronger result.  What's the
+difference between the LHS and RHS of [5]?  Let
 
-Proof:  The right spelling has z.d = 0, and the wrong spelling has z.d != 0
-(for US Eastern, the wrong spelling has z.d = 60 minutes, but we can't assume
-that all time zones work this way -- we can assume a time zone is in daylight
-time iff dst() doesn't return 0).  By [4], and recalling that z.o = z.s + z.d,
+    diff = (x.n - x.o) - (z.n - z.o)            [6]
 
-    z.n - z.s - z.d = x.n - x.o                 [5]
+Now
+    z.n =                       by [4]
+    (y + y.o - y.d - x.o).n =   by #5
+    y.n + y.o - y.d - x.o =     since y.n = x.n
+    x.n + y.o - y.d - x.o =     since y.o = y.s + y.d by #1
+    x.n + (y.s + y.d) - y.d - x.o =     cancelling the y.d terms
+    x.n + y.s - x.o =           since z and y are have the same tzinfo member,
+                                y.s = z.s by #2
+    x.n + z.s - x.o
 
-Also
+Plugging that back into [6] gives
 
-    z.n = (y + y.o - y.d - x.o).n by the construction of z, which equals
-          y.n + y.o - y.d - x.o by #5.
+    diff =
+    (x.n - x.o) - ((x.n + z.s - x.o) - z.o)     = expanding
+    x.n - x.o - x.n - z.s + x.o + z.o           = cancelling
+    - z.s + z.o                                 = by #2
+    z.d
 
-Plugging that into [5],
+So diff = z.d.
 
-    y.n + y.o - y.d - x.o - z.s - z.d = x.n - x.o; cancelling the x.o terms,
-    y.n + y.o - y.d - z.s - z.d = x.n; but x.n = y.n too, so they also cancel,
-    y.o - y.d - z.s - z.d = 0; then y.o = y.s + y.d, so
-    y.s + y.d - y.d - z.s - z.d = 0; then the y.d terms cancel,
-    y.s - z.s - z.d = 0; but y and z are in the same timezone, so by #2
-                         y.s = z.s, and they also cancel, leaving
-    - z.d = 0; or,
-    z.d = 0
+If [5] is true now, diff = 0, so z.d = 0 too, and we have the standard-time
+spelling we wanted in the endcase described above.  We're done.
 
-Therefore z is the standard-time spelling, and there's nothing left to do in
-this case.
+If [5] is not true now, diff = z.d != 0, and z.d is the offset we need to
+add to z (in effect, z is in tz's standard time, and we need to shift the
+offset into tz's daylight time).
 
-QED
+Let
 
-Note that we actually proved something stronger:  [4] is true if and only if
-z.dst() returns 0.  The "only if" part was proved directly.  The "if" part
-is proved by starting with z.d = 0 and reading the proof bottom-up; all the
-steps are "iff", so are reversible.
-
-Next:  if [4] isn't true, we're not done.  It's helpful to step back and look
-at
-
-    z.n = y.n + y.o - y.d - x.o = y.n-x.o + y.o-y.d
-
-from a higher level.  Since y.n = x.n, the y.n-x.o part gives x's UTC
-equivalent hour.  Then since y.s=y.o-y.d, the y.o-y.d part converts x's UTC
-equivalent into tz's standard time.  IOW, z is the correct spelling of x in
-tz's standard time.
-If
-    z.n - z.o != x.n - x.o
-despite that, then either (1) x is in the "unspellable hour" at the end
-of tz's daylight period; or, (2) z.n needs to be shifted into tz's daylight
-time.
-
-Assuming #2, that would be easy if we could ask the tzinfo object what the
-daylight offset would be if DST were in effect.  And we could compute z.d,
-but we already have enough info to compute it from the quantities we know:
-
-Claim:  The adjustment needed is adding (x.n-x.o)-(z.n-z.o) to z.n.
-
-Proof:  By the comment following the last proof, z.d is not 0 now, and z.d
-is what we need to add to z.n (it's the "missing part" of the conversion from
-x's UTC equivalent to z's daylight time).
-
-    z.d = z.o - z.s by #1; z.s = y.s since they're in the same time zone, so
-    z.d = z.o - y.s; then y.s = y.o - y.d by #1, so
-    z.d = z.o - (y.o - y.d); then since z.n = y.n+y.o-y.d-x.o, y.o-y.d=
-                             z.n-y.n+x.o, so
-    z.d = z.o - (z.n - y.n + x.o); then x.n = y.n, so
-    z.d = z.o - (z.n - x.n + x.o)
-and simple rearranging gives the desired
-    z.d = (x.n - x.o) - (z.n - z.o)
-
-The code actually optimizes this some more, in a straightforward way.  Letting
-
-    z'.n = z.n + (x.n - x.o) - (z.n - z.o)
+    z' = z + z.d = z + diff
 
 we can again ask whether
 
