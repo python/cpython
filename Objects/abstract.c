@@ -155,6 +155,24 @@ PyObject_SetItem(o, key, value)
   return -1;
 }
 
+int
+PyObject_DelItem(o, key)
+  PyObject *o;
+  PyObject *key;
+{
+  PyMappingMethods *m;
+
+  if(! o || ! key) return Py_ReturnNullError(),-1;
+  if((m=o->ob_type->tp_as_mapping) && m->mp_ass_subscript)
+    return m->mp_ass_subscript(o,key,(PyObject*)NULL);
+  
+  if(PyInt_Check(key))
+    return PySequence_SetItem(o,PyInt_AsLong(key),(PyObject*)NULL);
+
+  PyErr_SetString(PyExc_TypeError,"expeced integer index");
+  return -1;
+}
+
 int 
 PyNumber_Check(o)
   PyObject *o;
@@ -695,6 +713,27 @@ PySequence_SetItem(s, i, o)
   return m->sq_ass_item(s,i,o);
 }
 
+int
+PySequence_DelItem(s, i)
+  PyObject *s;
+  int i;
+{
+  PySequenceMethods *m;
+  int l;
+  if(! s) return Py_ReturnNullError(),-1;
+
+  if(! ((m=s->ob_type->tp_as_sequence) && m->sq_length && m->sq_ass_item))
+    return Py_ReturnMethodError("__delitem__"),-1;  
+
+  if(i < 0)
+    {
+      if(0 > (l=m->sq_length(s))) return -1;
+      i += l;
+    }
+      
+  return m->sq_ass_item(s,i,(PyObject*)NULL);
+}
+
 int 
 PySequence_SetSlice(s, i1, i2, o)
   PyObject *s;
@@ -716,6 +755,28 @@ PySequence_SetSlice(s, i1, i2, o)
   if(i2 < 0) i2 += l;
       
   return m->sq_ass_slice(s,i1,i2,o);
+}
+
+int 
+PySequence_DelSlice(s, i1, i2)
+  PyObject *s;
+  int i1;
+  int i2;
+{
+  PySequenceMethods *m;
+  int l;
+
+  if(! s) return Py_ReturnNullError(),-1;
+
+  if(! ((m=s->ob_type->tp_as_sequence) && m->sq_length && m->sq_ass_slice))
+    return Py_ReturnMethodError("__delslice__"),-1;  
+
+  if(0 > (l=m->sq_length(s))) return -1;
+
+  if(i1 < 0) i1 += l;
+  if(i2 < 0) i2 += l;
+      
+  return m->sq_ass_slice(s,i1,i2,(PyObject*)NULL);
 }
 
 PyObject *

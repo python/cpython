@@ -410,6 +410,13 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 statement: o[key]=v.
        */
 
+     int PyObject_DelItem Py_PROTO((PyObject *o, PyObject *key));
+
+       /*
+	 Delete the mapping for key from *o.  Returns -1 on failure.
+	 This is the equivalent of the Python statement: del o[key].
+       */
+
 
 /*  Number Protocol:*/
 
@@ -672,12 +679,28 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
+     int PySequence_DelItem Py_PROTO((PyObject *o, int i));
+
+       /*
+	 Delete the ith element of object v.  Returns
+	 -1 on failure.  This is the equivalent of the Python
+	 statement: del o[i].
+       */
+
      int PySequence_SetSlice Py_PROTO((PyObject *o, int i1, int i2, PyObject *v));
 
        /*
          Assign the sequence object, v, to the slice in sequence
 	 object, o, from i1 to i2.  Returns -1 on failure. This is the
 	 equivalent of the Python statement: o[i1:i2]=v.
+       */
+
+     int PySequence_DelSlice Py_PROTO((PyObject *o, int i1, int i2));
+
+       /*
+	 Delete the slice in sequence object, o, from i1 to i2.
+	 Returns -1 on failure. This is the equivalent of the Python
+	 statement: del o[i1:i2].
        */
 
      PyObject *PySequence_Tuple Py_PROTO((PyObject *o));
