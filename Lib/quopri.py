@@ -1,58 +1,96 @@
 #! /usr/bin/env python
 
-"""Conversions to/from quoted-printable transport encoding as per RFC-1521."""
+"""Conversions to/from quoted-printable transport encoding as per RFC 1521."""
 
 # (Dec 1991 version).
 
-__all__ = ["encode","decode"]
+__all__ = ["encode", "decode", "encodestring", "decodestring"]
 
 ESCAPE = '='
 MAXLINESIZE = 76
 HEX = '0123456789ABCDEF'
+EMPTYSTRING = ''
 
+
+
 def needsquoting(c, quotetabs):
     """Decide whether a particular character needs to be quoted.
 
-    The 'quotetabs' flag indicates whether tabs should be quoted."""
-    if c == '\t':
-        return not quotetabs
-    return c == ESCAPE or not(' ' <= c <= '~')
+    The 'quotetabs' flag indicates whether embedded tabs and spaces should be
+    quoted.  Note that line-ending tabs and spaces are always encoded, as per
+    RFC 1521.
+    """
+    if c in ' \t':
+        return quotetabs
+    return c == ESCAPE or not (' ' <= c <= '~')
 
 def quote(c):
     """Quote a single character."""
     i = ord(c)
     return ESCAPE + HEX[i/16] + HEX[i%16]
 
+
+
 def encode(input, output, quotetabs):
     """Read 'input', apply quoted-printable encoding, and write to 'output'.
 
     'input' and 'output' are files with readline() and write() methods.
-    The 'quotetabs' flag indicates whether tabs should be quoted.
-        """
+    The 'quotetabs' flag indicates whether embedded tabs and spaces should be
+    quoted.  Note that line-ending tabs and spaces are always encoded, as per
+    RFC 1521.
+    """
+    def write(s, output=output, lineEnd='\n'):
+        # RFC 1521 requires that the line ending in a space or tab must have
+        # that trailing character encoded.
+        if s and s[-1:] in ' \t':
+            output.write(s[:-1] + quote(s[-1]) + lineEnd)
+        else:
+            output.write(s + lineEnd)
+
+    prevline = None
+    linelen = 0
     while 1:
         line = input.readline()
         if not line:
             break
-        new = ''
-        last = line[-1:]
-        if last == '\n':
+        outline = []
+        # Strip off any readline induced trailing newline
+        stripped = ''
+        if line[-1:] == '\n':
             line = line[:-1]
-        else:
-            last = ''
-        prev = ''
+            stripped = '\n'
         for c in line:
             if needsquoting(c, quotetabs):
                 c = quote(c)
-            if len(new) + len(c) >= MAXLINESIZE:
-                output.write(new + ESCAPE + '\n')
-                new = ''
-            new = new + c
-            prev = c
-        if prev in (' ', '\t'):
-            output.write(new + ESCAPE + '\n\n')
-        else:
-            output.write(new + '\n')
+            # Have we hit the RFC 1521 encoded line maximum?
+            if linelen + len(c) >= MAXLINESIZE:
+                # Write out the previous line
+                if prevline is not None:
+                    write(prevline)
+                prevline = EMPTYSTRING.join(outline)
+                linelen = 0
+                outline = []
+            outline.append(c)
+            linelen += len(c)
+        # Write out the current line
+        if prevline is not None:
+            write(prevline)
+        prevline = EMPTYSTRING.join(outline)
+        linelen = 0
+        outline = []
+    # Write out the last line, without a trailing newline
+    if prevline is not None:
+        write(prevline, lineEnd=stripped)
 
+def encodestring(s, quotetabs=0):
+    from cStringIO import StringIO
+    infp = StringIO(s)
+    outfp = StringIO()
+    encode(infp, outfp, quotetabs)
+    return outfp.getvalue()
+
+
+
 def decode(input, output):
     """Read 'input', apply quoted-printable decoding, and write to 'output'.
 
@@ -87,6 +125,16 @@ def decode(input, output):
     if new:
         output.write(new)
 
+def decodestring(s):
+    from cStringIO import StringIO
+    infp = StringIO(s)
+    outfp = StringIO()
+    decode(infp, outfp)
+    return outfp.getvalue()
+
+
+
+# Other helper functions
 def ishex(c):
     """Return true if the character 'c' is a hexadecimal digit."""
     return '0' <= c <= '9' or 'a' <= c <= 'f' or 'A' <= c <= 'F'
@@ -106,7 +154,9 @@ def unhex(s):
         bits = bits*16 + (ord(c) - i)
     return bits
 
-def test():
+
+
+def main():
     import sys
     import getopt
     try:
@@ -148,5 +198,7 @@ def test():
     if sts:
         sys.exit(sts)
 
+
+
 if __name__ == '__main__':
-    test()
+    main()
