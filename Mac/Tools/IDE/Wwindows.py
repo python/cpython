@@ -19,8 +19,12 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 	
 	windowkind = Windows.documentProc
 	
-	def __init__(self, possize, title = "", minsize = None, maxsize = None, tabbable = 1, show = 1):
+	def __init__(self, possize, title="", minsize=None, maxsize=None, 
+			tabbable=1, show=1, fontsettings=None):
 		import W
+		if fontsettings is None:
+			fontsettings = W.getdefaultfont()
+		self._fontsettings = fontsettings
 		W.SelectableWidget.__init__(self, possize)
 		self._globalbounds = l, t, r, b = self.getwindowbounds(possize, minsize)
 		self._bounds = (0, 0, r - l, b - t)
@@ -92,11 +96,13 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 		self.wid = Win.NewCWindow(self._globalbounds, self.title, self._show,
 			self.windowkind, -1, self.hasclosebox, 0)
 		self.SetPort()
-		fnum = Fm.GetFNum("Python-Sans")
+		fontname, fontstyle, fontsize, fontcolor = self._fontsettings
+		fnum = Fm.GetFNum(fontname)
 		if fnum == 0:
 			fnum = Fm.GetFNum("Geneva")
-		Qd.TextFont(fnum)	# XXX font&size from a function?
-		Qd.TextSize(9)	# XXX font&size from a function?
+		Qd.TextFont(fnum)
+		Qd.TextFace(fontstyle)
+		Qd.TextSize(fontsize)
 		if self._bindings.has_key("<open>"):
 			callback = self._bindings["<open>"]
 			callback()
@@ -286,7 +292,7 @@ class Window(FrameWork.Window, Wbase.SelectableWidget):
 		(what, message, when, where, modifiers) = event
 		key = char
 		if Wkeys.keynames.has_key(key):
-			key = Wkeys.keynames[char]
+			key = Wkeys.keynames[key]
 		if modifiers & Events.shiftKey:
 			key = 'shift' + key
 		if modifiers & Events.cmdKey:

@@ -24,11 +24,13 @@ class TextBox(Wbase.Widget):
 	
 	"""A static text widget"""
 	
-	def __init__(self, possize, text = "", align = TextEdit.teJustLeft, 
-				fontsettings = ("Python-Sans", 0, 9, (0, 0, 0)),
-				backgroundcolor = (0xffff, 0xffff, 0xffff)
+	def __init__(self, possize, text="", align=TextEdit.teJustLeft, 
+				fontsettings=None,
+				backgroundcolor=(0xffff, 0xffff, 0xffff)
 				):
-	
+		if fontsettings is None:
+			import W
+			fontsettings = W.getdefaultfont()
 		Wbase.Widget.__init__(self, possize)
 		self.fontsettings = fontsettings
 		self.text = text
@@ -90,12 +92,14 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 	
 	"""A text edit widget, mainly for simple entry fields."""
 	
-	def __init__(self, possize, text = "", 
-				callback = None, inset = (3, 3), 
-				fontsettings = ("Python-Sans", 0, 9, (0, 0, 0)),
+	def __init__(self, possize, text="", 
+				callback=None, inset=(3, 3), 
+				fontsettings=None,
 				tabsettings = (32, 0),
 				readonly = 0):
-				
+		if fontsettings is None:
+			import W
+			fontsettings = W.getdefaultfont()
 		Wbase.SelectableWidget.__init__(self, possize)
 		self.temptext = text
 		self.ted = None
@@ -553,10 +557,10 @@ class TextEditor(EditText):
 	
 	"""A text edit widget."""
 	
-	def __init__(self, possize, text = "", callback = None, wrap = 1, inset = (4, 4),
-				fontsettings = ("Python-Sans", 0, 9, (0, 0, 0)),
-				tabsettings = (32, 0),
-				readonly = 0):
+	def __init__(self, possize, text="", callback=None, wrap=1, inset=(4, 4),
+				fontsettings=None,
+				tabsettings=(32, 0),
+				readonly=0):
 		EditText.__init__(self, possize, text, callback, inset, fontsettings, tabsettings, readonly)
 		self.wrap = wrap
 	
@@ -607,12 +611,12 @@ class PyEditor(TextEditor):
 	
 	"""A specialized Python source edit widget"""
 	
-	def __init__(self, possize, text = "", callback = None, inset = (4, 4),
-				fontsettings = ("Python-Sans", 0, 9, (0, 0, 0)),
-				tabsettings = (32, 0),
-				readonly = 0,
-				debugger = None,
-				file = ''):
+	def __init__(self, possize, text="", callback=None, inset=(4, 4),
+				fontsettings=None,
+				tabsettings=(32, 0),
+				readonly=0,
+				debugger=None,
+				file=''):
 		TextEditor.__init__(self, possize, text, callback, 0, inset, fontsettings, tabsettings, readonly)
 		self.bind("cmd[", self.domenu_shiftleft)
 		self.bind("cmd]", self.domenu_shiftright)
