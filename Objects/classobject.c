@@ -399,7 +399,7 @@ instance_dealloc(inst)
 		DECREF(del);
 		if (res == NULL) {
 			writestring("exception in __del__ method ignored\n",
-				    sysget("stdout"));
+				    sysget("stderr"));
 		}
 		else
 			DECREF(res);
