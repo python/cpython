@@ -140,20 +140,20 @@ inadequate and targeted at experienced Python developers.  Such users
 are already familiar with how the Python library is laid out on their
 platform, and know where to copy various files in order for Python to
 find them.  This document makes no such assumptions, and explains how
-the Python library is laid out on three major platforms (Unix, Windows,
-and Mac~OS), so that you can understand what happens when the Distutils
+the Python library is laid out on three major platforms (\UNIX, Windows,
+and MacOS), so that you can understand what happens when the Distutils
 do their job \emph{and} know how to install modules manually when the
 module author fails to provide a setup script.
 
 Additionally, while there has not previously been a standard
 installation mechanism, Python has had some standard machinery for
-building extensions on Unix since Python \XXX{version?}.  This machinery
-(the \file{Makefile.pre.in} file) is superseded by the Distutils, but it
-will no doubt live on in older module distributions for a while.  This
-\file{Makefile.pre.in} mechanism is documented in the ``Extending \&
-Embedding Python'' manual, but that manual is aimed at module
-developers---hence, we include documentation for builders/installers
-here.
+building extensions on \UNIX{} since Python \XXX{version?}.  This
+machinery (the \file{Makefile.pre.in} file) is superseded by the
+Distutils, but it will no doubt live on in older module distributions
+for a while.  This \file{Makefile.pre.in} mechanism is documented in
+the \citetitle[../ext/ext.html]{Extending \& Embedding Python} manual,
+but that manual is aimed at module developers---hence, we include
+documentation for builders/installers here.
 
 All of the pre-Distutils material is tucked away in
 section~\ref{pre-distutils}.
@@ -167,9 +167,9 @@ a module distribution using the Distutils is usually one simple command:
 \begin{verbatim}
 python setup.py install
 \end{verbatim}
-On Unix, you'd run this command from a shell prompt; on Windows, you
+On \UNIX, you'd run this command from a shell prompt; on Windows, you
 have to open a command prompt window (``DOS box'') and do it there; on
-Mac~OS, things are a tad more complicated (see below).
+MacOS, things are a tad more complicated (see below).
 
 
 \subsection{Platform variations}
@@ -178,8 +178,8 @@ Mac~OS, things are a tad more complicated (see below).
 You should always run the setup command from the distribution root
 directory, i.e. the top-level subdirectory that the module source
 distribution unpacks into.  For example, if you've just downloaded a
-module source distribution \file{foo-1.0.tar.gz} onto a Unix system, the
-normal thing to do is:
+module source distribution \file{foo-1.0.tar.gz} onto a
+\UNIX{} system, the normal thing to do is:
 \begin{verbatim}
 gunzip -c foo-1.0.tar.gz | tar xf -    # unpacks into directory foo-1.0
 cd foo-1.0
@@ -198,7 +198,7 @@ cd c:\Temp\foo-1.0
 python setup.py install
 \end{verbatim}
 
-On Mac~OS, you have to go through a bit more effort to supply
+On MacOS, you have to go through a bit more effort to supply
 command-line arguments to the setup script:
 \begin{itemize}
 \item hit option-double-click on the script's icon (or option-drop it
@@ -209,8 +209,9 @@ command-line arguments to the setup script:
   voluminous and often useful)
 \item when the command-line dialog pops up, enter ``install'' (you
   can, of course, enter any Distutils command-line as described in this
-  document or in the ``Distributing Python Modules'' document: just
-  leave of the initial \code{python setup.py} and you'll be fine)
+  document or in \citetitle[../dist/dist.html]{Distributing Python
+  Modules}: just leave off the initial \code{python setup.py} and
+  you'll be fine)
 \end{itemize}
 \XXX{this should change: every Distutils setup script will need
   command-line arguments for every run (and should probably keep stdout
@@ -300,15 +301,15 @@ If you don't choose an installation directory---i.e., if you just run
 \code{setup.py install}---then the \command{install} command installs to
 the standard location for third-party Python modules.  This location
 varies by platform and by how you built/installed Python itself.  On
-Unix and Mac~OS, it also depends on whether the module distribution
+\UNIX{} and MacOS, it also depends on whether the module distribution
 being installed is pure Python or contains extensions (``non-pure''):
 \begin{tableiv}{l|l|l|c}{textrm}%
   {Platform}{Standard installation location}{Default value}{Notes}
-  \lineiv{Unix (pure)}
+  \lineiv{\UNIX{} (pure)}
           {\filenq{\filevar{prefix}/lib/python2.0/site-packages}}
           {\filenq{/usr/local/lib/python2.0/site-packages}}
           {(1)}
-  \lineiv{Unix (non-pure)}
+  \lineiv{\UNIX{} (non-pure)}
           {\filenq{\filevar{exec-prefix}/lib/python2.0/site-packages}}
           {\filenq{/usr/local/lib/python2.0/site-packages}}
           {(1)}
@@ -316,11 +317,11 @@ being installed is pure Python or contains extensions (``non-pure''):
           {\filenq{\filevar{prefix}}}
           {\filenq{C:\textbackslash{}Python}}
           {(2)}
-  \lineiv{Mac~OS (pure)}
+  \lineiv{MacOS (pure)}
           {\filenq{\filevar{prefix}:Lib:site-packages}}
           {\filenq{Python:Lib:site-packages}}
           {}
-  \lineiv{Mac~OS (non-pure)}
+  \lineiv{MacOS (non-pure)}
           {\filenq{\filevar{prefix}:Lib:site-packages}}
           {\filenq{Python:Lib:site-packages}}
           {}
@@ -331,7 +332,7 @@ being installed is pure Python or contains extensions (``non-pure''):
 \item[(1)] Most Linux distributions include Python as a standard part of
   the system, so \filevar{prefix} and \filevar{exec-prefix} are usually
   both \file{/usr} on Linux.  If you build Python yourself on Linux (or
-  any Unix-like system), the default \filevar{prefix} and
+  any \UNIX-like system), the default \filevar{prefix} and
   \filevar{exec-prefix} are \file{/usr/local}.
 \item[(2)] The default installation directory on Windows was
   \file{C:\textbackslash{}Program Files\textbackslash{}Python} under
@@ -340,12 +341,12 @@ being installed is pure Python or contains extensions (``non-pure''):
 
 \filevar{prefix} and \filevar{exec-prefix} stand for the directories
 that Python is installed to, and where it finds its libraries at
-run-time.  They are always the same under Windows and Mac~OS, and very
-often the same under Unix.  You can find out what your Python
+run-time.  They are always the same under Windows and MacOS, and very
+often the same under \UNIX.  You can find out what your Python
 installation uses for \filevar{prefix} and \filevar{exec-prefix} by
 running Python in interactive mode and typing a few simple commands.
-Under Unix, just type \code{python} at the shell prompt; under Windows,
-run ``Python 2.0 (interpreter)'' \XXX{right?}; under Mac~OS, \XXX{???}.
+Under \UNIX, just type \code{python} at the shell prompt; under Windows,
+run ``Python 2.0 (interpreter)'' \XXX{right?}; under MacOS, \XXX{???}.
 Once the interpreter is started, you type Python code at the
 \samp{>>> } prompt.  For example, on my Linux system, I type the three
 Python statements shown below, and get the output as shown, to find
@@ -400,7 +401,7 @@ section~\ref{custom-install} on custom installations.
 (This is the section to read for people doing any sort of interesting
 build.  Things to talk about:
 \begin{itemize}
-\item the \file{Setup} file (any platform now, but Unix-biased)
+\item the \file{Setup} file (any platform now, but \UNIX-biased)
 \item CFLAGS and LDFLAGS (must implement them first!)
 \item using non-MS compilers on Windows (how to convert
   Python's library, ...)  
@@ -423,7 +424,7 @@ build.  Things to talk about:
 
 Often, it is necessary or desirable to install modules to a location
 other than the standard location for third-party Python modules.  For
-example, on a Unix system you might not have permission to write to the
+example, on a \UNIX{} system you might not have permission to write to the
 standard third-party module directory.  Or you might wish to try out a
 module before making it a standard part of your local Python
 installation; this is especially true when upgrading a distribution
@@ -439,12 +440,12 @@ install files.  The details differ across platforms, so read whichever
 of the following section applies to you.
 
 
-\subsection{Alternate installation: Unix (the home scheme)}
+\subsection{Alternate installation: \UNIX{} (the home scheme)}
 \label{alt-install-prefix}
 
-Under Unix, there are two ways to perform an alternate installation.
+Under \UNIX, there are two ways to perform an alternate installation.
 The ``prefix scheme'' is similar to how alternate installation works
-under Windows and Mac~OS, but is not necessarily the most useful way to
+under Windows and MacOS, but is not necessarily the most useful way to
 maintain a personal Python library.  Hence, we document the more
 convenient and commonly useful ``home scheme'' first.
 
@@ -469,7 +470,7 @@ installation base as follows:
               {home}{/bin}
               {home}{/share}
 
-\subsection{Alternate installation: Unix (the prefix scheme)}
+\subsection{Alternate installation: \UNIX{} (the prefix scheme)}
 \label{alt-install-home}
 
 The ``prefix scheme'' is useful when you wish to use one Python
@@ -521,7 +522,7 @@ installation; if the directories listed above do not already exist, they
 are created at installation time.
 
 Incidentally, the real reason the prefix scheme is important is simply
-that a standard Unix installation uses the prefix scheme, but with
+that a standard \UNIX{} installation uses the prefix scheme, but with
 \longprogramopt{prefix} and \longprogramopt{exec-prefix} supplied by
 Python itself (as \code{sys.prefix} and \code{sys.exec\_prefix}).  Thus,
 you might think you'll never use the prefix scheme, but every time you
@@ -546,7 +547,7 @@ point to an alternate Python installation, this is immaterial.)
 
 Since Windows has no conception of a user's home directory, and since
 the standard Python installation under Windows is simpler than that
-under Unix, there's no point in having separate \longprogramopt{prefix}
+under \UNIX, there's no point in having separate \longprogramopt{prefix}
 and \longprogramopt{home} options.  Just use the \longprogramopt{prefix}
 option to specify a base directory, e.g.
 \begin{verbatim}
@@ -564,10 +565,10 @@ Files are installed as follows:
               {prefix}{\textbackslash{}Data}
 
 
-\subsection{Alternate installation: Mac~OS}
+\subsection{Alternate installation: MacOS}
 \label{alt-install-macos}
 
-Like Windows, Mac~OS has no notion of home directories (or even of
+Like Windows, MacOS has no notion of home directories (or even of
 users), and a fairly simple standard Python installation.  Thus, only a
 \longprogramopt{prefix} option is needed.  It defines the installation
 base, and files are installed under it as follows:
@@ -597,11 +598,11 @@ how you define a custom installation scheme.  These override options can
 be relative, absolute, or explicitly defined in terms of one of the
 installation base directories.  (There are two installation base
 directories, and they are normally the same---they only differ when you
-use the Unix ``prefix scheme'' and supply different
+use the \UNIX{} ``prefix scheme'' and supply different
 \longprogramopt{prefix} and \longprogramopt{exec-prefix} options.)
 
 For example, say you're installing a module distribution to your home
-directory under Unix---but you want scripts to go in
+directory under \UNIX---but you want scripts to go in
 \file{\textasciitilde/scripts} rather than \file{\textasciitilde/bin}.
 As you might expect, you can override this directory with the
 \longprogramopt{install-scripts} option; in this case, it makes most
@@ -611,7 +612,7 @@ the installation base directory (your home directory, in this case):
 python setup.py install --home=~ --install-scripts=scripts
 \end{verbatim}
 
-Another Unix example: suppose your Python installation was built and
+Another \UNIX{} example: suppose your Python installation was built and
 installed with a prefix of \file{/usr/local/python}, so under a standard 
 installation scripts will wind up in \file{/usr/local/python/bin}.  If
 you want them in \file{/usr/local/bin} instead, you would supply this
@@ -703,10 +704,10 @@ that have such a notion---but the Distutils additionally define a few
 extra variables that may not be in your environment, such as
 \code{\$PLAT}.  (And of course, you can only use the configuration
 variables supplied by the Distutils on systems that don't have
-environment variables, such as Mac~OS (\XXX{true?}).)  See
+environment variables, such as MacOS (\XXX{true?}).)  See
 section~\ref{config-files} for details.
 
-\XXX{need some Windows and Mac~OS examples---when would custom
+\XXX{need some Windows and MacOS examples---when would custom
   installation schemes be needed on those platforms?}
 
 
@@ -727,7 +728,7 @@ apply, values from ``earlier'' files are overridden by ``later'' files.
 \label{sec:config-filenames}
 
 The names and locations of the configuration files vary slightly across
-platforms.  On Unix, the three configuration files (in the order they
+platforms.  On \UNIX, the three configuration files (in the order they
 are processed) are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
@@ -744,7 +745,7 @@ On Windows, the configuration files are:
   \lineiii{local}{\filenq{setup.cfg}}{(3)}
 \end{tableiii}
 
-And on Mac~OS, they are:
+And on MacOS, they are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
   \lineiii{system}{\filenq{\filevar{prefix}:Lib:distutils:pydistutils.cfg}}{(6)}
@@ -756,12 +757,12 @@ And on Mac~OS, they are:
 \begin{description}
 \item[(1)] Strictly speaking, the system-wide configuration file lives
   in the directory where the Distutils are installed; under Python 1.6
-  and later on Unix, this is as shown. For Python 1.5.2, the Distutils
+  and later on \UNIX, this is as shown. For Python 1.5.2, the Distutils
   will normally be installed to
   \file{\filevar{prefix}/lib/site-packages/python1.5/distutils},
   so the system configuration file should be put there under Python
   1.5.2.
-\item[(2)] On Unix, if the \envvar{HOME} environment variable is not
+\item[(2)] On \UNIX, if the \envvar{HOME} environment variable is not
   defined, the user's home directory will be determined with the
   \function{getpwuid()} function from the standard \module{pwd} module.
 \item[(3)] I.e., in the current directory (usually the location of the
@@ -783,7 +784,7 @@ And on Mac~OS, they are:
 \item[(6)] (See also notes (1) and (4).)  The default installation
   prefix is just \file{Python:}, so under Python 1.6 and later this is
   normally\file{Python:Lib:distutils:pydistutils.cfg}.  (The Distutils
-  don't work very well with Python 1.5.2 under Mac~OS.  \XXX{true?})
+  don't work very well with Python 1.5.2 under MacOS.  \XXX{true?})
 \end{description}
 
 
