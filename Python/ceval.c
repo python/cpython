@@ -1456,12 +1456,8 @@ eval_code(co, globals, locals, owner, arg)
 			}
 		}
 		else {
-			if (err_occurred()) {
-				fprintf(stderr, "XXX undetected error\n");
-				abort();
-				/* NOTREACHED */
-				why = WHY_EXCEPTION;
-			}
+			if (err_occurred())
+				fatal("XXX undetected error");
 		}
 #endif
 
@@ -2058,10 +2054,8 @@ call_object(func, arg)
 	else
 		result = call_builtin(func, arg);
 
-        if (result == NULL && !err_occurred()) {
-		fprintf(stderr, "null result without error in call_object\n");
-		abort();
-	}
+        if (result == NULL && !err_occurred())
+		fatal("null result without error in call_object");
         
         return result;
 }
@@ -2211,10 +2205,8 @@ call_function(func, arg)
 		XDECREF(newarg);
 		return NULL;
 	}
-	if (!is_codeobject(co)) {
-		fprintf(stderr, "XXX Bad code\n");
-		abort();
-	}
+	if (!is_codeobject(co))
+		fatal("XXX Bad code");
 	newlocals = newdictobject();
 	if (newlocals == NULL) {
 		XDECREF(newarg);
