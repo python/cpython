@@ -30,7 +30,7 @@ class UnlinkingLogReader(hotshot.log.LogReader):
     def next(self, index=None):
         try:
             return hotshot.log.LogReader.next(self)
-        except (IndexError, StopIteration):
+        except StopIteration:
             self.close()
             os.unlink(self.__logfn)
             raise
