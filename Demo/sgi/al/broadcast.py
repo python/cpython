@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/python
+#! /usr/local/bin/python
 
 # broadcast [port]
 #

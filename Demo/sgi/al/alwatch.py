@@ -10,7 +10,7 @@ params = al.queryparams(dev)
 for i in range(1, len(params), 2):
 	params[i] = -1
 while 1:
-	time.millisleep(100)
+	time.sleep(0.1)
 	old = params[:]
 	al.getparams(dev, params)
 	if params <> old:

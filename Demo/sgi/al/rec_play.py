@@ -20,7 +20,7 @@ def playit (buf) :
 	print 'playing...'
 	p.writesamps(buf)
 	while p.getfilled() > 0:
-		time.millisleep(10)
+		time.sleep(0.01)
 	print 'done.'
 	p.closeport()
 
