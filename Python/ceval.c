@@ -1778,6 +1778,21 @@ eval_frame(PyFrameObject *f)
 				x = res ? Py_True : Py_False;
 				Py_INCREF(x);
 			}
+			else if (v == w && PyString_CheckExact(v)) {
+			    	/* Fast-path for comparing interned strings */
+				switch (oparg) {
+				case EQ: x = Py_True; break;
+				case LE: x = Py_True; break;
+				case GE: x = Py_True; break;
+				case NE: x = Py_False; break;
+				case GT: x = Py_False; break;
+				case LT: x = Py_False; break;
+				case IS: x = Py_True; break;
+				case IS_NOT: x = Py_False; break;
+				default: goto slow_compare;
+				}
+				Py_INCREF(x);
+			}
 			else {
 			  slow_compare:
 				x = cmp_outcome(oparg, v, w);
