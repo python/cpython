@@ -178,9 +178,13 @@ class Bdb:
         self.returnframe = frame
         self.quitting = 0
 
-    def set_trace(self):
-        """Start debugging from here."""
-        frame = sys._getframe().f_back
+    def set_trace(self, frame=None):
+        """Start debugging from `frame`.
+
+        If frame is not specified, debugging starts from caller's frame.
+        """
+        if frame is None:
+            frame = sys._getframe().f_back
         self.reset()
         while frame:
             frame.f_trace = self.trace_dispatch
