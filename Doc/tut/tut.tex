@@ -1862,6 +1862,19 @@ SyntaxError: invalid syntax
 [8, 12, -54]
 \end{verbatim}
 
+To make list comprehensions match the behavior of \keyword{for}
+loops, assignments to the loop variable remain visible outside
+of the comprehension:
+
+\begin{verbatim}
+>>> x = 100                     # this gets overwritten
+>>> [x**3 for x in range(5)]
+[0, 1, 8, 27, 64]
+>>> x
+4                               # the final value for range(5)
+>>
+\end{verbatim}
+
 
 \section{The \keyword{del} statement \label{del}}
 
