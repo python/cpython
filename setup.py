@@ -822,5 +822,4 @@ def main():
 
 # --install-platlib
 if __name__ == '__main__':
-    sysconfig.set_python_build()
     main()
