@@ -377,12 +377,9 @@ class Aifc_read():
 		else:
 			raise Error, 'not an AIFF or AIFF-C file'
 		self._comm_chunk_read = 0
-		while 1:
+		while formlength > 0:
 			self._ssnd_seek_needed = 1
-			try:
-				chunk = Chunk().init(self._file)
-			except EOFError:
-				raise Error, 'COMM chunk and/or SSND chunk missing'
+			chunk = Chunk().init(self._file)
 			formlength = formlength - 8 - chunk.chunksize
 			if chunk.chunksize & 1:
 				formlength = formlength - 1
@@ -393,10 +390,6 @@ class Aifc_read():
 				self._ssnd_chunk = chunk
 				dummy = chunk.read(8)
 				self._ssnd_seek_needed = 0
-				if formlength <= 0:
-					if not self._comm_chunk_read:
-						raise Error, 'COMM chunk missing'
-					break
 			elif chunk.chunkname == 'FVER':
 				self._version = _read_long(chunk)
 			elif chunk.chunkname == 'MARK':
@@ -406,6 +399,8 @@ class Aifc_read():
 			else:
 				raise Error, 'unrecognized chunk type '+chunk.chunkname
 			chunk.skip()
+		if not self._comm_chunk_read or not self._ssnd_chunk:
+			raise Error, 'COMM chunk and/or SSND chunk missing'
 		if self._aifc and self._decomp:
 			params = [CL.ORIGINAL_FORMAT, 0, \
 				  CL.BITS_PER_COMPONENT, 0, \
@@ -707,7 +702,7 @@ class Aifc_write():
 		return self._nchannels, self._sampwidth, self._framerate, \
 			  self._nframes, self._comptype, self._compname
 
-	def setmark(self, (id, pos, name)):
+	def setmark(self, id, pos, name):
 		if id <= 0:
 			raise Error, 'marker ID must be > 0'
 		if pos < 0:
@@ -863,7 +858,8 @@ class Aifc_write():
 		else:
 			datalength = self._datawritten
 		if datalength == self._datalength and \
-			  self._nframes == self._nframeswritten:
+			  self._nframes == self._nframeswritten and \
+			  self._marklength == 0:
 			self._file.seek(curpos, 0)
 			return
 		self._file.seek(self._form_length_pos, 0)
@@ -888,7 +884,7 @@ class Aifc_write():
 				length = length + 1
 		_write_long(self._file, length)
 		self._marklength = length + 8
-		_write_short(len(self._file, markers))
+		_write_short(self._file, len(self._markers))
 		for marker in self._markers:
 			id, pos, name = marker
 			_write_short(self._file, id)
