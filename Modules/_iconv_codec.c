@@ -42,7 +42,7 @@ PyDoc_STRVAR(iconvcodec_doc, "iconvcodec object");
 
 staticforward PyTypeObject iconvcodec_Type;
 
-/* does the choosen internal encoding require
+/* does the chosen internal encoding require
  * byteswapping to get native endianness?
  * 0=no, 1=yes, -1=unknown */
 static int byteswap = -1;
@@ -146,7 +146,7 @@ iconvcodec_encode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
     }
 
     while (inplen > 0) {
-        if (iconv(self->enchdl, (char**)&inp, &inplen, &out, &outlen) == -1) {
+        if (iconv(self->enchdl, (char**)&inp, &inplen, &out, &outlen) == (size_t)-1) {
             char         reason[128];
             int          errpos;
 
@@ -353,7 +353,7 @@ iconvcodec_decode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
 }
     while (inplen > 0) {
         char *oldout = out;
-        char res = iconv(self->dechdl, (char**)&inp, &inplen, &out, &outlen);
+        size_t res = iconv(self->dechdl, (char**)&inp, &inplen, &out, &outlen);
 
         if (byteswap) {
             while (oldout < out)
@@ -372,7 +372,7 @@ iconvcodec_decode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
                 oldout += sizeof(Py_UNICODE);
             }
         }
-        if (res == -1) {
+        if (res == (size_t)-1) {
             char         reason[128], *reasonpos = (char *)reason;
             int          errpos;
 
@@ -662,11 +662,11 @@ init_iconv_codec(void)
 
     char in = 1;
     char *inptr = &in;
-    int insize = 1;
+    size_t insize = 1;
     Py_UNICODE out = 0;
     char *outptr = (char *)&out;
-    int outsize = sizeof(out);
-    int res;
+    size_t outsize = sizeof(out);
+    size_t res;
 
     iconv_t hdl = iconv_open(UNICODE_ENCODING, "ASCII");
 
@@ -674,10 +674,10 @@ init_iconv_codec(void)
         Py_FatalError("can't initialize the _iconv_codec module: iconv_open() failed");
 
     res = iconv(hdl, &inptr, &insize, &outptr, &outsize);
-    if (res == -1)
+    if (res == (size_t)-1)
         Py_FatalError("can't initialize the _iconv_codec module: iconv() failed");
 
-    /* Check whether conv() returned native endianess or not for the choosen encoding */
+    /* Check whether conv() returned native endianess or not for the chosen encoding */
     if (out == 0x1)
        byteswap = 0;
 #if Py_UNICODE_SIZE == 2
