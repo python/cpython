@@ -1,0 +1,193 @@
+% Contributed by Skip Montanaro, from the module's doc strings.
+
+\section{Built-in Module \sectcode{operator}}	% If implemented in C
+\bimodindex{spam}
+
+The \code{operator} module exports a set of functions implemented in C
+corresponding to the intrinsic operators of Python.  For example,
+{}\code{operator.add(x, y)} is equivalent to the expression x+y.  The
+function names are those used for special class methods; variants without
+leading and trailing '\_\_' are also provided for convenience.
+
+The \code{operator} module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module operator)}
+
+\begin{funcdesc}{add}{a\, b}
+Return a + b, for a and b numbers.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_add\_\_}{a\, b}
+Return a + b, for a and b numbers.
+\end{funcdesc}
+
+\begin{funcdesc}{sub}{a\, b}
+Return a - b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_sub\_\_}{a\, b}
+Return a - b.
+\end{funcdesc}
+
+\begin{funcdesc}{mul}{a\, b}
+Return a * b, for a and b numbers.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_mul\_\_}{a\, b}
+Return a * b, for a and b numbers.
+\end{funcdesc}
+
+\begin{funcdesc}{div}{a\, b}
+Return a / b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_div\_\_}{a\, b}
+Return a / b.
+\end{funcdesc}
+
+\begin{funcdesc}{mod}{a\, b}
+Return a \% b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_mod\_\_}{a\, b}
+Return a \% b.
+\end{funcdesc}
+
+\begin{funcdesc}{neg}{o}
+Return o negated.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_neg\_\_}{o}
+Return o negated.
+\end{funcdesc}
+
+\begin{funcdesc}{pos}{o}
+Return o positive.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_pos\_\_}{o}
+Return o positive.
+\end{funcdesc}
+
+\begin{funcdesc}{abs}{o}
+Return the absolute value of o.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_abs\_\_}{o}
+Return the absolute value of o.
+\end{funcdesc}
+
+\begin{funcdesc}{inv}{o}
+Return the inverse of o.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_inv\_\_}{o}
+Return the inverse of o.
+\end{funcdesc}
+
+\begin{funcdesc}{lshift}{a\, b}
+Return a shifted left by b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_lshift\_\_}{a\, b}
+Return a shifted left by b.
+\end{funcdesc}
+
+\begin{funcdesc}{rshift}{a\, b}
+Return a shifted right by b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_rshift\_\_}{a\, b}
+Return a shifted right by b.
+\end{funcdesc}
+
+\begin{funcdesc}{and\_}{a\, b}
+Return the bitwise and of a and b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_and\_\_}{a\, b}
+Return the bitwise and of a and b.
+\end{funcdesc}
+
+\begin{funcdesc}{or\_}{a\, b}
+Return the bitwise or of a and b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_or\_\_}{a\, b}
+Return the bitwise or of a and b.
+\end{funcdesc}
+
+\begin{funcdesc}{concat}{a\, b}
+Return a + b for a and b sequences.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_concat\_\_}{a\, b}
+Return a + b for a and b sequences.
+\end{funcdesc}
+
+\begin{funcdesc}{repeat}{a\, b}
+Return a * b where a is a sequence and b is an integer.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_repeat\_\_}{a\, b}
+Return a * b where a is a sequence and b is an integer.
+\end{funcdesc}
+
+\begin{funcdesc}{getitem}{a\, b}
+Return the value of a at index b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_getitem\_\_}{a\, b}
+Return the value of a at index b.
+\end{funcdesc}
+
+\begin{funcdesc}{setitem}{a\, b\, c}
+Set the value of a at index b to c.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_setitem\_\_}{a\, b\, c}
+Set the value of a at index b to c.
+\end{funcdesc}
+
+\begin{funcdesc}{delitem}{a\, b}
+Set the value of a at index b.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_delitem\_\_}{a\, b}
+Set the value of a at index b.
+\end{funcdesc}
+
+\begin{funcdesc}{getslice}{a\, b\, c}
+Return the slice of a from index b to index c-1.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_getslice\_\_}{a\, b\, c}
+Return the slice of a from index b to index c-1.
+\end{funcdesc}
+
+\begin{funcdesc}{setslice}{a\, b\, c\, v}
+Set the slice of a from index b to index c-1 to the sequence v.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_setslice\_\_}{a\, b\, c\, v}
+Set the slice of a from index b to index c-1 to the sequence v.
+\end{funcdesc}
+
+\begin{funcdesc}{delslice}{a\, b\, c}
+Delete the slice of a from index b to index c-1.
+\end{funcdesc}
+
+\begin{funcdesc}{\_\_delslice\_\_}{a\, b\, c}
+Delete the slice of a from index b to index c-1.
+\end{funcdesc}
+
+Example: Build a dictionary that maps the ordinals from 0 to 256 to their
+character equivalents.
+
+\begin{verbatim}
+>>> import operator
+>>> d = {}
+>>> keys = range(256)
+>>> vals = map(chr, keys)
+>>> map(operator.setitem, [d]*len(keys), keys, vals)
+\end{verbatim}
