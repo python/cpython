@@ -4,9 +4,11 @@ import errno
 import fcntl
 import linuxaudiodev
 import os
+import sys
 import select
 import sunaudio
 import time
+import audioop
 
 SND_FORMAT_MULAW_8 = 1
 
@@ -27,6 +29,15 @@ def play_sound_file(path):
             raise TestSkipped, msg
         raise TestFailed, msg
 
+    # convert the data to 16-bit signed
+    data = audioop.ulaw2lin(data, 2)
+
+    # set the data format
+    if sys.byteorder == 'little':
+        fmt = linuxaudiodev.AFMT_S16_LE
+    else:
+        fmt = linuxaudiodev.AFMT_S16_BE
+
     # at least check that these methods can be invoked
     a.bufsize()
     a.obufcount()
@@ -35,7 +46,7 @@ def play_sound_file(path):
     a.fileno()
 
     # set parameters based on .au file headers
-    a.setparameters(rate, 8, nchannels, linuxaudiodev.AFMT_MU_LAW, 1)
+    a.setparameters(rate, 16, nchannels, fmt)
     a.write(data)
     a.flush()
     a.close()
