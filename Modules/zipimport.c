@@ -664,7 +664,7 @@ read_directory(char *archive)
 			     "'%.200s'", archive);
 		return NULL;
 	}
-	fseek(fp, -22, 2);	/* Seek from end of file */
+	fseek(fp, -22, SEEK_END);
 	header_end = ftell(fp);
 	if (fread(endof_central_dir, 1, 22, fp) != 22) {
 		fclose(fp);
