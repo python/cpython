@@ -209,7 +209,7 @@ class dispatcher:
 
     def __repr__ (self):
         try:
-            status = []
+            status = [self.__class__.__module__+"."+self.__class__.__name__]
             if self.accepting and self.addr:
                 status.append ('listening')
             elif self.connected:
@@ -219,8 +219,7 @@ class dispatcher:
                     status.append ('%s:%d' % self.addr)
                 else:
                     status.append (self.addr)
-            return '<%s %s at %x>' % (self.__class__.__name__,
-                                      ' '.join (status), id (self))
+            return '<%s at %#x>' % (' '.join (status), id (self))
         except:
             pass
 
