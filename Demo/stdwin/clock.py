@@ -68,6 +68,7 @@ def cdispatch(event):
 		setdimensions(win)
 	elif type == WE_CLOSE:
 		mainloop.unregister(win)
+		win.close()
 
 def setdimensions(win):
 	width, height = win.getwinsize()
@@ -198,6 +199,6 @@ def dd(n):
 	return '0'*(2-len(s)) + s
 
 def getlocaltime():
-	return time.time() - TZDIFF
+	return int(time.time() - TZDIFF)
 
 main()
