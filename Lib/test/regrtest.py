@@ -555,6 +555,7 @@ _expectations = {
     'win32':
         """
         test_al
+        test_bsddb185
         test_bsddb3
         test_cd
         test_cl
@@ -590,6 +591,7 @@ _expectations = {
     'linux2':
         """
         test_al
+        test_bsddb185
         test_cd
         test_cl
         test_curses
@@ -609,6 +611,7 @@ _expectations = {
         test_al
         test_atexit
         test_bsddb
+        test_bsddb185
         test_bsddb3
         test_bz2
         test_cd
@@ -651,6 +654,7 @@ _expectations = {
         """
         test_al
         test_bsddb
+        test_bsddb185
         test_cd
         test_cl
         test_dl
@@ -671,6 +675,7 @@ _expectations = {
         """
         test_al
         test_bsddb
+        test_bsddb185
         test_cd
         test_cl
         test_dl
@@ -692,6 +697,7 @@ _expectations = {
         test_al
         test_asynchat
         test_bsddb
+        test_bsddb185
         test_cd
         test_cl
         test_dl
@@ -721,6 +727,7 @@ _expectations = {
         test_al
         test_asynchat
         test_bsddb
+        test_bsddb185
         test_cd
         test_cl
         test_commands
@@ -781,6 +788,7 @@ _expectations = {
         """
         test_al
         test_bsddb
+        test_bsddb185
         test_cd
         test_cl
         test_curses
@@ -800,6 +808,7 @@ _expectations = {
         """
         test_al
         test_bsddb
+        test_bsddb185
         test_cd
         test_cl
         test_curses
@@ -824,6 +833,7 @@ _expectations = {
     'atheos':
         """
         test_al
+        test_bsddb185
         test_cd
         test_cl
         test_curses
@@ -847,6 +857,7 @@ _expectations = {
     'cygwin':
         """
         test_al
+        test_bsddb185
         test_bsddb3
         test_cd
         test_cl
@@ -868,6 +879,7 @@ _expectations = {
         """
         test_al
         test_audioop
+        test_bsddb185
         test_bsddb3
         test_cd
         test_cl
