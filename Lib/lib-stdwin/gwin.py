@@ -4,7 +4,7 @@
 # This is used as a base class from which to derive other window types.
 # The mainloop() function here is an event dispatcher for all window types.
 
-import stdwin
+import stdwin, stdwinq
 from stdwinevents import *
 
 # XXX Old version of stdwinevents, should go
@@ -46,7 +46,7 @@ def open(title):			# Open a generic window
 
 def mainloop():				# Handle events until no windows left
 	while windows:
-		treatevent(stdwin.getevent())
+		treatevent(stdwinq.getevent())
 
 def treatevent(e):			# Handle a stdwin event
 	type, w, detail = e
