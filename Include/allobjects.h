@@ -33,6 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "objimpl.h"
 
 #include "intobject.h"
+#include "longobject.h"
 #include "floatobject.h"
 #include "stringobject.h"
 #include "tupleobject.h"
