@@ -7,7 +7,9 @@ PyExc_AssertionError
 PyExc_AttributeError
 PyExc_EOFError
 PyExc_FloatingPointError
+PyExc_EnvironmentError
 PyExc_IOError
+PyExc_OSError
 PyExc_ImportError
 PyExc_IndexError
 PyExc_KeyError
@@ -56,6 +58,7 @@ PyErr_NewException
 PyErr_Format
 PyErr_BadInternalCall
 PyErr_SetFromErrno
+PyErr_SetFromErrnoWithFilename
 PyErr_NoMemory
 PyErr_BadArgument
 PyErr_Clear
@@ -82,6 +85,8 @@ getopt
 Py_GetVersion
 _PyParser_Grammar
 PyImport_Inittab
+PyImport_AppendInittab
+PyImport_ExtendInittab
 initimp
 setint
 PyImport_Import
@@ -158,6 +163,8 @@ PyInterpreterState_Clear
 PyInterpreterState_New
 PyMember_Set
 PyMember_Get
+PySys_WriteStderr
+PySys_WriteStdout
 PySys_SetArgv
 PySys_SetPath
 _PySys_Init
@@ -172,17 +179,18 @@ Py_OptimizeFlag
 PyCode_Addr2Line
 PyNode_Compile
 PyCode_New
-PyMapping_SetItemString
-PyMapping_GetItemString
 PyObject_CallMethod
 PyObject_CallFunction
 PyObject_CallObject
 PyMapping_HasKey
 PyMapping_HasKeyString
+PyMapping_SetItemString
+PyMapping_GetItemString
 PyMapping_Length
 PyMapping_Check
 PySequence_Index
 PySequence_In
+PySequence_Contains
 PySequence_Count
 PySequence_List
 PySequence_Tuple
@@ -303,8 +311,8 @@ PyInt_FromLong
 PyInt_GetMax
 PyList_Type
 PyList_AsTuple
-PyList_Sort
 PyList_Reverse
+PyList_Sort
 PyList_SetSlice
 PyList_GetSlice
 PyList_Append
@@ -431,7 +439,6 @@ initmd5
 new_doc
 initnew
 initoperator
-PyAST_Type
 initparser
 initregex
 _Py_re_syntax_table
@@ -469,6 +476,8 @@ Py_GetPath
 Py_GetPlatform
 PyMac_ConsoleIsDead
 PyMac_OSErrException
+PyMac_Buildwide
+PyMac_Getwide
 PyMac_BuildFixed
 PyMac_GetFixed
 PyMac_GetEventRecord
@@ -484,9 +493,6 @@ PyMac_BuildOSType
 PyMac_GetOSType
 PyMac_PromptGetFile
 PyMac_GetDirectory
-PyMac_FindModuleExtension
-PyMac_LoadResourceModule
-PyMac_FindResourceModule
 SIOUXDoAboutBox
 PyMac_RestoreMenuBar
 PyMac_InitMenuBar
@@ -528,8 +534,7 @@ PyMac_Initialize
 PyMac_InitApplet
 getfiletype
 setfiletype
-PyMac_Getwide
-PyMac_Buildwide
+main
 PyMac_AddLibResources
 __initialize_with_resources
 getbootvol
@@ -564,6 +569,11 @@ initcPickle
 Pickler_setattr
 cPickle_PyMapping_HasKey
 initcStringIO
+PyMac_FindModuleExtension
+PyMac_LoadResourceModule
+PyMac_LoadCodeResourceModule
+PyMac_FindCodeResourceModule
+PyMac_FindResourceModule
 uADSPCompletion
 __vt__21AppleTalkSocketDomain		# AppleTalkSocketDomain::__vt
 __vt__10ADSPSocket		# ADSPSocket::__vt
@@ -673,6 +683,7 @@ socket__12SocketDomainFis		# SocketDomain::socket(int,short)
 __dt__12SocketDomainFv		# SocketDomain::~SocketDomain()
 __ct__12SocketDomainFi		# SocketDomain::SocketDomain(int)
 Ready__12SocketDomainFv		# SocketDomain::Ready()
+Domain__12SocketDomainFi		# SocketDomain::Domain(int)
 GUSIGetEvents
 GUSISetEvents
 GUSIGetHook
@@ -1314,10 +1325,6 @@ _fseek
 fgetpos
 ftell
 _ftell
-__float_min
-__float_max
-__float_epsilon
-__float_tiny
 __float_nan
 __float_huge
 __double_min
@@ -1452,6 +1459,7 @@ difftime
 clock
 __leap_year
 ccommand
+clrscr
 __close_console
 __write_console
 __read_console
@@ -1483,6 +1491,7 @@ __system7present
 __myraise
 utimes
 uname
+fwide
 fgetws
 fputws
 ungetwc
@@ -1562,6 +1571,7 @@ GetNextMallocHeapRegistration
 GetFirstMallocHeapRegistration
 UnregisterMallocHeap
 RegisterMallocHeap
+SIOUXclrscr
 getch
 kbhit
 SIOUXSetTitle
