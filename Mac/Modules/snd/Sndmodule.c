@@ -40,9 +40,6 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
-extern PyObject *PMObj_New(PixMapHandle);
-extern int PMObj_Convert(PyObject *, PixMapHandle *);
-
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Sound.h>
@@ -76,23 +73,6 @@ SndCmd_Convert(PyObject *v, SndCommand *pc)
 		return PyArg_ParseTuple(v, "hhs#", &pc->cmd, &pc->param1, &pc->param2, &len);
 	}
 	return PyArg_Parse(v, "h", &pc->cmd);
-}
-
-/* Create a NumVersion object (a quintuple of integers) */
-static PyObject *
-NumVer_New(NumVersion nv)
-{
-	return Py_BuildValue("iiiii",
-	                     nv.majorRev,
-#ifdef THINK_C
-	                     nv.minorRev,
-	                     nv.bugFixRev,
-#else
-	                     (nv.minorAndBugRev>>4) & 0xf,
-	                     nv.minorAndBugRev & 0xf,
-#endif
-	                     nv.stage,
-	                     nv.nonRelRev);
 }
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */
@@ -426,12 +406,12 @@ static PyObject *Snd_SndSoundManagerVersion(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
+	NumVersion _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = SndSoundManagerVersion();
-	_res = Py_BuildValue("l",
-	                     _rv);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildNumVersion, _rv);
 	return _res;
 }
 
@@ -491,12 +471,12 @@ static PyObject *Snd_MACEVersion(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long _rv;
+	NumVersion _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = MACEVersion();
-	_res = Py_BuildValue("l",
-	                     _rv);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildNumVersion, _rv);
 	return _res;
 }
 
@@ -771,7 +751,7 @@ static PyMethodDef Snd_methods[] = {
 	{"SndControl", (PyCFunction)Snd_SndControl, 1,
 	 "(short id) -> (SndCommand cmd)"},
 	{"SndSoundManagerVersion", (PyCFunction)Snd_SndSoundManagerVersion, 1,
-	 "() -> (long _rv)"},
+	 "() -> (NumVersion _rv)"},
 	{"SndManagerStatus", (PyCFunction)Snd_SndManagerStatus, 1,
 	 "(short theLength) -> (SMStatus theStatus)"},
 	{"SndGetSysBeepState", (PyCFunction)Snd_SndGetSysBeepState, 1,
@@ -779,7 +759,7 @@ static PyMethodDef Snd_methods[] = {
 	{"SndSetSysBeepState", (PyCFunction)Snd_SndSetSysBeepState, 1,
 	 "(short sysBeepState) -> None"},
 	{"MACEVersion", (PyCFunction)Snd_MACEVersion, 1,
-	 "() -> (long _rv)"},
+	 "() -> (NumVersion _rv)"},
 	{"Comp3to1", (PyCFunction)Snd_Comp3to1, 1,
 	 "(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)"},
 	{"Exp1to3", (PyCFunction)Snd_Exp1to3, 1,

@@ -79,8 +79,6 @@ SndCallBackUPP = SndCallBackProcPtr
 SndCompletionProcPtr = FakeType('(SndCompletionProcPtr)0') # XXX
 SndCompletionUPP = SndCompletionProcPtr
 
-NumVersion = OpaqueByValueType('NumVersion', 'NumVer')
-
 ##InOutBuf128 = FixedInputOutputBufferType(128)
 StateBlock = StructInputOutputBufferType('StateBlock')
 
@@ -117,23 +115,6 @@ SndCmd_Convert(PyObject *v, SndCommand *pc)
 		return PyArg_ParseTuple(v, "hhs#", &pc->cmd, &pc->param1, &pc->param2, &len);
 	}
 	return PyArg_Parse(v, "h", &pc->cmd);
-}
-
-/* Create a NumVersion object (a quintuple of integers) */
-static PyObject *
-NumVer_New(NumVersion nv)
-{
-	return Py_BuildValue("iiiii",
-	                     nv.majorRev,
-#ifdef THINK_C
-	                     nv.minorRev,
-	                     nv.bugFixRev,
-#else
-	                     (nv.minorAndBugRev>>4) & 0xf,
-	                     nv.minorAndBugRev & 0xf,
-#endif
-	                     nv.stage,
-	                     nv.nonRelRev);
 }
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */
