@@ -436,7 +436,11 @@ O_writelines(Oobject *self, PyObject *args) {
 
         if (PyObject_Size(args) < 0) return NULL;
 
-        tmp = PyObject_CallFunction(joiner, "O", args);
+	args = PyTuple_Pack(1, args);
+	if (args == NULL)
+		return NULL;
+	tmp = PyObject_Call(joiner, args, NULL);
+	Py_DECREF(args);
         UNLESS (tmp) return NULL;
 
         args = PyTuple_Pack(1, tmp);
