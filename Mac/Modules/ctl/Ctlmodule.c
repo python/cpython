@@ -432,6 +432,16 @@ static PyObject *CtlObj_GetControlReference(_self, _args)
 	return _res;
 }
 
+static PyObject *CtlObj_as_Resource(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	return ResObj_New((Handle)_self->ob_itself);
+
+}
+
 static PyMethodDef CtlObj_methods[] = {
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
 	 "() -> None"},
@@ -477,6 +487,8 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(SInt32 data) -> None"},
 	{"GetControlReference", (PyCFunction)CtlObj_GetControlReference, 1,
 	 "() -> (SInt32 _rv)"},
+	{"as_Resource", (PyCFunction)CtlObj_as_Resource, 1,
+	 "Return this Control as a Resource"},
 	{NULL, NULL, 0}
 };
 
