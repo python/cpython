@@ -135,18 +135,19 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 		if (max == 0) {
 			if (args == NULL)
 				return 1;
-			sprintf(msgbuf, "%.200s%s takes no arguments",
-				fname==NULL ? "function" : fname,
-				fname==NULL ? "" : "()");
+			PyOS_snprintf(msgbuf, sizeof(msgbuf),
+				      "%.200s%s takes no arguments",
+				      fname==NULL ? "function" : fname,
+				      fname==NULL ? "" : "()");
 			PyErr_SetString(PyExc_TypeError, msgbuf);
 			return 0;
 		}
 		else if (min == 1 && max == 1) {
 			if (args == NULL) {
-				sprintf(msgbuf,
-					"%.200s%s takes at least one argument",
-					fname==NULL ? "function" : fname,
-					fname==NULL ? "" : "()");
+				PyOS_snprintf(msgbuf, sizeof(msgbuf),
+				      "%.200s%s takes at least one argument",
+					      fname==NULL ? "function" : fname,
+					      fname==NULL ? "" : "()");
 				PyErr_SetString(PyExc_TypeError, msgbuf);
 				return 0;
 			}
@@ -173,15 +174,16 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 	
 	if (len < min || max < len) {
 		if (message == NULL) {
-			sprintf(msgbuf,
-				"%.150s%s takes %s %d argument%s (%d given)",
-				fname==NULL ? "function" : fname,
-				fname==NULL ? "" : "()",
-				min==max ? "exactly"
-				         : len < min ? "at least" : "at most",
-				len < min ? min : max,
-				(len < min ? min : max) == 1 ? "" : "s",
-				len);
+			PyOS_snprintf(msgbuf, sizeof(msgbuf),
+				      "%.150s%s takes %s %d argument%s "
+				      "(%d given)",
+				      fname==NULL ? "function" : fname,
+				      fname==NULL ? "" : "()",
+				      min==max ? "exactly"
+				      : len < min ? "at least" : "at most",
+				      len < min ? min : max,
+				      (len < min ? min : max) == 1 ? "" : "s",
+				      len);
 			message = msgbuf;
 		}
 		PyErr_SetString(PyExc_TypeError, message);
@@ -222,6 +224,7 @@ seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 	if (PyErr_Occurred())
 		return;
 	else if (message == NULL) {
+		/* XXX snprintf */
 		if (fname != NULL) {
 			sprintf(p, "%.200s() ", fname);
 			p += strlen(p);
@@ -294,19 +297,20 @@ converttuple(PyObject *arg, char **p_format, va_list *p_va, int *levels,
 	
 	if (!PySequence_Check(arg) || PyString_Check(arg)) {
 		levels[0] = 0;
-		sprintf(msgbuf,
-			toplevel ? "expected %d arguments, not %.50s" :
-				   "must be %d-item sequence, not %.50s",
-			n, arg == Py_None ? "None" : arg->ob_type->tp_name);
+		PyOS_snprintf(msgbuf, sizeof(msgbuf),
+			      toplevel ? "expected %d arguments, not %.50s" :
+			              "must be %d-item sequence, not %.50s",
+			      n, 
+			      arg == Py_None ? "None" : arg->ob_type->tp_name);
 		return msgbuf;
 	}
 	
 	if ((i = PySequence_Size(arg)) != n) {
 		levels[0] = 0;
-		sprintf(msgbuf,
-			toplevel ? "expected %d arguments, not %d" :
-				   "must be sequence of length %d, not %d",
-			n, i);
+		PyOS_snprintf(msgbuf, sizeof(msgbuf),
+			      toplevel ? "expected %d arguments, not %d" :
+			             "must be sequence of length %d, not %d",
+			      n, i);
 		return msgbuf;
 	}
 
@@ -366,7 +370,9 @@ converterr(char *expected, PyObject *arg, char *msgbuf)
 {
 	assert(expected != NULL);
 	assert(arg != NULL); 
-	sprintf(msgbuf, "must be %.50s, not %.50s", expected,
+	/* XXX use snprintf? */
+	sprintf(msgbuf,
+		"must be %.50s, not %.50s", expected,
 		arg == Py_None ? "None" : arg->ob_type->tp_name);
 	return msgbuf;
 }
@@ -1129,15 +1135,16 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	   are not included in the "%d given" part of the message */
 	if (len < min || max < len) {
 		if (message == NULL) {
-			sprintf(msgbuf,
-				"%.200s%s takes %s %d argument%s (%d given)",
-				fname==NULL ? "function" : fname,
-				fname==NULL ? "" : "()",
-				min==max ? "exactly"
-				         : len < min ? "at least" : "at most",
-				len < min ? min : max,
-				(len < min ? min : max) == 1 ? "" : "s",
-				len);
+			PyOS_snprintf(msgbuf, sizeof(msgbuf),
+				      "%.200s%s takes %s %d argument%s "
+				      "(%d given)",
+				      fname==NULL ? "function" : fname,
+				      fname==NULL ? "" : "()",
+				      min==max ? "exactly"
+			              : len < min ? "at least" : "at most",
+				      len < min ? min : max,
+				      (len < min ? min : max) == 1 ? "" : "s",
+				      len);
 			message = msgbuf;
 		}
 		PyErr_SetString(PyExc_TypeError, message);
