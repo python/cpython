@@ -507,15 +507,25 @@ class PyBuildExt(build_ext):
                             dblibs = [dblib]
                             raise found
         except found:
+            # A default source build puts Berkeley DB in something like
+            # /usr/local/Berkeley.3.3 and the lib dir under that isn't
+            # normally on ld.so's search path, unless the sysadmin has hacked
+            # /etc/ld.so.conf.  We add the directory to runtime_library_dirs
+            # so the proper -R/--rpath flags get passed to the linker.  This
+            # is usually correct and most trouble free, but may cause problems
+            # in some unusual system configurations (e.g. the directory is on
+            # an NFS server that goes away).
             if dbinc == 'db_185.h':
                 exts.append(Extension('bsddb', ['bsddbmodule.c'],
                                       library_dirs=[dblib_dir],
+                                      runtime_library_dirs=[dblib_dir],
                                       include_dirs=db_incs,
                                       define_macros=[('HAVE_DB_185_H',1)],
                                       libraries=[dblib]))
             else:
                 exts.append(Extension('bsddb', ['bsddbmodule.c'],
                                       library_dirs=[dblib_dir],
+                                      runtime_library_dirs=[dblib_dir],
                                       include_dirs=db_incs,
                                       libraries=[dblib]))
         else:
