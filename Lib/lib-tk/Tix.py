@@ -285,11 +285,17 @@ class TixWidget(Tkinter.Widget):
         # Move static options into extra. static_options must be
         # a list of keywords (or None).
         extra=()
+
+        # 'options' is always a static option
         if static_options:
-            for k,v in cnf.items()[:]:
-                if k in static_options:
-                    extra = extra + ('-' + k, v)
-                    del cnf[k]
+            static_options.append('options')
+        else:
+            static_options = ['options']
+            
+        for k,v in cnf.items()[:]:
+            if k in static_options:
+                extra = extra + ('-' + k, v)
+                del cnf[k]
 
         self.widgetName = widgetName
         Widget._setup(self, master, cnf)
@@ -408,8 +414,8 @@ class TixSubWidget(TixWidget):
                 except KeyError:
                     # Create the intermediate widget
                     parent = TixSubWidget(parent, plist[i],
-                                       destroy_physically=0,
-                                       check_intermediate=0)
+                                          destroy_physically=0,
+                                          check_intermediate=0)
             TixWidget.__init__(self, parent, None, None, {'name' : name})
         self.destroy_physically = destroy_physically
 
@@ -472,8 +478,8 @@ class DisplayStyle:
     def config(self, cnf={}, **kw):
         return _lst2dict(
             self.tk.split(
-               apply(self.tk.call,
-                     (self.stylename, 'configure') + self._options(cnf,kw))))
+            apply(self.tk.call,
+                  (self.stylename, 'configure') + self._options(cnf,kw))))
 
     def __getitem__(self,key):
         return self.tk.call(self.stylename, 'cget', '-%s'%key)
@@ -631,9 +637,9 @@ class DirTree(TixWidget):
 
     Subwidget       Class
     ---------       -----
-    hlist       HList
-    hsb              Scrollbar
-    vsb              Scrollbar"""
+    hlist           HList
+    hsb             Scrollbar
+    vsb             Scrollbar"""
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixDirTree', ['options'], cnf, kw)
@@ -654,9 +660,9 @@ class DirSelectBox(TixWidget):
     Subwidget       Class
     ---------       -----
     selection       ComboBox
-    filter       ComboBox
-    dirlist       ScrolledListBox
-    filelist       ScrolledListBox"""
+    filter          ComboBox
+    dirlist         ScrolledListBox
+    filelist        ScrolledListBox"""
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixDirSelectBox', ['options'], cnf, kw)
@@ -708,7 +714,7 @@ class DirSelectDialog(TixWidget):
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixDirSelectDialog',
-                         ['options'], cnf, kw)
+                           ['options'], cnf, kw)
         self.subwidget_list['dirbox'] = _dummyDirSelectBox(self, 'dirbox')
         # cancel and ok buttons are missing
 
@@ -730,7 +736,7 @@ class ExFileSelectDialog(TixWidget):
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixExFileSelectDialog',
-                         ['options'], cnf, kw)
+                           ['options'], cnf, kw)
         self.subwidget_list['fsbox'] = _dummyExFileSelectBox(self, 'fsbox')
 
     def popup(self):
@@ -749,9 +755,9 @@ class FileSelectBox(TixWidget):
     Subwidget       Class
     ---------       -----
     selection       ComboBox
-    filter       ComboBox
-    dirlist       ScrolledListBox
-    filelist       ScrolledListBox"""
+    filter          ComboBox
+    dirlist         ScrolledListBox
+    filelist        ScrolledListBox"""
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixFileSelectBox', ['options'], cnf, kw)
@@ -777,7 +783,7 @@ class FileSelectDialog(TixWidget):
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixFileSelectDialog',
-                         ['options'], cnf, kw)
+                           ['options'], cnf, kw)
         self.subwidget_list['btns'] = _dummyStdButtonBox(self, 'btns')
         self.subwidget_list['fsbox'] = _dummyFileSelectBox(self, 'fsbox')
 
@@ -800,7 +806,7 @@ class FileEntry(TixWidget):
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixFileEntry',
-                         ['dialogtype', 'options'], cnf, kw)
+                           ['dialogtype', 'options'], cnf, kw)
         self.subwidget_list['button'] = _dummyButton(self, 'button')
         self.subwidget_list['entry'] = _dummyEntry(self, 'entry')
 
@@ -821,17 +827,17 @@ class HList(TixWidget):
 
     def __init__ (self,master=None,cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixHList',
-                         ['columns', 'options'], cnf, kw)
+                           ['columns', 'options'], cnf, kw)
 
     def add(self, entry, cnf={}, **kw):
         return apply(self.tk.call,
-                    (self._w, 'add', entry) + self._options(cnf, kw))
+                     (self._w, 'add', entry) + self._options(cnf, kw))
 
     def add_child(self, parent=None, cnf={}, **kw):
         if not parent:
             parent = ''
         return apply(self.tk.call,
-                    (self._w, 'addchild', parent) + self._options(cnf, kw))
+                     (self._w, 'addchild', parent) + self._options(cnf, kw))
 
     def anchor_set(self, entry):
         self.tk.call(self._w, 'anchor', 'set', entry)
@@ -844,7 +850,7 @@ class HList(TixWidget):
             return self.tk.call(self._w, 'column', 'width', col, width)
         else:
             return self.tk.call(self._w, 'column', 'width', col,
-                             '-char', chars)
+                                '-char', chars)
 
     def delete_all(self):
         self.tk.call(self._w, 'delete', 'all')
@@ -877,8 +883,8 @@ class HList(TixWidget):
     def header_configure(self, col, cnf={}, **kw):
         if cnf is None:
             return _lst2dict(
-               self.tk.split(
-                   self.tk.call(self._w, 'header', 'configure', col)))
+                self.tk.split(
+                self.tk.call(self._w, 'header', 'configure', col)))
         apply(self.tk.call, (self._w, 'header', 'configure', col)
               + self._options(cnf, kw))
 
@@ -904,8 +910,8 @@ class HList(TixWidget):
     def indicator_configure(self, entry, cnf={}, **kw):
         if cnf is None:
             return _lst2dict(
-               self.tk.split(
-                   self.tk.call(self._w, 'indicator', 'configure', entry)))
+                self.tk.split(
+                self.tk.call(self._w, 'indicator', 'configure', entry)))
         apply(self.tk.call,
               (self._w, 'indicator', 'configure', entry) + self._options(cnf, kw))
 
@@ -956,8 +962,8 @@ class HList(TixWidget):
     def item_configure(self, entry, col, cnf={}, **kw):
         if cnf is None:
             return _lst2dict(
-               self.tk.split(
-                   self.tk.call(self._w, 'item', 'configure', entry, col)))
+                self.tk.split(
+                self.tk.call(self._w, 'item', 'configure', entry, col)))
         apply(self.tk.call, (self._w, 'item', 'configure', entry, col) +
               self._options(cnf, kw))
 
@@ -1016,7 +1022,7 @@ class LabelEntry(TixWidget):
 
     def __init__ (self,master=None,cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixLabelEntry',
-                         ['labelside','options'], cnf, kw)
+                           ['labelside','options'], cnf, kw)
         self.subwidget_list['label'] = _dummyLabel(self, 'label')
         self.subwidget_list['entry'] = _dummyEntry(self, 'entry')
 
@@ -1033,7 +1039,7 @@ class LabelFrame(TixWidget):
 
     def __init__ (self,master=None,cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixLabelFrame',
-                         ['labelside','options'], cnf, kw)
+                           ['labelside','options'], cnf, kw)
         self.subwidget_list['label'] = _dummyLabel(self, 'label')
         self.subwidget_list['frame'] = _dummyFrame(self, 'frame')
 
@@ -1047,11 +1053,12 @@ class ListNoteBook(TixWidget):
     choosing the name of the desired page in the hlist subwidget."""
 
     def __init__(self, master, cnf={}, **kw):
-       TixWidget.__init__(self, master, 'tixListNoteBook', ['options'], cnf, kw)
-       self.subwidget_list['pane'] = _dummyPanedWindow(self, 'pane',
-                                                destroy_physically=0)
-       self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
-       self.subwidget_list['shlist'] = _dummyScrolledHList(self, 'vsb')
+        TixWidget.__init__(self, master, 'tixListNoteBook', ['options'], cnf, kw)
+        # Is this necessary? It's not an exposed subwidget in Tix.
+        self.subwidget_list['pane'] = _dummyPanedWindow(self, 'pane',
+                                                        destroy_physically=0)
+        self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
+        self.subwidget_list['shlist'] = _dummyScrolledHList(self, 'shlist')
 
     def add(self, name, cnf={}, **kw):
         apply(self.tk.call,
@@ -1080,7 +1087,7 @@ class Meter(TixWidget):
 
     def __init__(self, master=None, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixMeter',
-                         ['options'], cnf, kw)
+                           ['options'], cnf, kw)
 
 class NoteBook(TixWidget):
     """NoteBook - Multi-page container widget (tabbed notebook metaphor).
@@ -1093,7 +1100,7 @@ class NoteBook(TixWidget):
     def __init__ (self,master=None,cnf={}, **kw):
         TixWidget.__init__(self,master,'tixNoteBook', ['options'], cnf, kw)
         self.subwidget_list['nbframe'] = TixSubWidget(self, 'nbframe',
-                                                 destroy_physically=0)
+                                                      destroy_physically=0)
 
     def add(self, name, cnf={}, **kw):
         apply(self.tk.call,
@@ -1132,8 +1139,8 @@ class OptionMenu(TixWidget):
 
     Subwidget       Class
     ---------       -----
-    menubutton       Menubutton
-    menu       Menu"""
+    menubutton      Menubutton
+    menu            Menu"""
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixOptionMenu', ['options'], cnf, kw)
@@ -1171,12 +1178,32 @@ class PanedWindow(TixWidget):
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixPanedWindow', ['orientation', 'options'], cnf, kw)
 
+    # add delete forget panecget paneconfigure panes setsize
     def add(self, name, cnf={}, **kw):
         apply(self.tk.call,
               (self._w, 'add', name) + self._options(cnf, kw))
         self.subwidget_list[name] = TixSubWidget(self, name,
-                                            check_intermediate=0)
+                                                 check_intermediate=0)
         return self.subwidget_list[name]
+
+    def delete(self, name):
+        self.tk.call(self._w, 'delete', name)
+        self.subwidget_list[name].destroy()
+        del self.subwidget_list[name]
+
+    def forget(self, name):
+        self.tk.call(self._w, 'forget', name)
+
+    def panecget(self,  entry, opt):
+        return self.tk.call(self._w, 'panecget', entry, opt)
+
+    def paneconfigure(self, entry, cnf={}, **kw):
+        if cnf is None:
+            return _lst2dict(
+                self.tk.split(
+                self.tk.call(self._w, 'paneconfigure', entry)))
+        apply(self.tk.call,
+              (self._w, 'paneconfigure', entry) + self._options(cnf, kw))
 
     def panes(self):
         names = self.tk.call(self._w, 'panes')
@@ -1221,7 +1248,7 @@ class ResizeHandle(TixWidget):
                  'x', 'y']
         # In fact, x y height width are configurable
         TixWidget.__init__(self, master, 'tixResizeHandle',
-                            flags, cnf, kw)
+                           flags, cnf, kw)
 
     def attach_widget(self, widget):
         self.tk.call(self._w, 'attachwidget', widget._w)
@@ -1240,7 +1267,7 @@ class ScrolledHList(TixWidget):
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixScrolledHList', ['options'],
-                         cnf, kw)
+                           cnf, kw)
         self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
         self.subwidget_list['vsb'] = _dummyScrollbar(self, 'vsb')
         self.subwidget_list['hsb'] = _dummyScrollbar(self, 'hsb')
@@ -1268,7 +1295,7 @@ class ScrolledTList(TixWidget):
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixScrolledTList', ['options'],
-                         cnf, kw)
+                           cnf, kw)
         self.subwidget_list['tlist'] = _dummyTList(self, 'tlist')
         self.subwidget_list['vsb'] = _dummyScrollbar(self, 'vsb')
         self.subwidget_list['hsb'] = _dummyScrollbar(self, 'hsb')
@@ -1290,9 +1317,9 @@ class Select(TixWidget):
 
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixSelect',
-                         ['allowzero', 'radio', 'orientation', 'labelside',
-                          'options'],
-                         cnf, kw)
+                           ['allowzero', 'radio', 'orientation', 'labelside',
+                            'options'],
+                           cnf, kw)
         self.subwidget_list['label'] = _dummyLabel(self, 'label')
 
     def add(self, name, cnf={}, **kw):
@@ -1304,12 +1331,44 @@ class Select(TixWidget):
     def invoke(self, name):
         self.tk.call(self._w, 'invoke', name)
 
+class Shell(TixWidget):
+    """Toplevel window.
+
+    Subwidgets - None"""
+
+    def __init__ (self,master=None,cnf={}, **kw):
+        TixWidget.__init__(self, master, 'tixShell', ['options', 'title'], cnf, kw)
+
+class DialogShell(TixWidget):
+    """Toplevel window, with popup popdown and center methods.
+    It tells the window manager that it is a dialog window and should be
+    treated specially. The exact treatment depends on the treatment of
+    the window manager.
+
+    Subwidgets - None"""
+
+    def __init__ (self,master=None,cnf={}, **kw):
+        TixWidget.__init__(self, master,
+                           'tixDialogShell',
+                           ['options', 'title', 'mapped',
+                            'minheight', 'minwidth',
+                            'parent', 'transient'], cnf, kw)
+
+    def popdown(self):
+        self.tk.call(self._w, 'popdown')
+
+    def popup(self):
+        self.tk.call(self._w, 'popup')
+
+    def center(self):
+        self.tk.call(self._w, 'center')
+
 class StdButtonBox(TixWidget):
     """StdButtonBox - Standard Button Box (OK, Apply, Cancel and Help) """
 
     def __init__(self, master=None, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixStdButtonBox',
-                         ['orientation', 'options'], cnf, kw)
+                           ['orientation', 'options'], cnf, kw)
         self.subwidget_list['ok'] = _dummyButton(self, 'ok')
         self.subwidget_list['apply'] = _dummyButton(self, 'apply')
         self.subwidget_list['cancel'] = _dummyButton(self, 'cancel')
@@ -1361,7 +1420,7 @@ class TList(TixWidget):
 
     def insert(self, index, cnf={}, **kw):
         apply(self.tk.call,
-               (self._w, 'insert', index) + self._options(cnf, kw))
+              (self._w, 'insert', index) + self._options(cnf, kw))
 
     def info_active(self):
         return self.tk.call(self._w, 'info', 'active')
@@ -1417,7 +1476,7 @@ class Tree(TixWidget):
 
     def __init__(self, master=None, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixTree',
-                         ['options'], cnf, kw)
+                           ['options'], cnf, kw)
         self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
         self.subwidget_list['vsb'] = _dummyScrollbar(self, 'vsb')
         self.subwidget_list['hsb'] = _dummyScrollbar(self, 'hsb')
@@ -1551,10 +1610,10 @@ class _dummyComboBox(ComboBox, TixSubWidget):
         # I'm not sure about this destroy_physically=0 in all cases;
         # it may depend on if -dropdown is true; I've added as a trial
         self.subwidget_list['slistbox'] = _dummyScrolledListBox(self,
-                                                         'slistbox',
-                                                         destroy_physically=0)
+                                                                'slistbox',
+                                                                destroy_physically=0)
         self.subwidget_list['listbox'] = _dummyListbox(self, 'listbox',
-                                                  destroy_physically=0)
+                                                       destroy_physically=0)
 
 class _dummyDirList(DirList, TixSubWidget):
     def __init__(self, master, name, destroy_physically=1):
