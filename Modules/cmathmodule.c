@@ -37,51 +37,51 @@ static complex c_mi = {0., -1.};
 static complex c_pi2 = {M_PI/2., 0.};
 
 /* forward declarations */
-complex c_log();
-complex c_prodi();
-complex c_sqrt();
+staticforward complex c_log();
+staticforward complex c_prodi();
+staticforward complex c_sqrt();
 
 
-complex c_acos(x)
+static complex c_acos(x)
 	complex x;
 {
 	return c_neg(c_prodi(c_log(c_sum(x,c_prod(c_i,
 		    c_sqrt(c_diff(c_1,c_prod(x,x))))))));
 }
 
-complex c_acosh(x)
+static complex c_acosh(x)
 	complex x;
 {
 	return c_log(c_sum(x,c_prod(c_i,
 		    c_sqrt(c_diff(c_1,c_prod(x,x))))));
 }
 
-complex c_asin(x)
+static complex c_asin(x)
 	complex x;
 {
 	return c_neg(c_prodi(c_log(c_sum(c_prod(c_i,x),
 		    c_sqrt(c_diff(c_1,c_prod(x,x)))))));
 }
 
-complex c_asinh(x)
+static complex c_asinh(x)
 	complex x;
 {
 	return c_neg(c_log(c_diff(c_sqrt(c_sum(c_1,c_prod(x,x))),x)));
 }
 
-complex c_atan(x)
+static complex c_atan(x)
 	complex x;
 {
 	return c_prod(c_i2,c_log(c_quot(c_sum(c_i,x),c_diff(c_i,x))));
 }
 
-complex c_atanh(x)
+static complex c_atanh(x)
 	complex x;
 {
 	return c_prod(c_half,c_log(c_quot(c_sum(c_1,x),c_diff(c_1,x))));
 }
 
-complex c_cos(x)
+static complex c_cos(x)
 	complex x;
 {
 	complex r;
@@ -90,7 +90,7 @@ complex c_cos(x)
 	return r;
 }
 
-complex c_cosh(x)
+static complex c_cosh(x)
 	complex x;
 {
 	complex r;
@@ -99,7 +99,7 @@ complex c_cosh(x)
 	return r;
 }
 
-complex c_exp(x)
+static complex c_exp(x)
 	complex x;
 {
 	complex r;
@@ -109,7 +109,7 @@ complex c_exp(x)
 	return r;
 }
 
-complex c_log(x)
+static complex c_log(x)
 	complex x;
 {
 	complex r;
@@ -119,7 +119,7 @@ complex c_log(x)
 	return r;
 }
 
-complex c_log10(x)
+static complex c_log10(x)
 	complex x;
 {
 	complex r;
@@ -129,7 +129,7 @@ complex c_log10(x)
 	return r;
 }
 
-complex c_prodi(x)
+static complex c_prodi(x)
      complex x;
 {
 	complex r;
@@ -138,7 +138,7 @@ complex c_prodi(x)
 	return r;
 }
 
-complex c_sin(x)
+static complex c_sin(x)
 	complex x;
 {
 	complex r;
@@ -147,7 +147,7 @@ complex c_sin(x)
 	return r;
 }
 
-complex c_sinh(x)
+static complex c_sinh(x)
 	complex x;
 {
 	complex r;
@@ -156,7 +156,7 @@ complex c_sinh(x)
 	return r;
 }
 
-complex c_sqrt(x)
+static complex c_sqrt(x)
 	complex x;
 {
 	complex r;
@@ -182,7 +182,7 @@ complex c_sqrt(x)
 	return r;
 }
 
-complex c_tan(x)
+static complex c_tan(x)
 	complex x;
 {
 	complex r;
@@ -203,7 +203,7 @@ complex c_tan(x)
 	return r;
 }
 
-complex c_tanh(x)
+static complex c_tanh(x)
 	complex x;
 {
 	complex r;
