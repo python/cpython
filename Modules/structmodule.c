@@ -32,6 +32,16 @@ static object *StructError;
 
 /* Define various structs to figure out the alignments of types */
 
+#ifdef __MWERKS__
+/*
+** XXXX We have a problem here. There are no unique alignment rules
+** on the PowerPC mac. 
+*/
+#ifdef __powerc
+#pragma options align=mac68k
+#endif
+#endif /* __MWERKS__ */
+
 typedef struct { char c; short x; } s_short;
 typedef struct { char c; int x; } s_int;
 typedef struct { char c; long x; } s_long;
@@ -43,6 +53,10 @@ typedef struct { char c; double x; } s_double;
 #define LONG_ALIGN (sizeof(s_long) - sizeof(long))
 #define FLOAT_ALIGN (sizeof(s_float) - sizeof(float))
 #define DOUBLE_ALIGN (sizeof(s_double) - sizeof(double))
+
+#ifdef __powerc
+#pragma options align=reset
+#endif
 
 
 /* Align a size according to a format code */
