@@ -28,7 +28,28 @@ rationale, refer to the PEP for a particular new feature.
 %======================================================================
 \section{PEP 309: Partial Function Application}
 
-XXX describe this PEP.
+For programs written in a functional style, it can be useful to
+construct variants of existing functions that have some of the
+parameters filled in.  This is called ``partial function application''.
+The new \module{functional} module contains a \class{partial} class
+that provides partial application.  
+
+The \module{functional} module is intended to contain tools for
+functional-style programming.  Currently it only contains
+\class{partial}, but new functions will probably be added in future
+versions of Python.
+
+% XXX write rest of this
+% XXX add example from my GTk programming
+
+
+\begin{seealso}
+
+\seepep{309}{Partial Function Application}{PEP proposed and written by
+Peter Harris; implemented by Hye-Shik Chang, with adaptations by
+Raymond Hettinger.}
+
+\end{seealso}
 
 
 %======================================================================
