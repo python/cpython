@@ -1722,14 +1722,14 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	bh = bl = NULL;
 
 	t3 = k_mul(t1, t2);
-	assert(t3->ob_size >= 0);
 	Py_DECREF(t1);
 	Py_DECREF(t2);
 	if (t3 == NULL) goto fail;
+	assert(t3->ob_size >= 0);
 
 	/* Add t3.  Caution:  t3 can spill one bit beyond the allocated
 	 * result space; it's t3-al*bl-ah*bh that always fits.  We have
-	 * to arrange to ignore the hight bit.
+	 * to arrange to ignore the high bit.
 	 */
 	if (t3->ob_size > i) {
 		assert(t3->ob_size == i+1);	/* just one digit over */
