@@ -71,6 +71,7 @@ aliases = {
     'macturkish': 'mac_turkish',
 
     # Windows
+    'windows_1251': 'cp1251',
     'windows_1252': 'cp1252',
     'windows_1254': 'cp1254',
     'windows_1255': 'cp1255',
