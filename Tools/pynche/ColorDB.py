@@ -174,6 +174,15 @@ def triplet_to_fractional_rgb(rgbtuple):
     return map(operator.__div__, rgbtuple, _maxtuple)
 
 
+def triplet_to_brightness(rgbtuple):
+    # return the brightness (grey level) along the scale 0.0==black to
+    # 1.0==white
+    r = 0.299
+    g = 0.587
+    b = 0.114
+    return r*rgbtuple[0] + g*rgbtuple[1] + b*rgbtuple[2]
+
+
 
 if __name__ == '__main__':
     import string
