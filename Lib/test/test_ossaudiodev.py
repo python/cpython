@@ -13,7 +13,7 @@ import audioop
 SND_FORMAT_MULAW_8 = 1
 
 def read_sound_file(path):
-    fp = open(path, 'r')
+    fp = open(path, 'rb')
     size, enc, rate, nchannels, extra = sunaudio.gethdr(fp)
     data = fp.read()
     fp.close()
@@ -30,7 +30,7 @@ def read_sound_file(path):
 def play_sound_file(data, rate, ssize, nchannels):
     try:
         a = ossaudiodev.open('w')
-    except ossaudiodev.error, msg:
+    except IOError, msg:
         if msg[0] in (errno.EACCES, errno.ENODEV, errno.EBUSY):
             raise TestSkipped, msg
         raise TestFailed, msg
