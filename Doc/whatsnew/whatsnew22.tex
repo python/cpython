@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.10}
+\release{1.00}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -11,8 +11,8 @@
 
 \section{Introduction}
 
-This article explains the new features in Python 2.2.
-The final release of Python 2.2 is planned for December 2001.
+This article explains the new features in Python 2.2, released on
+December 21, 2001.
 
 Python 2.2 can be thought of as the "cleanup release".  There are some
 features such as generators and iterators that are completely new, but
@@ -245,7 +245,7 @@ The \function{staticmethod()} function takes the function
 stored in the class object.  You might expect there to be special
 syntax for creating such methods (\code{def static f()},
 \code{defstatic f()}, or something like that) but no such syntax has
-been defined yet; that's been left for future versions.
+been defined yet; that's been left for future versions of Python.
 
 More new features, such as slots and properties, are also implemented
 as new kinds of descriptors, and it's not difficult to write a
@@ -260,10 +260,13 @@ from eiffel import eiffelmethod
 class C(object):
     def f(self, arg1, arg2):
         # The actual function
+        ...
     def pre_f(self):
         # Check preconditions
+        ...
     def post_f(self):
         # Check postconditions
+        ...
 
     f = eiffelmethod(f, pre_f, post_f)
 \end{verbatim}
@@ -275,6 +278,7 @@ There will be a few wizards who need to know about it in order to
 write \function{eiffelmethod()} or the ZODB or whatever, but most
 users will just write code on top of the resulting libraries and
 ignore the implementation details.
+
 
 \subsection{Multiple Inheritance: The Diamond Rule}
 
@@ -326,9 +330,28 @@ the above example, the list becomes [\class{D}, \class{B}, \class{C},
 
 Following this rule, referring to \method{D.save()} will return
 \method{C.save()}, which is the behaviour we're after.  This lookup
-rule is the same as the one followed by Common Lisp.  
+rule is the same as the one followed by Common Lisp.  A new built-in
+function, \function{super()}, provides a way to get at a class's
+superclasses without having to reimplement Python's algorithm.
+The most commonly used form will be 
+\function{super(\var{class}, \var{obj})}, which returns 
+a bound superclass object (not the actual class object).  This form
+will be used in methods to call a method in the superclass; for
+example, \class{D}'s \method{save()} method would look like this:
 
-% XXX mention super()
+\begin{verbatim}
+class D:
+    def save (self):
+	# Call superclass .save()
+        super(D, self).save()
+        # Save D's private information here
+        ...
+\end{verbatim}
+
+\function{super()} can also return unbound superclass objects
+when called as \function{super(\var{class})} or
+\function{super(\var{class1}, \var{class2})}, but this probably won't
+often be useful.
 
 
 \subsection{Attribute Access}
