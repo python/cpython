@@ -30,7 +30,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 #include "ceval.h"
+#ifdef STDC_HEADERS
+#include <stddef.h>
+#else
 #include <sys/types.h>		/* For size_t */
+#endif
 
 struct arrayobject; /* Forward */
 
