@@ -1742,6 +1742,41 @@ static PyObject *MenuObj_InsertMenuItem(_self, _args)
 	return _res;
 }
 
+static PyObject *MenuObj_EnableMenuItem(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	UInt16 item;
+	if (!PyArg_ParseTuple(_args, "H",
+	                      &item))
+		return NULL;
+	EnableMenuItem(_self->ob_itself,
+	               item);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_CheckMenuItem(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short item;
+	Boolean checked;
+	if (!PyArg_ParseTuple(_args, "hb",
+	                      &item,
+	                      &checked))
+		return NULL;
+	CheckMenuItem(_self->ob_itself,
+	              item,
+	              checked);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef MenuObj_methods[] = {
 	{"DisposeMenu", (PyCFunction)MenuObj_DisposeMenu, 1,
 	 "() -> None"},
@@ -1990,6 +2025,10 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(short beforeID) -> None"},
 	{"InsertMenuItem", (PyCFunction)MenuObj_InsertMenuItem, 1,
 	 "(Str255 itemString, short afterItem) -> None"},
+	{"EnableMenuItem", (PyCFunction)MenuObj_EnableMenuItem, 1,
+	 "(UInt16 item) -> None"},
+	{"CheckMenuItem", (PyCFunction)MenuObj_CheckMenuItem, 1,
+	 "(short item, Boolean checked) -> None"},
 	{NULL, NULL, 0}
 };
 
