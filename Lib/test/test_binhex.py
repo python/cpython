@@ -20,7 +20,7 @@ def test():
     start = 'Jack is my hero'
     f.write(start)
     f.close()
-    
+
     binhex.binhex(fname1, fname2)
     if verbose:
         print 'binhex'

@@ -257,4 +257,3 @@ test_division()
 test_bitop_identities()
 test_format()
 test_misc()
-

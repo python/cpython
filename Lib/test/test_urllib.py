@@ -28,5 +28,3 @@ out2_2 = "abc?def"
 
 assert urllib.quote(in2) == out2_1, "urllib.quote problem"
 assert urllib.quote(in2, '?') == out2_2, "urllib.quote problem"
-
-

@@ -81,7 +81,7 @@ def main():
     import sys
 
     # Toplevel headers
-    
+
     toplevel = MimeWriter(sys.stdout)
     toplevel.addheader("From", "bwarsaw@cnri.reston.va.us")
     toplevel.addheader("Date", "Mon Feb 12 17:21:48 EST 1996")
@@ -89,7 +89,7 @@ def main():
     toplevel.addheader("MIME-Version", "1.0")
 
     # Toplevel body parts
-    
+
     f = toplevel.startmultipartbody("knowbot", "801spam999",
                                     [("version", "0.1")], prefix=0)
     f.write("This is a multi-part message in MIME format.\n")
@@ -100,7 +100,7 @@ def main():
     md.startmultipartbody("knowbot-metadata", "802spam999")
 
     # Metadata part 1
-    
+
     md1 = md.nextpart()
     md1.addheader("KP-Metadata-Type", "simple")
     md1.addheader("KP-Access", "read-only")

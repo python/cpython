@@ -1,5 +1,5 @@
 # Test case for the os.poll() function
-    
+
 import sys, os, select, random
 from test_support import verbose, TestSkipped, TESTFN
 

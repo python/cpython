@@ -25,37 +25,37 @@ if 0xff <> 255: raise TestFailed, 'hex int'
 if 0377 <> 255: raise TestFailed, 'octal int'
 if  2147483647   != 017777777777: raise TestFailed, 'large positive int'
 try:
-	from sys import maxint
+    from sys import maxint
 except ImportError:
-	maxint = 2147483647
+    maxint = 2147483647
 if maxint == 2147483647:
-	if -2147483647-1 != 020000000000: raise TestFailed, 'max negative int'
-	# XXX -2147483648
-	if 037777777777 != -1: raise TestFailed, 'oct -1'
-	if 0xffffffff != -1: raise TestFailed, 'hex -1'
-	for s in '2147483648', '040000000000', '0x100000000':
-		try:
-			x = eval(s)
-		except OverflowError:
-			continue
-##		raise TestFailed, \
-		print \
-			  'No OverflowError on huge integer literal ' + `s`
+    if -2147483647-1 != 020000000000: raise TestFailed, 'max negative int'
+    # XXX -2147483648
+    if 037777777777 != -1: raise TestFailed, 'oct -1'
+    if 0xffffffff != -1: raise TestFailed, 'hex -1'
+    for s in '2147483648', '040000000000', '0x100000000':
+        try:
+            x = eval(s)
+        except OverflowError:
+            continue
+##              raise TestFailed, \
+        print \
+                  'No OverflowError on huge integer literal ' + `s`
 elif eval('maxint == 9223372036854775807'):
-	if eval('-9223372036854775807-1 != 01000000000000000000000'):
-		raise TestFailed, 'max negative int'
-	if eval('01777777777777777777777') != -1: raise TestFailed, 'oct -1'
-	if eval('0xffffffffffffffff') != -1: raise TestFailed, 'hex -1'
-	for s in '9223372036854775808', '02000000000000000000000', \
-		 '0x10000000000000000':
-		try:
-			x = eval(s)
-		except OverflowError:
-			continue
-		raise TestFailed, \
-			  'No OverflowError on huge integer literal ' + `s`
+    if eval('-9223372036854775807-1 != 01000000000000000000000'):
+        raise TestFailed, 'max negative int'
+    if eval('01777777777777777777777') != -1: raise TestFailed, 'oct -1'
+    if eval('0xffffffffffffffff') != -1: raise TestFailed, 'hex -1'
+    for s in '9223372036854775808', '02000000000000000000000', \
+             '0x10000000000000000':
+        try:
+            x = eval(s)
+        except OverflowError:
+            continue
+        raise TestFailed, \
+                  'No OverflowError on huge integer literal ' + `s`
 else:
-	print 'Weird maxint value', maxint
+    print 'Weird maxint value', maxint
 
 print '1.1.2.2 Long integers'
 x = 0L
@@ -84,7 +84,7 @@ x = 3.1e4
 print '1.1.3 String literals'
 
 ##def assert(s):
-##	if not s: raise TestFailed, 'see traceback'
+##      if not s: raise TestFailed, 'see traceback'
 
 x = ''; y = ""; assert(len(x) == 0 and x == y)
 x = '\''; y = "'"; assert(len(x) == 1 and x == y and ord(x) == 39)
@@ -142,11 +142,11 @@ print 'funcdef'
 ### parameters: '(' [varargslist] ')'
 ### varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' ('**'|'*' '*') NAME]
 ###            | ('**'|'*' '*') NAME)
-###            | fpdef ['=' test] (',' fpdef ['=' test])* [',']  
+###            | fpdef ['=' test] (',' fpdef ['=' test])* [',']
 ### fpdef: NAME | '(' fplist ')'
 ### fplist: fpdef (',' fpdef)* [',']
 ### arglist: (argument ',')* (argument | *' test [',' '**' test] | '**' test)
-### argument: [test '='] test	# Really [keyword '='] test
+### argument: [test '='] test   # Really [keyword '='] test
 def f1(): pass
 f1()
 f1(*())
@@ -270,7 +270,7 @@ print >> sys.stdout, 0 or 1
 
 # test printing to an instance
 class Gulp:
-	def write(self, msg): pass
+    def write(self, msg): pass
 
 gulp = Gulp()
 print >> gulp, 1, 2, 3
@@ -281,34 +281,34 @@ print >> gulp, 0 or 1
 
 # test print >> None
 def driver():
-	oldstdout = sys.stdout
-	sys.stdout = Gulp()
-	try:
-		tellme(Gulp())
-		tellme()
-	finally:
-		sys.stdout = oldstdout
+    oldstdout = sys.stdout
+    sys.stdout = Gulp()
+    try:
+        tellme(Gulp())
+        tellme()
+    finally:
+        sys.stdout = oldstdout
 
 # we should see this once
 def tellme(file=sys.stdout):
-	print >> file, 'hello world'
+    print >> file, 'hello world'
 
 driver()
 
 # we should not see this at all
 def tellme(file=None):
-	print >> file, 'goodbye universe'
+    print >> file, 'goodbye universe'
 
 driver()
 
 # syntax errors
 def check_syntax(statement):
-	try:
-		compile(statement, '<string>', 'exec')
-	except SyntaxError:
-		pass
-	else:
-		print 'Missing SyntaxError: "%s"' % statement
+    try:
+        compile(statement, '<string>', 'exec')
+    except SyntaxError:
+        pass
+    else:
+        print 'Missing SyntaxError: "%s"' % statement
 check_syntax('print ,')
 check_syntax('print >> x,')
 
@@ -350,26 +350,26 @@ from sys import path, argv
 
 print 'global_stmt' # 'global' NAME (',' NAME)*
 def f():
-	global a
-	global a, b
-	global one, two, three, four, five, six, seven, eight, nine, ten
+    global a
+    global a, b
+    global one, two, three, four, five, six, seven, eight, nine, ten
 
 print 'exec_stmt' # 'exec' expr ['in' expr [',' expr]]
 def f():
-	z = None
-	del z
-	exec 'z=1+1\n'
-	if z <> 2: raise TestFailed, 'exec \'z=1+1\'\\n'
-	del z
-	exec 'z=1+1'
-	if z <> 2: raise TestFailed, 'exec \'z=1+1\''
-	z = None
-	del z
-	exec u'z=1+1\n'
-	if z <> 2: raise TestFailed, 'exec u\'z=1+1\'\\n'
-	del z
-	exec u'z=1+1'
-	if z <> 2: raise TestFailed, 'exec u\'z=1+1\''
+    z = None
+    del z
+    exec 'z=1+1\n'
+    if z <> 2: raise TestFailed, 'exec \'z=1+1\'\\n'
+    del z
+    exec 'z=1+1'
+    if z <> 2: raise TestFailed, 'exec \'z=1+1\''
+    z = None
+    del z
+    exec u'z=1+1\n'
+    if z <> 2: raise TestFailed, 'exec u\'z=1+1\'\\n'
+    del z
+    exec u'z=1+1'
+    if z <> 2: raise TestFailed, 'exec u\'z=1+1\''
 f()
 g = {}
 exec 'z = 1' in g
@@ -408,17 +408,17 @@ for i in 1, 2, 3: pass
 for i, j, k in (): pass
 else: pass
 class Squares:
-	def __init__(self, max):
-		self.max = max
-		self.sofar = []
-	def __len__(self): return len(self.sofar)
-	def __getitem__(self, i):
-		if not 0 <= i < self.max: raise IndexError
-		n = len(self.sofar)
-		while n <= i:
-			self.sofar.append(n*n)
-			n = n+1
-		return self.sofar[i]
+    def __init__(self, max):
+        self.max = max
+        self.sofar = []
+    def __len__(self): return len(self.sofar)
+    def __getitem__(self, i):
+        if not 0 <= i < self.max: raise IndexError
+        n = len(self.sofar)
+        while n <= i:
+            self.sofar.append(n*n)
+            n = n+1
+        return self.sofar[i]
 n = 0
 for x in Squares(10): n = n+x
 if n != 285: raise TestFailed, 'for over growing sequence'
@@ -428,11 +428,11 @@ print 'try_stmt'
 ###         | 'try' ':' suite 'finally' ':' suite
 ### except_clause: 'except' [expr [',' expr]]
 try:
-	1/0
+    1/0
 except ZeroDivisionError:
-	pass
+    pass
 else:
-	pass
+    pass
 try: 1/0
 except EOFError: pass
 except TypeError, msg: pass
@@ -449,16 +449,16 @@ finally: pass
 print 'suite' # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
 if 1: pass
 if 1:
-	pass
+    pass
 if 1:
-	#
-	#
-	#
-	pass
-	pass
-	#
-	pass
-	#
+    #
+    #
+    #
+    pass
+    pass
+    #
+    pass
+    #
 
 print 'test'
 ### and_test ('or' and_test)*
@@ -598,9 +598,9 @@ class C1(B): pass
 class C2(B): pass
 class D(C1, C2, B): pass
 class C:
-	def meth1(self): pass
-	def meth2(self, arg): pass
-	def meth3(self, a1, a2): pass
+    def meth1(self): pass
+    def meth2(self, arg): pass
+    def meth3(self, a1, a2): pass
 
 # list comprehension tests
 nums = [1, 2, 3, 4, 5]
@@ -622,7 +622,7 @@ try:
     eval("[x if y]")
     print "FAIL: should have raised a SyntaxError!"
 except SyntaxError:
-        print "good: got a SyntaxError as expected"
+    print "good: got a SyntaxError as expected"
 
 suppliers = [
   (1, "Boeing"),

@@ -15,7 +15,7 @@ def test_methods():
     for i in range(65536):
         char = unichr(i)
         data = [
-            
+
             # Predicates (single char)
             char.isalnum() and u'1' or u'0',
             char.isalpha() and u'1' or u'0',
@@ -26,7 +26,7 @@ def test_methods():
             char.isspace() and u'1' or u'0',
             char.istitle() and u'1' or u'0',
             char.isupper() and u'1' or u'0',
-            
+
             # Predicates (multiple chars)
             (char + u'abc').isalnum() and u'1' or u'0',
             (char + u'abc').isalpha() and u'1' or u'0',
@@ -42,13 +42,13 @@ def test_methods():
             char.lower(),
             char.upper(),
             char.title(),
-            
+
             # Mappings (multiple chars)
             (char + u'abc').lower(),
             (char + u'ABC').upper(),
             (char + u'abc').title(),
             (char + u'ABC').title(),
-            
+
             ]
         h.update(u''.join(data).encode(encoding))
     return h.hexdigest()
@@ -68,7 +68,7 @@ def test_unicodedata():
             unicodedata.decomposition(char),
             str(unicodedata.mirrored(char)),
             str(unicodedata.combining(char)),
-            ] 
+            ]
         h.update(''.join(data))
     return h.hexdigest()
 

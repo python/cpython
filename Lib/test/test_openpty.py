@@ -19,4 +19,3 @@ if not os.isatty(slave):
 
 os.write(slave, 'Ping!')
 print os.read(master, 1024)
-

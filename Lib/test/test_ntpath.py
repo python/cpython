@@ -5,16 +5,16 @@ import os
 errors = 0
 
 def tester(fn, wantResult):
-	fn = string.replace(fn, "\\", "\\\\")
-	gotResult = eval(fn)
-	if wantResult != gotResult:
-		print "error!"
-		print "evaluated: " + str(fn)
-		print "should be: " + str(wantResult)
-		print " returned: " + str(gotResult)
-		print ""
-		global errors
-		errors = errors + 1
+    fn = string.replace(fn, "\\", "\\\\")
+    gotResult = eval(fn)
+    if wantResult != gotResult:
+        print "error!"
+        print "evaluated: " + str(fn)
+        print "should be: " + str(wantResult)
+        print " returned: " + str(gotResult)
+        print ""
+        global errors
+        errors = errors + 1
 
 tester('ntpath.splitdrive("c:\\foo\\bar")', ('c:', '\\foo\\bar'))
 tester('ntpath.splitunc("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint', '\\foo\\bar'))
@@ -45,7 +45,6 @@ tester('ntpath.commonprefix(["/home/swen/spam", "/home/swen/spam"])',
        "/home/swen/spam")
 
 if errors:
-	print str(errors) + " errors."
+    print str(errors) + " errors."
 else:
-	print "No errors.  Thank your lucky stars."
-
+    print "No errors.  Thank your lucky stars."

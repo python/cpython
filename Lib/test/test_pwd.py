@@ -51,7 +51,7 @@ while bynames.has_key(fakename):
             # should never happen... if so, just forget it
             break
     fakename = string.join(map(None, chars), '')
-    
+
 try:
     pwd.getpwnam(fakename)
 except KeyError:

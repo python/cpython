@@ -15,7 +15,7 @@ f = open(filename, 'w')
 rv = fcntl.fcntl(f.fileno(), FCNTL.F_SETFL, os.O_NONBLOCK)
 if verbose:
     print 'Status from fnctl with O_NONBLOCK: ', rv
-    
+
 if sys.platform in ('netbsd1', 'Darwin1.2',
                     'freebsd2', 'freebsd3', 'freebsd4', 'freebsd5',
                     'bsdos2', 'bsdos3', 'bsdos4',
@@ -27,7 +27,7 @@ else:
     lockdata = struct.pack('hhllhh', FCNTL.F_WRLCK, 0, 0, 0, 0, 0)
 if verbose:
     print 'struct.pack: ', `lockdata`
-    
+
 rv = fcntl.fcntl(f.fileno(), FCNTL.F_SETLKW, lockdata)
 if verbose:
     print 'String from fcntl with F_SETLKW: ', `rv`

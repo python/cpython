@@ -16,10 +16,10 @@ testdoc = """\
 
 import xmllib
 if verbose:
-	parser = xmllib.TestXMLParser()
+    parser = xmllib.TestXMLParser()
 else:
-	parser = xmllib.XMLParser()
+    parser = xmllib.XMLParser()
 
 for c in testdoc:
-	parser.feed(c)
+    parser.feed(c)
 parser.close()

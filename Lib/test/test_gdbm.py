@@ -2,7 +2,7 @@
 """Test script for the gdbm module
    Roger E. Masse
 """
-    
+
 import gdbm
 from gdbm import error
 from test_support import verbose, TestFailed
@@ -15,7 +15,7 @@ g['12345678910'] = '019237410982340912840198242'
 a = g.keys()
 if verbose:
     print 'Test gdbm file keys: ', a
-    
+
 g.has_key('a')
 g.close()
 try:

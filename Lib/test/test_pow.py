@@ -2,10 +2,10 @@ import sys
 import test_support
 
 def powtest(type):
-    if type != float: 
+    if type != float:
         print "    Testing 2-argument pow() function..."
         for i in range(-1000, 1000):
-            if pow(type(i), 0) != 1: 
+            if pow(type(i), 0) != 1:
                 raise ValueError, 'pow('+str(i)+',0) != 1'
             if pow(type(i), 1) != type(i):
                 raise ValueError, 'pow('+str(i)+',1) != '+str(i)
@@ -17,7 +17,7 @@ def powtest(type):
         for i in range(-100, 100):
             if pow(type(i), 3) != i*i*i:
                 raise ValueError, 'pow('+str(i)+',3) != '+str(i*i*i)
-    
+
         pow2 = 1
         for i in range(0,31):
             if pow(2, i) != pow2:
@@ -62,13 +62,13 @@ def powtest(type):
     elif type == long:
         jl, jh = 0, 15
     for i in range(il, ih+1):
-         for j in range(jl, jh+1):
-             for k in range(kl, kh+1):
-                 if k != 0:
-                     if compare(pow(type(i),j,k), pow(type(i),j)% type(k)):
-                         raise ValueError, "pow(" +str(i)+ "," +str(j)+ \
-                              "," +str(k)+ ") != pow(" +str(i)+ "," + \
-                              str(j)+ ") % " +str(k)
+        for j in range(jl, jh+1):
+            for k in range(kl, kh+1):
+                if k != 0:
+                    if compare(pow(type(i),j,k), pow(type(i),j)% type(k)):
+                        raise ValueError, "pow(" +str(i)+ "," +str(j)+ \
+                             "," +str(k)+ ") != pow(" +str(i)+ "," + \
+                             str(j)+ ") % " +str(k)
 
 
 print 'Testing integer mode...'
@@ -104,17 +104,17 @@ print pow(5.0,2) % -8, pow(5.0,2,-8)
 print
 
 for i in range(-10, 11):
- for j in range(0, 6):
-  for k in range(-7, 11):
-   if j >= 0 and k != 0:
-    o = pow(i,j) % k
-    n = pow(i,j,k)
-    if o != n: print 'Integer mismatch:', i,j,k
-   if j >= 0 and k <> 0:
-    o = pow(long(i),j) % k
-    n = pow(long(i),j,k)
-    if o != n: print 'Long mismatch:', i,j,k
-   if i >= 0 and k <> 0:
-     o = pow(float(i),j) % k
-     n = pow(float(i),j,k)
-     if o != n: print 'Float mismatch:', i,j,k
+    for j in range(0, 6):
+        for k in range(-7, 11):
+            if j >= 0 and k != 0:
+                o = pow(i,j) % k
+                n = pow(i,j,k)
+                if o != n: print 'Integer mismatch:', i,j,k
+            if j >= 0 and k <> 0:
+                o = pow(long(i),j) % k
+                n = pow(long(i),j,k)
+                if o != n: print 'Long mismatch:', i,j,k
+            if i >= 0 and k <> 0:
+                o = pow(float(i),j) % k
+                n = pow(float(i),j,k)
+                if o != n: print 'Float mismatch:', i,j,k

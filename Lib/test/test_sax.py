@@ -1,4 +1,3 @@
-
 # regression test for SAX 2.0
 # $Id$
 
@@ -75,7 +74,7 @@ def test_xmlgen_basic():
 def test_xmlgen_content():
     result = StringIO()
     gen = XMLGenerator(result)
-    
+
     gen.startDocument()
     gen.startElement("doc", {})
     gen.characters("huhei")
@@ -87,7 +86,7 @@ def test_xmlgen_content():
 def test_xmlgen_pi():
     result = StringIO()
     gen = XMLGenerator(result)
-    
+
     gen.startDocument()
     gen.processingInstruction("test", "data")
     gen.startElement("doc", {})
@@ -99,7 +98,7 @@ def test_xmlgen_pi():
 def test_xmlgen_content_escape():
     result = StringIO()
     gen = XMLGenerator(result)
-    
+
     gen.startDocument()
     gen.startElement("doc", {})
     gen.characters("<huhei&")
@@ -111,7 +110,7 @@ def test_xmlgen_content_escape():
 def test_xmlgen_ignorable():
     result = StringIO()
     gen = XMLGenerator(result)
-    
+
     gen.startDocument()
     gen.startElement("doc", {})
     gen.ignorableWhitespace(" ")
@@ -125,7 +124,7 @@ ns_uri = "http://www.python.org/xml-ns/saxtest/"
 def test_xmlgen_ns():
     result = StringIO()
     gen = XMLGenerator(result)
-    
+
     gen.startDocument()
     gen.startPrefixMapping("ns1", ns_uri)
     gen.startElementNS((ns_uri, "doc"), "ns1:doc", {})
@@ -147,7 +146,7 @@ def test_filter_basic():
     gen = XMLGenerator(result)
     filter = XMLFilterBase()
     filter.setContentHandler(gen)
-    
+
     filter.startDocument()
     filter.startElement("doc", {})
     filter.characters("content")
@@ -170,7 +169,7 @@ class TestDTDHandler:
     def __init__(self):
         self._notations = []
         self._entities  = []
-    
+
     def notationDecl(self, name, publicId, systemId):
         self._notations.append((name, publicId, systemId))
 
@@ -214,7 +213,7 @@ def test_expat_entityresolver():
     parser.close()
 
     return result.getvalue() == start + "<doc><entity></entity></doc>"
-    
+
 # ===== Attributes support
 
 class AttrGatherer(ContentHandler):
@@ -224,7 +223,7 @@ class AttrGatherer(ContentHandler):
 
     def startElementNS(self, name, qname, attrs):
         self._attrs = attrs
-        
+
 def test_expat_attrs_empty():
     parser = create_parser()
     gather = AttrGatherer()
@@ -264,7 +263,7 @@ def test_expat_nsattrs_wattr():
     parser.close()
 
     attrs = gather._attrs
-    
+
     return attrs.getLength() == 1 and \
            attrs.getNames() == [(ns_uri, "attr")] and \
            attrs.getQNames() == [] and \
@@ -376,13 +375,13 @@ def verify_empty_attrs(attrs):
         gqnk = 0
     except KeyError:
         gqnk = 1
-        
+
     try:
         attrs["attr"]
         gik = 0
     except KeyError:
         gik = 1
-        
+
     return attrs.getLength() == 0 and \
            attrs.getNames() == [] and \
            attrs.getQNames() == [] and \
@@ -444,13 +443,13 @@ def verify_empty_nsattrs(attrs):
         gqnk = 0
     except KeyError:
         gqnk = 1
-        
+
     try:
         attrs[(ns_uri, "attr")]
         gik = 0
     except KeyError:
         gik = 1
-        
+
     return attrs.getLength() == 0 and \
            attrs.getNames() == [] and \
            attrs.getQNames() == [] and \
@@ -469,7 +468,7 @@ def test_nsattrs_empty():
 def test_nsattrs_wattr():
     attrs = AttributesNSImpl({(ns_uri, "attr") : "val"},
                              {(ns_uri, "attr") : "ns:attr"})
-    
+
     return attrs.getLength() == 1 and \
            attrs.getNames() == [(ns_uri, "attr")] and \
            attrs.getQNames() == ["ns:attr"] and \
@@ -485,7 +484,7 @@ def test_nsattrs_wattr():
            attrs.getNameByQName("ns:attr") == (ns_uri, "attr") and \
            attrs[(ns_uri, "attr")] == "val" and \
            attrs.getQNameByName((ns_uri, "attr")) == "ns:attr"
-        
+
 
 # ===== Main program
 

@@ -2,7 +2,7 @@ import os
 import base64
 import gettext
 
-
+
 def test_api_1(localedir, mofile):
     print 'test api 1'
 
@@ -56,7 +56,7 @@ gettext message catalog library.''')
     print _('mullusk')
 
 
-
+
 def test_api_2(localedir, mofile):
     print 'test api 2'
 
@@ -104,7 +104,7 @@ gettext message catalog library.''')
         return gettext.dgettext('gettext')
 
 
-
+
 GNU_MO_DATA = '''\
 3hIElQAAAAAFAAAAHAAAAEQAAAAHAAAAbAAAAAAAAACIAAAAFQAAAIkAAAChAAAAnwAAAAcAAABB
 AQAACwAAAEkBAAAbAQAAVQEAABYAAABxAgAAoQAAAIgCAAAFAAAAKgMAAAkAAAAwAwAAAQAAAAQA
@@ -123,7 +123,7 @@ bCBjZWJpdnF2YXQgbmEgdmFncmVzbnByIGdiIGd1ciBUQUgKdHJnZ3JrZyB6cmZmbnRyIHBuZ255
 YnQgeXZvZW5lbC4AYmFjb24Ad2luayB3aW5rAA==
 '''
 
-
+
 LOCALEDIR = os.path.join('xx', 'LC_MESSAGES')
 MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
 
@@ -147,7 +147,7 @@ finally:
     pass
 
 
-
+
 # For reference, here's the .po file used to created the .mo data above.
 
 '''

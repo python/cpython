@@ -56,7 +56,7 @@ def expect(got_this, expect_this):
 # we have to check >4GB) files
 
 if test_support.verbose:
-	print 'create large file via seek (may be sparse file) ...'
+    print 'create large file via seek (may be sparse file) ...'
 f = open(name, 'w')
 f.seek(size)
 f.write('a')
@@ -117,16 +117,16 @@ f.close()
 # XXX has truncate ever worked on Windows? specifically on WinNT I get:
 #     "IOError: [Errno 13] Permission denied"
 ##try:
-##	newsize = size - 10
-##	f.seek(newsize)
-##	f.truncate()
-##	expect(f.tell(), newsize)
-##	newsize = newsize - 1
-##	f.seek(0)
-##	f.truncate(newsize)
-##	expect(f.tell(), newsize)
+##      newsize = size - 10
+##      f.seek(newsize)
+##      f.truncate()
+##      expect(f.tell(), newsize)
+##      newsize = newsize - 1
+##      f.seek(0)
+##      f.truncate(newsize)
+##      expect(f.tell(), newsize)
 ##except AttributeError:
-##	pass
+##      pass
 
 os.unlink(name)
 print >>sys.stderr, name, "exists:", os.path.exists(name)

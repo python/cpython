@@ -27,21 +27,21 @@ except TypeError, err:
     print "TypeError:", err
 else:
     print "should raise TypeError: not enough arguments; expected 1, got 0"
-    
+
 try:
     g(*())
 except TypeError, err:
     print "TypeError:", err
 else:
     print "should raise TypeError: not enough arguments; expected 1, got 0"
-    
+
 try:
     g(*(), **{})
 except TypeError, err:
     print "TypeError:", err
 else:
     print "should raise TypeError: not enough arguments; expected 1, got 0"
-    
+
 g(1)
 g(1, 2)
 g(1, 2, 3)
@@ -63,7 +63,7 @@ except AttributeError, attr:
     pass
 else:
     print "should raise AttributeError: __getitem__"
-    
+
 class Nothing:
     def __len__(self):
         return 5
@@ -92,14 +92,14 @@ kw = saboteur(a=1, **d)
 assert d == {}
 # break the cycle
 del kw['x']
-        
+
 try:
     g(1, 2, 3, **{'x':4, 'y':5})
 except TypeError, err:
     print err
 else:
     print "should raise TypeError: keyword parameter redefined"
-    
+
 try:
     g(1, 2, 3, a=4, b=5, *(6, 7), **{'a':8, 'b':9})
 except TypeError, err:

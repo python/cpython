@@ -110,7 +110,7 @@ basic(r"""
 [Foo Bar]
 foo=bar
 [Spacey Bar]
-foo = bar 
+foo = bar
 [Commented Bar]
 foo: bar ; comment
 """)

@@ -78,7 +78,7 @@ def runtest(hier, code):
 
 tests = [
     ("t1", [("t1", None), ("t1 __init__.py", "")], "import t1"),
-    
+
     ("t2", [
     ("t2", None),
     ("t2 __init__.py", "'doc for t2'; print __name__, 'loading'"),
@@ -108,7 +108,7 @@ print t2.__name__, t2.sub.__name__, t2.sub.subsub.__name__
 from t2 import *
 print dir()
 """),
-    
+
     ("t3", [
     ("t3", None),
     ("t3 __init__.py", "print __name__, 'loading'"),
@@ -124,7 +124,7 @@ reload(t3)
 reload(t3.sub)
 reload(t3.sub.subsub)
 """),
-    
+
     ("t4", [
     ("t4.py", "print 'THIS SHOULD NOT BE PRINTED (t4.py)'"),
     ("t4", None),
@@ -172,7 +172,7 @@ from t6 import *
 print fixdir(dir(t6))
 print dir()
 """),
-    
+
     ("t7", [
     ("t7.py", "print 'Importing t7.py'"),
     ("t7", None),

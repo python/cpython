@@ -69,7 +69,7 @@ for t in tests:
     if len(t)==5:
         pattern, s, outcome, repl, expected = t
     elif len(t)==3:
-        pattern, s, outcome = t 
+        pattern, s, outcome = t
     else:
         raise ValueError, ('Test tuples should have 3 or 5 fields',t)
 
@@ -77,8 +77,8 @@ for t in tests:
         obj=regex.compile(pattern)
     except regex.error:
         if outcome==SYNTAX_ERROR: pass    # Expected a syntax error
-        else: 
-            # Regex syntax errors aren't yet reported, so for 
+        else:
+            # Regex syntax errors aren't yet reported, so for
             # the official test suite they'll be quietly ignored.
             pass
             #print '=== Syntax error:', t

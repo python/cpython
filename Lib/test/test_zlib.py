@@ -96,7 +96,7 @@ def ignore():
     """
 
     """
-LAERTES 
+LAERTES
 
        O, fear me not.
        I stay too long: but here my father comes.
@@ -106,7 +106,7 @@ LAERTES
        A double blessing is a double grace,
        Occasion smiles upon a second leave.
 
-LORD POLONIUS 
+LORD POLONIUS
 
        Yet here, Laertes! aboard, aboard, for shame!
        The wind sits in the shoulder of your sail,
@@ -136,26 +136,25 @@ LORD POLONIUS
        Thou canst not then be false to any man.
        Farewell: my blessing season this in thee!
 
-LAERTES 
+LAERTES
 
        Most humbly do I take my leave, my lord.
 
-LORD POLONIUS 
+LORD POLONIUS
 
        The time invites you; go; your servants tend.
 
-LAERTES 
+LAERTES
 
        Farewell, Ophelia; and remember well
        What I have said to you.
 
-OPHELIA 
+OPHELIA
 
        'Tis in my memory lock'd,
        And you yourself shall keep the key of it.
 
-LAERTES 
+LAERTES
 
        Farewell.
 """
-

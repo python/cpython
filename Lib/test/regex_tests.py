@@ -1,6 +1,5 @@
-
 # Regex test suite and benchmark suite v1.5a2
-# Due to the use of r"aw" strings, this file will 
+# Due to the use of r"aw" strings, this file will
 # only work with Python 1.5 or higher.
 
 # The 3 possible outcomes for each pattern
@@ -9,22 +8,22 @@
 # Benchmark suite (needs expansion)
 #
 # The benchmark suite does not test correctness, just speed.  The
-# first element of each tuple is the regex pattern; the second is a 
+# first element of each tuple is the regex pattern; the second is a
 # string to match it against.  The benchmarking code will embed the
-# second string inside several sizes of padding, to test how regex 
+# second string inside several sizes of padding, to test how regex
 # matching performs on large strings.
 
 benchmarks = [
-	('Python', 'Python'),                     # Simple text literal
-	('.*Python', 'Python'),                   # Bad text literal
+        ('Python', 'Python'),                     # Simple text literal
+        ('.*Python', 'Python'),                   # Bad text literal
         ('.*Python.*', 'Python'),                 # Worse text literal
-	('.*\\(Python\\)', 'Python'),             # Bad text literal with grouping
+        ('.*\\(Python\\)', 'Python'),             # Bad text literal with grouping
 
-	('(Python\\|Perl\\|Tcl', 'Perl'),          # Alternation
-	('\\(Python\\|Perl\\|Tcl\\)', 'Perl'),     # Grouped alternation
-	('\\(Python\\)\\1', 'PythonPython'),       # Backreference
-#	('\\([0a-z][a-z]*,\\)+', 'a5,b7,c9,'),     # Disable the fastmap optimization
-	('\\([a-z][a-z0-9]*,\\)+', 'a5,b7,c9,')    # A few sets
+        ('(Python\\|Perl\\|Tcl', 'Perl'),          # Alternation
+        ('\\(Python\\|Perl\\|Tcl\\)', 'Perl'),     # Grouped alternation
+        ('\\(Python\\)\\1', 'PythonPython'),       # Backreference
+#       ('\\([0a-z][a-z]*,\\)+', 'a5,b7,c9,'),     # Disable the fastmap optimization
+        ('\\([a-z][a-z0-9]*,\\)+', 'a5,b7,c9,')    # A few sets
 ]
 
 # Test suite (for verifying correctness)
@@ -286,4 +285,3 @@ tests = [
 ('a\>', 'a!', SUCCEED, 'found', 'a'),
 ('a\>', 'a', SUCCEED, 'found', 'a'),
 ]
-

@@ -94,7 +94,7 @@ tests = [
 ]
 
 def badpack(fmt, arg, got, exp):
-    return 
+    return
 
 def badunpack(fmt, arg, got, exp):
     return "unpack(%s, %s) -> (%s,) # expected (%s,)" % (

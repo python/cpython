@@ -146,5 +146,5 @@ def main():
     if verbose:
         print 'winclose'
     gl.winclose(w)
-    
+
 main()
