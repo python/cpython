@@ -213,9 +213,8 @@ PyUnicodeObject *_PyUnicode_New(int length)
     /* Unicode freelist & memory allocation */
     if (unicode_freelist) {
         unicode = unicode_freelist;
-        unicode_freelist = *(PyUnicodeObject **)unicode_freelist;
+        unicode_freelist = *(PyUnicodeObject **)unicode;
         unicode_freelist_size--;
-	PyObject_INIT(unicode, &PyUnicode_Type);
 	if (unicode->str) {
 	    /* Keep-Alive optimization: we only upsize the buffer,
 	       never downsize it. */
@@ -225,8 +224,10 @@ PyUnicodeObject *_PyUnicode_New(int length)
 		goto onError;
 	    }
 	}
-	else
+      else {
 	    unicode->str = PyMem_NEW(Py_UNICODE, length + 1);
+      }
+      PyObject_INIT(unicode, &PyUnicode_Type);
     }
     else {
         unicode = PyObject_NEW(PyUnicodeObject, &PyUnicode_Type);
