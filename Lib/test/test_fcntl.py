@@ -16,7 +16,7 @@ rv = fcntl.fcntl(f.fileno(), FCNTL.F_SETFL, os.O_NONBLOCK)
 if verbose:
     print 'Status from fnctl with O_NONBLOCK: ', rv
 
-if sys.platform in ('netbsd1', 'Darwin1.2',
+if sys.platform in ('netbsd1', 'Darwin1.2', 'darwin1',
                     'freebsd2', 'freebsd3', 'freebsd4', 'freebsd5',
                     'bsdos2', 'bsdos3', 'bsdos4',
                     'openbsd', 'openbsd2'):
