@@ -30,10 +30,10 @@ The name of the mailbox directory is passed in \var{dirname}.
 All implementations of Mailbox objects have one externally visible
 method:
 
-\begin{funcdesc}{next}{}
+\begin{methoddesc}[mailbox]{next}{}
 Return the next message in the mailbox, as a \class{rfc822.Message} object.
 Depending on the mailbox implementation the \var{fp} attribute of this
 object may be a true file object or a class instance simulating a file object,
 taking care of things like message boundaries if multiple mail messages are
 contained in a single file, etc.
-\end{funcdesc}
+\end{methoddesc}
