@@ -22,8 +22,7 @@ from macsupport import *
 
 # Create the type objects
 
-WindowPtr = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
-WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
+#WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
 
 RgnHandle = FakeType("(RgnHandle)0") # XXX
 
@@ -31,6 +30,7 @@ KeyMap = ArrayOutputBufferType("KeyMap")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+#include <Desk.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 """
@@ -63,6 +63,7 @@ Function = OSErrFunctionGenerator
 functions = []
 ##methods = []
 execfile(INPUTFILE)
+execfile("evtedit.py")
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
@@ -72,3 +73,4 @@ for f in functions: module.add(f)
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)
 module.generate()
+
