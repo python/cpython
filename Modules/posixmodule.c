@@ -773,7 +773,7 @@ posix_listdir(self, args)
 		errno = GetLastError();
 		if (errno == ERROR_FILE_NOT_FOUND)
 			return PyList_New(0);
-		return posix_error();
+		return posix_error_with_filename(name);
 	}
 	do {
 		if (FileData.cFileName[0] == '.' &&
@@ -798,7 +798,7 @@ posix_listdir(self, args)
 
 	if (FindClose(hFindFile) == FALSE) {
 		errno = GetLastError();
-		return posix_error();
+		return posix_error_with_filename(&name);
 	}
 
 	return d;
@@ -836,7 +836,7 @@ posix_listdir(self, args)
 			   _A_HIDDEN | _A_SYSTEM | _A_SUBDIR, &ep) != 0)
         {
 		errno = ENOENT;
-		return posix_error();
+		return posix_error_with_filename(name);
 	}
 	do {
 		if (ep.name[0] == '.' &&
@@ -906,7 +906,7 @@ posix_listdir(self, args)
 
     if (rc != NO_ERROR) {
         errno = ENOENT;
-        return posix_error();
+        return posix_error_with_filename(name);
     }
 
     if (srchcnt > 0) { /* If Directory is NOT Totally Empty, */
@@ -948,7 +948,7 @@ posix_listdir(self, args)
 	Py_BEGIN_ALLOW_THREADS
 	if ((dirp = opendir(name)) == NULL) {
 		Py_BLOCK_THREADS
-		return posix_error();
+		return posix_error_with_filename(name);
 	}
 	if ((d = PyList_New(0)) == NULL) {
 		closedir(dirp);
