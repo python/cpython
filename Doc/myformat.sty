@@ -258,14 +258,14 @@
 % 'openright' option is used.
 %
 \let\OldEndAbstract=\endabstract
-\def\endabstract{%
-  \if@openright%
-    \ifodd\value{page}%
-      \typeout{Adding blank page after the abstract.}%
-      \vfil\pagebreak%
+\def\endabstract{
+  \if@openright
+    \ifodd\value{page}
+      \typeout{Adding blank page after the abstract.}
+      \vfil\pagebreak
     \fi
-  \fi%
-  \OldEndAbstract%
+  \fi
+  \OldEndAbstract
 }
 
 % \mytableofcontents wraps the \tableofcontents macro with all the magic to
@@ -273,20 +273,21 @@
 % option has been used.  This eliminates a fair amount of crud in the
 % individual document files.
 %
-\newcommand{\mytableofcontents}{%
-  \pagebreak%
-  \pagestyle{plain}%
-  {%
-  \parskip = 0mm%
-  \tableofcontents
+\let\OldTableofcontents=\tableofcontents
+\def\tableofcontents{%
+  \pagebreak
+  \pagestyle{plain}
+  {
+  \parskip = 0mm
+  \OldTableofcontents
   \if@openright
-    \ifodd\value{page}%
-      \typeout{Adding blank page after the table of contents.}%
-      \pagebreak\hspace{0pt}%
+    \ifodd\value{page}
+      \typeout{Adding blank page after the table of contents.}
+      \pagebreak\hspace{0pt}
     \fi
   \fi
   }
-  \pagebreak%
+  \pagebreak
 }
 
 % Uncomment the following line to use a PostScript font instead of bitmaps:
