@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.293 
+# From configure.in Revision: 1.295 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1428,7 +1428,7 @@ then
         fi
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp \"\" \$(LIBRARY); $(LINKCC)";;
+	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp \"\" \$(LIBRARY); $LINKCC";;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir $(LINKCC)";;
 	Monterey64*)
@@ -1689,7 +1689,7 @@ then
     esac
     case $ac_sys_system in
     Darwin*)
-    	OPT="$OPT -no-cpp-precomp";;
+    	OPT="$OPT -Wno-long-double -no-cpp-precomp";;
     esac
 fi
 
