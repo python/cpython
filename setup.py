@@ -141,8 +141,7 @@ class PyBuildExt(build_ext):
         # access to the builtin codecs and codec registry
         exts.append( Extension('_codecs', ['_codecsmodule.c']) )
         # static Unicode character database
-        exts.append( Extension('unicodedata',
-                               ['unicodedata.c', 'unicodedatabase.c']) )
+        exts.append( Extension('unicodedata', ['unicodedata.c']) )
         # Unicode Character Name expansion hash table
         exts.append( Extension('ucnhash', ['ucnhash.c']) )
         # access to ISO C locale support
