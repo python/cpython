@@ -48,11 +48,13 @@ level can look for a variable \code{user.spam_verbose}, as follows:
 
 \begin{verbatim}
 import user
-try:
-    verbose = user.spam_verbose  # user's verbosity preference
-except AttributeError:
-    verbose = 0                  # default verbosity
+
+verbose = bool(getattr(user, "spam_verbose", 0))
 \end{verbatim}
+
+(The three-argument form of \function{getattr()} is used in case
+the user has not defined \code{spam_verbose} in their
+\file{.pythonrc.py} file.)
 
 Programs with extensive customization needs are better off reading a
 program-specific customization file.
