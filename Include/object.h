@@ -650,7 +650,7 @@ PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
 #define Py_None (&_Py_NoneStruct)
 
 /* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE do {Py_INCREF(Py_None); return Py_None;} while (0)
+#define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
