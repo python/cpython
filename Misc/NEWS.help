@@ -11,6 +11,17 @@ snapshot:
 
     http://docutils.sf.net/docutils-snapshot.tgz
 
+Unfortunately, docutils doesn't work with Python 2.3 yet; you need
+Python 2.2.2 (or perhaps an older version).
+
+To process NEWS into NEWS.html, first install docutils for Python 2.2,
+and then run this command:
+
+    python2.2 .../docutils/tools/html.py NEWS >NEWS.html
+
+Here ".../docutils" is the directory into which the above snapshot was
+extracted.  (I hope this recipe will change for the better.)
+
 David Goodger made a change to the allowable structure of internal
 references which greatly simplified initial conversion of the file.
 
