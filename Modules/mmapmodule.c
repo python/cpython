@@ -141,8 +141,10 @@ mmap_close_method(mmap_object *self, PyObject *args)
 #endif /* MS_WINDOWS */
 
 #ifdef UNIX
-	munmap(self->data, self->size);
-	self->data = NULL;
+	if (self->data != NULL) {
+		munmap(self->data, self->size);
+		self->data = NULL;
+	}
 #endif
 
 	Py_INCREF (Py_None);
