@@ -322,10 +322,19 @@ def _execvpe(file, args, env=None):
         envpath = defpath
     PATH = envpath.split(pathsep)
     if not _notfound:
-        import tempfile
-        # Exec a file that is guaranteed not to exist
-        try: execv(tempfile.mktemp(), ('blah',))
-        except error, _notfound: pass
+        if sys.platform[:4] == 'beos':
+            #  Process handling (fork, wait) under BeOS (up to 5.0)
+            #  doesn't interoperate reliably with the thread interlocking
+            #  that happens during an import.  The actual error we need
+            #  is the same on BeOS for posix.open() et al., ENOENT.
+            try: unlink('/_#.# ## #.#')
+            except error, _notfound: pass
+        else:
+            import tempfile
+            t = tempfile.mktemp()
+            # Exec a file that is guaranteed not to exist
+            try: execv(t, ('blah',))
+            except error, _notfound: pass
     exc, arg = error, _notfound
     for dir in PATH:
         fullname = path.join(dir, file)
