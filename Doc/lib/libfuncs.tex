@@ -80,13 +80,14 @@ def my_import(name):
                    above.}
 \end{funcdesc}
 
-\begin{funcdesc}{bool}{x}
+\begin{funcdesc}{bool}{\optional{x}}
   Convert a value to a Boolean, using the standard truth testing
   procedure.  If \code{x} is false, this returns \code{False};
   otherwise it returns \code{True}.  \code{bool} is also a class,
   which is a subclass of \code{int}.  Class \code{bool} cannot be
   subclassed further.  Its only instances are \code{False} and
-  \code{True}.
+  \code{True}.  If no argument is given, this function returns
+  \code{False}.
 \indexii{Boolean}{type}
 \versionadded{2.2.1}
 \end{funcdesc}
@@ -132,8 +133,9 @@ class C:
     f = classmethod(f)
 \end{verbatim}
 
-  It can be called either on the class (e.g. C.f()) or on an instance
-  (e.g. C().f()).  The instance is ignored except for its class.
+  It can be called either on the class (such as \code{C.f()}) or on an
+  instance (such as \code{C().f()}).  The instance is ignored except for
+  its class.
   If a class method is called for a derived class, the derived class
   object is passed as the implied first argument.
 
@@ -195,7 +197,7 @@ class C:
   \module{__future__} module.
 \end{funcdesc}
 
-\begin{funcdesc}{complex}{real\optional{, imag}}
+\begin{funcdesc}{complex}{\optional{real\optional{, imag}}}
   Create a complex number with the value \var{real} + \var{imag}*j or
   convert a string or number to a complex number.  If the first
   parameter is a string, it will be interpreted as a complex number
@@ -204,7 +206,8 @@ class C:
   Each argument may be any numeric type (including complex).
   If \var{imag} is omitted, it defaults to zero and the function
   serves as a numeric conversion function like \function{int()},
-  \function{long()} and \function{float()}.
+  \function{long()} and \function{float()}.  If both arguments
+  are omitted, returns \code{0j}.
 \end{funcdesc}
 
 \begin{funcdesc}{delattr}{object, name}
@@ -447,14 +450,14 @@ class C:
   None.
 \end{funcdesc}
 
-\begin{funcdesc}{float}{x}
+\begin{funcdesc}{float}{\optional{x}}
   Convert a string or a number to floating point.  If the argument is a
   string, it must contain a possibly signed decimal or floating point
   number, possibly embedded in whitespace; this behaves identical to
   \code{string.atof(\var{x})}.  Otherwise, the argument may be a plain
   or long integer or a floating point number, and a floating point
   number with the same value (within Python's floating point
-  precision) is returned.
+  precision) is returned.  If no argument is given, returns \code{0.0}.
 
   \note{When passing in a string, values for NaN\index{NaN}
   and Infinity\index{Infinity} may be returned, depending on the
@@ -540,7 +543,7 @@ class C:
   from users.
 \end{funcdesc}
 
-\begin{funcdesc}{int}{x\optional{, radix}}
+\begin{funcdesc}{int}{\optional{x\optional{, radix}}}
   Convert a string or number to a plain integer.  If the argument is a
   string, it must contain a possibly signed decimal number
   representable as a Python integer, possibly embedded in whitespace.
@@ -554,7 +557,7 @@ class C:
   long integer or a floating point number.  Conversion of floating
   point numbers to integers truncates (towards zero).
   If the argument is outside the integer range a long object will
-  be returned instead.
+  be returned instead.  If no arguments are given, returns \code{0}.
 \end{funcdesc}
 
 \begin{funcdesc}{intern}{string}
@@ -625,7 +628,8 @@ class C:
   \var{sequence} is already a list, a copy is made and returned,
   similar to \code{\var{sequence}[:]}.  For instance,
   \code{list('abc')} returns \code{['a', 'b', 'c']} and \code{list(
-  (1, 2, 3) )} returns \code{[1, 2, 3]}.
+  (1, 2, 3) )} returns \code{[1, 2, 3]}.  If no argument is given,
+  returns a new empty list, \code{[]}.
 \end{funcdesc}
 
 \begin{funcdesc}{locals}{}
@@ -635,7 +639,7 @@ class C:
   interpreter.}
 \end{funcdesc}
 
-\begin{funcdesc}{long}{x\optional{, radix}}
+\begin{funcdesc}{long}{\optional{x\optional{, radix}}}
   Convert a string or number to a long integer.  If the argument is a
   string, it must contain a possibly signed number of
   arbitrary size, possibly embedded in whitespace;
@@ -645,7 +649,8 @@ class C:
   Otherwise, the argument may be a plain or
   long integer or a floating point number, and a long integer with
   the same value is returned.    Conversion of floating
-  point numbers to integers truncates (towards zero).
+  point numbers to integers truncates (towards zero).  If no arguments
+  are given, returns \code{0L}.
 \end{funcdesc}
 
 \begin{funcdesc}{map}{function, list, ...}
@@ -896,8 +901,9 @@ class C:
     f = staticmethod(f)
 \end{verbatim}
 
-  It can be called either on the class (e.g. C.f()) or on an instance
-  (e.g. C().f()).  The instance is ignored except for its class.
+  It can be called either on the class (such as \code{C.f()}) or on an
+  instance (such as \code{C().f()}).  The instance is ignored except
+  for its class.
 
   Static methods in Python are similar to those found in Java or C++.
   For a more advanced concept, see \ref{classmethod}.
@@ -929,13 +935,14 @@ class C(B):
 \versionadded{2.2}
 \end{funcdesc}
 
-\begin{funcdesc}{str}{object}
+\begin{funcdesc}{str}{\optional{object}}
   Return a string containing a nicely printable representation of an
   object.  For strings, this returns the string itself.  The
   difference with \code{repr(\var{object})} is that
   \code{str(\var{object})} does not always attempt to return a string
   that is acceptable to \function{eval()}; its goal is to return a
-  printable string.
+  printable string.  If no argument is given, returns the empty
+  string, \code{''}.
 \end{funcdesc}
 
 \begin{funcdesc}{tuple}{\optional{sequence}}
@@ -945,7 +952,8 @@ class C(B):
   If \var{sequence} is already a tuple, it
   is returned unchanged.  For instance, \code{tuple('abc')} returns
   returns \code{('a', 'b', 'c')} and \code{tuple([1, 2, 3])} returns
-  \code{(1, 2, 3)}.
+  \code{(1, 2, 3)}.  If no argument is given, returns a new empty
+  tuple, \code{()}.
 \end{funcdesc}
 
 \begin{funcdesc}{type}{object}
@@ -981,7 +989,8 @@ It's a function
   \versionadded{2.0}
 \end{funcdesc}
 
-\begin{funcdesc}{unicode}{object\optional{, encoding\optional{, errors}}}
+\begin{funcdesc}{unicode}{\optional{object\optional{, encoding
+				    \optional{, errors}}}}
   Return the Unicode string version of \var{object} using one of the
   following modes:
 
