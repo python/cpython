@@ -36,7 +36,7 @@ def getpass(prompt='Password: '):
 	new[3] = new[3] & ~TERMIOS.ECHO	# 3 == 'lflags'
 	try:
 		termios.tcsetattr(fd, TERMIOS.TCSADRAIN, new)
-		passwd = raw_input(prompt)
+		passwd = _raw_input(prompt)
 	finally:
 		termios.tcsetattr(fd, TERMIOS.TCSADRAIN, old)
 
@@ -66,7 +66,22 @@ def win_getpass(prompt='Password: '):
 
 
 def default_getpass(prompt='Password: '):
-	return raw_input(prompt)
+	return _raw_input(prompt)
+
+
+def _raw_input(prompt=""):
+	# A raw_input() replacement that doesn't save the string in the
+	# GNU readline history.
+	import sys
+	prompt = str(prompt)
+	if prompt:
+		sys.stdout.write(prompt)
+	line = sys.stdin.readline()
+	if not line:
+		raise EOFError
+	if line[-1] == '\n':
+		line = line[:-1]
+	return line
 
 
 def getuser():
