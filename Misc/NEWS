@@ -16,6 +16,10 @@ Library
   circular references by using itself as the locator that gets passed
   to the content handler implementation.  [SF bug #535474]
 
+C API
+
+- PyType_Ready() accidentally did not inherit tp_is_gc; now it does.
+
 Windows
 
 - The installer now installs Start menu shortcuts under (the local

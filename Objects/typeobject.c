@@ -1980,6 +1980,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYSLOT(tp_init);
 		COPYSLOT(tp_alloc);
 		COPYSLOT(tp_free);
+		COPYSLOT(tp_is_gc);
 	}
 }
 
