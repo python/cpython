@@ -182,9 +182,15 @@ func_compare(f, g)
 	int c;
 	if (f->func_globals != g->func_globals)
 		return (f->func_globals < g->func_globals) ? -1 : 1;
-	c = PyObject_Compare(f->func_defaults, g->func_defaults);
-	if (c != 0)
-		return c;
+	if (f->func_defaults != g->func_defaults) {
+		if (f->func_defaults == NULL)
+			return -1;
+		if (g->func_defaults == NULL)
+			return 1;
+		c = PyObject_Compare(f->func_defaults, g->func_defaults);
+		if (c != 0)
+			return c;
+	}
 	return PyObject_Compare(f->func_code, g->func_code);
 }
 
