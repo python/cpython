@@ -30,7 +30,7 @@ xml:
 	done
 
 tarball:  sgml
-	tar cf - tools/sgmlconv */*.sgml | gzip -9 >sgml-1.5.2b1.tgz
+	tar cf - sgml tools/sgmlconv */*.sgml | gzip -9 >sgml-1.5.2b1.tgz
 
 api:
 	cd api; $(MAKE) -f $(SGMLRULES) TOOLSDIR=../$(TOOLSDIR)
