@@ -385,16 +385,40 @@ class HTMLParser(SGMLParser):
         pass
 
 
-def test():
-    import sys
-    file = 'test.html'
-    if sys.argv[1:]: file = sys.argv[1]
-    fp = open(file, 'r')
-    data = fp.read()
-    fp.close()
-    from formatter import DumbWriter, AbstractFormatter
-    w = DumbWriter()
-    f = AbstractFormatter(w)
+def test(args = None):
+    import sys, formatter
+
+    if not args:
+	args = sys.argv[1:]
+
+    silent = args and args[0] == '-s'
+    if silent:
+	del args[0]
+
+    if args:
+	file = args[0]
+    else:
+	file = 'test.html'
+
+    if file == '-':
+	f = sys.stdin
+    else:
+	try:
+	    f = open(file, 'r')
+	except IOError, msg:
+	    print file, ":", msg
+	    sys.exit(1)
+
+    data = f.read()
+
+    if f is not sys.stdin:
+	f.close()
+    
+    if silent:
+	f = formatter.NullFormatter()
+    else:
+	f = formatter.AbstractFormatter(formatter.DumbWriter())
+
     p = HTMLParser(f)
     p.feed(data)
     p.close()
