@@ -18,13 +18,18 @@ describing what went wrong.
 \end{excdesc}
 
 \begin{funcdesc}{open}{mode}
-This function opens the audio device and returns a sun audio device
+This function opens the audio device and returns a Sun audio device
 object. This object can then be used to do I/O on. The \var{mode} parameter
 is one of \code{'r'} for record-only access, \code{'w'} for play-only
 access, \code{'rw'} for both and \code{'control'} for access to the
 control device. Since only one process is allowed to have the recorder
 or player open at the same time it is a good idea to open the device
 only for the activity needed. See \manpage{audio}{7I} for details.
+
+As per the manpage, this module first looks in the environment
+variable \code{AUDIODEV} for the base audio device filename.  If not
+found, it falls back to \file{/dev/audio}.  The control device is
+calculated by appending ``ctl'' to the base audio device.
 \end{funcdesc}
 
 
@@ -33,13 +38,19 @@ only for the activity needed. See \manpage{audio}{7I} for details.
 
 The audio device objects are returned by \function{open()} define the
 following methods (except \code{control} objects which only provide
-\method{getinfo()}, \method{setinfo()} and \method{drain()}):
+\method{getinfo()}, \method{setinfo()}, \method{fileno()}, and
+\method{drain()}):
 
 \begin{methoddesc}[audio device]{close}{}
 This method explicitly closes the device. It is useful in situations
 where deleting the object does not immediately close it since there
 are other references to it. A closed device should not be used again.
 \end{methoddesc}
+
+\begin{methoddesc}[audio device]{fileno}{}
+Returns the file descriptor associated with the device.  This can be
+used to set up \code{SIGPOLL} notification, as described below.
+\end{methoddocs}
 
 \begin{methoddesc}[audio device]{drain}{}
 This method waits until all pending output is processed and then returns.
@@ -106,6 +117,16 @@ symbolic constants like \constant{MIN_GAIN}, \constant{MAX_GAIN},
 as used in the \C{} include file \code{<sun/audioio.h>}, with the
 leading string \samp{AUDIO_} stripped.
 
-Useability of the control device is limited at the moment, since there
-is no way to use the ``wait for something to happen'' feature the
-device provides.
+The audio device supports asynchronous notification of various events,
+through the SIGPOLL signal.  Here's an example of how you might enable 
+this in Python:
+
+\begin{verbatim}
+def handle_sigpoll(signum, frame):
+    print 'I got a SIGPOLL update'
+pp
+import fcntl, signal, STROPTS
+
+signal.signal(signal.SIGPOLL, handle_sigpoll)
+fcntl.ioctl(audio_obj.fileno(), STROPTS.I_SETSIG, STROPTS.S_MSG)
+\end{verbatim}
