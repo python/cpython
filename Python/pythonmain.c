@@ -24,6 +24,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Python interpreter main program */
 
+#include "patchlevel.h"
+
 #include "allobjects.h"
 
 #include "grammar.h"
