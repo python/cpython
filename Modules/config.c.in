@@ -24,6 +24,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Configurable Python configuration file */
 
+#include "PROTO.h"
+#include "malloc.h"
+
 #include "patchlevel.h"
 
 #define VERSION "0.9.%d (%s)"
@@ -31,7 +34,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= 6 Apr 1992"
+#define DATE ">= 3 Jun 1992"
 #endif
 
 #include <stdio.h>
@@ -82,7 +85,7 @@ donecalls()
 }
 
 #ifndef PYTHONPATH
-#define PYTHONPATH ".:/usr/local/lib/python"
+#define PYTHONPATH ".:/usr/local/lib/python"
 #endif
 
 extern char *getenv();
@@ -91,9 +94,20 @@ char *
 getpythonpath()
 {
 	char *path = getenv("PYTHONPATH");
-	if (path == 0)
-		path = PYTHONPATH;
-	return path;
+	char *defpath = PYTHONPATH;
+	char *buf;
+	int n;
+
+	if (path == 0 || *path == '\0')
+		return defpath;
+	n = strlen(path) + strlen(defpath) + 2;
+	buf = malloc(n);
+	if (buf == NULL)
+		return path; /* XXX too bad -- but not likely */
+	strcpy(buf, path);
+	strcat(buf, ":");
+	strcat(buf, defpath);
+	return buf;
 }
 
 
