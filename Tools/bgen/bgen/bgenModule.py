@@ -7,9 +7,14 @@ class Module(GeneratorGroup):
 		     includestuff = None,
 		     finalstuff = None,
 		     initstuff = None,
-		     variablestuff = None):
+		     variablestuff = None,
+		     longname = None):
 		GeneratorGroup.__init__(self, prefix or name)
 		self.name = name
+		if longname:
+			self.longname = longname
+		else:
+			self.longname = name
 		self.includestuff = includestuff
 		self.initstuff = initstuff
 		self.finalstuff = finalstuff
@@ -19,7 +24,7 @@ class Module(GeneratorGroup):
 	def addobject(self, od):
 		self.generators.append(od)
 		self.typeobjects.append(od)
-		od.setmodulename(self.name)
+		od.setmodulename(self.longname)
 
 	def generate(self):
 		OutHeader1("Module " + self.name)
