@@ -1,0 +1,2 @@
+test_longexp
+Caught SyntaxError for long expression: expression too long
