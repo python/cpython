@@ -41,7 +41,6 @@ class AutoIndent:
 
     menudefs = [
         ('format', [       # /s/edit/format   dscherer@cmu.edu
-            None,
             ('_Indent region', '<<indent-region>>'),
             ('_Dedent region', '<<dedent-region>>'),
             ('Comment _out region', '<<comment-region>>'),
@@ -52,39 +51,6 @@ class AutoIndent:
             ('New indent width', '<<change-indentwidth>>'),
         ]),
     ]
-
-    keydefs = {
-        '<<smart-backspace>>': ['<Key-BackSpace>'],
-        '<<newline-and-indent>>': ['<Key-Return>', '<KP_Enter>'],
-        '<<smart-indent>>': ['<Key-Tab>']
-    }
-
-    windows_keydefs = {
-        '<<indent-region>>': ['<Control-bracketright>'],
-        '<<dedent-region>>': ['<Shift-Tab>',     # dscherer@cmu.edu
-                              '<Control-bracketleft>'],
-        '<<comment-region>>': ['<Alt-Key-3>'],
-        '<<uncomment-region>>': ['<Alt-Key-4>'],
-        '<<tabify-region>>': ['<Alt-Key-5>'],
-        '<<untabify-region>>': ['<Alt-Key-6>'],
-        '<<toggle-tabs>>': ['<Alt-Key-t>'],
-        '<<change-indentwidth>>': ['<Alt-Key-u>'],
-    }
-
-    unix_keydefs = {
-        '<<indent-region>>': ['<Alt-bracketright>',
-                              '<Meta-bracketright>',
-                              '<Control-bracketright>'],
-        '<<dedent-region>>': ['<Alt-bracketleft>',
-                              '<Meta-bracketleft>',
-                              '<Control-bracketleft>'],
-        '<<comment-region>>': ['<Alt-Key-3>', '<Meta-Key-3>'],
-        '<<uncomment-region>>': ['<Alt-Key-4>', '<Meta-Key-4>'],
-        '<<tabify-region>>': ['<Alt-Key-5>', '<Meta-Key-5>'],
-        '<<untabify-region>>': ['<Alt-Key-6>', '<Meta-Key-6>'],
-        '<<toggle-tabs>>': ['<Alt-Key-t>'],
-        '<<change-indentwidth>>': ['<Alt-Key-u>'],
-    }
 
     # usetabs true  -> literal tab characters are used by indent and
     #                  dedent cmds, possibly mixed with spaces if

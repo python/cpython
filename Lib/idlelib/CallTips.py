@@ -10,19 +10,6 @@ class CallTips:
     menudefs = [
     ]
 
-    keydefs = {
-        '<<paren-open>>': ['<Key-parenleft>'],
-        '<<paren-close>>': ['<Key-parenright>'],
-        '<<check-calltip-cancel>>': ['<KeyRelease>'],
-        '<<calltip-cancel>>': ['<ButtonPress>', '<Key-Escape>'],
-    }
-
-    windows_keydefs = {
-    }
-
-    unix_keydefs = {
-    }
-
     def __init__(self, editwin):
         self.editwin = editwin
         self.text = editwin.text

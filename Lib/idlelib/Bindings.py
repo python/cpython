@@ -73,6 +73,6 @@ menudefs = [
   ]),
 ]
 
-default_keydefs = idleConf.GetKeys(keySetName=idleConf.CurrentKeys())
+default_keydefs = idleConf.GetCurrentKeySet()
 
 del sys

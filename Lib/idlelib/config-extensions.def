@@ -1,26 +1,66 @@
 # IDLE reads several config files to determine user preferences.  This 
 # file is the default config file for idle extensions settings.  
+#
+# Each extension must have at least one section, named after the extension
+# module. This section must contain an 'enable' item (=1 to enable the 
+# extension, =0 to disable it) and also contains any other general configuration
+# items for the extension. Each extension may also define up to two optional
+# sections named ExtensionName_bindings and ExtensionName_cfgBindings. If
+# present, ExtensionName_bindings defines virtual event bindings for the 
+# extension that are not sensibly re-configurable. If present, 
+# ExtensionName_cfgBindings defines virtual event bindings for the extension 
+# that may be sensibly re-configured.
 
 [FormatParagraph]
 enable=1
+[FormatParagraph_cfgBindings]
+format-paragraph=<Alt-Key-q>
 
 [AutoIndent]
 enable=1
+[AutoIndent_cfgBindings]
+smart-backspace=<Key-BackSpace>
+newline-and-indent=<Key-Return> <Key-KP_Enter>
+smart-indent=<Key-Tab>
+indent-region=<Control-Key-bracketright>
+dedent-region=<Control-Key-bracketleft>
+comment-region=<Alt-Key-3>
+uncomment-region=<Alt-Key-4>
+tabify-region=<Alt-Key-5>
+untabify-region=<Alt-Key-6>
+toggle-tabs=<Alt-Key-t>
+change-indentwidth=<Alt-Key-u>
 
 [AutoExpand]
 enable=1
+[AutoExpand_cfgBindings]
+expand-word=<Alt-Key-slash>
 
 [ZoomHeight]
 enable=1
-
-#[ScriptBinding]    # disabled in favor of ExecBinding
-#enable=0
+[ZoomHeight_cfgBindings]
+zoom-height=<Alt-Key-F2>
 
 [ExecBinding]
 enable=1
+[ExecBinding_cfgBindings]
+run-complete-script=<Key-F5>
+stop-execution=<Key-Cancel>
+
+#[ScriptBinding] #currently ExecBinding has replaced ScriptBinding 
+#enable=0
+#[ScriptBinding_cfgBindings]
+#run-script=<Key-F5>
+#check-module=<Alt-Key-F5> <Meta-Key-F5>
+#import-module=<Control-Key-F5>
 
 [CallTips]
 enable=1
+[CallTips_bindings]
+paren-open=<Key-parenleft>
+paren-close=<Key-parenright>
+check-calltip-cancel=<KeyRelease>
+calltip-cancel=<ButtonPress> <Key-Escape>
 
 [ParenMatch]
 enable=0
@@ -29,3 +69,6 @@ flash-delay= 500
 bell= 1
 hilite-foreground= black
 hilite-background= #43cd80
+[ParenMatch_bindings]
+flash-open-paren=<KeyRelease-parenright> <KeyRelease-bracketright> <KeyRelease-braceright>
+check-restore=<KeyPress>

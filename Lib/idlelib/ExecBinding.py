@@ -45,11 +45,6 @@ def loader_connect(client, addr):
 protocol.publish('ExecBinding', loader_connect)
 
 class ExecBinding:
-    keydefs = {
-        '<<run-complete-script>>': ['<F5>'],
-        '<<stop-execution>>': ['<Cancel>'],   #'<Control-c>'
-    }
-    
     menudefs = [
         ('run', [None,
                   ('Run program', '<<run-complete-script>>'),

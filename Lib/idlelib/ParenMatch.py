@@ -43,19 +43,7 @@ class ParenMatch:
     to the right of a right paren.  I don't know how to do that in Tk,
     so I haven't bothered.
     """
-
     menudefs = []
-
-    keydefs = {
-        '<<flash-open-paren>>' : ('<KeyRelease-parenright>',
-                                  '<KeyRelease-bracketright>',
-                                  '<KeyRelease-braceright>'),
-        '<<check-restore>>' : ('<KeyPress>',),
-    }
-
-    windows_keydefs = {}
-    unix_keydefs = {}
-
     iconf = idleconf.getsection('ParenMatch')
     STYLE = iconf.getdef('style', 'default')
     FLASH_DELAY = iconf.getint('flash-delay')
