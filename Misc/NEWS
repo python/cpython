@@ -57,6 +57,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- os.getsid was added.
+
 - The pwd module incorrectly advertised its struct type as
   struct_pwent; this has been renamed to struct_passwd.  (The old name
   is still supported for backwards compatibility.)
@@ -103,6 +105,8 @@ Extension modules
 
 Library
 -------
+
+- imaplib.IMAP4.thread was added.
 
 - Plugged a minor hole in tempfile.mktemp() due to the use of
   os.path.exists(), switched to using os.lstat() directly if possible.

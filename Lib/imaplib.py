@@ -69,6 +69,7 @@ Commands = {
         'STATUS':       ('AUTH', 'SELECTED'),
         'STORE':        ('SELECTED',),
         'SUBSCRIBE':    ('AUTH', 'SELECTED'),
+        'THREAD':       ('SELECTED',),
         'UID':          ('SELECTED',),
         'UNSUBSCRIBE':  ('AUTH', 'SELECTED'),
         }
@@ -677,6 +678,16 @@ class IMAP4:
         (typ, [data]) = <instance>.subscribe(mailbox)
         """
         return self._simple_command('SUBSCRIBE', mailbox)
+
+
+    def thread(self, threading_algorithm, charset, *search_criteria):
+        """IMAPrev1 extension THREAD command.
+
+        (type, [data]) = <instance>.thread(threading_alogrithm, charset, search_criteria, ...)
+        """
+        name = 'THREAD'
+        typ, dat = self._simple_command(name, threading_algorithm, charset, *search_criteria)
+        return self._untagged_response(typ, dat, name)
 
 
     def uid(self, command, *args):
