@@ -25,11 +25,9 @@ import threading
 from test.test_support import TestFailed
 import StringIO
 from traceback import print_exc
+import tempfile
 
 startEvent = threading.Event()
-
-import tempfile
-tempfile.gettempdir() # Do this now, to avoid spurious races later
 
 class TempFileGreedy(threading.Thread):
     error_count = 0
@@ -48,7 +46,7 @@ class TempFileGreedy(threading.Thread):
             else:
                 self.ok_count += 1
 
-def _test():
+def test_main():
     threads = []
 
     print "Creating"
@@ -74,6 +72,7 @@ def _test():
     if errors:
         raise TestFailed(msg)
 
+
 if __name__ == "__main__":
     import sys, getopt
     opts, args = getopt.getopt(sys.argv[1:], "t:f:")
@@ -82,5 +81,4 @@ if __name__ == "__main__":
             FILES_PER_THREAD = int(v)
         elif o == "-t":
             NUM_THREADS = int(v)
-
-_test()
+    test_main()
