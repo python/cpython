@@ -4404,19 +4404,47 @@ onError:
 }
 #endif
 
+/* Argument converter.  Coerces to a single unicode character */
+
+static int
+convert_uc(PyObject *obj, void *addr)
+{
+	Py_UNICODE *fillcharloc = (Py_UNICODE *)addr;
+	PyObject *uniobj;
+	Py_UNICODE *unistr;
+
+	uniobj = PyUnicode_FromObject(obj);
+	if (uniobj == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+			"The fill character cannot be converted to Unicode");
+		return 0;
+	}
+	if (PyUnicode_GET_SIZE(uniobj) != 1) {
+		PyErr_SetString(PyExc_TypeError,
+			"The fill character must be exactly one character long");
+		Py_DECREF(uniobj);
+		return 0;
+	}
+	unistr = PyUnicode_AS_UNICODE(uniobj);
+	*fillcharloc = unistr[0];
+	Py_DECREF(uniobj);
+	return 1;
+}
+
 PyDoc_STRVAR(center__doc__,
-"S.center(width) -> unicode\n\
+"S.center(width[, fillchar]) -> unicode\n\
 \n\
-Return S centered in a Unicode string of length width. Padding is done\n\
-using spaces.");
+Return S centered in a Unicode string of length width. Padding is\n\
+done using the specified fill character (default is a space)");
 
 static PyObject *
 unicode_center(PyUnicodeObject *self, PyObject *args)
 {
     int marg, left;
     int width;
+    Py_UNICODE fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "i:center", &width))
+    if (!PyArg_ParseTuple(args, "i|O&:center", &width, convert_uc, &fillchar))
         return NULL;
 
     if (self->length >= width && PyUnicode_CheckExact(self)) {
@@ -4427,7 +4455,7 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
     marg = width - self->length;
     left = marg / 2 + (marg & width & 1);
 
-    return (PyObject*) pad(self, left, marg - left, ' ');
+    return (PyObject*) pad(self, left, marg - left, fillchar);
 }
 
 #if 0
@@ -5170,16 +5198,18 @@ unicode_length(PyUnicodeObject *self)
 }
 
 PyDoc_STRVAR(ljust__doc__,
-"S.ljust(width) -> unicode\n\
+"S.ljust(width[, fillchar]) -> unicode\n\
 \n\
 Return S left justified in a Unicode string of length width. Padding is\n\
-done using spaces.");
+done using the specified fill character (default is a space).");
 
 static PyObject *
 unicode_ljust(PyUnicodeObject *self, PyObject *args)
 {
     int width;
-    if (!PyArg_ParseTuple(args, "i:ljust", &width))
+    Py_UNICODE fillchar = ' ';
+
+    if (!PyArg_ParseTuple(args, "i|O&:ljust", &width, convert_uc, &fillchar))
         return NULL;
 
     if (self->length >= width && PyUnicode_CheckExact(self)) {
@@ -5187,7 +5217,7 @@ unicode_ljust(PyUnicodeObject *self, PyObject *args)
         return (PyObject*) self;
     }
 
-    return (PyObject*) pad(self, 0, width - self->length, ' ');
+    return (PyObject*) pad(self, 0, width - self->length, fillchar);
 }
 
 PyDoc_STRVAR(lower__doc__,
@@ -5552,16 +5582,18 @@ unicode_rindex(PyUnicodeObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(rjust__doc__,
-"S.rjust(width) -> unicode\n\
+"S.rjust(width[, fillchar]) -> unicode\n\
 \n\
 Return S right justified in a Unicode string of length width. Padding is\n\
-done using spaces.");
+done using the specified fill character (default is a space).");
 
 static PyObject *
 unicode_rjust(PyUnicodeObject *self, PyObject *args)
 {
     int width;
-    if (!PyArg_ParseTuple(args, "i:rjust", &width))
+    Py_UNICODE fillchar = ' ';
+
+    if (!PyArg_ParseTuple(args, "i|O&:rjust", &width, convert_uc, &fillchar))
         return NULL;
 
     if (self->length >= width && PyUnicode_CheckExact(self)) {
@@ -5569,7 +5601,7 @@ unicode_rjust(PyUnicodeObject *self, PyObject *args)
         return (PyObject*) self;
     }
 
-    return (PyObject*) pad(self, width - self->length, 0, ' ');
+    return (PyObject*) pad(self, width - self->length, 0, fillchar);
 }
 
 static PyObject*

@@ -546,9 +546,9 @@ objects support:
 Return a copy of the string with only its first character capitalized.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{center}{width}
+\begin{methoddesc}[string]{center}{width\optional{, fillchar}}
 Return centered in a string of length \var{width}. Padding is done
-using spaces.
+using the specified \var{fillchar} (default is a space).
 \end{methoddesc}
 
 \begin{methoddesc}[string]{count}{sub\optional{, start\optional{, end}}}
@@ -645,9 +645,10 @@ sequence \var{seq}.  The separator between elements is the string
 providing this method.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{ljust}{width}
+\begin{methoddesc}[string]{ljust}{width\optional{, fillchar}}
 Return the string left justified in a string of length \var{width}.
-Padding is done using spaces.  The original string is returned if
+Padding is done using the specified \var{fillchar} (default is a
+space).  The original string is returned if
 \var{width} is less than \code{len(\var{s})}.
 \end{methoddesc}
 
@@ -683,9 +684,10 @@ Like \method{rfind()} but raises \exception{ValueError} when the
 substring \var{sub} is not found.
 \end{methoddesc}
 
-\begin{methoddesc}[string]{rjust}{width}
+\begin{methoddesc}[string]{rjust}{width\optional{, fillchar}}
 Return the string right justified in a string of length \var{width}.
-Padding is done using spaces.  The original string is returned if
+Padding is done using the specified \var{fillchar} (default is a space).
+The original string is returned if
 \var{width} is less than \code{len(\var{s})}.
 \end{methoddesc}
 

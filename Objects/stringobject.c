@@ -2617,16 +2617,18 @@ pad(PyStringObject *self, int left, int right, char fill)
 }
 
 PyDoc_STRVAR(ljust__doc__,
-"S.ljust(width) -> string\n"
+"S.ljust(width[, fillchar]) -> string\n"
 "\n"
 "Return S left justified in a string of length width. Padding is\n"
-"done using spaces.");
+"done using the specified fill character (default is a space).");
 
 static PyObject *
 string_ljust(PyStringObject *self, PyObject *args)
 {
     int width;
-    if (!PyArg_ParseTuple(args, "i:ljust", &width))
+    char fillchar = ' ';
+
+    if (!PyArg_ParseTuple(args, "i|c:ljust", &width, &fillchar))
         return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
@@ -2634,21 +2636,23 @@ string_ljust(PyStringObject *self, PyObject *args)
         return (PyObject*) self;
     }
 
-    return pad(self, 0, width - PyString_GET_SIZE(self), ' ');
+    return pad(self, 0, width - PyString_GET_SIZE(self), fillchar);
 }
 
 
 PyDoc_STRVAR(rjust__doc__,
-"S.rjust(width) -> string\n"
+"S.rjust(width[, fillchar]) -> string\n"
 "\n"
 "Return S right justified in a string of length width. Padding is\n"
-"done using spaces.");
+"done using the specified fill character (default is a space)");
 
 static PyObject *
 string_rjust(PyStringObject *self, PyObject *args)
 {
     int width;
-    if (!PyArg_ParseTuple(args, "i:rjust", &width))
+    char fillchar = ' ';
+
+    if (!PyArg_ParseTuple(args, "i|c:rjust", &width, &fillchar))
         return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
@@ -2656,23 +2660,24 @@ string_rjust(PyStringObject *self, PyObject *args)
         return (PyObject*) self;
     }
 
-    return pad(self, width - PyString_GET_SIZE(self), 0, ' ');
+    return pad(self, width - PyString_GET_SIZE(self), 0, fillchar);
 }
 
 
 PyDoc_STRVAR(center__doc__,
-"S.center(width) -> string\n"
+"S.center(width[, fillchar]) -> string\n"
 "\n"
-"Return S centered in a string of length width. Padding is done\n"
-"using spaces.");
+"Return S centered in a string of length width. Padding is\n"
+"done using the specified fill character (default is a space)");
 
 static PyObject *
 string_center(PyStringObject *self, PyObject *args)
 {
     int marg, left;
     int width;
+    char fillchar = ' ';
 
-    if (!PyArg_ParseTuple(args, "i:center", &width))
+    if (!PyArg_ParseTuple(args, "i|c:center", &width, &fillchar))
         return NULL;
 
     if (PyString_GET_SIZE(self) >= width && PyString_CheckExact(self)) {
@@ -2683,7 +2688,7 @@ string_center(PyStringObject *self, PyObject *args)
     marg = width - PyString_GET_SIZE(self);
     left = marg / 2 + (marg & width & 1);
 
-    return pad(self, left, marg - left, ' ');
+    return pad(self, left, marg - left, fillchar);
 }
 
 PyDoc_STRVAR(zfill__doc__,
