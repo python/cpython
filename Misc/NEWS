@@ -8,6 +8,12 @@ Core and builtins
   great many cyclic structures involving frames.  Reported on
   SourceForge as bug 543148.
 
+- String methods lstrip(), rstrip() and strip() now take an optional
+  argument that specifies the characters to strip.  For example,
+  "Foo!!!?!?!?".rstrip("?!") -> "Foo". In addition, "200L".strip("L") 
+  will return "200". This is useful for replacing code that assumed
+  longs will always be printed with a trailing "L".
+
 Library
 
 
