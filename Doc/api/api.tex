@@ -3218,7 +3218,8 @@ sets an \exception{IndexError} exception.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyTuple_GET_ITEM}{PyObject *p, int pos}
-Does the same, but does no checking of its arguments.
+Like \cfunction{PyTuple_GetItem()}, but does no checking of its
+arguments.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyTuple_GetSlice}{PyObject *p,
@@ -3236,23 +3237,25 @@ the tuple pointed to by \var{p}. It returns \code{0} on success.
 
 \begin{cfuncdesc}{void}{PyTuple_SET_ITEM}{PyObject *p,
                                           int pos, PyObject *o}
-Does the same, but does no error checking, and
+Like \cfunction{PyTuple_SetItem()}, but does no error checking, and
 should \emph{only} be used to fill in brand new tuples.
 \strong{Note:}  This function ``steals'' a reference to \var{o}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{_PyTuple_Resize}{PyObject **p,
-                                        int newsize, int last_is_sticky}
+\begin{cfuncdesc}{int}{_PyTuple_Resize}{PyObject **p, int newsize}
 Can be used to resize a tuple.  \var{newsize} will be the new length
 of the tuple.  Because tuples are \emph{supposed} to be immutable,
 this should only be used if there is only one reference to the object.
 Do \emph{not} use this if the tuple may already be known to some other
-part of the code.  The tuple will always grow or shrink at the end.  The
-\var{last_is_sticky} flag is not used and should always be false.  Think
-of this as destroying the old tuple and creating a new one, only more
-efficiently.  Returns \code{0} on success and \code{-1} on failure (in
-which case a \exception{MemoryError} or \exception{SystemError} will be
-raised).
+part of the code.  The tuple will always grow or shrink at the end.
+Think of this as destroying the old tuple and creating a new one, only
+more efficiently.  Returns \code{0} on success.  Client code should
+never assume that the resulting value of \code{*\var{p}} will be the
+same as before calling this function.  If the object referenced by
+\code{*\var{p}} is replaced, the original \code{*\var{p}} is
+destroyed.  On failure, returns \code{-1} and sets \code{*\var{p}} to
+\NULL, and raises \exception{MemoryError} or \exception{SystemError}.
+\versionchanged[Removed unused third parameter, \var{last_is_sticky}]{2.2}
 \end{cfuncdesc}
 
 
