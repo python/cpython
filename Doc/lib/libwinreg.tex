@@ -1,7 +1,7 @@
-\section{\module{winreg} --
+\section{\module{_winreg} --
          Windows registry access}
 
-\declaremodule{extension}{winreg}
+\declaremodule[-winreg]{extension}{_winreg}
   \platform{Windows}
 \modulesynopsis{Routines and objects for manipulating the Windows registry.}
 \sectionauthor{Mark Hammond}{MarkH@ActiveState.com}
@@ -10,6 +10,10 @@ These functions exposes the Windows registry API to Python.  Instead of
 using an integer as the registry handle, a handle object is used to ensure
 that the handles are closed correctly, even if the programmer
 neglects to explicitly close them.
+
+This module exposes a very low-level interface to the Windows
+registry; for a more object-oriented interface, use the
+\module{winreg} module.
 
 
 \subsection{Registry Operations \label{registry-operations}}
