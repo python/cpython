@@ -1,3 +1,5 @@
+# Window interface to (some of) the CD player's vital audio functions
+
 import cd
 import stdwin
 from stdwinevents import *
@@ -91,3 +93,5 @@ def getgeo(win):
 	v1 = top + (bottom - top) / 3
 	v2 = top + (bottom - top) * 2 / 3
 	return left, top, right, bottom, v1, v2
+
+main()
