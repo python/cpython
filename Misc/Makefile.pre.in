@@ -50,6 +50,10 @@
 # where <prefix> is the prefix used to install Python for installdir
 # (and possibly similar for exec_installdir=<exec_prefix>).
 
+# Note: "make boot" implies "make clobber" -- it assumes that when you
+# bootstrap you may have changed platforms so it removes all previous
+# output files.
+
 # If you are building your extension as a shared library (your
 # Setup.in file starts with *shared*), run "make" or "make sharedmods"
 # to build the shared library files.  If you are building a statically
@@ -85,6 +89,9 @@ VPATH=		.
 
 # (Static) build target
 TARGET=		python
+
+# Installed python binary (used only by boot target)
+PYTHON=		python
 
 # Add more -I and -D options here
 CFLAGS=		$(OPT) -I$(INCLUDEPY) -I$(LIBPL) $(DEFS)
@@ -249,9 +256,9 @@ sedscript:	$(MAKEFILE)
 
 # Bootstrap target
 boot:	clobber
-	VERSION=`python -c "import sys; print sys.version[:3]"`; \
-	installdir=`python -c "import sys; print sys.prefix"`; \
-	exec_installdir=`python -c "import sys; print sys.exec_prefix"`; \
+	VERSION=`$(PYTHON) -c "import sys; print sys.version[:3]"`; \
+	installdir=`$(PYTHON) -c "import sys; print sys.prefix"`; \
+	exec_installdir=`$(PYTHON) -c "import sys; print sys.exec_prefix"`; \
 	$(MAKE) -f $(srcdir)/Makefile.pre.in VPATH=$(VPATH) srcdir=$(srcdir) \
 		VERSION=$$VERSION \
 		installdir=$$installdir \
@@ -264,7 +271,7 @@ clean:
 
 # Handy target to remove everything that is easily regenerated
 clobber:	clean
-		-rm -f *.a tags TAGS config.c Makefile.pre python sedscript
+		-rm -f *.a tags TAGS config.c Makefile.pre $(TARGET) sedscript
 		-rm -f *.so *.sl so_locations
 
 
