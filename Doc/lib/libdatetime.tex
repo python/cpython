@@ -12,26 +12,24 @@
 
 \versionadded{2.3}
 
-\newcommand{\Naive}{Na\"ive}
-\newcommand{\naive}{na\"ive}
 
 The \module{datetime} module supplies classes for manipulating dates
 and times in both simple and complex ways.  While date and time
 arithmetic is supported, the focus of the implementation is on
 efficient field extraction, for output formatting and manipulation.
 
-There are two kinds of date and time objects: ``\naive'' and ``aware''.
+There are two kinds of date and time objects: ``naive'' and ``aware''.
 This distinction refers to whether the object has any notion of time
 zone, daylight savings time, or other kind of algorithmic or political
-time adjustment.  Whether a {\naive} \class{datetime} object represents
+time adjustment.  Whether a {naive} \class{datetime} object represents
 Coordinated Universal Time (UTC), local time, or time in some other
 timezone is purely up to the program, just like it's up to the program
-whether a particular number represents meters, miles, or mass.  {\Naive}
+whether a particular number represents meters, miles, or mass.  Naive
 \class{datetime} objects are easy to understand and to work with, at
 the cost of ignoring some aspects of reality.
 
 For applications requiring more, ``aware'' \class{datetime} subclasses add an
-optional time zone information object to the basic {\naive} classes.
+optional time zone information object to the basic naive classes.
 These \class{tzinfo} objects capture information about the offset from
 UTC time, the time zone name, and whether Daylight Savings Time is in
 effect.  Note that no concrete \class{tzinfo} classes are supplied by
@@ -61,13 +59,13 @@ The \module{datetime} module exports the following constants:
 \subsection{Available Types}
 
 \begin{classdesc*}{date}
-  An idealized {\naive} date, assuming the current Gregorian calendar
+  An idealized naive date, assuming the current Gregorian calendar
   always was, and always will be, in effect.
   Attributes: \member{year}, \member{month}, and \member{day}.
 \end{classdesc*}
 
 \begin{classdesc*}{time}
-  An idealized {\naive} time, independent of any particular day, assuming
+  An idealized naive time, independent of any particular day, assuming
   that every day has exactly 24*60*60 seconds (there is no notion
   of "leap seconds" here).
   Attributes: \member{hour}, \member{minute}, \member{second}, and
@@ -75,7 +73,7 @@ The \module{datetime} module exports the following constants:
 \end{classdesc*}
 
 \begin{classdesc*}{datetime}
-  A combination of a {\naive} date and a {\naive} time.
+  A combination of a naive date and a naive time.
   Attributes: \member{year}, \member{month}, \member{day},
               \member{hour}, \member{minute}, \member{second},
               and \member{microsecond}.
@@ -107,16 +105,17 @@ The \module{datetime} module exports the following constants:
 Objects of these types are immutable.
 
 Objects of the \class{date}, \class{datetime}, and \class{time} types
-are always \naive.
+are always naive.
 
-An object \code{D} of type \class{timetz} or \class{datetimetz} may be
-{\naive} or aware.  \code{D} is aware if \code{D.tzinfo} is not
-\code{None}, and \code{D.tzinfo.utcoffset(D)} does not return
-\code{None}.  If \code{D.tzinfo} is \code{None}, or if \code{D.tzinfo}
-is not \code{None} but \code{D.tzinfo.utcoffset(D)} returns
-\code{None}, \code{D} is \naive.
+An object \var{d} of type \class{timetz} or \class{datetimetz} may be
+naive or aware.  \var{d} is aware if \code{\var{d}.tzinfo} is not
+\code{None}, and \code{\var{d}.tzinfo.utcoffset(\var{d})} does not return
+\code{None}.  If \code{\var{d}.tzinfo} is \code{None}, or if
+\code{\var{d}.tzinfo} is not \code{None} but
+\code{\var{d}.tzinfo.utcoffset(\var{d})} returns \code{None}, \var{d}
+is naive.
 
-The distinction between {\naive} and aware doesn't apply to
+The distinction between naive and aware doesn't apply to
 \code{timedelta} objects.
 
 Subclass relationships:
@@ -193,8 +192,9 @@ Class attributes are:
 	\class{timedelta} objects, \code{timedelta(microseconds=1)}}
 \end{tableii}
 
-Note that, because of normalization, timedelta.max > -timedelta.min.
--timedelta.max is not representable as a \class{timedelta} object.
+Note that, because of normalization, \code{timedelta.max} \textgreater
+\code{-timedelta.min}.  \code{-timedelta.max} is not representable as
+a \class{timedelta} object.
 
 Instance attributes (read-only):
 
@@ -283,7 +283,7 @@ calendar, the current Gregorian calendar indefinitely extended in both
 directions.  January 1 of year 1 is called day number 1, January 2 of year
 1 is called day number 2, and so on.  This matches the definition of the
 "proleptic Gregorian" calendar in Dershowitz and Reingold's book
-"Calendrical Calculations", where it's the base calendar for all
+\citetitle{Calendrical Calculations}, where it's the base calendar for all
 computations.  See the book for algorithms for converting between
 proleptic Gregorian ordinals and many other calendar systems.
 
@@ -409,12 +409,13 @@ Instance methods:
     Return a 9-element tuple of the form returned by
     \function{time.localtime()}.  The hours, minutes and seconds are
     0, and the DST flag is -1.
-    d.timetuple() is equivalent to
-        (d.year, d.month, d.day,
-         0, 0, 0,  \# h, m, s
-         d.weekday(),  \# 0 is Monday
-         d.toordinal() - date(d.year, 1, 1).toordinal() + 1, \# day of year
-         -1)
+    \code{\var{d}.timetuple()} is equivalent to
+        \code{(\var{d}.year, \var{d}.month, \var{d}.day,
+               0, 0, 0,  \# h, m, s
+               \var{d}.weekday(),  \# 0 is Monday
+               \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
+               \# day of year
+              -1)}
 \end{methoddesc}
 \begin{methoddesc}{toordinal}{}
     Return the proleptic Gregorian ordinal of the date, where January 1
@@ -465,7 +466,8 @@ Instance methods:
 \begin{methoddesc}{ctime}{}
     Return a string representing the date, for example
     date(2002, 12, 4).ctime() == 'Wed Dec  4 00:00:00 2002'.
-    d.ctime() is equivalent to time.ctime(time.mktime(d.timetuple()))
+    \code{\var{d}.ctime()} is equivalent to
+    \code{time.ctime(time.mktime(\var{d}.timetuple()))}
     on platforms where the native C \cfunction{ctime()} function
     (which \function{time.ctime()} invokes, but which
     \method{date.ctime()} does not invoke) conforms to the C standard.
@@ -558,13 +560,14 @@ Other constructors, all class methods:
 
 \begin{methoddesc}{combine}{date, time}
     Return a new \class{datetime} object whose date components are
-    equal to the given \class{date} object's, and whose time components are
-    equal to the given time object's.  For any \class{datetime} object
-    d, d == datetime.combine(d.date(), d.time()).
-    If date is a \class{datetime} or \class{datetimetz} object, its
-    time components are ignored.  If date is \class{datetimetz}
-    object, its \member{tzinfo} component is also ignored.  If time is
-    a \class{timetz} object, its \member{tzinfo} component is ignored.
+    equal to the given \class{date} object's, and whose time
+    components are equal to the given time object's.  For any
+    \class{datetime} object \var{d}, \code{\var{d} ==
+    datetime.combine(\var{d}.date(), \var{d}.time())}.  If date is a
+    \class{datetime} or \class{datetimetz} object, its time components
+    are ignored.  If date is \class{datetimetz} object, its
+    \member{tzinfo} component is also ignored.  If time is a
+    \class{timetz} object, its \member{tzinfo} component is ignored.
 \end{methoddesc}
 
 Class attributes:
@@ -595,8 +598,7 @@ Between 1 and 12 inclusive
 \end{memberdesc}
 
 \begin{memberdesc}{day}
-Between 1 and the number of days in the given month
-                    of the given year.
+Between 1 and the number of days in the given month of the given year.
 \end{memberdesc}
 
 \begin{memberdesc}{hour}
@@ -679,12 +681,13 @@ Instance methods:
 \begin{methoddesc}{timetuple}{}
     Return a 9-element tuple of the form returned by
     \function{time.localtime()}.
-    The DST flag is -1.   \code{d.timetuple()} is equivalent to
-        (d.year, d.month, d.day,
-         d.hour, d.minute, d.second,
-         d.weekday(),  \# 0 is Monday
-         d.toordinal() - date(d.year, 1, 1).toordinal() + 1, \# day of year
-         -1)
+    The DST flag is -1.   \code{\var{d}.timetuple()} is equivalent to
+    \code{(\var{d}.year, \var{d}.month, \var{d}.day,
+           \var{d}.hour, \var{d}.minute, \var{d}.second,
+           \var{d}.weekday(),  \# 0 is Monday
+           \var{d}.toordinal() - date(\var{d}.year, 1, 1).toordinal() + 1,
+           \# day of year
+           -1)}
 \end{methoddesc}
 
 \begin{methoddesc}{toordinal}{}
@@ -810,7 +813,7 @@ Supported operations:
 
   \item
     in Boolean contexts, a time object is considered to be true
-    if and only if it isn't equal to time(0)
+    if and only if it isn't equal to \code{time(0)}
 \end{itemize}
 
 Instance methods:
@@ -988,7 +991,7 @@ Supported operations:
   \item
     comparison of \class{timetz} to \class{time} or \class{timetz},
     where \var{a} is considered less than \var{b} when \var{a} precedes
-    \var{b} in time.  If one comparand is {\naive} and the other is aware,
+    \var{b} in time.  If one comparand is naive and the other is aware,
     \exception{TypeError} is raised.  If both comparands are aware, and
     have the same \member{tzinfo} member, the common \member{tzinfo}
     member is ignored and the base times are compared.  If both
@@ -1014,7 +1017,7 @@ Instance methods:
 \begin{methoddesc}{replace}(hour=, minute=, second=, microsecond=, tzinfo=)
     Return a \class{timetz} with the same value, except for those fields given
     new values by whichever keyword arguments are specified.  Note that
-    \code{tzinfo=None} can be specified to create a {\naive} \class{timetz} from an
+    \code{tzinfo=None} can be specified to create a naive \class{timetz} from an
     aware \class{timetz}.
 \end{methoddesc}
 
@@ -1183,16 +1186,16 @@ Supported operations:
 
   \item
     aware_datetimetz1 - aware_datetimetz2 -> timedelta
-    {\naive}_datetimetz1 - {\naive}_datetimetz2 -> timedelta
-    {\naive}_datetimetz1 - datetime2 -> timedelta
-    datetime1 - {\naive}_datetimetz2 -> timedelta
+    naive_datetimetz1 - naive_datetimetz2 -> timedelta
+    naive_datetimetz1 - datetime2 -> timedelta
+    datetime1 - naive_datetimetz2 -> timedelta
 
     Subtraction of a \class{datetime} or \class{datetimetz}, from a
     \class{datetime} or \class{datetimetz}, is defined only if both
-    operands are \naive, or if both are aware.  If one is aware and the
-    other is \naive, \exception{TypeError} is raised.
+    operands are naive, or if both are aware.  If one is aware and the
+    other is naive, \exception{TypeError} is raised.
 
-    If both are \naive, or both are aware and have the same \member{tzinfo}
+    If both are naive, or both are aware and have the same \member{tzinfo}
     member, subtraction acts as for \class{datetime} subtraction.
 
     If both are aware and have different \member{tzinfo} members,
@@ -1298,7 +1301,7 @@ These are the same as the \class{datetime} methods of the same names.
 \end{methoddesc}
 
 \begin{methoddesc}{utctimetuple}{}
-    If \class{datetimetz} instance \var{d} is \naive, this is the same as
+    If \class{datetimetz} instance \var{d} is naive, this is the same as
     \code{\var{d}.timetuple()} except that \member{tm_isdst} is forced to 0
     regardless of what \code{d.dst()} returns.  DST is never in effect
     for a UTC time.
@@ -1362,7 +1365,7 @@ For \class{date} objects, the format codes for hours, minutes, and
 seconds should not be used, as \class{date} objects have no such
 values.  If they're used anyway, \code{0} is substituted for them.
 
-For a {\naive} object, the \code{\%z} and \code{\%Z} format codes are
+For a naive object, the \code{\%z} and \code{\%Z} format codes are
 replaced by empty strings.
 
 For an aware object:
