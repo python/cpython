@@ -157,7 +157,7 @@ class RExec(ihooks._Verbose):
 	for mname in self.ok_builtin_modules:
 	    if mname in sys.builtin_module_names:
 		list.append(mname)
-	self.ok_builtin_modules = list
+	self.ok_builtin_modules = tuple(list)
 	self.set_trusted_path()
 	self.make_builtin()
 	self.make_initial_modules()
@@ -217,9 +217,9 @@ class RExec(ihooks._Verbose):
 	m.argv = ['RESTRICTED']
 	m.path = map(None, self.ok_path)
 	m = self.modules['sys']
-	m.builtin_module_names = \
-		self.modules.keys() + self.ok_builtin_modules
-	m.builtin_module_names.sort()
+	l = self.modules.keys() + list(self.ok_builtin_modules)
+	l.sort()
+	m.builtin_module_names = tuple(l)
 
     # The copy_* methods copy existing modules with some changes
 
