@@ -187,14 +187,14 @@ see above.)
 
 \begin{funcdesc}{getsockopt}{level\, optname\, buflen}
 Return the value of the given socket option (see the \UNIX{} man page
-{\it getsockopt}(2)).  The needed symbolic constants are defined in module
-SOCKET.  If the optional third argument is absent, an integer option
-is assumed and its integer value is returned by the function.  If
-\var{buflen} is present, it specifies the maximum length of the buffer used
-to receive the option in, and this buffer is returned as a string.
-It's up to the caller to decode the contents of the buffer (see the
-optional built-in module \code{struct} for a way to decode C structures
-encoded as strings).
+{\it getsockopt}(2)).  The needed symbolic constants are defined in
+the \code{socket} module (\code{SO_*} etc.).  If the optional third
+argument is absent, an integer option is assumed and its integer value
+is returned by the function.  If \var{buflen} is present, it specifies
+the maximum length of the buffer used to receive the option in, and
+this buffer is returned as a string.  It's up to the caller to decode
+the contents of the buffer (see the optional built-in module
+\code{struct} for a way to decode C structures encoded as strings).
 \end{funcdesc}
 
 \begin{funcdesc}{listen}{backlog}
@@ -250,10 +250,11 @@ raised; in blocking mode, the calls block until they can proceed.
 
 \begin{funcdesc}{setsockopt}{level\, optname\, value}
 Set the value of the given socket option (see the \UNIX{} man page
-{\it setsockopt}(2)).  The needed symbolic constants are defined in module
-\code{SOCKET}.  The value can be an integer or a string representing a
-buffer.  In the latter case it is up to the caller to ensure that the
-string contains the proper bits (see the optional built-in module
+{\it setsockopt}(2)).  The needed symbolic constants are defined in
+the \code{socket} module (\code{SO_*} etc.).  The value can be an
+integer or a string representing a buffer.  In the latter case it is
+up to the caller to ensure that the string contains the proper bits
+(see the optional built-in module
 \code{struct} for a way to encode C structures as strings).
 \end{funcdesc}
 
