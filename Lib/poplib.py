@@ -77,7 +77,7 @@ class POP3:
 		self.host = host
 		self.port = port
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.connect(self.host, self.port)
+		self.sock.connect((self.host, self.port))
 		self.file = self.sock.makefile('rb')
 		self._debugging = 0
 		self.welcome = self._getresp()

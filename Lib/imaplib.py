@@ -191,7 +191,7 @@ class IMAP4:
 	def open(self, host, port):
 		"""Setup 'self.sock' and 'self.file'."""
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.connect(self.host, self.port)
+		self.sock.connect((self.host, self.port))
 		self.file = self.sock.makefile('r')
 
 

@@ -109,7 +109,7 @@ class HTTP:
         if not port: port = HTTP_PORT
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if self.debuglevel > 0: print 'connect:', (host, port)
-        self.sock.connect(host, port)
+        self.sock.connect((host, port))
 
     def send(self, str):
         """Send `str' to the server."""
@@ -209,7 +209,7 @@ if hasattr(socket, "ssl"):
             if not port: port = HTTPS_PORT
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             if self.debuglevel > 0: print 'connect:', (host, port)
-            sock.connect(host, port)
+            sock.connect((host, port))
             ssl = socket.ssl(sock, self.key_file, self.cert_file)
             self.sock = FakeSocket(sock, ssl)
 
