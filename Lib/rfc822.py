@@ -660,7 +660,7 @@ def parsedate_tz(data):
         tss = string.atoi(tss)
     except string.atoi_error:
         return None
-    tzoffset=0
+    tzoffset=None
     tz=string.upper(tz)
     if _timezones.has_key(tz):
         tzoffset=_timezones[tz]
@@ -670,10 +670,13 @@ def parsedate_tz(data):
         except string.atoi_error: 
             pass
     # Convert a timezone offset into seconds ; -0500 -> -18000
-    if tzoffset<0: tzsign=-1
-    else: tzsign=1
-    tzoffset=tzoffset*tzsign
-    tzoffset = tzsign * ( (tzoffset/100)*3600 + (tzoffset % 100)*60)
+    if tzoffset:
+	if tzoffset < 0:
+	    tzsign = -1
+	    tzoffset = -tzoffset
+	else:
+	    tzsign = 1
+	tzoffset = tzsign * ( (tzoffset/100)*3600 + (tzoffset % 100)*60)
     tuple = (yy, mm, dd, thh, tmm, tss, 0, 0, 0, tzoffset)
     return tuple
 
@@ -695,8 +698,12 @@ def mktime_tz(data):
     switch dates.  Not enough to worry about for common use.
     
     """
-    t = time.mktime(data[:8] + (0,))
-    return t - data[9] - time.timezone
+    if data[9] is None:
+	# No zone info, so localtime is better assumption than GMT
+	return time.mktime(data[:8] + (-1,))
+    else:
+	t = time.mktime(data[:8] + (0,))
+	return t - data[9] - time.timezone
 
 
 # When used as script, run a small test program.
