@@ -50,9 +50,32 @@ static PVOID WINAPI interlocked_cmp_xchg(PVOID *dest, PVOID exc, PVOID comperand
 {
 	static LONG spinlock = 0 ;
 	PVOID result ;
+	DWORD dwSleep = 0;
 
 	/* Acqire spinlock (yielding control to other threads if cant aquire for the moment) */
-	while(InterlockedExchange(&spinlock, 1)) Sleep(0) ;
+	while(InterlockedExchange(&spinlock, 1))
+	{
+		// Using Sleep(0) can cause a priority inversion.
+		// Sleep(0) only yields the processor if there's
+		// another thread of the same priority that's
+		// ready to run.  If a high-priority thread is
+		// trying to acquire the lock, which is held by
+		// a low-priority thread, then the low-priority
+		// thread may never get scheduled and hence never
+		// free the lock.  NT attempts to avoid priority
+		// inversions by temporarily boosting the priority
+		// of low-priority runnable threads, but the problem
+		// can still occur if there's a medium-priority
+		// thread that's always runnable.  If Sleep(1) is used,
+		// then the thread unconditionally yields the CPU.  We
+		// only do this for the second and subsequent even
+		// iterations, since a millisecond is a long time to wait
+		// if the thread can be scheduled in again sooner
+		// (~100,000 instructions).
+		// Avoid priority inversion: 0, 1, 0, 1,...
+		Sleep(dwSleep);
+		dwSleep = !dwSleep;
+	}
 	result = *dest ;
 	if (result == comperand)
 		*dest = exc ;
