@@ -1,5 +1,6 @@
-# Module 'shutil' -- utility functions usable in a shell-like program
-# XXX The copy*() functions here don't copy the data fork on Mac
+# Module 'shutil' -- utility functions usable in a shell-like program.
+# XXX The copy*() functions here don't copy the data fork on Mac.
+# XXX Consider this example code rather than flexible tools.
 
 import os
 
@@ -40,15 +41,21 @@ def copystat(src, dst):
 	os.chmod(dst, mode)
 	os.utime(dst, st[7:9])
 
-# Copy data and mode bits ("cp src dst")
+# Copy data and mode bits ("cp src dst").
+# Support directory as target.
 #
 def copy(src, dst):
+	if os.path.isdir(dst):
+		dst = os.path.join(dst, os.path.basename(src))
 	copyfile(src, dst)
 	copymode(src, dst)
 
-# Copy data and all stat info ("cp -p src dst")
+# Copy data and all stat info ("cp -p src dst").
+# Support directory as target.
 #
 def copy2(src, dst):
+	if os.path.isdir(dst):
+		dst = os.path.join(dst, os.path.basename(src))
 	copyfile(src, dst)
 	copystat(src, dst)
 
@@ -58,22 +65,20 @@ def copy2(src, dst):
 def copytree(src, dst):
 	names = os.listdir(src)
 	os.mkdir(dst, 0777)
-	dot_dotdot = (os.curdir, os.pardir)
 	for name in names:
-		if name not in dot_dotdot:
-			srcname = os.path.join(src, name)
-			dstname = os.path.join(dst, name)
-			#print 'Copying', srcname, 'to', dstname
-			try:
-				#if os.path.islink(srcname):
-				#	linkto = os.readlink(srcname)
-				#	os.symlink(linkto, dstname)
-				#elif os.path.isdir(srcname):
-				if os.path.isdir(srcname):
-					copytree(srcname, dstname)
-				else:
-					copy2(srcname, dstname)
-				# XXX What about devices, sockets etc.?
-			except os.error, why:
-				print 'Could not copy', srcname, 'to', dstname,
-				print '(', why[1], ')'
+		srcname = os.path.join(src, name)
+		dstname = os.path.join(dst, name)
+		#print 'Copying', srcname, 'to', dstname
+		try:
+			#if os.path.islink(srcname):
+			#	linkto = os.readlink(srcname)
+			#	os.symlink(linkto, dstname)
+			#elif os.path.isdir(srcname):
+			if os.path.isdir(srcname):
+				copytree(srcname, dstname)
+			else:
+				copy2(srcname, dstname)
+			# XXX What about devices, sockets etc.?
+		except os.error, why:
+			print 'Could not copy', srcname, 'to', dstname,
+			print '(', why[1], ')'
