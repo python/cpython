@@ -4628,9 +4628,9 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 			}
 		}
 	}
-	if (list == NULL)	/* There used to be a check here for the size of */
-		return 0;		/* the list being 0, which would have leaked the */
-						/* list if that condition was ever possible. JRH */
+	if (list == NULL)
+		return 0;
+
 	/* There are cellvars that are also arguments.  Create a dict
 	   to replace cellvars and put the args at the front.
 	*/
