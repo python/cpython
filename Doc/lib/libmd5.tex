@@ -60,6 +60,11 @@ method so far.  This is an 16-byte string which may contain
 non-\ASCII{} characters, including null bytes.
 \end{methoddesc}
 
+\begin{methoddesc}[md5]{hexdigest}{}
+Like \method{digest()} except the digest is returned as a string of
+length 32, containing only hexadecimal digits.
+\end{methoddesc}
+
 \begin{methoddesc}[md5]{copy}{}
 Return a copy (``clone'') of the md5 object.  This can be used to
 efficiently compute the digests of strings that share a common initial
