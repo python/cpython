@@ -10,24 +10,25 @@ The module defines the following functions:
 
 
 \begin{funcdesc}{syslog}{\optional{priority,} message}
-Send the string \var{message} to the system logger.
-A trailing newline is added if necessary.
-Each message is tagged with a priority composed of a \var{facility} and
-a \var{level}.
-The optional \var{priority} argument, which defaults to
-\code{(LOG_USER | LOG_INFO)}, determines the message priority.
+Send the string \var{message} to the system logger.  A trailing
+newline is added if necessary.  Each message is tagged with a priority
+composed of a \var{facility} and a \var{level}.  The optional
+\var{priority} argument, which defaults to \constant{LOG_INFO},
+determines the message priority.  If the facility is not encoded in
+\var{priority} using logical-or (\code{LOG_INFO | LOG_USER}), the
+value given in the \function{openlog()} call is used.
 \end{funcdesc}
 
 \begin{funcdesc}{openlog}{ident\optional{, logopt\optional{, facility}}}
-Logging options other than the defaults can be set by explicitly opening
-the log file with \code{openlog()} prior to calling \code{syslog()}.
-The defaults are (usually) \var{ident} = \samp{syslog}, \var{logopt} = 0,
-\var{facility} = \code{LOG_USER}.
-The \var{ident} argument is a string which is prepended to every message.
-The optional \var{logopt} argument is a bit field - see below for possible
-values to combine.
-The optional \var{facility} argument sets the default facility for messages
-which do not have a facility explicitly encoded.
+Logging options other than the defaults can be set by explicitly
+opening the log file with \function{openlog()} prior to calling
+\function{syslog()}.  The defaults are (usually) \var{ident} =
+\code{'syslog'}, \var{logopt} = \code{0}, \var{facility} =
+\constant{LOG_USER}.  The \var{ident} argument is a string which is
+prepended to every message.  The optional \var{logopt} argument is a
+bit field - see below for possible values to combine.  The optional
+\var{facility} argument sets the default facility for messages which
+do not have a facility explicitly encoded.
 \end{funcdesc}
 
 \begin{funcdesc}{closelog}{}
@@ -36,14 +37,12 @@ Close the log file.
 
 \begin{funcdesc}{setlogmask}{maskpri}
 This function set the priority mask to \var{maskpri} and returns the
-previous mask value.
-Calls to \code{syslog} with a priority level not set in \var{maskpri}
-are ignored.
-The default is to log all priorities.
-The function \code{LOG_MASK(\var{pri})} calculates the mask for the
-individual priority \var{pri}.
-The function \code{LOG_UPTO(\var{pri})} calculates the mask for all priorities
-up to and including \var{pri}.
+previous mask value.  Calls to \function{syslog()} with a priority
+level not set in \var{maskpri} are ignored.  The default is to log all
+priorities.  The function \code{LOG_MASK(\var{pri})} calculates the
+mask for the individual priority \var{pri}.  The function
+\code{LOG_UPTO(\var{pri})} calculates the mask for all priorities up
+to and including \var{pri}.
 \end{funcdesc}
 
 The module defines the following constants:
@@ -52,18 +51,21 @@ The module defines the following constants:
 
 \item[Priority levels (high to low):]
 
-\code{LOG_EMERG}, \code{LOG_ALERT}, \code{LOG_CRIT}, \code{LOG_ERR},
-\code{LOG_WARNING}, \code{LOG_NOTICE}, \code{LOG_INFO}, \code{LOG_DEBUG}.
+\constant{LOG_EMERG}, \constant{LOG_ALERT}, \constant{LOG_CRIT},
+\constant{LOG_ERR}, \constant{LOG_WARNING}, \constant{LOG_NOTICE},
+\constant{LOG_INFO}, \constant{LOG_DEBUG}.
 
 \item[Facilities:]
 
-\code{LOG_KERN}, \code{LOG_USER}, \code{LOG_MAIL}, \code{LOG_DAEMON},
-\code{LOG_AUTH}, \code{LOG_LPR}, \code{LOG_NEWS}, \code{LOG_UUCP},
-\code{LOG_CRON} and \code{LOG_LOCAL0} to \code{LOG_LOCAL7}.
+\constant{LOG_KERN}, \constant{LOG_USER}, \constant{LOG_MAIL},
+\constant{LOG_DAEMON}, \constant{LOG_AUTH}, \constant{LOG_LPR},
+\constant{LOG_NEWS}, \constant{LOG_UUCP}, \constant{LOG_CRON} and
+\constant{LOG_LOCAL0} to \constant{LOG_LOCAL7}.
 
 \item[Log options:]
 
-\code{LOG_PID}, \code{LOG_CONS}, \code{LOG_NDELAY}, \code{LOG_NOWAIT}
-and \code{LOG_PERROR} if defined in \file{syslog.h}.
+\constant{LOG_PID}, \constant{LOG_CONS}, \constant{LOG_NDELAY},
+\constant{LOG_NOWAIT} and \constant{LOG_PERROR} if defined in
+\code{<syslog.h>}.
 
 \end{description}
