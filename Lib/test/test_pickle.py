@@ -69,6 +69,7 @@ def test_main():
     suite.addTest(loader.loadTestsFromTestCase(PicklerTests))
     suite.addTest(loader.loadTestsFromTestCase(PersPicklerTests))
     test_support.run_suite(suite)
+    test_support.run_doctest(pickle)
 
 if __name__ == "__main__":
     test_main()
