@@ -400,7 +400,7 @@ class Profile:
 		self.set_cmd(cmd)
 		sys.setprofile(self.trace_dispatch)
 		try:
-			exec(cmd, globals, locals)
+			exec cmd in globals, locals
 		finally:
 			sys.setprofile(None)
 
