@@ -82,8 +82,6 @@ class bdist_dumb (Command):
         # pseudo-installation tree.
         archive_basename = "%s.%s" % (self.distribution.get_fullname(),
                                       self.plat_name)
-        print "self.bdist_dir = %s" % self.bdist_dir
-        print "self.format = %s" % self.format
         self.make_archive (os.path.join(self.dist_dir, archive_basename),
                            self.format,
                            root_dir=self.bdist_dir)
