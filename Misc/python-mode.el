@@ -241,26 +241,16 @@ the Emacs bell is also rung as a warning."
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
 
-;; As of 30-Jan-1997, Emacs 19.34 works but XEmacs 19.15b90 and
-;; previous does not.  It is suspected that Emacsen before 19.34 are
-;; also broken.
-(defvar py-parse-partial-sexp-works-p
-  (let ((buf (get-buffer-create " ---*---pps---*---"))
-	state status)
-    (save-excursion
-      (set-buffer buf)
-      (erase-buffer)
-      (insert "(line1\n line2)\nline3")
-      (lisp-mode)
-      (goto-char (point-min))
-      (setq state (parse-partial-sexp (point) (save-excursion
-						(forward-line 1)
-						(point))))
-      (parse-partial-sexp (point) (point-max) 0 nil state)
-      (setq status (not (= (point) (point-max))))
-      (kill-buffer buf)
-      status))
-  "Does `parse-partial-sexp' work in this Emacs?")
+(defconst py-emacs-features ()
+  "A list of features extant in the Emacs you are using.
+There are many flavors of Emacs out there, each with different
+features supporting those needed by CC Mode.  Here's the current
+supported list, along with the values for this variable:
+
+ XEmacs 19: ()
+ XEmacs 20: ()
+ Emacs 19:  ()
+")
 
 (defvar python-font-lock-keywords
   (let* ((keywords '("and"        "break"      "class"
