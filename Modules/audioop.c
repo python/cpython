@@ -872,9 +872,10 @@ audioop_lin2adpcm(self, args)
 	valpred = 0;
 	step = 7;
 	index = 0;
-    } else if ( !getargs(state, "(iii)", &valpred, &step, &index) )
+    } else if ( !getargs(state, "(ii)", &valpred, &index) )
       return 0;
 
+    step = stepsizeTable[index];
     bufferstep = 1;
 
     for ( i=0; i < len; i += size ) {
@@ -944,7 +945,7 @@ audioop_lin2adpcm(self, args)
 	}
 	bufferstep = !bufferstep;
     }
-    rv = mkvalue("(O(iii))", str, valpred, step, index);
+    rv = mkvalue("(O(ii))", str, valpred, index);
     DECREF(str);
     return rv;
 }
@@ -975,7 +976,7 @@ audioop_adpcm2lin(self, args)
 	valpred = 0;
 	step = 7;
 	index = 0;
-    } else if ( !getargs(state, "(iii)", &valpred, &step, &index) )
+    } else if ( !getargs(state, "(ii)", &valpred, &index) )
       return 0;
     
     str = newsizedstringobject(NULL, len*size*2);
@@ -983,6 +984,7 @@ audioop_adpcm2lin(self, args)
       return 0;
     ncp = (signed char *)getstringvalue(str);
 
+    step = stepsizeTable[index];
     bufferstep = 0;
     
     for ( i=0; i < len*size*2; i += size ) {
@@ -1035,7 +1037,7 @@ audioop_adpcm2lin(self, args)
 	else if ( size == 4 ) *LONGP(ncp, i) = (long)(valpred<<16);
     }
 
-    rv = mkvalue("(O(iii))", str, valpred, step, index);
+    rv = mkvalue("(O(ii))", str, valpred, index);
     DECREF(str);
     return rv;
 }
