@@ -21,6 +21,7 @@ def findmodules(scriptfile, modules = [], path = sys.path):
 	for name in modules:
 		mod = os.path.basename(name)
 		if mod[-3:] == '.py': mod = mod[:-3]
+		elif mod[-4:] == '.pyc': mod = mod[:-4]
 		todo[mod] = name
 	done = closure(todo)
 	return done
@@ -94,7 +95,6 @@ def scanfile(filename):
 # Return filename, or '<builtin>', or '<unknown>'.
 
 builtins = sys.builtin_module_names
-if 'sys' not in builtins: builtins.append('sys')
 tails = ['.py', '.pyc']
 
 def findmodule(modname, path = sys.path):

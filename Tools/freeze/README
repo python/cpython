@@ -1,0 +1,161 @@
+THE FREEZE SCRIPT
+=================
+
+
+What is Freeze?
+---------------
+
+Freeze make it possible to ship arbitrary Python programs to people
+who don't have Python.  The shipped file (called a "frozen" version of
+your Python program) is an executable, so this only works if your
+platform is compatible with that on the receiving end (this is usually
+a matter of having the same major operating system revision and CPU
+type).
+
+The shipped file contains a Python interpreter and large portions of
+the Python run-time.  Some measures have been taken to avoid linking
+unneeded modules, but the resulting binary is usually not small.
+
+The Python source code of your program (and of the library modules
+written in Python that it uses) is not included in the binary --
+instead, the compiled byte-code (the instruction stream used
+internally by the interpreter) is incorporated.  This gives some
+protection of your Python source code, though not much -- a
+disassembler for Python byte-code is available in the standard Python
+library.  At least someone running "strings" on your binary won't see
+the source.
+
+
+How does Freeze know which modules to include?
+----------------------------------------------
+
+Freeze uses a pretty simple-minded algorithm to find the modules that
+your program uses: given a file containing Python source code, it
+scans for lines beginning with the word "import" or "from" (possibly
+preceded by whitespace) and then it knows where to find the module
+name(s) in those lines.  It then recursively scans the source for
+those modules (if found, and not already processed) in the same way.
+
+Freeze will not see import statements hidden behind another statement,
+like this:
+
+	if some_test: import M  # M not seen
+
+or like this:
+
+	import A; import B; import C  # B and C not seen
+
+nor will it see import statements constructed using string
+operations and passed to 'exec', like this:
+
+	exec "import %s" % "M"  # M not seen
+
+On the other hand, Freeze will think you are importing a module even
+if the import statement it sees will never be executed, like this:
+
+	if 0:
+		import M  # M is seen
+
+One tricky issue: Freeze assumes that the Python interpreter and
+environment you're using to run Freeze is the same one that would be
+used to run your program, which should also be the same whose sources
+and installed files you will learn about in the next section.  In
+particular, your PYTHONPATH setting should be the same as for running
+your program locally.  (Tip: if the program doesn't run when you type
+"python hello.py" there's little chance of getting the frozen version
+to run.)
+
+
+How do I use Freeze?
+--------------------
+
+Ideally, you should be able to use it as follows:
+
+	python freeze.py hello.py
+
+where hello.py is your program and freeze.py is the main file of
+Freeze (in actuality, you'll probably specify an absolute pathname
+such as /ufs/guido/src/python/Demo/freeze/freeze.py).
+
+Unfortunately, this doesn't work.  Well, it might, but somehow it's
+extremely unlikely that it'll work on the first try.  (If it does,
+skip to the next section.)  Most likely you'll get this error message:
+
+	needed directory /usr/local/lib/python/lib not found
+
+The reason is that Freeze require that some files that are normally
+kept inside the Python build tree are installed, and it searches for
+it in the default install location.  (The default install prefix is
+/usr/local; these particular files are installed at lib/python/lib
+under the install prefix.)
+
+The particular set of files needed is installed only if you run "make
+libainstall" (note: "liba", not "lib") in the Python build tree (which
+is the tree where you build Python -- often, but not necessarily, this
+is also the Python source tree).  If you have in fact done a "make
+libainstall" but used a different prefix, all you need to do is pass
+that same prefix to Freeze with the -p option:
+
+	python freeze.py -p your-prefix hello.py
+
+(If you haven't run "make libainstall" yet, go and do it now and don't
+come back until you've done it.)
+
+
+How do I configure Freeze?
+--------------------------
+
+It's a good idea to change the line marked with XXX in freeze.py (an
+assignment to variable PACK) to point to the absolute pathname of the
+directory where Freeze lives (Demo/freeze in the Python source tree.)
+This makes it possible to call Freeze from other directories.
+
+You can also edit the assignment to variable PREFIX -- this saves a
+lot of -p options.
+
+
+How do I use Freeze with extensions modules?
+--------------------------------------------
+
+XXX to be written.  (In short: pass -e extensionbuilddir.)
+
+
+How do I use Freeze with dynamically loaded extension modules?
+--------------------------------------------------------------
+
+XXX to be written.  (In short: pass -e modulebuilddir -- this even
+works if you built the modules in Python's own Modules directory.)
+
+
+
+What do I do next?
+------------------
+
+Freeze creates three files: frozen.c, config.c and Makefile.  To
+produce the frozen version of your program, you can simply type
+"make".  This should produce a binary file.  If the filename argument
+to Freeze was "hello.py", the binary will be called "hello".  On the
+other hand, if the argument was "hello", the binary will be called
+"hello.bin".  If you passed any other filename, all bets are off. :-)
+In any case, the name of the file will be printed as the last message
+from Freeze.
+
+
+Help!  I've tried everything but it doesn't work!
+-------------------------------------------------
+
+Freeze is currently beta software.  You could email me a bug report.
+Please give as much context as possible -- "Freeze doesn't work" is
+not going to get much sympathy.  You could fix the bug and send me a
+patch.  You could learn Tcl.
+
+If you are thinking about debugging Freeze, start playing with a
+really simple program first (like "print 'hello world'").  If you
+can't get that to work there's something fundamentally wrong with your
+environment (or with your understanding of it).  Gradually build it up
+to use more modules and extensions until you find where it stops
+working.  After that, you're on your own -- happy hacking!
+
+
+--Guido van Rossum, CWI, Amsterdam <mailto:Guido.van.Rossum@cwi.nl>
+<http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
