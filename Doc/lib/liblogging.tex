@@ -1215,26 +1215,26 @@ formatter=form05
 args=(('localhost', handlers.SYSLOG_UDP_PORT), handlers.SysLogHandler.LOG_USER)
 
 [handler_hand06]
-class=NTEventLogHandler
+class=handlers.NTEventLogHandler
 level=CRITICAL
 formatter=form06
 args=('Python Application', '', 'Application')
 
 [handler_hand07]
-class=SMTPHandler
+class=handlers.SMTPHandler
 level=WARN
 formatter=form07
 args=('localhost', 'from@abc', ['user1@abc', 'user2@xyz'], 'Logger Subject')
 
 [handler_hand08]
-class=MemoryHandler
+class=handlers.MemoryHandler
 level=NOTSET
 formatter=form08
 target=
 args=(10, ERROR)
 
 [handler_hand09]
-class=HTTPHandler
+class=handlers.HTTPHandler
 level=NOTSET
 formatter=form09
 args=('localhost:9022', '/log', 'GET')
