@@ -568,22 +568,31 @@ if __name__ == '__main__':
             else:
                 print "No statistics object is loaded."
             return 0
+        def generic_help(self):
+            print "Arguments may be:"
+            print "* An integer maximum number of entries to print."
+            print "* A decimal fractional number between 0 and 1, controlling"
+            print "  what fraction of selected entries to print."
+            print "* A regular expression; only entries with function names"
+            print "  that match it are printed."
 
         def do_add(self, line):
             self.stats.add(line)
             return 0
         def help_add(self):
-            print "Add profile info from given file to current stastics object."
+            print "Add profile info from given file to current statistics object."
 
         def do_callees(self, line):
             return self.generic('print_callees', line)
         def help_callees(self):
             print "Print callees statistics from the current stat object."
+            self.generic_help()
 
         def do_callers(self, line):
             return self.generic('print_callers', line)
         def help_callers(self):
             print "Print callers statistics from the current stat object."
+            self.generic_help()
 
         def do_EOF(self, line):
             print ""
@@ -619,15 +628,23 @@ if __name__ == '__main__':
             print "Reverse the sort order of the profiling report."
 
         def do_sort(self, line):
-            apply(self.stats.sort_stats, line.split())
+            abbrevs = self.stats.get_sort_arg_defs().keys()
+            if line and not filter(lambda x,a=abbrevs: x not in a,line.split()):
+                apply(self.stats.sort_stats, line.split())
+            else:
+                print "Valid sort keys (unique prefixes are accepted):"
+                for (key, value) in Stats.sort_arg_dict_default.items():
+                    print "%s -- %s" % (key, value[1])
             return 0
         def help_sort(self):
             print "Sort profile data according to specified keys."
+            print "(Typing `sort' without arguments lists valid keys.)"
 
         def do_stats(self, line):
             return self.generic('print_stats', line)
         def help_stats(self):
             print "Print statistics from the current stat object."
+            self.generic_help()
 
         def do_strip(self, line):
             self.stats.strip_dirs()
