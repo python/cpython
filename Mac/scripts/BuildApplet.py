@@ -19,6 +19,7 @@ import macfs
 import MACFS
 import MacOS
 from Res import *
+import macostools
 
 # .pyc file (and 'PYC ' resource magic number)
 MAGIC = imp.get_magic()
@@ -212,6 +213,7 @@ def process(template, filename, output):
 	
 	CloseResFile(output)
 	
+	macostools.touched(dest_fss)
 	if DEBUG:
 		print "Applet created:", destname
 
