@@ -80,8 +80,9 @@ L = []
 _dirs_in_sys_path = {}
 for dir in sys.path:
     # Filter out paths that don't exist, but leave in the empty string
-    # since it's a special case.
-    if dir and not os.path.isdir(dir):
+    # since it's a special case. Except on the mac, where files are legal
+    # in sys.path.
+    if dir and not os.path.isdir(dir) and sys.platform != 'mac':
         continue
     dir, dircase = makepath(dir)
     if not _dirs_in_sys_path.has_key(dircase):
