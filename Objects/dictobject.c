@@ -709,6 +709,75 @@ static PyMappingMethods dict_as_mapping = {
 };
 
 static PyObject *
+dict_firstkey(register dictobject *mp, PyObject *args)
+{
+	register int i;
+
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	if (mp->ma_used == 0) {
+		PyErr_SetString(PyExc_ValueError, "empty dictionary");
+		return NULL;
+	}
+	for (i = 0; i < mp->ma_size; i++) {
+		if (mp->ma_table[i].me_value != NULL) {
+			PyObject *key = mp->ma_table[i].me_key;
+			Py_INCREF(key);
+			return key;
+		}
+	}
+}
+
+static PyObject *
+dict_firstvalue(register dictobject *mp, PyObject *args)
+{
+	register int i;
+
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	if (mp->ma_used == 0) {
+		PyErr_SetString(PyExc_ValueError, "empty dictionary");
+		return NULL;
+	}
+	for (i = 0; i < mp->ma_size; i++) {
+		if (mp->ma_table[i].me_value != NULL) {
+			PyObject *value = mp->ma_table[i].me_value;
+			Py_INCREF(value);
+			return value;
+		}
+	}
+}
+
+static PyObject *
+dict_firstitem(register dictobject *mp, PyObject *args)
+{
+	register int i;
+
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	if (mp->ma_used == 0) {
+		PyErr_SetString(PyExc_ValueError, "empty dictionary");
+		return NULL;
+	}
+	for (i = 0; i < mp->ma_size; i++) {
+		if (mp->ma_table[i].me_value != NULL) {
+			PyObject *key = mp->ma_table[i].me_key;
+			PyObject *value = mp->ma_table[i].me_value;
+			PyObject *item = PyTuple_New(2);
+			if (item == NULL) {
+				return NULL;
+			}
+			Py_INCREF(key);
+			PyTuple_SetItem(item, 0, key);
+			Py_INCREF(value);
+			PyTuple_SetItem(item, 1, value);
+			return item;
+		}
+	}
+}
+
+
+static PyObject *
 dict_keys(register dictobject *mp, PyObject *args)
 {
 	register PyObject *v;
@@ -1162,6 +1231,9 @@ static PyMethodDef mapp_methods[] = {
 	{"keys",	(PyCFunction)dict_keys},
 	{"items",	(PyCFunction)dict_items},
 	{"values",	(PyCFunction)dict_values},
+	{"firstkey",	(PyCFunction)dict_firstkey},
+	{"firstitem",	(PyCFunction)dict_firstitem},
+	{"firstvalue",	(PyCFunction)dict_firstvalue},
 	{"update",	(PyCFunction)dict_update},
 	{"clear",	(PyCFunction)dict_clear},
 	{"copy",	(PyCFunction)dict_copy},
