@@ -1,22 +1,24 @@
-\chapter{Appendix: Future statements and nested scopes}
+\chapter{Future statements and nested scopes \label{futures}}
+\sectionauthor{Jeremy Hylton}{jeremy@alum.mit.edu}
+
 
 The semantics of Python's static scoping will change in version 2.2 to
 support resolution of unbound local names in enclosing functions'
 namespaces.  The new semantics will be available in Python 2.1 through
-the use of a future statement.  This appendix documents these two
+the use of a ``future'' statement.  This appendix documents these two
 features for Python 2.1; it will be removed in Python 2.2 and the
 features will be documented in the main sections of this manual.
 
-\section{Future statements}
-\indexii{future}{statement}
 
-A \dfn{future statement} is a directive to the compiler that a
-particular module should be compiled using syntax or semantics that
-will be available in a specified future release of Python.  The future
-statement is intended to ease migration to future versions of Python
-that introduce incompatible changes to the language.  It allows use of
-the new features on a per-module basis before the release in which the
-feature becomes standard.
+\section{Future statements \label{future-statements}}
+
+A \dfn{future statement}\indexii{future}{statement} is a directive to
+the compiler that a particular module should be compiled using syntax
+or semantics that will be available in a specified future release of
+Python.  The future statement is intended to ease migration to future
+versions of Python that introduce incompatible changes to the
+language.  It allows use of the new features on a per-module basis
+before the release in which the feature becomes standard.
 
 \begin{verbatim}
 future_statement: "from" "__future__" "import" feature ["as" name]
@@ -52,7 +54,7 @@ defined, and raises a compile-time error if a future statement contains
 a feature not known to it.
 
 The direct runtime semantics are the same as for any import statement:
-there is a standard module \file{__future__.py}, described later, and
+there is a standard module \module{__future__}, described later, and
 it will be imported in the usual way at the time the future statement
 is executed.
 
@@ -65,17 +67,17 @@ Note that there is nothing special about the statement:
 import __future__ [as name]
 \end{verbatim}
 
-That is not a future statement; it's an ordinary import statement, with
+That is not a future statement; it's an ordinary import statement with
 no special semantics or syntax restrictions.
 
 Code compiled by an exec statement or calls to the builtin functions
-\function{compile} and \function{execfile} that occur in a module M
-containing a future statement will use the new syntax or semantics
-associated with the future statement.
+\function{compile()} and \function{execfile()} that occur in a module
+\module{M} containing a future statement will use the new syntax or
+semantics associated with the future statement.
 
 A future statement typed at an interactive interpreter prompt will
 take effect for the rest of the interpreter session.  If an
-interpreter is started with the \emph{-i} option, is passed a
+interpreter is started with the \programopt{-i} option, is passed a
 script name to execute, and the script includes a future statement, it
 will be in effect in the interactive session started after the script
 is executed.
@@ -83,10 +85,10 @@ is executed.
 \section{\module{__future__} ---
 	 Future statement definitions}
 
-\declaremodule{standard}{__future__}
+\declaremodule[future]{standard}{__future__}
 \modulesynopsis{Future statement definitions}
 
-\file{__future__.py} is a real module, and serves three purposes:
+\module{__future__} is a real module, and serves three purposes:
 
 \begin{itemize}
 
@@ -95,13 +97,13 @@ is executed.
 
 \item To ensure that future_statements run under releases prior to 2.1
       at least yield runtime exceptions (the import of
-      \code{__future__} will fail, because there was no module of
+      \module{__future__} will fail, because there was no module of
       that name prior to 2.1). 
 
 \item To document when incompatible changes were introduced, and when they
       will be --- or were --- made mandatory.  This is a form of executable
       documentation, and can be inspected programatically via importing
-      \code{__future__} and examining its contents.
+      \module{__future__} and examining its contents.
 
 \end{itemize}
 
@@ -111,8 +113,8 @@ Each statment in \file{__future__.py} is of the form:
 FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease ")"
 \end{verbatim}
 
-where, normally, OptionalRelease <  MandatoryRelease, and both are
-5-tuples of the same form as \code{sys.version_info}:
+where, normally, OptionalRelease is less then MandatoryRelease, and
+both are 5-tuples of the same form as \code{sys.version_info}:
 
 \begin{verbatim}
     (PY_MAJOR_VERSION, # the 2 in 2.1.0a3; an int
@@ -135,15 +137,17 @@ language; in releases at or after that, modules no longer need a
 future statement to use the feature in question, but may continue to
 use such imports. 
 
-MandatoryRelease may also be None, meaning that a planned feature got
-dropped.
+MandatoryRelease may also be \code{None}, meaning that a planned
+feature got dropped.
 
 Instances of class \class{_Feature} have two corresponding methods,
-\member{getOptionalRelease()} and \member{getMandatoryRelease()}.
+\method{getOptionalRelease()} and \method{getMandatoryRelease()}.
 
-No feature line will ever be deleted from \file{__future__.py}.
+No feature description will ever be deleted from \module{__future__}.
 
-\section{Nested scopes}
+
+\section{Nested scopes \label{nested-scopes}}
+
 \indexii{nested}{scopes}
 
 Nested scopes are left as an exercise for the reader.
