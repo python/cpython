@@ -125,7 +125,6 @@ sub do_cmd_cfunction{ do_cmd_code(@_); }
 sub do_cmd_cdata{ do_cmd_code(@_); }
 sub do_cmd_ctype{ do_cmd_code(@_); }
 sub do_cmd_regexp{ do_cmd_code(@_); }
-sub do_cmd_key{ do_cmd_code(@_); }
 sub do_cmd_character{ do_cmd_samp(@_); }
 sub do_cmd_program{ do_cmd_strong(@_); }
 sub do_cmd_email{ use_sans_serif(@_); }
