@@ -10,9 +10,8 @@ import sys, os, string, re
 import fnmatch
 from types import *
 from glob import glob
-from shutil import rmtree
 from distutils.core import Command
-from distutils.util import newer
+from distutils.util import newer, remove_tree
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError
 
@@ -504,19 +503,6 @@ class sdist (Command):
     # make_release_tree ()
 
 
-    def nuke_release_tree (self, base_dir):
-        try:
-            self.execute (rmtree, (base_dir,),
-                          "removing %s" % base_dir)
-        except (IOError, OSError), exc:
-            if exc.filename:
-                msg = "error removing %s: %s (%s)" % \
-                       (base_dir, exc.strerror, exc.filename)
-            else:
-                msg = "error removing %s: %s" % (base_dir, exc.strerror)
-            self.warn (msg)
-
-
     def make_tarball (self, base_dir, compress="gzip"):
 
         # XXX GNU tar 1.13 has a nifty option to add a prefix directory.
@@ -601,7 +587,7 @@ class sdist (Command):
                 self.make_zipfile (base_dir)
 
         if not self.keep_tree:
-            self.nuke_release_tree (base_dir)
+            remove_tree (base_dir, self.verbose, self.dry_run)
 
 # class Dist
 
