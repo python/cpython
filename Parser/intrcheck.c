@@ -140,6 +140,15 @@ initintr()
 {
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		signal(SIGINT, intcatcher);
+#ifdef SV_INTERRUPT
+	/* This is for SunOS and other modern BSD derivatives.
+	   It means that system calls (like read()) are not restarted
+	   after an interrupt.  This is necessary so interrupting a
+	   read() or readline() call works as expected.
+	   XXX On old BSD (pure 4.2 or older) you may have to do this
+	   differently! */
+	siginterrupt(SIGINT, 1);
+#endif
 }
 
 int

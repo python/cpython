@@ -24,7 +24,7 @@ Last modified: Mon Nov  4 15:49:46 1991 ylo
 #define HAVE_PROTOTYPES
 #endif
 
-#define RE_NREGS	10  /* number of registers available */
+#define RE_NREGS	100  /* number of registers available */
 
 typedef struct re_pattern_buffer
 {
