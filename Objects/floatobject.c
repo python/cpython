@@ -338,18 +338,6 @@ static double powu(x, n)
 	return r;
 }
 
-static double powi(x, n)
-	double x;
-	long n;
-{
-	if (n > 10000 || n < -10000)
-		return pow(x, (double) n);
-	else if (n > 0)
-		return powu(x, n);
-	else
-		return 1./powu(x, -n);
-}
-
 static object *
 float_pow(v, w, z)
 	floatobject *v;
@@ -366,7 +354,7 @@ float_pow(v, w, z)
 	iv = v->ob_fval;
 	iw = ((floatobject *)w)->ob_fval;
 	intw = (long)iw;
-	if (iw == intw) {
+	if (iw == intw && -10000 < intw && intw < 10000) {
 		/* Sort out special cases here instead of relying on pow() */
 		if (intw == 0) { 		/* x**0 is 1, even 0**0 */
 		 	if ((object *)z!=None) {
@@ -377,16 +365,25 @@ float_pow(v, w, z)
 	    		return newfloatobject(ix); 
 		}
 		errno = 0;
-		ix = powi(iv, intw);
+		if (intw > 0)
+			ix = powu(iv, intw);
+		else
+			ix = 1./powu(iv, -intw);
 	}
 	else {
 		/* Sort out special cases here instead of relying on pow() */
 		if (iv == 0.0) {
 			if (iw < 0.0) {
-				err_setstr(ValueError, "0.0 to a negative power");
+				err_setstr(ValueError,
+					   "0.0 to a negative power");
 				return NULL;
 			}
 			return newfloatobject(0.0);
+		}
+		if (iv < 0.0) {
+			err_setstr(ValueError,
+				   "negative number to a float power");
+			return NULL;
 		}
 		errno = 0;
 		ix = pow(iv, iw);
