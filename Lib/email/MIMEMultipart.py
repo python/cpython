@@ -30,5 +30,8 @@ class MIMEMultipart(MIMEBase.MIMEBase):
         Additional parameters for the Content-Type: header are taken from the
         keyword arguments (or passed into the _params argument).
         """
-        MIMEBase.MIMEBase.__init__(self, 'multipart', _subtype, **params)
-        self.attach(*list(_subparts))
+        MIMEBase.MIMEBase.__init__(self, 'multipart', _subtype, **_params)
+        if _subparts:
+            self.attach(*list(_subparts))
+        if boundary:
+            self.set_boundary(boundary)
