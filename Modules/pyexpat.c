@@ -1756,7 +1756,7 @@ pyxml_UpdatePairedHandlers(xmlparseobject *self,
 }
 
 static void
-pyxml_SetStartElementHandler(XML_Parser *parser, void *junk)
+pyxml_SetStartElementHandler(XML_Parser parser, void *junk)
 {
     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser),
                                StartElement, EndElement,
@@ -1764,7 +1764,7 @@ pyxml_SetStartElementHandler(XML_Parser *parser, void *junk)
 }
 
 static void
-pyxml_SetEndElementHandler(XML_Parser *parser, void *junk)
+pyxml_SetEndElementHandler(XML_Parser parser, void *junk)
 {
     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser), 
                                StartElement, EndElement,
@@ -1772,7 +1772,7 @@ pyxml_SetEndElementHandler(XML_Parser *parser, void *junk)
 }
 
 static void
-pyxml_SetStartNamespaceDeclHandler(XML_Parser *parser, void *junk)
+pyxml_SetStartNamespaceDeclHandler(XML_Parser parser, void *junk)
 {
     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser), 
                                StartNamespaceDecl, EndNamespaceDecl,
@@ -1780,7 +1780,7 @@ pyxml_SetStartNamespaceDeclHandler(XML_Parser *parser, void *junk)
 }
 
 static void
-pyxml_SetEndNamespaceDeclHandler(XML_Parser *parser, void *junk)
+pyxml_SetEndNamespaceDeclHandler(XML_Parser parser, void *junk)
 {
     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser), 
                                StartNamespaceDecl, EndNamespaceDecl,
@@ -1788,7 +1788,7 @@ pyxml_SetEndNamespaceDeclHandler(XML_Parser *parser, void *junk)
 }
 
 static void
-pyxml_SetStartCdataSection(XML_Parser *parser, void *junk)
+pyxml_SetStartCdataSection(XML_Parser parser, void *junk)
 {
     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser),
                                StartCdataSection, EndCdataSection,
@@ -1796,7 +1796,7 @@ pyxml_SetStartCdataSection(XML_Parser *parser, void *junk)
 }
 
 static void
-pyxml_SetEndCdataSection(XML_Parser *parser, void *junk)
+pyxml_SetEndCdataSection(XML_Parser parser, void *junk)
 {
     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser), 
                                StartCdataSection, EndCdataSection, 
@@ -1806,7 +1806,7 @@ pyxml_SetEndCdataSection(XML_Parser *parser, void *junk)
 #if EXPAT_VERSION >= 0x010200
 
 static void
-pyxml_SetStartDoctypeDeclHandler(XML_Parser *parser, void *junk)
+pyxml_SetStartDoctypeDeclHandler(XML_Parser parser, void *junk)
 {
     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser),
                                StartDoctypeDecl, EndDoctypeDecl,
@@ -1814,7 +1814,7 @@ pyxml_SetStartDoctypeDeclHandler(XML_Parser *parser, void *junk)
 }
 
 static void
-pyxml_SetEndDoctypeDeclHandler(XML_Parser *parser, void *junk)
+pyxml_SetEndDoctypeDeclHandler(XML_Parser parser, void *junk)
 {
     pyxml_UpdatePairedHandlers((xmlparseobject *)XML_GetUserData(parser),
                                StartDoctypeDecl, EndDoctypeDecl,
