@@ -12,7 +12,7 @@ source code, implemented in Python.  The scanner in this module
 returns comments as tokens as well, making it useful for implementing
 ``pretty-printers,'' including colorizers for on-screen displays.
 
-The scanner is exposed via single function:
+The scanner is exposed by a single function:
 
 
 \begin{funcdesc}{tokenize}{readline\optional{, tokeneater}}
@@ -21,7 +21,7 @@ The scanner is exposed via single function:
   for \function{tokenize()}.
 
   The first parameter, \var{readline}, must be a callable object which
-  provides the same interface as \method{readline()} method of
+  provides the same interface as the \method{readline()} method of
   built-in file objects (see section~\ref{bltin-file-objects}).  Each
   call to the function should return one line of input as a string.
 
