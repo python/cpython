@@ -221,3 +221,18 @@ def dotest(pickle):
                                      repr(s),
                                      got))
         n = n >> 1
+
+    # Fake a pickle from a sizeof(long)==8 box.
+    maxint64 = (1L << 63) - 1
+    data = 'I' + str(maxint64) + '\n.'
+    got = pickle.loads(data)
+    if maxint64 != got:
+        raise TestFailed("maxint64 test failed %r %r" % (maxint64, got))
+    # Try too with a bogus literal.
+    data = 'I' + str(maxint64) + 'JUNK\n.'
+    try:
+        got = pickle.loads(data)
+    except ValueError:
+        pass
+    else:
+        raise TestFailed("should have raised error on bogus INT literal")

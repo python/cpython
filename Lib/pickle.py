@@ -615,7 +615,11 @@ class Unpickler:
     dispatch[NONE] = load_none
 
     def load_int(self):
-        self.append(int(self.readline()[:-1]))
+        data = self.readline()
+        try:
+            self.append(int(data))
+        except ValueError:
+            self.append(long(data))
     dispatch[INT] = load_int
 
     def load_binint(self):
