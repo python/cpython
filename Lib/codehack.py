@@ -52,3 +52,12 @@ def getcodename(co):
 
 def getfuncname(func):
 	return getcodename(func.func_code)
+
+# A part of the above code to extract just the line number from a code object.
+
+def getlineno(co):
+	code = co.co_code
+	if ord(code[0]) == SET_LINENO:
+		return ord(code[1]) | ord(code[2]) << 8
+	else:
+		return -1
