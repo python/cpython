@@ -8,6 +8,12 @@ import email.quopriMIME
 import email.base64MIME
 from email.Charset import Charset
 
+try:
+    from email._compat22 import _intdiv2
+except SyntaxError:
+    # Python 2.1 spells integer division differently
+    from email._compat21 import _intdiv2
+
 CRLFSPACE = '\r\n '
 CRLF = '\r\n'
 NLSPACE = '\n '
@@ -86,8 +92,7 @@ def decode_header(header):
 
 
 class Header:
-    def __init__(self, s, charset=None, maxlinelen=MAXLINELEN,
-                 header_name=None):
+    def __init__(self, s, charset=None, maxlinelen=None, header_name=None):
         """Create a MIME-compliant header that can contain many languages.
 
         Specify the initial header value in s.  Specify its character set as a
@@ -99,10 +104,10 @@ class Header:
         here.  In fact, it's optional, and if not given, defaults to the
         charset specified in the constructor.
 
-        The maximum line length can either be specified by maxlinelen, or you
-        can pass in the name of the header field (e.g. "Subject") to let this
-        class guess the best line length to use to prevent wrapping.  The
-        default maxlinelen is 76.
+        The maximum line length can be specified explicitly via maxlinelen.
+        You can also pass None for maxlinelen and the name of a header field
+        (e.g. "Subject") to let the constructor guess the best line length to
+        use.  The default maxlinelen is 76.
         """
         if charset is None:
             charset = Charset()
@@ -110,9 +115,13 @@ class Header:
         # BAW: I believe `chunks' and `maxlinelen' should be non-public.
         self._chunks = []
         self.append(s, charset)
-        self._maxlinelen = maxlinelen
-        if header_name is not None:
-            self.guess_maxlinelen(header_name)
+        if maxlinelen is None:
+            if header_name is None:
+                self._maxlinelen = MAXLINELEN
+            else:
+                self.guess_maxlinelen(header_name)
+        else:
+            self._maxlinelen = maxlinelen
 
     def __str__(self):
         """A synonym for self.encode()."""
@@ -146,13 +155,22 @@ class Header:
         # appears to be a private convenience method.
         splittable = charset.to_splittable(s)
         encoded = charset.from_splittable(splittable)
+        elen = charset.encoded_header_len(encoded)
         
-        if charset.encoded_header_len(encoded) < self._maxlinelen:
+        if elen <= self._maxlinelen:
             return [(encoded, charset)]
+        # BAW: should we use encoded?
+        elif elen == len(s):
+            # We can split on _maxlinelen boundaries because we know that the
+            # encoding won't change the size of the string
+            splitpnt = self._maxlinelen
+            first = charset.from_splittable(splittable[:splitpnt], 0)
+            last = charset.from_splittable(splittable[splitpnt:], 0)
+            return self._split(first, charset) + self._split(last, charset)
         else:
             # Divide and conquer.  BAW: halfway depends on integer division.
             # When porting to Python 2.2, use the // operator.
-            halfway = len(splittable) // 2
+            halfway = _intdiv2(len(splittable))
             first = charset.from_splittable(splittable[:halfway], 0)
             last = charset.from_splittable(splittable[halfway:], 0)
             return self._split(first, charset) + self._split(last, charset)
