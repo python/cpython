@@ -1641,10 +1641,37 @@ This \UNIX\ is also followed by a space.
 \end{verbatim}
 
 
-\section{Graphical Interface Components \label{gui-markup}}
+\subsection{Graphical Interface Components \label{gui-markup}}
 
   The components of graphical interfaces will be assigned markup, but
-  the specifics have not been determined.
+  most of the specifics have not been determined.
+
+  \begin{macrodesc}{menuselection}{\p{menupath}}
+    Menu selections should be marked using a combination of
+    \macro{menuselection} and \macro{sub}.  This macro is used to mark
+    a complete sequence of menu selections, including selecting
+    submenus and choosing a specific operation, or any subsequence of
+    such a sequence.  The names of individual selections should be
+    separated by occurances of \macro{sub}.
+
+    For example, to mark the selection ``\menuselection{Start \sub
+    Programs}'', use this markup:
+
+\begin{verbatim}
+\menuselection{Start \sub Programs}
+\end{verbatim}
+
+    When including a selection that includes some trailing indicator,
+    such as the ellipsis some operating systems use to indicate that
+    the command opens a dialog, the indicator should be omitted from
+    the selection name.
+  \end{macrodesc}
+
+  \begin{macrodesc}{sub}{}
+    Separator for menu selections that include multiple levels.  This
+    macro is only defined within the context of the
+    \macro{menuselection} macro.
+  \end{macrodesc}
 
 
 \section{Processing Tools \label{tools}}
