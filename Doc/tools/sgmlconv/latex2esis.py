@@ -24,7 +24,7 @@ class LaTeXFormatError(Error):
 _begin_env_rx = re.compile(r"[\\]begin{([^}]*)}")
 _end_env_rx = re.compile(r"[\\]end{([^}]*)}")
 _begin_macro_rx = re.compile("[\\\\]([a-zA-Z]+[*]?)({|\\s*\n?)")
-_comment_rx = re.compile("%+ ?(.*)\n")
+_comment_rx = re.compile("%+ ?(.*)\n *")
 _text_rx = re.compile(r"[^]%\\{}]+")
 _optional_rx = re.compile(r"\s*[[]([^]]*)[]]")
 _parameter_rx = re.compile("[ \n]*{([^}]*)}")
@@ -44,7 +44,7 @@ def encode(s):
     return string.join(map(_charmap.get, s), '')
 
 
-ESCAPED_CHARS = "$%#^ {}&"
+ESCAPED_CHARS = "$%#^ {}&~"
 
 
 def subconvert(line, ofp, table, discards, autoclosing, knownempty,
@@ -61,8 +61,8 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                 ofp.write("- %s \n" % encode(text))
                 ofp.write(")COMMENT\n")
                 ofp.write("-\\n\n")
-            else:
-                ofp.write("-\\n\n")
+##             else:
+##                 ofp.write("-\\n\n")
             line = line[m.end():]
             continue
         m = _begin_env_rx.match(line)
@@ -86,6 +86,8 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                 ofp.write(")%s\n" % envname)
                 del stack[-1]
             else:
+                print stack
+                print envname
                 raise LaTeXFormatError("environment close doesn't match")
             line = line[m.end():]
             continue
@@ -118,8 +120,8 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
             if macroname in discards:
                 ofp = StringIO.StringIO()
             #
-            conversion = table.get(macroname, ([], 0, 0))
-            params, optional, empty = conversion
+            conversion = table.get(macroname, ([], 0, 0, 0))
+            params, optional, empty, environ = conversion
             empty = empty or knownempty(macroname)
             if empty:
                 ofp.write("e\n")
@@ -191,6 +193,15 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                     ofp.write("A%s %s %s\n"
                               % (attrname, dtype, encode(value)))
                     line = line[m.end():]
+            if params and type(params[-1]) is type('') \
+               and (not empty) and not environ:
+                # attempt to strip off next '{'
+                m = _start_group_rx.match(line)
+                if not m:
+                    raise LaTeXFormatError(
+                        "non-empty element '%s' has no content: %s"
+                        % (macroname, line[:12]))
+                line = line[m.end():]
             stack.append(macroname)
             ofp.write("(%s\n" % macroname)
             if empty:
@@ -238,6 +249,13 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
             extra = "..."
         raise LaTeXFormatError("could not identify markup: %s%s"
                                % (`line[:100]`, extra))
+    while stack and stack[-1] in autoclosing:
+        ofp.write("-\\n\n")
+        ofp.write(")%s\n" % stack[-1])
+        del stack[-1]
+    if stack:
+        raise LaTeXFormatError("elements remain on stack: "
+                               + string.join(stack))
 
 
 def convert(ifp, ofp, table={}, discards=(), autoclosing=(), knownempties=()):
@@ -264,65 +282,75 @@ def main():
     convert(ifp, ofp, {
         # entries are name
         #          -> ([list of attribute names], first_is_optional, empty)
-        "cfuncdesc": (["type", "name", ("args",)], 0, 0),
-        "chapter": ([("title",)], 0, 0),
-        "chapter*": ([("title",)], 0, 0),
-        "classdesc": (["name", ("constructor-args",)], 0, 0),
-        "ctypedesc": (["name"], 0, 0),
-        "cvardesc":  (["type", "name"], 0, 0),
-        "datadesc":  (["name"], 0, 0),
-        "declaremodule": (["id", "type", "name"], 1, 1),
-        "deprecated": (["release"], 0, 1),
-        "documentclass": (["classname"], 0, 1),
-        "excdesc": (["name"], 0, 0),
-        "funcdesc": (["name", ("args",)], 0, 0),
-        "funcdescni": (["name", ("args",)], 0, 0),
-        "indexii": (["ie1", "ie2"], 0, 1),
-        "indexiii": (["ie1", "ie2", "ie3"], 0, 1),
-        "indexiv": (["ie1", "ie2", "ie3", "ie4"], 0, 1),
-        "input": (["source"], 0, 1),
-        "item": ([("leader",)], 1, 0),
-        "label": (["id"], 0, 1),
-        "manpage": (["name", "section"], 0, 1),
-        "memberdesc": (["class", "name"], 1, 0),
-        "methoddesc": (["class", "name", ("args",)], 1, 0),
-        "methoddescni": (["class", "name", ("args",)], 1, 0),
-        "opcodedesc": (["name", "var"], 0, 0),
-        "par": ([], 0, 1),
-        "paragraph": ([("title",)], 0, 0),
-        "rfc": (["number"], 0, 1),
-        "section": ([("title",)], 0, 0),
-        "seemodule": (["ref", "name"], 1, 0),
-        "subparagraph": ([("title",)], 0, 0),
-        "subsection": ([("title",)], 0, 0),
-        "subsubsection": ([("title",)], 0, 0),
-        "tableii": (["colspec", "style", "head1", "head2"], 0, 0),
-        "tableiii": (["colspec", "style", "head1", "head2", "head3"], 0, 0),
+        "bifuncindex": (["name"], 0, 1, 0),
+        "cfuncdesc": (["type", "name", ("args",)], 0, 0, 1),
+        "chapter": ([("title",)], 0, 0, 0),
+        "chapter*": ([("title",)], 0, 0, 0),
+        "classdesc": (["name", ("constructor-args",)], 0, 0, 1),
+        "ctypedesc": (["name"], 0, 0, 1),
+        "cvardesc":  (["type", "name"], 0, 0, 1),
+        "datadesc":  (["name"], 0, 0, 1),
+        "declaremodule": (["id", "type", "name"], 1, 1, 0),
+        "deprecated": (["release"], 0, 0, 0),
+        "documentclass": (["classname"], 0, 1, 0),
+        "excdesc": (["name"], 0, 0, 1),
+        "funcdesc": (["name", ("args",)], 0, 0, 1),
+        "funcdescni": (["name", ("args",)], 0, 0, 1),
+        "geq": ([], 0, 1, 0),
+        "hline": ([], 0, 1, 0),
+        "indexii": (["ie1", "ie2"], 0, 1, 0),
+        "indexiii": (["ie1", "ie2", "ie3"], 0, 1, 0),
+        "indexiv": (["ie1", "ie2", "ie3", "ie4"], 0, 1, 0),
+        "indexname": ([], 0, 0, 0),
+        "input": (["source"], 0, 1, 0),
+        "item": ([("leader",)], 1, 0, 0),
+        "label": (["id"], 0, 1, 0),
+        "leq": ([], 0, 1, 0),
+        "manpage": (["name", "section"], 0, 1, 0),
+        "memberdesc": (["class", "name"], 1, 0, 1),
+        "methoddesc": (["class", "name", ("args",)], 1, 0, 1),
+        "methoddescni": (["class", "name", ("args",)], 1, 0, 1),
+        "moduleauthor": (["name", "email"], 0, 1, 0),
+        "opcodedesc": (["name", "var"], 0, 0, 1),
+        "par": ([], 0, 1, 0),
+        "paragraph": ([("title",)], 0, 0, 0),
+        "renewcommand": (["macro"], 0, 0, 0),
+        "rfc": (["number"], 0, 1, 0),
+        "section": ([("title",)], 0, 0, 0),
+        "sectionauthor": (["name", "email"], 0, 1, 0),
+        "seemodule": (["ref", "name"], 1, 0, 0),
+        "stindex": (["type"], 0, 1, 0),
+        "subparagraph": ([("title",)], 0, 0, 0),
+        "subsection": ([("title",)], 0, 0, 0),
+        "subsubsection": ([("title",)], 0, 0, 0),
+        "tableii": (["colspec", "style", "head1", "head2"], 0, 0, 1),
+        "tableiii": (["colspec", "style", "head1", "head2", "head3"], 0, 0, 1),
         "tableiv": (["colspec", "style", "head1", "head2", "head3", "head4"],
-                    0, 0),
-        "versionadded": (["version"], 0, 1),
-        "versionchanged": (["version"], 0, 1),
+                    0, 0, 1),
+        "versionadded": (["version"], 0, 1, 0),
+        "versionchanged": (["version"], 0, 1, 0),
+        "withsubitem": (["text"], 0, 0, 0),
         #
-        "ABC": ([], 0, 1),
-        "ASCII": ([], 0, 1),
-        "C": ([], 0, 1),
-        "Cpp": ([], 0, 1),
-        "EOF": ([], 0, 1),
-        "e": ([], 0, 1),
-        "ldots": ([], 0, 1),
-        "NULL": ([], 0, 1),
-        "POSIX": ([], 0, 1),
-        "UNIX": ([], 0, 1),
+        "ABC": ([], 0, 1, 0),
+        "ASCII": ([], 0, 1, 0),
+        "C": ([], 0, 1, 0),
+        "Cpp": ([], 0, 1, 0),
+        "EOF": ([], 0, 1, 0),
+        "e": ([], 0, 1, 0),
+        "ldots": ([], 0, 1, 0),
+        "NULL": ([], 0, 1, 0),
+        "POSIX": ([], 0, 1, 0),
+        "UNIX": ([], 0, 1, 0),
         #
         # Things that will actually be going away!
         #
-        "fi": ([], 0, 1),
-        "ifhtml": ([], 0, 1),
-        "makeindex": ([], 0, 1),
-        "makemodindex": ([], 0, 1),
-        "maketitle": ([], 0, 1),
-        "noindent": ([], 0, 1),
-        "tableofcontents": ([], 0, 1),
+        "fi": ([], 0, 1, 0),
+        "ifhtml": ([], 0, 1, 0),
+        "makeindex": ([], 0, 1, 0),
+        "makemodindex": ([], 0, 1, 0),
+        "maketitle": ([], 0, 1, 0),
+        "noindent": ([], 0, 1, 0),
+        "tableofcontents": ([], 0, 1, 0),
         },
             discards=["fi", "ifhtml", "makeindex", "makemodindex", "maketitle",
                       "noindent", "tableofcontents"],
