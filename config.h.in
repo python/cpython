@@ -1,4 +1,4 @@
-/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+/* config.h.in.  Generated automatically from configure.in by autoheader 2.13.  */
 
 /* Define if on AIX 3.
    System headers sometimes define this.
@@ -136,6 +136,9 @@
 /* Define if you have GNU PTH threads */
 #undef HAVE_PTH
 
+/* Define if you have readline 4.2 */
+#undef HAVE_RL_COMPLETION_MATCHES
+
 /* Define if your compiler supports variable length function prototypes
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES
@@ -269,6 +272,9 @@
 /* The number of bytes in a void *.  */
 #undef SIZEOF_VOID_P
 
+/* Define if you have the _getpty function.  */
+#undef HAVE__GETPTY
+
 /* Define if you have the alarm function.  */
 #undef HAVE_ALARM
 
@@ -355,9 +361,6 @@
 
 /* Define if you have the getpid function.  */
 #undef HAVE_GETPID
-
-/* Define if you have the _getpty function.  */
-#undef HAVE__GETPTY
 
 /* Define if you have the getpwent function.  */
 #undef HAVE_GETPWENT
@@ -518,14 +521,14 @@
 /* Define if you have the waitpid function.  */
 #undef HAVE_WAITPID
 
-/* Define if you have the <db_185.h> header file.  */
-#undef HAVE_DB_185_H
+/* Define if you have the <db.h> header file.  */
+#undef HAVE_DB_H
 
 /* Define if you have the <db1/ndbm.h> header file.  */
 #undef HAVE_DB1_NDBM_H
 
-/* Define if you have the <db.h> header file.  */
-#undef HAVE_DB_H
+/* Define if you have the <db_185.h> header file.  */
+#undef HAVE_DB_185_H
 
 /* Define if you have the <dirent.h> header file.  */
 #undef HAVE_DIRENT_H

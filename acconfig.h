@@ -74,6 +74,9 @@
 /* Define if you have GNU PTH threads */
 #undef HAVE_PTH
 
+/* Define if you have readline 4.2 */
+#undef HAVE_RL_COMPLETION_MATCHES
+
 /* Define if your compiler supports variable length function prototypes
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES

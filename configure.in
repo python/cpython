@@ -1330,6 +1330,10 @@ then
   AC_DEFINE(HAVE_GETC_UNLOCKED)
 fi
 
+# check for readline 4.2
+AC_CHECK_LIB(readline, rl_completion_matches,
+	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES), , -ltermcap)
+
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
 cat >> confdefs.h <<\EOF
