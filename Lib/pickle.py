@@ -45,6 +45,9 @@ compatible_formats = ["1.0",            # Original protocol 0
                       "2.0",            # Protocol 2
                       ]                 # Old format versions we can read
 
+# Why use struct.pack() for pickling but marshal.loads() for
+# unpickling?  struct.pack() is 40% faster than marshal.loads(), but
+# marshal.loads() is twice as fast as struct.unpack()!
 mloads = marshal.loads
 
 class PickleError(Exception):
