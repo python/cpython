@@ -66,22 +66,23 @@ else:
 
 
 def makepath(*paths):
-    dir = os.path.join(*paths)
-    return os.path.normcase(os.path.abspath(dir))
+    dir = os.path.abspath(os.path.join(*paths))
+    return dir, os.path.normcase(dir)
 
-L = sys.modules.values()
-for m in L:
+for m in sys.modules.values():
     if hasattr(m, "__file__") and m.__file__:
-        m.__file__ = makepath(m.__file__)
-del m, L
+        m.__file__ = os.path.abspath(m.__file__)
+del m
 
 # This ensures that the initial path provided by the interpreter contains
 # only absolute pathnames, even if we're running from the build directory.
 L = []
+dirs_in_sys_path = {}
 for dir in sys.path:
-    dir = makepath(dir)
-    if dir not in L:
+    dir, dircase = makepath(dir)
+    if not dirs_in_sys_path.has_key(dircase):
         L.append(dir)
+        dirs_in_sys_path[dircase] = 1
 sys.path[:] = L
 del dir, L
 
@@ -95,14 +96,13 @@ if os.name == "posix" and os.path.basename(sys.path[-1]) == "Modules":
     del get_platform, s
 
 def addsitedir(sitedir):
-    sitedir = makepath(sitedir)
-    if sitedir not in sys.path:
+    sitedir, sitedircase = makepath(sitedir)
+    if not dirs_in_sys_path.has_key(sitedircase):
         sys.path.append(sitedir)        # Add path component
     try:
         names = os.listdir(sitedir)
     except os.error:
         return
-    names = map(os.path.normcase, names)
     names.sort()
     for name in names:
         if name[-4:] == endsep + "pth":
@@ -125,9 +125,10 @@ def addpackage(sitedir, name):
             continue
         if dir[-1] == '\n':
             dir = dir[:-1]
-        dir = makepath(sitedir, dir)
-        if dir not in sys.path and os.path.exists(dir):
+        dir, dircase = makepath(sitedir, dir)
+        if not dirs_in_sys_path.has_key(dircase) and os.path.exists(dir):
             sys.path.append(dir)
+            dirs_in_sys_path[dircase] = 1
 
 prefixes = [sys.prefix]
 if sys.exec_prefix != sys.prefix:
@@ -135,18 +136,20 @@ if sys.exec_prefix != sys.prefix:
 for prefix in prefixes:
     if prefix:
         if os.sep == '/':
-            sitedirs = [makepath(prefix,
-                                 "lib",
-                                 "python" + sys.version[:3],
-                                 "site-packages"),
-                        makepath(prefix, "lib", "site-python")]
+            sitedirs = [os.path.join(prefix,
+                                     "lib",
+                                     "python" + sys.version[:3],
+                                     "site-packages"),
+                        os.path.join(prefix, "lib", "site-python")]
         elif os.sep == ':':
-            sitedirs = [makepath(prefix, "lib", "site-packages")]
+            sitedirs = [os.path.join(prefix, "lib", "site-packages")]
         else:
             sitedirs = [prefix]
         for sitedir in sitedirs:
             if os.path.isdir(sitedir):
                 addsitedir(sitedir)
+
+del dirs_in_sys_path
 
 # Define new built-ins 'quit' and 'exit'.
 # These are simply strings that display a hint on how to exit.
