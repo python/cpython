@@ -27,6 +27,7 @@ char *PyMac_getscript(void);				/* Get the default encoding for our 8bit charact
 char *PyMac_StrError(int);					/* strerror with mac errors */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
 PyObject *PyMac_Error(OSErr);				/* Uses PyMac_GetOSErrException */
+extern OSErr PyMac_GetFullPathname(FSSpec *, char *, int); /* convert fsspec->path */
 
 /*
 ** These conversion routines are defined in mactoolboxglue.c itself.
