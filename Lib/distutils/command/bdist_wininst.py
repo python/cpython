@@ -43,7 +43,8 @@ class bdist_wininst (Command):
                      " or before deinstallation"),
                    ]
 
-    boolean_options = ['keep-temp']
+    boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
+                       'skip-build']
 
     def initialize_options (self):
         self.bdist_dir = None
