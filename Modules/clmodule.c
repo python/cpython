@@ -104,7 +104,7 @@ cl_CompressImage(PyObject *self, PyObject *args)
 	char *frameBuffer;
 	PyObject *compressedBuffer;
 
-	if (!PyArg_Parse(args, "(iiiifs#)", &compressionScheme,
+	if (!PyArg_ParseTuple(args, "iiiifs#", &compressionScheme,
 			 &width, &height,
 			 &originalFormat, &compressionRatio, &frameBuffer,
 			 &frameBufferSize))
@@ -149,7 +149,7 @@ cl_DecompressImage(PyObject *self, PyObject *args)
 	int compressedBufferSize, frameBufferSize;
 	PyObject *frameBuffer;
 
-	if (!PyArg_Parse(args, "(iiiis#)", &compressionScheme, &width, &height,
+	if (!PyArg_ParseTuple(args, "iiiis#", &compressionScheme, &width, &height,
 			 &originalFormat, &compressedBuffer,
 			 &compressedBufferSize))
 		return NULL;
@@ -670,7 +670,7 @@ doOpen(PyObject *self, PyObject *args, int (*open_func)(int, CL_Handle *),
 	int scheme;
 	clobject *new;
 
-	if (!PyArg_Parse(args, "i", &scheme))
+	if (!PyArg_ParseTuple(args, "i", &scheme))
 		return NULL;
 
 	new = PyObject_New(clobject, &Cltype);
@@ -711,7 +711,7 @@ cl_QueryScheme(PyObject *self, PyObject *args)
 	int headerlen;
 	int scheme;
 
-	if (!PyArg_Parse(args, "s#", &header, &headerlen))
+	if (!PyArg_ParseTuple(args, "s#", &header, &headerlen))
 		return NULL;
 
 	scheme = clQueryScheme(header);
@@ -728,7 +728,7 @@ cl_QueryMaxHeaderSize(PyObject *self, PyObject *args)
 {
 	int scheme;
 
-	if (!PyArg_Parse(args, "i", &scheme))
+	if (!PyArg_ParseTuple(args, "i", &scheme))
 		return NULL;
 
 	return PyInt_FromLong(clQueryMaxHeaderSize(scheme));
@@ -743,7 +743,7 @@ cl_QueryAlgorithms(PyObject *self, PyObject *args)
 	PyObject *list;
 	int i;
 
-	if (!PyArg_Parse(args, "i", &algorithmMediaType))
+	if (!PyArg_ParseTuple(args, "i", &algorithmMediaType))
 		return NULL;
 
 	error_handler_called = 0;
@@ -791,7 +791,7 @@ cl_QuerySchemeFromName(PyObject *self, PyObject *args)
 	char *name;
 	int scheme;
 
-	if (!PyArg_Parse(args, "(is)", &algorithmMediaType, &name))
+	if (!PyArg_ParseTuple(args, "is", &algorithmMediaType, &name))
 		return NULL;
 
 	error_handler_called = 0;
@@ -810,7 +810,7 @@ cl_GetAlgorithmName(PyObject *self, PyObject *args)
 	int scheme;
 	char *name;
 
-	if (!PyArg_Parse(args, "i", &scheme))
+	if (!PyArg_ParseTuple(args, "i", &scheme))
 		return NULL;
 
 	name = clGetAlgorithmName(scheme);
@@ -829,9 +829,9 @@ do_set(PyObject *self, PyObject *args, int (*func)(int, int, int))
 	float fvalue;
 	int is_float = 0;
 
-	if (!PyArg_Parse(args, "(iii)", &scheme, &paramID, &value)) {
+	if (!PyArg_ParseTuple(args, "iii", &scheme, &paramID, &value)) {
 		PyErr_Clear();
-		if (!PyArg_Parse(args, "(iif)", &scheme, &paramID, &fvalue)) {
+		if (!PyArg_ParseTuple(args, "iif", &scheme, &paramID, &fvalue)) {
 			PyErr_Clear();
 			PyErr_SetString(PyExc_TypeError,
 			     "bad argument list (format '(iii)' or '(iif)')");
@@ -884,7 +884,7 @@ cl_SetMax(PyObject *self, PyObject *args)
 static PyObject *cl_##name(PyObject *self, PyObject *args) \
 { \
 	  int x; \
-	  if (!PyArg_Parse(args, "i", &x)) return NULL; \
+	  if (!PyArg_ParseTuple(args, "i", &x)) return NULL; \
 	  return Py##handler(CL_##name(x)); \
 }
 
@@ -892,7 +892,7 @@ static PyObject *cl_##name(PyObject *self, PyObject *args) \
 static PyObject *cl_##name(PyObject *self, PyObject *args) \
 { \
 	  int a1, a2; \
-	  if (!PyArg_Parse(args, "(ii)", &a1, &a2)) return NULL; \
+	  if (!PyArg_ParseTuple(args, "ii", &a1, &a2)) return NULL; \
 	  return Py##handler(CL_##name(a1, a2)); \
 }
 
@@ -926,30 +926,30 @@ cvt_type(PyObject *self, PyObject *args)
 #endif
 
 static PyMethodDef cl_methods[] = {
-	{"CompressImage",	cl_CompressImage, METH_OLDARGS},
-	{"DecompressImage",	cl_DecompressImage, METH_OLDARGS},
-	{"GetAlgorithmName",	cl_GetAlgorithmName, METH_OLDARGS},
-	{"OpenCompressor",	cl_OpenCompressor, METH_OLDARGS},
-	{"OpenDecompressor",	cl_OpenDecompressor, METH_OLDARGS},
-	{"QueryAlgorithms",	cl_QueryAlgorithms, METH_OLDARGS},
-	{"QueryMaxHeaderSize",	cl_QueryMaxHeaderSize, METH_OLDARGS},
-	{"QueryScheme",		cl_QueryScheme, METH_OLDARGS},
-	{"QuerySchemeFromName",	cl_QuerySchemeFromName, METH_OLDARGS},
-	{"SetDefault",		cl_SetDefault, METH_OLDARGS},
-	{"SetMax",		cl_SetMax, METH_OLDARGS},
-	{"SetMin",		cl_SetMin, METH_OLDARGS},
-	{"BytesPerSample",	cl_BytesPerSample, METH_OLDARGS},
-	{"BytesPerPixel",	cl_BytesPerPixel, METH_OLDARGS},
-	{"AudioFormatName",	cl_AudioFormatName, METH_OLDARGS},
-	{"VideoFormatName",	cl_VideoFormatName, METH_OLDARGS},
-	{"AlgorithmNumber",	cl_AlgorithmNumber, METH_OLDARGS},
-	{"AlgorithmType",	cl_AlgorithmType, METH_OLDARGS},
-	{"Algorithm",		cl_Algorithm, METH_OLDARGS},
-	{"ParamNumber",		cl_ParamNumber, METH_OLDARGS},
-	{"ParamType",		cl_ParamType, METH_OLDARGS},
-	{"ParamID",		cl_ParamID, METH_OLDARGS},
+	{"CompressImage",	cl_CompressImage, METH_VARARGS},
+	{"DecompressImage",	cl_DecompressImage, METH_VARARGS},
+	{"GetAlgorithmName",	cl_GetAlgorithmName, METH_VARARGS},
+	{"OpenCompressor",	cl_OpenCompressor, METH_VARARGS},
+	{"OpenDecompressor",	cl_OpenDecompressor, METH_VARARGS},
+	{"QueryAlgorithms",	cl_QueryAlgorithms, METH_VARARGS},
+	{"QueryMaxHeaderSize",	cl_QueryMaxHeaderSize, METH_VARARGS},
+	{"QueryScheme",		cl_QueryScheme, METH_VARARGS},
+	{"QuerySchemeFromName",	cl_QuerySchemeFromName, METH_VARARGS},
+	{"SetDefault",		cl_SetDefault, METH_VARARGS},
+	{"SetMax",		cl_SetMax, METH_VARARGS},
+	{"SetMin",		cl_SetMin, METH_VARARGS},
+	{"BytesPerSample",	cl_BytesPerSample, METH_VARARGS},
+	{"BytesPerPixel",	cl_BytesPerPixel, METH_VARARGS},
+	{"AudioFormatName",	cl_AudioFormatName, METH_VARARGS},
+	{"VideoFormatName",	cl_VideoFormatName, METH_VARARGS},
+	{"AlgorithmNumber",	cl_AlgorithmNumber, METH_VARARGS},
+	{"AlgorithmType",	cl_AlgorithmType, METH_VARARGS},
+	{"Algorithm",		cl_Algorithm, METH_VARARGS},
+	{"ParamNumber",		cl_ParamNumber, METH_VARARGS},
+	{"ParamType",		cl_ParamType, METH_VARARGS},
+	{"ParamID",		cl_ParamID, METH_VARARGS},
 #ifdef CLDEBUG
-	{"cvt_type",		cvt_type, METH_OLDARGS},
+	{"cvt_type",		cvt_type, METH_VARARGS},
 #endif
 	{NULL,			NULL} /* Sentinel */
 };

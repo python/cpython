@@ -35,7 +35,7 @@ imageop_crop(PyObject *self, PyObject *args)
 	int ix, iy, xstep, ystep;
 	PyObject *rv;
 
-	if ( !PyArg_Parse(args, "(s#iiiiiii)", &cp, &len, &size, &x, &y,
+	if ( !PyArg_ParseTuple(args, "s#iiiiiii", &cp, &len, &size, &x, &y,
 			  &newx1, &newy1, &newx2, &newy2) )
 		return 0;
     
@@ -90,7 +90,7 @@ imageop_scale(PyObject *self, PyObject *args)
 	int oix, oiy;
 	PyObject *rv;
 
-	if ( !PyArg_Parse(args, "(s#iiiii)",
+	if ( !PyArg_ParseTuple(args, "s#iiiii",
 			  &cp, &len, &size, &x, &y, &newx, &newy) )
 		return 0;
     
@@ -136,7 +136,7 @@ imageop_tovideo(PyObject *self, PyObject *args)
 	PyObject *rv;
    
     
-	if ( !PyArg_Parse(args, "(s#iii)", &cp, &len, &width, &maxx, &maxy) )
+	if ( !PyArg_ParseTuple(args, "s#iii", &cp, &len, &width, &maxx, &maxy) )
 		return 0;
 
 	if ( width != 1 && width != 4 ) {
@@ -190,7 +190,7 @@ imageop_grey2mono(PyObject *self, PyObject *args)
 	int i, bit;
    
     
-	if ( !PyArg_Parse(args, "(s#iii)", &cp, &len, &x, &y, &tres) )
+	if ( !PyArg_ParseTuple(args, "s#iii", &cp, &len, &x, &y, &tres) )
 		return 0;
 
 	if ( x*y != len ) {
@@ -231,7 +231,7 @@ imageop_grey2grey4(PyObject *self, PyObject *args)
 	int pos;
    
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	if ( x*y != len ) {
@@ -270,7 +270,7 @@ imageop_grey2grey2(PyObject *self, PyObject *args)
 	int pos;
    
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	if ( x*y != len ) {
@@ -308,7 +308,7 @@ imageop_dither2mono(PyObject *self, PyObject *args)
 	int i, bit;
    
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	if ( x*y != len ) {
@@ -354,7 +354,7 @@ imageop_dither2grey2(PyObject *self, PyObject *args)
 	int sum = 0, nvalue;
    
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	if ( x*y != len ) {
@@ -393,7 +393,7 @@ imageop_mono2grey(PyObject *self, PyObject *args)
 	PyObject *rv;
 	int i, bit;
     
-	if ( !PyArg_Parse(args, "(s#iiii)", &cp, &len, &x, &y, &v0, &v1) )
+	if ( !PyArg_ParseTuple(args, "s#iiii", &cp, &len, &x, &y, &v0, &v1) )
 		return 0;
 
 	nlen = x*y;
@@ -430,7 +430,7 @@ imageop_grey22grey(PyObject *self, PyObject *args)
 	PyObject *rv;
 	int i, pos, value = 0, nvalue;
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	nlen = x*y;
@@ -466,7 +466,7 @@ imageop_grey42grey(PyObject *self, PyObject *args)
 	PyObject *rv;
 	int i, pos, value = 0, nvalue;
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	nlen = x*y;
@@ -503,7 +503,7 @@ imageop_rgb2rgb8(PyObject *self, PyObject *args)
 	int i, r, g, b;
 	Py_UInt32 value, nvalue;
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	nlen = x*y;
@@ -545,7 +545,7 @@ imageop_rgb82rgb(PyObject *self, PyObject *args)
 	int i, r, g, b;
 	Py_UInt32 value, nvalue;
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	nlen = x*y;
@@ -586,7 +586,7 @@ imageop_rgb2grey(PyObject *self, PyObject *args)
 	int i, r, g, b;
 	Py_UInt32 value, nvalue;
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	nlen = x*y;
@@ -622,7 +622,7 @@ imageop_grey2rgb(PyObject *self, PyObject *args)
 	int i;
 	Py_UInt32 value;
     
-	if ( !PyArg_Parse(args, "(s#ii)", &cp, &len, &x, &y) )
+	if ( !PyArg_ParseTuple(args, "s#ii", &cp, &len, &x, &y) )
 		return 0;
 
 	nlen = x*y;
@@ -677,21 +677,21 @@ imageop_mul(object *self, object *args)
 */
 
 static PyMethodDef imageop_methods[] = {
-	{ "crop",		imageop_crop, METH_OLDARGS },
-	{ "scale",		imageop_scale, METH_OLDARGS },
-	{ "grey2mono",	        imageop_grey2mono, METH_OLDARGS },
-	{ "grey2grey2",	        imageop_grey2grey2, METH_OLDARGS },
-	{ "grey2grey4",	        imageop_grey2grey4, METH_OLDARGS },
-	{ "dither2mono",	imageop_dither2mono, METH_OLDARGS },
-	{ "dither2grey2",	imageop_dither2grey2, METH_OLDARGS },
-	{ "mono2grey",	        imageop_mono2grey, METH_OLDARGS },
-	{ "grey22grey",	        imageop_grey22grey, METH_OLDARGS },
-	{ "grey42grey",	        imageop_grey42grey, METH_OLDARGS },
-	{ "tovideo",	        imageop_tovideo, METH_OLDARGS },
-	{ "rgb2rgb8",	        imageop_rgb2rgb8, METH_OLDARGS },
-	{ "rgb82rgb",	        imageop_rgb82rgb, METH_OLDARGS },
-	{ "rgb2grey",	        imageop_rgb2grey, METH_OLDARGS },
-	{ "grey2rgb",	        imageop_grey2rgb, METH_OLDARGS },
+	{ "crop",		imageop_crop, METH_VARARGS },
+	{ "scale",		imageop_scale, METH_VARARGS },
+	{ "grey2mono",	        imageop_grey2mono, METH_VARARGS },
+	{ "grey2grey2",	        imageop_grey2grey2, METH_VARARGS },
+	{ "grey2grey4",	        imageop_grey2grey4, METH_VARARGS },
+	{ "dither2mono",	imageop_dither2mono, METH_VARARGS },
+	{ "dither2grey2",	imageop_dither2grey2, METH_VARARGS },
+	{ "mono2grey",	        imageop_mono2grey, METH_VARARGS },
+	{ "grey22grey",	        imageop_grey22grey, METH_VARARGS },
+	{ "grey42grey",	        imageop_grey42grey, METH_VARARGS },
+	{ "tovideo",	        imageop_tovideo, METH_VARARGS },
+	{ "rgb2rgb8",	        imageop_rgb2rgb8, METH_VARARGS },
+	{ "rgb82rgb",	        imageop_rgb82rgb, METH_VARARGS },
+	{ "rgb2grey",	        imageop_rgb2grey, METH_VARARGS },
+	{ "grey2rgb",	        imageop_grey2rgb, METH_VARARGS },
 	{ 0,                    0 }
 };
 
