@@ -3,13 +3,10 @@ What's New in Python 2.1 alpha 1?
 
 Core language, builtins, and interpreter
 
-- There is a new Unicode companion to the builtin str() function
-  called unistr(). Like str(), it calls either the tp_str slot of
-  objects or the "__str__" method and converts the returned value
-  to an Unicode object (in case this is necessary).
-
-  The unistr() is complemented by a new PyObject_Unicode() C API
-  which behaves in the same way.
+- There is a new Unicode companion to the PyObject_Str() API
+  called PyObject_Unicode(). It behaves in the same way as the
+  former, but assures that the returned value is an Unicode object
+  (applying the usual coercion if necessary).
 
 - The comparison operators support "rich comparison overloading" (PEP
   207).  C extension types can provide a rich comparison function in
