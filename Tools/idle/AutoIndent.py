@@ -33,6 +33,20 @@ from Tkinter import TclError
 ###$ win <Alt-Key-6>
 ###$ unix <Alt-Key-6>
 
+import re
+_is_block_opener = re.compile(r":\s*(#.*)?$").search
+_is_block_closer = re.compile(r"""
+    \s*
+    ( return
+    | break
+    | continue
+    | raise
+    | pass
+    )
+    \b
+""", re.VERBOSE).match
+del re
+
 class AutoIndent:
 
     menudefs = [
@@ -50,6 +64,7 @@ class AutoIndent:
     keydefs = {
         '<<smart-backspace>>': ['<Key-BackSpace>'],
         '<<newline-and-indent>>': ['<Key-Return>', '<KP_Enter>'],
+        '<<smart-indent>>': ['<Key-Tab>']
     }
 
     windows_keydefs = {
@@ -112,6 +127,36 @@ class AutoIndent:
         text.delete("insert - %d chars" % ndelete, "insert")
         return "break"
 
+    def smart_indent_event(self, event):
+        # if intraline selection:
+        #     delete it
+        # elif multiline selection:
+        #     do indent-region & return
+        # if tabs preferred:
+        #     insert a tab
+        # else:
+        #     insert spaces up to next higher multiple of indent level
+        text = self.text
+        try:
+            first = text.index("sel.first")
+            last = text.index("sel.last")
+        except TclError:
+            first = last = None
+        if first and last:
+            if index2line(first) != index2line(last):
+                return self.indent_region_event(event)
+            text.delete(first, last)
+            text.mark_set("insert", first)
+        if self.prefertabs:
+            pad = '\t'
+        else:
+            n = len(self.spaceindent)
+            prefix = text.get("insert linestart", "insert")
+            pad = ' ' * (n - len(prefix) % n)
+        text.insert("insert", pad)
+        text.see("insert")
+        return "break"
+
     def newline_and_indent_event(self, event):
         text = self.text
         try:
@@ -127,18 +172,18 @@ class AutoIndent:
         while i < n and line[i] in " \t":
             i = i+1
         indent = line[:i]
-        lastchar = text.get("insert -1c")
-        if lastchar == ":":
-            if not indent:
-                if self.prefertabs:
-                    indent = "\t"
-                else:
-                    indent = self.spaceindent
-            elif indent[-1] == "\t":
-                indent = indent + "\t"
-            else:
-                indent = indent + self.spaceindent
+        # strip trailing whitespace
+        i = 0
+        while line and line[-1] in " \t":
+            line = line[:-1]
+            i = i + 1
+        if i:
+            text.delete("insert - %d chars" % i, "insert")
         text.insert("insert", "\n" + indent)
+        if _is_block_opener(line):
+            self.smart_indent_event(event)
+        elif indent and _is_block_closer(line) and line[-1:] != "\\":
+            self.smart_backspace_event(event)
         text.see("insert")
         return "break"
 
@@ -242,3 +287,7 @@ def tabify(line, tabsize=8):
     else:
         i = len(line)
     return '\t' * (i/tabsize) + line[i:]
+
+# "line.col" -> line, as an int
+def index2line(index):
+    return int(float(index))
