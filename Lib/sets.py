@@ -73,6 +73,10 @@ except ImportError:
         for x in iterable:
             if not predicate(x):
                 yield x
+    try:
+        True, False
+    except NameError:
+        True, False = (0==0, 0!=0)
 
 __all__ = ['BaseSet', 'Set', 'ImmutableSet']
 
