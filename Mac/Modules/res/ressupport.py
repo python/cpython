@@ -8,14 +8,15 @@ from macsupport import *
 class ResMixIn:
 
 	def checkit(self):
-		OutLbrace()
-		Output("OSErr _err = ResError();")
-		Output("if (_err != noErr) return PyMac_Error(_err);")
-		OutRbrace()
+		if self.returntype.__class__ != OSErrType:
+			OutLbrace()
+			Output("OSErr _err = ResError();")
+			Output("if (_err != noErr) return PyMac_Error(_err);")
+			OutRbrace()
 		FunctionGenerator.checkit(self) # XXX
 
-class ResFunction(ResMixIn, FunctionGenerator): pass
-class ResMethod(ResMixIn, MethodGenerator): pass
+class ResFunction(ResMixIn, OSErrFunctionGenerator): pass
+class ResMethod(ResMixIn, OSErrMethodGenerator): pass
 
 RsrcChainLocation = Type("RsrcChainLocation", "h")
 FSCatalogInfoBitmap = FakeType("0") # Type("FSCatalogInfoBitmap", "l")
