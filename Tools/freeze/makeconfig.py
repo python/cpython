@@ -12,7 +12,7 @@ def makeconfig(infp, outfp, modules, with_ifdef=0):
 		line = infp.readline()
 		if not line: break
 		outfp.write(line)
-		if m1 and m1.search(line) >= 0:
+		if m1 and m1.search(line):
 			m1 = None
 			for mod in modules:
 				if mod in never:
@@ -22,7 +22,7 @@ def makeconfig(infp, outfp, modules, with_ifdef=0):
 				outfp.write('extern void init%s();\n' % mod)
 				if with_ifdef:
 					outfp.write("#endif\n")
-		elif m2 and m2.search(line) >= 0:
+		elif m2 and m2.search(line):
 			m2 = None
 			for mod in modules:
 				if mod in never:

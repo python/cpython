@@ -13,11 +13,17 @@ makevardef = re.compile('^([a-zA-Z0-9_]+)[ \t]*=(.*)')
 def getmakevars(filename):
 	variables = {}
 	fp = open(filename)
+	pendingline = ""
 	try:
 		while 1:
 			line = fp.readline()
+			if pendingline:
+				line = pendingline + line
+				pendingline = ""
 			if not line:
 				break
+			if line.endswith('\\\n'):
+				pendingline = line[:-2]
 			matchobj = makevardef.match(line)
 			if not matchobj:
 				continue
@@ -44,15 +50,22 @@ def getsetupinfo(filename):
 	modules = {}
 	variables = {}
 	fp = open(filename)
+	pendingline = ""
 	try:
 		while 1:
 			line = fp.readline()
+			if pendingline:
+				line = pendingline + line
+				pendingline = ""
 			if not line:
 				break
 			# Strip comments
 			i = string.find(line, '#')
 			if i >= 0:
 				line = line[:i]
+			if line.endswith('\\\n'):
+				pendingline = line[:-2]
+				continue
 			matchobj = setupvardef.match(line)
 			if matchobj:
 				(name, value) = matchobj.group(1, 2)
