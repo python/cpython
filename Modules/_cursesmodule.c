@@ -145,7 +145,12 @@ None              notimeout(int)    int=0 or int=1
 
 #include "Python.h"
 
+#ifdef HAVE_NCURSES_H
+/* Now let's hope there aren't systems that have a broken ncurses.h */
+#include <ncurses.h>
+#else
 #include <curses.h>
+#endif
 
 typedef struct {
 	PyObject_HEAD
