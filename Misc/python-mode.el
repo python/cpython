@@ -38,6 +38,11 @@
 ;;	(autoload 'python-mode "python-mode" "Python editing mode." t)
 ;;	(setq auto-mode-alist
 ;;	      (cons '("\\.py$" . python-mode) auto-mode-alist))
+;;
+;; If you want font-lock support for Python source code (a.k.a. syntax
+;; coloring, highlighting), add this to your .emacs file:
+;;
+;;     (add-hook 'python-mode-hook 'turn-on-font-lock)
 
 ;; Here's a brief list of recent additions/improvements:
 ;;
@@ -189,13 +194,14 @@ displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
 (defconst python-font-lock-keywords
-  (let* ((keywords '("access"     "and"      "break"    "continue"
-		     "del"        "elif"     "else:"    "except"
-		     "except:"    "exec"     "finally:" "for"
-		     "from"       "global"   "if"       "import"
-		     "in"         "is"       "lambda"   "not"
-		     "or"         "pass"     "print"    "raise"
-		     "return"     "try:"     "while"
+  (let* ((keywords '("access"     "and"        "break"      "class"
+		     "continue"   "def"        "del"        "elif"
+		     "else:"      "except"     "except:"    "exec"
+		     "finally:"   "for"        "from"       "global"
+		     "if"         "import"     "in"         "is"
+		     "lambda"     "not"        "or"         "pass"
+		     "print"      "raise"      "return"     "try:"
+		     "while"
 		     ))
 	 (kwregex (mapconcat 'identity keywords "\\|")))
     (list
