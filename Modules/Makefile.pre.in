@@ -17,7 +17,7 @@ VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 
-@SET_CXX@
+CXX=		@CXX@
 CC=		@CC@
 RANLIB=		@RANLIB@
 AR=		@AR@
@@ -105,7 +105,7 @@ SYSLIBS=	$(LIBM) $(LIBC)
 
 LIBRARY=	../libpython$(VERSION).a
 LDLIBRARY=	../@LDLIBRARY@
-@SET_DLLLIBRARY@
+DLLLIBRARY=	@DLLLIBRARY@
 
 # === Rules ===
 
