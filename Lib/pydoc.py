@@ -127,14 +127,10 @@ def stripid(text):
 def modulename(path):
     """Return the Python module name for a given path, or None."""
     filename = os.path.basename(path)
-    if lower(filename[-3:]) == '.py':
-        return filename[:-3]
-    elif lower(filename[-4:]) in ['.pyc', '.pyd', '.pyo']:
-        return filename[:-4]
-    elif lower(filename[-11:]) == 'module.so':
-        return filename[:-11]
-    elif lower(filename[-13:]) == 'module.so.1':
-        return filename[:-13]
+    for ending in ['.py', '.pyc', '.pyd', '.pyo',
+                   'module.so', 'module.so.1', '.so']:
+        if len(filename) > len(ending) and filename[-len(ending):] == ending:
+            return filename[:-len(ending)]
 
 class DocImportError(Exception):
     """Class for errors while trying to import something to document it."""
