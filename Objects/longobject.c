@@ -1878,18 +1878,12 @@ long_mul(PyLongObject *v, PyLongObject *w)
 	}
 
 	z = k_mul(a, b);
-	if(z == NULL) {
-		Py_DECREF(a);
-		Py_DECREF(b);
-		return NULL;
-	}
-	if (a->ob_size < 0)
-		z->ob_size = -(z->ob_size);
-	if (b->ob_size < 0)
+	/* Negate if exactly one of the inputs is negative. */
+	if (((a->ob_size ^ b->ob_size) < 0) && z)
 		z->ob_size = -(z->ob_size);
 	Py_DECREF(a);
 	Py_DECREF(b);
-	return (PyObject *) long_normalize(z);
+	return (PyObject *)z;
 }
 
 /* The / and % operators are now defined in terms of divmod().
