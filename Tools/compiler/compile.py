@@ -11,7 +11,10 @@ def main():
             VERBOSE = 1
             visitor.ASTVisitor.VERBOSE = visitor.ASTVisitor.VERBOSE + 1
         if k == '-q':
-            f = open('/dev/null', 'wb')
+            if sys.platform[:3]=="win":
+                f = open('nul', 'wb') # /dev/null fails on Windows...
+            else:
+                f = open('/dev/null', 'wb')
             sys.stdout = f
     if not args:
         print "no files to compile"
