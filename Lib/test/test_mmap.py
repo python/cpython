@@ -1,4 +1,4 @@
-from test_support import verify, TESTFN
+from test_support import verify, vereq, TESTFN
 import mmap
 import os, re
 
@@ -25,15 +25,15 @@ def test_both():
 
         print type(m)  # SF bug 128713:  segfaulted on Linux
         print '  Position of foo:', m.find('foo') / float(PAGESIZE), 'pages'
-        verify(m.find('foo') == PAGESIZE)
+        vereq(m.find('foo'), PAGESIZE)
 
         print '  Length of file:', len(m) / float(PAGESIZE), 'pages'
-        verify(len(m) == 2*PAGESIZE)
+        vereq(len(m), 2*PAGESIZE)
 
         print '  Contents of byte 0:', repr(m[0])
-        verify(m[0] == '\0')
+        vereq(m[0], '\0')
         print '  Contents of first 3 bytes:', repr(m[0:3])
-        verify(m[0:3] == '\0\0\0')
+        vereq(m[0:3], '\0\0\0')
 
         # Modify the file's content
         print "\n  Modifying file's content..."
@@ -42,11 +42,11 @@ def test_both():
 
         # Check that the modification worked
         print '  Contents of byte 0:', repr(m[0])
-        verify(m[0] == '3')
+        vereq(m[0], '3')
         print '  Contents of first 3 bytes:', repr(m[0:3])
-        verify(m[0:3] == '3\0\0')
+        vereq(m[0:3], '3\0\0')
         print '  Contents of second page:',  repr(m[PAGESIZE-1 : PAGESIZE + 7])
-        verify(m[PAGESIZE-1 : PAGESIZE + 7] == '\0foobar\0')
+        vereq(m[PAGESIZE-1 : PAGESIZE + 7], '\0foobar\0')
 
         m.flush()
 
@@ -61,19 +61,19 @@ def test_both():
             print '  Regex match on mmap (page start, length of match):',
             print start / float(PAGESIZE), length
 
-            verify(start == PAGESIZE)
-            verify(end == PAGESIZE + 6)
+            vereq(start, PAGESIZE)
+            vereq(end, PAGESIZE + 6)
 
         # test seeking around (try to overflow the seek implementation)
         m.seek(0,0)
         print '  Seek to zeroth byte'
-        verify(m.tell() == 0)
+        vereq(m.tell(), 0)
         m.seek(42,1)
         print '  Seek to 42nd byte'
-        verify(m.tell() == 42)
+        vereq(m.tell(), 42)
         m.seek(0,2)
         print '  Seek to last byte'
-        verify(m.tell() == len(m))
+        vereq(m.tell(), len(m))
 
         print '  Try to seek to negative position...'
         try:
@@ -127,6 +127,118 @@ def test_both():
             f.close()
         except OSError:
             pass
+        try:
+            os.unlink(TESTFN)
+        except OSError:
+            pass
+
+    # Test for "access" keyword parameter
+    try:
+        mapsize = 10
+        print "  Creating", mapsize, "byte test data file."
+        open(TESTFN, "wb").write("a"*mapsize)
+        print "  Opening mmap with access=ACCESS_READ"
+        f = open(TESTFN, "rb")
+        m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_READ)
+        verify(m[:] == 'a'*mapsize, "Readonly memory map data incorrect.")
+
+        print "  Ensuring that readonly mmap can't be slice assigned."
+        try:
+            m[:] = 'b'*mapsize
+        except TypeError:
+            pass
+        else:
+            verify(0, "Able to write to readonly memory map")
+
+        print "  Ensuring that readonly mmap can't be item assigned."
+        try:
+            m[0] = 'b'
+        except TypeError:
+            pass
+        else:
+            verify(0, "Able to write to readonly memory map")
+
+        print "  Ensuring that readonly mmap can't be write() to."
+        try:
+            m.seek(0,0)
+            m.write('abc')
+        except TypeError:
+            pass
+        else:
+            verify(0, "Able to write to readonly memory map")
+
+        print "  Ensuring that readonly mmap can't be write_byte() to."
+        try:
+            m.seek(0,0)
+            m.write_byte('d')
+        except TypeError:
+            pass
+        else:
+            verify(0, "Able to write to readonly memory map")
+
+        print "  Ensuring that readonly mmap can't be resized."
+        try:
+            m.resize(2*mapsize)
+        except SystemError:   # resize is not universally supported
+            pass
+        except TypeError:
+            pass
+        else:
+            verify(0, "Able to resize readonly memory map")
+        del m, f
+        verify(open(TESTFN, "rb").read() == 'a'*mapsize,
+               "Readonly memory map data file was modified")
+
+        print "  Opening mmap with access=ACCESS_WRITE"
+        f = open(TESTFN, "r+b")
+        m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_WRITE)
+        print "  Modifying write-through memory map."
+        m[:] = 'c'*mapsize
+        verify(m[:] == 'c'*mapsize,
+               "Write-through memory map memory not updated properly.")
+        m.flush()
+        del m, f
+        verify(open(TESTFN).read() == 'c'*mapsize,
+               "Write-through memory map data file not updated properly.")
+
+        print "  Opening mmap with access=ACCESS_COPY"
+        f = open(TESTFN, "r+b")
+        m = mmap.mmap(f.fileno(), mapsize, access=mmap.ACCESS_COPY)
+        print "  Modifying copy-on-write memory map."
+        m[:] = 'd'*mapsize
+        verify(m[:] == 'd' * mapsize,
+               "Copy-on-write memory map data not written correctly.")
+        m.flush()
+        verify(open(TESTFN, "rb").read() == 'c'*mapsize,
+               "Copy-on-write test data file should not be modified.")
+        try:
+            print "  Ensuring copy-on-write maps cannot be resized."
+            m.resize(2*mapsize)
+        except TypeError:
+            pass
+        else:
+            verify(0, "Copy-on-write mmap resize did not raise exception.")
+        del m, f
+        try:
+            print "  Ensuring invalid access parameter raises exception."
+            f = open(TESTFN, "r+b")
+            m = mmap.mmap(f.fileno(), mapsize, access=4)
+        except ValueError:
+            pass
+        else:
+            verify(0, "Invalid access code should have raised exception.")
+
+        if os.name == "posix":
+            print "  Trying incompatible flags, prot and access parameters."
+            f=open(TESTFN, "r+b")
+            try:
+                m = mmap.mmap(f.fileno(), mapsize, flags=mmap.MAP_PRIVATE,
+                              prot=mmap.PROT_READ, access=mmap.ACCESS_WRITE)
+            except ValueError:
+                pass
+            else:
+                verify(0, "Incompatible parameters should raise ValueError.")
+    finally:
         try:
             os.unlink(TESTFN)
         except OSError:

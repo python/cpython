@@ -36,6 +36,13 @@ Core and builtins
 
 Extension modules
 
+- mmap has a new keyword argument, "access", allowing a uniform way for
+  both Windows and Unix users to create read-only, write-through and
+  copy-on-write memory mappings.  This was previously possible only on
+  Unix.  A new keyword argument was required to support this in a
+  uniform way because the mmap() signuatures had diverged across
+  platforms.  Thanks to Jay T Miller for repairing this!
+
 - By default, the gc.garbage list now contains only those instances in
   unreachable cycles that have __del__ methods; in 2.1 it contained all
   instances in unreachable cycles.  "Instances" here has been generalized
@@ -55,7 +62,7 @@ Extension modules
 
 Library
 
-- tkFileDialog exposes a Directory class and askdirectory 
+- tkFileDialog exposes a Directory class and askdirectory
   convenience function.
 
 - Symbolic group names in regular expressions must be unique.  For
