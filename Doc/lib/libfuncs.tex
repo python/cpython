@@ -310,6 +310,19 @@ module from which it is called).
 
 \begin{funcdesc}{input}{\optional{prompt}}
   Equivalent to \code{eval(raw_input(\var{prompt}))}.
+  \strong{Warning:} This function is not safe from user errors!  It
+  expects a valid Python expression as input; if the input is not
+  syntactically valid, a \exception{SyntaxError} will be raised.
+  Other exceptions may be raised if there is an error during
+  evaluation.  (On the other hand, sometimes this is exactly what you
+  need when writing a quick script for expert use.)
+
+  If the \module{readline} module was loaded, then
+  \function{input()} will use it to provide elaborate line editing and
+  history features.
+
+  Consider using the \function{raw_input()} function for general input
+  from users.
 \end{funcdesc}
 
 \begin{funcdesc}{int}{x\optional{, radix}}
@@ -374,7 +387,7 @@ returns \code{['a', 'b', 'c']} and \code{list( (1, 2, 3) )} returns
 
 \begin{funcdesc}{locals}{}
 Return a dictionary representing the current local symbol table.
-\strong{Warning:} the contents of this dictionary should not be
+\strong{Warning:} The contents of this dictionary should not be
 modified; changes may not affect the values of local variables used by 
 the interpreter.
 \end{funcdesc}
@@ -574,7 +587,7 @@ and skip its initialization if desired.
 
 It is legal though generally not very useful to reload built-in or
 dynamically loaded modules, except for \module{sys}, \module{__main__}
-and \module{__builtin__}.  In certain cases, however, extension
+and \module{__builtin__}.  In many cases, however, extension
 modules are not designed to be initialized more than once, and may
 fail in arbitrary ways when reloaded.
 
@@ -669,11 +682,11 @@ strings.  The argument must be in the range [0..65535], inclusive.
 \versionadded{2.0}
 \end{funcdesc}
 
-\begin{funcdesc}{unicode}{string\optional{, encoding='utf-8'\optional{, errors='strict'}}}
+\begin{funcdesc}{unicode}{string\optional{, encoding\optional{, errors}}}
 Decodes \var{string} using the codec for \var{encoding}.  Error
 handling is done according to \var{errors}.  The default behavior is
 to decode UTF-8 in strict mode, meaning that encoding errors raise
-\exception{ValueError}.
+\exception{ValueError}.  See also the \refmodule{codecs} module.
 \versionadded{2.0}
 \end{funcdesc}
 
@@ -706,8 +719,9 @@ This function returns a list of tuples, where each tuple contains the
 \var{i}-th element from each of the argument sequences.  At least one
 sequence is required, otherwise a \exception{TypeError} is raised.
 The returned list is truncated in length to the length of the shortest
-argument sequence.  When the argument sequences are all of the same
-length, \function{zip()} is similar to \function{map()} with an
-initial argument of \code{None}.
+argument sequence.  When there are multiple argument sequences which
+are all of the same length, \function{zip()} is similar to
+\function{map()} with an initial argument of \code{None}.  With a
+single sequence argument, it returns a list of 1-tuples.
 \versionadded{2.0}
 \end{funcdesc}
