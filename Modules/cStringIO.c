@@ -487,7 +487,7 @@ PyDoc_STRVAR(Otype__doc__, "Simple type for output to strings.");
 static PyTypeObject Otype = {
   PyObject_HEAD_INIT(NULL)
   0,	       			/*ob_size*/
-  "cStringIO.StringIO",   	/*tp_name*/
+  "cStringIO.StringO",   	/*tp_name*/
   sizeof(Oobject),       	/*tp_basicsize*/
   0,	       			/*tp_itemsize*/
   /* methods */
@@ -605,7 +605,7 @@ PyDoc_STRVAR(Itype__doc__,
 static PyTypeObject Itype = {
   PyObject_HEAD_INIT(NULL)
   0,					/*ob_size*/
-  "cStringIO.StringIO",			/*tp_name*/
+  "cStringIO.StringI",			/*tp_name*/
   sizeof(Iobject),			/*tp_basicsize*/
   0,					/*tp_itemsize*/
   /* methods */
