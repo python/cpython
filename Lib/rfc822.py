@@ -397,11 +397,11 @@ class Message:
     
     def __delitem__(self, name):
         """Delete all occurrences of a specific header, if it is present."""
-        lowname = string.lower(name)
-        if not self.dict.has_key(lowname):
-            raise KeyError, name
-        del self.dict[lowname]
-        name = lowname + ':'
+        name = string.lower(name)
+        if not self.dict.has_key(name):
+            return
+        del self.dict[name]
+        name = name + ':'
         n = len(name)
         list = []
         hit = 0
