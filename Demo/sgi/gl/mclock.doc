@@ -1,0 +1,60 @@
+Newsgroups: cwi.sgi
+Subject: Re: new clock
+Distribution: cwi.sgi
+References: <2246@charon.cwi.nl>
+
+Last week I wrote:
+
+>For your enjoyment I have implemented a colorful clock.
+
+The clock has now been extended with some new facilities: a menu, an
+alarm and a gong.  These may require some explanation beyond what's in
+the usage message.
+
+Menu
+----
+The right mouse button now pops up a menu that allows you to turn the
+seconds hand on or off and to switch the alarm off.
+
+Alarm
+-----
+
+The left and middle buttons set the alarm.  When it is on, the alarm
+time is displayed as a time on a 24 hour clock in the bottom left
+corner.  It is also indicated by two red triangles, corresponding to the
+little (hours) and big (minutes) hand.  These hands can be moved around:
+the left mouse button moves the minutes hand, the middle button moves
+the hourds hand.  Watch out for differences of twelve hours (always
+check the digital display); these can be corrected by dragging the hours
+hand once around the dial.
+
+When the alarm goes off, two things happen: a shell command specified on
+the command line with the -a option is executed (in the background), and
+the clock's colors change every two seconds, for five minutes.  You can
+also turn the alarm off by using the menu accessible through the right
+mouse button.
+
+There is no default command for the -a option; if it is not specified,
+only the changing of the colors happens.  If you have an 8 ohm speaker
+connected to the audio output of your Personal Iris, a suitable command
+would be:
+
+	mclock -a '/ufs/guido/bin/sgi/play /ufs/guido/lib/sounds/alarm'
+
+Gong
+----
+
+Some people like a clock that makes noises every hour, or even more
+often.  This is supported by the -g and -G options.  With -g you specify
+a shell command to be executed to sound the gong; with -G you can
+specify the interval between gong calls, in seconds (default is one hour).
+The shell command is executed in the background.  It is given two
+arguments: the hours (on a 24 hour clock!) and the minutes.  The
+executable Python script /ufs/guido/bin/sgi/chime is a suitable example.
+Again, this only works if you have installed a speaker (I bet 8 ohm
+speakers are going to be in demand!)
+
+--
+Guido van Rossum, Centre for Mathematics and Computer Science (CWI), Amsterdam
+guido@cwi.nl or ..!hp4nl!cwi.nl!guido or guido%cwi.nl@uunet.uu.net
+"A thing of beauty is a joy till sunrise"
