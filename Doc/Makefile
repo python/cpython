@@ -387,6 +387,12 @@ bziplatex:	latex-$(RELEASE).tar.bz2
 
 bzips:		bzippdf bzipps bziphtml
 
+disthtml:	tarhtml bziphtml ziphtml
+distinfo:	tarinfo bzipinfo
+distps:		tarps bzipps zipps
+distpdf:	tarpdf bzippdf zippdf
+distlatex:	tarlatex bziplatex ziplatex
+
 distfiles:	tarballs zips bzips
 	$(TOOLSDIR)/mksourcepkg --all $(RELEASE)
 
