@@ -550,7 +550,7 @@ instance_setattr(inst, name, v)
 	if (sname[0] == '_' && sname[1] == '_'
 	    && (strcmp(sname, "__dict__") == 0 ||
 		strcmp(sname, "__class__") == 0)) {
-	        int n = strlen(sname);
+	        int n = getstringsize(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
 			err_setstr(TypeError, "read-only special attribute");
 			return -1;
