@@ -38,10 +38,16 @@ long_mul(long i, long j, long *kk)
 	if (c == NULL)
 		return 0;
 
+	if (!PyInt_Check(c)) {
+		Py_DECREF(c);
+		goto overflow;
+	}
+
 	*kk = PyInt_AS_LONG(c);
 	Py_DECREF(c);
 
 	if (*kk > INT_MAX) {
+	  overflow:
 		PyErr_SetString(PyExc_OverflowError,
 				"integer multiplication");
 		return 0;
