@@ -77,8 +77,16 @@ the proxy server before starting the Python interpreter.  For example
 ...
 \end{verbatim}
 
+In a Windows environment, if no proxy envvironment variables are set,
+proxy settings are obtained from the registry's Internet Settings
+section.
+
 In a Macintosh environment, \function{urlopen()} will retrieve proxy
 information from Internet\index{Internet Config} Config.
+
+The \function{urlopen()} function does not support explicit proxy
+specification.  If you need to override environmental proxy settings,
+use \class{URLopener}, or a subclass such as \class{FancyURLopener}.
 
 Proxies which require authentication for use are not currently
 supported; this is considered an implementation limitation.
@@ -194,6 +202,12 @@ define their own \mailheader{User-Agent} header by subclassing
 \class{URLopener} or \class{FancyURLopener} and setting the instance
 attribute \member{version} to an appropriate string value before the
 \method{open()} method is called.
+
+The optional \var{proxies} parameter should be a dictionary mapping
+scheme names to proxy URLs, where an empty dictionary turns proxies
+off completely.  Its default value is None, in which case
+environmental proxy settings will be used if present, as discussed in
+the definition of \function{urlopen()}, above.
 
 Additional keyword parameters, collected in \var{x509}, are used for
 authentication with the \file{https:} scheme.  The keywords
@@ -359,4 +373,25 @@ The following example uses the \samp{POST} method instead:
 >>> params = urllib.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
 >>> f = urllib.urlopen("http://www.musi-cal.com/cgi-bin/query", params)
 >>> print f.read()
+\end{verbatim}
+
+The following example uses an explicitly specified HTTP proxy,
+overriding environment settings:
+
+\begin{verbatim}
+>>> import urllib
+>>> proxies = {'http': 'http://proxy.example.com:8080/'}
+>>> opener = urllib.FancyURLopener(proxies)
+>>> f = opener.open("http://www.python.org")
+>>> f.read()
+\end{verbatim}
+
+The following example uses no proxies at all, overriding environment
+settings:
+
+\begin{verbatim}
+>>> import urllib
+>>> opener = urllib.FancyURLopener({})
+>>> f = opener.open("http://www.python.org/")
+>>> f.read()
 \end{verbatim}
