@@ -2,6 +2,7 @@
 # After /usr/people/4Dgifts/examples/network/mcast.c
 # Usage:
 #   mcast -s (sender)
+#   mcast -b (sender, using broadcast instead multicast)
 #   mcast    (receivers)
 
 MYPORT = 8123
@@ -14,21 +15,26 @@ from socket import *
 from SOCKET import *
 from IN import *
 
-sender = (sys.argv[1:2] == ['-s'])
+sender = sys.argv[1:]
 
 s = socket(AF_INET, SOCK_DGRAM)
 
 if sender:
-	# Ugly: construct decimal IP address string from MYGROUP_BYTES
-	mygroup = ''
-	for byte in MYGROUP_BYTES: mygroup = mygroup + '.' + `byte`
-	mygroup = mygroup[1:]
-	ttl = struct.pack('b', 1)		# Time-to-live
-	s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
+	if sys.argv[1] == '-b':
+		s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+		mygroup = '<broadcast>'
+	else:
+		# Ugly: construct decimal IP address string from MYGROUP_BYTES
+		mygroup = ''
+		for byte in MYGROUP_BYTES: mygroup = mygroup + '.' + `byte`
+		mygroup = mygroup[1:]
+		ttl = struct.pack('b', 1)		# Time-to-live
+		s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, ttl)
 	while 1:
-		data = `time.time()` + '\n'
+		data = `time.time()`
+##		data = data + (1400 - len(data)) * '\0'
 		s.sendto(data, (mygroup, MYPORT))
-		time.sleep(5)
+		time.sleep(1)
 else:
 	# Bind the socket to my port
 	s.bind('', MYPORT)
