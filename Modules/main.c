@@ -216,6 +216,7 @@ Py_Main(argc, argv)
 
 	if (command) {
 		sts = PyRun_SimpleString(command) != 0;
+		free(command);
 	}
 	else {
 		if (filename == NULL && stdin_is_interactive) {
@@ -240,8 +241,8 @@ Py_Main(argc, argv)
 	    (filename != NULL || command != NULL))
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 
-	Py_Exit(sts);
-	return 0; /* Make gcc -Wall happy */
+	Py_Cleanup();
+	return sts;
 }
 
 
