@@ -146,6 +146,13 @@ PERFORMANCE OF THIS SOFTWARE.
    interpreter lock; inside the brackets, the Python interpreter lock has been 
    released and the lock for Tcl has been acquired.
 
+   Sometimes, it is necessary to have both the Python lock and the Tcl lock.
+   (For example, when transferring data from the Tcl interpreter result to a
+   Python string object.)  This can be done by using different macros to close
+   the ENTER_TCL block: ENTER_OVERLAP reacquires the Python lock (and restores
+   the thread state) but doesn't release the Tcl lock; LEAVE_OVERLAP_TCL
+   releases the Tcl lock.
+
    By contrast, ENTER_PYTHON(tstate) and LEAVE_PYTHON are used in Tcl event
    handlers when the handler needs to use Python.  Such event handlers are
    entered while the lock for Tcl is held; the event handler presumably needs
@@ -534,12 +541,6 @@ Tkapp_Call(self, args)
 	Tcl_CmdInfo info; /* and this is added */
 	Tcl_Interp *interp = Tkapp_Interp(self); /* and this too */
 
-	/* and this test */
-	if (Tcl_InterpDeleted(interp)) {
-		PyErr_SetString(Tkinter_TclError, "application is destroyed");
-		return NULL;
-	}
-
 	if (!(tmp = PyList_New(0)))
 	    return NULL;
 
@@ -652,11 +653,6 @@ Tkapp_GlobalCall(self, args)
 	char *cmd;
 	PyObject *res = NULL;
 
-	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
-		PyErr_SetString(Tkinter_TclError, "application is destroyed");
-		return NULL;
-	}
-
 	cmd  = Merge(args);
 	if (!cmd)
 		PyErr_SetString(Tkinter_TclError, "merge failed");
@@ -691,11 +687,6 @@ Tkapp_Eval(self, args)
 	if (!PyArg_ParseTuple(args, "s", &script))
 		return NULL;
 
-	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
-		PyErr_SetString(Tkinter_TclError, "application is destroyed");
-		return NULL;
-	}
-
 	ENTER_TCL
 	err = Tcl_Eval(Tkapp_Interp(self), script);
 	ENTER_OVERLAP
@@ -715,11 +706,6 @@ Tkapp_GlobalEval(self, args)
 	char *script;
 	PyObject *res = NULL;
 	int err;
-
-	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
-		PyErr_SetString(Tkinter_TclError, "application is destroyed");
-		return NULL;
-	}
 
 	if (!PyArg_ParseTuple(args, "s", &script))
 		return NULL;
@@ -744,11 +730,6 @@ Tkapp_EvalFile(self, args)
 	PyObject *res = NULL;
 	int err;
 
-	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
-		PyErr_SetString(Tkinter_TclError, "application is destroyed");
-		return NULL;
-	}
-
 	if (!PyArg_ParseTuple(args, "s", &fileName))
 		return NULL;
 
@@ -772,11 +753,6 @@ Tkapp_Record(self, args)
 	char *script;
 	PyObject *res = NULL;
 	int err;
-
-	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
-		PyErr_SetString(Tkinter_TclError, "application is destroyed");
-		return NULL;
-	}
 
 	if (!PyArg_ParseTuple(args, "s", &script))
 		return NULL;
@@ -822,11 +798,6 @@ SetVar(self, args, flags)
 	char *name1, *name2, *ok, *s;
 	PyObject *newValue;
 	PyObject *tmp;
-
-	if (Tcl_InterpDeleted(Tkapp_Interp(self))) {
-		PyErr_SetString(Tkinter_TclError, "application is destroyed");
-		return NULL;
-	}
 
 	tmp = PyList_New(0);
 	if (!tmp)
