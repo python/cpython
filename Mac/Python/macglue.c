@@ -27,6 +27,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <OSUtils.h> /* for Set(Current)A5 */
 #include <Files.h>
+#include <Aliases.h>
+#include <StandardFile.h>
 #include <Resources.h>
 #include <Memory.h>
 #include <Events.h>
@@ -39,6 +41,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #include <signal.h>
+
+#define NOPYTHON_ALERT 128
+#define YES_ITEM 1
+#define NO_ITEM 2
+#define CURWD_ITEM 3
 
 #ifdef __MWERKS__
 /* 
@@ -357,6 +364,74 @@ PyMac_Idle()
 {
 	PyMac_DoYield();
 	return intrpeek();
+}
+
+/*
+** Return the name of the Python directory
+*/
+char *
+PyMac_GetPythonDir()
+{
+    int item;
+    static char name[256];
+    AliasHandle handle;
+    FSSpec dirspec;
+    int ok = 0, exists = 0;
+    Boolean modified = 0;
+    StandardFileReply sfreply;
+    
+    handle = (AliasHandle)GetResource('alis', 128);
+    if ( handle ) {
+    	if ( ResolveAlias(NULL, handle, &dirspec, &modified) == noErr )
+    		ok = 1;
+    		exists = 1;
+    }
+    if ( !ok ) {
+	    item = Alert(NOPYTHON_ALERT, NULL);
+	    if ( item == YES_ITEM ) {
+	    	StandardGetFile(NULL, 0, NULL, &sfreply);
+	    	if ( sfreply.sfGood ) {
+	    		if ( sfreply.sfIsFolder ) {
+	    			dirspec = sfreply.sfFile;
+	    			ok = 1;
+	    			modified = 1;
+	    		} else {
+	    			/* User selected a file. Use folder containing it */
+	    			if (FSMakeFSSpec(sfreply.sfFile.vRefNum, 
+	    							sfreply.sfFile.parID, "\p", &dirspec) == 0) {
+	    				ok = 1;
+	    				modified = 1;
+	    			}
+	    		}
+	    	}
+	    } else if ( item == CURWD_ITEM ) {
+	    	if ( getwd(name) ) {
+	    		if ( FSMakeFSSpec(0, 0, Pstring(name), &dirspec) == 0 ) {
+	    			ok = 1;
+	    			modified = 1;
+	    		}
+	    	}
+	    }
+    }
+    if ( ok && modified ) {
+    	if ( !exists ) {
+    		if (NewAlias(NULL, &dirspec, &handle) == 0 )
+    			AddResource((Handle)handle, 'alis', 128, "\p");
+    	} else {
+    		ChangedResource((Handle)handle);
+    	}
+    	UpdateResFile(CurResFile());
+    }
+    if ( ok ) {
+    	ok = (nfullpath(&dirspec, name) == 0);
+    	if ( ok ) strcat(name, ":");
+    }
+    if ( !ok ) {
+		/* If all fails, we return the current directory */
+		name[0] = 0;
+		(void)getwd(name);
+	}
+	return name;
 }
 
 
