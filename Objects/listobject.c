@@ -758,39 +758,28 @@ reverse_slice(PyObject **lo, PyObject **hi)
 /* New quicksort implementation for arrays of object pointers.
    Thanks to discussions with Tim Peters. */
 
-/* CMPERROR is returned by our comparison function when an error
-   occurred.  This is the largest negative integer (0x80000000 on a
-   32-bit system). */
-#define CMPERROR ( (int) ((unsigned int)1 << (8*sizeof(int) - 1)) )
-
 /* Comparison function.  Takes care of calling a user-supplied
    comparison function (any callable Python object).  Calls the
-   standard comparison function, PyObject_Compare(), if the user-
-   supplied function is NULL. */
+   standard comparison function, PyObject_RichCompareBool(), if the user-
+   supplied function is NULL.
+   Returns <0 on error, >0 if x < y, 0 if x >= y. */
 
 static int
-docompare(PyObject *x, PyObject *y, PyObject *compare)
+islt(PyObject *x, PyObject *y, PyObject *compare)
 {
 	PyObject *res;
 	PyObject *args;
 	int i;
 
-	if (compare == NULL) {
-		/* NOTE: we rely on the fact here that the sorting algorithm
-		   only ever checks whether k<0, i.e., whether x<y.  So we
-		   invoke the rich comparison function with Py_LT ('<'), and
-		   return -1 when it returns true and 0 when it returns
-		   false. */
-		i = PyObject_RichCompareBool(x, y, Py_LT);
-		if (i < 0)
-			return CMPERROR;
-		else
-			return -i;
-	}
+	if (compare == NULL)
+		return PyObject_RichCompareBool(x, y, Py_LT);
 
+	/* Call the user's comparison function and translate the 3-way
+	 * result into true or false (or error).
+	 */
 	args = PyTuple_New(2);
 	if (args == NULL)
-		return CMPERROR;
+		return -1;
 	Py_INCREF(x);
 	Py_INCREF(y);
 	PyTuple_SET_ITEM(args, 0, x);
@@ -798,20 +787,16 @@ docompare(PyObject *x, PyObject *y, PyObject *compare)
 	res = PyObject_Call(compare, args, NULL);
 	Py_DECREF(args);
 	if (res == NULL)
-		return CMPERROR;
+		return -1;
 	if (!PyInt_Check(res)) {
 		Py_DECREF(res);
 		PyErr_SetString(PyExc_TypeError,
 				"comparison function must return int");
-		return CMPERROR;
+		return -1;
 	}
 	i = PyInt_AsLong(res);
 	Py_DECREF(res);
-	if (i < 0)
-		return -1;
-	if (i > 0)
-		return 1;
-	return 0;
+	return i < 0;
 }
 
 /* MINSIZE is the smallest array that will get a full-blown samplesort
@@ -850,17 +835,21 @@ docompare(PyObject *x, PyObject *y, PyObject *compare)
    exactly in two. */
 #define STACKSIZE 60
 
-
-#define SETK(X,Y) if ((k = docompare(X,Y,compare))==CMPERROR) goto fail
+/* Compare X to Y via islt().  Goto "fail" if the comparison raises an
+   error.  Else "k" is set to true iff X<Y, and an "if (k)" block is
+   started.  It makes more sense in context <wink>.  X and Y are PyObject*s.
+*/
+#define IFLT(X, Y) if ((k = islt(X, Y, compare)) < 0) goto fail;  \
+		   if (k)
 
 /* binarysort is the best method for sorting small arrays: it does
    few compares, but can do data movement quadratic in the number of
    elements.
    [lo, hi) is a contiguous slice of a list, and is sorted via
-   binary insertion.
+   binary insertion.  This sort is stable.
    On entry, must have lo <= start <= hi, and that [lo, start) is already
    sorted (pass start == lo if you don't know!).
-   If docompare complains (returns CMPERROR) return -1, else 0.
+   If islt() complains return -1, else 0.
    Even in case of error, the output slice will be some permutation of
    the input (nothing is lost or duplicated).
 */
@@ -869,12 +858,12 @@ static int
 binarysort(PyObject **lo, PyObject **hi, PyObject **start, PyObject *compare)
      /* compare -- comparison function object, or NULL for default */
 {
-	/* assert lo <= start <= hi
-	   assert [lo, start) is sorted */
 	register int k;
 	register PyObject **l, **p, **r;
 	register PyObject *pivot;
 
+	assert(lo <= start && start <= hi);
+	/* assert [lo, start) is sorted */
 	if (lo == start)
 		++start;
 	for (; start < hi; ++start) {
@@ -884,8 +873,7 @@ binarysort(PyObject **lo, PyObject **hi, PyObject **start, PyObject *compare)
 		pivot = *r;
 		do {
 			p = l + ((r - l) >> 1);
-			SETK(pivot, *p);
-			if (k < 0)
+			IFLT(pivot, *p)
 				r = p;
 			else
 				l = p + 1;
@@ -906,7 +894,7 @@ binarysort(PyObject **lo, PyObject **hi, PyObject **start, PyObject *compare)
 /* samplesortslice is the sorting workhorse.
    [lo, hi) is a contiguous slice of a list, to be sorted in place.
    On entry, must have lo <= hi,
-   If docompare complains (returns CMPERROR) return -1, else 0.
+   If islt() complains return -1, else 0.
    Even in case of error, the output slice will be some permutation of
    the input (nothing is lost or duplicated).
 
@@ -1023,8 +1011,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 	*/
 	/* assert lo < hi */
 	for (r = lo+1; r < hi; ++r) {
-		SETK(*r, *(r-1));
-		if (k < 0)
+		IFLT(*r, *(r-1))
 			break;
 	}
 	/* [lo,r) is sorted, [r,hi) unknown.  Get out cheap if there are
@@ -1036,8 +1023,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 	   benchmark-driven silliness <wink>. */
 	/* assert lo < hi */
 	for (r = lo+1; r < hi; ++r) {
-		SETK(*(r-1), *r);
-		if (k < 0)
+		IFLT(*(r-1), *r)
 			break;
 	}
 	if (hi - r <= MAXMERGE) {
@@ -1192,8 +1178,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 		do {
 			/* slide l right, looking for key >= pivot */
 			do {
-				SETK(*l, pivot);
-				if (k < 0)
+				IFLT(*l, pivot)
 					++l;
 				else
 					break;
@@ -1202,8 +1187,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 			/* slide r left, looking for key < pivot */
 			while (l < r) {
 				register PyObject *rval = *r--;
-				SETK(rval, pivot);
-				if (k < 0) {
+				IFLT(rval, pivot) {
 					/* swap and advance */
 					r[1] = *l;
 					*l++ = rval;
@@ -1219,8 +1203,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 		   everything to the right of r is >= pivot */
 
 		if (l == r) {
-			SETK(*r, pivot);
-			if (k < 0)
+			IFLT(*r, pivot)
 				++l;
 			else
 				--r;
@@ -1249,8 +1232,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 		*/
 		while (l < hi) {
 			/* pivot <= *l known */
-			SETK(pivot, *l);
-			if (k < 0)
+			IFLT(pivot, *l)
 				break;
 			else
 				/* <= and not < implies == */
@@ -1290,7 +1272,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 	return -1;
 }
 
-#undef SETK
+#undef IFLT
 
 static PyTypeObject immutable_list_type;
 
