@@ -234,9 +234,9 @@ complex_buf_repr(buf, v)
 	complexobject *v;
 {
 	if (v->cval.real == 0.)
-		sprintf(buf, "%.12gi", v->cval.imag);
+		sprintf(buf, "%.12gj", v->cval.imag);
 	else
-		sprintf(buf, "(%.12g%+.12gi)", v->cval.real, v->cval.imag);
+		sprintf(buf, "(%.12g%+.12gj)", v->cval.real, v->cval.imag);
 }
 
 static int
