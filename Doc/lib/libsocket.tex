@@ -214,6 +214,15 @@ remote socket, since the destination socket is specified by
 (The format of \var{address} depends on the address family -- see above.)
 \end{funcdesc}
 
+\begin{funcdesc}{setblocking}{flag}
+Set blocking or non-blocking mode of the socket: if \var{flag} is 0,
+the socket is set to non-blocking, else to blocking mode.  Initially
+all sockets are in blocking mode.  In non-blocking mode, if a
+\code{recv} call doesn't find any data, or if a \code{send} call can't
+immediately dispose of the data, a \code{socket.error} exception is
+raised; in blocking mode, the calls block until they can proceed.
+\end{funcdesc}
+
 \begin{funcdesc}{setsockopt}{level\, optname\, value}
 Set the value of the given socket option (see the \UNIX{} man page
 {\it setsockopt}(2)).  The needed symbolic constants are defined in module
