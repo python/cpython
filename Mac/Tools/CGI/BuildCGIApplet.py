@@ -30,7 +30,9 @@ def buildcgiapplet():
 	# (there's no point in proceeding if we can't find it)
 	
 	template = buildtools.findtemplate()
-	wrapper = os.path.join(sys.exec_prefix, ":Mac:Tools:CGI:PythonCGISlave.py")
+	wrapper = "PythonCGISlave.py"
+	if not os.path.exists("PythonCGISlave.py"):
+		wrapper = os.path.join(sys.exec_prefix, ":Mac:Tools:CGI", wrapper)
 	
 	# Ask for source text if not specified in sys.argv[1:]
 	if not sys.argv[1:]:
