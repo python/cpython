@@ -1345,7 +1345,7 @@ static PyTypeObject LogReaderType = {
     0,					/* tp_clear		*/
     0,					/* tp_richcompare	*/
     0,					/* tp_weaklistoffset	*/
-    PyObject_GenericGetIter,		/* tp_iter		*/
+    PyObject_SelfIter,			/* tp_iter		*/
     (iternextfunc)logreader_tp_iternext,/* tp_iternext		*/
     logreader_methods,			/* tp_methods		*/
     logreader_members,			/* tp_members		*/

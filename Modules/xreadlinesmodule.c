@@ -152,7 +152,7 @@ static PyTypeObject XReadlinesObject_Type = {
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	PyObject_GenericGetIter,		/* tp_iter */
+	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)xreadlines_iternext,	/* tp_iternext */
 };
 

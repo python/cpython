@@ -140,7 +140,7 @@ PyTypeObject cycle_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)cycle_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -289,7 +289,7 @@ PyTypeObject dropwhile_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)dropwhile_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -437,7 +437,7 @@ PyTypeObject takewhile_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)takewhile_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -607,7 +607,7 @@ PyTypeObject islice_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)islice_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -746,7 +746,7 @@ PyTypeObject starmap_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)starmap_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -933,7 +933,7 @@ PyTypeObject imap_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)imap_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1068,7 +1068,7 @@ PyTypeObject chain_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)chain_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1217,7 +1217,7 @@ PyTypeObject ifilter_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)ifilter_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1366,7 +1366,7 @@ PyTypeObject ifilterfalse_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)ifilterfalse_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1450,7 +1450,7 @@ PyTypeObject count_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)count_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1634,7 +1634,7 @@ PyTypeObject izip_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)izip_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */
@@ -1741,7 +1741,7 @@ PyTypeObject repeat_type = {
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
 	0,				/* tp_weaklistoffset */
-	PyObject_GenericGetIter,	/* tp_iter */
+	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)repeat_next,	/* tp_iternext */
 	0,				/* tp_methods */
 	0,				/* tp_members */

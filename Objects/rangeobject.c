@@ -281,7 +281,7 @@ static PyTypeObject Pyrangeiter_Type = {
 	0,                                      /* tp_clear */
 	0,                                      /* tp_richcompare */
 	0,                                      /* tp_weaklistoffset */
-	PyObject_GenericGetIter,		/* tp_iter */
+	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)rangeiter_next,		/* tp_iternext */
 	0,					/* tp_methods */
 };

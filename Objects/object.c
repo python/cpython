@@ -1301,7 +1301,7 @@ _PyObject_GetDictPtr(PyObject *obj)
 /* Generic GetAttr functions - put these in your tp_[gs]etattro slot */
 
 PyObject *
-PyObject_GenericGetIter(PyObject *obj)
+PyObject_SelfIter(PyObject *obj)
 {
 	Py_INCREF(obj);
 	return obj;
