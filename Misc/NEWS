@@ -12,6 +12,8 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Bug #845802: Python crashes when __init__.py is a directory.
+
 - Unicode objects received two new methods: iswide() and width().
   These query East Asian width information, as specified in Unicode
   TR11.
