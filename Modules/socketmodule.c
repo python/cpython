@@ -2475,9 +2475,13 @@ socket_ntohl(PyObject *self, PyObject *arg)
 
 	if (PyInt_Check(arg)) {
 		x = PyInt_AS_LONG(arg);
+		if (x == (unsigned long) -1 && PyErr_Occurred())
+			return NULL;
 	}
 	else if (PyLong_Check(arg)) {
 		x = PyLong_AsUnsignedLong(arg);
+		if (x == (unsigned long) -1 && PyErr_Occurred())
+			return NULL;
 #if SIZEOF_LONG > 4
 		{
 			unsigned long y;
@@ -2530,9 +2534,13 @@ socket_htonl(PyObject *self, PyObject *arg)
 
 	if (PyInt_Check(arg)) {
 		x = PyInt_AS_LONG(arg);
+		if (x == (unsigned long) -1 && PyErr_Occurred())
+			return NULL;
 	}
 	else if (PyLong_Check(arg)) {
 		x = PyLong_AsUnsignedLong(arg);
+		if (x == (unsigned long) -1 && PyErr_Occurred())
+			return NULL;
 #if SIZEOF_LONG > 4
 		{
 			unsigned long y;
@@ -2549,8 +2557,6 @@ socket_htonl(PyObject *self, PyObject *arg)
 		return PyErr_Format(PyExc_TypeError, 
 				    "expected int/long, %s found",
 				    arg->ob_type->tp_name);
-	if (x == (unsigned long) -1 && PyErr_Occurred())
-		return NULL;
 	return PyInt_FromLong(htonl(x));
 }
 
