@@ -5,7 +5,6 @@
 #include "structmember.h"
 
 static struct memberlist type_members[] = {
-	{"__name__", T_STRING, offsetof(PyTypeObject, tp_name), READONLY},
 	{"__basicsize__", T_INT, offsetof(PyTypeObject,tp_basicsize),READONLY},
 	{"__itemsize__", T_INT, offsetof(PyTypeObject, tp_itemsize), READONLY},
 	{"__flags__", T_LONG, offsetof(PyTypeObject, tp_flags), READONLY},
@@ -21,9 +20,37 @@ static struct memberlist type_members[] = {
 };
 
 static PyObject *
+type_name(PyTypeObject *type, void *context)
+{
+	char *s;
+
+	s = strrchr(type->tp_name, '.');
+	if (s == NULL)
+		s = type->tp_name;
+	else
+		s++;
+	return PyString_FromString(s);
+}
+
+static PyObject *
 type_module(PyTypeObject *type, void *context)
 {
-	return PyString_FromString("__builtin__");
+	PyObject *mod;
+	char *s;
+
+	s = strrchr(type->tp_name, '.');
+	if (s != NULL)
+		return PyString_FromStringAndSize(type->tp_name,
+						  (int)(s - type->tp_name));
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+		return PyString_FromString("__builtin__");
+	mod = PyDict_GetItemString(type->tp_defined, "__module__");
+	if (mod != NULL && PyString_Check(mod)) {
+		Py_INCREF(mod);
+		return mod;
+	}
+	PyErr_SetString(PyExc_AttributeError, "__module__");
+	return NULL;
 }
 
 static PyObject *
@@ -65,6 +92,7 @@ type_dynamic(PyTypeObject *type, void *context)
 }
 
 struct getsetlist type_getsets[] = {
+	{"__name__", (getter)type_name, NULL, NULL},
 	{"__module__", (getter)type_module, NULL, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
 	{"__defined__",  (getter)type_defined,  NULL, NULL},
@@ -85,8 +113,27 @@ type_compare(PyObject *v, PyObject *w)
 static PyObject *
 type_repr(PyTypeObject *type)
 {
-	char buf[100];
-	sprintf(buf, "<type '%.80s'>", type->tp_name);
+	PyObject *mod, *name;
+	char buf[200];
+
+	mod = type_module(type, NULL);
+	if (mod == NULL)
+		PyErr_Clear();
+	else if (!PyString_Check(mod)) {
+		Py_DECREF(mod);
+		mod = NULL;
+	}
+	name = type_name(type, NULL);
+	if (name == NULL)
+		return NULL;
+	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
+		sprintf(buf, "<type '%.80s.%.80s'>",
+			PyString_AS_STRING(mod),
+			PyString_AS_STRING(name));
+	else
+		sprintf(buf, "<type '%.80s'>", type->tp_name);
+	Py_XDECREF(mod);
+	Py_DECREF(name);
 	return PyString_FromString(buf);
 }
 
@@ -609,6 +656,19 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	if (dict == NULL) {
 		Py_DECREF(type);
 		return NULL;
+	}
+
+	/* Set __module__ in the dict */
+	if (PyDict_GetItemString(dict, "__module__") == NULL) {
+		tmp = PyEval_GetGlobals();
+		if (tmp != NULL) {
+			tmp = PyDict_GetItemString(tmp, "__name__");
+			if (tmp != NULL) {
+				if (PyDict_SetItemString(dict, "__module__",
+							 tmp) < 0)
+					return NULL;
+			}
+		}
 	}
 
 	/* Special-case __new__: if it's a plain function,
@@ -2478,8 +2538,14 @@ slot_tp_getattro(PyObject *self, PyObject *name)
 			return NULL;
 	}
 	getattr = _PyType_Lookup(tp, getattr_str);
-	if (getattr == NULL)
+	if (getattr == NULL) {
+		/* Avoid further slowdowns */
+		if (tp->tp_getattro == slot_tp_getattro)
+			tp->tp_getattro = PyObject_GenericGetAttr;
+		else
+			fprintf(stderr, "huh?\n");
 		return PyObject_GenericGetAttr(self, name);
+	}
 	return PyObject_CallFunction(getattr, "OO", self, name);
 }
 
