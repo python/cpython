@@ -8,13 +8,13 @@
 \renewcommand{\indexsubitem}{(in module urllib)}
 
 This module provides a high-level interface for fetching data across
-the World-Wide Web.  In particular, the \code{urlopen} function is
-similar to the built-in function \code{open}, but accepts URLs
+the World-Wide Web.  In particular, the \code{urlopen()} function is
+similar to the built-in function \code{open()}, but accepts URLs
 (Universal Resource Locators) instead of filenames.  Some restrictions
 apply --- it can only open URLs for reading, and no seek operations
 are available.
 
-it defines the following public functions:
+It defines the following public functions:
 
 \begin{funcdesc}{urlopen}{url}
 Open a network object denoted by a URL for reading.  If the URL does
@@ -36,6 +36,7 @@ The \code{info()} method returns an instance of the class
 if the protocol uses such headers (currently the only supported
 protocol that uses this is HTTP).  See the description of the
 \code{mimetools} module.
+\refstmodindex{mimetools}
 \end{funcdesc}
 
 \begin{funcdesc}{urlretrieve}{url}
@@ -118,15 +119,15 @@ looking at the \code{Content-type} header.  For the Gopher protocol,
 type information is encoded in the URL; there is currently no easy way
 to extract it.  If the returned data is HTML, you can use the module
 \code{htmllib} to parse it.
-\index{HTML}
-\index{HTTP}
-\index{Gopher}
-\stmodindex{htmllib}
+\index{HTML}%
+\index{HTTP}%
+\index{Gopher}%
+\refstmodindex{htmllib}
 
 \item
 Although the \code{urllib} module contains (undocumented) routines to
 parse and unparse URL strings, the recommended interface for URL
 manipulation is in module \code{urlparse}.
-\stmodindex{urlparse}
+\refstmodindex{urlparse}
 
 \end{itemize}
