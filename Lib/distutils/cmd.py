@@ -68,7 +68,7 @@ class Command:
 
         # Per-command versions of the global flags, so that the user can
         # customize Distutils' behaviour command-by-command and let some
-        # commands fallback on the Distribution's behaviour.  None means
+        # commands fall back on the Distribution's behaviour.  None means
         # "not defined, check self.distribution's copy", while 0 or 1 mean
         # false and true (duh).  Note that this means figuring out the real
         # value of each flag is a touch complicated -- hence "self._dry_run"
