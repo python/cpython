@@ -47,11 +47,16 @@ class ProjectBuilder:
 					if not type(keyvalues) in (type(()), type([])):
 						raise Error, "List or tuple expected for %s"%key
 					for curkeyvalue in keyvalues:
-						self.dict[key] = curkeyvalue
 						if os.path.isabs(curkeyvalue):
 							self.dict['pathtype'] = 'Absolute'
 						else:
 							self.dict['pathtype'] = 'Project'
+						if curkeyvalue[-2:] == ':*':
+							curkeyvalue = curkeyvalue[:-2]
+							self.dict['recursive'] = 'true'
+						else:
+							self.dict['recursive'] = 'false'
+						self.dict[key] = curkeyvalue
 						curkeyvalueresult = self._generate_one_value(datasource, dataname)
 						result = result + curkeyvalueresult
 				finally:
@@ -59,6 +64,8 @@ class ProjectBuilder:
 					self.dict[key] = keyvalues
 					self.dict['pathtype'] = None
 					del self.dict['pathtype']
+					self.dict['recursive'] = None
+					del self.dict['recursive']
 		else:
 			# Not a multi-element rule. Simply generate
 			result = self._generate_one_value(datasource, dataname)
