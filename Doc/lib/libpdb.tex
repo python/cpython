@@ -355,24 +355,25 @@ The events have the following meaning:
 
 \item[\code{'call'}]
 A function is called (or some other code block entered).  The global
-trace function is called; arg is the argument list to the function;
+trace function is called; \var{arg} is \code{None};
 the return value specifies the local trace function.
 
 \item[\code{'line'}]
 The interpreter is about to execute a new line of code (sometimes
 multiple line events on one line exist).  The local trace function is
-called; arg in None; the return value specifies the new local trace
-function.
+called; \var{arg} is \code{None}; the return value specifies the new
+local trace function.
 
 \item[\code{'return'}]
 A function (or other code block) is about to return.  The local trace
-function is called; arg is the value that will be returned.  The trace
-function's return value is ignored.
+function is called; \var{arg} is the value that will be returned.  The
+trace function's return value is ignored.
 
 \item[\code{'exception'}]
-An exception has occurred.  The local trace function is called; arg is
-a triple (exception, value, traceback); the return value specifies the
-new local trace function
+An exception has occurred.  The local trace function is called;
+\var{arg} is a triple \code{(\var{exception}, \var{value},
+\var{traceback})}; the return value specifies the new local trace
+function.
 
 \end{description}
 
