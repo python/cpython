@@ -193,6 +193,12 @@ Linux:  On Linux version 1.x, once you've built Python, use it to run
 	to fail as well, so their removal is a good idea regardless of
 	how you configure python.
 
+	More recently, a problem with threads and fork() was tracked
+	down to a bug in the pthreads code in glibc version 2.0.5;
+	glibc version 2.0.7 solves the problem.  This causes the
+	popen2 test to fail; problem and solution reported by Pablo
+	Bleyer.
+
 	Also under RedHat Linux 5.0, the crypt module now needs the
 	-lcrypt option.  Uncomment this flag in Modules/Setup, or
 	comment out the crypt module in the same file.
