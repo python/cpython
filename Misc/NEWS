@@ -19,6 +19,9 @@ Core and builtins
 Library
 -------
 
+- StringIO.truncate() now correctly adjusts the size attribute.
+  (Bug #951915).
+
 - The decimal module wouldn't run on builds without threads (Bug #1083645).
 
 - Bug #1086555:  Fix leak in syslog module.

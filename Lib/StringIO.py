@@ -204,6 +204,7 @@ class StringIO:
         elif size < self.pos:
             self.pos = size
         self.buf = self.getvalue()[:size]
+        self.len = size
 
     def write(self, s):
         """Write a string to the file.
@@ -312,6 +313,11 @@ def test():
     print 'File length =', f.tell()
     if f.tell() != length:
         raise RuntimeError, 'bad length'
+    f.truncate(length/2)
+    f.seek(0, 2)
+    print 'Truncated length =', f.tell()
+    if f.tell() != length/2:
+        raise RuntimeError, 'truncate did not adjust length'
     f.close()
 
 if __name__ == '__main__':
