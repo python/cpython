@@ -157,7 +157,11 @@ New platforms
 Tools/Demos
 -----------
 
-...
+- The text file comparison scripts ``ndiff.py`` and ``diff.py`` now
+  read the input files in universal-newline mode.  This spares them
+  from consuming a great deal of time to deduce the useless result that,
+  e.g., a file with Windows line ends and a file with Linux line ends
+  have no lines in common.
 
 
 What's New in Python 2.4 alpha 3?
