@@ -102,7 +102,7 @@ the installation directory specified to the installer.
 To include the headers, place both directories (if different) on your
 compiler's search path for includes.  Do \emph{not} place the parent
 directories on the search path and then use
-\samp{\#include <python1.5/Python.h>}; this will break on
+\samp{\#include <python\var{version}/Python.h>}; this will break on
 multi-platform builds since the platform independent headers under
 \envvar{prefix} include the platform specific headers from
 \envvar{exec_prefix}.
@@ -550,14 +550,14 @@ upon its best guess for the location of the standard Python
 interpreter executable, assuming that the Python library is found in a
 fixed location relative to the Python interpreter executable.  In
 particular, it looks for a directory named
-\file{lib/python1.5} (replacing \file{1.5} with the current
+\file{lib/python\var{version}} (replacing \var{version} with the current
 interpreter version) relative to the parent directory where the
 executable named \file{python} is found on the shell command search
 path (the environment variable \envvar{PATH}).
 
 For instance, if the Python executable is found in
 \file{/usr/local/bin/python}, it will assume that the libraries are in
-\file{/usr/local/lib/python1.5}.  (In fact, this particular path
+\file{/usr/local/lib/python\var{version}}.  (In fact, this particular path
 is also the ``fallback'' location, used when no executable file named
 \file{python} is found along \envvar{PATH}.)  The user can override
 this behavior by setting the environment variable \envvar{PYTHONHOME},
