@@ -1311,18 +1311,6 @@ window_dealloc(wp)
 	free((char *)wp);
 }
 
-static int
-window_print(wp, fp, flags)
-	windowobject *wp;
-	FILE *fp;
-	int flags;
-{
-	fprintf(fp, "<%s window titled '%s'>",
-		wp->w_win == NULL ? "closed" : "open",
-		getstringvalue(wp->w_title));
-	return 0;
-}
-
 static object *
 window_close(wp, args)
 	windowobject *wp;
@@ -1684,7 +1672,7 @@ typeobject Windowtype = {
 	0,			/*tp_itemsize*/
 	/* methods */
 	window_dealloc,		/*tp_dealloc*/
-	window_print,		/*tp_print*/
+	0,			/*tp_print*/
 	window_getattr,		/*tp_getattr*/
 	window_setattr,		/*tp_setattr*/
 	0,			/*tp_compare*/

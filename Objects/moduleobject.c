@@ -83,17 +83,6 @@ module_dealloc(m)
 	free((char *)m);
 }
 
-/* ARGSUSED */
-static int
-module_print(m, fp, flags)
-	moduleobject *m;
-	FILE *fp;
-	int flags; /* Not used but required by interface */
-{
-	fprintf(fp, "<module '%s'>", getstringvalue(m->md_name));
-	return 0;
-}
-
 static object *
 module_repr(m)
 	moduleobject *m;
@@ -153,7 +142,7 @@ typeobject Moduletype = {
 	sizeof(moduleobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	module_dealloc,		/*tp_dealloc*/
-	module_print,		/*tp_print*/
+	0,			/*tp_print*/
 	module_getattr,		/*tp_getattr*/
 	module_setattr,		/*tp_setattr*/
 	0,			/*tp_compare*/

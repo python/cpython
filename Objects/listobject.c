@@ -600,7 +600,7 @@ listindex(self, args)
 	}
 	for (i = 0; i < self->ob_size; i++) {
 		if (cmpobject(self->ob_item[i], args) == 0)
-			return newintobject(i);
+			return newintobject((long)i);
 	}
 	err_setstr(ValueError, "list.index(x): x not in list");
 	return NULL;

@@ -261,30 +261,6 @@ instance_setattr(inst, name, v)
 		return dictinsert(inst->in_attr, name, v);
 }
 
-int
-instance_print(inst, fp, flags)
-	instanceobject *inst;
-	FILE *fp;
-	int flags;
-{
-	object *func, *repr;
-	int ret;
-
-	func = instance_getattr(inst, "__repr__");
-	if (func == NULL) {
-		err_clear();
-		fprintf(fp, "<instance object at %lx>", (long)inst);
-		return 0;
-	}
-	repr = call_object(func, (object *)NULL);
-	DECREF(func);
-	if (repr == NULL)
-		return -1;
-	ret = printobject(repr, fp, flags | PRINT_RAW);
-	DECREF(repr);
-	return ret;
-}
-
 object *
 instance_repr(inst)
 	instanceobject *inst;
@@ -753,7 +729,7 @@ typeobject Instancetype = {
 	sizeof(instanceobject),
 	0,
 	instance_dealloc,	/*tp_dealloc*/
-	instance_print,		/*tp_print*/
+	0,			/*tp_print*/
 	instance_getattr,	/*tp_getattr*/
 	instance_setattr,	/*tp_setattr*/
 	instance_compare,	/*tp_compare*/

@@ -207,17 +207,6 @@ so there is exactly one (which is indestructible, by the way).
 */
 
 /* ARGSUSED */
-static int
-none_print(op, fp, flags)
-	object *op;
-	FILE *fp;
-	int flags;
-{
-	fprintf(fp, "None");
-	return 0;
-}
-
-/* ARGSUSED */
 static object *
 none_repr(op)
 	object *op;
@@ -232,7 +221,7 @@ static typeobject Notype = {
 	0,
 	0,
 	0,		/*tp_dealloc*/ /*never called*/
-	none_print,	/*tp_print*/
+	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
