@@ -140,44 +140,48 @@ spam3n(op_setitem      , PyObject_SetItem)
 
 static PyObject*
 op_getslice(s,a)
-     PyObject *s, *a;
+        PyObject *s, *a;
 {
-  PyObject *a1;
-  long a2,a3;
+        PyObject *a1;
+        long a2,a3;
 
-  if(! PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3)) return NULL;
-
-  return PySequence_GetSlice(a1,a2,a3);
+        if (!PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3))
+                return NULL;
+        return PySequence_GetSlice(a1,a2,a3);
 }
 
 static PyObject*
 op_setslice(s,a)
-     PyObject *s, *a;
+        PyObject *s, *a;
 {
-  PyObject *a1, *a4;
-  long a2,a3;
+        PyObject *a1, *a4;
+        long a2,a3;
 
-  if(! PyArg_ParseTuple(a,"OiiO",&a1,&a2,&a3,&a4)) return NULL;
+        if (!PyArg_ParseTuple(a,"OiiO",&a1,&a2,&a3,&a4))
+                return NULL;
 
-  if(-1 == PySequence_SetSlice(a1,a2,a3,a4)) return NULL;
+        if (-1 == PySequence_SetSlice(a1,a2,a3,a4))
+                return NULL;
 
-  Py_INCREF(Py_None);
-  return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
 }
 
 static PyObject*
 op_delslice(s,a)
-     PyObject *s, *a;
+        PyObject *s, *a;
 {
-  PyObject *a1;
-  long a2,a3;
+        PyObject *a1;
+        long a2,a3;
 
-  if(! PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3)) return NULL;
+        if(! PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3))
+                return NULL;
 
-  if(-1 == PySequence_DelSlice(a1,a2,a3)) return NULL;
+        if (-1 == PySequence_DelSlice(a1,a2,a3))
+                return NULL;
 
-  Py_INCREF(Py_None);
-  return Py_None;
+        Py_INCREF(Py_None);
+        return Py_None;
 }
 
 #undef spam1
@@ -252,18 +256,19 @@ spam2(delslice,__delslice__,
 void
 initoperator()
 {
-  PyObject *m, *d;
+        PyObject *m, *d;
   
-  /* Create the module and add the functions */
-  m = Py_InitModule4("operator", operator_methods,
-		     operator_doc,
-		     (PyObject*)NULL,PYTHON_API_VERSION);
+        /* Create the module and add the functions */
+        m = Py_InitModule4("operator", operator_methods,
+                           operator_doc,
+                           (PyObject*)NULL,PYTHON_API_VERSION);
 
-  /* Add some symbolic constants to the module */
-  d = PyModule_GetDict(m);
-  PyDict_SetItemString(d, "__version__",PyString_FromString("$Rev$"));
+        /* Add some symbolic constants to the module */
+        d = PyModule_GetDict(m);
+        PyDict_SetItemString(d, "__version__",
+                             PyString_FromString("$Rev$"));
   
-  /* Check for errors */
-  if (PyErr_Occurred())
-    Py_FatalError("can't initialize module operator");
+        /* Check for errors */
+        if (PyErr_Occurred())
+                Py_FatalError("can't initialize module operator");
 }
