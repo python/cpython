@@ -414,6 +414,12 @@ vereq(('a' in (1,None,u'a')), True)
 vereq(('a' in ('x',1,u'y')), False)
 vereq(('a' in ('x',1,None)), False)
 vereq(u'abcd' in u'abcxxxx', False)
+vereq((u'ab' in u'abcd'), True)
+vereq(('ab' in u'abc'), True)
+vereq((u'ab' in 'abc'), True)
+vereq((u'ab' in (1,None,u'ab')), True)
+vereq((u'' in u'abc'), True)
+vereq(('' in u'abc'), True)
 print 'done.'
 
 # Formatting:
