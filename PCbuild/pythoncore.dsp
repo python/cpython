@@ -323,6 +323,10 @@ SOURCE=..\Objects\iterobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Modules\itertoolsmodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\Parser\listnode.c
 # End Source File
 # Begin Source File

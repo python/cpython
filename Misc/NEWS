@@ -30,6 +30,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- Added an itertools module containing high speed, memory efficient
+  looping constructs inspired by tools from Haskell and SML.
+
 - The SSL module now handles sockets with a timeout set correctly (SF
   patch #675750, fixing SF bug #675552).
 

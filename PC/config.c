@@ -45,6 +45,7 @@ extern void init_hotshot(void);
 extern void initxxsubtype(void);
 extern void initzipimport(void);
 extern void init_random(void);
+extern void inititertools(void);
 
 /* XXX tim: what's the purpose of ADDMODULE MARKER? */
 /* -- ADDMODULE MARKER 1 -- */
@@ -97,6 +98,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_weakref", init_weakref},
 	{"_hotshot", init_hotshot},
 	{"_random", init_random},
+	{"itertools", inititertools},
 
 	{"xxsubtype", initxxsubtype},
 	{"zipimport", initzipimport},
