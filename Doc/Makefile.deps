@@ -156,6 +156,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libcommands.tex \
 	../lib/libcmath.tex \
 	../lib/libgzip.tex \
+	../lib/libzipfile.tex \
 	../lib/libpprint.tex \
 	../lib/libcode.tex \
 	../lib/libmimify.tex \
@@ -188,6 +189,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libcompileall.tex \
 	../lib/libshlex.tex \
 	../lib/libnetrc.tex \
+	../lib/librobotparser.tex \
 	../lib/libgetpass.tex \
 	../lib/libshutil.tex \
 	../lib/librepr.tex \
