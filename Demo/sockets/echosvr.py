@@ -20,8 +20,8 @@ def main():
 	s = socket(AF_INET, SOCK_STREAM)
 	s.bind('', port)
 	s.listen(0)
-	conn, (host, remoteport) = s.accept()
-	print 'connected by', host, remoteport
+	conn, (remotehost, remoteport) = s.accept()
+	print 'connected by', remotehost, remoteport
 	while 1:
 		data = conn.recv(BUFSIZE)
 		if not data:
