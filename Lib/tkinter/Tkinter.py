@@ -1219,7 +1219,10 @@ class Frame(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		cnf = _cnfmerge((cnf, kw))
 		extra = ()
-		if cnf.has_key('class'):
+		if cnf.has_key('class_'):
+			extra = ('-class', cnf['class_'])
+			del cnf['class_']
+		elif cnf.has_key('class'):
 			extra = ('-class', cnf['class'])
 			del cnf['class']
 		Widget.__init__(self, master, 'frame', cnf, {}, extra)
