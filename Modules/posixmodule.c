@@ -1250,7 +1250,9 @@ posix_uname(self, args)
 
 static char posix_utime__doc__[] =
 "utime(path, (atime, utime)) -> None\n\
-Set the access and modified time of the file to the given values.";
+utime(path, None) -> None\n\
+Set the access and modified time of the file to the given values.  If the\n\
+second form is used, set the access and modified times to the current time.";
 
 static PyObject *
 posix_utime(self, args)
@@ -1260,6 +1262,7 @@ posix_utime(self, args)
 	char *path;
 	long atime, mtime;
 	int res;
+	PyObject* arg;
 
 /* XXX should define struct utimbuf instead, above */
 #ifdef HAVE_UTIME_H
@@ -1274,13 +1277,26 @@ posix_utime(self, args)
 #define UTIME_ARG buf
 #endif /* HAVE_UTIME_H */
 
-	if (!PyArg_ParseTuple(args, "s(ll):utime", &path, &atime, &mtime))
+	if (!PyArg_ParseTuple(args, "sO:utime", &path, &arg))
 		return NULL;
-	ATIME = atime;
-	MTIME = mtime;
-	Py_BEGIN_ALLOW_THREADS
-	res = utime(path, UTIME_ARG);
-	Py_END_ALLOW_THREADS
+	if (arg == Py_None) {
+		/* optional time values not given */
+		Py_BEGIN_ALLOW_THREADS
+		res = utime(path, NULL);
+		Py_END_ALLOW_THREADS
+	}
+	else if (!PyArg_Parse(arg, "(ll)", &atime, &mtime)) {
+		PyErr_SetString(PyExc_TypeError,
+			      "Second argument must be a 2-tuple of numbers.");
+		return NULL;
+	}
+	else {
+		ATIME = atime;
+		MTIME = mtime;
+		Py_BEGIN_ALLOW_THREADS
+		res = utime(path, UTIME_ARG);
+		Py_END_ALLOW_THREADS
+	}
 	if (res < 0)
 		return posix_error_with_filename(path);
 	Py_INCREF(Py_None);
