@@ -877,7 +877,6 @@ def test(environ=os.environ):
     the script in HTML form.
 
     """
-    import traceback
     print "Content-type: text/html"
     print
     sys.stderr = sys.stdout
