@@ -94,6 +94,10 @@ Tests
 Windows
 -------
 
+- file.truncate() could misbehave if the file was open for update
+  (modes r+, rb+, w+, wb+), and the most recent file operation before
+  the truncate() call was an input operation.  SF bug 801631.
+
 Mac
 ----
 

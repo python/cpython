@@ -132,3 +132,31 @@ else:
     raise TestFailed, 'file.writelines([]) on a closed file should raise a ValueError'
 
 os.unlink(TESTFN)
+
+def bug801631():
+    # SF bug <http://www.python.org/sf/801631>
+    # "file.truncate fault on windows"
+    f = file(TESTFN, 'wb')
+    f.write('12345678901')   # 11 bytes
+    f.close()
+
+    f = file(TESTFN,'rb+')
+    data = f.read(5)
+    if data != '12345':
+        raise TestFailed("Read on file opened for update failed %r" % data)
+    if f.tell() != 5:
+        raise TestFailed("File pos after read wrong %d" % f.tell())
+
+    f.truncate()
+    if f.tell() != 5:
+        raise TestFailed("File pos after ftruncate wrong %d" % f.tell())
+
+    f.close()
+    size = os.path.getsize(TESTFN)
+    if size != 5:
+        raise TestFailed("File size after ftruncate wrong %d" % size)
+
+try:
+    bug801631()
+finally:
+    os.unlink(TESTFN)
