@@ -526,7 +526,7 @@ Foo_Type.ob_type = &PyType_Type;
   different output than \member{tp_repr} or \member{tp_str} would.
 
   The print function is called with the same signature as
-  \cfunction{PyObject_Print()}: \code{tp_print(PyObject *self, FILE
+  \cfunction{PyObject_Print()}: \code{int tp_print(PyObject *self, FILE
   *file, int flags)}.  The \var{self} argument is the instance to be
   printed.  The \var{file} argument is the stdio file to which it is
   to be printed.  The \var{flags} argument is composed of flag bits.
@@ -535,6 +535,8 @@ Foo_Type.ob_type = &PyType_Type;
   should be printed the same way as \member{tp_str} would format it;
   when the \constant{Py_PRINT_RAW} flag bit is clear, the instance
   should be printed the same was as \member{tp_repr} would format it.
+  It should return \code{-1} and set an exception condition when an
+  error occurred during the comparison.
 
   It is possible that the \member{tp_print} field will be deprecated.
   In any case, it is recommended not to define \member{tp_print}, but
