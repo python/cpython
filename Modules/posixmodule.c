@@ -619,7 +619,6 @@ posix_fsync(self, args)
        PyObject *self;
        PyObject *args;
 {
-       
        return posix_int(args, fsync);
 }
 #endif /* HAVE_FSYNC */
@@ -630,12 +629,13 @@ static char posix_fdatasync__doc__[] =
 force write of file with filedescriptor to disk.\n\
  does not force update of metadata.";
 
+extern int fdatasync(int); /* Prototype just in case */
+
 static PyObject *
 posix_fdatasync(self, args)
        PyObject *self;
        PyObject *args;
 {
-       
        return posix_int(args, fdatasync);
 }
 #endif /* HAVE_FDATASYNC */
