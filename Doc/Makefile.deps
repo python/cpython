@@ -169,6 +169,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/liblogging.tex \
 	lib/libpdb.tex \
 	lib/libprofile.tex \
+	lib/libtimeit.tex \
 	lib/libcgi.tex \
 	lib/libcgitb.tex \
 	lib/liburllib.tex \
