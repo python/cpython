@@ -8,9 +8,9 @@
 
 This document explains how to build MacPython from source. This is
 necessary if you want to write extension modules for 68K Python, and
-currently also probably the easiest way to build PPC extension
-modules. Building Python is not something to be undertaken lightly,
-the process is not very streamlined so you need a reasonable working
+is also necessary if you want to make modifications to the Python core.
+Building Python is not something to be undertaken lightly,
+you need a reasonable working
 knowledge of the CodeWarrior development environment, a good net
 connection and probably quite some time too. <p>
 
@@ -18,8 +18,7 @@ The information density in this file is high, so you should probably
 print it and read it at your leasure. Most things are explained only
 once (and probably in the wrong place:-). <p>
 
-I am very interested in feedback on this document, contact me at <A
-HREF="mailto:jack@cwi.nl">&lt;jack@cwi.nl&gt;</A> or send your
+I am very interested in feedback on this document, send your
 comments to the <A
 HREF="http://www.python.org/sigs/pythonmac-sig/">Mac Python Special
 Interest Group</A>.
@@ -41,10 +40,14 @@ HREF="ftp://ftp.python.org/pub/python/mac">python.org ftp
 site</A>. Everything you need is also included in the standard Python
 source distribution, but the organization is different. Look in
 directory <code>Mac/mwerks/projects</code> for the project files and
-related stuff.
+related stuff. <BR>
+
+If you are a <a href="http://www.python.org/psa">PSA</a> member, an alternative
+is to check the sources straight out of the CVS repository,
+see below. Most of the packages mentioned here are also available through CVS.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
-been built with CodeWarrior Pro 2. Ordering information is
+been built with CodeWarrior Pro 4. Ordering information is
 available on the <A HREF="http://www.metrowerks.com/">MetroWerks
 homepage</A>. Building Python with MPW or Think/Symantec C is
 probably impossible without major surgery.
@@ -132,7 +135,7 @@ Top-level-folder:
 If your setup of the libraries is exactly the same as mine (which is
 not very likely, unless you happen to work from the same CVS
 repository) you can use the project <code>buildlibs.prj</code> in the
-<code>build.mac</code> folder to build all needed libraries in one
+<code>:Mac:build.mac</code> folder to build all needed libraries in one
 fell swoop, otherwise you will have to build the libraries one by
 one. <p>
 
@@ -190,17 +193,6 @@ the Python source tree.  At the top level, we find the following
 folders:
 
 <DL>
-<DT> build.macstand
-<DD> This is where you build static 68K interpreter, and possibly (if
-you want them) static PPC and fat interpreters. There is also a project
-here that builds smaller versions of the static interpreter.
-
-<DT> build.mac
-<DD> This is where you build the CFM68K, PPC and fat shared library,
-interpreter and applet framework. The fat targets are deposited in the
-main folder (one level up), the others, which are intermediate results
-really, are left here.
-
 <DT> Demo
 <DD> Demo programs that are not Mac-specific. Some of these may not
 work, the file <code>README-Mac</code> has some details.
@@ -229,9 +221,6 @@ not really optional: the interpreter will not function without them.
 <DT> Parser
 <DD> The Python parser (machine-independent).
 
-<DT> PlugIns
-<DD> This is where you build the PPC and CFM68K dynamically-loaded plugin modules.
-
 <DT> Python
 <DD> The core interpreter. Most files are machine-independent, some
 are unix-specific and not used on the Mac.
@@ -247,6 +236,11 @@ needed.
 
 All the mac-specific stuff lives in the <code>Mac</code> folder:
 <DL>
+<DT> Build
+<DD> This is where the project files live and where you build the
+libraries, shared libraries, executables and plugin modules. All the
+resulting binaries, except for intermedeate results, are deposited in
+the toplevel folder or the PlugIns folder (for plugin modules).
 
 <DT> Compat
 <DD> Unix-compatability routines. Some of these are not used anymore,
@@ -289,6 +283,9 @@ various other things are accomplished by modifying these files (and
 possibly changing the list of files included in the project window, of
 course).
 
+<DT> PlugIns
+<DD> This is where the PPC and CFM68K dynamically-loaded plugin modules live.
+
 <DT> Python
 <DD> Mac-specific parts of the core interpreter.
 
@@ -300,6 +297,14 @@ course).
 essential, some are useful but few are documented, so you will have to
 use your imagination to work them out.
 
+<DT> Tools
+<DD> A collection of tools, usually bigger than those in the scripts
+folder. The important ones here are the IDE and macfreeze. The IDE is built
+with the buildIDE.py script, which puts the resulting applet in the toplevel
+folder. Macfreeze is usually invoked through the BuildApplication script,
+but for more control over the freezing process you can run the main script here.
+
+
 <DT> Unsupported
 <DD> Modules that are not supported any longer but may still work with a little effort.
 </DL>
@@ -307,31 +312,34 @@ use your imagination to work them out.
 <H2>Building the 68K interpreter</H2>
 
 If you have all the optional libraries mentioned <A
-HREF="#optional">above</A> loaded buildin Python for 68K macs is a
-breeze: open the project in the folder <code>build.macstand</code> and
-build the 68K target.  Do <em>not</em> run it yet, this will possibly
-result in a garbled preferences file. <p>
+HREF="#optional">above</A> loaded building Python for 68K macs is a
+breeze: in the Mac:Build folder you build the libraries with buildlibs.prj
+and then the interpreter with PythonStandalone.prj. <p>
 
-First remove the <code>Python XXX preferences</code> file from your
-preference folder, only if you had an older version of Python
-installed.  (this is also what you do if you did not heed the last
-sentence of the preceeding paragraph). Next, move the interpreter to
-the main Python folder (up one level) and run it there. This will
+If you were previously running another copy of this Python release,
+from a binary installer for instance, you should
+first remove the <code>Python XXX preferences</code> file from your
+preference folder. Next, run the interpreter, in the toplevel folder. This will
 create a correct initial preferences file. You are now all set, and
 your tree should be completely compatible with a binary-only
 distribution. Read the release notes
 (<code>Relnotes-somethingorother</code>) and
-<code>ReadMe</code> in the <code>Mac</code> folder.
+<code>ReadMe</code> in the <code>Mac</code> folder. <p>
+
+If something goes wrong you may end up with a garbled preferences file. Removing
+it from the system folder and running Python once again will re-create it.
 
 <H2>Building the PPC and CFM68K interpreter</H2>
 
-First you build the interpreter, core library and applet skeleton in
-folder <code>build.mac</code>. The projects are all linked together, so
+First you optionally build the external libraries with buildlibs.prj. Next, 
+the projects for
+interpreter, core library and applet skeleton  are all linked together, so
 building the fat targets in <code>Python.prj</code> and
 <code>PythonApplet.prj</code> will result in everything being built. The
 resulting applications and fat shared library are deposited in the main
-Python folder. For completeness sake here is a breakdown of the
-projects:
+Python folder. Finally, you build all the plugins with the plugins.prj project.
+
+For completeness sake here is a breakdown of the projects:
 
 <DL>
 
@@ -341,7 +349,8 @@ its resources. It is a good idea to immedeately put an alias to this
 shared library in the <code>Extensions</code> folder of your system
 folder.  Do exactly that: put an <em>alias</em> there, copying or
 moving the file will cause you grief later if you rebuild the library and
-forget to copy it to the extensions folder again.
+forget to copy it to the extensions folder again. The InstallPython applet
+will also do this, along with creating the plugin aliases.
 
 <DT> Python
 <DD> The interpreter. This is basically a routine to call out to the
@@ -354,6 +363,8 @@ core library. The <code>mkapplet</code> script will copy this complete
 file, and add a <code>'PYC '</code> with the module to generate an
 applet. <p>
 
+<DT> Plugin projects
+<DD> Usually, each plugin module has a separate project.
 </DL>
 
 After creating the alias to <code>PythonCore</code> you remove any old
@@ -361,8 +372,8 @@ After creating the alias to <code>PythonCore</code> you remove any old
 (if you had python installed on your system before) and run the interpreter once
 to create the correct preferences file.  <p>
 
-Next, you have to build the extension modules in the
-<code>PlugIns</code> folder. The <code>PlugIns.ppc</code> project has all the
+Next, you have to build the extension modules.
+The <code>PlugIns.ppc</code> project has all the
 other projects as subprojects and builds everything. After all
 the dynamically loaded modules are built you have to create a number
 of aliases: some modules live together in a single dynamic
@@ -408,6 +419,34 @@ This rather convoluted procedure is needed to ensure that plugin modules don't
 accidentally link with those entrypoints from PythonCore, which will not work because
 those routines have to be in the same code fragment as they are used from.
 
+<H2>Using the CVS source archive</H2>
+
+It is possible to access the Python sources through remote CVS if you are
+a PSA member. The advantage of this is that you get the very latest sources,
+so any bug fixed or new features will be immedeately available. This is also
+the disadvantage, of course: as this is the same tree as is used for development it
+may sometimes be a little less stable. <p>
+
+The CVS client of choice is Alexandre Parenteau's MacCVS. It can be
+obtained through the <a href="http://www.cyclic.com">Cyclic CVS homepage</a>. MacCVS
+uses Internet Config to set file types correctly based on the filename extension. In
+the maccvs preferences you should also set (in the "binary files" section)
+"use mac encoding: applesingle" and (in the "text files" section) "use ISO latin 1
+conversion". <p>
+
+The machine-independent Python sources are checked out from the main Python
+CVS archive, see the <a href="http://www.python.org/psa">PSA homepage</a> for
+details. <p>
+
+Next, within the toplevel Python folder, you check out the mac-specific sources
+in a Mac folder. The CVS path to use can be found at the
+<a href="http://www.cwi.nl/~jack/macpython.html">MacPython homepage</a>. Finally,
+you check out the external libraries needed in the parent of the Python folder. The
+CVS path for these libraries is also mentioned at the MacPython homepage. <p>
+
+Neither of the pages mentioned above contains the passwords for the CVS sites,
+for obvious reasons, but they do contain instructions on how to obtain the passwords. <p>
+
 <H2>Odds and ends</H2>
 
 Some remarks that I could not fit in elsewhere:
@@ -421,10 +460,8 @@ with using GUSI for I/O. Use PythonCore in stead of your MSL C library
 know whether this works.
 
 <LI> It is possible to build PPC extension modules without building a
-complete Python. Take the binary distribution, add folders
-<code>Include</code>, <code>Mac:Include</code> and
-<code>Mac:mwerks</code> from the source distribution and you should be
-all set. A template for a dynamic module can be found in
+complete Python. The binary distribution installer can optionally install
+all the needed folders. A template for a dynamic module can be found in
 <code>xx.prj</code>.
 
 <LI> The Python shared library architecture is a variant of the architecture
