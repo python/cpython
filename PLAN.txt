@@ -21,11 +21,22 @@ order should the base classes X and Y be searched?  This is an order
 conflict, and should be disallowed; currently the test for this is not
 implemented.
 
-Allow __class__ assignment.
+Allow __class__ assignment (and __bases__ and __dict__?).
 
 Make __dynamic__ the default.
 
 Add __del__ handlers.
+
+Add __coerce__?
+
+Support pickling (via __reduce__?)
+
+Make inspect and pydoc do the right thing for new-style classes.
+
+Support mixed multiple inheritance from classic and new-style classes?
+
+Change __getattr__ to be more like classic __getattr__, and introduce
+a new name for new-style __getattr__?
 
 Done (mostly)
 -------------
