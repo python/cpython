@@ -864,7 +864,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	else {
 		if (add_dict) {
 			if (base->tp_itemsize)
-				type->tp_dictoffset = -sizeof(PyObject *);
+				type->tp_dictoffset = -(long)sizeof(PyObject *);
 			else
 				type->tp_dictoffset = slotoffset;
 			slotoffset += sizeof(PyObject *);
