@@ -25,16 +25,10 @@ PyGrammar_AddAccelerators(grammar *g)
 {
 	dfa *d;
 	int i;
-#ifdef Py_DEBUG
-	fprintf(stderr, "Adding parser accelerators ...\n");
-#endif
 	d = g->g_dfa;
 	for (i = g->g_ndfas; --i >= 0; d++)
 		fixdfa(g, d);
 	g->g_accel = 1;
-#ifdef Py_DEBUG
-	fprintf(stderr, "Done.\n");
-#endif
 }
 
 void
