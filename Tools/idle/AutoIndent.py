@@ -3,9 +3,6 @@ import string
 #import tkMessageBox
 #import tkSimpleDialog
 
-# The default tab setting for a Text widget, in average-width characters.
-TK_TABWIDTH_DEFAULT = 8
-
 ###$ event <<newline-and-indent>>
 ###$ win <Key-Return>
 ###$ win <KP_Enter>
@@ -101,7 +98,7 @@ class AutoIndent:
     # Nobody expects this, so for now tabwidth should never be changed.
     usetabs = 1
     indentwidth = 4
-    tabwidth = TK_TABWIDTH_DEFAULT
+    tabwidth = 8    # for IDLE use, must remain 8 until Tk is fixed
 
     # If context_use_ps1 is true, parsing searches back for a ps1 line;
     # else searches for a popular (if, def, ...) Python stmt.
@@ -139,8 +136,6 @@ class AutoIndent:
     # character means.
 
     def set_indentation_params(self, ispythonsource, guess=1):
-        text = self.text
-
         if guess and ispythonsource:
             i = self.guess_indent()
             if 2 <= i <= 8:
@@ -148,39 +143,47 @@ class AutoIndent:
             if self.indentwidth != self.tabwidth:
                 self.usetabs = 0
 
-        current_tabs = text['tabs']
-        if current_tabs == "" and self.tabwidth == TK_TABWIDTH_DEFAULT:
-            pass
-        else:
-            # Reconfigure the Text widget by measuring the width
-            # of a tabwidth-length string in pixels, forcing the
-            # widget's tab stops to that.
-            need_tabs = text.tk.call("font", "measure", text['font'],
-                                     "-displayof", text.master,
-                                     "n" * self.tabwidth)
-            if current_tabs != need_tabs:
-                text.configure(tabs=need_tabs)
+        self.editwin.set_tabwidth(self.tabwidth)
 
     def smart_backspace_event(self, event):
         text = self.text
-        try:
-            first = text.index("sel.first")
-            last = text.index("sel.last")
-        except: # Was catching TclError, but this doesnt work for
-            first = last = None
+        first, last = self.editwin.get_selection_indices()
         if first and last:
             text.delete(first, last)
             text.mark_set("insert", first)
             return "break"
-        # If we're at the end of leading whitespace, nuke one indent
-        # level, else one character.
+        # Delete whitespace left, until hitting a real char or closest
+        # preceding virtual tab stop.
         chars = text.get("insert linestart", "insert")
-        raw, effective = classifyws(chars, self.tabwidth)
-        if 0 < raw == len(chars):
-            if effective >= self.indentwidth:
-                self.reindent_to(effective - self.indentwidth)
-                return "break"
-        text.delete("insert-1c")
+        if chars == '':
+            if text.compare("insert", ">", "1.0"):
+                # easy: delete preceding newline
+                text.delete("insert-1c")
+            else:
+                text.bell()     # at start of buffer
+            return "break"
+        if  chars[-1] not in " \t":
+            # easy: delete preceding real char
+            text.delete("insert-1c")
+            return "break"
+        # Ick.  It may require *inserting* spaces if we back up over a
+        # tab character!  This is written to be clear, not fast.
+        expand, tabwidth = string.expandtabs, self.tabwidth
+        have = len(expand(chars, tabwidth))
+        assert have > 0
+        want = int((have - 1) / self.indentwidth) * self.indentwidth
+        ncharsdeleted = 0
+        while 1:
+            chars = chars[:-1]
+            ncharsdeleted = ncharsdeleted + 1
+            have = len(expand(chars, tabwidth))
+            if have <= want or chars[-1] not in " \t":
+                break
+        text.undo_block_start()
+        text.delete("insert-%dc" % ncharsdeleted, "insert")
+        if have < want:
+            text.insert("insert", ' ' * (want - have))
+        text.undo_block_stop()
         return "break"
 
     def smart_indent_event(self, event):
@@ -190,11 +193,7 @@ class AutoIndent:
         #     do indent-region & return
         # indent one level
         text = self.text
-        try:
-            first = text.index("sel.first")
-            last = text.index("sel.last")
-        except: # Was catching TclError, but this doesnt work for
-            first = last = None
+        first, last = self.editwin.get_selection_indices()
         text.undo_block_start()
         try:
             if first and last:
@@ -223,11 +222,7 @@ class AutoIndent:
 
     def newline_and_indent_event(self, event):
         text = self.text
-        try:
-            first = text.index("sel.first")
-            last = text.index("sel.last")
-        except: # Was catching TclError, but this doesnt work for
-            first = last = None
+        first, last = self.editwin.get_selection_indices()
         text.undo_block_start()
         try:
             if first and last:
@@ -256,8 +251,8 @@ class AutoIndent:
             # start new line
             text.insert("insert", '\n')
 
-            # adjust indentation for continuations and block open/close
-            # first need to find the last stmt
+            # adjust indentation for continuations and block
+            # open/close first need to find the last stmt
             lno = index2line(text.index('insert'))
             y = PyParse.Parser(self.indentwidth, self.tabwidth)
             for context in self.num_context_lines:
@@ -280,15 +275,15 @@ class AutoIndent:
                 elif c == PyParse.C_BRACKET:
                     # line up with the first (if any) element of the
                     # last open bracket structure; else indent one
-                    # level beyond the indent of the line with the last
-                    # open bracket
+                    # level beyond the indent of the line with the
+                    # last open bracket
                     self.reindent_to(y.compute_bracket_indent())
                 elif c == PyParse.C_BACKSLASH:
                     # if more than one line in this stmt already, just
-                    # mimic the current indent; else if initial line has
-                    # a start on an assignment stmt, indent to beyond
-                    # leftmost =; else to beyond first chunk of non-
-                    # whitespace on initial line
+                    # mimic the current indent; else if initial line
+                    # has a start on an assignment stmt, indent to
+                    # beyond leftmost =; else to beyond first chunk of
+                    # non-whitespace on initial line
                     if y.get_num_lines_in_stmt() > 1:
                         text.insert("insert", indent)
                     else:
@@ -298,8 +293,8 @@ class AutoIndent:
                 return "break"
 
             # This line starts a brand new stmt; indent relative to
-            # indentation of initial line of closest preceding interesting
-            # stmt.
+            # indentation of initial line of closest preceding
+            # interesting stmt.
             indent = y.get_base_indent_string()
             text.insert("insert", indent)
             if y.is_block_opener():
@@ -313,9 +308,10 @@ class AutoIndent:
 
     auto_indent = newline_and_indent_event
 
-    # Our editwin provides a is_char_in_string function that works with
-    # a Tk text index, but PyParse only knows about offsets into a string.
-    # This builds a function for PyParse that accepts an offset.
+    # Our editwin provides a is_char_in_string function that works
+    # with a Tk text index, but PyParse only knows about offsets into
+    # a string. This builds a function for PyParse that accepts an
+    # offset.
 
     def _build_char_in_string_func(self, startindex):
         def inner(offset, _startindex=startindex,
@@ -413,9 +409,11 @@ class AutoIndent:
 
     def get_region(self):
         text = self.text
-        head = text.index("sel.first linestart")
-        tail = text.index("sel.last -1c lineend +1c")
-        if not (head and tail):
+        first, last = self.editwin.get_selection_indices()
+        if first and last:
+            head = text.index(first + " linestart")
+            tail = text.index(last + "-1c lineend +1c")
+        else:
             head = text.index("insert linestart")
             tail = text.index("insert lineend +1c")
         chars = text.get(head, tail)
