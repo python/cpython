@@ -977,6 +977,13 @@
                 </FILE>
                 <FILE>
                     <PATHTYPE>Name</PATHTYPE>
+                    <PATH>MSL C.Carbon.Lib</PATH>
+                    <PATHFORMAT>MacOS</PATHFORMAT>
+                    <FILEKIND>Library</FILEKIND>
+                    <FILEFLAGS></FILEFLAGS>
+                </FILE>
+                <FILE>
+                    <PATHTYPE>Name</PATHTYPE>
                     <PATH>CarbonLib</PATH>
                     <PATHFORMAT>MacOS</PATHFORMAT>
                     <FILEKIND>Library</FILEKIND>
@@ -1006,7 +1013,12 @@
                     <PATH>PythonCoreCarbon</PATH>
                     <PATHFORMAT>MacOS</PATHFORMAT>
                 </FILEREF>
-            </LINKORDER>
+                 <FILEREF>
+                    <PATHTYPE>Name</PATHTYPE>
+                    <PATH>MSL C.Carbon.Lib</PATH>
+                    <PATHFORMAT>MacOS</PATHFORMAT>
+                </FILEREF>
+           </LINKORDER>
         </TARGET>
     </TARGETLIST>
 
@@ -1036,6 +1048,12 @@
                 <TARGETNAME>%(mac_targetname)s</TARGETNAME>
                 <PATHTYPE>Name</PATHTYPE>
                 <PATH>PythonCoreCarbon</PATH>
+                <PATHFORMAT>MacOS</PATHFORMAT>
+            </FILEREF>
+            <FILEREF>
+                <TARGETNAME>%(mac_targetname)s</TARGETNAME>
+                <PATHTYPE>Name</PATHTYPE>
+                <PATH>MSL C.Carbon.Lib</PATH>
                 <PATHFORMAT>MacOS</PATHFORMAT>
             </FILEREF>
             <FILEREF>
