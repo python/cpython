@@ -908,6 +908,31 @@ write4(void *p, ulong n)
 	q[3] = (uchar)( n        & 0xff);
 }
 
+#ifdef Py_DEBUG
+/* Is target in the list?  The list is traversed via the nextpool pointers.
+ * The list may be NULL-terminated, or circular.  Return 1 if target is in
+ * list, else 0.
+ */
+static int
+pool_is_in_list(const poolp target, poolp list)
+{
+	poolp origlist = list;
+	assert(target != NULL);
+	if (list == NULL)
+		return 0;
+	do {
+		if (target == list)
+			return 1;
+		list = list->nextpool;
+	} while (list != NULL && list != origlist);
+	return 0;
+}
+
+#else
+#define pool_is_in_list(X, Y) 1
+
+#endif	/* Py_DEBUG */
+
 /* The debug malloc asks for 16 extra bytes and fills them with useful stuff,
    here calling the underlying malloc's result p:
 
@@ -1200,7 +1225,10 @@ printone(const char* msg, ulong value)
 	return origvalue;
 }
 
-/* Print summary info to stderr about the state of pymalloc's structures. */
+/* Print summary info to stderr about the state of pymalloc's structures.
+ * In Py_DEBUG mode, also perform some expensive internal consistency
+ * checks.
+ */
 void
 _PyObject_DebugMallocStats(void)
 {
@@ -1262,15 +1290,23 @@ _PyObject_DebugMallocStats(void)
 		/* visit every pool in the arena */
 		for (j = 0; j < poolsinarena; ++j, base += POOL_SIZE) {
 			poolp p = (poolp)base;
+			const uint sz = p->szidx;
+			uint freeblocks;
+
 			if (p->ref.count == 0) {
 				/* currently unused */
 				++numfreepools;
+				assert(pool_is_in_list(p, freepools));
 				continue;
 			}
-			++numpools[p->szidx];
-			numblocks[p->szidx] += p->ref.count;
-			numfreeblocks[p->szidx] += NUMBLOCKS(p->szidx) -
-						   p->ref.count;
+			++numpools[sz];
+			numblocks[sz] += p->ref.count;
+			freeblocks = NUMBLOCKS(sz) - p->ref.count;
+			numfreeblocks[sz] += freeblocks;
+#ifdef Py_DEBUG
+			if (freeblocks > 0)
+				assert(pool_is_in_list(p, usedpools[sz + sz]));
+#endif
 		}
 	}
 
