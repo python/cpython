@@ -56,7 +56,7 @@ Err(OSErr err)
 	return NULL;
 }
 
-/* Check for a ResType argument */
+/* Convert a ResType argument */
 static int
 GetOSType(PyObject *v, ResType *pr)
 {
@@ -69,14 +69,14 @@ GetOSType(PyObject *v, ResType *pr)
 	return 1;
 }
 
-/* Check for a Str255 argument */
+/* Convert a Str255 argument */
 static int
 GetStr255(PyObject *v, Str255 pbuf)
 {
 	int len;
 	if (!PyString_Check(v) || (len = PyString_Size(v)) > 255) {
 		PyErr_SetString(MacOS_Error,
-			"Str255 arg must be string <= 255 chars");
+			"Str255 arg must be string of at most 255 chars");
 		return 0;
 	}
 	pbuf[0] = len;
@@ -94,7 +94,7 @@ typedef struct {
 
 staticforward PyTypeObject RsrcType;
 
-#define RsrcObject_Check(r) ((r)->ob_type == &RsrcType)
+#define Rsrc_Check(r) ((r)->ob_type == &RsrcType)
 
 static RsrcObject *
 Rsrc_FromHandle(Handle h)
@@ -184,7 +184,7 @@ MacOS_GetNamedResource(PyObject *self, PyObject *args)
 /*----------------------------------------------------------------------*/
 /* SoundChannel objects */
 
-/* Check for a SndCommand argument */
+/* Convert a SndCommand argument */
 static int
 GetSndCommand(PyObject *v, SndCommand *pc)
 {
@@ -217,7 +217,7 @@ typedef struct {
 
 staticforward PyTypeObject SndChType;
 
-#define SndChObject_Check(s) ((s)->ob_type == &SndChType)
+#define SndCh_Check(s) ((s)->ob_type == &SndChType)
 
 static SndChObject *
 SndCh_FromSndChannelPtr(SndChannelPtr chan)
@@ -229,33 +229,46 @@ SndCh_FromSndChannelPtr(SndChannelPtr chan)
 }
 
 static void
+SndCh_Cleanup(SndChObject *s, int quitNow)
+{
+	SndChannelPtr chan = s->chan;
+	if (chan != NULL) {
+		void *userInfo = (void *)chan->userInfo;
+		s->chan = NULL;
+		SndDisposeChannel(chan, quitNow);
+		if (userInfo != 0)
+			DEL(userInfo);
+	}
+}
+
+static void
 SndCh_Dealloc(SndChObject *s)
 {
-	if (s->chan != NULL) {
-		SndDisposeChannel(s->chan, 1);
-		if (s->chan->userInfo != 0)
-			DEL((void *)s->chan->userInfo);
-		s->chan = NULL;
-	}
+	SndCh_Cleanup(s, 1);
 	PyMem_DEL(s);
 }
 
 static PyObject *
-SndCh_Close(SndChObject *s, PyObject *args)
+SndCh_DisposeChannel(SndChObject *s, PyObject *args)
 {
-	int quietNow = 1;
-	if (args != NULL) {
-		if (!PyArg_Parse(args, "i", &quietNow))
+	int quitNow = 1;
+	if (PyTuple_Size(args) > 0) {
+		if (!PyArg_Parse(args, "(i)", &quitNow))
 			return NULL;
 	}
-	if (s->chan != NULL) {
-		SndDisposeChannel(s->chan, quietNow);
-		if (s->chan->userInfo != 0)
-			DEL((void *)s->chan->userInfo);
-		s->chan = NULL;
-	}
+	SndCh_Cleanup(s, quitNow);
 	Py_INCREF(Py_None);
 	return Py_None;
+}
+
+static int
+SndCh_OK(SndChObject *s)
+{
+	if (s->chan == NULL) {
+		PyErr_SetString(MacOS_Error, "channel is closed");
+		return 0;
+	}
+	return 1;
 }
 
 static PyObject *
@@ -263,16 +276,13 @@ SndCh_SndPlay(SndChObject *s, PyObject *args)
 {
 	RsrcObject *r;
 	int async = 0;
-	if (!PyArg_Parse(args, "(O)", &r)) {
+	if (!PyArg_Parse(args, "(O!)", RsrcType, &r)) {
 		PyErr_Clear();
-		if (!PyArg_Parse(args, "(Oi)", &r, &async))
+		if (!PyArg_Parse(args, "(O&i)", RsrcType, &r, &async))
 			return NULL;
 	}
-	if (!RsrcObject_Check(r)) {
-		PyErr_SetString(MacOS_Error,
-			"SndPlay argument must be resource");
+	if (!SndCh_OK(s))
 		return NULL;
-	}
 	SndPlay(s->chan, r->h, async);
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -287,8 +297,10 @@ SndCh_SndDoCommand(SndChObject *s, PyObject *args)
 	if (!PyArg_Parse(args, "(O&)", GetSndCommand, &c)) {
 		PyErr_Clear();
 		if (!PyArg_Parse(args, "(O&i)", GetSndCommand, &c, &noWait))
-			return 0;
+			return NULL;
 	}
+	if (!SndCh_OK(s))
+		return NULL;
 	err = SndDoCommand(s->chan, &c, noWait);
 	return Err(err);
 }
@@ -300,13 +312,15 @@ SndCh_SndDoImmediate(SndChObject *s, PyObject *args)
 	OSErr err;
 	if (!PyArg_Parse(args, "(O&)", GetSndCommand, &c))
 		return 0;
+	if (!SndCh_OK(s))
+		return NULL;
 	err = SndDoImmediate(s->chan, &c);
 	return Err(err);
 }
 
 static PyMethodDef SndCh_Methods[] = {
-	{"close",				(PyCFunction)SndCh_Close},
-	{"SndDisposeChannel",	(PyCFunction)SndCh_Close},
+	{"close",				(PyCFunction)SndCh_DisposeChannel, 1},
+	{"SndDisposeChannel",	(PyCFunction)SndCh_DisposeChannel, 1},
 	{"SndPlay",				(PyCFunction)SndCh_SndPlay, 1},
 	{"SndDoCommand",		(PyCFunction)SndCh_SndDoCommand, 1},
 	{"SndDoImmediate",		(PyCFunction)SndCh_SndDoImmediate, 1},
@@ -356,8 +370,7 @@ MySafeCallback(arg)
 	PyObject *args;
 	PyObject *res;
 	args = Py_BuildValue("(O(hhl))",
-			     p->channel,
-			     p->cmd.cmd, p->cmd.param1, p->cmd.param2);
+						 p->channel, p->cmd.cmd, p->cmd.param1, p->cmd.param2);
 	res = PyEval_CallObject(p->callback, args);
 	Py_DECREF(args);
 	if (res == NULL)
@@ -391,8 +404,7 @@ MacOS_SndNewChannel(PyObject *self, PyObject *args)
 		PyErr_Clear();
 		if (!PyArg_Parse(args, "(hl)", &synth, &init)) {
 			PyErr_Clear();
-			if (!PyArg_Parse(args, "(hlO)",
-					 &synth, &init, &callback))
+			if (!PyArg_Parse(args, "(hlO)", &synth, &init, &callback))
 				return NULL;
 		}
 	}
@@ -411,14 +423,15 @@ MacOS_SndNewChannel(PyObject *self, PyObject *args)
 			DEL(p);
 		return Err(err);
 	}
-	chan->userInfo = (long)p;
 	res = (PyObject *)SndCh_FromSndChannelPtr(chan);
 	if (res == NULL) {
 		SndDisposeChannel(chan, 1);
 		DEL(p);
 	}
-	else
+	else {
+		chan->userInfo = (long)p;
 		p->channel = res;
+	}
 	return res;
 }
 
@@ -467,7 +480,6 @@ MacOS_Init()
 	
 	/* Initialize MacOS.Error exception */
 	MacOS_Error = PyString_FromString("MacOS.Error");
-	if (MacOS_Error == NULL ||
-	    PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
+	if (MacOS_Error == NULL || PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
 		Py_FatalError("can't define MacOS.Error");
 }
