@@ -44,6 +44,8 @@ Extension modules
 Library
 -------
 
+- Added Peter Astrand's subprocess.py module.  See PEP 327 for details.
+
 - time.strptime() now properly escapes timezones and all other locale-specific
   strings for regex-specific symbols.  Was breaking under Japanese Windows when
   the timezone was specified as "Tokyo (standard time)".
