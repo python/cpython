@@ -59,8 +59,8 @@ static PyObject *garbage;
 /* Python string to use if unhandled exception occurs */
 static PyObject *gc_str;
 
-/* Python string used to looked for __del__ attribute. */
-static PyObject *delstr;
+/* Python string used to look for __del__ attribute. */
+static PyObject *delstr = NULL;
 
 /* set for debugging information */
 #define DEBUG_STATS		(1<<0) /* print collection statistics */
@@ -369,7 +369,7 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *collectable,
 			Py_INCREF(op);
 			finalizer = PyObject_HasAttr(op, delstr);
 			if (op->ob_refcnt == 1) {
-				/* The object will be deallocated. 
+				/* The object will be deallocated.
 				   Nothing left to do.
 				 */
 				Py_DECREF(op);
@@ -525,6 +525,12 @@ collect(int generation)
 	PyGC_Head finalizers;
 	PyGC_Head *gc;
 
+	if (delstr == NULL) {
+		delstr = PyString_InternFromString("__del__");
+		if (delstr == NULL)
+			Py_FatalError("gc couldn't allocate \"__del__\"");
+	}
+
 	if (debug & DEBUG_STATS) {
 		PySys_WriteStderr("gc: collecting generation %d...\n",
 				  generation);
@@ -578,7 +584,7 @@ collect(int generation)
 	 * finalizers can't safely be deleted.  Python programmers should take
 	 * care not to create such things.  For Python, finalizers means
 	 * instance objects with __del__ methods.
-	 * 
+	 *
 	 * Move each object into the collectable set or the finalizers set.
 	 * It's possible that a classic class with a getattr() hook will
 	 * be revived or deallocated in this step.
@@ -877,7 +883,7 @@ gc_get_referrents(PyObject *self, PyObject *args)
 	int i;
 	PyObject *result = PyList_New(0);
 	for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
-		PyObject *obj = PyTuple_GET_ITEM(args, i); 
+		PyObject *obj = PyTuple_GET_ITEM(args, i);
 		traverseproc traverse = obj->ob_type->tp_traverse;
 		if (!traverse)
 			continue;
@@ -969,9 +975,6 @@ initgc(void)
 	PyObject *m;
 	PyObject *d;
 
-	delstr = PyString_InternFromString("__del__");
-	if (!delstr)
-		return;
 	m = Py_InitModule4("gc",
 			      GcMethods,
 			      gc__doc__,
