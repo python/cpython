@@ -49,3 +49,4 @@ class UserList:
 	def index(self, item): return self.data.index(item)
 	def reverse(self): self.data.reverse()
 	def sort(self, *args): apply(self.data.sort, args)
+	def extend(self, list): self.data.extend(list)
