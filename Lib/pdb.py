@@ -225,6 +225,30 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		except KeyboardInterrupt:
 			pass
 	do_l = do_list
+
+	def do_whatis(self, arg):
+		import codehack
+		try:
+			value = eval(arg, self.curframe.f_globals, \
+					self.curframe.f_locals)
+		except:
+			print '***', sys.exc_type + ':', `sys.exc_value`
+			return
+		code = None
+		# Is it a function?
+		try: code = value.func_code
+		except: pass
+		if code:
+			print 'Function', codehack.getcodename(code)
+			return
+		# Is it an instance method?
+		try: code = value.im_func.func_code
+		except: pass
+		if code:
+			print 'Method', codehack.getcodename(code)
+			return
+		# None of the above...
+		print type(value)
 	
 	# Print a traceback starting at the top stack frame.
 	# The most recently entered frame is printed last;
