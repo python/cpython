@@ -177,6 +177,21 @@ class build_ext (Command):
                 # building python standard extensions
                 self.library_dirs.append('.')
 
+        # The argument parsing will result in self.define being a string, but
+        # it has to be a list of 2-tuples.  All the preprocessor symbols
+        # specified by the 'define' option will be set to '1'.  Multiple
+        # symbols can be separated with commas.
+        
+        if self.define:
+            defines = string.split(self.define, ',')
+            self.define = map(lambda symbol: (symbol, '1'), defines)
+
+        # The option for macros to undefine is also a string from the
+        # option parsing, but has to be a list.  Multiple symbols can also
+        # be separated with commas here.
+        if self.undef:
+            self.undef = string.split(self.undef, ',')
+
     # finalize_options ()
     
 
