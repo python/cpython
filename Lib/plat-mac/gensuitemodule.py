@@ -572,8 +572,21 @@ def compilesuite((suite, pathname, modname), major, minor, language, script,
 	"""Generate code for a single suite"""
 	[name, desc, code, level, version, events, classes, comps, enums] = suite
 	# Sort various lists, so re-generated source is easier compared
+	def class_sorter(k1, k2):
+		"""Sort classes by code, and make sure main class sorts before synonyms"""
+		# [name, code, desc, properties, elements] = cls
+		if k1[1] < k2[1]: return -1
+		if k1[1] > k2[1]: return 1
+		if not k2[3] or k2[3][0][1] == 'c@#!':
+			# This is a synonym, the other one is better
+			return -1
+		if not k1[3] or k1[3][0][1] == 'c@#!':
+			# This is a synonym, the other one is better
+			return 1
+		return 0
+		
 	events.sort()
-	classes.sort()
+	classes.sort(class_sorter)
 	comps.sort()
 	enums.sort()
 	
@@ -627,7 +640,7 @@ def compilesuite((suite, pathname, modname), major, minor, language, script,
 	objc.dumpindex()
 	
 	return code, modname
-
+	
 def compileclassheader(fp, name, module=None):
 	"""Generate class boilerplate"""
 	classname = '%s_Events'%name
@@ -939,6 +952,10 @@ class ObjectCompiler:
 		if self.namemappers[0].hascode('class', code) and \
 				self.namemappers[0].findcodename('class', code)[0] != cname:
 			# This is an other name (plural or so) for something else. Skip.
+			if self.fp and (elements or len(properties) > 1 or (len(properties) == 1 and
+				properties[0][1] != 'c@#!')):
+				print '** Skip multiple %s of %s (code %s)' % (cname, self.namemappers[0].findcodename('class', code)[0], `code`)
+				raise RuntimeError, "About to skip non-empty class"
 			return
 		plist = []
 		elist = []
