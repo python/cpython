@@ -32,7 +32,7 @@ class DocBuild(build):
 		self.build_html = None
 		self.build_dest = None
 		self.download = 1
-		self.doc_version = '2.2.1'
+		self.doc_version = '2.2.2'
 		
 	def finalize_options(self):
 		build.finalize_options(self)
@@ -46,13 +46,20 @@ class DocBuild(build):
 	
 	def downloadDocs(self):
 		workdir = os.getcwd()
-		self.mkpath(self.build_html)
+		url = 'http://www.python.org/ftp/python/doc/%s/html-%s.tgz' % \
+			(self.doc_version,self.doc_version)
 		os.chdir(self.build_base)
-		self.spawn('curl','-O', 'http://www.python.org/ftp/python/doc/%s/html-%s.tgz' % (self.doc_version,self.doc_version))
+		self.spawn('curl','-O', url)
 		os.chdir(workdir)
-		os.chdir(self.build_html)
-		self.spawn('tar', '-xzf', '../html-%s.tgz' % self.doc_version)
-		os.chdir(workdir)
+		tarfile = 'html-%s.tgz' % self.doc_version
+## This no longer works due to name changes
+##		self.mkpath(self.build_html)
+##		os.chdir(self.build_html)
+##		self.spawn('tar', '-xzf', '../' + tarfile)
+##		os.chdir(workdir)
+		print "** Please unpack %s" % os.path.join(self.build_base, tarfile)
+		print "** Unpack the files into %s" % self.build_html
+		raise RuntimeError, "You need to unpack the docs manually"
 		
 	def buildDocsFromSource(self):
 		srcdir = '../../..'
@@ -75,7 +82,7 @@ class DocBuild(build):
 		hackedIndex = file(os.path.join(self.build_dest, ind_html),'w')
 		origIndex = file(os.path.join(self.build_html,ind_html))
 		r = re.compile('<style type="text/css">.*</style>', re.DOTALL)
-		hackedIndex.write(r.sub('<META NAME="AppleTitle" CONTENT="Python Help">',origIndex.read()))
+		hackedIndex.write(r.sub('<META NAME="AppleTitle" CONTENT="Python Documentation">',origIndex.read()))
 	
 	def hackFile(self,d,f):
 		origPath = os.path.join(d,f)
@@ -107,6 +114,7 @@ class DocBuild(build):
 		
 	def run(self):
 		self.ensure_finalized()
+		self.mkpath(self.build_base)
 		self.ensureHtml()
 		if not os.path.isdir(self.build_html):
 			raise RuntimeError, \
@@ -142,7 +150,7 @@ class AHVDocInstall(Command):
 			build_cmd = self.get_finalized_command('build')
 			self.build_dest = build_cmd.build_dest
 		if self.install_doc == None:
-			self.install_doc = os.path.join(self.prefix, 'Resources/English.lproj/Documentation')
+			self.install_doc = os.path.join(self.prefix, 'Resources/Python.app/Contents/Resources/English.lproj/PythonDocumentation')
 		print 'INSTALL', self.build_dest, '->', self.install_doc
 		
 	def run(self):

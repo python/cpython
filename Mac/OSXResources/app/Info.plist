@@ -32,9 +32,10 @@
 	<key>CFBundleHelpBookFolder</key>
 	<array>
 		<string>Documentation</string>
+		<string>PythonDocumentation</string>
 	</array>
 	<key>CFBundleHelpBookName</key>
-	<string>Python Help</string>
+	<string>MacPython Help</string>
 	<key>CFBundleHelpTOCFile</key>
 	<string>index.html</string>
 
