@@ -511,3 +511,346 @@ the \function{lookup()} function to construct the instance.
 \class{StreamReader} and \class{StreamWriter} classes. They inherit
 all other methods and attribute from the underlying stream.
 
+\subsection{Standard Encodings}
+
+Python comes with a number of codecs builtin, either implemented as C
+functions, or with dictionaries as mapping tables. The following table
+lists the codecs by name, together with a few common aliases, and the
+languages for which the encoding is likely used. Neither the list of
+aliases nor the list of languages is meant to be exhaustive. Notice
+that spelling alternatives that only differ in case or use a hyphen
+instead of an underscore are also valid aliases.
+
+Many of the character sets support the same languages. They vary in
+individual characters (e.g. whether the EURO SIGN is supported or
+not), and in the assignment of characters to code positions. For the
+European languages in particular, the following variants typically
+exist:
+
+\begin{itemize}
+\item an ISO 8859 codeset
+\item a Microsoft Windows code page, which is typically derived from
+      a 8859 codeset, but replaces control characters with additional
+      graphic characters
+\item an IBM EBCDIC code page
+\item an IBM PC code page, which is ASCII compatible
+\end{itemize}
+
+\begin{longtableiii}{l|l|l}{textrm}{Codec}{Aliases}{Languages}
+
+\lineiii{ascii}
+        {646, us-ascii}
+        {English}
+
+\lineiii{cp037}
+        {IBM037, IBM039}
+        {English}
+
+\lineiii{cp424}
+        {EBCDIC-CP-HE, IBM424}
+        {Hebrew}
+
+\lineiii{cp437}
+        {437, IBM437}
+        {English}
+
+\lineiii{cp500}
+        {EBCDIC-CP-BE, EBCDIC-CP-CH, IBM500}
+        {Western Europe}
+
+\lineiii{cp737}
+        {}
+        {Greek}
+
+\lineiii{cp775}
+        {IBM775}
+        {Baltic languages}
+
+\lineiii{cp850}
+        {850, IBM850}
+        {Western Europe}
+
+\lineiii{cp852}
+        {852, IBM852}
+        {Central and Eastern Europe}
+
+\lineiii{cp855}
+        {855, IBM855}
+        {Bulgarian, Byelorussian, Macedonian, Russian, Serbian}
+
+\lineiii{cp856}
+        {}
+        {Hebrew}
+
+\lineiii{cp857}
+        {857, IBM857}
+        {Turkish}
+
+\lineiii{cp860}
+        {860, IBM860}
+        {Portuguese}
+
+\lineiii{cp861}
+        {861, CP-IS, IBM861}
+        {Icelandic}
+
+\lineiii{cp862}
+        {862, IBM862}
+        {Hebrew}
+
+\lineiii{cp863}
+        {863, IBM863}
+        {Canadian}
+
+\lineiii{cp864}
+        {IBM864}
+        {Arabic}
+
+\lineiii{cp865}
+        {865, IBM865}
+        {Danish, Norwegian}
+
+\lineiii{cp869}
+        {869, CP-GR, IBM869}
+        {Greek}
+
+\lineiii{cp874}
+        {}
+        {Thai}
+
+\lineiii{cp875}
+        {}
+        {Greek}
+
+\lineiii{cp1006}
+        {}
+        {Urdu}
+
+\lineiii{cp1026}
+        {ibm1026}
+        {Turkish}
+
+\lineiii{cp1140}
+        {ibm1140}
+        {Western Europe}
+
+\lineiii{cp1250}
+        {windows-1250}
+        {Central and Eastern Europe}
+
+\lineiii{cp1251}
+        {windows-1251}
+        {Bulgarian, Byelorussian, Macedonian, Russian, Serbian}
+
+\lineiii{cp1252}
+        {windows-1252}
+        {Western Europe}
+
+\lineiii{cp1253}
+        {windows-1253}
+        {Greek}
+
+\lineiii{cp1254}
+        {windows-1254}
+        {Turkish}
+
+\lineiii{cp1255}
+        {windows-1255}
+        {Hebrew}
+
+\lineiii{cp1256}
+        {windows1256}
+        {Arabic}
+
+\lineiii{cp1257}
+        {windows-1257}
+        {Baltic languages}
+
+\lineiii{cp1258}
+        {windows-1258}
+        {Vietnamese}
+
+\lineiii{latin_1}
+        {iso-8859-1, iso8859-1, 8859, cp819, latin, latin1, L1}
+        {West Europe}
+
+\lineiii{iso8859_2}
+        {iso-8859-2, latin2, L2}
+        {Central and Eastern Europe}
+
+\lineiii{iso8859_3}
+        {iso-8859-3, latin3, L3}
+        {Esperanto, Maltese}
+
+\lineiii{iso8859_4}
+        {iso-8859-4, latin4, L4}
+        {Baltic languagues}
+
+\lineiii{iso8859_5}
+        {iso-8859-5, cyrillic}
+        {Bulgarian, Byelorussian, Macedonian, Russian, Serbian}
+
+\lineiii{iso8859_6}
+        {iso-8859-6, arabic}
+        {Arabic}
+
+\lineiii{iso8859_7}
+        {iso-8859-7, greek, greek8}
+        {Greek}
+
+\lineiii{iso8859_8}
+        {iso-8859-8, hebrew}
+        {Hebrew}
+
+\lineiii{iso8859_9}
+        {iso-8859-9, latin5, L5}
+        {Turkish}
+
+\lineiii{iso8859_10}
+        {iso-8859-10, latin6, L6}
+        {Nordic languages}
+
+\lineiii{iso8859_13}
+        {iso-8859-13}
+        {Baltic languages}
+
+\lineiii{iso8859_14}
+        {iso-8859-14, latin8, L8}
+        {Celtic languages}
+
+\lineiii{iso8859_15}
+        {iso-8859-15}
+        {Western Europe}
+
+\lineiii{koi8_r}
+        {}
+        {Russian}
+
+\lineiii{koi8_u}
+        {}
+        {Ukrainian}
+
+\lineiii{mac_cyrillic}
+        {maccyrillic}
+        {Bulgarian, Byelorussian, Macedonian, Russian, Serbian}
+
+\lineiii{mac_greek}
+        {macgreek}
+        {Greek}
+
+\lineiii{mac_iceland}
+        {maciceland}
+        {Icelandic}
+
+\lineiii{mac_latin2}
+        {maclatin2, maccentraleurope}
+        {Central and Eastern Europe}
+
+\lineiii{mac_roman}
+        {macroman}
+        {Western Europe}
+
+\lineiii{mac_turkish}
+        {macturkish}
+        {Turkish}
+
+\lineiii{utf_16}
+        {U16, utf16}
+        {all languages}
+
+\lineiii{utf_16_be}
+        {UTF-16BE}
+        {all languages (BMP only)}
+
+\lineiii{utf_16_le}
+        {UTF-16LE}
+        {all languages (BMP only)}
+
+\lineiii{utf_7}
+        {U7}
+        {all languages}
+
+\lineiii{utf_8}
+        {U8, UTF, utf8}
+        {all languages}
+
+\end{longtableiii}
+
+A number of codecs are specific to Python, so their codec names have
+no meaning outside Python. Some of them don't convert from Unicode
+strings to byte strings, but instead use the property of the Python
+codecs machinery that any bijective function with one argument can be
+considered as an encoding.
+
+For the codecs listed below, the result in the ``encoding'' direction
+is always a byte string. The result of the ``decoding'' direction is
+listed as operand type in the table.
+
+\begin{tableiv}{l|l|l|l}{textrm}{Codec}{Aliases}{Operand type}{Purpose}
+
+\lineiv{base64_codec}
+         {base64, base-64}
+         {byte string}
+         {Convert operand to MIME base64}
+
+\lineiv{hex_codec}
+         {hex}
+         {byte string}
+         {Convert operand to hexadecimal representation, with two digits per byte}
+
+\lineiv{mbcs}
+         {dbcs}
+         {Unicode string}
+         {Windows only: Encode operand according to the ANSI codepage (CP_ACP)}
+
+\lineiv{palmos}
+         {}
+         {Unicode string}
+         {Encoding of PalmOS 3.5}
+
+\lineiv{quopri_codec}
+         {quopri, quoted-printable, quotedprintable}
+         {byte string}
+         {Convert operand to MIME quoted printable}
+
+\lineiv{raw_unicode_escape}
+         {}
+         {Unicode string}
+         {Produce a string that is suitable as raw Unicode literal in Python source code}
+
+\lineiv{rot_13}
+         {rot13}
+         {byte string}
+         {Returns the Caesar-cypher encryption of the operand}
+
+\lineiv{string_escape}
+         {}
+         {byte string}
+         {Produce a string that is suitable as string literal in Python source code}
+
+\lineiv{undefined}
+         {}
+         {any}
+         {Raise an exception for all conversion. Can be used as the system encoding if no automatic coercion between byte and Unicode strings is desired.}
+
+\lineiv{unicode_escape}
+         {}
+         {Unicode string}
+         {Produce a string that is suitable as Unicode literal in Python source code}
+
+\lineiv{unicode_internal}
+         {}
+         {Unicode string}
+         {Return the internal represenation of the operand}
+
+\lineiv{uu_codec}
+         {uu}
+         {byte string}
+         {Convert the operand using uuencode}
+
+\lineiv{zlib_codec}
+         {zip, zlib}
+         {byte string}
+         {Compress the operand using gzip}
+
+\end{tableiv}
