@@ -181,6 +181,40 @@ static PyObject *python_event_handler;
 */
 int PyMac_AppearanceCompliant;
 
+/*
+** Find out what the current script is.
+** Donated by Fredrik Lund.
+*/
+char *PyMac_getscript()
+{
+   int font, script, lang;
+    font = 0;
+    font = GetSysFont();
+    script = FontToScript(font);
+    switch (script) {
+    case smRoman:
+        lang = GetScriptVariable(script, smScriptLang);
+        if (lang == langIcelandic)
+            return "mac-iceland";
+        else if (lang == langTurkish)
+            return "mac-turkish";
+        else if (lang == langGreek)
+            return "mac-greek";
+        else
+            return "mac-roman";
+        break;
+    case smJapanese:
+        return "mac-japan";
+    case smGreek:
+        return "mac-greek";
+    case smCyrillic:
+        return "mac-cyrillic";
+    default:
+        return "mac-roman"; /* better than nothing */
+    }
+}
+
+
 #ifdef USE_GUSI1
 /*
 ** GUSI (1.6.0 and earlier, at the least) do not set the MacOS idea of
