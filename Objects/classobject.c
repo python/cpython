@@ -417,13 +417,19 @@ static object *
 instance_concat(inst, other)
 	instanceobject *inst, *other;
 {
-	object *func, *res;
+	object *func, *arg, *res;
 
 	func = instance_getattr(inst, "__add__");
 	if (func == NULL)
 		return NULL;
-	res = call_object(func, (object *)other);
+	arg = mkvalue("(O)", other);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
 	DECREF(func);
+	DECREF(arg);
 	return res;
 }
 
@@ -568,12 +574,18 @@ generic_binary_op(self, other, methodname)
 	object *other;
 	char *methodname;
 {
-	object *func, *res;
+	object *func, *arg, *res;
 
 	if ((func = instance_getattr(self, methodname)) == NULL)
 		return NULL;
-	res = call_object(func, other);
+	arg = mkvalue("O", other);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
 	DECREF(func);
+	DECREF(arg);
 	return res;
 }
 
@@ -653,6 +665,45 @@ BINARY(instance_and, "__and__")
 BINARY(instance_xor, "__xor__")
 BINARY(instance_or, "__or__")
 
+static int
+instance_coerce(pv, pw)
+	object **pv, **pw;
+{
+	object *v =  *pv;
+	object *w = *pw;
+	object *func;
+	object *res;
+	int outcome;
+
+	if (!is_instanceobject(v))
+		return 1; /* XXX shouldn't be possible */
+	func = instance_getattr((instanceobject *)v, "__coerce__");
+	if (func == NULL) {
+		err_clear();
+		return 1;
+	}
+	res = call_object(func, w);
+	if (res == NULL)
+		return -1;
+	if (res == None) {
+		DECREF(res);
+		return 1;
+	}
+	outcome = getargs(res, "(OO)", &v, &w);
+	if (!outcome || v->ob_type != w->ob_type ||
+			v->ob_type->tp_as_number == NULL) {
+		DECREF(res);
+		err_setstr(TypeError, "bad __coerce__ result");
+		return -1;
+	}
+	INCREF(v);
+	INCREF(w);
+	DECREF(res);
+	*pv = v;
+	*pw = w;
+	return 0;
+}
+
 static number_methods instance_as_number = {
 	instance_add,		/*nb_add*/
 	instance_sub,		/*nb_subtract*/
@@ -671,6 +722,7 @@ static number_methods instance_as_number = {
 	instance_and,		/*nb_and*/
 	instance_xor,		/*nb_xor*/
 	instance_or,		/*nb_or*/
+	instance_coerce,	/*nb_coerce*/
 };
 
 typeobject Instancetype = {
@@ -689,58 +741,6 @@ typeobject Instancetype = {
 	&instance_as_sequence,	/*tp_as_sequence*/
 	&instance_as_mapping,	/*tp_as_mapping*/
 };
-
-static int
-one_coerce(pv, pw)
-	object **pv, **pw;
-{
-	object *v = *pv;
-	object *w = *pw;
-	object *func;
-
-	if (!is_instanceobject(v))
-		return 1;
-	func = instance_getattr((instanceobject *)v, "__coerce__");
-	if (func == NULL) {
-		err_clear();
-		return 1;
-	}
-	if (func != NULL) {
-		object *res = call_object(func, w);
-		int outcome;
-		if (res == NULL)
-			return -1;
-		outcome = getargs(res, "(OO)", &v, &w);
-		if (!outcome || v->ob_type != w->ob_type ||
-			        v->ob_type->tp_as_number == NULL) {
-			DECREF(res);
-			err_setstr(TypeError, "bad __coerce__ result");
-			return -1;
-		}
-		INCREF(v);
-		INCREF(w);
-		DECREF(res);
-		*pv = v;
-		*pw = w;
-		return 0;
-	}
-}
-
-int
-instance_coerce(pv, pw)
-	object **pv, **pw;
-{
-	int outcome;
-	outcome = one_coerce(pv, pw);
-	if (outcome > 0) {
-		outcome = one_coerce(pw, pv);
-		if (outcome > 0) {
-			err_setstr(TypeError, "uncoerceable instance");
-			outcome = -1;
-		}
-	}
-	return outcome;
-}
 
 object *
 instance_convert(inst, methodname)

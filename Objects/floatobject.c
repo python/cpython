@@ -299,6 +299,25 @@ float_nonzero(v)
 	return v->ob_fval != 0.0;
 }
 
+int
+float_coerce(pv, pw)
+	object **pv;
+	object **pw;
+{
+	if (is_intobject(*pw)) {
+		long x = getintvalue(*pw);
+		*pw = newfloatobject((double)x);
+		INCREF(*pv);
+		return 0;
+	}
+	else if (is_longobject(*pw)) {
+		*pw = newfloatobject(dgetlongvalue(*pw));
+		INCREF(*pv);
+		return 0;
+	}
+	return 1; /* Can't do it */
+}
+
 static number_methods float_as_number = {
 	float_add,	/*nb_add*/
 	float_sub,	/*nb_subtract*/
@@ -317,6 +336,7 @@ static number_methods float_as_number = {
 	0,		/*nb_and*/
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
+	float_coerce,	/*nb_coerce*/
 };
 
 typeobject Floattype = {
