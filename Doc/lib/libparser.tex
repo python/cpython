@@ -271,8 +271,6 @@ to the descriptions of each function for detailed information.
 
 AST objects returned by \function{expr()}, \function{suite()} and
 \function{sequence2ast()} have no methods of their own.
-Some of the functions defined which accept an AST object as their
-first argument may change to object methods in the future.
 
 Ordered and equality comparisons are supported between AST objects.
 Pickling of AST objects (using the \module{pickle} module) is also
@@ -282,6 +280,30 @@ supported.
 The type of the objects returned by \function{expr()},
 \function{suite()} and \function{sequence2ast()}.
 \end{datadesc}
+
+
+AST objects have the following methods:
+
+
+\begin{methoddesc}[AST]{compile}{\optional{filename}}
+Same as \code{compileast(\var{ast}, \var{filename})}.
+\end{methoddesc}
+
+\begin{methoddesc}[AST]{isexpr}{}
+Same as \code{isexpr(\var{ast})}.
+\end{methoddesc}
+
+\begin{methoddesc}[AST]{issuite}{}
+Same as \code{issuite(\var{ast})}.
+\end{methoddesc}
+
+\begin{methoddesc}[AST]{tolist}{\optional{line_info}}
+Same as \code{ast2list(\var{ast}, \var{line_info})}.
+\end{methoddesc}
+
+\begin{methoddesc}[AST]{totuple}{\optional{line_info}}
+Same as \code{ast2tuple(\var{ast}, \var{line_info})}.
+\end{methoddesc}
 
 
 \subsection{Examples}
