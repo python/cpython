@@ -46,6 +46,9 @@ class InstallPy (Command):
 
     def run (self):
 
+        # Make sure we have "built" all pure Python modules first
+        self.run_peer ('build_py')
+
         # Dump entire contents of the build directory to the installation
         # directory (that's the beauty of having a build directory!)
         outfiles = self.copy_tree (self.build_dir, self.install_dir)

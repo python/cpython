@@ -27,6 +27,9 @@ class InstallExt (Command):
 
     def run (self):
 
+        # Make sure we have built all extension modules first
+        self.run_peer ('build_ext')
+
         # Dump the entire "build/platlib" directory (or whatever it really
         # is; "build/platlib" is the default) to the installation target
         # (eg. "/usr/local/lib/python1.5/site-packages").  Note that
