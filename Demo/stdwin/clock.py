@@ -28,9 +28,6 @@ ORIGIN = 0, 0
 FARAWAY = 2000, 2000
 EVERYWHERE = ORIGIN, FARAWAY
 
-# TZDIFF = 5*3600	# THINK C 3.0 returns UCT if local time is EST
-TZDIFF = 0		# THINK C 4.0 always returns local time
-
 
 def main():
 	win = makewindow()
@@ -89,11 +86,11 @@ def setdimensions(win):
 	win.fullarea = ORIGIN, win.farcorner
 
 def settimer(win):
-	now = getlocaltime()
-	win.times = calctime(now)
-	delay = 61 - now % 60
+	now = time.time()
+	hours, minutes, seconds = win.times = calctime(now)
+	delay = 61 - seconds
 	win.settimer(10 * delay)
-	minutes = (now/60) % 720
+	minutes = minutes + hours*60
 	if win.ring:
 		# Is it time to stop the alarm ringing?
 		since = (minutes - win.time + 720) % 720
@@ -116,7 +113,7 @@ def drawproc(win, area):
 	d.circle(win.center, win.radius)
 	d.line(win.center, calcpoint(win, hours*30 + minutes/2, 0.6))
 	d.line(win.center, calcpoint(win, minutes*6, 1.0))
-	str = dd(hours) + ':' + dd(minutes)
+	str = "%02d:%02d" % (hours, minutes)
 	p = (win.width - d.textwidth(str))/2, win.height * 3 / 4
 	d.text(p, str)
 	if win.set:
@@ -177,7 +174,7 @@ def drawalarmtime(win, d):
 	# Convert to hours (0..12) and minutes (12*(0..60))
 	hh = win.time/60
 	mm = win.time%60
-	str = 'Alarm@' + dd(hh) + ':' + dd(mm)
+	str = 'Alarm@%02d:%02d' % (hh, mm)
 	p1 = (win.width - d.textwidth(str))/2, win.height
 	d.text(p1, str)
 
@@ -189,16 +186,8 @@ def calcpoint(win, degrees, size):
 	return h + int(x*size*r), v - int(y*size*r)
 
 def calctime(now):
-	seconds = now % 60
-	minutes = (now/60) % 60
-	hours = (now/3600) % 12
+	hours, minutes, seconds = time.localtime(now)[3:6]
+	hours = hours % 12
 	return hours, minutes, seconds
-
-def dd(n):
-	s = `n`
-	return '0'*(2-len(s)) + s
-
-def getlocaltime():
-	return int(time.time() - TZDIFF)
 
 main()
