@@ -587,6 +587,18 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
 	}
 }
 
+static PyObject *
+tuple_getnewargs(PyTupleObject *v)
+{
+	return Py_BuildValue("(N)", tupleslice(v, 0, v->ob_size));
+	
+}
+
+static PyMethodDef tuple_methods[] = {
+	{"__getnewargs__",	(PyCFunction)tuple_getnewargs,	METH_NOARGS},
+	{NULL,		NULL}		/* sentinel */
+};
+
 static PyMappingMethods tuple_as_mapping = {
 	(inquiry)tuplelength,
 	(binaryfunc)tuplesubscript,
@@ -625,7 +637,7 @@ PyTypeObject PyTuple_Type = {
 	0,					/* tp_weaklistoffset */
 	tuple_iter,	    			/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	tuple_methods,				/* tp_methods */
 	0,					/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */

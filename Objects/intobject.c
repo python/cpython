@@ -850,6 +850,17 @@ int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return new;
 }
 
+static PyObject *
+int_getnewargs(PyIntObject *v)
+{
+	return Py_BuildValue("(l)", v->ob_ival);
+}
+
+static PyMethodDef int_methods[] = {
+	{"__getnewargs__",	(PyCFunction)int_getnewargs,	METH_NOARGS},
+	{NULL,		NULL}		/* sentinel */
+};
+
 PyDoc_STRVAR(int_doc,
 "int(x[, base]) -> integer\n\
 \n\
@@ -931,7 +942,7 @@ PyTypeObject PyInt_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	int_methods,				/* tp_methods */
 	0,					/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */

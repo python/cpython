@@ -324,6 +324,21 @@ class AbstractPickleTests(unittest.TestCase):
 ##         print
 ##         pickletools.dis(s)
 
+    def test_newobj_generic(self):
+        for proto in [0, 1, 2]:
+            for C in myclasses:
+                B = C.__base__
+                x = C(C.sample)
+                x.foo = 42
+                s = self.dumps(x, proto)
+##                import pickletools
+##                print
+##                pickletools.dis(s)
+                y = self.loads(s)
+                detail = (proto, C, B, x, y, type(y))
+                self.assertEqual(B(x), B(y), detail)
+                self.assertEqual(x.__dict__, y.__dict__, detail)
+
 # XXX Temporary hack, so long as the C implementation of pickle protocol
 # XXX 2 isn't ready.  When it is, move the methods in TempAbstractPickleTests
 # XXX into AbstractPickleTests above, and get rid of TempAbstractPickleTests
@@ -405,11 +420,38 @@ class TempAbstractPickleTests(unittest.TestCase):
         finally:
             copy_reg.remove_extension(__name__, "MyList", 0xfffff0)
 
+class MyInt(int):
+    sample = 1
+
+class MyLong(long):
+    sample = 1L
+
+class MyFloat(float):
+    sample = 1.0
+
+class MyComplex(complex):
+    sample = 1.0 + 0.0j
+
+class MyStr(str):
+    sample = "hello"
+
+class MyUnicode(unicode):
+    sample = u"hello \u1234"
+
 class MyTuple(tuple):
-    pass
+    sample = (1, 2, 3)
 
 class MyList(list):
-    pass
+    sample = [1, 2, 3]
+
+class MyDict(dict):
+    sample = {"a": 1, "b": 2}
+
+myclasses = [MyInt, MyLong, MyFloat,
+             # MyComplex, # XXX complex somehow doesn't work here :-(
+             MyStr, MyUnicode,
+             MyTuple, MyList, MyDict]
+
 
 class SlotList(MyList):
     __slots__ = ["foo"]

@@ -11,9 +11,13 @@ from test.pickletester import AbstractPersistentPicklerTests
 
 class PickleTests(AbstractPickleTests, AbstractPickleModuleTests, XXXTemp):
 
-    def setUp(self):
-        self.dumps = pickle.dumps
-        self.loads = pickle.loads
+    def dumps(self, arg, proto=0, fast=0):
+        # Ignore fast
+        return pickle.dumps(arg, proto)
+
+    def loads(self, buf):
+        # Ignore fast
+        return pickle.loads(buf)
 
     module = pickle
     error = KeyError
@@ -22,9 +26,11 @@ class PicklerTests(AbstractPickleTests):
 
     error = KeyError
 
-    def dumps(self, arg, proto=0):
+    def dumps(self, arg, proto=0, fast=0):
         f = StringIO()
         p = pickle.Pickler(f, proto)
+        if fast:
+            p.fast = fast
         p.dump(arg)
         f.seek(0)
         return f.read()
@@ -36,12 +42,14 @@ class PicklerTests(AbstractPickleTests):
 
 class PersPicklerTests(AbstractPersistentPicklerTests):
 
-    def dumps(self, arg, proto=0):
+    def dumps(self, arg, proto=0, fast=0):
         class PersPickler(pickle.Pickler):
             def persistent_id(subself, obj):
                 return self.persistent_id(obj)
         f = StringIO()
         p = PersPickler(f, proto)
+        if fast:
+            p.fast = fast
         p.dump(arg)
         f.seek(0)
         return f.read()

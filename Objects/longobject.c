@@ -2646,6 +2646,17 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return (PyObject *)new;
 }
 
+static PyObject *
+long_getnewargs(PyLongObject *v)
+{
+	return Py_BuildValue("(N)", _PyLong_Copy(v));
+}
+
+static PyMethodDef long_methods[] = {
+	{"__getnewargs__",	(PyCFunction)long_getnewargs,	METH_NOARGS},
+	{NULL,		NULL}		/* sentinel */
+};
+
 PyDoc_STRVAR(long_doc,
 "long(x[, base]) -> integer\n\
 \n\
@@ -2726,7 +2737,7 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	long_methods,				/* tp_methods */
 	0,					/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */
