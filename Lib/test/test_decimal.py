@@ -967,13 +967,13 @@ class DecimalPythonAPItests(unittest.TestCase):
         self.assertEqual(d, e)
 
     def test_int(self):
-        data = '1.0 1.1 1.9 2.0 0.0 -1.0 -1.1 -1.9 -2.0'.split()
-        for s in data:
+        for x in range(-250, 250):
+            s = '%0.2f' % (x / 100.0)
             # should work the same as for floats
             self.assertEqual(int(Decimal(s)), int(float(s)))
-            # should work the same as ROUND_DOWN
+            # should work the same as to_integral in the ROUND_DOWN mode
             d = Decimal(s)
-            r = Context(prec=1, rounding=ROUND_DOWN).create_decimal(s)
+            r = d.to_integral(ROUND_DOWN)
             self.assertEqual(Decimal(int(d)), r)
 
 class ContextAPItests(unittest.TestCase):

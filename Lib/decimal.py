@@ -1410,14 +1410,14 @@ class Decimal(object):
                 return context._raise_error(InvalidContext)
             elif self._isinfinity():
                 raise OverflowError, "Cannot convert infinity to long"
-        if not self:
-            return 0
-        sign = '-'*self._sign
         if self._exp >= 0:
-            s = sign + ''.join(map(str, self._int)) + '0'*self._exp
-            return int(s)
-        s = sign + ''.join(map(str, self._int))[:self._exp]
-        return int(s)
+            s = ''.join(map(str, self._int)) + '0'*self._exp
+        else:
+            s = ''.join(map(str, self._int))[:self._exp]
+        if s == '':
+            s = '0'
+        sign = '-'*self._sign
+        return int(sign + s)
 
     def __long__(self):
         """Converts to a long.
