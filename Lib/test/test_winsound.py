@@ -85,8 +85,24 @@ class PlaySoundTest(unittest.TestCase):
         return
 
     def test_alias_nofallback(self):
-        self.assertRaises(RuntimeError, winsound.PlaySound, '!"$%&/(#+*',
-                          winsound.SND_ALIAS | winsound.SND_NODEFAULT)
+        # Note that this is not the same as asserting RuntimeError
+        # will get raised:  you cannot convert this to
+        # self.assertRaises(...) form.  The attempt may or may not
+        # raise RuntimeError, but it shouldn't raise anything other
+        # than RuntimeError, and that's all we're trying to test here.
+        # The MS docs aren't clear about whether the SDK PlaySound()
+        # with SND_ALIAS and SND_NODEFAULT will return True or False when
+        # the alias is unknown.  On Tim's WinXP box today, it returns
+        # True (no exception is raised).  What we'd really like to test
+        # is that no sound is played, but that requires first wiring an
+        # eardrum class into unittest <wink>.
+        try:
+            winsound.PlaySound(
+                '!"$%&/(#+*',
+                winsound.SND_ALIAS | winsound.SND_NODEFAULT
+            )
+        except RuntimeError:
+            pass
 
     def test_stopasync(self):
         winsound.PlaySound(
