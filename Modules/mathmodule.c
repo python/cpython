@@ -104,9 +104,9 @@ FUNC1(math_sqrt, sqrt)
 FUNC1(math_tan, tan)
 FUNC1(math_tanh, tanh)
 
-double	frexp(double, int *);
-double	ldexp(double, int);
-double	modf(double, double *);
+double	frexp PROTO((double, int *));
+double	ldexp PROTO((double, int));
+double	modf PROTO((double, double *));
 
 static object *
 math_frexp(self, args)
