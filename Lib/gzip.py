@@ -1,6 +1,7 @@
 import time
 import string
 import zlib
+import struct
 import __builtin__
 
 # implements a python function that reads and writes a gzipped file
@@ -14,29 +15,10 @@ FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 READ, WRITE = 1, 2
 
 def write32(output, value):
-    t = divmod(value, 256)
-    b1 = chr(t[1])
-
-    t = divmod(t[0], 256)
-    b2 = chr(t[1])
-
-    t = divmod(t[0], 256)
-    b3 = chr(t[1])
-
-    t = divmod(t[0], 256)
-    b4 = chr(t[1])
-
-    buf = b1 + b2 + b3 + b4
-    output.write(buf)
-   
+    output.write(struct.pack("<l", value))
     
 def read32(input):
-    buf = input.read(4)
-    v = ord(buf[0])
-    v = v + (ord(buf[1]) << 8)
-    v = v + (ord(buf[2]) << 16)
-    v = v + (ord(buf[3]) << 24)
-    return v
+    return struct.unpack("<l", input.read(4))[0]
 
 def open(filename, mode="r", compresslevel=9):
     return GzipFile(filename, mode, compresslevel)
