@@ -2266,3 +2266,61 @@ initimp()
   failure:
 	;
 }
+
+
+/* API for embedding applications that want to add their own entries to the
+   table of built-in modules.  This should normally be called *before*
+   Py_Initialize().  When the malloc() or realloc() call fails, -1 is returned
+   and the existing table is unchanged.
+
+   After a similar function by Just van Rossum. */
+
+int
+PyImport_ExtendInittab(newtab)
+	struct _inittab *newtab;
+{
+	static struct _inittab *our_copy = NULL;
+	struct _inittab *p;
+	int i, n;
+
+	/* Count the number of entries in both tables */
+	for (n = 0; newtab[n].name != NULL; n++)
+		;
+	if (n == 0)
+		return 0; /* Nothing to do */
+	for (i = 0; PyImport_Inittab[i].name != NULL; i++)
+		;
+
+	/* Allocate new memory for the combined table */
+	if (our_copy == NULL)
+		p = malloc((i+n+1) * sizeof(struct _inittab));
+	else
+		p = realloc(our_copy, (i+n+1) * sizeof(struct _inittab));
+	if (p == NULL)
+		return -1;
+
+	/* Copy the tables into the new memory */
+	if (our_copy != PyImport_Inittab)
+		memcpy(p, PyImport_Inittab, (i+1) * sizeof(struct _inittab));
+	PyImport_Inittab = our_copy = p;
+	memcpy(p+i, newtab, (n+1) * sizeof(struct _inittab));
+
+	return 0;
+}
+
+/* Shorthand to add a single entry given a name and a function */
+
+int
+PyImport_AppendInittab(name, initfunc)
+	char *name;
+	void (*initfunc)();
+{
+	struct _inittab newtab[2];
+
+	memset(newtab, '\0', sizeof newtab);
+
+	newtab[0].name = name;
+	newtab[0].initfunc = initfunc;
+
+	return PyImport_ExtendInittab(newtab);
+}
