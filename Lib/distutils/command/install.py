@@ -9,7 +9,7 @@ __revision__ = "$Id$"
 import sys, os, string
 from types import *
 from distutils.core import Command, DEBUG
-from distutils import sysconfig
+from distutils.sysconfig import get_config_vars
 from distutils.file_util import write_file
 from distutils.util import convert_path, subst_vars, change_root
 from distutils.errors import DistutilsOptionError
@@ -226,13 +226,16 @@ class install (Command):
         # about needing recursive variable expansion (shudder).
 
         py_version = (string.split(sys.version))[0]
+        prefix = get_config_vars('prefix', 'exec_prefix')
         self.config_vars = {'dist_name': self.distribution.get_name(),
                             'dist_version': self.distribution.get_version(),
                             'dist_fullname': self.distribution.get_fullname(),
                             'py_version': py_version,
                             'py_version_short': py_version[0:3],
-                            'sys_prefix': sysconfig.PREFIX,
-                            'sys_exec_prefix': sysconfig.EXEC_PREFIX,
+                            'sys_prefix': prefix,
+                            'prefix': prefix,
+                            'sys_exec_prefix': exec_prefix,
+                            'exec_prefix': exec_prefix,
                            }
         self.expand_basedirs ()
 
