@@ -3148,7 +3148,7 @@ local bindings to py-newline-and-indent."))
 ;; Helper functions
 (defvar py-parse-state-re
   (concat
-   "^[ \t]*\\(if\\|elif\\|else\\|while\\|def\\|class\\)\\>"
+   "^[ \t]*\\(elif\\|else\\|while\\|def\\|class\\)\\>"
    "\\|"
    "^[^ #\t\n]"))
 
