@@ -183,12 +183,9 @@ either case, it prints a stack backtrace, except when the exception is
 \exception{SystemExit}\withsubitem{(built-in
 exception)}{\ttindex{SystemExit}}.
 
-Exceptions are identified by string objects or class instances.
-Selection of a matching except clause is based on object identity
-(i.e., two different string objects with the same value represent
-different exceptions!)  For string exceptions, the \keyword{except}
-clause must reference the same string object.  For class exceptions,
-the \keyword{except} clause must reference the same class or a base
+Exceptions are identified by class instances.
+Selection of a matching except clause is based on object identity.
+The \keyword{except} clause must reference the same class or a base
 class of it.
 
 When an exception is raised, an object (maybe \code{None}) is passed
