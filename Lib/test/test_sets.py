@@ -132,6 +132,15 @@ class TestBasicOpsTriple(TestBasicOps):
 
 #==============================================================================
 
+class TestSetOfSets(unittest.TestCase):
+    def test_constructor(self):
+        inner = Set([1])
+        outer = Set([inner])
+        element = outer.pop()
+        assert type(element) == ImmutableSet, "Construct set of sets"
+
+#==============================================================================
+
 class TestBinaryOps(unittest.TestCase):
     def setUp(self):
         self.set = Set((2, 4, 6))
@@ -536,6 +545,7 @@ class TestCopyingNested(TestCopying):
 
 def makeAllTests():
     suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(TestSetOfSets))
     suite.addTest(unittest.makeSuite(TestBasicOpsEmpty))
     suite.addTest(unittest.makeSuite(TestBasicOpsSingleton))
     suite.addTest(unittest.makeSuite(TestBasicOpsTuple))
