@@ -195,6 +195,9 @@ class sdist (Command):
             if template_exists:
                 self.read_template ()
 
+            # Prune away the build and source distribution directories
+            self.prune_file_list()
+
             # File list now complete -- sort it so that higher-level files
             # come first
             sortable_files = map (os.path.split, self.files)
@@ -475,14 +478,20 @@ class sdist (Command):
 
         # while loop over lines of template file
 
-        # Prune away the build and source distribution directories
-        build = self.get_finalized_command ('build')
-        self.exclude_pattern (self.files, None, prefix=build.build_base)
-
-        base_dir = self.distribution.get_fullname()
-        self.exclude_pattern (self.files, None, prefix=base_dir)
-
     # read_template ()
+
+
+    def prune_file_list (self):
+        """Prune off branches that might slip into the file list as created
+        by 'read_template()', but really don't belong there: specifically,
+        the build tree (typically "build") and the release tree itself
+        (only an issue if we ran "sdist" previously with --keep-tree, or it
+        aborted).
+        """
+        build = self.get_finalized_command('build')
+        base_dir = self.distribution.get_fullname()
+        self.exclude_pattern (self.files, None, prefix=build.build_base)
+        self.exclude_pattern (self.files, None, prefix=base_dir)
 
 
     def select_pattern (self, files, pattern, anchor=1, prefix=None):
@@ -612,10 +621,6 @@ class sdist (Command):
         # done elsewhere.
         base_dir = self.distribution.get_fullname()
 
-        # Remove any files that match "base_dir" from the fileset -- we
-        # don't want to go distributing the distribution inside itself!
-        self.exclude_pattern (self.files, base_dir + "*")
- 
         self.make_release_tree (base_dir, self.files)
         archive_files = []              # remember names of files we create
         for fmt in self.formats:
