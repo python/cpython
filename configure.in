@@ -2012,6 +2012,17 @@ then
   AC_DEFINE(HAVE_GETC_UNLOCKED)
 fi
 
+# check for readline 2.2
+AC_TRY_CPP([#include <readline/readline.h>],
+have_readline=yes, have_readline=no)
+if test $have_readline = yes
+then
+  AC_EGREP_HEADER([extern int rl_completion_append_character;],
+  [readline/readline.h],
+  AC_DEFINE(HAVE_RL_COMPLETION_APPEND_CHARACTER, 1,
+  [Define if you have readline 2.2]), )
+fi
+
 # check for readline 4.0
 AC_CHECK_LIB(readline, rl_pre_input_hook,
 	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK), , -ltermcap)

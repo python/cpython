@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.288.6.17 
+# From configure.in Revision: 1.288.6.18 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -7307,9 +7307,48 @@ EOF
 
 fi
 
+# check for readline 2.2
+cat > conftest.$ac_ext <<EOF
+#line 7313 "configure"
+#include "confdefs.h"
+#include <readline/readline.h>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:7318: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  have_readline=yes
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  have_readline=no
+fi
+rm -f conftest*
+if test $have_readline = yes
+then
+  cat > conftest.$ac_ext <<EOF
+#line 7334 "configure"
+#include "confdefs.h"
+#include <readline/readline.h>
+EOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  egrep "extern int rl_completion_append_character;" >/dev/null 2>&1; then
+  rm -rf conftest*
+  cat >> confdefs.h <<\EOF
+#define HAVE_RL_COMPLETION_APPEND_CHARACTER 1
+EOF
+
+fi
+rm -f conftest*
+
+fi
+
 # check for readline 4.0
 echo $ac_n "checking for rl_pre_input_hook in -lreadline""... $ac_c" 1>&6
-echo "configure:7313: checking for rl_pre_input_hook in -lreadline" >&5
+echo "configure:7352: checking for rl_pre_input_hook in -lreadline" >&5
 ac_lib_var=`echo readline'_'rl_pre_input_hook | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -7317,7 +7356,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lreadline -ltermcap $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 7321 "configure"
+#line 7360 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -7328,7 +7367,7 @@ int main() {
 rl_pre_input_hook()
 ; return 0; }
 EOF
-if { (eval echo configure:7332: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:7371: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -7354,7 +7393,7 @@ fi
 
 # check for readline 4.2
 echo $ac_n "checking for rl_completion_matches in -lreadline""... $ac_c" 1>&6
-echo "configure:7358: checking for rl_completion_matches in -lreadline" >&5
+echo "configure:7397: checking for rl_completion_matches in -lreadline" >&5
 ac_lib_var=`echo readline'_'rl_completion_matches | sed 'y%./+-%__p_%'`
 if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
@@ -7362,7 +7401,7 @@ else
   ac_save_LIBS="$LIBS"
 LIBS="-lreadline -ltermcap $LIBS"
 cat > conftest.$ac_ext <<EOF
-#line 7366 "configure"
+#line 7405 "configure"
 #include "confdefs.h"
 /* Override any gcc2 internal prototype to avoid an error.  */
 /* We use char because int might match the return type of a gcc2
@@ -7373,7 +7412,7 @@ int main() {
 rl_completion_matches()
 ; return 0; }
 EOF
-if { (eval echo configure:7377: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+if { (eval echo configure:7416: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
   rm -rf conftest*
   eval "ac_cv_lib_$ac_lib_var=yes"
 else
@@ -7398,7 +7437,7 @@ fi
 
 
 echo $ac_n "checking for broken nice()""... $ac_c" 1>&6
-echo "configure:7402: checking for broken nice()" >&5
+echo "configure:7441: checking for broken nice()" >&5
 if eval "test \"`echo '$''{'ac_cv_broken_nice'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
@@ -7407,7 +7446,7 @@ if test "$cross_compiling" = yes; then
   ac_cv_broken_nice=no
 else
   cat > conftest.$ac_ext <<EOF
-#line 7411 "configure"
+#line 7450 "configure"
 #include "confdefs.h"
 
 int main()
@@ -7419,7 +7458,7 @@ int main()
 }
 
 EOF
-if { (eval echo configure:7423: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:7462: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   ac_cv_broken_nice=yes
 else
@@ -7444,12 +7483,12 @@ fi
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement
 echo $ac_n "checking whether mvwdelch is an expression""... $ac_c" 1>&6
-echo "configure:7448: checking whether mvwdelch is an expression" >&5
+echo "configure:7487: checking whether mvwdelch is an expression" >&5
 if eval "test \"`echo '$''{'ac_cv_mvwdelch_is_expression'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 7453 "configure"
+#line 7492 "configure"
 #include "confdefs.h"
 #include <curses.h>
 int main() {
@@ -7459,7 +7498,7 @@ int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:7463: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:7502: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_mvwdelch_is_expression=yes
 else
@@ -7482,12 +7521,12 @@ EOF
 fi
 
 echo $ac_n "checking whether WINDOW has _flags""... $ac_c" 1>&6
-echo "configure:7486: checking whether WINDOW has _flags" >&5
+echo "configure:7525: checking whether WINDOW has _flags" >&5
 if eval "test \"`echo '$''{'ac_cv_window_has_flags'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 7491 "configure"
+#line 7530 "configure"
 #include "confdefs.h"
 #include <curses.h>
 int main() {
@@ -7497,7 +7536,7 @@ int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:7501: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:7540: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   ac_cv_window_has_flags=yes
 else
@@ -7528,12 +7567,12 @@ cat >> confdefs.h <<\EOF
 #endif
 EOF
 echo $ac_n "checking for socklen_t""... $ac_c" 1>&6
-echo "configure:7532: checking for socklen_t" >&5
+echo "configure:7571: checking for socklen_t" >&5
 if eval "test \"`echo '$''{'ac_cv_type_socklen_t'+set}'`\" = set"; then
   echo $ac_n "(cached) $ac_c" 1>&6
 else
   cat > conftest.$ac_ext <<EOF
-#line 7537 "configure"
+#line 7576 "configure"
 #include "confdefs.h"
 #include <sys/types.h>
 #if STDC_HEADERS
@@ -7589,7 +7628,7 @@ done
 
 SRCDIRS="Parser Grammar Objects Python Modules"
 echo $ac_n "checking for build directories""... $ac_c" 1>&6
-echo "configure:7593: checking for build directories" >&5
+echo "configure:7632: checking for build directories" >&5
 for dir in $SRCDIRS; do
     if test ! -d $dir; then
         mkdir $dir
