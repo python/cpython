@@ -535,7 +535,7 @@ altbininstall:	$(PYTHON)
 	else	true; \
 	fi
 	if test -f "$(DLLLIBRARY)"; then \
-		$(INSTALL_DATA) $(DLLLIBRARY) $(BINDIR); \
+		$(INSTALL_SHARED) $(DLLLIBRARY) $(BINDIR); \
 	else	true; \
 	fi
 
