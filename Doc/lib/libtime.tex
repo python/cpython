@@ -20,35 +20,35 @@ look at \code{gmtime(0)}.%
 \index{epoch}
 
 \item
-The functions in this module don't handle dates and times before the
+The functions in this module do not handle dates and times before the
 epoch or far in the future.  The cut-off point in the future is
-determined by the C library; for \UNIX{}, it is typically in 2038.%
+determined by the \C{} library; for \UNIX{}, it is typically in 2038.%
 \index{Year 2038}
 
 \item
-\strong{Year 2000 (Y2K) issues}: Python depends on the platform's C library,
-which generally doesn't have year 2000 issues, since all dates and
-times are represented internally as seconds since the epoch.
-Functions accepting a time tuple (see below) generally require a
-4-digit year.  For backward compatibility, 2-digit years are supported
-if the module variable \code{accept2dyear} is a non-zero integer; this
-variable is initialized to \code{1} unless the environment variable
-\code{PYTHONY2K} is set to a non-empty string, in which case it is
-initialized to \code{0}.  Thus, you can set \code{PYTHONY2K} in the
-environment to \code{x} to require 4-digit years for all year input.
-When 2-digit years are accepted, they are converted according to the
-POSIX or X/Open standard: values 69-99 are mapped to 1969-1999, and
-values 0--68 are mapped to 2000--2068.  Values 100--1899 are always
-illegal.  Note that this is new as of Python 1.5.2(a2); earlier
-versions, up to Python 1.5.1 and 1.5.2a1, would add 1900 to year
-values below 1900.%
+\strong{Year 2000 (Y2K) issues}: Python depends on the platform's \C{}
+library, which generally doesn't have year 2000 issues, since all
+dates and times are represented internally as seconds since the
+epoch.  Functions accepting a time tuple (see below) generally require
+a 4-digit year.  For backward compatibility, 2-digit years are
+supported if the module variable \code{accept2dyear} is a non-zero
+integer; this variable is initialized to \code{1} unless the
+environment variable \envvar{PYTHONY2K} is set to a non-empty string,
+in which case it is initialized to \code{0}.  Thus, you can set
+\envvar{PYTHONY2K} in the environment to \code{x} to require 4-digit
+years for all year input.  When 2-digit years are accepted, they are
+converted according to the \POSIX{} or X/Open standard: values 69-99
+are mapped to 1969-1999, and values 0--68 are mapped to 2000--2068.
+Values 100--1899 are always illegal.  Note that this is new as of
+Python 1.5.2(a2); earlier versions, up to Python 1.5.1 and 1.5.2a1,
+would add 1900 to year values below 1900.%
 \index{Year 2000}%
 \index{Y2K}
 
 \item
 UTC is Coordinated Universal Time (formerly known as Greenwich Mean
-Time).  The acronym UTC is not a mistake but a compromise between
-English and French.%
+Time, or GMT).  The acronym UTC is not a mistake but a compromise
+between English and French.%
 \index{UTC}%
 \index{Coordinated Universal Time}%
 \index{Greenwich Mean Time}
@@ -103,9 +103,9 @@ Only use this if \code{daylight} is nonzero.
 \end{datadesc}
 
 \begin{funcdesc}{asctime}{tuple}
-Convert a tuple representing a time as returned by \code{gmtime()} or
-\code{localtime()} to a 24-character string of the following form:
-\code{'Sun Jun 20 23:21:05 1993'}.  Note: unlike the C function of
+Convert a tuple representing a time as returned by \function{gmtime()}
+or \function{localtime()} to a 24-character string of the following form:
+\code{'Sun Jun 20 23:21:05 1993'}.  Note: unlike the \C{} function of
 the same name, there is no trailing newline.
 \end{funcdesc}
 
@@ -139,13 +139,12 @@ set to \code{1} when DST applies to the given time.
 \end{funcdesc}
 
 \begin{funcdesc}{mktime}{tuple}
-This is the inverse function of \code{localtime}.  Its argument is the
-full 9-tuple (since the dst flag is needed --- pass \code{-1} as the
-dst flag if it is unknown) which expresses the time
-in \emph{local} time, not UTC.  It returns a floating
-point number, for compatibility with \function{time()}.  If the input
-value cannot be represented as a valid time, \exception{OverflowError}
-is raised.
+This is the inverse function of \function{localtime()}.  Its argument
+is the full 9-tuple (since the dst flag is needed --- pass \code{-1}
+as the dst flag if it is unknown) which expresses the time in
+\emph{local} time, not UTC.  It returns a floating point number, for
+compatibility with \function{time()}.  If the input value cannot be
+represented as a valid time, \exception{OverflowError} is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{sleep}{secs}
@@ -154,11 +153,14 @@ be a floating point number to indicate a more precise sleep time.
 \end{funcdesc}
 
 \begin{funcdesc}{strftime}{format, tuple}
-Convert a tuple representing a time as returned by \code{gmtime()} or
-\code{localtime()} to a string as specified by the format argument.
+Convert a tuple representing a time as returned by \function{gmtime()}
+or \function{localtime()} to a string as specified by the \var{format}
+argument.  \var{format} must be a string.
 
-The following directives, shown without the optional field width and
-precision specification, are replaced by the indicated characters:
+The following directives can be embedded in the \var{format} string.
+They are shown without the optional field width and precision
+specification, and are replaced by the indicated characters in the
+\function{strftime()} result:
 
 \begin{tableii}{c|p{24em}}{code}{Directive}{Meaning}
   \lineii{\%a}{Locale's abbreviated weekday name.}
@@ -190,25 +192,25 @@ precision specification, are replaced by the indicated characters:
 \end{tableii}
 
 Additional directives may be supported on certain platforms, but
-only the ones listed here have a meaning standardized by ANSI C.
+only the ones listed here have a meaning standardized by ANSI \C{}.
 
 On some platforms, an optional field width and precision
-specification can immediately follow the initial \code{\%} of a
+specification can immediately follow the initial \character{\%} of a
 directive in the following order; this is also not portable.
 The field width is normally 2 except for \code{\%j} where it is 3.
-
 \end{funcdesc}
 
 \begin{funcdesc}{strptime}{string\optional{, format}}
 Parse a string representing a time according to a format.  The return 
-value is a tuple as returned by \code{gmtime()} or \code{localtime()}.
-The format uses the same directives as those used by
-\code{strftime()}; it defaults to \code{"\%a \%b \%d \%H:\%M:\%S \%Y"}
-which matches the formatting returned by \code{ctime()}.  The same
-platform caveats apply; see the local Unix documentation for
-restrictions or additional supported directives.  This function may
-not be defined on all platforms.
-
+value is a tuple as returned by \function{gmtime()} or
+\function{localtime()}.  The \var{format} parameter uses the same
+directives as those used by \function{strftime()}; it defaults to
+\code{"\%a \%b \%d \%H:\%M:\%S \%Y"} which matches the formatting
+returned by \function{ctime()}.  The same platform caveats apply; see
+the local \UNIX{} documentation for restrictions or additional
+supported directives.  If \var{string} cannot be parsed according to
+\var{format}, \exception{ValueError} is raised.  This function may not
+be defined on all platforms.
 \end{funcdesc}
 
 \begin{funcdesc}{time}{}
