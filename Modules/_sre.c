@@ -58,9 +58,18 @@ char copyright[] = " SRE 0.9.8 Copyright (c) 1997-2000 by Secret Labs AB ";
 /* -------------------------------------------------------------------- */
 /* optional features */
 
-/* prevent run-away recursion (bad patterns on long strings) */
+/* prevent run-away recursion (bad patterns on long strings)
+   Require a smaller recursion limit for a number of 64-bit platforms
+   to prevent stack overflow:
+    Win64 - MS_WIN64, Linux64 - __LP64__, Monterey (64-bit AIX) - _LP64
+   XXX Or maybe this should be defined for all SIZEOF_VOIDP>4 platforms?
+*/
 #if !defined(USE_STACKCHECK)
-#define USE_RECURSION_LIMIT 10000
+#	if defined(MS_WIN64) || defined(__LP64__) || defined(_LP64)
+#		define USE_RECURSION_LIMIT 7500
+#	else
+#		define USE_RECURSION_LIMIT 10000
+#	endif
 #endif
 
 /* enables fast searching */
