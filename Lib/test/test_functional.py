@@ -1,6 +1,7 @@
 import functional
 import unittest
 from test import test_support
+from weakref import proxy
 
 @staticmethod
 def PythonPartial(func, *args, **keywords):
@@ -115,6 +116,22 @@ class TestPartial(unittest.TestCase):
         self.assertRaises(ZeroDivisionError, self.thetype(f, 1), 0)
         self.assertRaises(ZeroDivisionError, self.thetype(f), 1, 0)
         self.assertRaises(ZeroDivisionError, self.thetype(f, y=0), 1)
+
+    def test_attributes(self):
+        p = self.thetype(hex)
+        try:
+            del p.__dict__
+        except TypeError:
+            pass
+        else:
+            self.fail('partial object allowed __dict__ to be deleted')
+
+    def test_weakref(self):
+        f = self.thetype(int, base=16)
+        p = proxy(f)
+        self.assertEqual(f.func, p.func)
+        f = None
+        self.assertRaises(ReferenceError, getattr, p, 'func')
 
 
 class PartialSubclass(functional.partial):
