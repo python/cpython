@@ -72,8 +72,6 @@ class install_lib (Command):
                     skip_msg = "byte-compilation of %s skipped" % f
                     self.make_file (f, out_fn, compile, (f,),
                                     compile_msg, skip_msg)
-                                    
-                                    
     # run ()
 
 
@@ -94,6 +92,14 @@ class install_lib (Command):
         return outputs
 
     # _mutate_outputs ()
+
+    def _bytecode_filenames (self, py_filenames):
+        bytecode_files = []
+        for py_file in py_filenames:
+            bytecode = py_file + (__debug__ and "c" or "o")
+            bytecode_files.append(bytecode)
+
+        return bytecode_files
         
     def get_outputs (self):
         """Return the list of files that would be installed if this command
@@ -104,14 +110,17 @@ class install_lib (Command):
             self._mutate_outputs (self.distribution.has_pure_modules(),
                                   'build_py', 'build_lib',
                                   self.install_dir)
-
+        if self.compile:
+            bytecode_outputs = self._bytecode_filenames(pure_outputs)
+        else:
+            bytecode_outputs = []
 
         ext_outputs = \
             self._mutate_outputs (self.distribution.has_ext_modules(),
                                   'build_ext', 'build_lib',
                                   self.install_dir)
 
-        return pure_outputs + ext_outputs
+        return pure_outputs + bytecode_outputs + ext_outputs
 
     # get_outputs ()
 
