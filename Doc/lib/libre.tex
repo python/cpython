@@ -67,11 +67,8 @@ characters either stand for classes of ordinary characters, or affect
 how the regular expressions around them are interpreted.
 
 The special characters are:
-% define these since they're used twice:
-\newcommand{\MyLeftMargin}{0.7in}
-\newcommand{\MyLabelWidth}{0.65in}
 
-\begin{list}{}{\leftmargin \MyLeftMargin \labelwidth \MyLabelWidth}
+\begin{list}{}{\leftmargin 0.7in \labelwidth 0.65in}
 
 \item[\character{.}] (Dot.)  In the default mode, this matches any
 character except a newline.  If the \constant{DOTALL} flag has been
@@ -144,8 +141,8 @@ characters are not active inside sets.  For example, \regexp{[akm\$]}
 will match any of the characters \character{a}, \character{k},
 \character{m}, or \character{\$}; \regexp{[a-z]}
 will match any lowercase letter, and \code{[a-zA-Z0-9]} matches any
-letter or digit.  Character classes such as \code{\e w} or \code {\e
-S} (defined below) are also acceptable inside a range.  If you want to
+letter or digit.  Character classes such as \code{\e w} or \code{\e S}
+(defined below) are also acceptable inside a range.  If you want to
 include a \character{]} or a \character{-} inside a set, precede it with a
 backslash, or place it as the first character.  The 
 pattern \regexp{[]]} will match \code{']'}, for example.  
@@ -227,7 +224,7 @@ list below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.  For example,
 \regexp{\e\$} matches the character \character{\$}.
 
-\begin{list}{}{\leftmargin \MyLeftMargin \labelwidth \MyLabelWidth}
+\begin{list}{}{\leftmargin 0.7in \labelwidth 0.65in}
 
 %
 \item[\code{\e \var{number}}] Matches the contents of the group of the
