@@ -214,6 +214,7 @@ PYTHON_OBJS=	\
 		Python/marshal.o \
 		Python/modsupport.o \
 		Python/mystrtoul.o \
+		Python/mysnprintf.o \
 		Python/pyfpe.o \
 		Python/pystate.o \
 		Python/pythonrun.o \

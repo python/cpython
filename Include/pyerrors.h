@@ -106,6 +106,22 @@ extern DL_IMPORT(void) PyErr_SetInterrupt(void);
 extern DL_IMPORT(void) PyErr_SyntaxLocation(char *, int);
 extern DL_IMPORT(PyObject *) PyErr_ProgramText(char *, int);
 	
+/* These APIs aren't really part of the error implementation, but
+   often needed to format error messages; the native C lib APIs are
+   not available on all platforms, which is why we provide emulations
+   for those platforms in Python/mysnprintf.c */
+#if defined(MS_WIN32) && !defined(HAVE_SNPRINTF)
+# define HAVE_SNPRINTF
+# define snprintf _snprintf
+# define vsnprintf _vsnprintf
+#endif
+#ifndef HAVE_SNPRINTF
+extern DL_IMPORT(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...);
+extern DL_IMPORT(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va);
+#else
+# define PyOS_vsnprintf	vsnprintf
+# define PyOS_snprintf	snprintf
+#endif
 
 #ifdef __cplusplus
 }

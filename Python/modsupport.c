@@ -26,8 +26,8 @@ char *_Py_PackageContext = NULL;
 */
 
 static char api_version_warning[] =
-"WARNING: Python C API version mismatch for module %s:\n\
-  This Python has API version %d, module %s has version %d.\n";
+"Python C API version mismatch for module %.100s:\
+ This Python has API version %d, module %.100s has version %d.";
 
 PyObject *
 Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
@@ -37,9 +37,15 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 	PyMethodDef *ml;
 	if (!Py_IsInitialized())
 	    Py_FatalError("Interpreter not initialized (version mismatch?)");
-	if (module_api_version != PYTHON_API_VERSION)
-		fprintf(stderr, api_version_warning,
-			name, PYTHON_API_VERSION, name, module_api_version);
+	if (module_api_version != PYTHON_API_VERSION) {
+		char message[512];
+		PyOS_snprintf(message, sizeof(message), 
+			      api_version_warning, name, 
+			      PYTHON_API_VERSION, name, 
+			      module_api_version);
+		if (PyErr_Warn(PyExc_RuntimeWarning, message)) 
+			return NULL;
+	}
 	if (_Py_PackageContext != NULL) {
 		char *p = strrchr(_Py_PackageContext, '.');
 		if (p != NULL && strcmp(name, p+1) == 0) {
