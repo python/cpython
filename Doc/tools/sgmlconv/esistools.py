@@ -73,8 +73,11 @@ class ExtendedEsisBuilder(xml.dom.esis_builder.EsisBuilder):
                 return
             elif event == 'e':
                 self.__is_empty = 1
+            elif event == '&':
+                eref = self.document.createEntityReference(text)
+                self.push(eref)
             else:
                 sys.stderr.write('Unknown event: %s\n' % line)
-        
+
     def get_empties(self):
         return self.__empties.keys()
