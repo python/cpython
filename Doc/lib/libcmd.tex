@@ -11,7 +11,8 @@ line-oriented command interpreters.  These are often useful for
 test harnesses, administrative tools, and prototypes that will
 later be wrapped in a more sophisticated interface.
 
-\begin{classdesc}{Cmd}{\optional{completekey},\optional{stdin},\optional{stdout}}
+\begin{classdesc}{Cmd}{\optional{completekey\optional{,
+                       stdin\optional{, stdout}}}}
 A \class{Cmd} instance or subclass instance is a line-oriented
 interpreter framework.  There is no good reason to instantiate
 \class{Cmd} itself; rather, it's useful as a superclass of an
@@ -20,7 +21,7 @@ interpreter class you define yourself in order to inherit
 
 The optional argument \var{completekey} is the \refmodule{readline} name
 of a completion key; it defaults to \kbd{Tab}. If \var{completekey} is
-not \code{None} and \module{readline} is available, command completion
+not \code{None} and \refmodule{readline} is available, command completion
 is done automatically.
 
 The optional arguments \var{stdin} and \var{stdout} specify the 
@@ -44,7 +45,7 @@ remainder of the line as argument.
 The optional argument is a banner or intro string to be issued before the
 first prompt (this overrides the \member{intro} class member).
 
-If the \module{readline} module is loaded, input will automatically
+If the \refmodule{readline} module is loaded, input will automatically
 inherit \program{bash}-like history-list editing (e.g. \kbd{Control-P}
 scrolls back to the last command, \kbd{Control-N} forward to the next
 one, \kbd{Control-F} moves the cursor to the right non-destructively,
@@ -58,6 +59,10 @@ a line beginning with the character \character{?} is dispatched to
 the method \method{do_help()}.  As another special case, a line
 beginning with the character \character{!} is dispatched to the
 method \method{do_shell()} (if such a method is defined).
+
+This method will return when the \method{postcmd()} method returns a
+true value.  The \var{stop} argument to \method{postcmd()} is the
+return value from the command's corresponding \method{do_*()} method.
 
 If completion is enabled, completing commands will be done
 automatically, and completing of commands args is done by calling
@@ -82,7 +87,10 @@ Interpret the argument as though it had been typed in response to the
 prompt.  This may be overridden, but should not normally need to be;
 see the \method{precmd()} and \method{postcmd()} methods for useful
 execution hooks.  The return value is a flag indicating whether
-interpretation of commands by the interpreter should stop.
+interpretation of commands by the interpreter should stop.  If there
+is a \method{do_*()} method for the command \var{str}, the return
+value of that method is returned, otherwise the return value from the
+\method{default()} method is returned.
 \end{methoddesc}
 
 \begin{methoddesc}{emptyline}{}
@@ -184,7 +192,7 @@ A flag, defaulting to true.  If true, \method{cmdloop()} uses
 \function{raw_input()} to display a prompt and read the next command;
 if false, \method{sys.stdout.write()} and
 \method{sys.stdin.readline()} are used. (This means that by
-importing \module{readline}, on systems that support it, the
+importing \refmodule{readline}, on systems that support it, the
 interpreter will automatically support Emacs-like line editing 
 and command-history keystrokes.)
 \end{memberdesc}
