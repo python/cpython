@@ -1118,6 +1118,20 @@ to internationalize Optik's help and error messages.  Help messages
 for options can now include the string \code{'\%default'}, which will
 be replaced by the option's default value.
 
+\item A new \function{urandom(\var{n})} function 
+was added to the \module{os} module, providing access to
+platform-specific sources of randomness such as
+\filename{/dev/urandom} on Linux or the Windows CryptoAPI.  The
+function returns a string containing \var{n} bytes of random data.
+(Contributed by Trevor Perrin.)
+
+\item Another new function: \function{os.path.lexists(\var{path})} 
+returns true if the file specified by \var{path} exists, whether or
+not it's a symbolic link.  This differs from the existing
+\function{os.path.exists(\var{path})} function, which returns false if 
+\var{path} is a symlink that points to a destination that doesn't exist.
+(Contributed by Beni Cherniavsky.)
+
 \item A new \function{getsid()} function was added to the
 \module{posix} module that underlies the \module{os} module.
 (Contributed by J. Raynor.)
