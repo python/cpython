@@ -18,6 +18,7 @@ ulprog = regex.compile('^[ \t]*[Xv!_][Xv!_ \t]*\n')
 # Basic Man Page class -- does not disable editing
 class EditableManPage(ScrolledText):
 
+	# Initialize instance
 	def __init__(self, master=None, cnf={}):
 		# Initialize base class
 		ScrolledText.__init__(self, master, cnf)
@@ -27,37 +28,77 @@ class EditableManPage(ScrolledText):
 		self.tag_config('!', {'font': ITALICFONT})
 		self.tag_config('_', {'underline': 1})
 
-	def parsefile(self, fp):
-		if hasattr(self, 'buffer'):
-			raise RuntimeError, 'Still busy parsing!'
+		# Set state to idle
+		self.fp = None
+		self.lineno = 0
+
+	# Test whether we are busy parsing a file
+	def busy(self):
+		return self.fp != None
+
+	# Ensure we're not busy
+	def kill(self):
+		if self.busy():
+			self._endparser()
+
+	# Parse a file, in the background
+	def asyncparsefile(self, fp):
+		self._startparser(fp)
+		self.tk.createfilehandler(fp, tkinter.READABLE,
+					  self._filehandler)
+
+	parsefile = asyncparsefile	# Alias
+
+	# I/O handler used by background parsing
+	def _filehandler(self, fp, mask):
+		nextline = self.fp.readline()
+		if not nextline:
+			self._endparser()
+			return
+		self._parseline(nextline)
+
+	# Parse a file, now (cannot be aborted)
+	def syncparsefile(self, fp):
 		from select import select
 		def avail(fp=fp, tout=0.0, select=select):
 			return select([fp], [], [], tout)[0]
 		height = self.getint(self['height'])
-		self.startparser()
+		self._startparser(fp)
 		while 1:
-			if self.lineno < height or \
-			   self.lineno%10 == 0 or not avail():
-				self.update()
 			nextline = fp.readline()
 			if not nextline:
 				break
-			self.parseline(nextline)
-		self.endparser()
-		self.update()
+			self._parseline(nextline)
+		self._endparser()
 
-	def startparser(self):
+	# Initialize parsing from a particular file -- must not be busy
+	def _startparser(self, fp):
+		if self.busy():
+			raise RuntimeError, 'startparser: still busy'
+		fp.fileno()		# Test for file-ness
+		self.fp = fp
 		self.lineno = 0
 		self.ok = 0
 		self.empty = 0
 		self.buffer = None
+		self.delete('1.0', 'end')
 
-	def endparser(self):
+	# End parsing -- must be busy, need not be at EOF
+	def _endparser(self):
+		if not self.busy():
+			raise RuntimeError, 'endparser: not busy'
 		if self.buffer:
-			self.parseline('')
+			self._parseline('')
+		try:
+			self.tk.deletefilehandler(self.fp)
+		except TclError, msg:
+			pass
+		self.fp.close()
+		self.fp = None
 		del self.ok, self.empty, self.buffer
 
-	def parseline(self, nextline):
+	# Parse a single line
+	def _parseline(self, nextline):
 		if not self.buffer:
 			# Save this line -- we need one line read-ahead
 			self.buffer = nextline
@@ -90,12 +131,12 @@ class EditableManPage(ScrolledText):
 		if self.empty:
 			# One or more previous lines were empty
 			# -- insert one blank line in the text
-			self.insert_prop('\n')
+			self._insert_prop('\n')
 			self.lineno = self.lineno + 1
 			self.empty = 0
 		if not propline:
 			# No properties
-			self.insert_prop(textline)
+			self._insert_prop(textline)
 			self.lineno = self.lineno + 1
 			return
 		# Search for properties
@@ -104,25 +145,26 @@ class EditableManPage(ScrolledText):
 		for i in range(min(len(propline), len(textline))):
 			if propline[i] != p:
 				if j < i:
-					self.insert_prop(textline[j:i], p)
+					self._insert_prop(textline[j:i], p)
 					j = i
 				p = propline[i]
-		self.insert_prop(textline[j:])
+		self._insert_prop(textline[j:])
 		self.lineno = self.lineno + 1
 
-	def insert_prop(self, str, prop = ' '):
+	# Insert a string at the end, with at most one property (tag)
+	def _insert_prop(self, str, prop = ' '):
 		here = self.index('end')
-		self.insert('end', str[0])
+		self.insert('end', str)
 		tags = self.tag_names(here)
 		for tag in tags:
-			self.tag_remove(tag, here)
+			self.tag_remove(tag, here, 'end')
 		if prop != ' ':
-			self.tag_add(prop, here)
-		self.insert('end', str[1:])
+			self.tag_add(prop, here, 'end')
 
 # Readonly Man Page class -- disables editing, otherwise the same
 class ReadonlyManPage(EditableManPage):
 
+	# Initialize instance
 	def __init__(self, master=None, cnf={}):
 		# Initialize base class
 		EditableManPage.__init__(self, master, cnf)
@@ -136,6 +178,7 @@ class ReadonlyManPage(EditableManPage):
 		self.bind('<Control-d>', self.modify_cb)
 		self.bind('<Control-v>', self.modify_cb)
 
+	# You could override this to ring the bell, etc.
 	def modify_cb(self, e):
 		pass
 
