@@ -735,7 +735,7 @@ storage. The caller is responsible for calling
 object) {[const char *encoding, char **buffer, int *buffer_length]}]
 This variant on \samp{s\#} is used for encoding Unicode and objects
 convertible to Unicode into a character buffer. It reads one C
-variable and stores into two C variables, the first one a pointer to
+variable and stores into three C variables, the first one a pointer to
 an encoding name string (\var{encoding}), the second a pointer to a
 pointer to a character buffer (\var{**buffer}, the buffer used for
 storing the encoded data) and the third one a pointer to an integer
@@ -886,8 +886,8 @@ as the function name in error messages (the ``associated value'' of
 the exception that \cfunction{PyArg_ParseTuple()} raises).
 
 \item[\samp{;}]
-The list of format units ends here; the string after the colon is used
-as the error message \emph{instead} of the default error message.
+The list of format units ends here; the string after the semicolon is
+used as the error message \emph{instead} of the default error message.
 Clearly, \samp{:} and \samp{;} mutually exclude each other.
 
 \end{description}
@@ -1100,15 +1100,6 @@ Unicode object.  If the Unicode buffer pointer is \NULL,
 Convert a Unicode (UCS-2) data buffer and its length to a Python
 Unicode object.   If the Unicode buffer pointer is \NULL, the length
 is ignored and \code{None} is returned.
-
-\item[\samp{u} (Unicode string) {[Py_UNICODE *]}]
-Convert a null-terminated buffer of Unicode (UCS-2) data to a Python Unicode 
-object. If the Unicode buffer pointer is \NULL{}, \code{None} is returned.
-
-\item[\samp{u\#} (Unicode string) {[Py_UNICODE *, int]}]
-Convert a Unicode (UCS-2) data buffer and its length to a Python Unicode 
-object. If the Unicode buffer pointer is \NULL{}, the length is ignored and 
-\code{None} is returned.
 
 \item[\samp{i} (integer) {[int]}]
 Convert a plain C \ctype{int} to a Python integer object.
