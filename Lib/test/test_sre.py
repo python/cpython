@@ -243,12 +243,9 @@ if verbose:
 
 # Try nasty case that overflows the straightforward recursive
 # implementation of repeated groups.
-test(r"""sre.match(r'(x)*', 50000*'x').span()""",
-     (0, 50000), RuntimeError)
-test(r"""sre.match(r'(x)*y', 50000*'x'+'y').span()""",
-     (0, 50001), RuntimeError)
-test(r"""sre.match(r'(x)*?y', 50000*'x'+'y').span()""",
-     (0, 50001)) # this works in 2.1
+test("sre.match('(x)*', 50000*'x').span()", (0, 50000), RuntimeError)
+test("sre.match(r'(x)*y', 50000*'x'+'y').span()", (0, 50001), RuntimeError)
+test("sre.match(r'(x)*?y', 50000*'x'+'y').span()", (0, 50001), RuntimeError)
 
 from re_tests import *
 

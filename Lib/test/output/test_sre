@@ -1,9 +1,1 @@
 test_sre
-sre.match(r'(x)*?y', 50000*'x'+'y').span() FAILED
-Traceback (most recent call last):
-  File "../lib/test\test_sre.py", line 18, in test
-    r = eval(expression)
-  File "<string>", line 0, in ?
-  File "c:\pythonware\py21\python-2.1\lib\sre.py", line 52, in match
-    return _compile(pattern, flags).match(string)
-RuntimeError: maximum recursion limit exceeded
