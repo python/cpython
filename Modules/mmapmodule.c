@@ -16,11 +16,6 @@
  / ftp://squirl.nightmare.com/pub/python/python-ext.
 */
 
-#ifdef __linux__
-#define _GNU_SOURCE  /* So we can get MREMAP_MAYMOVE defined when
-		        sys/mman.h is included */
-#endif
-
 #include <Python.h>
 
 #ifndef MS_WIN32
