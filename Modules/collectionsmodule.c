@@ -109,7 +109,7 @@ deque_pop(dequeobject *deque, PyObject *unused)
 	block *prevblock;
 
 	if (deque->len == 0) {
-		PyErr_SetString(PyExc_LookupError, "pop from an emtpy deque");
+		PyErr_SetString(PyExc_LookupError, "pop from an empty deque");
 		return NULL;
 	}
 	item = deque->rightblock->data[deque->rightindex];
@@ -144,7 +144,7 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 	block *prevblock;
 
 	if (deque->len == 0) {
-		PyErr_SetString(PyExc_LookupError, "pop from an emtpy deque");
+		PyErr_SetString(PyExc_LookupError, "pop from an empty deque");
 		return NULL;
 	}
 	item = deque->leftblock->data[deque->leftindex];
