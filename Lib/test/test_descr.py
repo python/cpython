@@ -392,6 +392,7 @@ def metaclass():
     verify(C.__spam__ == 1)
     c = C()
     verify(c.__spam__ == 1)
+
     class _instance(object):
         pass
     class M2(object):
@@ -419,6 +420,96 @@ def metaclass():
     verify('spam' in C.dict)
     c = C()
     verify(c.spam() == 42)
+
+    # More metaclass examples
+
+    class autosuper(type):
+        # Automatically add __super to the class
+        # This trick only works for dynamic classes
+        # so we force __dynamic__ = 1
+        def __new__(metaclass, name, bases, dict):
+            # XXX Should check that name isn't already a base class name
+            dict["__dynamic__"] = 1
+            cls = super(autosuper, metaclass).__new__(metaclass,
+                                                      name, bases, dict)
+            while name[:1] == "_":
+                name = name[1:]
+            while name[-1:] == "_":
+                name = name[:-1]
+            if name:
+                name = "_%s__super" % name
+            else:
+                name = "__super"
+            setattr(cls, name, super(cls))
+            return cls
+    class A:
+        __metaclass__ = autosuper
+        def meth(self):
+            return "A"
+    class B(A):
+        def meth(self):
+            return "B" + self.__super.meth()
+    class C(A):
+        def meth(self):
+            return "C" + self.__super.meth()
+    class D(C, B):
+        def meth(self):
+            return "D" + self.__super.meth()
+    verify(D().meth() == "DCBA")
+    class E(B, C):
+        def meth(self):
+            return "E" + self.__super.meth()
+    verify(E().meth() == "EBCA")
+
+    class autogetset(type):
+        # Automatically create getset attributes when methods
+        # named _get_x and/or _set_x are found
+        def __new__(metaclass, name, bases, dict):
+            hits = {}
+            for key, val in dict.iteritems():
+                if key.startswith("_get_"):
+                    key = key[5:]
+                    get, set = hits.get(key, (None, None))
+                    get = val
+                    hits[key] = get, set
+                elif key.startswith("_set_"):
+                    key = key[5:]
+                    get, set = hits.get(key, (None, None))
+                    set = val
+                    hits[key] = get, set
+            for key, (get, set) in hits.iteritems():
+                dict[key] = getset(get, set)
+            return super(autogetset, metaclass).__new__(metaclass,
+                                                        name, bases, dict)
+    class A:
+        __metaclass__ = autogetset
+        def _get_x(self):
+            return -self.__x
+        def _set_x(self, x):
+            self.__x = -x
+    a = A()
+    verify(not hasattr(a, "x"))
+    a.x = 12
+    verify(a.x == 12)
+    verify(a._A__x == -12)
+
+    class multimetaclass(autogetset, autosuper):
+        # Merge of multiple cooperating metaclasses
+        pass
+    class A:
+        __metaclass__ = multimetaclass
+        def _get_x(self):
+            return "A"
+    class B(A):
+        def _get_x(self):
+            return "B" + self.__super._get_x()
+    class C(A):
+        def _get_x(self):
+            return "C" + self.__super._get_x()
+    class D(C, B):
+        def _get_x(self):
+            return "D" + self.__super._get_x()
+    verify(D().x == "DCBA")
 
 def pymods():
     if verbose: print "Testing Python subclass of module..."
@@ -1192,6 +1283,19 @@ def inherits():
         t = s.rev()
         u = t.rev()
         verify(u == s)
+
+    class madunicode(unicode):
+        _rev = None
+        def rev(self):
+            if self._rev is not None:
+                return self._rev
+            L = list(self)
+            L.reverse()
+            self._rev = self.__class__(u"".join(L))
+            return self._rev
+    u = madunicode("ABCDEF")
+    verify(u.rev() == madunicode(u"FEDCBA"))
+    verify(u.rev().rev() == madunicode(u"ABCDEF"))
 
 def all():
     lists()
