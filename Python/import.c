@@ -779,7 +779,6 @@ load_package(name, pathname)
 	if (fp != NULL)
 		fclose(fp);
   cleanup:
-	Py_XINCREF(m);
 	Py_XDECREF(path);
 	Py_XDECREF(file);
 	return m;
@@ -1712,8 +1711,8 @@ import_submodule(mod, subname, fullname)
 		}
 
 		buf[0] = '\0';
-		fdp = find_module(subname, path,
-				  buf, MAXPATHLEN+1, &fp);
+		fdp = find_module(subname, path, buf, MAXPATHLEN+1, &fp);
+		Py_XDECREF(path);
 		if (fdp == NULL) {
 			if (!PyErr_ExceptionMatches(PyExc_ImportError))
 				return NULL;
