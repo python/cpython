@@ -1047,26 +1047,79 @@ dict_update(register dictobject *mp, PyObject *args)
 	register int i;
 	dictobject *other;
 	dictentry *entry;
-	if (!PyArg_Parse(args, "O!", &PyDict_Type, &other))
+	PyObject *param;
+	/* We accept for the argument either a concrete dictionary object,
+	 * or an abstract "mapping" object.  For the former, we can do
+	 * things quite efficiently.  For the latter, we only require that
+	 * PyMapping_Keys() and PyObject_GetItem() be supported.
+	 */
+	if (!PyArg_ParseTuple(args, "O:update", &param))
 		return NULL;
-	if (other == mp || other->ma_used == 0)
-		goto done; /* a.update(a) or a.update({}); nothing to do */
-	/* Do one big resize at the start, rather than incrementally
-	   resizing as we insert new items.  Expect that there will be
-	   no (or few) overlapping keys. */
-	if ((mp->ma_fill + other->ma_used)*3 >= (mp->ma_mask+1)*2) {
-		if (dictresize(mp, (mp->ma_used + other->ma_used)*3/2) != 0)
-			return NULL;
-	}
-	for (i = 0; i <= other->ma_mask; i++) {
-		entry = &other->ma_table[i];
-		if (entry->me_value != NULL) {
-			Py_INCREF(entry->me_key);
-			Py_INCREF(entry->me_value);
-			insertdict(mp, entry->me_key, entry->me_hash,
-				   entry->me_value);
+
+	if (PyDict_Check(param)) {
+		other = (dictobject*)param;
+		if (other == mp || other->ma_used == 0)
+			/* a.update(a) or a.update({}); nothing to do */
+			goto done;
+		/* Do one big resize at the start, rather than
+		 * incrementally resizing as we insert new items.  Expect
+		 * that there will be no (or few) overlapping keys.
+		 */
+		if ((mp->ma_fill + other->ma_used)*3 >= (mp->ma_mask+1)*2) {
+		   if (dictresize(mp, (mp->ma_used + other->ma_used)*3/2) != 0)
+			   return NULL;
+		}
+		for (i = 0; i <= other->ma_mask; i++) {
+			entry = &other->ma_table[i];
+			if (entry->me_value != NULL) {
+				Py_INCREF(entry->me_key);
+				Py_INCREF(entry->me_value);
+				insertdict(mp, entry->me_key, entry->me_hash,
+					   entry->me_value);
+			}
 		}
 	}
+	else {
+		/* Do it the generic, slower way */
+		PyObject *keys = PyMapping_Keys(param);
+		PyObject *iter;
+		PyObject *key, *value;
+		int status;
+
+		if (keys == NULL)
+			/* Docstring says this is equivalent to E.keys() so
+			 * if E doesn't have a .keys() method we want
+			 * AttributeError to percolate up.  Might as well
+			 * do the same for any other error.
+			 */
+			return NULL;
+
+		iter = PyObject_GetIter(keys);
+		Py_DECREF(keys);
+		if (iter == NULL)
+			return NULL;
+
+		for (key = PyIter_Next(iter); key; key = PyIter_Next(iter)) {
+			value = PyObject_GetItem(param, key);
+			if (value == NULL) {
+				Py_DECREF(iter);
+				Py_DECREF(key);
+				return NULL;
+			}
+			status = PyDict_SetItem((PyObject*)mp, key, value);
+			Py_DECREF(key);
+			Py_DECREF(value);
+			if (status < 0) {
+				Py_DECREF(iter);
+				return NULL;
+			}
+		}
+		Py_DECREF(iter);
+		if (PyErr_Occurred())
+			/* Iterator completed, via error */
+			return NULL;
+	}
+	
   done:
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -1626,7 +1679,7 @@ static PyMethodDef mapp_methods[] = {
 	 items__doc__},
 	{"values",	(PyCFunction)dict_values,	METH_OLDARGS,
 	 values__doc__},
-	{"update",	(PyCFunction)dict_update,	METH_OLDARGS,
+	{"update",	(PyCFunction)dict_update,	METH_VARARGS,
 	 update__doc__},
 	{"clear",	(PyCFunction)dict_clear,	METH_OLDARGS,
 	 clear__doc__},
