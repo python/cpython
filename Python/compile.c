@@ -4069,7 +4069,7 @@ symtable_init_info(struct symbol_info *si)
 }
 
 static int
-symtable_resolve_free(struct compiling *c, PyObject *name, 
+symtable_resolve_free(struct compiling *c, PyObject *name, int flags,
 		      struct symbol_info *si)
 {
 	PyObject *dict, *v;
@@ -4079,11 +4079,19 @@ symtable_resolve_free(struct compiling *c, PyObject *name,
 	   cell var).  If it occurs in a class, then the class has a
 	   method and a free variable with the same name.
 	*/
-
 	if (c->c_symtable->st_cur->ste_type == TYPE_FUNCTION) {
+		/* If it isn't declared locally, it can't be a cell. */
+		if (!(flags & (DEF_LOCAL | DEF_PARAM)))
+			return 0;
 		v = PyInt_FromLong(si->si_ncells++);
 		dict = c->c_cellvars;
 	} else {
+		/* If it is free anyway, then there is no need to do
+		   anything here.
+		*/
+		if (is_free(flags ^ DEF_FREE_CLASS) 
+		    || flags == DEF_FREE_CLASS)
+			return 0;
 		v = PyInt_FromLong(si->si_nfrees++);
 		dict = c->c_freevars;
 	}
@@ -4369,10 +4377,7 @@ symtable_load_symbols(struct compiling *c)
 		   variables or declared global.
 		*/
 		if (flags & (DEF_FREE | DEF_FREE_CLASS)) {
-		    if ((ste->ste_type == TYPE_CLASS 
-			 && flags != DEF_FREE_CLASS)
-			|| (flags & (DEF_LOCAL | DEF_PARAM)))
-			symtable_resolve_free(c, name, &si);
+			symtable_resolve_free(c, name, flags, &si);
 		}
 
 		if (flags & DEF_STAR) {
@@ -4431,6 +4436,15 @@ symtable_load_symbols(struct compiling *c)
 			}
 		}
 	}
+
+	/*
+	fprintf(stderr, 
+		"cells %d: %s\n"
+		"frees %d: %s\n",
+		si.si_ncells, PyObject_REPR(c->c_cellvars),
+		si.si_nfrees, PyObject_REPR(c->c_freevars));
+	*/
+	assert(PyDict_Size(c->c_freevars) == si.si_nfrees);
 
 	if (si.si_ncells > 1) { /* one cell is always in order */
 		if (symtable_cellvar_offsets(&c->c_cellvars, c->c_argcount,
