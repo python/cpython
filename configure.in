@@ -216,6 +216,12 @@ then
 fi
 AC_MSG_RESULT($EXTRAPLATDIR)
 
+# Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
+# it may influence the way we can build extensions, so distutils
+# needs to check it
+AC_SUBST(CONFIGURE_MACOSX_DEPLOYMENT_TARGET)
+CONFIGURE_MACOSX_DEPLOYMENT_TARGET=
+
 # checks for alternative programs
 
 # compiler flags are generated in two sets, BASECFLAGS and OPT.  OPT is just
@@ -1257,7 +1263,7 @@ then
 			# No framework. Ignore undefined symbols, assuming they come from Python
 			LDSHARED="$LDSHARED -undefined suppress"
 		fi ;;
-	Darwin/*)
+	Darwin/1.4*|Darwin/5.*|Darwin/6.*)
 		LDSHARED='$(CC) $(LDFLAGS) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
@@ -1268,6 +1274,27 @@ then
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
 			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 		fi ;;
+	Darwin/*)
+		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
+		# This allows an extension to be used in any Python
+		if test ${MACOSX_DEPLOYMENT_TARGET-10.1} '>' 10.2
+		then
+			LDSHARED='$(CC) $(LDFLAGS) -bundle -undefined dynamic_lookup'
+			BLDSHARED="$LDSHARED"
+			CONFIGURE_MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET
+		else
+			LDSHARED='$(CC) $(LDFLAGS) -bundle'
+			if test "$enable_framework" ; then
+				# Link against the framework. All externals should be defined.
+				BLDSHARED="$LDSHARED "'-Wl,-F. -framework $(PYTHONFRAMEWORK)'
+				LDSHARED="$LDSHARED "'-Wl,-F$(PYTHONFRAMEWORKPREFIX) -framework $(PYTHONFRAMEWORK)'
+			else
+				# No framework, use the Python app as bundle-loader
+				BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
+				LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
+			fi
+		fi
+		;;
 	Linux*|GNU*) LDSHARED='$(CC) -shared';;
 	BSD/OS*/4*) LDSHARED="gcc -shared";;
 	OpenBSD*|FreeBSD*)
