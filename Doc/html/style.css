@@ -196,9 +196,9 @@ address                 { font-size: 80%; }
                           border-left-width: 0px;
                           vertical-align: baseline;
                           }
-.realtable .center      { text-align: center; }
-.realtable .left        { text-align: left; }
-.realtable .right       { text-align: right; }
+.center                 { text-align: center; }
+.left                   { text-align: left; }
+.right                  { text-align: right; }
 
 .refcount-info          { font-style: italic; }
 .refcount-info .value   { font-weight: bold;
