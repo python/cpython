@@ -115,6 +115,7 @@ div.note .label         { margin-right: 0.5em;
 .newsgroup              { font-family: avantgarde, sans-serif; }
 .url                    { font-family: avantgarde, sans-serif; }
 .file                   { font-family: avantgarde, sans-serif; }
+.menuselection          { font-family: avantgarde, sans-serif; }
 
 .tableheader            { background-color: #99ccff;
                           font-family: avantgarde, sans-serif; }

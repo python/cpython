@@ -95,7 +95,8 @@ sub do_cmd_textless{ '&lt;' . $_[0]; }
 sub do_cmd_textunderscore{ '_' . $_[0]; }
 sub do_cmd_infinity{ '&infin;' . $_[0]; }
 sub do_cmd_plusminus{ '&plusmn;' . $_[0]; }
-sub do_cmd_menuselection{ $_[0]; }
+sub do_cmd_menuselection{
+    return use_wrappers($_[0], '<span class="menuselection">', '</span>'); }
 sub do_cmd_sub{ ' > ' . $_[0]; }
 
 
