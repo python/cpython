@@ -72,6 +72,7 @@ extern "C" {
 /* Define locally if they are not defined in Python.  This gives only
  * the limited control to induce a core dump in case of an exception.
  */
+#include <setjmp.h>
 static jmp_buf PyFPE_jbuf;
 static int PyFPE_counter = 0;
 #endif
