@@ -99,6 +99,84 @@ The default filename is the last filename used.\
 static PyObject *completer = NULL;
 static PyThreadState *tstate = NULL;
 
+static PyObject *begidx = NULL;
+static PyObject *endidx = NULL;
+
+/* get the beginning index for the scope of the tab-completion */
+static PyObject *
+get_begidx(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	if(!PyArg_NoArgs(args)) {
+		return NULL;
+	} 
+	Py_INCREF(begidx);
+	return begidx;
+}
+
+static char doc_get_begidx[] = "\
+get_begidx() -> int\n\
+get the beginning index of the readline tab-completion scope";
+
+/* get the ending index for the scope of the tab-completion */
+static PyObject *
+get_endidx(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+ 	if(!PyArg_NoArgs(args)) {
+		return NULL;
+	} 
+	Py_INCREF(endidx);
+	return endidx;
+}
+
+static char doc_get_endidx[] = "\
+get_endidx() -> int\n\
+get the ending index of the readline tab-completion scope";
+
+
+/* set the tab-completion word-delimiters that readline uses */
+
+static PyObject *
+set_completer_delims(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *break_chars;
+
+	if(!PyArg_ParseTuple(args, "s", &break_chars)) {
+		return NULL;
+	}
+	free(rl_completer_word_break_characters);
+	rl_completer_word_break_characters = strdup(break_chars);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char doc_set_completer_delims[] = "\
+set_completer_delims(string) -> None\n\
+set the readline word delimiters for tab-completion";
+
+
+/* get the tab-completion word-delimiters that readline uses */
+
+static PyObject *
+get_completer_delims(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	if(!PyArg_NoArgs(args)) {
+		return NULL;
+	}
+	return PyString_FromString(rl_completer_word_break_characters);
+}
+	
+static char doc_get_completer_delims[] = "\
+get_completer_delims() -> string\n\
+get the readline word delimiters for tab-completion";
+
 static PyObject *
 set_completer(self, args)
 	PyObject *self;
@@ -143,7 +221,7 @@ get_line_buffer(self, args)
 	PyObject *self;
         PyObject *args;
 {
-	if (PyArg_NoArgs(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	return PyString_FromString(rl_line_buffer);
 }
@@ -180,10 +258,17 @@ Insert text into the command line.\
 static struct PyMethodDef readline_methods[] =
 {
 	{"parse_and_bind", parse_and_bind, 1, doc_parse_and_bind},
-	{"get_line_buffer", get_line_buffer, 1, doc_get_line_buffer},
+	{"get_line_buffer", get_line_buffer, 0, doc_get_line_buffer},
 	{"insert_text", insert_text, 1, doc_insert_text},
 	{"read_init_file", read_init_file, 1, doc_read_init_file},
 	{"set_completer", set_completer, 1, doc_set_completer},
+	{"get_begidx", get_begidx, 0, doc_get_begidx},
+	{"get_endidx", get_endidx, 0, doc_get_endidx},
+
+	{"set_completer_delims", set_completer_delims, METH_VARARGS,
+		doc_set_completer_delims},
+	{"get_completer_delims", get_completer_delims, 0,
+		doc_get_completer_delims},
 	{0, 0}
 };
 
@@ -227,6 +312,22 @@ on_completion(text, state)
 }
 
 
+/* a more flexible constructor that saves the "begidx" and "endidx"
+ * before calling the normal completer */
+
+char **
+flex_complete(text, start, end)
+	char *text;
+	int start;
+	int end;
+{
+	Py_XDECREF(begidx);
+	Py_XDECREF(endidx);
+	begidx = PyInt_FromLong((long) start);
+	endidx = PyInt_FromLong((long) end);
+	return completion_matches(text, *on_completion);
+}
+
 /* Helper to initialize GNU readline properly. */
 
 static void
@@ -239,11 +340,14 @@ setup_readline()
 	rl_bind_key_in_map ('\t', rl_complete, emacs_meta_keymap);
 	rl_bind_key_in_map ('\033', rl_complete, emacs_meta_keymap);
 	/* Set our completion function */
-	rl_completion_entry_function = (Function *) on_completion;
+	rl_attempted_completion_function = (CPPFunction *)flex_complete;
 	/* Set Python word break characters */
 	rl_completer_word_break_characters =
-		" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?";
+		strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
 		/* All nonalphanums except '.' */
+
+	begidx = PyInt_FromLong(0L);
+	endidx = PyInt_FromLong(0L);
 	/* Initialize (allows .inputrc to override)
 	 *
 	 * XXX: A bug in the readline-2.2 library causes a memory leak
