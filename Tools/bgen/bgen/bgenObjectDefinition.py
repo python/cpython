@@ -164,7 +164,7 @@ class ObjectDefinition(GeneratorGroup):
 		Output()
 		Output("%sPyTypeObject %s = {", sf, self.typename)
 		IndentLevel()
-		Output("PyObject_HEAD_INIT(&PyType_Type)")
+		Output("PyObject_HEAD_INIT(NULL)")
 		Output("0, /*ob_size*/")
 		Output("\"%s\", /*tp_name*/", self.name)
 		Output("sizeof(%s), /*tp_basicsize*/", self.objecttype)
