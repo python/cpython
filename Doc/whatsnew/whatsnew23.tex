@@ -417,7 +417,7 @@ A standard package for writing logs called \module{logging} has been
 added to Python 2.3.  It provides a powerful and flexible way for
 components to generate logging output which can then be filtered and
 processed in various ways.  A standard configuration file format can
-be used to control the logging behaviour of a program.  Python comes
+be used to control the logging behavior of a program.  Python comes
 with handlers that will write log records to standard error or to a
 file or socket, send them to the system log, or even e-mail them to a
 particular address, and of course it's also possible to write your own
@@ -833,8 +833,8 @@ creates a dictionary with keys taken from the supplied iterator
 
 (Patches contributed by Raymond Hettinger.)
 
-The dict() constructor now also accepts keyword arguments to simplify
-creating small dictionaries:
+The \function{dict()} constructor now also accepts keyword arguments to
+simplify creating small dictionaries:
 
 \begin{verbatim}
 >>> dict(red=1, blue=2, green=3, black=4)
@@ -1169,7 +1169,10 @@ sequence type.  For example:
 convert between radians and degrees.  Other functions in the
 \module{math} module such as
 \function{math.sin()} and \function{math.cos()} have always required
-input values measured in radians. (Contributed by Raymond Hettinger.)
+input values measured in radians.  Also, added an optional \var{base}
+argument to \function{math.log()} to make it easier to compute
+logarithms for bases other than \code{e} and \code{10}.
+(Contributed by Raymond Hettinger.)
 
 \item Seven new functions, \function{getpgid()}, \function{killpg()},
 \function{lchown()}, \function{major()}, \function{makedev()},
@@ -1389,7 +1392,7 @@ Martin von L\"owis.)
 returns only strings. Instead, if Tcl returns other objects those
 objects are converted to their Python equivalent, if one exists, or
 wrapped with a \class{_tkinter.Tcl_Obj} object if no Python equivalent
-exists. This behaviour can be controlled through the
+exists. This behavior can be controlled through the
 \method{wantobjects()} method of \class{tkapp} objects.
 
 When using \module{_tkinter} through the \module{Tkinter} module (as
@@ -1397,7 +1400,7 @@ most Tkinter applications will), this feature is always activated. It
 should not cause compatibility problems, since Tkinter would always
 convert string results to Python types where possible.
 
-If any incompatibilities are found, the old behaviour can be restored
+If any incompatibilities are found, the old behavior can be restored
 by setting the \member{wantobjects} variable in the \module{Tkinter}
 module to false before creating the first \class{tkapp} object.
 
