@@ -544,7 +544,7 @@ then
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) 
 		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -shared'
+		then LDSHARED='$(CC) -G'
 		else LDSHARED="ld -G";
 		fi ;;
 	hp*|HP*) LDSHARED="ld -b";;
@@ -590,6 +590,9 @@ AC_MSG_CHECKING(CCSHARED)
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
+	SunOS*) if test "$GCC" = yes;
+	        then CCSHARED="-fPIC";
+	        fi;;
 	hp*|HP*) if test "$GCC" = yes;
 		 then CCSHARED="-fpic";
 		 else CCSHARED="+z";
@@ -1441,3 +1444,4 @@ echo "creating Makefile"
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules Modules/Setup.config \
 			Modules/Setup Modules/Setup.local
+mv config.c Modules
