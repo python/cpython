@@ -48,6 +48,11 @@ def compile(file, cfile=None, dfile=None):
     except AttributeError:
         timestamp = long(os.stat(file)[8])
     codestring = f.read()
+    # If parsing from a string, line breaks are \n (see parsetok.c:tok_nextc)
+    # Replace will return original string if pattern is not found, so
+    # we don't need to check whether it is found first.
+    codestring = codestring.replace("\r\n","\n")
+    codestring = codestring.replace("\r","\n")
     f.close()
     if codestring and codestring[-1] != '\n':
         codestring = codestring + '\n'
