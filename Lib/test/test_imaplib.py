@@ -1,11 +1,11 @@
 import imaplib
+import time
 
-# Can't use time.time() values, as they are O/S specific
+timevalues = [2000000000, 2000000000.0, time.localtime(2000000000),
+              '"18-May-2033 05:33:20 +0200"', '"18-May-2033 13:33:20 +1000"']
 
-timevalues = [(2033, 5, 18, 3, 33, 20, 2, 138, 0), '"18-May-2033 13:33:20 +1000"']
+check = timevalues[2]
 
 for t in timevalues:
-    t1 = imaplib.Time2Internaldate(t)
-    t2 = imaplib.Time2Internaldate(imaplib.Internaldate2tuple('INTERNALDATE ' + t1))
-    if t1 <> t2:
+    if check <> imaplib.Internaldate2tuple('INTERNALDATE ' + imaplib.Time2Internaldate(t)):
         print 'incorrect result when converting', `t`
