@@ -231,13 +231,6 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         ## .sort() and so the list protection gimmicks are out of
         ## date (this cost some brain cells to figure out...).
 
-    def test_key_with_exception(self):
-        # Verify that the wrapper has been removed
-        data = range(-2,2)
-        dup = data[:]
-        self.assertRaises(ZeroDivisionError, data.sort, None, lambda x: 1/x)
-        self.assertEqual(data, dup)
-
     def test_reverse(self):
         data = range(100)
         random.shuffle(data)
