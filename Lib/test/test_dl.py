@@ -11,6 +11,8 @@ import dl
 sharedlibs = [
     # SunOS/Solaris
     ('/usr/lib/libresolv.so', 'gethostent'),
+    # SGI IRIX
+    ('/usr/lib/libm.so', 'sin'),
     ]
 
 for s, func in sharedlibs:
