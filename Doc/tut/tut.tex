@@ -3474,7 +3474,8 @@ is executed.  There's a built-in function \code{__import__} which
 provides the default implementation, but more interesting, the various
 steps it takes are available separately from the new built-in module
 \code{imp}.  (See the section on \code{imp} in the Library Reference
-Manual for more information on this module.)
+Manual for more information on this module -- it also contains a
+complete example of how to write your own \code{__import__} function.)
 
 When you do \code{dir()} in a fresh interactive interpreter you will
 see another ``secret'' object that's present in every module:
