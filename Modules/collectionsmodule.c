@@ -353,6 +353,44 @@ deque_item(dequeobject *deque, int i)
 }
 
 static int
+deque_del_item(dequeobject *deque, int i)
+{
+	PyObject *item=NULL, *minus_i=NULL, *plus_i=NULL;
+	int rv = -1;
+
+	assert (i >= 0 && i < deque->len); 
+
+	minus_i = Py_BuildValue("(i)", -i);
+	if (minus_i == NULL)
+		goto fail;
+
+	plus_i = Py_BuildValue("(i)", i);
+	if (plus_i == NULL)
+		goto fail;
+
+	item = deque_rotate(deque, minus_i);
+	if (item == NULL) 
+		goto fail;
+	Py_DECREF(item);
+
+	item = deque_popleft(deque, NULL);
+	if (item == NULL) 
+		goto fail;
+	Py_DECREF(item);
+
+	item = deque_rotate(deque, plus_i);
+	if (item == NULL) 
+		goto fail;
+
+	rv = 0;
+fail:
+	Py_XDECREF(item);
+	Py_XDECREF(minus_i);
+	Py_XDECREF(plus_i);
+	return rv;
+}
+
+static int
 deque_ass_item(dequeobject *deque, int i, PyObject *v)
 {
 	PyObject *old_value;
@@ -364,6 +402,9 @@ deque_ass_item(dequeobject *deque, int i, PyObject *v)
 				"deque index out of range");
 		return -1;
 	}
+	if (v == NULL)
+		return deque_del_item(deque, i);
+
 	i += deque->leftindex;
 	n = i / BLOCKLEN;
 	i %= BLOCKLEN;

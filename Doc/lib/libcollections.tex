@@ -137,24 +137,21 @@ This section shows various approaches to working with deques.
 The \method{rotate()} method provides a way to implement \class{deque}
 slicing and deletion:
 
+This pure python implementation of \code{del d[n]} shows how to use the
+\method{rotate()} method as a building block for implementing a variety
+of class{deque} operations:
+
 \begin{verbatim}
 def delete_nth(d, n):
-    "del d[n]"
     d.rotate(-n)
     d.popleft()
     d.rotate(n)
-
->>> d = deque('abcdef')
->>> delete_nth(d, 2)   # remove the entry at d[2]
->>> d
-deque(['a', 'b', 'd', 'e', 'f'])
-
 \end{verbatim}
 
-For slicing, the idea is the same.  Use \method{rotate()} to bring a target
-element to the left side of the deque.  Remove old entries with
-\method{popleft()}, add new entries with \method{extend()}, and then
-reverse the rotation.
+To implement \class{deque} slicing, use a similar approach applying
+\method{rotate()} to bring a target element to the left side of the deque.
+Remove old entries with \method{popleft()}, add new entries with
+\method{extend()}, and then reverse the rotation.
 
 With minor variations on that approach, it is easy to implement Forth style
 stack manipulations such as \code{dup}, \code{drop}, \code{swap}, \code{over},

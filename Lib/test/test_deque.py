@@ -90,6 +90,20 @@ class TestBasic(unittest.TestCase):
             l[i] = 7*i
         self.assertEqual(list(d), l)
 
+    def test_delitem(self):
+        n = 500         # O(n**2) test, don't make this too big
+        d = deque(xrange(n))
+        self.assertRaises(IndexError, d.__delitem__, -n-1)
+        self.assertRaises(IndexError, d.__delitem__, n)
+        for i in xrange(n):
+            self.assertEqual(len(d), n-i)
+            j = random.randrange(-len(d), len(d))
+            val = d[j]
+            self.assert_(val in d)
+            del d[j]
+            self.assert_(val not in d)
+        self.assertEqual(len(d), 0)
+
     def test_rotate(self):
         s = tuple('abcde')
         n = len(s)
@@ -476,9 +490,7 @@ deque(['c', 'b', 'a'])
 
 
 
-
 >>> def delete_nth(d, n):
-...     "del d[n]"
 ...     d.rotate(-n)
 ...     d.popleft()
 ...     d.rotate(n)
@@ -523,7 +535,6 @@ h
 ...
 >>> print maketree('abcdefgh')
 [[[['a', 'b'], ['c', 'd']], [['e', 'f'], ['g', 'h']]]]
-
 
 """
 
