@@ -147,7 +147,7 @@ class Misc:
 	def selection_clear(self):
 		self.tk.call('selection', 'clear', self._w)
 	def selection_get(self, type=None):
-		self.tk.call('selection', 'get', type)
+		return self.tk.call('selection', 'get', type)
 	def selection_handle(self, func, type=None, format=None):
 		name = self._register(func)
 		self.tk.call('selection', 'handle', self._w, 
@@ -288,7 +288,7 @@ class Misc:
 		if add: add = '+'
 		name = self._register(func, self._substitute)
 		self.tk.call('bind', 'all' , sequence, 
-			     (add + `name`,) + self._subst_format)
+			     (add + name,) + self._subst_format)
 	def bind_class(self, className, sequence, func, add=''):
 		if add: add = '+'
 		name = self._register(func, self._substitute)
@@ -499,7 +499,7 @@ class Tk(Misc, Wm):
 		self.tk.createcommand('tkerror', _tkerror)
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
-		del self.master.children[self._name]
+##		del self.master.children[self._name]
 		self.tk.call('destroy', self._w)
 	def __str__(self):
 		return self._w
