@@ -83,6 +83,10 @@ resources to test.  Currently only the following are defined:
     decimal -   Test the decimal module against a large suite that
                 verifies compliance with standards.
 
+    compiler -  Test the compiler package by compiling all the source
+                in the standard library and test suite.  This takes
+                a long time.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
@@ -126,7 +130,7 @@ if sys.platform == 'darwin':
 from test import test_support
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb',
-                  'decimal')
+                  'decimal', 'compiler')
 
 
 def usage(code, msg=''):
