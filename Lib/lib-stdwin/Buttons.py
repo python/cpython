@@ -35,12 +35,10 @@ class LabelAppearance():
 	#
 	# Size enquiry
 	#
-	def minsize(self, m):
-		try:
-			self.text = self.text
-		except NameError:
-			self.text = ''
-		return m.textwidth(self.text) + 6, m.lineheight() + 6
+	def getminsize(self, (m, (width, height))):
+		width = max(width, m.textwidth(self.text) + 6)
+		height = max(height, m.lineheight() + 6)
+		return width, height
 	#
 	def getbounds(self):
 		return self.bounds
@@ -143,6 +141,16 @@ class LabelAppearance():
 		d.invert(self.hilitebounds)
 
 
+# A Strut is a label with no width of its own.
+
+class StrutAppearance() = LabelAppearance():
+	#
+	def getminsize(self, (m, (width, height))):
+		height = max(height, m.lineheight() + 6)
+		return width, height
+	#
+
+
 # ButtonAppearance displays a centered string in a box.
 # selected --> bold border
 # disabled --> crossed out
@@ -167,9 +175,12 @@ class ButtonAppearance() = LabelAppearance():
 #
 class CheckAppearance() = LabelAppearance():
 	#
-	def minsize(self, m):
-		width, height = m.textwidth(self.text) + 6, m.lineheight() + 6
-		return width + height + m.textwidth(' '), height
+	def getminsize(self, (m, (width, height))):
+		minwidth = m.textwidth(self.text) + 6
+		minheight = m.lineheight() + 6
+		width = max(width, minwidth + minheight + m.textwidth(' '))
+		height = max(height, minheight)
+		return width, height
 	#
 	def drawpict(self, d):
 		d.box(self.boxbounds)
@@ -393,6 +404,7 @@ def _xorcross(d, bounds):
 # Ready-made button classes.
 #
 class Label() = NoReactivity(), LabelAppearance(), Define(): pass
+class Strut() = NoReactivity(), StrutAppearance(), Define(): pass
 class PushButton() = TriggerReactivity(), ButtonAppearance(), Define(): pass
 class CheckButton() = CheckReactivity(), CheckAppearance(), Define(): pass
 class RadioButton() = RadioReactivity(), RadioAppearance(), Define(): pass
