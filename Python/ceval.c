@@ -1941,7 +1941,13 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		       callable object.
 		    */
 		    if (PyCFunction_Check(func)) {
-			    if (PyCFunction_GET_FLAGS(func) == 0) {
+			    int flags = PyCFunction_GET_FLAGS(func);
+			    if (flags == METH_VARARGS) {
+				    PyObject *callargs;
+				    callargs = load_args(&stack_pointer, na);
+				    x = call_cfunction(func, callargs, NULL);
+				    Py_XDECREF(callargs); 
+			    } else if (flags == 0) {
 				    x = fast_cfunction(func,
 						       &stack_pointer, na);
 			    } else {
