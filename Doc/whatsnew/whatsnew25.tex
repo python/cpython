@@ -26,8 +26,9 @@ rationale, refer to the PEP for a particular new feature.
 
 
 %======================================================================
+\section{PEP 309: Partial Function Application}
 
-% Large, PEP-level features and changes should be described here.
+XXX describe this PEP.
 
 
 %======================================================================
@@ -53,6 +54,8 @@ print max(L, key=len)
 # Prints 'short', because lexicographically 'short' has the largest value
 print max(L)         
 \end{verbatim}
+
+% XXX also supported by heapq.nsmallest() and heapq.nlargest().
 
 (Contributed by Steven Bethard and Raymond Hettinger.)
 
@@ -84,7 +87,23 @@ details.
 
 \begin{itemize}
 
-\item Descriptions go here.
+% the cPickle module no longer accepts the deprecated None option in the
+% args tuple returned by __reduce__().
+
+% csv module improvements
+
+% datetime.datetime() now has a strptime class method which can be used to
+% create datetime object using a string and format.
+
+% itertools.islice() now accepts None for the start and step arguments.
+
+\item New module: \module{spwd} provides functions for accessing the
+shadow password database on systems that support it.  
+% XXX give example
+
+% XXX os.stat_float_times is now True
+
+% os.{SEEK_SET, SEEK_CUR, SEEK_END} have been added for convenience.
 
 \end{itemize}
 
@@ -137,7 +156,11 @@ changes to your code:
 
 \begin{itemize}
 
-\item Everything is all in the details!
+\item Some old deprecated modules (\module{statcache}, \module{tzparse},
+      \module{whrandom})  have been moved to \file{Lib/lib-old}.
+% XXX note how to get them back
+
+% the pickle module no longer uses the deprecated bin parameter.
 
 \end{itemize}
 
