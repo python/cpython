@@ -6,6 +6,16 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- File objects are now their own iterators.  For a file f, iter(f) now
+  returns f (unless f is closed), and f.next() is similar to
+  f.readline() when EOF is not reached; however, f.next() uses a
+  readahead buffer that messes up the file position, so mixing
+  f.next() and f.readline() (or other methods) doesn't work right.
+  Calling f.seek() drops the readahead buffer, but other operations
+  don't.  It so happens that this gives a nice additional speed boost
+  to "for line in file:"; the xreadlines method and corresponding
+  module are now obsolete.
+
 - Encoding declarations (PEP 263, phase 1) have been implemented.  A
   comment of the form "# -*- coding: <encodingname> -*-" in the first
   or second line of a Python source file indicates the encoding.
@@ -166,6 +176,8 @@ Core and builtins
   An exception will now be raised if more than one argument is used.
 
 Extension modules
+
+- The xreadlines module is slated for obsolescence.
 
 - The strptime function in the time module is now always available (a
   Python implementation is used when the C library doesn't define it).
