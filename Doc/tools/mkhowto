@@ -180,6 +180,8 @@ class Options:
             elif opt == "--global-module-index":
                 self.global_module_index = arg
             elif opt == "--dir":
+                if os.sep == "\\":
+                    arg = re.sub("/", "\\", arg)
                 self.builddir = arg
             elif opt == "--paper":
                 self.paper = arg
@@ -475,12 +477,22 @@ class Job:
 
     def run(self, command):
         self.message(command)
-        rc = os.system("(%s) </dev/null >>%s 2>&1"
-                       % (command, self.log_filename))
+        if sys.platform.startswith("win"):
+            rc = os.system(command)
+        else:
+            rc = os.system("(%s) </dev/null >>%s 2>&1"
+                           % (command, self.log_filename))
         if rc:
             self.warning(
                 "Session transcript and error messages are in %s."
                 % self.log_filename)
+            if hasattr(os, "WIFEXITED"):
+                if os.WIFEXITED(rc):
+                    self.warning("Exited with status %s." % os.WEXITSTATUS(rc))
+                else:
+                    self.warning("Killed by signal %s." % os.WSTOPSIG(rc))
+            else:
+                self.warning("Return code: %s" % rc)
             sys.stderr.write("The relevant lines from the transcript are:\n")
             sys.stderr.write("-" * 72 + "\n")
             sys.stderr.writelines(get_run_transcript(self.log_filename))
