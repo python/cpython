@@ -90,16 +90,15 @@ AC_SUBST(OPT)
 if test -z "$OPT"
 then
 	case $ac_sys_system in
-	NeXT|next) \
-		if test -n "$ac_arch_flags"; then
-			OPT="-g -Wall -O3 -fomit-frame-pointer $ac_arch_flags";
-		else
-			OPT="-g -Wall -O3 -fomit-frame-pointer";
-		fi;;
+	NeXT|next) OPT="-g -Wall -O3 -fomit-frame-pointer";;
 	*)	OPT="-O";;
 	esac
 fi
 
+if test -z "$ac_arch_flags"
+then
+	OPT="$OPT $ac_arch_flags"
+fi
 # checks for UNIX variants that set C preprocessor variables
 AC_AIX
 AC_MINIX
@@ -205,6 +204,11 @@ AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(inet, gethostbyname, [LIBS="-linet $LIBS"], [], -lnsl) # Sequent
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 fi
+AC_MSG_CHECKING(for --with-libs)
+AC_ARG_WITH(libs, [--with-libs='lib1 ...'    link against additional libs], [
+AC_MSG_RESULT($withval)
+LIBS="$withval $LIBS"
+], AC_MSG_RESULT(no))
 
 # XXX need to check whether libreadline.a actually exists there!
 # XXX Also, on some systems, it's libreadline.so...
@@ -242,10 +246,12 @@ AC_DEFINE(C_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
 AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
+AC_DEFINE(_REENTRANT)
 LIBS="$LIBS -lpthreads"
 LIBOBJS="$LIBOBJS thread.o"], [
 AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
+AC_DEFINE(_REENTRANT)
 LIBS="$LIBS -lpthread"
 LIBOBJS="$LIBOBJS thread.o"])
 ])])
