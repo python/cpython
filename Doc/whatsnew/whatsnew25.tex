@@ -41,7 +41,7 @@ language.
 
 \item The \function{min()} and \function{max()} built-in functions
 gained a \code{key} keyword argument analogous to the \code{key}
-argument for \function{sort()}.  This argument supplies a function
+argument for \method{sort()}.  This argument supplies a function
 that takes a single argument and is called for every value in the list; 
 \function{min()}/\function{max()} will return the element with the 
 smallest/largest return value from this function.
@@ -55,9 +55,16 @@ print max(L, key=len)
 print max(L)         
 \end{verbatim}
 
-% XXX also supported by heapq.nsmallest() and heapq.nlargest().
-
 (Contributed by Steven Bethard and Raymond Hettinger.)
+
+\item The list of base classes in a class definition can now be empty.  
+As an example, this is now legal:
+
+\begin{verbatim}
+class C():
+    pass
+\end{verbatim}
+(Implemented by Brett Cannon.)
 
 \end{itemize}
 
@@ -95,17 +102,48 @@ details.
 % datetime.datetime() now has a strptime class method which can be used to
 % create datetime object using a string and format.
 
+\item The \function{nsmallest()} and 
+\function{nlargest()} functions in the \module{heapq} module 
+now support a \code{key} keyword argument similar to the one
+provided by the \function{min()}/\function{max()} functions
+and the \method{sort()} methods.  For example:
+Example:
+
+\begin{verbatim}
+>>> import heapq
+>>> L = ["short", 'medium', 'longest', 'longer still']
+>>> heapq.nsmallest(2, L)  # Return two lowest elements, lexicographically
+['longer still', 'longest']
+>>> heapq.nsmallest(2, L, key=len)   # Return two shortest elements
+['short', 'medium']
+\end{verbatim}
+
+(Contributed by Raymond Hettinger.)
+
 % itertools.islice() now accepts None for the start and step arguments.
 
 \item New module: \module{spwd} provides functions for accessing the
 shadow password database on systems that support it.  
 % XXX give example
 
-% XXX os.stat_float_times is now True
+\item The \module{os} module underwent a number of changes.  The
+\member{stat_float_times} variable now defaults to true, meaning that
+\function{os.stat()} will now return time values as floats.  (This
+doesn't necessarily mean that \function{os.stat()} will return times
+that are precise to fractions of a second; not all systems support
+such precision.)
 
-% os.{SEEK_SET, SEEK_CUR, SEEK_END} have been added for convenience.
+Also, constants named \member{os.SEEK_SET}, \member{os.SEEK_CUR}, and
+\member{os.SEEK_END} have been added; these are the parameters to the
+\function{os.lseek()} function.
 
-\end{itemize}
+\item The \class{TarFile} class in the \module{tarfile} module now has
+a \method{extractall()} method that extracts all members from the
+archive into the current working directory.  It's also possible to set
+a different directory as the extraction target, and to unpack only a
+subset of the archive's members.  (Contributed by Lars Gust\"abel.)
+
+
 
 
 %======================================================================
