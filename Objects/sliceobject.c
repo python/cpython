@@ -249,7 +249,7 @@ S. Out of bounds indices are clipped in a manner consistent with the\n\
 handling of normal slices.");
 
 static PyMethodDef slice_methods[] = {
-	{"indices",	(PyCFuntion)slice_indices,
+	{"indices",	(PyCFunction)slice_indices,
 	 METH_O,	slice_indices_doc},
 	{NULL, NULL}
 };
