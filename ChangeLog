@@ -1,5 +1,9 @@
 Thu Jan  6 13:36:32 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
+	* readline/Makefile: remove some cruft so it works with VPATH
+
+	* Lib/aifc.py: remove dependencies on AL (Sjoerd)
+
 	* README: describe new Setup procedure
 
 	* Modules/Makefile.pre.in: copy Setup from $9srcdir)/Setup.in so
