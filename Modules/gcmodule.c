@@ -650,9 +650,10 @@ gc_get_thresh(PyObject *self, PyObject *args)
 static int
 referrersvisit(PyObject* obj, PyObject *objs)
 {
-	if (PySequence_Contains(objs, obj)) {
-		return 1;
-	}
+	int i;
+	for (i = 0; i < PyTuple_GET_SIZE(objs); i++)
+		if (PyTuple_GET_ITEM(objs, i) == obj)
+			return 1;
 	return 0;
 }
 
