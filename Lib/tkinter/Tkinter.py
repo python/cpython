@@ -1031,6 +1031,8 @@ class Listbox(Widget):
 			self['selectmode'] = 'single'
 		else:
 			self.tk.call('tk_listboxSingleSelect', self._w) 
+	def activate(self, index):
+		self.tk.call(self._w, 'activate', index)
 	def curselection(self):
 		return self.tk.splitlist(self.tk.call(
 			self._w, 'curselection'))
