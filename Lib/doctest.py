@@ -552,12 +552,10 @@ class DocTestParser:
             (source, want) = self._parse_example(m, name, lineno)
             # Extract extra options from the source.
             options = self._find_options(source, name, lineno)
-            # If it contains no real source, then ignore it.
-            if self._IS_BLANK_OR_COMMENT(source):
-                continue
             # Create an Example, and add it to the list.
-            examples.append( Example(source, want, lineno,
-                                     len(m.group('indent')), options) )
+            if not self._IS_BLANK_OR_COMMENT(source):
+                examples.append( Example(source, want, lineno,
+                                         len(m.group('indent')), options) )
             # Update lineno (lines inside this example)
             lineno += string.count('\n', m.start(), m.end())
             # Update charno.
