@@ -360,6 +360,12 @@ so that it is at most \var{length} bytes in size.
 Availability: \UNIX{}.
 \end{funcdesc}
 
+\begin{funcdesc}{isatty}{fd}
+Return \code{1} if the file descriptor \var{fd} is open and connected to a
+tty(-like) device, else \code{0}.
+Availability: \UNIX{}
+\end{funcdesc}
+
 \begin{funcdesc}{lseek}{fd, pos, how}
 Set the current position of file descriptor \var{fd} to position
 \var{pos}, modified by \var{how}: \code{0} to set the position
