@@ -1,21 +1,42 @@
-	Release notes for MacPython 1.5a4
+	Release notes for MacPython 1.5b3
 	---------------------------------
+	
+Open Issues and bugs:
+
+- Packages ("dotted import") appears to have problems for the cfm68k version
+  of MacPython. Please report anything of interest you find as soon as possible,
+  preferrably to pythonmac-sig@python.org.
+- import test.autotest fails the test_strftime test on %%. This is a bug in the
+  MetroWerks C strftime() routine. Test_re takes a loooooooooong time, by the way.
+- Tk menus may or may not work. Please let me know.
+- Occasionally Python becomes non-reactive to mouseclicks after switching it to
+  background and foreground again. If you experience this please let me know,
+  explaining the circumstances.
+- Printing a NumPy "array([1.2])" may cause a crash in cfm68k-Python. If you have
+  a 68k machine, a MetroWerks debugger, time and interest in NumPy: please let me
+  know and I'll ask you to help hunting this bug.
+
+Changes since the previous version:
 
 Here are the mac-specific changes since MacPython 1.4, with end-user-visible
 changes near the top and API changes and other things that are developer-only
-more to the bottom. Changes marked with a [*] are new changes, since
-1.5a3. And, of course, all Guido's 1.5a4 changes are incorporated.
+more to the bottom. Changes marked with a [*] are new changes since
+1.5a3 (there has not been a MacPython 1.5b1). And, of course, all Guido's
+1.5-final changes are incorporated.
 
-- Balloon help in set-preferences dialog and EditPythonPrefs [*]
-- An interface to the Help Maganer has been added [*]
+- Moved Mac:Lib:toolbox and scripting to lib-toolbox and lib-scripting, analogous
+  to Guido's changes. Initial sys.path settings reflect this change [*]
+- Added cPickle and cStringIO modules [*]
+- Balloon help in set-preferences dialog and EditPythonPrefs
+- An interface to the Help Maganer has been added
 - New modules "preferences" and "pythonprefs" which allow access to
   Python preferences and implements a general preference-handling
-  framework. New EditPythonPrefs uses this. [*]
+  framework. New EditPythonPrefs uses this.
 - Applescript suite modules are now in a separate Mac:Lib:scripting
-  folder [*]
-- Most modules now export their type objects [*]
-- MacOS.SysBeep() and MacOS.GetTicks() added [*]
-- sys.prefix and sys.exec_prefix are now set correctly [*]
+  folder
+- Most modules now export their type objects
+- MacOS.SysBeep() and MacOS.GetTicks() added
+- sys.prefix and sys.exec_prefix are now set correctly
 - Installation is now through an installer 
 - mkapplet and MkPluginAliases have been renamed to BuildApplet and
   ConfigurePython 
@@ -67,7 +88,7 @@ more to the bottom. Changes marked with a [*] are new changes, since
 - img: better error handling for truncated images and such
 - img: imgop.unpack() can unpack formats with multiple pixels per byte
 
-- build numbers work and are maintained in macbuildno.h by fullbuild.py [*]
+- build numbers work and are maintained in macbuildno.h by fullbuild.py
 - We now use CW Pro 1, with multitarget projects and such goodies 
 - fixed xx plugin project for cfm68k 
 - All files updated to new Py_ naming convention
