@@ -125,13 +125,13 @@ class ConfigDialog(Toplevel):
         labelIndentSizeTitle=Label(frameIndentSize,
                 text='Choose indentation size :')
         labelSpaceNumTitle=Label(frameIndentSize,justify=LEFT,
-                text='when tab key inserts spaces,\nspaces per tab')
+                text='when tab key inserts spaces,\nspaces per indent')
         self.scaleSpaceNum=Scale(frameIndentSize,variable=self.spaceNum,
                 orient='horizontal',tickinterval=2,from_=2,to=8)
-        labeltabColsTitle=Label(frameIndentSize,justify=LEFT,
-                text='when tab key inserts tabs,\ncolumns per tab')
-        self.scaleTabCols=Scale(frameIndentSize,variable=self.tabCols,
-                orient='horizontal',tickinterval=2,from_=2,to=8)
+        #labeltabColsTitle=Label(frameIndentSize,justify=LEFT,
+        #        text='when tab key inserts tabs,\ncolumns per tab')
+        #self.scaleTabCols=Scale(frameIndentSize,variable=self.tabCols,
+        #        orient='horizontal',tickinterval=2,from_=2,to=8)
         #widget packing
         #body
         frameFont.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
@@ -158,8 +158,8 @@ class ConfigDialog(Toplevel):
         labelIndentSizeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         labelSpaceNumTitle.pack(side=TOP,anchor=W,padx=5)
         self.scaleSpaceNum.pack(side=TOP,padx=5,fill=X)
-        labeltabColsTitle.pack(side=TOP,anchor=W,padx=5)
-        self.scaleTabCols.pack(side=TOP,padx=5,fill=X)
+        #labeltabColsTitle.pack(side=TOP,anchor=W,padx=5)
+        #self.scaleTabCols.pack(side=TOP,padx=5,fill=X)
         return frame
 
     def CreatePageHighlight(self):
@@ -921,17 +921,17 @@ class ConfigDialog(Toplevel):
         self.SetFontSample()
     
     def LoadTabCfg(self):
-        ##indent type radibuttons
+        ##indent type radiobuttons
         spaceIndent=idleConf.GetOption('main','Indent','use-spaces',
                 default=1,type='bool')
         self.indentBySpaces.set(spaceIndent)
         ##indent sizes
         spaceNum=idleConf.GetOption('main','Indent','num-spaces',
                 default=4,type='int')
-        tabCols=idleConf.GetOption('main','Indent','tab-cols',
-                default=4,type='int')
+        #tabCols=idleConf.GetOption('main','Indent','tab-cols',
+        #        default=4,type='int')
         self.spaceNum.set(spaceNum)
-        self.tabCols.set(tabCols)
+        #self.tabCols.set(tabCols)
     
     def LoadThemeCfg(self):
         ##current theme type radiobutton
