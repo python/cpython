@@ -481,7 +481,7 @@ class Checker:
         if self.name_table.has_key(url):
             return self.name_table[url]
 
-        scheme = urllib.splittype(url)
+        scheme, path = urllib.splittype(url)
         if scheme in ('mailto', 'news', 'javascript', 'telnet'):
             self.note(1, " Not checking %s URL" % scheme)
             return None
