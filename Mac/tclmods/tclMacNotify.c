@@ -83,24 +83,6 @@ static void		NotifierExitHandler _ANSI_ARGS_((
 			    ClientData clientData));
 
 /*
-** Routine to determine whether Tk is the "main event handler" at the moment or
-** something else (MacPython, IDE) is.
-** Currently we only check that the frontmost window is Tk based, it may be better
-** to also check whether we're inside a Tk mainloop().
-*/
-static int
-TkIsTheBoss(void)
-{
-    WindowRef windowRef;
-
-    windowRef = FrontWindow();
-    if ( !windowRef )
-    	return 0;
-    if ( TkMacGetXWindow(windowRef) )
-    	return 1;
-    return 0;
-}
-/*
  *----------------------------------------------------------------------
  *
  * InitNotifier --
@@ -174,8 +156,6 @@ HandleMacEvents(void)
     WindowRef windowRef;
     Rect mouseRect;
 
-    if ( !TkIsTheBoss() )
-    	return 0;
     /*
      * Check for mouse moved events.  These events aren't placed on the
      * system event queue unless we call WaitNextEvent.
@@ -211,13 +191,11 @@ HandleMacEvents(void)
      */
 
     while (needsUpdate || (GetEvQHdr()->qHead != NULL)) {
-   	/* Give Python command-. handling a chance */
-	PyMac_DoYield(0, 0);
-	
 	GetGlobalMouse(&currentMouse);
 	SetRect(&mouseRect, currentMouse.h, currentMouse.v,
 		currentMouse.h + 1, currentMouse.v + 1);
 	RectRgn(notifier.utilityRgn, &mouseRect);
+	
 	WaitNextEvent(everyEvent, &theEvent, 5, notifier.utilityRgn);
 	needsUpdate = 0;
 	if ((notifier.eventProcPtr != NULL)
