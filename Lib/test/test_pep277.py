@@ -52,10 +52,10 @@ class UnicodeFileTests(unittest.TestCase):
                              % (fn.__name__, filename))
         except expected_exception, details:
             if check_fn_in_exception and details.filename != filename:
-                    raise TestFailed("Function '%s(%r) failed with "
-                                     "bad filename in the exception: %r"
-                                     % (fn.__name__, filename,
-                                        details.filename))
+                raise TestFailed("Function '%s(%r) failed with "
+                                 "bad filename in the exception: %r"
+                                 % (fn.__name__, filename,
+                                    details.filename))
 
     def test_failures(self):
         # Pass non-existing Unicode filenames all over the place.

@@ -109,7 +109,7 @@ except IOError:
         TESTFN = TMP_TESTFN
         del TMP_TESTFN
     except IOError:
-        print ('WARNING: tests will fail, unable to write to: %s or %s' % 
+        print ('WARNING: tests will fail, unable to write to: %s or %s' %
                 (TESTFN, TMP_TESTFN))
 if fp is not None:
     fp.close()

@@ -470,8 +470,8 @@ try: int('1' * 600)
 except: raise TestFailed("int('1' * 600) didn't return long")
 
 if have_unicode:
-	try: int(unichr(0x661) * 600)
-	except: raise TestFailed("int('\\u0661' * 600) didn't return long")
+    try: int(unichr(0x661) * 600)
+    except: raise TestFailed("int('\\u0661' * 600) didn't return long")
 
 try: int(1, 12)
 except TypeError: pass
@@ -539,17 +539,17 @@ if sys.maxint == 0x7fffffff:
     # XXX If/when PySequence_Length() returns a ssize_t, it should be
     # XXX re-enabled.
     try:
-        # Verify clearing of bug #556025.
-        # This assumes that the max data size (sys.maxint) == max
-        # address size this also assumes that the address size is at
-        # least 4 bytes with 8 byte addresses, the bug is not well
-        # tested
-        #
-        # Note: This test is expected to SEGV under Cygwin 1.3.12 or
-        # earlier due to a newlib bug.  See the following mailing list
-        # thread for the details:
+    # Verify clearing of bug #556025.
+    # This assumes that the max data size (sys.maxint) == max
+    # address size this also assumes that the address size is at
+    # least 4 bytes with 8 byte addresses, the bug is not well
+    # tested
+    #
+    # Note: This test is expected to SEGV under Cygwin 1.3.12 or
+    # earlier due to a newlib bug.  See the following mailing list
+    # thread for the details:
 
-        #     http://sources.redhat.com/ml/newlib/2002/msg00369.html
+    #     http://sources.redhat.com/ml/newlib/2002/msg00369.html
         list(xrange(sys.maxint // 2))
     except MemoryError:
         pass
