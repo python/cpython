@@ -65,7 +65,7 @@ typedef anything (*anyroutine) Py_PROTO((...));
 
 /* Other constants */
 #define MAXNAME 31	/* Maximum size of names, for printing only */
-#define MAXARG 8	/* Maximum number of arguments */
+#define MAXARG 12	/* Maximum number of arguments */
 
 /*
 ** Routines to convert arguments between Python and C.
@@ -666,7 +666,7 @@ cdc_call(self, args, kwargs)
 {
 	char buf[256];
 	int i, pargindex;
-	anything c_args[MAXARG] = {0, 0, 0, 0, 0, 0, 0, 0};
+	anything c_args[MAXARG] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	anything c_rv;
 	conventry *cp;
 	PyObject *curarg;
@@ -706,7 +706,8 @@ cdc_call(self, args, kwargs)
 	/* Call function */
 	func = self->routine->rtn;
 	c_rv = (*func)(c_args[0], c_args[1], c_args[2], c_args[3],
-			c_args[4], c_args[5], c_args[6], c_args[7]);
+			c_args[4], c_args[5], c_args[6], c_args[7],
+			c_args[8], c_args[9], c_args[10], c_args[11]);
 
 	/* Decode return value, and store into returnvalues if needed */
 	pargindex = 0;
@@ -1066,17 +1067,19 @@ cdll_newcall(self, args)
 	PyObject *args;
 {
 	cdrobject *routine;
-	conventry *argconv[MAXARG] = {0, 0, 0, 0, 0, 0, 0, 0};
+	conventry *argconv[MAXARG] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	rv2py_converter rvconv;
 	int npargs, ncargs;
 
 	/* Note: the next format depends on MAXARG */
-	if (!PyArg_ParseTuple(args, "O!O&|O&O&O&O&O&O&O&O&", &Cdrtype, &routine,
+	if (!PyArg_ParseTuple(args, "O!O&|O&O&O&O&O&O&O&O&O&O&O&O&", &Cdrtype, &routine,
 		argparse_rvconv, &rvconv,
 		argparse_conv, &argconv[0], argparse_conv, &argconv[1],
 		argparse_conv, &argconv[2], argparse_conv, &argconv[3],
 		argparse_conv, &argconv[4], argparse_conv, &argconv[5],
-		argparse_conv, &argconv[6], argparse_conv, &argconv[7]))
+		argparse_conv, &argconv[6], argparse_conv, &argconv[7],
+		argparse_conv, &argconv[8], argparse_conv, &argconv[9],
+		argparse_conv, &argconv[10], argparse_conv, &argconv[11]))
 		return NULL;
 	npargs = 0;
 	for(ncargs=0; ncargs < MAXARG && argconv[ncargs]; ncargs++) {
