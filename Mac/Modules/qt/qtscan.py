@@ -6,7 +6,7 @@ from scantools import Scanner
 
 LONG = "QuickTime"
 SHORT = "qt"
-OBJECT = "Movie"
+OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase")
 
 def main():
 	input = "Movies.h"
@@ -26,52 +26,75 @@ class MyScanner(Scanner):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
-			if t == OBJECT and m == "InMode":
+			if t in OBJECTS and m == "InMode":
 				classname = "Method"
-				listname = "methods"
+				listname = t + "_methods"
 		return classname, listname
 
 	def makeblacklistnames(self):
 		return [
 			"DisposeMovie",		# Done on python-object disposal
+			"DisposeMovieTrack",	# ditto
+			"DisposeTrackMedia",	# ditto
+			"DisposeUserData",		# ditto
+			"DisposeTimeBase",		# ditto
 			"GetMovieCreationTime",	# type "unsigned long" in C, inparseable
 			"GetMovieModificationTime",	# Ditto
+			"GetTrackCreationTime",		# ditto
+			"GetTrackModificationTime",	# Ditto
+			"GetMediaCreationTime",		# ditto
+			"GetMediaModificationTime",	# Ditto
+			# The following 4 use 'void *' in an uncontrolled way
+			# TBD when I've read the manual...
+			"GetUserDataItem",
+			"SetUserDataItem",
+			"SetTextSampleData",
+			"MCDoAction",
+			# bgen gets the argument in/out wrong..
+			"AddTextSample",
+			"AddTESample",
+			"AddHiliteSample",
+			"HiliteTextSample",
 			]
 
 	def makeblacklisttypes(self):
 		return [
-			"MoviesErrorUPP",
-			"Track",	# XXXX To be done in the future
-			"Media",
-			"UserData",
-			"TimeBase",
+			# I don't think we want to do these
+			"QTSyncTaskPtr",
+			# We dont do callbacks yet, so no need for these
 			"QTCallBack",
-			"Component",
+			# Skipped for now, due to laziness
 			"TimeRecord",
 			"TimeRecord_ptr",
 			"TrackEditState",
 			"MovieEditState",
-			"MoviePreviewCallOutUPP",
-			"CGrafPtr",
-			"GDHandle",
-			"MovieDrawingCompleteUPP",
-			"PixMapHandle",
 			"MatrixRecord",
 			"MatrixRecord_ptr",
+			"SampleReferencePtr",
+#			"SampleDescription",
+#			"SoundDescription",
+#			"TextDescription",
+#			"MusicDescription",
+			# I dont know yet how to do these.
+			"CGrafPtr",
+			"GDHandle",
+			# Routine pointers, not yet.
+			"MoviesErrorUPP",
+			"MoviePreviewCallOutUPP",
+			"MovieDrawingCompleteUPP",
 			"QTCallBackUPP",
 			"TextMediaUPP",
 			"MovieProgressUPP",
 			"MovieRgnCoverUPP",
 			"MCActionFilterUPP",
 			"MCActionFilterWithRefConUPP",
-			"SampleDescription",
-			"SoundDescription",
-			"TextDescription",
-			"MusicDescription",
+			"GetMovieUPP",
+			"ModalFilterUPP",
 			]
 
 	def makerepairinstructions(self):
 		return [
+			([('FSSpec', '*', 'OutMode')], [('FSSpec_ptr', '*', 'InMode')]),
 			]
 			
 if __name__ == "__main__":
