@@ -315,11 +315,10 @@ class Editor(W.Window):
 			self.editgroup.editor.settabsettings(tabsettings)
 	
 	def domenu_options(self, *args):
-		rvcreator, rveoln = SaveOptions(self._creator, self._eoln)
-		if rvcreator != self._creator or rveoln != self._eoln:
+		rv = SaveOptions(self._creator, self._eoln)
+		if rv:
 			self.editgroup.editor.selectionchanged() # ouch...
-			self._creator = rvcreator
-			self._eoln = rveoln
+			self._creator, self._eoln = rv
 	
 	def clicklinefield(self):
 		if self._currentwidget <> self.linefield:
