@@ -233,16 +233,6 @@ extern int lstat(const char *, struct stat *);
 #endif /* MS_WIN32 */
 #endif /* _MSC_VER */
 
-/* The default encoding used by the platform file system APIs
-   If non-NULL, this is almost certainly different than the default 
-   encoding for strings (otherwise it can remain NULL!)
-*/
-#ifdef MS_WIN32
-const char *Py_FileSystemDefaultEncoding = "mbcs";
-#else
-const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
-#endif
-
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 #include <io.h>
 #endif /* OS2 */
