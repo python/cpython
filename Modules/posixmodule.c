@@ -349,12 +349,16 @@ posix_error_with_filename(char* name)
 static PyObject *
 win32_error(char* function, char* filename)
 {
-	/* XXX this could be improved */
+	/* XXX We should pass the function name along in the future.
+	   (_winreg.c also wants to pass the function name.)
+	   This would however require an additional param to the 
+	   Windows error object, which is non-trivial.
+	*/
 	errno = GetLastError();
 	if (filename)
-		return PyErr_SetFromErrnoWithFilename(PyExc_OSError, filename);
+		return PyErr_SetFromWindowsErrWithFilename(errno, filename);
 	else
-		return PyErr_SetFromErrno(PyExc_OSError);
+		return PyErr_SetFromWindowsErr(errno);
 }
 #endif
 
