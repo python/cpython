@@ -9,8 +9,6 @@
 \authoraddress{E-mail: \email{gward@python.net}}
 
 
-
-
 \begin{document}
 
 \maketitle
@@ -199,10 +197,10 @@ distributing Python modules using the Distutils:
 The setup script is the centre of all activity in building,
 distributing, and installing modules using the Distutils.  The main
 purpose of the setup script is to describe your module distribution to
-the Distutils, so that the various commands that operate on your modules 
+the Distutils, so that the various commands that operate on your modules
 do the right thing.  As we saw in section~\ref{sec:simple-example}
-above, the setup script consists mainly of a call to \function{setup()}, and 
-all information supplied to the Distutils is suppled as keyword
+above, the setup script consists mainly of a call to \function{setup()},
+and all information supplied to the Distutils is suppled as keyword
 arguments to \function{setup()}.
 
 Here's a slightly more involved example, which we'll follow for the next
@@ -305,12 +303,12 @@ slightly more involved example:
 py_modules = ['mod1', 'pkg.mod2']
 \end{verbatim}
 This describes two modules, one of them in the ``root'' package, the
-other in the \module{pkg} package.  Again, the default
-package/directory layout implies that these two modules can be found in
-\file{mod1.py} and \file{pkg/mod2.py}, and that \file{pkg/\_\_init\_\_.py}
-exists as well.  And again, you can override the package/directory
-layout using the \option{package\_dir} option.  \XXX{not sure if this is
-  actually true---must check!}
+other in the \module{pkg} package.  Again, the default package/directory
+layout implies that these two modules can be found in \file{mod1.py} and
+\file{pkg/mod2.py}, and that \file{pkg/\_\_init\_\_.py} exists as well.
+And again, you can override the package/directory layout using the
+\option{package\_dir} option.  \XXX{not sure if this is actually
+  true---must check!}
 
 
 \section{Writing the Setup Configuration File}
@@ -356,8 +354,8 @@ default format for the current platform.  The default formats are:
   \lineii{Unix}{gzipped tar file (\file{.tar.gz})}
   \lineii{Windows}{zip file}  
 \end{tableii}
-You can specify as many formats as you like using the \longprogramopt{formats} 
-option, for example:
+You can specify as many formats as you like using the
+\longprogramopt{formats} option, for example:
 \begin{verbatim}
 python setup.py sdist --formats=gztar,zip
 \end{verbatim}
@@ -489,9 +487,10 @@ python setup.py sdist --manifest-only
 (\longprogramopt{manifest-only} implies \longprogramopt{force-manifest}.)
 
 If you don't want to use the default file set, you can supply the
-\longprogramopt{no-defaults} option.  If you use \longprogramopt{no-defaults} and
-don't supply a manifest template (or it's empty, or nothing matches the
-patterns in it), then your source distribution will be empty.
+\longprogramopt{no-defaults} option.  If you use
+\longprogramopt{no-defaults} and don't supply a manifest template (or
+it's empty, or nothing matches the patterns in it), then your source
+distribution will be empty.
 
 
 \section{Creating Built Distributions}
@@ -547,9 +546,9 @@ between someone being able to use your extensions or not.
 
 \XXX{filenames are inaccurate here!}
 
-The \command{bdist} command has a \longprogramopt{format} option, similar to
-the \command{sdist} command, that you can use to select which formats to
-generate: for example,
+The \command{bdist} command has a \longprogramopt{format} option,
+similar to the \command{sdist} command, that you can use to select which
+formats to generate: for example,
 \begin{verbatim}
 python setup.py bdist --format=zip
 \end{verbatim}
@@ -580,8 +579,8 @@ The available formats for built distributions are:
 \end{description}
 
 You don't have to use the \command{bdist} command with the
-\longprogramopt{formats} option; you can also use the command that directly
-implements the format you're interested in.  Many of these
+\longprogramopt{formats} option; you can also use the command that
+directly implements the format you're interested in.  Many of these
 \command{bdist} ``sub-commands'' actually generate several similar
 formats; for instance, the \command{bdist\_dumb} command generates all
 the ``dumb'' archive formats (\code{tar}, \code{ztar}, \code{gztar}, and
@@ -676,8 +675,8 @@ anything except backslash or colon; on Mac OS anything except colon.
 \XXX{Windows and Mac OS support not there yet}
 
 
-\subsection{Creating a ``built'' distribution: the \protect\command{bdist} command
-  family}
+\subsection{Creating a ``built'' distribution: the
+  \protect\command{bdist} command family}
 \label{sec:bdist-cmds}
 
 
