@@ -192,7 +192,7 @@ as its argument, which is constructed using the
 Once the script is loaded, its dictionary is retrieved with
 \cfunction{PyModule_GetDict()}.  The dictionary is then searched using
 the normal dictionary access routines for the function name.  If the
-name exists, and the object retunred is callable, you can safely
+name exists, and the object returned is callable, you can safely
 assume that it is a function.  The program then proceeds by
 constructing a tuple of arguments as normal.  The call to the python
 function is then made with:
