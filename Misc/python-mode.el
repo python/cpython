@@ -275,6 +275,9 @@ Currently-active file is at the head of the list.")
 (and (fboundp 'make-obsolete-variable)
      (make-obsolete-variable 'py-mode-hook 'python-mode-hook))
 
+(defvar py-delete-function 'backward-delete-char-untabify
+  "*Function called by `py-delete-char' when deleting characters.")
+
 (defvar py-mode-map ()
   "Keymap used in `python-mode' buffers.")
 
@@ -992,7 +995,10 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 ;; Functions for Python style indentation
 (defun py-delete-char (count)
   "Reduce indentation or delete character.
+
 If point is at the leftmost column, deletes the preceding newline.
+Deletion is performed by calling the function in `py-delete-function'
+with a single argument (the number of characters to delete).
 
 Else if point is at the leftmost non-blank character of a line that is
 neither a continuation line nor a non-indenting comment line, or if
@@ -1011,7 +1017,7 @@ argument delets that many characters."
 	  (py-continuation-line-p)
 	  (not py-honor-comment-indentation)
 	  (looking-at "#[^ \t\n]"))	; non-indenting #
-      (backward-delete-char-untabify count)
+      (funcall py-delete-function count)
     ;; else indent the same as the colon line that opened the block
 
     ;; force non-blank so py-goto-block-up doesn't ignore it
