@@ -75,7 +75,7 @@ def test_setparameters():
     #   config2 (16-bit, stereo, 44.1kHz) should work on all but the
     #      most ancient and crufty hardware
     config1 = (ossaudiodev.AFMT_U8, 1, 8000)
-    config2 = (ossaudiodev.AFMT_S16_NE, 2, 44100)
+    config2 = (AFMT_S16_NE, 2, 44100)
 
     for config in [config1, config2]:
         (fmt, channels, rate) = config
