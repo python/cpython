@@ -54,8 +54,7 @@ class Cmd:
 				return
 			func()
 		else:
-			import newdir
-			names = newdir.dir(self.__class__)
+			names = dir(self.__class__)
 			cmds_doc = []
 			cmds_undoc = []
 			help = {}
