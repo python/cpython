@@ -213,8 +213,6 @@ def parse_makefile(fp, g=None):
 def _init_posix():
     """Initialize the module as appropriate for POSIX systems."""
     g = globals()
-    # load the installed config.h:
-    parse_config_h(open(get_config_h_filename()), g)
     # load the installed Makefile:
     parse_makefile(open(get_makefile_filename()), g)
 
