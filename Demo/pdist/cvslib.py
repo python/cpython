@@ -1,123 +1,268 @@
-"""Utilities to read and write CVS admin files (esp. CVS/Entries)"""
+"""Utilities for CVS administration."""
 
 import string
 import os
 import time
+import md5
+import fnmatch
 
 
-class Entry:
+class File:
 
-	"""Class representing one (parsed) line from CVS/Entries"""
+	"""Represent a file's status.
+
+	Instance variables:
+
+	file -- the filename (no slashes), None if uninitialized
+	lseen -- true if the data for the local file is up to date
+	eseen -- true if the data from the CVS/Entries entry is up to date
+	         (this implies that the entry must be written back)
+	sseen -- true if the data from the CVS/Sums file is up to date
+	rseen -- true if the data for the remote file is up to date
+
+	Note that lseen and rseen don't necessary mean that a local
+	or remote file *exists* -- they indicate that we've checked it.
+	However, eseen means that this instance corresponds to an
+	entry in the CVS/Entries file.
+
+	If lseen is true:
 	
-	def __init__(self, line):
+	lsum -- checksum of the local file, None if no local file
+	lctime -- ctime of the local file, None if no local file
+	lmtime -- mtime of the local file, None if no local file
+
+	If eseen is true:
+
+	erev -- revision, None if this is a no revision (not '0')
+	enew -- true if this is an uncommitted added file
+	edeleted -- true if this is an uncommitted removed file
+	ectime -- ctime of last local file corresponding to erev
+	emtime -- mtime of last local file corresponding to erev
+
+	If rseen is true:
+
+	proxy -- RCSProxy instance used to contact the server
+	rrev -- revision of head, None if non-existent
+	rsum -- checksum of that revision, Non if non-existent
+
+	If eseen and rseen are both true:
+	
+	esum -- checksum of revision erev, None if no revision
+
+	Note
+	"""
+
+	def __init__(self, file = None):
+		if file and '/' in file:
+			raise ValueError, "no slash allowed in file"
+		self.file = file
+		self.lseen = self.eseen = self.rseen = 0
+
+	def getlocal(self):
+		try:
+			self.lmtime, self.lctime = os.stat(self.file)[-2:]
+		except os.error:
+			self.lmtime = self.lctime = None
+		if self.lmtime:
+			self.lsum = md5.new(open(self.file).read()).digest()
+		else:
+			self.lsum = None
+		self.lseen = 1
+
+	def getentry(self, line):
 		words = string.splitfields(line, '/')
+		if self.file and words[1] != self.file:
+			raise ValueError, "file name mismatch"
 		self.file = words[1]
-		self.rev = words[2]
-		dates = words[3] # ctime, mtime
-		if len(dates) != 49 or dates[:7] == 'Initial':
-			self.ctime = None
-			self.mtime = None
-			self.new = dates[:7] == 'Initial'
+		self.erev = words[2]
+		self.edeleted = 0
+		self.enew = 0
+		self.ectime = self.emtime = None
+		if self.erev[:1] == '-':
+			self.edeleted = 1
+			self.erev = self.erev[1:]
+		if self.erev == '0':
+			self.erev = None
+			self.enew = 1
 		else:
-			self.ctime = unctime(dates[:24])
-			self.mtime = unctime(dates[25:])
-			self.new = 0
+			dates = words[3]
+			self.ectime = unctime(dates[:24])
+			self.emtime = unctime(dates[25:])
 		self.extra = words[4]
-		self.sum = None
-	
-	def unparse(self):
-		if self.new:
-			dates = "Initial %s" % self.file
+		if self.rseen:
+			self.getesum()
+		self.eseen = 1
+
+	def getremote(self, proxy):
+		self.proxy = proxy
+		try:
+			self.rrev = self.proxy.head(self.file)
+		except (os.error, IOError):
+			self.rrev = None
+		if self.rrev:
+			self.rsum = self.proxy.sum(self.file)
 		else:
-			dates = gmctime(self.ctime) + ' ' + gmctime(self.mtime)
+			self.rsum = None
+		if self.eseen:
+			self.getesum()
+		self.rseen = 1
+
+	def getesum(self):
+		if self.erev == self.rrev:
+			self.esum = self.rsum
+		elif self.erev:
+			name = (self.file, self.erev)
+			self.esum = self.proxy.sum(name)
+		else:
+			self.esum = None
+
+	def putentry(self):
+		"""Return a line suitable for inclusion in CVS/Entries.
+
+		The returned line is terminated by a newline.
+		If no entry should be written for this file,
+		return "".
+		"""
+		if not self.eseen:
+			return ""
+
+		rev = self.erev or '0'
+		if self.edeleted:
+			rev = '-' + rev
+		if self.enew:
+			dates = 'Initial ' + self.file
+		else:
+			dates = gmctime(self.ectime) + ' ' + \
+				gmctime(self.emtime)
 		return "/%s/%s/%s/%s/\n" % (
 			self.file,
-			self.rev,
+			rev,
 			dates,
 			self.extra)
-	
-	def setsum(self, sum):
-		self.sum = sum
-	
-	def getsum(self):
-		return self.sum
-	
-	def sethexsum(self, hexsum):
-		self.setsum(unhexify(hexsum))
-	
-	def gethexsum(self):
-		if self.sum:
-			return hexify(self.sum)
-		else:
-			return None
-	
-	def dump(self):
-		keys = self.__dict__.keys()
-		keys.sort()
-		for key in keys:
-			print "%-15s: %s" % (key, `self.__dict__[key]`)
-		print '-'*45
+
+	def report(self):
+		print '-'*50
+		def r(key, repr=repr, self=self):
+			try:
+				value = repr(getattr(self, key))
+			except AttributeError:
+				value = "?"
+			print "%-15s:" % key, value
+		r("file")
+		if self.lseen:
+			r("lsum", hexify)
+			r("lctime", gmctime)
+			r("lmtime", gmctime)
+		if self.eseen:
+			r("erev")
+			r("ectime", gmctime)
+			r("emtime", gmctime)
+		if self.rseen:
+			r("rrev")
+			r("rsum", hexify)
+			if self.eseen:
+				r("esum", hexify)
 
 
 class CVS:
+	
+	"""Represent the contents of a CVS admin file (and more).
 
-	"""Class representing the contents of CVS/Entries (and CVS/Sums)"""
+	Class variables:
+
+	FileClass -- the class to be instantiated for entries
+	             (this should be derived from class File above)
+	IgnoreList -- shell patterns for local files to be ignored
+
+	Instance variables:
+
+	entries -- a dictionary containing File instances keyed by
+	           their file name
+	proxy -- an RCSProxy instance, or None
+	"""
+	
+	FileClass = File
+
+	IgnoreList = ['.*', '@*', ',*', '*~', '*.o', '*.a', '*.so', '*.pyc']
 	
 	def __init__(self):
-		self.readentries()
+		self.entries = {}
+		self.proxy = None
 	
-	def readentries(self):
+	def setproxy(self, proxy):
+		if proxy is self.proxy:
+			return
+		self.proxy = proxy
+		for e in self.entries.values():
+			e.rseen = 0
+	
+	def getentries(self):
+		"""Read the contents of CVS/Entries"""
 		self.entries = {}
 		f = self.cvsopen("Entries")
 		while 1:
 			line = f.readline()
 			if not line: break
-			e = Entry(line)
+			e = self.FileClass()
+			e.getentry(line)
 			self.entries[e.file] = e
 		f.close()
 	
-	def readsums(self):
-		try:
-			f = self.cvsopen("Sums")
-		except IOError:
-			return
-		while 1:
-			line = f.readline()
-			if not line: break
-			words = string.split(line)
-			[file, rev, hexsum] = words
-			if not self.entries.has_key(file):
-				continue
-			e = self.entries[file]
-			if e.rev == rev:
-				e.sethexsum(hexsum)
-		f.close()
-	
-	def writeentries(self):
+	def putentries(self):
+		"""Write CVS/Entries back"""
 		f = self.cvsopen("Entries", 'w')
-		for file in self.keys():
-			f.write(self.entries[file].unparse())
+		for e in self.values():
+			f.write(e.unparse())
 		f.close()
-	
-	def writesums(self):
-		if self.cvsexists("Sums"):
-			f = self.cvsopen("Sums", 'w')
-		else:
-			f = None
-		for file in self.keys():
-			e = self.entries[file]
-			hexsum = e.gethexsum()
-			if hexsum:
-				if not f:
-					f = self.cvsopen("Sums", 'w')
-				f.write("%s %s %s\n" % (file, e.rev, hexsum))
-		if f:
-			f.close()
+
+	def getlocalfiles(self):
+		list = self.entries.keys()
+		addlist = os.listdir(os.curdir)
+		for name in addlist:
+			if name in list:
+				continue
+			if not self.ignored(name):
+				list.append(name)
+		list.sort()
+		for file in list:
+			try:
+				e = self.entries[file]
+			except KeyError:
+				e = self.entries[file] = self.FileClass(file)
+			e.getlocal()
+
+	def getremotefiles(self, proxy = None):
+		if proxy:
+			self.proxy = proxy
+		if not self.proxy:
+			raise RuntimeError, "no RCS proxy"
+		addlist = self.proxy.listfiles()
+		for file in addlist:
+			try:
+				e = self.entries[file]
+			except KeyError:
+				e = self.entries[file] = self.FileClass(file)
+			e.getremote(self.proxy)
+
+	def report(self):
+		for e in self.values():
+			e.report()
+		print '-'*50
 	
 	def keys(self):
 		keys = self.entries.keys()
 		keys.sort()
 		return keys
+
+	def values(self):
+		def value(key, self=self):
+			return self.entries[key]
+		return map(value, self.keys())
+
+	def items(self):
+		def item(key, self=self):
+			return (key, self.entries[key])
+		return map(item, self.keys())
 
 	def cvsexists(self, file):
 		file = os.path.join("CVS", file)
@@ -134,14 +279,26 @@ class CVS:
 			bfile = file + '~'
 			os.rename(file, bfile)
 
+	def ignored(self, file):
+		if os.path.isdir(file): return 1
+		for pat in self.IgnoreList:
+			if fnmatch.fnmatch(file, pat): return 1
+		return 0
+
+
+# hexify and unhexify are useful to print MD5 checksums in hex format
 
 hexify_format = '%02x' * 16
 def hexify(sum):
 	"Return a hex representation of a 16-byte string (e.g. an MD5 digest)"
+	if sum is None:
+		return "None"
 	return hexify_format % tuple(map(ord, sum))
 
 def unhexify(hexsum):
 	"Return the original from a hexified string"
+	if hexsum == "None":
+		return None
 	sum = ''
 	for i in range(0, len(hexsum), 2):
 		sum = sum + chr(string.atoi(hexsum[i:i+2], 16))
@@ -150,6 +307,7 @@ def unhexify(hexsum):
 
 unctime_monthmap = {}
 def unctime(date):
+	if date == "None": return None
 	if not unctime_monthmap:
 		months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
 			  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -166,6 +324,7 @@ def unctime(date):
 	return time.mktime((year, month, day, hh, mm, ss, 0, 0, 0))
 
 def gmctime(t):
+	if t is None: return "None"
 	return time.asctime(time.gmtime(t))
 
 def test_unctime():
@@ -183,12 +342,13 @@ def test_unctime():
 
 def test():
 	x = CVS()
-	keys = x.entries.keys()
-	keys.sort()
-	for file in keys:
-		e = x.entries[file]
-		print file, e.rev, gmctime(e.ctime), gmctime(e.mtime), e.extra,
-		print e.gethexsum()
+	x.getentries()
+	x.getlocalfiles()
+##	x.report()
+	import rcsclient
+	proxy = rcsclient.openrcsclient()
+	x.getremotefiles(proxy)
+	x.report()
 
 
 if __name__ == "__main__":
