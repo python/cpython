@@ -21,11 +21,10 @@ static PyObject *instance_getattr2(PyInstanceObject *, PyObject *);
 
 static PyObject *getattrstr, *setattrstr, *delattrstr;
 
+
 PyObject *
-PyClass_New(bases, dict, name)
-	PyObject *bases; /* NULL or tuple of classobjects! */
-	PyObject *dict;
-	PyObject *name;
+PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
+     /* bases is NULL or tuple of classobjects! */
 {
 	PyClassObject *op, *dummy;
 	static PyObject *docstr, *modstr, *namestr;
@@ -118,8 +117,7 @@ PyClass_New(bases, dict, name)
 /* Class methods */
 
 static void
-class_dealloc(op)
-	PyClassObject *op;
+class_dealloc(PyClassObject *op)
 {
 	PyObject_GC_Fini(op);
 	Py_DECREF(op->cl_bases);
@@ -133,10 +131,7 @@ class_dealloc(op)
 }
 
 static PyObject *
-class_lookup(cp, name, pclass)
-	PyClassObject *cp;
-	PyObject *name;
-	PyClassObject **pclass;
+class_lookup(PyClassObject *cp, PyObject *name, PyClassObject **pclass)
 {
 	int i, n;
 	PyObject *value = PyDict_GetItem(cp->cl_dict, name);
@@ -157,9 +152,7 @@ class_lookup(cp, name, pclass)
 }
 
 static PyObject *
-class_getattr(op, name)
-	register PyClassObject *op;
-	PyObject *name;
+class_getattr(register PyClassObject *op, PyObject *name)
 {
 	register PyObject *v;
 	register char *sname = PyString_AsString(name);
@@ -203,9 +196,7 @@ class_getattr(op, name)
 }
 
 static void
-set_slot(slot, v)
-	PyObject **slot;
-	PyObject *v;
+set_slot(PyObject **slot, PyObject *v)
 {
 	PyObject *temp = *slot;
 	Py_XINCREF(v);
@@ -214,8 +205,7 @@ set_slot(slot, v)
 }
 
 static void
-set_attr_slots(c)
-	PyClassObject *c;
+set_attr_slots(PyClassObject *c)
 {
 	PyClassObject *dummy;
 
@@ -225,9 +215,7 @@ set_attr_slots(c)
 }
 
 static char *
-set_dict(c, v)
-	PyClassObject *c;
-	PyObject *v;
+set_dict(PyClassObject *c, PyObject *v)
 {
 	if (v == NULL || !PyDict_Check(v))
 		return "__dict__ must be a dictionary object";
@@ -237,9 +225,7 @@ set_dict(c, v)
 }
 
 static char *
-set_bases(c, v)
-	PyClassObject *c;
-	PyObject *v;
+set_bases(PyClassObject *c, PyObject *v)
 {
 	int i, n;
 
@@ -259,9 +245,7 @@ set_bases(c, v)
 }
 
 static char *
-set_name(c, v)
-	PyClassObject *c;
-	PyObject *v;
+set_name(PyClassObject *c, PyObject *v)
 {
 	if (v == NULL || !PyString_Check(v))
 		return "__name__ must be a string object";
@@ -272,10 +256,7 @@ set_name(c, v)
 }
 
 static int
-class_setattr(op, name, v)
-	PyClassObject *op;
-	PyObject *name;
-	PyObject *v;
+class_setattr(PyClassObject *op, PyObject *name, PyObject *v)
 {
 	char *sname;
 	if (PyEval_GetRestricted()) {
@@ -322,8 +303,7 @@ class_setattr(op, name, v)
 }
 
 static PyObject *
-class_repr(op)
-	PyClassObject *op;
+class_repr(PyClassObject *op)
 {
 	PyObject *mod = PyDict_GetItemString(op->cl_dict, "__module__");
 	char buf[140];
@@ -342,8 +322,7 @@ class_repr(op)
 }
 
 static PyObject *
-class_str(op)
-	PyClassObject *op;
+class_str(PyClassObject *op)
 {
 	PyObject *mod = PyDict_GetItemString(op->cl_dict, "__module__");
 	PyObject *name = op->cl_name;
@@ -433,9 +412,7 @@ PyTypeObject PyClass_Type = {
 };
 
 int
-PyClass_IsSubclass(class, base)
-	PyObject *class;
-	PyObject *base;
+PyClass_IsSubclass(PyObject *class, PyObject *base)
 {
 	int i, n;
 	PyClassObject *cp;
@@ -456,10 +433,7 @@ PyClass_IsSubclass(class, base)
 /* Instance objects */
 
 PyObject *
-PyInstance_New(class, arg, kw)
-	PyObject *class;
-	PyObject *arg;
-	PyObject *kw;
+PyInstance_New(PyObject *class, PyObject *arg, PyObject *kw)
 {
 	register PyInstanceObject *inst;
 	PyObject *init;
@@ -517,8 +491,7 @@ PyInstance_New(class, arg, kw)
 /* Instance methods */
 
 static void
-instance_dealloc(inst)
-	register PyInstanceObject *inst;
+instance_dealloc(register PyInstanceObject *inst)
 {
 	PyObject *error_type, *error_value, *error_traceback;
 	PyObject *del;
@@ -597,9 +570,7 @@ instance_dealloc(inst)
 }
 
 static PyObject *
-instance_getattr1(inst, name)
-	register PyInstanceObject *inst;
-	PyObject *name;
+instance_getattr1(register PyInstanceObject *inst, PyObject *name)
 {
 	register PyObject *v;
 	register char *sname = PyString_AsString(name);
@@ -627,9 +598,7 @@ instance_getattr1(inst, name)
 }
 
 static PyObject *
-instance_getattr2(inst, name)
-	register PyInstanceObject *inst;
-	PyObject *name;
+instance_getattr2(register PyInstanceObject *inst, PyObject *name)
 {
 	register PyObject *v;
 	PyClassObject *class;
@@ -664,9 +633,7 @@ instance_getattr2(inst, name)
 }
 
 static PyObject *
-instance_getattr(inst, name)
-	register PyInstanceObject *inst;
-	PyObject *name;
+instance_getattr(register PyInstanceObject *inst, PyObject *name)
 {
 	register PyObject *func, *res;
 	res = instance_getattr1(inst, name);
@@ -683,10 +650,7 @@ instance_getattr(inst, name)
 }
 
 static int
-instance_setattr1(inst, name, v)
-	PyInstanceObject *inst;
-	PyObject *name;
-	PyObject *v;
+instance_setattr1(PyInstanceObject *inst, PyObject *name, PyObject *v)
 {
 	if (v == NULL) {
 		int rv = PyDict_DelItem(inst->in_dict, name);
@@ -700,10 +664,7 @@ instance_setattr1(inst, name, v)
 }
 
 static int
-instance_setattr(inst, name, v)
-	PyInstanceObject *inst;
-	PyObject *name;
-	PyObject *v;
+instance_setattr(PyInstanceObject *inst, PyObject *name, PyObject *v)
 {
 	PyObject *func, *args, *res, *tmp;
 	char *sname = PyString_AsString(name);
@@ -767,8 +728,7 @@ instance_setattr(inst, name, v)
 }
 
 static PyObject *
-instance_repr(inst)
-	PyInstanceObject *inst;
+instance_repr(PyInstanceObject *inst)
 {
 	PyObject *func;
 	PyObject *res;
@@ -803,16 +763,14 @@ instance_repr(inst)
 }
 
 static PyObject *
-instance_compare1(inst, other)
-	PyObject *inst, *other;
+instance_compare1(PyObject *inst, PyObject *other)
 {
 	return PyInstance_DoBinOp(inst, other, "__cmp__", "__rcmp__",
 			     instance_compare1);
 }
 
 static int
-instance_compare(inst, other)
-	PyObject *inst, *other;
+instance_compare(PyObject *inst, PyObject *other)
 {
 	PyObject *result;
 	long outcome;
@@ -835,8 +793,7 @@ instance_compare(inst, other)
 }
 
 static long
-instance_hash(inst)
-	PyInstanceObject *inst;
+instance_hash(PyInstanceObject *inst)
 {
 	PyObject *func;
 	PyObject *res;
@@ -898,8 +855,7 @@ instance_traverse(PyInstanceObject *o, visitproc visit, void *arg)
 static PyObject *getitemstr, *setitemstr, *delitemstr, *lenstr;
 
 static int
-instance_length(inst)
-	PyInstanceObject *inst;
+instance_length(PyInstanceObject *inst)
 {
 	PyObject *func;
 	PyObject *res;
@@ -930,9 +886,7 @@ instance_length(inst)
 }
 
 static PyObject *
-instance_subscript(inst, key)
-	PyInstanceObject *inst;
-	PyObject *key;
+instance_subscript(PyInstanceObject *inst, PyObject *key)
 {
 	PyObject *func;
 	PyObject *arg;
@@ -955,10 +909,7 @@ instance_subscript(inst, key)
 }
 
 static int
-instance_ass_subscript(inst, key, value)
-	PyInstanceObject*inst;
-	PyObject *key;
-	PyObject *value;
+instance_ass_subscript(PyInstanceObject *inst, PyObject *key, PyObject *value)
 {
 	PyObject *func;
 	PyObject *arg;
@@ -1000,9 +951,7 @@ static PyMappingMethods instance_as_mapping = {
 };
 
 static PyObject *
-instance_item(inst, i)
-	PyInstanceObject *inst;
-	int i;
+instance_item(PyInstanceObject *inst, int i)
 {
 	PyObject *func, *arg, *res;
 
@@ -1023,9 +972,7 @@ instance_item(inst, i)
 }
 
 static PyObject *
-instance_slice(inst, i, j)
-	PyInstanceObject *inst;
-	int i, j;
+instance_slice(PyInstanceObject *inst, int i, int j)
 {
 	PyObject *func, *arg, *res;
 	static PyObject *getslicestr;
@@ -1047,10 +994,7 @@ instance_slice(inst, i, j)
 }
 
 static int
-instance_ass_item(inst, i, item)
-	PyInstanceObject *inst;
-	int i;
-	PyObject *item;
+instance_ass_item(PyInstanceObject *inst, int i, PyObject *item)
 {
 	PyObject *func, *arg, *res;
 
@@ -1084,10 +1028,7 @@ instance_ass_item(inst, i, item)
 }
 
 static int
-instance_ass_slice(inst, i, j, value)
-	PyInstanceObject *inst;
-	int i, j;
-	PyObject *value;
+instance_ass_slice(PyInstanceObject *inst, int i, int j, PyObject *value)
 {
 	PyObject *func, *arg, *res;
 	static PyObject *setslicestr, *delslicestr;
@@ -1176,7 +1117,8 @@ static int instance_contains(PyInstanceObject *inst, PyObject *member)
 	return ret;
 }
 
-static PySequenceMethods instance_as_sequence = {
+static PySequenceMethods
+instance_as_sequence = {
 	(inquiry)instance_length, /*sq_length*/
 	0, /*sq_concat*/
 	0, /*sq_repeat*/
@@ -1188,9 +1130,7 @@ static PySequenceMethods instance_as_sequence = {
 };
 
 static PyObject *
-generic_unary_op(self, methodname)
-	PyInstanceObject *self;
-	PyObject *methodname;
+generic_unary_op(PyInstanceObject *self, PyObject *methodname)
 {
 	PyObject *func, *res;
 
@@ -1203,19 +1143,16 @@ generic_unary_op(self, methodname)
 
 
 /* Forward */
-static int halfbinop(PyObject *, PyObject *, char *, PyObject **,
-		     PyObject * (*)(PyObject *, PyObject *), int);
+static int
+halfbinop(PyObject *, PyObject *, char *, PyObject **,
+          PyObject * (*)(PyObject *, PyObject *), int);
 
 
 /* Implement a binary operator involving at least one class instance. */
 
 PyObject *
-PyInstance_DoBinOp(v, w, opname, ropname, thisfunc)
-	PyObject *v;
-	PyObject *w;
-	char *opname;
-	char *ropname;
-	PyObject * (*thisfunc)(PyObject *, PyObject *);
+PyInstance_DoBinOp(PyObject *v, PyObject *w, char *opname, char *ropname,
+                   PyObject * (*thisfunc)(PyObject *, PyObject *))
 {
 	char buf[256];
 	PyObject *result = NULL;
@@ -1244,13 +1181,8 @@ PyInstance_DoBinOp(v, w, opname, ropname, thisfunc)
 static PyObject *coerce_obj;
 
 static int
-halfbinop(v, w, opname, r_result, thisfunc, swapped)
-	PyObject *v;
-	PyObject *w;
-	char *opname;
-	PyObject **r_result;
-	PyObject * (*thisfunc)(PyObject *, PyObject *);
-	int swapped;
+halfbinop(PyObject *v, PyObject *w, char *opname, PyObject **r_result,
+          PyObject * (*thisfunc)(PyObject *, PyObject *), int swapped)
 {
 	PyObject *func;
 	PyObject *args;
@@ -1326,9 +1258,7 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 }
 
 static int
-instance_coerce(pv, pw)
-	PyObject **pv;
-	PyObject **pw;
+instance_coerce(PyObject **pv, PyObject **pw)
 {
 	PyObject *v = *pv;
 	PyObject *w = *pw;
@@ -1395,8 +1325,7 @@ UNARY(instance_pos, "__pos__")
 UNARY(instance_abs, "__abs__")
 
 static int
-instance_nonzero(self)
-	PyInstanceObject *self;
+instance_nonzero(PyInstanceObject *self)
 {
 	PyObject *func, *res;
 	long outcome;
@@ -1444,10 +1373,7 @@ UNARY(instance_hex, "__hex__")
 
 /* This version is for ternary calls only (z != None) */
 static PyObject *
-instance_pow(v, w, z)
-	PyObject *v;
-	PyObject *w;
-	PyObject *z;
+instance_pow(PyObject *v, PyObject *w, PyObject *z)
 {
 	/* XXX Doesn't do coercions... */
 	PyObject *func;
@@ -1533,10 +1459,7 @@ PyTypeObject PyInstance_Type = {
 static PyMethodObject *free_list;
 
 PyObject *
-PyMethod_New(func, self, class)
-	PyObject *func;
-	PyObject *self;
-	PyObject *class;
+PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 {
 	register PyMethodObject *im;
 	if (!PyCallable_Check(func)) {
@@ -1564,8 +1487,7 @@ PyMethod_New(func, self, class)
 }
 
 PyObject *
-PyMethod_Function(im)
-	register PyObject *im;
+PyMethod_Function(register PyObject *im)
 {
 	if (!PyMethod_Check(im)) {
 		PyErr_BadInternalCall();
@@ -1575,8 +1497,7 @@ PyMethod_Function(im)
 }
 
 PyObject *
-PyMethod_Self(im)
-	register PyObject *im;
+PyMethod_Self(register PyObject *im)
 {
 	if (!PyMethod_Check(im)) {
 		PyErr_BadInternalCall();
@@ -1586,8 +1507,7 @@ PyMethod_Self(im)
 }
 
 PyObject *
-PyMethod_Class(im)
-	register PyObject *im;
+PyMethod_Class(register PyObject *im)
 {
 	if (!PyMethod_Check(im)) {
 		PyErr_BadInternalCall();
@@ -1611,9 +1531,7 @@ static struct memberlist instancemethod_memberlist[] = {
 };
 
 static PyObject *
-instancemethod_getattr(im, name)
-	register PyMethodObject *im;
-	PyObject *name;
+instancemethod_getattr(register PyMethodObject *im, PyObject *name)
 {
 	char *sname = PyString_AsString(name);
 	if (sname[0] == '_') {
@@ -1632,8 +1550,7 @@ instancemethod_getattr(im, name)
 }
 
 static void
-instancemethod_dealloc(im)
-	register PyMethodObject *im;
+instancemethod_dealloc(register PyMethodObject *im)
 {
 	PyObject_GC_Fini(im);
 	Py_DECREF(im->im_func);
@@ -1644,8 +1561,7 @@ instancemethod_dealloc(im)
 }
 
 static int
-instancemethod_compare(a, b)
-	PyMethodObject *a, *b;
+instancemethod_compare(PyMethodObject *a, PyMethodObject *b)
 {
 	if (a->im_self != b->im_self)
 		return (a->im_self < b->im_self) ? -1 : 1;
@@ -1653,8 +1569,7 @@ instancemethod_compare(a, b)
 }
 
 static PyObject *
-instancemethod_repr(a)
-	PyMethodObject *a;
+instancemethod_repr(PyMethodObject *a)
 {
 	char buf[240];
 	PyInstanceObject *self = (PyInstanceObject *)(a->im_self);
@@ -1696,8 +1611,7 @@ instancemethod_repr(a)
 }
 
 static long
-instancemethod_hash(a)
-	PyMethodObject *a;
+instancemethod_hash(PyMethodObject *a)
 {
 	long x, y;
 	if (a->im_self == NULL)
@@ -1763,7 +1677,7 @@ PyTypeObject PyMethod_Type = {
 /* Clear out the free list */
 
 void
-PyMethod_Fini()
+PyMethod_Fini(void)
 {
 	while (free_list) {
 		PyMethodObject *im = free_list;
