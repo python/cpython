@@ -1359,7 +1359,6 @@ file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return f;
 }
 
-/* XXX Keep this in synch with open_doc in bltinmodule.c. */
 static char file_doc[] =
 "file(name[, mode[, buffering]]) -> file object\n"
 "\n"
@@ -1369,7 +1368,8 @@ static char file_doc[] =
 "opened for writing.  Add a 'b' to the mode for binary files.\n"
 "Add a '+' to the mode to allow simultaneous reading and writing.\n"
 "If the buffering argument is given, 0 means unbuffered, 1 means line\n"
-"buffered, and larger numbers specify the buffer size.";
+"buffered, and larger numbers specify the buffer size.\n"
+"Note:  open() is an alias for file().\n";
 
 PyTypeObject PyFile_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
