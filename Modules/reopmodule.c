@@ -48,6 +48,20 @@ static PyObject *ReopError;	/* Exception */
 #define DOTALL     0x04
 #define VERBOSE    0x08
 
+#define NORMAL			0
+#define CHARCLASS		1
+#define REPLACEMENT		2
+
+#define CHAR 			0
+#define MEMORY_REFERENCE 	1
+#define SYNTAX 			2
+#define NOT_SYNTAX 		3
+#define SET			4
+#define WORD_BOUNDARY		5
+#define NOT_WORD_BOUNDARY	6
+#define BEGINNING_OF_BUFFER	7
+#define END_OF_BUFFER		8
+
 static char *reop_casefold;
 
 static PyObject *
@@ -235,6 +249,501 @@ reop_search(self, args)
 	return makeresult(&re_regs, bufp.num_registers);
 }
 
+static PyObject *
+reop_expand_escape(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+  unsigned char c, *pattern;
+  int index, context=NORMAL, pattern_len;
+
+  if (!PyArg_ParseTuple(args, "s#i|i", &pattern, &pattern_len, &index,
+			&context)) 
+    return NULL;
+  if (pattern_len<=index)
+    {
+      PyErr_SetString(ReopError, "escape ends too soon");
+      return NULL;
+    }
+  c=pattern[index]; index++;
+  switch (c)
+    {
+    case('t'):
+      return Py_BuildValue("ici", CHAR, (char)9, index);
+      break;
+    case('n'):
+      return Py_BuildValue("ici", CHAR, (char)10, index);
+      break;
+    case('v'):
+      return Py_BuildValue("ici", CHAR, (char)11, index);
+      break;
+    case('r'):
+      return Py_BuildValue("ici", CHAR, (char)13, index);
+      break;
+    case('f'):
+      return Py_BuildValue("ici", CHAR, (char)12, index);
+      break;
+    case('a'):
+      return Py_BuildValue("ici", CHAR, (char)7, index);
+      break;
+    case('x'):
+      {
+	int end, length;
+	unsigned char *string;
+	PyObject *v, *result;
+
+	end=index; 
+	while (end<pattern_len && 
+	       ( re_syntax_table[ pattern[end] ] & Shexdigit ) )
+	  end++;
+	if (end==index)
+	  {
+	    PyErr_SetString(ReopError, "\\x must be followed by hex digits");
+	    return NULL;
+	  }
+	length=end-index;
+	string=malloc(length+4+1);
+	if (string==NULL)
+	  {
+	    PyErr_SetString(PyExc_MemoryError, "can't allocate memory for \\x string");
+	    return NULL;
+	  }
+	/* Create a string containing "\x<hexdigits>", which will be
+	   passed to eval() */
+	string[0]=string[length+3]='"';
+	string[1]='\\';
+	string[length+4]='\0';
+	memcpy(string+2, pattern+index-1, length+1);
+	v=PyRun_String(string, Py_eval_input, 
+		       PyEval_GetGlobals(), PyEval_GetLocals());
+	free(string);
+	/* The evaluation raised an exception */
+	if (v==NULL) return NULL;
+	result=Py_BuildValue("iOi", CHAR, v, end);
+	Py_DECREF(v);
+	return result;
+      }
+      break;
+
+    case('b'):
+      if (context!=NORMAL)
+	return Py_BuildValue("ici", CHAR, (char)8, index);
+      else 
+	{
+	  unsigned char empty_string[1];
+	  empty_string[0]='\0';
+	  return Py_BuildValue("isi", WORD_BOUNDARY, empty_string, index);
+	}
+      break;
+    case('B'):
+      if (context!=NORMAL)
+	return Py_BuildValue("ici", CHAR, 'B', index);
+      else 
+	{
+	  unsigned char empty_string[1];
+	  empty_string[0]='\0';
+	  return Py_BuildValue("isi", NOT_WORD_BOUNDARY, empty_string, index);
+	}
+      break;
+    case('A'):
+      if (context!=NORMAL)
+	return Py_BuildValue("ici", CHAR, 'A', index);
+      else 
+	{
+	  unsigned char empty_string[1];
+	  empty_string[0]='\0';
+	  return Py_BuildValue("isi", BEGINNING_OF_BUFFER, empty_string, index);
+	}
+      break;
+    case('Z'):
+      if (context!=NORMAL)
+	return Py_BuildValue("ici", CHAR, 'Z', index);
+      else 
+	{
+	  unsigned char empty_string[1];
+	  empty_string[0]='\0';
+	  return Py_BuildValue("isi", END_OF_BUFFER, empty_string, index);
+	}
+      break;
+    case('E'):    case('G'):    case('L'):    case('Q'):
+    case('U'):    case('l'):    case('u'):
+      {
+	char message[50];
+	sprintf(message, "\\%c is not allowed", c);
+	PyErr_SetString(ReopError, message);
+	return NULL;
+      }
+
+    case ('w'):
+      if (context==NORMAL)
+	return Py_BuildValue("iii", SYNTAX, Sword, index);
+      if (context!=CHARCLASS)
+	return Py_BuildValue("ici", CHAR, 'w', index);
+      {
+	/* context==CHARCLASS */
+	unsigned char set[256];
+	int i, j;
+	for(i=j=0; i<256; i++)
+	  if (re_syntax_table[i] & Sword) 
+	    {
+	      set[j++] = i;
+	    }
+	return Py_BuildValue("is#i", SET, set, j, index);
+      }
+      break;
+    case ('W'):
+      if (context==NORMAL)
+	return Py_BuildValue("iii", NOT_SYNTAX, Sword, index);
+      if (context!=CHARCLASS)
+	return Py_BuildValue("ici", CHAR, 'W', index);
+      {
+	/* context==CHARCLASS */
+	unsigned char set[256];
+	int i, j;
+	for(i=j=0; i<256; i++)
+	  if (! (re_syntax_table[i] & Sword))
+	    {
+	      set[j++] = i;
+	    }
+	return Py_BuildValue("is#i", SET, set, j, index);
+      }
+      break;
+    case ('s'):
+      if (context==NORMAL)
+	return Py_BuildValue("iii", SYNTAX, Swhitespace, index);
+      if (context!=CHARCLASS)
+	return Py_BuildValue("ici", CHAR, 's', index);
+      {
+	/* context==CHARCLASS */
+	unsigned char set[256];
+	int i, j;
+	for(i=j=0; i<256; i++)
+	  if (re_syntax_table[i] & Swhitespace) 
+	    {
+	      set[j++] = i;
+	    }
+	return Py_BuildValue("is#i", SET, set, j, index);
+      }
+      break;
+    case ('S'):
+      if (context==NORMAL)
+	return Py_BuildValue("iii", NOT_SYNTAX, Swhitespace, index);
+      if (context!=CHARCLASS)
+	return Py_BuildValue("ici", CHAR, 'S', index);
+      {
+	/* context==CHARCLASS */
+	unsigned char set[256];
+	int i, j;
+	for(i=j=0; i<256; i++)
+	  if (! (re_syntax_table[i] & Swhitespace) )
+	    {
+	      set[j++] = i;
+	    }
+	return Py_BuildValue("is#i", SET, set, j, index);
+      }
+      break;
+
+    case ('d'):
+      if (context==NORMAL)
+	return Py_BuildValue("iii", SYNTAX, Sdigit, index);
+      if (context!=CHARCLASS)
+	return Py_BuildValue("ici", CHAR, 'd', index);
+      {
+	/* context==CHARCLASS */
+	unsigned char set[256];
+	int i, j;
+	for(i=j=0; i<256; i++)
+	  if (re_syntax_table[i] & Sdigit) 
+	    {
+	      set[j++] = i;
+	    }
+	return Py_BuildValue("is#i", SET, set, j, index);
+      }
+      break;
+    case ('D'):
+      if (context==NORMAL)
+	return Py_BuildValue("iii", NOT_SYNTAX, Sdigit, index);
+      if (context!=CHARCLASS)
+	return Py_BuildValue("ici", CHAR, 'D', index);
+      {
+	/* context==CHARCLASS */
+	unsigned char set[256];
+	int i, j;
+	for(i=j=0; i<256; i++)
+	  if ( !(re_syntax_table[i] & Sdigit) )
+	    {
+	      set[j++] = i;
+	    }
+	return Py_BuildValue("is#i", SET, set, j, index);
+      }
+      break;
+
+    case('g'):
+      {
+	int end, valid, i;
+	if (context!=REPLACEMENT)
+	  return Py_BuildValue("ici", CHAR, 'g', index);
+	if (pattern_len<=index)
+	  {
+	    PyErr_SetString(ReopError, "unfinished symbolic reference");
+	    return NULL;
+	  }
+	if (pattern[index]!='<')
+	  {
+	    PyErr_SetString(ReopError, "missing < in symbolic reference");
+	    return NULL;
+	  }
+	index++;
+	end=index;
+	while (end<pattern_len && pattern[end]!='>')
+	  end++;
+	if (end==pattern_len)
+	  {
+	    PyErr_SetString(ReopError, "unfinished symbolic reference");
+	    return NULL;
+	  }
+	valid=1;
+	if (index==end		/* Zero-length name */
+	    || !(re_syntax_table[pattern[index]] & Sword) /* First char. not alphanumeric */
+	    || (re_syntax_table[pattern[index]] & Sdigit) ) /* First char. a digit */
+	  valid=0;
+
+	for(i=index+1; i<end; i++)
+	  {
+	    if (!(re_syntax_table[pattern[i]] & Sword) )
+	      valid=0;
+	  }	
+	if (!valid)
+	  {
+	    /* XXX should include the text of the reference */
+	    PyErr_SetString(ReopError, "illegal symbolic reference");
+	    return NULL;
+	  }
+	    
+	return Py_BuildValue("is#i", MEMORY_REFERENCE, 
+			             pattern+index, end-index, 
+			             end+1);
+      }
+    break;
+
+    case('0'):
+      {
+	/* \0 always indicates an octal escape, so we consume up to 3
+	   characters, as long as they're all octal digits */
+	int octval=0, i;
+	index--;
+	for(i=index;
+	    i<=index+2 && i<pattern_len 
+	      && (re_syntax_table[ pattern[i] ] & Soctaldigit );
+	    i++)
+	  {
+	    octval = octval * 8 + pattern[i] - '0';
+	  }
+	if (octval>255)
+	  {
+	    PyErr_SetString(ReopError, "octal value out of range");
+	    return NULL;
+	  }
+	return Py_BuildValue("ici", CHAR, (unsigned char)octval, i);
+      }
+      break;
+    case('1'):    case('2'):    case('3'):    case('4'):
+    case('5'):    case('6'):    case('7'):    case('8'):
+    case('9'):
+      {
+	/* Handle \?, where ? is from 1 through 9 */
+	int value=0;
+	index--;
+	/* If it's at least a two-digit reference, like \34, it might
+           either be a 3-digit octal escape (\123) or a 2-digit
+           decimal memory reference (\34) */
+
+	if ( (index+1) <pattern_len && 
+	    (re_syntax_table[ pattern[index+1] ] & Sdigit) )
+	  {
+	    if ( (index+2) <pattern_len && 
+		(re_syntax_table[ pattern[index+2] ] & Soctaldigit) &&
+		(re_syntax_table[ pattern[index+1] ] & Soctaldigit) &&
+		(re_syntax_table[ pattern[index  ] ] & Soctaldigit)
+		)
+	      {
+		/* 3 octal digits */
+		value= 8*8*(pattern[index  ]-'0') +
+		         8*(pattern[index+1]-'0') +
+		           (pattern[index+2]-'0');
+		if (value>255)
+		  {
+		    PyErr_SetString(ReopError, "octal value out of range");
+		    return NULL;
+		  }
+		return Py_BuildValue("ici", CHAR, (unsigned char)value, index+3);
+	      }
+	    else
+	      {
+		/* 2-digit form, so it's a memory reference */
+		if (context==CHARCLASS)
+		  {
+		    PyErr_SetString(ReopError, "cannot reference a register "
+				    "from inside a character class");
+		    return NULL;
+		  }
+		value= 10*(pattern[index  ]-'0') +
+		          (pattern[index+1]-'0');
+		if (value<1 || RE_NREGS<=value)
+		  {
+		    PyErr_SetString(ReopError, "memory reference out of range");
+		    return NULL;
+		  }
+		return Py_BuildValue("iii", MEMORY_REFERENCE, 
+				     value, index+2);
+	      }
+	  }
+	else 
+	  {
+	    /* Single-digit form, like \2, so it's a memory reference */
+	    if (context==CHARCLASS)
+	      {
+		PyErr_SetString(ReopError, "cannot reference a register "
+				"from inside a character class");
+		return NULL;
+	      }
+	    return Py_BuildValue("iii", MEMORY_REFERENCE, 
+				 pattern[index]-'0', index+1);
+	  }
+      }
+      break;
+
+    default:
+	return Py_BuildValue("ici", CHAR, c, index);
+	break;
+    }
+}
+
+static PyObject *
+reop__expand(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+  PyObject *results, *match_obj;
+  PyObject *repl_obj, *newstring;
+  char *repl;
+  int size, total_len, i, start, pos;
+
+  if (!PyArg_ParseTuple(args, "OS", &match_obj, &repl_obj)) 
+    return NULL;
+
+  repl=PyString_AsString(repl_obj);
+  size=PyString_Size(repl_obj);
+  results=PyList_New(0);
+  if (results==NULL) return NULL;
+  for(start=total_len=i=0; i<size; i++)
+    {
+      if (repl[i]=='\\')
+	{
+	  PyObject *args, *t, *value;
+	  int escape_type;
+
+	  if (start!=i)
+	    {
+	      PyList_Append(results, 
+			    PyString_FromStringAndSize(repl+start, i-start));
+	      total_len += i-start;
+	    }
+	  i++;
+	  args=Py_BuildValue("Oii", repl_obj, i, REPLACEMENT);
+	  t=reop_expand_escape(NULL, args);
+	  Py_DECREF(args);
+	  if (t==NULL)
+	    {
+	      /* reop_expand_escape triggered an exception of some sort,
+		 so just return */
+	      Py_DECREF(results);
+	      return NULL;
+	    }
+	  value=PyTuple_GetItem(t, 1);
+	  escape_type=PyInt_AsLong(PyTuple_GetItem(t, 0));
+	  switch (escape_type)
+	    {
+	    case (CHAR):
+	      PyList_Append(results, value);
+	      total_len += PyString_Size(value);
+	      break;
+	    case(MEMORY_REFERENCE):
+	      {
+		PyObject *r, *tuple, *result;
+		r=PyObject_GetAttrString(match_obj, "group");
+		tuple=PyTuple_New(1);
+		PyTuple_SetItem(tuple, 0, value);
+		result=PyEval_CallObject(r, tuple);
+		Py_DECREF(r); Py_DECREF(tuple);
+		if (result==NULL)
+		  {
+		    /* The group() method trigged an exception of some sort */
+		    Py_DECREF(results);
+		    return NULL;
+		  }
+		if (result==Py_None)
+		  {
+		    char message[50];
+		    sprintf(message, 
+			    "group %li did not contribute to the match",
+			    PyInt_AsLong(value));
+		    PyErr_SetString(ReopError, 
+				    message);
+		    Py_DECREF(result);
+		    Py_DECREF(t);
+		    Py_DECREF(results);
+		    return NULL;
+		  }
+		/* xxx typecheck that it's a string! */
+		PyList_Append(results, result);
+		total_len += PyString_Size(result);
+		Py_DECREF(result);
+	      }
+	      break;
+	    default:
+	      Py_DECREF(t);
+	      Py_DECREF(results);
+	      PyErr_SetString(ReopError, 
+			      "bad escape in replacement");
+	      return NULL;
+	    }
+	  i=start=PyInt_AsLong(PyTuple_GetItem(t, 2));
+	  i--; /* Decrement now, because the 'for' loop will increment it */
+	  Py_DECREF(t);
+	}
+    } /* endif repl[i]!='\\' */
+
+  if (start!=i)
+    {
+      PyList_Append(results, PyString_FromStringAndSize(repl+start, i-start));
+      total_len += i-start;
+    }
+
+  /* Whew!  Now we've constructed a list containing various pieces of
+     strings that will make up our final result.  So, iterate over 
+     the list concatenating them.  A new string measuring total_len
+     bytes is allocated and filled in. */
+     
+  newstring=PyString_FromStringAndSize(NULL, total_len);
+  if (newstring==NULL)
+    {
+      Py_DECREF(results);
+      return NULL;
+    }
+
+  repl=PyString_AsString(newstring);
+  for (pos=i=0; i<PyList_Size(results); i++)
+    {
+      PyObject *item=PyList_GetItem(results, i);
+      memcpy(repl+pos, PyString_AsString(item), PyString_Size(item) );
+      pos += PyString_Size(item);
+    }
+  Py_DECREF(results);
+  return newstring;
+}
+
+
 #if 0
 /* Functions originally in the regsub module.
    Added June 1, 1997. 
@@ -399,6 +908,8 @@ reop_splitx(self, args)
 static struct PyMethodDef reop_global_methods[] = {
 	{"match",	reop_match, 0},
 	{"search",	reop_search, 0},
+	{"expand_escape", reop_expand_escape, 1},
+	{"_expand", reop__expand, 1},
 #if 0
 	{"split",  reop_split, 0},
 	{"splitx",  reop_splitx, 0},
@@ -491,10 +1002,25 @@ initreop()
 	if (PyDict_SetItemString(d, "digit", v) < 0)
 	   goto finally;
 	Py_DECREF(v);
-	
+
+	PyDict_SetItemString(d, "NORMAL", PyInt_FromLong(NORMAL));
+	PyDict_SetItemString(d, "CHARCLASS", PyInt_FromLong(CHARCLASS));
+	PyDict_SetItemString(d, "REPLACEMENT", PyInt_FromLong(REPLACEMENT));
+
+	PyDict_SetItemString(d, "CHAR", PyInt_FromLong(CHAR));
+	PyDict_SetItemString(d, "MEMORY_REFERENCE", PyInt_FromLong(MEMORY_REFERENCE));
+	PyDict_SetItemString(d, "SYNTAX", PyInt_FromLong(SYNTAX));
+	PyDict_SetItemString(d, "NOT_SYNTAX", PyInt_FromLong(NOT_SYNTAX));
+	PyDict_SetItemString(d, "SET", PyInt_FromLong(SET));
+	PyDict_SetItemString(d, "WORD_BOUNDARY", PyInt_FromLong(WORD_BOUNDARY));
+	PyDict_SetItemString(d, "NOT_WORD_BOUNDARY", PyInt_FromLong(NOT_WORD_BOUNDARY));
+	PyDict_SetItemString(d, "BEGINNING_OF_BUFFER", PyInt_FromLong(BEGINNING_OF_BUFFER));
+	PyDict_SetItemString(d, "END_OF_BUFFER", PyInt_FromLong(END_OF_BUFFER));
+
 	if (!PyErr_Occurred())
 		return;
 
   finally:
 	Py_FatalError("can't initialize reop module");
 }
+
