@@ -1,9 +1,11 @@
 \documentclass{howto}
 
+% XXX difflib.py, doctest.py added
+
 % $Id$
 
 \title{What's New in Python 2.1}
-\release{0.05}
+\release{0.06}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk1@bigfoot.com}}
 \begin{document}
@@ -436,6 +438,54 @@ operations will now be processed at the C level.}
 \end{seealso}
 
 %======================================================================
+\section{New and Improved Modules}
+
+\begin{itemize}
+
+\item \module{curses.panel}, a wrapper for the panel library, part of
+ncurses and of SYSV curses, was contributed by Thomas Gellekum.  The
+panel library provides windows with the additional feature of depth.
+Windows can be moved higher or lower in the depth ordering, and the
+panel library figures out where panels overlap and which sections are
+visible.
+
+\item The PyXML package has gone through a few releases since Python
+2.0, and Python 2.1 includes an updated version of the \module{xml}
+package.  Some of the noteworthy changes include support for Expat
+1.2, the ability for Expat parsers to handle files in any encoding
+supported by Python, and various bugfixes for SAX, DOM, and the
+\module{minidom} module.
+
+\item Various functions in the \module{time} module, such as
+\function{asctime()} and \function{localtime()}, require a floating
+point argument containing the time in seconds since the epoch.  The
+most common use of these functions is to work with the current time,
+so the floating point argument has been made optional; when a value
+isn't provided, the current time will be used.  For example, log file
+entries usually need a string containing the current time; in Python
+2.1, \code{time.asctime()} can be used, instead of the lengthier
+\code{time.asctime(time.localtime(time.time()))} that was previously
+required.
+ 
+This change was proposed and implemented by Thomas Wouters.
+
+\item The \module{ftplib} module now defaults to retrieving files in
+passive mode, because passive mode is more likely to work from behind
+a firewall.  This request came from the Debian bug tracking system,
+since other Debian packages use \module{ftplib} to retrieve files and
+then don't work from behind a firewall.  It's deemed unlikely that
+this will cause problems for anyone, because Netscape defaults to
+passive mode and few people complain, but if passive mode is
+unsuitable for your application or network setup, call
+\method{set_pasv(0)} on FTP objects to disable passive mode.
+
+\item Support for raw socket access has been added to the
+\module{socket} module, contributed by Grant Edwards.
+
+
+\end{itemize}
+
+%======================================================================
 \section{Minor Changes and Fixes}
 
 There were relatively few smaller changes made in Python 2.1 due to
@@ -480,13 +530,6 @@ pair from the dictionary and returns it as a 2-tuple.  This was
 implemented mostly by Tim Peters and Guido van Rossum, after a
 suggestion and preliminary patch by Moshe Zadka.
  
-\item \module{curses.panel}, a wrapper for the panel library, part of
-ncurses and of SYSV curses, was contributed by Thomas Gellekum.  The
-panel library provides windows with the additional feature of depth.
-Windows can be moved higher or lower in the depth ordering, and the
-panel library figures out where panels overlap and which sections are
-visible.
-
 \item Modules can now control which names are imported when \code{from
 \var{module} import *} is used, by defining an \code{__all__}
 attribute containing a list of names that will be imported.  One
@@ -504,26 +547,6 @@ A stricter version of this patch was first suggested and implemented
 by Ben Wolfson, but after some python-dev discussion, a weaker final
 version was checked in.
 
-\item The PyXML package has gone through a few releases since Python
-2.0, and Python 2.1 includes an updated version of the \module{xml}
-package.  Some of the noteworthy changes include support for Expat
-1.2, the ability for Expat parsers to handle files in any encoding
-supported by Python, and various bugfixes for SAX, DOM, and the
-\module{minidom} module.
-
-\item Various functions in the \module{time} module, such as
-\function{asctime()} and \function{localtime()}, require a floating
-point argument containing the time in seconds since the epoch.  The
-most common use of these functions is to work with the current time,
-so the floating point argument has been made optional; when a value
-isn't provided, the current time will be used.  For example, log file
-entries usually need a string containing the current time; in Python
-2.1, \code{time.asctime()} can be used, instead of the lengthier
-\code{time.asctime(time.localtime(time.time()))} that was previously
-required.
- 
-This change was proposed and implemented by Thomas Wouters.
-
 \item Applying \function{repr()} to strings previously used octal
 escapes for non-printable characters; for example, a newline was
 \code{'\e 012'}.  This was a vestigial trace of Python's C ancestry, but
@@ -531,19 +554,6 @@ today octal is of very little practical use.  Ka-Ping Yee suggested
 using hex escapes instead of octal ones, and using the \code{\e n},
 \code{\e t}, \code{\e r} escapes for the appropriate characters, and
 implemented this new formatting.
-
-\item The \module{ftplib} module now defaults to retrieving files in
-passive mode, because passive mode is more likely to work from behind
-a firewall.  This request came from the Debian bug tracking system,
-since other Debian packages use \module{ftplib} to retrieve files and
-then don't work from behind a firewall.  It's deemed unlikely that
-this will cause problems for anyone, because Netscape defaults to
-passive mode and few people complain, but if passive mode is
-unsuitable for your application or network setup, call
-\method{set_pasv(0)} on FTP objects to disable passive mode.
-
-\item Support for raw socket access has been added to the
-\module{socket} module, contributed by Grant Edwards.
 
 \item Syntax errors detected at compile-time can now raise exceptions
 containing the filename and line number of the error, a pleasant side
