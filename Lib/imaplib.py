@@ -1,3 +1,4 @@
+
 """IMAP4 client.
 
 Based on RFC 2060.
@@ -13,10 +14,8 @@ Public functions:	Internaldate2tuple
 			ParseFlags
 			Time2Internaldate
 """
-#
-#	$Header$
-#
-__version__ = "$Revision$"
+
+__version__ = "2.11"
 
 import binascii, re, socket, string, time, random
 
@@ -87,10 +86,10 @@ class IMAP4:
 	name (in lower-case).
 
 	All arguments to commands are converted to strings, except for
-	the last argument to APPEND which is passed as an IMAP4
-	literal.  If necessary (the string contains white-space and
-	isn't enclosed with either parentheses or double quotes) each
-	string is quoted.
+	AUTHENTICATE, and the last argument to APPEND which is passed as
+	an IMAP4 literal.  If necessary (the string contains
+	white-space and isn't enclosed with either parentheses or
+	double quotes) each string is quoted.
 
 	Each command returns a tuple: (type, [data, ...]) where 'type'
 	is usually 'OK' or 'NO', and 'data' is either the text from the
@@ -157,14 +156,13 @@ class IMAP4:
 		if __debug__ and self.debug >= 3:
 			print '\tCAPABILITIES: %s' % `self.capabilities`
 
-		self.PROTOCOL_VERSION = None
 		for version in AllowedVersions:
 			if not version in self.capabilities:
 				continue
 			self.PROTOCOL_VERSION = version
-			break
-		if not self.PROTOCOL_VERSION:
-			raise self.error('server not IMAP4 compliant')
+			return
+
+		raise self.error('server not IMAP4 compliant')
 
 
 	def open(self, host, port):
@@ -915,15 +913,13 @@ if __debug__:
 
 if __debug__ and __name__ == '__main__':
 
-	host = ''
-	import sys
-	if sys.argv[1:]:
-		host = sys.argv[1]
+	import getpass, sys
 
-	import getpass
+	host = ''
+	if sys.argv[1:]: host = sys.argv[1]
+
 	USER = getpass.getuser()
-	PASSWD = getpass.getpass(
-		"IMAP password for %s: " % (host or "localhost"))
+	PASSWD = getpass.getpass("IMAP password for %s: " % (host or "localhost"))
 
 	test_seq1 = (
 	('login', (USER, PASSWD)),
