@@ -226,6 +226,17 @@ class ReferencesTestCase(TestBase):
         self.assert_(not hasattr(o, 'foo'),
                      "object does not reflect attribute removal via proxy")
 
+    def test_proxy_deletion(self):
+        # Test clearing of SF bug #762891
+        class Foo:
+            result = None
+            def __delitem__(self, accessor):
+                self.result = accessor
+        g = Foo()
+        f = weakref.proxy(g)
+        del f[0]
+        self.assertEqual(f.result, 0)
+
     def test_getweakrefcount(self):
         o = C()
         ref1 = weakref.ref(o)
