@@ -72,6 +72,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1103407: Properly deal with tarfile iterators when untarring
+  symbolic links on Windows.
+
 - Patch #645894: Use getrusage for computing the time consumption in 
   profile.py if available.
 
