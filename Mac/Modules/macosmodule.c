@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <errno.h>
 
+#include <OSUtils.h> /* for Set(Current)A5 */
 #include <Resources.h>
 #include <Sound.h>
 
@@ -232,6 +233,8 @@ SndCh_Dealloc(SndChObject *s)
 {
 	if (s->chan != NULL) {
 		SndDisposeChannel(s->chan, 1);
+		if (s->chan->userInfo != 0)
+			DEL((void *)s->chan->userInfo);
 		s->chan = NULL;
 	}
 	PyMem_DEL(s);
@@ -247,6 +250,8 @@ SndCh_Close(SndChObject *s, PyObject *args)
 	}
 	if (s->chan != NULL) {
 		SndDisposeChannel(s->chan, quietNow);
+		if (s->chan->userInfo != 0)
+			DEL((void *)s->chan->userInfo);
 		s->chan = NULL;
 	}
 	Py_INCREF(Py_None);
@@ -336,23 +341,85 @@ static PyTypeObject SndChType = {
 /*----------------------------------------------------------------------*/
 /* Module */
 
+typedef struct {
+	long A5;
+	PyObject *callback;
+	PyObject *channel;
+	SndCommand cmd;
+} cbinfo;
+
+static int
+MySafeCallback(arg)
+	void *arg;
+{
+	cbinfo *p = (cbinfo *)arg;
+	PyObject *args;
+	PyObject *res;
+	args = Py_BuildValue("(O(hhl))",
+			     p->channel,
+			     p->cmd.cmd, p->cmd.param1, p->cmd.param2);
+	res = PyEval_CallObject(p->callback, args);
+	Py_DECREF(args);
+	if (res == NULL)
+		return -1;
+	DECREF(res);
+	return 0;
+}
+
+static pascal void
+MyUserRoutine(SndChannelPtr chan, SndCommand cmd)
+{
+	cbinfo *p = (cbinfo *)chan->userInfo;
+	long A5 = SetA5(p->A5);
+	p->cmd = cmd;
+	Py_AddPendingCall(MySafeCallback, (void *)p);
+	SetA5(A5);
+}
+
 static PyObject *
 MacOS_SndNewChannel(PyObject *self, PyObject *args)
 {
 	SndChannelPtr chan;
 	short synth;
 	long init = 0;
+	PyObject *callback = NULL;
+	cbinfo *p = NULL;
+	SndCallBackProcPtr userroutine = 0;
 	OSErr err;
+	PyObject *res;
 	if (!PyArg_Parse(args, "(h)", &synth)) {
 		PyErr_Clear();
-		if (!PyArg_Parse(args, "(hl)", &synth, &init))
-			return NULL;
+		if (!PyArg_Parse(args, "(hl)", &synth, &init)) {
+			PyErr_Clear();
+			if (!PyArg_Parse(args, "(hlO)",
+					 &synth, &init, &callback))
+				return NULL;
+		}
+	}
+	if (callback != NULL) {
+		p = NEW(cbinfo, 1);
+		if (p == NULL)
+			return PyErr_NoMemory();
+		p->A5 = SetCurrentA5();
+		p->callback = callback;
+		userroutine = MyUserRoutine;
 	}
 	chan = NULL;
-	err = SndNewChannel(&chan, synth, init, (SndCallBackProcPtr)NULL);
-	if (err)
+	err = SndNewChannel(&chan, synth, init, userroutine);
+	if (err) {
+		if (p)
+			DEL(p);
 		return Err(err);
-	return (PyObject *)SndCh_FromSndChannelPtr(chan);
+	}
+	chan->userInfo = (long)p;
+	res = (PyObject *)SndCh_FromSndChannelPtr(chan);
+	if (res == NULL) {
+		SndDisposeChannel(chan, 1);
+		DEL(p);
+	}
+	else
+		p->channel = res;
+	return res;
 }
 
 static PyObject *
@@ -400,6 +467,7 @@ MacOS_Init()
 	
 	/* Initialize MacOS.Error exception */
 	MacOS_Error = PyString_FromString("MacOS.Error");
-	if (MacOS_Error == NULL || PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
+	if (MacOS_Error == NULL ||
+	    PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
 		Py_FatalError("can't define MacOS.Error");
 }
