@@ -7,8 +7,8 @@ Mailcap files are used to configure how MIME-aware applications such
 as mail readers and Web browsers react to files with different MIME
 types. (The name ``mailcap'' is derived from the phrase ``mail
 capability''.)  For example, a mailcap file might contain a line like
-\verb\video/mpeg; xmpeg %s\.  Then, if the user encounters an email
-message or Web document with the MIME type video/mpeg, \verb\%s\ will be
+\samp{video/mpeg; xmpeg \%s}.  Then, if the user encounters an email
+message or Web document with the MIME type video/mpeg, \code{\%s} will be
 replaced by a filename (usually one belonging to a temporary file) and
 the xmpeg program can be automatically started to view the file.
 
@@ -38,11 +38,11 @@ usually you'll override it by specifying a filename.
 
 \var{plist} can be a list containing named parameters; the default
 value is simply an empty list.  Each entry in the list must be a
-string containing the parameter name, an equals sign (=), and the
+string containing the parameter name, an equals sign (\code{=}), and the
 parameter's value.  Mailcap entries can contain 
-named parameters like \verb\%{foo}\, which will be replaced by the
+named parameters like \code{\%\{foo\}}, which will be replaced by the
 value of the parameter named 'foo'.  For example, if the command line
-\verb\showpartial %{id} %{number} %{total}\
+\samp{showpartial \%\{id\} \%\{number\} \%\{total\}}
 was in a mailcap file, and \var{plist} was set to \code{['id=1',
 'number=2', 'total=3']}, the resulting command line would be 
 \code{"showpartial 1 2 3"}.  
@@ -56,7 +56,7 @@ and skip the entry if the check fails.
 
 \begin{funcdesc}{getcaps}{}
 Returns a dictionary mapping MIME types to a list of mailcap file
-entries. This dictionary must be passed to the \code{findmatch}
+entries. This dictionary must be passed to the \code{findmatch()}
 function.  An entry is stored as a list of dictionaries, but it
 shouldn't be necessary to know the details of this representation.
 
