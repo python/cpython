@@ -356,16 +356,47 @@ int PyUnicode_AsWideChar(PyUnicodeObject *unicode,
 
 PyObject *PyUnicode_FromObject(register PyObject *obj)
 {
+    return PyUnicode_FromEncodedObject(obj, NULL, "strict");
+}
+
+PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
+				      const char *encoding,
+				      const char *errors)
+{
     const char *s;
     int len;
+    int owned = 0;
+    PyObject *v;
     
     if (obj == NULL) {
 	PyErr_BadInternalCall();
 	return NULL;
     }
-    else if (PyUnicode_Check(obj)) {
+
+    /* Coerce object */
+    if (PyInstance_Check(obj)) {
+	PyObject *func;
+	func = PyObject_GetAttrString(obj, "__str__");
+	if (func == NULL) {
+	    PyErr_SetString(PyExc_TypeError,
+		  "coercing to Unicode: instance doesn't define __str__");
+	    return NULL;
+	}
+	obj = PyEval_CallObject(func, NULL);
+	Py_DECREF(func);
+	if (obj == NULL)
+	    return NULL;
+	owned = 1;
+    }
+    if (PyUnicode_Check(obj)) {
 	Py_INCREF(obj);
-	return obj;
+	v = obj;
+	if (encoding) {
+	    PyErr_SetString(PyExc_TypeError,
+			    "decoding Unicode is not supported");
+	    return NULL;
+	}
+	goto done;
     }
     else if (PyString_Check(obj)) {
 	s = PyString_AS_STRING(obj);
@@ -376,14 +407,26 @@ PyObject *PyUnicode_FromObject(register PyObject *obj)
 	   case of a TypeError. */
 	if (PyErr_ExceptionMatches(PyExc_TypeError))
 	    PyErr_SetString(PyExc_TypeError,
-			    "coercing to Unicode: need string or charbuffer");
-	return NULL;
+		  "coercing to Unicode: need string or buffer");
+	goto onError;
     }
+
+    /* Convert to Unicode */
     if (len == 0) {
 	Py_INCREF(unicode_empty);
-	return (PyObject *)unicode_empty;
+	v = (PyObject *)unicode_empty;
     }
-    return PyUnicode_Decode(s, len, NULL, "strict");
+    else 
+	v = PyUnicode_Decode(s, len, encoding, errors);
+ done:
+    if (owned)
+	Py_DECREF(obj);
+    return v;
+
+ onError:
+    if (owned)
+	Py_DECREF(obj);
+    return NULL;
 }
 
 PyObject *PyUnicode_Decode(const char *s,
