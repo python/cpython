@@ -51,3 +51,5 @@
 #define testlist 306
 #define dictmaker 307
 #define classdef 308
+#define arglist 309
+#define argument 310
