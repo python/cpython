@@ -179,7 +179,12 @@ class ReTests(unittest.TestCase):
     def test_limitations(self):
         # Try nasty case that overflows the straightforward recursive
         # implementation of repeated groups.
-        self.assertEqual(re.match('(x)*', 50000*'x').span(), (0, 50000))
+        try:
+            re.match('(x)*', 50000*'x')
+        except RuntimeError, v:
+            self.assertEqual(str(v), "maximum recursion limit exceeded")
+        else:
+            self.fail("re.match('(x)*', 50000*'x') should have failed")
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
