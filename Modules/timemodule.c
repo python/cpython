@@ -112,6 +112,9 @@ extern int ftime();
 static int floatsleep Py_PROTO((double));
 static double floattime Py_PROTO(());
 
+/* For Y2K check */
+static PyObject *moddict;
+
 #ifdef macintosh
 /* Our own timezone. We have enough information to deduce whether
 ** DST is on currently, but unfortunately we cannot put it to good
@@ -322,8 +325,11 @@ gettmarg(args, p)
 	PyObject *args;
 	struct tm *p;
 {
+	int y;
+	memset((ANY *) p, '\0', sizeof(struct tm));
+
 	if (!PyArg_Parse(args, "(iiiiiiiii)",
-			 &p->tm_year,
+			 &y,
 			 &p->tm_mon,
 			 &p->tm_mday,
 			 &p->tm_hour,
@@ -333,8 +339,26 @@ gettmarg(args, p)
 			 &p->tm_yday,
 			 &p->tm_isdst))
 		return 0;
-	if (p->tm_year >= 1900)
-		p->tm_year -= 1900;
+	if (y < 1900) {
+		PyObject *accept = PyDict_GetItemString(moddict,
+							"accept2dyear");
+		if (accept == NULL || !PyInt_Check(accept) ||
+		    PyInt_AsLong(accept) == 0) {
+			PyErr_SetString(PyExc_ValueError,
+					"year >= 1900 required");
+			return 0;
+		}
+		if (69 <= y && y <= 99)
+			y += 1900;
+		else if (0 <= y && y <= 68)
+			y += 2000;
+		else {
+			PyErr_SetString(PyExc_ValueError,
+					"year out of range (00-99, 1900-*)");
+			return 0;
+		}
+	}
+	p->tm_year = y - 1900;
 	p->tm_mon--;
 	p->tm_wday = (p->tm_wday + 1) % 7;
 	p->tm_yday--;
@@ -347,6 +371,7 @@ time_strftime(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+	PyObject *tup;
 	struct tm buf;
 	const char *fmt;
 	char *outbuf = 0;
@@ -354,23 +379,8 @@ time_strftime(self, args)
 
 	memset((ANY *) &buf, '\0', sizeof(buf));
 
-	if (!PyArg_ParseTuple(args, "s(iiiiiiiii)",
-			      &fmt,
-			      &(buf.tm_year),
-			      &(buf.tm_mon),
-			      &(buf.tm_mday),
-			      &(buf.tm_hour),
-			      &(buf.tm_min),
-			      &(buf.tm_sec),
-			      &(buf.tm_wday),
-			      &(buf.tm_yday),
-			      &(buf.tm_isdst)))
+	if (!PyArg_ParseTuple(args, "sO", &fmt, &tup) || !gettmarg(tup, &buf))
 		return NULL;
-	if (buf.tm_year >= 1900)
-		buf.tm_year -= 1900;
-	buf.tm_mon--;
-	buf.tm_wday = (buf.tm_wday + 1) % 7;
-	buf.tm_yday--;
 	/* I hate these functions that presume you know how big the output
 	 * will be ahead of time...
 	 */
@@ -414,6 +424,7 @@ time_strptime(self, args)
 		PyErr_SetString(PyExc_ValueError, "invalid argument");
 		return NULL;
 	}
+	memset((ANY *) &tm, '\0', sizeof(tm));
 	s = strptime(buf, fmt, &tm);
 	if (s == NULL) {
 		PyErr_SetString(PyExc_ValueError, "format mismatch");
@@ -595,6 +606,7 @@ void
 inittime()
 {
 	PyObject *m, *d;
+	char *p;
 	m = Py_InitModule3("time", time_methods, module_doc);
 	d = PyModule_GetDict(m);
 #ifdef HAVE_TZNAME
@@ -607,6 +619,12 @@ inittime()
 #endif
 	ins(d, "daylight", PyInt_FromLong((long)daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
+	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
+	p = getenv("PYTHONY2K");
+	ins(d, "accept2dyear", PyInt_FromLong((long) (!p || !*p)));
+	/* Squirrel away the module's dictionary for the y2k check */
+	Py_INCREF(d);
+	moddict = d;
 #else /* !HAVE_TZNAME */
 #if HAVE_TM_ZONE
 	{
