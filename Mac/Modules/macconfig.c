@@ -94,6 +94,7 @@ extern void initicglue();
 #ifndef USE_CORE_TOOLBOX
 #define USE_CORE_TOOLBOX
 #endif
+extern void init_AH();
 extern void init_App();
 extern void init_Fm();
 extern void init_Help();
@@ -229,6 +230,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_Res", init_Res},
 #endif
 #ifdef USE_TOOLBOX
+	{"_AH", init_AH},
 	{"_App", init_App},
 	{"_Fm", init_Fm},
 	{"_IBCarbon", init_IBCarbon},
