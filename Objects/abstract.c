@@ -1752,7 +1752,7 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 
 
 static PyObject *
-obargs_mktuple(va_list va)
+objargs_mktuple(va_list va)
 {
 	int i, n = 0;
 	va_list countva;
@@ -1778,7 +1778,7 @@ obargs_mktuple(va_list va)
 }
 
 PyObject *
-PyObject_CallMethodObArgs(PyObject *callable, PyObject *name, ...)
+PyObject_CallMethodObjArgs(PyObject *callable, PyObject *name, ...)
 {
 	PyObject *args, *tmp;
 	va_list vargs;
@@ -1792,7 +1792,7 @@ PyObject_CallMethodObArgs(PyObject *callable, PyObject *name, ...)
 
 	/* count the args */
 	va_start(vargs, name);
-	args = obargs_mktuple(vargs);
+	args = objargs_mktuple(vargs);
 	va_end(vargs);
 	if (args == NULL) {
 		Py_DECREF(callable);
@@ -1806,7 +1806,7 @@ PyObject_CallMethodObArgs(PyObject *callable, PyObject *name, ...)
 }
 
 PyObject *
-PyObject_CallFunctionObArgs(PyObject *callable, ...)
+PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 {
 	PyObject *args, *tmp;
 	va_list vargs;
@@ -1816,7 +1816,7 @@ PyObject_CallFunctionObArgs(PyObject *callable, ...)
 
 	/* count the args */
 	va_start(vargs, callable);
-	args = obargs_mktuple(vargs);
+	args = objargs_mktuple(vargs);
 	va_end(vargs);
 	if (args == NULL)
 		return NULL;

@@ -208,9 +208,9 @@ determination.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyObject_CallFunctionObArgs}{PyObject *callable,
-                                                          \moreargs,
-                                                          \code{NULL}}
+\begin{cfuncdesc}{PyObject*}{PyObject_CallFunctionObjArgs}{PyObject *callable,
+                                                           \moreargs,
+                                                           \code{NULL}}
   Call a callable Python object \var{callable}, with a variable
   number of \ctype{PyObject*} arguments.  The arguments are provided
   as a variable number of parameters followed by \NULL.
@@ -219,10 +219,10 @@ determination.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyObject_CallMethodObArgs}{PyObject *o,
-                                                        PyObject *name,
-                                                        \moreargs,
-                                                        \code{NULL}}
+\begin{cfuncdesc}{PyObject*}{PyObject_CallMethodObjArgs}{PyObject *o,
+                                                         PyObject *name,
+                                                         \moreargs,
+                                                         \code{NULL}}
   Calls a method of the object \var{o}, where the name of the method
   is given as a Python string object in \var{name}.  It is called with
   a variable number of \ctype{PyObject*} arguments.  The arguments are
