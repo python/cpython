@@ -1658,10 +1658,10 @@ PyDoc_STRVAR(has_key__doc__,
 "D.has_key(k) -> 1 if D has a key k, else 0");
 
 PyDoc_STRVAR(get__doc__,
-"D.get(k[,d]) -> D[k] if D.has_key(k), else d.  d defaults to None.");
+"D.get(k[,d]) -> D[k] if k in D, else d.  d defaults to None.");
 
 PyDoc_STRVAR(setdefault_doc__,
-"D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if not D.has_key(k)");
+"D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if k not in D");
 
 PyDoc_STRVAR(pop__doc__,
 "D.pop(k) -> v, remove specified key and return the corresponding value");
