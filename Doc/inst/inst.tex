@@ -898,7 +898,7 @@ platforms.  On \UNIX, the three configuration files (in the order they
 are processed) are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
-  \lineiii{system}{\filenq{\filevar{prefix}/lib/python\filevar{ver}/distutils/pydistutils.cfg}}{(1)}
+  \lineiii{system}{\filenq{\filevar{prefix}/lib/python\filevar{ver}/distutils/distutils.cfg}}{(1)}
   \lineiii{personal}{\filenq{\$HOME/.pydistutils.cfg}}{(2)}
   \lineiii{local}{\filenq{setup.cfg}}{(3)}
 \end{tableiii}
@@ -906,7 +906,7 @@ are processed) are:
 On Windows, the configuration files are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
-  \lineiii{system}{\filenq{\filevar{prefix}\textbackslash{}Lib\textbackslash{}distutils\textbackslash{}pydistutils.cfg}}{(4)}
+  \lineiii{system}{\filenq{\filevar{prefix}\textbackslash{}Lib\textbackslash{}distutils\textbackslash{}distutils.cfg}}{(4)}
   \lineiii{personal}{\filenq{\%HOME\textbackslash{}pydistutils.cfg}}{(5)}
   \lineiii{local}{\filenq{setup.cfg}}{(3)}
 \end{tableiii}
@@ -914,7 +914,7 @@ On Windows, the configuration files are:
 And on Mac OS, they are:
 \begin{tableiii}{l|l|c}{textrm}
   {Type of file}{Location and filename}{Notes}
-  \lineiii{system}{\filenq{\filevar{prefix}:Lib:distutils:pydistutils.cfg}}{(6)}
+  \lineiii{system}{\filenq{\filevar{prefix}:Lib:distutils:distutils.cfg}}{(6)}
   \lineiii{personal}{N/A}{}
   \lineiii{local}{\filenq{setup.cfg}}{(3)}
 \end{tableiii}
@@ -936,12 +936,12 @@ And on Mac OS, they are:
 \item[(4)] (See also note (1).)  Under Python 1.6 and later, Python's
   default ``installation prefix'' is \file{C:\textbackslash{}Python}, so
   the system configuration file is normally
-  \file{C:\textbackslash{}Python\textbackslash{}Lib\textbackslash{}distutils\textbackslash{}pydistutils.cfg}.
+  \file{C:\textbackslash{}Python\textbackslash{}Lib\textbackslash{}distutils\textbackslash{}distutils.cfg}.
   Under Python 1.5.2, the default prefix was
   \file{C:\textbackslash{}Program~Files\textbackslash{}Python}, and the
   Distutils were not part of the standard library---so the system
   configuration file would be
-  \file{C:\textbackslash{}Program~Files\textbackslash{}Python\textbackslash{}distutils\textbackslash{}pydistutils.cfg}
+  \file{C:\textbackslash{}Program~Files\textbackslash{}Python\textbackslash{}distutils\textbackslash{}distutils.cfg}
   in a standard Python 1.5.2 installation under Windows.
 \item[(5)] On Windows, if the \envvar{HOME} environment variable is not
   defined, no personal configuration file will be found or used.  (In
@@ -949,7 +949,7 @@ And on Mac OS, they are:
   directory on Windows.)
 \item[(6)] (See also notes (1) and (4).)  The default installation
   prefix is just \file{Python:}, so under Python 1.6 and later this is
-  normally\file{Python:Lib:distutils:pydistutils.cfg}.  (The Distutils
+  normally\file{Python:Lib:distutils:distutils.cfg}.  (The Distutils
   don't work very well with Python 1.5.2 under Mac OS.  \XXX{true?})
 \end{description}
 
