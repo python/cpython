@@ -1,6 +1,6 @@
 /*
-** Configuration file for dynamically loaded cfm68k/ppc PythonCore,
-** interpreter and Applet.
+** Configuration file for dynamically loaded Carbon PythonCore,
+** interpreter and extension modules.
 **
 ** Note: enabling the switches below is not enough to enable the
 ** specific features, you may also need different sets of sources.

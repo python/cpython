@@ -1,5 +1,5 @@
 /*
-** Configuration file for standalone 68k/ppc Python.
+** Configuration file for standalone Carbon Python.
 **
 ** Note: enabling the switches below is not enough to enable the
 ** specific features, you may also need different sets of sources.
