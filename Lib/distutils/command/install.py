@@ -116,6 +116,7 @@ class install (Command):
         ]
 
     boolean_options = ['force', 'skip-build']
+    negative_opt = {'no-compile' : 'compile'}
 
 
     def initialize_options (self):
