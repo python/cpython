@@ -184,6 +184,10 @@ Tests
 
 Windows
 
+- Sometimes the uninstall executable (UNWISE.EXE) vanishes.  One cause
+  of that has been fixed in the installer (disabled Wise's "delete in-
+  use files" uninstall option).
+
 - Fixed a bug in urllib's proxy handling in Windows.  [SF bug #503031]
 
 - The installer now installs Start menu shortcuts under (the local
