@@ -2,6 +2,7 @@
 
 See module cPickle for a (much) faster implementation.
 See module copy_reg for a mechanism for registering custom picklers.
+See module pickletools source for extensive comments.
 
 Classes:
 
@@ -77,50 +78,54 @@ try:
 except NameError:
     UnicodeType = None
 
+# Pickle opcodes.  See pickletools.py for extensive docs.  The listing
+# here is in kind-of alphabetical order of 1-character pickle code.
+# pickletools groups them by purpose.
 
-MARK            = '('
-STOP            = '.'
-POP             = '0'
-POP_MARK        = '1'
-DUP             = '2'
-FLOAT           = 'F'
-INT             = 'I'
-BININT          = 'J'
-BININT1         = 'K'
-LONG            = 'L'
-BININT2         = 'M'
-NONE            = 'N'
-PERSID          = 'P'
-BINPERSID       = 'Q'
-REDUCE          = 'R'
-STRING          = 'S'
-BINSTRING       = 'T'
-SHORT_BINSTRING = 'U'
-UNICODE         = 'V'
-BINUNICODE      = 'X'
-APPEND          = 'a'
-BUILD           = 'b'
-GLOBAL          = 'c'
-DICT            = 'd'
-EMPTY_DICT      = '}'
-APPENDS         = 'e'
-GET             = 'g'
-BINGET          = 'h'
-INST            = 'i'
-LONG_BINGET     = 'j'
-LIST            = 'l'
-EMPTY_LIST      = ']'
-OBJ             = 'o'
-PUT             = 'p'
-BINPUT          = 'q'
-LONG_BINPUT     = 'r'
-SETITEM         = 's'
-TUPLE           = 't'
-EMPTY_TUPLE     = ')'
-SETITEMS        = 'u'
-BINFLOAT        = 'G'
-TRUE            = 'I01\n'
-FALSE           = 'I00\n'
+MARK            = '('   # push special markobject on stack
+STOP            = '.'   # every pickle ends with STOP
+POP             = '0'   # discard topmost stack item
+POP_MARK        = '1'   # discard stack top through topmost markobject
+DUP             = '2'   # duplicate top stack item
+FLOAT           = 'F'   # push float object; decimal string argument
+INT             = 'I'   # push integer or bool; decimal string argument
+BININT          = 'J'   # push four-byte signed int
+BININT1         = 'K'   # push 1-byte unsigned int
+LONG            = 'L'   # push long; decimal string argument
+BININT2         = 'M'   # push 2-byte unsigned int
+NONE            = 'N'   # push None
+PERSID          = 'P'   # push persistent object; id is taken from string arg
+BINPERSID       = 'Q'   #  "       "         "  ;  "  "   "     "  stack
+REDUCE          = 'R'   # apply callable to argtuple, both on stack
+STRING          = 'S'   # push string; NL-terminated string argument
+BINSTRING       = 'T'   # push string; counted binary string argument
+SHORT_BINSTRING = 'U'   #  "     "   ;    "      "       "      " < 256 bytes
+UNICODE         = 'V'   # push Unicode string; raw-unicode-escaped'd argument
+BINUNICODE      = 'X'   #   "     "       "  ; counted UTF-8 string argument
+APPEND          = 'a'   # append stack top to list below it
+BUILD           = 'b'   # call __setstate__ or __dict__.update()
+GLOBAL          = 'c'   # push self.find_class(modname, name); 2 string args
+DICT            = 'd'   # build a dict from stack items
+EMPTY_DICT      = '}'   # push empty dict
+APPENDS         = 'e'   # extend list on stack by topmost stack slice
+GET             = 'g'   # push item from memo on stack; index is string arg
+BINGET          = 'h'   #   "    "    "    "   "   "  ;   "    " 1-byte arg
+INST            = 'i'   # build & push class instance
+LONG_BINGET     = 'j'   # push item from memo on stack; index is 4-byte arg
+LIST            = 'l'   # build list from topmost stack items
+EMPTY_LIST      = ']'   # push empty list
+OBJ             = 'o'   # build & push class instance
+PUT             = 'p'   # store stack top in memo; index is string arg
+BINPUT          = 'q'   #   "     "    "   "   " ;   "    " 1-byte arg
+LONG_BINPUT     = 'r'   #   "     "    "   "   " ;   "    " 4-byte arg
+SETITEM         = 's'   # add key+value pair to dict
+TUPLE           = 't'   # build tuple from topmost stack items
+EMPTY_TUPLE     = ')'   # push empty tuple
+SETITEMS        = 'u'   # modify dict by adding topmost key+value pairs
+BINFLOAT        = 'G'   # push float; arg is 8-byte float encoding
+
+TRUE            = 'I01\n'  # not an opcode; see INT docs in pickletools.py
+FALSE           = 'I00\n'  # not an opcode; see INT docs in pickletools.py
 
 
 __all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
@@ -303,7 +308,7 @@ class Pickler:
         if not callable(acallable):
             raise PicklingError("__reduce__() must return callable as "
                                 "first argument, not %s" % `acallable`)
-        
+
         save(acallable)
         save(arg_tup)
         write(REDUCE)
