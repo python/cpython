@@ -220,6 +220,9 @@ extern void initcl();
 #ifdef USE_TIME
 extern void inittime();
 #endif
+#ifdef USE_IMAGEOP
+extern void initimageop();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 struct {
@@ -349,6 +352,10 @@ struct {
 
 #ifdef USE_TIME
 	{"time",	inittime},
+#endif
+
+#ifdef USE_IMAGEOP
+       {"imageop", initimageop},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
