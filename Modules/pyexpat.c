@@ -1739,7 +1739,7 @@ clear_handlers(xmlparseobject *self, int initial)
     }
 }
 
-statichere struct HandlerInfo handler_info[] = {
+static struct HandlerInfo handler_info[] = {
     {"StartElementHandler",
      (xmlhandlersetter)XML_SetStartElementHandler,
      (xmlhandler)my_StartElementHandler},

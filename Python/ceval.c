@@ -178,7 +178,7 @@ static PyMemberDef gen_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
-statichere PyTypeObject gentype = {
+static PyTypeObject gentype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
 	"generator",				/* tp_name */
