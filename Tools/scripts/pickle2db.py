@@ -11,7 +11,7 @@ named it is opened for read access.  If no pickle file is named, the pickle
 input is read from standard input.
 
 Note that recno databases can only contain numeric keys, so you can't dump a
-hash or btree database using bsddb2pickle.py and reconstitute it to a recno
+hash or btree database using db2pickle.py and reconstitute it to a recno
 database with %(prog)s.
 """
 
