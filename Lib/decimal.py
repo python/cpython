@@ -2032,17 +2032,39 @@ class Decimal(object):
             context = getcontext()
         other = self._convert_other(other)
 
-        ans = self._check_nans(other, context)
-        if ans:
-            return ans
+        # if one operand is a quiet NaN and the other is number, then the
+        # number is always returned
+        sn = self._isnan()
+        on = other._isnan()
+        if sn or on:
+            if on == 1 and sn != 2:
+                return self
+            if sn == 1 and on != 2:
+                return other
+            return self._check_nans(other, context)
 
         ans = self
-        if self < other:
+        c = self.__cmp__(other)
+        if c == 0:
+            # if both operands are finite and equal in numerical value
+            # then an ordering is applied:
+            #
+            # if the signs differ then max returns the operand with the
+            # positive sign and min returns the operand with the negative sign
+            #
+            # if the signs are the same then the exponent is used to select
+            # the result.
+            if self._sign != other._sign:
+                if self._sign:
+                    ans = other
+            elif self._exp < other._exp and not self._sign:
+                ans = other
+            elif self._exp > other._exp and self._sign:
+                ans = other
+        elif c == -1:
             ans = other
-        shouldround = context._rounding_decision == ALWAYS_ROUND
-        if shouldround:
-            ans = ans._fix(context=context)
-        return ans
+        context._rounding_decision == ALWAYS_ROUND
+        return ans._fix(context=context)
 
     def min(self, other, context=None):
         """Returns the smaller value.
@@ -2054,19 +2076,39 @@ class Decimal(object):
             context = getcontext()
         other = self._convert_other(other)
 
-        ans = self._check_nans(other, context)
-        if ans:
-            return ans
+        # if one operand is a quiet NaN and the other is number, then the
+        # number is always returned
+        sn = self._isnan()
+        on = other._isnan()
+        if sn or on:
+            if on == 1 and sn != 2:
+                return self
+            if sn == 1 and on != 2:
+                return other
+            return self._check_nans(other, context)
 
         ans = self
-
-        if self > other:
+        c = self.__cmp__(other)
+        if c == 0:
+            # if both operands are finite and equal in numerical value
+            # then an ordering is applied:
+            #
+            # if the signs differ then max returns the operand with the
+            # positive sign and min returns the operand with the negative sign
+            #
+            # if the signs are the same then the exponent is used to select
+            # the result.
+            if self._sign != other._sign:
+                if other._sign:
+                    ans = other
+            elif self._exp > other._exp and not self._sign:
+                ans = other
+            elif self._exp < other._exp and self._sign:
+                ans = other
+        elif c == 1:
             ans = other
-
-        if context._rounding_decision == ALWAYS_ROUND:
-            ans = ans._fix(context=context)
-
-        return ans
+        context._rounding_decision == ALWAYS_ROUND
+        return ans._fix(context=context)
 
     def _isinteger(self):
         """Returns whether self is an integer"""
@@ -2397,7 +2439,9 @@ class Context(object):
         >>> ExtendedContext.max(Decimal('-10'), Decimal('3'))
         Decimal("3")
         >>> ExtendedContext.max(Decimal('1.0'), Decimal('1'))
-        Decimal("1.0")
+        Decimal("1")
+        >>> ExtendedContext.max(Decimal('7'), Decimal('NaN'))
+        Decimal("7")
         """
         return a.max(b, context=self)
 
@@ -2416,6 +2460,8 @@ class Context(object):
         Decimal("-10")
         >>> ExtendedContext.min(Decimal('1.0'), Decimal('1'))
         Decimal("1.0")
+        >>> ExtendedContext.min(Decimal('7'), Decimal('NaN'))
+        Decimal("7")
         """
         return a.min(b, context=self)
 
