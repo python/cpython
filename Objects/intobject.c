@@ -510,13 +510,11 @@ int_pow(PyIntObject *v, PyIntObject *w, PyIntObject *z)
 	CONVERT_TO_LONG(v, iv);
 	CONVERT_TO_LONG(w, iw);
 	if (iw < 0) {
-		if (iv)
-			PyErr_SetString(PyExc_ValueError,
-					"cannot raise integer to a negative power");
-		else
-			PyErr_SetString(PyExc_ZeroDivisionError,
-					"cannot raise 0 to a negative power");
-		return NULL;
+		/* Return a float.  This works because we know that
+		   this calls float_pow() which converts its
+		   arguments to double. */
+		return PyFloat_Type.tp_as_number->nb_power(
+			(PyObject *)v, (PyObject *)w, (PyObject *)z);
 	}
  	if ((PyObject *)z != Py_None) {
 		CONVERT_TO_LONG(z, iz);
