@@ -44,16 +44,15 @@ The final release of Python 2.2 is planned for October 2001.
 %======================================================================
 \section{PEP 252: Type and Class Changes}
 
-XXX
-
-I need to read and digest the relevant PEPs.
-
-GvR's description at http://www.python.org/2.2/descrintro.html
+XXX I need to read and digest the relevant PEPs.
 
 \begin{seealso}
 
 \seepep{252}{Making Types Look More Like Classes}{Written and implemented 
 by Guido van Rossum.}
+
+\seeurl{http://www.python.org/2.2/descrintro.html}{A tutorial
+on the type/class changes in 2.2.}
 
 \end{seealso}
 
@@ -354,7 +353,7 @@ that support large files (files larger than \code{2**32} bytes), the
 \method{tell()} method of file objects has to return a long integer.
 However, there were various bits of Python that expected plain
 integers and would raise an error if a long integer was provided
-instead.  For example, in version XXX of Python, only regular integers
+instead.  For example, in Python 1.5, only regular integers
 could be used as a slice index, and \code{'abc'[1L:]} would raise a
 \exception{TypeError} exception with the message 'slice index must be
 int'.
@@ -369,9 +368,9 @@ will now return a long integer as their result.  For example:
 
 \begin{verbatim}
 >>> 1234567890123
-XXX
->>> 2 ** 32
-XXX put output here
+1234567890123L
+>>> 2 ** 64
+18446744073709551616L
 \end{verbatim}
 
 In most cases, integers and long integers will now be treated
@@ -714,7 +713,9 @@ See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
   \class{MimeTypes} class, which takes a list of filenames to be
   parsed.  (Contributed by Fred L. Drake, Jr.)
 
-  \item XXX threading.Timer class
+  \item A \class{Timer} class was added to the \module{threading}
+  module that allows scheduling an activity to happen at some future
+  time.  (Contributed by Itamar Shtull-Trauring.)
 
 \end{itemize}
 
@@ -758,8 +759,7 @@ affect you very much.
   desired encoding.  This differs from the \samp{es} format character,
   which assumes that 8-bit strings are in Python's default ASCII
   encoding and converts them to the specified new encoding.
-  (Contributed by M.-A. Lemburg, and used for the MBCS support on
-  Windows described in the previous section.)
+  (Contributed by M.-A. Lemburg.)
  
   \item Two new flags \constant{METH_NOARGS} and \constant{METH_O} are
    available in method definition tables to simplify implementation of
@@ -788,7 +788,7 @@ affect you very much.
 % XXX update the patch and bug figures as we go
 As usual there were a bunch of other improvements and bugfixes
 scattered throughout the source tree.  A search through the CVS change
-logs finds there were 43 patches applied, and 77 bugs fixed; both
+logs finds there were 119 patches applied, and 179 bugs fixed; both
 figures are likely to be underestimates.  Some of the more notable
 changes are:
 
@@ -854,9 +854,11 @@ to experiment with these modules can uncomment them manually.
   file APIs.  As MBCS is explicitly used by the file APIs, Python's
   choice of ASCII as the default encoding turns out to be an
   annoyance.
-
   (Contributed by Mark Hammond with assistance from Marc-Andr\'e
   Lemburg.)
+
+  \item Large file support is now enabled on Windows.  (Contributed by
+  Tim Peters.)
 
   \item The \file{Tools/scripts/ftpmirror.py} script
   now parses a \file{.netrc} file, if you have one.
@@ -908,7 +910,7 @@ to experiment with these modules can uncomment them manually.
   \code{pow(\var{x}, \var{y}, \var{z})} returns \code{(x**y) % z}, but
   this is never useful for floating point numbers, and the final
   result varies unpredictably depending on the platform.  A call such
-  as \code{pow(2.0, 8.0, 7.0)} will now raise a \exception{XXX}
+  as \code{pow(2.0, 8.0, 7.0)} will now raise a \exception{TypeError}
   exception.
   
 \end{itemize}
