@@ -193,13 +193,13 @@ socket sending the data.
 
 \begin{funcdesc}{send}{string}
 Send data to the socket.  The socket must be connected to a remote
-socket.
+socket.  Return the number of bytes sent.
 \end{funcdesc}
 
 \begin{funcdesc}{sendto}{string\, address}
 Send data to the socket.  The socket should not be connected to a
 remote socket, since the destination socket is specified by
-\code{address}.
+\code{address}.  Return the number of bytes sent.
 (The format of \var{address} depends on the address family -- see above.)
 \end{funcdesc}
 
