@@ -8,7 +8,7 @@ import idlever
 idlelib = "idlelib"
 
 # the normal build_py would not incorporate the .txt files
-txt_files = ['config-unix.txt','config-win.txt','config.txt']
+txt_files = ['config-unix.txt','config-win.txt','config.txt', 'help.txt']
 Icons = glob.glob1("Icons","*.gif")
 class idle_build_py(build_py):
     def get_plain_outfile(self, build_dir, package, file):
