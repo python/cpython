@@ -76,6 +76,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 # Some modules that are normally always on:
 
 posix posixmodule.c		# posix (UNIX) system calls
+errno errnomodule.c		# posix (UNIX) errno values
 signal signalmodule.c		# signal(2)
 
 # The SGI specific GL module:
