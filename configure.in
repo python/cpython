@@ -691,6 +691,7 @@ AC_MSG_CHECKING(for --with-sgi-dl)
 AC_ARG_WITH(sgi-dl, [--with-sgi-dl=DIRECTORY   IRIX 4 dynamic linking], [
 AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_SGI_DL)
+DYNLOADFILE="dynload_dl.o"
 dldir=$withval
 if test -d "$dldir"
 then LDFLAGS="$LDFLAGS -L$dldir"
@@ -703,6 +704,7 @@ AC_MSG_CHECKING(for --with-dl-dld)
 AC_ARG_WITH(dl-dld, [--with-dl-dld=DL_DIR,DLD_DIR  GNU dynamic linking], [
 AC_MSG_RESULT($withval)
 AC_DEFINE(WITH_DL_DLD)
+DYNLOADFILE="dynload_dl.o"
 dldir=`echo "$withval" | sed 's/,.*//'`
 dlddir=`echo "$withval" | sed 's/.*,//'`
 if test -d "$dldir" -a -d "$dlddir"
@@ -711,6 +713,37 @@ else AC_ERROR(proper usage is --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY)
 fi
 DLINCLDIR=${dldir}
 LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
+
+# the dlopen() function means we might want to use dynload_shlib.o. some
+# platforms, such as AIX, have dlopen(), but don't want to use it.
+AC_CHECK_FUNC(dlopen)
+
+# DYNLOADFILE specifies which dynload_*.o file we will use for dynamic
+# loading of modules.
+AC_SUBST(DYNLOADFILE)
+AC_MSG_CHECKING(DYNLOADFILE)
+if test -z "$DYNLOADFILE"
+then
+	case $ac_sys_system/$ac_sys_release in
+	AIX*) DYNLOADFILE="dynload_aix.o";;
+	BeOS*) DYNLOADFILE="dynload_beos.o";;
+	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
+	next/*) DYNLOADFILE="dynload_next.o";;
+	*)
+	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
+	# out any dynamic loading
+	if test "$ac_cv_func_dlopen" = yes
+	then DYNLOADFILE="dynload_shlib.o"
+	else DYNLOADFILE="dynload_stub.o"
+	fi
+	;;
+	esac
+fi
+AC_MSG_RESULT($DYNLOADFILE)
+if test "$DYNLOADFILE" != "dynload_stub.o"
+then
+	AC_DEFINE(HAVE_DYNAMIC_LOADING)
+fi
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r dlopen execv \
