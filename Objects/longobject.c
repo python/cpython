@@ -278,6 +278,7 @@ long_format(a, base)
 		assert(p > q);
 		do {
 		} while ((*q++ = *p++) != '\0');
+		q--;
 		resizestring((object **)&str, (int) (q - GETSTRINGVALUE(str)));
 	}
 	return str;
@@ -844,16 +845,60 @@ long_divmod(v, w)
 }
 
 static object *
-long_pow(v, w)
-	longobject *v;
-	register object *w;
+long_pow(a, w)
+	longobject *a;
+	object *w;
 {
+	register longobject *b;
+	longobject *z;
+	int size_b, i;
+	
 	if (!is_longobject(w)) {
 		err_badarg();
 		return NULL;
 	}
-	err_setstr(SystemError, "long power not implemented");
-	return NULL;
+	
+	b = (longobject *)w;
+	size_b = b->ob_size;
+	if (size_b < 0) {
+		err_setstr(RuntimeError, "long integer to the negative power");
+		return NULL;
+	}
+
+	z = (longobject *)newlongobject(1L);
+	
+	INCREF(a);
+	for (i = 0; i < size_b; ++i) {
+		digit bi = b->ob_digit[i];
+		int j;
+		
+		for (j = 0; j < SHIFT; ++j) {
+			longobject *temp;
+			
+			if (bi & 1) {
+				temp = (longobject *)long_mul(z, (object *)a);
+				DECREF(z);
+				z = temp;
+				if (z == NULL)
+					break;
+			}
+			bi >>= 1;
+			if (bi == 0 && i+1 == size_b)
+				break;
+			temp = (longobject *)long_mul(a, (object *)a);
+			DECREF(a);
+			a = temp;
+			if (a == NULL) {
+				DECREF(z);
+				z = NULL;
+				break;
+			}
+		}
+		if (a == NULL)
+			break;
+	}
+	XDECREF(a);
+	return (object *)z;
 }
 
 static object *
