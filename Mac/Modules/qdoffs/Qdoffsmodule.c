@@ -8,7 +8,11 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <QDOffscreen.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_GWorldObj_New(GWorldPtr);
@@ -34,8 +38,7 @@ typedef struct GWorldObject {
 	GWorldPtr ob_itself;
 } GWorldObject;
 
-PyObject *GWorldObj_New(itself)
-	GWorldPtr itself;
+PyObject *GWorldObj_New(GWorldPtr itself)
 {
 	GWorldObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -44,9 +47,7 @@ PyObject *GWorldObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-GWorldObj_Convert(v, p_itself)
-	PyObject *v;
-	GWorldPtr *p_itself;
+GWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
 {
 	if (!GWorldObj_Check(v))
 	{
@@ -57,16 +58,13 @@ GWorldObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void GWorldObj_dealloc(self)
-	GWorldObject *self;
+static void GWorldObj_dealloc(GWorldObject *self)
 {
 	DisposeGWorld(self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *GWorldObj_GetGWorldDevice(_self, _args)
-	GWorldObject *_self;
-	PyObject *_args;
+static PyObject *GWorldObj_GetGWorldDevice(GWorldObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle _rv;
@@ -78,9 +76,7 @@ static PyObject *GWorldObj_GetGWorldDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *GWorldObj_GetGWorldPixMap(_self, _args)
-	GWorldObject *_self;
-	PyObject *_args;
+static PyObject *GWorldObj_GetGWorldPixMap(GWorldObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle _rv;
@@ -92,9 +88,7 @@ static PyObject *GWorldObj_GetGWorldPixMap(_self, _args)
 	return _res;
 }
 
-static PyObject *GWorldObj_as_GrafPtr(_self, _args)
-	GWorldObject *_self;
-	PyObject *_args;
+static PyObject *GWorldObj_as_GrafPtr(GWorldObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GrafPtr _rv;
@@ -118,9 +112,7 @@ static PyMethodDef GWorldObj_methods[] = {
 
 PyMethodChain GWorldObj_chain = { GWorldObj_methods, NULL };
 
-static PyObject *GWorldObj_getattr(self, name)
-	GWorldObject *self;
-	char *name;
+static PyObject *GWorldObj_getattr(GWorldObject *self, char *name)
 {
 	return Py_FindMethodInChain(&GWorldObj_chain, (PyObject *)self, name);
 }
@@ -155,9 +147,7 @@ PyTypeObject GWorld_Type = {
 /* --------------------- End object type GWorld --------------------- */
 
 
-static PyObject *Qdoffs_NewGWorld(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_NewGWorld(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	QDErr _err;
@@ -186,9 +176,7 @@ static PyObject *Qdoffs_NewGWorld(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_LockPixels(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_LockPixels(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -202,9 +190,7 @@ static PyObject *Qdoffs_LockPixels(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_UnlockPixels(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_UnlockPixels(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
@@ -217,9 +203,7 @@ static PyObject *Qdoffs_UnlockPixels(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_UpdateGWorld(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_UpdateGWorld(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GWorldFlags _rv;
@@ -248,9 +232,7 @@ static PyObject *Qdoffs_UpdateGWorld(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_GetGWorld(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_GetGWorld(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -265,9 +247,7 @@ static PyObject *Qdoffs_GetGWorld(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_SetGWorld(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_SetGWorld(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CGrafPtr port;
@@ -283,9 +263,7 @@ static PyObject *Qdoffs_SetGWorld(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_CTabChanged(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_CTabChanged(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CTabHandle ctab;
@@ -298,9 +276,7 @@ static PyObject *Qdoffs_CTabChanged(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_PixPatChanged(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_PixPatChanged(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle ppat;
@@ -313,9 +289,7 @@ static PyObject *Qdoffs_PixPatChanged(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_PortChanged(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_PortChanged(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GrafPtr port;
@@ -328,9 +302,7 @@ static PyObject *Qdoffs_PortChanged(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_GDeviceChanged(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_GDeviceChanged(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle gdh;
@@ -343,9 +315,7 @@ static PyObject *Qdoffs_GDeviceChanged(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_AllowPurgePixels(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_AllowPurgePixels(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
@@ -358,9 +328,7 @@ static PyObject *Qdoffs_AllowPurgePixels(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_NoPurgePixels(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_NoPurgePixels(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
@@ -373,9 +341,7 @@ static PyObject *Qdoffs_NoPurgePixels(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_GetPixelsState(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_GetPixelsState(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GWorldFlags _rv;
@@ -389,9 +355,7 @@ static PyObject *Qdoffs_GetPixelsState(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_SetPixelsState(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_SetPixelsState(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
@@ -407,9 +371,7 @@ static PyObject *Qdoffs_SetPixelsState(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_GetPixRowBytes(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_GetPixRowBytes(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -423,9 +385,7 @@ static PyObject *Qdoffs_GetPixRowBytes(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_NewScreenBuffer(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_NewScreenBuffer(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	QDErr _err;
@@ -448,9 +408,7 @@ static PyObject *Qdoffs_NewScreenBuffer(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_DisposeScreenBuffer(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_DisposeScreenBuffer(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle offscreenPixMap;
@@ -463,9 +421,7 @@ static PyObject *Qdoffs_DisposeScreenBuffer(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_QDDone(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_QDDone(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -479,9 +435,7 @@ static PyObject *Qdoffs_QDDone(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_OffscreenVersion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_OffscreenVersion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
@@ -493,9 +447,7 @@ static PyObject *Qdoffs_OffscreenVersion(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_NewTempScreenBuffer(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_NewTempScreenBuffer(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	QDErr _err;
@@ -518,9 +470,7 @@ static PyObject *Qdoffs_NewTempScreenBuffer(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_PixMap32Bit(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_PixMap32Bit(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -534,9 +484,7 @@ static PyObject *Qdoffs_PixMap32Bit(_self, _args)
 	return _res;
 }
 
-static PyObject *Qdoffs_GetPixMapBytes(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_GetPixMapBytes(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -551,9 +499,7 @@ static PyObject *Qdoffs_GetPixMapBytes(_self, _args)
 
 }
 
-static PyObject *Qdoffs_PutPixMapBytes(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Qdoffs_PutPixMapBytes(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -623,15 +569,15 @@ static PyMethodDef Qdoffs_methods[] = {
 
 
 
-void initQdoffs()
+void initQdoffs(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldObj_Convert);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldPtr, GWorldObj_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldPtr, GWorldObj_Convert);
 
 
 	m = Py_InitModule("Qdoffs", Qdoffs_methods);

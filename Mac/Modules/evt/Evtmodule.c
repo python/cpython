@@ -8,13 +8,16 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Events.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 
 static PyObject *Evt_Error;
 
-static PyObject *Evt_GetMouse(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_GetMouse(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point mouseLoc;
@@ -26,9 +29,7 @@ static PyObject *Evt_GetMouse(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_Button(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_Button(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -40,9 +41,7 @@ static PyObject *Evt_Button(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_StillDown(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_StillDown(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -54,9 +53,7 @@ static PyObject *Evt_StillDown(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_WaitMouseUp(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_WaitMouseUp(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -68,9 +65,7 @@ static PyObject *Evt_WaitMouseUp(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_TickCount(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_TickCount(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
@@ -82,9 +77,7 @@ static PyObject *Evt_TickCount(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_GetCaretTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_GetCaretTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
@@ -96,9 +89,7 @@ static PyObject *Evt_GetCaretTime(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_GetKeys(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_GetKeys(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	KeyMap theKeys__out__;
@@ -111,9 +102,7 @@ static PyObject *Evt_GetKeys(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_GetDblTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_GetDblTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
@@ -125,9 +114,7 @@ static PyObject *Evt_GetDblTime(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_SetEventMask(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_SetEventMask(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	EventMask value;
@@ -140,9 +127,7 @@ static PyObject *Evt_SetEventMask(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_GetNextEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_GetNextEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -159,9 +144,7 @@ static PyObject *Evt_GetNextEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_EventAvail(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_EventAvail(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -178,9 +161,7 @@ static PyObject *Evt_EventAvail(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_PostEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_PostEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -200,9 +181,7 @@ static PyObject *Evt_PostEvent(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Evt_OSEventAvail(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_OSEventAvail(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -222,9 +201,7 @@ static PyObject *Evt_OSEventAvail(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Evt_GetOSEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_GetOSEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -242,9 +219,7 @@ static PyObject *Evt_GetOSEvent(_self, _args)
 }
 #endif
 
-static PyObject *Evt_FlushEvents(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_FlushEvents(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	EventMask whichMask;
@@ -262,9 +237,7 @@ static PyObject *Evt_FlushEvents(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Evt_SystemClick(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_SystemClick(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	EventRecord theEvent;
@@ -283,9 +256,7 @@ static PyObject *Evt_SystemClick(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Evt_SystemTask(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_SystemTask(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -299,9 +270,7 @@ static PyObject *Evt_SystemTask(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Evt_SystemEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_SystemEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -318,9 +287,7 @@ static PyObject *Evt_SystemEvent(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Evt_GetGlobalMouse(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_GetGlobalMouse(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point globalMouse;
@@ -335,9 +302,7 @@ static PyObject *Evt_GetGlobalMouse(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Evt_GetCurrentKeyModifiers(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_GetCurrentKeyModifiers(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
@@ -352,9 +317,7 @@ static PyObject *Evt_GetCurrentKeyModifiers(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Evt_CheckEventQueueForUserCancel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_CheckEventQueueForUserCancel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -367,9 +330,7 @@ static PyObject *Evt_CheckEventQueueForUserCancel(_self, _args)
 }
 #endif
 
-static PyObject *Evt_WaitNextEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Evt_WaitNextEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -470,7 +431,7 @@ static PyMethodDef Evt_methods[] = {
 
 
 
-void initEvt()
+void initEvt(void)
 {
 	PyObject *m;
 	PyObject *d;

@@ -34,7 +34,11 @@ GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 QDErr = OSErrType("QDErr", 'h')
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <QDOffscreen.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_GWorldObj_New(GWorldPtr);
@@ -49,8 +53,8 @@ extern int _GWorldObj_Convert(PyObject *, GWorldPtr *);
 """
 
 initstuff = initstuff + """
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(GWorldPtr, GWorldObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(GWorldPtr, GWorldObj_Convert);
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):

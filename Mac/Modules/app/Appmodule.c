@@ -8,13 +8,16 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Appearance.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 
 static PyObject *App_Error;
 
-static PyObject *App_RegisterAppearanceClient(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_RegisterAppearanceClient(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -27,9 +30,7 @@ static PyObject *App_RegisterAppearanceClient(_self, _args)
 	return _res;
 }
 
-static PyObject *App_UnregisterAppearanceClient(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_UnregisterAppearanceClient(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -42,9 +43,7 @@ static PyObject *App_UnregisterAppearanceClient(_self, _args)
 	return _res;
 }
 
-static PyObject *App_SetThemePen(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_SetThemePen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -65,9 +64,7 @@ static PyObject *App_SetThemePen(_self, _args)
 	return _res;
 }
 
-static PyObject *App_SetThemeBackground(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_SetThemeBackground(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -88,9 +85,7 @@ static PyObject *App_SetThemeBackground(_self, _args)
 	return _res;
 }
 
-static PyObject *App_SetThemeTextColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_SetThemeTextColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -111,9 +106,7 @@ static PyObject *App_SetThemeTextColor(_self, _args)
 	return _res;
 }
 
-static PyObject *App_SetThemeWindowBackground(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_SetThemeWindowBackground(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -134,9 +127,7 @@ static PyObject *App_SetThemeWindowBackground(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeWindowHeader(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeWindowHeader(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -154,9 +145,7 @@ static PyObject *App_DrawThemeWindowHeader(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeWindowListViewHeader(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeWindowListViewHeader(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -174,9 +163,7 @@ static PyObject *App_DrawThemeWindowListViewHeader(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemePlacard(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemePlacard(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -194,9 +181,7 @@ static PyObject *App_DrawThemePlacard(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeEditTextFrame(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeEditTextFrame(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -214,9 +199,7 @@ static PyObject *App_DrawThemeEditTextFrame(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeListBoxFrame(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeListBoxFrame(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -234,9 +217,7 @@ static PyObject *App_DrawThemeListBoxFrame(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeFocusRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeFocusRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -254,9 +235,7 @@ static PyObject *App_DrawThemeFocusRect(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemePrimaryGroup(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemePrimaryGroup(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -274,9 +253,7 @@ static PyObject *App_DrawThemePrimaryGroup(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeSecondaryGroup(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeSecondaryGroup(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -294,9 +271,7 @@ static PyObject *App_DrawThemeSecondaryGroup(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeSeparator(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeSeparator(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -314,9 +289,7 @@ static PyObject *App_DrawThemeSeparator(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeModelessDialogFrame(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeModelessDialogFrame(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -334,9 +307,7 @@ static PyObject *App_DrawThemeModelessDialogFrame(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeGenericWell(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeGenericWell(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -357,9 +328,7 @@ static PyObject *App_DrawThemeGenericWell(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeFocusRegion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeFocusRegion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -375,9 +344,7 @@ static PyObject *App_DrawThemeFocusRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *App_IsThemeInColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_IsThemeInColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -394,9 +361,7 @@ static PyObject *App_IsThemeInColor(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeAccentColors(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeAccentColors(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -410,9 +375,7 @@ static PyObject *App_GetThemeAccentColors(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeMenuBarBackground(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeMenuBarBackground(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -433,9 +396,7 @@ static PyObject *App_DrawThemeMenuBarBackground(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeMenuBarHeight(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeMenuBarHeight(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -449,9 +410,7 @@ static PyObject *App_GetThemeMenuBarHeight(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeMenuBackground(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeMenuBackground(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -469,9 +428,7 @@ static PyObject *App_DrawThemeMenuBackground(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeMenuBackgroundRegion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeMenuBackgroundRegion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -490,9 +447,7 @@ static PyObject *App_GetThemeMenuBackgroundRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeMenuSeparator(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeMenuSeparator(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -507,9 +462,7 @@ static PyObject *App_DrawThemeMenuSeparator(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeMenuSeparatorHeight(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeMenuSeparatorHeight(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -523,9 +476,7 @@ static PyObject *App_GetThemeMenuSeparatorHeight(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeMenuItemExtra(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeMenuItemExtra(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -545,9 +496,7 @@ static PyObject *App_GetThemeMenuItemExtra(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeMenuTitleExtra(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeMenuTitleExtra(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -564,9 +513,7 @@ static PyObject *App_GetThemeMenuTitleExtra(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeTabPane(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeTabPane(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -584,9 +531,7 @@ static PyObject *App_DrawThemeTabPane(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeTabRegion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeTabRegion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -608,9 +553,7 @@ static PyObject *App_GetThemeTabRegion(_self, _args)
 	return _res;
 }
 
-static PyObject *App_SetThemeCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_SetThemeCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -625,9 +568,7 @@ static PyObject *App_SetThemeCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *App_SetAnimatedThemeCursor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_SetAnimatedThemeCursor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -645,9 +586,7 @@ static PyObject *App_SetAnimatedThemeCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeScrollBarThumbStyle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeScrollBarThumbStyle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -661,9 +600,7 @@ static PyObject *App_GetThemeScrollBarThumbStyle(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeScrollBarArrowStyle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeScrollBarArrowStyle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -677,9 +614,7 @@ static PyObject *App_GetThemeScrollBarArrowStyle(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeCheckBoxStyle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeCheckBoxStyle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -693,9 +628,7 @@ static PyObject *App_GetThemeCheckBoxStyle(_self, _args)
 	return _res;
 }
 
-static PyObject *App_UseThemeFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_UseThemeFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -713,9 +646,7 @@ static PyObject *App_UseThemeFont(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeScrollBarArrows(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeScrollBarArrows(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -741,9 +672,7 @@ static PyObject *App_DrawThemeScrollBarArrows(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeScrollBarTrackRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeScrollBarTrackRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -769,9 +698,7 @@ static PyObject *App_GetThemeScrollBarTrackRect(_self, _args)
 	return _res;
 }
 
-static PyObject *App_HitTestThemeScrollBarArrows(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_HitTestThemeScrollBarArrows(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -803,9 +730,7 @@ static PyObject *App_HitTestThemeScrollBarArrows(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeScrollBarDelimiters(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeScrollBarDelimiters(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -829,9 +754,7 @@ static PyObject *App_DrawThemeScrollBarDelimiters(_self, _args)
 	return _res;
 }
 
-static PyObject *App_PlayThemeSound(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_PlayThemeSound(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -846,9 +769,7 @@ static PyObject *App_PlayThemeSound(_self, _args)
 	return _res;
 }
 
-static PyObject *App_BeginThemeDragSound(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_BeginThemeDragSound(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -863,9 +784,7 @@ static PyObject *App_BeginThemeDragSound(_self, _args)
 	return _res;
 }
 
-static PyObject *App_EndThemeDragSound(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_EndThemeDragSound(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -878,9 +797,7 @@ static PyObject *App_EndThemeDragSound(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeTickMark(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeTickMark(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -898,9 +815,7 @@ static PyObject *App_DrawThemeTickMark(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeStandaloneGrowBox(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeStandaloneGrowBox(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -924,9 +839,7 @@ static PyObject *App_DrawThemeStandaloneGrowBox(_self, _args)
 	return _res;
 }
 
-static PyObject *App_DrawThemeStandaloneNoGrowBox(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_DrawThemeStandaloneNoGrowBox(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -950,9 +863,7 @@ static PyObject *App_DrawThemeStandaloneNoGrowBox(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeStandaloneGrowBoxBounds(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeStandaloneGrowBoxBounds(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -975,9 +886,7 @@ static PyObject *App_GetThemeStandaloneGrowBoxBounds(_self, _args)
 	return _res;
 }
 
-static PyObject *App_NormalizeThemeDrawingState(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_NormalizeThemeDrawingState(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -990,9 +899,7 @@ static PyObject *App_NormalizeThemeDrawingState(_self, _args)
 	return _res;
 }
 
-static PyObject *App_ApplyThemeBackground(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_ApplyThemeBackground(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1019,9 +926,7 @@ static PyObject *App_ApplyThemeBackground(_self, _args)
 	return _res;
 }
 
-static PyObject *App_SetThemeTextColorForWindow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_SetThemeTextColorForWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1045,9 +950,7 @@ static PyObject *App_SetThemeTextColorForWindow(_self, _args)
 	return _res;
 }
 
-static PyObject *App_IsValidAppearanceFileType(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_IsValidAppearanceFileType(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1061,9 +964,7 @@ static PyObject *App_IsValidAppearanceFileType(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeBrushAsColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeBrushAsColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1086,9 +987,7 @@ static PyObject *App_GetThemeBrushAsColor(_self, _args)
 	return _res;
 }
 
-static PyObject *App_GetThemeTextColor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeTextColor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1113,9 +1012,7 @@ static PyObject *App_GetThemeTextColor(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *App_GetThemeMetric(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *App_GetThemeMetric(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -1251,7 +1148,7 @@ static PyMethodDef App_methods[] = {
 
 
 
-void initApp()
+void initApp(void)
 {
 	PyObject *m;
 	PyObject *d;

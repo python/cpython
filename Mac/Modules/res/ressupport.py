@@ -23,8 +23,12 @@ RsrcChainLocation = Type("RsrcChainLocation", "h")
 # includestuff etc. are imported from macsupport
 
 includestuff = includestuff + """
+#ifdef WITHOUT_FRAMEWORKS
 #include <Resources.h>
 #include <string.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_ResObj_New(Handle);
@@ -48,8 +52,7 @@ PyMac_AutoDisposeHandle(Handle h)
 finalstuff = finalstuff + """
 
 /* Alternative version of ResObj_New, which returns None for null argument */
-PyObject *OptResObj_New(itself)
-	Handle itself;
+PyObject *OptResObj_New(Handle itself)
 {
 	if (itself == NULL) {
 		Py_INCREF(Py_None);
@@ -58,9 +61,7 @@ PyObject *OptResObj_New(itself)
 	return ResObj_New(itself);
 }
 
-OptResObj_Convert(v, p_itself)
-	PyObject *v;
-	Handle *p_itself;
+OptResObj_Convert(PyObject *v, Handle *p_itself)
 {
 	PyObject *tmp;
 	
@@ -86,10 +87,10 @@ OptResObj_Convert(v, p_itself)
 """
 
 initstuff = initstuff + """
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(ResObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ResObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(OptResObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(OptResObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(Handle, ResObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, ResObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(Handle, OptResObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, OptResObj_Convert);
 """
 
 module = MacModule('Res', 'Res', includestuff, finalstuff, initstuff)
@@ -115,10 +116,7 @@ if (strcmp(name, "__members__") == 0)
 
 setattrCode = """
 static int
-ResObj_setattr(self, name, value)
-	ResourceObject *self;
-	char *name;
-	PyObject *value;
+ResObj_setattr(ResourceObject *self, char *name, PyObject *value)
 {
 	char *data;
 	long size;

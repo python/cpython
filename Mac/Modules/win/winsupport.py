@@ -54,7 +54,11 @@ PropertyCreator = OSTypeType("PropertyCreator")
 PropertyTag = OSTypeType("PropertyTag")
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <Windows.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_WinObj_New(WindowRef);
@@ -92,8 +96,7 @@ finalstuff = finalstuff + """
 /* Return the object corresponding to the window, or NULL */
 
 PyObject *
-WinObj_WhichWindow(w)
-	WindowPtr w;
+WinObj_WhichWindow(WindowPtr w)
 {
 	PyObject *it;
 	
@@ -114,9 +117,9 @@ WinObj_WhichWindow(w)
 """
 
 initstuff = initstuff + """
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(WinObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(WinObj_WhichWindow);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(WinObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(WindowPtr, WinObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(WindowPtr, WinObj_WhichWindow);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(WindowPtr, WinObj_Convert);
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):
@@ -164,10 +167,7 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		
 	def outputCompare(self):
 		Output()
-		Output("static int %s_compare(self, other)", self.prefix)
-		IndentLevel()
-		Output("%s *self, *other;", self.objecttype)
-		DedentLevel()
+		Output("static int %s_compare(%s *self, %s *other)", self.prefix, self.objecttype, self.objecttype)
 		OutLbrace()
 		Output("if ( self->ob_itself > other->ob_itself ) return 1;")
 		Output("if ( self->ob_itself < other->ob_itself ) return -1;")
@@ -176,20 +176,14 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		
 	def outputHash(self):
 		Output()
-		Output("static int %s_hash(self)", self.prefix)
-		IndentLevel()
-		Output("%s *self;", self.objecttype)
-		DedentLevel()
+		Output("static int %s_hash(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("return (int)self->ob_itself;")
 		OutRbrace()
 		
 	def outputRepr(self):
 		Output()
-		Output("static PyObject * %s_repr(self)", self.prefix)
-		IndentLevel()
-		Output("%s *self;", self.objecttype)
-		DedentLevel()
+		Output("static PyObject * %s_repr(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("char buf[100];")
 		Output("""sprintf(buf, "<Window object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")

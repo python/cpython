@@ -8,9 +8,13 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Sound.h>
-
 #include <OSUtils.h> /* for Set(Current)A5 */
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 
 /* Create a SndCommand object (an (int, int, int) tuple) */
 static PyObject *
@@ -58,8 +62,7 @@ typedef struct SndChannelObject {
 	SndCommand ob_cmd;
 } SndChannelObject;
 
-static PyObject *SndCh_New(itself)
-	SndChannelPtr itself;
+static PyObject *SndCh_New(SndChannelPtr itself)
 {
 	SndChannelObject *it;
 	it = PyObject_NEW(SndChannelObject, &SndChannel_Type);
@@ -69,9 +72,7 @@ static PyObject *SndCh_New(itself)
 	it->ob_A5 = SetCurrentA5();
 	return (PyObject *)it;
 }
-static SndCh_Convert(v, p_itself)
-	PyObject *v;
-	SndChannelPtr *p_itself;
+static SndCh_Convert(PyObject *v, SndChannelPtr *p_itself)
 {
 	if (!SndCh_Check(v))
 	{
@@ -82,17 +83,14 @@ static SndCh_Convert(v, p_itself)
 	return 1;
 }
 
-static void SndCh_dealloc(self)
-	SndChannelObject *self;
+static void SndCh_dealloc(SndChannelObject *self)
 {
 	SndDisposeChannel(self->ob_itself, 1);
 	Py_XDECREF(self->ob_callback);
 	PyMem_DEL(self);
 }
 
-static PyObject *SndCh_SndDoCommand(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndDoCommand(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -111,9 +109,7 @@ static PyObject *SndCh_SndDoCommand(_self, _args)
 	return _res;
 }
 
-static PyObject *SndCh_SndDoImmediate(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndDoImmediate(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -129,9 +125,7 @@ static PyObject *SndCh_SndDoImmediate(_self, _args)
 	return _res;
 }
 
-static PyObject *SndCh_SndPlay(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndPlay(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -152,9 +146,7 @@ static PyObject *SndCh_SndPlay(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *SndCh_SndStartFilePlay(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndStartFilePlay(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -185,9 +177,7 @@ static PyObject *SndCh_SndStartFilePlay(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *SndCh_SndPauseFilePlay(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndPauseFilePlay(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -203,9 +193,7 @@ static PyObject *SndCh_SndPauseFilePlay(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *SndCh_SndStopFilePlay(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndStopFilePlay(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -222,9 +210,7 @@ static PyObject *SndCh_SndStopFilePlay(_self, _args)
 }
 #endif
 
-static PyObject *SndCh_SndChannelStatus(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndChannelStatus(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -243,9 +229,7 @@ static PyObject *SndCh_SndChannelStatus(_self, _args)
 	return _res;
 }
 
-static PyObject *SndCh_SndGetInfo(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndGetInfo(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -264,9 +248,7 @@ static PyObject *SndCh_SndGetInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *SndCh_SndSetInfo(_self, _args)
-	SndChannelObject *_self;
-	PyObject *_args;
+static PyObject *SndCh_SndSetInfo(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -318,9 +300,7 @@ static PyMethodDef SndCh_methods[] = {
 
 static PyMethodChain SndCh_chain = { SndCh_methods, NULL };
 
-static PyObject *SndCh_getattr(self, name)
-	SndChannelObject *self;
-	char *name;
+static PyObject *SndCh_getattr(SndChannelObject *self, char *name)
 {
 	return Py_FindMethodInChain(&SndCh_chain, (PyObject *)self, name);
 }
@@ -384,9 +364,7 @@ static PyObject *SPBObj_New()
 	it->ob_spb.userLong = (long)it;
 	return (PyObject *)it;
 }
-static SPBObj_Convert(v, p_itself)
-	PyObject *v;
-	SPBPtr *p_itself;
+static SPBObj_Convert(PyObject *v, SPBPtr *p_itself)
 {
 	if (!SPBObj_Check(v))
 	{
@@ -397,8 +375,7 @@ static SPBObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void SPBObj_dealloc(self)
-	SPBObject *self;
+static void SPBObj_dealloc(SPBObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
 	self->ob_spb.userLong = 0;
@@ -414,9 +391,7 @@ static PyMethodDef SPBObj_methods[] = {
 
 static PyMethodChain SPBObj_chain = { SPBObj_methods, NULL };
 
-static PyObject *SPBObj_getattr(self, name)
-	SPBObject *self;
-	char *name;
+static PyObject *SPBObj_getattr(SPBObject *self, char *name)
 {
 
 				if (strcmp(name, "inRefNum") == 0)
@@ -430,10 +405,7 @@ static PyObject *SPBObj_getattr(self, name)
 	return Py_FindMethodInChain(&SPBObj_chain, (PyObject *)self, name);
 }
 
-static int SPBObj_setattr(self, name, value)
-	SPBObject *self;
-	char *name;
-	PyObject *value;
+static int SPBObj_setattr(SPBObject *self, char *name, PyObject *value)
 {
 
 		int rv = 0;
@@ -447,13 +419,13 @@ static int SPBObj_setattr(self, name, value)
 		else if (strcmp(name, "buffer") == 0)
 			rv = PyArg_Parse(value, "w#", &self->ob_spb.bufferPtr, &self->ob_spb.bufferLength);
 		else if (strcmp(name, "completionRoutine") == 0) {
-			self->ob_spb.completionRoutine = NewSICompletionProc(SPB_completion);
+			self->ob_spb.completionRoutine = NewSICompletionUPP(SPB_completion);
 			self->ob_completion = value;
 			Py_INCREF(value);
 			rv = 1;
 #if !TARGET_API_MAC_CARBON
 		} else if (strcmp(name, "interruptRoutine") == 0) {
-			self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
+			self->ob_spb.completionRoutine = NewSIInterruptUPP(SPB_interrupt);
 			self->ob_interrupt = value;
 			Py_INCREF(value);
 			rv = 1;
@@ -491,17 +463,13 @@ staticforward PyTypeObject SPB_Type = {
 /* ---------------------- End object type SPB ----------------------- */
 
 
-static PyObject *Snd_SPB(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPB(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	return SPBObj_New();
 }
 
-static PyObject *Snd_SysBeep(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SysBeep(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short duration;
@@ -514,9 +482,7 @@ static PyObject *Snd_SysBeep(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SndNewChannel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SndNewChannel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -537,7 +503,7 @@ static PyObject *Snd_SndNewChannel(_self, _args)
 	_err = SndNewChannel(&chan,
 	                     synth,
 	                     init,
-	                     NewSndCallBackProc(SndCh_UserRoutine));
+	                     NewSndCallBackUPP(SndCh_UserRoutine));
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     SndCh_New, chan);
@@ -554,9 +520,7 @@ static PyObject *Snd_SndNewChannel(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Snd_SndControl(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SndControl(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -574,9 +538,7 @@ static PyObject *Snd_SndControl(_self, _args)
 }
 #endif
 
-static PyObject *Snd_SndSoundManagerVersion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SndSoundManagerVersion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	NumVersion _rv;
@@ -588,9 +550,7 @@ static PyObject *Snd_SndSoundManagerVersion(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SndManagerStatus(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SndManagerStatus(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -608,9 +568,7 @@ static PyObject *Snd_SndManagerStatus(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SndGetSysBeepState(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SndGetSysBeepState(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short sysBeepState;
@@ -622,9 +580,7 @@ static PyObject *Snd_SndGetSysBeepState(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SndSetSysBeepState(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SndSetSysBeepState(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -641,9 +597,7 @@ static PyObject *Snd_SndSetSysBeepState(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Snd_MACEVersion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_MACEVersion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	NumVersion _rv;
@@ -658,9 +612,7 @@ static PyObject *Snd_MACEVersion(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Snd_Comp3to1(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_Comp3to1(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *buffer__in__;
@@ -705,9 +657,7 @@ static PyObject *Snd_Comp3to1(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Snd_Exp1to3(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_Exp1to3(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *buffer__in__;
@@ -752,9 +702,7 @@ static PyObject *Snd_Exp1to3(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Snd_Comp6to1(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_Comp6to1(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *buffer__in__;
@@ -799,9 +747,7 @@ static PyObject *Snd_Comp6to1(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Snd_Exp1to6(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_Exp1to6(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	char *buffer__in__;
@@ -844,9 +790,7 @@ static PyObject *Snd_Exp1to6(_self, _args)
 }
 #endif
 
-static PyObject *Snd_GetSysBeepVolume(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_GetSysBeepVolume(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -860,9 +804,7 @@ static PyObject *Snd_GetSysBeepVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SetSysBeepVolume(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SetSysBeepVolume(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -877,9 +819,7 @@ static PyObject *Snd_SetSysBeepVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_GetDefaultOutputVolume(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_GetDefaultOutputVolume(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -893,9 +833,7 @@ static PyObject *Snd_GetDefaultOutputVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SetDefaultOutputVolume(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SetDefaultOutputVolume(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -910,9 +848,7 @@ static PyObject *Snd_SetDefaultOutputVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_GetSoundHeaderOffset(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_GetSoundHeaderOffset(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -929,9 +865,7 @@ static PyObject *Snd_GetSoundHeaderOffset(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_GetCompressionInfo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_GetCompressionInfo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -958,9 +892,7 @@ static PyObject *Snd_GetCompressionInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SetSoundPreference(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SetSoundPreference(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -980,9 +912,7 @@ static PyObject *Snd_SetSoundPreference(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_GetSoundPreference(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_GetSoundPreference(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1002,9 +932,7 @@ static PyObject *Snd_GetSoundPreference(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_GetCompressionName(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_GetCompressionName(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1021,9 +949,7 @@ static PyObject *Snd_GetCompressionName(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBVersion(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBVersion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	NumVersion _rv;
@@ -1035,9 +961,7 @@ static PyObject *Snd_SPBVersion(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBSignInDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBSignInDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1055,9 +979,7 @@ static PyObject *Snd_SPBSignInDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBSignOutDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBSignOutDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1072,9 +994,7 @@ static PyObject *Snd_SPBSignOutDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBGetIndexedDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBGetIndexedDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1094,9 +1014,7 @@ static PyObject *Snd_SPBGetIndexedDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBOpenDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBOpenDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1116,9 +1034,7 @@ static PyObject *Snd_SPBOpenDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBCloseDevice(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBCloseDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1133,9 +1049,7 @@ static PyObject *Snd_SPBCloseDevice(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBRecord(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBRecord(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1155,9 +1069,7 @@ static PyObject *Snd_SPBRecord(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Snd_SPBRecordToFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBRecordToFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1179,9 +1091,7 @@ static PyObject *Snd_SPBRecordToFile(_self, _args)
 }
 #endif
 
-static PyObject *Snd_SPBPauseRecording(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBPauseRecording(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1196,9 +1106,7 @@ static PyObject *Snd_SPBPauseRecording(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBResumeRecording(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBResumeRecording(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1213,9 +1121,7 @@ static PyObject *Snd_SPBResumeRecording(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBStopRecording(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBStopRecording(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1230,9 +1136,7 @@ static PyObject *Snd_SPBStopRecording(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBGetRecordingStatus(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBGetRecordingStatus(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1264,9 +1168,7 @@ static PyObject *Snd_SPBGetRecordingStatus(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBGetDeviceInfo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBGetDeviceInfo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1287,9 +1189,7 @@ static PyObject *Snd_SPBGetDeviceInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBSetDeviceInfo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBSetDeviceInfo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1310,9 +1210,7 @@ static PyObject *Snd_SPBSetDeviceInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBMillisecondsToBytes(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBMillisecondsToBytes(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1329,9 +1227,7 @@ static PyObject *Snd_SPBMillisecondsToBytes(_self, _args)
 	return _res;
 }
 
-static PyObject *Snd_SPBBytesToMilliseconds(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Snd_SPBBytesToMilliseconds(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1453,8 +1349,7 @@ static PyMethodDef Snd_methods[] = {
 
 /* Routine passed to Py_AddPendingCall -- call the Python callback */
 static int
-SndCh_CallCallBack(arg)
-	void *arg;
+SndCh_CallCallBack(void *arg)
 {
 	SndChannelObject *p = (SndChannelObject *)arg;
 	PyObject *args;
@@ -1484,8 +1379,7 @@ SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd)
 
 /* SPB callbacks - Schedule callbacks to Python */
 static int
-SPB_CallCallBack(arg)
-	void *arg;
+SPB_CallCallBack(void *arg)
 {
 	SPBObject *p = (SPBObject *)arg;
 	PyObject *args;
@@ -1531,7 +1425,7 @@ SPB_interrupt(SPBPtr my_spb)
 #endif
 
 
-void initSnd()
+void initSnd(void)
 {
 	PyObject *m;
 	PyObject *d;

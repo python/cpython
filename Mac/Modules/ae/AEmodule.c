@@ -8,8 +8,12 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <AppleEvents.h>
 #include <AEObjects.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_AEDesc_New(AEDesc *);
@@ -49,8 +53,7 @@ typedef struct AEDescObject {
 	AEDesc ob_itself;
 } AEDescObject;
 
-PyObject *AEDesc_New(itself)
-	AEDesc *itself;
+PyObject *AEDesc_New(AEDesc *itself)
 {
 	AEDescObject *it;
 	it = PyObject_NEW(AEDescObject, &AEDesc_Type);
@@ -58,9 +61,7 @@ PyObject *AEDesc_New(itself)
 	it->ob_itself = *itself;
 	return (PyObject *)it;
 }
-AEDesc_Convert(v, p_itself)
-	PyObject *v;
-	AEDesc *p_itself;
+AEDesc_Convert(PyObject *v, AEDesc *p_itself)
 {
 	if (!AEDesc_Check(v))
 	{
@@ -71,16 +72,13 @@ AEDesc_Convert(v, p_itself)
 	return 1;
 }
 
-static void AEDesc_dealloc(self)
-	AEDescObject *self;
+static void AEDesc_dealloc(AEDescObject *self)
 {
 	AEDisposeDesc(&self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *AEDesc_AECoerceDesc(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AECoerceDesc(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -98,9 +96,7 @@ static PyObject *AEDesc_AECoerceDesc(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEDuplicateDesc(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEDuplicateDesc(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -115,9 +111,7 @@ static PyObject *AEDesc_AEDuplicateDesc(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AECountItems(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AECountItems(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -132,9 +126,7 @@ static PyObject *AEDesc_AECountItems(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEPutPtr(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEPutPtr(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -160,9 +152,7 @@ static PyObject *AEDesc_AEPutPtr(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEPutDesc(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEPutDesc(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -181,9 +171,7 @@ static PyObject *AEDesc_AEPutDesc(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEGetNthPtr(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEGetNthPtr(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -221,9 +209,7 @@ static PyObject *AEDesc_AEGetNthPtr(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEGetNthDesc(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEGetNthDesc(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -247,9 +233,7 @@ static PyObject *AEDesc_AEGetNthDesc(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AESizeOfNthItem(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AESizeOfNthItem(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -270,9 +254,7 @@ static PyObject *AEDesc_AESizeOfNthItem(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEDeleteItem(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEDeleteItem(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -288,9 +270,7 @@ static PyObject *AEDesc_AEDeleteItem(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEPutParamPtr(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEPutParamPtr(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -316,9 +296,7 @@ static PyObject *AEDesc_AEPutParamPtr(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEPutParamDesc(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEPutParamDesc(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -337,9 +315,7 @@ static PyObject *AEDesc_AEPutParamDesc(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEGetParamPtr(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEGetParamPtr(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -374,9 +350,7 @@ static PyObject *AEDesc_AEGetParamPtr(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEGetParamDesc(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEGetParamDesc(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -397,9 +371,7 @@ static PyObject *AEDesc_AEGetParamDesc(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AESizeOfParam(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AESizeOfParam(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -420,9 +392,7 @@ static PyObject *AEDesc_AESizeOfParam(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEDeleteParam(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEDeleteParam(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -438,9 +408,7 @@ static PyObject *AEDesc_AEDeleteParam(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEGetAttributePtr(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEGetAttributePtr(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -475,9 +443,7 @@ static PyObject *AEDesc_AEGetAttributePtr(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEGetAttributeDesc(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEGetAttributeDesc(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -498,9 +464,7 @@ static PyObject *AEDesc_AEGetAttributeDesc(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AESizeOfAttribute(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AESizeOfAttribute(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -521,9 +485,7 @@ static PyObject *AEDesc_AESizeOfAttribute(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEPutAttributePtr(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEPutAttributePtr(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -549,9 +511,7 @@ static PyObject *AEDesc_AEPutAttributePtr(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEPutAttributeDesc(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEPutAttributeDesc(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -572,9 +532,7 @@ static PyObject *AEDesc_AEPutAttributeDesc(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *AEDesc_AEGetDescDataSize(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEGetDescDataSize(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Size _rv;
@@ -587,9 +545,7 @@ static PyObject *AEDesc_AEGetDescDataSize(_self, _args)
 }
 #endif
 
-static PyObject *AEDesc_AESend(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AESend(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -615,9 +571,7 @@ static PyObject *AEDesc_AESend(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEResetTimer(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEResetTimer(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -630,9 +584,7 @@ static PyObject *AEDesc_AEResetTimer(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AESuspendTheCurrentEvent(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AESuspendTheCurrentEvent(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -645,9 +597,7 @@ static PyObject *AEDesc_AESuspendTheCurrentEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEResumeTheCurrentEvent(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEResumeTheCurrentEvent(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -668,9 +618,7 @@ static PyObject *AEDesc_AEResumeTheCurrentEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEGetTheCurrentEvent(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEGetTheCurrentEvent(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -683,9 +631,7 @@ static PyObject *AEDesc_AEGetTheCurrentEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AESetTheCurrentEvent(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AESetTheCurrentEvent(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -698,9 +644,7 @@ static PyObject *AEDesc_AESetTheCurrentEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *AEDesc_AEResolve(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
+static PyObject *AEDesc_AEResolve(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -783,9 +727,7 @@ static PyMethodDef AEDesc_methods[] = {
 
 PyMethodChain AEDesc_chain = { AEDesc_methods, NULL };
 
-static PyObject *AEDesc_getattr(self, name)
-	AEDescObject *self;
-	char *name;
+static PyObject *AEDesc_getattr(AEDescObject *self, char *name)
 {
 
 	if (strcmp(name, "type") == 0)
@@ -852,9 +794,7 @@ PyTypeObject AEDesc_Type = {
 /* --------------------- End object type AEDesc --------------------- */
 
 
-static PyObject *AE_AECoercePtr(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AECoercePtr(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -881,9 +821,7 @@ static PyObject *AE_AECoercePtr(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AECreateDesc(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AECreateDesc(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -907,9 +845,7 @@ static PyObject *AE_AECreateDesc(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AECreateList(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AECreateList(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -933,9 +869,7 @@ static PyObject *AE_AECreateList(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AECreateAppleEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AECreateAppleEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -966,9 +900,7 @@ static PyObject *AE_AECreateAppleEvent(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *AE_AEReplaceDescData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEReplaceDescData(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -993,9 +925,7 @@ static PyObject *AE_AEReplaceDescData(_self, _args)
 }
 #endif
 
-static PyObject *AE_AEProcessAppleEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEProcessAppleEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1010,9 +940,7 @@ static PyObject *AE_AEProcessAppleEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AEGetInteractionAllowed(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEGetInteractionAllowed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1026,9 +954,7 @@ static PyObject *AE_AEGetInteractionAllowed(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AESetInteractionAllowed(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AESetInteractionAllowed(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1043,9 +969,7 @@ static PyObject *AE_AESetInteractionAllowed(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AEInteractWithUser(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEInteractWithUser(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1062,9 +986,7 @@ static PyObject *AE_AEInteractWithUser(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AEInstallEventHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEInstallEventHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1088,9 +1010,7 @@ static PyObject *AE_AEInstallEventHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AERemoveEventHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AERemoveEventHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1110,9 +1030,7 @@ static PyObject *AE_AERemoveEventHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AEGetEventHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEGetEventHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1135,9 +1053,7 @@ static PyObject *AE_AEGetEventHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AEInstallSpecialHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEInstallSpecialHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1154,9 +1070,7 @@ static PyObject *AE_AEInstallSpecialHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AERemoveSpecialHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AERemoveSpecialHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1173,9 +1087,7 @@ static PyObject *AE_AERemoveSpecialHandler(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AEManagerInfo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEManagerInfo(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1192,9 +1104,7 @@ static PyObject *AE_AEManagerInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AEObjectInit(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEObjectInit(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1207,9 +1117,7 @@ static PyObject *AE_AEObjectInit(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AEDisposeToken(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AEDisposeToken(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1223,9 +1131,7 @@ static PyObject *AE_AEDisposeToken(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AECallObjectAccessor(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *AE_AECallObjectAccessor(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1330,17 +1236,17 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, unsigned long 
 }
 
 
-void initAE()
+void initAE(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
-		upp_AEIdleProc = NewAEIdleProc(AEIdleProc);
-		upp_GenericEventHandler = NewAEEventHandlerProc(GenericEventHandler);
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc_Convert);
+		upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
+		upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 
 
 	m = Py_InitModule("AE", AE_methods);

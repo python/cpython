@@ -22,7 +22,11 @@ from macsupport import *
 # Create the type objects
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <Scrap.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 /*
 ** Generate ScrapInfo records

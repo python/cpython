@@ -17,7 +17,12 @@ class SndMethod(SndMixIn, OSErrMethodGenerator): pass
 # includestuff etc. are imported from macsupport
 
 includestuff = includestuff + """
+#ifdef WITHOUT_FRAMEWORKS
 #include <Sound.h>
+#include <OSUtils.h> /* for Set(Current)A5 */
+#else
+#include <Carbon/Carbon.h>
+#endif
 """
 
 initstuff = initstuff + """
@@ -57,7 +62,7 @@ class SndCallBackType(InputOnlyType):
 		Output("goto %s__error__;", name)
 		OutRbrace()
 	def passInput(self, name):
-		return "NewSndCallBackProc(SndCh_UserRoutine)"
+		return "NewSndCallBackUPP(SndCh_UserRoutine)"
 	def cleanup(self, name):
 		# XXX This knows it is executing inside the SndNewChannel wrapper
 		Output("if (_res != NULL && %s != Py_None)", name)
@@ -90,7 +95,6 @@ SMStatus = StructOutputBufferType('SMStatus')
 CompressionInfo = StructOutputBufferType('CompressionInfo')
 
 includestuff = includestuff + """
-#include <OSUtils.h> /* for Set(Current)A5 */
 
 /* Create a SndCommand object (an (int, int, int) tuple) */
 static PyObject *
@@ -126,8 +130,7 @@ static pascal void SPB_interrupt(SPBPtr my_spb); /* Forward */
 finalstuff = finalstuff + """
 /* Routine passed to Py_AddPendingCall -- call the Python callback */
 static int
-SndCh_CallCallBack(arg)
-	void *arg;
+SndCh_CallCallBack(void *arg)
 {
 	SndChannelObject *p = (SndChannelObject *)arg;
 	PyObject *args;
@@ -157,8 +160,7 @@ SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd)
 
 /* SPB callbacks - Schedule callbacks to Python */
 static int
-SPB_CallCallBack(arg)
-	void *arg;
+SPB_CallCallBack(void *arg)
 {
 	SPBObject *p = (SPBObject *)arg;
 	PyObject *args;
@@ -268,11 +270,7 @@ class SpbObjectDefinition(ObjectDefinition):
 		Output("Py_XDECREF(self->ob_interrupt);")
 	
 	def outputConvert(self):
-		Output("%s%s_Convert(v, p_itself)", self.static, self.prefix)
-		IndentLevel()
-		Output("PyObject *v;")
-		Output("%s *p_itself;", self.itselftype)
-		DedentLevel()
+		Output("%s%s_Convert(PyObject *v, %s *p_itself)", self.static, self.prefix, self.itselftype)
 		OutLbrace()
 		self.outputCheckConvertArg()
 		Output("if (!%s_Check(v))", self.prefix)
@@ -286,12 +284,8 @@ class SpbObjectDefinition(ObjectDefinition):
 
 	def outputSetattr(self):
 		Output()
-		Output("static int %s_setattr(self, name, value)", self.prefix)
-		IndentLevel()
-		Output("%s *self;", self.objecttype)
-		Output("char *name;")
-		Output("PyObject *value;")
-		DedentLevel()
+		Output("static int %s_setattr(%s *self, char *name, PyObject *value)", 
+			self.prefix, self.objecttype)
 		OutLbrace()
 		self.outputSetattrBody()
 		OutRbrace()
@@ -309,13 +303,13 @@ class SpbObjectDefinition(ObjectDefinition):
 	else if (strcmp(name, "buffer") == 0)
 		rv = PyArg_Parse(value, "w#", &self->ob_spb.bufferPtr, &self->ob_spb.bufferLength);
 	else if (strcmp(name, "completionRoutine") == 0) {
-		self->ob_spb.completionRoutine = NewSICompletionProc(SPB_completion);
+		self->ob_spb.completionRoutine = NewSICompletionUPP(SPB_completion);
 		self->ob_completion = value;
 		Py_INCREF(value);
 		rv = 1;
 #if !TARGET_API_MAC_CARBON
 	} else if (strcmp(name, "interruptRoutine") == 0) {
-		self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
+		self->ob_spb.completionRoutine = NewSIInterruptUPP(SPB_interrupt);
 		self->ob_interrupt = value;
 		Py_INCREF(value);
 		rv = 1;

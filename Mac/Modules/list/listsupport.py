@@ -35,8 +35,11 @@ Handle = OpaqueByValueType("Handle", "ResObj")
 CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
-
+#ifdef WITHOUT_FRAMEWORKS
+#include <Lists.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_ListObj_New(ListHandle);
@@ -76,8 +79,8 @@ extern int _ListObj_Convert(PyObject *, ListHandle *);
 """
 
 initstuff = initstuff + """
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(ListObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ListObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(ListHandle, ListObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ListHandle, ListObj_Convert);
 """
 
 class ListMethodGenerator(MethodGenerator):
@@ -102,10 +105,7 @@ getattrHookCode = """{
 
 setattrCode = """
 static int
-ListObj_setattr(self, name, value)
-	ListObject *self;
-	char *name;
-	PyObject *value;
+ListObj_setattr(ListObject *self, char *name, PyObject *value)
 {
 	long intval;
 		

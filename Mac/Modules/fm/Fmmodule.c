@@ -8,14 +8,18 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Fonts.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 
 /*
 ** Parse/generate ComponentDescriptor records
 */
 static PyObject *
-FMRec_New(itself)
-	FMetricRec *itself;
+FMRec_New(FMetricRec *itself)
 {
 
 	return Py_BuildValue("O&O&O&O&O&", 
@@ -29,9 +33,7 @@ FMRec_New(itself)
 #if 0
 /* Not needed... */
 static int
-FMRec_Convert(v, p_itself)
-	PyObject *v;
-	FMetricRec *p_itself;
+FMRec_Convert(PyObject *v, FMetricRec *p_itself)
 {
 	return PyArg_ParseTuple(v, "O&O&O&O&O&",
 		PyMac_GetFixed, &itself->ascent,
@@ -47,9 +49,7 @@ static PyObject *Fm_Error;
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Fm_InitFonts(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_InitFonts(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -61,9 +61,7 @@ static PyObject *Fm_InitFonts(_self, _args)
 }
 #endif
 
-static PyObject *Fm_GetFontName(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_GetFontName(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short familyID;
@@ -78,9 +76,7 @@ static PyObject *Fm_GetFontName(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_GetFNum(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_GetFNum(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Str255 name;
@@ -95,9 +91,7 @@ static PyObject *Fm_GetFNum(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_RealFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_RealFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -116,9 +110,7 @@ static PyObject *Fm_RealFont(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Fm_SetFontLock(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_SetFontLock(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean lockFlag;
@@ -132,9 +124,7 @@ static PyObject *Fm_SetFontLock(_self, _args)
 }
 #endif
 
-static PyObject *Fm_SetFScaleDisable(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_SetFScaleDisable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean fscaleDisable;
@@ -147,9 +137,7 @@ static PyObject *Fm_SetFScaleDisable(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_FontMetrics(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_FontMetrics(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	FMetricRec theMetrics;
@@ -161,9 +149,7 @@ static PyObject *Fm_FontMetrics(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_SetFractEnable(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_SetFractEnable(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean fractEnable;
@@ -176,9 +162,7 @@ static PyObject *Fm_SetFractEnable(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_GetDefFontSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_GetDefFontSize(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -190,9 +174,7 @@ static PyObject *Fm_GetDefFontSize(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_IsOutline(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_IsOutline(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -209,9 +191,7 @@ static PyObject *Fm_IsOutline(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_SetOutlinePreferred(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_SetOutlinePreferred(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean outlinePreferred;
@@ -224,9 +204,7 @@ static PyObject *Fm_SetOutlinePreferred(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_GetOutlinePreferred(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_GetOutlinePreferred(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -238,9 +216,7 @@ static PyObject *Fm_GetOutlinePreferred(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_SetPreserveGlyph(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_SetPreserveGlyph(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean preserveGlyph;
@@ -253,9 +229,7 @@ static PyObject *Fm_SetPreserveGlyph(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_GetPreserveGlyph(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_GetPreserveGlyph(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -269,9 +243,7 @@ static PyObject *Fm_GetPreserveGlyph(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Fm_FlushFonts(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_FlushFonts(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -285,9 +257,7 @@ static PyObject *Fm_FlushFonts(_self, _args)
 }
 #endif
 
-static PyObject *Fm_GetSysFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_GetSysFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -299,9 +269,7 @@ static PyObject *Fm_GetSysFont(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_GetAppFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_GetAppFont(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	short _rv;
@@ -313,9 +281,7 @@ static PyObject *Fm_GetAppFont(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_SetAntiAliasedTextEnabled(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_SetAntiAliasedTextEnabled(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
@@ -333,9 +299,7 @@ static PyObject *Fm_SetAntiAliasedTextEnabled(_self, _args)
 	return _res;
 }
 
-static PyObject *Fm_IsAntiAliasedTextEnabled(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Fm_IsAntiAliasedTextEnabled(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -403,7 +367,7 @@ static PyMethodDef Fm_methods[] = {
 
 
 
-void initFm()
+void initFm(void)
 {
 	PyObject *m;
 	PyObject *d;

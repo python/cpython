@@ -21,7 +21,12 @@ from macsupport import *
 # Create the type objects
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <Components.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_CmpObj_New(Component);
 extern int _CmpObj_Convert(PyObject *, Component *);
@@ -38,8 +43,7 @@ extern int _CmpInstObj_Convert(PyObject *, ComponentInstance *);
 ** Parse/generate ComponentDescriptor records
 */
 static PyObject *
-CmpDesc_New(itself)
-	ComponentDescription *itself;
+CmpDesc_New(ComponentDescription *itself)
 {
 
 	return Py_BuildValue("O&O&O&ll", 
@@ -50,9 +54,7 @@ CmpDesc_New(itself)
 }
 
 static int
-CmpDesc_Convert(v, p_itself)
-	PyObject *v;
-	ComponentDescription *p_itself;
+CmpDesc_Convert(PyObject *v, ComponentDescription *p_itself)
 {
 	return PyArg_ParseTuple(v, "O&O&O&ll",
 		PyMac_GetOSType, &p_itself->componentType,
@@ -64,10 +66,10 @@ CmpDesc_Convert(v, p_itself)
 """
 
 initstuff = initstuff + """
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(CmpObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CmpObj_Convert);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(CmpInstObj_New);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CmpInstObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(Component, CmpObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Component, CmpObj_Convert);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(ComponentInstance, CmpInstObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ComponentInstance, CmpInstObj_Convert);
 """
 
 ComponentDescription = OpaqueType('ComponentDescription', 'CmpDesc')

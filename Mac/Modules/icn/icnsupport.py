@@ -46,7 +46,12 @@ RGBColor = OpaqueType("RGBColor", "QdRGB")
 #EventKind = Type("EventKind", "H")
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
+#ifdef WITHOUT_FRAMEWORKS
+#include <Icons.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):

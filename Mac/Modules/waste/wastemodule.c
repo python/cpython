@@ -154,7 +154,7 @@ my_dispose_handler(WEObjectReference objref)
 }
 
 static pascal OSErr
-my_draw_handler(const Rect *destRect, WEObjectReference objref)
+my_draw_handler(Rect *destRect, WEObjectReference objref)
 {
 	PyObject *args=NULL, *rv=NULL;
 	OSErr err;
@@ -201,8 +201,7 @@ typedef struct WEOObject {
 	WEObjectReference ob_itself;
 } WEOObject;
 
-PyObject *WEOObj_New(itself)
-	WEObjectReference itself;
+PyObject *WEOObj_New(WEObjectReference itself)
 {
 	WEOObject *it;
 	if (itself == NULL) {
@@ -214,9 +213,7 @@ PyObject *WEOObj_New(itself)
 	it->ob_itself = itself;
 	return (PyObject *)it;
 }
-WEOObj_Convert(v, p_itself)
-	PyObject *v;
-	WEObjectReference *p_itself;
+WEOObj_Convert(PyObject *v, WEObjectReference *p_itself)
 {
 	if (!WEOObj_Check(v))
 	{
@@ -227,16 +224,13 @@ WEOObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void WEOObj_dealloc(self)
-	WEOObject *self;
+static void WEOObj_dealloc(WEOObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
 	PyMem_DEL(self);
 }
 
-static PyObject *WEOObj_WEGetObjectType(_self, _args)
-	WEOObject *_self;
-	PyObject *_args;
+static PyObject *WEOObj_WEGetObjectType(WEOObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	FlavorType _rv;
@@ -248,9 +242,7 @@ static PyObject *WEOObj_WEGetObjectType(_self, _args)
 	return _res;
 }
 
-static PyObject *WEOObj_WEGetObjectDataHandle(_self, _args)
-	WEOObject *_self;
-	PyObject *_args;
+static PyObject *WEOObj_WEGetObjectDataHandle(WEOObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -262,9 +254,7 @@ static PyObject *WEOObj_WEGetObjectDataHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *WEOObj_WEGetObjectSize(_self, _args)
-	WEOObject *_self;
-	PyObject *_args;
+static PyObject *WEOObj_WEGetObjectSize(WEOObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point _rv;
@@ -276,9 +266,7 @@ static PyObject *WEOObj_WEGetObjectSize(_self, _args)
 	return _res;
 }
 
-static PyObject *WEOObj_WEGetObjectOwner(_self, _args)
-	WEOObject *_self;
-	PyObject *_args;
+static PyObject *WEOObj_WEGetObjectOwner(WEOObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WEReference _rv;
@@ -290,9 +278,7 @@ static PyObject *WEOObj_WEGetObjectOwner(_self, _args)
 	return _res;
 }
 
-static PyObject *WEOObj_WEGetObjectRefCon(_self, _args)
-	WEOObject *_self;
-	PyObject *_args;
+static PyObject *WEOObj_WEGetObjectRefCon(WEOObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -304,9 +290,7 @@ static PyObject *WEOObj_WEGetObjectRefCon(_self, _args)
 	return _res;
 }
 
-static PyObject *WEOObj_WESetObjectRefCon(_self, _args)
-	WEOObject *_self;
-	PyObject *_args;
+static PyObject *WEOObj_WESetObjectRefCon(WEOObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 refCon;
@@ -338,9 +322,7 @@ static PyMethodDef WEOObj_methods[] = {
 
 PyMethodChain WEOObj_chain = { WEOObj_methods, NULL };
 
-static PyObject *WEOObj_getattr(self, name)
-	WEOObject *self;
-	char *name;
+static PyObject *WEOObj_getattr(WEOObject *self, char *name)
 {
 	return Py_FindMethodInChain(&WEOObj_chain, (PyObject *)self, name);
 }
@@ -386,8 +368,7 @@ typedef struct wasteObject {
 	WEReference ob_itself;
 } wasteObject;
 
-PyObject *wasteObj_New(itself)
-	WEReference itself;
+PyObject *wasteObj_New(WEReference itself)
 {
 	wasteObject *it;
 	if (itself == NULL) {
@@ -400,9 +381,7 @@ PyObject *wasteObj_New(itself)
 	WESetInfo(weRefCon, (void *)&it, itself);
 	return (PyObject *)it;
 }
-wasteObj_Convert(v, p_itself)
-	PyObject *v;
-	WEReference *p_itself;
+wasteObj_Convert(PyObject *v, WEReference *p_itself)
 {
 	if (!wasteObj_Check(v))
 	{
@@ -413,16 +392,13 @@ wasteObj_Convert(v, p_itself)
 	return 1;
 }
 
-static void wasteObj_dealloc(self)
-	wasteObject *self;
+static void wasteObj_dealloc(wasteObject *self)
 {
 	WEDispose(self->ob_itself);
 	PyMem_DEL(self);
 }
 
-static PyObject *wasteObj_WEGetText(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetText(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -434,9 +410,7 @@ static PyObject *wasteObj_WEGetText(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetChar(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetChar(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -451,9 +425,7 @@ static PyObject *wasteObj_WEGetChar(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetTextLength(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetTextLength(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -465,9 +437,7 @@ static PyObject *wasteObj_WEGetTextLength(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetHeight(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetHeight(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -485,9 +455,7 @@ static PyObject *wasteObj_WEGetHeight(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetSelection(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetSelection(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 selStart;
@@ -503,9 +471,7 @@ static PyObject *wasteObj_WEGetSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetDestRect(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetDestRect(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	LongRect destRect;
@@ -518,9 +484,7 @@ static PyObject *wasteObj_WEGetDestRect(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetViewRect(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetViewRect(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	LongRect viewRect;
@@ -533,9 +497,7 @@ static PyObject *wasteObj_WEGetViewRect(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEIsActive(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEIsActive(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -547,9 +509,7 @@ static PyObject *wasteObj_WEIsActive(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEOffsetToLine(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEOffsetToLine(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -564,9 +524,7 @@ static PyObject *wasteObj_WEOffsetToLine(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetLineRange(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetLineRange(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 lineIndex;
@@ -585,9 +543,7 @@ static PyObject *wasteObj_WEGetLineRange(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECountLines(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECountLines(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -599,9 +555,7 @@ static PyObject *wasteObj_WECountLines(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEOffsetToRun(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEOffsetToRun(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -616,9 +570,7 @@ static PyObject *wasteObj_WEOffsetToRun(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetRunRange(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetRunRange(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 runIndex;
@@ -637,9 +589,7 @@ static PyObject *wasteObj_WEGetRunRange(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECountRuns(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECountRuns(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -651,9 +601,7 @@ static PyObject *wasteObj_WECountRuns(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetClickCount(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetClickCount(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt16 _rv;
@@ -665,9 +613,7 @@ static PyObject *wasteObj_WEGetClickCount(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESetSelection(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESetSelection(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 selStart;
@@ -684,9 +630,7 @@ static PyObject *wasteObj_WESetSelection(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESetDestRect(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESetDestRect(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	LongRect destRect;
@@ -700,9 +644,7 @@ static PyObject *wasteObj_WESetDestRect(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESetViewRect(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESetViewRect(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	LongRect viewRect;
@@ -716,9 +658,7 @@ static PyObject *wasteObj_WESetViewRect(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEContinuousStyle(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEContinuousStyle(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -737,9 +677,7 @@ static PyObject *wasteObj_WEContinuousStyle(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetRunInfo(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetRunInfo(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 offset;
@@ -755,9 +693,7 @@ static PyObject *wasteObj_WEGetRunInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetRunDirection(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetRunDirection(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -772,9 +708,7 @@ static PyObject *wasteObj_WEGetRunDirection(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetOffset(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetOffset(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -792,9 +726,7 @@ static PyObject *wasteObj_WEGetOffset(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetPoint(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetPoint(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 offset;
@@ -816,9 +748,7 @@ static PyObject *wasteObj_WEGetPoint(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEFindWord(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEFindWord(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 offset;
@@ -840,9 +770,7 @@ static PyObject *wasteObj_WEFindWord(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEFindLine(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEFindLine(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 offset;
@@ -864,9 +792,7 @@ static PyObject *wasteObj_WEFindLine(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEFindParagraph(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEFindParagraph(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 offset;
@@ -888,9 +814,7 @@ static PyObject *wasteObj_WEFindParagraph(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECopyRange(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECopyRange(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -918,9 +842,7 @@ static PyObject *wasteObj_WECopyRange(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetAlignment(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetAlignment(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WEAlignment _rv;
@@ -932,9 +854,7 @@ static PyObject *wasteObj_WEGetAlignment(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESetAlignment(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESetAlignment(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WEAlignment alignment;
@@ -948,9 +868,7 @@ static PyObject *wasteObj_WESetAlignment(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetDirection(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetDirection(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WEDirection _rv;
@@ -962,9 +880,7 @@ static PyObject *wasteObj_WEGetDirection(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESetDirection(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESetDirection(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WEDirection direction;
@@ -978,9 +894,7 @@ static PyObject *wasteObj_WESetDirection(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECalText(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECalText(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -993,9 +907,7 @@ static PyObject *wasteObj_WECalText(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEUpdate(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEUpdate(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle updateRgn;
@@ -1009,9 +921,7 @@ static PyObject *wasteObj_WEUpdate(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEScroll(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEScroll(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 hOffset;
@@ -1028,9 +938,7 @@ static PyObject *wasteObj_WEScroll(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESelView(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESelView(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1041,9 +949,7 @@ static PyObject *wasteObj_WESelView(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEActivate(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEActivate(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1054,9 +960,7 @@ static PyObject *wasteObj_WEActivate(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEDeactivate(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEDeactivate(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1067,9 +971,7 @@ static PyObject *wasteObj_WEDeactivate(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEKey(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEKey(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 key;
@@ -1086,9 +988,7 @@ static PyObject *wasteObj_WEKey(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEClick(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEClick(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point hitPt;
@@ -1108,9 +1008,7 @@ static PyObject *wasteObj_WEClick(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEAdjustCursor(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEAdjustCursor(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1128,9 +1026,7 @@ static PyObject *wasteObj_WEAdjustCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEIdle(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEIdle(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 maxSleep;
@@ -1143,9 +1039,7 @@ static PyObject *wasteObj_WEIdle(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEInsert(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEInsert(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1171,9 +1065,7 @@ static PyObject *wasteObj_WEInsert(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEDelete(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEDelete(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1186,9 +1078,7 @@ static PyObject *wasteObj_WEDelete(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESetStyle(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESetStyle(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1207,9 +1097,7 @@ static PyObject *wasteObj_WESetStyle(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEUseStyleScrap(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEUseStyleScrap(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1225,9 +1113,7 @@ static PyObject *wasteObj_WEUseStyleScrap(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEUseText(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEUseText(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1243,9 +1129,7 @@ static PyObject *wasteObj_WEUseText(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEUndo(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEUndo(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1258,9 +1142,7 @@ static PyObject *wasteObj_WEUndo(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEClearUndo(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEClearUndo(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1271,9 +1153,7 @@ static PyObject *wasteObj_WEClearUndo(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetUndoInfo(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetUndoInfo(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	WEActionKind _rv;
@@ -1288,9 +1168,7 @@ static PyObject *wasteObj_WEGetUndoInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEIsTyping(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEIsTyping(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1302,9 +1180,7 @@ static PyObject *wasteObj_WEIsTyping(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEBeginAction(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEBeginAction(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1317,9 +1193,7 @@ static PyObject *wasteObj_WEBeginAction(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEEndAction(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEEndAction(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1335,9 +1209,7 @@ static PyObject *wasteObj_WEEndAction(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetModCount(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetModCount(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	UInt32 _rv;
@@ -1349,9 +1221,7 @@ static PyObject *wasteObj_WEGetModCount(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEResetModCount(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEResetModCount(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1362,9 +1232,7 @@ static PyObject *wasteObj_WEResetModCount(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEInsertObject(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEInsertObject(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1386,9 +1254,7 @@ static PyObject *wasteObj_WEInsertObject(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetSelectedObject(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetSelectedObject(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1403,9 +1269,7 @@ static PyObject *wasteObj_WEGetSelectedObject(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEFindNextObject(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEFindNextObject(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt32 _rv;
@@ -1423,9 +1287,7 @@ static PyObject *wasteObj_WEFindNextObject(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEUseSoup(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEUseSoup(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1441,9 +1303,7 @@ static PyObject *wasteObj_WEUseSoup(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECut(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECut(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1456,9 +1316,7 @@ static PyObject *wasteObj_WECut(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECopy(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECopy(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1471,9 +1329,7 @@ static PyObject *wasteObj_WECopy(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEPaste(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEPaste(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1486,9 +1342,7 @@ static PyObject *wasteObj_WEPaste(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECanPaste(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECanPaste(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1500,9 +1354,7 @@ static PyObject *wasteObj_WECanPaste(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetHiliteRgn(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetHiliteRgn(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	RgnHandle _rv;
@@ -1520,9 +1372,7 @@ static PyObject *wasteObj_WEGetHiliteRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECharByte(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECharByte(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -1537,9 +1387,7 @@ static PyObject *wasteObj_WECharByte(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WECharType(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WECharType(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -1554,9 +1402,7 @@ static PyObject *wasteObj_WECharType(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEStopInlineSession(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEStopInlineSession(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -1567,9 +1413,7 @@ static PyObject *wasteObj_WEStopInlineSession(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEFeatureFlag(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEFeatureFlag(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -1587,9 +1431,7 @@ static PyObject *wasteObj_WEFeatureFlag(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetUserInfo(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetUserInfo(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1607,9 +1449,7 @@ static PyObject *wasteObj_WEGetUserInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESetUserInfo(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESetUserInfo(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1628,9 +1468,7 @@ static PyObject *wasteObj_WESetUserInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEInstallTabHooks(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEInstallTabHooks(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1643,9 +1481,7 @@ static PyObject *wasteObj_WEInstallTabHooks(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WERemoveTabHooks(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WERemoveTabHooks(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1658,9 +1494,7 @@ static PyObject *wasteObj_WERemoveTabHooks(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEIsTabHooks(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEIsTabHooks(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1672,9 +1506,7 @@ static PyObject *wasteObj_WEIsTabHooks(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WEGetTabSize(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WEGetTabSize(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -1686,9 +1518,7 @@ static PyObject *wasteObj_WEGetTabSize(_self, _args)
 	return _res;
 }
 
-static PyObject *wasteObj_WESetTabSize(_self, _args)
-	wasteObject *_self;
-	PyObject *_args;
+static PyObject *wasteObj_WESetTabSize(wasteObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1858,9 +1688,7 @@ static PyMethodDef wasteObj_methods[] = {
 
 PyMethodChain wasteObj_chain = { wasteObj_methods, NULL };
 
-static PyObject *wasteObj_getattr(self, name)
-	wasteObject *self;
-	char *name;
+static PyObject *wasteObj_getattr(wasteObject *self, char *name)
 {
 	return Py_FindMethodInChain(&wasteObj_chain, (PyObject *)self, name);
 }
@@ -1895,9 +1723,7 @@ PyTypeObject waste_Type = {
 /* --------------------- End object type waste ---------------------- */
 
 
-static PyObject *waste_WENew(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WENew(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1920,9 +1746,7 @@ static PyObject *waste_WENew(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WEUpdateStyleScrap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WEUpdateStyleScrap(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1940,9 +1764,7 @@ static PyObject *waste_WEUpdateStyleScrap(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WEInstallTSMHandlers(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WEInstallTSMHandlers(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1955,9 +1777,7 @@ static PyObject *waste_WEInstallTSMHandlers(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WERemoveTSMHandlers(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WERemoveTSMHandlers(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1970,9 +1790,7 @@ static PyObject *waste_WERemoveTSMHandlers(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WEHandleTSMEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WEHandleTSMEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1989,9 +1807,7 @@ static PyObject *waste_WEHandleTSMEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WELongPointToPoint(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WELongPointToPoint(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	LongPt lp;
@@ -2006,9 +1822,7 @@ static PyObject *waste_WELongPointToPoint(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WEPointToLongPoint(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WEPointToLongPoint(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Point p;
@@ -2023,9 +1837,7 @@ static PyObject *waste_WEPointToLongPoint(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WESetLongRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WESetLongRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	LongRect lr;
@@ -2049,9 +1861,7 @@ static PyObject *waste_WESetLongRect(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WELongRectToRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WELongRectToRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	LongRect lr;
@@ -2066,9 +1876,7 @@ static PyObject *waste_WELongRectToRect(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WERectToLongRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WERectToLongRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect r;
@@ -2083,9 +1891,7 @@ static PyObject *waste_WERectToLongRect(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WEOffsetLongRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WEOffsetLongRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	LongRect lr;
@@ -2103,9 +1909,7 @@ static PyObject *waste_WEOffsetLongRect(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_WELongPointInLongRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WELongPointInLongRect(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -2122,9 +1926,7 @@ static PyObject *waste_WELongPointInLongRect(_self, _args)
 	return _res;
 }
 
-static PyObject *waste_STDObjectHandlers(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_STDObjectHandlers(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -2166,9 +1968,7 @@ static PyObject *waste_STDObjectHandlers(_self, _args)
 
 }
 
-static PyObject *waste_WEInstallObjectHandler(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *waste_WEInstallObjectHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 
@@ -2260,7 +2060,7 @@ ExistingwasteObj_New(w)
 }
 
 
-void initwaste()
+void initwaste(void)
 {
 	PyObject *m;
 	PyObject *d;

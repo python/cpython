@@ -49,9 +49,11 @@ DragTrackingMessage = Type("DragTrackingMessage", "h")
 DragReference = OpaqueByValueType("DragReference", "DragObj")
 
 includestuff = includestuff + """
-#include <%s>""" % MACHEADERFILE + """
-#ifndef kControlCheckBoxUncheckedValue
+#ifdef WITHOUT_FRAMEWORKS
+#include <Controls.h>
 #include <ControlDefinitions.h>
+#else
+#include <Carbon/Carbon.h>
 #endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
@@ -77,8 +79,7 @@ staticforward PyObject *CtlObj_WhichControl(ControlHandle);
 */
 #if 0 /* Not needed */
 static PyObject *
-ControlFontStyle_New(itself)
-	ControlFontStyleRec *itself;
+ControlFontStyle_New(ControlFontStyleRec *itself)
 {
 
 	return Py_BuildValue("hhhhhhO&O&", itself->flags, itself->font,
@@ -88,9 +89,7 @@ ControlFontStyle_New(itself)
 #endif
 
 static int
-ControlFontStyle_Convert(v, itself)
-	PyObject *v;
-	ControlFontStyleRec *itself;
+ControlFontStyle_Convert(PyObject *v, ControlFontStyleRec *itself)
 {
 	return PyArg_ParseTuple(v, "hhhhhhO&O&", &itself->flags,
 		&itself->font, &itself->size, &itself->style, &itself->mode,
@@ -102,17 +101,14 @@ ControlFontStyle_Convert(v, itself)
 ** Parse/generate ControlID records
 */
 static PyObject *
-PyControlID_New(itself)
-	ControlID *itself;
+PyControlID_New(ControlID *itself)
 {
 
 	return Py_BuildValue("O&l", PyMac_BuildOSType, itself->signature, itself->id);
 }
 
 static int
-PyControlID_Convert(v, itself)
-	PyObject *v;
-	ControlID *itself;
+PyControlID_Convert(PyObject *v, ControlID *itself)
 {
 	return PyArg_ParseTuple(v, "O&l", PyMac_GetOSType, &itself->signature, &itself->id);
 }
@@ -133,8 +129,7 @@ staticforward int setcallback(PyObject *, OSType, PyObject *, UniversalProcPtr *
 
 finalstuff = finalstuff + """
 static PyObject *
-CtlObj_NewUnmanaged(itself)
-	ControlHandle itself;
+CtlObj_NewUnmanaged(ControlHandle itself)
 {
 	ControlObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);
@@ -166,8 +161,7 @@ CtlObj_WhichControl(ControlHandle c)
 }
 
 static int
-settrackfunc(obj)
-	PyObject *obj;
+settrackfunc(PyObject *obj)
 {
 	if (tracker) {
 		PyErr_SetString(Ctl_Error, "Tracker function in use");
@@ -178,7 +172,7 @@ settrackfunc(obj)
 }
 
 static void
-clrtrackfunc()
+clrtrackfunc(void)
 {
 	Py_XDECREF(tracker);
 	tracker = 0;
@@ -201,11 +195,7 @@ mytracker(ControlHandle ctl, short part)
 }
 
 static int
-setcallback(myself, which, callback, uppp)
-	PyObject *myself;
-	OSType which;
-	PyObject *callback;
-	UniversalProcPtr *uppp;
+setcallback(PyObject *myself, OSType which, PyObject *callback, UniversalProcPtr *uppp)
 {
 	ControlObject *self = (ControlObject *)myself;
 	char keybuf[9];
@@ -235,10 +225,7 @@ setcallback(myself, which, callback, uppp)
 }
 
 static PyObject *
-callcallback(self, which, arglist)
-	ControlObject *self;
-	OSType which;
-	PyObject *arglist;
+callcallback(ControlObject *self, OSType which, PyObject *arglist)
 {
 	char keybuf[9];
 	PyObject *func, *rv;
@@ -319,13 +306,13 @@ mytrackingproc(ControlHandle control, Point startPt, ControlActionUPP actionProc
 """
 
 initstuff = initstuff + """
-mytracker_upp = NewControlActionProc(mytracker);
-mydrawproc_upp = NewControlUserPaneDrawProc(mydrawproc);
-myidleproc_upp = NewControlUserPaneIdleProc(myidleproc);
-myhittestproc_upp = NewControlUserPaneHitTestProc(myhittestproc);
-mytrackingproc_upp = NewControlUserPaneTrackingProc(mytrackingproc);
-PyMac_INIT_TOOLBOX_OBJECT_NEW(CtlObj_New);
-PyMac_INIT_TOOLBOX_OBJECT_CONVERT(CtlObj_Convert);
+mytracker_upp = NewControlActionUPP(mytracker);
+mydrawproc_upp = NewControlUserPaneDrawUPP(mydrawproc);
+myidleproc_upp = NewControlUserPaneIdleUPP(myidleproc);
+myhittestproc_upp = NewControlUserPaneHitTestUPP(myhittestproc);
+mytrackingproc_upp = NewControlUserPaneTrackingUPP(mytrackingproc);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(ControlHandle, CtlObj_New);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ControlHandle, CtlObj_Convert);
 """
 
 class MyObjectDefinition(ObjectIdentityMixin, GlobalObjectDefinition):

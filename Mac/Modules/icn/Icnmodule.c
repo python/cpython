@@ -8,13 +8,16 @@
 #include "macglue.h"
 #include "pymactoolbox.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Icons.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
+
 
 static PyObject *Icn_Error;
 
-static PyObject *Icn_GetCIcon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetCIcon(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CIconHandle _rv;
@@ -28,9 +31,7 @@ static PyObject *Icn_GetCIcon(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PlotCIcon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PlotCIcon(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect theRect;
@@ -46,9 +47,7 @@ static PyObject *Icn_PlotCIcon(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_DisposeCIcon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_DisposeCIcon(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CIconHandle theIcon;
@@ -61,9 +60,7 @@ static PyObject *Icn_DisposeCIcon(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIcon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIcon(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Handle _rv;
@@ -77,9 +74,7 @@ static PyObject *Icn_GetIcon(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PlotIcon(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PlotIcon(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Rect theRect;
@@ -95,9 +90,7 @@ static PyObject *Icn_PlotIcon(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PlotIconID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PlotIconID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -121,9 +114,7 @@ static PyObject *Icn_PlotIconID(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_NewIconSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_NewIconSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -137,9 +128,7 @@ static PyObject *Icn_NewIconSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_AddIconToSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_AddIconToSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -160,9 +149,7 @@ static PyObject *Icn_AddIconToSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIconFromSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconFromSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -182,9 +169,7 @@ static PyObject *Icn_GetIconFromSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIconSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -204,9 +189,7 @@ static PyObject *Icn_GetIconSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_DisposeIconSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_DisposeIconSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -224,9 +207,7 @@ static PyObject *Icn_DisposeIconSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PlotIconSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PlotIconSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -250,9 +231,7 @@ static PyObject *Icn_PlotIconSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_LoadIconCache(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_LoadIconCache(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -276,9 +255,7 @@ static PyObject *Icn_LoadIconCache(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetLabel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetLabel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -298,9 +275,7 @@ static PyObject *Icn_GetLabel(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PtInIconID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PtInIconID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -323,9 +298,7 @@ static PyObject *Icn_PtInIconID(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PtInIconSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PtInIconSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -348,9 +321,7 @@ static PyObject *Icn_PtInIconSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_RectInIconID(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_RectInIconID(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -373,9 +344,7 @@ static PyObject *Icn_RectInIconID(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_RectInIconSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_RectInIconSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -398,9 +367,7 @@ static PyObject *Icn_RectInIconSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_IconIDToRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IconIDToRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -424,9 +391,7 @@ static PyObject *Icn_IconIDToRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_IconSuiteToRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IconSuiteToRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -450,9 +415,7 @@ static PyObject *Icn_IconSuiteToRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_SetSuiteLabel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_SetSuiteLabel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -470,9 +433,7 @@ static PyObject *Icn_SetSuiteLabel(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetSuiteLabel(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetSuiteLabel(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	SInt16 _rv;
@@ -486,9 +447,7 @@ static PyObject *Icn_GetSuiteLabel(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PlotIconHandle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PlotIconHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -512,9 +471,7 @@ static PyObject *Icn_PlotIconHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PlotSICNHandle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PlotSICNHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -538,9 +495,7 @@ static PyObject *Icn_PlotSICNHandle(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PlotCIconHandle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PlotCIconHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -566,9 +521,7 @@ static PyObject *Icn_PlotCIconHandle(_self, _args)
 
 #if !TARGET_API_MAC_CARBON
 
-static PyObject *Icn_IconServicesTerminate(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IconServicesTerminate(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
@@ -580,9 +533,7 @@ static PyObject *Icn_IconServicesTerminate(_self, _args)
 }
 #endif
 
-static PyObject *Icn_IconRefToIconFamily(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IconRefToIconFamily(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -602,9 +553,7 @@ static PyObject *Icn_IconRefToIconFamily(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_IconFamilyToIconSuite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IconFamilyToIconSuite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -624,9 +573,7 @@ static PyObject *Icn_IconFamilyToIconSuite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_IconSuiteToIconFamily(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IconSuiteToIconFamily(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -646,9 +593,7 @@ static PyObject *Icn_IconSuiteToIconFamily(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_SetIconFamilyData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_SetIconFamilyData(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -669,9 +614,7 @@ static PyObject *Icn_SetIconFamilyData(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIconFamilyData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconFamilyData(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -692,9 +635,7 @@ static PyObject *Icn_GetIconFamilyData(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIconRefOwners(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconRefOwners(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -711,9 +652,7 @@ static PyObject *Icn_GetIconRefOwners(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_AcquireIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_AcquireIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -728,9 +667,7 @@ static PyObject *Icn_AcquireIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_ReleaseIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_ReleaseIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -745,9 +682,7 @@ static PyObject *Icn_ReleaseIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIconRefFromFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconRefFromFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -767,9 +702,7 @@ static PyObject *Icn_GetIconRefFromFile(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -792,9 +725,7 @@ static PyObject *Icn_GetIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIconRefFromFolder(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconRefFromFolder(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -823,9 +754,7 @@ static PyObject *Icn_GetIconRefFromFolder(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_RegisterIconRefFromIconFamily(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_RegisterIconRefFromIconFamily(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -848,9 +777,7 @@ static PyObject *Icn_RegisterIconRefFromIconFamily(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_RegisterIconRefFromResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_RegisterIconRefFromResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -876,9 +803,7 @@ static PyObject *Icn_RegisterIconRefFromResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_UnregisterIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_UnregisterIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -896,9 +821,7 @@ static PyObject *Icn_UnregisterIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_UpdateIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_UpdateIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -913,9 +836,7 @@ static PyObject *Icn_UpdateIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_OverrideIconRefFromResource(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_OverrideIconRefFromResource(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -936,9 +857,7 @@ static PyObject *Icn_OverrideIconRefFromResource(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_OverrideIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_OverrideIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -956,9 +875,7 @@ static PyObject *Icn_OverrideIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_RemoveIconRefOverride(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_RemoveIconRefOverride(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -973,9 +890,7 @@ static PyObject *Icn_RemoveIconRefOverride(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_CompositeIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_CompositeIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -995,9 +910,7 @@ static PyObject *Icn_CompositeIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_IsIconRefComposite(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IsIconRefComposite(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1017,9 +930,7 @@ static PyObject *Icn_IsIconRefComposite(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_IsValidIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IsValidIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1033,9 +944,7 @@ static PyObject *Icn_IsValidIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PlotIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PlotIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1062,9 +971,7 @@ static PyObject *Icn_PlotIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_PtInIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_PtInIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1090,9 +997,7 @@ static PyObject *Icn_PtInIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_RectInIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_RectInIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1118,9 +1023,7 @@ static PyObject *Icn_RectInIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_IconRefToRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IconRefToRgn(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1147,9 +1050,7 @@ static PyObject *Icn_IconRefToRgn(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetIconSizesFromIconRef(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconSizesFromIconRef(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1172,9 +1073,7 @@ static PyObject *Icn_GetIconSizesFromIconRef(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_FlushIconRefs(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_FlushIconRefs(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1192,9 +1091,7 @@ static PyObject *Icn_FlushIconRefs(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_FlushIconRefsByVolume(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_FlushIconRefsByVolume(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1209,9 +1106,7 @@ static PyObject *Icn_FlushIconRefsByVolume(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_SetCustomIconsEnabled(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_SetCustomIconsEnabled(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1229,9 +1124,7 @@ static PyObject *Icn_SetCustomIconsEnabled(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_GetCustomIconsEnabled(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetCustomIconsEnabled(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1248,9 +1141,7 @@ static PyObject *Icn_GetCustomIconsEnabled(_self, _args)
 	return _res;
 }
 
-static PyObject *Icn_IsIconRefMaskEmpty(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_IsIconRefMaskEmpty(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	Boolean _rv;
@@ -1266,9 +1157,7 @@ static PyObject *Icn_IsIconRefMaskEmpty(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Icn_GetIconRefVariant(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_GetIconRefVariant(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	IconRef _rv;
@@ -1291,9 +1180,7 @@ static PyObject *Icn_GetIconRefVariant(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Icn_RegisterIconRefFromIconFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_RegisterIconRefFromIconFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1319,9 +1206,7 @@ static PyObject *Icn_RegisterIconRefFromIconFile(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Icn_ReadIconFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_ReadIconFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1341,9 +1226,7 @@ static PyObject *Icn_ReadIconFile(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
-static PyObject *Icn_WriteIconFile(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyObject *Icn_WriteIconFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
@@ -1506,7 +1389,7 @@ static PyMethodDef Icn_methods[] = {
 
 
 
-void initIcn()
+void initIcn(void)
 {
 	PyObject *m;
 	PyObject *d;
