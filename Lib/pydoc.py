@@ -35,10 +35,6 @@ Richard Chamberlain, for the first implementation of textdoc.
 
 Mynd you, møøse bites Kan be pretty nasti..."""
 
-# Note: this module is designed to deploy instantly and run under any
-# version of Python from 1.5 and up.  That's why it's a single file and
-# some 2.0 features (like string methods) are conspicuously absent.
-
 # Known bugs that can't be fixed here:
 #   - imp.load_module() cannot be prevented from clobbering existing
 #     loaded modules, so calling synopsis() on a binary module file
