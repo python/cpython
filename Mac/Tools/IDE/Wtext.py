@@ -486,7 +486,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		elif value == "--":
 			delta = lineheight - viewheight
 		else:	# in thumb
-			cur = (32767 * viewoffset) / (destheight - viewheight)
+			cur = (32767L * viewoffset) / (destheight - viewheight)
 			delta = (cur-value)*(destheight - viewheight)/32767
 			if abs(delta - viewoffset) <=2:
 				# compensate for irritating rounding error
