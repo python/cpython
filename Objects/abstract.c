@@ -1976,7 +1976,8 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 			/* Do not mask errors. */
 			if (!PyErr_Occurred())
 				PyErr_SetString(PyExc_TypeError,
-				"isinstance() arg 2 must be a class or type");
+				"isinstance() arg 2 must be a class, type,"
+				" or tuple of classes and types");
 			return -1;
 		}
 		Py_DECREF(cls_bases);
