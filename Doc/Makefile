@@ -314,7 +314,7 @@ info:
 $(ALLCSSFILES): html/style.css
 	cp $< $@
 
-$(INDEXFILES): $(COMMONPERL) html/about.dat tools/node2label.pl
+$(INDEXFILES): $(COMMONPERL) html/stdabout.dat tools/node2label.pl
 
 html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
 	$(PYTHON) $(TOOLSDIR)/mkackshtml --address $(PYTHONDOCS) \
@@ -398,7 +398,7 @@ ISILOINDEXFILES=isilo/api/api.html \
 	isilo/dist/dist.html \
 	isilo/whatsnew/$(WHATSNEW).html
 
-$(ISILOINDEXFILES): $(COMMONPERL) html/about.dat perl/isilo.perl
+$(ISILOINDEXFILES): $(COMMONPERL) html/stdabout.dat perl/isilo.perl
 
 isilo:	isilo/python-api.pdb \
 	isilo/python-doc.pdb \
