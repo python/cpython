@@ -113,7 +113,7 @@ class _TemplateMetaclass(type):
             pattern = cls.pattern
         else:
             pattern = _TemplateMetaclass.pattern % {
-                'delim' : cls.delimiter,
+                'delim' : _re.escape(cls.delimiter),
                 'id'    : cls.idpattern,
                 }
         cls.pattern = _re.compile(pattern, _re.IGNORECASE | _re.VERBOSE)
@@ -123,7 +123,7 @@ class Template:
     """A string class for supporting $-substitutions."""
     __metaclass__ = _TemplateMetaclass
 
-    delimiter = r'\$'
+    delimiter = '$'
     idpattern = r'[_a-z][_a-z0-9]*'
 
     def __init__(self, template):
@@ -152,7 +152,6 @@ class Template:
             mapping = _multimap(kws, args[0])
         else:
             mapping = args[0]
-        delimiter = self.delimiter[-1]
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
@@ -163,7 +162,7 @@ class Template:
                 # fail if val is a Unicode containing non-ASCII characters.
                 return '%s' % val
             if mo.group('escaped') is not None:
-                return delimiter
+                return self.delimiter
             if mo.group('invalid') is not None:
                 self._invalid(mo)
             raise ValueError('Unrecognized named group in pattern', pattern)
@@ -178,7 +177,6 @@ class Template:
             mapping = _multimap(kws, args[0])
         else:
             mapping = args[0]
-        delimiter = self.delimiter[-1]
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named')
@@ -188,15 +186,15 @@ class Template:
                     # will fail if val is a Unicode containing non-ASCII
                     return '%s' % mapping[named]
                 except KeyError:
-                    return delimiter + named
+                    return self.delimiter + named
             braced = mo.group('braced')
             if braced is not None:
                 try:
                     return '%s' % mapping[braced]
                 except KeyError:
-                    return delimiter + '{' + braced + '}'
+                    return self.delimiter + '{' + braced + '}'
             if mo.group('escaped') is not None:
-                return delimiter
+                return self.delimiter
             if mo.group('invalid') is not None:
                 self._invalid(mo)
             raise ValueError('Unrecognized named group in pattern', pattern)
