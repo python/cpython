@@ -1,9 +1,12 @@
 % Format this file with latex.
 
-\documentstyle[palatino,11pt,myformat]{article}
-%\documentstyle[11pt,myformat]{article}
+%\documentstyle[palatino,11pt,myformat]{article}
+\documentstyle[11pt,myformat]{article}
 
-\sloppy
+% A command to force the text after an item to start on a new line
+\newcommand{\itembreak}{
+	\mbox{}\\*[0mm]
+}
 
 \title{\bf
 	Python Library Reference \\
@@ -244,7 +247,7 @@ Keys are listed in random order.
 \end{description}
 
 A small example using a dictionary:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> tel = {}
 >>> tel['jack'] = 4098
 >>> tel['sape'] = 4139
@@ -262,7 +265,7 @@ A small example using a dictionary:
 >>> tel.has_key('guido')
 1
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \subsubsection{Other Built-in Types}
 
 The interpreter supports several other kinds of objects.
@@ -405,30 +408,30 @@ current local symbol table, sorted alphabetically.
 With a module object as argument, it returns the sorted list of names in
 that module's global symbol table.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import sys
 >>> dir()
 ['sys']
 >>> dir(sys)
 ['argv', 'exit', 'modules', 'path', 'stderr', 'stdin', 'stdout']
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \item[{\tt divmod(a, b)}]
 %.br
 Takes two integers as arguments and returns a pair of integers
 consisting of their quotient and remainder.
 For
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 q, r = divmod(a, b)
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 the invariants are:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 a = q*b + r
 abs(r) < abs(b)
 r has the same sign as b
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> divmod(100, 7)
 (14, 2)
 >>> divmod(-100, 7)
@@ -438,7 +441,7 @@ For example:
 >>> divmod(-100, -7)
 (14, -2)
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \item[{\tt eval(s)}]
 Takes a string as argument and parses and evaluates it as a {\Python}
 expression.
@@ -446,12 +449,12 @@ The expression is executed using the current local and global symbol
 tables.
 Syntax errors are reported as exceptions.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> x = 1
 >>> eval('x+1')
 2
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \item[{\tt exec(s)}]
 Takes a string as argument and parses and evaluates it as a sequence of
 {\Python} statements.
@@ -460,13 +463,13 @@ The statement is executed using the current local and global symbol
 tables.
 Syntax errors are reported as exceptions.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> x = 1
 >>> exec('x = x+1\n')
 >>> x
 2
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \item[{\tt float(x)}]
 Converts a number to floating point.
 The argument may be an integer or floating point number.
@@ -511,7 +514,7 @@ A third argument specifies the step size; negative steps are allowed and
 work as expected, but don't specify a zero step.
 The resulting list may be empty.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> range(10)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> range(1, 1+10)
@@ -527,7 +530,7 @@ For example:
 >>> range(1, 0)
 []
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \item[{\tt raw\_input(s)}]
 %.br
 The argument is optional; if present, it is written to standard output
@@ -536,12 +539,12 @@ The function then reads a line from input, converts it to a string
 (stripping a trailing newline), and returns that.
 EOF is reported as an exception.
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> raw_input('Type anything: ')
 Type anything: Teenage Mutant Ninja Turtles
 'Teenage Mutant Ninja Turtles'
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \item[{\tt type(x)}]
 Returns the type of an object.
 Types are objects themselves:
@@ -954,8 +957,9 @@ bits wide when drawn in the curent font.
 \item[{\tt textwidth(str)}]
 %.br
 Return the width in bits of the string when drawn in the current font.
-\subsubsection{Window Object Methods}
 \end{description}
+
+\subsubsection{Window Object Methods}
 
 Window objects are created by
 {\tt stdwin.open()}.
@@ -971,8 +975,10 @@ Invalidates the given rectangle; this may cause a draw event.
 \item[{\tt gettitle()}]
 Returns the window's title string.
 \item[{\tt getdocsize()}]
+\begin{sloppypar}
 Returns a pair of integers giving the size of the document as set by
 {\tt setdocsize()}.
+\end{sloppypar}
 \item[{\tt getorigin()}]
 Returns a pair of integers giving the origin of the window with respect
 to the document.
@@ -985,6 +991,7 @@ Methods menu objects are described below.
 \item[{\tt scroll(rect,~point)}]
 Scrolls the given rectangle by the vector given by the point.
 \item[{\tt setwincursor(name)}]
+\begin{sloppypar}
 Sets the window cursor to a cursor of the given name.
 It raises the
 {\tt Runtime\-Error}
@@ -998,6 +1005,7 @@ and
 {\tt 'plus'}.
 On X11, there are many more (see
 {\tt <X11/cursorfont.h>}).
+\end{sloppypar}
 \item[{\tt setdocsize(point)}]
 Sets the size of the drawing document.
 \item[{\tt setorigin(point)}]
@@ -1233,11 +1241,11 @@ Amoeba utilities
 and
 {\em a2c}(U).
 For example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> amoeba.name_lookup('/profile/cap')
 aa:1c:95:52:6a:fa/14(ff)/8e:ba:5b:8:11:1a
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The following methods are defined for capability objects.
 \begin{description}
 \item[{\tt dir\_list()}]
@@ -1254,6 +1262,7 @@ EOF is reported as an empty string.
 Returns the size of a bullet file.
 \item[{\tt dir\_append(), dir\_delete(), dir\_lookup(), dir\_replace()}]
 %.br
+\itembreak
 Like the corresponding
 {\tt name\_*}
 functions, but with a path relative to the capability.
@@ -1318,10 +1327,12 @@ Returns true if the second thread has finished reading (so
 \item[{\tt start\_playing(chunk)}, {\tt wait\_playing()},
 {\tt stop\_playing()}, {\tt poll\_playing()}]
 %.br
+\begin{sloppypar}
 Similar but for output.
 {\tt stop\_playing()}
 returns a lower bound for the number of bytes actually played (not very
 accurate).
+\end{sloppypar}
 \end{description}
 
 The following operations do not affect the audio device but are
@@ -1347,10 +1358,12 @@ Converts a string of sampled bytes as returned by {\tt read()} into
 a list containing the numeric values of the samples.
 \item[{\tt num2chr(list)}]
 %.br
+\begin{sloppypar}
 Converts a list as returned by
 {\tt chr2num()}
 back to a buffer acceptable by
 {\tt write()}.
+\end{sloppypar}
 \end{description}
 
 \subsection{Built-in Module {\tt gl}}
@@ -1382,22 +1395,24 @@ In most cases, {\Python} integers are also allowed.
 All arrays are represented by one-dimensional {\Python} lists.
 In most cases, tuples are also allowed.
 \item
+\begin{sloppypar}
 All string and character arguments are represented by {\Python} strings,
-e.g.,
+for instance,
 {\tt winopen('Hi~There!')}
 and
 {\tt rotate(900,~'z')}.
+\end{sloppypar}
 \item
 All (short, long, unsigned) integer arguments or return values that are
 only used to specify the length of an array argument are omitted.
 For example, the C call
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 lmdef(deftype, index, np, props)
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 is translated to {\Python} as
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 lmdef(deftype, index, props)
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \item
 Output arguments are omitted from the argument list; they are
 transmitted as function return values instead.
@@ -1406,13 +1421,13 @@ If the C function has both a regular return value (that is not omitted
 because of the previous rule) and an output argument, the return value
 comes first in the tuple.
 Examples: the C call
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 getmcolor(i, &red, &green, &blue)
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 is translated to {\Python} as
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 red, green, blue = getmcolor(i)
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \end{itemize}
 
 The following functions are non-standard or have special argument
@@ -1454,6 +1469,7 @@ Similar to
 but the pairs have the point first and the normal second.
 \item[{\tt nurbssurface(s\_k[], t\_k[], ctl[][], s\_ord, t\_ord, type)}]
 %.br
+\itembreak
 Defines a nurbs surface.
 The dimensions of
 {\tt ctl[][]}
@@ -1486,7 +1502,7 @@ No method is provided to detect buffer overrun.
 \end{description}
 
 Here is a tiny but complete example GL program in {\Python}:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 import gl, GL, time
 
 def main():
@@ -1508,15 +1524,14 @@ def main():
     time.sleep(5)
 
 main()
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsection{Built-in Module {\tt pnl}}
 
 This module provides access to the
 {\em Panel Library}
-built by NASA Ames (write to
-{\tt panel-request@nas.nasa.gov}
-to get it).
+built by NASA Ames (to get it, send e-mail to
+{\tt panel-request@nas.nasa.gov}).
 All access to it should be done through the standard module
 {\tt panel},
 which transparantly exports most functions from
@@ -1775,7 +1790,7 @@ option has no argument.
 The options occur in the list in the same order in which they were
 found, thus allowing multiple occurrences.
 Example:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import getopt, string
 >>> args = string.split('-a -b -cfoo -d bar a1 a2')
 >>> args
@@ -1786,7 +1801,7 @@ Example:
 >>> args
 ['a1', 'a2']
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 The exception
 {\tt getopt.error = 'getopt error'}
 is raised when an unrecognized option is found in the argument list or
@@ -1836,10 +1851,10 @@ This module defines constants used by STDWIN for event types
 and selection types ({\tt WS\_PRIMARY} etc.).
 Read the file for details.
 Suggested usage is
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> from stdwinevents import *
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 
 \subsection{Standard Module {\tt rect}}
 
@@ -1848,9 +1863,9 @@ A rectangle is defined as in module
 {\tt stdwin}:
 a pair of points, where a point is a pair of integers.
 For example, the rectangle
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 (10, 20), (90, 80)
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 is a rectangle whose left, top, right and bottom edges are 10, 20, 90
 and 80, respectively.
 Note that the positive vertical axis points down (as in
@@ -1868,7 +1883,7 @@ detail.
 %.br
 The rectangle returned when some operations return an empty result.
 This makes it possible to quickly check whether a result is empty:
-\begin{code}\begin{verbatim}
+\bcode\begin{verbatim}
 >>> import rect
 >>> r1 = (10, 20), (90, 80)
 >>> r2 = (0, 0), (10, 20)
@@ -1876,7 +1891,7 @@ This makes it possible to quickly check whether a result is empty:
 >>> if r3 is rect.empty: print 'Empty intersection'
 Empty intersection
 >>> 
-\end{verbatim}\end{code}
+\end{verbatim}\ecode
 \item[{\tt is\_empty(r)}]
 %.br
 Returns true if the given rectangle is empty.
