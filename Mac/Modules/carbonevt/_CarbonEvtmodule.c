@@ -1750,6 +1750,35 @@ static PyObject *CarbonEvents_GetLastUserEventTime(PyObject *_self, PyObject *_a
 	return _res;
 }
 
+static PyObject *CarbonEvents_IsMouseCoalescingEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsMouseCoalescingEnabled();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CarbonEvents_SetMouseCoalescingEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Boolean inNewState;
+	Boolean outOldState;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &inNewState))
+		return NULL;
+	_err = SetMouseCoalescingEnabled(inNewState,
+	                                 &outOldState);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     outOldState);
+	return _res;
+}
+
 static PyObject *CarbonEvents_GetWindowEventTarget(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2059,6 +2088,10 @@ static PyMethodDef CarbonEvents_methods[] = {
 	 PyDoc_STR("(GrafPtr inPort, RgnHandle inRegion, Boolean ioWasInRgn) -> (Boolean ioWasInRgn, UInt16 outResult)")},
 	{"GetLastUserEventTime", (PyCFunction)CarbonEvents_GetLastUserEventTime, 1,
 	 PyDoc_STR("() -> (double _rv)")},
+	{"IsMouseCoalescingEnabled", (PyCFunction)CarbonEvents_IsMouseCoalescingEnabled, 1,
+	 PyDoc_STR("() -> (Boolean _rv)")},
+	{"SetMouseCoalescingEnabled", (PyCFunction)CarbonEvents_SetMouseCoalescingEnabled, 1,
+	 PyDoc_STR("(Boolean inNewState) -> (Boolean outOldState)")},
 	{"GetWindowEventTarget", (PyCFunction)CarbonEvents_GetWindowEventTarget, 1,
 	 PyDoc_STR("(WindowPtr inWindow) -> (EventTargetRef _rv)")},
 	{"GetControlEventTarget", (PyCFunction)CarbonEvents_GetControlEventTarget, 1,

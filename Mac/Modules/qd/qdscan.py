@@ -120,6 +120,7 @@ extend						= 0x40
 
 	def makeblacklisttypes(self):
 		return [
+			"QDRegionBitsRef", # Should do this, but too lazy now.
 			'CIconHandle', # Obsolete
 			'CQDProcs',
 			'CQDProcsPtr',
@@ -214,6 +215,18 @@ extend						= 0x40
 			  [('void', '*', 'ReturnMode')]),
 			
 			 ([('Pattern_ptr', '*', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Point_ptr', 'QDLocalToGlobalPoint', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Rect_ptr', 'QDLocalToGlobalRect', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Point_ptr', 'QDGlobalToLocalPoint', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Rect_ptr', 'QDGlobalToLocalRect', 'ReturnMode')],
 			  [('void', '*', 'ReturnMode')]),
 			
 			]
