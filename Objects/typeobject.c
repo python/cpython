@@ -1694,6 +1694,20 @@ PyTypeObject PyBaseObject_Type = {
 
 /* Initialize the __dict__ in a type object */
 
+static PyObject *
+create_specialmethod(PyMethodDef *meth, PyObject *(*func)(PyObject *))
+{
+	PyObject *cfunc;
+	PyObject *result;
+
+	cfunc = PyCFunction_New(meth, NULL);
+	if (cfunc == NULL)
+		return NULL;
+	result = func(cfunc);
+	Py_DECREF(cfunc);
+	return result;
+}
+
 static int
 add_methods(PyTypeObject *type, PyMethodDef *meth)
 {
@@ -1703,10 +1717,23 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 		PyObject *descr;
 		if (PyDict_GetItemString(dict, meth->ml_name))
 			continue;
-		descr = PyDescr_NewMethod(type, meth);
+		if (meth->ml_flags & METH_CLASS) {
+			if (meth->ml_flags & METH_STATIC) {
+				PyErr_SetString(PyExc_ValueError,
+				     "method cannot be both class and static");
+				return -1;
+			}
+			descr = create_specialmethod(meth, PyClassMethod_New);
+		}
+		else if (meth->ml_flags & METH_STATIC) {
+			descr = create_specialmethod(meth, PyStaticMethod_New);
+		}
+		else {
+			descr = PyDescr_NewMethod(type, meth);
+		}
 		if (descr == NULL)
 			return -1;
-		if (PyDict_SetItemString(dict,meth->ml_name, descr) < 0)
+		if (PyDict_SetItemString(dict, meth->ml_name, descr) < 0)
 			return -1;
 		Py_DECREF(descr);
 	}
