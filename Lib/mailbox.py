@@ -56,10 +56,10 @@ class _Subfile:
         return data
 
     def read(self, length = None):
-        self._read(length, self.fp.read)
+        return self._read(length, self.fp.read)
 
     def readline(self, length = None):
-        self._read(length, self.fp.readline)
+        return self._read(length, self.fp.readline)
 
     def readlines(self, sizehint = -1):
         lines = []
