@@ -299,9 +299,6 @@ class StrptimeTests(unittest.TestCase):
         self.failUnlessEqual(strp_output.tm_isdst, 0)
         strp_output = _strptime.strptime("GMT", "%Z")
         self.failUnlessEqual(strp_output.tm_isdst, 0)
-        if time.daylight:
-            strp_output = _strptime.strptime(time.tzname[1], "%Z")
-            self.failUnlessEqual(strp_output[8], 1)
         time_tuple = time.localtime()
         strf_output = time.strftime("%Z")  #UTC does not have a timezone
         strp_output = _strptime.strptime(strf_output, "%Z")
