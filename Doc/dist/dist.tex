@@ -190,12 +190,12 @@ following glossary of common Python terms:
   \file{.pyo} files).  Sometimes referred to as a ``pure module.''
 
 \item[extension module] a module written in the low-level language of
-  the Python implementation: C/C++ for Python, Java for Jython.
+  the Python implementation: C/\Cpp{} for Python, Java for Jython.
   Typically contained in a single dynamically loadable pre-compiled
   file, e.g. a shared object (\file{.so}) file for Python extensions on
   \UNIX, a DLL (given the \file{.pyd} extension) for Python extensions
   on Windows, or a Java class file for Jython extensions.  (Note that
-  currently, the Distutils only handles C/C++ extensions for Python.)
+  currently, the Distutils only handles C/\Cpp{} extensions for Python.)
 
 \item[package] a module that contains other modules; typically contained
   in a directory in the filesystem and distinguished from other
@@ -471,16 +471,16 @@ source files: \file{.cc} and \file{.cpp} seem to be recognized by both
 However, you can also include SWIG interface (\file{.i}) files in the
 list; the \command{build\_ext} command knows how to deal with SWIG
 extensions: it will run SWIG on the interface file and compile the
-resulting C/C++ file into your extension.
+resulting C/\Cpp{} file into your extension.
 
 \XXX{SWIG support is rough around the edges and largely untested;
-  especially SWIG support of C++ extensions!  Explain in more detail
+  especially SWIG support for \Cpp{} extensions!  Explain in more detail
   here when the interface firms up.}
 
 On some platforms, you can include non-source files that are processed
 by the compiler and included in your extension.  Currently, this just
 means Windows message text (\file{.mc}) files and resource definition
-(\file{.rc}) files for Visual C++. These will be compiled to binary resource
+(\file{.rc}) files for Visual \Cpp. These will be compiled to binary resource
 (\file{.res}) files and linked into the executable.
 
 
