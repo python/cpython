@@ -32,8 +32,6 @@ class XMLParserTestCase(unittest.TestCase):
 
 def test_main():
     test_support.run_unittest(XMLParserTestCase)
-    warnings.resetwarnings()
-
 
 if __name__ == "__main__":
     test_main()

@@ -113,8 +113,5 @@ def do_prefix_binops():
 warnings.filterwarnings("ignore",
                         r'complex divmod\(\), // and % are deprecated',
                         DeprecationWarning)
-try:
-    do_infix_binops()
-    do_prefix_binops()
-finally:
-    warnings.resetwarnings()
+do_infix_binops()
+do_prefix_binops()
