@@ -438,7 +438,7 @@ def ints():
     except TypeError:
         pass
     else:
-        raise TestFailed, "NotImplemented should have caused TypeErrpr"
+        raise TestFailed, "NotImplemented should have caused TypeError"
 
 def longs():
     if verbose: print "Testing long operations..."
