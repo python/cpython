@@ -1350,7 +1350,11 @@ long_pow(a, b, c)
 				temp = (PyLongObject *)long_mul(z, a);
 				Py_DECREF(z);
 			 	if ((PyObject*)c!=Py_None && temp!=NULL) {
-			 		l_divmod(temp, c, &div, &mod);
+			 		if (l_divmod(temp,c,&div,&mod) < 0) {
+						Py_DECREF(temp);
+						z = NULL;
+						goto error;
+					}
 				 	Py_XDECREF(div);
 				 	Py_DECREF(temp);
 				 	temp = mod;
@@ -1365,7 +1369,11 @@ long_pow(a, b, c)
 			temp = (PyLongObject *)long_mul(a, a);
 			Py_DECREF(a);
 		 	if ((PyObject*)c!=Py_None && temp!=NULL) {
-			 	l_divmod(temp, c, &div, &mod);
+			 	if (l_divmod(temp, c, &div, &mod) < 0) {
+					Py_DECREF(temp);
+					z = NULL;
+					goto error;
+				}
 			 	Py_XDECREF(div);
 			 	Py_DECREF(temp);
 			 	temp = mod;
@@ -1382,11 +1390,17 @@ long_pow(a, b, c)
 	}
 	Py_XDECREF(a);
 	if ((PyObject*)c!=Py_None && z!=NULL) {
-			l_divmod(z, c, &div, &mod);
+		if (l_divmod(z, c, &div, &mod) < 0) {
+			Py_DECREF(z);
+			z = NULL;
+		}
+		else {
 			Py_XDECREF(div);
 			Py_DECREF(z);
-			z=mod;
+			z = mod;
+		}
 	}
+  error:
 	return (PyObject *)z;
 }
 
