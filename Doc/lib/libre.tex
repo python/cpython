@@ -662,7 +662,7 @@ the string matching the the corresponding parenthesized group.  If a
 group number is negative or larger than the number of groups defined
 in the pattern, an \exception{IndexError} exception is raised.
 If a group is contained in a part of the pattern that did not match,
-the corresponding result is \code{-1}.  If a group is contained in a 
+the corresponding result is \code{None}.  If a group is contained in a 
 part of the pattern that matched multiple times, the last match is
 returned.
 
