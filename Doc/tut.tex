@@ -28,8 +28,8 @@ language for highly customizable C applications such as editors or
 window managers.
 
 Python is available for various operating systems, amongst which
-several flavors of {\UNIX}, Amoeba, the Apple Macintosh O.S.,
-and MS-DOS.
+several flavors of {\UNIX}, the Apple Macintosh, MS-DOS, Windows
+(3.1(1), '95 and NT flavors), OS/2, and others.
 
 This tutorial introduces the reader informally to the basic concepts
 and features of the Python language and system.  It helps to have a
@@ -54,6 +54,23 @@ a more formal definition of the language.
 
 
 \chapter{Whetting Your Appetite}
+
+\section{Disclaimer}
+
+Now that there are several books out on Python, this tutorial has lost
+its role as the only introduction to Python for most new users.  It
+takes time to keep a document like this up to date in the face of
+additions to the language, and I simply don't have enough time to do a
+good job.  Therefore, this version of the tutorial is almost unchanged
+since the previous release.  This doesn't mean that the tutorial is
+out of date --- all the examples still work exactly as before.  There
+are simply some new areas of the language that aren't covered.
+
+To make up for this, there are some chapters at the end cover
+important changes in recent Python releases, and these are up to date
+with the current release.
+
+\section{Introduction}
 
 If you ever wrote a large shell script, you probably know this
 feeling: you'd love to add yet another feature, but it's already so
@@ -2620,7 +2637,7 @@ object of which the method is an instance, and \verb\m.im_func\ is the
 function object corresponding to the method.
 
 
-\chapter{Recent Additions}
+\chapter{Recent Additions as of Release 1.1}
 
 Python is an evolving language.  Since this tutorial was last
 thoroughly revised, several new features have been added to the
@@ -3879,6 +3896,8 @@ changes that only affect C programmers or the build and installation
 process are not described in this chapter (the new installation
 lay-out is explained below under \code{sys.prefix} though).
 
+\section{Language Changes}
+
 \begin{itemize}
 
 \item
@@ -3941,7 +3960,7 @@ slice is used, i.e. \code{x[lo:hi]}, with possible omission of
 \begin{verbatim}
 x[0:10:2]        -> slice(0, 10, 2)
 x[:2:]           -> slice(None, 2, None)
-x[::-1]           -> slice(None, None, -1)
+x[::-1]          -> slice(None, None, -1)
 x[::]            -> slice(None, None, None)
 x[1, 2:3]        -> (1, slice(2, 3, None))
 x[1:2, 3:4]      -> (slice(1, 2, None), slice(3, 4, None))
@@ -3956,7 +3975,8 @@ The \code{access} statement is now truly gone; \code{access} is no
 longer a reserved word.  This saves a few cycles here and there.
 
 \item
-Name mangling.  There is now limited support for class-private
+Private variables through name mangling.
+There is now limited support for class-private
 identifiers.  Any identifier of the form \code{__spam} (at least two
 leading underscores, at most one trailing underscore) is now textually
 replaced with \code{_classname__spam}, where \code{classname} is the
@@ -3976,9 +3996,9 @@ instance variables by code outside the class.  Note that the mangling
 rules are designed mostly to avoid accidents; it still is possible for
 a determined soul to access or modify a variable that is considered
 private.  This can even be useful, e.g. for the debugger, and that's
-one reason why this loophole is not closed.  (Buglet: accidental
-derivation of a class with the same name as the base class makes
-accidental use of private variables of the base class possible.)
+one reason why this loophole is not closed.  (Buglet: derivation of a
+class with the same name as the base class makes use of private
+variables of the base class possible.)
 
 Notice that code passed to \code{exec}, \code{eval()} or
 \code{evalfile()} does not consider the classname of the invoking 
@@ -4008,6 +4028,31 @@ class VirtualAttributes:
         self.__vdict[name] = value
 \end{verbatim}
 
+{\em Warning: this is an experimental feature.}  To avoid all
+potential problems, refrain from using identifiers starting with
+double underscore except for predefined uses like \code{__init__}.  To
+use private names while maintaining future compatibility: refrain from
+using the same private name in classes related via subclassing; avoid
+explicit (manual) mangling/unmangling; and assume that at some point
+in the future, leading double underscore will revert to being just a
+naming convention.  Discussion on extensive compile-time declarations
+are currently underway, and it is impossible to predict what solution
+will eventually be chosen for private names.  Double leading
+underscore is still a candidate, of course --- just not the only one.
+It is placed in the distribution in the belief that it is useful, and
+so that widespread experience with its use can be gained.  It will not
+be removed without providing a better solution and a migration path.
+
+\end{itemize}
+
+\section{Run-time Changes}
+
+\begin{itemize}
+
+\item
+New built-in function \code{list()} converts any sequence to a new list.
+Note that when the argument is a list, the return value is a fresh 
+copy, similar to what would be returned by \code{a[:]}.
 
 \item
 Improved syntax error message.  Syntax errors detected by the code
@@ -4026,17 +4071,27 @@ Exceptions in \code{__del__} methods.  When a \code{__del__} method
 raises an exception, a warning is written to \code{sys.stderr} and the
 exception is ignored.  Formerly, such exceptions were ignored without
 warning.  (Propagating the exception is not an option since it it is
-invoked from an object finalizer, which cannot 
-)  (Buglet: The new behavior, while needed in order to debug failing
-\code{__del__} methods, is occasionally annoying, because if affects
-the program's standard error stream.  It honors assignments to 
-\code{sys.stderr}, so it can be redirected from within a program if 
-desired.)
+invoked from an object finalizer, which cannot return any kind of
+status or error.)  (Buglet: The new behavior, while needed in order to
+debug failing \code{__del__} methods, is occasionally annoying,
+because if affects the program's standard error stream.  It honors
+assignments to \code{sys.stderr}, so it can be redirected from within
+a program if desired.)
 
 \item
-New built-in function \code{list()} converts any sequence to a new list.
-Note that when the argument is a list, the return value is a fresh 
-copy, similar to what would be returned by \code{a[:]}.
+You can now discover from which file (if any) a module was loaded by 
+inspecting its \code{__file__} attribute.  This attribute is not 
+present for built-in or frozen modules.  It points to the shared 
+library file for dynamically loaded modules.  (Buglet: this may be a 
+relative path and is stored in the \code{.pyc} file on compilation.  
+If you manipulate the current directory with \code{os.chdir()} or move 
+\code{.pyc} files around, the value may be incorrect.)
+
+\end{itemize}
+
+\section{New or Updated Modules}
+
+\begin{itemize}
 
 \item
 New built-in module \code{operator}.  While undocumented, the concept
@@ -4084,34 +4139,40 @@ delimiters as well as the words in the resulting list).  The optional
 
 \item
 Module files \code{pdb.py} and \code{profile.py} can now be invoked as
-scripts to debug c.q. profile other scripts easily.
+scripts to debug c.q. profile other scripts easily.  For example:
+\code{python /usr/local/lib/python1.4/profile.py myscript.py}
 
 \item
-The \code{os} module now supports the \code{putenv()} function on 
-systems where it is provided in the C library (Windows NT and most 
-Unix versions).  The call \code{os.putenv('PATH', '/bin:/usr/bin')} 
-sets the environment variable \code{PATH} to the string 
-\code{'/bin:/usr/bin'}.  Such changes to the environment affect 
-subprocesses started with \code{os.system()}, \code{os.popen()} or 
-\code{os.fork()} and \code{os.execv()}.  When \code{putenv()} is 
-supported, assignments to items in \code{os.environ} are automatically 
-translated into corresponding calls to \code{os.putenv()}; however, 
-calls to \code{os.putenv()} don't update \code{os.environ}, so it is 
-actually preferable to assign to items of \code{os.environ}.  For this 
-purpose, the type of \code{os.environ} is changed to a subclass of 
-\code{UserDict.UserDict} when \code{os.putenv()} is supported.  
-(Buglet: \code{os.execve()} still requires a real dictionary.)
+The \code{os} module now supports the \code{putenv()} function on
+systems where it is provided in the C library (Windows NT and most
+Unix versions).  For example, \code{os.putenv('PATH',
+'/bin:/usr/bin')} sets the environment variable \code{PATH} to the
+string \code{'/bin:/usr/bin'}.  Such changes to the environment affect
+subprocesses started with \code{os.system()}, \code{os.popen()} or
+\code{os.fork()} and \code{os.execv()}.  When \code{putenv()} is
+supported, assignments to items in \code{os.environ} are automatically
+translated into corresponding calls to \code{os.putenv()}; however,
+calls to \code{os.putenv()} don't update \code{os.environ}, so it is
+actually preferable to assign to items of \code{os.environ}.  For this
+purpose, the type of \code{os.environ} is changed to a subclass of
+\code{UserDict.UserDict} when \code{os.putenv()} is supported.
+(Buglet: \code{os.execve()} still requires a real dictionary, so it
+won't accept \code{os.environ} as its third argument.  However, you
+can now use \code{os.execv()} and it will use your changes to
+\code{os.environ}!.)
 
 \item
-New functions in the os module: mkfifo, plock, remove (== unlink),
-and ftruncate.  More functions are also available under NT.  XXX
+More new functions in the \code{os} module: \code{mkfifo},
+\code{plock}, \code{remove} (== \code{unlink}), and \code{ftruncate}.
+See the Unix manual (section 2, system calls) for these function.
+More functions are also available under NT.
 
 \item
 New functions in the fcntl module: \code{lockf()} and \code{flock()}
 (don't ask \code{:-)}).  See the Library Reference Manual.
 
 \item
-The first item of the module search path, \code{sys.path}, is the 
+The first item of the module search path, \code{sys.path[0]}, is the 
 directory containing the script that was used to invoke the Python 
 interpreter.  If the script directory is not available (e.g.  if the 
 interpreter is invoked interactively or if the script is read from 
@@ -4119,56 +4180,59 @@ standard input), \code{sys.path[0]} is the empty string, which directs
 Python to search modules in the current directory first.  Notice that 
 the script directory is inserted {\em before} the entries inserted as 
 a result of \code{\$PYTHONPATH}.  There is no longer an entry for the 
-current directory later in the path (unless explicitly set by 
-\code{\$PYTHONPATH}).
+current directory later in the path (unless explicitly set in 
+\code{\$PYTHONPATH} or overridden at build time).
+
+\end{itemize}
+
+\section{Configuration and Installation}
+
+\begin{itemize}
 
 \item
-Some more configuration information is now available to Python 
-programs.  The variable \code{sys.prefix} gives the site-specific 
-directory prefix where the platform independent Python files are 
-installed; by default, this is the string \code{"/usr/local"}.  The 
-main collection of Python library modules is installed in the 
-directory \code{sys.prefix+"/lib/python"+sys.version[:3]} while the 
-platform independent header files (all except \code{config.h}) are 
-stored in \code{sys.prefix+"/include/python"+sys.version[:3]}.
+More configuration information is now available to Python programs.
+The variable \code{sys.prefix} gives the site-specific directory
+prefix where the platform independent Python files are installed; by
+default, this is the string \code{"/usr/local"}.  This can be set at
+build time with the \code{--prefix} argument to the \code{configure}
+script.  The main collection of Python library modules is installed in
+the directory \code{sys.prefix+"/lib/python1.4"} while the platform
+independent header files (all except \code{config.h}) are stored in
+\code{sys.prefix+"/include/python1.4"}.
 
-Similarly, the variable \code{sys.exec_prefix} gives the site-specific 
-directory prefix where the platform {\em de}pendent Python files are 
-installed; by default, this is also \code{"/usr/local"}.  
-Specifically, all configuration files (e.g. the \code{config.h}
-header file) are installed in the directory 
-\code{sys.exec_prefix+"/lib/python"+sys.version[:3]+"/config"},
-and shared library modules are installed in
-\code{sys.exec_prefix+"/lib/python"+sys.version[:3]+"/sharedmodules"}.
+Similarly, the variable \code{sys.exec_prefix} gives the site-specific
+directory prefix where the platform {\em de}pendent Python files are
+installed; by default, this is also \code{"/usr/local"}.  This can be
+set at build time with the \code{--exec-prefix} argument to the
+\code{configure} script.  Specifically, all configuration files
+(e.g. the \code{config.h} header file) are installed in the directory
+\code{sys.exec_prefix+"/lib/python1.4/config"}, and shared library
+modules are installed in
+\code{sys.exec_prefix+"/lib/python1.4/sharedmodules"}.
+
+Include files are at \code{sys.prefix+"/include/python1.4"}.
+
+It is not yet decided what the most portable way is to come up with
+the version number used in these pathnames.  For compatibility with
+the 1.4beta releases, sys.version[:3] can be used.
 
 On non-Unix systems, these variables are meaningless.
 
 \item
-You can now discover from which file (if any) a module was loaded by 
-inspecting its \code{__file__} attribute.  This attribute is not 
-present for built-in or frozen modules.  It points to the shared 
-library file for dynamically loaded modules.  (Buglet: this may be a 
-relative path and is stored in the \code{.pyc} file on compilation.  
-If you manipulate the current directory with \code{os.chdir()} or move 
-\code{.pyc} files around, the value may be incorrect.)
-
-\item
-While sites are strongly discouraged from modifying the standard 
-Python library (e.g.  by adding site-specific modules or functions), 
-there is now a standard way to invoke site-specific features.  The 
-standard module \code{site}, when imported, appends two site-specific 
-directories to the end of \code{sys.path}: 
-\code{\$prefix/lib/site-python} and 
-\code{\$exec_prefix/lib/site-python}, where \code{\$prefix} and 
-\code{\$exec_prefix} are the directories \code{sys.prefix} and 
+While sites are strongly discouraged from modifying the standard
+Python library (like adding site-specific modules or functions), there
+is now a standard way to invoke site-specific features.  The standard
+module \code{site}, when imported, appends two site-specific
+directories to the end of \code{sys.path}:
+\code{\$prefix/lib/site-python} and
+\code{\$exec_prefix/lib/site-python}, where \code{\$prefix} and
+\code{\$exec_prefix} are the directories \code{sys.prefix} and
 \code{sys.exec_prefix} mentioned above.
 
-\item
-There's more.  As I said, see \code{Misc/NEWS}...
+After this path manipulation has been performed, an attempt is made to
+import the module \code{sitecustomize}.  Any \code{ImportError}
+exception raised by this attempt is silently ignored.
 
 \end{itemize}
-
-
-
 
 \end{document}
