@@ -32,6 +32,9 @@
 /* enable the GC module */
 #define WITH_CYCLE_GC	1
 
+/* Define if you want documentation strings in extension modules */
+#define WITH_DOC_STRINGS 1
+
 /* Unicode related */
 #define Py_USING_UNICODE
 #define PY_UNICODE_TYPE    wchar_t
