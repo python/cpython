@@ -301,14 +301,17 @@ def do_content(library, version, output) :
             content(book[0], book[3], output)
     output.write(contents_footer)
 
-
-def do_project( library, output, arch, version) :
+# Fill in the [FILES] section of the project (.hhp) file.
+# 'library' is the list of directory description tuples from
+# supported_libraries for the version of the docs getting generated.
+def do_project(library, output, arch, version):
     output.write(project_template % locals())
-    for book in library :
-        for page in os.listdir(book[0]) :
-            if page[string.rfind(page, '.'):] == '.html' or \
-               page[string.rfind(page, '.'):] == '.css':
-                output.write(book[0]+ '\\' + page + '\n')
+    for book in library:
+        directory = book[0]
+        path = directory + '\\%s\n'
+        for page in os.listdir(directory):
+            if page.endswith('.html') or page.endswith('.css'):
+                output.write(path % page)
 
 
 def openfile(file) :
@@ -385,5 +388,3 @@ def do_it(args = None) :
 
 if __name__ == '__main__' :
     do_it()
-
-
