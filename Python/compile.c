@@ -2368,15 +2368,14 @@ static enum cmp_op
 cmp_type(node *n)
 {
 	REQ(n, comp_op);
-	/* comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
+	/* comp_op: '<' | '>' | '>=' | '<=' | '<>' | '!=' | '=='
 	          | 'in' | 'not' 'in' | 'is' | 'is' not' */
 	if (NCH(n) == 1) {
 		n = CHILD(n, 0);
 		switch (TYPE(n)) {
 		case LESS:	return PyCmp_LT;
 		case GREATER:	return PyCmp_GT;
-		case EQEQUAL:			/* == */
-		case EQUAL:	return PyCmp_EQ;
+		case EQEQUAL:	return PyCmp_EQ;
 		case LESSEQUAL:	return PyCmp_LE;
 		case GREATEREQUAL: return PyCmp_GE;
 		case NOTEQUAL:	return PyCmp_NE;	/* <> or != */
