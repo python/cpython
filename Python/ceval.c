@@ -3024,6 +3024,24 @@ call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 	return result;
 }
 
+PyObject *
+_PyEval_CallTracing(PyObject *func, PyObject *args)
+{
+	PyFrameObject *frame = PyEval_GetFrame();
+	PyThreadState *tstate = frame->f_tstate;
+	int save_tracing = tstate->tracing;
+	int save_use_tracing = tstate->use_tracing;
+	PyObject *result;
+
+	tstate->tracing = 0;
+	tstate->use_tracing = ((tstate->c_tracefunc != NULL)
+			       || (tstate->c_profilefunc != NULL));
+	result = PyObject_Call(func, args, NULL);
+	tstate->tracing = save_tracing;
+	tstate->use_tracing = save_use_tracing;
+	return result;
+}
+
 static int
 maybe_call_line_trace(Py_tracefunc func, PyObject *obj, 
 		      PyFrameObject *frame, int *instr_lb, int *instr_ub)

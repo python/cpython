@@ -17,6 +17,7 @@ Data members:
 #include "Python.h"
 #include "compile.h"
 #include "frameobject.h"
+#include "eval.h"
 
 #include "osdefs.h"
 
@@ -609,6 +610,23 @@ sys_getframe(PyObject *self, PyObject *args)
 	return (PyObject*)f;
 }
 
+PyDoc_STRVAR(call_tracing_doc,
+"call_tracing(func, args) -> object\n\
+\n\
+Call func(*args), while tracing is enabled.  The tracing state is\n\
+saved, and restored afterwards.  This is intended to be called from\n\
+a debugger from a checkpoint, to recursively debug some other code."
+);
+
+static PyObject *
+sys_call_tracing(PyObject *self, PyObject *args)
+{
+	PyObject *func, *funcargs;
+	if (!PyArg_ParseTuple(args, "OO:call_tracing", &func, &funcargs))
+		return NULL;
+	return _PyEval_CallTracing(func, funcargs);
+}
+
 PyDoc_STRVAR(callstats_doc,
 "callstats() -> tuple of integers\n\
 \n\
@@ -700,6 +718,7 @@ static PyMethodDef sys_methods[] = {
 	{"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS,
 	 setrecursionlimit_doc},
 	{"settrace",	sys_settrace, METH_O, settrace_doc},
+	{"call_tracing", sys_call_tracing, METH_VARARGS, call_tracing_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 

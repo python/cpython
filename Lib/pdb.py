@@ -523,6 +523,33 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 print '*** Jump failed:', e
     do_j = do_jump
 
+    def do_debug(self, arg):
+        sys.settrace(None)
+        globals = self.curframe.f_globals
+        locals = self.curframe.f_locals
+	p = Pdb()
+	p.prompt = "(%s) " % self.prompt.strip()
+	print "ENTERING RECURSIVE DEBUGGER"
+	sys.call_tracing(p.run, (arg, globals, locals))
+	print "LEAVING RECURSIVE DEBUGGER"
+        sys.settrace(self.trace_dispatch)
+        self.lastcmd = p.lastcmd
+
+    def dont_debug(self, arg):
+        locals = self.curframe.f_locals
+        globals = self.curframe.f_globals
+        try:
+            r = sys.call_tracing(eval, (arg, globals, locals))
+	    print "--- DEBUG RETURNED ---"
+	    if r is not None:
+	        print repr(r)
+        except:
+            t, v = sys.exc_info()[:2]
+            if type(t) == type(''):
+                exc_type_name = t
+            else: exc_type_name = t.__name__
+            print '***', exc_type_name + ':', v
+
     def do_quit(self, arg):
         self.set_quit()
         return 1
@@ -833,6 +860,12 @@ Continue execution, only stop when a breakpoint is encountered."""
     def help_j(self):
         print """j(ump) lineno
 Set the next line that will be executed."""
+
+    def help_debug(self):
+        print """debug code
+Enter a recursive debugger that steps through the code argument
+(which is an arbitrary expression or statement to be executed
+in the current environment)."""
 
     def help_list(self):
         self.help_l()
