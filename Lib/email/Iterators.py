@@ -14,7 +14,7 @@ except SyntaxError:
 
 
 
-def _structure(msg, level=0, fp=None):
+def _structure(msg, fp=None, level=0):
     """A handy debugging aid"""
     if fp is None:
         fp = sys.stdout
@@ -22,4 +22,4 @@ def _structure(msg, level=0, fp=None):
     print >> fp, tab + msg.get_content_type()
     if msg.is_multipart():
         for subpart in msg.get_payload():
-            _structure(subpart, level+1, fp)
+            _structure(subpart, fp, level+1)
