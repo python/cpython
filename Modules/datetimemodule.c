@@ -120,6 +120,19 @@ divmod(int x, int y, int *r)
 	return quo;
 }
 
+/* Round a double to the nearest long.  |x| must be small enough to fit
+ * in a C long; this is not checked.
+ */
+static long
+round_to_long(double x)
+{
+	if (x >= 0.0)
+		x = floor(x + 0.5);
+	else
+		x = ceil(x - 0.5);
+	return (long)x;
+}
+
 /* ---------------------------------------------------------------------------
  * General calendrical helper functions
  */
@@ -1905,12 +1918,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	}
 	if (leftover_us) {
 		/* Round to nearest whole # of us, and add into x. */
-		PyObject *temp;
-		if (leftover_us >= 0.0)
-			leftover_us = floor(leftover_us + 0.5);
-		else
-			leftover_us = ceil(leftover_us - 0.5);
-		temp = PyLong_FromDouble(leftover_us);
+		PyObject *temp = PyLong_FromLong(round_to_long(leftover_us));
 		if (temp == NULL) {
 			Py_DECREF(x);
 			goto Done;
@@ -2858,7 +2866,8 @@ static PyObject *
 datetime_from_timestamp(PyObject *cls, TM_FUNC f, double timestamp)
 {
 	time_t timet = (time_t)timestamp;
-	int us = (int)((timestamp - (double)timet) * 1e6);
+	double fraction = timestamp - (double)timet;
+	int us = (int)round_to_long(fraction * 1e6);
 
 	return datetime_from_timet_and_us(cls, f, timet, us);
 }
