@@ -645,7 +645,7 @@ class PopupMenu(Menu):
 		reply = self.menu.PopUpMenuSelect(x, y, default)
 		if not reply:
 			return
-		id = (reply & 0xffff0000) >> 16
+		id = (reply >> 16) & 0xffff
 		item = reply & 0xffff
 		if not window:
 			wid = MyFrontWindow()
