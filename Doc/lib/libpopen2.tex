@@ -106,9 +106,10 @@ A file object that provides input to the child process.
 \end{memberdesc}
 
 \begin{memberdesc}{childerr}
-Where the standard error from the child process goes is
-\var{capturestderr} was true for the constructor, or \code{None}.
-This will always be \code{None} for \class{Popen4} instances.
+A file object that provides error output from the child process, if
+\var{capturestderr} was true for the constructor, otherwise
+\code{None}.  This will always be \code{None} for \class{Popen4}
+instances.
 \end{memberdesc}
 
 \begin{memberdesc}{pid}
