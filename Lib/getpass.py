@@ -29,7 +29,10 @@ def getpass(prompt='Password: '):
 		else:
 			return win_getpass(prompt)
 
-	fd = sys.stdin.fileno()
+	try:
+		fd = sys.stdin.fileno()
+	except:
+		return default_getpass(prompt)
 	old = termios.tcgetattr(fd)	# a copy to save
 	new = old[:]
 
