@@ -324,7 +324,6 @@ list_contains(PyListObject *a, PyObject *el)
 	return cmp;
 }
 
-
 static PyObject *
 list_item(PyListObject *a, int i)
 {
@@ -686,7 +685,6 @@ listextend_internal(PyListObject *self, PyObject *b)
 	return 0;
 }
 
-
 static PyObject *
 list_inplace_concat(PyListObject *self, PyObject *other)
 {
@@ -704,16 +702,70 @@ list_inplace_concat(PyListObject *self, PyObject *other)
 static PyObject *
 listextend(PyListObject *self, PyObject *b)
 {
+	PyObject *it;      /* iter(v) */
+	int m;		   /* size of self */
+	int n;		   /* guess for size of b */
+	int mn;		   /* m + n */
+	int i;
 
-	b = PySequence_Fast(b, "list.extend() argument must be iterable");
-	if (!b)
+	/* Special cases:
+	   1) lists and tuples which can use PySequence_Fast ops 
+	   2) extending self to self requires making a copy first 
+	*/
+	if (PyList_CheckExact(b) || PyTuple_CheckExact(b) || (PyObject *)self == b) {
+		b = PySequence_Fast(b, "argument must be iterable");
+		if (!b)
+			return NULL;
+		if (listextend_internal(self, b) < 0)
+			return NULL;
+		Py_RETURN_NONE;
+	}
+
+	it = PyObject_GetIter(b);
+	if (it == NULL)
 		return NULL;
 
-	if (listextend_internal(self, b) < 0)
-		return NULL;
+	/* Guess a result list size. */
+	n = PyObject_Size(b);
+	if (n < 0) {
+		PyErr_Clear();
+		n = 8;	/* arbitrary */
+	}
+	m = self->ob_size;
+	mn = m + n;
+	if (list_resize(self, mn) == -1)
+		goto error;
+	memset(&(self->ob_item[m]), 0, sizeof(*self->ob_item) * n);
 
-	Py_INCREF(Py_None);
-	return Py_None;
+	/* Run iterator to exhaustion. */
+	for (i = m; ; i++) {
+		PyObject *item = PyIter_Next(it);
+		if (item == NULL) {
+			if (PyErr_Occurred())
+				goto error;
+			break;
+		}
+		if (i < mn)
+			PyList_SET_ITEM(self, i, item); /* steals ref */
+		else {
+			int status = ins1(self, self->ob_size, item);
+			Py_DECREF(item);  /* append creates a new ref */
+			if (status < 0)
+				goto error;
+		}
+	}
+
+	/* Cut back result list if initial guess was too large. */
+	if (i < mn && self != NULL) {
+		if (list_ass_slice(self, i, mn, (PyObject *)NULL) != 0)
+			goto error;
+	}
+	Py_DECREF(it);
+	Py_RETURN_NONE;
+
+  error:
+	Py_DECREF(it);
+	return NULL;
 }
 
 static PyObject *
@@ -2220,78 +2272,6 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 	return PyObject_RichCompare(vl->ob_item[i], wl->ob_item[i], op);
 }
 
-/* Adapted from newer code by Tim */
-static int
-list_fill(PyListObject *result, PyObject *v)
-{
-	PyObject *it;      /* iter(v) */
-	int n;		   /* guess for result list size */
-	int i;
-
-	n = result->ob_size;
-
-	/* Special-case list(a_list), for speed. */
-	if (PyList_Check(v)) {
-		if (v == (PyObject *)result)
-			return 0; /* source is destination, we're done */
-		return list_ass_slice(result, 0, n, v);
-	}
-
-	/* Empty previous contents */
-	if (n != 0) {
-		if (list_ass_slice(result, 0, n, (PyObject *)NULL) != 0)
-			return -1;
-	}
-
-	/* Get iterator.  There may be some low-level efficiency to be gained
-	 * by caching the tp_iternext slot instead of using PyIter_Next()
-	 * later, but premature optimization is the root etc.
-	 */
-	it = PyObject_GetIter(v);
-	if (it == NULL)
-		return -1;
-
-	/* Guess a result list size. */
-	n = PyObject_Size(v);
-	if (n < 0) {
-		PyErr_Clear();
-		n = 8;	/* arbitrary */
-	}
-	if (list_resize(result, n) == -1)
-		goto error;
-	memset(result->ob_item, 0, sizeof(*result->ob_item) * n);
-
-	/* Run iterator to exhaustion. */
-	for (i = 0; ; i++) {
-		PyObject *item = PyIter_Next(it);
-		if (item == NULL) {
-			if (PyErr_Occurred())
-				goto error;
-			break;
-		}
-		if (i < n)
-			PyList_SET_ITEM(result, i, item); /* steals ref */
-		else {
-			int status = ins1(result, result->ob_size, item);
-			Py_DECREF(item);  /* append creates a new ref */
-			if (status < 0)
-				goto error;
-		}
-	}
-
-	/* Cut back result list if initial guess was too large. */
-	if (i < n && result != NULL) {
-		if (list_ass_slice(result, i, n, (PyObject *)NULL) != 0)
-			goto error;
-	}
-	Py_DECREF(it);
-	return 0;
-
-  error:
-	Py_DECREF(it);
-	return -1;
-}
-
 static int
 list_init(PyListObject *self, PyObject *args, PyObject *kw)
 {
@@ -2300,10 +2280,17 @@ list_init(PyListObject *self, PyObject *args, PyObject *kw)
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:list", kwlist, &arg))
 		return -1;
-	if (arg != NULL)
-		return list_fill(self, arg);
-	if (self->ob_size > 0)
-		return list_ass_slice(self, 0, self->ob_size, (PyObject*)NULL);
+	/* Empty previous contents */
+	if (self->ob_size != 0) {
+		if (list_ass_slice(self, 0, self->ob_size, (PyObject *)NULL) != 0)
+			return -1;
+	}
+	if (arg != NULL) {
+		PyObject *rv = listextend(self, arg);
+		if (rv == NULL)
+			return -1;
+		Py_DECREF(rv);
+	}
 	return 0;
 }
 
