@@ -1117,6 +1117,120 @@ Note: the standard way to exit is \code{sys.exit(\var{n})}.
 after a \function{fork()}.
 \end{funcdesc}
 
+The following exit codes are a defined, and can be used with
+\function{_exit()}, although they are not required.  These are
+typically used for system programs written in Python, such as a
+mail server's external command delivery program.
+
+\begin{datadesc}{EX_OK}
+Exit code that means no error occurred.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_USAGE}
+Exit code that means the command was used incorrectly, such as when
+the wrong number of arguments are given.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_DATAERR}
+Exit code that means the input data was incorrect.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_NOINPUT}
+Exit code that means an input file did not exist or was not readable.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_NOUSER}
+Exit code that means a specified user did not exist.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_NOHOST}
+Exit code that means a specified host did not exist.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_UNAVAILABLE}
+Exit code that means that a required service is unavailable.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_SOFTWARE}
+Exit code that means an internal software error was detected.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_OSERR}
+Exit code that means an operating system error was detected, such as
+the inability to fork or create a pipe.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_OSFILE}
+Exit code that means some system file did not exist, could not be
+opened, or had some other kind of error.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_CANTCREAT}
+Exit code that means a user specified output file could not be created.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_IOERR}
+Exit code that means that an error occurred while doing I/O on some file.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_TEMPFAIL}
+Exit code that means a temporary failure occurred.  This indicates
+something that may not really be an error, such as a network
+connection that couldn't be made during a retryable operation.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_PROTOCOL}
+Exit code that means that a protocol exchange was illegal, invalid, or
+not understood.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_NOPERM}
+Exit code that means that there were insufficient permissions to
+perform the operation (but not intended for file system problems).
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_CONFIG}
+Exit code that means that some kind of configuration error occurred.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
+\begin{datadesc}{EX_NOTFOUND}
+Exit code that means something like ``an entry was not found''.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{datadesc}
+
 \begin{funcdesc}{fork}{}
 Fork a child process.  Return \code{0} in the child, the child's
 process id in the parent.
