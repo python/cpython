@@ -17,6 +17,7 @@ import webbrowser
 import idlever
 import WindowList
 from IdleConf import idleconf
+import aboutDialog
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -88,7 +89,7 @@ by Guido van Rossum.
 IDLEfork is an official experimental development version of IDLE. \
 Succesful new features in IDLEfork will be mereged back in to stable IDLE.
 
-This version of IDLEfork is based on the work in stable IDLE version %s, \
+This version of IDLEfork is based on the work in stable IDLE version 0.8, \
 IDLE fork 0.7.1 released by David Scherer, and the VPython idle fork. 
 
 See README.txt and NEWS.txt for more details on this verion of IDLEfork.
@@ -96,7 +97,7 @@ See README.txt and NEWS.txt for more details on this verion of IDLEfork.
 WARNING: IDLEfork is at this stage alpha quality software, expect things \
 to be broken. 
 
-""" % (idlever.IDLEFORK_VERSION, idlever.IDLE_VERSION)
+""" % (idlever.IDLE_VERSION)
 
 class EditorWindow:
 
@@ -296,9 +297,10 @@ class EditorWindow:
         self.rmenu = rmenu
 
     def about_dialog(self, event=None):
-        tkMessageBox.showinfo(self.about_title, self.about_text,
-                              master=self.text)
-
+        #tkMessageBox.showinfo(self.about_title, self.about_text,
+        #                      master=self.text)
+        aboutDialog.AboutDialog(self.top,'About IDLEfork')
+        
     helpfile = "help.txt"
 
     def good_advice(self, event=None):
