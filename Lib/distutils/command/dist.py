@@ -220,7 +220,7 @@ class Dist (Command):
 
         optional = ['test/test*.py']
         for pattern in optional:
-            files = glob (pattern)
+            files = filter (os.path.isfile, glob (pattern))
             if files:
                 self.files.extend (files)
 
@@ -338,7 +338,7 @@ class Dist (Command):
 
             # Single word, no bang: it's a "simple include pattern"
             elif not exclude:
-                matches = glob (pattern)
+                matches = filter (os.path.isfile, glob (pattern))
                 if matches:
                     self.files.extend (matches)
                 else:
