@@ -33,13 +33,17 @@ class PythonIDE(Wapplication.Application):
 		for path in sys.argv[1:]:
 			self.opendoc(path)
 		try:
-			import uthread2
+			import Wthreading
 		except ImportError:
 			self.mainloop()
 		else:
-			main = uthread2.Thread("mainloop", self.mainloop)
-			main.start()
-			uthread2.run()
+			if Wthreading.haveThreading:
+				self.mainthread = Wthreading.Thread("IDE event loop", self.mainloop)
+				self.mainthread.start()
+				#self.mainthread.setResistant(1)
+				Wthreading.run()
+			else:
+				self.mainloop()
 	
 	def makeusermenus(self):
 		m = Wapplication.Menu(self.menubar, "File")
