@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=8.14
-  Title=Python 2.2.1 release candidate 2
+  Title=Python 2.2.1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -18,9 +18,9 @@ item: Global
   Patch Flags=0000000000001001
   Patch Threshold=85
   Patch Memory=4000
-  EXE Filename=Python-2.2.1c2.exe
+  EXE Filename=Python-2.2.1.exe
   Dialogs Version=8
-  Version File=2.2.1c2
+  Version File=2.2.1
   Version Description=Python Programming Language
   Version Copyright=©2002 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
@@ -64,7 +64,7 @@ item: Global
 end
 item: Set Variable
   Variable=PYVER_STRING
-  Value=2.2.1c2
+  Value=2.2.1
 end
 item: Remark
 end
