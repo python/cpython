@@ -402,7 +402,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 #define BASIC_POP()	(*--stack_pointer)
 
 #ifdef LLTRACE
-#define PUSH(v)		(BASIC_PUSH(v), lltrace && prtrace(TOP(), "push"))
+#define PUSH(v)		{ (void)(BASIC_PUSH(v), \
+                               lltrace && prtrace(TOP(), "push")); \
+                               assert(STACK_LEVEL() <= f->f_stacksize); }
 #define POP()		(lltrace && prtrace(TOP(), "pop"), BASIC_POP())
 #else
 #define PUSH(v)		BASIC_PUSH(v)
@@ -681,6 +683,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	w = NULL;
 
 	for (;;) {
+		assert(stack_pointer >= f->f_valuestack);	/* else underflow */
+		assert(STACK_LEVEL() <= f->f_stacksize);	/* else overflow */
 		/* Do periodic things.  Doing this every time through
 		   the loop would add too much overhead, so we do it
 		   only every Nth instruction.  We also do it if
