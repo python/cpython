@@ -28,9 +28,10 @@ output to checkin messages belonging to the CVS head (trunk).  (It
 produces some output if tag is a non-branch tag, but this output is
 not very useful.)
 
+-h prints this message and exits.
+
 XXX This code was created by reverse engineering CVS 1.9 and RCS 5.7
 from their output.
-
 """
 
 import os, sys, getopt, re
@@ -43,7 +44,7 @@ def main():
     truncate_last = 0
     reverse = 0
     branch = None
-    opts, args = getopt.getopt(sys.argv[1:], "trb:")
+    opts, args = getopt.getopt(sys.argv[1:], "trb:h")
     for o, a in opts:
         if o == '-t':
             truncate_last = 1
@@ -51,6 +52,9 @@ def main():
             reverse = 1
         elif o == '-b':
             branch = a
+        elif o == '-h':
+            print __doc__
+            sys.exit(0)
     database = []
     while 1:
         chunk = read_chunk(sys.stdin)
