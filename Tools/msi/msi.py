@@ -111,7 +111,7 @@ if major+minor <= "23":
     '_winreg.pyd',
     'datetime.pyd'
     'mmap.pyd',
-    'parser.pyd',    
+    'parser.pyd',
     ])
 
 if testpackage:
@@ -151,7 +151,7 @@ def build_database():
         w64 = ".ia64"
     else:
         w64 = ""
-    db = msilib.init_database("python-%s%s.msi" % (full_current_version, w64), 
+    db = msilib.init_database("python-%s%s.msi" % (full_current_version, w64),
                   schema, ProductName="Python "+full_current_version,
                   ProductCode=product_code,
                   ProductVersion=current_version,
@@ -196,10 +196,10 @@ def remove_old_versions(db):
     # a release, we remove all snapshots, and all earlier releases.
     if snapshot:
         add_data(db, "Upgrade",
-            [(upgrade_code_snapshot, start,  
+            [(upgrade_code_snapshot, start,
               current_version,
               None,                     # Ignore language
-              migrate_features, 
+              migrate_features,
               None,                     # Migrate ALL features
               "REMOVEOLDSNAPSHOT")])
         props = "REMOVEOLDSNAPSHOT"
@@ -400,7 +400,7 @@ def add_ui(db):
     # to the action, and optionally the condition for the event, and the order
     # of events.
     c.event("EndDialog", "Exit")
-    
+
     user_exit=PyDialog(db, "UserExit", x, y, w, h, modal, title,
                  "Finish", "Finish", "Finish")
     user_exit.title("[ProductName] Installer was interrupted")
@@ -413,7 +413,7 @@ def add_ui(db):
                "Click the Finish button to exit the Installer.")
     c = user_exit.next("Finish", "Cancel", name="Finish")
     c.event("EndDialog", "Exit")
-    
+
     exit_dialog = PyDialog(db, "ExitDialog", x, y, w, h, modal, title,
                          "Finish", "Finish", "Finish")
     exit_dialog.title("Completing the [ProductName] Installer")
@@ -426,7 +426,7 @@ def add_ui(db):
       "\n"
       "    Mark Hammond, without whose years of freely shared Windows\n"
       "    expertise, Python for Windows would still be Python for DOS.")
-                     
+
     exit_dialog.text("Description", 135, 235, 220, 20, 0x30003,
                "Click the Finish button to exit the Installer.")
     c = exit_dialog.next("Finish", "Cancel", name="Finish")
@@ -475,13 +475,13 @@ def add_ui(db):
     # Global "Query Cancel" dialog
     cancel = Dialog(db, "CancelDlg", 50, 10, 260, 85, 3, title,
                     "No", "No", "No")
-    cancel.text("Text", 48, 15, 194, 30, 3, 
+    cancel.text("Text", 48, 15, 194, 30, 3,
                 "Are you sure you want to cancel [ProductName] installation?")
     cancel.control("Icon", "Icon", 15, 15, 24, 24, 5242881, None,
                    "py.ico", None, None)
     c=cancel.pushbutton("Yes", 72, 57, 56, 17, 3, "Yes", "No")
     c.event("EndDialog", "Exit")
-    
+
     c=cancel.pushbutton("No", 132, 57, 56, 17, 3, "No", "Yes")
     c.event("EndDialog", "Return")
 
@@ -566,14 +566,14 @@ def add_ui(db):
     c=features.cancel("Cancel", "Tree")
     c.event("SpawnDialog", "CancelDlg")
 
-    # The browse property is not used, since we have only a single target path (selected already)    
+    # The browse property is not used, since we have only a single target path (selected already)
     features.control("Tree", "SelectionTree", 135, 75, 220, 95, 7, "_BrowseProperty",
                      "Tree of selections", "Back", None)
 
     #c=features.pushbutton("Reset", 42, 243, 56, 17, 3, "Reset", "DiskCost")
     #c.mapping("SelectionNoItems", "Enabled")
     #c.event("Reset", "0")
-    
+
     features.control("Box", "GroupBox", 135, 170, 225, 90, 1, None, None, None, None)
 
     c=features.xbutton("DiskCost", "Disk &Usage", None, 0.10)
@@ -586,7 +586,7 @@ def add_ui(db):
     c=features.text("ItemDescription", 140, 180, 210, 30, 3,
                   "Multiline description of the currently selected item.")
     c.mapping("SelectionDescription","Text")
-    
+
     c=features.text("ItemSize", 140, 210, 210, 45, 3,
                     "The size of the currently selected item.")
     c.mapping("SelectionSize", "Text")
@@ -629,7 +629,7 @@ def add_ui(db):
     g.add("ALL", 0, 5, 150, 20, "Install for all users")
     g.add("JUSTME", 0, 25, 150, 20, "Install just for me")
 
-    whichusers.back("Back", None, active=0)    
+    whichusers.back("Back", None, active=0)
 
     c = whichusers.next("Next >", "Cancel")
     c.event("[ALLUSERS]", "1", 'WhichUsers="ALL"', 1)
@@ -637,7 +637,7 @@ def add_ui(db):
 
     c = whichusers.cancel("Cancel", "AdminInstall")
     c.event("SpawnDialog", "CancelDlg")
-                        
+
     #####################################################################
     # Advanced Dialog.
     advanced = PyDialog(db, "AdvancedDlg", x, y, w, h, modal, title,
@@ -652,9 +652,9 @@ def add_ui(db):
 
     c = advanced.cancel("Cancel", "CompilePyc")
     c.event("SpawnDialog", "CancelDlg")
-                        
+
     #####################################################################
-    # Existing Directory dialog 
+    # Existing Directory dialog
     dlg = Dialog(db, "ExistingDirectoryDlg", 50, 30, 200, 80, modal, title,
                    "No", "No", "No")
     dlg.text("Title", 10, 20, 180, 40, 3,
@@ -702,7 +702,7 @@ def add_ui(db):
     g.add("Change", 0, 0, 200, 17, "&Change [ProductName]")
     g.add("Repair", 0, 18, 200, 17, "&Repair [ProductName]")
     g.add("Remove", 0, 36, 200, 17, "Re&move [ProductName]")
-    
+
     maint.back("< Back", None, active=False)
     c=maint.next("Finish", "Cancel")
     # Change installation: Change progress dialog to "Change", then ask
@@ -724,12 +724,12 @@ def add_ui(db):
     c.event("[Progress2]", "removes", 'MaintenanceForm_Action="Remove"', 13)
     c.event("Remove", "ALL", 'MaintenanceForm_Action="Remove"', 14)
 
-    # Close dialog when maintenance action scheduled    
+    # Close dialog when maintenance action scheduled
     c.event("EndDialog", "Return", 'MaintenanceForm_Action<>"Change"', 20)
     c.event("NewDialog", "SelectFeaturesDlg", 'MaintenanceForm_Action="Change"', 21)
-            
+
     maint.cancel("Cancel", "RepairRadioGroup").event("SpawnDialog", "CancelDlg")
-    
+
 
 # See "Feature Table". The feature level is 1 for all features,
 # and the feature attributes are 0 for the DefaultFeature, and
@@ -765,12 +765,12 @@ def add_features(db):
     htmlfiles = Feature(db, "Documentation", "Documentation",
                         "Python HTMLHelp File", 7, parent = default_feature)
     tools = Feature(db, "Tools", "Utility Scripts",
-                    "Python utility scripts (Tools/", 9, 
+                    "Python utility scripts (Tools/", 9,
                     parent = default_feature, attributes=2)
     testsuite = Feature(db, "Testsuite", "Test suite",
                         "Python test suite (Lib/test/)", 11,
                         parent = default_feature, attributes=2|8)
-    
+
 
 def extract_msvcr71():
     import _winreg
@@ -840,7 +840,7 @@ def add_files(db):
     dlldir.add_file("msvcr71.dll", src=os.path.abspath("msvcr71.dll"),
                     version=version, language=lang)
     tmpfiles.append("msvcr71.dll")
-    
+
     # Add all .py files in Lib, except lib-tk, test
     dirs={}
     pydirs = [(root,"Lib")]
@@ -925,7 +925,7 @@ def add_files(db):
         if f.endswith("_d.pyd"): continue # debug version
         if f in dlls: continue
         print "WARNING: Unknown extension", f
-    
+
     # Add headers
     default_feature.set_current()
     lib = PyDirectory(db, cab, root, "include", "include", "INCLUDE|include")
@@ -1022,7 +1022,7 @@ def add_registry(db):
             [("Python.File", None, None, "Python File", "python_icon.exe", 0),
              ("Python.NoConFile", None, None, "Python File (no console)", "python_icon.exe", 0),
              ("Python.CompiledFile", None, None, "Compiled Python File", "python_icon.exe", 1)])
-    
+
     # Non-advertised verbs: for advertised verbs, we would need to invoke the same
     # executable for both open and "Edit with IDLE". This cannot work, as we want
     # to use pythonw.exe in either case
@@ -1035,7 +1035,7 @@ def add_registry(db):
               r'"[TARGETDIR]pythonw.exe" "[TARGETDIR]Lib\idlelib\idle.pyw" -n -e "%1"',
               "REGISTRY.tcl"),
             ])
-    
+
     # Registry keys
     prefix = r"Software\%sPython\PythonCore\%s" % (testprefix, short_version)
     add_data(db, "Registry",

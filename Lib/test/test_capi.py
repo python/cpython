@@ -46,4 +46,3 @@ if have_thread_state:
     import threading
     t=threading.Thread(target=TestThreadState)
     t.start()
-

@@ -42,8 +42,8 @@ class TestTranforms(unittest.TestCase):
     def test_none_as_constant(self):
         # LOAD_GLOBAL None  -->  LOAD_CONST None
         def f(x):
-                None
-                return x
+            None
+            return x
         asm = disassemble(f)
         for elem in ('LOAD_GLOBAL',):
             self.assert_(elem not in asm)
@@ -53,9 +53,9 @@ class TestTranforms(unittest.TestCase):
     def test_while_one(self):
         # Skip over:  LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP
         def f():
-                while 1:
-                        pass
-                return list
+            while 1:
+                pass
+            return list
         asm = disassemble(f)
         for elem in ('LOAD_CONST', 'JUMP_IF_FALSE'):
             self.assert_(elem not in asm)

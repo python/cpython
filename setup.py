@@ -119,7 +119,7 @@ class PyBuildExt(build_ext):
 
         # Platform-dependent module source and include directories
         platform = self.get_platform()
-        if platform in ('darwin', 'mac') and ("--disable-toolbox-glue" not in 
+        if platform in ('darwin', 'mac') and ("--disable-toolbox-glue" not in
             sysconfig.get_config_var("CONFIG_ARGS")):
             # Mac OS X also includes some mac-specific modules
             macmoddir = os.path.join(os.getcwd(), srcdir, 'Mac/Modules')
@@ -790,7 +790,7 @@ class PyBuildExt(build_ext):
             # SunOS specific modules
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
 
-        if platform == 'darwin' and ("--disable-toolbox-glue" not in 
+        if platform == 'darwin' and ("--disable-toolbox-glue" not in
             sysconfig.get_config_var("CONFIG_ARGS")):
             # Mac OS X specific modules.
             exts.append( Extension('_CF', ['cf/_CFmodule.c', 'cf/pycfbridge.c'],
