@@ -19,3 +19,5 @@ OptResObj_New
 OptResObj_Convert
 MenuObj_Convert
 WinObj_Convert
+GrafObj_New
+GrafObj_Convert
