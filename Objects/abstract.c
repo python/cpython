@@ -383,8 +383,12 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 	PyObject *result = binary_op1(v, w, op_slot);
 	if (result == Py_NotImplemented) {
 		Py_DECREF(Py_NotImplemented);
-		PyErr_Format(PyExc_TypeError, 
-				"unsupported operand type(s) for %s", op_name);
+		PyErr_Format(
+			PyExc_TypeError, 
+			"unsupported operand type(s) for %s: '%s' and '%s'",
+			op_name,
+			v->ob_type->tp_name,
+			w->ob_type->tp_name);
 		return NULL;
 	}
 	return result;
@@ -533,9 +537,22 @@ ternary_op(PyObject *v,
 		if (c >= 0)
 			return x;
 	}
-	
-	PyErr_Format(PyExc_TypeError, "unsupported operand type(s) for %s",
-			op_name);
+
+	if (z == Py_None)
+		PyErr_Format(
+			PyExc_TypeError,
+			"unsupported operand type(s) for ** or pow(): "
+			"'%s' and '%s'",
+			v->ob_type->tp_name,
+			w->ob_type->tp_name);
+	else
+		PyErr_Format(
+			PyExc_TypeError,
+			"unsupported operand type(s) for pow(): "
+			"'%s', '%s', '%s'",
+			v->ob_type->tp_name,
+			w->ob_type->tp_name,
+			z->ob_type->tp_name);
 	return NULL;
 }
 
@@ -566,8 +583,11 @@ PyNumber_Add(PyObject *v, PyObject *w)
 			result = (*m->sq_concat)(v, w);
 		}
                 else {
-                    PyErr_SetString(PyExc_TypeError,
-                                    "unsupported operand types for +");
+                    PyErr_Format(
+			    PyExc_TypeError,
+			    "unsupported operand types for +: '%s' and '%s'",
+			    v->ob_type->tp_name,
+			    w->ob_type->tp_name);
                     result = NULL;
                 }
 	}
