@@ -201,7 +201,7 @@ def clear_extension_cache():
 
 # First  Last Count  Purpose
 #     1   127   127  Reserved for Python standard library
-#   128   191    64  Reserved for Zope 3
+#   128   191    64  Reserved for Zope
 #   192   239    48  Reserved for 3rd parties
 #   240   255    16  Reserved for private use (will never be assigned)
 #   256   Inf   Inf  Reserved for future assignment
