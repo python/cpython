@@ -269,6 +269,9 @@ class URLopener:
                     user_passwd, realhost = splituser(realhost)
                 if user_passwd:
                     selector = "%s://%s%s" % (urltype, realhost, rest)
+                if proxy_bypass(realhost):
+                    host = realhost
+
             #print "proxy via http:", host, selector
         if not host: raise IOError, ('http error', 'no host given')
         if user_passwd:
@@ -1252,6 +1255,9 @@ if os.name == 'mac':
         # Gopher: XXXX To be done.
         return proxies
 
+    def proxy_bypass(x):
+        return 0
+
 elif os.name == 'nt':
     def getproxies_registry():
         """Return a dictionary of scheme -> proxy server URL mappings.
@@ -1302,10 +1308,66 @@ elif os.name == 'nt':
 
         """
         return getproxies_environment() or getproxies_registry()
+
+    def proxy_bypass(host):
+        try:
+            import _winreg
+            import re
+            import socket
+        except ImportError:
+            # Std modules, so should be around - but you never know!
+            return 0
+        try:
+            internetSettings = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER,
+                r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
+            proxyEnable = _winreg.QueryValueEx(internetSettings,
+                                               'ProxyEnable')[0]
+            proxyOverride = str(_winreg.QueryValueEx(internetSettings,
+                                                     'ProxyOverride')[0])
+            # ^^^^ Returned as Unicode but problems if not converted to ASCII
+        except WindowsError:
+            return 0
+        if not proxyEnable or not proxyOverride:
+            return 0
+        # try to make a host list from name and IP address.
+        host = [host]
+        try:
+            addr = socket.gethostbyname(host[0])
+            if addr != host:
+                host.append(addr)
+        except socket.error:
+            pass
+        # make a check value list from the registry entry: replace the
+        # '<local>' string by the localhost entry and the corresponding
+        # canonical entry.
+        proxyOverride = proxyOverride.split(';')
+        i = 0
+        while i < len(proxyOverride):
+            if proxyOverride[i] == '<local>':
+                proxyOverride[i:i+1] = ['localhost',
+                                        '127.0.0.1',
+                                        socket.gethostname(),
+                                        socket.gethostbyname(
+                                            socket.gethostname())]
+            i += 1
+        # print proxyOverride
+        # now check if we match one of the registry values.
+        for test in proxyOverride:
+            test = test.replace(".", r"\.")	# mask dots
+            test = test.replace("*", r".*")	# change glob sequence
+            test = test.replace("?", r".")	# change glob char
+            for val in host:
+                # print "%s <--> %s" %( test, val )
+                if re.match(test, val, re.I):
+                    return 1
+        return 0
+
 else:
     # By default use environment variables
     getproxies = getproxies_environment
 
+    def proxy_bypass(host):
+        return 0
 
 # Test and time quote() and unquote()
 def test1():
