@@ -113,7 +113,7 @@ LIBFILES = lib.tex \
     libbase64.tex libfnmatch.tex libquopri.tex libzlib.tex libsocksvr.tex \
     libmailbox.tex libcommands.tex libcmath.tex libni.tex libgzip.tex \
     libpprint.tex libcode.tex libmimify.tex libre.tex libmacic.tex \
-    libuserdict.tex
+    libuserdict.tex libdis.tex libxmllib.tex
 
 # Library document
 lib.dvi: $(LIBFILES)
