@@ -14,9 +14,11 @@ class Module(GeneratorGroup):
 		self.initstuff = initstuff
 		self.finalstuff = finalstuff
 		self.variablestuff = variablestuff
+		self.typeobjects = []
 
 	def addobject(self, od):
 		self.generators.append(od)
+		self.typeobjects.append(od)
 
 	def generate(self):
 		OutHeader1("Module " + self.name)
@@ -66,6 +68,8 @@ class Module(GeneratorGroup):
 		Output("""Py_FatalError("can't initialize %s.Error");""",
 		                                           self.name)
 		DedentLevel()
+		for tp in self.typeobjects:
+			tp.outputTypeObjectInitializer()
 		if self.variablestuff:
 			Output("%s", self.variablestuff)
 			Output()

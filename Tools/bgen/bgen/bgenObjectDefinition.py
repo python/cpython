@@ -170,6 +170,17 @@ class ObjectDefinition(GeneratorGroup):
 		Output("(setattrfunc) %s_setattr, /*tp_setattr*/", self.prefix)
 		DedentLevel()
 		Output("};")
+		
+	def outputTypeObjectInitializer(self):
+		Output("""%s.ob_type = &PyType_Type;""", self.typename);
+		Output("""Py_INCREF(&%s);""", self.typename);
+		Output("""if (PyDict_SetItemString(d, "%sType", (PyObject *)&%s) != 0)""",
+			self.name, self.typename);
+		IndentLevel()
+		Output("""Py_FatalError("can't initialize %sType");""",
+		                                           self.name)
+		DedentLevel()
+
 
 
 class GlobalObjectDefinition(ObjectDefinition):
