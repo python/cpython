@@ -555,6 +555,9 @@ init_locale(void)
     ADDINT(ALT_DIGITS);
     ADDINT(YESEXPR);
     ADDINT(NOEXPR);
+#endif
+#ifdef _DATE_FMT
+    /* This is not available in all glibc versions that have CODESET. */
     ADDINT(_DATE_FMT);
 #endif
 #endif /* HAVE_LANGINFO_H */
