@@ -354,7 +354,6 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): $(LIBRARY) $(PYTHO
 
 # This rule builds the Cygwin Python DLL
 libpython$(VERSION).dll.a: $(LIBRARY_OBJS)
-	dlltool --export-all --output-def $@ $^
 	$(LDSHARED) -Wl,--out-implib=$@ -o $(DLLLIBRARY) $^ \
 		$(LIBS) $(MODLIBS) $(SYSLIBS)
 
