@@ -584,8 +584,10 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	}
 	if (free_list == NULL) {
 		f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
-		if (f == NULL)
+		if (f == NULL) {
+			Py_DECREF(builtins);
 			return NULL;
+		}
 	}
 	else {
 		assert(numfree > 0);
@@ -594,8 +596,10 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		free_list = free_list->f_back;
 		if (f->ob_size < extras) {
 			f = PyObject_GC_Resize(PyFrameObject, f, extras);
-			if (f == NULL)
+			if (f == NULL) {
+				Py_DECREF(builtins);
 				return NULL;
+			}
 		}
 		_Py_NewReference((PyObject *)f);
 	}
