@@ -165,7 +165,8 @@ getpythonpath()
 {
 #ifdef macintosh
 	/* Modified by Jack to do something a bit more sensible:
-	** - Prepend the current directory (which is presumably where python lives)
+	** - Prepend the python home-directory (which is obtained from a Preferences
+	**   resource)
 	** - Add :
 	** - Chdir to where the source file (if any) lives
 	*/
@@ -345,13 +346,19 @@ struct {
 #endif
 /* This is really "Guido van Rossum" specific... :-) */
 	{"AE", initAE},
+#ifndef __MWERKS__
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
+#endif
 	{"Evt", initEvt},
 	{"Menu", initMenu},
+#ifdef THINK_C
 	{"Qd", initQd},
+#endif
+#ifndef __MWERKS__
 	{"Snd", initSnd},
 	{"Win", initWin},
+#endif
 	{"Res", initRes},
 
 /* -- ADDMODULE MARKER 2 -- */
