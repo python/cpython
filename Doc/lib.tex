@@ -43,11 +43,12 @@ language.
 
 \pagenumbering{arabic}
 
-\input{lib1.tex}	% intro; built-in types, functions and exceptions
-\input{lib2.tex}	% built-in modules
-\input{lib3.tex}	% standard modules
-\input{lib4.tex}	% OS-dependent chapters
-\input{lib5.tex}	% Graphics chapters
-\input{lib.ind}		% The index
+\include{lib1}	% intro; built-in types, functions and exceptions
+\include{lib2}	% built-in modules
+\include{lib3}	% standard modules
+\include{lib4}	% Most OS'es; UNIX only; Amoeba only
+\include{lib5}	% STDWIN only; SGI machines only
+
+\input{lib.ind}	% The index
 
 \end{document}
