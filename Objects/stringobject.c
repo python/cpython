@@ -2671,7 +2671,7 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *tmp, *new;
+	PyObject *tmp, *pnew;
 	int n;
 
 	assert(PyType_IsSubtype(type, &PyString_Type));
@@ -2679,11 +2679,21 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (tmp == NULL)
 		return NULL;
 	assert(PyString_CheckExact(tmp));
-	new = type->tp_alloc(type, n = PyString_GET_SIZE(tmp));
-	if (new != NULL)
-		memcpy(PyString_AS_STRING(new), PyString_AS_STRING(tmp), n+1);
+	n = PyString_GET_SIZE(tmp);
+	pnew = type->tp_alloc(type, n);
+	if (pnew != NULL) {
+		memcpy(PyString_AS_STRING(pnew), PyString_AS_STRING(tmp), n+1);
+#ifdef CACHE_HASH
+		((PyStringObject *)pnew)->ob_shash =
+			((PyStringObject *)tmp)->ob_shash;
+#endif
+#ifdef INTERN_STRINGS
+		((PyStringObject *)pnew)->ob_sinterned =
+			((PyStringObject *)tmp)->ob_sinterned;
+#endif
+	}
 	Py_DECREF(tmp);
-	return new;
+	return pnew;
 }
 
 static char string_doc[] =
