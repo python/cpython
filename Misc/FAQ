@@ -3,12 +3,14 @@ Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
 Reply-to: guido@cwi.nl (Guido van Rossum)
+Expires: Sat, 1 Apr 1995 00:00:00 GMT
+Supersedes: <D1sGoJ.Mps@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.20
-Last-modified: 7 Februari 1995
+Version: 1.20++
+Last-modified: 16 Februari 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -67,12 +69,14 @@ Here's an overview of the questions per chapter:
   1.5. Q. Are there other ftp sites that mirror the Python distribution?
   1.6. Q. Is there a newsgroup or mailing list devoted to Python?
   1.7. Q. Is there a WWW page devoted to Python?
-  1.8. Q. Is there a book on Python, or will there be one out soon?
-  1.9. Q. Are there any published articles about Python that I can quote?
-  1.10. Q. Are there short introductory papers or talks on Python?
-  1.11. Q. How does the Python version numbering scheme work?
-  1.12. Q. Are there other ftp sites that carry Python related material?
-  1.13. Q. Are there copyright restrictions on the use of Python?
+  1.8. Q. Is the Python documentation available on the WWW?
+  1.9. Q. Is there a book on Python, or will there be one out soon?
+  1.10. Q. Are there any published articles about Python that I can quote?
+  1.11. Q. Are there short introductory papers or talks on Python?
+  1.12. Q. How does the Python version numbering scheme work?
+  1.13. Q. How do I get a beta test version of Python?
+  1.14. Q. Are there other ftp sites that carry Python related material?
+  1.15. Q. Are there copyright restrictions on the use of Python?
 
  2. Python in the real world
   2.1. Q. How many people are using Python?
@@ -266,15 +270,17 @@ HTML version of the index can be found in the file index.html,
 
 1.4. Q. How do I get documentation on Python?
 
-A. The latest Python documentation set is always available by
-anonymous ftp, e.g.
+A. The LaTeX source for the documentation is part of the source
+distribution.  If you don't have LaTeX, the latest Python
+documentation set is always available by anonymous ftp, e.g.
 <URL:ftp://ftp.cwi.nl/pub/python/pythondoc-ps1.1.tar.gz>.  It is a
 gzipped tar file containing PostScript files of the reference manual,
 the library manual, and the tutorial.  Note that the library manual is
 the most important one of the set, as much of Python's power stems
 from the standard or built-in types, functions and modules, all of
 which are described here.  PostScript for a high-level description of
-Python is in the file nluug-paper.ps.
+Python is in the file nluug-paper.ps (a separate file on the ftp
+site).
 
 1.5. Q. Are there other ftp sites that mirror the Python distribution?
 
@@ -310,17 +316,35 @@ MH, you could use "inc -file file".
 
 1.7. Q. Is there a WWW page devoted to Python?
 
-A. The official Python home page is
-<URL:http://www.cwi.nl/~guido/Python.html>.  Michael McLay at NIST
-maintains a Python page at <URL:http://www.eeel.nist.gov/python/>.
+A. Yes, <URL:http://www.cwi.nl/~guido/Python.html> is the official
+Python home page.  Michael McLay at NIST maintains a Python page at
+<URL:http://www.eeel.nist.gov/python/>.  And finally the emerging
+Python Software Association has a preliminary web server at
+<URL:http://www.cminds.com/python/> (eventually to be moved to
+somewhere under python.org).
 
-1.8. Q. Is there a book on Python, or will there be one out soon?
+1.8. Q. Is the Python documentation available on the WWW?
 
-A. I am writing one.  Addison-Wesley is interested.  Optimistically,
-it will be ready for the press by mid-1995.  Mark Lutz is working on
-one too -- more details as they emerge.
+A. Yes, see <URL:http://www.cwi.nl/~guido/Python.html> (Python's home
+page).  It contains pointers to hypertext versions of the whole
+documentation set (as hypertext, not just PostScript).
 
-1.9. Q. Are there any published articles about Python that I can quote?
+If you wish to browse this collection of HTML files on your own
+machine, it is available bundled up by anonymous ftp,
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/python-html.tar.gz>.  (This
+requires some manual patch-up for the references to images,
+unfortunately.)
+
+An Emacs-INFO set containing the library manual is also available by
+ftp, e.g. <URL:ftp://ftp.cwi.nl/pub/python/python-lin-info.tar.gz>.
+
+1.9. Q. Is there a book on Python, or will there be one out soon?
+
+A. I am writing one.  Publishers are interested.  Optimistically, it
+will be ready for the press by mid-1995.  Mark Lutz is working on one
+too -- more details as they emerge.
+
+1.10. Q. Are there any published articles about Python that I can quote?
 
 A. So far the only refereed and published article that describes
 Python in some detail is:
@@ -332,7 +356,7 @@ Python in some detail is:
 LaTeX source for this paper is available as part of the Python source
 distribution.
 
-1.10. Q. Are there short introductory papers or talks on Python?
+1.11. Q. Are there short introductory papers or talks on Python?
 
 A. A recent high-level description of Python is:
 
@@ -349,7 +373,7 @@ Slides for a talk on Python that I gave at the Usenix Symposium on
 Very High Level Languages in Santa Fe, NM, USA in October 1995 are
 available as <URL:ftp://ftp.cwi.nl/pub/python/vhll-slides.ps>.
 
-1.11. Q. How does the Python version numbering scheme work?
+1.12. Q. How does the Python version numbering scheme work?
 
 A. Python versions are numbered A.B.C.  A is the major version number
 -- it is only incremented for major changes in functionality or source
@@ -359,7 +383,18 @@ incremented for each new release.  Note that in the past, patches have
 added significant changes; in fact the changeover from 0.9.9 to 1.0.0
 was the first time that either A or B changed!
 
-1.12. Q. Are there other ftp sites that carry Python related material?
+Beta versions have an additional suffix of "-beta-N" for some small
+number N.  Note that (for instance) all versions labeled 1.2-beta-N
+*precede* the actual release of 1.2.
+
+1.13. Q. How do I get a beta test version of Python?
+
+A. Write me.  I might like you :-) Seriously, anybody who has
+previously used and installed Python can become a beta tester, but I
+expect feedback, so you have to write me first before I divulge the
+secret location of the latest beta release.
+
+1.14. Q. Are there other ftp sites that carry Python related material?
 
 A. An interesting ftp site for Python users is ftp.markv.com; the
 directory pub/python contains a growing collection of interesting
@@ -370,7 +405,7 @@ extension .readme) in the publicly writable directory
 <lance@markv.com>.  (I've heard complaints about this service not
 being very responsive -- try at your own risk.)
 
-1.13. Q. Are there copyright restrictions on the use of Python?
+1.15. Q. Are there copyright restrictions on the use of Python?
 
 A. Hardly.  You can do anything you want with the source, as long as
 you leave the copyrights in, and display those copyrights in any
@@ -456,10 +491,10 @@ in the early stages of development, in fact new, stable releases
 
 2.5. Q. When will the next version be released?
 
-A. I am planning to release 1.2 in January 1995.  It will contain
-hooks into the implementation of the import command, a (still limited)
-form of persistent objects, and the usual complement of bug fixes
-(including many fixed memory leaks and thread problems).
+A. I am planning to release 1.2 in February or early March 1995.  It
+will contain hooks into the implementation of the import command, a
+(still limited) form of persistent objects, and the usual complement
+of bug fixes (including many fixed memory leaks and thread problems).
 
 2.6. Q. What new developments are expected for Python in the future?
 
@@ -582,14 +617,12 @@ toplevel).
 
 3.8. Q. Python built with gcc for the DEC Alpha doesn't work.
 
-People have reported problems with gcc 2.5.8 up to 2.6.2.  The
-DEC OSF/1 cc compiler does not have these problems so it's probably
-gcc's fault.  The latest news is that the problem still exists but
-only when you use -O and only in the Modules subdirectory.  So one
-solution is to compile everything except Modules with gcc -O and then
-do the Modules directory with gcc without -O.  If you find a version
-of gcc which doesn't have this bug or if you can reduce it further to
-a particular file, please let me know.
+People have reported problems with gcc 2.5.8 up to 2.6.3.  The DEC
+OSF/1 cc compiler does not have these problems so it's likely a gcc
+bug.  The latest news is that (at least in the 1.2 beta release) the
+problem still exists but only when you use -O, and only affects the
+code generated from Python/marshal.c.  A fix is to change "long i, n;"
+into "int i, n;" in w_object().
 
 3.9. Q. I use VPATH but some targets are built in the source directory.
 
@@ -642,23 +675,30 @@ here but I've been told that it is the place for readline bugs.)
 
 3.11. Q. Trouble building Python on Linux.
 
-A. (Adapted from Bennet Todd:)
+A. In 1.1 and 1.1.1, there's a bug in the reference counting logic of
+ternary pow() which is only tripped by very picky mallocs, like the
+GNU malloc on Linux.  This has been fixed in 1.2.  To continue the
+tests, just disable the tests of pow() with three arguments from
+Lib/test/test_b2.py.
 
-It seems to work for some people but not for others.
+Apart from this, Python builds and runs fine on most Linux versions.
+Bennet Todd has this to say on the subject:
 
-This might depend on which Linux release you're using.  Older Linux
-releases had (understandably) fewer gracious hack to improve Unix
-compatibility; really old Linux was Posix 1003.1 compatible, without
-nearly as much Unix compatibility as one might have wished.  Current
-releases of Linux build most current free software, either BSD or
-System V, with little or no trouble.
+  It seems to work for some people but not for others.
 
-Besides that, there are quite a few different releases currently,
-including MCC, Slackware, SLS, and Debian, and probably more.  The
-differences between their compilation environments are far smaller
-than they used to be, but they're still updated with different
-frequencies.  It's likely that the current Slackware works fine, as it
-currently seems to be the most popular.  But that's just a guess.
+  This might depend on which Linux release you're using.  Older Linux
+  releases had (understandably) fewer gracious hack to improve Unix
+  compatibility; really old Linux was Posix 1003.1 compatible, without
+  nearly as much Unix compatibility as one might have wished.  Current
+  releases of Linux build most current free software, either BSD or
+  System V, with little or no trouble.
+
+  Besides that, there are quite a few different releases currently,
+  including MCC, Slackware, SLS, and Debian, and probably more.  The
+  differences between their compilation environments are far smaller
+  than they used to be, but they're still updated with different
+  frequencies.  It's likely that the current Slackware works fine, as
+  it currently seems to be the most popular.  But that's just a guess.
 
 3.12. Q. Trouble with prototypes on Ultrix.
 
@@ -693,11 +733,17 @@ A. (Thanks to Andrew Kuchling):
 Linux requires that you use the GNU DLD library.  The stages of using
 dynamic libraries on Linux are:
 
-1) Get dld from [some -- see below] Linux site.  I believe the version
-number is 3.2.4.  Be careful here; the most recent GNU version is
-3.2.3, and doesn't support Linux; be sure to get it from a Linux
-mirror, not a GNU mirror.  Compile it and install the library libdld.a
-somewhere; I used /usr/local/lib.
+1) Get dld 3.2.5 from a Linux site.  Be careful here; the most recent
+GNU version is 3.2.3, and doesn't support Linux; be sure to get it
+from a Linux mirror, not a GNU mirror (3.2.4 should also work).
+Compile it and install the library libdld.a somewhere; I used
+/usr/local/lib.
+
+Suitable URLs for the dld distribution are currently:
+<URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.src.tar.gz> and
+<URL:ftp://tsx-11.mit.edu/pub/linux/sources/libs/dld-3.2.5.src.tar.gz>.
+There's also a binary distribution of it:
+<URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.bin.tar.gz>.
 
 2) Get Jack Jansen's DL library; its location is given in the
 _Extending Python_ manual as ftp://ftp.cwi.nl/pub/dynload/.  Compile
@@ -709,27 +755,10 @@ libraries.
 
 4) Recompile Python.
 
-If you run into trouble with this, send me some mail and we can work
-on the problem.
-
-I don't use ELF binaries, because I'd rather wait until everything is
-reliable; my current impression (and please correct me if I'm wrong)
-is that gcc-elf is still a bit wonky, and you have to compile the
-entire GNU library yourself.  I'd much rather wait until ELF is a more
-standard part of Linux distributions.  I suspect that once ELF is
-common, Python's configure script will pick up the dlfcn.h header file
-and dynamic linking will work automatically.  Time will tell,
-however...
-
-It turns out that Linux DLD is not on sunsite.unc.edu; instead it's
-located at:
-<URL:ftp://tsx-11.mit.edu/pub/linux/sources/libs/dld-3.2.4.src.tar.gz>
-
-tsx-11 has mirrors; off the top of my head, one is ftp.uu.net, where
-the URL would be:
-<URL:ftp://ftp.uu.net/systems/unix/linux/sources/libs/dld-3.2.4.src.tar.gz>
-
-
+Note that once ELF is common in the Linux world, it will be much
+easier (probably within a year) -- the standard SVR4-style dlopen()
+interface is then available.  This has already proved to work
+perfectly using a beta version of the ELF-capable GCC for Linux.
 
 
 4. Programming in Python
@@ -1012,6 +1041,19 @@ API based upon Tk (though not necessarily on Tkinter); see
 Athena widget sets.  Last I heard about it it was included in the WAFE
 1.0 prerelease
 <URL:ftp://ftp.wu-wien.ac.at/pub/src/X11/wafe/wafe-1.0.tar.gz-prerelease>.
+
+- There's an interface to wxWindows.  wxWindows is a portable GUI
+class library written in C++.  It supports XView, Motif, MS-Windows as
+targets.  There is some support for Macs and CURSES as well.  wxWindows
+preserves the look and feel of the underlying graphics toolkit.  See
+the wxPython WWW page at
+<URL:http://www.aiai.ed.ac.uk/~jacs/wx/wxpython/wxpython.html>.
+
+- Python has been mentioned on the "Futurism" subpage of the Fresco
+home page <URL:http://www.faslab.com/fresco/HomePage.html>.  "Pesto"
+is a Python interface to the CORBA dynamic invocation interface, and
+thus Fresco. A Pesto prototype is running and is currently being
+packaged up for inclusion in the Fresco snapshot.
 
 4.14. Q. Are there any interfaces to database packages in Python?
 
@@ -1442,14 +1484,16 @@ list, to call a function without arguments, pass "()" for the format,
 and to call a function with one argument, surround the argument in
 parentheses, e.g. "(i)".
 
+(This function and a companion will be available in 1.2 under the
+names PyEval_CallFunction and PyEval_CallMethod.)
+
 5.9. Q. How do I catch the output from print_error()?
 
 A. (Due to Mark Hammond):
 
 * in Python code, define an object that supports the "write()" method.
 FWIW, there seems to be a small problem that requires the 'softspace'
-attribute to be defined too (I can't remember exact details of the
-problem).
+attribute to be defined too (fixed in 1.2).
 
 * redirect sys.stdout and sys.stderr to this object.
 
@@ -1502,6 +1546,8 @@ generic copying operation.
 
 A partial solution will appear in release 1.2.  This will also provide
 a partial solution to the problem of a generic copying operation.
+(Partial because it still won't cope with open files etc.; however it
+does handle user-defined classes!)
 
 6.3. Q. Why isn't there a switch or case statement in Python?
 
