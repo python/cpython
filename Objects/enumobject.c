@@ -79,7 +79,12 @@ enum_next(enumobject *en)
 }
 
 PyDoc_STRVAR(enum_doc,
-"enumerate(iterable) -> create an enumerating-iterator");
+"enumerate(iterable) -> iterator for index, value of iterable\n"
+"\n"
+"Return an enumerate object.  iterable must be an other object that supports\n"
+"iteration.  The enumerate object yields pairs containing a count (from\n"
+"zero) and a value yielded by the iterable argument.  enumerate is useful\n"
+"for obtaining an indexed list: (0, seq[0]), (1, seq[1]), (2, seq[2]), ...");
 
 PyTypeObject PyEnum_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
