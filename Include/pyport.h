@@ -27,7 +27,7 @@ Used in:  Py_uintptr_t
 
 HAVE_LONG_LONG
 Meaning:  The compiler supports the C type "long long"
-Used in:  LONG_LONG
+Used in:  PY_LONG_LONG
 
 **************************************************************************/
 
@@ -55,8 +55,8 @@ Used in:  LONG_LONG
  */
 
 #ifdef HAVE_LONG_LONG
-#ifndef LONG_LONG
-#define LONG_LONG long long
+#ifndef PY_LONG_LONG
+#define PY_LONG_LONG long long
 #endif
 #endif /* HAVE_LONG_LONG */
 
@@ -78,8 +78,8 @@ typedef unsigned long	Py_uintptr_t;
 typedef long		Py_intptr_t;
 
 #elif defined(HAVE_LONG_LONG) && (SIZEOF_VOID_P <= SIZEOF_LONG_LONG)
-typedef unsigned LONG_LONG	Py_uintptr_t;
-typedef LONG_LONG		Py_intptr_t;
+typedef unsigned PY_LONG_LONG	Py_uintptr_t;
+typedef PY_LONG_LONG		Py_intptr_t;
 
 #else
 #   error "Python needs a typedef for Py_uintptr_t in pyport.h."

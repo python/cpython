@@ -1437,7 +1437,7 @@ sock_fileno(PySocketSockObject *s)
 #if SIZEOF_SOCKET_T <= SIZEOF_LONG
 	return PyInt_FromLong((long) s->sock_fd);
 #else
-	return PyLong_FromLongLong((LONG_LONG)s->sock_fd);
+	return PyLong_FromLongLong((PY_LONG_LONG)s->sock_fd);
 #endif
 }
 

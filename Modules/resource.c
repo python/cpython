@@ -128,8 +128,8 @@ resource_getrlimit(PyObject *self, PyObject *args)
 #if defined(HAVE_LONG_LONG)
 	if (sizeof(rl.rlim_cur) > sizeof(long)) {
 		return Py_BuildValue("LL",
-				     (LONG_LONG) rl.rlim_cur,
-				     (LONG_LONG) rl.rlim_max);
+				     (PY_LONG_LONG) rl.rlim_cur,
+				     (PY_LONG_LONG) rl.rlim_max);
 	}
 #endif
 	return Py_BuildValue("ll", (long) rl.rlim_cur, (long) rl.rlim_max);
@@ -292,7 +292,7 @@ initresource(void)
 
 #if defined(HAVE_LONG_LONG)
 	if (sizeof(RLIM_INFINITY) > sizeof(long)) {
-		v = PyLong_FromLongLong((LONG_LONG) RLIM_INFINITY);
+		v = PyLong_FromLongLong((PY_LONG_LONG) RLIM_INFINITY);
 	} else 
 #endif
 	{

@@ -641,12 +641,12 @@ PyLong_FromVoidPtr(void *p)
 #   error "PyLong_FromVoidPtr: sizeof(void*) > sizeof(long), but no long long"
 #endif
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
-#   error "PyLong_FromVoidPtr: sizeof(LONG_LONG) < sizeof(void*)"
+#   error "PyLong_FromVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
 #endif
 	/* optimize null pointers */
 	if (p == NULL)
 		return PyInt_FromLong(0);
-	return PyLong_FromLongLong((LONG_LONG)p);
+	return PyLong_FromLongLong((PY_LONG_LONG)p);
 
 #endif /* SIZEOF_VOID_P <= SIZEOF_LONG */
 }
@@ -673,9 +673,9 @@ PyLong_AsVoidPtr(PyObject *vv)
 #   error "PyLong_AsVoidPtr: sizeof(void*) > sizeof(long), but no long long"
 #endif
 #if SIZEOF_LONG_LONG < SIZEOF_VOID_P
-#   error "PyLong_AsVoidPtr: sizeof(LONG_LONG) < sizeof(void*)"
+#   error "PyLong_AsVoidPtr: sizeof(PY_LONG_LONG) < sizeof(void*)"
 #endif
-	LONG_LONG x;
+	PY_LONG_LONG x;
 
 	if (PyInt_Check(vv))
 		x = PyInt_AS_LONG(vv);
@@ -691,43 +691,43 @@ PyLong_AsVoidPtr(PyObject *vv)
 
 #ifdef HAVE_LONG_LONG
 
-/* Initial LONG_LONG support by Chris Herborth (chrish@qnx.com), later
+/* Initial PY_LONG_LONG support by Chris Herborth (chrish@qnx.com), later
  * rewritten to use the newer PyLong_{As,From}ByteArray API.
  */
 
 #define IS_LITTLE_ENDIAN (int)*(unsigned char*)&one
 
-/* Create a new long int object from a C LONG_LONG int. */
+/* Create a new long int object from a C PY_LONG_LONG int. */
 
 PyObject *
-PyLong_FromLongLong(LONG_LONG ival)
+PyLong_FromLongLong(PY_LONG_LONG ival)
 {
-	LONG_LONG bytes = ival;
+	PY_LONG_LONG bytes = ival;
 	int one = 1;
 	return _PyLong_FromByteArray(
 			(unsigned char *)&bytes,
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 1);
 }
 
-/* Create a new long int object from a C unsigned LONG_LONG int. */
+/* Create a new long int object from a C unsigned PY_LONG_LONG int. */
 
 PyObject *
-PyLong_FromUnsignedLongLong(unsigned LONG_LONG ival)
+PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG ival)
 {
-	unsigned LONG_LONG bytes = ival;
+	unsigned PY_LONG_LONG bytes = ival;
 	int one = 1;
 	return _PyLong_FromByteArray(
 			(unsigned char *)&bytes,
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
 }
 
-/* Get a C LONG_LONG int from a long int object.
+/* Get a C PY_LONG_LONG int from a long int object.
    Return -1 and set an error if overflow occurs. */
 
-LONG_LONG
+PY_LONG_LONG
 PyLong_AsLongLong(PyObject *vv)
 {
-	LONG_LONG bytes;
+	PY_LONG_LONG bytes;
 	int one = 1;
 	int res;
 
@@ -737,7 +737,7 @@ PyLong_AsLongLong(PyObject *vv)
 	}
 	if (!PyLong_Check(vv)) {
 		if (PyInt_Check(vv))
-			return (LONG_LONG)PyInt_AsLong(vv);
+			return (PY_LONG_LONG)PyInt_AsLong(vv);
 		PyErr_BadInternalCall();
 		return -1;
 	}
@@ -746,20 +746,20 @@ PyLong_AsLongLong(PyObject *vv)
 			(PyLongObject *)vv, (unsigned char *)&bytes,
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 1);
 
-	/* Plan 9 can't handle LONG_LONG in ? : expressions */
+	/* Plan 9 can't handle PY_LONG_LONG in ? : expressions */
 	if (res < 0)
-		return (LONG_LONG)-1;
+		return (PY_LONG_LONG)-1;
 	else
 		return bytes;
 }
 
-/* Get a C unsigned LONG_LONG int from a long int object.
+/* Get a C unsigned PY_LONG_LONG int from a long int object.
    Return -1 and set an error if overflow occurs. */
 
-unsigned LONG_LONG
+unsigned PY_LONG_LONG
 PyLong_AsUnsignedLongLong(PyObject *vv)
 {
-	unsigned LONG_LONG bytes;
+	unsigned PY_LONG_LONG bytes;
 	int one = 1;
 	int res;
 
@@ -772,9 +772,9 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 			(PyLongObject *)vv, (unsigned char *)&bytes,
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
 
-	/* Plan 9 can't handle LONG_LONG in ? : expressions */
+	/* Plan 9 can't handle PY_LONG_LONG in ? : expressions */
 	if (res < 0)
-		return (unsigned LONG_LONG)res;
+		return (unsigned PY_LONG_LONG)res;
 	else
 		return bytes;
 }

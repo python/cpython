@@ -550,10 +550,10 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	}
 	
 #ifdef HAVE_LONG_LONG
-	case 'L': {/* LONG_LONG */
-		LONG_LONG *p = va_arg( *p_va, LONG_LONG * );
-		LONG_LONG ival = PyLong_AsLongLong( arg );
-		if( ival == (LONG_LONG)-1 && PyErr_Occurred() ) {
+	case 'L': {/* PY_LONG_LONG */
+		PY_LONG_LONG *p = va_arg( *p_va, PY_LONG_LONG * );
+		PY_LONG_LONG ival = PyLong_AsLongLong( arg );
+		if( ival == (PY_LONG_LONG)-1 && PyErr_Occurred() ) {
 			return converterr("long<L>", arg, msgbuf, bufsize);
 		} else {
 			*p = ival;
@@ -1320,9 +1320,9 @@ skipitem(char **p_format, va_list *p_va)
 		}
 	
 #ifdef HAVE_LONG_LONG
-	case 'L': /* LONG_LONG int */
+	case 'L': /* PY_LONG_LONG int */
 		{
-			(void) va_arg(*p_va, LONG_LONG *);
+			(void) va_arg(*p_va, PY_LONG_LONG *);
 			break;
 		}
 #endif

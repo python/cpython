@@ -142,7 +142,7 @@ struct addrinfo {
  */
 #define _SS_MAXSIZE	128
 #ifdef HAVE_LONG_LONG
-#define _SS_ALIGNSIZE	(sizeof(LONG_LONG))
+#define _SS_ALIGNSIZE	(sizeof(PY_LONG_LONG))
 #else
 #define _SS_ALIGNSIZE	(sizeof(double))
 #endif
@@ -159,7 +159,7 @@ struct sockaddr_storage {
 #endif
 	char	__ss_pad1[_SS_PAD1SIZE];
 #ifdef HAVE_LONG_LONG
-	LONG_LONG __ss_align;	/* force desired structure storage alignment */
+	PY_LONG_LONG __ss_align;	/* force desired structure storage alignment */
 #else
 	double __ss_align;	/* force desired structure storage alignment */
 #endif

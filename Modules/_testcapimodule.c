@@ -56,7 +56,7 @@ test_config(PyObject *self)
 	CHECK_SIZEOF(SIZEOF_VOID_P, void*);
 	CHECK_SIZEOF(SIZEOF_TIME_T, time_t);
 #ifdef HAVE_LONG_LONG
-	CHECK_SIZEOF(SIZEOF_LONG_LONG, LONG_LONG);
+	CHECK_SIZEOF(SIZEOF_LONG_LONG, PY_LONG_LONG);
 #endif
 
 #undef CHECK_SIZEOF
@@ -172,7 +172,7 @@ test_dict_iteration(PyObject* self)
 
    Note that the meat of the test is contained in testcapi_long.h.
    This is revolting, but delicate code duplication is worse:  "almost
-   exactly the same" code is needed to test LONG_LONG, but the ubiquitous
+   exactly the same" code is needed to test PY_LONG_LONG, but the ubiquitous
    dependence on type names makes it impossible to use a parameterized
    function.  A giant macro would be even worse than this.  A C++ template
    would be perfect.
@@ -221,7 +221,7 @@ raise_test_longlong_error(const char* msg)
 }
 
 #define TESTNAME	test_longlong_api_inner
-#define TYPENAME	LONG_LONG
+#define TYPENAME	PY_LONG_LONG
 #define F_S_TO_PY	PyLong_FromLongLong
 #define F_PY_TO_S	PyLong_AsLongLong
 #define F_U_TO_PY	PyLong_FromUnsignedLongLong
@@ -242,7 +242,7 @@ test_longlong_api(PyObject* self)
 #undef F_U_TO_PY
 #undef F_PY_TO_U
 
-/* Test the L code for PyArg_ParseTuple.  This should deliver a LONG_LONG
+/* Test the L code for PyArg_ParseTuple.  This should deliver a PY_LONG_LONG
    for both long and int arguments.  The test may leak a little memory if
    it fails.
 */
@@ -250,7 +250,7 @@ static PyObject *
 test_L_code(PyObject *self)
 {
 	PyObject *tuple, *num;
-	LONG_LONG value;
+	PY_LONG_LONG value;
 
         tuple = PyTuple_New(1);
         if (tuple == NULL)
