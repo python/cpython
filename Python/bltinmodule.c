@@ -1838,7 +1838,10 @@ filtertuple(PyObject *func, PyObject *tuple)
 	int len = PyTuple_Size(tuple);
 
 	if (len == 0) {
-		Py_INCREF(tuple);
+		if (PyTuple_CheckExact(tuple))
+			Py_INCREF(tuple);
+		else
+			tuple = PyTuple_New(0);
 		return tuple;
 	}
 
@@ -1895,8 +1898,15 @@ filterstring(PyObject *func, PyObject *strobj)
 	int outlen = len;
 
 	if (func == Py_None) {
-		/* No character is ever false -- share input string */
-		Py_INCREF(strobj);
+		/* No character is ever false -- share input string
+		 * (if it's not a subclass) */
+		if (PyString_CheckExact(strobj))
+			Py_INCREF(strobj);
+		else
+			strobj = PyString_FromStringAndSize(
+				PyString_AS_STRING(strobj),
+				len
+			);
 		return strobj;
 	}
 	if ((result = PyString_FromStringAndSize(NULL, len)) == NULL)
@@ -1980,8 +1990,15 @@ filterunicode(PyObject *func, PyObject *strobj)
 	int outlen = len;
 
 	if (func == Py_None) {
-		/* No character is ever false -- share input string */
-		Py_INCREF(strobj);
+		/* No character is ever false -- share input string
+		 * (it if's not a subclass) */
+		if (PyUnicode_CheckExact(strobj))
+			Py_INCREF(strobj);
+		else
+			strobj = PyUnicode_FromUnicode(
+				PyUnicode_AS_UNICODE(strobj),
+				len
+			);
 		return strobj;
 	}
 	if ((result = PyUnicode_FromUnicode(NULL, len)) == NULL)
