@@ -331,7 +331,7 @@ class HTMLDoc(Doc):
     def page(self, title, contents):
         """Format an HTML page."""
         return '''
-<!doctype html public "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!doctype html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html><head><title>Python: %s</title>
 <style type="text/css"><!--
 TT { font-family: lucidatypewriter, lucida console, courier }
@@ -342,7 +342,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
     def heading(self, title, fgcol, bgcol, extras=''):
         """Format a page heading."""
         return '''
-<table width="100%%" cellspacing=0 cellpadding=2 border=0>
+<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="heading">
 <tr bgcolor="%s">
 <td valign=bottom>&nbsp;<br>
 <font color="%s" face="helvetica, arial">&nbsp;<br>%s</font></td
@@ -356,7 +356,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
         if marginalia is None:
             marginalia = '<tt>' + '&nbsp;' * width + '</tt>'
         result = '''
-<p><table width="100%%" cellspacing=0 cellpadding=2 border=0>
+<table width="100%%" cellspacing=0 cellpadding=2 border=0 summary="section">
 <tr bgcolor="%s">
 <td colspan=3 valign=bottom>&nbsp;<br>
 <font color="%s" face="helvetica, arial">%s</font></td></tr>
@@ -393,7 +393,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                 if i < len(list):
                     result = result + format(list[i]) + '<br>\n'
             result = result + '</td>'
-        return '<table width="100%%"><tr>%s</tr></table>' % result
+        return '<table width="100%%" summary="list"><tr>%s</tr></table>' % result
 
     def grey(self, text): return '<font color="#909090">%s</font>' % text
 
@@ -785,7 +785,7 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             argspec = inspect.formatargspec(
                 args, varargs, varkw, defaults, formatvalue=self.formatvalue)
             if realname == '<lambda>':
-                decl = '<em>lambda</em>'
+                title = '<strong>%s</strong> <em>lambda</em> ' % name
                 argspec = argspec[1:-1] # remove parentheses
         else:
             argspec = '(...)'
