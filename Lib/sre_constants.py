@@ -1,6 +1,5 @@
 #
 # Secret Labs' Regular Expression Engine
-# $Id$
 #
 # various symbols used by the regular expression engine.
 # run this script to update the _sre include files!

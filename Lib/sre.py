@@ -1,6 +1,5 @@
 #
 # Secret Labs' Regular Expression Engine
-# $Id$
 #
 # re-compatible interface for the sre matching engine
 #
@@ -135,13 +134,14 @@ def _split(pattern, string, maxsplit=0):
         if not m:
             break
 	b, e = m.span()
-	if e == i:
+	if b == e:
+	    if i >= len(string):
+		break
 	    continue
         append(string[i:b])
 	if g and b != e:
 	    extend(m.groups())
 	i = e
         n = n + 1
-    if i < len(string):
-        append(string[i:])
+    append(string[i:])
     return s

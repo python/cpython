@@ -1,7 +1,6 @@
 /* -*- Mode: C; tab-width: 4 -*-
  *
  * Secret Labs' Regular Expression Engine
- * $Id$
  *
  * regular expression matching engine
  *
@@ -31,7 +30,7 @@
 #ifndef SRE_RECURSIVE
 
 static char
-copyright[] = " SRE 0.9.1 Copyright (c) 1997-2000 by Secret Labs AB ";
+copyright[] = " SRE 0.9.2 Copyright (c) 1997-2000 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -56,7 +55,7 @@ copyright[] = " SRE 0.9.1 Copyright (c) 1997-2000 by Secret Labs AB ";
 #define HAVE_UNICODE
 #endif
 
-#if defined(WIN32) /* FIXME: <fl> don't assume Windows == MSVC */
+#if defined(_MSC_VER)
 #pragma optimize("agtw", on) /* doesn't seem to make much difference... */
 /* fastest possible local call under MSVC */
 #define LOCAL(type) static __inline type __fastcall
@@ -298,16 +297,21 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 	int this, that;
 
 	switch (at) {
+
 	case SRE_AT_BEGINNING:
 		return ((void*) ptr == state->beginning);
+
 	case SRE_AT_BEGINNING_LINE:
 		return ((void*) ptr == state->beginning ||
                 SRE_IS_LINEBREAK((int) ptr[-1]));
+
 	case SRE_AT_END:
 		return ((void*) ptr == state->end);
+
 	case SRE_AT_END_LINE:
 		return ((void*) ptr == state->end ||
                 SRE_IS_LINEBREAK((int) ptr[0]));
+
 	case SRE_AT_BOUNDARY:
 		if (state->beginning == state->end)
 			return 0;
@@ -316,6 +320,7 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
 		this = ((void*) ptr < state->end) ?
 			SRE_IS_WORD((int) ptr[0]) : 0;
 		return this != that;
+
 	case SRE_AT_NON_BOUNDARY:
 		if (state->beginning == state->end)
 			return 0;
@@ -365,7 +370,8 @@ SRE_MEMBER(SRE_CODE* set, SRE_CHAR ch)
 			break;
 
 		default:
-			/* FIXME: internal error */
+			/* internal error -- there's not much we can do about it
+               here, so let's just pretend it didn't match... */
 			return 0;
 		}
 	}
@@ -910,13 +916,18 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 	SRE_CHAR* ptr = state->start;
 	SRE_CHAR* end = state->end;
 	int status = 0;
+    int prefix_len = 0;
+    SRE_CODE* prefix = NULL;
 
     if (pattern[0] == SRE_OP_INFO) {
-        /* don't look too far */
+        /* args: <skip> <min> <max> <prefix> <prefix data...> */
         end -= pattern[2];
+        prefix_len = pattern[4];
+        prefix = pattern + 5;
         pattern += pattern[1];
-        /* FIXME: add support for fast scan */
     }
+
+    /* if (prefix_len > 0) ... */
 
 	if (pattern[0] == SRE_OP_LITERAL) {
 		/* pattern starts with a literal */
