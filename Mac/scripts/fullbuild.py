@@ -81,14 +81,29 @@ PPC_INSTRUCTIONS=[
 		":build.macppc.shared:PythonApplet.µ",
 	])
 ]
+CFM68K_INSTRUCTIONS=[
+	(buildmwproject, "CWIE", [
+		":build.mac68k.shared:PythonCoreCFM68K.µ",
+		":build.mac68k.shared:PythonCFM68K.µ",
+		":build.mac68k.shared:PythonAppletCFM68K.µ",
+	])
+]
 PLUGIN_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
-		":PlugIns:ctbmodule.µ",
-		":PlugIns:imgmodules.µ",
-		":PlugIns:macspeechmodule.µ",
-		":PlugIns:toolboxmodules.µ",
-		":PlugIns:wastemodule.µ",
-		":PlugIns:_tkintermodule.µ",
+		":PlugIns:ctbmodule.ppc.µ",
+		":PlugIns:imgmodules.ppc.µ",
+		":PlugIns:macspeechmodule.ppc.µ",
+		":PlugIns:toolboxmodules.ppc.µ",
+		":PlugIns:wastemodule.ppc.µ",
+		":PlugIns:_tkintermodule.ppc.µ",
+	])
+]
+CFM68KPLUGIN_INSTRUCTIONS=[
+	(buildmwproject, "CWIE", [
+		":PlugIns:ctbmodule.CFM68K.µ",
+		":PlugIns:toolboxmodules.CFM68K.µ",
+		":PlugIns:wastemodule.CFM68K.µ",
+		":PlugIns:_tkintermodule.CFM68K.µ",
 	])
 ]
 M68K_INSTRUCTIONS=[
@@ -108,8 +123,9 @@ APPLET_INSTRUCTIONS=[
 ALLINST=[
 	("PPC shared executable", PPC_INSTRUCTIONS),
 	("PPC plugin modules", PLUGIN_INSTRUCTIONS),
-	("68K executable", M68K_INSTRUCTIONS),
-	("PPC applets", APPLET_INSTRUCTIONS)
+	("CFM68K shared executable", CFM68K_INSTRUCTIONS),
+	("68K standalone executable", M68K_INSTRUCTIONS),
+	("Applets", APPLET_INSTRUCTIONS)
 ]
 				
 def main():
