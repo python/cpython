@@ -571,7 +571,7 @@ class Marshaller:
         self.data = None
         self.encoding = encoding
         self.allow_none = allow_none
-        
+
     dispatch = {}
 
     def dumps(self, values):
@@ -612,7 +612,7 @@ class Marshaller:
             raise TypeError, "cannot marshal None unless allow_none is enabled"
         write("<value><nil/></value>")
     dispatch[NoneType] = dump_nil
-    
+
     def dump_int(self, value, write):
         # in case ints are > 32 bits
         if value > MAXINT or value < MININT:
@@ -784,7 +784,7 @@ class Unmarshaller:
         self.append(None)
         self._value = 0
     dispatch["nil"] = end_nil
-    
+
     def end_boolean(self, data):
         if data == "0":
             self.append(False)
@@ -1294,7 +1294,7 @@ class ServerProxy:
         self.__encoding = encoding
         self.__verbose = verbose
         self.__allow_none = allow_none
-        
+
     def __request(self, methodname, params):
         # call a method on the remote server
 
@@ -1340,7 +1340,7 @@ if __name__ == "__main__":
     # simple test program (from the XML-RPC specification)
 
     # server = ServerProxy("http://localhost:8000") # local server
-    server = ServerProxy("http://betty.userland.com") 
+    server = ServerProxy("http://betty.userland.com")
 
     print server
 
