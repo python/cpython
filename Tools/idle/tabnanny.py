@@ -19,9 +19,13 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], "v")
     except getopt.error, msg:
         print msg
+        return
     for o, a in opts:
         if o == '-v':
             verbose = verbose + 1
+    if not args:
+        print "Usage:", sys.argv[0], "file_or_directory ..."
+        return
     for arg in args:
         check(arg)
 
