@@ -509,24 +509,25 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 	{
 		APIRET  rc;
 		HMODULE hDLL;
-        char failreason[256];
+		char failreason[256];
 
 		rc = DosLoadModule(failreason,
-                           sizeof(failreason),
-                           pathname,
-                           &hDLL);
+				   sizeof(failreason),
+				   pathname,
+				   &hDLL);
 
 		if (rc != NO_ERROR) {
 			char errBuf[256];
 			sprintf(errBuf,
-				"DLL load failed, rc = %d, problem '%s': %s", rc, failreason);
+				"DLL load failed, rc = %d, problem '%s': %s",
+				rc, failreason);
 			PyErr_SetString(PyExc_ImportError, errBuf);
 			return NULL;
 		}
 
-        rc = DosQueryProcAddr(hDLL, 0L, funcname, &p);
-        if (rc != NO_ERROR)
-            p = NULL; /* Signify Failure to Acquire Entrypoint */
+		rc = DosQueryProcAddr(hDLL, 0L, funcname, &p);
+		if (rc != NO_ERROR)
+			p = NULL; /* Signify Failure to Acquire Entrypoint */
 	}
 #endif /* PYOS_OS2 */
 
@@ -574,28 +575,26 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		int flags;
 
 		flags = BIND_FIRST | BIND_DEFERRED;
-		if (Py_VerboseFlag)
-                {
-                        flags = DYNAMIC_PATH | BIND_FIRST | BIND_IMMEDIATE |
+		if (Py_VerboseFlag) {
+			flags = DYNAMIC_PATH | BIND_FIRST | BIND_IMMEDIATE |
 				BIND_NONFATAL | BIND_VERBOSE;
-                        printf("shl_load %s\n",pathname);
-                }
-                lib = shl_load(pathname, flags, 0);
-                /* XXX Chuck Blake once wrote that 0 should be BIND_NOSTART? */
-                if (lib == NULL)
-                {
-                        char buf[256];
-                        if (Py_VerboseFlag)
-                                perror(pathname);
-                        sprintf(buf, "Failed to load %.200s", pathname);
-                        PyErr_SetString(PyExc_ImportError, buf);
-                        return NULL;
-                }
-                if (Py_VerboseFlag)
-                        printf("shl_findsym %s\n", funcname);
-                shl_findsym(&lib, funcname, TYPE_UNDEFINED, (void *) &p);
-                if (p == NULL && Py_VerboseFlag)
-                        perror(funcname);
+			printf("shl_load %s\n",pathname);
+		}
+		lib = shl_load(pathname, flags, 0);
+		/* XXX Chuck Blake once wrote that 0 should be BIND_NOSTART? */
+		if (lib == NULL) {
+			char buf[256];
+			if (Py_VerboseFlag)
+				perror(pathname);
+			sprintf(buf, "Failed to load %.200s", pathname);
+			PyErr_SetString(PyExc_ImportError, buf);
+			return NULL;
+		}
+		if (Py_VerboseFlag)
+			printf("shl_findsym %s\n", funcname);
+		shl_findsym(&lib, funcname, TYPE_UNDEFINED, (void *) &p);
+		if (p == NULL && Py_VerboseFlag)
+			perror(funcname);
 	}
 #endif /* hpux */
 #ifdef USE_SHLIB
