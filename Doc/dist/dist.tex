@@ -21,20 +21,21 @@ In the past, Python module developers have not had much infrastructure
 support for distributing modules, nor have Python users had much support
 for installing and maintaining third-party modules.  With the
 introduction of the Python Distribution Utilities (Distutils for short)
-in Python 1.6, this situation should start to improve.
+in Python 2.0, this situation should start to improve.
 
 This document only covers using the Distutils to distribute your Python
-modules.  Using the Distutils does not tie you to Python 1.6, though:
+modules.  Using the Distutils does not tie you to Python 2.0, though:
 the Distutils work just fine with Python 1.5, and it is reasonable (and
 expected to become commonplace) to expect users of Python 1.5 to
 download and install the Distutils separately before they can install
-your modules.  Python 1.6 users, of course, won't have to add anything
+your modules.  Python 2.0 users, of course, won't have to add anything
 to their Python installation in order to use the Distutils to install
 third-party modules.
 
 This document concentrates on the role of developer/distributor: if
-you're looking for information on installing Python modules, you should
-refer to the ``Installing Python Modules'' manual.
+you're looking for information on installing Python modules, you
+should refer to the \citetitle[../inst/inst.html]{Installing Python
+Modules} manual.
 
 
 \section{Concepts \& Terminology}
@@ -223,7 +224,7 @@ supplied as keyword arguments to \function{setup()}.
 
 Here's a slightly more involved example, which we'll follow for the next
 couple of sections: the Distutils' own setup script.  (Keep in mind that
-although the Distutils are included with Python 1.6, they also have an
+although the Distutils are included with Python 2.0, they also have an
 independent existence so that Python 1.5 users can use them to install
 other module distributions.  The Distutils' own setup script is used to
 install the package into Python 1.5.)

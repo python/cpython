@@ -48,7 +48,7 @@ written in Python.
 
 In the past, there has been little support for adding third-party
 modules to an existing Python installation.  With the introduction of
-the Python Distribution Utilities (Distutils for short) in Python 1.6,
+the Python Distribution Utilities (Distutils for short) in Python 2.0,
 this is starting to change.  Not everything will change overnight,
 though, so while this document concentrates on installing module
 distributions that use the Distutils, we will also spend some time
@@ -62,7 +62,7 @@ don't need to know Python to read this document; there will be some
 brief forays into using Python's interactive mode to explore your
 installation, but that's it.  If you're looking for information on how
 to distribute your own Python modules so that others may use them, see
-the ``Distributing Python Modules'' manual.
+the \citetitle[../dist/dist.html]{Distributing Python Modules} manual.
 
 
 \subsection{Best case: trivial installation}
@@ -274,12 +274,12 @@ being installed is pure Python or contains extensions (``non-pure''):
 \begin{tableiv}{l|l|l|c}{textrm}%
   {Platform}{Standard installation location}{Default value}{Notes}
   \lineiv{Unix (pure)}
-          {\filenq{\filevar{prefix}/lib/python1.6/site-packages}}
-          {\filenq{/usr/local/lib/python1.6/site-packages}}
+          {\filenq{\filevar{prefix}/lib/python2.0/site-packages}}
+          {\filenq{/usr/local/lib/python2.0/site-packages}}
           {(1)}
   \lineiv{Unix (non-pure)}
-          {\filenq{\filevar{exec-prefix}/lib/python1.6/site-packages}}
-          {\filenq{/usr/local/lib/python1.6/site-packages}}
+          {\filenq{\filevar{exec-prefix}/lib/python2.0/site-packages}}
+          {\filenq{/usr/local/lib/python2.0/site-packages}}
           {(1)}
   \lineiv{Windows}
           {\filenq{\filevar{prefix}}}
@@ -314,11 +314,12 @@ often the same under Unix.  You can find out what your Python
 installation uses for \filevar{prefix} and \filevar{exec-prefix} by
 running Python in interactive mode and typing a few simple commands.
 Under Unix, just type \code{python} at the shell prompt; under Windows,
-run ``Python 1.6 (interpreter)'' \XXX{right?}; under Mac~OS, \XXX{???}.
-Once the interpreter is started, you type Python code at the \code{>>>}
-prompt.  For example, on my Linux system, I type the three Python
-statements shown below, and get the output as shown, to find out my
-\filevar{prefix} and \filevar{exec-prefix}:
+run ``Python 2.0 (interpreter)'' \XXX{right?}; under Mac~OS, \XXX{???}.
+Once the interpreter is started, you type Python code at the
+\samp{>>> } prompt.  For example, on my Linux system, I type the three
+Python statements shown below, and get the output as shown, to find
+out my \filevar{prefix} and \filevar{exec-prefix}:
+
 \begin{verbatim}
 Python 1.5.2 (#1, Apr 18 1999, 16:03:16)  [GCC pgcc-2.91.60 19981201 (egcs-1.1.1  on linux2
 Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam
