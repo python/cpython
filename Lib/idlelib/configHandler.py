@@ -23,7 +23,7 @@ class IdleConfParser(ConfigParser):
         self.file=cfgFile
         ConfigParser.__init__(self,defaults=cfgDefaults)
     
-    def Get(self, section, option, type=None):
+    def Get(self, section, option, type=None, default=None):
         """
         Get an option value for given section/option or return default.
         If type is specified, return as type.
@@ -35,8 +35,10 @@ class IdleConfParser(ConfigParser):
         else: 
             getVal=self.get
         if self.has_option(section,option):
-            #return getVal(section, option, raw, vars)
+            #return getVal(section, option, raw, vars, default)
             return getVal(section, option)
+        else:
+            return default
 
     def GetOptionList(self,section):
         """
@@ -188,21 +190,63 @@ class IdleConf:
             else:    
                 raise 'Invalid fgBg specified'
             
-
-    def GetTheme(self, name=None):
+    def GetThemeDict(self,type,themeName):
         """
-        Gets the requested theme or returns a final fallback theme in case 
-        one can't be obtained from either the user or default config files.
+        type - string, 'default' or 'user' theme type
+        themeName - string, theme name
+        Returns a dictionary which holds {option:value} for each element
+        in the specified theme. Values are loaded over a set of ultimate last
+        fallback defaults to guarantee that all theme elements are present in 
+        a newly created theme.
         """
-        pass
-    
+        if type == 'user':
+            cfgParser=self.userCfg['highlight']
+        elif type == 'default':
+            cfgParser=self.defaultCfg['highlight']
+        else:
+            raise 'Invalid theme type specified'
+        #foreground and background values are provded for each theme element
+        #(apart from cursor) even though all these values are not yet used
+        #by idle, to allow for their use in the future. Default values are
+        #generally black and white.
+        theme={ 'normal-foreground':'#000000', 
+                'normal-background':'#ffffff', 
+                'keyword-foreground':'#000000', 
+                'keyword-background':'#ffffff', 
+                'comment-foreground':'#000000', 
+                'comment-background':'#ffffff', 
+                'string-foreground':'#000000',
+                'string-background':'#ffffff',
+                'definition-foreground':'#000000', 
+                'definition-background':'#ffffff',
+                'hilite-foreground':'#000000',
+                'hilite-background':'gray',
+                'break-foreground':'#ffffff',
+                'break-background':'#000000',
+                'hit-foreground':'#ffffff',
+                'hit-background':'#000000',
+                'error-foreground':'#ffffff',
+                'error-background':'#000000', 
+                #cursor (only foreground can be set) 
+                'cursor-foreground':'#000000', 
+                #shell window
+                'stdout-foreground':'#000000',
+                'stdout-background':'#ffffff',
+                'stderr-foreground':'#000000',
+                'stderr-background':'#ffffff',
+                'console-foreground':'#000000',
+                'console-background':'#ffffff' }
+        for element in theme.keys():
+            colour=cfgParser.Get(type,themeName,element,default=theme[element])        
+            theme[element]=colour
+        return theme
+        
     def CurrentTheme(self):
         """
         Returns the name of the currently active theme        
         """
         return self.GetOption('main','Theme','name',default='')
         
-
     def CurrentKeys(self):
         """
         Returns the name of the currently active theme        
@@ -299,8 +343,6 @@ class IdleConf:
         
         return extBinds 
         
-    
-    
     def GetKeyBinding(self, keySetName, eventStr):
         """
         returns the keybinding for a specific event.
@@ -313,32 +355,35 @@ class IdleConf:
         return binding
 
     def GetCurrentKeySet(self):
+        return self.GetKeySet(self.CurrentKeys())
+    
+    def GetKeySet(self,keySetName):
         """
-        Returns a dictionary of: all current core keybindings, plus the 
+        Returns a dictionary of: all requested core keybindings, plus the 
         keybindings for all currently active extensions. If a binding defined
         in an extension is already in use, that binding is disabled.
         """
-        currentKeySet=self.GetCoreKeys(keySetName=self.CurrentKeys())
+        keySet=self.GetCoreKeys(keySetName)
         activeExtns=self.GetExtensions(activeOnly=1)
         for extn in activeExtns:
             extKeys=self.__GetRawExtensionKeys(extn)
             if extKeys: #the extension defines keybindings
                 for event in extKeys.keys():
-                    if extKeys[event] in currentKeySet.values():
+                    if extKeys[event] in keySet.values():
                         #the binding is already in use
                         extKeys[event]='' #disable this binding
-                    currentKeySet[event]=extKeys[event] #add binding
-        return currentKeySet
-    
+                    keySet[event]=extKeys[event] #add binding
+        return keySet
+
     def GetCoreKeys(self, keySetName=None):
         """
         returns the requested set of core keybindings, with fallbacks if
         required.
+        Keybindings loaded from the config file(s) are loaded _over_ these
+        defaults, so if there is a problem getting any core binding there will
+        be an 'ultimate last resort fallback' to the CUA-ish bindings
+        defined here.
         """
-        #keybindings loaded from the config file(s) are loaded _over_ these
-        #defaults, so if there is a problem getting any core binding there will
-        #be an 'ultimate last resort fallback' to the CUA-ish bindings
-        #defined here.
         keyBindings={
             '<<Copy>>': ['<Control-c>', '<Control-C>'],
             '<<Cut>>': ['<Control-x>', '<Control-X>'],

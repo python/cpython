@@ -264,8 +264,6 @@ if __name__ == '__main__':
     #test the dialog
     root=Tk()
     def run():
-        #import aboutDialog
-        #aboutDialog.AboutDialog(root,'About')
         keySeq=''
         dlg=GetKeysDialog(root,'Get Keys','find-again',[])
         print dlg.result
