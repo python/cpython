@@ -3,155 +3,170 @@ Tests for uu module.
 Nick Mathewson
 """
 
-from test.test_support import verify, TestFailed, verbose, TESTFN
-import sys, os
+import unittest
+from test import test_support
+
+import sys, os, uu, cStringIO
 import uu
 from StringIO import StringIO
 
-teststr = "The smooth-scaled python crept over the sleeping dog\n"
-expected = """\
+plaintext = "The smooth-scaled python crept over the sleeping dog\n"
+
+encodedtext = """\
 M5&AE('-M;V]T:\"US8V%L960@<'ET:&]N(&-R97!T(&]V97(@=&AE('-L965P
 (:6YG(&1O9PH """
-encoded1 = "begin 666 t1\n"+expected+"\n \nend\n"
-if verbose:
-    print '1. encode file->file'
-inp = StringIO(teststr)
-out = StringIO()
-uu.encode(inp, out, "t1")
-verify(out.getvalue() == encoded1)
-inp = StringIO(teststr)
-out = StringIO()
-uu.encode(inp, out, "t1", 0644)
-verify(out.getvalue() == "begin 644 t1\n"+expected+"\n \nend\n")
 
-if verbose:
-    print '2. decode file->file'
-inp = StringIO(encoded1)
-out = StringIO()
-uu.decode(inp, out)
-verify(out.getvalue() == teststr)
-inp = StringIO("""UUencoded files may contain many lines,
-                  even some that have 'begin' in them.\n"""+encoded1)
-out = StringIO()
-uu.decode(inp, out)
-verify(out.getvalue() == teststr)
+encodedtextwrapped = "begin %03o %s\n" + encodedtext.replace("%", "%%") + "\n \nend\n"
 
-stdinsave = sys.stdin
-stdoutsave = sys.stdout
-try:
-    if verbose:
-        print '3. encode stdin->stdout'
-    sys.stdin = StringIO(teststr)
-    sys.stdout = StringIO()
-    uu.encode("-", "-", "t1", 0666)
-    verify(sys.stdout.getvalue() == encoded1)
-    if verbose:
-        print >>stdoutsave, '4. decode stdin->stdout'
-    sys.stdin = StringIO(encoded1)
-    sys.stdout = StringIO()
-    uu.decode("-", "-")
-    verify(sys.stdout.getvalue() == teststr)
-finally:
-    sys.stdin = stdinsave
-    sys.stdout = stdoutsave
+class UUTest(unittest.TestCase):
 
-if verbose:
-    print '5. encode file->file'
-tmpIn  = TESTFN + "i"
-tmpOut = TESTFN + "o"
-try:
-    fin = open(tmpIn, 'wb')
-    fin.write(teststr)
-    fin.close()
+    def test_encode(self):
+        inp = cStringIO.StringIO(plaintext)
+        out = cStringIO.StringIO()
+        uu.encode(inp, out, "t1")
+        self.assertEqual(out.getvalue(), encodedtextwrapped % (0666, "t1"))
+        inp = cStringIO.StringIO(plaintext)
+        out = cStringIO.StringIO()
+        uu.encode(inp, out, "t1", 0644)
+        self.assertEqual(out.getvalue(), encodedtextwrapped % (0644, "t1"))
 
-    fin = open(tmpIn, 'rb')
-    fout = open(tmpOut, 'w')
-    uu.encode(fin, fout, tmpIn, mode=0644)
-    fin.close()
-    fout.close()
+    def test_decode(self):
+        inp = cStringIO.StringIO(encodedtextwrapped % (0666, "t1"))
+        out = cStringIO.StringIO()
+        uu.decode(inp, out)
+        self.assertEqual(out.getvalue(), plaintext)
+        inp = cStringIO.StringIO(
+            "UUencoded files may contain many lines,\n" +
+            "even some that have 'begin' in them.\n" +
+            encodedtextwrapped % (0666, "t1")
+        )
+        out = cStringIO.StringIO()
+        uu.decode(inp, out)
+        self.assertEqual(out.getvalue(), plaintext)
 
-    fout = open(tmpOut, 'r')
-    s = fout.read()
-    fout.close()
-    verify(s == 'begin 644 ' + tmpIn + '\n' + expected + '\n \nend\n')
+    def test_truncatedinput(self):
+        inp = cStringIO.StringIO("begin 644 t1\n" + encodedtext)
+        out = cStringIO.StringIO()
+        try:
+            uu.decode(inp, out)
+            self.fail("No exception thrown")
+        except uu.Error, e:
+            self.assertEqual(str(e), "Truncated input file")
 
-    os.unlink(tmpIn)
-    if verbose:
-        print '6. decode file-> file'
-    uu.decode(tmpOut)
-    fin = open(tmpIn, 'rb')
-    s = fin.read()
-    fin.close()
-    verify(s == teststr)
-    # XXX is there an xp way to verify the mode?
+    def test_missingbegin(self):
+        inp = cStringIO.StringIO("")
+        out = cStringIO.StringIO()
+        try:
+            uu.decode(inp, out)
+            self.fail("No exception thrown")
+        except uu.Error, e:
+            self.assertEqual(str(e), "No valid begin line found in input file")
 
-finally:
-    try:
-        fin.close()
-    except:
-        pass
-    try:
-        fout.close()
-    except:
-        pass
-    try:
-        os.unlink(tmpIn)
-    except:
-        pass
-    try:
-        os.unlink(tmpOut)
-    except:
-        pass
+class UUStdIOTest(unittest.TestCase):
 
-if verbose:
-    print '7. error: truncated input'
-inp = StringIO("begin 644 t1\n"+expected)
-out = StringIO()
-try:
-    uu.decode(inp, out)
-    raise TestFailed("No exception thrown")
-except uu.Error, e:
-    verify(str(e) == 'Truncated input file')
+    def setUp(self):
+        self.stdin = sys.stdin
+        self.stdout = sys.stdout
 
-if verbose:
-    print '8. error: missing begin'
-inp = StringIO("")
-out = StringIO()
-try:
-    uu.decode(inp, out)
-    raise TestFailed("No exception thrown")
-except uu.Error, e:
-    verify(str(e) == 'No valid begin line found in input file')
+    def tearDown(self):
+        sys.stdin = self.stdin
+        sys.stdout = self.stdout
 
-# Test to verify that decode() will refuse to overwrite an existing file
-outfile = TESTFN + "out"
-inp = StringIO('Here is a message to be uuencoded')
-out = StringIO()
-uu.encode(inp, out, outfile)
-out.seek(0)
-try:
-    if verbose:
-        print '9. decode w/file not exists is okay'
-    uu.decode(out)
-    if not os.path.exists(outfile):
-        raise TestFailed('uudecode w/ out_file=None failed')
-    fp = open(outfile)
-    data = fp.read()
-    fp.close()
-    if data <> inp.getvalue():
-        raise TestFailed('uudecode stored something weird')
-    # Try to write it again, which should cause a failure
-    if verbose:
-        print '10. uudecode w/file exists fails'
-    out.seek(0)
-    try:
-        uu.decode(out)
-    except uu.Error:
-        pass
-    else:
-        raise TestFailed('expected to get a "file exists" error')
-finally:
-    try:
-        os.unlink(outfile)
-    except OSError:
-        pass
+    def test_encode(self):
+        sys.stdin = cStringIO.StringIO(plaintext)
+        sys.stdout = cStringIO.StringIO()
+        uu.encode("-", "-", "t1", 0666)
+        self.assertEqual(
+            sys.stdout.getvalue(),
+            encodedtextwrapped % (0666, "t1")
+        )
+
+    def test_decode(self):
+        sys.stdin = cStringIO.StringIO(encodedtextwrapped % (0666, "t1"))
+        sys.stdout = cStringIO.StringIO()
+        uu.decode("-", "-")
+        self.assertEqual(sys.stdout.getvalue(), plaintext)
+
+class UUFileTest(unittest.TestCase):
+
+    def _kill(self, f):
+        # close and remove file
+        try:
+            f.close()
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except:
+            pass
+        try:
+            os.unlink(f.name)
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except:
+            pass
+
+    def setUp(self):
+        self.tmpin  = test_support.TESTFN + "i"
+        self.tmpout = test_support.TESTFN + "o"
+
+    def tearDown(self):
+        del self.tmpin
+        del self.tmpout
+
+    def test_encode(self):
+        try:
+            fin = open(self.tmpin, 'wb')
+            fin.write(plaintext)
+            fin.close()
+
+            fin = open(self.tmpin, 'rb')
+            fout = open(self.tmpout, 'w')
+            uu.encode(fin, fout, self.tmpin, mode=0644)
+            fin.close()
+            fout.close()
+
+            fout = open(self.tmpout, 'r')
+            s = fout.read()
+            fout.close()
+            self.assertEqual(s, encodedtextwrapped % (0644, self.tmpin))
+        finally:
+            self._kill(fin)
+            self._kill(fout)
+
+    def test_decode(self):
+        try:
+            f = open(self.tmpin, 'wb')
+            f.write(encodedtextwrapped % (0644, self.tmpout))
+            f.close()
+
+            f = open(self.tmpin, 'rb')
+            uu.decode(f)
+            f.close()
+
+            f = open(self.tmpout, 'r')
+            s = f.read()
+            f.close()
+            self.assertEqual(s, plaintext)
+            # XXX is there an xp way to verify the mode?
+        finally:
+            self._kill(f)
+
+    def test_decodetwice(self):
+        # Verify that decode() will refuse to overwrite an existing file
+        try:
+            f = cStringIO.StringIO(encodedtextwrapped % (0644, self.tmpout))
+
+            f = open(self.tmpin, 'rb')
+            uu.decode(f)
+            f.close()
+
+            f = open(self.tmpin, 'rb')
+            self.assertRaises(uu.Error, uu.decode, f)
+            f.close()
+        finally:
+            self._kill(f)
+
+def test_main():
+    test_support.run_unittest(UUTest, UUStdIOTest, UUFileTest)
+
+if __name__=="__main__":
+    test_main()
