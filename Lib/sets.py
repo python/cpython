@@ -51,6 +51,9 @@ what's tested is actually `z in y'.
 #
 # - Guido van Rossum rewrote much of the code, made some API changes,
 #   and cleaned up the docstrings.
+#
+# - Raymond Hettinger implemented a number of speedups and other
+#   improvements.
 
 
 __all__ = ['BaseSet', 'Set', 'ImmutableSet']
@@ -67,6 +70,7 @@ class BaseSet(object):
         """This is an abstract class."""
         # Don't call this from a concrete subclass!
         if self.__class__ is BaseSet:
+            # XXX Maybe raise TypeError instead, like basestring()?
             raise NotImplementedError, ("BaseSet is an abstract class.  "
                                         "Use Set or ImmutableSet.")
 
@@ -285,6 +289,8 @@ class ImmutableSet(BaseSet):
 
     def __init__(self, seq):
         """Construct an immutable set from a sequence."""
+        # XXX Maybe this should default seq to None?
+        # XXX Creating an empty immutable set is not unheard of.
         self._hashcode = None
         self._data = data = {}
         # I don't know a faster way to do this in pure Python.
@@ -296,6 +302,9 @@ class ImmutableSet(BaseSet):
         value = True
         # XXX Should this perhaps look for _as_immutable?
         # XXX If so, should use self.update(seq).
+        # XXX (Well, ImmutableSet doesn't have update(); the base
+        # XXX class could have _update() which does this though, and
+        # XXX we could use that here and in Set.update().)
         for key in seq:
             data[key] = value
 
