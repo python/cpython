@@ -181,6 +181,9 @@ def module_funcs(stdscr):
         curses.pair_content(curses.COLOR_PAIRS)
         curses.pair_number(0)
 
+    if hasattr(curses, 'use_default_colors'):
+        curses.use_default_colors()
+
     if hasattr(curses, 'keyname'):
         curses.keyname(13)
 

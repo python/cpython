@@ -47,7 +47,7 @@ unsupported functions:
 	resizeterm restartterm ripoffline scr_dump
 	scr_init scr_restore scr_set scrl set_curterm set_term setterm
 	tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
-	use_default_colors vidattr vidputs waddchnstr waddchstr wchgat
+	vidattr vidputs waddchnstr waddchstr wchgat
 	wcolor_set winchnstr winchstr winnstr wmouse_trafo wscrl
 
 Low-priority: 
@@ -2354,6 +2354,26 @@ PyCurses_Use_Env(PyObject *self, PyObject *args)
   return Py_None;
 }
 
+#ifndef STRICT_SYSV_CURSES
+static PyObject *
+PyCurses_Use_Default_Colors(PyObject *self)
+{
+  int code;
+
+  PyCursesInitialised
+  PyCursesInitialisedColor
+
+  code = use_default_colors();
+  if (code != ERR) {
+    Py_INCREF(Py_None);
+    return Py_None;
+  } else {
+    PyErr_SetString(PyCursesError, "use_default_colors() returned ERR");
+    return NULL;
+  }
+}
+#endif /* STRICT_SYSV_CURSES */
+
 /* List of functions defined in the module */
 
 static PyMethodDef PyCurses_methods[] = {
@@ -2434,6 +2454,9 @@ static PyMethodDef PyCurses_methods[] = {
   {"unctrl",              (PyCFunction)PyCurses_UnCtrl, METH_VARARGS},
   {"ungetch",             (PyCFunction)PyCurses_UngetCh, METH_VARARGS},
   {"use_env",             (PyCFunction)PyCurses_Use_Env, METH_VARARGS},
+#ifndef STRICT_SYSV_CURSES
+  {"use_default_colors",  (PyCFunction)PyCurses_Use_Default_Colors, METH_NOARGS},
+#endif
   {NULL,		  NULL}		/* sentinel */
 };
 
