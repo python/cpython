@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Unicode objects in sys.path are no longer ignored but treated
+  as directory names.
+
 - The built-ins slice() and buffer() are now callable types.  The
   types classobj (formerly class), code, function, instance, and
   instancemethod (formerly instance-method), which have no built-in
