@@ -17,16 +17,26 @@ template = None
 # Function to calculate the directory to use
 
 def gettempdir():
-	global tempdir
-	if tempdir == None:
-		try:
-			tempdir = os.environ['TMPDIR']
-		except (KeyError, AttributeError):
-			if os.name == 'posix':
-				tempdir = '/usr/tmp' # XXX Why not /tmp?
-			else:
-				tempdir = os.getcwd() # XXX Is this OK?
-	return tempdir
+    global tempdir
+    attempdirs = ['/usr/tmp', '/tmp', os.getcwd(), os.curdir]
+    if os.environ.has_key('TMPDIR'):
+	attempdirs.insert(0, os.environ['TMPDIR'])
+    testfile = gettempprefix() + '-*-writetest-*-'
+    for dir in attempdirs:
+	try:
+	    filename = os.path.join(dir, testfile)
+	    fp = open(filename, 'w')
+	    fp.write('blat')
+	    fp.close()
+	    os.unlink(filename)
+	    tempdir = dir
+	    break
+	except IOError:
+	    pass
+    if tempdir is None:
+	msg = "Can't find a usable temporary directory amongst " + `attempdirs`
+	raise IOError, msg
+    return tempdir
 
 
 # Function to calculate a prefix of the filename to use
