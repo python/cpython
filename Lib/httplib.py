@@ -1140,7 +1140,7 @@ class LineAndFileWrapper:
     def _done(self):
         # called when the last byte is read from the line.  After the
         # call, all read methods are delegated to the underlying file
-        # obhect.
+        # object.
         self._line_consumed = 1
         self.read = self._file.read
         self.readline = self._file.readline
