@@ -20,7 +20,7 @@
 \begin{abstract}
 
 \noindent
-This manual documents the API used by C (or C++) programmers who want
+This manual documents the API used by \C{} (or \Cpp{}) programmers who want
 to write extension modules or embed Python.  It is a companion to
 ``Extending and Embedding the Python Interpreter'', which describes
 the general principles of extension writing but does not document the
@@ -42,12 +42,12 @@ source code releases.
 
 \chapter{Introduction}
 
-The Application Programmer's Interface to Python gives C and C++
+The Application Programmer's Interface to Python gives \C{} and \Cpp{}
 programmers access to the Python interpreter at a variety of levels.
-The API is equally usable from C++, but for brevity it is generally
-referred to as the Python/C API.  There are two fundamentally
-different reasons for using the Python/C API.  The first reason is to
-write ``extension modules'' for specific purposes; these are C modules
+The API is equally usable from \Cpp{}, but for brevity it is generally
+referred to as the Python/\C{} API.  There are two fundamentally
+different reasons for using the Python/\C{} API.  The first reason is to
+write ``extension modules'' for specific purposes; these are \C{} modules
 that extend the Python interpreter.  This is probably the most common
 use.  The second reason is to use Python as a component in a larger
 application; this technique is generally referred to as ``embedding''
@@ -97,7 +97,7 @@ return value of type \code{PyObject *}.  This type is a pointer
 object.  Since all Python object types are treated the same way by the
 Python language in most situations (e.g., assignments, scope rules,
 and argument passing), it is only fitting that they should be
-represented by a single C type.  All Python objects live on the heap:
+represented by a single \C{} type.  All Python objects live on the heap:
 you never declare an automatic or static variable of type
 \code{PyObject}, only pointer variables of type \code{PyObject *} can 
 be declared.
@@ -115,8 +115,8 @@ iff the object pointed to by \code{a} is a Python list.
 The reference count is important because today's computers have a 
 finite (and often severly limited) memory size; it counts how many 
 different places there are that have a reference to an object.  Such a 
-place could be another object, or a global (or static) C variable, or 
-a local variable in some C function.  When an object's reference count 
+place could be another object, or a global (or static) \C{} variable, or 
+a local variable in some \C{} function.  When an object's reference count 
 becomes zero, the object is deallocated.  If it contains references to 
 other objects, their reference count is decremented.  Those other 
 objects may be deallocated in turn, if this decrement makes their 
@@ -150,7 +150,7 @@ long as our variable is pointing to it.  If we know that there is at
 least one other reference to the object that lives at least as long as 
 our variable, there is no need to increment the reference count 
 temporarily.  An important situation where this arises is in objects 
-that are passed as arguments to C functions in an extension module 
+that are passed as arguments to \C{} functions in an extension module 
 that are called from Python; the call mechanism guarantees to hold a 
 reference to every argument for the duration of the call.
 
@@ -228,7 +228,7 @@ PySequence_SetItem(l, 2, x); Py_DECREF(x);
 You might find it strange that the ``recommended'' approach takes more
 code.  However, in practice, you will rarely use these ways of
 creating and populating a tuple or list.  There's a generic function,
-\code{Py_BuildValue()}, that can create most common objects from C 
+\code{Py_BuildValue()}, that can create most common objects from \C{}
 values, directed by a ``format string''.  For example, the above two 
 blocks of code could be replaced by the following (which also takes 
 care of the error checking!):
@@ -328,7 +328,7 @@ long sum_sequence(PyObject *sequence)
 \subsection{Types}
 
 There are few other data types that play a significant role in 
-the Python/C API; most are simple C types such as \code{int}, 
+the Python/C API; most are simple \C{} types such as \code{int}, 
 \code{long}, \code{double} and \code{char *}.  A few structure types 
 are used to describe static tables used to list the functions exported 
 by a module or the data attributes of a new object type.  These will 
@@ -342,7 +342,7 @@ propagated to the caller, then to the caller's caller, and so on, till
 they reach the top-level interpreter, where they are reported to the 
 user accompanied by a stack traceback.
 
-For C programmers, however, error checking always has to be explicit.  
+For \C{} programmers, however, error checking always has to be explicit.  
 All functions in the Python/C API can raise exceptions, unless an 
 explicit claim is made otherwise in a function's documentation.  In 
 general, when a function encounters an error, it sets an exception, 
@@ -369,8 +369,8 @@ value, and the traceback.  These have the same meanings as the Python
 object \code{sys.exc_type}, \code{sys.exc_value}, 
 \code{sys.exc_traceback}; however, they are not the same: the Python 
 objects represent the last exception being handled by a Python 
-\code{try...except} statement, while the C level exception state only 
-exists while an exception is being passed on between C functions until 
+\code{try...except} statement, while the \C{} level exception state only 
+exists while an exception is being passed on between \C{} functions until 
 it reaches the Python interpreter, which takes care of transferring it 
 to \code{sys.exc_type} and friends.
 
@@ -410,7 +410,7 @@ def incr_item(dict, key):
     return item + 1
 \end{verbatim}
 
-Here is the corresponding C code, in all its glory:
+Here is the corresponding \C{} code, in all its glory:
 
 \begin{verbatim}
 int incr_item(PyObject *dict, PyObject *key)
@@ -453,7 +453,7 @@ int incr_item(PyObject *dict, PyObject *key)
 \end{verbatim}
 
 This example represents an endorsed use of the \code{goto} statement 
-in C!  It illustrates the use of \code{PyErr_ExceptionMatches()} and 
+in \C{}!  It illustrates the use of \code{PyErr_ExceptionMatches()} and 
 \code{PyErr_Clear()} to handle specific exceptions, and the use of 
 \code{Py_XDECREF()} to dispose of owned references that may be 
 \NULL{} (note the `X' in the name; \code{Py_DECREF()} would crash 
@@ -483,7 +483,7 @@ will be executed later, it must be set explicitly with a call to
 \code{PySys_SetArgv(\var{argc}, \var{argv})} subsequent to the call 
 to \code{Py_Initialize()}.
 
-On most systems (in particular, on Unix and Windows, although the
+On most systems (in particular, on \UNIX{} and Windows, although the
 details are slightly different), \code{Py_Initialize()} calculates the
 module search path based upon its best guess for the location of the
 standard Python interpreter executable, assuming that the Python
@@ -532,13 +532,13 @@ Print a fatal error message and kill the process.  No cleanup is
 performed.  This function should only be invoked when a condition is
 detected that would make it dangerous to continue using the Python
 interpreter; e.g., when the object administration appears to be
-corrupted.  On Unix, the standard C library function \code{abort()} is 
+corrupted.  On \UNIX{}, the standard \C{} library function \code{abort()} is 
 called which will attempt to produce a \file{core} file.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_Exit}{int status}
 Exit the current process.  This calls \code{Py_Finalize()} and then
-calls the standard C library function \code{exit(0)}.
+calls the standard \C{} library function \code{exit(0)}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_AtExit}{void (*func) ()}
@@ -605,7 +605,7 @@ PyMem_RESIZE(), PyMem_DEL(), PyMem_XDEL().
 
 The functions in this chapter will let you handle and raise Python
 exceptions.  It is important to understand some of the basics of
-Python exception handling.  It works somewhat like the Unix
+Python exception handling.  It works somewhat like the \UNIX{}
 \code{errno} variable: there is a global indicator (per thread) of the
 last error that occurred.  Most functions don't clear this on success,
 but will set it to indicate the cause of the error on failure.  Most
@@ -729,8 +729,8 @@ returns \NULL{} so an object allocation function can write
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject *}{PyErr_SetFromErrno}{PyObject *type}
-This is a convenience function to raise an exception when a C library
-function has returned an error and set the C variable \code{errno}.
+This is a convenience function to raise an exception when a \C{} library
+function has returned an error and set the \C{} variable \code{errno}.
 It constructs a tuple object whose first item is the integer
 \code{errno} value and whose second item is the corresponding error
 message (gotten from \code{strerror()}), and then calls
@@ -772,11 +772,11 @@ raised.
 PyObject *base, PyObject *dict}
 \strong{(NEW in 1.5a4!)}
 This utility function creates and returns a new exception object.  The
-\var{name} argument must be the name of the new exception, a C string
+\var{name} argument must be the name of the new exception, a \C{} string
 of the form \code{module.class}.  The \var{base} and \var{dict}
 arguments are normally \NULL{}.  Normally, this creates a class
 object derived from the root for all exceptions, the built-in name
-\code{Exception} (accessible in C as \code{PyExc_Exception}).  In this
+\code{Exception} (accessible in \C{} as \code{PyExc_Exception}).  In this
 case the \code{__module__} attribute of the new class is set to the
 first part (up to the last dot) of the \var{name} argument, and the
 class name is set to the last part (after the last dot).  When the
@@ -825,7 +825,7 @@ in Python 1.5a4):
 \chapter{Utilities}
 
 The functions in this chapter perform various utility tasks, such as
-parsing function arguments and constructing Python values from C
+parsing function arguments and constructing Python values from \C{}
 values.
 
 \section{OS Utilities}
@@ -842,7 +842,7 @@ the strings \code{"<stdin>"} or \code{"???"}.
 \begin{cfuncdesc}{long}{PyOS_GetLastModificationTime}{char *filename}
 Return the time of last modification of the file \code{filename}.
 The result is encoded in the same way as the timestamp returned by
-the standard C library function \code{time()}.
+the standard \C{} library function \code{time()}.
 \end{cfuncdesc}
 
 
@@ -1142,7 +1142,7 @@ of the Python expression: \code{apply(o, args)}.
 
 \begin{cfuncdesc}{PyObject*}{PyObject_CallFunction}{PyObject *callable_object, char *format, ...}
 Call a callable Python object \code{callable_object}, with a
-variable number of C arguments. The C arguments are described
+variable number of \C{} arguments. The \C{} arguments are described
 using a mkvalue-style format string. The format may be \NULL{},
 indicating that no arguments are provided.  Returns the
 result of the call on success, or \NULL{} on failure.  This is
@@ -1152,7 +1152,7 @@ the equivalent of the Python expression: \code{apply(o,args)}.
 
 \begin{cfuncdesc}{PyObject*}{PyObject_CallMethod}{PyObject *o, char *m, char *format, ...}
 Call the method named \code{m} of object \code{o} with a variable number of
-C arguments.  The C arguments are described by a mkvalue
+C arguments.  The \C{} arguments are described by a mkvalue
 format string.  The format may be \NULL{}, indicating that no
 arguments are provided. Returns the result of the call on
 success, or \NULL{} on failure.  This is the equivalent of the
@@ -1541,12 +1541,12 @@ statement: \code{o[key]=v}.
 \begin{cfuncdesc}{PyObject*}{PyFile_FromString}{char *file_name, char *mode}
 On success, returns a new file object that is opened on the
 file given by \code{file_name}, with a file mode given by \code{mode},
-where \code{mode} has the same semantics as the standard C routine,
+where \code{mode} has the same semantics as the standard \C{} routine,
 fopen.  On failure, return -1.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFile_FromFile}{FILE *fp, char *file_name, char *mode, int close_on_del}
-Return a new file object for an already opened standard C
+Return a new file object for an already opened standard \C{}
 file pointer, \code{fp}.  A file name, \code{file_name}, and open mode,
 \code{mode}, must be provided as well as a flag, \code{close_on_del}, that
 indicates whether the file is to be closed when the file
@@ -1691,7 +1691,7 @@ modules, including the fundamental modules \code{__builtin__},
 also separate.  The new environment has no \code{sys.argv} variable.  
 It has new standard I/O stream file objects \code{sys.stdin}, 
 \code{sys.stdout} and \code{sys.stderr} (however these refer to the 
-same underlying \code{FILE} structures in the C library).
+same underlying \code{FILE} structures in the \C{} library).
 
 The return value points to the first thread state created in the new 
 sub-interpreter.  This thread state is made the current thread state.  
@@ -1775,7 +1775,7 @@ static storage; the caller should not modify its value.  This
 corresponds to the \code{prefix} variable in the top-level 
 \code{Makefile} and the \code{--prefix} argument to the 
 \code{configure} script at build time.  The value is available to 
-Python code as \code{sys.prefix}.  It is only useful on Unix.  See 
+Python code as \code{sys.prefix}.  It is only useful on \UNIX{}.  See 
 also the next function.
 \end{cfuncdesc}
 
@@ -1790,7 +1790,7 @@ the caller should not modify its value.  This corresponds to the
 \code{exec_prefix} variable in the top-level \code{Makefile} and the 
 \code{--exec_prefix} argument to the \code{configure} script at build 
 time.  The value is available to Python code as 
-\code{sys.exec_prefix}.  It is only useful on Unix.
+\code{sys.exec_prefix}.  It is only useful on \UNIX{}.
 
 Background: The exec-prefix differs from the prefix when platform 
 dependent files (such as executables and shared libraries) are 
@@ -1804,7 +1804,7 @@ software families, e.g.  Sparc machines running the Solaris 2.x
 operating system are considered the same platform, but Intel machines 
 running Solaris 2.x are another platform, and Intel machines running 
 Linux are yet another platform.  Different major revisions of the same 
-operating system generally also form different platforms.  Non-Unix 
+operating system generally also form different platforms.  Non-\UNIX{} 
 operating systems are a different story; the installation strategies 
 on those systems are so different that the prefix and exec-prefix are 
 meaningless, and set to the empty string.  Note that compiled Python 
@@ -1832,7 +1832,7 @@ Return the default module search path; this is computed from the
 program name (set by \code{Py_SetProgramName()} above) and some 
 environment variables.  The returned string consists of a series of 
 directory names separated by a platform dependent delimiter character.  
-The delimiter character is \code{':'} on Unix, \code{';'} on 
+The delimiter character is \code{':'} on \UNIX{}, \code{';'} on 
 DOS/Windows, and \code{'\\n'} (the ASCII newline character) on 
 Macintosh.  The returned string points into static storage; the caller 
 should not modify its value.  The value is available to Python code 
@@ -1858,7 +1858,7 @@ Python code as the list \code{sys.version}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{const char *}{Py_GetPlatform}{}
-Return the platform identifier for the current platform.  On Unix, 
+Return the platform identifier for the current platform.  On \UNIX{}, 
 this is formed from the ``official'' name of the operating system, 
 converted to lower case, followed by the major revision number; e.g., 
 for Solaris 2.x, which is also known as SunOS 5.x, the value is 
@@ -2014,7 +2014,7 @@ Reversely, when acquiring the lock and restoring the thread state, the
 lock must be acquired before storing the thread state pointer.
 
 Why am I going on with so much detail about this?  Because when
-threads are created from C, they don't have the global interpreter
+threads are created from \C{}, they don't have the global interpreter
 lock, nor is there a thread state data structure for them.  Such
 threads must bootstrap themselves into existence, by first creating a
 thread state data structure, then acquiring the lock, and finally
