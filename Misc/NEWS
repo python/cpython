@@ -7,7 +7,7 @@ Python News
 What's New in Python 2.3 beta 2?
 ================================
 
-*Release date: XX-XXX-2003*
+*Release date: 29-Jun-2003*
 
 Core and builtins
 -----------------
@@ -163,8 +163,8 @@ Tools/Demos
 
 - Tools/idle is gone; long live Lib/idlelib.
 
-- diff.py is a new script for print file diffs in context, unified, or ndiff
-  formats.  Provides an alternate command line interface to difflib.py.
+- diff.py prints file diffs in context, unified, or ndiff formats,
+  providing a command line interface to difflib.py.
 
 - texcheck.py is a new script for making a rough validation of Python LaTeX
   files.
