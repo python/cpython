@@ -1,0 +1,90 @@
+Magic: 12321
+
+Internal Form Definition File
+    (do not change)
+
+Number of forms: 1
+
+=============== FORM ===============
+Name: form
+Width: 230.000000
+Height: 80.000000
+Number of Objects: 5
+
+--------------------
+class: 1
+type: 1
+box: 0.000000 0.000000 230.000000 80.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 12
+type: 1
+box: 10.000000 40.000000 100.000000 30.000000
+boxtype: 1
+colors: 39 3
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: uLAW
+name: ulawbutton
+callback: cb_ulaw
+argument: 0
+
+--------------------
+class: 12
+type: 1
+box: 10.000000 10.000000 100.000000 30.000000
+boxtype: 1
+colors: 39 3
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: ADPCM
+name: adpcm_button
+callback: cb_adpcm
+argument: 0
+
+--------------------
+class: 11
+type: 0
+box: 170.000000 10.000000 50.000000 20.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: EXIT
+name: exit_button
+callback: cb_exit
+argument: 0
+
+--------------------
+class: 12
+type: 1
+box: 120.000000 40.000000 100.000000 30.000000
+boxtype: 1
+colors: 39 3
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Difference
+name: diffbutton
+callback: cb_diff
+argument: 0
+
+==============================
+create_the_forms
