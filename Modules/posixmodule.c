@@ -2572,6 +2572,14 @@ posix_fork(PyObject *self, PyObject *noargs)
 }
 #endif
 
+/* AIX uses /dev/ptc but is otherwise the same as /dev/ptmx */
+#ifdef HAVE_DEV_PTC
+#define DEV_PTY_FILE "/dev/ptc"
+#define HAVE_DEV_PTMX
+#else
+#define DEV_PTY_FILE "/dev/ptmx"
+#endif
+
 #if defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) || defined(HAVE_DEV_PTMX)
 #ifdef HAVE_PTY_H
 #include <pty.h>
@@ -2607,7 +2615,7 @@ posix_openpty(PyObject *self, PyObject *noargs)
 #ifdef HAVE_OPENPTY
 	if (openpty(&master_fd, &slave_fd, NULL, NULL, NULL) != 0)
 		return posix_error();
-#elif HAVE__GETPTY
+#elif defined(HAVE__GETPTY)
 	slave_name = _getpty(&master_fd, O_RDWR, 0666, 0);
 	if (slave_name == NULL)
 		return posix_error();
@@ -2616,7 +2624,7 @@ posix_openpty(PyObject *self, PyObject *noargs)
 	if (slave_fd < 0)
 		return posix_error();
 #else
-	master_fd = open("/dev/ptmx", O_RDWR | O_NOCTTY); /* open master */
+	master_fd = open(DEV_PTY_FILE, O_RDWR | O_NOCTTY); /* open master */
 	if (master_fd < 0)
 		return posix_error();
 	sig_saved = signal(SIGCHLD, SIG_DFL);
@@ -2637,7 +2645,7 @@ posix_openpty(PyObject *self, PyObject *noargs)
 	slave_fd = open(slave_name, O_RDWR | O_NOCTTY); /* open slave */
 	if (slave_fd < 0)
 		return posix_error();
-#ifndef __CYGWIN__ 
+#if !defined(__CYGWIN__) && !defined(HAVE_DEV_PTC)
 	ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
 	ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
