@@ -164,9 +164,16 @@ PyFrame_New(tstate, code, globals, locals)
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	builtins = PyDict_GetItem(globals, builtin_object);
-	if (builtins != NULL && PyModule_Check(builtins))
-		builtins = PyModule_GetDict(builtins);
+	if (back == NULL || back->f_globals != globals) {
+		builtins = PyDict_GetItem(globals, builtin_object);
+		if (builtins != NULL && PyModule_Check(builtins))
+			builtins = PyModule_GetDict(builtins);
+	}
+	else {
+		/* If we share the globals, we share the builtins.
+		   Save a lookup and a call. */
+		builtins = back->f_builtins;
+	}
 	if (builtins != NULL && !PyDict_Check(builtins))
 		builtins = NULL;
 	if (free_list == NULL) {
@@ -194,8 +201,12 @@ PyFrame_New(tstate, code, globals, locals)
 		_Py_NewReference(f);
 	}
 	if (builtins == NULL) {
+		/* No builtins!  Make up a minimal one. */
 		builtins = PyDict_New();
 		if (builtins == NULL)
+			return NULL;
+		/* Give them 'None', at least. */
+		if (PyDict_SetItemString(builtins, "None", Py_None) < 0)
 			return NULL;
 	}
 	else
