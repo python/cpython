@@ -40,6 +40,19 @@ It is always available.
 \obindex{traceback}
 \end{datadesc}
 
+\begin{datadesc}{exec_prefix}
+A string giving the site-specific
+directory prefix where the platform-dependent Python files are
+installed; by default, this is also \code{"/usr/local"}.  This can be
+set at build time with the \code{--exec-prefix} argument to the
+\code{configure} script.  Specifically, all configuration files
+(e.g. the \code{config.h} header file) are installed in the directory
+\code{sys.exec_prefix+"/lib/python\emph{VER}/config"}, and shared library
+modules are installed in
+\code{sys.exec_prefix+"/lib/python\emph{VER}/sharedmodules"},
+where \emph{VER} is equal to \code{sys.version[:3]}.
+\end{datadesc}
+
 \begin{funcdesc}{exit}{n}
   Exit from Python with numeric exit status \var{n}.  This is
   implemented by raising the \code{SystemExit} exception, so cleanup
@@ -78,12 +91,35 @@ It is always available.
 \begin{datadesc}{path}
   A list of strings that specifies the search path for modules.
   Initialized from the environment variable \code{PYTHONPATH}, or an
-  installation-dependent default.
+  installation-dependent default.  
+
+The first item of this list, \code{sys.path[0]}, is the 
+directory containing the script that was used to invoke the Python 
+interpreter.  If the script directory is not available (e.g.  if the 
+interpreter is invoked interactively or if the script is read from 
+standard input), \code{sys.path[0]} is the empty string, which directs 
+Python to search modules in the current directory first.  Notice that 
+the script directory is inserted {\em before} the entries inserted as 
+a result of \code{\$PYTHONPATH}.  
 \end{datadesc}
 
 \begin{datadesc}{platform}
-This string contains a platform identifier.  This can be used to
-append platform-specific components to \code{sys.path}, for instance.
+This string contains a platform identifier, e.g. \code{sunos5} or
+\code{linux1}.  This can be used to append platform-specific
+components to \code{sys.path}, for instance. 
+\end{datadesc}
+
+\begin{datadesc}{prefix}
+A string giving the site-specific directory prefix where the platform
+independent Python files are installed; by default, this is the string
+\code{"/usr/local"}.  This can be set at build time with the
+\code{--prefix} argument to the \code{configure} script.  The main
+collection of Python library modules is installed in the directory
+\code{sys.prefix+"/lib/python\emph{VER}"} while the platform
+independent header files (all except \code{config.h}) are stored in
+\code{sys.prefix+"/include/python\emph{VER}"},
+where \emph{VER} is equal to \code{sys.version[:3]}.
+
 \end{datadesc}
 
 \begin{datadesc}{ps1}
@@ -149,4 +185,8 @@ maximum number of levels of traceback information printed when an
 unhandled exception occurs.  The default is 1000.  When set to 0 or
 less, all traceback information is suppressed and only the exception
 type and value are printed.
+\end{datadesc}
+
+\begin{datadesc}{version}
+A string containing the version number of the Python interpreter.  
 \end{datadesc}
