@@ -23,11 +23,11 @@ size = 2500000000L
 name = test_support.TESTFN
 
 
-# On Windows this test comsumes large resources; It takes a long time to build
-# the >2GB file and takes >2GB of disk space therefore the resource must be
-# enabled to run this test.  If not, nothing after this line stanza will be
-# executed.
-if sys.platform[:3] == 'win':
+# On Windows and Mac OSX this test comsumes large resources; It takes
+# a long time to build the >2GB file and takes >2GB of disk space
+# therefore the resource must be enabled to run this test.  If not,
+# nothing after this line stanza will be executed.
+if sys.platform[:3] == 'win' or sys.platform == 'darwin':
     test_support.requires(
         'largefile',
         'test requires %s bytes and a long time to run' % str(size))
