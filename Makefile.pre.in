@@ -796,9 +796,9 @@ frameworkinfrastructureinstall:	$(LDLIBRARY)
 
 # Build Python executable that can run GUI code. Another MacOSX pseudo
 # target.
-python.app:
-	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile install installmacsubtree \
-		PYTHONSRCDIR=$(srcdir) PYTHONBUILDDIR=.
+osxapps:
+	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile installmacsubtree install_all \
+		srcdir=$(srcdir) builddir=.
 
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
