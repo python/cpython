@@ -104,3 +104,13 @@ class SAXNotSupportedException(SAXException):
     perform is requested (specifically setting a state or value). SAX
     applications and extensions may use this class for similar
     purposes."""
+
+# ===== SAXNOTSUPPORTEDEXCEPTION =====
+
+class SAXReaderNotAvailable(SAXNotSupportedException):
+    """Exception class for a missing driver.
+
+    An XMLReader module (driver) should raise this exception when it
+    is first imported, e.g. when a support module cannot be imported.
+    It also may be raised during parsing, e.g. if executing an external
+    program is not permitted."""

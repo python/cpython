@@ -2,10 +2,15 @@
 # regression test for SAX 2.0
 # $Id$
 
+from xml.sax import make_parser, ContentHandler
+try:
+    make_parser()
+except xml.sax.SAXReaderNotAvailable:
+    # don't try to test this module if we cannot create a parser
+    raise ImportError("no XML parsers available")
 from xml.sax.saxutils import XMLGenerator, escape, XMLFilterBase
 from xml.sax.expatreader import create_parser
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
-from xml.sax.handler import ContentHandler
 from cStringIO import StringIO
 from test_support import verbose, TestFailed, findfile
 
@@ -40,6 +45,17 @@ def test_escape_all():
 
 def test_escape_extra():
     return escape("Hei på deg", {"å" : "&aring;"}) == "Hei p&aring; deg"
+
+def test_make_parser():
+    try:
+        # Creating a parser should succeed - it should fall back
+        # to the expatreader
+        p = make_parser(['xml.parsers.no_such_parser'])
+    except:
+        return 0
+    else:
+        return p
+
 
 # ===== XMLGenerator
 
