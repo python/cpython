@@ -14,17 +14,28 @@ dictionaries.  Keys and values must be strings, however, so to use
 other objects as keys or to store other kinds of objects the user must
 serialize them somehow, typically using marshal.dumps or pickle.dumps.
 
-There are two incompatible versions of the underlying library.
-Version 1.85 is widely available, but has some known bugs.  Version 2
-is not quite as widely used, but does offer some improvements.  The
-\module{bsddb} module uses the 1.85 interface.  Starting with Python
-2.0, the \program{configure} script can usually determine the
-version of the library which is available and build it correctly.  If
-you have difficulty getting \program{configure} to do the right thing,
-run it with the \longprogramopt{help} option to get information about
-additional options that can help.  On Windows, you will need to define
-the \code{HAVE_DB_185_H} macro if you are building Python from source
-and using version 2 of the DB library.
+Starting with Python 2.3 the \module{bsddb} module requires the
+Berkeley DB library version 3.1 or later (it is known to work with 3.1
+thru 4.1 at the time of this writing).
+
+NOTE: BerkeleyDB has its own license which may apply to you if you
+intend to distribute your application outside of your organization in
+a non-opensource manner.  Visit Sleepycat Software's website to read
+the full license.
+
+\begin{seealso}
+  \seeurl{http://pybsddb.sourceforge.net/}{Website with documentation
+  for the new python Berkeley DB interface that closely mirrors the 
+  sleepycat object oriented interface provided in Berkeley DB 3 and 4.}
+  \seeurl{http://www.sleepycat.com/}{Sleepycat Software produces the
+  modern Berkeley DB library.  They offer support and sell licenses for
+  proprietary software using BerkeleyDB.}
+\end{seealso}
+
+The following is a description of the legacy \module{bsddb} interface
+compatible with the old python bsddb module.  For details about the more
+modern Db and DbEnv object oriented interface see the above mentioned
+pybsddb URL.
 
 The \module{bsddb} module defines the following functions that create
 objects that access the appropriate type of Berkeley DB file.  The
@@ -41,7 +52,7 @@ Open the hash format file named \var{filename}.  Files never intended
 to be preserved on disk may be created by passing \code{None} as the 
 \var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
-\character{r} (read only), \character{w} (read-write),
+\character{r} (read only, default), \character{w} (read-write) ,
 \character{c} (read-write - create if necessary) or
 \character{n} (read-write - truncate to zero length).  The other
 arguments are rarely used and are just passed to the low-level
@@ -57,7 +68,7 @@ Open the btree format file named \var{filename}.  Files never intended
 to be preserved on disk may be created by passing \code{None} as the 
 \var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
-\character{r} (read only), \character{w} (read-write),
+\character{r} (read only, default), \character{w} (read-write),
 \character{c} (read-write - create if necessary) or
 \character{n} (read-write - truncate to zero length).  The other
 arguments are rarely used and are just passed to the low-level dbopen
@@ -73,7 +84,7 @@ Open a DB record format file named \var{filename}.  Files never intended
 to be preserved on disk may be created by passing \code{None} as the 
 \var{filename}.  The optional
 \var{flag} identifies the mode used to open the file.  It may be
-\character{r} (read only), \character{w} (read-write),
+\character{r} (read only, default), \character{w} (read-write),
 \character{c} (read-write - create if necessary) or
 \character{n} (read-write - truncate to zero length).  The other
 arguments are rarely used and are just passed to the low-level dbopen
