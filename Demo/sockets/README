@@ -5,10 +5,12 @@ echosvr.py		About the simplest TCP server possible.
 finger.py		Client for the 'finger' protocol.
 ftp.py			A very simple ftp client.
 gopher.py		A simple gopher client.
+radio.py		Receive time broadcasts from broadcast.py.
 telnet.py		Client for the 'telnet' protocol.
 throughput.py		Client and server to measure TCP throughput.
+unixclient.py		Unix socket example, client side
+unixserver.py		Unix socket example, server side
 udpecho.py		Client and server for the UDP echo protocol.
-radio.py		Receive time broadcasts from broadcast.py.
 
 The following file is only relevant on SGI machines (or other systems
 that support multicast):
