@@ -1,0 +1,34 @@
+MW library layout:
+
+header
+	magic word, magic processor flag ('MWOBPPC ') - 2x 4 bytes
+	magic flags, version (file format version?) - 2x 4 bytes
+	code size - 4 bytes
+	data size - 4 bytes
+	# of objects - 4 bytes
+
+	header for file 1 - 20 bytes
+		- modification time - 4 bytes
+		- offset to filename - 4 bytes
+		- offset to full path - 4 bytes (NOTE: NOT a full path in reality!)
+		- offset to object data - 4 bytes
+		- size of object data - 4 bytes
+
+	...
+
+	header for file n - 20 bytes
+
+	file 1 name + NUL - variable
+	file 1 name + NUL - variable
+	file 2 name + NUL - variable
+	file 2 name + NUL - variable
+	...
+	file n name + NUL - variable
+	file n name + NUL - variable
+
+	padding to multiple of 4 bytes - 0 - 3 bytes
+
+file 1 data - variable (padded to 4-byte boundary)
+file 2 data - variable (padded to 4-byte boundary)
+...
+file n data - variable (padded to 4-byte boundary)

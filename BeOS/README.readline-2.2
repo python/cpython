@@ -1,0 +1,56 @@
+GNU readline 2.2 for BeOS
+
+You can get the original GNU readline 2.2 source code from your favourite
+GNU software repository, such as ftp://prep.ai.mit.edu/pub/gnu/.
+
+You can get the only-slightly-modified-for-BeOS version of GNU readline 2.2
+from the GeekGadgets repository; ftp://ftp.ninemoons.com/pub/geekgadgets/.
+
+BUILDING libreadline for BeOS hosts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Note that we don't build a shared library version of libreadline and
+libhistory.  That's left as an exercise for the reader.
+
+You won't be able to link against libreadline.a using the limited linker.
+
+1) If you're on a PowerPC system, install the POSIX ar from 
+   http://www.qnx.com/~chrish/Be/software/index.html#programming
+   (note that it's currently packaged with Python, in the BeOS/ar-1.1
+   directory).
+   
+   If you're on an x86 system, you can leave out the "AR=ar-posix" part
+   of the following instructions.  In fact, you'll have to...
+
+2) For PowerPC, configure with:
+
+   CC=mwcc CFLAGS="-O7 -i- -I." AR=ar-posix RANLIB=: ./configure --verbose \
+   --without-gcc --prefix=/boot/home/config powerpc-*-beos
+
+   For x86, configure with:
+   
+   CC=mwcc CFLAGS="-O2 -i- -I." RANLIB=: ./configure --verbose \
+   --without-gcc --prefix=/boot/home/config x86-*-beos
+
+   Don't worry about the warnings/errors configure spews for
+   powerpc-*-beos or x86-*-beos; readline doesn't actually use this host 
+   information    for anything, although configure will die if you don't 
+   specify it.
+
+3) Edit config.h to comment out "#define HAVE_SELECT 1"; select() on
+   BeOS doesn't work on file descriptors (such as stdin).
+
+4) For PowerPC, make with:
+
+   make AR=ar-posix 
+
+   For x86, make with:
+   
+   make
+
+5) Install with:
+
+   make install
+
+- Chris Herborth (chrish@qnx.com)
+  April 21, 1998

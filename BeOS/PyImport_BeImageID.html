@@ -1,0 +1,47 @@
+<html>
+<head>
+<title>PyImport_BeImageID()</title>
+</head>
+<body text="#000000" bgcolor="#ffffff">
+
+<h1>PyImport_BeImageID()</h1>
+
+<dl compact>
+
+<dt><strong>NOTE:</strong><dt>
+
+<dd>This is documentation for the BeOS-specific 
+	<code>PyImport_BeImageID()</code> function defined in 
+	<tt>Python/importdl.c</tt>; it should be merged with the
+	<cite>Importing Modules</cite> section of the <cite>Python/C API</cite> 
+	reference (or it should be the first member of a BeOS-specific 
+	document in the <tt>BeOS</tt> directory).</dd>
+
+</dl>
+
+<dl compact
+
+<dt><code>image_id <b>PyImport_BeImageID</b>( char *<i>name</i> )</code></dt>
+
+<dd>Return the BeOS image ID (see the
+	<a href="file:///boot/beos/documentation/Be%20Book/The%20Kernel%20Kit/Images.html">Images</a>
+	section in the 
+	<a href="file:///boot/beos/documentation/Be%20Book/The%20Kernel%20Kit/index.html">Kernel 
+	Kit</a>) for the module object corresponding to a module <i>name</i>.
+	If the specified module is not dynamically loaded, 
+	<code>PyImport_BeImageID()</code> will return <code>B_ERROR</code>,
+	otherwise it will return a valid <code>image_id</code>.
+
+	<p>Using <code>PyImport_BeImageID()</code> outside of a BeOS-specific
+	module is probably a very bad idea.</p></dd>
+
+</dl>
+
+<hr>
+<p>Function added by Donn Cave 
+(<a href="mailto:donn@u.washington.edu"><tt>donn@u.washington.edu</tt></a>),
+documented by Chris Herborth
+(<a href="mailto:chrish@qnx.com"><tt>chrish@qnx.com</tt></a>).</p>
+
+</body>
+</html>
