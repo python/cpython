@@ -428,7 +428,7 @@ def caselesssort(alist):
 def tuple_caselesssort(items):
 	try:
 		tupledlist = map(lambda tuple, lower = string.lower: (lower(tuple[0]), tuple), items)
-	except TypeError:
+	except (AttributeError, TypeError):
 		items = items[:]
 		items.sort()
 		return items
