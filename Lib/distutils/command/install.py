@@ -90,6 +90,15 @@ class install (Command):
         ('install-data=', None,
          "installation directory for data files"),
 
+        # Byte-compilation options -- see install_lib.py for details, as
+        # these are duplicated from there (but only install_lib does
+        # anything with them).
+        ('compile', 'c', "compile .py to .pyc [default]"),
+        ('no-compile', None, "don't compile .py files"),
+        ('optimize=', 'O',
+         "also compile with optimization: -O1 for \"python -O\", "
+         "-O2 for \"python -OO\", and -O0 to disable [default: -O0]"),
+         
         # Miscellaneous control options
         ('force', 'f',
          "force installation (overwrite any existing files)"),
@@ -134,6 +143,9 @@ class install (Command):
         self.install_lib = None         # set to either purelib or platlib
         self.install_scripts = None
         self.install_data = None
+
+        self.compile = None
+        self.optimize = None
 
         # These two are for putting non-packagized distributions into their
         # own directory and creating a .pth file if it makes sense.
