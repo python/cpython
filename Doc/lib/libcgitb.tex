@@ -9,15 +9,14 @@
 \versionadded{2.2}
 \index{CGI!exceptions}
 \index{CGI!tracebacks}
-\index{exception!in CGI scripts}
-\index{traceback!in CGI scripts}
+\index{exceptions!in CGI scripts}
+\index{tracebacks!in CGI scripts}
 
 The \module{cgitb} module provides a special exception handler for CGI
-scripts.  After this module is activated using the \function{enable()}
-function, if an uncaught exception occurs, a detailed, formatted
-report will be sent to the Web browser.  The report includes a
-traceback showing excerpts of the source code for each level, as well
-as the values of the arguments and local variables to currently
+scripts.  After this module is activated, if an uncaught exception occurs,
+a detailed, formatted report will be sent to the Web browser.  The report
+includes a traceback showing excerpts of the source code for each level,
+as well as the values of the arguments and local variables to currently
 running functions, to help you debug the problem.  Optionally, you can
 save this information to a file instead of sending it to the browser.
 
