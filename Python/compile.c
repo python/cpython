@@ -3606,10 +3606,20 @@ com_import_stmt(struct compiling *c, node *n)
 			}
 			REQ(nn, import_as_names);
 			tup = PyTuple_New((NCH(nn) + 1) / 2);
-			for (i = 0; i < NCH(nn); i += 2)
-				PyTuple_SET_ITEM(tup, i / 2,
-					PyString_FromString(STR(
-						CHILD(CHILD(nn, i), 0))));
+            for (i = 0; i < NCH(nn); i += 2) {
+                PyObject *s = PyString_FromString(
+                    STR(CHILD(CHILD(nn, i), 0)));
+                if (s == NULL) {
+                    Py_CLEAR(tup);
+                    break;
+                } else
+                    PyTuple_SET_ITEM(tup, i / 2, s);
+            }
+            if (tup == NULL) {
+                /* Assume that failue above was MemoryError */
+                com_error(c, PyExc_MemoryError, "");
+                return;
+            }
 		}
 		com_addoparg(c, LOAD_CONST, com_addconst(c, tup));
 		Py_DECREF(tup);
