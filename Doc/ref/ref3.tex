@@ -925,7 +925,8 @@ reference is deleted.  It is not guaranteed that
 the interpreter exits.
 \stindex{del}
 
-\strong{Programmer's note:} \samp{del x} doesn't directly call
+\begin{notice}
+\samp{del x} doesn't directly call
 \code{x.__del__()} --- the former decrements the reference count for
 \code{x} by one, and the latter is only called when its reference
 count reaches zero.  Some common situations that may prevent the
@@ -938,13 +939,22 @@ alive); or a reference to the object on the stack frame that raised an
 unhandled exception in interactive mode (the traceback stored in
 \code{sys.last_traceback} keeps the stack frame alive).  The first
 situation can only be remedied by explicitly breaking the cycles; the
-latter two situations can be resolved by storing None in
-\code{sys.exc_traceback} or \code{sys.last_traceback}.
+latter two situations can be resolved by storing \code{None} in
+\code{sys.exc_traceback} or \code{sys.last_traceback}.  Circular
+references which are garbage are detected when the option cycle
+detector is enabled (it's on by default), but can only be cleaned up
+if there are no Python-level \method{__del__()} methods involved.
+Refer to the documentation for the \ulink{\module{gc}
+module}{../lib/module-gc.html} for more information about how
+\method{__del__()} methods are handled by the cycle detector,
+particularly the description of the \code{garbage} value.
+\end{notice}
 
-\warning{Due to the precarious circumstances under which
+\begin{notice}[warning]
+Due to the precarious circumstances under which
 \method{__del__()} methods are invoked, exceptions that occur during their
 execution are ignored, and a warning is printed to \code{sys.stderr}
-instead.  Also, when \method{__del__()} is invoked is response to a module
+instead.  Also, when \method{__del__()} is invoked in response to a module
 being deleted (e.g., when execution of the program is done), other
 globals referenced by the \method{__del__()} method may already have been
 deleted.  For this reason, \method{__del__()} methods should do the
@@ -953,7 +963,8 @@ guarantees that globals whose name begins with a single underscore are
 deleted from their module before other globals are deleted; if no
 other references to such globals exist, this may help in assuring that
 imported modules are still available at the time when the
-\method{__del__()} method is called.}
+\method{__del__()} method is called.
+\end{notice}
 \end{methoddesc}
 
 \begin{methoddesc}[object]{__repr__}{self}
