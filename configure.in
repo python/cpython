@@ -346,18 +346,14 @@ AC_MSG_RESULT($LINKFORSHARED)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 AC_CHECK_LIB(sun, getpwnam)	# NIS (== YP) interface for IRIX 4
-# The following three (nsl,inet,socket) are needed on Sequent;
-# the order of checking must be this.  Most SVR4 platforms will
-# need -lsocket and -lnsl.  However on SGI IRIX 5, these exist but
-# broken.  I see no elegant solution (probably CHECK_LIB should be
-# fixed to only add the library if the given entry point is not
-# satisfied without it).
+# Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
+# However on SGI IRIX, these exist but are broken.
 if test "$ac_sys_system" != IRIX
 then
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
-AC_CHECK_LIB(inet, gethostbyname, [LIBS="-linet $LIBS"], [], -lnsl) # Sequent
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 fi
+
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs, [--with-libs='lib1 ...'    link against additional libs], [
 AC_MSG_RESULT($withval)
