@@ -422,7 +422,7 @@ r_object(p)
 			buf[n] = '\0';
 			PyFPE_START_PROTECT("atof", return 0)
 			dx = atof(buf);
-			PyFPE_END_PROTECT
+			PyFPE_END_PROTECT(dx)
 			return newfloatobject(dx);
 		}
 	
@@ -441,7 +441,7 @@ r_object(p)
 			buf[n] = '\0';
 			PyFPE_START_PROTECT("atof", return 0)
 			c.real = atof(buf);
-			PyFPE_END_PROTECT
+			PyFPE_END_PROTECT(c)
 			n = r_byte(p);
 			if (r_string(buf, (int)n, p) != n) {
 				err_setstr(EOFError,
@@ -451,7 +451,7 @@ r_object(p)
 			buf[n] = '\0';
 			PyFPE_START_PROTECT("atof", return 0)
 			c.imag = atof(buf);
-			PyFPE_END_PROTECT
+			PyFPE_END_PROTECT(c)
 			return newcomplexobject(c);
 		}
 #endif

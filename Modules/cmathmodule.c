@@ -249,7 +249,7 @@ math_1(args, func)
 	errno = 0;
 	PyFPE_START_PROTECT("complex function", return 0)
 	x = (*func)(x);
-	PyFPE_END_PROTECT
+	PyFPE_END_PROTECT(x)
 	CHECK(x.real);
 	CHECK(x.imag);
 	if (errno != 0)

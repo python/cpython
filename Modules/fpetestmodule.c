@@ -120,11 +120,11 @@ static double nest1(int i, double x)
     /* This (following) message is never seen. */
     PyFPE_START_PROTECT("Division by zero, inner zone", return 3.1416)
     a = 1./(1. - x);
-    PyFPE_END_PROTECT
+    PyFPE_END_PROTECT(a)
   }else if(i == 2){
     a = 1./(2. - x);
   }
-  PyFPE_END_PROTECT
+  PyFPE_END_PROTECT(a)
 
   return a;
 }
@@ -140,7 +140,7 @@ static double nest2(int i, double x)
   }else if(i == 2){
     a = 1./(2. - x);
   }
-  PyFPE_END_PROTECT
+  PyFPE_END_PROTECT(a)
   return a;
 }
 
@@ -150,7 +150,7 @@ static double nest3(double x)
   /* This (following) message is never seen. */
   PyFPE_START_PROTECT("Division by zero, nest3 error", return 3.1416)
   result = 1./(1. - x);
-  PyFPE_END_PROTECT
+  PyFPE_END_PROTECT(result)
   return result;
 }
 
@@ -159,7 +159,7 @@ static double db0(double x)
   double a;
   PyFPE_START_PROTECT("Division by zero", return 3.1416)
   a = 1./x;
-  PyFPE_END_PROTECT
+  PyFPE_END_PROTECT(a)
   return a;
 }
 
@@ -168,7 +168,7 @@ static double overflow(double b)
   double a;
   PyFPE_START_PROTECT("Overflow", return 3.1416)
   a = b*b;
-  PyFPE_END_PROTECT
+  PyFPE_END_PROTECT(a)
   return a;
 }
 

@@ -12,5 +12,5 @@
 #ifdef WANT_SIGFPE_HANDLER
 jmp_buf PyFPE_jbuf;
 int PyFPE_counter = 0;
-double PyFPE_dummy(void){return(1.0);}
+double PyFPE_dummy(){return(1.0);}
 #endif
