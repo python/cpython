@@ -95,8 +95,9 @@ def copy_file (src, dst,
     Under Mac OS, uses the native file copy function in macostools; on
     other systems, uses '_copy_file_contents()' to copy file contents.
 
-    Return the name of the destination file, whether it was actually copied
-    or not.
+    Return a tuple (dest_name, copied): 'dest_name' is the actual name of
+    the output file, and 'copied' is true if the file was copied (or would
+    have been copied, if 'dry_run' true).
     """
     # XXX if the destination file already exists, we clobber it if
     # copying, but blow up if linking.  Hmmm.  And I don't know what
@@ -121,7 +122,7 @@ def copy_file (src, dst,
     if update and not newer(src, dst):
         if verbose:
             print "not copying %s (output up-to-date)" % src
-        return dst
+        return (dst, 0)
 
     try:
         action = _copy_action[link]
@@ -135,9 +136,9 @@ def copy_file (src, dst,
             print "%s %s -> %s" % (action, src, dst)
             
     if dry_run:
-        return dst
+        return (dst, 1)
 
-    # On a Mac, use the native file copy routine
+    # On Mac OS, use the native file copy routine
     if os.name == 'mac':
         import macostools
         try:
@@ -169,7 +170,7 @@ def copy_file (src, dst,
             if preserve_mode:
                 os.chmod(dst, S_IMODE(st[ST_MODE]))
 
-    return dst
+    return (dst, 1)
 
 # copy_file ()
 
