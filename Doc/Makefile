@@ -53,7 +53,7 @@ DVIPS=		dvips -f -N0
 DISTILL=	distill
 MAKEINDEX=	makeindex -s texinputs/myindex.ist
 L2H=		TEXINPUTS=$(TEXINPUTS) latex2html -init_file perl/l2hinit.perl
-L2HARGS=	-address $$LOGNAME@`domainname`
+L2HARGS=
 WEBCHECKER=	$(PYTHON) ../Tools/webchecker/webchecker.py
 
 # Install destination -- not used now but might be useful some time...
