@@ -27,15 +27,14 @@ The \module{uu} module defines the following functions:
 Uuencode file \var{in_file} into file \var{out_file}.  The uuencoded
 file will have the header specifying \var{name} and \var{mode} as the
 defaults for the results of decoding the file. The default defaults
-are taken from \var{in_file}, or \code{'-'} and \code{0666}
-respectively. 
+are taken from \var{in_file}, or \code{'-'} and \code{0666} respectively. 
 \end{funcdesc}
 
 \begin{funcdesc}{decode}{in_file\optional{, out_file\optional{, mode}}}
 This call decodes uuencoded file \var{in_file} placing the result on
-file \var{out_file}. If \var{out_file} is a pathname the \var{mode} is
-also set. Defaults for \var{out_file} and \var{mode} are taken from
-the uuencode header.
+file \var{out_file}. If \var{out_file} is a pathname, \var{mode} is
+used to set the permission bits if the file must be created. Defaults
+for \var{out_file} and \var{mode} are taken from the uuencode header.
 \end{funcdesc}
 
 
