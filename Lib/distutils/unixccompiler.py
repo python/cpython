@@ -190,45 +190,19 @@ class UnixCCompiler (CCompiler):
     # create_static_lib ()
 
 
-    def link_shared_lib (self,
-                         objects,
-                         output_libname,
-                         output_dir=None,
-                         libraries=None,
-                         library_dirs=None,
-                         runtime_library_dirs=None,
-                         export_symbols=None,
-                         debug=0,
-                         extra_preargs=None,
-                         extra_postargs=None,
-                         build_temp=None):
-
-        self.link_shared_object(
-            objects,
-            self.library_filename(output_libname, lib_type='shared'),
-            output_dir,
-            libraries,
-            library_dirs,
-            runtime_library_dirs,
-            export_symbols,
-            debug,
-            extra_preargs,
-            extra_postargs,
-            build_temp)
-        
-
-    def link_shared_object (self,
-                            objects,
-                            output_filename,
-                            output_dir=None,
-                            libraries=None,
-                            library_dirs=None,
-                            runtime_library_dirs=None,
-                            export_symbols=None,
-                            debug=0,
-                            extra_preargs=None,
-                            extra_postargs=None,
-                            build_temp=None):
+    def link (self,
+              target_desc,    
+              objects,
+              output_filename,
+              output_dir=None,
+              libraries=None,
+              library_dirs=None,
+              runtime_library_dirs=None,
+              export_symbols=None,
+              debug=0,
+              extra_preargs=None,
+              extra_postargs=None,
+              build_temp=None):
 
         (objects, output_dir) = self._fix_object_args(objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
@@ -253,54 +227,16 @@ class UnixCCompiler (CCompiler):
                 ld_args.extend(extra_postargs)
             self.mkpath(os.path.dirname(output_filename))
             try:
-                self.spawn(self.linker_so + ld_args)
+                if target_desc == CCompiler.EXECUTABLE:    
+                    self.spawn(self.linker_exe + ld_args)
+                else:
+                    self.spawn(self.linker_so + ld_args)
             except DistutilsExecError, msg:
                 raise LinkError, msg
         else:
             self.announce("skipping %s (up-to-date)" % output_filename)
 
-    # link_shared_object ()
-
-
-    def link_executable (self,
-                         objects,
-                         output_progname,
-                         output_dir=None,
-                         libraries=None,
-                         library_dirs=None,
-                         runtime_library_dirs=None,
-                         debug=0,
-                         extra_preargs=None,
-                         extra_postargs=None):
-    
-        (objects, output_dir) = self._fix_object_args(objects, output_dir)
-        (libraries, library_dirs, runtime_library_dirs) = \
-            self._fix_lib_args(libraries, library_dirs, runtime_library_dirs)
-
-        lib_opts = gen_lib_options(self,
-                                   library_dirs, runtime_library_dirs,
-                                   libraries)
-        output_filename = output_progname # Unix-ism!
-        if output_dir is not None:
-            output_filename = os.path.join(output_dir, output_filename)
-
-        if self._need_link(objects, output_filename):
-            ld_args = objects + self.objects + lib_opts + ['-o', output_filename]
-            if debug:
-                ld_args[:0] = ['-g']
-            if extra_preargs:
-                ld_args[:0] = extra_preargs
-            if extra_postargs:
-                ld_args.extend(extra_postargs)
-            self.mkpath(os.path.dirname(output_filename))
-            try:
-                self.spawn(self.linker_exe + ld_args)
-            except DistutilsExecError, msg:
-                raise LinkError, msg
-        else:
-            self.announce("skipping %s (up-to-date)" % output_filename)
-
-    # link_executable ()
+    # link ()
 
 
     # -- Miscellaneous methods -----------------------------------------

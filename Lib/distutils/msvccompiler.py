@@ -205,7 +205,7 @@ class MSVCCompiler (CCompiler) :
             version = versions[0]  # highest version
 
             self.cc   = find_exe("cl.exe", version)
-            self.link = find_exe("link.exe", version)
+            self.linker = find_exe("link.exe", version)
             self.lib  = find_exe("lib.exe", version)
             self.rc   = find_exe("rc.exe", version)     # resource compiler
             self.mc   = find_exe("mc.exe", version)     # message compiler
@@ -221,7 +221,7 @@ class MSVCCompiler (CCompiler) :
         else:
             # devstudio not found in the registry
             self.cc = "cl.exe"
-            self.link = "link.exe"
+            self.linker = "link.exe"
             self.lib = "lib.exe"
             self.rc = "rc.exe"
             self.mc = "mc.exe"
@@ -396,45 +396,19 @@ class MSVCCompiler (CCompiler) :
 
     # create_static_lib ()
     
-
-    def link_shared_lib (self,
-                         objects,
-                         output_libname,
-                         output_dir=None,
-                         libraries=None,
-                         library_dirs=None,
-                         runtime_library_dirs=None,
-                         export_symbols=None,
-                         debug=0,
-                         extra_preargs=None,
-                         extra_postargs=None,
-                         build_temp=None):
-
-        self.link_shared_object (objects,
-                                 self.shared_library_name(output_libname),
-                                 output_dir=output_dir,
-                                 libraries=libraries,
-                                 library_dirs=library_dirs,
-                                 runtime_library_dirs=runtime_library_dirs,
-                                 export_symbols=export_symbols,
-                                 debug=debug,
-                                 extra_preargs=extra_preargs,
-                                 extra_postargs=extra_postargs,
-                                 build_temp=build_temp)
-                    
-    
-    def link_shared_object (self,
-                            objects,
-                            output_filename,
-                            output_dir=None,
-                            libraries=None,
-                            library_dirs=None,
-                            runtime_library_dirs=None,
-                            export_symbols=None,
-                            debug=0,
-                            extra_preargs=None,
-                            extra_postargs=None,
-                            build_temp=None):
+    def link (self,
+              target_desc,
+              objects,
+              output_filename,
+              output_dir=None,
+              libraries=None,
+              library_dirs=None,
+              runtime_library_dirs=None,
+              export_symbols=None,
+              debug=0,
+              extra_preargs=None,
+              extra_postargs=None,
+              build_temp=None):
 
         (objects, output_dir) = self._fix_object_args (objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
@@ -452,10 +426,16 @@ class MSVCCompiler (CCompiler) :
 
         if self._need_link (objects, output_filename):
 
-            if debug:
-                ldflags = self.ldflags_shared_debug
+            if target_desc == CCompiler.EXECUTABLE:
+                if debug:
+                    ldflags = self.ldflags_shared_debug[1:]
+                else:
+                    ldflags = self.ldflags_shared[1:]
             else:
-                ldflags = self.ldflags_shared
+                if debug:
+                    ldflags = self.ldflags_shared_debug
+                else:
+                    ldflags = self.ldflags_shared
 
             export_opts = []
             for sym in (export_symbols or []):
@@ -469,12 +449,13 @@ class MSVCCompiler (CCompiler) :
             # needed! Make sure they are generated in the temporary build
             # directory. Since they have different names for debug and release
             # builds, they can go into the same directory.
-            (dll_name, dll_ext) = os.path.splitext(
-                os.path.basename(output_filename))
-            implib_file = os.path.join(
-                os.path.dirname(objects[0]),
-                self.library_filename(dll_name))
-            ld_args.append ('/IMPLIB:' + implib_file)
+            if export_symbols is not None:
+                (dll_name, dll_ext) = os.path.splitext(
+                    os.path.basename(output_filename))
+                implib_file = os.path.join(
+                    os.path.dirname(objects[0]),
+                    self.library_filename(dll_name))
+                ld_args.append ('/IMPLIB:' + implib_file)
 
             if extra_preargs:
                 ld_args[:0] = extra_preargs
@@ -483,65 +464,15 @@ class MSVCCompiler (CCompiler) :
 
             self.mkpath (os.path.dirname (output_filename))
             try:
-                self.spawn ([self.link] + ld_args)
+                self.spawn ([self.linker] + ld_args)
             except DistutilsExecError, msg:
                 raise LinkError, msg
 
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
-    # link_shared_object ()
+    # link ()
 
-
-    def link_executable (self,
-                         objects,
-                         output_progname,
-                         output_dir=None,
-                         libraries=None,
-                         library_dirs=None,
-                         runtime_library_dirs=None,
-                         debug=0,
-                         extra_preargs=None,
-                         extra_postargs=None):
-
-        (objects, output_dir) = self._fix_object_args (objects, output_dir)
-        (libraries, library_dirs, runtime_library_dirs) = \
-            self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
-
-        if runtime_library_dirs:
-            self.warn ("I don't know what to do with 'runtime_library_dirs': "
-                       + str (runtime_library_dirs))
-        
-        lib_opts = gen_lib_options (self,
-                                    library_dirs, runtime_library_dirs,
-                                    libraries)
-        output_filename = output_progname + self.exe_extension
-        if output_dir is not None:
-            output_filename = os.path.join (output_dir, output_filename)
-
-        if self._need_link (objects, output_filename):
-
-            if debug:
-                ldflags = self.ldflags_shared_debug[1:]
-            else:
-                ldflags = self.ldflags_shared[1:]
-
-            ld_args = ldflags + lib_opts + \
-                      objects + ['/OUT:' + output_filename]
-
-            if extra_preargs:
-                ld_args[:0] = extra_preargs
-            if extra_postargs:
-                ld_args.extend (extra_postargs)
-
-            self.mkpath (os.path.dirname (output_filename))
-            try:
-                self.spawn ([self.link] + ld_args)
-            except DistutilsExecError, msg:
-                raise LinkError, msg
-        else:
-            self.announce ("skipping %s (up-to-date)" % output_filename)   
-    
 
     # -- Miscellaneous methods -----------------------------------------
     # These are all used by the 'gen_lib_options() function, in
