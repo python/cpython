@@ -6,7 +6,6 @@
 Error = 'Split.Error'	# Exception
 
 import rect
-from util import remove
 
 class Split():
 	#
@@ -89,15 +88,15 @@ class Split():
 	def delchild(self, child):
 		if child not in self.children:
 			raise Error, 'delchild: child not in list'
-		remove(child, self.children)
+		self.children.remove(child)
 		if child in self.mouse_interest:
-			remove(child, self.mouse_interest)
+			self.mouse_interest.remove(child)
 		if child in self.keybd_interest:
-			remove(child, self.keybd_interest)
+			self.keybd_interest.remove(child)
 		if child in self.timer_interest:
-			remove(child, self.timer_interest)
+			self.timer_interest.remove(child)
 		if child in self.altdraw_interest:
-			remove(child, self.altdraw_interest)
+			self.altdraw_interest.remove(child)
 		if child = self.mouse_focus:
 			self.mouse_focus = 0
 	#
@@ -107,7 +106,7 @@ class Split():
 			self.parent.need_mouse(self)
 	def no_mouse(self, child):
 		if child in self.mouse_interest:
-			remove(child, self.mouse_interest)
+			self.mouse_interest.remove(child)
 			if not self.mouse_interest:
 				self.parent.no_mouse(self)
 	#
@@ -117,7 +116,7 @@ class Split():
 			self.parent.need_keybd(self)
 	def no_keybd(self, child):
 		if child in self.keybd_interest:
-			remove(child, self.keybd_interest)
+			self.keybd_interest.remove(child)
 			if not self.keybd_interest:
 				self.parent.no_keybd(self)
 	#
@@ -127,7 +126,7 @@ class Split():
 			self.parent.need_timer(self)
 	def no_timer(self, child):
 		if child in self.timer_interest:
-			remove(child, self.timer_interest)
+			self.timer_interest.remove(child)
 			if not self.timer_interest:
 				self.parent.no_timer(self)
 	#
@@ -137,7 +136,7 @@ class Split():
 			self.parent.need_altdraw(self)
 	def no_altdraw(self, child):
 		if child in self.altdraw_interest:
-			remove(child, self.altdraw_interest)
+			self.altdraw_interest.remove(child)
 			if not self.altdraw_interest:
 				self.parent.no_altdraw(self)
 	#
