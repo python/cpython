@@ -566,12 +566,55 @@ al_setparams(self, args)
 	return doParams(args, ALsetparams, 0);
 }
 
+static object *
+al_getname(self, args)
+	object *self, *args;
+{
+	long device, descriptor;
+	char *name;
+	if (!getargs(args, "(ll)", &device, &descriptor))
+		return NULL;
+	name = ALgetname(device, descriptor);
+	if (name == NULL) {
+		err_setstr(ValueError, "al.getname: bad descriptor");
+		return NULL;
+	}
+	return newstringobject(name);
+}
+
+static object *
+al_getdefault(self, args)
+	object *self, *args;
+{
+	long device, descriptor, value;
+	if (!getargs(args, "(ll)", &device, &descriptor))
+		return NULL;
+	value = ALgetdefault(device, descriptor);
+	return newlongobject(value);
+}
+
+static object *
+al_getminmax(self, args)
+	object *self, *args;
+{
+	long device, descriptor, min, max;
+	if (!getargs(args, "(ll)", &device, &descriptor))
+		return NULL;
+	min = -1;
+	max = -1;
+	ALgetminmax(device, descriptor, &min, &max);
+	return mkvalue("ll", min, max);
+}
+
 static struct methodlist al_methods[] = {
 	{"openport",		al_openport},
 	{"newconfig",		al_newconfig},
 	{"queryparams",		al_queryparams},
 	{"getparams",		al_getparams},
 	{"setparams",		al_setparams},
+	{"getname",		al_getname},
+	{"getdefault",		al_getdefault},
+	{"getminmax",		al_getminmax},
 	{NULL,			NULL}		/* sentinel */
 };
 
