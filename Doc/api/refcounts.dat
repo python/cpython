@@ -539,6 +539,9 @@ PyNumber_Xor:PyObject*:o2:0:
 PyOS_GetLastModificationTime:long:::
 PyOS_GetLastModificationTime:char*:filename::
 
+PyObject_AsFileDescriptor:int::: 
+PyObject_AsFileDescriptor:PyObject*:o:0:
+
 PyObject_CallFunction:PyObject*::+1:
 PyObject_CallFunction:PyObject*:callable_object:0:
 PyObject_CallFunction:char*:format::
