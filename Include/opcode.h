@@ -40,7 +40,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define UNARY_NEGATIVE	11
 #define UNARY_NOT	12
 #define UNARY_CONVERT	13
-#define UNARY_CALL	14
+
 #define UNARY_INVERT	15
 
 #define BINARY_MULTIPLY	20
@@ -49,7 +49,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define BINARY_ADD	23
 #define BINARY_SUBTRACT	24
 #define BINARY_SUBSCR	25
-#define BINARY_CALL	26
 
 #define SLICE		30
 /* Also uses 31-33 */
@@ -75,13 +74,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define PRINT_NEWLINE	72
 
 #define BREAK_LOOP	80
-#define RAISE_EXCEPTION	81
+
 #define LOAD_LOCALS	82
 #define RETURN_VALUE	83
-#define LOAD_GLOBALS	84
+
 #define EXEC_STMT	85
 
-#define BUILD_FUNCTION	86
 #define POP_BLOCK	87
 #define END_FINALLY	88
 #define BUILD_CLASS	89
@@ -125,7 +123,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SETUP_EXCEPT	121	/* "" */
 #define SETUP_FINALLY	122	/* "" */
 
-#define RESERVE_FAST	123	/* Number of local variables */
 #define LOAD_FAST	124	/* Local variable number */
 #define STORE_FAST	125	/* Local variable number */
 #define DELETE_FAST	126	/* Local variable number */
@@ -139,6 +136,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define RAISE_VARARGS	130	/* Number of raise arguments (1, 2 or 3) */
 #define CALL_FUNCTION	131	/* #args + (#kwargs<<8) */
+#define MAKE_FUNCTION	132	/* #defaults */
 
 /* Comparison operator codes (argument to COMPARE_OP) */
 enum cmp_op {LT, LE, EQ, NE, GT, GE, IN, NOT_IN, IS, IS_NOT, EXC_MATCH, BAD};

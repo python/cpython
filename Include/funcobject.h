@@ -34,10 +34,9 @@ typedef struct {
 	PyObject_HEAD
 	PyObject *func_code;
 	PyObject *func_globals;
-	PyObject *func_name;
-	int	func_argcount;
-	PyObject *func_argdefs;
+	PyObject *func_defaults;
 	PyObject *func_doc;
+	PyObject *func_name;
 } PyFunctionObject;
 
 extern DL_IMPORT(PyTypeObject) PyFunction_Type;
@@ -47,8 +46,8 @@ extern DL_IMPORT(PyTypeObject) PyFunction_Type;
 extern PyObject *PyFunction_New Py_PROTO((PyObject *, PyObject *));
 extern PyObject *PyFunction_GetCode Py_PROTO((PyObject *));
 extern PyObject *PyFunction_GetGlobals Py_PROTO((PyObject *));
-extern PyObject *PyFunction_GetArgStuff Py_PROTO((PyObject *, int *));
-extern int PyFunction_SetArgStuff Py_PROTO((PyObject *, int, PyObject *));
+extern PyObject *PyFunction_GetDefaults Py_PROTO((PyObject *));
+extern int PyFunction_SetDefaults Py_PROTO((PyObject *, PyObject *));
 
 #ifdef __cplusplus
 }

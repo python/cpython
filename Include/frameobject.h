@@ -45,7 +45,6 @@ typedef struct _frame {
 	PyObject *f_locals;	/* local symbol table (PyDictObject) */
 	PyObject *f_owner;	/* owner (e.g. class or module) or NULL */
 	PyObject *f_fastlocals;	/* fast local variables (PyListObject) */
-	PyObject *f_localmap;	/* local variable names (PyDictObject) */
 	PyObject **f_valuestack;	/* malloc'ed array */
 	PyTryBlock *f_blockstack;	/* malloc'ed array */
 	int f_nvalues;		/* size of f_valuestack */
