@@ -22,6 +22,8 @@ class GetHelpSourceDialog(Toplevel):
         self.parent = parent
         self.result=None
         self.CreateWidgets()
+        self.menu.set(menuItem)
+        self.path.set(filePath)
         self.withdraw() #hide while setting geometry
         self.update_idletasks()
         #needs to be done here so that the winfo_reqwidth is valid
