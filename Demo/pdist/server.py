@@ -58,7 +58,7 @@ class Server:
 			if self._verbose > 1: print "Wait for next request ..."
 			ok = self._dorequest(rf, wf)
 	
-	_valid = ['192.16.201.*', '192.16.197.*']
+	_valid = ['192.16.201.*', '192.16.197.*', '132.151.1.*']
 	
 	def _verify(self, conn, address):
 		host, port = address
