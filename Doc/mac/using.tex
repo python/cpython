@@ -67,10 +67,7 @@ format only.
 To run your script from the Terminal window you must make sure that
 \file{/usr/local/bin} is in your shell search path before \file{/usr/bin},
 where the Apple-supplied Python lives (which is version 2.2, as of Mac OS X
-10.2.4). There is one Mac OS X quirk that you need to be aware of: programs
-that talk to the window manager (in other words, anything that has a GUI)
-need to be run in a special way. Use \program{pythonw} in stead of \program{python}
-to start such scripts.
+10.2.4). 
 
 To run your script from the Finder you have two options:
 \begin{itemize}
@@ -83,6 +80,13 @@ To run your script from the Finder you have two options:
 PythonLauncher has various preferences to control how your script is launched.
 Option-dragging allows you to change these for one invocation, or use its
 Preferences menu to change things globally.
+
+\subsection{Running scripts with a GUI \label{osx-gui-scripts}}
+
+There is one Mac OS X quirk that you need to be aware of: programs
+that talk to the Aqua window manager (in other words, anything that has a GUI)
+need to be run in a special way. Use \program{pythonw} in stead of \program{python}
+to start such scripts.
 
 \subsection{configuration}
 

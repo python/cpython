@@ -345,10 +345,13 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	mac/mac.tex \
 	mac/using.tex \
+	mac/scripting.tex \
 	mac/toolbox.tex \
 	mac/undoc.tex \
 	mac/libcolorpicker.tex \
 	mac/libmac.tex \
+	mac/libgensuitemodule.tex \
+	mac/libaetools.tex \
 	mac/libaepack.tex \
 	mac/libaetypes.tex \
 	mac/libmacfs.tex \
