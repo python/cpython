@@ -69,13 +69,16 @@ marked with [*] and at the bottom of the list.
   (PythonInterpreter). [*]
 - PythonIDE used to burn CPU cycles when idle, this has been fixed. PythonInterpreter
   still has the problem. [*]
+- A BBEdit language module by Chris Stern is included in the :Mac:Contrib folder. [*]
+- The ConfigurePython applets will now detect if the preference file refers to a different
+  folder than where they live. They offer to remove the preference file in this case. [*]
 
 
 What is not in this distribution
 --------------------------------
 
 - The garbage collection mods have not been enabled, mainly due to lack of test-time.
-- Stackless Python/microthreads hasn't been ported to 2.0 yet. If/when it becomes available
+- Stackless Python/microthreads hasn't been ported to 2.1 yet. If/when it becomes available
   Just will undoubtedly announce it on pythonmac-sig and the MacPython homepage.
 
 Known problems
@@ -95,5 +98,9 @@ http://www.cwi.nl/~jack/macpython.html.
   no clue as to what is causing this.
 - PythonInterpreter used interactively will eat a lot of processor cycles. You should use
   PythonIDE for interactive work and PythonInterpreter for scripts only.
-- Under MacOSX applets have to live in the Python folder, otherwise they cannot find
-  PythonCore. This is being worked on.
+- Under MacOSX Public Beta ConfigurePython cannot put PythonCore in the global CFMSupport
+  folder. Therefore applets have to live in the Python folder, otherwise they cannot find
+  PythonCore. There is a workaround if you want to have an applet in a different folder:
+  put an alias PythonCoreCarbon (pointing to the PythonCoreCarbon in the Python folder)
+  in the same folder as your applet.
+  This problem should in all probability not occur in the release version of MacOSX.
