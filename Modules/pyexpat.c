@@ -1,3 +1,5 @@
+#include <ctype.h>
+
 #include "Python.h"
 #include "compile.h"
 #include "frameobject.h"
@@ -1463,11 +1465,31 @@ PyModule_AddStringConstant(PyObject *m, char *name, char *value)
 
 #endif
 
+
+/* Return a Python string that represents the version number without the
+ * extra cruft added by revision control, even if the right options were
+ * given to the "cvs export" command to make it not include the extra
+ * cruft.
+ */
+static PyObject *
+get_version_string(void)
+{
+    static char *rcsid = "$Revision$";
+    char *rev = rcsid;
+    int i = 0;
+
+    while (!isdigit(*rev))
+        ++rev;
+    while (rev[i] != ' ' && rev[i] != '\0')
+        ++i;
+
+    return PyString_FromStringAndSize(rev, i);
+}
+
 DL_EXPORT(void)
 initpyexpat(void)
 {
     PyObject *m, *d;
-    char *rev = "$Revision$";
     PyObject *errmod_name = PyString_FromString("pyexpat.errors");
     PyObject *errors_module;
     PyObject *modelmod_name;
@@ -1500,8 +1522,7 @@ initpyexpat(void)
     Py_INCREF(&Xmlparsetype);
     PyModule_AddObject(m, "XMLParserType", (PyObject *) &Xmlparsetype);
 
-    PyModule_AddObject(m, "__version__",
-                       PyString_FromStringAndSize(rev+11, strlen(rev+11)-2));
+    PyModule_AddObject(m, "__version__", get_version_string());
 #if EXPAT_VERSION >= 0x015f02
     PyModule_AddStringConstant(m, "EXPAT_VERSION",
                                (char *) XML_ExpatVersion());
