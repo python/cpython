@@ -152,10 +152,8 @@ try:
     assert sre.split("(?::*)", ":a:b::c") == ['', 'a', 'b', 'c']
     assert sre.split("(:)*", ":a:b::c") == ['', ':', 'a', ':', 'b', ':', 'c']
     assert sre.split("([b:]+)", ":a:b::c") == ['', ':', 'a', ':b::', 'c']
-##     print sre.split("(b)|(:+)", ":a:b::c")
-##     print ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
-##     assert sre.split("(b)|(:+)", ":a:b::c") == \
-##            ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
+    assert sre.split("(b)|(:+)", ":a:b::c") == \
+           ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
     assert sre.split("(?:b)|(?::+)", ":a:b::c") == ['', 'a', '', '', 'c']
 except AssertionError:
     raise TestFailed, "sre.split"
