@@ -100,6 +100,34 @@ PyImport_GetModuleDict()
 }
 
 
+/* Helper for PyImport_Cleanup */
+
+static void
+clear_carefully(d)
+	PyObject *d;
+{
+	/* To make the execution order of destructors for global
+	   objects a bit more predictable, we first zap all objects
+	   whose name starts with a single underscore, before we clear
+	   the entire dictionary.  We zap them by replacing them with
+	   None, rather than deleting them from the dictionary, to
+	   avoid rehashing the dictionary (to some extent). */
+
+	int pos;
+	PyObject *key, *value;
+
+	pos = 0;
+	while (PyDict_Next(d, &pos, &key, &value)) {
+		if (value != Py_None && PyString_Check(key)) {
+			char *s = PyString_AsString(key);
+			if (s[0] == '_' && s[1] != '_')
+				PyDict_SetItem(d, key, Py_None);
+		}
+	}
+	
+	PyDict_Clear(d);
+}
+
 /* Un-initialize things, as good as we can */
 
 void
@@ -115,7 +143,7 @@ PyImport_Cleanup()
 		while (PyDict_Next(tmp, &pos, &key, &value)) {
 			if (PyModule_Check(value)) {
 				PyObject *d = PyModule_GetDict(value);
-				PyDict_Clear(d);
+				clear_carefully(d);
 			}
 		}
 		PyDict_Clear(tmp);
