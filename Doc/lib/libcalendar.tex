@@ -112,6 +112,31 @@ an epoch of 1970, and the POSIX encoding.  In fact,
 \versionadded{2.0}
 \end{funcdesc}
 
+The \module{calendar} module exports the following data attributes:
+
+\begin{datadesc}{day_name}
+An array that represents the days of the week in the
+current locale.
+\end{datadesc}
+
+\begin{datadesc}{day_abbr}
+An array that represents the abbreviated days of the week
+in the current locale.
+\end{datadesc}
+
+\begin{datadesc}{month_name}
+An array that represents the months of the year in the
+current locale.  This follows normal convention
+of January being month number 1, so it has a length of 13 and 
+\code{month_name[0]} is the empty string.
+\end{datadesc}
+
+\begin{datadesc}{month_abbr}
+An array that represents the abbreviated months of the year
+in the current locale.  This follows normal convention
+of January being month number 1, so it has a length of 13 and 
+\code{month_abbr[0]} is the empty string.
+\end{datadesc}
 
 \begin{seealso}
   \seemodule{datetime}{Object-oriented interface to dates and times
