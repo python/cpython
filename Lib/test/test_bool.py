@@ -320,6 +320,27 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(cPickle.dumps(True, True), "I01\n.")
         self.assertEqual(cPickle.dumps(False, True), "I00\n.")
 
+    def test_convert_to_bool(self):
+        # Verify that TypeError occurs when bad things are returned
+        # from __nonzero__().  This isn't really a bool test, but
+        # it's related.
+        check = lambda o: self.assertRaises(TypeError, bool, o)
+        class Foo(object):
+            def __nonzero__(self):
+                return self
+        check(Foo())
+        
+        class Bar(object):
+            def __nonzero__(self):
+                return "Yes"
+        check(Bar())
+        
+        class Baz(int):
+            def __nonzero__(self):
+                return self
+        check(Baz())
+        
+
 def test_main():
     test_support.run_unittest(BoolTest)
 
