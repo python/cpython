@@ -52,7 +52,7 @@ class bdist (Command):
         ]
 
     # The following commands do not take a format option from bdist
-    no_format_option = ('bdist_rpm',)
+    no_format_option = ('bdist_rpm', 'bdist_sdux', 'bdist_pkgtool')
 
     # This won't do in reality: will need to distinguish RPM-ish Linux,
     # Debian-ish Linux, Solaris, FreeBSD, ..., Windows, Mac OS.
@@ -62,18 +62,21 @@ class bdist (Command):
 
     # Establish the preferred order (for the --help-formats option).
     format_commands = ['rpm', 'gztar', 'bztar', 'ztar', 'tar',
-                       'wininst', 'zip']
+                       'wininst', 'zip', 'pkgtool', 'sdux']
 
     # And the real information.
     format_command = { 'rpm':   ('bdist_rpm',  "RPM distribution"),
-                       'gztar': ('bdist_dumb', "gzip'ed tar file"),
+                       'zip':   ('bdist_dumb', "ZIP file"),                       'gztar': ('bdist_dumb', "gzip'ed tar file"),
                        'bztar': ('bdist_dumb', "bzip2'ed tar file"),
                        'ztar':  ('bdist_dumb', "compressed tar file"),
                        'tar':   ('bdist_dumb', "tar file"),
                        'wininst': ('bdist_wininst',
                                    "Windows executable installer"),
                        'zip':   ('bdist_dumb', "ZIP file"),
-                     }
+                       'pkgtool': ('bdist_pkgtool', 
+                                   "Solaris pkgtool distribution"),
+                       'sdux':  ('bdist_sdux', "HP-UX swinstall depot"),
+                      }
 
 
     def initialize_options (self):
