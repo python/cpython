@@ -261,14 +261,19 @@ class GNUTranslations(NullTranslations):
             # See if we're looking at GNU .mo conventions for metadata
             if mlen == 0:
                 # Catalog description
+                lastk = None
                 for item in tmsg.splitlines():
                     item = item.strip()
                     if not item:
                         continue
-                    k, v = item.split(':', 1)
-                    k = k.strip().lower()
-                    v = v.strip()
-                    self._info[k] = v
+                    if ':' in item:
+                        k, v = item.split(':', 1)
+                        k = k.strip().lower()
+                        v = v.strip()
+                        self._info[k] = v
+                        lastk = k
+                    elif lastk:
+                        self._info[lastk] += '\n' + item
                     if k == 'content-type':
                         self._charset = v.split('charset=')[1]
                     elif k == 'plural-forms':
