@@ -1321,23 +1321,27 @@ They all return \NULL{} or \code{-1} if an exception occurs.
   match, \var{direction} == 1 a suffix match), 0 otherwise.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyUnicode_Find}{PyObject *str,
-                                                  PyObject *substr,
-                                                  int start,
-                                                  int end,
-                                                  int direction}
+\begin{cfuncdesc}{int}{PyUnicode_Find}{PyObject *str,
+                                       PyObject *substr,
+                                       int start,
+                                       int end,
+                                       int direction}
   Return the first position of \var{substr} in
   \var{str}[\var{start}:\var{end}] using the given \var{direction}
   (\var{direction} == 1 means to do a forward search,
-  \var{direction} == -1 a backward search), 0 otherwise.
+  \var{direction} == -1 a backward search).  The return value is the
+  index of the first match; a value of \code{-1} indicates that no
+  match was found, and \code{-2} indicates that an error occurred and
+  an exception has been set.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyUnicode_Count}{PyObject *str,
-                                                  PyObject *substr,
-                                                  int start,
-                                                  int end}
-  Count the number of occurrences of \var{substr} in
-  \var{str}[\var{start}:\var{end}]
+\begin{cfuncdesc}{int}{PyUnicode_Count}{PyObject *str,
+                                        PyObject *substr,
+                                        int start,
+                                        int end}
+  Return the number of non-overlapping occurrences of \var{substr} in
+  \code{\var{str}[\var{start}:\var{end}]}.  Returns \code{-1} if an
+  error occurred.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_Replace}{PyObject *str,

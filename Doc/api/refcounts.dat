@@ -1389,14 +1389,14 @@ PyUnicode_Tailmatch:int:start::
 PyUnicode_Tailmatch:int:end::
 PyUnicode_Tailmatch:int:direction::
 
-PyUnicode_Find:PyObject*::+1:
+PyUnicode_Find:int:::
 PyUnicode_Find:PyObject*:str:0:
 PyUnicode_Find:PyObject*:substr:0:
 PyUnicode_Find:int:start::
 PyUnicode_Find:int:end::
 PyUnicode_Find:int:direction::
 
-PyUnicode_Count:PyObject*::+1:
+PyUnicode_Count:int:::
 PyUnicode_Count:PyObject*:str:0:
 PyUnicode_Count:PyObject*:substr:0:
 PyUnicode_Count:int:start::
