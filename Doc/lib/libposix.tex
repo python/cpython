@@ -2,8 +2,8 @@
          The most common \POSIX{} system calls.}
 \declaremodule{builtin}{posix}
 
-\modulesynopsis{The most common \POSIX{} system calls (normally used via module
-\module{os}).}
+\modulesynopsis{The most common \POSIX{} system calls (normally used
+via module \module{os}).}
 
 
 This module provides access to operating system functionality that is
@@ -17,10 +17,9 @@ the \module{posix} interface.  On non-\UNIX{} operating systems the
 \module{posix} module is not available, but a subset is always
 available through the \module{os} interface.  Once \module{os} is
 imported, there is \emph{no} performance penalty in using it instead
-of \module{posix}.  In addition, \module{os} provides some additional
-functionality, such as automatically calling \function{putenv()}
-when an entry in \code{os.environ} is changed.
-\refstmodindex{os}
+of \module{posix}.  In addition, \module{os}\refstmodindex{os}
+provides some additional functionality, such as automatically calling
+\function{putenv()} when an entry in \code{os.environ} is changed.
 
 The descriptions below are very terse; refer to the corresponding
 \UNIX{} manual (or \POSIX{} documentation) entry for more information.
@@ -29,19 +28,45 @@ Arguments called \var{path} refer to a pathname given as a string.
 Errors are reported as exceptions; the usual exceptions are given for
 type errors, while errors reported by the system calls raise
 \exception{error} (a synonym for the standard exception
-\exception{OSError}), described
-below.
+\exception{OSError}), described below.
+
+\subsection{Large File Support \label{posix-large-files}}
+\index{large files}
+\index{file!large files}
+
+\sectionauthor{Steve Clift}{clift@mail.anacapa.net}
+
+Several operating systems (including AIX, HPUX, Irix and Solaris)
+provide support for files that are larger than 2 Gb from a \C{}
+programming model where \ctype{int} and \ctype{long} are 32-bit
+values. This is typically accomplished by defining the relevant size
+and offset types as 64-bit values. Such files are sometimes referred
+to as \dfn{large files}.
+
+Large file support is enabled in Python when the size of an
+\ctype{off_t} is larger than a \ctype{long} and the \ctype{long long}
+type is available and is at least as large as an \ctype{off_t}. Python
+longs are then used to represent file sizes, offsets and other values
+that can exceed the range of a Python int. It may be necessary to
+configure and compile Python with certain compiler flags to enable
+this mode. For example, it is enabled by default with recent versions
+of Irix, but with Solaris 2.6 and 2.7 you need to do something like:
+
+\begin{verbatim}
+CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-g -O2 $CFLAGS" \
+        configure
+\end{verbatim} % $ <-- bow to font-lock
+
+
+\subsection{\module{posix} Module Contents \label{posix-contents}}
 
 Module \module{posix} defines the following data items:
 
 \begin{datadesc}{environ}
 A dictionary or dictionary look-alike representing the string
-environment at the time the interpreter was started.
-For example,
-\code{posix.environ['HOME']}
-is the pathname of your home directory, equivalent to
-\code{getenv("HOME")}
-in \C{}.
+environment at the time the interpreter was started. For example,
+\code{posix.environ['HOME']} is the pathname of your home directory,
+equivalent to \code{getenv("HOME")} in \C{}.
 
 Modifying this dictionary does not affect the string environment
 passed on by \function{execv()}, \function{popen()} or
@@ -78,7 +103,8 @@ When exceptions are strings, the string for the exception is
 \code{'OSError'}.
 \end{excdesc}
 
-It defines the following functions and constants:
+It defines the following functions and constants when the operating
+system provides them directly or provides the means to emulate them:
 
 \begin{funcdesc}{access}{path, mode}
 Check read/write/execute permissions for this process or extance of file
@@ -159,6 +185,11 @@ process id in the parent.
 
 \begin{funcdesc}{fstat}{fd}
 Return status for file descriptor \var{fd}, like \function{stat()}.
+\end{funcdesc}
+
+\begin{funcdesc}{fstatvfs}{fd}
+Return information about the filesystem containing the file associated
+with file descriptor \var{fd}, like \function{statvfs()}.
 \end{funcdesc}
 
 \begin{funcdesc}{ftruncate}{fd, length}
@@ -414,7 +445,28 @@ More items may be added at the end by some implementations.
 
 Note: The standard module \module{stat}\refstmodindex{stat} defines
 functions and constants that are useful for extracting information
-from a stat structure.
+from a \ctype{stat} structure.
+\end{funcdesc}
+
+\begin{funcdesc}{statvfs}{path}
+Perform a \cfunction{statvfs()} system call on the given path.  The
+return value is a tuple of 11 integers giving the most common
+members of the \ctype{statvfs} structure, in the order
+\code{f_bsize},
+\code{f_frsize},
+\code{f_blocks},
+\code{f_bfree},
+\code{f_bavail},
+\code{f_files},
+\code{f_ffree},
+\code{f_favail},
+\code{f_fsid},
+\code{f_flag},
+\code{f_namemax}.
+
+Note: The standard module \module{statvfs}\refstmodindex{statvfs}
+defines constants that are useful for extracting information
+from a \ctype{statvfs} structure.
 \end{funcdesc}
 
 \begin{funcdesc}{symlink}{src, dst}
