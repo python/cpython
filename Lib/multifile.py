@@ -45,15 +45,15 @@ class MultiFile:
 		return self.fp.tell() - self.start
 	#
 	def seek(self, pos, whence=0):
-                here = self.tell()
-                if whence:
-                        if whence == 1:
-                                pos = pos + here
-                        elif whence == 2:
-                                if self.level > 0:
-                                        pos = pos + self.lastpos
-                                else:
-                                        raise Error, "can't use whence=2 yet"
+		here = self.tell()
+		if whence:
+			if whence == 1:
+				pos = pos + here
+			elif whence == 2:
+				if self.level > 0:
+					pos = pos + self.lastpos
+				else:
+					raise Error, "can't use whence=2 yet"
 		if not 0 <= pos <= here or \
 				self.level > 0 and pos > self.lastpos:
 			raise Error, 'bad MultiFile.seek() call'

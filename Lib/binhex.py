@@ -89,9 +89,9 @@ else:
 		fp = open(name)
 		data = open(name).read(256)
 		for c in data:
-		    if not c in string.whitespace \
-			and (c<' ' or ord(c) > 0177):
-			break
+			if not c in string.whitespace \
+			    and (c<' ' or ord(c) > 0177):
+				break
 		else:
 			finfo.Type = 'TEXT'
 		fp.seek(0, 2)
@@ -214,10 +214,10 @@ class BinHex:
 		self.ofp.write(data)
 
 	def _writecrc(self):
-	    # XXXX Should this be here??
-	    # self.crc = binascii.crc_hqx('\0\0', self.crc)
-	    self.ofp.write(struct.pack('>h', self.crc))
-	    self.crc = 0
+		# XXXX Should this be here??
+		# self.crc = binascii.crc_hqx('\0\0', self.crc)
+		self.ofp.write(struct.pack('>h', self.crc))
+		self.crc = 0
 
 	def write(self, data):
 		if self.state != _DID_HEADER:

@@ -77,19 +77,20 @@ def send_query(selector, query, host, port = 0):
 
 # Takes a path as returned by urlparse and returns the appropriate selector
 def path_to_selector(path):
-    if path=="/":
-	return "/"
-    else:
-	return path[2:]   # Cuts initial slash and data type identifier
+	if path=="/":
+		return "/"
+	else:
+		return path[2:] # Cuts initial slash and data type identifier
 
 # Takes a path as returned by urlparse and maps it to a string
 # See section 3.4 of RFC 1738 for details
 def path_to_datatype_name(path):
-    if path=="/":
-	return "TYPE='unknown'" # No way to tell, although "INDEX" is probable
-    else:
-	return type_to_name(path[1])
-    
+	if path=="/":
+		# No way to tell, although "INDEX" is likely
+		return "TYPE='unknown'"
+	else:
+		return type_to_name(path[1])
+
 # The following functions interpret the data returned by the gopher
 # server according to the expected type, e.g. textfile or directory
 
@@ -118,7 +119,8 @@ def get_directory(f):
 			continue
 		if len(parts) > 4:
 			if parts[4:] != ['+']:
-			    print '(Extra info from server:', parts[4:], ')'
+				print '(Extra info from server:',
+				print parts[4:], ')'
 		else:
 			parts.append('')
 		parts.insert(0, gtype)

@@ -72,14 +72,15 @@ class NNTP:
 		self.debugging = 0
 		self.welcome = self.getresp()
 		if user:
-		    resp = self.shortcmd('authinfo user '+user)
-		    if resp[:3] == '381':
-			if not password:
-			    raise error_reply, resp
-			else:
-			    resp = self.shortcmd('authinfo pass '+password)
-			    if resp[:3] != '281':
-				raise error_perm, resp
+			resp = self.shortcmd('authinfo user '+user)
+			if resp[:3] == '381':
+				if not password:
+					raise error_reply, resp
+				else:
+					resp = self.shortcmd(
+						'authinfo pass '+password)
+					if resp[:3] != '281':
+						raise error_perm, resp
 
 	# Get the welcome message from the server
 	# (this is read and squirreled away by __init__()).

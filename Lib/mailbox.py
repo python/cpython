@@ -7,6 +7,7 @@ import rfc822
 import os
 
 class _Mailbox:
+
 	def __init__(self, fp):
 		self.fp = fp
 		self.seekp = 0
@@ -35,6 +36,7 @@ class _Mailbox:
 		return rfc822.Message(_Subfile(self.fp, start, stop))
 
 class _Subfile:
+
 	def __init__(self, fp, start, stop):
 		self.fp = fp
 		self.start = start
@@ -66,17 +68,18 @@ class _Subfile:
 		return self.pos - self.start
 
 	def seek(self, pos, whence=0):
-	        if whence == 0:
-		    self.pos = self.start + pos
+		if whence == 0:
+			self.pos = self.start + pos
 		elif whence == 1:
-		    self.pos = self.pos + pos
+			self.pos = self.pos + pos
 		elif whence == 2:
-		    self.pos = self.stop + pos
+			self.pos = self.stop + pos
 
 	def close(self):
 		pass
 
 class UnixMailbox(_Mailbox):
+
 	def _search_start(self):
 		while 1:
 			line = self.fp.readline()
@@ -96,6 +99,7 @@ class UnixMailbox(_Mailbox):
 				return
 
 class MmdfMailbox(_Mailbox):
+
 	def _search_start(self):
 		while 1:
 			line = self.fp.readline()
@@ -115,43 +119,45 @@ class MmdfMailbox(_Mailbox):
 				return
 
 class MHMailbox:
-    def __init__(self, dirname):
-	import re
-	pat = re.compile('^[0-9][0-9]*$')
-	self.dirname = dirname
-	files = os.listdir(self.dirname)
-	self.boxes = []
-	for f in files:
-	    if pat.match(f):
-		self.boxes.append(f)
 
-    def next(self):
-	if not self.boxes:
-	    return None
-	fn = self.boxes[0]
-	del self.boxes[0]
-	fp = open(os.path.join(self.dirname, fn))
-	return rfc822.Message(fp)
+	def __init__(self, dirname):
+		import re
+		pat = re.compile('^[0-9][0-9]*$')
+		self.dirname = dirname
+		files = os.listdir(self.dirname)
+		self.boxes = []
+		for f in files:
+			if pat.match(f):
+				self.boxes.append(f)
+
+	def next(self):
+		if not self.boxes:
+			return None
+		fn = self.boxes[0]
+		del self.boxes[0]
+		fp = open(os.path.join(self.dirname, fn))
+		return rfc822.Message(fp)
 	    
     
 class BabylMailbox(_Mailbox):
-    def _search_start(self):
-	while 1:
-	    line = self.fp.readline()
-	    if not line:
-		raise EOFError
-	    if line == '*** EOOH ***\n':
-		return
 
-    def _search_end(self):
-	while 1:
-	    pos = self.fp.tell()
-	    line = self.fp.readline()
-	    if not line:
-		return
-	    if line == '\037\014\n':
-		self.fp.seek(pos)
-		return
+	def _search_start(self):
+		while 1:
+			line = self.fp.readline()
+			if not line:
+				raise EOFError
+			if line == '*** EOOH ***\n':
+				return
+
+	def _search_end(self):
+		while 1:
+			pos = self.fp.tell()
+			line = self.fp.readline()
+			if not line:
+				return
+			if line == '\037\014\n':
+				self.fp.seek(pos)
+				return
 
 
 def _test():

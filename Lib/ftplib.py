@@ -40,9 +40,9 @@ import string
 
 # Import SOCKS module if it exists, else standard socket module socket
 try:
-    import SOCKS; socket = SOCKS
+	import SOCKS; socket = SOCKS
 except ImportError:
-    import socket
+	import socket
 
 
 # Magic number from <socket.h>
@@ -293,14 +293,14 @@ class FTP:
 			thishost = socket.gethostname()
 			# Make sure it is fully qualified
 			if not '.' in thishost:
-			    thisaddr = socket.gethostbyname(thishost)
-			    firstname, names, unused = \
-				       socket.gethostbyaddr(thisaddr)
-			    names.insert(0, firstname)
-			    for name in names:
-				    if '.' in name:
-					    thishost = name
-					    break
+				thisaddr = socket.gethostbyname(thishost)
+				firstname, names, unused = \
+					   socket.gethostbyaddr(thisaddr)
+				names.insert(0, firstname)
+				for name in names:
+					if '.' in name:
+						thishost = name
+						break
 			try:
 				if os.environ.has_key('LOGNAME'):
 					realuser = os.environ['LOGNAME']
@@ -419,15 +419,15 @@ class FTP:
 			raise error_reply, resp
 		return self.voidcmd('RNTO ' + toname)
 
-        def delete(self, filename):
+	def delete(self, filename):
 		'''Delete a file.'''
-                resp = self.sendcmd('DELE ' + filename)
-                if resp[:3] == '250':
-                        return resp
-                elif resp[:1] == '5':
-                        raise error_perm, resp
-                else:
-                        raise error_reply, resp
+		resp = self.sendcmd('DELE ' + filename)
+		if resp[:3] == '250':
+			return resp
+		elif resp[:1] == '5':
+			raise error_perm, resp
+		else:
+			raise error_reply, resp
 
 	def cwd(self, dirname):
 		'''Change to a directory.'''
@@ -477,20 +477,21 @@ class FTP:
 _150_re = None
 
 def parse150(resp):
-    '''Parse the '150' response for a RETR request.
-    Returns the expected transfer size or None; size is not guaranteed to
-    be present in the 150 message.
-    '''
-    if resp[:3] != '150':
-	raise error_reply, resp
-    global _150_re
-    if _150_re is None:
-	import re
-	_150_re = re.compile("150 .* \(([0-9][0-9]*) bytes\)", re.IGNORECASE)
-    m = _150_re.match(resp)
-    if m:
-	return string.atoi(m.group(1))
-    return None
+	'''Parse the '150' response for a RETR request.
+	Returns the expected transfer size or None; size is not guaranteed to
+	be present in the 150 message.
+	'''
+	if resp[:3] != '150':
+		raise error_reply, resp
+	global _150_re
+	if _150_re is None:
+		import re
+		_150_re = re.compile("150 .* \(([0-9][0-9]*) bytes\)",
+				     re.IGNORECASE)
+	m = _150_re.match(resp)
+	if m:
+		return string.atoi(m.group(1))
+	return None
 
 
 def parse227(resp):
@@ -561,104 +562,107 @@ def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
 
 
 class Netrc:
-    """Class to parse & provide access to 'netrc' format files.
+	"""Class to parse & provide access to 'netrc' format files.
 
-    See the netrc(4) man page for information on the file format.
-
-    """
-    __defuser = None
-    __defpasswd = None
-    __defacct = None
-
-    def __init__(self, filename=None):
-	if not filename:
-	    if os.environ.has_key("HOME"):
-		filename = os.path.join(os.environ["HOME"], ".netrc")
-	    else:
-		raise IOError, "specify file to load or set $HOME"
-	self.__hosts = {}
-	self.__macros = {}
-	fp = open(filename, "r")
-	in_macro = 0
-	while 1:
-	    line = fp.readline()
-	    if not line: break
-	    if in_macro and string.strip(line):
-		macro_lines.append(line)
-		continue
-	    elif in_macro:
-		self.__macros[macro_name] = tuple(macro_lines)
-		in_macro = 0
-	    words = string.split(line)
-	    host = user = passwd = acct = None
-	    default = 0
-	    i = 0
-	    while i < len(words):
-		w1 = words[i]
-		if i+1 < len(words):
-		    w2 = words[i + 1]
-		else:
-		    w2 = None
-		if w1 == 'default':
-		    default = 1
-		elif w1 == 'machine' and w2:
-		    host = string.lower(w2)
-		    i = i + 1
-		elif w1 == 'login' and w2:
-		    user = w2
-		    i = i + 1
-		elif w1 == 'password' and w2:
-		    passwd = w2
-		    i = i + 1
-		elif w1 == 'account' and w2:
-		    acct = w2
-		    i = i + 1
-		elif w1 == 'macdef' and w2:
-		    macro_name = w2
-		    macro_lines = []
-		    in_macro = 1
-		    break
-		i = i + 1
-	    if default:
-		self.__defuser = user or self.__defuser
-		self.__defpasswd = passwd or self.__defpasswd
-		self.__defacct = acct or self.__defacct
-	    if host:
-		if self.__hosts.has_key(host):
-		    ouser, opasswd, oacct = self.__hosts[host]
-		    user = user or ouser
-		    passwd = passwd or opasswd
-		    acct = acct or oacct
-		self.__hosts[host] = user, passwd, acct
-	fp.close()
-
-    def get_hosts(self):
-	"""Return a list of hosts mentioned in the .netrc file."""
-	return self.__hosts.keys()
-
-    def get_account(self, host):
-	"""Returns login information for the named host.
-
-	The return value is a triple containing userid, password, and the
-	accounting field.
+	See the netrc(4) man page for information on the file format.
 
 	"""
-	host = string.lower(host)
-	user = passwd = acct = None
-	if self.__hosts.has_key(host):
-	    user, passwd, acct = self.__hosts[host]
-	user = user or self.__defuser
-	passwd = passwd or self.__defpasswd
-	acct = acct or self.__defacct
-	return user, passwd, acct
+	__defuser = None
+	__defpasswd = None
+	__defacct = None
 
-    def get_macros(self):
-	"""Return a list of all defined macro names."""
-	return self.__macros.keys()
+	def __init__(self, filename=None):
+		if not filename:
+			if os.environ.has_key("HOME"):
+				filename = os.path.join(os.environ["HOME"],
+							".netrc")
+			else:
+				raise IOError, \
+				      "specify file to load or set $HOME"
+		self.__hosts = {}
+		self.__macros = {}
+		fp = open(filename, "r")
+		in_macro = 0
+		while 1:
+			line = fp.readline()
+			if not line: break
+			if in_macro and string.strip(line):
+				macro_lines.append(line)
+				continue
+			elif in_macro:
+				self.__macros[macro_name] = tuple(macro_lines)
+				in_macro = 0
+			words = string.split(line)
+			host = user = passwd = acct = None
+			default = 0
+			i = 0
+			while i < len(words):
+				w1 = words[i]
+				if i+1 < len(words):
+					w2 = words[i + 1]
+				else:
+					w2 = None
+				if w1 == 'default':
+					default = 1
+				elif w1 == 'machine' and w2:
+					host = string.lower(w2)
+					i = i + 1
+				elif w1 == 'login' and w2:
+					user = w2
+					i = i + 1
+				elif w1 == 'password' and w2:
+					passwd = w2
+					i = i + 1
+				elif w1 == 'account' and w2:
+					acct = w2
+					i = i + 1
+				elif w1 == 'macdef' and w2:
+					macro_name = w2
+					macro_lines = []
+					in_macro = 1
+					break
+				i = i + 1
+			if default:
+				self.__defuser = user or self.__defuser
+				self.__defpasswd = passwd or self.__defpasswd
+				self.__defacct = acct or self.__defacct
+			if host:
+				if self.__hosts.has_key(host):
+					ouser, opasswd, oacct = \
+					       self.__hosts[host]
+					user = user or ouser
+					passwd = passwd or opasswd
+					acct = acct or oacct
+				self.__hosts[host] = user, passwd, acct
+		fp.close()
 
-    def get_macro(self, macro):
-	"""Return a sequence of lines which define a named macro."""
-	return self.__macros[macro]
+	def get_hosts(self):
+		"""Return a list of hosts mentioned in the .netrc file."""
+		return self.__hosts.keys()
+
+	def get_account(self, host):
+		"""Returns login information for the named host.
+
+		The return value is a triple containing userid,
+		password, and the accounting field.
+
+		"""
+		host = string.lower(host)
+		user = passwd = acct = None
+		if self.__hosts.has_key(host):
+			user, passwd, acct = self.__hosts[host]
+		user = user or self.__defuser
+		passwd = passwd or self.__defpasswd
+		acct = acct or self.__defacct
+		return user, passwd, acct
+
+	def get_macros(self):
+		"""Return a list of all defined macro names."""
+		return self.__macros.keys()
+
+	def get_macro(self, macro):
+		"""Return a sequence of lines which define a named macro."""
+		return self.__macros[macro]
 
 
 
@@ -680,17 +684,18 @@ def test():
 	ftp.set_debuglevel(debugging)
 	userid = passwd = acct = ''
 	try:
-	    netrc = Netrc(rcfile)
+		netrc = Netrc(rcfile)
 	except IOError:
-	    if rcfile is not None:
-		sys.stderr.write("Could not open account file"
-				 " -- using anonymous login.")
+		if rcfile is not None:
+			sys.stderr.write("Could not open account file"
+					 " -- using anonymous login.")
 	else:
-	    try:
-		userid, passwd, acct = netrc.get_account(host)
-	    except KeyError:
-		# no account for host
-		sys.stderr.write("No account -- using anonymous login.")
+		try:
+			userid, passwd, acct = netrc.get_account(host)
+		except KeyError:
+			# no account for host
+			sys.stderr.write(
+				"No account -- using anonymous login.")
 	ftp.login(userid, passwd, acct)
 	for file in sys.argv[2:]:
 		if file[:2] == '-l':
