@@ -57,6 +57,11 @@ typedef struct {
 staticforward PyTypeObject Dbmtype;
 
 #define is_dbmobject(v) ((v)->ob_type == &Dbmtype)
+#define check_dbmobject_open(v) if ((v)->di_dbm == NULL) \
+               { PyErr_SetString(DbmError, "GDBM object has already been closed"); \
+                 return NULL; }
+
+
 
 static PyObject *DbmError;
 
@@ -100,6 +105,10 @@ static int
 dbm_length(dp)
 	dbmobject *dp;
 {
+        if (dp->di_dbm == NULL) {
+                 PyErr_SetString(DbmError, "GDBM object has already been closed"); 
+                 return -1; 
+        }
         if ( dp->di_size < 0 ) {
 		datum key,okey;
 		int size;
@@ -151,6 +160,10 @@ PyObject *v, *w;
 				"gdbm mappings have string indices only");
 		return -1;
 	}
+        if (dp->di_dbm == NULL) {
+                 PyErr_SetString(DbmError, "GDBM object has already been closed"); 
+                 return -1; 
+        }
 	dp->di_size = -1;
 	if (w == NULL) {
 		if ( gdbm_delete(dp->di_dbm, krec) < 0 ) {
@@ -214,6 +227,8 @@ PyObject *args;
 	if (!PyArg_NoArgs(args))
 		return NULL;
 
+	check_dbmobject_open(dp);
+
 	v = PyList_New(0);
 	if (v == NULL)
 		return NULL;
@@ -250,6 +265,7 @@ PyObject *args;
 	
 	if (!PyArg_Parse(args, "s#", &key.dptr, &key.dsize))
 		return NULL;
+	check_dbmobject_open(dp);
 	return PyInt_FromLong((long) gdbm_exists(dp->di_dbm, key));
 }
 
@@ -263,6 +279,7 @@ PyObject *args;
 
 	if (!PyArg_NoArgs(args))
 		return NULL;
+	check_dbmobject_open(dp);
 	key = gdbm_firstkey(dp->di_dbm);
 	if (key.dptr) {
 		v = PyString_FromStringAndSize(key.dptr, key.dsize);
@@ -284,6 +301,7 @@ PyObject *args;
 
 	if (!PyArg_Parse(args, "s#", &key.dptr, &key.dsize))
 		return NULL;
+	check_dbmobject_open(dp);
 	nextkey = gdbm_nextkey(dp->di_dbm, key);
 	if (nextkey.dptr) {
 		v = PyString_FromStringAndSize(nextkey.dptr, nextkey.dsize);
@@ -302,6 +320,7 @@ PyObject *args;
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
+	check_dbmobject_open(dp);
 	errno = 0;
 	if (gdbm_reorganize(dp->di_dbm) < 0) {
 		if (errno != 0)
@@ -322,6 +341,7 @@ dbm_sync(dp, args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
+	check_dbmobject_open(dp);
 	gdbm_sync(dp->di_dbm);
 	Py_INCREF(Py_None);
 	return Py_None;
