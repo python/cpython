@@ -101,7 +101,7 @@ list2set(list, set, fd2obj)
 
 		/* any intervening fileno() calls could decr this refcnt */
 		if (!(o = PyList_GetItem(list, i)))
-                    return NULL;
+                    return -1;
 
 		Py_INCREF(o);
 
