@@ -30,7 +30,7 @@ except ImportError:
 #CREATOR = 'KAHL'		# Guido's favorite text editor on the Mac
 #INCLUDEDIR = "D:Development:THINK C:Mac #includes:Apple #includes:"
 CREATOR = 'MPCC'		# Jack's favorite text editor on the Mac
-INCLUDEDIR = "Moes:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:"
+INCLUDEDIR = "Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:"
 
 
 Error = "scantools.Error"
