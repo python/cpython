@@ -9,7 +9,6 @@ TO DO:
     - better integration of "debug module"
     - debugger should be global resource (attached to flist, not to shell)
     - fix the stupid bug where you need to step twice
-    - after closing and reopening PyShell, debugger no longer works :-(
     - display class name in stack viewer entries for methods
     - suppress tracing through IDLE internals (e.g. print)
     - add a button to suppress through a specific module or class or method
@@ -20,23 +19,20 @@ TO DO:
 - "Recent documents" menu item
 - Filter region command
 - Optional horizontal scroll bar
-- more emacsisms:
-    - parentheses matching
+- more Emacsisms:
+    - ^K should cut to buffer
     - M-[, M-] to move by paragraphs
     - incremental search?
-    - ^K should cut to buffer
 - search should indicate wrap-around in some way
 - restructure state sensitive code to avoid testing flags all the time
 - persistent user state (e.g. window and cursor positions, bindings)
 - make backups when saving
 - check file mtimes at various points
 - Pluggable interface with RCS/CVS/Perforce/Clearcase
-- status bar???
 - better help?
 - don't open second class browser on same module (nor second path browser)
 - unify class and path browsers
-- use a tree widget instead of a smalltalk/NeXT style multicolumn browser
- Need to define a standard way whereby one can determine one is running
+- Need to define a standard way whereby one can determine one is running
   inside IDLE (needed for Tk mainloop, also handy for $PYTHONSTARTUP)
 - Add more utility methods for use by extensions (a la get_selection)
 - Way to run command in totally separate interpreter (fork+os.system?)
@@ -44,6 +40,7 @@ TO DO:
   In other words, select "UserDict.UserDict", hit some magic key and
   it loads up UserDict.py and finds the first def or class for UserDict.
 - need a way to force colorization on/off
+- need a way to force auto-indent on/off
 
 Details:
 
@@ -56,6 +53,11 @@ Details:
 - new autoindent after colon even indents when the colon is in a comment!
 - sometimes forward slashes in pathname remain
 - sometimes star in window name remains in Windows menu
+- With unix bindings, ESC by itself is ignored
+- Sometimes for no apparent reason a selection from the cursor to the
+  end of the command buffer appears, which is hard to get rid of
+  because it stays when you are typing!
+- The Line/Col in the status bar can be wrong initially in PyShell
 
 Structural problems:
 
@@ -67,7 +69,6 @@ Structural problems:
 
 Jeff Bauer suggests:
 
-- The editor should show the current line number.
 - Open Module doesn't appear to handle hierarchical packages.
 - Class browser should also allow hierarchical packages.
 - Open and Open Module could benefit from a history,
@@ -95,44 +96,14 @@ integrate better into IDLE.
 Comparison to PTUI
 ------------------
 
-+ PTUI has a status line
-
 + PTUI's help is better (HTML!)
 
 + PTUI can attach a shell to any module
 
-+ PTUI has more bells and whistles:
++ PTUI has some more I/O commands:
   open multiple
   append
-  examine
-
-? PTUI's fontify is faster but synchronous (and still too slow);
-  does a lousy job if editing affects lines below
-
-- PTUI's shell is worse:
-  no coloring;
-  no editing of multi-line commands;
-  ^P seems to permanently remove some text from the buffer
-
-- PTUI's undo is worse:
-  no redo;
-  one char at a time
-
-- PTUI's GUI is a tad ugly:
-  I don't like the multiple buffers in one window model;
-  I don't like the big buttons at the top of the widow
-
-- PTUI lacks an integrated debugger
-
-- PTUI lacks path and class browsers
-
-- PTUI lacks many of IDLE's features:
-  - expand word
-  - regular expression search
-  - search files (grep)
-  - (un)tabify
-  - center
-  - zoom height
+  examine (what's that?)
 
 ======================================================================
 
@@ -149,3 +120,86 @@ other parts of Grail.
 - Grail uses a module called History and so does idle :-(
 
 ======================================================================
+
+Robin Friedrich's items:
+
+Things I'd like to see:
+    - I'd like support for shift-click extending the selection. There's a
+      bug now that it doesn't work the first time you try it.
+    - Printing is needed. How hard can that be on Windows?
+    - The python-mode trick of autoindenting a line with <tab> is neat and
+      very handy.
+    - (someday) a spellchecker for docstrings and comments.
+    - a pagedown/up command key which moves to next class/def statement (top
+      level)
+    - split window capability
+    - DnD text relocation/copying
+
+Things I don't want to see.
+    - line numbers...  will probably slow things down way too much.
+    - Please use another icon for the tree browser leaf. The small snake
+      isn't cutting it.
+
+----------------------------------------------------------------------
+
+- Customizable views (multi-window or multi-pane).  (Markus Gritsch)
+
+- Being able to double click (maybe double right click) on a callable
+object in the editor which shows the source of the object, if
+possible.  (Gerrit Holl)
+
+- Hooks into the guts, like in Emacs.  (Mike Romberg)
+
+- Sharing the editor with a remote tutor.  (Martijn Faassen)
+
+- Multiple views on the same file.  (Tony J Ibbs)
+
+- Store breakpoints in a global (per-project) database (GvR); Dirk
+Heise adds: save some space-trimmed context and search around when
+reopening a file that might have been edited by someone else.
+
+- Capture menu events in extensions without changing the IDLE source.
+(Matthias Barmeier)
+
+- Use overlapping panels (a "notebook" in MFC terms I think) for info
+that doesn't need to be accessible simultaneously (e.g. HTML source
+and output).  Use multi-pane windows for info that does need to be
+shown together (e.g. class browser and source).  (Albert Brandl)
+
+- A project should invisibly track all symbols, for instant search,
+replace and cross-ref.  Projects should be allowed to span multiple
+directories, hosts, etc.  Project management files are placed in a
+directory you specify.  A global mapping between project names and
+project directories should exist [not so sure --GvR].  (Tim Peters)
+
+- Merge attr-tips and auto-expand.  (Mark Hammond, Tim Peters)
+
+- Python Shell should behave more like a "shell window" as users know
+it -- i.e. you can only edit the current command, and the cursor can't
+escape from the command area.  (Albert Brandl)
+
+- Set X11 class to "idle/Idle", set icon and title to something
+beginning with "idle" -- for window manangers.  (Randall Hopper)
+
+- Config files editable through a preferences dialog.  (me)
+
+- Config files still editable outside the preferences dialog.
+(Randall Hopper)
+
+- When you're editing a command in PyShell, and there are only blank
+lines below the cursor, hitting Return should ignore or delete those
+blank lines rather than deciding you're not on the last line.  (me)
+
+- Run command (F5 c.s.) should be more like Pythonwin's Run -- a
+dialog with options to give command line arguments, run the debugger,
+etc.  (me)
+
+- Shouldn't be able to delete part of the prompt (or any text before
+it) in the PyShell.  (Martijn Faassen)
+
+- Emacs style auto-fill (also smart about comments and strings).
+(Jeremy Hylton)
+
+- Output of Run Script should go to a separate output window, not to
+the shell window.  Output of separate runs should all go to the same
+window but clearly delimited.  (David Scherer)
