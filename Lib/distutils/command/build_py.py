@@ -322,4 +322,4 @@ class build_py (Command):
 
     # build_packages ()
                        
-# end class BuildPy
+# class build_py

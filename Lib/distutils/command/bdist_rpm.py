@@ -388,3 +388,5 @@ class bdist_rpm (Command):
                    'list or tuple of strings' % var_name)
         else:
             return default_value
+
+# class bdist_rpm
