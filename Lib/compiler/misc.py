@@ -39,6 +39,8 @@ class Stack:
         self.stack.append(elt)
     def top(self):
         return self.stack[-1]
+    def __getitem__(self, index): # needed by visitContinue()
+        return self.stack[index]
 
 MANGLE_LEN = 256 # magic constant from compile.c
 
