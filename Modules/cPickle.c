@@ -2916,7 +2916,7 @@ load_counted_long(Unpicklerobject *self, int size)
 		along = PyLong_FromLong(0L);
 	else {
 		/* Read the raw little-endian bytes & convert. */
-		i = self->read_func(self, &(char *)pdata, size);
+		i = self->read_func(self, (char **)&pdata, size);
 		if (i < 0) return -1;
 		along = _PyLong_FromByteArray(pdata, (size_t)size,
 				1 /* little endian */, 1 /* signed */);

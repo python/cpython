@@ -64,6 +64,7 @@ typedef struct {
 static PyTypeObject PySSL_Type;
 static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args);
 static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args);
+static int wait_for_timeout(PySocketSockObject *s, int writing);
 
 #define PySSLObject_Check(v)	((v)->ob_type == &PySSL_Type)
 
