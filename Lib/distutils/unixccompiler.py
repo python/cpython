@@ -159,6 +159,8 @@ class UnixCCompiler (CCompiler):
         if extra_postargs is None:
             extra_postargs = []
 
+        if output_dir is not None:
+            self.mkpath (output_dir)
         for (source,object) in srcobj:
             self.spawn ([self.cc] + cc_args +
                         [source, '-o', object] +
@@ -167,7 +169,7 @@ class UnixCCompiler (CCompiler):
         # Have to re-fetch list of object filenames, because we want to
         # return *all* of them, including those that weren't recompiled on
         # this call!
-        return self.object_filenames (orig_sources, output_dir)
+        return self.object_filenames (orig_sources, output_dir=output_dir)
 
 
     def _fix_link_args (self, output_dir, libraries, library_dirs):
@@ -226,6 +228,7 @@ class UnixCCompiler (CCompiler):
                 newer = newer_group (objects, output_filename)
 
         if self.force or newer:
+            self.mkpath (os.path.dirname (output_filename))
             self.spawn ([self.archiver,
                          self.archiver_options,
                          output_filename] +
@@ -298,6 +301,7 @@ class UnixCCompiler (CCompiler):
                 ld_args[:0] = extra_preargs
             if extra_postargs:
                 ld_args.extend (extra_postargs)
+            self.mkpath (os.path.dirname (output_filename))
             self.spawn ([self.ld_shared] + ld_args)
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
@@ -340,6 +344,7 @@ class UnixCCompiler (CCompiler):
                 ld_args[:0] = extra_preargs
             if extra_postargs:
                 ld_args.extend (extra_postargs)
+            self.mkpath (os.path.dirname (output_filename))
             self.spawn ([self.ld_exec] + ld_args)
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
