@@ -87,6 +87,22 @@ Socket methods:
 
 #include "Python.h"
 
+#undef HAVE_GETHOSTBYNAME_R_3_ARG
+#undef HAVE_GETHOSTBYNAME_R_5_ARG
+#undef HAVE_GETHOSTBYNAME_R_6_ARG
+
+#ifdef HAVE_GETHOSTBYNAME_R
+#if defined(_AIX) || defined(__osf__)
+#define HAVE_GETHOSTBYNAME_R_3_ARG
+#elif defined(__sun__) || defined(__sgi)
+#define HAVE_GETHOSTBYNAME_R_5_ARG
+#elif defined(linux)
+#define HAVE_GETHOSTBYNAME_R_6_ARG
+#else
+#undef HAVE_GETHOSTBYNAME_R
+#endif
+#endif
+
 #if !defined(HAVE_GETHOSTBYNAME_R) && defined(WITH_THREAD) && !defined(MS_WINDOWS)
 #define USE_GETHOSTBYNAME_LOCK
 #endif
@@ -373,6 +389,7 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 #elif  defined(HAVE_GETHOSTBYNAME_R_5_ARG)
 	hp = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
 #else  /* HAVE_GETHOSTBYNAME_R_3_ARG */
+	memset((void *) &data, '\0', sizeof(data));
 	result = gethostbyname_r(name, &hp_allocated, &data);
 	hp = (result != 0) ? NULL : &hp_allocated;
 #endif
@@ -1451,6 +1468,7 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 #elif defined(HAVE_GETHOSTBYNAME_R_5_ARG)
 	h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
+	memset((void *) &data, '\0', sizeof(data));
 	result = gethostbyname_r(name, &hp_allocated, &data);
 	h = (result != 0) ? NULL : &hp_allocated;
 #endif
@@ -1516,6 +1534,7 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 			    AF_INET, 
 			    &hp_allocated, buf, buf_len, &errnop);
 #else /* HAVE_GETHOSTBYNAME_R_3_ARG */
+	memset((void *) &data, '\0', sizeof(data));
 	result = gethostbyaddr_r((char *)&addr.sin_addr,
 		sizeof(addr.sin_addr),
 		AF_INET, &hp_allocated, &data);
