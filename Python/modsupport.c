@@ -218,8 +218,10 @@ do_arg(arg, p_format, p_va)
 }
 
 #ifdef USE_STDARG
+/* VARARGS2 */
 int getargs(object *arg, char *format, ...)
 #else
+/* VARARGS */
 int getargs(va_alist) va_dcl
 #endif
 {
