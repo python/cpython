@@ -188,6 +188,10 @@ PyErr_Restore:PyObject*:traceback:-1:
 PyErr_SetFromErrno:PyObject*::null:
 PyErr_SetFromErrno:PyObject*:type:0:
 
+PyErr_SetFromErrnoWithFilename:PyObject*::null:
+PyErr_SetFromErrnoWithFilename:PyObject*:type:0:
+PyErr_SetFromErrnoWithFilename:char*:filename::
+
 PyErr_SetInterrupt:void:::
 
 PyErr_SetNone:void:::
@@ -348,7 +352,7 @@ PyInt_AsLong:long:::
 PyInt_AsLong:PyObject*:io:0:
 
 PyInt_Check:int:::
-PyInt_Check:PyObject*::0:
+PyInt_Check:PyObject*:op:0:
 
 PyInt_FromLong:PyObject*::+1:
 PyInt_FromLong:long:ival::
@@ -492,6 +496,29 @@ PyMapping_SetItemString:PyObject*:v:+1:
 
 PyMapping_Values:PyObject*::+1:
 PyMapping_Values:PyObject*:o:0:
+
+PyMethod_Class:PyObject*::0:
+PyMethod_Class:PyObject*:im:0:
+
+PyMethod_Function:PyObject*::0:
+PyMethod_Function:PyObject*:im:0:
+
+PyMethod_GET_CLASS:PyObject*::0:
+PyMethod_GET_CLASS:PyObject*:im:0:
+
+PyMethod_GET_FUNCTION:PyObject*::0:
+PyMethod_GET_FUNCTION:PyObject*:im:0:
+
+PyMethod_GET_SELF:PyObject*::0:
+PyMethod_GET_SELF:PyObject*:im:0:
+
+PyMethod_New:PyObject*::+1:
+PyMethod_New:PyObject*:func:0:
+PyMethod_New:PyObject*:self:0:
+PyMethod_New:PyObject*:class:0:
+
+PyMethod_Self:PyObject*::0:
+PyMethod_Self:PyObject*:im:0:
 
 PyModule_GetDict:PyObject*::0:
 PyModule_GetDict::PyObject* module:0:
@@ -684,6 +711,9 @@ PyObject_DelAttrString:char*:attr_name::
 PyObject_DelItem:int:::
 PyObject_DelItem:PyObject*:o:0:
 PyObject_DelItem:PyObject*:key:0:
+
+PyObject_Dir:PyObject*::+1:
+PyObject_Dir:PyObject*:o:0:
 
 PyObject_GetAttr:PyObject*::+1:
 PyObject_GetAttr:PyObject*:o:0:
