@@ -13,6 +13,11 @@ def url2pathname(url):
 	import string, urllib
 	if not '|' in url:
 	    # No drive specifier, just convert slashes
+	    if url[:4] == '////':
+	        # path is something like ////host/path/on/remote/host
+	        # convert this to \\host\path\on\remote\host
+	        # (notice halving of slashes at the start of the path)
+	        url = url[2:]
 	    components = string.split(url, '/')
 	    # make sure not to convert quoted slashes :-)
 	    return urllib.unquote(string.join(components, '\\'))
@@ -41,6 +46,11 @@ def pathname2url(p):
 	import string, urllib
 	if not ':' in p:
 	    # No drive specifier, just convert slashes and quote the name
+	    if p[:2] == '\\\\':
+	        # path is something like \\host\path\on\remote\host
+	        # convert this to ////host/path/on/remote/host
+	        # (notice doubling of slashes at the start of the path)
+	        p = '\\\\' + p
 	    components = string.split(p, '\\')
 	    return urllib.quote(string.join(components, '/'))
 	comp = string.split(p, ':')
