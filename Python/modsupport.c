@@ -114,7 +114,7 @@ do_arg(arg, p_format, p_va)
 	
 	switch (*format++) {
 	
-	case '('/*')'*/: /* tuple, distributed over C parameters */ {
+	case '(': /* tuple, distributed over C parameters */ {
 		int i, n;
 		if (!is_tupleobject(arg))
 			return 0;
@@ -123,10 +123,13 @@ do_arg(arg, p_format, p_va)
 			if (!do_arg(gettupleitem(arg, i), &format, &va))
 				return 0;
 		}
-		if (*format++ != /*'('*/')')
+		if (*format++ != ')')
 			return 0;
 		break;
 		}
+
+	case ')': /* End of format -- too many arguments */
+		return 0;
 
 	case 'b': /* byte -- very short int */ {
 		char *p = va_arg(va, char *);
