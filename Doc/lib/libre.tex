@@ -373,11 +373,9 @@ also accepted by the regular expression parser:
 \\
 \end{verbatim}
 
-Note that octal escapes are not included.  While the parser can
-attempt to determine whether a character is being specified by it's
-ordinal value expressed in octal, doing so yields an expression which
-is relatively difficult to maintain, as the same syntax is used to
-refer to numbered groups.
+Octal escapes are included in a limited form: If the first digit is a
+0, or if there are three octal digits, it is considered an octal
+escape. Otherwise, it is a group reference.
 
 
 \subsection{Matching vs. Searching \label{matching-searching}}
