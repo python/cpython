@@ -13,7 +13,7 @@ class OutputWindow(EditorWindow):
     """
 
     def __init__(self, *args):
-        apply(EditorWindow.__init__, (self,) + args)
+        EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
 
     # Customize EditorWindow
@@ -136,7 +136,7 @@ class OnDemandOutputWindow:
         text = owin.text
         for tag, cnf in self.tagdefs.items():
             if cnf:
-                apply(text.tag_configure, (tag,), cnf)
+                text.tag_configure(tag, **cnf)
         text.tag_raise('sel')
         self.write = self.owin.write
 

@@ -5,7 +5,7 @@ class MultiStatusBar(Frame):
     def __init__(self, master=None, **kw):
         if master is None:
             master = Tk()
-        apply(Frame.__init__, (self, master), kw)
+        Frame.__init__(self, master, **kw)
         self.labels = {}
 
     def set_label(self, name, text='', side=LEFT):

@@ -792,7 +792,7 @@ class EditorWindow:
         text.keydefs = keydefs
         for event, keylist in keydefs.items():
             if keylist:
-                apply(text.event_add, (event,) + tuple(keylist))
+                text.event_add(event, *keylist)
 
     def fill_menus(self, defs=None, keydefs=None):
         """Add appropriate entries to the menus and submenus

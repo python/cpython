@@ -77,7 +77,7 @@ class PyShellEditorWindow(EditorWindow):
 
     def __init__(self, *args):
         self.breakpoints = []
-        apply(EditorWindow.__init__, (self,) + args)
+        EditorWindow.__init__(self, *args)
         self.text.bind("<<set-breakpoint-here>>", self.set_breakpoint_here)
         self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)

@@ -50,7 +50,7 @@ class ColorDelegator(Delegator):
     def config_colors(self):
         for tag, cnf in self.tagdefs.items():
             if cnf:
-                apply(self.tag_configure, (tag,), cnf)
+                self.tag_configure(tag, **cnf)
         self.tag_raise('sel')
 
     def LoadTagDefs(self):

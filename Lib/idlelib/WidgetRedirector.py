@@ -51,7 +51,7 @@ class WidgetRedirector:
         m = self.dict.get(cmd)
         try:
             if m:
-                return apply(m, args)
+                return m(*args)
             else:
                 return self.tk.call((self.orig, cmd) + args)
         except TclError:
@@ -84,7 +84,7 @@ def main():
     global orig_insert
     def my_insert(*args):
         print "insert", args
-        apply(orig_insert, args)
+        orig_insert(*args)
     orig_insert = redir.register("insert", my_insert)
     root.mainloop()
 

@@ -59,10 +59,10 @@ def main():
             Delegator.__init__(self, None)
         def insert(self, *args):
             print self.name, ": insert", args
-            apply(self.delegate.insert, args)
+            self.delegate.insert(*args)
         def delete(self, *args):
             print self.name, ": delete", args
-            apply(self.delegate.delete, args)
+            self.delegate.delete(*args)
     root = Tk()
     root.wm_protocol("WM_DELETE_WINDOW", root.quit)
     text = Text()

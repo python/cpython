@@ -188,8 +188,7 @@ class GetKeysDialog(Toplevel):
         #make a tuple of most of the useful common 'final' keys
         keys=(self.alphanumKeys+self.punctuationKeys+self.functionKeys+
                 self.whitespaceKeys+self.editKeys+self.moveKeys)
-        apply(self.listKeysFinal.insert,
-            (END,)+keys)
+        self.listKeysFinal.insert(END, *keys)
 
     def TranslateKey(self,key):
         #translate from key list value to tkinter key-id

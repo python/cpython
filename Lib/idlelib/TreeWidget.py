@@ -414,7 +414,7 @@ class ScrolledCanvas:
         self.frame = Frame(master)
         self.frame.rowconfigure(0, weight=1)
         self.frame.columnconfigure(0, weight=1)
-        self.canvas = apply(Canvas, (self.frame,), opts)
+        self.canvas = Canvas(self.frame, **opts)
         self.canvas.grid(row=0, column=0, sticky="nsew")
         self.vbar = Scrollbar(self.frame, name="vbar")
         self.vbar.grid(row=0, column=1, sticky="nse")
