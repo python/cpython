@@ -21,7 +21,7 @@ def main():
 	Qt.EnterMovies()
 	
 	# Get the movie file
-	fss, ok = macfs.StandardGetFile(QuickTime.MovieFileType)
+	fss, ok = macfs.StandardGetFile() # Was: QuickTime.MovieFileType
 	if not ok:
 		sys.exit(0)
 		
