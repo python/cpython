@@ -84,6 +84,10 @@ Type/class unification and new-style classes
 Core and builtins
 -----------------
 
+- The _codecs support module for codecs.py was turned into a builtin
+  module to assure that at least the builtin codecs are available
+  to the Python parser for source code decoding according to PEP 263.
+
 - issubclass now supports a tuple as the second argument, just like
   isinstance does. ``issubclass(X, (A, B))`` is equivalent to
   ``issubclass(X, A) or issubclass(X, B)``.
