@@ -166,7 +166,7 @@ api.ps:	api.dvi
 # of; the prominent location makes it worth the extra step.  This affects the
 # title pages!
 
-l2h: l2htut l2hext l2hlib l2htut
+l2h: l2htut l2hext l2hlib l2hapi
 
 l2htut: tut.dvi myformat.perl
 	$(L2H) $(L2HARGS) tut.tex
