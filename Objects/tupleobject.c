@@ -116,7 +116,7 @@ tupledealloc(op)
 	free((ANY *)op);
 }
 
-static void
+static int
 tupleprint(op, fp, flags)
 	tupleobject *op;
 	FILE *fp;
@@ -124,15 +124,16 @@ tupleprint(op, fp, flags)
 {
 	int i;
 	fprintf(fp, "(");
-	for (i = 0; i < op->ob_size && !StopPrint; i++) {
-		if (i > 0) {
+	for (i = 0; i < op->ob_size; i++) {
+		if (i > 0)
 			fprintf(fp, ", ");
-		}
-		printobject(op->ob_item[i], fp, flags);
+		if (printobject(op->ob_item[i], fp, flags) != 0)
+			return -1;
 	}
 	if (op->ob_size == 1)
 		fprintf(fp, ",");
 	fprintf(fp, ")");
+	return 0;
 }
 
 object *
@@ -243,7 +244,7 @@ tupleconcat(a, bb)
 	size = a->ob_size + b->ob_size;
 	np = (tupleobject *) newtupleobject(size);
 	if (np == NULL) {
-		return err_nomem();
+		return NULL;
 	}
 	for (i = 0; i < a->ob_size; i++) {
 		object *v = a->ob_item[i];
