@@ -1,0 +1,428 @@
+\section{\module{doctest} ---
+         Test docstrings represent reality}
+
+\declaremodule{standard}{doctest}
+\moduleauthor{Tim Peters}{tim_one@users.sourceforge.net}
+\sectionauthor{Tim Peters}{tim_one@users.sourceforge.net}
+\sectionauthor{Moshe Zadka}{moshez@debian.org}
+
+\modulesynopsis{A framework for verifying examples in docstrings.}
+
+The \module{doctest} module searches a module's docstrings for text that looks
+like an interactive Python session, then executes all such sessions to verify
+they still work exactly as shown.  Here's a complete but small example:
+
+\begin{verbatim}
+"""
+This is module example.
+
+Example supplies one function, factorial.  For example,
+
+>>> factorial(5)
+120
+"""
+
+def factorial(n):
+    """Return the factorial of n, an exact integer >= 0.
+
+    If the result is small enough to fit in an int, return an int.
+    Else return a long.
+
+    >>> [factorial(n) for n in range(6)]
+    [1, 1, 2, 6, 24, 120]
+    >>> [factorial(long(n)) for n in range(6)]
+    [1, 1, 2, 6, 24, 120]
+    >>> factorial(30)
+    265252859812191058636308480000000L
+    >>> factorial(30L)
+    265252859812191058636308480000000L
+    >>> factorial(-1)
+    Traceback (most recent call last):
+        ...
+    ValueError: n must be >= 0
+
+    Factorials of floats are OK, but the float must be an exact integer:
+    >>> factorial(30.1)
+    Traceback (most recent call last):
+        ...
+    ValueError: n must be exact integer
+    >>> factorial(30.0)
+    265252859812191058636308480000000L
+
+    It must also not be ridiculously large:
+    >>> factorial(1e100)
+    Traceback (most recent call last):
+        ...
+    OverflowError: n too large
+    """
+
+\end{verbatim}
+% allow LaTeX to break here.
+\begin{verbatim}
+
+    import math
+    if not n >= 0:
+        raise ValueError("n must be >= 0")
+    if math.floor(n) != n:
+        raise ValueError("n must be exact integer")
+    if n+1 == n:  # e.g., 1e300
+        raise OverflowError("n too large")
+    result = 1
+    factor = 2
+    while factor <= n:
+        try:
+            result *= factor
+        except OverflowError:
+            result *= long(factor)
+        factor += 1
+    return result
+
+def _test():
+    import doctest, example
+    return doctest.testmod(example)
+
+if __name__ == "__main__":
+    _test()
+\end{verbatim}
+
+If you run \file{example.py} directly from the command line, doctest works
+its magic:
+
+\begin{verbatim}
+$ python example.py
+$
+\end{verbatim}
+
+There's no output!  That's normal, and it means all the examples worked.
+Pass \code{-v} to the script, and doctest prints a detailed log of what it's
+trying, and prints a summary at the end:
+
+\begin{verbatim}
+$ python example.py -v
+Running example.__doc__
+Trying: factorial(5)
+Expecting: 120
+ok
+0 of 1 examples failed in example.__doc__
+Running example.factorial.__doc__
+Trying: [factorial(n) for n in range(6)]
+Expecting: [1, 1, 2, 6, 24, 120]
+ok
+Trying: [factorial(long(n)) for n in range(6)]
+Expecting: [1, 1, 2, 6, 24, 120]
+ok
+Trying: factorial(30)
+Expecting: 265252859812191058636308480000000L
+ok
+\end{verbatim}
+
+And so on, eventually ending with:
+
+\begin{verbatim}
+Trying: factorial(1e100)
+Expecting:
+Traceback (most recent call last):
+    ...
+OverflowError: n too large
+ok
+0 of 8 examples failed in example.factorial.__doc__
+2 items passed all tests:
+   1 tests in example
+   8 tests in example.factorial
+9 tests in 2 items.
+9 passed and 0 failed.
+Test passed.
+$
+\end{verbatim}
+
+That's all you need to know to start making productive use of doctest!  Jump
+in.  The docstrings in doctest.py contain detailed information about all
+aspects of doctest, and we'll just cover the more important points here.
+
+\subsection{Normal Usage}
+
+In normal use, end each module \module{M} with:
+
+\begin{verbatim}
+def _test():
+    import doctest, M           # replace M with your module's name
+    return doctest.testmod(M)   # ditto
+
+if __name__ == "__main__":
+    _test()
+\end{verbatim}
+
+Then running the module as a script causes the examples in the docstrings
+to get executed and verified:
+
+\begin{verbatim}
+python M.py
+\end{verbatim}
+
+This won't display anything unless an example fails, in which case the
+failing example(s) and the cause(s) of the failure(s) are printed to stdout,
+and the final line of output is \code{"Test failed."}.
+
+Run it with the \code{-v} switch instead:
+
+\begin{verbatim}
+python M.py -v
+\end{verbatim}
+
+and a detailed report of all examples tried is printed to \var{stdout},
+along with assorted summaries at the end.
+
+You can force verbose mode by passing \code{verbose=1} to testmod, or
+prohibit it by passing \code{verbose=0}.  In either of those cases,
+\var{sys.argv} is not examined by testmod.
+
+In any case, testmod returns a 2-tuple of ints \var{(f, t)}, where \var{f}
+is the number of docstring examples that failed and \var{t} is the total
+number of docstring examples attempted.
+
+\subsection{Which Docstrings Are Examined?}
+
+See \file{docstring.py} for all the details.  They're unsurprising:  the
+module docstring, and all function, class and method docstrings are
+searched, with the exception of docstrings attached to objects with private
+names.
+
+In addition, if \var{M.__test__} exists and "is true", it must be a dict,
+and each entry maps a (string) name to a function object, class object, or
+string.  Function and class object docstrings found from \var{M.__test__}
+are searched even if the name is private, and strings are searched directly
+as if they were docstrings.  In output, a key \var{K} in \var{M.__test__}
+appears with name
+
+\begin{verbatim}
+      <name of M>.__test__.K
+\end{verbatim}
+
+Any classes found are recursively searched similarly, to test docstrings in
+their contained methods and nested classes.  While private names reached
+from \module{M}'s globals are skipped, all names reached from
+\var{M.__test__} are searched.
+
+\subsection{What's the Execution Context?}
+
+By default, each time testmod finds a docstring to test, it uses a
+{\em copy} of \module{M}'s globals, so that running tests on a module
+doesn't change the module's real globals, and so that one test in
+\module{M} can't leave behind crumbs that accidentally allow another test
+to work.  This means examples can freely use any names defined at top-level
+in \module{M}, and names defined earlier in the docstring being run.  It
+also means that sloppy imports (see below) can cause examples in external
+docstrings to use globals inappropriate for them.
+
+You can force use of your own dict as the execution context by passing
+\code{globs=your_dict} to \function{testmod()} instead.  Presumably this
+would be a copy of \var{M.__dict__} merged with the globals from other
+imported modules.
+
+\subsection{What About Exceptions?}
+
+No problem, as long as the only output generated by the example is the
+traceback itself.  For example:
+
+\begin{verbatim}
+    >>> [1, 2, 3].remove(42)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in ?
+    ValueError: list.remove(x): x not in list
+    >>>
+\end{verbatim}
+
+Note that only the exception type and value are compared (specifically,
+only the last line in the traceback).  The various \code{"File"} lines in
+between can be left out (unless they add significantly to the documentation
+value of the example).
+
+\subsection{Advanced Usage}
+
+\function{testmod()} actually creates a local instance of class
+\class{doctest.Tester}, runs appropriate methods of that class, and merges
+the results into global \class{Tester} instance \var{doctest.master}.
+
+You can create your own instances of \class{doctest.Tester}, and so build
+your own policies, or even run methods of \var{doctest.master} directly.
+See \var{doctest.Tester.__doc__} for details.
+
+
+\subsection{How are Docstring Examples Recognized?}
+
+In most cases a copy-and-paste of an interactive console session works fine
+--- just make sure the leading whitespace is rigidly consistent (you can mix
+tabs and spaces if you're too lazy to do it right, but doctest is not in
+the business of guessing what you think a tab means).
+
+\begin{verbatim}
+    >>> # comments are ignored
+    >>> x = 12
+    >>> x
+    12
+    >>> if x == 13:
+    ...     print "yes"
+    ... else:
+    ...     print "no"
+    ...     print "NO"
+    ...     print "NO!!!"
+    ...
+    no
+    NO
+    NO!!!
+    >>>
+\end{verbatim}
+
+Any expected output must immediately follow the final \code{">>>"} or
+\code{"..."} line containing the code, and the expected output (if any)
+extends to the next \code{">>>"} or all-whitespace line.  That's it.
+
+The fine print:
+
+\begin{itemize}
+
+\item Expected output cannot contain an all-whitespace line, since such a
+  line is taken to signal the end of expected output.
+
+\item Output to stdout is captured, but not output to stderr (exception
+  tracebacks are captured via a different means).
+
+\item If you continue a line via backslashing in an interactive session, or
+  for any other reason use a backslash, you need to double the backslash in
+  the docstring version.  This is simply because you're in a string, and so
+  the backslash must be escaped for it to survive intact.  Like:
+
+\begin{verbatim}
+>>> if "yes" == \\
+...     "y" +   \\
+...     "es":
+...     print 'yes'
+yes
+\end{verbatim}
+
+The starting column doesn't matter:
+
+\begin{verbatim}
+>>> assert "Easy!"
+     >>> import math
+            >>> math.floor(1.9)
+            1.0
+\end{verbatim}
+
+and as many leading whitespace characters are stripped from the expected
+output as appeared in the initial ">>>" line that triggered it.
+
+\subsection{Warnings}
+
+\begin{enumerate}
+
+\item Sloppy imports can cause trouble; e.g., if you do
+
+\begin{verbatim}
+from XYZ import XYZclass
+\end{verbatim}
+
+then \class{XYZclass} is a name in \var{M.__dict__} too, and doctest has no
+way to know that \class{XYZclass} wasn't *defined* in \module{M}.  So it may
+try to execute the examples in \class{XYZclass}'s docstring, and those in
+turn may require a different set of globals to work correctly.  I prefer to
+do \code{import *}- friendly imports, a la
+
+\begin{verbatim}
+from XYZ import XYZclass as _XYZclass
+\end{verbatim}
+
+and then the leading underscore makes \class{_XYZclass} a private name so
+testmod skips it by default.  Other approaches are described in
+\file{doctest.py}.
+
+\item \module{doctest} is serious about requiring exact matches in expected
+  output.  If even a single character doesn't match, the test fails.  This
+  will probably surprise you a few times, as you learn exactly what Python
+  does and doesn't guarantee about output.  For example, when printing a
+  dict, Python doesn't guarantee that the key-value pairs will be printed
+  in any particular order, so a test like
+
+% Hey! What happened to Monty Python examples?
+\begin{verbatim}
+    >>> foo()
+    {"Hermione": "hippogryph", "Harry": "broomstick"}
+    >>>
+\end{verbatim}
+
+is vulnerable!  One workaround is to do
+
+\begin{verbatim}
+    >>> foo() == {"Hermione": "hippogryph", "Harry": "broomstick"}
+    1
+    >>>
+\end{verbatim}
+
+instead.  Another is to do
+
+\begin{verbatim}
+    >>> d = foo().items()
+    >>> d.sort()
+    >>> d
+    [('Harry', 'broomstick'), ('Hermione', 'hippogryph')]
+\end{verbatim}
+
+There are others, but you get the idea.
+
+Another bad idea is to print things that embed an object address, like
+
+\begin{verbatim}
+    >>> id(1.0) # certain to fail some of the time
+    7948648
+    >>>
+\end{verbatim}
+
+Floating-point numbers are also subject to small output variations across
+platforms, because Python defers to the platform C library for float
+formatting, and C libraries vary widely in quality here.
+
+\begin{verbatim}
+    >>> 1./7  # risky
+    0.14285714285714285
+    >>> print 1./7 # safer
+    0.142857142857
+    >>> print round(1./7, 6) # much safer
+    0.142857
+\end{verbatim}
+
+Numbers of the form \code{I/2.**J} are safe across all platforms, and I
+often contrive doctest examples to produce numbers of that form:
+
+\begin{verbatim}
+    >>> 3./4  # utterly safe
+    0.75
+\end{verbatim}
+
+Simple fractions are also easier for people to understand, and that makes
+for better documentation.
+
+
+\subsection{Soapbox}
+
+The first word in doctest is "doc", and that's why the author wrote
+doctest:  to keep documentation up to date.  It so happens that doctest
+makes a pleasant unit testing environment, but that's not its primary
+purpose.
+
+Choose docstring examples with care.  There's an art to this that needs to
+be learned --- it may not be natural at first.  Examples should add genuine
+value to the documentation.  A good example can often be worth many words.
+If possible, show just a few normal cases, show endcases, show interesting
+subtle cases, and show an example of each kind of exception that can be
+raised.  You're probably testing for endcases and subtle cases anyway in an
+interactive shell:  doctest wants to make it as easy as possible to capture
+those sessions, and will verify they continue to work as designed forever
+after.
+
+If done with care, the examples will be invaluable for your users, and will
+pay back the time it takes to collect them many times over as the years go
+by and "things change".  I'm still amazed at how often one of my doctest
+examples stops working after a "harmless" change.
+
+For exhaustive testing, or testing boring cases that add no value to the
+docs, define a \var{__test__} dict instead.  That's what it's for.
