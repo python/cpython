@@ -272,7 +272,7 @@ class Message:
     def getheader(self, name, default=None):
         """Get the header value for a name.
         
-        This is the normal interface: it return a stripped
+        This is the normal interface: it returns a stripped
         version of the header value for a given header name,
         or None if it doesn't exist.  This uses the dictionary
         version which finds the *last* such header.
@@ -282,6 +282,31 @@ class Message:
         except KeyError:
             return default
     get = getheader
+
+    def getheaders(self, name):
+        """Get all values for a header.
+
+        This returns a list of values for headers given more than once;
+        each value in the result list is stripped in the same way as the
+        result of getheader().  If the header is not given, return None.
+        """
+        result = []
+        current = ''
+        have_header = 0
+        for s in self.getallmatchingheaders(name):
+            if s[0] in string.whitespace:
+                if current:
+                    current = "%s\n %s" % (current, string.strip(s))
+                else:
+                    current = string.strip(s)
+            else:
+                if have_header:
+                    result.append(current)
+                current = string.strip(s[string.find(s, ":") + 1:])
+                have_header = 1
+        if have_header:
+            result.append(current)
+        return result or None
     
     def getaddr(self, name):
         """Get a single address from a header, as a tuple.
