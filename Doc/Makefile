@@ -71,7 +71,14 @@ RELEASE=2.4a0
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
 
-MKHOWTO=   $(PYTHON) ../tools/mkhowto
+# This is ugly!  The issue here is that there are two different levels
+# in the directory tree at which we execute mkhowto, so we can't
+# define it just once using a relative path (at least not with the
+# current implementation and Makefile structure).  We use the GNUish
+# $(shell) function here to work around that restriction by
+# identifying mkhowto using an absolute path.
+#
+MKHOWTO=   $(PYTHON) $(shell pwd)/tools/mkhowto
 
 MKDVI=	   $(MKHOWTO) --paper=$(PAPER) --dvi
 MKHTML=	   $(MKHOWTO) --html --about html/stdabout.dat \
