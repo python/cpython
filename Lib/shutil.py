@@ -117,27 +117,27 @@ def copytree(src, dst, symlinks=0):
     if errors:
         raise Error, errors
 
-def rmtree(path, ignore_errors=0, onerror=None):
+def rmtree(path, ignore_errors=False, onerror=None):
     """Recursively delete a directory tree.
 
     If ignore_errors is set, errors are ignored; otherwise, if
     onerror is set, it is called to handle the error; otherwise, an
     exception is raised.
-
     """
     cmdtuples = []
-    _build_cmdtuple(path, cmdtuples)
-    for func, arg in cmdtuples:
-        try:
+    arg = path
+    try:
+        _build_cmdtuple(path, cmdtuples)
+        for func, arg in cmdtuples:
             func(arg)
-        except OSError:
-            exc = sys.exc_info()
-            if ignore_errors:
-                pass
-            elif onerror is not None:
-                onerror(func, arg, exc)
-            else:
-                raise exc[0], (exc[1][0], exc[1][1] + ' removing '+arg)
+    except OSError:
+        exc = sys.exc_info()
+        if ignore_errors:
+            pass
+        elif onerror is not None:
+            onerror(func, arg, exc)
+        else:
+            raise exc[0], (exc[1][0], exc[1][1] + ' removing '+arg)
 
 # Helper for rmtree()
 def _build_cmdtuple(path, cmdtuples):
