@@ -267,7 +267,7 @@ class Block:
         assert len(self.next) == 1, map(str, self.next)
 
     _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS',
-                        'JUMP_ABSOLUTE', 'JUMP_FORWARD')
+                        'JUMP_ABSOLUTE', 'JUMP_FORWARD', 'CONTINUE_LOOP')
 
     def pruneNext(self):
         """Remove bogus edge for unconditional transfers
@@ -753,6 +753,9 @@ class StackDepthTracker:
         'IMPORT_STAR': -1,
         'IMPORT_NAME': 0,
         'IMPORT_FROM': 1,
+        # close enough...
+        'SETUP_EXCEPT': 3,
+        'SETUP_FINALLY': 3,
         }
     # use pattern match
     patterns = [
