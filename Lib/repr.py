@@ -14,7 +14,7 @@ class Repr:
     def repr(self, x):
         return self.repr1(x, self.maxlevel)
     def repr1(self, x, level):
-        typename = `type(x)`[7:-2] # "<type '......'>"
+        typename = type(x).__name__
         if ' ' in typename:
             parts = typename.split()
             typename = '_'.join(parts)
