@@ -303,8 +303,6 @@ _RegCreateKeyExOptions=[
     "REG_OPENED_EXISTING_KEY",
     "REG_OPTION_CREATE_LINK"]
 
-def test():
-    import testreg
 
 #unusednames=_RegNotifyChangeKeyValueOptions+_RegRestoreKeyOptions+_RegCreateKeyExOptions
 
