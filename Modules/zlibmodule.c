@@ -145,8 +145,6 @@ PyZlib_compress(PyObject *self, PyObject *args)
     {
 	PyErr_SetString(PyExc_MemoryError,
 			"Can't allocate memory to compress data");
-	free(output);
-
 	return NULL;
     }
 
@@ -266,11 +264,8 @@ PyZlib_decompress(PyObject *self, PyObject *args)
     zst.avail_in = length;
     zst.avail_out = r_strlen;
 
-    if (!(result_str = PyString_FromStringAndSize(NULL, r_strlen))) {
-	PyErr_SetString(PyExc_MemoryError,
-			"Can't allocate memory to decompress data");
+    if (!(result_str = PyString_FromStringAndSize(NULL, r_strlen)))
 	return NULL;
-    }
 
     /* Past the point of no return.  From here on out, we need to make sure
        we clean up mallocs & INCREFs. */
@@ -334,8 +329,6 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 	case(Z_OK):
 	    /* need more memory */
 	    if (_PyString_Resize(&result_str, r_strlen << 1) == -1) {
-		PyErr_SetString(PyExc_MemoryError,
-				"Out of memory while decompressing data");
 		inflateEnd(&zst);
 		result_str = NULL;
 		return_error = 1;
@@ -528,11 +521,8 @@ PyZlib_objcompress(compobject *self, PyObject *args)
     if (PyString_AsStringAndSize(inputString, (char**)&input, &inplen) == -1)
 	return NULL;
 
-    if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
-	PyErr_SetString(PyExc_MemoryError,
-			"Can't allocate memory to compress data");
+    if (!(RetVal = PyString_FromStringAndSize(NULL, length)))
 	return NULL;
-    }
 
     ENTER_ZLIB
 
@@ -554,8 +544,6 @@ PyZlib_objcompress(compobject *self, PyObject *args)
        so extend the output buffer and try again */
     while (err == Z_OK && self->zst.avail_out == 0) {
 	if (_PyString_Resize(&RetVal, length << 1) == -1)  {
-	    PyErr_SetString(PyExc_MemoryError,
-			    "Can't allocate memory to compress data");
 	    return_error = 1;
 	    break;
 	}
@@ -635,11 +623,8 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
     /* limit amount of data allocated to max_length */
     if (max_length && length > max_length) 
 	length = max_length;
-    if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
-	PyErr_SetString(PyExc_MemoryError,
-			"Can't allocate memory to compress data");
+    if (!(RetVal = PyString_FromStringAndSize(NULL, length)))
 	return NULL;
-    }
 
     ENTER_ZLIB
     return_error = 0;
@@ -673,8 +658,6 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 	    length = max_length;
 
 	if (_PyString_Resize(&RetVal, length) == -1) {
-	    PyErr_SetString(PyExc_MemoryError,
-			    "Can't allocate memory to compress data");
 	    return_error = 1;
 	    break;
 	}
@@ -709,8 +692,6 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 	    self->unused_data = PyString_FromStringAndSize(
 		(char *)self->zst.next_in, self->zst.avail_in);
 	    if (self->unused_data == NULL) {
-		PyErr_SetString(PyExc_MemoryError,
-				"Can't allocate memory to unused_data");
 		Py_DECREF(RetVal);
 		return_error = 1;
 	    }
@@ -769,11 +750,8 @@ PyZlib_flush(compobject *self, PyObject *args)
 	return PyString_FromStringAndSize(NULL, 0);
     }
 
-    if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
-	PyErr_SetString(PyExc_MemoryError,
-			"Can't allocate memory to compress data");
+    if (!(RetVal = PyString_FromStringAndSize(NULL, length)))
 	return NULL;
-    }
 
     ENTER_ZLIB
   
@@ -792,8 +770,6 @@ PyZlib_flush(compobject *self, PyObject *args)
        so extend the output buffer and try again */
     while (err == Z_OK && self->zst.avail_out == 0) {
 	if (_PyString_Resize(&RetVal, length << 1) == -1)  {
-	    PyErr_SetString(PyExc_MemoryError,
-			    "Can't allocate memory to compress data");
 	    return_error = 1;
 	    break;
 	}
