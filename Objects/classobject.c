@@ -494,8 +494,10 @@ instance_setattr(inst, name, v)
 	object *v;
 {
 	object *func, *args, *res;
-	if (name[0] == '_' && name[1] == '_') {
-		int n = strlen(name);
+	if (name[0] == '_' && name[1] == '_'
+	    && (strcmp(name, "__dict__") == 0 ||
+		strcmp(name, "__class__") == 0)) {
+	        int n = strlen(name);
 		if (name[n-1] == '_' && name[n-2] == '_') {
 			err_setstr(TypeError, "read-only special attribute");
 			return -1;
