@@ -2,6 +2,7 @@
         \label{defining-new-types}}
 \sectionauthor{Michael Hudson}{mwh@python.net}
 \sectionauthor{Dave Kuhlman}{dkuhlman@rexx.com}
+\sectionauthor{Jim Fulton}{jim@zope.com}
 
 As mentioned in the last chapter, Python allows the writer of an
 extension module to define new types that can be manipulated from
@@ -38,15 +39,6 @@ seem familiar from the last chapter.
 The first bit that will be new is:
 
 \begin{verbatim}
-static PyTypeObject noddy_NoddyType;
-\end{verbatim}
-
-This names the type object that will be defining further down in the
-file.  It can't be defined here because its definition has to refer to
-functions that have not yet been defined, but we need to be able to
-refer to it, hence the declaration.
-
-\begin{verbatim}
 typedef struct {
     PyObject_HEAD
 } noddy_NoddyObject;
@@ -73,105 +65,54 @@ typedef struct {
 } PyIntObject;
 \end{verbatim}
 
-Next up is:
-
-\begin{verbatim}
-static PyObject*
-noddy_new_noddy(PyObject* self, PyObject* args)
-{
-    noddy_NoddyObject* noddy;
-
-    if (!PyArg_ParseTuple(args,":new_noddy")) 
-        return NULL;
-
-    noddy = PyObject_New(noddy_NoddyObject, &noddy_NoddyType);
-
-    return (PyObject*)noddy;
-}
-\end{verbatim}
-
-This is in fact just a regular module function, as described in the
-last chapter.  The reason it gets special mention is that this is
-where we create our Noddy object.  Defining \ctype{PyTypeObject}
-structures is all very well, but if there's no way to actually
-\emph{create} one of the wretched things it is not going to do anyone
-much good.
-
-Almost always, you create objects with a call of the form:
-
-\begin{verbatim}
-PyObject_New(<type>, &<type object>);
-\end{verbatim}
-
-This allocates the memory and then initializes the object (sets
-the reference count to one, makes the \member{ob_type} pointer point at
-the right place and maybe some other stuff, depending on build options).
-You \emph{can} do these steps separately if you have some reason to
---- but at this level we don't bother.
-
-Note that \cfunction{PyObject_New()} is a polymorphic macro rather
-than a real function.  The first parameter is the name of the C
-structure that represents an object of our new type, and the return
-value is a pointer to that type.  This would be
-\ctype{noddy_NoddyObject} in our example:
-
-\begin{verbatim}
-    noddy_NoddyObject *my_noddy;
-
-    my_noddy = PyObject_New(noddy_NoddyObject, &noddy_NoddyType);
-\end{verbatim}
-
-We cast the return value to a \ctype{PyObject*} because that's what
-the Python runtime expects.  This is safe because of guarantees about
-the layout of structures in the C standard, and is a fairly common C
-programming trick.  One could declare \cfunction{noddy_new_noddy} to
-return a \ctype{noddy_NoddyObject*} and then put a cast in the
-definition of \cdata{noddy_methods} further down the file --- it
-doesn't make much difference.
-
-Now a Noddy object doesn't do very much and so doesn't need to
-implement many type methods.  One you can't avoid is handling
-deallocation, so we find
-
-\begin{verbatim}
-static void
-noddy_noddy_dealloc(PyObject* self)
-{
-    PyObject_Del(self);
-}
-\end{verbatim}
-
-This is so short as to be self explanatory.  This function will be
-called when the reference count on a Noddy object reaches \code{0} (or
-it is found as part of an unreachable cycle by the cyclic garbage
-collector).  \cfunction{PyObject_Del()} is what you call when you want
-an object to go away.  If a Noddy object held references to other
-Python objects, one would decref them here.
-
 Moving on, we come to the crunch --- the type object.
 
 \begin{verbatim}
 static PyTypeObject noddy_NoddyType = {
     PyObject_HEAD_INIT(NULL)
-    0,                          /* ob_size */
-    "Noddy",                    /* tp_name */
-    sizeof(noddy_NoddyObject),  /* tp_basicsize */
-    0,                          /* tp_itemsize */
-    noddy_noddy_dealloc,        /* tp_dealloc */
-    0,                          /* tp_print */
-    0,                          /* tp_getattr */
-    0,                          /* tp_setattr */
-    0,                          /* tp_compare */
-    0,                          /* tp_repr */
-    0,                          /* tp_as_number */
-    0,                          /* tp_as_sequence */
-    0,                          /* tp_as_mapping */
-    0,                          /* tp_hash */
+    0,                         /*ob_size*/
+    "noddy.Noddy",             /*tp_name*/
+    sizeof(noddy_NoddyObject), /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    0,                         /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+    "Noddy objects",           /* tp_doc */
+    0,		               /* tp_traverse */
+    0,		               /* tp_clear */
+    0,		               /* tp_richcompare */
+    0,		               /* tp_weaklistoffset */
+    0,		               /* tp_iter */
+    0,		               /* tp_iternext */
+    0,		               /* tp_methods */
+    0,                         /* tp_members */
+    0,                         /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    0,                         /* tp_init */
+    0,                         /* tp_alloc */
+    PyType_GenericNew,         /* tp_new */
 };
 \end{verbatim}
 
 Now if you go and look up the definition of \ctype{PyTypeObject} in
-\file{object.h} you'll see that it has many, many more fields that the
+\file{object.h} you'll see that it has many more fields that the
 definition above.  The remaining fields will be filled with zeros by
 the C compiler, and it's common practice to not specify them
 explicitly unless you need them.  
@@ -190,9 +131,8 @@ This line is a bit of a wart; what we'd like to write is:
 \end{verbatim}
 
 as the type of a type object is ``type'', but this isn't strictly
-conforming C and some compilers complain.  So instead we fill in the
-\member{ob_type} field of \cdata{noddy_NoddyType} at the earliest
-oppourtunity --- in \cfunction{initnoddy()}.
+conforming C and some compilers complain.  Fortunately, this member
+will be filled in for us by \cfunction{PyType_Ready()}.
 
 \begin{verbatim}
     0,                          /* ob_size */
@@ -204,7 +144,7 @@ binary compatibility with extension modules compiled for older
 versions of Python.  Always set this field to zero.
 
 \begin{verbatim}
-    "Noddy",                    /* tp_name */
+    "noddy.Noddy",              /* tp_name */
 \end{verbatim}
 
 The name of our type.  This will appear in the default textual
@@ -214,8 +154,13 @@ representation of our objects and in some error messages, for example:
 >>> "" + noddy.new_noddy()
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-TypeError: cannot add type "Noddy" to string
+TypeError: cannot add type "noddy.Noddy" to string
 \end{verbatim}
+
+Note that the name is a dotted name that includes both the module name
+and the name of the type within the module. The module in this case is 
+\module{noddy} and the type is \class{Noddy}, so we set the type name
+to \class{noddy.Noddy}.
 
 \begin{verbatim}
     sizeof(noddy_NoddyObject),  /* tp_basicsize */
@@ -231,37 +176,70 @@ This is so that Python knows how much memory to allocate when you call
 This has to do with variable length objects like lists and strings.
 Ignore this for now.
 
-Now we get into the type methods, the things that make your objects
-different from the others.  Of course, the Noddy object doesn't
-implement many of these, but as mentioned above you have to implement
-the deallocation function.
+Skipping a number of type methods that we don't provide, we set the
+class flags to \constant{Py_TPFLAGS_DEFAULT}. 
 
 \begin{verbatim}
-    noddy_noddy_dealloc,        /* tp_dealloc */
+    Py_TPFLAGS_DEFAULT,        /*tp_flags*/
 \end{verbatim}
 
-From here, all the type methods are \NULL, so we'll go over them later
---- that's for the next section!
+All types should include this constant in their flags.  It enables all
+of the members defined by the current version of Python.
 
-Everything else in the file should be familiar, except for this line
+We provide a doc string for the type in \member{tp_doc}.
+
+\begin{verbatim}
+    "Noddy objects",           /* tp_doc */
+\end{verbatim}
+
+Now we get into the type methods, the things that make your objects
+different from the others.  We aren't going to implement any of these
+in this version of the module.  We'll expand this example later to 
+have more interesting behavior.  
+
+For now, all we want to be able to do is to create new \class{Noddy}
+objects. To enable object creation, we have to provide a
+\member{tp_new} implementation. In this case, we can just use the
+default implementation provided by the API function
+\cfunction{PyType_GenericNew}.
+
+\begin{verbatim}
+    PyType_GenericNew,         /* tp_new */
+\end{verbatim}
+
+All the other type methods are \NULL, so we'll go over them later
+--- that's for a later section!
+
+Everything else in the file should be familiar, except for some code
 in \cfunction{initnoddy}:
 
 \begin{verbatim}
-    noddy_NoddyType.ob_type = &PyType_Type;
+    if (PyType_Ready(&noddy_NoddyType) < 0)
+        return;
 \end{verbatim}
 
-This was alluded to above --- the \cdata{noddy_NoddyType} object should
-have type ``type'', but \code{\&PyType_Type} is not constant and so
-can't be used in its initializer.  To work around this, we patch it up
-in the module initialization.
+This initializes the \class{Noddy} type, filing in a number of
+members, including \member{ob_type} that we initially set to \NULL.
+
+\begin{verbatim}
+    PyModule_AddObject(m, "Noddy", (PyObject *)&noddy_NoddyType);
+\end{verbatim}
+
+This adds the type to the module dictionary.  This allows us to create
+\class{Noddy} instances by calling the \class{Noddy} class:
+
+\begin{verbatim}
+import noddy
+mynoddy = noddy.Noddy()
+\end{verbatim}
 
 That's it!  All that remains is to build it; put the above code in a
-file called \file{noddymodule.c} and
+file called \file{noddy.c} and
 
 \begin{verbatim}
 from distutils.core import setup, Extension
 setup(name="noddy", version="1.0",
-      ext_modules=[Extension("noddy", ["noddymodule.c"])])
+      ext_modules=[Extension("noddy", ["noddy.c"])])
 \end{verbatim}
 
 in a file called \file{setup.py}; then typing
@@ -276,6 +254,424 @@ move to that directory and fire up Python --- you should be able to
 
 That wasn't so hard, was it?
 
+Of course, the current Noddy type is pretty uninteresting. It has no
+data and doesn't do anything. It can't even be subclasses.
+
+\subsection{Adding data and methods to the Basic example}
+    
+Let's expend the basic example to add some data and methods.  Let's
+also make the type usable as a base class. We'll create
+a new module, \module{noddy2} that adds these capabilities:
+
+\verbatiminput{noddy2.c}
+
+This version of the module has a number of changes.
+
+We've added an extra include:
+
+\begin{verbatim}
+#include "structmember.h"
+\end{verbatim}
+
+This include provides declarations that we use to handle attributes,
+as described a bit later.
+
+The name of the \class{Noddy} object structure has been shortened to
+\class{Noddy}.  The type object name has been shortened to
+\class{NoddyType}.
+
+The  \class{Noddy} type now has three data attributes, \var{first},
+\var{last}, and \var{number}.  The \var{first} and \var{last}
+variables are Python strings containing first and last names. The
+\var{number} attribute is an integer.
+
+The object structure is updated accordingly:
+
+\begin{verbatim}
+typedef struct {
+    PyObject_HEAD
+    PyObject *first;
+    PyObject *last;
+    int number;
+} Noddy;
+\end{verbatim}
+
+Because we now have data to manage, we have to be more careful about
+object allocation and deallocation.  At a minimum, we need a
+deallocation method:
+
+\begin{verbatim}
+static void
+Noddy_dealloc(Noddy* self)
+{
+    Py_XDECREF(self->first);
+    Py_XDECREF(self->last);
+    self->ob_type->tp_free(self);
+}
+\end{verbatim}
+
+which is assigned to the \member{tp_dealloc} member:
+
+\begin{verbatim}
+    (destructor)Noddy_dealloc, /*tp_dealloc*/
+\end{verbatim}
+
+This method decrements the reference counts of the two Python
+attributes. We use \cfunction{Py_XDECREF} here because the
+\member{first} and \member{last} members could be \NULL.  It then
+calls the \member{tp_free} member of the object's type to free the
+object's memory.  Note that the object's type might not be
+\class{NoddyType}, because the object may be an instance of a
+subclass.
+
+We want to make sure that the first and last names are initialized to
+empty strings, so we provide a new method:
+
+\begin{verbatim}
+static PyObject *
+Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    Noddy *self;
+
+    self = (Noddy *)type->tp_alloc(type, 0);
+    if (self != NULL) {
+        self->first = PyString_FromString("");
+        if (self->first == NULL)
+          {
+            Py_DECREF(self);
+            return NULL;
+          }
+        
+        self->last = PyString_FromString("");
+        if (self->last == NULL)
+          {
+            Py_DECREF(self);
+            return NULL;
+          }
+
+        self->number = 0;
+    }
+
+    return (PyObject *)self;
+}
+\end{verbatim}
+
+and install it in the \member{tp_new} member:
+
+\begin{verbatim}
+    Noddy_new,                 /* tp_new */
+\end{verbatim}
+
+The new member is responsible for creating (as opposed to
+initializing) objects of the type.  It is exposed in Python as the
+\method{__new__} method.  See the paper titled ``Unifying types and
+classes in Python'' for a detailed discussion of the \method{__new__}
+method.  One reason to implement a new method is to assure the initial
+values of instance variables.  In this case, we use the new method to
+make sure that the initial values of the members \member{first} and
+\member{last} are not \NULL. If we didn't care whether the initial
+values were \NULL, we could have used \cfunction{PyType_GenericNew} as
+our new method, as we did before.  \cfunction{PyType_GenericNew}
+initializes all of the instance variable members to NULLs.
+
+The new method is a static method that is passed the type being
+instantiated and any arguments passed when the type was called,
+and that returns the new object created. New methods always accept
+positional and keyword arguments, but they often ignore the arguments,
+leaving the argument handling to initializer methods. Note that if the
+type supports subclassing, the type passed may not be the type being
+defined.  The new method calls the tp_alloc slot to allocate memory.
+We don't fill the \member{tp_alloc} slot ourselves. Rather
+\cfunction{PyType_Ready()} fills it for us by inheriting it from our
+base class, which is \class{object} by default.  Most types use the
+default allocation.
+
+We provide an initialization function:
+
+\begin{verbatim}
+static PyObject *
+Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *first=NULL, *last=NULL;
+
+    static char *kwlist[] = {"first", "last", "number", NULL};
+
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist, 
+                                      &first, &last, 
+                                      &self->number))
+        return NULL; 
+
+    if (first) {
+        Py_XDECREF(self->first);
+        Py_INCREF(first);
+        self->first = first;
+    }
+
+    if (last) {
+        Py_XDECREF(self->last);
+        Py_INCREF(last);
+        self->last = last;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+\end{verbatim}
+
+by filling the \member{tp_init} slot.
+
+\begin{verbatim}
+    (initproc)Noddy_init,         /* tp_init */
+\end{verbatim}
+
+The \member{tp_init} slot is exposed in Python as the
+\method{__init__} method. It is used to initialize an object after
+it's created. Unlike the new method, we can't guarantee that the
+initializer is called.  The initializer isn't called when unpickling
+objects and it can be overridden.  Our initializer accepts arguments
+to provide initial values for our instance. Initializers always accept
+positional and keyword arguments.
+
+We want to want to expose our instance variables as attributes. There
+are a number of ways to do that. The simplest way is to define member
+definitions:
+
+\begin{verbatim}
+static PyMemberDef Noddy_members[] = {
+    {"first", T_OBJECT_EX, offsetof(Noddy, first), 0,
+     "first name"},
+    {"last", T_OBJECT_EX, offsetof(Noddy, last), 0,
+     "last name"},
+    {"number", T_INT, offsetof(Noddy, number), 0,
+     "noddy number"},
+    {NULL}  /* Sentinel */
+};
+\end{verbatim}
+
+and put the definitions in the \member{tp_members} slot:
+
+\begin{verbatim}
+    Noddy_members,             /* tp_members */
+\end{verbatim}
+
+Each member definition has a member name, type, offset, access flags
+and documentation string. See the ``Generic Attribute Management''
+section below for details.
+
+A disadvantage of this approach is that it doesn't provide a way to
+restrict the types of objects that can be assigned to the Python
+attributes.  We expect the first and last names to be strings, but any
+Python objects can be assigned.  Further, the attributes can be
+deleted, setting the C pointers to \NULL.  Even though we can make
+sure the members are initialized to non-\NULL values, the members can
+be set to \NULL if the attributes are deleted.
+
+We define a single method, \method{name}, that outputs the objects
+name as the concatenation of the first and last names.  
+
+\begin{verbatim}
+static PyObject *
+Noddy_name(Noddy* self)
+{
+    static PyObject *format = NULL;
+    PyObject *args, *result;
+
+    if (format == NULL) {
+        format = PyString_FromString("%s %s");
+        if (format == NULL)
+            return NULL;
+    }
+
+    if (self->first == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "first");
+        return NULL;
+    }
+
+    if (self->last == NULL) {
+        PyErr_SetString(PyExc_AttributeError, "last");
+        return NULL;
+    }
+
+    args = Py_BuildValue("OO", self->first, self->last);
+    if (args == NULL)
+        return NULL;
+
+    result = PyString_Format(format, args);
+    Py_DECREF(args);
+    
+    return result;
+}
+\end{verbatim}
+
+The method is implemented as a C function that takes a \class{Noddy} (or
+\class{Noddy} subclass) instance as the first argument.  Methods
+always take an instance as the first argument. Methods often take
+positional and keyword arguments as well, but in this cased we don't
+take any and don't need to accept a positional argument tuple or
+keyword argument dictionary. This method is equivalent to the Python
+method:
+
+\begin{verbatim}
+    def name(self):
+       return "%s %s" % (self.first, self.last)
+\end{verbatim}
+
+Note that we have to check for the possibility that our \member{first}
+and \member{last} members are \NULL.  This is because they can be
+deleted, in which case they are set to \NULL.  It would be better to
+prevent deletion of these attributes and to restrict the attribute
+values to be strings.  We'll see how to do that in the next section.
+
+Now that we've defined the method, we need to create an array of
+method definitions:
+
+\begin{verbatim}
+static PyMethodDef Noddy_methods[] = {
+    {"name", (PyCFunction)Noddy_name, METH_NOARGS,
+     "Return the name, combining the first and last name"
+    },
+    {NULL}  /* Sentinel */
+};
+\end{verbatim}
+
+and assign them to the \member{tp_methods} slot:
+
+\begin{verbatim}
+    Noddy_methods,             /* tp_methods */
+\end{verbatim}
+
+Note that used the \constant{METH_NOARGS} flag to indicate that the
+method is passed no arguments.
+
+Finally, we'll make our type usable as a base class.  We've written
+our methods carefully so far so that they don't make any assumptions
+about the type of the object being created or used, so all we need to
+do is to add the \constant{Py_TPFLAGS_BASETYPE} to our class flag
+definition:
+
+\begin{verbatim}
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
+\end{verbatim}
+
+We rename \cfunction{initnoddy} to \cfunction{initnoddy2}
+and update the module name passed to \cfunction{Py_InitModule3}.
+
+Finally, we update our \file{setup.py} file to build the new module:
+
+\begin{verbatim}
+from distutils.core import setup, Extension
+setup(name="noddy", version="1.0",
+      ext_modules=[
+         Extension("noddy", ["noddy.c"]),
+         Extension("noddy2", ["noddy2.c"]),
+         ])
+\end{verbatim}
+
+\subsection{Providing finer control over data attributes}
+
+In this section, we'll provide finer control over how the
+\member{first} and \member{last} attributes are set in the
+\class{Noddy} example. In the previous version of our module, the
+instance variables \member{first} and \member{last} could be set to
+non-string values or even deleted. We want to make sure that these
+attributes always contain strings.
+
+\verbatiminput{noddy3.c}
+
+To provide greater control, over the \member{first} and \member{last}
+attributes, we'll use custom getter and setter functions.  Here are
+the functions for getting and setting the \member{first} attribute:
+
+\begin{verbatim}
+Noddy_getfirst(Noddy *self, void *closure)
+{
+    Py_INCREF(self->first);
+    return self->first;
+}
+
+static int
+Noddy_setfirst(Noddy *self, PyObject *value, void *closure)
+{
+  if (value == NULL) {
+    PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
+    return -1;
+  }
+  
+  if (! PyString_Check(value)) {
+    PyErr_SetString(PyExc_TypeError, 
+                    "The first attribute value must be a string");
+    return -1;
+  }
+      
+  Py_DECREF(self->first);
+  Py_INCREF(value);
+  self->first = value;    
+
+  return 0;
+}
+\end{verbatim}
+
+The getter function is passed a \class{Noddy} object and a
+``closure'', which is void pointer. In this case, the closure is
+ignored. (The closure supports an advanced usage in which definition
+data is passed to the getter and setter. This could, for example, be
+used to allow a single set of getter and setter functions that decide
+the attribute to get or set based on data in the closure.)
+
+The setter function is passed the \class{Noddy} object, the new value,
+and the closure. The new value may be \NULL, in which case the
+attribute is being deleted.  In our setter, we raise an error if the
+attribute is deleted or if the attribute value is not a string.
+
+We create an array of \ctype{PyGetSetDef} structures:
+
+\begin{verbatim}
+static PyGetSetDef Noddy_getseters[] = {
+    {"first", 
+     (getter)Noddy_getfirst, (setter)Noddy_setfirst,
+     "first name",
+     NULL},
+    {"last", 
+     (getter)Noddy_getlast, (setter)Noddy_setlast,
+     "last name",
+     NULL},
+    {NULL}  /* Sentinel */
+};
+\end{verbatim}
+
+and register it in the \member{tp_getset} slot:
+
+\begin{verbatim}
+    Noddy_getseters,           /* tp_getset */
+\end{verbatim}
+
+to register out attribute getters and setters.  
+
+The last item in a \ctype{PyGetSetDef} structure is the closure
+mentioned above. In this case, we aren't using the closure, so we just
+pass \NULL.
+
+We also remove the member definitions for these attributes:
+
+\begin{verbatim}
+static PyMemberDef Noddy_members[] = {
+    {"number", T_INT, offsetof(Noddy, number), 0,
+     "noddy number"},
+    {NULL}  /* Sentinel */
+};
+\end{verbatim}
+
+With these changes, we can assure that the \member{first} and
+\member{last} members are never NULL so we can remove checks for \NULL
+values in almost all cases. This means that most of the
+\cfunction{Py_XDECREF} calls can be converted to \cfunction{Py_DECREF}
+calls. The only place we can't change these calls is in the
+deallocator, where there is the possibility that the initialization of
+these members failed in the constructor.
+
+We also rename the module initialization function and module name in
+the initialization function, as we did before, and we add an extra
+definition to the \file{setup.py} file.
 
 \section{Type Methods
          \label{dnt-type-methods}}
@@ -353,7 +749,7 @@ static void
 newdatatype_dealloc(newdatatypeobject * obj)
 {
     free(obj->obj_UnderlyingDatatypePtr);
-    PyObject_DEL(obj);
+    obj->ob_type->tp_free(self);
 }
 \end{verbatim}
 
@@ -396,7 +792,7 @@ my_dealloc(PyObject *obj)
 
         Py_DECREF(self->my_callback);
     }
-    PyObject_DEL(obj);
+    obj->ob_type->tp_free(self);
 }
 \end{verbatim}
 
@@ -716,7 +1112,7 @@ newdatatype_setattr(newdatatypeobject *obj, char *name, PyObject *v)
 \end{verbatim}
 
 The \member{tp_compare} handler is called when comparisons are needed
-are the object does not implement the specific rich comparison method
+and the object does not implement the specific rich comparison method
 which matches the requested comparison.  (It is always used if defined
 and the \cfunction{PyObject_Compare()} or \cfunction{PyObject_Cmp()}
 functions are used, or if \function{cmp()} is used from Python.)
@@ -772,10 +1168,12 @@ mapping, and sequence protocols have been part of Python since the
 beginning.  Other protocols have been added over time.  For protocols
 which depend on several handler routines from the type implementation,
 the older protocols have been defined as optional blocks of handlers
-referenced by the type object, while newer protocols have been added
-using additional slots in the main type object, with a flag bit being
-set to indicate that the slots are present.  (The flag bit does not
-indicate that the slot values are non-\NULL.)
+referenced by the type object.  For newer protocols there are
+additional slots in the main type object, with a flag bit being set to
+indicate that the slots are present and should be checked by the
+interpreter.  (The flag bit does not indicate that the slot values are
+non-\NULL. The flag may be set to indicate the presense of a slot,
+but a slot may still be unfilled.)
 
 \begin{verbatim}
     PyNumberMethods   tp_as_number;
