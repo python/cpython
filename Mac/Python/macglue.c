@@ -183,6 +183,7 @@ PyMac_FixGUSIcd()
 ** provide a dummy here.
 */
 void SpinCursor(short x) { /* Dummy */ }
+void RotateCursor(short x) { /* Dummy */ }
 
 /*
 ** Replacement GUSI Spin function
@@ -392,7 +393,7 @@ scan_event_queue(flush)
 {
 	register EvQElPtr q;
 	
-	q = (EvQElPtr) GetEventQueue()->qHead;
+	q = (EvQElPtr) LMGetEventQueue()->qHead;
 	
 	for (; q; q = (EvQElPtr)q->qLink) {
 		if (q->evtQWhat == keyDown &&
@@ -651,7 +652,8 @@ PyMac_RestoreMenuBar()
 	if ( sioux_mbar ) {
 		SetMenuBar(sioux_mbar);
 		DrawMenuBar();
-	}
+	} else
+		PyMac_InitMenuBar();
 }
 
 
