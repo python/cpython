@@ -1,7 +1,5 @@
 """Gopher protocol client interface."""
 
-import string
-
 __all__ = ["send_selector","send_query"]
 
 # Default selector, host and port
@@ -58,15 +56,14 @@ TAB = '\t'
 def send_selector(selector, host, port = 0):
     """Send a selector to a given host and port, return a file with the reply."""
     import socket
-    import string
     if not port:
-        i = string.find(host, ':')
+        i = host.find(':')
         if i >= 0:
-            host, port = host[:i], string.atoi(host[i+1:])
+            host, port = host[:i], int(host[i+1:])
     if not port:
         port = DEF_PORT
     elif type(port) == type(''):
-        port = string.atoi(port)
+        port = int(port)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     s.send(selector + CRLF)
@@ -98,7 +95,6 @@ def path_to_datatype_name(path):
 
 def get_directory(f):
     """Get a directory in the form of a list of entries."""
-    import string
     list = []
     while 1:
         line = f.readline()
@@ -115,7 +111,7 @@ def get_directory(f):
             print '(Empty line from server)'
             continue
         gtype = line[0]
-        parts = string.splitfields(line[1:], TAB)
+        parts = line[1:].split(TAB)
         if len(parts) < 4:
             print '(Bad line from server:', `line`, ')'
             continue
