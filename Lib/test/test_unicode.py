@@ -18,6 +18,10 @@ verify(repr(u'\n') == "u'\\n'")
 verify(repr(u'\r') == "u'\\r'")
 verify(repr(u'\t') == "u'\\t'")
 verify(repr(u'\b') == "u'\\x08'")
+verify(repr(u"'\"") == """u'\\'"'""")
+verify(repr(u"'\"") == """u'\\'"'""")
+verify(repr(u"'") == '''u"'"''')
+verify(repr(u'"') == """u'"'""")
 
 def test(method, input, output, *args):
     if verbose:
