@@ -35,13 +35,27 @@ def mkalias(src, dst):
 	dstfinfo.Flags = dstfinfo.Flags|0x8000    # Alias flag
 	dstfss.SetFInfo(dstfinfo)
 	
-def copy(src, dst):
+def mkdirs(dst):
+	"""Make directories leading to 'dst' if they don't exist yet"""
+	if dst == '' or os.path.exists(dst):
+		return
+	head, tail = os.path.split(dst)
+	print 'XX', dst, '->', (head, tail)
+	# XXXX Is this a bug in os.path.split?
+	if not ':' in head:
+		head = head + ':'
+	mkdirs(head)
+	os.mkdir(dst, 0777)
+	
+def copy(src, dst, createpath=0):
 	"""Copy a file, including finder info, resource fork, etc"""
+	if createpath:
+		mkdirs(os.path.split(dst)[0])
 	srcfss = macfs.FSSpec(src)
 	dstfss = macfs.FSSpec(dst)
 	
-	ifp = fopen(srcfss.as_pathname(), 'rb')
-	ofp = fopen(dstfss.as_pathname(), 'wb')
+	ifp = open(srcfss.as_pathname(), 'rb')
+	ofp = open(dstfss.as_pathname(), 'wb')
 	d = ifp.read(BUFSIZ)
 	while d:
 		ofp.write(d)
@@ -49,8 +63,8 @@ def copy(src, dst):
 	ifp.close()
 	ofp.close()
 	
-	ifp = fopen(srcfss.as_pathname(), '*rb')
-	ofp = fopen(dstfss.as_pathname(), '*wb')
+	ifp = open(srcfss.as_pathname(), '*rb')
+	ofp = open(dstfss.as_pathname(), '*wb')
 	d = ifp.read(BUFSIZ)
 	while d:
 		ofp.write(d)
@@ -66,12 +80,9 @@ def copy(src, dst):
 def copytree(src, dst):
 	"""Copy a complete file tree to a new destination"""
 	if os.path.isdir(src):
-		if not os.path.exists(dst):
-			os.mkdir(dst)
-		elif not os.path.isdir(dst):
-			raise Error, 'Not a directory: '+dst
+		mkdirs(dst)
 		files = os.listdir(src)
 		for f in files:
 			copytree(os.path.join(src, f), os.path.join(dst, f))
 	else:
-		copy(src, dst)
+		copy(src, dst, 1)
