@@ -147,7 +147,7 @@ def tightloop_example():
     try:
         i = 0
         while 1:
-            print items[i]; i+=1
+            b = items[i]; i+=1
     except IndexError:
         pass
 
@@ -156,6 +156,7 @@ tightloop_example.events = [(0, 'call'),
                             (2, 'line'),
                             (3, 'line'),
                             (4, 'line'),
+                            (5, 'line'),
                             (5, 'line'),
                             (5, 'line'),
                             (5, 'line'),
