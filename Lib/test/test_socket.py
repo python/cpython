@@ -226,7 +226,11 @@ class GeneralModuleTests(unittest.TestCase):
             # Probably name lookup wasn't set up right; skip this test
             return
         self.assert_(ip.find('.') >= 0, "Error resolving host to ip.")
-        hname, aliases, ipaddrs = socket.gethostbyaddr(ip)
+        try:
+            hname, aliases, ipaddrs = socket.gethostbyaddr(ip)
+        except socket.error:
+            # Probably a similar problem as above; skip this test
+            return
         all_host_names = [hname] + aliases
         fqhn = socket.getfqdn()
         if not fqhn in all_host_names:
