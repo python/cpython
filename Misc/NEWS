@@ -152,6 +152,9 @@ Library
 - The reconvert.quote function can now emit triple-quoted strings.  The
   reconvert module now has some simple documentation.
 
+- ``UserString.MutableString`` now supports negative indices in
+  ``__setitem__`` and ``__delitem__``
+
 Build
 -----
 

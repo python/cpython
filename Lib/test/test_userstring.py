@@ -52,20 +52,20 @@ class MutableStringTest(UserStringTest):
 
     def test_setitem(self):
         s = self.type2test("foo")
-        self.assertRaises(IndexError, s.__setitem__, -1, "bar")
+        self.assertRaises(IndexError, s.__setitem__, -4, "bar")
         self.assertRaises(IndexError, s.__setitem__, 3, "bar")
+        s[-1] = "bar"
+        self.assertEqual(s, "fobar")
         s[0] = "bar"
-        self.assertEqual(s, "baroo")
-        s[4] = "foo"
-        self.assertEqual(s, "barofoo")
+        self.assertEqual(s, "barobar")
 
     def test_delitem(self):
         s = self.type2test("foo")
-        self.assertRaises(IndexError, s.__delitem__, -1)
+        self.assertRaises(IndexError, s.__delitem__, -4)
         self.assertRaises(IndexError, s.__delitem__, 3)
+        del s[-1]
+        self.assertEqual(s, "fo")
         del s[0]
-        self.assertEqual(s, "oo")
-        del s[1]
         self.assertEqual(s, "o")
         del s[0]
         self.assertEqual(s, "")

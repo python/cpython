@@ -146,9 +146,13 @@ class MutableString(UserString):
     def __hash__(self):
         raise TypeError, "unhashable type (it is mutable)"
     def __setitem__(self, index, sub):
+        if index < 0:
+           index += len(self.data)
         if index < 0 or index >= len(self.data): raise IndexError
         self.data = self.data[:index] + sub + self.data[index+1:]
     def __delitem__(self, index):
+        if index < 0:
+           index += len(self.data)
         if index < 0 or index >= len(self.data): raise IndexError
         self.data = self.data[:index] + self.data[index+1:]
     def __setslice__(self, start, end, sub):
