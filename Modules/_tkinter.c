@@ -39,7 +39,7 @@ Copyright (C) 1994 Steen Lumholt.
 
 /* Allow using this code in Python 2.[12] */
 #ifndef PyDoc_STRVAR
-#define PyDoc_STRVAR(name,str) static char name[] = PyDoc_STR(str)
+#define PyDoc_STRVAR(name,str) static char name[] = str
 #endif
 
 #ifndef PyMODINIT_FUNC
