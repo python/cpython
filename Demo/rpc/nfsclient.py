@@ -169,7 +169,7 @@ class NFSClient(UDPClient):
 	# Shorthand to get the entire contents of a directory
 	def Listdir(self, dir):
 		list = []
-		ra = (dir, 0, 16)
+		ra = (dir, 0, 2000)
 		while 1:
 			(status, rest) = self.Readdir(ra)
 			if status <> NFS_OK:
@@ -177,10 +177,9 @@ class NFSClient(UDPClient):
 			entries, eof = rest
 			last_cookie = None
 			for fileid, name, cookie in entries:
-				print (fileid, name, cookie) # XXX
 				list.append(fileid, name)
 				last_cookie = cookie
-			if eof or not last_cookie:
+			if eof or last_cookie == None:
 				break
 			ra = (ra[0], last_cookie, ra[2])
 		return list
@@ -208,6 +207,6 @@ def test():
 		print as
 		list = ncl.Listdir(fh)
 		for item in list: print item
-		mcl.Unmnt(filesys)
+		mcl.Umnt(filesys)
 	
 test()
