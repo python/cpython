@@ -54,6 +54,8 @@ def get_platform ():
         # fall through to standard osname-release-machine representation
     elif osname[:4] == "irix":              # could be "irix64"!
         return "%s-%s" % (osname, release)
+    elif osname[:3] == "aix":              
+        return "%s-%s.%s" % (osname, version, release)
     elif osname[:6] == "cygwin":
         rel_re = re.compile (r'[\d.]+')
         m = rel_re.match(release)
