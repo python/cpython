@@ -1400,6 +1400,31 @@ posix_uname(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_UNAME */
 
+static int
+extract_time(PyObject *t, long* sec, long* usec)
+{
+	long intval;
+	if (PyFloat_Check(t)) {
+		double tval = PyFloat_AsDouble(t);
+		PyObject *intobj = t->ob_type->tp_as_number->nb_int(t);
+		if (!intobj)
+			return -1;
+		intval = PyInt_AsLong(intobj);
+		Py_DECREF(intobj);
+		*sec = intval;
+		*usec = (tval - intval) * 1e6;
+		if (*usec < 0)
+			/* If rounding gave us a negative number,
+			   truncate.  */
+			*usec = 0;
+		return 0;
+	}
+	intval = PyInt_AsLong(t);
+	if (intval == -1 && PyErr_Occurred())
+		return -1;
+	*sec = intval;
+	*usec = 0;
+}
 
 PyDoc_STRVAR(posix_utime__doc__,
 "utime(path, (atime, utime))\n\
@@ -1411,22 +1436,26 @@ static PyObject *
 posix_utime(PyObject *self, PyObject *args)
 {
 	char *path;
-	long atime, mtime;
+	long atime, mtime, ausec, musec;
 	int res;
 	PyObject* arg;
 
+#if defined(HAVE_UTIMES)
+	struct timeval buf[2];
+#define ATIME buf[0].tv_sec
+#define MTIME buf[1].tv_sec
+#elif defined(HAVE_UTIME_H)
 /* XXX should define struct utimbuf instead, above */
-#ifdef HAVE_UTIME_H
 	struct utimbuf buf;
 #define ATIME buf.actime
 #define MTIME buf.modtime
 #define UTIME_ARG &buf
-#else /* HAVE_UTIME_H */
+#else /* HAVE_UTIMES */
 	time_t buf[2];
 #define ATIME buf[0]
 #define MTIME buf[1]
 #define UTIME_ARG buf
-#endif /* HAVE_UTIME_H */
+#endif /* HAVE_UTIMES */
 
 	if (!PyArg_ParseTuple(args, "sO:utime", &path, &arg))
 		return NULL;
@@ -1436,17 +1465,31 @@ posix_utime(PyObject *self, PyObject *args)
 		res = utime(path, NULL);
 		Py_END_ALLOW_THREADS
 	}
-	else if (!PyArg_Parse(arg, "(ll)", &atime, &mtime)) {
+	else if (!PyTuple_Check(arg) || PyTuple_Size(arg) != 2) {
 		PyErr_SetString(PyExc_TypeError,
 				"utime() arg 2 must be a tuple (atime, mtime)");
 		return NULL;
 	}
 	else {
+		if (extract_time(PyTuple_GET_ITEM(arg, 0),
+				 &atime, &ausec) == -1)
+			return NULL;
+		if (extract_time(PyTuple_GET_ITEM(arg, 1),
+				 &mtime, &musec) == -1)
+			return NULL;
 		ATIME = atime;
 		MTIME = mtime;
+#ifdef HAVE_UTIMES
+		buf[0].tv_usec = ausec;
+		buf[1].tv_usec = musec;
+		Py_BEGIN_ALLOW_THREADS
+		res = utimes(path, buf);
+		Py_END_ALLOW_THREADS
+#else
 		Py_BEGIN_ALLOW_THREADS
 		res = utime(path, UTIME_ARG);
 		Py_END_ALLOW_THREADS
+#endif
 	}
 	if (res < 0)
 		return posix_error_with_filename(path);

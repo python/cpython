@@ -574,6 +574,9 @@
    wchar_t must be 16-bit unsigned type. (see Include/unicodeobject.h). */
 #undef HAVE_USABLE_WCHAR_T
 
+/* Define to 1 if you have the `utimes' function. */
+#undef HAVE_UTIMES
+
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
