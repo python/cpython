@@ -49,28 +49,35 @@
 ;; font-lock-mode!  As of this writing, the latest Emacs and XEmacs
 ;; 19's do.
 
-;; Here's a brief list of recent additions/improvements:
+;; Here's a brief list of recent additions/improvements/changes:
 ;;
-;; - Wrapping and indentation within triple quote strings should work
-;;   properly now.
+;; - Wrapping and indentation within triple quote strings now works.
 ;; - `Standard' bug reporting mechanism (use C-c C-b)
 ;; - py-mark-block was moved to C-c C-m
 ;; - C-c C-v shows you the python-mode version
-;; - a basic python-font-lock-keywords has been added for Emacs 19
-;;   font-lock colorizations.
+;; - a basic python-font-lock-keywords has been added for (X)Emacs 19
 ;; - proper interaction with pending-del and del-sel modes.
-;; - New py-electric-colon (:) command for improved outdenting.  Also
-;;   py-indent-line (TAB) should handle outdented lines better.
+;; - Better support for outdenting: py-electric-colon (:) and
+;;   py-indent-line (TAB) improvements; one level of outdentation
+;;   added after a return, raise, break, or continue statement
+;; - New py-electric-colon (:) command for improved outdenting  Also
+;;   py-indent-line (TAB) should handle outdented lines better
 ;; - improved (I think) C-c > and C-c <
 ;; - py-(forward|backward)-into-nomenclature, not bound, but useful on
 ;;   M-f and M-b respectively.
+;; - integration with imenu by Perry A. Stoll <stoll@atr-sw.atr.co.jp>
+;; - py-indent-offset now defaults to 4
+;; - new variable py-honor-comment-indentation
+;; - comment-region bound to C-c #
+;; - py-delete-char obeys numeric arguments
+;; - Small modification to rule for "indenting comment lines", such
+;;   lines must now also be indented less than or equal to the
+;;   indentation of the previous statement.
 
 ;; Here's a brief to do list:
 ;;
 ;; - Better integration with gud-mode for debugging.
 ;; - Rewrite according to GNU Emacs Lisp standards.
-;; - py-delete-char should obey numeric arguments.
-;; - de-electrify colon inside literals (e.g. comments and strings)
 ;; - possibly force indent-tabs-mode == nil, and add a
 ;;   write-file-hooks that runs untabify on the whole buffer (to work
 ;;   around potential tab/space mismatch problems).  In practice this
@@ -81,14 +88,10 @@
 ;; If you can think of more things you'd like to see, drop me a line.
 ;; If you want to report bugs, use py-submit-bug-report (C-c C-b).
 ;;
-;; Note that I only test things on XEmacs.  If you port stuff to FSF
-;; Emacs 19, or Emacs 18, please send me your patches.  Byte compiler
-;; complaints can probably be safely ignored.
-
-;; LCD Archive Entry:
-;; python-mode|Barry A. Warsaw|python-mode@python.org
-;; |Major mode for editing Python programs
-;; |$Date$|$Revision$|
+;; Note that I only test things on XEmacs 19 and to some degree on
+;; Emacs 19.  If you port stuff to FSF Emacs 19, or Emacs 18, please
+;; send me your patches.  Byte compiler complaints can probably be
+;; safely ignored.
 
 ;;; Code:
 
@@ -110,7 +113,7 @@ When this flag is non-nil, continuation lines are lined up under the
 preceding line's indentation.  When this flag is nil, continuation
 lines are aligned to column zero.")
 
-(defvar py-block-comment-prefix "##"
+(defvar py-block-comment-prefix "## "
   "*String used by \\[comment-region] to comment out a block of code.
 This should follow the convention for non-indenting comment lines so
 that the indentation commands won't get confused (i.e., the string
@@ -1366,7 +1369,7 @@ initial line; and comment lines beginning in column 1 are ignored."
 (defun py-comment-region (beg end &optional arg)
   "Like `comment-region' but uses double hash (`#') comment starter."
   (interactive "r\nP")
-  (let ((comment-start "## "))
+  (let ((comment-start py-block-comment-prefix))
     (comment-region beg end arg)))
 
 
