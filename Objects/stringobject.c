@@ -3628,7 +3628,7 @@ PyString_Format(PyObject *format, PyObject *args)
 			}
                         if (dict && (argidx < arglen) && c != '%') {
                                 PyErr_SetString(PyExc_TypeError,
-                                           "not all arguments converted");
+                                           "not all arguments converted during string formatting");
                                 goto error;
                         }
 			Py_XDECREF(temp);
@@ -3636,7 +3636,7 @@ PyString_Format(PyObject *format, PyObject *args)
 	} /* until end */
 	if (argidx < arglen && !dict) {
 		PyErr_SetString(PyExc_TypeError,
-				"not all arguments converted");
+				"not all arguments converted during string formatting");
 		goto error;
 	}
 	if (args_owned) {
