@@ -1286,9 +1286,7 @@ Python header files.  If the Make variable \var{PYTHONTOP} points to
 the toplevel Python directory, your \var{CFLAGS} Make variable should
 contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
 (Most header files are in the \file{Include} subdirectory, but the
-\file{config.h} header lives in the toplevel directory.)  You must
-also add \samp{-DHAVE_CONFIG_H} to the definition of \var{CFLAGS} to
-direct the Python headers to include \file{config.h}.
+\file{config.h} header lives in the toplevel directory.)
 
 
 \subsection{Shared Libraries}
