@@ -57,10 +57,14 @@ def fcmp(x, y): # fuzzy comparison function
     return cmp(x, y)
 
 import os
-if os.name !='riscos':
-    TESTFN = '@test' # Filename used for testing
+# Filename used for testing
+if os.name == 'java':
+    # Jython disallows @ in module names
+    TESTFN = '$test'
+elif os.name != 'riscos':
+    TESTFN = '@test'
 else:
-    TESTFN = 'test' # Filename used for testing
+    TESTFN = 'test'
 del os
 
 from os import unlink
