@@ -298,12 +298,21 @@ PyMac_GUSISpin(spin_msg msg, long arg)
 		SpinCursor(msg == SP_AUTO_SPIN ? short(arg) : 1);
 #endif
 
-	if (interrupted) return -1;
 
 	if ( msg == SP_AUTO_SPIN )
 		maxsleep = 0;
-	if ( msg==SP_SLEEP||msg==SP_SELECT )
+	if ( msg==SP_SLEEP||msg==SP_SELECT ) {
 		maxsleep = arg;
+		/*
+		** We force-scan for interrupts. Not pretty, but otherwise
+		** a program may hang in select or sleep forever.
+		*/
+		scan_event_queue(1);
+	}
+	if (interrupted) {
+		interrupted = 0;
+		return -1;
+	}
 
 	PyMac_DoYield(maxsleep, 0); /* XXXX or is it safe to call python here? */
 
@@ -453,65 +462,6 @@ PyOS_FiniInterrupts()
 {
 }
 
-/*
-** This routine scans the event queue looking for cmd-.
-** This is the only way to get an interrupt under THINK (since it
-** doesn't do SIGINT handling), but is also used under MW, when
-** the full-fledged event loop is disabled. This way, we can at least
-** interrupt a runaway python program.
-*/
-static void
-scan_event_queue(flush)
-	int flush;
-{
-#if !TARGET_API_MAC_OS8
-	if ( CheckEventQueueForUserCancel() )
-		interrupted = 1;
-#else
-	register EvQElPtr q;
-	
-	q = (EvQElPtr) LMGetEventQueue()->qHead;
-	
-	for (; q; q = (EvQElPtr)q->qLink) {
-		if (q->evtQWhat == keyDown &&
-				(char)q->evtQMessage == '.' &&
-				(q->evtQModifiers & cmdKey) != 0) {
-			if ( flush )
-				FlushEvents(keyDownMask, 0);
-			interrupted = 1;
-			break;
-		}
-	}
-#endif
-}
-
-int
-PyErr_CheckSignals()
-{
-	if (schedparams.enabled) {
-		if ( (unsigned long)LMGetTicks() > schedparams.next_check ) {
-			if ( PyMac_Yield() < 0)
-				return -1;
-			schedparams.next_check = (unsigned long)LMGetTicks()
-					 + schedparams.check_interval;
-			if (interrupted) {
-				scan_event_queue(1);	/* Eat events up to cmd-. */
-				interrupted = 0;
-				PyErr_SetNone(PyExc_KeyboardInterrupt);
-				return -1;
-			}
-		}
-	}
-	return 0;
-}
-
-int
-PyOS_InterruptOccurred()
-{
-	scan_event_queue(1);
-	return interrupted;
-}
-
 /* Check whether we are in the foreground */
 static int
 PyMac_InForeground(void)
@@ -530,6 +480,72 @@ PyMac_InForeground(void)
 	else if ( SameProcess(&ours, &curfg, &eq) < 0 )
 		eq = 1;
 	return (int)eq;
+}
+
+/*
+** This routine scans the event queue looking for cmd-.
+*/
+static void
+scan_event_queue(force)
+	int force;
+{
+#if !TARGET_API_MAC_OS8
+	if ( interrupted || (!schedparams.check_interrupt && !force) )
+		return;
+	if ( CheckEventQueueForUserCancel() )
+		interrupted = 1;
+#else
+	register EvQElPtr q;
+	
+	if ( interrupted || (!schedparams.check_interrupt && !force) || !PyMac_InForeground() )
+		return;
+	q = (EvQElPtr) LMGetEventQueue()->qHead;
+	
+	for (; q; q = (EvQElPtr)q->qLink) {
+		if (q->evtQWhat == keyDown &&
+				(char)q->evtQMessage == '.' &&
+				(q->evtQModifiers & cmdKey) != 0) {
+			if ( flush )
+				FlushEvents(keyDownMask, 0);
+			interrupted = 1;
+			break;
+		}
+	}
+#endif
+}
+
+int
+PyErr_CheckSignals()
+{
+	int xxx, xxx_old;
+	
+	if (schedparams.enabled) {
+		if ( interrupted || (unsigned long)LMGetTicks() > schedparams.next_check ) {
+			scan_event_queue(0);
+			if (interrupted) {
+				interrupted = 0;
+				PyErr_SetNone(PyExc_KeyboardInterrupt);
+				return -1;
+			}
+			if ( PyMac_Yield() < 0)
+				return -1;
+			xxx = LMGetTicks();
+			xxx_old = schedparams.next_check;
+			schedparams.next_check = (unsigned long)LMGetTicks()
+					 + schedparams.check_interval;
+		}
+	}
+	return 0;
+}
+
+int
+PyOS_InterruptOccurred()
+{
+	scan_event_queue(0);
+	if ( !interrupted )
+		return 0;
+	interrupted = 0;
+	return 1;
 }
 #endif
 
@@ -616,15 +632,6 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 	static int in_here = 0;
 	
 	in_here++;
-	/*
-	** First check for interrupts, if wanted.
-	** This sets a flag that will be picked up at an appropriate
-	** moment in the mainloop.
-	*/
-	if (schedparams.check_interrupt)
-		scan_event_queue(0);
-	
-	/* XXXX Implementing an idle routine goes here */
 		
 	/*
 	** Check which of the eventloop cases we have:
