@@ -142,6 +142,7 @@ typedef struct {
 	object *(*nb_and) FPROTO((object *, object *));
 	object *(*nb_xor) FPROTO((object *, object *));
 	object *(*nb_or) FPROTO((object *, object *));
+	int (*nb_coerce) FPROTO((object **, object **));
 } number_methods;
 
 typedef struct {

@@ -1532,7 +1532,9 @@ static object *
 add(v, w)
 	object *v, *w;
 {
-	if (v->ob_type->tp_as_number != NULL) {
+	if (v->ob_type->tp_as_sequence != NULL)
+		return (*v->ob_type->tp_as_sequence->sq_concat)(v, w);
+	else if (v->ob_type->tp_as_number != NULL) {
 		object *x;
 		if (coerce(&v, &w) != 0)
 			return NULL;
@@ -1541,8 +1543,6 @@ add(v, w)
 		DECREF(w);
 		return x;
 	}
-	else if (v->ob_type->tp_as_sequence != NULL)
-		return (*v->ob_type->tp_as_sequence->sq_concat)(v, w);
 	else {
 		err_setstr(TypeError, "+ not supported by operands");
 		return NULL;
@@ -1571,16 +1571,27 @@ mul(v, w)
 	object *v, *w;
 {
 	typeobject *tp;
-	if (is_intobject(v) && w->ob_type->tp_as_sequence != NULL) {
-		/* int*sequence -- swap v and w */
+	tp = v->ob_type;
+	if (tp->tp_as_number != NULL &&
+	    w->ob_type->tp_as_sequence != NULL &&
+	    !is_instanceobject(v)) {
+		/* number*sequence -- swap v and w */
 		object *tmp = v;
 		v = w;
 		w = tmp;
+		tp = v->ob_type;
 	}
-	tp = v->ob_type;
 	if (tp->tp_as_number != NULL) {
 		object *x;
-		if (coerce(&v, &w) != 0)
+		if (is_instanceobject(v)) {
+			/* Instances of user-defined classes get their
+			   other argument uncoerced, so they may
+			   implement sequence*number as well as
+			   number*number. */
+			INCREF(v);
+			INCREF(w);
+		}
+		else if (coerce(&v, &w) != 0)
 			return NULL;
 		x = (*v->ob_type->tp_as_number->nb_multiply)(v, w);
 		DECREF(v);

@@ -1253,6 +1253,19 @@ long_or(a, b)
 	return long_bitwise(a, '|', b);
 }
 
+int
+long_coerce(pv, pw)
+	object **pv;
+	object **pw;
+{
+	if (is_intobject(*pw)) {
+		*pw = newlongobject(getintvalue(*pw));
+		INCREF(*pv);
+		return 0;
+	}
+	return 1; /* Can't do it */
+}
+
 #define UF (object* (*) FPROTO((object *))) /* Unary function */
 #define BF (object* (*) FPROTO((object *, object *))) /* Binary function */
 #define IF (int (*) FPROTO((object *))) /* Int function */
@@ -1275,6 +1288,8 @@ static number_methods long_as_number = {
 	BF long_and,	/*nb_and*/
 	BF long_xor,	/*nb_xor*/
 	BF long_or,	/*nb_or*/
+	(int (*) FPROTO((object **, object **)))
+	long_coerce,	/*nb_coerce*/
 };
 
 typeobject Longtype = {

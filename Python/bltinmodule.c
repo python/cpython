@@ -781,10 +781,7 @@ initbuiltin()
    Increment the reference count on each argument.
    Return -1 and raise an exception if no coercion is possible
    (and then no reference count is incremented).
-   XXX This should be distributed over the various numeric types,
-   XXX but for now I don't see how to implement that.
-   XXX So, for now, if you add a new numeric type,
-   XXX you must add to this function as well. */
+*/
 
 int
 coerce(pv, pw)
@@ -792,36 +789,23 @@ coerce(pv, pw)
 {
 	register object *v = *pv;
 	register object *w = *pw;
+	int res;
+
 	if (v->ob_type == w->ob_type) {
 		INCREF(v);
 		INCREF(w);
 		return 0;
 	}
-	if (is_instanceobject(v) || is_instanceobject(w))
-		return instance_coerce(pv, pw);
-	if (v->ob_type->tp_as_number == NULL ||
-					w->ob_type->tp_as_number == NULL) {
-		err_setstr(TypeError, "mixing number and non-number");
-		return -1;
+	if (v->ob_type->tp_as_number && v->ob_type->tp_as_number->nb_coerce) {
+		res = (*v->ob_type->tp_as_number->nb_coerce)(pv, pw);
+		if (res <= 0)
+			return res;
 	}
-	if (is_floatobject(v) || is_floatobject(w)) {
-		v = builtin_float((object *)0, v);
-		w = builtin_float((object *)0, w);
+	if (w->ob_type->tp_as_number && w->ob_type->tp_as_number->nb_coerce) {
+		res = (*w->ob_type->tp_as_number->nb_coerce)(pw, pv);
+		if (res <= 0)
+			return res;
 	}
-	else if (is_longobject(v) || is_longobject(w)) {
-		v = builtin_long((object *)0, v);
-		w = builtin_long((object *)0, w);
-	}
-	else {
-		err_setstr(TypeError, "can't coerce numeric types?!?!?");
-		return -1;
-	}
-	if (v == NULL || w == NULL) {
-		XDECREF(v);
-		XDECREF(w);
-		return -1;
-	}
-	*pv = v;
-	*pw = w;
-	return 0;
+	err_setstr(TypeError, "number coercion failed");
+	return -1;
 }
