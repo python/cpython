@@ -196,7 +196,6 @@ EXPORTS
 	PyEval_GetBuiltins
 	PyEval_GetGlobals
 	PyEval_GetLocals
-	PyEval_GetOwner
 	PyEval_GetFrame
 	PyEval_GetRestricted
 	PyEval_InitThreads
@@ -352,3 +351,4 @@ EXPORTS
 	_Py_c_diff
 	PyCObject_FromVoidPtr
 	PyCObject_AsVoidPtr
+	Py_GetBuildInfo
