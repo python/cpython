@@ -250,11 +250,13 @@ same functionality using only one header.
 
 \begin{methoddesc}[Request]{add_unredirected_header}{key, header}
 Add a header that will not be added to a redirected request.
+\versionadded{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{has_header}{header}
 Return whether the instance has the named header (checks both regular
 and unredirected).
+\versionadded{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{get_full_url}{}
@@ -636,6 +638,8 @@ Raise a \exception{URLError} exception.
 
 
 \subsection{HTTPErrorProcessor Objects \label{http-error-processor-objects}}
+
+\versionadded{2.4}
 
 \begin{methoddesc}[HTTPErrorProcessor]{unknown_open}{}
 Process HTTP error responses.
