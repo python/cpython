@@ -522,6 +522,12 @@ hash(a)
 b = a * 5
 if a == b:
     raise TestFailed, 'buffers should not be equal'
+if str(b) != ('asdf' * 5):
+    raise TestFailed, 'repeated buffer has wrong content'
+if str(a * 0) != '':
+    raise TestFailed, 'repeated buffer zero times has wrong content'
+if str(a + buffer('def')) != 'asdfdef':
+    raise TestFailed, 'concatenation of buffers yields wrong content'
 
 try: a[1] = 'g'
 except TypeError: pass
