@@ -587,7 +587,7 @@ _expectations = {
         test_winreg
         test_winsound
         """,
-    'unixware5':
+    'unixware7':
         """
         test_al
         test_bsddb
@@ -607,6 +607,63 @@ _expectations = {
         test_socketserver
         test_sunaudiodev
         test_sundry
+        test_unicode_file
+        test_winreg
+        test_winsound
+        """,
+    'openunix8':
+        """
+        test_al
+        test_bsddb
+        test_cd
+        test_cl
+        test_dl
+        test_gl
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_minidom
+        test_nis
+        test_ntpath
+        test_openpty
+        test_pyexpat
+        test_sax
+        test_socketserver
+        test_sunaudiodev
+        test_sundry
+        test_unicode_file
+        test_winreg
+        test_winsound
+        """,
+    'sco_sv3':
+        """
+        test_al
+        test_asynchat
+        test_bsddb
+        test_cd
+        test_cl
+        test_dl
+        test_fork1
+        test_gettext
+        test_gl
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_locale
+        test_minidom
+        test_nis
+        test_ntpath
+        test_openpty
+        test_pyexpat
+        test_queue
+        test_sax
+        test_socketserver
+        test_sunaudiodev
+        test_sundry
+        test_thread
+        test_threaded_import
+        test_threadedtempfile
+        test_threading
         test_unicode_file
         test_winreg
         test_winsound
