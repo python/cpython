@@ -28,10 +28,11 @@ def escape(data, entities={}):
 
     # must do ampersand first
     data = data.replace("&", "&amp;")
-    data = __dict_replace(data, {"<" : "&lt;",
-                                 ">" : "&gt;",
-                                 })
-    return __dict_replace(data, entities)
+    data = data.replace(">", "&gt;")
+    data = data.replace("<", "&lt;")
+    if entities:
+        data = __dict_replace(data, entities)
+    return data
 
 def unescape(data, entities={}):
     """Unescape &amp;, &lt;, and &gt; in a string of data.
@@ -40,12 +41,13 @@ def unescape(data, entities={}):
     the optional entities parameter.  The keys and values must all be
     strings; each key will be replaced with its corresponding value.
     """
-    data = __dict_replace(data, {"&lt;"  : "<",
-                                 "&gt;"  : ">",
-                                 })
+    data = data.replace("&lt;", "<")
+    data = data.replace("&gt;", ">")
     # must do ampersand last
     data = data.replace("&amp;", "&")
-    return __dict_replace(data, entities)
+    if entities:
+        data = __dict_replace(data, entities)
+    return data
 
 def quoteattr(data, entities={}):
     """Escape and quote an attribute value.
