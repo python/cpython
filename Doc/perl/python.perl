@@ -928,7 +928,7 @@ sub do_cmd_modulesynopsis{
 sub do_cmd_localmoduletable{
     local($_) = @_;
     my $chap = get_chapter_id();
-    "<tex2htmllocalmoduletable><$chap>" . $_;
+    "<tex2htmllocalmoduletable><$chap>\\tableofchildlinks[off]" . $_;
 }
 
 sub process_all_localmoduletables{
