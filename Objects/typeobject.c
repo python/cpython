@@ -3058,10 +3058,7 @@ PyType_Ready(PyTypeObject *type)
 	 * to get type objects into the doubly-linked list of all objects.
 	 * Still, not all type objects go thru PyType_Ready.
 	 */
-	 if (type->_ob_next == NULL) {
-	 	assert(type->_ob_prev == NULL);
-		_Py_AddToAllObjects((PyObject *)type);
-	}
+	_Py_AddToAllObjects((PyObject *)type, 0);
 #endif
 
 	/* Initialize tp_base (defaults to BaseObject unless that's us) */

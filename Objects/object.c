@@ -18,19 +18,42 @@ int Py_DivisionWarningFlag;
    Do not call them otherwise, they do not initialize the object! */
 
 #ifdef Py_TRACE_REFS
-/* Head of doubly-linked list of all objects. */
+/* Head of circular doubly-linked list of all objects.  These are linked
+ * together via the _ob_prev and _ob_next members of a PyObject, which
+ * exist only in a Py_TRACE_REFS build.
+ */
 static PyObject refchain = {&refchain, &refchain};
 
-/* Insert op at the fron of the doubly-linked list of all objects. */
+/* Insert op at the front of the list of all objects.  If force is true,
+ * op is added even if _ob_prev and _ob_next are non-NULL already.  If
+ * force is false amd _ob_prev or _ob_next are non-NULL, do nothing.
+ * force should be true if and only if op points to freshly allocated,
+ * uninitialized memory, or you've unlinked op from the list and are
+ * relinking it into the font.
+ * Note that objects are normally added to the list via _Py_NewReference,
+ * which is called by PyObject_Init.  Not all objects are initialized that
+ * way, though; exceptions include statically allocated type objects, and
+ * statically allocated singletons (like Py_True and Py_None).
+ */
 void
-_Py_AddToAllObjects(PyObject *op)
+_Py_AddToAllObjects(PyObject *op, int force)
 {
-	op->_ob_next = refchain._ob_next;
-	op->_ob_prev = &refchain;
-	refchain._ob_next->_ob_prev = op;
-	refchain._ob_next = op;
-}
+#ifdef  Py_DEBUG
+	if (!force) {
+		/* If it's initialized memory, op must be in or out of
+		 * the list unambiguously.
+		 */
+		assert((op->_ob_prev == NULL) == (op->_ob_next == NULL));
+	}
 #endif
+	if (force || op->_ob_prev == NULL) {
+		op->_ob_next = refchain._ob_next;
+		op->_ob_prev = &refchain;
+		refchain._ob_next->_ob_prev = op;
+		refchain._ob_next = op;
+	}
+}
+#endif	/* Py_TRACE_REFS */
 
 #ifdef COUNT_ALLOCS
 static PyTypeObject *type_list;
@@ -100,11 +123,10 @@ inc_count(PyTypeObject *tp)
 		Py_INCREF(tp);
 		type_list = tp;
 #ifdef Py_TRACE_REFS
-		/* Also insert in the doubly-linked list of all objects. */
-		if (tp->_ob_prev == NULL) {
-			assert(tp->_ob_next == NULL);
-			_Py_AddToAllObjects((PyObject *)tp);
-		}
+		/* Also insert in the doubly-linked list of all objects,
+		 * if not already there.
+		 */
+		_Py_AddToAllObjects((PyObject *)tp, 0);
 #endif
 	}
 	tp->tp_allocs++;
@@ -1963,7 +1985,7 @@ _Py_NewReference(PyObject *op)
 {
 	_Py_INC_REFTOTAL;
 	op->ob_refcnt = 1;
-	_Py_AddToAllObjects(op);
+	_Py_AddToAllObjects(op, 1);
 	_Py_INC_TPALLOCS(op);
 }
 
