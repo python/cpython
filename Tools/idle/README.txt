@@ -35,9 +35,10 @@ Command line arguments: files passed on the command line are executed,
 not opened for editing, unless you give the -e command line option.
 Try "./idle.py -h" to see other command line options.
 
-IDLE requires Python 1.5.2, so it is currently only usable with a
-Python 1.5.2 distribution.  (An older version of IDLE is distributed
-with Python 1.5.2; you can drop this version on top of it.)
+IDLE requires Python 1.5.2 or later, so it is currently only usable
+with a Python 1.5.2 (or later) distribution.  (An older version of
+IDLE is distributed with Python 1.5.2; you can drop this version on
+top of it.)
 
 COPYRIGHT
 
