@@ -18,7 +18,7 @@ def main():
 	else:
 		port = ECHO_PORT
 	s = socket(AF_INET, SOCK_STREAM)
-	s.bind('', port)
+	s.bind(('', port))
 	s.listen(1)
 	conn, (remotehost, remoteport) = s.accept()
 	print 'connected by', remotehost, remoteport
