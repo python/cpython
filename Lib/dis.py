@@ -65,7 +65,7 @@ def disassemble(co, lasti=-1):
 		if i in labels: print '>>',
 		else: print '  ',
 		print string.rjust(`i`, 4),
-		print string.ljust(opname[op], 15),
+		print string.ljust(opname[op], 20),
 		i = i+1
 		if op >= HAVE_ARGUMENT:
 			oparg = ord(code[i]) + ord(code[i+1])*256
