@@ -627,7 +627,8 @@ eval_frame(PyFrameObject *f)
 
 #define INSTR_OFFSET()	(next_instr - first_instr)
 #define NEXTOP()	(*next_instr++)
-#define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
+#define OPARG()		(next_instr[0] + (next_instr[1]<<8))
+#define OPARG_SIZE	2
 #define JUMPTO(x)	(next_instr = first_instr + (x))
 #define JUMPBY(x)	(next_instr += (x))
 
@@ -658,8 +659,7 @@ eval_frame(PyFrameObject *f)
 #endif
 
 #define PREDICTED(op)		PRED_##op: next_instr++
-#define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = (next_instr[2]<<8) + \
-				next_instr[1]; next_instr += 3
+#define PREDICTED_WITH_ARG(op)	PRED_##op: next_instr++; oparg = OPARG(); next_instr += OPARG_SIZE
 
 /* Stack manipulation macros */
 
@@ -862,8 +862,11 @@ eval_frame(PyFrameObject *f)
 		/* Extract opcode and argument */
 
 		opcode = NEXTOP();
-		if (HAS_ARG(opcode))
-			oparg = NEXTARG();
+		if (HAS_ARG(opcode)) {
+			oparg = OPARG();
+			next_instr += OPARG_SIZE;
+		}
+
 	  dispatch_opcode:
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #ifdef DXPAIRS
@@ -2249,7 +2252,8 @@ eval_frame(PyFrameObject *f)
 
 		case EXTENDED_ARG:
 			opcode = NEXTOP();
-			oparg = oparg<<16 | NEXTARG();
+			oparg = oparg<<16 | OPARG();
+			next_instr += OPARG_SIZE;
 			goto dispatch_opcode;
 
 		default:
