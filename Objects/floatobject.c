@@ -449,20 +449,33 @@ float_pow(PyFloatObject *v, PyObject *w, PyFloatObject *z)
 	iv = v->ob_fval;
 	iw = ((PyFloatObject *)w)->ob_fval;
 	intw = (long)iw;
-	if (iw == intw && -10000 < intw && intw < 10000) {
-		/* Sort out special cases here instead of relying on pow() */
-		if (intw == 0) { 		/* x**0 is 1, even 0**0 */
-			PyFPE_START_PROTECT("pow", return 0)
-		 	if ((PyObject *)z!=Py_None) {
-			 	ix=fmod(1.0, z->ob_fval);
-			 	if (ix!=0 && z->ob_fval<0) ix+=z->ob_fval;
-			}
-		 	else ix=1.0;
-			PyFPE_END_PROTECT(ix)
-	    		return PyFloat_FromDouble(ix); 
+
+	/* Sort out special cases here instead of relying on pow() */
+	if (iw == 0) { 		/* x**0 is 1, even 0**0 */
+		PyFPE_START_PROTECT("pow", return NULL)
+		if ((PyObject *)z != Py_None) {
+			ix = fmod(1.0, z->ob_fval);
+			if (ix != 0 && z->ob_fval < 0)
+				ix += z->ob_fval;
 		}
+		else
+			ix = 1.0;
+		PyFPE_END_PROTECT(ix)
+		return PyFloat_FromDouble(ix); 
+	}
+	if (iv == 0.0) {
+		if (iw < 0.0) {
+			PyErr_SetString(PyExc_ZeroDivisionError,
+				   "0.0 to a negative power");
+			return NULL;
+		}
+		return PyFloat_FromDouble(0.0);
+	}
+
+	if (iw == intw && intw > LONG_MIN) {
+		/* ruled out LONG_MIN because -LONG_MIN isn't representable */
 		errno = 0;
-		PyFPE_START_PROTECT("pow", return 0)
+		PyFPE_START_PROTECT("pow", return NULL)
 		if (intw > 0)
 			ix = powu(iv, intw);
 		else
@@ -471,21 +484,13 @@ float_pow(PyFloatObject *v, PyObject *w, PyFloatObject *z)
 	}
 	else {
 		/* Sort out special cases here instead of relying on pow() */
-		if (iv == 0.0) {
-			if (iw < 0.0) {
-				PyErr_SetString(PyExc_ValueError,
-					   "0.0 to a negative power");
-				return NULL;
-			}
-			return PyFloat_FromDouble(0.0);
-		}
 		if (iv < 0.0) {
 			PyErr_SetString(PyExc_ValueError,
 				   "negative number to a float power");
 			return NULL;
 		}
 		errno = 0;
-		PyFPE_START_PROTECT("pow", return 0)
+		PyFPE_START_PROTECT("pow", return NULL)
 		ix = pow(iv, iw);
 		PyFPE_END_PROTECT(ix)
 	}
@@ -495,13 +500,15 @@ float_pow(PyFloatObject *v, PyObject *w, PyFloatObject *z)
 		PyErr_SetFromErrno(PyExc_OverflowError);
 		return NULL;
 	}
- 	if ((PyObject *)z!=Py_None) {
-		PyFPE_START_PROTECT("pow", return 0)
-	 	ix=fmod(ix, z->ob_fval);	/* XXX To Be Rewritten */
-	 	if ( ix!=0 &&
-		      ((iv<0 && z->ob_fval>0) || (iv>0 && z->ob_fval<0) )) {
-		     ix+=z->ob_fval;
-		    }
+	if ((PyObject *)z != Py_None) {
+		PyFPE_START_PROTECT("pow", return NULL)
+		ix = fmod(ix, z->ob_fval);	/* XXX To Be Rewritten */
+		if (ix != 0 &&
+		    ((iv < 0 && z->ob_fval > 0) ||
+		     (iv > 0 && z->ob_fval < 0)
+		    )) {
+		     ix += z->ob_fval;
+		}
 		PyFPE_END_PROTECT(ix)
 	}
 	return PyFloat_FromDouble(ix);
