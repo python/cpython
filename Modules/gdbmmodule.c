@@ -209,9 +209,73 @@ dbm_has_key(dp, args)
 	return newintobject((long) gdbm_exists(dp->di_dbm, key));
 }
 
+static object *
+dbm_firstkey(dp, args)
+	register dbmobject *dp;
+	object *args;
+{
+	register object *v;
+	datum key;
+
+	if (!getnoarg(args))
+		return NULL;
+	key = gdbm_firstkey(dp->di_dbm);
+	if (key.dptr) {
+	    v = newsizedstringobject(key.dptr, key.dsize);
+	    free(key.dptr);
+	    return v;
+	} else {
+	    INCREF(None);
+	    return None;
+	}
+}
+
+static object *
+dbm_nextkey(dp, args)
+	register dbmobject *dp;
+	object *args;
+{
+	register object *v;
+	datum key, nextkey;
+
+	if (!getargs(args, "s#", &key.dptr, &key.dsize))
+		return NULL;
+	nextkey = gdbm_nextkey(dp->di_dbm, key);
+	if (nextkey.dptr) {
+	    v = newsizedstringobject(nextkey.dptr, nextkey.dsize);
+	    free(nextkey.dptr);
+	    return v;
+	} else {
+	    INCREF(None);
+	    return None;
+	}
+}
+
+static object *
+dbm_reorganize(dp, args)
+	register dbmobject *dp;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	errno = 0;
+	if (gdbm_reorganize(dp->di_dbm) < 0) {
+	    if (errno != 0)
+		err_errno(DbmError);
+	    else
+		err_setstr(DbmError, (char *) gdbm_strerror(gdbm_errno));
+	    return NULL;
+	}
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist dbm_methods[] = {
 	{"keys",	(method)dbm_keys},
 	{"has_key",	(method)dbm_has_key},
+	{"firstkey",	(method)dbm_firstkey},
+	{"nextkey",	(method)dbm_nextkey},
+	{"reorganize",	(method)dbm_reorganize},
 	{NULL,		NULL}		/* sentinel */
 };
 
