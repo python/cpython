@@ -155,6 +155,7 @@ class ScriptBinding:
                                 message=msg,
                                 icon=tkMessageBox.QUESTION,
                                 type=tkMessageBox.OKCANCEL,
+                                default=tkMessageBox.OK,
                                 master=self.editwin.text)
             reply = mb.show()
             if reply == "ok":
