@@ -412,7 +412,7 @@ zipimporter_get_data(PyObject *obj, PyObject *args)
 	path = buf;
 #endif
 	len = PyString_Size(self->archive);
-	if (len < strlen(path) &&
+	if ((size_t)len < strlen(path) &&
 	    strncmp(path, PyString_AsString(self->archive), len) == 0 &&
 	    path[len] == SEP) {
 		path = path + len + 1;
