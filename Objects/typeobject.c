@@ -2114,6 +2114,12 @@ PyType_Ready(PyTypeObject *type)
 	if (base == NULL && type != &PyBaseObject_Type)
 		base = type->tp_base = &PyBaseObject_Type;
 
+	/* Initialize the base class */
+	if (base && base->tp_dict == NULL) {
+		if (PyType_Ready(base) < 0)
+			goto error;
+	}
+
 	/* Initialize ob_type if NULL.  This means extensions that want to be
 	   compilable separately on Windows can call PyType_Ready() instead of
 	   initializing the ob_type field of their type objects. */
@@ -2130,12 +2136,6 @@ PyType_Ready(PyTypeObject *type)
 		if (bases == NULL)
 			goto error;
 		type->tp_bases = bases;
-	}
-
-	/* Initialize the base class */
-	if (base && base->tp_dict == NULL) {
-		if (PyType_Ready(base) < 0)
-			goto error;
 	}
 
 	/* Initialize tp_dict */
