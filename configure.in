@@ -368,6 +368,151 @@ else
   fi
 fi
 
+# Check for enable-ipv6
+OPT="$OPT -Dss_family=__ss_family -Dss_len=__ss_len"
+AC_MSG_CHECKING([whether to enable ipv6])
+AC_ARG_ENABLE(ipv6,
+[  --enable-ipv6		Enable ipv6 (with ipv4) support
+  --disable-ipv6		Disable ipv6 support],
+[ case "$enableval" in
+  no)
+       AC_MSG_RESULT(no)
+       ipv6=no
+       ;;
+  *)   AC_MSG_RESULT(yes)
+       AC_DEFINE(ENABLE_IPV6)
+       ipv6=yes
+       ;;
+  esac ],
+
+  AC_TRY_RUN([ /* AF_INET6 avalable check */
+#include <sys/types.h>
+#include <sys/socket.h>
+main()
+{
+ if (socket(AF_INET6, SOCK_STREAM, 0) < 0)
+   exit(1);
+ else
+   exit(0);
+}
+],
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(ENABLE_IPV6)
+  ipv6=yes,
+  AC_MSG_RESULT(no)
+  ipv6=no,
+  AC_MSG_RESULT(no)
+  ipv6=no
+))
+
+ipv6type=unknown
+ipv6lib=none
+ipv6trylibc=no
+
+if test "$ipv6" = "yes"; then
+	AC_MSG_CHECKING([ipv6 stack type])
+	for i in inria kame linux-glibc linux-inet6 toshiba v6d zeta; do
+		case $i in
+		inria)
+			dnl http://www.kame.net/
+			AC_EGREP_CPP(yes, [dnl
+#include <netinet/in.h>
+#ifdef IPV6_INRIA_VERSION
+yes
+#endif],
+				[ipv6type=$i;
+				OPT="-DINET6 $OPT"])
+			;;
+		kame)
+			dnl http://www.kame.net/
+			AC_EGREP_CPP(yes, [dnl
+#include <netinet/in.h>
+#ifdef __KAME__
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6lib=inet6
+				ipv6libdir=/usr/local/v6/lib
+				ipv6trylibc=yes
+				OPT="-DINET6 $OPT"])
+			;;
+		linux-glibc)
+			dnl http://www.v6.linux.or.jp/
+			AC_EGREP_CPP(yes, [dnl
+#include <features.h>
+#if defined(__GLIBC__) && ((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 1) || (__GLIBC__ > 2))
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6trylibc=yes
+				OPT="-DINET6 $OPT"])
+			;;
+		linux-inet6)
+			dnl http://www.v6.linux.or.jp/
+			if test -d /usr/inet6; then
+				ipv6type=$i
+				ipv6lib=inet6
+				ipv6libdir=/usr/inet6/lib
+				OPT="-DINET6 -I/usr/inet6/include $OPT"
+			fi
+			;;
+		toshiba)
+			AC_EGREP_CPP(yes, [dnl
+#include <sys/param.h>
+#ifdef _TOSHIBA_INET6
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6lib=inet6;
+				ipv6libdir=/usr/local/v6/lib;
+				OPT="-DINET6 $OPT"])
+			;;
+		v6d)
+			AC_EGREP_CPP(yes, [dnl
+#include </usr/local/v6/include/sys/v6config.h>
+#ifdef __V6D__
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6lib=v6;
+				ipv6libdir=/usr/local/v6/lib;
+				OPT="-I/usr/local/v6/include $OPT"])
+			;;
+		zeta)
+			AC_EGREP_CPP(yes, [dnl
+#include <sys/param.h>
+#ifdef _ZETA_MINAMI_INET6
+yes
+#endif],
+				[ipv6type=$i;
+				ipv6lib=inet6;
+				ipv6libdir=/usr/local/v6/lib;
+				OPT="-DINET6 $OPT"])
+			;;
+		esac
+		if test "$ipv6type" != "unknown"; then
+			break
+		fi
+	done
+	AC_MSG_RESULT($ipv6type)
+fi
+
+if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
+	if test -d $ipv6libdir -a -f $ipv6libdir/lib$ipv6lib.a; then
+		LIBS="-L$ipv6libdir -l$ipv6lib $LIBS"
+		echo "using lib$ipv6lib"
+	else
+		if test $ipv6trylibc = "yes"; then
+			echo "using libc"
+		else
+			echo 'Fatal: no $ipv6lib library found.  cannot continue.'
+			echo "You need to fetch lib$ipv6lib.a from appropriate"
+			echo 'ipv6 kit and compile beforehand.'
+			exit 1
+		fi
+	fi
+fi
+
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
 dnl AC_TRY_COMPILE([
@@ -1039,6 +1184,110 @@ AC_CHECK_FUNCS(getpgrp, AC_TRY_COMPILE([#include <unistd.h>], [getpgrp(0);], AC_
 AC_CHECK_FUNCS(setpgrp, AC_TRY_COMPILE([#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
 AC_CHECK_FUNCS(gettimeofday, AC_TRY_COMPILE([#include <sys/time.h>], [gettimeofday((struct timeval*)0,(struct timezone*)0);], ,AC_DEFINE(GETTIMEOFDAY_NO_TZ)))
 
+AC_CHECK_FUNCS(getaddrinfo, [dnl
+AC_MSG_CHECKING(getaddrinfo bug)
+AC_TRY_RUN([
+#include <sys/types.h>
+#include <netdb.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+main()
+{
+  int passive, gaierr, inet4 = 0, inet6 = 0;
+  struct addrinfo hints, *ai, *aitop;
+  char straddr[INET6_ADDRSTRLEN], strport[16];
+
+  for (passive = 0; passive <= 1; passive++) {
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_flags = passive ? AI_PASSIVE : 0;
+    hints.ai_socktype = SOCK_STREAM;
+    if ((gaierr = getaddrinfo(NULL, "54321", &hints, &aitop)) != 0) {
+      (void)gai_strerror(gaierr);
+      goto bad;
+    }
+    for (ai = aitop; ai; ai = ai->ai_next) {
+      if (ai->ai_addr == NULL ||
+          ai->ai_addrlen == 0 ||
+          getnameinfo(ai->ai_addr, ai->ai_addrlen,
+                      straddr, sizeof(straddr), strport, sizeof(strport),
+                      NI_NUMERICHOST|NI_NUMERICSERV) != 0) {
+        goto bad;
+      }
+      switch (ai->ai_family) {
+      case AF_INET:
+        if (strcmp(strport, "54321") != 0) {
+          goto bad;
+        }
+        if (passive) {
+          if (strcmp(straddr, "0.0.0.0") != 0) {
+            goto bad;
+          }
+        } else {
+          if (strcmp(straddr, "127.0.0.1") != 0) {
+            goto bad;
+          }
+        }
+        inet4++;
+        break;
+      case AF_INET6:
+        if (strcmp(strport, "54321") != 0) {
+          goto bad;
+        }
+        if (passive) {
+          if (strcmp(straddr, "::") != 0) {
+            goto bad;
+          }
+        } else {
+          if (strcmp(straddr, "::1") != 0) {
+            goto bad;
+          }
+        }
+        inet6++;
+        break;
+      case AF_UNSPEC:
+        goto bad;
+        break;
+      default:
+        /* another family support? */
+        break;
+      }
+    }
+  }
+
+  if (!(inet4 == 0 || inet4 == 2))
+    goto bad;
+  if (!(inet6 == 0 || inet6 == 2))
+    goto bad;
+
+  if (aitop)
+    freeaddrinfo(aitop);
+  exit(0);
+
+ bad:
+  if (aitop)
+    freeaddrinfo(aitop);
+  exit(1);
+}
+],
+AC_MSG_RESULT(good)
+buggygetaddrinfo=no,
+AC_MSG_RESULT(buggy)
+buggygetaddrinfo=yes,
+AC_MSG_RESULT(buggy)
+buggygetaddrinfo=yes)], [buggygetaddrinfo=yes])
+
+if test "$buggygetaddrinfo" = "yes"; then
+	if test "$ipv6" = "yes"; then
+		echo 'Fatal: You must get working getaddrinfo() function.'
+		echo '       or you can specify "--disable-ipv6"'.
+		exit 1
+	fi
+fi
+AC_CHECK_FUNCS(getaddrinfo getnameinfo)
+
 # checks for structures
 AC_HEADER_TIME
 AC_STRUCT_TM
@@ -1062,6 +1311,31 @@ AC_TRY_COMPILE([
 #include <sys/time.h>
 ], [;], [AC_DEFINE(SYS_SELECT_WITH_SYS_TIME) was_it_defined=yes])
 AC_MSG_RESULT($was_it_defined)
+
+AC_MSG_CHECKING(for addrinfo)
+AC_CACHE_VAL(ac_cv_struct_addrinfo,
+AC_TRY_COMPILE([
+#		include <netdb.h>],
+	[struct addrinfo a],
+	ac_cv_struct_addrinfo=yes,
+	ac_cv_struct_addrinfo=no))
+AC_MSG_RESULT($ac_cv_struct_addrinfo)
+if test $ac_cv_struct_addrinfo = yes; then
+	AC_DEFINE(HAVE_ADDRINFO)
+fi
+
+AC_MSG_CHECKING(for sockaddr_storage)
+AC_CACHE_VAL(ac_cv_struct_sockaddr_storage,
+AC_TRY_COMPILE([
+#		include <sys/types.h>
+#		include <sys/socket.h>],
+	[struct sockaddr_storage s],
+	ac_cv_struct_sockaddr_storage=yes,
+	ac_cv_struct_sockaddr_storage=no))
+AC_MSG_RESULT($ac_cv_struct_sockaddr_storage)
+if test $ac_cv_struct_sockaddr_storage = yes; then
+	AC_DEFINE(HAVE_SOCKADDR_STORAGE)
+fi
 
 # checks for compiler characteristics
 
@@ -1107,6 +1381,16 @@ AC_TRY_COMPILE([#include <unistd.h>], [char **t;execve("@",t,t);], ,
 	AC_DEFINE(BAD_EXEC_PROTOTYPES) bad_prototypes=yes)
 AC_MSG_RESULT($bad_prototypes)
 fi
+
+# check if sockaddr has sa_len member
+AC_MSG_CHECKING(if sockaddr has sa_len member)
+AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/socket.h>],
+[struct sockaddr x;
+x.sa_len = 0;],
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(HAVE_SOCKADDR_SA_LEN),
+	AC_MSG_RESULT(no))
 
 bad_forward=no
 AC_MSG_CHECKING(for bad static forward)
