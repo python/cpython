@@ -240,8 +240,15 @@ init_common(int *argcp, char ***argvp, int embedded)
 	Py_VerboseFlag = options.verbose;
 	Py_SuppressPrintingFlag = options.suppress_print;
 	Py_DebugFlag = options.debugging;
-	if ( options.noargs )
-		PyMac_DoYieldEnabled = 0;
+	if ( options.noargs ) {
+		/* don't process events at all without the scripts permission */
+		PyMacSchedParams scp;
+		
+		PyMac_GetSchedParams(&scp);
+		scp.process_events = 0;
+		/* Should we disable command-dot as well? */
+		PyMac_SetSchedParams(&scp);
+	}
 
 	/* Set buffering */
 	if (options.unbuffered) {
