@@ -1,0 +1,495 @@
+\section{\module{gettext} ---
+         Multilingual internationalization services}
+
+\declaremodule{standard}{gettext}
+\modulesynopsis{Multilingual internationalization services.}
+\moduleauthor{Barry A. Warsaw}{bwarsaw@beopen.com}
+\sectionauthor{Barry A. Warsaw}{bwarsaw@beopen.com}
+
+
+The \module{gettext} module provides internationalization (I18N) and
+localization (L10N) services for your Python modules and applications.
+It supports both the GNU \program{gettext} message catalog API and a
+higher level, class-based API that may be more appropriate for Python
+files.  The interface described below allows you to write your
+module and application messages in one natural language, and provide a
+catalog of translated messages for running under different natural
+languages.
+
+Some hints on localizing your Python modules and applications are also
+given.
+
+\subsection{GNU \program{gettext} API}
+
+The \module{gettext} module defines the following API, which is very
+similar to the GNU \program{gettext} API.  If you use this API you
+will affect the translation of your entire application globally.  Often
+this is what you want if your application is monolingual, with the choice
+of language dependent on the locale of your user.  If you are
+localizing a Python module, or if your application needs to switch
+languages on the fly, you probably want to use the class-based API
+instead.
+
+\begin{funcdesc}{bindtextdomain}{domain, localedir\code{=None}}
+Bind the \var{domain} to the locale directory
+\var{localedir}.  More concretely, \module{gettext} will look for
+binary \file{.mo} files for the given domain using the path (on Unix):
+\file{\var{localedir}/\var{language}/LC_MESSAGES/\var{domain}.mo},
+where \var{languages} is searched for in the environment variables
+\code{LANGUAGE}, \code{LC_ALL}, \code{LC_MESSAGES}, and \code{LANG}
+respectively.
+
+If \var{localedir} is \code{None}, then the current binding for
+\var{domain} is returned\footnote{The default locale directory is system
+dependent; e.g. on standard RedHat Linux it is
+\file{/usr/share/locale}, but on Solaris it is 
+\file{/usr/lib/locale}.  The \module{gettext} module does not try to
+support these system dependent defaults; instead its default is
+\file{\code{sys.prefix}/share/locale}.  For this reason, it is always
+best to call \code{gettext.bindtextdomain()} with an explicit absolute
+path at the start of your application.}.
+\end{funcdesc}
+
+\begin{funcdesc}{textdomain}{domain\code{=None}}
+Change or query the current global domain.  If \var{domain} is
+\code{None}, then the current global domain is returned, otherwise the
+global domain is set to \var{domain}, which is returned.
+\end{funcdesc}
+
+\begin{funcdesc}{gettext}{message}
+Return the localized translation of \var{message}, based on the
+current global domain, language, and locale directory.  This function
+is usually aliased as \function{_} in the local namespace (see
+examples below).
+\end{funcdesc}
+
+\begin{funcdesc}{dgettext}{domain, message}
+Like \function{gettext()}, but look the message up in the specified
+\var{domain}.
+\end{funcdesc}
+
+Note that GNU \program{gettext} also defines a \function{dcgettext()}
+method, but this was deemed not useful and so it is currently
+unimplemented.
+
+Here's an example of typical usage for this API:
+
+\begin{verbatim}
+import gettext
+gettext.bindtextdomain('myapplication', '/path/to/my/language/directory')
+gettext.textdomain('myapplication')
+_ = gettext.gettext
+# ...
+print _('This is a translatable string.')
+\end{verbatim}
+
+\subsection{Class-based API}
+
+The class-based API of the \module{gettext} module gives you more
+flexibility and greater convenience than the GNU \program{gettext}
+API.  It is the recommended way of localizing your Python applications and
+modules.  \module{gettext} defines a ``translations'' class which
+implements the parsing of GNU \file{.mo} format files, and has methods
+for returning either standard 8-bit strings or Unicode strings.
+Translations instances can also install themselves in the built-in
+namespace as the function \function{_()}.
+
+\begin{funcdesc}{find}{domain, localedir\code{=None}, languages\code{=None}}
+This function implements the standard \file{.mo} file search
+algorithm.  It takes a \var{domain}, identical to what
+\function{textdomain()} takes, and optionally a \var{localedir} (as in
+\function{bindtextdomain()}), and a list of languages.  All arguments
+are strings.
+
+If \var{localedir} is not given, then the default system locale
+directory is used\footnote{See the footnote for
+\function{bindtextdomain()} above.}.  If \var{languages} is not given,
+then the following environment variables are searched: \code{LANGUAGE},
+\code{LC_ALL}, \code{LC_MESSAGES}, and \code{LANG}.  The first one
+returning a non-empty value is used for the \var{languages} variable.
+The environment variables can contain a colon separated list of
+languages, which will be split.
+
+\function{find()} then expands and normalizes the languages, and then
+iterates through them, searching for an existing file built of these
+components:
+
+\file{\var{localedir}/\var{language}/LC_MESSAGES/\var{domain}.mo}
+
+The first such file name that exists is returned by \function{find()}.
+If no such file is found, then \code{None} is returned.
+\end{funcdesc}
+
+\begin{funcdesc}{translation}{domain, localedir\code{=None},
+languages\code{=None}, class_\code{=None}}
+Return a \class{Translations} instance based on the \var{domain},
+\var{localedir}, and \var{languages}, which are first passed to
+\function{find()} to get the
+associated \file{.mo} file path.  Instances with
+identical \file{.mo} file names are cached.  The actual class instantiated
+is either \var{class_} if provided, otherwise
+\class{GNUTranslations}.  The class's constructor must take a single
+file object argument.  If no \file{.mo} file is found, this
+function raises \exception{IOError}.
+\end{funcdesc}
+
+\begin{funcdesc}{install}{domain, localedir\code{=None}, unicode\code{=0}}
+This installs the function \function{_} in Python's builtin namespace,
+based on \var{domain}, and \var{localedir} which are passed to the
+function \function{translation()}.  The \var{unicode} flag is passed to
+the resulting translation object's \method{install} method.
+
+As seen below, you usually mark the strings in your application that are
+candidates for translation, by wrapping them in a call to the function
+\function{_()}, e.g.
+
+\begin{verbatim}
+print _('This string will be translated.')
+\end{verbatim}
+
+For convenience, you want the \function{_()} function to be installed in
+Python's builtin namespace, so it is easily accessible in all modules
+of your application.  
+\end{funcdesc}
+
+\subsubsection{The \class{NullTranslations} class}
+Translation classes are what actually implement the translation of
+original source file message strings to translated message strings.
+The base class used by all translation classes is
+\class{NullTranslations}; this provides the basic interface you can use
+to write your own specialized translation classes.  Here are the
+methods of \class{NullTranslations}:
+
+\begin{methoddesc}[NullTranslations]{__init__}{fp\code{=None}}
+Takes an optional file object \var{fp}, which is ignored by the base
+class.  Initializes ``protected'' instance variables \var{_info} and
+\var{_charset} which are set by derived classes.  It then calls
+\code{self._parse(fp)} if \var{fp} is not \code{None}.
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{_parse}{fp}
+No-op'd in the base class, this method takes file object \var{fp}, and
+reads the data from the file, initializing its message catalog.  If
+you have an unsupported message catalog file format, you should
+override this method to parse your format.
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{gettext}{message}
+Return the translated message.  Overridden in derived classes.
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{ugettext}{message}
+Return the translated message as a Unicode string.  Overridden in
+derived classes.
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{info}{}
+Return the ``protected'' \var{_info} variable.
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{charset}{}
+Return the ``protected'' \var{_charset} variable.
+\end{methoddesc}
+
+\begin{methoddesc}[NullTranslations]{install}{unicode\code{=0}}
+If the \var{unicode} flag is false, this method installs
+\code{self.gettext} into the built-in namespace, binding it to
+\function{_}.  If \var{unicode} is true, it binds \code{self.ugettext}
+instead.
+
+Note that this is only one way, albeit the most convenient way, to
+make the \function{_} function available to your application.  Because it
+affects the entire application globally, and specifically the built-in
+namespace, localized modules should never install \function{_}.
+Instead, they should use this code to make \function{_} available to
+their module:
+
+\begin{verbatim}
+import gettext
+t = gettext.translation('mymodule', ...)
+_ = t.gettext
+\end{verbatim}
+
+This puts \function{_} only in the module's global namespace and so
+only affects calls within this module.
+\end{methoddesc}
+
+\subsubsection{The \class{GNUTranslations} class}
+
+The \module{gettext} module provides one additional class derived from
+\class{NullTranslations}: \class{GNUTranslations}.  This class
+overrides \method{_parse()} to enable reading GNU \program{gettext}
+format \file{.mo} files in both big-endian and little-endian format.
+
+It also parses optional meta-data out of the translation catalog.  It
+is convention with GNU \program{gettext} to include meta-data as the
+translation for the empty string.  This meta-data is in RFC822-style
+\code{key: value} pairs.  If the key \code{Content-Type:} is found,
+then the \code{charset} property is used to initialize the
+``protected'' \code{_charset} instance variable.  The entire set of
+key/value pairs are placed into a dictionary and set as the
+``protected'' \code{_info} instance variable.
+
+If the \file{.mo} file's magic number is invalid, or if other problems
+occur while reading the file, instantiating a \class{GNUTranslations} class
+can raise \exception{IOError}.
+
+The other usefully overridden method is \method{ugettext()}, which
+returns a Unicode string by passing both the translated message string
+and the value of the ``protected'' \code{_charset} variable to the
+builtin \function{unicode()} function.
+
+\subsubsection{Solaris \file{.mo} file support}
+
+The Solaris operating system defines its own binary
+\file{.mo} file format, but since no documentation can be found on
+this format, it is not supported at this time.
+
+\subsubsection{The Catalog constructor}
+
+GNOME uses a version of the \module{gettext} module by James
+Henstridge, but this version has a slightly different API.  Its
+documented usage was:
+
+\begin{verbatim}
+import gettext
+cat = gettext.Catalog(domain, localedir)
+_ = cat.gettext
+print _('hello world')
+\end{verbatim}
+
+For compatibility with this older module, the function
+\function{Catalog()} is an alias for the the \function{translation()}
+function described above.
+
+One difference between this module and Henstridge's: his catalog
+objects supported access through a mapping API, but this appears to be
+unused and so is not currently supported.
+
+\subsection{Internationalizing your programs and modules}
+Internationalization (I18N) refers to the operation by which a program
+is made aware of multiple languages.  Localization (L10N) refers to
+the adaptation of your program, once internationalized, to the local
+language and cultural habits.  In order to provide multilingual
+messages for your Python programs, you need to take the following
+steps:
+
+\begin{enumerate}
+    \item prepare your program or module by specially marking
+          translatable strings
+    \item run a suite of tools over your marked files to generate raw
+          messages catalogs
+    \item create language specific translations of the message catalogs
+    \item use the \module{gettext} module so that message strings are
+          properly translated
+\end{enumerate}
+
+In order to prepare your code for I18N, you need to look at all the
+strings in your files.  Any string that needs to be translated
+should be marked by wrapping it in \code{_('...')} -- i.e. a call to
+the function \function{_()}.  For example:
+
+\begin{verbatim}
+filename = 'mylog.txt'
+message = _('writing a log message')
+fp = open(filename, 'w')
+fp.write(message)
+fp.close()
+\end{verbatim}
+
+In this example, the string ``\code{writing a log message}'' is marked as
+a candidate for translation, while the strings ``\code{mylog.txt}'' and
+``\code{w}'' are not.
+
+The GNU \program{gettext} package provides a tool, called
+\program{xgettext}, that scans C and C++ source code looking for these
+specially marked strings.  \program{xgettext} generates what are
+called \file{.pot} files, essentially structured human readable files
+which contain every marked string in the source code.  These
+\file{.pot} files are copied and handed over to human translators who write
+language-specific versions for every supported natural language.
+
+For I18N Python programs however, \program{xgettext} won't work; it
+doesn't understand the myriad of string types support by Python.  The
+standard Python distribution provides a tool called
+\program{pygettext} that does though (found in the \file{Tools/i18n}
+directory)\footnote{Fran\c cois Pinard has written a program called
+\program{xpot} which does a similar job.  It is distributed separately
+from the Python distribution.}.  This is a command line script that
+supports a similar interface as \program{xgettext}; see its
+documentation for details.  Once you've used \program{pygettext} to
+create your \file{.pot} files, you can use the standard GNU
+\program{gettext} tools to generate your machine-readable \file{.mo}
+files, which are readable by the \class{GNUTranslations} class.
+
+How you use the \module{gettext} module in your code depends on
+whether you are internationalizing your entire application or a single
+module.
+
+\subsubsection{Localizing your module}
+
+If you are localizing your module, you must take care not to make
+global changes, e.g. to the built-in namespace.  You should not use
+the GNU \program{gettext} API but instead the class-based API.  
+
+Let's say your module is called ``spam'' and the module's various
+natural language translation \file{.mo} files reside in
+\file{/usr/share/locale} in GNU
+\program{gettext} format.  Here's what you would put at the top of
+your module:
+
+\begin{verbatim}
+import gettext
+t = gettext.translation('spam', '/usr/share/locale')
+_ = t.gettext
+\end{verbatim}
+
+If your translators were providing you with Unicode strings in their
+\file{.po} files, you'd instead do:
+
+\begin{verbatim}
+import gettext
+t = gettext.translation('spam', '/usr/share/locale')
+_ = t.ugettext
+\end{verbatim}
+
+\subsubsection{Localizing your application}
+
+If you are localizing your application, you can install the \function{_()}
+function globally into the built-in namespace, usually in the main driver file
+of your application.  This will let all your application-specific
+files just use \code{_('...')} without having to explicitly install it in
+each file.
+
+In the simple case then, you need only add the following bit of code
+to the main driver file of your application:
+
+\begin{verbatim}
+import gettext
+gettext.install('myapplication')
+\end{verbatim}
+
+If you need to set the locale directory or the \code{unicode} flag,
+you can pass these into the \function{install()} function:
+
+\begin{verbatim}
+import gettext
+gettext.install('myapplication', '/usr/share/locale', unicode=1)
+\end{verbatim}
+
+\subsubsection{Changing languages on the fly}
+
+If your program needs to support many languages at the same time, you
+may want to create multiple translation instances and then switch
+between them explicitly, like so:
+
+\begin{verbatim}
+import gettext
+
+lang1 = gettext.translation(languages=['en'])
+lang2 = gettext.translation(languages=['fr'])
+lang3 = gettext.translation(languages=['de'])
+
+# start by using language1
+lang1.install()
+
+# ... time goes by, user selects language 2
+lang2.install()
+
+# ... more time goes by, user selects language 3
+lang3.install()
+\end{verbatim}
+
+\subsubsection{Deferred translations}
+
+In most coding situations, strings are translated were they are coded.
+Occasionally however, you need to mark strings for translation, but
+defer actual translation until later.  A classic example is:
+
+\begin{verbatim}
+animals = ['mollusk',
+           'albatross',
+	   'rat',
+	   'penguin',
+	   'python',
+	   ]
+# ...
+for a in animals:
+    print a
+\end{verbatim}
+
+Here, you want to mark the strings in the \code{animals} list as being
+translatable, but you don't actually want to translate them until they
+are printed.
+
+Here is one way you can handle this situation:
+
+\begin{verbatim}
+def _(message): return message
+
+animals = [_('mollusk'),
+           _('albatross'),
+	   _('rat'),
+	   _('penguin'),
+	   _('python'),
+	   ]
+
+del _
+
+# ...
+for a in animals:
+    print _(a)
+\end{verbatim}
+
+This works because the dummy definition of \function{_()} simply returns
+the string unchanged.  And this dummy definition will temporarily
+override any definition of \function{_()} in the built-in namespace
+(until the \code{del} command).
+Take care, though if you have a previous definition of \function{_} in
+the local namespace.
+
+Note that the second use of \function{_()} will not identify ``a'' as
+being translatable to the \program{pygettext} program, since it is not
+a string.
+
+Another way to handle this is with the following example:
+
+\begin{verbatim}
+def N_(message): return message
+
+animals = [N_('mollusk'),
+           N_('albatross'),
+	   N_('rat'),
+	   N_('penguin'),
+	   N_('python'),
+	   ]
+
+# ...
+for a in animals:
+    print _(a)
+\end{verbatim}
+
+In this case, you are marking translatable strings with the function
+\function{N_()}\footnote{The choice of \function{N_()} here is totally
+arbitrary; it could have just as easily been
+\function{MarkThisStringForTranslation()}.},
+which won't conflict with any definition of
+\function{_()}.  However, you will need to teach your message extraction
+program to look for translatable strings marked with \function{N_()}.
+\program{pygettext} and \program{xpot} both support this through the
+use of command line switches.
+
+\subsection{Acknowledgements}
+
+The following people contributed code, feedback, design suggestions,
+previous implementations, and valuable experience to the creation of
+this module:
+
+\begin{itemize}
+    \item Peter Funk
+    \item James Henstridge
+    \item Mark-Andre Lemburg
+    \item Martin von L\"owis
+    \item Fran\c cois Pinard
+    \item Barry Warsaw
+\end{itemize}
