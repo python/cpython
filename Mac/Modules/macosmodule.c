@@ -259,7 +259,7 @@ static void
 rf_dealloc(rfobject *self)
 {
 	do_close(self);
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *
