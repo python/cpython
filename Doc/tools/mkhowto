@@ -369,24 +369,23 @@ class Job:
         shutil.copyfile(os.path.join(builddir, self.doc + ".html"),
                         os.path.join(builddir, "index.html"))
         if max_split_depth != 1:
-            if self.options.numeric:
-                label_file = os.path.join(builddir, "labels.pl")
-                fp = open(label_file)
-                about_node = None
-                target = " = q/about/;\n"
-                x = len(target)
-                while 1:
+            label_file = os.path.join(builddir, "labels.pl")
+            fp = open(label_file)
+            about_node = None
+            target = " = q/about/;\n"
+            x = len(target)
+            while 1:
+                line = fp.readline()
+                if not line:
+                    break
+                if line[-x:] == target:
                     line = fp.readline()
-                    if not line:
-                        break
-                    if line[-x:] == target:
-                        line = fp.readline()
-                        m = re.search(r"\|(node\d+\.[a-z]+)\|", line)
-                        about_node = m.group(1)
-                        shutil.copyfile(os.path.join(builddir, about_node),
-                                        os.path.join(builddir, "about.html"))
-                        break
-            else:
+                    m = re.search(r"\|(node\d+\.[a-z]+)\|", line)
+                    about_node = m.group(1)
+                    shutil.copyfile(os.path.join(builddir, about_node),
+                                    os.path.join(builddir, "about.html"))
+                    break
+            if not self.options.numeric:
                 pwd = os.getcwd()
                 try:
                     os.chdir(builddir)
