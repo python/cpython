@@ -84,7 +84,7 @@ getstringvalue(op)
 
 /* Methods */
 
-static void
+static int
 stringprint(op, fp, flags)
 	stringobject *op;
 	FILE *fp;
@@ -92,9 +92,10 @@ stringprint(op, fp, flags)
 {
 	int i;
 	char c;
+	/* XXX Ought to check for interrupts when writing long strings */
 	if (flags & PRINT_RAW) {
 		fwrite(op->ob_sval, 1, (int) op->ob_size, fp);
-		return;
+		return 0;
 	}
 	fprintf(fp, "'");
 	for (i = 0; i < op->ob_size; i++) {
@@ -107,6 +108,7 @@ stringprint(op, fp, flags)
 			putc(c, fp);
 	}
 	fprintf(fp, "'");
+	return 0;
 }
 
 static object *
@@ -117,7 +119,7 @@ stringrepr(op)
 	int newsize = 2 + 4 * op->ob_size * sizeof(char);
 	object *v = newsizedstringobject((char *)NULL, newsize);
 	if (v == NULL) {
-		return err_nomem();
+		return NULL;
 	}
 	else {
 		register int i;
