@@ -110,11 +110,23 @@ class PackageManagerMain(Wapplication.Application):
 		
 		self.openwindowsmenu = Wapplication.Menu(self.menubar, 'Windows')
 		self.makeopenwindowsmenu()
+		self.makehelpmenu()
 		self._menustocheck = [closeitem, 
 				undoitem, cutitem, copyitem, pasteitem, 
 				selallitem,
 				runitem, homepageitem]
 			
+	def makehelpmenu(self):
+		python_app = os.path.join(sys.prefix, 'Resources/Python.app')
+		help_source = os.path.join(python_app, 'Contents/Resources/English.lproj/Documentation')
+		hashelp = os.path.isdir(help_source)
+
+		self.helpmenu = m = self.gethelpmenu()
+		helpitem1 = FrameWork.MenuItem(m, "PackageManager Help", None, self.domenu_packmanhelp)
+		helpitem1.enable(hashelp)
+		helpitem2 = FrameWork.MenuItem(m, "MacPython Help", None, self.domenu_pythonhelp)
+		helpitem2.enable(hashelp)
+
 	def quitevent(self, theAppleEvent, theReply):
 		self._quit()
 		
@@ -198,6 +210,14 @@ class PackageManagerMain(Wapplication.Application):
 	def domenu_save(self, *args):
 		print "Save"
 	
+	def domenu_pythonhelp(self, *args):
+		from Carbon import AH
+		AH.AHGotoPage("MacPython Help", None, None)
+		
+	def domenu_packmanhelp(self, *args):
+		from Carbon import AH
+		AH.AHGotoPage("MacPython Help", "packman.html", None)
+		
 	def _quit(self):
 ##		import PyConsole, PyEdit
 		for window in self._windows.values():
