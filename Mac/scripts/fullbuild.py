@@ -18,6 +18,7 @@ import MacOS
 import EasyDialogs
 import re
 import string
+import genpluginprojects
 
 import aetools
 import AppleEvents
@@ -377,6 +378,8 @@ def main():
 	if not ok:
 		sys.exit(0)
 	dir = dir.as_pathname()
+	# Set genpluginprojects to use this folder (slight hack)
+	genpluginprojects.PYTHONDIR = dir
 	
 	todo = handle_dialog(os.path.join(dir, MACBUILDNO))
 		
