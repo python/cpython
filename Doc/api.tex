@@ -479,9 +479,10 @@ after the interpreter has been initialized.
 
 The basic initialization function is \cfunction{Py_Initialize()}.
 This initializes the table of loaded modules, and creates the
-fundamental modules \module{__builtin__}, \module{__main__} and
-\module{sys}.  It also initializes the module search path
-(\code{sys.path}).
+fundamental modules \module{__builtin__}\refbimodindex{__builtin__},
+\module{__main__}\refbimodindex{__main__} and 
+\module{sys}\refbimodindex{sys}.  It also initializes the module
+search path (\code{sys.path}).
 
 \cfunction{Py_Initialize()} does not set the ``script argument list'' 
 (\code{sys.argv}).  If this variable is needed by Python code that 
@@ -772,10 +773,11 @@ argument.  It is mostly for internal use.
 \begin{cfuncdesc}{int}{PyErr_CheckSignals}{}
 This function interacts with Python's signal handling.  It checks
 whether a signal has been sent to the processes and if so, invokes the
-corresponding signal handler.  If the \module{signal} module is
-supported, this can invoke a signal handler written in Python.  In all
-cases, the default effect for \constant{SIGINT} is to raise the
-\exception{KeyboadInterrupt} exception.  If an exception is raised the
+corresponding signal handler.  If the
+\module{signal}\refbimodindex{signal} module is supported, this can
+invoke a signal handler written in Python.  In all cases, the default
+effect for \constant{SIGINT} is to raise the
+\exception{KeyboadInterrupt} exception.  If an exception is raised the 
 error indicator is set and the function returns \code{1}; otherwise
 the function returns \code{0}.  The error indicator may or may not be
 cleared if it was previously set.
@@ -935,7 +937,8 @@ This is a higher-level interface that calls the current ``import hook
 function''.  It invokes the \function{__import__()} function from the
 \code{__builtins__} of the current globals.  This means that the
 import is done using whatever import hooks are installed in the
-current environment, e.g. by \module{rexec} or \module{ihooks}.
+current environment, e.g. by \module{rexec}\refstmodindex{rexec} or
+\module{ihooks}\refstmodindex{ihooks}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject *}{PyImport_ReloadModule}{PyObject *m}
@@ -2077,17 +2080,17 @@ Returns true if its argument is a \code{PyFloatObject}.
 \subsection{Complex Number Objects}
 
 \begin{ctypedesc}{Py_complex}
+The \C{} structure which corresponds to the value portion of a Python
+complex number object.  Most of the functions for dealing with complex
+number objects use structures of this type as input or output values,
+as appropriate.  It is defined as:
+
 \begin{verbatim}
 typedef struct {
    double real;
    double imag;
-} 
+} Py_complex;
 \end{verbatim}
-
-The \C{} structure which corresponds to the value portion of a Python
-complex number object.  Most of the functions for dealing with complex
-number objects use structures of this type as input or output values,
-as appropriate.
 \end{ctypedesc}
 
 \begin{ctypedesc}{PyComplexObject}
@@ -2226,10 +2229,13 @@ functions; with the exception of \cfunction{Py_SetProgramName()},
 \cfunction{PyEval_InitThreads()}, \cfunction{PyEval_ReleaseLock()},
 and \cfunction{PyEval_AcquireLock()}.  This initializes the table of
 loaded modules (\code{sys.modules}), and creates the fundamental
-modules \module{__builtin__}, \module{__main__} and \module{sys}.  It
-also initializes the module search path (\code{sys.path}).  It does
-not set \code{sys.argv}; use \cfunction{PySys_SetArgv()} for that.
-This is a no-op when called for a second time (without calling
+modules \module{__builtin__}\refbimodindex{__builtin__},
+\module{__main__}\refbimodindex{__main__} and
+\module{sys}\refbimodindex{sys}.  It also initializes the module
+search path (\code{sys.path}).%
+\indexiii{module}{search}{path}
+It does not set \code{sys.argv}; use \cfunction{PySys_SetArgv()} for
+that.  This is a no-op when called for a second time (without calling
 \cfunction{Py_Finalize()} first).  There is no return value; it is a
 fatal error if the initialization fails.
 \end{cfuncdesc}
@@ -2277,15 +2283,17 @@ than once.
 
 \begin{cfuncdesc}{PyThreadState *}{Py_NewInterpreter}{}
 \strong{(NEW in 1.5a3!)}
-Create a new sub-interpreter.  This is an (almost) totally separate 
-environment for the execution of Python code.  In particular, the new 
-interpreter has separate, independent versions of all imported 
-modules, including the fundamental modules \module{__builtin__}, 
-\module{__main__} and \module{sys}.  The table of loaded modules 
-(\code{sys.modules}) and the module search path (\code{sys.path}) are 
-also separate.  The new environment has no \code{sys.argv} variable.  
-It has new standard I/O stream file objects \code{sys.stdin}, 
-\code{sys.stdout} and \code{sys.stderr} (however these refer to the 
+Create a new sub-interpreter.  This is an (almost) totally separate
+environment for the execution of Python code.  In particular, the new
+interpreter has separate, independent versions of all imported
+modules, including the fundamental modules
+\module{__builtin__}\refbimodindex{__builtin__},
+\module{__main__}\refbimodindex{__main__} and
+\module{sys}\refbimodindex{sys}.  The table of loaded modules
+(\code{sys.modules}) and the module search path (\code{sys.path}) are
+also separate.  The new environment has no \code{sys.argv} variable.
+It has new standard I/O stream file objects \code{sys.stdin},
+\code{sys.stdout} and \code{sys.stderr} (however these refer to the
 same underlying \code{FILE} structures in the \C{} library).
 
 The return value points to the first thread state created in the new 
@@ -2423,6 +2431,7 @@ modify its value.  The value is available to Python code as
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char *}{Py_GetPath}{}
+\indexiii{module}{search}{path}
 Return the default module search path; this is computed from the 
 program name (set by \cfunction{Py_SetProgramName()} above) and some 
 environment variables.  The returned string consists of a series of 
@@ -2672,11 +2681,12 @@ the lock operations slow the interpreter down a bit.  Therefore, the
 lock is not created initially.  This situation is equivalent to having
 acquired the lock: when there is only a single thread, all object
 accesses are safe.  Therefore, when this function initializes the
-lock, it also acquires it.  Before the Python \module{thread} module
-creates a new thread, knowing that either it has the lock or the lock
-hasn't been created yet, it calls \cfunction{PyEval_InitThreads()}.
-When this call returns, it is guaranteed that the lock has been
-created and that it has acquired it.
+lock, it also acquires it.  Before the Python
+\module{thread}\refbimodindex{thread} module creates a new thread,
+knowing that either it has the lock or the lock hasn't been created
+yet, it calls \cfunction{PyEval_InitThreads()}.  When this call
+returns, it is guaranteed that the lock has been created and that it
+has acquired it.
 
 It is \strong{not} safe to call this function when it is unknown which
 thread (if any) currently has the global interpreter lock.
