@@ -90,7 +90,7 @@ def _expand(match, template):
 def _subn(pattern, template, string, count=0):
     # internal: pattern.subn implementation hook
     if callable(template):
-        filter = callable
+        filter = template
     else:
         # FIXME: prepare template
         def filter(match, template=template):
