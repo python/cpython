@@ -1412,7 +1412,7 @@ extract_time(PyObject *t, long* sec, long* usec)
 		intval = PyInt_AsLong(intobj);
 		Py_DECREF(intobj);
 		*sec = intval;
-		*usec = (tval - intval) * 1e6;
+		*usec = (long)((tval - intval) * 1e6); /* can't exceed 1000000 */
 		if (*usec < 0)
 			/* If rounding gave us a negative number,
 			   truncate.  */
