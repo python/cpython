@@ -162,6 +162,10 @@ main(argc, argv)
 	}
 
 	if (unbuffered) {
+#ifdef MS_WINDOWS
+		_setmode(stdin, O_BINARY);
+		_setmode(stdout, O_BINARY);
+#endif
 #ifndef MPW
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
