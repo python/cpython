@@ -1,14 +1,43 @@
-This is Python release 1.2
-==========================
+This is Python release 1.3b1
+============================
+
+I.e., the first beta release of Python 1.3.
 
 
 What's new in this release?
 ---------------------------
 
-This version provides new functionality as well as bug fixes, lots of
-new documentation, and quite a few new library modules.  Everyone
-should upgrade.  For a full list of what's new and changed, see
-Misc/NEWS.
+- Keyword parameters (see the last chapter of the tutorial).
+- Third argument to raise (the stacktrace to provide).
+- Faster function and method calls.
+- Jim Fulton's abstract object interface (Include/abstract.h).
+- Support for Tk 4.0 in Tkinter (Tkinter now supports keywords!).
+- Rewritten htmllib.py (HTML parser), with new formatter.py.
+- Rewritten rexec.py (restricted execution).
+- New modules ni.py and ihooks.py (package support and more).
+- And lots more that you'll have to discover on your own.
+
+
+Why is it called a beta release?
+--------------------------------
+
+Because it is.  There's no documentation except the source.  A few
+things are broken by the changes for keyword parameters (the access
+statement, the profiler, half of newmodule.c).  It has only been tested
+on two Unix platforms (IRIX 5.3 and Solaris 2.4).  The Mac and Windows
+sopport has not been fully re-integrated.
+
+
+Why do I release it anyway?
+---------------------------
+
+Because I'm also releasing a prototype of Grail, an extensible web
+browser that is its answer to Java and could become Python's "Killer
+App".  Grail depends heavily on some features of Python 1.3 (such as
+keyword parameters).  The release date for Grail is determined by other
+factors and I don't want to release it without full source.
+
+Oh, and I'm going on a two week holiday as well :-)
 
 
 What is Python anyway?
@@ -424,11 +453,8 @@ The Tk interface
 Tk (the user interface component of John Ousterhout's Tcl language) is
 also usable from Python.  Since this requires that you first build and
 install Tcl/Tk, the Tk interface is not enabled by default.  It
-requires Tcl 7.3 and Tk 3.6.  It doesn't work yet with Tk 4.0-beta!
-(Actually, the C code does, but the Tkinter.py module hasn't been
-adapted yet.)  For more info about Tk, including pointers to the
-source, see John Ousterhout's home page at
-<URL:http://playground.sun.com/~ouster/>.
+requires Tcl 7.4 and Tk 4.0.  (Support for Tk 3.6 and Tcl 7.3 can be
+found in Lib/tk3inter/.)
 
 To enable the Python/Tk interface, once you've built and installed
 Tcl/Tk, all you need to do is edit two lines in Modules/Setup; search
@@ -456,6 +482,9 @@ if you install Python properly ("make install libinstall").  (You can
 also use dynamic loading for the C tkinter module, in which case you
 must manually fix up sys.path or set $PYTHONPATH for the Python
 Tkinter module.)
+
+See <URL:http://www.sunlabs.com/research/tcl/> for more info on where
+to get Tcl/Tk.
 
 
 Distribution structure
