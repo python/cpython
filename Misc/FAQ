@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.2
-Last-modified: 24 Jan 1994
+Version: 1.3
+Last-modified: 26 Jan 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -65,14 +65,14 @@ Here's an overview of the questions per chapter:
   1.5. Q. Is there a newsgroup or mailing list devoted to Python?
   1.6. Q. Is there a book on Python, or will there be one out soon?
   1.7. Q. Are there any published articles about Python that I can quote?
+  1.8. Q. How does the Python version numbering scheme work?
 
  2. Python in the real world
   2.1. Q. How many people are using Python?
   2.2. Q. Have any significant projects been done in Python?
   2.3. Q. Are there any commercial projects going on using Python?
-  2.4. Q. What new developments are expected for Python in the future?
-  2.5. Q. How stable is Python?
-  2.6. Q. Any more future plans?
+  2.4. Q. How stable is Python?
+  2.5. Q. What new developments are expected for Python in the future?
 
  3. Building Python
   3.1. Q. I have trouble building the md5 module and/or finding the file
@@ -82,7 +82,8 @@ Here's an overview of the questions per chapter:
        operations, but when playing with floating point operations I cannot
        find anything wrong with them.
   3.4. Q. I get an OverflowError on evaluating 2*2.  What is going on?
-  3.5. Q. Trouble building Python 0.9.9 on platform X.
+  3.5. Q. Trouble building Python 0.9.9 or earlier on platform X.
+  3.6. Q. Trouble building Python 1.0.0 on platform X.
 
  4. Programming in Python
   4.1. Q. Can I create an object class with some methods implemented in
@@ -116,7 +117,7 @@ Here's an overview of the questions per chapter:
   6.3. Q. Why isn't there a switch or case statement in Python?
 
  7. Using Python on non-UNIX platforms
-  7.1. Q. Where's the DOS version of 0.9.9?
+  7.1. Q. Where's the DOS version of 1.0.0?
   7.2. Q. Is there a Windows version of Python?
   7.3. Q. I have the Mac or DOS version but it appears to be only a binary.
        Where's the library?
@@ -168,7 +169,7 @@ anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
 tar file containing the complete C source, LaTeX documentation, Python
 library modules, example programs, and several useful pieces of freely
 distributable software.  This will compile and run out of the box on
-most UNIX platforms.  Currently <version> is 0.9.9.  (See section 7
+most UNIX platforms.  Currently <version> is 1.0.0.  (See section 7
 for non-UNIX information.)
 
 1.4. Q. How do I get documentation on Python?
@@ -178,7 +179,7 @@ anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
 /pub/python, with filename pythondoc-ps<version>.tar.Z.  It is a
 compressed tar file containing PostScript files of the reference
 manual, the library manual, and the tutorial.  Currently <version> is
-0.9.9.  (Note that the library manual is the most important one of the
+1.0.0.  (Note that the library manual is the most important one of the
 set, as much of Python's power stems from the standard or built-in
 types, functions and modules, all of which are described here.)
 PostScript for a high-level description of Python is in the file
@@ -194,7 +195,7 @@ ftp.wustl.edu		128.252.135.4	/graphics/graphics/sgi-stuff/python
 ftp.funet.fi		128.214.6.100	/pub/languages/python (old?)
 ftp.fu-berlin.de	130.133.4.50	/pub/unix/languages/python (python* only)
 
-Or try archie on e.g. python0.9.9.tar.Z to locate the nearest copy of
+Or try archie on e.g. python1.0.0.tar.Z to locate the nearest copy of
 that version...
 
 1.5. Q. Is there a newsgroup or mailing list devoted to Python?
@@ -237,6 +238,16 @@ presentation can be found in the ftp directory mentioned a few
 questions earlier, with filenames nluug-paper.ps and nluug-slides.ps,
 respectively.
 
+1.8. Q. How does the Python version numbering scheme work?
+
+A. Python versions are numbered A.B.C.  A is the major version number
+-- it is only incremented for major changes in functionality or source
+structure.  B is the minor version number, incremented for less
+earth-shattering changes to a release.  C is the patchlevel -- it is
+incremented for each new release.  Note that in the past, patches have
+added significant changes; in fact the changeover from 0.9.9 to 1.0.0
+was the first time that either A or B changed!
+
 
 2. Python in the real world
 ===========================
@@ -276,36 +287,28 @@ consortium supported by the European Committee's ESPRIT program and
 consisting of Bull, CWI and some other European companies.  Contact:
 Ivan Herman <ivan@cwi.nl>.
 
-2.4. Q. What new developments are expected for Python in the future?
+2.4. Q. How stable is Python?
 
-A. I am almost ready to release version 1.0.0 -- it should be out by
-the end of January 1994.  It will have some new functionality and
-bugfixes and be portable to more platforms.  The directory tree
-structure and build procedure will be radically different -- almost
-all configuration is now done automatically, using GNU autoconf.
-User-visible changes include: double-quoted strings, functional
-programming operations (lambda, map, filter, reduce -- all evaluated
-eagerly), exec becomes a statement, str() is customizable through
-__str__ (used by print).  The originally planned grand renaming scheme
-will not be implemented because of lack of time.  A beta version can
-be ftp'ed from the usual sites, file python1.0.0beta.tar.Z.
-
-2.5. Q. How stable is Python?
-
-A. Very stable.  While the current version number (0.9.9) would
+A. Very stable.  While the current version number (1.0.0) would
 suggest it is in the early stages of development, in fact new, stable
-releases have been coming out every 3-6 months for the past three years.
+releases (numbered 0.9.x) have been coming out roughly every 3 to 6
+months for the past four years.
 
-2.6. Q. Any more future plans?
+2.5. Q. What new developments are expected for Python in the future?
 
-A. Without warranty that any of this will actually be realized: I am
+A.  Without warranty that any of this will actually be realized: I am
 currently thinking about mechanisms for built-in on-line help and a
-switch/case statement.  There are also some people (independently)
-working on a windowing interface based on STDWIN but with the power
-and ease of use of the average modern widget set.  I still hope to get
-some help in producing a Windows version.  It would be nice if there
-were a window-based class browser (Someone at CWI has contributed one
-using Motif but it needs some work).
+switch/case statement.  A pthreads interface has been contributed
+which I would like to merge into the latest release.  The X interface
+needs improving.  There are also some people (independently) working
+on a windowing interface based on STDWIN but with the power and ease
+of use of the average modern widget set.  I still hope to get some
+help in producing a Windows version.  It would be nice if there were a
+window-based class browser (Someone at CWI has contributed one using
+Motif but it needs some work).  Also: improved support for embedding
+Python in other applications, e.g. by renaming most global symbols to
+have a "Py" prefix and providing more documentation and threading
+support.
 
 
 3. Building Python
@@ -354,27 +357,13 @@ from int_mul:
 You should also include <limits.h> and replace the constant 32 by
 LONG_BIT in int_[lr]shift.
 
-3.5. Q. Trouble building Python 0.9.9 on platform X.
+3.5. Q. Trouble building Python 0.9.9 or earlier on platform X.
 
-A. In the bootstrap phase (before you have built the first running
-interpreter), make sure the -D settings in the Makefile are correct
-for your system.  In particular you may have to add or delete -DSYSV.
-It may also be necessary to change the flags used to compile
-posixmodule.c and timemodule.c; e.g. on AIX the following are
-necessary:
-  posixmodule.c: -DHAVE_STDLIB -DNOALTTZ -DOLDTZ -Dunix -DSYSV -DDO_TIMES
-  timemodule.c:  -DHAVE_STDLIB -DNOALTTZ -DOLDTZ -Uunix -DSYSV -DBSD_TIME
-(Note the -Uunix for timemodule!)
-Those switches for timemodule also require that the 
-	#ifdef unix
-	#ifdef BSD_TIME
-just above:
-	static long
-	millitimer() 
-( and below the "#endif  /* macintosh */"  version of millitimer 
-be changed to:
-	#if defined(unix) | defined(BSD_TIME)
-	#ifdef BSD_TIME
+Please convert to Python 1.0.0 -- it is much more portable.
+
+3.6. Q. Trouble building Python 1.0.0 on platform X.
+
+A. Please email the details to <guido@cwi.nl> and I'll look into it.
 
 
 4. Programming in Python
@@ -603,12 +592,12 @@ to do range tests.
 7. Using Python on non-UNIX platforms
 =====================================
 
-7.1. Q. Where's the DOS version of 0.9.9?
+7.1. Q. Where's the DOS version of 1.0.0?
 
-A. I hope it will be coming soon.  A friend with a DOS machine and a
-compiler has volunteered to build it but he's very busy.  Until then,
-you will have to make do with the 0.9.8 version (which isn't so bad,
-actually).
+A. I hope it will be coming soon.  Our institute has finally acquired
+a 486 PC with a decent C compiler, now all I have to do is to learn
+how to use it :-)  Until then, you will have to make do with the 0.9.8
+version (which isn't so bad, actually).
 
 7.2. Q. Is there a Windows version of Python?
 
@@ -620,7 +609,7 @@ Where's the library?
 
 A. You still need to copy the files from the distribution directory
 "python/lib" to your system.  If you don't have the full distribution,
-you can ftp the file pythonlib0.9.9.tar.Z from site ftp.cwi.nl,
+you can ftp the file pythonlib1.0.0.tar.Z from site ftp.cwi.nl,
 directory /pub/python; this is a subset of the distribution containing
 just those file.
 
