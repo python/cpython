@@ -41,7 +41,7 @@ class BlockStack(misc.Stack):
         self.__super_init(self)
         self.loop = None
 
-def compile(filename, display=0):
+def compileFile(filename, display=0):
     f = open(filename)
     buf = f.read()
     f.close()
@@ -55,16 +55,68 @@ def compile(filename, display=0):
         mod.dump(f)
         f.close()
 
-class Module:
+def compile(source, filename, mode, flags=None, dont_inherit=None):
+    """Replacement for builtin compile() function"""
+    if flags is not None or dont_inherit is not None:
+        raise RuntimeError, "not implemented yet"
+    
+    if mode == "single":
+        gen = Interactive(source, filename)
+    elif mode == "exec":
+        gen = Module(source, filename)
+    elif mode == "eval":
+        gen = Expression(source, filename)
+    else:
+        raise ValueError("compile() 3rd arg must be 'exec' or "
+                         "'eval' or 'single'")
+    gen.compile()
+    return gen.code
+
+class AbstractCompileMode:
+
+    mode = None # defined by subclass
+
     def __init__(self, source, filename):
-        self.filename = os.path.abspath(filename)
         self.source = source
+        self.filename = filename
         self.code = None
 
-    def compile(self, display=0):
-        tree = parse(self.source)
+    def _get_tree(self):
+        tree = parse(self.source, self.mode)
         misc.set_filename(self.filename, tree)
         syntax.check(tree)
+        return tree
+
+    def compile(self):
+        pass # implemented by subclass
+
+    def getCode(self):
+        return self.code
+
+class Expression(AbstractCompileMode):
+
+    mode = "eval"
+
+    def compile(self):
+        tree = self._get_tree()
+        gen = ExpressionCodeGenerator(tree)
+        self.code = gen.getCode()
+
+class Interactive(AbstractCompileMode):
+
+    mode = "single"
+
+    def compile(self):
+        tree = self._get_tree()
+        gen = InteractiveCodeGenerator(tree)
+        self.code = gen.getCode()
+
+class Module(AbstractCompileMode):
+
+    mode = "exec"
+
+    def compile(self, display=0):
+        tree = self._get_tree()
         gen = ModuleCodeGenerator(tree)
         if display:
             import pprint
@@ -1096,6 +1148,44 @@ class ModuleCodeGenerator(NestedScopeMixin, CodeGenerator):
 
     def get_module(self):
         return self
+
+class ExpressionCodeGenerator(NestedScopeMixin, CodeGenerator):
+    __super_init = CodeGenerator.__init__
+
+    scopes = None
+    futures = ()
+    
+    def __init__(self, tree):
+        self.graph = pyassem.PyFlowGraph("<expression>", tree.filename)
+        self.__super_init()
+        self.set_lineno(tree)
+        walk(tree, self)
+        self.emit('RETURN_VALUE')
+
+    def get_module(self):
+        return self
+
+class InteractiveCodeGenerator(NestedScopeMixin, CodeGenerator):
+
+    __super_init = CodeGenerator.__init__
+
+    scopes = None
+    futures = ()
+    
+    def __init__(self, tree):
+        self.graph = pyassem.PyFlowGraph("<interactive>", tree.filename)
+        self.__super_init()
+        self.set_lineno(tree)
+        walk(tree, self)
+        self.emit('RETURN_VALUE')
+
+    def get_module(self):
+        return self
+    def visitDiscard(self, node):
+        # XXX Discard means it's an expression.  Perhaps this is a bad
+        # name.
+        self.visit(node.expr)
+        self.emit('PRINT_EXPR')
 
 class AbstractFunctionCode:
     optimized = 1

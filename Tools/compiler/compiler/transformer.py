@@ -42,8 +42,14 @@ def parseFile(path):
     f.close()
     return parse(src)
 
-def parse(buf):
-    return Transformer().parsesuite(buf)
+def parse(buf, mode="exec"):
+    if mode == "exec" or mode == "single":
+        return Transformer().parsesuite(buf)
+    elif mode == "eval":
+        return Transformer().parseexpr(buf)
+    else:
+        raise ValueError("compile() arg 3 must be"
+                         " 'exec' or 'eval' or 'single'")
 
 def asList(nodes):
     l = []
