@@ -1,13 +1,15 @@
 \section{\module{types} ---
-         Names for all built-in types}
+         Names for built-in types}
 
 \declaremodule{standard}{types}
-\modulesynopsis{Names for all built-in types.}
+\modulesynopsis{Names for built-in types.}
 
 
-This module defines names for all object types that are used by the
-standard Python interpreter, but not for the types defined by various
-extension modules.  It is safe to use \samp{from types import *} ---
+This module defines names for types some object types that are used by
+the standard Python interpreter, but not for the types defined by various
+extension modules.  Also, it does not include some of the types that
+arise during processing such the \code{listiterator} type.
+It is safe to use \samp{from types import *} ---
 the module does not export any names besides the ones listed here.
 New names exported by future versions of this module will all end in
 \samp{Type}.
@@ -17,8 +19,22 @@ their argument types, like the following:
 
 \begin{verbatim}
 from types import *
-def delete(list, item):
+def delete(mylist, item):
     if type(item) is IntType:
+       del mylist[item]
+    else:
+       mylist.remove(item)
+\end{verbatim}
+
+Starting in Python 2.2, built-in factory functions such as
+\function{int()} and \function{str()} are also names for the
+corresponding types.  This is now the preferred way to access
+the type instead of using the \module{types} module.  Accordingly,
+the example above should be written as follows:
+
+\begin{verbatim}
+def delete(mylist, item):
+    if isinstance(item, int):
        del list[item]
     else:
        list.remove(item)
