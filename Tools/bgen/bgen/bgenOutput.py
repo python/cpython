@@ -43,7 +43,7 @@ SetOutputFile()	# Initialize _File
 _Level = 0		# Indentation level
 
 def GetLevel():
-	""""Return the current indentation level."""
+	"""Return the current indentation level."""
 	return _Level
 
 def SetLevel(level):

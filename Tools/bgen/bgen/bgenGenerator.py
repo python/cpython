@@ -259,12 +259,12 @@ class MethodGenerator(FunctionGenerator):
 
 def _test():
 	void = None
-	eggs = Generator(void, "eggs",
-	                 Variable(stringptr, 'cmd'),
-	                 Variable(int, 'x'),
-	                 Variable(double, 'y', InOutMode),
-	                 Variable(int, 'status', ErrorMode),
-	                )
+	eggs = FunctionGenerator(void, "eggs",
+				 (stringptr, 'cmd', InMode),
+				 (int, 'x', InMode),
+				 (double, 'y', InOutMode),
+				 (int, 'status', ErrorMode),
+				 )
 	eggs.setprefix("spam")
 	print "/* START */"
 	eggs.generate()

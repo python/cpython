@@ -189,7 +189,7 @@ class ObjectDefinition(GeneratorGroup):
 		Output("""if (PyDict_SetItemString(d, "%sType", (PyObject *)&%s) != 0)""",
 			self.name, self.typename);
 		IndentLevel()
-		Output("""Py_FatalError("can't initialize %sType");""",
+		Output("""Py_FatalError("can\'t initialize %sType");""",
 		                                           self.name)
 		DedentLevel()
 
