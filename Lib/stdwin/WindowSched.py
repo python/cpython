@@ -22,7 +22,8 @@ def delayfunc(msecs):
 	# Use millisleep for very short delays or if there are no windows
 	#
 	if msecs < 100 or WindowParent.CountWindows() = 0:
-		time.millisleep(msecs)
+		if msecs > 0:
+			time.millisleep(msecs)
 		return
 	#
 	# Post a timer event on an arbitrary window and wait for it
