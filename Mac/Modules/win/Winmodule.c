@@ -2310,7 +2310,13 @@ static int WinObj_compare(self, other)
 	return 0;
 }
 
-#define WinObj_repr NULL
+static PyObject * WinObj_repr(self)
+	WindowObject *self;
+{
+	char buf[100];
+	sprintf(buf, "<Window object at 0x%08.8x for 0x%08.8x>", self, self->ob_itself);
+	return PyString_FromString(buf);
+}
 
 static int WinObj_hash(self)
 	WindowObject *self;

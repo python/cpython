@@ -156,6 +156,18 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		Output("return (int)self->ob_itself;")
 		OutRbrace()
 		
+	def outputRepr(self):
+		Output()
+		Output("static PyObject * %s_repr(self)", self.prefix)
+		IndentLevel()
+		Output("%s *self;", self.objecttype)
+		DedentLevel()
+		OutLbrace()
+		Output("char buf[100];")
+		Output("""sprintf(buf, "<Window object at 0x%%08.8x for 0x%%08.8x>", self, self->ob_itself);""")
+		Output("return PyString_FromString(buf);")
+		OutRbrace()
+		
 ##	def outputFreeIt(self, itselfname):
 ##		Output("DisposeWindow(%s);", itselfname)
 # From here on it's basically all boiler plate...
