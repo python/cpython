@@ -107,7 +107,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"thread", initthread},
 #endif
 	{"_codecs", init_codecs},
-	{"_csv", init_codecs},
+	{"_csv", init_csv},
 	{"_locale", init_locale},
 	{"_random", init_random},
 	{"_sre", init_sre},
