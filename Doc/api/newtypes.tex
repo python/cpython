@@ -306,6 +306,21 @@ may be set for any given method.
   \versionadded{2.3}
 \end{datadesc}
 
+One other constant controls whether a method is loaded in place of
+another definition with the same method name.
+
+\begin{datadesc}{METH_COEXIST}
+  The method will be loaded in place of existing definitions.  Without
+  \var{METH_COEXIST}, the default is to skip repeated definitions.  Since
+  slot wrappers are loaded before the method table, the existence of a
+  \var{sq_contains} slot, for example, would generate a wrapped method
+  named \method{__contains__()} and preclude the loading of a
+  corresponding PyCFunction with the same name.  With the flag defined,
+  the PyCFunction will be loaded in place of the wrapper object and will
+  co-exist with the slot.  This is helpful because calls to PyCFunctions
+  are optimized more than wrapper object calls.
+  \versionadded{2.4}
+\end{datadesc}
 
 \begin{cfuncdesc}{PyObject*}{Py_FindMethod}{PyMethodDef table[],
                                             PyObject *ob, char *name}

@@ -281,6 +281,12 @@ Build
 C API
 -----
 
+- Created a new method flag, METH_COEXIST, which causes a method to be loaded
+  even if already defined by a slot wrapper.  This allows a __contains__
+  method, for example, to co-exist with a defined sq_contains slot.  This
+  is helpful because the PyCFunction can take advantage of optimized calls
+  whenever METH_O or METH_NOARGS flags are defined.
+
 - Added a new function, PyDict_Contains(d, k) which is like
   PySequence_Contains() but is specific to dictionaries and executes
   about 10% faster.

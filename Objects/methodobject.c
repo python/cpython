@@ -67,7 +67,7 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 	PyObject *self = PyCFunction_GET_SELF(func);
 	int size;
 
-	switch (PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC)) {
+	switch (PyCFunction_GET_FLAGS(func) & ~(METH_CLASS | METH_STATIC | METH_COEXIST)) {
 	case METH_VARARGS:
 		if (kw == NULL || PyDict_Size(kw) == 0)
 			return (*meth)(self, arg);

@@ -2371,6 +2371,8 @@ list_nohash(PyObject *self)
 static PyObject *list_iter(PyObject *seq);
 static PyObject *list_reversed(PyListObject* seq, PyObject* unused);
 
+PyDoc_STRVAR(getitem_doc,
+"x.__getitem__(y) <==> x[y]");
 PyDoc_STRVAR(reversed_doc,
 "L.__reversed__() -- return a reverse iterator over the list");
 PyDoc_STRVAR(append_doc,
@@ -2396,7 +2398,10 @@ PyDoc_STRVAR(sorted_doc,
 "list.sorted(iterable, cmp=None, key=None, reverse=False) --> new sorted list;\n\
 cmp(x, y) -> -1, 0, 1");
 
+static PyObject *list_subscript(PyListObject*, PyObject*);
+
 static PyMethodDef list_methods[] = {
+	{"__getitem__", (PyCFunction)list_subscript, METH_O|METH_COEXIST, getitem_doc},
 	{"__reversed__",(PyCFunction)list_reversed, METH_NOARGS, reversed_doc},
 	{"append",	(PyCFunction)listappend,  METH_O, append_doc},
 	{"insert",	(PyCFunction)listinsert,  METH_VARARGS, insert_doc},
