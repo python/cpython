@@ -305,10 +305,10 @@ def getcomments(object):
     if ismodule(object):
         # Look for a comment block at the top of the file.
         start = 0
-        if lines[0][:2] == '#!': start = 1
+        if lines and lines[0][:2] == '#!': start = 1
         while start < len(lines) and string.strip(lines[start]) in ['', '#']:
             start = start + 1
-        if lines[start][:1] == '#':
+        if start < len(lines) and lines[start][:1] == '#':
             comments = []
             end = start
             while end < len(lines) and lines[end][:1] == '#':
