@@ -396,7 +396,7 @@ collect(int generation)
 	if (generation+1 < NUM_GENERATIONS)
 		generations[generation+1].count += 1;
 	for (i = 0; i <= generation; i++)
-		generations[generation].count = 0;
+		generations[i].count = 0;
 
 	/* merge younger generations with one we are currently collecting */
 	for (i = 0; i < generation; i++) {
