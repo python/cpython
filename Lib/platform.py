@@ -202,7 +202,7 @@ def _dist_try_harder(distname,version,id):
     if os.path.isdir('/usr/lib/setup'):
         # Check for slackware verson tag file (thanks to Greg Andruk)
         verfiles = os.listdir('/usr/lib/setup')
-        for n in reversed(xrange(len(verfiles))):
+        for n in range(len(verfiles)-1, -1, -1):
             if verfiles[n][:14] != 'slack-version-':
                 del verfiles[n]
         if verfiles:
