@@ -1,0 +1,45 @@
+#! /usr/bin/env python
+#  -*- Python -*-
+
+import fileinput
+import glob
+import os
+import re
+import sys
+
+
+declare_rx = re.compile(
+    r"\\declaremodule(?:\[[a-zA-Z0-9]*\]*)?{[a-zA-Z_0-9]+}{([a-zA-Z_0-9]+)}")
+
+module_rx = re.compile(r"\\module{([a-zA-Z_0-9]+)}")
+
+def main():
+    try:
+        files = sys.argv[1:]
+        if not files:
+            files = glob.glob("*.tex")
+            files.sort()
+        modulename = None
+        for line in fileinput.input(files):
+            if line[:9] == r"\section{":
+                modulename = None
+                continue
+            if line[:16] == r"\modulesynopsys{":
+                continue
+            m = declare_rx.match(line)
+            if m:
+                modulename = m.group(1)
+                continue
+            if not modulename:
+                continue
+            m = module_rx.search(line)
+            if m:
+                name = m.group(1)
+                if name != modulename:
+                    print "%s:%s" % (fileinput.filename(), line[:-1])
+    except KeyboardInterrupt:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
