@@ -91,7 +91,7 @@ class LocaleTime_Tests(unittest.TestCase):
     def test_lang(self):
         # Make sure lang is set
         self.failUnless(self.LT_ins.lang in (locale.getdefaultlocale()[0],
-                                             locale.getlocale(locale.LC_TIME),
+                                             locale.getlocale(locale.LC_TIME)[0],
                                              ''),
                         "Setting of lang failed")
 
