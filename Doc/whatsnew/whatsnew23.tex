@@ -13,6 +13,17 @@
 \maketitle
 \tableofcontents
 
+% Timeout sockets: 
+% Executive summary: after sock.settimeout(T), all methods of sock will
+% block for at most T floating seconds and fail if they can't complete
+% within that time.  sock.settimeout(None) restores full blocking mode.
+%
+% Optik (or whatever it gets called)
+%
+% getopt.gnu_getopt
+%
+
+
 %\section{Introduction \label{intro}}
 
 {\large This article is a draft, and is currently up to date for some
@@ -420,7 +431,7 @@ distributed with the source to Python 2.3 that allows Python
 extensions to use the 2.3 interfaces to memory allocation and compile
 against any version of Python since 1.5.2.  (The idea is that you take
 the file from Python's source distribution and bundle it with the
-source of you extension).
+source of your extension).
 
 \begin{seealso}
 
