@@ -100,6 +100,34 @@ def islink(path):
 	return stat.S_ISLNK(st[stat.ST_MODE])
 
 
+# Are two filenames really pointing to the same file?
+#
+def samefile(f1, f2):
+	s1 = posix.stat(f1)
+	s2 = posix.stat(f2)
+	return samestat(s1, s2)
+
+
+# Are two open files really referencing the same file?
+# (Not necessarily the same file descriptor!)
+# XXX Oops, posix.fstat() doesn't exist yet!
+#
+def sameopenfile(fp1, fp2):
+	s1 = posix.fstat(fp1)
+	s2 = posix.fstat(fp2)
+	return samestat(s1, s2)
+
+
+# Are two stat buffers (obtained from stat, fstat or lstat)
+# describing the same file?
+#
+def samestat(s1, s2):
+	return s1[stat.ST_INO] = s2[stat.ST_INO] and \
+		s1[stat.ST_DEV] = s2[stat.STD_DEV]
+
+
+# Subroutine and global data used by ismount().
+
 _mounts = []
 
 def _getmounts():
