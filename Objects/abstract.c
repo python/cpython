@@ -59,7 +59,6 @@ static PyObject *
 int_from_string(v)
 	PyObject *v;
 {
-	extern long PyOS_strtol Py_PROTO((const char *, char **, int));
 	char *s, *end;
 	long x;
 	char buffer[256]; /* For errors */
