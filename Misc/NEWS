@@ -341,6 +341,12 @@ Core and builtins
 Extension modules
 -----------------
 
+- The new datetime module supplies classes for manipulating dates and
+  times.  The basic design came from the Zope "fishbowl process", and
+  favors practical commercial applications over calendar esoterica.  See
+
+      http://www.zope.org/Members/fdrake/DateTimeWiki/FrontPage
+
 - _tkinter now returns Tcl objects, instead of strings. Objects which
   have Python equivalents are converted to Python objects, other objects
   are wrapped. This can be configured through the wantobjects method,
@@ -879,8 +885,8 @@ Windows
   XXX     Python, what must they do to convert it?
   XXX I'm still not sure how to link this thing (see PCbuild/readme.txt).
   XXX The version # is likely to change before 2.3a1.
-  
-- The Windows distribution now ships with a Secure Sockets Library (SLL) 
+
+- The Windows distribution now ships with a Secure Sockets Library (SLL)
    module (_ssl.pyd)
 
 - The Windows distribution now ships with Tcl/Tk version 8.4.1 (it
