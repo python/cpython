@@ -114,7 +114,7 @@ typedef struct methodlist PyMethodDef;
 #define PyMappingMethods mapping_methods
 #define PyObject_HEAD OB_HEAD
 #define PyObject_VAR_HEAD OB_VARHEAD
-#define PyObject_HEAD_INIT OB_HEAD_INIT
+#define PyObject_HEAD_INIT(x) OB_HEAD_INIT(x)
 #define PyObject_NEW NEWOBJ
 #define PyObject_NEW_VAR NEWVAROBJ
 #define Py_PROTO PROTO
@@ -345,7 +345,8 @@ typedef struct methodlist PyMethodDef;
 #define PyErr_SetString err_setstr
 #define PyErr_SetObject err_setval
 #define PyErr_Occurred err_occurred
-#define PyErr_GetAndClear err_get
+#define PyErr_Fetch err_fetch
+#define PyErr_Restore err_restore
 #define PyErr_Clear err_clear
 #define PyOS_InterruptableGetString fgets_intr
 #define PyOS_InitInterrupts initintr

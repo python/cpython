@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Module definition and import interface */
 
+long get_pyc_magic PROTO((void));
 object *get_modules PROTO((void));
 object *add_module PROTO((char *name));
 object *import_module PROTO((char *name));
