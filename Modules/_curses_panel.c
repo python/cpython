@@ -191,7 +191,7 @@ PyCursesPanel_Dealloc(PyCursesPanelObject *po)
     (void)del_panel(po->pan);
     Py_DECREF(po->wo);
     remove_lop(po);
-    PyMem_DEL(po);
+    PyObject_DEL(po);
 }
 
 /* panel_above(NULL) returns the bottom panel in the stack. To get
