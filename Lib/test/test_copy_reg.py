@@ -21,6 +21,10 @@ class CopyRegTestCase(unittest.TestCase):
         self.assertRaises(TypeError, copy_reg.pickle,
                           type(1), int, "not a callable")
 
+    def test_bool(self):
+        import copy
+        self.assertEquals(True, copy.copy(True))
+
 
 def test_main():
     test_support.run_unittest(CopyRegTestCase)
