@@ -19,6 +19,9 @@ uu0 = UserDict(u0)
 uu1 = UserDict(u1)
 uu2 = UserDict(u2)
 
+verify(UserDict(one=1, two=2) == d2)            # keyword arg constructor
+verify(UserDict([('one',1), ('two',2)]) == d2)  # item sequence constructor
+
 # Test __repr__
 
 verify(str(u0) == str(d0))

@@ -1,9 +1,14 @@
 """A more or less complete user-defined wrapper around dictionary objects."""
 
 class UserDict:
-    def __init__(self, dict=None):
-        self.data = {}
-        if dict is not None: self.update(dict)
+    def __init__(self, dict=None, **kwargs):
+        self.data = kwargs              # defaults to {}
+        if dict is not None:
+            if hasattr(dict,'keys'):    # handle mapping (possibly a UserDict)
+                self.update(dict)
+            else:                       # handle sequence
+                DICT = type({})  # because builtin dict is locally overridden
+                self.data.update(DICT(dict))
     def __repr__(self): return repr(self.data)
     def __cmp__(self, dict):
         if isinstance(dict, UserDict):
