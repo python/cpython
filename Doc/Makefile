@@ -4,6 +4,8 @@
 #	latex tut
 #	latex lib
 #	latex lib
+#	latex ref
+#	latex ref
 # (Doing everything twice so the table of contents comes out right!)
 
 LATEX=		latex
@@ -11,6 +13,10 @@ DVIPS=		dvips
 TEXPREVIEW=	xdvi
 
 PRINT=		lpr
+
+ALL=		tut.ps lib.ps ref.ps
+
+all:		$(ALL)
 
 tut:		tut.dvi
 		$(TEXPREVIEW) tut
@@ -22,9 +28,10 @@ lib:		lib.dvi
 
 lib.dvi lib.ps:	lib.toc lib.tex lib1.tex lib2.tex lib3.tex myformat.sty
 
-ALL=		tut.ps lib.ps
+ref:		ref.dvi
+		$(TEXPREVIEW) ref
 
-all:		$(ALL)
+ref.dvi ref.ps:	ref.toc ref.tex myformat.sty
 
 print:		$(ALL)
 		$(PRINT) $(ALL)
