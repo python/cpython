@@ -852,6 +852,7 @@ object_dealloc(PyObject *self)
 }
 
 #if 0
+/* XXX These should be made smarter before they can be used */
 static PyObject *
 object_repr(PyObject *self)
 {
@@ -1036,6 +1037,20 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
 		}
 	}
 	PyType_SET_BASICSIZE(type, newsize);
+
+	/* Copy other non-function slots */
+
+#undef COPYVAL
+#define COPYVAL(SLOT) \
+	if (type->SLOT == 0) type->SLOT = base->SLOT
+
+	COPYVAL(tp_itemsize);
+	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_WEAKREFS) {
+		COPYVAL(tp_weaklistoffset);
+	}
+	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_CLASS) {
+		COPYVAL(tp_dictoffset);
+	}
 }
 
 static void
@@ -1136,7 +1151,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
 	basebase = base->tp_base;
 
-	COPYSLOT(tp_itemsize);
 	COPYSLOT(tp_dealloc);
 	COPYSLOT(tp_print);
 	if (type->tp_getattr == NULL && type->tp_getattro == NULL) {
@@ -1153,7 +1167,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	COPYSLOT(tp_call);
 	COPYSLOT(tp_str);
 	COPYSLOT(tp_as_buffer);
-	COPYSLOT(tp_flags);
 	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_RICHCOMPARE) {
 		if (type->tp_compare == NULL && type->tp_richcompare == NULL) {
 			type->tp_compare = base->tp_compare;
@@ -1162,9 +1175,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 	}
 	else {
 		COPYSLOT(tp_compare);
-	}
-	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_WEAKREFS) {
-		COPYSLOT(tp_weaklistoffset);
 	}
 	if (type->tp_flags & base->tp_flags & Py_TPFLAGS_HAVE_ITER) {
 		COPYSLOT(tp_iter);
@@ -2244,6 +2254,8 @@ SLOT0(slot_nb_absolute, "__abs__")
 static int
 slot_nb_nonzero(PyObject *self)
 {
+	/* XXX This should cope with a missing __nonzero__ */
+	/* XXX Should it also look for __len__? */
 	PyObject *res = PyObject_CallMethod(self, "__nonzero__", "");
 
 	if (res == NULL)
@@ -2283,6 +2295,7 @@ SLOT1(slot_nb_inplace_true_divide, "__itruediv__", PyObject *, "O")
 static int
 slot_tp_compare(PyObject *self, PyObject *other)
 {
+	/* XXX Should this cope with a missing __cmp__? */
 	PyObject *res = PyObject_CallMethod(self, "__cmp__", "O", other);
 	long r;
 
@@ -2293,11 +2306,13 @@ slot_tp_compare(PyObject *self, PyObject *other)
 	return (int)r;
 }
 
+/* XXX This should cope with a missing __repr__, and also look for __str__ */
 SLOT0(slot_tp_repr, "__repr__")
 
 static long
 slot_tp_hash(PyObject *self)
 {
+	/* XXX This should cope with a missing __hash__ */
 	PyObject *res = PyObject_CallMethod(self, "__hash__", "");
 	long h;
 
@@ -2322,6 +2337,7 @@ slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 	return res;
 }
 
+/* XXX This should cope with a missing __str__, and also look for __repr__ */
 SLOT0(slot_tp_str, "__str__")
 
 static PyObject *
@@ -2371,6 +2387,7 @@ static char *name_op[] = {
 static PyObject *
 slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 {
+	/* XXX How should this cope with missing __xx__? */
 	PyObject *meth = PyObject_GetAttrString(self, name_op[op]);
 	PyObject *res;
 
