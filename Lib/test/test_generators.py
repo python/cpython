@@ -1359,12 +1359,38 @@ Solution 2
 +---+---+---+---+---+---+---+---+---+---+
 """
 
+weakref_tests = """\
+Generators are weakly referencable:
+
+>>> import weakref
+>>> def gen():
+...     yield 'foo!'
+...
+>>> wr = weakref.ref(gen)
+>>> wr() is gen
+True
+>>> p = weakref.proxy(gen)
+
+Generator-iterators are weakly referencable as well:
+
+>>> gi = gen()
+>>> wr = weakref.ref(gi)
+>>> wr() is gi
+True
+>>> p = weakref.proxy(gi)
+>>> list(p)
+['foo!']
+
+"""
+
 __test__ = {"tut":      tutorial_tests,
             "pep":      pep_tests,
             "email":    email_tests,
             "fun":      fun_tests,
             "syntax":   syntax_tests,
-            "conjoin":  conjoin_tests}
+            "conjoin":  conjoin_tests,
+            "weakref":  weakref_tests,
+            }
 
 # Magic test name that regrtest.py invokes *after* importing this module.
 # This worms around a bootstrap problem.
