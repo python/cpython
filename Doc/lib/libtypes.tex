@@ -639,9 +639,6 @@ built-in functions and methods, e.g.\ \code{posix.popen()} and
 \code{posix.fdopen()} and the \code{makefile()} method of socket
 objects.
 \bifuncindex{open}
-\bifuncindex{popen}
-\bifuncindex{fdopen}
-\bifuncindex{makefile}
 
 When a file operation fails for an I/O-related reason, the exception
 \code{IOError} is raised.  This includes situations where the
@@ -712,8 +709,18 @@ Files have the following methods:
   Return the file's current position, like \code{stdio}'s \code{ftell()}.
 \end{funcdesc}
 
+\begin{funcdesc}{truncate}{\optional{size}}
+Truncate the file's size.  If the optional size argument present, the
+file is truncated to (at most) that size.  The size defaults to the
+current position.  Availability of this function depends on the
+operating system version (e.g., not all {\UNIX} versions support this
+operation).
+\end{funcdesc}
+
 \begin{funcdesc}{write}{str}
-  Write a string to the file.  There is no return value.
+Write a string to the file.  There is no return value.  Note: due to
+buffering, the string may not actually show up in the file until
+the \code{flush()} or \code{close()} method is called.
 \end{funcdesc}
 
 \begin{funcdesc}{writelines}{list}
