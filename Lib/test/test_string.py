@@ -1,6 +1,12 @@
 from test_support import verbose
 import string, sys
 
+# XXX: kludge... short circuit if strings don't have methods
+try:
+    ''.join
+except AttributeError:
+    raise ImportError
+
 def test(name, input, output, *args):
     if verbose:
         print 'string.%s%s =? %s... ' % (name, (input,) + args, output),
@@ -128,6 +134,8 @@ test('endswith', 'helloworld', 1, 'lowo', 2, 7)
 test('endswith', 'helloworld', 1, 'lowo', 3, 7)
 test('endswith', 'helloworld', 0, 'lowo', 4, 7)
 test('endswith', 'helloworld', 0, 'lowo', 3, 8)
+test('endswith', 'ab', 0, 'ab', 0, 1)
+test('endswith', 'ab', 0, 'ab', 0, 0)
 
 string.whitespace
 string.lowercase
