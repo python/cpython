@@ -1,10 +1,13 @@
 What's New in Python 2.2.1c2?
-Release date: ???
+Release date: 26-Mar-2002
 =============================
+
+There were a bunch of mostly minor fixes between 2.2.1c1 and 2.2.1c2,
+including:
 
 Core and builtins
 
-Extension modules
+- The floating point behavoiur fix-up continued into complex_pow.
 
 Library
 
@@ -12,7 +15,16 @@ Library
   occur when flattening multipart/* messages with zero or one (scalar)
   attachment.
 
-Tools
+- Support for https: urls in httplib was broken (by the sendall patch
+  mentioned below).
+
+- Minor bugs in the calendar module were fixed.
+
+- A few minor bugs in pydoc were fixed (better url recognition, proper
+  quoting of some elements).
+
+- Some distutils commands didn't list all their "boolean options"
+  which made overriding them from .cfg files not work.
 
 
 What's New in Python 2.2.1c1?
