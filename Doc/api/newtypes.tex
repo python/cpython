@@ -1502,7 +1502,8 @@ to be able to test for its presence before using it.}
 
 \begin{ctypedesc}[getcharbufferproc]{int (*getcharbufferproc)
                             (PyObject *self, int segment, const char **ptrptr)}
-[Guido: the description is missing!]
+  Return the size of the memory buffer in ptrptr at the segment index.
+  \code{\var{ptrptr}} is set to the memory buffer.
 \end{ctypedesc}
 
 
