@@ -174,7 +174,7 @@ signal_alarm(self, args)
 static char alarm_doc[] =
 "alarm(seconds)\n\
 \n\
-Arrange for SIGALRM to arrive after the given number of seconds."
+Arrange for SIGALRM to arrive after the given number of seconds.";
 #endif
 
 #ifdef HAVE_PAUSE
