@@ -566,23 +566,44 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		return NULL;
 	}
 
-	/* Should this be a dynamic class (i.e. modifiable __dict__)? */
+	/* Should this be a dynamic class (i.e. modifiable __dict__)?
+	   Look in two places for a variable named __dynamic__:
+	   1) in the class dict
+	   2) in the module dict (globals)
+	   The first variable that is an int >= 0 is used.
+	   Otherwise, a default is calculated from the base classes:
+	   if any base class is dynamic, this class is dynamic; otherwise
+	   it is static. */
+	dynamic = -1; /* Not yet determined */
+	/* Look in the class */
 	tmp = PyDict_GetItemString(dict, "__dynamic__");
 	if (tmp != NULL) {
-		/* The class author has a preference */
-		dynamic = PyObject_IsTrue(tmp);
-		Py_DECREF(tmp);
+		dynamic = PyInt_AsLong(tmp);
 		if (dynamic < 0)
-			return NULL;
+			PyErr_Clear();
 	}
-	else {
-		/* Make a new class dynamic if any of its bases is dynamic.
-		   This is not always the same as inheriting the __dynamic__
-		   class attribute! */
+	if (dynamic < 0) {
+		/* Look in the module globals */
+		tmp = PyEval_GetGlobals();
+		if (tmp != NULL) {
+			tmp = PyDict_GetItemString(tmp, "__dynamic__");
+			if (tmp != NULL) {
+				dynamic = PyInt_AsLong(tmp);
+				if (dynamic < 0)
+					PyErr_Clear();
+			}
+		}
+	}
+	if (dynamic < 0) {
+		/* Make a new class dynamic if any of its bases is
+		   dynamic.  This is not always the same as inheriting
+		   the __dynamic__ class attribute! */
 		dynamic = 0;
 		for (i = 0; i < nbases; i++) {
-			tmptype = (PyTypeObject *)PyTuple_GET_ITEM(bases, i);
-			if (tmptype->tp_flags & Py_TPFLAGS_DYNAMICTYPE) {
+			tmptype = (PyTypeObject *)
+				PyTuple_GET_ITEM(bases, i);
+			if (tmptype->tp_flags &
+			    Py_TPFLAGS_DYNAMICTYPE) {
 				dynamic = 1;
 				break;
 			}
@@ -2565,8 +2586,6 @@ slot_tp_getattro(PyObject *self, PyObject *name)
 		/* Avoid further slowdowns */
 		if (tp->tp_getattro == slot_tp_getattro)
 			tp->tp_getattro = PyObject_GenericGetAttr;
-		else
-			fprintf(stderr, "huh?\n");
 		return PyObject_GenericGetAttr(self, name);
 	}
 	return PyObject_CallFunction(getattr, "OO", self, name);
@@ -2672,7 +2691,28 @@ slot_tp_iternext(PyObject *self)
 	return PyObject_CallMethod(self, "next", "");
 }
 
-SLOT2(slot_tp_descr_get, "__get__", PyObject *, PyObject *, "OO")
+static PyObject *
+slot_tp_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+	PyTypeObject *tp = self->ob_type;
+	PyObject *get;
+	static PyObject *get_str = NULL;
+
+	if (get_str == NULL) {
+		get_str = PyString_InternFromString("__get__");
+		if (get_str == NULL)
+			return NULL;
+	}
+	get = _PyType_Lookup(tp, get_str);
+	if (get == NULL) {
+		/* Avoid further slowdowns */
+		if (tp->tp_descr_get == slot_tp_descr_get)
+			tp->tp_descr_get = NULL;
+		Py_INCREF(self);
+		return self;
+	}
+	return PyObject_CallFunction(get, "OOO", self, obj, type);
+}
 
 static int
 slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
