@@ -581,7 +581,7 @@ PLATDIR=	plat-$(MACHDEP)
 MACHDEPS=	$(PLATDIR)
 XMLLIBSUBDIRS=  xml xml/dom xml/parsers xml/sax
 LIBSUBDIRS=	lib-old lib-tk site-packages test test/output encodings \
-		email compiler \
+		email compiler hotshot \
 		distutils distutils/command $(XMLLIBSUBDIRS) curses $(MACHDEPS)
 libinstall:	$(PYTHON) $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
