@@ -636,6 +636,15 @@ These can be bit-wise OR'd together.
 Availability: Windows.
 \end{datadesc}
 
+\begin{datadesc}{SEEK_SET}
+\dataline{SEEK_CUR}
+\dataline{SEEK_END}
+Parameteters to the \function{lseek()} function.
+Their values are 0, 1, and 2, respectively.
+Availability: Windows, Macintosh, \UNIX.
+\versionadded{2.5}
+\end{datadesc}
+
 \subsection{Files and Directories \label{os-file-dir}}
 
 \begin{funcdesc}{access}{path, mode}
