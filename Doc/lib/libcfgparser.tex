@@ -114,7 +114,15 @@ Returns a list of options available in the specified \var{section}.
 \end{methoddesc}
 
 \begin{methoddesc}{read}{filenames}
-Read and parse a list of filenames.
+Read and parse a list of filenames.  If \var{filenames} is a string or
+Unicode string, it is treated as a single filename.
+\end{methoddesc}
+
+\begin{methoddesc}{readfp}{fp\optional{, filename}}
+Read and parse configuration data from the file or file-like object in
+\var{fp} (only the \method{readline()} method is used).  If
+\var{filename} is omitted and \var{fp} has a \member{name} attribute,
+that is used for \var{filename}; the default is \samp{<???>}.
 \end{methoddesc}
 
 \begin{methoddesc}{get}{section, option\optional{, raw\optional{, vars}}}
