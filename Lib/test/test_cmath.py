@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 """ Simple test script for cmathmodule.c
-Roger E. Masse
+    Roger E. Masse
 """
 import cmath
 from test_support import verbose
