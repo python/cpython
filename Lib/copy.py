@@ -1,6 +1,4 @@
-"""\
-Generic (shallow and deep) copying operations
-=============================================
+"""Generic (shallow and deep) copying operations.
 
 Interface summary:
 

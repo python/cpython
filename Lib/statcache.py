@@ -1,4 +1,5 @@
-"""Maintain a cache of file stats.
+"""Maintain a cache of stat() information on files.
+
 There are functions to reset the cache or to selectively remove items.
 """
 

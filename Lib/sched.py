@@ -1,4 +1,4 @@
-"""Module sched -- a generally useful event scheduler class
+"""A generally useful event scheduler class.
 
 Each instance of this class manages its own queue.
 No multi-threading is implied; you are supposed to hack that
