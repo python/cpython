@@ -34,6 +34,14 @@ the built-in module \code{pwd}.  If the expansion fails, or if the
 path does not begin with a tilde, the path is returned unchanged.
 \end{funcdesc}
 
+\begin{funcdesc}{expandvars}{p}
+Return the argument with environment variables expanded.  Substrings
+of the form \samp{\$\var{name}} or \samp{\$\{\var{name}\}} are
+replaced by the value of environment variable \var{name}.  Malformed
+variable names and references to non-existing variables are left
+unchanged.
+\end{funcdesc}
+
 \begin{funcdesc}{isabs}{p}
 Return true if \var{p} is an absolute pathname (begins with a slash).
 \end{funcdesc}
