@@ -43,12 +43,12 @@ item: Global
   Variable Default3=..\chm
   Variable Flags3=00001001
   Variable Name4=_SYS_
-  Variable Description4=System directory (where to find MSVCRT.DLL)
-  Variable Default4=C:\Windows\System32
-  Variable Values4=C:\Windows\System
-  Variable Values4=C:\WINNT\System32
+  Variable Description4=VC redistributables directory (where to find MSVCRT.DLL).
+  Variable Description4=
+  Variable Description4=NEVER USE A SYSTEM DIRECTORY!
+  Variable Default4=C:\VCREDIST\VC6SP5
   Variable Values4=C:\Code\MSDLLs
-  Variable Values4=C:\Windows\System32
+  Variable Values4=C:\VCREDIST\VC6SP5
   Variable Flags4=00000010
   Variable Name5=_PYMAJOR_
   Variable Description5=Python major version number; the 2 in 2.3.
