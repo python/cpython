@@ -137,7 +137,7 @@ Library
 - Added new module "platform" which provides a wide range of tools
   for querying platform dependent features.
 
-- netrc now allows Ascii punctuation characters in passwords.
+- netrc now allows ASCII punctuation characters in passwords.
 
 - shelve now supports the optional writeback argument, and exposes
   pickle protocol versions.
