@@ -482,7 +482,7 @@ try_3way_compare(PyObject *v, PyObject *w)
 	if (f != NULL && f == w->ob_type->tp_compare) {
 		c = (*f)(v, w);
 		if (c < 0 && PyErr_Occurred())
-			return -1;
+			return -2;
 		return c < 0 ? -1 : c > 0 ? 1 : 0;
 	}
 
