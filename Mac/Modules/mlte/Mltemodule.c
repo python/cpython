@@ -70,6 +70,20 @@ OptRectPtr_Convert(PyObject *v, Rect **p_itself)
 	return PyMac_GetRect(v, *p_itself);
 }
 
+/*
+** Parse an optional GWorld
+*/
+static int
+OptGWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
+{	
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
+	return GWorldObj_Convert(v, p_itself);
+}
+
 
 static PyObject *Mlte_Error;
 
@@ -276,7 +290,7 @@ static PyObject *TXNObj_TXNDraw(TXNObjectObject *_self, PyObject *_args)
 	GWorldPtr iDrawPort;
 	PyMac_PRECHECK(TXNDraw);
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      GWorldObj_Convert, &iDrawPort))
+	                      OptGWorldObj_Convert, &iDrawPort))
 		return NULL;
 	TXNDraw(_self->ob_itself,
 	        iDrawPort);

@@ -74,6 +74,20 @@ OptRectPtr_Convert(PyObject *v, Rect **p_itself)
 	return PyMac_GetRect(v, *p_itself);
 }
 
+/*
+** Parse an optional GWorld
+*/
+static int
+OptGWorldObj_Convert(PyObject *v, GWorldPtr *p_itself)
+{	
+	if (v == Py_None)
+	{
+		*p_itself = NULL;
+		return 1;
+	}
+	return GWorldObj_Convert(v, p_itself);
+}
+
 """
 
 initstuff = initstuff + """
@@ -109,6 +123,7 @@ DragTrackingMessage = Type("DragTrackingMessage", "h")
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 OptRgnHandle = OpaqueByValueType("RgnHandle", "OptResObj")
 GWorldPtr = OpaqueByValueType("GWorldPtr", "GWorldObj")
+OptGWorldPtr = OpaqueByValueType("GWorldPtr", "OptGWorldObj")
 MlteInBuffer = VarInputBufferType('void *', 'ByteCount', 'l')
 
 OptFSSpecPtr = OpaqueByValueType("FSSpec *", "OptFSSpecPtr")

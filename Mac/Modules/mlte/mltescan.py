@@ -116,7 +116,11 @@ MovieFileType = FOUR_CHAR_CODE('moov')
 			 
 			# The AdjustCursor region handle is optional
 			([("RgnHandle", "ioCursorRgn", "InMode")],
-			 [("OptRgnHandle", "*", "*")])
+			 [("OptRgnHandle", "*", "*")]),
+			 
+			# The GWorld for TXNDraw is optional
+			([('GWorldPtr', 'iDrawPort', 'InMode')],
+			 [('OptGWorldPtr', '*', '*')]),
 			]
 			
 if __name__ == "__main__":
