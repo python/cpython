@@ -485,3 +485,21 @@ else:
     print "eval() should have failed, because code contained free vars"
 
 warnings.resetwarnings()
+
+print "21. list comprehension with local variables"
+
+try:
+    print bad
+except NameError:
+    pass
+else:
+    print "bad should not be defined"
+
+def x():
+    [bad for s in 'a b' for bad in s.split()]
+
+x()
+try:
+    print bad
+except NameError:
+    pass
