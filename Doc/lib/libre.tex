@@ -282,6 +282,35 @@ for the current locale.
 \end{list}
 
 
+\subsection{Matching vs. Searching \label{matching-searching}}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+\strong{XXX This section is still incomplete!}
+
+Python offers two different primitive operations based on regular
+expressions: match and search.  If you are accustomed to Perl's
+semantics, the search operation is what you're looking for.  See the
+\function{search()} function and corresponding method of compiled
+regular expression objects.
+
+Note that match may differ from search using a regular expression
+beginning with \character{\^}:  \character{\^} matches only at the start
+of the string, or in \constant{MULTILINE} mode also immediately
+following a newline.  "match" succeeds only if the pattern matches at
+the start of the string regardless of mode, or at the starting
+position given by the optional \var{pos} argument regardless of
+whether a newline precedes it.
+
+% Examples from Tim Peters:
+\begin{verbatim}
+re.compile("a").match("ba", 1)           # succeeds
+re.compile("^a").search("ba", 1)         # fails; 'a' not at start
+re.compile("^a").search("\na", 1)        # fails; 'a' not at start
+re.compile("^a", re.M).search("\na", 1)  # succeeds
+re.compile("^a", re.M).search("ba", 1)   # fails; no preceding \n
+\end{verbatim}
+
+
 \subsection{Module Contents}
 \nodename{Contents of Module re}
 
@@ -376,6 +405,9 @@ leftmost such \character{\#} through the end of the line are ignored.
   \class{MatchObject} instance.  Return \code{None} if the string does not
   match the pattern; note that this is different from a zero-length
   match.
+
+  \strong{Note:}  If you want to locate a match anywhere in
+  \var{string}, use \method{search()} instead.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{pattern, string, \optional{, maxsplit\code{ = 0}}}
@@ -387,7 +419,7 @@ leftmost such \character{\#} through the end of the line are ignored.
   element of the list.  (Incompatibility note: in the original Python
   1.5 release, \var{maxsplit} was ignored.  This has been fixed in
   later releases.)
-%
+
 \begin{verbatim}
 >>> re.split('\W+', 'Words, words, words.')
 ['Words', 'words', 'words', '']
@@ -396,7 +428,7 @@ leftmost such \character{\#} through the end of the line are ignored.
 >>> re.split('\W+', 'Words, words, words.', 1)
 ['Words', 'words, words.']
 \end{verbatim}
-%
+
   This function combines and extends the functionality of
   the old \function{regsub.split()} and \function{regsub.splitx()}.
 \end{funcdesc}
@@ -417,7 +449,7 @@ unchanged.  \var{repl} can be a string or a function; if a function,
 it is called for every non-overlapping occurance of \var{pattern}.
 The function takes a single match object argument, and returns the
 replacement string.  For example:
-%
+
 \begin{verbatim}
 >>> def dashrepl(matchobj):
 ....    if matchobj.group(0) == '-': return ' '
@@ -425,7 +457,7 @@ replacement string.  For example:
 >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
 'pro--gram files'
 \end{verbatim}
-%
+
 The pattern may be a string or a 
 regex object; if you need to specify
 regular expression flags, you must use a regex object, or use
@@ -498,7 +530,10 @@ attributes:
   \class{MatchObject} instance.  Return \code{None} if the string does not
   match the pattern; note that this is different from a zero-length
   match.
-  
+
+  \strong{Note:}  If you want to locate a match anywhere in
+  \var{string}, use \method{search()} instead.
+
   The optional second parameter \var{pos} gives an index in the string
   where the search is to start; it defaults to \code{0}.  This is not
   completely equivalent to slicing the string; the \code{'\^'} pattern
