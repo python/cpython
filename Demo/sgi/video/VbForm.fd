@@ -9,7 +9,7 @@ Number of forms: 1
 Name: form
 Width: 450.000000
 Height: 240.000000
-Number of Objects: 33
+Number of Objects: 37
 
 --------------------
 class: 1
@@ -239,7 +239,7 @@ argument:
 --------------------
 class: 31
 type: 2
-box: 220.000000 170.000000 100.000000 30.000000
+box: 220.000000 130.000000 100.000000 30.000000
 boxtype: 2
 colors: 13 5
 alignment: 0
@@ -284,7 +284,7 @@ argument:
 --------------------
 class: 31
 type: 1
-box: 220.000000 170.000000 100.000000 30.000000
+box: 220.000000 130.000000 100.000000 30.000000
 boxtype: 2
 colors: 13 5
 alignment: 0
@@ -299,7 +299,7 @@ argument: 0
 --------------------
 class: 31
 type: 2
-box: 220.000000 110.000000 100.000000 30.000000
+box: 220.000000 70.000000 100.000000 30.000000
 boxtype: 2
 colors: 13 5
 alignment: 0
@@ -344,7 +344,7 @@ argument:
 --------------------
 class: 31
 type: 2
-box: 250.000000 170.000000 40.000000 30.000000
+box: 250.000000 130.000000 40.000000 30.000000
 boxtype: 2
 colors: 13 5
 alignment: 0
@@ -359,7 +359,7 @@ argument: 0
 --------------------
 class: 2
 type: 0
-box: 220.000000 170.000000 30.000000 30.000000
+box: 220.000000 130.000000 30.000000 30.000000
 boxtype: 0
 colors: 47 47
 alignment: 2
@@ -374,7 +374,7 @@ argument:
 --------------------
 class: 2
 type: 0
-box: 290.000000 170.000000 30.000000 30.000000
+box: 290.000000 130.000000 30.000000 30.000000
 boxtype: 0
 colors: 47 47
 alignment: 2
@@ -389,7 +389,7 @@ argument:
 --------------------
 class: 13
 type: 0
-box: 220.000000 110.000000 100.000000 30.000000
+box: 220.000000 70.000000 100.000000 30.000000
 boxtype: 0
 colors: 7 3
 alignment: 4
@@ -451,7 +451,7 @@ class: 10000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 1147496041 1852404841
+colors: 640 235
 alignment: 4
 style: 0
 size: 11.000000
@@ -464,7 +464,7 @@ argument:
 --------------------
 class: 31
 type: 2
-box: 220.000000 110.000000 100.000000 30.000000
+box: 220.000000 70.000000 100.000000 30.000000
 boxtype: 2
 colors: 13 5
 alignment: 0
@@ -479,7 +479,7 @@ argument: 0
 --------------------
 class: 31
 type: 2
-box: 220.000000 170.000000 100.000000 30.000000
+box: 220.000000 130.000000 100.000000 30.000000
 boxtype: 2
 colors: 13 5
 alignment: 0
@@ -492,11 +492,71 @@ callback: cb_rate_vcr
 argument: 0
 
 --------------------
+class: 42
+type: 0
+box: 220.000000 10.000000 100.000000 30.000000
+boxtype: 5
+colors: 7 0
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: VCR speed:
+name: c_vcrspeed
+callback: cb_vcrspeed
+argument: 0
+
+--------------------
 class: 20000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 544171552 1331849829
+colors: 640 235
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 58720287 33751040
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_rgb24
+callback: 
+argument: 
+
+--------------------
+class: 42
+type: 0
+box: 260.000000 200.000000 60.000000 30.000000
+boxtype: 5
+colors: 7 0
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: Size:
+name: c_rgb24_size
+callback: cb_rgb24_size
+argument: 0
+
+--------------------
+class: 20000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
 alignment: 4
 style: 0
 size: 11.000000
