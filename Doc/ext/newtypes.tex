@@ -160,6 +160,18 @@ to \class{noddy.Noddy}.
 This is so that Python knows how much memory to allocate when you call
 \cfunction{PyObject_New()}.
 
+\note{If you want your type to be subclassable from Python, and your
+type has the same \member{tp_basicsize} as its base type, you may
+have problems with multiple inheritance.  A Python subclass of your
+type will have to list your type first in its \member{__bases__}, or
+else it will not be able to call your type's \method{__new__} method
+without getting an error.  You can avoid this problem by ensuring
+that your type has a larger value for \member{tp_basicsize} than
+its base type does.  Most of the time, this will be true anyway,
+because either your base type will be \class{object}, or else you will
+be adding data members to your base type, and therefore increasing its
+size.}
+
 \begin{verbatim}
     0,                          /* tp_itemsize */
 \end{verbatim}
@@ -383,6 +395,18 @@ We don't fill the \member{tp_alloc} slot ourselves. Rather
 \cfunction{PyType_Ready()} fills it for us by inheriting it from our
 base class, which is \class{object} by default.  Most types use the
 default allocation.
+
+\note{If you are creating a co-operative \member{tp_new} (one that
+calls a base type's \member{tp_new} or \method{__new__}), you
+must \emph{not} try to determine what method to call using
+method resolution order at runtime.  Always statically determine
+what type you are going to call, and call its \member{tp_new}
+directly, or via \code{type->tp_base->tp_new}.  If you do
+not do this, Python subclasses of your type that also inherit
+from other Python-defined classes may not work correctly.
+(Specifically, you may not be able to create instances of
+such subclasses without getting a \exception{TypeError}.)}
+
 
 We provide an initialization function:
 
