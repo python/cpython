@@ -17,9 +17,9 @@ internal to external form (in an RPC buffer for instance) and
 
 This is not a general ``persistency'' module.  For general persistency
 and transfer of Python objects through RPC calls, see the modules
-\code{pickle} and \code{shelve}.  The \code{marshal} module exists
+\module{pickle} and \module{shelve}.  The \module{marshal} module exists
 mainly to support reading and writing the ``pseudo-compiled'' code for
-Python modules of \samp{.pyc} files.
+Python modules of \file{.pyc} files.
 \refstmodindex{pickle}
 \refstmodindex{shelve}
 \obindex{code}
@@ -37,16 +37,16 @@ supported; and recursive lists and dictionaries should not be written
 \strong{Caveat:} On machines where C's \code{long int} type has more than
 32 bits (such as the DEC Alpha), it
 is possible to create plain Python integers that are longer than 32
-bits.  Since the current \code{marshal} module uses 32 bits to
+bits.  Since the current \module{marshal} module uses 32 bits to
 transfer plain Python integers, such values are silently truncated.
 This particularly affects the use of very long integer literals in
 Python modules --- these will be accepted by the parser on such
 machines, but will be silently be truncated when the module is read
-from the \code{.pyc} instead.%
+from the \file{.pyc} instead.%
 \footnote{A solution would be to refuse such literals in the parser,
 since they are inherently non-portable.  Another solution would be to
-let the \code{marshal} module raise an exception when an integer value
-would be truncated.  At least one of these solutions will be
+let the \module{marshal} module raise an exception when an integer
+value would be truncated.  At least one of these solutions will be
 implemented in a future version.}
 
 There are functions that read/write files as well as functions
@@ -59,34 +59,34 @@ The module defines these functions:
 \begin{funcdesc}{dump}{value\, file}
   Write the value on the open file.  The value must be a supported
   type.  The file must be an open file object such as
-  \code{sys.stdout} or returned by \code{open()} or
-  \code{posix.popen()}.
-  
+  \code{sys.stdout} or returned by \function{open()} or
+  \function{posix.popen()}.
+
   If the value has (or contains an object that has) an unsupported type,
-  a \code{ValueError} exception is raised -- but garbage data will also
-  be written to the file.  The object will not be properly read back by
-  \code{load()}.
+  a \exception{ValueError} exception is raised -- but garbage data
+  will also be written to the file.  The object will not be properly
+  read back by \function{load()}.
 \end{funcdesc}
 
 \begin{funcdesc}{load}{file}
   Read one value from the open file and return it.  If no valid value
-  is read, raise \code{EOFError}, \code{ValueError} or
-  \code{TypeError}.  The file must be an open file object.
+  is read, raise \exception{EOFError}, \exception{ValueError} or
+  \exception{TypeError}.  The file must be an open file object.
 
   Warning: If an object containing an unsupported type was marshalled
-  with \code{dump()}, \code{load()} will substitute \code{None} for the
-  unmarshallable type.
+  with \function{dump()}, \function{load()} will substitute
+  \code{None} for the unmarshallable type.
 \end{funcdesc}
 
 \begin{funcdesc}{dumps}{value}
   Return the string that would be written to a file by
-  \code{dump(value, file)}.  The value must be a supported type.
-  Raise a \code{ValueError} exception if value has (or contains an
-  object that has) an unsupported type.
+  \code{dump(\var{value}, \var{file})}.  The value must be a supported
+  type.  Raise a \exception{ValueError} exception if value has (or
+  contains an object that has) an unsupported type.
 \end{funcdesc}
 
 \begin{funcdesc}{loads}{string}
   Convert the string to a value.  If no valid value is found, raise
-  \code{EOFError}, \code{ValueError} or \code{TypeError}.  Extra
-  characters in the string are ignored.
+  \exception{EOFError}, \exception{ValueError} or
+  \exception{TypeError}.  Extra characters in the string are ignored.
 \end{funcdesc}
