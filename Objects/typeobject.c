@@ -2891,6 +2891,44 @@ slot_tp_getattro(PyObject *self, PyObject *name)
 	return PyObject_CallFunction(getattr, "OO", self, name);
 }
 
+static PyObject *
+slot_tp_getattr_hook(PyObject *self, PyObject *name)
+{
+	PyTypeObject *tp = self->ob_type;
+	PyObject *getattr, *getattribute, *res;
+	static PyObject *getattribute_str = NULL;
+	static PyObject *getattr_str = NULL;
+
+	if (getattr_str == NULL) {
+		getattr_str = PyString_InternFromString("__getattr__");
+		if (getattr_str == NULL)
+			return NULL;
+	}
+	if (getattribute_str == NULL) {
+		getattribute_str =
+			PyString_InternFromString("__getattribute__");
+		if (getattribute_str == NULL)
+			return NULL;
+	}
+	getattr = _PyType_Lookup(tp, getattr_str);
+	getattribute = _PyType_Lookup(tp, getattribute_str);
+	if (getattr == NULL && getattribute == NULL) {
+		/* Avoid further slowdowns */
+		if (tp->tp_getattro == slot_tp_getattr_hook)
+			tp->tp_getattro = PyObject_GenericGetAttr;
+		return PyObject_GenericGetAttr(self, name);
+	}
+	if (getattribute == NULL)
+		res = PyObject_GenericGetAttr(self, name);
+	else
+		res = PyObject_CallFunction(getattribute, "OO", self, name);
+	if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+		PyErr_Clear();
+		res = PyObject_CallFunction(getattr, "OO", self, name);
+	}
+	return res;
+}
+
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
@@ -3197,6 +3235,7 @@ override_slots(PyTypeObject *type, PyObject *dict)
 	TPSLOT("__call__", tp_call, slot_tp_call);
 	TPSLOT("__str__", tp_str, slot_tp_str);
 	TPSLOT("__getattribute__", tp_getattro, slot_tp_getattro);
+	TPSLOT("__getattr__", tp_getattro, slot_tp_getattr_hook);
 	TPSLOT("__setattr__", tp_setattro, slot_tp_setattro);
 	TPSLOT("__lt__", tp_richcompare, slot_tp_richcompare);
 	TPSLOT("__le__", tp_richcompare, slot_tp_richcompare);

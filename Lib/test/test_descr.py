@@ -880,9 +880,8 @@ def dynamics():
     def mygetattr(self, name):
         if name == "spam":
             return "spam"
-        else:
-            return object.__getattribute__(self, name)
-    C.__getattribute__ = mygetattr
+        raise AttributeError
+    C.__getattr__ = mygetattr
     verify(a.spam == "spam")
     a.new = 12
     verify(a.new == 12)
@@ -1105,11 +1104,11 @@ def overloading():
 
     class C(B):
 
-        def __getattribute__(self, name):
+        def __getattr__(self, name):
             if name == "foo":
                 return ("getattr", name)
             else:
-                return B.__getattribute__(self, name)
+                raise AttributeError
         def __setattr__(self, name, value):
             if name == "foo":
                 self.setattr = (name, value)
