@@ -87,7 +87,7 @@ Syntax
 * Strings may now be enclosed in double quotes as well as in single
 quotes.  There is no difference in interpretation.  The repr() of
 string objects will use double quotes if the string contains a single
-quote and no double quotes.  Thanks to Amrit for these changes!
+quote and no double quotes.  Thanks to Amrit Prem for these changes!
 
 * There is a new keyword 'exec'.  This replaces the exec() built-in
 function.  If a function contains an exec statement, local variable
@@ -106,7 +106,7 @@ you can just as well define a local function using
 	def some_temporary_name(<parameters>): return <expression>
 
 Lambda expressions are particularly useful in combination with map(),
-filter() and reduce(), described below.  Thanks to Amrit for
+filter() and reduce(), described below.  Thanks to Amrit Prem for
 submitting this code (as well as map(), filter(), reduce() and
 xrange())!
 
@@ -235,7 +235,7 @@ module can't be decoded by the new version.
 as leaving the timeout argument out.
 
 * Module strop (and hence standard library module string) has aquired
-a new function: rindex().  Thanks to Amrit!
+a new function: rindex().  Thanks to Amrit Prem!
 
 * Module regex defines a new function symcomp() which uses an extended
 regular expression syntax: parenthesized subexpressions may be labeled
