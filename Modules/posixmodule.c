@@ -1706,9 +1706,9 @@ extern int openpty(int *, int *, char *, struct termios *, struct winsize *);
 extern int forkpty(int *, char *, struct termios *, struct winsize *);
 #endif /* HAVE_LIBUTIL_H */
 #endif /* HAVE_PTY_H */
-#endif /* defined(HAVE_OPENPTY) or defined(HAVE_FORKPTY) */
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE_FORKPTY) */
 
-#ifdef HAVE_OPENPTY
+#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY)
 static char posix_openpty__doc__[] =
 "openpty() -> (master_fd, slave_fd)\n\
 Open a pseudo-terminal, returning open fd's for both master and slave end.\n";
@@ -1717,13 +1717,32 @@ static PyObject *
 posix_openpty(PyObject *self, PyObject *args)
 {
 	int master_fd, slave_fd;
+#ifndef HAVE_OPENPTY
+	char * slave_name;
+	/* SGI apparently needs this forward declaration */
+	extern char * _getpty(int *, int, mode_t, int);
+#endif
+
 	if (!PyArg_ParseTuple(args, ":openpty"))
 		return NULL;
+
+#ifdef HAVE_OPENPTY
 	if (openpty(&master_fd, &slave_fd, NULL, NULL, NULL) != 0)
 		return posix_error();
+#else
+	slave_name = _getpty(&master_fd, O_RDWR, 0666, 0);
+	if (slave_name == NULL)
+		return posix_error();
+
+	slave_fd = open(slave_name, O_RDWR);
+	if (slave_fd < 0)
+		return posix_error();
+#endif /* defined(HAVE_OPENPTY) */
+
 	return Py_BuildValue("(ii)", master_fd, slave_fd);
+
 }
-#endif
+#endif /* defined(HAVE_OPENPTY) || defined(HAVE__GETPTY) */
 
 #ifdef HAVE_FORKPTY
 static char posix_forkpty__doc__[] =
@@ -4926,9 +4945,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_FORK
 	{"fork",	posix_fork, METH_VARARGS, posix_fork__doc__},
 #endif /* HAVE_FORK */
-#ifdef HAVE_OPENPTY
+#if defined(HAVE_OPENPTY) || defined(HAVE__GETPTY)
 	{"openpty",	posix_openpty, METH_VARARGS, posix_openpty__doc__},
-#endif /* HAVE_OPENPTY */
+#endif /* HAVE_OPENPTY || HAVE__GETPTY */
 #ifdef HAVE_FORKPTY
 	{"forkpty",	posix_forkpty, METH_VARARGS, posix_forkpty__doc__},
 #endif /* HAVE_FORKPTY */

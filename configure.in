@@ -826,7 +826,7 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r dlopen execv \
  setlocale setregid setreuid setsid setpgid setpgrp setuid setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink sysconf \
  tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname waitpid)
+ truncate uname waitpid _getpty)
 
 # check for openpty and forkpty
 
