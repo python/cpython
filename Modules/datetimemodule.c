@@ -3880,7 +3880,7 @@ timetz_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 		"hour", "minute", "second", "microsecond", "tzinfo", NULL
 	};
 
-	if (PyArg_ParseTupleAndKeywords(args, kw, "|llllO", keywords,
+	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO", keywords,
 					&hour, &minute, &second, &usecond,
 					&tzinfo)) {
 		if (check_time_args(hour, minute, second, usecond) < 0)
