@@ -314,7 +314,7 @@ separators:
 \end{verbatim}
 
 
-\subsection{Listing whole packages}
+\section{Listing whole packages}
 \label{listing-packages}
 
 The \option{packages} option tells the Distutils to process (build,
@@ -369,7 +369,7 @@ scan your source tree looking for any directory with an
 \file{\_\_init\_\_.py} file.)
 
 
-\subsection{Listing individual modules}
+\section{Listing individual modules}
 \label{listing-modules}
 
 For a small module distribution, you might prefer to list all modules
@@ -390,7 +390,7 @@ And again, you can override the package/directory correspondence using
 the \option{package\_dir} option.
 
 
-\subsection{Describing extension modules}
+\section{Describing extension modules}
 \label{describing-extensions}
 
 % XXX read over this section
@@ -433,7 +433,7 @@ great deal of flexibility in describing Python extensions, which is
 explained in the following sections.  
 
 
-\subsubsection{Extension names and packages}
+\subsection{Extension names and packages}
 
 The first argument to the \class{Extension} constructor is always the
 name of the extension, including any package names.  For example,
@@ -469,7 +469,7 @@ will compile \file{foo.c} to the extension \module{pkg.foo}, and
 \file{bar.c} to \module{pkg.subpkg.bar}.
 
 
-\subsubsection{Extension source files}
+\subsection{Extension source files}
 
 The second argument to the \class{Extension} constructor is a list of
 source files.  Since the Distutils currently only support C, \Cpp, and
@@ -494,7 +494,7 @@ means Windows message text (\file{.mc}) files and resource definition
 (\file{.res}) files and linked into the executable.
 
 
-\subsubsection{Preprocessor options}
+\subsection{Preprocessor options}
 
 Three optional arguments to \class{Extension} will help if you need to
 specify include directories to search or preprocessor macros to
@@ -581,7 +581,7 @@ is the equivalent of having this at the top of every C source file:
 \end{verbatim}
 
 
-\subsubsection{Library options}
+\subsection{Library options}
 
 You can also specify the libraries to link against when building your
 extension, and the directories to search for those libraries.  The
@@ -612,7 +612,7 @@ intend to distribute your code.)
 
 \XXX{Should mention clib libraries here or somewhere else!}
 
-\subsubsection{Other options}
+\subsection{Other options}
 
 There are still some other options which can be used to handle special
 cases.
@@ -631,7 +631,7 @@ is not needed when building compiled extensions: Distutils
 will automatically add \code{initmodule}
 to the list of exported symbols.
 
-\subsection{Installing Scripts}
+\section{Installing Scripts}
 So far we have been dealing with pure and non-pure Python modules,
 which are usually not run by themselves but imported by scripts.
 
@@ -652,7 +652,7 @@ setup(...
 \end{verbatim}
 
 
-\subsection{Installing Package Data}
+\section{Installing Package Data}
 
 Often, additional files need to be installed into a package.  These
 files are often data that's closely related to the package's
@@ -701,7 +701,7 @@ setup(...,
 \versionadded{2.4}
 
 
-\subsection{Installing Additional Files}
+\section{Installing Additional Files}
 
 The \option{data\_files} option can be used to specify additional
 files needed by the module distribution: configuration files, message
@@ -739,7 +739,7 @@ and the \command{install} command will print a warning in this case.
 To install data files directly in the target directory, an empty
 string should be given as the directory.
 
-\subsection{Additional meta-data}
+\section{Additional meta-data}
 \label{meta-data}
 
 The setup script may include additional meta-data beyond the name and
@@ -846,7 +846,7 @@ if sys.version < '2.2.3':
 \end{verbatim}
 
 
-\subsection{Debugging the setup script}
+\section{Debugging the setup script}
 
 Sometimes things go wrong, and the setup script doesn't do what the
 developer wants.
@@ -1051,7 +1051,7 @@ to create a gzipped tarball and a zip file.  The available formats are:
 
 
 
-\subsection{Specifying the files to distribute}
+\section{Specifying the files to distribute}
 \label{manifest}
 
 If you don't supply an explicit list of files (or instructions on how to
@@ -1156,7 +1156,7 @@ of converting them to the standard representation on your platform.
 That way, the manifest template is portable across operating systems.
 
 
-\subsection{Manifest-related options}
+\section{Manifest-related options}
 \label{manifest-options}
 
 The normal course of operations for the \command{sdist} command is as
@@ -1324,14 +1324,14 @@ The following sections give details on the individual \command{bdist\_*}
 commands.
 
 
-\subsection{Creating dumb built distributions}
+\section{Creating dumb built distributions}
 \label{creating-dumb}
 
 \XXX{Need to document absolute vs. prefix-relative packages here, but
   first I have to implement it!}
 
 
-\subsection{Creating RPM packages}
+\section{Creating RPM packages}
 \label{creating-rpms}
 
 The RPM format is used by many popular Linux distributions, including
@@ -1455,7 +1455,7 @@ tree,'' in a temporary directory created by \command{bdist_rpm}.)
 % to the \file{.spec} file.)
 
 
-\subsection{Creating Windows Installers}
+\section{Creating Windows Installers}
 \label{creating-wininst}
 
 Executable installers are the natural format for binary distributions
@@ -1508,7 +1508,7 @@ The installer file will be written to the ``distribution directory''
 --- normally \file{dist/}, but customizable with the
 \longprogramopt{dist-dir} option.
 
-\subsubsection{The Postinstallation script}
+\subsection{The Postinstallation script}
 \label{postinstallation-script}
 
 Starting with Python 2.3, a postinstallation script can be specified
@@ -1982,7 +1982,7 @@ or \class{buildcmds.bdist_openpkg.bdist_openpkg}.
 \label{reference}
 
 
-%\subsection{Building modules: the \protect\command{build} command family}
+%\section{Building modules: the \protect\command{build} command family}
 %\label{build-cmds}
 
 %\subsubsection{\protect\command{build}}
@@ -3510,41 +3510,41 @@ The class constructor takes a single argument \var{dist}, a
 
 % todo
 
-\subsubsection{\module{distutils.command.install} --- Install a package}
+\section{\module{distutils.command.install} --- Install a package}
 \declaremodule{standard}{distutils.command.install}
 \modulesynopsis{Install a package}
 
 % todo
 
-\subsubsection{\module{distutils.command.install_data}
+\section{\module{distutils.command.install_data}
                --- Install data files from a package}
 \declaremodule[distutils.command.installdata]{standard}{distutils.command.install_data}
 \modulesynopsis{Install data files from a package}
 
 % todo
 
-\subsubsection{\module{distutils.command.install_headers}
+\section{\module{distutils.command.install_headers}
                --- Install C/\Cpp{} header files from a package}
 \declaremodule[distutils.command.installheaders]{standard}{distutils.command.install_headers}
 \modulesynopsis{Install C/\Cpp{} header files from a package}
 
 % todo
 
-\subsubsection{\module{distutils.command.install_lib}
+\section{\module{distutils.command.install_lib}
                --- Install library files from a package}
 \declaremodule[distutils.command.installlib]{standard}{distutils.command.install_lib}
 \modulesynopsis{Install library files from a package}
 
 % todo
 
-\subsubsection{\module{distutils.command.install_scripts}
+\section{\module{distutils.command.install_scripts}
                --- Install script files from a package}
 \declaremodule[distutils.command.installscripts]{standard}{distutils.command.install_scripts}
 \modulesynopsis{Install script files from a package}
 
 % todo
 
-\subsubsection{\module{distutils.command.register}
+\section{\module{distutils.command.register}
                --- Register a module with the Python Package Index}
 \declaremodule{standard}{distutils.command.register}
 \modulesynopsis{Register a module with the Python Package Index}
@@ -3553,7 +3553,7 @@ The \code{register} command registers the package with the Python Package
 Index.  This is described in more detail in \pep{301}.
 % todo
 
-\subsubsection{Creating a new Distutils command}
+\section{Creating a new Distutils command}
 
 This section outlines the steps to create a new Distutils command.
 
