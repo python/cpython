@@ -4132,7 +4132,10 @@ com_decorators(struct compiling *c, node *n)
 	REQ(CHILD(n, nch - 1), NEWLINE);
 
 	ndecorators = 0;
-	for (i = NCH(n) - 1; i >= 0; --i) {
+	/* the application order for decorators is the reverse of how they are
+	   listed; bottom-up */
+	nch -= 1;
+	for (i = 0; i < nch; i+=1) {
 		node *ch = CHILD(n, i);
 		if (TYPE(ch) != NEWLINE) {
 			com_decorator(c, ch);
