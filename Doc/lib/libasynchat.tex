@@ -235,7 +235,7 @@ class http_request_handler(asynchat.async_chat):
     def found_terminator(self):
         if self.reading_headers:
             self.reading_headers = False
-            self.parse_headers("".join(self.ibuffer)
+            self.parse_headers("".join(self.ibuffer))
             self.ibuffer = []
             if self.op.upper() == "POST":
                 clen = self.headers.getheader("content-length")
