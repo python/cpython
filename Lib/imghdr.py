@@ -101,6 +101,13 @@ def test_jpeg(h, f):
 
 tests.append(test_jpeg)
 
+def test_exif(h, f):
+    """JPEG data in Exif format"""
+    if h[6:10] == 'Exif':
+        return 'jpeg'
+
+tests.append(test_exif)
+
 def test_bmp(h, f):
     if h[:2] == 'BM':
         return 'bmp'
