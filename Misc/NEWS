@@ -28,6 +28,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Patch #1012280: Fix term.h compilation problems on Solaris.
+
 - Patch #914291: Set locale while getting a line from readline.
 
 - Bug #1005308: Define _BSD_TYPES.
