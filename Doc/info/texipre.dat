@@ -80,10 +80,10 @@ PERFORMANCE OF THIS SOFTWARE.
 @end titlepage
 
 
+@ifinfo
 @node Top, Overview, (dir), (dir)
 @top The Python library
 
-@ifinfo
 This file describes the built-in types, exceptions and functions and the
 standard modules that come with the Python system.  It assumes basic
 knowledge about the Python language.  For an informal introduction to
@@ -93,8 +93,8 @@ Reference Manual} gives a more formal definition of the language.
 
 This version corresponds to Python version 1.5 (Feb 17, 1998).
 
-@end ifinfo
-
 @c placeholder for the master menu -- patched by texinfo-all-menus-update
 @menu
 @end menu
+
+@end ifinfo
