@@ -301,6 +301,8 @@ PyZlib_compressobj(PyObject *selfptr, PyObject *args)
 	return(NULL);
     self->zst.zalloc = (alloc_func)NULL;
     self->zst.zfree = (free_func)Z_NULL;
+    self->zst.next_in = NULL;
+    self->zst.avail_in = 0;
     err = deflateInit2(&self->zst, level, method, wbits, memLevel, strategy);
     switch(err) {
     case (Z_OK):
@@ -335,6 +337,8 @@ PyZlib_decompressobj(PyObject *selfptr, PyObject *args)
 	return(NULL);
     self->zst.zalloc = (alloc_func)NULL;
     self->zst.zfree = (free_func)Z_NULL;
+    self->zst.next_in = NULL;
+    self->zst.avail_in = 0;
     err = inflateInit2(&self->zst, wbits);
     switch(err) {
     case (Z_OK):
@@ -516,7 +520,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
     }
 
-    /* Not all of the compressed data could be accomodated in the output buffer
+    /* Not all of the compressed data could be accommodated in the output buffer
        of specified size. Return the unconsumed tail in an attribute.*/
     if(max_length) {
 	Py_DECREF(self->unconsumed_tail);

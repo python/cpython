@@ -42,6 +42,9 @@ Library
   once when a size argument is given. This prevents a buffer overflow in the
   tokenizer with very long source lines.
 
+- Bug #1083110: ``zlib.decompress.flush()`` would segfault if called immediately
+  after creating the object, without any intervening ``.decompress()`` calls.
+
 
 Build
 -----

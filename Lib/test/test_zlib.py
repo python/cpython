@@ -290,6 +290,16 @@ class CompressObjectTestCase(unittest.TestCase):
             # if decompressed data is different from the input data, choke.
             self.assertEqual(expanded, data, "17K random source doesn't match")
 
+    def test_empty_flush(self):
+        # Test that calling .flush() on unused objects works.
+        # (Bug #1083110 -- calling .flush() on decompress objects
+        # caused a core dump.)
+
+        co = zlib.compressobj(zlib.Z_BEST_COMPRESSION)
+        self.failUnless(co.flush())  # Returns a zlib header
+        dco = zlib.decompressobj()
+        self.assertEqual(dco.flush(), "") # Returns nothing
+        
 
 def genblock(seed, length, step=1024, generator=random):
     """length-byte stream of random data from a seed (in step-byte blocks)."""
