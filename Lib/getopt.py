@@ -22,7 +22,7 @@ error = 'getopt error'
 
 def getopt(args, options):
     list = []
-    while args and args[0][0] == '-' and args[0] <> '-':
+    while args and args[0][:1] == '-' and args[0] <> '-':
     	if args[0] == '--':
     	    args = args[1:]
     	    break
