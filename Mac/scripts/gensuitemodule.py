@@ -130,8 +130,8 @@ def processfile(fullname, output=None, basepkgname=None,
 	try:
 		aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
 	except MacOS.Error, arg:
-		if arg[0] == -1701: # errAEDescNotFound
-			print "GetAppTerminology failed with errAEDescNotFound, trying manually"
+		if arg[0] in (-1701, -192): # errAEDescNotFound, resNotFound
+			print "GetAppTerminology failed with errAEDescNotFound/resNotFound, trying manually"
 			aedata, sig = getappterminology(fullname)
 			if not creatorsignature:
 				creatorsignature = sig
@@ -150,7 +150,7 @@ def processfile(fullname, output=None, basepkgname=None,
 		aedata = raw[0]
 	aete = decode(aedata.data)
 	compileaete(aete, None, fullname, output=output, basepkgname=basepkgname,
-		creatorsignature=creatorsignature)
+		creatorsignature=creatorsignature, edit_modnames=edit_modnames)
 		
 def getappterminology(fullname):
 	"""Get application terminology by sending an AppleEvent"""
@@ -161,16 +161,24 @@ def getappterminology(fullname):
 	# you have created an event loop first.
 	import Carbon.Evt
 	Carbon.Evt.WaitNextEvent(0,0)
-	# Now get the signature of the application, hoping it is a bundle
-	pkginfo = os.path.join(fullname, 'Contents', 'PkgInfo')
-	if not os.path.exists(pkginfo):
-		raise RuntimeError, "No PkgInfo file found"
-	tp_cr = open(pkginfo, 'rb').read()
-	cr = tp_cr[4:8]
+	if os.path.isdir(fullname):
+		# Now get the signature of the application, hoping it is a bundle
+		pkginfo = os.path.join(fullname, 'Contents', 'PkgInfo')
+		if not os.path.exists(pkginfo):
+			raise RuntimeError, "No PkgInfo file found"
+		tp_cr = open(pkginfo, 'rb').read()
+		cr = tp_cr[4:8]
+	else:
+		# Assume it is a file
+		cr, tp = MacOS.GetCreatorAndType(fullname)
 	# Let's talk to it and ask for its AETE
 	talker = aetools.TalkTo(cr)
-	talker._start()
+	try:
+		talker._start()
+	except (MacOS.Error, aetools.Error), arg:
+		print 'Warning: start() failed, continuing anyway:', arg
 	reply = talker.send("ascr", "gdte")
+	#reply2 = talker.send("ascr", "gdut")
 	# Now pick the bits out of the return that we need.
 	return reply[1]['----'], cr
 	
@@ -406,6 +414,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 	fp.write('"""\n')
 	fp.write('import aetools\n')
 	fp.write('Error = aetools.Error\n')
+	suitelist.sort()
 	for code, modname in suitelist:
 		fp.write("import %s\n" % modname)
 	fp.write("\n\n_code_to_module = {\n")
@@ -433,6 +442,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
 	fp.write("\t\tv._elemdict.update(getattr(v, '_privelemdict', {}))\n")
 	fp.write("\n")
 	fp.write("import StdSuites\n")
+	allprecompinfo.sort()
 	if allprecompinfo:
 		fp.write("\n#\n# Set property and element dictionaries now that all classes have been defined\n#\n")
 		for codenamemapper in allprecompinfo:
@@ -517,6 +527,11 @@ def compilesuite((suite, pathname, modname), major, minor, language, script,
 		fname, basepackage, precompinfo, interact=1):
 	"""Generate code for a single suite"""
 	[name, desc, code, level, version, events, classes, comps, enums] = suite
+	# Sort various lists, so re-generated source is easier compared
+	events.sort()
+	classes.sort()
+	comps.sort()
+	enums.sort()
 	
 	fp = open(pathname, 'w')
 	MacOS.SetCreatorAndType(pathname, 'Pyth', 'TEXT')
