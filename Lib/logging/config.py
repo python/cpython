@@ -98,31 +98,34 @@ def fileConfig(fname, defaults=None):
                 handlers = {}
                 fixups = [] #for inter-handler references
                 for hand in hlist:
-                    sectname = "handler_%s" % hand
-                    klass = cp.get(sectname, "class")
-                    opts = cp.options(sectname)
-                    if "formatter" in opts:
-                        fmt = cp.get(sectname, "formatter")
-                    else:
-                        fmt = ""
-                    klass = eval(klass, vars(logging))
-                    args = cp.get(sectname, "args")
-                    args = eval(args, vars(logging))
-                    h = apply(klass, args)
-                    if "level" in opts:
-                        level = cp.get(sectname, "level")
-                        h.setLevel(logging._levelNames[level])
-                    if len(fmt):
-                        h.setFormatter(formatters[fmt])
-                    #temporary hack for FileHandler and MemoryHandler.
-                    if klass == logging.handlers.MemoryHandler:
-                        if "target" in opts:
-                            target = cp.get(sectname,"target")
+                    try:
+                        sectname = "handler_%s" % hand
+                        klass = cp.get(sectname, "class")
+                        opts = cp.options(sectname)
+                        if "formatter" in opts:
+                            fmt = cp.get(sectname, "formatter")
                         else:
-                            target = ""
-                        if len(target): #the target handler may not be loaded yet, so keep for later...
-                            fixups.append((h, target))
-                    handlers[hand] = h
+                            fmt = ""
+                        klass = eval(klass, vars(logging))
+                        args = cp.get(sectname, "args")
+                        args = eval(args, vars(logging))
+                        h = apply(klass, args)
+                        if "level" in opts:
+                            level = cp.get(sectname, "level")
+                            h.setLevel(logging._levelNames[level])
+                        if len(fmt):
+                            h.setFormatter(formatters[fmt])
+                        #temporary hack for FileHandler and MemoryHandler.
+                        if klass == logging.handlers.MemoryHandler:
+                            if "target" in opts:
+                                target = cp.get(sectname,"target")
+                            else:
+                                target = ""
+                            if len(target): #the target handler may not be loaded yet, so keep for later...
+                                fixups.append((h, target))
+                        handlers[hand] = h
+                    except:     #if an error occurs when instantiating a handler, too bad
+                        pass    #this could happen e.g. because of lack of privileges
                 #now all handlers are loaded, fixup inter-handler references...
                 for fixup in fixups:
                     h = fixup[0]
