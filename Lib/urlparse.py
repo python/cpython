@@ -87,7 +87,9 @@ def urlsplit(url, scheme='', allow_fragments=1):
             if url[:2] == '//':
                 i = url.find('/', 2)
                 if i < 0:
-                    i = len(url)
+                    i = url.find('#')
+                    if i < 0:
+                        i = len(url)
                 netloc = url[2:i]
                 url = url[i:]
             if allow_fragments and '#' in url:
