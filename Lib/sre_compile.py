@@ -24,12 +24,6 @@ else:
 def _identityfunction(x):
     return x
 
-# use xrange if available
-try:
-    xrange
-except NameError:
-    xrange = range
-
 def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
     emit = code.append
