@@ -298,11 +298,14 @@ class StripWidget:
 class StripViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
+        optiondb = switchboard.optiondb()
         # create a frame inside the parent
         self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
         self.__frame.grid(row=1, column=0, columnspan=2, sticky='EW')
-        uwd = BooleanVar()
-        hexp = BooleanVar()
+        uwd = self.__uwdvar = BooleanVar()
+        uwd.set(optiondb.get('UPWHILEDRAG', 0))
+        hexp = self.__hexpvar = BooleanVar()
+        hexp.set(optiondb.get('HEXSTRIP', 0))
         self.__reds = StripWidget(switchboard, self.__frame,
                                   generator=constant_cyan_generator,
                                   axis=0,
@@ -349,3 +352,7 @@ class StripViewer:
     def __togglehex(self, event=None):
         red, green, blue = self.__sb.current_rgb()
         self.update_yourself(red, green, blue)
+
+    def save_options(self, optiondb):
+        optiondb['UPWHILEDRAG'] = self.__uwdvar.get()
+        optiondb['HEXSTRIP'] = self.__hexpvar.get()

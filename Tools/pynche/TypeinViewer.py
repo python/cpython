@@ -20,8 +20,11 @@ class TypeinViewer:
     def __init__(self, switchboard, parent=None):
         # non-gui ivars
         self.__sb = switchboard
+        optiondb = switchboard.optiondb()
         self.__hexp = BooleanVar()
+        self.__hexp.set(optiondb.get('HEXTYPE', 0))
         self.__uwtyping = BooleanVar()
+        self.__uwtyping.set(optiondb.get('UPWHILETYPE', 0))
         # create the gui
         self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
         self.__frame.grid(row=3, column=1, sticky='NS')
@@ -130,3 +133,7 @@ class TypeinViewer:
 
     def hexp_var(self):
         return self.__hexp
+
+    def save_options(self, optiondb):
+        optiondb['HEXTYPE'] = self.__hexp.get()
+        optiondb['UPWHILETYPE'] = self.__uwtyping.get()

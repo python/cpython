@@ -12,13 +12,32 @@ conform to the following interface:
       since this would cause it to get updated twice.
 """
 
+from types import DictType
+import marshal
+
 class Switchboard:
-    def __init__(self, colordb):
-        self.__views = []
+    def __init__(self, colordb, initfile):
         self.__colordb = colordb
+        self.__optiondb = {}
+        self.__views = []
         self.__red = 0
         self.__green = 0
         self.__blue = 0
+        # read the initialization file
+        fp = None
+        if initfile:
+            try:
+                try:
+                    fp = open(initfile)
+                    self.__optiondb = marshal.load(fp)
+                    if type(self.__optiondb) <> DictType:
+                        print 'Problem reading options from file:', initfile
+                        self.__optiondb = {}
+                except (IOError, EOFError):
+                    pass
+            finally:
+                if fp:
+                    fp.close()
 
     def add_view(self, view):
         self.__views.append(view)
@@ -38,3 +57,25 @@ class Switchboard:
 
     def colordb(self):
         return self.__colordb
+
+    def optiondb(self):
+        return self.__optiondb
+
+    def save_views(self, file):
+        # save the current color
+        self.__optiondb['RED'] = self.__red
+        self.__optiondb['GREEN'] = self.__green
+        self.__optiondb['BLUE'] = self.__blue
+        for v in self.__views:
+            v.save_options(self.__optiondb)
+        fp = None
+        try:
+            try:
+                fp = open(file, 'w')
+            except IOError:
+                print 'Cannot write options to file:', file
+            else:
+                marshal.dump(self.__optiondb, fp)
+        finally:
+            if fp:
+                fp.close()

@@ -21,6 +21,7 @@ import ColorDB
 class ListViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
+        optiondb = switchboard.optiondb()
         self.__lastbox = None
         self.__dontcenter = 0
         # GUI
@@ -76,7 +77,7 @@ class ListViewer:
         #
         # Update on click
         self.__uoc = BooleanVar()
-        self.__uoc.set(1)
+        self.__uoc.set(optiondb.get('UPONCLICK', 1))
         self.__uocbtn = Checkbutton(root,
                                     text='Update on Click',
                                     variable=self.__uoc,
@@ -160,3 +161,6 @@ class ListViewer:
             ig, ig, ig, y2 = canvas.coords(self.__bboxes[-1])
             h = int(canvas['height']) * 0.5
             canvas.yview('moveto', (y1-h) / y2)
+
+    def save_options(self, optiondb):
+        optiondb['UPONCLICK'] = self.__uoc.get()
