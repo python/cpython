@@ -135,8 +135,7 @@ class Demo:
         import tkMessageBox, traceback
         while self.exit < 0:
             try:
-        while self.exit < 0:
-            self.root.tk.dooneevent(TCL_ALL_EVENTS)
+                self.root.tk.dooneevent(TCL_ALL_EVENTS)
             except SystemExit:
                 #print 'Exit'
                 self.exit = 1
