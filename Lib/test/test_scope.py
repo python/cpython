@@ -512,3 +512,13 @@ try:
     print bad
 except NameError:
     pass
+
+print "22. eval with free variables"
+
+def f(x):
+    def g():
+        x
+        eval("x + 1")
+    return g
+
+f(4)()
