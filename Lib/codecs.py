@@ -280,7 +280,7 @@ class StreamReader(Codec):
             the line breaking knowledge from the underlying stream's
             .readline() method -- there is currently no support for
             line breaking using the codec decoder due to lack of line
-            buffering. Sublcasses should however, if possible, try to
+            buffering. Subclasses should however, if possible, try to
             implement this method using their own knowledge of line
             breaking.
 
@@ -539,12 +539,12 @@ def open(filename, mode='rb', encoding=None, errors='strict', buffering=1):
         Unicode as well.
 
         Files are always opened in binary mode, even if no binary mode
-        was specified. Thisis done to avoid data loss due to encodings
+        was specified. This is done to avoid data loss due to encodings
         using 8-bit values. The default file mode is 'rb' meaning to
         open the file in binary read mode.
 
         encoding specifies the encoding which is to be used for the
-        the file.
+        file.
 
         errors may be given to define the error handling. It defaults
         to 'strict' which causes ValueErrors to be raised in case an
@@ -670,7 +670,7 @@ def make_encoding_map(decoding_map):
 
     """ Creates an encoding map from a decoding map.
 
-        If a target mapping in the decoding map occurrs multiple
+        If a target mapping in the decoding map occurs multiple
         times, then that target is mapped to None (undefined mapping),
         causing an exception when encountered by the charmap codec
         during translation.
