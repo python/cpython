@@ -274,13 +274,15 @@ strop_joinfields(self, args)
 		}
 		return res;
 	}
-	else if (!PySequence_Check(seq)) {
+
+	if (seq->ob_type->tp_as_sequence == NULL ||
+		 (getitemfunc = seq->ob_type->tp_as_sequence->sq_item) == NULL)
+	{
 		PyErr_SetString(PyExc_TypeError,
 				"first argument must be a sequence");
 		return NULL;
 	}
-	/* type safe */
-	getitemfunc = seq->ob_type->tp_as_sequence->sq_item;
+	/* This is now type safe */
 	for (i = 0; i < seqlen; i++) {
 		PyObject *item = getitemfunc(seq, i);
 		if (!item || !PyString_Check(item)) {
