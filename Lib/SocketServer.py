@@ -120,7 +120,12 @@ BaseServer:
 
 # Author of the BaseServer patch: Luke Kenneth Casson Leighton
 
-__version__ = "0.3"
+# XXX Warning!
+# There is a test suite for this module, but it cannot be run by the
+# standard regression test.
+# To run it manually, run Lib/test/test_socketserver.py.
+
+__version__ = "0.4"
 
 
 import socket
@@ -129,7 +134,8 @@ import os
 
 __all__ = ["TCPServer","UDPServer","ForkingUDPServer","ForkingTCPServer",
            "ThreadingUDPServer","ThreadingTCPServer","BaseRequestHandler",
-           "StreamRequestHandler","DatagramRequestHandler"]
+           "StreamRequestHandler","DatagramRequestHandler",
+           "ThreadingMixIn", "ForkingMixIn"]
 if hasattr(socket, "AF_UNIX"):
     __all__.extend(["UnixStreamServer","UnixDatagramServer",
                     "ThreadingUnixStreamServer",
@@ -215,7 +221,7 @@ class BaseServer:
                 self.process_request(request, client_address)
             except:
                 self.handle_error(request, client_address)
-        self.close_request(request)
+                self.close_request(request)
 
     def verify_request(self, request, client_address):
         """Verify the request.  May be overridden.
@@ -232,6 +238,7 @@ class BaseServer:
 
         """
         self.finish_request(request, client_address)
+        self.close_request(request)
 
     def server_close(self):
         """Called to clean-up the server.
@@ -423,18 +430,17 @@ class ForkingMixIn:
             if self.active_children is None:
                 self.active_children = []
             self.active_children.append(pid)
+            self.close_request(request)
             return
         else:
             # Child process.
             # This must never return, hence os._exit()!
             try:
-                self.server_close()
                 self.finish_request(request, client_address)
                 os._exit(0)
             except:
                 try:
-                    self.handle_error(request,
-                                      client_address)
+                    self.handle_error(request, client_address)
                 finally:
                     os._exit(1)
 
@@ -544,6 +550,9 @@ class StreamRequestHandler(BaseRequestHandler):
 
 
 class DatagramRequestHandler(BaseRequestHandler):
+
+    # XXX Regrettably, I cannot get this working on Linux;
+    # s.recvfrom() doesn't return a meaningful client address.
 
     """Define self.rfile and self.wfile for datagram sockets."""
 
