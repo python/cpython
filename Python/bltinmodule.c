@@ -24,6 +24,9 @@ const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
 
 /* Forward */
 static PyObject *filterstring(PyObject *, PyObject *);
+#ifdef Py_USING_UNICODE
+static PyObject *filterunicode(PyObject *, PyObject *);
+#endif
 static PyObject *filtertuple (PyObject *, PyObject *);
 
 static PyObject *
@@ -132,6 +135,10 @@ builtin_filter(PyObject *self, PyObject *args)
 	/* Strings and tuples return a result of the same type. */
 	if (PyString_Check(seq))
 		return filterstring(func, seq);
+#ifdef Py_USING_UNICODE
+	if (PyUnicode_Check(seq))
+		return filterunicode(func, seq);
+#endif
 	if (PyTuple_Check(seq))
 		return filtertuple(func, seq);
 
@@ -1926,3 +1933,58 @@ Fail_1:
 	Py_DECREF(result);
 	return NULL;
 }
+
+#ifdef Py_USING_UNICODE
+/* Helper for filter(): filter a Unicode object through a function */
+
+static PyObject *
+filterunicode(PyObject *func, PyObject *strobj)
+{
+	PyObject *result;
+	register int i, j;
+	int len = PyUnicode_GetSize(strobj);
+
+	if (func == Py_None) {
+		/* No character is ever false -- share input string */
+		Py_INCREF(strobj);
+		return strobj;
+	}
+	if ((result = PyUnicode_FromUnicode(NULL, len)) == NULL)
+		return NULL;
+
+	for (i = j = 0; i < len; ++i) {
+		PyObject *item, *arg, *good;
+		int ok;
+
+		item = (*strobj->ob_type->tp_as_sequence->sq_item)(strobj, i);
+		if (item == NULL)
+			goto Fail_1;
+		arg = Py_BuildValue("(O)", item);
+		if (arg == NULL) {
+			Py_DECREF(item);
+			goto Fail_1;
+		}
+		good = PyEval_CallObject(func, arg);
+		Py_DECREF(arg);
+		if (good == NULL) {
+			Py_DECREF(item);
+			goto Fail_1;
+		}
+		ok = PyObject_IsTrue(good);
+		Py_DECREF(good);
+		if (ok)
+			PyUnicode_AS_UNICODE((PyStringObject *)result)[j++] =
+				PyUnicode_AS_UNICODE((PyStringObject *)item)[0];
+		Py_DECREF(item);
+	}
+
+	if (j < len)
+		PyUnicode_Resize(&result, j);
+
+	return result;
+
+Fail_1:
+	Py_DECREF(result);
+	return NULL;
+}
+#endif
