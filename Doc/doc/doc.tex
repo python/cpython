@@ -610,6 +610,26 @@ distribution, to create or maintain whole documents or sections.
 \moduleauthor{Jane Doe}{jane.doe@frobnitz.org}
 \end{verbatim}
 
+  Python packages\index{packages} --- collections of modules that can
+  be described as a unit --- are documented using the same markup as
+  modules.  The name for a module in a package should be typed in
+  ``fully qualified'' form (i.e., it should include the package name).
+  For example, a module ``foo'' in package ``bar'' should be marked as
+  \samp{\e module\{bar.foo\}}, and the beginning of the reference
+  section would appear as:
+
+\begin{verbatim}
+\section{\module{bar.foo} ---
+         Module from the \module{bar} package}
+
+\declaremodule{extension}{bar.foo}
+\modulesynopsis{Nifty module from the \module{bar} package.}
+\moduleauthor{Jane Doe}{jane.doe@frobnitz.org}
+\end{verbatim}
+
+  Note that the name of a package is also marked using
+  \macro{module}.
+
   \begin{macrodesc}{declaremodule}{\op{key}\p{type}\p{name}}
     Requires two parameters: module type (\samp{standard},
     \samp{builtin}, \samp{extension}, or \samp{}), and the module
