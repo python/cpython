@@ -212,11 +212,15 @@ EXPORTS
 	PyList_Sort
 	PyLong_AsDouble
 	PyLong_AsLong
+	PyLong_AsLongLong
 	PyLong_AsUnsignedLong
+	PyLong_AsUnsignedLongLong
 	PyLong_FromDouble
 	PyLong_FromLong
+	PyLong_FromLongLong
 	PyLong_FromString
 	PyLong_FromUnsignedLong
+	PyLong_FromUnsignedLongLong
 	PyMapping_Check
 	PyMapping_GetItemString
 	PyMapping_HasKey
