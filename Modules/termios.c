@@ -391,7 +391,9 @@ static struct constant {
 	{"TAB1", TAB1},
 	{"TAB2", TAB2},
 	{"TAB3", TAB3},
+#ifdef XTABS
 	{"XTABS", XTABS},
+#endif
 	{"BS0", BS0},
 	{"BS1", BS1},
 	{"VT0", VT0},
@@ -410,7 +412,9 @@ static struct constant {
 #ifdef CIBAUD
 	{"CIBAUD", CIBAUD},
 #endif
-	{"CRTSCTS", CRTSCTS},
+#ifdef CRTSCTS
+	{"CRTSCTS", (long)CRTSCTS},
+#endif
 
 	/* struct termios.c_cflag-related values (character size) */
 	{"CS5", CS5},
@@ -449,8 +453,12 @@ static struct constant {
 	{"VEOF", VEOF},
 	{"VTIME", VTIME},
 	{"VMIN", VMIN},
+#ifdef VSWTC
+	/* The #defines above ensure that if either is defined, both are,
+         * but both may be omitted by the system headers.  ;-(  */
 	{"VSWTC", VSWTC},
 	{"VSWTCH", VSWTCH},
+#endif
 	{"VSTART", VSTART},
 	{"VSTOP", VSTOP},
 	{"VSUSP", VSUSP},
