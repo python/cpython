@@ -393,6 +393,13 @@ Currently-active file is at the head of the list.")
 
 ;; Menu definitions, only relevent if you have the easymenu.el package
 ;; (standard in the latest Emacs 19 and XEmacs 19 distributions).
+(defvar py-menu nil
+  "Menu for Python Mode.
+
+This menu will get created automatically if you have the easymenu
+package.  Note that the latest XEmacs 19 and Emacs 19 versions contain
+this package.")
+
 (if (condition-case nil
 	(require 'easymenu)
       (error nil))
