@@ -62,6 +62,25 @@ class Scanner:
 			modes = self.usedtypes[type].keys()
 			modes.sort()
 			print type, string.join(modes)
+			
+	def gentypetest(self, file):
+		fp = open(file, "w")
+		fp.write("types=[\n")
+		types = self.usedtypes.keys()
+		types.sort()
+		for type in types:
+			fp.write("\t'%s',\n"%type)
+		fp.write("]\n")
+		fp.write("""missing=0
+for t in types:
+	try:
+		tt = eval(t)
+	except NameError:
+		print "** Missing type:", t
+		missing = 1
+if missing: raise "Missing Types"
+""")
+		fp.close()
 
 	def initsilent(self):
 		self.silent = 0
@@ -365,6 +384,7 @@ class Scanner:
 			self.report("Bad raw spec: %s", `raw`)
 			return
 		type, name, args = self.whole.group('type', 'name', 'args')
+		type = regsub.gsub("[ \t]+", "_", type)
 		if name in self.alreadydone:
 			self.report("Name has already been defined: %s", `name`)
 			return
