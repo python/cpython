@@ -85,6 +85,11 @@ access.  The documentation is available in HTML, PostScript, PDF, and
 LaTeX formats; the LaTeX version is primarily for documentation
 authors, translators, and people with special formatting requirements.
 
+The best documentation for the new (in Python 2.2) type/class unification
+features is Guido's tutorial introduction, at
+
+    http://www.python.org/2.2/descrintro.html
+
 
 Web sites
 ---------
@@ -394,22 +399,24 @@ Reliant UNIX: The thread support does not compile on Reliant UNIX, and
 Mac OS X 10: One of the regular expression tests fails
         with a SEGV due to the small stack size used by default, if you do
         "limit stacksize 2048" before "make test" it should work.
-        
+
         On naked Darwin you may want to add the configure option
         "--disable-toolbox-glue" to disable the glue code for the Carbon
         interface modules. The modules themselves are currently only built
         if you add the --enable-framework option, see below.
-        
-        On a clean OSX /usr/local does not exist. Do a "sudo mkdir -m 775 /usr/local"
+
+        On a clean OSX /usr/local does not exist. Do a
+	"sudo mkdir -m 775 /usr/local"
         before you do a make install. Alternatively, do "sudo make install"
         which installs everything as superuser.
-        
-        You may want to try the configure option "--enable-framework" which
-        installs Python as a framework. The location can be set as argument
-        to the --enable-framework option (default /Library/Frameworks). You may
-        also want to check out ./Mac/OSX for building a Python.app. You may also
-        want to manually install a symlink in /usr/local/bin/python to the
-        executable deep down in the framework.
+
+        You may want to try the configure option "--enable-framework"
+        which installs Python as a framework. The location can be set
+        as argument to the --enable-framework option (default
+        /Library/Frameworks). You may also want to check out ./Mac/OSX
+        for building a Python.app. You may also want to manually
+        install a symlink in /usr/local/bin/python to the executable
+        deep down in the framework.
 
 Cygwin: With recent (relative to the time of writing, 2001-12-11)
         Cygwin installations, Python builds and passes all tests on
@@ -826,6 +833,11 @@ configuration of your system.  Most symbols must simply be defined as
 otherwise; however the *_t type symbols must be defined as some variant
 of int if they need to be defined at all.
 
+For all platforms, it's important that the build arrange to define the
+preprocessor symbol NDEBUG on the compiler command line in a release
+build of Python (else assert() calls remain in the code, hurting
+release-build performance).  The Unix, Windows and Mac builds already
+do this.
 
 
 Miscellaneous issues
