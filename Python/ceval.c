@@ -2728,16 +2728,6 @@ call_cfunction(PyObject *func, PyObject *arg, PyObject *kw)
 	int flags = PyCFunction_GET_FLAGS(func);
 
 	if (flags & METH_KEYWORDS) {
-		if (kw == NULL) {
-			static PyObject *dict = NULL;
-			if (dict == NULL) {
-				dict = PyDict_New();
-				if (dict == NULL)
-					return NULL;
-			}
-			kw = dict;
-			Py_INCREF(dict);
-		}
 		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
 	}
 	if (kw != NULL && PyDict_Size(kw) != 0) {
