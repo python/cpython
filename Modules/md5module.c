@@ -128,23 +128,27 @@ md5_update(self, args)
 	return None;
 } /* md5_update() */
 
+#define DIGESTLEN	16	/* this is used twice--walrus@umich.edu */
 static object *
 md5_digest(self, args)
 	md5object *self;
 	object *args;
 {
+
 	MD5_CTX mdContext;
-	stringobject *strobjp;
+	char aDigest[DIGESTLEN];
+	
 
 	if (!getnoarg(args))
 		return NULL;
 
 	/* make a temporary copy, and perform the final */
 	mdContext = self->md5;
-	MD5Final(&mdContext);
+	MD5Final(aDigest, &mdContext);
 
-	return newsizedstringobject((char *)mdContext.digest, 16);
+	return newsizedstringobject((char *)aDigest, DIGESTLEN);
 } /* md5_digest() */
+#undef DIGESTLEN
 
 static object *
 md5_copy(self, args)
@@ -181,8 +185,10 @@ md5_getattr(self, name)
 	return findmethod(md5_methods, (object *)self, name);
 } /* md5_getattr() */
 
-
-static typeobject MD5type = {
+#ifndef _AIX
+static
+#endif
+typeobject MD5type = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"md5",			/*tp_name*/
