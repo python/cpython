@@ -169,7 +169,7 @@ static PyObject*
 op_delslice(s,a)
      PyObject *s, *a;
 {
-  PyObject *a1, *a4;
+  PyObject *a1;
   long a2,a3;
 
   if(! PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3)) return NULL;
