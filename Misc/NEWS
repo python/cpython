@@ -552,6 +552,8 @@ Extension modules
 Library
 -------
 
+- imaplib.py now supports SSL (Tino Lange and Piers Lauder).
+
 - Freeze's modulefinder.py has been moved to the standard library;
   slightly improved so it will issue less false missing submodule
   reports (see sf path #643711 for details).  Documentation will follow
