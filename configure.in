@@ -96,30 +96,28 @@ AC_ARG_WITH(gcc, [  --without-gcc                   never use gcc], [
 	case $ac_sys_system in
 	OSF1)	CC=cc
 		without_gcc=;;
+	AIX*)   CC=cc_r
+		without_gcc=;;
 	BeOS*)
 		case $BE_HOST_CPU in
 		ppc)
 			CC=mwcc
 			without_gcc=yes
 			OPT="-O -D'DL_EXPORT(RTYPE)=__declspec(dllexport) RTYPE' -D'DL_IMPORT(RTYPE)=__declspec(dllexport) RTYPE' -export pragma"
-			CCSHARED="UDL_IMPORT -D'DL_IMPORT(RTYPE)=__declspec(dllimport) RTYPE'"
+			CCSHARED="-UDL_IMPORT -D'DL_IMPORT(RTYPE)=__declspec(dllimport) RTYPE'"
 			LDFLAGS="$LDFLAGS -nodup"
-
-			AR="$PWD/BeOS/ar-fake"
-			RANLIB=:
 			;;
 		x86)
 			CC=gcc
 			without_gcc=no
 			OPT=-O
-			# Really should use srcdir instead of PWD
-			AR="$PWD/BeOS/ar-fake"
-			RANLIB=:
 			;;
 		*)
 			AC_ERROR(Unknown BeOS platform \"$BE_HOST_CPU\")
 			;;
 		esac
+		AR="\$(srcdir)/Modules/ar_beos"
+		RANLIB=:
 		;;
     Monterey*)
         RANLIB=:
@@ -225,7 +223,7 @@ if test -z "$LINKCC"
 then
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="\$(srcdir)/Modules/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
+	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
 	Monterey64*)
@@ -510,6 +508,7 @@ fi
 # Set info about shared libraries.
 AC_SUBST(SO)
 AC_SUBST(LDSHARED)
+AC_SUBST(BLDSHARED)
 AC_SUBST(CCSHARED)
 AC_SUBST(LINKFORSHARED)
 # SO is the extension of shared libraries `(including the dot!)
@@ -532,8 +531,14 @@ AC_MSG_CHECKING(LDSHARED)
 if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) LDSHARED="\$(srcdir)/Modules/ld_so_aix \$(CC)";;
-	BeOS*) LDSHARED="\$(srcdir)/../BeOS/linkmodule -L.. -lpython\$(VERSION)";;
+	AIX*)
+		BLDSHARED="\$(srcdir)/Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
+		LDSHARED="\$(BINLIBDEST)/ld_so_aix \$(CC) -bI:\$(BINLIBDEST)/python.exp"
+		;;
+	BeOS*)
+		BLDSHARED="\$(srcdir)/Modules/ld_so_beos $LDLIBRARY"
+		LDSHARED="\$(BINLIBDEST)/ld_so_beos \$(LIBDIR)/$LDLIBRARY"
+		;;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/4*) LDSHARED="ld";;
@@ -578,6 +583,7 @@ then
 	esac
 fi
 AC_MSG_RESULT($LDSHARED)
+BLDSHARED=${BLDSHARED-$LDSHARED}
 # CCSHARED are the C *flags* used to create objects to go into a shared
 # library (module) -- this is only needed for a few systems
 AC_MSG_CHECKING(CCSHARED)
@@ -608,7 +614,7 @@ AC_MSG_CHECKING(LINKFORSHARED)
 if test -z "$LINKFORSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*)	LINKFORSHARED='-Wl,-bE:python.exp -lld';;
+	AIX*)	LINKFORSHARED='-Wl,-bE:Modules/python.exp -lld';;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
