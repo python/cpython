@@ -83,6 +83,24 @@ PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_CREATEFILEHANDLER
 #endif
 
+#ifdef MS_WINDOWS
+#define FHANDLETYPE TCL_WIN_SOCKET
+#else
+#define FHANDLETYPE TCL_UNIX_FD
+#endif
+
+#if TKMAJORMINOR < 8000
+#define FHANDLE Tcl_File
+#define MAKEFHANDLE(fd) Tcl_GetFile((ClientData)(fd), FHANDLETYPE)
+#else
+#define FHANDLE int
+#define MAKEFHANDLE(fd) (fd)
+#endif
+
+#if defined(HAVE_CREATEFILEHANDLER) && !defined(MS_WINDOWS)
+#define WAIT_FOR_STDIN
+#endif
+
 extern int Tk_GetNumMainWindows();
 
 #ifdef macintosh
@@ -342,6 +360,10 @@ Tcl_AppInit(interp)
 /* Initialize the Tk application; see the `main' function in
  * `tkMain.c'.
  */
+
+static void EnableEventHook(); /* Forward */
+static void DisableEventHook(); /* Forward */
+
 static TkappObject *
 Tkapp_New(screenName, baseName, className, interactive)
 	char *screenName;
@@ -391,6 +413,8 @@ Tkapp_New(screenName, baseName, className, interactive)
 
 	if (Tcl_AppInit(v->interp) != TCL_OK)
 		return (TkappObject *)Tkinter_Error(v);
+
+	EnableEventHook();
 
 	return v;
 }
@@ -1128,9 +1152,7 @@ Tkapp_CreateFileHandler(self, args)
 	PyObject *file, *func, *data;
 	PyObject *idkey;
 	int mask, id;
-#if TKMAJORMINOR < 8000
-	Tcl_File tfile;
-#endif
+	FHANDLE tfile;
 
 	if (!Tkapp_ClientDataDict) {
 		if (!(Tkapp_ClientDataDict = PyDict_New()))
@@ -1159,18 +1181,9 @@ Tkapp_CreateFileHandler(self, args)
 	}
 	Py_DECREF(idkey);
 
-#if TKMAJORMINOR < 8000
-#ifdef MS_WINDOWS
-	/* We assume this is a socket... */
-	tfile = Tcl_GetFile((ClientData)id, TCL_WIN_SOCKET);
-#else /* !MS_WINDOWS */
-	tfile = Tcl_GetFile((ClientData)id, TCL_UNIX_FD);
-#endif /* !MS_WINDOWS */
+	tfile = MAKEFHANDLE(id);
 	/* Ought to check for null Tcl_File object... */
 	Tcl_CreateFileHandler(tfile, mask, FileHandler, (ClientData) data);
-#else /* >= 8000 */
-	Tcl_CreateFileHandler(id, mask, FileHandler, (ClientData) data);
-#endif  /* >= 8000 */
 	/* XXX fileHandlerDict */
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -1186,9 +1199,7 @@ Tkapp_DeleteFileHandler(self, args)
 	PyObject *idkey;
 	PyObject *data;
 	int id;
-#if TKMAJORMINOR < 8000
-	Tcl_File tfile;
-#endif
+	FHANDLE tfile;
   
 	if (!PyArg_ParseTuple(args, "O", &file))
 		return NULL;
@@ -1207,18 +1218,9 @@ Tkapp_DeleteFileHandler(self, args)
 	PyDict_DelItem(Tkapp_ClientDataDict, idkey);
 	Py_DECREF(idkey);
 
-#if TKMAJORMINOR < 8000
-#ifdef MS_WINDOWS
-	/* We assume this is a socket... */
-	tfile = Tcl_GetFile((ClientData)id, TCL_WIN_SOCKET);
-#else
-	tfile = Tcl_GetFile((ClientData)id, TCL_UNIX_FD);
-#endif
+	tfile = MAKEFHANDLE(id);
 	/* Ought to check for null Tcl_File object... */
 	Tcl_DeleteFileHandler(tfile);
-#else /* >= 8000 */
-	Tcl_DeleteFileHandler(id);
-#endif /* >= 8000 */
 	/* XXX fileHandlerDict */
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -1511,6 +1513,7 @@ Tkapp_Dealloc(self)
 {
 	Tcl_DeleteInterp(Tkapp_Interp(self));
 	PyMem_DEL(self);
+	DisableEventHook();
 }
 
 static PyObject *
@@ -1584,22 +1587,41 @@ static PyMethodDef moduleMethods[] =
 	{NULL,                 NULL}
 };
 
+#ifdef WAIT_FOR_STDIN
+#define WAITFLAG 0
+
+static int stdin_ready = 0;
+
+static void
+MyFileProc(clientData, mask)
+	void *clientData;
+	int mask;
+{
+	stdin_ready = 1;
+}
+#else
+#define WAITFLAG TCL_DONT_WAIT
+#endif
+
 static PyInterpreterState *event_interp = NULL;
 
 static int
 EventHook()
 {
 	PyThreadState *tstate, *save_tstate;
+#ifdef WAIT_FOR_STDIN
+	FHANDLE tfile = MAKEFHANDLE(((int)fileno(stdin)));
 
-	if (Tk_GetNumMainWindows() == 0)
-		return 0;
-	if (event_interp == NULL)
-		return 0;
+	stdin_ready = 0;
+	Tcl_CreateFileHandler(tfile, TCL_READABLE, MyFileProc, NULL);
+#endif
 	tstate = PyThreadState_New(event_interp);
 	save_tstate = PyThreadState_Swap(NULL);
 	PyEval_RestoreThread(tstate);
-	if (!errorInCmd)
-		Tcl_DoOneEvent(TCL_DONT_WAIT);
+#ifdef WAIT_FOR_STDIN
+	while (!errorInCmd && !stdin_ready)
+#endif
+		Tcl_DoOneEvent(WAITFLAG);
 	if (errorInCmd) {
 		errorInCmd = 0;
 		PyErr_Restore(excInCmd, valInCmd, trbInCmd);
@@ -1610,7 +1632,27 @@ EventHook()
 	PyEval_SaveThread();
 	PyThreadState_Swap(save_tstate);
 	PyThreadState_Delete(tstate);
+#ifdef WAIT_FOR_STDIN
+	Tcl_DeleteFileHandler(tfile);
+#endif
 	return 0;
+}
+
+static void
+EnableEventHook()
+{
+	if (PyOS_InputHook == NULL) {
+		event_interp = PyThreadState_Get()->interp;
+		PyOS_InputHook = EventHook;
+	}
+}
+
+static void
+DisableEventHook()
+{
+	if (Tk_GetNumMainWindows() == 0 && PyOS_InputHook == EventHook) {
+		PyOS_InputHook = NULL;
+	}
 }
 
 
@@ -1669,11 +1711,6 @@ init_tkinter()
 
 	PyDict_SetItemString(d, "TkappType", (PyObject *)&Tkapp_Type);
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
-
-	if (PyOS_InputHook == NULL) {
-		event_interp = PyThreadState_Get()->interp;
-		PyOS_InputHook = EventHook;
-	}
 
 	if (PyErr_Occurred())
 		return;
