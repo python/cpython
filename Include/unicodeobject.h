@@ -454,14 +454,12 @@ extern DL_IMPORT(int) PyUnicode_Resize(
 
    Coercion is done in the following way:
 
-   1. Unicode objects are passed back as-is with incremented
-      refcount.
-
-   2. String and other char buffer compatible objects are decoded
+   1. String and other char buffer compatible objects are decoded
       under the assumptions that they contain data using the current
       default encoding. Decoding is done in "strict" mode.
 
-   3. All other objects raise an exception.
+   2. All other objects (including Unicode objects) raise an
+      exception.
 
    The API returns NULL in case of an error. The caller is responsible
    for decref'ing the returned objects.
@@ -474,12 +472,13 @@ extern DL_IMPORT(PyObject*) PyUnicode_FromEncodedObject(
     const char *errors          /* error handling */
     );
 
-/* Shortcut for PyUnicode_FromEncodedObject(obj, NULL, "strict");
-   which results in using the default encoding as basis for 
-   decoding the object.
-
-   Coerces obj to an Unicode object and return a reference with
+/* Coerce obj to an Unicode object and return a reference with
    *incremented* refcount.
+   
+   Unicode objects are passed back as-is (subclasses are converted to
+   true Unicode objects), all other objects are delegated to
+   PyUnicode_FromEncodedObject(obj, NULL, "strict") which results in
+   using the default encoding as basis for decoding the object.
 
    The API returns NULL in case of an error. The caller is responsible
    for decref'ing the returned objects.
