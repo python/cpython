@@ -9,6 +9,23 @@ import tkMessageBox
 import idlever
 import WindowList
 
+# Customization of default window size and font
+# standard
+WIDTH = 80
+HEIGHT = 24
+if sys.platform[:3] == 'win':
+    FONT = ("courier new", 10)
+else:
+    FONT = ("courier", 10)
+if 0:
+    # for demos (on Windows)
+    WIDTH = 70
+    HEIGHT = 16
+    FONT = ("lucida console", 14)
+if 0:
+    # for Windows 98
+    FONT = ("lucida console", 8)
+
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
 
@@ -109,6 +126,7 @@ class EditorWindow:
                                 highlightcolor=cprefs.CHilite[0],
                                 highlightbackground=cprefs.CHilite[1],
                                 insertbackground=cprefs.CCursor[1],
+                                width=WIDTH, height=HEIGHT,
                                 wrap="none")
 
         self.createmenubar()
@@ -138,9 +156,7 @@ class EditorWindow:
         vbar.pack(side=RIGHT, fill=Y)
 
         text['yscrollcommand'] = vbar.set
-        if sys.platform[:3] == 'win':
-            text['font'] = ("lucida console", 8)
-#            text['font'] = ("courier new", 10)
+        text['font'] = FONT
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
