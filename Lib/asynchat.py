@@ -259,7 +259,7 @@ class fifo:
         return len(self.list)
 
     def is_empty (self):
-        return self.list == []
+        return not self.list
 
     def first (self):
         return self.list[0]
