@@ -1,9 +1,11 @@
 \documentclass{howto}
 
+\usepackage{distutils}
+
 % $Id$
 
 \title{What's New in Python 2.1}
-\release{0.06}
+\release{0.07}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk1@bigfoot.com}}
 \begin{document}
@@ -454,6 +456,48 @@ Fred~L. Drake,~Jr.}
 \end{seealso}
 
 %======================================================================
+\section{PEP 232: Function Attributes}
+
+In Python 2.1, functions can now have arbitrary information attached
+to them.  People were often using docstrings to hold information about
+functions and methods, because the \code{__doc__} attribute was the
+only way of attaching any information to a function.  For example, in
+the Zope Web application server, functions are marked as safe for
+public access by having a docstring, and in John Aycock's SPARK
+parsing framework, docstrings hold parts of the BNF grammar to be
+parsed.  This overloading is unfortunate, since docstrings are really
+intended to hold a function's documentation; for example, it means you
+can't properly document functions intended for private use in Zope.
+
+Arbitrary attributes can now be set and retrieved on functions using the
+regular Python syntax:
+
+\begin{verbatim}
+def f(): pass
+
+f.publish = 1
+f.secure = 1
+f.grammar = "A ::= B (C D)*"
+\end{verbatim}
+
+The dictionary containing attributes can be accessed as the function's
+\member{__dict__}. Unlike the \member{__dict__} attribute of class
+instances, in functions you can actually assign a new dictionary to
+\member{__dict__}, though the new value is restricted to a regular
+Python dictionary; you \emph{can't} be tricky and set it to a
+\class{UserDict} instance, or any other random object that behaves
+like a mapping.
+
+\begin{seealso}
+
+\seepep{232}{Function Attributes}{Written and implemented by Barry
+Warsaw.}
+
+\end{seealso}
+
+
+%======================================================================
+
 \section{PEP 235: Case-Insensitive Platforms and \keyword{import}}
 
 Some operating systems have filesystems that are case-insensitive,
@@ -475,7 +519,7 @@ variable before starting the Python interpreter.
 
 When using the Python interpreter interactively, the output of
 commands is displayed using the built-in \function{repr()} function.
-In Python 2.1, the variable \module{sys.displayhook} can be set to a
+In Python 2.1, the variable \function{sys.displayhook} can be set to a
 callable object which will be called instead of \function{repr()}.
 For example, you can set it to a special pretty-printing function:
 
@@ -534,6 +578,50 @@ operations will now be processed at the C level.}
 \end{seealso}
 
 %======================================================================
+\section{PEP 241: Metadata in Python Packages}
+
+A common complaint from Python users is that there's no single catalog
+of all the Python modules in existence.  T.~Middleton's Vaults of
+Parnassus at \url{http://www.vex.net/parnassus} are the largest
+catalog of Python modules, but registering software at the Vaults is
+optional, and many people don't bother.
+
+As a first small step toward fixing the problem, Python software
+packaged using the Distutils \command{sdist} command will include a
+file named \file{PKG-INFO} containing information about the package
+such as its name, version, and author (metadata, in cataloguing
+terminology).  PEP 241 contains the full list of fields that can be
+present in the \file{PKG-INFO} file.  As people began to package their
+software using Python 2.1, more and more packages will include
+metadata, making it possible to build automated cataloguing systems
+and experiment with them.  With the result experience, perhaps it'll
+be possible to design a really good catalog and then build support for
+it into Python 2.2.  For example, the Distutils \command{sdist}
+and \command{bdist_*} commands could support a \option{upload} option
+that would automatically upload your package to a catalog server. 
+
+You can start creating packages containing \file{PKG-INFO} even if
+you're not using Python 2.1, since a new release of the Distutils will
+be made for users of earlier Python versions.  Version 1.0.2 of the
+Distutils includes the changes described in PEP 241, as well as
+various bugfixes and enhancements.  It will be available from 
+the Distutils SIG at \url{http://www.python.org/sigs/distutils-sig}.
+
+% XXX update when I actually release 1.0.2
+
+\begin{seealso}
+
+\seepep{241}{Metadata for Python Software Packages}{Written and
+implemented by A.M. Kuchling.}
+
+\seepep{243}{Module Repository Upload Mechanism}{Written by Sean
+Reifschneider, this draft PEP describes a proposed mechanism for uploading 
+Python packages to a central server.
+}
+
+\end{seealso}
+
+%======================================================================
 \section{New and Improved Modules}
 
 \begin{itemize}
@@ -564,9 +652,15 @@ DESCRIPTION
 
 \file{pydoc} quickly becomes addictive; try it out!
 
-\item The \module{doctest} module provides a testing framework based
-on running embedded examples in docstrings and comparing the results
-against the expected output.  Contributed by Tim Peters.
+\item Two different modules for unit testing were added to the
+standard library.  The \module{doctest} module, contributed by Tim
+Peters, provides a testing framework based on running embedded
+examples in docstrings and comparing the results against the expected
+output.  PyUnit, contributed by Steve Purcell, is a unit testing
+framework inspired by JUnit, which was in turn an adaptation of Kent
+Beck's Smalltalk testing framework.  See
+\url{http://pyunit.sourceforge.net/} for more information about
+PyUnit.
 
 \item The \module{difflib} module contains a class,
 \class{SequenceMatcher}, which compares two sequences and computes the
@@ -588,6 +682,16 @@ package.  Some of the noteworthy changes include support for Expat 1.2
 and later versions, the ability for Expat parsers to handle files in
 any encoding supported by Python, and various bugfixes for SAX, DOM,
 and the \module{minidom} module.
+
+\item Ping also contributed another hook for handling uncaught
+exceptions.  \function{sys.excepthook} can be set to a callable
+object.  When an exception isn't caught by any
+\keyword{try}...\keyword{except} blocks, the exception will be passed
+to \function{sys.excepthook}, which can then do whatever it likes.  At
+the Ninth Python Conference, Ping demonstrated an application for this
+hook: printing an extended traceback that not only lists the stack
+frames, but also lists the function arguments and the local variables
+for each frame.  
 
 \item Various functions in the \module{time} module, such as
 \function{asctime()} and \function{localtime()}, require a floating
