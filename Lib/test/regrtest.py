@@ -24,27 +24,34 @@ If no test names are given, all tests are run.
 
 -v is incompatible with -g and does not compare test output files.
 
--s means to run only a single test and exit.  This is useful when doing memory
-analysis on the Python interpreter (which tend to consume to many resources to
-run the full regression test non-stop).  The file /tmp/pynexttest is read to
-find the next test to run.  If this file is missing, the first test_*.py file
-in testdir or on the command line is used.  (actually tempfile.gettempdir() is
-used instead of /tmp).
+-s means to run only a single test and exit.  This is useful when
+doing memory analysis on the Python interpreter (which tend to consume
+too many resources to run the full regression test non-stop).  The
+file /tmp/pynexttest is read to find the next test to run.  If this
+file is missing, the first test_*.py file in testdir or on the command
+line is used.  (actually tempfile.gettempdir() is used instead of
+/tmp).
 
--u is used to specify which special resource intensive tests to run, such as
-those requiring large file support or network connectivity.  The argument is a
-comma-separated list of words indicating the resources to test.  Currently
-only the following are defined:
+-u is used to specify which special resource intensive tests to run,
+such as those requiring large file support or network connectivity.
+The argument is a comma-separated list of words indicating the
+resources to test.  Currently only the following are defined:
+
+    all -       Enable all special resources.
 
     curses -    Tests that use curses and will modify the terminal's
                 state and output modes.
 
-    largefile - It is okay to run some test that may create huge files.  These
-                tests can take a long time and may consume >2GB of disk space
-                temporarily.
+    largefile - It is okay to run some test that may create huge
+                files.  These tests can take a long time and may
+                consume >2GB of disk space temporarily.
 
-    network -   It is okay to run tests that use external network resource,
-                e.g. testing SSL support for sockets.
+    network -   It is okay to run tests that use external network
+                resource, e.g. testing SSL support for sockets.
+
+To enable all resources except one, use '-uall,-<resource>'.  For
+example, to run all the tests except for the network tests, give the
+option '-uall,-network'.
 """
 
 import sys
@@ -55,6 +62,9 @@ import random
 import StringIO
 
 import test_support
+
+RESOURCE_NAMES = ['curses', 'largefile', 'network']
+
 
 def usage(code, msg=''):
     print __doc__
@@ -81,10 +91,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     command-line will be used.  If that's empty, too, then all *.py
     files beginning with test_ will be used.
 
-    The other default arguments (verbose, quiet, generate, exclude, single,
-    randomize, findleaks, and use_resources) allow programmers calling main()
-    directly to set the values that would normally be set by flags on the
-    command line.
+    The other default arguments (verbose, quiet, generate, exclude,
+    single, randomize, findleaks, and use_resources) allow programmers
+    calling main() directly to set the values that would normally be
+    set by flags on the command line.
 
     """
 
@@ -121,9 +131,20 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
-                if r not in ('curses', 'largefile', 'network'):
-                    usage(1, 'Invalid -u/--use option: %s' % a)
-            use_resources.extend(u)
+                if r == 'all':
+                    use_resources[:] = RESOURCE_NAMES
+                    continue
+                remove = False
+                if r[0] == '-':
+                    remove = True
+                    r = r[1:]
+                if r not in RESOURCE_NAMES:
+                    usage(1, 'Invalid -u/--use option: ' + a)
+                if remove:
+                    if r in use_resources:
+                        use_resources.remove(r)
+                elif r not in use_resources:
+                    use_resources.append(r)
     if generate and verbose:
         usage(2, "-g and -v don't go together!")
 
@@ -315,7 +336,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
             sys.stdout = save_stdout
     except (ImportError, test_support.TestSkipped), msg:
         if not quiet:
-            print "test", test, "skipped --", msg
+            print test, "skipped --", msg
             sys.stdout.flush()
         return -1
     except KeyboardInterrupt:
@@ -525,7 +546,7 @@ _expectations = {
         test_winreg
         test_winsound
         """,
-   'mac':
+    'mac':
         """
         test_al
         test_bsddb
@@ -714,6 +735,52 @@ _expectations = {
         test_unicode_file
         test_winreg
         test_winsound
+        """,
+    'sunos5':
+        """
+        test_al
+        test_bsddb
+        test_cd
+        test_cl
+        test_curses
+        test_dbm
+        test_email_codecs
+        test_gdbm
+        test_gl
+        test_gzip
+        test_imgfile
+        test_linuxaudiodev
+        test_mpz
+        test_openpty
+        test_socketserver
+        test_zipfile
+        test_zlib
+        """,
+    'hp-ux11':
+        """
+        test_al
+        test_bsddb
+        test_cd
+        test_cl
+        test_curses
+        test_dl
+        test_gdbm
+        test_gl
+        test_gzip
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_locale
+        test_minidom
+        test_nis
+        test_ntpath
+        test_openpty
+        test_pyexpat
+        test_sax
+        test_socketserver
+        test_sunaudiodev
+        test_zipfile
+        test_zlib
         """,
     'freebsd4':
         """
