@@ -35,7 +35,7 @@ These interpreters use raw_input; thus, if the readline module is loaded,
 they automatically support Emacs-like command history and editing features.
 """
 
-import string
+import string, sys
 
 __all__ = ["Cmd"]
 
@@ -54,6 +54,7 @@ class Cmd:
     misc_header = "Miscellaneous help topics:"
     undoc_header = "Undocumented commands:"
     nohelp = "*** No help on %s"
+    use_rawinput = 1
 
     def __init__(self): pass
 
@@ -69,10 +70,18 @@ class Cmd:
                 line = self.cmdqueue[0]
                 del self.cmdqueue[0]
             else:
-                try:
-                    line = raw_input(self.prompt)
-                except EOFError:
-                    line = 'EOF'
+                if self.use_rawinput:
+                    try:
+                        line = raw_input(self.prompt)
+                    except EOFError:
+                        line = 'EOF'
+                else:
+                    sys.stdout.write(self.prompt)
+                    line = sys.stdin.readline()
+                    if not len(line):
+                        line = 'EOF'
+                    else:
+                        line = line[:-1] # chop \n
             line = self.precmd(line)
             stop = self.onecmd(line)
             stop = self.postcmd(stop, line)
