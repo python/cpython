@@ -21,7 +21,11 @@ decoder = re.compile(r'^([-+]?)0*(\d*)((?:\.\d*)?)(([eE][-+]?\d+)?)$')
 # \3 fraction (empty or begins with point)
 # \4 exponent part (empty or begins with 'e' or 'E')
 
-NotANumber = 'fpformat.NotANumber'
+try:
+	class NotANumber(ValueError):
+		pass
+except TypeError:
+	NotANumber = 'fpformat.NotANumber'
 
 # Return (sign, intpart, fraction, expo) or raise an exception:
 # sign is '+' or '-'
@@ -30,7 +34,7 @@ NotANumber = 'fpformat.NotANumber'
 # expo is an integer
 def extract(s):
 	res = decoder.match(s)
-	if res is None: raise NotANumber
+	if res is None: raise NotANumber, s
 	sign, intpart, fraction, exppart = res.group(1,2,3,4)
 	if sign == '+': sign = ''
 	if fraction: fraction = fraction[1:]
