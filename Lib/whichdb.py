@@ -25,6 +25,18 @@ def whichdb(filename):
     except IOError:
         pass
 
+    # Check for dumbdbm next -- this has a .dir and and a .dat file
+        f = open(filename + ".dat", "rb")
+        f.close()
+        f = open(filename + ".dir", "rb")
+        try:
+            if f.read(1) in ["'", '"']:
+                return "dumbdbm"
+        finally:
+            f.close()
+    except IOError:
+        pass
+
     # See if the file exists, return None if not
     try:
         f = open(filename, "rb")
