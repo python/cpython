@@ -2433,6 +2433,7 @@ PySocket_getnameinfo(PyObject *self, PyObject *args)
 	PyOS_snprintf(pbuf, sizeof(pbuf), "%d", port);
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = PF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;	/* make numeric port happy */
 	error = getaddrinfo(hostp, pbuf, &hints, &res);
 	if (error) {
 		PyGAI_Err(error);
@@ -3137,6 +3138,9 @@ init_socket(void)
 #else
 	insint(d, "IPPROTO_IP", 0);
 #endif
+#ifdef	IPPROTO_HOPOPTS
+	insint(d, "IPPROTO_HOPOPTS", IPPROTO_HOPOPTS);
+#endif
 #ifdef	IPPROTO_ICMP
 	insint(d, "IPPROTO_ICMP", IPPROTO_ICMP);
 #else
@@ -3147,6 +3151,12 @@ init_socket(void)
 #endif
 #ifdef	IPPROTO_GGP
 	insint(d, "IPPROTO_GGP", IPPROTO_GGP);
+#endif
+#ifdef	IPPROTO_IPV4
+	insint(d, "IPPROTO_IPV4", IPPROTO_IPV4);
+#endif
+#ifdef	IPPROTO_IPIP
+	insint(d, "IPPROTO_IPIP", IPPROTO_IPIP);
 #endif
 #ifdef	IPPROTO_TCP
 	insint(d, "IPPROTO_TCP", IPPROTO_TCP);
@@ -3176,11 +3186,53 @@ init_socket(void)
 #ifdef	IPPROTO_TP
 	insint(d, "IPPROTO_TP", IPPROTO_TP);
 #endif
+#ifdef	IPPROTO_IPV6
+	insint(d, "IPPROTO_IPV6", IPPROTO_IPV6);
+#endif
+#ifdef	IPPROTO_ROUTING
+	insint(d, "IPPROTO_ROUTING", IPPROTO_ROUTING);
+#endif
+#ifdef	IPPROTO_FRAGMENT
+	insint(d, "IPPROTO_FRAGMENT", IPPROTO_FRAGMENT);
+#endif
+#ifdef	IPPROTO_RSVP
+	insint(d, "IPPROTO_RSVP", IPPROTO_RSVP);
+#endif
+#ifdef	IPPROTO_GRE
+	insint(d, "IPPROTO_GRE", IPPROTO_GRE);
+#endif
+#ifdef	IPPROTO_ESP
+	insint(d, "IPPROTO_ESP", IPPROTO_ESP);
+#endif
+#ifdef	IPPROTO_AH
+	insint(d, "IPPROTO_AH", IPPROTO_AH);
+#endif
+#ifdef	IPPROTO_MOBILE
+	insint(d, "IPPROTO_MOBILE", IPPROTO_MOBILE);
+#endif
+#ifdef	IPPROTO_ICMPV6
+	insint(d, "IPPROTO_ICMPV6", IPPROTO_ICMPV6);
+#endif
+#ifdef	IPPROTO_NONE
+	insint(d, "IPPROTO_NONE", IPPROTO_NONE);
+#endif
+#ifdef	IPPROTO_DSTOPTS
+	insint(d, "IPPROTO_DSTOPTS", IPPROTO_DSTOPTS);
+#endif
 #ifdef	IPPROTO_XTP
 	insint(d, "IPPROTO_XTP", IPPROTO_XTP);
 #endif
 #ifdef	IPPROTO_EON
 	insint(d, "IPPROTO_EON", IPPROTO_EON);
+#endif
+#ifdef	IPPROTO_PIM
+	insint(d, "IPPROTO_PIM", IPPROTO_PIM);
+#endif
+#ifdef	IPPROTO_IPCOMP
+	insint(d, "IPPROTO_IPCOMP", IPPROTO_IPCOMP);
+#endif
+#ifdef	IPPROTO_VRRP
+	insint(d, "IPPROTO_VRRP", IPPROTO_VRRP);
 #endif
 #ifdef	IPPROTO_BIP
 	insint(d, "IPPROTO_BIP", IPPROTO_BIP);
@@ -3244,7 +3296,7 @@ init_socket(void)
 	insint(d, "INADDR_NONE", 0xffffffff);
 #endif
 
-	/* IP [gs]etsockopt options */
+	/* IPv4 [gs]etsockopt options */
 #ifdef	IP_OPTIONS
 	insint(d, "IP_OPTIONS", IP_OPTIONS);
 #endif
@@ -3292,6 +3344,26 @@ init_socket(void)
 #endif
 #ifdef	IP_MAX_MEMBERSHIPS
 	insint(d, "IP_MAX_MEMBERSHIPS", IP_MAX_MEMBERSHIPS);
+#endif
+
+	/* IPv6 [gs]etsockopt options, defined in RFC2553 */
+#ifdef	IPV6_JOIN_GROUP
+	insint(d, "IPV6_JOIN_GROUP", IPV6_JOIN_GROUP);
+#endif
+#ifdef	IPV6_LEAVE_GROUP
+	insint(d, "IPV6_LEAVE_GROUP", IPV6_LEAVE_GROUP);
+#endif
+#ifdef	IPV6_MULTICAST_HOPS
+	insint(d, "IPV6_MULTICAST_HOPS", IPV6_MULTICAST_HOPS);
+#endif
+#ifdef	IPV6_MULTICAST_IF
+	insint(d, "IPV6_MULTICAST_IF", IPV6_MULTICAST_IF);
+#endif
+#ifdef	IPV6_MULTICAST_LOOP
+	insint(d, "IPV6_MULTICAST_LOOP", IPV6_MULTICAST_LOOP);
+#endif
+#ifdef	IPV6_UNICAST_HOPS
+	insint(d, "IPV6_UNICAST_HOPS", IPV6_UNICAST_HOPS);
 #endif
 
 	/* TCP options */
