@@ -39,6 +39,7 @@ typedef struct {
     char ob_sval[1];
 } PyStringObject;
 
+extern DL_IMPORT(PyTypeObject) PyBaseString_Type;
 extern DL_IMPORT(PyTypeObject) PyString_Type;
 
 #define PyString_Check(op) PyObject_TypeCheck(op, &PyString_Type)

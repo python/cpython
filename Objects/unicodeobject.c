@@ -5835,7 +5835,7 @@ PyTypeObject PyUnicode_Type = {
     unicode_methods,			/* tp_methods */
     0,					/* tp_members */
     0,					/* tp_getset */
-    0,					/* tp_base */
+    &PyBaseString_Type,			/* tp_base */
     0,					/* tp_dict */
     0,					/* tp_descr_get */
     0,					/* tp_descr_set */
@@ -5859,6 +5859,8 @@ void _PyUnicode_Init(void)
     strcpy(unicode_default_encoding, "ascii");
     for (i = 0; i < 256; i++)
 	unicode_latin1[i] = NULL;
+    if (PyType_Ready(&PyUnicode_Type) < 0)
+	Py_FatalError("Can't initialize 'unicode'");
 }
 
 /* Finalize the Unicode implementation */
