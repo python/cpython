@@ -15,7 +15,6 @@ import Scrap
 import os
 import macfs
 import MACFS
-import regsub
 import string
 import htmllib
 
@@ -445,7 +444,7 @@ class WasteWindow(ScrolledWindow):
 		self.ted.WEInsert(data, None, None)
 		
 	def send_literal_data(self, data):
-		data = regsub.gsub('\n', '\r', data)
+		data = string.replace(data, '\n', '\r')
 		data = string.expandtabs(data)
 		self.ted.WEInsert(data, None, None)
 		
@@ -775,6 +774,8 @@ class Wed(Application):
 	def idle(self, event):
 		if self.active:
 			self.active.do_idle(event)
+		else:
+			Qd.SetCursor(Qd.qd.arrow)
 			
 	def newRuler(self, obj):
 		"""Insert a new ruler. Make it as wide as the window minus 2 pxls"""
