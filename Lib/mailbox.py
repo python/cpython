@@ -52,8 +52,9 @@ class _Subfile:
 		elif length > remaining:
 			length = remaining
 		self.fp.seek(self.pos)
-		self.pos = self.pos + length
-		return self.fp.read(length)
+		data = self.fp.read(length)
+		self.pos = self.fp.tell()
+		return data
 
 	def readline(self, length = None):
 		if self.pos >= self.stop:
@@ -62,9 +63,7 @@ class _Subfile:
 			length = self.stop - self.pos
 		self.fp.seek(self.pos)
 		data = self.fp.readline(length)
-		if len(data) < length:
-			length = len(data)
-		self.pos = self.pos + length
+		self.pos = self.fp.tell()
 		return data
 
 	def tell(self):
@@ -79,7 +78,7 @@ class _Subfile:
 			self.pos = self.stop + pos
 
 	def close(self):
-		pass
+		del self.fp
 
 class UnixMailbox(_Mailbox):
 
