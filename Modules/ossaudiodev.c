@@ -86,6 +86,11 @@ static PyTypeObject OSSMixerType;
 
 static PyObject *OSSAudioError;
 
+
+/* ----------------------------------------------------------------------
+ * DSP object initialization/deallocation
+ */
+
 static oss_t *
 newossobject(PyObject *arg)
 {
@@ -153,6 +158,11 @@ oss_dealloc(oss_t *xp)
         close(xp->fd);
     PyObject_Del(xp);
 }
+
+
+/* ----------------------------------------------------------------------
+ * Mixer object initialization/deallocation
+ */
 
 static oss_mixer_t *
 newossmixerobject(PyObject *arg)
@@ -240,6 +250,11 @@ _do_ioctl_1(int fd, PyObject *args, char *fname, int cmd)
     return PyInt_FromLong(arg);
 }
 
+
+/* ----------------------------------------------------------------------
+ * Helper functions
+ */
+
 /* _do_ioctl_1_internal() is a wrapper for ioctls that take no inputs
    but return an output -- ie. we need to pass a pointer to a local C
    variable so the driver can write its output there, but from Python
@@ -285,6 +300,10 @@ _do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
     return Py_None;
 }
 
+
+/* ----------------------------------------------------------------------
+ * Methods of DSP objects (OSSType)
+ */
 
 static PyObject *
 oss_nonblock(oss_t *self, PyObject *args)
@@ -646,7 +665,11 @@ oss_getptr(oss_t *self, PyObject *args)
     return Py_BuildValue("iii", info.bytes, info.blocks, info.ptr);
 }
 
-/* Mixer methods */
+
+/* ----------------------------------------------------------------------
+ * Methods of mixer objects (OSSMixerType)
+ */
+
 static PyObject *
 oss_mixer_close(oss_mixer_t *self, PyObject *args)
 {
@@ -753,6 +776,10 @@ oss_mixer_set_recsrc(oss_mixer_t *self, PyObject *args)
         SOUND_MIXER_WRITE_RECSRC);
 }
 
+
+/* ----------------------------------------------------------------------
+ * Method tables and other bureaucracy
+ */
 
 static PyMethodDef oss_methods[] = {
     /* Regular file methods */
