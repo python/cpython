@@ -518,7 +518,8 @@ static PyObject *Qd_OffsetRect(_self, _args)
 	Rect r;
 	short dh;
 	short dv;
-	if (!PyArg_ParseTuple(_args, "hh",
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      PyMac_GetRect, &r,
 	                      &dh,
 	                      &dv))
 		return NULL;
@@ -538,7 +539,8 @@ static PyObject *Qd_InsetRect(_self, _args)
 	Rect r;
 	short dh;
 	short dv;
-	if (!PyArg_ParseTuple(_args, "hh",
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      PyMac_GetRect, &r,
 	                      &dh,
 	                      &dv))
 		return NULL;
@@ -1654,7 +1656,8 @@ static PyObject *Qd_MapRect(_self, _args)
 	Rect r;
 	Rect srcRect;
 	Rect dstRect;
-	if (!PyArg_ParseTuple(_args, "O&O&",
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      PyMac_GetRect, &r,
 	                      PyMac_GetRect, &srcRect,
 	                      PyMac_GetRect, &dstRect))
 		return NULL;
@@ -2208,6 +2211,108 @@ static PyObject *Qd_QDError(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_GetPattern(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PatHandle _rv;
+	short patternID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &patternID))
+		return NULL;
+	_rv = GetPattern(patternID);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_GetCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CursHandle _rv;
+	short cursorID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &cursorID))
+		return NULL;
+	_rv = GetCursor(cursorID);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_GetPicture(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	PicHandle _rv;
+	short pictureID;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &pictureID))
+		return NULL;
+	_rv = GetPicture(pictureID);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qd_DeltaPoint(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	Point ptA;
+	Point ptB;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetPoint, &ptA,
+	                      PyMac_GetPoint, &ptB))
+		return NULL;
+	_rv = DeltaPoint(ptA,
+	                 ptB);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_ShieldCursor(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect shieldRect;
+	Point offsetPt;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetRect, &shieldRect,
+	                      PyMac_GetPoint, &offsetPt))
+		return NULL;
+	ShieldCursor(&shieldRect,
+	             offsetPt);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_ScreenRes(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short scrnHRes;
+	short scrnVRes;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	ScreenRes(&scrnHRes,
+	          &scrnVRes);
+	_res = Py_BuildValue("hh",
+	                     scrnHRes,
+	                     scrnVRes);
+	return _res;
+}
+
 static PyObject *Qd_TextFont(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2471,9 +2576,9 @@ static PyMethodDef Qd_methods[] = {
 	{"SetRect", (PyCFunction)Qd_SetRect, 1,
 	 "(short left, short top, short right, short bottom) -> (Rect r)"},
 	{"OffsetRect", (PyCFunction)Qd_OffsetRect, 1,
-	 "(short dh, short dv) -> (Rect r)"},
+	 "(Rect r, short dh, short dv) -> (Rect r)"},
 	{"InsetRect", (PyCFunction)Qd_InsetRect, 1,
-	 "(short dh, short dv) -> (Rect r)"},
+	 "(Rect r, short dh, short dv) -> (Rect r)"},
 	{"SectRect", (PyCFunction)Qd_SectRect, 1,
 	 "(Rect src1, Rect src2) -> (Boolean _rv, Rect dstRect)"},
 	{"UnionRect", (PyCFunction)Qd_UnionRect, 1,
@@ -2599,7 +2704,7 @@ static PyMethodDef Qd_methods[] = {
 	{"MapPt", (PyCFunction)Qd_MapPt, 1,
 	 "(Point pt, Rect srcRect, Rect dstRect) -> (Point pt)"},
 	{"MapRect", (PyCFunction)Qd_MapRect, 1,
-	 "(Rect srcRect, Rect dstRect) -> (Rect r)"},
+	 "(Rect r, Rect srcRect, Rect dstRect) -> (Rect r)"},
 	{"MapRgn", (PyCFunction)Qd_MapRgn, 1,
 	 "(RgnHandle rgn, Rect srcRect, Rect dstRect) -> None"},
 	{"MapPoly", (PyCFunction)Qd_MapPoly, 1,
@@ -2662,6 +2767,18 @@ static PyMethodDef Qd_methods[] = {
 	 "(short index, Boolean reserve) -> None"},
 	{"QDError", (PyCFunction)Qd_QDError, 1,
 	 "() -> (short _rv)"},
+	{"GetPattern", (PyCFunction)Qd_GetPattern, 1,
+	 "(short patternID) -> (PatHandle _rv)"},
+	{"GetCursor", (PyCFunction)Qd_GetCursor, 1,
+	 "(short cursorID) -> (CursHandle _rv)"},
+	{"GetPicture", (PyCFunction)Qd_GetPicture, 1,
+	 "(short pictureID) -> (PicHandle _rv)"},
+	{"DeltaPoint", (PyCFunction)Qd_DeltaPoint, 1,
+	 "(Point ptA, Point ptB) -> (long _rv)"},
+	{"ShieldCursor", (PyCFunction)Qd_ShieldCursor, 1,
+	 "(Rect shieldRect, Point offsetPt) -> None"},
+	{"ScreenRes", (PyCFunction)Qd_ScreenRes, 1,
+	 "() -> (short scrnHRes, short scrnVRes)"},
 	{"TextFont", (PyCFunction)Qd_TextFont, 1,
 	 "(short font) -> None"},
 	{"TextFace", (PyCFunction)Qd_TextFace, 1,

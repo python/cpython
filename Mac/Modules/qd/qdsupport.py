@@ -40,6 +40,8 @@ PicHandle = OpaqueByValueType("PicHandle", "ResObj")
 PolyHandle = OpaqueByValueType("PolyHandle", "ResObj")
 PixMapHandle = OpaqueByValueType("PixMapHandle", "ResObj")
 PixPatHandle = OpaqueByValueType("PixPatHandle", "ResObj")
+PatHandle = OpaqueByValueType("PatHandle", "ResObj")
+CursHandle = OpaqueByValueType("CursHandle", "ResObj")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
