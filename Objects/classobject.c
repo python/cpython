@@ -1053,7 +1053,7 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 {
 	PyObject *func;
 	PyObject *args;
-	PyObject *PyNumber_Coerce;
+	PyObject *coercefunc;
 	PyObject *coerced = NULL;
 	PyObject *v1;
 	
@@ -1064,8 +1064,8 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 		if (coerce_obj == NULL)
 			return -1;
 	}
-	PyNumber_Coerce = PyObject_GetAttr(v, coerce_obj);
-	if (PyNumber_Coerce == NULL) {
+	coercefunc = PyObject_GetAttr(v, coerce_obj);
+	if (coercefunc == NULL) {
 		PyErr_Clear();
 	}
 	else {
@@ -1073,9 +1073,9 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 		if (args == NULL) {
 			return -1;
 		}
-		coerced = PyEval_CallObject(PyNumber_Coerce, args);
+		coerced = PyEval_CallObject(coercefunc, args);
 		Py_DECREF(args);
-		Py_DECREF(PyNumber_Coerce);
+		Py_DECREF(coercefunc);
 		if (coerced == NULL) {
 			return -1;
 		}
@@ -1132,7 +1132,7 @@ instance_coerce(pv, pw)
 {
 	PyObject *v = *pv;
 	PyObject *w = *pw;
-	PyObject *PyNumber_Coerce;
+	PyObject *coercefunc;
 	PyObject *args;
 	PyObject *coerced;
 
@@ -1141,8 +1141,8 @@ instance_coerce(pv, pw)
 		if (coerce_obj == NULL)
 			return -1;
 	}
-	PyNumber_Coerce = PyObject_GetAttr(v, coerce_obj);
-	if (PyNumber_Coerce == NULL) {
+	coercefunc = PyObject_GetAttr(v, coerce_obj);
+	if (coercefunc == NULL) {
 		/* No __coerce__ method: always OK */
 		PyErr_Clear();
 		Py_INCREF(v);
@@ -1154,9 +1154,9 @@ instance_coerce(pv, pw)
 	if (args == NULL) {
 		return -1;
 	}
-	coerced = PyEval_CallObject(PyNumber_Coerce, args);
+	coerced = PyEval_CallObject(coercefunc, args);
 	Py_DECREF(args);
-	Py_DECREF(PyNumber_Coerce);
+	Py_DECREF(coercefunc);
 	if (coerced == NULL) {
 		/* __coerce__ call raised an exception */
 		return -1;
