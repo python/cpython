@@ -32,6 +32,7 @@ extern int CtlObj_Convert(PyObject *, ControlHandle *);
 /* Dlg exports */
 extern PyObject *DlgObj_New(DialogPtr);
 extern int DlgObj_Convert(PyObject *, DialogPtr *);
+extern WindowPtr DlgObj_ConvertToWindow(PyObject *);
 extern PyTypeObject Dialog_Type;
 #define DlgObj_Check(x) ((x)->ob_type == &Dialog_Type)
 
