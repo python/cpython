@@ -192,7 +192,7 @@ sub do_cmd_manpage{
 
 sub do_cmd_rfc{
     local($_) = @_;
-    my($rfcnumber,$br_id) = next_argument();
+    my($rfcnumber,$br_id) = next_argument_id();
     my $href =
       "http://info.internet.isi.edu/in-notes/rfc/files/rfc$rfcnumber.txt";
     # Save the reference
@@ -340,7 +340,7 @@ sub do_cmd_indexii{
 
 sub do_cmd_indexiii{
     local($_) = @_;
-    my($str1,$br_id) = next_argument();
+    my($str1,$br_id) = next_argument_id();
     my $str2 = next_argument();
     my $str3 = next_argument();
     #
@@ -353,7 +353,7 @@ sub do_cmd_indexiii{
 
 sub do_cmd_indexiv{
     local($_) = @_;
-    my($str1,$br_id) = next_argument();
+    my($str1,$br_id) = next_argument_id();
     my $str2 = next_argument();
     my $str3 = next_argument();
     my $str4 = next_argument();
@@ -375,7 +375,7 @@ sub do_cmd_ttindex{
 
 sub my_typed_index_helper{
     local($word,$_) = @_;
-    my($str,$br_id) = next_argument();
+    my($str,$br_id) = next_argument_id();
     swallow_newline();
     #
     my($name,$aname,$ahref) = link_info($br_id1);
@@ -434,7 +434,7 @@ sub my_module_index_helper{
 
 sub ref_module_index_helper{
     local($word, $_) = @_;
-    my($str,$br_id) = next_argument();
+    my($str,$br_id) = next_argument_id();
     swallow_newline();
     $word = "$word " if $word;
     return make_mod_index_entry($br_id,
@@ -443,7 +443,7 @@ sub ref_module_index_helper{
 
 sub do_cmd_bifuncindex{
     local($_) = @_;
-    my($str,$br_id) = next_argument();
+    my($str,$br_id) = next_argument_id();
     swallow_newline();
     my $fname = "<tt>$str()</tt>";
     return make_index_entry($br_id, "$fname (built-in function)") . $_;
@@ -665,7 +665,7 @@ sub do_env_methoddescni{
 sub do_env_memberdesc{
     local($_) = @_;
     my $class = next_optional_argument();
-    my($member,$br_id) = next_argument();
+    my($member,$br_id) = next_argument_id();
     $class = $THIS_CLASS
         unless $class;
     my $extra = '';
