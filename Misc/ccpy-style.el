@@ -29,7 +29,7 @@
     (c-basic-offset   . 8)
     (c-offsets-alist  . ((substatement-open . 0)
 			 ))
-    (c-hanging-braces-alist . ((brace-list-open after)
+    (c-hanging-braces-alist . ((brace-list-open)
 			       (brace-list-intro)
 			       (brace-list-close)
 			       (substatement-open after)
