@@ -9,7 +9,7 @@ Extension modules
 Library
 
 - The email package bug #531966 was fixed.  This caused exceptions to
-  occur when flatting multipart/* messages with zero or one (scalar)
+  occur when flattening multipart/* messages with zero or one (scalar)
   attachment.
 
 Tools
