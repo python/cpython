@@ -8,7 +8,7 @@
 #ifdef macintosh
 #include <time.h>
 #include <OSUtils.h>
-#ifdef USE_GUSI2
+#ifdef USE_GUSI211
 /* GUSI, the I/O library which has the time() function and such uses the
 ** Mac epoch of 1904. MSL, the C library which has localtime() and so uses
 ** the ANSI epoch of 1900.
@@ -466,7 +466,7 @@ time_mktime(PyObject *self, PyObject *args)
                                 "mktime argument out of range");
 		return NULL;
 	}
-#if defined(macintosh) && defined(USE_GUSI2)
+#if defined(macintosh) && defined(USE_GUSI211)
 	tt = tt - GUSI_TO_MSL_EPOCH;
 #endif
 	return PyFloat_FromDouble((double)tt);
