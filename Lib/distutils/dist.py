@@ -712,6 +712,7 @@ class Distribution:
             return command
         command.initialize_options()
         command.finalized = 0
+        self.have_run[command_name] = 0
         self._set_command_options(command)
         return command
 
