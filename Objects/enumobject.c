@@ -230,10 +230,7 @@ reversed_next(reversedobject *ro)
 			PyErr_Clear();
 	}
 	ro->index = -1;
-	if (ro->seq != NULL) {
-		Py_DECREF(ro->seq);
-		ro->seq = NULL;
-	}
+	Py_CLEAR(ro->seq);
 	return NULL;
 }
 

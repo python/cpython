@@ -51,8 +51,7 @@ gen_iternext(PyGenObject *gen)
 	 * may keep a chain of frames alive or it could create a reference
 	 * cycle. */
 	assert(f->f_back != NULL);
-	Py_DECREF(f->f_back);
-	f->f_back = NULL;
+	Py_CLEAR(f->f_back);
 
 	/* If the generator just returned (as opposed to yielding), signal
 	 * that the generator is exhausted. */

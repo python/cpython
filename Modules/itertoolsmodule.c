@@ -250,8 +250,7 @@ _grouper_next(_grouperobject *igo)
 
 	r = gbo->currvalue;
 	gbo->currvalue = NULL;
-	Py_DECREF(gbo->currkey);
-	gbo->currkey = NULL;
+	Py_CLEAR(gbo->currkey);
 
 	return r;
 }
