@@ -8,13 +8,21 @@ and a list of Frequently Asked Questions (and their answers).
 Files found here
 ----------------
 
+ACKS		Acknowledgements
+AIX-NOTES	Notes for building Python on AIX
 BLURB		A quick description of Python for newcomers
-BLURB.LUTZ	A very good blurb to show to TCL/Perl hackers
+BLURB.LUTZ	A testimonial from a converted Tcl/Perl hacker :-)
 COPYING		The GNU GENERAL PUBLIC LICENCE (needed because of autoconf)
 COPYRIGHT	The Python copyright notice
 FAQ		Frequently Asked Questions about Python (and answers)
 Fixcprt.py	Fix the copyright message (a yearly chore :-)
+HISTORY		News from previous releases -- oldest last
+Makefile	Used for administrative chores like cleaning up
+NEWS		News for this release
 README		The file you're reading now
+RFD		Request For Discussion about a Python newsgroup
 fixfuncptrs.sh	Shell script to fix function pointer initializers
-python-mode.el	Emacs mode for editing Python programs (thanks again, Tim!)
+python-mode.el	Emacs mode for editing Python programs (thanks, Tim!)
+python.gif	4-level grayscale image of a Python (snake)
 python.man	UNIX man page for the python interpreter
+renumber.py	Script to renumber the sections in the FAQ
