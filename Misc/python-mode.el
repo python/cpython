@@ -314,7 +314,11 @@ Currently-active file is at the head of the list.")
 	    ( ?\* . "." ) ( ?\+ . "." ) ( ?\- . "." )
 	    ( ?\/ . "." ) ( ?\< . "." ) ( ?\= . "." )
 	    ( ?\> . "." ) ( ?\| . "." )
-	    ( ?\_ . "_" )	; underscore is legit in symbols, but not words
+	    ;; Guido and I disagree about this. Underscore should be
+	    ;; symbol constituent by not word.  For historical
+	    ;; reasons, I leave it as is. -baw
+	    ;;( ?\_ . "_" )	; underscore is legit in symbols, but not words
+	    ( ?\_ . "w" )	; underscore is legit in words
 	    ( ?\' . "\"")	; single quote is string quote
 	    ( ?\" . "\"" )	; double quote is string quote too
 	    ( ?\` . "$")	; backquote is open and close paren
