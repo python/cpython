@@ -389,7 +389,7 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 		d.GetDialogItemAsControl(ARGV_OPTION_GROUP).DeactivateControl()
 	if commandlist:
 		_setmenu(d.GetDialogItemAsControl(ARGV_COMMAND_GROUP), commandlist)
-		if type(commandlist) == type(()) and len(commandlist[0]) > 1:
+		if type(commandlist[0]) == type(()) and len(commandlist[0]) > 1:
 			help = commandlist[0][-1]
 			h = d.GetDialogItemAsControl(ARGV_COMMAND_EXPLAIN)
 			Dlg.SetDialogItemText(h, help)
@@ -422,10 +422,9 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 			elif n == ARGV_OPTION_ADD:
 				idx = d.GetDialogItemAsControl(ARGV_OPTION_GROUP).GetControlValue()-1
 				if 0 <= idx < len(optionlist):
-					if type(optionlist) == type(()):
-						option = optionlist[idx][0]
-					else:
-						option = optionlist[idx]
+					option = optionlist[idx]
+					if type(option) == type(()):
+						option = option[0]
 					if option[-1] == '=' or option[-1] == ':':
 						option = option[:-1]
 						h = d.GetDialogItemAsControl(ARGV_OPTION_VALUE)
@@ -443,7 +442,7 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 					MacOS.SysBeep()
 			elif n == ARGV_COMMAND_GROUP:
 				idx = d.GetDialogItemAsControl(ARGV_COMMAND_GROUP).GetControlValue()-1
-				if 0 <= idx < len(commandlist) and type(commandlist) == type(()) and \
+				if 0 <= idx < len(commandlist) and type(commandlist[idx]) == type(()) and \
 						len(commandlist[idx]) > 1:
 					help = commandlist[idx][-1]
 					h = d.GetDialogItemAsControl(ARGV_COMMAND_EXPLAIN)
@@ -451,10 +450,10 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 			elif n == ARGV_COMMAND_ADD:
 				idx = d.GetDialogItemAsControl(ARGV_COMMAND_GROUP).GetControlValue()-1
 				if 0 <= idx < len(commandlist):
-					if type(commandlist) == type(()):
-						stringstoadd = [commandlist[idx][0]]
-					else:
-						stringstoadd = [commandlist[idx]]
+					command = commandlist[idx]
+					if type(command) == type(()):
+						command = command[0]
+					stringstoadd = [command]
 				else:
 					MacOS.SysBeep()
 			elif n == ARGV_ADD_OLDFILE:
@@ -511,6 +510,7 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 		return newlist
 	finally:
 		apply(MacOS.SchedParams, appsw)
+		del d
 	
 def test():
 	import time, sys
