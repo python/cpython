@@ -32,6 +32,13 @@ except TypeError:
 else:
     print 'expected TypeError exception not raised'
 
+try:
+    rfd, wfd, xfd = select.select([], [], [], 'not a number')
+except TypeError:
+    pass
+else:
+    print 'expected TypeError exception not raised'
+
 
 def test():
     import sys
