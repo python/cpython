@@ -2028,7 +2028,7 @@ filterunicode(PyObject *func, PyObject *strobj)
 						need = 2*outlen;
 					if (PyUnicode_Resize(&result, need)) {
 						Py_DECREF(item);
-						return NULL;
+						goto Fail_1;
 					}
 					outlen = need;
 				}
