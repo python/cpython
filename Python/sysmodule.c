@@ -155,13 +155,13 @@ sys_mdebug(self, args)
 #endif /* USE_MALLOPT */
 
 static struct methodlist sys_methods[] = {
-	{"exit",	sys_exit},
+	{"exit",	sys_exit, 0},
 #ifdef USE_MALLOPT
-	{"mdebug",	sys_mdebug},
+	{"mdebug",	sys_mdebug, 0},
 #endif
-	{"setprofile",	sys_setprofile},
-	{"settrace",	sys_settrace},
-	{"setcheckinterval",	sys_setcheckinterval},
+	{"setprofile",	sys_setprofile, 0},
+	{"settrace",	sys_settrace, 0},
+	{"setcheckinterval",	sys_setcheckinterval, 0},
 	{NULL,		NULL}		/* sentinel */
 };
 
