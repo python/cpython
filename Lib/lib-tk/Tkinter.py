@@ -583,7 +583,7 @@ class Widget(Misc, Pack, Place):
 		apply(self.tk.call, (self._w, 'configure')
 		      + self._options(cnf))
 	def __getitem__(self, key):
-		v = self.tk.split(self.tk.call(
+		v = self.tk.splitlist(self.tk.call(
 			self._w, 'configure', '-' + key))
 		return v[4]
 	def __setitem__(self, key, value):
@@ -940,7 +940,9 @@ class Menu(Widget):
 		apply(self.tk.call, (self._w, 'entryconfigure', index)
 		      + self._options(cnf))
 	def index(self, index):
-		return self.tk.call(self._w, 'index', index)
+		i = self.tk.call(self._w, 'index', index)
+		if i == 'none': return None
+		return self.tk.getint(i)
 	def invoke(self, index):
 		return self.tk.call(self._w, 'invoke', index)
 	def post(self, x, y):
