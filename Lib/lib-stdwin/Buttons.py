@@ -1,8 +1,4 @@
-# Module 'Buttons' -- see README
-#
-# Module functionality is now split in two parts:
-# - 'appearance' defines what it looks like
-# - 'reactivity' defines how it acts to mouse events
+# Module 'Buttons'
 
 
 # Import module 'rect' renamed as '_rect'
@@ -20,32 +16,42 @@ _BUTTON = 2
 _MASK = 3
 
 
-# BaseAppearance provides defaults for all appearance methods.
-# In fact it looks like a label.
+# LabelAppearance provides defaults for all appearance methods.
+# selected state not visible
+# disabled --> crossed out
+# hilited  --> inverted
 #
-class BaseAppearance():
+class LabelAppearance():
 	#
 	# Initialization
 	#
 	def init_appearance(self, (win, bounds)):
-		win.change(bounds)
 		self.win = win
 		self.bounds = bounds
 		self.enabled = 1
 		self.hilited = 0
 		self.selected = 0
 		self.text = ''
+		self.limbo = 1
+		self.recalc()
+		self.win.change(self.bounds)
+		# While the limbo flag is set, redraw calls are ignored.
+		# It is cleared by the first draw event.
+		# This is intended to avoid duplicate drawing during
+		# initialization.
 	#
 	# Changing the parameters
 	#
 	def settext(self, text):
 		self.text = text
+		self.recalctextpos()
 		self.redraw()
 	#
 	def setbounds(self, bounds):
-		# This elays drawing until after all buttons are moved
+		# This delays drawing until after all buttons are moved
 		self.win.change(self.bounds)
 		self.bounds = bounds
+		self.recalc()
 		self.win.change(bounds)
 	#
 	# Changing the state bits
@@ -53,25 +59,54 @@ class BaseAppearance():
 	def enable(self, flag):
 		if flag <> self.enabled:
 			self.enabled = flag
-			self.flipenable(self.win.begindrawing())
+			if not self.limbo:
+				self.flipenable(self.win.begindrawing())
 	#
 	def hilite(self, flag):
 		if flag <> self.hilited:
 			self.hilited = flag
-			self.fliphilite(self.win.begindrawing())
+			if not self.limbo:
+				self.fliphilite(self.win.begindrawing())
 	#
 	def select(self, flag):
 		if flag <> self.selected:
 			self.selected = flag
 			self.redraw()
 	#
+	# Recalculate the box bounds and text position.
+	# This can be overridden by buttons that draw different boxes
+	# or want their text in a different position.
+	#
+	def recalc(self):
+		self.recalcbounds()
+		self.recalctextpos()
+	#
+	def recalcbounds(self):
+		self.hilitebounds = _rect.inset(self.bounds, (3, 3))
+		self.crossbounds = self.bounds
+	#
+	def recalctextpos(self):
+		(left, top), (right, bottom) = self.bounds
+		d = self.win.begindrawing()
+		h = (left + right - d.textwidth(self.text)) / 2
+		v = (top + bottom - d.lineheight()) / 2
+		self.textpos = h, v
+	#
+	# Resize method.
+	# Override for widgets that take over window geomtry management.
+	#
+	def resize(self):
+		pass
+	#
 	# Generic drawing mechanism.
-	# There should be no reason to override redraw() or draw() methods.
+	# Do not override redraw() or draw() methods; override drawit() c.s.
 	#
 	def redraw(self):
-		self.draw(self.win.begindrawing(), self.bounds)
+		if not self.limbo:
+			self.draw(self.win.begindrawing(), self.bounds)
 	#
 	def draw(self, (d, area)):
+		self.limbo = 0
 		area = _rect.intersect(area, self.bounds)
 		if area = _rect.empty:
 			return
@@ -83,10 +118,9 @@ class BaseAppearance():
 	# The drawit() method is fairly generic but may be overridden.
 	#
 	def drawit(self, d):
-		self.drawpict(d)	# Box, circle etc.; also 'selected'
+		self.drawpict(d)
 		if self.text:
-			hv = self.textpos(d)
-			d.text(hv, self.text)
+			d.text(self.textpos, self.text)
 		if not self.enabled:
 			self.flipenable(d)
 		if self.hilited:
@@ -95,52 +129,15 @@ class BaseAppearance():
 	# Default drawing detail functions.
 	# Overriding these is normally sufficient to get different
 	# appearances.
-	# No picture; centered text; enable crosses out; hilite inverts.
 	#
 	def drawpict(self, d):
 		pass
 	#
-	def textpos(self, d):
-		# XXX shouldn't this be done once by init/settext()?
-		(left, top), (right, bottom) = self.bounds
-		h = (left + right - d.textwidth(self.text)) / 2
-		v = (top + bottom - d.lineheight()) / 2
-		return h, v
-	#
 	def flipenable(self, d):
-		_xorcross(d, self.bounds)
+		_xorcross(d, self.crossbounds)
 	#
 	def fliphilite(self, d):
-		d.invert(_rect.inset(self.bounds, (3, 3)))
-
-
-# Subroutine to cross out a rectangle.
-#
-def _xorcross(d, bounds):
-	((left, top), (right, bottom)) = bounds
-	left = left + 2
-	right = right - 2
-	top = top + 2
-	bottom = bottom - 3
-	d.xorline(((left, top), (right, bottom)))
-	d.xorline((left, bottom), (right, top))
-
-
-# LabelAppearance displays a centered string.
-# selected --> underlined
-# disabled --> crossed out
-# hilited  --> inverted
-#
-class LabelAppearance() = BaseAppearance():
-	#
-	def drawpict(self, d):
-		if self.selected:
-			# Underline it
-			d.line((left+1, bottom-1), (right-1, bottom-1))
-		#
-		if not self.enabled: self._crossout(d)
-		if self.hilited: self._invert(d)
-	#
+		d.invert(self.hilitebounds)
 
 
 # ButtonAppearance displays a centered string in a box.
@@ -148,7 +145,7 @@ class LabelAppearance() = BaseAppearance():
 # disabled --> crossed out
 # hilited  --> inverted
 #
-class ButtonAppearance() = BaseAppearance():
+class ButtonAppearance() = LabelAppearance():
 	#
 	def drawpict(self, d):
 		d.box(_rect.inset(self.bounds, (1, 1)))
@@ -165,27 +162,25 @@ class ButtonAppearance() = BaseAppearance():
 # disabled --> whole button crossed out
 # hilited  --> box is inverted
 #
-class CheckAppearance() = BaseAppearance():
+class CheckAppearance() = LabelAppearance():
 	#
 	def drawpict(self, d):
-		(left, top), (right, bottom) = self.bounds
-		size = bottom - top
-		boxbounds = (left, top), (left+size, bottom)
-		d.box(boxbounds)
-		if self.selected: _xorcross(d, boxbounds)
+		d.box(self.boxbounds)
+		if self.selected: _xorcross(d, self.boxbounds)
 	#
-	def textpos(self, d):
+	def recalcbounds(self):
+		LabelAppearance.recalcbounds(self)
 		(left, top), (right, bottom) = self.bounds
-		size = bottom - top
-		h = left + size + d.textwidth(' ')
-		v = top + (size - d.lineheight()) / 2
-		return h, v
+		self.size = bottom - top - 4
+		self.boxbounds = (left+2, top+2), (left+2+self.size, bottom-2)
+		self.hilitebounds = self.boxbounds
 	#
-	def fliphilite(self, d):
-		(left, top), (right, bottom) = self.bounds
-		size = bottom - top
-		boxbounds = (left, top), (left+size, bottom)
-		d.invert(boxbounds)
+	def recalctextpos(self):
+		d = self.win.begindrawing()
+		(left, top), (right, bottom) = self.boxbounds
+		h = right + d.textwidth(' ')
+		v = top + (self.size - d.lineheight()) / 2
+		self.textpos = h, v
 	#
 
 
@@ -194,29 +189,16 @@ class CheckAppearance() = BaseAppearance():
 # disabled --> whole button crossed out
 # hilited  --> indicator is inverted
 #
-class RadioAppearance() = BaseAppearance():
+class RadioAppearance() = CheckAppearance():
 	#
 	def drawpict(self, d):
-		(left, top), (right, bottom) = self.bounds
-		size = bottom - top
-		radius = size / 2
+		(left, top), (right, bottom) = self.boxbounds
+		radius = self.size / 2
 		h, v = left + radius, top + radius
-		d.circle((h, v), radius - 1)
+		d.circle((h, v), radius)
 		if self.selected:
 			some = radius/3
 			d.paint((h-some, v-some), (h+some, v+some))
-	#
-	def textpos(self, d):
-		(left, top), (right, bottom) = self.bounds
-		size = bottom - top
-		h = left + size + d.textwidth(' ')
-		v = top + (size - d.lineheight()) / 2
-		return h, v
-	#
-	def fliphilite(self, d):
-		(left, top), (right, bottom) = self.bounds
-		size = bottom - top
-		d.invert((left, top), (left + size, bottom))
 	#
 
 
@@ -224,7 +206,7 @@ class RadioAppearance() = BaseAppearance():
 # The trigger methods call the corresponding hooks set by the user.
 # Hooks (and triggers) mean the following:
 # down_hook	called on some mouse-down events
-# active_hook	called on some mouse-move events
+# move_hook	called on some mouse-move events
 # up_hook	called on mouse-up events
 # on_hook	called for buttons with on/off state, when it goes on
 # timer_hook	called on timer events
@@ -235,7 +217,7 @@ class RadioAppearance() = BaseAppearance():
 class NoReactivity():
 	#
 	def init_reactivity(self):
-		self.down_hook = self.active_hook = self.up_hook = \
+		self.down_hook = self.move_hook = self.up_hook = \
 		  self.on_hook = self.off_hook = self.timer_hook = \
 		  self.hook = self.active = 0
 	#
@@ -257,8 +239,8 @@ class NoReactivity():
 	def down_trigger(self):
 		if self.down_hook: self.down_hook(self)
 	#
-	def active_trigger(self):
-		if self.active_hook: self.active_hook(self)
+	def move_trigger(self):
+		if self.move_hook: self.move_hook(self)
 	#
 	def up_trigger(self):
 		if self.up_hook: self.up_hook(self)
@@ -290,7 +272,7 @@ class ToggleReactivity() = NoReactivity():
 	#
 	def mouse_move(self, detail):
 		if self.active:
-			self.active_trigger()
+			self.move_trigger()
 	#
 	def mouse_up(self, detail):
 		if self.active:
@@ -325,7 +307,7 @@ class TriggerReactivity() = NoReactivity():
 		if self.active:
 			self.hilite(self.mousetest(detail[_HV]))
 			if self.hilited:
-				self.active_trigger()
+				self.move_trigger()
 	#
 	def mouse_up(self, detail):
 		if self.active:
@@ -338,7 +320,7 @@ class TriggerReactivity() = NoReactivity():
 	#
 	def timer(self):
 		if self.active and self.hilited:
-			self.active_trigger()
+			self.timer_trigger()
 	#
 
 
@@ -382,14 +364,27 @@ class Define():
 	#
 	def define(self, (win, bounds, text)):
 		self.init_appearance(win, bounds)
-		self.text = text
 		self.init_reactivity()
+		self.settext(text)
 		return self
+
+
+# Subroutine to cross out a rectangle.
+#
+def _xorcross(d, bounds):
+	((left, top), (right, bottom)) = bounds
+	# This is s bit funny to make it look better
+	left = left + 2
+	right = right - 2
+	top = top + 2
+	bottom = bottom - 3
+	d.xorline(((left, top), (right, bottom)))
+	d.xorline((left, bottom), (right, top))
 
 
 # Ready-made button classes
 #
-class BaseButton() = NoReactivity(), BaseAppearance(), Define(): pass
+class BaseButton() = NoReactivity(), LabelAppearance(), Define(): pass
 class Label() = NoReactivity(), LabelAppearance(), Define(): pass
 class ClassicButton() = TriggerReactivity(), ButtonAppearance(), Define(): pass
 class CheckButton() = CheckReactivity(), CheckAppearance(), Define(): pass
