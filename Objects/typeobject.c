@@ -5537,7 +5537,14 @@ super_getattro(PyObject *self, PyObject *name)
 				Py_INCREF(res);
 				f = res->ob_type->tp_descr_get;
 				if (f != NULL) {
-					tmp = f(res, su->obj,
+					tmp = f(res,
+						/* Only pass 'obj' param if
+						   this is instance-mode super 
+						   (See SF ID #743627)
+						*/
+						(su->obj==su->obj_type 
+							? (PyObject *)NULL 
+							: su->obj),
 						(PyObject *)starttype);
 					Py_DECREF(res);
 					res = tmp;
