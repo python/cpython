@@ -28,6 +28,8 @@
 /* Get the object given the GC head */
 #define FROM_GC(g) ((PyObject *)(((PyGC_Head *)g)+1))
 
+/* True if an object is tracked by the GC */
+#define IS_TRACKED(o) ((AS_GC(o))->gc.gc_next != NULL)
 
 /*** Global GC state ***/
 
@@ -72,6 +74,9 @@ static int debug;
 
 /* Special gc_refs value */
 #define GC_MOVED  -123
+
+/* True if an object has been moved to the older generation */
+#define IS_MOVED(o) ((AS_GC(o))->gc.gc_refs == GC_MOVED)
 
 /* list of uncollectable objects */
 static PyObject *garbage;
@@ -170,8 +175,7 @@ static int
 visit_decref(PyObject *op, void *data)
 {
 	if (op && PyObject_IS_GC(op)) {
-		PyGC_Head *gc = AS_GC(op);
-		if (gc->gc.gc_next != NULL)
+		if (IS_TRACKED(op))
 			AS_GC(op)->gc.gc_refs--;
 	}
 	return 0;
@@ -212,8 +216,8 @@ static int
 visit_move(PyObject *op, PyGC_Head *tolist)
 {
 	if (PyObject_IS_GC(op)) {
-		PyGC_Head *gc = AS_GC(op);
-		if (gc->gc.gc_next != NULL && gc->gc.gc_refs != GC_MOVED) {
+		if (IS_TRACKED(op) && !IS_MOVED(op)) {
+			PyGC_Head *gc = AS_GC(op);
 			gc_list_remove(gc);
 			gc_list_append(gc, tolist);
 			gc->gc.gc_refs = GC_MOVED;
@@ -856,8 +860,7 @@ void
 PyObject_GC_UnTrack(void *op)
 {
 #ifdef WITH_CYCLE_GC
-	PyGC_Head *gc = AS_GC(op);
-	if (gc->gc.gc_next != NULL)
+	if (IS_TRACKED(op))
 		_PyObject_GC_UNTRACK(op);
 #endif
 }
@@ -941,7 +944,7 @@ PyObject_GC_Del(void *op)
 {
 #ifdef WITH_CYCLE_GC
 	PyGC_Head *g = AS_GC(op);
-	if (g->gc.gc_next != NULL)
+	if (IS_TRACKED(op))
 		gc_list_remove(g);
 	if (generations[0].count > 0) {
 		generations[0].count--;
