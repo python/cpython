@@ -476,7 +476,7 @@ float_divmod(PyObject *v, PyObject *w)
 		   fmod returns different results across platforms; ensure
 		   it has the same sign as the denominator; we'd like to do
 		   "mod = wx * 0.0", but that may get optimized away */
-		mod = 0.0;
+		mod *= mod;  /* hide "mod = +0" from optimizer */
 		if (wx < 0.0)
 			mod = -mod;
 	}
