@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.155 
+# From configure.in Revision: 1.156 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.14.1 
@@ -1542,7 +1542,7 @@ for ac_hdr in dlfcn.h fcntl.h limits.h locale.h ncurses.h poll.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
 sys/audioio.h sys/file.h sys/lock.h db_185.h db.h \
 sys/param.h sys/select.h sys/socket.h sys/time.h sys/times.h \
-sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h
+sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h ndbm.h gdbm/ndbm.h
 do
 ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
 echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6

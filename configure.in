@@ -371,7 +371,7 @@ AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h locale.h ncurses.h poll.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h \
 sys/audioio.h sys/file.h sys/lock.h db_185.h db.h \
 sys/param.h sys/select.h sys/socket.h sys/time.h sys/times.h \
-sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h)
+sys/un.h sys/utsname.h sys/wait.h pty.h libutil.h ndbm.h gdbm/ndbm.h)
 AC_HEADER_DIRENT
 
 # checks for typedefs
