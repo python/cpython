@@ -317,7 +317,7 @@ SndCh_SndPlay(SndChObject *s, PyObject *args)
 		return NULL;
 	if (!SndCh_OK(s))
 		return NULL;
-	SndPlay(s->chan, r->h, async);
+	SndPlay(s->chan, (SndListHandle)r->h, async);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -475,7 +475,7 @@ MacOS_SndPlay(PyObject *self, PyObject *args)
 	OSErr err;
 	if (!PyArg_ParseTuple(args, "O!", &RsrcType, &r))
 		return NULL;
-	err = SndPlay((SndChannelPtr)NULL, r->h, 0);
+	err = SndPlay((SndChannelPtr)NULL, (SndListHandle)r->h, 0);
 	return PyErr_Mac(MacOS_Error, (int)err);
 }
 
