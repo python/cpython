@@ -53,6 +53,7 @@
     </macro>
   <macro name="shortversion"/>
   <macro name="versionadded">
+    <attribute name="info" optional="yes"/>
     <attribute name="version"/>
     </macro>
   <!-- This is broken:  we need to re-order the optional and required
@@ -60,7 +61,7 @@
        element.  The processor is not powerful enough to handle this.
     -->
   <macro name="versionchanged">
-    <attribute name="how" optional="yes"/>
+    <attribute name="info" optional="yes"/>
     <attribute name="version"/>
     </macro>
 
@@ -135,6 +136,9 @@
     <attribute name="class" optional="yes"/>
     <attribute name="name"/>
     </environment>
+  <macro name="memberline">
+    <attribute name="name"/>
+    </macro>
 
   <environment name="methoddesc">
     <attribute name="class" optional="yes"/>
