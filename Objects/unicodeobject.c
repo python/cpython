@@ -5225,6 +5225,8 @@ _PyUnicode_Fini(void)
 {
     PyUnicodeObject *u = unicode_freelist;
 
+    Py_XDECREF(unicode_empty);
+    unicode_empty = NULL;
     while (u != NULL) {
 	PyUnicodeObject *v = u;
 	u = *(PyUnicodeObject **)u;
@@ -5235,6 +5237,4 @@ _PyUnicode_Fini(void)
     }
     unicode_freelist = NULL;
     unicode_freelist_size = 0;
-    Py_XDECREF(unicode_empty);
-    unicode_empty = NULL;
 }
