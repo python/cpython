@@ -114,19 +114,6 @@ class Distribution:
                       ('dry-run', 'n', "don't actually do anything"),
                      ]
 
-    # 'alias_options' map distribution options to command options -- the
-    # idea is that the most common, essential options can be directly
-    # specified as Distribution attributes, and the rest can go in the
-    # 'options' dictionary.  These aliases are for those common, essential
-    # options.
-    alias_options = { 'py_modules': ('build_py', 'modules'),
-                      'ext_modules': ('build_ext', 'extensions'),
-                      'package': [('build_py', 'package',),
-                                  ('build_ext', 'package')],
-                      'include_dirs': ('build_ext', 'include_dirs'),
-
-                    }
-
 
     # -- Creation/initialization methods -------------------------------
     
@@ -151,6 +138,7 @@ class Distribution:
         self.name = None
         self.version = None
         self.author = None
+        self.author_email = None
         self.url = None
         self.licence = None
         self.description = None
@@ -165,10 +153,13 @@ class Distribution:
         # than of the Distribution itself.  We provide aliases for them in
         # Distribution as a convenience to the developer.
         # dictionary.        
-        # XXX not needed anymore! (I think...)
-        #self.py_modules = None
-        #self.ext_modules = None
-        #self.package = None
+        self.packages = None
+        self.package_dir = None
+        self.py_modules = None
+        self.ext_modules = None
+        self.ext_package = None
+        self.include_dirs = None
+        self.install_path = None
 
         # And now initialize bookkeeping stuff that can't be supplied by
         # the caller at all.  'command_obj' maps command names to
@@ -188,8 +179,9 @@ class Distribution:
         # '.get()' rather than a straight lookup.
         self.have_run = {}
 
-        # Now we'll use the attrs dictionary (from the client) to possibly
-        # override any or all of these distribution options
+        # Now we'll use the attrs dictionary (ultimately, keyword args from
+        # the client) to possibly override any or all of these distribution
+        # options.        
         if attrs:
 
             # Pull out the set of command options and work on them
@@ -206,26 +198,10 @@ class Distribution:
                 # loop over commands
             # if any command options                        
 
-            # Now work on the rest of the attributes.  Note that some of
-            # these may be aliases for command options, so we might go
-            # through some of the above again.
+            # Now work on the rest of the attributes.  Any attribute that's
+            # not already defined is invalid!
             for (key,val) in attrs.items():
-                alias = self.alias_options.get (key)
-                if alias:
-                    if type (alias) is ListType:
-                        for (command, cmd_option) in alias:
-                            cmd_obj = self.find_command_obj (command)
-                            cmd_obj.set_option (cmd_option, val)
-                    elif type (alias) is TupleType:
-                        (command, cmd_option) = alias
-                        cmd_obj = self.find_command_obj (command)
-                        cmd_obj.set_option (cmd_option, val)
-                    else:
-                        raise RuntimeError, \
-                              ("oops! bad alias option for '%s': " +
-                               "must be tuple or list of tuples") % key
-                    
-                elif hasattr (self, key):
+                if hasattr (self, key):
                     setattr (self, key, val)
                 else:
                     raise DistutilsOptionError, \
@@ -653,7 +629,8 @@ class Command:
             # splits to ['', 'Foo', '', 'Bar', '', 'Baz', ''].  Hence
             # the 'filter' to strip out the empties.            
             words = filter (None, re.split (r'([A-Z][a-z]+)', class_name))
-            return string.join (map (string.lower, words), "_")
+            self.command_name = string.join (map (string.lower, words), "_")
+            return self.command_name
 
 
     def set_undefined_options (self, src_cmd, *option_pairs):
@@ -716,6 +693,11 @@ class Command:
 
 
     # -- External world manipulation -----------------------------------
+
+    def warn (self, msg):
+        sys.stderr.write ("warning: %s: %s\n" %
+                          (self.get_command_name(), msg))
+
 
     def execute (self, func, args, msg=None, level=1):
         """Perform some action that affects the outside world (eg.
