@@ -120,6 +120,16 @@ signal signalmodule.c		# signal(2)
 
 #*shared*
 
+# GNU readline.  Unlike previous Python incarnations, GNU readline is
+# now incorporated in an optional module, configured in the Setup file
+# instead of by a configure script switch.  You may have to insert a
+# -L option pointing to the directory where libreadline.* lives,
+# and you may have to change -ltermcap to -ltermlib or perhaps remove
+# it, depending on your system -- see the GNU readline instructions.
+# It's okay for this to be a shared library, too.
+
+#readline readline.c -lreadline -ltermcap
+
 
 # Modules that should always be present (non UNIX dependent):
 
