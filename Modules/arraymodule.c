@@ -22,6 +22,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include <sys/types.h>		/* For size_t */
 #endif /* DONT_HAVE_SYS_TYPES_H */
 #endif /* !STDC_HEADERS */
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif /* HAVE_LIMITS_H */
 
 struct arrayobject; /* Forward */
 
