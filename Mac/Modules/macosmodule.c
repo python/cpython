@@ -37,6 +37,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef __MWERKS__
 #define SndCallBackUPP ProcPtr
 #define NewSndCallBackProc(x) (x)
+#define SndListHandle Handle
 #endif
 
 /*----------------------------------------------------------------------*/
