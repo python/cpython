@@ -31,7 +31,8 @@ class sdist (Command):
          "include the default file set in the manifest "
          "[default; disable with --no-defaults]"),
         ('manifest-only', 'o',
-         "just regenerate the manifest and then stop"),
+         "just regenerate the manifest and then stop "
+         "(implies --force-manifest)"),
         ('force-manifest', 'f',
          "forcibly regenerate the manifest and carry on as usual"),
         ('formats=', None,
@@ -133,7 +134,11 @@ class sdist (Command):
 
 
     def check_metadata (self):
-
+        """Ensure that all required elements of meta-data (name, version,
+        URL, (author and author_email) or (maintainer and
+        maintainer_email)) are supplied by the Distribution object; warn if
+        any are missing.
+        """
         metadata = self.distribution.metadata
 
         missing = []
@@ -215,7 +220,16 @@ class sdist (Command):
 
 
     def find_defaults (self):
-
+        """Add all the default files to self.files:
+          - README or README.txt
+          - setup.py
+          - test/test*.py
+          - all pure Python modules mentioned in setup script
+          - all C sources listed as part of extensions or C libraries
+            in the setup script (doesn't catch C headers!)
+        Warns if (README or README.txt) or setup.py are missing; everything
+        else is optional.
+        """
         standards = [('README', 'README.txt'), 'setup.py']
         for fn in standards:
             if type (fn) is TupleType:
@@ -308,7 +322,8 @@ class sdist (Command):
         """Read and parse the manifest template file named by
         'self.template' (usually "MANIFEST.in").  Process all file
         specifications (include and exclude) in the manifest template and
-        add the resulting filenames to 'self.files'.
+        update 'self.files' accordingly (filenames may be added to
+        or removed from 'self.files' based on the manifest template).
         """
         assert self.files is not None and type (self.files) is ListType
         self.announce("reading manifest template '%s'" % self.template)
@@ -558,7 +573,14 @@ class sdist (Command):
             
 
     def make_release_tree (self, base_dir, files):
-
+        """Create the directory tree that will become the source
+        distribution archive.  All directories implied by the filenames in
+        'files' are created under 'base_dir', and then we hard link or copy
+        (if hard linking is unavailable) those files into place.
+        Essentially, this duplicates the developer's source tree, but in a
+        directory named after the distribution, containing only the files
+        to be distributed.
+        """
         # Create all the directories under 'base_dir' necessary to
         # put 'files' there.
         create_tree (base_dir, files,
@@ -587,7 +609,13 @@ class sdist (Command):
 
 
     def make_distribution (self):
-
+        """Create the source distribution(s).  First, we create the release
+        tree with 'make_release_tree()'; then, we create all required
+        archive files (according to 'self.formats') from the release tree.
+        Finally, we clean up by blowing away the release tree (unless
+        'self.keep_tree' is true).  The list of archive files created is
+        stored so it can be retrieved later by 'get_archive_files()'.
+        """
         # Don't warn about missing meta-data here -- should be (and is!)
         # done elsewhere.
         base_dir = self.distribution.get_fullname()
@@ -620,9 +648,9 @@ class sdist (Command):
 # Utility functions
 
 def findall (dir = os.curdir):
-    """Find all files under 'dir' and return the list of full
-       filenames (relative to 'dir')."""
-
+    """Find all files under 'dir' and return the list of full filenames
+    (relative to 'dir').
+    """
     list = []
     stack = [dir]
     pop = stack.pop
@@ -645,10 +673,11 @@ def findall (dir = os.curdir):
 
 
 def glob_to_re (pattern):
-    """Translate a shell-like glob pattern to a regular expression;
-       return a string containing the regex.  Differs from
-       'fnmatch.translate()' in that '*' does not match "special
-       characters" (which are platform-specific)."""
+    """Translate a shell-like glob pattern to a regular expression; return
+    a string containing the regex.  Differs from 'fnmatch.translate()' in
+    that '*' does not match "special characters" (which are
+    platform-specific).
+    """
     pattern_re = fnmatch.translate (pattern)
 
     # '?' and '*' in the glob pattern become '.' and '.*' in the RE, which
@@ -666,8 +695,8 @@ def glob_to_re (pattern):
 
 def translate_pattern (pattern, anchor=1, prefix=None):
     """Translate a shell-like wildcard pattern to a compiled regular
-       expression.    Return the compiled regex."""
-
+    expression.  Return the compiled regex.
+    """
     if pattern:
         pattern_re = glob_to_re (pattern)
     else:
