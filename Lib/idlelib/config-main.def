@@ -46,9 +46,9 @@ print-command-win=start /min notepad /p %s
 
 [EditorWindow]
 width= 80
-height= 30
+height= 40
 font= courier
-font-size= 12
+font-size= 10
 font-bold= 0
 encoding= none
 
