@@ -156,6 +156,10 @@ sub do_cmd_strong{
 
 $INDEX_SUBITEM = "";
 
+sub get_indexsubitem{
+  $INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
+}
+
 sub do_cmd_setindexsubitem{
     local($_) = @_;
     s/$any_next_pair_pr_rx//;
@@ -283,8 +287,8 @@ sub do_cmd_nodename{ &do_cmd_label(@_); }
 
 sub init_myformat{
     # XXX need some way for this to be called after &initialise; ???
-#     $anchor_mark = '';
-#     $icons{'anchor_mark'} = '';
+    $anchor_mark = '';
+    $icons{'anchor_mark'} = '';
     # <<2>>...<<2>>
     $any_next_pair_rx3 = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
     $any_next_pair_rx5 = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
@@ -298,10 +302,6 @@ sub init_myformat{
 }
 
 &init_myformat;
-
-sub get_indexsubitem{
-  $INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
-}
 
 # similar to make_index_entry(), but includes the string in the result
 # instead of the dummy filler.
@@ -320,11 +320,27 @@ sub make_str_index_entry{
     "<a name=\"$br_id\">$str<\/a>";
 }
 
-# Changed from the stock version to indent {verbatim} sections:
+# Changed from the stock version to indent {verbatim} sections,
+# and make them smaller, to better match the LaTeX version:
+
+# (Used with LaTeX2HTML 96.1*)
 sub replace_verbatim {
     # Modifies $_
-    s/$verbatim_mark(verbatim)(\d+)/<p><dl><dd><pre>$verbatim{$2}<\/pre><\/dl>/go;
+    s/$verbatim_mark(verbatim)(\d+)/<p><dl><dd><font size=\"-1\"><pre>$verbatim{$2}<\/pre><\/font><\/dl>/go;
     s/$verbatim_mark(rawhtml)(\d+)/$verbatim{$2}/ego;	# Raw HTML
+}
+  
+# (Used with LaTeX2HTML 98.1)
+sub replace_verbatim_hook{
+    # Modifies $_
+    s/$math_verbatim_rx/&put_comment("MATH: ".$verbatim{$1})/eg;
+#    s/$verbatim_mark(verbatim\*?)(\d+)#/<PRE>\n$verbatim{$2}\n<\/PRE>/go;
+    s/$verbatim_mark(\w*[vV]erbatim\*?)(\d+)#/\n<p><dl><dd><font size=\"-1\">$verbatim{$2}<\/font><\/dl>\n/go;
+#    s/$verbatim_mark(rawhtml)(\d+)#/$verbatim{$2}/eg; # Raw HTML
+    # Raw HTML, but replacements may have protected characters
+    s/$verbatim_mark(rawhtml)(\d+)#/&unprotect_raw_html($verbatim{$2})/eg;
+    s/$verbatim_mark$keepcomments(\d+)#/$verbatim{$2}/ego; # Raw TeX
+    s/$unfinished_mark$keepcomments(\d+)#/$verbatim{$2}/ego; # Raw TeX
 }
 
 sub do_env_cfuncdesc{
@@ -511,8 +527,10 @@ sub do_env_tableii{
     }
     local($th1,$th2,$th3) = &setup_column_alignments($2);
     $globals{"lineifont"} = $font;
-    "<table border align=center>\n  <tr>$th1$h1</th>\n      $th2$h2</th>$'\n"
-      . "</table>";
+    "<table border align=center>"
+      . "\n  <tr>$th1<b>$h1</b></th>"
+      . "\n      $th2<b>$h2</b></th>$'"
+      . "\n</table>";
 }
 
 sub do_cmd_lineii{
@@ -542,9 +560,11 @@ sub do_env_tableiii{
     }
     local($th1,$th2,$th3) = &setup_column_alignments($2);
     $globals{"lineifont"} = $font;
-    "<table border align=center>\n  <tr>$th1$h1</th>\n      $th2$h2</th>"
-      . "\n      $th3$h3</th>$'\n"
-      . "</table>";
+    "<table border align=center>"
+      . "\n  <tr>$th1<b>$h1</b></th>"
+      . "\n      $th2<b>$h2</b></th>"
+      . "\n      $th3<b>$h3</b></th>$'"
+      . "\n</table>";
 }
 
 sub do_cmd_lineiii{
