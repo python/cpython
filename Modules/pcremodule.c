@@ -489,8 +489,19 @@ PyPcre_expand(self, args)
 
 			if (start!=i)
 			{
-				PyList_Append(results, 
-					      PyString_FromStringAndSize((char *)repl+start, i-start));
+				int status;
+				PyObject *s = PyString_FromStringAndSize(
+					(char *)repl+start, i-start);
+				if (s == NULL) {
+					Py_DECREF(results);
+					return NULL;
+				}
+				status = PyList_Append(results, s);
+				Py_DECREF(s);
+				if (status < 0) {
+					Py_DECREF(results);
+					return NULL;
+				}
 				total_len += i-start;
 			}
 			i++;
@@ -574,7 +585,19 @@ PyPcre_expand(self, args)
 
 	if (start!=i)
 	{
-		PyList_Append(results, PyString_FromStringAndSize((char *)repl+start, i-start));
+		int status;
+		PyObject *s = PyString_FromStringAndSize((char *)repl+start, 
+							 i-start);
+		if (s == NULL) {
+			Py_DECREF(results);
+			return NULL;
+		}
+		status = PyList_Append(results, s);
+		Py_DECREF(s);
+		if (status < 0) {
+			Py_DECREF(results);
+			return NULL;
+		}
 		total_len += i-start;
 	}
 
