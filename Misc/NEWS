@@ -102,6 +102,8 @@ Extension modules
 
 Library
 
+- added degree/radian conversion functions to the math module.
+
 - ftplib.retrlines() now tests for callback is None rather than testing
   for False.  Was causing an error when given a callback object which
   was callable but also returned len() as zero.  The change may
