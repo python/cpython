@@ -585,6 +585,7 @@ method named \verb@__getitem__@, and \verb@x@ is an instance of this
 class, then \verb@x[i]@ is equivalent to \verb@x.__getitem__(i)@.
 (The reverse is not true --- if \verb@x@ is a list object,
 \verb@x.__getitem__(i)@ is not equivalent to \verb@x[i]@.)
+\ttindex{__getitem__}
 
 Except for \verb@__repr__@, \verb@__str__@ and \verb@__cmp__@,
 attempts to execute an
@@ -594,6 +595,9 @@ object's class and address.
 For \verb@__cmp__@, the default is to compare instances based on their
 address.
 For \verb@__str__@, the default is to use \verb@__repr__@.
+\ttindex{__repr__}
+\ttindex{__str__}
+\ttindex{__cmp__}
 
 
 \subsection{Special methods for any type}
@@ -606,6 +610,9 @@ to the class constructor expression.  If a base class has an
 \code{__init__} method the derived class's \code{__init__} method must
 explicitly call it to ensure proper initialization of the base class
 part of the instance.
+\ttindex{__init__}
+\indexii{class}{constructor}
+
 
 \item[{\tt __del__(self)}]
 Called when the instance is about to be destroyed.  If a base class
@@ -617,6 +624,8 @@ reference to it.  It may then be called at a later time when this new
 reference is deleted.  It is not guaranteed that
 \code{__del__} methods are called for objects that still exist when
 the interpreter exits.
+\ttindex{__del__}
+\stindex{del}
 
 Note that \code{del x} doesn't directly call \code{x.__del__} --- the
 former decrements the reference count for \code{x} by one, but
@@ -625,6 +634,8 @@ former decrements the reference count for \code{x} by one, but
 \item[{\tt __repr__(self)}]
 Called by the \verb@repr()@ built-in function and by string conversions
 (reverse or backward quotes) to compute the string representation of an object.
+\ttindex{__repr__}
+\bifuncindex{repr}
 \indexii{string}{conversion}
 \indexii{reverse}{quotes}
 \indexii{backward}{quotes}
@@ -633,6 +644,9 @@ Called by the \verb@repr()@ built-in function and by string conversions
 \item[{\tt __str__(self)}]
 Called by the \verb@str()@ built-in function and by the \verb@print@
 statement compute the string representation of an object.
+\ttindex{__str__}
+\bifuncindex{str}
+\stindex{print}
 
 \item[{\tt __cmp__(self, other)}]
 Called by all comparison operations.  Should return -1 if
@@ -642,6 +656,9 @@ instances are compared by object identity (``address'').
 (Implementation note: due to limitations in the interpreter,
 exceptions raised by comparisons are ignored, and the objects will be
 considered equal in this case.)
+\ttindex{__cmp__}
+\bifuncindex{cmp}
+\index{comparisons}
 
 \item[{\tt __hash__(self)}]
 Called for the key object for dictionary operations,
@@ -659,9 +676,14 @@ implements a \code{__cmp__} method it should not implement
 \code{__hash__}, since the dictionary implementation assumes that a
 key's hash value is a constant.
 \obindex{dictionary}
+\ttindex{__cmp__}
+\ttindex{__hash__}
+\bifuncindex{hash}
 
 \item[{\tt __call__(self, *args)}]
 Called when the instance is ``called'' as a function.
+\ttindex{__call__}
+\indexii{call}{instance}
 
 \end{description}
 
@@ -677,6 +699,7 @@ access for class instances.
 Called when an attribute lookup has not found the attribute in the
 usual places (i.e. it is not an instance attribute nor is it found in
 the class tree for \code{self}).  \code{name} is the attribute name.
+\ttindex{__getattr__}
 
 Note that if the attribute is found through the normal mechanism,
 \code{__getattr__} is not called.  (This is an asymmetry between
@@ -687,22 +710,26 @@ instance.
 Note that at least for instance variables, \code{__getattr__} can fake
 total control by simply not inserting any values in the instance
 attribute dictionary.
+\ttindex{__setattr__}
 
 \item[{\tt __setattr__(self, name, value)}]
 Called when an attribute assignment is attempted.  This is called
 instead of the normal mechanism (i.e. store the value as an instance
 attribute).  \code{name} is the attribute name, \code{value} is the
 value to be assigned to it.
+\ttindex{__setattr__}
 
 If \code{__setattr__} wants to assign to an instance attribute, it
 should not simply execute \code{self.\var{name} = value} --- this would
 cause a recursive call.  Instead, it should insert the value in the
 dictionary of instance attributes, e.g. \code{self.__dict__[name] =
 value}.
+\ttindex{__dict__}
 
 \item[{\tt __delattr__(self, name)}]
 Like \code{__setattr__} but for attribute deletion instead of
 assignment.
+\ttindex{__delattr__}
 
 \end{description}
 
@@ -716,19 +743,23 @@ Called to implement the built-in function \verb@len()@.  Should return
 the length of the object, an integer \verb@>=@ 0.  Also, an object
 whose \verb@__len__()@ method returns 0 is considered to be false in a
 Boolean context.
+\ttindex{__len__}
 
 \item[{\tt __getitem__(self, key)}]
 Called to implement evaluation of \verb@self[key]@.  Note that the
 special interpretation of negative keys (if the class wishes to
 emulate a sequence type) is up to the \verb@__getitem__@ method.
+\ttindex{__getitem__}
 
 \item[{\tt __setitem__(self, key, value)}]
 Called to implement assignment to \verb@self[key]@.  Same note as for
 \verb@__getitem__@.
+\ttindex{__setitem__}
 
 \item[{\tt __delitem__(self, key)}]
 Called to implement deletion of \verb@self[key]@.  Same note as for
 \verb@__getitem__@.
+\ttindex{__delitem__}
 
 \end{description}
 
@@ -743,14 +774,17 @@ Called to implement evaluation of \verb@self[i:j]@.  Note that missing
 respectively, and \verb@len(self)@ has been added (once) to originally
 negative \verb@i@ or \verb@j@ by the time this function is called
 (unlike for \verb@__getitem__@).
+\ttindex{__getslice__}
 
 \item[{\tt __setslice__(self, i, j, sequence)}]
 Called to implement assignment to \verb@self[i:j]@.  Same notes as for
 \verb@__getslice__@.
+\ttindex{__setslice__}
 
 \item[{\tt __delslice__(self, i, j)}]
 Called to implement deletion of \verb@self[i:j]@.  Same notes as for
 \verb@__getslice__@.
+\ttindex{__delslice__}
 
 \end{description}
 
@@ -774,6 +808,18 @@ Called to implement deletion of \verb@self[i:j]@.  Same notes as for
 Called to implement the binary arithmetic operations (\verb@+@,
 \verb@-@, \verb@*@, \verb@/@, \verb@%@, \verb@divmod()@, \verb@pow()@,
 \verb@<<@, \verb@>>@, \verb@&@, \verb@^@, \verb@|@).
+\ttindex{__or__}
+\ttindex{__xor__}
+\ttindex{__and__}
+\ttindex{__rshift__}
+\ttindex{__lshift__}
+\ttindex{__pow__}
+\ttindex{__divmod__}
+\ttindex{__mod__}
+\ttindex{__div__}
+\ttindex{__mul__}
+\ttindex{__sub__}
+\ttindex{__add__}
 
 \item[{\tt __neg__(self)}]\itemjoin
 \item[{\tt __pos__(self)}]\itemjoin
@@ -781,10 +827,15 @@ Called to implement the binary arithmetic operations (\verb@+@,
 \item[{\tt __invert__(self)}]\itembreak
 Called to implement the unary arithmetic operations (\verb@-@, \verb@+@,
 \verb@abs()@ and \verb@~@).
+\ttindex{__invert__}
+\ttindex{__abs__}
+\ttindex{__pos__}
+\ttindex{__neg__}
 
 \item[{\tt __nonzero__(self)}]
 Called to implement boolean testing; should return 0 or 1.  An
 alternative name for this method is \verb@__len__@.
+\ttindex{__nonzero__}
 
 \item[{\tt __coerce__(self, other)}]
 Called to implement ``mixed-mode'' numeric arithmetic.  Should either
@@ -794,6 +845,7 @@ would be the type of other, it is sufficient to return None, since the
 interpreter will also ask the other object to attempt a coercion (but
 sometimes, if the implementation of the other type cannot be changed,
 it is useful to do the conversion to the other type here).
+\ttindex{__coerce__}
 
 Note that this method is not called to coerce the arguments to \verb@+@
 and \verb@*@, because these are also used to implement sequence
@@ -803,16 +855,22 @@ same reason, in \verb@n*x@, where \verb@n@ is a built-in number and
 \footnote{The interpreter should really distinguish between
 user-defined classes implementing sequences, mappings or numbers, but
 currently it doesn't --- hence this strange exception.}
+\ttindex{__mul__}
 
 \item[{\tt __int__(self)}]\itemjoin
 \item[{\tt __long__(self)}]\itemjoin
 \item[{\tt __float__(self)}]\itembreak
 Called to implement the built-in functions \verb@int()@, \verb@long()@
 and \verb@float()@.  Should return a value of the appropriate type.
+\ttindex{__float__}
+\ttindex{__long__}
+\ttindex{__int__}
 
 \item[{\tt __oct__(self)}]\itemjoin
 \item[{\tt __hex__(self)}]\itembreak
 Called to implement the built-in functions \verb@oct()@ and
 \verb@hex()@.  Should return a string value.
+\ttindex{__hex__}
+\ttindex{__oct__}
 
 \end{description}

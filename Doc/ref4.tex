@@ -77,6 +77,11 @@ construct {\tt from \ldots import *}, the semantics of names not
 explicitly mentioned in a {\tt global} statement change subtly: name
 lookup first searches the local name space, then the global one, then
 the built-in one.}
+\bimodindex{__builtin__}
+\stindex{from}
+\stindex{exec}
+\stindex{global}
+\ttindex{NameError}
 
 The following table lists the meaning of the local and global name
 space for various types of code blocks.  The name space for a
@@ -107,6 +112,7 @@ Expression read by \verb@input@
 \hline
 \end{tabular}
 \end{center}
+\bimodindex{__main__}
 
 Notes:
 
