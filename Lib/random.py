@@ -49,13 +49,23 @@ __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
            "expovariate","vonmisesvariate","gammavariate",
            "gauss","betavariate","paretovariate","weibullvariate",
-           "getstate","setstate","jumpahead", "WichmannHill", "getrandbits"]
+           "getstate","setstate","jumpahead", "WichmannHill", "getrandbits",
+           "HardwareRandom"]
 
 NV_MAGICCONST = 4 * _exp(-0.5)/_sqrt(2.0)
 TWOPI = 2.0*_pi
 LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
+
+try:
+    from os import urandom as _urandom
+    from binascii import hexlify as _hexlify
+except ImportError:
+    _urandom = None
+else:
+    _tofloat = 2.0 ** (-7*8)    # converts 7 byte integers to floats
+
 
 # Translated by Guido van Rossum from C source provided by
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
@@ -94,14 +104,19 @@ class Random(_random.Random):
     def seed(self, a=None):
         """Initialize internal state from hashable object.
 
-        None or no argument seeds from current time.
+        None or no argument seeds from current time or from a hardware
+        randomness source if available.
 
         If a is not None or an int or long, hash(a) is used instead.
         """
 
         if a is None:
-            import time
-            a = long(time.time() * 256) # use fractional seconds
+            if _urandom is None:
+                import time
+                a = long(time.time() * 256) # use fractional seconds
+            else:
+                a = long(_hexlify(_urandom(16)), 16)
+
         super(Random, self).seed(a)
         self.gauss_next = None
 
@@ -593,7 +608,8 @@ class WichmannHill(Random):
     def seed(self, a=None):
         """Initialize internal state from hashable object.
 
-        None or no argument seeds from current time.
+        None or no argument seeds from current time or from a hardware
+        randomness source if available.
 
         If a is not None or an int or long, hash(a) is used instead.
 
@@ -604,9 +620,11 @@ class WichmannHill(Random):
         """
 
         if a is None:
-            # Initialize from current time
-            import time
-            a = long(time.time() * 256)
+            if _urandom is None:
+                import time
+                a = long(time.time() * 256) # use fractional seconds
+            else:
+                a = long(_hexlify(_urandom(16)), 16)
 
         if not isinstance(a, (int, long)):
             a = hash(a)
@@ -730,6 +748,42 @@ class WichmannHill(Random):
         y = (y + a) % 256 or 1
         z = (z + a) % 256 or 1
         self.__whseed(x, y, z)
+
+## -------------------- Hardware Random Source  -------------------
+
+class HardwareRandom(Random):
+    """Alternate random number generator using hardware sources.
+
+     Not available on all systems (see os.urandom() for details).
+    """
+
+    def random(self):
+        """Get the next random number in the range [0.0, 1.0)."""
+        if _urandom is None:
+            raise NotImplementedError('Cannot find hardware entropy source')
+        return long(_hexlify(_urandom(7)), 16) * _tofloat
+
+    def getrandbits(self, k):
+        """getrandbits(k) -> x.  Generates a long int with k random bits."""
+        if _urandom is None:
+            raise NotImplementedError('Cannot find hardware entropy source')
+        if k <= 0:
+            raise ValueError('number of bits must be greater than zero')
+        if k != int(k):
+            raise TypeError('number of bits should be an integer')
+        bytes = (k + 7) // 8                    # bits / 8 and rounded up
+        x = long(_hexlify(_urandom(bytes)), 16)
+        return x >> (bytes * 8 - k)             # trim excess bits
+
+    def _stub(self, *args, **kwds):
+        "Stub method.  Not used for a hardware random number generator."
+        return None
+    seed = jumpahead = _stub
+
+    def _notimplemented(self, *args, **kwds):
+        "Method should not be called for a hardware random number generator."
+        raise NotImplementedError('Hardware entropy source does not have state.')
+    getstate = setstate = _notimplemented
 
 ## -------------------- test program --------------------
 

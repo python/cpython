@@ -61,7 +61,10 @@ Bookkeeping functions:
   Optional argument \var{x} can be any hashable object.
   If \var{x} is omitted or \code{None}, current system time is used;
   current system time is also used to initialize the generator when the
-  module is first imported.
+  module is first imported.  If hardware random sources are available,
+  they are used instead of the system time (see the \function{os.urandom()}
+  function for details on availability).  \versionchanged[formerly,
+  hardward sources were not used]{2.4}
   If \var{x} is not \code{None} or an int or long,
   \code{hash(\var{x})} is used instead.
   If \var{x} is an int or long, \var{x} is used directly.
@@ -227,7 +230,7 @@ these equations can be found in any statistics text.
   \var{beta} is the shape parameter.
 \end{funcdesc}
 
-Alternative Generator
+Alternative Generators
 
 \begin{classdesc}{WichmannHill}{\optional{seed}}
 Class that implements the Wichmann-Hill algorithm as the core generator.
@@ -245,6 +248,17 @@ require care that two independent random sequences do not overlap.
   that distinct integer arguments yield distinct internal states, and can
   yield no more than about 2**24 distinct internal states in all.
 \end{funcdesc}
+
+\begin{classdesc}{HardwareRandom}{\optional{seed}}
+Class that uses the \function{os.urandom()} function for generating
+random numbers from hardware.  Not available on all systems.
+Does not rely on software state and sequences are not reproducible.
+Accordingly, the \method{seed()} and \method{jumpahead()} methods
+have no effect and are ignored.  The \method{getstate()} and
+\method{setstate()} methods raise \exception{NotImplementedError} if
+called.
+\versionadded{2.4}
+\end{classdesc}
 
 \begin{seealso}
   \seetext{M. Matsumoto and T. Nishimura, ``Mersenne Twister: A
