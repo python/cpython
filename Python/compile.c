@@ -2158,9 +2158,6 @@ static int
 com_make_closure(struct compiling *c, PyCodeObject *co)
 {
 	int i, free = PyTuple_GET_SIZE(co->co_freevars);
-	/* If the code is compiled with st->st_nested_scopes == 0,
-	   then no variable will ever be added to co_freevars. 
-	*/
 	if (free == 0)
 		return 0;
 	for (i = 0; i < free; ++i) {
@@ -3928,7 +3925,7 @@ PyNode_CompileSymtable(node *n, char *filename)
 	symtable_node(st, n);
 	if (st->st_errors > 0)
 		goto fail;
-
+	
 	return st;
  fail:
 	PyMem_Free((void *)ff);
@@ -4056,50 +4053,36 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
 static int
 get_ref_type(struct compiling *c, char *name)
 {
+	char buf[350];
 	PyObject *v;
-	if (c->c_symtable->st_nested_scopes) {
-		if (PyDict_GetItemString(c->c_cellvars, name) != NULL)
-			return CELL;
-		if (PyDict_GetItemString(c->c_locals, name) != NULL)
-			return LOCAL;
-		if (PyDict_GetItemString(c->c_freevars, name) != NULL)
-			return FREE;
-		v = PyDict_GetItemString(c->c_globals, name);
-		if (v) {
-			if (v == Py_None)
-				return GLOBAL_EXPLICIT;
-			else {
-				return GLOBAL_IMPLICIT;
-			}
-		}
-	} else {
-		if (PyDict_GetItemString(c->c_locals, name) != NULL)
-			return LOCAL;
-		v = PyDict_GetItemString(c->c_globals, name);
-		if (v) {
-			if (v == Py_None)
-				return GLOBAL_EXPLICIT;
-			else {
-				return GLOBAL_IMPLICIT;
-			}
-		}
-	}
-	{
-		char buf[350];
-		sprintf(buf, 
-			"unknown scope for %.100s in %.100s(%s) "
-			"in %s\nsymbols: %s\nlocals: %s\nglobals: %s\n",
-			name, c->c_name, 
-			PyObject_REPR(c->c_symtable->st_cur->ste_id),
-			c->c_filename,
-			PyObject_REPR(c->c_symtable->st_cur->ste_symbols),
-			PyObject_REPR(c->c_locals),
-			PyObject_REPR(c->c_globals)
-		    );
 
-		Py_FatalError(buf);
+	if (PyDict_GetItemString(c->c_cellvars, name) != NULL)
+		return CELL;
+	if (PyDict_GetItemString(c->c_locals, name) != NULL)
+		return LOCAL;
+	if (PyDict_GetItemString(c->c_freevars, name) != NULL)
+		return FREE;
+	v = PyDict_GetItemString(c->c_globals, name);
+	if (v) {
+		if (v == Py_None)
+			return GLOBAL_EXPLICIT;
+		else {
+			return GLOBAL_IMPLICIT;
+		}
 	}
-	return -1; /* can't get here */
+	sprintf(buf, 
+		"unknown scope for %.100s in %.100s(%s) "
+		"in %s\nsymbols: %s\nlocals: %s\nglobals: %s\n",
+		name, c->c_name, 
+		PyObject_REPR(c->c_symtable->st_cur->ste_id),
+		c->c_filename,
+		PyObject_REPR(c->c_symtable->st_cur->ste_symbols),
+		PyObject_REPR(c->c_locals),
+		PyObject_REPR(c->c_globals)
+		);
+
+	Py_FatalError(buf);
+	return -1;
 }
 
 /* Helper functions to issue warnings */
@@ -4375,60 +4358,10 @@ symtable_check_unoptimized(struct compiling *c,
 		}
 	}
 
-	if (c->c_symtable->st_nested_scopes) {
-		PyErr_SetString(PyExc_SyntaxError, buf);
-		PyErr_SyntaxLocation(c->c_symtable->st_filename,
-				     ste->ste_opt_lineno);
-		return -1;
-	}
-	else {
-		return issue_warning(buf, c->c_filename, ste->ste_lineno);
-	}
-	return 0;
-}
-
-static int
-symtable_check_shadow(struct symtable *st, PyObject *name, int flags)
-{
-	char buf[500];
-	PyObject *children, *v;
-	PySymtableEntryObject *child = NULL;
-	int i;
-
-	if (!(flags & DEF_BOUND))
-		return 0;
-
-	/* The semantics of this code will change with nested scopes.
-	   It is defined in the current scope and referenced in a
-	   child scope.  Under the old rules, the child will see a
-	   global.  Under the new rules, the child will see the
-	   binding in the current scope.
-	*/
-
-	/* Find name of child function that has free variable */
-	children = st->st_cur->ste_children;
-	for (i = 0; i < PyList_GET_SIZE(children); i++) {
-		int cflags;
-		child = (PySymtableEntryObject *)PyList_GET_ITEM(children, i);
-		v = PyDict_GetItem(child->ste_symbols, name);
-		if (v == NULL)
-			continue;
-		cflags = PyInt_AS_LONG(v);
-		if (!(cflags & DEF_BOUND))
-			break;
-	}
-
-	assert(child != NULL);
-
-	sprintf(buf, "local name '%.100s' in '%.100s' shadows "
-		"use of '%.100s' as global in nested scope '%.100s'",
-		PyString_AS_STRING(name),
-		PyString_AS_STRING(st->st_cur->ste_name),
-		PyString_AS_STRING(name),
-		PyString_AS_STRING(child->ste_name)
-		);
-
-	return symtable_warn(st, buf);
+	PyErr_SetString(PyExc_SyntaxError, buf);
+	PyErr_SyntaxLocation(c->c_symtable->st_filename,
+			     ste->ste_opt_lineno);
+	return -1;
 }
 
 static int
@@ -4489,26 +4422,17 @@ symtable_load_symbols(struct compiling *c)
 	while (PyDict_Next(ste->ste_symbols, &pos, &name, &v)) {
 		flags = PyInt_AS_LONG(v);
 
-		if (st->st_nested_scopes == 0 
-		    && (flags & (DEF_FREE | DEF_FREE_CLASS))) {
-			if (symtable_check_shadow(st, name, flags) < 0)
-				goto fail;
-		}
-
 		if (flags & DEF_FREE_GLOBAL)
 			/* undo the original DEF_FREE */
 			flags &= ~(DEF_FREE | DEF_FREE_CLASS);
 
 		/* Deal with names that need two actions:
-		   1. Cell variables, which are also locals.
+		   1. Cell variables that are also locals.
 		   2. Free variables in methods that are also class
 		   variables or declared global.
 		*/
-		if (st->st_nested_scopes) {
-		    if (flags & (DEF_FREE | DEF_FREE_CLASS)) {
+		if (flags & (DEF_FREE | DEF_FREE_CLASS))
 			symtable_resolve_free(c, name, flags, &si);
-		    }
-		}
 
 		if (flags & DEF_STAR) {
 			c->c_argcount--;
@@ -4544,7 +4468,7 @@ symtable_load_symbols(struct compiling *c)
 				if (PyList_Append(c->c_varnames, name) < 0)
 					goto fail;
 		} else if (is_free(flags)) {
-			if (ste->ste_nested && st->st_nested_scopes) {
+			if (ste->ste_nested) {
 				v = PyInt_FromLong(si.si_nfrees++);
 				if (v == NULL)
 					goto fail;
@@ -4553,24 +4477,21 @@ symtable_load_symbols(struct compiling *c)
 				Py_DECREF(v);
 			} else {
 				si.si_nimplicit++;
-				if (PyDict_SetItem(c->c_globals, name,
-						   implicit) < 0)
-					goto fail;
-				if (st->st_nscopes != 1) {
-					v = PyInt_FromLong(flags);
-					if (PyDict_SetItem(st->st_global, 
-							   name, v)) 
-						goto fail;
-					Py_DECREF(v);
-				}
+ 				if (PyDict_SetItem(c->c_globals, name,
+ 						   implicit) < 0)
+ 					goto fail;
+ 				if (st->st_nscopes != 1) {
+ 					v = PyInt_FromLong(flags);
+ 					if (PyDict_SetItem(st->st_global, 
+ 							   name, v)) 
+ 						goto fail;
+ 					Py_DECREF(v);
+ 				}
 			}
 		}
 	}
 
 	assert(PyDict_Size(c->c_freevars) == si.si_nfrees);
-
-	if (st->st_nested_scopes == 0)
-		assert(si.si_nfrees == 0);
 
 	if (si.si_ncells > 1) { /* one cell is always in order */
 		if (symtable_cellvar_offsets(&c->c_cellvars, c->c_argcount,
@@ -4595,11 +4516,6 @@ symtable_init()
 	if (st == NULL)
 		return NULL;
 	st->st_pass = 1;
-
-	/* XXX Tim: Jeremy deleted the next line and everything went to hell.
-	   XXX It should probably get fixed by getting rid of st_nested_scopes
-	   XXX entirely. */
- 	st->st_nested_scopes = 1;
 
 	st->st_filename = NULL;
 	if ((st->st_stack = PyList_New(0)) == NULL)

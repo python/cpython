@@ -20,7 +20,6 @@ struct _symtable_entry;
 
 struct symtable {
 	int st_pass;             /* pass == 1 or 2 */
-	int st_nested_scopes;    /* true if nested scopes are enabled */
 	char *st_filename;       /* name of file being compiled */
 	struct _symtable_entry *st_cur; /* current symbol table entry */
 	PyObject *st_symbols;    /* dictionary of symbol table entries */
