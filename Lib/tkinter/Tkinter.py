@@ -12,7 +12,7 @@ FunctionType = type(_isfunctype)
 ClassType = type(_Dummy)
 MethodType = type(_Dummy.meth)
 
-def tkerror(err):
+def _tkerror(err):
 	pass
 
 class Event:
@@ -34,20 +34,31 @@ class Misc:
 		return self.tk.getdouble(s)
 	def getboolean(self, s):
 		return self.tk.getboolean(s)
-	def focus(self):
+	def focus_set(self):
 		self.tk.call('focus', self._w)
-	def focus_default(self):
+	focus = focus_set # XXX b/w compat?
+	def focus_default_set(self):
 		self.tk.call('focus', 'default', self._w)
+	def focus_default_none(self):
+		self.tk.call('focus', 'default', 'none')
+	focus_default = focus_default_set
 	def focus_none(self):
 		self.tk.call('focus', 'none')
-	#XXX focus_get?
+	def focus_get(self):
+		name = self.tk.call('focus')
+		if name == 'none': return None
+		return self._nametowidget(name)
 	def after(self, ms, func=None, *args):
 		if not func:
 			self.tk.call('after', ms)
 		else:
 			name = self._register(func)
 			apply(self.tk.call, ('after', ms, name) + args)
-	#XXX grab_current
+	# XXX grab current w/o window argument
+	def grab_current(self):
+		name = self.tk.call('grab', 'current', self._w)
+		if not name: return None
+		return self._nametowidget(name)
 	def grab_release(self):
 		self.tk.call('grab', 'release', self._w)
 	def grab_set(self):
@@ -55,7 +66,9 @@ class Misc:
 	def grab_set_global(self):
 		self.tk.call('grab', 'set', '-global', self._w)
 	def grab_status(self):
-		self.tk.call('grab', 'status', self._w)
+		status = self.tk.call('grab', 'status', self._w)
+		if status == 'none': status = None
+		return status
 	def lower(self, belowThis=None):
 		self.tk.call('lower', self._w, belowThis)
 	def selection_clear(self):
@@ -84,7 +97,10 @@ class Misc:
 	def winfo_cells(self):
 		return self.tk.getint(
 			self.tk.call('winfo', 'cells', self._w))
-	#XXX winfo_children
+	def winfo_children(self):
+		return map(self._nametowidget,
+			   self.tk.splitlist(self.tk.call(
+				   'winfo', 'children', self._w)))
 	def winfo_class(self):
 		return self.tk.call('winfo', 'class', self._w)
 	def winfo_containing(self, rootX, rootY):
@@ -188,32 +204,30 @@ class Misc:
 		self.tk.call('update', 'idletasks')
 	def bind(self, sequence, func, add=''):
 		if add: add = '+'
-		name = self._register(func, _substitute)
+		name = self._register(func, self._substitute)
 		self.tk.call('bind', self._w, sequence, 
-			     (add + name,) + _subst_prefix)
+			     (add + name,) + self._subst_prefix)
 	def bind_all(self, sequence, func, add=''):
 		if add: add = '+'
-		name = self._register(func, _substitute)
+		name = self._register(func, self._substitute)
 		self.tk.call('bind', 'all' , sequence, 
-			     (add + `name`,) + _subst_prefix)
+			     (add + `name`,) + self._subst_prefix)
 	def bind_class(self, className, sequence, func, add=''):
 		if add: add = '+'
-		name = self._register(func, _substitute)
+		name = self._register(func, self._substitute)
 		self.tk.call('bind', className , sequence, 
-			     (add + name,) + _subst_prefix)
+			     (add + name,) + self._subst_prefix)
 	def mainloop(self):
 		self.tk.mainloop()
 	def quit(self):
 		self.tk.quit()
 	# Utilities
 	def _getints(self, string):
-		if string:
-			res = ()
-			for v in self.tk.split(string):
-				res = res +  (self.tk.getint(v),)
-			return res
-		else:
-			return string
+		if not string: return None
+		res = ()
+		for v in self.tk.splitlist(string):
+			res = res +  (self.tk.getint(v),)
+		return res
 	def _getboolean(self, string):
 		if string:
 			return self.tk.getboolean(string)
@@ -225,8 +239,22 @@ class Misc:
 				v = self._register(v)
 			res = res + ('-'+k, v)
 		return res
+	def _nametowidget(self, name):
+		w = self
+		if name[0] == '.':
+			w = w._root()
+			name = name[1:]
+		from string import find
+		while name:
+			i = find(name, '.')
+			if i >= 0:
+				name, tail = name[:i], name[i+1:]
+			else:
+				tail = ''
+			w = w.children[name]
+			name = tail
+		return w
 	def _register(self, func, subst=None):
-		f = func
 		f = _CallSafely(func, subst).__call__
 		name = `id(f)`
 		if hasattr(func, 'im_func'):
@@ -236,39 +264,40 @@ class Misc:
 			name = name + func.func_name
 		self.tk.createcommand(name, f)
 		return name
-
-_subst_prefix = ('%#', '%b', '%f', '%h', '%k', 
-		 '%s', '%t', '%w', '%x', '%y',
-		 '%A', '%E', '%K', '%N', '%T', '%X', '%Y')
-
-def _substitute(*args):
-	tk = default_root.tk
-	if len(args) != len(_subst_prefix): return args
-	nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, T, X, Y = args
-	# Missing: (a, c, d, m, o, v, B, R, W)
-	#XXX Convert %W (_w) to class instance?
-	e = Event()
-	e.serial = tk.getint(nsign)
-	e.num = tk.getint(b)
-	try: e.focus = tk.getboolean(f)
-	except TclError: pass
-	e.height = tk.getint(h)
-	e.keycode = tk.getint(k)
-	e.state = tk.getint(s)
-	e.time = tk.getint(t)
-	e.width = tk.getint(w)
-	e.x = tk.getint(x)
-	e.y = tk.getint(y)
-	e.char = A
-	try: e.send_event = tk.getboolean(E)
-	except TclError: pass
-	e.keysym = K
-	e.keysym_num = tk.getint(N)
-	e.type = T
-	#XXX %W stuff
-	e.x_root = tk.getint(X)
-	e.y_root = tk.getint(Y)
-	return (e,)
+	def _root(self):
+		w = self
+		while w.master: w = w.master
+		return w
+	_subst_prefix = ('%#', '%b', '%f', '%h', '%k', 
+			 '%s', '%t', '%w', '%x', '%y',
+			 '%A', '%E', '%K', '%N', '%W', '%T', '%X', '%Y')
+	def _substitute(self, *args):
+		tk = self.tk
+		if len(args) != len(self._subst_prefix): return args
+		nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y = args
+		# Missing: (a, c, d, m, o, v, B, R)
+		e = Event()
+		e.serial = tk.getint(nsign)
+		e.num = tk.getint(b)
+		try: e.focus = tk.getboolean(f)
+		except TclError: pass
+		e.height = tk.getint(h)
+		e.keycode = tk.getint(k)
+		e.state = tk.getint(s)
+		e.time = tk.getint(t)
+		e.width = tk.getint(w)
+		e.x = tk.getint(x)
+		e.y = tk.getint(y)
+		e.char = A
+		try: e.send_event = tk.getboolean(E)
+		except TclError: pass
+		e.keysym = K
+		e.keysym_num = tk.getint(N)
+		e.type = T
+		e.widget = self._nametowidget(W)
+		e.x_root = tk.getint(X)
+		e.y_root = tk.getint(Y)
+		return (e,)
 
 class _CallSafely:
 	def __init__(self, func, subst=None):
@@ -282,6 +311,8 @@ class _CallSafely:
 		import sys
 		try:
 			return apply(func, args)
+		except SystemExit, msg:
+			raise SystemExit, msg
 		except:
 			try:
 				try:
@@ -296,6 +327,13 @@ class _CallSafely:
 					sys.stderr.write('%s: %s\n' %
 							 (sys.exc_type,
 							  sys.exc_value))
+				(sys.last_type,
+				 sys.last_value,
+				 sys.last_traceback) = (sys.exc_type,
+							sys.exc_value,
+							sys.exc_traceback)
+				import pdb
+				pdb.pm()
 			except:
 				print '*** Error in error handling ***'
 				print sys.exc_type, ':', sys.exc_value
@@ -373,16 +411,20 @@ class Wm:
 class Tk(Misc, Wm):
 	_w = '.'
 	def __init__(self, screenName=None, baseName=None, className='Tk'):
+		self.master = None
+		self.children = {}
 		if baseName is None:
 			import sys, os
 			baseName = os.path.basename(sys.argv[0])
 			if baseName[-3:] == '.py': baseName = baseName[:-3]
 		self.tk = tkinter.create(screenName, baseName, className)
-		self.tk.createcommand('tkerror', tkerror)
-	def __del__(self):
-		self.tk.call('destroy', '.')
+		self.tk.createcommand('tkerror', _tkerror)
+	def destroy(self):
+		for c in self.children.values(): c.destroy()
+		del self.master.children[self._name]
+		self.tk.call('destroy', self._w)
 	def __str__(self):
-		return '.'
+		return self._w
 
 class Pack:
 	def config(self, cnf={}):
@@ -404,8 +446,9 @@ class Pack:
 			return self._getboolean(self.tk.call(
 				'pack', 'propagate', self._w))
 	def slaves(self):
-		return self.tk.splitlist(self.tk.call(
-			'pack', 'slaves', self._w))
+		return map(self._nametowidget,
+			   self.tk.splitlist(
+				   self.tk.call('pack', 'slaves', self._w)))
 
 class Place:
 	def config(self, cnf={}):
@@ -420,20 +463,22 @@ class Place:
 	def info(self):
 		return self.tk.call('place', 'info', self._w)
 	def slaves(self):
-		return self.tk.splitlist(self.tk.call(
-			'place', 'slaves', self._w))
+		return map(self._nametowidget,
+			   self.tk.splitlist(
+				   self.tk.call(
+					   'place', 'slaves', self._w)))
 
-default_root = None
+_default_root = None
 
 class Widget(Misc, Pack, Place):
 	def __init__(self, master, widgetName, cnf={}, extra=()):
-		global default_root
+		global _default_root
 		if not master:
-			if not default_root:
-				default_root = Tk()
-			master = default_root
-		if not default_root:
-			default_root = master
+			if not _default_root:
+				_default_root = Tk()
+			master = _default_root
+		if not _default_root:
+			_default_root = master
 		self.master = master
 		self.tk = master.tk
 		if cnf.has_key('name'):
@@ -441,6 +486,7 @@ class Widget(Misc, Pack, Place):
 			del cnf['name']
 		else:
 			name = `id(self)`
+		self._name = name
 		if master._w=='.':
 			self._w = '.' + name
 		else:
@@ -448,6 +494,10 @@ class Widget(Misc, Pack, Place):
 		self.widgetName = widgetName
 		apply(self.tk.call, (widgetName, self._w) + extra)
 		Widget.config(self, cnf)
+		self.children = {}
+		if master.children.has_key(name):
+			 master.children[name].destroy()
+		master.children[name] = self
 	def config(self, cnf={}):
 		for k in cnf.keys():
 			if type(k) == ClassType:
@@ -463,9 +513,10 @@ class Widget(Misc, Pack, Place):
 		Widget.config(self, {key: value})
 	def __str__(self):
 		return self._w
-	def __del__(self):
+	def destroy(self):
+		for c in self.children.values(): c.destroy()
+		del self.master.children[self._name]
 		self.tk.call('destroy', self._w)
-	destroy = __del__
 	def _do(self, name, args=()):
 		apply(self.tk.call, (self._w, name) + args) 
 
@@ -479,8 +530,9 @@ class Toplevel(Widget, Wm):
 			extra = extra + ('-class', cnf['class'])
 			del cnf['class']
 		Widget.__init__(self, master, 'toplevel', cnf, extra)
-		self.iconname(self.tk.call('wm', 'iconname', '.'))
-		self.title(self.tk.call('wm', 'title', '.'))
+		root = self._root()
+		self.iconname(root.iconname())
+		self.title(root.title())
 
 class Button(Widget):
 	def __init__(self, master=None, cnf={}):
@@ -525,9 +577,9 @@ class Canvas(Widget):
 		return self._getints(self._do('bbox', args))
 	def bind(self, tagOrId, sequence, func, add=''):
 		if add: add='+'
-		name = self._register(func, _substitute)
+		name = self._register(func, self._substitute)
 		self.tk.call(self._w, 'bind', tagOrId, sequence, 
-			     (add + name,) + _subst_prefix)
+			     (add + name,) + self._subst_prefix)
 	def canvasx(self, screenx, gridspacing=None):
 		return self.tk.getint(self.tk.call(
 			self._w, 'canvasx', screenx, gridspacing))
@@ -569,7 +621,7 @@ class Canvas(Widget):
 	def dtag(self, *args):
 		self._do('dtag', args)
 	def find(self, *args):
-		self.tk.splitlist(self._do('find', args))
+		return self.tk.splitlist(self._do('find', args))
 	def focus(self, *args):
 		return self._do('focus', args)
 	def gettags(self, *args):
@@ -845,10 +897,10 @@ class Text(Widget):
 			self._w, 'tag', 'add', tagName, index1, index2)
 	def tag_bind(self, tagName, sequence, func, add=''):
 		if add: add='+'
-		name = self._register(func, _substitute)
+		name = self._register(func, self._substitute)
 		self.tk.call(self._w, 'tag', 'bind', 
 			     tagName, sequence, 
-			     (add + name,) + _subst_prefix)
+			     (add + name,) + self._subst_prefix)
 	def tag_config(self, tagName, cnf={}):
 		apply(self.tk.call, 
 		      (self._w, 'tag', 'configure', tagName) 
