@@ -380,7 +380,7 @@ l = {}
 exec 'global a; a = 1; b = 2' in g, l
 if g.has_key('__builtins__'): del g['__builtins__']
 if l.has_key('__builtins__'): del l['__builtins__']
-if (g, l) != ({'a':1}, {'b':2}): raise TestFailed, 'exec ... in g, l'
+if (g, l) != ({'a':1}, {'b':2}): raise TestFailed, 'exec ... in g (%s), l (%s)' %(g,l)
 
 
 ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
