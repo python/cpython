@@ -3001,6 +3001,18 @@ init_socket(void)
 	if (PyDict_SetItemString(d, "SSLType",
 				 (PyObject *)&PySSL_Type) != 0)
 		return;
+	PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
+				SSL_ERROR_ZERO_RETURN);
+	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_READ",
+				SSL_ERROR_WANT_READ);
+	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_WRITE",
+				SSL_ERROR_WANT_WRITE);
+	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_X509_LOOKUP",
+				SSL_ERROR_WANT_X509_LOOKUP);
+	PyModule_AddIntConstant(m, "SSL_ERROR_SYSCALL",
+				SSL_ERROR_SYSCALL);
+	PyModule_AddIntConstant(m, "SSL_ERROR_SSL",
+				SSL_ERROR_SSL);
 #endif /* USE_SSL */
 	PySocketSock_Type.ob_type = &PyType_Type;
 	PySocketSock_Type.tp_doc = sockettype_doc;
