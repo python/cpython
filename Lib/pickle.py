@@ -191,6 +191,7 @@ class Pickler:
         self.memo = {}
         self.proto = int(proto)
         self.bin = proto >= 1
+        self.fast = 0
 
     def clear_memo(self):
         """Clears the pickler's "memo".
@@ -230,6 +231,8 @@ class Pickler:
         # But there appears no advantage to any other scheme, and this
         # scheme allows the Unpickler memo to be implemented as a plain (but
         # growable) array, indexed by memo key.
+        if self.fast:
+            return
         memo_len = len(self.memo)
         self.write(self.put(memo_len))
         self.memo[id(obj)] = memo_len, obj
@@ -378,14 +381,7 @@ class Pickler:
         if getnewargs:
             args = getnewargs()         # This bette not reference obj
         else:
-            # XXX These types should each grow a __getnewargs__
-            # implementation so this special-casing is unnecessary.
-            for cls in int, long, float, complex, str, UnicodeType, tuple:
-                if cls and isinstance(obj, cls):
-                    args = (cls(obj),)
-                    break
-            else:
-                args = ()
+            args = ()
 
         save = self.save
         write = self.write

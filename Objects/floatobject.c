@@ -726,6 +726,17 @@ float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return new;
 }
 
+static PyObject *
+float_getnewargs(PyFloatObject *v)
+{
+	return Py_BuildValue("(d)", v->ob_fval);
+}
+
+static PyMethodDef float_methods[] = {
+	{"__getnewargs__",	(PyCFunction)float_getnewargs,	METH_NOARGS},
+	{NULL,		NULL}		/* sentinel */
+};
+
 PyDoc_STRVAR(float_doc,
 "float(x) -> floating point number\n\
 \n\
@@ -803,7 +814,7 @@ PyTypeObject PyFloat_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	float_methods,				/* tp_methods */
 	0,					/* tp_members */
 	0,					/* tp_getset */
 	0,					/* tp_base */

@@ -639,8 +639,15 @@ complex_conjugate(PyObject *self)
 	return PyComplex_FromCComplex(c);
 }
 
+static PyObject *
+complex_getnewargs(PyComplexObject *v)
+{
+	return Py_BuildValue("(D)", v->cval);
+}
+
 static PyMethodDef complex_methods[] = {
 	{"conjugate",	(PyCFunction)complex_conjugate,	METH_NOARGS},
+	{"__getnewargs__",	(PyCFunction)complex_getnewargs,	METH_NOARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

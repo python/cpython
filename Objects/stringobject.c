@@ -3045,6 +3045,12 @@ string_splitlines(PyStringObject *self, PyObject *args)
 
 #undef SPLIT_APPEND
 
+static PyObject *
+string_getnewargs(PyStringObject *v)
+{
+	return Py_BuildValue("(s#)", v->ob_sval, v->ob_size);
+}
+
 
 static PyMethodDef
 string_methods[] = {
@@ -3091,6 +3097,7 @@ string_methods[] = {
 	 expandtabs__doc__},
 	{"splitlines", (PyCFunction)string_splitlines, METH_VARARGS,
 	 splitlines__doc__},
+	{"__getnewargs__",	(PyCFunction)string_getnewargs,	METH_NOARGS},
 	{NULL,     NULL}		     /* sentinel */
 };
 

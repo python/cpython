@@ -5741,6 +5741,14 @@ unicode_endswith(PyUnicodeObject *self,
 }
 
 
+
+static PyObject *
+unicode_getnewargs(PyUnicodeObject *v)
+{
+	return Py_BuildValue("(u#)", v->str, v->length);
+}
+
+
 static PyMethodDef unicode_methods[] = {
 
     /* Order is according to common usage: often used methods should
@@ -5791,6 +5799,7 @@ static PyMethodDef unicode_methods[] = {
     {"freelistsize", (PyCFunction) unicode_freelistsize, METH_NOARGS},
 #endif
 
+    {"__getnewargs__",	(PyCFunction)unicode_getnewargs, METH_NOARGS},
     {NULL, NULL}
 };
 
