@@ -346,8 +346,8 @@ it from the system folder and running Python once again will re-create it.
 First you optionally build the external libraries with buildlibs.prj. Next, 
 the projects for
 interpreter, core library and applet skeleton  are all linked together, so
-building the fat targets in <code>Python.prj</code> and
-<code>PythonApplet.prj</code> will result in everything being built. The
+building the fat target in <code>PythonEngine.prj</code> 
+will result in everything being built. The
 resulting applications and fat shared library are deposited in the main
 Python folder. Finally, you build all the plugins with the plugins.prj project.
 
@@ -364,16 +364,10 @@ moving the file will cause you grief later if you rebuild the library and
 forget to copy it to the extensions folder again. The InstallPython applet
 will also do this, along with creating the plugin aliases.
 
-<DT> Python
+<DT> PythonInterpeter
 <DD> The interpreter. This is basically a routine to call out to the
-shared library.  <p>
-
-<DT> PythonAppletPPC
-<DD> The applet skeleton application. Very similar to
-<code>PythonPPC</code>, but it calls to a different entrypoint in the
-core library. The <code>mkapplet</code> script will copy this complete
-file, and add a <code>'PYC '</code> with the module to generate an
-applet. <p>
+shared library. Unlike in previous releases the same program is used for
+creating applets (for which formerly PythonApplet was used). <p>
 
 <DT> Plugin projects
 <DD> Each plugin module has a separate project. The <code>Plugins.prj</code>

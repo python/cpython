@@ -22,7 +22,7 @@ DEBUG=1
 MAGIC = imp.get_magic()
 
 # Template file (searched on sys.path)
-TEMPLATE = "PythonApplet"
+TEMPLATE = "PythonInterpreter"
 
 # Specification of our resource
 RESTYPE = 'PYC '

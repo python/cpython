@@ -149,8 +149,7 @@ def handle_dialog(filename):
 BUILD_DICT = {
 I_CORE : (buildmwproject, "CWIE", [
 		(":Mac:Build:PythonCore.prj", "PythonCore"),
-		(":Mac:Build:Python.prj", "PythonFAT"),
-		(":Mac:Build:PythonApplet.prj", "PythonAppletFAT"),
+		(":Mac:Build:PythonInterpreter.prj", "PythonInterpreter"),
 	]),
 
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
