@@ -136,7 +136,7 @@ signal_handler(int sig_num)
 		   reset until explicit re-instated.
 		   Don't clear the 'func' field as it is our pointer
 		   to the Python handler... */
-		return;
+		Py_RETURN_FROM_SIGNAL_HANDLER(0);
 	}
 #endif
 #ifdef HAVE_SIGINTERRUPT
