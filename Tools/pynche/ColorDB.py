@@ -40,6 +40,8 @@ class ColorDB:
 	# key is name, value is (red, green, blue)
 	self.__byname = {}
 	#
+        # all unique names (non-aliases).  built-on demand
+        self.__allnames = None
 	while 1:
 	    line = fp.readline()
 	    if not line:
@@ -101,6 +103,15 @@ class ColorDB:
 		nearest = distance
 		nearest_name = name
 	return nearest_name
+
+    def all_names(self):
+        # sorted
+        if not self.__allnames:
+            self.__allnames = []
+            for name, aliases in self.__byrgb.values():
+                self.__allnames.append(name)
+            self.__allnames.sort()
+        return self.__allnames
 	
 
 class RGBColorDB(ColorDB):
