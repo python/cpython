@@ -119,10 +119,6 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, int size)
 	op->ob_size = size;
 	op->ob_type = tp;
 	_Py_NewReference((PyObject *)op);
-	if (PyType_SUPPORTS_WEAKREFS(tp)) {
-		PyObject **weaklist = PyObject_GET_WEAKREFS_LISTPTR(op);
-		*weaklist = NULL;
-	}
 	return op;
 }
 
