@@ -18,6 +18,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Patch #803998: Deal with errors in SSL_write correctly.
+
 - The xml.parsers.expat module now provides Expat 1.95.7.
 
 - Patch #813445: Add missing socket.IPPROTO_IPV6.
