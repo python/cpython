@@ -51,6 +51,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 #ifdef USE_GUSI
 #include <TFileSpec.h> /* For Path2FSSpec */
+#include <LowMem.h> /* For SetSFCurDir, etc */
 #endif
 
 #ifndef HAVE_UNIVERSAL_HEADERS
@@ -117,6 +118,34 @@ struct hook_args {
 };
 static DlgHookYDUPP myhook_upp;
 static int upp_inited = 0;
+
+#ifdef USE_GUSI
+/*
+** GUSI (1.6.0 and earlier, at the least) do not set the MacOS idea of
+** the working directory. Hence, we call this routine after each call
+** to chdir() to rectify things.
+*/
+void
+PyMac_FixGUSIcd()
+{
+	WDPBRec pb;
+	FSSpec curdirfss;
+	
+	if ( Path2FSSpec(":x", &curdirfss) != noErr ) 
+		return;
+	
+	/* Set MacOS "working directory" */
+	pb.ioNamePtr= "\p";
+	pb.ioVRefNum= curdirfss.vRefNum;
+	pb.ioWDDirID= curdirfss.parID;
+	if (PBHSetVol(&pb, 0) != noErr)
+		return;
+
+	/* Set standard-file working directory */
+	LMSetSFSaveDisk(-curdirfss.vRefNum);
+	LMSetCurDirStore(curdirfss.parID);
+}
+#endif
 
 
 /* Convert C to Pascal string. Returns pointer to static buffer. */
@@ -657,21 +686,8 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 		/* It's a pathname */
 		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
 			return 0;
-#ifdef USE_GUSI
-		{
-			FSSpec curdirfss;
-			
-			if ( Path2FSSpec(":x", &curdirfss) == 0 ) {
-				refnum = curdirfss.vRefNum;
-				parid = curdirfss.parID;
-			} else {
-				return 0;
-			}
-		}
-#else
-		refnum = 0; /* XXXX Should get CurWD here... */
+		refnum = 0; /* XXXX Should get CurWD here?? */
 		parid = 0;
-#endif
 	} else {
 		if( !PyArg_Parse(v, "(hlO&); FSSpec should be fullpath or (vrefnum,dirid,path)",
 							&refnum, &parid, PyMac_GetStr255, &path)) {
@@ -685,7 +701,6 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	}
 	return 1;
 }
-
 
 
 /* Convert a Python object to a Rect.

@@ -39,6 +39,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #pragma lib_export on
 #endif
 
+#ifdef USE_GUSI
+void PyMac_FixGUSIcd Py_PROTO((void));	/* Workaround for GUSI chdir() call */
+#endif
+
 char *PyMac_StrError(int);			/* strerror with mac errors */
 
 extern int PyMac_DoYieldEnabled;		/* Don't do eventloop when false */
