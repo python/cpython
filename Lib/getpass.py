@@ -22,7 +22,12 @@ def getpass(prompt='Password: '):
 	try:
 		import termios, TERMIOS
 	except ImportError:
-		return win_getpass(prompt)
+		try:
+			import msvcrt
+		except ImportError:
+			return default_getpass(prompt)
+		else:
+			return win_getpass(prompt)
 
 	fd = sys.stdin.fileno()
 	old = termios.tcgetattr(fd)	# a copy to save
@@ -57,6 +62,10 @@ def win_getpass(prompt='Password: '):
 	msvcrt.putch('\r')
 	msvcrt.putch('\n')
 	return pw
+
+
+def default_getpass(prompt='Password: '):
+	return raw_input(prompt)
 
 
 def getuser():
