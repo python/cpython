@@ -39,8 +39,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "getapplbycreator.h"
 
+#ifndef TARGET_API_MAC_OSX
 #include "pythonresources.h"
 extern PyMac_PrefRecord PyMac_options;
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern int _PyMac_GetFSSpec(PyObject *, FSSpec *);
@@ -1218,7 +1220,9 @@ PyObject *PyMac_BuildFSSpec(FSSpec *v)
 static void
 PyMac_InstallNavServicesForSF(void)
 {
+#ifndef TARGET_API_MAC_OSX
 	if ( !PyMac_options.nonavservice ) {
+#endif
 		PyObject *m = PyImport_ImportModule("macfsn");
 		
 		if ( m == NULL ) {
@@ -1232,7 +1236,9 @@ PyMac_InstallNavServicesForSF(void)
 			}
 			PyErr_Clear();
 		}
+#ifndef TARGET_API_MAC_OSX
 	}
+#endif
 }
 
 
