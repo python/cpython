@@ -688,34 +688,62 @@ def expand_escape(pattern, index, context=NORMAL):
 	    return CHAR, 'D', index + 1
 
     elif pattern[index] in '0123456789':
-	end = index
-	while (end < len(pattern)) and (pattern[end] in string.digits):
-	    end = end + 1
-	value = pattern[index:end]
 
-	if (len(value) == 3) or ((len(value) == 2) and (value[0] == '0')):
-	    # octal character value
-	    value = string.atoi(value, 8)
+	if pattern[index] == '0':
+	    if (index + 1 < len(pattern)) and \
+	       (pattern[index + 1] in string.octdigits):
+		if (index + 2 < len(pattern)) and \
+		   (pattern[index + 2] in string.octdigits):
+		    value = string.atoi(pattern[index:index + 3], 8)
+		    index = index + 3
+
+		else:
+		    value = string.atoi(pattern[index:index + 2], 8)
+		    index = index + 2
+
+	    else:
+		value = 0
+		index = index + 1
+
 	    if value > 255:
-		raise error, 'octal char out of range'
-	    return CHAR, chr(value), end
+		raise error, 'octal value out of range'
 
-	elif value == '0':
-	    return CHAR, chr(0), end
-
-	elif len(value) > 3:
-	    raise error, ('\\' + value + ' has too many digits')
-
+	    return CHAR, chr(value), index
+	
 	else:
-	    # \1-\99 - reference a register
-	    if context == CHARCLASS:
-		raise error, ('cannot reference a register from '
-			      'inside a character class')
-	    value = string.atoi(value)
-	    if value == 0:
-		raise error, ('register 0 cannot be used '
-			      'during match')
-	    return MEMORY_REFERENCE, value, end
+	    if (index + 1 < len(pattern)) and \
+	       (pattern[index + 1] in string.digits):
+		if (index + 2 < len(pattern)) and \
+		   (pattern[index + 2] in string.octdigits) and \
+		   (pattern[index + 1] in string.octdigits) and \
+		   (pattern[index] in string.octdigits):
+		    value = string.atoi(pattern[index:index + 3], 8)
+		    if value > 255:
+			raise error, 'octal value out of range'
+
+		    return CHAR, chr(value), index + 3
+
+		else:
+		    value = string.atoi(pattern[index:index + 2])
+		    if (value < 1) or (value > 99):
+			raise error, 'memory reference out of range'
+
+		    if context == CHARCLASS:
+			raise error, ('cannot reference a register from '
+				      'inside a character class')
+		    return MEMORY_REFERENCE, value, index + 2
+
+	    else:
+		if context == CHARCLASS:
+		    raise error, ('cannot reference a register from '
+				  'inside a character class')
+
+		value = string.atoi(pattern[index])
+		return MEMORY_REFERENCE, value, index + 1
+	    
+	    while (end < len(pattern)) and (pattern[end] in string.digits):
+		end = end + 1
+	    value = pattern[index:end]
 
     else:
 	return CHAR, pattern[index], index + 1
