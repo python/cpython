@@ -38,6 +38,15 @@ Extension modules
 Library
 -------
 
+- doctest now examines all docstrings by default.  Previously, it would
+  skip over functions with private names (as indicated by the underscore
+  naming convention).  The old default created too much of a risk that
+  user tests were being skipped inadvertently.  Note, this change could
+  break code in the unlikely case that someone had intentionally put
+  failing tests in the docstrings of private functions.  The breakage
+  is easily fixable by specifying the old behavior when calling testmod()
+  or Tester().
+
 - Closing a dumbdbm database more than once is now harmless (it used to
   raise a nuisance exception on the second close).
 

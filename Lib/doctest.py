@@ -48,10 +48,10 @@ WHICH DOCSTRINGS ARE EXAMINED?
 + M.__doc__.
 
 + f.__doc__ for all functions f in M.__dict__.values(), except those
-  with private names and those defined in other modules.
+  defined in other modules.
 
-+ C.__doc__ for all classes C in M.__dict__.values(), except those with
-  private names and those defined in other modules.
++ C.__doc__ for all classes C in M.__dict__.values(), except those
+  defined in other modules.
 
 + If M.__test__ exists and "is true", it must be a dict, and
   each entry maps a (string) name to a function object, class object, or
@@ -62,13 +62,16 @@ WHICH DOCSTRINGS ARE EXAMINED?
       <name of M>.__test__.K
 
 Any classes found are recursively searched similarly, to test docstrings in
-their contained methods and nested classes.  Private names reached from M's
-globals are skipped, but all names reached from M.__test__ are searched.
+their contained methods and nested classes.  All names reached from
+M.__test__ are searched.
 
-By default, a name is considered to be private if it begins with an
-underscore (like "_my_func") but doesn't both begin and end with (at least)
-two underscores (like "__init__").  You can change the default by passing
-your own "isprivate" function to testmod.
+Optionally, functions with private names can be skipped (unless listed in
+M.__test__) by supplying a function to the "isprivate" argument that will
+identify private functions.  For convenience, one such function is
+supplied.  docttest.is_private considers a name to be private if it begins
+with an underscore (like "_my_func") but doesn't both begin and end with
+(at least) two underscores (like "__init__").  By supplying this function
+or your own "isprivate" function to testmod, the behavior can be customized.
 
 If you want to test docstrings in objects with private names too, stuff
 them into an M.__test__ dict, or see ADVANCED USAGE below (e.g., pass your
@@ -671,8 +674,10 @@ Optional keyword arg "verbose" prints lots of stuff if true, only
 failures if false; by default, it's true iff "-v" is in sys.argv.
 
 Optional keyword arg "isprivate" specifies a function used to determine
-whether a name is private.  The default function is doctest.is_private;
-see its docs for details.
+whether a name is private.  The default function is to assume that
+no functions are private.  The "isprivate" arg may be set to
+doctest.is_private in order to skip over functions marked as private
+using an underscore naming convention; see its docs for details.
 
 See doctest.testmod docs for the meaning of optionflags.
 """
@@ -691,8 +696,9 @@ See doctest.testmod docs for the meaning of optionflags.
             verbose = "-v" in sys.argv
         self.verbose = verbose
 
+        # By default, assume that nothing is private
         if isprivate is None:
-            isprivate = is_private
+            isprivate = lambda prefix, base:  0
         self.isprivate = isprivate
 
         self.optionflags = optionflags
@@ -861,26 +867,26 @@ See doctest.testmod docs for the meaning of optionflags.
 
         Tests that objects outside m1 are excluded:
 
-        >>> t = Tester(globs={}, verbose=0)
+        >>> t = Tester(globs={}, verbose=0, isprivate=is_private)
         >>> t.rundict(m1.__dict__, "rundict_test", m1)  # _f, f2 and g2 and h2 skipped
         (0, 3)
 
-        Again, but with a custom isprivate function allowing _f:
+        Again, but with the default isprivate function allowing _f:
 
-        >>> t = Tester(globs={}, verbose=0, isprivate=lambda x,y: 0)
+        >>> t = Tester(globs={}, verbose=0)
         >>> t.rundict(m1.__dict__, "rundict_test_pvt", m1)  # Only f2, g2 and h2 skipped
         (0, 4)
 
         And once more, not excluding stuff outside m1:
 
-        >>> t = Tester(globs={}, verbose=0, isprivate=lambda x,y: 0)
+        >>> t = Tester(globs={}, verbose=0)
         >>> t.rundict(m1.__dict__, "rundict_test_pvt")  # None are skipped.
         (0, 8)
 
         The exclusion of objects from outside the designated module is
         meant to be invoked automagically by testmod.
 
-        >>> testmod(m1)
+        >>> testmod(m1, isprivate=is_private)
         (0, 3)
 
         """
@@ -1070,7 +1076,8 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
 
     Test examples in docstrings in functions and classes reachable
     from module m (or the current module if m is not supplied), starting
-    with m.__doc__.  Private names are skipped.
+    with m.__doc__.  Unless isprivate is specified, private names
+    are not skipped.
 
     Also test examples reachable from dict m.__test__ if it exists and is
     not None.  m.__dict__ maps names to functions, classes and strings;
@@ -1094,7 +1101,9 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
 
     Optional keyword arg "isprivate" specifies a function used to
     determine whether a name is private.  The default function is
-    doctest.is_private; see its docs for details.
+    treat all functions as public.  Optionally, "isprivate" can be
+    set to doctest.is_private to skip over functions marked as private
+    using the underscore naming convention; see its docs for details.
 
     Optional keyword arg "report" prints a summary at the end when true,
     else prints nothing at the end.  In verbose mode, the summary is
