@@ -130,7 +130,7 @@ def instantiate_converter(args):
 	args.append(cl.convert)
 	return args
 
-class RtConverters():
+class RtConverters:
 	def init(self, list):
 		self.list = list
 		return self
