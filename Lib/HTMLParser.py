@@ -74,15 +74,19 @@ class HTMLParseError(Exception):
 
 
 # HTML parser class -- find tags and call handler functions.
-# Usage: p = HTMLParser(); p.feed(data); ...; p.close().
+# Usage:
+#
+#     p = HTMLParser(); p.feed(data); ...; p.close()
 
 # Start tags are handled by calling self.handle_starttag() or
 # self.handle_startendtag(); end tags by self.handle_endtag().  The
-# data between tags is passed to the parser by calling
-# self.handle_data() with some data as argument (the data may be split
-# up in arbitrary chunks).  Entity references are passed by calling
-# self.handle_entityref() with the entity reference as argument.
-# Etc.
+# data between tags is passed from the parser to the derived class by
+# calling self.handle_data() with the data as argument (the data may
+# be split up in arbitrary chunks).  Entity references are passed by
+# calling self.handle_entityref() with the entity reference as the
+# argument.  Numeric character references are passed to
+# self.handle_charref() with the string containing the reference as
+# the argument.
 
 class HTMLParser:
 
