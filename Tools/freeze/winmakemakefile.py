@@ -11,6 +11,7 @@ int WINAPI WinMain(
     int nCmdShow              // show state of window
     )
 {
+    extern int Py_FrozenMain(int, char **);
     PyImport_FrozenModules = _PyImport_FrozenModules;
     return Py_FrozenMain(__argc, __argv);
 }

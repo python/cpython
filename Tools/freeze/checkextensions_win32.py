@@ -177,7 +177,7 @@ ext_tab_footer = """\
 """
 
 ext_src_footer = """\
-extern int PyImport_ExtendInittab(struct _inittab *newtab);
+extern DL_IMPORT(int) PyImport_ExtendInittab(struct _inittab *newtab);
 
 int PyInitFrozenExtensions()
 {
