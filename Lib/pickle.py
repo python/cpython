@@ -482,7 +482,6 @@ class Pickler:
 
         write = self.write
         save  = self.save
-        memo  = self.memo
 
         if self.bin:
             write(EMPTY_LIST)
