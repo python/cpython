@@ -107,7 +107,6 @@ extern "C" {
 #define JUMP_IF_FALSE	111	/* "" */
 #define JUMP_IF_TRUE	112	/* "" */
 #define JUMP_ABSOLUTE	113	/* Target byte offset from beginning of code */
-#define FOR_LOOP	114	/* Number of bytes to skip */
 
 #define LOAD_GLOBAL	116	/* Index in name list */
 

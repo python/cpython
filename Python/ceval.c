@@ -1942,37 +1942,6 @@ eval_frame(PyFrameObject *f)
 			}
 			break;
 
-		case FOR_LOOP:
-			/* for v in s: ...
-			   On entry: stack contains s, i.
-			   On exit: stack contains s, i+1, s[i];
-			   but if loop exhausted:
-			   	s, i are popped, and we jump */
-			w = POP(); /* Loop index */
-			v = POP(); /* Sequence object */
-			u = loop_subscript(v, w);
-			if (u != NULL) {
-				PUSH(v);
-				x = PyInt_FromLong(PyInt_AsLong(w)+1);
-				PUSH(x);
-				Py_DECREF(w);
-				PUSH(u);
-				if (x != NULL) continue;
-			}
-			else {
-				Py_DECREF(v);
-				Py_DECREF(w);
-				/* A NULL can mean "s exhausted"
-				   but also an error: */
-				if (PyErr_Occurred())
-					why = WHY_EXCEPTION;
-				else {
-					JUMPBY(oparg);
-					continue;
-				}
-			}
-			break;
-
 		case SETUP_LOOP:
 		case SETUP_EXCEPT:
 		case SETUP_FINALLY:
