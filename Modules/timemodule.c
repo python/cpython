@@ -412,6 +412,7 @@ See the library reference manual for formatting codes. When the time tuple\n\
 is not present, current time as returned by localtime() is used.");
 #endif /* HAVE_STRFTIME */
 
+#undef HAVE_STRPTIME
 #ifdef HAVE_STRPTIME
 
 #if 0
@@ -445,12 +446,28 @@ time_strptime(PyObject *self, PyObject *args)
 	return tmtotuple(&tm);
 }
 
+#endif /* HAVE_STRPTIME */
+
+#ifndef HAVE_STRPTIME
+
+static PyObject *
+time_strptime(PyObject *self, PyObject *args)
+{
+    PyObject *strptime_module = PyImport_ImportModule("_strptime");
+
+    if (!strptime_module) 
+        return NULL;
+    return PyObject_CallMethod(strptime_module, "strptime", "O", args);
+}
+
+#endif /* !HAVE_STRPTIME */
+
 PyDoc_STRVAR(strptime_doc,
 "strptime(string, format) -> tuple\n\
 \n\
 Parse a string to a time tuple according to a format specification.\n\
 See the library reference manual for formatting codes (same as strftime()).");
-#endif /* HAVE_STRPTIME */
+
 
 static PyObject *
 time_asctime(PyObject *self, PyObject *args)
@@ -553,9 +570,7 @@ static PyMethodDef time_methods[] = {
 #ifdef HAVE_STRFTIME
 	{"strftime",	time_strftime, METH_VARARGS, strftime_doc},
 #endif
-#ifdef HAVE_STRPTIME
 	{"strptime",	time_strptime, METH_VARARGS, strptime_doc},
-#endif
 	{NULL,		NULL}		/* sentinel */
 };
 
