@@ -37,13 +37,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "tokenizer.h"
 #include "errcode.h"
 
-#ifdef macintosh
-#define TABSIZE 4
-#endif
-
-#ifndef TABSIZE
+/* Don't ever change this -- it would break the portability of Python code */
 #define TABSIZE 8
-#endif
 
 /* Forward */
 static struct tok_state *tok_new PROTO((void));
