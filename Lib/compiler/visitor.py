@@ -1,3 +1,4 @@
+import sys
 from compiler import ast
 
 class ASTVisitor:
@@ -40,15 +41,6 @@ class ASTVisitor:
         self.node = None
         self._cache = {}
 
-    def preorder(self, tree, visitor):
-        """Do preorder walk of tree using visitor"""
-        self.visitor = visitor
-        visitor.visit = self._preorder
-        self._preorder(tree)
-
-    def _preorder(self, node, *args):
-        return apply(self.dispatch, (node,) + args)
-
     def default(self, node, *args):
         for child in node.getChildren():
             if isinstance(child, ast.Node):
@@ -56,18 +48,28 @@ class ASTVisitor:
 
     def dispatch(self, node, *args):
         self.node = node
-        meth = self._cache.get(node.__class__, None)
-        className = node.__class__.__name__
+        klass = node.__class__
+        meth = self._cache.get(klass, None)
         if meth is None:
+            className = klass.__name__
             meth = getattr(self.visitor, 'visit' + className, self.default)
-            self._cache[node.__class__] = meth
+            self._cache[klass] = meth
         if self.VERBOSE > 0:
+            className = klass.__name__
             if self.VERBOSE == 1:
                 if meth == 0:
                     print "dispatch", className
             else:
                 print "dispatch", className, (meth and meth.__name__ or '')
         return apply(meth, (node,) + args)
+
+    def preorder(self, tree, visitor):
+        """Do preorder walk of tree using visitor"""
+        self.visitor = visitor
+        visitor.visit = self._preorder
+        self._preorder(tree)
+
+    _preorder = dispatch
 
 class ExampleASTVisitor(ASTVisitor):
     """Prints examples of the nodes that aren't visited
