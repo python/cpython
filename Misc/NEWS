@@ -29,6 +29,11 @@ Tests
   name returned by socket.gethostname() a valid return value for getfqdn().
   Also clarified the wording of docs and docstring that this is the case.
 
+Extensions Modules
+------------------
+
+- os.access now supports Unicode path names on non-Win32 systems.
+
 
 What's New in Python 2.4.1c1?
 =============================
