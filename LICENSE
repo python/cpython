@@ -17,7 +17,7 @@ Following the release of Python 1.6, and after Guido van Rossum left
 CNRI to work with commercial software developers, it became clear that
 the ability to use Python with software available under the GNU Public
 License (GPL) was very desirable.  CNRI and the Free Software
-Foundation (FSF)interacted to develop enabling wording changes to the
+Foundation (FSF) interacted to develop enabling wording changes to the
 Python license.  Python 1.6.1 is essentially the same as Python 1.6,
 with a few minor bug fixes, and with a GPL compatible open source
 license.  Python 2.1 is a derivative work of Python 1.6.1, as well as
