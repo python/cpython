@@ -145,6 +145,8 @@ typedef int (*getwritebufferproc) Py_PROTO((PyObject *, int, void **));
 typedef int (*getsegcountproc) Py_PROTO((PyObject *, int *));
 typedef int (*getcharbufferproc) Py_PROTO((PyObject *, int, const char **));
 typedef int (*objobjproc) Py_PROTO((PyObject *, PyObject *));
+typedef int (*visitproc) Py_PROTO((PyObject *, void *));
+typedef int (*traverseproc) Py_PROTO((PyObject *, visitproc, void *));
 
 typedef struct {
 	binaryfunc nb_add;
@@ -243,9 +245,13 @@ typedef struct _typeobject {
 
 	char *tp_doc; /* Documentation string */
 
+	/* call function for all accessible objects */
+	traverseproc tp_traverse;
+	
+	/* delete references to contained objects */
+	inquiry tp_clear;
+
 	/* More spares */
-	long tp_xxx5;
-	long tp_xxx6;
 	long tp_xxx7;
 	long tp_xxx8;
 

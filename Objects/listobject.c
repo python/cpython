@@ -1418,6 +1418,30 @@ listremove(self, args)
 	return NULL;
 }
 
+static int
+list_traverse(PyListObject *o, visitproc visit, void *arg)
+{
+	int i, err;
+	PyObject *x;
+
+	for (i = o->ob_size; --i >= 0; ) {
+		x = o->ob_item[i];
+		if (x != NULL) {
+			err = visit(x, arg);
+			if (err)
+				return err;
+		}
+	}
+	return 0;
+}
+
+static int
+list_clear(PyListObject *lp)
+{
+	(void) PyList_SetSlice((PyObject *)lp, 0, lp->ob_size, 0);
+	return 0;
+}
+
 static char append_doc[] =
 "L.append(object) -- append object to end";
 static char extend_doc[] =
@@ -1491,6 +1515,9 @@ PyTypeObject PyList_Type = {
 	0,		/*tp_setattro*/
 	0,		/*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
+ 	0,		/* tp_doc */
+ 	(traverseproc)list_traverse,	/* tp_traverse */
+ 	(inquiry)list_clear,	/* tp_clear */
 };
 
 
@@ -1567,5 +1594,7 @@ static PyTypeObject immutable_list_type = {
 	0,		/*tp_setattro*/
 	0,		/*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
+ 	0,		/* tp_doc */
+ 	(traverseproc)list_traverse,	/* tp_traverse */
 };
 

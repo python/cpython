@@ -420,6 +420,23 @@ tuplerepeat(a, n)
 	return (PyObject *) np;
 }
 
+static int
+tupletraverse(PyTupleObject *o, visitproc visit, void *arg)
+{
+	int i, err;
+	PyObject *x;
+
+	for (i = o->ob_size; --i >= 0; ) {
+		x = o->ob_item[i];
+		if (x != NULL) {
+			err = visit(x, arg);
+			if (err)
+				return err;
+		}
+	}
+	return 0;
+}
+
 static PySequenceMethods tuple_as_sequence = {
 	(inquiry)tuplelength, /*sq_length*/
 	(binaryfunc)tupleconcat, /*sq_concat*/
@@ -453,6 +470,8 @@ PyTypeObject PyTuple_Type = {
 	0,		/*tp_setattro*/
 	0,		/*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	0,              /*tp_doc*/
+ 	(traverseproc)tupletraverse,	/* tp_traverse */
 };
 
 /* The following function breaks the notion that tuples are immutable:
