@@ -10,8 +10,6 @@
 
 REF (Py_Main);
 
-#if defined (__EMX__)
-
 #include <signal.h>
 
 extern int _CRT_init (void);
@@ -37,18 +35,4 @@ unsigned long _DLL_InitTerm (unsigned long mod_handle, unsigned long flag)
     default:
       return 0;
   }
-}
-
-#endif
-
-/* A version of getenv() that works from DLLs */
-extern int DosScanEnv (const char *pszName, char **ppszValue);
-
-char *getenv (const char *name)
-{
-  char *value;
-  if (DosScanEnv (name, &value))
-    return NULL;
-  else
-    return value;
 }
