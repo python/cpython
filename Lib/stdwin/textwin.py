@@ -19,18 +19,18 @@ def fixsize(w):
 def cut(w, m, id):
 	s = w.text.getfocustext()
 	if s:
-		stdwin.setcutbuffer(s)
+		stdwin.setcutbuffer(0, s)
 		w.text.replace('')
 		fixsize(w)
 
 def copy(w, m, id):
 	s = w.text.getfocustext()
 	if s:
-		stdwin.setcutbuffer(s)
+		stdwin.setcutbuffer(0, s)
 		fixeditmenu(w)
 
 def paste(w, m, id):
-	w.text.replace(stdwin.getcutbuffer())
+	w.text.replace(stdwin.getcutbuffer(0))
 	fixsize(w)
 
 def addeditmenu(w):
@@ -50,7 +50,7 @@ def fixeditmenu(w):
 	m.enable(1, can_copy)
 	if not w.readonly:
 		m.enable(0, can_copy)
-		m.enable(2, (stdwin.getcutbuffer() <> ''))
+		m.enable(2, (stdwin.getcutbuffer(0) <> ''))
 
 def draw(w, area):			# Draw method
 	w.text.draw(area)
