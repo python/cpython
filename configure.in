@@ -1667,7 +1667,7 @@ AC_ARG_WITH(sgi-dl,
             AC_HELP_STRING(--with-sgi-dl=DIRECTORY, IRIX 4 dynamic linking),
 [
 AC_MSG_RESULT($withval)
-echo --with-sgi-dl is unsupported; see README
+echo --with-sgi-dl is unsupported, see README
 exit 1
 AC_DEFINE(WITH_SGI_DL, 1,
   [Define if you want to use SGI (IRIX 4) dynamic linking.
@@ -1689,7 +1689,7 @@ AC_ARG_WITH(dl-dld,
             AC_HELP_STRING(--with-dl-dld=DL_DIR, GNU dynamic linking),
 [
 AC_MSG_RESULT($withval)
-echo --with-dl-dld is unsupported; see README
+echo --with-dl-dld is unsupported, see README
 exit 1
 AC_DEFINE(WITH_DL_DLD, 1, 
   [Define if you want to emulate SGI (IRIX 4) dynamic linking.
