@@ -2733,10 +2733,10 @@ string_zfill(PyStringObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(isspace__doc__,
-"S.isspace() -> bool\n"
-"\n"
-"Return True if there are only whitespace characters in S,\n"
-"False otherwise.");
+"S.isspace() -> bool\n\
+\n\
+Return True if all characters in S are whitespace\n\
+and there is at least one character in S, False otherwise.");
 
 static PyObject*
 string_isspace(PyStringObject *self)
@@ -2766,7 +2766,7 @@ string_isspace(PyStringObject *self)
 PyDoc_STRVAR(isalpha__doc__,
 "S.isalpha() -> bool\n\
 \n\
-Return True if  all characters in S are alphabetic\n\
+Return True if all characters in S are alphabetic\n\
 and there is at least one character in S, False otherwise.");
 
 static PyObject*
@@ -2797,7 +2797,7 @@ string_isalpha(PyStringObject *self)
 PyDoc_STRVAR(isalnum__doc__,
 "S.isalnum() -> bool\n\
 \n\
-Return True if  all characters in S are alphanumeric\n\
+Return True if all characters in S are alphanumeric\n\
 and there is at least one character in S, False otherwise.");
 
 static PyObject*
@@ -2828,8 +2828,8 @@ string_isalnum(PyStringObject *self)
 PyDoc_STRVAR(isdigit__doc__,
 "S.isdigit() -> bool\n\
 \n\
-Return True if there are only digit characters in S,\n\
-False otherwise.");
+Return True if all characters in S are digits\n\
+and there is at least one character in S, False otherwise.");
 
 static PyObject*
 string_isdigit(PyStringObject *self)
@@ -2893,7 +2893,7 @@ string_islower(PyStringObject *self)
 PyDoc_STRVAR(isupper__doc__,
 "S.isupper() -> bool\n\
 \n\
-Return True if  all cased characters in S are uppercase and there is\n\
+Return True if all cased characters in S are uppercase and there is\n\
 at least one cased character in S, False otherwise.");
 
 static PyObject*
@@ -2927,9 +2927,10 @@ string_isupper(PyStringObject *self)
 PyDoc_STRVAR(istitle__doc__,
 "S.istitle() -> bool\n\
 \n\
-Return True if S is a titlecased string, i.e. uppercase characters\n\
-may only follow uncased characters and lowercase characters only cased\n\
-ones. Return False otherwise.");
+Return True if S is a titlecased string and there is at least one\n\
+character in S, i.e. uppercase characters may only follow uncased\n\
+characters and lowercase characters only cased ones. Return False\n\
+otherwise.");
 
 static PyObject*
 string_istitle(PyStringObject *self, PyObject *uncased)
