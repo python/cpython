@@ -262,6 +262,11 @@ Build
 Windows
 -------
 
+- The _winreg module could segfault when reading very large registry
+  values, due to unchecked alloca() calls (SF bug 851056).  The fix is
+  uses either PyMem_Malloc(n) or PyString_FromStringAndSize(NULL, n),
+  as appropriate, followed by a size check.
+
 - The _ssl extension module was built using openssl-0.9.7b.
 
 - The Windows installer includes documentation in HTMLHelp format
