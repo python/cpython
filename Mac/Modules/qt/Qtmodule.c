@@ -58,10 +58,795 @@ staticforward PyObject *TrackObj_New(Track);
 staticforward int TrackObj_Convert(PyObject *, Track *);
 staticforward PyObject *MovieObj_New(Movie);
 staticforward int MovieObj_Convert(PyObject *, Movie *);
+staticforward PyObject *MovieCtlObj_New(MovieController);
+staticforward int MovieCtlObj_Convert(PyObject *, MovieController *);
 
 
 
 static PyObject *Qt_Error;
+
+/* ------------------ Object type MovieController ------------------- */
+
+PyTypeObject MovieController_Type;
+
+#define MovieCtlObj_Check(x) ((x)->ob_type == &MovieController_Type)
+
+typedef struct MovieControllerObject {
+	PyObject_HEAD
+	MovieController ob_itself;
+} MovieControllerObject;
+
+PyObject *MovieCtlObj_New(itself)
+	MovieController itself;
+{
+	MovieControllerObject *it;
+	if (itself == NULL) {
+						PyErr_SetString(Qt_Error,"Cannot create null MovieController");
+						return NULL;
+					}
+	it = PyObject_NEW(MovieControllerObject, &MovieController_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = itself;
+	return (PyObject *)it;
+}
+MovieCtlObj_Convert(v, p_itself)
+	PyObject *v;
+	MovieController *p_itself;
+{
+	if (!MovieCtlObj_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "MovieController required");
+		return 0;
+	}
+	*p_itself = ((MovieControllerObject *)v)->ob_itself;
+	return 1;
+}
+
+static void MovieCtlObj_dealloc(self)
+	MovieControllerObject *self;
+{
+	DisposeMovieController(self->ob_itself);
+	PyMem_DEL(self);
+}
+
+static PyObject *MovieCtlObj_MCSetMovie(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Movie theMovie;
+	WindowPtr movieWindow;
+	Point where;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      MovieObj_Convert, &theMovie,
+	                      WinObj_Convert, &movieWindow,
+	                      PyMac_GetPoint, &where))
+		return NULL;
+	_rv = MCSetMovie(_self->ob_itself,
+	                 theMovie,
+	                 movieWindow,
+	                 where);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetIndMovie(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Movie _rv;
+	short index;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &index))
+		return NULL;
+	_rv = MCGetIndMovie(_self->ob_itself,
+	                    index);
+	_res = Py_BuildValue("O&",
+	                     MovieObj_New, _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCRemoveMovie(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCRemoveMovie(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCIsPlayerEvent(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	EventRecord e;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetEventRecord, &e))
+		return NULL;
+	_rv = MCIsPlayerEvent(_self->ob_itself,
+	                      &e);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCDoAction(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	short action;
+	void * params;
+	if (!PyArg_ParseTuple(_args, "hs",
+	                      &action,
+	                      &params))
+		return NULL;
+	_rv = MCDoAction(_self->ob_itself,
+	                 action,
+	                 params);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCSetControllerAttached(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Boolean attach;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &attach))
+		return NULL;
+	_rv = MCSetControllerAttached(_self->ob_itself,
+	                              attach);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCIsControllerAttached(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCIsControllerAttached(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCSetVisible(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Boolean visible;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &visible))
+		return NULL;
+	_rv = MCSetVisible(_self->ob_itself,
+	                   visible);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetVisible(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCGetVisible(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetControllerBoundsRect(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Rect bounds;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCGetControllerBoundsRect(_self->ob_itself,
+	                                &bounds);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildRect, &bounds);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCSetControllerBoundsRect(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Rect bounds;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetRect, &bounds))
+		return NULL;
+	_rv = MCSetControllerBoundsRect(_self->ob_itself,
+	                                &bounds);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetControllerBoundsRgn(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCGetControllerBoundsRgn(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetWindowRgn(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle _rv;
+	WindowPtr w;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &w))
+		return NULL;
+	_rv = MCGetWindowRgn(_self->ob_itself,
+	                     w);
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCMovieChanged(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Movie m;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      MovieObj_Convert, &m))
+		return NULL;
+	_rv = MCMovieChanged(_self->ob_itself,
+	                     m);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCSetDuration(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	TimeValue duration;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &duration))
+		return NULL;
+	_rv = MCSetDuration(_self->ob_itself,
+	                    duration);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetCurrentTime(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	TimeValue _rv;
+	TimeScale scale;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCGetCurrentTime(_self->ob_itself,
+	                       &scale);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     scale);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCNewAttachedController(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Movie theMovie;
+	WindowPtr w;
+	Point where;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      MovieObj_Convert, &theMovie,
+	                      WinObj_Convert, &w,
+	                      PyMac_GetPoint, &where))
+		return NULL;
+	_rv = MCNewAttachedController(_self->ob_itself,
+	                              theMovie,
+	                              w,
+	                              where);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCDraw(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	WindowPtr w;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &w))
+		return NULL;
+	_rv = MCDraw(_self->ob_itself,
+	             w);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCActivate(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	WindowPtr w;
+	Boolean activate;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      WinObj_Convert, &w,
+	                      &activate))
+		return NULL;
+	_rv = MCActivate(_self->ob_itself,
+	                 w,
+	                 activate);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCIdle(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCIdle(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCKey(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	SInt8 key;
+	long modifiers;
+	if (!PyArg_ParseTuple(_args, "bl",
+	                      &key,
+	                      &modifiers))
+		return NULL;
+	_rv = MCKey(_self->ob_itself,
+	            key,
+	            modifiers);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCClick(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	WindowPtr w;
+	Point where;
+	long when;
+	long modifiers;
+	if (!PyArg_ParseTuple(_args, "O&O&ll",
+	                      WinObj_Convert, &w,
+	                      PyMac_GetPoint, &where,
+	                      &when,
+	                      &modifiers))
+		return NULL;
+	_rv = MCClick(_self->ob_itself,
+	              w,
+	              where,
+	              when,
+	              modifiers);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCEnableEditing(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Boolean enabled;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &enabled))
+		return NULL;
+	_rv = MCEnableEditing(_self->ob_itself,
+	                      enabled);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCIsEditingEnabled(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCIsEditingEnabled(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCCopy(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Movie _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCCopy(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     MovieObj_New, _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCCut(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Movie _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCCut(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     MovieObj_New, _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCPaste(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Movie srcMovie;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      MovieObj_Convert, &srcMovie))
+		return NULL;
+	_rv = MCPaste(_self->ob_itself,
+	              srcMovie);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCClear(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCClear(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCUndo(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCUndo(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCPositionController(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	Rect movieRect;
+	Rect controllerRect;
+	long someFlags;
+	if (!PyArg_ParseTuple(_args, "O&O&l",
+	                      PyMac_GetRect, &movieRect,
+	                      PyMac_GetRect, &controllerRect,
+	                      &someFlags))
+		return NULL;
+	_rv = MCPositionController(_self->ob_itself,
+	                           &movieRect,
+	                           &controllerRect,
+	                           someFlags);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetControllerInfo(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	long someFlags;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCGetControllerInfo(_self->ob_itself,
+	                          &someFlags);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     someFlags);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCSetClip(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	RgnHandle theClip;
+	RgnHandle movieClip;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      ResObj_Convert, &theClip,
+	                      ResObj_Convert, &movieClip))
+		return NULL;
+	_rv = MCSetClip(_self->ob_itself,
+	                theClip,
+	                movieClip);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetClip(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	RgnHandle theClip;
+	RgnHandle movieClip;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCGetClip(_self->ob_itself,
+	                &theClip,
+	                &movieClip);
+	_res = Py_BuildValue("lO&O&",
+	                     _rv,
+	                     ResObj_New, theClip,
+	                     ResObj_New, movieClip);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCDrawBadge(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	RgnHandle movieRgn;
+	RgnHandle badgeRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &movieRgn))
+		return NULL;
+	_rv = MCDrawBadge(_self->ob_itself,
+	                  movieRgn,
+	                  &badgeRgn);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, badgeRgn);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCSetUpEditMenu(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	long modifiers;
+	MenuHandle mh;
+	if (!PyArg_ParseTuple(_args, "lO&",
+	                      &modifiers,
+	                      MenuObj_Convert, &mh))
+		return NULL;
+	_rv = MCSetUpEditMenu(_self->ob_itself,
+	                      modifiers,
+	                      mh);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetMenuString(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	long modifiers;
+	short item;
+	Str255 aString;
+	if (!PyArg_ParseTuple(_args, "lhO&",
+	                      &modifiers,
+	                      &item,
+	                      PyMac_GetStr255, aString))
+		return NULL;
+	_rv = MCGetMenuString(_self->ob_itself,
+	                      modifiers,
+	                      item,
+	                      aString);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyMethodDef MovieCtlObj_methods[] = {
+	{"MCSetMovie", (PyCFunction)MovieCtlObj_MCSetMovie, 1,
+	 "(Movie theMovie, WindowPtr movieWindow, Point where) -> (ComponentResult _rv)"},
+	{"MCGetIndMovie", (PyCFunction)MovieCtlObj_MCGetIndMovie, 1,
+	 "(short index) -> (Movie _rv)"},
+	{"MCRemoveMovie", (PyCFunction)MovieCtlObj_MCRemoveMovie, 1,
+	 "() -> (ComponentResult _rv)"},
+	{"MCIsPlayerEvent", (PyCFunction)MovieCtlObj_MCIsPlayerEvent, 1,
+	 "(EventRecord e) -> (ComponentResult _rv)"},
+	{"MCDoAction", (PyCFunction)MovieCtlObj_MCDoAction, 1,
+	 "(short action, void * params) -> (ComponentResult _rv)"},
+	{"MCSetControllerAttached", (PyCFunction)MovieCtlObj_MCSetControllerAttached, 1,
+	 "(Boolean attach) -> (ComponentResult _rv)"},
+	{"MCIsControllerAttached", (PyCFunction)MovieCtlObj_MCIsControllerAttached, 1,
+	 "() -> (ComponentResult _rv)"},
+	{"MCSetVisible", (PyCFunction)MovieCtlObj_MCSetVisible, 1,
+	 "(Boolean visible) -> (ComponentResult _rv)"},
+	{"MCGetVisible", (PyCFunction)MovieCtlObj_MCGetVisible, 1,
+	 "() -> (ComponentResult _rv)"},
+	{"MCGetControllerBoundsRect", (PyCFunction)MovieCtlObj_MCGetControllerBoundsRect, 1,
+	 "() -> (ComponentResult _rv, Rect bounds)"},
+	{"MCSetControllerBoundsRect", (PyCFunction)MovieCtlObj_MCSetControllerBoundsRect, 1,
+	 "(Rect bounds) -> (ComponentResult _rv)"},
+	{"MCGetControllerBoundsRgn", (PyCFunction)MovieCtlObj_MCGetControllerBoundsRgn, 1,
+	 "() -> (RgnHandle _rv)"},
+	{"MCGetWindowRgn", (PyCFunction)MovieCtlObj_MCGetWindowRgn, 1,
+	 "(WindowPtr w) -> (RgnHandle _rv)"},
+	{"MCMovieChanged", (PyCFunction)MovieCtlObj_MCMovieChanged, 1,
+	 "(Movie m) -> (ComponentResult _rv)"},
+	{"MCSetDuration", (PyCFunction)MovieCtlObj_MCSetDuration, 1,
+	 "(TimeValue duration) -> (ComponentResult _rv)"},
+	{"MCGetCurrentTime", (PyCFunction)MovieCtlObj_MCGetCurrentTime, 1,
+	 "() -> (TimeValue _rv, TimeScale scale)"},
+	{"MCNewAttachedController", (PyCFunction)MovieCtlObj_MCNewAttachedController, 1,
+	 "(Movie theMovie, WindowPtr w, Point where) -> (ComponentResult _rv)"},
+	{"MCDraw", (PyCFunction)MovieCtlObj_MCDraw, 1,
+	 "(WindowPtr w) -> (ComponentResult _rv)"},
+	{"MCActivate", (PyCFunction)MovieCtlObj_MCActivate, 1,
+	 "(WindowPtr w, Boolean activate) -> (ComponentResult _rv)"},
+	{"MCIdle", (PyCFunction)MovieCtlObj_MCIdle, 1,
+	 "() -> (ComponentResult _rv)"},
+	{"MCKey", (PyCFunction)MovieCtlObj_MCKey, 1,
+	 "(SInt8 key, long modifiers) -> (ComponentResult _rv)"},
+	{"MCClick", (PyCFunction)MovieCtlObj_MCClick, 1,
+	 "(WindowPtr w, Point where, long when, long modifiers) -> (ComponentResult _rv)"},
+	{"MCEnableEditing", (PyCFunction)MovieCtlObj_MCEnableEditing, 1,
+	 "(Boolean enabled) -> (ComponentResult _rv)"},
+	{"MCIsEditingEnabled", (PyCFunction)MovieCtlObj_MCIsEditingEnabled, 1,
+	 "() -> (long _rv)"},
+	{"MCCopy", (PyCFunction)MovieCtlObj_MCCopy, 1,
+	 "() -> (Movie _rv)"},
+	{"MCCut", (PyCFunction)MovieCtlObj_MCCut, 1,
+	 "() -> (Movie _rv)"},
+	{"MCPaste", (PyCFunction)MovieCtlObj_MCPaste, 1,
+	 "(Movie srcMovie) -> (ComponentResult _rv)"},
+	{"MCClear", (PyCFunction)MovieCtlObj_MCClear, 1,
+	 "() -> (ComponentResult _rv)"},
+	{"MCUndo", (PyCFunction)MovieCtlObj_MCUndo, 1,
+	 "() -> (ComponentResult _rv)"},
+	{"MCPositionController", (PyCFunction)MovieCtlObj_MCPositionController, 1,
+	 "(Rect movieRect, Rect controllerRect, long someFlags) -> (ComponentResult _rv)"},
+	{"MCGetControllerInfo", (PyCFunction)MovieCtlObj_MCGetControllerInfo, 1,
+	 "() -> (ComponentResult _rv, long someFlags)"},
+	{"MCSetClip", (PyCFunction)MovieCtlObj_MCSetClip, 1,
+	 "(RgnHandle theClip, RgnHandle movieClip) -> (ComponentResult _rv)"},
+	{"MCGetClip", (PyCFunction)MovieCtlObj_MCGetClip, 1,
+	 "() -> (ComponentResult _rv, RgnHandle theClip, RgnHandle movieClip)"},
+	{"MCDrawBadge", (PyCFunction)MovieCtlObj_MCDrawBadge, 1,
+	 "(RgnHandle movieRgn) -> (ComponentResult _rv, RgnHandle badgeRgn)"},
+	{"MCSetUpEditMenu", (PyCFunction)MovieCtlObj_MCSetUpEditMenu, 1,
+	 "(long modifiers, MenuHandle mh) -> (ComponentResult _rv)"},
+	{"MCGetMenuString", (PyCFunction)MovieCtlObj_MCGetMenuString, 1,
+	 "(long modifiers, short item, Str255 aString) -> (ComponentResult _rv)"},
+	{NULL, NULL, 0}
+};
+
+PyMethodChain MovieCtlObj_chain = { MovieCtlObj_methods, NULL };
+
+static PyObject *MovieCtlObj_getattr(self, name)
+	MovieControllerObject *self;
+	char *name;
+{
+	return Py_FindMethodInChain(&MovieCtlObj_chain, (PyObject *)self, name);
+}
+
+#define MovieCtlObj_setattr NULL
+
+PyTypeObject MovieController_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0, /*ob_size*/
+	"MovieController", /*tp_name*/
+	sizeof(MovieControllerObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) MovieCtlObj_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc) MovieCtlObj_getattr, /*tp_getattr*/
+	(setattrfunc) MovieCtlObj_setattr, /*tp_setattr*/
+};
+
+/* ---------------- End object type MovieController ----------------- */
+
 
 /* ---------------------- Object type TimeBase ---------------------- */
 
@@ -4285,7 +5070,7 @@ static PyObject *MovieObj_NewMovieController(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	ComponentInstance _rv;
+	MovieController _rv;
 	Rect movieRect;
 	long someFlags;
 	if (!PyArg_ParseTuple(_args, "O&l",
@@ -4296,7 +5081,7 @@ static PyObject *MovieObj_NewMovieController(_self, _args)
 	                         &movieRect,
 	                         someFlags);
 	_res = Py_BuildValue("O&",
-	                     CmpInstObj_New, _rv);
+	                     MovieCtlObj_New, _rv);
 	return _res;
 }
 
@@ -4515,7 +5300,7 @@ static PyMethodDef MovieObj_methods[] = {
 	{"GetMovieStatus", (PyCFunction)MovieObj_GetMovieStatus, 1,
 	 "() -> (ComponentResult _rv, Track firstProblemTrack)"},
 	{"NewMovieController", (PyCFunction)MovieObj_NewMovieController, 1,
-	 "(Rect movieRect, long someFlags) -> (ComponentInstance _rv)"},
+	 "(Rect movieRect, long someFlags) -> (MovieController _rv)"},
 	{"PutMovieOnScrap", (PyCFunction)MovieObj_PutMovieOnScrap, 1,
 	 "(long movieScrapFlags) -> None"},
 	{"SetMoviePlayHints", (PyCFunction)MovieObj_SetMoviePlayHints, 1,
@@ -4852,25 +5637,21 @@ static PyObject *Qt_NewMovieFromFile(_self, _args)
 	OSErr _err;
 	Movie theMovie;
 	short resRefNum;
-	short resId;
-	StringPtr resName;
 	short newMovieFlags;
 	Boolean dataRefWasChanged;
-	if (!PyArg_ParseTuple(_args, "hsh",
+	if (!PyArg_ParseTuple(_args, "hh",
 	                      &resRefNum,
-	                      &resName,
 	                      &newMovieFlags))
 		return NULL;
 	_err = NewMovieFromFile(&theMovie,
 	                        resRefNum,
-	                        &resId,
-	                        resName,
+	                        (short *)0,
+	                        (StringPtr)0,
 	                        newMovieFlags,
 	                        &dataRefWasChanged);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&hb",
+	_res = Py_BuildValue("O&b",
 	                     MovieObj_New, theMovie,
-	                     resId,
 	                     dataRefWasChanged);
 	return _res;
 }
@@ -5067,21 +5848,6 @@ static PyObject *Qt_FindNextText(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_DisposeMovieController(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentInstance mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	DisposeMovieController(mc);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Qt_NewMovieFromScrap(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -5098,692 +5864,6 @@ static PyObject *Qt_NewMovieFromScrap(_self, _args)
 	return _res;
 }
 
-static PyObject *Qt_MCSetMovie(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Movie theMovie;
-	WindowPtr movieWindow;
-	Point where;
-	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      MovieObj_Convert, &theMovie,
-	                      WinObj_Convert, &movieWindow,
-	                      PyMac_GetPoint, &where))
-		return NULL;
-	_rv = MCSetMovie(mc,
-	                 theMovie,
-	                 movieWindow,
-	                 where);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetIndMovie(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Movie _rv;
-	MovieController mc;
-	short index;
-	if (!PyArg_ParseTuple(_args, "O&h",
-	                      CmpInstObj_Convert, &mc,
-	                      &index))
-		return NULL;
-	_rv = MCGetIndMovie(mc,
-	                    index);
-	_res = Py_BuildValue("O&",
-	                     MovieObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCRemoveMovie(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCRemoveMovie(mc);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCIsPlayerEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	EventRecord e;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      PyMac_GetEventRecord, &e))
-		return NULL;
-	_rv = MCIsPlayerEvent(mc,
-	                      &e);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCSetControllerAttached(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Boolean attach;
-	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &mc,
-	                      &attach))
-		return NULL;
-	_rv = MCSetControllerAttached(mc,
-	                              attach);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCIsControllerAttached(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCIsControllerAttached(mc);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCSetVisible(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Boolean visible;
-	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &mc,
-	                      &visible))
-		return NULL;
-	_rv = MCSetVisible(mc,
-	                   visible);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetVisible(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCGetVisible(mc);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetControllerBoundsRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Rect bounds;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCGetControllerBoundsRect(mc,
-	                                &bounds);
-	_res = Py_BuildValue("lO&",
-	                     _rv,
-	                     PyMac_BuildRect, &bounds);
-	return _res;
-}
-
-static PyObject *Qt_MCSetControllerBoundsRect(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Rect bounds;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      PyMac_GetRect, &bounds))
-		return NULL;
-	_rv = MCSetControllerBoundsRect(mc,
-	                                &bounds);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetControllerBoundsRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	RgnHandle _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCGetControllerBoundsRgn(mc);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetWindowRgn(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	RgnHandle _rv;
-	MovieController mc;
-	WindowPtr w;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      WinObj_Convert, &w))
-		return NULL;
-	_rv = MCGetWindowRgn(mc,
-	                     w);
-	_res = Py_BuildValue("O&",
-	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCMovieChanged(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Movie m;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      MovieObj_Convert, &m))
-		return NULL;
-	_rv = MCMovieChanged(mc,
-	                     m);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCSetDuration(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	TimeValue duration;
-	if (!PyArg_ParseTuple(_args, "O&l",
-	                      CmpInstObj_Convert, &mc,
-	                      &duration))
-		return NULL;
-	_rv = MCSetDuration(mc,
-	                    duration);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetCurrentTime(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	TimeValue _rv;
-	MovieController mc;
-	TimeScale scale;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCGetCurrentTime(mc,
-	                       &scale);
-	_res = Py_BuildValue("ll",
-	                     _rv,
-	                     scale);
-	return _res;
-}
-
-static PyObject *Qt_MCNewAttachedController(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Movie theMovie;
-	WindowPtr w;
-	Point where;
-	if (!PyArg_ParseTuple(_args, "O&O&O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      MovieObj_Convert, &theMovie,
-	                      WinObj_Convert, &w,
-	                      PyMac_GetPoint, &where))
-		return NULL;
-	_rv = MCNewAttachedController(mc,
-	                              theMovie,
-	                              w,
-	                              where);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCDraw(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	WindowPtr w;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      WinObj_Convert, &w))
-		return NULL;
-	_rv = MCDraw(mc,
-	             w);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCActivate(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	WindowPtr w;
-	Boolean activate;
-	if (!PyArg_ParseTuple(_args, "O&O&b",
-	                      CmpInstObj_Convert, &mc,
-	                      WinObj_Convert, &w,
-	                      &activate))
-		return NULL;
-	_rv = MCActivate(mc,
-	                 w,
-	                 activate);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCIdle(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCIdle(mc);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCKey(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	SInt8 key;
-	long modifiers;
-	if (!PyArg_ParseTuple(_args, "O&bl",
-	                      CmpInstObj_Convert, &mc,
-	                      &key,
-	                      &modifiers))
-		return NULL;
-	_rv = MCKey(mc,
-	            key,
-	            modifiers);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCClick(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	WindowPtr w;
-	Point where;
-	long when;
-	long modifiers;
-	if (!PyArg_ParseTuple(_args, "O&O&O&ll",
-	                      CmpInstObj_Convert, &mc,
-	                      WinObj_Convert, &w,
-	                      PyMac_GetPoint, &where,
-	                      &when,
-	                      &modifiers))
-		return NULL;
-	_rv = MCClick(mc,
-	              w,
-	              where,
-	              when,
-	              modifiers);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCEnableEditing(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Boolean enabled;
-	if (!PyArg_ParseTuple(_args, "O&b",
-	                      CmpInstObj_Convert, &mc,
-	                      &enabled))
-		return NULL;
-	_rv = MCEnableEditing(mc,
-	                      enabled);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCIsEditingEnabled(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	long _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCIsEditingEnabled(mc);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCCopy(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Movie _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCCopy(mc);
-	_res = Py_BuildValue("O&",
-	                     MovieObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCCut(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Movie _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCCut(mc);
-	_res = Py_BuildValue("O&",
-	                     MovieObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCPaste(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Movie srcMovie;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      MovieObj_Convert, &srcMovie))
-		return NULL;
-	_rv = MCPaste(mc,
-	              srcMovie);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCClear(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCClear(mc);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCUndo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCUndo(mc);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCPositionController(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	Rect movieRect;
-	Rect controllerRect;
-	long someFlags;
-	if (!PyArg_ParseTuple(_args, "O&O&O&l",
-	                      CmpInstObj_Convert, &mc,
-	                      PyMac_GetRect, &movieRect,
-	                      PyMac_GetRect, &controllerRect,
-	                      &someFlags))
-		return NULL;
-	_rv = MCPositionController(mc,
-	                           &movieRect,
-	                           &controllerRect,
-	                           someFlags);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetControllerInfo(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	long someFlags;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCGetControllerInfo(mc,
-	                          &someFlags);
-	_res = Py_BuildValue("ll",
-	                     _rv,
-	                     someFlags);
-	return _res;
-}
-
-static PyObject *Qt_MCSetClip(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	RgnHandle theClip;
-	RgnHandle movieClip;
-	if (!PyArg_ParseTuple(_args, "O&O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      ResObj_Convert, &theClip,
-	                      ResObj_Convert, &movieClip))
-		return NULL;
-	_rv = MCSetClip(mc,
-	                theClip,
-	                movieClip);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetClip(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	RgnHandle theClip;
-	RgnHandle movieClip;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      CmpInstObj_Convert, &mc))
-		return NULL;
-	_rv = MCGetClip(mc,
-	                &theClip,
-	                &movieClip);
-	_res = Py_BuildValue("lO&O&",
-	                     _rv,
-	                     ResObj_New, theClip,
-	                     ResObj_New, movieClip);
-	return _res;
-}
-
-static PyObject *Qt_MCDrawBadge(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	RgnHandle movieRgn;
-	RgnHandle badgeRgn;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      CmpInstObj_Convert, &mc,
-	                      ResObj_Convert, &movieRgn))
-		return NULL;
-	_rv = MCDrawBadge(mc,
-	                  movieRgn,
-	                  &badgeRgn);
-	_res = Py_BuildValue("lO&",
-	                     _rv,
-	                     ResObj_New, badgeRgn);
-	return _res;
-}
-
-static PyObject *Qt_MCSetUpEditMenu(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	long modifiers;
-	MenuHandle mh;
-	if (!PyArg_ParseTuple(_args, "O&lO&",
-	                      CmpInstObj_Convert, &mc,
-	                      &modifiers,
-	                      MenuObj_Convert, &mh))
-		return NULL;
-	_rv = MCSetUpEditMenu(mc,
-	                      modifiers,
-	                      mh);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qt_MCGetMenuString(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ComponentResult _rv;
-	MovieController mc;
-	long modifiers;
-	short item;
-	Str255 aString;
-	if (!PyArg_ParseTuple(_args, "O&lhO&",
-	                      CmpInstObj_Convert, &mc,
-	                      &modifiers,
-	                      &item,
-	                      PyMac_GetStr255, aString))
-		return NULL;
-	_rv = MCGetMenuString(mc,
-	                      modifiers,
-	                      item,
-	                      aString);
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
 static PyObject *Qt_NewTimeBase(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -5795,6 +5875,49 @@ static PyObject *Qt_NewTimeBase(_self, _args)
 	_rv = NewTimeBase();
 	_res = Py_BuildValue("O&",
 	                     TimeBaseObj_New, _rv);
+	return _res;
+}
+
+static PyObject *Qt_AlignWindow(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr wp;
+	Boolean front;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      WinObj_Convert, &wp,
+	                      &front))
+		return NULL;
+	AlignWindow(wp,
+	            front,
+	            (Rect *)0,
+	            (ICMAlignmentProcRecordPtr)0);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qt_DragAlignedWindow(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr wp;
+	Point startPt;
+	Rect boundsRect;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      WinObj_Convert, &wp,
+	                      PyMac_GetPoint, &startPt,
+	                      PyMac_GetRect, &boundsRect))
+		return NULL;
+	DragAlignedWindow(wp,
+	                  startPt,
+	                  &boundsRect,
+	                  (Rect *)0,
+	                  (ICMAlignmentProcRecordPtr)0);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -5832,7 +5955,7 @@ static PyMethodDef Qt_methods[] = {
 	{"DeleteMovieFile", (PyCFunction)Qt_DeleteMovieFile, 1,
 	 "(FSSpec fileSpec) -> None"},
 	{"NewMovieFromFile", (PyCFunction)Qt_NewMovieFromFile, 1,
-	 "(short resRefNum, StringPtr resName, short newMovieFlags) -> (Movie theMovie, short resId, Boolean dataRefWasChanged)"},
+	 "(short resRefNum, short newMovieFlags) -> (Movie theMovie, Boolean dataRefWasChanged)"},
 	{"NewMovieFromHandle", (PyCFunction)Qt_NewMovieFromHandle, 1,
 	 "(Handle h, short newMovieFlags) -> (Movie theMovie, Boolean dataRefWasChanged)"},
 	{"NewMovieFromDataFork", (PyCFunction)Qt_NewMovieFromDataFork, 1,
@@ -5849,82 +5972,14 @@ static PyMethodDef Qt_methods[] = {
 	 "(MediaHandler mh, short balance) -> (HandlerError _rv)"},
 	{"FindNextText", (PyCFunction)Qt_FindNextText, 1,
 	 "(MediaHandler mh, Ptr text, long size, short findFlags, TimeValue startTime) -> (ComponentResult _rv, TimeValue foundTime, TimeValue foundDuration, long offset)"},
-	{"DisposeMovieController", (PyCFunction)Qt_DisposeMovieController, 1,
-	 "(ComponentInstance mc) -> None"},
 	{"NewMovieFromScrap", (PyCFunction)Qt_NewMovieFromScrap, 1,
 	 "(long newMovieFlags) -> (Movie _rv)"},
-	{"MCSetMovie", (PyCFunction)Qt_MCSetMovie, 1,
-	 "(MovieController mc, Movie theMovie, WindowPtr movieWindow, Point where) -> (ComponentResult _rv)"},
-	{"MCGetIndMovie", (PyCFunction)Qt_MCGetIndMovie, 1,
-	 "(MovieController mc, short index) -> (Movie _rv)"},
-	{"MCRemoveMovie", (PyCFunction)Qt_MCRemoveMovie, 1,
-	 "(MovieController mc) -> (ComponentResult _rv)"},
-	{"MCIsPlayerEvent", (PyCFunction)Qt_MCIsPlayerEvent, 1,
-	 "(MovieController mc, EventRecord e) -> (ComponentResult _rv)"},
-	{"MCSetControllerAttached", (PyCFunction)Qt_MCSetControllerAttached, 1,
-	 "(MovieController mc, Boolean attach) -> (ComponentResult _rv)"},
-	{"MCIsControllerAttached", (PyCFunction)Qt_MCIsControllerAttached, 1,
-	 "(MovieController mc) -> (ComponentResult _rv)"},
-	{"MCSetVisible", (PyCFunction)Qt_MCSetVisible, 1,
-	 "(MovieController mc, Boolean visible) -> (ComponentResult _rv)"},
-	{"MCGetVisible", (PyCFunction)Qt_MCGetVisible, 1,
-	 "(MovieController mc) -> (ComponentResult _rv)"},
-	{"MCGetControllerBoundsRect", (PyCFunction)Qt_MCGetControllerBoundsRect, 1,
-	 "(MovieController mc) -> (ComponentResult _rv, Rect bounds)"},
-	{"MCSetControllerBoundsRect", (PyCFunction)Qt_MCSetControllerBoundsRect, 1,
-	 "(MovieController mc, Rect bounds) -> (ComponentResult _rv)"},
-	{"MCGetControllerBoundsRgn", (PyCFunction)Qt_MCGetControllerBoundsRgn, 1,
-	 "(MovieController mc) -> (RgnHandle _rv)"},
-	{"MCGetWindowRgn", (PyCFunction)Qt_MCGetWindowRgn, 1,
-	 "(MovieController mc, WindowPtr w) -> (RgnHandle _rv)"},
-	{"MCMovieChanged", (PyCFunction)Qt_MCMovieChanged, 1,
-	 "(MovieController mc, Movie m) -> (ComponentResult _rv)"},
-	{"MCSetDuration", (PyCFunction)Qt_MCSetDuration, 1,
-	 "(MovieController mc, TimeValue duration) -> (ComponentResult _rv)"},
-	{"MCGetCurrentTime", (PyCFunction)Qt_MCGetCurrentTime, 1,
-	 "(MovieController mc) -> (TimeValue _rv, TimeScale scale)"},
-	{"MCNewAttachedController", (PyCFunction)Qt_MCNewAttachedController, 1,
-	 "(MovieController mc, Movie theMovie, WindowPtr w, Point where) -> (ComponentResult _rv)"},
-	{"MCDraw", (PyCFunction)Qt_MCDraw, 1,
-	 "(MovieController mc, WindowPtr w) -> (ComponentResult _rv)"},
-	{"MCActivate", (PyCFunction)Qt_MCActivate, 1,
-	 "(MovieController mc, WindowPtr w, Boolean activate) -> (ComponentResult _rv)"},
-	{"MCIdle", (PyCFunction)Qt_MCIdle, 1,
-	 "(MovieController mc) -> (ComponentResult _rv)"},
-	{"MCKey", (PyCFunction)Qt_MCKey, 1,
-	 "(MovieController mc, SInt8 key, long modifiers) -> (ComponentResult _rv)"},
-	{"MCClick", (PyCFunction)Qt_MCClick, 1,
-	 "(MovieController mc, WindowPtr w, Point where, long when, long modifiers) -> (ComponentResult _rv)"},
-	{"MCEnableEditing", (PyCFunction)Qt_MCEnableEditing, 1,
-	 "(MovieController mc, Boolean enabled) -> (ComponentResult _rv)"},
-	{"MCIsEditingEnabled", (PyCFunction)Qt_MCIsEditingEnabled, 1,
-	 "(MovieController mc) -> (long _rv)"},
-	{"MCCopy", (PyCFunction)Qt_MCCopy, 1,
-	 "(MovieController mc) -> (Movie _rv)"},
-	{"MCCut", (PyCFunction)Qt_MCCut, 1,
-	 "(MovieController mc) -> (Movie _rv)"},
-	{"MCPaste", (PyCFunction)Qt_MCPaste, 1,
-	 "(MovieController mc, Movie srcMovie) -> (ComponentResult _rv)"},
-	{"MCClear", (PyCFunction)Qt_MCClear, 1,
-	 "(MovieController mc) -> (ComponentResult _rv)"},
-	{"MCUndo", (PyCFunction)Qt_MCUndo, 1,
-	 "(MovieController mc) -> (ComponentResult _rv)"},
-	{"MCPositionController", (PyCFunction)Qt_MCPositionController, 1,
-	 "(MovieController mc, Rect movieRect, Rect controllerRect, long someFlags) -> (ComponentResult _rv)"},
-	{"MCGetControllerInfo", (PyCFunction)Qt_MCGetControllerInfo, 1,
-	 "(MovieController mc) -> (ComponentResult _rv, long someFlags)"},
-	{"MCSetClip", (PyCFunction)Qt_MCSetClip, 1,
-	 "(MovieController mc, RgnHandle theClip, RgnHandle movieClip) -> (ComponentResult _rv)"},
-	{"MCGetClip", (PyCFunction)Qt_MCGetClip, 1,
-	 "(MovieController mc) -> (ComponentResult _rv, RgnHandle theClip, RgnHandle movieClip)"},
-	{"MCDrawBadge", (PyCFunction)Qt_MCDrawBadge, 1,
-	 "(MovieController mc, RgnHandle movieRgn) -> (ComponentResult _rv, RgnHandle badgeRgn)"},
-	{"MCSetUpEditMenu", (PyCFunction)Qt_MCSetUpEditMenu, 1,
-	 "(MovieController mc, long modifiers, MenuHandle mh) -> (ComponentResult _rv)"},
-	{"MCGetMenuString", (PyCFunction)Qt_MCGetMenuString, 1,
-	 "(MovieController mc, long modifiers, short item, Str255 aString) -> (ComponentResult _rv)"},
 	{"NewTimeBase", (PyCFunction)Qt_NewTimeBase, 1,
 	 "() -> (TimeBase _rv)"},
+	{"AlignWindow", (PyCFunction)Qt_AlignWindow, 1,
+	 "(WindowPtr wp, Boolean front) -> None"},
+	{"DragAlignedWindow", (PyCFunction)Qt_DragAlignedWindow, 1,
+	 "(WindowPtr wp, Point startPt, Rect boundsRect) -> None"},
 	{NULL, NULL, 0}
 };
 

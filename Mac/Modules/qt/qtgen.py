@@ -1160,8 +1160,8 @@ functions.append(f)
 f = Function(OSErr, 'NewMovieFromFile',
     (Movie, 'theMovie', OutMode),
     (short, 'resRefNum', InMode),
-    (short, 'resId', OutMode),
-    (StringPtr, 'resName', InMode),
+    (dummyshortptr, 'resId', InMode),
+    (dummyStringPtr, 'resName', InMode),
     (short, 'newMovieFlags', InMode),
     (Boolean, 'dataRefWasChanged', OutMode),
 )
@@ -1350,17 +1350,12 @@ f = Method(ComponentResult, 'GetMovieStatus',
 )
 Movie_methods.append(f)
 
-f = Method(ComponentInstance, 'NewMovieController',
+f = Method(MovieController, 'NewMovieController',
     (Movie, 'theMovie', InMode),
     (Rect_ptr, 'movieRect', InMode),
     (long, 'someFlags', InMode),
 )
 Movie_methods.append(f)
-
-f = Function(void, 'DisposeMovieController',
-    (ComponentInstance, 'mc', InMode),
-)
-functions.append(f)
 
 f = Method(OSErr, 'PutMovieOnScrap',
     (Movie, 'theMovie', InMode),
@@ -1443,222 +1438,229 @@ f = Method(void, 'GetTrackLoadSettings',
 )
 Track_methods.append(f)
 
-f = Function(ComponentResult, 'MCSetMovie',
+f = Method(ComponentResult, 'MCSetMovie',
     (MovieController, 'mc', InMode),
     (Movie, 'theMovie', InMode),
     (WindowPtr, 'movieWindow', InMode),
     (Point, 'where', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(Movie, 'MCGetIndMovie',
+f = Method(Movie, 'MCGetIndMovie',
     (MovieController, 'mc', InMode),
     (short, 'index', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCRemoveMovie',
+f = Method(ComponentResult, 'MCRemoveMovie',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCIsPlayerEvent',
+f = Method(ComponentResult, 'MCIsPlayerEvent',
     (MovieController, 'mc', InMode),
     (EventRecord_ptr, 'e', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCSetControllerAttached',
+f = Method(ComponentResult, 'MCDoAction',
+    (MovieController, 'mc', InMode),
+    (short, 'action', InMode),
+    (mcactionparams, 'params', InMode),
+)
+MovieController_methods.append(f)
+
+f = Method(ComponentResult, 'MCSetControllerAttached',
     (MovieController, 'mc', InMode),
     (Boolean, 'attach', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCIsControllerAttached',
+f = Method(ComponentResult, 'MCIsControllerAttached',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCSetVisible',
+f = Method(ComponentResult, 'MCSetVisible',
     (MovieController, 'mc', InMode),
     (Boolean, 'visible', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCGetVisible',
+f = Method(ComponentResult, 'MCGetVisible',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCGetControllerBoundsRect',
+f = Method(ComponentResult, 'MCGetControllerBoundsRect',
     (MovieController, 'mc', InMode),
     (Rect, 'bounds', OutMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCSetControllerBoundsRect',
+f = Method(ComponentResult, 'MCSetControllerBoundsRect',
     (MovieController, 'mc', InMode),
     (Rect_ptr, 'bounds', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(RgnHandle, 'MCGetControllerBoundsRgn',
+f = Method(RgnHandle, 'MCGetControllerBoundsRgn',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(RgnHandle, 'MCGetWindowRgn',
+f = Method(RgnHandle, 'MCGetWindowRgn',
     (MovieController, 'mc', InMode),
     (WindowPtr, 'w', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCMovieChanged',
+f = Method(ComponentResult, 'MCMovieChanged',
     (MovieController, 'mc', InMode),
     (Movie, 'm', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCSetDuration',
+f = Method(ComponentResult, 'MCSetDuration',
     (MovieController, 'mc', InMode),
     (TimeValue, 'duration', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(TimeValue, 'MCGetCurrentTime',
+f = Method(TimeValue, 'MCGetCurrentTime',
     (MovieController, 'mc', InMode),
     (TimeScale, 'scale', OutMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCNewAttachedController',
+f = Method(ComponentResult, 'MCNewAttachedController',
     (MovieController, 'mc', InMode),
     (Movie, 'theMovie', InMode),
     (WindowPtr, 'w', InMode),
     (Point, 'where', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCDraw',
+f = Method(ComponentResult, 'MCDraw',
     (MovieController, 'mc', InMode),
     (WindowPtr, 'w', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCActivate',
+f = Method(ComponentResult, 'MCActivate',
     (MovieController, 'mc', InMode),
     (WindowPtr, 'w', InMode),
     (Boolean, 'activate', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCIdle',
+f = Method(ComponentResult, 'MCIdle',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCKey',
+f = Method(ComponentResult, 'MCKey',
     (MovieController, 'mc', InMode),
     (SInt8, 'key', InMode),
     (long, 'modifiers', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCClick',
+f = Method(ComponentResult, 'MCClick',
     (MovieController, 'mc', InMode),
     (WindowPtr, 'w', InMode),
     (Point, 'where', InMode),
     (long, 'when', InMode),
     (long, 'modifiers', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCEnableEditing',
+f = Method(ComponentResult, 'MCEnableEditing',
     (MovieController, 'mc', InMode),
     (Boolean, 'enabled', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(long, 'MCIsEditingEnabled',
+f = Method(long, 'MCIsEditingEnabled',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(Movie, 'MCCopy',
+f = Method(Movie, 'MCCopy',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(Movie, 'MCCut',
+f = Method(Movie, 'MCCut',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCPaste',
+f = Method(ComponentResult, 'MCPaste',
     (MovieController, 'mc', InMode),
     (Movie, 'srcMovie', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCClear',
+f = Method(ComponentResult, 'MCClear',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCUndo',
+f = Method(ComponentResult, 'MCUndo',
     (MovieController, 'mc', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCPositionController',
+f = Method(ComponentResult, 'MCPositionController',
     (MovieController, 'mc', InMode),
     (Rect_ptr, 'movieRect', InMode),
     (Rect_ptr, 'controllerRect', InMode),
     (long, 'someFlags', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCGetControllerInfo',
+f = Method(ComponentResult, 'MCGetControllerInfo',
     (MovieController, 'mc', InMode),
     (long, 'someFlags', OutMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCSetClip',
+f = Method(ComponentResult, 'MCSetClip',
     (MovieController, 'mc', InMode),
     (RgnHandle, 'theClip', InMode),
     (RgnHandle, 'movieClip', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCGetClip',
+f = Method(ComponentResult, 'MCGetClip',
     (MovieController, 'mc', InMode),
     (RgnHandle, 'theClip', OutMode),
     (RgnHandle, 'movieClip', OutMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCDrawBadge',
+f = Method(ComponentResult, 'MCDrawBadge',
     (MovieController, 'mc', InMode),
     (RgnHandle, 'movieRgn', InMode),
     (RgnHandle, 'badgeRgn', OutMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCSetUpEditMenu',
+f = Method(ComponentResult, 'MCSetUpEditMenu',
     (MovieController, 'mc', InMode),
     (long, 'modifiers', InMode),
     (MenuHandle, 'mh', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
-f = Function(ComponentResult, 'MCGetMenuString',
+f = Method(ComponentResult, 'MCGetMenuString',
     (MovieController, 'mc', InMode),
     (long, 'modifiers', InMode),
     (short, 'item', InMode),
     (Str255, 'aString', InMode),
 )
-functions.append(f)
+MovieController_methods.append(f)
 
 f = Function(TimeBase, 'NewTimeBase',
 )

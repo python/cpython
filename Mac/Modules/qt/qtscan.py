@@ -6,7 +6,7 @@ from scantools import Scanner
 
 LONG = "QuickTime"
 SHORT = "qt"
-OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase")
+OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController")
 
 def main():
 	input = "Movies.h"
@@ -38,6 +38,7 @@ class MyScanner(Scanner):
 			"DisposeTrackMedia",	# ditto
 			"DisposeUserData",		# ditto
 			"DisposeTimeBase",		# ditto
+			"DisposeMovieController", # ditto
 			"GetMovieCreationTime",	# type "unsigned long" in C, inparseable
 			"GetMovieModificationTime",	# Ditto
 			"GetTrackCreationTime",		# ditto
@@ -49,7 +50,6 @@ class MyScanner(Scanner):
 			"GetUserDataItem",
 			"SetUserDataItem",
 			"SetTextSampleData",
-			"MCDoAction",
 			# bgen gets the argument in/out wrong..
 			"AddTextSample",
 			"AddTESample",
@@ -95,6 +95,17 @@ class MyScanner(Scanner):
 	def makerepairinstructions(self):
 		return [
 			([('FSSpec', '*', 'OutMode')], [('FSSpec_ptr', '*', 'InMode')]),
+			
+			# Movie controller creation
+			([('ComponentInstance', 'NewMovieController', 'ReturnMode')],
+			 [('MovieController', '*', 'ReturnMode')]),
+			 
+			# NewMovieFromFile
+			([('short', 'resId', 'OutMode'), ('StringPtr', 'resName', 'InMode')],
+			 [('dummyshortptr', 'resId', 'InMode'), ('dummyStringPtr', 'resName', 'InMode')]),
+			 
+			# MCDoAction
+			([('void', 'params', 'OutMode')], [('mcactionparams', 'params', 'InMode')]),
 			]
 			
 if __name__ == "__main__":
