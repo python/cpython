@@ -154,8 +154,7 @@ select selectmodule.c	# select(2); not on ancient System V
 _socket socketmodule.c	# socket(2)
 
 # Memory-mapped files (also works on Win32).
-# Some platforms require -lucb.
-mmap mmapmodule.c # -lucb
+mmap mmapmodule.c
 
 # Socket module compiled with SSL support; you must edit the SSL variable:
 #SSL=/usr/local/ssl
@@ -182,7 +181,7 @@ mmap mmapmodule.c # -lucb
 
 #audioop audioop.c	# Operations on audio samples
 #imageop imageop.c	# Operations on images
-#rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
+#rgbimg rgbimgmodule.c	# Read SGI RGB image files (but coded portably)
 
 
 # The md5 module implements the RSA Data Security, Inc. MD5
