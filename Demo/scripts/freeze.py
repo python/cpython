@@ -68,6 +68,7 @@ j = os.path.join
 
 # Attempt to guess machine architecture
 if os.path.exists('/usr/lib/libgl_s'): ARCH = 'sgi'
+elif os.path.exists('/etc/issue'): ARCH = 'sequent'
 else: ARCH = 'sun4'
 
 # Site parametrizations (change to match your site)
@@ -77,6 +78,9 @@ PYTHON = j(TOP, 'python')		# Top of the Python source tree
 SRC = j(PYTHON, 'src')			# Python source directory
 BLD = j(PYTHON, 'build.' + ARCH)	# Python build directory
 #BLD = SRC				# Use this if you build in SRC
+
+LIBINST = '/ufs/guido/src/python/irix4/tmp/lib/python/lib' # installed libraries
+INCLINST = '/ufs/guido/src/python/irix4/tmp/include/Py' # installed include files
 
 # Other packages (change to match your site)
 DL = j(TOP, 'dl')			# Top of the dl source tree
@@ -88,9 +92,14 @@ READLINE = j(TOP, 'readline.' + ARCH)	# Top of the GNU Readline source tree
 SUN_X11 = '/usr/local/X11R5/lib/libX11.a'
 
 # File names (usually no need to change)
-LIBP = j(BLD, 'libpython.a')		# Main Python library
-CONFIG = j(SRC, 'config.c')		# Configuration source file
-FMAIN = j(SRC, 'frozenmain.c')		# Special main source file
+LIBP = [				# Main Python libraries
+        j(LIBINST, 'libPython.a'),
+        j(LIBINST, 'libParser.a'),
+        j(LIBINST, 'libObjects.a'),
+        j(LIBINST, 'libModules.a')
+       ]
+CONFIG_IN = j(LIBINST, 'config.c.in')	# Configuration source file
+FMAIN = j(LIBINST, 'frozenmain.c')	# Special main source file
 
 # Libraries needed when linking.  First tuple item is built-in module
 # for which it is needed (or '*' for always), rest are ld arguments.
@@ -104,8 +113,7 @@ libdeps_sgi = [ \
 	  ('cd',	'-lcdaudio', '-lds'), \
 	  ('cl',	'-lcl'), \
 	  ('imgfile',	'-limage', '-lgutil', '-lm'), \
-	  ('mpz',	'/ufs/jh/src/gmp-1.2/libgmp.a'), \
-	  ('md5',	'/ufs/jh/src/md5/md5.o'), \
+	  ('mpz',	'/ufs/guido/src/gmp/libgmp.a'), \
 	  ('*',		'-lsun'), \
 	  ('*',		j(DL, 'libdl.a'), '-lmld'), \
 	  ('*',		'-lmpc'), \
@@ -123,6 +131,14 @@ libdeps_sun4 = [ \
 	  ('*',		j(DL_DLD,'libdl.a'), j(DLD,'libdld.a')), \
 	  ('*',		SUN_X11), \
 	  ('*',		'-ltermcap'), \
+	  ('*',		'-lc'), \
+	  ]
+libdeps_sequent = [ \
+	  ('*',		j(LIBINST, 'libreadline.a'), '-ltermcap'), \
+	  ('*',		'-lsocket'), \
+	  ('*',		'-linet'), \
+	  ('*',		'-lnsl'), \
+	  ('*',		'-lm'), \
 	  ('*',		'-lc'), \
 	  ]
 libdeps = eval('libdeps_' + ARCH)
@@ -223,7 +239,8 @@ def process(filename, addmodules):
 	else:
 		if not quiet: print 'NOT writing frozen.c ...'
 	#
-	if not dlmodules:
+##	if not dlmodules:
+	if 0:
 		config = CONFIG
 		if not quiet: print 'Using existing', config, '...'
 	else:
@@ -233,22 +250,30 @@ def process(filename, addmodules):
 		else:
 			if not quiet:
 				print 'Writing config.c with dl modules ...'
-			f = open(CONFIG, 'r')
+			f = open(CONFIG_IN, 'r')
 			g = open(config, 'w')
 			m1 = regex.compile('-- ADDMODULE MARKER 1 --')
 			m2 = regex.compile('-- ADDMODULE MARKER 2 --')
+			builtinmodules = []
+			stdmodules = ('sys', '__main__', '__builtin__',
+				      'marshal')
+			todomodules = builtinmodules + dlmodules
+			for mod in dict.keys():
+				if dict[mod] == '<builtin>' and \
+					  mod not in stdmodules:
+					builtinmodules.append(mod)
 			while 1:
 				line = f.readline()
 				if not line: break
 				g.write(line)
 				if m1.search(line) >= 0:
 					if verbose: print 'Marker 1 ...'
-					for mod in dlmodules:
+					for mod in todomodules:
 						g.write('extern void init' + \
 						  mod + '();\n')
 				if m2.search(line) >= 0:
 					if verbose: print 'Marker 2 ...'
-					for mod in dlmodules:
+					for mod in todomodules:
 						g.write('{"' + mod + \
 						  '", init' + mod + '},\n')
 			g.close()
@@ -256,18 +281,19 @@ def process(filename, addmodules):
 	if not quiet:
 		if noexec: print 'Generating compilation commands ...'
 		else: print 'Starting compilation ...'
-	defs = ['-DUSE_FROZEN', '-DPYTHONPATH=\'"."\'']
-	for mod in dict.keys():
-		if dict[mod] == '<builtin>' and mod <> 'sys':
-			defs.append('-DUSE_' + string.upper(mod))
+	defs = ['-DNO_MAIN', '-DUSE_FROZEN', '-DPYTHONPATH=\'"."\'']
 	#
-	incs = ['-I.', '-I' + SRC]
+	incs = ['-I.', '-I' + INCLINST]
 	if dict.has_key('stdwin'):
 		incs.append('-I' + j(STDWIN, 'H'))
 	#
 	srcs = [config, FMAIN]
 	#
-	libs.append(LIBP)
+	if type(LIBP) == type(''):
+		libs.append(LIBP)
+	else:
+		for lib in LIBP:
+			libs.append(lib)
 	for item in libdeps:
 		m = item[0]
 		if m == '*' or dict.has_key(m):
@@ -344,7 +370,7 @@ def writefrozen(filename, dict):
 		for mod, codestring in codelist:
 			if verbose:
 				write('Writing initializer for %s\n'%mod)
-			print 'static char M_' + mod + '[' + \
+			print 'static unsigned char M_' + mod + '[' + \
 				  str(len(codestring)) + '+1] = {'
 			for i in range(0, len(codestring), 16):
 				for c in codestring[i:i+16]:
@@ -353,7 +379,7 @@ def writefrozen(filename, dict):
 			print '};'
 		print 'struct frozen {'
 		print '  char *name;'
-		print '  char *code;'
+		print '  unsigned char *code;'
 		print '  int size;'
 		print '} frozen_modules[] = {'
 		for mod, codestring in codelist:
