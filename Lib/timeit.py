@@ -84,7 +84,7 @@ def inner(number, timer):
 
 def reindent(src, indent):
     """Helper to reindent a multi-line statement."""
-    return ("\n" + " "*indent).join(src.split("\n"))
+    return src.replace("\n", "\n" + " "*indent)
 
 class Timer:
     """Class for timing execution speed of small code snippets.
