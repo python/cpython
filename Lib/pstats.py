@@ -477,7 +477,7 @@ class TupleComp:
 
 def func_strip_path(func_name):
 	file, line, name = func_name
- 	return os.path.basename(file), line, name
+	return os.path.basename(file), line, name
 
 def func_get_function_name(func):
 	return func[2]
