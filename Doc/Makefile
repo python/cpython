@@ -23,5 +23,5 @@ qua:
 	latex qua
 
 clean:
-	rm -f @* *~ *.aux *.dvi *.idx *.ilg *.ind *.log *.ps *.toc
+	rm -f @* *~ *.aux *.dvi *.idx *.ilg *.ind *.log *.ps *.toc *.blg
 	# Keep: .tex, .bib, .sty!
