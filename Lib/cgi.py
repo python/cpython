@@ -1210,7 +1210,7 @@ def test(environ=os.environ):
 
 def print_exception(type=None, value=None, tb=None, limit=None):
     if type is None:
-	type, value, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
+	type, value, tb = sys.exc_info()
     import traceback
     print
     print "<H3>Traceback (innermost last):</H3>"
@@ -1220,6 +1220,7 @@ def print_exception(type=None, value=None, tb=None, limit=None):
 	escape(string.join(list[:-1], "")),
 	escape(list[-1]),
 	)
+    del tb
 
 def print_environ(environ=os.environ):
     """Dump the shell environment as HTML."""

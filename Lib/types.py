@@ -51,10 +51,12 @@ try:
     raise TypeError
 except TypeError:
     try:
-	TracebackType = type(sys.exc_traceback)
-	FrameType = type(sys.exc_traceback.tb_frame)
+	tb = sys.exc_info()[2]
+	TracebackType = type(tb)
+	FrameType = type(tb.tb_frame)
     except:
 	pass
+    tb = None; del tb
 
 SliceType = type(slice(0))
 EllipsisType = type(Ellipsis)
