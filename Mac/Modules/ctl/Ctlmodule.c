@@ -73,7 +73,7 @@ PyObject *CtlObj_New(itself)
 	it = PyObject_NEW(ControlObject, &Control_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
-	SetCRefCon(itself, (long)it);
+	SetControlReference(itself, (long)it);
 	return (PyObject *)it;
 }
 CtlObj_Convert(v, p_itself)
@@ -92,7 +92,7 @@ CtlObj_Convert(v, p_itself)
 static void CtlObj_dealloc(self)
 	ControlObject *self;
 {
-	if (self->ob_itself) SetCRefCon(self->ob_itself, (long)0); /* Make it forget about us */
+	if (self->ob_itself) SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */
 	PyMem_DEL(self);
 }
 
@@ -448,7 +448,7 @@ static PyObject *CtlObj_DisposeControl(_self, _args)
 		if (!PyArg_ParseTuple(_args, ""))
 			return NULL;
 		if ( _self->ob_itself ) {
-			SetCRefCon(_self->ob_itself, (long)0); /* Make it forget about us */
+			SetControlReference(_self->ob_itself, (long)0); /* Make it forget about us */
 			DisposeControl(_self->ob_itself);
 			_self->ob_itself = NULL;
 		}
@@ -674,7 +674,7 @@ CtlObj_WhichControl(ControlHandle c)
 	if (c == NULL)
 		it = NULL;
 	else
-		it = (PyObject *) GetCRefCon(c);
+		it = (PyObject *) GetControlReference(c);
 	if (it == NULL || ((ControlObject *)it)->ob_itself != c)
 		it = Py_None;
 	Py_INCREF(it);
