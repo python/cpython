@@ -2,6 +2,27 @@ sSuffices
 GUSISetupConfig
 GUSISetupDevices
 GUSISetupFactories
+gusisioux_state
+__vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
+__vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
+sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
+sInstance__15GUSISIOUXSocket		# GUSISIOUXSocket::sInstance
+__dt__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::~GUSISIOUXDevice()
+GUSISetupConsoleDescriptors
+open__15GUSISIOUXDeviceFR13GUSIFileTokeni		# GUSISIOUXDevice::open(GUSIFileToken&,int)
+Want__15GUSISIOUXDeviceFR13GUSIFileToken		# GUSISIOUXDevice::Want(GUSIFileToken&)
+__dt__10GUSIDeviceFv		# GUSIDevice::~GUSIDevice()
+Instance__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::Instance()
+select__15GUSISIOUXSocketFPbPbPb		# GUSISIOUXSocket::select(bool*,bool*,bool*)
+isatty__15GUSISIOUXSocketFv		# GUSISIOUXSocket::isatty()
+fstat__15GUSISIOUXSocketFP4stat		# GUSISIOUXSocket::fstat(stat*)
+ioctl__15GUSISIOUXSocketFUiPc		# GUSISIOUXSocket::ioctl(unsigned int,char*)
+write__15GUSISIOUXSocketFRC12GUSIGatherer		# GUSISIOUXSocket::write(const GUSIGatherer&)
+read__15GUSISIOUXSocketFRC13GUSIScatterer		# GUSISIOUXSocket::read(const GUSIScatterer&)
+__dt__15GUSISIOUXSocketFv		# GUSISIOUXSocket::~GUSISIOUXSocket()
+Initialize__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Initialize()
+__ct__15GUSISIOUXSocketFv		# GUSISIOUXSocket::GUSISIOUXSocket()
+Instance__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Instance()
 _PyBuiltin_Init
 _PyEval_SliceIndex
 PyEval_CallObjectWithKeywords
@@ -95,6 +116,7 @@ PyMarshal_Init
 PyMarshal_WriteObjectToString
 PyMarshal_ReadObjectFromString
 PyMarshal_ReadObjectFromFile
+PyMarshal_ReadLastObjectFromFile
 PyMarshal_ReadLongFromFile
 PyMarshal_WriteObjectToFile
 PyMarshal_WriteLongToFile
@@ -125,6 +147,7 @@ Py_AtExit
 Py_FatalError
 PyParser_SimpleParseString
 PyParser_SimpleParseFile
+Py_SymtableString
 Py_CompileString
 PyRun_FileEx
 PyRun_File
@@ -151,6 +174,7 @@ _PyThreadState_Current
 PyThreadState_GetDict
 PyThreadState_Swap
 PyThreadState_Get
+PyThreadState_DeleteCurrent
 PyThreadState_Delete
 PyThreadState_Clear
 PyThreadState_New
@@ -174,8 +198,11 @@ PyTraceBack_Print
 PyTraceBack_Here
 PyCode_Type
 Py_OptimizeFlag
+PySymtable_Free
 PyCode_Addr2Line
+PyNode_CompileSymtable
 PyNode_Compile
+is_free
 PyCode_New
 PyObject_CallMethod
 PyObject_CallFunction
@@ -257,6 +284,7 @@ PyMethod_Self
 PyMethod_Function
 PyMethod_New
 PyInstance_New
+PyInstance_NewRaw
 PyClass_IsSubclass
 PyClass_New
 PyCObject_Type
@@ -320,6 +348,8 @@ PyFrame_BlockPop
 PyFrame_BlockSetup
 PyFrame_New
 PyFunction_Type
+PyFunction_SetClosure
+PyFunction_GetClosure
 PyFunction_SetDefaults
 PyFunction_GetDefaults
 PyFunction_GetGlobals
@@ -376,6 +406,7 @@ _Py_NoneStruct
 _Py_NotImplementedStruct
 _Py_cobject_hack
 _Py_abstract_hack
+PyObject_ClearWeakRefs
 _PyTrash_delete_later
 _PyTrash_delete_nesting
 _PyTrash_destroy_chain
@@ -408,6 +439,7 @@ PyObject_Compare
 PyObject_Unicode
 PyObject_Str
 PyObject_Repr
+_PyObject_Dump
 PyObject_Print
 _PyGC_Remove
 _PyGC_Insert
@@ -576,14 +608,16 @@ PyMac_StopGUSISpin
 RotateCursor
 SpinCursor
 PyMac_getscript
-gusisioux_state
 PyMac_AppRefNum
 PyMac_options
+console_output_state
+PyMac_GetDelayConsoleFlag
 Py_GetExecPrefix
 Py_GetPrefix
 Py_GetArgcArgv
 Py_GetProgramFullPath
 PyMac_Exit
+PyMac_OutputNotSeen
 PyMac_OutputSeen
 PyMac_InitApplication
 PyMac_Initialize
@@ -637,6 +671,7 @@ initDlg
 DlgObj_ConvertToWindow
 DlgObj_Convert
 DlgObj_New
+DlgObj_WhichDialog
 MenuObj_chain
 Menu_Type
 initMenu
@@ -648,6 +683,7 @@ BMObj_chain
 BitMap_Type
 QDGlobalsAccess_Type
 initQd
+BMObj_NewCopied
 BMObj_Convert
 BMObj_New
 GrafObj_Convert
@@ -676,10 +712,10 @@ PyBuffer_FromObject
 _PyImport_DynLoadFiletab
 _PyImport_GetDynLoadFunc
 init_codecs
-initunicodedata
 _PyUnicode_Database_Records
 _PyUnicode_CategoryNames
 _PyUnicode_BidirectionalNames
+initunicodedata
 _PyCodecRegistry_Fini
 _PyCodecRegistry_Init
 PyCodec_Decode
@@ -831,26 +867,13 @@ dragglue_SendDataUPP
 initDrag
 DragObj_Convert
 DragObj_New
-__vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
-__vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
-sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
-sInstance__15GUSISIOUXSocket		# GUSISIOUXSocket::sInstance
-__dt__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::~GUSISIOUXDevice()
-GUSISetupConsoleDescriptors
-open__15GUSISIOUXDeviceFR13GUSIFileTokeni		# GUSISIOUXDevice::open(GUSIFileToken&,int)
-Want__15GUSISIOUXDeviceFR13GUSIFileToken		# GUSISIOUXDevice::Want(GUSIFileToken&)
-__dt__10GUSIDeviceFv		# GUSIDevice::~GUSIDevice()
-Instance__15GUSISIOUXDeviceFv		# GUSISIOUXDevice::Instance()
-select__15GUSISIOUXSocketFPbPbPb		# GUSISIOUXSocket::select(bool*,bool*,bool*)
-isatty__15GUSISIOUXSocketFv		# GUSISIOUXSocket::isatty()
-fstat__15GUSISIOUXSocketFP4stat		# GUSISIOUXSocket::fstat(stat*)
-ioctl__15GUSISIOUXSocketFUiPc		# GUSISIOUXSocket::ioctl(unsigned int,char*)
-write__15GUSISIOUXSocketFRC12GUSIGatherer		# GUSISIOUXSocket::write(const GUSIGatherer&)
-read__15GUSISIOUXSocketFRC13GUSIScatterer		# GUSISIOUXSocket::read(const GUSIScatterer&)
-__dt__15GUSISIOUXSocketFv		# GUSISIOUXSocket::~GUSISIOUXSocket()
-Initialize__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Initialize()
-__ct__15GUSISIOUXSocketFv		# GUSISIOUXSocket::GUSISIOUXSocket()
-Instance__15GUSISIOUXSocketFv		# GUSISIOUXSocket::Instance()
+initxreadlines
+PyCell_Type
+PyCell_Set
+PyCell_Get
+PyCell_New
+PySymtableEntry_Type
+PySymtableEntry_New
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
@@ -1007,6 +1030,7 @@ __dt__19GUSIDescriptorTableFv		# GUSIDescriptorTable::~GUSIDescriptorTable()
 CloseAllDescriptors__19GUSIDescriptorTableFv		# GUSIDescriptorTable::CloseAllDescriptors()
 SetInstance__19GUSIDescriptorTableFP19GUSIDescriptorTable		# GUSIDescriptorTable::SetInstance(GUSIDescriptorTable*)
 Instance__19GUSIDescriptorTableFv		# GUSIDescriptorTable::Instance()
+Instance__14GUSINullDeviceFv		# GUSINullDevice::Instance()
 GUSIDefaultSetupConsole
 GUSISetupConsole
 __ct__19GUSIDescriptorTableFv		# GUSIDescriptorTable::GUSIDescriptorTable()
@@ -1080,6 +1104,8 @@ socketpair__17GUSISocketFactoryFiiiPP10GUSISocket		# GUSISocketFactory::socketpa
 sID__16GUSITempFileSpec		# GUSITempFileSpec::sID
 sScratchSize__12GUSIFileSpec		# GUSIFileSpec::sScratchSize
 sScratch__12GUSIFileSpec		# GUSIFileSpec::sScratch
+GUSIFSpGetCatInfo
+GUSIFSpTouchFolder
 GUSIFSp2Encoding
 GUSIFSp2DirRelPath
 GUSIFSp2RelPath
@@ -1441,10 +1467,12 @@ GUSIwithOTTcpSockets
 ioctl__15GUSIOTUdpSocketFUiPc		# GUSIOTUdpSocket::ioctl(unsigned int,char*)
 setsockopt__15GUSIOTUdpSocketFiiPvUi		# GUSIOTUdpSocket::setsockopt(int,int,void*,unsigned int)
 getsockopt__15GUSIOTUdpSocketFiiPvPUi		# GUSIOTUdpSocket::getsockopt(int,int,void*,unsigned int*)
+Clone__15GUSIOTUdpSocketFv		# GUSIOTUdpSocket::Clone()
 ConfigPath__17GUSIOTUdpStrategyFv		# GUSIOTUdpStrategy::ConfigPath()
 ioctl__15GUSIOTTcpSocketFUiPc		# GUSIOTTcpSocket::ioctl(unsigned int,char*)
 setsockopt__15GUSIOTTcpSocketFiiPvUi		# GUSIOTTcpSocket::setsockopt(int,int,void*,unsigned int)
 getsockopt__15GUSIOTTcpSocketFiiPvPUi		# GUSIOTTcpSocket::getsockopt(int,int,void*,unsigned int*)
+Clone__15GUSIOTTcpSocketFv		# GUSIOTTcpSocket::Clone()
 ConfigPath__17GUSIOTTcpStrategyFv		# GUSIOTTcpStrategy::ConfigPath()
 DoIoctl__18GUSIOTMInetOptionsFPiUiPc		# GUSIOTMInetOptions::DoIoctl(int*,unsigned int,char*)
 DoSetSockOpt__18GUSIOTMInetOptionsFPiP9TEndpointiiPvUi		# GUSIOTMInetOptions::DoSetSockOpt(int*,TEndpoint*,int,int,void*,unsigned int)
@@ -2382,3 +2410,152 @@ OTAsyncStreamOpen
 stream_open
 stream_pipe
 OTStreamPipe
+AEGetDescData
+AEGetDescDataSize
+AEReplaceDescData
+GetControlBounds
+IsControlHilited
+GetControlHilite
+GetControlDataHandle
+GetControlOwner
+GetControlPopupMenuHandle
+GetControlPopupMenuID
+SetControlBounds
+SetControlDataHandle
+SetControlPopupMenuHandle
+SetControlPopupMenuID
+GetDialogWindow
+GetDialogTextEditHandle
+GetDialogDefaultItem
+GetDialogCancelItem
+GetDialogKeyboardFocusItem
+SetPortDialogPort
+GetDialogPort
+GetDialogFromWindow
+GetParamText
+GetCorrectPort
+GetPortPixMap
+GetPortBounds
+IsPortRegionBeingDefined
+IsPortPictureBeingDefined
+IsPortOffscreen
+GetPortVisibleRegion
+GetPortClipRegion
+GetPortForeColor
+GetPortBackColor
+GetPortBackPixPatDirect
+GetPortBackPixPat
+GetPortPenPixPatDirect
+GetPortPenPixPat
+GetPortFillPixPat
+GetPortTextFont
+GetPortTextFace
+GetPortTextMode
+GetPortFracHPenLocation
+GetPortChExtra
+GetPortPenVisibility
+GetPortSpExtra
+GetPortTextSize
+GetPortGrafProcs
+GetPortOpColor
+GetPortHiliteColor
+GetPixBounds
+GetPixDepth
+GetPortPenSize
+GetPortPenMode
+GetPortPenLocation
+GetPortPrintingReference
+SetPortBounds
+SetPortVisibleRegion
+SetPortClipRegion
+SetPortPenPixPatDirect
+SetPortPenPixPat
+SetPortBackPixPatDirect
+SetPortBackPixPat
+SetPortOpColor
+SetPortPenSize
+SetPortPenMode
+SetPortFracHPenLocation
+SetPortGrafProcs
+SetPortPrintingReference
+GetQDGlobalsRandomSeed
+GetQDGlobalsScreenBits
+GetQDGlobalsArrow
+GetQDGlobalsDarkGray
+GetQDGlobalsLightGray
+GetQDGlobalsGray
+GetQDGlobalsBlack
+GetQDGlobalsWhite
+GetQDGlobalsThePort
+SetQDGlobalsArrow
+SetQDGlobalsRandomSeed
+GetRegionBounds
+IsRegionRectangular
+CreateNewPort
+DisposePort
+SetQDError
+GetWindowPort
+GetWindowKind
+IsWindowVisible
+IsWindowHilited
+IsWindowUpdatePending
+GetWindowGoAwayFlag
+GetWindowSpareFlag
+GetWindowStandardState
+GetWindowUserState
+SetWindowKind
+SetWindowStandardState
+SetWindowUserState
+SetPortWindowPort
+GetWindowPortBounds
+GetWindowFromPort
+IsTSMTEDialog
+GetTSMTEDialogDocumentID
+GetTSMTEDialogTSMTERecHandle
+SetTSMTEDialogDocumentID
+SetTSMTEDialogTSMTERecHandle
+GetMenuID
+GetMenuWidth
+GetMenuHeight
+GetMenuTitle
+SetMenuID
+SetMenuWidth
+SetMenuHeight
+SetMenuTitle
+GetGlobalMouse
+GetListViewBounds
+GetListPort
+GetListCellIndent
+GetListCellSize
+GetListVisibleCells
+GetListVerticalScrollBar
+GetListHorizontalScrollBar
+GetListFlags
+GetListSelectionFlags
+GetListActive
+GetListClickTime
+GetListClickLocation
+GetListMouseLocation
+GetListClickLoop
+GetListRefCon
+GetListDefinition
+GetListUserHandle
+GetListDataBounds
+GetListDataHandle
+SetListViewBounds
+SetListPort
+SetListCellIndent
+SetListClickTime
+SetListClickLoop
+SetListLastClick
+SetListRefCon
+SetListFlags
+SetListSelectionFlags
+SetListUserHandle
+GrabSpecifiedCFMSymbol
+CopyPascalStringToC
+CopyCStringToPascal
+p2cstrcpy
+GetQDGlobals
+GetWindowList
+GetNextWindow

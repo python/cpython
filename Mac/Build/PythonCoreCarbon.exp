@@ -864,6 +864,8 @@ PyCell_Type
 PyCell_Set
 PyCell_Get
 PyCell_New
+PySymtableEntry_Type
+PySymtableEntry_New
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
