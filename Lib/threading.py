@@ -191,15 +191,22 @@ class _Condition(_Verbose):
                 if __debug__:
                     self._note("%s.wait(): got it", self)
             else:
+                # Balancing act:  We can't afford a pure busy loop, so we
+                # have to sleep; but if we sleep the whole timeout time,
+                # we'll be unresponsive.  The scheme here sleeps very
+                # little at first, longer as time goes on, but never longer
+                # than 20 times per second (or the timeout time remaining).
                 endtime = _time() + timeout
-                delay = 0.000001 # 1 usec
+                delay = 0.0005 # 500 us -> initial delay of 1 ms
                 while 1:
                     gotit = waiter.acquire(0)
-                    if gotit or _time() >= endtime:
+                    if gotit:
                         break
+                    remaining = endtime - _time()
+                    if remaining <= 0:
+                        break
+                    delay = min(delay * 2, remaining, .05)
                     _sleep(delay)
-                    if delay < 1.0:
-                        delay = delay * 2.0
                 if not gotit:
                     if __debug__:
                         self._note("%s.wait(%s): timed out", self, timeout)
