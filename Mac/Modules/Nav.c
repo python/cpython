@@ -113,7 +113,6 @@ my_filterProc(AEDesc *theItem, void *info,
 	PyObject *pyfunc;
 	PyObject *rv;
 	Boolean c_rv = false;
-	PyObject theItemCopy;
 	
 	if (!dict) return false;
 	if ( (pyfunc = PyDict_GetItemString(dict, "filterProc")) == NULL ) {
