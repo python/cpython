@@ -1,6 +1,13 @@
 \documentstyle[twoside,11pt,myformat]{report}
 
-\title{Python Tutorial}
+% Things to do:
+% Add a section on file I/O
+% Write a chapter entitled ``Some Useful Modules''
+%  --regex, math+cmath
+% Should really move the Python startup file info to an appendix
+%
+
+\title{Python Tutorial -- DRAFT of \today}
 
 \input{boilerplate}
 
@@ -17,8 +24,7 @@
 \noindent
 Python is a simple, yet powerful programming language that bridges the
 gap between C and shell programming, and is thus ideally suited for
-``throw-away programming''
-and rapid prototyping.  Its syntax is put
+``throw-away programming'' and rapid prototyping.  Its syntax is put
 together from constructs borrowed from a variety of other languages;
 most prominent are influences from ABC, C, Modula-3 and Icon.
 
@@ -27,7 +33,7 @@ types implemented in C.  Python is also suitable as an extension
 language for highly customizable C applications such as editors or
 window managers.
 
-Python is available for various operating systems, amongst which
+Python is available for many operating systems:
 several flavors of \UNIX{}, the Apple Macintosh, MS-DOS, Windows
 (3.1(1), '95 and NT flavors), OS/2, and others.
 
@@ -58,29 +64,41 @@ a more formal definition of the language.
 \section{Disclaimer}
 
 Now that there are several books out on Python, this tutorial has lost
-its role as the only introduction to Python for most new users.  It
-takes time to keep a document like this up to date in the face of
-additions to the language, and I simply don't have enough time to do a
-good job.  Therefore, this version of the tutorial is almost unchanged
-since the previous release.  This doesn't mean that the tutorial is
-out of date --- all the examples still work exactly as before.  There
-are simply some new areas of the language that aren't covered.
+its role as the only introduction to Python for most new users.  This
+tutorial does not attempt to be comprehensive and cover every single
+feature, or even every commonly used feature.  Instead, it introduces
+many of Python's most noteworthy features, and will give you a good
+idea of the language's flavor and style.
 
-To make up for this, there are some chapters at the end cover
-important changes in recent Python releases, and these are up to date
-with the current release.
+%It takes time to keep a document like this up to date in the face of
+%additions to the language, and I simply don't have enough time to do a
+%good job.  Therefore, this version of the tutorial is almost unchanged
+%since the previous release.  This doesn't mean that the tutorial is
+%out of date --- all the examples still work exactly as before.  There
+%are simply some new areas of the language that aren't covered.
+
+%To make up for this, there are some chapters at the end that cover
+%important changes in recent Python releases, and these are up to date
+%with the current release.
 
 \section{Introduction}
 
 If you ever wrote a large shell script, you probably know this
 feeling: you'd love to add yet another feature, but it's already so
 slow, and so big, and so complicated; or the feature involves a system
-call or other function that is only accessible from C \ldots  Usually
+call or other function that is only accessible from C \ldots Usually
 the problem at hand isn't serious enough to warrant rewriting the
-script in C; perhaps because the problem requires variable-length
-strings or other data types (like sorted lists of file names) that are
-easy in the shell but lots of work to implement in C; or perhaps just
-because you're not sufficiently familiar with C.
+script in C; perhaps the problem requires variable-length strings or
+other data types (like sorted lists of file names) that are easy in
+the shell but lots of work to implement in C, or perhaps you're not
+sufficiently familiar with C.
+
+Another situation: perhaps you have to work with several C libraries,
+and the usual C write/compile/test/re-compile cycle is too slow.  You
+need to develop software more quickly.  Possibly perhaps you've
+written a program that could use an extension language, and you don't
+want to design a language, write and debug an interpreter for it, then
+tie it into your application.
 
 In such cases, Python may be just the language for you.  Python is
 simple to use, but it is a real programming language, offering much
@@ -98,7 +116,7 @@ reused in other Python programs.  It comes with a large collection of
 standard modules that you can use as the basis of your programs --- or
 as examples to start learning to program in Python.  There are also
 built-in modules that provide things like file I/O, system calls,
-sockets, and even a generic interface to window systems (STDWIN).
+sockets, and even interfaces to GUI toolkits like Tk.  
 
 Python is an interpreted language, which can save you considerable time
 during program development because no compilation and linking is
@@ -122,17 +140,17 @@ no variable or argument declarations are necessary.
 \end{itemize}
 
 Python is {\em extensible}: if you know how to program in C it is easy
-to add a new built-in
-function or
-module to the interpreter, either to
+to add a new built-in function or module to the interpreter, either to
 perform critical operations at maximum speed, or to link Python
 programs to libraries that may only be available in binary form (such
 as a vendor-specific graphics library).  Once you are really hooked,
 you can link the Python interpreter into an application written in C
 and use it as an extension or command language for that application.
 
-By the way, the language is named after the BBC show ``Monty
-Python's Flying Circus'' and has nothing to do with nasty reptiles...
+By the way, the language is named after the BBC show ``Monty Python's
+Flying Circus'' and has nothing to do with nasty reptiles.  Making
+references to Monty Python skits in documentation is not only allowed,
+it is encouraged.  
 
 \section{Where From Here}
 
@@ -149,12 +167,6 @@ language and system though examples, beginning with simple
 expressions, statements and data types, through functions and modules,
 and finally touching upon advanced concepts like exceptions
 and user-defined classes.
-
-When you're through with the tutorial (or just getting bored), you
-should read the Library Reference, which gives complete (though terse)
-reference material about built-in and standard types, functions and
-modules that can save you a lot of time when writing Python programs.
-
 
 \chapter{Using the Python Interpreter}
 
@@ -174,11 +186,28 @@ lives is an installation option, other places are possible; check with
 your local Python guru or system administrator.  (E.g., {\tt
 /usr/local/python} is a popular alternative location.)
 
+Typing an EOF character (Control-D on \UNIX{}, Control-Z or F6 on DOS
+or Windows) at the primary prompt causes the interpreter to exit with
+a zero exit status.  If that doesn't work, you can exit the
+interpreter by typing the following commands: \code{import sys ;
+sys.exit()}.
+
+The interpreter's line-editing features usually aren't very
+sophisticated.  On Unix, whoever installed the interpreter may have
+enabled support for the GNU readline library, which adds more
+elaborate interactive editing and history features. Perhaps the
+quickest check to see whether command line editing is supported is
+typing Control-P to the first Python prompt you get.  If it beeps, you
+have command line editing; see Appendix A for an introduction to the
+keys.  If nothing appears to happen, or if \verb/^P/ is echoed,
+command line editing isn't available; you'll only be able to use
+backspace to remove characters from the current line.
+
 The interpreter operates somewhat like the \UNIX{} shell: when called
 with standard input connected to a tty device, it reads and executes
 commands interactively; when called with a file name argument or with
 a file as standard input, it reads and executes a {\em script} from
-that file.
+that file. 
 
 A third way of starting the interpreter is
 ``{\tt python -c command [arg] ...}'', which
@@ -188,7 +217,7 @@ characters that are special to the shell, it is best to quote {\tt
 command} in its entirety with double quotes.
 
 Note that there is a difference between ``{\tt python file}'' and
-``{\tt python $<$file}''.  In the latter case, input requests from the
+``{\tt python <file}''.  In the latter case, input requests from the
 program, such as calls to {\tt input()} and {\tt raw_input()}, are
 satisfied from {\em file}.  Since this file has already been read
 until the end by the parser before the program starts executing, the
@@ -222,10 +251,7 @@ When commands are read from a tty, the interpreter is said to be in
 with the {\em primary\ prompt}, usually three greater-than signs ({\tt
 >>>}); for continuation lines it prompts with the
 {\em secondary\ prompt},
-by default three dots ({\tt ...}).  Typing an EOF character
-(Control-D on \UNIX{}, Control-Z on DOS or Windows)
-at the primary prompt causes the interpreter to exit with a zero exit
-status.
+by default three dots ({\tt ...}).  
 
 The interpreter prints a welcome message stating its version number
 and a copyright notice before printing the first prompt, e.g.:
@@ -263,44 +289,6 @@ Typing an interrupt while a command is executing raises the {\tt
 KeyboardInterrupt} exception, which may be handled by a {\tt try}
 statement.
 
-\subsection{The Module Search Path}
-
-When a module named {\tt spam} is imported, the interpreter searches
-for a file named {\tt spam.py} in the current directory,
-and then in the list of directories specified by
-the environment variable {\tt PYTHONPATH}.  This has the same syntax as
-the \UNIX{} shell variable {\tt PATH}, i.e., a list of colon-separated
-directory names.  When {\tt PYTHONPATH} is not set, or when the file
-is not found there, the search continues in an installation-dependent
-default path, usually {\tt .:/usr/local/lib/python}.
-
-Actually, modules are searched in the list of directories given by the 
-variable {\tt sys.path} which is initialized from the directory 
-containing the input script (or the current directory), {\tt 
-PYTHONPATH} and the installation-dependent default.  This allows 
-Python programs that know what they're doing to modify or replace the 
-module search path.  See the section on Standard Modules later.
-
-\subsection{``Compiled'' Python files}
-
-As an important speed-up of the start-up time for short programs that
-use a lot of standard modules, if a file called {\tt spam.pyc} exists
-in the directory where {\tt spam.py} is found, this is assumed to
-contain an already-``compiled'' version of the module {\tt spam}.  The
-modification time of the version of {\tt spam.py} used to create {\tt
-spam.pyc} is recorded in {\tt spam.pyc}, and the file is ignored if
-these don't match.
-
-Normally, you don't need to do anything to create the {\tt spam.pyc} file.
-Whenever {\tt spam.py} is successfully compiled, an attempt is made to
-write the compiled version to {\tt spam.pyc}.  It is not an error if
-this attempt fails; if for any reason the file is not written
-completely, the resulting {\tt spam.pyc} file will be recognized as
-invalid and thus ignored later.  The contents of the {\tt spam.pyc}
-file is platform independent, so a Python module directory can be
-shared by machines of different architectures.  (Tip for experts:
-the module {\tt compileall} creates {\tt .pyc} files for all modules.)
-
 \subsection{Executable Python scripts}
 
 On BSD'ish \UNIX{} systems, Python scripts can be made directly
@@ -315,6 +303,9 @@ script and giving the file an executable mode.  The {\tt \#!} must be
 the first two characters of the file.
 
 \subsection{The Interactive Startup File}
+
+XXX This should probably be dumped in an appendix, since most people
+don't use Python interactively in non-trivial ways.
 
 When you use Python interactively, it is frequently handy to have some
 standard commands executed every time the interpreter is started.  You
@@ -338,102 +329,6 @@ directory, you can program this in the global start-up file, e.g.
 in a script, you must write this explicitly in the script, e.g.
 \verb\import os;\ \verb\execfile(os.environ['PYTHONSTARTUP'])\.
 
-\section{Interactive Input Editing and History Substitution}
-
-Some versions of the Python interpreter support editing of the current
-input line and history substitution, similar to facilities found in
-the Korn shell and the GNU Bash shell.  This is implemented using the
-{\em GNU\ Readline} library, which supports Emacs-style and vi-style
-editing.  This library has its own documentation which I won't
-duplicate here; however, the basics are easily explained.
-
-Perhaps the quickest check to see whether command line editing is
-supported is typing Control-P to the first Python prompt you get.  If
-it beeps, you have command line editing.  If nothing appears to
-happen, or if \verb/^P/ is echoed, you can skip the rest of this
-section.
-
-\subsection{Line Editing}
-
-If supported, input line editing is active whenever the interpreter
-prints a primary or secondary prompt.  The current line can be edited
-using the conventional Emacs control characters.  The most important
-of these are: C-A (Control-A) moves the cursor to the beginning of the
-line, C-E to the end, C-B moves it one position to the left, C-F to
-the right.  Backspace erases the character to the left of the cursor,
-C-D the character to its right.  C-K kills (erases) the rest of the
-line to the right of the cursor, C-Y yanks back the last killed
-string.  C-underscore undoes the last change you made; it can be
-repeated for cumulative effect.
-
-\subsection{History Substitution}
-
-History substitution works as follows.  All non-empty input lines
-issued are saved in a history buffer, and when a new prompt is given
-you are positioned on a new line at the bottom of this buffer.  C-P
-moves one line up (back) in the history buffer, C-N moves one down.
-Any line in the history buffer can be edited; an asterisk appears in
-front of the prompt to mark a line as modified.  Pressing the Return
-key passes the current line to the interpreter.  C-R starts an
-incremental reverse search; C-S starts a forward search.
-
-\subsection{Key Bindings}
-
-The key bindings and some other parameters of the Readline library can
-be customized by placing commands in an initialization file called
-{\tt \$HOME/.inputrc}.  Key bindings have the form
-
-\bcode\begin{verbatim}
-key-name: function-name
-\end{verbatim}\ecode
-%
-or
-
-\bcode\begin{verbatim}
-"string": function-name
-\end{verbatim}\ecode
-%
-and options can be set with
-
-\bcode\begin{verbatim}
-set option-name value
-\end{verbatim}\ecode
-%
-For example:
-
-\bcode\begin{verbatim}
-# I prefer vi-style editing:
-set editing-mode vi
-# Edit using a single line:
-set horizontal-scroll-mode On
-# Rebind some keys:
-Meta-h: backward-kill-word
-"\C-u": universal-argument
-"\C-x\C-r": re-read-init-file
-\end{verbatim}\ecode
-%
-Note that the default binding for TAB in Python is to insert a TAB
-instead of Readline's default filename completion function.  If you
-insist, you can override this by putting
-
-\bcode\begin{verbatim}
-TAB: complete
-\end{verbatim}\ecode
-%
-in your {\tt \$HOME/.inputrc}.  (Of course, this makes it hard to type
-indented continuation lines...)
-
-\subsection{Commentary}
-
-This facility is an enormous step forward compared to previous
-versions of the interpreter; however, some wishes are left: It would
-be nice if the proper indentation were suggested on continuation lines
-(the parser knows if an indent token is required next).  The
-completion mechanism might use the interpreter's symbol table.  A
-command to check (or even suggest) matching parentheses, quotes etc.
-would also be useful.
-
-
 \chapter{An Informal Introduction to Python}
 
 In the following examples, input and output are distinguished by the
@@ -441,11 +336,11 @@ presence or absence of prompts ({\tt >>>} and {\tt ...}): to repeat
 the example, you must type everything after the prompt, when the
 prompt appears; lines that do not begin with a prompt are output from
 the interpreter.%
-\footnote{
-        I'd prefer to use different fonts to distinguish input
-        from output, but the amount of LaTeX hacking that would require
-        is currently beyond my ability.
-}
+%\footnote{
+%        I'd prefer to use different fonts to distinguish input
+%        from output, but the amount of LaTeX hacking that would require
+%        is currently beyond my ability.
+%}
 Note that a secondary prompt on a line by itself in an example means
 you must type a blank line; this is used to end a multi-line command.
 
@@ -512,13 +407,82 @@ operands convert the integer operand to floating point:
 3.0303030303
 >>> 7.0 / 2
 3.5
->>> 
 \end{verbatim}\ecode
+%
+Complex numbers are also supported; imaginary numbers are written with
+a suffix of \code{'j'} or \code{'J'}.  Complex numbers with a nonzero
+real component are written as \code{(\var{real}+\var{imag}j)}, or can
+be created with the \code{complex(\var{real}, \var{imag})} function.
+
+\bcode\begin{verbatim}
+>>> 1j * 1J
+(-1+0j)
+>>> 1j * complex(0,1)
+(-1+0j)
+>>> 3+1j*3
+(3+3j)
+>>> (3+1j)*3
+(9+3j)
+>>> (1+2j)/(1+1j)
+(1.5+0.5j)
+\end{verbatim}\ecode
+%
+Complex numbers are always represented as two floating point numbers,
+the real and imaginary part.  To extract these parts from a complex
+number \code{z}, use \code{z.real} and \code{z.imag}.  
+
+\bcode\begin{verbatim}
+>>> a=1.5+0.5j
+>>> a.real
+1.5
+>>> a.imag
+0.5
+\end{verbatim}\ecode
+%
+The conversion functions to floating point and integer
+(\code{float()}, \code{int()} and \code{long()}) don't work for
+complex numbers --- there is no one correct way to convert a complex
+number to a real number.  Use \code{abs(z)} to get its magnitude (as a
+float) or \code{z.real} to get its real part.
+
+\bcode\begin{verbatim}
+>>> a=1.5+0.5j
+>>> float(a)
+Traceback (innermost last):
+  File "<stdin>", line 1, in ?
+TypeError: can't convert complex to float; use e.g. abs(z)
+>>> a.real
+1.5
+>>> abs(a)
+1.58113883008
+\end{verbatim}\ecode
+%
+In interactive mode, the last printed expression is assigned to the
+variable \code{_}.  This means that when you are using Python as a
+desk calculator, it is somewhat easier to continue calculations, for
+example:
+
+\begin{verbatim}
+>>> tax = 17.5 / 100
+>>> price = 3.50
+>>> price * tax
+0.6125
+>>> price + _
+4.1125
+>>> round(_, 2)
+4.11
+\end{verbatim}
+
+This variable should be treated as read-only by the user.  Don't
+explicitly assign a value to it --- you would create an independent
+local variable with the same name masking the built-in variable with
+its magic behavior.
 
 \subsection{Strings}
 
-Besides numbers, Python can also manipulate strings, enclosed in
-single quotes or double quotes:
+Besides numbers, Python can also manipulate strings, which can be
+expressed in several ways.  They can be enclosed in single quotes or
+double quotes:
 
 \bcode\begin{verbatim}
 >>> 'spam eggs'
@@ -536,12 +500,50 @@ single quotes or double quotes:
 >>> 
 \end{verbatim}\ecode
 %
-Strings are written the same way as they are typed for input: inside
-quotes and with quotes and other funny characters escaped by backslashes,
-to show the precise value.  The string is enclosed in double quotes if
-the string contains a single quote and no double quotes, else it's
-enclosed in single quotes.  (The {\tt print} statement, described later,
-can be used to write strings without quotes or escapes.)
+String literals can span multiple lines in several ways.  Newlines can be escaped with backslashes, e.g.
+
+\begin{verbatim}
+hello = "This is a rather long string containing\n\
+several lines of text just as you would do in C.\n\
+    Note that whitespace at the beginning of the line is\
+ significant.\n"
+print hello
+\end{verbatim}
+
+which would print the following:
+\begin{verbatim}
+This is a rather long string containing
+several lines of text just as you would do in C.
+    Note that whitespace at the beginning of the line is significant.
+\end{verbatim}
+
+Or, strings can be surrounded in a pair of matching triple-quotes:
+\code{"""} or \code {'''}.  End of lines do not need to be escaped
+when using triple-quotes, but they will be included in the string.
+
+\begin{verbatim}
+print """
+Usage: thingy [OPTIONS] 
+     -h                        Display this usage message
+     -H hostname               Hostname to connect to
+"""
+\end{verbatim}
+
+produces the following output:
+
+\bcode\begin{verbatim}
+Usage: thingy [OPTIONS] 
+     -h                        Display this usage message
+     -H hostname               Hostname to connect to
+\end{verbatim}\ecode
+%
+The interpreter prints the result of string operations in the same way
+as they are typed for input: inside quotes, and with quotes and other
+funny characters escaped by backslashes, to show the precise
+value.  The string is enclosed in double quotes if the string contains
+a single quote and no double quotes, else it's enclosed in single
+quotes.  (The {\tt print} statement, described later, can be used to
+write strings without quotes or escapes.)
 
 Strings can be concatenated (glued together) with the {\tt +}
 operator, and repeated with {\tt *}:
@@ -555,12 +557,15 @@ operator, and repeated with {\tt *}:
 >>> 
 \end{verbatim}\ecode
 %
-Strings can be subscripted (indexed); like in C, the first character of
-a string has subscript (index) 0.
+Two string literals next to each other are automatically concatenated;
+the first line above could also have been written \code{word = 'Help'
+'A'}; this only works with two literals, not with arbitrary string expressions.
 
-There is no separate character type; a character is simply a string of
-size one.  Like in Icon, substrings can be specified with the {\em
-slice} notation: two indices separated by a colon.
+Strings can be subscripted (indexed); like in C, the first character
+of a string has subscript (index) 0.  There is no separate character
+type; a character is simply a string of size one.  Like in Icon,
+substrings can be specified with the {\em slice} notation: two indices
+separated by a colon.
 
 \bcode\begin{verbatim}
 >>> word[4]
@@ -1026,6 +1031,7 @@ arbitrary boundary:
 
 \bcode\begin{verbatim}
 >>> def fib(n):    # write Fibonacci series up to n
+...     "Print a Fibonacci series up to n"
 ...     a, b = 0, 1
 ...     while b < n:
 ...           print b,
@@ -1039,16 +1045,21 @@ arbitrary boundary:
 %
 The keyword {\tt def} introduces a function {\em definition}.  It must
 be followed by the function name and the parenthesized list of formal
-parameters.  The statements that form the body of the function starts at
-the next line, indented by a tab stop.
+parameters.  The statements that form the body of the function start
+at the next line, indented by a tab stop.  The first statement of the
+function body can optionally be a string literal; this string literal
+is the function's documentation string, or \dfn{docstring}.  There are
+tools which use docstrings to automatically produce printed
+documentation, or to let the user interactively browse through code;
+it's good practice to include docstrings in code that you write, so
+try to make a habit of it.
 
 The {\em execution} of a function introduces a new symbol table used
 for the local variables of the function.  More precisely, all variable
 assignments in a function store the value in the local symbol table;
-whereas
-variable references first look in the local symbol table, then
+whereas variable references first look in the local symbol table, then
 in the global symbol table, and then in the table of built-in names.
-Thus,
+Thus, 
 global variables cannot be directly assigned a value within a
 function (unless named in a {\tt global} statement), although
 they may be referenced.
@@ -1102,6 +1113,7 @@ the Fibonacci series, instead of printing it:
 
 \bcode\begin{verbatim}
 >>> def fib2(n): # return Fibonacci series up to n
+...     "Return a list containing the Fibonacci series up to n"
 ...     result = []
 ...     a, b = 0, 1
 ...     while b < n:
@@ -1142,8 +1154,137 @@ it is equivalent to {\tt result = result + [b]}, but more efficient.
 
 \end{itemize}
 
+\section{More on Defining Functions}
 
-\chapter{Odds and Ends}
+It is also possible to define functions with a variable number of
+arguments.  There are three forms, which can be combined.
+
+\subsection{Default Argument Values}
+
+The most useful form is to specify a default value for one or more
+arguments.  This creates a function that can be called with fewer
+arguments than it is defined, e.g.
+
+\begin{verbatim}
+        def ask_ok(prompt, retries = 4, complaint = 'Yes or no, please!'):
+                while 1:
+                        ok = raw_input(prompt)
+                        if ok in ('y', 'ye', 'yes'): return 1
+                        if ok in ('n', 'no', 'nop', 'nope'): return 0
+                        retries = retries - 1
+                        if retries < 0: raise IOError, 'refusenik user'
+                        print complaint
+\end{verbatim}
+
+This function can be called either like this:
+\verb\ask_ok('Do you really want to quit?')\ or like this:
+\verb\ask_ok('OK to overwrite the file?', 2)\.
+
+The default values are evaluated at the point of function definition
+in the {\em defining} scope, so that e.g.
+
+\begin{verbatim}
+        i = 5
+        def f(arg = i): print arg
+        i = 6
+        f()
+\end{verbatim}
+
+will print \verb\5\.
+
+\subsection{Keyword Arguments}
+
+Functions can also be called using
+keyword arguments of the form \code{\var{keyword} = \var{value}}.  For
+instance, the following function:
+
+\begin{verbatim}
+def parrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
+    print "-- This parrot wouldn't", action,
+    print "if you put", voltage, "Volts through it."
+    print "-- Lovely plumage, the", type
+    print "-- It's", state, "!"
+\end{verbatim}
+
+could be called in any of the following ways:
+
+\begin{verbatim}
+parrot(1000)
+parrot(action = 'VOOOOOM', voltage = 1000000)
+parrot('a thousand', state = 'pushing up the daisies')
+parrot('a million', 'bereft of life', 'jump')
+\end{verbatim}
+
+but the following calls would all be invalid:
+
+\begin{verbatim}
+parrot()                     # required argument missing
+parrot(voltage=5.0, 'dead')  # non-keyword argument following keyword
+parrot(110, voltage=220)     # duplicate value for argument
+parrot(actor='John Cleese')  # unknown keyword
+\end{verbatim}
+
+In general, an argument list must have any positional arguments
+followed by any keyword arguments, where the keywords must be chosen
+from the formal parameter names.  It's not important whether a formal
+parameter has a default value or not.  No argument must receive a
+value more than once --- formal parameter names corresponding to
+positional arguments cannot be used as keywords in the same calls.
+
+When a final formal parameter of the form \code{**\var{name}} is
+present, it receives a dictionary containing all keyword arguments
+whose keyword doesn't correspond to a formal parameter.  This may be
+combined with a formal parameter of the form \code{*\var{name}}
+(described in the next subsection) which receives a tuple containing
+the positional arguments beyond the formal parameter list.
+(\code{*\var{name}} must occur before \code{**\var{name}}.)  For
+example, if we define a function like this:
+
+\begin{verbatim}
+def cheeseshop(kind, *arguments, **keywords):
+    print "-- Do you have any", kind, '?'
+    print "-- I'm sorry, we're all out of", kind
+    for arg in arguments: print arg
+    print '-'*40
+    for kw in keywords.keys(): print kw, ':', keywords[kw]
+\end{verbatim}
+
+It could be called like this:
+
+\begin{verbatim}
+cheeseshop('Limburger', "It's very runny, sir.",
+           "It's really very, VERY runny, sir.",
+           client='John Cleese',
+           shopkeeper='Michael Palin',
+           sketch='Cheese Shop Sketch')
+\end{verbatim}
+
+and of course it would print:
+
+\begin{verbatim}
+-- Do you have any Limburger ?
+-- I'm sorry, we're all out of Limburger
+It's very runny, sir.
+It's really very, VERY runny, sir.
+----------------------------------------
+client : John Cleese
+shopkeeper : Michael Palin
+sketch : Cheese Shop Sketch
+\end{verbatim}
+
+\subsection{Arbitrary Argument Lists}
+
+Finally, the least frequently used option is to specify that a
+function can be called with an arbitrary number of arguments.  These
+arguments will be wrapped up in a tuple.  Before the variable number
+of arguments, zero or more normal arguments may occur.
+
+\begin{verbatim}
+        def fprintf(file, format, *args):
+                file.write(format % args)
+\end{verbatim}
+
+\chapter{Data Structures}
 
 This chapter describes some things you've learned about already in
 more detail, and adds some new things as well.
@@ -1206,6 +1347,88 @@ An example that uses all list methods:
 [-1, 1, 66.6, 333, 333, 1234.5]
 >>>
 \end{verbatim}\ecode
+
+\subsection{Functional Programming Tools}
+
+There are three built-in functions that are very useful when used with
+lists: \verb\filter\, \verb\map\, and \verb\reduce\.
+
+\verb\filter(function, sequence)\ returns a sequence (of the same
+type, if possible) consisting of those items from the sequence for
+which \verb\function(item)\ is true.  For example, to compute some
+primes:
+
+\begin{verbatim}
+        >>> def f(x): return x%2 != 0 and x%3 != 0
+        ...
+        >>> filter(f, range(2, 25))
+        [5, 7, 11, 13, 17, 19, 23]
+        >>>
+\end{verbatim}
+
+\verb\map(function, sequence)\ calls \verb\function(item)\ for each of
+the sequence's items and returns a list of the return values.  For
+example, to compute some cubes:
+
+\begin{verbatim}
+	>>> def cube(x): return x*x*x
+        ...
+        >>> map(cube, range(1, 11))
+        [1, 8, 27, 64, 125, 216, 343, 512, 729, 1000]
+        >>>
+\end{verbatim}
+
+More than one sequence may be passed; the function must then have as
+many arguments as there are sequences and is called with the
+corresponding item from each sequence (or \verb\None\ if some sequence
+is shorter than another).  If \verb\None\ is passed for the function,
+a function returning its argument(s) is substituted.
+
+Combining these two special cases, we see that
+\verb\map(None, list1, list2)\  is a convenient way of turning a pair
+of lists into a list of pairs.  For example:
+
+\begin{verbatim}
+        >>> seq = range(8)
+	>>> def square(x): return x*x
+        ...
+        >>> map(None, seq, map(square, seq))
+        [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25), (6, 36), (7, 49)]
+        >>> 
+\end{verbatim}
+
+\verb\reduce(func, sequence)\ returns a single value constructed
+by calling the binary function \verb\func\ on the first two items of the
+sequence, then on the result and the next item, and so on.  For
+example, to compute the sum of the numbers 1 through 10:
+
+\begin{verbatim}
+	>>> def add(x,y): return x+y
+        ...
+        >>> reduce(add, range(1, 11))
+        55
+        >>> 
+\end{verbatim}
+
+If there's only one item in the sequence, its value is returned; if
+the sequence is empty, an exception is raised.
+
+A third argument can be passed to indicate the starting value.  In this
+case the starting value is returned for an empty sequence, and the
+function is first applied to the starting value and the first sequence
+item, then to the result and the next item, and so on.  For example,
+
+\begin{verbatim}
+        >>> def sum(seq):
+        ...     def add(x,y): return x+y
+        ...     return reduce(add, seq, 0)
+        ... 
+        >>> sum(range(1, 11))
+        55
+        >>> sum([])
+        0
+        >>> 
+\end{verbatim}
 
 \section{The {\tt del} statement}
 
@@ -1323,8 +1546,11 @@ Another useful data type built into Python is the {\em dictionary}.
 Dictionaries are sometimes found in other languages as ``associative
 memories'' or ``associative arrays''.  Unlike sequences, which are
 indexed by a range of numbers, dictionaries are indexed by {\em keys},
-which are strings (the use of non-string values as keys
-is supported, but beyond the scope of this tutorial).
+which can be any non-mutable type; strings and numbers can always be
+keys.  Tuples can be used as keys if they contain only strings,
+numbers, or tuples.  You can't use lists as keys, since lists can be
+modified in place using their \code{append()} method.
+
 It is best to think of a dictionary as an unordered set of
 {\em key:value} pairs, with the requirement that the keys are unique
 (within one dictionary).
@@ -1527,6 +1753,7 @@ If you intend to use a function often you can assign it to a local name:
 >>> 
 \end{verbatim}\ecode
 
+
 \section{More on Modules}
 
 A module can contain executable statements as well as function
@@ -1586,6 +1813,46 @@ There is even a variant to import all names that a module defines:
 %
 This imports all names except those beginning with an underscore
 ({\tt _}).
+
+\subsection{The Module Search Path}
+
+When a module named {\tt spam} is imported, the interpreter searches
+for a file named {\tt spam.py} in the current directory,
+and then in the list of directories specified by
+the environment variable {\tt PYTHONPATH}.  This has the same syntax as
+the \UNIX{} shell variable {\tt PATH}, i.e., a list of colon-separated
+directory names.  When {\tt PYTHONPATH} is not set, or when the file
+is not found there, the search continues in an installation-dependent
+default path, usually {\tt .:/usr/local/lib/python}.
+
+Actually, modules are searched in the list of directories given by the 
+variable {\tt sys.path} which is initialized from the directory 
+containing the input script (or the current directory), {\tt 
+PYTHONPATH} and the installation-dependent default.  This allows 
+Python programs that know what they're doing to modify or replace the 
+module search path.  See the section on Standard Modules later.
+
+\subsection{``Compiled'' Python files}
+
+As an important speed-up of the start-up time for short programs that
+use a lot of standard modules, if a file called {\tt spam.pyc} exists
+in the directory where {\tt spam.py} is found, this is assumed to
+contain an already-``compiled'' version of the module {\tt spam}.  The
+modification time of the version of {\tt spam.py} used to create {\tt
+spam.pyc} is recorded in {\tt spam.pyc}, and the file is ignored if
+these don't match.
+
+Normally, you don't need to do anything to create the {\tt spam.pyc} file.
+Whenever {\tt spam.py} is successfully compiled, an attempt is made to
+write the compiled version to {\tt spam.pyc}.  It is not an error if
+this attempt fails; if for any reason the file is not written
+completely, the resulting {\tt spam.pyc} file will be recognized as
+invalid and thus ignored later.  The contents of the {\tt spam.pyc}
+file is platform independent, so a Python module directory can be
+shared by machines of different architectures.  (Tip for experts:
+the module {\tt compileall} creates {\tt .pyc} files for all modules.)
+
+XXX Should optimization with -O be covered here?
 
 \section{Standard Modules}
 
@@ -1682,8 +1949,13 @@ If you want a list of those, they are defined in the standard module
 \end{verbatim}\ecode
 
 
-\chapter{Output Formatting}
+\chapter{Input and Output}
 
+There are several ways to present the output of a program; data can be
+printed in a human-readable form, or written to a file for future use.
+This chapter will discuss some of the possibilities.
+
+\section{Fancier Output Formatting}
 So far we've encountered two ways of writing values: {\em expression
 statements} and the {\tt print} statement.  (A third way is using the
 {\tt write} method of file objects; the standard output file can be
@@ -1691,19 +1963,21 @@ referenced as {\tt sys.stdout}.  See the Library Reference for more
 information on this.)
 
 Often you'll want more control over the formatting of your output than
-simply printing space-separated values.  The key to nice formatting in
-Python is to do all the string handling yourself; using string slicing
-and concatenation operations you can create any lay-out you can imagine.
-The standard module {\tt string} contains some useful operations for
-padding strings to a given column width; these will be discussed shortly.
-Finally, the \code{\%} operator (modulo) with a string left argument
-interprets this string as a C sprintf format string to be applied to the
-right argument, and returns the string resulting from this formatting
-operation.
+simply printing space-separated values.  There are two ways to format
+your output; the first way is to do all the string handling yourself;
+using string slicing and concatenation operations you can create any
+lay-out you can imagine.  The standard module {\tt string} contains
+some useful operations for padding strings to a given column width;
+these will be discussed shortly.  The second way is to use the
+\code{\%} operator with a string as the left argument.  \code{\%}
+interprets the left argument as a \C\ \code{sprintf()}-style format
+string to be applied to the right argument, and returns the string
+resulting from this formatting operation.
 
 One question remains, of course: how do you convert values to strings?
-Luckily, Python has a way to convert any value to a string: just write
-the value between reverse quotes (\verb/``/).  Some examples:
+Luckily, Python has a way to convert any value to a string: pass it to
+the \verb/repr()/ function, or just write the value between reverse
+quotes (\verb/``/).  Some examples:
 
 \bcode\begin{verbatim}
 >>> x = 10 * 3.14
@@ -1713,7 +1987,7 @@ the value between reverse quotes (\verb/``/).  Some examples:
 The value of x is 31.4, and y is 40000...
 >>> # Reverse quotes work on other types besides numbers:
 ... p = [x, y]
->>> ps = `p`
+>>> ps = repr(p)
 >>> ps
 '[31.4, 40000]'
 >>> # Converting a string adds string quotes and backslashes:
@@ -1788,6 +2062,222 @@ signs:
 '3.14159265359'
 >>>
 \end{verbatim}\ecode
+%
+Using the \code{\%} operator looks like this:
+
+\begin{verbatim}
+        >>> import math
+        >>> print 'The value of PI is approximately %5.3f.' % math.pi
+        The value of PI is approximately 3.142.
+        >>> 
+\end{verbatim}
+
+If there is more than one format in the string you pass a tuple as
+right operand, e.g.
+
+\begin{verbatim}
+        >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
+        >>> for name, phone in table.items():
+        ...     print '%-10s ==> %10d' % (name, phone)
+        ... 
+        Jack       ==>       4098
+        Dcab       ==>    8637678
+        Sjoerd     ==>       4127
+        >>> 
+\end{verbatim}
+
+Most formats work exactly as in C and require that you pass the proper
+type; however, if you don't you get an exception, not a core dump.
+The \verb\%s\ format is more relaxed: if the corresponding argument is
+not a string object, it is converted to string using the \verb\str()\
+built-in function.  Using \verb\*\ to pass the width or precision in
+as a separate (integer) argument is supported.  The C formats
+\verb\%n\ and \verb\%p\ are not supported.
+
+If you have a really long format string that you don't want to split
+up, it would be nice if you could reference the variables to be
+formatted by name instead of by position.  This can be done by using
+an extension of C formats using the form \verb\%(name)format\, e.g.
+
+\begin{verbatim}
+        >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
+        >>> print 'Jack: %(Jack)d; Sjoerd: %(Sjoerd)d; Dcab: %(Dcab)d' % table
+        Jack: 4098; Sjoerd: 4127; Dcab: 8637678
+        >>> 
+\end{verbatim}
+
+This is particularly useful in combination with the new built-in
+\verb\vars()\ function, which returns a dictionary containing all
+local variables.
+
+\section{Reading and Writing Files}
+% Opening files 
+\code{open()} returns a file object, and is most commonly used with
+two arguments: \code{open(\var{filename},\var{mode})}.  
+
+\bcode\begin{verbatim}
+>>> f=open('/tmp/workfile', 'w')
+>>> print f
+<open file '/tmp/workfile', mode 'w' at 80a0960>
+\end{verbatim}\ecode
+%
+The first argument is a string containing the filename.  The second
+argument is another string containing a few characters describing the
+way in which the file will be used.  \var{mode} can be \code{'r'} when
+the file will only be read, \code{'w'} for only writing (an existing
+file with the same name will be erased), and \code{'a'} opens the file
+for appending; any data written to the file is automatically added to
+the end.  \code{'r+'} opens the file for both reading and writing.
+The \var{mode} argument is optional; \code{'r'} will be assumed if
+it's omitted.
+
+On Windows, (XXX does the Mac need this too?) \code{'b'} appended to the
+mode opens the file in binary mode, so there are also modes like
+\code{'rb'}, \code{'wb'}, and \code{'r+b'}.  Windows makes a
+distinction between text and binary files; the end-of-line characters
+in text files are automatically altered slightly when data is read or
+written.  This behind-the-scenes modification to file data is fine for
+ASCII text files, but it'll corrupt binary data like that in JPEGs or
+.EXE files.  Be very careful to use binary mode when reading and
+writing such files.
+
+\subsection{Methods of file objects}
+
+The rest of the examples in this section will assume that a file
+object called \code{f} has already been created.
+
+To read a file's contents, call \code{f.read(\var{size})}, which reads
+some quantity of data and returns it as a string.  \var{size} is an
+optional numeric argument.  When \var{size} is omitted or negative,
+the entire contents of the file will be read and returned; it's your
+problem if the file is twice as large as your machine's memory.
+Otherwise, at most \var{size} bytes are read and returned.  If the end
+of the file has been reached, \code{f.read()} will return an empty
+string (\code {""}).
+\bcode\begin{verbatim}
+>>> f.read()
+'This is the entire file.\012'
+>>> f.read()
+''
+\end{verbatim}\ecode
+%
+\code{f.readline()} reads a single line from the file; a newline
+character (\verb/\n/) is left at the end of the string, and is only
+omitted on the last line of the file if the file doesn't end in a
+newline.  This makes the return value unambiguous; if
+\code{f.readline()} returns an empty string, the end of the file has
+been reached, while a blank line is represented by \verb/'\n'/, a
+string containing only a single newline.  
+
+\bcode\begin{verbatim}
+>>> f.readline()
+'This is the first line of the file.\012'
+>>> f.readline()
+'Second line of the file\012'
+>>> f.readline()
+''
+\end{verbatim}\ecode
+%
+\code{f.readlines()} uses {\code{f.readline()} repeatedly, and returns
+a list containing all the lines of data in the file.
+
+\bcode\begin{verbatim}
+>>> f.readlines()
+['This is the first line of the file.\012', 'Second line of the file\012']
+\end{verbatim}\ecode
+%
+\code{f.write(\var{string})} writes the contents of \var{string} to
+the file, returning \code{None}.  
+
+\bcode\begin{verbatim}
+>>> f.write('This is a test\n')
+\end{verbatim}\ecode
+%
+\code{f.tell()} returns an integer giving the file object's current
+position in the file, measured in bytes from the beginning of the
+file.  To change the file object's position, use
+\code{f.seek(\var{offset}, \var{from_what})}.  The position is
+computed from adding \var{offset} to a reference point; the reference
+point is selected by the \var{from_what} argument.  A \var{from_what}
+value of 0 measures from the beginning of the file, 1 uses the current
+file position, and 2 uses the end of the file as the reference point.
+\var{from_what}
+can be omitted and defaults to 0, using the beginning of the file as the reference point.
+
+\bcode\begin{verbatim}
+>>> f=open('/tmp/workfile', 'r+')
+>>> f.write('0123456789abcdef')
+>>> f.seek(5)     # Go to the 5th byte in the file
+>>> f.read(1)        
+'5'
+>>> f.seek(-3, 2) # Go to the 3rd byte before the end
+>>> f.read(1)
+'d'
+\end{verbatim}\ecode
+%
+When you're done with a file, call \code{f.close()} to close it and
+free up any system resources taken up by the open file.  After calling
+\code{f.close()}, attempts to use the file object will automatically fail.
+
+\bcode\begin{verbatim}
+>>> f.close()
+>>> f.read()
+Traceback (innermost last):
+  File "<stdin>", line 1, in ?
+ValueError: I/O operation on closed file
+\end{verbatim}\ecode
+%
+File objects have some additional methods, such as \code{isatty()} and
+\code{truncate()} which are less frequently used; consult the Library
+Reference for a complete guide to file objects.
+
+\subsection{The pickle module}
+
+Strings can easily be written to and read from a file. Numbers take a
+bit more effort, since the \code{read()} method only returns strings,
+which will have to be passed to a function like \code{string.atoi()},
+which takes a string like \code{'123'} and returns its numeric value
+123.  However, when you want to save more complex data types like
+lists, dictionaries, or class instances, things get a lot more
+complicated.  
+
+Rather than have users be constantly writing and debugging code to
+save complicated data types, Python provides a standard module called
+\code{pickle}.  code{pickle} is an amazing module that can take almost
+any Python object (even some forms of Python code!), and convert it to
+a string representation; this process is called \dfn{pickling}.  
+Reconstructing the object from the string representation is called
+\dfn{unpickling}.  Between pickling and unpickling, the string
+representing the object may have been stored in a file or data, or
+sent over a network connection to some distant machine.
+
+If you have an object \code{x}, and a file object \code{f} that's been
+opened for writing, the simplest way to pickle the object takes only
+one line of code:
+
+\bcode\begin{verbatim}
+pickle.dump(x, f)
+\end{verbatim}\ecode
+%
+To unpickle the object again, if \code{f} is a file object which has been
+opened for reading:
+
+\bcode\begin{verbatim}
+x = pickle.load(f)
+\end{verbatim}\ecode
+%
+(There are other variants of this, used when pickling many objects or
+when you don't want to write the pickled data to a file; consult the
+complete documentation for \code{pickle} in the Library Reference.)
+
+\code{pickle} is the standard way to make Python objects which can be
+stored and reused by other programs or by a future invocation of the
+same program; the technical term for this is a \dfn{persistent}
+object.  Because \code{pickle} is so widely used, many authors who
+write Python extensions take care to ensure that new data types such
+as matrices, XXX more examples needed XXX, can be properly pickled and
+unpickled.
+
 
 
 \chapter{Errors and Exceptions}
@@ -1884,7 +2374,7 @@ some floating point numbers:
 ...         print 1.0 / x
 ...     except ZeroDivisionError:
 ...         print '*** has no inverse ***'
-... 
+...     
 0.3333 3.00030003
 2.5 0.4
 0 *** has no inverse ***
@@ -1934,6 +2424,23 @@ wildcard.
 Use this with extreme caution, since it is easy to mask a real
 programming error in this way!
 
+The \verb\try...except\ statement has an optional \verb\else\ clause,
+which must follow all \verb\except\ clauses.  It is useful to place
+code that must be executed if the \verb\try\ clause does not raise an
+exception.  For example:
+
+\begin{verbatim}
+        for arg in sys.argv:
+                try:
+                        f = open(arg, 'r')
+                except IOError:
+                        print 'cannot open', arg
+                else:
+                        print arg, 'has', len(f.readlines()), 'lines'
+                        f.close()
+\end{verbatim}
+
+
 When an exception occurs, it may have an associated value, also known as
 the exceptions's
 {\em argument}.
@@ -1970,8 +2477,9 @@ For example:
 ...     print 'Handling run-time error:', detail
 ... 
 Handling run-time error: integer division or modulo
->>> 
+>>>
 \end{verbatim}\ecode
+%
 
 \section{Raising Exceptions}
 
@@ -1989,6 +2497,8 @@ NameError: HiThere
 %
 The first argument to {\tt raise} names the exception to be raised.
 The optional second argument specifies the exception's argument.
+
+%
 
 \section{User-defined Exceptions}
 
@@ -2013,6 +2523,8 @@ my_exc: 1
 %
 Many standard modules use this to report errors that may occur in
 functions they define.
+
+%
 
 \section{Defining Clean-up Actions}
 
@@ -2043,7 +2555,6 @@ statement.
 A {\tt try} statement must either have one or more {\tt except}
 clauses or one {\tt finally} clause, but not both.
 
-
 \chapter{Classes}
 
 Python's class mechanism adds classes to the language with a minimum
@@ -2070,7 +2581,6 @@ or Modula-3, built-in types cannot be used as base classes for
 extension by the user.  Also, like in \Cpp{} but unlike in Modula-3, most
 built-in operators with special syntax (arithmetic operators,
 subscripting etc.) can be redefined for class members.
-
 
 \section{A word about terminology}
 
@@ -2264,6 +2774,7 @@ this:
 
 \begin{verbatim}
         class MyClass:
+                "A simple example class"
                 i = 12345
                 def f(x):
                         return 'hello world'
@@ -2271,8 +2782,10 @@ this:
 
 then \verb\MyClass.i\ and \verb\MyClass.f\ are valid attribute
 references, returning an integer and a function object, respectively.
-Class attributes can also be assigned to, so you can change the
-value of \verb\MyClass.i\ by assignment.
+Class attributes can also be assigned to, so you can change the value
+of \verb\MyClass.i\ by assignment.  \verb\__doc__\ is also a valid
+attribute that's read-only, returning the docstring belonging to
+the class: \verb\"A simple example class"\).  
 
 Class {\em instantiation} uses function notation.  Just pretend that
 the class object is a parameterless function that returns a new
@@ -2600,6 +3113,75 @@ variables'' or data attributes used by the common base class), it is
 not clear that these semantics are in any way useful.
 
 
+\section{Private variables through name mangling}
+
+There is now limited support for class-private
+identifiers.  Any identifier of the form \code{__spam} (at least two
+leading underscores, at most one trailing underscore) is now textually
+replaced with \code{_classname__spam}, where \code{classname} is the
+current class name with leading underscore(s) stripped.  This mangling
+is done without regard of the syntactic position of the identifier, so
+it can be used to define class-private instance and class variables,
+methods, as well as globals, and even to store instance variables
+private to this class on instances of {\em other} classes.  Truncation
+may occur when the mangled name would be longer than 255 characters.
+Outside classes, or when the class name consists of only underscores,
+no mangling occurs.
+
+Name mangling is intended to give classes an easy way to define
+``private'' instance variables and methods, without having to worry
+about instance variables defined by derived classes, or mucking with
+instance variables by code outside the class.  Note that the mangling
+rules are designed mostly to avoid accidents; it still is possible for
+a determined soul to access or modify a variable that is considered
+private.  This can even be useful, e.g. for the debugger, and that's
+one reason why this loophole is not closed.  (Buglet: derivation of a
+class with the same name as the base class makes use of private
+variables of the base class possible.)
+
+Notice that code passed to \code{exec}, \code{eval()} or
+\code{evalfile()} does not consider the classname of the invoking 
+class to be the current class; this is similar to the effect of the 
+\code{global} statement, the effect of which is likewise restricted to 
+code that is byte-compiled together.  The same restriction applies to
+\code{getattr()}, \code{setattr()} and \code{delattr()}, as well as
+when referencing \code{__dict__} directly.
+
+Here's an example of a class that implements its own
+\code{__getattr__} and \code{__setattr__} methods and stores all
+attributes in a private variable, in a way that works in Python 1.4 as
+well as in previous versions:
+
+\begin{verbatim}
+class VirtualAttributes:
+    __vdict = None
+    __vdict_name = locals().keys()[0]
+     
+    def __init__(self):
+        self.__dict__[self.__vdict_name] = {}
+    
+    def __getattr__(self, name):
+        return self.__vdict[name]
+    
+    def __setattr__(self, name, value):
+        self.__vdict[name] = value
+\end{verbatim}
+
+%{\em Warning: this is an experimental feature.}  To avoid all
+%potential problems, refrain from using identifiers starting with
+%double underscore except for predefined uses like \code{__init__}.  To
+%use private names while maintaining future compatibility: refrain from
+%using the same private name in classes related via subclassing; avoid
+%explicit (manual) mangling/unmangling; and assume that at some point
+%in the future, leading double underscore will revert to being just a
+%naming convention.  Discussion on extensive compile-time declarations
+%are currently underway, and it is impossible to predict what solution
+%will eventually be chosen for private names.  Double leading
+%underscore is still a candidate, of course --- just not the only one.
+%It is placed in the distribution in the belief that it is useful, and
+%so that widespread experience with its use can be gained.  It will not
+%be removed without providing a better solution and a migration path.
+
 \section{Odds and ends}
 
 Sometimes it is useful to have a data type similar to the Pascal
@@ -2636,608 +3218,7 @@ Instance method objects have attributes, too: \verb\m.im_self\ is the
 object of which the method is an instance, and \verb\m.im_func\ is the
 function object corresponding to the method.
 
-
-\chapter{Recent Additions as of Release 1.1}
-
-Python is an evolving language.  Since this tutorial was last
-thoroughly revised, several new features have been added to the
-language.  While ideally I should revise the tutorial to incorporate
-them in the mainline of the text, lack of time currently requires me
-to take a more modest approach.  In this chapter I will briefly list the
-most important improvements to the language and how you can use them
-to your benefit.
-
-\section{The Last Printed Expression}
-
-In interactive mode, the last printed expression is assigned to the
-variable \code{_}.  This means that when you are using Python as a
-desk calculator, it is somewhat easier to continue calculations, for
-example:
-
-\begin{verbatim}
-        >>> tax = 17.5 / 100
-        >>> price = 3.50
-        >>> price * tax
-        0.6125
-        >>> price + _
-        4.1125
-        >>> round(_, 2)
-        4.11
-        >>> 
-\end{verbatim}
-
-For reasons too embarrassing to explain, this variable is implemented
-as a built-in (living in the module \code{__builtin__}), so it should
-be treated as read-only by the user.  I.e. don't explicitly assign a
-value to it --- you would create an independent local variable with
-the same name masking the built-in variable with its magic behavior.
-
-\section{String Literals}
-
-\subsection{Double Quotes}
-
-Python can now also use double quotes to surround string literals,
-e.g. \verb\"this doesn't hurt a bit"\.  There is no semantic
-difference between strings surrounded by single or double quotes.
-
-\subsection{Continuation Of String Literals}
-
-String literals can span multiple lines by escaping newlines with
-backslashes, e.g.
-
-\begin{verbatim}
-        hello = "This is a rather long string containing\n\
-        several lines of text just as you would do in C.\n\
-            Note that whitespace at the beginning of the line is\
-         significant.\n"
-        print hello
-\end{verbatim}
-
-which would print the following:
-\begin{verbatim}
-        This is a rather long string containing
-        several lines of text just as you would do in C.
-            Note that whitespace at the beginning of the line is significant.
-\end{verbatim}
-
-\subsection{Triple-quoted strings}
-
-In some cases, when you need to include really long strings (e.g.
-containing several paragraphs of informational text), it is annoying
-that you have to terminate each line with \verb@\n\@, especially if
-you would like to reformat the text occasionally with a powerful text
-editor like Emacs.  For such situations, ``triple-quoted'' strings can
-be used, e.g.
-
-\begin{verbatim}
-        hello = """
-
-            This string is bounded by triple double quotes (3 times ").
-        Unescaped newlines in the string are retained, though \
-        it is still possible\nto use all normal escape sequences.
-
-            Whitespace at the beginning of a line is
-        significant.  If you need to include three opening quotes
-        you have to escape at least one of them, e.g. \""".
-
-            This string ends in a newline.
-        """
-\end{verbatim}
-
-Triple-quoted strings can be surrounded by three single quotes as
-well, again without semantic difference.
-
-\subsection{String Literal Juxtaposition}
-
-One final twist: you can juxtapose multiple string literals.  Two or
-more adjacent string literals (but not arbitrary expressions!)
-separated only by whitespace will be concatenated (without intervening
-whitespace) into a single string object at compile time.  This makes
-it possible to continue a long string on the next line without
-sacrificing indentation or performance, unlike the use of the string
-concatenation operator \verb\+\ or the continuation of the literal
-itself on the next line (since leading whitespace is significant
-inside all types of string literals).  Note that this feature, like
-all string features except triple-quoted strings, is borrowed from
-Standard C.
-
-\section{The Formatting Operator}
-
-\subsection{Basic Usage}
-
-The chapter on output formatting is really out of date: there is now
-an almost complete interface to C-style printf formats.  This is done
-by overloading the modulo operator (\verb\%\) for a left operand
-which is a string, e.g.
-
-\begin{verbatim}
-        >>> import math
-        >>> print 'The value of PI is approximately %5.3f.' % math.pi
-        The value of PI is approximately 3.142.
-        >>> 
-\end{verbatim}
-
-If there is more than one format in the string you pass a tuple as
-right operand, e.g.
-
-\begin{verbatim}
-        >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
-        >>> for name, phone in table.items():
-        ...     print '%-10s ==> %10d' % (name, phone)
-        ... 
-        Jack       ==>       4098
-        Dcab       ==>    8637678
-        Sjoerd     ==>       4127
-        >>> 
-\end{verbatim}
-
-Most formats work exactly as in C and require that you pass the proper
-type (however, if you don't you get an exception, not a core dump).
-The \verb\%s\ format is more relaxed: if the corresponding argument is
-not a string object, it is converted to string using the \verb\str()\
-built-in function.  Using \verb\*\ to pass the width or precision in
-as a separate (integer) argument is supported.  The C formats
-\verb\%n\ and \verb\%p\ are not supported.
-
-\subsection{Referencing Variables By Name}
-
-If you have a really long format string that you don't want to split
-up, it would be nice if you could reference the variables to be
-formatted by name instead of by position.  This can be done by using
-an extension of C formats using the form \verb\%(name)format\, e.g.
-
-\begin{verbatim}
-        >>> table = {'Sjoerd': 4127, 'Jack': 4098, 'Dcab': 8637678}
-        >>> print 'Jack: %(Jack)d; Sjoerd: %(Sjoerd)d; Dcab: %(Dcab)d' % table
-        Jack: 4098; Sjoerd: 4127; Dcab: 8637678
-        >>> 
-\end{verbatim}
-
-This is particularly useful in combination with the new built-in
-\verb\vars()\ function, which returns a dictionary containing all
-local variables.
-
-\section{Optional Function Arguments}
-
-It is now possible to define functions with a variable number of
-arguments.  There are two forms, which can be combined.
-
-\subsection{Default Argument Values}
-
-The most useful form is to specify a default value for one or more
-arguments.  This creates a function that can be called with fewer
-arguments than it is defined, e.g.
-
-\begin{verbatim}
-        def ask_ok(prompt, retries = 4, complaint = 'Yes or no, please!'):
-                while 1:
-                        ok = raw_input(prompt)
-                        if ok in ('y', 'ye', 'yes'): return 1
-                        if ok in ('n', 'no', 'nop', 'nope'): return 0
-                        retries = retries - 1
-                        if retries < 0: raise IOError, 'refusenik user'
-                        print complaint
-\end{verbatim}
-
-This function can be called either like this:
-\verb\ask_ok('Do you really want to quit?')\ or like this:
-\verb\ask_ok('OK to overwrite the file?', 2)\.
-
-The default values are evaluated at the point of function definition
-in the {\em defining} scope, so that e.g.
-
-\begin{verbatim}
-        i = 5
-        def f(arg = i): print arg
-        i = 6
-        f()
-\end{verbatim}
-
-will print \verb\5\.
-
-\subsection{Arbitrary Argument Lists}
-
-It is also possible to specify that a function can be called with an
-arbitrary number of arguments.  These arguments will be wrapped up in
-a tuple.  Before the variable number of arguments, zero or more normal
-arguments may occur, e.g.
-
-\begin{verbatim}
-        def fprintf(file, format, *args):
-                file.write(format % args)
-\end{verbatim}
-
-This feature may be combined with the previous, e.g.
-
-\begin{verbatim}
-        def but_is_it_useful(required, optional = None, *remains):
-                print "I don't know"
-\end{verbatim}
-
-\section{Lambda And Functional Programming Tools}
-
-\subsection{Lambda Forms}
-
-By popular demand, a few features commonly found in functional
-programming languages and Lisp have been added to Python.  With the
-\verb\lambda\ keyword, small anonymous functions can be created.
-Here's a function that returns the sum of its two arguments:
-\verb\lambda a, b: a+b\.  Lambda forms can be used wherever function
-objects are required.  They are syntactically restricted to a single
-expression.  Semantically, they are just syntactic sugar for a normal
-function definition.  Like nested function definitions, lambda forms
-cannot reference variables from the containing scope, but this can be
-overcome through the judicious use of default argument values, e.g.
-
-\begin{verbatim}
-        def make_incrementor(n):
-                return lambda x, incr=n: x+incr
-\end{verbatim}
-
-\subsection{Map, Reduce and Filter}
-
-Three new built-in functions on sequences are good candidate to pass
-lambda forms.
-
-\subsubsection{Map.}
-
-\verb\map(function, sequence)\ calls \verb\function(item)\ for each of
-the sequence's items and returns a list of the return values.  For
-example, to compute some cubes:
-
-\begin{verbatim}
-        >>> map(lambda x: x*x*x, range(1, 11))
-        [1, 8, 27, 64, 125, 216, 343, 512, 729, 1000]
-        >>>
-\end{verbatim}
-
-More than one sequence may be passed; the function must then have as
-many arguments as there are sequences and is called with the
-corresponding item from each sequence (or \verb\None\ if some sequence
-is shorter than another).  If \verb\None\ is passed for the function,
-a function returning its argument(s) is substituted.
-
-Combining these two special cases, we see that
-\verb\map(None, list1, list2)\  is a convenient way of turning a pair
-of lists into a list of pairs.  For example:
-
-\begin{verbatim}
-        >>> seq = range(8)
-        >>> map(None, seq, map(lambda x: x*x, seq))
-        [(0, 0), (1, 1), (2, 4), (3, 9), (4, 16), (5, 25), (6, 36), (7, 49)]
-        >>> 
-\end{verbatim}
-
-\subsubsection{Filter.}
-
-\verb\filter(function, sequence)\ returns a sequence (of the same
-type, if possible) consisting of those items from the sequence for
-which \verb\function(item)\ is true.  For example, to compute some
-primes:
-
-\begin{verbatim}
-        >>> filter(lambda x: x%2 != 0 and x%3 != 0, range(2, 25))
-        [5, 7, 11, 13, 17, 19, 23]
-        >>>
-\end{verbatim}
-
-\subsubsection{Reduce.}
-
-\verb\reduce(function, sequence)\ returns a single value constructed
-by calling the (binary) function on the first two items of the
-sequence, then on the result and the next item, and so on.  For
-example, to compute the sum of the numbers 1 through 10:
-
-\begin{verbatim}
-        >>> reduce(lambda x, y: x+y, range(1, 11))
-        55
-        >>> 
-\end{verbatim}
-
-If there's only one item in the sequence, its value is returned; if
-the sequence is empty, an exception is raised.
-
-A third argument can be passed to indicate the starting value.  In this
-case the starting value is returned for an empty sequence, and the
-function is first applied to the starting value and the first sequence
-item, then to the result and the next item, and so on.  For example,
-
-\begin{verbatim}
-        >>> def sum(seq):
-        ...     return reduce(lambda x, y: x+y, seq, 0)
-        ... 
-        >>> sum(range(1, 11))
-        55
-        >>> sum([])
-        0
-        >>> 
-\end{verbatim}
-
-\section{Continuation Lines Without Backslashes}
-
-While the general mechanism for continuation of a source line on the
-next physical line remains to place a backslash on the end of the
-line, expressions inside matched parentheses (or square brackets, or
-curly braces) can now also be continued without using a backslash.
-This is particularly useful for calls to functions with many
-arguments, and for initializations of large tables.
-
-For example:
-
-\begin{verbatim}
-        month_names = ['Januari', 'Februari', 'Maart', 
-                       'April',   'Mei',      'Juni', 
-                       'Juli',    'Augustus', 'September',
-                       'Oktober', 'November', 'December']
-\end{verbatim}
-
-and
-
-\begin{verbatim}
-        CopyInternalHyperLinks(self.context.hyperlinks,
-                               copy.context.hyperlinks,
-                               uidremap)
-\end{verbatim}
-
-\section{Regular Expressions}
-
-While C's printf-style output formats, transformed into Python, are
-adequate for most output formatting jobs, C's scanf-style input
-formats are not very powerful.  Instead of scanf-style input, Python
-offers Emacs-style regular expressions as a powerful input and
-scanning mechanism.  Read the corresponding section in the Library
-Reference for a full description.
-
-\section{Generalized Dictionaries}
-
-The keys of dictionaries are no longer restricted to strings --- they
-can be any immutable basic type including strings, numbers, tuples, or
-(certain) class instances.  (Lists and dictionaries are not acceptable
-as dictionary keys, in order to avoid problems when the object used as
-a key is modified.)
-
-Dictionaries have two new methods: \verb\d.values()\ returns a list of
-the dictionary's values, and \verb\d.items()\ returns a list of the
-dictionary's (key, value) pairs.  Like \verb\d.keys()\, these
-operations are slow for large dictionaries.  Examples:
-
-\begin{verbatim}
-        >>> d = {100: 'honderd', 1000: 'duizend', 10: 'tien'}
-        >>> d.keys()
-        [100, 10, 1000]
-        >>> d.values()
-        ['honderd', 'tien', 'duizend']
-        >>> d.items()
-        [(100, 'honderd'), (10, 'tien'), (1000, 'duizend')]
-        >>> 
-\end{verbatim}
-
-\section{Miscellaneous New Built-in Functions}
-
-The function \verb\vars()\ returns a dictionary containing the current
-local variables.  With a module argument, it returns that module's
-global variables.  The old function \verb\dir(x)\ returns
-\verb\vars(x).keys()\.
-
-The function \verb\round(x)\ returns a floating point number rounded
-to the nearest integer (but still expressed as a floating point
-number).  E.g. \verb\round(3.4) == 3.0\ and \verb\round(3.5) == 4.0\.
-With a second argument it rounds to the specified number of digits,
-e.g. \verb\round(math.pi, 4) == 3.1416\ or even
-\verb\round(123.4, -2) == 100.0\. 
-
-The function \verb\hash(x)\ returns a hash value for an object.
-All object types acceptable as dictionary keys have a hash value (and
-it is this hash value that the dictionary implementation uses).
-
-The function \verb\id(x)\ return a unique identifier for an object.
-For two objects x and y, \verb\id(x) == id(y)\ if and only if
-\verb\x is y\.  (In fact the object's address is used.)
-
-The function \verb\hasattr(x, name)\ returns whether an object has an
-attribute with the given name (a string value).  The function
-\verb\getattr(x, name)\ returns the object's attribute with the given
-name.  The function \verb\setattr(x, name, value)\ assigns a value to
-an object's attribute with the given name.  These three functions are
-useful if the attribute names are not known beforehand.  Note that
-\verb\getattr(x, 'spam')\ is equivalent to \verb\x.spam\, and
-\verb\setattr(x, 'spam', y)\ is equivalent to \verb\x.spam = y\.  By
-definition, \verb\hasattr(x, name)\ returns true if and only if
-\verb\getattr(x, name)\ returns without raising an exception.
-
-\section{Else Clause For Try Statement}
-
-The \verb\try...except\ statement now has an optional \verb\else\
-clause, which must follow all \verb\except\ clauses.  It is useful to
-place code that must be executed if the \verb\try\ clause does not
-raise an exception.  For example:
-
-\begin{verbatim}
-        for arg in sys.argv:
-                try:
-                        f = open(arg, 'r')
-                except IOError:
-                        print 'cannot open', arg
-                else:
-                        print arg, 'has', len(f.readlines()), 'lines'
-                        f.close()
-\end{verbatim}
-
-
-\section{New Class Features in Release 1.1}
-
-Some changes have been made to classes: the operator overloading
-mechanism is more flexible, providing more support for non-numeric use
-of operators (including calling an object as if it were a function),
-and it is possible to trap attribute accesses.
-
-\subsection{New Operator Overloading}
-
-It is no longer necessary to coerce both sides of an operator to the
-same class or type.  A class may still provide a \code{__coerce__}
-method, but this method may return objects of different types or
-classes if it feels like it.  If no \code{__coerce__} is defined, any
-argument type or class is acceptable.
-
-In order to make it possible to implement binary operators where the
-right-hand side is a class instance but the left-hand side is not,
-without using coercions, right-hand versions of all binary operators
-may be defined.  These have an `r' prepended to their name,
-e.g. \code{__radd__}.
-
-For example, here's a very simple class for representing times.  Times
-are initialized from a number of seconds (like time.time()).  Times
-are printed like this: \code{Wed Mar 15 12:28:48 1995}.  Subtracting
-two Times gives their difference in seconds.  Adding or subtracting a
-Time and a number gives a new Time.  You can't add two times, nor can
-you subtract a Time from a number.
-
-\begin{verbatim}
-import time
-
-class Time:
-    def __init__(self, seconds):
-        self.seconds = seconds
-    def __repr__(self):
-        return time.ctime(self.seconds)
-    def __add__(self, x):
-        return Time(self.seconds + x)
-    __radd__ = __add__            # support for x+t
-    def __sub__(self, x):
-        if hasattr(x, 'seconds'): # test if x could be a Time
-            return self.seconds - x.seconds
-        else:
-            return self.seconds - x
-
-now = Time(time.time())
-tomorrow = 24*3600 + now
-yesterday = now - today
-print tomorrow - yesterday        # prints 172800
-\end{verbatim}
-
-\subsection{Trapping Attribute Access}
-
-You can define three new ``magic'' methods in a class now:
-\code{__getattr__(self, name)}, \code{__setattr__(self, name, value)}
-and \code{__delattr__(self, name)}.
-
-The \code{__getattr__} method is called when an attribute access fails,
-i.e. when an attribute access would otherwise raise AttributeError ---
-this is {\em after} the instance's dictionary and its class hierarchy
-have been searched for the named attribute.  Note that if this method
-attempts to access any undefined instance attribute it will be called
-recursively!
-
-The \code{__setattr__} and \code{__delattr__} methods are called when
-assignment to, respectively deletion of an attribute are attempted.
-They are called {\em instead} of the normal action (which is to insert
-or delete the attribute in the instance dictionary).  If either of
-these methods most set or delete any attribute, they can only do so by
-using the instance dictionary directly --- \code{self.__dict__} --- else
-they would be called recursively.
-
-For example, here's a near-universal ``Wrapper'' class that passes all
-its attribute accesses to another object.  Note how the
-\code{__init__} method inserts the wrapped object in
-\code{self.__dict__} in order to avoid endless recursion
-(\code{__setattr__} would call \code{__getattr__} which would call
-itself recursively).
-
-\begin{verbatim}
-class Wrapper:
-    def __init__(self, wrapped):
-        self.__dict__['wrapped'] = wrapped
-    def __getattr__(self, name):
-        return getattr(self.wrapped, name)
-    def __setattr__(self, name, value):
-        setattr(self.wrapped, name, value)
-    def __delattr__(self, name):
-        delattr(self.wrapped, name)
-
-import sys
-f = Wrapper(sys.stdout)
-f.write('hello world\n')          # prints 'hello world'
-\end{verbatim}
-
-A simpler example of \code{__getattr__} is an attribute that is
-computed each time (or the first time) it it accessed.  For instance:
-
-\begin{verbatim}
-from math import pi
-
-class Circle:
-    def __init__(self, radius):
-        self.radius = radius
-    def __getattr__(self, name):
-        if name == 'circumference':
-            return 2 * pi * self.radius
-        if name == 'diameter':
-            return 2 * self.radius
-        if name == 'area':
-           return pi * pow(self.radius, 2)
-        raise AttributeError, name
-\end{verbatim}
-
-\subsection{Calling a Class Instance}
-
-If a class defines a method \code{__call__} it is possible to call its
-instances as if they were functions.  For example:
-
-\begin{verbatim}
-class PresetSomeArguments:
-    def __init__(self, func, *args):
-        self.func, self.args = func, args
-    def __call__(self, *args):
-        return apply(self.func, self.args + args)
-
-f = PresetSomeArguments(pow, 2)    # f(i) computes powers of 2
-for i in range(10): print f(i),    # prints 1 2 4 8 16 32 64 128 256 512
-print                              # append newline
-\end{verbatim}
-
-
-\chapter{New in Release 1.2}
-
-
-This chapter describes even more recent additions to the Python
-language and library.
-
-
-\section{New Class Features}
-
-The semantics of \code{__coerce__} have been changed to be more
-reasonable.  As an example, the new standard module \code{Complex}
-implements fairly complete complex numbers using this.  Additional
-examples of classes with and without \code{__coerce__} methods can be
-found in the \code{Demo/classes} subdirectory, modules \code{Rat} and
-\code{Dates}.
-
-If a class defines no \code{__coerce__} method, this is equivalent to
-the following definition:
-
-\begin{verbatim}
-def __coerce__(self, other): return self, other
-\end{verbatim}
-
-If \code{__coerce__} coerces itself to an object of a different type,
-the operation is carried out using that type --- in release 1.1, this
-would cause an error.
-
-Comparisons involving class instances now invoke \code{__coerce__}
-exactly as if \code{cmp(x, y)} were a binary operator like \code{+}
-(except if \code{x} and \code{y} are the same object).
-
-\section{Unix Signal Handling}
-
-On \UNIX{}, Python now supports signal handling.  The module
-\code{signal} exports functions \code{signal}, \code{pause} and
-\code{alarm}, which act similar to their \UNIX{} counterparts.  The
-module also exports the conventional names for the various signal
-classes (also usable with \code{os.kill()}) and \code{SIG_IGN} and
-\code{SIG_DFL}.  See the section on \code{signal} in the Library
-Reference Manual for more information.
-
-\section{Exceptions Can Be Classes}
+\subsection{Exceptions Can Be Classes}
 
 User-defined exceptions are no longer limited to being string objects
 --- they can be identified by classes as well.  Using this mechanism it
@@ -3295,163 +3276,76 @@ finally the instance converted to a string using the built-in function
 
 In this release, the built-in exceptions are still strings.
 
+\chapter{What Now?}
 
-\section{Object Persistency and Object Copying}
+Hopefully reading this tutorial has reinforced your interest in using
+Python.  Now what should you do?
 
-Two new modules, \code{pickle} and \code{shelve}, support storage and
-retrieval of (almost) arbitrary Python objects on disk, using the
-\code{dbm} package.  A third module, \code{copy}, provides flexible
-object copying operations.  More information on these modules is
-provided in the Library Reference Manual.
+You should read, or at least page through, the Library Reference,
+which gives complete (though terse) reference material about types,
+functions, and modules that can save you a lot of time when writing
+Python programs.  The standard Python distribution includes a
+\emph{lot} of code in both C and Python; there are modules to read
+Unix mailboxes, retrieve documents via HTTP, generate random numbers,
+parse command-line options, write CGI programs, compress data, and a
+lot more; skimming through the Library Reference will give you an idea
+of what's available.
 
-\subsection{Persistent Objects}
+The major Python Web site is \code{http://www.python.org}; it contains
+code, documentation, and pointers to Python-related pages around the
+Web.  \code{www.python.org} is mirrored in various places around the
+world, such as Europe, Japan, and Australia; a mirror may be faster
+than the main site, depending on your geographical location.  A more
+informal site is \code{http://starship.skyport.net}, which contains a
+bunch of Python-related personal home pages; many people have
+downloadable software here.
 
-The module \code{pickle} provides a general framework for objects to
-disassemble themselves into a stream of bytes and to reassemble such a
-stream back into an object.  It copes with reference sharing,
-recursive objects and instances of user-defined classes, but not
-(directly) with objects that have ``magical'' links into the operating
-system such as open files, sockets or windows.
+For Python-related questions and problem reports, you can post to the
+newsgroup \code{comp.lang.python}, or send them to the mailing list at
+\code{python-list@cwi.nl}.  The newsgroup and mailing list are
+gatewayed, so messages posted to one will automatically be forwarded
+to the other.  There are around 20--30 postings a day, asking (and
+answering) questions, suggesting new features, and announcing new
+modules.  But before posting, be sure to check the list of Frequently
+Asked Questions (also called the FAQ), at
+\code{http://www.python.org/doc/FAQ.html}, or look for it in the
+\code{Misc/} directory of the Python source distribution.  The FAQ
+answers many of the questions that come up again and again, and may
+already contain the solution for your problem.
 
-The \code{pickle} module defines a simple protocol whereby
-user-defined classes can control how they are disassembled and
-assembled.  The method \code{__getinitargs__()}, if defined, returns
-the argument list for the constructor to be used at assembly time (by
-default the constructor is called without arguments).  The methods
-\code{__getstate__()} and \code{__setstate__()} are used to pass
-additional state from disassembly to assembly; by default the
-instance's \code{__dict__} is passed and restored.
+You can support the Python community by joining the Python Software
+Activity, which runs the python.org web, ftp and email servers, and
+organizes Python workshops.  See \code{http://www.python.org/psa/} for
+information on how to join.
 
-Note that \code{pickle} does not open or close any files --- it can be
-used equally well for moving objects around on a network or store them
-in a database.  For ease of debugging, and the inevitable occasional
-manual patch-up, the constructed byte streams consist of printable
-\ASCII{} characters only (though it's not designed to be pretty).
 
-The module \code{shelve} provides a simple model for storing objects
-on files.  The operation \code{shelve.open(filename)} returns a
-``shelf'', which is a simple persistent database with a
-dictionary-like interface.  Database keys are strings, objects stored
-in the database can be anything that \code{pickle} will handle.
+\chapter{Recent Additions as of Release 1.1}
 
-\subsection{Copying Objects}
+XXX Should the stuff in this chapter be deleted, or can a home be found or it elsewhere in the Tutorial?
 
-The module \code{copy} exports two functions: \code{copy()} and
-\code{deepcopy()}.  The \code{copy()} function returns a ``shallow''
-copy of an object; \code{deepcopy()} returns a ``deep'' copy.  The
-difference between shallow and deep copying is only relevant for
-compound objects (objects that contain other objects, like lists or
-class instances):
+\section{Lambda Forms}
 
-\begin{itemize}
+XXX Where to put this?  Or just leave it out?
 
-\item
-A shallow copy constructs a new compound object and then (to the
-extent possible) inserts {\em the same objects} into in that the
-original contains.
+By popular demand, a few features commonly found in functional
+programming languages and Lisp have been added to Python.  With the
+\verb\lambda\ keyword, small anonymous functions can be created.
+Here's a function that returns the sum of its two arguments:
+\verb\lambda a, b: a+b\.  Lambda forms can be used wherever function
+objects are required.  They are syntactically restricted to a single
+expression.  Semantically, they are just syntactic sugar for a normal
+function definition.  Like nested function definitions, lambda forms
+cannot reference variables from the containing scope, but this can be
+overcome through the judicious use of default argument values, e.g.
 
-\item
-A deep copy constructs a new compound object and then, recursively,
-inserts {\em copies} into it of the objects found in the original.
-
-\end{itemize}
-
-Both functions have the same restrictions and use the same protocols
-as \code{pickle} --- user-defined classes can control how they are
-copied by providing methods named \code{__getinitargs__()},
-\code{__getstate__()} and \code{__setstate__()}.
-
+\begin{verbatim}
+        def make_incrementor(n):
+                return lambda x, incr=n: x+incr
+\end{verbatim}
 
 \section{Documentation Strings}
 
-A variety of objects now have a new attribute, \code{__doc__}, which
-is supposed to contain a documentation string (if no documentation is
-present, the attribute is \code{None}).  New syntax, compatible with
-the old interpreter, allows for convenient initialization of the
-\code{__doc__} attribute of modules, classes and functions by placing
-a string literal by itself as the first statement in the suite.  It
-must be a literal --- an expression yielding a string object is not
-accepted as a documentation string, since future tools may need to
-derive documentation from source by parsing.
-
-Here is a hypothetical, amply documented module called \code{Spam}:
-
-\begin{verbatim}
-"""Spam operations.
-
-This module exports two classes, a function and an exception:
-
-class Spam: full Spam functionality --- three can sizes
-class SpamLight: limited Spam functionality --- only one can size
-
-def open(filename): open a file and return a corresponding Spam or
-SpamLight object
-
-GoneOff: exception raised for errors; should never happen
-
-Note that it is always possible to convert a SpamLight object to a
-Spam object by a simple method call, but that the reverse operation is
-generally costly and may fail for a number of reasons.
-"""
-
-class SpamLight:
-    """Limited spam functionality.
-
-    Supports a single can size, no flavor, and only hard disks.
-    """
-
-    def __init__(self, size=12):
-        """Construct a new SpamLight instance.
-
-        Argument is the can size.
-        """
-        # etc.
-
-    # etc.
-
-class Spam(SpamLight):
-    """Full spam functionality.
-
-    Supports three can sizes, two flavor varieties, and all floppy
-    disk formats still supported by current hardware.
-    """
-
-    def __init__(self, size1=8, size2=12, size3=20):
-        """Construct a new Spam instance.
-
-        Arguments are up to three can sizes.
-        """
-        # etc.
-
-    # etc.
-
-def open(filename = "/dev/null"):
-    """Open a can of Spam.
-
-    Argument must be an existing file.
-    """
-    # etc.
-
-class GoneOff:
-    """Class used for Spam exceptions.
-
-    There shouldn't be any.
-    """
-    pass
-\end{verbatim}
-
-After executing ``\code{import Spam}'', the following expressions
-return the various documentation strings from the module:
-
-\begin{verbatim}
-Spam.__doc__
-Spam.SpamLight.__doc__
-Spam.SpamLight.__init__.__doc__
-Spam.Spam.__doc__
-Spam.Spam.__init__.__doc__
-Spam.open.__doc__
-Spam.GoneOff.__doc__
-\end{verbatim}
+XXX Where to put this?  Or just leave it out?
 
 There are emerging conventions about the content and formatting of
 documentation strings.
@@ -3484,755 +3378,97 @@ indented less should not occur, but if they occur all their leading
 whitespace should be stripped.  Equivalence of whitespace should be
 tested after expansion of tabs (to 8 spaces, normally).
 
-In this release, few of the built-in or standard functions and modules
-have documentation strings.
 
-
-\section{Customizing Import and Built-Ins}
-
-In preparation for a ``restricted execution mode'' which will be
-usable to run code received from an untrusted source (such as a WWW
-server or client), the mechanism by which modules are imported has
-been redesigned.  It is now possible to provide your own function
-\code{__import__} which is called whenever an \code{import} statement
-is executed.  There's a built-in function \code{__import__} which
-provides the default implementation, but more interesting, the various
-steps it takes are available separately from the new built-in module
-\code{imp}.  (See the section on \code{imp} in the Library Reference
-Manual for more information on this module --- it also contains a
-complete example of how to write your own \code{__import__} function.)
-
-When you do \code{dir()} in a fresh interactive interpreter you will
-see another ``secret'' object that's present in every module:
-\code{__builtins__}.  This is either a dictionary or a module
-containing the set of built-in objects used by functions defined in
-current module.  Although normally all modules are initialized with a
-reference to the same dictionary, it is now possible to use a
-different set of built-ins on a per-module basis.  Together with the
-fact that the \code{import} statement uses the \code{__import__}
-function it finds in the importing modules' dictionary of built-ins,
-this forms the basis for a future restricted execution mode.
-
-
-\section{Python and the World-Wide Web}
-
-There is a growing number of modules available for writing WWW tools.
-The previous release already sported modules \code{gopherlib},
-\code{ftplib}, \code{httplib} and \code{urllib} (which unifies the
-other three) for accessing data through the commonest WWW protocols.
-This release also provides \code{cgi}, to ease the writing of
-server-side scripts that use the Common Gateway Interface protocol,
-supported by most WWW servers.  The module \code{urlparse} provides
-precise parsing of a URL string into its components (address scheme,
-network location, path, parameters, query, and fragment identifier).
-
-A rudimentary, parser for HTML files is available in the module
-\code{htmllib}.  It currently supports a subset of HTML 1.0 (if you
-bring it up to date, I'd love to receive your fixes!).  Unfortunately
-Python seems to be too slow for real-time parsing and formatting of
-HTML such as required by interactive WWW browsers --- but it's good
-enough to write a ``robot'' (an automated WWW browser that searches
-the web for information).
-
-
-\section{Miscellaneous}
-
-\begin{itemize}
-
-\item
-The \code{socket} module now exports all the needed constants used for
-socket operations, such as \code{SO_BROADCAST}.
-
-\item
-The functions \code{popen()} and \code{fdopen()} in the \code{os}
-module now follow the pattern of the built-in function \code{open()}:
-the default mode argument is \code{'r'} and the optional third
-argument specifies the buffer size, where \code{0} means unbuffered,
-\code{1} means line-buffered, and any larger number means the size of
-the buffer in bytes.
-
-\end{itemize}
-
-
-\chapter{New in Release 1.3}
-
-
-This chapter describes yet more recent additions to the Python
-language and library.
-
-
-\section{Keyword Arguments}
-
-Functions and methods written in Python can now be called using
-keyword arguments of the form \code{\var{keyword} = \var{value}}.  For
-instance, the following function:
-
-\begin{verbatim}
-def parrot(voltage, state='a stiff', action='voom', type='Norwegian Blue'):
-    print "-- This parrot wouldn't", action,
-    print "if you put", voltage, "Volts through it."
-    print "-- Lovely plumage, the", type
-    print "-- It's", state, "!"
-\end{verbatim}
-
-could be called in any of the following ways:
-
-\begin{verbatim}
-parrot(1000)
-parrot(action = 'VOOOOOM', voltage = 1000000)
-parrot('a thousand', state = 'pushing up the daisies')
-parrot('a million', 'bereft of life', 'jump')
-\end{verbatim}
-
-but the following calls would all be invalid:
-
-\begin{verbatim}
-parrot()                     # required argument missing
-parrot(voltage=5.0, 'dead')  # non-keyword argument following keyword
-parrot(110, voltage=220)     # duplicate value for argument
-parrot(actor='John Cleese')  # unknown keyword
-\end{verbatim}
-
-In general, an argument list must have the form: zero or more
-positional arguments followed by zero or more keyword arguments, where
-the keywords must be chosen from the formal parameter names.  It's not
-important whether a formal parameter has a default value or not.  No
-argument must receive a value more than once --- formal parameter names
-corresponding to positional arguments cannot be used as keywords in
-the same calls.
-
-Note that no special syntax is required to allow a function to be
-called with keyword arguments.  The additional costs incurred by
-keyword arguments are only present when a call uses them.
-
-(As far as I know, these rules are exactly the same as used by
-Modula-3, even if they are enforced by totally different means.  This
-is intentional.)
-
-When a final formal parameter of the form \code{**\var{name}} is
-present, it receives a dictionary containing all keyword arguments
-whose keyword doesn't correspond to a formal parameter.  This may be
-combined with a formal parameter of the form \code{*\var{name}} which
-receives a tuple containing the positional arguments beyond the formal
-parameter list.  (\code{*\var{name}} must occur before
-\code{**\var{name}}.)  For example, if we define a function like this:
-
-\begin{verbatim}
-def cheeseshop(kind, *arguments, **keywords):
-    print "-- Do you have any", kind, '?'
-    print "-- I'm sorry, we're all out of", kind
-    for arg in arguments: print arg
-    print '-'*40
-    for kw in keywords.keys(): print kw, ':', keywords[kw]
-\end{verbatim}
-
-It could be called like this:
-
-\begin{verbatim}
-cheeseshop('Limburger', "It's very runny, sir.",
-           "It's really very, VERY runny, sir.",
-           client='John Cleese',
-           shopkeeper='Michael Palin',
-           sketch='Cheese Shop Sketch')
-\end{verbatim}
-
-and of course it would print:
-
-\begin{verbatim}
--- Do you have any Limburger ?
--- I'm sorry, we're all out of Limburger
-It's very runny, sir.
-It's really very, VERY runny, sir.
-----------------------------------------
-client : John Cleese
-shopkeeper : Michael Palin
-sketch : Cheese Shop Sketch
-\end{verbatim}
-
-Consequences of this change include:
-
-\begin{itemize}
-
-\item
-The built-in function \code{apply()} now has an optional third
-argument, which is a dictionary specifying any keyword arguments to be
-passed.  For example,
-\begin{verbatim}
-apply(parrot, (), {'voltage': 20, 'action': 'voomm'})
-\end{verbatim}
-is equivalent to
-\begin{verbatim}
-parrot(voltage=20, action='voomm')
-\end{verbatim}
-
-\item
-There is also a mechanism for functions and methods defined in an
-extension module (i.e., implemented in C or C++) to receive a
-dictionary of their keyword arguments.  By default, such functions do
-not accept keyword arguments, since the argument names are not
-available to the interpreter.
-
-\item
-In the effort of implementing keyword arguments, function and
-especially method calls have been sped up significantly --- for a
-method with ten formal parameters, the call overhead has been cut in
-half; for a function with one formal parameters, the overhead has been
-reduced by a third.
-
-\item
-The format of \code{.pyc} files has changed (again).
-
-\item
-The \code{access} statement has been disabled.  The syntax is still
-recognized but no code is generated for it.  (There were some
-unpleasant interactions with changes for keyword arguments, and my
-plan is to get rid of \code{access} altogether in favor of a different
-approach.)
-
-\end{itemize}
-
-\section{Changes to the WWW and Internet tools}
-
-\begin{itemize}
-
-\item
-The \code{htmllib} module has been rewritten in an incompatible
-fashion.  The new version is considerably more complete (HTML 2.0
-except forms, but including all ISO-8859-1 entity definitions), and
-easy to use.  Small changes to \code{sgmllib} have also been made, to
-better match the tokenization of HTML as recognized by other web
-tools.
-
-\item
-A new module \code{formatter} has been added, for use with the new
-\code{htmllib} module.
-
-\item
-The \code{urllib}and \code{httplib} modules have been changed somewhat
-to allow overriding unknown URL types and to support authentication.
-They now use \code{mimetools.Message} instead of \code{rfc822.Message}
-to parse headers.  The \code{endrequest()} method has been removed
-from the HTTP class since it breaks the interaction with some servers.
-
-\item
-The \code{rfc822.Message} class has been changed to allow a flag to be
-passed in that says that the file is unseekable.
-
-\item
-The \code{ftplib} module has been fixed to be (hopefully) more robust
-on Linux.
-
-\item
-Several new operations that are optionally supported by servers have
-been added to \code{nntplib}: \code{xover}, \code{xgtitle},
-\code{xpath} and \code{date}. % thanks to Kevan Heydon
-
-\end{itemize}
-
-\section{Other Language Changes}
-
-\begin{itemize}
-
-\item
-The \code{raise} statement now takes an optional argument which
-specifies the traceback to be used when printing the exception's stack
-trace.  This must be a traceback object, such as found in
-\code{sys.exc_traceback}.  When omitted or given as \code{None}, the
-old behavior (to generate a stack trace entry for the current stack
-frame) is used.
-
-\item
-The tokenizer is now more tolerant of alien whitespace.  Control-L in
-the leading whitespace of a line resets the column number to zero,
-while Control-R just before the end of the line is ignored.
-
-\end{itemize}
-
-\section{Changes to Built-in Operations}
-
-\begin{itemize}
-
-\item
-For file objects, \code{\var{f}.read(0)} and
-\code{\var{f}.readline(0)} now return an empty string rather than
-reading an unlimited number of bytes.  For the latter, omit the
-argument altogether or pass a negative value.
-
-\item
-A new system variable, \code{sys.platform}, has been added.  It
-specifies the current platform, e.g. \code{sunos5} or \code{linux1}.
-
-\item
-The built-in functions \code{input()} and \code{raw_input()} now use
-the GNU readline library when it has been configured (formerly, only
-interactive input to the interpreter itself was read using GNU
-readline).  The GNU readline library provides elaborate line editing
-and history.  The Python debugger (\code{pdb}) is the first
-beneficiary of this change.
-
-\item
-Two new built-in functions, \code{globals()} and \code{locals()},
-provide access to dictionaries containming current global and local
-variables, respectively.  (These augment rather than replace
-\code{vars()}, which returns the current local variables when called
-without an argument, and a module's global variables when called with
-an argument of type module.)
-
-\item
-The built-in function \code{compile()} now takes a third possible
-value for the kind of code to be compiled: specifying \code{'single'}
-generates code for a single interactive statement, which prints the
-output of expression statements that evaluate to something else than
-\code{None}.
-
-\end{itemize}
-
-\section{Library Changes}
-
-\begin{itemize}
-
-\item
-There are new module \code{ni} and \code{ihooks} that support
-importing modules with hierarchical names such as \code{A.B.C}.  This
-is enabled by writing \code{import ni; ni.ni()} at the very top of the
-main program.  These modules are amply documented in the Python
-source.
-
-\item
-The module \code{rexec} has been rewritten (incompatibly) to define a
-class and to use \code{ihooks}.
-
-\item
-The \code{string.split()} and \code{string.splitfields()} functions
-are now the same function (the presence or absence of the second
-argument determines which operation is invoked); similar for
-\code{string.join()} and \code{string.joinfields()}.
-
-\item
-The \code{Tkinter} module and its helper \code{Dialog} have been
-revamped to use keyword arguments.  Tk 4.0 is now the standard.  A new
-module \code{FileDialog} has been added which implements standard file
-selection dialogs.
-
-\item
-The optional built-in modules \code{dbm} and \code{gdbm} are more
-coordinated --- their \code{open()} functions now take the same values
-for their \var{flag} argument, and the \var{flag} and \var{mode}
-argument have default values (to open the database for reading only,
-and to create the database with mode \code{0666} minuse the umask,
-respectively).  The memory leaks have finally been fixed.
-
-\item
-A new dbm-like module, \code{bsddb}, has been added, which uses the
-BSD DB package's hash method. % thanks to David Ely
-
-\item
-A portable (though slow) dbm-clone, implemented in Python, has been
-added for systems where none of the above is provided.  It is aptly
-dubbed \code{dumbdbm}.
-
-\item
-The module \code{anydbm} provides a unified interface to \code{bsddb},
-\code{gdbm}, \code{dbm}, and \code{dumbdbm}, choosing the first one
-available.
-
-\item
-A new extension module, \code{binascii}, provides a variety of
-operations for conversion of text-encoded binary data.
-
-\item
-There are three new or rewritten companion modules implemented in
-Python that can encode and decode the most common such formats:
-\code{uu} (uuencode), \code{base64} and \code{binhex}.
-
-\item
-A module to handle the MIME encoding quoted-printable has also been
-added: \code{quopri}.
-
-\item
-The parser module (which provides an interface to the Python parser's
-abstract syntax trees) has been rewritten (incompatibly) by Fred
-Drake.  It now lets you change the parse tree and compile the result!
-
-\item
-The \code{syslog} module has been upgraded and documented.
-% thanks to Steve Clift
-
-\end{itemize}
-
-\section{Other Changes}
-
-\begin{itemize}
-
-\item
-The dynamic module loader recognizes the fact that different filenames
-point to the same shared library and loads the library only once, so
-you can have a single shared library that defines multiple modules.
-(SunOS / SVR4 style shared libraries only.)
-
-\item
-Jim Fulton's ``abstract object interface'' has been incorporated into
-the run-time API.  For more detailes, read the files
-\code{Include/abstract.h} and \code{Objects/abstract.c}.
-
-\item
-The Macintosh version is much more robust now.
-
-\item
-Numerous things I have forgotten or that are so obscure no-one will
-notice them anyway :-)
-
-\end{itemize}
-
-
-\chapter{New in Release 1.4}
-
-
-This chapter describes the major additions to the Python language and 
-library in version 1.4.  Many minor changes are not listed here;
-it is recommended to read the file \code{Misc/NEWS} in the Python 
-source distribution for a complete listing of changes.  In particular,
-changes that only affect C programmers or the build and installation
-process are not described in this chapter (the new installation
-lay-out is explained below under \code{sys.prefix} though).
-
-\section{Language Changes}
-
-\begin{itemize}
-
-\item
-Power operator.  \code{x**y} is equivalent to \code{pow(x, y)}.
-This operator binds more tightly than \code{*}, \code{/} or \code{\%},
-and binds from right to left when repeated or combined with unary 
-operators.  For example, \code{x**y**z} is equivalent to 
-\code{x**(y**z)}, and \code{-x**y} is \code{-(x**y)}.
-
-\item
-Complex numbers.  Imaginary literals are writen with a \code{'j'}
-suffix (\code{'J'} is allowed as well.) Complex numbers with a nonzero
-real component are written as \code{(\var{real}+\var{imag}j)}.  You
-can also use the new built-in function \code{complex()} which takes
-one or two arguments: \code{complex(x)} is equivalent to \code{x +
-0j}, and \code{complex(x, y)} is \code{x + y*0j}.  For example,
-\code{1j**2} yields \code{complex(-1.0)} (which is another way of
-saying ``the real value 1.0 represented as a complex number.''
-
-Complex numbers are always represented as two floating point numbers,
-the real and imaginary part.
-To extract these parts from a complex number \code{z}, 
-use \code{z.real} and \code{z.imag}.  The conversion functions to 
-floating point and integer (\code{float()}, \code{int()} and 
-\code{long()}) don't work for complex numbers --- there is no one 
-correct way to convert a complex number to a real number.  Use 
-\code{abs(z)} to get its magnitude (as a float) or \code{z.real} to 
-get its real part.
-
-Module \code{cmath} provides versions of all math functions that take 
-complex arguments and return complex results.  (Module \code{math} 
-only supports real numbers, so that \code{math.sqrt(-1)} still raises 
-a \code{ValueError} exception.  Numerical experts agree that this is 
-the way it should be.)
-
-\item
-New indexing syntax.  It is now possible to use a tuple as an indexing
-expression for a mapping object without parenthesizing it,
-e.g. \code{x[1, 2, 3]} is equivalent to \code{x[(1, 2, 3)]}.
-
-\item
-New slicing syntax.  In support of the Numerical Python extension
-(distributed independently), slice indices of the form
-\code{x[lo:hi:stride]} are possible, multiple slice indices separated by
-commas are allowed, and an index position may be replaced by an ellipsis,
-as follows: \code{x[a, ..., z]}.  There's also a new built-in function
-\code{slice(lo, hi, stride)} and a new built-in object
-\code{Ellipsis}, which yield the same effect without using special
-syntax.  None of the standard sequence types support indexing with
-slice objects or ellipses yet.
-
-Note that when this new slicing syntax is used, the mapping interface
-will be used, not the sequence interface.  In particular, when a
-user-defined class instance is sliced using this new slicing syntax,
-its \code{__getitem__} method is invoked --- the
-\code{__getslice__} method is only invoked when a single old-style
-slice is used, i.e. \code{x[lo:hi]}, with possible omission of
-\code{lo} and/or \code{hi}.  Some examples:
-
-\begin{verbatim}
-x[0:10:2]        -> slice(0, 10, 2)
-x[:2:]           -> slice(None, 2, None)
-x[::-1]          -> slice(None, None, -1)
-x[::]            -> slice(None, None, None)
-x[1, 2:3]        -> (1, slice(2, 3, None))
-x[1:2, 3:4]      -> (slice(1, 2, None), slice(3, 4, None))
-x[1:2, ..., 3:4] -> (slice(1, 2, None), Ellipsis,
-                     slice(3, 4, None))
-\end{verbatim}
-
-For more help with this you are referred to the matrix-sig.
-
-\item
-The \code{access} statement is now truly gone; \code{access} is no 
-longer a reserved word.  This saves a few cycles here and there.
-
-\item
-Private variables through name mangling.
-There is now limited support for class-private
-identifiers.  Any identifier of the form \code{__spam} (at least two
-leading underscores, at most one trailing underscore) is now textually
-replaced with \code{_classname__spam}, where \code{classname} is the
-current class name with leading underscore(s) stripped.  This mangling
-is done without regard of the syntactic position of the identifier, so
-it can be used to define class-private instance and class variables,
-methods, as well as globals, and even to store instance variables
-private to this class on instances of {\em other} classes.  Truncation
-may occur when the mangled name would be longer than 255 characters.
-Outside classes, or when the class name consists of only underscores,
-no mangling occurs.
-
-Name mangling is intended to give classes an easy way to define
-``private'' instance variables and methods, without having to worry
-about instance variables defined by derived classes, or mucking with
-instance variables by code outside the class.  Note that the mangling
-rules are designed mostly to avoid accidents; it still is possible for
-a determined soul to access or modify a variable that is considered
-private.  This can even be useful, e.g. for the debugger, and that's
-one reason why this loophole is not closed.  (Buglet: derivation of a
-class with the same name as the base class makes use of private
-variables of the base class possible.)
-
-Notice that code passed to \code{exec}, \code{eval()} or
-\code{evalfile()} does not consider the classname of the invoking 
-class to be the current class; this is similar to the effect of the 
-\code{global} statement, the effect of which is likewise restricted to 
-code that is byte-compiled together.  The same restriction applies to
-\code{getattr()}, \code{setattr()} and \code{delattr()}, as well as
-when referencing \code{__dict__} directly.
-
-Here's an example of a class that implements its own
-\code{__getattr__} and \code{__setattr__} methods and stores all
-attributes in a private variable, in a way that works in Python 1.4 as
-well as in previous versions:
-
-\begin{verbatim}
-class VirtualAttributes:
-    __vdict = None
-    __vdict_name = locals().keys()[0]
-     
-    def __init__(self):
-        self.__dict__[self.__vdict_name] = {}
-    
-    def __getattr__(self, name):
-        return self.__vdict[name]
-    
-    def __setattr__(self, name, value):
-        self.__vdict[name] = value
-\end{verbatim}
-
-{\em Warning: this is an experimental feature.}  To avoid all
-potential problems, refrain from using identifiers starting with
-double underscore except for predefined uses like \code{__init__}.  To
-use private names while maintaining future compatibility: refrain from
-using the same private name in classes related via subclassing; avoid
-explicit (manual) mangling/unmangling; and assume that at some point
-in the future, leading double underscore will revert to being just a
-naming convention.  Discussion on extensive compile-time declarations
-are currently underway, and it is impossible to predict what solution
-will eventually be chosen for private names.  Double leading
-underscore is still a candidate, of course --- just not the only one.
-It is placed in the distribution in the belief that it is useful, and
-so that widespread experience with its use can be gained.  It will not
-be removed without providing a better solution and a migration path.
-
-\end{itemize}
-
-\section{Run-time Changes}
-
-\begin{itemize}
-
-\item
-New built-in function \code{list()} converts any sequence to a new list.
-Note that when the argument is a list, the return value is a fresh 
-copy, similar to what would be returned by \code{a[:]}.
-
-\item
-Improved syntax error message.  Syntax errors detected by the code
-generation phase of the Python bytecode compiler now include a line
-number.  The line number is appended in parentheses.  It is suppressed
-if the error occurs in line 1 (this usually happens in interactive
-use).
-
-\item
-Different exception raised.
-Unrecognized keyword arguments now raise a \code{TypeError} exception 
-rather than \code{KeyError}.
-
-\item
-Exceptions in \code{__del__} methods.  When a \code{__del__} method
-raises an exception, a warning is written to \code{sys.stderr} and the
-exception is ignored.  Formerly, such exceptions were ignored without
-warning.  (Propagating the exception is not an option since it it is
-invoked from an object finalizer, which cannot return any kind of
-status or error.)  (Buglet: The new behavior, while needed in order to
-debug failing \code{__del__} methods, is occasionally annoying,
-because if affects the program's standard error stream.  It honors
-assignments to \code{sys.stderr}, so it can be redirected from within
-a program if desired.)
-
-\item
-You can now discover from which file (if any) a module was loaded by 
-inspecting its \code{__file__} attribute.  This attribute is not 
-present for built-in or frozen modules.  It points to the shared 
-library file for dynamically loaded modules.  (Buglet: this may be a 
-relative path and is stored in the \code{.pyc} file on compilation.  
-If you manipulate the current directory with \code{os.chdir()} or move 
-\code{.pyc} files around, the value may be incorrect.)
-
-\end{itemize}
-
-\section{New or Updated Modules}
-
-\begin{itemize}
-
-\item
-New built-in module \code{operator}.  While undocumented, the concept
-is real simply: \code{operator.__add__(x, y)} does exactly the same
-thing as \code{x+y} (for all types --- built-in, user-defined,
-extension-defined).  As a convenience, \code{operator.add} does the
-same thing, but beware --- you can't use \code{operator.and} and a few
-others where the ``natural'' name for an operator is a reserved
-keyword.  You can add a single trailing underscore in such cases.
-
-\item
-New built-in module \code{errno}.  See the Library Reference Manual.
-
-\item
-Rewritten \code{cgi} module.  See the Library Reference Manual.
-
-\item
-Improved restricted execution module (\code{rexec}).  New module 
-\code{Bastion}.  Both are now documented in a new chapter on
-restricted execution in the Library Reference Manual.
-
-\item
-New string operations (all described in the Library Reference Manual):
-\code{lstrip()}, \code{rstrip()} (strip only the left/right
-whitespace), \code{capitalize()} (uppercase the first character,
-lowercase the rest), \code{capwords()} (capitalize each word,
-delimited a la \code{string.split()}), \code{translate()} (string
-transliteration -- this existed before but can now also delete
-characters by specifying a third argument), \code{maketrans()} (a
-convenience function for creating translation tables for
-\code{translate()} and \code{regex.compile()}).  The string function
-\code{split()} has an optional third argument which specifies the
-maximum number of separators to split;
-e.g. \code{string.split('a=b=c', '=', 1)} yields \code{['a', 'b=c']}.
-(Note that for a long time, \code{split()} and \code{splitfields()}
-are synonyms.
-
-\item
-New regsub operations (see the Library Reference Manual):
-\code{regsub.capwords()} (like \code{string.capwords()} but allows you to
-specify the word delimiter as a regular expression),
-\code{regsub.splitx()} (like \code{regsub.split()} but returns the
-delimiters as well as the words in the resulting list).  The optional
-\code{maxsep} argument is also supported by \code{regsub.split()}.
-
-\item
-Module files \code{pdb.py} and \code{profile.py} can now be invoked as
-scripts to debug c.q. profile other scripts easily.  For example:
-\code{python /usr/local/lib/python1.4/profile.py myscript.py}
-
-\item
-The \code{os} module now supports the \code{putenv()} function on
-systems where it is provided in the C library (Windows NT and most
-Unix versions).  For example, \code{os.putenv('PATH',
-'/bin:/usr/bin')} sets the environment variable \code{PATH} to the
-string \code{'/bin:/usr/bin'}.  Such changes to the environment affect
-subprocesses started with \code{os.system()}, \code{os.popen()} or
-\code{os.fork()} and \code{os.execv()}.  When \code{putenv()} is
-supported, assignments to items in \code{os.environ} are automatically
-translated into corresponding calls to \code{os.putenv()}; however,
-calls to \code{os.putenv()} don't update \code{os.environ}, so it is
-actually preferable to assign to items of \code{os.environ}.  For this
-purpose, the type of \code{os.environ} is changed to a subclass of
-\code{UserDict.UserDict} when \code{os.putenv()} is supported.
-(Buglet: \code{os.execve()} still requires a real dictionary, so it
-won't accept \code{os.environ} as its third argument.  However, you
-can now use \code{os.execv()} and it will use your changes to
-\code{os.environ}!.)
-
-\item
-More new functions in the \code{os} module: \code{mkfifo},
-\code{plock}, \code{remove} (== \code{unlink}), and \code{ftruncate}.
-See the Unix manual (section 2, system calls) for these function.
-More functions are also available under NT.
-
-\item
-New functions in the fcntl module: \code{lockf()} and \code{flock()}
-(don't ask \code{:-)}).  See the Library Reference Manual.
-
-\item
-The first item of the module search path, \code{sys.path[0]}, is the 
-directory containing the script that was used to invoke the Python 
-interpreter.  If the script directory is not available (e.g.  if the 
-interpreter is invoked interactively or if the script is read from 
-standard input), \code{sys.path[0]} is the empty string, which directs 
-Python to search modules in the current directory first.  Notice that 
-the script directory is inserted {\em before} the entries inserted as 
-a result of \code{\$PYTHONPATH}.  There is no longer an entry for the 
-current directory later in the path (unless explicitly set in 
-\code{\$PYTHONPATH} or overridden at build time).
-
-\end{itemize}
-
-\section{Configuration and Installation}
-
-\begin{itemize}
-
-\item
-More configuration information is now available to Python programs.
-The variable \code{sys.prefix} gives the site-specific directory
-prefix where the platform independent Python files are installed; by
-default, this is the string \code{"/usr/local"}.  This can be set at
-build time with the \code{--prefix} argument to the \code{configure}
-script.  The main collection of Python library modules is installed in
-the directory \code{sys.prefix+"/lib/python1.4"} while the platform
-independent header files (all except \code{config.h}) are stored in
-\code{sys.prefix+"/include/python1.4"}.
-
-Similarly, the variable \code{sys.exec_prefix} gives the site-specific
-directory prefix where the platform {\em de}pendent Python files are
-installed; by default, this is also \code{"/usr/local"}.  This can be
-set at build time with the \code{--exec-prefix} argument to the
-\code{configure} script.  Specifically, all configuration files
-(e.g. the \code{config.h} header file) are installed in the directory
-\code{sys.exec_prefix+"/lib/python1.4/config"}, and shared library
-modules are installed in
-\code{sys.exec_prefix+"/lib/python1.4/sharedmodules"}.
-
-Include files are at \code{sys.prefix+"/include/python1.4"}.
-
-It is not yet decided what the most portable way is to come up with
-the version number used in these pathnames.  For compatibility with
-the 1.4beta releases, sys.version[:3] can be used.
-
-On non-Unix systems, these variables are meaningless.
-
-\item
-While sites are strongly discouraged from modifying the standard
-Python library (like adding site-specific modules or functions), there
-is now a standard way to invoke site-specific features.  The standard
-module \code{site}, when imported, appends two site-specific
-directories to the end of \code{sys.path}:
-\code{\$prefix/lib/site-python} and
-\code{\$exec_prefix/lib/site-python}, where \code{\$prefix} and
-\code{\$exec_prefix} are the directories \code{sys.prefix} and
-\code{sys.exec_prefix} mentioned above.
-
-After this path manipulation has been performed, an attempt is made to
-import the module \code{sitecustomize}.  Any \code{ImportError}
-exception raised by this attempt is silently ignored.
-
-\end{itemize}
+\appendix\chapter{Interactive Input Editing and History Substitution}
+
+Some versions of the Python interpreter support editing of the current
+input line and history substitution, similar to facilities found in
+the Korn shell and the GNU Bash shell.  This is implemented using the
+{\em GNU\ Readline} library, which supports Emacs-style and vi-style
+editing.  This library has its own documentation which I won't
+duplicate here; however, the basics are easily explained.
+
+\subsection{Line Editing}
+
+If supported, input line editing is active whenever the interpreter
+prints a primary or secondary prompt.  The current line can be edited
+using the conventional Emacs control characters.  The most important
+of these are: C-A (Control-A) moves the cursor to the beginning of the
+line, C-E to the end, C-B moves it one position to the left, C-F to
+the right.  Backspace erases the character to the left of the cursor,
+C-D the character to its right.  C-K kills (erases) the rest of the
+line to the right of the cursor, C-Y yanks back the last killed
+string.  C-underscore undoes the last change you made; it can be
+repeated for cumulative effect.
+
+\subsection{History Substitution}
+
+History substitution works as follows.  All non-empty input lines
+issued are saved in a history buffer, and when a new prompt is given
+you are positioned on a new line at the bottom of this buffer.  C-P
+moves one line up (back) in the history buffer, C-N moves one down.
+Any line in the history buffer can be edited; an asterisk appears in
+front of the prompt to mark a line as modified.  Pressing the Return
+key passes the current line to the interpreter.  C-R starts an
+incremental reverse search; C-S starts a forward search.
+
+\subsection{Key Bindings}
+
+The key bindings and some other parameters of the Readline library can
+be customized by placing commands in an initialization file called
+{\tt \$HOME/.inputrc}.  Key bindings have the form
+
+\bcode\begin{verbatim}
+key-name: function-name
+\end{verbatim}\ecode
+%
+or
+
+\bcode\begin{verbatim}
+"string": function-name
+\end{verbatim}\ecode
+%
+and options can be set with
+
+\bcode\begin{verbatim}
+set option-name value
+\end{verbatim}\ecode
+%
+For example:
+
+\bcode\begin{verbatim}
+# I prefer vi-style editing:
+set editing-mode vi
+# Edit using a single line:
+set horizontal-scroll-mode On
+# Rebind some keys:
+Meta-h: backward-kill-word
+"\C-u": universal-argument
+"\C-x\C-r": re-read-init-file
+\end{verbatim}\ecode
+%
+Note that the default binding for TAB in Python is to insert a TAB
+instead of Readline's default filename completion function.  If you
+insist, you can override this by putting
+
+\bcode\begin{verbatim}
+TAB: complete
+\end{verbatim}\ecode
+%
+in your {\tt \$HOME/.inputrc}.  (Of course, this makes it hard to type
+indented continuation lines...)
+
+\subsection{Commentary}
+
+This facility is an enormous step forward compared to previous
+versions of the interpreter; however, some wishes are left: It would
+be nice if the proper indentation were suggested on continuation lines
+(the parser knows if an indent token is required next).  The
+completion mechanism might use the interpreter's symbol table.  A
+command to check (or even suggest) matching parentheses, quotes etc.
+would also be useful.
+
+XXX Lele Gaifax's readline module, which adds name completion...
 
 \end{document}
+
