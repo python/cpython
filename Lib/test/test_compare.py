@@ -17,7 +17,7 @@ class Coerce:
         if isinstance(other, Coerce):
             return self.arg, other.arg
         else:
-            return (self.arg, other)
+            return self.arg, other
 
 class Cmp:
     def __init__(self,arg):
@@ -40,18 +40,20 @@ class RCmp:
         return cmp(other, self.arg)
  
 
-candidates = [2, 2.2, 2L, 2+4j, [1], (2,), None, Empty(), Coerce(3),
-                Cmp(4), RCmp(5)]
+candidates = [2, 2.0, 2L, 2+0j, [1], (3,), None, Empty(), Coerce(2),
+                Cmp(2.0), RCmp(2L)]
 
 def test():
     for a in candidates:
         for b in candidates:
-            print "cmp(%s, %s)" % (a, b),
             try:
-                x = cmp(a, b)
+                x = a == b
             except:
-                print '... %s' % sys.exc_info(0)
+                print 'cmp(%s, %s) => %s' % (a, b, sys.exc_info()[0])
             else:
-                print '=', x
+                if x:
+                    print "%s == %s" % (a, b)
+                else:
+                    print "%s != %s" % (a, b)
 
 test()
