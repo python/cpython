@@ -400,7 +400,7 @@ PyList_New:int:len::
 PyList_Reverse:int:::
 PyList_Reverse:PyObject*:list:0:
 
-PyList_SET_ITEM:PyObject*::0:
+PyList_SET_ITEM:void:::
 PyList_SET_ITEM:PyObject*:list:0:
 PyList_SET_ITEM:int:i::
 PyList_SET_ITEM:PyObject*:o:0:
