@@ -307,7 +307,7 @@ fastwebcheck: html
 # Release packaging targets:
 
 paper-$(PAPER)/README: ps $(TOOLSDIR)/getpagecounts
-	(cd paper-$(PAPER); ../$(TOOLSDIR)/getpagecounts >$@)
+	(cd paper-$(PAPER); ../$(TOOLSDIR)/getpagecounts >../$@)
 
 info-$(RELEASE).tgz: info
 	(cd $(INFODIR); tar cf - README python.dir python-???.info*) \
