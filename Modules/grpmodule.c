@@ -87,6 +87,7 @@ grp_getgrall(PyObject *self, PyObject *args)
         }
         Py_DECREF(v);
     }
+    endgrent();
     return d;
 }
 
