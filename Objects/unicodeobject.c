@@ -1441,6 +1441,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = '\\';
             *p++ = (char) ch;
         } 
+#ifdef Py_UNICODE_WIDE
         /* Map 21-bit characters to '\U00xxxxxx' */
         else if (ch >= 0x10000) {
             *p++ = '\\';
@@ -1454,6 +1455,7 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
             *p++ = hexdigit[(ch >> 4) & 0xf];
             *p++ = hexdigit[ch & 15];
         }
+#endif
         /* Map 16-bit characters to '\uxxxx' */
         else if (ch >= 256) {
             *p++ = '\\';
