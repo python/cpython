@@ -10,6 +10,17 @@ import string
 import traceback
 from codeop import compile_command
 
+def softspace(file, newvalue):
+    oldvalue = 0
+    try:
+        oldvalue = file.softspace
+    except AttributeError:
+        pass
+    try:
+        file.softspace = newvalue
+    except TypeError: # "attribute-less object" or "read-only attributes"
+        pass
+    return oldvalue
 
 class InteractiveInterpreter:
     """Base class for InteractiveConsole.
@@ -90,6 +101,9 @@ class InteractiveInterpreter:
             raise
         except:
             self.showtraceback()
+        else:
+            if softspace(sys.stdout, 0):
+                print
 
     def showsyntaxerror(self, filename=None):
         """Display the syntax error that just occurred.
