@@ -1,7 +1,7 @@
 from test_support import verify, TestFailed, check_syntax
 
 import warnings
-warnings.filterwarnings("ignore", "import *")
+warnings.filterwarnings("ignore", r"import \*", SyntaxWarning, "<string>")
 
 print "1. simple nesting"
 
@@ -490,8 +490,6 @@ except TypeError:
     pass
 else:
     print "exec should have failed, because code contained free vars"
-
-warnings.resetwarnings()
 
 print "21. list comprehension with local variables"
 
