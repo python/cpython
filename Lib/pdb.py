@@ -12,10 +12,12 @@ import repr
 
 class Pdb(bdb.Bdb, cmd.Cmd):
 	
-	def init(self):
-		self = bdb.Bdb.init(self)
-		self = cmd.Cmd.init(self)
+	def __init__(self):
+		bdb.Bdb.__init__(self)
+		cmd.Cmd.__init__(self)
 		self.prompt = '(Pdb) '
+
+	def init(self):			# BW compat only
 		return self
 	
 	def reset(self):
@@ -277,19 +279,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 # Simplified interface
 
 def run(statement):
-	Pdb().init().run(statement)
+	Pdb().run(statement)
 
 def runctx(statement, globals, locals):
-	Pdb().init().runctx(statement, globals, locals)
+	Pdb().runctx(statement, globals, locals)
 
 def runcall(*args):
-	apply(Pdb().init().runcall, args)
+	apply(Pdb().runcall, args)
 
 
 # Post-Mortem interface
 
 def post_mortem(t):
-	p = Pdb().init()
+	p = Pdb()
 	p.reset()
 	while t.tb_next <> None: t = t.tb_next
 	p.interaction(t.tb_frame, t)

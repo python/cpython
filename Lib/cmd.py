@@ -14,7 +14,7 @@ class Cmd:
 		self.identchars = IDENTCHARS
 		self.lastcmd = ''
 	
-	def init(self):
+	def init(self):			# BW compat only
 		return self
 
 	def cmdloop(self):
