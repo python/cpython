@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.04}
+\release{0.05}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -707,14 +707,24 @@ affect you very much.
   encoding and converts them to the specified new encoding.
   (Contributed by M.-A. Lemburg, and used for the MBCS support on
   Windows described in the previous section.)
-   
-  \item Two new wrapper functions, \cfunction{PyOS_snprintf()} and
-  \cfunction{PyOS_vsnprintf()} were added.   which provide a cross-platform
-  implementations for the relatively new snprintf()/vsnprintf() C lib
-  APIs. In contrast to the standard sprintf() and vsprintf() C lib
-  APIs, these versions apply bounds checking on the used buffer which
-  enhances protection against buffer overruns.
-  (Contributed by M.-A. Lemburg.)
+ 
+  \item Two new flags \constant{METH_NOARGS} and \constant{METH_O} are
+   available in method definition tables to simplify implementation of
+   methods with no arguments or a single untyped argument. Calling
+   such methods is more efficient than calling a corresponding method
+   that uses \constant{METH_VARARGS}. 
+   Also, the old \constant{METH_OLDARGS} style of writing C methods is 
+   now officially deprecated.  
+
+\item
+   Two new wrapper functions, \cfunction{PyOS_snprintf()} and
+   \cfunction{PyOS_vsnprintf()} were added.  which provide a
+   cross-platform implementations for the relatively new
+   \cfunction{snprintf()} and \cfunction{vsnprintf()} C lib APIs. In
+   contrast to the standard \cfunction{sprintf()} and
+   \cfunction{vsprintf()} functions, the Python versions check the
+   bounds of the buffer used to protect against buffer overruns.
+   (Contributed by M.-A. Lemburg.)
 
 \end{itemize}
 
