@@ -159,6 +159,29 @@ values of this parser.
 
 \class{xmlparser} objects have the following attributes:
 
+\begin{memberdesc}[xmlparser]{buffer_size}
+The size of the buffer used when \member{buffer_text} is true.  This
+value cannot be changed at this time.
+\versionadded{2.3}
+\end{memberdesc}
+
+\begin{memberdesc}[xmlparser]{buffer_text}
+Setting this to true causes the \class{xmlparser} object to buffer
+textual content returned by Expat to avoid multiple calls to the
+\method{CharacterDataHandler()} callback whenever possible.  This can
+improve performance substantially since Expat normally breaks
+character data into chunks at every line ending.  This attribute is
+false by default, and may be changed at any time.
+\versionadded{2.3}
+\end{memberdesc}
+
+\begin{memberdesc}[xmlparser]{buffer_used}
+If \member{buffer_text} is enabled, the number of bytes stored in the
+buffer.  These bytes represent UTF-8 encoded text.  This attribute has
+no meaningful interpretation when \member{buffer_text} is false.
+\versionadded{2.3}
+\end{memberdesc}
+
 \begin{memberdesc}[xmlparser]{ordered_attributes}
 Setting this attribute to a non-zero integer causes the attributes to
 be reported as a list rather than a dictionary.  The attributes are
