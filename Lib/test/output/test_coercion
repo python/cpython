@@ -52,7 +52,7 @@ test_coercion
 2 - [1] ... exceptions.TypeError
 2 -= [1] ... exceptions.TypeError
 2 * [1] = [1, 1]
-2 *= [1] ... exceptions.TypeError
+2 *= [1] => [1, 1]
 2 / [1] ... exceptions.TypeError
 2 /= [1] ... exceptions.TypeError
 2 ** [1] ... exceptions.TypeError
@@ -64,7 +64,7 @@ test_coercion
 2 - (2,) ... exceptions.TypeError
 2 -= (2,) ... exceptions.TypeError
 2 * (2,) = (2, 2)
-2 *= (2,) ... exceptions.TypeError
+2 *= (2,) => (2, 2)
 2 / (2,) ... exceptions.TypeError
 2 /= (2,) ... exceptions.TypeError
 2 ** (2,) ... exceptions.TypeError
@@ -268,7 +268,7 @@ test_coercion
 2 - [1] ... exceptions.TypeError
 2 -= [1] ... exceptions.TypeError
 2 * [1] = [1, 1]
-2 *= [1] ... exceptions.TypeError
+2 *= [1] => [1, 1]
 2 / [1] ... exceptions.TypeError
 2 /= [1] ... exceptions.TypeError
 2 ** [1] ... exceptions.TypeError
@@ -280,7 +280,7 @@ test_coercion
 2 - (2,) ... exceptions.TypeError
 2 -= (2,) ... exceptions.TypeError
 2 * (2,) = (2, 2)
-2 *= (2,) ... exceptions.TypeError
+2 *= (2,) => (2, 2)
 2 / (2,) ... exceptions.TypeError
 2 /= (2,) ... exceptions.TypeError
 2 ** (2,) ... exceptions.TypeError
