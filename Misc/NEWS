@@ -12,6 +12,9 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- int subclasses can be initialized with longs if the value fits in an int.
+  See SF bug #683467.
+
 - long(string, base) takes time linear in len(string) when base is a power
   of 2 now.  It used to take time quadratic in len(string).
 

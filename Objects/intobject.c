@@ -836,16 +836,30 @@ static PyObject *
 int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *tmp, *new;
+	long ival;
 
 	assert(PyType_IsSubtype(type, &PyInt_Type));
 	tmp = int_new(&PyInt_Type, args, kwds);
 	if (tmp == NULL)
 		return NULL;
-	assert(PyInt_Check(tmp));
+	if (!PyInt_Check(tmp)) {
+		if (!PyLong_Check(tmp)) {
+			PyErr_SetString(PyExc_ValueError,
+					"value must convertable to an int");
+			return NULL;
+		}
+		ival = PyLong_AsLong(tmp);
+		if (ival == -1 && PyErr_Occurred())
+			return NULL;
+
+	} else {
+		ival = ((PyIntObject *)tmp)->ob_ival;
+	}
+
 	new = type->tp_alloc(type, 0);
 	if (new == NULL)
 		return NULL;
-	((PyIntObject *)new)->ob_ival = ((PyIntObject *)tmp)->ob_ival;
+	((PyIntObject *)new)->ob_ival = ival;
 	Py_DECREF(tmp);
 	return new;
 }
