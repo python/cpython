@@ -1,5 +1,5 @@
 #
-# Test script for the textwrap module.
+# Test suite for the textwrap module.
 #
 # Original tests written by Greg Ward <gward@python.net>.
 # Converted to PyUnit by Peter Hansen <peter@engcorp.com>.
@@ -270,6 +270,23 @@ What a mess!
         self.check_split("--option-opt", ["--option-", "opt"])
         self.check_split("foo --option-opt bar",
                          ["foo", " ", "--option-", "opt", " ", "bar"])
+
+    def test_punct_hyphens(self):
+        # Oh bother, SF #965425 found another problem with hyphens --
+        # hyphenated words in single quotes weren't handled correctly.
+        # In fact, the bug is that *any* punctuation around a hyphenated
+        # word was handled incorrectly, except for a leading "--", which
+        # was special-cased for Optik and Docutils.  So test a variety
+        # of styles of punctuation around a hyphenated word.
+        # (Actually this is based on an Optik bug report, #813077).
+        self.check_split("the 'wibble-wobble' widget",
+                         ['the', ' ', "'wibble-", "wobble'", ' ', 'widget'])
+        self.check_split('the "wibble-wobble" widget',
+                         ['the', ' ', '"wibble-', 'wobble"', ' ', 'widget'])
+        self.check_split("the (wibble-wobble) widget",
+                         ['the', ' ', "(wibble-", "wobble)", ' ', 'widget'])
+        self.check_split("the ['wibble-wobble'] widget",
+                         ['the', ' ', "['wibble-", "wobble']", ' ', 'widget'])
 
     def test_funky_parens (self):
         # Second part of SF bug #596434: long option strings inside
