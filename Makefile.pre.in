@@ -461,7 +461,7 @@ TESTOPTS=	-l
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 TESTPYTHON=	./$(PYTHON) -tt
 test:		all platform
-		-rm -f $(srcdir)/Lib/test/*.py[co]
+		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 
@@ -469,7 +469,7 @@ QUICKTESTOPTS=	$(TESTOPTS) -x test_thread test_signal test_strftime \
 		test_unicodedata test_re test_sre test_select test_poll \
 		test_linuxaudiodev test_sunaudiodev
 quicktest:	all platform
-		-rm -f $(srcdir)/Lib/test/*.py[co]
+		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
 		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
 
