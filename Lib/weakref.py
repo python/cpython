@@ -277,54 +277,26 @@ class WeakKeyDictionary(UserDict.UserDict):
             self.update(kwargs)
 
 
-class BaseIter:
-    def __iter__(self):
-        return self
+def WeakKeyedKeyIterator(weakdict):
+    for wr in weakdict.data.iterkeys():
+        obj = wr()
+        if obj is not None:
+            yield obj
 
+def WeakKeyedItemIterator(weakdict):
+    for wr, value in weakdict.data.iteritems():
+        key = wr()
+        if key is not None:
+            yield key, value
 
-class WeakKeyedKeyIterator(BaseIter):
-    def __init__(self, weakdict):
-        self._next = weakdict.data.iterkeys().next
+def WeakValuedValueIterator(weakdict):
+    for wr in weakdict.data.itervalues():
+        obj = wr()
+        if obj is not None:
+            yield obj
 
-    def next(self):
-        while 1:
-            wr = self._next()
-            obj = wr()
-            if obj is not None:
-                return obj
-
-
-class WeakKeyedItemIterator(BaseIter):
-    def __init__(self, weakdict):
-        self._next = weakdict.data.iteritems().next
-
-    def next(self):
-        while 1:
-            wr, value = self._next()
-            key = wr()
-            if key is not None:
-                return key, value
-
-
-class WeakValuedValueIterator(BaseIter):
-    def __init__(self, weakdict):
-        self._next = weakdict.data.itervalues().next
-
-    def next(self):
-        while 1:
-            wr = self._next()
-            obj = wr()
-            if obj is not None:
-                return obj
-
-
-class WeakValuedItemIterator(BaseIter):
-    def __init__(self, weakdict):
-        self._next = weakdict.data.itervalues().next
-
-    def next(self):
-        while 1:
-            wr = self._next()
-            value = wr()
-            if value is not None:
-                return wr.key, value
+def WeakValuedItemIterator(weakdict):
+    for wr in weakdict.data.itervalues():
+        value = wr()
+        if value is not None:
+            yield wr.key, value
