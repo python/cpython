@@ -103,7 +103,7 @@ class TestResult:
     def stop(self):
         "Indicates that the tests should be aborted"
         self.shouldStop = 1
-    
+
     def __repr__(self):
         return "<%s run=%i errors=%i failures=%i>" % \
                (self.__class__, self.testsRun, len(self.errors),
@@ -116,12 +116,12 @@ class TestCase:
     By default, the test code itself should be placed in a method named
     'runTest'.
 
-    If the fixture may be used for many test cases, create as 
+    If the fixture may be used for many test cases, create as
     many test methods as are needed. When instantiating such a TestCase
     subclass, specify in the constructor arguments the name of the test method
     that the instance is to execute.
 
-    Test authors should subclass TestCase for their own tests. Construction 
+    Test authors should subclass TestCase for their own tests. Construction
     and deconstruction of the test's environment ('fixture') can be
     implemented by overriding the 'setUp' and 'tearDown' methods respectively.
 
@@ -480,7 +480,7 @@ class _WritelnDecorator:
     def writeln(self, *args):
         if args: apply(self.write, args)
         self.write('\n') # text-mode streams translate to \r\n if needed
- 
+
 
 class _TextTestResult(TestResult):
     """A test result class that can print formatted text results to a stream.
@@ -550,7 +550,7 @@ class _TextTestResult(TestResult):
 
 class TextTestRunner:
     """A test runner class that displays results in textual form.
-    
+
     It prints out the names of tests as they are run, errors as they
     occur, and a summary of the results at the end of the test run.
     """
@@ -587,7 +587,7 @@ class TextTestRunner:
         else:
             self.stream.writeln("OK")
         return result
-        
+
 
 
 ##############################################################################
@@ -668,7 +668,7 @@ Examples:
         if self.testRunner is None:
             self.testRunner = TextTestRunner(verbosity=self.verbosity)
         result = self.testRunner.run(self.test)
-        sys.exit(not result.wasSuccessful())    
+        sys.exit(not result.wasSuccessful())
 
 main = TestProgram
 

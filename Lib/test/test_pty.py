@@ -60,7 +60,7 @@ if pid == pty.CHILD:
         os._exit(3)
 
     # After pty.fork(), the child should already be a session leader.
-    # (on those systems that have that concept.) 
+    # (on those systems that have that concept.)
     debug("In child, calling os.setsid()")
     try:
         os.setsid()

@@ -34,7 +34,7 @@ class SymbolTableFactory:
         return obj
 
 newSymbolTable = SymbolTableFactory()
-    
+
 def bool(x):
     """Helper to force boolean result to 1 or 0"""
     if x:
@@ -60,7 +60,7 @@ class SymbolTable:
             kind = ""
         else:
             kind = "%s " % self.__class__.__name__
-        
+
         if self._table.name == "global":
             return "<%sSymbolTable for module %s>" % (kind, self._filename)
         else:
@@ -143,7 +143,7 @@ class Function(SymbolTable):
         if self.__locals is None:
             self.__locals = self.__idents_matching(lambda x:x & DEF_BOUND)
         return self.__locals
-        
+
     def get_globals(self):
         if self.__globals is None:
             glob = DEF_GLOBAL | DEF_FREE_GLOBAL
@@ -186,7 +186,7 @@ class Symbol:
         return bool(self.__flags & DEF_PARAM)
 
     def is_global(self):
-        return bool((self.__flags & DEF_GLOBAL) 
+        return bool((self.__flags & DEF_GLOBAL)
                     or (self.__flags & DEF_FREE_GLOBAL))
 
     def is_vararg(self):
