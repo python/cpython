@@ -117,7 +117,7 @@ typedef struct _object {
 
 typedef struct {
 	PyObject_VAR_HEAD
-} varobject;
+} PyVarObject;
 
 
 /*

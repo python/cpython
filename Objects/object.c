@@ -129,24 +129,24 @@ _PyObject_New(tp,op)
 }
 
 #ifndef MS_COREDLL
-varobject *
+PyVarObject *
 _PyObject_NewVar(tp, size)
 	PyTypeObject *tp;
 	int size;
 #else
-varobject *
+PyVarObject *
 _PyObject_NewVar(tp, size, op)
 	PyTypeObject *tp;
 	int size;
-	varobject *op;
+	PyVarObject *op;
 #endif
 {
 #ifndef MS_COREDLL
-	varobject *op = (varobject *)
+	PyVarObject *op = (PyVarObject *)
 		malloc(tp->tp_basicsize + size * tp->tp_itemsize);
 #endif
 	if (op == NULL)
-		return (varobject *)PyErr_NoMemory();
+		return (PyVarObject *)PyErr_NoMemory();
 	op->ob_type = tp;
 	op->ob_size = size;
 	_Py_NewReference(op);

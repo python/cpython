@@ -56,7 +56,7 @@ n * tp_itemsize.  This fills in the ob_size field as well.
 
 #ifndef MS_COREDLL
 extern PyObject *_PyObject_New Py_PROTO((PyTypeObject *));
-extern varobject *_PyObject_NewVar Py_PROTO((PyTypeObject *, int));
+extern PyVarObject *_PyObject_NewVar Py_PROTO((PyTypeObject *, int));
 
 #define PyObject_NEW(type, typeobj) ((type *) _PyObject_New(typeobj))
 #define PyObject_NEW_VAR(type, typeobj, n) ((type *) _PyObject_NewVar(typeobj, n))
@@ -67,10 +67,10 @@ extern varobject *_PyObject_NewVar Py_PROTO((PyTypeObject *, int));
    no guarantee they will use the same heap
 */
 extern PyObject *_PyObject_New Py_PROTO((PyTypeObject *, PyObject *));
-extern varobject *_PyObject_NewVar Py_PROTO((PyTypeObject *, int, varobject *));
+extern PyVarObject *_PyObject_NewVar Py_PROTO((PyTypeObject *, int, PyVarObject *));
 
 #define PyObject_NEW(type, typeobj) ((type *) _PyObject_New(typeobj,(PyObject *)malloc((typeobj)->tp_basicsize)))
-#define PyObject_NEW_VAR(type, typeobj, n) ((type *) _PyObject_NewVar(typeobj, n, (varobject *)malloc((typeobj)->tp_basicsize + n * (typeobj)->tp_itemsize)))
+#define PyObject_NEW_VAR(type, typeobj, n) ((type *) _PyObject_NewVar(typeobj, n, (PyVarObject *)malloc((typeobj)->tp_basicsize + n * (typeobj)->tp_itemsize)))
 
 #endif /* MS_COREDLL */
 
