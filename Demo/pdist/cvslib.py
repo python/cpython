@@ -39,6 +39,7 @@ class File:
 	edeleted -- true if this is an uncommitted removed file
 	ectime -- ctime of last local file corresponding to erev
 	emtime -- mtime of last local file corresponding to erev
+	extra -- 5th string from CVS/Entries file
 
 	If rseen is true:
 
