@@ -695,22 +695,22 @@ It takes a while to get used to the proper usage of reference counts.
 
 Functions that create an object set the reference count to 1; such new
 objects must be stored somewhere or destroyed again with Py_DECREF().
-Functions that 'store' objects such as PyTuple_SetItem() and
-PyDict_SetItemString()
+Some functions that 'store' objects, such as PyTuple_SetItem() and
+PyList_SetItem(),
 don't increment the reference count of the object, since the most
 frequent use is to store a fresh object.  Functions that 'retrieve'
-objects such as PyTuple_GetItem() and PyDict_GetItemString() also
+objects, such as PyTuple_GetItem() and PyDict_GetItemString(), also
 don't increment
 the reference count, since most frequently the object is only looked at
 quickly.  Thus, to retrieve an object and store it again, the caller
 must call Py_INCREF() explicitly.
 
-NOTE: functions that 'consume' a reference count like
-PyList_SetItemString() even consume the reference if the object wasn't
-stored, to simplify error handling.
+NOTE: functions that 'consume' a reference count, like
+PyList_SetItem(), consume the reference even if the object wasn't
+successfully stored, to simplify error handling.
 
 It seems attractive to make other functions that take an object as
-argument consume a reference count; however this may quickly get
+argument consume a reference count; however, this may quickly get
 confusing (even the current practice is already confusing).  Consider
 it carefully, it may save lots of calls to Py_INCREF() and Py_DECREF() at
 times.
