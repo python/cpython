@@ -3941,19 +3941,19 @@ slot_tp_str(PyObject *self)
 static long
 slot_tp_hash(PyObject *self)
 {
-	PyObject *func, *res;
+	PyObject *func;
 	static PyObject *hash_str, *eq_str, *cmp_str;
-
 	long h;
 
 	func = lookup_method(self, "__hash__", &hash_str);
 
 	if (func != NULL) {
-		res = PyEval_CallObject(func, NULL);
+		PyObject *res = PyEval_CallObject(func, NULL);
 		Py_DECREF(func);
 		if (res == NULL)
 			return -1;
 		h = PyInt_AsLong(res);
+		Py_DECREF(res);
 	}
 	else {
 		PyErr_Clear();
