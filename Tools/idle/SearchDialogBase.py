@@ -48,15 +48,15 @@ class SearchDialogBase:
 
     def make_entry(self, label, var):
         l = Label(self.top, text=label)
-        l.grid(row=self.row, col=0, sticky="w")
+        l.grid(row=self.row, column=0, sticky="w")
         e = Entry(self.top, textvariable=var, exportselection=0)
-        e.grid(row=self.row, col=1, sticky="we")
+        e.grid(row=self.row, column=1, sticky="we")
         self.row = self.row + 1
         return e
 
     def make_frame(self):
         f = Frame(self.top)
-        f.grid(row=self.row, col=0, columnspan=2, sticky="we")
+        f.grid(row=self.row, column=0, columnspan=2, sticky="we")
         self.row = self.row + 1
         return f
 
