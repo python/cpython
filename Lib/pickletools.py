@@ -631,7 +631,7 @@ long1 = ArgumentDescriptor(
     doc="""A binary long, little-endian, using 1-byte size.
 
     This first reads one byte as an unsigned size, then reads that
-    many bytes and interprets them as a little-endian long.
+    many bytes and interprets them as a little-endian 2's-complement long.
     """)
 
 def read_long2(f):
@@ -661,7 +661,7 @@ long2 = ArgumentDescriptor(
     doc="""A binary long, little-endian, using 2-byte size.
 
     This first reads two byte as an unsigned size, then reads that
-    many bytes and interprets them as a little-endian long.
+    many bytes and interprets them as a little-endian 2's-complement long.
     """)
 
 def read_long4(f):
@@ -694,7 +694,7 @@ long4 = ArgumentDescriptor(
 
     This first reads four bytes as a signed size (but requires the
     size to be >= 0), then reads that many bytes and interprets them
-    as a little-endian long.
+    as a little-endian 2's-complement long.
     """)
 
 
