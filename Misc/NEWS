@@ -272,9 +272,6 @@ Library
   which don't restrict the return types (unlike the unicode and
   string methods of the same name).
 
-- asyncore's dispatcher.set_reuse_addr() now works correctly on Windows.
-  SF patch 982681.
-
 - Non-blocking SSL sockets work again; they were broken in Python 2.3.
   SF patch 945642.
 
