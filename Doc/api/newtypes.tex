@@ -206,9 +206,9 @@ and \constant{METH_KEYWORDS} can be combined; the others can't.
 \begin{cfuncdesc}{PyObject*}{Py_FindMethod}{PyMethodDef table[],
                                             PyObject *ob, char *name}
   Return a bound method object for an extension type implemented in
-  C.  This function also handles the special attribute
-  \member{__methods__},  returning a list of all the method names
-  defined in \var{table}.
+  C.  This can be useful in the implementation of a
+  \member{tp_getattro} or \member{tp_getattr} handler that does not
+  use the \cfunction{PyObject_GenericGetAttr()} function.
 \end{cfuncdesc}
 
 

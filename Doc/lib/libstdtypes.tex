@@ -1390,16 +1390,13 @@ object's (writable) attributes.
 \end{memberdesc}
 
 \begin{memberdesc}[object]{__methods__}
-List of the methods of many built-in object types.  For example,
-\code{[].__methods__} yields \code{['append', 'count', 'index',
-'insert', 'pop', 'remove', 'reverse', 'sort']}.  This usually does not
-need to be explicitly provided by the object.
+\deprecated{2.2}{Use the built-in function \function{dir()} to get a
+list of an object's attributes.  This attribute is no longer available.}
 \end{memberdesc}
 
 \begin{memberdesc}[object]{__members__}
-Similar to \member{__methods__}, but lists data attributes.  This
-usually does not need to be explicitly provided by the object, and
-need not include the names of the attributes defined in this section.
+\deprecated{2.2}{Use the built-in function \function{dir()} to get a
+list of an object's attributes.  This attribute is no longer available.}
 \end{memberdesc}
 
 \begin{memberdesc}[instance]{__class__}
