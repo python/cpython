@@ -72,6 +72,8 @@ Extension modules
 Library
 -------
 
+- nntplib does now allow to ignore a .netrc file.
+
 - urllib2 now recognizes Basic authentication even if other authentication
   schemes are offered.
 

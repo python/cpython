@@ -92,7 +92,7 @@ CRLF = '\r\n'
 # The class itself
 class NNTP:
     def __init__(self, host, port=NNTP_PORT, user=None, password=None,
-                 readermode=None):
+                 readermode=None, usenetrc=True):
         """Initialize an instance.  Arguments:
         - host: hostname to connect to
         - port: port to connect to (default the standard NNTP port)
@@ -136,7 +136,7 @@ class NNTP:
         # If no login/password was specified, try to get them from ~/.netrc
         # Presume that if .netc has an entry, NNRP authentication is required.
         try:
-            if not user:
+            if usenetrc and not user:
                 import netrc
                 credentials = netrc.netrc()
                 auth = credentials.authenticators(host)
