@@ -800,8 +800,10 @@ def parsedate_tz(data):
     if len(tm) == 2:
         [thh, tmm] = tm
         tss = '0'
-    else:
+    elif len(tm) == 3:
         [thh, tmm, tss] = tm
+    else:
+        return None
     try:
         yy = string.atoi(yy)
         dd = string.atoi(dd)
