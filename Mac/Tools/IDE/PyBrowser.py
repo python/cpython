@@ -22,9 +22,7 @@ def double_repr(key, value, truncvalue = 0,
 		key = str(key)
 	else:
 		key = _repr(key)
-	if type(value) == StringType and has_ctlchars(value) < 0:
-		value = str(value)
-	elif key == '__builtins__':
+	if key == '__builtins__':
 		value = "<" + type(value).__name__ + " '__builtin__'>"
 	elif key == '__return__':
 		# bleh, when returning from a class codeblock we get infinite recursion in repr. 
