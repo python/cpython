@@ -16,6 +16,7 @@ static int thread_debug = 0;
 #include <ulocks.h>
 #include <errno.h>
 
+#define HDR_SIZE	2680	/* sizeof(ushdr_t) */
 #define MAXPROC		100	/* max # of threads that can be started */
 
 static usptr_t *shared_arena;
@@ -121,7 +122,7 @@ void init_thread _P0()
 		perror("usconfig - CONF_INITSIZE (check)");
 	if (usconfig(CONF_INITSIZE, size) < 0)
 		perror("usconfig - CONF_INITSIZE (reset)");
-	addr = (long) dl_getrange(size + sizeof(ushdr_t));
+	addr = (long) dl_getrange(size + HDR_SIZE);
 	dprintf(("trying to use addr %lx-%lx for shared arena\n", addr, addr+size));
 	errno = 0;
 	if ((addr = usconfig(CONF_ATTACHADDR, addr)) < 0 && errno != 0)
@@ -194,7 +195,7 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 				perror("usconfig - CONF_INITSIZE (check)");
 			if (usconfig(CONF_INITSIZE, size) < 0)
 				perror("usconfig - CONF_INITSIZE (reset)");
-			addr = (long) dl_getrange(size + sizeof(ushdr_t));
+			addr = (long) dl_getrange(size + HDR_SIZE);
 			dprintf(("trying to use addr %lx-%lx for sproc\n", addr, addr+size));
 			errno = 0;
 			if ((addr = usconfig(CONF_ATTACHADDR, addr)) < 0 && errno != 0)
