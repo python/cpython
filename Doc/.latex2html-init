@@ -101,7 +101,7 @@ sub top_navigation_panel {
     "<div class=navigation>\n" .
     "$NEXT $UP $PREVIOUS $CONTENTS $INDEX $CUSTOM_BUTTONS" .
 
-    "<BR>\n" .		# Line break
+    "<br>\n" .		# Line break
 
     # If ``next'' section exists, add its title to the navigation panel
     ($NEXT_TITLE ? "<b> Next:</b> $NEXT_TITLE\n" : undef) .
