@@ -255,7 +255,13 @@ Split (self, list)
     }
 
   if (Tcl_SplitList (Tkapp_Interp (self), list, &argc, &argv) == TCL_ERROR)
-    return Tkinter_Error (self);
+    {
+      /* Not a list.
+	 Could be a quoted string containing funnies, e.g. {"}.
+	 Return the string itself. */
+      PyErr_Clear();
+      return PyString_FromString(list);
+    }
 
   if (argc == 0)
     v = PyString_FromString ("");
