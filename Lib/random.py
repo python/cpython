@@ -123,6 +123,9 @@ class Random(_random.Random):
     def __setstate__(self, state):  # for pickle
         self.setstate(state)
 
+    def __reduce__(self):
+        return self.__class__, (), self.getstate()
+
 ## -------------------- integer methods  -------------------
 
     def randrange(self, start, stop=None, step=1, int=int, default=None):
