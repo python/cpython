@@ -585,7 +585,13 @@ convertsimple1(arg, p_format, p_va)
 			        char **p = va_arg(*p_va, char **);
 			
 			        if (PyString_Check(arg))
-				  *p = PyString_AsString(arg);
+				    *p = PyString_AS_STRING(arg);
+				else if (PyUnicode_Check(arg)) {
+				    arg = PyUnicode_AsUTF8String(arg);
+				    if (arg == NULL)
+					return "unicode conversion error";
+				    *p = PyString_AS_STRING(arg);
+				}
 				else
 				  return "string";
 				if ((int)strlen(*p) != PyString_Size(arg))
@@ -625,6 +631,12 @@ convertsimple1(arg, p_format, p_va)
 				  *p = 0;
 				else if (PyString_Check(arg))
 				  *p = PyString_AsString(arg);
+				else if (PyUnicode_Check(arg)) {
+				  arg = PyUnicode_AsUTF8String(arg);
+				  if (arg == NULL)
+				      return "unicode conversion error";
+				  *p = PyString_AS_STRING(arg);
+				}
 				else
 				  return "None or string";
 				if (*format == '#') {
@@ -649,6 +661,16 @@ convertsimple1(arg, p_format, p_va)
 				*p = arg;
 			else
 				return "string";
+			break;
+		}
+	
+	case 'U': /* Unicode object */
+		{
+			PyObject **p = va_arg(*p_va, PyObject **);
+			if (PyUnicode_Check(arg))
+				*p = arg;
+			else
+				return "unicode";
 			break;
 		}
 	
