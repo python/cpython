@@ -23,72 +23,102 @@ class EditableManPage(ScrolledText):
 		ScrolledText.__init__(self, master, cnf)
 
 		# Define tags for formatting styles
-		self.tag_config('bold', {'font': BOLDFONT})
-		self.tag_config('italic', {'font': ITALICFONT})
-		self.tag_config('underline', {'underline': 1})
+		self.tag_config('X', {'font': BOLDFONT})
+		self.tag_config('!', {'font': ITALICFONT})
+		self.tag_config('_', {'underline': 1})
 
-		# Create mapping from characters to tags
-		self.tagmap = {
-			'X': 'bold',
-			'_': 'underline',
-			'!': 'italic',
-			}
-
-	# Parse nroff output piped through ul -i and append it to the
-	# text widget
 	def parsefile(self, fp):
-		save_cursor = self['cursor']
-		self['cursor'] = 'watch'
-		self.update()
-		ok = 0
-		empty = 0
-		nextline = None
+		if hasattr(self, 'buffer'):
+			raise RuntimeError, 'Still busy parsing!'
+		from select import select
+		def avail(fp=fp, tout=0.0, select=select):
+			return select([fp], [], [], tout)[0]
+		height = self.getint(self['height'])
+		self.startparser()
 		while 1:
-			if nextline:
-				line = nextline
-				nextline = None
-			else:
-				line = fp.readline()
-				if not line:
-					break
-			if emptyprog.match(line) >= 0:
-				empty = 1
-				continue
+			if self.lineno < height or \
+			   self.lineno%10 == 0 or not avail():
+				self.update()
 			nextline = fp.readline()
-			if nextline and ulprog.match(nextline) >= 0:
-				propline = nextline
-				nextline = None
-			else:
-				propline = ''
-			if not ok:
-				ok = 1
-				empty = 0
-				continue
-			if footerprog.match(line) >= 0:
-				ok = 0
-				empty = 0
-				continue
-			if empty:
-				self.insert_prop('\n')
-				empty = 0
-			p = ''
-			j = 0
-			for i in range(min(len(propline), len(line))):
-				if propline[i] != p:
-					if j < i:
-						self.insert_prop(line[j:i], p)
-						j = i
-					p = propline[i]
-			self.insert_prop(line[j:])
-		self['cursor'] = save_cursor
+			if not nextline:
+				break
+			self.parseline(nextline)
+		self.endparser()
+		self.update()
+
+	def startparser(self):
+		self.lineno = 0
+		self.ok = 0
+		self.empty = 0
+		self.buffer = None
+
+	def endparser(self):
+		if self.buffer:
+			self.parseline('')
+		del self.ok, self.empty, self.buffer
+
+	def parseline(self, nextline):
+		if not self.buffer:
+			# Save this line -- we need one line read-ahead
+			self.buffer = nextline
+			return
+		if emptyprog.match(self.buffer) >= 0:
+			# Buffered line was empty -- set a flag
+			self.empty = 1
+			self.buffer = nextline
+			return
+		textline = self.buffer
+		if ulprog.match(nextline) >= 0:
+			# Next line is properties for buffered line
+			propline = nextline
+			self.buffer = None
+		else:
+			# Next line is read-ahead
+			propline = None
+			self.buffer = nextline
+		if not self.ok:
+			# First non blank line after footer must be header
+			# -- skip that too
+			self.ok = 1
+			self.empty = 0
+			return
+		if footerprog.match(textline) >= 0:
+			# Footer -- start skipping until next non-blank line
+			self.ok = 0
+			self.empty = 0
+			return
+		if self.empty:
+			# One or more previous lines were empty
+			# -- insert one blank line in the text
+			self.insert_prop('\n')
+			self.lineno = self.lineno + 1
+			self.empty = 0
+		if not propline:
+			# No properties
+			self.insert_prop(textline)
+			self.lineno = self.lineno + 1
+			return
+		# Search for properties
+		p = ''
+		j = 0
+		for i in range(min(len(propline), len(textline))):
+			if propline[i] != p:
+				if j < i:
+					self.insert_prop(textline[j:i], p)
+					j = i
+				p = propline[i]
+		self.insert_prop(textline[j:])
+		self.lineno = self.lineno + 1
 
 	def insert_prop(self, str, prop = ' '):
 		here = self.index(AtInsert())
-		self.insert(AtInsert(), str)
-		for tag in self.tagmap.values():
-			self.tag_remove(tag, here, AtInsert())
-		if self.tagmap.has_key(prop):
-			self.tag_add(self.tagmap[prop], here, AtInsert())
+		self.insert(AtInsert(), str[0])
+		tags = self.tag_names(here)
+		for tag in tags:
+			self.tag_remove(tag, here)
+		if prop != ' ':
+			self.tag_add(prop, here)
+		self.insert(AtInsert(), str[1:])
 
 # Readonly Man Page class -- disables editing, otherwise the same
 class ReadonlyManPage(EditableManPage):
