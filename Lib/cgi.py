@@ -1043,6 +1043,7 @@ def test():
 	print_form(form)
 	print_environ()
 	print_directory()
+	print_arguments()
 	print_environ_usage()
     except:
 	print "\n\n<PRE>"	# Turn off HTML word wrap
@@ -1085,6 +1086,13 @@ def print_directory():
 	print "os.error:", escape(str(msg))
     else:
 	print escape(pwd)
+    print
+
+def print_arguments():
+    print
+    print "<H3>Command line Arguments:</H3>"
+    print
+    print sys.argv
     print
 
 def print_environ_usage():
