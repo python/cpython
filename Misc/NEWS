@@ -44,6 +44,9 @@ Core
     'x in y' and 'x not in y' (PySequence_Contains() in C API)
     operator.countOf() (PySequence_Count() in C API)
 
+- Accessing module attributes is significantly faster (for example,
+  random.random or os.path or yourPythonModule.yourAttribute).
+
 - Comparing dictionary objects via == and != is faster, and now works even
   if the keys and values don't support comparisons other than ==.
 
