@@ -14,7 +14,7 @@ The \code{commands} module defines the following functions:
 \begin{funcdesc}{getstatusoutput}{cmd}
 Execute the string \var{cmd} in a shell with \code{os.popen()} and return
 a 2-tuple (status, output).  \var{cmd} is actually run as
-\samp{cmd ; 2$>$\$1}, so that the returned output will contain output
+\samp{\{\ cmd \} ; 2$>$\$1}, so that the returned output will contain output
 or error messages. A trailing newline is stripped from the output.
 The exit status for the  command can be interpreted according to the
 rules for the \C{} function \code{wait()}.  
