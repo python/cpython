@@ -2,7 +2,7 @@
 # main Makefile. The next couple of variables are overridden on the 
 # commandline in that case.
 
-VERSION=2.3
+VERSION=2.4
 builddir = ../..
 srcdir = ../..
 prefix=/Library/Frameworks/Python.framework/Versions/$(VERSION)
