@@ -28,8 +28,11 @@ Standard library
 
 - Restored support for HTTP/0.9 servers in httplib.
 
-- XXX The math module was changed to suppress underflow errors and
-  just return 0.
+- The math module was changed to stop raising OverflowError in case of
+  underflow, and return 0 instead in underflow cases.  Whether Python
+  used to raise OverflowError in case of underflow was platform-
+  dependent (it did when the platform math library set errno to ERANGE
+  on underflow).
 
 - Fixed a bug in StringIO that occurred when the file position was not
   at the end of the file and write() was called with enough data to
@@ -57,8 +60,11 @@ Standard library
   -l changed: It now reports a count of objects that are recognized as
   garbage but not freed by the garbage collector.
 
-- The regression test for the math module was changed to report
-  exceptional behavior when the test is run in verbose mode.
+- The regression test for the math module was changed to test
+  exceptional behavior when the test is run in verbose mode.  Python
+  cannot yet guarantee consistent exception behavior across platforms,
+  so the exception part of test_math is run only in verbose mode, and
+  may fail on your platform.
 
 Internals
 
@@ -70,8 +76,8 @@ Build issues
 - Changed compiler flags, so that gcc is always invoked with -Wall and
   -Wstrict-prototypes.  Users compiling Python with GCC should see
   exactly one warning, except if they have passed configure the
-  --with-pydebug flag.  The expect warning is for getopt() in
-  Modules/main.c. 
+  --with-pydebug flag.  The expected warning is for getopt() in
+  Modules/main.c.  This will warning will be fixed for Python 2.1.
 
 - Fixed configure to add -threads argument during linking on OSF1. 
 
