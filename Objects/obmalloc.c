@@ -403,6 +403,10 @@ new_arena(void)
 		 * only make a supposed-to-succeed case fail by mistake).
 		 * Read the above 50 times before changing anything in this
 		 * block.
+		 * XXX Fudge.  This is still vulnerable:  there's nothing
+		 * XXX to stop the bad-guy thread from picking up the
+		 * XXX current value of arenas, but not indexing off of it
+		 * XXX until after the PyMem_FREE(oldarenas) below completes.
 		 */
 		uptr *oldarenas;
 		int newmax = maxarenas + (maxarenas >> 1);
