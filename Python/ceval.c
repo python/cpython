@@ -1578,12 +1578,12 @@ eval_frame(PyFrameObject *f)
 #endif
 		case BREAK_LOOP:
 			why = WHY_BREAK;
-			break;
+			goto fast_block_end;
 
 		case CONTINUE_LOOP:
 			retval = PyInt_FromLong(oparg);
 			why = WHY_CONTINUE;
-			break;
+			goto fast_block_end;
 
 		case RAISE_VARARGS:
 			u = v = w = NULL;
@@ -1620,14 +1620,13 @@ eval_frame(PyFrameObject *f)
 		case RETURN_VALUE:
 			retval = POP();
 			why = WHY_RETURN;
-			break;
+			goto fast_block_end;
 
 		case YIELD_VALUE:
 			retval = POP();
 			f->f_stacktop = stack_pointer;
 			why = WHY_YIELD;
-			break;
-
+			goto fast_yield;
 
 		case EXEC_STMT:
 			w = TOP();
@@ -2327,6 +2326,7 @@ eval_frame(PyFrameObject *f)
 
 		/* Unwind stacks if a (pseudo) exception occurred */
 
+fast_block_end:
 		while (why != WHY_NOT && why != WHY_YIELD && f->f_iblock > 0) {
 			PyTryBlock *b = PyFrame_BlockPop(f);
 
@@ -2410,6 +2410,7 @@ eval_frame(PyFrameObject *f)
 	if (why != WHY_RETURN && why != WHY_YIELD)
 		retval = NULL;
 
+fast_yield:
 	if (tstate->use_tracing) {
 		if (tstate->c_tracefunc
 		    && (why == WHY_RETURN || why == WHY_YIELD)) {
