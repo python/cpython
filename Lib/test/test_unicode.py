@@ -255,6 +255,15 @@ assert u"%c" % (36,) == u'$'
 assert u"%r, %r" % (u"abc", "abc") == u"u'abc', 'abc'"
 assert u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"} == u'abc, def'
 assert u"%(x)s, %(ä)s" % {'x':u"abc", u'ä'.encode('utf-8'):"def"} == u'abc, def'
+# formatting jobs delegated from the string implementation:
+assert '...%(foo)s...' % {'foo':u"abc"} == u'...abc...'
+assert '...%(foo)s...' % {'foo':"abc"} == '...abc...'
+assert '...%(foo)s...' % {u'foo':"abc"} == '...abc...'
+assert '...%(foo)s...' % {u'foo':u"abc"} == u'...abc...'
+assert '...%(foo)s...' % {u'foo':u"abc",'def':123} ==  u'...abc...'
+assert '...%(foo)s...' % {u'foo':u"abc",u'def':123} == u'...abc...'
+assert '...%s...%s...%s...%s...' % (1,2,3,u"abc") == u'...1...2...3...abc...'
+assert '...%s...' % u"abc" == u'...abc...'
 print 'done.'
 
 # Test builtin codecs
@@ -264,6 +273,26 @@ assert unicode('hello','ascii') == u'hello'
 assert unicode('hello','utf-8') == u'hello'
 assert unicode('hello','utf8') == u'hello'
 assert unicode('hello','latin-1') == u'hello'
+
+try:
+    u'Andr\202 x'.encode('ascii')
+    u'Andr\202 x'.encode('ascii','strict')
+except ValueError:
+    pass
+else:
+    raise AssertionError, "u'Andr\202'.encode('ascii') failed to raise an exception"
+assert u'Andr\202 x'.encode('ascii','ignore') == "Andr x"
+assert u'Andr\202 x'.encode('ascii','replace') == "Andr? x"
+
+try:
+    unicode('Andr\202 x','ascii')
+    unicode('Andr\202 x','ascii','strict')
+except ValueError:
+    pass
+else:
+    raise AssertionError, "unicode('Andr\202') failed to raise an exception"
+assert unicode('Andr\202 x','ascii','ignore') == u"Andr x"
+assert unicode('Andr\202 x','ascii','replace') == u'Andr\uFFFD x'
 
 assert u'hello'.encode('ascii') == 'hello'
 assert u'hello'.encode('utf-8') == 'hello'
