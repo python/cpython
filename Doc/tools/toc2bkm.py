@@ -58,7 +58,7 @@ def parse_toc(fp, bigpart=None):
         if m:
             stype, snum, title, pageno = m.group(1, 2, 3, 4)
             title = clean_title(title)
-            entry = (stype, snum, title, string.atoi(pageno), [])
+            entry = (stype, snum, title, int(pageno), [])
             if stype == level:
                 toc.append(entry)
             else:
@@ -99,7 +99,7 @@ def clean_title(title):
             pos = start + 1
         else:
             break
-    title = string.translate(title, title_trans, "{}")
+    title = title.translate(title_trans, "{}")
     return title
 
 

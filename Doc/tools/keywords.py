@@ -2,11 +2,10 @@
 
 # This Python program sorts and reformats the table of keywords in ref2.tex
 
-import string
 l = []
 try:
 	while 1:
-		l = l + string.split(raw_input())
+		l = l + raw_input().split()
 except EOFError:
 	pass
 l.sort()
@@ -16,5 +15,5 @@ ncols = 5
 nrows = (len(l)+ncols-1)/ncols
 for i in range(nrows):
 	for j in range(i, len(l), nrows):
-		print string.ljust(l[j], 10),
+		print l[j].ljust(10),
 	print

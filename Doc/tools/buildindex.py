@@ -2,7 +2,7 @@
 
 __version__ = '$Revision$'
 
-import os
+import os.path
 import re
 import string
 import sys
@@ -49,7 +49,7 @@ class Node:
 
     def dump(self):
         return "%s\1%s###%s\n" \
-               % (string.join(self.links, "\1"),
+               % ("\1".join(self.links),
                   bang_join(self.text),
                   self.seqno)
 
@@ -294,7 +294,7 @@ def format_html_letters(nodes, columns, group_symbol_nodes):
     for letter, nodes in letter_groups:
         s = "<b><a href=\"#letter-%s\">%s</a></b>" % (letter, letter)
         items.append(s)
-    s = ["<hr><center>\n%s</center>\n" % string.join(items, " |\n")]
+    s = ["<hr><center>\n%s</center>\n" % " |\n".join(items)]
     for letter, nodes in letter_groups:
         s.append(format_letter(letter))
         s.append(format_nodes(nodes, columns))

@@ -19,13 +19,12 @@ isn't part of a group of similar items is not modified.
 __version__ = '$Revision$'
 
 import re
-import string
 import StringIO
 import sys
 
 
-def cmp_entries(e1, e2, lower=string.lower):
-    return cmp(lower(e1[1]), lower(e2[1])) or cmp(e1, e2)
+def cmp_entries(e1, e2):
+    return cmp(e1[1].lower(), e2[1].lower()) or cmp(e1, e2)
 
 
 def dump_entries(write, entries):
