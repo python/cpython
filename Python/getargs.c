@@ -499,6 +499,20 @@ convertsimple1(arg, p_format, p_va)
 			break;
 		}
 	
+#if HAVE_LONG_LONG
+	case 'L': /* long long */
+		{
+			long long *p = va_arg( *p_va, long long * );
+			long long ival = PyLong_AsLongLong( arg );
+			if( ival == (long long)-1 && PyErr_Occurred() ) {
+				return "long<L>";
+			} else {
+				*p = ival;
+			}
+			break;
+		}
+#endif
+	
 	case 'f': /* float */
 		{
 			float *p = va_arg(*p_va, float *);
@@ -987,6 +1001,14 @@ skipitem(p_format, p_va)
 			(void) va_arg(*p_va, long *);
 			break;
 		}
+	
+#if HAVE_LONG_LONG
+	case 'L': /* long long int */
+		{
+			(void) va_arg(*p_va, long long *);
+			break;
+		}
+#endif
 	
 	case 'f': /* float */
 		{

@@ -2274,7 +2274,7 @@ static PyMethodDef imp_methods[] = {
 	{NULL,			NULL}		/* sentinel */
 };
 
-int
+static int
 setint(d, name, value)
 	PyObject *d;
 	char *name;

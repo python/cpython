@@ -54,6 +54,11 @@ int PyImport_ImportFrozenModule Py_PROTO((char *));
 extern PyObject *_PyImport_FindExtension Py_PROTO((char *, char *));
 extern PyObject *_PyImport_FixupExtension Py_PROTO((char *, char *));
 
+#ifdef __BEOS__
+#include <kernel/image.h>
+extern image_id PyImport_BeImageID( char *name );
+#endif
+
 struct _inittab {
 	char *name;
 	void (*initfunc)();

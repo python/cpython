@@ -20,10 +20,17 @@ extern "C" {
 #endif
 
 /* Macros defining new names for all these symbols */
+/* BeOS note: We have exit_thread(), and no legacy code to
+ * support, so we won't allow exit_thread and _exit_thread
+ * in here.  Actually, I think these #defines should vanish;
+ * aren't they cheesy in the face of the Great Renaming? [cjh]
+ */
 #define init_thread PyThread_init_thread
 #define start_new_thread PyThread_start_new_thread
+#ifndef __BEOS__
 #define exit_thread PyThread_exit_thread
 #define _exit_thread PyThread__exit_thread
+#endif
 #define get_thread_ident PyThread_get_thread_ident
 #define allocate_lock PyThread_allocate_lock
 #define free_lock PyThread_free_lock
@@ -43,8 +50,13 @@ extern "C" {
 
 void init_thread Py_PROTO((void));
 int start_new_thread Py_PROTO((void (*)(void *), void *));
+#ifndef __BEOS__
 void exit_thread Py_PROTO((void));
 void _exit_thread Py_PROTO((void));
+#else
+void PyThread_exit_thread Py_PROTO((void));
+void PyThread__exit_thread Py_PROTO((void));
+#endif
 long get_thread_ident Py_PROTO((void));
 
 type_lock allocate_lock Py_PROTO((void));

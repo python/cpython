@@ -153,6 +153,10 @@ void init_thread _P0()
 #include "thread_os2.h"
 #endif
 
+#ifdef BEOS_THREADS
+#include "thread_beos.h"
+#endif
+
 /*
 #ifdef FOOBAR_THREADS
 #include "thread_foobar.h"
