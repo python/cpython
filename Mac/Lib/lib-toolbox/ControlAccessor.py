@@ -11,7 +11,7 @@ def GetControlData_Handle(control, part, selector):
 	return control.GetControlData_Handle(part, selector)
 	
 _accessdict = {
-	kControlPopupButtonMenuHandleTag: (SetControl_DataHandle, GetControlData_Handle),
+	kControlPopupButtonMenuHandleTag: (SetControlData_Handle, GetControlData_Handle),
 }
 
 _codingdict = {
