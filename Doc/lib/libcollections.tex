@@ -37,6 +37,17 @@ Deque objects support the following methods:
    Remove all elements from the deque leaving it with length 0.
 \end{methoddesc}
 
+\begin{methoddesc}{extend}{iterable}
+   Extend the right side of the deque by appending elements from
+   the iterable argument.
+\end{methoddesc}
+
+\begin{methoddesc}{extendleft}{iterable}
+   Extend the left side of the deque by appending elements from
+   \var{iterable}.  Note, the series of left appends results in
+   reversing the order of elements in the iterable argument.
+\end{methoddesc}
+
 \begin{methoddesc}{pop}{}
    Remove and return an element from the right side of the deque.
    If no elements are present, raises a \exception{LookupError}.
@@ -75,14 +86,19 @@ deque(['f', 'g', 'h', 'i', 'j'])
 ['g', 'h', 'i']
 >>> 'h' in d                # search the deque
 True
->>> d.__init__('jkl')       # use __init__ to append many elements at once
+>>> d.extend('jkl')         # extend() will append many elements at once
 >>> d
 deque(['g', 'h', 'i', 'j', 'k', 'l'])
 >>> d.clear()               # empty the deque
->>> d.pop()                 # try to pop from an empty deque
+>>> d.pop()                 # cannot pop from an empty deque
 
 Traceback (most recent call last):
   File "<pyshell#6>", line 1, in -toplevel-
     d.pop()
 LookupError: pop from an empty deque
+
+>>> d.extendleft('abc')     # extendleft() reverses the element order
+>>> d
+deque(['c', 'b', 'a'])
+
 \end{verbatim}    

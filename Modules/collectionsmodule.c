@@ -174,6 +174,72 @@ deque_popleft(dequeobject *deque, PyObject *unused)
 
 PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
 
+static PyObject *
+deque_extend(dequeobject *deque, PyObject *iterable)
+{
+	PyObject *it, *item;
+
+	it = PyObject_GetIter(iterable);
+	if (it == NULL)
+		return NULL;
+
+	while ((item = PyIter_Next(it)) != NULL) {
+		deque->rightindex++;
+		deque->len++;
+		if (deque->rightindex == BLOCKLEN) {
+			block *b = newblock(deque->rightblock, NULL);
+			if (b == NULL)
+				return NULL;
+			assert(deque->rightblock->rightlink == NULL);
+			deque->rightblock->rightlink = b;
+			deque->rightblock = b;
+			deque->rightindex = 0;
+		}
+		Py_INCREF(item);
+		deque->rightblock->data[deque->rightindex] = item;
+	}
+	Py_DECREF(it);
+	if (PyErr_Occurred()) 
+		return NULL;
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(extend_doc, 
+"Extend the right side of the deque with elements from the iterable");
+
+static PyObject *
+deque_extendleft(dequeobject *deque, PyObject *iterable)
+{
+	PyObject *it, *item;
+
+	it = PyObject_GetIter(iterable);
+	if (it == NULL)
+		return NULL;
+
+	while ((item = PyIter_Next(it)) != NULL) {
+		deque->leftindex--;
+		deque->len++;
+		if (deque->leftindex == -1) {
+			block *b = newblock(NULL, deque->leftblock);
+			if (b == NULL)
+				return NULL;
+			assert(deque->leftblock->leftlink == NULL);
+			deque->leftblock->leftlink = b;
+			deque->leftblock = b;
+			deque->leftindex = BLOCKLEN - 1;
+		}
+		Py_INCREF(item);
+		deque->leftblock->data[deque->leftindex] = item;
+	}
+	Py_DECREF(it);
+	if (PyErr_Occurred()) 
+		return NULL;
+	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(extendleft_doc, 
+"Extend the left side of the deque with elements from the iterable");
+
 static int
 deque_len(dequeobject *deque)
 {
@@ -356,35 +422,16 @@ deque_tp_print(PyObject *deque, FILE *fp, int flags)
 static int
 deque_init(dequeobject *deque, PyObject *args, PyObject *kwds)
 {
-	PyObject *iterable = NULL, *it, *item;
+	PyObject *iterable = NULL;
 
 	if (!PyArg_UnpackTuple(args, "deque", 0, 1, &iterable))
 		return -1;
 
 	if (iterable != NULL) {
-		it = PyObject_GetIter(iterable);
-		if (it == NULL)
+		PyObject *rv = deque_extend(deque, iterable);
+		if (rv == NULL)
 			return -1;
-
-		while ((item = PyIter_Next(it)) != NULL) {
-			deque->rightindex++;
-			deque->len++;
-			if (deque->rightindex == BLOCKLEN) {
-				block *b = newblock(deque->rightblock, NULL);
-				if (b == NULL) {
-					Py_DECREF(it);
-					Py_DECREF(item);
-					return -1;
-				}
-				deque->rightblock->rightlink = b;
-				deque->rightblock = b;
-				deque->rightindex = 0;
-			}
-			deque->rightblock->data[deque->rightindex] = item;
-		}
-		Py_DECREF(it);
-		if (PyErr_Occurred()) 
-			return -1;
+		Py_DECREF(rv);
 	}
 	return 0;
 }
@@ -413,6 +460,10 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 popleft_doc},
 	{"__reduce__",	(PyCFunction)deque_reduce,	
 		METH_NOARGS,	 reduce_doc},
+	{"extend",		(PyCFunction)deque_extend,	
+		METH_O,		 extend_doc},
+	{"extendleft",	(PyCFunction)deque_extendleft,	
+		METH_O,		 extendleft_doc},
 	{NULL,		NULL}	/* sentinel */
 };
 
