@@ -601,3 +601,39 @@ Open the gopher resource indicated by \var{req}.
 \begin{methoddesc}[UnknownHandler]{unknown_open}{}
 Raise a \exception{URLError} exception.
 \end{methoddesc}
+
+
+\subsection{Examples \label{urllib2-examples}}
+
+This example gets the python.org main page and displays the first 100
+bytes of it:
+
+\begin{verbatim}
+>>> import urllib2
+>>> f = urllib2.urlopen('http://www.python.org/')
+>>> print f.read(100)
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<?xml-stylesheet href="./css/ht2html
+\end{verbatim}
+
+Here we are sending a data-stream to the stdin of a CGI and reading
+the data it returns to us:
+
+\begin{verbatim}
+>>> import urllib2
+>>> req = urllib2.Request(url='https://localhost/cgi-bin/test.cgi',
+...                       data='This data is passed to stdin of the CGI')
+>>> f = urllib2.urlopen(req)
+>>> print f.read()
+Got Data: "This data is passed to stdin of the CGI"
+\end{verbatim}
+
+The code for the sample CGI used in the above example is:
+
+\begin{verbatim}
+#!/usr/bin/env python
+import sys
+data = sys.stdin.read()
+print 'Content-type: text-plain\n\nGot Data: "%s"' %
+data
+\end{verbatim}
