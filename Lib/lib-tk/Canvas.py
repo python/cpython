@@ -1,14 +1,14 @@
 # This module exports classes for the various canvas item types
 
-from Tkinter import Canvas, _isfunctype, _flatten
+from Tkinter import Canvas, _flatten
 
 StringType = type('')
 DictionaryType = type({})
 
 class CanvasItem:
-	def __init__(self, canvas, itemType, *args):
+	def __init__(self, canvas, itemType, *args, **kw):
 		self.canvas = canvas
-		self.id = canvas._create(itemType, args)
+		self.id = canvas._create(itemType, args, kw)
 		if not hasattr(canvas, 'items'):
 			canvas.items = {}
 		canvas.items[self.id] = self
