@@ -608,8 +608,8 @@ reop_expand_escape(self, args)
 		/* 2-digit form, so it's a memory reference */
 		if (context==CHARCLASS)
 		  {
-		    PyErr_SetString(ReopError, "cannot reference a register "
-				    "from inside a character class");
+		    PyErr_SetString(ReopError, 
+				    "cannot reference a register from inside a character class");
 		    return NULL;
 		  }
 		value= 10*(pattern[index  ]-'0') +
@@ -628,8 +628,8 @@ reop_expand_escape(self, args)
 	    /* Single-digit form, like \2, so it's a memory reference */
 	    if (context==CHARCLASS)
 	      {
-		PyErr_SetString(ReopError, "cannot reference a register "
-				"from inside a character class");
+		PyErr_SetString(ReopError, 
+				"cannot reference a register from inside a character class");
 		return NULL;
 	      }
 	    return Py_BuildValue("iii", MEMORY_REFERENCE, 
