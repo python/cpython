@@ -8,7 +8,11 @@
 #ifdef __powerc
 #define COMPILER " [CW PPC]"
 #else
+#ifdef __CFM68K__
+#define COMPILER " [CW CFM68K]"
+#else
 #define COMPILER " [CW 68K]"
+#endif
 #endif
 #endif
 
