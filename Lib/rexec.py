@@ -33,6 +33,8 @@ class FileBase:
 
 class FileWrapper(FileBase):
 
+	# XXX This is just like a Bastion -- should use that!
+
 	def __init__(self, f):
 		self.f = f
 		for m in self.ok_file_methods:
@@ -278,22 +280,43 @@ class RExec(ihooks._Verbose):
     
     # The s_* methods are similar but also swap std{in,out,err}
 
-    def set_files(self):
+    def make_delegate_files(self):
         s = self.modules['sys']
-        s.stdin = FileWrapper(sys.stdin)
-        s.stdout = FileWrapper(sys.stdout)
-        s.stderr = FileWrapper(sys.stderr)
-	sys.stdin = FileDelegate(s, 'stdin')
-	sys.stdout = FileDelegate(s, 'stdout')
-	sys.stderr = FileDelegate(s, 'stderr')
+	self.delegate_stdin = FileDelegate(s, 'stdin')
+	self.delegate_stdout = FileDelegate(s, 'stdout')
+	self.delegate_stderr = FileDelegate(s, 'stderr')
+        self.restricted_stdin = FileWrapper(sys.stdin)
+        self.restricted_stdout = FileWrapper(sys.stdout)
+        self.restricted_stderr = FileWrapper(sys.stderr)
+
+    def set_files(self):
+	if not hasattr(self, 'save_stdin'):
+	    self.save_files()
+	if not hasattr(self, 'delegate_stdin'):
+	    self.make_delegate_files()
+        s = self.modules['sys']
+	s.stdin = self.restricted_stdin
+	s.stdout = self.restricted_stdout
+	s.stderr = self.restricted_stdout
+	sys.stdin = self.delegate_stdin
+	sys.stdout = self.delegate_stdout
+	sys.stderr = self.delegate_stderr
+
+    def reset_files(self):
+	self.restore_files()
+        s = self.modules['sys']
+	self.restricted_stdin = s.stdin
+	self.restricted_stdout = s.stdout
+	self.restricted_stdout = s.stderr
+	
 
     def save_files(self):
         self.save_stdin = sys.stdin
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
 
-    def restore_files(files):
-	sys.stdin = self.save_sydin
+    def restore_files(self):
+	sys.stdin = self.save_stdin
 	sys.stdout = self.save_stdout
 	sys.stderr = self.save_stderr
     
