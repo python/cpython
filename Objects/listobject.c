@@ -572,6 +572,35 @@ listappend(self, args)
 	return ins(self, (int) self->ob_size, v);
 }
 
+static PyObject *
+listpop(self, args)
+	PyListObject *self;
+	PyObject *args;
+{
+	int i = -1;
+	PyObject *v;
+	if (!PyArg_ParseTuple(args, "|i", &i))
+		return NULL;
+	if (self->ob_size == 0) {
+		/* Special-case most common failure cause */
+		PyErr_SetString(PyExc_IndexError, "pop from empty list");
+		return NULL;
+	}
+	if (i < 0)
+		i += self->ob_size;
+	if (i < 0 || i >= self->ob_size) {
+		PyErr_SetString(PyExc_IndexError, "pop index out of range");
+		return NULL;
+	}
+	v = self->ob_item[i];
+	Py_INCREF(v);
+	if (list_ass_slice(self, i, i+1, (PyObject *)NULL) != 0) {
+		Py_DECREF(v);
+		return NULL;
+	}
+	return v;
+}
+
 /* New quicksort implementation for arrays of object pointers.
    Thanks to discussions with Tim Peters. */
 
@@ -1282,14 +1311,32 @@ listremove(self, args)
 	return NULL;
 }
 
+static char append_doc[] =
+"L.append(object) -- append object to end";
+static char insert_doc[] =
+"L.insert(index, object) -- insert object before index";
+static char pop_doc[] =
+"L.pop([index]) -> item -- remove and return item at index (default last)";
+static char remove_doc[] =
+"L.remove(value) -- remove first occurrence of value";
+static char index_doc[] =
+"L.index(value) -> integer -- return index of first occurrence of value";
+static char count_doc[] =
+"L.count(value) -> integer -- return number of occurrences of value";
+static char reverse_doc[] =
+"L.reverse() -- reverse *IN PLACE*";
+static char sort_doc[] =
+"L.sort([cmpfunc]) -- sort *IN PLACE*; if given, cmpfunc(x, y) -> -1, 0, 1";
+
 static PyMethodDef list_methods[] = {
-	{"append",	(PyCFunction)listappend},
-	{"insert",	(PyCFunction)listinsert},
-	{"remove",	(PyCFunction)listremove},
-	{"index",	(PyCFunction)listindex},
-	{"count",	(PyCFunction)listcount},
-	{"reverse",	(PyCFunction)listreverse},
-	{"sort",	(PyCFunction)listsort, 0},
+	{"append",	(PyCFunction)listappend, 0, append_doc},
+	{"insert",	(PyCFunction)listinsert, 0, insert_doc},
+	{"pop",		(PyCFunction)listpop, 1, pop_doc},
+	{"remove",	(PyCFunction)listremove, 0, remove_doc},
+	{"index",	(PyCFunction)listindex, 0, index_doc},
+	{"count",	(PyCFunction)listcount, 0, count_doc},
+	{"reverse",	(PyCFunction)listreverse, 0, reverse_doc},
+	{"sort",	(PyCFunction)listsort, 0, sort_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
