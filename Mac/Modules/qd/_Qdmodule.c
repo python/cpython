@@ -196,7 +196,7 @@ int GrafObj_Convert(PyObject *v, GrafPtr *p_itself)
 static void GrafObj_dealloc(GrafPortObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *GrafObj_MacSetPort(GrafPortObject *_self, PyObject *_args)
@@ -1172,7 +1172,7 @@ static void BMObj_dealloc(BitMapObject *self)
 {
 	Py_XDECREF(self->referred_object);
 	if (self->referred_bitmap) free(self->referred_bitmap);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *BMObj_getdata(BitMapObject *_self, PyObject *_args)
@@ -6851,12 +6851,14 @@ void init_Qd(void)
 	    PyDict_SetItemString(d, "Error", Qd_Error) != 0)
 		return;
 	GrafPort_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&GrafPort_Type) < 0) return;
 	Py_INCREF(&GrafPort_Type);
 	PyModule_AddObject(m, "GrafPort", (PyObject *)&GrafPort_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&GrafPort_Type);
 	PyModule_AddObject(m, "GrafPortType", (PyObject *)&GrafPort_Type);
 	BitMap_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&BitMap_Type) < 0) return;
 	Py_INCREF(&BitMap_Type);
 	PyModule_AddObject(m, "BitMap", (PyObject *)&BitMap_Type);
 	/* Backward-compatible name */

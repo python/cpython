@@ -241,7 +241,7 @@ int CGContextRefObj_Convert(PyObject *v, CGContextRef *p_itself)
 static void CGContextRefObj_dealloc(CGContextRefObject *self)
 {
 	CGContextRelease(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *CGContextRefObj_CGContextSaveGState(CGContextRefObject *_self, PyObject *_args)
@@ -1399,6 +1399,7 @@ void init_CG(void)
 	    PyDict_SetItemString(d, "Error", CG_Error) != 0)
 		return;
 	CGContextRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&CGContextRef_Type) < 0) return;
 	Py_INCREF(&CGContextRef_Type);
 	PyModule_AddObject(m, "CGContextRef", (PyObject *)&CGContextRef_Type);
 	/* Backward-compatible name */

@@ -55,7 +55,7 @@ int IBNibRefObj_Convert(PyObject *v, IBNibRef *p_itself)
 static void IBNibRefObj_dealloc(IBNibRefObject *self)
 {
 	DisposeNibReference(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *IBNibRefObj_CreateWindowFromNib(IBNibRefObject *_self, PyObject *_args)
@@ -256,6 +256,7 @@ void init_IBCarbon(void)
 	    PyDict_SetItemString(d, "Error", IBCarbon_Error) != 0)
 		return;
 	IBNibRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&IBNibRef_Type) < 0) return;
 	Py_INCREF(&IBNibRef_Type);
 	PyModule_AddObject(m, "IBNibRef", (PyObject *)&IBNibRef_Type);
 	/* Backward-compatible name */

@@ -83,8 +83,6 @@ PyObject *OptMenuObj_New(MenuRef itself)
 /* Alternative version of MenuObj_Convert, which returns NULL for a None argument */
 int OptMenuObj_Convert(PyObject *v, MenuRef *p_itself)
 {
-	PyObject *tmp;
-	
 	if ( v == Py_None ) {
 		*p_itself = NULL;
 		return 1;

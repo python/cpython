@@ -179,7 +179,7 @@ static void CtlObj_dealloc(ControlObject *self)
 {
 	Py_XDECREF(self->ob_callbackdict);
 	if (self->ob_itself)SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *CtlObj_HiliteControl(ControlObject *_self, PyObject *_args)
@@ -5849,6 +5849,7 @@ void init_Ctl(void)
 	    PyDict_SetItemString(d, "Error", Ctl_Error) != 0)
 		return;
 	Control_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Control_Type) < 0) return;
 	Py_INCREF(&Control_Type);
 	PyModule_AddObject(m, "Control", (PyObject *)&Control_Type);
 	/* Backward-compatible name */

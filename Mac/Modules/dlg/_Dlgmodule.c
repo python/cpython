@@ -172,7 +172,7 @@ int DlgObj_Convert(PyObject *v, DialogPtr *p_itself)
 static void DlgObj_dealloc(DialogObject *self)
 {
 	DisposeDialog(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *DlgObj_DrawDialog(DialogObject *_self, PyObject *_args)
@@ -1590,6 +1590,7 @@ void init_Dlg(void)
 	    PyDict_SetItemString(d, "Error", Dlg_Error) != 0)
 		return;
 	Dialog_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Dialog_Type) < 0) return;
 	Py_INCREF(&Dialog_Type);
 	PyModule_AddObject(m, "Dialog", (PyObject *)&Dialog_Type);
 	/* Backward-compatible name */

@@ -101,7 +101,7 @@ static void ResObj_dealloc(ResourceObject *self)
 		self->ob_freeit(self->ob_itself);
 	}
 	self->ob_itself = NULL;
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *ResObj_HomeResFile(ResourceObject *_self, PyObject *_args)
@@ -1744,6 +1744,7 @@ void init_Res(void)
 	    PyDict_SetItemString(d, "Error", Res_Error) != 0)
 		return;
 	Resource_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Resource_Type) < 0) return;
 	Py_INCREF(&Resource_Type);
 	PyModule_AddObject(m, "Resource", (PyObject *)&Resource_Type);
 	/* Backward-compatible name */

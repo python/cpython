@@ -130,7 +130,7 @@ int MovieCtlObj_Convert(PyObject *v, MovieController *p_itself)
 static void MovieCtlObj_dealloc(MovieControllerObject *self)
 {
 	DisposeMovieController(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *MovieCtlObj_MCSetMovie(MovieControllerObject *_self, PyObject *_args)
@@ -1201,7 +1201,7 @@ int TimeBaseObj_Convert(PyObject *v, TimeBase *p_itself)
 static void TimeBaseObj_dealloc(TimeBaseObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *TimeBaseObj_DisposeTimeBase(TimeBaseObject *_self, PyObject *_args)
@@ -1689,7 +1689,7 @@ int UserDataObj_Convert(PyObject *v, UserData *p_itself)
 static void UserDataObj_dealloc(UserDataObject *self)
 {
 	DisposeUserData(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *UserDataObj_GetUserData(UserDataObject *_self, PyObject *_args)
@@ -2030,7 +2030,7 @@ int MediaObj_Convert(PyObject *v, Media *p_itself)
 static void MediaObj_dealloc(MediaObject *self)
 {
 	DisposeTrackMedia(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *MediaObj_LoadMediaIntoRam(MediaObject *_self, PyObject *_args)
@@ -3242,7 +3242,7 @@ int TrackObj_Convert(PyObject *v, Track *p_itself)
 static void TrackObj_dealloc(TrackObject *self)
 {
 	DisposeMovieTrack(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *TrackObj_LoadTrackIntoRam(TrackObject *_self, PyObject *_args)
@@ -4560,7 +4560,7 @@ int MovieObj_Convert(PyObject *v, Movie *p_itself)
 static void MovieObj_dealloc(MovieObject *self)
 {
 	DisposeMovie(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *MovieObj_MoviesTask(MovieObject *_self, PyObject *_args)
@@ -9740,36 +9740,42 @@ void init_Qt(void)
 	    PyDict_SetItemString(d, "Error", Qt_Error) != 0)
 		return;
 	MovieController_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&MovieController_Type) < 0) return;
 	Py_INCREF(&MovieController_Type);
 	PyModule_AddObject(m, "MovieController", (PyObject *)&MovieController_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&MovieController_Type);
 	PyModule_AddObject(m, "MovieControllerType", (PyObject *)&MovieController_Type);
 	TimeBase_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&TimeBase_Type) < 0) return;
 	Py_INCREF(&TimeBase_Type);
 	PyModule_AddObject(m, "TimeBase", (PyObject *)&TimeBase_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&TimeBase_Type);
 	PyModule_AddObject(m, "TimeBaseType", (PyObject *)&TimeBase_Type);
 	UserData_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&UserData_Type) < 0) return;
 	Py_INCREF(&UserData_Type);
 	PyModule_AddObject(m, "UserData", (PyObject *)&UserData_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&UserData_Type);
 	PyModule_AddObject(m, "UserDataType", (PyObject *)&UserData_Type);
 	Media_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Media_Type) < 0) return;
 	Py_INCREF(&Media_Type);
 	PyModule_AddObject(m, "Media", (PyObject *)&Media_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&Media_Type);
 	PyModule_AddObject(m, "MediaType", (PyObject *)&Media_Type);
 	Track_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Track_Type) < 0) return;
 	Py_INCREF(&Track_Type);
 	PyModule_AddObject(m, "Track", (PyObject *)&Track_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&Track_Type);
 	PyModule_AddObject(m, "TrackType", (PyObject *)&Track_Type);
 	Movie_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Movie_Type) < 0) return;
 	Py_INCREF(&Movie_Type);
 	PyModule_AddObject(m, "Movie", (PyObject *)&Movie_Type);
 	/* Backward-compatible name */

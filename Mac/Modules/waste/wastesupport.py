@@ -82,15 +82,15 @@ static PyObject *ExistingwasteObj_New(WEReference);
 /*
 ** Parse/generate TextStyle records
 */
-static
-PyObject *TextStyle_New(TextStylePtr itself)
+static PyObject *
+TextStyle_New(TextStylePtr itself)
 {
 
 	return Py_BuildValue("lllO&", (long)itself->tsFont, (long)itself->tsFace, (long)itself->tsSize, QdRGB_New,
 				&itself->tsColor);
 }
 
-static
+static int
 TextStyle_Convert(PyObject *v, TextStylePtr p_itself)
 {
 	long font, face, size;
@@ -106,8 +106,8 @@ TextStyle_Convert(PyObject *v, TextStylePtr p_itself)
 /*
 ** Parse/generate RunInfo records
 */
-static
-PyObject *RunInfo_New(WERunInfo *itself)
+static PyObject *
+RunInfo_New(WERunInfo *itself)
 {
 
 	return Py_BuildValue("llhhO&O&", itself->runStart, itself->runEnd, itself->runHeight,
@@ -127,7 +127,7 @@ LongRect_New(LongRect *r)
 	return Py_BuildValue("(llll)", r->left, r->top, r->right, r->bottom);
 }
 
-
+int
 LongPt_Convert(PyObject *v, LongPt *p)
 {
 	return PyArg_Parse(v, "(ll)", &p->h, &p->v);
@@ -186,8 +186,12 @@ my_new_handler(Point *objectSize, WEObjectReference objref)
 		if (!PyMac_GetPoint(rv, objectSize) )
 			err = errAECoercionFail;
 	}
-	if ( args ) Py_DECREF(args);
-	if ( rv ) Py_DECREF(rv);
+	if ( args ) {
+		Py_DECREF(args);
+	}
+	if ( rv ) {
+		Py_DECREF(rv);
+	}
 	return err;
 }
 
@@ -199,8 +203,12 @@ my_dispose_handler(WEObjectReference objref)
 	
 	args=Py_BuildValue("(O&)", WEOObj_New, objref);
 	err = any_handler(weDisposeHandler, objref, args, &rv);
-	if ( args ) Py_DECREF(args);
-	if ( rv ) Py_DECREF(rv);
+	if ( args ) {
+		Py_DECREF(args);
+	}
+	if ( rv ) {
+		Py_DECREF(rv);
+	}
 	return err;
 }
 
@@ -212,8 +220,12 @@ my_draw_handler(const Rect *destRect, WEObjectReference objref)
 	
 	args=Py_BuildValue("O&O&", PyMac_BuildRect, destRect, WEOObj_New, objref);
 	err = any_handler(weDrawHandler, objref, args, &rv);
-	if ( args ) Py_DECREF(args);
-	if ( rv ) Py_DECREF(rv);
+	if ( args ) {
+		Py_DECREF(args);
+	}
+	if ( rv ) {
+		Py_DECREF(rv);
+	}
 	return err;
 }
 
@@ -232,8 +244,12 @@ my_click_handler(Point hitPt, EventModifiers modifiers,
 		retvalue = PyInt_AsLong(rv);
 	else
 		retvalue = 0;
-	if ( args ) Py_DECREF(args);
-	if ( rv ) Py_DECREF(rv);
+	if ( args ) {
+		Py_DECREF(args);
+	}
+	if ( rv ) {
+		Py_DECREF(rv);
+	}
 	return retvalue;
 }
 		
@@ -359,7 +375,8 @@ stdhandlers_body = """
 				(UniversalProcPtr) NewWEClickObjectProc(HandleClickSound), NULL)) != noErr)
 		goto cleanup;
 	Py_INCREF(Py_None);
-	return Py_None;
+	_res = Py_None;
+	return _res;
 	
 cleanup:
 	return PyMac_Error(err);
@@ -397,7 +414,8 @@ inshandler_body = """
 	err = WEInstallObjectHandler(objectType, selector, handler, we);
 	if ( err ) return PyMac_Error(err);
 	Py_INCREF(Py_None);
-	return Py_None;
+	_res = Py_None;
+	return _res;
 """
 
 stdhand = ManualGenerator("STDObjectHandlers", stdhandlers_body)

@@ -566,7 +566,7 @@ MacOS_openrf(PyObject *self, PyObject *args)
 		FILE *tfp;
 		char pathname[PATHNAMELEN];
 		
-		if ( err=PyMac_GetFullPathname(&fss, pathname, PATHNAMELEN) ) {
+		if ( (err=PyMac_GetFullPathname(&fss, pathname, PATHNAMELEN)) ) {
 			PyMac_Error(err);
 			Py_DECREF(fp);
 			return NULL;

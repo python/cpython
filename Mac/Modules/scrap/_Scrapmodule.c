@@ -127,7 +127,6 @@ static PyObject *ScrapObj_GetScrapFlavorData(ScrapObject *_self, PyObject *_args
 		Py_XDECREF(_res);
 		return PyMac_Error(_err);
 	}
- destination__error__: ;
 	return _res;
 }
 
@@ -152,7 +151,6 @@ static PyObject *ScrapObj_PutScrapFlavor(ScrapObject *_self, PyObject *_args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
- flavorData__error__: ;
 	return _res;
 }
 

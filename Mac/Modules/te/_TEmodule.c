@@ -100,7 +100,7 @@ int TEObj_Convert(PyObject *v, TEHandle *p_itself)
 static void TEObj_dealloc(TEObject *self)
 {
 	TEDispose(self->ob_itself);
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *TEObj_TESetText(TEObject *_self, PyObject *_args)
@@ -1327,6 +1327,7 @@ void init_TE(void)
 	    PyDict_SetItemString(d, "Error", TE_Error) != 0)
 		return;
 	TE_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&TE_Type) < 0) return;
 	Py_INCREF(&TE_Type);
 	PyModule_AddObject(m, "TE", (PyObject *)&TE_Type);
 	/* Backward-compatible name */

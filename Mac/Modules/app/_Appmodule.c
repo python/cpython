@@ -69,7 +69,7 @@ int ThemeDrawingStateObj_Convert(PyObject *v, ThemeDrawingState *p_itself)
 static void ThemeDrawingStateObj_dealloc(ThemeDrawingStateObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *ThemeDrawingStateObj_SetThemeDrawingState(ThemeDrawingStateObject *_self, PyObject *_args)
@@ -1818,6 +1818,7 @@ void init_App(void)
 	    PyDict_SetItemString(d, "Error", App_Error) != 0)
 		return;
 	ThemeDrawingState_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&ThemeDrawingState_Type) < 0) return;
 	Py_INCREF(&ThemeDrawingState_Type);
 	PyModule_AddObject(m, "ThemeDrawingState", (PyObject *)&ThemeDrawingState_Type);
 	/* Backward-compatible name */

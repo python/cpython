@@ -64,8 +64,6 @@ PyObject *OptMenuObj_New(MenuRef itself)
 /* Alternative version of MenuObj_Convert, which returns NULL for a None argument */
 int OptMenuObj_Convert(PyObject *v, MenuRef *p_itself)
 {
-	PyObject *tmp;
-	
 	if ( v == Py_None ) {
 		*p_itself = NULL;
 		return 1;
@@ -108,7 +106,7 @@ int MenuObj_Convert(PyObject *v, MenuHandle *p_itself)
 static void MenuObj_dealloc(MenuObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *MenuObj_DisposeMenu(MenuObject *_self, PyObject *_args)
@@ -3478,6 +3476,7 @@ void init_Menu(void)
 	    PyDict_SetItemString(d, "Error", Menu_Error) != 0)
 		return;
 	Menu_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Menu_Type) < 0) return;
 	Py_INCREF(&Menu_Type);
 	PyModule_AddObject(m, "Menu", (PyObject *)&Menu_Type);
 	/* Backward-compatible name */

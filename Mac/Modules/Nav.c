@@ -338,7 +338,7 @@ navrr_getattr(navrrobject *self, char *name)
 		PyObject *rv, *rvitem;
 		AEDesc desc;
 		
-		if (err=AECountItems(&self->itself.selection, &count)) {
+		if ((err=AECountItems(&self->itself.selection, &count))) {
 			PyErr_Mac(ErrorObject, err);
 			return NULL;
 		}
@@ -346,12 +346,12 @@ navrr_getattr(navrrobject *self, char *name)
 			return NULL;
 		for(i=0; i<count; i++) {
 			desc.dataHandle = NULL;
-			if (err=AEGetNthDesc(&self->itself.selection, i+1, typeFSS, NULL, &desc)) {
+			if ((err=AEGetNthDesc(&self->itself.selection, i+1, typeFSS, NULL, &desc))) {
 				Py_DECREF(rv);
 				PyErr_Mac(ErrorObject, err);
 				return NULL;
 			}
-			if (err=AEGetDescData(&desc, &fss, sizeof(FSSpec))) {
+			if ((err=AEGetDescData(&desc, &fss, sizeof(FSSpec)))) {
 				Py_DECREF(rv);
 				PyErr_Mac(ErrorObject, err);
 				return NULL;
@@ -368,7 +368,7 @@ navrr_getattr(navrrobject *self, char *name)
 		PyObject *rv, *rvitem;
 		AEDesc desc;
 		
-		if (err=AECountItems(&self->itself.selection, &count)) {
+		if ((err=AECountItems(&self->itself.selection, &count))) {
 			PyErr_Mac(ErrorObject, err);
 			return NULL;
 		}
@@ -376,12 +376,12 @@ navrr_getattr(navrrobject *self, char *name)
 			return NULL;
 		for(i=0; i<count; i++) {
 			desc.dataHandle = NULL;
-			if (err=AEGetNthDesc(&self->itself.selection, i+1, typeFSRef, NULL, &desc)) {
+			if ((err=AEGetNthDesc(&self->itself.selection, i+1, typeFSRef, NULL, &desc))) {
 				Py_DECREF(rv);
 				PyErr_Mac(ErrorObject, err);
 				return NULL;
 			}
-			if (err=AEGetDescData(&desc, &fsr, sizeof(FSRef))) {
+			if ((err=AEGetDescData(&desc, &fsr, sizeof(FSRef)))) {
 				Py_DECREF(rv);
 				PyErr_Mac(ErrorObject, err);
 				return NULL;

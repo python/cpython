@@ -2740,24 +2740,28 @@ void init_File(void)
 	    PyDict_SetItemString(d, "Error", File_Error) != 0)
 		return;
 	FInfo_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&FInfo_Type) < 0) return;
 	Py_INCREF(&FInfo_Type);
 	PyModule_AddObject(m, "FInfo", (PyObject *)&FInfo_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&FInfo_Type);
 	PyModule_AddObject(m, "FInfoType", (PyObject *)&FInfo_Type);
 	Alias_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&Alias_Type) < 0) return;
 	Py_INCREF(&Alias_Type);
 	PyModule_AddObject(m, "Alias", (PyObject *)&Alias_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&Alias_Type);
 	PyModule_AddObject(m, "AliasType", (PyObject *)&Alias_Type);
 	FSSpec_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&FSSpec_Type) < 0) return;
 	Py_INCREF(&FSSpec_Type);
 	PyModule_AddObject(m, "FSSpec", (PyObject *)&FSSpec_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&FSSpec_Type);
 	PyModule_AddObject(m, "FSSpecType", (PyObject *)&FSSpec_Type);
 	FSRef_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&FSRef_Type) < 0) return;
 	Py_INCREF(&FSRef_Type);
 	PyModule_AddObject(m, "FSRef", (PyObject *)&FSRef_Type);
 	/* Backward-compatible name */

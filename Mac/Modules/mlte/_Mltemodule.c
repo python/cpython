@@ -125,7 +125,7 @@ int TXNObj_Convert(PyObject *v, TXNObject *p_itself)
 static void TXNObj_dealloc(TXNObjectObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *TXNObj_TXNDeleteObject(TXNObjectObject *_self, PyObject *_args)
@@ -1377,7 +1377,7 @@ int TXNFontMenuObj_Convert(PyObject *v, TXNFontMenuObject *p_itself)
 static void TXNFontMenuObj_dealloc(TXNFontMenuObjectObject *self)
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyObject_Del(self);
+	self->ob_type->tp_free((PyObject *)self);
 }
 
 static PyObject *TXNFontMenuObj_TXNGetFontMenuHandle(TXNFontMenuObjectObject *_self, PyObject *_args)
@@ -1703,12 +1703,14 @@ void init_Mlte(void)
 	    PyDict_SetItemString(d, "Error", Mlte_Error) != 0)
 		return;
 	TXNObject_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&TXNObject_Type) < 0) return;
 	Py_INCREF(&TXNObject_Type);
 	PyModule_AddObject(m, "TXNObject", (PyObject *)&TXNObject_Type);
 	/* Backward-compatible name */
 	Py_INCREF(&TXNObject_Type);
 	PyModule_AddObject(m, "TXNObjectType", (PyObject *)&TXNObject_Type);
 	TXNFontMenuObject_Type.ob_type = &PyType_Type;
+	if (PyType_Ready(&TXNFontMenuObject_Type) < 0) return;
 	Py_INCREF(&TXNFontMenuObject_Type);
 	PyModule_AddObject(m, "TXNFontMenuObject", (PyObject *)&TXNFontMenuObject_Type);
 	/* Backward-compatible name */
