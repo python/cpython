@@ -392,8 +392,8 @@ class HTMLDoc(Doc):
         info = []
         if hasattr(object, '__version__'):
             version = str(object.__version__)
-            if version[:11] == '$Revision$':
-                version = version[11:-1]
+            if version[:11] == '$' + 'Revision: ' and version[-1:] == '$':
+                version = strip(version[11:-1])
             info.append('version: %s' % self.escape(version))
         if hasattr(object, '__date__'):
             info.append(self.escape(str(object.__date__)))
