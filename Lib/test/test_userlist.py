@@ -1,201 +1,261 @@
 # Check every path through every method of UserList
 
 from UserList import UserList
-from test.test_support import TestFailed
+import unittest, test.test_support
 
-# Use check instead of assert so -O doesn't render the
-# test useless.
-# XXX: could use the verify function in test_support instead
-def check(predicate, msg):
-    if not predicate:
-        raise TestFailed(msg + " failed")
+class UserListTest(unittest.TestCase):
 
-l0 = []
-l1 = [0]
-l2 = [0, 1]
+    def test_constructors(self):
+        l0 = []
+        l1 = [0]
+        l2 = [0, 1]
 
-# Test constructors
+        u = UserList()
+        u0 = UserList(l0)
+        u1 = UserList(l1)
+        u2 = UserList(l2)
 
-u = UserList()
-u0 = UserList(l0)
-u1 = UserList(l1)
-u2 = UserList(l2)
+        uu = UserList(u)
+        uu0 = UserList(u0)
+        uu1 = UserList(u1)
+        uu2 = UserList(u2)
 
-uu = UserList(u)
-uu0 = UserList(u0)
-uu1 = UserList(u1)
-uu2 = UserList(u2)
+        v = UserList(tuple(u))
+        class OtherList:
+            def __init__(self, initlist):
+                self.__data = initlist
+            def __len__(self):
+                return len(self.__data)
+            def __getitem__(self, i):
+                return self.__data[i]
+        v0 = UserList(OtherList(u0))
+        vv = UserList("this is also a sequence")
 
-v = UserList(tuple(u))
-class OtherList:
-    def __init__(self, initlist):
-        self.__data = initlist
-    def __len__(self):
-        return len(self.__data)
-    def __getitem__(self, i):
-        return self.__data[i]
-v0 = UserList(OtherList(u0))
-vv = UserList("this is also a sequence")
+    def test_repr(self):
+        l0 = []
+        l2 = [0, 1, 2]
+        u0 = UserList(l0)
+        u2 = UserList(l2)
 
-# Test __repr__
+        self.assertEqual(str(u0), str(l0))
+        self.assertEqual(repr(u0), repr(l0))
+        self.assertEqual(`u2`, `l2`)
 
-check(str(u0) == str(l0), "str(u0) == str(l0)")
-check(repr(u1) == repr(l1), "repr(u1) == repr(l1)")
-check(`u2` == `l2`, "`u2` == `l2`")
+    def test_cmplen(self):
+        l0 = []
+        l1 = [0]
+        l2 = [0, 1]
 
-# Test __cmp__ and __len__
+        # Test constructors
 
-def mycmp(a, b):
-    r = cmp(a, b)
-    if r < 0: return -1
-    if r > 0: return 1
-    return r
+        u = UserList()
+        u0 = UserList(l0)
+        u1 = UserList(l1)
+        u2 = UserList(l2)
 
-all = [l0, l1, l2, u, u0, u1, u2, uu, uu0, uu1, uu2]
-for a in all:
-    for b in all:
-        check(mycmp(a, b) == mycmp(len(a), len(b)),
-              "mycmp(a, b) == mycmp(len(a), len(b))")
+        uu = UserList(u)
+        uu0 = UserList(u0)
+        uu1 = UserList(u1)
+        uu2 = UserList(u2)
 
-# Test __getitem__
+        def mycmp(x, y):
+            r = cmp(x, y)
+            if r < 0: return -1
+            if r > 0: return 1
+            return r
 
-for i in range(len(u2)):
-    check(u2[i] == i, "u2[i] == i")
+        all = [l0, l1, l2, u, u0, u1, u2, uu, uu0, uu1, uu2]
+        for a in all:
+            for b in all:
+                self.assertEqual(mycmp(a, b), mycmp(len(a), len(b)))
 
-# Test __setitem__
+        self.assert_(u0 <= u2)
+        self.assert_(u2 >= u0)
 
-uu2[0] = 0
-uu2[1] = 100
-try:
-    uu2[2] = 200
-except IndexError:
-    pass
-else:
-    raise TestFailed("uu2[2] shouldn't be assignable")
+    def test_getitem(self):
+        u = UserList([0, 1, 2])
+        for i in xrange(len(u)):
+            self.assertEqual(u[i], i)
 
-# Test __delitem__
+    def test_setitem(self):
+        u = UserList([0, 1])
+        u[0] = 0
+        u[1] = 100
+        self.assertEqual(u, [0, 100])
+        self.assertRaises(IndexError, u.__setitem__, 2, 200)
 
-del uu2[1]
-del uu2[0]
-try:
-    del uu2[0]
-except IndexError:
-    pass
-else:
-    raise TestFailed("uu2[0] shouldn't be deletable")
+    def test_delitem(self):
+        u = UserList([0, 1])
+        del u[1]
+        del u[0]
+        self.assertRaises(IndexError, u.__delitem__, 0)
 
-# Test __getslice__
+    def test_getslice(self):
+        l = [0, 1]
+        u = UserList(l)
+        for i in xrange(-3, 4):
+            self.assertEqual(u[:i], l[:i])
+            self.assertEqual(u[i:], l[i:])
+            for j in xrange(-3, 4):
+                self.assertEqual(u[i:j], l[i:j])
 
-for i in range(-3, 4):
-    check(u2[:i] == l2[:i], "u2[:i] == l2[:i]")
-    check(u2[i:] == l2[i:], "u2[i:] == l2[i:]")
-    for j in range(-3, 4):
-        check(u2[i:j] == l2[i:j], "u2[i:j] == l2[i:j]")
+    def test_setslice(self):
+        l = [0, 1]
+        u = UserList(l)
 
-# Test __setslice__
+        # Test __setslice__
+        for i in range(-3, 4):
+            u[:i] = l[:i]
+            self.assertEqual(u, l)
+            u2 = u[:]
+            u2[:i] = u[:i]
+            self.assertEqual(u2, u)
+            u[i:] = l[i:]
+            self.assertEqual(u, l)
+            u2 = u[:]
+            u2[i:] = u[i:]
+            self.assertEqual(u2, u)
+            for j in range(-3, 4):
+                u[i:j] = l[i:j]
+                self.assertEqual(u, l)
+                u2 = u[:]
+                u2[i:j] = u[i:j]
+                self.assertEqual(u2, u)
 
-for i in range(-3, 4):
-    u2[:i] = l2[:i]
-    check(u2 == l2, "u2 == l2")
-    u2[i:] = l2[i:]
-    check(u2 == l2, "u2 == l2")
-    for j in range(-3, 4):
-        u2[i:j] = l2[i:j]
-        check(u2 == l2, "u2 == l2")
+        uu2 = u2[:]
+        uu2[:0] = [-2, -1]
+        self.assertEqual(uu2, [-2, -1, 0, 1])
+        uu2[0:] = []
+        self.assertEqual(uu2, [])
 
-uu2 = u2[:]
-uu2[:0] = [-2, -1]
-check(uu2 == [-2, -1, 0, 1], "uu2 == [-2, -1, 0, 1]")
-uu2[0:] = []
-check(uu2 == [], "uu2 == []")
+    def test_contains(self):
+        u = UserList([0, 1, 2])
+        for i in u:
+            self.assert_(i in u)
+        for i in min(u)-1, max(u)+1:
+            self.assert_(i not in u)
 
-# Test __contains__
-for i in u2:
-    check(i in u2, "i in u2")
-for i in min(u2)-1, max(u2)+1:
-    check(i not in u2, "i not in u2")
+    def test_delslice(self):
+        u = UserList([0, 1])
+        del u[1:2]
+        del u[0:1]
+        self.assertEqual(u, [])
 
-# Test __delslice__
+        u = UserList([0, 1])
+        del u[1:]
+        del u[:1]
+        self.assertEqual(u, [])
 
-uu2 = u2[:]
-del uu2[1:2]
-del uu2[0:1]
-check(uu2 == [], "uu2 == []")
+    def test_addmul(self):
+        u1 = UserList([0])
+        u2 = UserList([0, 1])
+        self.assertEqual(u1, u1 + [])
+        self.assertEqual(u1, [] + u1)
+        self.assertEqual(u1 + [1], u2)
+        self.assertEqual([-1] + u1, [-1, 0])
+        self.assertEqual(u2, u2*1)
+        self.assertEqual(u2, 1*u2)
+        self.assertEqual(u2+u2, u2*2)
+        self.assertEqual(u2+u2, 2*u2)
+        self.assertEqual(u2+u2+u2, u2*3)
+        self.assertEqual(u2+u2+u2, 3*u2)
 
-uu2 = u2[:]
-del uu2[1:]
-del uu2[:1]
-check(uu2 == [], "uu2 == []")
+    def test_add_specials(self):
+        u = UserList("spam")
+        u2 = u + "eggs"
+        self.assertEqual(u2, list("spameggs"))
 
-# Test __add__, __radd__, __mul__ and __rmul__
+    def test_radd_specials(self):
+        u = UserList("eggs")
+        u2 = "spam" + u
+        self.assertEqual(u2, list("spameggs"))
+        u2 = u.__radd__(UserList("spam"))
+        self.assertEqual(u2, list("spameggs"))
 
-check(u1 + [] == [] + u1 == u1, "u1 + [] == [] + u1 == u1")
-check(u1 + [1] == u2, "u1 + [1] == u2")
-check([-1] + u1 == [-1, 0], "[-1] + u1 == [-1, 0]")
-check(u2 == u2*1 == 1*u2, "u2 == u2*1 == 1*u2")
-check(u2+u2 == u2*2 == 2*u2, "u2+u2 == u2*2 == 2*u2")
-check(u2+u2+u2 == u2*3 == 3*u2, "u2+u2+u2 == u2*3 == 3*u2")
+    def test_append(self):
+        u = UserList((0, ))
+        u.append(1)
+        self.assertEqual(u, [0, 1])
 
-# Test append
+    def test_insert(self):
+        u = UserList((0, 1))
+        u.insert(0, -1)
+        self.assertEqual(u, [-1, 0, 1])
 
-u = u1[:]
-u.append(1)
-check(u == u2, "u == u2")
+    def test_pop(self):
+        u = UserList((-1, 0, 1))
+        u.pop()
+        self.assertEqual(u, [-1, 0])
+        u.pop(0)
+        self.assertEqual(u, [0])
 
-# Test insert
+    def test_remove(self):
+        u = UserList((0, 1))
+        u.remove(1)
+        self.assertEqual(u, [0])
 
-u = u2[:]
-u.insert(0, -1)
-check(u == [-1, 0, 1], "u == [-1, 0, 1]")
+    def test_count(self):
+        u = UserList((0, 1))*3
+        self.assertEqual(u.count(0), 3)
+        self.assertEqual(u.count(1), 3)
+        self.assertEqual(u.count(2), 0)
 
-# Test pop
+    def test_index(self):
+        u = UserList((0, 1))
+        self.assertEqual(u.index(0), 0)
+        self.assertEqual(u.index(1), 1)
+        self.assertRaises(ValueError, u.index, 2)
 
-u = [-1] + u2
-u.pop()
-check(u == [-1, 0], "u == [-1, 0]")
-u.pop(0)
-check(u == [0], "u == [0]")
+    def test_reverse(self):
+        u = UserList((0, 1))
+        u2 = u[:]
+        u.reverse()
+        self.assertEqual(u, [1, 0])
+        u.reverse()
+        self.assertEqual(u, u2)
 
-# Test remove
+    def test_sort(self):
+        u = UserList([1, 0])
+        u.sort()
+        self.assertEqual(u, [0, 1])
 
-u = u2[:]
-u.remove(1)
-check(u == u1, "u == u1")
+    def test_slice(self):
+        u = UserList("spam")
+        u[:2] = "h"
+        self.assertEqual(u, list("ham"))
 
-# Test count
-u = u2*3
-check(u.count(0) == 3, "u.count(0) == 3")
-check(u.count(1) == 3, "u.count(1) == 3")
-check(u.count(2) == 0, "u.count(2) == 0")
+    def test_iadd(self):
+        u = UserList((0, 1))
+        u += [0, 1]
+        self.assertEqual(u, [0, 1, 0, 1])
+        u += UserList([0, 1])
+        self.assertEqual(u, [0, 1, 0, 1, 0, 1])
 
+        u = UserList("spam")
+        u += "eggs"
+        self.assertEqual(u, list("spameggs"))
 
-# Test index
+    def test_extend(self):
+        u1 = UserList((0, ))
+        u2 = UserList((0, 1))
+        u = u1[:]
+        u.extend(u2)
+        self.assertEqual(u, u1 + u2)
 
-check(u2.index(0) == 0, "u2.index(0) == 0")
-check(u2.index(1) == 1, "u2.index(1) == 1")
-try:
-    u2.index(2)
-except ValueError:
-    pass
-else:
-    raise TestFailed("expected ValueError")
+        u = UserList("spam")
+        u.extend("eggs")
+        self.assertEqual(u, list("spameggs"))
 
-# Test reverse
+    def test_imul(self):
+        u = UserList((0, 1))
+        u *= 3
+        self.assertEqual(u, [0, 1, 0, 1, 0, 1])
 
-u = u2[:]
-u.reverse()
-check(u == [1, 0], "u == [1, 0]")
-u.reverse()
-check(u == u2, "u == u2")
+def test_main():
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(UserListTest))
+    test.test_support.run_suite(suite)
 
-# Test sort
+if __name__ == "__main__":
+    test_main()
 
-u = UserList([1, 0])
-u.sort()
-check(u == u2, "u == u2")
-
-# Test extend
-
-u = u1[:]
-u.extend(u2)
-check(u == u1 + u2, "u == u1 + u2")
