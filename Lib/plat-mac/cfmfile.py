@@ -5,7 +5,7 @@
 __version__ = "0.8b3"
 __author__ = "jvr"
 
-import macfs
+import Carbon.File
 import struct
 from Carbon import Res
 import os
@@ -28,10 +28,8 @@ def mergecfmfiles(srclist, dst, architecture = 'fat'):
 	
 	srclist = list(srclist)
 	for i in range(len(srclist)):
-		if type(srclist[i]) == macfs.FSSpecType:
-			srclist[i] = srclist[i].as_pathname()
-	if type(dst) == macfs.FSSpecType:
-		dst = dst.as_pathname()
+		srclist[i] = Carbon.File.pathname(srclist[i])
+	dst = Carbon.File.pathname(dst)
 	
 	dstfile = open(dst, "wb")
 	rf = Res.FSpOpenResFile(dst, 3)
