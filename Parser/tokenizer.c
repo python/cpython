@@ -328,7 +328,7 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	if (utf8 == NULL) return error_ret(tok);
 	else {
 		const char* str = PyString_AsString(utf8);
-		assert(strlen(str) < size); /* XXX */
+		assert(strlen(str) < (size_t)size); /* XXX */
 		strcpy(s, str);
 		Py_DECREF(utf8);
 		if (s[0] == '\0') return NULL; /* EOF */
