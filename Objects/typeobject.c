@@ -2484,7 +2484,7 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 	}
 
 	/* Check that the use doesn't do something silly and unsafe like
-	   object.__new__(dictionary).  To do this, we check that the
+	   object.__new__(dict).  To do this, we check that the
 	   most derived base that's not a heap type is this type. */
 	staticbase = subtype;
 	while (staticbase && (staticbase->tp_flags & Py_TPFLAGS_HEAPTYPE))

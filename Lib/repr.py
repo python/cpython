@@ -48,7 +48,7 @@ class Repr:
             s = s + self.repr1(x[i], level-1)
         if n > self.maxlist: s = s + ', ...'
         return '[' + s + ']'
-    def repr_dictionary(self, x, level):
+    def repr_dict(self, x, level):
         n = len(x)
         if n == 0: return '{}'
         if level <= 0: return '{...}'

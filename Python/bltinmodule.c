@@ -1848,7 +1848,7 @@ _PyBuiltin_Init(void)
 #ifndef WITHOUT_COMPLEX
 	SETBUILTIN("complex",		&PyComplex_Type);
 #endif
-	SETBUILTIN("dictionary",	&PyDict_Type);
+	SETBUILTIN("dict",		&PyDict_Type);
 	SETBUILTIN("float",		&PyFloat_Type);
 	SETBUILTIN("property",		&PyProperty_Type);
 	SETBUILTIN("int",		&PyInt_Type);

@@ -175,7 +175,7 @@ def my_import(name):
   \code{del \var{x}.\var{foobar}}.
 \end{funcdesc}
 
-\begin{funcdesc}{dictionary}{\optional{mapping-or-sequence}}
+\begin{funcdesc}{dict}{\optional{mapping-or-sequence}}
   Return a new dictionary initialized from the optional argument.
   If an argument is not specified, return a new empty dictionary.
   If the argument is a mapping object, return a dictionary mapping the
@@ -191,12 +191,12 @@ def my_import(name):
   \code{\{1: 2, 2: 3\}}:
 
   \begin{itemize}
-    \item \code{dictionary(\{1: 2, 2: 3\})}
-    \item \code{dictionary(\{1: 2, 2: 3\}.items())}
-    \item \code{dictionary(\{1: 2, 2: 3\}.iteritems())}
-    \item \code{dictionary(zip((1, 2), (2, 3)))}
-    \item \code{dictionary([[2, 3], [1, 2]])}
-    \item \code{dictionary([(i-1, i) for i in (2, 3)])}
+    \item \code{dict(\{1: 2, 2: 3\})}
+    \item \code{dict(\{1: 2, 2: 3\}.items())}
+    \item \code{dict(\{1: 2, 2: 3\}.iteritems())}
+    \item \code{dict(zip((1, 2), (2, 3)))}
+    \item \code{dict([[2, 3], [1, 2]])}
+    \item \code{dict([(i-1, i) for i in (2, 3)])}
   \end{itemize}
 \end{funcdesc}
 

@@ -163,7 +163,7 @@ def dicts():
     for i in d.__iter__(): l.append(i)
     vereq(l, l1)
     l = []
-    for i in dictionary.__iter__(d): l.append(i)
+    for i in dict.__iter__(d): l.append(i)
     vereq(l, l1)
     d = {1:2, 3:4}
     testunop(d, 2, "len(a)", "__len__")
@@ -173,20 +173,20 @@ def dicts():
 
 def dict_constructor():
     if verbose:
-        print "Testing dictionary constructor ..."
-    d = dictionary()
+        print "Testing dict constructor ..."
+    d = dict()
     vereq(d, {})
-    d = dictionary({})
+    d = dict({})
     vereq(d, {})
-    d = dictionary(items={})
+    d = dict(items={})
     vereq(d, {})
-    d = dictionary({1: 2, 'a': 'b'})
+    d = dict({1: 2, 'a': 'b'})
     vereq(d, {1: 2, 'a': 'b'})
-    vereq(d, dictionary(d.items()))
-    vereq(d, dictionary(items=d.iteritems()))
+    vereq(d, dict(d.items()))
+    vereq(d, dict(items=d.iteritems()))
     for badarg in 0, 0L, 0j, "0", [0], (0,):
         try:
-            dictionary(badarg)
+            dict(badarg)
         except TypeError:
             pass
         except ValueError:
@@ -196,37 +196,37 @@ def dict_constructor():
                 # one seemed better as a ValueError than a TypeError.
                 pass
             else:
-                raise TestFailed("no TypeError from dictionary(%r)" % badarg)
+                raise TestFailed("no TypeError from dict(%r)" % badarg)
         else:
-            raise TestFailed("no TypeError from dictionary(%r)" % badarg)
+            raise TestFailed("no TypeError from dict(%r)" % badarg)
     try:
-        dictionary(senseless={})
+        dict(senseless={})
     except TypeError:
         pass
     else:
-        raise TestFailed("no TypeError from dictionary(senseless={})")
+        raise TestFailed("no TypeError from dict(senseless={})")
 
     try:
-        dictionary({}, {})
+        dict({}, {})
     except TypeError:
         pass
     else:
-        raise TestFailed("no TypeError from dictionary({}, {})")
+        raise TestFailed("no TypeError from dict({}, {})")
 
     class Mapping:
         # Lacks a .keys() method; will be added later.
         dict = {1:2, 3:4, 'a':1j}
 
     try:
-        dictionary(Mapping())
+        dict(Mapping())
     except TypeError:
         pass
     else:
-        raise TestFailed("no TypeError from dictionary(incomplete mapping)")
+        raise TestFailed("no TypeError from dict(incomplete mapping)")
 
     Mapping.keys = lambda self: self.dict.keys()
     Mapping.__getitem__ = lambda self, i: self.dict[i]
-    d = dictionary(items=Mapping())
+    d = dict(items=Mapping())
     vereq(d, Mapping.dict)
 
     # Init from sequence of iterable objects, each producing a 2-sequence.
@@ -237,23 +237,23 @@ def dict_constructor():
         def __iter__(self):
             return iter([self.first, self.last])
 
-    d = dictionary([AddressBookEntry('Tim', 'Warsaw'),
+    d = dict([AddressBookEntry('Tim', 'Warsaw'),
                     AddressBookEntry('Barry', 'Peters'),
                     AddressBookEntry('Tim', 'Peters'),
                     AddressBookEntry('Barry', 'Warsaw')])
     vereq(d, {'Barry': 'Warsaw', 'Tim': 'Peters'})
 
-    d = dictionary(zip(range(4), range(1, 5)))
-    vereq(d, dictionary([(i, i+1) for i in range(4)]))
+    d = dict(zip(range(4), range(1, 5)))
+    vereq(d, dict([(i, i+1) for i in range(4)]))
 
     # Bad sequence lengths.
     for bad in [('tooshort',)], [('too', 'long', 'by 1')]:
         try:
-            dictionary(bad)
+            dict(bad)
         except ValueError:
             pass
         else:
-            raise TestFailed("no ValueError from dictionary(%r)" % bad)
+            raise TestFailed("no ValueError from dict(%r)" % bad)
 
 def test_dir():
     if verbose:
@@ -543,13 +543,13 @@ def spamdicts():
 
 def pydicts():
     if verbose: print "Testing Python subclass of dict..."
-    verify(issubclass(dictionary, dictionary))
-    verify(isinstance({}, dictionary))
-    d = dictionary()
+    verify(issubclass(dict, dict))
+    verify(isinstance({}, dict))
+    d = dict()
     vereq(d, {})
-    verify(d.__class__ is dictionary)
-    verify(isinstance(d, dictionary))
-    class C(dictionary):
+    verify(d.__class__ is dict)
+    verify(isinstance(d, dict))
+    class C(dict):
         state = -1
         def __init__(self, *a, **kw):
             if a:
@@ -561,12 +561,12 @@ def pydicts():
             return self.get(key, 0)
         def __setitem__(self, key, value):
             assert isinstance(key, type(0))
-            dictionary.__setitem__(self, key, value)
+            dict.__setitem__(self, key, value)
         def setstate(self, state):
             self.state = state
         def getstate(self):
             return self.state
-    verify(issubclass(C, dictionary))
+    verify(issubclass(C, dict))
     a1 = C(12)
     vereq(a1.state, 12)
     a2 = C(foo=1, bar=2)
@@ -801,7 +801,7 @@ def multi():
     vereq(a.getstate(), 0)
     a.setstate(10)
     vereq(a.getstate(), 10)
-    class D(dictionary, C):
+    class D(dict, C):
         def __init__(self):
             type({}).__init__(self)
             C.__init__(self)
@@ -813,7 +813,7 @@ def multi():
     vereq(d.getstate(), 0)
     d.setstate(10)
     vereq(d.getstate(), 10)
-    vereq(D.__mro__, (D, dictionary, C, object))
+    vereq(D.__mro__, (D, dict, C, object))
 
     # SF bug #442833
     class Node(object):
@@ -999,7 +999,7 @@ def errors():
     if verbose: print "Testing errors..."
 
     try:
-        class C(list, dictionary):
+        class C(list, dict):
             pass
     except TypeError:
         pass
@@ -1865,10 +1865,10 @@ def keywords():
     vereq(unicode(string='abc', errors='strict'), u'abc')
     vereq(tuple(sequence=range(3)), (0, 1, 2))
     vereq(list(sequence=(0, 1, 2)), range(3))
-    vereq(dictionary(items={1: 2}), {1: 2})
+    vereq(dict(items={1: 2}), {1: 2})
 
     for constructor in (int, float, long, complex, str, unicode,
-                        tuple, list, dictionary, file):
+                        tuple, list, dict, file):
         try:
             constructor(bogus_keyword_arg=1)
         except TypeError:

@@ -11,21 +11,21 @@
 from test_support import sortdict
 import pprint
 
-class defaultdict(dictionary):
+class defaultdict(dict):
     def __init__(self, default=None):
-        dictionary.__init__(self)
+        dict.__init__(self)
         self.default = default
 
     def __getitem__(self, key):
         try:
-            return dictionary.__getitem__(self, key)
+            return dict.__getitem__(self, key)
         except KeyError:
             return self.default
 
     def get(self, key, *args):
         if not args:
             args = (self.default,)
-        return dictionary.get(self, key, *args)
+        return dict.get(self, key, *args)
 
     def merge(self, other):
         for key in other:
@@ -56,7 +56,7 @@ Here's the new type at work:
     3.25
     >>> print a[0]                      # a non-existant item
     0.0
-    >>> a.merge({1:100, 2:200})         # use a dictionary method
+    >>> a.merge({1:100, 2:200})         # use a dict method
     >>> print sortdict(a)               # show the result
     {1: 3.25, 2: 200}
     >>>
@@ -111,23 +111,23 @@ just like classic classes:
     >>>
 """
 
-class defaultdict2(dictionary):
+class defaultdict2(dict):
     __slots__ = ['default']
 
     def __init__(self, default=None):
-        dictionary.__init__(self)
+        dict.__init__(self)
         self.default = default
 
     def __getitem__(self, key):
         try:
-            return dictionary.__getitem__(self, key)
+            return dict.__getitem__(self, key)
         except KeyError:
             return self.default
 
     def get(self, key, *args):
         if not args:
             args = (self.default,)
-        return dictionary.get(self, key, *args)
+        return dict.get(self, key, *args)
 
     def merge(self, other):
         for key in other:
@@ -168,7 +168,7 @@ For instance of built-in types, x.__class__ is now the same as type(x):
     <type 'list'>
     >>> isinstance([], list)
     1
-    >>> isinstance([], dictionary)
+    >>> isinstance([], dict)
     0
     >>> isinstance([], object)
     1

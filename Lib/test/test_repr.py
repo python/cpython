@@ -145,7 +145,7 @@ class ReprTests(unittest.TestCase):
     def test_descriptors(self):
         eq = self.assertEquals
         # method descriptors
-        eq(repr(dictionary.items), "<method 'items' of 'dictionary' objects>")
+        eq(repr(dict.items), "<method 'items' of 'dict' objects>")
         # XXX member descriptors
         # XXX attribute descriptors
         # XXX slot descriptors
