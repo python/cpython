@@ -7,10 +7,10 @@ Email:   bwarsaw@python.org
 Version: %(__version__)s
 
 When no arguments are given, this pops up a graphical window which lets you
-choose the audio input and output devices.
+choose the audio input and output devices, and set the output volume.
 
 This program can be driven via the command line, and when done so, no window
-pops up.  Options have the general form:
+pops up.  Most options have the general form:
 
     --device[={0,1}]
     -d[={0,1}]
@@ -31,6 +31,11 @@ The list of devices and their short options are:
 
 Other options are:
 
+    --gain volume
+    -g volume
+        Sets the output gain to the specified volume, which must be an integer
+        in the range [%(MIN_GAIN)s..%(MAX_GAIN)s]
+
     --version
     -v
         Print the version number and exit.
@@ -49,7 +54,7 @@ from SUNAUDIODEV import *
 # Milliseconds between interrupt checks
 KEEPALIVE_TIMER = 500
 
-__version__ = '0.1'
+__version__ = '1.0'
 
 
 
@@ -213,6 +218,21 @@ class MainWindow:
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
         #
+        # Volume
+        frame = Frame(root, bd=1, relief=RAISED)
+        frame.grid(row=3, column=0, sticky='NSEW')
+        label = Label(frame, text='Output Volume:')
+        label.grid(row=0, column=0, sticky=W)
+        self.__scalevar = IntVar()
+        self.__scale = Scale(frame,
+                             orient=HORIZONTAL,
+                             from_=MIN_GAIN,
+                             to=MAX_GAIN,
+                             length=200,
+                             variable=self.__scalevar,
+                             command=self.__volume)
+        self.__scale.grid(row=1, column=0, sticky=EW)
+        #
         # do we need to poll for changes?
         self.__needtopoll = 1
         try:
@@ -268,6 +288,8 @@ Email:   bwarsaw@python.org''' % __version__)
         self.__spkvar.set(info.o_port & SPEAKER)
         self.__headvar.set(info.o_port & HEADPHONE)
         self.__linevar.set(info.o_port & LINE_OUT)
+        # volume
+        self.__scalevar.set(info.o_gain)
 
     def __pushtodev(self, event=None):
         info = self.__devctl.getinfo()
@@ -275,6 +297,7 @@ Email:   bwarsaw@python.org''' % __version__)
                       self.__headvar.get() + \
                       self.__linevar.get()
         info.i_port = self.__inputvar.get()
+        info.o_gain = self.__scalevar.get()
         self.__devctl.setinfo(info)
 
     def __getset(self, var, onvalue):
@@ -305,6 +328,9 @@ Email:   bwarsaw@python.org''' % __version__)
 
     def __lineout(self, event=None):
         self.__getset(self.__linevar, LINE_OUT)
+
+    def __volume(self, event=None):
+        self.__pushtodev()
 
     def start(self):
         self.__keepalive()
@@ -361,7 +387,7 @@ class Helpwin:
 
 
 
-def usage(msg='', code=1):
+def usage(code, msg=''):
     print __doc__ % globals()
     if msg:
         print msg
@@ -398,10 +424,23 @@ def main():
 
     info = device.getinfo()
     # first get the existing values
-    for arg in sys.argv[1:]:
+    i = 0
+    while i < len(sys.argv)-1:
+        i = i + 1
+        arg = sys.argv[i]
         if arg in ('-h', '--help'):
-            usage(code=0)
+            usage(0)
             # does not return
+        elif arg in ('-g', '--gain'):
+            gainspec = '<missing>'
+            try:
+                gainspec = sys.argv[i+1]
+                gain = int(gainspec)
+            except (ValueError, IndexError):
+                usage(1, 'Bad gain specification: ' + gainspec)
+            info.o_gain = gain
+            i = i + 1
+            continue
         elif arg in ('-v', '--version'):
             print '''\
 audiopy -- a program to control the Solaris audio device.
@@ -424,7 +463,7 @@ Version: %s''' % __version__
                 elif arg[:len(short)+1] == short+'=':
                     val = int(arg[len(short)+1:])
             except ValueError:
-                usage(msg='Invalid option: ' + arg)
+                usage(1, msg='Invalid option: ' + arg)
                 # does not return
             if val == 0:
                 if io == 0:
@@ -440,7 +479,7 @@ Version: %s''' % __version__
                 break
             # else keep trying next option
         else:
-            usage(msg='Invalid option: ' + arg)
+            usage(1, msg='Invalid option: ' + arg)
     # now set the values
     device.setinfo(info)
     device.close()

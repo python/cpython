@@ -6,10 +6,10 @@ Version: 0.1
 
 Introduction
 
-    Audiopy is a program to control the Solaris audio device, allowing 
-    you to set both the input and output devices.  It can be run
-    either as a standalone command-line script, or as a Tkinter based
-    GUI application.
+    Audiopy is a program to control the Solaris audio device, allowing
+    you to choose both the input and output devices, and to set the
+    output volume.  It can be run either as a standalone command-line
+    script, or as a Tkinter based GUI application.
 
     Note that your version of Python must have been built with the
     sunaudiodev module enabled.  It is not enabled by default however!
@@ -25,6 +25,8 @@ Introduction
     You can also choose to enable any of the three possible output
     devices: the headphone jack, the speakers, or the line-out jack.
     You can enable any combination of these three devices.
+
+    You can also set the output gain (volume) level.
 
 Running as a GUI
 
@@ -43,11 +45,11 @@ Running as a GUI
     Alt-q is also an accelerator for selecting Quit from the File
     menu.
 
-    No unsupported devices will appear in the GUI.  When run as a GUI, 
-    audiopy monitors the audio device and automatically updates its
-    display if the state of the device is changed by some other
-    means.  In pre-Python 1.5.2 this is done by occasionally polling
-    the device, but in Python 1.5.2 no polling is necessary (you don't 
+    Unsupported devices will appear dimmed out in the GUI.  When run
+    as a GUI, audiopy monitors the audio device and automatically
+    updates its display if the state of the device is changed by some
+    other means.  In Python 1.5.2 this is done by occasionally polling
+    the device, but in Python 1.5.2 no polling is necessary (you don't
     really need to know this, but I thought I'd plug 1.5.2 :-).
     
 Running as a Command Line Program
@@ -85,7 +87,13 @@ Running as a Command Line Program
 
     % ./audiopy -s=0 -p=1 -c
 
-    Audiopy understands two other command line options:
+    Audiopy understands these other command line options:
+
+    --gain volume
+    -g volume
+        Sets the output volume to the specified gain level.  This must 
+        be an integer between MIN_GAIN and MAX_GAIN (usually [0..255], 
+        but use the -h option to find the exact values).
 
     --version
     -v
