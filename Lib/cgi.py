@@ -850,7 +850,8 @@ def test(environ=os.environ):
     except:
         print_exception()
 
-    # Second try with a small maxlen...
+    print "<H1>Second try with a small maxlen...</H1>"
+
     global maxlen
     maxlen = 50
     try:
@@ -859,7 +860,6 @@ def test(environ=os.environ):
         print_environ(environ)
         print_directory()
         print_arguments()
-        print_environ_usage()
     except:
         print_exception()
 
@@ -895,6 +895,8 @@ def print_form(form):
     keys.sort()
     print
     print "<H3>Form Contents:</H3>"
+    if not keys:
+        print "<P>No form fields."
     print "<DL>"
     for key in keys:
         print "<DT>" + escape(key) + ":",
