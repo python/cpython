@@ -52,14 +52,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define Anysequencetype PyAnySequence_Type
 #define Anymappingtype PyAnyMapping_Type
 
-#ifdef Py_TRACE_REFS
-#define TRACE_REFS
-#endif
-
-#ifdef Py_REF_DEBUG
-#define REF_DEBUG
-#endif
-
 #define FalseObject _Py_ZeroStruct
 #define NoObject _Py_NoneStruct
 #define TrueObject _Py_TrueStruct
@@ -349,6 +341,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define coerce PyNumber_Coerce
 #define getbuiltin PyBuiltin_GetObject
 #define initbuiltin PyBuiltin_Init
+#define getbuiltindict PyBuiltin_GetDict
+#define getbuiltinmod PyBuiltin_GetModule
 #define initmarshal PyMarshal_Init
 #define initmodule Py_InitModule
 #define initmodule4 Py_InitModule4
