@@ -159,10 +159,11 @@ These are useful if you want more control, or if you want to employ
 some of the algorithms implemented in this module in other
 circumstances.
 
-parse(fp): parse a form into a Python dictionary.
+parse(fp, [environ, [keep_blank_values, [strict_parsing]]]): parse a
+form into a Python dictionary.
 
-parse_qs(qs): parse a query string (data of type 
-application/x-www-form-urlencoded).
+parse_qs(qs, [keep_blank_values, [strict_parsing]]): parse a query
+string (data of type application/x-www-form-urlencoded).
 
 parse_multipart(fp, pdict): parse input of type multipart/form-data (for 
 file uploads).
@@ -407,7 +408,7 @@ backwards compatible and debugging classes and functions?
 
 # " <== Emacs font-lock de-bogo-kludgificocity
 
-__version__ = "2.0"
+__version__ = "2.1"
 
 
 # Imports
@@ -473,7 +474,7 @@ log = initlog		# The current logging function
 # Parsing functions
 # =================
 
-def parse(fp=None, environ=os.environ, keep_blank_values=None):
+def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
     """Parse a query in the environment or from a file (default stdin)
 
         Arguments, all optional:
@@ -488,6 +489,10 @@ def parse(fp=None, environ=os.environ, keep_blank_values=None):
             blank strings.  The default false value indicates that
 	    blank values are to be ignored and treated as if they were
 	    not included.
+
+	strict_parsing: flag indicating what to do with parsing errors.
+	    If false (the default), errors are silently ignored.
+	    If true, errors raise a ValueError exception.
     """
     if not fp:
 	fp = sys.stdin
@@ -517,15 +522,15 @@ def parse(fp=None, environ=os.environ, keep_blank_values=None):
 	else:
 	    qs = ""
 	environ['QUERY_STRING'] = qs	# XXX Shouldn't, really
-    return parse_qs(qs, keep_blank_values)
+    return parse_qs(qs, keep_blank_values, strict_parsing)
 
 
-def parse_qs(qs, keep_blank_values=None):
-    """Parse a query given as a string argumen
+def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
+    """Parse a query given as a string argument.
 
         Arguments:
 
-	qs              : URL-encoded query string to be parsed
+	qs: URL-encoded query string to be parsed
 
         keep_blank_values: flag indicating whether blank values in
             URL encoded queries should be treated as blank strings.  
@@ -533,6 +538,10 @@ def parse_qs(qs, keep_blank_values=None):
             blank strings.  The default false value indicates that
 	    blank values are to be ignored and treated as if they were
 	    not included.
+
+	strict_parsing: flag indicating what to do with parsing errors.
+	    If false (the default), errors are silently ignored.
+	    If true, errors raise a ValueError exception.
     """
     import urllib, regsub
     name_value_pairs = string.splitfields(qs, '&')
@@ -540,6 +549,8 @@ def parse_qs(qs, keep_blank_values=None):
     for name_value in name_value_pairs:
 	nv = string.splitfields(name_value, '=')
 	if len(nv) != 2:
+	    if strict_parsing:
+		raise ValueError, "bad query field: %s" % `name_value`
 	    continue
 	name = nv[0]
 	value = urllib.unquote(regsub.gsub('+', ' ', nv[1]))
@@ -735,7 +746,7 @@ class FieldStorage:
     """
 
     def __init__(self, fp=None, headers=None, outerboundary="",
-		 environ=os.environ, keep_blank_values=None):
+		 environ=os.environ, keep_blank_values=0, strict_parsing=0):
 	"""Constructor.  Read multipart/* until last part.
 
 	Arguments, all optional:
@@ -757,9 +768,14 @@ class FieldStorage:
 	    blank values are to be ignored and treated as if they were
 	    not included.
 
+	strict_parsing: flag indicating what to do with parsing errors.
+	    If false (the default), errors are silently ignored.
+	    If true, errors raise a ValueError exception.
+
 	"""
 	method = None
 	self.keep_blank_values = keep_blank_values
+	self.strict_parsing = strict_parsing
 	if environ.has_key('REQUEST_METHOD'):
 	    method = string.upper(environ['REQUEST_METHOD'])
 	if not fp and method == 'GET':
@@ -873,7 +889,7 @@ class FieldStorage:
     def read_urlencoded(self):
 	"""Internal: read data in query string format."""
 	qs = self.fp.read(self.length)
-        dict = parse_qs(qs, self.keep_blank_values)
+	dict = parse_qs(qs, self.keep_blank_values, self.strict_parsing)
 	self.list = []
 	for key, valuelist in dict.items():
 	    for value in valuelist:
