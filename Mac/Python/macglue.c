@@ -153,6 +153,16 @@ PyMac_FixGUSIcd()
 	if (PBHSetVol(&pb, 0) != noErr)
 		return;
 }
+
+#ifdef __CFM68K__
+/*
+** There is no SpinCursor for cfm68k.
+*/
+SpinCursor(dummy)
+int dummy;
+{
+}
+#endif
 #endif
 
 
