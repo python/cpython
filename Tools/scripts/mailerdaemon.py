@@ -101,9 +101,9 @@ def emparse_cts(fp):
 	line = line[:-1]
 	if not line:
 	    continue
-	errors.append(line)
 	if line[:2] == '|-':
 	    break
+	errors.append(line)
     return errors
 
 def emparse_aol(fp):
