@@ -1408,12 +1408,12 @@ csv_get_dialect(PyObject *module, PyObject *name_obj)
 }
 
 static PyObject *
-csv_set_field_limit(PyObject *module, PyObject *args)
+csv_field_size_limit(PyObject *module, PyObject *args)
 {
 	PyObject *new_limit = NULL;
 	long old_limit = field_limit;
 
-	if (!PyArg_UnpackTuple(args, "set_field_limit", 0, 1, &new_limit))
+	if (!PyArg_UnpackTuple(args, "field_size_limit", 0, 1, &new_limit))
 		return NULL;
 	if (new_limit != NULL) {
 		if (!PyInt_Check(new_limit)) {
@@ -1533,9 +1533,9 @@ PyDoc_STRVAR(csv_unregister_dialect_doc,
 "Delete the name/dialect mapping associated with a string name.\n"
 "    csv.unregister_dialect(name)");
 
-PyDoc_STRVAR(csv_set_field_limit_doc,
+PyDoc_STRVAR(csv_field_size_limit_doc,
 "Sets an upper limit on parsed fields.\n"
-"    csv.set_field_limit([limit])\n"
+"    csv.field_size_limit([limit])\n"
 "\n"
 "Returns old limit. If limit is not given, no new limit is set and\n"
 "the old limit is returned");
@@ -1553,8 +1553,8 @@ static struct PyMethodDef csv_methods[] = {
 		METH_O, csv_unregister_dialect_doc},
 	{ "get_dialect", (PyCFunction)csv_get_dialect, 
 		METH_O, csv_get_dialect_doc},
-	{ "set_field_limit", (PyCFunction)csv_set_field_limit, 
-		METH_VARARGS, csv_set_field_limit_doc},
+	{ "field_size_limit", (PyCFunction)csv_field_size_limit, 
+		METH_VARARGS, csv_field_size_limit_doc},
 	{ NULL, NULL }
 };
 
