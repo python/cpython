@@ -182,6 +182,13 @@ Extension modules
 Library
 -------
 
+- The encodings package will now applies codec name aliases
+  first before starting to try the import of the codec module.
+  This simplifies overriding built-in codecs with external
+  packages, e.g. the included CJK codecs with the JapaneseCodecs
+  package, by adjusting the aliases dictionary in encodings.aliases
+  accordingly.
+
 - base64 now supports RFC 3548 Base16, Base32, and Base64 encoding and
   decoding standards.
 
