@@ -1,0 +1,146 @@
+#! /depot/gnu/plat/bin/perl
+#
+# Note: you may have to edit the top line in this file.
+#
+# Usage: world addr
+#
+# $Id$
+
+# This little perl program will take an internet address of the form
+# foobar@some.place.domain and will print out where in the world that
+# message originated from.  Its pretty dumb in that it just matches
+# the `domain' part against a hard-coded list.  Also, I haven't
+# checked the list for validity -- I picked it up from someplace. With
+# the speed in which political boundaries are changing these days, no
+# doubt there are some incorrect mappings.
+
+$prog = $0;
+$ARGV[0] || die "No addresses provided.\nUsage: $prog addr1 [addr2 ...]\n";
+
+
+
+# The mappings
+%nameorg = (
+    "arpa", "Arpanet",
+    'com', 'commercial',
+    'edu', 'educational',
+    'gov', 'government',
+    'mil', 'military',
+    'net', 'networking',
+    'org', 'non-commercial',
+    'int', 'international'
+);
+
+
+%country = (
+    "ag", "Antigua and Barbuda",
+    "al", "Albania",
+    "aq", "Antarctica",
+    "ar", "Argentina",
+    "at", "Austria",
+    "au", "Australia",
+    "bb", "Barbados",
+    "be", "Belgium",
+    "bg", "Bulgaria",
+    "bo", "Bolivia",
+    "br", "Brazil",
+    "bs", "Bahamas",
+    "bz", "Belize",
+    "ca", "Canada",
+    "ch", "Switzerland",
+    "cl", "Chile",
+    "cm", "Cameroon",
+    "cn", "China",
+    "co", "Colombia",
+    "cr", "Costa Rica",
+    "cy", "Cyprus",
+    "cz", "Czech Republic",
+    "de", "Germany",
+    "dk", "Denmark",
+    "dm", "Dominica",
+    "do", "Dominican Republic",
+    "ec", "Ecuador",
+    "ee", "Estonia",
+    "eg", "Egypt",
+    "es", "Spain",
+    "fi", "Finland",
+    "fj", "Fiji",
+    "fr", "France",
+    "gb", "Great Britain",
+    "gh", "Ghana",
+    "gr", "Greece",
+    "hk", "Hong Kong",
+    "hr", "Croatia",
+    "hu", "Hungary",
+    "id", "Indonesia",
+    "ie", "Ireland",
+    "il", "Israel",
+    "in", "India",
+    "is", "Iceland",
+    "it", "Italy",
+    "jm", "Jamaica",
+    "jp", "Japan",
+    "km", "Comoros",
+    "kn", "Saint Kitts and Nevis",
+    "kr", "Republic of Korea",
+    "kw", "Kuwait",
+    "lc", "Saint Lucia",
+    "li", "Liechtenstein",
+    "lk", "Sri Lanka",
+    "lu", "Luxembourg",
+    "lv", "Latvia",
+    "my", "Malaysia",
+    "mx", "Mexico",
+    "na", "Namibia",
+    "ni", "Nicaragua",
+    "nl", "Netherlands",
+    "no", "Norway",
+    "nz", "New Zealand",
+    "pe", "Peru",
+    "pg", "Papua New Guinea",
+    "ph", "Philippines",
+    "pl", "Poland",
+    "pr", "Puerto Rico",
+    "pt", "Portugal",
+    "py", "Paraguay",
+    "ro", "Romania",
+    "se", "Sweden",
+    "sg", "Singapore",
+    "si", "Slovenia",
+    "sk", "Slovakia",
+    "sr", "Suriname",
+    "su", "USSR",
+    "tw", "Taiwan",
+    "th", "Thailand",
+    "tn", "Tunisia",
+    "tr", "Turkey",
+    "tt", "Trinidad and Tobago",
+    "uk", "United Kingdom",
+    "us", "United States",
+    "uy", "Uruguay",
+    "vc", "Saint Vincent and the Grenadines",
+    "ve", "Venezuela",
+    "vi", "Virgin Islands",
+    "yu", "Yugoslavia",
+    "za", "South Africa",
+    "zw", "Zimbabwe"
+    );
+
+
+while ($addr = shift @ARGV) {
+    ($_) = $addr =~ /\.(.*)$/;
+    $_ = $addr if !$_;
+
+    if ($nameorg{$_}) {
+	# its one of the `special' USA organizational domains
+	print "$addr is a USA $nameorg{$_} organization\n";
+    }
+    elsif ($country{$_}) {
+	# its a country code
+	print "$addr originated from $country{$_}\n";
+    }
+    else {
+	# who knows?
+	print "I have no idea where $addr came from!\n";
+    }
+}
