@@ -46,7 +46,7 @@ APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj \
 	Resources/English.lproj/Documentation \
 	Resources/English.lproj/Documentation/doc \
-	Resources/English.lproj/Documentation/macpython_ide_tutorial
+	Resources/English.lproj/Documentation/ide
 DOCDIR=$(srcdir)/Mac/OSXResources/app/Resources/English.lproj/Documentation
 DOCINDEX=$(DOCDIR)/"Documentation idx"
 CACHERSRC=$(srcdir)/Mac/scripts/cachersrc.py
