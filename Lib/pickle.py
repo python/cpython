@@ -577,7 +577,7 @@ class Unpickler:
         self.memo = {}
 
     def load(self):
-        self.mark = ['spam'] # Any new unique object
+        self.mark = object() # any new unique object
         self.stack = []
         self.append = self.stack.append
         read = self.read
