@@ -63,7 +63,7 @@ class TreeNode:
         self.parent = parent
         self.item = item
         self.state = 'collapsed'
-        self.selected = 0
+        self.selected = False
         self.children = []
         self.x = self.y = None
         self.iconimages = {} # cache of PhotoImage instances for icons
@@ -90,7 +90,7 @@ class TreeNode:
         if self.selected:
             return
         self.deselectall()
-        self.selected = 1
+        self.selected = True
         self.canvas.delete(self.image_id)
         self.drawicon()
         self.drawtext()
@@ -98,7 +98,7 @@ class TreeNode:
     def deselect(self, event=None):
         if not self.selected:
             return
-        self.selected = 0
+        self.selected = False
         self.canvas.delete(self.image_id)
         self.drawicon()
         self.drawtext()

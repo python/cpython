@@ -57,7 +57,7 @@ class UndoDelegator(Delegator):
             self.saved = self.pointer
         else:
             self.saved = -1
-        self.can_merge = 0
+        self.can_merge = False
         self.check_saved()
 
     def get_saved(self):
@@ -111,7 +111,7 @@ class UndoDelegator(Delegator):
                 # been done, so don't execute it again
                 self.addcmd(cmd, 0)
 
-    def addcmd(self, cmd, execute=1):
+    def addcmd(self, cmd, execute=True):
         if execute:
             cmd.do(self.delegate)
         if self.undoblock != 0:
@@ -131,7 +131,7 @@ class UndoDelegator(Delegator):
             self.pointer = self.pointer - 1
             if self.saved >= 0:
                 self.saved = self.saved - 1
-        self.can_merge = 1
+        self.can_merge = True
         self.check_saved()
 
     def undo_event(self, event):
@@ -141,7 +141,7 @@ class UndoDelegator(Delegator):
         cmd = self.undolist[self.pointer - 1]
         cmd.undo(self.delegate)
         self.pointer = self.pointer - 1
-        self.can_merge = 0
+        self.can_merge = False
         self.check_saved()
         return "break"
 
@@ -152,7 +152,7 @@ class UndoDelegator(Delegator):
         cmd = self.undolist[self.pointer]
         cmd.redo(self.delegate)
         self.pointer = self.pointer + 1
-        self.can_merge = 0
+        self.can_merge = False
         self.check_saved()
         return "break"
 
@@ -237,19 +237,19 @@ class InsertCommand(Command):
 
     def merge(self, cmd):
         if self.__class__ is not cmd.__class__:
-            return 0
+            return False
         if self.index2 != cmd.index1:
-            return 0
+            return False
         if self.tags != cmd.tags:
-            return 0
+            return False
         if len(cmd.chars) != 1:
-            return 0
+            return False
         if self.chars and \
            self.classify(self.chars[-1]) != self.classify(cmd.chars):
-            return 0
+            return False
         self.index2 = cmd.index2
         self.chars = self.chars + cmd.chars
-        return 1
+        return True
 
     alphanumeric = string.ascii_letters + string.digits + "_"
 
