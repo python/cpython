@@ -58,7 +58,7 @@ def mkdirs(dst):
 	mkdirs(head)
 	os.mkdir(dst, 0777)
 	
-def touched_old(dst):
+def touched(dst):
 	"""Tell the finder a file has changed"""
 	file_fss = macfs.FSSpec(dst)
 	vRefNum, dirID, name = file_fss.as_tuple()
@@ -69,7 +69,7 @@ def touched_old(dst):
 		now = now + 1
 	dir_fss.SetDates(crdate, now, bkdate)
 	
-def touched(dst):
+def touched_ae(dst):
 	"""Tell the finder a file has changed"""
 	import Finder
 	f = Finder.Finder()
