@@ -144,3 +144,21 @@ for i in range(512):
     d[key] = i
 a, b = f2(1, *(2, 3), **d)
 print len(a), len(b), b == d
+
+class Foo:
+    def method(self, arg1, arg2):
+        return arg1 + arg2
+
+x = Foo()
+print Foo.method(*(x, 1, 2))
+print Foo.method(x, *(1, 2))
+try:
+    print Foo.method(*(1, 2, 3))
+except TypeError, err:
+    print err
+try:
+    print Foo.method(1, *(2, 3))
+except TypeError, err:
+    print err
+
+
