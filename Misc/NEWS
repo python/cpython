@@ -23,10 +23,12 @@ Core
     max()
     min()
     reduce()
+    tuple() (PySequence_Tuple() and PySequence_Fast() in C API)
     .join() method of strings
-    tuple()
+    'x in y' and 'x not in y' (PySequence_Contains() in C API)
+    operator.countOf() (PySequence_Count() in C API)
     XXX TODO zip()
-    'x in y' and 'x not in y'
+
 
 What's New in Python 2.1 (final)?
 =================================

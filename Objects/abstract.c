@@ -1333,34 +1333,52 @@ PySequence_Fast(PyObject *v, const char *m)
 	return v;
 }
 
+/* Return # of times o appears in s. */
 int
 PySequence_Count(PyObject *s, PyObject *o)
 {
-	int l, i, n, cmp, err;
-	PyObject *item;
+	int n;  /* running count of o hits */
+	PyObject *it;  /* iter(s) */
 
 	if (s == NULL || o == NULL) {
 		null_error();
 		return -1;
 	}
-	
-	l = PySequence_Size(s);
-	if (l < 0)
+
+	it = PyObject_GetIter(s);
+	if (it == NULL) {
+		type_error(".count() requires iterable argument");
 		return -1;
+	}
 
 	n = 0;
-	for (i = 0; i < l; i++) {
-		item = PySequence_GetItem(s, i);
-		if (item == NULL)
-			return -1;
-		err = PyObject_Cmp(item, o, &cmp);
+	for (;;) {
+		int cmp;
+		PyObject *item = PyIter_Next(it);
+		if (item == NULL) {
+			if (PyErr_Occurred())
+				goto Fail;
+			break;
+		}
+		cmp = PyObject_RichCompareBool(o, item, Py_EQ);
 		Py_DECREF(item);
-		if (err < 0)
-			return err;
-		if (cmp == 0)
+		if (cmp < 0)
+			goto Fail;
+		if (cmp > 0) {
+			if (n == INT_MAX) {
+				PyErr_SetString(PyExc_OverflowError,
+				                "count exceeds C int size");
+				goto Fail;
+			}
 			n++;
+		}
 	}
+	Py_DECREF(it);
 	return n;
+
+Fail:
+	Py_DECREF(it);
+	return -1;
 }
 
 /* Return -1 if error; 1 if v in w; 0 if v not in w. */
