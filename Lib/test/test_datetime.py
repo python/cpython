@@ -868,6 +868,12 @@ class TestDate(unittest.TestCase):
         self.failUnless(self.theclass.min)
         self.failUnless(self.theclass.max)
 
+    def test_srftime_out_of_range(self):
+        # For nasty technical reasons, we can't handle years before 1900.
+        cls = self.theclass
+        self.assertEqual(cls(1900, 1, 1).strftime("%Y"), "1900")
+        for y in 1, 49, 51, 99, 100, 1000, 1899:
+            self.assertRaises(ValueError, cls(y, 1, 1).strftime, "%Y")
 #############################################################################
 # datetime tests
 
