@@ -1,0 +1,81 @@
+Announcing Python
+
+Python, a mature, powerful and stable programming language used by
+tens of thousands of programmers worldwide, has arrived in full force
+at the heart of Windows 95 and Windows NT.  Toting the powerful
+toolbox which has made it such a sucess on almost every modern
+operating system, Python for Windows has embraced the metaphors and
+resources of its new home and turned them into powerful tools within
+the Python language.
+
+Python's wrapper-around-a-tool metaphor allows it to provide a
+well-formed handle for manipulating the technologies which MicroSoft
+provides to the programmer.  These tools include:
+
+- Office automation and customisation through ActiveX and COM Scripting
+- Networking services
+- Remote access services
+- Performance monitoring
+- Registry maintenance
+- Database interaction through both ODBC and native database drivers
+
+In addition, Python provides access to the standard
+application-building libraries, the MicroSoft Foundation Classes.
+
+Python is a high-level, interpreted, interactive, object-oriented
+programming language.  It provides the modern features programmer's
+expect or desire, modules, exceptions, dynamic typing, high-level
+dynamic data types, and classes.  It combines remarkable power with
+clear syntax, and easy extension.
+
+It is easy to extend Python by adding new, compiled tools to the
+language.  The compiling of extensions into the language toolbox
+mitigates the overhead of interpretation, while the ability to mix
+compiled and interpretted code promotes rapid application
+development.  In addition, it is possible to embed Python itself as a
+tool in your applications, an easily understood and readily learned
+extension language.
+
+(Should be some sort of bridge between the ideas of extending and the
+ideas of already-available tools, but I have to start work soon...)
+
+Python's extensive, portable toolbox, available on Windows, most
+Unixes, MacOS, DOS, and OS/2 includes a host of powerful tools which
+are now easily available to Windows programmers.  These include:
+
+- TCP/IP socket support
+- CGI Forms Processing for the World-wide web
+- Clients and servers for (among others) the HTTP and FTP protocols
+- Powerful text manipulation facilities
+- Powerful (optional) numeric and image manipulation facilities
+
+One of the most exciting of Python for Windows' new tools is
+COM/ActiveX support.  This tool allows Python to act as both server
+and client to any COM-capable application or language, a group that
+includes MSOffice, CorelDraw, MS Active Server Pages, Netscape
+Communicator, MS Internet Explorer, Delphi, Visual Basic and Visual
+C++.
+
+Client support allows Python to drive these applications (or
+applications written in these languages), automating tasks, importing
+or exporting data, customising environments and processing
+information.  Server support allows Python to be driven in a similar
+manner, to provide access to its tools to any application capable of
+calling a COM object.
+
+> Python's dynamism, flexibility, object oriented features, and
+> ease of use make it a powerful and useful alternative to Java,
+> Visual Basic, and compiled languages such as Delphi or C++.
+> Simply put Python offers the simplest and most powerful way
+> to solve many important programming and system administration
+> tasks in the ActiveX/COM environment."
+
+It is, however, Python which is the star of Python for Windows.
+Over seven years old, Python has long been a favourite of Web
+Masters, Python is a clear, easily learned and understood language
+with features that lend themselves to developing rapid, robust,
+dynamic solutions.  It is being used to solve problems in many large
+organisations, notably including ... (insert notes here).  It is
+enthusiastically supported through public newsgroups and mailing
+lists frequented by a large number of Python enthusiasts.  Python
+arguably provides the best support of any free language available.
