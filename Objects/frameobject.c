@@ -609,7 +609,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	/* Most functions have CO_NEWLOCALS and CO_OPTIMIZED set. */
 	if ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) == 
 		(CO_NEWLOCALS | CO_OPTIMIZED))
-		locals = NULL; /* PyFrame_Fast2Locals() will set. */
+		locals = NULL; /* PyFrame_FastToLocals() will set. */
 	else if (code->co_flags & CO_NEWLOCALS) {
 		locals = PyDict_New();
 		if (locals == NULL) {
