@@ -27,7 +27,8 @@
 # 2001-02-26 fl  Added compare support to wrappers (0.9.9/1.0b1)
 # 2001-03-28 fl  Make sure response tuple is a singleton
 # 2001-03-29 fl  Don't require empty params element (from Nicholas Riley)
-# 2001-06-10 fl  Folded in _xmlrpclib accelerator support
+# 2001-06-10 fl  Folded in _xmlrpclib accelerator support (1.0b2)
+# 2001-08-20 fl  Base xmlrpclib.Error on built-in Exception (from Paul Prescod)
 #
 # Copyright (c) 1999-2001 by Secret Labs AB.
 # Copyright (c) 1999-2001 by Fredrik Lundh.
@@ -113,12 +114,12 @@ else:
     def _stringify(string):
         return string
 
-__version__ = "1.0b2"
+__version__ = "1.0b3"
 
 # --------------------------------------------------------------------
 # Exceptions
 
-class Error:
+class Error(Exception):
     # base class for client errors
     pass
 
@@ -195,9 +196,8 @@ def boolean(value, truefalse=(False, True)):
 class DateTime:
 
     def __init__(self, value=0):
-        t = type(value)
-        if not isinstance(t, StringType):
-            if not isinstance(t, TupleType):
+        if not isinstance(value, StringType):
+            if not isinstance(value, TupleType):
                 if value == 0:
                     value = time.time()
                 value = time.localtime(value)
@@ -387,6 +387,11 @@ class Marshaller:
             write("</fault>\n")
         else:
             # parameter block
+	    # FIXME: the xml-rpc specification allows us to leave out
+	    # the entire <params> block if there are no parameters.
+	    # however, changing this may break older code (including
+	    # old versions of xmlrpclib.py), so this is better left as
+	    # is for now.  See @XMLRPC3 for more information. /F
             write("<params>\n")
             for v in values:
                 write("<param>\n")
@@ -901,7 +906,7 @@ class ServerProxy:
 
     def __repr__(self):
         return (
-            "<Server proxy for %s%s>" %
+            "<ServerProxy for %s%s>" %
             (self.__host, self.__handler)
             )
 
@@ -914,6 +919,7 @@ class ServerProxy:
     # note: to call a remote object with an non-standard name, use
     # result getattr(server, "strange-python-name")(args)
 
+# compatibility
 Server = ServerProxy
 
 # --------------------------------------------------------------------
@@ -923,8 +929,8 @@ if __name__ == "__main__":
 
     # simple test program (from the XML-RPC specification)
 
-    # server = Server("http://localhost:8000") # local server
-    server = Server("http://betty.userland.com")
+    # server = ServerProxy("http://localhost:8000") # local server
+    server = ServerProxy("http://betty.userland.com")
 
     print server
 
