@@ -61,7 +61,7 @@ def isgraph(c): return _ctoi(c) >= 33 and _ctoi(c) <= 126
 def islower(c): return _ctoi(c) >= 97 and _ctoi(c) <= 122
 def isprint(c): return _ctoi(c) >= 32 and _ctoi(c) <= 126
 def ispunct(c): return _ctoi(c) != 32 and not isalnum(c)
-def isspace(c): return _ctoi(c) in (12, 10, 13, 9, 11)
+def isspace(c): return _ctoi(c) in (9, 10, 11, 12, 13, 32)
 def isupper(c): return _ctoi(c) >= 65 and _ctoi(c) <= 90
 def isxdigit(c): return isdigit(c) or \
     (_ctoi(c) >= 65 and _ctoi(c) <= 70) or (_ctoi(c) >= 97 and _ctoi(c) <= 102)
