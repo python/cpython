@@ -850,6 +850,9 @@ _GetMapSize(PyObject *o)
 static PyObject *
 new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 {
+#ifdef HAVE_FSTAT
+	struct stat st;
+#endif
 	mmap_object *m_obj;
 	PyObject *map_size_obj = NULL;
 	int map_size;
@@ -890,7 +893,14 @@ new_mmap_object(PyObject *self, PyObject *args, PyObject *kwdict)
 		return PyErr_Format(PyExc_ValueError, 
 				    "mmap invalid access parameter.");
 	}
-	
+
+#ifdef HAVE_FSTAT
+	if (fstat(fd, &st) == 0 && (size_t)map_size > st.st_size) {
+		PyErr_SetString(PyExc_ValueError, 
+				"mmap length is greater than file size");
+		return NULL;
+	}
+#endif
 	m_obj = PyObject_New (mmap_object, &mmap_object_type);
 	if (m_obj == NULL) {return NULL;}
 	m_obj->size = (size_t) map_size;

@@ -45,6 +45,11 @@ Core and builtins
   will return "200". This is useful for replacing code that assumed
   longs will always be printed with a trailing "L".
 
+Extension modules
+
+- If the size passed to mmap.mmap() is larger than the length of the
+  file on non-Windows platforms, a ValueError is raised. [SF bug 585792]
+
 Library
 
 - Some fixes in the copy module: when an object is copied through its
