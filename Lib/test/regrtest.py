@@ -702,6 +702,7 @@ _expectations = {
         test_gl
         test_imgfile
         test_largefile
+        test_locale
         test_linuxaudiodev
         test_minidom
         test_nis
