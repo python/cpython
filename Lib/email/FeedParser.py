@@ -71,9 +71,11 @@ class BufferedSubFile(object):
         # Pop the line off the stack and see if it matches the current
         # false-EOF predicate.
         line = self._lines.pop()
-        if self._eofstack:
-            matches = self._eofstack[-1]
-            if matches(line):
+        # RFC 2046, section 5.1.2 requires us to recognize outer level
+        # boundaries at any level of inner nesting.  Do this, but be sure it's
+        # in the order of most to least nested.
+        for ateof in self._eofstack[::-1]:
+            if ateof(line):
                 # We're at the false EOF.  But push the last line back first.
                 self._lines.append(line)
                 return ''
