@@ -39,10 +39,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef HUGE_VAL
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER < 850
-#define CHECK(x) /* errno is always set VC++ Ver 1.5*/
-#endif
-
 #if defined(HUGE_VAL) && !defined(CHECK)
 #define CHECK(x) if (errno != 0) ; \
 	else if (-HUGE_VAL <= (x) && (x) <= HUGE_VAL) ; \
