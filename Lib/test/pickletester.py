@@ -324,11 +324,28 @@ class AbstractPickleTests(unittest.TestCase):
 ##         print
 ##         pickletools.dis(s)
 
+    def test_newobj_list_slots(self):
+        x = SlotList([1, 2, 3])
+        x.foo = 42
+        x.bar = "hello"
+        s = self.dumps(x, 2)
+        y = self.loads(s)
+        self.assertEqual(list(x), list(y))
+        self.assertEqual(x.__dict__, y.__dict__)
+        self.assertEqual(x.foo, y.foo)
+        self.assertEqual(x.bar, y.bar)
+##         import pickletools
+##         print
+##         pickletools.dis(s)
+
 class MyTuple(tuple):
     pass
 
 class MyList(list):
     pass
+
+class SlotList(MyList):
+    __slots__ = ["foo"]
 
 class AbstractPickleModuleTests(unittest.TestCase):
 
