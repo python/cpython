@@ -19,12 +19,10 @@ most of it checked.  In fact the default works this way if your local
 web tree is located at /usr/local/etc/httpd/htdpcs (the default for
 the NCSA HTTP daemon and probably others).
 
-Reports printed:
+Report printed:
 
-When done, it reports links to pages outside the web (unless -q is
-specified), and pages with bad links within the subweb.  When
-interrupted, it print those same reports for the pages that it has
-checked already.
+When done, it reports pages with bad links within the subweb.  When
+interrupted, it reports for the pages that it has checked already.
 
 In verbose mode, additional messages are printed during the
 information gathering phase.  By default, it prints a summary of its
@@ -50,31 +48,29 @@ overwritten, but all work done in the current run is lost.
 
 Miscellaneous:
 
+- You may find the (Tk-based) GUI version easier to use.  See wcgui.py.
+
 - Webchecker honors the "robots.txt" convention.  Thanks to Skip
 Montanaro for his robotparser.py module (included in this directory)!
 The agent name is hardwired to "webchecker".  URLs that are disallowed
 by the robots.txt file are reported as external URLs.
 
-- Because the HTML parser is a bit slow, very large HTML files are
+- Because the SGML parser is a bit slow, very large SGML files are
 skipped.  The size limit can be set with the -m option.
 
-- Before fetching a page, it guesses its type based on its extension.
-If it is a known extension and the type is not text/html, the page is
-not fetched.  This is a huge optimization but occasionally it means
-links can be missed, and such links aren't checked for validity
-(XXX!).  The mimetypes.py module (also in this directory) has a
-built-in table mapping most currently known suffixes, and in addition
-attempts to read the mime.types configuration files in the default
-locations of Netscape and the NCSA HTTP daemon.
+- When the server or protocol does not tell us a file's type, we guess
+it based on the URL's suffix.  The mimetypes.py module (also in this
+directory) has a built-in table mapping most currently known suffixes,
+and in addition attempts to read the mime.types configuration files in
+the default locations of Netscape and the NCSA HTTP daemon.
 
-- It only follows links indicated by <A> tags.  It doesn't follow
-links in <FORM> or <IMG> or whatever other tags might contain
-hyperlinks.  It does honor the <BASE> tag.
+- We follows links indicated by <A>, <FRAME> and <IMG> tags.  We also
+honor the <BASE> tag.
 
-- Checking external links is not done by default; use -x to enable
-this feature.  This is done because checking external links usually
-takes a lot of time.  When enabled, this check is executed during the
-report generation phase (even when the report is silent).
+- Checking external links is now done by default; use -x to *disable*
+this feature.  External links are now checked during normal
+processing.  (XXX The status of a checked link could be categorized
+better.  Later...)
 
 
 Usage: webchecker.py [option] ... [rooturl] ...
@@ -88,7 +84,7 @@ Options:
 -q        -- quiet operation (also suppresses external links report)
 -r number -- number of links processed per round (default %(ROUNDSIZE)d)
 -v        -- verbose operation; repeating -v will increase verbosity
--x        -- check external links (during report phase)
+-x        -- don't check external links (these are often slow to check)
 
 Arguments:
 
@@ -100,7 +96,7 @@ rooturl   -- URL to start checking
 # ' Emacs bait
 
 
-__version__ = "0.3"
+__version__ = "0.4"
 
 
 import sys
@@ -137,7 +133,7 @@ def main():
     global verbose, maxpage, roundsize
     dumpfile = DUMPFILE
     restart = 0
-    checkext = 0
+    checkext = 1
     norun = 0
 
     try:
@@ -163,7 +159,7 @@ def main():
 	if o == '-v':
 	    verbose = verbose + 1
 	if o == '-x':
-	    checkext = 1
+	    checkext = not checkext
 
     if verbose > 0:
 	print AGENTNAME, "version", __version__
@@ -178,7 +174,7 @@ def main():
 	    print "Done."
 	    print "Root:", string.join(c.roots, "\n      ")
     else:
-	c = Checker()
+	c = Checker(checkext)
 	if not args:
 	    args.append(DEFROOT)
 
@@ -193,7 +189,7 @@ def main():
 		print "[run interrupted]"
 
     try:
-	c.report(checkext)
+	c.report()
     except KeyboardInterrupt:
 	if verbose > 0:
 	    print "[report interrupted]"
@@ -229,33 +225,37 @@ def main():
 
 class Checker:
 
-    def __init__(self):
+    def __init__(self, checkext=1):
+	self.reset()
+	self.checkext = checkext
+
+    def reset(self):
 	self.roots = []
 	self.todo = {}
 	self.done = {}
-	self.ext = {}
 	self.bad = {}
 	self.round = 0
 	# The following are not pickled:
 	self.robots = {}
+	self.errors = {}
 	self.urlopener = MyURLopener()
 	self.changed = 0
 
     def __getstate__(self):
-	return (self.roots, self.todo, self.done,
-		self.ext, self.bad, self.round)
+	return (self.roots, self.todo, self.done, self.bad, self.round)
 
     def __setstate__(self, state):
-	(self.roots, self.todo, self.done,
-	 self.ext, self.bad, self.round) = state
+	(self.roots, self.todo, self.done, self.bad, self.round) = state
 	for root in self.roots:
 	    self.addrobot(root)
+	for url in self.bad.keys():
+	    self.markerror(url)
 
     def addroot(self, root):
 	if root not in self.roots:
 	    self.roots.append(root)
 	    self.addrobot(root)
-	    self.newintlink(root, ("<root>", root))
+	    self.newlink(root, ("<root>", root))
 
     def addrobot(self, root):
 	url = urlparse.urljoin(root, "/robots.txt")
@@ -275,64 +275,24 @@ class Checker:
 	    self.round = self.round + 1
 	    if verbose > 0:
 		print
-		print "Round", self.round, self.status()
+		print "Round %d (%s)" % (self.round, self.status())
 		print 
 	    urls = self.todo.keys()[:roundsize]
 	    for url in urls:
 		self.dopage(url)
 
     def status(self):
-	return "(%d total, %d to do, %d done, %d external, %d bad)" % (
+	return "%d total, %d to do, %d done, %d bad" % (
 	    len(self.todo)+len(self.done),
 	    len(self.todo), len(self.done),
-	    len(self.ext), len(self.bad))
+	    len(self.bad))
 
-    def report(self, checkext=0):
+    def report(self):
 	print
 	if not self.todo: print "Final",
 	else: print "Interim",
-	print "Report", self.status()
-	if verbose > 0 or checkext:
-	    self.report_extrefs(checkext)
-	# Report errors last because the output may get truncated
+	print "Report (%s)" % self.status()
 	self.report_errors()
-
-    def report_extrefs(self, checkext=0):
-	if not self.ext:
-	    if verbose > 0:
-		print
-		print "No external URLs"
-	    return
-	if verbose > 0:
-	    print
-	    if checkext:
-		print "External URLs (checking validity):"
-	    else:
-		print "External URLs (not checked):"
-	    print
-	urls = self.ext.keys()
-	urls.sort()
-	for url in urls:
-	    if verbose > 0:
-		show("HREF ", url, " from", self.ext[url])
-	    if checkext:
-		self.checkextpage(url)
-
-    def checkextpage(self, url):
-	if url[:7] == 'mailto:' or url[:5] == 'news:':
-	    if verbose > 2: print "Not checking", url
-	    return
-	if verbose > 2: print "Checking", url, "..."
-	try:
-	    f = self.urlopener.open(url)
-	    safeclose(f)
-	    if verbose > 3: print "OK"
-	    if self.bad.has_key(url):
-		self.setgood(url)
-	except IOError, msg:
-	    msg = sanitize(msg)
-	    if verbose > 0: print "Error", msg
-	    self.setbad(url, msg)
 
     def report_errors(self):
 	if not self.bad:
@@ -341,27 +301,10 @@ class Checker:
 	    return
 	print
 	print "Error Report:"
-	urls = self.bad.keys()
-	urls.sort()
-	bysource = {}
-	for url in urls:
-	    try:
-		origins = self.done[url]
-	    except KeyError:
-		try:
-		    origins = self.todo[url]
-		except KeyError:
-		    origins = self.ext[url]
-	    for source, rawlink in origins:
-		triple = url, rawlink, self.bad[url]
-		try:
-		    bysource[source].append(triple)
-		except KeyError:
-		    bysource[source] = [triple]
-	sources = bysource.keys()
+	sources = self.errors.keys()
 	sources.sort()
 	for source in sources:
-	    triples = bysource[source]
+	    triples = self.errors[source]
 	    print
 	    if len(triples) > 1:
 		print len(triples), "Errors in", source
@@ -376,31 +319,18 @@ class Checker:
     def dopage(self, url):
 	if verbose > 1:
 	    if verbose > 2:
-		show("Page  ", url, "  from", self.todo[url])
+		show("Check ", url, "  from", self.todo[url])
 	    else:
-		print "Page  ", url
+		print "Check ", url
 	page = self.getpage(url)
 	if page:
 	    for info in page.getlinkinfos():
 		link, rawlink = info
 		origin = url, rawlink
-		if not self.inroots(link):
-		    self.newextlink(link, origin)
-		else:
-		    self.newintlink(link, origin)
+		self.newlink(link, origin)
 	self.markdone(url)
 
-    def newextlink(self, url, origin):
-	try:
-	    self.ext[url].append(origin)
-	    if verbose > 3:
-		print "  New ext link", url
-	except KeyError:
-	    self.ext[url] = [origin]
-	    if verbose > 3:
-		print "  Seen ext link", url
-
-    def newintlink(self, url, origin):
+    def newlink(self, url, origin):
 	if self.done.has_key(url):
 	    self.newdonelink(url, origin)
 	else:
@@ -433,6 +363,13 @@ class Checker:
 	return 0
 
     def getpage(self, url):
+	if url[:7] == 'mailto:' or url[:5] == 'news:':
+	    if verbose > 1: print " Not checking mailto/news URL"
+	    return None
+	isint = self.inroots(url)
+	if not isint and not self.checkext:
+	    if verbose > 1: print " Not checking ext link"
+	    return None
 	try:
 	    f = self.urlopener.open(url)
 	except IOError, msg:
@@ -442,6 +379,10 @@ class Checker:
 	    if verbose > 0:
 		show(" HREF ", url, "  from", self.todo[url])
 	    self.setbad(url, msg)
+	    return None
+	if not isint:
+	    if verbose > 1: print " Not gathering links from ext URL"
+	    safeclose(f)
 	    return None
 	nurl = f.geturl()
 	info = f.info()
@@ -477,6 +418,22 @@ class Checker:
 	    return
 	self.bad[url] = msg
 	self.changed = 1
+	self.markerror(url)
+	
+    def markerror(self, url):
+	try:
+	    origins = self.todo[url]
+	except KeyError:
+	    origins = self.done[url]
+	for source, rawlink in origins:
+	    triple = url, rawlink, self.bad[url]
+	    self.seterror(source, triple)
+
+    def seterror(self, url, triple):
+	try:
+	    self.errors[url].append(triple)
+	except KeyError:
+	    self.errors[url] = [triple]
 
 
 class Page:
