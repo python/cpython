@@ -357,28 +357,26 @@ class BCPPCompiler(CCompiler) :
 
 
     def find_library_file (self, dirs, lib, debug=0):
-        # find library file
+        # List of effective library names to try, in order of preference:
         # bcpp_xxx.lib is better than xxx.lib
         # and xxx_d.lib is better than xxx.lib if debug is set
-        for dir in dirs:
-            if debug:
-                libfile = os.path.join (
-                    dir, self.library_filename ("bcpp_" + lib + "_d"))
-                if os.path.exists (libfile):
-                    return libfile
-            libfile = os.path.join (
-                dir, self.library_filename ("bcpp_" + lib))
-            if os.path.exists (libfile):
-                return libfile
-            if debug:
-                libfile = os.path.join (
-                    dir, self.library_filename(lib + '_d'))
-                if os.path.exists (libfile):
-                    return libfile
-            libfile = os.path.join (dir, self.library_filename (lib))
-            if os.path.exists (libfile):
-                return libfile
+        #
+        # The "bcpp_" prefix is to handle a Python installation for people
+        # with multiple compilers (primarily Distutils hackers, I suspect
+        # ;-).  The idea is they'd have one static library for each
+        # compiler they care about, since (almost?) every Windows compiler
+        # seems to have a different format for static libraries.
+        if debug:
+            dlib = (lib + "_d")
+            try_names = ("bcpp_" + dlib, "bcpp_" + lib, dlib, lib)
+        else:
+            try_names = ("bcpp_" + lib, lib)
 
+        for dir in dirs:
+            for name in try_names:
+                libfile = os.path.join(dir, self.library_filename(name))
+                if os.path.exists(libfile):
+                    return libfile
         else:
             # Oops, didn't find it in *any* of 'dirs'
             return None
