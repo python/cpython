@@ -61,11 +61,17 @@ class PullDOM(xml.sax.ContentHandler):
                     tagName = prefix + ":" + localname
                 else:
                     tagName = localname
-            node = self.document.createElementNS(uri, tagName)
+            if self.document:
+                node = self.document.createElementNS(uri, tagName)
+            else:
+                node = self.buildDocument(uri, tagName)
         else:
             # When the tagname is not prefixed, it just appears as
             # localname
-            node = self.document.createElement(localname)
+            if self.document:
+                node = self.document.createElement(localname)
+            else:
+                node = self.buildDocument(None, localname)
 
         for aname,value in attrs.items():
             a_uri, a_localname = aname
@@ -90,7 +96,10 @@ class PullDOM(xml.sax.ContentHandler):
         self.lastEvent = self.lastEvent[1]
 
     def startElement(self, name, attrs):
-        node = self.document.createElement(name)
+        if self.document:
+            node = self.document.createElement(name)
+        else:
+            node = self.buildDocument(None, name)
 
         for aname,value in attrs.items():
             attr = self.document.createAttribute(aname)
@@ -127,22 +136,27 @@ class PullDOM(xml.sax.ContentHandler):
         self.lastEvent = self.lastEvent[1]
 
     def startDocument(self):
-        publicId = systemId = None
-        if self._locator:
-            publicId = self._locator.getPublicId()
-            systemId = self._locator.getSystemId()
         if self.documentFactory is None:
             import xml.dom.minidom
             self.documentFactory = xml.dom.minidom.Document.implementation
-        node = self.documentFactory.createDocument(None, publicId, systemId)
+
+    def buildDocument(self, uri, tagname):
+        # Can't do that in startDocument, since we need the tagname
+        # XXX: obtain DocumentType
+        node = self.documentFactory.createDocument(uri, tagname, None)
         self.document = node
         self.lastEvent[1] = [(START_DOCUMENT, node), None]
         self.lastEvent = self.lastEvent[1]
         self.push(node)
+        return node.firstChild
 
     def endDocument(self):
         self.lastEvent[1] = [(END_DOCUMENT, self.document), None]
         self.pop()
+
+    def clear(self):
+        "clear(): Explicitly release parsing structures"
+        self.document = None
 
 class ErrorHandler:
     def warning(self, exception):
@@ -198,6 +212,13 @@ class DOMEventStream:
         rc = self.pulldom.firstEvent[1][0]
         self.pulldom.firstEvent[1] = self.pulldom.firstEvent[1][1]
         return rc
+
+    def clear(self):
+        "clear(): Explicitly release parsing objects"
+        self.pulldom.clear()
+        del self.pulldom
+        self.parser = None
+        self.stream = None
 
 class SAX2DOM(PullDOM):
 
