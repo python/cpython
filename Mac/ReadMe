@@ -1,4 +1,4 @@
-How to install MacPython-OS9 2.3a1 on your Macintosh
+How to install MacPython-OS9 2.3a2 on your Macintosh
 ----------------------------------------------------
 
 This is a MacPython that can run on Mac OS 8.6 with CarbonLib
@@ -18,7 +18,7 @@ Two changes since 2.2 deserve special mention:
 - Most Mac-specific modules have moved to :Lib:plat-mac. :Mac:Lib now contains
   only modules that are not shared with MacPython-OSX 2.3.
 - macfs is now a pure Python wrapper module around various modules in the
-  Carbon package. For 2.3a1 only this wrapping is incomplete: fsspec.SetDates()
+  Carbon package. For 2.3a2 only this wrapping is incomplete: fsspec.SetDates()
   does not work yet. If you encounter any other problems please report them.
 
 ------
@@ -75,10 +75,9 @@ After installing
 It is probably a good idea to run the automatic tests. Start
 Python and "import test.regrtest ; test.regrtest.main()". 
 
-test_httplib fails with an unexpected output error, 
-this problem is being investigated.
+test_socket and test_logging fail, this problem is being investigated.
 
-test_socket fails, this problem is being investigated.
+test_tarfile fails, this problem is being investigated.
 
 Three tests will fail on MacOS9 with MemoryErrors:
 test_longexp, test_sha and test_zlib (on MacOSX these should pass).
@@ -124,7 +123,7 @@ Uninstalling
 
 Up to three items are installed in the MacOS 8 or 9 system folder: the interpreter
 shared library PythonCore lives in the Extensions
-folder and the "Python 2.3a1 Preferences" file in the Python subfolder
+folder and the "Python 2.3a2 Preferences" file in the Python subfolder
 in the Preferences folder. All the rest of Python lives in the folder
 you installed in.
 
@@ -168,9 +167,9 @@ this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.3a1 works as expected you can trash
+After you are satisfied that 2.3a2 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.3a1".
+"2.3a2".
 
 The ConfigurePython applet will try to detect incompatible
 preferences files and offer to remove them. This means that re-running

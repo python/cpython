@@ -471,7 +471,7 @@ class Editor(W.Window):
 		except os.error:
 			pass
 		template = buildtools.findtemplate()
-		buildtools.process(template, filename, destname, rsrcname=rsrcname, progress=None)
+		buildtools.process(template, filename, destname, 1, rsrcname=rsrcname, progress=None)
 		try:
 			os.remove(filename)
 			os.rmdir(tmpdir)

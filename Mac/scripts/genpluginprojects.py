@@ -101,7 +101,7 @@ def	genallprojects(force=0):
 	genpluginproject("carbon", "pyexpat", 
 		sources=["pyexpat.c", "xmlparse.c", "xmlrole.c", "xmltok.c"],
 		extradirs=[":::Modules:expat"],
-		prefixname="mwerks_shcarbon_config.h"
+		prefixname="mwerks_pyexpat_config.h"
 		)
 	genpluginproject("carbon", "zlib", 
 		libraries=["zlib.ppc.Lib"], 
