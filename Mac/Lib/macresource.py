@@ -70,7 +70,7 @@ def need(restype, resid, filename=None, modname=None):
 		h = Res.GetNamedResource(restype, resid)
 	return refno
 	
-def open_pathname(pathname):
+def open_pathname(pathname, verbose=0):
 	"""Open a resource file given by pathname, possibly decoding an
 	AppleSingle file"""
 	try:
@@ -89,17 +89,20 @@ def open_pathname(pathname):
 			else:
 				return refno
 			# Finally try decoding an AppleSingle file
-			pathname = _decode(pathname)
+			pathname = _decode(pathname, verbose=verbose)
 			refno = Res.FSOpenResourceFile(pathname, u'', 1)
 		else:
 			raise
 	return refno
 	
-def _decode(pathname):
+def _decode(pathname, verbose=0):
 	# Decode an AppleSingle resource file, return the new pathname.
 	newpathname = pathname + '.df.rsrc'
-	if os.path.exists(newpathname):
+	if os.path.exists(newpathname) and \
+			os.stat(newpathname).st_mtime >= os.stat(pathname).st_mtime:
 		return newpathname
+	if verbose:
+		print 'Decoding', pathname
 	import applesingle
 	applesingle.decode(pathname, newpathname, resonly=1)
 	return newpathname
