@@ -823,8 +823,8 @@ TT { font-family: lucidatypewriter, lucida console, courier }
 
         def found(name, ispackage,
                   modpkgs=modpkgs, shadowed=shadowed, seen=seen):
-            if not name in seen:
-                modpkgs.append((name, '', ispackage, name)) in shadowed
+            if name not in seen:
+                modpkgs.append((name, '', ispackage, name in shadowed))
                 seen[name] = 1
                 shadowed[name] = 1
 
