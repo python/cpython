@@ -71,10 +71,10 @@ Running as a Modal Dialog
     tkColorChooser module, with a few changes.  By importing
     pyColorChooser from the Pynche package, you can run
 
-        pyColorChooser.askcolor(master=window)
+        pyColorChooser.askcolor()
 
-    where `window' is an Tkinter parent window object.  Without the
-    `master' keyword argument, Pynche runs standalone.
+    which will popup Pynche as a modal dialog, and return the selected 
+    color.
 
     There are some UI differences when running as a modal
     vs. standalone.  When running as a modal, there is no "File" menu,
@@ -91,24 +91,37 @@ Running as a Modal Dialog
     is different than tkColorChooser, which doesn't know anything
     about color names.
 
-    When the optional keyword `wantspec' is true, a #rrggbb color spec 
-    will always be returned instead of a color name.
+    askcolor() supports the following optional keyword arguments:
 
-    askcolor() also supports the following optional keyword arguments
-    which parallel the command line options described above:
+	color
+	    the color to set as the initial selected color
 
-	initialcolor
+	master[*]
+	    the master window to use as the parent of the modal
+	    dialog.  Without this argument, pyColorChooser will create 
+	    it's own Tkinter.Tk instance as the master.  This may not
+	    be what you want.
 
-	databasefile
+	databasefile[*]
 	    similar to the --database option, the value must be a
 	    file name
 
-	initfile
+	initfile[*]
 	    similar to the --initfile option, the value must be a
 	    file name
 
-	ignore
+	ignore[*]
 	    similar to the --ignore flag, the value is a boolean
+
+	wantspec[*]
+	    When this is true, the "name" field in the return tuple
+	    will always be a color spec of the form "#rrggbb".  It
+	    will not return a color name even if there is a match;
+	    this is so pyColorChooser can exactly match the API of
+	    tkColorChooser.
+
+	[*] these arguments must be specified the first time
+	askcolor() is used and cannot be changed on subsequent calls.
 
 The Colorstrip Window
 
@@ -301,3 +314,20 @@ Persistency
     the storing of the settings in the init file on Pynche exit.  If
     you really want to do this, use /dev/null as the init file, using
     --initfile.
+
+To Do
+
+    Here's a brief list of things I want to do:
+
+    - Better support for resizing the top level windows
+
+    - Better support on 8-bit screens
+
+    - More output views, e.g. color solids
+
+    - Have the notion of a `last color selected'; this may require a
+      new output view
+
+    - Support setting the font in the text view
+
+    I'm open to suggestions!
