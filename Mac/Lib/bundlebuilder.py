@@ -230,7 +230,12 @@ SITE_CO = compile(SITE_PY, "<-bundlebuilder.py->", "exec")
 
 EXT_LOADER = """\
 import imp, sys, os
-path = os.path.join(sys.path[0], "%(filename)s")
+for p in sys.path:
+	path = os.path.join(p, "%(filename)s")
+	if os.path.exists(path):
+		break
+else:
+	assert 0, "file not found: %(filename)s"
 mod = imp.load_dynamic("%(name)s", path)
 sys.modules["%(name)s"] = mod
 """
@@ -361,7 +366,8 @@ class AppBuilder(BundleBuilder):
 			os.chmod(bootstrappath, 0775)
 
 	def postProcess(self):
-		self.addPythonModules()
+		if self.standalone:
+			self.addPythonModules()
 		if self.strip and not self.symlink:
 			self.stripBinaries()
 
