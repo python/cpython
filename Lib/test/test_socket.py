@@ -319,6 +319,8 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertRaises(TypeError, socket.setdefaulttimeout, "spam")
 
     def testIPv4toString(self):
+        if not hasattr(socket, 'inet_pton'):
+            return # No inet_pton() on this platform
         from socket import inet_aton as f, inet_pton, AF_INET
         g = lambda a: inet_pton(AF_INET, a)
 
@@ -332,6 +334,8 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEquals('\xaa\xaa\xaa\xaa', g('170.170.170.170'))
     
     def testIPv6toString(self):
+        if not hasattr(socket, 'inet_pton'):
+            return # No inet_pton() on this platform
         try:
             from socket import inet_pton, AF_INET6, has_ipv6
             if not has_ipv6:
@@ -349,6 +353,8 @@ class GeneralModuleTests(unittest.TestCase):
         )
     
     def testStringToIPv4(self):
+        if not hasattr(socket, 'inet_ntop'):
+            return # No inet_ntop() on this platform
         from socket import inet_ntoa as f, inet_ntop, AF_INET
         g = lambda a: inet_ntop(AF_INET, a)
 
@@ -362,6 +368,8 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertEquals('255.255.255.255', g('\xff\xff\xff\xff'))
 
     def testStringToIPv6(self):
+        if not hasattr(socket, 'inet_ntop'):
+            return # No inet_ntop() on this platform
         try:
             from socket import inet_ntop, AF_INET6, has_ipv6
             if not has_ipv6:
