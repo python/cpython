@@ -3,10 +3,11 @@
 % mimetypes module.
 
 \section{\module{mimetypes} ---
-         Mapping of filenames to MIME types}
+         Map filenames to MIME types}
 
 \declaremodule{standard}{mimetypes}
 \modulesynopsis{Mapping of filename extensions to MIME types.}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
 
 \indexii{MIME}{content type}
@@ -17,7 +18,7 @@ from filename to MIME type and from MIME type to filename extension;
 encodings are not supported for the later conversion.
 
 The functions described below provide the primary interface for this
-module.  If the module has not been initialized, they will call the
+module.  If the module has not been initialized, they will call
 \function{init()}.
 
 
@@ -76,9 +77,8 @@ initialized.  This is set to true by \function{init()}.
 
 \begin{datadesc}{knownfiles}
 List of type map file names commonly installed.  These files are
-typically names \file{mime.types} and are installed in different
-locations by different packages.%
-\index{file!mime.types}
+typically named \file{mime.types} and are installed in different
+locations by different packages.\index{file!mime.types}
 \end{datadesc}
 
 \begin{datadesc}{suffix_map}
