@@ -38,6 +38,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #endif
 
+#ifdef MS_WIN32
+#define ftruncate _chsize
+#define fileno _fileno
+#define HAVE_FTRUNCATE
+#endif
+
 #ifdef THINK_C
 #define HAVE_FOPENRF
 #endif
