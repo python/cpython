@@ -348,7 +348,10 @@ PyObject_GetAttrString(v, name)
 	}
 
 	if (v->ob_type->tp_getattr == NULL) {
-		PyErr_SetString(PyExc_AttributeError, "attribute-less object");
+		PyErr_Format(PyExc_AttributeError,
+			     "'%.50s' object has no attribute '%.400s'",
+			     v->ob_type->tp_name,
+			     name);
 		return NULL;
 	}
 	else {
