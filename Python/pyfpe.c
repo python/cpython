@@ -12,4 +12,13 @@
 jmp_buf PyFPE_jbuf;
 int PyFPE_counter = 0;
 double PyFPE_dummy(void *dummy){ return 1.0; }
+#else
+#ifdef __MWERKS__
+/*
+ * Metrowerks fails when compiling an empty file, at least in strict ANSI
+ * mode. - [cjh]
+ */
+static double PyFPE_dummy( void * );
+static double PyFPE_dummy( void *dummy ) { return 1.0; }
+#endif
 #endif

@@ -277,6 +277,198 @@ PyLong_AsDouble(vv)
 	return x * sign;
 }
 
+#ifdef HAVE_LONG_LONG
+/*
+ * long long support by Chris Herborth (chrish@qnx.com)
+ *
+ * For better or worse :-), I tried to follow the coding style already
+ * here.
+ */
+
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
+/* Hopefully this is portable... */
+#ifndef LONG_MAX
+#define LONG_MAX 2147483647L
+#endif
+#ifndef ULONG_MAX
+#define ULONG_MAX 4294967295U
+#endif
+#ifndef LONGLONG_MAX
+#define LONGLONG_MAX 9223372036854775807LL
+#endif
+#ifndef ULONGLONG_MAX
+#define ULONGLONG_MAX 0xffffffffffffffffULL
+#endif
+
+/* Create a new long int object from a C long long int */
+
+PyObject *
+PyLong_FromLongLong(ival)
+	long long ival;
+{
+#if SIZEOF_LONG_LONG == SIZEOF_LONG
+	/* In case the compiler is faking it. */
+	return PyLong_FromLong( (long)ival );
+#else
+	if( ival <= (long long)LONG_MAX ) {
+		return PyLong_FromLong( (long)ival );
+	} else if( ival <= (unsigned long long)ULONG_MAX ) {
+		return PyLong_FromUnsignedLong( (unsigned long)ival );
+	} else {
+		/* Assume a C long long fits in at most 10 'digits'.
+		 * Should be OK if we're assuming long fits in 5.
+		 */
+		PyLongObject *v = _PyLong_New(10);
+
+		if (v != NULL) {
+			unsigned long long t = ival;
+			int i;
+			if (ival < 0) {
+				t = -ival;
+				v->ob_size = -(v->ob_size);
+  			}
+
+			for (i = 0; i < 10; i++) {
+				v->ob_digit[i] = (digit) (t & MASK);
+				t >>= SHIFT;
+			}
+
+			v = long_normalize(v);
+		}
+
+		return (PyObject *)v;
+	}
+
+	/* If we got here, we're confused... */
+	PyErr_SetString( PyExc_ArithmeticError, "invalid long integer" );
+	return NULL;
+#endif
+}
+
+/* Create a new long int object from a C unsigned long long int */
+PyObject *
+PyLong_FromUnsignedLongLong(ival)
+	unsigned long long ival;
+{
+#if SIZEOF_LONG_LONG == SIZEOF_LONG
+	/* In case the compiler is faking it. */
+	return PyLong_FromUnsignedLong( (unsigned long)ival );
+#else
+	if( ival <= (unsigned long long)ULONG_MAX ) {
+		return PyLong_FromUnsignedLong( (unsigned long)ival );
+	} else {
+		/* Assume a C long fits in at most 10 'digits'. */
+		PyLongObject *v = _PyLong_New(10);
+
+		if (v != NULL) {
+			unsigned long long t = ival;
+			int i;
+			for (i = 0; i < 10; i++) {
+				v->ob_digit[i] = (digit) (t & MASK);
+				t >>= SHIFT;
+			}
+
+			v = long_normalize(v);
+		}
+
+		return (PyObject *)v;
+	}
+
+	/* If we got here, we're confused... */
+	PyErr_SetString( PyExc_ArithmeticError, "invalid unsigned long integer" );
+	return NULL;
+#endif
+}
+
+/* Get a C long long int from a long int object.
+   Returns -1 and sets an error condition if overflow occurs. */
+
+long long
+PyLong_AsLongLong(vv)
+	PyObject *vv;
+{
+#if SIZEOF_LONG_LONG == SIZEOF_LONG
+	/* In case the compiler is faking it. */
+	return (long long)PyLong_AsLong( vv );
+#else
+	register PyLongObject *v;
+	long long x, prev;
+	int i, sign;
+	
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+
+	v = (PyLongObject *)vv;
+	i = v->ob_size;
+	sign = 1;
+	x = 0;
+
+	if (i < 0) {
+		sign = -1;
+		i = -(i);
+	}
+
+	while (--i >= 0) {
+		prev = x;
+		x = (x << SHIFT) + v->ob_digit[i];
+		if ((x >> SHIFT) != prev) {
+			PyErr_SetString(PyExc_OverflowError,
+				"long int too long to convert");
+			return -1;
+		}
+	}
+
+	return x * sign;
+#endif
+}
+
+unsigned long long
+PyLong_AsUnsignedLongLong(vv)
+	PyObject *vv;
+{
+#if SIZEOF_LONG_LONG == 4
+	/* In case the compiler is faking it. */
+	return (unsigned long long)PyLong_AsUnsignedLong( vv );
+#else
+	register PyLongObject *v;
+	unsigned long long x, prev;
+	int i;
+	
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
+		return (unsigned long long) -1;
+	}
+
+	v = (PyLongObject *)vv;
+	i = v->ob_size;
+	x = 0;
+
+	if (i < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+			   "can't convert negative value to unsigned long");
+		return (unsigned long long) -1;
+	}
+
+	while (--i >= 0) {
+		prev = x;
+		x = (x << SHIFT) + v->ob_digit[i];
+		if ((x >> SHIFT) != prev) {
+			PyErr_SetString(PyExc_OverflowError,
+				"long int too long to convert");
+			return (unsigned long long) -1;
+		}
+	}
+
+	return x;
+#endif
+}
+#endif /* HAVE_LONG_LONG */
+
 /* Multiply by a single digit, ignoring the sign. */
 
 static PyLongObject *
