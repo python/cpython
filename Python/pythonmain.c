@@ -44,6 +44,8 @@ main(argc, argv)
 	}
 	
 	/* XXX what is the ideal initialization order? */
+	/* XXX exceptions are initialized by initrun but this
+	   may be too late */
 	
 	initsys(argc-1, argv+1);
 	inittime();
@@ -58,11 +60,15 @@ main(argc, argv)
 		ret = runfile(fp, file_input, (char *)NULL, (char *)NULL);
 	}
 	else {
-		sysset("ps1", newstringobject(">>> "));
-		sysset("ps2", newstringobject("... "));
+		object *v, *w;
+		sysset("ps1", v = newstringobject(">>> "));
+		sysset("ps2", w = newstringobject("... "));
+		DECREF(v);
+		DECREF(w);
 		for (;;) {
-			object *v = sysget("ps1"), *w = sysget("ps2");
 			char *ps1 = NULL, *ps2 = NULL;
+			v = sysget("ps1");
+			w = sysget("ps2");
 			if (v != NULL && is_stringobject(v)) {
 				INCREF(v);
 				ps1 = getstringvalue(v);
