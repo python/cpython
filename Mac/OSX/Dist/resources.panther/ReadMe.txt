@@ -1,7 +1,7 @@
 This package will install MacPython 2.3 for Mac OS X
-10.3. 
+10.3 beta (build 7B53 or later). 
 
-Installation requires approximately XXX MB of disk
+Installation requires approximately 3.3 MB of disk
 space, ignore the message that it will take zero bytes.
 
 You must install onto your current boot disk, even

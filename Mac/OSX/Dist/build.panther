@@ -65,7 +65,7 @@ pushd $PYTHONOSXDIR
 make -f Makefile.panther DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT
 
 # Remove the temporary symlink
-# rm -r $INSTALLROOT/System
+rm -r $INSTALLROOT/System
 
 # Unfortunately all the ...MODE arguments above still don't do the trick.
 # Cop out, and recursively set everything group-writeable.
