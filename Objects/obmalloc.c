@@ -691,6 +691,16 @@ _PyMalloc_Del(PyObject *op)
 
 static ulong serialno = 0;	/* incremented on each debug {m,re}alloc */
 
+/* serialno is always incremented via calling this routine.  The point is
+   to supply a single place to set a breakpoint.
+*/
+static void
+bumpserialno()
+{
+	++serialno;
+}
+
+
 /* Read 4 bytes at p as a big-endian ulong. */
 static ulong
 read4(const void *p)
@@ -771,7 +781,7 @@ _PyMalloc_DebugMalloc(size_t nbytes, int family)
 
 	assert(family == 0);
 
-	++serialno;
+	bumpserialno();
 	total = nbytes + 16;
 	if (total < nbytes || (total >> 31) > 1) {
 		/* overflow, or we can't represent it in 4 bytes */
@@ -828,7 +838,7 @@ _PyMalloc_DebugRealloc(void *p, size_t nbytes, int family)
 {
 	uchar *q = (uchar *)p;
 	size_t original_nbytes;
-	uchar *fresh;	/* new memory block, if needed */
+	void *fresh;	/* new memory block, if needed */
 
 	assert(family == 0);
 
@@ -842,7 +852,7 @@ _PyMalloc_DebugRealloc(void *p, size_t nbytes, int family)
 	if (nbytes == original_nbytes) {
 		/* note that this case is likely to be common due to the
 		   way Python appends to lists */
-		++serialno;
+		bumpserialno();
 		write4(q + nbytes + 4, serialno);
 		return p;
 	}
@@ -851,7 +861,7 @@ _PyMalloc_DebugRealloc(void *p, size_t nbytes, int family)
 		/* shrinking -- leave the guts alone, except to
 		   fill the excess with DEADBYTE */
 		const size_t excess = original_nbytes - nbytes;
-		++serialno;
+		bumpserialno();
 		write4(q-8, nbytes);
 		/* kill the excess bytes plus the trailing 8 pad bytes */
 		memset(q + nbytes, PYMALLOC_DEADBYTE, excess + 8);
@@ -863,7 +873,7 @@ _PyMalloc_DebugRealloc(void *p, size_t nbytes, int family)
 
 	/* More memory is needed:  get it, copy over the first original_nbytes
 	   of the original data, and free the original memory. */
-	fresh = (uchar *)_PyMalloc_DebugMalloc(nbytes, family);
+	fresh = _PyMalloc_DebugMalloc(nbytes, family);
 	if (fresh != NULL && original_nbytes > 0)
 		memcpy(fresh, p, original_nbytes);
 	_PyMalloc_DebugFree(p, family);
