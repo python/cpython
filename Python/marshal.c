@@ -261,7 +261,6 @@ w_object(PyObject *v, WFILE *p)
 		w_object((PyObject *)NULL, p);
 	}
 	else if (PyAnySet_Check(v)) {
-		int pos;
 		PyObject *value, *it;
 
 		if (PyObject_TypeCheck(v, &PySet_Type))
