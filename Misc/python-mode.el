@@ -57,6 +57,8 @@
 ;; - New py-electric-colon (:) command for improved outdenting.  Also
 ;;   py-indent-line (TAB) should handle outdented lines better.
 ;; - improved (I think) C-c > and C-c <
+;; - py-(forward|backward)-into-nomenclature, not bound, but useful on
+;;   M-f and M-b respectively.
 
 ;; Here's a brief to do list:
 ;;
@@ -1412,6 +1414,35 @@ pleasant."
 		     (forward-line 1))
 		  ;; no comment, so go back
 		  (goto-char start))))))))
+
+;; ripped from cc-mode
+(defun py-forward-into-nomenclature (&optional arg)
+  "Move forward to end of a nomenclature section or word.
+With arg, to it arg times.
+
+A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
+  (interactive "p")
+  (let ((case-fold-search nil))
+    (if (> arg 0)
+	(re-search-forward "\\W*\\([A-Z]*[a-z0-9]*\\)" (point-max) t arg)
+      (while (and (< arg 0)
+		  (re-search-backward
+		   "\\(\\(\\W\\|[a-z0-9]\\)[A-Z]+\\|\\W\\w+\\)"
+		   (point-min) 0))
+	(forward-char 1)
+	(setq arg (1+ arg)))))
+  (py-keep-region-active))
+
+(defun py-backward-into-nomenclature (&optional arg)
+  "Move backward to beginning of a nomenclature section or word.
+With optional ARG, move that many times.  If ARG is negative, move
+forward.
+
+A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
+  (interactive "p")
+  (py-forward-into-nomenclature (- arg))
+  (py-keep-region-active))
+
 
 
 ;; Documentation functions
