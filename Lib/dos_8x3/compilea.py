@@ -43,7 +43,7 @@ def compile_dir(dir, maxlevels = 10):
 
 def compile_path(skip_curdir = 1):
 	for dir in sys.path:
-		if dir == os.curdir and skip_curdir:
+		if (not dir or dir == os.curdir) and skip_curdir:
 			print 'Skipping current directory'
 		else:
 			compile_dir(dir, 0)
