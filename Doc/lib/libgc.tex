@@ -14,7 +14,9 @@ collector supplements the reference counting already used in Python, you
 can disable the collector if you are sure your program does not create
 reference cycles.  Automatic collection can be disabled by calling
 \code{gc.disable()}.  To debug a leaking program call
-\code{gc.set_debug(gc.DEBUG_LEAK)}.
+\code{gc.set_debug(gc.DEBUG_LEAK)}. Notice that this includes 
+\code{gc.DEBUG_SAVEALL}, causing garbage-collected objects to be
+saved in gc.garbage for inspection.
 
 The \module{gc} module provides the following functions:
 
