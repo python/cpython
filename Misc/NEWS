@@ -380,7 +380,9 @@ Mac
   form. Only in MacPython-OSX.
   
 - Applets are now built with bundlebuilder in MacPython-OSX, which should make
-  them more robust and also provides a path towards BuildApplication. 
+  them more robust and also provides a path towards BuildApplication. The
+  downside of this change is that applets can no longer be run from the
+  Terminal window, this will hopefully be fixed in the 2.3b1.
 
 
 What's New in Python 2.3 alpha 1?
