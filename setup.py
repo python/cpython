@@ -74,7 +74,7 @@ def find_library_file(compiler, libname, std_dirs, paths):
             return [p]
     else:
         assert False, "Internal error: Path not found in std_dirs or paths"
-        
+
 def module_enabled(extlist, modname):
     """Returns whether the module 'modname' is present in the list
     of extensions 'extlist'."""
@@ -159,7 +159,7 @@ class PyBuildExt(build_ext):
                 line = line.split()
                 remove_modules.append( line[0] )
             input.close()
-    
+
             for ext in self.extensions[:]:
                 if ext.name in remove_modules:
                     self.extensions.remove(ext)
@@ -323,7 +323,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension('datetime', ['datetimemodule.c'],
                                libraries=math_libs) )
         # random number generator implemented in C
-        exts.append( Extension("_random", ["_randommodule.c"]) )       
+        exts.append( Extension("_random", ["_randommodule.c"]) )
         # operator.add() and similar goodies
         exts.append( Extension('operator', ['operator.c']) )
         # Python C API test module
@@ -347,9 +347,9 @@ class PyBuildExt(build_ext):
         exts.append( Extension('fcntl', ['fcntlmodule.c']) )
         if platform not in ['mac']:
                 # pwd(3)
-                exts.append( Extension('pwd', ['pwdmodule.c']) )
-                # grp(3)
-                exts.append( Extension('grp', ['grpmodule.c']) )
+            exts.append( Extension('pwd', ['pwdmodule.c']) )
+            # grp(3)
+            exts.append( Extension('grp', ['grpmodule.c']) )
         # select(2); not on ancient System V
         exts.append( Extension('select', ['selectmodule.c']) )
 
@@ -380,8 +380,8 @@ class PyBuildExt(build_ext):
         # enigma-inspired encryption
         exts.append( Extension('rotor', ['rotormodule.c']) )
         if platform not in ['mac']:
-                # syslog daemon interface
-                exts.append( Extension('syslog', ['syslogmodule.c']) )
+            # syslog daemon interface
+            exts.append( Extension('syslog', ['syslogmodule.c']) )
 
         # George Neville-Neil's timing module:
         exts.append( Extension('timing', ['timingmodule.c']) )
@@ -419,12 +419,12 @@ class PyBuildExt(build_ext):
                                    libraries=readline_libs) )
         if platform not in ['mac']:
                 # crypt module.
-        
-                if self.compiler.find_library_file(lib_dirs, 'crypt'):
-                    libs = ['crypt']
-                else:
-                    libs = []
-                exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
+
+            if self.compiler.find_library_file(lib_dirs, 'crypt'):
+                libs = ['crypt']
+            else:
+                libs = []
+            exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
 
         # socket(2)
         exts.append( Extension('_socket', ['socketmodule.c'],
@@ -501,7 +501,7 @@ class PyBuildExt(build_ext):
         db_search_order = db_try_this.keys()
         db_search_order.sort()
         db_search_order.reverse()
-        
+
         class found(Exception): pass
         try:
             # See whether there is a Sleepycat header in the standard
@@ -602,7 +602,7 @@ class PyBuildExt(build_ext):
             # Steen Lumholt's termios module
             exts.append( Extension('termios', ['termios.c']) )
             # Jeremy Hylton's rlimit interface
-	    if platform not in ['atheos']:
+            if platform not in ['atheos']:
                 exts.append( Extension('resource', ['resource.c']) )
 
             # Sun yellow pages. Some systems have the functions in libc.
@@ -625,7 +625,7 @@ class PyBuildExt(build_ext):
                     iconv_libraries = ['iconv']
                 else:
                     iconv_libraries = [] # in libc
-		
+
                 exts.append( Extension('_iconv_codec',
                                        ['_iconv_codec.c'],
                                        include_dirs = iconv_incs,
@@ -726,7 +726,7 @@ class PyBuildExt(build_ext):
             ('XML_CONTEXT_BYTES','1024'),
             ],
                               include_dirs = [expatinc]
-                               ))                        
+                               ))
 
         # Dynamic loading module
         if sys.maxint == 0x7fffffff:
@@ -821,7 +821,7 @@ class PyBuildExt(build_ext):
             # should put a symlink to your Waste installation in the
             # same folder as your python source tree.  Or modify the
             # next few lines:-)
-            waste_incs = find_file("WASTE.h", [], 
+            waste_incs = find_file("WASTE.h", [],
                     ['../'*n + 'waste/C_C++ Headers' for n in (0,1,2,3,4)])
             waste_libs = find_library_file(self.compiler, "WASTE", [],
                     ["../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
@@ -829,7 +829,7 @@ class PyBuildExt(build_ext):
                 (srcdir,) = sysconfig.get_config_vars('srcdir')
                 exts.append( Extension('waste',
                                ['waste/wastemodule.c'] + [
-                                os.path.join(srcdir, d) for d in 
+                                os.path.join(srcdir, d) for d in
                                 'Mac/Wastemods/WEObjectHandlers.c',
                                 'Mac/Wastemods/WETabHooks.c',
                                 'Mac/Wastemods/WETabs.c'
@@ -852,8 +852,8 @@ class PyBuildExt(build_ext):
         # different the UNIX search logic is not sharable.
         from os.path import join, exists
         framework_dirs = [
-            '/System/Library/Frameworks/', 
-            '/Library/Frameworks', 
+            '/System/Library/Frameworks/',
+            '/Library/Frameworks',
             join(os.getenv('HOME'), '/Library/Frameworks')
         ]
 
@@ -861,9 +861,9 @@ class PyBuildExt(build_ext):
         # bundles.
         # XXX distutils should support -F!
         for F in framework_dirs:
-            # both Tcl.framework and Tk.framework should be present 
+            # both Tcl.framework and Tk.framework should be present
             for fw in 'Tcl', 'Tk':
-            	if not exists(join(F, fw + '.framework')):
+                if not exists(join(F, fw + '.framework')):
                     break
             else:
                 # ok, F is now directory with both frameworks. Continure
@@ -873,18 +873,18 @@ class PyBuildExt(build_ext):
             # Tk and Tcl frameworks not found. Normal "unix" tkinter search
             # will now resume.
             return 0
-                
+
         # For 8.4a2, we must add -I options that point inside the Tcl and Tk
         # frameworks. In later release we should hopefully be able to pass
-        # the -F option to gcc, which specifies a framework lookup path. 
+        # the -F option to gcc, which specifies a framework lookup path.
         #
         include_dirs = [
-            join(F, fw + '.framework', H) 
+            join(F, fw + '.framework', H)
             for fw in 'Tcl', 'Tk'
             for H in 'Headers', 'Versions/Current/PrivateHeaders'
         ]
 
-        # For 8.4a2, the X11 headers are not included. Rather than include a 
+        # For 8.4a2, the X11 headers are not included. Rather than include a
         # complicated search, this is a hard-coded path. It could bail out
         # if X11 libs are not found...
         include_dirs.append('/usr/X11R6/include')
@@ -900,7 +900,7 @@ class PyBuildExt(build_ext):
         self.extensions.append(ext)
         return 1
 
-         
+
     def detect_tkinter(self, inc_dirs, lib_dirs):
         # The _tkinter module.
 
@@ -910,7 +910,7 @@ class PyBuildExt(build_ext):
         platform = self.get_platform()
         if platform == 'darwin' and \
            self.detect_tkinter_darwin(inc_dirs, lib_dirs):
-          return
+            return
 
         # Set platform specific library prefix, if any
         if platform == 'cygwin':

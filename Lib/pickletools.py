@@ -1859,10 +1859,10 @@ def dis(pickle, out=None, indentlevel=4):
 
         markmsg = None
         if markstack and markobject in opcode.stack_before:
-                assert markobject not in opcode.stack_after
-                markpos = markstack.pop()
-                if markpos is not None:
-                    markmsg = "(MARK at %d)" % markpos
+            assert markobject not in opcode.stack_after
+            markpos = markstack.pop()
+            if markpos is not None:
+                markmsg = "(MARK at %d)" % markpos
 
         if arg is not None or markmsg:
             # make a mild effort to align arguments
