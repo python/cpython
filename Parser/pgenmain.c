@@ -64,7 +64,6 @@ main(argc, argv)
 	char **argv;
 {
 	grammar *g;
-	node *n;
 	FILE *fp;
 	char *filename;
 	

@@ -209,6 +209,7 @@ tok_nextc(tok)
 				tok->lineno++;
 				if (buf == NULL) {
 					free(tok->buf);
+					tok->buf = NULL;
 					free(new);
 					tok->done = E_NOMEM;
 					return EOF;
@@ -309,10 +310,8 @@ tok_backup(tok, c)
 	register int c;
 {
 	if (c != EOF) {
-		if (--tok->cur < tok->buf) {
-			fprintf(stderr, "tok_backup: begin of buffer\n");
-			abort();
-		}
+		if (--tok->cur < tok->buf)
+			fatal("tok_backup: begin of buffer");
 		if (*tok->cur != c)
 			*tok->cur = c;
 	}

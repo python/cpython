@@ -48,6 +48,7 @@ newgrammar(start)
 	g->g_start = start;
 	g->g_ll.ll_nlabels = 0;
 	g->g_ll.ll_label = NULL;
+	g->g_accel = 0;
 	return g;
 }
 
@@ -84,6 +85,10 @@ addstate(d)
 	s = &d->d_state[d->d_nstates++];
 	s->s_narcs = 0;
 	s->s_arc = NULL;
+	s->s_lower = 0;
+	s->s_upper = 0;
+	s->s_accel = NULL;
+	s->s_accept = 0;
 	return s - d->d_state;
 }
 
@@ -139,7 +144,6 @@ findlabel(ll, type, str)
 	char *str;
 {
 	int i;
-	label *lb;
 	
 	for (i = 0; i < ll->ll_nlabels; i++) {
 		if (ll->ll_label[i].lb_type == type /*&&
@@ -147,7 +151,8 @@ findlabel(ll, type, str)
 			return i;
 	}
 	fprintf(stderr, "Label %d/'%s' not found\n", type, str);
-	abort();
+	fatal("grammar.c:findlabel()");
+	/*NOTREACHED*/
 }
 
 /* Forward */
@@ -158,8 +163,10 @@ translatelabels(g)
 	grammar *g;
 {
 	int i;
-	
+
+#ifdef DEBUG
 	printf("Translating labels ...\n");
+#endif
 	/* Don't translate EMPTY */
 	for (i = EMPTY+1; i < g->g_ll.ll_nlabels; i++)
 		translabel(g, &g->g_ll.ll_label[i]);

@@ -86,10 +86,8 @@ static void
 s_pop(s)
 	register stack *s;
 {
-	if (s_empty(s)) {
-		fprintf(stderr, "s_pop: parser stack underflow -- FATAL\n");
-		abort();
-	}
+	if (s_empty(s))
+		fatal("s_pop: parser stack underflow -- FATAL");
 	s->s_top++;
 }
 
