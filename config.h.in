@@ -157,6 +157,9 @@
 /* Define if you have the dlopen function.  */
 #undef HAVE_DLOPEN
 
+/* Define if you have the dup2 function.  */
+#undef HAVE_DUP2
+
 /* Define if you have the flock function.  */
 #undef HAVE_FLOCK
 
@@ -165,6 +168,9 @@
 
 /* Define if you have the ftruncate function.  */
 #undef HAVE_FTRUNCATE
+
+/* Define if you have the getcwd function.  */
+#undef HAVE_GETCWD
 
 /* Define if you have the gethostname_r function.  */
 #undef HAVE_GETHOSTNAME_R
@@ -192,6 +198,9 @@
 
 /* Define if you have the lstat function.  */
 #undef HAVE_LSTAT
+
+/* Define if you have the memmove function.  */
+#undef HAVE_MEMMOVE
 
 /* Define if you have the mkfifo function.  */
 #undef HAVE_MKFIFO
@@ -237,6 +246,12 @@
 
 /* Define if you have the sigrelse function.  */
 #undef HAVE_SIGRELSE
+
+/* Define if you have the strdup function.  */
+#undef HAVE_STRDUP
+
+/* Define if you have the strerror function.  */
+#undef HAVE_STRERROR
 
 /* Define if you have the strftime function.  */
 #undef HAVE_STRFTIME
