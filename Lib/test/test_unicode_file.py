@@ -20,7 +20,7 @@ def remove_if_exists(filename):
 class TestUnicodeFiles(unittest.TestCase):
     # The 'do_' functions are the actual tests.  They generally assume the
     # file already exists etc.
-    
+
     # Do all the tests we can given only a single filename.  The file should
     # exist.
     def _do_single(self, filename):
@@ -39,7 +39,7 @@ class TestUnicodeFiles(unittest.TestCase):
         # basename should appear in listdir.
         path, base = os.path.split(os.path.abspath(filename))
         self.failUnless(base in os.listdir(path))
-    
+
     # Do as many "equivalancy' tests as we can - ie, check that although we
     # have different types for the filename, they refer to the same file.
     def _do_equivilent(self, filename1, filename2):
@@ -124,7 +124,7 @@ class TestUnicodeFiles(unittest.TestCase):
             self._do_single(filename)
         finally:
             os.unlink(filename)
-    
+
     def _test_equivalent(self, filename1, filename2):
         remove_if_exists(filename1)
         self.failUnless(not os.path.exists(filename2))

@@ -365,9 +365,9 @@ def _parse_sub(source, state, nested=1):
     return subpattern
 
 def _parse_sub_cond(source, state, condgroup):
-    item_yes = _parse(source, state) 
+    item_yes = _parse(source, state)
     if source.match("|"):
-        item_no = _parse(source, state) 
+        item_no = _parse(source, state)
         if source.match("|"):
             raise error, "conditional backref with more than two branches"
     else:

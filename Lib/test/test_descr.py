@@ -3966,7 +3966,7 @@ def vicious_descriptor_nonsense():
     # this makes a crash more likely:
     import gc; gc.collect()
     vereq(hasattr(c, 'attr'), False)
-    
+
 
 def test_main():
     weakref_segfault() # Must be first, somehow

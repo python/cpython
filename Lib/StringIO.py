@@ -142,7 +142,7 @@ class StringIO:
         return lines
 
     def truncate(self, size=None):
-        _complain_ifclosed(self.closed) 
+        _complain_ifclosed(self.closed)
         if size is None:
             size = self.pos
         elif size < 0:

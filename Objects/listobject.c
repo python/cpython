@@ -57,13 +57,15 @@ PyList_New(int size)
 {
 	PyListObject *op;
 	size_t nbytes;
+	int allocated_size = roundupsize(size);
+
 	if (size < 0) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	nbytes = size * sizeof(PyObject *);
+	nbytes = allocated_size * sizeof(PyObject *);
 	/* Check for overflow */
-	if (nbytes / sizeof(PyObject *) != (size_t)size) {
+	if (nbytes / sizeof(PyObject *) != (size_t)allocated_size) {
 		return PyErr_NoMemory();
 	}
 	op = PyObject_GC_New(PyListObject, &PyList_Type);
@@ -78,7 +80,7 @@ PyList_New(int size)
 		if (op->ob_item == NULL) {
 			return PyErr_NoMemory();
 		}
-		memset(op->ob_item, 0, sizeof(*op->ob_item) * size);
+		memset(op->ob_item, 0, sizeof(*op->ob_item) * allocated_size);
 	}
 	op->ob_size = size;
 	_PyObject_GC_TRACK(op);
@@ -154,7 +156,8 @@ ins1(PyListObject *self, int where, PyObject *v)
 		return -1;
 	}
 	items = self->ob_item;
-	NRESIZE(items, PyObject *, self->ob_size+1);
+	if (roundupsize(self->ob_size) - 1 == self->ob_size || items == NULL)
+		NRESIZE(items, PyObject *, self->ob_size+1);
 	if (items == NULL) {
 		PyErr_NoMemory();
 		return -1;
@@ -1878,7 +1881,8 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	saved_ob_size = self->ob_size;
 	saved_ob_item = self->ob_item;
 	self->ob_size = 0;
-	self->ob_item = empty_ob_item = PyMem_NEW(PyObject *, 0);
+/*	self->ob_item = empty_ob_item = PyMem_NEW(PyObject *, 0); */
+	self->ob_item = empty_ob_item = PyMem_NEW(PyObject *, roundupsize(0));
 
 	if (keyfunc != NULL) {
 		for (i=0 ; i < saved_ob_size ; i++) {

@@ -141,7 +141,7 @@ else:
         # which have special Unicode support in posixmodule.
         if (not hasattr(sys, "getwindowsversion") or
                 sys.getwindowsversion()[3] < 2): #  0=win32s or 1=9x/ME
-           TESTFN_UNICODE_UNENCODEABLE = None
+            TESTFN_UNICODE_UNENCODEABLE = None
         else:
             # Japanese characters (I think - from bug 846133)
             TESTFN_UNICODE_UNENCODEABLE = u"@test-\u5171\u6709\u3055\u308c\u308b"

@@ -179,7 +179,7 @@ class TestJointOps(unittest.TestCase):
             def __init__(self, value):
                 self.value = value
             def __hash__(self):
-                    return self.value
+                return self.value
             def __deepcopy__(self, memo=None):
                 return Tracer(self.value + 1)
         t = Tracer(10)

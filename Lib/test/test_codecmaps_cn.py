@@ -31,4 +31,3 @@ def test_main():
 test_multibytecodec_support.register_skip_expected(TestGB2312Map, TestGBKMap)
 if __name__ == "__main__":
     test_main()
-

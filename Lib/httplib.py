@@ -610,7 +610,7 @@ class HTTPConnection:
         if self.__response and self.__response.isclosed():
             self.__response = None
 
-       
+
         # in certain cases, we cannot issue another request on this connection.
         # this occurs when:
         #   1) we are in the process of sending a request.   (_CS_REQ_STARTED)
@@ -731,7 +731,7 @@ class HTTPConnection:
         # If headers already contains a host header, then define the
         # optional skip_host argument to putrequest().  The check is
         # harder because field names are case insensitive.
-        if 'host' in [k.lower() for k in headers]:                
+        if 'host' in [k.lower() for k in headers]:
             self.putrequest(method, url, skip_host=1)
         else:
             self.putrequest(method, url)

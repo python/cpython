@@ -697,7 +697,7 @@ class CodecCallbackTest(unittest.TestCase):
             ord(">"): u"&gt;",
             ord('"'): u"&quot;",
         }
-        
+
         for n in (1, 10, 100, 1000):
             text = u'abc<def>ghi'*n
             text.translate(charmap)

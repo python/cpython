@@ -55,7 +55,7 @@ class TestApplesingle(unittest.TestCase):
         applesingle.decode(test_support.TESTFN, TESTFN2)
         self.compareData(False, dataforkdata)
         self.compareData(True, resourceforkdata)
-        
+
     def test_applesingle_resonly(self):
         try:
             os.unlink(TESTFN2)
