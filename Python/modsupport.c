@@ -338,3 +338,130 @@ getshortlistarg(args, a, n)
 	}
 	return 1;
 }
+
+static object *
+do_mkval(char **p_format, va_list *p_va) {
+	object *v;
+	
+	switch (*(*p_format)++) {
+	
+	case '(':
+		{
+			int n = 0;
+			char *p = *p_format;
+			int level = 0;
+			int i;
+			while (level > 0 || *p != ')') {
+				if (*p == '\0') {
+					err_setstr(SystemError, "missing ')' in mkvalue format");
+					return NULL;
+				}
+				else if (*p == '(') {
+					if (level == 0)
+						n++;
+					level++;
+				}
+				else if (*p == ')')
+					level--;
+				else if (level == 0 && *p != '#')
+					n++;
+				p++;
+			}
+			v = newtupleobject(n);
+			if (v == NULL)
+				break;
+			for (i = 0; i < n; i++) {
+				object *w = do_mkval(p_format, p_va);
+				if (w == NULL) {
+					DECREF(v);
+					v = NULL;
+					break;
+				}
+				settupleitem(v, i, w);
+			}
+			if (v != NULL && *(*p_format)++ != ')') {
+				/* "Cannot happen" */
+				err_setstr(SystemError, "inconsistent format in mkvalue???");
+				DECREF(v);
+				v = NULL;
+			}
+		}
+		break;
+		
+	case 'h':
+		v = newintobject((long)va_arg(*p_va, short));
+		break;
+		
+	case 'i':
+		v = newintobject((long)va_arg(*p_va, int));
+		break;
+		
+	case 'l':
+		v = newintobject((long)va_arg(*p_va, long));
+		break;
+		
+	case 'f':
+		v = newfloatobject((double)va_arg(*p_va, float));
+		break;
+		
+	case 'd':
+		v = newfloatobject((double)va_arg(*p_va, double));
+		break;
+	
+	case 's':
+	case 'z':
+		{
+			char *str = va_arg(*p_va, char *);
+			int n;
+			if (**p_format == '#') {
+				++*p_format;
+				n = va_arg(*p_va, int);
+			}
+			else
+				n = -1;
+			if (str == NULL) {
+				v = None;
+				INCREF(v);
+			}
+			else {
+				if (n < 0)
+					n = strlen(str);
+				v = newsizedstringobject(str, n);
+			}
+		}
+		break;
+	
+	case 'S':
+	case 'O':
+		v = va_arg(*p_va, object *);
+		if (v == NULL) {
+			if (!err_occurred())
+				err_setstr(SystemError, "NULL object passed to mkvalue");
+		}
+		else
+			INCREF(v);
+		break;
+	
+	default:
+		err_setstr(SystemError, "bad format char passed to mkvalue");
+		v = NULL;
+		break;
+	
+	}
+	
+	return v;
+}
+
+object *
+mkvalue(char *format, ...)
+{
+	char *fmt = format;
+	object *v;
+	va_list p;
+	va_start(p, format);
+	v = do_mkval(&fmt, &p);
+	va_end(p);
+	if (v == NULL)
+		fprintf(stderr, "mkvalue: format = \"%s\" \"%s\"\n", format, fmt);
+	return v;
+}
