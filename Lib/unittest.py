@@ -131,6 +131,13 @@ class TestCase:
     of the classes are instantiated automatically by parts of the framework
     in order to be run.
     """
+
+    # This attribute determines which exception will be raised when
+    # the instance's assertion methods fail; test methods raising this
+    # exception will be deemed to have 'failed' rather than 'errored'
+
+    failureException = AssertionError
+
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
            method when executed. Raises a ValueError if the instance does
@@ -189,22 +196,22 @@ class TestCase:
             try:
                 self.setUp()
             except:
-                result.addError(self,sys.exc_info())
+                result.addError(self,self.__exc_info())
                 return
 
             ok = 0
             try:
                 testMethod()
                 ok = 1
-            except AssertionError, e:
-                result.addFailure(self,sys.exc_info())
+            except self.failureException, e:
+                result.addFailure(self,self.__exc_info())
             except:
-                result.addError(self,sys.exc_info())
+                result.addError(self,self.__exc_info())
 
             try:
                 self.tearDown()
             except:
-                result.addError(self,sys.exc_info())
+                result.addError(self,self.__exc_info())
                 ok = 0
             if ok: result.addSuccess(self)
         finally:
@@ -216,21 +223,33 @@ class TestCase:
         getattr(self, self.__testMethodName)()
         self.tearDown()
 
-    def assert_(self, expr, msg=None):
-        """Equivalent of built-in 'assert', but is not optimised out when
-           __debug__ is false.
+    def __exc_info(self):
+        """Return a version of sys.exc_info() with the traceback frame
+           minimised; usually the top level of the traceback frame is not
+           needed.
         """
-        if not expr:
-            raise AssertionError, msg
+        exctype, excvalue, tb = sys.exc_info()
+        if sys.platform[:4] == 'java': ## tracebacks look different in Jython
+            return (exctype, excvalue, tb)
+        newtb = tb.tb_next
+        if newtb is None:
+            return (exctype, excvalue, tb)
+        return (exctype, excvalue, newtb)
 
-    failUnless = assert_
+    def fail(self, msg=None):
+        """Fail immediately, with the given message."""
+        raise self.failureException, msg
 
     def failIf(self, expr, msg=None):
         "Fail the test if the expression is true."
-        apply(self.assert_,(not expr,msg))
+        if expr: raise self.failureException, msg
 
-    def assertRaises(self, excClass, callableObj, *args, **kwargs):
-        """Assert that an exception of class excClass is thrown
+    def failUnless(self, expr, msg=None):
+        """Fail the test unless the expression is true."""
+        if not expr: raise self.failureException, msg
+
+    def failUnlessRaises(self, excClass, callableObj, *args, **kwargs):
+        """Fail unless an exception of class excClass is thrown
            by callableObj when invoked with arguments args and keyword
            arguments kwargs. If a different type of exception is
            thrown, it will not be caught, and the test case will be
@@ -244,27 +263,30 @@ class TestCase:
         else:
             if hasattr(excClass,'__name__'): excName = excClass.__name__
             else: excName = str(excClass)
-            raise AssertionError, excName
+            raise self.failureException, excName
 
-    def assertEquals(self, first, second, msg=None):
-        """Assert that the two objects are equal as determined by the '=='
+    def failUnlessEqual(self, first, second, msg=None):
+        """Fail if the two objects are unequal as determined by the '!='
            operator.
         """
-        self.assert_((first == second), msg or '%s != %s' % (first, second))
+        if first != second:
+            raise self.failureException, (msg or '%s != %s' % (first, second))
 
-    def assertNotEquals(self, first, second, msg=None):
-        """Assert that the two objects are unequal as determined by the '!='
+    def failIfEqual(self, first, second, msg=None):
+        """Fail if the two objects are equal as determined by the '=='
            operator.
         """
-        self.assert_((first != second), msg or '%s == %s' % (first, second))
+        if first == second:
+            raise self.failureException, (msg or '%s != %s' % (first, second))
 
-    assertEqual = assertEquals
+    assertEqual = assertEquals = failUnlessEqual
 
-    assertNotEqual = assertNotEquals
+    assertNotEqual = assertNotEquals = failIfEqual
 
-    def fail(self, msg=None):
-        """Fail immediately, with the given message."""
-        raise AssertionError, msg
+    assertRaises = failUnlessRaises
+
+    assert_ = failUnless
+
 
 
 class TestSuite:
@@ -364,18 +386,18 @@ class FunctionTestCase(TestCase):
 class TestLoader:
     """This class is responsible for loading tests according to various
     criteria and returning them wrapped in a Test
-
-    It can load all tests within a given, module
     """
     testMethodPrefix = 'test'
     sortTestMethodsUsing = cmp
     suiteClass = TestSuite
 
     def loadTestsFromTestCase(self, testCaseClass):
+        """Return a suite of all tests cases contained in testCaseClass"""
         return self.suiteClass(map(testCaseClass,
                                    self.getTestCaseNames(testCaseClass)))
 
     def loadTestsFromModule(self, module):
+        """Return a suite of all tests cases contained in the given module"""
         tests = []
         for name in dir(module):
             obj = getattr(module, name)
@@ -384,6 +406,14 @@ class TestLoader:
         return self.suiteClass(tests)
 
     def loadTestsFromName(self, name, module=None):
+        """Return a suite of all tests cases given a string specifier.
+
+        The name may resolve either to a module, a test case class, a
+        test method within a test case class, or a callable object which
+        returns a TestCase or TestSuite instance.
+        
+        The method optionally resolves the names relative to a given module.
+        """
         parts = string.split(name, '.')
         if module is None:
             if not parts:
@@ -419,12 +449,17 @@ class TestLoader:
             raise ValueError, "don't know how to make test from: %s" % obj
 
     def loadTestsFromNames(self, names, module=None):
+        """Return a suite of all tests cases found using the given sequence
+        of string specifiers. See 'loadTestsFromName()'.
+        """
         suites = []
         for name in names:
             suites.append(self.loadTestsFromName(name, module))
         return self.suiteClass(suites)
 
     def getTestCaseNames(self, testCaseClass):
+        """Return a sorted sequence of method names found within testCaseClass
+        """
         testFnNames = filter(lambda n,p=self.testMethodPrefix: n[:len(p)] == p,
                              dir(testCaseClass))
         for baseclass in testCaseClass.__bases__:
