@@ -138,7 +138,7 @@ fails.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{path}
-Split the pathname \var{path} in a pair \code{(\var{head},
+Split the pathname \var{path} into a pair \code{(\var{head},
 \var{tail})}, where \var{tail} is the last pathname component and
 \var{head} is everything leading up to that.  The \var{tail} part will
 never contain a slash; if \var{path} ends in a slash, \var{tail} will
@@ -151,8 +151,16 @@ exception being when there were multiple slashes separating \var{head}
 from \var{tail}).
 \end{funcdesc}
 
+\begin{funcdesc}{splitdrive}{path}
+Split the pathname \var{path} into a pair \code{(\var{drive},
+\var{tail})}, where \var{drive} is either a drive specification or the
+empty string.  On systems which do not use drive specifications,
+\var{drive} will always be the empty string.  In all cases,
+\code{\var{drive} + \var{tail}} will be the same as \var{path}.
+\end{funcdesc}
+
 \begin{funcdesc}{splitext}{path}
-Split the pathname \var{path} in a pair \code{(\var{root}, \var{ext})} 
+Split the pathname \var{path} into a pair \code{(\var{root}, \var{ext})} 
 such that \code{\var{root} + \var{ext} == \var{path}},
 and \var{ext} is empty or begins with a period and contains
 at most one period.
