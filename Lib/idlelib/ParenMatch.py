@@ -10,8 +10,6 @@ We'll have to fix IDLE to do something reasonable when two or more
 extensions what to capture the same event.
 """
 
-import string
-
 import PyParse
 from AutoIndent import AutoIndent, index2line
 from configHandler import idleConf
@@ -166,10 +164,10 @@ class LastOpenBracketFinder:
         if i is None \
            or keysym_type(buf[i]) != right_keysym_type:
             return None
-        lines_back = string.count(buf[i:], "\n") - 1
+        lines_back = buf[i:].count("\n") - 1
         # subtract one for the "\n" added to please the parser
         upto_open = buf[:i]
-        j = string.rfind(upto_open, "\n") + 1 # offset of column 0 of line
+        j = upto_open.rfind("\n") + 1 # offset of column 0 of line
         offset = i - j
         return "%d.%d" % (lno - lines_back, offset)
 
