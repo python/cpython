@@ -8,6 +8,9 @@
 \moduleauthor{Tim Peters}{tim@zope.com}
 \sectionauthor{Tim Peters}{tim@zope.com}
 \sectionauthor{A.M. Kuchling}{amk@amk.ca}
+\sectionauthor{Raymond D. Hettinger}{python@rcn.com}
+
+\versionadded{2.3}
 
 \newcommand{\Naive}{Na\"ive}
 \newcommand{\naive}{na\"ive}
@@ -50,6 +53,10 @@ The \module{datetime} module exports the following constants:
   or \class{datetimetz} object.  \constant{MAXYEAR} is \code{9999}.
 \end{datadesc}
 
+\begin{seealso}
+  \seemodule{calendar}{General calandar related functions.}
+  \seemodule{time}{Time access and conversions.}
+\end{seealso}
 
 \subsection{Available Types}
 
@@ -125,24 +132,25 @@ object
             datetimetz
 \end{verbatim}
 
-\subsection{\class{timedelta} \label{datetime-timedelta}}
+\subsection{\class{timedelta} Objects \label{datetime-timedelta}}
 
+\begin{classdesc}{timedelta}{days=0, seconds=0, microseconds=0,
+                            milliseconds=0, minutes=0, hours=0, weeks=0}
 A \class{timedelta} object represents a duration, the difference
 between two dates or times.
-
-\begin{funcdesc}{timedelta}{days=0, seconds=0, microseconds=0,
-                            milliseconds=0, minutes=0, hours=0, weeks=0}
 
     All arguments are optional.  Arguments may be ints, longs, or floats,
     and may be positive or negative.
 
-    Only days, seconds and microseconds are stored internally.  Arguments
-    are converted to those units:
+    Only \var{days}, \var{seconds} and \var{microseconds} are stored
+    internally.  Arguments are converted to those units:
 
+\begin{verbatim}
         A millisecond is converted to 1000 microseconds.
         A minute is converted to 60 seconds.
         An hour is converted to 3600 seconds.
         A week is converted to 7 days.
+\end{verbatim}
 
     and days, seconds and microseconds are then normalized so that the
     representation is unique, with
@@ -171,69 +179,60 @@ between two dates or times.
 (-1, 86399, 999999)
 \end{verbatim}
 
-\end{funcdesc}
+\end{classdesc}
 
 Class attributes are:
 
-\begin{memberdesc}{min}
-        The most negative \class{timedelta} object, \code{timedelta(-999999999)}.
-\end{memberdesc}
-
-\begin{memberdesc}{max}
-        The most positive \class{timedelta} object,
+\begin{tableii}{c|l}{code}{Attribute}{Value}
+  \lineii{min}{The most negative \class{timedelta} object,
+	       \code{timedelta(-999999999)}}
+  \lineii{max}{The most positive \class{timedelta} object,
         timedelta(days=999999999, hours=23, minutes=59, seconds=59,
-                  microseconds=999999)
-\end{memberdesc}
-
-\begin{memberdesc}{resolution}
-        The smallest possible difference between non-equal timedelta
-        objects, \code{timedelta(microseconds=1)}.
-\end{memberdesc}
+                  microseconds=999999)}
+  \lineii{resolution}{The smallest possible difference between non-equal
+	\class{timedelta} objects, \code{timedelta(microseconds=1)}}
+\end{tableii}
 
 Note that, because of normalization, timedelta.max > -timedelta.min.
 -timedelta.max is not representable as a \class{timedelta} object.
 
 Instance attributes (read-only):
 
-\begin{memberdesc}{days}
-Between -999999999 and 999999999 inclusive.
-\end{memberdesc}
-\begin{memberdesc}{seconds}
-Between 0 and 86399 inclusive.
-\end{memberdesc}
-\begin{memberdesc}{microseconds}
-Between 0 and 999999 inclusive.
-\end{memberdesc}
+\begin{tableii}{c|l}{code}{Attribute}{Value}
+  \lineii{days}{Between -999999999 and 999999999 inclusive}
+  \lineii{seconds}{Between 0 and 86399 inclusive}
+  \lineii{microseconds}{Between 0 and 999999 inclusive}
+\end{tableii}
 
 Supported operations:
 
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
+  \lineii{t1 = t2 + t3}{Sum of t2 and t3. 
+			Afterwards t1-t2 == t3 and t1-t3 == t2 are true.}{(1)}
+  \lineii{t1 = t2 - t3}{Difference of t2 and t3. Afterwards t1 = t2 - t3 and
+			t2 == t1 + t3 are true.}{(1)}
+  \lineii{t1 = t2 * i or t1 = i * t2}{Delta multiplied by an integer or long.
+			Afterwards t1 // i == t2 is true, provided i != 0.
+			In general, t1 * i == t1 * (i-1) + t1 is true.}{(1)}
+  \lineii{t1 = t2 // i}{The floor is computed and the remainder (if any) is
+			thrown away.}{(2)}
+  
+\end{tableii}
+\noindent
+Notes:
+
+\begin{description}
+\item[(1)]
+This is exact, but may overflow.
+
+\item[(2)]
+Division by 0 raises \exception{ZeroDivisionError}.
+\end{description}
+
+
+
+
 \begin{itemize}
-  \item
-    timedelta + timedelta -> timedelta
-    This is exact, but may overflow.  After
-        t1 = t2 + t3
-    t1-t2 == t3 and t1-t3 == t2 are true.
-
-  \item
-    timedelta - timedelta -> timedelta
-    This is exact, but may overflow.  After
-        t1 = t2 - t3
-     t2 == t1 + t3 is true.
-
-  \item
-    timedelta * (int or long) -> timedelta
-    (int or long) * timedelta -> timedelta
-    This is exact, but may overflow.  After
-        t1 = t2 * i
-    t1 // i == t2 is true, provided i != 0.  In general,
-        t * i == t * (i-1) + t
-    is true.
-
-  \item
-    timedelta // (int or long) -> timedelta
-    The floor is computed and the remainder (if any) is thrown away.
-    Division by 0 raises \exception{ZeroDivisionError}.
-
   \item
     certain additions and subtractions with date, datetime, and datimetz
     objects (see below)
@@ -269,7 +268,7 @@ Supported operations:
 \end{itemize}
 
 
-\subsection{\class{date} \label{datetime-date}}
+\subsection{\class{date} Objects \label{datetime-date}}
 
 A \class{date} object represents a date (year, month and day) in an idealized
 calendar, the current Gregorian calendar indefinitely extended in both
@@ -471,7 +470,7 @@ Instance methods:
 \end{methoddesc}
 
 
-\subsection{\class{datetime} \label{datetime-datetime}}
+\subsection{\class{datetime} Objects \label{datetime-datetime}}
 
 A \class{datetime} object is a single object containing all the
 information from a \class{date} object and a time object.  Like a
@@ -737,7 +736,7 @@ Instance methods:
 \end{methoddesc}
 
 
-\subsection{\class{time} \label{datetime-time}}
+\subsection{\class{time} Objects \label{datetime-time}}
 
 A time object represents an idealized time of day, independent of day
 and timezone.
@@ -831,7 +830,7 @@ Instance methods:
 \end{methoddesc}
 
 
-\subsection{\class{tzinfo} \label{datetime-tzinfo}}
+\subsection{\class{tzinfo} Objects \label{datetime-tzinfo}}
 
 \class{tzinfo} is an abstract base clase, meaning that this class
 should not be instantiated directly.  You need to derive a concrete
@@ -905,7 +904,7 @@ Example \class{tzinfo} classes:
 \verbatiminput{tzinfo-examples.py}
 
 
-\subsection{\class{timetz} \label{datetime-timetz}}
+\subsection{\class{timetz} Objects \label{datetime-timetz}}
 
 A time object represents a (local) time of day, independent of any
 particular day, and subject to adjustment via a \class{tzinfo} object.
@@ -1032,7 +1031,7 @@ Instance methods:
 
 
 
-\subsection{ \class{datetimetz}  \label{datetime-datetimetz}}
+\subsection{ \class{datetimetz} Objects \label{datetime-datetimetz}}
 
 \begin{notice}[warning]
   I think this is \emph{still} missing some methods from the
