@@ -151,7 +151,7 @@ PyTypeObject cycle_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	cycle_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -300,7 +300,7 @@ PyTypeObject dropwhile_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	dropwhile_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -448,7 +448,7 @@ PyTypeObject takewhile_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	takewhile_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -638,7 +638,7 @@ PyTypeObject islice_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	islice_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -777,7 +777,7 @@ PyTypeObject starmap_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	starmap_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -964,7 +964,7 @@ PyTypeObject imap_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	imap_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -1099,7 +1099,7 @@ PyTypeObject chain_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	chain_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -1248,7 +1248,7 @@ PyTypeObject ifilter_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	ifilter_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -1397,7 +1397,7 @@ PyTypeObject ifilterfalse_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	ifilterfalse_new,		/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -1481,7 +1481,7 @@ PyTypeObject count_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	count_new,			/* tp_new */
 };
 
@@ -1665,7 +1665,7 @@ PyTypeObject izip_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	izip_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
@@ -1775,7 +1775,7 @@ PyTypeObject repeat_type = {
 	0,				/* tp_descr_set */
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
-	PyType_GenericAlloc,		/* tp_alloc */
+	0,				/* tp_alloc */
 	repeat_new,			/* tp_new */
 	PyObject_GC_Del,		/* tp_free */
 };
