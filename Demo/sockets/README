@@ -8,3 +8,10 @@ telnet.py		Client for the 'telnet' protocol.
 throughput.py		Client and server to measure TCP throughput.
 udpecho.py		Client and server for the UDP echo protocol.
 radio.py		Receive time broadcasts from broadcast.py.
+
+The following two files are only relevant on SGI machines (or other
+systems that support multicast):
+
+mcast.py		A Python translation of
+			/usr/people/4Dgifts/examples/network/mcast.c
+IN.py			Needed by mcast.py -- translation of <netinet/in.h>
