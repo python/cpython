@@ -267,6 +267,8 @@ yellow 5
  use of the underlying system realloc().  List comprehensions also
  benefit.  The amount of improvement varies between systems and shows
  the greatest improvement on systems with poor realloc() implementations.
+ \method{list.extend()} was also optimized and no longer converts its
+ argument into a temporary list prior to extending the base list.
 
 \item \function{list()}, \function{tuple()}, \function{map()},
   \function{filter()}, and \function{zip()} now run several times
