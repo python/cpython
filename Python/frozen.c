@@ -21,7 +21,7 @@ static unsigned char M___hello__[] = {
 	0,0,0,0,
 };
 
-#define SIZE sizeof(M___hello__)
+#define SIZE (int)sizeof(M___hello__)
 
 static struct _frozen _PyImport_FrozenModules[] = {
 	/* Test module */
