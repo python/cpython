@@ -1,7 +1,7 @@
 #ifndef Py_CONFIG_H
 #define Py_CONFIG_H
 
-/* config.h.  NOT Generated automatically by configure.
+/* pyconfig.h.  NOT Generated automatically by configure.
 
 This is a manually maintained version used for the Watcom,
 Borland and and Microsoft Visual C++ compilers.  It is a

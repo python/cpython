@@ -2,7 +2,7 @@
 #define Py_CONFIG_H
 
 /**********************************************************************
- * config.h.  NOT Generated automatically by configure.
+ * pyconfig.h.  NOT Generated automatically by configure.
  *
  * This is a manually maintained version used for the IBM VisualAge
  * C/C++ compiler on the OS/2 platform.  It is a standard part of

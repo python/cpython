@@ -84,7 +84,7 @@ class PyBuildExt(build_ext):
         for ext in self.extensions[:]:
             ext.sources = [ os.path.join(moddir, filename)
                             for filename in ext.sources ]
-            ext.include_dirs.append( '.' ) # to get config.h
+            ext.include_dirs.append( '.' ) # to get pyconfig.h
             ext.include_dirs.append( os.path.join(srcdir, './Include') )
 
             # If a module has already been built statically,

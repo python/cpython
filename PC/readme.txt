@@ -50,7 +50,7 @@ To make a Python port, start the Integrated Development Environment
 (or makefile) provided.  This will enable you to change any source
 files or build settings so you can make custom builds.
 
-config.h    An important configuration file specific to PC's.
+pyconfig.h    An important configuration file specific to PC's.
 
 config.c    The list of C modules to include in the Python PC
             version.  Manually edit this file to add or

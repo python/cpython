@@ -9,7 +9,7 @@ extern "C" {
 
 #include "pyconfig.h"
 
-/* config.h may or may not define DL_IMPORT */
+/* pyconfig.h may or may not define DL_IMPORT */
 #ifndef DL_IMPORT	/* declarations for DLL import/export */
 #define DL_IMPORT(RTYPE) RTYPE
 #endif

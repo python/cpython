@@ -172,7 +172,7 @@ Source: Lib\xml\*.py; DestDir: "{app}\Lib\xml"; CopyMode: alwaysoverwrite; Flags
 Source: Lib\lib-old\*.py;  DestDir: "{app}\Lib\lib-old"; CopyMode: alwaysoverwrite; Components: main
 Source: Lib\site-packages\README; DestDir: "{app}\Lib\site-packages"; DestName: README.txt; CopyMode: alwaysoverwrite; Components: main
 Source: Include\*.h; DestDir: "{app}\include"; CopyMode: alwaysoverwrite; Components: main
-Source: PC\config.h; DestDir: "{app}\include"; CopyMode: alwaysoverwrite; Components: main
+Source: PC\pyconfig.h; DestDir: "{app}\include"; CopyMode: alwaysoverwrite; Components: main
 
 Source: Tools\scripts\*.py;  DestDir: "{app}\Tools\Scripts";  CopyMode: alwaysoverwrite; Components: tools
 Source: Tools\scripts\*.pyw; DestDir: "{app}\Tools\Scripts";  CopyMode: alwaysoverwrite; Components: tools
