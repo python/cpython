@@ -163,6 +163,7 @@ def	genallprojects(force=0):
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	# Carbon Only?
 	genpluginproject("carbon", "_CF", outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "_CarbonEvt", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "hfsplus")
 	
 	# Other Mac modules

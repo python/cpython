@@ -298,6 +298,7 @@ I_CARBON_PLUGINS :  (buildmwproject, "CWIE", [
 	(":Mac:Build:_AE.carbon.mcp", "_AE.carbon"),
 	(":Mac:Build:_App.carbon.mcp", "_App.carbon"),
 	(":Mac:Build:_CF.carbon.mcp", "_CF.carbon"),
+	(":Mac:Build:_CarbonEvt.carbon.mcp", "_CarbonEvt.carbon"),
 	(":Mac:Build:_Cm.carbon.mcp", "_Cm.carbon"),
 	(":Mac:Build:_Ctl.carbon.mcp", "_Ctl.carbon"),
 	(":Mac:Build:_Dlg.carbon.mcp", "_Dlg.carbon"),
