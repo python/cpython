@@ -64,9 +64,9 @@ Core and builtins
   log_base_2(3)) instead of the previous O(N**2).  Measured results may
   be better or worse than that, depending on platform quirks.  Note that
   this is a simple implementation, and there's no intent here to compete
-  with, e.g., gmp.  It simply gives a very nice speedup when it applies.
-  XXX Karatsuba multiplication can be slower when the inputs have very
-  XXX different sizes.
+  with, e.g., GMP.  It gives a very nice speedup when it applies, but
+  a package devoted to fast large-integer arithmetic should run circles
+  around it.
 
 - u'%c' will now raise a ValueError in case the argument is an
   integer outside the valid range of Unicode code point ordinals.

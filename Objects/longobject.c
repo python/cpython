@@ -1592,6 +1592,8 @@ kmul_split(PyLongObject *n, int size, PyLongObject **high, PyLongObject **low)
 	return 0;
 }
 
+static PyLongObject *k_lopsided_mul(PyLongObject *a, PyLongObject *b);
+
 /* Karatsuba multiplication.  Ignores the input signs, and returns the
  * absolute value of the product (or NULL if error).
  * See Knuth Vol. 2 Chapter 4.3.3 (Pp. 294-295).
@@ -1633,14 +1635,20 @@ k_mul(PyLongObject *a, PyLongObject *b)
 
 	/* Use gradeschool math when either number is too small. */
 	if (asize <= KARATSUBA_CUTOFF) {
-		/* 0 is inevitable if one kmul arg has more than twice
-		 * the digits of another, so it's worth special-casing.
-		 */
 		if (asize == 0)
 			return _PyLong_New(0);
 		else
 			return x_mul(a, b);
 	}
+
+	/* If a is small compared to b, splitting on b gives a degenerate
+	 * case with ah==0, and Karatsuba may be (even much) less efficient
+	 * than "grade school" then.  However, we can still win, by viewing
+	 * b as a string of "big digits", each of width a->ob_size.  That
+	 * leads to a sequence of balanced calls to k_mul.
+	 */
+	if (2 * asize <= bsize)
+		return k_lopsided_mul(a, b);
 
 	shift = bsize >> 1;
 	if (kmul_split(a, shift, &ah, &al) < 0) goto fail;
@@ -1750,6 +1758,67 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	return NULL;
 }
 
+/* b has at least twice the digits of a, and a is big enough that Karatsuba
+ * would pay off *if* the inputs had balanced sizes.  View b as a sequence
+ * of slices, each with a->ob_size digits, and multiply the slices by a,
+ * one at a time.  This gives k_mul balanced inputs to work with, and is
+ * also cache-friendly (we compute one double-width slice of the result
+ * at a time, then move on, never bactracking except for the helpful
+ * single-width slice overlap between successive partial sums).
+ */
+static PyLongObject *
+k_lopsided_mul(PyLongObject *a, PyLongObject *b)
+{
+	const int asize = ABS(a->ob_size);
+	int bsize = ABS(b->ob_size);
+	int nbdone;	/* # of b digits already multiplied */
+	PyLongObject *ret;
+	PyLongObject *bslice = NULL;
+
+	assert(asize > KARATSUBA_CUTOFF);
+	assert(2 * asize <= bsize);
+
+	/* Allocate result space, and zero it out. */
+	ret = _PyLong_New(asize + bsize);
+	if (ret == NULL)
+		return NULL;
+	memset(ret->ob_digit, 0, ret->ob_size * sizeof(digit));
+
+	/* Successive slices of b are copied into bslice. */
+	bslice = _PyLong_New(bsize);
+	if (bslice == NULL)
+		goto fail;
+
+	nbdone = 0;
+	while (bsize > 0) {
+		PyLongObject *product;
+		const int nbtouse = MIN(bsize, asize);
+
+		/* Multiply the next slice of b by a. */
+		memcpy(bslice->ob_digit, b->ob_digit + nbdone,
+		       nbtouse * sizeof(digit));
+		bslice->ob_size = nbtouse;
+		product = k_mul(a, bslice);
+		if (product == NULL)
+			goto fail;
+
+		/* Add into result. */
+		(void)v_iadd(ret->ob_digit + nbdone, ret->ob_size - nbdone,
+			     product->ob_digit, product->ob_size);
+		Py_DECREF(product);
+
+		bsize -= nbtouse;
+		nbdone += nbtouse;
+	}
+
+	Py_DECREF(bslice);
+	return long_normalize(ret);
+
+ fail:
+	Py_DECREF(ret);
+	Py_XDECREF(bslice);
+	return NULL;
+}
 
 static PyObject *
 long_mul(PyLongObject *v, PyLongObject *w)
@@ -1769,14 +1838,7 @@ long_mul(PyLongObject *v, PyLongObject *w)
 		return Py_NotImplemented;
 	}
 
-#if 0
-	if (Py_GETENV("KARAT") != NULL)
-		z = k_mul(a, b);
-	else
-		z = x_mul(a, b);
-#else
 	z = k_mul(a, b);
-#endif
 	if(z == NULL) {
 		Py_DECREF(a);
 		Py_DECREF(b);
