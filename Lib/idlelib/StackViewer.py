@@ -19,8 +19,29 @@ class StackTreeItem(TreeItem):
 
     def __init__(self, flist=None, tb=None):
         self.flist = flist
-        self.stack = get_stack(tb)
-        self.text = get_exception()
+        self.stack = self.get_stack(tb)
+        self.text = self.get_exception()
+
+    def get_stack(self, tb):
+        if tb is None:
+            tb = sys.last_traceback
+        stack = []
+        if tb and tb.tb_frame is None:
+            tb = tb.tb_next
+        while tb is not None:
+            stack.append((tb.tb_frame, tb.tb_lineno))
+            tb = tb.tb_next
+        return stack
+
+    def get_exception(self):
+        type = sys.last_type
+        value = sys.last_value
+        if hasattr(type, "__name__"):
+            type = type.__name__
+        s = str(type)
+        if value is not None:
+            s = s + ": " + str(value)
+        return s
 
     def GetText(self):
         return self.text
@@ -54,8 +75,6 @@ class FrameTreeItem(TreeItem):
         else:
             item = "%s.%s(...), line %d: %s" % (modname, funcname,
                                              lineno, sourceline)
-##        if i == index:
-##            item = "> " + item
         return item
 
     def GetSubList(self):
@@ -102,33 +121,6 @@ class VariablesTreeItem(ObjectTreeItem):
             sublist.append(item)
         return sublist
 
-def get_stack(t=None, f=None):
-    if t is None:
-        t = sys.last_traceback
-    stack = []
-    if t and t.tb_frame is f:
-        t = t.tb_next
-    while f is not None:
-        stack.append((f, f.f_lineno))
-        if f is self.botframe:
-            break
-        f = f.f_back
-    stack.reverse()
-    while t is not None:
-        stack.append((t.tb_frame, t.tb_lineno))
-        t = t.tb_next
-    return stack
-
-def get_exception(type=None, value=None):
-    if type is None:
-        type = sys.last_type
-        value = sys.last_value
-    if hasattr(type, "__name__"):
-        type = type.__name__
-    s = str(type)
-    if value is not None:
-        s = s + ": " + str(value)
-    return s
 
 def _test():
     try:
