@@ -65,10 +65,9 @@ class ScriptBinding:
     def tabnanny(self, filename):
         import tabnanny
         import tokenize
-        tabnanny.reset_globals()
         f = open(filename, 'r')
         try:
-            tokenize.tokenize(f.readline, tabnanny.tokeneater)
+            tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
         except tokenize.TokenError, msg:
             self.errorbox("Token error",
                           "Token error:\n%s" % str(msg))
