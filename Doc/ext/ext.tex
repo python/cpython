@@ -1243,8 +1243,8 @@ arguments is that functions often pass the objects they receive on to
 other function --- if each function were to test for \NULL{},
 there would be a lot of redundant tests and the code would run slower.
 
-It is better to test for \NULL{} only at the ``source'', i.e.\
-when a pointer that may be \NULL{} is received, e.g.\ from
+It is better to test for \NULL{} only at the ``source'', i.e.\ when a
+pointer that may be \NULL{} is received, e.g.\ from
 \cfunction{malloc()} or from a function that may raise an exception.
 
 The macros \cfunction{Py_INCREF()} and \cfunction{Py_DECREF()}
@@ -1282,6 +1282,177 @@ It is unnecessary to enclose the Python header files in
 \code{extern "C" \{...\}} --- they use this form already if the symbol
 \samp{__cplusplus} is defined (all recent \Cpp{} compilers define this
 symbol).
+
+
+
+\chapter{Building \C{} and  \Cpp{} Extensions on \UNIX{}}
+
+\sectionauthor{Fim Fulton}{jim@Digicool.com}
+
+
+%The make file make file, building C extensions on Unix
+
+
+Starting in Python 1.4, Python provides a special make file for
+building make files for building dynamically-linked extensions and
+custom interpreters.  The make file make file builds a make file
+that reflects various system variables determined by configure when
+the Python interpreter was built, so people building module's don't
+have to resupply these settings.  This vastly simplifies the process
+of building extensions and custom interpreters on Unix systems.
+
+The make file make file is distributed as the file
+\file{Misc/Makefile.pre.in} in the Python source distribution.  The
+first step in building extensions or custom interpreters is to copy
+this make file to a development directory containing extension module
+source.
+
+The make file make file, \file{Makefile.pre.in} uses metadata
+provided in a file named \file{Setup}.  The format of the \file{Setup}
+file is the same as the \file{Setup} (or \file{Setup.in}) file
+provided in the \file{Modules/} directory of the Python source
+distribution.  The \file{Setup} file contains variable definitions::
+
+\begin{verbatim}
+EC=/projects/ExtensionClass
+\end{verbatim}
+
+and module description lines.  It can also contain blank lines and
+comment lines that start with \character{\#}.
+
+A module description line includes a module name, source files,
+options, variable references, and other input files, such
+as libraries or object files.  Consider a simple example::
+
+\begin{verbatim}
+ExtensionClass ExtensionClass.c
+\end{verbatim}
+
+This is the simplest form of a module definition line.  It defines a
+dule, \module{ExtensionClass}, which has a single source file,
+\file{ExtensionClass.c}.
+
+Here is a slightly more complex example that uses an \strong{-I}
+option to specify an include directory:
+
+\begin{verbatim}
+cPersistence cPersistence.c -I$(EC)
+\end{verbatim}
+
+This example also illustrates the format for variable references.
+
+For systems that support dynamic linking, the \file{Setup} file should 
+begin:
+
+\begin{verbatim}
+*shared*
+\end{verbatim}
+
+to indicate that the modules defined in \file{Setup} are to be built
+as dynamically-linked linked modules.
+
+Here is a complete \file{Setup} file for building a
+\module{cPersistent} module:
+
+\begin{verbatim}
+# Set-up file to build the cPersistence module. 
+# Note that the text should begin in the first column.
+*shared*
+
+# We need the path to the directory containing the ExtensionClass
+# include file.
+EC=/projects/ExtensionClass
+cPersistence cPersistence.c -I$(EC)
+\end{verbatim}
+
+After the \file{Setup} file has been created, \file{Makefile.pre.in}
+is run with the \samp{boot} target to create a make file:
+
+\begin{verbatim}
+make -f Makefile.pre.in boot
+\end{verbatim}
+
+This creates the file, Makefile.  To build the extensions, simply
+run the created make file:
+
+\begin{verbatim}
+make
+\end{verbatim}
+
+It's not necessary to re-run \file{Makefile.pre.in} if the
+\file{Setup} file is changed.  The make file automatically rebuilds
+itself if the \file{Setup} file changes.
+
+\section{Building Custom Interpreters}
+
+The make file built by \file{Makefile.pre.in} can be run with the
+\samp{static} target to build an interpreter:
+
+\begin{verbatim}
+make static
+\end{verbatim}
+
+Any modules defined in the Setup file before the \samp{*shared*} line
+will be statically linked into the interpreter.  Typically, a
+\samp{*shared*} line is omitted from the Setup file when a custom
+interpreter is desired.
+
+\section{Module Definition Options}
+
+Several compiler options are supported:
+
+\begin{tableii}{l|l}{}{Option}{Meaning}
+  \lineii{-C}{Tell the C pre-processor not to discard comments}
+  \lineii{-D\var{name}=\var{value}}{Define a macro}
+  \lineii{-I\var{dir}}{Specify an include directory, \var{dir}}
+  \lineii{-L\var{dir}}{Specify a library directory, \var{dir}}
+  \lineii{-l\var{lib}}{Link a library, \var{lib}}
+  \lineii{-U\var{name}}{Undefine a macro}
+\end{tableii}
+
+Other compiler options can be included (snuck in) by putting them
+in variable variables.
+
+Source files can include files with \file{.c}, \file{.C}, \file{.cc},
+and \file{.c++} extensions. 
+
+Other input files include files with \file{.o} or \file{.a}
+extensions.
+
+
+\section{Example}
+
+Here is a more complicated example from \file{Modules/Setup.in}:
+
+\begin{verbatim}
+GMP=/ufs/guido/src/gmp
+mpz mpzmodule.c -I$(GMP) $(GMP)/libgmp.a
+\end{verbatim}
+
+which could also be written as:
+
+\begin{verbatim}
+mpz mpzmodule.c -I$(GMP) -L$(GMP) -lgmp
+\end{verbatim}
+
+
+\section{Distributing your extension modules
+         \label{distributing}}
+
+When distributing your extension modules in source form, make sure to
+include a \file{Setup} file.  The \file{Setup} file should be named
+\file{Setup.in} in the distribution.  The make file make file,
+\file{Makefile.pre.in}, will copy \file{Setup.in} to \file{Setup}.
+Distributing a \file{Setup.in} file makes it easy for people to
+customize the \file{Setup} file while keeping the original in
+\file{Setup.in}.
+
+It is a good idea to include a copy of \file{Makefile.pre.in} for
+people who do not have a source distribution of Python.
+
+Do not distribute a make file.  People building your modules
+should use \file{Makefile.pre.in} to build their own make file.
+
 
 \chapter{Embedding Python in Another Application
          \label{embedding}}
