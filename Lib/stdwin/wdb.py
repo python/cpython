@@ -1,5 +1,11 @@
 # wdb.py -- a window-based Python debugger
 
+# XXX To do:
+# - don't fall out of bottom frame
+# - is the /tmp file hack really needed?
+# - also use it for post-mortem debugging
+
+
 import stdwin
 from stdwinevents import *
 import sys
@@ -65,15 +71,18 @@ class Wdb(bdb.Bdb, basewin.BaseWindow): # Window debugger
 		frame.f_locals['__return__'] = return_value
 		self.settitle('--Return--')
 		self.interaction(frame, None)
-		self.settitle('--Stack--')
+		if not self.closed:
+			self.settitle('--Stack--')
 	
 	def user_exception(self, frame, (exc_type, exc_value, exc_traceback)):
 		# This function is called if an exception occurs,
 		# but only if we are to stop at or just below this level
 		frame.f_locals['__exception__'] = exc_type, exc_value
 		self.settitle(exc_type + ': ' + repr.repr(exc_value))
+		stdwin.fleep()
 		self.interaction(frame, exc_traceback)
-		self.settitle('--Stack--')
+		if not self.closed:
+			self.settitle('--Stack--')
 	
 	# Change the title
 	
