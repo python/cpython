@@ -455,7 +455,7 @@ class HorizontalPanes(Widget):
 		"""panesizes should be a tuple of numbers. The length of the tuple is the number of panes, 
 		the items in the tuple are the relative sizes of these panes; these numbers should add up 
 		to 1 (the total size of all panes)."""
-		ClickableWidget.__init__(self, possize)
+		Widget.__init__(self, possize)
 		self._panesizes = panesizes
 		self._gutter = gutter
 		self._enabled = 1
