@@ -79,6 +79,11 @@ class Command:
                 return getattr (self.distribution, attr)
             else:
                 return myval
+
+        # Needed because some Command methods assume 'self.force' exists,
+        # but not all commands define 'self.force'.  Ugh.
+        elif attr == 'force':
+            return None
         else:
             raise AttributeError, attr
 
@@ -307,8 +312,9 @@ class Command:
 
     def copy_file (self, infile, outfile,
                    preserve_mode=1, preserve_times=1, link=None, level=1):
-        """Copy a file respecting verbose, dry-run and force flags (this
-        should only be used by commands that define 'self.force'!)."""
+        """Copy a file respecting verbose, dry-run and force flags.  (The
+        former two default to whatever is in the Distribution object, and
+        the latter defaults to false for commands that don't define it.)"""
 
         return util.copy_file (infile, outfile,
                                preserve_mode, preserve_times,
@@ -322,8 +328,7 @@ class Command:
                    preserve_mode=1, preserve_times=1, preserve_symlinks=0,
                    level=1):
         """Copy an entire directory tree respecting verbose, dry-run,
-           and force flags (again, should only be used by commands
-           that define 'self.force')."""
+           and force flags."""
 
         return util.copy_tree (infile, outfile, 
                                preserve_mode,preserve_times,preserve_symlinks,
@@ -381,8 +386,7 @@ class Command:
         # If 'outfile' must be regenerated (either because it doesn't
         # exist, is out-of-date, or the 'force' flag is true) then
         # perform the action that presumably regenerates it
-        if ((hasattr(self,'force') and self.force) or
-            util.newer_group (infiles, outfile)):
+        if self.force or util.newer_group (infiles, outfile):
             self.execute (func, args, exec_msg, level)
 
         # Otherwise, print the "skip" message
