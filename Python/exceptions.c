@@ -288,6 +288,9 @@ Exception__str__(PyObject *self, PyObject *args)
 	    out = NULL;
 	break;
     }
+    case -1:
+        PyErr_Clear();
+        /* Fall through */
     default:
         out = PyObject_Str(args);
         break;
