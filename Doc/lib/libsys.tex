@@ -282,10 +282,11 @@ else:
 \begin{datadesc}{path}
 \indexiii{module}{search}{path}
   A list of strings that specifies the search path for modules.
-  Initialized from the environment variable \envvar{PYTHONPATH}, or an
+  Initialized from the environment variable \envvar{PYTHONPATH}, plus an
   installation-dependent default.
 
-  The first item of this list, \code{path[0]}, is the directory
+  As initialized upon program startup,
+  the first item of this list, \code{path[0]}, is the directory
   containing the script that was used to invoke the Python
   interpreter.  If the script directory is not available (e.g.  if the
   interpreter is invoked interactively or if the script is read from
@@ -293,6 +294,8 @@ else:
   Python to search modules in the current directory first.  Notice
   that the script directory is inserted \emph{before} the entries
   inserted as a result of \envvar{PYTHONPATH}.
+
+  A program is free to modify this list for its own purposes.
 \end{datadesc}
 
 \begin{datadesc}{platform}
