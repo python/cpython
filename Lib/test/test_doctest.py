@@ -363,26 +363,19 @@ Duplicate Removal
 If a single object is listed twice (under different names), then tests
 will only be generated for it once:
 
-    >>> class TwoNames:
-    ...     '''f() and g() are two names for the same method'''
-    ...
-    ...     def f(self):
-    ...         '''
-    ...         >>> print TwoNames().f()
-    ...         f
-    ...         '''
-    ...         return 'f'
-    ...
-    ...     g = f # define an alias for f.
-
-    >>> finder = doctest.DocTestFinder()
-    >>> tests = finder.find(TwoNames, ignore_imports=False)
+    >>> from test import doctest_aliases
+    >>> tests = finder.find(doctest_aliases)
     >>> tests.sort()
     >>> print len(tests)
     2
     >>> print tests[0].name
-    TwoNames
-    >>> print tests[1].name in ('TwoNames.f', 'TwoNames.g')
+    test.doctest_aliases.TwoNames
+
+    TwoNames.f and TwoNames.g are bound to the same object.
+    We can't guess which will be found in doctest's traversal of
+    TwoNames.__dict__ first, so we have to allow for either.
+
+    >>> tests[1].name.split('.')[-1] in ['f', 'g']
     True
 
 Filter Functions
