@@ -10,7 +10,7 @@ import TwitCore
 from mac_widgets import MT_AnyList, MT_IconTextWidget
 
 # Our dialogs
-ID_MODULES=512
+ID_MODULES=500
 I_MODULES_TITLE=1
 I_MODULES=2
 I_VARS_TITLE=3

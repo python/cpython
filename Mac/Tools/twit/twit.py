@@ -20,7 +20,7 @@ if not dirname in sys.path:
 
 if os.name == 'mac':
 	import MacOS
-	MacOS.splash(515)	# Try to show the splash screen
+	MacOS.splash(502)	# Try to show the splash screen
 	import mactwit_app; twit_app = mactwit_app
 else:
 	try:

@@ -10,7 +10,7 @@ import TwitCore
 from mac_widgets import MT_AnyList, MT_IndexList, MT_IconTextWidget
 
 # Our dialogs
-ID_STACK=513
+ID_STACK=501
 I_STACK_TITLE=1
 I_STACK=2
 I_VARS_TITLE=3

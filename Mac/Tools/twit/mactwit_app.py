@@ -20,9 +20,9 @@ import macfs
 import string
 
 # Resource-id (for checking existence)
-ID_MODULES=512
+ID_MODULES=500
 
-ID_ABOUT=515
+ID_ABOUT=502
 
 _arrow = Qd.qd.arrow
 _watch = Qd.GetCursor(4).data

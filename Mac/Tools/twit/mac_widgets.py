@@ -17,7 +17,10 @@ TEXTWIDTH=4096 # More-or-less random value
 TEXTFONT=4
 TEXTSIZE=9
 
-PIC_BREAK=513
+# Resource numbers
+PIC_CURRENT=500
+PIC_BREAK=501
+
 picture_cache={}
 
 class MT_TextWidget:
@@ -184,14 +187,14 @@ class MT_IconTextWidget(MT_TextWidget):
 				self.terect[0]-1, self.rect[3]-SCROLLBAR)
 		self.curlinerange = (self.terect[1]+self.ted.lineHeight,
 				self.terect[3]-2*self.ted.lineHeight)
-		self.piccurrent = 512
+		self.piccurrent = PIC_CURRENT
 		
 	def setbreaks(self, list):
 		self.breakpointlist = list[:]
 		Qd.SetPort(self.wid)
 		Win.InvalRect(self.iconrect)
 		
-	def setcurline(self, line, pic=512):
+	def setcurline(self, line, pic=PIC_CURRENT):
 		self.curline = line
 		self.piccurrent = pic
 		Qd.SetPort(self.wid)
