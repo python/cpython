@@ -523,7 +523,7 @@ internal_select(PySocketSockObject *s, int writing)
 
 /* Initialize a new socket object. */
 
-static float defaulttimeout = -1.0; /* Default timeout for new sockets */
+static double defaulttimeout = -1.0; /* Default timeout for new sockets */
 
 static void
 init_sockobject(PySocketSockObject *s,
