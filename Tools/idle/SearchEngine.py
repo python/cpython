@@ -111,8 +111,6 @@ class SearchEngine:
         If the search is allowed to wrap around, it will return the
         original selection if (and only if) it is the only match.
 
-        XXX When wrapping around and failing to find anything, the
-        portion of the text after the selection is searched twice :-(
         """
         if not prog:
             prog = self.getprog()
@@ -137,6 +135,8 @@ class SearchEngine:
         return res
 
     def search_forward(self, text, prog, line, col, wrap, ok=0):
+        wrapped = 0
+        startline = line
         chars = text.get("%d.0" % line, "%d.0" % (line+1))
         while chars:
             m = prog.search(chars[:-1], col)
@@ -144,28 +144,35 @@ class SearchEngine:
                 if ok or m.end() > col:
                     return line, m
             line = line + 1
+            if wrapped and line > startline:
+                break
             col = 0
             ok = 1
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             if not chars and wrap:
+                wrapped = 1
                 wrap = 0
                 line = 1
                 chars = text.get("1.0", "2.0")
         return None
 
     def search_backward(self, text, prog, line, col, wrap, ok=0):
+        wrapped = 0
+        startline = line
         chars = text.get("%d.0" % line, "%d.0" % (line+1))
         while 1:
             m = search_reverse(prog, chars[:-1], col)
             if m:
-                i, j = m.span()
                 if ok or m.start() < col:
                     return line, m
             line = line - 1
+            if wrapped and line < startline:
+                break
             ok = 1
             if line <= 0:
                 if not wrap:
                     break
+                wrapped = 1
                 wrap = 0
                 pos = text.index("end-1c")
                 line, col = map(int, string.split(pos, "."))
