@@ -2038,6 +2038,8 @@ long_hex(PyObject *v)
 {
 	return long_format(v, 16, 1);
 }
+staticforward PyObject *
+long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *
 long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2046,7 +2048,8 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	int base = -909;		     /* unlikely! */
 	static char *kwlist[] = {"x", "base", 0};
 
-	assert(type == &PyLong_Type);
+	if (type != &PyLong_Type)
+		return long_subtype_new(type, args, kwds); /* Wimp out */
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:long", kwlist,
 					 &x, &base))
 		return NULL;
@@ -2067,6 +2070,36 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 			"long() can't convert non-string with explicit base");
 		return NULL;
 	}
+}
+
+/* Wimpy, slow approach to tp_new calls for subtypes of long:
+   first create a regular long from whatever arguments we got,
+   then allocate a subtype instance and initialize it from
+   the regular long.  The regular long is then thrown away.
+*/
+static PyObject *
+long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyLongObject *tmp, *new;
+	int i, n;
+
+	assert(PyType_IsSubtype(type, &PyLong_Type));
+	tmp = (PyLongObject *)long_new(&PyLong_Type, args, kwds);
+	if (tmp == NULL)
+		return NULL;
+	assert(PyLong_Check(tmp));
+	n = tmp->ob_size;
+	if (n < 0)
+		n = -n;
+	new = (PyLongObject *)type->tp_alloc(type, n);
+	if (new == NULL)
+		return NULL;
+	assert(PyLong_Check(new));
+	new->ob_size = type->ob_size;
+	for (i = 0; i < n; i++)
+		new->ob_digit[i] = tmp->ob_digit[i];
+	Py_DECREF(tmp);
+	return (PyObject *)new;
 }
 
 static char long_doc[] =
@@ -2140,7 +2173,8 @@ PyTypeObject PyLong_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	long_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */

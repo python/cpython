@@ -134,8 +134,12 @@ PyInt_FromLong(long ival)
 static void
 int_dealloc(PyIntObject *v)
 {
-	v->ob_type = (struct _typeobject *)free_list;
-	free_list = v;
+	if (v->ob_type == &PyInt_Type) {
+		v->ob_type = (struct _typeobject *)free_list;
+		free_list = v;
+	}
+	else
+		v->ob_type->tp_free((PyObject *)v);
 }
 
 long
@@ -783,6 +787,9 @@ int_hex(PyIntObject *v)
 	return PyString_FromString(buf);
 }
 
+staticforward PyObject *
+int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+
 static PyObject *
 int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -790,7 +797,8 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	int base = -909;
 	static char *kwlist[] = {"x", "base", 0};
 
-	assert(type == &PyInt_Type);
+	if (type != &PyInt_Type)
+		return int_subtype_new(type, args, kwds); /* Wimp out */
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:int", kwlist,
 					 &x, &base))
 		return NULL;
@@ -809,6 +817,29 @@ int_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	PyErr_SetString(PyExc_TypeError,
 			"int() can't convert non-string with explicit base");
 	return NULL;
+}
+
+/* Wimpy, slow approach to tp_new calls for subtypes of int:
+   first create a regular int from whatever arguments we got,
+   then allocate a subtype instance and initialize its ob_ival
+   from the regular int.  The regular int is then thrown away.
+*/
+static PyObject *
+int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *tmp, *new;
+
+	assert(PyType_IsSubtype(type, &PyInt_Type));
+	tmp = int_new(&PyInt_Type, args, kwds);
+	if (tmp == NULL)
+		return NULL;
+	assert(PyInt_Check(tmp));
+	new = type->tp_alloc(type, 0);;
+	if (new == NULL)
+		return NULL;
+	((PyIntObject *)new)->ob_ival = ((PyIntObject *)tmp)->ob_ival;
+	Py_DECREF(tmp);
+	return new;
 }
 
 static char int_doc[] =
@@ -882,7 +913,8 @@ PyTypeObject PyInt_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	int_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
@@ -934,7 +966,7 @@ PyInt_Fini(void)
 		for (i = 0, p = &list->objects[0];
 		     i < N_INTOBJECTS;
 		     i++, p++) {
-			if (PyInt_Check(p) && p->ob_refcnt != 0)
+			if (p->ob_type == &PyInt_Type && p->ob_refcnt != 0)
 				irem++;
 		}
 		next = list->next;
@@ -944,7 +976,8 @@ PyInt_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_INTOBJECTS;
 			     i++, p++) {
-				if (!PyInt_Check(p) || p->ob_refcnt == 0) {
+				if (p->ob_type != &PyInt_Type ||
+				    p->ob_refcnt == 0) {
 					p->ob_type = (struct _typeobject *)
 						free_list;
 					free_list = p;
@@ -986,7 +1019,7 @@ PyInt_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_INTOBJECTS;
 			     i++, p++) {
-				if (PyInt_Check(p) && p->ob_refcnt != 0)
+				if (p->ob_type == &PyInt_Type && p->ob_refcnt != 0)
 					fprintf(stderr,
 				"#   <int at %p, refcnt=%d, val=%ld>\n",
 						p, p->ob_refcnt, p->ob_ival);

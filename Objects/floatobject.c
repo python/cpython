@@ -626,18 +626,45 @@ float_float(PyObject *v)
 }
 
 
+staticforward PyObject *
+float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+
 static PyObject *
 float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *x = Py_False; /* Integer zero */
 	static char *kwlist[] = {"x", 0};
 
-	assert(type == &PyFloat_Type);
+	if (type != &PyFloat_Type)
+		return float_subtype_new(type, args, kwds); /* Wimp out */
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:float", kwlist, &x))
 		return NULL;
 	if (PyString_Check(x))
 		return PyFloat_FromString(x, NULL);
 	return PyNumber_Float(x);
+}
+
+/* Wimpy, slow approach to tp_new calls for subtypes of float:
+   first create a regular float from whatever arguments we got,
+   then allocate a subtype instance and initialize its ob_fval
+   from the regular float.  The regular float is then thrown away.
+*/
+static PyObject *
+float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *tmp, *new;
+
+	assert(PyType_IsSubtype(type, &PyFloat_Type));
+	tmp = float_new(&PyFloat_Type, args, kwds);
+	if (tmp == NULL)
+		return NULL;
+	assert(PyFloat_Check(tmp));
+	new = type->tp_alloc(type, 0);;
+	if (new == NULL)
+		return NULL;
+	((PyFloatObject *)new)->ob_fval = ((PyFloatObject *)tmp)->ob_fval;
+	Py_DECREF(tmp);
+	return new;
 }
 
 static char float_doc[] =
@@ -708,7 +735,8 @@ PyTypeObject PyFloat_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES, /* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
+		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	float_doc,				/* tp_doc */
  	0,					/* tp_traverse */
 	0,					/* tp_clear */
@@ -750,7 +778,7 @@ PyFloat_Fini(void)
 		for (i = 0, p = &list->objects[0];
 		     i < N_FLOATOBJECTS;
 		     i++, p++) {
-			if (PyFloat_Check(p) && p->ob_refcnt != 0)
+			if (p->ob_type == &PyFloat_Type && p->ob_refcnt != 0)
 				frem++;
 		}
 		next = list->next;
@@ -760,7 +788,8 @@ PyFloat_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_FLOATOBJECTS;
 			     i++, p++) {
-				if (!PyFloat_Check(p) || p->ob_refcnt == 0) {
+				if (p->ob_type != &PyFloat_Type ||
+				    p->ob_refcnt == 0) {
 					p->ob_type = (struct _typeobject *)
 						free_list;
 					free_list = p;
@@ -792,7 +821,8 @@ PyFloat_Fini(void)
 			for (i = 0, p = &list->objects[0];
 			     i < N_FLOATOBJECTS;
 			     i++, p++) {
-				if (PyFloat_Check(p) && p->ob_refcnt != 0) {
+				if (p->ob_type == &PyFloat_Type &&
+				    p->ob_refcnt != 0) {
 					char buf[100];
 					PyFloat_AsString(buf, p);
 					fprintf(stderr,
