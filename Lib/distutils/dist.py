@@ -172,6 +172,12 @@ class Distribution:
         # operations, we just check the 'have_run' dictionary and carry on.
         # It's only safe to query 'have_run' for a command class that has
         # been instantiated -- a false value will be inserted when the
+        if sys.platform == 'mac':
+            import EasyDialogs
+            cmdlist = self.get_command_list()
+            self.script_args = EasyDialogs.GetArgv(
+                self.global_options + self.display_options, cmdlist)
+
         # command object is created, and replaced with a true value when
         # the command is successfully run.  Thus it's probably best to use
         # '.get()' rather than a straight lookup.
@@ -657,6 +663,38 @@ class Distribution:
 
     # print_commands ()
 
+    def get_command_list (self):
+        """Get a list of (command, description) tuples.
+        The list is divided into "standard commands" (listed in
+        distutils.command.__all__) and "extra commands" (mentioned in
+        self.cmdclass, but not a standard command).  The descriptions come
+        from the command class attribute 'description'.
+        """
+        # Currently this is only used on Mac OS, for the Mac-only GUI
+        # Distutils interface (by Jack Jansen)
+
+        import distutils.command
+        std_commands = distutils.command.__all__
+        is_std = {}
+        for cmd in std_commands:
+            is_std[cmd] = 1
+
+        extra_commands = []
+        for cmd in self.cmdclass.keys():
+            if not is_std.get(cmd):
+                extra_commands.append(cmd)
+
+        rv = []
+        for cmd in (std_commands + extra_commands):
+            klass = self.cmdclass.get(cmd)
+            if not klass:
+                klass = self.get_command_class(cmd)
+            try:
+                description = klass.description
+            except AttributeError:
+                description = "(no description available)"
+            rv.append((cmd, description))
+        return rv
 
     # -- Command class/object methods ----------------------------------
 
