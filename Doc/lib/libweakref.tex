@@ -217,7 +217,9 @@ For an object to be weakly referencable, the extension must include a
 weak reference mechanism; it must be initialized to \NULL{} by the
 object's constructor.  It must also set the \member{tp_weaklistoffset}
 field of the corresponding type object to the offset of the field.
-For example, the instance type is defined with the following structure:
+Also, it needs to add \constant{Py_TPFLAGS_HAVE_WEAKREFS} to the
+tp_flags slot.  For example, the instance type is defined with the
+following structure:
 
 \begin{verbatim}
 typedef struct {
@@ -238,8 +240,27 @@ PyTypeObject PyInstance_Type = {
 
     /* Lots of stuff omitted for brevity... */
 
-    offsetof(PyInstanceObject, in_weakreflist) /* tp_weaklistoffset */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_WEAKREFS   /* tp_flags */
+    0,                                          /* tp_doc */
+    0,                                          /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    offsetof(PyInstanceObject, in_weakreflist), /* tp_weaklistoffset */
 };
+\end{verbatim}
+
+The type constructor is responsible for initializing the weak reference
+list to \NULL:
+
+\begin{verbatim}
+static PyObject * 
+instance_new() { 
+    /* Other initialization stuff omitted for brevity */ 
+
+    self->in_weakreflist = NULL; 
+
+    return (PyObject *) self; 
+} 
 \end{verbatim}
 
 The only further addition is that the destructor needs to call the
