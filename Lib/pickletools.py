@@ -299,10 +299,10 @@ def read_stringnl_noescape_pair(f):
     """
     >>> import StringIO
     >>> read_stringnl_noescape_pair(StringIO.StringIO("Queue\\nEmpty\\njunk"))
-    'Queue.Empty'
+    'Queue Empty'
     """
 
-    return "%s.%s" % (read_stringnl_noescape(f), read_stringnl_noescape(f))
+    return "%s %s" % (read_stringnl_noescape(f), read_stringnl_noescape(f))
 
 stringnl_noescape_pair = ArgumentDescriptor(
                              name='stringnl_noescape_pair',
@@ -314,7 +314,7 @@ stringnl_noescape_pair = ArgumentDescriptor(
                              escapes, or bracketing quotes.  They should
                              consist solely of printable ASCII characters.
                              The pair is returned as a single string, with
-                             a single '.' separating the two strings.
+                             a single blank separating the two strings.
                              """)
 
 def read_string4(f):
@@ -1668,7 +1668,7 @@ Exercise the INST/OBJ/BUILD family.
 
 >>> import random
 >>> dis(pickle.dumps(random.random))
-    0: c GLOBAL     'random.random'
+    0: c GLOBAL     'random random'
    15: p PUT        0
    18: . STOP
 
@@ -1678,7 +1678,7 @@ Exercise the INST/OBJ/BUILD family.
     1: l     LIST       (MARK at 0)
     2: p PUT        0
     5: ( MARK
-    6: i     INST       'pickle.PicklingError' (MARK at 5)
+    6: i     INST       'pickle PicklingError' (MARK at 5)
    28: p PUT        1
    31: ( MARK
    32: d     DICT       (MARK at 31)
@@ -1700,7 +1700,7 @@ Exercise the INST/OBJ/BUILD family.
     1: q BINPUT     0
     3: ( MARK
     4: (     MARK
-    5: c         GLOBAL     'pickle.PicklingError'
+    5: c         GLOBAL     'pickle PicklingError'
    27: q         BINPUT     1
    29: o         OBJ        (MARK at 4)
    30: q     BINPUT     2
