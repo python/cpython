@@ -55,7 +55,7 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 1.5.2a1
+  Value=Python 1.5.2a2
 end
 item: Set Variable
   Variable=GROUP
@@ -728,7 +728,7 @@ item: Install File
 end
 item: Install File
   Source=%_SRC_%\..\zlibvc104dll\zlib.dll
-  Destination=%SYS32%\zlib.dll
+  Destination=%MAINDIR%\DLLs\zlib.dll
   Flags=0000000000000010
 end
 item: Install File
@@ -829,9 +829,39 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\Tools\scripts\Readme
-  Destination=%MAINDIR%\Tools\Scripts\Readme
+  Source=%_SRC_%\Tools\scripts\README
+  Destination=%MAINDIR%\Tools\Scripts\README.txt
   Description=Utility Scripts
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\freeze\*.*
+  Destination=%MAINDIR%\Tools\freeze
+  Description=Freeze tool
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\webchecker\*.py
+  Destination=%MAINDIR%\Tools\webchecker
+  Description=Web checker tool
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\webchecker\README
+  Destination=%MAINDIR%\Tools\webchecker\README.txt
+  Description=Web checker tool
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\versioncheck\*.py
+  Destination=%MAINDIR%\Tools\versioncheck
+  Description=Version checker tool
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Tools\versioncheck\README
+  Destination=%MAINDIR%\Tools\versioncheck\README.txt
+  Description=Version checker tool
   Flags=0000000000000010
 end
 item: End Block
@@ -934,6 +964,11 @@ item: Edit Registry
   New Value=Python.File
 end
 item: Edit Registry
+  Key=.py
+  New Value=text/plain
+  Value Name=Content Type
+end
+item: Edit Registry
   Key=Python.File
   New Value=Python File
 end
@@ -950,6 +985,11 @@ item: Edit Registry
   New Value=Python.NoConFile
 end
 item: Edit Registry
+  Key=.pyw
+  New Value=text/plain
+  Value Name=Content Type
+end
+item: Edit Registry
   Key=Python.NoConFile
   New Value=Python File (no console)
 end
@@ -963,6 +1003,10 @@ item: Edit Registry
 end
 item: Edit Registry
   Key=.pyc
+  New Value=Python.CompiledFile
+end
+item: Edit Registry
+  Key=.pyo
   New Value=Python.CompiledFile
 end
 item: Edit Registry
