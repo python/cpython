@@ -99,11 +99,22 @@ if missing: raise "Missing Types"
 	def initblacklists(self):
 		self.blacklistnames = self.makeblacklistnames()
 		self.blacklisttypes = ["unknown", "-"] + self.makeblacklisttypes()
+		self.greydictnames = self.greylist2dict(self.makegreylist())
+		
+	def greylist2dict(self, list):
+		rv = {}
+		for define, namelist in list:
+			for name in namelist:
+				rv[name] = define
+		return rv
 
 	def makeblacklistnames(self):
 		return []
 
 	def makeblacklisttypes(self):
+		return []
+		
+	def makegreylist(self):
 		return []
 
 	def initrepairinstructions(self):
@@ -395,6 +406,7 @@ if missing: raise "Missing Types"
 			self.defsfile.write("%s = %s\n" % (name, defn))
 		else:
 			self.defsfile.write("# %s = %s\n" % (name, defn))
+		# XXXX No way to handle greylisted names
 
 	def dofuncspec(self):
 		raw = self.line
@@ -519,6 +531,8 @@ if missing: raise "Missing Types"
 			self.typeused(atype, amode)
 			self.specfile.write("    (%s, %s, %s),\n" %
 			                    (atype, `aname`, amode))
+		if self.greydictnames.has_key(name):
+			self.specfile.write("    condition=%s,\n"%`self.greydictnames[name]`)
 		self.specfile.write(")\n")
 		self.specfile.write("%s.append(f)\n\n" % listname)
 
