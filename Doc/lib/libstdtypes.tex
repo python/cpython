@@ -255,7 +255,7 @@ See the section on built-in functions for an exact definition.
 \end{description}
 % XXXJH exceptions: overflow (when? what operations?) zerodivision
 
-\subsubsection{Bit-string Operations on Integer Types}
+\subsubsection{Bit-string Operations on Integer Types \label{bitstring-ops}}
 \nodename{Bit-string Operations}
 
 Plain and long integer types support additional operations that make
@@ -590,6 +590,7 @@ and \var{k} is not in the map, \code{None} is returned.
 The interpreter supports several other kinds of objects.
 Most of these support only one or two operations.
 
+
 \subsubsection{Modules \label{typesmodules}}
 
 The only special operation on a module is attribute access:
@@ -609,12 +610,16 @@ possible (i.e., you can write \code{\var{m}.__dict__['a'] = 1}, which
 defines \code{\var{m}.a} to be \code{1}, but you can't write
 \code{\var{m}.__dict__ = \{\}}.
 
-Modules are written like this: \code{<module 'sys'>}.
+Modules built into the interpreter are written like this:
+\code{<module 'sys' (built-in)>}.  If loaded from a file, they are
+written as \code{<module 'os' from '/usr/local/lib/python1.5/os.pyc'>}.
+
 
 \subsubsection{Classes and Class Instances \label{typesobjects}}
 \nodename{Classes and Instances}
 
 See Chapters 3 and 7 of the \emph{Python Reference Manual} for these.
+
 
 \subsubsection{Functions \label{typesfunctions}}
 
