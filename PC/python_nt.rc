@@ -6,41 +6,11 @@
 #define MS_WINDOWS
 #include "modsupport.h"
 #include "patchlevel.h"
-
-/* Across releases, change:
- *    MS_DLL_ID if the minor version number changes.
- *    PYTHON_DLL_NAME ditto.
- * MS_DLL_ID must match PY_VERSION in the Windows install script.
- */
-#define MS_DLL_ID "2.4"
-
-#ifndef PYTHON_DLL_NAME
-#define PYTHON_DLL_NAME "python24.dll"
+#ifdef _DEBUG
+#   include "pythonnt_rc_d.h"
+#else
+#   include "pythonnt_rc.h"
 #endif
-
-/* Nothing below this should need to be changed except for copyright
- * notices, company name, and FIELD3.  Unfortunately, all attempts
- * to get the resource compiler to do arithmetic in macros have
- * failed miserably -- it gives syntax errors, ignores operators,
- * or does stuff that's simply bizarre.
- */
-
-
-/* This is what we'd like FIELD3 to be:
- *
- * #define FIELD3 (PY_MICRO_VERSION*1000 + PY_RELEASE_LEVEL*10 + PY_RELEASE_SERIAL)
- *
- * but that neither gives an error nor comes anywhere close to working.  The
- * following comment and #define are output from PCbuild\field3.py:
- *
- * For 2.4a0,
- * PY_MICRO_VERSION = 0
- * PY_RELEASE_LEVEL = 'alpha' = 0xa
- * PY_RELEASE_SERIAL = 0
- *
- * and 0*1000 + 10*10 + 0 = 100
- */
-#define FIELD3 100
 
 /* e.g., 2.1a2
  * PY_VERSION comes from patchevel.h
