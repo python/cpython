@@ -1597,6 +1597,7 @@ izip_next(izipobject *lz)
 	PyObject *result = lz->result;
 	PyObject *it;
 	PyObject *item;
+	PyObject *olditem;
 
 	if (result->ob_refcnt == 1) {
 		Py_INCREF(result);
@@ -1608,8 +1609,9 @@ izip_next(izipobject *lz)
 				Py_DECREF(result);
 				return NULL;
 			}
-			Py_DECREF(PyTuple_GET_ITEM(result, i));
+			olditem = PyTuple_GET_ITEM(result, i);
 			PyTuple_SET_ITEM(result, i, item);
+			Py_DECREF(olditem);
 		}
 	} else {
 		result = PyTuple_New(tuplesize);
