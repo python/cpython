@@ -347,6 +347,7 @@ libpython$(VERSION).so:	$(LIBRARY)
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX
 $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): $(LIBRARY) $(PYTHONFRAMEWORKDIR)
+	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
 	libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
 		-framework System @LIBTOOL_CRUFT@
 
@@ -758,10 +759,10 @@ $(PYTHONFRAMEWORKDIR): $(RESSRCDIR)/Info.plist \
 	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(FRAMEWORKDEST)/Resources/version.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
 		$(FRAMEWORKDEST)/Resources/English.lproj/InfoPlist.strings
-	$(LN) -fs $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
-	$(LN) -fs Versions/Current/Python $(PYTHONFRAMEWORKDIR)/Python
-	$(LN) -fs Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
-	$(LN) -fs Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
+	$(LN) -fsh $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
+	$(LN) -fsh Versions/Current/Python $(PYTHONFRAMEWORKDIR)/Python
+	$(LN) -fsh Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
+	$(LN) -fsh Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
 # On install, we re-make the framework
 # structure in the install location, /Library/Frameworks/ or the argument to
@@ -789,10 +790,10 @@ frameworkinfrastructureinstall:	$(LDLIBRARY)
 	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(FRAMEWORKFINALDEST)/Resources/version.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
 		$(FRAMEWORKFINALDEST)/Resources/English.lproj/InfoPlist.strings
-	$(LN) -fs $(VERSION) $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
-	$(LN) -fs Versions/Current/Python $(PYTHONFRAMEWORKINSTALLDIR)/Python
-	$(LN) -fs Versions/Current/Headers $(PYTHONFRAMEWORKINSTALLDIR)/Headers
-	$(LN) -fs Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
+	$(LN) -fsh $(VERSION) $(PYTHONFRAMEWORKINSTALLDIR)/Versions/Current
+	$(LN) -fsh Versions/Current/Python $(PYTHONFRAMEWORKINSTALLDIR)/Python
+	$(LN) -fsh Versions/Current/Headers $(PYTHONFRAMEWORKINSTALLDIR)/Headers
+	$(LN) -fsh Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_DATA) $(LDLIBRARY) $(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
 
 # Build the toplevel Makefile
