@@ -126,10 +126,12 @@ I have no answers.  Garbage Collection may also become a problem here.)
 """
 
 __format_version__ = "1.0"		# File format version
-__version__ = "1.2"			# Code version
+__version__ = "1.4"			# Code version
 
 from types import *
 import string
+
+PicklingError = "pickle.PicklingError"
 
 AtomicTypes = [NoneType, IntType, FloatType, StringType]
 
@@ -191,7 +193,12 @@ class Pickler:
 			self.write(GET + `d` + '\n')
 			return
 		t = type(object)
-		self.dispatch[t](self, object)
+		try:
+			f = self.dispatch[t]
+		except KeyError:
+			raise PicklingError, \
+			      "can't pickle %s objects" % `t.__name__`
+		f(self, object)
 
 	def persistent_id(self, object):
 		return None
