@@ -222,14 +222,14 @@ p.add('fooprof')
 
 Invoked as a script, the \module{pstats} module is a statistics
 browser for reading and examining profile dumps.  It has a simple
-line-oriented interface (implemented using \module{cmd}) and
+line-oriented interface (implemented using \refmodule{cmd}) and
 interactive help.
 
 \section{What Is Deterministic Profiling?}
 \nodename{Deterministic Profiling}
 
 \dfn{Deterministic profiling} is meant to reflect the fact that all
-\dfn{function call}, \dfn{function return}, and \dfn{exception} events
+\emph{function call}, \emph{function return}, and \emph{exception} events
 are monitored, and precise timings are made for the intervals between
 these events (during which time the user's code is executing).  In
 contrast, \dfn{statistical profiling} (which is not done by this
