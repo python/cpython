@@ -2,7 +2,7 @@
 # -*- mode: python -*-
 # $Id$
 
-# Re test suite and benchmark suite v1.5a2
+# Re test suite and benchmark suite v1.5b2
 
 # The 3 possible outcomes for each pattern
 [SUCCEED, FAIL, SYNTAX_ERROR] = range(3)
@@ -47,7 +47,62 @@ benchmarks = [
 #
 # If the regex isn't expected to work, the latter two elements can be omitted.
 
-tests = [
+tests = [ 
+    # Test ?P< and ?P= extensions
+    ('(?P<foo_123', '', SYNTAX_ERROR),      # Unterminated group identifier
+    ('(?P<1>a)', '', SYNTAX_ERROR),         # Begins with a digit
+    ('(?P<!>a)', '', SYNTAX_ERROR),         # Begins with an illegal char
+    ('(?P<foo!>a)', '', SYNTAX_ERROR),      # Begins with an illegal char
+
+    # Same tests, for the ?P= form
+    ('(?P<foo_123>a)(?P=foo_123', 'aa', SYNTAX_ERROR),
+    ('(?P<foo_123>a)(?P=1)', 'aa', SYNTAX_ERROR),
+    ('(?P<foo_123>a)(?P=!)', 'aa', SYNTAX_ERROR),
+    ('(?P<foo_123>a)(?P=foo_124', 'aa', SYNTAX_ERROR),  # Backref to undefined group
+
+    ('(?P<foo_123>a)', 'a', SUCCEED, 'g1', 'a'),
+    ('(?P<foo_123>a)(?P=foo_123)', 'aa', SUCCEED, 'g1', 'a'),
+    
+    # Test octal escapes
+    ('\\1', 'a', SYNTAX_ERROR),
+    ('\\09', chr(0) + '9', SUCCEED, 'found', chr(0) + '9'),
+    ('\\141', 'a', SUCCEED, 'found', 'a'),
+    ('(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)\\119', 'abcdefghijklk9', SUCCEED, 'found+"-"+g11', 'abcdefghijklk9-k'),
+
+    # Test that a literal \0 is handled everywhere
+    ('\0', '\0', SUCCEED, 'found', '\0'),
+    (r'\0', '\0', SUCCEED, 'found', '\0'),
+    ('[\0a]', '\0', SUCCEED, 'found', '\0'),
+    ('[a\0]', '\0', SUCCEED, 'found', '\0'),
+    ('[^a\0]', '\0', FAIL),
+    (r'[\0a]', '\0', SUCCEED, 'found', '\0'),
+    (r'[a\0]', '\0', SUCCEED, 'found', '\0'),
+    (r'[^a\0]', '\0', FAIL),
+
+    # Test various letter escapes
+    (r'\a[\b]\f\n\r\t\v', '\a\b\f\n\r\t\v', SUCCEED, 'found', '\a\b\f\n\r\t\v'),
+    (r'[\a][\b][\f][\n][\r][\t][\v]', '\a\b\f\n\r\t\v', SUCCEED, 'found', '\a\b\f\n\r\t\v'),
+    (r'\u', '', SYNTAX_ERROR),    # A Perl escape
+    (r'\c\e\g\h\i\j\k\m\o\p\q\y\z', 'ceghijkmopqyz', SUCCEED, 'found', 'ceghijkmopqyz'),
+    (r'\xff', '\377', SUCCEED, 'found', chr(255)),
+    (r'\x00ffffffffffffff', '\377', SUCCEED, 'found', chr(255)),
+    (r'\x00f', '\017', SUCCEED, 'found', chr(15)),
+    (r'\x00fe', '\376', SUCCEED, 'found', chr(254)),
+
+    (r"^\w+=(\\[\000-\277]|[^\n\\])*", "SRC=eval.c g.c blah blah blah \\\\\n\tapes.c", 
+     SUCCEED, 'found', "SRC=eval.c g.c blah blah blah \\\\"),
+     
+    # Test that . only matches \n in DOTALL mode
+    ('a.b', 'acb', SUCCEED, 'found', 'acb'),
+    ('a.b', 'a\nb', FAIL),
+    ('a.*b', 'acc\nccb', FAIL),
+    ('a.{4,5}b', 'acc\nccb', FAIL),
+    ('a.b', 'a\rb', SUCCEED, 'found', 'a\rb'),
+    ('a.b(?s)', 'a\nb', SUCCEED, 'found', 'a\nb'),
+    ('a.*(?s)b', 'acc\nccb', SUCCEED, 'found', 'acc\nccb'),
+    ('(?s)a.{4,5}b', 'acc\nccb', SUCCEED, 'found', 'acc\nccb'),
+    ('(?s)a.b', 'a\nb', SUCCEED, 'found', 'a\nb'),
+
     ('abc', 'abc', SUCCEED, 'found', 'abc'),
     ('abc', 'xbc', FAIL),
     ('abc', 'axc', FAIL),
@@ -338,8 +393,9 @@ tests = [
     ('(.*)c(.*)', 'abcde', SUCCEED, 'found+"-"+g1+"-"+g2', 'abcde-ab-de'),
     ('\\((.*), (.*)\\)', '(a, b)', SUCCEED, 'g2+"-"+g1', 'b-a'),
     ('[k]', 'ab', FAIL),
-    ##('abcd', 'abcd', SUCCEED, 'found+"-"+\\found+"-"+\\\\found', 'abcd-$&-\\abcd'),
-    ##('a(bc)d', 'abcd', SUCCEED, 'g1+"-"+\\g1+"-"+\\\\g1', 'bc-$1-\\bc'),
+# XXX
+#    ('abcd', 'abcd', SUCCEED, 'found+"-"+\\found+"-"+\\\\found', 'abcd-$&-\\abcd'),
+#    ('a(bc)d', 'abcd', SUCCEED, 'g1+"-"+\\g1+"-"+\\\\g1', 'bc-$1-\\bc'),
     ('a[-]?c', 'ac', SUCCEED, 'found', 'ac'),
     ('(abc)\\1', 'abcabc', SUCCEED, 'g1', 'abc'),
     ('([a-c]*)\\1', 'abcabc', SUCCEED, 'g1', 'abc'),
@@ -470,15 +526,14 @@ tests = [
     ('(?i)(.*)c(.*)', 'ABCDE', SUCCEED, 'found+"-"+g1+"-"+g2', 'ABCDE-AB-DE'),
     ('(?i)\\((.*), (.*)\\)', '(A, B)', SUCCEED, 'g2+"-"+g1', 'B-A'),
     ('(?i)[k]', 'AB', FAIL),
-    ##('(?i)abcd', 'ABCD', SUCCEED, 'found+"-"+\\found+"-"+\\\\found', 'ABCD-$&-\\ABCD'),
-    ##('(?i)a(bc)d', 'ABCD', SUCCEED, 'g1+"-"+\\g1+"-"+\\\\g1', 'BC-$1-\\BC'),
+#    ('(?i)abcd', 'ABCD', SUCCEED, 'found+"-"+\\found+"-"+\\\\found', 'ABCD-$&-\\ABCD'),
+#    ('(?i)a(bc)d', 'ABCD', SUCCEED, 'g1+"-"+\\g1+"-"+\\\\g1', 'BC-$1-\\BC'),
     ('(?i)a[-]?c', 'AC', SUCCEED, 'found', 'AC'),
     ('(?i)(abc)\\1', 'ABCABC', SUCCEED, 'g1', 'ABC'),
     ('(?i)([a-c]*)\\1', 'ABCABC', SUCCEED, 'g1', 'ABC'),
-    # these zero-width assertions are not supported
-    #('a(?!b).', 'abad', SUCCEED, 'found', 'ad'),
-    #('a(?=d).', 'abad', SUCCEED, 'found', 'ad'),
-    #('a(?=c|d).', 'abad', SUCCEED, 'found', 'ad'),
+    ('a(?!b).', 'abad', SUCCEED, 'found', 'ad'),
+    ('a(?=d).', 'abad', SUCCEED, 'found', 'ad'),
+    ('a(?=c|d).', 'abad', SUCCEED, 'found', 'ad'),
     ('a(?:b|c|d)(.)', 'ace', SUCCEED, 'g1', 'e'),
     ('a(?:b|c|d)*(.)', 'ace', SUCCEED, 'g1', 'e'),
     ('a(?:b|c|d)+?(.)', 'ace', SUCCEED, 'g1', 'e'),
@@ -535,5 +590,5 @@ xyzabc
     (r'\t\n\v\r\f\a\g', '\t\n\v\r\f\ag', SUCCEED, 'found', '\t\n\v\r\f\ag'),
     ('\t\n\v\r\f\a\g', '\t\n\v\r\f\ag', SUCCEED, 'found', '\t\n\v\r\f\ag'),
     (r'\t\n\v\r\f\a', '\t\n\v\r\f\a', SUCCEED, 'found', chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)),
-    (r'[\t][\n][\v][\r][\f][\a][\A][\b][\B][\Z][\g]', '\t\n\v\r\f\aA\bBZg', SUCCEED, 'found', '\t\n\v\r\f\aA\bBZg'),
+    (r'[\t][\n][\v][\r][\f][\b]', '\t\n\v\r\f\b', SUCCEED, 'found', '\t\n\v\r\f\b'),
 ]

@@ -4,7 +4,6 @@
 
 from test_support import verbose, TestFailed
 import re
-import reop
 import sys, os, string, traceback
 
 # Misc tests from Tim Peters' re.doc
@@ -23,12 +22,13 @@ try:
     
     assert re.sub('.', lambda m: r"\n", 'x') == '\\n'
     assert re.sub('.', r"\n", 'x') == '\n'
-    
+
     s = r"\1\1"
     assert re.sub('(.)', s, 'x') == 'xx'
     assert re.sub('(.)', re.escape(s), 'x') == s
     assert re.sub('(.)', lambda m: s, 'x') == s
 
+    assert re.sub('(?P<a>x)', '\g<a>\g<a>', 'xx') == 'xxxx'
     assert re.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx') == 'xxxx'
 
     assert re.sub('a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a') == '\t\n\v\r\f\a\bBZ\aAwWsSdD'
@@ -98,12 +98,8 @@ try:
     assert re.subn("b+", "x", "bbbb BBBB") == ('x BBBB', 1)
     assert re.subn("b+", "x", "xyz") == ('xyz', 0)
     assert re.subn("b*", "x", "xyz") == ('xxxyxzx', 4)
-    
 except AssertionError:
     raise TestFailed, "re.subn"
-
-if verbose:
-    print 'Running tests on re.split'
 
 try:
     assert re.split(":", ":a:b::c") == ['', 'a', 'b', '', 'c']
@@ -119,12 +115,37 @@ try:
 except AssertionError:
     raise TestFailed, "re.split"
 
+if verbose:
+    print 'Pickling a RegexObject instance'
+    import pickle
+    pat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
+    s = pickle.dumps(pat)
+    pat = pickle.loads(s)
+
+if verbose:
+    print 'Running tests on re.split'
+    
+try:
+    assert re.I == re.IGNORECASE
+    assert re.L == re.LOCALE
+    assert re.M == re.MULTILINE
+    assert re.S == re.DOTALL 
+    assert re.X == re.VERBOSE 
+except AssertionError:
+    raise TestFailed, 're module constants'
+
+for flags in [re.I, re.M, re.X, re.S]:
+    try:
+	r = re.compile('^pattern$', flags)
+    except:
+	print 'Exception raised on flag', flags
+
 from re_tests import *
 if verbose:
     print 'Running re_tests test suite'
 else:
     # To save time, only run the first and last 10 tests
-    tests = tests[:10] + tests[-10:]
+    pass #tests = tests[:10] + tests[-10:]
 
 for t in tests:
     sys.stdout.flush()
@@ -150,7 +171,7 @@ for t in tests:
     else:
 	try:
 	    result=obj.search(s)
-	except (re.error, reop.error), msg:
+	except (re.error), msg:
 	    print '=== Unexpected exception', t, repr(msg)
 	if outcome==SYNTAX_ERROR:
 	    # This should have been a syntax error; forget it.
@@ -190,9 +211,22 @@ for t in tests:
 	    else:
 		print '=== Failed incorrectly', t
 
+	    # Try the match with the search area limited to the extent
+	    # of the match and see if it still succeeds.  \B will
+	    # break (because it won't match at the end or start of a
+	    # string), so we'll ignore patterns that feature it.
+	    
+	    if pattern[:2]!='\\B' and pattern[-2:]!='\\B':
+		obj=re.compile(pattern)
+		result=obj.search(s, pos=result.start(0), endpos=result.end(0)+1)
+		if result==None:
+		    print '=== Failed on range-limited match', t
+
             # Try the match with IGNORECASE enabled, and check that it
 	    # still succeeds.
             obj=re.compile(pattern, re.IGNORECASE)
             result=obj.search(s)
             if result==None:
                 print '=== Fails on case-insensitive match', t
+
+

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # -*- mode: python -*-
-# $Id$
-
 
 import sys
 import string
@@ -12,11 +10,12 @@ from pcre import *
 #
 
 # pcre.error and re.error should be the same, since exceptions can be
-# raised from  either module.
+# raised from either module.
 
 # compilation flags
 
 I = IGNORECASE
+L = LOCALE
 M = MULTILINE
 S = DOTALL 
 X = VERBOSE 
@@ -61,8 +60,25 @@ def split(pattern, string, maxsplit=0):
 	pattern = _cachecompile(pattern)
     return pattern.split(string, maxsplit)
 
+def escape(pattern):
+    "Escape all non-alphanumeric characters in pattern."
+    result = []
+    alphanum=string.letters+'_'+string.digits
+    for char in pattern:
+	if char not in alphanum:
+	    result.append('\\')
+	result.append(char)
+    return string.join(result, '')
+
+def compile(pattern, flags=0):
+    "Compile a regular expression pattern, returning a RegexObject."
+    groupindex={}
+    code=pcre_compile(pattern, flags, groupindex)
+    return RegexObject(pattern, flags, code, groupindex)
+    
+
 #
-#
+#   Class definitions
 #
 
 class RegexObject:
@@ -71,31 +87,54 @@ class RegexObject:
 	self.flags = flags
 	self.pattern = pattern
 	self.groupindex = groupindex
-    def search(self, string, pos=0):
-	regs = self.code.match(string, pos, 0)
+
+    def search(self, string, pos=0, endpos=None):
+	"""Scan through string looking for a match to the pattern, returning
+	a MatchObject instance, or None if no match was found."""
+
+	if endpos is None or endpos>len(string): 
+	    endpos=len(string)
+	if endpos<pos: endpos=pos
+	regs = self.code.match(string, pos, endpos, 0)
 	if regs is None:
 	    return None
-	self.num_regs=len(regs)
+	self._num_regs=len(regs)
 	
 	return MatchObject(self,
 			   string,
-			   pos,
+			   pos, endpos,
 			   regs)
     
-    def match(self, string, pos=0):
-	regs = self.code.match(string, pos, ANCHORED)
+    def match(self, string, pos=0, endpos=None):
+	"""Try to apply the pattern at the start of the string, returning
+	a MatchObject instance, or None if no match was found."""
+
+	if endpos is None or endpos>len(string): 
+	    endpos=len(string)
+	if endpos<pos: endpos=pos
+	regs = self.code.match(string, pos, endpos, ANCHORED)
 	if regs is None:
 	    return None
-	self.num_regs=len(regs)
+	self._num_regs=len(regs)
 	return MatchObject(self,
 			   string,
-			   pos,
+			   pos, endpos,
 			   regs)
     
     def sub(self, repl, string, count=0):
+	"""Return the string obtained by replacing the leftmost
+	non-overlapping occurrences of the pattern in string by the
+	replacement repl""" 
+
         return self.subn(repl, string, count)[0]
     
-    def subn(self, repl, source, count=0):
+    def subn(self, repl, source, count=0): 
+	"""Return a 2-tuple containing (new_string, number).
+	new_string is the string obtained by replacing the leftmost
+	non-overlapping occurrences of the pattern in string by the
+	replacement repl.  number is the number of substitutions that
+	were made."""
+
 	if count < 0:
 	    raise error, "negative substitution count"
 	if count == 0:
@@ -134,6 +173,9 @@ class RegexObject:
 	return (string.join(results, ''), n)
 									    
     def split(self, source, maxsplit=0):
+	"""Split \var{string} by the occurrences of the pattern,
+	returning a list containing the resulting substrings."""
+
 	if maxsplit < 0:
 	    raise error, "negative split count"
 	if maxsplit == 0:
@@ -156,21 +198,39 @@ class RegexObject:
 		pos = pos+1
 		continue
 	    results.append(source[lastmatch:i])
-	    g = m.group()
+	    g = m.groups()
 	    if g:
+		if type(g)==type( "" ): g = [g]
 		results[len(results):] = list(g)
 	    pos = lastmatch = j
 	results.append(source[lastmatch:])
 	return results
 
+    # The following 3 functions were contributed by Mike Fletcher, and
+    # allow pickling and unpickling of RegexObject instances.
+    def __getinitargs__(self):
+        return (None,None,None,None) # any 4 elements, to work around
+                                     # problems with the
+				     # pickle/cPickle modules not yet 
+				     # ignoring the __init__ function
+    def __getstate__(self):
+        return self.pattern, self.flags, self.groupindex
+    def __setstate__(self, statetuple):
+        self.pattern = statetuple[0]
+        self.flags = statetuple[1]
+        self.groupindex = statetuple[2]
+        self.code = apply(pcre_compile, statetuple)
+
 class MatchObject:
-    def __init__(self, re, string, pos, regs):
+    def __init__(self, re, string, pos, endpos, regs):
 	self.re = re
 	self.string = string
-	self.pos = pos
+	self.pos = pos 
+	self.endpos = endpos
 	self.regs = regs
 	
-    def start(self, g):
+    def start(self, g = 0):
+	"Return the start of the substring matched by group g"
 	if type(g) == type(''):
 	    try:
 		g = self.re.groupindex[g]
@@ -178,7 +238,8 @@ class MatchObject:
 		raise IndexError, ('group "' + g + '" is undefined')
 	return self.regs[g][0]
     
-    def end(self, g):
+    def end(self, g = 0):
+	"Return the end of the substring matched by group g"
 	if type(g) == type(''):
 	    try:
 		g = self.re.groupindex[g]
@@ -186,7 +247,9 @@ class MatchObject:
 		raise IndexError, ('group "' + g + '" is undefined')
 	return self.regs[g][1]
     
-    def span(self, g):
+    def span(self, g = 0):
+	"""Return a tuple containing the start,end of the substring 
+	matched by group g"""
 	if type(g) == type(''):
 	    try:
 		g = self.re.groupindex[g]
@@ -194,12 +257,18 @@ class MatchObject:
 		raise IndexError, ('group "' + g + '" is undefined')
 	return self.regs[g]
     
+    def groups(self):
+	"Return a tuple containing all subgroups of the match object"
+
+	# If _num_regs==1, we don't want to call self.group with an
+	# empty tuple.
+	if self.re._num_regs == 1: return ()
+	return apply(self.group, tuple(range(1, self.re._num_regs) ) )
+
     def group(self, *groups):
+	"Return one or more groups of the match."
 	if len(groups) == 0:
-	    groups = range(1, self.re.num_regs)
-	    use_all = 1
-	else:
-	    use_all = 0
+	    groups = (0,)
 	result = []
 	for g in groups:
 	    if type(g) == type(''):
@@ -212,25 +281,10 @@ class MatchObject:
 		result.append(None)
 	    else:
 		result.append(self.string[self.regs[g][0]:self.regs[g][1]])
-	if use_all or len(result) > 1:
+	if len(result) > 1:
 	    return tuple(result)
 	elif len(result) == 1:
 	    return result[0]
 	else:
 	    return ()
-
-def escape(pattern):
-    result = []
-    alphanum=string.letters+'_'+string.digits
-    for char in pattern:
-	if char not in alphanum:
-	    result.append('\\')
-	result.append(char)
-    return string.join(result, '')
-
-def compile(pattern, flags=0):
-    groupindex={}
-    code=pcre_compile(pattern, flags, groupindex)
-    return RegexObject(pattern, flags, code, groupindex)
-    
 
