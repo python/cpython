@@ -41,11 +41,13 @@ class TestCopy(unittest.TestCase):
         self.assert_(y is x)
 
     def test_copy_cant(self):
-        class C(object):
+        class Meta(type):
             def __getattribute__(self, name):
                 if name == "__reduce__":
                     raise AttributeError, name
                 return object.__getattribute__(self, name)
+        class C:
+            __metaclass__ = Meta
         x = C()
         self.assertRaises(copy.Error, copy.copy, x)
 
@@ -189,11 +191,13 @@ class TestCopy(unittest.TestCase):
         self.assert_(y is x)
 
     def test_deepcopy_cant(self):
-        class C(object):
+        class Meta(type):
             def __getattribute__(self, name):
                 if name == "__reduce__":
                     raise AttributeError, name
                 return object.__getattribute__(self, name)
+        class C:
+            __metaclass__ = Meta
         x = C()
         self.assertRaises(copy.Error, copy.deepcopy, x)
 
@@ -410,6 +414,45 @@ class TestCopy(unittest.TestCase):
         self.assertEqual(x, y)
         self.assert_(x is not y)
         self.assert_(x["foo"] is not y["foo"])
+
+    def test_copy_slots(self):
+        class C(object):
+            __slots__ = ["foo"]
+        x = C()
+        x.foo = [42]
+        y = copy.copy(x)
+        self.assert_(x.foo is y.foo)
+
+    def test_deepcopy_slots(self):
+        class C(object):
+            __slots__ = ["foo"]
+        x = C()
+        x.foo = [42]
+        y = copy.deepcopy(x)
+        self.assertEqual(x.foo, y.foo)
+        self.assert_(x.foo is not y.foo)
+
+    def test_copy_list_subclass(self):
+        class C(list):
+            pass
+        x = C([[1, 2], 3])
+        x.foo = [4, 5]
+        y = copy.copy(x)
+        self.assertEqual(list(x), list(y))
+        self.assertEqual(x.foo, y.foo)
+        self.assert_(x[0] is y[0])
+        self.assert_(x.foo is y.foo)
+
+    def test_deepcopy_list_subclass(self):
+        class C(list):
+            pass
+        x = C([[1, 2], 3])
+        x.foo = [4, 5]
+        y = copy.deepcopy(x)
+        self.assertEqual(list(x), list(y))
+        self.assertEqual(x.foo, y.foo)
+        self.assert_(x[0] is not y[0])
+        self.assert_(x.foo is not y.foo)
 
 def test_main():
     suite = unittest.TestSuite()
