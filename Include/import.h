@@ -54,7 +54,7 @@ struct _inittab {
 
 /* This table is defined in config.c: */
 
-extern struct _inittab inittab[];
+extern struct _inittab _PyImport_Inittab[];
 
 struct _frozen {
 	char *name;

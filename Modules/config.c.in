@@ -44,7 +44,7 @@ PERFORMANCE OF THIS SOFTWARE.
 extern void PyMarshal_Init();
 extern void initimp();
 
-struct _inittab inittab[] = {
+struct _inittab _PyImport_Inittab[] = {
 
 /* -- ADDMODULE MARKER 2 -- */
 
