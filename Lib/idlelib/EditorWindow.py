@@ -1,9 +1,3 @@
-# changes by dscherer@cmu.edu
-#   - created format and run menus
-#   - added silly advice dialog (apologies to Douglas Adams)
-#   - made Python Documentation work on Windows (requires win32api to
-#     do a ShellExecute(); other ways of starting a web browser are awkward)
-
 import sys
 import os
 import string
