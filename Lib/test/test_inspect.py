@@ -26,7 +26,7 @@ class StupidGit:
     docstring."""
 # line 27
 
-    def abuse(self, a, b, c):
+    def abuse(self, a, b, c):    # a comment
         """Another
 
 \tdocstring
