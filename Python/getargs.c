@@ -967,6 +967,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 			message = format;
 			break;
 		}
+		else if (c == 'e')
+			; /* Pass */
 		else if (isalpha(c))
 			max++;
 		else if (c == '|')
