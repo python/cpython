@@ -47,7 +47,7 @@ Library
   from a tarfile.
 
 - Patch #846659.  Fix an error in tarfile.py when using
-  GNU longname/longlink creation. 
+  GNU longname/longlink creation.
 
 - The obsolete FCNTL.py has been deleted.  The builtin fcntl module
   has been available (on platforms that support fcntl) since Python
@@ -144,8 +144,12 @@ New platforms
 Tests
 -----
 
-- The test data files for the decimal test suite are now installed on 
+- The test data files for the decimal test suite are now installed on
   platforms that use the Makefile.
+
+- SF patch 995225:  The test file testtar.tar accidentally contained
+  CVS keywords (like $Id$), which could cause spurious failures in
+  test_tarfile.py depending on how the test file was checked out.
 
 Windows
 -------
