@@ -22,9 +22,10 @@ is because Python doesn't remove backslashes from string literals if
 they are followed by an unrecognized escape character.
 \emph{However}, if you want to include a literal \dfn{backslash} in a
 regular expression represented as a string literal, you have to
-\emph{quadruple} it.  E.g.\  to extract \LaTeX\ \samp{\e section\{{\rm
+\emph{quadruple} it or enclose it in a singleton character class.
+E.g.\  to extract \LaTeX\ \samp{\e section\{{\rm
 \ldots}\}} headers from a document, you can use this pattern:
-\code{'\e \e \e \e section\{\e (.*\e )\}'}.  \emph{Another exception:}
+\code{'[\e ] section\{\e (.*\e )\}'}.  \emph{Another exception:}
 the escape sequece \samp{\e b} is significant in string literals
 (where it means the ASCII bell character) as well as in Emacs regular
 expressions (where it stands for a word boundary), so in order to
