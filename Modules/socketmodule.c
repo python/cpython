@@ -76,15 +76,68 @@ Socket methods:
 #include "mytime.h"
 
 #include <signal.h>
+#ifndef NT
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#else
+#include <winsock.h>
+#endif
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #else
 #undef AF_UNIX
 #endif
 
+/* Here we have some hacks to choose between K&R or ANSI style function
+   definitions.  For NT to build this as an extension module (ie, DLL)
+   it must be compiled by the C++ compiler, as it takes the address of
+   a static data item exported from the main Python DLL.
+*/
+#ifdef NT
+/* seem to be a few differences in the API */
+#define close closesocket
+#define NO_DUP	/* I wont trust passing a socket to NT's RTL!!  */
+#define FORCE_ANSI_FUNC_DEFS
+#endif
+
+#ifdef FORCE_ANSI_FUNC_DEFS
+#define BUILD_FUNC_DEF_1( fnname, arg1type, arg1name )	\
+fnname( arg1type arg1name )
+
+#define BUILD_FUNC_DEF_2( fnname, arg1type, arg1name, arg2type, arg2name ) \
+fnname( arg1type arg1name, arg2type arg2name )
+
+#define BUILD_FUNC_DEF_3( fnname, arg1type, arg1name, arg2type, arg2name , arg3type, arg3name )	\
+fnname( arg1type arg1name, arg2type arg2name, arg3type arg3name )
+
+#define BUILD_FUNC_DEF_4( fnname, arg1type, arg1name, arg2type, arg2name , arg3type, arg3name, arg4type, arg4name )	\
+fnname( arg1type arg1name, arg2type arg2name, arg3type arg3name, arg4type arg4name )
+
+#else /* !FORCE_ANSI_FN_DEFS */
+#define BUILD_FUNC_DEF_1( fnname, arg1type, arg1name )	\
+fnname( arg1name )	\
+	arg1type arg1name;
+
+#define BUILD_FUNC_DEF_2( fnname, arg1type, arg1name, arg2type, arg2name ) \
+fnname( arg1name, arg2name )	\
+	arg1type arg1name;	\
+	arg2type arg2name;
+
+#define BUILD_FUNC_DEF_3( fnname, arg1type, arg1name, arg2type, arg2name, arg3type, arg3name ) \
+fnname( arg1name, arg2name, arg3name )	\
+	arg1type arg1name;	\
+	arg2type arg2name;	\
+	arg3type arg3name;
+
+#define BUILD_FUNC_DEF_4( fnname, arg1type, arg1name, arg2type, arg2name, arg3type, arg3name, arg4type, arg4name ) \
+fnname( arg1name, arg2name, arg3name, arg4name )	\
+	arg1type arg1name;	\
+	arg2type arg2name;	\
+	arg3type arg3name;	\
+	arg4type arg4name;
+
+#endif /* !FORCE_ANSI_FN_DEFS */
 
 /* Global variable holding the exception type for errors detected
    by this module (but not argument type or memory errors, etc.). */
@@ -129,8 +182,7 @@ staticforward typeobject Socktype;
    in NEWOBJ()). */
 
 static sockobject *
-newsockobject(fd, family, type, proto)
-	int fd, family, type, proto;
+BUILD_FUNC_DEF_4(newsockobject, int, fd, int, family, int, type, int, proto)
 {
 	sockobject *s;
 	s = NEWOBJ(sockobject, &Socktype);
@@ -151,9 +203,7 @@ newsockobject(fd, family, type, proto)
    an error occurred; then an exception is raised. */
 
 static int
-setipaddr(name, addr_ret)
-	char *name;
-	struct sockaddr_in *addr_ret;
+BUILD_FUNC_DEF_2(setipaddr, char*, name, struct sockaddr_in *, addr_ret)
 {
 	struct hostent *hp;
 	int d1, d2, d3, d4;
@@ -192,8 +242,7 @@ setipaddr(name, addr_ret)
    size numbers). */
 
 static object *
-makeipaddr(addr)
-	struct sockaddr_in *addr;
+BUILD_FUNC_DEF_1(makeipaddr, struct sockaddr_in *,addr)
 {
 	long x = ntohl(addr->sin_addr.s_addr);
 	char buf[100];
@@ -211,9 +260,7 @@ makeipaddr(addr)
 
 /*ARGSUSED*/
 static object *
-makesockaddr(addr, addrlen)
-	struct sockaddr *addr;
-	int addrlen;
+BUILD_FUNC_DEF_2(makesockaddr,struct sockaddr *, addr, int, addrlen)
 {
 	if (addrlen == 0) {
 		/* No address -- may be recvfrom() from known socket */
@@ -256,11 +303,8 @@ makesockaddr(addr, addrlen)
    through len_ret. */
 
 static int
-getsockaddrarg(s, args, addr_ret, len_ret)
-	sockobject *s;
-	object *args;
-	struct sockaddr **addr_ret;
-	int *len_ret;
+BUILD_FUNC_DEF_4(
+getsockaddrarg,sockobject *,s, object *,args, struct sockaddr **,addr_ret, int *,len_ret)
 {
 	switch (s->sock_family) {
 
@@ -315,9 +359,7 @@ getsockaddrarg(s, args, addr_ret, len_ret)
    through len_ret. */
 
 static int
-getsockaddrlen(s, len_ret)
-	sockobject *s;
-	int *len_ret;
+BUILD_FUNC_DEF_2(getsockaddrlen,sockobject *,s, int *,len_ret)
 {
 	switch (s->sock_family) {
 
@@ -348,9 +390,7 @@ getsockaddrlen(s, len_ret)
 /* s.accept() method */
 
 static object *
-sock_accept(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_accept,sockobject *,s, object *,args)
 {
 	char addrbuf[256];
 	int addrlen, newfd;
@@ -385,9 +425,7 @@ sock_accept(s, args)
 /* XXX obsolete -- will disappear in next release */
 
 static object *
-sock_allowbroadcast(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_allowbroadcast,sockobject *,s, object *,args)
 {
 	int flag;
 	int res;
@@ -409,9 +447,7 @@ sock_allowbroadcast(s, args)
    use optional built-in module 'struct' to encode the string. */
 
 static object *
-sock_setsockopt(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_setsockopt,sockobject *,s, object *,args)
 {
 	int level;
 	int optname;
@@ -443,9 +479,7 @@ sock_setsockopt(s, args)
    use optional built-in module 'struct' to decode the string. */
 
 static object *
-sock_getsockopt(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_getsockopt,sockobject *,s, object *,args)
 {
 	int level;
 	int optname;
@@ -487,9 +521,7 @@ sock_getsockopt(s, args)
 /* s.bind(sockaddr) method */
 
 static object *
-sock_bind(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_bind,sockobject *,s, object *,args)
 {
 	struct sockaddr *addr;
 	int addrlen;
@@ -511,9 +543,7 @@ sock_bind(s, args)
    will surely fail. */
 
 static object *
-sock_close(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_close,sockobject *,s, object *,args)
 {
 	if (!getnoarg(args))
 		return NULL;
@@ -529,9 +559,7 @@ sock_close(s, args)
 /* s.connect(sockaddr) method */
 
 static object *
-sock_connect(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_connect,sockobject *,s, object *,args)
 {
 	struct sockaddr *addr;
 	int addrlen;
@@ -551,9 +579,7 @@ sock_connect(s, args)
 /* s.fileno() method */
 
 static object *
-sock_fileno(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_fileno,sockobject *,s, object *,args)
 {
 	if (!getnoarg(args))
 		return NULL;
@@ -564,9 +590,7 @@ sock_fileno(s, args)
 /* s.getsockname() method */
 
 static object *
-sock_getsockname(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_getsockname,sockobject *,s, object *,args)
 {
 	char addrbuf[256];
 	int addrlen, res;
@@ -587,9 +611,7 @@ sock_getsockname(s, args)
 /* s.getpeername() method */
 
 static object *
-sock_getpeername(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_getpeername,sockobject *,s, object *,args)
 {
 	char addrbuf[256];
 	int addrlen, res;
@@ -610,9 +632,7 @@ sock_getpeername(s, args)
 /* s.listen(n) method */
 
 static object *
-sock_listen(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_listen,sockobject *,s, object *,args)
 {
 	int backlog;
 	int res;
@@ -629,7 +649,7 @@ sock_listen(s, args)
 	return None;
 }
 
-
+#ifndef NO_DUP
 /* s.makefile(mode) method.
    Create a new open file object referring to a dupped version of
    the socket's file descriptor.  (The dup() call is necessary so
@@ -638,9 +658,7 @@ sock_listen(s, args)
    The mode argument specifies 'r' or 'w' passed to fdopen(). */
 
 static object *
-sock_makefile(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_makefile,sockobject *,s, object *,args)
 {
 	extern int fclose PROTO((FILE *));
 	char *mode;
@@ -653,14 +671,12 @@ sock_makefile(s, args)
 		return socket_error();
 	return newopenfileobject(fp, "<socket>", mode, fclose);
 }
-
+#endif /* NO_DUP */
 
 /* s.recv(nbytes [,flags]) method */
 
 static object *
-sock_recv(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_recv,sockobject *,s, object *,args)
 {
 	int len, n, flags;
 	object *buf;
@@ -687,9 +703,7 @@ sock_recv(s, args)
 /* s.recvfrom(nbytes [,flags]) method */
 
 static object *
-sock_recvfrom(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_recvfrom,sockobject *,s, object *,args)
 {
 	char addrbuf[256];
 	object *buf, *addr, *ret;
@@ -707,7 +721,11 @@ sock_recvfrom(s, args)
 		return NULL;
 	BGN_SAVE
 	n = recvfrom(s->sock_fd, getstringvalue(buf), len, flags,
+#ifndef NT
 		     (ANY *)addrbuf, &addrlen);
+#else
+     		     (struct sockaddr *)addrbuf, &addrlen);
+#endif
 	END_SAVE
 	if (n < 0)
 		return socket_error();
@@ -724,9 +742,7 @@ sock_recvfrom(s, args)
 /* s.send(data [,flags]) method */
 
 static object *
-sock_send(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_send,sockobject *,s, object *,args)
 {
 	char *buf;
 	int len, n, flags;
@@ -748,9 +764,7 @@ sock_send(s, args)
 /* s.sendto(data, [flags,] sockaddr) method */
 
 static object *
-sock_sendto(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_sendto,sockobject *,s, object *,args)
 {
 	object *addro;
 	char *buf;
@@ -776,9 +790,7 @@ sock_sendto(s, args)
 /* s.shutdown(how) method */
 
 static object *
-sock_shutdown(s, args)
-	sockobject *s;
-	object *args;
+BUILD_FUNC_DEF_2(sock_shutdown,sockobject *,s, object *,args)
 {
 	int how;
 	int res;
@@ -812,7 +824,9 @@ static struct methodlist sock_methods[] = {
 	{"getpeername",		(method)sock_getpeername},
 #endif
 	{"listen",		(method)sock_listen},
+#ifndef NO_DUP
 	{"makefile",		(method)sock_makefile},
+#endif
 	{"recv",		(method)sock_recv},
 	{"recvfrom",		(method)sock_recvfrom},
 	{"send",		(method)sock_send},
@@ -826,8 +840,7 @@ static struct methodlist sock_methods[] = {
    First close the file description. */
 
 static void
-sock_dealloc(s)
-	sockobject *s;
+BUILD_FUNC_DEF_1(sock_dealloc, sockobject *,s)
 {
 	(void) close(s->sock_fd);
 	DEL(s);
@@ -837,9 +850,7 @@ sock_dealloc(s)
 /* Return a socket object's named attribute. */
 
 static object *
-sock_getattr(s, name)
-	sockobject *s;
-	char *name;
+BUILD_FUNC_DEF_2(sock_getattr,sockobject *,s, char *,name)
 {
 	return findmethod(sock_methods, (object *) s, name);
 }
@@ -869,9 +880,7 @@ static typeobject Socktype = {
 
 /*ARGSUSED*/
 static object *
-socket_gethostname(self, args)
-	object *self;
-	object *args;
+BUILD_FUNC_DEF_2(socket_gethostname,object *,self, object *,args)
 {
 	char buf[1024];
 	int res;
@@ -891,11 +900,9 @@ socket_gethostname(self, args)
 
 /*ARGSUSED*/
 static object *
-socket_gethostbyname(self, args)
-	object *self;
-	object *args;
+BUILD_FUNC_DEF_2(socket_gethostbyname,object *,self, object *,args)
 {
-	object *name;
+	char *name;
 	struct sockaddr_in addrbuf;
 	if (!getargs(args, "s", &name))
 		return NULL;
@@ -911,9 +918,7 @@ socket_gethostbyname(self, args)
 
 /*ARGSUSED*/
 static object *
-socket_getservbyname(self, args)
-	object *self;
-	object *args;
+BUILD_FUNC_DEF_2(socket_getservbyname,object *,self, object *,args)
 {
 	char *name, *proto;
 	struct servent *sp;
@@ -936,9 +941,7 @@ socket_getservbyname(self, args)
 
 /*ARGSUSED*/
 static object *
-socket_socket(self, args)
-	object *self;
-	object *args;
+BUILD_FUNC_DEF_2(socket_socket,object *,self,object *,args)
 {
 	sockobject *s;
 	int fd, family, type, proto;
@@ -960,20 +963,20 @@ socket_socket(self, args)
 		(void) close(fd);
 	/* From now on, ignore SIGPIPE and let the error checking
 	   do the work. */
+#ifdef SIGPIPE      
 	(void) signal(SIGPIPE, SIG_IGN);
+#endif   
 	return (object *) s;
 }
 
-
+#ifndef NO_DUP
 /* Create a socket object from a numeric file description.
    Useful e.g. if stdin is a socket.
    Additional arguments as for socket(). */
 
 /*ARGSUSED*/
 static object *
-socket_fromfd(self, args)
-	object *self;
-	object *args;
+BUILD_FUNC_DEF_2(socket_fromfd,object *,self,object *,args)
 {
 	sockobject *s;
 	int fd, family, type, proto;
@@ -990,10 +993,12 @@ socket_fromfd(self, args)
 	s = newsockobject(fd, family, type, proto);
 	/* From now on, ignore SIGPIPE and let the error checking
 	   do the work. */
+#ifdef SIGPIPE      
 	(void) signal(SIGPIPE, SIG_IGN);
+#endif   
 	return (object *) s;
 }
-
+#endif /* NO_DUP */
 
 /* List of functions exported by this module. */
 
@@ -1002,7 +1007,9 @@ static struct methodlist socket_methods[] = {
 	{"gethostname",		socket_gethostname},
 	{"getservbyname",	socket_getservbyname},
 	{"socket",		socket_socket},
+#ifndef NO_DUP
 	{"fromfd",		socket_fromfd},
+#endif
 	{NULL,			NULL}		 /* Sentinel */
 };
 
@@ -1011,10 +1018,7 @@ static struct methodlist socket_methods[] = {
    For simplicity, errors (which are unlikely anyway) are ignored. */
 
 static void
-insint(d, name, value)
-	object *d;
-	char *name;
-	int value;
+BUILD_FUNC_DEF_3(insint,object *,d,char *,name,int,value)
 {
 	object *v = newintobject((long) value);
 	if (v == NULL) {
@@ -1037,7 +1041,6 @@ void
 initsocket()
 {
 	object *m, *d;
-
 	m = initmodule("socket", socket_methods);
 	d = getmoduledict(m);
 	SocketError = newstringobject("socket.error");
@@ -1053,3 +1056,26 @@ initsocket()
 	insint(d, "SOCK_SEQPACKET", SOCK_SEQPACKET);
 	insint(d, "SOCK_RDM", SOCK_RDM);
 }
+
+#ifdef NT
+BOOL	WINAPI	DllMain (HANDLE hInst, 
+			ULONG ul_reason_for_call,
+			LPVOID lpReserved)
+{
+	switch (ul_reason_for_call)
+	{
+		case DLL_PROCESS_ATTACH:
+			WSADATA WSAData;
+			if (WSAStartup(MAKEWORD(2,0), &WSAData)) {
+				OutputDebugString("Python can't initialize Windows Sockets DLL!");
+				return FALSE;
+			}
+			break;
+		case DLL_PROCESS_DETACH:
+			WSACleanup();
+			break;
+
+	}
+	return TRUE;
+}
+#endif /* NT */

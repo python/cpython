@@ -24,37 +24,25 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* POSIX module implementation */
 
-#ifdef _M_IX86
-#define NT
-/* NT may be defined externally as well.  If it is defined, the module is
-   actually called 'nt', not 'posix', and some functions don't exist. */
-#endif
-
 #include "allobjects.h"
 #include "modsupport.h"
 #include "ceval.h"
 
 #include <string.h>
 #include <errno.h>
-
-#ifndef macintosh
 #include <sys/types.h>
 #include <sys/stat.h>
-#endif 
 
 #include "mytime.h"		/* For clock_t on some systems */
 
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
-#endif
+#endif /* HAVE_FCNTL_H */
 
+#ifndef NT
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #else /* !HAVE_UNISTD_H */
-
-#ifdef macintosh
-#include "macdefs.h"
-#else
 extern int mkdir PROTO((const char *, mode_t));
 extern int chdir PROTO((const char *));
 extern int rmdir PROTO((const char *));
@@ -69,40 +57,40 @@ extern int unlink PROTO((const char *));
 extern int pclose PROTO((FILE *));
 #ifdef HAVE_SYMLINK
 extern int symlink PROTO((const char *, const char *));
-#endif
+#endif /_ HAVE_SYMLINK */
 #ifdef HAVE_LSTAT
 extern int lstat PROTO((const char *, struct stat *));
-#endif
-#endif /* macintosh */
+#endif /* HAVE_LSTAT */
 #endif /* !HAVE_UNISTD_H */
+#endif /* !NT */
 
-#if 1
+#ifndef NT
 /* XXX These are for SunOS4.1.3 but shouldn't hurt elsewhere */
 extern int rename();
 extern int pclose();
 extern int lstat();
 extern int symlink();
-#endif
+#endif /* !NT */
 
 #ifdef HAVE_UTIME_H
 #include <utime.h>
-#endif
+#endif /* HAVE_UTIME_H */
 
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
-#endif
+#endif /* HAVE_SYS_TIMES_H */
 
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
-#endif
+#endif /* HAVE_SYS_PARAM_H */
 
 #ifdef HAVE_SYS_UTSNAME_H
 #include <sys/utsname.h>
-#endif
+#endif /* HAVE_SYS_UTSNAME_H */
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
-#endif
+#endif /* MAXPATHLEN */
 
 /* unistd.h defines _POSIX_VERSION on POSIX.1 systems.  */
 #if defined(DIRENT) || defined(_POSIX_VERSION)
@@ -132,11 +120,13 @@ extern int symlink();
 
 #ifdef OS2
 #include <io.h>
-#endif
+#endif /* OS2 */
 
 /* Return a dictionary corresponding to the POSIX environment table */
 
+#ifndef NT
 extern char **environ;
+#endif /* !NT */
 
 static object *
 convertenviron()
@@ -306,7 +296,7 @@ posix_chown(self, args)
 {
 	return posix_strintint(args, chown);
 }
-#endif
+#endif /* HAVE_CHOWN */
 
 static object *
 posix_getcwd(self, args)
@@ -333,14 +323,15 @@ posix_link(self, args)
 {
 	return posix_2str(args, link);
 }
-#endif
+#endif /* HAVE_LINK */
 
-#ifdef NT
 static object *
 posix_listdir(self, args)
 	object *self;
 	object *args;
 {
+#ifdef NT
+
 	char *name;
 	int len;
 	object *d, *v;
@@ -389,13 +380,9 @@ posix_listdir(self, args)
 	}
 
 	return d;
-}
-#else /* ! NT */
-static object *
-posix_listdir(self, args)
-	object *self;
-	object *args;
-{
+
+#else /* !NT */
+
 	char *name;
 	object *d, *v;
 	DIR *dirp;
@@ -431,8 +418,9 @@ posix_listdir(self, args)
 	END_SAVE
 
 	return d;
+
+#endif /* !NT */
 }
-#endif /* ! NT */
 
 static object *
 posix_mkdir(self, args)
@@ -558,12 +546,12 @@ posix_utime(self, args)
 #define ATIME buf.actime
 #define MTIME buf.modtime
 #define UTIME_ARG &buf
-#else
+#else /* HAVE_UTIME_H */
 	time_t buf[2];
 #define ATIME buf[0]
 #define MTIME buf[1]
 #define UTIME_ARG buf
-#endif
+#endif /* HAVE_UTIME_H */
 
 	if (!getargs(args, "(s(ll))", &path, &ATIME, &MTIME))
 		return NULL;
@@ -637,9 +625,9 @@ posix_execv(self, args)
 
 #ifdef BAD_EXEC_PROTOTYPES
 	execv(path, (const char **) argvlist);
-#else
+#else /* BAD_EXEC_PROTOTYPES */
 	execv(path, argvlist);
-#endif
+#endif /* BAD_EXEC_PROTOTYPES */
 
 	/* If we get here it's definitely an error */
 
@@ -724,9 +712,9 @@ posix_execve(self, args)
 
 #ifdef BAD_EXEC_PROTOTYPES
 	execve(path, (const char **)argvlist, envlist);
-#else
+#else /* BAD_EXEC_PROTOTYPES */
 	execve(path, argvlist, envlist);
-#endif
+#endif /* BAD_EXEC_PROTOTYPES */
 	
 	/* If we get here it's definitely an error */
 
@@ -806,9 +794,9 @@ posix_getpgrp(self, args)
 		return NULL;
 #ifdef GETPGRP_HAVE_ARG
 	return newintobject((long)getpgrp(0));
-#else
+#else /* GETPGRP_HAVE_ARG */
 	return newintobject((long)getpgrp());
-#endif
+#endif /* GETPGRP_HAVE_ARG */
 }
 #endif /* HAVE_GETPGRP */
 
@@ -822,9 +810,9 @@ posix_setpgrp(self, args)
 		return NULL;
 #ifdef GETPGRP_HAVE_ARG
 	if (setpgrp(0, 0) < 0)
-#else
+#else /* GETPGRP_HAVE_ARG */
 	if (setpgrp() < 0)
-#endif
+#endif /* GETPGRP_HAVE_ARG */
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -897,7 +885,7 @@ posix_setuid(self, args)
 	INCREF(None);
 	return None;
 }
-#endif
+#endif /* HAVE_SETUID */
 
 #ifdef HAVE_SETGID
 static object *
@@ -913,7 +901,7 @@ posix_setgid(self, args)
 	INCREF(None);
 	return None;
 }
-#endif
+#endif /* HAVE_SETGID */
 
 #ifdef HAVE_WAITPID
 static object *
@@ -994,7 +982,7 @@ posix_symlink(self, args)
 #ifdef HAVE_TIMES
 #ifndef HZ
 #define HZ 60 /* Universal constant :-) */
-#endif
+#endif /* HZ */
 static object *
 posix_times(self, args)
 	object *self;
@@ -1169,7 +1157,7 @@ posix_lseek(self, args)
 	case 1: how = SEEK_CUR; break;
 	case 2: how = SEEK_END; break;
 	}
-#endif
+#endif /* SEEK_END */
 	BGN_SAVE
 	res = lseek(fd, pos, how);
 	END_SAVE
@@ -1289,38 +1277,36 @@ static struct methodlist posix_methods[] = {
 	{"chmod",	posix_chmod},
 #ifdef HAVE_CHOWN
 	{"chown",	posix_chown},
-#endif
+#endif /* HAVE_CHOWN */
 	{"getcwd",	posix_getcwd},
 #ifdef HAVE_LINK
 	{"link",	posix_link},
-#endif 
+#endif /* HAVE_LINK */
 	{"listdir",	posix_listdir},
 	{"lstat",	posix_lstat},
 	{"mkdir",	posix_mkdir},
 #ifdef HAVE_NICE
 	{"nice",	posix_nice},
-#endif
+#endif /* HAVE_NICE */
 #ifdef HAVE_READLINK
 	{"readlink",	posix_readlink},
-#endif
+#endif /* HAVE_READLINK */
 	{"rename",	posix_rename},
 	{"rmdir",	posix_rmdir},
 	{"stat",	posix_stat},
 #ifdef HAVE_SYMLINK
 	{"symlink",	posix_symlink},
-#endif
+#endif /* HAVE_SYMLINK */
 	{"system",	posix_system},
 	{"umask",	posix_umask},
 #ifdef HAVE_UNAME
 	{"uname",	posix_uname},
-#endif
+#endif /* HAVE_UNAME */
 	{"unlink",	posix_unlink},
-#ifndef NT
 	{"utime",	posix_utime},
-#endif /* ! NT */
 #ifdef HAVE_TIMES
 	{"times",	posix_times},
-#endif
+#endif /* HAVE_TIMES */
 	{"_exit",	posix__exit},
 	{"execv",	posix_execv},
 	{"execve",	posix_execve},
@@ -1329,44 +1315,44 @@ static struct methodlist posix_methods[] = {
 	{"getegid",	posix_getegid},
 	{"geteuid",	posix_geteuid},
 	{"getgid",	posix_getgid},
-#endif /* ! NT */
+#endif /* !NT */
 	{"getpid",	posix_getpid},
 #ifdef HAVE_GETPGRP
 	{"getpgrp",	posix_getpgrp},
-#endif
+#endif /* HAVE_GETPGRP */
 #ifndef NT
 	{"getppid",	posix_getppid},
 	{"getuid",	posix_getuid},
 	{"kill",	posix_kill},
-#endif /* ! NT */
+#endif /* !NT */
 	{"popen",	posix_popen},
 #ifdef HAVE_SETUID
 	{"setuid",	posix_setuid},
-#endif
+#endif /* HAVE_SETUID */
 #ifdef HAVE_SETGID
 	{"setgid",	posix_setgid},
-#endif
+#endif /* HAVE_SETGID */
 #ifdef HAVE_SETPGRP
 	{"setpgrp",	posix_setpgrp},
-#endif
+#endif /* HAVE_SETPGRP */
 #ifndef NT
 	{"wait",	posix_wait},
-#endif /* ! NT */
+#endif /* !NT */
 #ifdef HAVE_WAITPID
 	{"waitpid",	posix_waitpid},
-#endif
+#endif /* HAVE_WAITPID */
 #ifdef HAVE_SETSID
 	{"setsid",	posix_setsid},
-#endif
+#endif /* HAVE_SETSID */
 #ifdef HAVE_SETPGID
 	{"setpgid",	posix_setpgid},
-#endif
+#endif /* HAVE_SETPGID */
 #ifdef HAVE_TCGETPGRP
 	{"tcgetpgrp",	posix_tcgetpgrp},
-#endif
+#endif /* HAVE_TCGETPGRP */
 #ifdef HAVE_TCSETPGRP
 	{"tcsetpgrp",	posix_tcsetpgrp},
-#endif
+#endif /* HAVE_TCSETPGRP */
 	{"open",	posix_open},
 	{"close",	posix_close},
 	{"dup",		posix_dup},
@@ -1378,7 +1364,7 @@ static struct methodlist posix_methods[] = {
 	{"fdopen",	posix_fdopen},
 #ifndef NT
 	{"pipe",	posix_pipe},
-#endif /* ! NT */
+#endif /* !NT */
 
 	{NULL,		NULL}		 /* Sentinel */
 };
@@ -1404,7 +1390,7 @@ initnt()
 	if (PosixError == NULL || dictinsert(d, "error", PosixError) != 0)
 		fatal("can't define nt.error");
 }
-#else /* ! NT */
+#else /* !NT */
 void
 initposix()
 {
@@ -1424,4 +1410,4 @@ initposix()
 	if (PosixError == NULL || dictinsert(d, "error", PosixError) != 0)
 		fatal("can't define posix.error");
 }
-#endif /* ! NT */
+#endif /* !NT */
