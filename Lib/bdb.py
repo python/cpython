@@ -210,7 +210,6 @@ class Bdb:
 		if not lineno in list:
 			list.append(lineno)
 		bp = Breakpoint(filename, lineno, temporary, cond)
-		print "Breakpoint in", filename, "at", lineno
 
 	def clear_break(self, filename, lineno):
 		filename = self.canonic(filename)
