@@ -123,12 +123,7 @@ class Generator:
         # self._handle_<maintype>_<subtype>().  If there's no handler for the
         # full MIME type, then dispatch to self._handle_<maintype>().  If
         # that's missing too, then dispatch to self._writeBody().
-        ctype = msg.get_type()
-        if ctype is None:
-            # No Content-Type: header so use the default type, which must be
-            # either text/plain or message/rfc822.
-            ctype = msg.get_default_type()
-            assert ctype in ('text/plain', 'message/rfc822')
+        ctype = msg.get_content_type()
         # We do have a Content-Type: header.
         main, sub = ctype.split('/')
         specific = UNDERSCORE.join((main, sub)).replace('-', '_')
