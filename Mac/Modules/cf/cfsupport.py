@@ -250,6 +250,15 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
 			*p_itself = CFStringCreateWithCString((CFAllocatorRef)NULL, cStr, 0);
 			return 1;
 		}
+		if (PyUnicode_Check(v)) {
+			/* We use the CF types here, if Python was configured differently that will give an error */
+			CFIndex size = PyUnicode_GetSize(v);
+			UniChar *unichars = PyUnicode_AsUnicode(v);
+			if (!unichars) return 0;
+			*p_itself = CFStringCreateWithCharacters((CFAllocatorRef)NULL, unichars, size);
+			return 1;
+		}
+			
 		""")
 
 	def outputRepr(self):
@@ -375,6 +384,24 @@ return _res;
 
 f = ManualGenerator("CFStringGetString", getasstring_body);
 f.docstring = lambda: "() -> (string _rv)"
+CFStringRef_object.add(f)
+
+getasunicode_body = """
+int size = CFStringGetLength(_self->ob_itself)+1;
+Py_UNICODE *data = malloc(size*sizeof(Py_UNICODE));
+CFRange range;
+
+range.location = 0;
+range.length = size;
+if( data == NULL ) return PyErr_NoMemory();
+CFStringGetCharacters(_self->ob_itself, range, data);
+_res = (PyObject *)PyUnicode_FromUnicode(data, size);
+free(data);
+return _res;
+"""
+
+f = ManualGenerator("CFStringGetUnicode", getasunicode_body);
+f.docstring = lambda: "() -> (unicode _rv)"
 CFStringRef_object.add(f)
 
 # ADD add forloop here
