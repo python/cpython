@@ -1230,6 +1230,14 @@ to internationalize Optik's help and error messages.  Help messages
 for options can now include the string \code{'\%default'}, which will
 be replaced by the option's default value.
 
+\item The long-term plan is to deprecate the \module{rfc822} module
+in some future Python release in favor of the \module{email} package.
+To this end, the \function{email.Utils.formatdate()} function has been
+changed to make it usable as a replacement for
+\function{rfc822.formatdate()}.  You may want to write new e-mail
+processing code with this in mind.  (Change implemented by Anthony
+Baxter.)
+
 \item A new \function{urandom(\var{n})} function 
 was added to the \module{os} module, providing access to
 platform-specific sources of randomness such as
@@ -1383,6 +1391,12 @@ Changes to Python's build process and to the C API include:
   \item The \csimplemacro{Py_IS_NAN(\var{X})} macro returns 1 if 
   its float or double argument \var{X} is a NaN.  
   (Contributed by Tim Peters.)
+
+  \item C code can avoid unnecessary locking by using the new
+   \cfunction{PyEval_ThreadsInitialized()} function to tell 
+   if any thread operations have been performed.  If this function 
+   returns false, no lock operations are needed.
+   (Contributed by Nick Coghlan.)
 
   \item A new function, \cfunction{PyArg_VaParseTupleAndKeywords()},
   is the same as \cfunction{PyArg_ParseTupleAndKeywords()} but takes a 
