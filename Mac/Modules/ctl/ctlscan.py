@@ -162,6 +162,9 @@ class MyScanner(Scanner):
 			 [("ExistingControlHandle", "*", "*")]),
 			([("ControlRef", "*", "OutMode")],	# Ditto, for Universal Headers
 			 [("ExistingControlHandle", "*", "*")]),
+			 
+			([("Rect_ptr", "*", "ReturnMode")], # GetControlBounds
+			 [("void", "*", "ReturnMode")]),
 			]
 
 if __name__ == "__main__":

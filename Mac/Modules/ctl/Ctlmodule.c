@@ -1277,14 +1277,12 @@ static PyObject *CtlObj_GetControlBounds(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Rect _rv;
 	Rect bounds;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetControlBounds(_self->ob_itself,
-	                       &bounds);
-	_res = Py_BuildValue("O&O&",
-	                     PyMac_BuildRect, &_rv,
+	GetControlBounds(_self->ob_itself,
+	                 &bounds);
+	_res = Py_BuildValue("O&",
 	                     PyMac_BuildRect, &bounds);
 	return _res;
 }
@@ -1805,7 +1803,7 @@ static PyObject *CtlObj_GetControlData(_self, _args)
 
 }
 
-static PyObject *CtlObj_SetControlDataHandle(_self, _args)
+static PyObject *CtlObj_SetControlData_Handle(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -1835,7 +1833,7 @@ static PyObject *CtlObj_SetControlDataHandle(_self, _args)
 
 }
 
-static PyObject *CtlObj_GetControlDataHandle(_self, _args)
+static PyObject *CtlObj_GetControlData_Handle(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -1880,7 +1878,7 @@ static PyObject *CtlObj_GetControlDataHandle(_self, _args)
 
 #if !TARGET_API_MAC_CARBON_NOTYET
 
-static PyObject *CtlObj_SetControlDataCallback(_self, _args)
+static PyObject *CtlObj_SetControlData_Callback(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
 {
@@ -2133,7 +2131,7 @@ static PyMethodDef CtlObj_methods[] = {
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
 	{"GetControlBounds", (PyCFunction)CtlObj_GetControlBounds, 1,
-	 "() -> (Rect _rv, Rect bounds)"},
+	 "() -> (Rect bounds)"},
 #endif
 
 #if ACCESSOR_CALLS_ARE_FUNCTIONS
@@ -2215,13 +2213,13 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(stuff) -> None"},
 	{"GetControlData", (PyCFunction)CtlObj_GetControlData, 1,
 	 "(part, type) -> String"},
-	{"SetControlDataHandle", (PyCFunction)CtlObj_SetControlDataHandle, 1,
+	{"SetControlData_Handle", (PyCFunction)CtlObj_SetControlData_Handle, 1,
 	 "(ResObj) -> None"},
-	{"GetControlDataHandle", (PyCFunction)CtlObj_GetControlDataHandle, 1,
+	{"GetControlData_Handle", (PyCFunction)CtlObj_GetControlData_Handle, 1,
 	 "(part, type) -> ResObj"},
 
 #if !TARGET_API_MAC_CARBON_NOTYET
-	{"SetControlDataCallback", (PyCFunction)CtlObj_SetControlDataCallback, 1,
+	{"SetControlData_Callback", (PyCFunction)CtlObj_SetControlData_Callback, 1,
 	 "(callbackfunc) -> None"},
 #endif
 

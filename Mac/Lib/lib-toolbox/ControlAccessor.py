@@ -4,14 +4,14 @@ from Controls import *
 import struct
 
 # These needn't go through this module, but are here for completeness
-def SetControlDataHandle(control, part, selector, data):
-	control.SetControlDataHandle(part, selector, data)
+def SetControlData_Handle(control, part, selector, data):
+	control.SetControlData_Handle(part, selector, data)
 	
-def GetControlDataHandle(control, part, selector):
-	return control.GetControlDataHandle(part, selector)
+def GetControlData_Handle(control, part, selector):
+	return control.GetControlData_Handle(part, selector)
 	
 _accessdict = {
-	kControlPopupButtonMenuHandleTag: (SetControlDataHandle, GetControlDataHandle),
+	kControlPopupButtonMenuHandleTag: (SetControl_DataHandle, GetControlData_Handle),
 }
 
 _codingdict = {

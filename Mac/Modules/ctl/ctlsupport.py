@@ -501,8 +501,8 @@ f = ManualGenerator("GetControlData", getcontroldata_body);
 f.docstring = lambda: "(part, type) -> String"
 object.add(f)
 
-# Manual Generator for SetControlDataHandle
-setcontroldatahandle_body = """
+# Manual Generator for SetControlData_Handle
+setcontroldata_handle_body = """
 OSErr _err;
 ControlPartCode inPart;
 ResType inTagName;
@@ -526,12 +526,12 @@ _res = Py_None;
 return _res;
 """
 
-f = ManualGenerator("SetControlDataHandle", setcontroldatahandle_body);
+f = ManualGenerator("SetControlData_Handle", setcontroldata_handle_body);
 f.docstring = lambda: "(ResObj) -> None"
 object.add(f)
 
-# Manual Generator for GetControlDataHandle
-getcontroldatahandle_body = """
+# Manual Generator for GetControlData_Handle
+getcontroldata_handle_body = """
 OSErr _err;
 ControlPartCode inPart;
 ResType inTagName;
@@ -568,12 +568,12 @@ if (_err != noErr) {
 return Py_BuildValue("O&", OptResObj_New, hdl);
 """
 
-f = ManualGenerator("GetControlDataHandle", getcontroldatahandle_body);
+f = ManualGenerator("GetControlData_Handle", getcontroldata_handle_body);
 f.docstring = lambda: "(part, type) -> ResObj"
 object.add(f)
 
-# Manual Generator for SetControlDataCallback
-setcontroldatacallback_body = """
+# Manual Generator for SetControlData_Callback
+setcontroldata_callback_body = """
 OSErr _err;
 ControlPartCode inPart;
 ResType inTagName;
@@ -600,7 +600,7 @@ _res = Py_None;
 return _res;
 """
 
-f = ManualGenerator("SetControlDataCallback", setcontroldatacallback_body, condition="#if !TARGET_API_MAC_CARBON_NOTYET");
+f = ManualGenerator("SetControlData_Callback", setcontroldata_callback_body, condition="#if !TARGET_API_MAC_CARBON_NOTYET");
 f.docstring = lambda: "(callbackfunc) -> None"
 object.add(f)
 
