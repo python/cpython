@@ -224,8 +224,12 @@ PyUnicodeObject *_PyUnicode_New(int length)
 }
 
 static
-void _PyUnicode_Free(register PyUnicodeObject *unicode)
+void unicode_dealloc(register PyUnicodeObject *unicode)
 {
+    if (!PyUnicode_CheckExact(unicode)) {
+	unicode->ob_type->tp_free((PyObject *)unicode);
+	return;
+    }
     if (unicode_freelist_size < MAX_UNICODE_FREELIST_SIZE) {
         /* Keep-Alive optimization */
 	if (unicode->length >= KEEPALIVE_SIZE_LIMIT) {
@@ -5693,7 +5697,7 @@ PyTypeObject PyUnicode_Type = {
     sizeof(PyUnicodeObject), 		/* tp_size */
     0, 					/* tp_itemsize */
     /* Slots */
-    (destructor)_PyUnicode_Free, 	/* tp_dealloc */
+    (destructor)unicode_dealloc, 	/* tp_dealloc */
     0, 					/* tp_print */
     0,				 	/* tp_getattr */
     0, 					/* tp_setattr */
@@ -5727,6 +5731,7 @@ PyTypeObject PyUnicode_Type = {
     0,					/* tp_init */
     0,					/* tp_alloc */
     unicode_new,			/* tp_new */
+    _PyObject_Del,			/* tp_free */
 };
 
 /* Initialize the Unicode implementation */

@@ -157,7 +157,7 @@ tupledealloc(register PyTupleObject *op)
 		}
 #endif
 	}
-	PyObject_GC_Del(op);
+	op->ob_type->tp_free((PyObject *)op);
 done:
 	Py_TRASHCAN_SAFE_END(op)
 }
@@ -582,6 +582,7 @@ PyTypeObject PyTuple_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	tuple_new,				/* tp_new */
+	_PyObject_GC_Del,			/* tp_free */
 };
 
 /* The following function breaks the notion that tuples are immutable:

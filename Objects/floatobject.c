@@ -182,8 +182,12 @@ PyFloat_FromString(PyObject *v, char **pend)
 static void
 float_dealloc(PyFloatObject *op)
 {
-	op->ob_type = (struct _typeobject *)free_list;
-	free_list = op;
+	if (PyFloat_CheckExact(op)) {
+		op->ob_type = (struct _typeobject *)free_list;
+		free_list = op;
+	}
+	else
+		op->ob_type->tp_free((PyObject *)op);
 }
 
 double

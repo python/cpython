@@ -73,6 +73,24 @@ def test_instance():
     del a
     expect_nonzero(gc.collect(), "instance")
 
+def test_newinstance():
+    class A(object):
+        pass
+    a = A()
+    a.a = a
+    gc.collect()
+    del a
+    expect_nonzero(gc.collect(), "newinstance")
+    class B(list):
+        pass
+    class C(B, A):
+        pass
+    a = C()
+    a.a = a
+    gc.collect()
+    del a
+    expect_nonzero(gc.collect(), "newinstance(2)")
+
 def test_method():
     # Tricky: self.__init__ is a bound method, it references the instance.
     class A:
@@ -170,6 +188,7 @@ def test_all():
     run_test("static classes", test_staticclass)
     run_test("dynamic classes", test_dynamicclass)
     run_test("instances", test_instance)
+    run_test("new instances", test_newinstance)
     run_test("methods", test_method)
     run_test("functions", test_function)
     run_test("frames", test_frame)

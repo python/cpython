@@ -481,7 +481,7 @@ PyObject *PyString_AsEncodedString(PyObject *str,
 static void
 string_dealloc(PyObject *op)
 {
-	PyObject_DEL(op);
+	op->ob_type->tp_free(op);
 }
 
 static int
@@ -2746,6 +2746,7 @@ PyTypeObject PyString_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	string_new,				/* tp_new */
+	_PyObject_Del,				/* tp_free */
 };
 
 void

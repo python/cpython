@@ -461,7 +461,7 @@ static void
 cm_dealloc(classmethod *cm)
 {
 	Py_XDECREF(cm->cm_callable);
-	PyObject_DEL(cm);
+	cm->ob_type->tp_free((PyObject *)cm);
 }
 
 static PyObject *
@@ -531,6 +531,7 @@ PyTypeObject PyClassMethod_Type = {
 	cm_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
+	_PyObject_Del,				/* tp_free */
 };
 
 PyObject *
@@ -571,7 +572,7 @@ static void
 sm_dealloc(staticmethod *sm)
 {
 	Py_XDECREF(sm->sm_callable);
-	PyObject_DEL(sm);
+	sm->ob_type->tp_free((PyObject *)sm);
 }
 
 static PyObject *
@@ -641,6 +642,7 @@ PyTypeObject PyStaticMethod_Type = {
 	sm_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
+	_PyObject_Del,				/* tp_free */
 };
 
 PyObject *

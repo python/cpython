@@ -1227,7 +1227,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 static void
 long_dealloc(PyObject *v)
 {
-	PyObject_DEL(v);
+	v->ob_type->tp_free(v);
 }
 
 static PyObject *
@@ -2341,4 +2341,5 @@ PyTypeObject PyLong_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	long_new,				/* tp_new */
+	_PyObject_Del,				/* tp_free */
 };
