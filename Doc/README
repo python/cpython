@@ -126,14 +126,12 @@ To create HTML files:
 	- Perl 5.004_04 or newer.  Find the software at
 	  <http://language.perl.com/info/software.html>.
 
-	- LaTeX2HTML 98.2b6.  Older version will fail with the new
-	  directory layout.  Version 98.2b8 specifically does not
-	  work; it translates `` and '' to &ldquo; and &rdquo;, which
-	  are not supported by popular Web browsers.  This also screws 
-	  up code fragments.  ;-(  Releases are available at:
-	  <http://cdc-server.cdc.informatik.tu-darmstadt.de/~latex2html/>.
-	  Really new versions also don't work, but I'm not sure when
-	  things broke.
+	- LaTeX2HTML 99.2b8.  Older versions are not supported; each
+	  version changes enough that supporting multiple versions is not 
+	  likely to work.  Many older versions don't work with Perl
+	  5.6 as well.  This also screws up code fragments.  ;-(
+	  Releases are available at:
+          <http://saftsack.fs.uni-bayreuth.de/~latex2ht/current/>.
 
 
 What if Times fonts are not available?
