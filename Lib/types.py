@@ -85,5 +85,6 @@ SliceType = slice
 EllipsisType = type(Ellipsis)
 
 DictProxyType = type(TypeType.__dict__)
+NotImplementedType = type(NotImplemented)
 
 del sys, _f, _C, _x                  # Not for export
