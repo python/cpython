@@ -17,10 +17,11 @@ import marshal
 import regex
 
 try:
-	# experimental microthread support
-	import uthread2
+	import Wthreading
 except ImportError:
-	uthread2 = None
+	haveThreading = 0
+else:
+	haveThreading = Wthreading.haveThreading
 
 _scriptuntitledcounter = 1
 _wordchars = string.letters + string.digits + "_"
@@ -109,6 +110,10 @@ class Editor(W.Window):
 			self.run_as_main = self.settings["run_as_main"]
 		else:
 			self.run_as_main = 0
+		if self.settings.has_key("run_with_interpreter"):
+			self.run_with_interpreter = self.settings["run_with_interpreter"]
+		else:
+			self.run_with_interpreter = 0
 		self._threadstate = (0, 0)
 		self._thread = None
 	
@@ -151,6 +156,7 @@ class Editor(W.Window):
 		self.settings["fontsettings"] = self.editgroup.editor.getfontsettings()
 		self.settings["tabsize"] = self.editgroup.editor.gettabsettings()
 		self.settings["run_as_main"] = self.run_as_main
+		self.settings["run_with_interpreter"] = self.run_with_interpreter
 	
 	def get(self):
 		return self.editgroup.editor.get()
@@ -220,6 +226,8 @@ class Editor(W.Window):
 				("Save optionsŠ", self.domenu_options),
 				'-',
 				('\0' + chr(self.run_as_main) + 'Run as __main__', self.domenu_toggle_run_as_main), 
+				#('\0' + chr(self.run_with_interpreter) + 'Run with Interpreter', self.domenu_toggle_run_with_interpreter), 
+				#'-',
 				('Modularize', self.domenu_modularize),
 				('Browse namespaceŠ', self.domenu_browsenamespace), 
 				'-']
@@ -237,6 +245,12 @@ class Editor(W.Window):
 	
 	def domenu_toggle_run_as_main(self):
 		self.run_as_main = not self.run_as_main
+		self.run_with_interpreter = 0
+		self.editgroup.editor.selchanged = 1
+	
+	def domenu_toggle_run_with_interpreter(self):
+		self.run_with_interpreter = not self.run_with_interpreter
+		self.run_as_main = 0
 		self.editgroup.editor.selchanged = 1
 	
 	def showbreakpoints(self, onoff):
@@ -476,28 +490,52 @@ class Editor(W.Window):
 		if self._threadstate == (0, 0):
 			self._run()
 		else:
-			uthread2.globalLock()
-			self._thread.raiseException(KeyboardInterrupt)
-			if self._thread.isPaused():
+			lock = Wthreading.Lock()
+			lock.acquire()
+			self._thread.postException(KeyboardInterrupt)
+			if self._thread.isBlocked():
 				self._thread.start()
-			uthread2.globalUnlock()
+			lock.release()
 	
 	def _run(self):
-		pytext = self.editgroup.editor.get()
-		globals, file, modname = self.getenvironment()
-		self.execstring(pytext, globals, globals, file, modname)
+		if self.run_with_interpreter:
+			if self.editgroup.editor.changed:
+				import EasyDialogs
+				import Qd; Qd.InitCursor()
+				save = EasyDialogs.AskYesNoCancel('Save ³%s² before running?' % self.title, 1)
+				if save > 0:
+					if self.domenu_save():
+						return
+				elif save < 0:
+					return
+			if not self.path:
+				raise W.AlertError, "Can't run unsaved file"
+			self._run_with_interpreter()
+		else:
+			pytext = self.editgroup.editor.get()
+			globals, file, modname = self.getenvironment()
+			self.execstring(pytext, globals, globals, file, modname)
+	
+	def _run_with_interpreter(self):
+		interp_path = os.path.join(sys.exec_prefix, "PythonInterpreter")
+		if not os.path.exists(interp_path):
+			raise W.AlertError, "Can't find interpreter"
+		import findertools
+		XXX
 	
 	def runselection(self):
 		if self._threadstate == (0, 0):
 			self._runselection()
 		elif self._threadstate == (1, 1):
-			self._thread.pause()
+			self._thread.block()
 			self.setthreadstate((1, 2))
 		elif self._threadstate == (1, 2):
 			self._thread.start()
 			self.setthreadstate((1, 1))
 	
 	def _runselection(self):
+		if self.run_with_interpreter:
+			raise W.AlertError, "Can't run selection with Interpreter"
 		globals, file, modname = self.getenvironment()
 		locals = globals
 		# select whole lines
@@ -571,8 +609,8 @@ class Editor(W.Window):
 		else:
 			cwdindex = None
 		try:
-			if uthread2 and uthread2.currentThread() is not None:
-				self._thread = uthread2.Thread(file, 
+			if haveThreading:
+				self._thread = Wthreading.Thread(os.path.basename(file), 
 							self._exec_threadwrapper, pytext, globals, locals, file, self.debugging, 
 							modname, self.profiling)
 				self.setthreadstate((1, 1))
@@ -1082,13 +1120,14 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 		return
 	try:
 		if debugging:
-			if uthread2:
-				uthread2.globalLock()
+			if haveThreading:
+				lock = Wthreading.Lock()
+				lock.acquire()
 				PyDebugger.startfromhere()
-				uthread2.globalUnlock()
+				lock.release()
 			else:
 				PyDebugger.startfromhere()
-		elif not uthread2:
+		elif not haveThreading:
 			MacOS.EnableAppswitch(0)
 		try:
 			if profiling:
@@ -1105,23 +1144,25 @@ def execstring(pytext, globals, locals, filename="<string>", debugging=0,
 			else:
 				exec code in globals, locals
 		finally:
-			if not uthread2:
+			if not haveThreading:
 				MacOS.EnableAppswitch(-1)
 	except W.AlertError, detail:
 		raise W.AlertError, detail
 	except (KeyboardInterrupt, BdbQuit):
 		pass
 	except:
-		if uthread2:
-			uthread2.globalLock()
+		if haveThreading:
+			import continuation
+			lock = Wthreading.Lock()
+			lock.acquire()
 		if debugging:
 			sys.settrace(None)
 			PyDebugger.postmortem(sys.exc_type, sys.exc_value, sys.exc_traceback)
 			return
 		else:
 			tracebackwindow.traceback(1, filename)
-		if uthread2:
-			uthread2.globalUnlock()
+		if haveThreading:
+			lock.release()
 	if debugging:
 		sys.settrace(None)
 		PyDebugger.stop()
