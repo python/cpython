@@ -19,6 +19,9 @@ from sre_constants import *
 # FIXME: should be 65535, but the arraymodule is still broken
 MAXREPEAT = 32767
 
+# FIXME: same here
+CHARMASK = 0x7fff
+
 SPECIAL_CHARS = ".\\[{()*+?^$|"
 REPEAT_CHARS  = "*+?{"
 
@@ -30,14 +33,14 @@ HEXDIGITS = tuple("0123456789abcdefABCDEF")
 WHITESPACE = string.whitespace
 
 ESCAPES = {
-    r"\a": (LITERAL, chr(7)),
-    r"\b": (LITERAL, chr(8)),
-    r"\f": (LITERAL, chr(12)),
-    r"\n": (LITERAL, chr(10)),
-    r"\r": (LITERAL, chr(13)),
-    r"\t": (LITERAL, chr(9)),
-    r"\v": (LITERAL, chr(11)),
-    r"\\": (LITERAL, "\\")
+    r"\a": (LITERAL, 7),
+    r"\b": (LITERAL, 8),
+    r"\f": (LITERAL, 12),
+    r"\n": (LITERAL, 10),
+    r"\r": (LITERAL, 13),
+    r"\t": (LITERAL, 9),
+    r"\v": (LITERAL, 11),
+    r"\\": (LITERAL, ord("\\"))
 }
 
 CATEGORIES = {
@@ -176,9 +179,6 @@ def isdigit(char):
 
 def isname(name):
     # check that group name is a valid string
-    # FIXME: <fl> this code is really lame.  should use a regular
-    # expression instead, but I seem to have certain bootstrapping
-    # problems here ;-)
     if not isident(name[0]):
         return 0
     for char in name:
@@ -209,16 +209,14 @@ def _class_escape(source, escape):
             while source.next in HEXDIGITS:
                 escape = escape + source.get()
             escape = escape[2:]
-            # FIXME: support unicode characters!
-            return LITERAL, chr(int(escape[-4:], 16) & 0xff)
+            return LITERAL, int(escape[-4:], 16) & CHARMASK
         elif str(escape[1:2]) in OCTDIGITS:
             while source.next in OCTDIGITS:
                 escape = escape + source.get()
             escape = escape[1:]
-            # FIXME: support unicode characters!
-            return LITERAL, chr(int(escape[-6:], 8) & 0xff)
+            return LITERAL, int(escape[-6:], 8) & CHARMASK
         if len(escape) == 2:
-            return LITERAL, escape[1]
+            return LITERAL, ord(escape[1])
     except ValueError:
         pass
     raise error, "bogus escape: %s" % repr(escape)
@@ -236,8 +234,7 @@ def _escape(source, escape, state):
             while source.next in HEXDIGITS:
                 escape = escape + source.get()
             escape = escape[2:]
-            # FIXME: support unicode characters!
-            return LITERAL, chr(int(escape[-4:], 16) & 0xff)
+            return LITERAL, int(escape[-4:], 16) & CHARMASK
         elif escape[1:2] in DIGITS:
             while 1:
                 group = _group(escape, state.groups)
@@ -251,17 +248,14 @@ def _escape(source, escape, state):
                 else:
                     break
             escape = escape[1:]
-            # FIXME: support unicode characters!
-            return LITERAL, chr(int(escape[-6:], 8) & 0xff)
+            return LITERAL, int(escape[-6:], 8) & CHARMASK
         if len(escape) == 2:
-            return LITERAL, escape[1]
+            return LITERAL, ord(escape[1])
     except ValueError:
         pass
     raise error, "bogus escape: %s" % repr(escape)
 
-
 def _branch(pattern, items):
-
     # form a branch operator from a set of items
 
     subpattern = SubPattern(pattern)
@@ -327,7 +321,7 @@ def _parse(source, state, flags=0):
                 continue
 
         if this and this[0] not in SPECIAL_CHARS:
-            subpattern.append((LITERAL, this))
+            subpattern.append((LITERAL, ord(this)))
 
         elif this == "[":
             # character set
@@ -345,7 +339,7 @@ def _parse(source, state, flags=0):
                 elif this and this[0] == "\\":
                     code1 = _class_escape(source, this)
                 elif this:
-                    code1 = LITERAL, this
+                    code1 = LITERAL, ord(this)
                 else:
                     raise error, "unexpected end of regular expression"
                 if source.match("-"):
@@ -353,16 +347,14 @@ def _parse(source, state, flags=0):
                     this = source.get()
                     if this == "]":
                         set.append(code1)
-                        set.append((LITERAL, "-"))
+                        set.append((LITERAL, ord("-")))
                         break
                     else:
                         if this[0] == "\\":
                             code2 = _class_escape(source, this)
                         else:
-                            code2 = LITERAL, this
+                            code2 = LITERAL, ord(this)
                         if code1[0] != LITERAL or code2[0] != LITERAL:
-                            raise error, "illegal range"
-                        if len(code1[1]) != 1 or len(code2[1]) != 1:
                             raise error, "illegal range"
                         set.append((RANGE, (code1[1], code2[1])))
                 else:
@@ -605,17 +597,16 @@ def parse_template(source, pattern):
                         break
                 if not code:
                     this = this[1:]
-                    # FIXME: support unicode characters!
-                    code = LITERAL, chr(int(this[-6:], 8) & 0xff)
+                    code = LITERAL, int(this[-6:], 8) & CHARMASK
                 a(code)
             else:
                 try:
                     a(ESCAPES[this])
                 except KeyError:
                     for c in this:
-                        a((LITERAL, c))
+                        a((LITERAL, ord(c)))
         else:
-            a((LITERAL, this))
+            a((LITERAL, ord(this)))
     return p
 
 def expand_template(template, match):
@@ -623,12 +614,17 @@ def expand_template(template, match):
     # code instead
     p = []
     a = p.append
+    sep = match.string[:0]
+    if type(sep) is type(""):
+	char = chr
+    else:
+	char = unichr
     for c, s in template:
         if c is LITERAL:
-            a(s)
+            a(char(s))
         elif c is MARK:
             s = match.group(s)
             if s is None:
                 raise error, "empty group"
             a(s)
-    return match.string[:0].join(p)
+    return sep.join(p)
