@@ -351,7 +351,7 @@ class FTP:
 				break
 			if line[-2:] == CRLF:
 				line = line[:-2]
-			elif line[:-1] == '\n':
+			elif line[-1:] == '\n':
 				line = line[:-1]
 			callback(line)
 		fp.close()
