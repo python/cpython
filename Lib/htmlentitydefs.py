@@ -5,6 +5,7 @@ entitydefs = {
     'lt':       '<',
     'gt':       '>',
     'amp':      '&',
+    'quot':	'"',
     'nbsp':	chr(160),	# no-break space
     'iexcl':	chr(161),	# inverted exclamation mark
     'cent':	chr(162),	# cent sign
