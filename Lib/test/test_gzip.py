@@ -12,7 +12,7 @@ data1 = """  int length=DEFAULTALLOC, err = Z_OK;
 """
 
 data2 = """/* zlibmodule.c -- gzip-compatible data compression */
-/* See http://www.cdrom.com/pub/infozip/zlib/ */
+/* See http://www.gzip.org/zlib/
 /* See http://www.winimage.com/zLibDll for Windows */
 """
 
