@@ -14,6 +14,7 @@ def basic(src):
     verify(L == [r'Commented Bar',
                  r'Foo Bar',
                  r'Internationalized Stuff',
+                 r'Long Line',
                  r'Section\with$weird%characters[' '\t',
                  r'Spacey Bar',
                  ],
@@ -47,7 +48,26 @@ def basic(src):
             "remove_option() failed to report non-existance of option"
             " that never existed")
 
+    verify(cf.get('Long Line', 'foo', raw=1) ==
+           'this line is much, much longer than my editor\nlikes it.')
 
+
+def write(src):
+    print "Testing writing of files..."
+    cf = ConfigParser.ConfigParser()
+    sio = StringIO.StringIO(src)
+    cf.readfp(sio)
+    output = StringIO.StringIO()
+    cf.write(output)
+    verify(output, """[DEFAULT]
+foo = another very
+        long line
+
+[Long Line]
+foo = this line is much, much longer than my editor
+        likes it.
+""")
+           
 def case_sensitivity():
     print "Testing case sensitivity..."
     cf = ConfigParser.ConfigParser()
@@ -191,6 +211,9 @@ foo=bar
 foo = bar
 [Commented Bar]
 foo: bar ; comment
+[Long Line]
+foo: this line is much, much longer than my editor
+   likes it.
 [Section\with$weird%characters[""" '\t' r"""]
 [Internationalized Stuff]
 foo[bg]: Bulgarian
@@ -198,6 +221,12 @@ foo=Default
 foo[en]=English
 foo[de]=Deutsch
 """)
+write("""[Long Line]
+foo: this line is much, much longer than my editor
+   likes it.
+[DEFAULT]
+foo: another very
+ long line""")
 case_sensitivity()
 boolean(r"""
 [BOOLTEST]
