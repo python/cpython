@@ -558,6 +558,13 @@ if type(dictlike.fromkeys('a')) is not dictlike:
     raise TestFailed, 'dictsubclass.fromkeys created wrong type'
 if type(dictlike().fromkeys('a')) is not dictlike:
     raise TestFailed, 'dictsubclass.fromkeys created wrong type'
+from UserDict import UserDict
+class mydict(dict):
+    def __new__(cls, *args, **kwargs):
+        return UserDict(*args, **kwargs)
+try: mydict.fromkeys('a b c'.split())
+except TypeError: pass
+else: raise TestFailed, 'dict.fromkeys() failed to detect non-dict class.'
 # dict.copy()
 d = {1:1, 2:2, 3:3}
 if d.copy() != {1:1, 2:2, 3:3}: raise TestFailed, 'dict copy'
