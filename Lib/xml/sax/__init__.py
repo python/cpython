@@ -17,12 +17,12 @@ drv_pyexpat -- Driver that allows use of the Expat parser with the classes
 
 """
 
-from handler import *
-from expatreader import *
-from _exceptions import *
-from saxutils import *
-from _exceptions import SAXParseException
+from handler import ContentHandler, ErrorHandler
+from expatreader import ExpatParser
+from _exceptions import SAXException, SAXNotRecognizedException, \
+			SAXParseException, SAXNotSupportedException
 import xmlreader
+import saxutils
 
 def parse( filename_or_stream, handler, errorHandler=ErrorHandler() ):
     parser=ExpatParser()
