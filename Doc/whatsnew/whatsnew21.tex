@@ -36,8 +36,8 @@ release in April 2001.
 % ======================================================================
 \section{PEP 232: Function Attributes}
 
-In Python 2.1, functions can have arbitrary attributes assigned to
-them.  We noticed that people were often using docstrings to hold
+In Python 2.1, functions can now have arbitrary
+information attached to them.  People were often using docstrings to hold
 information about functions and methods, because the \code{__doc__}
 attribute was the only way of attaching any information to a function.
 For example, in the Zope Web application server, functions are marked
@@ -47,12 +47,93 @@ be parsed.  This overloading is unfortunate, since docstrings are
 really intended to hold a function's documentation, and means you
 can't properly document functions intended for private use in Zope.
 
-XXX example here
+Attributes can now be set and retrieved on functions, using the
+regular Python syntax:
+
+\begin{verbatim}
+def f(): pass
+
+f.publish = 1
+f.secure = 1
+f.grammar = "A ::= B (C D)*"
+\end{verbatim}    
+
+The dictionary containing attributes can be accessed as
+\member{__dict__}. Unlike the \member{__dict__} attribute of
+class instances, in functions you can actually assign a new dictionary
+to \member{__dict__}, though the new value is restricted to a
+regular Python dictionary; you can't be tricky and set it to a
+\class{UserDict} instance, a DBM file, or any other random mapping
+object.
 
 % ======================================================================
 \section{PEP 207: Rich Comparisons}
 
-xxx
+In earlier versions, Python's support for implementing comparisons on
+user-defined classes and extension types was quite simple. Classes
+could implement a \method{__cmp__} method that was given two instances
+of a class, and could only return 0 if they were equal or +1 or -1 if
+they weren't; the method couldn't raise an exception or return
+anything other than a Boolean value.  Users of Numeric Python often
+found this model too weak and restrictive, because in the
+number-crunching programs that numeric Python is used for, it would be
+more useful to be able to perform elementwise comparisons of two
+matrices, returning a matrix containing the results of a given
+comparison for each element.  If the two matrices are of different
+sizes, then the compare has to be able to raise an exception to signal
+the error.
+
+In Python 2.1, rich comparisons were added in order to support this need.
+Python classes can now individually overload each of the \code{<},
+\code{<=}, \code{>}, \code{>=}, \code{==}, and \code{!=} operations.
+The new magic method names are:
+
+\begin{tableii}{c|l}{code}{Operation}{Method name}
+  \lineii{<}{\method{__lt__}}
+  \lineii{<=}{\method{__le__}}
+  \lineii{>}{\method{__gt__}}
+  \lineii{>=}{\method{__ge__}}
+  \lineii{==}{\method{__eq__}}
+  \lineii{!=}{\method{__ne__}}
+\end{tableii}
+
+(The magic methods are named after the corresponding Fortran operators
+\code{.LT.}. \code{.LE.}, \&c.  Numeric programmers are almost
+certainly quite familar with these names and will find them easy to
+remember.)
+ 
+Each of these magic methods is of the form \code{\var{method}(self,
+other)}, where \code{self} will be the object on the left-hand side of
+the operator, while \code{other} will be the object on the right-hand
+side.  For example, the expression \code{A < B} will cause
+\code{A.__lt__(B)} to be called.
+
+Each of these magic methods can return anything at all: a Boolean, a
+matrix, a list, or any other Python object.  Alternatively they can
+raise an exception if the comparison is impossible, inconsistent, or
+otherwise meaningless.
+
+The built-in \function{cmp(A,B)} function can use the rich comparison
+machinery, and now accepts an optional argument specifying which
+comparison operation to use; this is given as one of the strings
+\code{"<"}, \code{"<="}, \code{">"}, \code{">="}, \code{"=="}, or
+\code{"!="}.  If called without the optional third argument,
+\function{cmp()} will only return -1, 0, or +1 as in previous versions
+of Python; otherwise it will call the appropriate method and can
+return any Python object.
+
+There are also corresponding changes of interest to C programmers;
+there's a new slot \code{tp_richcmp} in type objects and an API for
+performing a given rich comparison.  I won't cover the C API here, but
+will refer you to PEP 207, or the documentation for Python's C API,
+for the full list of related functions.
+
+\begin{seealso}
+
+\seepep{207}{Rich Comparisions}{Written by Guido van Rossum, heavily
+based on earlier work by David Ascher, and implemented by Guido van Rossum.}
+
+\end{seealso}
 
 % ======================================================================
 \section{XXX Nested Scopes ?}
@@ -84,7 +165,8 @@ so importing it causes a warning to be printed:
 
 \begin{verbatim}
 >>> import regex
-xxx
+__main__:1: DeprecationWarning: the regex module is deprecated; please use the re module
+>>> 
 \end{verbatim}
 
 Warnings can be issued by calling the \function{warnings.warn} function:
@@ -100,19 +182,32 @@ Filters can be added to disable certain warnings; a regular expression
 pattern can be applied to the message or to the module name in order
 to suppress a warning.  For example, you may have a program that uses
 the \module{regex} module and not want to spare the time to convert it
-to use the \module{re} module right now.  The warning can be suppressed by calling
+to use the \module{re} module right now.  The warning can be
+suppressed by calling
 
 \begin{verbatim}
-XXX is this correct?
-warnings.filterwarnings(module = 'regex')
+import warnings
+warnings.filterwarnings(action = 'ignore',
+                        message='.*regex module is deprecated',
+                        category=DeprecationWarning,
+                        module = '__main__')
 \end{verbatim}
 
+This adds a filter that will apply only to warnings of the class
+\class{DeprecationWarning} triggered in the \module{__main__} module, and applies a regular expression to only match the message about the \module{regex} module being deprecated, and will cause such warnings to be ignored.  Warnings can also be printed only once, printed every time the offending code is executed, or turned into exceptions that will cause the program to stop (unless the exceptions are caught in the usual way, of course). 
+
 Functions were also added to Python's C API for issuing warnings;
-refer to the PEP or to Python's API documentation for the details.
+refer to PEP 230 or to Python's API documentation for the details.
 
-\seepep{5}{Guidelines for Language Evolution}{Written by Paul Prescod.}
+\begin{seealso}
+\seepep{5}{Guidelines for Language Evolution}{Written by Paul Prescod,
+to specify procedures to be followed when removing old features from
+Python.  The policy described in this PEP hasn't been officially
+adopted, but the eventual policy probably won't be too different from
+Prescod's proposal.}
 
-\seepep{230}{Warning Framework}{Written and implemented by GvR.}
+\seepep{230}{Warning Framework}{Written and implemented by Guido van Rossum.}
+\end{seealso}
     
 % ======================================================================
 \section{PEP 229: New Build System}
@@ -130,7 +225,9 @@ compile much of the standard library of extension modules,
 autodetecting which ones are supported on the current machine.  
 It's hoped that this will make Python installations easier and more featureful.
 
-\seepep{229}{xxx}{Written and implemented by A.M. Kuchling.}
+\begin{seealso}
+\seepep{229}{Using Distutils to Build Python}{Written and implemented by A.M. Kuchling.}
+\end{seealso}
 
 % ======================================================================
 \section{PEP 217: Interactive Display Hook}
@@ -142,10 +239,24 @@ callable object which will be called instead of \function{repr()}.
 For example, you can set it to a special pretty-printing function:
 
 \begin{verbatim}
-xxx sample transcript
+>>> # Create a recursive data structure
+... L = [1,2,3]
+>>> L.append(L)
+>>> L   # Show Python's default output
+[1, 2, 3, [...]]
+>>> # Use pprint.pprint() as the display function
+... import sys, pprint
+>>> sys.displayhook = pprint.pprint
+>>> L
+[1, 2, 3, <Recursion on list with id=135143996>]
+>>> 
 \end{verbatim}
 
+\begin{seealso}
+
 \seepep{217}{Display Hook for Interactive Use}{Written and implemented by Moshe Zadka.}
+
+\end{seealso}
 
 % ======================================================================
 \section{PEP 208: New Coercion Model}
@@ -168,11 +279,14 @@ of the other type will then be tried, and perhaps they can handle the
 operation; if the other type also returns \code{Py_NotImplemented},
 then a \exception{TypeError} will be raised.
 
+\begin{seealso}
+
 \seepep{208}{Reworking the Coercion Model}{Written and implemented by
 Neil Schemenauer, heavily based upon earlier work by Marc-Andr\'e
 Lemburg.  Read this to understand the fine points of how numeric
 operations will now be processed at the C level.}
 
+\end{seealso}
 
 % ======================================================================
 \section{Minor Changes and Fixes}
@@ -215,7 +329,6 @@ panel library provides windows with the additional feature of depth.
 Windows can be moved higher or lower in the depth ordering, and the
 panel library figures out where panels overlap and which sections are
 visible.
-XXX who contributed this?
 
 \item Modules can now control which names are imported when \code{from
 \var{module} import *} is used, by defining a \code{__all__} attribute
@@ -230,12 +343,18 @@ simply list the public names in \code{__all__}:
 __all__ = ['Database', 'open']
 \end{verbatim}
 
+A stricter version of this patch was first suggested and implemented
+by Ben Wolfson, but after some python-dev discussion, this weaker final version 
+
 \item The \module{ftplib} module now defaults to retrieving files in passive mode,
 because passive mode is more likely to work from behind a firewall.
-If passive mode is unsuitable for your application or network setup, call
-\method{set_pasv(0)} on FTP objects to disable passive mode.
-
-XXX check bug 126851 for arguments.
+This request came from the Debian bug tracking system, since other
+Debian packages use \module{ftplib} to retrieve files and then don't
+work from behind a firewall.  It's deemed unlikely that this will
+cause problems for anyone, because Netscape defaults to passive mode
+and few people complain, but if passive mode is unsuitable for your
+application or network setup, call
+\method{set_pasv(0)} on FTP objects to disable passive mode.  
 
 \end{itemize}
 
