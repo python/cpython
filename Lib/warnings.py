@@ -249,3 +249,4 @@ if __name__ == "__main__":
     _test()
 else:
     _processoptions(sys.warnoptions)
+    filterwarnings("ignore", category=OverflowWarning, append=1)
