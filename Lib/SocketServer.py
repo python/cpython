@@ -154,6 +154,7 @@ class BaseServer:
     - verify_request(request, client_address)
     - server_close()
     - process_request(request, client_address)
+    - close_request(request)
     - handle_error()
 
     Methods for derived classes:
@@ -214,6 +215,7 @@ class BaseServer:
                 self.process_request(request, client_address)
             except:
                 self.handle_error(request, client_address)
+        self.close_request(request)
 
     def verify_request(self, request, client_address):
         """Verify the request.  May be overridden.
@@ -242,6 +244,10 @@ class BaseServer:
     def finish_request(self, request, client_address):
         """Finish one request by instantiating RequestHandlerClass."""
         self.RequestHandlerClass(request, client_address, self)
+
+    def close_request(self, request):
+        """Called to clean up an individual request."""
+        pass
 
     def handle_error(self, request, client_address):
         """Handle an error gracefully.  May be overridden.
@@ -277,6 +283,7 @@ class TCPServer(BaseServer):
     - get_request() -> request, client_address
     - verify_request(request, client_address)
     - process_request(request, client_address)
+    - close_request(request)
     - handle_error()
 
     Methods for derived classes:
@@ -357,6 +364,10 @@ class TCPServer(BaseServer):
         """
         return self.socket.accept()
 
+    def close_request(self, request):
+        """Called to clean up an individual request."""
+        request.close()
+
 
 class UDPServer(TCPServer):
 
@@ -376,6 +387,9 @@ class UDPServer(TCPServer):
         # No need to call listen() for UDP.
         pass
 
+    def close_request(self, request):
+        # No need to close anything.
+        pass
 
 class ForkingMixIn:
 
