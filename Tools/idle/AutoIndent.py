@@ -84,6 +84,8 @@ class AutoIndent:
         '<<uncomment-region>>': ['<Alt-Key-4>', '<Meta-Key-4>'],
         '<<tabify-region>>': ['<Alt-Key-5>', '<Meta-Key-5>'],
         '<<untabify-region>>': ['<Alt-Key-6>', '<Meta-Key-6>'],
+        '<<toggle-tabs>>': ['<Alt-Key-t>'],
+        '<<change-indentwidth>>': ['<Alt-Key-u>'],
     }
 
     # usetabs true  -> literal tab characters are used by indent and
