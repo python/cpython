@@ -21,7 +21,6 @@ XXX To do:
 import sys
 import __builtin__
 import os
-import marshal
 import ihooks
 
 
@@ -133,7 +132,7 @@ class RExec(ihooks._Verbose):
 
     ok_builtin_modules = ('audioop', 'array', 'binascii',
 			  'cmath', 'errno', 'imageop',
-			  'math', 'md5', 'operator',
+			  'marshal', 'math', 'md5', 'operator',
 			  'parser', 'regex', 'rotor', 'select',
 			  'strop', 'struct', 'time')
 
