@@ -58,6 +58,7 @@ PyTypeObject List_Type;
 typedef struct ListObject {
 	PyObject_HEAD
 	ListHandle ob_itself;
+	int ob_must_be_disposed;
 } ListObject;
 
 PyObject *ListObj_New(itself)
@@ -71,6 +72,7 @@ PyObject *ListObj_New(itself)
 	it = PyObject_NEW(ListObject, &List_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
+	it->ob_must_be_disposed = 1;
 	return (PyObject *)it;
 }
 ListObj_Convert(v, p_itself)
@@ -89,7 +91,7 @@ ListObj_Convert(v, p_itself)
 static void ListObj_dealloc(self)
 	ListObject *self;
 {
-	LDispose(self->ob_itself);
+	if (self->ob_must_be_disposed && self->ob_itself) LDispose(self->ob_itself);
 	PyMem_DEL(self);
 }
 
@@ -686,22 +688,22 @@ static PyObject *List_as_List(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	ListHandle _rv;
+
 	Handle h;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &h))
+	ListObject *l;
+	if (!PyArg_ParseTuple(_args, "O&", ResObj_Convert, &h))
 		return NULL;
-	_rv = as_List(h);
-	_res = Py_BuildValue("O&",
-	                     ListObj_New, _rv);
-	return _res;
+	l = (ListObject *)ListObj_New(as_List(h));
+	l->ob_must_be_disposed = 0;
+	return Py_BuildValue("O", l);
+
 }
 
 static PyMethodDef List_methods[] = {
 	{"LNew", (PyCFunction)List_LNew, 1,
 	 "(Rect rView, Rect dataBounds, Point cSize, short theProc, WindowPtr theWindow, Boolean drawIt, Boolean hasGrow, Boolean scrollHoriz, Boolean scrollVert) -> (ListHandle _rv)"},
 	{"as_List", (PyCFunction)List_as_List, 1,
-	 "(Handle h) -> (ListHandle _rv)"},
+	 "(Resource)->List.\nReturns List object (which is not auto-freed!)"},
 	{NULL, NULL, 0}
 };
 
