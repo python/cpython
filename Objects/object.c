@@ -231,9 +231,13 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
 /* For debugging convenience.  See Misc/gdbinit for some useful gdb hooks */
 void _PyObject_Dump(PyObject* op) 
 {
-	(void)PyObject_Print(op, stderr, 0);
-	fprintf(stderr, "\nrefcounts: %d\n", op->ob_refcnt);
-	fprintf(stderr, "address    : %p\n", op);
+	if (op == NULL)
+		fprintf(stderr, "NULL\n");
+	else {
+		(void)PyObject_Print(op, stderr, 0);
+		fprintf(stderr, "\nrefcounts: %d\n", op->ob_refcnt);
+		fprintf(stderr, "address    : %p\n", op);
+	}
 }
 
 #ifdef WITH_CYCLE_GC
