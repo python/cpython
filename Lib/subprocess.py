@@ -378,11 +378,15 @@ if mswindows:
             error = IOError
     except ImportError:
         import pywintypes
-        from win32api import GetStdHandle, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
-        from win32api import GetCurrentProcess, DuplicateHandle, GetModuleFileName, GetVersion
+        from win32api import GetStdHandle, STD_INPUT_HANDLE, \
+                             STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
+        from win32api import GetCurrentProcess, DuplicateHandle, \
+                             GetModuleFileName, GetVersion
         from win32con import DUPLICATE_SAME_ACCESS
         from win32pipe import CreatePipe
-        from win32process import CreateProcess, STARTUPINFO, GetExitCodeProcess, STARTF_USESTDHANDLES, CREATE_NEW_CONSOLE
+        from win32process import CreateProcess, STARTUPINFO, \
+                                 GetExitCodeProcess, STARTF_USESTDHANDLES, \
+                                 CREATE_NEW_CONSOLE
         from win32event import WaitForSingleObject, INFINITE, WAIT_OBJECT_0
 else:
     import select
@@ -502,16 +506,20 @@ class Popen(object):
         _cleanup()
 
         if mswindows:
-            if preexec_fn != None:
-                raise ValueError("preexec_fn is not supported on Windows platforms")
+            if preexec_fn is not None:
+                raise ValueError("preexec_fn is not supported on Windows "
+                                 "platforms")
             if close_fds:
-                raise ValueError("close_fds is not supported on Windows platforms")
+                raise ValueError("close_fds is not supported on Windows "
+                                 "platforms")
         else:
             # POSIX
-            if startupinfo != None:
-                raise ValueError("startupinfo is only supported on Windows platforms")
+            if startupinfo is not None:
+                raise ValueError("startupinfo is only supported on Windows "
+                                 "platforms")
             if creationflags != 0:
-                raise ValueError("creationflags is only supported on Windows platforms")
+                raise ValueError("creationflags is only supported on Windows "
+                                 "platforms")
 
         self.stdin = None
         self.stdout = None
@@ -641,14 +649,17 @@ class Popen(object):
 
         def _find_w9xpopen(self):
             """Find and return absolut path to w9xpopen.exe"""
-            w9xpopen = os.path.join(os.path.dirname(GetModuleFileName(0)), "w9xpopen.exe")
+            w9xpopen = os.path.join(os.path.dirname(GetModuleFileName(0)),
+                                    "w9xpopen.exe")
             if not os.path.exists(w9xpopen):
                 # Eeek - file-not-found - possibly an embedding
                 # situation - see if we can locate it in sys.exec_prefix
-                w9xpopen = os.path.join(os.path.dirname(sys.exec_prefix), "w9xpopen.exe")
+                w9xpopen = os.path.join(os.path.dirname(sys.exec_prefix),
+                                        "w9xpopen.exe")
                 if not os.path.exists(w9xpopen):
-                    raise RuntimeError("Cannot locate w9xpopen.exe, which is needed "
-                                       "for Popen to work with your shell or platform.")
+                    raise RuntimeError("Cannot locate w9xpopen.exe, which is "
+                                       "needed for Popen to work with your "
+                                       "shell or platform.")
             return w9xpopen
 
 
@@ -666,7 +677,8 @@ class Popen(object):
             if shell:
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = comspec + " /c " + args
-                if GetVersion() >= 0x80000000L or os.path.basename(comspec).lower() == "command.com":
+                if (GetVersion() >= 0x80000000L or
+                        os.path.basename(comspec).lower() == "command.com"):
                     # Win9x, or using command.com on NT. We need to
                     # use the w9xpopen intermediate program. For more
                     # information, see KB Q150956
@@ -693,12 +705,15 @@ class Popen(object):
             # Start the process
             try:
                 hp, ht, pid, tid = CreateProcess(executable, args,
-                                                 None, None,  # No special security
-                                                 1,           # Must inherit handles to pass std handles
-                                                 creationflags,
-                                                 env,
-                                                 cwd,
-                                                 startupinfo)
+                                         # no special security
+                                         None, None,
+                                         # must inherit handles to pass std
+                                         # handles
+                                         1,
+                                         creationflags,
+                                         env,
+                                         cwd,
+                                         startupinfo)
             except pywintypes.error, e:
                 # Translate pywintypes.error to WindowsError, which is
                 # a subclass of OSError.  FIXME: We should really
@@ -762,12 +777,14 @@ class Popen(object):
 
             if self.stdout:
                 stdout = []
-                stdout_thread = threading.Thread(target=self._readerthread, args=(self.stdout, stdout,))
+                stdout_thread = threading.Thread(target=self._readerthread,
+                                                 args=(self.stdout, stdout))
                 stdout_thread.setDaemon(True)
                 stdout_thread.start()
             if self.stderr:
                 stderr = []
-                stderr_thread = threading.Thread(target=self._readerthread, args=(self.stderr, stderr,))
+                stderr_thread = threading.Thread(target=self._readerthread,
+                                                 args=(self.stderr, stderr))
                 stderr_thread.setDaemon(True)
                 stderr_thread.start()
 
@@ -940,7 +957,9 @@ class Popen(object):
                 except:
                     exc_type, exc_value, tb = sys.exc_info()
                     # Save the traceback and attach it to the exception object
-                    exc_lines = traceback.format_exception(exc_type, exc_value, tb)
+                    exc_lines = traceback.format_exception(exc_type,
+                                                           exc_value,
+                                                           tb)
                     exc_value.child_traceback = ''.join(exc_lines)
                     os.write(errpipe_write, pickle.dumps(exc_value))
 
