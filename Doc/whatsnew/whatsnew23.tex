@@ -1276,6 +1276,30 @@ stamps, or if they use the tuple API. If used, the feature should be
 activated on an application level instead of trying to enable it on a
 per-use basis.
 
+\item Calling Tcl methods through \module{_tkinter} now does not
+always return strings anymore. Instead, if Tcl returns other objects,
+those objects are converted to their Python equivalent, if one exists,
+or wrapped with a \class{_tkinter.Tcl_Obj} object if no Python
+equivalent exists. This behaviour can be controlled through the
+\method{wantobjects} method of \class{tkapp} objects.
+
+When using _tkinter through Tkinter.py (i.e. for most _tkinter
+applications), this feature is always activated. It should not cause
+compatibility problems, since Tkinter would always convert string
+results to Python types were possible.
+
+If any incompatibilities are found, the old behaviour can be restored
+by invoking
+
+\begin{verbatim}
+import Tkinter
+Tkinter.want_objects = 0
+\end{verbatim}
+
+before creating the first \class{tkapp} object.
+
+Please report any such breakage as a bug.
+
 \end{itemize}
 
 
