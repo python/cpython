@@ -370,7 +370,90 @@ This also works for strings:
 'dcba'
 \end{verbatim}
 
+as well as tuples and arrays.
 
+If you have a mutable sequence (i.e. a list or an array) you can
+assign to or delete an extended slice, but there are some differences
+in assignment to extended and regular slices.  Assignment to a regular
+slice can be used to change the length of the sequence:
+
+\begin{verbatim}
+>>> a = range(3)
+>>> a
+[0, 1, 2]
+>>> a[1:3] = [4, 5, 6]
+>>> a
+[0, 4, 5, 6]
+\end{verbatim}
+
+but when assigning to an extended slice the list on the right hand
+side of the statement must contain the same number of items as the
+slice it is replacing:
+
+\begin{verbatim}
+>>> a = range(4)
+>>> a
+[0, 1, 2, 3]
+>>> a[::2]
+[0, 2]
+>>> a[::2] = range(0, -2, -1)
+>>> a
+[0, 1, -1, 3]
+>>> a[::2] = range(3)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+ValueError: attempt to assign list of size 3 to extended slice of size 2
+\end{verbatim}
+
+Deletion is more straightforward:
+
+\begin{verbatim}
+>>> a = range(4)
+>>> a[::2]
+[0, 2]
+>>> del a[::2]
+>>> a
+[1, 3]
+\end{verbatim}
+
+One can also now pass slice objects to builtin sequences
+\method{__getitem__} methods:
+
+\begin{verbatim}
+>>> range(10).__getitem__(slice(0, 5, 2))
+[0, 2, 4]
+\end{verbatim}
+
+or use them directly in subscripts:
+
+\begin{verbatim}
+>>> range(10)[slice(0, 5, 2)]
+[0, 2, 4]
+\end{verbatim}
+
+To make implementing sequences that support extended slicing in Python
+easier, slice ojects now have a method \method{indices} which given
+the length of a sequence returns \code{(start, stop, step)} handling
+omitted and out-of-bounds indices in a manner consistent with regular
+slices (and this innocuous phrase hides a welter of confusing
+details!).  The method is intended to be used like this:
+
+\begin{verbatim}
+class FakeSeq:
+    ...
+    def calc_item(self, i):
+        ...
+    def __getitem__(self, item):
+        if isinstance(item, slice):
+            return FakeSeq([self.calc_item(i) 
+                            in range(*item.indices(len(self)))])
+	else:
+            return self.calc_item(i)
+\end{verbatim}
+
+From this example you can also see that the builtin ``\var{slice}''
+object is now the type of slice objects, not a function (so is now
+consistent with \var{int}, \var{str}, etc from 2.2).
 
 %======================================================================
 \section{Other Language Changes}
