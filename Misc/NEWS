@@ -2,6 +2,8 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- SF bug #678518:  fix some bugs in the parser module.  
+
 - Bastion.py and rexec.py are disabled.  These modules are not safe in
   Python 2.2. or 2.3.
 

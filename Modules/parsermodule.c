@@ -1692,6 +1692,9 @@ validate_global_stmt(node *tree)
     int res = (validate_ntype(tree, global_stmt)
                && is_even(nch) && (nch >= 2));
 
+    if (!res && !PyErr_Occurred())
+        err_string("illegal global statement");
+
     if (res)
         res = (validate_name(CHILD(tree, 0), "global")
                && validate_ntype(CHILD(tree, 1), NAME));
@@ -1739,8 +1742,7 @@ validate_assert_stmt(node *tree)
     int nch = NCH(tree);
     int res = (validate_ntype(tree, assert_stmt)
                && ((nch == 2) || (nch == 4))
-               && (validate_name(CHILD(tree, 0), "__assert__") ||
-                   validate_name(CHILD(tree, 0), "assert"))
+               && (validate_name(CHILD(tree, 0), "assert"))
                && validate_test(CHILD(tree, 1)));
 
     if (!res && !PyErr_Occurred())
