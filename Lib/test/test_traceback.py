@@ -16,7 +16,7 @@ class TracebackCases(unittest.TestCase):
             return traceback.format_exception_only(exc, value)
         else:
             raise ValueError, "call did not raise exception"
-    
+
     def syntax_error_with_caret(self):
         compile("def fact(x):\n\treturn x!\n", "?", "exec")
 
@@ -30,7 +30,7 @@ class TracebackCases(unittest.TestCase):
         self.assert_(len(err) == 4)
         self.assert_("^" in err[2]) # third line has caret
         self.assert_(err[1].strip() == "return x!")
-        
+
     def test_nocaret(self):
         err = self.get_exception_format(self.syntax_error_without_caret,
                                         SyntaxError)
