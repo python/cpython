@@ -61,7 +61,7 @@
   }}
   \begin{flushright}
     {\rm\Huge\py@HeaderFamily \@title} \par
-    {\em\large\py@HeaderFamily \py@release} \par
+    {\em\large\py@HeaderFamily \py@release\releaseinfo} \par
     \vspace{25pt}
     {\Large\py@HeaderFamily \@author} \par
     \vspace{25pt}
