@@ -41,6 +41,11 @@ char *PyCursesVersion = "1.6";
 
 #include "Python.h"
 
+#ifdef __osf__
+#define _XOPEN_SOURCE_EXTENDED  /* Define macro for OSF/1 */
+#define STRICT_SYSV_CURSES 
+#endif
+
 #ifdef HAVE_NCURSES_H
 #include <ncurses.h>
 #else
@@ -48,8 +53,8 @@ char *PyCursesVersion = "1.6";
 #endif
 
 #if defined(__sgi__) || defined(__sun__)
- /* No attr_t type is available */
-typedef chtype attr_t;
+#define STRICT_SYSV_CURSES 
+typedef chtype attr_t;           /* No attr_t type is available */
 #endif
 
 /* Definition of exception curses.error */
@@ -249,7 +254,7 @@ Window_OneArgNoReturnFunction(syncok, int, "i;True(1) or False(0)")
 Window_TwoArgNoReturnFunction(mvwin, int, "(ii);y,x")
 Window_TwoArgNoReturnFunction(mvderwin, int, "(ii);y,x")
 Window_TwoArgNoReturnFunction(wmove, int, "(ii);y,x")
-#if !defined(__sgi__) && !defined(__sun__)
+#ifndef STRICT_SYSV_CURSES
 Window_TwoArgNoReturnFunction(wresize, int, "(ii);lines,columns")
 #endif
 
@@ -728,7 +733,7 @@ PyCursesWindow_GetStr(self,arg)
   case 3:
     if (!PyArg_Parse(arg,"(iii);y,x,n", &y, &x, &n))
       return NULL;
-#if defined(__sgi__) || defined(__sun__)
+#ifdef STRICT_SYSV_CURSES
  /* Untested */
     Py_BEGIN_ALLOW_THREADS
     rtn2 = wmove(self->win,y,x)==ERR ? ERR :
@@ -1323,7 +1328,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"redrawln",        (PyCFunction)PyCursesWindow_RedrawLine},
 	{"redrawwin",       (PyCFunction)PyCursesWindow_redrawwin},
 	{"refresh",         (PyCFunction)PyCursesWindow_Refresh},
-#if !defined(__sgi__) && !defined(__sun__)
+#ifndef STRICT_SYSV_CURSES
 	{"resize",          (PyCFunction)PyCursesWindow_wresize},
 #endif
 	{"scroll",          (PyCFunction)PyCursesWindow_Scroll},
@@ -1829,8 +1834,8 @@ PyCurses_InitScr(self, args)
 	SetDictInt("ACS_BSBS",          (ACS_HLINE));
 	SetDictInt("ACS_SBSB",          (ACS_VLINE));
 	SetDictInt("ACS_SSSS",          (ACS_PLUS));
-#if !defined(__sgi__) && !defined(__sun__)
-  /* The following are never available on IRIX 5.3 */
+#ifndef STRICT_SYSV_CURSES
+  /* The following are never available with strict SYSV curses */
 	SetDictInt("ACS_S3",            (ACS_S3));
 	SetDictInt("ACS_LEQUAL",        (ACS_LEQUAL));
 	SetDictInt("ACS_GEQUAL",        (ACS_GEQUAL));
@@ -2347,7 +2352,7 @@ init_curses()
 	SetDictInt("A_PROTECT",         A_PROTECT);
 	SetDictInt("A_CHARTEXT",        A_CHARTEXT);
 	SetDictInt("A_COLOR",           A_COLOR);
-#if !defined(__sgi__) && !defined(__sun__)
+#ifndef STRICT_SYSV_CURSES
 	SetDictInt("A_HORIZONTAL",      A_HORIZONTAL);
 	SetDictInt("A_LEFT",            A_LEFT);
 	SetDictInt("A_LOW",             A_LOW);
