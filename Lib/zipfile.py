@@ -604,7 +604,10 @@ class PyZipFile(ZipFile):
             import py_compile
             if self.debug:
                 print "Compiling", file_py
-            py_compile.compile(file_py, file_pyc)
+            try:
+                py_compile.compile(file_py, file_pyc, None, True)
+            except py_compile.PyCompileError,err:
+                print err.msg
             fname = file_pyc
         else:
             fname = file_pyc

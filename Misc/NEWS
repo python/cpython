@@ -78,6 +78,9 @@ Extension modules
 Library
 -------
 
+- py_compile has a new 'doraise' flag and a new PyCompileError
+  exception.
+
 - SimpleXMLRPCServer now supports CGI through the CGIXMLRPCRequestHandler
   class.
 

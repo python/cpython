@@ -62,16 +62,11 @@ def compile_dir(dir, maxlevels=10, ddir=None,
                 if not quiet:
                     print 'Compiling', fullname, '...'
                 try:
-                    ok = py_compile.compile(fullname, None, dfile)
+                    ok = py_compile.compile(fullname, None, dfile, True)
                 except KeyboardInterrupt:
                     raise KeyboardInterrupt
-                except:
-                    # XXX py_compile catches SyntaxErrors
-                    if type(sys.exc_type) == type(''):
-                        exc_type_name = sys.exc_type
-                    else: exc_type_name = sys.exc_type.__name__
-                    print 'Sorry:', exc_type_name + ':',
-                    print sys.exc_value
+                except py_compile.PyCompileError,err:
+                    print err.msg
                     success = 0
                 else:
                     if ok == 0:

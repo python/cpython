@@ -19,16 +19,21 @@ modules for shared use, especially if some of the users may not have
 permission to write the byte-code cache files in the directory
 containing the source code.
 
+\begin{excdesc}{PyCompileError}
+Exception raised when an error occurs while attempting to compile the file.
+\end{excdesc}
 
-\begin{funcdesc}{compile}{file\optional{, cfile\optional{, dfile}}}
+\begin{funcdesc}{compile}{file\optional{, cfile\optional{, dfile\optional{, doraise}}}}
   Compile a source file to byte-code and write out the byte-code cache 
   file.  The source code is loaded from the file name \var{file}.  The 
   byte-code is written to \var{cfile}, which defaults to \var{file}
   \code{+} \code{'c'} (\code{'o'} if optimization is enabled in the
   current interpreter).  If \var{dfile} is specified, it is used as
   the name of the source file in error messages instead of \var{file}. 
+  If \var{doraise} = True, a PyCompileError is raised when an error is 
+  encountered while compiling \var{file}. If \var{doraise} = False (the default), 
+  an error string is written to sys.stderr, but no exception is raised.
 \end{funcdesc}
-
 
 \begin{funcdesc}{main}{\optional{args}}
   Compile several source files.  The files named in \var{args} (or on
