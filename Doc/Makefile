@@ -60,7 +60,7 @@ MAKEINDEX=	makeindex
 PYTHON=		python
 MAKEINFO=	makeinfo
 L2H=		latex2html
-L2HARGS=	-address $$USER@`domainname` -info ""
+L2HARGS=	-address $$USER@`domainname`
 
 # Destination directory for output of libwww target.
 PARTPARSE=	$(PYTHON) ./partparse.pyc
@@ -131,7 +131,7 @@ lib.dvi: $(LIBFILES)
 	touch lib.ind
 	$(LATEX) lib
 	./fix_hack lib.idx
-	$(MAKEINDEX) lib
+	$(MAKEINDEX) lib.idx
 	$(LATEX) lib
 
 lib.ps:	lib.dvi
@@ -142,7 +142,7 @@ ext.dvi: ext.tex extref.tex
 	touch ext.ind
 	$(LATEX) ext
 	./fix_hack ext.idx
-	$(MAKEINDEX) ext
+	$(MAKEINDEX) ext.idx
 	$(LATEX) ext
 
 ext.ps:	ext.dvi
@@ -187,36 +187,29 @@ libwww: lib.texi texi2html.pyc
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
 # <URL:http://cbl.leeds.ac.uk/nikos/tex2html/doc/latex2html/latex2html.html>.
-# (I've had some trouble getting this to work with the netpbm version
-# of the pbmplus library; ppmtogif dumped core because giftopnm
-# outputs bitmap (pbm) files.  I've fixed this by changing the source
-# of LaTeX2HTML to insert a call to pnmtoppm, which I wrote myself.
-# You can probably also use "pbmtopgm | pgmtoppm"...
 
-# In order to use these targets, you must edit the definition of L2H
-# earlier in the Makefile to point to the latex2html program.  Note
-# that LaTeX2HTML inserts references to an "icons" directory in each
-# page that it generates.  You can customize where these icons are to
-# be found; I generally make it point to "../icons" and then create a
-# symbolic link to the icons directory in the LaTeX2HTML source at the
-# appropriate place.
+# Note that LaTeX2HTML inserts references to an "icons" directory in
+# each page that it generates.  You can customize where these icons
+# are to be found; I generally make it point to "../icons" and then
+# create a symbolic link to the icons directory in the LaTeX2HTML
+# source at the appropriate place.  Change the definition of
+# $ICONSERVER in .latex2html-init to point to a different location.
 
-l2h: l2htut l2href l2hext
+l2h: l2htut l2hext l2hlib
 
-l2htut: tut.dvi
+l2htut: tut.dvi myformat.perl
 	$(L2H) $(L2HARGS) tut.tex
 	@rm -rf python-tut
 	mv tut python-tut
 
-l2hext: ext.dvi
+l2hext: ext.dvi myformat.perl
 	$(L2H) $(L2HARGS) ext.tex
 	@rm -rf python-ext
 	mv ext python-ext
 
-# This target doesn't quite work, since l2h doesn't understand the
-# funcdesc and similar environments, and turns them into GIF images.
-# Use the "libwww" target above instead.
-l2hlib: lib.dvi
+l2hlib: lib.dvi myformat.perl
+	./fix_libaux.sed <lib.aux >@lib.aux
+	mv @lib.aux lib.aux
 	$(L2H) $(L2HARGS) lib.tex
 	@rm -rf python-lib
 	mv lib python-lib
