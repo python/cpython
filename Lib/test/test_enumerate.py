@@ -145,6 +145,35 @@ class TestReversed(unittest.TestCase):
         # This is an implementation detail, not an interface requirement
         for s in ('hello', tuple('hello'), list('hello'), xrange(5)):
             self.assertEqual(len(reversed(s)), len(s))
+            r = reversed(s)
+            list(r)
+            self.assertEqual(len(r), 0)
+        class SeqWithWeirdLen:
+            called = False
+            def __len__(self):
+                if not self.called:
+                    self.called = True
+                    return 10
+                raise ZeroDivisionError
+            def __getitem__(self, index):
+                return index
+        r = reversed(SeqWithWeirdLen())
+        self.assertRaises(ZeroDivisionError, len, r)
+
+
+    def test_gc(self):
+        class Seq:
+            def __len__(self):
+                return 10
+            def __getitem__(self, index):
+                return index
+        s = Seq()
+        r = reversed(s)
+        s.r = r
+
+    def test_args(self):
+        self.assertRaises(TypeError, reversed)
+        self.assertRaises(TypeError, reversed, [], 'extra')
 
 def test_main(verbose=None):
     testclasses = (EnumerateTestCase, SubclassTestCase, TestEmpty, TestBig,

@@ -420,6 +420,14 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(cycle([a]*2), a)
 
+    def test_dropwhile(self):
+        a = []
+        self.makecycle(dropwhile(bool, [0, a, a]), a)
+
+    def test_groupby(self):
+        a = []
+        self.makecycle(groupby([a]*2, lambda x:x), a)
+
     def test_ifilter(self):
         a = []
         self.makecycle(ifilter(lambda x:True, [a]*2), a)
@@ -440,9 +448,17 @@ class TestGC(unittest.TestCase):
         a = []
         self.makecycle(islice([a]*2, None), a)
 
+    def test_repeat(self):
+        a = []
+        self.makecycle(repeat(a), a)
+
     def test_starmap(self):
         a = []
         self.makecycle(starmap(lambda *t: t, [(a,a)]*2), a)
+
+    def test_takewhile(self):
+        a = []
+        self.makecycle(takewhile(bool, [1, 0, a, a]), a)
 
 def R(seqn):
     'Regular generator'
