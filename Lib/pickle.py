@@ -215,10 +215,9 @@ class Pickler:
         # But there appears no advantage to any other scheme, and this
         # scheme allows the Unpickler memo to be implemented as a plain (but
         # growable) array, indexed by memo key.
-        d = id(obj)
         memo_len = len(self.memo)
         self.write(self.put(memo_len))
-        self.memo[d] = memo_len, obj
+        self.memo[id(obj)] = memo_len, obj
 
     # Return a PUT (BINPUT, LONG_BINPUT) opcode string, with argument i.
     def put(self, i):
@@ -325,9 +324,7 @@ class Pickler:
                                  "by %s must be a tuple" % reduce
 
         self.save_reduce(callable, arg_tup, state)
-        memo_len = len(memo)
-        self.write(self.put(memo_len))
-        memo[d] = (memo_len, object)
+        self.memoize(object)
 
     def persistent_id(self, object):
         return None
@@ -472,9 +469,8 @@ class Pickler:
             write(POP * (len(object) + 1) + self.get(memo[d][0]))
             return
 
-        memo_len = len(memo)
-        self.write(TUPLE + self.put(memo_len))
-        memo[d] = (memo_len, object)
+        self.write(TUPLE)
+        self.memoize(object)
 
     dispatch[TupleType] = save_tuple
 
@@ -566,6 +562,9 @@ class Pickler:
 
         # This method does not use memoize() so that it can handle
         # the special case for non-binary mode.
+        # XXX What did that comment mean?  That is, what "special case for
+        # XXX non-binary mode?  It sure *looks* like nothing special is
+        # XXX happening in the INST case.
         memo_len = len(memo)
         if self.bin:
             write(OBJ + self.put(memo_len))
@@ -612,10 +611,8 @@ class Pickler:
                     "Can't pickle %r: it's not the same object as %s.%s" %
                     (object, module, name))
 
-        memo_len = len(memo)
-        write(GLOBAL + module + '\n' + name + '\n' +
-            self.put(memo_len))
-        memo[id(object)] = (memo_len, object)
+        write(GLOBAL + module + '\n' + name + '\n')
+        self.memoize(object)
     dispatch[ClassType] = save_global
     dispatch[FunctionType] = save_global
     dispatch[BuiltinFunctionType] = save_global
