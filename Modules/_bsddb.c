@@ -746,7 +746,8 @@ DBCursor_dealloc(DBCursorObject* self)
     int err;
     if (self->dbc != NULL) {
         MYDB_BEGIN_ALLOW_THREADS;
-        err = self->dbc->c_close(self->dbc);
+	if (self->mydb->db != NULL)
+            err = self->dbc->c_close(self->dbc);
         self->dbc = NULL;
         MYDB_END_ALLOW_THREADS;
     }
@@ -1623,6 +1624,7 @@ DB_open(DBObject* self, PyObject* args, PyObject* kwargs)
 #endif
     MYDB_END_ALLOW_THREADS;
     if (makeDBError(err)) {
+        self->db->close(self->db, 0);
         self->db = NULL;
         return NULL;
     }
