@@ -148,9 +148,9 @@ sub make_nav_panel {
     $s = ('<table align="center" width="100%" cellpadding="0" cellspacing="2">'
           . "\n<tr>"
           # left-hand side
-          . "\n<td>$NEXT</td>"
-          . "\n<td>$UP</td>"
           . "\n<td>$PREVIOUS</td>"
+          . "\n<td>$UP</td>"
+          . "\n<td>$NEXT</td>"
           # title box
           . "\n<td align=\"center\"$NAV_BGCOLOR width=\"100%\">"
           . "\n <b class=\"title\">$t_title</b></td>"
@@ -160,9 +160,10 @@ sub make_nav_panel {
           . "\n<td>$INDEX</td>"
           . "\n</tr></table>\n"
           # textual navigation
-          . make_nav_sectref("Next", $NEXT_TITLE)
+          . make_nav_sectref("Previous", $PREVIOUS_TITLE)
           . make_nav_sectref("Up", $UP_TITLE)
-          . make_nav_sectref("Previous", $PREVIOUS_TITLE));
+          . make_nav_sectref("Next", $NEXT_TITLE)
+          );
     # remove these; they are unnecessary and cause errors from validation
     $s =~ s/ NAME="tex2html\d+"\n */ /g;
     return $s;
