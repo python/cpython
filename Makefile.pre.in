@@ -286,7 +286,7 @@ platform: $(PYTHON)
 
 # Build the shared modules
 sharedmods: $(PYTHON)
-	unset PYTHONPATH PYTHONHOME PYTHONSTARTUP; \
+	PYTHONPATH= PYTHONHOME= PYTHONSTARTUP= \
 		./$(PYTHON) $(srcdir)/setup.py build
 
 # buildno should really depend on something like LIBRARY_SRC
