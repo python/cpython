@@ -179,6 +179,9 @@ class TestBinaryOps(unittest.TestCase):
     def setUp(self):
         self.set = Set((2, 4, 6))
 
+    def test_eq(self):              # SF bug 643115
+        self.assertEqual(self.set, Set({2:1,4:3,6:5}))
+
     def test_union_subset(self):
         result = self.set | Set([2])
         self.assertEqual(result, Set((2, 4, 6)))

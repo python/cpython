@@ -315,9 +315,6 @@ class BaseSet(object):
         if isinstance(iterable, BaseSet):
             data.update(iterable._data)
             return
-        if isinstance(iterable, dict):
-            data.update(iterable)
-            return
 
         value = True
 
