@@ -1,3 +1,31 @@
+Mon Mar  7 12:41:32 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/{bltinmodule,ceval}.c: Changed implied and explicit loops
+	over sequences to allow for "indefinite" sequences a la Steve
+	Majewski.  Instead of iterating over 0, 1, 2, ..., len(a)-1, we
+	now iterate over 0, 1, 2, ..., until we get an IndexError
+	exception (other exceptions are still errors).  This affects the
+	semantics of the following language constructs: "for x in a: ...",
+	"x in a", "x not in a", and the following built-in functions:
+	filter(), map(), max(), min(), reduce().
+
+	* Doc/ref6.tex (section{Assignment statements}): clarify slice
+	assignment; (section{The {\tt break} statement}): fix typo
+
+	* Doc/ref5.tex (subsection{Identifiers (Names)}): clarify
+	difference between local and global
+
+	* Doc/ref2.tex (subsection{String literals}): fix typo in def of
+	escapeseq
+
+	* Lib/addpack.py: new module to add packages to sys.path
+
+	* Lib/urlopen.py: added basejoin() function
+
+Fri Mar  4 13:07:43 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/urlopen.py(open_ftp): avoid crash when no host given
+
 Wed Mar  2 10:33:39 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Python/ceval.c (eval_code): use sys.check_interval to reset the
