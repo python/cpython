@@ -84,15 +84,14 @@ class WeakValueDictionary(UserDict.UserDict):
 
     def setdefault(self, key, default):
         try:
-            ref = self.data[key]
+            wr = self.data[key]
         except KeyError:
             def remove(o, data=self.data, key=key):
                 del data[key]
-            ref = ref(default, remove)
-            self.data[key] = ref
+            self.data[key] = ref(default, remove)
             return default
         else:
-            return ref()
+            return wr()
 
     def update(self, dict):
         d = self.data
