@@ -36,6 +36,7 @@ class FixedInputOutputBufferType(InputOnlyType):
 		self.datatype = datatype
 		self.sizetype = sizetype
 		self.sizeformat = sizeformat or type2format[sizetype]
+		self.label_needed = 0
 
 	def declare(self, name):
 		self.declareBuffer(name)
@@ -67,6 +68,7 @@ class FixedInputOutputBufferType(InputOnlyType):
 		Output('PyErr_SetString(PyExc_TypeError, "buffer length should be %s");',
 		       self.size)
 		Output("goto %s__error__;", name)
+		self.label_needed = 1
 		OutRbrace()
 		self.transferSize(name)
 	
@@ -83,9 +85,10 @@ class FixedInputOutputBufferType(InputOnlyType):
 		return "%s__out__, (int)%s" % (name, self.size)
 	
 	def cleanup(self, name):
-		DedentLevel()
-		Output(" %s__error__: ;", name)
-		IndentLevel()
+		if self.label_needed:
+			DedentLevel()
+			Output(" %s__error__: ;", name)
+			IndentLevel()
 
 
 class FixedCombinedInputOutputBufferType(FixedInputOutputBufferType):
