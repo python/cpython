@@ -54,7 +54,7 @@ int Py_AtExit Py_PROTO((void (*func) Py_PROTO((void))));
 
 void Py_Exit Py_PROTO((int));
 
-void cleanup Py_PROTO((void));
+void Py_Cleanup Py_PROTO((void));
 
 #ifdef __cplusplus
 }

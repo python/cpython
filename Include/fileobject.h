@@ -35,11 +35,11 @@ extern DL_IMPORT PyTypeObject PyFile_Type;
 #define PyFile_Check(op) ((op)->ob_type == &PyFile_Type)
 
 extern PyObject *PyFile_FromString Py_PROTO((char *, char *));
-extern void setfilebufsize Py_PROTO((PyObject *, int));
+extern void PyFile_SetBufSize Py_PROTO((PyObject *, int));
 extern PyObject *PyFile_FromFile
 	Py_PROTO((FILE *, char *, char *, int (*)Py_FPROTO((FILE *))));
 extern FILE *PyFile_AsFile Py_PROTO((PyObject *));
-extern PyObject *getfilename Py_PROTO((PyObject *));
+extern PyObject *PyFile_Name Py_PROTO((PyObject *));
 extern PyObject *PyFile_GetLine Py_PROTO((PyObject *, int));
 
 #ifdef __cplusplus

@@ -47,8 +47,8 @@ extern DL_IMPORT PyTypeObject PyFunction_Type;
 extern PyObject *PyFunction_New Py_PROTO((PyObject *, PyObject *));
 extern PyObject *PyFunction_GetCode Py_PROTO((PyObject *));
 extern PyObject *PyFunction_GetGlobals Py_PROTO((PyObject *));
-extern PyObject *getfuncargstuff Py_PROTO((PyObject *, int *));
-extern int     setfuncargstuff Py_PROTO((PyObject *, int, PyObject *));
+extern PyObject *PyFunction_GetArgStuff Py_PROTO((PyObject *, int *));
+extern int PyFunction_SetArgStuff Py_PROTO((PyObject *, int, PyObject *));
 
 #ifdef __cplusplus
 }

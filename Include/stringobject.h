@@ -31,8 +31,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* String object interface */
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 Type PyStringObject represents a character string.  An extra zero byte is
 reserved at the end to ensure it is zero-terminated, but a size is
 present so strings with null bytes in them can be represented.  This
@@ -66,7 +64,7 @@ extern PyObject *PyString_FromString Py_PROTO((char *));
 extern int PyString_Size Py_PROTO((PyObject *));
 extern char *PyString_AsString Py_PROTO((PyObject *));
 extern void PyString_Concat Py_PROTO((PyObject **, PyObject *));
-extern void joinstring_decref Py_PROTO((PyObject **, PyObject *));
+extern void PyString_ConcatAndDel Py_PROTO((PyObject **, PyObject *));
 extern int _PyString_Resize Py_PROTO((PyObject **, int));
 extern PyObject *PyString_Format Py_PROTO((PyObject *, PyObject *));
 

@@ -58,7 +58,7 @@ extern int PyTuple_Size Py_PROTO((PyObject *));
 extern PyObject *PyTuple_GetItem Py_PROTO((PyObject *, int));
 extern int PyTuple_SetItem Py_PROTO((PyObject *, int, PyObject *));
 extern PyObject *PyTuple_GetSlice Py_PROTO((PyObject *, int, int));
-extern int resizetuple Py_PROTO((PyObject **, int, int));
+extern int _PyTuple_Resize Py_PROTO((PyObject **, int, int));
 
 /* Macro, trading safety for speed */
 #define PyTuple_GET_ITEM(op, i) ((op)->ob_item[i])

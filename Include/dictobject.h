@@ -32,20 +32,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "mappingobject.h"
 
-#define PyDict_Check(op) is_mappingobject(op)
-
-#define newdictobject PyDict_New
-
-extern PyObject *PyDict_GetItemString Py_PROTO((PyObject *dp, char *key));
-extern int PyDict_SetItemString Py_PROTO((PyObject *dp, char *key, PyObject *item));
-extern int PyDict_DelItemString Py_PROTO((PyObject *dp, char *key));
-
-#define getdictkeys PyDict_Keys
-
-#define dict2lookup PyDict_GetItem
-#define dict2insert PyDict_SetItem
-#define dict2remove PyDict_DelItem
-
 #ifdef __cplusplus
 }
 #endif

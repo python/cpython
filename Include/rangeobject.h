@@ -25,17 +25,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Range object interface */
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
-rangeobject represents an integer range.  This is an immutable object;
+A range object represents an integer range.  This is an immutable object;
 a range cannot change its value after creation.
 
 Range objects behave like the corresponding tuple objects except that
 they are represented by a start, stop, and step datamembers.
 */
 
-extern DL_IMPORT PyTypeObject Rangetype;
+extern DL_IMPORT PyTypeObject PyRange_Type;
 
-#define is_rangeobject(op) ((op)->ob_type == &Rangetype)
+#define PyRange_Check(op) ((op)->ob_type == &PyRange_Type)
 
-extern PyObject *newrangeobject Py_PROTO((long, long, long, int));
+extern PyObject *PyRange_New Py_PROTO((long, long, long, int));

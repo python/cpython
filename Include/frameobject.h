@@ -72,7 +72,7 @@ PyFrameObject * PyFrame_New
 
 /* The rest of the interface is specific for frame objects */
 
-/* List access macros */
+/* Tuple access macros */
 
 #ifdef NDEBUG
 #define GETITEM(v, i) PyTuple_GET_ITEM((PyTupleObject *)(v), (i))
@@ -103,8 +103,8 @@ PyObject **PyFrame_ExtendStack Py_PROTO((PyFrameObject *, int, int));
 
 /* Conversions between "fast locals" and locals in dictionary */
 
-void locals_2_fast Py_PROTO((PyFrameObject *, int));
-void fast_2_locals Py_PROTO((PyFrameObject *));
+void PyFrame_LocalsToFast Py_PROTO((PyFrameObject *, int));
+void PyFrame_FastToLocals Py_PROTO((PyFrameObject *));
 
 #ifdef __cplusplus
 }

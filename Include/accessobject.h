@@ -46,19 +46,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define AC_R_PUBLIC	0004
 #define AC_W_PUBLIC	0002
 
-extern DL_IMPORT PyTypeObject Accesstype;
+extern DL_IMPORT PyTypeObject PyAccess_Type;
 
-#define PyAccess_Check(v) ((v)->ob_type == &Accesstype)
+#define PyAccess_Check(v) ((v)->ob_type == &PyAccess_Type)
 
-PyObject *newaccessobject Py_PROTO((PyObject *, PyObject *, PyTypeObject *, int));
-PyObject *getaccessvalue Py_PROTO((PyObject *, PyObject *));
-int setaccessvalue Py_PROTO((PyObject *, PyObject *, PyObject *));
+PyObject *PyAccess_FromValue Py_PROTO((PyObject *, PyObject *, PyTypeObject *, int));
+PyObject *PyAccess_AsValue Py_PROTO((PyObject *, PyObject *));
+int PyAccess_SetValue Py_PROTO((PyObject *, PyObject *, PyObject *));
 
-void setaccessowner Py_PROTO((PyObject *, PyObject *));
-PyObject *cloneaccessobject Py_PROTO((PyObject *));
-int hasaccessvalue Py_PROTO((PyObject *));
+void PyAccess_SetOwner Py_PROTO((PyObject *, PyObject *));
+PyObject *PyAccess_Clone Py_PROTO((PyObject *));
+int PyAccess_HasValue Py_PROTO((PyObject *));
 
-extern DL_IMPORT PyTypeObject Anynumbertype, Anysequencetype, Anymappingtype;
+extern DL_IMPORT PyTypeObject PyAnyNumber_Type, PyAnySequence_Type, PyAnyMapping_Type;
 
 #ifdef __cplusplus
 }

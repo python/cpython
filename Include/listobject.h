@@ -62,6 +62,7 @@ extern int PyList_Append Py_PROTO((PyObject *, PyObject *));
 extern PyObject *PyList_GetSlice Py_PROTO((PyObject *, int, int));
 extern int PyList_SetSlice Py_PROTO((PyObject *, int, int, PyObject *));
 extern int PyList_Sort Py_PROTO((PyObject *));
+extern int PyList_Reverse Py_PROTO((PyObject *));
 extern PyObject *listtuple Py_PROTO((PyObject *));
 
 /* Macro, trading safety for speed */

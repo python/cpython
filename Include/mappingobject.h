@@ -28,11 +28,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Mapping object type -- mapping from hashable object to object */
+/* Dictionary object type -- mapping from hashable object to object */
+/* NB Should be moved back to dictobject.h */
 
-extern DL_IMPORT PyTypeObject Mappingtype;
+extern DL_IMPORT PyTypeObject PyDict_Type;
 
-#define is_mappingobject(op) ((op)->ob_type == &Mappingtype)
+#define PyDict_Check(op) ((op)->ob_type == &PyDict_Type)
 
 extern PyObject *PyDict_New Py_PROTO((void));
 extern PyObject *PyDict_GetItem Py_PROTO((PyObject *mp, PyObject *key));
@@ -44,7 +45,11 @@ extern int PyDict_Next
 extern PyObject *PyDict_Keys Py_PROTO((PyObject *mp));
 extern PyObject *PyDict_Values Py_PROTO((PyObject *mp));
 extern PyObject *PyDict_Items Py_PROTO((PyObject *mp));
-extern int getmappingsize Py_PROTO((PyObject *mp));
+extern int PyDict_Size Py_PROTO((PyObject *mp));
+
+extern PyObject *PyDict_GetItemString Py_PROTO((PyObject *dp, char *key));
+extern int PyDict_SetItemString Py_PROTO((PyObject *dp, char *key, PyObject *item));
+extern int PyDict_DelItemString Py_PROTO((PyObject *dp, char *key));
 
 #ifdef __cplusplus
 }
