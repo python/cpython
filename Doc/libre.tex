@@ -490,18 +490,20 @@ The pattern string from which the regex object was compiled.
 
 \code{MatchObject} instances support the following methods and attributes:
 
-\begin{funcdesc}{group}{\optional{g1, g2, ...}}
-Returns one or more groups of the match.  If there is a single
-\var{index} argument, the result is a single string; if there are
+\begin{funcdesc}{group}{\optional{group1, group2, ...}}
+Returns one or more subgroups of the match.  If there is a single
+argument, the result is a single string; if there are
 multiple arguments, the result is a tuple with one item per argument.
-If the \var{index} is zero, the corresponding return value is the
+Without arguments, \var{group1} defaults to zero (i.e. the whole match
+is returned).
+If a \var{groupN} argument is zero, the corresponding return value is the
 entire matching string; if it is in the inclusive range [1..99], it is
 the string matching the the corresponding parenthesized group.  If no
 such group exists, the corresponding result is
 \code{None}.
 
 If the regular expression uses the \code{(?P<\var{name}>...)} syntax,
-the \var{index} arguments may also be strings identifying groups by
+the \var{groupN} arguments may also be strings identifying groups by
 their group name.
 
 A moderately complicated example:
@@ -511,7 +513,7 @@ m = re.match(r"(?P<int>\d+)\.(\d*)", '3.14')
 \end{verbatim}
 
 After performing this match, \code{m.group(1)} is \code{'3'}, as is
-\code{m.group('int')}.  \code{m.group(2)} is \code{'14'}.
+\code{m.group('int')}, and \code{m.group(2)} is \code{'14'}.
 \end{funcdesc}
 
 \begin{funcdesc}{groups}{}
@@ -523,12 +525,14 @@ long, a string would be returned instead.  In later versions, a
 singleton tuple is returned in such cases.)
 \end{funcdesc}
 
-\begin{funcdesc}{start}{group}
+\begin{funcdesc}{start}{\optional{group}}
 \end{funcdesc}
 
-\begin{funcdesc}{end}{group}
+\begin{funcdesc}{end}{\optional{group}}
 Return the indices of the start and end of the substring
-matched by \var{group}.  Return \code{None} if \var{group} exists but
+matched by \var{group}; \var{group} defaults to zero (meaning the whole
+matched substring).
+Return \code{None} if \var{group} exists but
 did not contribute to the match.  For a match object
 \var{m}, and a group \var{g} that did contribute to the match, the
 substring matched by group \var{g} (equivalent to
@@ -548,11 +552,11 @@ an \code{IndexError} exception.
 
 \end{funcdesc}
 
-\begin{funcdesc}{span}{group}
+\begin{funcdesc}{span}{\optional{group}}
 For \code{MatchObject} \var{m}, return the 2-tuple
 \code{(\var{m}.start(\var{group}), \var{m}.end(\var{group}))}.
 Note that if \var{group} did not contribute to the match, this is
-\code{(None, None)}.
+\code{(None, None)}.  Again, \var{group} defaults to zero.
 \end{funcdesc}
 
 \begin{datadesc}{pos}
