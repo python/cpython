@@ -1,5 +1,9 @@
 # Python test set -- part 4a, built-in functions a-m
 
+import warnings
+warnings.filterwarnings("ignore", "hex../oct.. of negative int",
+                        DeprecationWarning, __name__)
+
 from test.test_support import TestFailed, fcmp, have_unicode, TESTFN, unlink
 
 print '__import__'
