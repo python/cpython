@@ -357,17 +357,13 @@ class Application:
 	
 	def do_activateEvt(self, event):
 		(what, message, when, where, modifiers) = event
-		# XXXX Incorrect, should be fixed in suspendresume
-		if type(message) == type(1):
-			wid = WhichWindow(message)
-		else:
-			wid = message
+		wid = WhichWindow(message)
 		if wid and self._windows.has_key(wid):
 			window = self._windows[wid]
 			window.do_activate(modifiers & 1, event)
 		else:
 			MacOS.HandleEvent(event)
-			
+	
 	def do_osEvt(self, event):
 		(what, message, when, where, modifiers) = event
 		which = (message >> 24) & 0xff
@@ -377,16 +373,14 @@ class Application:
 			if DEBUG:
 				print 'unknown osEvt:',
 				self.printevent(event)
-				
+	
 	def do_suspendresume(self, event):
-		# Is this a good idea???
 		(what, message, when, where, modifiers) = event
-		w = FrontWindow()
-		if w:
-			# XXXX Incorrect, should stuff windowptr into message field
-			nev = (activateEvt, w, when, where, message&1)
-			self.do_activateEvt(nev)
-
+		wid = FrontWindow()
+		if wid and self._windows.has_key(wid):
+			window = self._windows[wid]
+			window.do_activate(modifiers & 1, event)
+	
 	def do_kHighLevelEvent(self, event):
 		(what, message, when, where, modifiers) = event
 		if DEBUG: 
