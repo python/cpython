@@ -3,7 +3,7 @@
 
 __version__ = "$Revision$"
 
-import sys, os, getopt, imp, re
+import sys, os, imp, re, getopt
 
 from distutils import log
 from distutils import sysconfig
@@ -242,14 +242,23 @@ class PyBuildExt(build_ext):
         add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
         add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
 
-        # Add paths to popular package managers on OS X/darwin
-        if sys.platform == "darwin":
-            # Fink installs into /sw by default
-            add_dir_to_list(self.compiler.library_dirs, '/sw/lib')
-            add_dir_to_list(self.compiler.include_dirs, '/sw/include')
-            # DarwinPorts installs into /opt/local by default
-            add_dir_to_list(self.compiler.library_dirs, '/opt/local/lib')
-            add_dir_to_list(self.compiler.include_dirs, '/opt/local/include')
+        # Add paths specified in the environment variables LDFLAGS and
+        # CPPFLAGS.
+        # Since this file tends to be executed by ``make install`` its
+        # environment variables are those that the Makefile sets and not what
+        # the shell has.  The Makefile must keep the shell's values somewhere
+        # in order to be able to reach them at execution time.
+        for env_var, arg_name, dir_list in (
+                ('LDFLAGS', '-L', self.compiler.library_dirs),
+                ('CPPFLAGS', '-I', self.compiler.include_dirs)):
+            env_val = os.getenv(env_var)
+            if env_val:
+                # getopt is used instead of optparse because the latter imports
+                # gettext which imports struct which has not been built yet
+                # when this method is needed
+                options = getopt.getopt(env_val.split(), arg_name[1] + ':')[0]
+                for arg_option, directory in options:
+                    add_dir_to_list(dir_list, directory)
 
         if os.path.normpath(sys.prefix) != '/usr':
             add_dir_to_list(self.compiler.library_dirs,
