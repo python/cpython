@@ -1,9 +1,3 @@
-#ifndef Py_TOKEN_H
-#define Py_TOKEN_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright (c) 2000, BeOpen.com.
 Copyright (c) 1995-2000, Corporation for National Research Initiatives.
@@ -15,6 +9,12 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
 /* Token types */
+
+#ifndef Py_TOKEN_H
+#define Py_TOKEN_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ENDMARKER	0
 #define NAME		1
@@ -68,8 +68,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 
 extern DL_IMPORT(char *) _PyParser_TokenNames[]; /* Token names */
-extern DL_IMPORT(int) PyToken_OneChar Py_PROTO((int));
-extern DL_IMPORT(int) PyToken_TwoChars Py_PROTO((int, int));
+extern DL_IMPORT(int) PyToken_OneChar(int);
+extern DL_IMPORT(int) PyToken_TwoChars(int, int);
 
 #ifdef __cplusplus
 }
