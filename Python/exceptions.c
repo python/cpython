@@ -793,7 +793,7 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 	    buffer = PyMem_Malloc(bufsize);
 	    if (buffer != NULL) {
 		if (have_filename && have_lineno)
-		    sprintf(buffer, "%s (%s, line %d)",
+		    sprintf(buffer, "%s (%s, line %ld)",
 			    PyString_AS_STRING(str),
 			    my_basename(PyString_AS_STRING(filename)),
 			    PyInt_AsLong(lineno));
@@ -802,7 +802,7 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 			    PyString_AS_STRING(str),
 			    my_basename(PyString_AS_STRING(filename)));
 		else if (have_lineno)
-		    sprintf(buffer, "%s (line %d)",
+		    sprintf(buffer, "%s (line %ld)",
 			    PyString_AS_STRING(str),
 			    PyInt_AsLong(lineno));
 
