@@ -1,8 +1,9 @@
 # LaTeX source dependencies.
 
 COMMONSTYLES= texinputs/python.sty \
-	texinputs/pypaper.sty \
-	texinputs/python.ist
+	texinputs/pypaper.sty
+
+INDEXSTYLES=texinputs/python.ist
 
 COMMONTEX= texinputs/copyright.tex \
 	texinputs/license.tex \
@@ -16,20 +17,21 @@ HOWTOSTYLES= texinputs/howto.cls \
 	$(COMMONSTYLES)
 
 
-APIFILES= api/api.tex $(MANSTYLES) $(COMMONTEX) \
+APIFILES= api/api.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	texinputs/reportingbugs.tex
 
-DOCFILES= $(HOWTOSTYLES) $(COMMONTEX) \
+DOCFILES= $(HOWTOSTYLES) \
+	texinputs/boilerplate.tex \
 	texinputs/ltxmarkup.sty \
 	doc/doc.tex
 
-EXTFILES= ext/ext.tex $(MANSTYLES) $(COMMONTEX) \
+EXTFILES= ext/ext.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	texinputs/reportingbugs.tex
 
 TUTFILES= tut/tut.tex $(MANSTYLES) $(COMMONTEX)
 
 # LaTeX source files for the Python Reference Manual
-REFFILES= $(MANSTYLES) $(COMMONTEX) \
+REFFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	ref/ref.tex \
 	ref/ref1.tex \
 	ref/ref2.tex \
@@ -42,7 +44,7 @@ REFFILES= $(MANSTYLES) $(COMMONTEX) \
 	ref/refa1.tex
 
 # LaTeX source files for the Python Library Reference
-LIBFILES= $(MANSTYLES) $(COMMONTEX) \
+LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/lib.tex \
 	texinputs/reportingbugs.tex \
 	lib/libintro.tex \
@@ -263,7 +265,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
-MACFILES= $(HOWTOSTYLES) $(COMMONTEX) \
+MACFILES= $(HOWTOSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	mac/mac.tex \
 	mac/using.tex \
 	mac/toolbox.tex \
@@ -284,6 +286,6 @@ MACFILES= $(HOWTOSTYLES) $(COMMONTEX) \
 	mac/libframework.tex \
 	mac/libminiae.tex
 
-INSTFILES = $(HOWTOSTYLES) $(COMMONTEX) inst/inst.tex
+INSTFILES = $(HOWTOSTYLES) inst/inst.tex
 
-DISTFILES = $(HOWTOSTYLES) $(COMMONTEX) dist/dist.tex
+DISTFILES = $(HOWTOSTYLES) dist/dist.tex
