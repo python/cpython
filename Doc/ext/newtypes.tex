@@ -20,9 +20,9 @@ object - it just contains the refcount and a pointer to the object's
 ``type object''.  This is where the action is; the type object
 determines which (C) functions get called when, for instance, an
 attribute gets looked up on an object or it is multiplied by another
-object.  I call these C functions ``type methods'' to distinguish them
-from things like \code{[].append} (which I will call ``object
-methods'' when I get around to them).
+object.  These C functions are called ``type methods'' to distinguish
+them from things like \code{[].append} (which we call ``object
+methods'').
 
 So, if you want to define a new object type, you need to create a new
 type object.
@@ -184,7 +184,7 @@ definition above.  The remaining fields will be filled with zeros by
 the C compiler, and it's common practice to not specify them
 explicitly unless you need them.  
 
-This is so important that I'm going to pick the top of it apart still
+This is so important that we're going to pick the top of it apart still
 further:
 
 \begin{verbatim}
@@ -237,7 +237,7 @@ This is so that Python knows how much memory to allocate when you call
 \end{verbatim}
 
 This has to do with variable length objects like lists and strings.
-Ignore for now...
+Ignore this for now.
 
 Now we get into the type methods, the things that make your objects
 different from the others.  Of course, the Noddy object doesn't
@@ -248,7 +248,7 @@ the deallocation function.
     noddy_noddy_dealloc,        /* tp_dealloc */
 \end{verbatim}
 
-From here, all the type methods are \NULL, so I won't go over them yet
+From here, all the type methods are \NULL, so we'll go over them later
 --- that's for the next section!
 
 Everything else in the file should be familiar, except for this line
@@ -452,7 +452,7 @@ The \member{tp_str} handler is to \function{str()} what the
 is, it is called when Python code calls \function{str()} on an
 instance of your object.  It's implementation is very similar to the
 \member{tp_repr} function, but the resulting string is intended for
-human consumption.  It \member{tp_str} is not specified, the
+human consumption.  If \member{tp_str} is not specified, the
 \member{tp_repr} handler is used instead.
 
 Here is a simple example:
