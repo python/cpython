@@ -208,6 +208,7 @@ def _escapeAndEncode(text):
     text = text.replace("\r", "\n")         # convert Mac line endings
     text = text.replace("&", "&amp;")       # escape '&'
     text = text.replace("<", "&lt;")        # escape '<'
+    text = text.replace(">", "&gt;")        # escape '>'
     text = _controlStripper.sub("?", text)  # replace control chars with '?'
     return text.encode("utf-8")             # encode as UTF-8
 
