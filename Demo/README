@@ -1,24 +1,49 @@
 This directory contains various demonstrations of what you can do with
-Python.  The demos are grouped sub(sub*)directories according to
-required optional built-in modules.
+Python.  Most demos are grouped sub(sub*)directories according to
+required optional built-in modules or specific platform; there is also
+a set of generally useful scripts and there are some more-or-less
+complete applications.
+
+classes		Some examples of how to use classes.
+
+ibrowse		An Emacs info file browser (uses stdwin).
+		See also ../doc (the Python library documentation can
+		be converted to info format).
+
+md5test		Test program for the optional md5 module.
+
+rpc		A set of classes for building clients and servers for
+		Sun RPC.
+
+rsa		An RSA public-key cryptosystem (needs mpz and md5).
 
 scripts		Some useful Python scripts that I put in my bin
-		directory.  No optional built-in modules meeded.
+		directory.  No optional built-in modules needed.
 
 sockets		Examples for the new built-in module 'socket'.
 
 sgi		Demos that only run on Silicon Graphics machines.
 		These require at least one of the optional built-in
 		modules that only make sense for the SGI, such as
-		the modules 'gl' and 'al'.  Split in subdirectories
+		'gl', 'al', and 'sv'.  Split in subdirectories
 		per subject.
 
 stdwin		Demos that use the STDWIN library.  Require the 'stdwin'
 		built-in module.
 
+threads		Demos that use the 'thread' module.  (Currently these
+		only run on SGIs, but this may change in the future.)
+
+www		Browsers for CERN's distributed hypertext system
+		World-Wide Web (one with a stdwin-based user
+		interface, one for dumb ttys).  Also contains a
+		primitive gopher client and an ftp client.
+		See also ../doc (the Python library documentation can
+		be converted to WWW's "HTML" format).
+
 WARNING: many scripts are executable and have a first line saying
 
-	#! /usr/local/python
+	#! /usr/local/bin/python
 
 This is unlikely to give good results unless you've really installed
 the latest version python there.  Edit the first line before
