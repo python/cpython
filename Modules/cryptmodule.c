@@ -9,8 +9,7 @@
 /* Module crypt */
 
 
-static PyObject *crypt_crypt(self, args)
-	PyObject *self, *args;
+static PyObject *crypt_crypt(PyObject *self, PyObject *args)
 {
 	char *word, *salt; 
 	extern char * crypt();

@@ -45,9 +45,7 @@ extern char *(*PyOS_ReadlineFunctionPointer)(char *);
 /* Exported function to send one line to readline's init file parser */
 
 static PyObject *
-parse_and_bind(self, args)
-	PyObject *self;
-	PyObject *args;
+parse_and_bind(PyObject *self, PyObject *args)
 {
 	char *s, *copy;
 	if (!PyArg_ParseTuple(args, "s:parse_and_bind", &s))
@@ -73,9 +71,7 @@ Parse and execute single line of a readline init file.\
 /* Exported function to parse a readline init file */
 
 static PyObject *
-read_init_file(self, args)
-	PyObject *self;
-	PyObject *args;
+read_init_file(PyObject *self, PyObject *args)
 {
 	char *s = NULL;
 	if (!PyArg_ParseTuple(args, "|z:read_init_file", &s))
@@ -97,9 +93,7 @@ The default filename is the last filename used.\
 /* Exported function to load a readline history file */
 
 static PyObject *
-read_history_file(self, args)
-	PyObject *self;
-	PyObject *args;
+read_history_file(PyObject *self, PyObject *args)
 {
 	char *s = NULL;
 	if (!PyArg_ParseTuple(args, "|z:read_history_file", &s))
@@ -121,9 +115,7 @@ The default filename is ~/.history.\
 /* Exported function to save a readline history file */
 
 static PyObject *
-write_history_file(self, args)
-	PyObject *self;
-	PyObject *args;
+write_history_file(PyObject *self, PyObject *args)
 {
 	char *s = NULL;
 	if (!PyArg_ParseTuple(args, "|z:write_history_file", &s))
@@ -152,9 +144,7 @@ static PyObject *endidx = NULL;
 
 /* get the beginning index for the scope of the tab-completion */
 static PyObject *
-get_begidx(self, args)
-	PyObject *self;
-	PyObject *args;
+get_begidx(PyObject *self, PyObject *args)
 {
 	if(!PyArg_NoArgs(args)) {
 		return NULL;
@@ -169,9 +159,7 @@ get the beginning index of the readline tab-completion scope";
 
 /* get the ending index for the scope of the tab-completion */
 static PyObject *
-get_endidx(self, args)
-	PyObject *self;
-	PyObject *args;
+get_endidx(PyObject *self, PyObject *args)
 {
  	if(!PyArg_NoArgs(args)) {
 		return NULL;
@@ -188,9 +176,7 @@ get the ending index of the readline tab-completion scope";
 /* set the tab-completion word-delimiters that readline uses */
 
 static PyObject *
-set_completer_delims(self, args)
-	PyObject *self;
-	PyObject *args;
+set_completer_delims(PyObject *self, PyObject *args)
 {
 	char *break_chars;
 
@@ -211,9 +197,7 @@ set the readline word delimiters for tab-completion";
 /* get the tab-completion word-delimiters that readline uses */
 
 static PyObject *
-get_completer_delims(self, args)
-	PyObject *self;
-	PyObject *args;
+get_completer_delims(PyObject *self, PyObject *args)
 {
 	if(!PyArg_NoArgs(args)) {
 		return NULL;
@@ -226,9 +210,7 @@ get_completer_delims() -> string\n\
 get the readline word delimiters for tab-completion";
 
 static PyObject *
-set_completer(self, args)
-	PyObject *self;
-	PyObject *args;
+set_completer(PyObject *self, PyObject *args)
 {
 	PyObject *function = Py_None;
 	if (!PyArg_ParseTuple(args, "|O:set_completer", &function))
@@ -265,9 +247,7 @@ It should return the next possible completion starting with 'text'.\
 /* Exported function to read the current line buffer */
 
 static PyObject *
-get_line_buffer(self, args)
-	PyObject *self;
-        PyObject *args;
+get_line_buffer(PyObject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -282,9 +262,7 @@ return the current contents of the line buffer.\
 /* Exported function to insert text into the line buffer */
 
 static PyObject *
-insert_text(self, args)
-	PyObject *self;
-	PyObject *args;
+insert_text(PyObject *self, PyObject *args)
 {
 	char *s;
 	if (!PyArg_ParseTuple(args, "s:insert_text", &s))
@@ -325,9 +303,7 @@ static struct PyMethodDef readline_methods[] =
 /* C function to call the Python completer. */
 
 static char *
-on_completion(text, state)
-	char *text;
-	int state;
+on_completion(char *text, int state)
 {
 	char *result = NULL;
 	if (completer != NULL) {
@@ -366,10 +342,7 @@ on_completion(text, state)
  * before calling the normal completer */
 
 char **
-flex_complete(text, start, end)
-	char *text;
-	int start;
-	int end;
+flex_complete(char *text, int start, int end)
 {
 	Py_XDECREF(begidx);
 	Py_XDECREF(endidx);
@@ -413,8 +386,7 @@ static jmp_buf jbuf;
 
 /* ARGSUSED */
 static RETSIGTYPE
-onintr(sig)
-	int sig;
+onintr(int sig)
 {
 	longjmp(jbuf, 1);
 }
@@ -423,8 +395,7 @@ onintr(sig)
 /* Wrapper around GNU readline that handles signals differently. */
 
 static char *
-call_readline(prompt)
-	char *prompt;
+call_readline(char *prompt)
 {
 	size_t n;
 	char *p, *q;
