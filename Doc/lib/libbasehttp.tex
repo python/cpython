@@ -7,19 +7,18 @@
 \index{URL}
 \index{httpd}
 
-\setindexsubitem{(in module BaseHTTPServer)}
 
 This module defines two classes for implementing HTTP servers
 (web servers). Usually, this module isn't used directly, but is used
 as a basis for building functioning web servers. See the
-\code{SimpleHTTPServer} and \code{CGIHTTPServer} modules.
-\stmodindex{SimpleHTTPServer}
-\stmodindex{CGIHTTPServer}
+\module{SimpleHTTPServer} and \module{CGIHTTPServer} modules.
+\refstmodindex{SimpleHTTPServer}
+\refstmodindex{CGIHTTPServer}
 
-The first class, \code{HTTPServer}, is a \code{SocketServer.TCPServer}
-subclass. It creates and listens at the web socket, dispatching the
-requests to a handler. Code to create and run the server looks like
-this:
+The first class, \class{HTTPServer}, is a
+\class{SocketServer.TCPServer} subclass. It creates and listens at the
+web socket, dispatching the requests to a handler. Code to create and
+run the server looks like this:
 
 \begin{verbatim}
 def run(server_class=BaseHTTPServer.HTTPServer,
@@ -28,38 +27,38 @@ def run(server_class=BaseHTTPServer.HTTPServer,
   httpd = server_class(server_address, handler_class)
   httpd.serve_forever()
 \end{verbatim}
-%
-The \code{HTTPServer} class builds on the \code{TCPServer} class by
-storing the server address as instance
-variables named \code{server_name} and \code{server_port}. The
-server is accessible by the handler, typically through the handler's
-\code{server} instance variable.
 
-The module's second class, \code{BaseHTTPRequestHandler}, is used
+The \class{HTTPServer} class builds on the \class{TCPServer} class by
+storing the server address as instance
+variables named \member{server_name} and \member{server_port}. The
+server is accessible by the handler, typically through the handler's
+\member{server} instance variable.
+
+The module's second class, \class{BaseHTTPRequestHandler}, is used
 to handle the HTTP requests that arrive at the server. By itself,
 it cannot respond to any actual HTTP requests; it must be subclassed
 to handle each request method (e.g. GET or POST).
-\code{BaseHTTPRequestHandler} provides a number of class and instance
+\class{BaseHTTPRequestHandler} provides a number of class and instance
 variables, and methods for use by subclasses.
 
 The handler will parse the request and the headers, then call a
 method specific to the request type. The method name is constructed
-from the request. For example, for the request \code{SPAM}, the
-\code{do_SPAM} method will be called with no arguments. All of
+from the request. For example, for the request \samp{SPAM}, the
+\method{do_SPAM()} method will be called with no arguments. All of
 the relevant information is stored into instance variables of the
 handler.
 
-\setindexsubitem{(BaseHTTPRequestHandler instance variable)}
+\setindexsubitem{(BaseHTTPRequestHandler attribute)}
 
-\code{BaseHTTPRequestHandler} has the following instance variables:
+\class{BaseHTTPRequestHandler} has the following instance variables:
 
 \begin{datadesc}{client_address}
-Contains a tuple of the form (host, port) referring to the client's
-address.
+Contains a tuple of the form \code{(\var{host}, \var{port})} referring
+to the client's address.
 \end{datadesc}
 
 \begin{datadesc}{command}
-Contains the command (request type). For example, \code{"GET"}.
+Contains the command (request type). For example, \code{'GET'}.
 \end{datadesc}
 
 \begin{datadesc}{path}
@@ -68,11 +67,11 @@ Contains the request path.
 
 \begin{datadesc}{request_version}
 Contains the version string from the request. For example,
-\code{"HTTP/1.0"}.
+\code{'HTTP/1.0'}.
 \end{datadesc}
 
 \begin{datadesc}{headers}
-Holds an instance of the class specified by the \var{MessageClass}
+Holds an instance of the class specified by the \member{MessageClass}
 class variable. This instance parses and manages the headers in
 the HTTP request.
 \end{datadesc}
@@ -88,7 +87,7 @@ Proper adherance to the HTTP protocol must be used when writing
 to this stream.
 \end{datadesc}
 
-\setindexsubitem{(BaseHTTPRequestHandler class variable)}
+\setindexsubitem{(BaseHTTPRequestHandler attribute)}
 
 \code{BaseHTTPRequestHandler} has the following class variables:
 
@@ -97,13 +96,13 @@ Specifies the server software version.  You may want to override
 this.
 The format is multiple whitespace-separated strings,
 where each string is of the form name[/version].
-For example, \code{"BaseHTTP/0.2"}.
+For example, \code{'BaseHTTP/0.2'}.
 \end{datadesc}
 
 \begin{datadesc}{sys_version}
 Contains the Python system version, in a form usable by the
-\code{version_string} method and the \code{server_version} class
-variable. For example, \code{"Python/1.4"}.
+\member{version_string} method and the \member{server_version} class
+variable. For example, \code{'Python/1.4'}.
 \end{datadesc}
 
 \begin{datadesc}{error_message_format}
@@ -121,38 +120,40 @@ class variable.
 \begin{datadesc}{protocol_version}
 This specifies the HTTP protocol version used in responses.
 Typically, this should not be overridden. Defaults to
-\code{"HTTP/1.0"}.
+\code{'HTTP/1.0'}.
 \end{datadesc}
 
 \begin{datadesc}{MessageClass}
-Specifies a Message-like class to parse HTTP headers. Typically,
-this is not overridden, and it defaults to \code{mimetools.Message}.
+Specifies a \class{rfc822.Message}-like class to parse HTTP
+headers. Typically, this is not overridden, and it defaults to
+\class{mimetools.Message}.
+\withsubitem{(in module mimetools)}{\ttindex{Message}}
 \end{datadesc}
 
 \begin{datadesc}{responses}
 This variable contains a mapping of error code integers to two-element
 tuples containing a short and long message. For example,
-\code{\{code : (shortmessage, longmessage)\}}. The
+\code{\{\var{code}: (\var{shortmessage}, \var{longmessage})\}}. The
 \var{shortmessage} is usually used as the \var{message} key in an
 error response, and \var{longmessage} as the \var{explain} key
-(see the \code{error_message_format} class variable).
+(see the \member{error_message_format} class variable).
 \end{datadesc}
 
 \setindexsubitem{(BaseHTTPRequestHandler method)}
 
-A \code{BaseHTTPRequestHandler} instance has the following methods:
+A \class{BaseHTTPRequestHandler} instance has the following methods:
 
 \begin{funcdesc}{handle}{}
-Overrides the superclass' \code{handle} method to provide the
+Overrides the superclass' \method{handle()} method to provide the
 specific handler behavior. This method will parse and dispatch
-the request to the appropriate \code{do_}* method.
+the request to the appropriate \code{do_*()} method.
 \end{funcdesc}
 
-\begin{funcdesc}{send_error}{code\optional{\, message}}
+\begin{funcdesc}{send_error}{code\optional{, message}}
 Sends and logs a complete error reply to the client. The numeric
 \var{code} specifies the HTTP error code, with \var{message} as
 optional, more specific text. A complete set of headers is sent,
-followed by text composed using the \code{error_message_format}
+followed by text composed using the \member{error_message_format}
 class variable.
 \end{funcdesc}
 
@@ -160,7 +161,7 @@ class variable.
 Sends a response header and logs the accepted request. The HTTP
 response line is sent, followed by \emph{Server} and \emph{Date}
 headers. The values for these two headers are picked up from the
-\code{version_string()} and \code{date_time_string()} methods,
+\method{version_string()} and \method{date_time_string()} methods,
 respectively.
 \end{funcdesc}
 
@@ -184,7 +185,7 @@ the response is available, then it should be passed as the
 
 \begin{funcdesc}{log_error}{...}
 Logs an error when a request cannot be fulfilled. By default,
-it passes the message to \code{log_message}, so it takes the
+it passes the message to \method{log_message()}, so it takes the
 same arguments (\var{format} and additional values).
 \end{funcdesc}
 
@@ -192,14 +193,14 @@ same arguments (\var{format} and additional values).
 Logs an arbitrary message to \code{sys.stderr}. This is typically
 overridden to create custom error logging mechanisms. The
 \var{format} argument is a standard printf-style format string,
-where the additional arguments to \code{log_message} are applied
+where the additional arguments to \method{log_message()} are applied
 as inputs to the formatting. The client address and current date
 and time are prefixed to every message logged.
 \end{funcdesc}
 
 \begin{funcdesc}{version_string}{}
 Returns the server software's version string. This is a combination
-of the \var{server_version} and \var{sys_version} class variables.
+of the \member{server_version} and \member{sys_version} class variables.
 \end{funcdesc}
 
 \begin{funcdesc}{date_time_string}{}
