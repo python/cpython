@@ -9,15 +9,35 @@
 
 This module allows you to output calendars like the \UNIX{}
 \program{cal} program, and provides additional useful functions
-related to the calendar.
+related to the calendar. By default, these calendars have Monday as
+the first day of the week, and Sunday as the last (the European
+convention). Use \function{setfirstweekday()} to set the first day of the
+week to Sunday (6) or to any other weekday.
+
+\begin{funcdesc}{setfirstweekday}{weekday}
+Sets the weekday (\code{0} is Monday, \code{6} is Sunday) to start
+each week. The values \constant{MONDAY}, \constant{TUESDAY},
+\constant{WEDNESDAY}, \constant{THURSDAY}, \constant{FRIDAY},
+\constant{SATURDAY}, and \constant{SUNDAY} are provided for
+convenience. For example, to set the first weekday to Sunday:
+
+\begin{verbatim}
+import calendar
+calendar.setfirstweekday(calendar.SUNDAY)
+\end{verbatim}
+\end{funcdesc}
+
+\begin{funcdesc}{firstweekday}{}
+Returns the current setting for the weekday to start each week.
+\end{funcdesc}
 
 \begin{funcdesc}{isleap}{year}
 Returns true if \var{year} is a leap year.
 \end{funcdesc}
 
-\begin{funcdesc}{leapdays}{year1, year2}
-Return the number of leap years in the range
-[\var{year1}\ldots\var{year2}].
+\begin{funcdesc}{leapdays}{y1, y2}
+Returns the number of leap years in the range
+[\var{y1}\ldots\var{y2}].
 \end{funcdesc}
 
 \begin{funcdesc}{weekday}{year, month, day}
@@ -34,17 +54,32 @@ for the specified \var{year} and \var{month}.
 \begin{funcdesc}{monthcalendar}{year, month}
 Returns a matrix representing a month's calendar.  Each row represents
 a week; days outside of the month a represented by zeros.
+Each week begins with Monday unless set by \function{setfirstweekday()}.
 \end{funcdesc}
 
-\begin{funcdesc}{prmonth}{year, month\optional{, width\optional{, length}}}
-Prints a month's calendar.  If \var{width} is provided, it specifies
-the width of the columns that the numbers are centered in.  If
-\var{length} is given, it specifies the number of lines that each
-week will use.
+\begin{funcdesc}{prmonth}{theyear, themonth\optional{, w\optional{, l}}}
+Prints a month's calendar as returned by \function{month()}.
 \end{funcdesc}
 
-\begin{funcdesc}{prcal}{year}
-Prints the calendar for the year \var{year}.
+\begin{funcdesc}{month}{theyear, themonth\optional{, w\optional{, l}}}
+Returns a month's calendar in a multi-line string. If \var{w} is
+provided, it specifies the width of the date columns, which are
+centered. If \var{l} is given, it specifies the number of lines that
+each week will use. Depends on the first weekday as set by
+\function{setfirstweekday()}.
+\end{funcdesc}
+
+\begin{funcdesc}{prcal}{year\optional{, w\optional{, l\optional{c}}}}
+Prints the calendar for an entire year as returned by 
+\function{calendar()}.
+\end{funcdesc}
+
+\begin{funcdesc}{calendar}{year\optional{, w\optional{, l\optional{c}}}}
+Returns a 3-column calendar for an entire year as a multi-line string.
+Optional parameters \var{w}, \var{l}, and \var{c} are for date column
+width, lines per week, and number of spaces between month columns,
+respectively. Depends on the first weekday as set by
+\function{setfirstweekday()}.
 \end{funcdesc}
 
 \begin{funcdesc}{timegm}{tuple}
