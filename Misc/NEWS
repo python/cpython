@@ -6,6 +6,13 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- The constructor for the module type now requires a name argument and
+  takes an optional docstring argument.  Previously, this constructor
+  ignored its arguments.  As a consequence, deriving a class from a
+  module (not from the module type) is now illegal; previously this
+  created an unnamed module, just like invoking the module type did.
+  [SF bug 563060]
+
 - A new warning PendingDeprecationWarning was added to provide
   direction on features which are in the process of being deprecated.
   The warning will not be printed by default.  To see the pending
