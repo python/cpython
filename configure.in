@@ -557,10 +557,15 @@ if test $enable_shared = "yes"; then
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
           ;;
-    Linux*|GNU*|NetBSD*)
+    Linux*|GNU*|NetBSD*|FreeBSD*)
 	  LDLIBRARY='libpython$(VERSION).so'
 	  BLDLIBRARY='-L. -lpython$(VERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
+	  case $ac_sys_system in
+	      FreeBSD*)
+		SOVERSION=`echo $SOVERSION|cut -d "." -f 1`
+		;;
+	  esac
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
 	  ;;
     hp*|HP*)
@@ -1345,7 +1350,7 @@ then
 	OpenBSD*|FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
-			LDSHARED="cc -shared ${LDFLAGS}"
+			LDSHARED="$CC -shared ${LDFLAGS}"
 		else
 			LDSHARED="ld -Bshareable ${LDFLAGS}"
 		fi;;
