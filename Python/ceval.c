@@ -82,6 +82,7 @@ static int call_trace
 	PROTO((object **, object **, frameobject *, char *, object *));
 static object *add PROTO((object *, object *));
 static object *sub PROTO((object *, object *));
+static object *pow PROTO((object *, object *));
 static object *mul PROTO((object *, object *));
 static object *divide PROTO((object *, object *));
 static object *mod PROTO((object *, object *));
@@ -672,6 +673,15 @@ eval_code2(co, globals, locals,
 			v = POP();
 			x = invert(v);
 			DECREF(v);
+			PUSH(x);
+			break;
+		
+		case BINARY_POWER:
+			w = POP();
+			v = POP();
+			x = pow(v, w);
+			DECREF(v);
+			DECREF(w);
 			PUSH(x);
 			break;
 		
@@ -2202,6 +2212,34 @@ mod(v, w)
 	}
 	err_setstr(TypeError, "bad operand type(s) for %");
 	return NULL;
+}
+
+static object *
+pow(v, w)
+	object *v, *w;
+{
+	object *res;
+	BINOP("__pow__", "__rpow__", pow);
+	if (v->ob_type->tp_as_number == NULL ||
+	    w->ob_type->tp_as_number == NULL) {
+		err_setstr(TypeError, "pow() requires numeric arguments");
+		return NULL;
+	}
+	if (
+#ifndef WITHOUT_COMPLEX
+            !is_complexobject(v) && 
+#endif
+            is_floatobject(w) && getfloatvalue(v) < 0.0) {
+		if (!err_occurred())
+		    err_setstr(ValueError, "negative number to float power");
+		return NULL;
+	}
+	if (coerce(&v, &w) != 0)
+		return NULL;
+	res = (*v->ob_type->tp_as_number->nb_power)(v, w, None);
+	DECREF(v);
+	DECREF(w);
+	return res;
 }
 
 static object *
