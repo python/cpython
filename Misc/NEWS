@@ -33,7 +33,7 @@ Core and builtins
   Calling f.seek() drops the readahead buffer, but other operations
   don't.  It so happens that this gives a nice additional speed boost
   to "for line in file:"; the xreadlines method and corresponding
-  module are now obsolete.
+  module are now obsolete.  Thanks to Oren Tirosh!
 
 - Encoding declarations (PEP 263, phase 1) have been implemented.  A
   comment of the form "# -*- coding: <encodingname> -*-" in the first
