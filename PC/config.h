@@ -196,6 +196,10 @@ typedef int pid_t;
 #endif /* !MS_WIN32 */
 
 #ifdef MS_WIN32
+
+#define SIZEOF_INT 4
+#define SIZEOF_LONG 4
+
 /* EXPERIMENTAL FEATURE: When CHECK_IMPORT_CASE is defined, check case of
    imported modules against case of file; this causes "import String" to fail
    with a NameError exception when it finds "string.py".  Normally, you set
