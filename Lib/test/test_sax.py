@@ -185,6 +185,18 @@ def test_filter_basic():
 #
 # ===========================================================================
 
+# ===== XMLReader support
+
+def test_expat_file():
+    parser = create_parser()
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+
+    parser.setContentHandler(xmlgen)
+    parser.parse(open(findfile("test.xml")))
+
+    return result.getvalue() == xml_test_out
+
 # ===== DTDHandler support
 
 class TestDTDHandler:
