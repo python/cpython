@@ -1,8 +1,4 @@
 
-#ifdef WITH_SGI_DL
-#define USE_DL
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>

@@ -369,24 +369,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
    (which you can't on SCO ODT 3.0). */
 /* #undef SYS_SELECT_WITH_SYS_TIME */
 
-/* Define if you want to use SGI (IRIX 4) dynamic linking.
-   This requires the "dl" library by Jack Jansen,
-   ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
-   Don't bother on IRIX 5, it already has dynamic linking using SunOS
-   style shared libraries */
-/* #undef WITH_SGI_DL */
-
-/* Define if you want to emulate SGI (IRIX 4) dynamic linking.
-   This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
-   Sequent Symmetry (Dynix), and Atari ST.
-   This requires the "dl-dld" library,
-   ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z,
-   as well as the "GNU dld" library,
-   ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z.
-   Don't bother on SunOS 4 or 5, they already have dynamic linking using
-   shared libraries */
-/* #undef WITH_DL_DLD */
-
 /* Define if you want documentation strings in extension modules */
 #define WITH_DOC_STRINGS 1
 
