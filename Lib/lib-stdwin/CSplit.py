@@ -9,14 +9,13 @@ from Split import Split
 
 class CSplit() = Split():
 	#
-	def minsize(self, m):
+	def getminsize(self, (m, (width, height))):
 		# Since things look best if the children are spaced evenly
 		# along the circle (and often all children have the same
 		# size anyway) we compute the max child size and assume
 		# this is each child's size.
-		width, height = 0, 0
 		for child in self.children:
-			wi, he = child.minsize(m)
+			wi, he = child.getminsize(m, (0, 0))
 			width = max(width, wi)
 			height = max(height, he)
 		# In approximation, the diameter of the circle we need is
