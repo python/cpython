@@ -46,6 +46,11 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(type(u), self.thetype)
         self.assertRaises(PassThru, self.s.union, check_pass_thru())
         self.assertRaises(TypeError, self.s.union, [[]])
+        for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+            self.assertEqual(self.thetype('abcba').union(C('cdc')), set('abcd'))
+            self.assertEqual(self.thetype('abcba').union(C('efgfe')), set('abcefg'))
+            self.assertEqual(self.thetype('abcba').union(C('ccb')), set('abc'))
+            self.assertEqual(self.thetype('abcba').union(C('ef')), set('abcef'))
 
     def test_or(self):
         i = self.s.union(self.otherword)
@@ -65,6 +70,11 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(self.s, self.thetype(self.word))
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.intersection, check_pass_thru())
+        for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+            self.assertEqual(self.thetype('abcba').intersection(C('cdc')), set('cc'))
+            self.assertEqual(self.thetype('abcba').intersection(C('efgfe')), set(''))
+            self.assertEqual(self.thetype('abcba').intersection(C('ccb')), set('bc'))
+            self.assertEqual(self.thetype('abcba').intersection(C('ef')), set(''))
 
     def test_and(self):
         i = self.s.intersection(self.otherword)
@@ -85,6 +95,11 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.difference, [[]])
+        for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+            self.assertEqual(self.thetype('abcba').difference(C('cdc')), set('ab'))
+            self.assertEqual(self.thetype('abcba').difference(C('efgfe')), set('abc'))
+            self.assertEqual(self.thetype('abcba').difference(C('ccb')), set('a'))
+            self.assertEqual(self.thetype('abcba').difference(C('ef')), set('abc'))
 
     def test_sub(self):
         i = self.s.difference(self.otherword)
@@ -105,6 +120,11 @@ class TestJointOps(unittest.TestCase):
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.symmetric_difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.symmetric_difference, [[]])
+        for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+            self.assertEqual(self.thetype('abcba').symmetric_difference(C('cdc')), set('abd'))
+            self.assertEqual(self.thetype('abcba').symmetric_difference(C('efgfe')), set('abcefg'))
+            self.assertEqual(self.thetype('abcba').symmetric_difference(C('ccb')), set('a'))
+            self.assertEqual(self.thetype('abcba').symmetric_difference(C('ef')), set('abcef'))
 
     def test_xor(self):
         i = self.s.symmetric_difference(self.otherword)
@@ -191,7 +211,8 @@ class TestSet(TestJointOps):
 
     def test_clear(self):
         self.s.clear()
-        self.assertEqual(self.s, set([]))
+        self.assertEqual(self.s, set())
+        self.assertEqual(len(self.s), 0)
 
     def test_copy(self):
         dup = self.s.copy()
@@ -201,6 +222,9 @@ class TestSet(TestJointOps):
     def test_add(self):
         self.s.add('Q')
         self.assert_('Q' in self.s)
+        dup = self.s.copy()
+        self.s.add('Q')
+        self.assertEqual(self.s, dup)
         self.assertRaises(TypeError, self.s.add, [])
 
     def test_remove(self):
@@ -231,13 +255,18 @@ class TestSet(TestJointOps):
             self.assert_(elem not in self.s)
         self.assertRaises(KeyError, self.s.pop)
 
-    def test_union_update(self):
-        retval = self.s.union_update(self.otherword)
+    def test_update(self):
+        retval = self.s.update(self.otherword)
         self.assertEqual(retval, None)
         for c in (self.word + self.otherword):
             self.assert_(c in self.s)
-        self.assertRaises(PassThru, self.s.union_update, check_pass_thru())
-        self.assertRaises(TypeError, self.s.union_update, [[]])
+        self.assertRaises(PassThru, self.s.update, check_pass_thru())
+        self.assertRaises(TypeError, self.s.update, [[]])
+        for p, q in (('cdc', 'abcd'), ('efgfe', 'abcefg'), ('ccb', 'abc'), ('ef', 'abcef')):
+            for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+                s = self.thetype('abcba')
+                self.assertEqual(s.update(C(p)), None)
+                self.assertEqual(s, set(q))
 
     def test_ior(self):
         self.s |= set(self.otherword)
@@ -254,6 +283,11 @@ class TestSet(TestJointOps):
                 self.assert_(c not in self.s)
         self.assertRaises(PassThru, self.s.intersection_update, check_pass_thru())
         self.assertRaises(TypeError, self.s.intersection_update, [[]])
+        for p, q in (('cdc', 'c'), ('efgfe', ''), ('ccb', 'bc'), ('ef', '')):
+            for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+                s = self.thetype('abcba')
+                self.assertEqual(s.intersection_update(C(p)), None)
+                self.assertEqual(s, set(q))
 
     def test_iand(self):
         self.s &= set(self.otherword)
@@ -273,6 +307,12 @@ class TestSet(TestJointOps):
                 self.assert_(c not in self.s)
         self.assertRaises(PassThru, self.s.difference_update, check_pass_thru())
         self.assertRaises(TypeError, self.s.difference_update, [[]])
+        self.assertRaises(TypeError, self.s.symmetric_difference_update, [[]])
+        for p, q in (('cdc', 'ab'), ('efgfe', 'abc'), ('ccb', 'a'), ('ef', 'abc')):
+            for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+                s = self.thetype('abcba')
+                self.assertEqual(s.difference_update(C(p)), None)
+                self.assertEqual(s, set(q))
 
     def test_isub(self):
         self.s -= set(self.otherword)
@@ -292,6 +332,11 @@ class TestSet(TestJointOps):
                 self.assert_(c not in self.s)
         self.assertRaises(PassThru, self.s.symmetric_difference_update, check_pass_thru())
         self.assertRaises(TypeError, self.s.symmetric_difference_update, [[]])
+        for p, q in (('cdc', 'abd'), ('efgfe', 'abcefg'), ('ccb', 'a'), ('ef', 'abcef')):
+            for C in set, frozenset, dict.fromkeys, str, unicode, list, tuple:
+                s = self.thetype('abcba')
+                self.assertEqual(s.symmetric_difference_update(C(p)), None)
+                self.assertEqual(s, set(q))
 
     def test_ixor(self):
         self.s ^= set(self.otherword)
@@ -635,7 +680,7 @@ class TestUpdateOps(unittest.TestCase):
         self.assertEqual(self.set, set([2, 4, 6, 8]))
 
     def test_union_method_call(self):
-        self.set.union_update(set([3, 4, 5]))
+        self.set.update(set([3, 4, 5]))
         self.assertEqual(self.set, set([2, 3, 4, 5, 6]))
 
     def test_intersection_subset(self):
@@ -761,15 +806,15 @@ class TestMutate(unittest.TestCase):
             self.failUnless(v in popped)
 
     def test_update_empty_tuple(self):
-        self.set.union_update(())
+        self.set.update(())
         self.assertEqual(self.set, set(self.values))
 
     def test_update_unit_tuple_overlap(self):
-        self.set.union_update(("a",))
+        self.set.update(("a",))
         self.assertEqual(self.set, set(self.values))
 
     def test_update_unit_tuple_non_overlap(self):
-        self.set.union_update(("a", "z"))
+        self.set.update(("a", "z"))
         self.assertEqual(self.set, set(self.values + ["z"]))
 
 #==============================================================================
@@ -872,7 +917,7 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         self.assertRaises(TypeError, lambda: self.other > self.set)
         self.assertRaises(TypeError, lambda: self.other >= self.set)
 
-    def test_union_update_operator(self):
+    def test_update_operator(self):
         try:
             self.set |= self.other
         except TypeError:
@@ -880,11 +925,11 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
         else:
             self.fail("expected TypeError")
 
-    def test_union_update(self):
+    def test_update(self):
         if self.otherIsIterable:
-            self.set.union_update(self.other)
+            self.set.update(self.other)
         else:
-            self.assertRaises(TypeError, self.set.union_update, self.other)
+            self.assertRaises(TypeError, self.set.update, self.other)
 
     def test_union(self):
         self.assertRaises(TypeError, lambda: self.set | self.other)
@@ -1215,7 +1260,7 @@ class TestVariousIteratorArgs(unittest.TestCase):
 
     def test_inplace_methods(self):
         for data in ("123", "", range(1000), ('do', 1.2), xrange(2000,2200,5), 'december'):
-            for methname in ('union_update', 'intersection_update',
+            for methname in ('update', 'intersection_update',
                              'difference_update', 'symmetric_difference_update'):
                 for g in (G, I, Ig, S, L, R):
                     s = set('january')
