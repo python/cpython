@@ -88,7 +88,7 @@ PyList_New(size)
 	op->ob_size = size;
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	return (PyObject *) op;
 }
 

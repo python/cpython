@@ -61,6 +61,8 @@ you must define MS_NO_COREDLL (do not test this macro) */
 
 #ifdef _M_IX86
 #define COMPILER "[MSC 32 bit (Intel)]"
+#elif defined(_M_ALPHA)
+#define COMPILER "[MSC 32 bit (Alpha)]"
 #else
 #define COMPILER "[MSC (Unknown)]"
 #endif
@@ -213,12 +215,15 @@ typedef int pid_t;
 #ifndef USE_DL_EXPORT
 /* So nobody needs to specify the .lib in their Makefile any more */
 #ifdef _DEBUG
-#define Py_DEBUG
 #pragma comment(lib,"python15_d.lib")
 #else
 #pragma comment(lib,"python15.lib")
 #endif
 #endif /* USE_DL_EXPORT */
+
+#ifdef _DEBUG
+#define Py_DEBUG
+#endif
 
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4

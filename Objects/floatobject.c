@@ -145,7 +145,7 @@ PyFloat_FromDouble(fval)
 	free_list = (PyFloatObject *)op->ob_type;
 	op->ob_type = &PyFloat_Type;
 	op->ob_fval = fval;
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	return (PyObject *) op;
 }
 

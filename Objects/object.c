@@ -34,7 +34,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 
 #if defined( Py_TRACE_REFS ) || defined( Py_REF_DEBUG )
-long _Py_RefTotal;
+DL_IMPORT(long) _Py_RefTotal;
 #endif
 
 /* Object allocation routines used by NEWOBJ and NEWVAROBJ macros.
@@ -149,7 +149,7 @@ _PyObject_NewVar(tp, size, op)
 		return (PyVarObject *)PyErr_NoMemory();
 	op->ob_type = tp;
 	op->ob_size = size;
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	return op;
 }
 
@@ -651,7 +651,9 @@ void
 _Py_ForgetReference(op)
 	register PyObject *op;
 {
+#ifdef SLOW_UNREF_CHECK
 	register PyObject *p;
+#endif
 	if (op->ob_refcnt < 0)
 		Py_FatalError("UNREF negative refcnt");
 	if (op == &refchain ||

@@ -104,7 +104,7 @@ PyString_FromStringAndSize(str, size)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
@@ -154,7 +154,7 @@ PyString_FromString(str)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	strcpy(op->ob_sval, str);
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
@@ -317,7 +317,7 @@ string_concat(a, bb)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
 	memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
 	op->ob_sval[size] = '\0';
@@ -352,7 +352,7 @@ string_repeat(a, n)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	for (i = 0; i < size; i += a->ob_size)
 		memcpy(op->ob_sval+i, a->ob_sval, (int) a->ob_size);
 	op->ob_sval[size] = '\0';

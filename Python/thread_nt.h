@@ -65,7 +65,7 @@ int PyThread_start_new_thread(void (*func)(void *), void *arg)
  
 	if (rv != -1) {
 		success = 1;
-		dprintf(("%ld: PyThread_start_new_thread succeeded: %ld\n", PyThread_get_thread_ident(), aThreadId));
+		dprintf(("%ld: PyThread_start_new_thread succeeded: %ld\n", PyThread_get_thread_ident(), rv));
 	}
 
 	return success;

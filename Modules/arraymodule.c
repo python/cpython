@@ -363,7 +363,7 @@ newarrayobject(size, descr)
 	op->ob_type = &Arraytype;
 	op->ob_size = size;
 	op->ob_descr = descr;
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	return (PyObject *) op;
 }
 

@@ -184,7 +184,7 @@ PyFrame_New(tstate, code, globals, locals)
 		if (f == NULL)
 			return (PyFrameObject *)PyErr_NoMemory();
 		f->ob_type = &PyFrame_Type;
-		_Py_NewReference(f);
+		_Py_NewReference((PyObject *)f);
 	}
 	else {
 		f = free_list;
@@ -199,7 +199,7 @@ PyFrame_New(tstate, code, globals, locals)
 		else
 			extras = f->f_nlocals + f->f_stacksize;
 		f->ob_type = &PyFrame_Type;
-		_Py_NewReference(f);
+		_Py_NewReference((PyObject *)f);
 	}
 	if (builtins == NULL) {
 		/* No builtins!  Make up a minimal one. */

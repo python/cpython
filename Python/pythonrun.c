@@ -72,6 +72,10 @@ static void initsigs Py_PROTO((void));
 static void call_sys_exitfunc Py_PROTO((void));
 static void call_ll_exitfuncs Py_PROTO((void));
 
+#ifdef Py_TRACE_REFS
+int _Py_AskYesNo(char *prompt);
+#endif
+
 int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */

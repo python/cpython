@@ -504,7 +504,7 @@ instance_dealloc(inst)
 	/* much too complicated if Py_TRACE_REFS defined */
 	extern long _Py_RefTotal;
 	inst->ob_type = &PyInstance_Type;
-	_Py_NewReference(inst);
+	_Py_NewReference((PyObject *)inst);
 	_Py_RefTotal--;		/* compensate for increment in NEWREF */
 #ifdef COUNT_ALLOCS
 	inst->ob_type->tp_alloc--; /* ditto */
@@ -556,7 +556,7 @@ instance_dealloc(inst)
 #ifdef COUNT_ALLOCS
 	inst->ob_type->tp_free--;	/* compensate for increment in UNREF */
 #endif
-	_Py_ForgetReference(inst);
+	_Py_ForgetReference((PyObject *)inst);
 	inst->ob_type = NULL;
 #endif /* Py_TRACE_REFS */
 	Py_DECREF(inst->in_class);
@@ -1431,7 +1431,7 @@ PyMethod_New(func, self, class)
 	if (im != NULL) {
 		free_list = (PyMethodObject *)(im->im_self);
 		im->ob_type = &PyMethod_Type;
-		_Py_NewReference(im);
+		_Py_NewReference((PyObject *)im);
 	}
 	else {
 		im = PyObject_NEW(PyMethodObject, &PyMethod_Type);

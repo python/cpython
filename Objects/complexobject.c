@@ -172,7 +172,7 @@ PyComplex_FromCComplex(cval)
 		return PyErr_NoMemory();
 	op->ob_type = &PyComplex_Type;
 	op->cval = cval;
-	_Py_NewReference(op);
+	_Py_NewReference((PyObject *)op);
 	return (PyObject *) op;
 }
 
