@@ -70,6 +70,8 @@ typedef struct re_registers
 #define Sword       1
 #define Swhitespace 2
 #define Sdigit      4
+#define Soctaldigit 8
+#define Shexdigit   16
 
 /* Rename all exported symbols to avoid conflicts with similarly named
    symbols in some systems' standard C libraries... */

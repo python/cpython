@@ -486,7 +486,13 @@ void re_compile_initialize(void)
 		for (a = 'A'; a <= 'Z'; a++)
 			re_syntax_table[a] = Sword;
 		for (a = '0'; a <= '9'; a++)
-			re_syntax_table[a] = Sword | Sdigit;
+			re_syntax_table[a] = Sword | Sdigit | Shexdigit;
+		for (a = '0'; a <= '7'; a++)
+			re_syntax_table[a] |= Soctaldigit;
+		for (a = 'A'; a <= 'F'; a++)
+			re_syntax_table[a] |= Shexdigit;
+		for (a = 'a'; a <= 'f'; a++)
+			re_syntax_table[a] |= Shexdigit;
 		re_syntax_table['_'] = Sword;
 		for (a = 9; a <= 13; a++)
 			re_syntax_table[a] = Swhitespace;
