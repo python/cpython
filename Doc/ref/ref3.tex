@@ -12,15 +12,15 @@ program is represented by objects or by relations between objects.
 Every object has an identity, a type and a value.  An object's
 \emph{identity} never changes once it has been created; you may think
 of it as the object's address in memory.  The `\code{is}' operator
-compares the identity of two objects; the `\code{id()}' function
-returns an integer representing its identity (currently implemented as
-its address).
+compares the identity of two objects; the
+\function{id()}\bifuncindex{id} function returns an integer
+representing its identity (currently implemented as its address).
 An object's \dfn{type} is
 also unchangeable.  It determines the operations that an object
 supports (e.g., ``does it have a length?'') and also defines the
-possible values for objects of that type.  The `\code{type()}'
-function returns an object's type (which is an object itself).
-The \emph{value} of some
+possible values for objects of that type.  The
+\function{type()}\bifuncindex{type} function returns an object's type
+(which is an object itself).  The \emph{value} of some
 objects can change.  Objects whose value can change are said to be
 \emph{mutable}; objects whose value is unchangeable once they are
 created are called \emph{immutable}.
@@ -78,13 +78,13 @@ of object identity is affected in some sense: for immutable types,
 operations that compute new values may actually return a reference to
 any existing object with the same type and value, while for mutable
 objects this is not allowed.  E.g., after
-``\code{a = 1; b = 1}'',
+\samp{a = 1; b = 1},
 \code{a} and \code{b} may or may not refer to the same object with the
 value one, depending on the implementation, but after
-``\code{c = []; d = []}'', \code{c} and \code{d}
+\samp{c = []; d = []}, \code{c} and \code{d}
 are guaranteed to refer to two different, unique, newly created empty
 lists.
-(Note that ``\code{c = d = []}'' assigns the same object to both
+(Note that \samp{c = d = []} assigns the same object to both
 \code{c} and \code{d}.)
 
 \section{The standard type hierarchy\label{types}}
@@ -127,7 +127,7 @@ Its truth value is false.
 \item[Ellipsis]
 This type has a single value.  There is a single object with this value.
 This object is accessed through the built-in name \code{Ellipsis}.
-It is used to indicate the presence of the ``\code{...}'' syntax in a
+It is used to indicate the presence of the \samp{...} syntax in a
 slice.  Its truth value is true.
 \ttindex{Ellipsis}
 \obindex{Ellipsis@{\tt Ellipsis}}
@@ -375,13 +375,13 @@ parameter list.
 \obindex{function}
 \obindex{user-defined function}
 
-Special read-only attributes: \code{func_doc} or \code{__doc__} is the
+Special read-only attributes: \member{func_doc} or \member{__doc__} is the
 function's documentation string, or None if unavailable;
-\code{func_name} or \code{__name__} is the function's name;
-\code{func_defaults} is a tuple containing default argument values for
+\member{func_name} or \member{__name__} is the function's name;
+\member{func_defaults} is a tuple containing default argument values for
 those arguments that have defaults, or \code{None} if no arguments
-have a default value; \code{func_code} is the code object representing
-the compiled function body; \code{func_globals} is (a reference to)
+have a default value; \member{func_code} is the code object representing
+the compiled function body; \member{func_globals} is (a reference to)
 the dictionary that holds the function's global variables --- it
 defines the global namespace of the module in which the function was
 defined.  Additional information about a function's definition can be
@@ -404,38 +404,38 @@ A user-defined method object combines a class, a class instance (or
 
 Special read-only attributes: \member{im_self} is the class instance
 object, \member{im_func} is the function object;
-\code{im_class} is the class that defined the method (which may be a
-base class of the class of which \code{im_self} is an instance);
-\code{__doc__} is the method's documentation (same as
-\code{im_func.__doc__}); \code{__name__} is the method name (same as
+\member{im_class} is the class that defined the method (which may be a
+base class of the class of which \member{im_self} is an instance);
+\member{__doc__} is the method's documentation (same as
+\code{im_func.__doc__}); \member{__name__} is the method name (same as
 \code{im_func.__name__}).
 
 User-defined method objects are created in two ways: when getting an
 attribute of a class that is a user-defined function object, or when
 getting an attributes of a class instance that is a user-defined
 function object.  In the former case (class attribute), the
-\code{im_self} attribute is \code{None}, and the method object is said
-to be unbound; in the latter case (instance attribute), \code{im_self}
+\member{im_self} attribute is \code{None}, and the method object is said
+to be unbound; in the latter case (instance attribute), \method{im_self}
 is the instance, and the method object is said to be bound.  For
-instance, when \code{C} is a class which contains a definition for a
-function \code{f}, \code{C.f} does not yield the function object
+instance, when \class{C} is a class which contains a definition for a
+function \method{f()}, \code{C.f} does not yield the function object
 \code{f}; rather, it yields an unbound method object \code{m} where
-\code{m.im_class} is \code{C}, \code{m.im_func} is \code{f}, and
-m\code{.im_self} is \code{None}.  When \code{x} is a \code{C}
+\code{m.im_class} is \class{C}, \code{m.im_func} is \method{f()}, and
+\code{m.im_self} is \code{None}.  When \code{x} is a \class{C}
 instance, \code{x.f} yields a bound method object \code{m} where
-m\code{.im_class} is \code{C}, \code{m.im_func} is \code{f}, and
+\code{m.im_class} is \code{C}, \code{m.im_func} is \method{f()}, and
 \code{m.im_self} is \code{x}.
 
 When an unbound user-defined method object is called, the underlying
-function (\code{im_func}) is called, with the restriction that the
+function (\member{im_func}) is called, with the restriction that the
 first argument must be an instance of the proper class
-(\code{im_class}) or of a derived class thereof.
+(\member{im_class}) or of a derived class thereof.
 
 When a bound user-defined method object is called, the underlying
-function (\code{im_func}) is called, inserting the class instance
-(\code{im_self}) in front of the argument list.  For instance, when
-\code{C} is a class which contains a definition for a function
-\code{f}, and \code{x} is an instance of \code{C}, calling
+function (\member{im_func}) is called, inserting the class instance
+(\member{im_self}) in front of the argument list.  For instance, when
+\class{C} is a class which contains a definition for a function
+\method{f()}, and \code{x} is an instance of \class{C}, calling
 \code{x.f(1)} is equivalent to calling \code{C.f(x, 1)}.
 
 Note that the transformation from function object to (unbound or
@@ -455,9 +455,9 @@ of built-in functions are \function{len()} and \function{math.sin()}
 (\module{math} is a standard built-in module).
 The number and type of the arguments are
 determined by the C function.
-Special read-only attributes: \code{__doc__} is the function's
-documentation string, or \code{None} if unavailable; \code{__name__}
-is the function's name; \code{__self__} is set to \code{None} (but see
+Special read-only attributes: \member{__doc__} is the function's
+documentation string, or \code{None} if unavailable; \member{__name__}
+is the function's name; \member{__self__} is set to \code{None} (but see
 the next item).
 \obindex{built-in function}
 \obindex{function}
@@ -469,7 +469,7 @@ containing an object passed to the \C{} function as an implicit extra
 argument.  An example of a built-in method is
 \code{\var{list}.append()}, assuming
 \var{list} is a list object.
-In this case, the special read-only attribute \code{__self__} is set
+In this case, the special read-only attribute \member{__self__} is set
 to the object denoted by \code{list}.
 \obindex{built-in method}
 \obindex{method}
@@ -490,7 +490,7 @@ without arguments.
 
 \item[Class instances]
 Class instances are described below.  Class instances are callable
-only when the class has a \code{__call__} method; \code{x(arguments)}
+only when the class has a \method{__call__()} method; \code{x(arguments)}
 is a shorthand for \code{x.__call__(arguments)}.
 
 \end{description}
@@ -510,7 +510,7 @@ is done).
 \obindex{module}
 
 Attribute assignment updates the module's namespace dictionary,
-e.g., ``\code{m.x = 1}'' is equivalent to ``\code{m.__dict__["x"] = 1}''.
+e.g., \samp{m.x = 1} is equivalent to \samp{m.__dict__["x"] = 1}.
 
 Special read-only attribute: \member{__dict__} is the module's
 namespace as a dictionary object.
@@ -519,9 +519,9 @@ namespace as a dictionary object.
 Predefined (writable) attributes: \member{__name__}
 is the module's name; \member{__doc__} is the
 module's documentation string, or
-\code{None} if unavailable; \code{__file__} is the pathname of the
+\code{None} if unavailable; \member{__file__} is the pathname of the
 file from which the module was loaded, if it was loaded from a file.
-The \code{__file__} attribute is not present for C{} modules that are
+The \member{__file__} attribute is not present for C{} modules that are
 statically linked into the interpreter; for extension modules loaded
 dynamically from a shared library, it is the pathname of the shared
 library file.
@@ -536,14 +536,14 @@ Class objects are created by class definitions (see section
 A class has a namespace implemented by a dictionary object.
 Class attribute references are translated to
 lookups in this dictionary,
-e.g., ``\code{C.x}'' is translated to ``\code{C.__dict__["x"]}''.
+e.g., \samp{C.x} is translated to \samp{C.__dict__["x"]}.
 When the attribute name is not found
 there, the attribute search continues in the base classes.  The search
 is depth-first, left-to-right in the order of occurrence in the
 base class list.
 When a class attribute reference would yield a user-defined function
 object, it is transformed into an unbound user-defined method object
-(see above).  The \code{im_class} attribute of this method object is the
+(see above).  The \member{im_class} attribute of this method object is the
 class in which the function object was found, not necessarily the
 class for which the attribute reference was initiated.
 \obindex{class}
@@ -567,7 +567,7 @@ Special attributes: \member{__name__} is the class name;
 \member{__dict__} is the dictionary containing the class's namespace;
 \member{__bases__} is a tuple (possibly empty or a singleton)
 containing the base classes, in the order of their occurrence in the
-base class list; \code{__doc__} is the class's documentation string,
+base class list; \member{__doc__} is the class's documentation string,
 or None if undefined.
 \ttindex{__name__}
 \ttindex{__module__}
@@ -584,19 +584,19 @@ there, and the instance's class has an attribute by that name,
 the search continues with the class attributes.  If a class attribute
 is found that is a user-defined function object (and in no other
 case), it is transformed into an unbound user-defined method object
-(see above).  The \code{im_class} attribute of this method object is
+(see above).  The \member{im_class} attribute of this method object is
 the class in which the function object was found, not necessarily the
 class of the instance for which the attribute reference was initiated.
 If no class attribute is found, and the object's class has a
-\code{__getattr__} method, that is called to satisfy the lookup.
+\method{__getattr__()} method, that is called to satisfy the lookup.
 \obindex{class instance}
 \obindex{instance}
 \indexii{class}{instance}
 \indexii{class instance}{attribute}
 
 Attribute assignments and deletions update the instance's dictionary,
-never a class's dictionary.  If the class has a \code{__setattr__} or
-\code{__delattr__} method, this is called instead of updating the
+never a class's dictionary.  If the class has a \method{__setattr__()} or
+\method{__delattr__()} method, this is called instead of updating the
 instance dictionary directly.
 \indexiii{class instance}{attribute}{assignment}
 
@@ -658,34 +658,34 @@ contain no references (directly or indirectly) to mutable objects.
 \index{bytecode}
 \obindex{code}
 
-Special read-only attributes: \code{co_name}\ttindex{co_name} gives
-the function name; \code{co_argcount}\ttindex{co_argcount}
+Special read-only attributes: \member{co_name}\ttindex{co_name} gives
+the function name; \member{co_argcount}\ttindex{co_argcount}
 is the number of positional arguments (including arguments with
-default values); \code{co_nlocals}\ttindex{co_nlocals} is the number
+default values); \member{co_nlocals}\ttindex{co_nlocals} is the number
 of local variables used by the function (including arguments);
-\code{co_varnames}\ttindex{co_varnames} is a tuple containing the
+\member{co_varnames}\ttindex{co_varnames} is a tuple containing the
 names of the local variables (starting with the argument names);
-\code{co_code}\ttindex{co_code} is a string representing the sequence
-of bytecode instructions; \code{co_consts}\ttindex{co_consts} is a
+\member{co_code}\ttindex{co_code} is a string representing the sequence
+of bytecode instructions; \member{co_consts}\ttindex{co_consts} is a
 tuple containing the literals used by the bytecode;
-\code{co_names}\ttindex{co_names} is a tuple containing the names used 
-by the bytecode; \code{co_filename}\ttindex{co_filename} is the
+\member{co_names}\ttindex{co_names} is a tuple containing the names used 
+by the bytecode; \member{co_filename}\ttindex{co_filename} is the
 filename from which the code was compiled;
-\code{co_firstlineno}\ttindex{co_firstlineno} is the first line number 
-of the function; \code{co_lnotab}\ttindex{co_lnotab} is a string 
+\member{co_firstlineno}\ttindex{co_firstlineno} is the first line number 
+of the function; \member{co_lnotab}\ttindex{co_lnotab} is a string 
 encoding the mapping from byte code offsets to line numbers (for
 detais see the source code of the interpreter);
-\code{co_stacksize}\ttindex{co_stacksize} is the required stack size
-(including local variables); \code{co_flags}\ttindex{co_flags} is an
+\member{co_stacksize}\ttindex{co_stacksize} is the required stack size
+(including local variables); \member{co_flags}\ttindex{co_flags} is an
 integer encoding a number of flags for the interpreter.
 
-The following flag bits are defined for \code{co_flags}: bit 2 is set
-if the function uses the ``\code{*arguments}'' syntax to accept an
+The following flag bits are defined for \member{co_flags}: bit 2 is set
+if the function uses the \samp{*arguments} syntax to accept an
 arbitrary number of positional arguments; bit 3 is set if the function
-uses the ``\code{**keywords}'' syntax to accept arbitrary keyword
+uses the \samp{**keywords} syntax to accept arbitrary keyword
 arguments; other bits are used internally or reserved for future use.
 If a code object represents a function, the first item in
-\code{co_consts} is the documentation string of the
+\member{co_consts} is the documentation string of the
 function, or \code{None} if undefined.
 
 \item[Frame objects]
@@ -698,8 +698,8 @@ stack frame (towards the caller), or \code{None} if this is the bottom
 stack frame; \member{f_code} is the code object being executed in this
 frame; \member{f_locals} is the dictionary used to look up local
 variables; \member{f_globals} is used for global variables;
-\code{f_builtins} is used for built-in (intrinsic) names;
-\code{f_restricted} is a flag indicating whether the function is
+\member{f_builtins} is used for built-in (intrinsic) names;
+\member{f_restricted} is a flag indicating whether the function is
 executing in restricted execution mode;
 \member{f_lineno} gives the line number and \member{f_lasti} gives the
 precise instruction (this is an index into the bytecode string of
@@ -713,10 +713,10 @@ the code object).
 \ttindex{f_builtins}
 \ttindex{f_restricted}
 
-Special writable attributes: \code{f_trace}, if not \code{None}, is a
+Special writable attributes: \member{f_trace}, if not \code{None}, is a
 function called at the start of each source code line (this is used by
-the debugger); \code{f_exc_type}, \code{f_exc_value},
-\code{f_exc_traceback} represent the most recent exception caught in
+the debugger); \member{f_exc_type}, \member{f_exc_value},
+\member{f_exc_traceback} represent the most recent exception caught in
 this frame.
 \ttindex{f_trace}
 \ttindex{f_exc_type}
@@ -772,8 +772,8 @@ or ellipses separated by commas, e.g., \code{a[i:j:step]}, \code{a[i:j,
 k:l]}, or \code{a[..., i:j])}.  They are also created by the built-in
 \function{slice()} function.
 
-Special read-only attributes: \code{start} is the lowerbound;
-\code{stop} is the upperbound; \code{step} is the step value; each is
+Special read-only attributes: \member{start} is the lowerbound;
+\member{stop} is the upperbound; \member{step} is the step value; each is
 \code{None} if omitted. These attributes can have any type.
 
 \end{description} % Internal types
@@ -800,7 +800,7 @@ operation raise an exception when no appropriate method is defined.
 \begin{methoddescni}{__init__}{self\optional{, args...}}
 Called when the instance is created.  The arguments are those passed
 to the class constructor expression.  If a base class has an
-\code{__init__} method the derived class's \code{__init__} method must
+\method{__init__()} method the derived class's \method{__init__()} method must
 explicitly call it to ensure proper initialization of the base class
 part of the instance, e.g., \samp{BaseClass.__init__(\var{self},
 [\var{args}...])}.
@@ -824,7 +824,7 @@ the interpreter exits.
 \ttindex{__del__}
 \stindex{del}
 
-\strong{Programmer's note:} ``\code{del x}'' doesn't directly call
+\strong{Programmer's note:} \samp{del x} doesn't directly call
 \code{x.__del__()} --- the former decrements the reference count for
 \code{x} by one, and the latter is only called when its reference
 count reaches zero.  Some common situations that may prevent the
@@ -856,15 +856,15 @@ imported modules are still available at the time when the
 \end{methoddescni}
 
 \begin{methoddescni}{__repr__}{self}
-Called by the \function{repr()} built-in function and by string conversions
-(reverse quotes) to compute the ``official'' string representation of
-an object.  This should normally look like a valid Python expression
-that can be used to recreate an object with the same value.
-This differs from \code{__repr__} in that it doesn't have to look like
-a valid Python expression: a more convenient or concise representation
-may be used instead.
+Called by the \function{repr()}\bifuncindex{repr} built-in function
+and by string conversions (reverse quotes) to compute the ``official''
+string representation of an object.  This should normally look like a
+valid Python expression that can be used to recreate an object with
+the same value.  By convention, objects which cannot be trivially
+converted to strings which can be used to create a similar object
+produce a string of the form \samp{<\var{...some useful
+description...}>}.
 \ttindex{__repr__}
-\bifuncindex{repr}
 \indexii{string}{conversion}
 \indexii{reverse}{quotes}
 \indexii{backward}{quotes}
@@ -874,7 +874,10 @@ may be used instead.
 \begin{methoddescni}{__str__}{self}
 Called by the \function{str()}\bifuncindex{str} built-in function and
 by the \keyword{print}\stindex{print} statement to compute the
-``informal'' string representation of an object.
+``informal'' string representation of an object.  This differs from
+\method{__repr__()} in that it does not have to be a valid Python
+expression: a more convenient or concise representation may be used
+instead.
 \ttindex{__str__}
 \end{methoddescni}
 
@@ -884,7 +887,7 @@ Called by all comparison operations.  Should return a negative integer if
 \code{self > other}.  If no \method{__cmp__()} operation is defined, class
 instances are compared by object identity (``address'').
 (Note: the restriction that exceptions are not propagated by
-\code{__cmp__} has been removed in Python 1.5.)
+\method{__cmp__()} has been removed in Python 1.5.)
 \ttindex{__cmp__}
 \bifuncindex{cmp}
 \index{comparisons}
