@@ -506,7 +506,7 @@ class CodecCallbackTest(unittest.TestCase):
         # Python/codecs.c::PyCodec_XMLCharRefReplaceErrors()
         # and inline implementations
         v = (1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000)
-        if sys.maxunicode>50000:
+        if sys.maxunicode>=100000:
              v += (100000, 500000, 1000000)
         s = u"".join([unichr(x) for x in v])
         codecs.register_error("test.xmlcharrefreplace", codecs.xmlcharrefreplace_errors)
