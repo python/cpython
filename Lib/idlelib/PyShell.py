@@ -332,7 +332,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 self.rpcclt = rpc.RPCClient(addr)
                 break
             except socket.error, err:
-                print>>sys.__stderr__,"Idle socket error: " + err[1]\
+                print>>sys.__stderr__,"IDLE socket error: " + err[1]\
                                                     + ", retrying..."
         else:
             display_port_binding_error()
@@ -650,7 +650,6 @@ class PyShell(OutputWindow):
     menu_specs = [
         ("file", "_File"),
         ("edit", "_Edit"),
-        ("shell", "_Shell"),
         ("debug", "_Debug"),
         ("options", "_Options"),
         ("windows", "_Windows"),
@@ -661,6 +660,8 @@ class PyShell(OutputWindow):
     from IdleHistory import History
 
     def __init__(self, flist=None):
+        if use_subprocess:
+            self.menu_specs.insert(2, ("shell", "_Shell"))
         self.interp = ModifiedInterpreter(self)
         if flist is None:
             root = Tk()
@@ -686,8 +687,9 @@ class PyShell(OutputWindow):
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<open-python-shell>>", self.flist.open_shell)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
-        text.bind("<<view-restart>>", self.view_restart_mark)
-        text.bind("<<restart-shell>>", self.restart_shell)
+        if use_subprocess:
+            text.bind("<<view-restart>>", self.view_restart_mark)
+            text.bind("<<restart-shell>>", self.restart_shell)
         #
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
@@ -810,7 +812,7 @@ class PyShell(OutputWindow):
         return self.shell_title
 
     COPYRIGHT = \
-              'Type "copyright", "credits" or "license" for more information.'
+          'Type "copyright", "credits" or "license()" for more information.'
 
     def begin(self):
         self.resetoutput()
@@ -1072,6 +1074,7 @@ USAGE: idle  [-deis] [-t title] [file]*
        idle  [-ds] [-t title] - [arg]*
 
   -h         print this help message and exit
+  -n         run IDLE without a subprocess (see Help/IDLE Help for details)
 
 The following options will override the IDLE 'settings' configuration:
 
@@ -1120,6 +1123,7 @@ echo "import sys; print sys.argv" | idle - "foobar"
 def main():
     global flist, root, use_subprocess
 
+    use_subprocess = True
     enable_shell = False
     enable_edit = False
     debug = False
@@ -1131,7 +1135,7 @@ def main():
     except AttributeError:
         sys.ps1 = '>>> '
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "c:deihr:st:")
+        opts, args = getopt.getopt(sys.argv[1:], "c:deihnr:st:")
     except getopt.error, msg:
         sys.stderr.write("Error: %s\n" % str(msg))
         sys.stderr.write(usage_msg)
@@ -1150,6 +1154,8 @@ def main():
             sys.exit()
         if o == '-i':
             enable_shell = True
+        if o == '-n':
+            use_subprocess = False
         if o == '-r':
             script = a
             if os.path.isfile(script):
@@ -1167,9 +1173,6 @@ def main():
     if args and args[0] == '-':
         cmd = sys.stdin.read()
         enable_shell = True
-
-    use_subprocess = True
-
     # process sys.argv and sys.path:
     for i in range(len(sys.path)):
         sys.path[i] = os.path.abspath(sys.path[i])
@@ -1202,7 +1205,6 @@ def main():
     fixwordbreaks(root)
     root.withdraw()
     flist = PyShellFileList(root)
-
     if enable_edit:
         if not (cmd or script):
             for filename in args:
@@ -1239,19 +1241,19 @@ def main():
 
 def display_port_binding_error():
     print """\
-IDLE cannot run.
+\nIDLE cannot run.
 
-IDLE needs to use a specific TCP/IP port (8833) in order to execute and
-debug programs. IDLE is unable to bind to this port, and so cannot
-start. Here are some possible causes of this problem:
+IDLE needs to use a specific TCP/IP port (8833) in order to communicate with
+its Python execution server.  IDLE is unable to bind to this port, and so
+cannot start. Here are some possible causes of this problem:
 
   1. TCP/IP networking is not installed or not working on this computer
-  2. Another program is running that uses this port
+  2. Another program (another IDLE?) is running that uses this port
   3. Personal firewall software is preventing IDLE from using this port
 
-IDLE makes and accepts connections only with this computer, and does not
-communicate over the internet in any way. Its use of port 8833 should not
-be a security risk on a single-user machine.
+Run IDLE with the -n command line switch to start without a subprocess
+and refer to Help/IDLE Help "Running without a subprocess" for further
+details.
 """
 
 if __name__ == "__main__":
