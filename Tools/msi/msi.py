@@ -81,6 +81,11 @@ product_codes = {
     '2.4.121': '{75508821-a8e9-40a8-95bd-dbe6033ddbea}', # 2.4c1
     '2.4.122': '{83a9118b-4bdd-473b-afc3-bcb142feca9e}', # 2.4c2
     '2.4.150': '{82d9302e-f209-4805-b548-52087047483a}', # 2.4.0
+    '2.4.1121':'{be027411-8e6b-4440-a29b-b07df0690230}', # 2.4.1c1
+    '2.4.1122':'{02818752-48bf-4074-a281-7a4114c4f1b1}', # 2.4.1c2
+    '2.4.1150':'{4d4f5346-7e4a-40b5-9387-fdb6181357fc}', # 2.4.1
+    '2.4.2121':'{5ef9d6b6-df78-45d2-ab09-14786a3c5a99}', # 2.4.2c1
+    '2.4.2150':'{b191e49c-ea23-43b2-b28a-14e0784069b8}', # 2.4.2
 }
 
 if snapshot:
@@ -346,11 +351,17 @@ def add_ui(db):
         raise "'nmake /f msisupport.mak' failed"
     add_data(db, "Binary", [("Script", msilib.Binary("msisupport.dll"))])
     # See "Custom Action Type 1"
+    if msilib.Win64:
+        CheckDir = "CheckDir"
+        UpdateEditIdle = "UpdateEditIDLE"
+    else:
+        CheckDir =  "_CheckDir@4"
+        UpdateEditIDLE = "_UpdateEditIDLE@4"
     add_data(db, "CustomAction",
-        [("CheckDir", 1, "Script", "_CheckDir@4")])
+        [("CheckDir", 1, "Script", CheckDir)])
     if have_tcl:
         add_data(db, "CustomAction",
-        [("UpdateEditIDLE", 1, "Script", "_UpdateEditIDLE@4")])
+        [("UpdateEditIDLE", 1, "Script", UpdateEditIDLE)])
 
     # UI customization properties
     add_data(db, "Property",
