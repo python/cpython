@@ -186,14 +186,13 @@ except \character{\textasciicircum}.
 \item[\character{|}]\code{A|B}, where A and B can be arbitrary REs,
 creates a regular expression that will match either A or B.  An
 arbitrary number of REs can be separated by the \character{|} in this
-way.  This can be used inside groups (see below) as well.  REs
-separated by \character{|} are tried from left to right, and the first
-one that allows the complete pattern to match is considered the
-accepted branch.  This means that if \code{A} matches, \code{B} will
-never be tested, even if it would produce a longer overall match.  In
-other words, the \character{|} operator is never greedy.  To match a
-literal \character{|}, use \regexp{\e|}, or enclose it inside a
-character class, as in \regexp{[|]}.
+way.  This can be used inside groups (see below) as well.  As the target
+string is scanned, REs separated by \character{|} are tried from left to
+right. When one pattern completely matches, that branch is accepted.
+This means that once \code{A} matches, \code{B} will not be tested further,
+even if it would produce a longer overall match.  In other words, the
+\character{|} operator is never greedy.  To match a literal \character{|},
+use \regexp{\e|}, or enclose it inside a character class, as in \regexp{[|]}.
 
 \item[\code{(...)}] Matches whatever regular expression is inside the
 parentheses, and indicates the start and end of a group; the contents
