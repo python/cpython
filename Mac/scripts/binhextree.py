@@ -32,13 +32,44 @@ CWDIR=':Mac:mwerks:projects'
 # Helper routines
 def binhexit(path, name):
 	dstfile = path + '.hqx'
-	if os.path.exists(dstfile) and \
-			os.stat(dstfile)[8] > os.stat(path)[8]:
-		print 'Skip', path,'- Up-to-date'
-		return
+	if os.path.exists(dstfile):
+		print 'Compare', path,'...',
+		if binhexcompare(path, dstfile):
+			print 'Identical, skipped.'
+			return
+		else:
+			print 'Not up-to-date.'
 	print 'Binhexing', path
 	binhex.binhex(path, dstfile)
 	
+def binhexcompare(source, hqxfile):
+	"""(source, hqxfile) - Check whether the two files match (forks only)"""
+	ifp = binhex.HexBin(hqxfile)
+
+	sfp = open(source, 'rb')
+	while 1:
+		d = ifp.read(128000)
+		d2 = sfp.read(128000)
+		if d <> d2:
+			return 0
+		if not d: break
+	sfp.close()
+	ifp.close_data()
+	
+	d = ifp.read_rsrc(128000)
+	if d:
+		sfp = binhex.openrsrc(source, 'rb')
+		d2 = sfp.read(128000)
+		if d <> d2:
+			return 0
+		while 1:
+			d = ifp.read_rsrc(128000)
+			d2 = sfp.read(128000)
+			if d <> d2:
+				return 0
+			if not d: break
+	return 1
+
 # Project files to handle
 project_files = {}
 
