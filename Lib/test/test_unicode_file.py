@@ -4,24 +4,13 @@
 import os, glob
 
 from test.test_support import verify, TestSkipped, TESTFN_UNICODE
+from test.test_support import TESTFN_ENCODING
 try:
-    from test.test_support import TESTFN_ENCODING
-    oldlocale = None
-except ImportError:
-    import locale
-    # try to run the test in an UTF-8 locale. If this locale is not
-    # available, avoid running the test since the locale's encoding
-    # might not support TESTFN_UNICODE. Likewise, if the system does
-    # not support locale.CODESET, Unicode file semantics is not
-    # available, either.
-    oldlocale = locale.setlocale(locale.LC_CTYPE)
-    try:
-        locale.setlocale(locale.LC_CTYPE,"en_US.UTF-8")
-        TESTFN_ENCODING = locale.nl_langinfo(locale.CODESET)
-    except (locale.Error, AttributeError):
-        raise TestSkipped("No Unicode filesystem semantics on this platform.")
-
-TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)
+    TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)    
+except (ImportError, TypeError):
+    # Either the file system encoding is None, or the file name
+    # cannot be encoded in the file system encoding.
+    raise TestSkipped("No Unicode filesystem semantics on this platform.")
 
 # Check with creation as Unicode string.
 f = open(TESTFN_UNICODE, 'wb')
@@ -104,5 +93,3 @@ finally:
     os.chdir(cwd)
     os.rmdir(abs_encoded)
 print "All the Unicode tests appeared to work"
-if oldlocale:
-    locale.setlocale(locale.LC_CTYPE, oldlocale)
