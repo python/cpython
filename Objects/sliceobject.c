@@ -121,11 +121,8 @@ PySlice_GetIndicesEx(PySliceObject *r, int length,
 		*step = 1;
 	} 
 	else {
-		*step = PyInt_AsLong(r->step);
-		if (*step == -1 && PyErr_Occurred()) {
-			return -1;
-		}
-		else if (*step == 0) {
+		if (!_PyEval_SliceIndex(r->step, step)) return -1;
+		if (*step == 0) {
 			PyErr_SetString(PyExc_ValueError,
 					"slice step cannot be zero");
 			return -1;
