@@ -1084,11 +1084,8 @@ parsenumber(struct compiling *co, char *s)
 	else
 		x = PyOS_strtol(s, &end, 0);
 	if (*end == '\0') {
-		if (errno != 0) {
-			com_error(co, PyExc_OverflowError,
-				  "integer literal too large");
-			return NULL;
-		}
+		if (errno != 0)
+			return PyLong_FromString(s, (char **)0, 0);
 		return PyInt_FromLong(x);
 	}
 	/* XXX Huge floats may silently fail */
