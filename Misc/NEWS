@@ -42,6 +42,8 @@ Core and builtins
 Library
 -------
 
+- Bug #944082: Empty passwords in urllib2 are now supported.
+
 - Bug #926075: Fixed a bug that returns a wrong pattern object
   for a string or unicode object in sre.compile() when a different
   type pattern with the same value exists.
