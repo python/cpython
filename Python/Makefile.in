@@ -34,7 +34,7 @@ SHELL=		/bin/sh
 
 OBJS=		\
 		bltinmodule.o \
-		ceval.o cgensupport.o compile.o \
+		ceval.o compile.o \
 		errors.o \
 		frozen.o \
 		getargs.o getcompiler.o getcopyright.o getmtime.o \
@@ -85,7 +85,6 @@ depend:
 
 bltinmodule.o: bltinmodule.c
 ceval.o: ceval.c
-cgensupport.o: cgensupport.c
 compile.o: compile.c
 dup2.o: dup2.c
 errors.o: errors.c
