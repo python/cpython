@@ -125,9 +125,9 @@ class ConfigDialog(Toplevel):
         labelIndentSizeTitle=Label(frameIndentSize,
                 text='Choose indentation size :')
         labelSpaceNumTitle=Label(frameIndentSize,justify=LEFT,
-                text='when tab key inserts spaces,\nspaces per indent')
+                text='indent width')
         self.scaleSpaceNum=Scale(frameIndentSize,variable=self.spaceNum,
-                orient='horizontal',tickinterval=2,from_=2,to=10)
+                orient='horizontal',tickinterval=2,from_=2,to=16)
         #labeltabColsTitle=Label(frameIndentSize,justify=LEFT,
         #        text='when tab key inserts tabs,\ncolumns per tab')
         #self.scaleTabCols=Scale(frameIndentSize,variable=self.tabCols,
