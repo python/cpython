@@ -6,10 +6,11 @@ from random import random, randint
 SHIFT = 15
 BASE = 2 ** SHIFT
 MASK = BASE - 1
+KARATSUBA_CUTOFF = 35   # from longobject.c
 
 # Max number of base BASE digits to use in test cases.  Doubling
-# this will at least quadruple the runtime.
-MAXDIGITS = 10
+# this will more than double the runtime.
+MAXDIGITS = 15
 
 # build some special values
 special = map(long, [0, 1, 2, BASE, BASE >> 1])
@@ -90,7 +91,8 @@ def test_division_2(x, y):
 def test_division(maxdigits=MAXDIGITS):
     if verbose:
         print "long / * % divmod"
-    digits = range(1, maxdigits+1)
+    digits = range(1, maxdigits+1) + range(KARATSUBA_CUTOFF,
+                                           KARATSUBA_CUTOFF + 15)
     for lenx in digits:
         x = getran(lenx)
         for leny in digits:
