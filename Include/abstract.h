@@ -762,21 +762,25 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 this is equivalent to the Python expression: len(o).
        */
 
+     /* implemented as a macro:
+
      int PyMapping_DelItemString Py_PROTO((PyObject *o, char *key));
 
-       /*
 	 Remove the mapping for object, key, from the object *o.
 	 Returns -1 on failure.  This is equivalent to
 	 the Python statement: del o[key].
        */
+#define PyMapping_DelItemString(O,K) PyDict_DelItemString((O),(K))
+
+     /* implemented as a macro:
 
      int PyMapping_DelItem Py_PROTO((PyObject *o, PyObject *key));
 
-       /*
 	 Remove the mapping for object, key, from the object *o.
 	 Returns -1 on failure.  This is equivalent to
 	 the Python statement: del o[key].
        */
+#define PyMapping_DelItem(O,K) PyDict_DelItem((O),(K))
 
      int PyMapping_HasKeyString Py_PROTO((PyObject *o, char *key));
 
