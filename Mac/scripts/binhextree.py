@@ -1,11 +1,11 @@
 #
-# hexbintree - Recursively descend a directory and
+# binhextree - Recursively descend a directory and
 # pack all resource files.
 #
 # Jack Jansen, CWI, August 1995.
 #
 # To do:
-# - Also do project files (.µ and .¹), after using AppleEvents to the
+# - Also do project files (.µ and .º), after using AppleEvents to the
 #   various builders to clean the projects
 # - Don't hexbin (and clean) if there exists a .hqx file that is newer.
 #
