@@ -272,6 +272,8 @@ class VideoParams:
 
 	def setpf(self, pf):
 		if self.frozen: raise CallError
+		if type(pf) == type(1):
+			pf = (pf, pf)
 		if type(pf) is not type(()) or len(pf) <> 2: raise CallError
 		self.packfactor = pf
 		self.setderived()
