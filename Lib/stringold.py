@@ -5,7 +5,7 @@
 # functions imported from built-in module "strop".
 
 # Some strings for ctype-style character classification
-whitespace = ' \t\n'
+whitespace = ' \t\n\r\v\f'
 lowercase = 'abcdefghijklmnopqrstuvwxyz'
 uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 letters = lowercase + uppercase
@@ -181,10 +181,13 @@ def expandtabs(s, tabsize):
 
 # Try importing optional built-in module "strop" -- if it exists,
 # it redefines some string operations that are 100-1000 times faster.
+# It also defines values for whitespace, lowercase and uppercase
+# that match <ctype.h>'s definitions.
 # The manipulation with index_error is needed for compatibility.
 
 try:
 	from strop import *
+	letters = lowercase + uppercase
 	from strop import index
 	index_error = ValueError
 except ImportError:
