@@ -1,13 +1,18 @@
 # Python test set -- built-in functions
 
 import test.test_support, unittest
-from test.test_support import fcmp, have_unicode, TESTFN, unlink
+from test.test_support import fcmp, have_unicode, TESTFN, unlink, run_unittest
+from operator import neg
 
 import sys, warnings, cStringIO, random, UserDict
 warnings.filterwarnings("ignore", "hex../oct.. of negative int",
                         FutureWarning, __name__)
 warnings.filterwarnings("ignore", "integer argument expected",
                         DeprecationWarning, "unittest")
+
+# count the number of test runs.
+# used to skip running test_execfile() multiple times
+numruns = 0
 
 class Squares:
 
@@ -343,6 +348,11 @@ class BuiltinTest(unittest.TestCase):
     execfile(TESTFN)
 
     def test_execfile(self):
+        global numruns
+        if numruns:
+            return
+        numruns += 1
+        
         globals = {'a': 1, 'b': 2}
         locals = {'b': 200, 'c': 300}
 
@@ -845,6 +855,30 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(max(1L, 2.0, 3), 3)
         self.assertEqual(max(1.0, 2, 3L), 3L)
 
+        for stmt in (
+            "max(key=int)",                 # no args
+            "max(1, key=int)",              # single arg not iterable
+            "max(1, 2, keystone=int)",      # wrong keyword
+            "max(1, 2, key=int, abc=int)",  # two many keywords
+            "max(1, 2, key=1)",             # keyfunc is not callable
+            ):
+                try:
+                    exec(stmt) in globals()
+                except TypeError:
+                    pass
+                else:
+                    self.fail(stmt)
+
+        self.assertEqual(max((1,), key=neg), 1)     # one elem iterable
+        self.assertEqual(max((1,2), key=neg), 1)    # two elem iterable
+        self.assertEqual(max(1, 2, key=neg), 1)     # two elems
+
+        data = [random.randrange(200) for i in range(100)]
+        keys = dict((elem, random.randrange(50)) for elem in data)
+        f = keys.__getitem__
+        self.assertEqual(max(data, key=f),
+                         sorted(reversed(data), key=f)[-1])
+
     def test_min(self):
         self.assertEqual(min('123123'), '1')
         self.assertEqual(min(1, 2, 3), 1)
@@ -866,6 +900,30 @@ class BuiltinTest(unittest.TestCase):
             def __cmp__(self, other):
                 raise ValueError
         self.assertRaises(ValueError, min, (42, BadNumber()))
+
+        for stmt in (
+            "min(key=int)",                 # no args
+            "min(1, key=int)",              # single arg not iterable
+            "min(1, 2, keystone=int)",      # wrong keyword
+            "min(1, 2, key=int, abc=int)",  # two many keywords
+            "min(1, 2, key=1)",             # keyfunc is not callable
+            ):
+                try:
+                    exec(stmt) in globals()
+                except TypeError:
+                    pass
+                else:
+                    self.fail(stmt)
+
+        self.assertEqual(min((1,), key=neg), 1)     # one elem iterable
+        self.assertEqual(min((1,2), key=neg), 2)    # two elem iterable
+        self.assertEqual(min(1, 2, key=neg), 2)     # two elems
+
+        data = [random.randrange(200) for i in range(100)]
+        keys = dict((elem, random.randrange(50)) for elem in data)
+        f = keys.__getitem__
+        self.assertEqual(min(data, key=f),
+                         sorted(data, key=f)[0])
 
     def test_oct(self):
         self.assertEqual(oct(100), '0144')
@@ -1313,8 +1371,21 @@ class TestSorted(unittest.TestCase):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
         self.assertRaises(TypeError, sorted, data, None, lambda x,y: 0)
 
-def test_main():
-    test.test_support.run_unittest(BuiltinTest, TestSorted)
+def test_main(verbose=None):
+    test_classes = (BuiltinTest, TestSorted)
+
+    run_unittest(*test_classes)
+
+    # verify reference counting
+    if verbose and hasattr(sys, "gettotalrefcount"):
+        import gc
+        counts = [None] * 5
+        for i in xrange(len(counts)):
+            run_unittest(*test_classes)
+            gc.collect()
+            counts[i] = sys.gettotalrefcount()
+        print counts
+
 
 if __name__ == "__main__":
-    test_main()
+    test_main(verbose=True)

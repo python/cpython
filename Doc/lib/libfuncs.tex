@@ -642,16 +642,28 @@ class C:
   of sequence; the result is always a list.
 \end{funcdesc}
 
-\begin{funcdesc}{max}{s\optional{, args...}}
+\begin{funcdesc}{max}{s\optional{, args...}\optional{key}}
   With a single argument \var{s}, return the largest item of a
   non-empty sequence (such as a string, tuple or list).  With more
   than one argument, return the largest of the arguments.
+
+  The optional \var{key} argument specifies a one argument ordering
+  function like that used for \method{list.sort()}.  The \var{key}
+  argument, if supplied, must be in keyword form (for example,
+  \samp{max(a,b,c,key=func)}).
+  \versionchanged[Added support for the optional \var{key} argument]{2.5}
 \end{funcdesc}
 
 \begin{funcdesc}{min}{s\optional{, args...}}
   With a single argument \var{s}, return the smallest item of a
   non-empty sequence (such as a string, tuple or list).  With more
   than one argument, return the smallest of the arguments.
+
+  The optional \var{key} argument specifies a one argument ordering
+  function like that used for \method{list.sort()}.  The \var{key}
+  argument, if supplied, must be in keyword form (for example,
+  \samp{min(a,b,c,key=func)}).
+  \versionchanged[Added support for the optional \var{key} argument]{2.5}           
 \end{funcdesc}
 
 \begin{funcdesc}{object}{}
