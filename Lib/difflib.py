@@ -92,9 +92,9 @@ See also function get_close_matches() in this module, which shows how
 simple code building on SequenceMatcher can be used to do useful work.
 
 Timing:  Basic R-O is cubic time worst case and quadratic time expected
-case.  SequenceMatcher is quadratic time worst case and has expected-case
-behavior dependent on how many elements the sequences have in common; best
-case time (no elements in common) is linear.
+case.  SequenceMatcher is quadratic time for the worst case and has
+expected-case behavior dependent in a complicated way on how many
+elements the sequences have in common; best case time is linear.
 
 SequenceMatcher methods:
 
