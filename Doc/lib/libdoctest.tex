@@ -214,7 +214,7 @@ attempted.
   created for each docstring with examples, so that each docstring's
   examples start with a clean slate.
 
-  Optional argument \var{extraglobs} gives a dicti merged into the
+  Optional argument \var{extraglobs} gives a dict merged into the
   globals used to execute examples.  This works like
   \method{dict.update()}:  if \var{globs} and \var{extraglobs} have a
   common key, the associated value in \var{extraglobs} appears in the
@@ -234,45 +234,8 @@ attempted.
   detailed, else the summary is very brief (in fact, empty if all tests
   passed).
 
-  Optional argument \var{optionflags} or's together module constants,
-  and defaults to 0.
-
-%  Possible values:
-%
-%      DONT_ACCEPT_TRUE_FOR_1
-%          By default, if an expected output block contains just "1",
-%          an actual output block containing just "True" is considered
-%          to be a match, and similarly for "0" versus "False".  When
-%          DONT_ACCEPT_TRUE_FOR_1 is specified, neither substitution
-%          is allowed.
-%
-%      DONT_ACCEPT_BLANKLINE
-%          By default, if an expected output block contains a line
-%          containing only the string "<BLANKLINE>", then that line
-%          will match a blank line in the actual output.  When
-%          DONT_ACCEPT_BLANKLINE is specified, this substitution is
-%          not allowed.
-%
-%      NORMALIZE_WHITESPACE
-%          When NORMALIZE_WHITESPACE is specified, all sequences of
-%          whitespace are treated as equal.  I.e., any sequence of
-%          whitespace within the expected output will match any
-%          sequence of whitespace within the actual output.
-%
-%      ELLIPSIS
-%          When ELLIPSIS is specified, then an ellipsis marker
-%          ("...") in the expected output can match any substring in
-%          the actual output.
-%
-%      UNIFIED_DIFF
-%          When UNIFIED_DIFF is specified, failures that involve
-%          multi-line expected and actual outputs will be displayed
-%          using a unified diff.
-%
-%      CONTEXT_DIFF
-%          When CONTEXT_DIFF is specified, failures that involve
-%          multi-line expected and actual outputs will be displayed
-%          using a context diff.
+  Optional argument \var{optionflags} or's together option flags.  See
+  see section \ref{doctest-options}.
 
   Optional argument \var{raise_on_error} defaults to false.  If true,
   an exception is raised upon the first failure or unexpected exception
@@ -299,9 +262,6 @@ attempted.
 
   \versionchanged[The parameter \var{optionflags} was added]{2.3}
 
-  \versionchanged[Many new module constants for use with \var{optionflags}
-                  were added]{2.4}
-
   \versionchanged[The parameters \var{extraglobs} and \var{raise_on_error}
                   were added]{2.4}
 \end{funcdesc}
@@ -309,27 +269,26 @@ attempted.
 
 \subsection{Which Docstrings Are Examined?}
 
-See the docstrings in \file{doctest.py} for all the details.  They're
-unsurprising: the module docstring, and all function, class and method
-docstrings are searched.  Optionally, the tester can be directed to
-exclude docstrings attached to objects with private names.  Objects
-imported into the module are not searched.
+The module docstring, and all function, class and method docstrings are
+searched.  Objects imported into the module are not searched.
 
 In addition, if \code{M.__test__} exists and "is true", it must be a
 dict, and each entry maps a (string) name to a function object, class
 object, or string.  Function and class object docstrings found from
-\code{M.__test__} are searched even if the tester has been
-directed to skip over private names in the rest of the module.
-In output, a key \code{K} in \code{M.__test__} appears with name
+\code{M.__test__} are searched, and strings are treated as if they
+were docstrings.  In output, a key \code{K} in \code{M.__test__} appears
+with name
 
 \begin{verbatim}
 <name of M>.__test__.K
 \end{verbatim}
 
 Any classes found are recursively searched similarly, to test docstrings in
-their contained methods and nested classes.  While private names reached
-from \module{M}'s globals can be optionally skipped, all names reached from
-\code{M.__test__} are searched.
+their contained methods and nested classes.
+
+\versionchanged[A "private name" concept is deprecated and no longer
+                documented.]{2.4}
+
 
 \subsection{What's the Execution Context?}
 
@@ -362,6 +321,70 @@ Note that only the exception type and value are compared (specifically,
 only the last line in the traceback).  The various ``File'' lines in
 between can be left out (unless they add significantly to the documentation
 value of the example).
+
+\subsection{Option Flags and Directive Names\label{doctest-options}}
+
+A number of option flags control various aspects of doctest's behavior.
+Symbolic names for the flags are supplied as module constants, which
+can be or'ed together and passed to various functions.  The names can
+also be used in doctest directives.
+
+\begin{datadesc}{DONT_ACCEPT_TRUE_FOR_1}
+    By default, if an expected output block contains just \code{1},
+    an actual output block containing just \code{1} or just
+    \code{True} is considered to be a match, and similarly for \code{0}
+    versus \code{False}.  When \constant{DONT_ACCEPT_TRUE_FOR_1} is
+    specified, neither substitution is allowed.  The default behavior
+    caters to that Python changed the return type of many functions
+    from integer to boolean; doctests expecting "little integer"
+    output still work in these cases.  This option will probably go
+    away, but not for several years.
+\end{datadesc}
+
+\begin{datadesc}{DONT_ACCEPT_BLANKLINE}
+    By default, if an expected output block contains a line
+    containing only the string \code{<BLANKLINE>}, then that line
+    will match a blank line in the actual output.  Because a
+    genuinely blank line delimits the expected output, this is
+    the only way to communicate that a blank line is expected.  When
+    \constant{DONT_ACCEPT_BLANKLINE} is specified, this substitution
+    is not allowed.
+\end{datadesc}
+
+\begin{datadesc}{NORMALIZE_WHITESPACE}
+    When specified, all sequences of whitespace (blanks and newlines) are
+    treated as equal.  Any sequence of whitespace within the expected
+    output will match any sequence of whitespace within the actual output.
+    By default, whitespace must match exactly.
+    \constant{NORMALIZE_WHITESPACE} is especially useful when a line
+    of expected output is very long, and you want to wrap it across
+    multiple lines in your source.
+\end{datadesc}
+
+\begin{datadesc}{ELLIPSIS}
+    When specified, an ellipsis marker (\code{...}) in the expected output
+    can match any substring in the actual output.  This includes
+    substrings that span line boundaries, so it's best to keep usage of
+    this simple.  Complicated uses can lead to the same kinds of
+    surprises that \code{.*} is prone to in regular expressions.
+\end{datadesc}
+
+\begin{datadesc}{UNIFIED_DIFF}
+    When specified, failures that involve multi-line expected and
+    actual outputs are displayed using a unified diff.
+\end{datadesc}
+
+\begin{datadesc}{CONTEXT_DIFF}
+    When specified, failures that involve multi-line expected and
+    actual outputs will be displayed using a context diff.
+\end{datadesc}
+
+
+\versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
+    \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
+    \constant{UNIFIED_DIFF}, and \constant{CONTEXT_DIFF}
+    were added, and \code{<BLANKLINE>} in expected output matches
+    an empty line in actual output by default.]{2.4}
 
 \subsection{Advanced Usage}
 
