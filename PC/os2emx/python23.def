@@ -51,18 +51,9 @@ EXPORTS
   "Py_TabcheckFlag"
   "PyParser_ParseString"
   "PyParser_ParseStringFlags"
+  "PyParser_ParseStringFlagsFilename"
   "PyParser_ParseFile"
   "PyParser_ParseFileFlags"
-
-; From python23_s.lib(tokenizer)
-  "PyTokenizer_FromString"
-  "PyTokenizer_FromFile"
-  "PyTokenizer_Free"
-  "PyToken_OneChar"
-  "PyToken_TwoChars"
-  "PyToken_ThreeChars"
-  "PyTokenizer_Get"
-  "_PyParser_TokenNames"
 
 ; From python23_s.lib(bitset)
   "_Py_newbitset"
@@ -73,6 +64,16 @@ EXPORTS
 
 ; From python23_s.lib(metagrammar)
   "_Py_meta_grammar"
+
+; From python23_s.lib(tokenizer)
+  "PyTokenizer_FromString"
+  "PyTokenizer_FromFile"
+  "PyTokenizer_Free"
+  "PyToken_OneChar"
+  "PyToken_TwoChars"
+  "PyToken_ThreeChars"
+  "PyTokenizer_Get"
+  "_PyParser_TokenNames"
 
 ; From python23_s.lib(myreadline)
   "PyOS_ReadlineFunctionPointer"
@@ -104,10 +105,10 @@ EXPORTS
   "PyNumber_Lshift"
   "PyNumber_Rshift"
   "PyNumber_Subtract"
-  "PyNumber_Multiply"
   "PyNumber_Divide"
   "PyNumber_Divmod"
   "PyNumber_Add"
+  "PyNumber_Multiply"
   "PyNumber_FloorDivide"
   "PyNumber_TrueDivide"
   "PyNumber_Remainder"
@@ -168,9 +169,7 @@ EXPORTS
   "PyObject_IsSubclass"
 
 ; From python23_s.lib(boolobject)
-  "bool_repr"
   "PyBool_FromLong"
-  "bool_new"
   "_Py_ZeroStruct"
   "_Py_TrueStruct"
   "PyBool_Type"
@@ -228,10 +227,10 @@ EXPORTS
 ; From python23_s.lib(descrobject)
   "PyWrapper_New"
   "PyDescr_NewMethod"
+  "PyDescr_NewClassMethod"
   "PyDescr_NewMember"
   "PyDescr_NewGetSet"
   "PyDescr_NewWrapper"
-  "PyDescr_IsData"
   "PyDictProxy_New"
   "PyWrapperDescr_Type"
   "PyProperty_Type"
@@ -266,11 +265,13 @@ EXPORTS
   "PyFile_FromFile"
   "PyFile_FromString"
   "PyFile_SetBufSize"
+  "Py_UniversalNewlineFread"
   "PyFile_GetLine"
   "PyFile_SoftSpace"
   "PyFile_WriteObject"
   "PyFile_WriteString"
   "PyObject_AsFileDescriptor"
+  "Py_UniversalNewlineFgets"
   "PyFile_Type"
 
 ; From python23_s.lib(floatobject)
@@ -285,6 +286,7 @@ EXPORTS
 
 ; From python23_s.lib(frameobject)
   "PyFrame_FastToLocals"
+  "_PyFrame_Init"
   "PyFrame_New"
   "PyFrame_BlockSetup"
   "PyFrame_BlockPop"
@@ -312,6 +314,7 @@ EXPORTS
   "PyInt_AsLong"
   "PyInt_FromString"
   "PyInt_FromUnicode"
+  "_PyInt_Init"
   "PyInt_Fini"
   "PyInt_Type"
 
@@ -437,6 +440,7 @@ EXPORTS
 ; From python23_s.lib(sliceobject)
   "PySlice_New"
   "PySlice_GetIndices"
+  "PySlice_GetIndicesEx"
   "_Py_EllipsisObject"
   "PySlice_Type"
 
@@ -454,14 +458,17 @@ EXPORTS
   "PyString_Encode"
   "PyString_AsEncodedString"
   "PyString_AsEncodedObject"
-  "PyString_AsStringAndSize"
+  "PyString_DecodeEscape"
   "PyString_Size"
+  "PyString_AsStringAndSize"
+  "PyString_Repr"
   "_PyString_Eq"
   "_PyString_Join"
+  "PyString_Format"
   "PyString_Concat"
   "PyString_ConcatAndDel"
   "_PyString_FormatLong"
-  "PyString_Format"
+  "PyString_InternImmortal"
   "PyString_InternFromString"
   "PyString_Fini"
   "_Py_ReleaseInternedStrings"
@@ -471,6 +478,7 @@ EXPORTS
 ; From python23_s.lib(structseq)
   "PyStructSequence_New"
   "PyStructSequence_InitType"
+  "PyStructSequence_UnnamedField"
 
 ; From python23_s.lib(tupleobject)
   "PyTuple_New"
@@ -481,6 +489,7 @@ EXPORTS
   "_PyTuple_Resize"
   "PyTuple_Fini"
   "PyTuple_Type"
+  "PyTupleIter_Type"
 
 ; From python23_s.lib(typeobject)
   "PyType_IsSubtype"
@@ -497,6 +506,7 @@ EXPORTS
   "PyUnicodeUCS2_GetMax"
   "PyUnicodeUCS2_Resize"
   "PyUnicodeUCS2_FromUnicode"
+  "PyUnicodeUCS2_FromOrdinal"
   "PyUnicodeUCS2_FromObject"
   "PyUnicodeUCS2_FromEncodedObject"
   "PyUnicodeUCS2_Decode"
@@ -584,6 +594,9 @@ EXPORTS
 ; From python23_s.lib(exceptions)
   "PyExc_TypeError"
   "PyExc_Exception"
+  "PyExc_UnicodeEncodeError"
+  "PyExc_UnicodeDecodeError"
+  "PyExc_UnicodeTranslateError"
   "PyExc_StopIteration"
   "PyExc_StandardError"
   "PyExc_SystemExit"
@@ -621,7 +634,34 @@ EXPORTS
   "PyExc_SyntaxWarning"
   "PyExc_OverflowWarning"
   "PyExc_RuntimeWarning"
+  "PyExc_FutureWarning"
   "PyExc_MemoryErrorInst"
+  "PyUnicodeEncodeError_GetEncoding"
+  "PyUnicodeDecodeError_GetEncoding"
+  "PyUnicodeEncodeError_GetObject"
+  "PyUnicodeDecodeError_GetObject"
+  "PyUnicodeTranslateError_GetObject"
+  "PyUnicodeEncodeError_GetStart"
+  "PyUnicodeDecodeError_GetStart"
+  "PyUnicodeTranslateError_GetStart"
+  "PyUnicodeEncodeError_SetStart"
+  "PyUnicodeDecodeError_SetStart"
+  "PyUnicodeTranslateError_SetStart"
+  "PyUnicodeEncodeError_GetEnd"
+  "PyUnicodeDecodeError_GetEnd"
+  "PyUnicodeTranslateError_GetEnd"
+  "PyUnicodeEncodeError_SetEnd"
+  "PyUnicodeDecodeError_SetEnd"
+  "PyUnicodeTranslateError_SetEnd"
+  "PyUnicodeEncodeError_GetReason"
+  "PyUnicodeDecodeError_GetReason"
+  "PyUnicodeTranslateError_GetReason"
+  "PyUnicodeEncodeError_SetReason"
+  "PyUnicodeDecodeError_SetReason"
+  "PyUnicodeTranslateError_SetReason"
+  "PyUnicodeEncodeError_Create"
+  "PyUnicodeDecodeError_Create"
+  "PyUnicodeTranslateError_Create"
   "_PyExc_Init"
   "_PyExc_Fini"
 
@@ -644,9 +684,9 @@ EXPORTS
   "PyEval_SetProfile"
   "PyEval_SetTrace"
   "PyEval_GetBuiltins"
+  "PyEval_GetFrame"
   "PyEval_GetLocals"
   "PyEval_GetGlobals"
-  "PyEval_GetFrame"
   "PyEval_GetRestricted"
   "PyEval_MergeCompilerFlags"
   "Py_FlushLine"
@@ -654,9 +694,12 @@ EXPORTS
   "PyEval_GetFuncName"
   "PyEval_GetFuncDesc"
   "_PyEval_SliceIndex"
+  "_Py_Ticker"
+  "_Py_CheckInterval"
 
 ; From python23_s.lib(compile)
   "PyCode_New"
+  "_Py_Mangle"
   "PyNode_Compile"
   "PyNode_CompileFlags"
   "PyNode_CompileSymtable"
@@ -674,6 +717,13 @@ EXPORTS
   "PyCodec_StreamWriter"
   "PyCodec_Encode"
   "PyCodec_Decode"
+  "PyCodec_RegisterError"
+  "PyCodec_LookupError"
+  "PyCodec_StrictErrors"
+  "PyCodec_IgnoreErrors"
+  "PyCodec_ReplaceErrors"
+  "PyCodec_XMLCharRefReplaceErrors"
+  "PyCodec_BackslashReplaceErrors"
   "_PyCodecRegistry_Init"
   "_PyCodecRegistry_Fini"
 
@@ -690,6 +740,7 @@ EXPORTS
   "PyErr_Clear"
   "PyErr_BadArgument"
   "PyErr_NoMemory"
+  "PyErr_SetFromErrnoWithFilenameObject"
   "PyErr_SetFromErrnoWithFilename"
   "PyErr_SetFromErrno"
   "_PyErr_BadInternalCall"
@@ -738,6 +789,8 @@ EXPORTS
 
 ; From python23_s.lib(import)
   "_PyImport_Init"
+  "_PyImportHooks_Init"
+  "PyImport_ImportModule"
   "_PyImport_Fini"
   "PyImport_GetModuleDict"
   "PyImport_Cleanup"
@@ -748,7 +801,6 @@ EXPORTS
   "PyImport_ExecCodeModule"
   "PyImport_ExecCodeModuleEx"
   "PyImport_ImportFrozenModule"
-  "PyImport_ImportModule"
   "PyImport_Import"
   "PyImport_ImportModuleEx"
   "PyImport_ReloadModule"
@@ -810,6 +862,7 @@ EXPORTS
   "PyInterpreterState_ThreadHead"
   "PyThreadState_Next"
   "_PyThreadState_Current"
+  "_PyThreadState_GetFrame"
 
 ; From python23_s.lib(pythonrun)
   "Py_IgnoreEnvironmentFlag"
@@ -858,7 +911,9 @@ EXPORTS
   "PyParser_SimpleParseFileFlags"
   "Py_CompileString"
   "Py_CompileStringFlags"
+  "PyParser_SimpleParseStringFlagsFilename"
   "Py_SymtableString"
+  "PyParser_SimpleParseStringFilename"
   "Py_AtExit"
   "PyOS_getsig"
   "PyOS_setsig"
