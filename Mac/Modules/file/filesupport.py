@@ -280,8 +280,11 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 
 #if TARGET_API_MAC_OSX
 	/* On OSX we now try a pathname */
-	if ( PyString_Check(v) ) {
-		if ( (err=FSPathMakeRef(PyString_AsString(v), fsr, NULL)) ) {
+	if ( PyString_Check(v) || PyUnicode_Check(v)) {
+		char *path = NULL;
+		if (!PyArg_Parse(v, "et", Py_FileSystemDefaultEncoding, &path))
+			return NULL;
+		if ( (err=FSPathMakeRef(path, fsr, NULL)) ) {
 			PyMac_Error(err);
 			return 0;
 		}
