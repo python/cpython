@@ -66,7 +66,10 @@ _FH_FILENAME_LENGTH = 10
 _FH_EXTRA_FIELD_LENGTH = 11
 
 # Used to compare file passed to ZipFile
-_STRING_TYPES = (type('s'), type(u's'))
+import types
+_STRING_TYPES = (types.StringType,)
+if hasattr(types, "UnicodeType"):
+    _STRING_TYPES = _STRING_TYPES + (types.UnicodeType,)
 
 
 def is_zipfile(filename):

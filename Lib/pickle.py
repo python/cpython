@@ -54,6 +54,12 @@ try:
 except ImportError:
     PyStringMap = None
 
+try:
+    UnicodeType
+except NameError:
+    UnicodeType = None
+
+
 MARK            = '('
 STOP            = '.'
 POP             = '0'
@@ -304,8 +310,8 @@ class Pickler:
             s = mdumps(l)[1:]
             self.write(BINUNICODE + s + encoding)
         else:
-            object = object.replace(u"\\", u"\\u005c")
-            object = object.replace(u"\n", u"\\u000a")
+            object = object.replace("\\", "\\u005c")
+            object = object.replace("\n", "\\u000a")
             self.write(UNICODE + object.encode('raw-unicode-escape') + '\n')
 
         memo_len = len(memo)
@@ -334,8 +340,8 @@ class Pickler:
                         self.write(BINSTRING + s + object)
             else:
                 if unicode:
-                    object = object.replace(u"\\", u"\\u005c")
-                    object = object.replace(u"\n", u"\\u000a")
+                    object = object.replace("\\", "\\u005c")
+                    object = object.replace("\n", "\\u000a")
                     object = object.encode('raw-unicode-escape')
                     self.write(UNICODE + object + '\n')
                 else:

@@ -394,11 +394,15 @@ def f():
     if z != 2: raise TestFailed, 'exec \'z=1+1\''
     z = None
     del z
+    import types
+    if hasattr(types, "UnicodeType"):
+        exec r"""if 1:
     exec u'z=1+1\n'
     if z != 2: raise TestFailed, 'exec u\'z=1+1\'\\n'
     del z
     exec u'z=1+1'
     if z != 2: raise TestFailed, 'exec u\'z=1+1\''
+"""
 f()
 g = {}
 exec 'z = 1' in g
