@@ -1148,7 +1148,7 @@ struct_pack(self, args)
 	char *fmt;
 	int size, num;
 	int i, n;
-	char *s, *res, *restart;
+	char *s, *res, *restart, *nres;
 	char c;
 
 	if (args == NULL || !PyTuple_Check(args) ||
@@ -1186,7 +1186,10 @@ struct_pack(self, args)
 		e = getentry(c, f);
 		if (e == NULL)
 			goto fail;
-		res = restart + align((int)(res-restart), c, e);
+		nres = restart + align((int)(res-restart), c, e);
+		/* Fill padd bytes with zeros */
+		while (res < nres)
+			*res++ = '\0';
 		if (num == 0 && c != 's')
 			continue;
 		do {
