@@ -39,7 +39,8 @@ symtable_symtable(PyObject *self, PyObject *args)
 
 static PyMethodDef symtable_methods[] = {
 	{"symtable",	symtable_symtable,	METH_VARARGS,
-	 "Return symbol and scope dictionaries used internally by compiler."},
+	 PyDoc_STR("Return symbol and scope dictionaries"
+	 	   " used internally by compiler.")},
 	{NULL,		NULL}		/* sentinel */
 };
 

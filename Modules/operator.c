@@ -146,9 +146,9 @@ op_delslice(PyObject *s, PyObject *a)
 
 #undef spam1
 #undef spam2
-#define spam1(OP,DOC) {#OP, OP, METH_VARARGS, DOC},
+#define spam1(OP,DOC) {#OP, OP, METH_VARARGS, PyDoc_STR(DOC)},
 #define spam2(OP,ALTOP,DOC) {#OP, op_##OP, METH_VARARGS, DOC}, \
-			   {#ALTOP, op_##OP, METH_VARARGS, DOC}, 
+			   {#ALTOP, op_##OP, METH_VARARGS, PyDoc_STR(DOC)}, 
 
 static struct PyMethodDef operator_methods[] = {
 

@@ -442,15 +442,15 @@ parser_issuite(PyST_Object *self, PyObject *args, PyObject *kw)
 static PyMethodDef
 parser_methods[] = {
     {"compile",         (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
-        "Compile this ST object into a code object."},
+        PyDoc_STR("Compile this ST object into a code object.")},
     {"isexpr",          (PyCFunction)parser_isexpr,     PUBLIC_METHOD_TYPE,
-        "Determines if this ST object was created from an expression."},
+        PyDoc_STR("Determines if this ST object was created from an expression.")},
     {"issuite",         (PyCFunction)parser_issuite,    PUBLIC_METHOD_TYPE,
-        "Determines if this ST object was created from a suite."},
+        PyDoc_STR("Determines if this ST object was created from a suite.")},
     {"tolist",          (PyCFunction)parser_st2list,    PUBLIC_METHOD_TYPE,
-        "Creates a list-tree representation of this ST."},
+        PyDoc_STR("Creates a list-tree representation of this ST.")},
     {"totuple",         (PyCFunction)parser_st2tuple,   PUBLIC_METHOD_TYPE,
-        "Creates a tuple-tree representation of this ST."},
+        PyDoc_STR("Creates a tuple-tree representation of this ST.")},
 
     {NULL, NULL, 0, NULL}
 };
@@ -2816,37 +2816,37 @@ parser__pickler(PyObject *self, PyObject *args)
  */
 static PyMethodDef parser_functions[] =  {
     {"ast2tuple",       (PyCFunction)parser_st2tuple,  PUBLIC_METHOD_TYPE,
-        "Creates a tuple-tree representation of an ST."},
+        PyDoc_STR("Creates a tuple-tree representation of an ST.")},
     {"ast2list",        (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
-        "Creates a list-tree representation of an ST."},
+        PyDoc_STR("Creates a list-tree representation of an ST.")},
     {"compileast",      (PyCFunction)parser_compilest, PUBLIC_METHOD_TYPE,
-        "Compiles an ST object into a code object."},
+        PyDoc_STR("Compiles an ST object into a code object.")},
     {"compilest",      (PyCFunction)parser_compilest,  PUBLIC_METHOD_TYPE,
-        "Compiles an ST object into a code object."},
+        PyDoc_STR("Compiles an ST object into a code object.")},
     {"expr",            (PyCFunction)parser_expr,      PUBLIC_METHOD_TYPE,
-        "Creates an ST object from an expression."},
+        PyDoc_STR("Creates an ST object from an expression.")},
     {"isexpr",          (PyCFunction)parser_isexpr,    PUBLIC_METHOD_TYPE,
-        "Determines if an ST object was created from an expression."},
+        PyDoc_STR("Determines if an ST object was created from an expression.")},
     {"issuite",         (PyCFunction)parser_issuite,   PUBLIC_METHOD_TYPE,
-        "Determines if an ST object was created from a suite."},
+        PyDoc_STR("Determines if an ST object was created from a suite.")},
     {"suite",           (PyCFunction)parser_suite,     PUBLIC_METHOD_TYPE,
-        "Creates an ST object from a suite."},
+        PyDoc_STR("Creates an ST object from a suite.")},
     {"sequence2ast",    (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
-        "Creates an ST object from a tree representation."},
+        PyDoc_STR("Creates an ST object from a tree representation.")},
     {"sequence2st",     (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
-        "Creates an ST object from a tree representation."},
+        PyDoc_STR("Creates an ST object from a tree representation.")},
     {"st2tuple",        (PyCFunction)parser_st2tuple,  PUBLIC_METHOD_TYPE,
-        "Creates a tuple-tree representation of an ST."},
+        PyDoc_STR("Creates a tuple-tree representation of an ST.")},
     {"st2list",         (PyCFunction)parser_st2list,   PUBLIC_METHOD_TYPE,
-        "Creates a list-tree representation of an ST."},
+        PyDoc_STR("Creates a list-tree representation of an ST.")},
     {"tuple2ast",       (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
-        "Creates an ST object from a tree representation."},
+        PyDoc_STR("Creates an ST object from a tree representation.")},
     {"tuple2st",        (PyCFunction)parser_tuple2st,  PUBLIC_METHOD_TYPE,
-        "Creates an ST object from a tree representation."},
+        PyDoc_STR("Creates an ST object from a tree representation.")},
 
     /* private stuff: support pickle module */
     {"_pickler",        (PyCFunction)parser__pickler,  METH_VARARGS,
-        "Returns the pickle magic to allow ST objects to be pickled."},
+        PyDoc_STR("Returns the pickle magic to allow ST objects to be pickled.")},
 
     {NULL, NULL, 0, NULL}
     };

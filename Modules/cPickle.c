@@ -2295,12 +2295,12 @@ Pickler_dump(Picklerobject *self, PyObject *args)
 static struct PyMethodDef Pickler_methods[] = 
 {
   {"dump",          (PyCFunction)Pickler_dump,  METH_VARARGS,
-   "dump(object) --"
-   "Write an object in pickle format to the object's pickle stream"},
+   PyDoc_STR("dump(object) -- "
+   "Write an object in pickle format to the object's pickle stream")},
   {"clear_memo",  (PyCFunction)Pickle_clear_memo,  METH_NOARGS,
-   "clear_memo() -- Clear the picklers memo"},
+   PyDoc_STR("clear_memo() -- Clear the picklers memo")},
   {"getvalue",  (PyCFunction)Pickle_getvalue,  METH_VARARGS,
-   "getvalue() -- Finish picking a list-based pickle"},
+   PyDoc_STR("getvalue() -- Finish picking a list-based pickle")},
   {NULL,                NULL}           /* sentinel */
 };
 
@@ -4301,15 +4301,16 @@ Unpickler_noload(Unpicklerobject *self, PyObject *args)
 
 static struct PyMethodDef Unpickler_methods[] = {
   {"load",         (PyCFunction)Unpickler_load,   METH_VARARGS,
-   "load() -- Load a pickle"
+   PyDoc_STR("load() -- Load a pickle")
   },
   {"noload",         (PyCFunction)Unpickler_noload,   METH_VARARGS,
+   PyDoc_STR(
    "noload() -- not load a pickle, but go through most of the motions\n"
    "\n"
    "This function can be used to read past a pickle without instantiating\n"
    "any objects or importing any modules.  It can also be used to find all\n"
    "persistent references without instantiating any objects or importing\n"
-   "any modules.\n"
+   "any modules.\n")
   },
   {NULL,              NULL}           /* sentinel */
 };
@@ -4648,34 +4649,34 @@ static PyTypeObject Unpicklertype = {
 
 static struct PyMethodDef cPickle_methods[] = {
   {"dump",         (PyCFunction)cpm_dump,         METH_VARARGS,
-   "dump(object, file, [binary]) --"
+   PyDoc_STR("dump(object, file, [binary]) --"
    "Write an object in pickle format to the given file\n"
    "\n"
    "If the optional argument, binary, is provided and is true, then the\n"
    "pickle will be written in binary format, which is more space and\n"
-   "computationally efficient. \n"
+   "computationally efficient. \n")
   },
   {"dumps",        (PyCFunction)cpm_dumps,        METH_VARARGS,
-   "dumps(object, [binary]) --"
+   PyDoc_STR("dumps(object, [binary]) --"
    "Return a string containing an object in pickle format\n"
    "\n"
    "If the optional argument, binary, is provided and is true, then the\n"
    "pickle will be written in binary format, which is more space and\n"
-   "computationally efficient. \n"
+   "computationally efficient. \n")
   },
   {"load",         (PyCFunction)cpm_load,         METH_VARARGS,
-   "load(file) -- Load a pickle from the given file"},
+   PyDoc_STR("load(file) -- Load a pickle from the given file")},
   {"loads",        (PyCFunction)cpm_loads,        METH_VARARGS,
-   "loads(string) -- Load a pickle from the given string"},
+   PyDoc_STR("loads(string) -- Load a pickle from the given string")},
   {"Pickler",      (PyCFunction)get_Pickler,      METH_VARARGS,
-   "Pickler(file, [binary]) -- Create a pickler\n"
+   PyDoc_STR("Pickler(file, [binary]) -- Create a pickler\n"
    "\n"
    "If the optional argument, binary, is provided and is true, then\n"
    "pickles will be written in binary format, which is more space and\n"
-   "computationally efficient. \n"
+   "computationally efficient. \n")
   },
   {"Unpickler",    (PyCFunction)get_Unpickler,    METH_VARARGS,
-   "Unpickler(file) -- Create an unpickler"},
+   PyDoc_STR("Unpickler(file) -- Create an unpickler")},
   { NULL, NULL }
 };
 
