@@ -522,6 +522,11 @@ test:		all platform
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 
+testall:	all platform
+		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
+		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
+		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) -uall
+
 QUICKTESTOPTS=	$(TESTOPTS) -x test_thread test_signal test_strftime \
 		test_unicodedata test_re test_sre test_select test_poll \
 		test_linuxaudiodev test_struct test_sunaudiodev test_zlib
