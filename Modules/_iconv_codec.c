@@ -144,7 +144,9 @@ iconvcodec_encode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
     }
 
     while (inplen > 0) {
-        if (iconv(self->enchdl, (char**)&inp, &inplen, &out, &outlen) == (size_t)-1) {
+        if (iconv(self->enchdl, (char**)&inp, &inplen, &out, &outlen)
+	    == (size_t)-1)
+	{
             char         reason[128];
             int          errpos;
 
@@ -247,8 +249,9 @@ errorexit_cbpad:        Py_XDECREF(retobj);
                 if (newpos < 0)
                     newpos = inputlen + newpos;
                 if (newpos < 0 || newpos > inputlen) {
-                    PyErr_Format(PyExc_IndexError, "position %ld from error handler"
-                          " out of bounds", newpos);
+                    PyErr_Format(PyExc_IndexError,
+			"position %ld from error handler out of bounds",
+			newpos);
                     goto errorexit;
                 }
                 if (newpos == inputlen)
@@ -476,8 +479,9 @@ errorexit_cbpad:        Py_DECREF(retobj);
                 if (newpos < 0)
                     newpos = inplen_total + newpos;
                 if (newpos < 0 || newpos > inplen_total) {
-                    PyErr_Format(PyExc_IndexError, "position %ld from error handler"
-                          " out of bounds", newpos);
+                    PyErr_Format(PyExc_IndexError,
+			"position %ld from error handler out of bounds",
+			newpos);
                     goto errorexit;
                 }
                 if (newpos == inplen_total)
@@ -496,7 +500,8 @@ errorexit_cbpad:        Py_DECREF(retobj);
 
         finalsize = (int)(out - out_top);
         if (finalsize != outlen_total) {
-            if (PyUnicode_Resize(&outputobj, finalsize / Py_UNICODE_SIZE) == -1)
+            if (PyUnicode_Resize(&outputobj, finalsize / Py_UNICODE_SIZE)
+		== -1)
                 goto errorexit;
         }
 
@@ -668,14 +673,21 @@ init_iconv_codec(void)
 
     iconv_t hdl = iconv_open(UNICODE_ENCODING, "ASCII");
 
-    if (hdl == (iconv_t)-1)
-        Py_FatalError("can't initialize the _iconv_codec module: iconv_open() failed");
+    if (hdl == (iconv_t)-1) {
+        PyErr_SetString(PyExc_RuntimeError,
+	  "can't initialize the _iconv_codec module: iconv_open() failed");
+	return;
+    }
 
     res = iconv(hdl, &inptr, &insize, &outptr, &outsize);
-    if (res == (size_t)-1)
-        Py_FatalError("can't initialize the _iconv_codec module: iconv() failed");
+    if (res == (size_t)-1) {
+        PyErr_SetString(PyExc_RuntimeError,
+	  "can't initialize the _iconv_codec module: iconv() failed");
+	return;
+    }
 
-    /* Check whether conv() returned native endianess or not for the chosen encoding */
+    /* Check whether conv() returned native endianess or not for the chosen
+       encoding */
     if (out == 0x1)
        byteswap = 0;
 #if Py_UNICODE_SIZE == 2
@@ -684,8 +696,12 @@ init_iconv_codec(void)
     else if (out == 0x01000000)
 #endif
        byteswap = 1;
-    else
-        Py_FatalError("can't initialize the _iconv_codec module: mixed endianess");
+    else {
+	iconv_close(hdl);
+        PyErr_SetString(PyExc_RuntimeError,
+	  "can't initialize the _iconv_codec module: mixed endianess");
+	return;
+    }
     iconv_close(hdl);
 
     iconvcodec_Type.ob_type = &PyType_Type;
@@ -697,7 +713,8 @@ init_iconv_codec(void)
     PyModule_AddStringConstant(m, "internal_encoding", UNICODE_ENCODING);
 
     if (PyErr_Occurred())
-        Py_FatalError("can't initialize the _iconv_codec module");
+        PyErr_SetString(PyExc_RuntimeError,
+			"can't initialize the _iconv_codec module");
 }
 
 /*
