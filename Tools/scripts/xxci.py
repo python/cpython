@@ -11,6 +11,8 @@ import stat
 import path
 import commands
 
+EXECMAGIC = '\001\140\000\010'
+
 MAXSIZE = 200*1024 # Files this big must be binaries and are skipped.
 
 def getargs():
@@ -30,7 +32,8 @@ def getargs():
 badnames = ['tags', 'TAGS', 'xyzzy', 'nohup.out', 'core']
 badprefixes = ['.', ',', '@', '#', 'o.']
 badsuffixes = \
-	['~', '.a', '.o', '.old', '.bak', '.orig', '.new', '.prev', '.not']
+	['~', '.a', '.o', '.old', '.bak', '.orig', '.new', '.prev', '.not', \
+	 '.pyc', '.elc']
 # XXX Should generalize even more to use fnmatch!
 
 def skipfile(file):
@@ -43,7 +46,14 @@ def skipfile(file):
 		st = posix.stat(file)
 	except posix.error:
 		return 1 # Doesn't exist -- skip it
-	return st[stat.ST_SIZE] >= MAXSIZE
+	if st[stat.ST_SIZE] >= MAXSIZE: return 1
+	# Skip executables
+	try:
+		data = open(file, 'r').read(len(EXECMAGIC))
+		if data = EXECMAGIC: return 1
+	except:
+		pass
+	return 0
 
 def badprefix(file):
 	for bad in badprefixes:
