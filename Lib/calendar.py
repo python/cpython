@@ -91,7 +91,8 @@ def zd(s):
 
 # Turn calendar time as returned by gmtime() into a string
 # (the yday parameter is for compatibility with gmtime())
-def asctime(year, month, day, hours, mins, secs, yday, wday):
+def asctime(arg):
+	year, month, day, hours, mins, secs, yday, wday = arg
 	s = day_abbr[wday] + ' ' + month_abbr[month] + ' ' + zd(`day`)
 	s = s + ' ' + dd(`hours`) + ':' + dd(`mins`) + ':' + dd(`secs`)
 	return s + ' ' + `year`
