@@ -20,12 +20,14 @@ incomplete = re.compile('&([a-zA-Z][a-zA-Z0-9]*|#[0-9]*)?|'
                               '/([a-zA-Z][^<>]*)?|'
                               '![^<>]*)?')
 
-entityref = re.compile('&([a-zA-Z][a-zA-Z0-9]*)[^a-zA-Z0-9]')
+entityref = re.compile('&([a-zA-Z][-.a-zA-Z0-9]*)[^a-zA-Z0-9]')
 charref = re.compile('&#([0-9]+)[^0-9]')
 
 starttagopen = re.compile('<[>a-zA-Z]')
 shorttagopen = re.compile('<[a-zA-Z][a-zA-Z0-9]*/')
 shorttag = re.compile('<([a-zA-Z][a-zA-Z0-9]*)/([^/]*)/')
+piopen = re.compile('<\?')
+piclose = re.compile('>')
 endtagopen = re.compile('</[<>a-zA-Z]')
 endbracket = re.compile('[<>]')
 special = re.compile('<![^<>]*>')
@@ -33,7 +35,7 @@ commentopen = re.compile('<!--')
 commentclose = re.compile('--[%s]*>' % string.whitespace)
 tagfind = re.compile('[a-zA-Z][a-zA-Z0-9]*')
 attrfind = re.compile(
-    '[ \t\n\r]+([a-zA-Z_][-.a-zA-Z_0-9]*)'
+    '[%s]+([a-zA-Z_][-.a-zA-Z_0-9]*)' % string.whitespace
     + ('([%s]*=[%s]*' % (string.whitespace, string.whitespace))
     + r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./:+*%?!\(\)_#=~]*))?')
 
@@ -127,6 +129,15 @@ class SGMLParser:
                     if k < 0: break
                     i = i+k
                     continue
+                if piopen.match(rawdata, i):
+                    if self.literal:
+                        self.handle_data(rawdata[i])
+                        i = i+1
+                        continue
+                    k = self.parse_pi(i)
+                    if k < 0: break
+                    i = i+k
+                    continue                    
                 match = special.match(rawdata, i)
                 if match:
                     if self.literal:
@@ -184,6 +195,19 @@ class SGMLParser:
         j = match.end(0)
         return j-i
 
+    # Internal -- parse processing instr, return length or -1 if not terminated
+    def parse_pi(self, i):
+        rawdata = self.rawdata
+        if rawdata[i:i+2] <> '<?':
+            raise RuntimeError, 'unexpected call to handle_pi'
+        match = piclose.search(rawdata, i+2)
+        if not match:
+            return -1
+        j = match.start(0)
+        self.handle_pi(rawdata[i+2: j])
+        j = match.end(0)
+        return j-i
+    
     # Internal -- handle starttag, return length or -1 if not terminated
     def parse_starttag(self, i):
         rawdata = self.rawdata
@@ -346,6 +370,10 @@ class SGMLParser:
 
     # Example -- handle comment, could be overridden
     def handle_comment(self, data):
+        pass
+
+    # Example -- handle processing instruction, could be overridden
+    def handle_pi(self, data):
         pass
 
     # To be overridden -- handlers for unknown objects
