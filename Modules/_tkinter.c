@@ -576,7 +576,7 @@ static void DisableEventHook(void); /* Forward */
 
 static TkappObject *
 Tkapp_New(char *screenName, char *baseName, char *className,
-	  int interactive, int wantobjects, int	wantTk)
+	  int interactive, int wantobjects, int	wantTk, int sync, char *use)
 {
 	TkappObject *v;
 	char *argv0;
@@ -642,6 +642,35 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 
 	if (! wantTk) {
 	    Tcl_SetVar(v->interp, "_tkinter_skip_tk_init", "1",	TCL_GLOBAL_ONLY);
+	}
+
+	/* some initial arguments need to be in argv */
+	if (sync || use) {
+		int len = 0;
+		if (sync)
+			len += sizeof "-sync";
+		if (use)
+			len += strlen(use) + sizeof "-use ";
+
+		char *args = (char*)ckalloc(len);
+		if (!args) {
+			PyErr_NoMemory();
+			Py_DECREF(v);
+			return NULL;
+		}
+
+		args[0] = '\0';
+		if (sync)
+			strcat(args, "-sync");
+		if (use) {
+			if (sync)
+				strcat(args, " ");
+			strcat(args, "-use ");
+			strcat(args, use);
+		}
+
+		Tcl_SetVar(v->interp, "argv", args, TCL_GLOBAL_ONLY);
+		ckfree(args);
 	}
 
 	if (Tcl_AppInit(v->interp) != TCL_OK)
@@ -2835,6 +2864,8 @@ Tkinter_Create(PyObject *self, PyObject *args)
 	int interactive = 0;
 	int wantobjects = 0;
 	int wantTk = 1;	/* If false, then Tk_Init() doesn't get	called */
+	int sync = 0; /* pass -sync to wish */
+	char *use = NULL; /* pass -use to wish */
 
 	baseName = strrchr(Py_GetProgramName(), '/');
 	if (baseName != NULL)
@@ -2843,13 +2874,15 @@ Tkinter_Create(PyObject *self, PyObject *args)
 		baseName = Py_GetProgramName();
 	className = "Tk";
   
-	if (!PyArg_ParseTuple(args, "|zssiii:create",
+	if (!PyArg_ParseTuple(args, "|zssiiiiz:create",
 			      &screenName, &baseName, &className,
-			      &interactive, &wantobjects, &wantTk))
+			      &interactive, &wantobjects, &wantTk,
+			      &sync, &use))
 		return NULL;
 
 	return (PyObject *) Tkapp_New(screenName, baseName, className, 
-				      interactive, wantobjects,	wantTk);
+				      interactive, wantobjects,	wantTk,
+				      sync, use);
 }
 
 static PyObject *
