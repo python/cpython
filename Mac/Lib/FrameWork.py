@@ -27,6 +27,11 @@ import types
 
 import EasyDialogs
 
+try:
+	MyFrontWindow = FrontNonFloatingWindow
+except NameError:
+	MyFrontWindow = FrontWindow
+
 kHighLevelEvent = 23	# Don't know what header file this should come from
 SCROLLBARWIDTH = 16		# Again, not a clue...
 
@@ -153,7 +158,8 @@ class Application:
 	
 	def mainloop(self, mask = everyEvent, wait = None):
 		self.quitting = 0
-		saveparams = apply(MacOS.SchedParams, self.schedparams)
+		if hasattr(MacOS, 'SchedParams'):
+			saveparams = apply(MacOS.SchedParams, self.schedparams)
 		try:
 			while not self.quitting:
 				try:
@@ -164,7 +170,8 @@ class Application:
 					# applications.
 					break
 		finally:
-			apply(MacOS.SchedParams, saveparams)
+			if hasattr(MacOS, 'SchedParams'):
+				apply(MacOS.SchedParams, saveparams)
 	
 	def dopendingevents(self, mask = everyEvent):
 		"""dopendingevents - Handle all pending events"""
@@ -214,6 +221,8 @@ class Application:
 		
 	def asyncevents(self, onoff):
 		"""asyncevents - Set asynchronous event handling on or off"""
+		if MacOS.runtimemodel == 'macho':
+			raise 'Unsupported in MachoPython'
 		old = self._doing_asyncevents
 		if old:
 			MacOS.SetEventHandler()
@@ -257,7 +266,8 @@ class Application:
 			except AttributeError:
 				# Not menubar or something, so assume someone
 				# else's window
-				MacOS.HandleEvent(event)
+				if hasattr(MacOS, 'HandleEvent'):
+					MacOS.HandleEvent(event)
 				return		
 		elif self._windows.has_key(wid):
 			# It is a window. Hand off to correct window.
@@ -272,14 +282,17 @@ class Application:
 		handler(partcode, wid, event)
 
 	def do_inSysWindow(self, partcode, window, event):
-		MacOS.HandleEvent(event)
+		if hasattr(MacOS, 'HandleEvent'):
+			MacOS.HandleEvent(event)
 	
 	def do_inDesk(self, partcode, window, event):
-		MacOS.HandleEvent(event)
+		if hasattr(MacOS, 'HandleEvent'):
+			MacOS.HandleEvent(event)
 	
 	def do_inMenuBar(self, partcode, window, event):
 		if not self.menubar:
-			MacOS.HandleEvent(event)
+			if hasattr(MacOS, 'HandleEvent'):
+				MacOS.HandleEvent(event)
 			return
 		(what, message, when, where, modifiers) = event
 		result = MenuSelect(where)
@@ -294,7 +307,8 @@ class Application:
 			HiliteMenu(0)
 	
 	def do_menu(self, id, item, window, event):
-		MacOS.OutputSeen()
+		if hasattr(MacOS, 'OutputSeen'):
+			MacOS.OutputSeen()
 		self.menubar.dispatch(id, item, window, event)
 	
 	
@@ -303,11 +317,13 @@ class Application:
 		if DEBUG: print "Mouse down at global:", where
 		if DEBUG: print "\tUnknown part code:", partcode
 		if DEBUG: print "\tEvent:", self.printevent(event)
-		MacOS.HandleEvent(event)
+		if hasattr(MacOS, 'HandleEvent'):
+			MacOS.HandleEvent(event)
 		
 	def do_unknownwindow(self, partcode, window, event):
 		if DEBUG: print 'Unknown window:', window
-		MacOS.HandleEvent(event)
+		if hasattr(MacOS, 'HandleEvent'):
+			MacOS.HandleEvent(event)
 	
 	def do_keyDown(self, event):
 		self.do_key(event)
@@ -332,11 +348,12 @@ class Application:
 				raise self
 			else:
 				if not self.menubar:
-					MacOS.HandleEvent(event)
+					if hasattr(MacOS, 'HandleEvent'):
+						MacOS.HandleEvent(event)
 				return
 		else:
 			# See whether the front window wants it
-			w = FrontWindow()
+			w = MyFrontWindow()
 			if w and self._windows.has_key(w):
 				window = self._windows[w]
 				try:
@@ -356,7 +373,8 @@ class Application:
 			window = self._windows[wid]
 			window.do_rawupdate(wid, event)
 		else:
-			MacOS.HandleEvent(event)
+			if hasattr(MacOS, 'HandleEvent'):
+				MacOS.HandleEvent(event)
 	
 	def do_activateEvt(self, event):
 		(what, message, when, where, modifiers) = event
@@ -365,7 +383,8 @@ class Application:
 			window = self._windows[wid]
 			window.do_activate(modifiers & 1, event)
 		else:
-			MacOS.HandleEvent(event)
+			if hasattr(MacOS, 'HandleEvent'):
+				MacOS.HandleEvent(event)
 	
 	def do_osEvt(self, event):
 		(what, message, when, where, modifiers) = event
@@ -379,7 +398,7 @@ class Application:
 	
 	def do_suspendresume(self, event):
 		(what, message, when, where, modifiers) = event
-		wid = FrontWindow()
+		wid = MyFrontWindow()
 		if wid and self._windows.has_key(wid):
 			window = self._windows[wid]
 			window.do_activate(message & 1, event)
@@ -483,7 +502,7 @@ class MenuBar:
 			for i in range(len(menu.items)):
 				label, shortcut, callback, kind = menu.items[i]
 				if type(callback) == types.StringType:
-					wid = Win.FrontWindow()
+					wid = MyFrontWindow()
 					if wid and self.parent._windows.has_key(wid):
 						window = self.parent._windows[wid]
 						if hasattr(window, "domenu_" + callback):
@@ -575,7 +594,7 @@ class Menu:
 				menuhandler = callback
 			else: 
 				# callback is string
-				wid = Win.FrontWindow()
+				wid = MyFrontWindow()
 				if wid and self.bar.parent._windows.has_key(wid):
 					window = self.bar.parent._windows[wid]
 					if hasattr(window, "domenu_" + callback):
@@ -620,7 +639,7 @@ class PopupMenu(Menu):
 		id = (reply & 0xffff0000) >> 16
 		item = reply & 0xffff
 		if not window:
-			wid = Win.FrontWindow()
+			wid = MyFrontWindow()
 			try:
 				window = self.bar.parent._windows[wid]
 			except:
@@ -783,7 +802,7 @@ class Window:
 		# If we're not frontmost, select ourselves and wait for
 		# the activate event.
 		#
-		if FrontWindow() <> window:
+		if MyFrontWindow() <> window:
 			window.SelectWindow()
 			return
 		# We are. Handle the event.
@@ -832,7 +851,7 @@ class ControlsWindow(Window):
 		if DEBUG: print "control hit in", window, "on", control, "; pcode =", pcode
 
 	def do_inContent(self, partcode, window, event):
-		if FrontWindow() <> window:
+		if MyFrontWindow() <> window:
 			window.SelectWindow()
 			return
 		(what, message, when, where, modifiers) = event
