@@ -247,7 +247,7 @@ l2h: l2hapi l2hext l2hlib l2htut
 
 l2htut: tut.dvi myformat.perl
 	$(L2H) $(L2HARGS) tut.tex
-	(cd tut; ../node2label.pl footnode.html tut.html node*.html)
+	(cd tut; ../node2label.pl *.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<tut/tut.html >tut/xxx
 	mv tut/xxx tut/tut.html
@@ -255,7 +255,7 @@ l2htut: tut.dvi myformat.perl
 
 l2hext: ext.dvi myformat.perl
 	$(L2H) $(L2HARGS) ext.tex
-	(cd ext; ../node2label.pl footnode.html ext.html node*.html)
+	(cd ext; ../node2label.pl *.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<ext/ext.html >ext/xxx
 	mv ext/xxx ext/ext.html
@@ -266,16 +266,15 @@ l2hlib: lib.dvi myformat.perl
 	mv lib1.aux lib.aux
 	if [ -d lib ] ; then rm -f lib/*.html ; fi
 	$(L2H) $(L2HARGS) lib.tex
-	(cd lib; ../node2label.pl footnode.html lib.html node*.html)
+	(cd lib; ../node2label.pl *.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<lib/lib.html >lib/xxx
 	mv lib/xxx lib/lib.html
 	ln -s lib.html lib/index.html || true
 
-# note that the node2label.pl command doesn't include a footnode.html
 l2hapi: api.dvi myformat.perl
 	$(L2H) $(L2HARGS) api.tex
-	(cd api; ../node2label.pl api.html node*.html)
+	(cd api; ../node2label.pl *.html)
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<api/api.html >api/xxx
 	mv api/xxx api/api.html
