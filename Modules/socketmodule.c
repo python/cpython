@@ -874,7 +874,7 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 		return ret;
 	}
 
-#if defined(AF_UNIX) && !defined(PYOS_OS2)
+#if defined(AF_UNIX)
 	case AF_UNIX:
 	{
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
@@ -948,7 +948,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 {
 	switch (s->sock_family) {
 
-#if defined(AF_UNIX) && !defined(PYOS_OS2)
+#if defined(AF_UNIX)
 	case AF_UNIX:
 	{
 		struct sockaddr_un* addr;
@@ -1143,7 +1143,7 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 {
 	switch (s->sock_family) {
 
-#if defined(AF_UNIX) && !defined(PYOS_OS2)
+#if defined(AF_UNIX)
 	case AF_UNIX:
 	{
 		*len_ret = sizeof (struct sockaddr_un);
@@ -3649,7 +3649,7 @@ init_socket(void)
 #ifdef AF_INET6
 	PyModule_AddIntConstant(m, "AF_INET6", AF_INET6);
 #endif /* AF_INET6 */
-#if defined(AF_UNIX) && !defined(PYOS_OS2)
+#if defined(AF_UNIX)
 	PyModule_AddIntConstant(m, "AF_UNIX", AF_UNIX);
 #endif /* AF_UNIX */
 #ifdef AF_AX25
