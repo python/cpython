@@ -31,8 +31,9 @@ $BODYTEXT = 'bgcolor="#ffffff"';
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
 
-# default # of columns for the index
+# default # of columns for the indexes
 $INDEX_COLUMNS = 2;
+$MODULE_INDEX_COLUMNS = 5;
 
 
 # A little painful, but lets us clean up the top level directory a little,
@@ -194,15 +195,22 @@ sub make_index_entry {
 
 
 sub insert_index{
-    my($mark,$datafile) = @_;
-    my $index = `$myrootdir/tools/buildindex.py --columns $INDEX_COLUMNS $datafile`;
+    my($mark,$datafile,$columns,$letters) = @_;
+    my $prog = "$myrootdir/tools/buildindex.py";
+    my $index;
+    if ($letters) {
+	$index = `$prog --columns $columns --letters $datafile`;
+    }
+    else {
+	$index = `$prog --columns $columns $datafile`;
+    }
     s/$mark/$index/;
 }
 
 sub add_idx{
     print "\nDoing the index ...";
     close(IDXFILE);
-    insert_index($idx_mark, 'index.dat');
+    insert_index($idx_mark, 'index.dat', $INDEX_COLUMNS, 1);
 }
 
 
@@ -218,7 +226,7 @@ sub add_module_idx{
 	print MODIDXFILE "$Modules{$key}" . $IDXFILE_FIELD_SEP . "$key###\n";
     }
     close(MODIDXFILE);
-    insert_index($idx_module_mark, 'modindex.dat');
+    insert_index($idx_module_mark, 'modindex.dat', $MODULE_INDEX_COLUMNS, 0);
 }
 
 # replace both indexes as needed:
