@@ -5,7 +5,8 @@ What's Fixed in Python 2.0.1
 
 - Bogus indentation in Lib/statcache.py was fixed.
 
-- A few small nits in the documentation were fixed.
+- A few small nits in the documentation were fixed and the new license
+  was included there.
 
 What's Fixed in Python 2.0.1c1
 ==============================
