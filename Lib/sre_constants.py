@@ -7,7 +7,7 @@
 # Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
 #
 # Portions of this engine have been developed in cooperation with
-# CNRI.  Hewlett-Packard provided funding for 1.6 integration and
+# CNRI.  Hewlett-Packard provided funding for 2.0 integration and
 # other compatibility work.
 #
 

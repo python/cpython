@@ -25,7 +25,7 @@
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
  * Portions of this engine have been developed in cooperation with
- * CNRI.  Hewlett-Packard provided funding for 1.6 integration and
+ * CNRI.  Hewlett-Packard provided funding for 2.0 integration and
  * other compatibility work.
  */
 
@@ -52,7 +52,7 @@ char copyright[] = " SRE 0.9.4 Copyright (c) 1997-2000 by Secret Labs AB ";
 #undef DEBUG
 
 #if PY_VERSION_HEX >= 0x01060000
-/* defining this enables unicode support (default under 1.6) */
+/* defining this enables unicode support (default under 1.6a1 and later) */
 #define HAVE_UNICODE
 #endif
 
@@ -143,11 +143,18 @@ static unsigned int sre_lower_unicode(unsigned int ch)
 {
     return (unsigned int) Py_UNICODE_TOLOWER((Py_UNICODE)(ch));
 }
-#define SRE_UNI_TO_LOWER(ch) Py_UNICODE_TOLOWER((Py_UNICODE)(ch))
+
+#if !defined(Py_UNICODE_ISALNUM)
+/* FIXME: workaround.  should be fixed in unicodectype.c */
+#define Py_UNICODE_ISALNUM(ch)\
+    (Py_UNICODE_ISLOWER(ch) || Py_UNICODE_ISUPPER(ch) ||\
+     Py_UNICODE_ISTITLE(ch) || Py_UNICODE_ISDIGIT(ch))
+#endif
+
 #define SRE_UNI_IS_DIGIT(ch) Py_UNICODE_ISDIGIT((Py_UNICODE)(ch))
 #define SRE_UNI_IS_SPACE(ch) Py_UNICODE_ISSPACE((Py_UNICODE)(ch))
 #define SRE_UNI_IS_LINEBREAK(ch) Py_UNICODE_ISLINEBREAK((Py_UNICODE)(ch))
-#define SRE_UNI_IS_ALNUM(ch) ((ch) < 256 ? isalnum((ch)) : 0)
+#define SRE_UNI_IS_ALNUM(ch) Py_UNICODE_ISALNUM((Py_UNICODE)(ch))
 #define SRE_UNI_IS_WORD(ch) (SRE_IS_ALNUM((ch)) || (ch) == '_')
 #endif
 
