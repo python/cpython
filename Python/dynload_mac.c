@@ -40,7 +40,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define CFragConnectionID ConnectionID
 #define kLoadCFrag 0x01
 #endif
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 #include "TFileSpec.h"		/* for Path2FSSpec() */
 #endif
 #include <Files.h>
@@ -78,7 +78,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	Ptr mainAddr;
 	Str255 errMessage;
 	OSErr err;
-#ifndef USE_GUSI
+#ifndef USE_GUSI1
 	Boolean isfolder, didsomething;
 #endif
 	char buf[512];
@@ -87,7 +87,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 	CFragSymbolClass class;
 		
 	/* First resolve any aliases to find the real file */
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 	err = Path2FSSpec(pathname, &libspec);
 #else
 	(void)FSMakeFSSpec(0, 0, Pstring(pathname), &libspec);
