@@ -9,9 +9,14 @@
 
 \section{Introduction}
 
-{\large This is a draft document; please report inaccuracies and 
-omissions to the authors. \\
-XXX marks locations where fact-checking or rewriting is still needed.
+{\large This is a draft document; please report inaccuracies and
+omissions to the authors.  This document should not be treated as
+definitive; features described here might be removed or changed before
+Python 1.6final. \\ 
+
+XXX marks locations in the text where fact-checking or rewriting is
+still needed.  
+
 }
 
 A new release of Python, version 1.6, will be released some time this
@@ -65,7 +70,7 @@ throughout a Python program.  If an encoding isn't specified, the
 default encoding is usually 7-bit ASCII, though it can be changed for
 your Python installation by calling the
 \function{sys.setdefaultencoding(\var{encoding})} function in a
-customized version of \file{site.py}.
+customised version of \file{site.py}.
 
 Combining 8-bit and Unicode strings always coerces to Unicode, using
 the default ASCII encoding; the result of \code{'a' + u'bc'} is
@@ -125,8 +130,9 @@ the given encoding and return Unicode strings.
 
 \item \var{stream_writer}, similarly, is a class that supports
 encoding output to a stream.  \var{stream_writer(\var{file_obj})}
-returns an object that supports the \method{write()} and 
-\method{writelines()} methods.  These methods expect Unicode strings, translating them to the given encoding on output.
+returns an object that supports the \method{write()} and
+\method{writelines()} methods.  These methods expect Unicode strings,
+translating them to the given encoding on output.
 \end{itemize}
 
 For example, the following code writes a Unicode string into a file, 
@@ -365,6 +371,72 @@ For example, the number 8.1 can't be represented exactly in binary, so
 %into strings instead of classes, has been removed.  
 
 % ======================================================================
+\section{Optional Collection of Cycles}
+
+The C implementation of Python uses reference counting to implement
+garbage collection.  Every Python object maintains a count of the
+number of references pointing to itself, and adjusts the count as
+references are created or destroyed.  Once the reference count reaches
+zero, the object is no longer accessible, since you need to have a
+reference to an object to access it, and if the count is zero, no
+references exist any longer.  
+
+Reference counting has some pleasant properties: it's easy to
+understand and implement, and the resulting implementation is
+portable, fairly fast, and reacts well with other libraries that
+implement their own memory handling schemes.  The major problem with
+reference counting is that it sometimes doesn't realise that objects
+are no longer accessible, resulting in a memory leak.  This happens
+when there are cycles of references.
+
+Consider the simplest possible cycle, 
+a class instance which has a reference to itself:
+
+\begin{verbatim}
+instance = SomeClass()
+instance.myself = instance
+\end{verbatim}
+
+After the above two lines of code have been executed, the reference
+count of \code{instance} is 2; one reference is from the variable
+named \samp{'instance'}, and the other is from the \samp{myself}
+attribute of the instance.  
+
+If the next line of code is \code{del instance}, what happens?  The
+reference count of \code{instance} is decreased by 1, so it has a
+reference count of 1; the reference in the \samp{myself} attribute
+still exists.  Yet the instance is no longer accessible through Python
+code, and it could be deleted.  Several objects can participate in a
+cycle if they have references to each other, causing all of the
+objects to be leaked.
+
+An experimental step has been made toward fixing this problem.  When
+compiling Python, the \code{--with-cycle-gc} (XXX correct option
+flag?) option can be specified.  This causes a cycle detection
+algorithm to be periodically executed, which looks for inaccessible
+cycles and deletes the objects involved.  
+
+Why isn't this enabled by default?  Running the cycle detection
+algorithm takes some time, and some tuning will be required to
+minimize the overhead cost.  It's not yet obvious how much performance
+is lost, because benchmarking this is tricky and depends sensitively
+on how often the program creates and destroys objects.  XXX is this
+actually the correct reason?  Or is it fear of breaking software that
+runs happily while leaving garbage?
+
+Several people worked on this problem.  Early versions were written by
+XXX1, XXX2.  (I vaguely remember several people writing first cuts at this.  
+Anyone recall who?)
+The implementation that's in Python 1.6 is a rewritten version, this
+time done by Neil Schemenauer.  Lots of other people offered
+suggestions along the way, such as (in alphabetical order)
+Marc-Andr\'e Lemburg, Tim Peters, Greg Stein, Eric Tiedemann.  The
+March 2000 archives of the python-dev mailing list contain most of the
+relevant discussion, especially in the threads titled ``Reference
+cycle collection for Python'' and ``Finalization again''.
+
+
+% ======================================================================
 \section{Core Changes}
 
 Various minor changes have been made to Python's syntax and built-in
@@ -488,7 +560,7 @@ This means you no longer have to remember to write code such as
 
 The \file{Python/importdl.c} file, which was a mass of \#ifdefs to
 support dynamic loading on many different platforms, was cleaned up
-and reorganized by Greg Stein.  \file{importdl.c} is now quite small,
+and reorganised by Greg Stein.  \file{importdl.c} is now quite small,
 and platform-specific code has been moved into a bunch of
 \file{Python/dynload_*.c} files.  
 
@@ -535,6 +607,12 @@ which takes a socket object and returns an SSL socket.  The
 support ``https://'' URLs, though no one has implemented FTP or SMTP
 over SSL.  
 
+The \module{httplib} module has been rewritten by Greg Stein to
+support HTTP/1.1.  Backward compatibility with the 1.5 version of
+\module{httplib} is provided, though using HTTP/1.1 features such as
+pipelining will require rewriting code to use a different set of
+interfaces.
+
 The \module{Tkinter} module now supports Tcl/Tk version 8.1, 8.2, or
 8.3, and support for the older 7.x versions has been dropped.  The
 Tkinter module also supports displaying Unicode strings in Tk
@@ -543,10 +621,10 @@ widgets.
 The \module{curses} module has been greatly extended, starting from
 Oliver Andrich's enhanced version, to provide many additional
 functions from ncurses and SYSV curses, such as colour, alternative
-character set support, pads, and other new features.  This means the
-module is no longer compatible with operating systems that only have
-BSD curses, but there don't seem to be any currently maintained OSes
-that fall into this category.
+character set support, pads, and mouse support.  This means the module
+is no longer compatible with operating systems that only have BSD
+curses, but there don't seem to be any currently maintained OSes that
+fall into this category.
 
 As mentioned in the earlier discussion of 1.6's Unicode support, the
 underlying implementation of the regular expressions provided by the
@@ -608,6 +686,11 @@ DOS/Windows or \program{zip} on Unix, not to be confused with
 \program{gzip}-format files (which are supported by the \module{gzip}
 module)
 (Contributed by James C. Ahlstrom.)
+
+\item{\module{imputil}:} A module that provides a simpler way for
+writing customised import hooks, in comparison to the existing
+\module{ihooks} module.  (Implemented by Greg Stein, with much
+discussion on python-dev along the way.)
 
 \end{itemize}
 
