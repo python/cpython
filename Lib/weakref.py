@@ -57,6 +57,20 @@ class WeakValueDictionary(UserDict.UserDict):
         else:
             return o
 
+    def __contains__(self, key):
+        try:
+            o = self.data[key]()
+        except KeyError:
+            return False
+        return o is not None
+
+    def has_key(self, key):
+        try:
+            o = self.data[key]()
+        except KeyError:
+            return False
+        return o is not None
+
     def __repr__(self):
         return "<WeakValueDictionary at %s>" % id(self)
 
@@ -93,14 +107,22 @@ class WeakValueDictionary(UserDict.UserDict):
         return L
 
     def iteritems(self):
-        return WeakValuedItemIterator(self)
+        for wr in self.data.itervalues():
+            value = wr()
+            if value is not None:
+                yield wr.key, value
 
     def iterkeys(self):
         return self.data.iterkeys()
-    __iter__ = iterkeys
+
+    def __iter__(self):
+        return self.data.iterkeys()
 
     def itervalues(self):
-        return WeakValuedValueIterator(self)
+        for wr in self.data.itervalues():
+            obj = wr()
+            if obj is not None:
+                yield obj
 
     def popitem(self):
         while 1:
@@ -236,11 +258,19 @@ class WeakKeyDictionary(UserDict.UserDict):
         return L
 
     def iteritems(self):
-        return WeakKeyedItemIterator(self)
+        for wr, value in self.data.iteritems():
+            key = wr()
+            if key is not None:
+                yield key, value
 
     def iterkeys(self):
-        return WeakKeyedKeyIterator(self)
-    __iter__ = iterkeys
+        for wr in self.data.iterkeys():
+            obj = wr()
+            if obj is not None:
+                yield obj
+
+    def __iter__(self):
+        return self.iterkeys()
 
     def itervalues(self):
         return self.data.itervalues()
@@ -275,28 +305,3 @@ class WeakKeyDictionary(UserDict.UserDict):
                 d[ref(key, self._remove)] = value
         if len(kwargs):
             self.update(kwargs)
-
-
-def WeakKeyedKeyIterator(weakdict):
-    for wr in weakdict.data.iterkeys():
-        obj = wr()
-        if obj is not None:
-            yield obj
-
-def WeakKeyedItemIterator(weakdict):
-    for wr, value in weakdict.data.iteritems():
-        key = wr()
-        if key is not None:
-            yield key, value
-
-def WeakValuedValueIterator(weakdict):
-    for wr in weakdict.data.itervalues():
-        obj = wr()
-        if obj is not None:
-            yield obj
-
-def WeakValuedItemIterator(weakdict):
-    for wr in weakdict.data.itervalues():
-        value = wr()
-        if value is not None:
-            yield wr.key, value
