@@ -21,6 +21,11 @@ Library
 IDLE
 ----
 
+- Bug 778400:  IDLE hangs when selecting "Edit with IDLE" from explorer.
+  This was unique to Windows, and was fixed by adding an -n switch to
+  the command the Windows installer creates to execute "Edit with IDLE"
+  context-menu actions.
+
 - IDLE displays a new message upon startup:  some "personal firewall"
   kinds of programs (for example, ZoneAlarm) open a dialog of their
   own when any program opens a socket.  IDLE does use sockets, talking
