@@ -305,6 +305,10 @@ SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 	without optimization.  The bug is fixed in version 7.2.1 of
 	the compiler.
 
+	A bug in gcc-2.8.1 sets sys.maxint to -1 which *also* seems to
+	break Modules/pypcre.c.  The egcs versions of gcc fix this
+	problem.  (Raj Srinivasan)
+
 OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
         compiler installed, just change into the pc\os2vacpp directory
         and type NMAKE.  Threading and sockets are supported by default
