@@ -1,9 +1,8 @@
 \section{\module{mailbox} ---
-         Read various mailbox formats.}
+         Read various mailbox formats}
+
 \declaremodule{standard}{mailbox}
-
 \modulesynopsis{Read various mailbox formats.}
-
 
 
 This module defines a number of classes that allow easy and uniform
@@ -27,8 +26,19 @@ file with a numeric name.
 The name of the mailbox directory is passed in \var{dirname}.
 \end{classdesc}
 
-\subsection{Mailbox Objects}
-\label{mailbox-objects}
+\begin{classdesc}{Maildir}{dirname}
+Access a Qmail mail directory.  All new and current mail for the
+mailbox specified by \var{dirname} is made available.
+\end{classdesc}
+
+\begin{classdesc}{BabylMailbox}{fp}
+Access a Babyl mailbox, which is similar to an MMDF mailbox.  Mail
+messages start with \code{'*** EOOH ***\n'} and end with
+\code{'\037\014\n'}.
+\end{classdesc}
+
+
+\subsection{Mailbox Objects \label{mailbox-objects}}
 
 All implementations of Mailbox objects have one externally visible
 method:
