@@ -30,7 +30,7 @@ membercount = 10
 def tarname(comp=""):
     if not comp:
         return testtar
-    return "%s%s%s" % (testtar, os.extsep, comp)
+    return os.path.join(tempdir, "%s%s%s" % (testtar, os.extsep, comp))
 
 def dirname():
     if not os.path.exists(tempdir):
