@@ -1668,14 +1668,19 @@ initsocket()
 #endif
 
 	/* Protocol level and numbers, usable for [gs]etsockopt */
+/* Sigh -- some systems (e.g. Linux) use enums for these. */
 #ifdef	SOL_SOCKET
 	insint(d, "SOL_SOCKET", SOL_SOCKET);
 #endif
 #ifdef	IPPROTO_IP
 	insint(d, "IPPROTO_IP", IPPROTO_IP);
+#else
+	insint(d, "IPPROTO_IP", 0);
 #endif
 #ifdef	IPPROTO_ICMP
 	insint(d, "IPPROTO_ICMP", IPPROTO_ICMP);
+#else
+	insint(d, "IPPROTO_ICMP", 1);
 #endif
 #ifdef	IPPROTO_IGMP
 	insint(d, "IPPROTO_IGMP", IPPROTO_IGMP);
@@ -1685,6 +1690,8 @@ initsocket()
 #endif
 #ifdef	IPPROTO_TCP
 	insint(d, "IPPROTO_TCP", IPPROTO_TCP);
+#else
+	insint(d, "IPPROTO_TCP", 6);
 #endif
 #ifdef	IPPROTO_EGP
 	insint(d, "IPPROTO_EGP", IPPROTO_EGP);
@@ -1694,6 +1701,8 @@ initsocket()
 #endif
 #ifdef	IPPROTO_UDP
 	insint(d, "IPPROTO_UDP", IPPROTO_UDP);
+#else
+	insint(d, "IPPROTO_UDP", 17);
 #endif
 #ifdef	IPPROTO_IDP
 	insint(d, "IPPROTO_IDP", IPPROTO_IDP);
@@ -1719,6 +1728,8 @@ initsocket()
 /**/
 #ifdef	IPPROTO_RAW
 	insint(d, "IPPROTO_RAW", IPPROTO_RAW);
+#else
+	insint(d, "IPPROTO_RAW", 255);
 #endif
 #ifdef	IPPROTO_MAX
 	insint(d, "IPPROTO_MAX", IPPROTO_MAX);
