@@ -1,3 +1,93 @@
+Wed Mar  2 10:33:39 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/repr.py: added special case for class instances (which may
+	cause exceptions in their __repr__)
+
+	* Lib/pdb.{py,doc}: mod by Steve Kirsch to allow setting a break
+	on a function name
+
+Tue Mar  1 10:32:54 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/pythonrun.c (run_tty_1): Fix wrong (uninitialized) return
+	value
+
+	* Doc/ref4.tex (table 4.1): differentiated between exec stmt and
+	eval()
+
+Mon Feb 28 10:49:20 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/svmodule.c: correct wrong cast of svideo_getattr
+
+	* README: added Linux to list of supported systems.
+
+	* Doc/libsocket.tex: adapt to min value of 1 for listen() backlog
+	argument.
+
+	* Modules/socketmodule.c (sock_listen): ensure backlog argument is
+	at least 1.
+
+Fri Feb 25 14:25:30 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Include/osdefs.h, Modules/config.c.in: Added NT case (same as
+	MSDOS)
+
+Thu Feb 24 09:58:53 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/posixmodule.c: merged in NT changes by Jaap Vermeulen
+
+	* README: added Mac and PC platforms to blurb.
+
+	* Doc/libfuncs.tex (section{Built-in Functions}): documented
+	xrange()
+
+	* Doc/ref7.tex (section{Function definitions} added index entry
+	for second ref to lambda.
+
+	* Lib/{bdb.py,pdb.py,stdwin/wdb.py}: call linecache.checkcache()
+	in bdb.Bdb's reset method; remove it from the test() functions.
+
+Wed Feb 23 10:15:28 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/parsermodule.c (parser_parsefile): fix fatal typo in
+	NULL comparison
+
+	* Misc/python.man: fixed mess describing -d and -i options
+
+Tue Feb 22 09:08:22 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Demo2: added new subdirectory holmes, with Mark Lutz' expert
+	system shell
+
+	* Demo: added new subdirectory lutz, with Mark Lutz' examples
+	(e.g. psh.py, a nice enhanced Python shell!!!)
+
+	* Lib/os.py: added listdir for Windows NT
+
+	* Modules/timemodule.c, Parser/intrcheck.c: changes for Windows NT
+	by Jaap Vermeulen (#ifdef _M_IX86)
+
+	* Makefile.in (inclinstall): added variable INCLUDEPY to specify
+	where the include files are installed
+
+	* Modules/nismodule.c (nisproc_maplist_2): cast some args to
+	(caddr_t) as required on some systems
+
+	* Objects/mappingobject.c (getmappingitems): correct typo (called
+	_values instead of _items)
+
+Mon Feb 21 17:07:07 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/rfc822.py: added access as a dictionary
+
+	* Lib/urlopen.py: new module to access arbitrary files designated
+	by a URL (Universal Resource Locator)
+
+	* Lib/{httplib,gopherlib}.py: new modules to interface to HTTP
+	and gopher servers
+
+	* Lib/rfc822.py: moved _monthnames to where it is used; add some
+	blank lines
+
 Fri Feb 18 09:54:34 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Lib/sgi/flp.py: avoid using time.milli{sleep,timer}
