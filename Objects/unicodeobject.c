@@ -3197,6 +3197,14 @@ PyObject *PyUnicode_Join(PyObject *separator,
 	}
 	if (!PyUnicode_Check(item)) {
 	    PyObject *v;
+	    if (!PyString_Check(item)) {
+		PyErr_Format(PyExc_TypeError,
+			     "sequence item %i: expected string or Unicode,"
+			     " %.80s found",
+			     i, item->ob_type->tp_name);
+		Py_DECREF(item);
+		goto onError;
+	    }
 	    v = PyUnicode_FromObject(item);
 	    Py_DECREF(item);
 	    item = v;
@@ -3205,8 +3213,10 @@ PyObject *PyUnicode_Join(PyObject *separator,
 	}
 	itemlen = PyUnicode_GET_SIZE(item);
 	while (reslen + itemlen + seplen >= sz) {
-	    if (_PyUnicode_Resize(&res, sz*2))
+	    if (_PyUnicode_Resize(&res, sz*2)) {
+		Py_DECREF(item);
 		goto onError;
+	    }
 	    sz *= 2;
 	    p = PyUnicode_AS_UNICODE(res) + reslen;
 	}
