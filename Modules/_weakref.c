@@ -728,7 +728,7 @@ weakref_functions[] =  {
 };
 
 
-void
+DL_EXPORT(void)
 init_weakref(void)
 {
     PyObject *m;
