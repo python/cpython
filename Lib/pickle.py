@@ -283,30 +283,6 @@ class Pickler:
             self.save_global(obj)
             return
 
-        # Check for instance of subclass of common built-in types
-        # XXX This block is experimental code that will go away!
-        if self.proto >= 2:
-            if isinstance(obj, _builtin_type):
-                assert t not in _builtin_type # Proper subclass
-                args = ()
-                getnewargs = getattr(obj, "__getnewargs__", None)
-                if getnewargs:
-                    args = getnewargs() # This better not reference obj
-                self.save_global(t)
-                self.save(args)
-                self.write(NEWOBJ)
-                self.memoize(obj)
-                getstate = getattr(obj, "__getstate__", None)
-                if getstate:
-                    state = getstate()
-                else:
-                    state = getattr(obj, "__dict__", None)
-                    # XXX What about __slots__?
-                if state is not None:
-                    self.save(state)
-                    self.write(BUILD)
-                return
-
         # Check copy_reg.dispatch_table
         reduce = dispatch_table.get(t)
         if reduce:
@@ -315,6 +291,11 @@ class Pickler:
             # Check for __reduce__ method
             reduce = getattr(obj, "__reduce__", None)
             if not reduce:
+                # Check for instance of subclass of common built-in types
+                if self.proto >= 2 and isinstance(obj, _builtin_type):
+                    assert t not in _builtin_type # Proper subclass
+                    self.save_newobj(obj)
+                    return
                 raise PicklingError("Can't pickle %r object: %r" %
                                     (t.__name__, obj))
             rv = reduce()
@@ -383,6 +364,29 @@ class Pickler:
         if state is not None:
             save(state)
             write(BUILD)
+
+    def save_newobj(self, obj):
+        # Save a new-style class instance, using protocol 2.
+        # XXX Much of this is still experimental.
+        t = type(obj)
+        args = ()
+        getnewargs = getattr(obj, "__getnewargs__", None)
+        if getnewargs:
+            args = getnewargs() # This better not reference obj
+        self.save_global(t)
+        self.save(args)
+        self.write(NEWOBJ)
+        self.memoize(obj)
+        getstate = getattr(obj, "__getstate__", None)
+        if getstate:
+            state = getstate()
+        else:
+            state = getattr(obj, "__dict__", None)
+            # XXX What about __slots__?
+        if state is not None:
+            self.save(state)
+            self.write(BUILD)
+        return
 
     # Methods below this point are dispatched through the dispatch table
 
