@@ -83,8 +83,8 @@ module.addobject(object)
 
 
 # Create the generator classes used to populate the lists
-Function = OSErrFunctionGenerator
-Method = OSErrMethodGenerator
+Function = OSErrWeakLinkFunctionGenerator
+Method = OSErrWeakLinkMethodGenerator
 
 # Create and populate the lists
 functions = []

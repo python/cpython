@@ -80,6 +80,9 @@ static PyObject *GWorldObj_GetGWorldDevice(GWorldObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle _rv;
+#ifndef GetGWorldDevice
+	PyMac_PRECHECK(GetGWorldDevice);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetGWorldDevice(_self->ob_itself);
@@ -92,6 +95,9 @@ static PyObject *GWorldObj_GetGWorldPixMap(GWorldObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle _rv;
+#ifndef GetGWorldPixMap
+	PyMac_PRECHECK(GetGWorldPixMap);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetGWorldPixMap(_self->ob_itself);
@@ -104,6 +110,9 @@ static PyObject *GWorldObj_as_GrafPtr(GWorldObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GrafPtr _rv;
+#ifndef as_GrafPtr
+	PyMac_PRECHECK(as_GrafPtr);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = as_GrafPtr(_self->ob_itself);
@@ -169,6 +178,9 @@ static PyObject *Qdoffs_NewGWorld(PyObject *_self, PyObject *_args)
 	CTabHandle cTable;
 	GDHandle aGDevice;
 	GWorldFlags flags;
+#ifndef NewGWorld
+	PyMac_PRECHECK(NewGWorld);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&O&O&l",
 	                      &PixelDepth,
 	                      PyMac_GetRect, &boundsRect,
@@ -193,6 +205,9 @@ static PyObject *Qdoffs_LockPixels(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	PixMapHandle pm;
+#ifndef LockPixels
+	PyMac_PRECHECK(LockPixels);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &pm))
 		return NULL;
@@ -206,6 +221,9 @@ static PyObject *Qdoffs_UnlockPixels(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
+#ifndef UnlockPixels
+	PyMac_PRECHECK(UnlockPixels);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &pm))
 		return NULL;
@@ -225,6 +243,9 @@ static PyObject *Qdoffs_UpdateGWorld(PyObject *_self, PyObject *_args)
 	CTabHandle cTable;
 	GDHandle aGDevice;
 	GWorldFlags flags;
+#ifndef UpdateGWorld
+	PyMac_PRECHECK(UpdateGWorld);
+#endif
 	if (!PyArg_ParseTuple(_args, "hO&O&O&l",
 	                      &pixelDepth,
 	                      PyMac_GetRect, &boundsRect,
@@ -249,6 +270,9 @@ static PyObject *Qdoffs_GetGWorld(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CGrafPtr port;
 	GDHandle gdh;
+#ifndef GetGWorld
+	PyMac_PRECHECK(GetGWorld);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetGWorld(&port,
@@ -264,6 +288,9 @@ static PyObject *Qdoffs_SetGWorld(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	CGrafPtr port;
 	GDHandle gdh;
+#ifndef SetGWorld
+	PyMac_PRECHECK(SetGWorld);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      GrafObj_Convert, &port,
 	                      OptResObj_Convert, &gdh))
@@ -279,6 +306,9 @@ static PyObject *Qdoffs_CTabChanged(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	CTabHandle ctab;
+#ifndef CTabChanged
+	PyMac_PRECHECK(CTabChanged);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      OptResObj_Convert, &ctab))
 		return NULL;
@@ -292,6 +322,9 @@ static PyObject *Qdoffs_PixPatChanged(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixPatHandle ppat;
+#ifndef PixPatChanged
+	PyMac_PRECHECK(PixPatChanged);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &ppat))
 		return NULL;
@@ -305,6 +338,9 @@ static PyObject *Qdoffs_PortChanged(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GrafPtr port;
+#ifndef PortChanged
+	PyMac_PRECHECK(PortChanged);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      GrafObj_Convert, &port))
 		return NULL;
@@ -318,6 +354,9 @@ static PyObject *Qdoffs_GDeviceChanged(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	GDHandle gdh;
+#ifndef GDeviceChanged
+	PyMac_PRECHECK(GDeviceChanged);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      OptResObj_Convert, &gdh))
 		return NULL;
@@ -331,6 +370,9 @@ static PyObject *Qdoffs_AllowPurgePixels(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
+#ifndef AllowPurgePixels
+	PyMac_PRECHECK(AllowPurgePixels);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &pm))
 		return NULL;
@@ -344,6 +386,9 @@ static PyObject *Qdoffs_NoPurgePixels(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle pm;
+#ifndef NoPurgePixels
+	PyMac_PRECHECK(NoPurgePixels);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &pm))
 		return NULL;
@@ -358,6 +403,9 @@ static PyObject *Qdoffs_GetPixelsState(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	GWorldFlags _rv;
 	PixMapHandle pm;
+#ifndef GetPixelsState
+	PyMac_PRECHECK(GetPixelsState);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &pm))
 		return NULL;
@@ -372,6 +420,9 @@ static PyObject *Qdoffs_SetPixelsState(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	PixMapHandle pm;
 	GWorldFlags state;
+#ifndef SetPixelsState
+	PyMac_PRECHECK(SetPixelsState);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&l",
 	                      ResObj_Convert, &pm,
 	                      &state))
@@ -388,6 +439,9 @@ static PyObject *Qdoffs_GetPixRowBytes(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	long _rv;
 	PixMapHandle pm;
+#ifndef GetPixRowBytes
+	PyMac_PRECHECK(GetPixRowBytes);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &pm))
 		return NULL;
@@ -405,6 +459,9 @@ static PyObject *Qdoffs_NewScreenBuffer(PyObject *_self, PyObject *_args)
 	Boolean purgeable;
 	GDHandle gdh;
 	PixMapHandle offscreenPixMap;
+#ifndef NewScreenBuffer
+	PyMac_PRECHECK(NewScreenBuffer);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      PyMac_GetRect, &globalRect,
 	                      &purgeable))
@@ -424,6 +481,9 @@ static PyObject *Qdoffs_DisposeScreenBuffer(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	PixMapHandle offscreenPixMap;
+#ifndef DisposeScreenBuffer
+	PyMac_PRECHECK(DisposeScreenBuffer);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &offscreenPixMap))
 		return NULL;
@@ -438,6 +498,9 @@ static PyObject *Qdoffs_QDDone(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	GrafPtr port;
+#ifndef QDDone
+	PyMac_PRECHECK(QDDone);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      GrafObj_Convert, &port))
 		return NULL;
@@ -451,6 +514,9 @@ static PyObject *Qdoffs_OffscreenVersion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	long _rv;
+#ifndef OffscreenVersion
+	PyMac_PRECHECK(OffscreenVersion);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = OffscreenVersion();
@@ -467,6 +533,9 @@ static PyObject *Qdoffs_NewTempScreenBuffer(PyObject *_self, PyObject *_args)
 	Boolean purgeable;
 	GDHandle gdh;
 	PixMapHandle offscreenPixMap;
+#ifndef NewTempScreenBuffer
+	PyMac_PRECHECK(NewTempScreenBuffer);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      PyMac_GetRect, &globalRect,
 	                      &purgeable))
@@ -487,6 +556,9 @@ static PyObject *Qdoffs_PixMap32Bit(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	PixMapHandle pmHandle;
+#ifndef PixMap32Bit
+	PyMac_PRECHECK(PixMap32Bit);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &pmHandle))
 		return NULL;
