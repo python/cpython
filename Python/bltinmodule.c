@@ -791,17 +791,13 @@ builtin_map(PyObject *self, PyObject *args)
 		}
 
 		/* Update len. */
-		curlen = -1;  /* unknown */
-		if (PySequence_Check(curseq) &&
-		    curseq->ob_type->tp_as_sequence->sq_length) {
-			curlen = PySequence_Size(curseq);
-			if (curlen < 0)
-				PyErr_Clear();
-		}
-		if (curlen < 0)
+		curlen = PyObject_Size(curseq);
+		if (curlen < 0) {
+			PyErr_Clear();
 			curlen = 8;  /* arbitrary */
-			if (curlen > len)
-				len = curlen;
+		}
+		if (curlen > len)
+			len = curlen;
 	}
 
 	/* Get space for the result list. */
@@ -1968,7 +1964,7 @@ builtin_zip(PyObject *self, PyObject *args)
 	len = -1;	/* unknown */
 	for (i = 0; i < itemsize; ++i) {
 		PyObject *item = PyTuple_GET_ITEM(args, i);
-		int thislen = PySequence_Length(item);
+		int thislen = PyObject_Size(item);
 		if (thislen < 0) {
 			PyErr_Clear();
 			len = -1;
