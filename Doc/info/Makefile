@@ -7,7 +7,8 @@ PAPERDIR=$(TOPDIR)/paper-$(PAPER)
 HTMLDIR=$(TOPDIR)/html
 
 MKINFO=$(TOOLSDIR)/mkinfo
-SCRIPTS=$(TOOLSDIR)/html2texi.pl $(TOOLSDIR)/checkargs.pm $(TOOLSDIR)/mkinfo
+SCRIPTS=$(TOOLSDIR)/html2texi.pl $(TOOLSDIR)/checkargs.pm $(TOOLSDIR)/mkinfo \
+	$(TOOLSDIR)/fixinfo.el
 
 all:	python-api.info python-ext.info python-lib.info \
 	python-mac.info python-ref.info python-tut.info
