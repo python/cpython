@@ -153,6 +153,8 @@ class: \code{[(] [)]}.
 \item[\code{(?...)}] This is an extension notation (a '?' following a
 '(' is not meaningful otherwise).  The first character after the '?'
 determines what the meaning and further syntax of the construct is.
+Extensions usually do not create a new group;
+\code{(?P<\var{name}>...)} is the only exception to this rule.
 Following are the currently supported extensions.
 %
 \item[\code{(?iLmsx)}] (One or more letters from the set \samp{i},
@@ -160,16 +162,16 @@ Following are the currently supported extensions.
 the empty string; the letters set the corresponding flags
 (\constant{re.I}, \constant{re.L}, \constant{re.M}, \constant{re.S},
 \constant{re.X}) for the entire regular expression.  This is useful if
-you wish include the flags as part of the regular expression, instead
+you wish to include the flags as part of the regular expression, instead
 of passing a \var{flag} argument to the \function{compile()} function. 
 %
 \item[\code{(?:...)}] A non-grouping version of regular parentheses.
-Matches whatever's inside the parentheses, but the text matched by the
+Matches whatever's inside the parentheses, but the substring matched by the
 group \emph{cannot} be retrieved after performing a match or
 referenced later in the pattern. 
 %
 \item[\code{(?P<\var{name}>...)}] Similar to regular parentheses, but
-the text matched by the group is accessible via the symbolic group
+the substring matched by the group is accessible via the symbolic group
 name \var{name}.  Group names must be valid Python identifiers.  A
 symbolic group is also a numbered group, just as if the group were not
 named.  So the group named 'id' in the example above can also be
@@ -214,6 +216,8 @@ the space after the group).  This special sequence can only be used to
 match one of the first 99 groups.  If the first digit of \var{number}
 is 0, or \var{number} is 3 octal digits long, it will not be interpreted
 as a group match, but as the character with octal value \var{number}.
+Inside the \code{[} and \code{]} of a character class, all numeric
+escapes are treated as characters. 
 %
 \item[\code{\e A}] Matches only at the start of the string.
 %
@@ -300,7 +304,7 @@ newline (if any) at the end of the string.
 
 \begin{datadesc}{S}
 \dataline{DOTALL}
-Make the \code{.} special character any character at all, including a
+Make the \code{.} special character match any character at all, including a
 newline; without this flag, \code{.} will match anything \emph{except}
 a newline.
 \end{datadesc}
@@ -393,8 +397,8 @@ replacement string.  For example:
 %
 \begin{verbatim}
 >>> def dashrepl(matchobj):
-...    if matchobj.group(0) == '-': return ' '
-...    else: return '-'
+....    if matchobj.group(0) == '-': return ' '
+....    else: return '-'
 >>> re.sub('-{1,2}', dashrepl, 'pro----gram-files')
 'pro--gram files'
 \end{verbatim}
@@ -411,6 +415,21 @@ the default value of 0 means to replace all occurrences.
 
 Empty matches for the pattern are replaced only when not adjacent to a
 previous match, so \samp{sub('x*', '-', 'abc')} returns \code{'-a-b-c-'}.
+
+If \var{repl} is a string, any backslash escapes in it are processed.
+That is, \samp{\e n} is converted to a single newline character,
+\samp{\e r} is converted to a linefeed, and so forth.  Unknown escapes
+such as \samp{\e j} are XXX.  Backreferences, such as \samp{\e 6} are
+replaced with the substring matched by group 6 in the pattern. 
+
+In addition to character escapes and backreferences as described
+above, \samp{\e g<name>} will use the substring matched by the group
+named \samp{name}, as defined by the \samp{(?P<name>...)} syntax.
+\samp{\e g<number>} uses the corresponding group number; \samp{\e
+g<2>} is therefore equivalent to \samp{\e 2}, but isn't ambiguous in a
+replacement such as \samp{\e g<2>0}.  \samp{\e 20} would be
+interpreted as a reference to group 20, not a reference to group 2
+followed by the literal character \samp{0}.  
 \end{funcdesc}
 
 \begin{funcdesc}{subn}{pattern, repl, string\optional{, count\code{ = 0}}}
