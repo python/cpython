@@ -937,19 +937,21 @@ get_line(PyFileObject *f, int n)
 	FILE *fp = f->f_fp;
 	int c;
 	char *buf, *end;
-	size_t n1, n2;
+	size_t total_v_size;	/* total # of slots in buffer */
+	size_t used_v_size;	/* # used slots in buffer */
+	size_t increment;       /* amount to increment the buffer */
 	PyObject *v;
 
 #ifdef USE_FGETS_IN_GETLINE
 	if (n <= 0)
 		return getline_via_fgets(fp);
 #endif
-	n2 = n > 0 ? n : 100;
-	v = PyString_FromStringAndSize((char *)NULL, n2);
+	total_v_size = n > 0 ? n : 100;
+	v = PyString_FromStringAndSize((char *)NULL, total_v_size);
 	if (v == NULL)
 		return NULL;
 	buf = BUF(v);
-	end = buf + n2;
+	end = buf + total_v_size;
 
 	for (;;) {
 		Py_BEGIN_ALLOW_THREADS
@@ -979,23 +981,24 @@ get_line(PyFileObject *f, int n)
 		/* Must be because buf == end */
 		if (n > 0)
 			break;
-		n1 = n2;
-		n2 += 1000;
-		if (n2 > INT_MAX) {
+		used_v_size = total_v_size;
+		increment = total_v_size >> 2; /* mild exponential growth */
+		total_v_size += increment;
+		if (total_v_size > INT_MAX) {
 			PyErr_SetString(PyExc_OverflowError,
 			    "line is longer than a Python string can hold");
 			Py_DECREF(v);
 			return NULL;
 		}
-		if (_PyString_Resize(&v, n2) < 0)
+		if (_PyString_Resize(&v, total_v_size) < 0)
 			return NULL;
-		buf = BUF(v) + n1;
-		end = BUF(v) + n2;
+		buf = BUF(v) + used_v_size;
+		end = BUF(v) + total_v_size;
 	}
 
-	n1 = buf - BUF(v);
-	if (n1 != n2)
-		_PyString_Resize(&v, n1);
+	used_v_size = buf - BUF(v);
+	if (used_v_size != total_v_size)
+		_PyString_Resize(&v, used_v_size);
 	return v;
 }
 
