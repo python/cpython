@@ -157,7 +157,8 @@ static struct key *keyhead = NULL;
 static int nkeys = 0;
 static PyThread_type_lock keymutex = NULL;
 
-static struct key *find_key(int key, void *value)
+static struct key *
+find_key(int key, void *value)
 {
 	struct key *p;
 	long id = PyThread_get_thread_ident();
@@ -180,14 +181,16 @@ static struct key *find_key(int key, void *value)
 	return p;
 }
 
-int PyThread_create_key(void)
+int
+PyThread_create_key(void)
 {
 	if (keymutex == NULL)
 		keymutex = PyThread_allocate_lock();
 	return ++nkeys;
 }
 
-void PyThread_delete_key(int key)
+void
+PyThread_delete_key(int key)
 {
 	struct key *p, **q;
 	PyThread_acquire_lock(keymutex, 1);
@@ -204,7 +207,8 @@ void PyThread_delete_key(int key)
 	PyThread_release_lock(keymutex);
 }
 
-int PyThread_set_key_value(int key, void *value)
+int
+PyThread_set_key_value(int key, void *value)
 {
 	struct key *p = find_key(key, value);
 	if (p == NULL)
@@ -213,7 +217,8 @@ int PyThread_set_key_value(int key, void *value)
 		return 0;
 }
 
-void *PyThread_get_key_value(int key)
+void *
+PyThread_get_key_value(int key)
 {
 	struct key *p = find_key(key, NULL);
 	if (p == NULL)
@@ -222,7 +227,8 @@ void *PyThread_get_key_value(int key)
 		return p->value;
 }
 
-void PyThread_delete_key_value(int key)
+void
+PyThread_delete_key_value(int key)
 {
 	long id = PyThread_get_thread_ident();
 	struct key *p, **q;

@@ -388,18 +388,20 @@ static int autoTLSkey = 0;
 /* Internal initialization/finalization functions called by
    Py_Initialize/Py_Finalize
 */
-void _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
+void
+_PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
 {
-	assert(i && t); /* must init with a valid states */
+	assert(i && t); /* must init with valid states */
 	autoTLSkey = PyThread_create_key();
 	autoInterpreterState = i;
 	/* Now stash the thread state for this thread in TLS */
 	PyThread_set_key_value(autoTLSkey, (void *)t);
-	assert(t->gilstate_counter==0); /* must be a new thread state */
+	assert(t->gilstate_counter == 0); /* must be a new thread state */
 	t->gilstate_counter = 1;
 }
 
-void _PyGILState_Fini(void)
+void
+_PyGILState_Fini(void)
 {
 	PyThread_delete_key(autoTLSkey);
 	autoTLSkey = 0;
@@ -407,14 +409,16 @@ void _PyGILState_Fini(void)
 }
 
 /* The public functions */
-PyThreadState *PyGILState_GetThisThreadState(void)
+PyThreadState *
+PyGILState_GetThisThreadState(void)
 {
-	if (autoInterpreterState==NULL || autoTLSkey==0)
+	if (autoInterpreterState == NULL || autoTLSkey == 0)
 		return NULL;
-	return (PyThreadState *) PyThread_get_key_value(autoTLSkey);
+	return (PyThreadState *)PyThread_get_key_value(autoTLSkey);
 }
 
-PyGILState_STATE PyGILState_Ensure(void)
+PyGILState_STATE
+PyGILState_Ensure(void)
 {
 	int current;
 	PyThreadState *tcur;
@@ -425,30 +429,32 @@ PyGILState_STATE PyGILState_Ensure(void)
 	*/
 	assert(autoInterpreterState); /* Py_Initialize() hasn't been called! */
 	tcur = PyThread_get_key_value(autoTLSkey);
-	if (tcur==NULL) {
+	if (tcur == NULL) {
 		/* Create a new thread state for this thread */
 		tcur = PyThreadState_New(autoInterpreterState);
-		if (tcur==NULL)
+		if (tcur == NULL)
 			Py_FatalError("Couldn't create thread-state for new thread");
 		PyThread_set_key_value(autoTLSkey, (void *)tcur);
 		current = 0; /* new thread state is never current */
-	} else
+	}
+	else
 		current = PyThreadState_IsCurrent(tcur);
-	if (!current)
+	if (current == 0)
 		PyEval_RestoreThread(tcur);
 	/* Update our counter in the thread-state - no need for locks:
 	   - tcur will remain valid as we hold the GIL.
 	   - the counter is safe as we are the only thread "allowed"
 	     to modify this value
 	*/
-	tcur->gilstate_counter++;
+	++tcur->gilstate_counter;
 	return current ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 
-void PyGILState_Release(PyGILState_STATE oldstate)
+void
+PyGILState_Release(PyGILState_STATE oldstate)
 {
 	PyThreadState *tcur = PyThread_get_key_value(autoTLSkey);
-	if (tcur==NULL)
+	if (tcur == NULL)
 		Py_FatalError("auto-releasing thread-state, "
 		              "but no thread-state for this thread");
 	/* We must hold the GIL and have our thread state current */
@@ -456,27 +462,27 @@ void PyGILState_Release(PyGILState_STATE oldstate)
 	   but while this is very new (April 2003), the extra check
 	   by release-only users can't hurt.
 	*/
-	if (!PyThreadState_IsCurrent(tcur))
+	if (! PyThreadState_IsCurrent(tcur))
 		Py_FatalError("This thread state must be current when releasing");
-	assert (PyThreadState_IsCurrent(tcur));
-	tcur->gilstate_counter -= 1;
-	assert (tcur->gilstate_counter >= 0); /* illegal counter value */
+	assert(PyThreadState_IsCurrent(tcur));
+	--tcur->gilstate_counter;
+	assert(tcur->gilstate_counter >= 0); /* illegal counter value */
 
 	/* If we are about to destroy this thread-state, we must
 	   clear it while the lock is held, as destructors may run
 	*/
-	if (tcur->gilstate_counter==0) {
+	if (tcur->gilstate_counter == 0) {
 		/* can't have been locked when we created it */
-		assert(oldstate==PyGILState_UNLOCKED);
+		assert(oldstate == PyGILState_UNLOCKED);
 		PyThreadState_Clear(tcur);
 	}
 
 	/* Release the lock if necessary */
-	if (oldstate==PyGILState_UNLOCKED)
+	if (oldstate == PyGILState_UNLOCKED)
 		PyEval_ReleaseThread(tcur);
 
 	/* Now complete destruction of the thread if necessary */
-	if (tcur->gilstate_counter==0) {
+	if (tcur->gilstate_counter == 0) {
 		/* Delete this thread from our TLS */
 		PyThread_delete_key_value(autoTLSkey);
 		/* Delete the thread-state */
