@@ -33,6 +33,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+/* Mac with GUSI has more errors than those in errno.h */
+#ifdef USE_GUSI
+#include <sys/errno.h>
+#endif
+
 /*
  * Pull in the system error definitions
  */ 
