@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 5.00
 
 ###############################################################################
 
-Project: "_tkinter"=.\_tkinter.dsp - Package Owner=<4>
+Project: "_tkinter"=".\_tkinter.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -15,7 +15,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "parser"=.\parser.dsp - Package Owner=<4>
+Project: "parser"=".\parser.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -27,7 +27,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "python"=.\python.dsp - Package Owner=<4>
+Project: "python"=".\python.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -39,7 +39,19 @@ Package=<4>
 
 ###############################################################################
 
-Project: "python15"=.\python15.dsp - Package Owner=<4>
+Project: "python15"=".\python15.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "pythonw"=".\pythonw.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
