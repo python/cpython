@@ -1,10 +1,32 @@
 #! /depot/sundry/plat/bin/python1.4
 
-"""Interactive FAQ project."""
+"""Interactive FAQ project.
+
+XXX TO DO
+
+- use cookies to keep Name/email the same
+- explanation of editing somewhere
+- various embellishments, GIFs, crosslinks, hints, etc.
+- create new sections
+- rearrange entries
+- delete entries
+- log changes
+- send email on changes
+- optional staging of entries until reviewed?
+- review revision log and older versions
+- freeze entries
+- username/password for editors
+- Change references to other Q's and whole sections
+- Browse should display menu of 7 sections & let you pick
+  (or frontpage should have the option to browse a section or all)
+- support adding annotations, too
+
+"""
 
 import cgi, string, os
 
 NAMEPAT = "faq??.???.htp"
+NAMEREG = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
 
 class FAQServer:
 
@@ -22,7 +44,7 @@ class FAQServer:
 	    method()
 
     KEYS = ['req', 'query', 'name', 'text', 'commit', 'title',
-	    'author', 'email', 'log']
+	    'author', 'email', 'log', 'section', 'number', 'add']
 
     def __getattr__(self, key):
 	if key not in self.KEYS:
@@ -38,11 +60,14 @@ class FAQServer:
 	<TITLE>Python FAQ (alpha 1)</TITLE>
 	<H1>Python FAQ Front Page</H1>
 	<UL>
-	<LI><A HREF="faq.py?req=search">Search the FAQ</A>
-	<LI><A HREF="faq.py?req=browse">Browse the FAQ</A>
-	<LI><A HREF="faq.py?req=submit">Submit a new FAQ entry</A> (not yet)
+	<LI><A HREF="faq.py?req=index">FAQ index</A>
+	<LI><A HREF="faq.py?req=all">The whole FAQ</A>
 	<LI><A HREF="faq.py?req=roulette">FAQ roulette</A>
+	<LI><A HREF="faq.py?req=recent">Recently changed FAQ entries</A>
+	<LI><A HREF="faq.py?req=add">Add a new FAQ entry</A>
 	</UL>
+
+	<H2>Search the FAQ</H2>
 
 	<FORM ACTION="faq.py?req=query">
 	<INPUT TYPE=text NAME=query>
@@ -54,7 +79,52 @@ class FAQServer:
 	Please exercise discretion when editing, don't be rude, etc.
 	"""
 
-    def do_browse(self):
+    def do_index(self):
+	print """
+	<TITLE>Python FAQ Index</TITLE>
+	<H1>Python FAQ Index</H1>
+	"""
+	names = os.listdir(os.curdir)
+	names.sort()
+	section = None
+	for name in names:
+	    headers, text = self.read(name)
+	    if headers:
+		title = headers['title']
+		i = string.find(title, '.')
+		nsec = title[:i]
+		if nsec != section:
+		    if section:
+			print """
+			<P>
+			<LI><A HREF="faq.py?req=add&amp;section=%s"
+			>Add new entry</A> (at this point)
+			</UL>
+			""" % section
+		    section = nsec
+		    print "<H2>Section %s</H2>" % section
+		    print "<UL>"
+		print '<LI><A HREF="faq.py?req=show&name=%s">%s</A>' % (
+		    name, cgi.escape(title))
+	if section:
+	    print """
+	    <P>
+	    <LI><A HREF="faq.py?req=add&amp;section=%s">Add new entry</A>
+	    (at this point)
+	    </UL>
+	    """ % section
+	else:
+	    print "No FAQ entries?!?!"
+
+    def do_show(self):
+	name = self.name
+	headers, text = self.read(name)
+	if not headers:
+	    print "Invalid file name", name
+	    return
+	self.show(name, headers['title'], text, 1)
+
+    def do_all(self):
 	print """
 	<TITLE>Python FAQ</TITLE>
 	<H1>Python FAQ</H1>
@@ -62,13 +132,20 @@ class FAQServer:
 	"""
 	names = os.listdir(os.curdir)
 	names.sort()
-	n = 0
+	section = None
 	for name in names:
 	    headers, text = self.read(name)
 	    if headers:
-		self.show(name, headers['title'], text, 1)
+		title = headers['title']
+		i = string.find(title, '.')
+		nsec = title[:i]
+		if nsec != section:
+		    section = nsec
+		    print "<H1>Section %s</H1>" % section
+		    print "<HR>"
+		self.show(name, title, text, 1)
 		n = n+1
-	if not n:
+	if not section:
 	    print "No FAQ entries?!?!"
 
     def do_roulette(self):
@@ -94,17 +171,35 @@ class FAQServer:
 	else:
 	    print "No FAQ entries?!?!"
 
-    def do_search(self):
+    def do_recent(self):
+	import fnmatch, stat
+	names = os.listdir(os.curdir)
+	now = time.time()
+	list = []
+	for name in names:
+	    if not fnmatch.fnmatch(name, NAMEPAT):
+		continue
+	    try:
+		st = os.stat(name)
+	    except os.error:
+		continue
+	    tuple = (st[stat.ST_MTIME], name)
+	    list.append(tuple)
+	list.sort()
+	list.reverse()
 	print """
-	<TITLE>Search the Python FAQ</TITLE>
-	<H1>Search the Python FAQ</H1>
-
-	<FORM ACTION="faq.py?req=query">
-	<INPUT TYPE=text NAME=query>
-	<INPUT TYPE=submit VALUE="Search">
-	<INPUT TYPE=hidden NAME=req VALUE=query>
-	</FORM>
+	<TITLE>Python FAQ, Most Recently Modified First</TITLE>
+	<H1>Python FAQ, Most Recently Modified First</H1>
+	<HR>
 	"""
+	n = 0
+	for (mtime, name) in list:
+	    headers, text = self.read(name)
+	    if headers:
+		self.show(name, headers['title'], text, 1)
+		n = n+1
+	if not n:
+	    print "No FAQ entries?!?!"
 
     def do_query(self):
 	import regex
@@ -129,6 +224,43 @@ class FAQServer:
 	if not n:
 	    print "No hits."
 
+    def do_add(self):
+	section = self.section
+	if not section:
+	    print """
+	    <TITLE>How to add a new FAQ entry</TITLE>
+	    <H1>How to add a new FAQ entry</H1>
+
+	    Go to the <A HREF="faq.py?req=index">FAQ index</A>
+	    and click on the "Add new entry" link at the end
+	    of the section to which you want to add the entry.
+	    """
+	    return
+	try:
+	    nsec = string.atoi(section)
+	except ValueError:
+	    print "Bad section number", nsec
+	names = os.listdir(os.curdir)
+	max = 0
+	import regex
+	prog = regex.compile(NAMEREG)
+	for name in names:
+	    if prog.match(name) >= 0:
+		s1, s2 = prog.group(1, 2)
+		n1, n2 = string.atoi(s1), string.atoi(s2)
+		if n1 == nsec:
+		    if n2 > max:
+			max = n2
+	if not max:
+	    print "Can't add new sections yet."
+	    return
+	num = max+1
+	name = "faq%02d.%03d.htp" % (nsec, num)
+	self.name = name
+	self.add = "yes"
+	self.number = str(num)
+	self.do_edit()
+
     def do_edit(self):
 	name = self.name
 	headers, text = self.read(name)
@@ -141,7 +273,13 @@ class FAQServer:
 	"""
 	title = headers['title']
 	print "<FORM METHOD=POST ACTION=faq.py>"
-	self.showedit(name, headers, text)
+	self.showedit(name, title, text)
+	if self.add:
+	    print """
+	    <INPUT TYPE=hidden NAME=add VALUE=%s>
+	    <INPUT TYPE=hidden NAME=section VALUE=%s>
+	    <INPUT TYPE=hidden NAME=number VALUE=%s>
+	    """ % (self.add, self.section, self.number)
 	print """
 	<INPUT TYPE=submit VALUE="Review Edit">
 	<INPUT TYPE=hidden NAME=req VALUE=review>
@@ -165,6 +303,7 @@ class FAQServer:
 	print """
 	<TITLE>Python FAQ Review Form</TITLE>
 	<H1>Python FAQ Review Form</H1>
+	<HR>
 	"""
 	self.show(name, title, text)
 	print "<FORM METHOD=POST ACTION=faq.py>"
@@ -184,7 +323,13 @@ class FAQServer:
 	    <HR>
 	    <P>
 	    """
-	self.showedit(name, headers, text)
+	self.showedit(name, title, text)
+	if self.add:
+	    print """
+	    <INPUT TYPE=hidden NAME=add VALUE=%s>
+	    <INPUT TYPE=hidden NAME=section VALUE=%s>
+	    <INPUT TYPE=hidden NAME=number VALUE=%s>
+	    """ % (self.add, self.section, self.number)
 	print """
 	<BR>
 	<INPUT TYPE=submit VALUE="Review Edit">
@@ -220,9 +365,9 @@ class FAQServer:
 	    print "No changes."
 	    # XXX Should exit more ceremoniously
 	    return
-	# Check that the question number didn't change
+	# Check that the FAQ entry number didn't change
 	if string.split(title)[:1] != string.split(oldtitle)[:1]:
-	    print "Don't change the question number please."
+	    print "Don't change the FAQ entry number please."
 	    # XXX Should exit more ceremoniously
 	    return
 	remhost = os.environ["REMOTE_HOST"]
@@ -285,6 +430,7 @@ class FAQServer:
 	sts = p.close()
 	if not sts:
 	    print """
+	    <TITLE>Python FAQ Entry Edited</TITLE>
 	    <H1>Python FAQ Entry Edited</H1>
 	    <HR>
 	    """
@@ -299,8 +445,7 @@ class FAQServer:
 	    if output:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
 
-    def showedit(self, name, headers, text):
-	title = headers['title']
+    def showedit(self, name, title, text):
 	print """
 	Title: <INPUT TYPE=text SIZE=70 NAME=title VALUE="%s"<BR>
 	<TEXTAREA COLS=80 ROWS=20 NAME=text>""" % title
@@ -328,6 +473,17 @@ class FAQServer:
 	import fnmatch, rfc822
 	if not fnmatch.fnmatch(name, NAMEPAT):
 	    return None, None
+	if self.add:
+	    try:
+		fname = "faq%02d.%03d.htp" % (string.atoi(self.section),
+					      string.atoi(self.number))
+	    except ValueError:
+		return None, None
+	    if fname != name:
+		return None, None
+	    headers = {'title': "%s.%s. " % (self.section, self.number)}
+	    text = ""
+	    return headers, text
 	f = open(name)
 	headers = rfc822.Message(f)
 	text = f.read()
@@ -337,7 +493,7 @@ class FAQServer:
     def show(self, name, title, text, edit=0):
 	# XXX Should put <A> tags around recognizable URLs
 	# XXX Should also turn "see section N" into hyperlinks
-	print "<H2>%s</H2>" % title
+	print "<H2>%s</H2>" % cgi.escape(title)
 	pre = 0
 	for line in string.split(text, '\n'):
 	    if not string.strip(line):
@@ -355,7 +511,7 @@ class FAQServer:
 		    if not pre:
 			print '<PRE>'
 			pre = 1
-		print line
+		print cgi.escape(line)
 	if pre:
 	    print '</PRE>'
 	    pre = 0
@@ -378,4 +534,4 @@ try:
 except:
     print "<HR>Sorry, an error occurred"
     cgi.print_exception()
-print "<!-- dt = %s -->" % str(round(dt, 3))
+print "<P>(time = %s seconds)" % str(round(dt, 3))
