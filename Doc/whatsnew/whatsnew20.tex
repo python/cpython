@@ -118,33 +118,91 @@ formatting precision than \function{str()}.  \function{repr()} uses
 \function{str()} uses ``%.12g'' as before.  The effect is that
 \function{repr()} may occasionally show more decimal places than 
 \function{str()}, for numbers 
-XXX need example value here.
+
+XXX need example value here to demonstrate problem.
 
 
 % ======================================================================
 \section{Core Changes}
 
-Deleting objects is safe even for deeply nested data structures.
-Comparing recursive objects is now safe (doesn't dump core).
+Various minor changes have been made to Python's syntax and built-in
+functions.  None of the changes are very far-reaching, but they're
+handy conveniences.
 
-Builds on NT Alpha, and work on Win64 (NT Itanium -- sys.platform is
-still 'win32') is ongoing.  Supports Windows CE (confirm with Mark
-Hammond)
+A change to syntax makes it more convenient to call a given function
+with a tuple of arguments and/or a dictionary of keyword arguments.
+In Python 1.5 and earlier, you do this with the \builtin{apply()}
+built-in function: \code{apply(f, \var{args}, \var{kw})} calls the
+function \function{f()} with the argument tuple \var{args} and the
+keyword arguments in the dictionary \var{kw}.  Thanks to a patch from
+Greg Ewing, 1.6 adds \code{f(*\var{args}, **\var{kw})} as a shorter
+and clearer way to achieve the same effect.  This syntax is
+symmetrical with the syntax for defining functions:
 
-UnboundLocalError is raised when a local variable is undefined
-long, int take optional "base" parameter
+\begin{verbatim}
+def f(*args, **kw):
+    # args is a tuple of positional args,
+    # kw is a dictionary of keyword args
+    ...
+\end{verbatim}
 
-string objects now have methods (though they are still immutable)
+A new format style is available when using the \operator{\%} operator.
+'\%r' will insert the \function{repr()} of its argument.  This was
+also added from symmetry considerations, this time for symmetry with
+the existing '\%s' format style which inserts the \function{str()} of
+its argument.  For example, \code{'%r %s' % ('abc', 'abc')} returns a
+string containing \verb|'abc' abc|.
 
-sys.version_info is a tuple: (major, minor, micro, level, serial); level
-is a string "a2", "b1", "c1", or '' for a final release.
+The \builtin{int()} and \builtin{long()} functions now accept an
+optional ``base'' parameter when the first argument is a string.
+\code{int('123', 10)} returns 123, while \code{int('123', 16)} returns
+291.  \code{int(123, 16)} raises a \exception{TypeError} exception
+with the message ``can't convert non-string with explicit base''.
 
-New format style '%r' inserts repr(arg) instead of str(arg).
+Previously there was no way to implement a class that overrode
+Python's built-in \operator{in} operator and implemented a custom
+version.  \code{\var{obj} in \var{seq}} returns true if \var{obj} is
+present in the sequence \var{seq}; Python computes this by simply
+trying every index of the sequence until either \var{obj} is found or
+an \exception{IndexError} is encountered.  Moshe Zadka contributed a
+patch which adds a \method{__contains__} magic method for providing a
+custom implementation for \operator{in}.
 
-"in" operator can now be overriden in user-defined classes to mean anything:
-it calls the magic method __contains__
+Earlier versions of Python used a recursive algorithm for deleting
+objects.  Deeply nested data structures could cause the interpreter to
+fill up the C stack and crash; Christian Tismer rewrote the deletion
+logic to fix this problem.  On a related note, comparing recursive
+objects recursed infinitely and crashed; Jeremy Hylton rewrote the
+code to no longer crash, producing a useful result instead.  For
+example, after this code:
 
-New calling syntax: f(*args, **kw) equivalent to apply(f, args, kw)
+\begin{verbatim}
+a = []
+b = []
+a.append(a)
+b.append(b)
+\end{verbatim}
+
+The comparison \code{a==b} returns true, because the two recursive
+data structures are isomorphic.
+\footnote{See the thread ``trashcan and PR\#7'' in the April 2000 archives of the python-dev mailing list for the discussion leading up to this implementation, and some useful relevant links.
+%http://www.python.org/pipermail/python-dev/2000-April/004834.html
+}
+
+Work has been done on porting Python to 64-bit Windows on the Itanium
+processor, mostly by Trent Mick of ActiveState.  (Confusingly, for
+complicated reasons \code{sys.platform} is still \code{'win32'} on
+Win64.)  PythonWin also supports Windows CE; see the Python CE page at
+\url{http://www.python.net/crew/mhammond/ce/} for more information.
+
+XXX UnboundLocalError is raised when a local variable is undefined
+
+A new variable holding more detailed version information has been
+added to the \module{sys} module.  \code{sys.version_info} is a tuple
+\code{(\var{major}, \var{minor}, \var{micro}, \var{level},
+\var{serial})} For example, in 1.6a2 \code{sys.version_info} is
+\code{(1, 6, 0, 'alpha', 2)}.  \var{level} is a string such as
+"alpha", "beta", or '' for a final release.
 
 % ======================================================================
 \section{Extending/embedding Changes}
@@ -152,8 +210,7 @@ New calling syntax: f(*args, **kw) equivalent to apply(f, args, kw)
 Some of the changes are under the covers, and will only be apparent to
 people writing C extension modules, or embedding a Python interpreter
 in a larger application.  If you aren't dealing with Python's C API,
-you can safely skip this section since it won't contain anything of
-interest to you.
+you can safely skip this section.
 
 Users of Jim Fulton's ExtensionClass module will be pleased to find
 out that hooks have been added so that ExtensionClasses are now
