@@ -802,7 +802,10 @@ class FieldStorage:
                 headers = {'content-type':
                            "application/x-www-form-urlencoded"}
         if headers is None:
-            headers = {'content-type': "application/x-www-form-urlencoded"}
+            headers = {}
+            if method == 'POST':
+                # Set default content-type for POST to what's traditional
+                headers['content-type'] = "application/x-www-form-urlencoded"
             if environ.has_key('CONTENT_TYPE'):
                 headers['content-type'] = environ['CONTENT_TYPE']
             if environ.has_key('CONTENT_LENGTH'):
