@@ -45,6 +45,10 @@ Extension modules
 
 - curses module now supports use_default_colors().  [patch #739124]
 
+- Bug #811028: ncurses.h breakage on FreeBSD/MacOS X
+
+- Bug #814613: INET_ADDRSTRLEN fix needed for all compilers on SGI
+
 Library
 -------
 
