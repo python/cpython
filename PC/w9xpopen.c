@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
     BOOL bRet;
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
+    DWORD exit_code=0;
 
     if (argc != 2) {
         MessageBox(NULL, usage, argv[0], MB_OK);
@@ -50,10 +51,12 @@ int main(int argc, char *argv[])
         );
 
     if (bRet) {
-        WaitForSingleObject(pi.hProcess, INFINITE);
+        if (WaitForSingleObject(pi.hProcess, INFINITE) != WAIT_FAILED) {
+	    GetExitCodeProcess(pi.hProcess, &exit_code);
+	}
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
-        return 0;
+        return exit_code;
     }
 
     return 1;
