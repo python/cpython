@@ -110,21 +110,24 @@ def test():
 	dl = 0
 	for o, a in opts:
 		if o == '-d': dl = dl + 1
-	host = 'www.cwi.nl:80'
-	selector = '/index.html'
+	host = 'www.python.org'
+	selector = '/'
 	if args[0:]: host = args[0]
 	if args[1:]: selector = args[1]
 	h = HTTP()
 	h.set_debuglevel(dl)
 	h.connect(host)
 	h.putrequest('GET', selector)
+	h.endheaders()
 	errcode, errmsg, headers = h.getreply()
 	print 'errcode =', errcode
-	print 'headers =', headers
 	print 'errmsg  =', errmsg
+	print
 	if headers:
 		for header in headers.headers: print string.strip(header)
+	print
 	print h.getfile().read()
+
 
 if __name__ == '__main__':
 	test()
