@@ -12,6 +12,8 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Set file.name to the object passed to open (instead of a new string)
+
 - Moved tracebackobject into traceback.h and renamed to PyTracebackObject
 
 - Optimized the byte coding for multiple assignments like "a,b=b,a" and

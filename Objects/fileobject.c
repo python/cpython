@@ -95,8 +95,8 @@ dircheck(PyFileObject* f)
 
 
 static PyObject *
-fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
-		 int (*close)(FILE *), PyObject *wname)
+fill_file_fields(PyFileObject *f, FILE *fp, PyObject *name, char *mode,
+		 int (*close)(FILE *))
 {
 	assert(f != NULL);
 	assert(PyFile_Check(f));
@@ -105,12 +105,10 @@ fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
 	Py_DECREF(f->f_name);
 	Py_DECREF(f->f_mode);
 	Py_DECREF(f->f_encoding);
-#ifdef Py_USING_UNICODE
-	if (wname)
-		f->f_name = PyUnicode_FromObject(wname);
-	else
-#endif
-		f->f_name = PyString_FromString(name);
+
+        Py_INCREF (name);
+        f->f_name = name;
+
 	f->f_mode = PyString_FromString(mode);
 
 	f->f_close = close;
@@ -202,11 +200,7 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 			PyErr_Format(PyExc_IOError, "invalid mode: %s",
 				     mode);
 		else
-#ifdef MS_WINDOWS
 			PyErr_SetFromErrnoWithFilenameObject(PyExc_IOError, f->f_name);
-#else
-			PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
-#endif /* MS_WINDOWS */
 		f = NULL;
 	}
 	if (f != NULL)
@@ -220,10 +214,12 @@ PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
 	PyFileObject *f = (PyFileObject *)PyFile_Type.tp_new(&PyFile_Type,
 							     NULL, NULL);
 	if (f != NULL) {
-		if (fill_file_fields(f, fp, name, mode, close, NULL) == NULL) {
+                PyObject *o_name = PyString_FromString(name);
+		if (fill_file_fields(f, fp, o_name, mode, close) == NULL) {
 			Py_DECREF(f);
 			f = NULL;
 		}
+                Py_DECREF(o_name);
 	}
 	return (PyObject *) f;
 }
@@ -1853,8 +1849,8 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 		if (PyArg_ParseTupleAndKeywords(args, kwds, "U|si:file",
 						kwlist, &po, &mode, &bufsize)) {
 			wideargument = 1;
-			if (fill_file_fields(foself, NULL, name, mode,
-					     fclose, po) == NULL)
+			if (fill_file_fields(foself, NULL, po, mode,
+					     fclose) == NULL)
 				goto Error;
 		} else {
 			/* Drop the argument parsing error as narrow
@@ -1865,13 +1861,21 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 #endif
 
 	if (!wideargument) {
+                PyObject *o_name;
+
 		if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|si:file", kwlist,
 						 Py_FileSystemDefaultEncoding,
 						 &name,
 						 &mode, &bufsize))
 			return -1;
-		if (fill_file_fields(foself, NULL, name, mode,
-				     fclose, NULL) == NULL)
+
+                /* We parse again to get the name as a PyObject */
+                if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|si:file", kwlist,
+                    &o_name, &mode, &bufsize))
+                        return -1;
+
+		if (fill_file_fields(foself, NULL, o_name, mode,
+				     fclose) == NULL)
 			goto Error;
 	}
 	if (open_the_file(foself, name, mode) == NULL)
