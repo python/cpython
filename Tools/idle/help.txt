@@ -24,7 +24,7 @@ Edit menu:
 	---
 	Find... -- Search (case sensitive, Perl regular expression)
 	Find next -- Repeat last search
-	Fine same -- Search for the string in the selection
+	Find same -- Search for the string in the selection
 	Go to line -- Ask for a line number and show that line
 	---
 	Dedent region -- Shift selected lines left 4 spaces
