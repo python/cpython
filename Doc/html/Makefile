@@ -119,10 +119,14 @@ distclean realclean clobber: clean
 # This is really ugly, but we're not dependent on $(RELEASE), which isn't
 # defined here.  It also maintains the proper dependency on boilerplate.tex.
 
+# index.html is dependent on $(INDEXFILES) since we want the date on
+# the front index to be updated whenever any of the child documents
+# are updated and boilerplate.tex uses \today as the date.
+
 # It's at the end of the file since it wedges font-lock in XEmacs.
 
 BOILERPLATE=$(TOPDIR)/texinputs/boilerplate.tex
-index.html: $(TOPDIR)/html/index.html.in $(BOILERPLATE)
+index.html: $(TOPDIR)/html/index.html.in $(BOILERPLATE) $(INDEXFILES)
 	REL=`grep '\\release{' $(BOILERPLATE) | sed 's/.*\\release{\(.*\)}.*$$/\1/'`; \
 		REL=`echo "$$REL" | sed 's/[$$]//g'`; \
 		sed "s/@RELEASE@/$$REL/g" $< >TEMP
