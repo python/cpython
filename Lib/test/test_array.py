@@ -3,7 +3,8 @@
    Roger E. Masse
 """
 import array
-from test_support import verbose, TESTFN, unlink, TestFailed, have_unicode
+from test_support import verbose, TESTFN, unlink, TestFailed,\
+     have_unicode, vereq
 
 def main():
     testtype('c', 'c')
@@ -312,6 +313,46 @@ def testtype(type, example):
         a.reverse()
         if a != array.array(type, [4, 3, 1]):
             raise TestFailed, "array(%s) reverse-test" % `type`
+        # extended slicing
+        # subscription
+        a = array.array(type, [0,1,2,3,4])
+        vereq(a[::], a)
+        vereq(a[::2], array.array(type, [0,2,4]))
+        vereq(a[1::2], array.array(type, [1,3]))
+        vereq(a[::-1], array.array(type, [4,3,2,1,0]))
+        vereq(a[::-2], array.array(type, [4,2,0]))
+        vereq(a[3::-2], array.array(type, [3,1]))
+        vereq(a[-100:100:], a)
+        vereq(a[100:-100:-1], a[::-1])
+        vereq(a[-100L:100L:2L], array.array(type, [0,2,4]))
+        vereq(a[1000:2000:2], array.array(type, []))
+        vereq(a[-1000:-2000:-2], array.array(type, []))
+        #  deletion
+        del a[::2]
+        vereq(a, array.array(type, [1,3]))
+        a = array.array(type, range(5))
+        del a[1::2]
+        vereq(a, array.array(type, [0,2,4]))
+        a = array.array(type, range(5))
+        del a[1::-2]
+        vereq(a, array.array(type, [0,2,3,4]))
+        #  assignment
+        a = array.array(type, range(10))
+        a[::2] = array.array(type, [-1]*5)
+        vereq(a, array.array(type, [-1, 1, -1, 3, -1, 5, -1, 7, -1, 9]))
+        a = array.array(type, range(10))
+        a[::-4] = array.array(type, [10]*3)
+        vereq(a, array.array(type, [0, 10, 2, 3, 4, 10, 6, 7, 8 ,10]))
+        a = array.array(type, range(4))
+        a[::-1] = a
+        vereq(a, array.array(type, [3, 2, 1, 0]))
+        a = array.array(type, range(10))
+        b = a[:]
+        c = a[:]
+        ins = array.array(type, range(2))
+        a[2:3] = ins
+        b[slice(2,3)] = ins
+        c[2:3:] = ins
 
     # test that overflow exceptions are raised as expected for assignment
     # to array of specific integral types

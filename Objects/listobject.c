@@ -1757,9 +1757,13 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			return -1;
 		}
 
+		/* treat L[slice(a,b)] = v _exactly_ like L[a:b] = v */
+		if (step == 1 && ((PySliceObject*)item)->step == Py_None)
+			return list_ass_slice(self, start, stop, value);
+
 		if (value == NULL) {
 			/* delete slice */
-			PyObject **garbage, **item;
+			PyObject **garbage, **it;
 			int cur, i, j;
 			
 			if (slicelength <= 0)
@@ -1788,15 +1792,15 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 								cur + j + 1));
 				}
 			}
-			for (cur = start + slicelength*step + 1; 
+			for (cur = start + slicelength*step + 1;
 			     cur < self->ob_size; cur++) {
 				PyList_SET_ITEM(self, cur - slicelength,
 						PyList_GET_ITEM(self, cur));
 			}
 			self->ob_size -= slicelength;
-			item = self->ob_item;
-			NRESIZE(item, PyObject*, self->ob_size);
-			self->ob_item = item;
+			it = self->ob_item;
+			NRESIZE(it, PyObject*, self->ob_size);
+			self->ob_item = it;
 
 			for (i = 0; i < slicelength; i++) {
 				Py_DECREF(garbage[i]);
