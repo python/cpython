@@ -383,8 +383,8 @@ and implemented by Jack Jansen.}
 A new built-in function, \function{enumerate()}, will make
 certain loops a bit clearer.  \code{enumerate(thing)}, where
 \var{thing} is either an iterator or a sequence, returns a iterator
-that will return \code{(0, \var{thing[0]})}, \code{(1,
-\var{thing[1]})}, \code{(2, \var{thing[2]})}, and so forth.  
+that will return \code{(0, \var{thing}[0])}, \code{(1,
+\var{thing}[1])}, \code{(2, \var{thing}[2])}, and so forth.  
 
 Fairly often you'll see code to change every element of a list that
 looks like this:
