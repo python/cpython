@@ -19,6 +19,17 @@
 
 \input{copyright}
 
+%begin{latexonly}
+\vspace{1in}
+%end{latexonly}
+\strong{\large Acknowledgements}
+
+% XXX This needs to be checked and updated manually before each
+% release.
+
+The following people have contributed sections to this document:  Jim
+Fulton, Konrad Hinsen, Chris Phoenix, and Neil Schemenauer.
+
 \begin{abstract}
 
 \noindent
@@ -203,7 +214,7 @@ function call, since you should be able to tell from the return value.
 
 When a function \var{f} that calls another function \var{g} detects
 that the latter fails, \var{f} should itself return an error value
-(e.g. \NULL{} or \code{-1}).  It should \emph{not} call one of the
+(e.g.\ \NULL{} or \code{-1}).  It should \emph{not} call one of the
 \cfunction{PyErr_*()} functions --- one has already been called by \var{g}.
 \var{f}'s caller is then supposed to also return an error indication
 to \emph{its} caller, again \emph{without} calling \cfunction{PyErr_*()},
@@ -223,7 +234,7 @@ To ignore an exception set by a function call that failed, the exception
 condition must be cleared explicitly by calling \cfunction{PyErr_Clear()}. 
 The only time C code should call \cfunction{PyErr_Clear()} is if it doesn't
 want to pass the error on to the interpreter but wants to handle it
-completely by itself (e.g. by trying something else or pretending
+completely by itself (e.g.\ by trying something else or pretending
 nothing happened).
 
 Note that a failing \cfunction{malloc()} call must be turned into an
@@ -262,7 +273,7 @@ static PyObject *SpamError;
 \end{verbatim}
 
 and initialize it in your module's initialization function
-(\cfunction{initspam()}) with an exception object, e.g. (leaving out
+(\cfunction{initspam()}) with an exception object, e.g.\ (leaving out
 the error checking for now):
 
 \begin{verbatim}
@@ -742,20 +753,30 @@ Some example calls:
     long k, l;
     char *s;
     int size;
+\end{verbatim}
 
+\begin{verbatim}
     ok = PyArg_ParseTuple(args, ""); /* No arguments */
         /* Python call: f() */
+\end{verbatim}
 
+\begin{verbatim}
     ok = PyArg_ParseTuple(args, "s", &s); /* A string */
         /* Possible Python call: f('whoops!') */
+\end{verbatim}
 
+\begin{verbatim}
     ok = PyArg_ParseTuple(args, "lls", &k, &l, &s); /* Two longs and a string */
         /* Possible Python call: f(1, 2, 'three') */
+\end{verbatim}
 
+\begin{verbatim}
     ok = PyArg_ParseTuple(args, "(ii)s#", &i, &j, &s, &size);
         /* A pair of ints and a string, whose size is also returned */
         /* Possible Python call: f((1, 2), 'three') */
+\end{verbatim}
 
+\begin{verbatim}
     {
         char *file;
         char *mode = "r";
@@ -767,7 +788,9 @@ Some example calls:
            f('spam', 'w')
            f('spam', 'wb', 100000) */
     }
+\end{verbatim}
 
+\begin{verbatim}
     {
         int left, top, right, bottom, h, v;
         ok = PyArg_ParseTuple(args, "((ii)(ii))(ii)",
@@ -776,7 +799,9 @@ Some example calls:
         /* Possible Python call:
            f(((0, 0), (400, 300)), (10, 10)) */
     }
+\end{verbatim}
 
+\begin{verbatim}
     {
         Py_complex c;
         ok = PyArg_ParseTuple(args, "D:myfunction", &c);
@@ -1310,8 +1335,8 @@ interpreter. When modules are used as shared libraries, however, the
 symbols defined in one module may not be visible to another module.
 The details of visibility depend on the operating system; some systems
 use one global namespace for the Python interpreter and all extension
-modules (e.g. Windows), whereas others require an explicit list of
-imported symbols at module link time (e.g. AIX), or offer a choice of
+modules (e.g.\ Windows), whereas others require an explicit list of
+imported symbols at module link time (e.g.\ AIX), or offer a choice of
 different strategies (most Unices). And even if symbols are globally
 visible, the module whose functions one wishes to call might not have
 been loaded yet!
@@ -1513,7 +1538,7 @@ Python source code distribution).
 \chapter{Building C and \Cpp{} Extensions on \UNIX{}
          \label{building-on-unix}}
 
-\sectionauthor{Fim Fulton}{jim@Digicool.com}
+\sectionauthor{Jim Fulton}{jim@Digicool.com}
 
 
 %The make file make file, building C extensions on Unix
@@ -1537,7 +1562,7 @@ The make file make file, \file{Makefile.pre.in} uses metadata
 provided in a file named \file{Setup}.  The format of the \file{Setup}
 file is the same as the \file{Setup} (or \file{Setup.in}) file
 provided in the \file{Modules/} directory of the Python source
-distribution.  The \file{Setup} file contains variable definitions::
+distribution.  The \file{Setup} file contains variable definitions:
 
 \begin{verbatim}
 EC=/projects/ExtensionClass
@@ -1631,7 +1656,8 @@ Several compiler options are supported:
   \lineii{-C}{Tell the C pre-processor not to discard comments}
   \lineii{-D\var{name}=\var{value}}{Define a macro}
   \lineii{-I\var{dir}}{Specify an include directory, \var{dir}}
-  \lineii{-L\var{dir}}{Specify a library directory, \var{dir}}
+  \lineii{-L\var{dir}}{Specify a link-time library directory, \var{dir}}
+  \lineii{-R\var{dir}}{Specify a run-time library directory, \var{dir}}
   \lineii{-l\var{lib}}{Link a library, \var{lib}}
   \lineii{-U\var{name}}{Undefine a macro}
 \end{tableii}
@@ -1679,15 +1705,31 @@ people who do not have a source distribution of Python.
 Do not distribute a make file.  People building your modules
 should use \file{Makefile.pre.in} to build their own make file.
 
+Work is being done to make building and installing Python extensions
+easier for all platforms; this work in likely to supplant the current
+approach at some point in the future.  For more information or to
+participate in the effort, refer to
+\url{http://www.python.org/sigs/distutils-sig/} on the Python Web
+site.
+
 
 \chapter{Building C and \Cpp{} Extensions on Windows
-         \label{building-on-unix}}
-
-\sectionauthor{Neil Schemenauer}{neil_schemenauer@transcanada.com}
+         \label{building-on-windows}}
 
 
 This chapter briefly explains how to create a Windows extension module
-for Python using Microsoft Visual \Cpp{}.
+for Python using Microsoft Visual \Cpp{}, and follows with more
+detailed background information on how it works.  The explanatory
+material is useful for both the Windows programmer learning to build
+Python extensions and the \UNIX{} programming interested in producing
+software which can be successfully built on both \UNIX{} and Windows.
+
+\section{A Cookbook Approach \label{win-cookbook}}
+
+\sectionauthor{Neil Schemenauer}{neil_schemenauer@transcanada.com}
+
+This section provides a recipe for building a Python extension on
+Windows.
 
 Grab the binary installer from \url{http://www.python.org/} and
 install Python.  The binary installer has all of the required header
@@ -1729,6 +1771,100 @@ Refer to section 3 of the Python FAQ
 do this.
 
 
+\section{Differences Between \UNIX{} and Windows
+         \label{dynamic-linking}}
+\sectionauthor{Chris Phoenix}{cphoenix@best.com}
+
+
+\UNIX{} and Windows use completely different paradigms for run-time
+loading of code.  Before you try to build a module that can be
+dynamically loaded, be aware of how your system works.
+
+In \UNIX{}, a shared object (.so) file contains code to be used by the
+program, and also the names of functions and data that it expects to
+find in the program.  When the file is joined to the program, all
+references to those functions and data in the file's code are changed
+to point to the actual locations in the program where the functions
+and data are placed in memory.  This is basically a link operation.
+
+In Windows, a dynamic-link library (\file{.dll}) file has no dangling
+references.  Instead, an access to functions or data goes through a
+lookup table.  So the DLL code does not have to be fixed up at runtime
+to refer to the program's memory; instead, the code already uses the
+DLL's lookup table, and the lookup table is modified at runtime to
+point to the functions and data.
+
+In \UNIX{}, there is only one type of library file (\file{.a}) which
+contains code from several object files (\file{.o}).  During the link
+step to create a shared object file (\file{.so}), the linker may find
+that it doesn't know where an identifier is defined.  The linker will
+look for it in the object files in the libraries; if it finds it, it
+will include all the code from that object file.
+
+In Windows, there are two types of library, a static library and an
+import library (both called \file{.lib}).  A static library is like a
+\UNIX{} \file{.a} file; it contains code to be included as necessary.
+An import library is basically used only to reassure the linker that a
+certain identifier is legal, and will be present in the program when
+the DLL is loaded.  So the linker uses the information from the
+import library to build the lookup table for using identifiers that
+are not included in the DLL.  When an application or a DLL is linked,
+an import library may be generated, which will need to be used for all
+future DLLs that depend on the symbols in the application or DLL.
+
+Suppose you are building two dynamic-load modules, B and C, which should
+share another block of code A.  On \UNIX{}, you would \emph{not} pass
+\file{A.a} to the linker for \file{B.so} and \file{C.so}; that would
+cause it to be included twice, so that B and C would each have their
+own copy.  In Windows, building \file{A.dll} will also build
+\file{A.lib}.  You \emph{do} pass \file{A.lib} to the linker for B and
+C.  \file{A.lib} does not contain code; it just contains information
+which will be used at runtime to access A's code.  
+
+In Windows, using an import library is sort of like using \samp{import
+spam}; it gives you access to spam's names, but does not create a
+separate copy.  On \UNIX{}, linking with a library is more like
+\samp{from spam import *}; it does create a separate copy.
+
+
+\section{Using DLLs in Practice \label{win-dlls}}
+\sectionauthor{Chris Phoenix}{cphoenix@best.com}
+
+Windows Python is built in Microsoft Visual \Cpp{}; using other
+compilers may or may not work (though Borland seems to).  The rest of
+this section is MSV\Cpp{} specific.
+
+When creating DLLs in Windows, you must pass \file{python15.lib} to
+the linker.  To build two DLLs, spam and ni (which uses C functions
+found in spam), you could use these commands:
+
+\begin{verbatim}
+cl /LD /I/python/include spam.c ../libs/python15.lib
+cl /LD /I/python/include ni.c spam.lib ../libs/python15.lib
+\end{verbatim}
+
+The first command created three files: \file{spam.obj},
+\file{spam.dll} and \file{spam.lib}.  \file{Spam.dll} does not contain
+any Python functions (such as \cfunction{PyArg_ParseTuple()}), but it
+does know how to find the Python code thanks to \file{python15.lib}.
+
+The second command created \file{ni.dll} (and \file{.obj} and
+\file{.lib}), which knows how to find the necessary functions from
+spam, and also from the Python executable.
+
+Not every identifier is exported to the lookup table.  If you want any
+other modules (including Python) to be able to see your identifiers,
+you have to say \samp{_declspec(dllexport)}, as in \samp{void
+_declspec(dllexport) initspam(void)} or \samp{PyObject
+_declspec(dllexport) *NiGetSpamData(void)}.
+
+Developer Studio will throw in a lot of import libraries that you do
+not really need, adding about 100K to your executable.  To get rid of
+them, use the Project Settings dialog, Link tab, to specify
+\emph{ignore default libraries}.  Add the correct
+\file{msvcrt\var{xx}.lib} to the list of libraries.
+
+
 \chapter{Embedding Python in Another Application
          \label{embedding}}
 
@@ -1766,206 +1902,5 @@ is done will depend on the details of the \Cpp{} system used; in general you
 will need to write the main program in \Cpp{}, and use the \Cpp{} compiler
 to compile and link your program.  There is no need to recompile Python
 itself using \Cpp{}.
-
-
-\chapter{Dynamic Loading
-         \label{dynload}}
-
-On most modern systems it is possible to configure Python to support
-dynamic loading of extension modules implemented in C.  When shared
-libraries are used dynamic loading is configured automatically;
-otherwise you have to select it as a build option (see below).  Once
-configured, dynamic loading is trivial to use: when a Python program
-executes \code{import spam}, the search for modules tries to find a
-file \file{spammodule.o} (\file{spammodule.so} when using shared
-libraries) in the module search path,%
-\indexiii{module}{search}{path}
-and if one is found, it is loaded into the executing binary and
-executed.  Once loaded, the module acts just like a built-in extension
-module.
-
-The advantages of dynamic loading are twofold: the ``core'' Python
-binary gets smaller, and users can extend Python with their own
-modules implemented in C without having to build and maintain their
-own copy of the Python interpreter.  There are also disadvantages:
-dynamic loading isn't available on all systems (this just means that
-on some systems you have to use static loading), and dynamically
-loading a module that was compiled for a different version of Python
-(e.g. with a different representation of objects) may dump core.
-
-
-\section{Configuring and Building the Interpreter for Dynamic Loading
-         \label{dynloadConfig}}
-
-There are three styles of dynamic loading: one using shared libraries,
-one using SGI IRIX 4 dynamic loading, and one using GNU dynamic
-loading.
-
-\subsection{Shared Libraries
-            \label{sharedlibs}}
-
-The following systems support dynamic loading using shared libraries:
-SunOS 4; Solaris 2; SGI IRIX 5 (but not SGI IRIX 4!), Linux, FreeBSD,
-NetBSD; and probably all systems derived from SVR4, or at least those
-SVR4 derivatives that support shared libraries (are there any that
-don't?).
-
-You don't need to do anything to configure dynamic loading on these
-systems --- the \file{configure} detects the presence of the
-\code{<dlfcn.h>} header file and automatically configures dynamic
-loading.
-
-\subsection{SGI IRIX 4 Dynamic Loading
-            \label{irixDynload}}
-
-Only SGI IRIX 4 supports dynamic loading of modules using SGI dynamic
-loading.  (SGI IRIX 5 might also support it but it is inferior to
-using shared libraries so there is no reason to; a small test didn't
-work right away so I gave up trying to support it.)
-
-Before you build Python, you first need to fetch and build the
-\code{dl} package written by Jack Jansen.  This is available by
-anonymous ftp from \url{ftp://ftp.cwi.nl/pub/dynload/}, file
-\file{dl-1.6.tar.Z}.  (The version number may change.)  Follow the
-instructions in the package's \file{README} file to build it.
-
-Once you have built \code{dl}, you can configure Python to use it.  To
-this end, you run the \program{configure} script with the option
-\code{--with-dl=\var{directory}} where \var{directory} is the absolute
-pathname of the \code{dl} directory.
-
-Now build and install Python as you normally would (see the
-\file{README} file in the toplevel Python directory.)
-
-\subsection{GNU Dynamic Loading
-            \label{gnuDynload}}
-
-GNU dynamic loading supports (according to its \file{README} file) the
-following hardware and software combinations: VAX (Ultrix), Sun 3
-(SunOS 3.4 and 4.0), Sparc (SunOS 4.0), Sequent Symmetry (Dynix), and
-Atari ST.  There is no reason to use it on a Sparc; I haven't seen a
-Sun 3 for years so I don't know if these have shared libraries or not.
-
-You need to fetch and build two packages.
-One is GNU DLD.  All development of this code has been done with DLD
-version 3.2.3, which is available by anonymous ftp from
-\url{ftp://ftp.cwi.nl/pub/dynload}, file
-\file{dld-3.2.3.tar.Z}.  (A more recent version of DLD is available
-via \url{http://www-swiss.ai.mit.edu/~jaffer/DLD.html} but this has
-not been tested.)
-The other package needed is an
-emulation of Jack Jansen's \code{dl} package that I wrote on top of
-GNU DLD 3.2.3.  This is available from the same host and directory,
-file \file{dl-dld-1.1.tar.Z}.  (The version number may change --- but I doubt
-it will.)  Follow the instructions in each package's \file{README}
-file to configure and build them.
-
-Now configure Python.  Run the \file{configure} script with the option
-\code{--with-dl-dld=\var{dl-directory},\var{dld-directory}} where
-\var{dl-directory} is the absolute pathname of the directory where you
-have built the \file{dl-dld} package, and \var{dld-directory} is that
-of the GNU DLD package.  The Python interpreter you build hereafter
-will support GNU dynamic loading.
-
-
-\section{Building a Dynamically Loadable Module
-         \label{makedynload}}
-
-Since there are three styles of dynamic loading, there are also three
-groups of instructions for building a dynamically loadable module.
-Instructions common for all three styles are given first.  Assuming
-your module is called \module{spam}, the source filename must be
-\file{spammodule.c}, so the object name is \file{spammodule.o}.  The
-module must be written as a normal Python extension module (as
-described earlier).
-
-Note that in all cases you will have to create your own Makefile that
-compiles your module file(s).  This Makefile will have to pass two
-\samp{-I} arguments to the C compiler which will make it find the
-Python header files.  If the Make variable \makevar{PYTHONTOP} points to
-the toplevel Python directory, your \makevar{CFLAGS} Make variable should
-contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
-(Most header files are in the \file{Include/} subdirectory, but the
-\file{config.h} header lives in the toplevel directory.)
-
-
-\subsection{Shared Libraries
-            \label{linking}}
-
-You must link the \file{.o} file to produce a shared library.  This is 
-done using a special invocation of the \UNIX{} loader/linker,
-\manpage{ld}{1}.  Unfortunately the invocation differs slightly per
-system.
-
-On SunOS 4, use
-\begin{verbatim}
-ld spammodule.o -o spammodule.so
-\end{verbatim}
-
-On Solaris 2, use
-\begin{verbatim}
-ld -G spammodule.o -o spammodule.so
-\end{verbatim}
-
-On SGI IRIX 5, use
-\begin{verbatim}
-ld -shared spammodule.o -o spammodule.so
-\end{verbatim}
-
-On other systems, consult the manual page for \manpage{ld}{1} to find
-what flags, if any, must be used.
-
-If your extension module uses system libraries that haven't already
-been linked with Python (e.g. a windowing system), these must be
-passed to the \program{ld} command as \samp{-l} options after the
-\samp{.o} file.
-
-The resulting file \file{spammodule.so} must be copied into a directory
-along the Python module search path.
-
-
-\subsection{SGI IRIX 4 Dynamic Loading
-            \label{irixLinking}}
-
-\strong{IMPORTANT:} You must compile your extension module with the
-additional C flag \samp{-G0} (or \samp{-G 0}).  This instructs the
-assembler to generate position-independent code.
-
-You don't need to link the resulting \file{spammodule.o} file; just
-copy it into a directory along the Python module search path.%
-\indexiii{module}{search}{path}
-
-The first time your extension is loaded, it takes some extra time and
-a few messages may be printed.  This creates a file
-\file{spammodule.ld} which is an image that can be loaded quickly into
-the Python interpreter process.  When a new Python interpreter is
-installed, the \code{dl} package detects this and rebuilds
-\file{spammodule.ld}.  The file \file{spammodule.ld} is placed in the
-directory where \file{spammodule.o} was found, unless this directory is
-unwritable; in that case it is placed in a temporary
-directory.\footnote{Check the manual page of the \code{dl} package for
-details.}
-
-If your extension modules uses additional system libraries, you must
-create a file \file{spammodule.libs} in the same directory as the
-\file{spammodule.o}.  This file should contain one or more lines with
-whitespace-separated options that will be passed to the linker ---
-normally only \samp{-l} options or absolute pathnames of libraries
-(\samp{.a} files) should be used.
-
-
-\subsection{GNU Dynamic Loading
-            \label{gnuLinking}}
-
-Just copy \file{spammodule.o} into a directory along the Python module
-search path.%
-\indexiii{module}{search}{path}
-
-If your extension modules uses additional system libraries, you must
-create a file \file{spammodule.libs} in the same directory as the
-\file{spammodule.o}.  This file should contain one or more lines with
-whitespace-separated absolute pathnames of libraries (\samp{.a}
-files).  No \samp{-l} options can be used.
-
 
 \end{document}
