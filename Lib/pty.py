@@ -16,7 +16,7 @@ import os
 # ImportError then.  But since tty *does* exist across platforms, that
 # leaves a damaged module object for tty in sys.modules, and the import
 # of tty here then appears to work despite that the tty imported is junk.
-import termios 
+import termios
 del termios
 
 import tty

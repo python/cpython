@@ -14,4 +14,3 @@ file_url = "file://%s" % urllib2.__file__
 f = urllib2.urlopen(file_url)
 buf = f.read()
 f.close()
-
