@@ -171,6 +171,7 @@ typedef int pid_t;
 #endif /* __WATCOMC__ */
 
 /* The Borland compiler defines __BORLANDC__ */
+/* XXX These defines are likely incomplete, but should be easy to fix. */
 #ifdef __BORLANDC__
 #define COMPILER "[Borland]"
 #define PYTHONPATH ".;.\\lib;.\\lib\\win;.\\lib\\dos_8x3"
