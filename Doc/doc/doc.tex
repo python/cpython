@@ -33,6 +33,9 @@ This document describes the document classes and special markup used
 in the Python documentation.  Authors may use this guide, in
 conjunction with the template files provided with the
 distribution, to create or maintain whole documents or sections.
+
+[Notes and questions in brackets, like this, are notes to myself while 
+ developing this document.]
 \end{abstract}
 
 \tableofcontents
@@ -53,9 +56,22 @@ distribution, to create or maintain whole documents or sections.
   from the community have proved useful during the time I've been
   involved in maintaining the documentation.
 
-  [Who is this document for?]
+  This document is aimed at authors and potential authors of
+  documentation for Python.  Among this group, it is aimed primarily
+  at people contributing to the standard documentation and developing
+  additional documents using the same tools as the standard
+  documents.  This guide will be less useful for authors using the
+  Python documentation tools for topics other than Python, and less
+  useful still for authors not using the tools at all.
 
-  [What does it cover?]
+  The material in this guide is intended to assist authors using the
+  Python documentation tools.  It includes information on the source
+  distribution of the standard documentation, a discussion of the
+  Python document classes, reference material on the markup defined in
+  the document classes, a list of the tools need for processing
+  documents, and reference material on the tools provided with the
+  documentation resources.  At the end, there is also a section
+  discussing future directions for the Python documentation.
 
 \section{Directory Structure}
 
@@ -69,7 +85,7 @@ distribution, to create or maintain whole documents or sections.
 
   The documentation sources are usually placed within the Python
   source distribution as the top-level subdirectory \file{Doc/}, but
-  is independent of the Python source distribution.
+  are independent of the Python source distribution.
 
   The \file{Doc/} directory contains a few files and several
   subdirectories.  The files are mostly self-explanatory, including a
@@ -83,12 +99,12 @@ distribution, to create or maintain whole documents or sections.
 	three-character names.
 
     \term{Format-Specific Output}
-	Most output formats have a directory provided which contains a
+	Most output formats have a directory which contains a
 	\file{Makefile} which controls the generation of that format
 	and provides storage for the formatted documents.  The only
-	variation within this category is the Portable Document Format
-	(PDF) and PostScript versions are placed in the directories
-	\file{paper-a4/} and \file{paper-letter/}.
+	variations within this category are the Portable Document
+        Format (PDF) and PostScript versions are placed in the
+	directories \file{paper-a4/} and \file{paper-letter/}.
 
     \term{Supplemental Files}
 	Some additional directories are used to store supplemental
@@ -98,6 +114,13 @@ distribution, to create or maintain whole documents or sections.
 	components, and the scripts used to perform various steps in
 	the formatting processes.
   \end{definitions}
+
+
+\section{\LaTeX{} Syntax Primer \label{latex-primer}}
+
+  [This section will discuss what the markup looks like, and explain
+   the difference between an environment and a macro.]
+
 
 \section{Document Classes}
 
@@ -128,6 +151,10 @@ distribution, to create or maintain whole documents or sections.
 
 
 \section{Python-specific Markup}
+
+  The Python document classes define a lot of new environments and
+  macros.  This section contains the reference material for these
+  facilities.
 
   \subsection{Information Units \label{info-units}}
 
@@ -185,9 +212,9 @@ distribution, to create or maintain whole documents or sections.
          Access to the SPAM facility}
 
 \declaremodule{extension}{spam}
-  \platform{SomeOS}
-\modulesynopsis{Access to the SPAM facility of SomeOS.}
-\moduleauthor{John Doe}{john.doe@frobnication.org}
+  \platform{Unix}
+\modulesynopsis{Access to the SPAM facility of Unix.}
+\moduleauthor{Jane Doe}{jane.doe@frobnitz.org}
 \end{verbatim}
 
   \begin{macrodesc}{declaremodule}{{[}\var{key}{]}\{\var{type}\}\{\var{name}\}}
@@ -195,9 +222,9 @@ distribution, to create or maintain whole documents or sections.
     extension), and the module name.  An optional parameter should be
     given as the basis for the module's ``key'' used for linking to or
     referencing the section.  The ``key'' should only be given if the
-    module's name contains underscores, and should be the name with the
-    underscore's stripped.  This should be the first thing after the
-    \macro{section} used to introduce the module.
+    module's name contains any underscores, and should be the name
+    with the underscores stripped.  This should be the first thing
+    after the \macro{section} used to introduce the module.
   \end{macrodesc}
 
   \begin{macrodesc}{platform}{\{\var{specifier}\}}
@@ -234,7 +261,7 @@ distribution, to create or maintain whole documents or sections.
     the same purpose.
 
   \begin{macrodesc}{localmoduletable}{}
-    No parameters.  If a \file{.syn} file exists for the current
+    If a \file{.syn} file exists for the current
     chapter (or for the entire document in \code{howto} documents), a
     \env{synopsistable} is created with the contents loaded from the
     \file{.syn} file.
@@ -251,16 +278,17 @@ distribution, to create or maintain whole documents or sections.
     be used for an advantage when the documents are processed using
     the tools for Python documentation processing.  In particular, the
     generated HTML looks good!  There is also an advantage for the
-    eventual conversion of the documentation to SGML; see Section
-    \ref{futures}, ``Future Directions.''
+    eventual conversion of the documentation to SGML (see Section
+    \ref{futures}, ``Future Directions'').
 
     Each environment is named \env{table\var{cols}}, where \var{cols}
     is the number of columns in the table specified in lower-case
     Roman numerals.  Within each of these environments, an additional
     macro, \macro{line\var{cols}}, is defined, where \var{cols}
     matches the \var{cols} value of the corresponding table
-    environment.  These environments are all built on top of the
-    \env{tabular} environment.
+    environment.  These are supported for \var{cols} values of
+    \code{ii}, \code{iii}, and \code{iv}.  These environments are all
+    built on top of the \env{tabular} environment.
 
     \begin{envdesc}{tableii}{\{\var{colspec}\}\{\var{col1font}\}\{\var{heading1}\}\{\var{heading2}\}}
       Create a two-column table using the \LaTeX{} column specifier
@@ -346,11 +374,11 @@ distribution, to create or maintain whole documents or sections.
     the creation of indexes.  Much of the difficulty arises in the
     area of terminology: including the terms an expert would use for a
     concept is not sufficient.  Coming up with the terms that a novice
-    would look up is fairly difficult for an author who, hopefully, is
+    would look up is fairly difficult for an author who, typically, is
     an expert in the area she is writing on.
 
-    The truly difficult aspects of index generation are not something
-    which the documentation tools can help with, unfortunately.  Ease
+    The truly difficult aspects of index generation are not areas with
+    which the documentation tools can help.  However, ease
     of producing the index once content decisions are make is within
     the scope of the tools.  Markup is provided which the processing
     software is able to use to generate a variety of kinds of index
@@ -377,18 +405,27 @@ distribution, to create or maintain whole documents or sections.
     programming languages or even Python.
 
     \begin{macrodesc}{bifuncindex}{\{\var{name}\}}
+      Add a index entry referring to a built-in function named
+      \var{name}; parenthesis should not be included after
+      \var{name}.
     \end{macrodesc}
 
     \begin{macrodesc}{exindex}{\{\var{exception}\}}
+      Add a reference to an exception named \var{exception}.  The
+      exception may be either string- or class-based.
     \end{macrodesc}
 
     \begin{macrodesc}{kwindex}{\{\var{keyword}\}}
+      Add a reference to a language keyword (not a keyword parameter
+      in a function or method call).
     \end{macrodesc}
 
     \begin{macrodesc}{obindex}{\{\var{object type}\}}
+      Add an index entry for a built-in object type.
     \end{macrodesc}
 
     \begin{macrodesc}{opindex}{\{\var{operator}\}}
+      Add a reference to an operator, such as \samp{+}.
     \end{macrodesc}
 
     \begin{macrodesc}{refmodindex}{{[}\var{key}{]}\{\var{module}\}}
@@ -419,6 +456,9 @@ distribution, to create or maintain whole documents or sections.
     \end{macrodesc}
 
     \begin{macrodesc}{stindex}{\{\var{statement}\}}
+      Add an index entry for a statement type, such as \keyword{print}
+      or \keyword{try}/\keyword{finally}.  [XXX Need better examples
+      of difference from \macro{kwindex}.
     \end{macrodesc}
 
 
@@ -486,7 +526,7 @@ distribution, to create or maintain whole documents or sections.
       \item[\program{dvips}]
         This program is a typical part of \TeX{} installations.  It is
         used to generate PostScript from the ``device independent''
-        \file{.dvi} files.  It is only needed for the conversion to
+        \file{.dvi} files.  It is needed for the conversion to
         PostScript.
 
       \item[\program{emacs}]
@@ -494,7 +534,7 @@ distribution, to create or maintain whole documents or sections.
         fine kitchen sink it is.  It also comes with some of the
         processing needed to support the proper menu structures for
         Texinfo documents when an info conversion is desired.  This is
-        only needed for the info conversion.  Using \program{xemacs}
+        needed for the info conversion.  Using \program{xemacs}
         instead of FSF \program{emacs} may lead to instability in the
         conversion, but that's because nobody seems to maintain the
         Emacs Texinfo code in a portable manner.
@@ -543,7 +583,7 @@ distribution, to create or maintain whole documents or sections.
       \item[\program{perl}]
         Perl is required for \LaTeX2HTML{} and one of the scripts used
         to post-process \LaTeX2HTML output, as well as the
-        HTML-to-Texinfo conversion.  This is only required for
+        HTML-to-Texinfo conversion.  This is required for
         the HTML and GNU info conversions.
 
       \item[\program{python}]
@@ -558,7 +598,7 @@ distribution, to create or maintain whole documents or sections.
 
     This section describes the various scripts that are used to
     implement various stages of document processing or to orchestrate
-    entire build sequences.  Most of these tools are still only useful
+    entire build sequences.  Most of these tools are only useful
     in the context of building the standard documentation, but some
     are more general.
 
@@ -602,7 +642,7 @@ distribution, to create or maintain whole documents or sections.
     questions:  Can we do this more easily?  and, Can we do this
     better?  After a great deal of discussion with the community, we
     have determined that actively pursuing modern structured
-    documentation systems worth some investment of time.
+    documentation systems is worth some investment of time.
 
     There appear to be two real contenders in this arena: the Standard
     General Markup Language (SGML), and the Extensible Markup Language
@@ -639,6 +679,6 @@ distribution, to create or maintain whole documents or sections.
 
     Comments and bug reports on the standard documents should be sent
     to \email{python-docs@python.org}.  This may include comments
-    about formatting, content, or grammatical errors.
+    about formatting, content, grammatical errors, or this document.
 
 \end{document}
