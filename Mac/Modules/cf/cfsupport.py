@@ -171,8 +171,6 @@ CFOptionFlags = Type("CFOptionFlags", "l")
 CFStringEncoding = Type("CFStringEncoding", "l")
 CFComparisonResult = Type("CFComparisonResult", "l")  # a bit dangerous, it's an enum
 CFURLPathStyle = Type("CFURLPathStyle", "l") #  a bit dangerous, it's an enum
-FSRef_ptr = OpaqueType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
-FSRef = OpaqueByValueType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
 
 char_ptr = stringptr
 return_stringptr = Type("char *", "s")	# ONLY FOR RETURN VALUES!!
