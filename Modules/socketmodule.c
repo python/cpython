@@ -1848,8 +1848,8 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-	internal_select(s, 1);
 	do {
+		internal_select(s, 1);
 		n = send(s->sock_fd, buf, len, flags);
 		if (n < 0)
 			break;
