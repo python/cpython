@@ -1,29 +1,44 @@
 Project: core implementation
 ****************************
 
-Still to do
------------
+Still to do (by priority)
+-------------------------
 
-Add __del__ handlers?
-
-Allow assignment to __bases__ and __dict__?
+Add __del__ handlers?  I asked for a motivation on python-dev and
+nobody piped up.  Yet I expect it will be asked for later.  Are there
+GC issues?  Doesn't the GC make an exception for classic classes with
+a __del__ handler?
 
 Support mixed multiple inheritance from classic and new-style classes?
+That would be cool and make new-style classes much more usable (it
+would remove most of the reasons not to use them for new projects).
+How hard would this be?
+
+Do something with the tp_cache slot?  This is (was?) intended to cache
+all the class attributes from all base classes; a key would be deleted
+when the base class attribute is.  But the question is, are the
+savings worth it?  So I may not do this.
 
 Check for conflicts between base classes.  I fear that the rules used
 to decide whether multiple bases have conflicting instance variables
 aren't strict enough.  I think that sometimes two different classes
-adding __dict__ may be incompatible after all.
+adding __dict__ may be incompatible after all.  (I may not do this.
+Who cares.)
 
 Check for order conflicts.  Suppose there are two base classes X and
 Y.  Suppose class B derives from X and Y, and class C from Y and X (in
 that order).  Now suppose class D derives from B and C.  In which
 order should the base classes X and Y be searched?  This is an order
 conflict, and should be disallowed; currently the test for this is not
-implemented.
+implemented.  (I may not do this.  Who cares.)
+
+Allow assignment to __bases__?  (I don't think there's a demand for
+this.)
 
 Done (mostly)
 -------------
+
+Assignment to __dict__.
 
 More performance work -- one particular test, test_descr.inherits(),
 is still about 50% slower with dynamic classes. :-(  The approach of
