@@ -1,0 +1,4 @@
+test_atexit
+handler2 (7,) {'kw': 'abc'}
+handler2 () {}
+handler1

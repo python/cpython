@@ -228,6 +228,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/libstatvfs.tex \
 	../lib/libtty.tex \
 	../lib/libasyncore.tex \
+	../lib/libatexit.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
