@@ -96,6 +96,9 @@
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES
 
+/* Define if malloc(0) returns a NULL pointer */
+#undef MALLOC_ZERO_RETURNS_NULL
+
 /* Define if you have POSIX threads */
 #undef _POSIX_THREADS
 
