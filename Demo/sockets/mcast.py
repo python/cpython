@@ -34,13 +34,13 @@ if sender:
 		s.sendto(data, (mygroup, MYPORT))
 		time.sleep(1)
 else:
-	# Bind the socket to my port
-	s.bind('', MYPORT)
-
 	# Allow multiple copies of this program on one machine
 	s.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1) # (Not strictly needed)
 
-	# Ugly: construct binary group address from MYGROUP converted to bytes
+	# Bind the socket to my port
+	s.bind('', MYPORT)
+
+	# Construct binary group address from MYGROUP converted to bytes
 	bytes = eval(regsub.gsub('\.', ',', MYGROUP))
 	grpaddr = 0
 	for byte in bytes: grpaddr = (grpaddr << 8) | byte
