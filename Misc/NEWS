@@ -70,6 +70,11 @@ Extension modules
   second parameter to decompress() that specifies the maximum amount
   of memory to use for the uncompressed data.
 
+- optional SSL support in the socket module now exports OpenSSL
+  functions RAND_add(), RAND_egd(), and RAND_status().  These calls
+  are useful on platforms like Solaris where OpenSSL does not
+  automatically seed its PRNG.
+
 Library
 
 - doctest now excludes functions and classes not defined by the module
