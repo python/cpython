@@ -5,12 +5,8 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
 #include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -62,6 +58,42 @@ extern int _ListObj_Convert(PyObject *, ListHandle *);
 #define as_List(x) ((ListHandle)x)
 #define as_Resource(lh) ((Handle)lh)
 
+static ListDefUPP myListDefFunctionUPP;
+
+#if !TARGET_API_MAC_CARBON
+
+#define kJumpAbs 0x4EF9
+
+#pragma options align=mac68k
+typedef struct {
+	short jmpabs;       /* 4EF9 */
+	ListDefUPP theUPP;  /* 00000000 */
+} LDEFStub, **LDEFStubHandle;
+#pragma options align=reset
+
+static OSErr installLDEFStub(ListHandle list) {
+	LDEFStubHandle stubH;
+
+	stubH = (LDEFStubHandle)NewHandleClear(sizeof(LDEFStub));
+	if (stubH == NULL)
+		return MemError();
+	
+	(*stubH)->jmpabs = kJumpAbs;
+	(*stubH)->theUPP = myListDefFunctionUPP;
+	HLock((Handle) stubH);
+	
+	(*list)->listDefProc = (Handle)stubH;
+	return noErr;
+}
+
+static void removeLDEFStub(ListHandle list) {
+	if ((*list)->listDefProc)
+		DisposeHandle((Handle)(*list)->listDefProc);
+	(*list)->listDefProc = NULL;
+}
+
+#endif
+
 static PyObject *List_Error;
 
 /* ------------------------ Object type List ------------------------ */
@@ -73,6 +105,8 @@ PyTypeObject List_Type;
 typedef struct ListObject {
 	PyObject_HEAD
 	ListHandle ob_itself;
+	PyObject *ob_ldef_func;
+	int ob_have_ldef_stub;
 	int ob_must_be_disposed;
 } ListObject;
 
@@ -86,7 +120,10 @@ PyObject *ListObj_New(ListHandle itself)
 	it = PyObject_NEW(ListObject, &List_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
+	it->ob_ldef_func = NULL;
+	it->ob_have_ldef_stub = 0;
 	it->ob_must_be_disposed = 1;
+	SetListRefCon(itself, (long)it);
 	return (PyObject *)it;
 }
 int ListObj_Convert(PyObject *v, ListHandle *p_itself)
@@ -102,6 +139,12 @@ int ListObj_Convert(PyObject *v, ListHandle *p_itself)
 
 static void ListObj_dealloc(ListObject *self)
 {
+	Py_XDECREF(self->ob_ldef_func);
+	self->ob_ldef_func = NULL;
+#if !TARGET_API_MAC_CARBON
+	if (self->ob_have_ldef_stub) removeLDEFStub(self->ob_itself);
+#endif
+	SetListRefCon(self->ob_itself, (long)0);
 	if (self->ob_must_be_disposed && self->ob_itself) LDispose(self->ob_itself);
 	PyMem_DEL(self);
 }
@@ -476,6 +519,25 @@ static PyObject *ListObj_LDraw(ListObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *ListObj_LGetCellDataLocation(ListObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short offset;
+	short len;
+	Point theCell;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetPoint, &theCell))
+		return NULL;
+	LGetCellDataLocation(&offset,
+	                     &len,
+	                     theCell,
+	                     _self->ob_itself);
+	_res = Py_BuildValue("hh",
+	                     offset,
+	                     len);
+	return _res;
+}
+
 static PyObject *ListObj_as_Resource(ListObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -533,6 +595,8 @@ static PyMethodDef ListObj_methods[] = {
 	 "(Boolean setIt, Point theCell) -> None"},
 	{"LDraw", (PyCFunction)ListObj_LDraw, 1,
 	 "(Point theCell) -> None"},
+	{"LGetCellDataLocation", (PyCFunction)ListObj_LGetCellDataLocation, 1,
+	 "(Point theCell) -> (short offset, short len)"},
 	{"as_Resource", (PyCFunction)ListObj_as_Resource, 1,
 	 "() -> (Handle _rv)"},
 	{NULL, NULL, 0}
@@ -545,9 +609,9 @@ static PyObject *ListObj_getattr(ListObject *self, char *name)
 	{
 		/* XXXX Should we HLock() here?? */
 		if ( strcmp(name, "listFlags") == 0 )
-			return Py_BuildValue("l", (long)(*self->ob_itself)->listFlags & 0xff);
+			return Py_BuildValue("l", (long)GetListFlags(self->ob_itself) & 0xff);
 		if ( strcmp(name, "selFlags") == 0 )
-			return Py_BuildValue("l", (long)(*self->ob_itself)->selFlags & 0xff);
+			return Py_BuildValue("l", (long)GetListSelectionFlags(self->ob_itself) & 0xff);
 	}
 	return Py_FindMethodInChain(&ListObj_chain, (PyObject *)self, name);
 }
@@ -561,12 +625,11 @@ ListObj_setattr(ListObject *self, char *name, PyObject *value)
 		return -1;
 	intval = PyInt_AsLong(value);
 	if (strcmp(name, "listFlags") == 0 ) {
-		/* XXXX Should we HLock the handle here?? */
-		(*self->ob_itself)->listFlags = intval;
+		SetListFlags(self->ob_itself, intval);
 		return 0;
 	}
 	if (strcmp(name, "selFlags") == 0 ) {
-		(*self->ob_itself)->selFlags = intval;
+		SetListSelectionFlags(self->ob_itself, intval);
 		return 0;
 	}
 	return -1;
@@ -600,6 +663,79 @@ PyTypeObject List_Type = {
 
 /* ---------------------- End object type List ---------------------- */
 
+
+static PyObject *List_CreateCustomList(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Rect rView;
+	Rect dataBounds;
+	Point cellSize;
+
+	PyObject *listDefFunc;
+	ListDefSpec theSpec;
+	WindowPtr theWindow;
+	Boolean drawIt;
+	Boolean hasGrow;
+	Boolean scrollHoriz;
+	Boolean scrollVert;
+	ListHandle outList;
+
+	if (!PyArg_ParseTuple(_args, "O&O&O&(iO)O&bbbb",
+	                      PyMac_GetRect, &rView,
+	                      PyMac_GetRect, &dataBounds,
+	                      PyMac_GetPoint, &cellSize,
+	                      &theSpec.defType, &listDefFunc,
+	                      WinObj_Convert, &theWindow,
+	                      &drawIt,
+	                      &hasGrow,
+	                      &scrollHoriz,
+	                      &scrollVert))
+		return NULL;
+
+
+#if TARGET_API_MAC_CARBON
+	/* Carbon applications use the CreateCustomList API */ 
+	theSpec.u.userProc = myListDefFunctionUPP;
+	CreateCustomList(&rView,
+	                 &dataBounds,
+	                 cellSize,
+	                 &theSpec,
+	                 theWindow,
+	                 drawIt,
+	                 hasGrow,
+	                 scrollHoriz,
+	                 scrollVert,
+	                 &outList);
+
+#else
+	/* pre-Carbon applications set the address in the LDEF
+	to a routine descriptor referring to their list
+	definition routine. */
+	outList = LNew(&rView,
+	               &dataBounds,
+	               cellSize,
+	               0,
+	               theWindow,
+	               drawIt, /* XXX must be false */
+	               hasGrow,
+	               scrollHoriz,
+	               scrollVert);
+	if (installLDEFStub(outList) != noErr) {
+		PyErr_SetString(PyExc_MemoryError, "can't create LDEF stub");
+		return NULL;
+	}
+#endif
+
+	_res = ListObj_New(outList);
+	if (_res == NULL)
+		return NULL;
+	Py_INCREF(listDefFunc);
+	((ListObject*)_res)->ob_ldef_func = listDefFunc;
+#if !TARGET_API_MAC_CARBON
+	((ListObject*)_res)->ob_have_ldef_stub = 1;
+#endif
+	return _res;
+}
 
 static PyObject *List_LNew(PyObject *_self, PyObject *_args)
 {
@@ -937,6 +1073,8 @@ static PyObject *List_as_List(PyObject *_self, PyObject *_args)
 }
 
 static PyMethodDef List_methods[] = {
+	{"CreateCustomList", (PyCFunction)List_CreateCustomList, 1,
+	 "(Rect rView, Rect dataBounds, Point cellSize, ListDefSpec theSpec, WindowPtr theWindow, Boolean drawIt, Boolean hasGrow, Boolean scrollHoriz, Boolean scrollVert) -> (ListHandle outList)"},
 	{"LNew", (PyCFunction)List_LNew, 1,
 	 "(Rect rView, Rect dataBounds, Point cSize, short theProc, WindowPtr theWindow, Boolean drawIt, Boolean hasGrow, Boolean scrollHoriz, Boolean scrollVert) -> (ListHandle _rv)"},
 	{"GetListPort", (PyCFunction)List_GetListPort, 1,
@@ -984,6 +1122,42 @@ static PyMethodDef List_methods[] = {
 
 
 
+static void myListDefFunction(SInt16 message,
+                       Boolean selected,
+                       Rect *cellRect,
+                       Cell theCell,
+                       SInt16 dataOffset,
+                       SInt16 dataLen,
+                       ListHandle theList)  
+{
+	PyObject *listDefFunc, *args, *rv=NULL;
+	ListObject *self;
+	
+	self = (ListObject*)GetListRefCon(theList);
+	if (self == NULL || self->ob_itself != theList)
+		return;  /* nothing we can do */
+	listDefFunc = self->ob_ldef_func;
+	if (listDefFunc == NULL)
+		return;  /* nothing we can do */
+	args = Py_BuildValue("hbO&O&hhO", message,
+	                                  selected,
+	                                  PyMac_BuildRect, cellRect,
+	                                  PyMac_BuildPoint, theCell,
+	                                  dataOffset,
+	                                  dataLen,
+	                                  self);
+	if (args != NULL) {
+		rv = PyEval_CallObject(listDefFunc, args);
+		Py_DECREF(args);
+	}
+	if (rv == NULL) {
+		PySys_WriteStderr("error in list definition callback:\n");
+		PyErr_Print();
+	} else {
+		Py_DECREF(rv);
+	}
+}
+
 
 void init_List(void)
 {
@@ -992,8 +1166,10 @@ void init_List(void)
 
 
 
-		PyMac_INIT_TOOLBOX_OBJECT_NEW(ListHandle, ListObj_New);
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ListHandle, ListObj_Convert);
+	myListDefFunctionUPP = NewListDefUPP((ListDefProcPtr)myListDefFunction);
+
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(ListHandle, ListObj_New);
+	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(ListHandle, ListObj_Convert);
 
 
 	m = Py_InitModule("_List", List_methods);
