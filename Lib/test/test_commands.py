@@ -45,6 +45,7 @@ class CommandTests(unittest.TestCase):
         # Note that the first case above has a space in the group name
         # while the second one has a space in both names.
         pat = r'''d.........   # It is a directory.
+                  \+?          # It may have ACLs.
                   \s+\d+       # It has some number of links.
                   [^/]*        # Skip user, group, size, and date.
                   /\.          # and end with the name of the file.
