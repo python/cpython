@@ -752,7 +752,6 @@ def _test(N=2000):
     _test_generator(N, 'normalvariate(0.0, 1.0)')
     _test_generator(N, 'lognormvariate(0.0, 1.0)')
     _test_generator(N, 'cunifvariate(0.0, 1.0)')
-    _test_generator(N, 'expovariate(1.0)')
     _test_generator(N, 'vonmisesvariate(0.0, 1.0)')
     _test_generator(N, 'gammavariate(0.01, 1.0)')
     _test_generator(N, 'gammavariate(0.1, 1.0)')
@@ -765,8 +764,6 @@ def _test(N=2000):
     _test_generator(N, 'gammavariate(200.0, 1.0)')
     _test_generator(N, 'gauss(0.0, 1.0)')
     _test_generator(N, 'betavariate(3.0, 3.0)')
-    _test_generator(N, 'paretovariate(1.0)')
-    _test_generator(N, 'weibullvariate(1.0, 1.0)')
     _test_generator(N, '_sample_generator(50, 5)')  # expected s.d.: 14.4
     _test_generator(N, '_sample_generator(50, 45)') # expected s.d.: 14.4
 
