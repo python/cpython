@@ -1696,6 +1696,18 @@ eval_code2(co, globals, locals,
 			why = WHY_EXCEPTION;
 		}
 	}
+
+	/* Kill all local variables */
+
+	{
+		int i;
+		for (i = co->co_nlocals; --i >= 0; ++fastlocals) {
+			if (*fastlocals != NULL) {
+				DECREF(*fastlocals);
+				*fastlocals = NULL;
+			}
+		}
+	}
 	
 	/* Restore previous frame and release the current one */
 
