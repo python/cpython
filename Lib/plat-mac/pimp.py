@@ -131,7 +131,8 @@ class PimpTarUnpacker(PimpUnpacker):
             tf.extract(member, self._dir)
         if skip:
             names = [member.name for member in skip if member.name[-1] != '/']
-            return "Not all files were unpacked: %s" % " ".join(names)
+            if names:
+	            return "Not all files were unpacked: %s" % " ".join(names)
         
 ARCHIVE_FORMATS = [
     (".tar.Z", PimpTarUnpacker, None),
