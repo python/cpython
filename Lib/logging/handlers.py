@@ -27,7 +27,7 @@ Copyright (C) 2001-2004 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, logging, socket, types, os, string, cPickle, struct, time
+import sys, logging, socket, types, os, string, cPickle, struct, time, glob
 
 #
 # Some constants...
@@ -39,8 +39,34 @@ DEFAULT_HTTP_LOGGING_PORT   = 9022
 DEFAULT_SOAP_LOGGING_PORT   = 9023
 SYSLOG_UDP_PORT             = 514
 
+class BaseRotatingHandler(logging.FileHandler):
+    """
+    Base class for handlers that rotate log files at a certain point.
+    Not meant to be instantiated directly.  Instead, use RotatingFileHandler
+    or TimedRotatingFileHandler.
+    """
+    def __init__(self, filename, mode):
+        """
+        Use the specified filename for streamed logging
+        """
+        logging.FileHandler.__init__(self, filename, mode)
 
-class RotatingFileHandler(logging.FileHandler):
+    def emit(self, record):
+        """
+        Emit a record.
+
+        Output the record to the file, catering for rollover as described
+        in doRollover().
+        """
+        if self.shouldRollover(record):
+            self.doRollover()
+        logging.FileHandler.emit(self, record)
+
+class RotatingFileHandler(BaseRotatingHandler):
+    """
+    Handler for logging to a set of files, which switches from one file
+    to the next when the current file reaches a certain size.
+    """
     def __init__(self, filename, mode="a", maxBytes=0, backupCount=0):
         """
         Open the specified file and use it as the stream for logging.
@@ -62,11 +88,12 @@ class RotatingFileHandler(logging.FileHandler):
 
         If maxBytes is zero, rollover never occurs.
         """
-        logging.FileHandler.__init__(self, filename, mode)
+        self.mode = mode
+        if maxBytes > 0:
+            self.mode = "a" # doesn't make sense otherwise!
+        BaseRotatingHandler.__init__(self, filename, self.mode)
         self.maxBytes = maxBytes
         self.backupCount = backupCount
-        if maxBytes > 0:
-            self.mode = "a"
 
     def doRollover(self):
         """
@@ -90,20 +117,149 @@ class RotatingFileHandler(logging.FileHandler):
             #print "%s -> %s" % (self.baseFilename, dfn)
         self.stream = open(self.baseFilename, "w")
 
-    def emit(self, record):
+    def shouldRollover(self, record):
         """
-        Emit a record.
+        Determine if rollover should occur.
 
-        Output the record to the file, catering for rollover as described
-        in doRollover().
+        Basically, see if the supplied record would cause the file to exceed
+        the size limit we have.
         """
         if self.maxBytes > 0:                   # are we rolling over?
             msg = "%s\n" % self.format(record)
             self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
             if self.stream.tell() + len(msg) >= self.maxBytes:
-                self.doRollover()
-        logging.FileHandler.emit(self, record)
+                return 1
+        return 0
 
+class TimedRotatingFileHandler(BaseRotatingHandler):
+    """
+    Handler for logging to a file, rotating the log file at certain timed
+    intervals.
+
+    If backupCount is > 0, when rollover is done, no more than backupCount
+    files are kept - the oldest ones are deleted.
+    """
+    def __init__(self, filename, when='h', interval=1, backupCount=0):
+        BaseRotatingHandler.__init__(self, filename, 'a')
+        self.when = string.upper(when)
+        self.backupCount = backupCount
+        # Calculate the real rollover interval, which is just the number of
+        # seconds between rollovers.  Also set the filename suffix used when
+        # a rollover occurs.  Current 'when' events supported:
+        # S - Seconds
+        # M - Minutes
+        # H - Hours
+        # D - Days
+        # midnight - roll over at midnight
+        # W{0-6} - roll over on a certain day; 0 - Monday
+        #
+        # Case of the 'when' specifier is not important; lower or upper case
+        # will work.
+        currentTime = int(time.time())
+        if self.when == 'S':
+            self.interval = 1 # one second
+            self.suffix = "%Y-%m-%d_%H-%M-%S"
+        elif self.when == 'M':
+            self.interval = 60 # one minute
+            self.suffix = "%Y-%m-%d_%H-%M"
+        elif self.when == 'H':
+            self.interval = 60 * 60 # one hour
+            self.suffix = "%Y-%m-%d_%H"
+        elif self.when == 'D' or self.when == 'MIDNIGHT':
+            self.interval = 60 * 60 * 24 # one day
+            self.suffix = "%Y-%m-%d"
+        elif self.when.startswith('W'):
+            self.interval = 60 * 60 * 24 * 7 # one week
+            if len(self.when) != 2:
+                raise ValueError("You must specify a day for weekly rollover from 0 to 6 (0 is Monday): %s" % self.when)
+            if self.when[1] < '0' or self.when[1] > '6':
+                raise ValueError("Invalid day specified for weekly rollover: %s" % self.when)
+            self.dayOfWeek = int(self.when[1])
+            self.suffix = "%Y-%m-%d"
+        else:
+            raise ValueError("Invalid rollover interval specified: %s" % self.when)
+
+        self.interval *= interval # multiply by units requested
+        self.rolloverAt = currentTime + self.interval
+
+        # If we are rolling over at midnight or weekly, then the interval is already known.
+        # What we need to figure out is WHEN the next interval is.  In other words,
+        # if you are rolling over at midnight, then your base interval is 1 day,
+        # but you want to start that one day clock at midnight, not now.  So, we
+        # have to fudge the rolloverAt value in order to trigger the first rollover
+        # at the right time.  After that, the regular interval will take care of
+        # the rest.  Note that this code doesn't care about leap seconds. :)
+        if self.when == 'MIDNIGHT' or self.when.startswith('W'):
+            # This could be done with less code, but I wanted it to be clear
+            t = time.localtime(currentTime)
+            currentHour = t[3]
+            currentMinute = t[4]
+            currentSecond = t[5]
+            # r is the number of seconds left between now and midnight
+            r = (24 - currentHour) * 60 * 60 # number of hours in seconds
+            r += (59 - currentMinute) * 60 # plus the number of minutes (in secs)
+            r += (59 - currentSecond) # plus the number of seconds
+            self.rolloverAt = currentTime + r
+            # If we are rolling over on a certain day, add in the number of days until
+            # the next rollover, but offset by 1 since we just calculated the time
+            # until the next day starts.  There are three cases:
+            # Case 1) The day to rollover is today; in this case, do nothing
+            # Case 2) The day to rollover is further in the interval (i.e., today is
+            #         day 2 (Wednesday) and rollover is on day 6 (Sunday).  Days to
+            #         next rollover is simply 6 - 2 - 1, or 3.
+            # Case 3) The day to rollover is behind us in the interval (i.e., today
+            #         is day 5 (Saturday) and rollover is on day 3 (Thursday).
+            #         Days to rollover is 6 - 5 + 3, or 4.  In this case, it's the
+            #         number of days left in the current week (1) plus the number
+            #         of days in the next week until the rollover day (3).
+            if when.startswith('W'):
+                day = t[6] # 0 is Monday
+                if day > self.dayOfWeek:
+                    daysToWait = (day - self.dayOfWeek) - 1
+                    self.rolloverAt += (daysToWait * (60 * 60 * 24))
+                if day < self.dayOfWeek:
+                    daysToWait = (6 - self.dayOfWeek) + day
+                    self.rolloverAt += (daysToWait * (60 * 60 * 24))
+
+        print "Will rollover at %d, %d seconds from now" % (self.rolloverAt, self.rolloverAt - currentTime)
+
+    def shouldRollover(self, record):
+        """
+        Determine if rollover should occur
+
+        record is not used, as we are just comparing times, but it is needed so
+        the method siguratures are the same
+        """
+        t = int(time.time())
+        if t >= self.rolloverAt:
+            return 1
+        print "No need to rollover: %d, %d" % (t, self.rolloverAt)
+        return 0
+
+    def doRollover(self):
+        """
+        do a rollover; in this case, a date/time stamp is appended to the filename
+        when the rollover happens.  However, you want the file to be named for the
+        start of the interval, not the current time.  If there is a backup count,
+        then we have to get a list of matching filenames, sort them and remove
+        the one with the oldest suffix.
+        """
+        self.stream.close()
+        # get the time that this sequence started at and make it a TimeTuple
+        t = self.rolloverAt - self.interval
+        timeTuple = time.localtime(t)
+        dfn = self.baseFilename + "." + time.strftime(self.suffix, timeTuple)
+        if os.path.exists(dfn):
+            os.remove(dfn)
+        os.rename(self.baseFilename, dfn)
+        if self.backupCount > 0:
+            # find the oldest log file and delete it
+            s = glob.glob(self.baseFilename + ".20*")
+            if len(s) > self.backupCount:
+                os.remove(s[0])
+        print "%s -> %s" % (self.baseFilename, dfn)
+        self.stream = open(self.baseFilename, "w")
+        self.rolloverAt = int(time.time()) + self.interval
 
 class SocketHandler(logging.Handler):
     """
