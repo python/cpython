@@ -1567,7 +1567,8 @@ class Tk(Misc, Wm):
             raise RuntimeError, \
             "tk.h version (%s) doesn't match libtk.a version (%s)" \
             % (_tkinter.TK_VERSION, tk_version)
-        tcl_version = self.tk.getvar('tcl_version')
+        # Under unknown circumstances, tcl_version gets coerced to float
+        tcl_version = str(self.tk.getvar('tcl_version'))
         if tcl_version != _tkinter.TCL_VERSION:
             raise RuntimeError, \
             "tcl.h version (%s) doesn't match libtcl.a version (%s)" \
