@@ -31,11 +31,11 @@
 @if "%_qmode%"=="yes" goto Qmode
 @echo Deleting .pyc/.pyo files ...
 @%_exe% rmpyc.py
-%_exe% %_dashO% ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
+%_exe% %_dashO% -E -tt ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 @echo About to run again without deleting .pyc/.pyo first:
 @pause
 :Qmode
-%_exe% %_dashO% ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
+%_exe% %_dashO% -E -tt ../lib/test/regrtest.py %1 %2 %3 %4 %5 %6 %7 %8 %9
 @set _exe=
 @set _qmode=
 @set _dashO=
