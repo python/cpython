@@ -23,7 +23,8 @@ for t in tests:
 	    print '=== Syntax error:', t
     except:
 	print '*** Unexpected error ***'
-	traceback.print_exc(file=sys.stdout)
+	if verbose:
+	    traceback.print_exc(file=sys.stdout)
     else:
 	try:
 	    result=obj.search(s)
