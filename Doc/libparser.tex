@@ -72,37 +72,13 @@ application to amortize the cost of processing complex parse trees, to
 provide a parse tree representation which conserves memory space when
 compared to the Python tuple representation, and to ease the creation
 of additional modules in C which manipulate parse trees.  A simple
-``wrapper'' module may be created in Python if desired to hide the use
-of AST objects.
+``wrapper'' module may be created in Python to hide the use of AST
+objects.
 
-
-% ==== 3. ====
-% List the public functions defined by the module.  Begin with a
-% standard phrase.  You may also list the exceptions and other data
-% items defined in the module, insofar as they are important for the
-% user.
 
 The \code{parser} module defines the following functions:
 
-% ---- 3.1. ----
-% Redefine the ``indexsubitem'' macro to point to this module
-% (alternatively, you can put this at the top of the file):
-
 \renewcommand{\indexsubitem}{(in module parser)}
-
-% ---- 3.2. ----
-% For each function, use a ``funcdesc'' block.  This has exactly two
-% parameters (each parameters is contained in a set of curly braces):
-% the first parameter is the function name (this automatically
-% generates an index entry); the second parameter is the function's
-% argument list.  If there are no arguments, use an empty pair of
-% curly braces.  If there is more than one argument, separate the
-% arguments with backslash-comma.  Optional parts of the parameter
-% list are contained in \optional{...} (this generates a set of square
-% brackets around its parameter).  Arguments are automatically set in
-% italics in the parameter list.  Each argument should be mentioned at
-% least once in the description; each usage (even inside \code{...})
-% should be enclosed in \var{...}.
 
 \begin{funcdesc}{ast2tuple}{ast}
 This function accepts an AST object from the caller in
@@ -178,10 +154,6 @@ exception).
 \end{funcdesc}
 
 
-% --- 3.4. ---
-% Exceptions are described using a ``excdesc'' block.  This has only
-% one parameter: the exception name.
-
 \subsection{Exceptions and Error Handling}
 
 The parser module defines a single exception, but may also pass other
@@ -209,16 +181,6 @@ exceptions \code{MemoryError}, \code{OverflowError},
 exceptions carry all the meaning normally associated with them.  Refer
 to the descriptions of each function for detailed information.
 
-% ---- 3.5. ----
-% There is no standard block type for classes.  I generally use
-% ``funcdesc'' blocks, since class instantiation looks very much like
-% a function call.
-
-
-% ==== 4. ====
-% Now is probably a good time for a complete example.  (Alternatively,
-% an example giving the flavor of the module may be given before the
-% detailed list of functions.)
 
 \subsection{Example}
 
