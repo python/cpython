@@ -35,7 +35,7 @@ def lf2cr(text):
 		text = text[:253] + '\311'
 	return text
 
-def Message(msg, id=256):
+def Message(msg, id=256, ok=None):
 	"""Display a MESSAGE string.
 	
 	Return when the user clicks the OK button or presses Return.
@@ -49,6 +49,9 @@ def Message(msg, id=256):
 		return
 	tp, h, rect = d.GetDialogItem(2)
 	SetDialogItemText(h, lf2cr(msg))
+	if ok != None:
+		tp, h, rect = d.GetDialogItem(1)
+		h.as_Control().SetControlTitle(ok)
 	d.SetDialogDefaultItem(1)
 	while 1:
 		n = ModalDialog(None)
@@ -56,7 +59,7 @@ def Message(msg, id=256):
 			return
 
 
-def AskString(prompt, default = "", id=257):
+def AskString(prompt, default = "", id=257, ok=None, cancel=None):
 	"""Display a PROMPT string and a text entry field with a DEFAULT string.
 	
 	Return the contents of the text entry field when the user clicks the
@@ -80,6 +83,12 @@ def AskString(prompt, default = "", id=257):
 	SetDialogItemText(h, lf2cr(default))
 	d.SelectDialogItemText(4, 0, 999)
 #	d.SetDialogItem(4, 0, 255)
+	if ok != None:
+		tp, h, rect = d.GetDialogItem(1)
+		h.as_Control().SetControlTitle(ok)
+	if cancel != None:
+		tp, h, rect = d.GetDialogItem(2)
+		h.as_Control().SetControlTitle(cancel)
 	d.SetDialogDefaultItem(1)
 	d.SetDialogCancelItem(2)
 	while 1:
@@ -191,8 +200,11 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=258
 		tp, h, rect = d.GetDialogItem(3)
 		h.as_Control().SetControlTitle(no)
 	if cancel != None:
-		tp, h, rect = d.GetDialogItem(4)
-		h.as_Control().SetControlTitle(cancel)
+		if cancel == '':
+			d.HideDialogItem(4)
+		else:
+			tp, h, rect = d.GetDialogItem(4)
+			h.as_Control().SetControlTitle(cancel)
 	d.SetDialogCancelItem(4)
 	if default == 1:
 		d.SetDialogDefaultItem(2)
