@@ -12,7 +12,7 @@ extern "C" {
 #include <signal.h>
 
 /* Routines needed from outside (but not declared in a header file). */
-extern int (*Py_input_hook)();
+extern int (*PyOS_InputHook)();
 extern char *readline();
 extern int rl_initialize();
 extern int rl_insert();
@@ -98,7 +98,7 @@ PyOS_GnuReadline(prompt)
 		signal(SIGINT, old_inthandler);
 		return NULL;
 	}
-	rl_event_hook = Py_input_hook;
+	rl_event_hook = PyOS_InputHook;
 	p = readline(prompt);
 	signal(SIGINT, old_inthandler);
 	if (p == NULL) {

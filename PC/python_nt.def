@@ -54,7 +54,7 @@ EXPORTS
 	PySlice_Type DATA
 	Py_InteractiveFlag DATA
 	PyCObject_Type DATA
-	Py_input_hook DATA
+	PyOS_InputHook DATA
 	PyOS_ReadlineFunctionPointer DATA
 
 	_PyObject_New
