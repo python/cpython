@@ -226,7 +226,7 @@ binding flag.
 
 \begin{datadesc}{METH_VARARGS}
   This is the typical calling convention, where the methods have the
-  type \ctype{PyMethodDef}. The function expects two
+  type \ctype{PyCFunction}. The function expects two
   \ctype{PyObject*} values.  The first one is the \var{self} object for
   methods; for module functions, it has the value given to
   \cfunction{Py_InitModule4()} (or \NULL{} if
@@ -1151,7 +1151,7 @@ if dictoffset is not aligned on sizeof(void*):
   The function signature is
 
 \begin{verbatim}
-tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+int tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 \end{verbatim}
 
   The self argument is the instance to be initialized; the \var{args}
@@ -1179,7 +1179,7 @@ tp_init(PyObject *self, PyObject *args, PyObject *kwds)
   The function signature is
 
 \begin{verbatim}
-tp_alloc(PyTypeObject *self, int nitems)
+PyObject *tp_alloc(PyTypeObject *self, int nitems)
 \end{verbatim}
 
   The purpose of this function is to separate memory allocation from
@@ -1215,7 +1215,7 @@ tp_alloc(PyTypeObject *self, int nitems)
   The function signature is
 
 \begin{verbatim}
-tp_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+PyObject *tp_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 \end{verbatim}
 
   The subtype argument is the type of the object being created; the
