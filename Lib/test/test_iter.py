@@ -275,4 +275,48 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+    # Test filter()'s use of iterators.
+    def test_builtin_filter(self):
+        self.assertEqual(filter(None, SequenceClass(5)), range(1, 5))
+        self.assertEqual(filter(None, SequenceClass(0)), [])
+        self.assertEqual(filter(None, ()), ())
+        self.assertEqual(filter(None, "abc"), "abc")
+
+        d = {"one": 1, "two": 2, "three": 3}
+        self.assertEqual(filter(None, d), d.keys())
+
+        self.assertRaises(TypeError, filter, None, list)
+        self.assertRaises(TypeError, filter, None, 42)
+
+        class Boolean:
+            def __init__(self, truth):
+                self.truth = truth
+            def __nonzero__(self):
+                return self.truth
+        True = Boolean(1)
+        False = Boolean(0)
+
+        class Seq:
+            def __init__(self, *args):
+                self.vals = args
+            def __iter__(self):
+                class SeqIter:
+                    def __init__(self, vals):
+                        self.vals = vals
+                        self.i = 0
+                    def __iter__(self):
+                        return self
+                    def next(self):
+                        i = self.i
+                        self.i = i + 1
+                        if i < len(self.vals):
+                            return self.vals[i]
+                        else:
+                            raise StopIteration
+                return SeqIter(self.vals)
+
+        seq = Seq(*([True, False] * 25))
+        self.assertEqual(filter(lambda x: not x, seq), [False]*25)
+        self.assertEqual(filter(lambda x: not x, iter(seq)), [False]*25)
+
 run_unittest(TestCase)
