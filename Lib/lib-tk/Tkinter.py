@@ -1603,6 +1603,7 @@ class Scrollbar(Widget):
 		self.tk.call((self._w, 'set') + args)
 
 class Text(Widget):
+	# XXX Add dump()
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'text', cnf, kw)
 	def bbox(self, *args):
