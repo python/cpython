@@ -151,8 +151,11 @@ class build_ext (Command):
             self.library_dirs = []
         elif type(self.library_dirs) is StringType:
             self.library_dirs = string.split(self.library_dirs, os.pathsep)
+
         if self.rpath is None:
             self.rpath = []
+        elif type(self.rpath) is StringType:
+            self.rpath = string.split(self.rpath, os.pathsep)
 
         # for extensions under windows use different directories
         # for Release and Debug builds.
