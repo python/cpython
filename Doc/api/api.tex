@@ -1033,6 +1033,13 @@ The result is encoded in the same way as the timestamp returned by
 the standard C library function \cfunction{time()}.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{void}{PyOS_AfterFork}{}
+Function to update some internal state after a process fork; this
+should be called in the new process if the Python interpreter will
+continue to be used.  If a new executable is loaded into the new
+process, this function does not need to be called.
+\end{cfuncdesc}
+
 
 \section{Process Control \label{processControl}}
 
