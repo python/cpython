@@ -1042,11 +1042,12 @@ objects.  The first set of methods is used either to emulate a
 sequence or to emulate a mapping; the difference is that for a
 sequence, the allowable keys should be the integers \var{k} for which
 \code{0 <= \var{k} < \var{N}} where \var{N} is the length of the
-sequence, and the method \method{__getslice__()} (see below) should be
-defined.  It is also recommended that mappings provide methods
-\method{keys()}, \method{values()}, \method{items()},
-\method{has_key()}, \method{get()}, \method{clear()}, \method{copy()},
-and \method{update()} behaving similar to those for
+sequence, or slice objects, which define a range of items. (For backwards
+compatibility, the method \method{__getslice__()} (see below) can also be
+defined to handle simple, but not extended slices.) It is also recommended
+that mappings provide methods \method{keys()}, \method{values()},
+\method{items()}, \method{has_key()}, \method{get()}, \method{clear()},
+\method{copy()}, and \method{update()} behaving similar to those for
 Python's standard dictionary objects; mutable sequences should provide
 methods \method{append()}, \method{count()}, \method{index()},
 \method{insert()}, \method{pop()}, \method{remove()}, \method{reverse()}
@@ -1141,22 +1142,30 @@ If the instance does not implement the \method{__len__()} method, an
 No guarantee is made that indexes adjusted this way are not still
 negative.  Indexes which are greater than the length of the sequence
 are not modified.
+This method is deprecated. If no \method{__getslice__()} is found, a slice
+object is created instead, and passed to \method{__getitem__()} instead.
 \end{methoddesc}
 
 \begin{methoddesc}[sequence object]{__setslice__}{self, i, j, sequence}
 Called to implement assignment to \code{\var{self}[\var{i}:\var{j}]}.
 Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
+
+This method is deprecated. If no \method{__setslice__()} is found, a slice
+object is created instead, and passed to \method{__setitem__()} instead.
 \end{methoddesc}
 
 \begin{methoddesc}[sequence object]{__delslice__}{self, i, j}
 Called to implement deletion of \code{\var{self}[\var{i}:\var{j}]}.
 Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
+This method is deprecated. If no \method{__delslice__()} is found, a slice
+object is created instead, and passed to \method{__delitem__()} instead.
 \end{methoddesc}
 
-Notice that these methods are only invoked when a single slice with a
-single colon is used.  For slice operations involving extended slice
-notation, \method{__getitem__()}, \method{__setitem__()}
-or\method{__delitem__()} is called.
+Notice that these methods are only invoked when a single slice with a single
+colon is used, and the slice method is available.  For slice operations
+involving extended slice notation, or in absence of the slice methods,
+\method{__getitem__()}, \method{__setitem__()} or \method{__delitem__()} is
+called with a slice object as argument.
 
 
 \subsection{Emulating numeric types\label{numeric-types}}
