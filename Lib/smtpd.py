@@ -38,7 +38,7 @@ Version: %(__version__)s
 # has a hierarchy of classes which implement the backend functionality for the
 # smtpd.  A number of classes are provided:
 #
-#   SMTPServer - the base class for the backend.  Raises an UnimplementedError
+#   SMTPServer - the base class for the backend.  Raises NotImplementedError
 #   if you try to use it.
 #
 #   DebuggingServer - simply prints each message it receives on stdout.
@@ -309,7 +309,7 @@ class SMTPServer(asyncore.dispatcher):
         otherwise it returns the desired response string in RFC 821 format.
 
         """
-        raise UnimplementedError
+        raise NotImplementedError
 
 
 class DebuggingServer(SMTPServer):
