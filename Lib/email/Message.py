@@ -53,7 +53,7 @@ def _formatparam(param, value=None, quote=1):
 
 def _unquotevalue(value):
     if isinstance(value, TupleType):
-        return (value[0], value[1], Utils.unquote(value[2]))
+        return value[0], value[1], Utils.unquote(value[2])
     else:
         return Utils.unquote(value)
 
@@ -509,8 +509,8 @@ class Message:
         The elements of the returned list are 2-tuples of key/value pairs, as
         split on the `=' sign.  The left hand side of the `=' is the key,
         while the right hand side is the value.  If there is no `=' sign in
-        the parameter the value is the empty string.  The value is always
-        unquoted, unless unquote is set to a false value.
+        the parameter the value is the empty string.  The value is as
+        described in the get_param() method.
 
         Optional failobj is the object to return if there is no Content-Type:
         header.  Optional header is the header to search instead of
@@ -529,11 +529,23 @@ class Message:
         """Return the parameter value if found in the Content-Type: header.
 
         Optional failobj is the object to return if there is no Content-Type:
-        header.  Optional header is the header to search instead of
-        Content-Type:
+        header, or the Content-Type header has no such parameter.  Optional
+        header is the header to search instead of Content-Type:
 
-        Parameter keys are always compared case insensitively.  Values are
-        always unquoted, unless unquote is set to a false value.
+        Parameter keys are always compared case insensitively.  The return
+        value can either be a string, or a 3-tuple if the parameter was RFC
+        2231 encoded.  When it's a 3-tuple, the elements of the value are of
+        the form (CHARSET, LANGUAGE, VALUE), where LANGUAGE may be the empty
+        string.  Your application should be prepared to deal with these, and
+        can convert the parameter to a Unicode string like so:
+
+            param = msg.get_param('foo')
+            if isinstance(param, tuple):
+                param = unicode(param[2], param[0])
+
+        In any case, the parameter value (either the returned string, or the
+        VALUE item in the 3-tuple) is always unquoted, unless unquote is set
+        to a false value.
         """
         if not self.has_key(header):
             return failobj
@@ -674,6 +686,9 @@ class Message:
         boundary = self.get_param('boundary', missing)
         if boundary is missing:
             return failobj
+        if isinstance(boundary, TupleType):
+            # RFC 2231 encoded, so decode.  It better end up as ascii
+            return unicode(boundary[2], boundary[0]).encode('us-ascii')
         return _unquotevalue(boundary.strip())
 
     def set_boundary(self, boundary):
@@ -727,6 +742,21 @@ class Message:
         # Must be using Python 2.1
         from email._compat21 import walk
 
+    def get_content_charset(self, failobj=None):
+        """Return the charset parameter of the Content-Type header.
+
+        If there is no Content-Type header, or if that header has no charset
+        parameter, failobj is returned.
+        """
+        missing = []
+        charset = self.get_param('charset', missing)
+        if charset is missing:
+            return failobj
+        if isinstance(charset, TupleType):
+            # RFC 2231 encoded, so decode it, and it better end up as ascii.
+            return unicode(charset[2], charset[0]).encode('us-ascii')
+        return charset
+
     def get_charsets(self, failobj=None):
         """Return a list containing the charset(s) used in this message.
 
@@ -743,4 +773,4 @@ class Message:
         one for the container message (i.e. self), so that a non-multipart
         message will still return a list of length 1.
         """
-        return [part.get_param('charset', failobj) for part in self.walk()]
+        return [part.get_content_charset(failobj) for part in self.walk()]
