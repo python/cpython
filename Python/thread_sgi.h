@@ -49,7 +49,10 @@ static int do_exit;		/* indicates that the program is to exit */
 #endif
 static int exiting;		/* we're already exiting (for maybe_exit) */
 static pid_t my_pid;		/* PID of main thread */
-static pid_t pidlist[MAXPROC];	/* PIDs of other threads */
+static struct pidlist {
+	pid_t parent;
+	pid_t child;
+} pidlist[MAXPROC];	/* PIDs of other threads; protected by count_lock */
 static int maxpidindex;		/* # of PIDs in pidlist */
 
 #ifndef NO_EXIT_PROG
@@ -156,21 +159,33 @@ static void _init_thread _P0()
 
 static void clean_threads _P0()
 {
-	int i;
-	pid_t pid;
+	int i, j;
+	pid_t mypid, pid;
 
 	/* clean up any exited threads */
+	mypid = getpid();
 	i = 0;
 	while (i < maxpidindex) {
-		if ((pid = pidlist[i]) > 0) {
+		if (pidlist[i].parent == mypid && (pid = pidlist[i].child) > 0) {
 			pid = waitpid(pid, 0, WNOHANG);
-			if (pid < 0)
-				return;
-			if (pid != 0) {
+			if (pid > 0) {
 				/* a thread has exited */
 				pidlist[i] = pidlist[--maxpidindex];
+				/* remove references to children of dead proc */
+				for (j = 0; j < maxpidindex; j++)
+					if (pidlist[j].parent == pid)
+						pidlist[j].child = -1;
 				continue; /* don't increment i */
 			}
+		}
+		i++;
+	}
+	/* clean up the list */
+	i = 0;
+	while (i < maxpidindex) {
+		if (pidlist[i].child == -1) {
+			pidlist[i] = pidlist[--maxpidindex];
+			continue; /* don't increment i */
 		}
 		i++;
 	}
@@ -202,9 +217,11 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 			if (usconfig(CONF_INITSIZE, size) < 0)
 				perror("usconfig - CONF_INITSIZE (reset)");
 			addr = (long) dl_getrange(size + HDR_SIZE);
-			dprintf(("trying to use addr %lx-%lx for sproc\n", addr, addr+size));
+			dprintf(("trying to use addr %lx-%lx for sproc\n",
+				 addr, addr+size));
 			errno = 0;
-			if ((addr = usconfig(CONF_ATTACHADDR, addr)) < 0 && errno != 0)
+			if ((addr = usconfig(CONF_ATTACHADDR, addr)) < 0 &&
+			    errno != 0)
 				perror("usconfig - CONF_ATTACHADDR (set)");
 		}
 #endif /* USE_DL */
@@ -213,15 +230,18 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 			perror("sproc");
 #ifdef USE_DL
 		if (!local_initialized) {
-			if (usconfig(CONF_ATTACHADDR, addr) < 0) /* reset address */
+			if (usconfig(CONF_ATTACHADDR, addr) < 0)
+				/* reset address */
 				perror("usconfig - CONF_ATTACHADDR (reset)");
 			local_initialized = 1;
 		}
 #endif /* USE_DL */
 		if (success >= 0) {
 			nthreads++;
-			pidlist[maxpidindex++] = success;
-			dprintf(("pidlist[%d] = %d\n", maxpidindex-1, success));
+			pidlist[maxpidindex].parent = getpid();
+			pidlist[maxpidindex++].child = success;
+			dprintf(("pidlist[%d] = %d\n",
+				 maxpidindex-1, success));
 		}
 	}
 	if (usunsetlock(count_lock) < 0)
@@ -257,8 +277,8 @@ static void do_exit_thread _P1(no_cleanup, int no_cleanup)
 			if (nthreads >= 0) {
 				dprintf(("kill other threads\n"));
 				for (i = 0; i < maxpidindex; i++)
-					if (pidlist[i] > 0)
-						(void) kill(pidlist[i],
+					if (pidlist[i].child > 0)
+						(void) kill(pidlist[i].child,
 							    SIGKILL);
 				_exit(exit_status);
 			}
