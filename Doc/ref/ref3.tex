@@ -986,10 +986,10 @@ instead.  Also, when \method{__del__()} is invoked in response to a module
 being deleted (e.g., when execution of the program is done), other
 globals referenced by the \method{__del__()} method may already have been
 deleted.  For this reason, \method{__del__()} methods should do the
-absolute minimum needed to maintain external invariants.  Python 1.5
-guarantees that globals whose name begins with a single underscore are
-deleted from their module before other globals are deleted; if no
-other references to such globals exist, this may help in assuring that
+absolute minimum needed to maintain external invariants.  Starting with
+version 1.5, Python guarantees that globals whose name begins with a single
+underscore are deleted from their module before other globals are deleted;
+if no other references to such globals exist, this may help in assuring that
 imported modules are still available at the time when the
 \method{__del__()} method is called.
 \end{notice}
