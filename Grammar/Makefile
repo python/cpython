@@ -8,6 +8,8 @@ all:		install
 
 install:	$(DESTH) $(DESTC)
 
+depend:
+
 $(DESTH):	graminit.h
 		cp graminit.h $(DESTH)
 
