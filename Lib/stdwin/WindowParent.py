@@ -29,13 +29,19 @@ class WindowParent() = ManageOneChild():
 		self.do_keybd = 0
 		self.do_timer = 0
 		self.do_altdraw = 0
+		self.pending_destroy = 0
 	#
 	def destroy(self):
 		if self.win in WindowList:
-			import util
-			util.remove(self.win, WindowList)
+			WindowList.remove(self.win)
 		if self.child: self.child.destroy()
 		self._reset()
+	#
+	def delayed_destroy(self):
+		# This interface to be used by 'Close' buttons etc.;
+		# destroying a window from within a button hook
+		# is not a good idea...
+		self.pending_destroy = 1
 	#
 	def need_mouse(self, child): self.do_mouse = 1
 	def no_mouse(self, child): self.do_mouse = 0
@@ -57,9 +63,10 @@ class WindowParent() = ManageOneChild():
 		size = self.child.minsize(self.beginmeasuring())
 		self.size = max(self.size[0], size[0]), \
 					max(self.size[1], size[1])
-		# XXX stdwin.setdefwinsize(self.size)
+		stdwin.setdefscrollbars(0, 0)
 		# XXX Compensate stdwin bug:
-		stdwin.setdefwinsize(self.size[0]+4, min(300, self.size[1]+2))
+		# XXX should really be stdwin.setdefwinsize(self.size)
+		stdwin.setdefwinsize(self.size[0]+4, self.size[1]+2)
 		self.win = stdwin.open(self.title)
 		self.win.setdocsize(self.size)
 		if self.itimer:
@@ -109,12 +116,10 @@ class WindowParent() = ManageOneChild():
 		else:
 			self.itimer = itimer
 	#
-	# Only call dispatch if we have a child
+	# Only call dispatch once we are realized
 	#
 	def dispatch(self, (type, win, detail)):
-		if win <> self.win:
-			return
-		elif type = WE_DRAW:
+		if type = WE_DRAW:
 			d = self.win.begindrawing()
 			self.child.draw(d, detail)
 			del d
@@ -132,6 +137,8 @@ class WindowParent() = ManageOneChild():
 		elif type = WE_SIZE:
 			self.fixup()
 		elif type = WE_CLOSE:
+			self.delayed_destroy()
+		if self.pending_destroy:
 			self.destroy()
 	#
 
