@@ -2,7 +2,7 @@
 
 import unittest
 import macostools
-import macfs
+import Carbon.File
 import MacOS
 import os
 import sys
@@ -67,7 +67,7 @@ class TestMacostools(unittest.TestCase):
         except:
             pass
         macostools.mkalias(test_support.TESTFN, TESTFN2)
-        fss, _, _ = macfs.ResolveAliasFile(TESTFN2)
+        fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
         self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
 
     def test_mkalias_relative(self):
@@ -76,7 +76,7 @@ class TestMacostools(unittest.TestCase):
         except:
             pass
         macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
-        fss, _, _ = macfs.ResolveAliasFile(TESTFN2)
+        fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
         self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
 
 

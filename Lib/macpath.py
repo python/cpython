@@ -129,8 +129,8 @@ def islink(s):
     """Return true if the pathname refers to a symbolic link."""
 
     try:
-        import macfs
-        return macfs.ResolveAliasFile(s)[2]
+        import Carbon.File
+        return Carbon.File.ResolveAliasFile(s, 0)[2]
     except:
         return False
 
@@ -247,7 +247,7 @@ def abspath(path):
 def realpath(path):
     path = abspath(path)
     try:
-        import macfs
+        import Carbon.File
     except ImportError:
         return path
     if not path:
@@ -256,7 +256,7 @@ def realpath(path):
     path = components[0] + ':'
     for c in components[1:]:
         path = join(path, c)
-        path = macfs.ResolveAliasFile(path)[0].as_pathname()
+        path = Carbon.File.FSResolveAliasFile(path, 1)[0].as_pathname()
     return path
 
 supports_unicode_filenames = False
