@@ -242,11 +242,13 @@ initxxsubtype(void)
 
 	/* Fill in the deferred data addresses.  This must be done before
 	   PyType_Ready() is called. */
-	spamdict_type.ob_type = &PyType_Type;
 	spamdict_type.tp_base = &PyDict_Type;
+	if (PyType_Ready(&spamdict_type) < 0)
+		return;
 
-	spamlist_type.ob_type = &PyType_Type;
 	spamlist_type.tp_base = &PyList_Type;
+	if (PyType_Ready(&spamlist_type) < 0)
+		return;
 
 	m = Py_InitModule3("xxsubtype",
 			   xxsubtype_functions,
