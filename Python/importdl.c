@@ -36,7 +36,7 @@ extern int verbose; /* Defined in pythonrun.c */
    symbol	-- defined for:
 
    DYNAMIC_LINK -- any kind of dynamic linking
-   USE_RLD	-- NeXT dynamic linking (currently disabled)
+   USE_RLD	-- NeXT dynamic linking
    USE_DL	-- Jack's dl for IRIX 4 or GNU dld with emulation for Jack's dl
    USE_SHLIB	-- SunOS or IRIX 5 (SVR4?) shared libraries
    _AIX		-- AIX style dynamic linking
@@ -83,7 +83,7 @@ typedef FARPROC dl_funcptr;
 #define LONG_EXT "module.pyd"
 #endif
 
-#ifdef WITH_RLD
+#ifdef NeXT
 #define DYNAMIC_LINK
 #define USE_RLD
 #endif
