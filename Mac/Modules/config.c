@@ -95,7 +95,11 @@ getversion()
 #ifdef __powerc
 	strcat(version, " [MW PPC compiler]");
 #else
+#ifdef __CFM68K__
+	strcat(version, " [MW CFM68K compiler]");
+#else
 	strcat(version, " [MW 68K compiler]");
+#endif
 #endif
 #endif
 #ifdef THINK_C
@@ -330,7 +334,7 @@ struct {
 } inittab[] = {
 
 	{"array", initarray},
-#ifndef __CFM68K__
+#ifndef SYMANTEC__CFM68K__
 /* The math library seems mostly broken... */
 	{"math", initmath},
 #endif

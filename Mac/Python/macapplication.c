@@ -24,12 +24,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Macintosh Applet Python main program */
 
-#ifdef __CFM68K__
+#ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
 #endif
 
 extern void PyMac_InitApplication();
 
 main() {
+#if defined(__MWERKS__) && defined(__CFM68K__)
+	printf("Hello, world!\n");
+#endif
 	PyMac_InitApplication();
 }

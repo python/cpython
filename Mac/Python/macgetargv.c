@@ -50,7 +50,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_UNIVERSAL_HEADERS
 #endif
 
-#ifdef __CFM68K__
+#ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
 #endif
 
@@ -120,6 +120,9 @@ get_full_path (FSSpec *fss, char *buf)
 	char tmpbuf[256];
 	int plen;
 
+#if defined(__MWERKS__) && defined(__CFM68K__)
+	return -1; /* get_folder_parent doesn't work */
+#endif
 	fss_current = *fss;
 	plen = fss_current.name[0];
 	memcpy(buf, &fss_current.name[1], plen);

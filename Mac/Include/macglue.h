@@ -34,7 +34,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_UNIVERSAL_HEADERS
 #endif
 
-#ifdef __CFM68K__
+#ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
 #endif
 
