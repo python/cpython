@@ -273,11 +273,12 @@ cygwin*)
       ;;
 esac
 
-# MacOSX framework builds need more magic. LDLIBRARY is the dynamic library that
-# we build, but we do not want to link against it (we will find it with a -framework
-# option). For this reason there is an extra variable BLDLIBRARY against which Python
-# and the extension modules are linked, BLDLIBRARY. This is normally the same
-# as LDLIBRARY, but empty for MacOSX framework builds.
+# MacOSX framework builds need more magic. LDLIBRARY is the dynamic
+# library that we build, but we do not want to link against it (we
+# will find it with a -framework option). For this reason there is an
+# extra variable BLDLIBRARY against which Python and the extension
+# modules are linked, BLDLIBRARY. This is normally the same as
+# LDLIBRARY, but empty for MacOSX framework builds.
 if test "$enable_framework"
 then
   LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
@@ -1018,7 +1019,8 @@ ipv6trylibc=no
 
 if test "$ipv6" = "yes"; then
 	AC_MSG_CHECKING([ipv6 stack type])
-	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta; do
+	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
+	do
 		case $i in
 		inria)
 			dnl http://www.kame.net/
@@ -1255,6 +1257,47 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r execv \
 
 AC_CHECK_FUNCS(openpty,, AC_CHECK_LIB(util,openpty, [AC_DEFINE(HAVE_OPENPTY)] [LIBS="$LIBS -lutil"]))
 AC_CHECK_FUNCS(forkpty,, AC_CHECK_LIB(util,forkpty, [AC_DEFINE(HAVE_FORKPTY)] [LIBS="$LIBS -lutil"]))
+
+# Try defining symbols to enable large file support.
+# The particular combination of symbols used here is known to work
+# on Linux and Solaris [2.]7.
+AC_MSG_CHECKING(for CFLAGS to enable large files)
+OLD_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+AC_TRY_RUN([
+#include <sys/types.h>
+#include <stdio.h>
+main() {
+	FILE *fp;
+	off_t seek = 0x80000000ul;
+	off_t tell = 0;
+	fp = fopen("conftestval", "wb");
+	if (fp == NULL) {
+		perror("conftestval");
+		exit(1);
+	}
+ 	if (fseeko(fp, seek, 0) < 0)
+		perror("fseeko");
+	else
+		tell = ftello(fp);
+	fclose(fp);
+	unlink("conftestval");
+	if (tell == seek) {
+		fprintf(stderr, "seek to 2**31 worked\n");
+		exit(0);
+	}
+	else {
+		exit(1);
+		fprintf(stderr, "seek to 2**31 didn't work\n");
+	}
+}
+],
+AC_MSG_RESULT(yes)
+AC_DEFINE(_LARGEFILE_SOURCE)
+AC_DEFINE(_FILE_OFFSET_BITS,64),
+AC_MSG_RESULT(no),
+AC_MSG_RESULT(no (cross-compiling)))
+CFLAGS="$OLD_CFLAGS"
 
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)

@@ -25,6 +25,9 @@
 /* Defined on Solaris to see additional function prototypes. */
 #undef __EXTENSIONS__
 
+/* This must be set to 64 on some systems to enable large file support */
+#undef _FILE_OFFSET_BITS
+
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
@@ -106,6 +109,9 @@
 
 /* Define if the compiler provides a wchar.h header file. */
 #undef HAVE_WCHAR_H
+
+/* This must be defined on some systems to enable large file support */
+#undef _LARGEFILE_SOURCE
 
 /* Define if you want to have a Unicode type. */
 #undef Py_USING_UNICODE
