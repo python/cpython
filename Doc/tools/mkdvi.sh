@@ -39,8 +39,14 @@ export TEXINPUTS
 
 echo $srcdir'/tools/newind.py >'$part'.ind'
 $srcdir/tools/newind.py >$part.ind || exit $?
+echo $srcdir'/tools/newind.py modindex >mod'$part'.ind'
+$srcdir/tools/newind.py modindex >mod$part.ind || exit $?
 echo "$latex $part"
 $latex $part || exit $?
+if [ ! -f mod$part.idx ] ; then
+    echo "Not using module index; removing mod$part.ind"
+    rm mod$part.ind
+fi
 if [ "$aux" ] ; then
     # make sure the .dvi isn't interpreted as useful:
     rm $part.dvi
@@ -54,6 +60,13 @@ else
     else
 	# skipping the index; clean up the unused file
 	rm -f $part.ind
+    fi
+    if [ -f mod$part.idx ] ; then
+	# using the index
+	echo $srcdir'/tools/fix_hack mod'$part'.idx'
+	$srcdir/tools/fix_hack mod$part.idx || exit $?
+	echo 'makeindex -s '$srcdir'/texinputs/python.ist mod'$part'.idx'
+	makeindex -s $srcdir/texinputs/python.ist mod$part.idx || exit $?
     fi
     if [ "$pdf" ] ; then
 	echo $srcdir'/tools/toc2bkm.py '$part
