@@ -498,7 +498,12 @@ begin.
 The first form of \keyword{import} statement binds the module name in the
 local namespace to the module object, and then goes on to import the
 next identifier, if any.  If the module name is followed by \keyword{as},
-the name following \keyword{as} is used as the local name for the module. 
+the name following \keyword{as} is used as the local name for the module. To
+avoid confusion, you cannot import sub-modules 'as' a different
+local name. So 'import module as m' is legal, but 'import module.submod as
+s' is not. The latter should be written as 'from module import submod as s',
+see below.
+
 The \keyword{from} form does not bind the module name: it goes through the
 list of identifiers, looks each one of them up in the module found in step
 (1), and binds the name in the local namespace to the object thus found. 
