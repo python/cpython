@@ -172,7 +172,7 @@ static long
 meth_hash(a)
 	PyCFunctionObject *a;
 {
-	long x;
+	long x,y;
 	if (a->m_self == NULL)
 		x = 0;
 	else {
@@ -180,7 +180,13 @@ meth_hash(a)
 		if (x == -1)
 			return -1;
 	}
-	return x ^ (long) a->m_ml->ml_meth;
+	y = _Py_HashPointer(a->m_ml->ml_meth);
+	if (y == -1)
+		return -1;
+	x ^= y;
+	if (x == -1)
+		x = -2;
+	return x;
 }
 
 PyTypeObject PyCFunction_Type = {

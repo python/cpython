@@ -59,7 +59,13 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifndef LONG_MAX
+#if SIZEOF_LONG == 4
 #define LONG_MAX 0X7FFFFFFFL
+#elif SIZEOF_LONG == 8
+#define LONG_MAX 0X7FFFFFFFFFFFFFFFL
+#else
+#error "could not set LONG_MAX"
+#endif
 #endif
 
 #ifndef LONG_MIN
@@ -357,12 +363,12 @@ float_compare(v, w)
 	return (i < j) ? -1 : (i > j) ? 1 : 0;
 }
 
+
 static long
 float_hash(v)
 	PyFloatObject *v;
 {
 	double intpart, fractpart;
-	int expo;
 	long x;
 	/* This is designed so that Python numbers with the same
 	   value hash to the same value, otherwise comparisons
@@ -379,7 +385,7 @@ float_hash(v)
 #endif
 
 	if (fractpart == 0.0) {
-		if (intpart > 0x7fffffffL || -intpart > 0x7fffffffL) {
+		if (intpart > LONG_MAX || -intpart > LONG_MAX) {
 			/* Convert to long int and use its hash... */
 			PyObject *w = PyLong_FromDouble(v->ob_fval);
 			if (w == NULL)
@@ -393,14 +399,9 @@ float_hash(v)
 	else {
 		/* Note -- if you change this code, also change the copy
 		   in complexobject.c */
-		long hipart;
-		fractpart = frexp(fractpart, &expo);
-		fractpart = fractpart * 2147483648.0; /* 2**31 */
-		hipart = (long)fractpart; /* Take the top 32 bits */
-		fractpart = (fractpart - (double)hipart) * 2147483648.0;
-						/* Get the next 32 bits */
-		x = hipart + (long)fractpart + (long)intpart + (expo << 15);
-						/* Combine everything */
+		x = _Py_HashDouble(v->ob_fval);
+		if (x == -1)
+			return -1;
 	}
 	if (x == -1)
 		x = -2;

@@ -864,10 +864,7 @@ instance_hash(inst)
 		func = instance_getattr(inst, cmpstr);
 		if (func == NULL) {
 			PyErr_Clear();
-			outcome = (long)inst;
-			if (outcome == -1)
-				outcome = -2;
-			return outcome;
+			return _Py_HashPointer(inst);
 		}
 		PyErr_SetString(PyExc_TypeError, "unhashable instance");
 		return -1;
