@@ -22,7 +22,7 @@ __version__ = "2.53"
 
 import binascii, re, socket, time, random, sys
 
-__all__ = ["IMAP4", "Internaldate2tuple",
+__all__ = ["IMAP4", "IMAP4_SSL", "Internaldate2tuple",
            "Int2AP", "ParseFlags", "Time2Internaldate"]
 
 #       Globals
