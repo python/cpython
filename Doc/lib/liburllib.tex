@@ -173,7 +173,7 @@ class AppURLopener(urllib.FancyURLopener):
         apply(urllib.FancyURLopener.__init__, (self,) + args)
         self.version = "App/1.7"
 
-urllib._urlopener = AppURLopener
+urllib._urlopener = AppURLopener()
 \end{verbatim}
 
 \begin{classdesc}{URLopener}{\optional{proxies\optional{, **x509}}}
