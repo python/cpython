@@ -6,7 +6,8 @@
 
 As a policy, Python doesn't run user-specified code on startup of
 Python programs.  (Only interactive sessions execute the script
-specified in the \code{PYTHONSTARTUP} environment variable if it exists).
+specified in the \envvar{PYTHONSTARTUP} environment variable if it
+exists).
 
 However, some programs or sites may find it convenient to allow users
 to have a standard customization file, which gets run when a program
@@ -23,7 +24,7 @@ home directory and if it can be opened, exececutes it (using
 module \module{user}'s) global namespace.  Errors during this phase
 are not caught; that's up to the program that imports the
 \module{user} module, if it wishes.  The home directory is assumed to
-be named by the \code{HOME} environment variable; if this is not set,
+be named by the \envvar{HOME} environment variable; if this is not set,
 the current directory is used.
 
 The user's \file{.pythonrc.py} could conceivably test for
