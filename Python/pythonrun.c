@@ -108,11 +108,11 @@ Py_Initialize(void)
 	initialized = 1;
 	
 	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
-		Py_DebugFlag = 1;
+		Py_DebugFlag = Py_DebugFlag ? Py_DebugFlag : 1;
 	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
-		Py_VerboseFlag = 1;
+		Py_VerboseFlag = Py_VerboseFlag ? Py_VerboseFlag : 1;
 	if ((p = getenv("PYTHONOPTIMIZE")) && *p != '\0')
-		Py_OptimizeFlag = 1;
+		Py_OptimizeFlag = Py_OptimizeFlag ? Py_OptimizeFlag : 1;
 
 	interp = PyInterpreterState_New();
 	if (interp == NULL)
