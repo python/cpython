@@ -1,9 +1,11 @@
 # Copyright (C) 2002 Python Software Foundation
-# Author: che@debian.org (Ben Gertzfield)
+# Author: che@debian.org (Ben Gertzfield), barry@zope.com (Barry Warsaw)
 
 """Header encoding and decoding functionality."""
 
 import re
+from types import StringType, UnicodeType
+
 import email.quopriMIME
 import email.base64MIME
 from email.Charset import Charset
@@ -13,6 +15,12 @@ try:
 except SyntaxError:
     # Python 2.1 spells integer division differently
     from email._compat21 import _floordiv
+
+try:
+    True, False
+except NameError:
+    True = 1
+    False = 0
 
 CRLFSPACE = '\r\n '
 CRLF = '\r\n'
@@ -24,6 +32,9 @@ MAXLINELEN = 76
 
 ENCODE = 1
 DECODE = 2
+
+USASCII = Charset('us-ascii')
+UTF8 = Charset('utf-8')
 
 # Match encoded-word strings in the form =?charset?q?Hello_World?=
 ecre = re.compile(r'''
@@ -117,21 +128,19 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
 class Header:
     def __init__(self, s=None, charset=None, maxlinelen=None, header_name=None,
                  continuation_ws=' '):
-        """Create a MIME-compliant header that can contain many languages.
+        """Create a MIME-compliant header that can contain many character sets.
 
-        Specify the initial header value in s.  If None, the initial header
-        value is not set.
+        Optional s is the initial header value.  If None, the initial header
+        value is not set.  You can later append to the header with .append()
+        method calls.  s may be a byte string or a Unicode string, but see the
+        .append() documentation for semantics.
 
-        Specify both s's character set, and the default character set by
-        setting the charset argument to a Charset object (not a character set
-        name string!).  If None, a us-ascii Charset is used as both s's
-        initial charset and as the default character set for subsequent
-        .append() calls.
-
-        You can later append to the header with append(s, charset) below;
-        charset does not have to be the same as the one initially specified
-        here.  In fact, it's optional, and if not given, defaults to the
-        charset specified in the constructor.
+        Optional charset serves two purposes: it has the same meaning as the
+        charset argument to the .append() method.  It also sets the default
+        character set for all subsequent .append() calls that omit the charset
+        argument.  If charset is not provided in the constructor, the us-ascii
+        charset is used both as s's initial charset and as the default for
+        subsequent .append() calls.
 
         The maximum line length can be specified explicit via maxlinelen.  For
         splitting the first line to a shorter value (to account for the field
@@ -143,7 +152,7 @@ class Header:
         lines.
         """
         if charset is None:
-            charset = Charset()
+            charset = USASCII
         self._charset = charset
         self._continuation_ws = continuation_ws
         cws_expanded_len = len(continuation_ws.replace('\t', SPACE8))
@@ -186,20 +195,43 @@ class Header:
         return not self == other
 
     def append(self, s, charset=None):
-        """Append string s with Charset charset to the MIME header.
+        """Append a string to the MIME header.
 
-        If charset is given, it should be a Charset instance, or the name of a
-        character set (which will be converted to a Charset instance).  A
-        value of None (the default) means charset is the one given in the
-        class constructor.
+        Optional charset, if given, should be a Charset instance or the name
+        of a character set (which will be converted to a Charset instance).  A
+        value of None (the default) means that the charset given in the
+        constructor is used.
+
+        s may be a byte string or a Unicode string.  If it is a byte string
+        (i.e. isinstance(s, StringType) is true), then charset is the encoding
+        of that byte string, and a UnicodeError will be raised if the string
+        cannot be decoded with that charset.  If `s' is a Unicode string, then
+        charset is a hint specifying the character set of the characters in
+        the string.  In this case, when producing an RFC 2822 compliant header
+        using RFC 2047 rules, the Unicode string will be encoded using the
+        following charsets in order: us-ascii, the charset hint, utf-8.
         """
         if charset is None:
             charset = self._charset
         elif not isinstance(charset, Charset):
             charset = Charset(charset)
+        # Normalize and check the string
+        if isinstance(s, StringType):
+            # Possibly raise UnicodeError if it can't e encoded
+            unicode(s, charset.get_output_charset())
+        elif isinstance(s, UnicodeType):
+            # Convert Unicode to byte string for later concatenation
+            for charset in USASCII, charset, UTF8:
+                try:
+                    s = s.encode(charset.get_output_charset())
+                    break
+                except UnicodeError:
+                    pass
+            else:
+                assert False, 'Could not encode to utf-8'
         self._chunks.append((s, charset))
 
-    def _split(self, s, charset, firstline=0):
+    def _split(self, s, charset, firstline=False):
         # Split up a header safely for use with encode_chunks.  BAW: this
         # appears to be a private convenience method.
         splittable = charset.to_splittable(s)
@@ -227,13 +259,13 @@ class Header:
             # We can split on _maxlinelen boundaries because we know that the
             # encoding won't change the size of the string
             splitpnt = self._maxlinelen
-            first = charset.from_splittable(splittable[:splitpnt], 0)
-            last = charset.from_splittable(splittable[splitpnt:], 0)
+            first = charset.from_splittable(splittable[:splitpnt], False)
+            last = charset.from_splittable(splittable[splitpnt:], False)
         else:
             # Divide and conquer.
             halfway = _floordiv(len(splittable), 2)
-            first = charset.from_splittable(splittable[:halfway], 0)
-            last = charset.from_splittable(splittable[halfway:], 0)
+            first = charset.from_splittable(splittable[:halfway], False)
+            last = charset.from_splittable(splittable[halfway:], False)
         # Do the split
         return self._split(first, charset, firstline) + \
                self._split(last, charset)
@@ -248,7 +280,7 @@ class Header:
             line = lines.pop(0)
             if firstline:
                 maxlinelen = self._firstlinelen
-                firstline = 0
+                firstline = False
             else:
                 #line = line.lstrip()
                 maxlinelen = self._maxlinelen
@@ -338,7 +370,7 @@ class Header:
                 # There's no encoding for this chunk's charsets
                 _max_append(chunks, header, self._maxlinelen)
             else:
-                _max_append(chunks, charset.header_encode(header, 0),
+                _max_append(chunks, charset.header_encode(header),
                             self._maxlinelen, ' ')
         joiner = NL + self._continuation_ws
         return joiner.join(chunks)
@@ -363,6 +395,6 @@ class Header:
         """
         newchunks = []
         for s, charset in self._chunks:
-            newchunks += self._split(s, charset, 1)
+            newchunks += self._split(s, charset, True)
         self._chunks = newchunks
         return self._encode_chunks()
