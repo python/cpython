@@ -14,7 +14,8 @@ mswindows = (sys.platform == "win32")
 #
 
 if mswindows:
-    SETBINARY = 'import msvcrt; msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY);'
+    SETBINARY = ('import msvcrt; msvcrt.setmode(sys.stdout.fileno(), '
+                                                'os.O_BINARY);')
 else:
     SETBINARY = ''
 
@@ -32,7 +33,8 @@ class ProcessTestCase(unittest.TestCase):
     #
     def test_call_seq(self):
         """call() function with sequence argument"""
-        rc = subprocess.call([sys.executable, "-c", "import sys; sys.exit(47)"])
+        rc = subprocess.call([sys.executable, "-c",
+                              "import sys; sys.exit(47)"])
         self.assertEqual(rc, 47)
 
     def test_call_kwargs(self):
@@ -68,8 +70,9 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_executable(self):
         """executable"""
-        p = subprocess.Popen(["somethingyoudonthave", "-c", "import sys; sys.exit(47)"],
-                         executable=sys.executable)
+        p = subprocess.Popen(["somethingyoudonthave",
+                              "-c", "import sys; sys.exit(47)"],
+                             executable=sys.executable)
         p.wait()
         self.assertEqual(p.returncode, 47)
 
@@ -215,14 +218,17 @@ class ProcessTestCase(unittest.TestCase):
                           'import sys,os;' \
                           'sys.stderr.write("pineapple");' \
                           'sys.stdout.write(sys.stdin.read())'],
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                         stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
         (stdout, stderr) = p.communicate("banana")
         self.assertEqual(stdout, "banana")
         self.assertEqual(stderr, "pineapple")
 
     def test_communicate_returns(self):
         """communicate() should return None if no redirection is active"""
-        p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(47)"])
+        p = subprocess.Popen([sys.executable, "-c",
+                              "import sys; sys.exit(47)"])
         (stdout, stderr) = p.communicate()
         self.assertEqual(stdout, None)
         self.assertEqual(stderr, None)
@@ -243,7 +249,9 @@ class ProcessTestCase(unittest.TestCase):
                           'sys.stdout.write(sys.stdin.read(47));' \
                           'sys.stderr.write("xyz"*%d);' \
                           'sys.stdout.write(sys.stdin.read())' % pipe_buf],
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                         stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
         string_to_write = "abc"*pipe_buf
         (stdout, stderr) = p.communicate(string_to_write)
         self.assertEqual(stdout, string_to_write)
@@ -253,7 +261,9 @@ class ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys,os;' \
                           'sys.stdout.write(sys.stdin.read())'],
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                         stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
         p.stdin.write("banana")
         (stdout, stderr) = p.communicate("split")
         self.assertEqual(stdout, "bananasplit")
@@ -262,49 +272,52 @@ class ProcessTestCase(unittest.TestCase):
     def test_universal_newlines(self):
         """universal newlines"""
         p = subprocess.Popen([sys.executable, "-c",
-                          'import sys,os;' + SETBINARY + \
-                          'sys.stdout.write("line1\\n");' \
-                          'sys.stdout.flush();' \
-                          'sys.stdout.write("line2\\r");' \
-                          'sys.stdout.flush();' \
-                          'sys.stdout.write("line3\\r\\n");' \
-                          'sys.stdout.flush();' \
-                          'sys.stdout.write("line4\\r");' \
-                          'sys.stdout.flush();' \
+                          'import sys,os;' + SETBINARY +
+                          'sys.stdout.write("line1\\n");'
+                          'sys.stdout.flush();'
+                          'sys.stdout.write("line2\\r");'
+                          'sys.stdout.flush();'
+                          'sys.stdout.write("line3\\r\\n");'
+                          'sys.stdout.flush();'
+                          'sys.stdout.write("line4\\r");'
+                          'sys.stdout.flush();'
                           'sys.stdout.write("\\nline5");'
-                          'sys.stdout.flush();' \
+                          'sys.stdout.flush();'
                           'sys.stdout.write("\\nline6");'],
                          stdout=subprocess.PIPE,
                          universal_newlines=1)
         stdout = p.stdout.read()
         if hasattr(open, 'newlines'):
             # Interpreter with universal newline support
-            self.assertEqual(stdout, "line1\nline2\nline3\nline4\nline5\nline6")
+            self.assertEqual(stdout,
+                             "line1\nline2\nline3\nline4\nline5\nline6")
         else:
             # Interpreter without universal newline support
-            self.assertEqual(stdout, "line1\nline2\rline3\r\nline4\r\nline5\nline6")
+            self.assertEqual(stdout,
+                             "line1\nline2\rline3\r\nline4\r\nline5\nline6")
 
     def test_universal_newlines_communicate(self):
         """universal newlines through communicate()"""
         p = subprocess.Popen([sys.executable, "-c",
-                          'import sys,os;' + SETBINARY + \
-                          'sys.stdout.write("line1\\n");' \
-                          'sys.stdout.flush();' \
-                          'sys.stdout.write("line2\\r");' \
-                          'sys.stdout.flush();' \
-                          'sys.stdout.write("line3\\r\\n");' \
-                          'sys.stdout.flush();' \
-                          'sys.stdout.write("line4\\r");' \
-                          'sys.stdout.flush();' \
+                          'import sys,os;' + SETBINARY +
+                          'sys.stdout.write("line1\\n");'
+                          'sys.stdout.flush();'
+                          'sys.stdout.write("line2\\r");'
+                          'sys.stdout.flush();'
+                          'sys.stdout.write("line3\\r\\n");'
+                          'sys.stdout.flush();'
+                          'sys.stdout.write("line4\\r");'
+                          'sys.stdout.flush();'
                           'sys.stdout.write("\\nline5");'
-                          'sys.stdout.flush();' \
+                          'sys.stdout.flush();'
                           'sys.stdout.write("\\nline6");'],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                          universal_newlines=1)
         (stdout, stderr) = p.communicate()
         if hasattr(open, 'newlines'):
             # Interpreter with universal newline support
-            self.assertEqual(stdout, "line1\nline2\nline3\nline4\nline5\nline6")
+            self.assertEqual(stdout,
+                             "line1\nline2\nline3\nline4\nline5\nline6")
         else:
             # Interpreter without universal newline support
             self.assertEqual(stdout, "line1\nline2\rline3\r\nline4\r\nline5\nline6")
@@ -312,8 +325,11 @@ class ProcessTestCase(unittest.TestCase):
     def test_no_leaking(self):
         """Make sure we leak no resources"""
         for i in range(1026):
-            p = subprocess.Popen([sys.executable, "-c", "import sys;sys.stdout.write(sys.stdin.read())"],
-                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen([sys.executable, "-c",
+                    "import sys;sys.stdout.write(sys.stdin.read())"],
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
             data = p.communicate("lime")[0]
             self.assertEqual(data, "lime")
 
@@ -373,7 +389,8 @@ class ProcessTestCase(unittest.TestCase):
 
         def test_run_abort(self):
             """returncode handles signal termination"""
-            p = subprocess.Popen([sys.executable, "-c", "import os; os.abort()"])
+            p = subprocess.Popen([sys.executable,
+                                  "-c", "import os; os.abort()"])
             p.wait()
             self.assertEqual(-p.returncode, signal.SIGABRT)
 
@@ -401,7 +418,8 @@ class ProcessTestCase(unittest.TestCase):
             """args is a string"""
             f, fname = self.mkstemp()
             os.write(f, "#!/bin/sh\n")
-            os.write(f, "exec %s -c 'import sys; sys.exit(47)'\n" % sys.executable)
+            os.write(f, "exec %s -c 'import sys; sys.exit(47)'\n" %
+                        sys.executable)
             os.close(f)
             os.chmod(fname, 0700)
             p = subprocess.Popen(fname)
@@ -412,10 +430,12 @@ class ProcessTestCase(unittest.TestCase):
         def test_invalid_args(self):
             """invalid arguments should raise ValueError"""
             self.assertRaises(ValueError, subprocess.call,
-                              [sys.executable, "-c", "import sys; sys.exit(47)"],
+                              [sys.executable,
+                               "-c", "import sys; sys.exit(47)"],
                               startupinfo=47)
             self.assertRaises(ValueError, subprocess.call,
-                              [sys.executable, "-c", "import sys; sys.exit(47)"],
+                              [sys.executable,
+                               "-c", "import sys; sys.exit(47)"],
                               creationflags=47)
 
         def test_shell_sequence(self):
@@ -440,7 +460,8 @@ class ProcessTestCase(unittest.TestCase):
             """call() function with string argument on UNIX"""
             f, fname = self.mkstemp()
             os.write(f, "#!/bin/sh\n")
-            os.write(f, "exec %s -c 'import sys; sys.exit(47)'\n" % sys.executable)
+            os.write(f, "exec %s -c 'import sys; sys.exit(47)'\n" %
+                        sys.executable)
             os.close(f)
             os.chmod(fname, 0700)
             rc = subprocess.call(fname)
@@ -469,16 +490,19 @@ class ProcessTestCase(unittest.TestCase):
         def test_creationflags(self):
             """creationflags argument"""
             CREATE_NEW_CONSOLE = 16
-            subprocess.call(sys.executable + ' -c "import time; time.sleep(2)"',
+            subprocess.call(sys.executable +
+                                ' -c "import time; time.sleep(2)"',
                             creationflags=CREATE_NEW_CONSOLE)
 
         def test_invalid_args(self):
             """invalid arguments should raise ValueError"""
             self.assertRaises(ValueError, subprocess.call,
-                              [sys.executable, "-c", "import sys; sys.exit(47)"],
+                              [sys.executable,
+                               "-c", "import sys; sys.exit(47)"],
                               preexec_fn=lambda: 1)
             self.assertRaises(ValueError, subprocess.call,
-                              [sys.executable, "-c", "import sys; sys.exit(47)"],
+                              [sys.executable,
+                               "-c", "import sys; sys.exit(47)"],
                               close_fds=True)
 
         def test_shell_sequence(self):
@@ -501,9 +525,9 @@ class ProcessTestCase(unittest.TestCase):
 
         def test_call_string(self):
             """call() function with string argument on Windows"""
-            rc = subprocess.call(sys.executable + ' -c "import sys; sys.exit(47)"')
+            rc = subprocess.call(sys.executable +
+                                 ' -c "import sys; sys.exit(47)"')
             self.assertEqual(rc, 47)
-
 
 
 def test_main():
