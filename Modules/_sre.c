@@ -20,6 +20,7 @@
  * 2001-10-24 fl  added finditer primitive (for 2.2 only)
  * 2001-12-07 fl  fixed memory leak in sub/subn (Guido van Rossum)
  * 2002-11-09 fl  fixed empty sub/subn return type
+ * 2003-04-18 mvl fully support 4-byte codes
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -510,10 +511,18 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
             break;
 
         case SRE_OP_CHARSET:
-            /* <CHARSET> <bitmap> (16 bits per code word) */
-            if (ch < 256 && (set[ch >> 4] & (1 << (ch & 15))))
-                return ok;
-            set += 16;
+            if (sizeof(SRE_CODE) == 2) {
+                /* <CHARSET> <bitmap> (16 bits per code word) */
+                if (ch < 256 && (set[ch >> 4] & (1 << (ch & 15))))
+                    return ok;
+                set += 16;
+            } 
+            else {
+                /* <CHARSET> <bitmap> (32 bits per code word) */
+                if (ch < 256 && (set[ch >> 5] & (1 << (ch & 31))))
+                    return ok;
+                set += 8;
+            }
             break;
 
         case SRE_OP_BIGCHARSET:
@@ -521,11 +530,25 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
         {
             int count, block;
             count = *(set++);
-            block = ((unsigned char*)set)[ch >> 8];
-            set += 128;
-            if (set[block*16 + ((ch & 255)>>4)] & (1 << (ch & 15)))
-                return ok;
-            set += count*16;
+
+            if (sizeof(SRE_CODE) == 2) {
+                block = ((unsigned char*)set)[ch >> 8];
+                set += 128;
+                if (set[block*16 + ((ch & 255)>>4)] & (1 << (ch & 15)))
+                    return ok;
+                set += count*16;
+            }
+            else {
+                if (ch < 65536)
+                    block = ((unsigned char*)set)[ch >> 8];
+                else
+                    block = -1;
+                set += 64;
+                if (block >=0 && 
+                    (set[block*8 + ((ch & 255)>>5)] & (1 << (ch & 31))))
+                    return ok;
+                set += count*8;
+            }
             break;
         }
 
@@ -1371,7 +1394,10 @@ _compile(PyObject* self_, PyObject* args)
 
     for (i = 0; i < n; i++) {
         PyObject *o = PyList_GET_ITEM(code, i);
-        self->code[i] = (SRE_CODE) PyInt_AsLong(o);
+        if (PyInt_Check(o))
+            self->code[i] = (SRE_CODE) PyInt_AsLong(o);
+        else
+            self->code[i] = (SRE_CODE) PyLong_AsUnsignedLong(o);
     }
 
     if (PyErr_Occurred()) {
@@ -3042,6 +3068,12 @@ PyMODINIT_FUNC init_sre(void)
     x = PyInt_FromLong(SRE_MAGIC);
     if (x) {
         PyDict_SetItemString(d, "MAGIC", x);
+        Py_DECREF(x);
+    }
+
+    x = PyInt_FromLong(sizeof(SRE_CODE));
+    if (x) {
+        PyDict_SetItemString(d, "CODESIZE", x);
         Py_DECREF(x);
     }
 
