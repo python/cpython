@@ -1,0 +1,27 @@
+Tommy Burnette <tnb2d@server.cs.virginia.edu> has created an
+"official" version of Tkinter.py for Tk 4.0b3.  I have placed it on
+ftp.cwi.nl in ftp/python/src/tk4inter.shar.  Note that this (probably)
+isn't compatible with Tk 3.6, and explicitly tests for the Tk version
+number (tkintermodule.c *is* compatible with both versions of Tk).
+The shar file also contains a slightly modified version of Dialog.py.
+
+Here are Tommy's notes:
+
+> 	Here is an implementation of Tkinter.py that works with
+> tk4.0b3.  I've used it on sunos4, solaris and Irix5.2 for a few weeks
+> and it all seems to work okay.  It is an almalgam of patches put in by
+> Steven Reiz <sreiz@aie.nl>, Guido vanRossum <guido@cnri.reston.va.us>
+> and myself.  I can say now that probably not all of the widgets have
+> been updated, and the ones that have been updated have not been
+> completely updated (i.e. some new commands on Text widgets and such
+> are not in yet).  So please post patches as you make them and if you
+> have an "insurmountable" problems post those too and I'll see if I can
+> help.  I've also included versions of tributton.c and studbutton.c
+> that I've updated for Tk4.0b3 (in case you use those- I know I LOVE
+> tributtons!).  Enjoy!
+
+I placed the *Button.c files in a separate shar file in
+ftp/python/contrib/tk4buttons.shar.
+
+--Guido van Rossum, CWI, Amsterdam <mailto:guido@CNRI.Reston.VA.US>
+<http://www.python.org/~guido/>
