@@ -24,14 +24,25 @@ else:
 def _identityfunction(x):
     return x
 
+def set(seq):
+    s = {}
+    for elem in seq:
+        s[elem] = 1
+    return s
+
+_LITERAL_CODES = set([LITERAL, NOT_LITERAL])
+_REPEATING_CODES = set([REPEAT, MIN_REPEAT, MAX_REPEAT])
+_SUCCESS_CODES = set([SUCCESS, FAILURE])
+_ASSERT_CODES = set([ASSERT, ASSERT_NOT])
+
 def _compile(code, pattern, flags):
     # internal: compile a (sub)pattern
     emit = code.append
     _len = len
-    LITERAL_CODES = {LITERAL:1, NOT_LITERAL:1}
-    REPEATING_CODES = {REPEAT:1, MIN_REPEAT:1, MAX_REPEAT:1}
-    SUCCESS_CODES = {SUCCESS:1, FAILURE:1}
-    ASSERT_CODES = {ASSERT:1, ASSERT_NOT:1}
+    LITERAL_CODES = _LITERAL_CODES
+    REPEATING_CODES = _REPEATING_CODES
+    SUCCESS_CODES = _SUCCESS_CODES
+    ASSERT_CODES = _ASSERT_CODES
     for op, av in pattern:
         if op in LITERAL_CODES:
             if flags & SRE_FLAG_IGNORECASE:
