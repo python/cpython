@@ -95,7 +95,7 @@ def isdir(path):
 def islink(path):
 	try:
 		st = posix.lstat(path)
-	except (posix.error, NameError):
+	except (posix.error, AttributeError):
 		return 0
 	return stat.S_ISLNK(st[stat.ST_MODE])
 
