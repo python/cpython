@@ -2,9 +2,6 @@
 ** Mac shared lib glue.
 */
 
-#ifdef __powerc
-#include <CPlusLibPPC.h>
-#endif
 #include <Quickdraw.h>
 #include <SegLoad.h>
 #include <FragLoad.h>
@@ -19,7 +16,7 @@
 #include <setjmp.h>
 #include <stdio.h>
 
-DestructorChain	*__local_destructor_chain;	/*	chain of local objects that need destruction	*/
+void	*__local_destructor_chain;	/*	chain of local objects that need destruction	*/
 
 	/*	public data		*/
 
