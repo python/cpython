@@ -14,6 +14,9 @@
 
 #include "sre_constants.h"
 
+/* size of a code word (must be unsigned short or larger) */
+#define SRE_CODE unsigned short
+
 typedef struct {
     PyObject_HEAD
     PyObject* code; /* link to the code string object */
@@ -35,6 +38,14 @@ typedef struct {
     int mark[2];
 } MatchObject;
 
+typedef unsigned int (*SRE_TOLOWER_HOOK)(unsigned int ch);
+
+typedef struct {
+    /* stack elements */
+    SRE_CODE* pattern;
+    void* ptr;
+} SRE_STACK;
+
 typedef struct {
     /* string pointers */
     void* ptr; /* current position (also end of current slice) */
@@ -44,15 +55,18 @@ typedef struct {
     /* character size */
     int charsize;
     /* registers */
-    int marks;
+    int lastmark;
     void* mark[64]; /* FIXME: <fl> should be dynamically allocated! */
     /* backtracking stack */
-    void** stack;
+    SRE_STACK* stack;
     int stacksize;
     int stackbase;
+    /* hooks */
+    SRE_TOLOWER_HOOK tolower;
 } SRE_STATE;
 
 typedef struct {
+    /* search helper */
     PyObject_HEAD
     PyObject* pattern;
     PyObject* string;
