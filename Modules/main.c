@@ -60,7 +60,6 @@ static char *usage_2 = "\
 -u     : unbuffered binary stdout and stderr (also PYTHONUNBUFFERED=x)\n\
 ";
 static char *usage_3 = "\
--U     : Unicode literals: treats '...' literals like u'...'\n\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
 -V     : print the Python version number and exit\n\
 -W arg : warning control (arg is action:message:category:module:lineno)\n\
