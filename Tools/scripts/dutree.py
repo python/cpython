@@ -7,8 +7,11 @@ def main():
 	p = os.popen('du ' + string.join(sys.argv[1:]), 'r')
 	total, d = None, {}
 	for line in p.readlines():
-		[num, file] = string.split(line)
-		size = eval(num)
+		i = 0
+		while line[i] in '0123456789': i = i+1
+		size = eval(line[:i])
+		while line[i] in ' \t': i = i+1
+		file = line[i:-1]
 		comps = string.splitfields(file, '/')
 		if comps[0] == '': comps[0] = '/'
 		if comps[len(comps)-1] == '': del comps[len(comps)-1]
