@@ -406,7 +406,7 @@ symbolic links encountered in the path."""
     for i in range(2, len(bits)+1):
         component = join(*bits[0:i])
         # Resolve symbolic links.
-	if islink(component):
+        if islink(component):
             resolved = _resolve_link(component)
             if resolved is None:
                 # Infinite loop -- return original component + rest of the path
@@ -425,12 +425,12 @@ def _resolve_link(path):
     """
     paths_seen = []
     while islink(path):
-	if path in paths_seen:
+        if path in paths_seen:
             # Already seen this path, so we must have a symlink loop
             return None
-	paths_seen.append(path)
+        paths_seen.append(path)
         # Resolve where the link points to
-	resolved = os.readlink(path)
+        resolved = os.readlink(path)
         if not abspath(resolved):
             dir = dirname(path)
             path = normpath(join(dir, resolved))
