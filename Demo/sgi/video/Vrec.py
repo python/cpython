@@ -326,13 +326,14 @@ def record(v, info, filename, audiofilename, mono, grey, greybits, \
 		print count*200.0/lastid, '%,',
 		print count*rate*200.0/lastid, '% of wanted rate',
 	print
-	print 'Ids:',
-	t0 = ids[0]
-	del ids[0]
-	for t1 in ids:
-		print t1-t0,
-		t0 = t1
-	print
+	if ids:
+		print 'Ids:',
+		t0 = ids[0]
+		del ids[0]
+		for t1 in ids:
+			print t1-t0,
+			t0 = t1
+		print
 	if filename and audiofilename:
 		audiostop.append(None)
 		audiodone.acquire_lock()
