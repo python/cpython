@@ -3,6 +3,7 @@ This directory contains a collection of executable Python scripts.
 See also the Tools/scripts directory!
 
 fact.py			Factorize numbers
+find-uname.py		Search for Unicode characters using regexps.
 from.py			Summarize mailbox
 ftpstats.py		Summarize ftp daemon log file
 lpwatch.py		Watch BSD line printer queues
