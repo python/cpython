@@ -2,6 +2,7 @@
          Unit testing framework}
 
 \declaremodule{standard}{unittest}
+\modulesynopsis{Unit testing framework for Python.}
 \moduleauthor{Steve Purcell}{stephen\textunderscore{}purcell@yahoo.com}
 \sectionauthor{Steve Purcell}{stephen\textunderscore{}purcell@yahoo.com}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
@@ -19,7 +20,7 @@ the tests from the reporting framework.  The \module{unittest} module
 provides classes that make it easy to support these qualities for a
 set of tests.
 
-To achieve this, PyUnit supports three major concepts:
+To achieve this, PyUnit supports some important concepts:
 
 \begin{definitions}
 \term{test fixture}
@@ -47,6 +48,36 @@ indicate the results of executing the tests.
 \end{definitions}
 
 
+The test case and test fixture concepts are supported through the
+\class{TestCase} and \class{FunctionTestCase} classes; the former
+should be used when creating new tests, and the later can be used when
+integrating existing test code with a PyUnit-driven framework.  When
+building test fixtures using \class{TestCase}, the \method{setUp()}
+and \method{tearDown()} methods can be overridden to provide
+initialization and cleanup for the fixture.  With
+\class{FunctionTestCase}, existing functions can be passed to the
+constructor for these purposes.  When the test is run, the
+fixture initialization is run first; if it succeeds, the cleanup
+method is run after the test has been executed, regardless of the
+outcome of the test.  Each instance of the \class{TestCase} will only
+be used to run a single test method, so a new fixture is created for
+each test.
+
+Test suites are implemented by the \class{TestSuite} class.  This
+class allows individual tests and test suites to be aggregated; when
+the suite is executed, all tests added directly to the suite and in
+``child'' test suites are run.
+
+A test runner is an object that provides a single method,
+\method{run()}, which accepts a \class{TestCase} or \class{TestSuite}
+object as a parameter, and returns a result object.  The class
+\class{TestResult} is provided for use as the result object.  PyUnit
+provide the \class{TextTestRunner} as an example test runner which
+reports test results on the standard error stream by default.
+Alternate runners can be implemented for other environments (such as
+graphical environments) without any need to derive from a specific
+class.
+
 
 \begin{seealso}
   \seetitle[http://pyunit.sourceforge.net/]{PyUnit Web Site}{The
@@ -56,10 +87,6 @@ indicate the results of executing the tests.
             testing frameworks using the pattern shared by
             \module{unittest}.}
 \end{seealso}
-
-
-\subsection{Mapping concepts to classes
-            \label{test-concept-classes}}
 
 
 \subsection{Organizing test code
@@ -89,15 +116,17 @@ import unittest
 class DefaultWidgetSizeTestCase(unittest.TestCase):
     def runTest(self):
         widget = Widget("The widget")
-        assert widget.size() == (50,50), 'incorrect default size'
+        self.failUnless(widget.size() == (50,50), 'incorrect default size')
 \end{verbatim}
 
-Note that in order to test something, we just use the built-in 'assert'
-statement of Python. If the test fails when the test case runs,
-\class{TestFailed} will be raised, and the testing framework
-will identify the test case as a \dfn{failure}. Other exceptions that
-do not arise from explicit 'assert' checks are identified by the testing
-framework as dfn{errors}.
+Note that in order to test something, we use the one of the
+\method{assert*()} or \method{fail*()} methods provided by the
+\class{TestCase} base class.  If the test fails when the test case
+runs, an exception will be raised, and the testing framework will
+identify the test case as a \dfn{failure}.  Other exceptions that do
+not arise from checks made through the \method{assert*()} and
+\method{fail*()} methods are identified by the testing framework as
+dfn{errors}.
 
 The way to run a test case will be described later.  For now, note
 that to construct an instance of such a test case, we call its
@@ -124,13 +153,14 @@ class SimpleWidgetTestCase(unittest.TestCase):
 
 class DefaultWidgetSizeTestCase(SimpleWidgetTestCase):
     def runTest(self):
-        assert self.widget.size() == (50,50), 'incorrect default size'
+        self.failUnless(self.widget.size() == (50,50),
+                        'incorrect default size')
 
 class WidgetResizeTestCase(SimpleWidgetTestCase):
     def runTest(self):
         self.widget.resize(100,150)
-        assert self.widget.size() == (100,150), \
-               'wrong size after resize'
+        self.failUnless(self.widget.size() == (100,150),
+                        'wrong size after resize')
 \end{verbatim}
 
 If the \method{setUp()} method raises an exception while the test is
@@ -177,13 +207,13 @@ class WidgetTestCase(unittest.TestCase):
         self.widget = None
 
     def testDefaultSize(self):
-        assert self.widget.size() == (50,50), \
-               'incorrect default size'
+        self.failUnless(self.widget.size() == (50,50),
+                        'incorrect default size')
 
     def testResize(self):
         self.widget.resize(100,150)
-        assert self.widget.size() == (100,150), \
-               'wrong size after resize'
+        self.failUnless(self.widget.size() == (100,150),
+                        'wrong size after resize')
 \end{verbatim}
 
 Here we have not provided a \method{runTest()} method, but have
@@ -315,7 +345,6 @@ testcase = unittest.FunctionTestCase(testSomething,
                                      tearDown=deleteSomethingDB)
 \end{verbatim}
 
-
 \strong{Note:}  PyUnit supports the use of \exception{AssertionError}
 as an indicator of test failure, but does not recommend it.  Future
 versions may treat \exception{AssertionError} differently.
@@ -334,7 +363,7 @@ versions may treat \exception{AssertionError} differently.
 \end{classdesc}
 
 \begin{classdesc}{FunctionTestCase}{testFunc\optional{,
-                  setup\optional{, tearDown\optional{, description}}}}
+                  setUp\optional{, tearDown\optional{, description}}}}
   This class implements the portion of the \class{TestCase} interface
   which allows the test runner to drive the test, but does not provide
   the methods which test code can use to check and report errors.
@@ -363,6 +392,12 @@ versions may treat \exception{AssertionError} differently.
   \samp{test}.
 \end{classdesc}
 
+\begin{datadesc}{defaultTestLoader}
+  Instance of the \class{TestLoader} class which can be shared.  If no
+  customization of the \class{TestLoader} is needed, this instance can
+  always be used instead of creating new instances.
+\end{datadesc}
+
 \begin{classdesc}{TextTestRunner}{\optional{stream\optional{,
                   descriptions\optional{, verbosity}}}}
   A basic test runner implementation which prints results on standard
@@ -383,12 +418,6 @@ if __name__ == '__main__':
     unittest.main()
 \end{verbatim}
 \end{funcdesc}
-
-\begin{excdesc}{TestFailed}
-  Exception raised to indicate that a test failed.  The
-  \method{TestCase.fail()} method is responsible for creating and
-  raising this exception.
-\end{excdesc}
 
 
 \subsection{TestCase Objects
@@ -413,21 +442,23 @@ Methods in the first group are:
   The default implementation does nothing.
 \end{methoddesc}
 
-\begin{methoddesc}[TestCase]{run}{\optional{result}}
-  Run the test, collecting the result into the test result object
-  passed as \var{result}.  If \var{result} is omitted or \code{None},
-  a temporary result object is created and used, but is not made
-  available to the caller.  This is equivalent to simply calling the
-  \class{TestCase} instance.
-\end{methoddesc}
-
 \begin{methoddesc}[TestCase]{tearDown}{}
   Method called immediately after the test method has been called and
   the result recorded.  This is called even if the test method raised
   an exception, so the implementation in subclasses may need to be
   particularly careful about checking internal state.  Any exception
   raised by this method will be considered an error rather than a test
-  failure.  The default implementation does nothing.
+  failure.  This method will only be called if the \method{setUp()}
+  succeeds, regardless of the outcome of the test method.
+  The default implementation does nothing.  
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{run}{\optional{result}}
+  Run the test, collecting the result into the test result object
+  passed as \var{result}.  If \var{result} is omitted or \code{None},
+  a temporary result object is created and used, but is not made
+  available to the caller.  This is equivalent to simply calling the
+  \class{TestCase} instance.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{debug}{}
@@ -438,29 +469,28 @@ Methods in the first group are:
 
 
 The test code can use any of the following methods to check for and
-report failures:
+report failures.
 
-\begin{methoddesc}[TestCase]{failUnless}{expr\optional{, msg}}
-  This method is similar to the \keyword{assert} statement, except it
-  works even when Python is executed in ``optimizing'' mode (using the
-  \programopt{-O} command line switch), and raises the
-  \exception{TestFailed} exception.  If \var{expr} is false,
-  \exception{TestFailed} will be raised with \var{msg} as the
-  message describing the failure; \code{None} will be used for the
-  message if \var{msg} is omitted.
+\begin{methoddesc}[TestCase]{assert_}{expr\optional{, msg}}
+\methodline{failUnless}{expr\optional{, msg}}
+  Signal a test failure if \var{expr} is false; the explanation for
+  the error will be \var{msg} if given, otherwise it will be
+  \code{None}.
 \end{methoddesc}
 
-\begin{methoddesc}[TestCase]{failUnlessEqual}{first, second\optional{, msg}}
+\begin{methoddesc}[TestCase]{assertEqual}{first, second\optional{, msg}}
+\methodline{failUnlessEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are equal.  If the values do
   not compare equal, the test will fail with the explanation given by
   \var{msg}, or \code{None}.  Note that using \method{failUnlessEqual()}
   improves upon doing the comparison as the first parameter to
-  \method{failUnless()} is that the default value for \var{msg} can be
+  \method{failUnless()}:  the default value for \var{msg} can be
   computed to include representations of both \var{first} and
   \var{second}.
 \end{methoddesc}
 
-\begin{methoddesc}[TestCase]{failIfEqual}{first, second\optional{, msg}}
+\begin{methoddesc}[TestCase]{assertNotEqual}{first, second\optional{, msg}}
+\methodline{failIfEqual}{first, second\optional{, msg}}
   Test that \var{first} and \var{second} are not equal.  If the values
   do compare equal, the test will fail with the explanation given by
   \var{msg}, or \code{None}.  Note that using \method{failIfEqual()}
@@ -470,17 +500,35 @@ report failures:
   \var{second}.
 \end{methoddesc}
 
+\begin{methoddesc}[TestCase]{assertRaises}{exception, callable, \moreargs}
+\methodline{failUnlessRaises}{exception, callable, \moreargs}
+  Test that an exception is raised when \var{callable} is called with
+  any positional or keyword arguments that are also passed to
+  \method{assertRaises()}.  The test passes if \var{exception} is
+  raised, is an error if another exception is raised, or fails if no
+  exception is raised.  To catch any of a group of exceptions, a tuple
+  containing the exception classes may be passed as \var{exception}.
+\end{methoddesc}
+
 \begin{methoddesc}[TestCase]{failIf}{expr\optional{, msg}}
   The inverse of the \method{failUnless()} method is the
-  \method{failIf()} method.  This raises \exception{TestFailed} if
-  \var{expr} is true, with \var{msg} or \code{None} for the error
-  message.
+  \method{failIf()} method.  This signals a test failure if \var{expr}
+  is true, with \var{msg} or \code{None} for the error message.
 \end{methoddesc}
 
 \begin{methoddesc}[TestCase]{fail}{\optional{msg}}
-  Fail unconditionally, with \var{msg} or \code{None} for the error
-  message.
+  Signals a test failure unconditionally, with \var{msg} or
+  \code{None} for the error message.
 \end{methoddesc}
+
+\begin{memberdesc}[TestCase]{failureException}
+  This class attribute gives the exception raised by the
+  \method{test()} method.  If a test framework needs to use a
+  specialized exception, possibly to carry additional information, it
+  must subclass this exception in order to ``play fair'' with the
+  framework.  The initial value of this attribute is
+  \exception{AssertionError}.
+\end{memberdesc}
 
 
 Testing frameworks can use the following methods to collect
@@ -556,14 +604,14 @@ be of interest when inspecting the results of running a set of tests:
 
 \begin{memberdesc}[TestResult]{errors}
   A list containing pairs of \class{TestCase} instances and the
-  \function{sys.exc_info()} results for tests which raised exceptions
-  other than \exception{AssertionError} and \exception{TestFailed}.
+  \function{sys.exc_info()} results for tests which raised an
+  exception but did not signal a test failure.
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{failures}
   A list containing pairs of \class{TestCase} instances and the
-  \function{sys.exc_info()} results for tests which raised either
-  \exception{TestFailed} or \exception{AssertionError}.
+  \function{sys.exc_info()} results for tests which signalled a
+  failure in the code under test.
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{testsRun}
@@ -592,18 +640,14 @@ reporting while tests are being run.
 \end{methoddesc}
 
 \begin{methoddesc}[TestResult]{addError}{test, err}
-  Called when the test case \var{test} results in an exception other
-  than \exception{TestFailed} or \exception{AssertionError}.
-  \var{err} is a tuple of the form returned by
-  \function{sys.exc_info()}:  \code{(\var{type}, \var{value},
-  \var{traceback})}.
+  Called when the test case \var{test} raises an exception without
+  signalling a test failure.  \var{err} is a tuple of the form
+  returned by \function{sys.exc_info()}:  \code{(\var{type},
+  \var{value}, \var{traceback})}.
 \end{methoddesc}
 
 \begin{methoddesc}[TestResult]{addFailure}{test, err}
-  Called when the test case \var{test} results in an
-  \exception{AssertionError} exception; the assumption is that the
-  test raised either \exception{TestFailed} or
-  \exception{AssertionError} and not the implementation being tested.
+  Called when the test case \var{test} signals a failure.
   \var{err} is a tuple of the form returned by
   \function{sys.exc_info()}:  \code{(\var{type}, \var{value},
   \var{traceback})}.
@@ -626,3 +670,78 @@ One additional method is available for \class{TestResult} objects:
   the keyboard.  GUI tools which provide runners can use this in a
   similar manner.
 \end{methoddesc}
+
+
+\subsection{TestLoader Objects
+            \label{testloader-objects}}
+
+The \class{TestLoader} class is used to create test suites from
+classes and modules.  Normally, there is no need to create an instance
+of this class; the \refmodule{unittest} module provides an instance
+that can be shared as the \code{defaultTestLoader} module attribute.
+Using a subclass or instance would allow customization of some
+configurable properties.
+
+\class{TestLoader} objects have the following methods:
+
+\begin{methoddesc}[TestLoader]{loadTestsFromTestCase}{testCaseClass}
+  Return a suite of all tests cases contained in the
+  \class{TestCase}-derived class \class{testCaseClass}.
+\end{methoddesc}
+
+\begin{methoddesc}[TestLoader]{loadTestsFromModule}{module}
+  Return a suite of all tests cases contained in the given module.
+  This method searches \var{module} for classes derived from
+  \class{TestCase} and creates an instance of the class for each test
+  method defined for the class.
+
+  \strong{Warning:}  While using a hierarchy of
+  \class{Testcase}-derived classes can be convenient in sharing
+  fixtures and helper functions, defining test methods on base classes
+  that are not intended to be instantiated directly does not play well
+  with this method.  Doing so, however, can be useful when the
+  fixtures are different and defined in subclasses.
+\end{methoddesc}
+
+\begin{methoddesc}[TestLoader]{loadTestsFromName}{name\optional{, module}}
+  Return a suite of all tests cases given a string specifier.
+
+  The specifier \var{name} may resolve either to a module, a test case
+  class, a test method within a test case class, or a callable object
+  which returns a \class{TestCase} or \class{TestSuite} instance.
+
+  The method optionally resolves \var{name} relative to a given module.
+\end{methoddesc}
+
+\begin{methoddesc}[TestLoader]{loadTestsFromNames}{names\optional{, module}}
+  Similar to \method{loadTestsFromName()}, but takes a sequence of
+  names rather than a single name.  The return value is a test suite
+  which supports all the tests defined for each name.
+\end{methoddesc}
+
+\begin{methoddesc}[TestLoader]{getTestCaseNames}{testCaseClass}
+  Return a sorted sequence of method names found within
+  \var{testCaseClass}.
+\end{methoddesc}
+
+
+The following attributes of a \class{TestLoader} can be configured
+either by subclassing or assignment on an instance:
+
+\begin{memberdesc}[TestLoader]{testMethodPrefix}
+  String giving the prefix of method names which will be interpreted
+  as test methods.  The default value is \code{'test'}.
+\end{memberdesc}
+
+\begin{memberdesc}[TestLoader]{sortTestMethodsUsing}
+  Function to be used to compare method names when sorting them in
+  \method{getTestCaseNames()}.  The default value is the built-in
+  \function{cmp()} function; it can be set to \code{None} to disable
+  the sort.
+\end{memberdesc}
+
+\begin{memberdesc}[TestLoader]{suiteClass}
+  Callable object that constructs a test suite from a list of tests.
+  No methods on the resulting object are needed.  The default value is
+  the \class{TestSuite} class.
+\end{memberdesc}
