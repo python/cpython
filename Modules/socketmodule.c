@@ -2315,6 +2315,7 @@ static PyObject *SSL_SSLread(SSLObject *self, PyObject *args)
 		assert(count == 0);
 		break;
 	default:
+		Py_DECREF(buf);
 		return PyErr_SetFromErrno(SSLErrorObject);
 	}
 
