@@ -14,10 +14,10 @@ import sys
 list = [
 	('.py', 'PYTH', 'TEXT'),
 	('.pyc', 'PYTH', 'PYC '),
-	('.c', 'MPCC', 'TEXT'),
-	('.h', 'MPCC', 'TEXT'),
-	('.as', 'TEXT', 'ToyS'),
-	('.hqx', 'TEXT', 'BnHq')
+	('.c', 'CWIE', 'TEXT'),
+	('.h', 'CWIE', 'TEXT'),
+	('.as', 'ToyS', 'TEXT'),
+	('.hqx', 'BnHq', 'TEXT')
 ]
 
 def walktree(name, change):
