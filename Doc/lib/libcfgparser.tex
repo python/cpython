@@ -22,13 +22,14 @@ with continuations in the style of \rfc{822}; \samp{name=value} is
 also accepted.  Note that leading whitespace is removed from values.
 The optional values can contain format strings which refer to other
 values in the same section, or values in a special
-\code{DEFAULT} section.  Additional defaults can be provided upon
+\code{DEFAULT} section.  Additional defaults can be provided on
 initialization and retrieval.  Lines beginning with \character{\#} or
 \character{;} are ignored and may be used to provide comments.
 
 For example:
 
 \begin{verbatim}
+[My Section]
 foodir: %(dir)s/whatever
 dir=frob
 \end{verbatim}
@@ -42,10 +43,17 @@ Default values can be specified by passing them into the
 may be passed into the \method{get()} method which will override all
 others.
 
+\begin{classdesc}{RawConfigParser}{\optional{defaults}}
+The basic configuration object.  When \var{defaults} is given, it is
+initialized into the dictionary of intrinsic defaults.  This class
+does not support the magical interpolation behavior.
+\versionadded{2.3}
+\end{classdesc}
+
 \begin{classdesc}{ConfigParser}{\optional{defaults}}
-Return a new instance of the \class{ConfigParser} class.  When
-\var{defaults} is given, it is initialized into the dictionary of
-intrinsic defaults.  The keys must be strings, and the values must be 
+Derived class of \class{RawConfigParser} that implements the magical
+interpolation feature and adds optional arguments the \method{get()}
+and \method{items()} methods.  The values in \var{defaults} must be
 appropriate for the \samp{\%()s} string interpolation.  Note that
 \var{__name__} is an intrinsic default; its value is the section name,
 and will override any value provided in \var{defaults}.
@@ -86,8 +94,8 @@ Exception raised when errors occur attempting to parse a file.
 
 \begin{datadesc}{MAX_INTERPOLATION_DEPTH}
 The maximum depth for recursive interpolation for \method{get()} when
-the \var{raw} parameter is false.  Setting this does not change the
-allowed recursion depth.
+the \var{raw} parameter is false.  This is relevant only for the
+\class{ConfigParser} class.
 \end{datadesc}
 
 
@@ -98,9 +106,9 @@ allowed recursion depth.
 \end{seealso}
 
 
-\subsection{ConfigParser Objects \label{ConfigParser-objects}}
+\subsection{RawConfigParser Objects \label{RawConfigParser-objects}}
 
-\class{ConfigParser} instances have the following methods:
+\class{RawConfigParser} instances have the following methods:
 
 \begin{methoddesc}{defaults}{}
 Return a dictionary containing the instance-wide defaults.
@@ -162,11 +170,8 @@ Read and parse configuration data from the file or file-like object in
 that is used for \var{filename}; the default is \samp{<???>}.
 \end{methoddesc}
 
-\begin{methoddesc}{get}{section, option\optional{, raw\optional{, vars}}}
-Get an \var{option} value for the provided \var{section}.  All the
-\character{\%} interpolations are expanded in the return values, based on
-the defaults passed into the constructor, as well as the options
-\var{vars} provided, unless the \var{raw} argument is true.
+\begin{methoddesc}{get}{section, option}
+Get an \var{option} value for the named \var{section}.
 \end{methoddesc}
 
 \begin{methoddesc}{getint}{section, option}
@@ -189,11 +194,9 @@ values are checked in a case-insensitive manner.  Any other value will
 cause it to raise \exception{ValueError}.
 \end{methoddesc}
 
-\begin{methoddesc}{items}{section\optional{, raw\optional{, vars}}}
-Create a generator which will return a tuple \code{(name, value)} for
-each option in the given \var{section}. Optional arguments have the
-same meaning as for the \code{get()} method.
-\versionadded{2.3}
+\begin{methoddesc}{items}{section}
+Return a list of \code{(\var{name}, \var{value})} pairs for each
+option in the given \var{section}.
 \end{methoddesc}
 
 \begin{methoddesc}{set}{section, option, value}
@@ -230,4 +233,24 @@ version of \var{option}; subclasses may override this or client code
 can set an attribute of this name on instances to affect this
 behavior.  Setting this to \function{str()}, for example, would make
 option names case sensitive.
+\end{methoddesc}
+
+
+\subsection{ConfigParser Objects \label{ConfigParser-objects}}
+
+The \class{ConfigParser} class extends some methods of the
+\class{RawConfigParser} interface, adding some optional arguments.
+
+\begin{methoddesc}{get}{section, option\optional{, raw\optional{, vars}}}
+Get an \var{option} value for the named \var{section}.  All the
+\character{\%} interpolations are expanded in the return values, based
+on the defaults passed into the constructor, as well as the options
+\var{vars} provided, unless the \var{raw} argument is true.
+\end{methoddesc}
+
+\begin{methoddesc}{items}{section\optional{, raw\optional{, vars}}}
+Create a generator which will return a tuple \code{(name, value)} for
+each option in the given \var{section}. Optional arguments have the
+same meaning as for the \code{get()} method.
+\versionadded{2.3}
 \end{methoddesc}
