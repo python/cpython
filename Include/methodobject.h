@@ -5,8 +5,8 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -48,6 +48,10 @@ struct methodlist {
 };
 
 extern object *findmethod PROTO((struct methodlist *, object *, char *));
+
+/* Flag passed to newmethodobject */
+#define METH_VARARGS  0x0001
+#define METH_FREENAME 0x0100
 
 #ifdef __cplusplus
 }
