@@ -135,7 +135,8 @@ class TestTranforms(unittest.TestCase):
 
     def test_set_conversion(self):
         for line in (
-            'x in (1,2,3)',
+                'x in [1,2,3]',
+                'x in (1,2,3)',
                 'x not in (1,2,3)',
                 'not x in (1,2,3)',
                 'not x not in (1,2,3)',
