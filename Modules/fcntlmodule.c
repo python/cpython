@@ -15,6 +15,18 @@
 #include <fcntl.h>
 
 
+static int
+conv_descriptor(PyObject *object, int *target)
+{
+    int fd = PyObject_AsFileDescriptor(object);
+
+    if (fd < 0)
+        return 0;
+    *target = fd;
+    return 1;
+}
+
+
 /* fcntl(fd, opt, [arg]) */
 
 static PyObject *
@@ -28,7 +40,8 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 	int len;
 	char buf[1024];
 
-	if (PyArg_ParseTuple(args, "iis#:fcntl", &fd, &code, &str, &len)) {
+	if (PyArg_ParseTuple(args, "O&is#:fcntl",
+                             conv_descriptor, &fd, &code, &str, &len)) {
 		if (len > sizeof buf) {
 			PyErr_SetString(PyExc_ValueError,
 					"fcntl string arg too long");
@@ -47,8 +60,10 @@ fcntl_fcntl(PyObject *self, PyObject *args)
 
 	PyErr_Clear();
 	arg = 0;
-	if (!PyArg_ParseTuple(args, "ii|i;fcntl requires 2 integers and optionally a third integer or a string", 
-			      &fd, &code, &arg)) {
+	if (!PyArg_ParseTuple(args,
+             "O&i|i;fcntl requires a file or file descriptor,"
+             " an integer and optionally a third integer or a string", 
+			      conv_descriptor, &fd, &code, &arg)) {
 	  return NULL;
 	}
 	Py_BEGIN_ALLOW_THREADS
@@ -89,7 +104,8 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 	int len;
 	char buf[1024];
 
-	if (PyArg_ParseTuple(args, "iis#:ioctl", &fd, &code, &str, &len)) {
+	if (PyArg_ParseTuple(args, "O&is#:ioctl",
+                             conv_descriptor, &fd, &code, &str, &len)) {
 		if (len > sizeof buf) {
 			PyErr_SetString(PyExc_ValueError,
 					"ioctl string arg too long");
@@ -108,8 +124,8 @@ fcntl_ioctl(PyObject *self, PyObject *args)
 
 	PyErr_Clear();
 	arg = 0;
-	if (!PyArg_ParseTuple(args, "ii|i;ioctl requires 2 integers and optionally a third integer or a string", 
-			      &fd, &code, &arg)) {
+	if (!PyArg_ParseTuple(args, "O&i|i;ioctl requires 2 integers and optionally a third integer or a string",
+			      conv_descriptor, &fd, &code, &arg)) {
 	  return NULL;
 	}
 	Py_BEGIN_ALLOW_THREADS
@@ -145,7 +161,8 @@ fcntl_flock(PyObject *self, PyObject *args)
 	int code;
 	int ret;
 
-	if (!PyArg_ParseTuple(args, "ii:flock", &fd, &code))
+	if (!PyArg_ParseTuple(args, "O&i:flock",
+                              conv_descriptor, &fd, &code))
 		return NULL;
 
 #ifdef HAVE_FLOCK
@@ -202,7 +219,8 @@ fcntl_lockf(PyObject *self, PyObject *args)
 	int fd, code, ret, whence = 0;
 	PyObject *lenobj = NULL, *startobj = NULL;
 
-	if (!PyArg_ParseTuple(args, "ii|OOi:lockf", &fd, &code,
+	if (!PyArg_ParseTuple(args, "O&i|OOi:lockf",
+                              conv_descriptor, &fd, &code,
 			      &lenobj, &startobj, &whence))
 	    return NULL;
 
@@ -324,6 +342,51 @@ all_ins(PyObject* d)
         if (ins(d, "LOCK_EX", (long)LOCK_EX)) return -1;
         if (ins(d, "LOCK_NB", (long)LOCK_NB)) return -1;
         if (ins(d, "LOCK_UN", (long)LOCK_UN)) return -1;
+#ifdef F_DUPFD
+        if (ins(d, "F_DUPFD", (long)F_DUPFD)) return -1;
+#endif
+#ifdef F_GETFD
+        if (ins(d, "F_GETFD", (long)F_GETFD)) return -1;
+#endif
+#ifdef F_SETFD
+        if (ins(d, "F_SETFD", (long)F_SETFD)) return -1;
+#endif
+#ifdef F_GETFL
+        if (ins(d, "F_GETFL", (long)F_GETFL)) return -1;
+#endif
+#ifdef F_SETFL
+        if (ins(d, "F_SETFL", (long)F_SETFL)) return -1;
+#endif
+#ifdef F_GETLK
+        if (ins(d, "F_GETLK", (long)F_GETLK)) return -1;
+#endif
+#ifdef F_SETLK
+        if (ins(d, "F_SETLK", (long)F_SETLK)) return -1;
+#endif
+#ifdef F_SETLKW
+        if (ins(d, "F_SETLKW", (long)F_SETLKW)) return -1;
+#endif
+#ifdef F_GETOWN
+        if (ins(d, "F_GETOWN", (long)F_GETOWN)) return -1;
+#endif
+#ifdef F_SETOWN
+        if (ins(d, "F_SETOWN", (long)F_SETOWN)) return -1;
+#endif
+#ifdef F_GETSIG
+        if (ins(d, "F_GETSIG", (long)F_GETSIG)) return -1;
+#endif
+#ifdef F_SETSIG
+        if (ins(d, "F_SETSIG", (long)F_SETSIG)) return -1;
+#endif
+#ifdef F_RDLCK
+        if (ins(d, "F_RDLCK", (long)F_RDLCK)) return -1;
+#endif
+#ifdef F_WRLCK
+        if (ins(d, "F_WRLCK", (long)F_WRLCK)) return -1;
+#endif
+#ifdef F_UNLCK
+        if (ins(d, "F_UNLCK", (long)F_UNLCK)) return -1;
+#endif
 	return 0;
 }
 
