@@ -1215,8 +1215,11 @@ is inserted at the end.  See also the command `py-clear-queue'."
     (cond
      ;; always run the code in its own asynchronous subprocess
      (async
-      (let* ((buf (generate-new-buffer-name py-output-buffer)))
-	(start-process py-which-bufname buf py-which-shell "-u" file)
+      (let* ((buf (generate-new-buffer-name py-output-buffer))
+	     ;; TBD: a horrible hack, but why create new Custom variables?
+	     (arg (if (string-equal py-which-bufname "Python")
+		      "-u" "")))
+	(start-process py-which-bufname buf py-which-shell arg file)
 	(pop-to-buffer buf)
 	(py-postprocess-output-buffer buf)
 	))
@@ -1230,18 +1233,22 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (setq py-file-queue (append py-file-queue (list file)))
       (setq py-exception-buffer (cons file (current-buffer))))
      (t
-      ;; otherwise either run it synchronously in a subprocess
-      (shell-command-on-region start end py-which-shell py-output-buffer)
-      ;; shell-command-on-region kills the output buffer if it never
-      ;; existed and there's no output from the command
-      (if (not (get-buffer py-output-buffer))
-	  (message "No output.")
-	(setq py-exception-buffer (current-buffer))
-	(let ((err-p (py-postprocess-output-buffer py-output-buffer)))
-	  (pop-to-buffer py-output-buffer)
-	  (if err-p
-	      (pop-to-buffer py-exception-buffer)))
-	))
+      ;; TBD: a horrible hack, buy why create new Custom variables?
+      (let ((cmd (concat py-which-shell
+			 (if (string-equal py-which-bufname "JPython")
+			     " -" ""))))
+	;; otherwise either run it synchronously in a subprocess
+	(shell-command-on-region start end cmd py-output-buffer)
+	;; shell-command-on-region kills the output buffer if it never
+	;; existed and there's no output from the command
+	(if (not (get-buffer py-output-buffer))
+	    (message "No output.")
+	  (setq py-exception-buffer (current-buffer))
+	  (let ((err-p (py-postprocess-output-buffer py-output-buffer)))
+	    (pop-to-buffer py-output-buffer)
+	    (if err-p
+		(pop-to-buffer py-exception-buffer)))
+	  )))
      )))
 
 
