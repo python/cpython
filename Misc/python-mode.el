@@ -121,8 +121,8 @@ When the value is `jpython', the variables `py-jpython-command' and
 `py-jpython-command-args' are consulted to determine the interpreter
 and arguments to use.
 
-Note that this variable is consulted only the first time that a Python 
-interpreter shell is started during an Emacs session.  After that, use 
+Note that this variable is consulted only the first time that a Python
+mode buffer is visited during an Emacs session.  After that, use
 \\[py-toggle-shells] to change the interpreter shell."
   :type '(choice (const :tag "Python (a.k.a. CPython)" cpython)
 		 (const :tag "JPython" jpython))
@@ -989,7 +989,11 @@ py-beep-if-tab-change\t\tring the bell if `tab-width' is changed"
       ;; have explicitly turned it off.
       (if (/= tab-width py-indent-offset)
 	  (setq indent-tabs-mode nil))
-      )))
+      ))
+  ;; Set the default shell if not already set
+  (when (null py-which-shell)
+    (py-toggle-shells py-default-interpreter))
+  )
 
 
 ;; electric characters
@@ -1122,18 +1126,26 @@ If an exception occurred return t, otherwise return nil.  BUF must exist."
 
 (defun py-toggle-shells (arg)
   "Toggles between the CPython and JPython shells.
+
 With positive argument ARG (interactively \\[universal-argument]),
 uses the CPython shell, with negative ARG uses the JPython shell, and
-with a zero argument, toggles the shell."
+with a zero argument, toggles the shell.
+
+Programmatically, ARG can also be one of the symbols `cpython' or
+`jpython', equivalent to positive arg and negative arg respectively."
   (interactive "P")
   ;; default is to toggle
   (if (null arg)
       (setq arg 0))
-  ;; toggle if zero
-  (if (= arg 0)
-      (if (string-equal py-which-bufname "Python")
-	  (setq arg -1)
-	(setq arg 1)))
+  ;; preprocess arg
+  (cond
+   ((equal arg 0)
+    ;; toggle
+    (if (string-equal py-which-bufname "Python")
+	(setq arg -1)
+      (setq arg 1)))
+   ((equal arg 'cpython) (setq arg 1))
+   ((equal arg 'jpython) (setq arg -1)))
   (let (msg)
     (cond
      ((< 0 arg)
@@ -1192,15 +1204,6 @@ interaction between undo and process filters; the same problem exists in
 non-Python process buffers using the default (Emacs-supplied) process
 filter."
   (interactive "P")
-  (if (null py-which-shell)
-      (cond ((eq py-default-interpreter 'cpython)
-	     (setq py-which-shell py-python-command
-		   py-which-args py-python-command-args))
-	    ((eq py-default-interpreter 'jpython)
-	     (setq py-which-shell py-jpython-command
-		   py-which-args py-jpython-command-args))
-	    (t (error "Illegal value for `py-default-interpreter': %s"
-		      py-default-interpreter))))
   (let ((args py-which-args))
     (when (and argprompt
 	       (interactive-p)
