@@ -36,8 +36,7 @@ def getpass(prompt='Password: '):
 	new[3] = new[3] & ~TERMIOS.ECHO	# 3 == 'lflags'
 	try:
 		termios.tcsetattr(fd, TERMIOS.TCSADRAIN, new)
-		try: passwd = raw_input(prompt)
-		except KeyboardInterrupt: passwd = None
+		passwd = raw_input(prompt)
 	finally:
 		termios.tcsetattr(fd, TERMIOS.TCSADRAIN, old)
 
@@ -55,6 +54,8 @@ def win_getpass(prompt='Password: '):
 		c = msvcrt.getch()
 		if c == '\r' or c == '\n':
 			break
+		if c == '\003':
+			raise KeyboardInterrupt
 		if c == '\b':
 			pw = pw[:-1]
 		else:
