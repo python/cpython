@@ -1,4 +1,8 @@
 \section{Standard Modules \sectcode{UserDict} and \sectcode{UserList}}
+\stmodindex{UserDict}
+\label{module-UserDict}
+\label{module-UserList}
+
 Each of these modules defines a class that acts as a wrapper around
 either dictionary or list objects.  They're useful base classes for
 your own dictionary-like or list-like classes, which can inherit from
@@ -14,6 +18,7 @@ contents are kept in a regular dictionary, which is accessible via the
 \code{data} attribute of \code{UserDict} instances.
 \end{funcdesc}
 
+\stmodindex{UserList}
 \renewcommand{\indexsubitem}{(in module UserList)}
 The \code{UserList} module defines the \code{UserList} class:
 
@@ -21,7 +26,7 @@ The \code{UserList} module defines the \code{UserList} class:
 Return a class instance that simulates a list.  The instance's
 contents are kept in a regular list, which is accessible via the
 \code{data} attribute of \code{UserList} instances.  The instance's
-contents are initially set to c copy of \var{list}, defaulting to the
+contents are initially set to a copy of \var{list}, defaulting to the
 empty list \code{[]}.  \var{list} can be either a regular Python list,
 or an instance of \code{UserList} (or a subclass).
 \end{funcdesc}
