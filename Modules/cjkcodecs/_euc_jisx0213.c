@@ -43,18 +43,18 @@ ENCODER(euc_jisx0213)
                 if (code == MULTIC) {
                     if (inleft < 2) {
                         if (flags & MBENC_FLUSH) {
-                            code = find_pairencmap(c, 0, jisx0213_pairencmap,
-                                                JISX0213_ENCPAIRS);
+                            code = find_pairencmap((ucs2_t)c, 0,
+                                     jisx0213_pairencmap, JISX0213_ENCPAIRS);
                             if (code == DBCINV)
                                 return 1;
                         } else
                             return MBERR_TOOFEW;
                     } else {
-                        code = find_pairencmap(c, (*inbuf)[1],
-                                    jisx0213_pairencmap, JISX0213_ENCPAIRS);
+                        code = find_pairencmap((ucs2_t)c, (*inbuf)[1],
+                                     jisx0213_pairencmap, JISX0213_ENCPAIRS);
                         if (code == DBCINV) {
-                            code = find_pairencmap(c, 0, jisx0213_pairencmap,
-                                                JISX0213_ENCPAIRS);
+                            code = find_pairencmap((ucs2_t)c, 0,
+                                     jisx0213_pairencmap, JISX0213_ENCPAIRS);
                             if (code == DBCINV)
                                 return 1;
                         } else

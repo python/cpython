@@ -32,7 +32,7 @@ ENCODER(shift_jis)
         if (code < 0x80 || (code >= 0xa1 && code <= 0xdf)) {
             RESERVE_OUTBUF(1)
 
-            OUT1(code)
+            OUT1((unsigned char)code)
             NEXT(1, 1)
             continue;
         }

@@ -18,7 +18,7 @@ ENCODER(big5)
 
         if (c < 0x80) {
             RESERVE_OUTBUF(1)
-            **outbuf = c;
+            **outbuf = (unsigned char)c;
             NEXT(1, 1)
             continue;
         }

@@ -20,7 +20,7 @@ ENCODER(cp932)
         unsigned char    c1, c2;
 
         if (c <= 0x80) {
-            WRITE1(c)
+            WRITE1((unsigned char)c)
             NEXT(1, 1)
             continue;
         } else if (c >= 0xff61 && c <= 0xff9f) {

@@ -183,7 +183,7 @@ iso2022processesc(MultibyteCodec_State *state,
                   const unsigned char **inbuf, size_t *inleft)
 {
     unsigned char charset, designation;
-    int  i, esclen;
+    size_t  i, esclen;
 
     for (i = 1;i < MAX_ESCSEQLEN;i++) {
         if (i >= *inleft)
