@@ -59,39 +59,6 @@ class Module:
         s = s + ")"
         return s
 
-_warned = 0
-
-def _try_registry(name):
-    # Emulate the Registered Module support on Windows.
-    try:
-        import _winreg
-        RegQueryValue = _winreg.QueryValue
-        HKLM = _winreg.HKEY_LOCAL_MACHINE
-        exception = _winreg.error
-    except ImportError:
-        try:
-            import win32api
-            RegQueryValue = win32api.RegQueryValue
-            HKLM = 0x80000002 # HKEY_LOCAL_MACHINE
-            exception = win32api.error
-        except ImportError:
-            global _warned
-            if not _warned:
-                _warned = 1
-                print "Warning: Neither _winreg nor win32api is available - modules"
-                print "listed in the registry will not be found"
-            return None
-    try:
-        pathname = RegQueryValue(HKLM, \
-         r"Software\Python\PythonCore\%s\Modules\%s" % (sys.winver, name))
-        fp = open(pathname, "rb")
-    except exception:
-        return None
-    else:
-        # XXX - To do - remove the hard code of C_EXTENSION.
-        stuff = "", "rb", imp.C_EXTENSION
-        return fp, pathname, stuff
-
 class ModuleFinder:
 
     def __init__(self, path=None, debug=0, excludes = [], replace_paths = []):
@@ -389,11 +356,6 @@ class ModuleFinder:
             if name in sys.builtin_module_names:
                 return (None, None, ("", "", imp.C_BUILTIN))
 
-            if sys.platform=="win32":
-                result = _try_registry(name)
-                if result:
-                    return result
-                    
             path = self.path
         return imp.find_module(name, path)
 
