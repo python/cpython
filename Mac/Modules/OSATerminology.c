@@ -9,11 +9,7 @@
 #include "Python.h"
 #include "macglue.h"
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <OpenScripting.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 static PyObject *
 PyOSA_GetAppTerminology(PyObject* self, PyObject* args)
