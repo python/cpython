@@ -926,7 +926,7 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(gdate, 'Fri, 09 Nov 2001 17:33:52 -0000')
         # It's a little tougher to test for localtime, but we'll try.  Skip if
         # we don't have strptime().
-        if hasattr(time, 'striptime'):
+        if hasattr(time, 'strptime'):
             gtime = time.strptime(gdate.split()[4], '%H:%M:%S')
             ltime = time.strptime(ldate.split()[4], '%H:%M:%S')
             zone = ldate.split()[5]
