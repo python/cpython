@@ -49,6 +49,14 @@ BALLOON = 'balloon'
 AUTO = 'auto'
 ACROSSTOP = 'acrosstop'
 
+# Some constants used by Tkinter dooneevent()
+TCL_DONT_WAIT     = 1 << 1
+TCL_WINDOW_EVENTS = 1 << 2
+TCL_FILE_EVENTS   = 1 << 3
+TCL_TIMER_EVENTS  = 1 << 4
+TCL_IDLE_EVENTS   = 1 << 5
+TCL_ALL_EVENTS    = 0
+
 # BEWARE - this is implemented by copying some code from the Widget class
 #          in Tkinter (to override Widget initialization) and is therefore
 #          liable to break.
@@ -56,23 +64,22 @@ import Tkinter, os
 
 # Could probably add this to Tkinter.Misc
 class tixCommand:
-    """The tix command provides access to miscellaneous  elements
+    """The tix commands provide access to miscellaneous  elements
     of  Tix's  internal state and the Tix application context.
-    Most of the information manipulated by this  command  per
-    tains  to  the  application  as a whole, or to a screen or
-    display, rather than to a particular window.  The  command
-    can  take  any of a number of different forms depending on
-    the option argument.
+    Most of the information manipulated by these  commands pertains
+    to  the  application  as a whole, or to a screen or
+    display, rather than to a particular window.
 
     This is a mixin class, assumed to be mixed to Tkinter.Tk
     that supports the self.tk.call method.
     """
+
     def tix_addbitmapdir(self, directory):
-        """Tix maintains a list of directory under which which
+        """Tix maintains a list of directories under which
         the  tix_getimage  and tix_getbitmap commands will
-        search for image files. The standard bitmap  direc
-        tory is $TIX_LIBRARY/bitmaps. The addbitmapdir com
-        mand adds directory into this list. By  using  this
+        search for image files. The standard bitmap  directory
+        is $TIX_LIBRARY/bitmaps. The addbitmapdir command
+        adds directory into this list. By  using  this
         command, the  image  files  of an applications can
         also be located using the tix_getimage or tix_getbitmap
         command.
@@ -87,34 +94,39 @@ class tixCommand:
         return self.tk.call('tix', 'cget', option)
 
     def tix_configure(self, cnf=None, **kw):
-        """Query or modify the configuration  options  of  the
-        Tix application context. If no option is specified,
-        returns a list  describing  all  of  the available
-        options  (see  Tk_ConfigureInfo  for information on
-        the format of this list).  If option  is specified
-        with  no value, then  the  command returns a list
-        describing the one named option (this list will  be
-        identical to the corresponding sublist of the value
-        returned if no option is specified).   If  one  or
-        more  option-value  pairs  are  specified, then the
-        command modifies the given option(s)  to have  the
-        given value(s); in this case the command returns an
-        empty string. Option may be  any  of  the  options
-        described in the CONFIGURATION OPTIONS section.
+        """Query or modify the configuration options of the Tix application
+        context. If no option is specified, returns a dictionary all of the
+        available options.  If option is specified with no value, then the
+        command returns a list describing the one named option (this list
+        will be identical to the corresponding sublist of the value
+        returned if no option is specified).  If one or more option-value
+        pairs are specified, then the command modifies the given option(s)
+        to have the given value(s); in this case the command returns an
+        empty string. Option may be any of the configuration options.
         """
-        return apply(self.tk.call, ('tix', configure) +
-                      self._options(cnf,kw) )
+        # Copied from Tkinter.py
+        if kw:
+            cnf = _cnfmerge((cnf, kw))
+        elif cnf:
+            cnf = _cnfmerge(cnf)
+        if cnf is None:
+            cnf = {}
+            for x in self.tk.split(self.tk.call('tix', 'configure')):
+                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+            return cnf
+        if isinstance(cnf, StringType):
+            x = self.tk.split(self.tk.call('tix', 'configure', '-'+cnf))
+            return (x[0][1:],) + x[1:]
+        return self.tk.call(('tix', 'configure') + self._options(cnf))
 
     def tix_filedialog(self, dlgclass=None):
-        """Returns  the  file  selection  dialog  that  may be
-        shared among different modules of this application.
-        This  command  will  create a file selection dialog
-        widget when it is called the first time. This  dialog
-        will be returned by all subsequent calls to tix
-        filedialog. An  optional dlgclass  parameter  can  be
-        passed  to  specified  what  type of file selection
-        dialog widget is desired. Possible options are 'tix'
-        'FileSelectDialog' or 'tixExFileSelectDialog'.
+        """Returns the file selection dialog that may be shared among
+        different calls from this application.  This command will create a
+        file selection dialog widget when it is called the first time. This
+        dialog will be returned by all subsequent calls to tix_filedialog.
+        An optional dlgclass parameter can be passed to specified what type
+        of file selection dialog widget is desired. Possible options are
+        tix FileSelectDialog or tixExFileSelectDialog.
         """
         if dlgclass is not None:
             return self.tk.call('tix', 'filedialog', dlgclass)
@@ -122,38 +134,33 @@ class tixCommand:
             return self.tk.call('tix', 'filedialog')
 
     def tix_getbitmap(self, name):
-        """Locates  a bitmap file of the name name.xpm or name
-        in  one  of  the bitmap  directories   (self, see   the
-        tix_addbitmapdir  command  above).  By  using  tix_getbitmap,
-        you can advoid hard coding the pathnames of
-        the bitmap files in your application. When successful,
-        it returns the complete pathname of the bitmap
-        file,  prefixed with the character '@'.  The returned
-        value can be used to configure the  -bitmap  option
-        of the TK and Tix widgets.
+        """Locates a bitmap file of the name name.xpm or name in one of the
+        bitmap directories (see the tix_addbitmapdir command above).  By
+        using tix_getbitmap, you can avoid hard coding the pathnames of the
+        bitmap files in your application. When successful, it returns the
+        complete pathname of the bitmap file, prefixed with the character
+        '@'.  The returned value can be used to configure the -bitmap
+        option of the TK and Tix widgets.
         """
         return self.tk.call('tix', 'getbitmap', name)
 
     def tix_getimage(self, name):
-        """Locates an  image  file  of  the  name name.xpm,
-        name.xbm or name.ppm in one of the bitmap  directo
-        ries  (see the addbitmapdir command above). If more
-        than one file with the  same  name  (but different
-        extensions)  exist,  then  the image type is chosen
-        according to the depth of the X display: xbm images
-        are  chosen on monochrome displays and color images
-        are chosen on color displays. By using  tix  getim
-        age,  you  can  advoid hard coding the pathnames of
-        the image files in your application. When  success
-        ful,  this  command  returns  the name of the newly
-        created image, which can be used to  configure  the
-        -image option of the TK and Tix widgets.
+        """Locates an image file of the name name.xpm, name.xbm or name.ppm
+        in one of the bitmap directories (see the addbitmapdir command
+        above). If more than one file with the same name (but different
+        extensions) exist, then the image type is chosen according to the
+        depth of the X display: xbm images are chosen on monochrome
+        displays and color images are chosen on color displays. By using
+        tix_ getimage, you can advoid hard coding the pathnames of the
+        image files in your application. When successful, this command
+        returns the name of the newly created image, which can be used to
+        configure the -image option of the Tk and Tix widgets.
         """
         return self.tk.call('tix', 'getimage', name)
 
     def tix_option_get(self, name):
         """Gets  the options  manitained  by  the  Tix
-        scheme mechanism. Available options are:
+        scheme mechanism. Available options include:
 
             active_bg       active_fg      bg
             bold_font       dark1_bg       dark1_fg
@@ -169,21 +176,19 @@ class tixCommand:
         return self.tk.call('tix', 'option', 'get', name)
 
     def tix_resetoptions(self, newScheme, newFontSet, newScmPrio=None):
-        """Resets  the  scheme and fontset of the Tix application
-        to  newScheme  and  newFontSet,  respectively.
-        This  affects only those widgets created after this
-        call. Therefore, it is best to  call  the  resetop
-        tions command before the creation of any widgets in
-        a Tix application.
+        """Resets the scheme and fontset of the Tix application to
+        newScheme and newFontSet, respectively.  This affects only those
+        widgets created after this call. Therefore, it is best to call the
+        resetoptions command before the creation of any widgets in a Tix
+        application.
 
-        The optional parameter newScmPrio can be given  to
-        reset  the  priority level of the TK options set by
-        the Tix schemes.
+        The optional parameter newScmPrio can be given to reset the
+        priority level of the Tk options set by the Tix schemes.
 
-        Because of the way TK handles the X option database, after
-        tixwish has  started  up, it is not possible to reset the
-        color schemes and font sets using the tix config  command.
-        Instead, the tix resetoptions command must be used.
+        Because of the way Tk handles the X option database, after Tix has
+        been has imported and inited, it is not possible to reset the color
+        schemes and font sets using the tix config command.  Instead, the
+        tix_resetoptions command must be used.
         """
         if newScmPrio is not None:
             return self.tk.call('tix', 'resetoptions', newScheme, newFontSet, newScmPrio)
@@ -203,7 +208,7 @@ class Tk(Tkinter.Tk, tixCommand):
         # Load Tix - this should work dynamically or statically
         # If it's static, lib/tix8.1/pkgIndex.tcl should have
         #		'load {} Tix'
-        # If it's dynamic, lib/tix8.1/pkgIndex.tcl should have
+        # If it's dynamic under Unix, lib/tix8.1/pkgIndex.tcl should have
         #		'load libtix8.1.8.3.so Tix'
         self.tk.eval('package require Tix')
 
@@ -362,9 +367,9 @@ class TixWidget(Tkinter.Widget):
        """Set configuration options for all subwidgets (and self)."""
        if option == '':
            return
-       elif type(option) != type(''):
+       elif not isinstance(option, StringType):
            option = `option`
-       if type(value) != type(''):
+       if not isinstance(value, StringType):
            value = `value`
        names = self._subwidget_names()
        for name in names:
@@ -485,17 +490,18 @@ class Balloon(TixWidget):
 
     Subwidget       Class
     ---------       -----
-    label       Label
-    message       Message"""
+    label           Label
+    message         Message"""
 
     def __init__(self, master=None, cnf={}, **kw):
         # static seem to be -installcolormap -initwait -statusbar -cursor
-       static = ['options', 'installcolormap', 'initwait', 'statusbar', 'cursor']
+       static = ['options', 'installcolormap', 'initwait', 'statusbar',
+                 'cursor']
        TixWidget.__init__(self, master, 'tixBalloon', static, cnf, kw)
        self.subwidget_list['label'] = _dummyLabel(self, 'label',
-                                             destroy_physically=0)
+                                                  destroy_physically=0)
        self.subwidget_list['message'] = _dummyLabel(self, 'message',
-                                               destroy_physically=0)
+                                                    destroy_physically=0)
 
     def bind_widget(self, widget, cnf={}, **kw):
        """Bind balloon widget to another.
@@ -512,13 +518,13 @@ class ButtonBox(TixWidget):
     """
     def __init__(self, master=None, cnf={}, **kw):
        TixWidget.__init__(self, master, 'tixButtonBox',
-                        ['orientation', 'options'], cnf, kw)
+                          ['orientation', 'options'], cnf, kw)
 
     def add(self, name, cnf={}, **kw):
        """Add a button with given name to box."""
 
        btn = apply(self.tk.call,
-                  (self._w, 'add', name) + self._options(cnf, kw))
+                   (self._w, 'add', name) + self._options(cnf, kw))
        self.subwidget_list[name] = _dummyButton(self, name)
        return btn
 
@@ -541,13 +547,13 @@ class ComboBox(TixWidget):
 
     def __init__ (self, master=None, cnf={}, **kw):
        TixWidget.__init__(self, master, 'tixComboBox', 
-                        ['editable', 'dropdown', 'fancy', 'options'],
-                        cnf, kw)
+                          ['editable', 'dropdown', 'fancy', 'options'],
+                          cnf, kw)
        self.subwidget_list['label'] = _dummyLabel(self, 'label')
        self.subwidget_list['entry'] = _dummyEntry(self, 'entry')
        self.subwidget_list['arrow'] = _dummyButton(self, 'arrow')
        self.subwidget_list['slistbox'] = _dummyScrolledListBox(self,
-                                                        'slistbox')
+                                                               'slistbox')
        try:
            self.subwidget_list['tick'] = _dummyButton(self, 'tick')
            self.subwidget_list['cross'] = _dummyButton(self, 'cross')
