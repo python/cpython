@@ -208,7 +208,7 @@ or other characters that are special to the shell, it is best to quote
 
 Note that there is a difference between \samp{python file} and
 \samp{python <file}.  In the latter case, input requests from the
-program, such as calls to \code{input()} and \code{raw_input()}, are
+program, such as calls to \function{input()} and \function{raw_input()}, are
 satisfied from \emph{file}.  Since this file has already been read
 until the end by the parser before the program starts executing, the
 program will encounter end-of-file immediately.  In the former case
@@ -271,8 +271,8 @@ When an error occurs, the interpreter prints an error
 message and a stack trace.  In interactive mode, it then returns to
 the primary prompt; when input came from a file, it exits with a
 nonzero exit status after printing
-the stack trace.  (Exceptions handled by an \code{except} clause in a
-\code{try} statement are not errors in this context.)  Some errors are
+the stack trace.  (Exceptions handled by an \keyword{except} clause in a
+\keyword{try} statement are not errors in this context.)  Some errors are
 unconditionally fatal and cause an exit with a nonzero exit; this
 applies to internal inconsistencies and some cases of running out of
 memory.  All error messages are written to the standard error stream;
@@ -285,8 +285,8 @@ primary prompt.\footnote{
         A problem with the GNU Readline package may prevent this.
 }
 Typing an interrupt while a command is executing raises the
-\code{KeyboardInterrupt} exception, which may be handled by a
-\code{try} statement.
+\exception{KeyboardInterrupt} exception, which may be handled by a
+\keyword{try} statement.
 
 \subsection{Executable Python Scripts \label{scripts}}
 
