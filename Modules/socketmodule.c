@@ -1110,7 +1110,7 @@ sock_gettimeout(PySocketSockObject *s)
 }
 
 PyDoc_STRVAR(gettimeout_doc,
-"gettimeout()\n\
+"gettimeout() -> timeout\n\
 \n\
 Returns the timeout in floating seconds associated with socket \n\
 operations. A timeout of None indicates that timeouts on socket \n\
@@ -1387,7 +1387,7 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
 }
 
 PyDoc_STRVAR(connect_ex_doc,
-"connect_ex(address)\n\
+"connect_ex(address) -> errno\n\
 \n\
 This is like connect(address), but returns an error code (the errno value)\n\
 instead of raising an exception when an error occurs.");
@@ -1787,7 +1787,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 }
 
 PyDoc_STRVAR(sendto_doc,
-"sendto(data[, flags], address)\n\
+"sendto(data[, flags], address) -> count\n\
 \n\
 Like send(data, flags) but allows specifying the destination address.\n\
 For IP sockets, the address is a pair (hostaddr, port).");
@@ -2712,8 +2712,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(getaddrinfo_doc,
-"socket.getaddrinfo(host, port [, family, socktype, proto, flags])\n\
-	--> List of (family, socktype, proto, canonname, sockaddr)\n\
+"getaddrinfo(host, port [, family, socktype, proto, flags])\n\
+    -> list of (family, socktype, proto, canonname, sockaddr)\n\
 \n\
 Resolve host and port into addrinfo struct.");
 
@@ -2790,7 +2790,7 @@ fail:
 }
 
 PyDoc_STRVAR(getnameinfo_doc,
-"socket.getnameinfo(sockaddr, flags) --> (host, port)\n\
+"getnameinfo(sockaddr, flags) --> (host, port)\n\
 \n\
 Get host and port for a sockaddr.");
 
@@ -2809,7 +2809,7 @@ socket_getdefaulttimeout(PyObject *self)
 }
 
 PyDoc_STRVAR(getdefaulttimeout_doc,
-"socket.getdefaulttimeout() -> None | float\n\
+"getdefaulttimeout() -> timeout\n\
 \n\
 Returns the default timeout in floating seconds for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
@@ -2839,7 +2839,7 @@ socket_setdefaulttimeout(PyObject *self, PyObject *arg)
 }
 
 PyDoc_STRVAR(setdefaulttimeout_doc,
-"socket.setdefaulttimeout(None | float)\n\
+"setdefaulttimeout(timeout)\n\
 \n\
 Set the default timeout in floating seconds for new socket objects.\n\
 A value of None indicates that new socket objects have no timeout.\n\
@@ -3013,8 +3013,9 @@ PySocketModule_APIObject PySocketModuleAPI =
 */
 
 PyDoc_STRVAR(socket_doc,
-"Implementation module for socket operations.  See the socket module\n\
-for documentation.");
+"Implementation module for socket operations.\n\
+\n\
+See the socket module for documentation.");
 
 PyMODINIT_FUNC
 init_socket(void)
