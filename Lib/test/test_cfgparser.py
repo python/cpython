@@ -48,6 +48,29 @@ def basic(src):
             " that never existed")
 
 
+def case_sensitivity():
+    print "Testing case sensitivity..."
+    cf = ConfigParser.ConfigParser()
+    cf.add_section("A")
+    cf.add_section("a")
+    L = cf.sections()
+    L.sort()
+    verify(L == ["A", "a"])
+    cf.set("a", "B", "value")
+    verify(cf.options("a") == ["b"])
+    verify(cf.get("a", "b", raw=1) == "value",
+           "could not locate option, expecting case-insensitive option names")
+    verify(cf.has_option("a", "b"))
+    cf.set("A", "A-B", "A-B value")
+    for opt in ("a-b", "A-b", "a-B", "A-B"):
+        verify(cf.has_option("A", opt),
+               "has_option() returned false for option which should exist")
+    verify(cf.options("A") == ["a-b"])
+    verify(cf.options("a") == ["b"])
+    cf.remove_option("a", "B")
+    verify(cf.options("a") == [])
+
+
 def interpolation(src):
     print "Testing value interpolation..."
     cf = ConfigParser.ConfigParser({"getname": "%(__name__)s"})
@@ -149,6 +172,7 @@ foo=Default
 foo[en]=English
 foo[de]=Deutsch
 """)
+case_sensitivity()
 interpolation(r"""
 [Foo]
 bar=something %(with1)s interpolation (1 step)
