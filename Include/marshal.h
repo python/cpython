@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 PyAPI_FUNC(void) PyMarshal_WriteLongToFile(long, FILE *);
-PyAPI_FUNC(void) PyMarshal_WriteShortToFile(int, FILE *);
 PyAPI_FUNC(void) PyMarshal_WriteObjectToFile(PyObject *, FILE *);
 PyAPI_FUNC(PyObject *) PyMarshal_WriteObjectToString(PyObject *);
 

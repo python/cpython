@@ -289,12 +289,6 @@ Numeric values are stored with the least significant byte first.
   regardless of the size of the native \ctype{long} type.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{void}{PyMarshal_WriteShortToFile}{short value, FILE *file}
-  Marshal a \ctype{short} integer, \var{value}, to \var{file}.  This
-  will only write the least-significant 16 bits of \var{value};
-  regardless of the size of the native \ctype{short} type.
-\end{cfuncdesc}
-
 \begin{cfuncdesc}{void}{PyMarshal_WriteObjectToFile}{PyObject *value,
                                                      FILE *file}
   Marshal a Python object, \var{value}, to \var{file}.
