@@ -445,8 +445,8 @@ Bind the socket to \var{address}.  The socket must not already be bound.
 (The format of \var{address} depends on the address family --- see
 above.)  \note{This method has historically accepted a pair
 of parameters for \constant{AF_INET} addresses instead of only a
-tuple.  This was never intentional and is no longer be available in
-Python 2.0.}
+tuple.  This was never intentional and is no longer available in
+Python 2.0 and later.}
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{close}{}
@@ -473,7 +473,7 @@ operation succeeded, otherwise the value of the \cdata{errno}
 variable.  This is useful to support, for example, asynchronous connects.
 \note{This method has historically accepted a pair of
 parameters for \constant{AF_INET} addresses instead of only a tuple.
-This was never intentional and is no longer be available in Python
+This was never intentional and is no longer available in Python
 2.0 and later.}
 \end{methoddesc}
 
