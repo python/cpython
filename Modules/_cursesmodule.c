@@ -43,7 +43,7 @@ unsupported functions:
 	del_curterm delscreen dupwin inchnstr inchstr innstr keyok
 	mcprint mvaddchnstr mvaddchstr mvchgat mvcur mvinchnstr
 	mvinchstr mvinnstr mmvwaddchnstr mvwaddchstr mvwchgat
-	mvwgetnstr mvwinchnstr mvwinchstr mvwinnstr napms newterm
+	mvwgetnstr mvwinchnstr mvwinchstr mvwinnstr newterm
 	overlay overwrite resizeterm restartterm ripoffline scr_dump
 	scr_init scr_restore scr_set scrl set_curterm set_term setterm
 	tgetent tgetflag tgetnum tgetstr tgoto timeout tputs
@@ -54,6 +54,42 @@ Low-priority:
 	slk_attr slk_attr_off slk_attr_on slk_attr_set slk_attroff
 	slk_attron slk_attrset slk_clear slk_color slk_init slk_label
 	slk_noutrefresh slk_refresh slk_restore slk_set slk_touch
+
+Menu extension (ncurses and probably SYSV):
+	current_item free_item free_menu item_count item_description
+	item_index item_init item_name item_opts item_opts_off
+	item_opts_on item_term item_userptr item_value item_visible
+	menu_back menu_driver menu_fore menu_format menu_grey
+	menu_init menu_items menu_mark menu_opts menu_opts_off
+	menu_opts_on menu_pad menu_pattern menu_request_by_name
+	menu_request_name menu_spacing menu_sub menu_term menu_userptr
+	menu_win new_item new_menu pos_menu_cursor post_menu
+	scale_menu set_current_item set_item_init set_item_opts
+	set_item_term set_item_userptr set_item_value set_menu_back
+	set_menu_fore set_menu_format set_menu_grey set_menu_init
+	set_menu_items set_menu_mark set_menu_opts set_menu_pad
+	set_menu_pattern set_menu_spacing set_menu_sub set_menu_term
+	set_menu_userptr set_menu_win set_top_row top_row unpost_menu
+
+Form extension (ncurses and probably SYSV):
+	current_field data_ahead data_behind dup_field
+	dynamic_fieldinfo field_arg field_back field_buffer
+	field_count field_fore field_index field_info field_init
+	field_just field_opts field_opts_off field_opts_on field_pad
+	field_status field_term field_type field_userptr form_driver
+	form_fields form_init form_opts form_opts_off form_opts_on
+	form_page form_request_by_name form_request_name form_sub
+	form_term form_userptr form_win free_field free_form
+	link_field link_fieldtype move_field new_field new_form
+	new_page pos_form_cursor post_form scale_form
+	set_current_field set_field_back set_field_buffer
+	set_field_fore set_field_init set_field_just set_field_opts
+	set_field_pad set_field_status set_field_term set_field_type
+	set_field_userptr set_fieldtype_arg set_fieldtype_choice
+	set_form_fields set_form_init set_form_opts set_form_page
+	set_form_sub set_form_term set_form_userptr set_form_win
+	set_max_field set_new_page unpost_form
+
 
  */
 
@@ -1933,6 +1969,18 @@ PyCurses_MouseMask(PyObject *self, PyObject *args)
 #endif
 
 static PyObject *
+PyCurses_Napms(PyObject *self, PyObject *args)
+{
+    int ms;
+
+    PyCursesInitialised
+    if (!PyArg_Parse(args, "i;ms", &ms)) return NULL;
+
+    return Py_BuildValue("i", napms(ms));
+}
+
+
+static PyObject *
 PyCurses_NewPad(PyObject *self, PyObject *args)
 {
   WINDOW *win;
@@ -2332,6 +2380,7 @@ static PyMethodDef PyCurses_methods[] = {
   {"mouseinterval",       (PyCFunction)PyCurses_MouseInterval},
   {"mousemask",           (PyCFunction)PyCurses_MouseMask},
 #endif
+  {"napms",               (PyCFunction)PyCurses_Napms},
   {"newpad",              (PyCFunction)PyCurses_NewPad},
   {"newwin",              (PyCFunction)PyCurses_NewWindow},
   {"nl",                  (PyCFunction)PyCurses_nl},
