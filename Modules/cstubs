@@ -561,6 +561,216 @@ gl_altgetmatrix(self, args)
 	return v;
 }
 
+% lrectwrite
+
+static object *
+gl_lrectwrite(self, args)
+	object *self;
+	object *args;
+{
+	short x1 ;
+	short y1 ;
+	short x2 ;
+	short y2 ;
+	string parray ;
+	object *s;
+	int pixcount;
+	if (!getishortarg(args, 5, 0, &x1))
+		return NULL;
+	if (!getishortarg(args, 5, 1, &y1))
+		return NULL;
+	if (!getishortarg(args, 5, 2, &x2))
+		return NULL;
+	if (!getishortarg(args, 5, 3, &y2))
+		return NULL;
+	if (!getistringarg(args, 5, 4, &parray))
+		return NULL;
+	if (!getiobjectarg(args, 5, 4, &s))
+		return NULL;
+	pixcount = (long)(x2+1-x1) * (long)(y2+1-y1);
+	if (!is_stringobject(s) || getstringsize(s) != pixcount*sizeof(long)) {
+		fprintf(stderr, "string arg to lrectwrite has wrong size\n");
+		err_badarg();
+		return NULL;
+	}
+	lrectwrite( x1 , y1 , x2 , y2 , (unsigned long *) parray );
+	INCREF(None);
+	return None;
+}
+
+% lrectread
+
+static object *
+gl_lrectread(self, args)
+	object *self;
+	object *args;
+{
+	short x1 ;
+	short y1 ;
+	short x2 ;
+	short y2 ;
+	object *parray;
+	int pixcount;
+	if (!getishortarg(args, 4, 0, &x1))
+		return NULL;
+	if (!getishortarg(args, 4, 1, &y1))
+		return NULL;
+	if (!getishortarg(args, 4, 2, &x2))
+		return NULL;
+	if (!getishortarg(args, 4, 3, &y2))
+		return NULL;
+	pixcount = (long)(x2+1-x1) * (long)(y2+1-y1);
+	parray = newsizedstringobject((char *)NULL, pixcount*sizeof(long));
+	if (parray == NULL)
+		return NULL; /* No memory */
+	lrectread(x1, y1, x2, y2, (unsigned long *) getstringvalue(parray));
+	return parray;
+}
+
+/* Desperately needed, here are tools to compress and decompress
+   the data manipulated by lrectread/lrectwrite.
+
+   gl.packrect(width, height, packfactor, bigdata) --> smalldata
+		makes 'bigdata' 4*(packfactor**2) times smaller by:
+		- turning it into B/W (a factor 4)
+		- replacing squares of size pacfactor by one
+		  representative
+
+   gl.unpackrect(width, height, packfactor, smalldata) --> bigdata
+		is the inverse; the numeric arguments must be *the same*.
+
+   Both work best if width and height are multiples of packfactor
+   (in fact unpackrect will leave garbage bytes).
+*/
+
+% packrect
+
+static object *
+gl_packrect(self, args)
+	object *self;
+	object *args;
+{
+	long width, height, packfactor;
+	char *s;
+	object *unpacked, *packed;
+	int pixcount, packedcount, x, y, r, g, b;
+	unsigned long pixel;
+	unsigned char *p;
+	unsigned long *parray;
+	if (!getilongarg(args, 4, 0, &width))
+		return NULL;
+	if (!getilongarg(args, 4, 1, &height))
+		return NULL;
+	if (!getilongarg(args, 4, 2, &packfactor))
+		return NULL;
+	if (!getistringarg(args, 4, 3, &s)) /* For type checking only */
+		return NULL;
+	if (!getiobjectarg(args, 4, 3, &unpacked))
+		return NULL;
+	if (width <= 0 || height <= 0 || packfactor <= 0) {
+		err_setstr(RuntimeError, "packrect args must be > 0");
+		return NULL;
+	}
+	pixcount = width*height;
+	packedcount = ((width+packfactor-1)/packfactor) *
+		((height+packfactor-1)/packfactor);
+	if (getstringsize(unpacked) != pixcount*sizeof(long)) {
+		fprintf(stderr, "string arg to packrect has wrong size\n");
+		err_badarg();
+		return NULL;
+	}
+	packed = newsizedstringobject((char *)NULL, packedcount);
+	if (packed == NULL)
+		return NULL;
+	parray = (unsigned long *) getstringvalue(unpacked);
+	p = getstringvalue(packed);
+	for (y = 0; y < height; y += packfactor, parray += packfactor*width) {
+		for (x = 0; x < width; x += packfactor) {
+			pixel = parray[x];
+			r = pixel & 0xff;
+			g = (pixel >> 8) & 0xff;
+			b = (pixel >> 16) & 0xff;
+			*p++ = (r+g+b) / 3;
+		}
+	}
+	return packed;
+}
+
+% unpackrect
+
+static unsigned long unpacktab[256];
+static int unpacktab_inited = 0;
+
+static object *
+gl_unpackrect(self, args)
+	object *self;
+	object *args;
+{
+	long width, height, packfactor;
+	char *s;
+	object *unpacked, *packed;
+	int pixcount, packedcount, y;
+	register unsigned char *p;
+	register unsigned long *parray;
+	if (!unpacktab_inited) {
+		register int white;
+		for (white = 256; --white >= 0; )
+			unpacktab[white] = white * 0x010101L;
+		unpacktab_inited++;
+	}
+	if (!getilongarg(args, 4, 0, &width))
+		return NULL;
+	if (!getilongarg(args, 4, 1, &height))
+		return NULL;
+	if (!getilongarg(args, 4, 2, &packfactor))
+		return NULL;
+	if (!getistringarg(args, 4, 3, &s)) /* For type checking only */
+		return NULL;
+	if (!getiobjectarg(args, 4, 3, &packed))
+		return NULL;
+	if (width <= 0 || height <= 0 || packfactor <= 0) {
+		err_setstr(RuntimeError, "packrect args must be > 0");
+		return NULL;
+	}
+	pixcount = width*height;
+	packedcount = ((width+packfactor-1)/packfactor) *
+		((height+packfactor-1)/packfactor);
+	if (getstringsize(packed) != packedcount) {
+		fprintf(stderr, "string arg to unpackrect has wrong size\n");
+		err_badarg();
+		return NULL;
+	}
+	unpacked = newsizedstringobject((char *)NULL, pixcount*sizeof(long));
+	if (unpacked == NULL)
+		return NULL;
+	parray = (unsigned long *) getstringvalue(unpacked);
+	p = (unsigned char *) getstringvalue(packed);
+	if (packfactor == 1 && width*height > 0) {
+		/* Just expand bytes to longs */
+		register int x = width * height;
+		do {
+			*parray++ = unpacktab[*p++];
+		} while (--x >= 0);
+	}
+	else {
+		register int y;
+		for (y = 0; y < height-packfactor+1;
+		     y += packfactor, parray += packfactor*width) {
+			register int x;
+			for (x = 0; x < width-packfactor+1; x += packfactor) {
+				register unsigned long pixel = unpacktab[*p++];
+				register int i;
+				for (i = packfactor*width; (i-=width) >= 0;) {
+					register int j;
+					for (j = packfactor; --j >= 0; )
+						parray[i+x+j] = pixel;
+				}
+			}
+		}
+	}
+	return unpacked;
+}
+
 /* End of manually written stubs */
 
 %%
@@ -828,7 +1038,7 @@ void splfi		long s long s[3*arg1] short s[arg1]
 void splf2i		long s long s[2*arg1] short s[arg1]
 void splfs		long s short s[3*arg1] short s[arg1]
 void splf2s		long s short s[2*arg1] short s[arg1]
-void defpattern		short s short s short s[arg2*arg2/16]
+###void defpattern		short s short s short s[arg2*arg2/16]
 #
 void rpatch		float s[16] float s[16] float s[16] float s[16]
 #
@@ -922,22 +1132,22 @@ void winposition	long s long s long s long s
 void gRGBcolor		short r short r short r
 void gRGBmask		short r short r short r
 void getscrmask	short r short r short r short r
-void gRGBcursor	short r short r short r short r short r short r short r short r long *
+###void gRGBcursor	short r short r short r short r short r short r short r short r
 void getmcolor		short s short r short r short r
 void mapw		long s short s short s float r float r float r float r float r float r
 void mapw2		long s short s short s float r float r
-void defrasterfont	short s short s short s Fontchar s[arg3] short s short s[4*arg5]
+###void defrasterfont	short s short s short s Fontchar s[arg3] short s short s[4*arg5]
 long qread		short r
 void getcursor		short r short r short r long r
 #
 #   For these we receive arrays of stuff
 #
-void getdev 		long s short s[arg1] short r[arg1]
+###void getdev 		long s short s[arg1] short r[arg1]
 #XXX not generated correctly yet
 #void getmatrix		float r[16]
-long readpixels		short s short r[retval]
-long readRGB		short s char r[retval] char r[retval] char r[retval]
-long blkqread		short s short r[arg1]
+###long readpixels		short s short r[retval]
+###long readRGB		short s char r[retval] char r[retval] char r[retval]
+###long blkqread		short s short r[arg1]
 #
 #   New 4D routines
 #
@@ -1000,10 +1210,11 @@ void lRGBrange		short s short s short s short s short s short s long s long s
 void linesmooth		long s
 void lmcolor		long s
 void logicop		long s
-long lrectread	 	short s short s short s short s long r[retval]
-void lrectwrite		short s short s short s short s long s[(arg2-arg1+1)*(arg4-arg3+1)]
-long rectread	 	short s short s short s short s short r[retval]
-void rectwrite		short s short s short s short s short s[(arg2-arg1+1)*(arg4-arg3+1)]
+###long lrectread	 	short s short s short s short s long r[retval]
+###void lrectwrite		short s short s short s short s long s[(arg2-arg1+1)*(arg4-arg3+1)]
+### Now manual, with string last arg
+###long rectread	 	short s short s short s short s short r[retval]
+###void rectwrite		short s short s short s short s short s[(arg2-arg1+1)*(arg4-arg3+1)]
 void lsetdepth		long s long s
 void lshaderange	short s short s long s long s
 void n3f		float s[3]
@@ -1045,3 +1256,7 @@ void zwritemask		long s
 void v2d		double s[2]
 void v3d		double s[3]
 void v4d		double s[4]
+#
+# Why isn't this here?
+#
+void pixmode		long s long s
