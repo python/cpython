@@ -12,10 +12,10 @@ def help():
 	print '-M magnify : magnify the image by the given factor'
 	print '-d         : write some debug stuff on stderr'
 	print '-l         : loop, playing the movie over and over again'
-	print '-m delta   : drop frames closer than delta msec (default 0)'
+	print '-m delta   : drop frames closer than delta seconds (default 0.)'
 	print '-n         : don\'t wait after each file'
 	print '-q         : quiet, no informative messages'
-	print '-r delta   : regenerate input time base delta msec apart'
+	print '-r delta   : regenerate input time base delta seconds apart'
 	print '-s speed   : speed change factor (default 1.0)'
 	print '-t         : use a 2nd thread for read-ahead'
 	print '-x left    : window offset from left of screen'
@@ -81,10 +81,10 @@ def main():
 			if opt == '-M': magnify = float(eval(arg))
 			if opt == '-d': debug = debug + 1
 			if opt == '-l': looping = 1
-			if opt == '-m': mindelta = string.atoi(arg)
+			if opt == '-m': mindelta = float(eval(arg))
 			if opt == '-n': nowait = 1
 			if opt == '-q': quiet = 1
-			if opt == '-r': regen = string.atoi(arg)
+			if opt == '-r': regen = float(eval(arg))
 			if opt == '-s':
 				try:
 					speed = float(eval(arg))
@@ -238,7 +238,7 @@ def playonce(vin):
 		thread.start_new_thread(read_ahead, (vin, queue, stop))
 		# Get the read-ahead thread going
 		while queue.qsize() < MAXSIZE/2 and not stop:
-			time.millisleep(100)
+			time.sleep(0.100)
 
 	tin = 0
 	toffset = 0
@@ -250,7 +250,7 @@ def playonce(vin):
 	nskipped = 0
 	data = None
 
-	tlast = t0 = time.millitimer()
+	tlast = t0 = time.time()
 
 	while 1:
 		if gl.qtest():
@@ -278,6 +278,7 @@ def playonce(vin):
 				tin, size, csize = vin.getnextframeheader()
 			except EOFError:
 				break
+		tin = tin*0.001
 		nin = nin+1
 		if tin+toffset < oldtin:
 			print 'Fix reversed time:', oldtin, 'to', tin
@@ -286,7 +287,7 @@ def playonce(vin):
 		oldtin = tin
 		if regen: tout = nin * regen
 		else: tout = tin
-		tout = int(tout / speed)
+		tout = tout / speed
 		if tout - told < mindelta:
 			nskipped = nskipped + 1
 			if not threading:
@@ -300,34 +301,34 @@ def playonce(vin):
 					if not quiet:
 						print '[incomplete last frame]'
 					break
-			now = time.millitimer()
+			now = time.time()
 			dt = (tout-told) - (now-tlast)
 			told = tout
-			if debug: sys.stderr.write(`dt/10` + ' ')
+			if debug: sys.stderr.write(`round(dt, 3)` + ' ')
 			if dt < 0: nlate = nlate + 1
 			if dt > 0:
-				time.millisleep(dt)
-				now = now + dt
+				time.sleep(dt)
+				now = time.time()
 			tlast = now
 			vin.showframe(data, cdata)
 			nout = nout + 1
 
-	t1 = time.millitimer()
+	t1 = time.time()
 
 	if debug: sys.stderr.write('\n')
 
 	if quiet: return 0
 
-	print 'Recorded:', nin, 'frames in', tin*0.001, 'sec.',
-	if tin: print '-- average', int(nin*10000.0/tin)*0.1, 'frames/sec',
+	print 'Recorded:', nin, 'frames in', round(tin, 3), 'sec.',
+	if tin: print '-- average', round(nin/tin, 1), 'frames/sec',
 	print
 
 	if nskipped: print 'Skipped', nskipped, 'frames'
 
 	tout = t1-t0
 	print 'Played:', nout,
-	print 'frames in', tout*0.001, 'sec.',
-	if tout: print '-- average', int(nout*10000.0/tout)*0.1, 'frames/sec',
+	print 'frames in', round(tout, 3), 'sec.',
+	if tout: print '-- average', round(nout/tout, 1), 'frames/sec',
 	print
 
 	if nlate: print 'There were', nlate, 'late frames'
