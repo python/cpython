@@ -173,12 +173,13 @@ passive mode.  (In Python 2.0 and before, passive mode was off by
 default; in Python 2.1 and later, it is on by default.)
 \end{methoddesc}
 
-\begin{methoddesc}{storbinary}{command, file, blocksize}
+\begin{methoddesc}{storbinary}{command, file\optional{, blocksize}}
 Store a file in binary transfer mode.  \var{command} should be an
 appropriate \samp{STOR} command, i.e.\ \code{"STOR \var{filename}"}.
 \var{file} is an open file object which is read until \EOF{} using its
 \method{read()} method in blocks of size \var{blocksize} to provide the
-data to be stored.
+data to be stored.  The \var{blocksize} argument defaults to 8192.
+\versionchanged[default for \var{blocksize} added]{2.1}
 \end{methoddesc}
 
 \begin{methoddesc}{storlines}{command, file}
