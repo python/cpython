@@ -29,9 +29,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef macintosh
-/* The Macintosh main program is in macmain.c */
+/* The Macintosh main program is in either macapplet.c or macapplication.c */
 #define NO_MAIN
-char *fileargument;		/* So main() can tell us the program name */
 #endif
 
 #include <stdio.h>
@@ -42,7 +41,6 @@ char *fileargument;		/* So main() can tell us the program name */
 #include "osdefs.h"
 #include "intrcheck.h"
 
-char *PyMac_GetPythonDir();
 
 #ifndef NO_MAIN
 
@@ -168,12 +166,13 @@ getpythonpath()
 	** - Prepend the python home-directory (which is obtained from a Preferences
 	**   resource)
 	** - Add :
-	** - Chdir to where the source file (if any) lives
 	*/
 	static char *pythonpath;
 	char *curwd;
 	char *p, *endp;
 	int newlen;
+	extern char *PyMac_GetPythonDir();
+	extern char *PyMac_GetScriptPath();
 	
 	if ( pythonpath ) return pythonpath;
 	curwd = PyMac_GetPythonDir();
@@ -204,14 +203,6 @@ getpythonpath()
 		}
 		pythonpath[newlen] = '\0';
 		p = endp + 1;
-	}
-	if ( fileargument ) {
-		strcpy(curwd, fileargument);
-		endp = strrchr(curwd, ':');
-		if ( endp && endp > curwd ) {
-			*endp = '\0';
-			chdir(curwd);
-		}
 	}
 	return pythonpath;
 #else /* !macintosh */
@@ -346,13 +337,17 @@ struct {
 	{"mactcp", initmactcp},
 #endif
 	{"AE", initAE},
+#ifndef __MWERKS__
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
+#endif
 	{"Evt", initEvt},
 	{"Menu", initMenu},
+#ifndef __MWERKS__
 	{"Qd", initQd},
 	{"Snd", initSnd},
 	{"Win", initWin},
+#endif
 	{"Res", initRes},
 
 /* -- ADDMODULE MARKER 2 -- */
