@@ -84,6 +84,13 @@ class Application:
 		self.menubar = MenuBar()
 		AppleMenu(self.menubar, self.getabouttext(), self.do_about)
 		self.makeusermenus()
+
+	def makeusermenus(self):
+		self.filemenu = m = Menu(self.menubar, "File")
+		self._quititem = MenuItem(m, "Quit", "Q", self._quit)
+	
+	def _quit(self, *args):
+		raise self
 		
 	def appendwindow(self, wid, window):
 		self._windows[wid] = window
@@ -278,7 +285,11 @@ class Application:
 	
 	def do_activateEvt(self, event):
 		(what, message, when, where, modifiers) = event
-		wid = WhichWindow(message)
+		# XXXX Incorrect, should be fixed in suspendresume
+		if type(message) == type(1):
+			wid = WhichWindow(message)
+		else:
+			wid = message
 		if wid and self._windows.has_key(wid):
 			window = self._windows[wid]
 			window.do_activate(modifiers & 1, event)
@@ -300,8 +311,9 @@ class Application:
 		(what, message, when, where, modifiers) = event
 		w = FrontWindow()
 		if w:
+			# XXXX Incorrect, should stuff windowptr into message field
 			nev = (activateEvt, w, when, where, message&1)
-			self.do_activateEvt(self, nev)
+			self.do_activateEvt(nev)
 
 	def do_kHighLevelEvent(self, event):
 		(what, message, when, where, modifiers) = event
@@ -452,7 +464,7 @@ class AppleMenu(Menu):
 		if item == 1:
 			Menu.dispatch(self, id, item, window, event)
 		else:
-			name = self.menu.GetItem(item)
+			name = self.menu.GetMenuItemText(item)
 			OpenDeskAcc(name)
 
 class Window:
@@ -462,8 +474,11 @@ class Window:
 		self.wid = None
 		self.parent = parent
 		
-	def open(self):
-		self.wid = NewWindow((40, 40, 400, 400), self.__class__.__name__, 1,
+	def open(self, bounds=(40, 40, 400, 400), resid=None):
+		if resid <> None:
+			self.wid = GetNewWindow(resid, -1)
+		else:
+			self.wid = NewWindow(bounds, self.__class__.__name__, 1,
 				0, -1, 1, 0)
 		self.do_postopen()
 		
@@ -478,6 +493,10 @@ class Window:
 		self.parent.removewindow(self.wid)
 		self.parent = None
 		self.wid = None
+		
+	def SetPort(self):
+		# Convinience method
+		SetPort(self.wid)
 	
 	def do_inDrag(self, partcode, window, event):
 		where = event[3]
