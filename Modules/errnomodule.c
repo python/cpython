@@ -101,7 +101,7 @@ initerrno()
 	m = Py_InitModule3("errno", errno_methods, errno__doc__);
 	d = PyModule_GetDict(m);
 	de = PyDict_New();
-	if (de == NULL || PyDict_SetItemString(d,"errorcode",de))
+	if (de == NULL || PyDict_SetItemString(d, "errorcode", de))
 		Py_FatalError("can't initialize errno module");
 
 /* Macro so I don't have to edit each and every line below... */
@@ -824,4 +824,5 @@ initerrno()
 	inscode(d, ds, de, "WSAN", WSAN, "Error WSAN");
 #endif
 
+	Py_DECREF(de);
 }
