@@ -106,7 +106,7 @@ AEEventHandlerUPP upp_GenericEventHandler;
 
 static pascal Boolean AEIdleProc(EventRecord *theEvent, long *sleepTime, RgnHandle *mouseRgn)
 {
-	(void) PyMac_Idle();
+	PyMac_Yield();
 	return 0;
 }
 
