@@ -473,11 +473,16 @@ parser_issuite(self, args)
 
 static PyMethodDef
 parser_methods[] = {
-    {"compile",		parser_compileast,	METH_VARARGS},
-    {"isexpr",		parser_isexpr,		METH_VARARGS},
-    {"issuite",		parser_issuite,		METH_VARARGS},
-    {"tolist",		parser_ast2list,	METH_VARARGS},
-    {"totuple",		parser_ast2tuple,	METH_VARARGS},
+    {"compile",		(PyCFunction)parser_compileast,	METH_VARARGS,
+	"Compile this AST object into a code object."},
+    {"isexpr",		(PyCFunction)parser_isexpr,	METH_VARARGS,
+	"Determines if this AST object was created from an expression."},
+    {"issuite",		(PyCFunction)parser_issuite,	METH_VARARGS,
+	"Determines if this AST object was created from a suite."},
+    {"tolist",		(PyCFunction)parser_ast2list,	METH_VARARGS,
+	"Creates a list-tree representation of this AST."},
+    {"totuple",		(PyCFunction)parser_ast2tuple,	METH_VARARGS,
+	"Creates a tuple-tree representation of this AST."},
 
     {NULL}
 };
@@ -2685,27 +2690,27 @@ parser__pickler(self, args)
  *  inheritance.
  */
 static PyMethodDef parser_functions[] =  {
-    {"ast2tuple",	parser_ast2tuple,	METH_VARARGS,
+    {"ast2tuple",	(PyCFunction)parser_ast2tuple,	METH_VARARGS,
 	"Creates a tuple-tree representation of an AST."},
-    {"ast2list",	parser_ast2list,	METH_VARARGS,
+    {"ast2list",	(PyCFunction)parser_ast2list,	METH_VARARGS,
 	"Creates a list-tree representation of an AST."},
-    {"compileast",	parser_compileast,	METH_VARARGS,
+    {"compileast",	(PyCFunction)parser_compileast,	METH_VARARGS,
 	"Compiles an AST object into a code object."},
-    {"expr",		parser_expr,		METH_VARARGS,
+    {"expr",		(PyCFunction)parser_expr,	METH_VARARGS,
 	"Creates an AST object from an expression."},
-    {"isexpr",		parser_isexpr,		METH_VARARGS,
+    {"isexpr",		(PyCFunction)parser_isexpr,	METH_VARARGS,
 	"Determines if an AST object was created from an expression."},
-    {"issuite",		parser_issuite,		METH_VARARGS,
+    {"issuite",		(PyCFunction)parser_issuite,	METH_VARARGS,
 	"Determines if an AST object was created from a suite."},
-    {"suite",		parser_suite,		METH_VARARGS,
+    {"suite",		(PyCFunction)parser_suite,	METH_VARARGS,
 	"Creates an AST object from a suite."},
-    {"sequence2ast",	parser_tuple2ast,	METH_VARARGS,
+    {"sequence2ast",	(PyCFunction)parser_tuple2ast,	METH_VARARGS,
 	"Creates an AST object from a tree representation."},
-    {"tuple2ast",	parser_tuple2ast,	METH_VARARGS,
+    {"tuple2ast",	(PyCFunction)parser_tuple2ast,	METH_VARARGS,
 	"Creates an AST object from a tree representation."},
 
     /* private stuff: support pickle module */
-    {"_pickler",	parser__pickler,	METH_VARARGS,
+    {"_pickler",	(PyCFunction)parser__pickler,	METH_VARARGS,
         "Returns the pickle magic to allow ast objects to be pickled."},
 
     {0, 0, 0}
@@ -2761,7 +2766,7 @@ initparser()
     /* register to support pickling */
     module = PyImport_ImportModule("copy_reg");
     if (module != NULL) {
-	PyObject *func, *constructor, *pickler;
+	PyObject *func, *pickler;
 
 	func = PyObject_GetAttrString(module, "pickle");
 	pickle_constructor = PyDict_GetItemString(dict, "sequence2ast");
