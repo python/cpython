@@ -88,7 +88,10 @@ class ReprTests(unittest.TestCase):
         eq(r(i2), expected)
 
         i3 = ClassWithFailingRepr()
-        eq(r(i3), ("<ClassWithFailingRepr instance at %x>"%id(i3)))
+        # On some systems (RH10) id() can be a negative number. 
+        # work around this.
+        MAX = 2L*sys.maxint+1
+        eq(r(i3), ("<ClassWithFailingRepr instance at %x>"%(id(i3)&MAX)))
 
         s = r(ClassWithFailingRepr)
         self.failUnless(s.startswith("<class "))
