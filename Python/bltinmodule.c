@@ -1916,11 +1916,9 @@ builtin_zip(PyObject *self, PyObject *args)
 	PyObject *itlist;  /* tuple of iterators */
 	int len;	   /* guess at result length */
 
-	if (itemsize < 1) {
-		PyErr_SetString(PyExc_TypeError,
-				"zip() requires at least one sequence");
-		return NULL;
-	}
+	if (itemsize == 0)
+		return PyList_New(0);
+
 	/* args must be a tuple */
 	assert(PyTuple_Check(args));
 
