@@ -54,6 +54,8 @@ EXPORTS
 	Py_NoSiteFlag DATA
 	Py_UseClassExceptionsFlag DATA
 	Py_VerboseFlag DATA
+	Py_FrozenFlag DATA
+	Py_TabcheckFlag DATA
 	_PyParser_Grammar DATA
 	_PyParser_TokenNames DATA
 	_PyThread_Started DATA
