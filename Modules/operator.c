@@ -110,40 +110,36 @@ used for special class methods; variants without leading and trailing\n\
   if(-1 == (r=AOP(a1,a2))) return NULL; \
   return PyInt_FromLong(r); }
 
-#ifdef _AIX
-#define __div __aix_div
-#define __abs __aix_abs
-#endif
-
 spami(isCallable       , PyCallable_Check)
 spami(isNumberType     , PyNumber_Check)
 spami(truth            , PyObject_IsTrue)
-spam2(__add          , PyNumber_Add)
-spam2(__sub          , PyNumber_Subtract)
-spam2(__mul          , PyNumber_Multiply)
-spam2(__div          , PyNumber_Divide)
-spam2(__mod          , PyNumber_Remainder)
-spam1(__neg          , PyNumber_Negative)
-spam1(__pos          , PyNumber_Positive)
-spam1(__abs          , PyNumber_Absolute)
-spam1(__inv          , PyNumber_Invert)
-spam2(__lshift       , PyNumber_Lshift)
-spam2(__rshift       , PyNumber_Rshift)
-spam2(__and          , PyNumber_And)
-spam2(__xor          , PyNumber_Xor)
-spam2(__or           , PyNumber_Or)
+spam2(op_add           , PyNumber_Add)
+spam2(op_sub           , PyNumber_Subtract)
+spam2(op_mul           , PyNumber_Multiply)
+spam2(op_div           , PyNumber_Divide)
+spam2(op_mod           , PyNumber_Remainder)
+spam1(op_neg           , PyNumber_Negative)
+spam1(op_pos           , PyNumber_Positive)
+spam1(op_abs           , PyNumber_Absolute)
+spam1(op_inv           , PyNumber_Invert)
+spam2(op_lshift        , PyNumber_Lshift)
+spam2(op_rshift        , PyNumber_Rshift)
+spam2(op_and_          , PyNumber_And)
+spam2(op_xor           , PyNumber_Xor)
+spam2(op_or_           , PyNumber_Or)
 spami(isSequenceType   , PySequence_Check)
-spam2(__concat       , PySequence_Concat)
-spamoi(__repeat       , PySequence_Repeat)
+spam2(op_concat        , PySequence_Concat)
+spamoi(op_repeat       , PySequence_Repeat)
 spami2(sequenceIncludes, PySequence_In)
 spami2(indexOf         , PySequence_Index)
 spami2(countOf         , PySequence_Count)
 spami(isMappingType    , PyMapping_Check)
-spam2(__getitem      , PyObject_GetItem)
-spam3n(__setitem     , PyObject_SetItem)
+spam2(op_getitem       , PyObject_GetItem)
+spam2n(op_delitem       , PyObject_DelItem)
+spam3n(op_setitem      , PyObject_SetItem)
 
 static PyObject*
-__getslice(s,a)
+op_getslice(s,a)
      PyObject *s, *a;
 {
   PyObject *a1;
@@ -155,7 +151,7 @@ __getslice(s,a)
 }
 
 static PyObject*
-__setslice(s,a)
+op_setslice(s,a)
      PyObject *s, *a;
 {
   PyObject *a1, *a4;
@@ -169,16 +165,31 @@ __setslice(s,a)
   return Py_None;
 }
 
+static PyObject*
+op_delslice(s,a)
+     PyObject *s, *a;
+{
+  PyObject *a1, *a4;
+  long a2,a3;
+
+  if(! PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3)) return NULL;
+
+  if(-1 == PySequence_DelSlice(a1,a2,a3)) return NULL;
+
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 #undef spam1
 #undef spam2
 #ifdef HAVE_OLD_CPP
 #define spam1(OP,DOC) {"OP", OP, 1, DOC},
-#define spam2(OP,ALTOP,DOC) {"OP", __/**/OP, 1, DOC}, \
-			   {"ALTOP", __/**/OP, 1, DOC}, 
+#define spam2(OP,ALTOP,DOC) {"OP", op_/**/OP, 1, DOC}, \
+			   {"ALTOP", op_/**/OP, 1, DOC}, 
 #else
 #define spam1(OP,DOC) {#OP, OP, 1, DOC},
-#define spam2(OP,ALTOP,DOC) {#OP, __ ## OP, 1, DOC}, \
-			   {#ALTOP, __ ## OP, 1, DOC}, 
+#define spam2(OP,ALTOP,DOC) {#OP, op_##OP, 1, DOC}, \
+			   {#ALTOP, op_##OP, 1, DOC}, 
 #endif
 
 static struct PyMethodDef operator_methods[] = {
@@ -211,9 +222,9 @@ spam2(abs,__abs__, "abs(o) -- Return the absolute value of o.")
 spam2(inv,__inv__, "inv(o) -- Return the inverse of o.")
 spam2(lshift,__lshift__, "lshift(a, b) -- Return a shifted left by b.")
 spam2(rshift,__rshift__, "rshift(a, b) -- Return a shifted right by b.")
-spam2(and,__and__, "and(a, b) -- Return the bitwise and of a and b.")
+spam2(and_,__and__, "and_(a, b) -- Return the bitwise and of a and b.")
 spam2(xor,__xor__, "xor(a, b) -- Return the bitwise exclusive-or of a and b.")
-spam2(or,__or__, "or(a, b) -- Return the bitwise or of a and b.")
+spam2(or_,__or__, "or_(a, b) -- Return the bitwise or of a and b.")
 spam2(concat,__concat__,
  "concat(a, b) -- Return a + b, for a and b sequences.")
 spam2(repeat,__repeat__,
@@ -222,10 +233,14 @@ spam2(getitem,__getitem__,
  "getitem(a, b) -- Return the value of a at index b.")
 spam2(setitem,__setitem__,
  "setitem(a, b, c) -- Set the value of a at b to c.")
+spam2(delitem,__delitem__,
+ "delitem(a, b) -- Delete the value of a at b.")
 spam2(getslice,__getslice__,
  "getslice(a, b, c) -- Return the slice of a from b to c-1.")
 spam2(setslice,__setslice__,
-"setslice(a, b, c, v) -- Set the slice of a from b to c-1 to the sequence, v.")
+"setslice(a, b, c, v) -- Set the slice of a from b to c-1 to the sequence v.")
+spam2(delslice,__delslice__,
+"delslice(a, b, c) -- Delete the slice of a from b to c-1.")
 
 	{NULL,		NULL}		/* sentinel */
 
