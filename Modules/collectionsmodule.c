@@ -550,19 +550,21 @@ PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");
 static PyObject *
 deque_reduce(dequeobject *deque)
 {
-	PyObject *seq, *args, *result;
+	PyObject *dict, *result, *it;
 
-	seq = PySequence_Tuple((PyObject *)deque);
-	if (seq == NULL)
-		return NULL;
-	args = PyTuple_Pack(1, seq);
-	if (args == NULL) {
-		Py_DECREF(seq);
+	dict = PyObject_GetAttrString((PyObject *)deque, "__dict__");
+	if (dict == NULL) {
+		PyErr_Clear();
+		dict = Py_None;
+		Py_INCREF(dict);
+	}
+	it = PyObject_GetIter((PyObject *)deque);
+	if (it == NULL) {
+		Py_DECREF(dict);
 		return NULL;
 	}
-	result = PyTuple_Pack(2, deque->ob_type, args);
-	Py_DECREF(seq);
-	Py_DECREF(args);
+	result = Py_BuildValue("O()ON", deque->ob_type, dict, it);
+	Py_DECREF(dict);
 	return result;
 }
 
