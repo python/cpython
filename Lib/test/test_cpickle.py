@@ -93,4 +93,15 @@ def dotest():
         print "load from closed file should raise IOError"
     os.remove(fn)
 
+    # Test specific bad cases
+    for i in range(10):
+        try:
+            x = cPickle.loads('garyp')
+        except cPickle.BadPickleGet, y:
+            del y
+        else:
+            print "unexpected success!"
+            break
+    
+
 dotest()
