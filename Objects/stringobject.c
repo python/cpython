@@ -394,7 +394,7 @@ string_compare(a, b)
 	int min_len = (len_a < len_b) ? len_a : len_b;
 	int cmp;
 	if (min_len > 0) {
-		cmp = *a->ob_sval - *b->ob_sval;
+		cmp = Py_CHARMASK(*a->ob_sval) - Py_CHARMASK(*b->ob_sval);
 		if (cmp == 0)
 			cmp = memcmp(a->ob_sval, b->ob_sval, min_len);
 		if (cmp != 0)
