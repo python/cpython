@@ -1118,7 +1118,7 @@ PyTypeObject ifilterfalse_type;
 static PyObject *
 ifilterfalse_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *func, *seq, *invert=NULL;
+	PyObject *func, *seq;
 	PyObject *it;
 	ifilterfalseobject *lz;
 
