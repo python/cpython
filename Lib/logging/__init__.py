@@ -1256,8 +1256,13 @@ def shutdown():
     Should be called at application exit.
     """
     for h in _handlers.keys():
-        h.flush()
-        h.close()
+        #errors might occur, for example, if files are locked
+        #we just ignore them
+        try:
+            h.flush()
+            h.close()
+        except:
+            pass
 
 #Let's try and shutdown automatically on application exit...
 try:
