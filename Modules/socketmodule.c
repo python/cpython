@@ -194,14 +194,6 @@ Socket methods:
 #include "openssl/pem.h"
 #include "openssl/ssl.h"
 #include "openssl/err.h"
-#include "openssl/rand.h"
-
-#if OPENSSL_VERSION_NUMBER < 0x0090510fL
-/* RAND_status was added in OpenSSL 0.9.5. If it is not available,
-   we assume that seeding the RNG is necessary every time. */
-#define RAND_status()	0
-#endif
-
 #endif /* USE_SSL */
 
 #if defined(MS_WINDOWS) || defined(__BEOS__)
@@ -2552,32 +2544,6 @@ init_socket(void)
 	if (PyDict_SetItemString(d, "SSLType",
 				 (PyObject *)&SSL_Type) != 0)
 		return;
-	if (RAND_status() == 0) {
-#ifdef USE_EGD
-		char random_device[MAXPATHLEN+1];
-		if (!RAND_file_name (random_device, MAXPATHLEN + 1)) {
-			PyErr_SetObject(SSLErrorObject,
-			        PyString_FromString("RAND_file_name error"));
-			return;
-		}
-		if (RAND_egd (random_device) == -1) {
-			PyErr_SetObject(SSLErrorObject,
-			             PyString_FromString("RAND_egd error"));
-			return;
-		}
-#else /* USE_EGD not defined */
-		char random_string[32];
-		int i;
-
-                PyErr_Warn(PyExc_RuntimeWarning, 
-                           "using insecure method to generate random numbers");
-		srand(time(NULL));
-		for(i=0; i<sizeof(random_string); i++) {
-			random_string[i] = rand();
-		}
-		RAND_seed(random_string, sizeof(random_string));
-#endif /* USE_EGD */
-	}
 #endif /* USE_SSL */
 	PyDict_SetItemString(d, "error", PySocket_Error);
 	PySocketSock_Type.ob_type = &PyType_Type;
