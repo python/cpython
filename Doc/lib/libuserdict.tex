@@ -12,22 +12,22 @@ them and override existing methods or add new ones.  In this way one
 can add new behaviours to dictionaries or lists.
 
 \setindexsubitem{(in module UserDict)}
-The \code{UserDict} module defines the \code{UserDict} class:
+The \module{UserDict} module defines the \class{UserDict} class:
 
-\begin{funcdesc}{UserDict}{}
+\begin{classdesc}{UserDict}{}
 Return a class instance that simulates a dictionary.  The instance's
 contents are kept in a regular dictionary, which is accessible via the
-\code{data} attribute of \code{UserDict} instances.
-\end{funcdesc}
+\member{data} attribute of \class{UserDict} instances.
+\end{classdesc}
 
 \setindexsubitem{(in module UserList)}
-The \code{UserList} module defines the \code{UserList} class:
+The \module{UserList} module defines the \class{UserList} class:
 
-\begin{funcdesc}{UserList}{\optional{list}}
+\begin{classdesc}{UserList}{\optional{list}}
 Return a class instance that simulates a list.  The instance's
 contents are kept in a regular list, which is accessible via the
-\code{data} attribute of \code{UserList} instances.  The instance's
+\member{data} attribute of \class{UserList} instances.  The instance's
 contents are initially set to a copy of \var{list}, defaulting to the
 empty list \code{[]}.  \var{list} can be either a regular Python list,
-or an instance of \code{UserList} (or a subclass).
-\end{funcdesc}
+or an instance of \class{UserList} (or a subclass).
+\end{classdesc}
