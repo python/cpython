@@ -269,7 +269,7 @@ class ExpatBuilder:
         node = self.document.createProcessingInstruction(target, data)
         _append_child(self.curNode, node)
         if self._filter and self._filter.acceptNode(node) == FILTER_REJECT:
-            curNode.removeChild(node)
+            self.curNode.removeChild(node)
 
     def character_data_handler_cdata(self, data):
         childNodes = self.curNode.childNodes
