@@ -92,6 +92,8 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 # Some modules that are normally always on:
 
+regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
+reop reopmodule.c		# Additional RE support (also needs regexpr.c)
 posix posixmodule.c		# posix (UNIX) system calls
 signal signalmodule.c		# signal(2)
 
@@ -124,7 +126,6 @@ signal signalmodule.c		# signal(2)
 array arraymodule.c	# array objects
 cmath cmathmodule.c # -lm # complex math library functions
 math mathmodule.c # -lm # math library functions, e.g. sin()
-regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
 strop stropmodule.c	# fast string operations implemented in C
 struct structmodule.c	# binary structure packing/unpacking
 time timemodule.c # -lm # time operations and variables
@@ -308,7 +309,7 @@ rotor rotormodule.c		# enigma-inspired encryption
 
 #DB=/depot/sundry/src/berkeley-db/db.1.85
 #DBPORT=$(DB)/PORT/irix.5.3
-#bsddb bsddbmodule.c -I$(DBPORT)/include $(DBPORT)/libdb.a
+#bsddb bsddbmodule.c -I$(DBPORT)/include -I$(DBPORT) $(DBPORT)/libdb.a
 
 
 
