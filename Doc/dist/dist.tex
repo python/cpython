@@ -786,6 +786,27 @@ if sys.version < '2.2.3':
 \end{verbatim}
 
 
+\subsection{Debugging the setup script}
+\label{meta-data}
+
+Sometimes things go wrong, and the setup script doesn't do what the
+developer wants.
+
+Distutils catches any exceptions when running the setup script, and
+print a simple error message before the script is terminated.  The
+motivation for this behaviour is to not confuse administrators who
+don't know much about Python and are trying to install a package.  If
+they get a big long traceback from deep inside the guts of Distutils,
+they may think the package or the Python installation is broken
+because they don't read all the way down to the bottom and see that
+it's a permission problem.
+
+On the other hand, this doesn't help the developer to find the cause
+of the failure. For this purpose, the DISTUTILS_DEBUG environment
+variable can be set to anything except an empty string, and distutils
+will now print detailed information what it is doing, and prints the
+full traceback in case an exception occurrs.
+
 \section{Writing the Setup Configuration File}
 \label{setup-config}
 
