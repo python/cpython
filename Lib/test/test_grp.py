@@ -9,6 +9,7 @@ class GroupDatabaseTestCase(unittest.TestCase):
 
     def test_values(self):
         entries = grp.getgrall()
+        entriesbygid = {}
 
         for e in entries:
             self.assertEqual(len(e), 4)
@@ -22,7 +23,17 @@ class GroupDatabaseTestCase(unittest.TestCase):
             self.assert_(isinstance(e.gr_mem, list))
 
             self.assertEqual(grp.getgrnam(e.gr_name), e)
-            self.assertEqual(grp.getgrgid(e.gr_gid), e)
+            # The following won't work, because of duplicate entries
+            # for one gid
+            #    self.assertEqual(grp.getgrgid(e.gr_gid), e)
+            # instead of this collect all entries for one uid
+            # and check afterwards
+            entriesbygid.setdefault(e.gr_gid, []).append(e)
+
+        # check whether the entry returned by getgrgid()
+        # for each uid is among those from getgrall() for this uid
+        for e in entries:
+            self.assert_(grp.getgrgid(e.gr_gid) in entriesbygid[e.gr_gid])
 
     def test_errors(self):
         self.assertRaises(TypeError, grp.getgrgid)
