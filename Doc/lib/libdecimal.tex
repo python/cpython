@@ -882,6 +882,7 @@ Here are some functions demonstrating ways to work with the
 
 \begin{verbatim}
 from decimal import Decimal, getcontext
+getcontext().prec = 28
 
 def moneyfmt(value, places=2, curr='$', sep=',', dp='.', pos='', neg='-'):
     """Convert Decimal to a money formatted string.
@@ -928,7 +929,11 @@ def moneyfmt(value, places=2, curr='$', sep=',', dp='.', pos='', neg='-'):
     return ''.join(result)
 
 def pi():
-    "Compute Pi to the current precision"
+    """Compute Pi to the current precision.
+
+    >>> print pi()
+    3.141592653589793238462643383279502887
+    """
     getcontext().prec += 9  # extra digits for intermediate steps
     one = Decimal(1)        # substitute "one=1.0" for regular floats
     lastc, t, c, n, na, d, da = 0*one, 3*one, 3*one, 1, 0, 0, 24*one
@@ -951,7 +956,7 @@ def exp(x):
     """
     getcontext().prec += 9  # extra digits for intermediate steps
     one = Decimal(1)        # substitute "one=1.0" for regular floats
-    i, laste, e, fact, num = 0*one, 0*one, one, one, one
+    i, laste, e, fact, num = 0, 0, 1, 1, 1
     while e != laste:
         laste = e    
         i += 1
@@ -969,7 +974,7 @@ def cos(x):
     """
     getcontext().prec += 9  # extra digits for intermediate steps
     one = Decimal(1)        # substitute "one=1.0" for regular floats
-    i, laste, e, fact, num, sign = 0*one, 0*one, one, one, one, one
+    i, laste, e, fact, num, sign = 0, 0, 1, 1, 1, 1
     while e != laste:
         laste = e    
         i += 2
@@ -988,7 +993,7 @@ def sin(x):
     """
     getcontext().prec += 9  # extra digits for intermediate steps
     one = Decimal(1)        # substitute "one=1.0" for regular floats
-    i, laste, e, fact, num, sign = one, 0*one, x, one, x, one
+    i, laste, e, fact, num, sign = 1, 0, x, 1, x, 1
     while e != laste:
         laste = e    
         i += 2
@@ -997,6 +1002,6 @@ def sin(x):
         sign *= -1
         e += num / fact * sign 
     getcontext().prec -= 9        
-    return e  
+    return e
 
 \end{verbatim}                                             
