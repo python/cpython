@@ -1,7 +1,7 @@
 % Format this file with latex.
 
-%\documentstyle[garamond,11pt,myformat]{article}
-\documentstyle[11pt,myformat]{article}
+%\documentstyle[11pt,myformat]{article}
+\documentstyle[palatino,11pt,myformat]{article}
 
 \title{\bf
 	Python Tutorial \\
@@ -24,23 +24,23 @@
 \begin{abstract}
 
 \noindent
-\Python\ is a simple, yet powerful programming language that bridges the
+Python is a simple, yet powerful programming language that bridges the
 gap between C and shell programming, and is thus ideally suited for rapid
 prototyping.
 Its syntax is put together from constructs borrowed from a variety of other
 languages; most prominent are influences from ABC, C, Modula-3 and Icon.
 
-The \Python\ interpreter is easily extended with new functions and data
+The Python interpreter is easily extended with new functions and data
 types implemented in C.
-\Python\ is also suitable as an extension language for highly
+Python is also suitable as an extension language for highly
 customizable C applications such as editors or window managers.
 
-\Python\ is available for various operating systems, amongst which
+Python is available for various operating systems, amongst which
 several flavors of \UNIX, Amoeba, and the Apple Macintosh O.S.
 
 This tutorial introduces the reader informally to the basic concepts and
-features of the \Python\ language and system.
-It helps to have a \Python\ interpreter handy for hands-on experience,
+features of the Python language and system.
+It helps to have a Python interpreter handy for hands-on experience,
 but as the examples are self-contained, the tutorial can be read
 off-line as well.
 
@@ -71,31 +71,31 @@ strings or other data types (like sorted lists of file names) that
 are easy in the shell but lots of work to implement in C; or perhaps
 just because you're not sufficiently familiar with C.
 
-In all such cases, \Python\ is just the language for you.
-\Python\ is simple to use, but it is a real programming language, offering
+In such cases, Python may be just the language for you.
+Python is simple to use, but it is a real programming language, offering
 much more structure and support for large programs than the shell has.
 On the other hand, it also offers much more error checking than C, and,
 being a
 {\em very-high-level language},
 it has high-level data types built in, such as flexible arrays and
 dictionaries that would cost you days to implement efficiently in C.
-Because of its more general data types \Python\ is applicable to a
+Because of its more general data types Python is applicable to a
 much larger problem domain than
 {\em Awk}
 or even
 {\em Perl},
-yet most simple things are at least as easy in \Python\ as in those
+yet most simple things are at least as easy in Python as in those
 languages.
 
-\Python\ allows you to split up your program in modules that can be reused
-in other \Python\ programs.
+Python allows you to split up your program in modules that can be reused
+in other Python programs.
 It comes with a large collection of standard modules that you can use as
 the basis for your programs --- or as examples to start learning to
-program in \Python.
+program in Python.
 There are also built-in modules that provide things like file I/O,
 system calls, and even a generic interface to window systems (STDWIN).
 
-\Python\ is an interpreted language, which saves you considerable time
+Python is an interpreted language, which saves you considerable time
 during program development because no compilation and linking is
 necessary.
 The interpreter can be used interactively, which makes it easy to
@@ -103,26 +103,26 @@ experiment with features of the language, to write throw-away programs,
 or to test functions during bottom-up program development.
 It is also a handy desk calculator.
 
-\Python\ allows writing very compact and readable programs.
-Programs written in \Python\ are typically much shorter than equivalent C
+Python allows writing very compact and readable programs.
+Programs written in Python are typically much shorter than equivalent C
 programs:
 No declarations are necessary (all type checking is
 dynamic); statement grouping is done by indentation instead of begin/end
 brackets; and the high-level data types allow you to express complex
 operations in a single statement.
 
-\Python\ is
+Python is
 {\em extensible}:
 if you know how to program in C it is easy to add a new built-in module
 to the interpreter, either to perform critical operations at maximum
-speed, or to link \Python\ programs to libraries that may be only available
+speed, or to link Python programs to libraries that may be only available
 in binary form (such as a vendor-specific graphics library).
-Once you are really hooked, you can link the \Python\ interpreter into an
+Once you are really hooked, you can link the Python interpreter into an
 application written in C and use it as an extension or command language.
 
 \subsection{Where From Here}
 
-Now that you are all excited about \Python, you'll want to examine it in
+Now that you are all excited about Python, you'll want to examine it in
 some more detail.
 Since the best introduction to a language is using it, you are invited
 here to do so.
@@ -131,18 +131,18 @@ In the next section, the mechanics of using the interpreter are
 explained.
 This is rather mundane information, but essential for trying out the
 examples shown later.
-The rest of the tutorial introduces various features of the \Python\
+The rest of the tutorial introduces various features of the Python
 language and system though examples, beginning with simple expressions,
 statements and data types, through functions and modules, and finally
 touching upon advanced concepts like exceptions and classes.
 
 \section{Using the Python Interpreter}
 
-The \Python\ interpreter is usually installed as
+The Python interpreter is usually installed as
 {\tt /usr/local/python}
 on those machines where it is available; putting
 {\tt /usr/local}
-in your \UNIX\ shell's search path makes it possible to start it by
+in your {\UNIX} shell's search path makes it possible to start it by
 typing the command
 \bcode\begin{verbatim}
 python
@@ -151,10 +151,10 @@ to the shell.
 Since the choice of the directory where the interpreter lives is an
 installation option, other places instead of
 {\tt /usr/local}
-are possible; check with your local \Python\ guru or system
+are possible; check with your local Python guru or system
 administrator.
 
-The interpreter operates somewhat like the \UNIX\ shell: when called with
+The interpreter operates somewhat like the {\UNIX} shell: when called with
 standard input connected to a tty device, it reads and executes commands
 interactively; when called with a file name argument or with a file as
 standard input, it reads and executes a
@@ -167,7 +167,7 @@ from that file.%
 	already been read until the end by the parser, so they will read
 	EOF immediately.  In the former case (which is usually what
 	you want) they are satisfied from whatever file or device is
-	connected to standard input of the \Python\ interpreter.
+	connected to standard input of the Python interpreter.
 }
 If available, the script name and additional arguments thereafter are
 passed to the script in the variable
@@ -213,7 +213,7 @@ is imported, the interpreter searches for a file named
 {\tt foo.py}
 in a list of directories specified by the environment variable
 {\tt PYTHONPATH}.
-It has the same syntax as the \UNIX\ shell variable
+It has the same syntax as the {\UNIX} shell variable
 {\tt PATH},
 i.e., a list of colon-separated directory names.
 When
@@ -227,7 +227,15 @@ is not set, an installation-dependent default path is used, usually
 	See the section on Standard Modules later.
 }
 
-On BSD'ish \UNIX\ systems, \Python\ scripts can be made directly executable,
+As an important speed-up of the start-up time of short programs, if a
+file called {\tt foo.pyc} exists in the directory where {\tt foo.py}
+is found, this is assumed to contain an already-``compiled'' version
+of the module {\tt foo}.  The last modification time of {\tt foo.py}
+is recorded in {\tt foo.pyc}, and if these don't match, {\tt foo.pyc}
+is ignored.  Whenever {\tt foo.py} is successfully compiled, an
+attempt is made to write the compiled version to {\tt foo.pyc}.
+
+On BSD'ish {\UNIX} systems, Python scripts can be made directly executable,
 like shell scripts, by putting the line
 \bcode\begin{verbatim}
 #! /usr/local/python
@@ -240,7 +248,7 @@ must be the first two characters of the file.)
 
 \subsection{Interactive Input Editing and History Substitution}
 
-Some versions of the \Python\ interpreter support editing of the current
+Some versions of the Python interpreter support editing of the current
 input line and history substitution, similar to facilities found in the
 Korn shell and the GNU Bash shell.
 This is implemented using the
@@ -252,7 +260,7 @@ however, the basics are easily explained.
 If supported,%
 \footnote{
 	Perhaps the quickest check to see whether command line editing
-	is supported is typing Control-P to the first \Python\ prompt
+	is supported is typing Control-P to the first Python prompt
 	you get.  If it beeps, you have command line editing.
 	If not, you can skip the rest of this section.
 }
@@ -301,7 +309,7 @@ set horizontal-scroll-mode On
 Meta-h: backward-kill-word
 Control-u: universal-argument
 \end{verbatim}\ecode
-Note that the default binding for TAB in \Python\ is to insert a TAB
+Note that the default binding for TAB in Python is to insert a TAB
 instead of Readline's default filename completion function.
 If you insist, you can override this by putting
 \bcode\begin{verbatim}
@@ -332,7 +340,7 @@ must type a blank line; this is used to end a multi-line command.
 
 \subsection{Using Python as a Calculator}
 
-Let's try some simple \Python\ commands.
+Let's try some simple Python commands.
 Start the interpreter and wait for the primary prompt,
 {\tt >>>}.
 The interpreter acts as a simple calculator: you can type an expression
@@ -374,7 +382,7 @@ point and integral numbers in expression (yet):
 3.0303030303
 >>> 
 \end{verbatim}\ecode
-Besides numbers, \Python\ can also manipulate strings, enclosed in single
+Besides numbers, Python can also manipulate strings, enclosed in single
 quotes:
 \bcode\begin{verbatim}
 >>> 'foo bar'
@@ -479,7 +487,7 @@ string:
 34
 >>> 
 \end{verbatim}\ecode
-\Python\ knows a number of
+Python knows a number of
 {\em compound}
 data types, used to group together other values.
 The most versatile is the
@@ -500,12 +508,14 @@ As for strings, list subscripts start at 0:
 1234
 >>> 
 \end{verbatim}\ecode
-Lists can be sliced and concatenated like strings:
+Lists can be sliced, concatenated and so on, like strings:
 \bcode\begin{verbatim}
 >>> a[1:3]
 ['bar', 100]
 >>> a[:2] + ['bletch', 2*2]
 ['foo', 'bar', 'bletch', 4]
+>>> 3*a[:3] + ['Boe!']
+['foo', 'bar', 100, 'foo', 'bar', 100, 'foo', 'bar', 100, 'Boe!']
 >>> 
 \end{verbatim}\ecode
 Unlike strings, which are
@@ -549,7 +559,7 @@ XXX To Be Done.
 
 \subsection{First Steps Towards Programming}
 
-Of course, we can use \Python\ for more complicated tasks than adding two
+Of course, we can use Python for more complicated tasks than adding two
 and two together.
 For instance, we can write an initial subsequence of the
 {\em Fibonacci}
@@ -592,7 +602,7 @@ assignments take place.
 The
 {\tt while}
 loop executes as long as the condition (here: $b < 100$) remains true.
-In \Python, as in C, any non-zero integer value is true; zero is false.
+In Python, as in C, any non-zero integer value is true; zero is false.
 The condition may also be a string or list value, in fact any sequence;
 anything with a non-zero length is true, empty sequences are false.
 The test used in the example is a simple comparison.
@@ -613,10 +623,10 @@ and
 The
 {\em body}
 of the loop is
-{\em indented}: indentation is \Python's way of grouping statements.
-\Python\ does not (yet!) provide an intelligent input line editing
+{\em indented}: indentation is Python's way of grouping statements.
+Python does not (yet!) provide an intelligent input line editing
 facility, so you have to type a tab or space(s) for each indented line.
-In practice you will prepare more complicated input for \Python\ with a
+In practice you will prepare more complicated input for Python with a
 text editor; most text editors have an auto-indent facility.
 When a compound statement is entered interactively, it must be
 followed by a blank line to indicate completion (since the parser
@@ -652,7 +662,7 @@ prompt if the last line was not completed.
 
 \subsection{More Control Flow Tools}
 
-Besides the {\tt while} statement just introduced, \Python\ knows the
+Besides the {\tt while} statement just introduced, Python knows the
 usual control flow statements known from other languages, with some
 twists.
 
@@ -681,11 +691,11 @@ An {\tt if...elif...elif...} sequence is a substitute for the
 
 \subsubsection{For Statements}
 
-The {\tt for} statement in \Python\ differs a bit from what you may be
+The {\tt for} statement in Python differs a bit from what you may be
 used to in C or Pascal.
 Rather than always iterating over an arithmetic progression of numbers
 (as Pascal), or leaving the user completely free in the iteration test
-and step (as C), \Python's {\tt for} statement iterates over the items
+and step (as C), Python's {\tt for} statement iterates over the items
 of any sequence (e.g., a list or a string).
 For example (no pun intended):
 \bcode\begin{verbatim}
@@ -852,7 +862,7 @@ This serves as a general renaming mechanism:
 You might object that
 {\tt fib}
 is not a function but a procedure.
-In \Python, as in C, procedures are just functions that don't return a
+In Python, as in C, procedures are just functions that don't return a
 value.
 In fact, technically speaking, procedures do return a value, albeit a
 rather boring one.
@@ -881,7 +891,7 @@ the Fibonacci series, instead of printing it:
 [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
 >>> 
 \end{verbatim}\ecode
-This example, as usual, demonstrates some new \Python\ features:
+This example, as usual, demonstrates some new Python features:
 \begin{itemize}
 \item
 The
@@ -950,7 +960,7 @@ For example:
 
 \subsection{Modules}
 
-If you quit from the \Python\ interpreter and enter it again, the
+If you quit from the Python interpreter and enter it again, the
 definitions you have made (functions and variables) are lost.
 Therefore, if you want to write a somewhat longer program, you are
 better off using a text editor to prepare the input for the interpreter
@@ -961,7 +971,7 @@ As your program gets longer, you may want to split it into several files
 for easier maintenance.
 You may also want to use a handy function that you've written in several
 programs without copying its definition into each program.
-To support this, \Python\ has a way to put definitions in a file and use
+To support this, Python has a way to put definitions in a file and use
 them in a script or in an interactive instance of the interpreter.
 Such a file is called a
 {\em module};
@@ -972,7 +982,7 @@ into other modules or into the
 module (the collection of variables that you have access to in
 a script and in calculator mode).
 
-A module is a file containing \Python\ definitions and statements.
+A module is a file containing Python definitions and statements.
 The file name is the module name with the suffix
 {\tt .py}
 appended.
@@ -996,7 +1006,7 @@ def fib2(n): # return Fibonacci series up to n
           a, b = b, a+b
     return ret
 \end{verbatim}\ecode
-Now enter the \Python\ interpreter and import this module with the
+Now enter the Python interpreter and import this module with the
 following command:
 \bcode\begin{verbatim}
 >>> import fibo
@@ -1081,7 +1091,7 @@ This imports all names except those beginning with an underscore
 
 \subsubsection{Standard Modules}
 
-\Python\ comes with a library of standard modules, described in a separate
+Python comes with a library of standard modules, described in a separate
 document (Python Library and Module Reference).
 Some modules are built into the interpreter; these provide access to
 operations that are not part of the core of the language but are
@@ -1093,7 +1103,7 @@ module is only provided on systems that somehow support Amoeba
 primitives.
 One particular module deserves some attention:
 {\tt sys},
-which is built into every \Python\ interpreter.
+which is built into every Python interpreter.
 The variables
 {\tt sys.ps1}
 and
@@ -1141,7 +1151,7 @@ and
 \subsubsection{Syntax Errors}
 
 Syntax errors, also known as parsing errors, are perhaps the most common
-kind of complaint you get while you are still learning \Python:
+kind of complaint you get while you are still learning Python:
 \bcode\begin{verbatim}
 >>> while 1 print 'Hello world'
 Parsing error: file <stdin>, line 1:
@@ -1181,7 +1191,7 @@ Stack backtrace (innermost last):
 Errors detected during execution are called
 {\em exceptions}
 and are not unconditionally fatal: you will soon learn how to handle
-them in \Python\ programs.
+them in Python programs.
 Most exceptions are not handled by programs, however, and result
 in error messages as shown here.
 
@@ -1409,16 +1419,16 @@ It is also executed when the {\tt try} statement is left via a
 
 \subsection{Classes}
 
-Classes in \Python\ make it possible to play the game of encapsulation in a
+Classes in Python make it possible to play the game of encapsulation in a
 somewhat different way than it is played with modules.
 Classes are an advanced topic and are probably best skipped on the first
-encounter with \Python.
+encounter with Python.
 
 \subsubsection{Prologue}
 
-\Python's class mechanism is not particularly elegant, but quite powerful.
+Python's class mechanism is not particularly elegant, but quite powerful.
 It is a mixture of the class mechanisms found in C++ and Modula-3.
-As is true for modules, classes in \Python\ do not put an absolute barrier
+As is true for modules, classes in Python do not put an absolute barrier
 between definition and user, but rather rely on the politeness of the
 user not to ``break into the definition.''
 The most important features of classes are retained with full power,
@@ -1437,7 +1447,7 @@ members from its methods: the method function is declared with an
 explicit first argument representing the object, which is provided
 implicitly by the call.
 As in Smalltalk, classes themselves are objects, albeit in the wider
-sense of the word: in \Python, all data types are objects.
+sense of the word: in Python, all data types are objects.
 This provides semantics for renaming or aliasing.
 But, just like in C++ or Modula-3, the built-in types cannot be used as
 base classes for extension by the user.
@@ -1486,7 +1496,7 @@ Let's assume that this
 {\em class\ definition}
 is the only contents of the module file
 {\tt SetClass.py}.
-We can then use it in a \Python\ program as follows:
+We can then use it in a Python program as follows:
 \bcode\begin{verbatim}
 >>> from SetClass import Set
 >>> a = Set().new() # create a Set object
@@ -1522,7 +1532,7 @@ Thus, the call
 is equivalent to
 {\tt Set.add(a, 2)}.
 
-XXX This section is not complete yet!
+XXX This section is not complete yet!  Inheritance!
 
 \section{XXX P.M.}
 
@@ -1533,7 +1543,9 @@ XXX This section is not complete yet!
 \item	Dictionaries.
 \item	Objects and types in general.
 \item	Backquotes.
+\item	Output formatting.
 \item	And/Or/Not.
+\item	``.pyc'' files.
 \end{itemize}
 
 \end{document}
