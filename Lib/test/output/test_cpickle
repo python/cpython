@@ -9,3 +9,17 @@ loads() binary
 ok
 loads() BINDATA
 ok
+dumps() RECURSIVE
+ok
+dumps()
+loads()
+ok
+loads() DATA
+ok
+dumps() binary
+loads() binary
+ok
+loads() BINDATA
+ok
+dumps() RECURSIVE
+ok
