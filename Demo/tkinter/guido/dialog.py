@@ -12,7 +12,6 @@ def dialog(master, title, text, bitmap, default, *args):
     # and bottom parts.
 
     w = Toplevel(master, {'class': 'Dialog'})
-    w.tk.call('global', 'button')
     w.title(title)
     w.iconname('Dialog')
 
@@ -47,7 +46,7 @@ def dialog(master, title, text, bitmap, default, *args):
 	    bd = Frame(bot, {'relief': 'sunken', 'bd': 1,
 			     Pack: {'side': 'left', 'expand': 1,
 				    'padx': '3m', 'pady': '2m'}})
-	    w.tk.call('raise', b)
+	    b.lift()
 	    b.pack ({'in': bd, 'side': 'left',
 		     'padx': '2m', 'pady': '2m',
 		     'ipadx': '2m', 'ipady': '1m'})
@@ -62,21 +61,21 @@ def dialog(master, title, text, bitmap, default, *args):
 
     if default >= 0:
 	w.bind('<Return>',
-	       lambda b=buttons[default], i=default:
-	       (b.cmd('flash'),
-		b.tk.call('set', 'button', i)))
+	       lambda e, b=buttons[default], i=default:
+	       (b.flash(),
+		b.setvar('button', i)))
 
-    oldFocus = w.tk.call('focus')
-    w.tk.call('grab', 'set', w)
-    w.tk.call('focus', w)
+    oldFocus = w.tk.call('focus') # XXX
+    w.grab_set()
+    w.focus()
 
     # 5. Wait for the user to respond, then restore the focus
     # and return the index of the selected button.
 
-    w.tk.call('tkwait', 'variable', 'button')
-    w.tk.call('destroy', w)
-    w.tk.call('focus', oldFocus)
-    return w.tk.call('set', 'button')
+    w.waitvar('button')
+    w.destroy()
+    w.tk.call('focus', oldFocus) # XXX
+    return w.getint(w.getvar('button'))
 
 # The rest is the test program.
 
@@ -113,7 +112,7 @@ def test():
 		   {'text': 'Exit',
 		    'command': 'exit',
 		    Pack: {'fill' : 'both'}})
-    mainWidget.tk.mainloop()
+    mainWidget.mainloop()
 
 if __name__ == '__main__':
     test()
