@@ -2432,6 +2432,11 @@ call_function(func, arg, kw)
 			}
 			arg = newarg;
 		}
+		if (!PyFunction_Check(func)) {
+			result = PyEval_CallObjectWithKeywords(func, arg, kw);
+			Py_DECREF(arg);
+			return result;
+		}
 	}
 	else {
 		if (!PyFunction_Check(func)) {
