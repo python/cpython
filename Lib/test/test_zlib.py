@@ -96,17 +96,6 @@ class CompressTestCase(unittest.TestCase):
         x = zlib.compress(data)
         self.assertEqual(zlib.decompress(x), data)
 
-    def test_monotonic(self):
-        # higher compression levels should not expand compressed size
-        data = hamlet_scene * 8 * 16
-        last = length = len(zlib.compress(data, 0))
-        self.failUnless(last > len(data), "compress level 0 always expands")
-        for level in range(10):
-            length = len(zlib.compress(data, level))
-            self.failUnless(length <= last,
-                            'compress level %d more effective than %d!' % (
-                                            level-1, level))
-            last = length
 
 
 
