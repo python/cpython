@@ -33,7 +33,7 @@ abstract class useful for determining whether something is a set:
 The set classes are implemented using dictionaries.  As a result, sets
 cannot contain mutable elements such as lists or dictionaries.
 However, they can contain immutable collections such as tuples or
-instances of \class(ImmutableSet).  For convenience in implementing
+instances of \class{ImmutableSet}.  For convenience in implementing
 sets of sets, inner sets are automatically converted to immutable
 form, for example, \code{Set([Set(['dog'])])} is transformed to
 \code{Set([ImmutableSet(['dog'])])}.
@@ -140,8 +140,8 @@ but not found in \class{ImmutableSet}:
   \lineii{\var{s}.remove(\var{x})}
          {Remove element \var{x} from set \var{s}}
   \lineii{\var{s}.discard(\var{x})}
-         {Removes element \var{x} from set \var{s} like \var{s}.remove(\var{x})
-          but does not raise a KeyError if \var{x} is not in \var{s}}
+         {Removes element \var{x} from set \var{s}. Like \var{s}.remove(\var{x})
+          but does not raise KeyError if \var{x} is not in \var{s}}
   \lineii{\var{s}.pop()}
          {Remove and return an element from \var{s}; no guarantee is
           made about which element is removed}
@@ -212,6 +212,6 @@ method which returns the \class{Set} object wrapped by a new class
 
 The two mechanisms for adding hashability are normally invisible to the
 user; however, a conflict can arise in a multi-threaded environment
-where one thread is updating a Set while another has temporarily wrapped it
+where one thread is updating a set while another has temporarily wrapped it
 in \class{_TemporarilyImmutableSet}.  In other words, sets of mutable sets
 are not thread-safe.
