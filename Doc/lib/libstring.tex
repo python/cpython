@@ -71,6 +71,7 @@ methods of string and Unicode objects; see ``String Methods'' (section
 The functions defined in this module are:
 
 \begin{funcdesc}{atof}{s}
+  \deprecated{2.0}{Use the \function{float()} built-in function.}
   Convert a string to a floating point number.  The string must have
   the standard syntax for a floating point literal in Python,
   optionally preceded by a sign (\samp{+} or \samp{-}).  Note that
@@ -85,6 +86,7 @@ The functions defined in this module are:
 \end{funcdesc}
 
 \begin{funcdesc}{atoi}{s\optional{, base}}
+  \deprecated{2.0}{Use the \function{int()} built-in function.}
   Convert string \var{s} to an integer in the given \var{base}.  The
   string must consist of one or more digits, optionally preceded by a
   sign (\samp{+} or \samp{-}).  The \var{base} defaults to 10.  If it
@@ -99,6 +101,7 @@ The functions defined in this module are:
 \end{funcdesc}
 
 \begin{funcdesc}{atol}{s\optional{, base}}
+  \deprecated{2.0}{Use the \function{long()} built-in function.}
   Convert string \var{s} to a long integer in the given \var{base}.
   The string must consist of one or more digits, optionally preceded
   by a sign (\samp{+} or \samp{-}).  The \var{base} argument has the
@@ -121,7 +124,7 @@ The functions defined in this module are:
   trailing whitespace.
 \end{funcdesc}
 
-\begin{funcdesc}{expandtabs}{s, \optional{tabsize}}
+\begin{funcdesc}{expandtabs}{s\optional{, tabsize}}
   Expand tabs in a string, i.e.\ replace them by one or more spaces,
   depending on the current column and the given tab size.  The column
   number is reset to zero after each newline occurring in the string.
