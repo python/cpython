@@ -108,8 +108,10 @@ def AppletOptions(file):
 	fss = macfs.FSSpec(file)
 	a_popt = PoptLoader(ResLoader(fss, 'Popt', OVERRIDE_POPT_ID, default=popt_loader))
 	a_dir = ResLoader(fss, 'alis', OVERRIDE_DIR_ID, default=dir)
-	a_gusi = ResLoader(fss, 'GU\267I', OVERRIDE_GUSI_ID, default=gusi_loader)
-	a_path = StrListLoader(fss, 'STR#', OVERRIDE_PATH_ID, default=path_loader)
+	a_gusi = GusiLoader(
+			ResLoader(fss, 'GU\267I', OVERRIDE_GUSI_ID, default=gusi_loader))
+	a_path = StrListLoader(
+			ResLoader(fss, 'STR#', OVERRIDE_PATH_ID, default=path_loader))
 	return PythonOptions(a_popt, a_dir, a_gusi, a_path)
 	
 def _test():
