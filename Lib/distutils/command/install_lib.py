@@ -33,9 +33,7 @@ class InstallPy (Command):
 
         # Dump entire contents of the build directory to the installation
         # directory (that's the beauty of having a build directory!)
-        copy_tree (self.build_dir, self.dir,
-                   verbose=self.distribution.verbose,
-                   update=1)
+        self.copy_tree (self.build_dir, self.dir)
                    
     # run ()
 
