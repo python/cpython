@@ -1248,10 +1248,12 @@ The cycle detector is able to detect garbage cycles and can reclaim
 them so long as there are no finalizers implemented in Python
 (\method{__del__()} methods).  When there are such finalizers, the
 detector exposes the cycles through the \ulink{\module{gc}
-module}{../lib/module-gc.html}.  The \module{gc} module also exposes
+module}{../lib/module-gc.html} (specifically, the \code{garbage}
+variable in that module).  The \module{gc} module also exposes a way
+to run the detector (the \function{collect()} function), as well as
 configuration interfaces and the ability to disable the detector at
 runtime.  The cycle detector is considered an optional component;
-though it is included by default, it can be disabled at compile time
+though it is included by default, it can be disabled at build time
 using the \longprogramopt{without-cycle-gc} option to the
 \program{configure} script on \UNIX{} platforms (including Mac OS X)
 or by removing the definition of \code{WITH_CYCLE_GC} in the
