@@ -188,8 +188,8 @@ file_readline(f, args)
 	v = newsizedstringobject((char *)NULL, n);
 	if (v == NULL)
 		return NULL;
-#ifndef THINK_C
-	/* XXX Think C reads n characters, others read n-1 characters... */
+#ifndef THINK_C_3_0
+	/* XXX Think C 3.0 wrongly reads up to n characters... */
 	n = n+1;
 #endif
 	if (fgets(getstringvalue(v), n, f->f_fp) == NULL) {
