@@ -47,16 +47,16 @@ typedef unsigned long uint32_t;
 
 typedef struct {
     PyObject_HEAD;
-    int		x_fd;		/* The open file */
-    int         x_mode;           /* file mode */
-    int		x_icount;	/* Input count */
-    int		x_ocount;	/* Output count */
-    uint32_t	x_afmts;	/* Audio formats supported by hardware*/
+    int      fd;                      /* The open file */
+    int      mode;                    /* file mode */
+    int      icount;                  /* Input count */
+    int      ocount;                  /* Output count */
+    uint32_t afmts;                   /* Audio formats supported by hardware */
 } oss_t;
 
 typedef struct {
     PyObject_HEAD;
-    int	x_fd;	/* The open mixer device */
+    int	     fd;                      /* The open mixer device */
 } oss_mixer_t;
 
 /* XXX several format defined in soundcard.h are not supported,
@@ -145,10 +145,10 @@ newossobject(PyObject *arg)
         close(fd);
         return NULL;
     }
-    xp->x_fd = fd;
-    xp->x_mode = imode;
-    xp->x_icount = xp->x_ocount = 0;
-    xp->x_afmts  = afmts;
+    xp->fd = fd;
+    xp->mode = imode;
+    xp->icount = xp->ocount = 0;
+    xp->afmts  = afmts;
     return xp;
 }
 
@@ -156,8 +156,8 @@ static void
 oss_dealloc(oss_t *xp)
 {
     /* if already closed, don't reclose it */
-    if (xp->x_fd != -1)
-	close(xp->x_fd);
+    if (xp->fd != -1)
+	close(xp->fd);
     PyObject_Del(xp);
 }
 
@@ -199,7 +199,7 @@ newossmixerobject(PyObject *arg)
         return NULL;
     }
     
-    xp->x_fd = fd;
+    xp->fd = fd;
     
     return xp;
 }
@@ -208,8 +208,8 @@ static void
 oss_mixer_dealloc(oss_mixer_t *xp)
 {
     /* if already closed, don't reclose it */
-    if (xp->x_fd != -1)
-	close(xp->x_fd);
+    if (xp->fd != -1)
+	close(xp->fd);
     PyObject_Del(xp);
 }
 
@@ -300,7 +300,7 @@ oss_nonblock(oss_t *self, PyObject *args)
        mode once we're in non-blocking mode! */
     if (!PyArg_ParseTuple(args, ":nonblock"))
 	return NULL;
-    if (ioctl(self->x_fd, SNDCTL_DSP_NONBLOCK, NULL) == -1)
+    if (ioctl(self->fd, SNDCTL_DSP_NONBLOCK, NULL) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_INCREF(Py_None);
     return Py_None;
@@ -309,7 +309,7 @@ oss_nonblock(oss_t *self, PyObject *args)
 static PyObject *
 oss_setfmt(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_1(self->x_fd, args, "setfmt", SNDCTL_DSP_SETFMT);
+    return _do_ioctl_1(self->fd, args, "setfmt", SNDCTL_DSP_SETFMT);
 }
 
 static PyObject *
@@ -318,7 +318,7 @@ oss_getfmts(oss_t *self, PyObject *args)
     int mask;
     if (!PyArg_ParseTuple(args, ":getfmts"))
 	return NULL;
-    if (ioctl(self->x_fd, SNDCTL_DSP_GETFMTS, &mask) == -1)
+    if (ioctl(self->fd, SNDCTL_DSP_GETFMTS, &mask) == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
     return PyInt_FromLong(mask);
 }
@@ -326,31 +326,31 @@ oss_getfmts(oss_t *self, PyObject *args)
 static PyObject *
 oss_channels(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_1(self->x_fd, args, "channels", SNDCTL_DSP_CHANNELS);
+    return _do_ioctl_1(self->fd, args, "channels", SNDCTL_DSP_CHANNELS);
 }
 
 static PyObject *
 oss_speed(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_1(self->x_fd, args, "speed", SNDCTL_DSP_SPEED);
+    return _do_ioctl_1(self->fd, args, "speed", SNDCTL_DSP_SPEED);
 }
 
 static PyObject *
 oss_sync(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_0(self->x_fd, args, "sync", SNDCTL_DSP_SYNC);
+    return _do_ioctl_0(self->fd, args, "sync", SNDCTL_DSP_SYNC);
 }
     
 static PyObject *
 oss_reset(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_0(self->x_fd, args, "reset", SNDCTL_DSP_RESET);
+    return _do_ioctl_0(self->fd, args, "reset", SNDCTL_DSP_RESET);
 }
     
 static PyObject *
 oss_post(oss_t *self, PyObject *args)
 {
-    return _do_ioctl_0(self->x_fd, args, "post", SNDCTL_DSP_POST);
+    return _do_ioctl_0(self->fd, args, "post", SNDCTL_DSP_POST);
 }
 
 
@@ -370,12 +370,12 @@ oss_read(oss_t *self, PyObject *args)
     if (rv == NULL)
         return NULL;
     cp = PyString_AS_STRING(rv);
-    if ((count = read(self->x_fd, cp, size)) < 0) {
+    if ((count = read(self->fd, cp, size)) < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
         Py_DECREF(rv);
         return NULL;
     }
-    self->x_icount += count;
+    self->icount += count;
     _PyString_Resize(&rv, count);
     return rv;
 }
@@ -389,10 +389,10 @@ oss_write(oss_t *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s#:write", &cp, &size)) {
 	return NULL;
     }
-    if ((rv = write(self->x_fd, cp, size)) == -1) {
+    if ((rv = write(self->fd, cp, size)) == -1) {
         return PyErr_SetFromErrno(PyExc_IOError);
     } else {
-        self->x_ocount += rv;
+        self->ocount += rv;
     }
     return PyInt_FromLong(rv);
 }
@@ -417,15 +417,15 @@ oss_writeall(oss_t *self, PyObject *args)
 
     /* use select to wait for audio device to be available */
     FD_ZERO(&write_set_fds);
-    FD_SET(self->x_fd, &write_set_fds);
+    FD_SET(self->fd, &write_set_fds);
 
     while (size > 0) {
-        select_rv = select(self->x_fd+1, NULL, &write_set_fds, NULL, NULL);
+        select_rv = select(self->fd+1, NULL, &write_set_fds, NULL, NULL);
         assert(select_rv != 0);         /* no timeout, can't expire */
         if (select_rv == -1)
             return PyErr_SetFromErrno(PyExc_IOError);
 
-        rv = write(self->x_fd, cp, size);
+        rv = write(self->fd, cp, size);
         if (rv == -1) {
             if (errno == EAGAIN) {      /* buffer is full, try again */
                 errno = 0;
@@ -433,7 +433,7 @@ oss_writeall(oss_t *self, PyObject *args)
             } else                      /* it's a real error */
                 return PyErr_SetFromErrno(PyExc_IOError);
         } else {                        /* wrote rv bytes */
-            self->x_ocount += rv;
+            self->ocount += rv;
             size -= rv;
             cp += rv;
         }
@@ -448,9 +448,9 @@ oss_close(oss_t *self, PyObject *args)
     if (!PyArg_ParseTuple(args, ":close"))
 	return NULL;
 
-    if (self->x_fd >= 0) {
-        close(self->x_fd);
-        self->x_fd = -1;
+    if (self->fd >= 0) {
+        close(self->fd);
+        self->fd = -1;
     }
     Py_INCREF(Py_None);
     return Py_None;
@@ -461,7 +461,7 @@ oss_fileno(oss_t *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":fileno")) 
 	return NULL;
-    return PyInt_FromLong(self->x_fd);
+    return PyInt_FromLong(self->fd);
 }
 
 
@@ -508,23 +508,23 @@ oss_setparameters(oss_t *self, PyObject *args)
     }
 
     if (emulate == 0) {
-	if ((self->x_afmts & audio_types[n].a_fmt) == 0) {
+	if ((self->afmts & audio_types[n].a_fmt) == 0) {
 	    PyErr_Format(PyExc_ValueError, 
 			 "%s format not supported by device",
 			 audio_types[n].a_name);
 	    return NULL;
 	}
     }
-    if (ioctl(self->x_fd, SNDCTL_DSP_SETFMT, 
+    if (ioctl(self->fd, SNDCTL_DSP_SETFMT, 
 	      &audio_types[n].a_fmt) == -1) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    if (ioctl(self->x_fd, SNDCTL_DSP_CHANNELS, &nchannels) == -1) {
+    if (ioctl(self->fd, SNDCTL_DSP_CHANNELS, &nchannels) == -1) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    if (ioctl(self->x_fd, SNDCTL_DSP_SPEED, &rate) == -1) {
+    if (ioctl(self->fd, SNDCTL_DSP_SPEED, &rate) == -1) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -539,7 +539,7 @@ _ssize(oss_t *self, int *nchannels, int *ssize)
     int fmt;
 
     fmt = 0;
-    if (ioctl(self->x_fd, SNDCTL_DSP_SETFMT, &fmt) < 0) 
+    if (ioctl(self->fd, SNDCTL_DSP_SETFMT, &fmt) < 0) 
         return -errno;
 
     switch (fmt) {
@@ -561,7 +561,7 @@ _ssize(oss_t *self, int *nchannels, int *ssize)
         return -EOPNOTSUPP;
     }
     *nchannels = 0;
-    if (ioctl(self->x_fd, SNDCTL_DSP_CHANNELS, nchannels) < 0)
+    if (ioctl(self->fd, SNDCTL_DSP_CHANNELS, nchannels) < 0)
         return -errno;
     return 0;
 }
@@ -581,7 +581,7 @@ oss_bufsize(oss_t *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    if (ioctl(self->x_fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
+    if (ioctl(self->fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -603,7 +603,7 @@ oss_obufcount(oss_t *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    if (ioctl(self->x_fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
+    if (ioctl(self->fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -626,7 +626,7 @@ oss_obuffree(oss_t *self, PyObject *args)
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
-    if (ioctl(self->x_fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
+    if (ioctl(self->fd, SNDCTL_DSP_GETOSPACE, &ai) < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -642,11 +642,11 @@ oss_getptr(oss_t *self, PyObject *args)
     if (!PyArg_ParseTuple(args, ":getptr"))
 	return NULL;
     
-    if (self->x_mode == O_RDONLY)
+    if (self->mode == O_RDONLY)
 	req = SNDCTL_DSP_GETIPTR;
     else
 	req = SNDCTL_DSP_GETOPTR;
-    if (ioctl(self->x_fd, req, &info) == -1) {
+    if (ioctl(self->fd, req, &info) == -1) {
         PyErr_SetFromErrno(PyExc_IOError);
         return NULL;
     }
@@ -660,9 +660,9 @@ oss_mixer_close(oss_mixer_t *self, PyObject *args)
     if (!PyArg_ParseTuple(args, ":close"))
 	return NULL;
 
-    if (self->x_fd >= 0) {
-        close(self->x_fd);
-        self->x_fd = -1;
+    if (self->fd >= 0) {
+        close(self->fd);
+        self->fd = -1;
     }
     Py_INCREF(Py_None);
     return Py_None;
@@ -673,7 +673,7 @@ oss_mixer_fileno(oss_mixer_t *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":fileno")) 
 	return NULL;
-    return PyInt_FromLong(self->x_fd);
+    return PyInt_FromLong(self->fd);
 }
 
 /* Simple mixer interface methods */
@@ -681,21 +681,21 @@ oss_mixer_fileno(oss_mixer_t *self, PyObject *args)
 static PyObject *
 oss_mixer_channels (oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->x_fd, args, "channels",
+    return _do_ioctl_1_internal(self->fd, args, "channels",
         SOUND_MIXER_READ_DEVMASK);
 }
 
 static PyObject *
 oss_mixer_stereo_channels (oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->x_fd, args, "stereochannels",
+    return _do_ioctl_1_internal(self->fd, args, "stereochannels",
         SOUND_MIXER_READ_STEREODEVS);
 }
 
 static PyObject *
 oss_mixer_rec_channels (oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->x_fd, args, "recchannels",
+    return _do_ioctl_1_internal(self->fd, args, "recchannels",
         SOUND_MIXER_READ_RECMASK);
 }
 
@@ -713,7 +713,7 @@ oss_mixer_getvol (oss_mixer_t *self, PyObject *args)
 	return NULL;
     }
     
-    if (ioctl (self->x_fd, MIXER_READ(channel), &volume) == -1)
+    if (ioctl (self->fd, MIXER_READ(channel), &volume) == -1)
     	return PyErr_SetFromErrno(PyExc_IOError);
     
     return Py_BuildValue ("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
@@ -740,7 +740,7 @@ oss_mixer_setvol (oss_mixer_t *self, PyObject *args)
 
     volume = (rightVol << 8) | leftVol;
     
-    if (ioctl (self->x_fd, MIXER_WRITE(channel), &volume) == -1)
+    if (ioctl (self->fd, MIXER_WRITE(channel), &volume) == -1)
     	return PyErr_SetFromErrno(PyExc_IOError);
    
     return Py_BuildValue ("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
@@ -749,14 +749,14 @@ oss_mixer_setvol (oss_mixer_t *self, PyObject *args)
 static PyObject *
 oss_mixer_getrecsrc (oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1_internal(self->x_fd, args, "getrecsrc",
+    return _do_ioctl_1_internal(self->fd, args, "getrecsrc",
         SOUND_MIXER_READ_RECSRC);
 }
 
 static PyObject *
 oss_mixer_setrecsrc (oss_mixer_t *self, PyObject *args)
 {
-    return _do_ioctl_1(self->x_fd, args, "setrecsrc",
+    return _do_ioctl_1(self->fd, args, "setrecsrc",
         SOUND_MIXER_WRITE_RECSRC);
 }
 
@@ -901,6 +901,7 @@ initossaudiodev(void)
     _EXPORT_INT(m, AFMT_S16_NE);
 	
     /* Expose the sound mixer channels. */
+    _EXPORT_INT(m, SOUND_MIXER_NRDEVICES);
     _EXPORT_INT(m, SOUND_MIXER_VOLUME);
     _EXPORT_INT(m, SOUND_MIXER_BASS);
     _EXPORT_INT(m, SOUND_MIXER_TREBLE);
