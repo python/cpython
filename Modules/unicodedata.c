@@ -13,17 +13,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include "unicodedatabase.h"
 
-/* --- Helpers ------------------------------------------------------------ */
-
-static 
-const _PyUnicode_DatabaseRecord *unicode_db(register int i)
-{
-    register int page = i >> 12;
-    
-    if (page < sizeof(_PyUnicode_Database))
-	return &_PyUnicode_Database[page][i & 0x0fff];
-    return &_PyUnicode_Database[0][0];
-}
+#define unicode_db _PyUnicode_Database_GetRecord
 
 /* --- Module API --------------------------------------------------------- */
 
