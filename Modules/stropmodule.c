@@ -1058,8 +1058,10 @@ mymemreplace(const char *str, int len,		/* input string */
 
 	/* find length of output string */
 	nfound = mymemcnt(str, len, pat, pat_len);
-	if (count > 0)
-		nfound = nfound > count ? count : nfound;
+	if (count < 0)
+		count = INT_MAX;
+	else if (nfound > count)
+		nfound = count;
 	if (nfound == 0)
 		goto return_same;
 
@@ -1067,7 +1069,7 @@ mymemreplace(const char *str, int len,		/* input string */
 	if (new_len == 0) {
 		/* Have to allocate something for the caller to free(). */
 		out_s = (char *)PyMem_MALLOC(1);
-		if (out_s = NULL)
+		if (out_s == NULL)
 			return NULL;
 		out_s[0] = '\0';
 	}
@@ -1078,7 +1080,7 @@ mymemreplace(const char *str, int len,		/* input string */
 			return NULL;
 		out_s = new_s;
 
-		while (len > 0) {
+		for (; count > 0 && len > 0; --count) {
 			/* find index of next instance of pattern */
 			offset = mymemfind(str, len, pat, pat_len);
 			if (offset == -1)
@@ -1093,10 +1095,6 @@ mymemreplace(const char *str, int len,		/* input string */
 			new_s += offset;
 			memcpy(new_s, sub, sub_len);
 			new_s += sub_len;
-
-			/* note count==0 is effectively infinity */
-			if (--count == 0)
-				break;
 		}
 		/* copy any remaining values into output string */
 		if (len > 0)
