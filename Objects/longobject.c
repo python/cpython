@@ -28,7 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "longintrepr.h"
-#include <math.h>
+#include "mymath.h"
 #include <assert.h>
 #include <ctype.h>
 
@@ -102,8 +102,12 @@ newlongobject(ival)
 /* Create a new long int object from a C double */
 
 object *
+#ifdef MPW
+dnewlongobject(double dval)
+#else
 dnewlongobject(dval)
 	double dval;
+#endif /* MPW */
 {
 	longobject *v;
 	double frac;
