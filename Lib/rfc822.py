@@ -468,6 +468,17 @@ def parsedate(data):
 		return t[:9]
 	else: return t    
 
+def mktime_tz(data):
+	"""Turn a 10-tuple as returned by parsedate_tz() into a UTC timestamp.
+
+	Minor glitch: this first interprets the first 8 elements as a
+	local time and then compensates for the timezone difference;
+	this may yield a slight error around daylight savings time
+	switch dates.  Not enough to worry about for common use.
+
+	"""
+	t = time.mktime(data[:8] + (0,))
+	return t + data[9] - time.timezone
 
 # When used as script, run a small test program.
 # The first command line argument must be a filename containing one
