@@ -953,11 +953,13 @@ class CodeGenerator:
         self.emit('LOAD_CONST', Ellipsis)
 
     def visitTuple(self, node):
+        self.set_lineno(node)
         for elt in node.nodes:
             self.visit(elt)
         self.emit('BUILD_TUPLE', len(node.nodes))
 
     def visitList(self, node):
+        self.set_lineno(node)
         for elt in node.nodes:
             self.visit(elt)
         self.emit('BUILD_LIST', len(node.nodes))
@@ -970,7 +972,7 @@ class CodeGenerator:
     def visitDict(self, node):
         lineno = getattr(node, 'lineno', None)
         if lineno:
-            set.emit('SET_LINENO', lineno)
+            self.emit('SET_LINENO', lineno)
         self.emit('BUILD_MAP', 0)
         for k, v in node.items:
             lineno2 = getattr(node, 'lineno', None)
