@@ -17,7 +17,7 @@ def _mktypelist(typelist):
 	data = 'Pyth' + struct.pack("hh", 0, len(typelist))
 	for type in typelist:
 		data = data+type
-	return Res.Resource(data)
+	return Res.Handle(data)
 	
 def _StandardGetFile(*typelist):
 	return apply(_PromptGetFile, (None,)+typelist)
