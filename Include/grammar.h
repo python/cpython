@@ -113,6 +113,7 @@ void translatelabels Py_PROTO((grammar *g));
 void addfirstsets Py_PROTO((grammar *g));
 
 void PyGrammar_AddAccelerators Py_PROTO((grammar *g));
+void PyGrammar_RemoveAccelerators Py_PROTO((grammar *));
 
 void printgrammar Py_PROTO((grammar *g, FILE *fp));
 void printnonterminals Py_PROTO((grammar *g, FILE *fp));
