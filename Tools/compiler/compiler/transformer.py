@@ -82,10 +82,19 @@ class Transformer:
     """
 
     def __init__(self):
-        self._dispatch = { }
+        self._dispatch = {}
         for value, name in symbol.sym_name.items():
             if hasattr(self, name):
                 self._dispatch[value] = getattr(self, name)
+        self._dispatch[token.NEWLINE] = self.com_NEWLINE
+        self._atom_dispatch = {token.LPAR: self.atom_lpar,
+                               token.LSQB: self.atom_lsqb,
+                               token.LBRACE: self.atom_lbrace,
+                               token.BACKQUOTE: self.atom_backquote,
+                               token.NUMBER: self.atom_number,
+                               token.STRING: self.atom_string,
+                               token.NAME: self.atom_name,
+                               }
 
     def transform(self, tree):
         """Transform an AST into a modified parse tree."""
@@ -484,7 +493,7 @@ class Transformer:
     def testlist(self, nodelist):
         # testlist: expr (',' expr)* [',']
         # exprlist: expr (',' expr)* [',']
-        return self.com_binary('tuple', nodelist)
+        return self.com_binary(Tuple, nodelist)
 
     exprlist = testlist
 
@@ -492,11 +501,11 @@ class Transformer:
         # and_test ('or' and_test)* | lambdef
         if len(nodelist) == 1 and nodelist[0][0] == symbol.lambdef:
             return self.lambdef(nodelist[0])
-        return self.com_binary('or', nodelist)
+        return self.com_binary(Or, nodelist)
 
     def and_test(self, nodelist):
         # not_test ('and' not_test)*
-        return self.com_binary('and', nodelist)
+        return self.com_binary(And, nodelist)
 
     def not_test(self, nodelist):
         # 'not' not_test | comparison
@@ -544,15 +553,15 @@ class Transformer:
 
     def expr(self, nodelist):
         # xor_expr ('|' xor_expr)*
-        return self.com_binary('bitor', nodelist)
+        return self.com_binary(Bitor, nodelist)
 
     def xor_expr(self, nodelist):
         # xor_expr ('^' xor_expr)*
-        return self.com_binary('bitxor', nodelist)
+        return self.com_binary(Bitxor, nodelist)
 
     def and_expr(self, nodelist):
         # xor_expr ('&' xor_expr)*
-        return self.com_binary('bitand', nodelist)
+        return self.com_binary(Bitand, nodelist)
 
     def shift_expr(self, nodelist):
         # shift_expr ('<<'|'>>' shift_expr)*
@@ -583,93 +592,93 @@ class Transformer:
         node = self.com_node(nodelist[0])
         for i in range(2, len(nodelist), 2):
             right = self.com_node(nodelist[i])
-            if nodelist[i-1][0] == token.STAR:
+            t = nodelist[i-1][0]
+            if t == token.STAR:
                 node = Mul([node, right])
-                node.lineno = nodelist[1][2]
-            elif nodelist[i-1][0] == token.SLASH:
+            elif t == token.SLASH:
                 node = Div([node, right])
-                node.lineno = nodelist[1][2]
             else:
                 node = Mod([node, right])
-                node.lineno = nodelist[1][2]
+            node.lineno = nodelist[1][2]
         return node
 
     def factor(self, nodelist):
-        t = nodelist[0][0]
+        elt = nodelist[0]
+        t = elt[0]
         node = self.com_node(nodelist[-1])
         if t == token.PLUS:
             node = UnaryAdd(node)
-            node.lineno = nodelist[0][2]
+            node.lineno = elt[2]
         elif t == token.MINUS:
             node = UnarySub(node)
-            node.lineno = nodelist[0][2]
+            node.lineno = elt[2]
         elif t == token.TILDE:
             node = Invert(node)
-            node.lineno = nodelist[0][2]
+            node.lineno = elt[2]
         return node
 
     def power(self, nodelist):
         # power: atom trailer* ('**' factor)*
         node = self.com_node(nodelist[0])
         for i in range(1, len(nodelist)):
-            if nodelist[i][0] == token.DOUBLESTAR:
+            elt = nodelist[i]
+            if elt[0] == token.DOUBLESTAR:
                 n = Power([node, self.com_node(nodelist[i+1])])
-                n.lineno = nodelist[i][2]
+                n.lineno = elt[2]
                 return n
 
-            node = self.com_apply_trailer(node, nodelist[i])
+            node = self.com_apply_trailer(node, elt)
 
         return node
 
     def atom(self, nodelist):
-        t = nodelist[0][0]
-        if t == token.LPAR:
-            if nodelist[1][0] == token.RPAR:
-                n = Tuple(())
-                n.lineno = nodelist[0][2]
-                return n
-            return self.com_node(nodelist[1])
+        return self._atom_dispatch[nodelist[0][0]](nodelist)
 
-        if t == token.LSQB:
-            if nodelist[1][0] == token.RSQB:
-                n = List(())
-                n.lineno = nodelist[0][2]
-                return n
-            return self.com_list_constructor(nodelist[1])
-
-        if t == token.LBRACE:
-            if nodelist[1][0] == token.RBRACE:
-                return Dict(())
-            return self.com_dictmaker(nodelist[1])
-
-        if t == token.BACKQUOTE:
-            n = Backquote(self.com_node(nodelist[1]))
+    def atom_lpar(self, nodelist):
+        if nodelist[1][0] == token.RPAR:
+            n = Tuple(())
             n.lineno = nodelist[0][2]
             return n
+        return self.com_node(nodelist[1])
 
-        if t == token.NUMBER:
-            ### need to verify this matches compile.c
-            k = eval(nodelist[0][1])
-            n = Const(k)
+    def atom_lsqb(self, nodelist):
+        if nodelist[1][0] == token.RSQB:
+            n = List(())
             n.lineno = nodelist[0][2]
             return n
+        return self.com_list_constructor(nodelist[1])
 
-        if t == token.STRING:
-            ### need to verify this matches compile.c
-            k = ''
-            for node in nodelist:
-                k = k + eval(node[1])
-            n = Const(k)
-            n.lineno = nodelist[0][2]
-            return n
+    def atom_lbrace(self, nodelist):
+        if nodelist[1][0] == token.RBRACE:
+            return Dict(())
+        return self.com_dictmaker(nodelist[1])
 
-        if t == token.NAME:
-            ### any processing to do?
-            n = Name(nodelist[0][1])
-            n.lineno = nodelist[0][2]
-            return n
+    def atom_backquote(self, nodelist):
+        n = Backquote(self.com_node(nodelist[1]))
+        n.lineno = nodelist[0][2]
+        return n
+    
+    def atom_number(self, nodelist):
+        ### need to verify this matches compile.c
+        k = eval(nodelist[0][1])
+        n = Const(k)
+        n.lineno = nodelist[0][2]
+        return n
+        
+    def atom_string(self, nodelist):
+        ### need to verify this matches compile.c
+        k = ''
+        for node in nodelist:
+            k = k + eval(node[1])
+        n = Const(k)
+        n.lineno = nodelist[0][2]
+        return n
 
-        raise error, "unknown node type"
+    def atom_name(self, nodelist):
+        ### any processing to do?
+        n = Name(nodelist[0][1])
+        n.lineno = nodelist[0][2]
+        return n
 
     # --------------------------------------------------------------
     #
@@ -681,20 +690,13 @@ class Transformer:
         #       break_stmt, stmt, small_stmt, flow_stmt, simple_stmt,
         #       and compound_stmt.
         #       We'll just dispatch them.
+        return self._dispatch[node[0]](node[1:])
 
+    def com_NEWLINE(self):
         # A ';' at the end of a line can make a NEWLINE token appear
         # here, Render it harmless. (genc discards ('discard',
         # ('const', xxxx)) Nodes)
-        key = node[0]
-        
-        meth = self._dispatch.get(key, None)
-        if meth:
-            return meth(node[1:])
-        else:
-            if key == token.NEWLINE:
-                return Discard(Const(None))
-
-            raise error, 'illegal node passed to com_node: %s' % `node`
+        return Discard(Const(None))
     
     def com_arglist(self, nodelist):
         # varargslist:
@@ -907,18 +909,18 @@ class Transformer:
 
     def com_assign_trailer(self, primary, node, assigning):
         t = node[1][0]
-        if t == token.LPAR:
-            raise SyntaxError, "can't assign to function call"
         if t == token.DOT:
             return self.com_assign_attr(primary, node[2], assigning)
         if t == token.LSQB:
             return self.com_subscriptlist(primary, node[2], assigning)
+        if t == token.LPAR:
+            raise SyntaxError, "can't assign to function call"
         raise SyntaxError, "unknown trailer type: %s" % t
 
     def com_assign_attr(self, primary, node, assigning):
         return AssAttr(primary, node[1], assigning)
 
-    def com_binary(self, type, nodelist):
+    def com_binary(self, constructor, nodelist):
         "Compile 'NODE (OP NODE)*' into (type, [ node1, ..., nodeN ])."
         l = len(nodelist)
         if l == 1:
@@ -926,7 +928,7 @@ class Transformer:
         items = []
         for i in range(0, l, 2):
             items.append(self.com_node(nodelist[i]))
-        return Node(type, items)
+        return constructor(items)
 
     def com_stmt(self, node):
         result = self.com_node(node)
@@ -964,7 +966,8 @@ class Transformer:
             lineno = node[1][2]
             fors = []
             while node:
-                if node[1][1] == 'for':
+                t = node[1][1]
+                if t == 'for':
                     assignNode = self.com_assign(node[2], OP_ASSIGN)
                     listNode = self.com_node(node[4])
                     newfor = ListCompFor(assignNode, listNode, [])
@@ -974,7 +977,7 @@ class Transformer:
                         node = None
                     else:
                         node = self.com_list_iter(node[5])
-                elif node[1][1] == 'if':
+                elif t == 'if':
                     test = self.com_node(node[2])
                     newif = ListCompIf(test)
                     newif.lineno = node[1][2]
@@ -1101,9 +1104,10 @@ class Transformer:
     def com_subscript(self, node):
         # slice_item: expression | proper_slice | ellipsis
         ch = node[1]
-        if ch[0] == token.DOT and node[2][0] == token.DOT:
+        t = ch[0]
+        if t == token.DOT and node[2][0] == token.DOT:
             return Ellipsis()
-        if ch[0] == token.COLON or len(node) > 2:
+        if t == token.COLON or len(node) > 2:
             return self.com_sliceobj(node)
         return self.com_node(ch)
 
