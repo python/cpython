@@ -35,6 +35,7 @@
  * 2001-10-20 fl  added split primitive; reenable unicode for 1.6/2.0/2.1
  * 2001-10-21 fl  added sub/subn primitive
  * 2001-10-22 fl  check for literal sub/subn templates
+ * 2001-10-24 fl  added finditer primitive (for 2.2 only)
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -1954,6 +1955,30 @@ error:
     
 }
 
+#if PY_VERSION_HEX >= 0x02020000
+static PyObject*
+pattern_finditer(PatternObject* pattern, PyObject* args)
+{
+    PyObject* scanner;
+    PyObject* search;
+    PyObject* iterator;
+
+    scanner = pattern_scanner(pattern, args);
+    if (!scanner)
+        return NULL;
+
+    search = PyObject_GetAttrString(scanner, "search");
+    Py_DECREF(scanner);
+    if (!search)
+        return NULL;
+
+    iterator = PyCallIter_New(search, Py_None);
+    Py_DECREF(search);
+
+    return iterator;
+}
+#endif
+
 static PyObject*
 pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
 {
@@ -2331,6 +2356,9 @@ static PyMethodDef pattern_methods[] = {
     {"subn", (PyCFunction) pattern_subn, METH_VARARGS|METH_KEYWORDS},
     {"split", (PyCFunction) pattern_split, METH_VARARGS|METH_KEYWORDS},
     {"findall", (PyCFunction) pattern_findall, METH_VARARGS|METH_KEYWORDS},
+#if PY_VERSION_HEX >= 0x02020000
+    {"finditer", (PyCFunction) pattern_finditer, METH_VARARGS},
+#endif
     {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS},
     {"__copy__", (PyCFunction) pattern_copy, METH_VARARGS},
     {"__deepcopy__", (PyCFunction) pattern_deepcopy, METH_VARARGS},

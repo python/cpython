@@ -93,6 +93,7 @@ This module also defines an exception 'error'.
 
 """
 
+import sys
 import sre_compile
 import sre_parse
 
@@ -163,6 +164,15 @@ def findall(pattern, string):
 
     Empty matches are included in the result."""
     return _compile(pattern, 0).findall(string)
+
+if sys.hexversion >= 0x02020000:
+    def finditer(pattern, string):
+        """Return an iterator over all non-overlapping matches in
+        the string.  For each match, the iterator returns a match
+        object.
+
+        Empty matches are included in the result."""
+        return _compile(pattern, 0).finditer(string)
 
 def compile(pattern, flags=0):
     "Compile a regular expression pattern, returning a pattern object."
