@@ -16,22 +16,25 @@ TupleType = type(())
 ListType = type([])
 DictionaryType = type({})
 
-def func(): pass
-FunctionType = type(func)
+def _f(): pass
+FunctionType = type(_f)
+LambdaType = type(lambda: None)		# Same as FunctionType
+CodeType = type(_f.func_code)
 
-class C:
-	def meth(self): pass
-ClassType = type(C)
-UnboundMethodType = type(C.meth)	# Same as MethodType
-x = C()
-InstanceType = type(x)
-MethodType = type(x.meth)
+class _C:
+	def _m(self): pass
+ClassType = type(_C)
+UnboundMethodType = type(_C._m)		# Same as MethodType
+_x = _C()
+InstanceType = type(_x)
+MethodType = type(_x._m)
 
-BuiltinFunctionType = type(len)		# Also used for built-in methods
+BuiltinFunctionType = type(len)
+BuiltinMethodType = type([].append)	# Same as BuiltinFunctionType
 
 ModuleType = type(sys)
 
-FileType = type(sys.stdin)
+FileType = type(sys.stdin)		# XXX what if it was assigned to?
 XRangeType = type(xrange(0))
 
 try:
@@ -40,4 +43,4 @@ except TypeError:
 	TracebackType = type(sys.exc_traceback)
 	FrameType = type(sys.exc_traceback.tb_frame)
 
-del sys, func, C, x			# These are not for export
+del sys, _f, _C, _x			# Not for export
