@@ -47,8 +47,6 @@ def mkdirs(dst):
 	if dst == '' or os.path.exists(dst):
 		return
 	head, tail = os.path.split(dst)
-	print 'XX', dst, '->', (head, tail)
-	# XXXX Is this a bug in os.path.split?
 	if not ':' in head:
 		head = head + ':'
 	mkdirs(head)
