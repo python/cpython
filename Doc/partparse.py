@@ -2151,10 +2151,8 @@ def changeit(buf, pp):
 	    elif s_buf_data == 'deprecated':
 		length, newi = getnextarg(length, buf, pp, i)
 		version = pp[i:newi][0]
-		print "version =", version
 		length, newi2 = getnextarg(length, buf, pp, newi)
 		action = pp[newi:newi2]
-		print "action =", action
 		del pp[i-1:newi2]
 		length = length - (newi2 - i) - 1
 		stuff = [chunk(PLAIN, ch.where, 'Deprecated since release '),
