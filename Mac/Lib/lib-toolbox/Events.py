@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Events.h'
+# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Events.h'
 
 nullEvent = 0
 mouseDown = 1
@@ -21,15 +21,15 @@ diskMask = 1 << diskEvt
 activMask = 1 << activateEvt
 highLevelEventMask = 0x0400
 osMask = 1 << osEvt
-everyEvent = 0xFFFF
+everyEvent = 0xFFFF                        
 charCodeMask = 0x000000FF
 keyCodeMask = 0x0000FF00
 adbAddrMask = 0x00FF0000
-# osEvtMessageMask = (long)0xFF000000
+# osEvtMessageMask = (unsigned long)0xFF000000
 mouseMovedMessage = 0x00FA
 suspendResumeMessage = 0x0001
 resumeFlag = 1
-convertClipboardFlag = 2
+convertClipboardFlag = 2                             
 activeFlagBit = 0
 btnStateBit = 7
 cmdKeyBit = 8
@@ -39,7 +39,7 @@ optionKeyBit = 11
 controlKeyBit = 12
 rightShiftKeyBit = 13
 rightOptionKeyBit = 14
-rightControlKeyBit = 15
+rightControlKeyBit = 15                            
 activeFlag = 1 << activeFlagBit
 btnState = 1 << btnStateBit
 cmdKey = 1 << cmdKeyBit

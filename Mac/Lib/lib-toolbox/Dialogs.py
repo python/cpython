@@ -1,9 +1,6 @@
-# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Dialogs.h'
+# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Dialogs.h'
 
 def FOUR_CHAR_CODE(x): return x
-gestaltDialogMgrAttr = FOUR_CHAR_CODE('dlog')
-gestaltDialogMgrPresent = (1L << 0)
-dialogNoTimeoutErr = -5640
 kControlDialogItem = 4
 kButtonDialogItem = kControlDialogItem | 0
 kCheckBoxDialogItem = kControlDialogItem | 1
@@ -14,6 +11,7 @@ kEditTextDialogItem = 16
 kIconDialogItem = 32
 kPictureDialogItem = 64
 kUserDialogItem = 0
+kHelpDialogItem = 1
 kItemDisableBit = 128
 ctrlItem = 4
 btnCtrl = 0
@@ -47,7 +45,7 @@ kAlertCautionAlert = 2
 kAlertPlainAlert = 3
 kAlertDefaultOKText = -1
 kAlertDefaultCancelText = -1
-kAlertDefaultOtherText = -1
+kAlertDefaultOtherText = -1                            
 kAlertStdAlertOKButton = 1
 kAlertStdAlertCancelButton = 2
 kAlertStdAlertOtherButton = 3

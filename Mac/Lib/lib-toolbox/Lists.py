@@ -1,10 +1,10 @@
-# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Lists.h'
+# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Lists.h'
 
 def FOUR_CHAR_CODE(x): return x
 listNotifyNothing = FOUR_CHAR_CODE('nada')
 listNotifyClick = FOUR_CHAR_CODE('clik')
 listNotifyDoubleClick = FOUR_CHAR_CODE('dblc')
-listNotifyPreClick = FOUR_CHAR_CODE('pclk')
+listNotifyPreClick = FOUR_CHAR_CODE('pclk')        
 lDoVAutoscrollBit = 1
 lDoHAutoscrollBit = 0
 lDoVAutoscroll = 2
@@ -27,3 +27,6 @@ lInitMsg = 0
 lDrawMsg = 1
 lHiliteMsg = 2
 lCloseMsg = 3
+kListDefUserProcType = 0
+kListDefStandardTextType = 1
+kListDefStandardIconType = 2

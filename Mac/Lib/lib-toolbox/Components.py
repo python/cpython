@@ -1,13 +1,14 @@
-# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Components.h'
+# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Components.h'
 
 def FOUR_CHAR_CODE(x): return x
 kAppleManufacturer = FOUR_CHAR_CODE('appl')
 kComponentResourceType = FOUR_CHAR_CODE('thng')
-kComponentAliasResourceType = FOUR_CHAR_CODE('thga')
+kComponentAliasResourceType = FOUR_CHAR_CODE('thga')        
 kAnyComponentType = 0
 kAnyComponentSubType = 0
 kAnyComponentManufacturer = 0
 kAnyComponentFlagsMask = 0
+cmpIsMissing = 1L << 29
 cmpWantsRegisterMessage = 1L << 31
 kComponentOpenSelect = -1
 kComponentCloseSelect = -2
@@ -17,6 +18,8 @@ kComponentRegisterSelect = -5
 kComponentTargetSelect = -6
 kComponentUnregisterSelect = -7
 kComponentGetMPWorkFunctionSelect = -8
+kComponentExecuteWiredActionSelect = -9
+kComponentGetPublicResourceSelect = -10                     
 componentDoAutoVersion = (1 << 0)
 componentWantsUnregister = (1 << 1)
 componentAutoVersionIncludeFlags = (1 << 2)
@@ -36,12 +39,15 @@ platform68k = 1
 platformPowerPC = 2
 platformInterpreted = 3
 platformWin32 = 4
+platformPowerPCNativeEntryPoint = 5
 mpWorkFlagDoWork = (1 << 0)
 mpWorkFlagDoCompletion = (1 << 1)
 mpWorkFlagCopyWorkBlock = (1 << 2)
 mpWorkFlagDontBlock = (1 << 3)
 mpWorkFlagGetProcessorCount = (1 << 4)
 mpWorkFlagGetIsRunning = (1 << 6)
+cmpAliasNoFlags = 0
+cmpAliasOnlyThisFile = 1
 uppComponentFunctionImplementedProcInfo = 0x000002F0
 uppGetComponentVersionProcInfo = 0x000000F0
 uppComponentSetTargetProcInfo = 0x000003F0
@@ -53,3 +59,4 @@ uppCallComponentRegisterProcInfo = 0x000000F0
 uppCallComponentTargetProcInfo = 0x000003F0
 uppCallComponentUnregisterProcInfo = 0x000000F0
 uppCallComponentGetMPWorkFunctionProcInfo = 0x00000FF0
+uppCallComponentGetPublicResourceProcInfo = 0x00003BF0
