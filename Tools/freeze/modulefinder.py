@@ -280,7 +280,9 @@ class ModuleFinder:
                         self.import_hook(name, m)
                     except ImportError, msg:
                         self.msg(2, "ImportError:", str(msg))
-                        self.badmodules[name] = {m.__name__:None}
+                        if not self.badmodules.has_key(name):
+                            self.badmodules[name] = {}
+                        self.badmodules[name][m.__name__] = None
             elif op == IMPORT_FROM:
                 name = co.co_names[oparg]
                 assert lastname is not None
@@ -290,7 +292,9 @@ class ModuleFinder:
                     except ImportError, msg:
                         self.msg(2, "ImportError:", str(msg))
                         fullname = lastname + "." + name
-                        self.badmodules[fullname] = {m.__name__:None}
+                        if not self.badmodules.has_key(fullname):
+                            self.badmodules[fullname] = {}
+                        self.badmodules[fullname][m.__name__] = None
             else:
                 lastname = None
         for c in co.co_consts:
