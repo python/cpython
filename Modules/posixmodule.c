@@ -7135,6 +7135,28 @@ win32_startfile(PyObject *self, PyObject *args)
 }
 #endif
 
+#ifdef HAVE_GETLOADAVG
+PyDoc_STRVAR(posix_getloadavg__doc__,
+"getloadavg() -> (float, float, float)\n\n\
+Return the number of processes in the system run queue averaged over\n\
+the last 1, 5, and 15 minutes or raises OSError if the load average\n\
+was unobtainable");
+
+static PyObject *
+posix_getloadavg(PyObject *self, PyObject *args)
+{
+    double loadavg[3];
+    if (!PyArg_ParseTuple(args, ":getloadavg"))
+        return NULL;
+    if (getloadavg(loadavg, 3)!=3) {
+        PyErr_SetString(PyExc_OSError, "Load averages are unobtainable");
+        return NULL;
+    } else
+        return Py_BuildValue("ddd", loadavg[0], loadavg[1], loadavg[2]);
+}
+#endif
+
+
 static PyMethodDef posix_methods[] = {
 	{"access",	posix_access, METH_VARARGS, posix_access__doc__},
 #ifdef HAVE_TTYNAME
@@ -7408,6 +7430,9 @@ static PyMethodDef posix_methods[] = {
 	{"abort",	posix_abort, METH_VARARGS, posix_abort__doc__},
 #ifdef MS_WINDOWS
 	{"_getfullpathname",	posix__getfullpathname, METH_VARARGS, NULL},
+#endif
+#ifdef HAVE_GETLOADAVG
+	{"getloadavg",	posix_getloadavg, METH_VARARGS, posix_getloadavg__doc__},
 #endif
 	{NULL,		NULL}		 /* Sentinel */
 };
