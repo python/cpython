@@ -19,13 +19,13 @@ sublist is not used, hence always None.
 # Many thanks for regular expression debugging & authoring are due to:
 #	Tim (the-incredib-ly y'rs) Peters and Cristian Tismer
 # So, who owns the copyright? ;-) How about this:
-# Copyright 1996-1997: 
+# Copyright 1996-2000: 
 #	Mitchell S. Chapman,
 #	Zachary Roadhouse,
 #	Tim Peters,
 #	Just van Rossum
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 import string, regex
 
@@ -86,7 +86,7 @@ for keyword in keywordsList:
 	keyPat = keyPat + keyword + "\|"
 keyPat = keyPat[:-2] + "\)" + nonKeyPat
 
-matchPat = keyPat + "\|" + commentPat + "\|" + tripleQuotePat + "\|" + quotePat
+matchPat = commentPat + "\|" + keyPat + "\|" + tripleQuotePat + "\|" + quotePat
 matchRE = regex.compile(matchPat)
 
 idKeyPat = "[ \t]*[A-Za-z_][A-Za-z_0-9.]*"	# Ident w. leading whitespace.
