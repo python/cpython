@@ -36,7 +36,7 @@ ConfigParser -- responsible for for parsing a list of
     options(section)
         return list of configuration options for the named section
 
-    read(*filenames)
+    read(filenames)
         read and parse the list of named configuration files
 
     get(section, option, raw=0, vars=None)
