@@ -219,7 +219,7 @@ t_bootstrap(boot_raw)
 			PyErr_Clear();
 		else {
 			fprintf(stderr, "Unhandled exception in thread:\n");
-			PyErr_Print();
+			PyErr_PrintEx(0);
 		}
 	}
 	else
