@@ -4,24 +4,24 @@ Resource aete resid 0 Terminal Terminology
 """
 import aetools
 Error = aetools.Error
-import Terminal_Suite
 import Invisible_Suite
+import Terminal_Suite
 
 
 _code_to_module = {
-	'trmx' : Terminal_Suite,
 	'tpnm' : Invisible_Suite,
+	'trmx' : Terminal_Suite,
 }
 
 
 
 _code_to_fullname = {
-	'trmx' : ('Terminal.Terminal_Suite', 'Terminal_Suite'),
 	'tpnm' : ('Terminal.Invisible_Suite', 'Invisible_Suite'),
+	'trmx' : ('Terminal.Terminal_Suite', 'Terminal_Suite'),
 }
 
-from Terminal_Suite import *
 from Invisible_Suite import *
+from Terminal_Suite import *
 
 def getbaseclasses(v):
 	if not getattr(v, '_propdict', None):
@@ -41,7 +41,6 @@ import StdSuites
 # Set property and element dictionaries now that all classes have been defined
 #
 getbaseclasses(window)
-getbaseclasses(application)
 getbaseclasses(application)
 getbaseclasses(StdSuites.Type_Names_Suite.small_integer)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
@@ -83,13 +82,13 @@ getbaseclasses(StdSuites.Type_Names_Suite.null)
 getbaseclasses(StdSuites.Type_Names_Suite.target_id)
 getbaseclasses(StdSuites.Type_Names_Suite.point)
 getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
+getbaseclasses(application)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
 	'cwin' : window,
-	'capp' : application,
 	'capp' : application,
 	'shor' : StdSuites.Type_Names_Suite.small_integer,
 	'tr16' : StdSuites.Type_Names_Suite.RGB16_color,
@@ -131,11 +130,12 @@ _classdeclarations = {
 	'targ' : StdSuites.Type_Names_Suite.target_id,
 	'QDpt' : StdSuites.Type_Names_Suite.point,
 	'qdrt' : StdSuites.Type_Names_Suite.bounding_rectangle,
+	'capp' : application,
 }
 
 
-class Terminal(Terminal_Suite_Events,
-		Invisible_Suite_Events,
+class Terminal(Invisible_Suite_Events,
+		Terminal_Suite_Events,
 		aetools.TalkTo):
 	_signature = 'trmx'
 

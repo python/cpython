@@ -70,6 +70,102 @@ class view_options_window(aetools.NProperty):
 
 containers = container
 
+class desktop_2d_object(aetools.ComponentItem):
+	"""desktop-object - Desktop-object is the class of the \xd2desktop\xd3 object """
+	want = 'cdsk'
+class startup_disk(aetools.NProperty):
+	"""startup disk - the startup disk """
+	which = 'sdsk'
+	want = 'cdis'
+class trash(aetools.NProperty):
+	"""trash - the trash """
+	which = 'trsh'
+	want = 'ctrs'
+#        element 'cobj' as ['indx', 'name']
+#        element 'ctnr' as ['indx', 'name']
+#        element 'sctr' as ['indx', 'name']
+#        element 'cdis' as ['indx', 'name']
+#        element 'cfol' as ['indx', 'name', 'ID  ']
+#        element 'file' as ['indx', 'name']
+#        element 'alia' as ['indx', 'name']
+#        element 'appf' as ['indx', 'name', 'ID  ']
+#        element 'docf' as ['indx', 'name']
+#        element 'fntf' as ['indx', 'name']
+#        element 'dafi' as ['indx', 'name']
+#        element 'inlf' as ['indx', 'name']
+#        element 'sndf' as ['indx', 'name']
+#        element 'clpf' as ['indx', 'name']
+#        element 'pack' as ['indx', 'name']
+#        element 'stcs' as ['indx', 'name']
+#        element 'fsut' as ['indx', 'name']
+#        element 'dsut' as ['indx', 'name']
+
+class disk(aetools.ComponentItem):
+	"""disk - A disk """
+	want = 'cdis'
+class capacity(aetools.NProperty):
+	"""capacity - the total number of bytes (free or used) on the disk """
+	which = 'capa'
+	want = 'long'
+class free_space(aetools.NProperty):
+	"""free space - the number of free bytes left on the disk """
+	which = 'frsp'
+	want = 'long'
+class ejectable(aetools.NProperty):
+	"""ejectable - Can the media be ejected (floppies, CD's, and so on)? """
+	which = 'isej'
+	want = 'bool'
+class local_volume(aetools.NProperty):
+	"""local volume - Is the media a local volume (as opposed to a file server)? """
+	which = 'isrv'
+	want = 'bool'
+class startup(aetools.NProperty):
+	"""startup - Is this disk the boot disk? """
+	which = 'istd'
+	want = 'bool'
+#        element 'cobj' as ['indx', 'name']
+#        element 'ctnr' as ['indx', 'name']
+#        element 'sctr' as ['indx', 'name']
+#        element 'cfol' as ['indx', 'name', 'ID  ']
+#        element 'file' as ['indx', 'name']
+#        element 'alia' as ['indx', 'name']
+#        element 'appf' as ['indx', 'name', 'ID  ']
+#        element 'docf' as ['indx', 'name']
+#        element 'fntf' as ['indx', 'name']
+#        element 'dafi' as ['indx', 'name']
+#        element 'inlf' as ['indx', 'name']
+#        element 'sndf' as ['indx', 'name']
+#        element 'clpf' as ['indx', 'name']
+#        element 'pack' as ['indx', 'name']
+#        element 'stcs' as ['indx', 'name']
+#        element 'fsut' as ['indx', 'name']
+#        element 'dsut' as ['indx', 'name']
+
+disks = disk
+
+class folder(aetools.ComponentItem):
+	"""folder - A folder """
+	want = 'cfol'
+#        element 'cobj' as ['indx', 'name']
+#        element 'ctnr' as ['indx', 'name']
+#        element 'sctr' as ['indx', 'name']
+#        element 'cfol' as ['indx', 'name', 'ID  ']
+#        element 'file' as ['indx', 'name']
+#        element 'alia' as ['indx', 'name']
+#        element 'appf' as ['indx', 'name', 'ID  ']
+#        element 'docf' as ['indx', 'name']
+#        element 'fntf' as ['indx', 'name']
+#        element 'dafi' as ['indx', 'name']
+#        element 'inlf' as ['indx', 'name']
+#        element 'sndf' as ['indx', 'name']
+#        element 'clpf' as ['indx', 'name']
+#        element 'pack' as ['indx', 'name']
+#        element 'stcs' as ['indx', 'name']
+#        element 'fsut' as ['indx', 'name']
+#        element 'dsut' as ['indx', 'name']
+
+folders = folder
+
 class sharable_container(aetools.ComponentItem):
 	"""sharable container - A container that may be shared (disks and folders) """
 	want = 'sctr'
@@ -149,102 +245,6 @@ class make_changes(aetools.NProperty):
 	which = 'prvw'
 	want = 'bool'
 
-class disk(aetools.ComponentItem):
-	"""disk - A disk """
-	want = 'cdis'
-class capacity(aetools.NProperty):
-	"""capacity - the total number of bytes (free or used) on the disk """
-	which = 'capa'
-	want = 'long'
-class free_space(aetools.NProperty):
-	"""free space - the number of free bytes left on the disk """
-	which = 'frsp'
-	want = 'long'
-class ejectable(aetools.NProperty):
-	"""ejectable - Can the media be ejected (floppies, CD's, and so on)? """
-	which = 'isej'
-	want = 'bool'
-class local_volume(aetools.NProperty):
-	"""local volume - Is the media a local volume (as opposed to a file server)? """
-	which = 'isrv'
-	want = 'bool'
-class startup(aetools.NProperty):
-	"""startup - Is this disk the boot disk? """
-	which = 'istd'
-	want = 'bool'
-#        element 'cobj' as ['indx', 'name']
-#        element 'ctnr' as ['indx', 'name']
-#        element 'sctr' as ['indx', 'name']
-#        element 'cfol' as ['indx', 'name', 'ID  ']
-#        element 'file' as ['indx', 'name']
-#        element 'alia' as ['indx', 'name']
-#        element 'appf' as ['indx', 'name', 'ID  ']
-#        element 'docf' as ['indx', 'name']
-#        element 'fntf' as ['indx', 'name']
-#        element 'dafi' as ['indx', 'name']
-#        element 'inlf' as ['indx', 'name']
-#        element 'sndf' as ['indx', 'name']
-#        element 'clpf' as ['indx', 'name']
-#        element 'pack' as ['indx', 'name']
-#        element 'stcs' as ['indx', 'name']
-#        element 'fsut' as ['indx', 'name']
-#        element 'dsut' as ['indx', 'name']
-
-disks = disk
-
-class folder(aetools.ComponentItem):
-	"""folder - A folder """
-	want = 'cfol'
-#        element 'cobj' as ['indx', 'name']
-#        element 'ctnr' as ['indx', 'name']
-#        element 'sctr' as ['indx', 'name']
-#        element 'cfol' as ['indx', 'name', 'ID  ']
-#        element 'file' as ['indx', 'name']
-#        element 'alia' as ['indx', 'name']
-#        element 'appf' as ['indx', 'name', 'ID  ']
-#        element 'docf' as ['indx', 'name']
-#        element 'fntf' as ['indx', 'name']
-#        element 'dafi' as ['indx', 'name']
-#        element 'inlf' as ['indx', 'name']
-#        element 'sndf' as ['indx', 'name']
-#        element 'clpf' as ['indx', 'name']
-#        element 'pack' as ['indx', 'name']
-#        element 'stcs' as ['indx', 'name']
-#        element 'fsut' as ['indx', 'name']
-#        element 'dsut' as ['indx', 'name']
-
-folders = folder
-
-class desktop_2d_object(aetools.ComponentItem):
-	"""desktop-object - Desktop-object is the class of the \xd2desktop\xd3 object """
-	want = 'cdsk'
-class startup_disk(aetools.NProperty):
-	"""startup disk - the startup disk """
-	which = 'sdsk'
-	want = 'cdis'
-class trash(aetools.NProperty):
-	"""trash - the trash """
-	which = 'trsh'
-	want = 'ctrs'
-#        element 'cobj' as ['indx', 'name']
-#        element 'ctnr' as ['indx', 'name']
-#        element 'sctr' as ['indx', 'name']
-#        element 'cdis' as ['indx', 'name']
-#        element 'cfol' as ['indx', 'name', 'ID  ']
-#        element 'file' as ['indx', 'name']
-#        element 'alia' as ['indx', 'name']
-#        element 'appf' as ['indx', 'name', 'ID  ']
-#        element 'docf' as ['indx', 'name']
-#        element 'fntf' as ['indx', 'name']
-#        element 'dafi' as ['indx', 'name']
-#        element 'inlf' as ['indx', 'name']
-#        element 'sndf' as ['indx', 'name']
-#        element 'clpf' as ['indx', 'name']
-#        element 'pack' as ['indx', 'name']
-#        element 'stcs' as ['indx', 'name']
-#        element 'fsut' as ['indx', 'name']
-#        element 'dsut' as ['indx', 'name']
-
 class trash_2d_object(aetools.ComponentItem):
 	"""trash-object - Trash-object is the class of the \xd2trash\xd3 object """
 	want = 'ctrs'
@@ -284,6 +284,83 @@ container._privpropdict = {
 	'view_options_window' : view_options_window,
 }
 container._privelemdict = {
+	'item' : Earlier_terms.item,
+	'container' : container,
+	'sharable_container' : sharable_container,
+	'folder' : folder,
+	'file' : Files_and_suitcases.file,
+	'alias_file' : Files_and_suitcases.alias_file,
+	'application_file' : Earlier_terms.application_file,
+	'document_file' : Files_and_suitcases.document_file,
+	'font_file' : Files_and_suitcases.font_file,
+	'desk_accessory_file' : Files_and_suitcases.desk_accessory_file,
+	'internet_location' : Earlier_terms.internet_location,
+	'sound_file' : Files_and_suitcases.sound_file,
+	'clipping' : Files_and_suitcases.clipping,
+	'package' : Files_and_suitcases.package,
+	'suitcase' : Files_and_suitcases.suitcase,
+	'font_suitcase' : Files_and_suitcases.font_suitcase,
+	'accessory_suitcase' : Earlier_terms.accessory_suitcase,
+}
+desktop_2d_object._superclassnames = ['container']
+desktop_2d_object._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'startup_disk' : startup_disk,
+	'trash' : trash,
+}
+desktop_2d_object._privelemdict = {
+	'item' : Earlier_terms.item,
+	'container' : container,
+	'sharable_container' : sharable_container,
+	'disk' : disk,
+	'folder' : folder,
+	'file' : Files_and_suitcases.file,
+	'alias_file' : Files_and_suitcases.alias_file,
+	'application_file' : Earlier_terms.application_file,
+	'document_file' : Files_and_suitcases.document_file,
+	'font_file' : Files_and_suitcases.font_file,
+	'desk_accessory_file' : Files_and_suitcases.desk_accessory_file,
+	'internet_location' : Earlier_terms.internet_location,
+	'sound_file' : Files_and_suitcases.sound_file,
+	'clipping' : Files_and_suitcases.clipping,
+	'package' : Files_and_suitcases.package,
+	'suitcase' : Files_and_suitcases.suitcase,
+	'font_suitcase' : Files_and_suitcases.font_suitcase,
+	'accessory_suitcase' : Earlier_terms.accessory_suitcase,
+}
+disk._superclassnames = ['sharable_container']
+disk._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'capacity' : capacity,
+	'free_space' : free_space,
+	'ejectable' : ejectable,
+	'local_volume' : local_volume,
+	'startup' : startup,
+}
+disk._privelemdict = {
+	'item' : Earlier_terms.item,
+	'container' : container,
+	'sharable_container' : sharable_container,
+	'folder' : folder,
+	'file' : Files_and_suitcases.file,
+	'alias_file' : Files_and_suitcases.alias_file,
+	'application_file' : Earlier_terms.application_file,
+	'document_file' : Files_and_suitcases.document_file,
+	'font_file' : Files_and_suitcases.font_file,
+	'desk_accessory_file' : Files_and_suitcases.desk_accessory_file,
+	'internet_location' : Earlier_terms.internet_location,
+	'sound_file' : Files_and_suitcases.sound_file,
+	'clipping' : Files_and_suitcases.clipping,
+	'package' : Files_and_suitcases.package,
+	'suitcase' : Files_and_suitcases.suitcase,
+	'font_suitcase' : Files_and_suitcases.font_suitcase,
+	'accessory_suitcase' : Earlier_terms.accessory_suitcase,
+}
+folder._superclassnames = ['sharable_container']
+folder._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+}
+folder._privelemdict = {
 	'item' : Earlier_terms.item,
 	'container' : container,
 	'sharable_container' : sharable_container,
@@ -343,83 +420,6 @@ sharing_privileges._privpropdict = {
 }
 sharing_privileges._privelemdict = {
 }
-disk._superclassnames = ['sharable_container']
-disk._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'capacity' : capacity,
-	'free_space' : free_space,
-	'ejectable' : ejectable,
-	'local_volume' : local_volume,
-	'startup' : startup,
-}
-disk._privelemdict = {
-	'item' : Earlier_terms.item,
-	'container' : container,
-	'sharable_container' : sharable_container,
-	'folder' : folder,
-	'file' : Files_and_suitcases.file,
-	'alias_file' : Files_and_suitcases.alias_file,
-	'application_file' : Earlier_terms.application_file,
-	'document_file' : Files_and_suitcases.document_file,
-	'font_file' : Files_and_suitcases.font_file,
-	'desk_accessory_file' : Files_and_suitcases.desk_accessory_file,
-	'internet_location' : Earlier_terms.internet_location,
-	'sound_file' : Files_and_suitcases.sound_file,
-	'clipping' : Files_and_suitcases.clipping,
-	'package' : Files_and_suitcases.package,
-	'suitcase' : Files_and_suitcases.suitcase,
-	'font_suitcase' : Files_and_suitcases.font_suitcase,
-	'accessory_suitcase' : Earlier_terms.accessory_suitcase,
-}
-folder._superclassnames = ['sharable_container']
-folder._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-folder._privelemdict = {
-	'item' : Earlier_terms.item,
-	'container' : container,
-	'sharable_container' : sharable_container,
-	'folder' : folder,
-	'file' : Files_and_suitcases.file,
-	'alias_file' : Files_and_suitcases.alias_file,
-	'application_file' : Earlier_terms.application_file,
-	'document_file' : Files_and_suitcases.document_file,
-	'font_file' : Files_and_suitcases.font_file,
-	'desk_accessory_file' : Files_and_suitcases.desk_accessory_file,
-	'internet_location' : Earlier_terms.internet_location,
-	'sound_file' : Files_and_suitcases.sound_file,
-	'clipping' : Files_and_suitcases.clipping,
-	'package' : Files_and_suitcases.package,
-	'suitcase' : Files_and_suitcases.suitcase,
-	'font_suitcase' : Files_and_suitcases.font_suitcase,
-	'accessory_suitcase' : Earlier_terms.accessory_suitcase,
-}
-desktop_2d_object._superclassnames = ['container']
-desktop_2d_object._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'startup_disk' : startup_disk,
-	'trash' : trash,
-}
-desktop_2d_object._privelemdict = {
-	'item' : Earlier_terms.item,
-	'container' : container,
-	'sharable_container' : sharable_container,
-	'disk' : disk,
-	'folder' : folder,
-	'file' : Files_and_suitcases.file,
-	'alias_file' : Files_and_suitcases.alias_file,
-	'application_file' : Earlier_terms.application_file,
-	'document_file' : Files_and_suitcases.document_file,
-	'font_file' : Files_and_suitcases.font_file,
-	'desk_accessory_file' : Files_and_suitcases.desk_accessory_file,
-	'internet_location' : Earlier_terms.internet_location,
-	'sound_file' : Files_and_suitcases.sound_file,
-	'clipping' : Files_and_suitcases.clipping,
-	'package' : Files_and_suitcases.package,
-	'suitcase' : Files_and_suitcases.suitcase,
-	'font_suitcase' : Files_and_suitcases.font_suitcase,
-	'accessory_suitcase' : Earlier_terms.accessory_suitcase,
-}
 trash_2d_object._superclassnames = ['container']
 trash_2d_object._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
@@ -452,21 +452,21 @@ _classdeclarations = {
 	'ctrs' : trash_2d_object,
 	'cdsk' : desktop_2d_object,
 	'sctr' : sharable_container,
-	'priv' : sharing_privileges,
 	'cdis' : disk,
-	'cfol' : folder,
 	'ctnr' : container,
+	'cfol' : folder,
+	'priv' : sharing_privileges,
 }
 
 _propdeclarations = {
 	'pexp' : expanded,
-	'gppr' : group_privileges,
-	'prvr' : see_files,
+	'iprv' : privileges_inherited,
+	'gstp' : guest_privileges,
 	'ects' : entire_contents,
 	'lvis' : icon_size,
-	'iprv' : privileges_inherited,
+	'gppr' : group_privileges,
 	'isrv' : local_volume,
-	'frsp' : free_space,
+	'prvs' : see_folders,
 	'pexa' : expandable,
 	'pexc' : completely_expanded,
 	'vwnd' : view_options_window,
@@ -479,13 +479,13 @@ _propdeclarations = {
 	'sexp' : exported,
 	'sdsk' : startup_disk,
 	'istd' : startup,
-	'gstp' : guest_privileges,
-	'trsh' : trash,
+	'prvr' : see_files,
+	'c@#^' : _3c_Inheritance_3e_,
 	'smou' : mounted,
 	'sele' : selection,
-	'prvs' : see_folders,
+	'trsh' : trash,
 	'sgrp' : group,
-	'c@#^' : _3c_Inheritance_3e_,
+	'frsp' : free_space,
 	'spro' : protected,
 	'ownr' : owner_privileges,
 }

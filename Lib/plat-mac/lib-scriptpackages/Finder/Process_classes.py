@@ -15,6 +15,30 @@ class Process_classes_Events:
 	pass
 
 
+class application_process(aetools.ComponentItem):
+	"""application process - A process launched from an application file """
+	want = 'pcap'
+class _3c_Inheritance_3e_(aetools.NProperty):
+	"""<Inheritance> - inherits some of its properties from the process class """
+	which = 'c@#^'
+	want = 'prcs'
+class application_file(aetools.NProperty):
+	"""application file - the application file from which this process was launched """
+	which = 'appf'
+	want = 'appf'
+
+application_processes = application_process
+
+class desk_accessory_process(aetools.ComponentItem):
+	"""desk accessory process - A process launched from a desk accessory file """
+	want = 'pcda'
+class desk_accessory_file(aetools.NProperty):
+	"""desk accessory file - the desk accessory file from which this process was launched """
+	which = 'dafi'
+	want = 'obj '
+
+desk_accessory_processes = desk_accessory_process
+
 class process(aetools.ComponentItem):
 	"""process - A process running on this computer """
 	want = 'prcs'
@@ -64,30 +88,20 @@ class partition_space_used(aetools.NProperty):
 	want = 'long'
 
 processes = process
-
-class application_process(aetools.ComponentItem):
-	"""application process - A process launched from an application file """
-	want = 'pcap'
-class _3c_Inheritance_3e_(aetools.NProperty):
-	"""<Inheritance> - inherits some of its properties from the process class """
-	which = 'c@#^'
-	want = 'prcs'
-class application_file(aetools.NProperty):
-	"""application file - the application file from which this process was launched """
-	which = 'appf'
-	want = 'appf'
-
-application_processes = application_process
-
-class desk_accessory_process(aetools.ComponentItem):
-	"""desk accessory process - A process launched from a desk accessory file """
-	want = 'pcda'
-class desk_accessory_file(aetools.NProperty):
-	"""desk accessory file - the desk accessory file from which this process was launched """
-	which = 'dafi'
-	want = 'obj '
-
-desk_accessory_processes = desk_accessory_process
+application_process._superclassnames = ['process']
+application_process._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'application_file' : application_file,
+}
+application_process._privelemdict = {
+}
+desk_accessory_process._superclassnames = ['process']
+desk_accessory_process._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'desk_accessory_file' : desk_accessory_file,
+}
+desk_accessory_process._privelemdict = {
+}
 process._superclassnames = []
 process._privpropdict = {
 	'name' : name,
@@ -103,20 +117,6 @@ process._privpropdict = {
 	'partition_space_used' : partition_space_used,
 }
 process._privelemdict = {
-}
-application_process._superclassnames = ['process']
-application_process._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'application_file' : application_file,
-}
-application_process._privelemdict = {
-}
-desk_accessory_process._superclassnames = ['process']
-desk_accessory_process._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'desk_accessory_file' : desk_accessory_file,
-}
-desk_accessory_process._privelemdict = {
 }
 
 #

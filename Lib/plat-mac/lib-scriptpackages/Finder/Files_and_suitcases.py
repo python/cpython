@@ -15,43 +15,13 @@ class Files_and_suitcases_Events:
 	pass
 
 
-class file(aetools.ComponentItem):
-	"""file - A file """
-	want = 'file'
-class _3c_Inheritance_3e_(aetools.NProperty):
-	"""<Inheritance> - inherits some of its properties from the item class """
-	which = 'c@#^'
-	want = 'cobj'
-class file_type(aetools.NProperty):
-	"""file type - the OSType identifying the type of data contained in the item """
-	which = 'asty'
-	want = 'type'
-class creator_type(aetools.NProperty):
-	"""creator type - the OSType identifying the application that created the item """
-	which = 'fcrt'
-	want = 'type'
-class locked(aetools.NProperty):
-	"""locked - Is the file locked? """
-	which = 'aslk'
-	want = 'bool'
-class stationery(aetools.NProperty):
-	"""stationery - Is the file a stationery pad? """
-	which = 'pspd'
-	want = 'bool'
-class product_version(aetools.NProperty):
-	"""product version - the version of the product (visible at the top of the \xd2Get Info\xd3 window) """
-	which = 'ver2'
-	want = 'itxt'
-class version(aetools.NProperty):
-	"""version - the version of the file (visible at the bottom of the \xd2Get Info\xd3 window) """
-	which = 'vers'
-	want = 'itxt'
-
-files = file
-
 class alias_file(aetools.ComponentItem):
 	"""alias file - An alias file (created with \xd2Make Alias\xd3) """
 	want = 'alia'
+class _3c_Inheritance_3e_(aetools.NProperty):
+	"""<Inheritance> - inherits some of its properties from the file class """
+	which = 'c@#^'
+	want = 'file'
 class original_item(aetools.NProperty):
 	"""original item - the original item pointed to by the alias """
 	which = 'orig'
@@ -85,11 +55,60 @@ class has_scripting_terminology(aetools.NProperty):
 
 application_files = application_file
 
+class clipping(aetools.ComponentItem):
+	"""clipping - A clipping """
+	want = 'clpf'
+
+clippings = clipping
+
+class desk_accessory_file(aetools.ComponentItem):
+	"""desk accessory file - A desk accessory file """
+	want = 'dafi'
+
+desk_accessory_files = desk_accessory_file
+
+class desk_accessory_suitcase(aetools.ComponentItem):
+	"""desk accessory suitcase - A desk accessory suitcase """
+	want = 'dsut'
+#        element 'cobj' as ['indx', 'name']
+
+desk_accessory_suitcases = desk_accessory_suitcase
+
 class document_file(aetools.ComponentItem):
 	"""document file - A document file """
 	want = 'docf'
 
 document_files = document_file
+
+class file(aetools.ComponentItem):
+	"""file - A file """
+	want = 'file'
+class file_type(aetools.NProperty):
+	"""file type - the OSType identifying the type of data contained in the item """
+	which = 'asty'
+	want = 'type'
+class creator_type(aetools.NProperty):
+	"""creator type - the OSType identifying the application that created the item """
+	which = 'fcrt'
+	want = 'type'
+class locked(aetools.NProperty):
+	"""locked - Is the file locked? """
+	which = 'aslk'
+	want = 'bool'
+class stationery(aetools.NProperty):
+	"""stationery - Is the file a stationery pad? """
+	which = 'pspd'
+	want = 'bool'
+class product_version(aetools.NProperty):
+	"""product version - the version of the product (visible at the top of the \xd2Get Info\xd3 window) """
+	which = 'ver2'
+	want = 'itxt'
+class version(aetools.NProperty):
+	"""version - the version of the file (visible at the bottom of the \xd2Get Info\xd3 window) """
+	which = 'vers'
+	want = 'itxt'
+
+files = file
 
 class font_file(aetools.ComponentItem):
 	"""font file - A font file """
@@ -97,11 +116,12 @@ class font_file(aetools.ComponentItem):
 
 font_files = font_file
 
-class desk_accessory_file(aetools.ComponentItem):
-	"""desk accessory file - A desk accessory file """
-	want = 'dafi'
+class font_suitcase(aetools.ComponentItem):
+	"""font suitcase - A font suitcase """
+	want = 'fsut'
+#        element 'cobj' as ['indx', 'name']
 
-desk_accessory_files = desk_accessory_file
+font_suitcases = font_suitcase
 
 class internet_location_file(aetools.ComponentItem):
 	"""internet location file - An file containing an internet location """
@@ -113,6 +133,12 @@ class location(aetools.NProperty):
 
 internet_location_files = internet_location_file
 
+class package(aetools.ComponentItem):
+	"""package - A package """
+	want = 'pack'
+
+packages = package
+
 class sound_file(aetools.ComponentItem):
 	"""sound file - A sound file """
 	want = 'sndf'
@@ -123,51 +149,12 @@ class sound(aetools.NProperty):
 
 sound_files = sound_file
 
-class clipping(aetools.ComponentItem):
-	"""clipping - A clipping """
-	want = 'clpf'
-
-clippings = clipping
-
-class package(aetools.ComponentItem):
-	"""package - A package """
-	want = 'pack'
-
-packages = package
-
 class suitcase(aetools.ComponentItem):
 	"""suitcase - A font or desk accessory suitcase """
 	want = 'stcs'
 #        element 'cobj' as ['indx', 'name']
 
 suitcases = suitcase
-
-class font_suitcase(aetools.ComponentItem):
-	"""font suitcase - A font suitcase """
-	want = 'fsut'
-#        element 'cobj' as ['indx', 'name']
-
-font_suitcases = font_suitcase
-
-class desk_accessory_suitcase(aetools.ComponentItem):
-	"""desk accessory suitcase - A desk accessory suitcase """
-	want = 'dsut'
-#        element 'cobj' as ['indx', 'name']
-
-desk_accessory_suitcases = desk_accessory_suitcase
-import Earlier_terms
-file._superclassnames = ['item']
-file._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'file_type' : file_type,
-	'creator_type' : creator_type,
-	'locked' : locked,
-	'stationery' : stationery,
-	'product_version' : product_version,
-	'version' : version,
-}
-file._privelemdict = {
-}
 alias_file._superclassnames = ['file']
 alias_file._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
@@ -186,17 +173,11 @@ application_file._privpropdict = {
 }
 application_file._privelemdict = {
 }
-document_file._superclassnames = ['file']
-document_file._privpropdict = {
+clipping._superclassnames = ['file']
+clipping._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-document_file._privelemdict = {
-}
-font_file._superclassnames = ['file']
-font_file._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-font_file._privelemdict = {
+clipping._privelemdict = {
 }
 desk_accessory_file._superclassnames = ['file']
 desk_accessory_file._privpropdict = {
@@ -204,38 +185,37 @@ desk_accessory_file._privpropdict = {
 }
 desk_accessory_file._privelemdict = {
 }
-internet_location_file._superclassnames = ['file']
-internet_location_file._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'location' : location,
-}
-internet_location_file._privelemdict = {
-}
-sound_file._superclassnames = ['file']
-sound_file._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-	'sound' : sound,
-}
-sound_file._privelemdict = {
-}
-clipping._superclassnames = ['file']
-clipping._privpropdict = {
+desk_accessory_suitcase._superclassnames = ['suitcase']
+import Earlier_terms
+desk_accessory_suitcase._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-clipping._privelemdict = {
-}
-package._superclassnames = ['item']
-package._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-package._privelemdict = {
-}
-suitcase._superclassnames = ['file']
-suitcase._privpropdict = {
-	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
-}
-suitcase._privelemdict = {
+desk_accessory_suitcase._privelemdict = {
 	'item' : Earlier_terms.item,
+}
+document_file._superclassnames = ['file']
+document_file._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+}
+document_file._privelemdict = {
+}
+file._superclassnames = ['item']
+file._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'file_type' : file_type,
+	'creator_type' : creator_type,
+	'locked' : locked,
+	'stationery' : stationery,
+	'product_version' : product_version,
+	'version' : version,
+}
+file._privelemdict = {
+}
+font_file._superclassnames = ['file']
+font_file._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+}
+font_file._privelemdict = {
 }
 font_suitcase._superclassnames = ['suitcase']
 font_suitcase._privpropdict = {
@@ -244,11 +224,31 @@ font_suitcase._privpropdict = {
 font_suitcase._privelemdict = {
 	'item' : Earlier_terms.item,
 }
-desk_accessory_suitcase._superclassnames = ['suitcase']
-desk_accessory_suitcase._privpropdict = {
+internet_location_file._superclassnames = ['file']
+internet_location_file._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'location' : location,
+}
+internet_location_file._privelemdict = {
+}
+package._superclassnames = ['item']
+package._privpropdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 }
-desk_accessory_suitcase._privelemdict = {
+package._privelemdict = {
+}
+sound_file._superclassnames = ['file']
+sound_file._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'sound' : sound,
+}
+sound_file._privelemdict = {
+}
+suitcase._superclassnames = ['file']
+suitcase._privpropdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+}
+suitcase._privelemdict = {
 	'item' : Earlier_terms.item,
 }
 
@@ -258,24 +258,25 @@ desk_accessory_suitcase._privelemdict = {
 _classdeclarations = {
 	'sndf' : sound_file,
 	'fntf' : font_file,
-	'inlf' : internet_location_file,
+	'stcs' : suitcase,
 	'clpf' : clipping,
+	'dsut' : desk_accessory_suitcase,
 	'alia' : alias_file,
 	'dafi' : desk_accessory_file,
-	'dsut' : desk_accessory_suitcase,
 	'fsut' : font_suitcase,
 	'file' : file,
 	'appf' : application_file,
-	'stcs' : suitcase,
+	'inlf' : internet_location_file,
 	'docf' : document_file,
 	'pack' : package,
 }
 
 _propdeclarations = {
-	'vers' : version,
 	'ver2' : product_version,
-	'snd ' : sound,
+	'vers' : version,
 	'appt' : preferred_size,
+	'snd ' : sound,
+	'pspd' : stationery,
 	'sprt' : suggested_size,
 	'isab' : accepts_high_level_events,
 	'hscr' : has_scripting_terminology,
@@ -283,7 +284,6 @@ _propdeclarations = {
 	'c@#^' : _3c_Inheritance_3e_,
 	'fcrt' : creator_type,
 	'mprt' : minimum_size,
-	'pspd' : stationery,
 	'iloc' : location,
 	'aslk' : locked,
 	'orig' : original_item,

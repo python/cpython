@@ -12,32 +12,14 @@ _code = 'ascr'
 
 class AppleScript_Suite_Events:
 
-	def activate(self, _no_object=None, _attributes={}, **_arguments):
-		"""activate: Bring the targeted application program to the front
+	def _26_(self, _object, _attributes={}, **_arguments):
+		"""&: Concatenation
+		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'misc'
-		_subcode = 'actv'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def log(self, _object, _attributes={}, **_arguments):
-		"""log: Cause a comment to be logged
-		Required argument: undocumented, typecode 'TEXT'
-		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
 		"""
 		_code = 'ascr'
-		_subcode = 'cmnt'
+		_subcode = 'ccat'
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
@@ -51,73 +33,17 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def stop_log(self, _no_object=None, _attributes={}, **_arguments):
-		"""stop log: Stop event logging in the script editor
+	def _2a_(self, _object, _attributes={}, **_arguments):
+		"""*: Multiplication
+		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'ToyS'
-		_subcode = 'log0'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def start_log(self, _no_object=None, _attributes={}, **_arguments):
-		"""start log: Start event logging in the script editor
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'ToyS'
-		_subcode = 'log1'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def idle(self, _no_object=None, _attributes={}, **_arguments):
-		"""idle: Sent to a script application when it is idle
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: the number of seconds to wait for next idle event
-		"""
-		_code = 'misc'
-		_subcode = 'idle'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def launch(self, _no_object=None, _attributes={}, **_arguments):
-		"""launch: Start an application for scripting
-		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
 		"""
 		_code = 'ascr'
-		_subcode = 'noop'
+		_subcode = '*   '
 
 		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
+		_arguments['----'] = _object
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -128,15 +54,17 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def tell(self, _no_object=None, _attributes={}, **_arguments):
-		"""tell: Record or log a \xd4tell\xd5 statement
+	def _2b_(self, _object, _attributes={}, **_arguments):
+		"""+: Addition
+		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
 		"""
 		_code = 'ascr'
-		_subcode = 'tell'
+		_subcode = '+   '
 
 		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
+		_arguments['----'] = _object
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -147,15 +75,17 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def end_tell(self, _no_object=None, _attributes={}, **_arguments):
-		"""end tell: Record or log an \xd4end tell\xd5 statement
+	def _2d_(self, _object, _attributes={}, **_arguments):
+		"""-: Subtraction
+		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
 		"""
 		_code = 'ascr'
-		_subcode = 'tend'
+		_subcode = '-   '
 
 		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
+		_arguments['----'] = _object
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -166,26 +96,58 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_error = {
-		'number' : 'errn',
-		'partial_result' : 'ptlr',
-		'from_' : 'erob',
-		'to' : 'errt',
-	}
-
-	def error(self, _object=None, _attributes={}, **_arguments):
-		"""error: Raise an error
-		Required argument: anything
-		Keyword argument number: an error number
-		Keyword argument partial_result: any partial result occurring before the error
-		Keyword argument from_: the object that caused the error
-		Keyword argument to: the desired class for a failed coercion
+	def _3c_(self, _object, _attributes={}, **_arguments):
+		"""<: Less than
+		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
 		"""
 		_code = 'ascr'
-		_subcode = 'err '
+		_subcode = '<   '
 
-		aetools.keysubst(_arguments, self._argmap_error)
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def _3d_(self, _object, _attributes={}, **_arguments):
+		"""=: Equality
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = '=   '
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def _3e_(self, _object, _attributes={}, **_arguments):
+		""">: Greater than
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = '>   '
+
+		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
 
 
@@ -277,174 +239,6 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def _3d_(self, _object, _attributes={}, **_arguments):
-		"""=: Equality
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '=   '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _ad_(self, _object, _attributes={}, **_arguments):
-		"""\xad: Inequality
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '\xad   '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _2b_(self, _object, _attributes={}, **_arguments):
-		"""+: Addition
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '+   '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _2d_(self, _object, _attributes={}, **_arguments):
-		"""-: Subtraction
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '-   '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _2a_(self, _object, _attributes={}, **_arguments):
-		"""*: Multiplication
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '*   '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _d6_(self, _object, _attributes={}, **_arguments):
-		"""\xd6: Division
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '/   '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def div(self, _object, _attributes={}, **_arguments):
-		"""div: Quotient
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = 'div '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def mod(self, _object, _attributes={}, **_arguments):
-		"""mod: Remainder
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = 'mod '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
 	def _5e_(self, _object, _attributes={}, **_arguments):
 		"""^: Exponentiation
 		Required argument: an AE object reference
@@ -466,164 +260,15 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def _3e_(self, _object, _attributes={}, **_arguments):
-		""">: Greater than
-		Required argument: an AE object reference
+	def activate(self, _no_object=None, _attributes={}, **_arguments):
+		"""activate: Bring the targeted application program to the front
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
 		"""
-		_code = 'ascr'
-		_subcode = '>   '
+		_code = 'misc'
+		_subcode = 'actv'
 
 		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _b3_(self, _object, _attributes={}, **_arguments):
-		"""\xb3: Greater than or equal to
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '>=  '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _3c_(self, _object, _attributes={}, **_arguments):
-		"""<: Less than
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '<   '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _b2_(self, _object, _attributes={}, **_arguments):
-		"""\xb2: Less than or equal to
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = '<=  '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def _26_(self, _object, _attributes={}, **_arguments):
-		"""&: Concatenation
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = 'ccat'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def starts_with(self, _object, _attributes={}, **_arguments):
-		"""starts with: Starts with
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = 'bgwt'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def ends_with(self, _object, _attributes={}, **_arguments):
-		"""ends with: Ends with
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = 'ends'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def contains(self, _object, _attributes={}, **_arguments):
-		"""contains: Containment
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = 'cont'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
@@ -642,27 +287,6 @@ class AppleScript_Suite_Events:
 		"""
 		_code = 'ascr'
 		_subcode = 'AND '
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def or_(self, _object, _attributes={}, **_arguments):
-		"""or: Logical disjunction
-		Required argument: an AE object reference
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: anything
-		"""
-		_code = 'ascr'
-		_subcode = 'OR  '
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
@@ -697,14 +321,186 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	def not_(self, _object, _attributes={}, **_arguments):
-		"""not: Logical negation
+	def contains(self, _object, _attributes={}, **_arguments):
+		"""contains: Containment
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
 		"""
 		_code = 'ascr'
-		_subcode = 'NOT '
+		_subcode = 'cont'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def div(self, _object, _attributes={}, **_arguments):
+		"""div: Quotient
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = 'div '
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def end_tell(self, _no_object=None, _attributes={}, **_arguments):
+		"""end tell: Record or log an \xd4end tell\xd5 statement
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'ascr'
+		_subcode = 'tend'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def ends_with(self, _object, _attributes={}, **_arguments):
+		"""ends with: Ends with
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = 'ends'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_error = {
+		'number' : 'errn',
+		'partial_result' : 'ptlr',
+		'from_' : 'erob',
+		'to' : 'errt',
+	}
+
+	def error(self, _object=None, _attributes={}, **_arguments):
+		"""error: Raise an error
+		Required argument: anything
+		Keyword argument number: an error number
+		Keyword argument partial_result: any partial result occurring before the error
+		Keyword argument from_: the object that caused the error
+		Keyword argument to: the desired class for a failed coercion
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'ascr'
+		_subcode = 'err '
+
+		aetools.keysubst(_arguments, self._argmap_error)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def idle(self, _no_object=None, _attributes={}, **_arguments):
+		"""idle: Sent to a script application when it is idle
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: the number of seconds to wait for next idle event
+		"""
+		_code = 'misc'
+		_subcode = 'idle'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def launch(self, _no_object=None, _attributes={}, **_arguments):
+		"""launch: Start an application for scripting
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'ascr'
+		_subcode = 'noop'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def log(self, _object, _attributes={}, **_arguments):
+		"""log: Cause a comment to be logged
+		Required argument: undocumented, typecode 'TEXT'
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'ascr'
+		_subcode = 'cmnt'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def mod(self, _object, _attributes={}, **_arguments):
+		"""mod: Remainder
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = 'mod '
 
 		if _arguments: raise TypeError, 'No optional args expected'
 		_arguments['----'] = _object
@@ -739,214 +535,222 @@ class AppleScript_Suite_Events:
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+	def not_(self, _object, _attributes={}, **_arguments):
+		"""not: Logical negation
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = 'NOT '
 
-class boolean(aetools.ComponentItem):
-	"""boolean - A true or false value """
-	want = 'bool'
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
 
-booleans = boolean
 
-class integer(aetools.ComponentItem):
-	"""integer - An integral number """
-	want = 'long'
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-integers = integer
+	def or_(self, _object, _attributes={}, **_arguments):
+		"""or: Logical disjunction
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = 'OR  '
 
-class real(aetools.ComponentItem):
-	"""real - A real number """
-	want = 'doub'
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
 
-reals = real
 
-class number(aetools.ComponentItem):
-	"""number - an integer or real number """
-	want = 'nmbr'
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-numbers = number
+	def start_log(self, _no_object=None, _attributes={}, **_arguments):
+		"""start log: Start event logging in the script editor
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'ToyS'
+		_subcode = 'log1'
 
-class list(aetools.ComponentItem):
-	"""list - An ordered collection of items """
-	want = 'list'
-class length(aetools.NProperty):
-	"""length - the length of a list """
-	which = 'leng'
-	want = 'long'
-class reverse(aetools.NProperty):
-	"""reverse - the items of the list in reverse order """
-	which = 'rvse'
-	want = 'list'
-class rest(aetools.NProperty):
-	"""rest - all items of the list excluding first """
-	which = 'rest'
-	want = 'list'
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-lists = list
 
-class linked_list(aetools.ComponentItem):
-	"""linked list - An ordered collection of items """
-	want = 'llst'
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-linked_lists = linked_list
+	def starts_with(self, _object, _attributes={}, **_arguments):
+		"""starts with: Starts with
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = 'bgwt'
 
-class vector(aetools.ComponentItem):
-	"""vector - An ordered collection of items """
-	want = 'vect'
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
 
-vectors = vector
 
-class record(aetools.ComponentItem):
-	"""record - A set of labeled items """
-	want = 'reco'
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-records = record
+	def stop_log(self, _no_object=None, _attributes={}, **_arguments):
+		"""stop log: Stop event logging in the script editor
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'ToyS'
+		_subcode = 'log0'
 
-class item(aetools.ComponentItem):
-	"""item - An item of any type """
-	want = 'cobj'
-class id(aetools.NProperty):
-	"""id - the unique ID number of this object """
-	which = 'ID  '
-	want = 'long'
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-items = item
 
-class script(aetools.ComponentItem):
-	"""script - An AppleScript script """
-	want = 'scpt'
-class name(aetools.NProperty):
-	"""name - the name of the script """
-	which = 'pnam'
-	want = 'TEXT'
-class parent(aetools.NProperty):
-	"""parent - its parent, i.e. the script that will handle events that this script doesn\xd5t """
-	which = 'pare'
-	want = 'scpt'
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-scripts = script
+	def tell(self, _no_object=None, _attributes={}, **_arguments):
+		"""tell: Record or log a \xd4tell\xd5 statement
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'ascr'
+		_subcode = 'tell'
 
-class list_or_record(aetools.ComponentItem):
-	"""list or record - a list or record """
-	want = 'lr  '
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
-class list_or_string(aetools.ComponentItem):
-	"""list or string - a list or string """
-	want = 'ls  '
 
-class number_or_string(aetools.ComponentItem):
-	"""number or string - a number or string """
-	want = 'ns  '
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-class alias_or_string(aetools.ComponentItem):
-	"""alias or string - an alias or string """
-	want = 'sf  '
+	def _ad_(self, _object, _attributes={}, **_arguments):
+		"""\xad: Inequality
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = '\xad   '
 
-class list_2c__record_or_text(aetools.ComponentItem):
-	"""list, record or text - a list, record or text """
-	want = 'lrs '
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
 
-class number_or_date(aetools.ComponentItem):
-	"""number or date - a number or date """
-	want = 'nd  '
 
-class number_2c__date_or_text(aetools.ComponentItem):
-	"""number, date or text - a number, date or text """
-	want = 'nds '
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-class class_(aetools.ComponentItem):
-	"""class - the type of a value """
-	want = 'pcls'
-class _3c_Inheritance_3e_(aetools.NProperty):
-	"""<Inheritance> - inherits some of its properties from this class """
-	which = 'c@#^'
-	want = 'type'
+	def _b2_(self, _object, _attributes={}, **_arguments):
+		"""\xb2: Less than or equal to
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = '<=  '
 
-classes = class_
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
 
-class event(aetools.ComponentItem):
-	"""event - an AppleEvents event """
-	want = 'evnt'
 
-events = event
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-class property(aetools.ComponentItem):
-	"""property - an AppleEvents property """
-	want = 'prop'
+	def _b3_(self, _object, _attributes={}, **_arguments):
+		"""\xb3: Greater than or equal to
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = '>=  '
 
-properties = property
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
 
-class constant(aetools.ComponentItem):
-	"""constant - A constant value """
-	want = 'enum'
 
-constants = constant
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-class preposition(aetools.ComponentItem):
-	"""preposition - an AppleEvents preposition """
-	want = 'prep'
+	def _d6_(self, _object, _attributes={}, **_arguments):
+		"""\xd6: Division
+		Required argument: an AE object reference
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: anything
+		"""
+		_code = 'ascr'
+		_subcode = '/   '
 
-prepositions = preposition
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
 
-class reference_form(aetools.ComponentItem):
-	"""reference form - an AppleEvents key form """
-	want = 'kfrm'
 
-reference_forms = reference_form
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
 
-class handler(aetools.ComponentItem):
-	"""handler - an AppleScript event or subroutine handler """
-	want = 'hand'
 
-handlers = handler
+class empty_ae_name_(aetools.ComponentItem):
+	""" - the undefined value """
+	want = 'undf'
 
-class data(aetools.ComponentItem):
-	"""data - an AppleScript raw data object """
-	want = 'rdat'
+class April(aetools.ComponentItem):
+	"""April - the month of April """
+	want = 'apr '
 
-class text(aetools.ComponentItem):
-	"""text - text with language and style information """
-	want = 'ctxt'
-
-class international_text(aetools.ComponentItem):
-	"""international text -  """
-	want = 'itxt'
-
-international_text = international_text
-
-class string(aetools.ComponentItem):
-	"""string - text in 8-bit Macintosh Roman format """
-	want = 'TEXT'
-
-strings = string
-
-class styled_text(aetools.ComponentItem):
-	"""styled text -  """
-	want = 'STXT'
-
-styled_text = styled_text
-
-class styled_Clipboard_text(aetools.ComponentItem):
-	"""styled Clipboard text -  """
-	want = 'styl'
-
-styled_Clipboard_text = styled_Clipboard_text
-
-class Unicode_text(aetools.ComponentItem):
-	"""Unicode text -  """
-	want = 'utxt'
-
-Unicode_text = Unicode_text
-
-class styled_Unicode_text(aetools.ComponentItem):
-	"""styled Unicode text -  """
-	want = 'sutx'
-
-styled_Unicode_text = styled_Unicode_text
-
-class encoded_string(aetools.ComponentItem):
-	"""encoded string - text encoded using the Text Encoding Converter """
-	want = 'encs'
-
-encoded_strings = encoded_string
+class August(aetools.ComponentItem):
+	"""August - the month of August """
+	want = 'aug '
 
 class C_string(aetools.ComponentItem):
 	"""C string - text followed by a null """
@@ -954,65 +758,55 @@ class C_string(aetools.ComponentItem):
 
 C_strings = C_string
 
+class December(aetools.ComponentItem):
+	"""December - the month of December """
+	want = 'dec '
+
+class February(aetools.ComponentItem):
+	"""February - the month of February """
+	want = 'feb '
+
+class Friday(aetools.ComponentItem):
+	"""Friday - Friday """
+	want = 'fri '
+
+class January(aetools.ComponentItem):
+	"""January - the month of January """
+	want = 'jan '
+
+class July(aetools.ComponentItem):
+	"""July - the month of July """
+	want = 'jul '
+
+class June(aetools.ComponentItem):
+	"""June - the month of June """
+	want = 'jun '
+
+class March(aetools.ComponentItem):
+	"""March - the month of March """
+	want = 'mar '
+
+class May(aetools.ComponentItem):
+	"""May - the month of May """
+	want = 'may '
+
+class Monday(aetools.ComponentItem):
+	"""Monday - Monday """
+	want = 'mon '
+
+class November(aetools.ComponentItem):
+	"""November - the month of November """
+	want = 'nov '
+
+class October(aetools.ComponentItem):
+	"""October - the month of October """
+	want = 'oct '
+
 class Pascal_string(aetools.ComponentItem):
 	"""Pascal string - text up to 255 characters preceded by a length byte """
 	want = 'pstr'
 
 Pascal_strings = Pascal_string
-
-class character(aetools.ComponentItem):
-	"""character - an individual text character """
-	want = 'cha '
-
-characters = character
-
-class text_item(aetools.ComponentItem):
-	"""text item - text between delimiters """
-	want = 'citm'
-
-text_items = text_item
-
-class writing_code(aetools.ComponentItem):
-	"""writing code - codes that identify the language and script system """
-	want = 'psct'
-
-class writing_code_info(aetools.ComponentItem):
-	"""writing code info - script code and language code of text run """
-	want = 'citl'
-class script_code(aetools.NProperty):
-	"""script code - the script code for the text """
-	which = 'pscd'
-	want = 'shor'
-class language_code(aetools.NProperty):
-	"""language code - the language code for the text """
-	which = 'plcd'
-	want = 'shor'
-
-writing_code_infos = writing_code_info
-
-class empty_ae_name_(aetools.ComponentItem):
-	""" - the undefined value """
-	want = 'undf'
-
-class missing_value(aetools.ComponentItem):
-	"""missing value - unavailable value, such as properties missing from heterogeneous classes in a Whose clause """
-	want = 'msng'
-
-missing_values = missing_value
-
-class reference(aetools.ComponentItem):
-	"""reference - an AppleScript reference """
-	want = 'obj '
-
-references = reference
-
-class anything(aetools.ComponentItem):
-	"""anything - any class or reference """
-	want = '****'
-
-class type_class(aetools.ComponentItem):
-	"""type class - the name of a particular class (or any four-character code) """
-	want = 'type'
 
 class RGB_color(aetools.ComponentItem):
 	"""RGB color - Three integers specifying red, green, blue color values """
@@ -1020,317 +814,49 @@ class RGB_color(aetools.ComponentItem):
 
 RGB_colors = RGB_color
 
-class picture(aetools.ComponentItem):
-	"""picture - A QuickDraw picture object """
-	want = 'PICT'
-
-pictures = picture
-
-class sound(aetools.ComponentItem):
-	"""sound - a sound object on the clipboard """
-	want = 'snd '
-
-sounds = sound
-
-class version(aetools.ComponentItem):
-	"""version - a version value """
-	want = 'vers'
-
-class file_specification(aetools.ComponentItem):
-	"""file specification - a file specification as used by the operating system """
-	want = 'fss '
-
-file_specifications = file_specification
-
-class alias(aetools.ComponentItem):
-	"""alias - a file on a disk or server.  The file must exist when you check the syntax of your script. """
-	want = 'alis'
-
-aliases = alias
-
-class machine(aetools.ComponentItem):
-	"""machine - a computer """
-	want = 'mach'
-
-machines = machine
-
-class zone(aetools.ComponentItem):
-	"""zone - an AppleTalk zone """
-	want = 'zone'
-
-zones = zone
-
-class keystroke(aetools.ComponentItem):
-	"""keystroke - a press of a key combination on a Macintosh keyboard """
-	want = 'kprs'
-class key(aetools.NProperty):
-	"""key - the character for the key was pressed (ignoring modifiers) """
-	which = 'kMsg'
-	want = 'cha '
-class modifiers(aetools.NProperty):
-	"""modifiers - the modifier keys pressed in combination """
-	which = 'kMod'
-	want = 'eMds'
-class key_kind(aetools.NProperty):
-	"""key kind - the kind of key that was pressed """
-	which = 'kknd'
-	want = 'ekst'
-
-keystrokes = keystroke
-
-class seconds(aetools.ComponentItem):
-	"""seconds - more than one second """
-	want = 'scnd'
-
-class date(aetools.ComponentItem):
-	"""date - Absolute date and time values """
-	want = 'ldt '
-class weekday(aetools.NProperty):
-	"""weekday - the day of a week of a date """
-	which = 'wkdy'
-	want = 'wkdy'
-class month(aetools.NProperty):
-	"""month - the month of a date """
-	which = 'mnth'
-	want = 'mnth'
-class day(aetools.NProperty):
-	"""day - the day of the month of a date """
-	which = 'day '
-	want = 'long'
-class year(aetools.NProperty):
-	"""year - the year of a date """
-	which = 'year'
-	want = 'long'
-class time(aetools.NProperty):
-	"""time - the time since midnight of a date """
-	which = 'time'
-	want = 'long'
-class date_string(aetools.NProperty):
-	"""date string - the date portion of a date-time value as text """
-	which = 'dstr'
-	want = 'TEXT'
-class time_string(aetools.NProperty):
-	"""time string - the time portion of a date-time value as text """
-	which = 'tstr'
-	want = 'TEXT'
-
-dates = date
-
-class month(aetools.ComponentItem):
-	"""month - a month """
-	want = 'mnth'
-
-months = month
-
-class January(aetools.ComponentItem):
-	"""January - the month of January """
-	want = 'jan '
-
-class February(aetools.ComponentItem):
-	"""February - the month of February """
-	want = 'feb '
-
-class March(aetools.ComponentItem):
-	"""March - the month of March """
-	want = 'mar '
-
-class April(aetools.ComponentItem):
-	"""April - the month of April """
-	want = 'apr '
-
-class May(aetools.ComponentItem):
-	"""May - the month of May """
-	want = 'may '
-
-class June(aetools.ComponentItem):
-	"""June - the month of June """
-	want = 'jun '
-
-class July(aetools.ComponentItem):
-	"""July - the month of July """
-	want = 'jul '
-
-class August(aetools.ComponentItem):
-	"""August - the month of August """
-	want = 'aug '
+class Saturday(aetools.ComponentItem):
+	"""Saturday - Saturday """
+	want = 'sat '
 
 class September(aetools.ComponentItem):
 	"""September - the month of September """
 	want = 'sep '
 
-class October(aetools.ComponentItem):
-	"""October - the month of October """
-	want = 'oct '
-
-class November(aetools.ComponentItem):
-	"""November - the month of November """
-	want = 'nov '
-
-class December(aetools.ComponentItem):
-	"""December - the month of December """
-	want = 'dec '
-
-class weekday(aetools.ComponentItem):
-	"""weekday - a weekday """
-	want = 'wkdy'
-
-weekdays = weekday
-
 class Sunday(aetools.ComponentItem):
 	"""Sunday - Sunday """
 	want = 'sun '
-
-class Monday(aetools.ComponentItem):
-	"""Monday - Monday """
-	want = 'mon '
-
-class Tuesday(aetools.ComponentItem):
-	"""Tuesday - Tuesday """
-	want = 'tue '
-
-class Wednesday(aetools.ComponentItem):
-	"""Wednesday - Wednesday """
-	want = 'wed '
 
 class Thursday(aetools.ComponentItem):
 	"""Thursday - Thursday """
 	want = 'thu '
 
-class Friday(aetools.ComponentItem):
-	"""Friday - Friday """
-	want = 'fri '
+class Tuesday(aetools.ComponentItem):
+	"""Tuesday - Tuesday """
+	want = 'tue '
 
-class Saturday(aetools.ComponentItem):
-	"""Saturday - Saturday """
-	want = 'sat '
+class Unicode_text(aetools.ComponentItem):
+	"""Unicode text -  """
+	want = 'utxt'
 
-class metres(aetools.ComponentItem):
-	"""metres - a distance measurement in SI meters """
-	want = 'metr'
+Unicode_text = Unicode_text
 
-meters = metres
+class Wednesday(aetools.ComponentItem):
+	"""Wednesday - Wednesday """
+	want = 'wed '
 
-class inches(aetools.ComponentItem):
-	"""inches - a distance measurement in Imperial inches """
-	want = 'inch'
+class alias(aetools.ComponentItem):
+	"""alias - a file on a disk or server.  The file must exist when you check the syntax of your script. """
+	want = 'alis'
 
-class feet(aetools.ComponentItem):
-	"""feet - a distance measurement in Imperial feet """
-	want = 'feet'
+class alias_or_string(aetools.ComponentItem):
+	"""alias or string - an alias or string """
+	want = 'sf  '
 
-class yards(aetools.ComponentItem):
-	"""yards - a distance measurement in Imperial yards """
-	want = 'yard'
+aliases = alias
 
-class miles(aetools.ComponentItem):
-	"""miles - a distance measurement in Imperial miles """
-	want = 'mile'
-
-class kilometres(aetools.ComponentItem):
-	"""kilometres - a distance measurement in SI kilometers """
-	want = 'kmtr'
-
-kilometers = kilometres
-
-class centimetres(aetools.ComponentItem):
-	"""centimetres - a distance measurement in SI centimeters """
-	want = 'cmtr'
-
-centimeters = centimetres
-
-class square_metres(aetools.ComponentItem):
-	"""square metres - an area measurement in SI square meters """
-	want = 'sqrm'
-
-square_meters = square_metres
-
-class square_feet(aetools.ComponentItem):
-	"""square feet - an area measurement in Imperial square feet """
-	want = 'sqft'
-
-class square_yards(aetools.ComponentItem):
-	"""square yards - an area measurement in Imperial square yards """
-	want = 'sqyd'
-
-class square_miles(aetools.ComponentItem):
-	"""square miles - an area measurement in Imperial square miles """
-	want = 'sqmi'
-
-class square_kilometres(aetools.ComponentItem):
-	"""square kilometres - an area measurement in SI square kilometers """
-	want = 'sqkm'
-
-square_kilometers = square_kilometres
-
-class litres(aetools.ComponentItem):
-	"""litres - a volume measurement in SI liters """
-	want = 'litr'
-
-liters = litres
-
-class gallons(aetools.ComponentItem):
-	"""gallons - a volume measurement in Imperial gallons """
-	want = 'galn'
-
-class quarts(aetools.ComponentItem):
-	"""quarts - a volume measurement in Imperial quarts """
-	want = 'qrts'
-
-class cubic_metres(aetools.ComponentItem):
-	"""cubic metres - a volume measurement in SI cubic meters """
-	want = 'cmet'
-
-cubic_meters = cubic_metres
-
-class cubic_centimetres(aetools.ComponentItem):
-	"""cubic centimetres - a volume measurement in SI cubic centimeters """
-	want = 'ccmt'
-
-cubic_centimeters = cubic_centimetres
-
-class cubic_feet(aetools.ComponentItem):
-	"""cubic feet - a volume measurement in Imperial cubic feet """
-	want = 'cfet'
-
-class cubic_inches(aetools.ComponentItem):
-	"""cubic inches - a volume measurement in Imperial cubic inches """
-	want = 'cuin'
-
-class cubic_yards(aetools.ComponentItem):
-	"""cubic yards - a distance measurement in Imperial cubic yards """
-	want = 'cyrd'
-
-class kilograms(aetools.ComponentItem):
-	"""kilograms - a mass measurement in SI kilograms """
-	want = 'kgrm'
-
-class grams(aetools.ComponentItem):
-	"""grams - a mass measurement in SI meters """
-	want = 'gram'
-
-class ounces(aetools.ComponentItem):
-	"""ounces - a weight measurement in SI meters """
-	want = 'ozs '
-
-class pounds(aetools.ComponentItem):
-	"""pounds - a weight measurement in SI meters """
-	want = 'lbs '
-
-class degrees_Celsius(aetools.ComponentItem):
-	"""degrees Celsius - a temperature measurement in SI degrees Celsius """
-	want = 'degc'
-
-class degrees_Fahrenheit(aetools.ComponentItem):
-	"""degrees Fahrenheit - a temperature measurement in degrees Fahrenheit """
-	want = 'degf'
-
-class degrees_Kelvin(aetools.ComponentItem):
-	"""degrees Kelvin - a temperature measurement in degrees Kelvin """
-	want = 'degk'
-
-class upper_case(aetools.ComponentItem):
-	"""upper case - Text with lower case converted to upper case """
-	want = 'case'
+class anything(aetools.ComponentItem):
+	"""anything - any class or reference """
+	want = '****'
 
 class app(aetools.ComponentItem):
 	"""app - Short name for application """
@@ -1391,98 +917,639 @@ class AppleScript(aetools.NProperty):
 	want = 'scpt'
 
 applications = app
-boolean._superclassnames = []
-boolean._privpropdict = {
+
+class boolean(aetools.ComponentItem):
+	"""boolean - A true or false value """
+	want = 'bool'
+
+booleans = boolean
+
+class centimeters(aetools.ComponentItem):
+	"""centimeters - a distance measurement in SI centimeters """
+	want = 'cmtr'
+
+centimetres = centimeters
+
+class character(aetools.ComponentItem):
+	"""character - an individual text character """
+	want = 'cha '
+
+characters = character
+
+class class_(aetools.ComponentItem):
+	"""class - the type of a value """
+	want = 'pcls'
+class _3c_Inheritance_3e_(aetools.NProperty):
+	"""<Inheritance> - inherits some of its properties from this class """
+	which = 'c@#^'
+	want = 'type'
+
+classes = class_
+
+class constant(aetools.ComponentItem):
+	"""constant - A constant value """
+	want = 'enum'
+
+constants = constant
+
+class cubic_centimeters(aetools.ComponentItem):
+	"""cubic centimeters - a volume measurement in SI cubic centimeters """
+	want = 'ccmt'
+
+cubic_centimetres = cubic_centimeters
+
+class cubic_feet(aetools.ComponentItem):
+	"""cubic feet - a volume measurement in Imperial cubic feet """
+	want = 'cfet'
+
+class cubic_inches(aetools.ComponentItem):
+	"""cubic inches - a volume measurement in Imperial cubic inches """
+	want = 'cuin'
+
+class cubic_meters(aetools.ComponentItem):
+	"""cubic meters - a volume measurement in SI cubic meters """
+	want = 'cmet'
+
+cubic_metres = cubic_meters
+
+class cubic_yards(aetools.ComponentItem):
+	"""cubic yards - a distance measurement in Imperial cubic yards """
+	want = 'cyrd'
+
+class data(aetools.ComponentItem):
+	"""data - an AppleScript raw data object """
+	want = 'rdat'
+
+class date(aetools.ComponentItem):
+	"""date - Absolute date and time values """
+	want = 'ldt '
+class weekday(aetools.NProperty):
+	"""weekday - the day of a week of a date """
+	which = 'wkdy'
+	want = 'wkdy'
+class month(aetools.NProperty):
+	"""month - the month of a date """
+	which = 'mnth'
+	want = 'mnth'
+class day(aetools.NProperty):
+	"""day - the day of the month of a date """
+	which = 'day '
+	want = 'long'
+class year(aetools.NProperty):
+	"""year - the year of a date """
+	which = 'year'
+	want = 'long'
+class time(aetools.NProperty):
+	"""time - the time since midnight of a date """
+	which = 'time'
+	want = 'long'
+class date_string(aetools.NProperty):
+	"""date string - the date portion of a date-time value as text """
+	which = 'dstr'
+	want = 'TEXT'
+class time_string(aetools.NProperty):
+	"""time string - the time portion of a date-time value as text """
+	which = 'tstr'
+	want = 'TEXT'
+
+dates = date
+
+class degrees_Celsius(aetools.ComponentItem):
+	"""degrees Celsius - a temperature measurement in SI degrees Celsius """
+	want = 'degc'
+
+class degrees_Fahrenheit(aetools.ComponentItem):
+	"""degrees Fahrenheit - a temperature measurement in degrees Fahrenheit """
+	want = 'degf'
+
+class degrees_Kelvin(aetools.ComponentItem):
+	"""degrees Kelvin - a temperature measurement in degrees Kelvin """
+	want = 'degk'
+
+class encoded_string(aetools.ComponentItem):
+	"""encoded string - text encoded using the Text Encoding Converter """
+	want = 'encs'
+
+encoded_strings = encoded_string
+
+class event(aetools.ComponentItem):
+	"""event - an AppleEvents event """
+	want = 'evnt'
+
+events = event
+
+class feet(aetools.ComponentItem):
+	"""feet - a distance measurement in Imperial feet """
+	want = 'feet'
+
+class file_specification(aetools.ComponentItem):
+	"""file specification - a file specification as used by the operating system """
+	want = 'fss '
+
+file_specifications = file_specification
+
+class gallons(aetools.ComponentItem):
+	"""gallons - a volume measurement in Imperial gallons """
+	want = 'galn'
+
+class grams(aetools.ComponentItem):
+	"""grams - a mass measurement in SI meters """
+	want = 'gram'
+
+class handler(aetools.ComponentItem):
+	"""handler - an AppleScript event or subroutine handler """
+	want = 'hand'
+
+handlers = handler
+
+class inches(aetools.ComponentItem):
+	"""inches - a distance measurement in Imperial inches """
+	want = 'inch'
+
+class integer(aetools.ComponentItem):
+	"""integer - An integral number """
+	want = 'long'
+
+integers = integer
+
+class international_text(aetools.ComponentItem):
+	"""international text -  """
+	want = 'itxt'
+
+international_text = international_text
+
+class item(aetools.ComponentItem):
+	"""item - An item of any type """
+	want = 'cobj'
+class id(aetools.NProperty):
+	"""id - the unique ID number of this object """
+	which = 'ID  '
+	want = 'long'
+
+items = item
+
+class keystroke(aetools.ComponentItem):
+	"""keystroke - a press of a key combination on a Macintosh keyboard """
+	want = 'kprs'
+class key(aetools.NProperty):
+	"""key - the character for the key was pressed (ignoring modifiers) """
+	which = 'kMsg'
+	want = 'cha '
+class modifiers(aetools.NProperty):
+	"""modifiers - the modifier keys pressed in combination """
+	which = 'kMod'
+	want = 'eMds'
+class key_kind(aetools.NProperty):
+	"""key kind - the kind of key that was pressed """
+	which = 'kknd'
+	want = 'ekst'
+
+keystrokes = keystroke
+
+class kilograms(aetools.ComponentItem):
+	"""kilograms - a mass measurement in SI kilograms """
+	want = 'kgrm'
+
+class kilometers(aetools.ComponentItem):
+	"""kilometers - a distance measurement in SI kilometers """
+	want = 'kmtr'
+
+kilometres = kilometers
+
+class linked_list(aetools.ComponentItem):
+	"""linked list - An ordered collection of items """
+	want = 'llst'
+class length(aetools.NProperty):
+	"""length - the length of a list """
+	which = 'leng'
+	want = 'long'
+
+linked_lists = linked_list
+
+class list(aetools.ComponentItem):
+	"""list - An ordered collection of items """
+	want = 'list'
+class reverse(aetools.NProperty):
+	"""reverse - the items of the list in reverse order """
+	which = 'rvse'
+	want = 'list'
+class rest(aetools.NProperty):
+	"""rest - all items of the list excluding first """
+	which = 'rest'
+	want = 'list'
+
+class list_or_record(aetools.ComponentItem):
+	"""list or record - a list or record """
+	want = 'lr  '
+
+class list_or_string(aetools.ComponentItem):
+	"""list or string - a list or string """
+	want = 'ls  '
+
+class list_2c__record_or_text(aetools.ComponentItem):
+	"""list, record or text - a list, record or text """
+	want = 'lrs '
+
+lists = list
+
+class liters(aetools.ComponentItem):
+	"""liters - a volume measurement in SI liters """
+	want = 'litr'
+
+litres = liters
+
+class machine(aetools.ComponentItem):
+	"""machine - a computer """
+	want = 'mach'
+
+machines = machine
+
+class meters(aetools.ComponentItem):
+	"""meters - a distance measurement in SI meters """
+	want = 'metr'
+
+metres = meters
+
+class miles(aetools.ComponentItem):
+	"""miles - a distance measurement in Imperial miles """
+	want = 'mile'
+
+class missing_value(aetools.ComponentItem):
+	"""missing value - unavailable value, such as properties missing from heterogeneous classes in a Whose clause """
+	want = 'msng'
+
+missing_values = missing_value
+
+class month(aetools.ComponentItem):
+	"""month - a month """
+	want = 'mnth'
+
+months = month
+
+class number(aetools.ComponentItem):
+	"""number - an integer or real number """
+	want = 'nmbr'
+
+class number_or_date(aetools.ComponentItem):
+	"""number or date - a number or date """
+	want = 'nd  '
+
+class number_or_string(aetools.ComponentItem):
+	"""number or string - a number or string """
+	want = 'ns  '
+
+class number_2c__date_or_text(aetools.ComponentItem):
+	"""number, date or text - a number, date or text """
+	want = 'nds '
+
+numbers = number
+
+class ounces(aetools.ComponentItem):
+	"""ounces - a weight measurement in SI meters """
+	want = 'ozs '
+
+class picture(aetools.ComponentItem):
+	"""picture - A QuickDraw picture object """
+	want = 'PICT'
+
+pictures = picture
+
+class pounds(aetools.ComponentItem):
+	"""pounds - a weight measurement in SI meters """
+	want = 'lbs '
+
+class preposition(aetools.ComponentItem):
+	"""preposition - an AppleEvents preposition """
+	want = 'prep'
+
+prepositions = preposition
+
+class properties(aetools.ComponentItem):
+	"""properties -  """
+	want = 'prop'
+
+property = properties
+
+class quarts(aetools.ComponentItem):
+	"""quarts - a volume measurement in Imperial quarts """
+	want = 'qrts'
+
+class real(aetools.ComponentItem):
+	"""real - A real number """
+	want = 'doub'
+
+reals = real
+
+class record(aetools.ComponentItem):
+	"""record - A set of labeled items """
+	want = 'reco'
+
+records = record
+
+class reference(aetools.ComponentItem):
+	"""reference - an AppleScript reference """
+	want = 'obj '
+
+class reference_form(aetools.ComponentItem):
+	"""reference form - an AppleEvents key form """
+	want = 'kfrm'
+
+reference_forms = reference_form
+
+references = reference
+
+class script(aetools.ComponentItem):
+	"""script - An AppleScript script """
+	want = 'scpt'
+class name(aetools.NProperty):
+	"""name - the name of the script """
+	which = 'pnam'
+	want = 'TEXT'
+class parent(aetools.NProperty):
+	"""parent - its parent, i.e. the script that will handle events that this script doesn\xd5t """
+	which = 'pare'
+	want = 'scpt'
+
+scripts = script
+
+class seconds(aetools.ComponentItem):
+	"""seconds - more than one second """
+	want = 'scnd'
+
+class sound(aetools.ComponentItem):
+	"""sound - a sound object on the clipboard """
+	want = 'snd '
+
+sounds = sound
+
+class square_feet(aetools.ComponentItem):
+	"""square feet - an area measurement in Imperial square feet """
+	want = 'sqft'
+
+class square_kilometers(aetools.ComponentItem):
+	"""square kilometers - an area measurement in SI square kilometers """
+	want = 'sqkm'
+
+square_kilometres = square_kilometers
+
+class square_meters(aetools.ComponentItem):
+	"""square meters - an area measurement in SI square meters """
+	want = 'sqrm'
+
+square_metres = square_meters
+
+class square_miles(aetools.ComponentItem):
+	"""square miles - an area measurement in Imperial square miles """
+	want = 'sqmi'
+
+class square_yards(aetools.ComponentItem):
+	"""square yards - an area measurement in Imperial square yards """
+	want = 'sqyd'
+
+class string(aetools.ComponentItem):
+	"""string - text in 8-bit Macintosh Roman format """
+	want = 'TEXT'
+
+strings = string
+
+class styled_Clipboard_text(aetools.ComponentItem):
+	"""styled Clipboard text -  """
+	want = 'styl'
+
+styled_Clipboard_text = styled_Clipboard_text
+
+class styled_Unicode_text(aetools.ComponentItem):
+	"""styled Unicode text -  """
+	want = 'sutx'
+
+styled_Unicode_text = styled_Unicode_text
+
+class styled_text(aetools.ComponentItem):
+	"""styled text -  """
+	want = 'STXT'
+
+styled_text = styled_text
+
+class text(aetools.ComponentItem):
+	"""text - text with language and style information """
+	want = 'ctxt'
+
+class text_item(aetools.ComponentItem):
+	"""text item - text between delimiters """
+	want = 'citm'
+
+text_items = text_item
+
+class type_class(aetools.ComponentItem):
+	"""type class - the name of a particular class (or any four-character code) """
+	want = 'type'
+
+class upper_case(aetools.ComponentItem):
+	"""upper case - Text with lower case converted to upper case """
+	want = 'case'
+
+class vector(aetools.ComponentItem):
+	"""vector - An ordered collection of items """
+	want = 'vect'
+
+vectors = vector
+
+class version(aetools.ComponentItem):
+	"""version - a version value """
+	want = 'vers'
+
+class weekday(aetools.ComponentItem):
+	"""weekday - a weekday """
+	want = 'wkdy'
+
+weekdays = weekday
+
+class writing_code(aetools.ComponentItem):
+	"""writing code - codes that identify the language and script system """
+	want = 'psct'
+
+class writing_code_info(aetools.ComponentItem):
+	"""writing code info - script code and language code of text run """
+	want = 'citl'
+class script_code(aetools.NProperty):
+	"""script code - the script code for the text """
+	which = 'pscd'
+	want = 'shor'
+class language_code(aetools.NProperty):
+	"""language code - the language code for the text """
+	which = 'plcd'
+	want = 'shor'
+
+writing_code_infos = writing_code_info
+
+class yards(aetools.ComponentItem):
+	"""yards - a distance measurement in Imperial yards """
+	want = 'yard'
+
+class zone(aetools.ComponentItem):
+	"""zone - an AppleTalk zone """
+	want = 'zone'
+
+zones = zone
+empty_ae_name_._superclassnames = []
+empty_ae_name_._privpropdict = {
 }
-boolean._privelemdict = {
+empty_ae_name_._privelemdict = {
 }
-integer._superclassnames = []
-integer._privpropdict = {
+April._superclassnames = []
+April._privpropdict = {
 }
-integer._privelemdict = {
+April._privelemdict = {
 }
-real._superclassnames = []
-real._privpropdict = {
+August._superclassnames = []
+August._privpropdict = {
 }
-real._privelemdict = {
+August._privelemdict = {
 }
-number._superclassnames = []
-number._privpropdict = {
+C_string._superclassnames = []
+C_string._privpropdict = {
 }
-number._privelemdict = {
+C_string._privelemdict = {
 }
-list._superclassnames = []
-list._privpropdict = {
-	'length' : length,
-	'reverse' : reverse,
-	'rest' : rest,
+December._superclassnames = []
+December._privpropdict = {
 }
-list._privelemdict = {
+December._privelemdict = {
 }
-linked_list._superclassnames = []
-linked_list._privpropdict = {
-	'length' : length,
+February._superclassnames = []
+February._privpropdict = {
 }
-linked_list._privelemdict = {
+February._privelemdict = {
 }
-vector._superclassnames = []
-vector._privpropdict = {
-	'length' : length,
+Friday._superclassnames = []
+Friday._privpropdict = {
 }
-vector._privelemdict = {
+Friday._privelemdict = {
 }
-record._superclassnames = []
-record._privpropdict = {
+January._superclassnames = []
+January._privpropdict = {
 }
-record._privelemdict = {
+January._privelemdict = {
 }
-item._superclassnames = []
-item._privpropdict = {
-	'id' : id,
+July._superclassnames = []
+July._privpropdict = {
 }
-item._privelemdict = {
+July._privelemdict = {
 }
-script._superclassnames = []
-script._privpropdict = {
-	'name' : name,
-	'parent' : parent,
+June._superclassnames = []
+June._privpropdict = {
 }
-script._privelemdict = {
+June._privelemdict = {
 }
-list_or_record._superclassnames = []
-list_or_record._privpropdict = {
+March._superclassnames = []
+March._privpropdict = {
 }
-list_or_record._privelemdict = {
+March._privelemdict = {
 }
-list_or_string._superclassnames = []
-list_or_string._privpropdict = {
+May._superclassnames = []
+May._privpropdict = {
 }
-list_or_string._privelemdict = {
+May._privelemdict = {
 }
-number_or_string._superclassnames = []
-number_or_string._privpropdict = {
+Monday._superclassnames = []
+Monday._privpropdict = {
 }
-number_or_string._privelemdict = {
+Monday._privelemdict = {
+}
+November._superclassnames = []
+November._privpropdict = {
+}
+November._privelemdict = {
+}
+October._superclassnames = []
+October._privpropdict = {
+}
+October._privelemdict = {
+}
+Pascal_string._superclassnames = []
+Pascal_string._privpropdict = {
+}
+Pascal_string._privelemdict = {
+}
+RGB_color._superclassnames = []
+RGB_color._privpropdict = {
+}
+RGB_color._privelemdict = {
+}
+Saturday._superclassnames = []
+Saturday._privpropdict = {
+}
+Saturday._privelemdict = {
+}
+September._superclassnames = []
+September._privpropdict = {
+}
+September._privelemdict = {
+}
+Sunday._superclassnames = []
+Sunday._privpropdict = {
+}
+Sunday._privelemdict = {
+}
+Thursday._superclassnames = []
+Thursday._privpropdict = {
+}
+Thursday._privelemdict = {
+}
+Tuesday._superclassnames = []
+Tuesday._privpropdict = {
+}
+Tuesday._privelemdict = {
+}
+Unicode_text._superclassnames = []
+Unicode_text._privpropdict = {
+}
+Unicode_text._privelemdict = {
+}
+Unicode_text._superclassnames = []
+Unicode_text._privpropdict = {
+}
+Unicode_text._privelemdict = {
+}
+Wednesday._superclassnames = []
+Wednesday._privpropdict = {
+}
+Wednesday._privelemdict = {
+}
+alias._superclassnames = []
+alias._privpropdict = {
+}
+alias._privelemdict = {
 }
 alias_or_string._superclassnames = []
 alias_or_string._privpropdict = {
 }
 alias_or_string._privelemdict = {
 }
-list_2c__record_or_text._superclassnames = []
-list_2c__record_or_text._privpropdict = {
+anything._superclassnames = []
+anything._privpropdict = {
 }
-list_2c__record_or_text._privelemdict = {
+anything._privelemdict = {
 }
-number_or_date._superclassnames = []
-number_or_date._privpropdict = {
+app._superclassnames = []
+app._privpropdict = {
 }
-number_or_date._privelemdict = {
+app._privelemdict = {
 }
-number_2c__date_or_text._superclassnames = []
-number_2c__date_or_text._privpropdict = {
+boolean._superclassnames = []
+boolean._privpropdict = {
 }
-number_2c__date_or_text._privelemdict = {
+boolean._privelemdict = {
+}
+centimeters._superclassnames = []
+centimeters._privpropdict = {
+}
+centimeters._privelemdict = {
+}
+character._superclassnames = []
+character._privpropdict = {
+}
+character._privelemdict = {
 }
 class_._superclassnames = ['type_class']
 class_._privpropdict = {
@@ -1490,215 +1557,40 @@ class_._privpropdict = {
 }
 class_._privelemdict = {
 }
-event._superclassnames = []
-event._privpropdict = {
-}
-event._privelemdict = {
-}
-property._superclassnames = []
-property._privpropdict = {
-}
-property._privelemdict = {
-}
 constant._superclassnames = []
 constant._privpropdict = {
 }
 constant._privelemdict = {
 }
-preposition._superclassnames = []
-preposition._privpropdict = {
+cubic_centimeters._superclassnames = []
+cubic_centimeters._privpropdict = {
 }
-preposition._privelemdict = {
+cubic_centimeters._privelemdict = {
 }
-reference_form._superclassnames = []
-reference_form._privpropdict = {
+cubic_feet._superclassnames = []
+cubic_feet._privpropdict = {
 }
-reference_form._privelemdict = {
+cubic_feet._privelemdict = {
 }
-handler._superclassnames = []
-handler._privpropdict = {
+cubic_inches._superclassnames = []
+cubic_inches._privpropdict = {
 }
-handler._privelemdict = {
+cubic_inches._privelemdict = {
+}
+cubic_meters._superclassnames = []
+cubic_meters._privpropdict = {
+}
+cubic_meters._privelemdict = {
+}
+cubic_yards._superclassnames = []
+cubic_yards._privpropdict = {
+}
+cubic_yards._privelemdict = {
 }
 data._superclassnames = []
 data._privpropdict = {
 }
 data._privelemdict = {
-}
-text._superclassnames = []
-text._privpropdict = {
-}
-text._privelemdict = {
-}
-international_text._superclassnames = []
-international_text._privpropdict = {
-}
-international_text._privelemdict = {
-}
-international_text._superclassnames = []
-international_text._privpropdict = {
-}
-international_text._privelemdict = {
-}
-string._superclassnames = []
-string._privpropdict = {
-}
-string._privelemdict = {
-}
-styled_text._superclassnames = []
-styled_text._privpropdict = {
-}
-styled_text._privelemdict = {
-}
-styled_text._superclassnames = []
-styled_text._privpropdict = {
-}
-styled_text._privelemdict = {
-}
-styled_Clipboard_text._superclassnames = []
-styled_Clipboard_text._privpropdict = {
-}
-styled_Clipboard_text._privelemdict = {
-}
-styled_Clipboard_text._superclassnames = []
-styled_Clipboard_text._privpropdict = {
-}
-styled_Clipboard_text._privelemdict = {
-}
-Unicode_text._superclassnames = []
-Unicode_text._privpropdict = {
-}
-Unicode_text._privelemdict = {
-}
-Unicode_text._superclassnames = []
-Unicode_text._privpropdict = {
-}
-Unicode_text._privelemdict = {
-}
-styled_Unicode_text._superclassnames = []
-styled_Unicode_text._privpropdict = {
-}
-styled_Unicode_text._privelemdict = {
-}
-styled_Unicode_text._superclassnames = []
-styled_Unicode_text._privpropdict = {
-}
-styled_Unicode_text._privelemdict = {
-}
-encoded_string._superclassnames = []
-encoded_string._privpropdict = {
-}
-encoded_string._privelemdict = {
-}
-C_string._superclassnames = []
-C_string._privpropdict = {
-}
-C_string._privelemdict = {
-}
-Pascal_string._superclassnames = []
-Pascal_string._privpropdict = {
-}
-Pascal_string._privelemdict = {
-}
-character._superclassnames = []
-character._privpropdict = {
-}
-character._privelemdict = {
-}
-text_item._superclassnames = []
-text_item._privpropdict = {
-}
-text_item._privelemdict = {
-}
-writing_code._superclassnames = []
-writing_code._privpropdict = {
-}
-writing_code._privelemdict = {
-}
-writing_code_info._superclassnames = []
-writing_code_info._privpropdict = {
-	'script_code' : script_code,
-	'language_code' : language_code,
-}
-writing_code_info._privelemdict = {
-}
-empty_ae_name_._superclassnames = []
-empty_ae_name_._privpropdict = {
-}
-empty_ae_name_._privelemdict = {
-}
-missing_value._superclassnames = []
-missing_value._privpropdict = {
-}
-missing_value._privelemdict = {
-}
-reference._superclassnames = []
-reference._privpropdict = {
-}
-reference._privelemdict = {
-}
-anything._superclassnames = []
-anything._privpropdict = {
-}
-anything._privelemdict = {
-}
-type_class._superclassnames = []
-type_class._privpropdict = {
-}
-type_class._privelemdict = {
-}
-RGB_color._superclassnames = []
-RGB_color._privpropdict = {
-}
-RGB_color._privelemdict = {
-}
-picture._superclassnames = []
-picture._privpropdict = {
-}
-picture._privelemdict = {
-}
-sound._superclassnames = []
-sound._privpropdict = {
-}
-sound._privelemdict = {
-}
-version._superclassnames = []
-version._privpropdict = {
-}
-version._privelemdict = {
-}
-file_specification._superclassnames = []
-file_specification._privpropdict = {
-}
-file_specification._privelemdict = {
-}
-alias._superclassnames = []
-alias._privpropdict = {
-}
-alias._privelemdict = {
-}
-machine._superclassnames = []
-machine._privpropdict = {
-}
-machine._privelemdict = {
-}
-zone._superclassnames = []
-zone._privpropdict = {
-}
-zone._privelemdict = {
-}
-keystroke._superclassnames = []
-keystroke._privpropdict = {
-	'key' : key,
-	'modifiers' : modifiers,
-	'key_kind' : key_kind,
-}
-keystroke._privelemdict = {
-}
-seconds._superclassnames = []
-seconds._privpropdict = {
-}
-seconds._privelemdict = {
 }
 date._superclassnames = []
 date._privpropdict = {
@@ -1711,231 +1603,6 @@ date._privpropdict = {
 	'time_string' : time_string,
 }
 date._privelemdict = {
-}
-month._superclassnames = []
-month._privpropdict = {
-}
-month._privelemdict = {
-}
-January._superclassnames = []
-January._privpropdict = {
-}
-January._privelemdict = {
-}
-February._superclassnames = []
-February._privpropdict = {
-}
-February._privelemdict = {
-}
-March._superclassnames = []
-March._privpropdict = {
-}
-March._privelemdict = {
-}
-April._superclassnames = []
-April._privpropdict = {
-}
-April._privelemdict = {
-}
-May._superclassnames = []
-May._privpropdict = {
-}
-May._privelemdict = {
-}
-June._superclassnames = []
-June._privpropdict = {
-}
-June._privelemdict = {
-}
-July._superclassnames = []
-July._privpropdict = {
-}
-July._privelemdict = {
-}
-August._superclassnames = []
-August._privpropdict = {
-}
-August._privelemdict = {
-}
-September._superclassnames = []
-September._privpropdict = {
-}
-September._privelemdict = {
-}
-October._superclassnames = []
-October._privpropdict = {
-}
-October._privelemdict = {
-}
-November._superclassnames = []
-November._privpropdict = {
-}
-November._privelemdict = {
-}
-December._superclassnames = []
-December._privpropdict = {
-}
-December._privelemdict = {
-}
-weekday._superclassnames = []
-weekday._privpropdict = {
-}
-weekday._privelemdict = {
-}
-Sunday._superclassnames = []
-Sunday._privpropdict = {
-}
-Sunday._privelemdict = {
-}
-Monday._superclassnames = []
-Monday._privpropdict = {
-}
-Monday._privelemdict = {
-}
-Tuesday._superclassnames = []
-Tuesday._privpropdict = {
-}
-Tuesday._privelemdict = {
-}
-Wednesday._superclassnames = []
-Wednesday._privpropdict = {
-}
-Wednesday._privelemdict = {
-}
-Thursday._superclassnames = []
-Thursday._privpropdict = {
-}
-Thursday._privelemdict = {
-}
-Friday._superclassnames = []
-Friday._privpropdict = {
-}
-Friday._privelemdict = {
-}
-Saturday._superclassnames = []
-Saturday._privpropdict = {
-}
-Saturday._privelemdict = {
-}
-metres._superclassnames = []
-metres._privpropdict = {
-}
-metres._privelemdict = {
-}
-inches._superclassnames = []
-inches._privpropdict = {
-}
-inches._privelemdict = {
-}
-feet._superclassnames = []
-feet._privpropdict = {
-}
-feet._privelemdict = {
-}
-yards._superclassnames = []
-yards._privpropdict = {
-}
-yards._privelemdict = {
-}
-miles._superclassnames = []
-miles._privpropdict = {
-}
-miles._privelemdict = {
-}
-kilometres._superclassnames = []
-kilometres._privpropdict = {
-}
-kilometres._privelemdict = {
-}
-centimetres._superclassnames = []
-centimetres._privpropdict = {
-}
-centimetres._privelemdict = {
-}
-square_metres._superclassnames = []
-square_metres._privpropdict = {
-}
-square_metres._privelemdict = {
-}
-square_feet._superclassnames = []
-square_feet._privpropdict = {
-}
-square_feet._privelemdict = {
-}
-square_yards._superclassnames = []
-square_yards._privpropdict = {
-}
-square_yards._privelemdict = {
-}
-square_miles._superclassnames = []
-square_miles._privpropdict = {
-}
-square_miles._privelemdict = {
-}
-square_kilometres._superclassnames = []
-square_kilometres._privpropdict = {
-}
-square_kilometres._privelemdict = {
-}
-litres._superclassnames = []
-litres._privpropdict = {
-}
-litres._privelemdict = {
-}
-gallons._superclassnames = []
-gallons._privpropdict = {
-}
-gallons._privelemdict = {
-}
-quarts._superclassnames = []
-quarts._privpropdict = {
-}
-quarts._privelemdict = {
-}
-cubic_metres._superclassnames = []
-cubic_metres._privpropdict = {
-}
-cubic_metres._privelemdict = {
-}
-cubic_centimetres._superclassnames = []
-cubic_centimetres._privpropdict = {
-}
-cubic_centimetres._privelemdict = {
-}
-cubic_feet._superclassnames = []
-cubic_feet._privpropdict = {
-}
-cubic_feet._privelemdict = {
-}
-cubic_inches._superclassnames = []
-cubic_inches._privpropdict = {
-}
-cubic_inches._privelemdict = {
-}
-cubic_yards._superclassnames = []
-cubic_yards._privpropdict = {
-}
-cubic_yards._privelemdict = {
-}
-kilograms._superclassnames = []
-kilograms._privpropdict = {
-}
-kilograms._privelemdict = {
-}
-grams._superclassnames = []
-grams._privpropdict = {
-}
-grams._privelemdict = {
-}
-ounces._superclassnames = []
-ounces._privpropdict = {
-}
-ounces._privelemdict = {
-}
-pounds._superclassnames = []
-pounds._privpropdict = {
-}
-pounds._privelemdict = {
 }
 degrees_Celsius._superclassnames = []
 degrees_Celsius._privpropdict = {
@@ -1952,16 +1619,354 @@ degrees_Kelvin._privpropdict = {
 }
 degrees_Kelvin._privelemdict = {
 }
+encoded_string._superclassnames = []
+encoded_string._privpropdict = {
+}
+encoded_string._privelemdict = {
+}
+event._superclassnames = []
+event._privpropdict = {
+}
+event._privelemdict = {
+}
+feet._superclassnames = []
+feet._privpropdict = {
+}
+feet._privelemdict = {
+}
+file_specification._superclassnames = []
+file_specification._privpropdict = {
+}
+file_specification._privelemdict = {
+}
+gallons._superclassnames = []
+gallons._privpropdict = {
+}
+gallons._privelemdict = {
+}
+grams._superclassnames = []
+grams._privpropdict = {
+}
+grams._privelemdict = {
+}
+handler._superclassnames = []
+handler._privpropdict = {
+}
+handler._privelemdict = {
+}
+inches._superclassnames = []
+inches._privpropdict = {
+}
+inches._privelemdict = {
+}
+integer._superclassnames = []
+integer._privpropdict = {
+}
+integer._privelemdict = {
+}
+international_text._superclassnames = []
+international_text._privpropdict = {
+}
+international_text._privelemdict = {
+}
+international_text._superclassnames = []
+international_text._privpropdict = {
+}
+international_text._privelemdict = {
+}
+item._superclassnames = []
+item._privpropdict = {
+	'id' : id,
+}
+item._privelemdict = {
+}
+keystroke._superclassnames = []
+keystroke._privpropdict = {
+	'key' : key,
+	'modifiers' : modifiers,
+	'key_kind' : key_kind,
+}
+keystroke._privelemdict = {
+}
+kilograms._superclassnames = []
+kilograms._privpropdict = {
+}
+kilograms._privelemdict = {
+}
+kilometers._superclassnames = []
+kilometers._privpropdict = {
+}
+kilometers._privelemdict = {
+}
+linked_list._superclassnames = []
+linked_list._privpropdict = {
+	'length' : length,
+}
+linked_list._privelemdict = {
+}
+list._superclassnames = []
+list._privpropdict = {
+	'length' : length,
+	'reverse' : reverse,
+	'rest' : rest,
+}
+list._privelemdict = {
+}
+list_or_record._superclassnames = []
+list_or_record._privpropdict = {
+}
+list_or_record._privelemdict = {
+}
+list_or_string._superclassnames = []
+list_or_string._privpropdict = {
+}
+list_or_string._privelemdict = {
+}
+list_2c__record_or_text._superclassnames = []
+list_2c__record_or_text._privpropdict = {
+}
+list_2c__record_or_text._privelemdict = {
+}
+liters._superclassnames = []
+liters._privpropdict = {
+}
+liters._privelemdict = {
+}
+machine._superclassnames = []
+machine._privpropdict = {
+}
+machine._privelemdict = {
+}
+meters._superclassnames = []
+meters._privpropdict = {
+}
+meters._privelemdict = {
+}
+miles._superclassnames = []
+miles._privpropdict = {
+}
+miles._privelemdict = {
+}
+missing_value._superclassnames = []
+missing_value._privpropdict = {
+}
+missing_value._privelemdict = {
+}
+month._superclassnames = []
+month._privpropdict = {
+}
+month._privelemdict = {
+}
+number._superclassnames = []
+number._privpropdict = {
+}
+number._privelemdict = {
+}
+number_or_date._superclassnames = []
+number_or_date._privpropdict = {
+}
+number_or_date._privelemdict = {
+}
+number_or_string._superclassnames = []
+number_or_string._privpropdict = {
+}
+number_or_string._privelemdict = {
+}
+number_2c__date_or_text._superclassnames = []
+number_2c__date_or_text._privpropdict = {
+}
+number_2c__date_or_text._privelemdict = {
+}
+ounces._superclassnames = []
+ounces._privpropdict = {
+}
+ounces._privelemdict = {
+}
+picture._superclassnames = []
+picture._privpropdict = {
+}
+picture._privelemdict = {
+}
+pounds._superclassnames = []
+pounds._privpropdict = {
+}
+pounds._privelemdict = {
+}
+preposition._superclassnames = []
+preposition._privpropdict = {
+}
+preposition._privelemdict = {
+}
+properties._superclassnames = []
+properties._privpropdict = {
+}
+properties._privelemdict = {
+}
+quarts._superclassnames = []
+quarts._privpropdict = {
+}
+quarts._privelemdict = {
+}
+real._superclassnames = []
+real._privpropdict = {
+}
+real._privelemdict = {
+}
+record._superclassnames = []
+record._privpropdict = {
+}
+record._privelemdict = {
+}
+reference._superclassnames = []
+reference._privpropdict = {
+}
+reference._privelemdict = {
+}
+reference_form._superclassnames = []
+reference_form._privpropdict = {
+}
+reference_form._privelemdict = {
+}
+script._superclassnames = []
+script._privpropdict = {
+	'name' : name,
+	'parent' : parent,
+}
+script._privelemdict = {
+}
+seconds._superclassnames = []
+seconds._privpropdict = {
+}
+seconds._privelemdict = {
+}
+sound._superclassnames = []
+sound._privpropdict = {
+}
+sound._privelemdict = {
+}
+square_feet._superclassnames = []
+square_feet._privpropdict = {
+}
+square_feet._privelemdict = {
+}
+square_kilometers._superclassnames = []
+square_kilometers._privpropdict = {
+}
+square_kilometers._privelemdict = {
+}
+square_meters._superclassnames = []
+square_meters._privpropdict = {
+}
+square_meters._privelemdict = {
+}
+square_miles._superclassnames = []
+square_miles._privpropdict = {
+}
+square_miles._privelemdict = {
+}
+square_yards._superclassnames = []
+square_yards._privpropdict = {
+}
+square_yards._privelemdict = {
+}
+string._superclassnames = []
+string._privpropdict = {
+}
+string._privelemdict = {
+}
+styled_Clipboard_text._superclassnames = []
+styled_Clipboard_text._privpropdict = {
+}
+styled_Clipboard_text._privelemdict = {
+}
+styled_Clipboard_text._superclassnames = []
+styled_Clipboard_text._privpropdict = {
+}
+styled_Clipboard_text._privelemdict = {
+}
+styled_Unicode_text._superclassnames = []
+styled_Unicode_text._privpropdict = {
+}
+styled_Unicode_text._privelemdict = {
+}
+styled_Unicode_text._superclassnames = []
+styled_Unicode_text._privpropdict = {
+}
+styled_Unicode_text._privelemdict = {
+}
+styled_text._superclassnames = []
+styled_text._privpropdict = {
+}
+styled_text._privelemdict = {
+}
+styled_text._superclassnames = []
+styled_text._privpropdict = {
+}
+styled_text._privelemdict = {
+}
+text._superclassnames = []
+text._privpropdict = {
+}
+text._privelemdict = {
+}
+text_item._superclassnames = []
+text_item._privpropdict = {
+}
+text_item._privelemdict = {
+}
+type_class._superclassnames = []
+type_class._privpropdict = {
+}
+type_class._privelemdict = {
+}
 upper_case._superclassnames = []
 upper_case._privpropdict = {
 }
 upper_case._privelemdict = {
 }
-app._superclassnames = []
-app._privpropdict = {
+vector._superclassnames = []
+vector._privpropdict = {
+	'length' : length,
 }
-app._privelemdict = {
+vector._privelemdict = {
 }
+version._superclassnames = []
+version._privpropdict = {
+}
+version._privelemdict = {
+}
+weekday._superclassnames = []
+weekday._privpropdict = {
+}
+weekday._privelemdict = {
+}
+writing_code._superclassnames = []
+writing_code._privpropdict = {
+}
+writing_code._privelemdict = {
+}
+writing_code_info._superclassnames = []
+writing_code_info._privpropdict = {
+	'script_code' : script_code,
+	'language_code' : language_code,
+}
+writing_code_info._privelemdict = {
+}
+yards._superclassnames = []
+yards._privpropdict = {
+}
+yards._privelemdict = {
+}
+zone._superclassnames = []
+zone._privpropdict = {
+}
+zone._privelemdict = {
+}
+_Enum_boov = {
+	'true' : 'true',	# the true boolean value
+	'false' : 'fals',	# the false boolean value
+}
+
 _Enum_cons = {
 	'case' : 'case',	# case
 	'diacriticals' : 'diac',	# diacriticals
@@ -1970,15 +1975,6 @@ _Enum_cons = {
 	'expansion' : 'expa',	# expansion
 	'punctuation' : 'punc',	# punctuation
 	'application_responses' : 'rmte',	# remote event replies
-}
-
-_Enum_boov = {
-	'true' : 'true',	# the true boolean value
-	'false' : 'fals',	# the false boolean value
-}
-
-_Enum_misc = {
-	'current_application' : 'cura',	# the current application
 }
 
 _Enum_eMds = {
@@ -2023,6 +2019,10 @@ _Enum_ekst = {
 	'F15_key' : 'ksq\x00',	# 
 }
 
+_Enum_misc = {
+	'current_application' : 'cura',	# the current application
+}
+
 
 #
 # Indices of types declared in this module
@@ -2031,117 +2031,117 @@ _classdeclarations = {
 	'jul ' : July,
 	'may ' : May,
 	'TEXT' : string,
-	'cmet' : cubic_metres,
+	'cmet' : cubic_meters,
 	'STXT' : styled_text,
 	'nds ' : number_2c__date_or_text,
 	'feet' : feet,
 	'feb ' : February,
-	'nmbr' : number,
-	'mile' : miles,
+	'degc' : degrees_Celsius,
 	'kprs' : keystroke,
 	'psct' : writing_code,
 	'degf' : degrees_Fahrenheit,
 	'lrs ' : list_2c__record_or_text,
 	'ldt ' : date,
-	'litr' : litres,
-	'nd  ' : number_or_date,
-	'cmtr' : centimetres,
+	'degk' : degrees_Kelvin,
+	'sun ' : Sunday,
+	'oct ' : October,
 	'evnt' : event,
 	'pstr' : Pascal_string,
-	'zone' : zone,
+	'cyrd' : cubic_yards,
 	'PICT' : picture,
 	'ls  ' : list_or_string,
 	'long' : integer,
-	'sf  ' : alias_or_string,
+	'prop' : properties,
+	'nmbr' : number,
 	'citl' : writing_code_info,
 	'citm' : text_item,
-	'mach' : machine,
+	'apr ' : April,
+	'thu ' : Thursday,
 	'type' : type_class,
 	'prep' : preposition,
 	'tue ' : Tuesday,
 	'case' : upper_case,
 	'vers' : version,
 	'wed ' : Wednesday,
-	'dec ' : December,
-	'sqkm' : square_kilometres,
+	'capp' : app,
+	'sqkm' : square_kilometers,
 	'obj ' : reference,
 	'vect' : vector,
 	'wkdy' : weekday,
 	'cRGB' : RGB_color,
-	'sun ' : Sunday,
+	'nd  ' : number_or_date,
 	'itxt' : international_text,
 	'scnd' : seconds,
 	'mar ' : March,
-	'kmtr' : kilometres,
+	'kmtr' : kilometers,
 	'sqft' : square_feet,
 	'list' : list,
-	'doub' : real,
+	'styl' : styled_Clipboard_text,
 	'nov ' : November,
 	'qrts' : quarts,
-	'degc' : degrees_Celsius,
+	'mile' : miles,
 	'msng' : missing_value,
 	'alis' : alias,
 	'jan ' : January,
-	'metr' : metres,
+	'metr' : meters,
 	'mnth' : month,
 	'ns  ' : number_or_string,
 	'jun ' : June,
 	'aug ' : August,
 	'llst' : linked_list,
-	'styl' : styled_Clipboard_text,
+	'doub' : real,
 	'encs' : encoded_string,
 	'galn' : gallons,
 	'cuin' : cubic_inches,
 	'fri ' : Friday,
-	'sutx' : styled_Unicode_text,
+	'sf  ' : alias_or_string,
 	'lr  ' : list_or_record,
-	'degk' : degrees_Kelvin,
 	'mon ' : Monday,
 	'snd ' : sound,
-	'pcls' : class_,
+	'sep ' : September,
 	'kgrm' : kilograms,
 	'scpt' : script,
 	'****' : anything,
-	'prop' : property,
-	'reco' : record,
+	'litr' : liters,
 	'bool' : boolean,
-	'oct ' : October,
-	'sqrm' : square_metres,
+	'cmtr' : centimeters,
+	'sqrm' : square_meters,
 	'inch' : inches,
+	'zone' : zone,
 	'kfrm' : reference_form,
 	'cobj' : item,
 	'gram' : grams,
 	'cha ' : character,
-	'apr ' : April,
+	'reco' : record,
 	'undf' : empty_ae_name_,
-	'capp' : app,
+	'dec ' : December,
 	'enum' : constant,
 	'hand' : handler,
 	'sqmi' : square_miles,
 	'rdat' : data,
 	'cstr' : C_string,
 	'utxt' : Unicode_text,
-	'thu ' : Thursday,
+	'sutx' : styled_Unicode_text,
+	'mach' : machine,
 	'sqyd' : square_yards,
 	'yard' : yards,
-	'cyrd' : cubic_yards,
 	'ozs ' : ounces,
 	'lbs ' : pounds,
 	'cfet' : cubic_feet,
-	'ccmt' : cubic_centimetres,
+	'ccmt' : cubic_centimeters,
 	'sat ' : Saturday,
-	'sep ' : September,
+	'pcls' : class_,
 	'fss ' : file_specification,
 	'ctxt' : text,
 }
 
 _propdeclarations = {
 	'week' : weeks,
-	'kMod' : modifiers,
+	'mnth' : month,
 	'pare' : parent,
 	'leng' : length,
-	'hour' : hours,
-	'mnth' : month,
+	'pi  ' : pi,
+	'kMod' : modifiers,
 	'min ' : minutes,
 	'wkdy' : weekday,
 	'dstr' : date_string,
@@ -2154,10 +2154,10 @@ _propdeclarations = {
 	'rvse' : reverse,
 	'tab ' : tab,
 	'tstr' : time_string,
-	'pi  ' : pi,
-	'ret ' : return_,
 	'plcd' : language_code,
+	'ret ' : return_,
 	'kMsg' : key,
+	'hour' : hours,
 	'spac' : space,
 	'days' : days,
 	'txdl' : text_item_delimiters,

@@ -12,44 +12,6 @@ _code = 'trmx'
 
 class Terminal_Suite_Events:
 
-	def run(self, _no_object=None, _attributes={}, **_arguments):
-		"""run: Run the Terminal application
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'oapp'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def quit(self, _no_object=None, _attributes={}, **_arguments):
-		"""quit: Quit the Terminal application
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'quit'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
 	def count(self, _object=None, _attributes={}, **_arguments):
 		"""count: Return the number of elements of a particular class within an object
 		Required argument: a reference to the objects to be counted
@@ -88,6 +50,44 @@ class Terminal_Suite_Events:
 
 		aetools.keysubst(_arguments, self._argmap_do_script)
 		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def quit(self, _no_object=None, _attributes={}, **_arguments):
+		"""quit: Quit the Terminal application
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'quit'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def run(self, _no_object=None, _attributes={}, **_arguments):
+		"""run: Run the Terminal application
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'oapp'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
 
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,

@@ -13,100 +13,23 @@ _code = 'core'
 from _builtinSuites.builtin_Suite import *
 class Standard_Suite_Events(builtin_Suite_Events):
 
-	def open(self, _object, _attributes={}, **_arguments):
-		"""open: Open the specified object(s)
-		Required argument: list of objects to open
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'odoc'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def run(self, _no_object=None, _attributes={}, **_arguments):
-		"""run: Run an application.  Most applications will open an empty, untitled window.
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'oapp'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def reopen(self, _no_object=None, _attributes={}, **_arguments):
-		"""reopen: Reactivate a running application.  Some applications will open a new untitled window if no window is open.
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'rapp'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		if _no_object != None: raise TypeError, 'No direct arg expected'
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	def print_(self, _object, _attributes={}, **_arguments):
-		"""print: Print the specified object(s)
-		Required argument: list of objects to print
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		"""
-		_code = 'aevt'
-		_subcode = 'pdoc'
-
-		if _arguments: raise TypeError, 'No optional args expected'
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_quit = {
-		'saving' : 'savo',
+	_argmap_class_info = {
+		'in_' : 'wrcd',
 	}
 
-	def quit(self, _no_object=None, _attributes={}, **_arguments):
-		"""quit: Quit an application
-		Keyword argument saving: specifies whether to save currently open documents
+	def class_info(self, _object=None, _attributes={}, **_arguments):
+		"""class info: (optional) Get information about an object class
+		Required argument: the object class about which information is requested
+		Keyword argument in_: the human language and script system in which to return information
 		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: a record containing the object\xd5s properties and elements
 		"""
-		_code = 'aevt'
-		_subcode = 'quit'
+		_code = 'core'
+		_subcode = 'qobj'
 
-		aetools.keysubst(_arguments, self._argmap_quit)
-		if _no_object != None: raise TypeError, 'No direct arg expected'
+		aetools.keysubst(_arguments, self._argmap_class_info)
+		_arguments['----'] = _object
 
-		aetools.enumsubst(_arguments, 'savo', _Enum_savo)
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
@@ -170,6 +93,32 @@ class Standard_Suite_Events(builtin_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+	_argmap_data_size = {
+		'as' : 'rtyp',
+	}
+
+	def data_size(self, _object, _attributes={}, **_arguments):
+		"""data size: (optional) Return the size in bytes of an object
+		Required argument: the object whose data size is to be returned
+		Keyword argument as: the data type for which the size is calculated
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: the size of the object in bytes
+		"""
+		_code = 'core'
+		_subcode = 'dsiz'
+
+		aetools.keysubst(_arguments, self._argmap_data_size)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
 	def delete(self, _object, _attributes={}, **_arguments):
 		"""delete: Delete an object from its container. Note this does not work on script variables, only on elements of application classes.
 		Required argument: the element to delete
@@ -207,6 +156,32 @@ class Standard_Suite_Events(builtin_Suite_Events):
 		_subcode = 'clon'
 
 		aetools.keysubst(_arguments, self._argmap_duplicate)
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_event_info = {
+		'in_' : 'wrcd',
+	}
+
+	def event_info(self, _object, _attributes={}, **_arguments):
+		"""event info: (optional) Get information about the Apple events in a suite
+		Required argument: the event class of the Apple events for which to return information
+		Keyword argument in_: the human language and script system in which to return information
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		Returns: a record containing the events and their parameters
+		"""
+		_code = 'core'
+		_subcode = 'gtei'
+
+		aetools.keysubst(_arguments, self._argmap_event_info)
 		_arguments['----'] = _object
 
 
@@ -296,6 +271,109 @@ class Standard_Suite_Events(builtin_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
+	def open(self, _object, _attributes={}, **_arguments):
+		"""open: Open the specified object(s)
+		Required argument: list of objects to open
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'odoc'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def print_(self, _object, _attributes={}, **_arguments):
+		"""print: Print the specified object(s)
+		Required argument: list of objects to print
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'pdoc'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		_arguments['----'] = _object
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	_argmap_quit = {
+		'saving' : 'savo',
+	}
+
+	def quit(self, _no_object=None, _attributes={}, **_arguments):
+		"""quit: Quit an application
+		Keyword argument saving: specifies whether to save currently open documents
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'quit'
+
+		aetools.keysubst(_arguments, self._argmap_quit)
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+		aetools.enumsubst(_arguments, 'savo', _Enum_savo)
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def reopen(self, _no_object=None, _attributes={}, **_arguments):
+		"""reopen: Reactivate a running application.  Some applications will open a new untitled window if no window is open.
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'rapp'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
+	def run(self, _no_object=None, _attributes={}, **_arguments):
+		"""run: Run an application.  Most applications will open an empty, untitled window.
+		Keyword argument _attributes: AppleEvent attribute dictionary
+		"""
+		_code = 'aevt'
+		_subcode = 'oapp'
+
+		if _arguments: raise TypeError, 'No optional args expected'
+		if _no_object != None: raise TypeError, 'No direct arg expected'
+
+
+		_reply, _arguments, _attributes = self.send(_code, _subcode,
+				_arguments, _attributes)
+		if _arguments.get('errn', 0):
+			raise aetools.Error, aetools.decodeerror(_arguments)
+		# XXXX Optionally decode result
+		if _arguments.has_key('----'):
+			return _arguments['----']
+
 	_argmap_save = {
 		'in_' : 'kfil',
 		'as' : 'fltp',
@@ -343,32 +421,6 @@ class Standard_Suite_Events(builtin_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_data_size = {
-		'as' : 'rtyp',
-	}
-
-	def data_size(self, _object, _attributes={}, **_arguments):
-		"""data size: (optional) Return the size in bytes of an object
-		Required argument: the object whose data size is to be returned
-		Keyword argument as: the data type for which the size is calculated
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: the size of the object in bytes
-		"""
-		_code = 'core'
-		_subcode = 'dsiz'
-
-		aetools.keysubst(_arguments, self._argmap_data_size)
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
 	_argmap_suite_info = {
 		'in_' : 'wrcd',
 	}
@@ -395,58 +447,12 @@ class Standard_Suite_Events(builtin_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-	_argmap_event_info = {
-		'in_' : 'wrcd',
-	}
 
-	def event_info(self, _object, _attributes={}, **_arguments):
-		"""event info: (optional) Get information about the Apple events in a suite
-		Required argument: the event class of the Apple events for which to return information
-		Keyword argument in_: the human language and script system in which to return information
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: a record containing the events and their parameters
-		"""
-		_code = 'core'
-		_subcode = 'gtei'
+class alias(aetools.ComponentItem):
+	"""alias - a file on a disk or server.  The file must exist when you check the syntax of your script. """
+	want = 'alis'
 
-		aetools.keysubst(_arguments, self._argmap_event_info)
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
-	_argmap_class_info = {
-		'in_' : 'wrcd',
-	}
-
-	def class_info(self, _object=None, _attributes={}, **_arguments):
-		"""class info: (optional) Get information about an object class
-		Required argument: the object class about which information is requested
-		Keyword argument in_: the human language and script system in which to return information
-		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: a record containing the object\xd5s properties and elements
-		"""
-		_code = 'core'
-		_subcode = 'qobj'
-
-		aetools.keysubst(_arguments, self._argmap_class_info)
-		_arguments['----'] = _object
-
-
-		_reply, _arguments, _attributes = self.send(_code, _subcode,
-				_arguments, _attributes)
-		if _arguments.get('errn', 0):
-			raise aetools.Error, aetools.decodeerror(_arguments)
-		# XXXX Optionally decode result
-		if _arguments.has_key('----'):
-			return _arguments['----']
-
+aliases = alias
 
 class application(aetools.ComponentItem):
 	"""application - An application program """
@@ -494,11 +500,11 @@ class stationery(aetools.NProperty):
 
 files = file
 
-class alias(aetools.ComponentItem):
-	"""alias - a file on a disk or server.  The file must exist when you check the syntax of your script. """
-	want = 'alis'
+class insertion_point(aetools.ComponentItem):
+	"""insertion point - An insertion location between two objects """
+	want = 'cins'
 
-aliases = alias
+insertion_points = insertion_point
 
 class selection_2d_object(aetools.ComponentItem):
 	"""selection-object - A way to refer to the state of the current of the selection.  Use the \xd4select\xd5 command to make a new selection. """
@@ -553,12 +559,11 @@ class visible(aetools.NProperty):
 	want = 'bool'
 
 windows = window
-
-class insertion_point(aetools.ComponentItem):
-	"""insertion point - An insertion location between two objects """
-	want = 'cins'
-
-insertion_points = insertion_point
+alias._superclassnames = []
+alias._privpropdict = {
+}
+alias._privelemdict = {
+}
 application._superclassnames = []
 application._privpropdict = {
 	'name' : name,
@@ -581,10 +586,10 @@ file._privpropdict = {
 }
 file._privelemdict = {
 }
-alias._superclassnames = []
-alias._privpropdict = {
+insertion_point._superclassnames = []
+insertion_point._privpropdict = {
 }
-alias._privelemdict = {
+insertion_point._privelemdict = {
 }
 selection_2d_object._superclassnames = []
 selection_2d_object._privpropdict = {
@@ -607,37 +612,32 @@ window._privpropdict = {
 }
 window._privelemdict = {
 }
-insertion_point._superclassnames = []
-insertion_point._privpropdict = {
-}
-insertion_point._privelemdict = {
-}
-class starts_with(aetools.NComparison):
-	"""starts with - Starts with """
-class contains(aetools.NComparison):
-	"""contains - Contains """
-class ends_with(aetools.NComparison):
-	"""ends with - Ends with """
+class _3c_(aetools.NComparison):
+	"""< - Less than """
 class _3d_(aetools.NComparison):
 	"""= - Equal """
 class _3e_(aetools.NComparison):
 	"""> - Greater than """
-class _b3_(aetools.NComparison):
-	"""\xb3 - Greater than or equal to """
-class _3c_(aetools.NComparison):
-	"""< - Less than """
+class contains(aetools.NComparison):
+	"""contains - Contains """
+class ends_with(aetools.NComparison):
+	"""ends with - Ends with """
+class starts_with(aetools.NComparison):
+	"""starts with - Starts with """
 class _b2_(aetools.NComparison):
 	"""\xb2 - Less than or equal to """
-_Enum_savo = {
-	'yes' : 'yes ',	# Save objects now
-	'no' : 'no  ',	# Do not save objects
-	'ask' : 'ask ',	# Ask the user whether to save
-}
-
+class _b3_(aetools.NComparison):
+	"""\xb3 - Greater than or equal to """
 _Enum_kfrm = {
 	'index' : 'indx',	# keyform designating indexed access
 	'named' : 'name',	# keyform designating named access
 	'id' : 'ID  ',	# keyform designating access by unique identifier
+}
+
+_Enum_savo = {
+	'yes' : 'yes ',	# Save objects now
+	'no' : 'no  ',	# Do not save objects
+	'ask' : 'ask ',	# Ask the user whether to save
 }
 
 _Enum_styl = {

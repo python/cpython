@@ -4,44 +4,44 @@ Resource aete resid 0
 """
 import aetools
 Error = aetools.Error
-import Required_suite
 import Standard_Suite
 import Standard_URL_suite
-import WorldWideWeb_suite
 import Mozilla_suite
-import PowerPlant
 import Text
+import WorldWideWeb_suite
+import PowerPlant
+import Required_suite
 
 
 _code_to_module = {
-	'reqd' : Required_suite,
 	'CoRe' : Standard_Suite,
 	'GURL' : Standard_URL_suite,
-	'WWW!' : WorldWideWeb_suite,
 	'MOSS' : Mozilla_suite,
-	'ppnt' : PowerPlant,
 	'TEXT' : Text,
+	'WWW!' : WorldWideWeb_suite,
+	'ppnt' : PowerPlant,
+	'reqd' : Required_suite,
 }
 
 
 
 _code_to_fullname = {
-	'reqd' : ('Netscape.Required_suite', 'Required_suite'),
 	'CoRe' : ('Netscape.Standard_Suite', 'Standard_Suite'),
 	'GURL' : ('Netscape.Standard_URL_suite', 'Standard_URL_suite'),
-	'WWW!' : ('Netscape.WorldWideWeb_suite', 'WorldWideWeb_suite'),
 	'MOSS' : ('Netscape.Mozilla_suite', 'Mozilla_suite'),
-	'ppnt' : ('Netscape.PowerPlant', 'PowerPlant'),
 	'TEXT' : ('Netscape.Text', 'Text'),
+	'WWW!' : ('Netscape.WorldWideWeb_suite', 'WorldWideWeb_suite'),
+	'ppnt' : ('Netscape.PowerPlant', 'PowerPlant'),
+	'reqd' : ('Netscape.Required_suite', 'Required_suite'),
 }
 
-from Required_suite import *
 from Standard_Suite import *
 from Standard_URL_suite import *
-from WorldWideWeb_suite import *
 from Mozilla_suite import *
-from PowerPlant import *
 from Text import *
+from WorldWideWeb_suite import *
+from PowerPlant import *
+from Required_suite import *
 
 def getbaseclasses(v):
 	if not getattr(v, '_propdict', None):
@@ -62,8 +62,6 @@ import StdSuites
 #
 getbaseclasses(window)
 getbaseclasses(application)
-getbaseclasses(text)
-getbaseclasses(styleset)
 getbaseclasses(StdSuites.Text_Suite.paragraph)
 getbaseclasses(StdSuites.Text_Suite.character)
 getbaseclasses(StdSuites.Text_Suite.text_style_info)
@@ -71,6 +69,8 @@ getbaseclasses(StdSuites.Text_Suite.word)
 getbaseclasses(StdSuites.Text_Suite.text_flow)
 getbaseclasses(StdSuites.Text_Suite.line)
 getbaseclasses(StdSuites.Text_Suite.text)
+getbaseclasses(text)
+getbaseclasses(styleset)
 
 #
 # Indices of types declared in this module
@@ -78,8 +78,6 @@ getbaseclasses(StdSuites.Text_Suite.text)
 _classdeclarations = {
 	'cwin' : window,
 	'capp' : application,
-	'ctxt' : text,
-	'stys' : styleset,
 	'cpar' : StdSuites.Text_Suite.paragraph,
 	'cha ' : StdSuites.Text_Suite.character,
 	'tsty' : StdSuites.Text_Suite.text_style_info,
@@ -87,16 +85,18 @@ _classdeclarations = {
 	'cflo' : StdSuites.Text_Suite.text_flow,
 	'clin' : StdSuites.Text_Suite.line,
 	'ctxt' : StdSuites.Text_Suite.text,
+	'ctxt' : text,
+	'stys' : styleset,
 }
 
 
-class Netscape(Required_suite_Events,
-		Standard_Suite_Events,
+class Netscape(Standard_Suite_Events,
 		Standard_URL_suite_Events,
-		WorldWideWeb_suite_Events,
 		Mozilla_suite_Events,
-		PowerPlant_Events,
 		Text_Events,
+		WorldWideWeb_suite_Events,
+		PowerPlant_Events,
+		Required_suite_Events,
 		aetools.TalkTo):
 	_signature = 'MOSS'
 

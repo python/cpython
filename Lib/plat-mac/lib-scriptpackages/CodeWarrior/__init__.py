@@ -4,32 +4,32 @@ Resource aete resid 0 AppleEvent Suites
 """
 import aetools
 Error = aetools.Error
-import Required
-import Standard_Suite
 import CodeWarrior_suite
+import Standard_Suite
 import Metrowerks_Shell_Suite
+import Required
 
 
 _code_to_module = {
-	'reqd' : Required,
-	'CoRe' : Standard_Suite,
 	'CWIE' : CodeWarrior_suite,
+	'CoRe' : Standard_Suite,
 	'MMPR' : Metrowerks_Shell_Suite,
+	'reqd' : Required,
 }
 
 
 
 _code_to_fullname = {
-	'reqd' : ('CodeWarrior.Required', 'Required'),
-	'CoRe' : ('CodeWarrior.Standard_Suite', 'Standard_Suite'),
 	'CWIE' : ('CodeWarrior.CodeWarrior_suite', 'CodeWarrior_suite'),
+	'CoRe' : ('CodeWarrior.Standard_Suite', 'Standard_Suite'),
 	'MMPR' : ('CodeWarrior.Metrowerks_Shell_Suite', 'Metrowerks_Shell_Suite'),
+	'reqd' : ('CodeWarrior.Required', 'Required'),
 }
 
-from Required import *
-from Standard_Suite import *
 from CodeWarrior_suite import *
+from Standard_Suite import *
 from Metrowerks_Shell_Suite import *
+from Required import *
 
 def getbaseclasses(v):
 	if not getattr(v, '_propdict', None):
@@ -48,32 +48,6 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(character)
-getbaseclasses(text)
-getbaseclasses(window)
-getbaseclasses(file)
-getbaseclasses(line)
-getbaseclasses(selection_2d_object)
-getbaseclasses(application)
-getbaseclasses(insertion_point)
-getbaseclasses(document)
-getbaseclasses(single_class_browser)
-getbaseclasses(project_document)
-getbaseclasses(symbol_browser)
-getbaseclasses(editor_document)
-getbaseclasses(file_compare_document)
-getbaseclasses(class_browser)
-getbaseclasses(subtarget)
-getbaseclasses(message_document)
-getbaseclasses(project_inspector)
-getbaseclasses(text_document)
-getbaseclasses(catalog_document)
-getbaseclasses(class_hierarchy)
-getbaseclasses(target)
-getbaseclasses(build_progress_document)
-getbaseclasses(target_file)
-getbaseclasses(ToolServer_worksheet)
-getbaseclasses(single_class_hierarchy)
 getbaseclasses(File_Mapping)
 getbaseclasses(browser_catalog)
 getbaseclasses(Build_Settings)
@@ -110,37 +84,37 @@ getbaseclasses(Font)
 getbaseclasses(Target_Source_Trees)
 getbaseclasses(Debugger_Display)
 getbaseclasses(class_)
+getbaseclasses(character)
+getbaseclasses(text)
+getbaseclasses(window)
+getbaseclasses(file)
+getbaseclasses(line)
+getbaseclasses(selection_2d_object)
+getbaseclasses(application)
+getbaseclasses(insertion_point)
+getbaseclasses(document)
+getbaseclasses(single_class_browser)
+getbaseclasses(project_document)
+getbaseclasses(symbol_browser)
+getbaseclasses(editor_document)
+getbaseclasses(file_compare_document)
+getbaseclasses(class_browser)
+getbaseclasses(subtarget)
+getbaseclasses(message_document)
+getbaseclasses(project_inspector)
+getbaseclasses(text_document)
+getbaseclasses(catalog_document)
+getbaseclasses(class_hierarchy)
+getbaseclasses(target)
+getbaseclasses(build_progress_document)
+getbaseclasses(target_file)
+getbaseclasses(ToolServer_worksheet)
+getbaseclasses(single_class_hierarchy)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cha ' : character,
-	'ctxt' : text,
-	'cwin' : window,
-	'file' : file,
-	'clin' : line,
-	'csel' : selection_2d_object,
-	'capp' : application,
-	'cins' : insertion_point,
-	'docu' : document,
-	'1BRW' : single_class_browser,
-	'PRJD' : project_document,
-	'SYMB' : symbol_browser,
-	'EDIT' : editor_document,
-	'COMP' : file_compare_document,
-	'BROW' : class_browser,
-	'SBTG' : subtarget,
-	'MSSG' : message_document,
-	'INSP' : project_inspector,
-	'TXTD' : text_document,
-	'CTLG' : catalog_document,
-	'HIER' : class_hierarchy,
-	'TRGT' : target,
-	'PRGS' : build_progress_document,
-	'SRCF' : target_file,
-	'TOOL' : ToolServer_worksheet,
-	'1HIR' : single_class_hierarchy,
 	'FMap' : File_Mapping,
 	'Cata' : browser_catalog,
 	'BSTG' : Build_Settings,
@@ -177,13 +151,39 @@ _classdeclarations = {
 	'TSTs' : Target_Source_Trees,
 	'DbDS' : Debugger_Display,
 	'Clas' : class_,
+	'cha ' : character,
+	'ctxt' : text,
+	'cwin' : window,
+	'file' : file,
+	'clin' : line,
+	'csel' : selection_2d_object,
+	'capp' : application,
+	'cins' : insertion_point,
+	'docu' : document,
+	'1BRW' : single_class_browser,
+	'PRJD' : project_document,
+	'SYMB' : symbol_browser,
+	'EDIT' : editor_document,
+	'COMP' : file_compare_document,
+	'BROW' : class_browser,
+	'SBTG' : subtarget,
+	'MSSG' : message_document,
+	'INSP' : project_inspector,
+	'TXTD' : text_document,
+	'CTLG' : catalog_document,
+	'HIER' : class_hierarchy,
+	'TRGT' : target,
+	'PRGS' : build_progress_document,
+	'SRCF' : target_file,
+	'TOOL' : ToolServer_worksheet,
+	'1HIR' : single_class_hierarchy,
 }
 
 
-class CodeWarrior(Required_Events,
+class CodeWarrior(CodeWarrior_suite_Events,
 		Standard_Suite_Events,
-		CodeWarrior_suite_Events,
 		Metrowerks_Shell_Suite_Events,
+		Required_Events,
 		aetools.TalkTo):
 	_signature = 'CWIE'
 
