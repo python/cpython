@@ -123,8 +123,11 @@ To create HTML files:
 	- Perl 5.004_04 or newer.  Find the software at
 	  <http://language.perl.com/info/software.html>.
 
-	- LaTeX2HTML 98.2b2 or newer.  Older version will fail with
-	  the new directory layout.  Releases are available at
+	- LaTeX2HTML 98.2b6.  Older version will fail with the new
+	  directory layout.  Version 98.2b8 specifically does not
+	  work; it translates `` and '' to &ldquo; and &rdquo;, which
+	  are not supported by popular Web browsers.  Releases are
+	  available at:
 	  <http://cdc-server.cdc.informatik.tu-darmstadt.de/~latex2html/>.
 
 
