@@ -266,6 +266,34 @@ details.
 \item The \module{imaplib} module now supports IMAP's THREAD command.
 (Contributed by Yves Dionne.)
 
+\item The \module{itertools} module gained a
+  \function{groupby(\var{iterable}\optional{, \var{func}})} function,
+  inspired by the GROUP BY clause from SQL.
+  \var{iterable} returns a succession of elements, and the optional
+  \var{func} is a function that takes an element and returns a key
+  value; if omitted, the key is simply the element itself.
+  \function{groupby()} then groups the elements into subsequences
+  which have matching values of the key, and returns a series of 2-tuples
+  containing the key value and an iterator over the subsequence.
+ 
+Here's an example.  The \var{key} function simply returns whether a
+number is even or odd, so the result of \function{groupby()} is to
+return consecutive runs of odd or even numbers.
+
+\begin{verbatim}
+>>> import itertools
+>>> L = [2,4,6, 7,8,9,11, 12, 14]
+>>> for key_val, it in itertools.groupby(L, lambda x: x % 2):
+...    print key_val, list(it)
+... 
+0 [2, 4, 6]
+1 [7]
+0 [8]
+1 [9, 11]
+0 [12, 14]
+>>> 
+\end{verbatim}
+
 \item A new \function{getsid()} function was added to the
 \module{posix} module that underlies the \module{os} module.
 (Contributed by J. Raynor.)
