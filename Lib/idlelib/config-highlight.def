@@ -1,5 +1,5 @@
-# IDLE reads several config files to determine user preferences.  This 
-# file is the default config file for idle highlight theme settings.  
+# IDLE reads several config files to determine user preferences.  This
+# file is the default config file for idle highlight theme settings.
 
 [IDLE Classic]
 normal-foreground= #000000
@@ -20,7 +20,7 @@ hit-foreground= #ffffff
 hit-background= #000000
 error-foreground= #000000
 error-background= #ff7777
-#cursor (only foreground can be set) 
+#cursor (only foreground can be set)
 cursor-foreground= black
 #shell window
 stdout-foreground= blue
@@ -49,7 +49,7 @@ hit-foreground= #ffffff
 hit-background= #000000
 error-foreground= #000000
 error-background= #ff7777
-#cursor (only foreground can be set) 
+#cursor (only foreground can be set)
 cursor-foreground= black
 #shell window
 stdout-foreground= blue

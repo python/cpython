@@ -1,6 +1,6 @@
-# IDLE reads several config files to determine user preferences.  This 
+# IDLE reads several config files to determine user preferences.  This
 # file is the default config file for general idle settings.
-#  
+#
 # When IDLE starts, it will look in
 # the following two sets of files, in order:
 #
@@ -19,17 +19,17 @@
 #     ~/.idlerc/idle-keys.cfg            the user keybinding config file
 #
 # Any options the user saves through the config dialog will be saved to
-# the relevant user config file. Reverting any general setting to the 
-# default causes that entry to be wiped from the user file and re-read 
+# the relevant user config file. Reverting any general setting to the
+# default causes that entry to be wiped from the user file and re-read
 # from the default file. User highlighting themes or keybinding sets are
 # retained unless specifically deleted within the config dialog. Choosing
-# one of the default themes or keysets just applies the relevant settings 
-# from the default file. 
+# one of the default themes or keysets just applies the relevant settings
+# from the default file.
 #
 # Additional help sources are listed in the [HelpFiles] section and must be
 # viewable by a web browser (or the Windows Help viewer in the case of .chm
-# files). These sources will be listed on the Help menu.  The pattern is 
-# <sequence_number = menu item;/path/to/help/source> 
+# files). These sources will be listed on the Help menu.  The pattern is
+# <sequence_number = menu item;/path/to/help/source>
 # You can't use a semi-colon in a menu item or path.  The path will be platform
 # specific because of path separators, drive specs etc.
 #
@@ -56,11 +56,11 @@ use-spaces= 1
 num-spaces= 4
 
 [Theme]
-default= 1  
+default= 1
 name= IDLE Classic
 
 [Keys]
-default= 1  
+default= 1
 name= IDLE Classic Windows
 
 [HelpFiles]
