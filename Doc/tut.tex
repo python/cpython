@@ -3035,9 +3035,10 @@ raise an exception.  For example:
 
 \section{New Class Features in Release 1.1}
 
-Two changes have been made to classes: the operator overloading
+Semoe changes have been made to classes: the operator overloading
 mechanism is more flexible, providing more support for non-numeric use
-of operators, and it is possible to trap attribute accesses.
+of operators (including calling an object as if it were a function),
+and it is possible to trap attribute accesses.
 
 \subsection{New Operator Overloading}
 
@@ -3125,6 +3126,42 @@ class Wrapper:
 import sys
 f = Wrapper(sys.stdout)
 f.write('hello world\n')          # prints 'hello world'
+\end{verbatim}
+
+A simpler example of \code{__getattr__} is an attribute that is
+computed each time (or the first time) it it accessed.  For instance:
+
+\begin{verbatim}
+from math import pi
+
+class Circle:
+    def __init__(self, radius):
+        self.radius = radius
+    def __getattr__(self, name):
+        if name == 'circumference':
+            return 2 * pi * self.radius
+        if name == 'diameter':
+            return 2 * self.radius
+        if name == 'area':
+           return pi * pow(self.radius, 2)
+        raise AttributeError, name
+\end{verbatim}
+
+\subsection{Calling a Class Instance}
+
+If a class defines a method \code{__call__} it is possible to call its
+instances as if they were functions.  For example:
+
+\begin{verbatim}
+class PresetSomeArguments:
+    def __init__(self, func, *args):
+        self.func, self.args = func, args
+    def __call__(self, *args):
+        return apply(self.func, self.args + args)
+
+f = PresetSomeArguments(pow, 2)    # f(i) computes powers of 2
+for i in range(10): print f(i),    # prints 1 2 4 8 16 32 64 128 256 512
+print                              # append newline
 \end{verbatim}
 
 \end{document}
