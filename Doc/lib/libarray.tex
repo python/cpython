@@ -1,17 +1,17 @@
 \section{\module{array} ---
-         Efficient arrays of uniformly typed numeric values.}
-\declaremodule{builtin}{array}
+         Efficient arrays of numeric values}
 
+\declaremodule{builtin}{array}
 \modulesynopsis{Efficient arrays of uniformly typed numeric values.}
 
-\index{arrays}
 
 This module defines a new object type which can efficiently represent
 an array of basic values: characters, integers, floating point
-numbers.  Arrays are sequence types and behave very much like lists,
-except that the type of objects stored in them is constrained.  The
-type is specified at object creation time by using a \dfn{type code},
-which is a single character.  The following type codes are defined:
+numbers.  Arrays\index{arrays} are sequence types and behave very much
+like lists, except that the type of objects stored in them is
+constrained.  The type is specified at object creation time by using a
+\dfn{type code}, which is a single character.  The following type
+codes are defined:
 
 \begin{tableiii}{c|l|c}{code}{Type code}{C Type}{Minimum size in bytes}
 \lineiii{'c'}{character}{1}
@@ -28,11 +28,11 @@ which is a single character.  The following type codes are defined:
 \end{tableiii}
 
 The actual representation of values is determined by the machine
-architecture (strictly speaking, by the \C{} implementation).  The actual
+architecture (strictly speaking, by the C implementation).  The actual
 size can be accessed through the \member{itemsize} attribute.  The values
 stored  for \code{'L'} and \code{'I'} items will be represented as
 Python long integers when retrieved, because Python's plain integer
-type cannot represent the full range of \C{}'s unsigned (long) integers.
+type cannot represent the full range of C's unsigned (long) integers.
 
 
 The module defines the following function and type object:
@@ -160,5 +160,6 @@ array('d', [1.0, 2.0, 3.14])
 
 
 \begin{seealso}
-\seemodule{struct}{Packing and unpacking of heterogeneous binary data.}
+  \seemodule{struct}{packing and unpacking of heterogeneous binary data}
+  \seemodule{xdrlib{{packing and unpacking of XDR data}
 \end{seealso}
