@@ -9,7 +9,7 @@ TEXINPUTS=..:../texinputs
 
 all:	icons l2h
 
-l2h:	l2hapi l2hext l2hlib l2href l2htut
+l2h:	l2hapi l2hext l2hlib l2hmac l2href l2htut
 
 l2hapi:
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hapi
@@ -19,6 +19,9 @@ l2hext:
 
 l2hlib:
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hlib
+
+l2hmac:
+	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hmac
 
 l2href:
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2href
