@@ -93,5 +93,4 @@ import urllib2
 #import user
 import webbrowser
 import whichdb
-import xdrlib
 import xml
