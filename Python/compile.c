@@ -294,6 +294,7 @@ struct compiling {
 #ifdef PRIVATE_NAME_MANGLING
 	char *c_private;	/* for private name mangling */
 #endif
+	int c_tmpname;		/* temporary local name counter */
 };
 
 
@@ -368,8 +369,10 @@ static int com_addconst(struct compiling *, PyObject *);
 static int com_addname(struct compiling *, PyObject *);
 static void com_addopname(struct compiling *, int, node *);
 static void com_list(struct compiling *, node *, int);
+static void com_list_iter(struct compiling *, node *, node *, char *);
 static int com_argdefs(struct compiling *, node *);
 static int com_newlocal(struct compiling *, char *);
+static void com_assign(struct compiling *, node *, int);
 static PyCodeObject *icompile(struct _node *, struct compiling *);
 static PyCodeObject *jcompile(struct _node *, char *,
 			      struct compiling *);
@@ -419,6 +422,7 @@ com_init(struct compiling *c, char *filename)
 	c->c_last_addr = 0;
 	c->c_last_line = 0;
 	c-> c_lnotab_next = 0;
+	c->c_tmpname = 0;
 	return 1;
 	
   fail:
@@ -941,18 +945,116 @@ parsestrplus(node *n)
 }
 
 static void
-com_list_constructor(struct compiling *c, node *n)
+com_list_for(struct compiling *c, node *n, node *e, char *t)
 {
-	int len;
-	int i;
-	if (TYPE(n) != testlist)
-		REQ(n, exprlist);
-	/* exprlist: expr (',' expr)* [',']; likewise for testlist */
-	len = (NCH(n) + 1) / 2;
-	for (i = 0; i < NCH(n); i += 2)
-		com_node(c, CHILD(n, i));
-	com_addoparg(c, BUILD_LIST, len);
-	com_pop(c, len-1);
+	PyObject *v;
+	int anchor = 0;
+	int save_begin = c->c_begin;
+
+	/* list_iter: for v in expr [list_iter] */
+	com_node(c, CHILD(n, 3)); /* expr */
+	v = PyInt_FromLong(0L);
+	if (v == NULL)
+		c->c_errors++;
+	com_addoparg(c, LOAD_CONST, com_addconst(c, v));
+	com_push(c, 1);
+	Py_XDECREF(v);
+	c->c_begin = c->c_nexti;
+	com_addoparg(c, SET_LINENO, n->n_lineno);
+	com_addfwref(c, FOR_LOOP, &anchor);
+	com_push(c, 1);
+	com_assign(c, CHILD(n, 1), OP_ASSIGN);
+	c->c_loops++;
+	com_list_iter(c, n, e, t);
+	c->c_loops--;
+	com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
+	c->c_begin = save_begin;
+	com_backpatch(c, anchor);
+	com_pop(c, 2); /* FOR_LOOP has popped these */
+}  
+
+static void
+com_list_if(struct compiling *c, node *n, node *e, char *t)
+{
+	int anchor = 0;
+	int a = 0;
+	/* list_iter: 'if' test [list_iter] */
+	com_addoparg(c, SET_LINENO, n->n_lineno);
+	com_node(c, CHILD(n, 1));
+	com_addfwref(c, JUMP_IF_FALSE, &a);
+	com_addbyte(c, POP_TOP);
+	com_pop(c, 1);
+	com_list_iter(c, n, e, t);
+	com_addfwref(c, JUMP_FORWARD, &anchor);
+	com_backpatch(c, a);
+	/* We jump here with an extra entry which we now pop */
+	com_addbyte(c, POP_TOP);
+	com_backpatch(c, anchor);
+}
+
+static void
+com_list_iter(struct compiling *c,
+	      node *p,		/* parent of list_iter node */
+	      node *e,		/* element expression node */
+	      char *t		/* name of result list temp local */)
+{
+	/* list_iter is the last child in a listmaker, list_for, or list_if */
+	node *n = CHILD(p, NCH(p)-1);
+	if (TYPE(n) == list_iter) {
+		n = CHILD(n, 0);
+		switch (TYPE(n)) {
+		case list_for: 
+			com_list_for(c, n, e, t);
+			break;
+		case list_if:
+			com_list_if(c, n, e, t);
+			break;
+		default:
+			com_error(c, PyExc_SystemError,
+				  "invalid list_iter node type");
+		}
+	}
+	else {
+		com_addopnamestr(c, LOAD_NAME, t);
+		com_push(c, 1);
+		com_node(c, e);
+		com_addoparg(c, CALL_FUNCTION, 1);
+		com_addbyte(c, POP_TOP);
+		com_pop(c, 2);
+	}
+}
+
+static void
+com_list_comprehension(struct compiling *c, node *n)
+{
+	/* listmaker: test list_iter */
+	char tmpname[12];
+	sprintf(tmpname, "__%d__", ++c->c_tmpname);
+	com_addoparg(c, BUILD_LIST, 0);
+	com_addbyte(c, DUP_TOP); /* leave the result on the stack */
+	com_push(c, 2);
+	com_addopnamestr(c, LOAD_ATTR, "append");
+	com_addopnamestr(c, STORE_NAME, tmpname);
+	com_pop(c, 1);
+	com_list_iter(c, n, CHILD(n, 0), tmpname);
+	com_addopnamestr(c, DELETE_NAME, tmpname);
+	--c->c_tmpname;
+}
+
+static void
+com_listmaker(struct compiling *c, node *n)
+{
+	/* listmaker: test ( list_iter | (',' test)* [','] ) */
+	if (TYPE(CHILD(n, 1)) == list_iter)
+		com_list_comprehension(c, n);
+	else {
+		int len = 0;
+		int i;
+		for (i = 0; i < NCH(n); i += 2, len++)
+			com_node(c, CHILD(n, i));
+		com_addoparg(c, BUILD_LIST, len);
+		com_pop(c, len-1);
+	}
 }
 
 static void
@@ -990,18 +1092,18 @@ com_atom(struct compiling *c, node *n)
 		else
 			com_node(c, CHILD(n, 1));
 		break;
-	case LSQB:
+	case LSQB: /* '[' [listmaker] ']' */
 		if (TYPE(CHILD(n, 1)) == RSQB) {
 			com_addoparg(c, BUILD_LIST, 0);
 			com_push(c, 1);
 		}
 		else
-			com_list_constructor(c, CHILD(n, 1));
+			com_listmaker(c, CHILD(n, 1));
 		break;
 	case LBRACE: /* '{' [dictmaker] '}' */
 		com_addoparg(c, BUILD_MAP, 0);
 		com_push(c, 1);
-		if (TYPE(CHILD(n, 1)) != RBRACE)
+		if (TYPE(CHILD(n, 1)) == dictmaker)
 			com_dictmaker(c, CHILD(n, 1));
 		break;
 	case BACKQUOTE:
@@ -1734,6 +1836,19 @@ com_assign_sequence(struct compiling *c, node *n, int assigning)
 	int i;
 	if (TYPE(n) != testlist)
 		REQ(n, exprlist);
+	if (assigning) {
+		i = (NCH(n)+1)/2;
+		com_addoparg(c, UNPACK_SEQUENCE, i);
+		com_push(c, i-1);
+	}
+	for (i = 0; i < NCH(n); i += 2)
+		com_assign(c, CHILD(n, i), assigning);
+}
+
+static void
+com_assign_list(struct compiling *c, node *n, int assigning)
+{
+	int i;
 	if (assigning) {
 		i = (NCH(n)+1)/2;
 		com_addoparg(c, UNPACK_SEQUENCE, i);
