@@ -54,6 +54,9 @@ PyAPI_DATA(PyObject *) PyExc_SystemExit;
 PyAPI_DATA(PyObject *) PyExc_TypeError;
 PyAPI_DATA(PyObject *) PyExc_UnboundLocalError;
 PyAPI_DATA(PyObject *) PyExc_UnicodeError;
+PyAPI_DATA(PyObject *) PyExc_UnicodeEncodeError;
+PyAPI_DATA(PyObject *) PyExc_UnicodeDecodeError;
+PyAPI_DATA(PyObject *) PyExc_UnicodeTranslateError;
 PyAPI_DATA(PyObject *) PyExc_ValueError;
 PyAPI_DATA(PyObject *) PyExc_ZeroDivisionError;
 #ifdef MS_WINDOWS
@@ -113,6 +116,69 @@ PyAPI_FUNC(void) PyErr_SetInterrupt(void);
 /* Support for adding program text to SyntaxErrors */
 PyAPI_FUNC(void) PyErr_SyntaxLocation(char *, int);
 PyAPI_FUNC(PyObject *) PyErr_ProgramText(char *, int);
+
+/* The following functions are used to create and modify unicode
+   exceptions from C */
+/* create a UnicodeDecodeError object */
+PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_Create(
+	const char *, const char *, int, int, int, const char *);
+
+/* create a UnicodeEncodeError object */
+PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_Create(
+	const char *, const Py_UNICODE *, int, int, int, const char *);
+
+/* create a UnicodeTranslateError object */
+PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_Create(
+	const Py_UNICODE *, int, int, int, const char *);
+
+/* get the encoding attribute */
+PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetEncoding(PyObject *);
+PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_GetEncoding(PyObject *);
+PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_GetEncoding(PyObject *);
+
+/* get the object attribute */
+PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetObject(PyObject *);
+PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_GetObject(PyObject *);
+PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_GetObject(PyObject *);
+
+/* get the value of the start attribute (the int * may not be NULL)
+   return 0 on success, -1 on failure */
+PyAPI_FUNC(int) PyUnicodeEncodeError_GetStart(PyObject *, int *);
+PyAPI_FUNC(int) PyUnicodeDecodeError_GetStart(PyObject *, int *);
+PyAPI_FUNC(int) PyUnicodeTranslateError_GetStart(PyObject *, int *);
+
+/* assign a new value to the start attribute
+   return 0 on success, -1 on failure */
+PyAPI_FUNC(int) PyUnicodeEncodeError_SetStart(PyObject *, int);
+PyAPI_FUNC(int) PyUnicodeDecodeError_SetStart(PyObject *, int);
+PyAPI_FUNC(int) PyUnicodeTranslateError_SetStart(PyObject *, int);
+
+/* get the value of the end attribute (the int *may not be NULL)
+ return 0 on success, -1 on failure */
+PyAPI_FUNC(int) PyUnicodeEncodeError_GetEnd(PyObject *, int *);
+PyAPI_FUNC(int) PyUnicodeDecodeError_GetEnd(PyObject *, int *);
+PyAPI_FUNC(int) PyUnicodeTranslateError_GetEnd(PyObject *, int *);
+
+/* assign a new value to the end attribute
+   return 0 on success, -1 on failure */
+PyAPI_FUNC(int) PyUnicodeEncodeError_SetEnd(PyObject *, int);
+PyAPI_FUNC(int) PyUnicodeDecodeError_SetEnd(PyObject *, int);
+PyAPI_FUNC(int) PyUnicodeTranslateError_SetEnd(PyObject *, int);
+
+/* get the value of the reason attribute */
+PyAPI_FUNC(PyObject *) PyUnicodeEncodeError_GetReason(PyObject *);
+PyAPI_FUNC(PyObject *) PyUnicodeDecodeError_GetReason(PyObject *);
+PyAPI_FUNC(PyObject *) PyUnicodeTranslateError_GetReason(PyObject *);
+
+/* assign a new value to the reason attribute
+   return 0 on success, -1 on failure */
+PyAPI_FUNC(int) PyUnicodeEncodeError_SetReason(
+	PyObject *, const char *);
+PyAPI_FUNC(int) PyUnicodeDecodeError_SetReason(
+	PyObject *, const char *);
+PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
+	PyObject *, const char *);
+
 
 /* These APIs aren't really part of the error implementation, but
    often needed to format error messages; the native C lib APIs are
