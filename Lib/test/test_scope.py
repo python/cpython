@@ -436,3 +436,14 @@ verify(d.has_key('h'))
 del d['h']
 verify(d == {'x': 2, 'y': 7, 'w': 6})
 
+print "19. var is bound and free in class"
+
+def f(x):
+    class C:
+        def m(self):
+            return x
+        a = x
+    return C
+
+inst = f(3)()
+verify(inst.a == inst.m())
