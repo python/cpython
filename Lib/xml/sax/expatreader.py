@@ -118,15 +118,15 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
         self._parser.NotationDeclHandler = self.notation_decl
         self._parser.StartNamespaceDeclHandler = self.start_namespace_decl
         self._parser.EndNamespaceDeclHandler = self.end_namespace_decl
-        
+
         self._decl_handler_prop = None
         if self._lex_handler_prop:
             self._parser.CommentHandler = self._lex_handler_prop.comment
             self._parser.StartCdataSectionHandler = self._lex_handler_prop.startCDATA
             self._parser.EndCdataSectionHandler = self._lex_handler_prop.endCDATA
-#         self._parser.DefaultHandler = 
-#         self._parser.DefaultHandlerExpand = 
-#         self._parser.NotStandaloneHandler = 
+#         self._parser.DefaultHandler =
+#         self._parser.DefaultHandlerExpand =
+#         self._parser.NotStandaloneHandler =
         self._parser.ExternalEntityRefHandler = self.external_entity_ref
 
         self._parsing = 0
