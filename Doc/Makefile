@@ -267,8 +267,11 @@ l2hapi: api.dvi manual.perl python.perl
 info-$(VERSION).tar.gz: $(INFOFILES)
 	tar cf - python-???.info* | gzip -9 >$@
 
+# This snags a PDF version if available, but doesn't fail if not.
 pdf-$(VERSION).tar.gz: $(PDFFILES)
+	if [ -f ref/ref.pdf ] ; then cp ref/ref.pdf . ; else true ; fi
 	tar cf - ???.pdf | gzip -9 >$@
+	if [ -f ref.pdf ] ; then rm ref.pdf ; else true ; fi
 
 postscript-$(VERSION).tar.gz: $(PSFILES) ref/ref.ps
 	cp ref/ref.ps .
@@ -277,7 +280,7 @@ postscript-$(VERSION).tar.gz: $(PSFILES) ref/ref.ps
 
 tarhtml:
 	@echo "Did you remember to run makeMIFs.py in the ref subdirectory...?"
-	tar cf - index.html ???/???.css ???/*.html lib/*.gif icons/*.* \
+	tar cf - index.html ???/???.css ???/*.html */*.gif \
 		| gzip -9 >html-$(VERSION).tar.gz
 
 # convenience targets:
