@@ -31,7 +31,7 @@ In Python, the following code fragment will do the same:
 import Finder
 
 f = Finder.Finder()
-print f.get(Finder.window(1).name)
+print f.get(f.window(1).name)
 \end{verbatim}
 
 As distributed the Python library includes packages that implement the
@@ -64,10 +64,12 @@ direct object as the first argument and all optional parameters as
 keyword arguments. AppleScript classes are also implemented as Python
 classes, as are comparisons and all the other thingies.
 
-Note that in the current release there is no coupling between the main
-Python class implementing the verbs and the Python classes implementing
-the AppleScript classes. Hence, in the example above we need to use
-\code{f.get(Finder.window(1).name)} in stead of the more Pythonic
+The main
+Python class implementing the verbs also allows access to the properties
+and elements declared in the AppleScript class "application". In the
+current release that is as far as the object orientation goes, so
+in the example above we need to use
+\code{f.get(f.window(1).name)} in stead of the more Pythonic
 \code{f.window(1).name.get()}.
 
 
