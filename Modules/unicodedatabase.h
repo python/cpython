@@ -30,4 +30,4 @@ extern const char *_PyUnicode_BidirectionalNames[21];
 
 /* --- Unicode Database --------------------------------------------------- */
 
-extern const _PyUnicode_DatabaseRecord *_PyUnicode_Database[16];
+extern const _PyUnicode_DatabaseRecord *_PyUnicode_Database_GetRecord(int ch);
