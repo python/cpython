@@ -44,6 +44,9 @@ Library
 Tools/Demos
 -----------
 
+- texcheck.py is a new script for making a rough validation of Python LaTeX
+  files.
+
 Build
 -----
 
