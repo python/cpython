@@ -2,6 +2,9 @@
 
 """Program to control the Solaris audio device.
 
+Author: Barry Warsaw
+Email:  bwarsaw@python.org
+
 When no arguments are given, this pops up a graphical window which lets you
 choose the audio input and output devices.
 
