@@ -4837,10 +4837,11 @@ slot_tp_del(PyObject *self)
 	}
 	assert(!PyType_IS_GC(self->ob_type) ||
 	       _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
-	/* If Py_REF_DEBUG, the original decref dropped _Py_RefTotal, but
-	 * _Py_NewReference bumped it again, so that's a wash.
-	 * If Py_TRACE_REFS, _Py_NewReference re-added self to the object
-	 * chain, so no more to do there either.
+	/* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
+	 * we need to undo that. */
+	_Py_DEC_REFTOTAL;
+	/* If Py_TRACE_REFS, _Py_NewReference re-added self to the object
+	 * chain, so no more to do there.
 	 * If COUNT_ALLOCS, the original decref bumped tp_frees, and
 	 * _Py_NewReference bumped tp_allocs:  both of those need to be
 	 * undone.
