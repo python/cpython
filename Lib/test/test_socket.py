@@ -90,6 +90,20 @@ if hasattr(socket, 'getservbyname'):
     except socket.error:
         pass
 
+try:
+    # On some versions, this loses a reference
+    import sys
+    orig = sys.getrefcount(__name__)
+    socket.getnameinfo(__name__,0)
+except SystemError:
+    if sys.getrefcount(__name__) <> orig:
+        raise TestFailed,"socket.getnameinfo loses a reference"
+
+try:
+    # On some versions, this crashes the interpreter.
+    socket.getnameinfo(('x', 0, 0, 0), 0)
+except socket.gaierror:
+    pass
 
 canfork = hasattr(os, 'fork')
 try:
