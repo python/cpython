@@ -88,7 +88,6 @@ list2set(PyObject *list, fd_set *set, pylist fd2obj[FD_SETSIZE + 3])
 	FD_ZERO(set);
 
 	for (i = 0; i < len; i++)  {
-		PyObject *meth;
 		SOCKET v;
 
 		/* any intervening fileno() calls could decr this refcnt */
