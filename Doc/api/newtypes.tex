@@ -1663,6 +1663,29 @@ The \member{tp_traverse} handler must have the following type:
   that value should be returned immediately.
 \end{ctypedesc}
 
+To simplify writing \member{tp_traverse} handlers, a
+\cfunction{Py_VISIT()} is provided:
+
+\begin{cfuncdesc}{void}{Py_VISIT}{PyObject *o}
+  Call the \var{visit} for \var{o} with \var{arg}. If \var{visit}
+  returns a non-zero value, then return it.  Using this macro,
+  \member{tp_traverse} handlers look like:
+
+
+\begin{verbatim}
+static int
+my_traverse(Noddy *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->foo);
+    Py_VISIT(self->bar);
+    return 0;
+}
+\end{verbatim}
+
+\versionadded{2.4}
+\end{cfuncdesc}
+
+
 The \member{tp_clear} handler must be of the \ctype{inquiry} type, or
 \NULL{} if the object is immutable.
 
