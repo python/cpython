@@ -79,7 +79,7 @@ class TestBasicOps(unittest.TestCase):
         def factorial(n):
             return reduce(int.__mul__, xrange(1, n), 1)
         for k in xrange(n):
-            expected = factorial(n) / factorial(n-k)
+            expected = factorial(n) // factorial(n-k)
             perms = {}
             for i in xrange(trials):
                 perms[tuple(self.gen.sample(pop, k))] = None

@@ -50,7 +50,7 @@ class E:
     def __iter__(self):
         return self
     def next(self):
-        3/0
+        3 // 0
 
 class N:
     'Iterator missing next()'

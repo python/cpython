@@ -197,9 +197,9 @@ class Random(_random.Random):
         if istep != step:
             raise ValueError, "non-integer step for randrange()"
         if istep > 0:
-            n = (width + istep - 1) / istep
+            n = (width + istep - 1) // istep
         elif istep < 0:
-            n = (width + istep + 1) / istep
+            n = (width + istep + 1) // istep
         else:
             raise ValueError, "zero step for randrange()"
 

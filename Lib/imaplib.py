@@ -1361,7 +1361,7 @@ def Time2Internaldate(date_time):
         zone = -time.altzone
     else:
         zone = -time.timezone
-    return '"' + dt + " %+03d%02d" % divmod(zone/60, 60) + '"'
+    return '"' + dt + " %+03d%02d" % divmod(zone//60, 60) + '"'
 
 
 
