@@ -198,7 +198,11 @@ def mirrorsubdir(f, localdir):
 		if fp1 != fp:
 			fp1.close()
 		try:
-		    os.rename(tempname, fullname)
+			os.unlink(fullname)
+		except os.error:
+			pass		# Ignore the error
+		try:
+			os.rename(tempname, fullname)
 		except os.error, msg:
 			print "Can't rename %s to %s: %s" % (tempname,
 							     fullname,
