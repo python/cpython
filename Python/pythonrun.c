@@ -416,6 +416,7 @@ Py_Finalize(void)
 	PyFrame_Fini();
 	PyCFunction_Fini();
 	PyTuple_Fini();
+	PyList_Fini();
 	PyString_Fini();
 	PyInt_Fini();
 	PyFloat_Fini();
