@@ -238,10 +238,10 @@ class FTP:
         '''Send a PORT command with the current host and the given
         port number.
         '''
-        hbytes = string.splitfields(host, '.')
+        hbytes = host.split('.')
         pbytes = [`port/256`, `port%256`]
         bytes = hbytes + pbytes
-        cmd = 'PORT ' + string.joinfields(bytes, ',')
+        cmd = 'PORT ' + ','.join(bytes)
         return self.voidcmd(cmd)
 
     def makeport(self):
@@ -456,7 +456,7 @@ class FTP:
         # Note that the RFC doesn't say anything about 'SIZE'
         resp = self.sendcmd('SIZE ' + filename)
         if resp[:3] == '213':
-            return string.atoi(string.strip(resp[3:]))
+            return int(resp[3:].strip())
 
     def mkd(self, dirname):
         '''Make a directory, return its full pathname.'''
@@ -500,7 +500,7 @@ def parse150(resp):
         _150_re = re.compile("150 .* \((\d+) bytes\)", re.IGNORECASE)
     m = _150_re.match(resp)
     if m:
-        return string.atoi(m.group(1))
+        return int(m.group(1))
     return None
 
 
@@ -511,16 +511,16 @@ def parse227(resp):
 
     if resp[:3] != '227':
         raise error_reply, resp
-    left = string.find(resp, '(')
+    left = resp.find('(')
     if left < 0: raise error_proto, resp
-    right = string.find(resp, ')', left + 1)
+    right = resp.find(')', left + 1)
     if right < 0:
         raise error_proto, resp # should contain '(h1,h2,h3,h4,p1,p2)'
-    numbers = string.split(resp[left+1:right], ',')
+    numbers = resp[left+1:right].split(',')
     if len(numbers) != 6:
         raise error_proto, resp
-    host = string.join(numbers[:4], '.')
-    port = (string.atoi(numbers[4]) << 8) + string.atoi(numbers[5])
+    host = '.'.join(numbers[:4])
+    port = (int(numbers[4]) << 8) + int(numbers[5])
     return host, port
 
 
@@ -598,13 +598,13 @@ class Netrc:
         while 1:
             line = fp.readline()
             if not line: break
-            if in_macro and string.strip(line):
+            if in_macro and line.strip():
                 macro_lines.append(line)
                 continue
             elif in_macro:
                 self.__macros[macro_name] = tuple(macro_lines)
                 in_macro = 0
-            words = string.split(line)
+            words = line.split()
             host = user = passwd = acct = None
             default = 0
             i = 0
@@ -617,7 +617,7 @@ class Netrc:
                 if w1 == 'default':
                     default = 1
                 elif w1 == 'machine' and w2:
-                    host = string.lower(w2)
+                    host = w2.lower()
                     i = i + 1
                 elif w1 == 'login' and w2:
                     user = w2
@@ -659,7 +659,7 @@ class Netrc:
         password, and the accounting field.
 
         """
-        host = string.lower(host)
+        host = host.lower()
         user = passwd = acct = None
         if self.__hosts.has_key(host):
             user, passwd, acct = self.__hosts[host]
