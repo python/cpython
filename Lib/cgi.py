@@ -802,7 +802,7 @@ class FieldStorage:
                 headers = {'content-type':
                            "application/x-www-form-urlencoded"}
         if headers is None:
-            headers = {}
+            headers = {'content-type': "application/x-www-form-urlencoded"}
             if environ.has_key('CONTENT_TYPE'):
                 headers['content-type'] = environ['CONTENT_TYPE']
             if environ.has_key('CONTENT_LENGTH'):
