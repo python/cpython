@@ -25,7 +25,7 @@ ZIP_DEFLATED = 8
 # Here are some struct module formats for reading headers
 structEndArchive = "<4s4H2lH"     # 9 items, end of archive, 22 bytes
 stringEndArchive = "PK\005\006"   # magic number for end of archive record
-structCentralDir = "<4s4B4H3l5H2l"# 19 items, central directory, 46 bytes
+structCentralDir = "<4s4B4H3l5HLl"# 19 items, central directory, 46 bytes
 stringCentralDir = "PK\001\002"   # magic number for central directory
 structFileHeader = "<4s2B4H3l2H"  # 12 items, file header record, 30 bytes
 stringFileHeader = "PK\003\004"   # magic number for file header
@@ -373,7 +373,7 @@ class ZipFile:
             zinfo = ZipInfo(filename, date_time)
         else:
             zinfo = ZipInfo(arcname, date_time)
-        zinfo.external_attr = st[0] << 16       # Unix attributes
+        zinfo.external_attr = st[0] << 16L      # Unix attributes
         if compress_type is None:
             zinfo.compress_type = self.compression
         else:
