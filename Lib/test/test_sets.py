@@ -506,78 +506,50 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
     def test_union_update(self):
         try:
             self.set |= self.other
-            self.fail("expected TypeError")
         except TypeError:
             pass
+        else:
+            self.fail("expected TypeError")
 
     def test_union(self):
-        try:
-            self.other | self.set
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
-        try:
-            self.set | self.other
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
+        self.assertRaises(TypeError, lambda: self.set | self.other)
+        self.assertRaises(TypeError, lambda: self.other | self.set)
 
     def test_intersection_update(self):
         try:
             self.set &= self.other
-            self.fail("expected TypeError")
         except TypeError:
             pass
+        else:
+            self.fail("expected TypeError")
 
     def test_intersection(self):
-        try:
-            self.other & self.set
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
-        try:
-            self.set & self.other
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
+        self.assertRaises(TypeError, lambda: self.set & self.other)
+        self.assertRaises(TypeError, lambda: self.other & self.set)
 
     def test_sym_difference_update(self):
         try:
             self.set ^= self.other
-            self.fail("expected TypeError")
         except TypeError:
             pass
+        else:
+            self.fail("expected TypeError")
 
     def test_sym_difference(self):
-        try:
-            self.other ^ self.set
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
-        try:
-            self.set ^ self.other
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
+        self.assertRaises(TypeError, lambda: self.set ^ self.other)
+        self.assertRaises(TypeError, lambda: self.other ^ self.set)
 
     def test_difference_update(self):
         try:
             self.set -= self.other
-            self.fail("expected TypeError")
         except TypeError:
             pass
+        else:
+            self.fail("expected TypeError")
 
     def test_difference(self):
-        try:
-            self.other - self.set
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
-        try:
-            self.set - self.other
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
+        self.assertRaises(TypeError, lambda: self.set - self.other)
+        self.assertRaises(TypeError, lambda: self.other - self.set)
 
 #------------------------------------------------------------------------------
 
