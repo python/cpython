@@ -10,8 +10,8 @@ Interface summary:
 \begin{verbatim}
 import copy
 
-x = copy.copy(y)	# make a shallow copy of y
-x = copy.deepcopy(y)	# make a deep copy of y
+x = copy.copy(y)        # make a shallow copy of y
+x = copy.deepcopy(y)    # make a deep copy of y
 \end{verbatim}
 
 For module specific errors, \code{copy.Error} is raised.
@@ -44,7 +44,7 @@ Recursive objects (compound objects that, directly or indirectly,
 contain a reference to themselves) may cause a recursive loop.
 
 \item
-Because deep copy copies {\em everything} it may copy too much, e.g.
+Because deep copy copies {\em everything} it may copy too much, e.g.\
 administrative data structures that should be shared even between
 copies.
 

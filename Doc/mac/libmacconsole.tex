@@ -23,13 +23,13 @@ etc).
 \end{datadesc}
 
 \begin{funcdesc}{copen}{}
-Open a new console window. Returns a console window object.
+Open a new console window. Return a console window object.
 \end{funcdesc}
 
 \begin{funcdesc}{fopen}{fp}
 Return the console window object corresponding with the given file
-object. \var{Fp} should be one of \var{sys.stdin}, \var{sys.stdout} or
-\var{sys.stderr}.
+object. \var{fp} should be one of \code{sys.stdin}, \code{sys.stdout} or
+\code{sys.stderr}.
 \end{funcdesc}
 
 \subsection{macconsole options object}
@@ -57,8 +57,7 @@ The title of the window.
 \end{datadesc}
 
 \begin{datadesc}{pause_atexit}
-If set non-zero, the window will wait for user action before closing
-the window.
+If set non-zero, the window will wait for user action before closing.
 \end{datadesc}
 
 \subsection{console window object}
@@ -88,13 +87,13 @@ Clear to end-of-line.
 \end{funcdesc}
 
 \begin{funcdesc}{inverse}{onoff}
-Enable inverse-video mode: characters with the high bit set are
+Enable inverse-video mode:\ characters with the high bit set are
 displayed in inverse video (this disables the upper half of a
-non-ascii character set).
+non-\ASCII{} character set).
 \end{funcdesc}
 
 \begin{funcdesc}{gotoxy}{x\, y}
-Set the cursor to position \code{(x, y)}.
+Set the cursor to position \code{(\var{x}, \var{y})}.
 \end{funcdesc}
 
 \begin{funcdesc}{hide}{}

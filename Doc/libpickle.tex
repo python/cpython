@@ -8,7 +8,7 @@
 \indexii{pickling}{objects}
 
 The \code{pickle} module implements a basic but powerful algorithm for
-``pickling'' (a.k.a. serializing, marshalling or flattening) nearly
+``pickling'' (a.k.a.\ serializing, marshalling or flattening) nearly
 arbitrary Python objects.  This is a more primitive notion than
 persistency --- although \code{pickle} reads and writes file objects,
 it does not handle the issue of naming persistent objects, nor the
@@ -32,7 +32,7 @@ following correctly:
 
 \item pointer sharing
 
-\item instances uf user-defined classes
+\item instances of user-defined classes
 
 \end{itemize}
 
@@ -105,11 +105,11 @@ module.
 \ttindex{__dict__}
 
 Note that when class instances are pickled, their class's code and
-data is not pickled along with them.  Only the instance data is
+data are not pickled along with them.  Only the instance data are
 pickled.  This is done on purpose, so you can fix bugs in a class or
 add methods and still load objects that were created with an earlier
 version of the class.  If you plan to have long-lived objects that
-will see many versions of a class, it may be worth to put a version
+will see many versions of a class, it may be worthwhile to put a version
 number in the objects so that suitable conversions can be made by the
 class's \code{__setstate__()} method.
 
@@ -157,7 +157,7 @@ the file argument.
 
 It is possible to make multiple calls to \code{Pickler.dump()} or to
 \code{Unpickler.load()}, as long as there is a one-to-one
-correspondence between pickler and \code{Unpickler} objects and
+correspondence between \code{Pickler} and \code{Unpickler} objects and
 between \code{dump} and \code{load} calls for any pair of
 corresponding \code{Pickler} and \code{Unpicklers}.  {\em Warning}:
 this is intended for pickling multiple objects without intervening

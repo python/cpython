@@ -30,14 +30,14 @@ Bits in the status as returned by \var{Status}.
 \end{datadesc}
 
 \begin{funcdesc}{available}{}
-Returns 1 if the communication toolbox is available, zero otherwise.
+Return 1 if the communication toolbox is available, zero otherwise.
 \end{funcdesc}
 
 \begin{funcdesc}{CMNew}{name\, sizes}
 Create a connection object using the connection tool named
 \var{name}. \var{sizes} is a 6-tuple given buffer sizes for data in,
 data out, control in, control out, attention in and attention out.
-Alternatively, passing \var{None} will result in default buffer sizes.
+Alternatively, passing \code{None} will result in default buffer sizes.
 \end{funcdesc}
 
 \subsection{connection object}
@@ -47,14 +47,14 @@ of \code{-1} is indefinite, meaning that the command runs to completion.
 \renewcommand{\indexsubitem}{(connection object method)}
 
 \begin{datadesc}{callback}
-If this member is set to a value other than \var{None} it should point
+If this member is set to a value other than \code{None} it should point
 to a function accepting a single argument (the connection
 object). This will make all connection object methods work
 asynchronously, with the callback routine being called upon
 completion.
 
 {\em Note:} for reasons beyond my understanding the callback routine
-is never called currently. You are advised against using asynchronous
+is currently never called. You are advised against using asynchronous
 calls for the time being.
 \end{datadesc}
 
@@ -76,15 +76,15 @@ Accept (when \var{yesno} is non-zero) or reject an incoming call after
 
 \begin{funcdesc}{Close}{timeout\, now}
 Close a connection. When \var{now} is zero, the close is orderly
-(i.e. outstanding output is flushed, etc) with a timeout of
+(i.e.\ outstanding output is flushed, etc.)\ with a timeout of
 \var{timeout} seconds. When \var{now} is non-zero the close is
-immedeate, discarding output.
+immediate, discarding output.
 \end{funcdesc}
 
 \begin{funcdesc}{Read}{len\, chan\, timeout}
-Read \var{len} bytes or until \var{timeout} seconds have passed from
+Read \var{len} bytes, or until \var{timeout} seconds have passed, from
 the channel \var{chan} (which is one of \var{cmData}, \var{cmCntl} or
-\var{cmAttn}). Returns a 2-tuple: the data read and the end-of-message
+\var{cmAttn}). Return a 2-tuple:\ the data read and the end-of-message
 flag.
 \end{funcdesc}
 
@@ -97,8 +97,8 @@ the number of bytes written.
 \end{funcdesc}
 
 \begin{funcdesc}{Status}{}
-Return connection status as the 2-tuple \code{(sizes,
-flags)}. \var{Sizes} is a 6-tuple giving the actual buffer sizes used
+Return connection status as the 2-tuple \code{(\var{sizes},
+\var{flags})}. \var{sizes} is a 6-tuple giving the actual buffer sizes used
 (see \var{CMNew}), \var{flags} is a set of bits describing the state
 of the connection.
 \end{funcdesc}

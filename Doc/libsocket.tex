@@ -10,7 +10,7 @@ Tutorial}, by Stuart Sechrest and \emph{An Advanced 4.3BSD Interprocess
 Communication Tutorial}, by Samuel J.  Leffler et al, both in the
 \UNIX{} Programmer's Manual, Supplementary Documents 1 (sections PS1:7
 and PS1:8).  The \UNIX{} manual pages for the various socket-related
-system calls also a valuable source of information on the details of
+system calls are also a valuable source of information on the details of
 socket semantics.
 
 The Python interface is a straightforward transliteration of the
@@ -77,11 +77,11 @@ used for the second argument to \code{socket()}.
 \dataline{IPPORT_*}
 \dataline{INADDR_*}
 \dataline{IP_*}
-Many constants of these forms, documented in the Unix documentation on
+Many constants of these forms, documented in the \UNIX{} documentation on
 sockets and/or the IP protocol, are also defined in the socket module.
 They are generally used in arguments to the \code{setsockopt} and
 \code{getsockopt} methods of socket objects.  In most cases, only
-those symbols that are defined in the Unix header files are defined;
+those symbols that are defined in the \UNIX{} header files are defined;
 for a few symbols, default values are provided.
 \end{datadesc}
 
@@ -113,7 +113,7 @@ for that service.  The protocol name should be \code{'tcp'} or
 \code{'udp'}.
 \end{funcdesc}
 
-\begin{funcdesc}{socket}{family\, type\, proto}
+\begin{funcdesc}{socket}{family\, type\optional{\, proto}}
 Create a new socket using the given address family, socket type and
 protocol number.  The address family should be \code{AF_INET} or
 \code{AF_UNIX}.  The socket type should be \code{SOCK_STREAM},
@@ -121,7 +121,7 @@ protocol number.  The address family should be \code{AF_INET} or
 The protocol number is usually zero and may be omitted in that case.
 \end{funcdesc}
 
-\begin{funcdesc}{fromfd}{fd\, family\, type\, proto}
+\begin{funcdesc}{fromfd}{fd\, family\, type\optional{\, proto}}
 Build a socket object from an existing file descriptor (an integer as
 returned by a file object's \code{fileno} method).  Address family,
 socket type and protocol number are as for the \code{socket} function
@@ -129,7 +129,7 @@ above.  The file descriptor should refer to a socket, but this is not
 checked --- subsequent operations on the object may fail if the file
 descriptor is invalid.  This function is rarely needed, but can be
 used to get or set socket options on a socket passed to a program as
-standard input or output (e.g. a server started by the \UNIX{} inet
+standard input or output (e.g.\ a server started by the \UNIX{} inet
 daemon).
 \end{funcdesc}
 
@@ -185,7 +185,7 @@ number of an IP socket, for instance.
 see above.)
 \end{funcdesc}
 
-\begin{funcdesc}{getsockopt}{level\, optname\, buflen}
+\begin{funcdesc}{getsockopt}{level\, optname\optional{\, buflen}}
 Return the value of the given socket option (see the \UNIX{} man page
 {\it getsockopt}(2)).  The needed symbolic constants are defined in
 the \code{socket} module (\code{SO_*} etc.).  If the optional third
@@ -211,7 +211,7 @@ descriptor, so the file object and socket object may be closed or
 garbage-collected independently.
 \end{funcdesc}
 
-\begin{funcdesc}{recv}{bufsize\, flags}
+\begin{funcdesc}{recv}{bufsize\optional{\, flags}}
 Receive data from the socket.  The return value is a string representing
 the data received.  The maximum amount of data to be received
 at once is specified by \var{bufsize}.  See the \UNIX{} manual page
@@ -271,7 +271,7 @@ Note that there are no methods \code{read()} or \code{write()}; use
 \subsection{Example}
 \nodename{Socket Example}
 
-Here are two minimal example programs using the TCP/IP protocol: a
+Here are two minimal example programs using the TCP/IP protocol:\ a
 server that echoes all data that it receives back (servicing only one
 client), and a client using it.  Note that a server must perform the
 sequence \code{socket}, \code{bind}, \code{listen}, \code{accept}

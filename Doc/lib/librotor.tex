@@ -25,7 +25,7 @@ The available functions in this module are:
 
 \renewcommand{\indexsubitem}{(in module rotor)}
 \begin{funcdesc}{newrotor}{key\optional{\, numrotors}}
-Returns a rotor object. \var{key} is a string containing the encryption key
+Return a rotor object. \var{key} is a string containing the encryption key
 for the object; it can contain arbitrary binary data. The key will be used
 to randomly generate the rotor permutations and their initial positions.
 \var{numrotors} is the number of rotor permutations in the returned object;
@@ -36,28 +36,28 @@ Rotor objects have the following methods:
 
 \renewcommand{\indexsubitem}{(rotor method)}
 \begin{funcdesc}{setkey}{}
-Resets the rotor to its initial state.
+Reset the rotor to its initial state.
 \end{funcdesc}
 
 \begin{funcdesc}{encrypt}{plaintext}
-Resets the rotor object to its initial state and encrypts \var{plaintext},
+Reset the rotor object to its initial state and encrypt \var{plaintext},
 returning a string containing the ciphertext.  The ciphertext is always the
 same length as the original plaintext.
 \end{funcdesc}
 
 \begin{funcdesc}{encryptmore}{plaintext}
-Encrypts \var{plaintext} without resetting the rotor object, and returns a
+Encrypt \var{plaintext} without resetting the rotor object, and return a
 string containing the ciphertext.
 \end{funcdesc}
 
 \begin{funcdesc}{decrypt}{ciphertext}
-Resets the rotor object to its initial state and decrypts \var{ciphertext},
+Reset the rotor object to its initial state and decrypt \var{ciphertext},
 returning a string containing the ciphertext.  The plaintext string will
 always be the same length as the ciphertext.
 \end{funcdesc}
 
 \begin{funcdesc}{decryptmore}{ciphertext}
-Decrypts \var{ciphertext} without resetting the rotor object, and returns a
+Decrypt \var{ciphertext} without resetting the rotor object, and return a
 string containing the ciphertext.
 \end{funcdesc}
 

@@ -3,11 +3,11 @@
 \renewcommand{\indexsubitem}{(in module mactcp)}
 
 This module provides an interface to the Macintosh TCP/IP driver
-MacTCP. There is an accompanying module \var{macdnr} which provides an
+MacTCP\@. There is an accompanying module \code{macdnr} which provides an
 interface to the name-server (allowing you to translate hostnames to
-ip-addresses), a module \var{MACTCP} which has symbolic names for
-constants constants used by MacTCP and a wrapper module \var{socket}
-which mimics the unix socket interface (as far as possible).
+ip-addresses), a module \code{MACTCP} which has symbolic names for
+constants constants used by MacTCP and a wrapper module \code{socket}
+which mimics the \UNIX{} socket interface (as far as possible).
 
 A complete description of the MacTCP interface can be found in the
 Apple MacTCP API documentation.
@@ -26,14 +26,14 @@ Return the 32-bit integer network mask of the interface.
 \end{funcdesc}
 
 \begin{funcdesc}{TCPCreate}{size}
-Create a TCP Stream object. \var{Size} is the size of the receive
+Create a TCP Stream object. \var{size} is the size of the receive
 buffer, \code{4096} is suggested by various sources.
 \end{funcdesc}
 
 \begin{funcdesc}{UDPCreate}{size, port}
-Create a UDP stream object. \var{Size} is the size of the receive
+Create a UDP stream object. \var{size} is the size of the receive
 buffer (and, hence, the size of the biggest datagram you can receive
-on this port). \var{Port} is the UDP port number you want to receive
+on this port). \var{port} is the UDP port number you want to receive
 datagrams on, a value of zero will make MacTCP select a free port.
 \end{funcdesc}
 
@@ -41,30 +41,30 @@ datagrams on, a value of zero will make MacTCP select a free port.
 \renewcommand{\indexsubitem}{(TCP stream method)}
 
 \begin{datadesc}{asr}
-When set to a value different than \var{None} this should point to a
-function with two integer parameters: an event code and a detail. This
+When set to a value different than \code{None} this should point to a
+function with two integer parameters:\ an event code and a detail. This
 function will be called upon network-generated events such as urgent
 data arrival. In addition, it is called with eventcode
-\var{MACTCP.PassiveOpenDone} when a \var{PassiveOpen} completes. This
-is a python addition to the MacTCP semantics.
-It is safe to do further calls from the asr.
+\code{MACTCP.PassiveOpenDone} when a \code{PassiveOpen} completes. This
+is a Python addition to the MacTCP semantics.
+It is safe to do further calls from the \code{asr}.
 \end{datadesc}
 
 \begin{funcdesc}{PassiveOpen}{port}
 Wait for an incoming connection on TCP port \var{port} (zero makes the
-system pick a free port). The call returns immedeately, and you should
+system pick a free port). The call returns immediately, and you should
 use \var{wait} to wait for completion. You should not issue any method
 calls other than
-\var{wait}, \var{isdone} or \var{GetSockName} before the call
+\code{wait}, \code{isdone} or \code{GetSockName} before the call
 completes.
 \end{funcdesc}
 
 \begin{funcdesc}{wait}{}
-Wait for \var{PassiveOpen} to complete.
+Wait for \code{PassiveOpen} to complete.
 \end{funcdesc}
 
 \begin{funcdesc}{isdone}{}
-Return 1 if a \var{PassiveOpen} is completed.
+Return 1 if a \code{PassiveOpen} has completed.
 \end{funcdesc}
 
 \begin{funcdesc}{GetSockName}{}
@@ -73,9 +73,9 @@ Return the TCP address of this side of a connection as a 2-tuple
 \end{funcdesc}
 
 \begin{funcdesc}{ActiveOpen}{lport\, host\, rport}
-Open an outgoing connection to TCP address \code{(host, rport)}. Use
+Open an outgoing connection to TCP address \code{(\var{host}, \var{rport})}. Use
 local port \var{lport} (zero makes the system pick a free port). This
-call blocks until the connection is established.
+call blocks until the connection has been established.
 \end{funcdesc}
 
 \begin{funcdesc}{Send}{buf\, push\, urgent}
@@ -87,7 +87,7 @@ are flags as specified by the TCP standard.
 Receive data. The call returns when \var{timeout} seconds have passed
 or when (according to the MacTCP documentation) ``a reasonable amount
 of data has been received''. The return value is a 3-tuple
-\code{(data, urgent, mark)}. If urgent data is outstanding \var{Rcv}
+\code{(\var{data}, \var{urgent}, \var{mark})}. If urgent data is outstanding \code{Rcv}
 will always return that before looking at any normal data. The first
 call returning urgent data will have the \var{urgent} flag set, the
 last will have the \var{mark} flag set.
@@ -95,7 +95,7 @@ last will have the \var{mark} flag set.
 
 \begin{funcdesc}{Close}{}
 Tell MacTCP that no more data will be transmitted on this
-connection. The call returnes when all data has been acknowledged by
+connection. The call returns when all data has been acknowledged by
 the receiving side.
 \end{funcdesc}
 
@@ -131,7 +131,7 @@ amtUnackedData} is what you can pass to \code{Send} without blocking.
 \end{datadesc}
 
 \begin{datadesc}{amtUnreadData}
-The number of bytes received but not yet read (what you can \var{Recv}
+The number of bytes received but not yet read (what you can \code{Recv}
 without blocking).
 \end{datadesc}
 
@@ -145,7 +145,7 @@ about UDP.
 
 \begin{datadesc}{asr}
 The asynchronous service routine to be called on events such as
-datagram arrival without outstanding \var{Read} call. The asr has a
+datagram arrival without outstanding \code{Read} call. The \code{asr} has a
 single argument, the event code.
 \end{datadesc}
 
@@ -154,8 +154,8 @@ A read-only member giving the port number of this UDP stream.
 \end{datadesc}
 
 \begin{funcdesc}{Read}{timeout}
-Read a datagram, waiting at most \var{timeout} seconds (-1 is
-indefinite). Returns the data.
+Read a datagram, waiting at most \var{timeout} seconds ($-1$ is
+indefinite). Return the data.
 \end{funcdesc}
 
 \begin{funcdesc}{Write}{host\, port\, buf}

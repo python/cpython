@@ -12,20 +12,20 @@ it is explicitly reset (i.e. Python uses the BSD style interface).
 
 \item
 There is no way to ``block'' signals temporarily from critical
-sections (since this is not supported by all Unix flavors).
+sections (since this is not supported by all \UNIX{} flavors).
 
 \item
 Although Python signal handlers are called asynchronously as far as
 the Python user is concerned, they can only occur between the
 ``atomic'' instructions of the Python interpreter.  This means that
 signals arriving during long calculations implemented purely in C
-(e.g. regular expression matches on large bodies of text) may be
+(e.g.\ regular expression matches on large bodies of text) may be
 delayed for an arbitrary time.
 
 \item
 When a signal arrives during an I/O operation, it is possible that the
 I/O operation raises an exception after the signal handler returns.
-This is dependent on the underlying Unix system's semantics regarding
+This is dependent on the underlying \UNIX{} system's semantics regarding
 interrupted system calls.
 
 \item
@@ -44,8 +44,8 @@ overridden.
 \item
 Some care must be taken if both signals and threads are used in the
 same program.  The fundamental thing to remember in using signals and
-threads simultaneously is: always perform \code{signal()} operations
-in the main thread of execution.  Any thread can perform a
+threads simultaneously is:\ always perform \code{signal()} operations
+in the main thread of execution.  Any thread can perform an
 \code{alarm()}, \code{getsignal()}, or \code{pause()}; only the main
 thread can set a new signal handler, and the main thread will be the
 only one to receive signals.  This means that signals can't be used as
@@ -73,7 +73,7 @@ The variables defined in the signal module are:
   hangup signal is defined as \code{signal.SIGHUP}; the variable names
   are identical to the names used in C programs, as found in
   \file{signal.h}.
-  The UNIX man page for \file{signal} lists the existing signals (on
+  The \UNIX{} man page for \file{signal} lists the existing signals (on
   some systems this is \file{signal(2)}, on others the list is in
   \file{signal(7)}).
   Note that not all systems define the same set of signal names; only
@@ -89,18 +89,18 @@ The signal module defines the following functions:
 \begin{funcdesc}{alarm}{time}
   If \var{time} is non-zero, this function requests that a
   \code{SIGALRM} signal be sent to the process in \var{time} seconds.
-  Any previously scheduled alarm is canceled (i.e. only one alarm can
+  Any previously scheduled alarm is canceled (i.e.\ only one alarm can
   be scheduled at any time).  The returned value is then the number of
   seconds before any previously set alarm was to have been delivered.
   If \var{time} is zero, no alarm id scheduled, and any scheduled
   alarm is canceled.  The return value is the number of seconds
   remaining before a previously scheduled alarm.  If the return value
-  is zero, no alarm is currently scheduled.  (See the UNIX man page
+  is zero, no alarm is currently scheduled.  (See the \UNIX{} man page
   \code{alarm(2)}.)
 \end{funcdesc}
 
 \begin{funcdesc}{getsignal}{signalnum}
-  Returns the current signal handler for the signal \var{signalnum}.
+  Return the current signal handler for the signal \var{signalnum}.
   The returned value may be a callable Python object, or one of the
   special values \code{signal.SIG_IGN}, \code{signal.SIG_DFL} or
   \code{None}.  Here, \code{signal.SIG_IGN} means that the signal was
@@ -110,20 +110,20 @@ The signal module defines the following functions:
 \end{funcdesc}
 
 \begin{funcdesc}{pause}{}
-  Causes the process to sleep until a signal is received; the
+  Cause the process to sleep until a signal is received; the
   appropriate handler will then be called.  Returns nothing.  (See the
-  UNIX man page \code{signal(2)}.)
+  \UNIX{} man page \code{signal(2)}.)
 \end{funcdesc}
 
 \begin{funcdesc}{signal}{signalnum\, handler}
-  Sets the handler for signal \var{signalnum} to the function
+  Set the handler for signal \var{signalnum} to the function
   \var{handler}.  \var{handler} can be any callable Python object, or
   one of the special values \code{signal.SIG_IGN} or
   \code{signal.SIG_DFL}.  The previous signal handler will be returned
-  (see the description of \code{getsignal()} above).  (See the UNIX
+  (see the description of \code{getsignal()} above).  (See the \UNIX{}
   man page \code{signal(2)}.)
 
   When threads are enabled, this function can only be called from the
   main thread; attempting to call it from other threads will cause a
-  \code{ValueError} exception will be raised.
+  \code{ValueError} exception to be raised.
 \end{funcdesc}

@@ -39,7 +39,8 @@ returned by \code{get_suffixes} describing the kind of file found.
 Initialize the built-in module called \var{name} and return its module
 object.  If the module was already initialized, it will be initialized
 {\em again}.  A few modules cannot be initialized twice --- attempting
-to initialize these again will raise an exception.  If there is no
+to initialize these again will raise an \code{ImportError} exception.
+If there is no
 built-in module called \var{name}, \code{None} is returned.
 \end{funcdesc}
 

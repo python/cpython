@@ -5,8 +5,8 @@
 
 \renewcommand{\indexsubitem}{(in module tempfile)}
 
-This module generates temporary file names.  It is not UNIX specific,
-but it may require some help on non-UNIX systems.
+This module generates temporary file names.  It is not \UNIX{} specific,
+but it may require some help on non-\UNIX{} systems.
 
 Note: the modules does not create temporary files, nor does it
 automatically remove them when the current process exits or dies.
@@ -27,7 +27,7 @@ are initialized at the first call to \code{mktemp()}.
 When set to a value other than \code{None}, this variable defines the
 directory in which filenames returned by \code{mktemp()} reside.  The
 default is taken from the environment variable \code{TMPDIR}; if this
-is not set, either \code{/usr/tmp} is used (on UNIX), or the current
+is not set, either \code{/usr/tmp} is used (on \UNIX{}), or the current
 working directory (all other systems).  No check is made to see
 whether its value is valid.
 \end{datadesc}
@@ -38,11 +38,11 @@ When set to a value other than \code{None}, this variable defines the
 prefix of the final component of the filenames returned by
 \code{mktemp()}.  A string of decimal digits is added to generate
 unique filenames.  The default is either ``\code{@\var{pid}.}'' where
-\var{pid} is the current process ID (on UNIX), or ``\code{tmp}'' (all
+\var{pid} is the current process ID (on \UNIX{}), or ``\code{tmp}'' (all
 other systems).
 \end{datadesc}
 
-Warning: if a UNIX process uses \code{mktemp()}, then calls
+Warning: if a \UNIX{} process uses \code{mktemp()}, then calls
 \code{fork()} and both parent and child continue to use
 \code{mktemp()}, the processes will generate conflicting temporary
 names.  To resolve this, the child process should assign \code{None}
