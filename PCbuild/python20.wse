@@ -2505,6 +2505,48 @@ item: Edit Registry
 end
 item: End Block
 end
+item: Remark
+end
+item: Remark
+  Text=If we're installing IDLE, also set an Edit context menu action to use IDLE, for .py and .pyw files.
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=B
+  Flags=00000010
+end
+item: If/While Statement
+  Variable=USE_HKCR
+  Value=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Python.NoConFile\shell\Edit with IDLE\command
+  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Tools\idle\idle.pyw -e "%%1"
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Python.File\shell\Edit with IDLE\command
+  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Tools\idle\idle.pyw -e "%%1"
+end
+item: Else Statement
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.NoConFile\shell\Edit with IDLE\command
+  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Tools\idle\idle.pyw -e "%%1"
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.File\shell\Edit with IDLE\command
+  New Value=%MAINDIR%\pythonw.exe %MAINDIR%\Tools\idle\idle.pyw -e "%%1"
+  Root=1
+end
+item: End Block
+end
+item: End Block
+end
 item: End Block
 end
 item: Remark
