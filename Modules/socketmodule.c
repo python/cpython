@@ -148,13 +148,15 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # include <ctype.h>
 #endif
 
-#if defined(__VMS) && ! defined(_SOCKADDR_LEN)
+#if defined(__VMS)
+#if ! defined(_SOCKADDR_LEN)
 #   ifdef getaddrinfo
 #      undef getaddrinfo
 #   endif
 #  include "TCPIP_IOCTL_ROUTINE"
 #else
 #  include <ioctl.h>
+#endif
 #endif
 
 #if defined(PYOS_OS2)
