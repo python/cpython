@@ -1,13 +1,75 @@
 What's New in Python 2.2a4?
 ===========================
 
-Core
+Type/class unification and new-style classes
+
+- pydoc and inspect are now aware of new-style classes;
+  e.g. help(list) at the interactive prompt now shows proper
+  documentation for all operations on list objects.
+
+- Applications using Jim Fulton's ExtensionClass module can now safely
+  be used with Python 2.2.  In particular, Zope 2.4.1 now works with
+  Python 2.2 (as well as with Python 2.1.1).  The Demo/metaclass
+  examples also work again.  It is hoped that Gtk and Boost also work
+  with 2.2a4 and beyond.  (If you can confirm this, please write
+  webmaster@python.org; if there are still problems, please open a bug
+  report on SourceForge.)
 
 - property() now takes 4 keyword arguments:  fget, fset, fdel and doc.
   These map to readonly attributes 'fget', 'fset', 'fdel', and '__doc__'
   in the constructed property object.  fget, fset and fdel weren't
   discoverable from Python in 2.2a3.  __doc__ is new, and allows to
   associate a docstring with a property.
+
+- Comparison overloading is now more completely implemented.  For
+  example, a str subclass instance can properly be compared to a str
+  instance, and it can properly overload comparison.  Ditto for most
+  other built-in object types.
+
+- The repr() of new-style classes has changed; instead of <type
+  'M.Foo'> a new-style class is now rendered as <class 'M.Foo'>,
+  *except* for built-in types, which are still rendered as <type
+  'Foo'> (to avoid upsetting existing code that might parse or
+  otherwise rely on repr() of certain type objects).
+
+- The repr() of new-style objects is now always <Foo object at XXX>;
+  previously, it was sometimes <Foo instance at XXX>.
+
+- For new-style classes, what was previously called __getattr__ is now
+  called __getattribute__.  This method, if defined, is called for
+  *every* attribute access.  A new __getattr__ hook mor similar to the
+  one in classic classes is defined which is called only if regular
+  attribute access raises AttributeError; to catch *all* attribute
+  access, you can use __getattribute__ (for new-style classes).  If
+  both are defined, __getattribute__ is called first, and if it raises
+  AttributeError, __getattr__ is called.
+
+- The __class__ attribute of new-style objects can be assigned to.
+  The new class must have the same C-level object layout as the old
+  class.
+
+- The builtin file type can be subclassed now.  In the usual pattern,
+  "file" is the name of the builtin type, and file() is a new builtin
+  constructor, with the same signature as the builtin open() function.
+  file() is now the preferred way to open a file.
+
+- Previously, __new__ would only see sequential arguments passed to
+  the type in a constructor call; __init__ would see both sequential
+  and keyword arguments.  This made no sense whatsoever any more, so
+  now both __new__ and __init__ see all arguments.
+
+- Previously, hash() applied to an instance of a subclass of str or
+  unicode always returned 0.  This has been repaired.
+
+- Previously, an operation on an instance of a subclass of an
+  immutable type (int, long, float, complex, tuple, str, unicode),
+  where the subtype didn't override the operation (and so the
+  operation was handled by the builtin type), could return that
+  instance instead a value of the base type.  For example, if s was of
+  a str sublass type, s[:] returned s as-is.  Now it returns a str
+  with the same value as s.
+
+Core
 
 - file.writelines() now accepts any iterable object producing strings.
 
@@ -21,40 +83,6 @@ Core
   method. As a result, all file-like object which may be the target
   of a print statement must support Unicode objects, i.e. they must
   at least convert them into ASCII strings.
-
-- The builtin file type can be subclassed now.  In the usual pattern,
-  "file" is the name of the builtin type, and file() is a new builtin
-  constructor, with the same signature as the builtin open() function.
-  file() is now the preferred way to open a file.
-
-- In 2.2a3, *for new-style classes only*, __getattr__ was called for
-  every attribute access.  This was confusing because it differed
-  significantly from the behavior of classic classes, where it was
-  only called for missing attributes.  Now, __getattr__ is called only
-  if regular attribute access raises AttributeError; to catch *all*
-  attribute access, *for new-style classes only*, you can use
-  __getattribute__.  If both are defined, __getattribute__ is called
-  first, and if it raises AttributeError, __getattr__ is called.
-
-- In 2.2a3, __new__ would only see sequential arguments passed to the
-  type in a constructor call; __init__ would see both sequential and
-  keyword arguments.  This made no sense whatsoever any more, so
-  now both __new__ and __init__ see all arguments.
-
-- In 2.2a3, hash() applied to an instance of a subclass of str or unicode
-  always returned 0.  This has been repaired.
-
-- In 2.2a3, an operation on an instance of a subclass of an immutable type
-  (int, long, float, complex, tuple, str, unicode), where the subtype
-  didn't override the operation (and so the operation was handled by the
-  builtin type), could return that instance instead a value of the base
-  type.  For example, if s was of a str sublass type, s[:] returned s
-  as-is.  Now it returns a str with the same value as s.
-
-- Applications using Jim Fulton's ExtensionClass module can now safely
-  be used with Python 2.2.  In particular, Zope 2.4.1 now works with
-  Python 2.2 (as well as with Python 2.1.1).  The Demo/metaclass
-  examples also work again.
 
 - Thread scheduling on Solaris should be improved; it is no longer
   necessary to insert a small sleep at the start of a thread in order
@@ -101,10 +129,6 @@ Library
   Python 2.2 bytecode generation.  It has also been promoted from a
   Tool to a standard library package.  (Tools/compiler still exists as
   a sample driver.)
-
-- pydoc and inspect are now aware of new-style classes;
-  e.g. help(list) at the interactive prompt now shows proper
-  documentation for all operations on list objects.
 
 Tools
 
