@@ -122,6 +122,7 @@ or \function{localtime()} to a 24-character string of the following form:
 \code{'Sun Jun 20 23:21:05 1993'}.  If \var{tuple} is not provided, the
 current time as returned by \function{localtime()} is used.  Note: unlike
 the C function of the same name, there is no trailing newline.
+\versionchanged[Allowed \var{tuple} to be omitted]{2.1}
 \end{funcdesc}
 
 \begin{funcdesc}{clock}{}
@@ -137,6 +138,7 @@ Convert a time expressed in seconds since the epoch to a string
 representing local time. If \var{secs} is not provided, the current time
 as returned by \function{time()} is used.  \code{ctime(\var{secs})}
 is equivalent to \code{asctime(localtime(\var{secs}))}.
+\versionchanged[Allowed \var{secs} to be omitted]{2.1}
 \end{funcdesc}
 
 \begin{datadesc}{daylight}
@@ -149,11 +151,13 @@ in UTC in which the dst flag is always zero.  If \var{secs} is not
 provided, the current time as returned by \function{time()} is used.
 Fractions of a second are ignored.  See above for a description of the
 tuple lay-out.
+\versionchanged[Allowed \var{secs} to be omitted]{2.1}
 \end{funcdesc}
 
 \begin{funcdesc}{localtime}{\optional{secs}}
 Like \function{gmtime()} but converts to local time.  The dst flag is
 set to \code{1} when DST applies to the given time.
+\versionchanged[Allowed \var{secs} to be omitted]{2.1}
 \end{funcdesc}
 
 \begin{funcdesc}{mktime}{tuple}
@@ -180,6 +184,7 @@ Convert a tuple representing a time as returned by \function{gmtime()}
 or \function{localtime()} to a string as specified by the \var{format}
 argument.  If \var{tuple} is not provided, the current time as returned by
 \function{localtime()} is used.  \var{format} must be a string.
+\versionchanged[Allowed \var{tuple} to be omitted]{2.1}
 
 The following directives can be embedded in the \var{format} string.
 They are shown without the optional field width and precision
