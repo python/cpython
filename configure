@@ -1635,7 +1635,7 @@ rm -f conftest*
 fi
 rm -f conftest*
 
-+ test -n "$silent" || echo "checking for setpgrp"
+test -n "$silent" || echo "checking for setpgrp"
 cat > conftest.${ac_ext} <<EOF
 #include "confdefs.h"
 #include <ctype.h>
