@@ -183,6 +183,8 @@ sequences.  Use this if you need to display text that might contain
 such characters in HTML.  To translate URLs for inclusion in the HREF
 attribute of an <A> tag, use urllib.quote().
 
+log(fmt, ...): write a line to a log file; see docs for initlog().
+
 
 Caring about security
 ---------------------
@@ -349,6 +351,11 @@ first two lines have been printed, a traceback will be displayed.
 Because no HTML interpretation is going on, the traceback will
 readable.
 
+When all else fails, you may want to insert calls to log() to your
+program or even to a copy of the cgi.py file.  Note that this requires
+you to set cgi.logfile to the name of a world-writable file before the
+first call to log() is made!
+
 Good luck!
 
 
@@ -408,6 +415,59 @@ __version__ = "2.0b4"
 import string
 import sys
 import os
+
+
+# Logging support
+# ===============
+
+logfile = ""		# Filename to log to, if not empty
+logfp = None		# File object to log to, if not None
+
+def initlog(*allargs):
+    """Write a log message, if there is a log file.
+
+    Even though this function is called initlog(), you should always
+    use log(); log is a variable that is set either to initlog
+    (initially), to dolog (once the log file has been opened), or to
+    nolog (when logging is disabled).
+
+    The first argument is a format string; the remaining arguments (if
+    any) are arguments to the % operator, so e.g.
+        log("%s: %s", "a", "b")
+    will write "a: b" to the log file, followed by a newline.
+
+    If the global logfp is not None, it should be a file object to
+    which log data is written.
+
+    If the global logfp is None, the global logfile may be a string
+    giving a filename to open, in append mode.  This file should be
+    world writable!!!  If the file can't be opened, logging is
+    silently disabled (since there is no safe place where we could
+    send an error message).
+
+    """
+    global logfp, log
+    if logfile and not logfp:
+	try:
+	    logfp = open(logfile, "a")
+	except IOError:
+	    pass
+    if not logfp:
+	log = nolog
+    else:
+	log = dolog
+    apply(log, allargs)
+
+def dolog(fmt, *args):
+    """Write a log message to the log file.  See initlog() for docs."""
+    logfp.write(fmt%args + "\n")
+
+def nolog(*allargs):
+    """Dummy function, assigned to log when logging is disabled."""
+    pass
+
+log = initlog		# The current logging function
+
 
 # Parsing functions
 # =================
