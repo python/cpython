@@ -25,18 +25,27 @@ February = 2
 mdays = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 class _localized_name:
-    def __init__(self, format):
+    def __init__(self, format, len):
         self.format = format
+        self.len = len
     def __getitem__(self, item):
-        return strftime(self.format, (item,)*9).capitalize()
+        if isinstance(item, int):
+            if item < 0: item += self.len
+            if not 0 <= item < self.len:
+                raise IndexError, "out of range"
+            return strftime(self.format, (item,)*9).capitalize()
+        elif isinstance(item, type(slice(0))):
+            return [self[e] for e in range(self.len)].__getslice__(item.start, item.stop)
+    def __len__(self):
+        return self.len
 
 # Full and abbreviated names of weekdays
-day_name = _localized_name('%A')
-day_abbr = _localized_name('%a')
+day_name = _localized_name('%A', 7)
+day_abbr = _localized_name('%a', 7)
 
 # Full and abbreviated names of months (1-based arrays!!!)
-month_name = _localized_name('%B')
-month_abbr = _localized_name('%b')
+month_name = _localized_name('%B', 13)
+month_abbr = _localized_name('%b', 13)
 
 # Constants for weekdays
 (MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY) = range(7)
