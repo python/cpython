@@ -120,10 +120,11 @@ class CheckerWindow(webchecker.Checker):
 	self.__step = Button(self.__controls, text="Check one",
 			     command=self.step)
 	self.__step.pack(side=LEFT)
-	self.__cv = BooleanVar()
-	self.__cv.set(1)
+	self.__cv = BooleanVar(parent)
+	self.__cv.set(self.checkext)
 	self.__checkext = Checkbutton(self.__controls, variable=self.__cv,
-				      text="Check nonlocal links")
+				      command=self.update_checkext,
+				      text="Check nonlocal links",)
 	self.__checkext.pack(side=LEFT)
 	self.__reset = Button(self.__controls, text="Start over", command=self.reset)
 	self.__reset.pack(side=LEFT)
@@ -144,16 +145,11 @@ class CheckerWindow(webchecker.Checker):
 	self.__errors = ListPanel(mp, "Pages w/ bad links", self.showinfo)
 	self.__details = LogPanel(mp, "Details")
 	webchecker.Checker.__init__(self)
-	del self.checkext # See __getattr__ below
 	if root:
 	    root = string.strip(str(root))
 	    if root:
 		self.suggestroot(root)
 	self.newstatus()
-
-    def __getattr__(self, name):
-	if name != 'checkext': raise AttributeError, name
-	return self.__cv.get()
 
     def reset(self):
 	webchecker.Checker.reset(self)
@@ -299,6 +295,9 @@ class CheckerWindow(webchecker.Checker):
 	self.__status.config(text="Status: "+self.status())
 	self.__parent.update()
 
+    def update_checkext(self):
+	self.checkext = self.__cv.get()
+
 
 class ListPanel:
 
@@ -395,7 +394,7 @@ class MultiPanel:
 	self.panels = {}
 
     def addpanel(self, name, on=0):
-	v = StringVar()
+	v = StringVar(self.parent)
 	if on:
 	    v.set(name)
 	else:
