@@ -23,7 +23,7 @@ except ImportError:
 # this test is done to see if machine representation is the same as
 # network representation.  if so, we can use module struct for packing
 # some data types
-__USE_MACHINE_REP = (struct.pack('l', 1) == '\0\0\0\1')
+_USE_MACHINE_REP = (struct.pack('l', 1) == '\0\0\0\1')
 
 # exceptions
 class Error:
@@ -67,7 +67,7 @@ class Packer:
 	self.__buf = self.__buf + \
 		     (chr(int(x>>24 & 0xff)) + chr(int(x>>16 & 0xff)) + \
 		      chr(int(x>>8 & 0xff)) + chr(int(x & 0xff)))
-    if __USE_MACHINE_REP:
+    if _USE_MACHINE_REP:
 	def pack_uint(self, x):
 	    if type(x) == LongType:
 		x = int((x + 0x80000000L) % 0x100000000L - 0x80000000L)
@@ -171,7 +171,7 @@ class Unpacker:
 	if x < 0x80000000L:
 	    x = int(x)
 	return x
-    if __USE_MACHINE_REP:
+    if _USE_MACHINE_REP:
 	def unpack_uint(self):
 	    i = self.__pos
 	    self.__pos = j = i+4
