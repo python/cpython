@@ -392,6 +392,14 @@ version of \function{profile.run()}.  Statistics for identically named
 single function statistics.
 \end{methoddesc}
 
+\begin{methoddesc}[Stats]{dump_stats}{filename}
+Save the data loaded into the \class{Stats} object to a file named
+\var{filename}.  The file is created if it does not exist, and is
+overwritten if it already exists.  This is equivalent to the method of
+the same name on the \class{profile.Profile} class.
+\versionadded{2.3}
+\end{methoddesc}
+
 \begin{methoddesc}[Stats]{sort_stats}{key\optional{, ...}}
 This method modifies the \class{Stats} object by sorting it according
 to the supplied criteria.  The argument is typically a string
