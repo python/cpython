@@ -166,6 +166,8 @@ class SocketIO:
             return ("OK", ret)
         except SystemExit:
             raise
+        except socket.error:
+            pass
         except:
             self.debug("localcall:EXCEPTION")
             traceback.print_exc(file=sys.__stderr__)

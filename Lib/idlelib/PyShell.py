@@ -400,7 +400,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
             from signal import SIGINT
         except ImportError:
             SIGINT = 2
-        os.kill(self.rpcpid, SIGINT)
+        try:
+            os.kill(self.rpcpid, SIGINT)
+        except OSError:    # subprocess may have already exited
+            pass
 
     def __request_interrupt(self):
         self.rpcclt.asynccall("exec", "interrupt_the_server", (), {})
