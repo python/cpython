@@ -47,6 +47,8 @@ ConstStringPtr = StringPtr
 # File System Specifications
 FSSpec_ptr = OpaqueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
 FSSpec = OpaqueByValueType("FSSpec", "PyMac_BuildFSSpec", "PyMac_GetFSSpec")
+FSRef_ptr = OpaqueType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
+FSRef = OpaqueByValueType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
 
 # OSType and ResType: 4-byte character strings
 def OSTypeType(typename):
@@ -110,6 +112,19 @@ VarInOutBuffer = VarHeapInputOutputBufferType('char', 'long', 'l') # (inbuf, out
 OutBuffer = HeapOutputBufferType('char', 'long', 'l')		# (buf, len)
 VarOutBuffer = VarHeapOutputBufferType('char', 'long', 'l')	# (buf, &len)
 VarVarOutBuffer = VarVarHeapOutputBufferType('char', 'long', 'l') # (buf, len, &len)
+
+# Unicode arguments sometimes have reversed len, buffer (don't understand why Apple did this...)
+class VarUnicodeInputBufferType(VarInputBufferType):
+
+	def getargsFormat(self):
+		return "u#"
+		
+class VarUnicodeReverseInputBufferType(ReverseInputBufferMixin, VarUnicodeInputBufferType):
+	pass
+	
+UnicodeInBuffer = VarUnicodeInputBufferType('UniChar', 'UniCharCount', 'l')
+UnicodeReverseInBuffer = VarUnicodeReverseInputBufferType('UniChar', 'UniCharCount', 'l')
+UniChar_ptr = InputOnlyType("UniCharPtr", "u")
 
 
 # Predefine various pieces of program text to be passed to Module() later:
