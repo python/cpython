@@ -15,6 +15,7 @@
 # * Fancy comments, like this bulleted list, arent handled :-)
 
 import re
+from configHandler import idleConf
 
 class FormatParagraph:
 
@@ -31,6 +32,7 @@ class FormatParagraph:
         self.editwin = None
 
     def format_paragraph_event(self, event):
+        maxformatwidth = int(idleConf.GetOption('main','FormatParagraph','paragraph'))
         text = self.editwin.text
         first, last = self.editwin.get_selection_indices()
         if first and last:
@@ -44,8 +46,8 @@ class FormatParagraph:
             lines = data.split("\n")
             lines = map(lambda st, l=len(comment_header): st[l:], lines)
             data = "\n".join(lines)
-            # Reformat to 70 chars or a 20 char width, whichever is greater.
-            format_width = max(70-len(comment_header), 20)
+            # Reformat to maxformatwidth chars or a 20 char width, whichever is greater.
+            format_width = max(maxformatwidth, len(comment_header), 20)
             newdata = reformat_paragraph(data, format_width)
             # re-split and re-insert the comment header.
             newdata = newdata.split("\n")
@@ -62,7 +64,7 @@ class FormatParagraph:
             newdata = '\n'.join(map(builder, newdata)) + block_suffix
         else:
             # Just a normal text format
-            newdata = reformat_paragraph(data)
+            newdata = reformat_paragraph(data, maxformatwidth)
         text.tag_remove("sel", "1.0", "end")
         if newdata != data:
             text.mark_set("insert", first)
@@ -99,7 +101,7 @@ def find_paragraph(text, mark):
     first = "%d.0" % (lineno+1)
     return first, last, comment_header, text.get(first, last)
 
-def reformat_paragraph(data, limit=70):
+def reformat_paragraph(data, limit):
     lines = data.split("\n")
     i = 0
     n = len(lines)
