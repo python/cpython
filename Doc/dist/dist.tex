@@ -53,7 +53,7 @@ Modules} manual.
 
 Using the Distutils is quite simple, both for module developers and for
 users/administrators installing third-party modules.  As a developer,
-your responsibilites (apart from writing solid, well-documented and
+your responsibilities (apart from writing solid, well-documented and
 well-tested code, of course!) are:
 \begin{itemize}
 \item write a setup script (\file{setup.py} by convention)
@@ -148,19 +148,7 @@ python setup.py bdist_wininst
 will create an executable installer, \file{Foo-1.0.win32.exe}, in the
 current directory.
 
-\XXX{not implemented yet}
-(Another way to create executable installers for Windows is with the
-\command{bdist\_wise} command, which uses Wise---the commercial
-installer-generator used to create Python's own installer---to create
-the installer.  Wise-based installers are more appropriate for large,
-industrial-strength applications that need the full capabilities of a
-``real'' installer.  \command{bdist\_wininst} creates a self-extracting
-zip file with a minimal user interface, which is enough for small- to
-medium-sized module collections.  You'll need to have version XXX of
-Wise installed on your system for the \command{bdist\_wise} command to
-work; it's available from \url{http://foo/bar/baz}.)
-
-Currently (Distutils 0.9.2), the are only other useful built
+Currently (Distutils 0.9.2), the only other useful built
 distribution format is RPM, implemented by the \command{bdist\_rpm}
 command.  For example, the following command will create an RPM file
 called \file{Foo-1.0.noarch.rpm}:
@@ -192,7 +180,7 @@ following glossary of common Python terms:
   single \file{.py} file (and possibly associated \file{.pyc} and/or
   \file{.pyo} files).  Sometimes referred to as a ``pure module.''
 \item[extension module] a module written in the low-level language of
-  the Python implemention: C/C++ for Python, Java for JPython.
+  the Python implementation: C/C++ for Python, Java for JPython.
   Typically contained in a single dynamically loadable pre-compiled
   file, e.g. a shared object (\file{.so}) file for Python extensions on
   \UNIX, a DLL (given the \file{.pyd} extension) for Python extensions
@@ -290,6 +278,14 @@ this document are slash-separated (MacOS programmers should keep in
 mind that the \emph{absence} of a leading slash indicates a relative
 path, the opposite of the MacOS convention with colons).
 
+This, of course, only applies to pathnames given to Distutils functions.
+If you, for example, use standard python functions such as glob.glob
+or os.listdir to specify files, you should be careful to write portable
+code instead of hardcoding path separators:
+\begin{verbatim}
+    glob.glob(os.path.join('mydir', 'subdir', '*.html'))
+    os.listdir(os.path.join('mydir', 'subdir'))
+\end{verbatim}
 
 \subsection{Listing whole packages}
 \label{listing-packages}
@@ -447,8 +443,9 @@ resulting C/C++ file into your extension.
 
 On some platforms, you can include non-source files that are processed
 by the compiler and included in your extension.  Currently, this just
-means Windows resource files for Visual C++.  \XXX{get more detail on
-  this feature from Thomas Heller!}
+means Windows message text (\file{.mc}) files and resource definition
+(\file{.rc}) files for Visual C++. These will be compiled to binary resource
+(\file{.res}) files and linked into the executable.
 
 
 \subsubsection{Preprocessor options}
@@ -550,9 +547,63 @@ Extension(...,
 (Again, this sort of non-portable construct should be avoided if you
 intend to distribute your code.)
 
-\XXX{still undocumented: extra\_objects, extra\_compile\_args,
-  extra\_link\_args, export\_symbols---none of which are frequently
-  needed, some of which might be completely unnecessary!}
+\XXX{Should mention clib libraries here or somewhere else!}
+
+\subsubsection{Other options}
+
+There are still some other options which can be used to handle special
+cases.
+
+The \option{extra\_objects} option is a list of object files to be passed
+to the linker. These files must not have extensions, as the default
+extension for the compiler is used.
+
+\option{extra\_compile\_args} and \option{extra\_link\_args} can be used
+to specify additional command line options for the compiler resp.
+the linker command line.
+
+\option{export\_symbols} is only useful on windows, it can contain a list
+of symbols (functions or variables) to be exported. This option
+is not needed when building compiled extensions: the \code{initmodule}
+function will automatically be added to the exported symbols list
+by Distutils.
+
+\subsection{Listing scripts}
+So far we have been dealing with pure and non-pure Python modules,
+which are usually not run by themselves but imported by scripts.
+
+Scripts are files containing Python source code, indended to be started
+from the command line.
+Distutils doesn't provide much functionality for the scripts: the only
+support Distutils gives is to adjust the first line of the script
+if it starts with \code{#!} and contains the word ``python'' to refer
+to the current interpreter location.
+
+The \option{scripts} option simply is a list of files to be handled
+in this way.
+
+
+\subsection{Listing additional files}
+The \option{data\_files} option can be used to specify additional
+files needed by the module distribution: configuration files,
+data files, anything which does not fit in the previous categories.
+
+\option{data\_files} specify a sequence of \code{(directory, files)}
+pairs in the following way:
+\begin{verbatim}
+setup(...
+      data_files=[('bitmaps', ['bm/b1.gif', 'bm/b2.gif']),
+                  ('config', ['cfg/data.cfg'])])
+\end{verbatim}
+
+Note that you can specify the directory names where the data files
+will be installed, but you cannot rename the data files themselves.
+
+You can specify the \option{data\_files} options as a simple sequence
+of files without specifying a target directory, but this is not recommended,
+and the \command{install} command will print a warning in this case.
+To install data files directly in the target directory, an empty
+string should be given as the directory.
 
 
 \section{Writing the Setup Configuration File}
@@ -948,8 +999,7 @@ The available formats for built distributions are:
   \lineiii{zip}{zip file (\file{.zip})}{(4)}
   \lineiii{rpm}{RPM}{(5)}
   \lineiii{srpm}{source RPM}{(5) \XXX{to do!}}
-  \lineiii{wininst}{self-extracting ZIP file for Windows}{(2),(6)}
-  %\lineiii{wise}{Wise installer for Windows}{(3)}
+  \lineiii{wininst}{self-extracting ZIP file for Windows}{(2),(4)}
 \end{tableiii}
 
 \noindent Notes:
@@ -962,8 +1012,6 @@ The available formats for built distributions are:
   \module{zipfile} module (not part of the standard Python library)
 \item[(5)] requires external \program{rpm} utility, version 3.0.4 or
   better (use \code{rpm --version} to find out which version you have)
-\item[(6)] \XXX{requirements for \command{bdist\_wininst}?}
-%\item[(3)] not implemented yet
 \end{description}
 
 You don't have to use the \command{bdist} command with the
@@ -980,7 +1028,6 @@ each, are:
   \lineii{bdist\_dumb}{tar, ztar, gztar, zip}
   \lineii{bdist\_rpm}{rpm, srpm}
   \lineii{bdist\_wininst}{wininst}
-  %\lineii{bdist\_wise}{wise}
 \end{tableii}
 
 The following sections give details on the individual \command{bdist\_*}
@@ -1093,7 +1140,7 @@ tree,'' in a temporary directory created by \command{bdist\_rpm}.)
 
 \XXX{this isn't implemented yet---is it needed?!}
 You can also specify a custom \file{.spec} file with the
-\longprogramopt{spec-file} option; used in conjunctin with
+\longprogramopt{spec-file} option; used in conjunction with
 \longprogramopt{spec-only}, this gives you an opportunity to customize
 the \file{.spec} file manually:
 \begin{verbatim}
@@ -1110,7 +1157,38 @@ extending the Distutils.)
 \subsection{Creating Windows installers}
 \label{creating-wininst}
 
+Executable Windows installers are the natural format for binary
+distributions on Windows. They display a nice GUI interface, display
+some information of the module distribution to be installed, taken
+from the meta-dada in the setup script, let the user select a few
+(currently maybe too few) options, and start or cancel the installation.
 
+Since the meta-data is taken from the setup script, creating
+Windows installers is usually as easy as running:
+\begin{verbatim}
+python setup.py bdist_wininst
+\end{verbatim}
+or the \command{bdist} command with the \longprogramopt{format} option:
+\begin{verbatim}
+python setup.py bdist --formats=wininst
+\end{verbatim}
+
+If you have a pure module distribution (only containing pure
+Python modules and packages), the resulting installer will be
+version independent and have a name like \file{Foo-1.0.win32.exe}.
+These installers can even be created on \UNIX{} or MacOS platforms.
+
+If you have a non-pure distribution, the extensions can only be
+created on a Windows platform, and will be Python version dependend.
+The installer filename will reflect this and now has the form
+\file{Foo-1.0.win32-py2.0.exe}. You have to create a separate installer
+for every Python version you want to support.
+
+The installer will try to compile pure modules into bytecode after
+installation on the target system in normal and optimizing mode.
+If you don't want this to happen for some reason, you can run
+the bdist_wininst command with the \longprogramopt{no-target-compile} and/or
+the \longprogramopt{no-target-optimize} option.
 
 \section{Examples}
 \label{examples}
@@ -1146,6 +1224,8 @@ extending the Distutils.)
 
 \subsection{Writing new commands}
 \label{new-commands}
+
+\XXX{Would an uninstall command be a good example here?}
 
 
 
