@@ -27,6 +27,7 @@ from Carbon import Dlg,Win,Evt,Events # sdm7g
 from Carbon import Ctl
 from Carbon import Controls
 from Carbon import Menu
+from Carbon import AE
 import Nav
 import MacOS
 import string
@@ -46,7 +47,10 @@ def _initialize():
 	global _initialized
 	if _initialized: return
 	macresource.need("DLOG", 260, "dialogs.rsrc", __name__)
-
+	
+def _interact():
+	"""Make sure the application is in the foreground"""
+	AE.AEInteractWithUser(50000000)
 
 def cr2lf(text):
 	if '\r' in text:
@@ -68,6 +72,7 @@ def Message(msg, id=260, ok=None):
 	The MESSAGE string can be at most 255 characters long.
 	"""
 	_initialize()
+	_interact()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -100,6 +105,7 @@ def AskString(prompt, default = "", id=261, ok=None, cancel=None):
 	"""
 	
 	_initialize()
+	_interact()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -141,6 +147,7 @@ def AskPassword(prompt,	 default='', id=264, ok=None, cancel=None):
 	can be at most 255 characters long.
 	"""
 	_initialize()
+	_interact()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -184,6 +191,7 @@ def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=262
 	"""
 	
 	_initialize()
+	_interact()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -416,6 +424,7 @@ def _selectoption(d, optionlist, idx):
 
 def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfolder=1, id=ARGV_ID):
 	_initialize()
+	_interact()
 	d = GetNewDialog(id, -1)
 	if not d:
 		print "EasyDialogs: Can't get DLOG resource with id =", id, " (missing resource file?)"
@@ -636,6 +645,7 @@ def AskFileForOpen(
 		message=message,preferenceKey=preferenceKey,
 		popupExtension=popupExtension,eventProc=eventProc,previewProc=previewProc,
 		filterProc=filterProc,typeList=typeList,wanted=wanted,multiple=multiple) 
+	_interact()
 	try:
 		rr = Nav.NavChooseFile(args)
 		good = 1
@@ -688,6 +698,7 @@ def AskFileForSave(
 		savedFileName=savedFileName,message=message,preferenceKey=preferenceKey,
 		popupExtension=popupExtension,eventProc=eventProc,fileType=fileType,
 		fileCreator=fileCreator,wanted=wanted,multiple=multiple) 
+	_interact()
 	try:
 		rr = Nav.NavPutFile(args)
 		good = 1
@@ -747,6 +758,7 @@ def AskFolder(
 		message=message,preferenceKey=preferenceKey,
 		popupExtension=popupExtension,eventProc=eventProc,filterProc=filterProc,
 		wanted=wanted,multiple=multiple) 
+	_interact()
 	try:
 		rr = Nav.NavChooseFolder(args)
 		good = 1
