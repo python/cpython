@@ -2,19 +2,21 @@
 """Test script for the bsddb C module
    Roger E. Masse
 """
-
 import os
 import bsddb
 import dbhash # Just so we know it's imported
 import tempfile
 from test_support import verbose, verify
 
-def test(openmethod, what):
+def test(openmethod, what, ondisk=1):
 
     if verbose:
-        print '\nTesting: ', what
+        print '\nTesting: ', what, (ondisk and "on disk" or "in memory")
 
-    fname = tempfile.mktemp()
+    if ondisk:
+        fname = tempfile.mktemp()
+    else:
+        fname = None
     f = openmethod(fname, 'c')
     verify(f.keys() == [])
     if verbose:
@@ -47,30 +49,35 @@ def test(openmethod, what):
 
     f.sync()
     f.close()
-    if verbose:
-        print 'modification...'
-    f = openmethod(fname, 'w')
-    f['d'] = 'discovered'
-
-    if verbose:
-        print 'access...'
-    for key in f.keys():
-        word = f[key]
+    if ondisk:
+        # if we're using an in-memory only db, we can't reopen it
+        # so finish here.
         if verbose:
-            print word
+            print 'modification...'
+        f = openmethod(fname, 'w')
+        f['d'] = 'discovered'
 
-    f.close()
-    try:
-        os.remove(fname)
-    except os.error:
-        pass
+        if verbose:
+            print 'access...'
+        for key in f.keys():
+            word = f[key]
+            if verbose:
+                print word
+
+        f.close()
+        try:
+            os.remove(fname)
+        except os.error:
+            pass
 
 types = [(bsddb.btopen, 'BTree'),
          (bsddb.hashopen, 'Hash Table'),
+         (bsddb.btopen, 'BTree', 0),
+         (bsddb.hashopen, 'Hash Table', 0),
          # (bsddb.rnopen,'Record Numbers'), 'put' for RECNO for bsddb 1.85
          #                                   appears broken... at least on
          #                                   Solaris Intel - rmasse 1/97
          ]
 
 for type in types:
-    test(type[0], type[1])
+    test(*type)

@@ -687,7 +687,7 @@ bsdhashopen(PyObject *self, PyObject *args)
 	int hash = 0; /* XXX currently ignored */
 	int lorder = 0;
 
-	if (!PyArg_ParseTuple(args, "s|siiiiiii:hashopen",
+	if (!PyArg_ParseTuple(args, "z|siiiiiii:hashopen",
 			      &file, &flag, &mode,
 			      &bsize, &ffactor, &nelem, &cachesize,
 			      &hash, &lorder))
@@ -738,7 +738,7 @@ bsdbtopen(PyObject *self, PyObject *args)
 	unsigned int psize = 0;
 	int lorder = 0;
 
-	if (!PyArg_ParseTuple(args, "s|siiiiiii:btopen",
+	if (!PyArg_ParseTuple(args, "z|siiiiiii:btopen",
 			      &file, &flag, &mode,
 			      &btflags, &cachesize, &maxkeypage, &minkeypage,
 			      &psize, &lorder))
@@ -791,7 +791,7 @@ bsdrnopen(PyObject *self, PyObject *args)
 	char  *bval = "";
 	char *bfname = NULL;
 
-	if (!PyArg_ParseTuple(args, "s|siiiiiiss:rnopen",
+	if (!PyArg_ParseTuple(args, "z|siiiiiiss:rnopen",
 			      &file, &flag, &mode,
 			      &rnflags, &cachesize, &psize, &lorder,
 			      &reclen, &bval, &bfname))
