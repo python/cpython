@@ -150,7 +150,7 @@ pattern \regexp{[]]} will match \code{']'}, for example.
 You can match the characters not within a range by \dfn{complementing}
 the set.  This is indicated by including a
 \character{\^} as the first character of the set; \character{\^} elsewhere will
-simply match the \character{\^} character.  For example, \regexp{[\^5]}
+simply match the \character{\^} character.  For example, \regexp{[{\^}5]}
 will match any character except \character{5}.
 
 \item[\character{|}]\code{A|B}, where A and B can be arbitrary REs,
@@ -254,7 +254,7 @@ Python's string literals.
 equivalent to the set \regexp{[0-9]}.
 %
 \item[\code{\e D}]Matches any non-digit character; this is
-equivalent to the set \regexp{[\^0-9]}.
+equivalent to the set \regexp{[{\^}0-9]}.
 %
 \item[\code{\e s}]Matches any whitespace character; this is
 equivalent to the set \regexp{[ \e t\e n\e r\e f\e v]}.
@@ -270,7 +270,7 @@ current locale.
 %
 \item[\code{\e W}]When the \constant{LOCALE} flag is not specified,
 matches any non-alphanumeric character; this is equivalent to the set
-\regexp{[\^a-zA-Z0-9_]}.   With \constant{LOCALE}, it will match any
+\regexp{[{\^}a-zA-Z0-9_]}.   With \constant{LOCALE}, it will match any
 character not in the set \regexp{[0-9_]}, and not defined as a letter
 for the current locale.
 
