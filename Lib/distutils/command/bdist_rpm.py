@@ -10,7 +10,7 @@ __revision__ = "$Id$"
 import os, string
 from types import *
 from distutils.core import Command
-from distutils.util import mkpath, write_file, copy_file
+from distutils.util import get_platform, write_file
 from distutils.errors import *
 
 class bdist_rpm (Command):
@@ -18,6 +18,8 @@ class bdist_rpm (Command):
     description = "create an RPM distribution"
 
     user_options = [
+        ('bdist-base', None,
+         "base directory for creating built distributions"),
         ('spec-only', None,
          "only regenerate spec file"),
         ('source-only', None,
@@ -41,6 +43,7 @@ class bdist_rpm (Command):
 
                     
     def initialize_options (self):
+        self.bdist_base = None
         self.spec_only = None
         self.binary_only = None
         self.source_only = None
@@ -52,13 +55,14 @@ class bdist_rpm (Command):
 
 
     def finalize_options (self):
+        self.set_undefined_options('bdist', ('bdist_base', 'bdist_base'))
         if os.name != 'posix':
             raise DistutilsPlatformError, \
                   ("don't know how to create RPM "
                    "distributions on platform %s" % os.name)
         if self.binary_only and self.source_only:
             raise DistutilsOptionsError, \
-                  "Cannot supply both '--source-only' and '--binary-only'"
+                  "cannot supply both '--source-only' and '--binary-only'"
         # don't pass CFLAGS to pure python distributions
         if not self.distribution.has_ext_modules():
             self.use_rpm_opt_flags = 0
@@ -69,50 +73,49 @@ class bdist_rpm (Command):
     def run (self):
         self._get_package_data() # get packaging info
 
-
         # make directories
         if self.spec_only:
-            self.mkpath('redhat')
+            spec_dir = "dist"
+            self.mkpath(spec_dir)       # XXX should be configurable
         else:
+            rpm_base = os.path.join(self.bdist_base, "rpm")
+            rpm_dir = {}
             for d in ('SOURCES', 'SPECS', 'BUILD', 'RPMS', 'SRPMS'):
-                self.mkpath(os.path.join('build/rpm', d))
+                rpm_dir[d] = os.path.join(rpm_base, d)
+                self.mkpath(rpm_dir[d])
+            spec_dir = rpm_dir['SPECS']
 
-        # spec file goes into .redhat directory if '--spec-only specified',
-        # into build/rpm/spec otherwise
-        if self.spec_only:
-            spec_path = 'redhat/%s.spec' % self.distribution.get_name()
-        else:
-            spec_path = ('build/rpm/SPECS/%s.spec' %
-                         self.distribution.get_name())
+        # Spec file goes into 'dist' directory if '--spec-only specified',
+        # into build/rpm.<plat> otherwise.
+        spec_path = os.path.join(spec_dir,
+                                 "%s.spec" % self.distribution.get_name())
         self.execute(write_file,
                      (spec_path,
                       self._make_spec_file()),
-                     'Writing .spec file')
+                     "writing '%s'" % spec_path)
 
         if self.spec_only: # stop if requested
             return
 
-        # make a source distribution and copy to SOURCES directory with
-        # optional icon
-        sdist = self.get_finalized_command ('sdist')
+        # Make a source distribution and copy to SOURCES directory with
+        # optional icon.
+        sdist = self.reinitialize_command ('sdist')
         if self.use_bzip2:
             sdist.formats = ['bztar']
         else:
             sdist.formats = ['gztar']
         self.run_command('sdist')
-        if self.use_bzip2:
-            source = self.distribution.get_fullname() + '.tar.bz2'
-        else:
-            source = self.distribution.get_fullname() + '.tar.gz'
-        self.execute(copy_file, (source, 'build/rpm/SOURCES'),
-                     'Copying source distribution to SOURCES')
+
+        source = sdist.get_archive_files()[0]
+        source_dir = rpm_dir['SOURCES']
+        self.copy_file(source, source_dir)
+
         if self.icon:
             if os.path.exists(self.icon):
-                self.execute(copy_file, (self.icon, 'build/rpm/SOURCES'),
-                     'Copying icon to SOURCES')
+                self.copy_file(self.icon, source_dir)
             else:
                 raise DistutilsFileError, \
-                      "Unable to find icon file '%s'" % self.icon
+                      "icon file '%s' does not exist" % self.icon
         
 
         # build package
