@@ -5,13 +5,13 @@ class Module(GeneratorGroup):
 
 	def __init__(self, name, prefix = None,
 		     includestuff = None,
-		     initstuff = None,
-		     preinitstuff = None):
+		     finalstuff = None,
+		     initstuff = None):
 		GeneratorGroup.__init__(self, prefix or name)
 		self.name = name
 		self.includestuff = includestuff
 		self.initstuff = initstuff
-		self.preinitstuff = preinitstuff
+		self.finalstuff = finalstuff
 
 	def addobject(self, od):
 		self.generators.append(od)
@@ -29,9 +29,9 @@ class Module(GeneratorGroup):
 
 		GeneratorGroup.generate(self)
 		
-		if self.preinitstuff:
+		if self.finalstuff:
 			Output()
-			Output("%s", self.preinitstuff)
+			Output("%s", self.finalstuff)
 
 		Output()
 		Output("void init%s()", self.name)
@@ -56,12 +56,17 @@ class Module(GeneratorGroup):
 		Output("static PyObject *%s;", self.errorname)
 
 	def createModuleVariables(self):
-		Output("""if ((%s = PyString_FromString("%s.Error")) == NULL ||""",
-		               self.errorname,           self.name)
+		Output("""%s = %s;""", self.errorname, self.exceptionInitializer())
+		Output("""if (%s == NULL ||""", self.errorname)
 		Output("""    PyDict_SetItemString(d, "Error", %s) != 0)""",
 		                                               self.errorname)
+		IndentLevel()
 		Output("""Py_FatalError("can't initialize %s.Error");""",
 		                                           self.name)
+		DedentLevel()
+
+	def exceptionInitializer(self):
+		return """PyString_FromString("%s.Error")""" % self.name
 
 
 def _test():

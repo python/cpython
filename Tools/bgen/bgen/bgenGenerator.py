@@ -1,5 +1,6 @@
 from bgenOutput import *
 from bgenType import *
+from bgenVariable import *
 
 
 Error = "bgenGenerator.Error"
@@ -14,6 +15,7 @@ INOUT = IN_OUT = "in-out"
 class FunctionGenerator:
 
 	def __init__(self, returntype, name, *argumentList):
+		print "<--", name
 		self.returntype = returntype
 		self.name = name
 		self.argumentList = []
@@ -51,8 +53,42 @@ class FunctionGenerator:
 	def reference(self, name = None):
 		if name is None:
 			name = self.name
-		Output("{\"%s\", (PyCFunction)%s_%s, 1},",
-		       name, self.prefix, self.name)
+		docstring = self.docstring()
+		Output("{\"%s\", (PyCFunction)%s_%s, 1,", name, self.prefix, self.name)
+		Output(" %s},", stringify(docstring))
+	
+	def docstring(self):
+		import string
+		input = []
+		output = []
+		for arg in self.argumentList:
+			if arg.flags == ErrorMode or arg.flags == SelfMode:
+				continue
+			if arg.type == None:
+				str = 'void'
+			else:
+				if hasattr(arg.type, 'typeName'):
+					typeName = arg.type.typeName
+					if typeName is None: # Suppressed type
+						continue
+				else:
+					typeName = "?"
+					print "Nameless type", arg.type
+					
+				str = typeName + ' ' + arg.name
+			if arg.mode in (InMode, InOutMode):
+				input.append(str)
+			if arg.mode in (InOutMode, OutMode):
+				output.append(str)
+		if not input:
+			instr = "()"
+		else:
+			instr = "(%s)" % string.joinfields(input, ", ")
+		if not output or output == ["void"]:
+			outstr = "None"
+		else:
+			outstr = "(%s)" % string.joinfields(output, ", ")
+		return instr + " -> " + outstr
 
 	def generate(self):
 		print "-->", self.name
@@ -143,9 +179,7 @@ class FunctionGenerator:
 		tmp.reverse()
 		for arg in tmp:
 			if not arg: continue
-			if arg.flags == ErrorMode: continue
-			if arg.mode in (OutMode, InOutMode):
-				arg.mkvalueCleanup()
+			arg.cleanup()
 		Output("return _res;")
 
 	def functiontrailer(self):
@@ -174,6 +208,18 @@ class ManualGenerator(FunctionGenerator):
 		Output("%s", self.body)
 		self.functiontrailer()
 
+_stringify_map = {'\n': '\\n', '\t': '\\t', '\r': '\\r', '\b': '\\b',
+                  '\e': '\\e', '\a': '\\a', '\f': '\\f', '"': '\\"'}
+def stringify(str):
+	if str is None: return "None"
+	res = '"'
+	map = _stringify_map
+	for c in str:
+		if map.has_key(c): res = res + map[c]
+		elif ' ' <= c <= '~': res = res + c
+		else: res = res + '\\%03o' % ord(c)
+	res = res + '"'
+	return res
 
 def _test():
 	void = None

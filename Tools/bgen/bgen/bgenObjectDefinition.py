@@ -2,15 +2,25 @@ from bgenOutput import *
 from bgenGeneratorGroup import GeneratorGroup
 
 class ObjectDefinition(GeneratorGroup):
+	"Spit out code that together defines a new Python object type"
 
 	def __init__(self, name, prefix, itselftype):
-		import string
+		"""ObjectDefinition constructor.  May be extended, but do not override.
+		
+		- name: the object's official name, e.g. 'SndChannel'.
+		- prefix: the prefix used for the object's functions and data, e.g. 'SndCh'.
+		- itselftype: the C type actually contained in the object, e.g. 'SndChannelPtr'.
+		
+		XXX For official Python data types, rules for the 'Py' prefix are a problem.
+		"""
+		
 		GeneratorGroup.__init__(self, prefix or name)
 		self.name = name
 		self.itselftype = itselftype
 		self.objecttype = name + 'Object'
 		self.typename = name + '_Type'
 		self.argref = ""	# set to "*" if arg to <type>_New should be pointer
+		self.static = "static " # set to "" to make <type>_New and <type>_Convert public
 
 	def add(self, g):
 		g.setselftype(self.objecttype, self.itselftype)
@@ -25,17 +35,18 @@ class ObjectDefinition(GeneratorGroup):
 
 		OutHeader2("Object type " + self.name)
 
-		Output("staticforward PyTypeObject %s;", self.typename)
+		sf = self.static and "staticforward "
+		Output("%sPyTypeObject %s;", sf, self.typename)
 		Output()
 
 		Output("#define %s_Check(x) ((x)->ob_type == &%s)",
 		       self.prefix, self.typename)
 		Output()
 
-		Output("typedef struct {")
+		Output("typedef struct %s {", self.objecttype)
 		IndentLevel()
 		Output("PyObject_HEAD")
-		Output("%s ob_itself;", self.itselftype)
+		self.outputStructMembers()
 		DedentLevel()
 		Output("} %s;", self.objecttype)
 		Output()
@@ -56,8 +67,11 @@ class ObjectDefinition(GeneratorGroup):
 
 		OutHeader2("End object type " + self.name)
 
+	def outputStructMembers(self):
+		Output("%s ob_itself;", self.itselftype)
+
 	def outputNew(self):
-		Output("static PyObject *%s_New(itself)", self.prefix)
+		Output("%sPyObject *%s_New(itself)", self.static, self.prefix)
 		IndentLevel()
 		Output("const %s %sitself;", self.itselftype, self.argref)
 		DedentLevel()
@@ -66,28 +80,36 @@ class ObjectDefinition(GeneratorGroup):
 		self.outputCheckNewArg()
 		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)
 		Output("if (it == NULL) return NULL;")
-		Output("it->ob_itself = %sitself;", self.argref)
+		self.outputInitStructMembers()
 		Output("return (PyObject *)it;")
 		OutRbrace()
 		Output()
+
+	def outputInitStructMembers(self):
+		Output("it->ob_itself = %sitself;", self.argref)
 	
 	def outputCheckNewArg(self):
-		pass
-
+			"Override this method to apply additional checks/conversions"
+	
 	def outputConvert(self):
-		Output("""\
-static int %(prefix)s_Convert(v, p_itself)
-	PyObject *v;
-	%(itselftype)s *p_itself;
-{
-	if (v == NULL || !%(prefix)s_Check(v)) {
-		PyErr_SetString(PyExc_TypeError, "%(name)s required");
-		return 0;
-	}
-	*p_itself = ((%(objecttype)s *)v)->ob_itself;
-	return 1;
-}
-""" % self.__dict__)
+		Output("%s%s_Convert(v, p_itself)", self.static, self.prefix)
+		IndentLevel()
+		Output("PyObject *v;")
+		Output("%s *p_itself;", self.itselftype)
+		DedentLevel()
+		OutLbrace()
+		self.outputCheckConvertArg()
+		Output("if (!%s_Check(v))", self.prefix)
+		OutLbrace()
+		Output('PyErr_SetString(PyExc_TypeError, "%s required");', self.name)
+		Output("return 0;")
+		OutRbrace()
+		Output("*p_itself = ((%s *)v)->ob_itself;", self.objecttype)
+		Output("return 1;")
+		OutRbrace()
+
+	def outputCheckConvertArg(self):
+		"Override this method to apply additional conversions"
 
 	def outputDealloc(self):
 		Output("static void %s_dealloc(self)", self.prefix)
@@ -95,10 +117,13 @@ static int %(prefix)s_Convert(v, p_itself)
 		Output("%s *self;", self.objecttype)
 		DedentLevel()
 		OutLbrace()
-		self.outputFreeIt("self->ob_itself")
+		self.outputCleanupStructMembers()
 		Output("PyMem_DEL(self);")
 		OutRbrace()
 		Output()
+
+	def outputCleanupStructMembers(self):
+		self.outputFreeIt("self->ob_itself")
 
 	def outputFreeIt(self, name):
 		Output("/* Cleanup of %s goes here */", name)
@@ -126,7 +151,7 @@ static int %(prefix)s_Convert(v, p_itself)
 		Output()
 
 	def outputTypeObject(self):
-		Output("static PyTypeObject %s = {", self.typename)
+		Output("%sPyTypeObject %s = {", self.static, self.typename)
 		IndentLevel()
 		Output("PyObject_HEAD_INIT(&PyType_Type)")
 		Output("0, /*ob_size*/")
@@ -140,3 +165,11 @@ static int %(prefix)s_Convert(v, p_itself)
 		Output("(setattrfunc) %s_setattr, /*tp_setattr*/", self.prefix)
 		DedentLevel()
 		Output("};")
+
+
+class GlobalObjectDefinition(ObjectDefinition):
+	"Same as ObjectDefinition but exports its New and Create methods"
+
+	def __init__(self, name, prefix = None, itselftype = None):
+		ObjectDefinition.__init__(self, name, prefix or name, itselftype or name)
+		self.static = ""
