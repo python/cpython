@@ -36,6 +36,8 @@ multifile.py -- make each part of a multipart message ``feel'' like
 
 mailbox.py -- handle Unix style, MMDF style, and MH style mailboxes
 
+gzip.py -- compression using zlib (compatible with gzip)
+
 
 \section{Miscellaneous useful utilities}
 
@@ -61,9 +63,6 @@ statcache.py -- Maintain a cache of file stats
 
 colorsys.py -- Conversion between RGB and other color systems
 
-commands.py -- executing commands and looking at their output and
-status
-
 dbhash.py -- (g)dbm-like wrapper for bsdhash.hashopen
 
 mhlib.py -- MH interface
@@ -78,6 +77,8 @@ bdb.py -- A generic Python debugger base class (used by pdb)
 
 ihooks.py -- Import hook support (for ni and rexec)
 
+pprint.py -- support to pretty-print lists, tuples, & dictionaries recursively
+
 
 \section{Parsing Python}
 
@@ -88,6 +89,8 @@ the token and symbol modules.)
 token.py -- Tokens (from ``token.h'')
 
 symbol.py -- Symbols (from ``graminit.h'')
+
+keyword.py -- Keywords (from ``graminit.c'')
 
 tokenize.py -- regular expression that recognizes Python tokens
 
@@ -116,7 +119,7 @@ dis.py -- Disassembler for Python bytecode objects
 repr.py -- Redo the `...` (representation) but with limits on most
 sizes (used by pdb)
 
-newdir.py -- New dir() function
+copy_reg.py -- helper to provide extensibility for pickle/cPickle
 
 
 \section{Multimedia}
@@ -141,7 +144,7 @@ whatsound.py -- recognizing sound files
 These modules are probably also obsolete, or just not very useful.
 
 Queue.py -- A multi-producer, multi-consumer queue
-
+p
 bisect.py -- Bisection algorithms
 
 dump.py -- Print python code that reconstructs a variable
@@ -172,6 +175,8 @@ tzparse.py -- Parse a timezone specification (unfinished)
 
 
 \section{Obsolete}
+
+newdir.py -- New dir() function (the standard dir() is now just as good)
 
 addpack.py -- standard support for "packages" (use ni instead)
 
