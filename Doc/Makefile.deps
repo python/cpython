@@ -230,6 +230,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libuser.tex \
 	lib/libanydbm.tex \
 	lib/libbsddb.tex \
+	lib/libdumbdbm.tex \
 	lib/libdbhash.tex \
 	lib/librandom.tex \
 	lib/libsite.tex \
