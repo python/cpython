@@ -798,9 +798,11 @@ print_error_text(PyObject *f, int offset, char *text)
 	PyFile_WriteString("^\n", f);
 }
 
-void
-PyRun_HandleSystemExit(PyObject* value)
+static void
+handle_system_exit(void)
 {
+        PyObject *exception, *value, *tb;
+	PyErr_Fetch(&exception, &value, &tb);
 	if (Py_FlushLine())
 		PyErr_Clear();
 	fflush(stdout);
@@ -831,15 +833,14 @@ void
 PyErr_PrintEx(int set_sys_last_vars)
 {
 	PyObject *exception, *v, *tb, *hook;
+
+	if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
+		handle_system_exit();
+	}
 	PyErr_Fetch(&exception, &v, &tb);
 	PyErr_NormalizeException(&exception, &v, &tb);
-
 	if (exception == NULL)
 		return;
-
-	if (PyErr_GivenExceptionMatches(exception, PyExc_SystemExit)) {
-		PyRun_HandleSystemExit(v);
-	}
 	if (set_sys_last_vars) {
 		PySys_SetObject("last_type", exception);
 		PySys_SetObject("last_value", v);
@@ -852,12 +853,11 @@ PyErr_PrintEx(int set_sys_last_vars)
 		PyObject *result = PyEval_CallObject(hook, args);
 		if (result == NULL) {
 			PyObject *exception2, *v2, *tb2;
+			if (PyErr_ExceptionMatches(PyExc_SystemExit)) {
+				handle_system_exit();
+			}
 			PyErr_Fetch(&exception2, &v2, &tb2);
 			PyErr_NormalizeException(&exception2, &v2, &tb2);
-			if (PyErr_GivenExceptionMatches(
-				exception2, PyExc_SystemExit)) {
-				PyRun_HandleSystemExit(v2);
-			}
 			if (Py_FlushLine())
 				PyErr_Clear();
 			fflush(stdout);
