@@ -157,7 +157,7 @@ MacOS_GetResource(PyObject *self, PyObject *args)
 	ResType rt;
 	int id;
 	Handle h;
-	if (!PyArg_ParseTuple(args, "O&i", GetOSType, &rt, &id))
+	if (!PyArg_ParseTuple(args, "O&i", PyMac_GetOSType, &rt, &id))
 		return NULL;
 	h = GetResource(rt, id);
 	return (PyObject *)Rsrc_FromHandle(h);
@@ -169,7 +169,7 @@ MacOS_GetNamedResource(PyObject *self, PyObject *args)
 	ResType rt;
 	Str255 name;
 	Handle h;
-	if (!PyArg_ParseTuple(args, "O&O&", GetOSType, &rt, GetStr255, &name))
+	if (!PyArg_ParseTuple(args, "O&O&", PyMac_GetOSType, &rt, PyMac_GetStr255, &name))
 		return NULL;
 	h = GetNamedResource(rt, name);
 	return (PyObject *)Rsrc_FromHandle(h);
@@ -186,7 +186,7 @@ MacOS_GetFileType(PyObject *self, PyObject *args)
 	PyObject *type, *creator, *res;
 	OSErr err;
 	
-	if (!PyArg_ParseTuple(args, "O&", GetStr255, &name))
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetStr255, &name))
 		return NULL;
 	if ((err = GetFInfo(name, 0, &info)) != noErr) {
 		errno = err;
@@ -210,7 +210,7 @@ MacOS_SetFileType(PyObject *self, PyObject *args)
 	OSErr err;
 	
 	if (!PyArg_ParseTuple(args, "O&O&O&",
-			GetStr255, &name, GetOSType, &type, GetOSType, &creator))
+			PyMac_GetStr255, &name, PyMac_GetOSType, &type, PyMac_GetOSType, &creator))
 		return NULL;
 	if ((err = GetFInfo(name, 0, &info)) != noErr) {
 		errno = err;

@@ -31,6 +31,8 @@ Pstring(char *str)
 	int len;
 
 	len = strlen(str);
+	if (len > 255)
+		len = 255;
 	buf[0] = (unsigned char)len;
 	strncpy((char *)buf+1, str, len);
 	return buf;
@@ -147,20 +149,19 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 
 	if ( PyString_Check(v) ) {
 		/* It's a pathname */
-		if( !PyArg_Parse(v, "O&", GetStr255, &path) )
+		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
 			return 0;
 		refnum = 0; /* XXXX Should get CurWD here... */
 		parid = 0;
 	} else {
-		PyErr_Clear();
-		if( !PyArg_Parse(v, "(hlO&); FSSpec should be fullpath or (int,int,string)",
-							&refnum, &parid, GetStr255, &path))
+		if( !PyArg_Parse(v, "(hlO&); FSSpec should be fullpath or (vrefnum,dirid,path)",
+							&refnum, &parid, PyMac_GetStr255, &path)) {
 			return 0;
+		}
 	}
 	err = FSMakeFSSpec(refnum, parid, path, fs);
 	if ( err && err != fnfErr ) {
-		PyErr_SetString(PyExc_TypeError,
-			"FSMakeFSSpec error");
+		PyErr_Mac(PyExc_ValueError, err);
 		return 0;
 	}
 	return 1;
