@@ -54,6 +54,15 @@ def gethostbyname(str):
 	return macdnr.AddrToStr(id)
 
 
+def gethostbyaddr(str):
+	id = _ipaddress(str)
+	ptr = macdnr.AddrToName(id)
+	ptr.wait()
+	name = ptr.cname
+	if name[-1:] == '.': name = name[:-1]
+	names, addresses = [], [str]
+	return name, names, addresses
+
 def gethostname():
 	global _myname
 	if _myname == None:
@@ -164,8 +173,8 @@ class _tcpsocket(_socket):
 		self.stream.PassiveOpen(self.port)
 		self.listening = 1
 		
-	def makefile(self, rw = 'r'):
-		return _socketfile(self, rw)
+	def makefile(self, rw = 'r', bs = 512):
+		return _socketfile(self, rw, bs)
 		
 	def recv(self, bufsize, flags=0):
 		if flags:
@@ -206,14 +215,15 @@ class _udpsocket(_socket):
 
 class _socketfile:
 	
-	def __init__(self, sock, rw):
+	def __init__(self, sock, rw, bs):
 		if rw not in ('r', 'w'): raise _myerror, "mode must be 'r' or 'w'"
 		self.sock = sock
 		self.rw = rw
+		self.bs = bs
 		self.buf = ''
 		
-	def read(self, length = 0):
-		if length <= 0:
+	def read(self, length = -1):
+		if length < 0:
 			length = 0x7fffffff
 		while len(self.buf) < length:
 			new = self.sock.recv(0x7fffffff)
@@ -240,8 +250,16 @@ class _socketfile:
 			self.buf = self.buf[i+1:]
 		return rv
 		
+	def readlines(self):
+		list = []
+		line = self.readline()
+		while line:
+			list.append(line)
+			line = self.readline()
+		return list
+		
 	def write(self, buf):
-		BS = 512
+		BS = self.bs
 		if len(buf) >= BS:
 			self.flush()
 			self.sock.send(buf)
@@ -250,7 +268,11 @@ class _socketfile:
 			self.buf = buf
 		else:
 			self.buf = self.buf + buf
-		
+	
+	def writelines(self, list):
+		for line in list:
+			self.write(line)
+	
 	def flush(self):
 		if self.buf and self.rw == 'w':
 			self.sock.send(self.buf)
