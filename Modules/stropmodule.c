@@ -225,9 +225,11 @@ strop_joinfields(self, args)
 	if (seqlen == 1) {
 		/* Optimization if there's only one item */
 		PyObject *item = PySequence_GetItem(seq, 0);
-		if (item && !PyString_Check(item))
+		if (item && !PyString_Check(item)) {
 			PyErr_SetString(PyExc_TypeError,
 				 "first argument must be sequence of strings");
+			return NULL;
+		}
 		return item;
 	}
 
