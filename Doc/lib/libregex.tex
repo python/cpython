@@ -24,7 +24,143 @@ they are followed by an unrecognized escape character.
 regular expression represented as a string literal, you have to
 \emph{quadruple} it.  E.g.\  to extract \LaTeX\ \samp{\e section\{{\rm
 \ldots}\}} headers from a document, you can use this pattern:
-\code{'\e \e \e\e section\{\e (.*\e )\}'}.
+\code{'\e \e \e \e section\{\e (.*\e )\}'}.  \emph{Another exception:}
+the escape sequece \samp{\e b} is significant in string literals
+(where it means the ASCII bell character) as well as in Emacs regular
+expressions (where it stands for a word boundary), so in order to
+search for a word boundary, you should use the pattern \code{'\e \e b'}.
+Similarly, a backslash followed by a digit 0-7 should be doubled to
+avoid interpretation as an octal escape.
+
+\subsection{Regular Expressions}
+
+A regular expression (or RE) specifies a set of strings that matches
+it; the functions in this module let you check if a particular string
+matches a given regular expression.
+
+Regular expressions can be concatenated to form new regular
+expressions; if \emph{A} and \emph{B} are both regular expressions,
+then \emph{AB} is also an regular expression.  If a string \emph{p}
+matches A and another string \emph{q} matches B, the string \emph{pq}
+will match AB.  Thus, complex expressions can easily be constructed
+from simpler ones like the primitives described here.  For details of
+the theory and implementation of regular expressions, consult almost
+any textbook about compiler construction.
+
+% XXX The reference could be made more specific, say to 
+% "Compilers: Principles, Techniques and Tools", by Alfred V. Aho, 
+% Ravi Sethi, and Jeffrey D. Ullman, or some FA text.   
+
+A brief explanation of the format of regular
+expressions follows.
+
+Regular expressions can contain both special and ordinary characters.
+Ordinary characters, like '\code{A}', '\code{a}', or '\code{0}', are
+the simplest regular expressions; they simply match themselves.  You
+can concatenate ordinary characters, so '\code{last}' matches the
+characters 'last'.
+
+Special characters either stand for classes of ordinary characters, or
+affect how the regular expressions around them are interpreted.
+
+The special characters are:
+\begin{itemize}
+\item[\code{.}]{Matches any character except a newline.}
+\item[\code{\^}]{Matches the start of the string.}
+\item[\code{\$}]{Matches the end of the string.  
+\code{foo} matches both 'foo' and 'foobar', while the regular
+expression '\code{foo\$}' matches only 'foo'.}
+\item[\code{*}] Causes the resulting RE to
+match 0 or more repetitions of the preceding RE.  \code{ab*} will
+match 'a', 'ab', or 'a' followed by any number of 'b's.
+\item[\code{+}] Causes the
+resulting RE to match 1 or more repetitions of the preceding RE.
+\code{ab+} will match 'a' followed by any non-zero number of 'b's; it
+will not match just 'a'.
+\item[\code{?}] Causes the resulting RE to
+match 0 or 1 repetitions of the preceding RE.  \code{ab?} will
+match either 'a' or 'ab'.
+
+\item[\code{\e}] Either escapes special characters (permitting you to match
+characters like '*?+\&\$'), or signals a special sequence; special
+sequences are discussed below.  Remember that Python also uses the
+backslash as an escape sequence in string literals; if the escape
+sequence isn't recognized by Python's parser, the backslash and
+subsequent character are included in the resulting string.  However,
+if Python would recognize the resulting sequence, the backslash should
+be repeated twice.  
+
+\item[\code{[]}] Used to indicate a set of characters.  Characters can
+be listed individually, or a range is indicated by giving two
+characters and separating them by a '-'.  Special characters are
+not active inside sets.  For example, \code{[akm\$]}
+will match any of the characters 'a', 'k', 'm', or '\$'; \code{[a-z]} will
+match any lowercase letter.  
+
+If you want to include a \code{]} inside a
+set, it must be the first character of the set; to include a \code{-},
+place it as the first or last character. 
+
+Characters \emph{not} within a range can be matched by including a
+\code{\^} as the first character of the set; \code{\^} elsewhere will
+simply match the '\code{\^}' character.  
+\end{itemize}
+
+The special sequences consist of '\code{\e}' and a character
+from the list below.  If the ordinary character is not on the list,
+then the resulting RE will match the second character.  For example,
+\code{\e\$} matches the character '\$'.  Ones where the backslash
+should be doubled are indicated.
+
+\begin{itemize}
+\item[\code{\e|}]\code{A\e|B}, where A and B can be arbitrary REs,
+creates a regular expression that will match either A or B.
+%
+\item[\code{\e( \e)}]{Indicates the start and end of a group; the
+contents of a group can be matched later in the string with the
+\code{\e \[1-9]} special sequence, described next.}
+%
+{\fulllineitems\item[\code{\e \e 1, ... \e \e 7, \e 8, \e 9}]
+{Matches the contents of the group of the same
+number.  For example, \code{\e (.+\e ) \e \e 1} matches 'the the' or
+'55 55', but not 'the end' (note the space after the group).  This
+special sequence can only be used to match one of the first 9 groups;
+groups with higher numbers can be matched using the \code{\e v}
+sequence.}}
+%
+\item[\code{\e \e b}]{Matches the empty string, but only at the
+beginning or end of a word.  A word is defined as a sequence of
+alphanumeric characters, so the end of a word is indicated by
+whitespace or a non-alphanumeric character.}
+%
+\item[\code{\e B}]{Matches the empty string, but when it is \emph{not} at the
+beginning or end of a word.} 
+%
+\item[\code{\e v}]{Must be followed by a two digit decimal number, and
+matches the contents of the group of the same number.  The group number must be between 1 and 99, inclusive.}
+%
+\item[\code{\e w}]Matches any alphanumeric character; this is
+equivalent to the set \code{[a-zA-Z0-9]}.
+%
+\item[\code{\e W}]{Matches any non-alphanumeric character; this is
+equivalent to the set \code{[\^a-zA-Z0-9]}.} 
+\item[\code{\e <}]{Matches the empty string, but only at the beginning of a
+word.  A word is defined as a sequence of alphanumeric characters, so
+the end of a word is indicated by whitespace or a non-alphanumeric 
+character.}
+\item[\code{\e >}]{Matches the empty string, but only at the end of a
+word.}
+
+% In Emacs, the following two are start of buffer/end of buffer.  In
+% Python they seem to be synonyms for ^$.
+\item[\code{\e `}]{Like \code{\^}, this only matches at the start of the
+string.}
+\item[\code{\e \e '}] Like \code{\$}, this only matches at the end of the
+string.
+% end of buffer
+\end{itemize}
+
+\subsection{Module Contents}
 
 The module defines these functions, and an exception:
 
