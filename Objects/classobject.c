@@ -2000,58 +2000,90 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 	return (PyObject *)im;
 }
 
-/* Class method methods */
+/* Descriptors for PyMethod attributes */
+
+/* im_class, im_func and im_self are stored in the PyMethod object */
 
 #define OFF(x) offsetof(PyMethodObject, x)
 
 static struct memberlist instancemethod_memberlist[] = {
-	{"im_func",	T_OBJECT,	OFF(im_func)},
-	{"im_self",	T_OBJECT,	OFF(im_self)},
-	{"im_class",	T_OBJECT,	OFF(im_class)},
-	/* Dummies that are not handled by getattr() except for __members__ */
-	{"__doc__",	T_INT,		0},
-	{"__name__",	T_INT,		0},
-	{"__dict__",    T_OBJECT,       0},
+	{"im_class",	T_OBJECT,	OFF(im_class),	READONLY|RESTRICTED},
+	{"im_func",	T_OBJECT,	OFF(im_func),	READONLY|RESTRICTED},
+	{"im_self",	T_OBJECT,	OFF(im_self),	READONLY|RESTRICTED},
 	{NULL}	/* Sentinel */
 };
 
-static int
-instancemethod_setattro(register PyMethodObject *im, PyObject *name,
-			PyObject *v)
-{
-	char *sname = PyString_AsString(name);
-
-	PyErr_Format(PyExc_TypeError, "read-only attribute: %s", sname);
-	return -1;
-}
- 
+/* __dict__, __doc__ and __name__ are retrieved from im_func */
 
 static PyObject *
-instancemethod_getattro(register PyMethodObject *im, PyObject *name)
+im_get_dict(PyMethodObject *im)
 {
-	PyObject *rtn;
-	char *sname = PyString_AsString(name);
-	if (sname[0] == '_') {
-		/* Inherit __name__ and __doc__ from the callable object
-		   implementing the method */
-	        if (strcmp(sname, "__name__") == 0 ||
-		    strcmp(sname, "__doc__") == 0)
-			return PyObject_GetAttr(im->im_func, name);
-	}
-	if (PyEval_GetRestricted()) {
-		PyErr_SetString(PyExc_RuntimeError,
-	    "instance-method attributes not accessible in restricted mode");
-		return NULL;
-	}
-	if (sname[0] == '_' && strcmp(sname, "__dict__") == 0)
-		return PyObject_GetAttr(im->im_func, name);
+	return PyObject_GetAttrString(im->im_func, "__dict__");
+}
 
-	rtn = PyMember_Get((char *)im, instancemethod_memberlist, sname);
-	if (rtn == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
-		PyErr_Clear();
-		rtn = PyObject_GetAttr(im->im_func, name);
+static PyObject *
+im_get_doc(PyMethodObject *im)
+{
+	return PyObject_GetAttrString(im->im_func, "__doc__");
+}
+
+static PyObject *
+im_get_name(PyMethodObject *im)
+{
+	return PyObject_GetAttrString(im->im_func, "__name__");
+}
+
+static struct getsetlist instancemethod_getsetlist[] = {
+	{"__dict__", (getter)im_get_dict},
+	{"__doc__", (getter)im_get_doc},
+	{"__name__", (getter)im_get_name},
+	{NULL}  /* Sentinel */
+};
+
+/* The getattr() implementation for PyMethod objects is similar to
+   PyObject_GenericGetAttr(), but instead of looking in __dict__ it
+   asks im_self for the attribute.  Then the error handling is a bit
+   different because we want to preserve the exception raised by the
+   delegate, unless we have an alternative from our class. */
+
+static PyObject *
+instancemethod_getattro(PyObject *obj, PyObject *name)
+{
+	PyMethodObject *im = (PyMethodObject *)obj;
+	PyTypeObject *tp = obj->ob_type;
+	PyObject *descr, *res;
+	descrgetfunc f;
+
+	if (tp->tp_dict == NULL) {
+		if (PyType_Ready(tp) < 0)
+			return NULL;
 	}
-	return rtn;
+
+	descr = _PyType_Lookup(tp, name);
+	f = NULL;
+	if (descr != NULL) {
+		f = descr->ob_type->tp_descr_get;
+		if (f != NULL && PyDescr_IsData(descr))
+			return f(descr, obj, (PyObject *)obj->ob_type);
+	}
+
+	res = PyObject_GetAttr(im->im_func, name);
+	if (res != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError))
+		return res;
+
+	if (f != NULL) {
+		PyErr_Clear();
+		return f(descr, obj, (PyObject *)obj->ob_type);
+	}
+
+	if (descr != NULL) {
+		PyErr_Clear();
+		Py_INCREF(descr);
+		return descr;
+	}
+
+	assert(PyErr_Occurred());
+	return NULL;
 }
 
 static void
@@ -2298,7 +2330,7 @@ PyTypeObject PyMethod_Type = {
 	instancemethod_call,			/* tp_call */
 	0,					/* tp_str */
 	(getattrofunc)instancemethod_getattro,	/* tp_getattro */
-	(setattrofunc)instancemethod_setattro,	/* tp_setattro */
+	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,					/* tp_doc */
@@ -2309,8 +2341,8 @@ PyTypeObject PyMethod_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,					/* tp_members */
-	0,					/* tp_getset */
+	instancemethod_memberlist,		/* tp_members */
+	instancemethod_getsetlist,		/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	instancemethod_descr_get,		/* tp_descr_get */
