@@ -769,6 +769,9 @@ getattro(v, name)
 	object *v;
 	object *name;
 {
+	if (v->ob_type->tp_getattro != NULL)
+		return (*v->ob_type->tp_getattro)(v, name);
+
 	if (name != last_name_object) {
 		XDECREF(last_name_object);
 		INCREF(name);
@@ -784,6 +787,9 @@ setattro(v, name, value)
 	object *name;
 	object *value;
 {
+	if (v->ob_type->tp_setattro != NULL)
+		return (*v->ob_type->tp_setattro)(v, name, value);
+
 	if (name != last_name_object) {
 		XDECREF(last_name_object);
 		INCREF(name);

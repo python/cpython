@@ -326,6 +326,16 @@ getattr(v, name)
 	object *v;
 	char *name;
 {
+	if (v->ob_type->tp_getattro != NULL) {
+		object *w, *res;
+		w = newstringobject(name);
+		if (w == NULL)
+			return NULL;
+		res = (*v->ob_type->tp_getattro)(v, w);
+		XDECREF(w);
+		return res;
+	}
+
 	if (v->ob_type->tp_getattr == NULL) {
 		err_setstr(AttributeError, "attribute-less object");
 		return NULL;
@@ -355,6 +365,17 @@ setattr(v, name, w)
 	char *name;
 	object *w;
 {
+	if (v->ob_type->tp_setattro != NULL) {
+		object *s;
+		int res;
+		s = newstringobject(name);
+		if (s == NULL)
+			return NULL;
+		res = (*v->ob_type->tp_setattro)(v, s, w);
+		XDECREF(s);
+		return res;
+	}
+
 	if (v->ob_type->tp_setattr == NULL) {
 		if (v->ob_type->tp_getattr == NULL)
 			err_setstr(TypeError,
