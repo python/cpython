@@ -178,7 +178,21 @@ Library
 Tools/Demos
 -----------
 
-TBD
+- Two new scripts (db2pickle.py and pickle2db.py) were added to the
+  Tools/scripts directory to facilitate conversion from the old bsddb module
+  to the new one.  While the user-visible API of the new module is
+  compatible with the old one, it's likely that the version of the
+  underlying database library has changed.  To convert from the old library,
+  run the db2pickle.py script using the old version of Python to convert it
+  to a pickle file.  After upgrading Python, run the pickle2db.py script
+  using the new version of Python to reconstitute your database.  For
+  example:
+
+    % python2.2 -h some.db > some.pickle
+    % python2.3 -h some.db.new < some.pickle
+
+  Run the scripts without any args to get a usage message.
+
 
 Build
 -----
@@ -626,7 +640,10 @@ Extension modules
   been added as the package bsddb.  The traditional bsddb module is
   still available in source code, but not built automatically anymore,
   and is now named bsddb185.  This supports Berkeley DB versions from
-  3.0 to 4.1.
+  3.0 to 4.1.  For help converting your databases from the old module (which
+  probably used an obsolete version of Berkeley DB) to the new module, see
+  the db2pickle.py and pickle2db.py scripts described in the Tools/Demos
+  section above.
 
 - unicodedata was updated to Unicode 3.2. It supports normalization
   and names for Hangul syllables and CJK unified ideographs.
