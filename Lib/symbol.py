@@ -7,10 +7,7 @@
 #  To update the symbols in this file, 'cd' to the top directory of
 #  the python source tree after building the interpreter and run:
 #
-#    PYTHONPATH=Lib:Modules ./python Lib/symbol.py
-#
-#  (this path allows the import of string.py, token.py, and regexmodule.so
-#  for a site with no installation in place)
+#    python Lib/symbol.py
 
 #--start constants--
 single_input = 256
@@ -87,6 +84,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#
-#  end of file
