@@ -405,7 +405,7 @@ class PyBuildExt(build_ext):
         else:
             expat_incs = find_file('xmlparse.h', inc_dirs, [])
             
-        if (expat_incs and
+        if (expat_incs is not None and
             self.compiler.find_library_file(lib_dirs, 'expat')):
             exts.append( Extension('pyexpat', ['pyexpat.c'],
                                    define_macros = expat_defs,
