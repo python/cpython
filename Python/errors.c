@@ -128,6 +128,7 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 	PyObject *type = *exc;
 	PyObject *value = *val;
 	PyObject *inclass = NULL;
+	PyObject *initial_tb = NULL;
 
 	if (type == NULL) {
 		/* This is a bug.  Should never happen.  Don't dump core. */
@@ -191,8 +192,18 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 finally:
 	Py_DECREF(type);
 	Py_DECREF(value);
-	Py_XDECREF(*tb);
+	/* If the new exception doesn't set a traceback and the old
+	   exception had a traceback, use the old traceback for the
+	   new exception.  It's better than nothing.
+	*/
+	initial_tb = *tb;
 	PyErr_Fetch(exc, val, tb);
+	if (initial_tb != NULL) {
+		if (*tb == NULL)
+			*tb = initial_tb;
+		else
+			Py_DECREF(initial_tb);
+	}
 	/* normalize recursively */
 	PyErr_NormalizeException(exc, val, tb);
 }
