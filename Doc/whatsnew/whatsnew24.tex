@@ -90,7 +90,25 @@ Greg Wilson and ultimately implemented by Raymond Hettinger.}
 %======================================================================
 \section{PEP 237: Unifying Long Integers and Integers}
 
-XXX write this.
+The lengthy transition process for the PEP, begun with Python 2.2,
+takes another step forward in Python 2.4.  In 2.3, certain integer
+operations that would behave differently after int/long unification
+triggered \exception{FutureWarning} warnings and returned values
+limited to 32 or 64 bits.  In 2.4, these expressions no longer produce
+a warning, but they now produce a different value that's a long
+integer.  
+
+The problematic expressions are primarily left shifts and lengthy
+hexadecimal and octal constants.  For example, \code{2 << 32} is one
+expression that results in a warning in 2.3, evaluating to 0 on 32-bit
+platforms.  In Python 2.4, this expression now returns 8589934592.
+
+
+\begin{seealso}
+\seepep{237}{Unifying Long Integers and Integers}{Original PEP
+written by Moshe Zadka and Gvr.  The changes for 2.4 were implemented by 
+Kalle Svensson.}
+\end{seealso}
 
 %======================================================================
 \section{PEP 289: Generator Expressions}
