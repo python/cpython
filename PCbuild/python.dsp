@@ -92,6 +92,13 @@ SOURCE=..\Modules\python.c
 # Begin Source File
 
 SOURCE=..\PC\python_exe.rc
+
+!IF  "$(CFG)" == "python - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "python - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # End Target
 # End Project
