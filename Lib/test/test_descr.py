@@ -830,6 +830,34 @@ def multi():
     vereq(int(Frag()), 42)
 
     # MI mixing classic and new-style classes.
+
+    class A:
+        x = 1
+
+    class B(A):
+        pass
+
+    class C(A):
+        x = 2
+
+    class D(B, C):
+        pass
+    vereq(D.x, 1)
+
+    # Classic MRO is preserved for a classic base class.
+    class E(D, object):
+        pass
+    vereq(E.__mro__, (E, D, B, A, C, object))
+    vereq(E.x, 1)
+
+    # But with a mix of classic bases, their MROs are combined using
+    # new-style MRO.
+    class F(B, C, object):
+        pass
+    vereq(F.__mro__, (F, B, C, A, object))
+    vereq(F.x, 2)
+
+    # Try something else.
     class C:
         def cmethod(self):
             return "C a"
@@ -875,6 +903,13 @@ def multi():
     # XXX Expected this (the commented-out result):
     # vereq(M3.__mro__, (M3, M1, M2, object, D, C))
     vereq(M3.__mro__, (M3, M1, M2, D, C, object))  # XXX ?
+    m = M3()
+    vereq(m.cmethod(), "C a")
+    vereq(m.dmethod(), "D a")
+    vereq(m.m1method(), "M1 a")
+    vereq(m.m2method(), "M2 a")
+    vereq(m.m3method(), "M3 a")
+    vereq(m.all_method(), "M3 b")
 
 def diamond():
     if verbose: print "Testing multiple inheritance special cases..."
