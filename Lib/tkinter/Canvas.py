@@ -22,6 +22,7 @@ class CanvasItem:
 			self.canvas._w, 'itemconfigure',
 			self.id, '-' + key))
 		return v[4]
+	cget = __getitem__
 	def __setitem__(self, key, value):
 		self.canvas.itemconfig(self.id, {key: value})
 	def keys(self):
