@@ -236,6 +236,42 @@ if int(-3.9) <> -3: raise TestFailed, 'int(-3.9)'
 if int(3.5) <> 3: raise TestFailed, 'int(3.5)'
 if int(-3.5) <> -3: raise TestFailed, 'int(-3.5)'
 
+print 'isinstance'
+class C:
+    pass
+class D(C):
+    pass
+class E:
+    pass
+c = C()
+d = D()
+e = E()
+if not isinstance(c, C): raise TestFailed, 'isinstance(c, C)'
+if not isinstance(d, C): raise TestFailed, 'isinstance(d, C)'
+if isinstance(e, C): raise TestFailed, 'isinstance(e, C)'
+if isinstance(c, D): raise TestFailed, 'isinstance(c, D)'
+if isinstance('foo', E): raise TestFailed, 'isinstance("Foo", E)'
+try:
+    isinstance(E, 'foo')
+    raise TestFailed, 'isinstance(E, "foo")'
+except TypeError:
+    pass
+
+print 'issubclass'
+if not issubclass(D, C): raise TestFailed, 'issubclass(D, C)'
+if not issubclass(C, C): raise TestFailed, 'issubclass(C, C)'
+if issubclass(C, D): raise TestFailed, 'issubclass(C, D)'
+try:
+    issubclass('foo', E)
+    raise TestFailed, 'issubclass("foo", E)'
+except TypeError:
+    pass
+try:
+    issubclass(E, 'foo')
+    raise TestFailed, 'issubclass(E, "foo")'
+except TypeError:
+    pass
+
 print 'len'
 if len('123') <> 3: raise TestFailed, 'len(\'123\')'
 if len(()) <> 0: raise TestFailed, 'len(())'
