@@ -563,7 +563,7 @@ PyCursesWindow_Border(PyCursesWindowObject *self, PyObject *args)
 {
   chtype ls, rs, ts, bs, tl, tr, bl, br;
   ls = rs = ts = bs = tl = tr = bl = br = 0;
-  if (!PyArg_Parse(args,"|llllllll;ls,rs,ts,bs,tl,tr,bl,br",
+  if (!PyArg_ParseTuple(args,"|llllllll;ls,rs,ts,bs,tl,tr,bl,br",
                         &ls, &rs, &ts, &bs, &tl, &tr, &bl, &br))
     return NULL;
   wborder(self->win, ls, rs, ts, bs, tl, tr, bl, br);
