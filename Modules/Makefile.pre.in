@@ -127,7 +127,8 @@ link:		$(MAINOBJ)
 		mv python$(EXE) ../python$(EXE)
 
 clean:
-		-rm -f *.o python$(EXE) core *~ [@,#]* *.old *.orig *.rej add2lib
+		-rm -f *.o python$(EXE) core *~ [@,#]* *.old *.orig *.rej
+		-rm -f add2lib hassignal
 
 clobber:	clean
 		-rm -f *.a tags TAGS config.c Makefile.pre
