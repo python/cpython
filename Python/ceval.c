@@ -537,15 +537,17 @@ _Py_CheckRecursiveCall(char *where)
 }
 
 /* Status code for main loop (reason for stack unwind) */
-#define WHY_NOT			0x0001
-#define WHY_EXCEPTION		0x0002
-#define WHY_RERAISE		0x0004
-#define WHY_RETURN		0x0008
-#define WHY_BREAK		0x0010
-#define WHY_CONTINUE		0x0020
-#define WHY_YIELD		0x0040
+enum why_code {
+		WHY_NOT =	0x0001,	/* No error */
+		WHY_EXCEPTION = 0x0002,	/* Exception occurred */
+		WHY_RERAISE =	0x0004,	/* Exception re-raised by 'finally' */
+		WHY_RETURN =	0x0008,	/* 'return' statement */
+		WHY_BREAK =	0x0010,	/* 'break' statement */
+		WHY_CONTINUE =	0x0020,	/* 'continue' statement */
+		WHY_YIELD =	0x0040	/* 'yield' operator */
+};
 
-static int do_raise(PyObject *, PyObject *, PyObject *);
+static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, PyObject **);
 
 /* for manipulating the thread switch and periodic "stuff" - used to be
@@ -578,7 +580,7 @@ eval_frame(PyFrameObject *f)
 	register unsigned char *next_instr;
 	register int opcode=0;	/* Current opcode */
 	register int oparg=0;	/* Current opcode argument, if any */
-	register int why;	/* Reason for block stack unwind */
+	register enum why_code why; /* Reason for block stack unwind */
 	register int err;	/* Error status -- nonzero if error */
 	register PyObject *x;	/* Result object -- NULL if error */
 	register PyObject *v;	/* Temporary objects popped off stack */
@@ -1650,7 +1652,7 @@ eval_frame(PyFrameObject *f)
 		case END_FINALLY:
 			v = POP();
 			if (PyInt_Check(v)) {
-				why = (int) PyInt_AS_LONG(v);
+				why = (enum why_code) PyInt_AS_LONG(v);
 				assert(why != WHY_YIELD);
 				if (why & (WHY_RETURN | WHY_CONTINUE))
 					retval = POP();
@@ -2834,7 +2836,7 @@ reset_exc_info(PyThreadState *tstate)
 
 /* Logic for the raise statement (too complicated for inlining).
    This *consumes* a reference count to each of its arguments. */
-static int
+static enum why_code
 do_raise(PyObject *type, PyObject *value, PyObject *tb)
 {
 	if (type == NULL) {
