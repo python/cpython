@@ -43,6 +43,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 extern int PyArg_Parse Py_PROTO((PyObject *, char *, ...));
 extern int PyArg_ParseTuple Py_PROTO((PyObject *, char *, ...));
+extern int PyArg_ParseTupleAndKeywords Py_PROTO((PyObject *, PyObject *,
+						 char *, char **, ...));
 extern PyObject *Py_BuildValue Py_PROTO((char *, ...));
 
 #else
