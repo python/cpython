@@ -610,9 +610,11 @@ BUILD_FUNC_DEF_2(PySocketSock_close,PySocketSockObject *,s, PyObject *,args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	Py_BEGIN_ALLOW_THREADS
-	(void) close(s->sock_fd);
-	Py_END_ALLOW_THREADS
+	if (s->sock_fd != -1) {
+		Py_BEGIN_ALLOW_THREADS
+		(void) close(s->sock_fd);
+		Py_END_ALLOW_THREADS
+	}
 	s->sock_fd = -1;
 	Py_INCREF(Py_None);
 	return Py_None;
