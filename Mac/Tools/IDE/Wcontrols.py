@@ -7,7 +7,7 @@ class ControlWidget(Wbase.ClickableWidget):
 	
 	"""Baseclass for all native controls."""
 	
-	def __init__(self, possize, title = "Control", procID = 0, callback = None, value = 0, min = 0, max = 1):
+	def __init__(self, possize, title = "Control", procID = 0, callback = None, value = 0, min = 0, max = 1, viewsize = 0):
 		Wbase.ClickableWidget.__init__(self, possize)
 		self._control = None
 		self._title = title
@@ -17,21 +17,54 @@ class ControlWidget(Wbase.ClickableWidget):
 		self._min = min
 		self._max = max
 		self._enabled = 1
-		self._viewsize = 0
+		self._viewsize = viewsize
 	
 	def open(self):
 		self._calcbounds()
+		
+		# NewControl doesn't accept 32-bit value, min, or max, so for consistency
+		# with the new 32-bit set/get methods, out-of-range values are initially
+		# set as zero, followed by a 32-bit set of the actual value.
+		# Values not representable in 16 bits will fail on MacOS 8.1, however
+		# the vast majority of control usage should still be compatible.
+		_value, _min, _max = self._value, self._min, self._max
+		if -32768 <= _value <= 32767:
+			bigvalue = None
+		else:
+			bigvalue = _value
+			_value = 0
+		if -32768 <= _min <= 32767:
+			bigmin = None
+		else:
+			bigmin = _min
+			_min = 0
+		if -32768 <= _max <= 32767:
+			bigmax = None
+		else:
+			bigmax = _max
+			_max = 0
 		self._control = Ctl.NewControl(self._parentwindow.wid, 
 						self._bounds, 
 						self._title, 
 						1, 
-						self._value, 
-						self._min, 
-						self._max, 
+						_value, 
+						_min, 
+						_max, 
 						self._procID, 
 						0)
+		if bigvalue:
+			self._control.SetControl32BitValue(bigvalue)
+		if bigmin:
+			self._control.SetControl32BitMinimum(bigmin)
+		if bigmax:
+			self._control.SetControl32BitMaximum(bigmax)
 		if self._viewsize:
-			self._control.SetControlViewSize(self._viewsize)
+			try:
+				self._control.SetControlViewSize(self._viewsize)
+				# Not available in MacOS 8.1, but that's OK since it only affects
+				# proportional scrollbars which weren't available in 8.1 either.
+			except NotImplementedError:
+				pass
 		self.enable(self._enabled)
 	
 	def adjust(self, oldbounds):
@@ -100,13 +133,23 @@ class ControlWidget(Wbase.ClickableWidget):
 	
 	def set(self, value):
 		if self._control:
-			self._control.SetControl32BitValue(value)
+			if -32768 <= value <= 32767:
+				# No 32-bit control support in MacOS 8.1, so use
+				# the 16-bit interface when possible.
+				self._control.SetControlValue(value)
+			else:
+				self._control.SetControl32BitValue(value)
 		else:
 			self._value = value
 	
 	def get(self):
 		if self._control:
-			return self._control.GetControl32BitValue()
+			try:
+				return self._control.GetControl32BitValue()
+				# No 32-bit control support in MacOS 8.1, so fall
+				# back to the 16-bit interface when needed.
+			except NotImplementedError:
+				return self._control.GetControlValue()
 		else:
 			return self._value
 
@@ -279,27 +322,52 @@ class Scrollbar(ControlWidget):
 	
 	def setmin(self, min):
 		if self._control is not None:
-			self._control.SetControl32BitMinimum(min)
+			if -32768 <= min <= 32767:
+				# No 32-bit control support in MacOS 8.1, so use
+				# the 16-bit interface when possible.
+				self._control.SetControlMinimum(min)
+			else:
+				self._control.SetControl32BitMinimum(min)
 		else:
 			self._min = min
 	
 	def setmax(self, max):
 		if self._control is not None:
-			self._control.SetControl32BitMaximum(max)
+			if -32768 <= max <= 32767:
+				# No 32-bit control support in MacOS 8.1, so use
+				# the 16-bit interface when possible.
+				self._control.SetControlMaximum(max)
+			else:
+				self._control.SetControl32BitMaximum(max)
 		else:
 			self._max = max
 	
 	def setviewsize(self, viewsize):
 		if self._control is not None:
-			self._control.SetControlViewSize(viewsize)
+			try:
+				self._control.SetControlViewSize(viewsize)
+				# Not available in MacOS 8.1, but that's OK since it only affects
+				# proportional scrollbars which weren't available in 8.1 either.
+			except NotImplementedError:
+				pass
 		else:
 			self._viewsize = viewsize
 	
 	def getmin(self):
-		return self._control.GetControl32BitMinimum()
+		try:
+			return self._control.GetControl32BitMinimum()
+			# No 32-bit control support in MacOS 8.1, so fall
+			# back to the 16-bit interface when needed.
+		except NotImplementedError:
+			return self._control.GetControlMinimum()
 	
 	def getmax(self):
-		return self._control.GetControl32BitMaximum()
+		try:
+			return self._control.GetControl32BitMaximum()
+			# No 32-bit control support in MacOS 8.1, so fall
+			# back to the 16-bit interface when needed.
+		except NotImplementedError:
+			return self._control.GetControlMaximum()
 	
 	# internals
 	def click(self, point, modifiers):
@@ -334,7 +402,12 @@ class Scrollbar(ControlWidget):
 	
 	def _hit(self, part):
 		if part == Controls.inThumb:
-			value = self._control.GetControl32BitValue()
+			try:
+				value = self._control.GetControl32BitValue()
+				# No 32-bit control support in MacOS 8.1, so fall
+				# back to the 16-bit interface when needed.
+			except NotImplementedError:
+				value = self._control.GetControlValue()
 		elif part == Controls.inUpButton:
 			value = "+"
 		elif part == Controls.inDownButton:

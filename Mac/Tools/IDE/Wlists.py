@@ -55,12 +55,11 @@ class List(Wbase.SelectableWidget):
 	
 	def adjust(self, oldbounds):
 		self.SetPort()
-		if self._selected:
-			self.GetWindow().InvalWindowRect(Qd.InsetRect(oldbounds, -3, -3))
-			self.GetWindow().InvalWindowRect(Qd.InsetRect(self._bounds, -3, -3))
-		else:
-			self.GetWindow().InvalWindowRect(oldbounds)
-			self.GetWindow().InvalWindowRect(self._bounds)
+		# Appearance frames are drawn outside the specified bounds,
+		# so we always need to outset the invalidated area.
+		self.GetWindow().InvalWindowRect(Qd.InsetRect(oldbounds, -3, -3))
+		self.GetWindow().InvalWindowRect(Qd.InsetRect(self._bounds, -3, -3))
+
 		if oldbounds[:2] == self._bounds[:2]:
 			# set visRgn to empty, to prevent nasty drawing side effect of LSize()
 			Qd.RectRgn(self._parentwindow.wid.GetWindowPort().visRgn, (0, 0, 0, 0))
@@ -255,24 +254,25 @@ class List(Wbase.SelectableWidget):
 			if not visRgn:
 				visRgn = self._parentwindow.wid.GetWindowPort().visRgn
 			self._list.LUpdate(visRgn)
-			App.DrawThemeListBoxFrame(self._bounds, kThemeStateActive)
-			#if self._selected and self._activated:
-			#	self.drawselframe(1)
+			state = [kThemeStateActive, kThemeStateInactive][not self._activated]
+			App.DrawThemeListBoxFrame(Qd.InsetRect(self._bounds, 1, 1), state)
+			if self._selected and self._activated:
+				self.drawselframe(1)
 	
 	def select(self, onoff, isclick = 0):
 		if Wbase.SelectableWidget.select(self, onoff):
 			return
 		self.SetPort()
-		state = [kThemeStateActive, kThemeStatePressed][onoff]
-		App.DrawThemeListBoxFrame(self._bounds, kThemeStateActive)
-		#self.drawselframe(onoff)
+		self.drawselframe(onoff)
 	
 	def activate(self, onoff):
 		self._activated = onoff
 		if self._visible:
 			self._list.LActivate(onoff)
-			#if self._selected:
-			#	self.drawselframe(onoff)
+			state = [kThemeStateActive, kThemeStateInactive][not onoff]
+			App.DrawThemeListBoxFrame(Qd.InsetRect(self._bounds, 1, 1), state)
+			if self._selected:
+				self.drawselframe(onoff)
 	
 	def get(self):
 		return self.items
