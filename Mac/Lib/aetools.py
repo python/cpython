@@ -71,7 +71,7 @@ def unpackevent(ae):
 	except AE.Error:
 		pass
 	else:
-		parameters['errn'] = unpack(dirobj, formodulename)
+		parameters['errn'] = unpack(dirobj)
 		del dirobj
 	while 1:
 		key = missed(ae)
