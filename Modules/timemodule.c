@@ -33,6 +33,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #include <setjmp.h>
 
+#ifndef NO_UNISTD
+#include <unistd.h>
+#endif
+
 /* What happens here is not trivial.
    The BSD_TIME code needs <sys/time.h> (for struct timeval).
    The rest of the code needs only time_t, except some MS-DOS
@@ -95,9 +99,10 @@ time_time(self, args)
 
 static jmp_buf sleep_intr;
 
+/* ARGSUSED */
 static void
 sleep_catcher(sig)
-	int sig;
+	int sig; /* Not used but required by interface */
 {
 	longjmp(sleep_intr, 1);
 }
@@ -108,7 +113,7 @@ time_sleep(self, args)
 	object *args;
 {
 	int secs;
-	SIGTYPE (*sigsave)();
+	SIGTYPE (*sigsave)() = 0; /* Initialized to shut lint up */
 	if (!getintarg(args, &secs))
 		return NULL;
 	if (setjmp(sleep_intr)) {
@@ -193,6 +198,8 @@ time_times(self, args)
 	struct tms t;
 	clock_t c;
 	object *tuple;
+	if (!getnoarg(args))
+		return NULL;
 	errno = 0;
 	c = times(&t);
 	if (c == (clock_t) -1) {
