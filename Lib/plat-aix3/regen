@@ -5,7 +5,4 @@ case `uname -sv` in
         exit 1;;
 esac
 set -v
-h2py.py /usr/include/fcntl.h
-h2py.py /usr/include/sys/socket.h
 h2py.py -i '(u_long)' /usr/include/netinet/in.h
-h2py.py /usr/include/termios.h
