@@ -108,6 +108,14 @@ class OutputOnlyBufferMixIn(OutputOnlyMixIn):
 	def declareInputBuffer(self, name):
 		pass
 
+class OptionalInputBufferMixIn:
+	
+	"""Add to input buffers if the buffer may be omitted: pass None in Python
+	and the C code will get a NULL pointer and zero size"""
+	
+	def getargsFormat(self):
+		return "z#"
+
 
 class FixedInputBufferType(InputOnlyBufferMixIn, FixedInputOutputBufferType):
 
@@ -119,6 +127,8 @@ class FixedInputBufferType(InputOnlyBufferMixIn, FixedInputOutputBufferType):
 	def passInput(self, name):
 		return "%s__in__" % name
 
+class OptionalFixedInputBufferType(OptionalInputBufferMixIn, FixedInputBufferType):
+	pass
 
 class FixedOutputBufferType(OutputOnlyBufferMixIn, FixedInputOutputBufferType):
 
@@ -147,7 +157,9 @@ class VarInputBufferType(FixedInputBufferType):
 	def passInput(self, name):
 		return "%s__in__, %s__len__" % (name, name)
 
-
+class OptionalVarInputBufferType(OptionalInputBufferMixIn, VarInputBufferType):
+	pass
+	
 # ----- PART 2: Structure buffers -----
 
 
