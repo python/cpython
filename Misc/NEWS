@@ -292,6 +292,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- readline now dynamically adjusts its input/output stream if
+  sys.stdin/stdout changes.
+
 - The _tkinter module (and hence Tkinter) has dropped support for
   Tcl/Tk 8.0 and 8.1.  Only Tcl/Tk versions 8.2, 8.3 and 8.4 are
   supported.
