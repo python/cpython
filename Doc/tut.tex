@@ -249,18 +249,20 @@ statement.
 \subsection{The Module Search Path}
 
 When a module named {\tt spam} is imported, the interpreter searches
-for a file named {\tt spam.py} in the list of directories specified by
-the environment variable {\tt PYTHONPATH}.  It has the same syntax as
+for a file named {\tt spam.py} in the current directory,
+and then in the list of directories specified by
+the environment variable {\tt PYTHONPATH}.  This has the same syntax as
 the {\UNIX} shell variable {\tt PATH}, i.e., a list of colon-separated
 directory names.  When {\tt PYTHONPATH} is not set, or when the file
 is not found there, the search continues in an installation-dependent
 default path, usually {\tt .:/usr/local/lib/python}.
 
-Actually, modules are searched in the list of directories given by the
-variable {\tt sys.path} which is initialized from {\tt PYTHONPATH} and
-the installation-dependent default.  This allows Python programs that
-know what they're doing to modify or replace the module search path.
-See the section on Standard Modules later.
+Actually, modules are searched in the list of directories given by the 
+variable {\tt sys.path} which is initialized from the directory 
+containing the input script (or the current directory), {\tt 
+PYTHONPATH} and the installation-dependent default.  This allows 
+Python programs that know what they're doing to modify or replace the 
+module search path.  See the section on Standard Modules later.
 
 \subsection{``Compiled'' Python files}
 
@@ -272,13 +274,15 @@ modification time of the version of {\tt spam.py} used to create {\tt
 spam.pyc} is recorded in {\tt spam.pyc}, and the file is ignored if
 these don't match.
 
+Normally, you don't need to do anything to create the {\tt spam.pyc} file.
 Whenever {\tt spam.py} is successfully compiled, an attempt is made to
 write the compiled version to {\tt spam.pyc}.  It is not an error if
 this attempt fails; if for any reason the file is not written
 completely, the resulting {\tt spam.pyc} file will be recognized as
 invalid and thus ignored later.  The contents of the {\tt spam.pyc}
 file is platform independent, so a Python module directory can be
-shared by machines of different architectures.
+shared by machines of different architectures.  (Tip for experts:
+the module {\tt compileall} creates {\tt .pyc} files for all modules.)
 
 \subsection{Executable Python scripts}
 
@@ -3867,24 +3871,45 @@ notice them anyway :-)
 \chapter{New in Release 1.4}
 
 
-This chapter describes additions to the Python language and library in
-version 1.4.
+This chapter describes the major additions to the Python language and 
+library in version 1.4.  Many minor changes are not listed here;
+it is recommended to read the file \code{Misc/NEWS} in the Python 
+source distribution for a complete listing of all changes, however 
+small.
 
 \begin{itemize}
 
 \item
 Power operator.  \code{x**y} is equivalent to \code{pow(x, y)}.
+This operator binds more tightly than \code{*}, \code{/} or \code{\%},
+and binds from right to left when repeated or combined with unary 
+operators.  For example, \code{x**y**z} is equivalent to 
+\code{x**(y**z)}, and \code{-x**y} is \code{-(x**y)}.
 
 \item
-Complex numbers.  Imaginary literals are writen with a \code{'j'}
-suffix (\code{'J'} is allowed for consistency.)  Complex numbers with
-a nonzero real component are written as
-\code{(\var{real}+\var{imag}j)}.  The usual arithmetic operators on
-complex numbers are supported, so that e.g. \code{1j**2} equals
-\code{-1.0}.  Module \code{cmath} provides versions of all math
-functions that take complex arguments and return complex results.
-(Module \code{math} only supports real numbers, so that
-\code{math.sqrt(-1)} still raises a \code{ValueError} exception.)
+Complex numbers.  Imaginary literals are writen with a \code{'j'} 
+suffix (\code{'J'} is allowed as well.) Complex numbers with a nonzero 
+real component are written as \code{(\var{real}+\var{imag}j)}.  You 
+can also use the new built-in function \code{complex()} which takes 
+one or two arguments: \code{complex(x)} is equivalent to \code{x + 
+0j}, and \code{complex(x, y)} is \code{x + y*0j}.
+
+The usual arithmetic operators on complex numbers are supported, so 
+that e.g.  \code{1j**2} equals \code{complex(-1.0)}.
+
+To extract the real and imaginary part from a complex number \code{z}, 
+use \code{z.real} and \code{z.imag}.  The conversion functions to 
+floating point and integer (\code{float()}, \code{int()} and 
+\code{long()}) don't work for complex numbers -- there is no one 
+obvious way to convert a complex number to a real number.  Use 
+\code{abs(z)} to get its magnitude (as a float) or \code{z.real} to 
+get its real part.
+
+Module \code{cmath} provides versions of all math functions that take 
+complex arguments and return complex results.  (Module \code{math} 
+only supports real numbers, so that \code{math.sqrt(-1)} still raises 
+a \code{ValueError} exception.  Numerical experts agree that this is 
+the way it shold be.)
 
 \item
 New indexing syntax.  It is now possible to use a tuple as an indexing
@@ -3893,7 +3918,7 @@ e.g. \code{x[1, 2, 3]}.
 
 \item
 New slicing syntax.  In support of the Numerical Python extension
-(distributed separately), slice indices of the form
+(distributed independently), slice indices of the form
 \code{x[lo:hi:stride]} are possible, multiple slice indices separated by
 commas are allowed, and an index position may be replaced by ellipses,
 as follows: \code{x[a, ..., z]}.  There's also a new built-in function
@@ -3903,8 +3928,185 @@ syntax.  None of the standard sequence types support indexing with
 slice objects or ellipses yet.  Note that when any of these extensions
 are used, the mapping interface for indexing will be used.
 
+When a user-defined class instance is sliced using this extended slice 
+notation, its \code{__getitem__} method is invoked -- the 
+\code{__getslice__} method is only invoked when a single old-style
+slice is used, i.e. \code{x[lo:hi]}, with possible omission or 
+\code{lo} and/or \code{hi}.  Some examples:
+
+\begin{verbatim}
+x[1:2:-3]         --> slice(1, 2, -3)
+x[-1:2:]          --> slice(-1, 2, None)
+x[::]            --> slice(None, None, None)
+x[1, 2:3]        --> (1, slice(2, 3, None))
+x[1:2, 3:4]      --> (slice(1, 2, None), slice(3, 4, None))
+x[1:2, ..., 3:4] --> (slice(1, 2, None), Ellipses, slice(3, 4, None))
+\end{verbatim}
+
+For more help with this you are referred to the matrix-sig.
+
 \item
-XXX More!!!
+The \code{access} statement is now truly gone; \code{access} is no 
+longer a reserved word.  This saves a few cycles here and there.
+
+\item
+There is now limited support for class-private identifiers.  Any 
+identifier of the form \code{__spam} (two leading underscores, no two 
+trailing underscores) is now textually replaced with 
+\code{_classname__spam}, where \code{classname} is the current class 
+name with leading underscore(s) stripped.  This munging is done 
+without regard of the syntactic position of the identifier, so it can 
+be used to define class-private instance and class variables, methods, 
+as well as globals, and even class-private instance variables on 
+instances of {\em other} classes.  Truncation may occur when the 
+munged name would be longer than 255 characters.  Outside classes, no 
+munging occurs.
+
+Name munging is mostly intended to give classes an easy way to define 
+``private'' instance variables and methods, without having to worry 
+about instance variables defined by derived classes, or mucking with 
+instance variables by code outside the class.  Note that the munging 
+rules are designed mostly to avoid accidents; it still is possible for 
+a ``determined soul'' to access or modify a variable that's considered 
+private.  This can even be useful, e.g. for the debugger, and that's 
+one reason why this loophole is not closed.  (Buglet: accidental 
+derivation of a class with the same name as the base class makes 
+accidental use of private variables of the base class possible.)
+
+Notice that code passed to \code{exec}, \code{eval()} or
+\code{evalfile()} does not consider the classname of the invoking 
+class to be the current class; this is similar to the effect of the 
+\code{global} statement, the effect of which is likewise restricted to 
+code that is byte-compiled together.
+
+\item
+Syntax errors detected by the code generation phase of the Python
+bytecode compiler now include a line number.  The line number is 
+appended in parentheses.  It is suppressed if the error occurs
+in line 1 (this usually happens in interactive use).
+
+\item
+Unrecognized keyword arguments now raise a \code{TypeError} exception 
+rather than \code{KeyError}.
+
+\item
+A warning is written to sys.stderr when a \code{__del__} method raises 
+an exception.  Formerly, such exceptions were completely ignored.
+The new behavior, while needed in order to debug failing 
+\code{__del__} methods, is occasionally annoying, because if affects
+the program's standard error stream.  It honors assignments to 
+\code{sys.stderr}, so it can be redirected from within a program if 
+desired.
+
+\item
+New built-in function \code{list()} converts any sequence to a new list.
+Note that when the argument is a list, the return value is a fresh 
+copy, similar to what would be returned by \code{a[:]}.
+
+\item
+New built-in module \code{operator}.  XXX
+
+\item
+New built-in module \code{errno}.  XXX
+
+\item
+Rewritten \code{cgi} module.  XXX
+
+\item
+Improved restricted execution module (\code{rexec}).  New module 
+\code{Bastion}.  XXX
+
+\item
+New string operations: lstrip(), rstrip(), capitalize(), capwords(), 
+translate(), maketrans(); extended string operation: split(s, sep, 
+maxsep).  XXX
+
+\item
+New regsub operations: capwords(), splitx(), and split(s, sep, maxsep).
+XXX
+
+\item
+Module files pdb.py and profile.py can now be invoked as scripts to 
+debug c.q. profile other scripts easily.
+
+\item
+The \code{os} module now supports the \code{putenv()} function on 
+systems where it is provided in the C library (Windows NT and most 
+Unix versions).  The call \code{os.putenv('PATH', '/bin:/usr/bin')} 
+sets the environment variable \code{PATH} to the string 
+\code{'/bin:/usr/bin'}.  Such changes to the environment affect 
+subprocesses started with \code{os.system()}, \code{os.popen()} or 
+\code{os.fork()} and \code{os.execv()}.  When \code{putenv()} is 
+supported, assignments to items in \code{os.environ} are automatically 
+translated into corresponding calls to \code{os.putenv()}; however, 
+calls to \code{os.putenv()} don't update \code{os.environ}, so it is 
+actually preferable to assign to items of \code{os.environ}.  For this 
+purpose, the type of \code{os.environ} is changed to a subclass of 
+\code{UserDict.UserDict} when \code{os.putenv()} is supported.  
+(Buglet: \code{os.execve()} still requires a real dictionary.)
+
+\item
+New functions in the os module: mkfifo, plock, remove (== unlink),
+and ftruncate.  More functions are also available under NT.  XXX
+
+\item
+New function in the fcntl module: flock.  XXX
+
+\item
+The first item of the module search path, \code{sys.path}, is the 
+directory containing the script that was used to invoke the Python 
+interpreter.  If the script directory is not available (e.g.  if the 
+interpreter is invoked interactively or if the script is read from 
+standard input), \code{sys.path[0]} is the empty string, which directs 
+Python to search modules in the current directory first.  Notice that 
+the script directory is inserted {\em before} the entries inserted as 
+a result of \code{\$PYTHONPATH}.  There is no longer an entry for the 
+current directory later in the path (unless explicitly set by 
+\code{\$PYTHONPATH}).
+
+\item
+Some more configuration information is now available to Python 
+programs.  The variable \code{sys.prefix} gives the site-specific 
+directory prefix where the platform independent Python files are 
+installed; by default, this is the string \code{"/usr/local"}.  The 
+main collection of Python library modules is installed in the 
+directory \code{sys.prefix+"/lib/python"+sys.version[:3]} while the 
+platform independent header files (all except \code{config.h}) are 
+stored in \code{sys.prefix+"/include/python"+sys.version[:3]}.
+
+Similarly, the variable \code{sys.exec_prefix} gives the site-specific 
+directory prefix where the platform {\em de}pendent Python files are 
+installed; by default, this is also \code{"/usr/local"}.  
+Specifically, all configuration files (e.g. the \code{config.h}
+header file) are installed in the directory 
+\code{sys.exec_prefix+"/lib/python"+sys.version[:3]+"/config"},
+and shared library modules are installed in
+\code{sys.exec_prefix+"/lib/python"+sys.version[:3]+"/sharedmodules"}.
+
+On non-Unix systems, these variables are meaningless.
+
+\item
+You can now discover from which file (if any) a module was loaded by 
+inspecting its \code{__file__} attribute.  This attribute is not 
+present for built-in or frozen modules.  It points to the shared 
+library file for dynamically loaded modules.  (Buglet: this may be a 
+relative path and is stored in the \code{.pyc} file on compilation.  
+If you manipulate the current directory with \code{os.chdir()} or move 
+\code{.pyc} files around, the value may be incorrect.)
+
+\item
+While sites are strongly discouraged from modifying the standard 
+Python library (e.g.  by adding site-specific modules or functions), 
+there is now a standard way to invoke site-specific features.  The 
+standard module \code{site}, when imported, appends two site-specific 
+directories to the end of \code{sys.path}: 
+\code{\$prefix/lib/site-python} and 
+\code{\$exec_prefix/lib/site-python}, where \code{\$prefix} and 
+\code{\$exec_prefix} are the directories \code{sys.prefix} and 
+\code{sys.exec_prefix} mentioned above.
+
+\item
+XXX
 
 \end{itemize}
 
