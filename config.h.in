@@ -344,9 +344,6 @@
 /* Define if you have the gethostbyname function.  */
 #undef HAVE_GETHOSTBYNAME
 
-/* Define if you have the getline function.  */
-#undef HAVE_GETLINE
-
 /* Define if you have the getlogin function.  */
 #undef HAVE_GETLOGIN
 
