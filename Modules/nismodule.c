@@ -1,7 +1,7 @@
 /***********************************************************
     Written by:
 	Fred Gansevles <Fred.Gansevles@cs.utwente.nl>
-	Vakgroep Spa,
+	B&O group,
 	Faculteit der Informatica,
 	Universiteit Twente,
 	Enschede,
@@ -36,31 +36,47 @@ nis_error (err)
 static struct nis_map {
 	char *alias;
 	char *map;
+	int  fix;
 } aliases [] = {
-	{"passwd",	"passwd.byname"},
-	{"group",	"group.byname"},
-	{"networks",	"networks.byaddr"},
-	{"hosts",	"hosts.byname"},
-	{"protocols",	"protocols.bynumber"},
-	{"services",	"services.byname"},
-	{"aliases",	"mail.aliases"},
-	{"ethers",	"ethers.byname"},
-	{0L,		0L}
+	{"passwd",	"passwd.byname",	0},
+	{"group",	"group.byname",		0},
+	{"networks",	"networks.byaddr",	0},
+	{"hosts",	"hosts.byname",		0},
+	{"protocols",	"protocols.bynumber",	0},
+	{"services",	"services.byname",	0},
+	{"aliases",	"mail.aliases",		1}, /* created with 'makedbm -a' */
+	{"ethers",	"ethers.byname",	0},
+	{0L,		0L,			0}
 };
 
 static char *
-nis_mapname (map)
+nis_mapname (map, pfix)
 	char *map;
+	int *pfix;
 {
 	int i;
 
-	for (i=0; aliases[i].alias != 0L; i++)
-		if (!strcmp (aliases[i].alias, map))
-			map = aliases[i].map;
+	*pfix = 0;
+	for (i=0; aliases[i].alias != 0L; i++) {
+		if (!strcmp (aliases[i].alias, map)) {
+			*pfix = aliases[i].fix;
+			return aliases[i].map;
+		}
+		if (!strcmp (aliases[i].map, map)) {
+			*pfix = aliases[i].fix;
+			return aliases[i].map;
+		}
+	}
+
 	return map;
 }
 
 typedef int (*foreachfunc) Py_PROTO((int, char *, int, char *, int, char *));
+
+struct ypcallback_data {
+	PyObject	*dict;
+	int			fix;
+};
 
 static int
 nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
@@ -69,12 +85,19 @@ nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
 	int inkeylen;
 	char *inval;
 	int invallen;
-	PyObject *indata;
+	struct ypcallback_data *indata;
 {
 	if (instatus == YP_TRUE) {
-		PyObject *key = PyString_FromStringAndSize(inkey, inkeylen);
-		PyObject *val = PyString_FromStringAndSize(inval, invallen);
+		PyObject *key;
+		PyObject *val;
 		int err;
+
+		if (indata->fix) {
+		    inkeylen--;
+		    invallen--;
+		}
+		key = PyString_FromStringAndSize(inkey, inkeylen);
+		val = PyString_FromStringAndSize(inval, invallen);
 		if (key == NULL || val == NULL) {
 			/* XXX error -- don't know how to handle */
 			PyErr_Clear();
@@ -82,7 +105,7 @@ nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
 			Py_XDECREF(val);
 			return 1;
 		}
-		err = PyDict_SetItem(indata, key, val);
+		err = PyDict_SetItem(indata->dict, key, val);
 		Py_DECREF(key);
 		Py_DECREF(val);
 		if (err != 0) {
@@ -105,15 +128,20 @@ nis_match (self, args)
 	char *key, *map;
 	int err;
 	PyObject *res;
+	int fix;
 
 	if (!PyArg_Parse(args, "(t#s)", &key, &keylen, &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);
+	map = nis_mapname (map, &fix);
+	if (fix)
+	    keylen++;
 	Py_BEGIN_ALLOW_THREADS
-	map = nis_mapname (map);
 	err = yp_match (domain, map, key, keylen, &match, &len);
 	Py_END_ALLOW_THREADS
+	if (fix)
+	    len--;
 	if (err != 0)
 		return nis_error(err);
 	res = PyString_FromStringAndSize (match, len);
@@ -129,27 +157,29 @@ nis_cat (self, args)
 	char *domain;
 	char *map;
 	struct ypall_callback cb;
-	PyObject *cat;
+	struct ypcallback_data data;
+	PyObject *dict;
 	int err;
 
 	if (!PyArg_Parse(args, "s", &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);
-	cat = PyDict_New ();
-	if (cat == NULL)
+	dict = PyDict_New ();
+	if (dict == NULL)
 		return NULL;
 	cb.foreach = (foreachfunc)nis_foreach;
-	cb.data = (char *)cat;
+	data.dict = dict;
+	map = nis_mapname (map, &data.fix);
+	cb.data = (char *)&data;
 	Py_BEGIN_ALLOW_THREADS
-	map = nis_mapname (map);
 	err = yp_all (domain, map, &cb);
 	Py_END_ALLOW_THREADS
 	if (err != 0) {
-		Py_DECREF(cat);
+		Py_DECREF(dict);
 		return nis_error(err);
 	}
-	return cat;
+	return dict;
 }
 
 /* These should be u_long on Sun h/w but not on 64-bit h/w.
@@ -345,7 +375,7 @@ nis_maps (self, args)
 		return NULL;
 	if ((list = PyList_New(0)) == NULL)
 		return NULL;
-	for (maps = maps->next; maps; maps = maps->next) {
+	for (maps = maps; maps; maps = maps->next) {
 		PyObject *str = PyString_FromString(maps->map);
 		if (!str || PyList_Append(list, str) < 0)
 		{
