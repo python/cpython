@@ -190,12 +190,7 @@ def rewrite_descriptor(doc, descriptor):
     #
     # 1.
     descname = descriptor.tagName
-    index = 1
-    if descname[-2:] == "ni":
-        descname = descname[:-2]
-        descriptor.setAttribute("index", "no")
-        set_tagName(descriptor, descname)
-        index = 0
+    index = descriptor.getAttribute("name") != "no"
     desctype = descname[:-4] # remove 'desc'
     linename = desctype + "line"
     if not index:
