@@ -656,6 +656,7 @@ class TarInfo(object):
     def __repr__(self):
         return "<%s %r at %#x>" % (self.__class__.__name__,self.name,id(self))
 
+    @classmethod
     def frombuf(cls, buf):
         """Construct a TarInfo object from a 512 byte string buffer.
         """
@@ -698,8 +699,6 @@ class TarInfo(object):
         if tarinfo.isdir() and tarinfo.name[-1:] != "/":
             tarinfo.name += "/"
         return tarinfo
-
-    frombuf = classmethod(frombuf)
 
     def tobuf(self):
         """Return a tar header block as a 512 byte string.
@@ -858,6 +857,7 @@ class TarFile(object):
     # the super-constructor. A sub-constructor is registered and made available
     # by adding it to the mapping in OPEN_METH.
 
+    @classmethod
     def open(cls, name=None, mode="r", fileobj=None, bufsize=20*512):
         """Open a tar archive for reading, writing or appending. Return
            an appropriate TarFile class.
@@ -923,8 +923,7 @@ class TarFile(object):
 
         raise ValueError, "undiscernible mode"
 
-    open = classmethod(open)
-
+    @classmethod
     def taropen(cls, name, mode="r", fileobj=None):
         """Open uncompressed tar archive name for reading or writing.
         """
@@ -932,8 +931,7 @@ class TarFile(object):
             raise ValueError, "mode must be 'r', 'a' or 'w'"
         return cls(name, mode, fileobj)
 
-    taropen = classmethod(taropen)
-
+    @classmethod
     def gzopen(cls, name, mode="r", fileobj=None, compresslevel=9):
         """Open gzip compressed tar archive name for reading or writing.
            Appending is not allowed.
@@ -970,8 +968,7 @@ class TarFile(object):
         t._extfileobj = False
         return t
 
-    gzopen = classmethod(gzopen)
-
+    @classmethod
     def bz2open(cls, name, mode="r", fileobj=None, compresslevel=9):
         """Open bzip2 compressed tar archive name for reading or writing.
            Appending is not allowed.
@@ -1001,8 +998,6 @@ class TarFile(object):
             raise ReadError, "not a bzip2 file"
         t._extfileobj = False
         return t
-
-    bz2open = classmethod(bz2open)
 
     # All *open() methods are registered here.
     OPEN_METH = {
