@@ -477,10 +477,7 @@ class Decimal(object):
 
         # From an internal working value
         if isinstance(value, _WorkRep):
-            if value.sign == 1:
-                self._sign = 0
-            else:
-                self._sign = 1
+            self._sign = value.sign
             self._int = tuple(map(int, str(value.int)))
             self._exp = int(value.exp)
             return self
@@ -955,32 +952,30 @@ class Decimal(object):
         op1, op2 = _normalize(op1, op2, shouldround, context.prec)
 
         result = _WorkRep()
-
         if op1.sign != op2.sign:
-            diff = cmp(abs(op1), abs(op2))
             # Equal and opposite
-            if diff == 0:
+            if op1.int == op2.int:
                 if exp < context.Etiny():
                     exp = context.Etiny()
                     context._raise_error(Clamped)
                 return Decimal((negativezero, (0,), exp))
-            if diff < 0:
+            if op1.int < op2.int:
                 op1, op2 = op2, op1
                 #OK, now abs(op1) > abs(op2)
-            if op1.sign == -1:
-                result.sign = -1
+            if op1.sign == 1:
+                result.sign = 1
                 op1.sign, op2.sign = op2.sign, op1.sign
             else:
-                result.sign = 1
+                result.sign = 0
                 #So we know the sign, and op1 > 0.
-        elif op1.sign == -1:
-            result.sign = -1
-            op1.sign, op2.sign = (1, 1)
-        else:
+        elif op1.sign == 1:
             result.sign = 1
+            op1.sign, op2.sign = (0, 0)
+        else:
+            result.sign = 0
         #Now, op1 > abs(op2) > 0
 
-        if op2.sign == 1:
+        if op2.sign == 0:
             result.int = op1.int + op2.int
         else:
             result.int = op1.int - op2.int
@@ -1214,11 +1209,6 @@ class Decimal(object):
                 #Don't round the mod part, if we don't need it.
                 return (Decimal( (sign, (0,), 0) ), Decimal(self))
 
-        if sign:
-            sign = -1
-        else:
-            sign = 1
-        adjust = 0
         op1 = _WorkRep(self)
         op2 = _WorkRep(other)
         op1, op2, adjust = _adjust_coefficients(op1, op2)
@@ -1238,8 +1228,7 @@ class Decimal(object):
                 frozen = context._ignore_all_flags()
 
                 exp = min(self._exp, other._exp)
-                otherside = otherside._rescale(exp, context=context,
-                                              watchexp=0)
+                otherside = otherside._rescale(exp, context=context, watchexp=0)
                 context._regard_flags(*frozen)
                 if shouldround:
                     otherside = otherside._fix(context)
@@ -2769,7 +2758,7 @@ class Context(object):
 
 class _WorkRep(object):
     __slots__ = ('sign','int','exp')
-    # sign: -1 None 1
+    # sign: 0 or 1
     # int:  int or long
     # exp:  None, int, or string
 
@@ -2778,17 +2767,15 @@ class _WorkRep(object):
             self.sign = None
             self.int = 0
             self.exp = None
-        if isinstance(value, Decimal):
-            if value._sign:
-                self.sign = -1
-            else:
-                self.sign = 1
+        elif isinstance(value, Decimal):
+            self.sign = value._sign
             cum = 0
-            for digit in value._int:
+            for digit  in value._int:
                 cum = cum * 10 + digit
             self.int = cum
             self.exp = value._exp
-        if isinstance(value, tuple):
+        else:
+            # assert isinstance(value, tuple)
             self.sign = value[0]
             self.int = value[1]
             self.exp = value[2]
@@ -2797,38 +2784,6 @@ class _WorkRep(object):
         return "(%r, %r, %r)" % (self.sign, self.int, self.exp)
 
     __str__ = __repr__
-
-    def __neg__(self):
-        if self.sign == 1:
-            return _WorkRep( (-1, self.int, self.exp) )
-        else:
-            return _WorkRep( (1, self.int, self.exp) )
-
-    def __abs__(self):
-        if self.sign == -1:
-            return -self
-        else:
-            return self
-
-    def __cmp__(self, other):
-        if self.exp != other.exp:
-            raise ValueError("Operands not normalized: %r, %r" % (self, other))
-        if self.sign != other.sign:
-            if self.sign == -1:
-                return -1
-            else:
-                return 1
-        if self.sign == -1:
-            direction = -1
-        else:
-            direction = 1
-        int1 = self.int
-        int2 = other.int
-        if int1 > int2:
-            return direction * 1
-        if int1 < int2:
-            return direction * -1
-        return 0
 
 
 
