@@ -230,7 +230,7 @@ test_exc(u'no format', '1', TypeError,
 test_exc(u'no format', u'1', TypeError,
          "not all arguments converted during string formatting")
 
-if sys.maxint == 2**32-1:
+if sys.maxint == 2**31-1:
     # crashes 2.2.1 and earlier:
     try:
         "%*d"%(sys.maxint, -127)
