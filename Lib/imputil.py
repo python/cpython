@@ -125,6 +125,10 @@ class ImportManager:
         if importer:
             return importer._finish_import(top_module, parts[1:], fromlist)
 
+        # Grrr, some people "import os.path"
+        if len(parts) == 2 and hasattr(top_module, parts[1]):
+            return top_module
+
         # If the importer does not exist, then we have to bail. A missing
         # importer means that something else imported the module, and we have
         # no knowledge of how to get sub-modules out of the thing.
@@ -290,7 +294,11 @@ class Importer:
             exec code in module.__dict__
 
         # fetch from sys.modules instead of returning module directly.
-        return sys.modules[fqname]
+        # also make module's __name__ agree with fqname, in case
+        # the "exec code in module.__dict__" played games on us.
+        module = sys.modules[fqname]
+        module.__name__ = fqname
+        return module
 
     def _load_tail(self, m, parts):
         """Import the rest of the modules, down from the top-level module.
