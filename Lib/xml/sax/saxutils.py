@@ -203,8 +203,10 @@ def prepare_input_source(source, base = ""):
         source = xmlreader.InputSource(source)
     elif hasattr(source, "read"):
         f = source
-        source = xmlreader.InputSource(source)
+        source = xmlreader.InputSource()
         source.setByteStream(f)
+        if hasattr(f, "name"):
+            f.setSystemId(f.name)
 
     if source.getByteStream() is None:
         sysid = source.getSystemId()
