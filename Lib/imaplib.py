@@ -16,8 +16,9 @@ Public functions:       Internaldate2tuple
 # String method conversion by ESR, February 2001.
 # GET/SETACL contributed by Anthony Baxter <anthony@interlink.com.au> April 2001.
 # IMAP4_SSL contributed by Tino Lange <Tino.Lange@isg.de> March 2002.
+# GET/SETQUOTA contributed by Andreas Zeidler <az@kreativkombinat.de> June 2002.
 
-__version__ = "2.51"
+__version__ = "2.52"
 
 import binascii, re, socket, time, random, sys
 
@@ -48,6 +49,8 @@ Commands = {
         'EXPUNGE':      ('SELECTED',),
         'FETCH':        ('SELECTED',),
         'GETACL':       ('AUTH', 'SELECTED'),
+        'GETQUOTA':     ('AUTH', 'SELECTED'),
+        'GETQUOTAROOT': ('AUTH', 'SELECTED'),
         'LIST':         ('AUTH', 'SELECTED'),
         'LOGIN':        ('NONAUTH',),
         'LOGOUT':       ('NONAUTH', 'AUTH', 'SELECTED', 'LOGOUT'),
@@ -59,6 +62,7 @@ Commands = {
         'SEARCH':       ('SELECTED',),
         'SELECT':       ('AUTH', 'SELECTED'),
         'SETACL':       ('AUTH', 'SELECTED'),
+        'SETQUOTA':     ('AUTH', 'SELECTED'),
         'SORT':         ('SELECTED',),
         'STATUS':       ('AUTH', 'SELECTED'),
         'STORE':        ('SELECTED',),
@@ -416,6 +420,28 @@ class IMAP4:
         return self._untagged_response(typ, dat, 'ACL')
 
 
+    def getquota(self, root):
+        """Get the quota root's resource usage and limits.
+
+	Part of the IMAP4 QUOTA extension defined in rfc2087.
+
+        (typ, [data]) = <instance>.getquota(root)
+	"""
+        typ, dat = self._simple_command('GETQUOTA', root)
+        return self._untagged_response(typ, dat, 'QUOTA')
+
+
+    def getquotaroot(self, mailbox):
+        """Get the list of quota roots for the named mailbox.
+
+        (typ, [[QUOTAROOT responses...], [QUOTA responses]]) = <instance>.getquotaroot(mailbox)
+	"""
+        typ, dat = self._simple_command('GETQUOTA', root)
+        typ, quota = self._untagged_response(typ, dat, 'QUOTA')
+        typ, quotaroot = self._untagged_response(typ, dat, 'QUOTAROOT')
+	return typ, [quotaroot, quota]
+
+
     def list(self, directory='""', pattern='*'):
         """List mailbox names in directory matching pattern.
 
@@ -564,6 +590,15 @@ class IMAP4:
         (typ, [data]) = <instance>.create(mailbox, who, what)
         """
         return self._simple_command('SETACL', mailbox, who, what)
+
+
+    def setquota(self, root, limits):
+        """Set the quota root's resource limits.
+
+        (typ, [data]) = <instance>.setquota(root, limits)
+	"""
+        typ, dat = self._simple_command('SETQUOTA', root, limits)
+        return self._untagged_response(typ, dat, 'QUOTA')
 
 
     def sort(self, sort_criteria, charset, *search_criteria):
@@ -1186,7 +1221,7 @@ def Time2Internaldate(date_time):
         tt = time.localtime(date_time)
     elif isinstance(date_time, (tuple, time.struct_time)):
         tt = date_time
-    elif isinstance(date_time, str):
+    elif isinstance(date_time, str) and (date_time[0],date_time[-1]) == ('"','"'):
         return date_time        # Assume in correct format
     else:
         raise ValueError("date_time not of a known type")
