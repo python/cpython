@@ -39,6 +39,26 @@ define additional processing at the end of the input, but the
 redefined version should always call \code{XMLParser.close()}.
 \end{funcdesc}
 
+\begin{funcdesc}{translate_references}{data}
+Translate all entity and character references in \code{data} and
+returns the translated string.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_xml}{encoding\, standalone}
+This method is called when the \code{<?xml ...?>} tag is processed.
+The arguments are the values of the encoding and standalone attributes 
+in the tag.  Both encoding and standalone are optional.  The values
+passed to \code{handle_xml} default to \code{None} and the string
+\code{'no'} respectively.
+\end{funcdesc}
+
+\begin{funcdesc}{handle_doctype}{tag\, data}
+This method is called when the \code{<!DOCTYPE...>} tag is processed.
+The arguments are the name of the root element and the uninterpreted
+contents of the tag, starting after the white space after the name of
+the root element.
+\end{funcdesc}
+
 \begin{funcdesc}{handle_starttag}{tag\, method\, attributes}
 This method is called to handle start tags for which a
 \code{start_\var{tag}()} method has been defined.  The \code{tag}
@@ -47,7 +67,7 @@ bound method which should be used to support semantic interpretation
 of the start tag.  The \var{attributes} argument is a dictionary of
 attributes, the key being the \var{name} and the value being the
 \var{value} of the attribute found inside the tag's \code{<>} brackets.
-Lower case and double quotes and backslashes in the \var{value} have
+Character and entity references in the \var{value} have
 been interpreted.  For instance, for the tag
 \code{<A HREF="http://www.cwi.nl/">}, this method would be called as
 \code{handle_starttag('A', self.start_A, \{'HREF': 'http://www.cwi.nl/'\})}.
@@ -123,25 +143,27 @@ string containing the text between the PI target and the closing delimiter,
 but not the delimiter itself.  For example, the instruction
 ``\code{<?XML text?>}'' will cause this method to be called with the
 arguments \code{'XML'} and \code{'text'}.  The default method does
-nothing.
+nothing.  Note that if a document starts with a \code <?xml ...?>}
+tag, \code{handle_xml} is called to handle it.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_special}{data}
 This method is called when a declaration is encountered.  The
 \code{data} argument is a string containing the text between the
 ``\code{<!}'' and ``\code{>}'' delimiters, but not the delimiters
-themselves.  For example, the entity ``\code{<!DOCTYPE text>}'' will
-cause this method to be called with the argument \code{'DOCTYPE text'}.  The
-default method does nothing.
+themselves.  For example, the entity ``\code{<!ENTITY text>}'' will
+cause this method to be called with the argument \code{'ENTITY text'}.  The
+default method does nothing.  Note that \code{<!DOCTYPE ...>} is
+handled separately if it is located at the start of the document.
 \end{funcdesc}
 
-\begin{funcdesc}{syntax_error}{lineno\, message}
+\begin{funcdesc}{syntax_error}{message}
 This method is called when a syntax error is encountered.  The
-\code{lineno} argument is the line number of the error, and the
 \code{message} is a description of what was wrong.  The default method 
 raises a \code{RuntimeError} exception.  If this method is overridden, 
 it is permissable for it to return.  This method is only called when
-the error can be recovered from.
+the error can be recovered from.  Unrecoverable errors raise a
+\code{RuntimeError} without first calling \code{syntax_error}.
 \end{funcdesc}
 
 \begin{funcdesc}{unknown_starttag}{tag\, attributes}
@@ -169,17 +191,31 @@ implementation does nothing.
 \end{funcdesc}
 
 Apart from overriding or extending the methods listed above, derived
-classes may also define methods of the following form to define
-processing of specific tags.  Tag names in the input stream are case
-dependent; the \var{tag} occurring in method names must be in the
+classes may also define methods and variables of the following form to
+define processing of specific tags.  Tag names in the input stream are
+case dependent; the \var{tag} occurring in method names must be in the
 correct case:
 
 \begin{funcdesc}{start_\var{tag}}{attributes}
 This method is called to process an opening tag \var{tag}.  The
 \var{attributes} argument has the same meaning as described for
-\code{handle_starttag()} above.
+\code{handle_starttag()} above.  In fact, the base implementation of
+\code{handle_starttag} calls this method.
 \end{funcdesc}
 
 \begin{funcdesc}{end_\var{tag}}{}
 This method is called to process a closing tag \var{tag}.
 \end{funcdesc}
+
+\begin{datadesc}{\var{tag}_attributes}
+If a class or instance variable \code{\var{tag}_attributes} exists, it 
+should be a list or a dictionary.  If a list, the elements of the list 
+are the valid attributes for the element \var{tag}; if a dictionary,
+the keys are the valid attributes for the element \var{tag}, and the
+values the default values of the attributes, or \code{None} if there
+is no default.
+In addition to the attributes that were present in the tag, the
+attribute dictionary that is passed to \code{handle_starttag} and
+\code{unknown_starttag} contains values for all attributes that have a
+default value.
+\end{datadesc}
