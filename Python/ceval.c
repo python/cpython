@@ -51,7 +51,6 @@ static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 static void call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
-static PyObject *loop_subscript(PyObject *, PyObject *);
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
 static int assign_slice(PyObject *, PyObject *,
 			PyObject *, PyObject *);
@@ -3302,24 +3301,6 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 
 #define SLICE_ERROR_MSG \
 	"standard sequence type does not support step size other than one"
-
-static PyObject *
-loop_subscript(PyObject *v, PyObject *w)
-{
-	PySequenceMethods *sq = v->ob_type->tp_as_sequence;
-	int i;
-	if (sq == NULL || sq->sq_item == NULL) {
-		PyErr_SetString(PyExc_TypeError, "loop over non-sequence");
-		return NULL;
-	}
-	i = PyInt_AsLong(w);
-	v = (*sq->sq_item)(v, i);
-	if (v)
-		return v;
-	if (PyErr_ExceptionMatches(PyExc_IndexError))
-		PyErr_Clear();
-	return NULL;
-}
 
 /* Extract a slice index from a PyInt or PyLong, and store in *pi.
    Silently reduce values larger than INT_MAX to INT_MAX, and silently
