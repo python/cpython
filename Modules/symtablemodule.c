@@ -31,7 +31,7 @@ symtable_symtable(PyObject *self, PyObject *args)
 	st = Py_SymtableString(str, filename, start);
 	if (st == NULL)
 		return NULL;
-	t = Py_BuildValue("OO", st->st_symbols, st->st_scopes);
+	t = Py_BuildValue("O", st->st_symbols);
 	PySymtable_Free(st);
 	return t;
 }
