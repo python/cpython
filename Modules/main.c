@@ -197,8 +197,15 @@ Py_Main(argc, argv)
 				exit(2);
 			}
 			else if (skipfirstline) {
-				char line[256];
-				fgets(line, sizeof line, fp);
+				int ch;
+				/* Push back first newline so line numbers
+				   remain the same */
+				while ((ch = getc(fp)) != EOF) {
+					if (ch == '\n') {
+						(void)ungetc(ch, fp);
+						break;
+					}
+				}
 			}
 		}
 	}
