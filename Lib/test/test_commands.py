@@ -38,13 +38,15 @@ class CommandTests(unittest.TestCase):
 
     def test_getstatus(self):
         # This pattern should match 'ls -ld /.' on any posix
-        # system, however perversely configured.
+        # system, however perversely configured.  Even on systems
+        # (e.g., Cygwin) where user and group names can have spaces:
+        #     drwxr-xr-x   15 Administ Domain U     4096 Aug 12 12:50 /
+        #     drwxr-xr-x   15 Joe User My Group     4096 Aug 12 12:50 /
+        # Note that the first case above has a space in the group name
+        # while the second one has a space in both names.
         pat = r'''d.........   # It is a directory.
                   \s+\d+       # It has some number of links.
-                  \s+\w+\s+\w+ # It has a user and group, which may
-                               #     be named anything.
-                  \s+\d+       # It has a size.
-                  [^/]*        # Skip the date.
+                  [^/]*        # Skip user, group, size, and date.
                   /\.          # and end with the name of the file.
                '''
 
