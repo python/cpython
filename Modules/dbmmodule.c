@@ -13,10 +13,13 @@
  */
 #if defined(HAVE_NDBM_H)
 #include <ndbm.h>
+static char *which_dbm = "ndbm";
 #elif defined(HAVE_DB1_NDBM_H)
 #include <db1/ndbm.h>
+static char *which_dbm = "BSD db";
 #elif defined(HAVE_GDBM_NDBM_H)
 #include <gdbm/ndbm.h>
+static char *which_dbm = "GNU gdbm";
 #else
 #error "No ndbm.h available!"
 #endif
@@ -158,9 +161,9 @@ static PyMappingMethods dbm_as_mapping = {
 static PyObject *
 dbm__close(register dbmobject *dp, PyObject *args)
 {
-	if ( !PyArg_NoArgs(args) )
+	if (!PyArg_ParseTuple(args, ":close"))
 		return NULL;
-        if ( dp->di_dbm )
+        if (dp->di_dbm)
 		dbm_close(dp->di_dbm);
 	dp->di_dbm = NULL;
 	Py_INCREF(Py_None);
@@ -174,7 +177,7 @@ dbm_keys(register dbmobject *dp, PyObject *args)
 	datum key;
 	int err;
 
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":keys"))
 		return NULL;
         check_dbmobject_open(dp);
 	v = PyList_New(0);
@@ -202,17 +205,76 @@ dbm_has_key(register dbmobject *dp, PyObject *args)
 {
 	datum key, val;
 	
-	if (!PyArg_Parse(args, "s#", &key.dptr, &key.dsize))
+	if (!PyArg_ParseTuple(args, "s#:has_key", &key.dptr, &key.dsize))
 		return NULL;
         check_dbmobject_open(dp);
 	val = dbm_fetch(dp->di_dbm, key);
 	return PyInt_FromLong(val.dptr != NULL);
 }
 
+static PyObject *
+dbm_get(register dbmobject *dp, PyObject *args)
+{
+	datum key, val;
+	PyObject *defvalue = Py_None;
+
+	if (!PyArg_ParseTuple(args, "s#|O:get",
+                              &key.dptr, &key.dsize, &defvalue))
+		return NULL;
+        check_dbmobject_open(dp);
+	val = dbm_fetch(dp->di_dbm, key);
+	if (val.dptr != NULL)
+		return PyString_FromStringAndSize(val.dptr, val.dsize);
+	else {
+		Py_INCREF(defvalue);
+		return defvalue;
+	}
+}
+
+static PyObject *
+dbm_setdefault(register dbmobject *dp, PyObject *args)
+{
+	datum key, val;
+	PyObject *defvalue = NULL;
+
+	if (!PyArg_ParseTuple(args, "s#|S:setdefault",
+                              &key.dptr, &key.dsize, &defvalue))
+		return NULL;
+        check_dbmobject_open(dp);
+	val = dbm_fetch(dp->di_dbm, key);
+	if (val.dptr != NULL)
+		return PyString_FromStringAndSize(val.dptr, val.dsize);
+	if (defvalue == NULL) {
+		defvalue = PyString_FromStringAndSize(NULL, 0);
+		if (defvalue == NULL)
+			return NULL;
+	}
+	else
+		Py_INCREF(defvalue);
+	val.dptr = PyString_AS_STRING(defvalue);
+	val.dsize = PyString_GET_SIZE(defvalue);
+	if (dbm_store(dp->di_dbm, key, val, DBM_INSERT) < 0) {
+		dbm_clearerr(dp->di_dbm);
+		PyErr_SetString(DbmError, "Cannot add item to database");
+		return NULL;
+	}
+	return defvalue;
+}
+
 static PyMethodDef dbm_methods[] = {
-	{"close",	(PyCFunction)dbm__close},
-	{"keys",	(PyCFunction)dbm_keys},
-	{"has_key",	(PyCFunction)dbm_has_key},
+	{"close",	(PyCFunction)dbm__close,	METH_VARARGS,
+	 "close()\nClose the database."},
+	{"keys",	(PyCFunction)dbm_keys,		METH_VARARGS,
+	 "keys() -> list\nReturn a list of all keys in the database."},
+	{"has_key",	(PyCFunction)dbm_has_key,	METH_VARARGS,
+	 "has_key(key} -> boolean\nReturn true iff key is in the database."},
+	{"get",		(PyCFunction)dbm_get,		METH_VARARGS,
+	 "get(key[, default]) -> value\n"
+	 "Return the value for key if present, otherwise default."},
+	{"setdefault",	(PyCFunction)dbm_setdefault,	METH_VARARGS,
+	 "setdefault(key[, default]) -> value\n"
+	 "Return the value for key if present, otherwise default.  If key\n"
+	 "is not in the database, it is inserted with default as the value."},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -270,17 +332,25 @@ dbmopen(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef dbmmodule_methods[] = {
-	{ "open", (PyCFunction)dbmopen, 1 },
+	{ "open", (PyCFunction)dbmopen, METH_VARARGS,
+	  "open(path[, flag[, mode]]) -> mapping\n"
+	  "Return a database object."},
 	{ 0, 0 },
 };
 
 DL_EXPORT(void)
 initdbm(void) {
-	PyObject *m, *d;
+	PyObject *m, *d, *s;
 
 	m = Py_InitModule("dbm", dbmmodule_methods);
 	d = PyModule_GetDict(m);
-	DbmError = PyErr_NewException("dbm.error", NULL, NULL);
+	if (DbmError == NULL)
+		DbmError = PyErr_NewException("dbm.error", NULL, NULL);
+	s = PyString_FromString(which_dbm);
+	if (s != NULL) {
+		PyDict_SetItemString(d, "library", s);
+		Py_DECREF(s);
+	}
 	if (DbmError != NULL)
 		PyDict_SetItemString(d, "error", DbmError);
 }
