@@ -32,6 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "osdefs.h"
 #include "macglue.h"
+#include "macdefs.h"
 #include "pythonresources.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
