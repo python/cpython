@@ -352,7 +352,7 @@ class BuiltinTest(unittest.TestCase):
         if numruns:
             return
         numruns += 1
-        
+
         globals = {'a': 1, 'b': 2}
         locals = {'b': 200, 'c': 300}
 
@@ -862,12 +862,12 @@ class BuiltinTest(unittest.TestCase):
             "max(1, 2, key=int, abc=int)",  # two many keywords
             "max(1, 2, key=1)",             # keyfunc is not callable
             ):
-                try:
-                    exec(stmt) in globals()
-                except TypeError:
-                    pass
-                else:
-                    self.fail(stmt)
+            try:
+                exec(stmt) in globals()
+            except TypeError:
+                pass
+            else:
+                self.fail(stmt)
 
         self.assertEqual(max((1,), key=neg), 1)     # one elem iterable
         self.assertEqual(max((1,2), key=neg), 1)    # two elem iterable
@@ -908,12 +908,12 @@ class BuiltinTest(unittest.TestCase):
             "min(1, 2, key=int, abc=int)",  # two many keywords
             "min(1, 2, key=1)",             # keyfunc is not callable
             ):
-                try:
-                    exec(stmt) in globals()
-                except TypeError:
-                    pass
-                else:
-                    self.fail(stmt)
+            try:
+                exec(stmt) in globals()
+            except TypeError:
+                pass
+            else:
+                self.fail(stmt)
 
         self.assertEqual(min((1,), key=neg), 1)     # one elem iterable
         self.assertEqual(min((1,2), key=neg), 2)    # two elem iterable
