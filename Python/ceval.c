@@ -2146,7 +2146,6 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			opcode = NEXTOP();
 			oparg = oparg<<16 | NEXTARG();
 			goto dispatch_opcode;
-			break;
 
 		default:
 			fprintf(stderr,

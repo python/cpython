@@ -671,12 +671,10 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
         case 0:
             errmsg = "unexpected code byte";
 	    goto utf8Error;
-            break;
 
         case 1:
             errmsg = "internal error";
 	    goto utf8Error;
-            break;
 
         case 2:
             if ((s[1] & 0xc0) != 0x80) {
@@ -740,7 +738,6 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
             /* Other sizes are only needed for UCS-4 */
             errmsg = "unsupported Unicode code range";
 	    goto utf8Error;
-	    break;
         }
         s += n;
 	continue;
