@@ -164,6 +164,8 @@ def process_common(template, progress, code, rsrcname, destname, is_update):
 		dest.write(data)
 	dest.close()
 	tmpl.close()
+	del dest
+	del tmpl
 	
 	# Open the output resource fork
 	
@@ -209,14 +211,6 @@ def process_common(template, progress, code, rsrcname, destname, is_update):
 	if ownertype == None:
 		die("No owner resource found in either resource file or template")	
 	
-	# Now set the creator, type and bundle bit of the destination
-	dest_finfo = dest_fss.GetFInfo()
-	dest_finfo.Creator = ownertype
-	dest_finfo.Type = 'APPL'
-	dest_finfo.Flags = dest_finfo.Flags | MACFS.kHasBundle
-	dest_finfo.Flags = dest_finfo.Flags & ~MACFS.kHasBeenInited
-	dest_fss.SetFInfo(dest_finfo)
-	
 	# Make sure we're manipulating the output resource file now
 	
 	UseResFile(output)
@@ -252,6 +246,14 @@ def process_common(template, progress, code, rsrcname, destname, is_update):
 	# Close the output file
 	
 	CloseResFile(output)
+	
+	# Now set the creator, type and bundle bit of the destination
+	dest_finfo = dest_fss.GetFInfo()
+	dest_finfo.Creator = ownertype
+	dest_finfo.Type = 'APPL'
+	dest_finfo.Flags = dest_finfo.Flags | MACFS.kHasBundle
+	dest_finfo.Flags = dest_finfo.Flags & ~MACFS.kHasBeenInited
+	dest_fss.SetFInfo(dest_finfo)
 	
 	macostools.touched(dest_fss)
 	if DEBUG:
