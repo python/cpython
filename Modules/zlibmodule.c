@@ -530,7 +530,7 @@ PyZlib_flush(self, args)
   /* When flushing the zstream, there's no input data.  
      If zst.avail_out == 0, that means that more output space is
      needed to complete the flush operation. */ 
-  do {
+  while (err == Z_OK) {
       err = deflate(&(self->zst), Z_FINISH);
       if (self->zst.avail_out <= 0) {
 	  if (_PyString_Resize(&RetVal, length << 1) == -1)  {
@@ -542,9 +542,9 @@ PyZlib_flush(self, args)
 	  self->zst.avail_out = length;
 	  length = length << 1;
       }
-  } while (self->zst.avail_out == 0);
+  }
 
-  if (err!=Z_OK && err != Z_STREAM_END) 
+  if (err != Z_STREAM_END) 
   {
       if (self->zst.msg == Z_NULL)
 	  PyErr_Format(ZlibError, "Error %i while flushing",
@@ -554,7 +554,7 @@ PyZlib_flush(self, args)
 		       err, self->zst.msg);  
       Py_DECREF(RetVal);
       return NULL;
-    }
+  }
   if (flushmode == Z_FINISH) {
     err=deflateEnd(&(self->zst));
     if (err!=Z_OK) {
