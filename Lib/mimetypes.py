@@ -1,8 +1,10 @@
 """Guess the MIME type of a file.
 
-This module defines one useful function:
+This module defines two useful functions:
 
 guess_type(url) -- guess the MIME type and encoding of a URL.
+
+guess_extension(type) -- guess the extension for a given MIME type.
 
 It also contains the following, for tuning the behavior:
 
@@ -63,6 +65,21 @@ def guess_type(url):
         return types_map[string.lower(ext)], encoding
     else:
         return None, encoding
+
+def guess_extension(type):
+    """Guess the extension for a file based on its MIME type.
+
+    Return value is a string giving a filename extension, including the
+    leading dot ('.').  The extension is not guaranteed to have been
+    associated with any particular data stream, but has been known to be
+    used for streams of the MIME type given by `type'.  If `type' is not
+    known, None is returned.
+    """
+    type = string.lower(type)
+    for ext, stype in types_map.items():
+        if type == stype:
+            return ext
+    return None
 
 def init(files=None):
     global inited
