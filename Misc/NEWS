@@ -1,3 +1,14 @@
+What's New in Python 2.1.1 (final) ?
+==============================
+
+- The following bugs were fixed:
+
+    [ #441664 ] Python crash on del of a slice of a mmap
+    [ #438050 ] configure doesn't look for poll.h in sys
+    [ #437487 ] 2.1 build on Solaris fails if CC is set
+    [ #441527 ] unixccompiler preprocessor broken
+
+
 What's New in Python 2.1.1c1 ?
 ==============================
 
