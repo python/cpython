@@ -1,6 +1,4 @@
-"""curses.textpad
-
-"""
+"""Simple textbox editing widget with Emacs-like keybindings."""
 
 import sys, curses, ascii
 
