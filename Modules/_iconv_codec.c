@@ -247,8 +247,13 @@ errorexit_cbpad:        Py_XDECREF(retobj);
                 Py_DECREF(retobj);
 
                 if (newpos < 0)
-                    newpos = inputlen - newpos;
-                if (newpos < 0 || newpos >= inputlen)
+                    newpos = inputlen + newpos;
+                if (newpos < 0 || newpos > inputlen) {
+                    PyErr_Format(PyExc_IndexError, "position %ld from error handler"
+                          " out of bounds", newpos);
+                    goto errorexit;
+                }
+                if (newpos == inputlen)
                     break;
                 inp = inp_top + Py_UNICODE_SIZE * newpos;
                 inplen = inplen_total - Py_UNICODE_SIZE * newpos;
@@ -471,8 +476,13 @@ errorexit_cbpad:        Py_DECREF(retobj);
                 Py_DECREF(retobj);
 
                 if (newpos < 0)
-                    newpos = inplen_total - newpos;
-                if (newpos < 0 || newpos >= inplen_total)
+                    newpos = inplen_total + newpos;
+                if (newpos < 0 || newpos > inplen_total) {
+                    PyErr_Format(PyExc_IndexError, "position %ld from error handler"
+                          " out of bounds", newpos);
+                    goto errorexit;
+                }
+                if (newpos == inplen_total)
                     break;
                 inp = inp_top + newpos;
                 inplen = inplen_total - newpos;

@@ -728,9 +728,11 @@ int unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler
     if (!PyArg_ParseTuple(restuple, argparse, &PyUnicode_Type, &repunicode, &newpos))
 	goto onError;
     if (newpos<0)
-	newpos = 0;
-    else if (newpos>insize)
-	newpos = insize;
+	newpos = insize+newpos;
+    if (newpos<0 || newpos>insize) {
+	PyErr_Format(PyExc_IndexError, "position %d from error handler out of bounds", newpos);
+	goto onError;
+    }
 
     /* need more space? (at least enough for what we
        have+the replacement+the rest of the string (starting
@@ -2246,9 +2248,12 @@ static PyObject *unicode_encode_call_errorhandler(const char *errors,
 	return NULL;
     }
     if (*newpos<0)
-	*newpos = 0;
-    else if (*newpos>size)
-	*newpos = size;
+	*newpos = size+*newpos;
+    if (*newpos<0 || *newpos>size) {
+	PyErr_Format(PyExc_IndexError, "position %d from error handler out of bounds", *newpos);
+	Py_DECREF(restuple);
+	return NULL;
+    }
     Py_INCREF(resunicode);
     Py_DECREF(restuple);
     return resunicode;
@@ -3084,9 +3089,12 @@ static PyObject *unicode_translate_call_errorhandler(const char *errors,
 	return NULL;
     }
     if (*newpos<0)
-	*newpos = 0;
-    else if (*newpos>size)
-	*newpos = size;
+	*newpos = size+*newpos;
+    if (*newpos<0 || *newpos>size) {
+	PyErr_Format(PyExc_IndexError, "position %d from error handler out of bounds", *newpos);
+	Py_DECREF(restuple);
+	return NULL;
+    }
     Py_INCREF(resunicode);
     Py_DECREF(restuple);
     return resunicode;
