@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "structmember.h"
 
 /* Examples showing how to subtype the builtin list and dict types from C. */
 
@@ -136,6 +137,11 @@ spamdict_init(spamdictobject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
+static struct memberlist spamdict_members[] = {
+	{"state", T_INT, offsetof(spamdictobject, state), READONLY},
+	{0}
+};
+
 static PyTypeObject spamdict_type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -166,7 +172,7 @@ static PyTypeObject spamdict_type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	spamdict_methods,			/* tp_methods */
-	0,					/* tp_members */
+	spamdict_members,			/* tp_members */
 	0,					/* tp_getset */
 	&PyDict_Type,				/* tp_base */
 	0,					/* tp_dict */
