@@ -13,6 +13,11 @@ static FSSpec library_fss;
 
 #ifdef MAC_TCL
 #define WITH_APPINIT
+#ifdef __MWERKS__
+void		GUSISetup (void (*socketfamily)());
+void		GUSIwithInternetSockets (void);
+void		GUSIwithSIOUXSockets (void);
+#endif
 #endif
 
 #define PyInit__tkinter init_tkinter
@@ -1271,6 +1276,9 @@ PyInit__tkinter ()
       if (Py_AtExit (Tkinter_Cleanup) != 0)
 	fprintf(stderr,
 		"Tkinter: warning: cleanup procedure not registered\n");
+#ifdef __MWERKS__
+	  PyTk_InitGUSI();
+#endif
     }
 
   if (PyErr_Occurred ())
@@ -1295,6 +1303,19 @@ panic(char * format, ...)
 
     Py_FatalError("Tcl/Tk panic");
 }
+#ifdef __MWERKS__
+void
+PyTk_InitGUSI()
+{
+	static int is_inited;
+	
+	if ( is_inited ) return;
+    GUSISetup(GUSIwithInternetSockets);
+    GUSISetup(GUSIwithSIOUXSockets);
+    is_inited = 1;
+}
+#endif /* __MWERKS__ */
+
 
 /*
 ** If this module is dynamically loaded the following routine should
