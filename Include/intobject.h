@@ -38,8 +38,6 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Integer object interface */
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 PyIntObject represents a (long) integer.  This is an immutable object;
 an integer cannot change its value after creation.
 
@@ -68,8 +66,6 @@ extern DL_IMPORT(long) PyInt_GetMax Py_PROTO((void));
 
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 False and True are special intobjects used by Boolean expressions.
 All values of type Boolean must point to either of these; but in
 contexts where integers are required they are integers (valued 0 and 1).

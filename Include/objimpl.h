@@ -36,8 +36,6 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 Additional macros for modules that implement new object types.
 You must first include "object.h".
 

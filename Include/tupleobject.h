@@ -38,8 +38,6 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Tuple object interface */
 
 /*
-123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
-
 Another generally useful object type is an tuple of object pointers.
 This is a mutable type: the tuple items can be changed (but not their
 number).  Out-of-range indices or non-tuple objects are ignored.
