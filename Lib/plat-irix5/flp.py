@@ -36,7 +36,7 @@ def parse_form(filename, formname):
 #
 def parse_forms(filename):
     forms = checkcache(filename)
-    if forms != None: return forms
+    if forms is not None: return forms
     fp = _open_formfile(filename)
     nforms = _parse_fd_header(fp)
     forms = {}
@@ -168,7 +168,7 @@ def _open_formfile(filename):
     return _open_formfile2(filename)[0]
 
 def _open_formfile2(filename):
-    if filename[-3:] <> '.fd':
+    if filename[-3:] != '.fd':
         filename = filename + '.fd'
     if filename[0] == '/':
         try:
@@ -184,7 +184,7 @@ def _open_formfile2(filename):
                 break
             except IOError:
                 fp = None
-    if fp == None:
+    if fp is None:
         raise error, 'Cannot find forms file ' + filename
     return fp, filename
 
@@ -194,7 +194,7 @@ def _open_formfile2(filename):
 def _parse_fd_header(file):
     # First read the magic header line
     datum = _parse_1_line(file)
-    if datum <> ('Magic', 12321):
+    if datum != ('Magic', 12321):
         raise error, 'Not a forms definition file'
     # Now skip until we know number of forms
     while 1:
@@ -208,10 +208,10 @@ def _parse_fd_header(file):
 #
 def _parse_fd_form(file, name):
     datum = _parse_1_line(file)
-    if datum <> FORMLINE:
+    if datum != FORMLINE:
         raise error, 'Missing === FORM === line'
     form = _parse_object(file)
-    if form.Name == name or name == None:
+    if form.Name == name or name is None:
         objs = []
         for j in range(form.Numberofobjects):
             obj = _parse_object(file)
@@ -316,7 +316,7 @@ def _parse_object(file):
             if datum == FORMLINE:
                 file.seek(pos)
             return obj
-        if type(datum) <> type(()) or len(datum) <> 2:
+        if type(datum) is not type(()) or len(datum) != 2:
             raise error, 'Parse error, illegal line in object: '+datum
         obj.add(datum[0], datum[1])
 
@@ -339,7 +339,7 @@ def create_full_form(inst, (fdata, odatalist)):
 #
 def merge_full_form(inst, form, (fdata, odatalist)):
     exec 'inst.'+fdata.Name+' = form\n'
-    if odatalist[0].Class <> FL.BOX:
+    if odatalist[0].Class != FL.BOX:
         raise error, 'merge_full_form() expects FL.BOX as first obj'
     for odata in odatalist[1:]:
         create_object_instance(inst, form, odata)

@@ -82,13 +82,13 @@ def checkfield(n, p):
 		print inv
 
 def rj(s, width):
-	if type(s) <> type(''): s = `s`
+	if type(s) is not type(''): s = `s`
 	n = len(s)
 	if n >= width: return s
 	return ' '*(width - n) + s
 
 def lj(s, width):
-	if type(s) <> type(''): s = `s`
+	if type(s) is not type(''): s = `s`
 	n = len(s)
 	if n >= width: return s
 	return s + ' '*(width - n)

@@ -241,7 +241,7 @@ class CygwinCCompiler (UnixCCompiler):
                 objects.append(def_file)
 
         #end: if ((export_symbols is not None) and
-        #        (target_desc <> self.EXECUTABLE or self.linker_dll == "gcc")):
+        #        (target_desc != self.EXECUTABLE or self.linker_dll == "gcc")):
                                                  
         # who wants symbols and a many times larger output file
         # should explicitly switch the debug mode on 

@@ -52,7 +52,7 @@ def fcmp(x, y): # fuzzy comparison function
     elif type(x) == type(y) and type(x) in (type(()), type([])):
         for i in range(min(len(x), len(y))):
             outcome = fcmp(x[i], y[i])
-            if outcome <> 0:
+            if outcome != 0:
                 return outcome
         return cmp(len(x), len(y))
     return cmp(x, y)

@@ -12,17 +12,17 @@ print '1.1.1 Backslashes'
 # Backslash means line continuation:
 x = 1 \
 + 1
-if x <> 2: raise TestFailed, 'backslash for line continuation'
+if x != 2: raise TestFailed, 'backslash for line continuation'
 
 # Backslash does not means continuation in comments :\
 x = 0
-if x <> 0: raise TestFailed, 'backslash ending comment'
+if x != 0: raise TestFailed, 'backslash ending comment'
 
 print '1.1.2 Numeric literals'
 
 print '1.1.2.1 Plain integers'
-if 0xff <> 255: raise TestFailed, 'hex int'
-if 0377 <> 255: raise TestFailed, 'octal int'
+if 0xff != 255: raise TestFailed, 'hex int'
+if 0377 != 255: raise TestFailed, 'octal int'
 if  2147483647   != 017777777777: raise TestFailed, 'large positive int'
 try:
     from sys import maxint
@@ -359,28 +359,28 @@ def f():
     z = None
     del z
     exec 'z=1+1\n'
-    if z <> 2: raise TestFailed, 'exec \'z=1+1\'\\n'
+    if z != 2: raise TestFailed, 'exec \'z=1+1\'\\n'
     del z
     exec 'z=1+1'
-    if z <> 2: raise TestFailed, 'exec \'z=1+1\''
+    if z != 2: raise TestFailed, 'exec \'z=1+1\''
     z = None
     del z
     exec u'z=1+1\n'
-    if z <> 2: raise TestFailed, 'exec u\'z=1+1\'\\n'
+    if z != 2: raise TestFailed, 'exec u\'z=1+1\'\\n'
     del z
     exec u'z=1+1'
-    if z <> 2: raise TestFailed, 'exec u\'z=1+1\''
+    if z != 2: raise TestFailed, 'exec u\'z=1+1\''
 f()
 g = {}
 exec 'z = 1' in g
 if g.has_key('__builtins__'): del g['__builtins__']
-if g <> {'z': 1}: raise TestFailed, 'exec \'z = 1\' in g'
+if g != {'z': 1}: raise TestFailed, 'exec \'z = 1\' in g'
 g = {}
 l = {}
 exec 'global a; a = 1; b = 2' in g, l
 if g.has_key('__builtins__'): del g['__builtins__']
 if l.has_key('__builtins__'): del l['__builtins__']
-if (g, l) <> ({'a':1}, {'b':2}): raise TestFailed, 'exec ... in g, l'
+if (g, l) != ({'a':1}, {'b':2}): raise TestFailed, 'exec ... in g, l'
 
 
 ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef

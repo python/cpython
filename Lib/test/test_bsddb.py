@@ -34,8 +34,8 @@ def test(openmethod, what):
             try:
                 rec = f.next()
             except KeyError:
-                if rec <> f.last():
-                    print 'Error, last <> last!'
+                if rec != f.last():
+                    print 'Error, last != last!'
                 f.previous()
                 break
             if verbose:

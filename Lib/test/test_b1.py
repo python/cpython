@@ -11,17 +11,17 @@ except ImportError: pass
 else: raise TestFailed, "__import__('spamspam') should fail"
 
 print 'abs'
-if abs(0) <> 0: raise TestFailed, 'abs(0)'
-if abs(1234) <> 1234: raise TestFailed, 'abs(1234)'
-if abs(-1234) <> 1234: raise TestFailed, 'abs(-1234)'
+if abs(0) != 0: raise TestFailed, 'abs(0)'
+if abs(1234) != 1234: raise TestFailed, 'abs(1234)'
+if abs(-1234) != 1234: raise TestFailed, 'abs(-1234)'
 #
-if abs(0.0) <> 0.0: raise TestFailed, 'abs(0.0)'
-if abs(3.14) <> 3.14: raise TestFailed, 'abs(3.14)'
-if abs(-3.14) <> 3.14: raise TestFailed, 'abs(-3.14)'
+if abs(0.0) != 0.0: raise TestFailed, 'abs(0.0)'
+if abs(3.14) != 3.14: raise TestFailed, 'abs(3.14)'
+if abs(-3.14) != 3.14: raise TestFailed, 'abs(-3.14)'
 #
-if abs(0L) <> 0L: raise TestFailed, 'abs(0L)'
-if abs(1234L) <> 1234L: raise TestFailed, 'abs(1234L)'
-if abs(-1234L) <> 1234L: raise TestFailed, 'abs(-1234L)'
+if abs(0L) != 0L: raise TestFailed, 'abs(0L)'
+if abs(1234L) != 1234L: raise TestFailed, 'abs(1234L)'
+if abs(-1234L) != 1234L: raise TestFailed, 'abs(-1234L)'
 
 print 'apply'
 def f0(*args):
@@ -55,14 +55,14 @@ y = D()
 if not callable(y): raise TestFailed, 'callable(y)'
 
 print 'chr'
-if chr(32) <> ' ': raise TestFailed, 'chr(32)'
-if chr(65) <> 'A': raise TestFailed, 'chr(65)'
-if chr(97) <> 'a': raise TestFailed, 'chr(97)'
+if chr(32) != ' ': raise TestFailed, 'chr(32)'
+if chr(65) != 'A': raise TestFailed, 'chr(65)'
+if chr(97) != 'a': raise TestFailed, 'chr(97)'
 
 print 'cmp'
-if cmp(-1, 1) <> -1: raise TestFailed, 'cmp(-1, 1)'
-if cmp(1, -1) <> 1: raise TestFailed, 'cmp(1, -1)'
-if cmp(1, 1) <> 0: raise TestFailed, 'cmp(1, 1)'
+if cmp(-1, 1) != -1: raise TestFailed, 'cmp(-1, 1)'
+if cmp(1, -1) != 1: raise TestFailed, 'cmp(1, -1)'
+if cmp(1, 1) != 0: raise TestFailed, 'cmp(1, 1)'
 # verify that circular objects are handled
 a = []; a.append(a)
 b = []; b.append(b)
@@ -77,40 +77,40 @@ a.pop(); b.pop(); c.pop()
 
 print 'coerce'
 if fcmp(coerce(1, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1, 1.1)'
-if coerce(1, 1L) <> (1L, 1L): raise TestFailed, 'coerce(1, 1L)'
+if coerce(1, 1L) != (1L, 1L): raise TestFailed, 'coerce(1, 1L)'
 if fcmp(coerce(1L, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1L, 1.1)'
 
 print 'compile'
 compile('print 1\n', '', 'exec')
 
 print 'complex'
-if complex(1,10) <> 1+10j: raise TestFailed, 'complex(1,10)'
-if complex(1,10L) <> 1+10j: raise TestFailed, 'complex(1,10L)'
-if complex(1,10.0) <> 1+10j: raise TestFailed, 'complex(1,10.0)'
-if complex(1L,10) <> 1+10j: raise TestFailed, 'complex(1L,10)'
-if complex(1L,10L) <> 1+10j: raise TestFailed, 'complex(1L,10L)'
-if complex(1L,10.0) <> 1+10j: raise TestFailed, 'complex(1L,10.0)'
-if complex(1.0,10) <> 1+10j: raise TestFailed, 'complex(1.0,10)'
-if complex(1.0,10L) <> 1+10j: raise TestFailed, 'complex(1.0,10L)'
-if complex(1.0,10.0) <> 1+10j: raise TestFailed, 'complex(1.0,10.0)'
-if complex(3.14+0j) <> 3.14+0j: raise TestFailed, 'complex(3.14)'
-if complex(3.14) <> 3.14+0j: raise TestFailed, 'complex(3.14)'
-if complex(314) <> 314.0+0j: raise TestFailed, 'complex(314)'
-if complex(314L) <> 314.0+0j: raise TestFailed, 'complex(314L)'
-if complex(3.14+0j, 0j) <> 3.14+0j: raise TestFailed, 'complex(3.14, 0j)'
-if complex(3.14, 0.0) <> 3.14+0j: raise TestFailed, 'complex(3.14, 0.0)'
-if complex(314, 0) <> 314.0+0j: raise TestFailed, 'complex(314, 0)'
-if complex(314L, 0L) <> 314.0+0j: raise TestFailed, 'complex(314L, 0L)'
-if complex(0j, 3.14j) <> -3.14+0j: raise TestFailed, 'complex(0j, 3.14j)'
-if complex(0.0, 3.14j) <> -3.14+0j: raise TestFailed, 'complex(0.0, 3.14j)'
-if complex(0j, 3.14) <> 3.14j: raise TestFailed, 'complex(0j, 3.14)'
-if complex(0.0, 3.14) <> 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
-if complex("  3.14+J  ") <> 3.14+1j:  raise TestFailed, 'complex("  3.14+J  )"'
-if complex(u"  3.14+J  ") <> 3.14+1j:  raise TestFailed, 'complex(u"  3.14+J  )"'
+if complex(1,10) != 1+10j: raise TestFailed, 'complex(1,10)'
+if complex(1,10L) != 1+10j: raise TestFailed, 'complex(1,10L)'
+if complex(1,10.0) != 1+10j: raise TestFailed, 'complex(1,10.0)'
+if complex(1L,10) != 1+10j: raise TestFailed, 'complex(1L,10)'
+if complex(1L,10L) != 1+10j: raise TestFailed, 'complex(1L,10L)'
+if complex(1L,10.0) != 1+10j: raise TestFailed, 'complex(1L,10.0)'
+if complex(1.0,10) != 1+10j: raise TestFailed, 'complex(1.0,10)'
+if complex(1.0,10L) != 1+10j: raise TestFailed, 'complex(1.0,10L)'
+if complex(1.0,10.0) != 1+10j: raise TestFailed, 'complex(1.0,10.0)'
+if complex(3.14+0j) != 3.14+0j: raise TestFailed, 'complex(3.14)'
+if complex(3.14) != 3.14+0j: raise TestFailed, 'complex(3.14)'
+if complex(314) != 314.0+0j: raise TestFailed, 'complex(314)'
+if complex(314L) != 314.0+0j: raise TestFailed, 'complex(314L)'
+if complex(3.14+0j, 0j) != 3.14+0j: raise TestFailed, 'complex(3.14, 0j)'
+if complex(3.14, 0.0) != 3.14+0j: raise TestFailed, 'complex(3.14, 0.0)'
+if complex(314, 0) != 314.0+0j: raise TestFailed, 'complex(314, 0)'
+if complex(314L, 0L) != 314.0+0j: raise TestFailed, 'complex(314L, 0L)'
+if complex(0j, 3.14j) != -3.14+0j: raise TestFailed, 'complex(0j, 3.14j)'
+if complex(0.0, 3.14j) != -3.14+0j: raise TestFailed, 'complex(0.0, 3.14j)'
+if complex(0j, 3.14) != 3.14j: raise TestFailed, 'complex(0j, 3.14)'
+if complex(0.0, 3.14) != 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
+if complex("  3.14+J  ") != 3.14+1j:  raise TestFailed, 'complex("  3.14+J  )"'
+if complex(u"  3.14+J  ") != 3.14+1j:  raise TestFailed, 'complex(u"  3.14+J  )"'
 class Z:
     def __complex__(self): return 3.14j
 z = Z()
-if complex(z) <> 3.14j: raise TestFailed, 'complex(classinstance)'
+if complex(z) != 3.14j: raise TestFailed, 'complex(classinstance)'
 
 print 'delattr'
 import sys
@@ -124,20 +124,20 @@ import sys
 if 'modules' not in dir(sys): raise TestFailed, 'dir(sys)'
 
 print 'divmod'
-if divmod(12, 7) <> (1, 5): raise TestFailed, 'divmod(12, 7)'
-if divmod(-12, 7) <> (-2, 2): raise TestFailed, 'divmod(-12, 7)'
-if divmod(12, -7) <> (-2, -2): raise TestFailed, 'divmod(12, -7)'
-if divmod(-12, -7) <> (1, -5): raise TestFailed, 'divmod(-12, -7)'
+if divmod(12, 7) != (1, 5): raise TestFailed, 'divmod(12, 7)'
+if divmod(-12, 7) != (-2, 2): raise TestFailed, 'divmod(-12, 7)'
+if divmod(12, -7) != (-2, -2): raise TestFailed, 'divmod(12, -7)'
+if divmod(-12, -7) != (1, -5): raise TestFailed, 'divmod(-12, -7)'
 #
-if divmod(12L, 7L) <> (1L, 5L): raise TestFailed, 'divmod(12L, 7L)'
-if divmod(-12L, 7L) <> (-2L, 2L): raise TestFailed, 'divmod(-12L, 7L)'
-if divmod(12L, -7L) <> (-2L, -2L): raise TestFailed, 'divmod(12L, -7L)'
-if divmod(-12L, -7L) <> (1L, -5L): raise TestFailed, 'divmod(-12L, -7L)'
+if divmod(12L, 7L) != (1L, 5L): raise TestFailed, 'divmod(12L, 7L)'
+if divmod(-12L, 7L) != (-2L, 2L): raise TestFailed, 'divmod(-12L, 7L)'
+if divmod(12L, -7L) != (-2L, -2L): raise TestFailed, 'divmod(12L, -7L)'
+if divmod(-12L, -7L) != (1L, -5L): raise TestFailed, 'divmod(-12L, -7L)'
 #
-if divmod(12, 7L) <> (1, 5L): raise TestFailed, 'divmod(12, 7L)'
-if divmod(-12, 7L) <> (-2, 2L): raise TestFailed, 'divmod(-12, 7L)'
-if divmod(12L, -7) <> (-2L, -2): raise TestFailed, 'divmod(12L, -7)'
-if divmod(-12L, -7) <> (1L, -5): raise TestFailed, 'divmod(-12L, -7)'
+if divmod(12, 7L) != (1, 5L): raise TestFailed, 'divmod(12, 7L)'
+if divmod(-12, 7L) != (-2, 2L): raise TestFailed, 'divmod(-12, 7L)'
+if divmod(12L, -7) != (-2L, -2): raise TestFailed, 'divmod(12L, -7)'
+if divmod(-12L, -7) != (1L, -5): raise TestFailed, 'divmod(-12L, -7)'
 #
 if fcmp(divmod(3.25, 1.0), (3.0, 0.25)):
     raise TestFailed, 'divmod(3.25, 1.0)'
@@ -149,29 +149,29 @@ if fcmp(divmod(-3.25, -1.0), (3.0, -0.25)):
     raise TestFailed, 'divmod(-3.25, -1.0)'
 
 print 'eval'
-if eval('1+1') <> 2: raise TestFailed, 'eval(\'1+1\')'
-if eval(' 1+1\n') <> 2: raise TestFailed, 'eval(\' 1+1\\n\')'
+if eval('1+1') != 2: raise TestFailed, 'eval(\'1+1\')'
+if eval(' 1+1\n') != 2: raise TestFailed, 'eval(\' 1+1\\n\')'
 globals = {'a': 1, 'b': 2}
 locals = {'b': 200, 'c': 300}
-if eval('a', globals) <> 1:
+if eval('a', globals) != 1:
     raise TestFailed, "eval(1) == %s" % eval('a', globals)
-if eval('a', globals, locals) <> 1:
+if eval('a', globals, locals) != 1:
     raise TestFailed, "eval(2)"
-if eval('b', globals, locals) <> 200:
+if eval('b', globals, locals) != 200:
     raise TestFailed, "eval(3)"
-if eval('c', globals, locals) <> 300:
+if eval('c', globals, locals) != 300:
     raise TestFailed, "eval(4)"
-if eval(u'1+1') <> 2: raise TestFailed, 'eval(u\'1+1\')'
-if eval(u' 1+1\n') <> 2: raise TestFailed, 'eval(u\' 1+1\\n\')'
+if eval(u'1+1') != 2: raise TestFailed, 'eval(u\'1+1\')'
+if eval(u' 1+1\n') != 2: raise TestFailed, 'eval(u\' 1+1\\n\')'
 globals = {'a': 1, 'b': 2}
 locals = {'b': 200, 'c': 300}
-if eval(u'a', globals) <> 1:
+if eval(u'a', globals) != 1:
     raise TestFailed, "eval(1) == %s" % eval(u'a', globals)
-if eval(u'a', globals, locals) <> 1:
+if eval(u'a', globals, locals) != 1:
     raise TestFailed, "eval(2)"
-if eval(u'b', globals, locals) <> 200:
+if eval(u'b', globals, locals) != 200:
     raise TestFailed, "eval(3)"
-if eval(u'c', globals, locals) <> 300:
+if eval(u'c', globals, locals) != 300:
     raise TestFailed, "eval(4)"
 
 print 'execfile'
@@ -181,21 +181,21 @@ f.write('z = z+1\n')
 f.write('z = z*2\n')
 f.close()
 execfile(TESTFN)
-if z <> 2: raise TestFailed, "execfile(1)"
+if z != 2: raise TestFailed, "execfile(1)"
 globals['z'] = 0
 execfile(TESTFN, globals)
-if globals['z'] <> 2: raise TestFailed, "execfile(1)"
+if globals['z'] != 2: raise TestFailed, "execfile(1)"
 locals['z'] = 0
 execfile(TESTFN, globals, locals)
-if locals['z'] <> 2: raise TestFailed, "execfile(1)"
+if locals['z'] != 2: raise TestFailed, "execfile(1)"
 unlink(TESTFN)
 
 print 'filter'
-if filter(lambda c: 'a' <= c <= 'z', 'Hello World') <> 'elloorld':
+if filter(lambda c: 'a' <= c <= 'z', 'Hello World') != 'elloorld':
     raise TestFailed, 'filter (filter a string)'
-if filter(None, [1, 'hello', [], [3], '', None, 9, 0]) <> [1, 'hello', [3], 9]:
+if filter(None, [1, 'hello', [], [3], '', None, 9, 0]) != [1, 'hello', [3], 9]:
     raise TestFailed, 'filter (remove false values)'
-if filter(lambda x: x > 0, [1, -3, 9, 0, 2]) <> [1, 9, 2]:
+if filter(lambda x: x > 0, [1, -3, 9, 0, 2]) != [1, 9, 2]:
     raise TestFailed, 'filter (keep positives)'
 class Squares:
     def __init__(self, max):
@@ -232,12 +232,12 @@ def identity(item):
 filter(identity, Squares(5))
 
 print 'float'
-if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
-if float(314) <> 314.0: raise TestFailed, 'float(314)'
-if float(314L) <> 314.0: raise TestFailed, 'float(314L)'
-if float("  3.14  ") <> 3.14:  raise TestFailed, 'float("  3.14  ")'
-if float(u"  3.14  ") <> 3.14:  raise TestFailed, 'float(u"  3.14  ")'
-if float(u"  \u0663.\u0661\u0664  ") <> 3.14:
+if float(3.14) != 3.14: raise TestFailed, 'float(3.14)'
+if float(314) != 314.0: raise TestFailed, 'float(314)'
+if float(314L) != 314.0: raise TestFailed, 'float(314L)'
+if float("  3.14  ") != 3.14:  raise TestFailed, 'float("  3.14  ")'
+if float(u"  3.14  ") != 3.14:  raise TestFailed, 'float(u"  3.14  ")'
+if float(u"  \u0663.\u0661\u0664  ") != 3.14:
     raise TestFailed, 'float(u"  \u0663.\u0661\u0664  ")'
 
 print 'getattr'
@@ -276,18 +276,18 @@ id({'spam': 1, 'eggs': 2, 'ham': 3})
 # Test input() later, together with raw_input
 
 print 'int'
-if int(314) <> 314: raise TestFailed, 'int(314)'
-if int(3.14) <> 3: raise TestFailed, 'int(3.14)'
-if int(314L) <> 314: raise TestFailed, 'int(314L)'
+if int(314) != 314: raise TestFailed, 'int(314)'
+if int(3.14) != 3: raise TestFailed, 'int(3.14)'
+if int(314L) != 314: raise TestFailed, 'int(314L)'
 # Check that conversion from float truncates towards zero
-if int(-3.14) <> -3: raise TestFailed, 'int(-3.14)'
-if int(3.9) <> 3: raise TestFailed, 'int(3.9)'
-if int(-3.9) <> -3: raise TestFailed, 'int(-3.9)'
-if int(3.5) <> 3: raise TestFailed, 'int(3.5)'
-if int(-3.5) <> -3: raise TestFailed, 'int(-3.5)'
+if int(-3.14) != -3: raise TestFailed, 'int(-3.14)'
+if int(3.9) != 3: raise TestFailed, 'int(3.9)'
+if int(-3.9) != -3: raise TestFailed, 'int(-3.9)'
+if int(3.5) != 3: raise TestFailed, 'int(3.5)'
+if int(-3.5) != -3: raise TestFailed, 'int(-3.5)'
 # Different base:
-if int("10",16) <> 16L: raise TestFailed, 'int("10",16)'
-if int(u"10",16) <> 16L: raise TestFailed, 'int(u"10",16)'
+if int("10",16) != 16L: raise TestFailed, 'int("10",16)'
+if int(u"10",16) != 16L: raise TestFailed, 'int(u"10",16)'
 # Test conversion from strings and various anomalies
 L = [
         ('0', 0),
@@ -385,28 +385,28 @@ except TypeError:
     pass
 
 print 'len'
-if len('123') <> 3: raise TestFailed, 'len(\'123\')'
-if len(()) <> 0: raise TestFailed, 'len(())'
-if len((1, 2, 3, 4)) <> 4: raise TestFailed, 'len((1, 2, 3, 4))'
-if len([1, 2, 3, 4]) <> 4: raise TestFailed, 'len([1, 2, 3, 4])'
-if len({}) <> 0: raise TestFailed, 'len({})'
-if len({'a':1, 'b': 2}) <> 2: raise TestFailed, 'len({\'a\':1, \'b\': 2})'
+if len('123') != 3: raise TestFailed, 'len(\'123\')'
+if len(()) != 0: raise TestFailed, 'len(())'
+if len((1, 2, 3, 4)) != 4: raise TestFailed, 'len((1, 2, 3, 4))'
+if len([1, 2, 3, 4]) != 4: raise TestFailed, 'len([1, 2, 3, 4])'
+if len({}) != 0: raise TestFailed, 'len({})'
+if len({'a':1, 'b': 2}) != 2: raise TestFailed, 'len({\'a\':1, \'b\': 2})'
 
 print 'long'
-if long(314) <> 314L: raise TestFailed, 'long(314)'
-if long(3.14) <> 3L: raise TestFailed, 'long(3.14)'
-if long(314L) <> 314L: raise TestFailed, 'long(314L)'
+if long(314) != 314L: raise TestFailed, 'long(314)'
+if long(3.14) != 3L: raise TestFailed, 'long(3.14)'
+if long(314L) != 314L: raise TestFailed, 'long(314L)'
 # Check that conversion from float truncates towards zero
-if long(-3.14) <> -3L: raise TestFailed, 'long(-3.14)'
-if long(3.9) <> 3L: raise TestFailed, 'long(3.9)'
-if long(-3.9) <> -3L: raise TestFailed, 'long(-3.9)'
-if long(3.5) <> 3L: raise TestFailed, 'long(3.5)'
-if long(-3.5) <> -3L: raise TestFailed, 'long(-3.5)'
-if long("-3") <> -3L: raise TestFailed, 'long("-3")'
-if long(u"-3") <> -3L: raise TestFailed, 'long(u"-3")'
+if long(-3.14) != -3L: raise TestFailed, 'long(-3.14)'
+if long(3.9) != 3L: raise TestFailed, 'long(3.9)'
+if long(-3.9) != -3L: raise TestFailed, 'long(-3.9)'
+if long(3.5) != 3L: raise TestFailed, 'long(3.5)'
+if long(-3.5) != -3L: raise TestFailed, 'long(-3.5)'
+if long("-3") != -3L: raise TestFailed, 'long("-3")'
+if long(u"-3") != -3L: raise TestFailed, 'long(u"-3")'
 # Different base:
-if long("10",16) <> 16L: raise TestFailed, 'long("10",16)'
-if long(u"10",16) <> 16L: raise TestFailed, 'long(u"10",16)'
+if long("10",16) != 16L: raise TestFailed, 'long("10",16)'
+if long(u"10",16) != 16L: raise TestFailed, 'long(u"10",16)'
 # Check conversions from string (same test set as for int(), and then some)
 LL = [
         ('1' + '0'*20, 10L**20),
@@ -430,33 +430,33 @@ for s, v in L + LL:
                 raise TestFailed, "long(%s) raised ValueError: %s" % (`ss`, e)
 
 print 'map'
-if map(None, 'hello world') <> ['h','e','l','l','o',' ','w','o','r','l','d']:
+if map(None, 'hello world') != ['h','e','l','l','o',' ','w','o','r','l','d']:
     raise TestFailed, 'map(None, \'hello world\')'
-if map(None, 'abcd', 'efg') <> \
+if map(None, 'abcd', 'efg') != \
    [('a', 'e'), ('b', 'f'), ('c', 'g'), ('d', None)]:
     raise TestFailed, 'map(None, \'abcd\', \'efg\')'
-if map(None, range(10)) <> [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
+if map(None, range(10)) != [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
     raise TestFailed, 'map(None, range(10))'
-if map(lambda x: x*x, range(1,4)) <> [1, 4, 9]:
+if map(lambda x: x*x, range(1,4)) != [1, 4, 9]:
     raise TestFailed, 'map(lambda x: x*x, range(1,4))'
 try:
     from math import sqrt
 except ImportError:
     def sqrt(x):
         return pow(x, 0.5)
-if map(lambda x: map(sqrt,x), [[16, 4], [81, 9]]) <> [[4.0, 2.0], [9.0, 3.0]]:
+if map(lambda x: map(sqrt,x), [[16, 4], [81, 9]]) != [[4.0, 2.0], [9.0, 3.0]]:
     raise TestFailed, 'map(lambda x: map(sqrt,x), [[16, 4], [81, 9]])'
-if map(lambda x, y: x+y, [1,3,2], [9,1,4]) <> [10, 4, 6]:
+if map(lambda x, y: x+y, [1,3,2], [9,1,4]) != [10, 4, 6]:
     raise TestFailed, 'map(lambda x,y: x+y, [1,3,2], [9,1,4])'
 def plus(*v):
     accu = 0
     for i in v: accu = accu + i
     return accu
-if map(plus, [1, 3, 7]) <> [1, 3, 7]:
+if map(plus, [1, 3, 7]) != [1, 3, 7]:
     raise TestFailed, 'map(plus, [1, 3, 7])'
-if map(plus, [1, 3, 7], [4, 9, 2]) <> [1+4, 3+9, 7+2]:
+if map(plus, [1, 3, 7], [4, 9, 2]) != [1+4, 3+9, 7+2]:
     raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2])'
-if map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0]) <> [1+4+1, 3+9+1, 7+2+0]:
+if map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0]) != [1+4+1, 3+9+1, 7+2+0]:
     raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0])'
 if map(None, Squares(10)) != [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]:
     raise TestFailed, 'map(None, Squares(10))'
@@ -468,21 +468,21 @@ if map(max, Squares(3), Squares(2)) != [0, 1, None]:
     raise TestFailed, 'map(max, Squares(3), Squares(2))'
 
 print 'max'
-if max('123123') <> '3': raise TestFailed, 'max(\'123123\')'
-if max(1, 2, 3) <> 3: raise TestFailed, 'max(1, 2, 3)'
-if max((1, 2, 3, 1, 2, 3)) <> 3: raise TestFailed, 'max((1, 2, 3, 1, 2, 3))'
-if max([1, 2, 3, 1, 2, 3]) <> 3: raise TestFailed, 'max([1, 2, 3, 1, 2, 3])'
+if max('123123') != '3': raise TestFailed, 'max(\'123123\')'
+if max(1, 2, 3) != 3: raise TestFailed, 'max(1, 2, 3)'
+if max((1, 2, 3, 1, 2, 3)) != 3: raise TestFailed, 'max((1, 2, 3, 1, 2, 3))'
+if max([1, 2, 3, 1, 2, 3]) != 3: raise TestFailed, 'max([1, 2, 3, 1, 2, 3])'
 #
-if max(1, 2L, 3.0) <> 3.0: raise TestFailed, 'max(1, 2L, 3.0)'
-if max(1L, 2.0, 3) <> 3: raise TestFailed, 'max(1L, 2.0, 3)'
-if max(1.0, 2, 3L) <> 3L: raise TestFailed, 'max(1.0, 2, 3L)'
+if max(1, 2L, 3.0) != 3.0: raise TestFailed, 'max(1, 2L, 3.0)'
+if max(1L, 2.0, 3) != 3: raise TestFailed, 'max(1L, 2.0, 3)'
+if max(1.0, 2, 3L) != 3L: raise TestFailed, 'max(1.0, 2, 3L)'
 
 print 'min'
-if min('123123') <> '1': raise TestFailed, 'min(\'123123\')'
-if min(1, 2, 3) <> 1: raise TestFailed, 'min(1, 2, 3)'
-if min((1, 2, 3, 1, 2, 3)) <> 1: raise TestFailed, 'min((1, 2, 3, 1, 2, 3))'
-if min([1, 2, 3, 1, 2, 3]) <> 1: raise TestFailed, 'min([1, 2, 3, 1, 2, 3])'
+if min('123123') != '1': raise TestFailed, 'min(\'123123\')'
+if min(1, 2, 3) != 1: raise TestFailed, 'min(1, 2, 3)'
+if min((1, 2, 3, 1, 2, 3)) != 1: raise TestFailed, 'min((1, 2, 3, 1, 2, 3))'
+if min([1, 2, 3, 1, 2, 3]) != 1: raise TestFailed, 'min([1, 2, 3, 1, 2, 3])'
 #
-if min(1, 2L, 3.0) <> 1: raise TestFailed, 'min(1, 2L, 3.0)'
-if min(1L, 2.0, 3) <> 1L: raise TestFailed, 'min(1L, 2.0, 3)'
-if min(1.0, 2, 3L) <> 1.0: raise TestFailed, 'min(1.0, 2, 3L)'
+if min(1, 2L, 3.0) != 1: raise TestFailed, 'min(1, 2L, 3.0)'
+if min(1L, 2.0, 3) != 1L: raise TestFailed, 'min(1L, 2.0, 3)'
+if min(1.0, 2, 3L) != 1.0: raise TestFailed, 'min(1.0, 2, 3L)'

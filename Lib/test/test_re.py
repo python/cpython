@@ -15,7 +15,7 @@ try:
     assert re.search('x*', 'axx').span() == (0, 0)
     assert re.search('x+', 'axx').span(0) == (1, 3)
     assert re.search('x+', 'axx').span() == (1, 3)
-    assert re.search('x', 'aaa') == None
+    assert re.search('x', 'aaa') is None
 except:
     raise TestFailed, "re.search"
 
@@ -24,7 +24,7 @@ try:
     assert re.match('a*', 'xxx').span() == (0, 0)
     assert re.match('x*', 'xxxa').span(0) == (0, 3)
     assert re.match('x*', 'xxxa').span() == (0, 3)
-    assert re.match('a+', 'xxx') == None
+    assert re.match('a+', 'xxx') is None
 except:
     raise TestFailed, "re.search"
 
@@ -216,11 +216,11 @@ try:
     p=""
     for i in range(0, 256):
         p = p + chr(i)
-        assert re.match(re.escape(chr(i)), chr(i)) != None
+        assert re.match(re.escape(chr(i)), chr(i)) is not None
         assert re.match(re.escape(chr(i)), chr(i)).span() == (0,1)
 
     pat=re.compile( re.escape(p) )
-    assert pat.match(p) != None
+    assert pat.match(p) is not None
     assert pat.match(p).span() == (0,256)
 except AssertionError:
     raise TestFailed, "re.escape"
@@ -335,14 +335,14 @@ for t in tests:
             # Try the match on a unicode string, and check that it
             # still succeeds.
             result = obj.search(unicode(s, "latin-1"))
-            if result == None:
+            if result is None:
                 print '=== Fails on unicode match', t
 
             # Try the match on a unicode pattern, and check that it
             # still succeeds.
             obj=re.compile(unicode(pattern, "latin-1"))
             result = obj.search(s)
-            if result == None:
+            if result is None:
                 print '=== Fails on unicode pattern match', t
 
             # Try the match with the search area limited to the extent
@@ -351,29 +351,29 @@ for t in tests:
             # string), so we'll ignore patterns that feature it.
 
             if pattern[:2] != '\\B' and pattern[-2:] != '\\B' \
-                           and result != None:
+                           and result is not None:
                 obj = re.compile(pattern)
                 result = obj.search(s, result.start(0), result.end(0) + 1)
-                if result == None:
+                if result is None:
                     print '=== Failed on range-limited match', t
 
             # Try the match with IGNORECASE enabled, and check that it
             # still succeeds.
             obj = re.compile(pattern, re.IGNORECASE)
             result = obj.search(s)
-            if result == None:
+            if result is None:
                 print '=== Fails on case-insensitive match', t
 
             # Try the match with LOCALE enabled, and check that it
             # still succeeds.
             obj = re.compile(pattern, re.LOCALE)
             result = obj.search(s)
-            if result == None:
+            if result is None:
                 print '=== Fails on locale-sensitive match', t
 
             # Try the match with UNICODE locale enabled, and check
             # that it still succeeds.
             obj = re.compile(pattern, re.UNICODE)
             result = obj.search(s)
-            if result == None:
+            if result is None:
                 print '=== Fails on unicode-sensitive match', t

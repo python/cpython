@@ -395,8 +395,8 @@ def test_expat_locator_noinfo():
     parser.feed("</doc>")
     parser.close()
 
-    return parser.getSystemId() == None and \
-           parser.getPublicId() == None and \
+    return parser.getSystemId() is None and \
+           parser.getPublicId() is None and \
            parser.getLineNumber() == 1 
 
 def test_expat_locator_withinfo():
@@ -407,7 +407,7 @@ def test_expat_locator_withinfo():
     parser.parse(findfile("test.xml"))
 
     return parser.getSystemId() == findfile("test.xml") and \
-           parser.getPublicId() == None
+           parser.getPublicId() is None
 
 
 # ===========================================================================
@@ -484,7 +484,7 @@ def verify_empty_attrs(attrs):
            len(attrs) == 0 and \
            not attrs.has_key("attr") and \
            attrs.keys() == [] and \
-           attrs.get("attrs") == None and \
+           attrs.get("attrs") is None and \
            attrs.get("attrs", 25) == 25 and \
            attrs.items() == [] and \
            attrs.values() == [] and \
@@ -552,7 +552,7 @@ def verify_empty_nsattrs(attrs):
            len(attrs) == 0 and \
            not attrs.has_key((ns_uri, "attr")) and \
            attrs.keys() == [] and \
-           attrs.get((ns_uri, "attr")) == None and \
+           attrs.get((ns_uri, "attr")) is None and \
            attrs.get((ns_uri, "attr"), 25) == 25 and \
            attrs.items() == [] and \
            attrs.values() == [] and \

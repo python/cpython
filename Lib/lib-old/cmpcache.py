@@ -30,7 +30,7 @@ def cmp(f1, f2, shallow=1):
     if shallow and s1 == s2:
         # type, size & mtime match -- report same
         return 1
-    if s1[:2] <> s2[:2]: # Types or sizes differ, don't bother
+    if s1[:2] != s2[:2]: # Types or sizes differ, don't bother
         # types or sizes differ -- report different
         return 0
     # same type and size -- look in the cache
@@ -60,5 +60,5 @@ def do_cmp(f1, f2):
     while 1:
         b1 = fp1.read(bufsize)
         b2 = fp2.read(bufsize)
-        if b1 <> b2: return 0
+        if b1 != b2: return 0
         if not b1: return 1

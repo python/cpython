@@ -26,5 +26,5 @@ print md5test('12345678901234567890123456789012345678901234567890123456789012345
 # hexdigest is new with Python 2.0
 m = md5('testing the hexdigest method')
 h = m.hexdigest()
-if hexstr(m.digest()) <> h:
+if hexstr(m.digest()) != h:
     print 'hexdigest() failed'

@@ -12,11 +12,11 @@ for e in entries:
         print name, uid
     print 'pwd.getpwuid()'
     dbuid = pwd.getpwuid(uid)
-    if dbuid[0] <> name:
+    if dbuid[0] != name:
         print 'Mismatch in pwd.getpwuid()'
     print 'pwd.getpwnam()'
     dbname = pwd.getpwnam(name)
-    if dbname[2] <> uid:
+    if dbname[2] != uid:
         print 'Mismatch in pwd.getpwnam()'
     else:
         print 'name matches uid'

@@ -207,7 +207,7 @@ def build_panel(descr):
 	#
 	# Sanity check
 	#
-	if (not descr) or descr[0] <> 'panel':
+	if (not descr) or descr[0] != 'panel':
 		raise panel_error, 'panel description must start with "panel"'
 	#
 	if debug: show_panel('', descr)

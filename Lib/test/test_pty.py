@@ -81,7 +81,7 @@ else:
         raise TestFailed, "pty.fork() failed to make child a session leader."
     elif status / 256 == 3:
         raise TestFailed, "Child spawned by pty.fork() did not have a tty as stdout"
-    elif status / 256 <> 4:
+    elif status / 256 != 4:
         raise TestFailed, "pty.fork() failed for unknown reasons:"
         print os.read(master_fd, 65536)
 

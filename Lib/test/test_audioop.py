@@ -24,61 +24,61 @@ def gendata4():
 def testmax(data):
     if verbose:
         print 'max'
-    if audioop.max(data[0], 1) <> 2 or \
-              audioop.max(data[1], 2) <> 2 or \
-              audioop.max(data[2], 4) <> 2:
+    if audioop.max(data[0], 1) != 2 or \
+              audioop.max(data[1], 2) != 2 or \
+              audioop.max(data[2], 4) != 2:
         return 0
     return 1
 
 def testminmax(data):
     if verbose:
         print 'minmax'
-    if audioop.minmax(data[0], 1) <> (0, 2) or \
-              audioop.minmax(data[1], 2) <> (0, 2) or \
-              audioop.minmax(data[2], 4) <> (0, 2):
+    if audioop.minmax(data[0], 1) != (0, 2) or \
+              audioop.minmax(data[1], 2) != (0, 2) or \
+              audioop.minmax(data[2], 4) != (0, 2):
         return 0
     return 1
 
 def testmaxpp(data):
     if verbose:
         print 'maxpp'
-    if audioop.maxpp(data[0], 1) <> 0 or \
-              audioop.maxpp(data[1], 2) <> 0 or \
-              audioop.maxpp(data[2], 4) <> 0:
+    if audioop.maxpp(data[0], 1) != 0 or \
+              audioop.maxpp(data[1], 2) != 0 or \
+              audioop.maxpp(data[2], 4) != 0:
         return 0
     return 1
 
 def testavg(data):
     if verbose:
         print 'avg'
-    if audioop.avg(data[0], 1) <> 1 or \
-              audioop.avg(data[1], 2) <> 1 or \
-              audioop.avg(data[2], 4) <> 1:
+    if audioop.avg(data[0], 1) != 1 or \
+              audioop.avg(data[1], 2) != 1 or \
+              audioop.avg(data[2], 4) != 1:
         return 0
     return 1
 
 def testavgpp(data):
     if verbose:
         print 'avgpp'
-    if audioop.avgpp(data[0], 1) <> 0 or \
-              audioop.avgpp(data[1], 2) <> 0 or \
-              audioop.avgpp(data[2], 4) <> 0:
+    if audioop.avgpp(data[0], 1) != 0 or \
+              audioop.avgpp(data[1], 2) != 0 or \
+              audioop.avgpp(data[2], 4) != 0:
         return 0
     return 1
 
 def testrms(data):
-    if audioop.rms(data[0], 1) <> 1 or \
-              audioop.rms(data[1], 2) <> 1 or \
-              audioop.rms(data[2], 4) <> 1:
+    if audioop.rms(data[0], 1) != 1 or \
+              audioop.rms(data[1], 2) != 1 or \
+              audioop.rms(data[2], 4) != 1:
         return 0
     return 1
 
 def testcross(data):
     if verbose:
         print 'cross'
-    if audioop.cross(data[0], 1) <> 0 or \
-              audioop.cross(data[1], 2) <> 0 or \
-              audioop.cross(data[2], 4) <> 0:
+    if audioop.cross(data[0], 1) != 0 or \
+              audioop.cross(data[1], 2) != 0 or \
+              audioop.cross(data[2], 4) != 0:
         return 0
     return 1
 
@@ -91,9 +91,9 @@ def testadd(data):
         for s in d:
             str = str + chr(ord(s)*2)
         data2.append(str)
-    if audioop.add(data[0], data[0], 1) <> data2[0] or \
-              audioop.add(data[1], data[1], 2) <> data2[1] or \
-              audioop.add(data[2], data[2], 4) <> data2[2]:
+    if audioop.add(data[0], data[0], 1) != data2[0] or \
+              audioop.add(data[1], data[1], 2) != data2[1] or \
+              audioop.add(data[2], data[2], 4) != data2[2]:
         return 0
     return 1
 
@@ -104,9 +104,9 @@ def testbias(data):
     d1 = audioop.bias(data[0], 1, 100)
     d2 = audioop.bias(data[1], 2, 100)
     d4 = audioop.bias(data[2], 4, 100)
-    if audioop.avg(d1, 1) <> 101 or \
-              audioop.avg(d2, 2) <> 101 or \
-              audioop.avg(d4, 4) <> 101:
+    if audioop.avg(d1, 1) != 101 or \
+              audioop.avg(d2, 2) != 101 or \
+              audioop.avg(d4, 4) != 101:
         return 0
     return 1
 
@@ -118,13 +118,13 @@ def testlin2lin(data):
         for d2 in data:
             got = len(d1)/3
             wtd = len(d2)/3
-            if len(audioop.lin2lin(d1, got, wtd)) <> len(d2):
+            if len(audioop.lin2lin(d1, got, wtd)) != len(d2):
                 return 0
     return 1
 
 def testadpcm2lin(data):
     # Very cursory test
-    if audioop.adpcm2lin('\0\0', 1, None) <> ('\0\0\0\0', (0,0)):
+    if audioop.adpcm2lin('\0\0', 1, None) != ('\0\0\0\0', (0,0)):
         return 0
     return 1
 
@@ -132,16 +132,16 @@ def testlin2adpcm(data):
     if verbose:
         print 'lin2adpcm'
     # Very cursory test
-    if audioop.lin2adpcm('\0\0\0\0', 1, None) <> ('\0\0', (0,0)):
+    if audioop.lin2adpcm('\0\0\0\0', 1, None) != ('\0\0', (0,0)):
         return 0
     return 1
 
 def testlin2ulaw(data):
     if verbose:
         print 'lin2ulaw'
-    if audioop.lin2ulaw(data[0], 1) <> '\377\347\333' or \
-              audioop.lin2ulaw(data[1], 2) <> '\377\377\377' or \
-              audioop.lin2ulaw(data[2], 4) <> '\377\377\377':
+    if audioop.lin2ulaw(data[0], 1) != '\377\347\333' or \
+              audioop.lin2ulaw(data[1], 2) != '\377\377\377' or \
+              audioop.lin2ulaw(data[2], 4) != '\377\377\377':
         return 0
     return 1
 
@@ -150,7 +150,7 @@ def testulaw2lin(data):
         print 'ulaw2lin'
     # Cursory
     d = audioop.lin2ulaw(data[0], 1)
-    if audioop.ulaw2lin(d, 1) <> data[0]:
+    if audioop.ulaw2lin(d, 1) != data[0]:
         return 0
     return 1
 
@@ -163,9 +163,9 @@ def testmul(data):
         for s in d:
             str = str + chr(ord(s)*2)
         data2.append(str)
-    if audioop.mul(data[0], 1, 2) <> data2[0] or \
-              audioop.mul(data[1],2, 2) <> data2[1] or \
-              audioop.mul(data[2], 4, 2) <> data2[2]:
+    if audioop.mul(data[0], 1, 2) != data2[0] or \
+              audioop.mul(data[1],2, 2) != data2[1] or \
+              audioop.mul(data[2], 4, 2) != data2[2]:
         return 0
     return 1
 
@@ -182,7 +182,7 @@ def testratecv(data):
 def testreverse(data):
     if verbose:
         print 'reverse'
-    if audioop.reverse(data[0], 1) <> '\2\1\0':
+    if audioop.reverse(data[0], 1) != '\2\1\0':
         return 0
     return 1
 
@@ -192,7 +192,7 @@ def testtomono(data):
     data2 = ''
     for d in data[0]:
         data2 = data2 + d + d
-    if audioop.tomono(data2, 1, 0.5, 0.5) <> data[0]:
+    if audioop.tomono(data2, 1, 0.5, 0.5) != data[0]:
         return 0
     return 1
 
@@ -202,28 +202,28 @@ def testtostereo(data):
     data2 = ''
     for d in data[0]:
         data2 = data2 + d + d
-    if audioop.tostereo(data[0], 1, 1, 1) <> data2:
+    if audioop.tostereo(data[0], 1, 1, 1) != data2:
         return 0
     return 1
 
 def testfindfactor(data):
     if verbose:
         print 'findfactor'
-    if audioop.findfactor(data[1], data[1]) <> 1.0:
+    if audioop.findfactor(data[1], data[1]) != 1.0:
         return 0
     return 1
 
 def testfindfit(data):
     if verbose:
         print 'findfit'
-    if audioop.findfit(data[1], data[1]) <> (0, 1.0):
+    if audioop.findfit(data[1], data[1]) != (0, 1.0):
         return 0
     return 1
 
 def testfindmax(data):
     if verbose:
         print 'findmax'
-    if audioop.findmax(data[1], 1) <> 2:
+    if audioop.findmax(data[1], 1) != 2:
         return 0
     return 1
 
@@ -231,9 +231,9 @@ def testgetsample(data):
     if verbose:
         print 'getsample'
     for i in range(3):
-        if audioop.getsample(data[0], 1, i) <> i or \
-                  audioop.getsample(data[1], 2, i) <> i or \
-                  audioop.getsample(data[2], 4, i) <> i:
+        if audioop.getsample(data[0], 1, i) != i or \
+                  audioop.getsample(data[1], 2, i) != i or \
+                  audioop.getsample(data[2], 4, i) != i:
             return 0
     return 1
 

@@ -60,7 +60,7 @@ def torgb(filename):
 		ret = _torgb(filename, temps)
 	finally:
 		for temp in temps[:]:
-			if temp <> ret:
+			if temp != ret:
 				try:
 					os.unlink(temp)
 				except os.error:
@@ -83,12 +83,12 @@ def _torgb(filename, temps):
 		if type(msg) == type(()) and len(msg) == 2 and \
 			type(msg[0]) == type(0) and type(msg[1]) == type(''):
 			msg = msg[1]
-		if type(msg) <> type(''):
+		if type(msg) is not type(''):
 			msg = `msg`
 		raise error, filename + ': ' + msg
 	if ftype == 'rgb':
 		return fname
-	if ftype == None or not table.has_key(ftype):
+	if ftype is None or not table.has_key(ftype):
 		raise error, \
 			filename + ': unsupported image file type ' + `ftype`
 	temp = tempfile.mktemp()

@@ -23,7 +23,7 @@ def browser(tb):
 	ptr = len(tblist)-1
 	tb = tblist[ptr]
 	while 1:
-		if tb <> tblist[ptr]:
+		if tb != tblist[ptr]:
 			tb = tblist[ptr]
 			print `ptr` + ':',
 			printtbheader(tb)
@@ -76,11 +76,11 @@ def browserexec(tb, cmd):
 	except:
 		t, v = sys.exc_info()[:2]
 		print '*** Exception:',
-		if type(t) == type(''):
+		if type(t) is type(''):
 			print t,
 		else:
 			print t.__name__,
-		if v <> None:
+		if v is not None:
 			print ':', v,
 		print
 		print 'Type help to get help.'
@@ -127,24 +127,24 @@ def printsymbols(d):
 		print
 
 def printobject(v, maxlevel):
-	if v == None:
+	if v is None:
 		print 'None',
 	elif type(v) in (type(0), type(0.0)):
 		print v,
-	elif type(v) == type(''):
+	elif type(v) is type(''):
 		if len(v) > 20:
 			print `v[:17] + '...'`,
 		else:
 			print `v`,
-	elif type(v) == type(()):
+	elif type(v) is type(()):
 		print '(',
 		printlist(v, maxlevel)
 		print ')',
-	elif type(v) == type([]):
+	elif type(v) is type([]):
 		print '[',
 		printlist(v, maxlevel)
 		print ']',
-	elif type(v) == type({}):
+	elif type(v) is type({}):
 		print '{',
 		printdict(v, maxlevel)
 		print '}',

@@ -16,35 +16,35 @@ c = -1
 if verbose:
     print 'unpack tuple'
 a, b, c = t
-if a <> 1 or b <> 2 or c <> 3:
+if a != 1 or b != 2 or c != 3:
     raise TestFailed
 
 # unpack list
 if verbose:
     print 'unpack list'
 a, b, c = l
-if a <> 4 or b <> 5 or c <> 6:
+if a != 4 or b != 5 or c != 6:
     raise TestFailed
 
 # unpack implied tuple
 if verbose:
     print 'unpack implied tuple'
 a, b, c = 7, 8, 9
-if a <> 7 or b <> 8 or c <> 9:
+if a != 7 or b != 8 or c != 9:
     raise TestFailed
 
 # unpack string... fun!
 if verbose:
     print 'unpack string'
 a, b, c = 'one'
-if a <> 'o' or b <> 'n' or c <> 'e':
+if a != 'o' or b != 'n' or c != 'e':
     raise TestFailed
 
 # unpack generic sequence
 if verbose:
     print 'unpack sequence'
 a, b, c = Seq()
-if a <> 0 or b <> 1 or c <> 2:
+if a != 0 or b != 1 or c != 2:
     raise TestFailed
 
 # single element unpacking, with extra syntax
@@ -53,10 +53,10 @@ if verbose:
 st = (99,)
 sl = [100]
 a, = st
-if a <> 99:
+if a != 99:
     raise TestFailed
 b, = sl
-if b <> 100:
+if b != 100:
     raise TestFailed
 
 # now for some failures

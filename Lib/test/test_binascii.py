@@ -96,7 +96,7 @@ if crc != 1571220330:
 s = '{s\005\000\000\000worldi\002\000\000\000s\005\000\000\000helloi\001\000\000\0000'
 t = binascii.b2a_hex(s)
 u = binascii.a2b_hex(t)
-if s <> u:
+if s != u:
     print 'binascii hexlification failed'
 try:
     binascii.a2b_hex(t[:-1])
