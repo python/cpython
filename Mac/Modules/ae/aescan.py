@@ -15,7 +15,7 @@ from scantools import Scanner
 
 def main():
 	print "=== Scanning AEDataModel.h, AppleEvents.h, AERegistry.h, AEObjects.h ==="
-	input = ["AEDataModel.h", "AppleEvents.h", "AERegistry.h", "AEObjects.h"]
+	input = ["AEDataModel.h", "AEInteraction.h", "AppleEvents.h", "AERegistry.h", "AEObjects.h"]
 	output = "aegen.py"
 	defsoutput = TOOLBOXDIR + "AppleEvents.py"
 	scanner = AppleEventsScanner(input, output, defsoutput)
