@@ -65,7 +65,6 @@ def _decode_fontrecord(data, key):
 	return size, face, data[5:5+namelen]
 	
 def _decode_boolean(data, key):
-	print 'XXXX boolean:', `data`
 	return ord(data[0])
 	
 def _decode_text(data, key):
@@ -174,6 +173,13 @@ class IC:
 			rv.append(self.ic.ICGetIndPref(i+1))
 		self.ic.ICEnd()
 		return rv
+		
+	def has_key(self, key):
+		try:
+			dummy = self.ic.ICFindPrefHandle(key, self.h)
+		except icglue.error:
+			return 0
+		return 1
 		
 	def __getitem__(self, key):
 		attr = self.ic.ICFindPrefHandle(key, self.h)
