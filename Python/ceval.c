@@ -1511,6 +1511,8 @@ apply_subscript(v, w)
 			return NULL;
 		}
 		i = getintvalue(w);
+		if (i < 0)
+			i += (*tp->tp_as_sequence->sq_length)(v);
 		return (*tp->tp_as_sequence->sq_item)(v, i);
 	}
 	return (*tp->tp_as_mapping->mp_subscript)(v, w);
@@ -1584,11 +1586,15 @@ assign_subscript(w, key, v) /* w[key] = v */
 			(func = sq->sq_ass_item) != NULL) {
 		if (!is_intobject(key)) {
 			err_setstr(TypeError,
-				"sequence subscript must be integer");
+			"sequence subscript must be integer (assign or del)");
 			return -1;
 		}
-		else
-			return (*func)(w, (int)getintvalue(key), v);
+		else {
+			int i = getintvalue(key);
+			if (i < 0)
+				i += (*sq->sq_length)(v);
+			return (*func)(w, i, v);
+		}
 	}
 	else if ((mp = tp->tp_as_mapping) != NULL &&
 			(func = mp->mp_ass_subscript) != NULL) {
@@ -1726,8 +1732,6 @@ cmp_outcome(op, v, w)
 	return v;
 }
 
-/* XXX This function should use dict2 variants (change interface!) */
-
 static int
 import_from(locals, v, name)
 	object *locals;
@@ -1746,7 +1750,7 @@ import_from(locals, v, name)
 			x = dict2lookup(w, name);
 			if (x == NULL) {
 				/* XXX can't happen? */
-				err_setstr(NameError, getstringvalue(name));
+				err_setstr(SystemError, getstringvalue(name));
 				return -1;
 			}
 			if (dict2insert(locals, name, x) != 0)
@@ -1757,7 +1761,10 @@ import_from(locals, v, name)
 	else {
 		x = dict2lookup(w, name);
 		if (x == NULL) {
-			err_setstr(NameError, getstringvalue(name));
+			char buf[250];
+			sprintf(buf, "cannot import name %s",
+				getstringvalue(name));
+			err_setstr(ImportError, buf);
 			return -1;
 		}
 		else
