@@ -416,9 +416,9 @@ class Thread(_Verbose):
             if __debug__:
                 self._note("%s.join(): thread stopped", self)
         else:
-            deadline = time.time() + timeout
+            deadline = _time() + timeout
             while not self.__stopped:
-                delay = deadline - time.time()
+                delay = deadline - _time()
                 if delay <= 0:
                     if __debug__:
                         self._note("%s.join(): timed out", self)
