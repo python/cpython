@@ -163,7 +163,7 @@ def modname(path):
     return filename
 
 def fullmodname(path):
-    """Return a plausible module name for the patch."""
+    """Return a plausible module name for the path."""
 
     # If the file 'path' is part of a package, then the filename isn't
     # enough to uniquely identify it.  Try to do the right thing by
@@ -244,17 +244,18 @@ class CoverageResults:
             # skip some "files" we don't care about...
             if filename == "<string>":
                 continue
-            modulename = fullmodname(filename)
 
             if filename.endswith(".pyc") or filename.endswith(".pyo"):
                 filename = filename[:-1]
 
             if coverdir is None:
                 dir = os.path.dirname(os.path.abspath(filename))
+                modulename = modname(filename)
             else:
                 dir = coverdir
                 if not os.path.exists(dir):
                     os.makedirs(dir)
+                modulename = fullmodname(filename)
 
             # If desired, get a list of the line numbers which represent
             # executable content (returned as a dict for better lookup speed)
