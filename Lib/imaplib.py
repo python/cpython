@@ -172,8 +172,7 @@ class IMAP4:
 			date_time = Time2Internaldate(date_time)
 		else:
 			date_time = None
-		tag = self._command(name, mailbox, flags, date_time, message)
-		return self._command_complete(name, tag)
+		return self._simple_command(name, mailbox, flags, date_time, message)
 
 
 	def authenticate(self, func):
@@ -314,6 +313,8 @@ class IMAP4:
 	def recent(self):
 		"""Prompt server for an update.
 
+		Flush all untagged responses.
+
 		(typ, [data]) = <instance>.recent()
 
 		'data' is None if no new messages,
@@ -323,6 +324,7 @@ class IMAP4:
 		typ, dat = self._untagged_response('OK', name)
 		if dat[-1]:
 			return typ, dat
+		self.untagged_responses = {}
 		typ, dat = self._simple_command('NOOP')
 		return self._untagged_response(typ, name)
 
@@ -338,9 +340,11 @@ class IMAP4:
 	def response(self, code):
 		"""Return data for response 'code' if received, or None.
 
+		Old value for response 'code' is cleared.
+
 		(code, [data]) = <instance>.response(code)
 		"""
-		return code, self.untagged_responses.get(code, [None])
+		return self._untagged_response(code, code)
 
 
 	def search(self, charset, criteria):
@@ -360,15 +364,14 @@ class IMAP4:
 	def select(self, mailbox='INBOX', readonly=None):
 		"""Select a mailbox.
 
+		Flush all untagged responses.
+
 		(typ, [data]) = <instance>.select(mailbox='INBOX', readonly=None)
 
 		'data' is count of messages in mailbox ('EXISTS' response).
 		"""
 		# Mandated responses are ('FLAGS', 'EXISTS', 'RECENT', 'UIDVALIDITY')
-		# Remove immediately interesting responses
-		for r in ('EXISTS', 'READ-WRITE'):
-			if self.untagged_responses.has_key(r):
-				del self.untagged_responses[r]
+		self.untagged_responses = {}	# Flush old responses.
 		if readonly:
 			name = 'EXAMINE'
 		else:
@@ -400,8 +403,7 @@ class IMAP4:
 
 		(typ, [data]) = <instance>.store(message_set, command, flag_list)
 		"""
-		command = '%s %s' % (command, flag_list)
-		typ, dat = self._simple_command('STORE', message_set, command)
+		typ, dat = self._simple_command('STORE', message_set, command, flag_list)
 		return self._untagged_response(typ, 'FETCH')
 
 
@@ -413,16 +415,16 @@ class IMAP4:
 		return self._simple_command('SUBSCRIBE', mailbox)
 
 
-	def uid(self, command, args):
-		"""Execute "command args" with messages identified by UID,
+	def uid(self, command, *args):
+		"""Execute "command arg ..." with messages identified by UID,
 			rather than message number.
 
-		(typ, [data]) = <instance>.uid(command, args)
+		(typ, [data]) = <instance>.uid(command, arg1, arg2, ...)
 
 		Returns response appropriate to 'command'.
 		"""
 		name = 'UID'
-		typ, dat = self._simple_command('UID', command, args)
+		typ, dat = apply(self._simple_command, ('UID', command) + args)
 		if command == 'SEARCH':
 			name = 'SEARCH'
 		else:
@@ -440,15 +442,15 @@ class IMAP4:
 		return self._simple_command('UNSUBSCRIBE', mailbox)
 
 
-	def xatom(self, name, arg1=None, arg2=None):
+	def xatom(self, name, *args):
 		"""Allow simple extension commands
 			notified by server in CAPABILITY response.
 
-		(typ, [data]) = <instance>.xatom(name, arg1=None, arg2=None)
+		(typ, [data]) = <instance>.xatom(name, arg, ...)
 		"""
 		if name[0] != 'X' or not name in self.capabilities:
 			raise self.error('unknown extension command: %s' % name)
-		return self._simple_command(name, arg1, arg2)
+		return apply(self._simple_command, (name,) + args)
 
 
 
@@ -475,7 +477,15 @@ class IMAP4:
 		tag = self._new_tag()
 		data = '%s %s' % (tag, name)
 		for d in (dat1, dat2, dat3):
-			if d is not None: data = '%s %s' % (data, d)
+			if d is None: continue
+			if type(d) is type(''):
+				l = len(string.split(d))
+			else:
+				l = 1
+			if l == 0 or l > 1 and (d[0],d[-1]) not in (('(',')'),('"','"')):
+				data = '%s "%s"' % (data, d)
+			else:
+				data = '%s %s' % (data, d)
 		if literal is not None:
 			data = '%s {%s}' % (data, len(literal))
 
@@ -529,11 +539,9 @@ class IMAP4:
 		# Read response and store.
 		#
 		# Returns None for continuation responses,
-		# otherwise first response line received
+		# otherwise first response line received.
 
-		# Protocol mandates all lines terminated by CRLF.
-
-		resp = self._get_line()[:-2]
+		resp = self._get_line()
 
 		# Command completion response?
 
@@ -584,7 +592,7 @@ class IMAP4:
 
 				# Read trailer - possibly containing another literal
 
-				dat = self._get_line()[:-2]
+				dat = self._get_line()
 
 			self._append_untagged(typ, dat)
 
@@ -614,8 +622,9 @@ class IMAP4:
 
 		# Protocol mandates all lines terminated by CRLF
 
+		line = line[:-2]
 		if __debug__ and self.debug >= 4:
-			print '\t< %s' % line[:-2]
+			print '\t< %s' % line
 		return line
 
 
@@ -638,9 +647,9 @@ class IMAP4:
 		return tag
 
 
-	def _simple_command(self, name, dat1=None, dat2=None):
+	def _simple_command(self, name, *args):
 
-		return self._command_complete(name, self._command(name, dat1, dat2))
+		return self._command_complete(name, apply(self._command, (name,) + args))
 
 
 	def _untagged_response(self, typ, name):
@@ -648,6 +657,8 @@ class IMAP4:
 		if not self.untagged_responses.has_key(name):
 			return typ, [None]
 		data = self.untagged_responses[name]
+		if __debug__ and self.debug >= 5:
+			print '\tuntagged_responses[%s] => %.20s..' % (name, `data`)
 		del self.untagged_responses[name]
 		return typ, data
 
@@ -755,16 +766,16 @@ if __debug__ and __name__ == '__main__':
 
 	test_seq1 = (
 	('login', (USER, PASSWD)),
-	('create', ('/tmp/xxx',)),
-	('rename', ('/tmp/xxx', '/tmp/yyy')),
-	('CREATE', ('/tmp/yyz',)),
-	('append', ('/tmp/yyz', None, None, 'From: anon@x.y.z\n\ndata...')),
-	('select', ('/tmp/yyz',)),
-	('recent', ()),
+	('create', ('/tmp/xxx 1',)),
+	('rename', ('/tmp/xxx 1', '/tmp/yyy')),
+	('CREATE', ('/tmp/yyz 2',)),
+	('append', ('/tmp/yyz 2', None, None, 'From: anon@x.y.z\n\ndata...')),
+	('select', ('/tmp/yyz 2',)),
 	('uid', ('SEARCH', 'ALL')),
 	('fetch', ('1', '(INTERNALDATE RFC822)')),
 	('store', ('1', 'FLAGS', '(\Deleted)')),
 	('expunge', ()),
+	('recent', ()),
 	('close', ()),
 	)
 
@@ -772,8 +783,8 @@ if __debug__ and __name__ == '__main__':
 	('select', ()),
 	('response',('UIDVALIDITY',)),
 	('uid', ('SEARCH', 'ALL')),
-	('recent', ()),
 	('response', ('EXISTS',)),
+	('recent', ()),
 	('logout', ()),
 	)
 
@@ -790,7 +801,9 @@ if __debug__ and __name__ == '__main__':
 		run(cmd, args)
 
 	for ml in run('list', ('/tmp/', 'yy%')):
-		path = string.split(ml)[-1]
+		mo = re.match(r'.*"([^"]+)"$', ml)
+		if mo: path = mo.group(1)
+		else: path = string.split(ml)[-1]
 		run('delete', (path,))
 
 	for cmd,args in test_seq2:
@@ -800,5 +813,5 @@ if __debug__ and __name__ == '__main__':
 			continue
 
 		uid = string.split(dat[0])[-1]
-		run('uid', ('FETCH',
-			'%s (FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822)' % uid))
+		run('uid', ('FETCH', '%s' % uid,
+			'(FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822)'))
