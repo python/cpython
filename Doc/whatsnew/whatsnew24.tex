@@ -6,9 +6,6 @@
 % Feel free to add commented-out reminders of things that need
 % to be covered.  --amk
 
-% XXX pydoc can display links to module docs -- but when?
-% 
-
 \title{What's New in Python 2.4}
 \release{1.0}
 \author{A.M.\ Kuchling}
@@ -1021,7 +1018,7 @@ Python dictionary.  (Contributed by Raymond Hettinger.)
 a partially-initialized module object in \code{sys.modules}.  The
 incomplete module object left behind would fool further imports of the
 same module into succeeding, leading to confusing errors.  
-% (XXX contributed by Tim?)
+(Fixed by Tim Peters.)
 
 \item \constant{None} is now a constant; code that binds a new value to 
 the name \samp{None} is now a syntax error.
@@ -1177,7 +1174,7 @@ performance.  (Contributed by Raymond Hettinger.)
    The \method{read()} method now returns a list of the files that
    were successfully parsed, and the \method{set()} method raises
    \exception{TypeError} if passed a \var{value} argument that isn't a
-   string.
+   string.   (Contributed by John Belmonte and David Goodger.)
 
 \item The \module{curses} module now supports the ncurses extension 
    \function{use_default_colors()}.  On platforms where the terminal
@@ -1389,7 +1386,8 @@ not it's a symbolic link.  This differs from the existing
 \module{posix} module that underlies the \module{os} module.
 (Contributed by J. Raynor.)
 
-\item The \module{poplib} module now supports POP over SSL.
+\item The \module{poplib} module now supports POP over SSL.  (Contributed by
+Hector Urtubia.)
 
 \item The \module{profile} module can now profile C extension functions.
 (Contributed by Nick Bastin.)
@@ -1408,6 +1406,7 @@ not it's a symbolic link.  This differs from the existing
    earlier in the expression.  If the specified group matched, the
    regular expression pattern \var{A} will be tested against the string; if
    the group didn't match, the pattern \var{B} will be used instead.
+   (Contributed by Gustavo Niemeyer.)
 
 \item The \module{re} module is also no longer recursive, thanks to a
 massive amount of work by Gustavo Niemeyer.  In a recursive regular
@@ -1462,6 +1461,7 @@ Other threads can assign and retrieve their own values for the
 
 \item The \module{xmlrpclib} module now supports a multi-call extension for 
 transmitting multiple XML-RPC calls in a single HTTP operation.
+(Contributed by Brian Quinlan.)
 
 \item The \module{mpz}, \module{rotor}, and \module{xreadlines} modules have 
 been removed.
@@ -1491,6 +1491,9 @@ one that stores cookies in the same format as the Perl libwww libary.
 \module{urllib2} has been changed to interact with \module{cookielib}:
 \class{HTTPCookieProcessor} manages a cookie jar that is used when
 accessing URLs.
+
+This module was contributed by John J. Lee.
+
 
 % ==================
 \subsection{doctest}
@@ -1654,11 +1657,11 @@ Some of the changes to Python's build process and to the C API are:
   \program{configure} script will let you profile the interpreter with
   \program{gprof}, and providing the \longprogramopt{--with-tsc}
   switch enables profiling using the Pentium's Time-Stamp-Counter
-  register.  (The \longprogramopt{--with-tsc} switch is slightly
+  register.  Note that the \longprogramopt{--with-tsc} switch is slightly
   misnamed, because the profiling feature also works on the PowerPC
   platform, though that processor architecture doesn't call that
-  register ``the TSC register''.)
-   
+  register ``the TSC register''.  (Contributed by Jeremy Hylton.)
+    
   \item The \ctype{tracebackobject} type has been renamed to \ctype{PyTracebackObject}.
 
 \end{itemize}
@@ -1694,7 +1697,6 @@ The \exception{OverflowWarning} warning will disappear in Python 2.5.
 \item The \function{zip()} built-in function and \function{itertools.izip()}
   now return  an empty list instead of raising a \exception{TypeError}
   exception if called with no arguments.
-  (Contributed by Raymond Hettinger.)
 
 \item \function{dircache.listdir()} now passes exceptions to the caller
       instead of returning empty lists.
