@@ -37,6 +37,8 @@ Extension modules
 Library
 -------
 
+- Patch #975885: Print file name in err msg in quiet mode of compileall.py.
+
 - Bug #919012: shutil.move() raises an exception when you try to move a
   directory into itself.
 
