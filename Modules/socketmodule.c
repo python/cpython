@@ -7,7 +7,8 @@ This module provides an interface to Berkeley socket IPC.
 
 Limitations:
 
-- only AF_INET and AF_UNIX address families are supported
+- only AF_INET and AF_UNIX address families are supported in a
+  portable manner, though AF_PACKET is supported under Linux.
 - no read/write operations (use send/recv or makefile instead)
 - additional restrictions apply on Windows
 
@@ -33,6 +34,13 @@ Module interface:
   (including the dd.dd.dd.dd notation) and port is in host byte order
 - where a hostname is returned, the dd.dd.dd.dd notation is used
 - a UNIX domain socket address is a string specifying the pathname
+- an AF_PACKET socket address is a tuple containing a string
+  specifying the ethernet interface and an integer specifying
+  the Ethernet protocol number to be received. For example:
+  ("eth0",0x1234).  Optional 3rd and 4th elements in the tuple
+  specify packet-type and ha-type -- these are ignored by
+  networking code, but accepted since they are returned by the
+  getsockname() method.
 
 Socket methods:
 
@@ -144,6 +152,12 @@ Socket methods:
 #include <sys/un.h>
 #else
 #undef AF_UNIX
+#endif
+
+#if defined(linux) && defined(AF_PACKET)
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <netpacket/packet.h>
 #endif
 
 #ifndef O_NDELAY
@@ -347,6 +361,9 @@ typedef struct {
 #ifdef AF_UNIX
 		struct sockaddr_un un;
 #endif
+#if defined(linux) && defined(AF_PACKET)
+		struct sockaddr_ll ll;
+#endif		
 	} sock_addr;
 } PySocketSockObject;
 
@@ -550,8 +567,31 @@ makesockaddr(struct sockaddr *addr, int addrlen)
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
 		return PyString_FromString(a->sun_path);
 	}
-#endif /* AF_UNIX */
+#endif
 
+#if defined(linux) && defined(AF_PACKET)
+	case AF_PACKET:
+	{
+		struct sockaddr_ll *a = (struct sockaddr_ll *)addr;
+		char *ifname = "";
+		struct ifreq ifr;
+		int s;
+		/* need a socket on which we can do an ioctl to look
+		 * up interface name from index, but only if index is
+		 * non-zero.
+		 */
+		if (a->sll_ifindex 
+		    && ((s = socket(AF_PACKET, SOCK_RAW, 0)) >= 0)) {
+			ifr.ifr_ifindex = a->sll_ifindex;
+			if (ioctl(s, SIOCGIFNAME, &ifr) == 0)
+				ifname = ifr.ifr_name;
+			close(s);
+		}
+		return Py_BuildValue("shbh", ifname, ntohs(a->sll_protocol),
+				     a->sll_pkttype, a->sll_hatype);
+	}
+#endif
+          
 	/* More cases here... */
 
 	default:
@@ -622,6 +662,36 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args, struct sockaddr **addr_ret
 		return 1;
 	}
 
+#if defined(linux) && defined(AF_PACKET)
+	case AF_PACKET:
+	{
+		struct sockaddr_ll* addr;
+		struct ifreq ifr;
+		char *interfaceName;
+		int protoNumber;
+		int hatype = 0;
+		int pkttype = 0;
+		
+		if (!PyArg_ParseTuple(args, "si|ii", &interfaceName, 
+				      &protoNumber, &pkttype, &hatype))
+			return 0;
+		strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
+		ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
+		if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr))
+			return 0;
+		addr = &(s->sock_addr.ll);
+		addr->sll_family = AF_PACKET;
+		addr->sll_protocol = htons((short)protoNumber);
+		addr->sll_ifindex = ifr.ifr_ifindex;
+		addr->sll_pkttype = pkttype;
+		addr->sll_hatype = hatype;
+		*addr_ret = (struct sockaddr *) addr;
+		*len_ret = sizeof *addr;
+		return 1;
+	}
+#endif              
+              
+              
 	/* More cases here... */
 
 	default:
@@ -655,6 +725,14 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 		return 1;
 	}
 
+#if defined(linux) && defined(AF_PACKET)
+	case AF_PACKET:
+	{
+		*len_ret = sizeof (struct sockaddr_ll);
+		return 1;
+	}
+#endif
+		
 	/* More cases here... */
 
 	default:
@@ -894,7 +972,8 @@ static char bind_doc[] =
 "bind(address)\n\
 \n\
 Bind the socket to a local address.  For IP sockets, the address is a\n\
-pair (host, port); the host must refer to the local host.";
+pair (host, port); the host must refer to the local host. For raw packet\n\
+sockets the address is a tuple (ifname, proto [,pkttype [,hatype]])";
 
 
 /* s.close() method.
@@ -2441,6 +2520,17 @@ init_socket(void)
 #ifdef AF_ROSE
 	insint(d, "AF_ROSE", AF_ROSE); /* Amateur Radio X.25 PLP */
 #endif
+#if defined(linux) && defined(AF_PACKET)
+	insint(d, "AF_PACKET", AF_PACKET);
+	insint(d, "PF_PACKET", PF_PACKET);
+	insint(d, "PACKET_HOST", PACKET_HOST);
+	insint(d, "PACKET_BROADCAST", PACKET_BROADCAST);
+	insint(d, "PACKET_MULTICAST", PACKET_MULTICAST);
+	insint(d, "PACKET_OTHERHOST", PACKET_OTHERHOST);
+	insint(d, "PACKET_OUTGOING", PACKET_OUTGOING);
+	insint(d, "PACKET_LOOPBACK", PACKET_LOOPBACK);
+	insint(d, "PACKET_FASTROUTE", PACKET_FASTROUTE);
+#endif	
 
 	/* Socket types */
 	insint(d, "SOCK_STREAM", SOCK_STREAM);
