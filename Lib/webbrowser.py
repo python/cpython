@@ -306,11 +306,14 @@ if os.environ.has_key("BROWSER"):
     # It's the user's responsibility to register handlers for any unknown
     # browser referenced by this value, before calling open().
     _tryorder = os.environ["BROWSER"].split(":")
-else:
-    # Optimization: filter out alternatives that aren't available, so we can
-    # avoid has_key() tests at runtime.  (This may also allow some unused
-    # classes and class-instance storage to be garbage-collected.)
-    _tryorder = filter(lambda x: _browsers.has_key(x.lower())
-                       or x.find("%s") > -1, _tryorder)
+
+for cmd in _tryorder:
+    if not _browsers.has_key(cmd.lower()):
+        if _iscommand(cmd.lower()):
+            register(cmd.lower(), None, GenericBrowser("%s %%s" % cmd.lower()))
+
+_tryorder = filter(lambda x: _browsers.has_key(x.lower())
+                   or x.find("%s") > -1, _tryorder)
+# what to do if _tryorder is now empty?
 
 # end
