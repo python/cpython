@@ -38,7 +38,7 @@ getname(Py_UCS4 code, char* buffer, int buflen)
 
     /* get offset into phrasebook */
     offset = phrasebook_offset1[(code>>phrasebook_shift)];
-    offset = phrasebook_offset2[(offset<<phrasebook_shift)+
+    offset = phrasebook_offset2[(offset<<phrasebook_shift) +
                                (code&((1<<phrasebook_shift)-1))];
     if (!offset)
         return 0;
@@ -47,13 +47,12 @@ getname(Py_UCS4 code, char* buffer, int buflen)
 
     for (;;) {
         /* get word index */
-        if (phrasebook[offset] & 128) {
-            word = phrasebook[offset] & 127;
-            offset++;
-        } else {
-            word = (phrasebook[offset]<<8) + phrasebook[offset+1];
-            offset+=2;
-        }
+        word = phrasebook[offset] - phrasebook_short;
+        if (word >= 0) {
+            word = (word << 8) + phrasebook[offset+1];
+            offset += 2;
+        } else
+            word = phrasebook[offset++];
         if (i) {
             if (i > buflen)
                 return 0; /* buffer overflow */
