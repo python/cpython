@@ -72,11 +72,11 @@ err_setval(exception, value)
 	object *exception;
 	object *value;
 {
-	XDECREF(last_exception);
+	err_clear();
+
 	XINCREF(exception);
 	last_exception = exception;
 	
-	XDECREF(last_exc_val);
 	XINCREF(value);
 	last_exc_val = value;
 }
