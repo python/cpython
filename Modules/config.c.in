@@ -103,6 +103,9 @@ extern void initpanel();
 #ifdef USE_STDWIN
 extern void initstdwin();
 #endif
+#ifdef USE_SOCKET
+extern void initsocket();
+#endif
 
 struct {
 	char *name;
@@ -142,6 +145,10 @@ struct {
 
 #ifdef USE_STDWIN
 	{"stdwin",	initstdwin},
+#endif
+
+#ifdef USE_SOCKET
+	{"socket",	initsocket},
 #endif
 
 	{0,		0}		/* Sentinel */
