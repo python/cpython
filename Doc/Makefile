@@ -93,7 +93,9 @@ api:	api.ps
 	$(DISTILL) $<
 
 # Dependencies
-tut.dvi lib.dvi ext.dvi api.dvi: myformat.sty fix_hack
+COMMONTEX=myformat.sty copyright.tex boilerplate.tex
+
+tut.dvi lib.dvi ext.dvi api.dvi: fix_hack $(COMMONTEX)
 
 # Tutorial document
 tut.dvi: tut.tex 
