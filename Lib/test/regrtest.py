@@ -520,6 +520,7 @@ _expectations = {
         test_cl
         test_curses
         test_dl
+        test_email_codecs
         test_gl
         test_imgfile
         test_largefile
