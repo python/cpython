@@ -98,7 +98,7 @@ class HTTPServer(SocketServer.TCPServer):
     def server_bind(self):
         """Override server_bind to store the server name."""
         SocketServer.TCPServer.server_bind(self)
-        host, port = self.socket.getsockname()
+        host, port = self.socket.getsockname()[:2]
         self.server_name = socket.getfqdn(host)
         self.server_port = port
 
@@ -475,7 +475,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 
         """
 
-        host, port = self.client_address
+        host, port = self.client_address[:2]
         return socket.getfqdn(host)
 
     # Essentially static class variables
