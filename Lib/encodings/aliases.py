@@ -3,9 +3,9 @@
     This module is used by the encodings package search function to
     map encodings names to module names.
 
-    Note that the search function converts the encoding names to lower
-    case and replaces hyphens with underscores *before* performing the
-    lookup.
+    Note that the search function normalizes the encoding names before
+    doing the lookup, so the mapping will have to map normalized
+    encoding names to module names.
 
     Contents:
 
