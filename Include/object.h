@@ -150,6 +150,7 @@ typedef struct {
 	unaryfunc nb_float;
 	unaryfunc nb_oct;
 	unaryfunc nb_hex;
+	/* Added in release 2.0 */
 	binaryfunc nb_inplace_add;
 	binaryfunc nb_inplace_subtract;
 	binaryfunc nb_inplace_multiply;
@@ -162,6 +163,7 @@ typedef struct {
 	binaryfunc nb_inplace_xor;
 	binaryfunc nb_inplace_or;
 
+	/* Added in release 2.2 */
 	/* The following require the Py_TPFLAGS_HAVE_CLASS flag */
 	binaryfunc nb_floor_divide;
 	binaryfunc nb_true_divide;
@@ -178,6 +180,7 @@ typedef struct {
 	intobjargproc sq_ass_item;
 	intintobjargproc sq_ass_slice;
 	objobjproc sq_contains;
+	/* Added in release 2.0 */
 	binaryfunc sq_inplace_concat;
 	intargfunc sq_inplace_repeat;
 } PySequenceMethods;
@@ -250,18 +253,21 @@ typedef struct _typeobject {
 
 	char *tp_doc; /* Documentation string */
 
+	/* Assigned meaning in release 2.0 */
 	/* call function for all accessible objects */
 	traverseproc tp_traverse;
 	
 	/* delete references to contained objects */
 	inquiry tp_clear;
 
+	/* Assigned meaning in release 2.1 */
 	/* rich comparisons */
 	richcmpfunc tp_richcompare;
 
 	/* weak reference enabler */
 	long tp_weaklistoffset;
 
+	/* Added in release 2.2 */
 	/* Iterators */
 	getiterfunc tp_iter;
 	iternextfunc tp_iternext;
