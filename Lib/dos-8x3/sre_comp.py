@@ -39,7 +39,7 @@ def _compile(code, pattern, flags):
                     return _sre.getlower(literal, flags)
             else:
                 emit(OPCODES[op])
-		fixup = lambda x: x
+                fixup = lambda x: x
             skip = len(code); emit(0)
             for op, av in av:
                 emit(OPCODES[op])
@@ -118,7 +118,7 @@ def _compile(code, pattern, flags):
         elif op is AT:
             emit(OPCODES[op])
             if flags & SRE_FLAG_MULTILINE:
-                emit(ATCODES[AT_MULTILINE[av]])
+                emit(ATCODES[AT_MULTILINE.get(av, av)])
             else:
                 emit(ATCODES[av])
         elif op is BRANCH:
@@ -203,7 +203,7 @@ def compile(p, flags=0):
     if type(p) in (type(""), type(u"")):
         import sre_parse
         pattern = p
-        p = sre_parse.parse(p)
+        p = sre_parse.parse(p, flags)
     else:
         pattern = None
 
