@@ -434,6 +434,15 @@ typedef	struct fd_set {
 #endif
 #endif
 
+/*
+ * Rename some functions for the Borland compiler
+ */
+#ifdef __BORLANDC__
+#  include <io.h>
+#  define _chsize chsize
+#  define _setmode setmode
+#endif
+
 #ifdef __cplusplus
 }
 #endif
