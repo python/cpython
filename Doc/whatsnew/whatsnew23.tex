@@ -22,10 +22,6 @@
 %
 % Optik (or whatever it gets called)
 %
-% getopt.gnu_getopt
-%
-% Docstrings now optional (with --without-doc-strings)
-%
 % New dependency argument to distutils.Extension
 %
 
@@ -233,7 +229,7 @@ and implemented by Jack Jansen.}
 
 
 %======================================================================
-\section{PEP 279: The \function{enumerate()} Built-in Function}
+\section{PEP 279: The \function{enumerate()} Built-in Function\label{section-enumerate}}
 
 A new built-in function, \function{enumerate()}, will make
 certain loops a bit clearer.  \code{enumerate(thing)}, where
@@ -340,15 +336,21 @@ strings \samp{True} and \samp{False} instead of \samp{1} and \samp{0}.
 
 \end{seealso}
 
-\section{Extended Slices\label{extended-slices}}
 
-Ever since Python 1.4 the slice syntax has supported a third
-``stride'' argument, but the built-in sequence types have not
-supported this feature (it was initially included at the behest of the
-developers of the Numerical Python package).  Starting with Python
-2.3, the built-in sequence types do support the stride.
+\section{Extended Slices\label{section-slices}}
 
-For example, to extract the elements of a list with even indexes:
+Ever since Python 1.4, the slicing syntax has supported an optional
+third ``step'' or ``stride'' argument.  For example, these are all
+legal Python syntax: \code{L[1:10:2]}, \code{L[:-1:1]},
+\code{L[::-1]}.  This was added to Python included at the request of
+the developers of Numerical Python.  However, the built-in sequence
+types of lists, tuples, and strings have never supported this feature,
+and you got a \exception{TypeError} if you tried it.  Michael Hudson
+contributed a patch that was applied to Python 2.3 and fixed this 
+shortcoming.
+
+For example, you can now easily extract the elements of a list that
+have even indexes:
 
 \begin{verbatim}
 >>> L = range(10)
@@ -356,38 +358,137 @@ For example, to extract the elements of a list with even indexes:
 [0, 2, 4, 6, 8]
 \end{verbatim}
 
-To make a copy of the same list in reverse order:
+Negative values also work, so you can make a copy of the same list in
+reverse order:
 
 \begin{verbatim}
 >>> L[::-1]
 [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
 \end{verbatim}
 
+This also works for strings:
+
+\begin{verbatim}
+>>> s='abcd'
+>>> s[::2]
+'ac'
+>>> s[::-1]
+'dcba'
+\end{verbatim}
+
+
+
 %======================================================================
 \section{Other Language Changes}
 
-%Here are the changes that Python 2.3 makes to the core language.
+Here are all of the changes that Python 2.3 makes to the core Python
+language.
 
-%\begin{itemize}
-%\item The \keyword{yield} statement is now always a keyword, as
-%described in section~\ref{section-generators}.
+\begin{itemize}
+\item The \keyword{yield} statement is now always a keyword, as
+described in section~\ref{section-generators} of this document.
 
-%\item Two new constants, \constant{True} and \constant{False} were
-%added along with the built-in \class{bool} type, as described in
-%section~\ref{section-bool}.
+\item A new built-in function \function{enumerate()} 
+was added, as described in section~\ref{section-enumerate} of this
+document.
 
-%\item 
-%\end{itemize}
+\item Two new constants, \constant{True} and \constant{False} were
+added along with the built-in \class{bool} type, as described in
+section~\ref{section-bool} of this document.
 
+\item Built-in types now support the extended slicing syntax, 
+as described in section~\ref{section-slices} of this document.
 
-%\begin{PendingDeprecationWarning}
+\item Dictionaries have a new method, \method{pop(\var{key})}, that
+returns the value corresponding to \var{key} and removes that
+key/value pair from the dictionary.  \method{pop()} will raise a
+\exception{KeyError} if the requested key isn't present in the
+dictionary:
+
+\begin{verbatim}
+>>> d = {1:2}
+>>> d
+{1: 2}
+>>> d.pop(4)
+Traceback (most recent call last):
+  File ``stdin'', line 1, in ?
+KeyError: 4
+>>> d.pop(1)
+2
+>>> d.pop(1)
+Traceback (most recent call last):
+  File ``stdin'', line 1, in ?
+KeyError: pop(): dictionary is empty
+>>> d
+{}
+>>>
+\end{verbatim}
+
+(Patch contributed by Raymond Hettinger.)
+
+\item The \method{strip()}, \method{lstrip()}, and \method{rstrip()}
+string methods now have an optional argument for specifying the
+characters to strip.  The default is still to remove all whitespace
+characters:
+
+\begin{verbatim}
+>>> '   abc '.strip()
+'abc'
+>>> '><><abc<><><>'.strip('<>')
+'abc'
+>>> '><><abc<><><>\n'.strip('<>')
+'abc<><><>\n'
+>>> u'\u4000\u4001abc\u4000'.strip(u'\u4000')
+u'\u4001abc'
+>>>
+\end{verbatim}
+
+\item The \method{startswith()} and \method{endswith()}
+string methods now accept negative numbers for the start and end
+parameters.
+
+\item Another new string method is \method{zfill()}, originally a
+function in the \module{string} module.  \method{zfill()} pads a
+numeric string with zeros on the left until it's the specified width.
+Note that the \code{\%} operator is still more flexible and powerful
+than \method{zfill()}.
+
+\begin{verbatim}
+>>> '45'.zfill(4)
+'0045'
+>>> '12345'.zfill(4)
+'12345'
+>>> 'goofy'.zfill(6)
+'0goofy'
+\end{verbatim}
+
+\item 
 A new warning, \exception{PendingDeprecationWarning} was added to
 provide direction on features which are in the process of being
-deprecated.  The warning will not be printed by default.  To see the
-pending deprecations, use
-\programopt{-Walways::PendingDeprecationWarning::} on the command line
-or use \function{warnings.filterwarnings()}.
-%\end{PendingDeprecationWarning}
+deprecated.  The warning will \emph{not} be printed by default.  To
+check for use of features that will be deprecated in the future,
+supply \programopt{-Walways::PendingDeprecationWarning::} on the
+command line or use \function{warnings.filterwarnings()}.
+
+\item One minor but far-reaching change is that the names of extension
+types defined by the modules included with Python now contain the
+module and a \samp{.} in front of the type name.  For example, in
+Python 2.2, if you created a socket and printed its
+\member{__class__}, you'd get this output:
+
+\begin{verbatim}
+>>> s = socket.socket()
+>>> s.__class__
+<type 'socket'>
+\end{verbatim}
+
+In 2.3, you get this:
+\begin{verbatim}
+>>> s.__class__
+<type '_socket.socket'>
+\end{verbatim}
+
+\end{itemize}
 
 
 %======================================================================
@@ -457,9 +558,9 @@ support, turn on the Python interpreter's debugging code by running
 To aid extension writers, a header file \file{Misc/pymemcompat.h} is
 distributed with the source to Python 2.3 that allows Python
 extensions to use the 2.3 interfaces to memory allocation and compile
-against any version of Python since 1.5.2.  (The idea is that you take
-the file from Python's source distribution and bundle it with the
-source of your extension).
+against any version of Python since 1.5.2.  You would copy the file
+from Python's source distribution and bundle it with the source of
+your extension.
 
 \begin{seealso}
 
@@ -470,6 +571,7 @@ Python source code.  The above link points to the file within the
 SourceForge CVS browser.}
 
 \end{seealso}
+
 
 %======================================================================
 \section{New and Improved Modules}
@@ -515,87 +617,6 @@ documentation for details.
 % XXX add a link to the module docs?
 (Contributed by Greg Ward.)
 
-\item One minor but far-reaching change is that the names of extension
-types defined by the modules included with Python now contain the
-module and a \samp{.} in front of the type name.  For example, in
-Python 2.2, if you created a socket and printed its
-\member{__class__}, you'd get this output:
-
-\begin{verbatim}
->>> s = socket.socket()
->>> s.__class__
-<type 'socket'>
-\end{verbatim}
-
-In 2.3, you get this:
-\begin{verbatim}
->>> s.__class__
-<type '_socket.socket'>
-\end{verbatim}
-
-\item The \method{strip()}, \method{lstrip()}, and \method{rstrip()}
-string methods now have an optional argument for specifying the
-characters to strip.  The default is still to remove all whitespace
-characters:
-
-\begin{verbatim}
->>> '   abc '.strip()
-'abc'
->>> '><><abc<><><>'.strip('<>')
-'abc'
->>> '><><abc<><><>\n'.strip('<>')
-'abc<><><>\n'
->>> u'\u4000\u4001abc\u4000'.strip(u'\u4000')
-u'\u4001abc'
->>>
-\end{verbatim}
-
-\item The \method{startswith()} and \method{endswith()}
-string methods now have accept negative numbers for
-start and end parameters.
-
-\item Another new string method is \method{zfill()}, originally a
-function in the \module{string} module.  \method{zfill()} pads a
-numeric string with zeros on the left until it's the specified width.
-Note that the \code{\%} operator is still more flexible and powerful
-than \method{zfill()}.
-
-\begin{verbatim}
->>> '45'.zfill(4)
-'0045'
->>> '12345'.zfill(4)
-'12345'
->>> 'goofy'.zfill(6)
-'0goofy'
-\end{verbatim}
-
-\item Dictionaries have a new method, \method{pop(\var{key})}, that
-returns the value corresponding to \var{key} and removes that
-key/value pair from the dictionary.  \method{pop()} will raise a
-\exception{KeyError} if the requsted key isn't present in the
-dictionary:
-
-\begin{verbatim}
->>> d = {1:2}
->>> d
-{1: 2}
->>> d.pop(4)
-Traceback (most recent call last):
-  File ``stdin'', line 1, in ?
-KeyError: 4
->>> d.pop(1)
-2
->>> d.pop(1)
-Traceback (most recent call last):
-  File ``stdin'', line 1, in ?
-KeyError: pop(): dictionary is empty
->>> d
-{}
->>>
-\end{verbatim}
-
-(Contributed by Raymond Hettinger.)
-
 \item Two new functions in the \module{math} module, 
 \function{degrees(\var{rads})} and \function{radians(\var{degs})},
 convert between radians and degrees.  Other functions in the 
@@ -605,7 +626,25 @@ input values measured in radians. (Contributed by Raymond Hettinger.)
 
 \item Three new functions, \function{getpgid()}, \function{killpg()},
 and \function{mknod()}, were added to the \module{posix} module that
-underlies the \module{os} module.
+underlies the \module{os} module.  (Contributed by Gustavo Niemeyer
+and Geert Jansen.)
+
+\item The \module{getopt} module gained a new function,
+\function{gnu_getopt()}, that supports the same arguments as the existing
+\function{getopt()} function but uses GNU-style scanning mode. 
+The existing \function{getopt()} stops processing options as soon as a
+non-option argument is encountered, but in GNU-style mode processing
+continues, meaning that options and arguments can be mixed.  For
+example:
+
+\begin{verbatim}
+>>> getopt.getopt(['-f', 'filename', 'output', '-v'], 'f:v')
+([('-f', 'filename')], ['output', '-v'])
+>>> getopt.gnu_getopt(['-f', 'filename', 'output', '-v'], 'f:v')
+([('-f', 'filename'), ('-v', '')], ['output'])
+\end{verbatim}
+
+(Contributed by Peter \AA{strand}.)
 
 \item Two new binary packagers were added to the Distutils.
 \code{bdist_pkgtool} builds \file{.pkg} files to use with Solaris
@@ -651,6 +690,13 @@ Changes to Python's build process, and to the C API, include:
 (\file{libpython2.3.so}) by supplying \longprogramopt{enable-shared}
 when running Python's \file{configure} script.  (Contributed by Ondrej
 Palkovsky.)
+
+\item The interpreter can be compiled without any docstrings for 
+the built-in functions and modules by supplying
+\longprogramopt{--without-doc-strings} to the \file{configure} script.
+This makes the Python executable about 10\% smaller, but will also
+mean that you can't get help for Python's built-ins.  (Contributed by
+Gustavo Niemeyer.)
 
 \item The \cfunction{PyArg_NoArgs()} macro is now deprecated, and code
 that uses it should be changed.  For Python 2.2 and later, the method
