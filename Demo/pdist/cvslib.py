@@ -19,6 +19,7 @@ class File:
 	         (this implies that the entry must be written back)
 	sseen -- true if the data from the CVS/Sums file is up to date
 	rseen -- true if the data for the remote file is up to date
+	proxy -- RCSProxy instance used to contact the server, or None
 
 	Note that lseen and rseen don't necessary mean that a local
 	or remote file *exists* -- they indicate that we've checked it.
@@ -41,7 +42,6 @@ class File:
 
 	If rseen is true:
 
-	proxy -- RCSProxy instance used to contact the server
 	rrev -- revision of head, None if non-existent
 	rsum -- checksum of that revision, Non if non-existent
 
@@ -57,16 +57,18 @@ class File:
 			raise ValueError, "no slash allowed in file"
 		self.file = file
 		self.lseen = self.eseen = self.rseen = 0
+		self.proxy = None
+
+	def __cmp__(self, other):
+		return cmp(self.file, other.file)
 
 	def getlocal(self):
 		try:
 			self.lmtime, self.lctime = os.stat(self.file)[-2:]
 		except os.error:
-			self.lmtime = self.lctime = None
-		if self.lmtime:
-			self.lsum = md5.new(open(self.file).read()).digest()
+			self.lmtime = self.lctime = self.lsum = None
 		else:
-			self.lsum = None
+			self.lsum = md5.md5(open(self.file).read()).digest()
 		self.lseen = 1
 
 	def getentry(self, line):
@@ -93,8 +95,9 @@ class File:
 			self.getesum()
 		self.eseen = 1
 
-	def getremote(self, proxy):
-		self.proxy = proxy
+	def getremote(self, proxy = None):
+		if proxy:
+			self.proxy = proxy
 		try:
 			self.rrev = self.proxy.head(self.file)
 		except (os.error, IOError):
