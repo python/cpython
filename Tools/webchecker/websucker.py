@@ -10,7 +10,9 @@ import string
 import urllib
 import getopt
 
-import webchecker
+import wcnew
+
+webchecker = wcnew
 
 # Extract real version number if necessary
 if __version__[0] == '$':
@@ -45,14 +47,20 @@ def main():
 class Sucker(webchecker.Checker):
 
     checkext = 0
+    nonames = 1
 
-    def readhtml(self, url):
+    # SAM 11/13/99: in general, URLs are now URL pairs.
+    # Since we've suppressed name anchor checking,
+    # we can ignore the second dimension.
+
+    def readhtml(self, url_pair):
+        url = url_pair[0]
         text = None
         path = self.savefilename(url)
         try:
             f = open(path, "rb")
         except IOError:
-            f = self.openpage(url)
+            f = self.openpage(url_pair)
             if f:
                 info = f.info()
                 nurl = f.geturl()
@@ -89,7 +97,7 @@ class Sucker(webchecker.Checker):
         host, port = urllib.splitnport(host)
         host = string.lower(host)
         if not path or path[-1] == "/":
-        	path = path + "index.html"
+                path = path + "index.html"
         if os.sep != "/":
             path = string.join(string.split(path, "/"), os.sep)
         path = os.path.join(host, path)
