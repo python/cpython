@@ -12,6 +12,7 @@ typedef struct _longobject PyLongObject; /* Revealed in longintrepr.h */
 extern DL_IMPORT(PyTypeObject) PyLong_Type;
 
 #define PyLong_Check(op) PyObject_TypeCheck(op, &PyLong_Type)
+#define PyLong_CheckExact(op) ((op)->ob_type == &PyLong_Type)
 
 extern DL_IMPORT(PyObject *) PyLong_FromLong(long);
 extern DL_IMPORT(PyObject *) PyLong_FromUnsignedLong(unsigned long);
