@@ -70,7 +70,7 @@ initmodule(name, methods)
 }
 
 
-/* Helper for getargs() and mkvalue() to scan the length of a format */
+/* Helper for mkvalue() to scan the length of a format */
 
 static int countformat PROTO((char *format, int endchar));
 static int countformat(format, endchar)
@@ -292,24 +292,34 @@ int getargs(va_alist) va_dcl
 	arg = va_arg(va, object *);
 	format = va_arg(va, char *);
 #endif
-	if (*format == '\0') {
+	if (*format == '\0' || *format == ';') {
 		va_end(va);
 		if (arg != NULL) {
-			err_setstr(TypeError, "no arguments needed");
+			char *str = "no arguments needed";
+			if (*format == ';')
+				str = format+1;
+			err_setstr(TypeError, str);
 			return 0;
 		}
 		return 1;
 	}
 	
 	f = format;
-	ok = do_arg(arg, &f, &va) && *f == '\0';
+	ok = do_arg(arg, &f, &va) && (*f == '\0' || *f == ';');
 	va_end(va);
 	if (!ok) {
-		char buf[256];
 		if (!err_occurred()) {
-			sprintf(buf, "bad argument list (format '%s')",
-				format);
-			err_setstr(TypeError, buf);
+			char buf[256];
+			char *str;
+			f = strchr(format, ';');
+			if (f != NULL)
+				str = f+1;
+			else {
+				sprintf(buf, "bad argument list (format '%s')",
+					format);
+				str = buf;
+			}
+			err_setstr(TypeError, str);
 		}
 	}
 	return ok;
