@@ -7,19 +7,15 @@ TO DO:
     - help on how to use it (a simple help button will do wonders)
     - performance?  (updates of large sets of locals are slow)
     - better integration of "debug module"
+    - debugger should be global resource (attached to flist, not to shell)
+    - fix the stupid bug where you need to step twice
 - insert the initial current directory into sys.path
 - default directory attribute for each window instead of only for windows
   that have an associated filename
-- "GO" commands (execute whole buffer, selection, current line
-  in the context of the Python Shell window)
-  Rename Run -> Import, Go -> Run (like Pythonwin)
-- module __name__ should be '__main__' in console
-- when reopening the shell window, the old __main__ module's contents
-  should still be there
-- output from module execution should go to Python Shell
 - command expansion from keywords, module contents, other buffers, etc.
 - "Recent documents" menu item
 - Filter region command
+- Optional horizontal scroll bar
 - more emacsisms:
     - parentheses matching
     - M-[, M-] to move by paragraphs
@@ -30,24 +26,12 @@ TO DO:
 - make backups when saving
 - check file mtimes at various points
 - interface with RCS/CVS/Perforce ???
-- status bar?
+- status bar???
 - better help?
 - don't open second class browser on same module (nor second path browser)
 - unify class and path browsers
 - use a tree widget instead of a smalltalk/NeXT style multicolumn browser
-- Make command line behave more like the standard Python interpreter:
-    idle.py -- starts interactive shell
-    idle.py script.py arg ... -- runs script as main
-    idle.py -i script.py arg ... -- runs script as main, then interactive shell
-    idle.py -e file ... -- edit files
-    idle.py -i -e file ... -- edit files and pop up interactive shell
-    idle.py -c cmd arg ... -- run command
-    idle.py -i -c cmd arg ... -- run command, then interactive shell
-- In addition:
-    idle.py -t title -- specify alternate title for shell window    
-- And perhaps:
-    if $PYTHONSTARTUP is defined, use it (perhaps make it another option?)
-- Need to define a standard way whereby one can determine one is running
+ Need to define a standard way whereby one can determine one is running
   inside IDLE (needed for Tk mainloop, also handy for $PYTHONSTARTUP)
 - Add utility methods for use by extensions (e.g. to get selection)
 
@@ -108,7 +92,6 @@ Comparison to PTUI
   open multiple
   append
   examine
-  go
 
 ? PTUI's fontify is faster but synchronous (and still too slow);
   does a lousy job if editing affects lines below
