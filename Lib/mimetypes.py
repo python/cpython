@@ -20,17 +20,6 @@ Functions:
 
 init([files]) -- parse a list of files, default knownfiles
 read_mime_types(file) -- parse one file, return a dictionary or None
-
-When run as a script, the following command line options are recognized:
-
-Usage: mimetypes.py [options] type
-Options:
-    --help / -h       -- print this message and exit
-    --lenient / -l    -- additionally search of some common, but non-standard
-                         types.
-    --extension / -e  -- guess extension instead of type
-
-More than one type argument may be given.
 """
 
 import os
@@ -399,15 +388,26 @@ common_types = {
     }
 
 
-def usage(code, msg=''):
-    print __doc__
-    if msg: print msg
-    sys.exit(code)
-
-
 if __name__ == '__main__':
     import sys
     import getopt
+
+    USAGE = """\
+Usage: mimetypes.py [options] type
+
+Options:
+    --help / -h       -- print this message and exit
+    --lenient / -l    -- additionally search of some common, but non-standard
+                         types.
+    --extension / -e  -- guess extension instead of type
+
+More than one type argument may be given.
+"""
+
+    def usage(code, msg=''):
+        print USAGE
+        if msg: print msg
+        sys.exit(code)
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hle',
