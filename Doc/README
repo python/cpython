@@ -130,6 +130,8 @@ To create HTML files:
 	  are not supported by popular Web browsers.  This also screws 
 	  up code fragments.  ;-(  Releases are available at:
 	  <http://cdc-server.cdc.informatik.tu-darmstadt.de/~latex2html/>.
+	  Really new versions also don't work, but I'm not sure when
+	  things broke.
 
 
 What if Times fonts are not available?
