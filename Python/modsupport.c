@@ -33,7 +33,7 @@ PyObject *
 Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 	       PyObject *passthrough, int module_api_version)
 {
-	PyObject *m, *d, *v;
+	PyObject *m, *d, *v, *n;
 	PyMethodDef *ml;
 	if (!Py_IsInitialized())
 	    Py_FatalError("Interpreter not initialized (version mismatch?)");
@@ -46,6 +46,15 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 		if (PyErr_Warn(PyExc_RuntimeWarning, message)) 
 			return NULL;
 	}
+	/* Make sure name is fully qualified.
+
+	   This is a bit of a hack: when the shared library is loaded,
+	   the module name is "package.module", but the module calls
+	   Py_InitModule*() with just "module" for the name.  The shared
+	   library loader squirrels away the true name of the module in
+	   _Py_PackageContext, and Py_InitModule*() will substitute this
+	   (if the name actually matches).
+	*/
 	if (_Py_PackageContext != NULL) {
 		char *p = strrchr(_Py_PackageContext, '.');
 		if (p != NULL && strcmp(name, p+1) == 0) {
@@ -57,6 +66,9 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 		return NULL;
 	d = PyModule_GetDict(m);
 	if (methods != NULL) {
+		n = PyString_FromString(name);
+		if (n == NULL)
+			return NULL;
 		for (ml = methods; ml->ml_name != NULL; ml++) {
 			if ((ml->ml_flags & METH_CLASS) ||
 			    (ml->ml_flags & METH_STATIC)) {
@@ -65,7 +77,7 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 						" METH_CLASS or METH_STATIC");
 				return NULL;
 			}
-			v = PyCFunction_New(ml, passthrough);
+			v = PyCFunction_NewEx(ml, passthrough, n);
 			if (v == NULL)
 				return NULL;
 			if (PyDict_SetItemString(d, ml->ml_name, v) != 0) {

@@ -2,11 +2,12 @@
 /* Method object implementation */
 
 #include "Python.h"
+#include "structmember.h"
 
 static PyCFunctionObject *free_list = NULL;
 
 PyObject *
-PyCFunction_New(PyMethodDef *ml, PyObject *self)
+PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
 {
 	PyCFunctionObject *op;
 	op = free_list;
@@ -22,6 +23,8 @@ PyCFunction_New(PyMethodDef *ml, PyObject *self)
 	op->m_ml = ml;
 	Py_XINCREF(self);
 	op->m_self = self;
+	Py_XINCREF(module);
+	op->m_module = module;
 	_PyObject_GC_TRACK(op);
 	return (PyObject *)op;
 }
@@ -121,6 +124,7 @@ meth_dealloc(PyCFunctionObject *m)
 {
 	_PyObject_GC_UNTRACK(m);
 	Py_XDECREF(m->m_self);
+	Py_XDECREF(m->m_module);
 	m->m_self = (PyObject *)free_list;
 	free_list = m;
 }
@@ -145,10 +149,18 @@ meth_get__name__(PyCFunctionObject *m, void *closure)
 static int
 meth_traverse(PyCFunctionObject *m, visitproc visit, void *arg)
 {
-	if (m->m_self != NULL)
-		return visit(m->m_self, arg);
-	else
-		return 0;
+	int err;
+	if (m->m_self != NULL) {
+		err = visit(m->m_self, arg);
+		if (err)
+			return err;
+	}
+	if (m->m_module != NULL) {
+		err = visit(m->m_module, arg);
+		if (err)
+			return err;
+	}
+	return 0;
 }
 
 static PyObject *
@@ -172,6 +184,13 @@ static PyGetSetDef meth_getsets [] = {
 	{"__name__", (getter)meth_get__name__, NULL, NULL},
 	{"__self__", (getter)meth_get__self__, NULL, NULL},
 	{0}
+};
+
+#define OFF(x) offsetof(PyCFunctionObject, x)
+
+static PyMemberDef meth_members[] = {
+	{"__module__",    T_OBJECT,     OFF(m_module),       READONLY},
+	{NULL}
 };
 
 static PyObject *
@@ -250,7 +269,7 @@ PyTypeObject PyCFunction_Type = {
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
-	0,					/* tp_members */
+	meth_members,				/* tp_members */
 	meth_getsets,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
@@ -308,6 +327,7 @@ Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, char *name)
 		for (; ml->ml_name != NULL; ml++) {
 			if (name[0] == ml->ml_name[0] &&
 			    strcmp(name+1, ml->ml_name+1) == 0)
+				/* XXX */
 				return PyCFunction_New(ml, self);
 		}
 		chain = chain->link;
@@ -337,4 +357,18 @@ PyCFunction_Fini(void)
 		free_list = (PyCFunctionObject *)(v->m_self);
 		PyObject_GC_Del(v);
 	}
+}
+
+/* PyCFunction_New() is now just a macro that calls PyCFunction_NewEx(),
+   but it's part of the API so we need to keep a function around that
+   existing C extensions can call.
+*/
+   
+#undef PyCFunction_New
+PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
+
+PyObject *
+PyCFunction_New(PyMethodDef *ml, PyObject *self)
+{
+	return PyCFunction_NewEx(ml, self, NULL);
 }

@@ -14,6 +14,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 	if (op != NULL) {
 		PyObject *doc;
 		PyObject *consts;
+		PyObject *module;
 		op->func_weakreflist = NULL;
 		Py_INCREF(code);
 		op->func_code = code;
@@ -34,6 +35,16 @@ PyFunction_New(PyObject *code, PyObject *globals)
 		Py_INCREF(doc);
 		op->func_doc = doc;
 		op->func_dict = NULL;
+		op->func_module = NULL;
+
+		/* __module__: If module name is in globals, use it.
+		   Otherwise, use None.
+		*/
+		module = PyDict_GetItemString(globals, "__name__");
+		if (module) {
+		    Py_INCREF(module);
+		    op->func_module = module;
+		}
 	}
 	else
 		return NULL;
@@ -59,6 +70,16 @@ PyFunction_GetGlobals(PyObject *op)
 		return NULL;
 	}
 	return ((PyFunctionObject *) op) -> func_globals;
+}
+
+PyObject *
+PyFunction_GetModule(PyObject *op)
+{
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	return ((PyFunctionObject *) op) -> func_module;
 }
 
 PyObject *
@@ -138,6 +159,7 @@ static PyMemberDef func_memberlist[] = {
 	 RESTRICTED|READONLY},
         {"func_name",     T_OBJECT,     OFF(func_name),         READONLY},
         {"__name__",      T_OBJECT,     OFF(func_name),         READONLY},
+	{"__module__",    T_OBJECT,     OFF(func_module),       READONLY},
         {NULL}  /* Sentinel */
 };
 
@@ -373,6 +395,7 @@ func_dealloc(PyFunctionObject *op)
 		PyObject_ClearWeakRefs((PyObject *) op);
 	Py_DECREF(op->func_code);
 	Py_DECREF(op->func_globals);
+	Py_XDECREF(op->func_module);
 	Py_DECREF(op->func_name);
 	Py_XDECREF(op->func_defaults);
 	Py_XDECREF(op->func_doc);
@@ -402,6 +425,11 @@ func_traverse(PyFunctionObject *f, visitproc visit, void *arg)
 	}
 	if (f->func_globals) {
 		err = visit(f->func_globals, arg);
+		if (err)
+			return err;
+	}
+	if (f->func_module) {
+		err = visit(f->func_module, arg);
 		if (err)
 			return err;
 	}

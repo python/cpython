@@ -40,7 +40,9 @@ typedef struct PyMethodDef PyMethodDef;
 
 PyAPI_FUNC(PyObject *) Py_FindMethod(PyMethodDef[], PyObject *, char *);
 
-PyAPI_FUNC(PyObject *) PyCFunction_New(PyMethodDef *, PyObject *);
+#define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
+PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *, 
+					 PyObject *);
 
 /* Flag passed to newmethodobject */
 #define METH_OLDARGS  0x0000
@@ -68,6 +70,7 @@ typedef struct {
     PyObject_HEAD
     PyMethodDef *m_ml;
     PyObject    *m_self;
+    PyObject    *m_module;
 } PyCFunctionObject;
 
 #ifdef __cplusplus

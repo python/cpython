@@ -787,9 +787,8 @@ class Pickler:
         if name is None:
             name = obj.__name__
 
-        try:
-            module = obj.__module__
-        except AttributeError:
+        module = getattr(obj, "__module__", None)
+        if module is None:
             module = whichmodule(obj, name)
 
         try:
@@ -876,6 +875,10 @@ def whichmodule(func, funcname):
     Return a module name.
     If the function cannot be found, return "__main__".
     """
+    # Python functions should always get an __module__ from their globals.
+    mod = getattr(func, "__module__", None)
+    if mod is not None:
+        return mod
     if func in classmap:
         return classmap[func]
 
