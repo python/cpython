@@ -451,6 +451,23 @@ def _parse(source, state):
                         if gid is None:
                             raise error, "unknown group name"
                         subpattern.append((GROUP, gid))
+                    elif source.match("#"):
+                        index = ""
+                        while 1:
+                            char = source.get()
+                            if char is None:
+                                raise error, "unterminated index"
+                            if char == ")":
+                                break
+                            index = index + char
+                        try:
+                            index = int(index)
+                            if index < 0 or index > MAXREPEAT:
+                                raise ValueError
+                        except ValueError:
+                            raise error, "illegal index"
+                        subpattern.append((INDEX, index))
+                        continue
                     else:
                         char = source.get()
                         if char is None:

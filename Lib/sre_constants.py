@@ -33,6 +33,7 @@ GROUP = "group"
 GROUP_IGNORE = "group_ignore"
 IN = "in"
 IN_IGNORE = "in_ignore"
+INDEX = "index"
 INFO = "info"
 JUMP = "jump"
 LITERAL = "literal"
@@ -90,6 +91,7 @@ OPCODES = [
     CATEGORY,
     CHARSET,
     GROUP, GROUP_IGNORE,
+    INDEX,
     IN, IN_IGNORE,
     INFO,
     JUMP,

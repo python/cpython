@@ -21,6 +21,7 @@
  * 00-06-29 fl	fixed split, added more scanner features (0.9.2)
  * 00-06-30 fl	added fast search optimization (0.9.3)
  * 00-06-30 fl	added assert (lookahead) primitives, etc (0.9.4)
+ * 00-07-02 fl	added charset optimizations, etc (0.9.5)
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -31,7 +32,7 @@
 
 #ifndef SRE_RECURSIVE
 
-char copyright[] = " SRE 0.9.4 Copyright (c) 1997-2000 by Secret Labs AB ";
+char copyright[] = " SRE 0.9.5 Copyright (c) 1997-2000 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -587,6 +588,14 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 			pattern++;
 			break;
 
+		case SRE_OP_INDEX:
+			/* set index */
+			/* args: <index> */
+			TRACE(("%8d: set index %d\n", PTR(ptr), pattern[0]));
+            state->index = pattern[0];
+			pattern++;
+			break;
+
 		case SRE_OP_JUMP:
 		case SRE_OP_INFO:
 			/* jump forward */
@@ -810,7 +819,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
             /* match maximum number of items, pushing alternate end
                points to the stack */
 
-            while (pattern[2] == 32767 || count < (int) pattern[2]) {
+            while (pattern[2] == 65535 || count < (int) pattern[2]) {
 				state->stackbase = stack;
 				i = SRE_MATCH(state, pattern + 3);
 				state->stackbase = stackbase; /* rewind */
@@ -980,10 +989,12 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         }
 
         if (flags & SRE_INFO_PREFIX) {
+            /* pattern starts with a known prefix */
             prefix_len = pattern[5];
             prefix = pattern + 6;
             overlap = prefix + prefix_len - 1;
         } else if (flags & SRE_INFO_CHARSET)
+            /* pattern starts with a character from a known set */
             charset = pattern + 5;
 
         pattern += 1 + pattern[1];
@@ -1042,7 +1053,6 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 			if (status != 0)
 				break;
 		}
-#if 0
     } else if (charset) {
 		/* pattern starts with a character from a known set */
 		for (;;) {
@@ -1057,7 +1067,6 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 			if (status != 0)
 				break;
         }
-#endif
 	} else
 		/* general case */
 		while (ptr <= end) {
@@ -1204,6 +1213,8 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* args)
 	for (i = 0; i < SRE_MARK_SIZE; i++)
 		state->mark[i] = NULL;
 
+    state->index = -1;
+
 	state->stack = NULL;
 	state->stackbase = 0;
 	state->stacksize = 0;
@@ -1285,6 +1296,8 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state,
 				match->mark[j+3] = ((char*) state->mark[j+1] - base) / n;
 			} else
 				match->mark[j+2] = match->mark[j+3] = -1; /* undefined */
+
+        match->index = state->index;
 
 		return (PyObject*) match;
 
@@ -1886,6 +1899,15 @@ match_getattr(MatchObject* self, char* name)
 
 	if (!strcmp(name, "endpos"))
 		return Py_BuildValue("i", 0); /* FIXME */
+
+	if (!strcmp(name, "index")) {
+        /* experimental */
+        if (self->index < 0) {
+            Py_INCREF(Py_None);
+            return Py_None;
+        } else
+            return Py_BuildValue("i", self->index);
+    }
 
 	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;

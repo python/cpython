@@ -155,3 +155,34 @@ def _pickle(p):
     return _compile, (p.pattern, p.flags)
 
 copy_reg.pickle(type(_compile("")), _pickle, _compile)
+
+# --------------------------------------------------------------------
+# experimental stuff (see python-dev discussions for details)
+
+class Scanner:
+    def __init__(self, lexicon):
+        self.lexicon = lexicon
+        p = []
+        for phrase, action in lexicon:
+            p.append("(?:%s)(?P#%d)" % (phrase, len(p)))
+        self.scanner = sre.compile("|".join(p))
+    def scan(self, string):
+        result = []
+        append = result.append
+        match = self.scanner.match
+        i = 0
+        while 1:
+            m = match(string, i)
+            if not m:
+                break
+            j = m.end()
+            if i == j:
+                break
+            action = self.lexicon[m.index][1]
+            if callable(action):
+                self.match = match
+                action = action(self, m.group())
+            if action is not None:
+                append(action)
+            i = j
+        return result, string[i:]

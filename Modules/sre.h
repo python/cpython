@@ -33,6 +33,7 @@ typedef struct {
     PyObject_HEAD
     PyObject* string; /* link to the target string */
     PatternObject* pattern; /* link to the regex (pattern) object */
+    int index; /* last index marker seen by the engine (-1 if none) */
     int groups; /* number of groups (start/end marks) */
     int mark[2];
 } MatchObject;
@@ -57,6 +58,7 @@ typedef struct {
     /* character size */
     int charsize;
     /* registers */
+    int index;
     int lastmark;
     void* mark[SRE_MARK_SIZE];
     /* backtracking stack */
