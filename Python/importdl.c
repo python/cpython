@@ -36,7 +36,7 @@ extern int verbose; /* Defined in pythonrun.c */
    symbol	-- defined for:
 
    DYNAMIC_LINK -- any kind of dynamic linking
-   USE_RLD	-- NeXT dynamic linking
+   USE_RLD	-- NeXT dynamic linking (currently disabled)
    USE_DL	-- Jack's dl for IRIX 4 or GNU dld with emulation for Jack's dl
    USE_SHLIB	-- SunOS or IRIX 5 (SVR4?) shared libraries
    _AIX		-- AIX style dynamic linking
@@ -46,6 +46,7 @@ extern int verbose; /* Defined in pythonrun.c */
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
    LONG_EXT	-- long extension, e.g. "module.so"
    hpux		-- HP-UX Dynamic Linking - defined by the compiler
+   __NetBSD__	-- NetBSD shared libraries (not quite SVR4 compatible)
 
    (The other WITH_* symbols are used only once, to set the
    appropriate symbols.)
@@ -62,6 +63,13 @@ typedef void (*dl_funcptr)();
 #define LONG_EXT "module.sl"
 #endif 
 
+#ifdef __NetBSD__
+#define DYNAMIC_LINK
+#define USE_SHLIB
+
+#define dlerror() "error in dynamic linking"
+#endif
+
 #ifdef NT
 #define DYNAMIC_LINK
 #include <windows.h>
@@ -71,7 +79,7 @@ typedef FARPROC dl_funcptr;
 #define LONG_EXT "module.pyd"
 #endif
 
-#if defined(NeXT) || defined(WITH_RLD)
+#ifdef WITH_RLD
 #define DYNAMIC_LINK
 #define USE_RLD
 #endif
@@ -106,7 +114,12 @@ static void aix_loaderror(char *name);
 #ifdef DYNAMIC_LINK
 
 #ifdef USE_SHLIB
+#ifdef __NetBSD__
+#include <nlist.h>
+#include <link.h>
+#else
 #include <dlfcn.h>
+#endif
 #ifndef _DL_FUNCPTR_DEFINED
 typedef void (*dl_funcptr)();
 #endif
@@ -136,7 +149,7 @@ typedef void (*dl_funcptr)();
 extern char *getprogramname();
 
 #ifndef FUNCNAME_PATTERN
-#if defined(__hp9000s300)
+#if defined(__hp9000s300) || defined(__NetBSD__)
 #define FUNCNAME_PATTERN "_init%.200s"
 #else
 #define FUNCNAME_PATTERN "init%.200s"
