@@ -23,7 +23,7 @@ import getopt
 import cgi
 
 usage_mode = '''
-Usage: make_chm.py [-c] [-k] [-p] [-v 1.5[.x]] filename
+Usage: pre_chm.py [-c] [-k] [-p] [-v 1.5[.x]] filename
     -c: does not build filename.hhc (Table of Contents)
     -k: does not build filename.hhk (Index)
     -p: does not build filename.hhp (Project File)
@@ -93,8 +93,8 @@ contents_header = '''\
 <!-- Sitemap 1.0 -->
 </HEAD><BODY>
 <OBJECT type="text/site properties">
-	<param name="Window Styles" value="0x801227">
-	<param name="ImageType" value="Folder">
+        <param name="Window Styles" value="0x801227">
+        <param name="ImageType" value="Folder">
 </OBJECT>
 <UL>
 '''
