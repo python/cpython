@@ -1975,12 +1975,9 @@ eval_frame(PyFrameObject *f)
 		       these are presumed to be the most frequent
 		       callable object.
 		    */
-		    if (PyCFunction_Check(func)) {
+		    if (PyCFunction_Check(func) && nk == 0) {
 			    int flags = PyCFunction_GET_FLAGS(func);
-			    if (nk != 0 || (flags & METH_KEYWORDS))
-				    x = do_call(func, &stack_pointer,
-						na, nk);
-			    else if (flags == METH_VARARGS) {
+			    if (flags  & (METH_VARARGS | METH_KEYWORDS)) {
 				    PyObject *callargs;
 				    callargs = load_args(&stack_pointer, na);
 				    x = PyCFunction_Call(func, callargs, NULL);
