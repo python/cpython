@@ -3494,11 +3494,6 @@ PyObject *replace(PyUnicodeObject *self,
 {
     PyUnicodeObject *u;
 
-    if (str1->length == 0) {
-	PyErr_SetString(PyExc_ValueError, "empty pattern string");
-	return NULL;
-    }
-
     if (maxcount < 0)
 	maxcount = INT_MAX;
 
@@ -3549,19 +3544,30 @@ PyObject *replace(PyUnicodeObject *self,
             if (u) {
                 i = 0;
                 p = u->str;
-                while (i <= self->length - str1->length)
-                    if (Py_UNICODE_MATCH(self, i, str1)) {
-                        /* replace string segment */
+                if (str1->length > 0) {
+                    while (i <= self->length - str1->length)
+                        if (Py_UNICODE_MATCH(self, i, str1)) {
+                            /* replace string segment */
+                            Py_UNICODE_COPY(p, str2->str, str2->length);
+                            p += str2->length;
+                            i += str1->length;
+                            if (--n <= 0) {
+                                /* copy remaining part */
+                                Py_UNICODE_COPY(p, self->str+i, self->length-i);
+                                break;
+                            }
+                        } else
+                            *p++ = self->str[i++];
+                } else {
+                    while (n > 0) {
                         Py_UNICODE_COPY(p, str2->str, str2->length);
                         p += str2->length;
-                        i += str1->length;
-                        if (--n <= 0) {
-                            /* copy remaining part */
-                            Py_UNICODE_COPY(p, self->str+i, self->length-i);
+                        if (--n <= 0)
                             break;
-                        }
-                    } else
                         *p++ = self->str[i++];
+                    }
+                    Py_UNICODE_COPY(p, self->str+i, self->length-i);
+                }
             }
         }
     }

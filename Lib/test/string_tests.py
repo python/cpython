@@ -202,6 +202,10 @@ def run_method_tests(test):
     test('replace', 'one!two!three!', 'one@two@three@', '!', '@')
     test('replace', 'one!two!three!', 'one!two!three!', 'x', '@')
     test('replace', 'one!two!three!', 'one!two!three!', 'x', '@', 2)
+    test('replace', 'abc', '-a-b-c-', '', '-')
+    test('replace', 'abc', '-a-b-c', '', '-', 3)
+    test('replace', 'abc', 'abc', '', '-', 0)
+    test('replace', '', '', '', '')
     # Next three for SF bug 422088: [OSF1 alpha] string.replace(); died with
     # MemoryError due to empty result (platform malloc issue when requesting
     # 0 bytes).

@@ -2996,10 +2996,6 @@ def strops():
     except ValueError: pass
     else: raise TestFailed, "''.rindex('5') doesn't raise ValueError"
 
-    try: ''.replace('', '')
-    except ValueError: pass
-    else: raise TestFailed, "''.replace('', '') doesn't raise ValueError"
-
     try: '%(n)s' % None
     except TypeError: pass
     else: raise TestFailed, "'%(n)s' % None doesn't raise TypeError"
