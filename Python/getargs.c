@@ -1090,7 +1090,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 			char *thiskw = kwlist[i];
 			if (thiskw == NULL)
 				break;
-			if (PyMapping_HasKeyString(keywords, thiskw)) {
+			if (PyDict_GetItemString(keywords, thiskw)) {
 				PyErr_Format(PyExc_TypeError,
 					"keyword parameter '%s' was given "
 					"by position and by name",
@@ -1105,9 +1105,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	len = nargs;
 	if (keywords && nargs < min) {
 		for (i = nargs; i < min; i++) {
-		  if (PyMapping_HasKeyString(keywords, kwlist[i])) {
+			if (PyDict_GetItemString(keywords, kwlist[i]))
 				len++;
-		  }
 		}
 	}
 	PyErr_Clear();	
@@ -1168,15 +1167,16 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		PyObject *item;
 		if (*format == '|')
 			format++;
-		item = PyMapping_GetItemString(keywords, kwlist[i]);
+		item = PyDict_GetItemString(keywords, kwlist[i]);
 		if (item != NULL) {
+			Py_INCREF(item);
 			msg = convertitem(item, &format, p_va, levels, msgbuf);
+			Py_DECREF(item);
 			if (msg) {
 				seterror(i+1, msg, levels, fname, message);
 				return 0;
 			}
 			converted++;
-			Py_DECREF(item);
 		}
 		else {
 			PyErr_Clear();
