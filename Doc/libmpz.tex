@@ -1,9 +1,13 @@
 \section{Built-in Module \sectcode{mpz}}
 \bimodindex{mpz}
 
-This module implements the interface to part of the GNU MP library.
-This library contains arbitrary precision integer and rational number
-arithmetic routines. Only the interfaces to the \emph{integer}
+This is an optional module.  It is only available when Python is
+configured to include it, which requires that the GNU MP software is
+installed.
+
+This module implements the interface to part of the GNU MP library,
+which defines arbitrary precision integer and rational number
+arithmetic routines.  Only the interfaces to the \emph{integer}
 (\samp{mpz_{\rm \ldots}}) routines are provided. If not stated
 otherwise, the description in the GNU MP documentation can be applied.
 
