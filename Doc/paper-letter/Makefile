@@ -77,25 +77,25 @@ README:	$(PSFILES)
 
 # Python Library Reference
 lib.dvi: $(TOOLSDIR)/indfix.py $(LIBFILES)
-	$(TOOLSDIR)/newind.py >$*.ind
-	$(TOOLSDIR)/newind.py modindex >mod$*.ind
-	TEXINPUTS=../lib:$(TEXINPUTS) $(LATEX) $*
-	$(MAKEINDEX) mod$*.idx
-	$(TOOLSDIR)/fix_hack $*.idx
-	$(MAKEINDEX) $*.idx
-	$(TOOLSDIR)/indfix.py $*.ind
-	TEXINPUTS=../lib:$(TEXINPUTS) $(LATEX) $*
+	$(TOOLSDIR)/newind.py >lib.ind
+	$(TOOLSDIR)/newind.py modindex >modlib.ind
+	TEXINPUTS=../lib:$(TEXINPUTS) $(LATEX) lib
+	$(MAKEINDEX) modlib.idx
+	$(TOOLSDIR)/fix_hack lib.idx
+	$(MAKEINDEX) lib.idx
+	$(TOOLSDIR)/indfix.py lib.ind
+	TEXINPUTS=../lib:$(TEXINPUTS) $(LATEX) lib
 
 lib.pdf: $(TOOLSDIR)/indfix.py $(LIBFILES)
-	$(TOOLSDIR)/newind.py >$*.ind
-	$(TOOLSDIR)/newind.py modindex >mod$*.ind
-	TEXINPUTS=../lib:$(TEXINPUTS) $(PDFLATEX) $*
-	$(MAKEINDEX) mod$*.idx
-	$(TOOLSDIR)/fix_hack $*.idx
-	$(MAKEINDEX) $*.idx
-	$(TOOLSDIR)/indfix.py $*.ind
-	$(TOOLSDIR)/toc2bkm.py $*
-	TEXINPUTS=../lib:$(TEXINPUTS) $(PDFLATEX) $*
+	$(TOOLSDIR)/newind.py >lib.ind
+	$(TOOLSDIR)/newind.py modindex >modlib.ind
+	TEXINPUTS=../lib:$(TEXINPUTS) $(PDFLATEX) lib
+	$(MAKEINDEX) modlib.idx
+	$(TOOLSDIR)/fix_hack lib.idx
+	$(MAKEINDEX) lib.idx
+	$(TOOLSDIR)/indfix.py lib.ind
+	$(TOOLSDIR)/toc2bkm.py lib
+	TEXINPUTS=../lib:$(TEXINPUTS) $(PDFLATEX) lib
 
 # Python/C API Reference Manual
 api.dvi: $(APIFILES)
@@ -113,10 +113,10 @@ ext.pdf: $(EXTFILES)
 
 # Macintosh Library Modules
 mac.dvi: $(MACFILES)
-	$(MKHOWTO) --dvi ../$*/$*.tex
+	$(MKHOWTO) --dvi ../mac/mac.tex
 
 mac.pdf: $(MACFILES)
-	$(MKHOWTO) --pdf ../$*/$*.tex
+	$(MKHOWTO) --pdf ../mac/mac.tex
 
 # Python Reference Manual
 ref.dvi: $(REFFILES)
