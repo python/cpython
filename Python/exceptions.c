@@ -244,7 +244,7 @@ Exception__str__(PyObject *self, PyObject *args)
 {
     PyObject *out;
 
-    if (!PyArg_ParseTuple(args, "O", &self))
+    if (!PyArg_ParseTuple(args, "O:__str__", &self))
         return NULL;
 
     args = PyObject_GetAttrString(self, "args");
@@ -282,7 +282,7 @@ Exception__getitem__(PyObject *self, PyObject *args)
     PyObject *out;
     PyObject *index;
 
-    if (!PyArg_ParseTuple(args, "OO", &self, &index))
+    if (!PyArg_ParseTuple(args, "OO:__getitem__", &self, &index))
         return NULL;
 
     args = PyObject_GetAttrString(self, "args");
@@ -524,7 +524,7 @@ EnvironmentError__str__(PyObject *self, PyObject *args)
     PyObject *strerror;
     PyObject *rtnval = NULL;
 
-    if (!PyArg_ParseTuple(args, "O", &self))
+    if (!PyArg_ParseTuple(args, "O:__str__", &self))
 	return NULL;
     
     filename = PyObject_GetAttrString(self, "filename");
@@ -734,16 +734,65 @@ SyntaxError__str__(PyObject *self, PyObject *args)
 {
     PyObject *msg;
     PyObject *str;
+    PyObject *filename, *lineno, *result;
 
-    if (!PyArg_ParseTuple(args, "O", &self))
+    if (!PyArg_ParseTuple(args, "O:__str__", &self))
 	return NULL;
 
     if (!(msg = PyObject_GetAttrString(self, "msg")))
 	return NULL;
-    
+
     str = PyObject_Str(msg);
     Py_DECREF(msg);
-    return str;
+    result = str;
+
+    /* XXX -- do all the additional formatting with filename and
+       lineno here */
+
+    if (PyString_Check(str)) {
+	int have_filename = 0;
+	int have_lineno = 0;
+	char *buffer = NULL;
+
+	if (filename = PyObject_GetAttrString(self, "filename"))
+	    have_filename = PyString_Check(filename);
+	else
+	    PyErr_Clear();
+	if (lineno = PyObject_GetAttrString(self, "lineno"))
+	    have_lineno = PyInt_Check(lineno);
+	else
+	    PyErr_Clear();
+
+	if (have_filename || have_lineno) {
+	    int bufsize = (PyString_GET_SIZE(str) + 64 +
+			   PyString_GET_SIZE(filename));
+
+	    buffer = PyMem_Malloc(bufsize);
+	    if (buffer != NULL) {
+		if (have_filename && have_lineno)
+		    sprintf(buffer, "%s (%s, line %d)",
+			    PyString_AS_STRING(str),
+			    PyString_AS_STRING(filename),
+			    PyInt_AsLong(lineno));
+		else if (have_filename)
+		    sprintf(buffer, "%s (%s)",
+			    PyString_AS_STRING(str),
+			    PyString_AS_STRING(filename));
+		else if (have_lineno)
+		    sprintf(buffer, "%s (line %d)",
+			    PyString_AS_STRING(str),
+			    PyInt_AsLong(lineno));
+		result = PyString_FromString(buffer);
+		if (result == NULL)
+		    result = str;
+		else
+		    Py_DECREF(str);
+	    }
+	}
+	Py_XDECREF(filename);
+	Py_XDECREF(lineno);
+    }
+    return result;
 }
 
 
