@@ -190,7 +190,7 @@ range_compare(rangeobject *r1, rangeobject *r2)
 {
 
         if (PyErr_Warn(PyExc_DeprecationWarning,
-        	       "xrange object comparision is deprecated; "
+        	       "xrange object comparison is deprecated; "
         	       "convert to list instead") < 0)
         	return -1;
 
