@@ -1,5 +1,6 @@
-
-/* Lowest-level memory allocation interface */
+/* The PyMem_ family:  low-level memory allocation interfaces.
+   See objimpl.h for the PyObject_ memory family.
+*/
 
 #ifndef Py_PYMEM_H
 #define Py_PYMEM_H
@@ -12,37 +13,39 @@ extern "C" {
 
 /* BEWARE:
 
-   Each interface exports both functions and macros. Extension modules
-   should normally use the functions for ensuring binary compatibility
-   of the user's code across Python versions. Subsequently, if the
-   Python runtime switches to its own malloc (different from standard
-   malloc), no recompilation is required for the extensions.
+   Each interface exports both functions and macros.  Extension modules should
+   use the functions, to ensure binary compatibility across Python versions.
+   Because the Python implementation is free to change internal details, and
+   the macros may (or may not) expose details for speed, if you do use the
+   macros you must recompile your extensions with each Python release.
 
-   The macro versions are free to trade compatibility for speed, although
-   there's no guarantee they're ever faster.  Extensions shouldn't use the
-   macro versions, as they don't gurantee binary compatibility across
-   releases.
-
-   Do not mix calls to PyMem_xyz with calls to platform
-   malloc/realloc/calloc/free. */
+   Never mix calls to PyMem_ with calls to the platform malloc/realloc/
+   calloc/free.  For example, on Windows different DLLs may end up using
+   different heaps, and if you use PyMem_Malloc you'll get the memory from the
+   heap used by the Python DLL; it could be a disaster if you free()'ed that
+   directly in your own extension.  Using PyMem_Free instead ensures Python
+   can return the memory to the proper heap.  As another example, in
+   PYMALLOC_DEBUG mode, Python wraps all calls to all PyMem_ and PyObject_
+   memory functions in special debugging wrappers that add additional
+   debugging info to dynamic memory blocks.  The system routines have no idea
+   what to do with that stuff, and the Python wrappers have no idea what to do
+   with raw blocks obtained directly by the system routines then.
+*/
 
 /*
  * Raw memory interface
  * ====================
  */
 
-/* Functions */
+/* Functions
 
-/* Functions supplying platform-independent semantics for malloc/realloc/
-   free; useful if you need to be sure you're using the same memory
-   allocator as Python (this can be especially important on Windows, if
-   you need to make sure you're using the same MS malloc/free, and out of
-   the same heap, as the main Python DLL uses).
-   These functions make sure that allocating 0 bytes returns a distinct
+   Functions supplying platform-independent semantics for malloc/realloc/
+   free.  These functions make sure that allocating 0 bytes returns a distinct
    non-NULL pointer (whenever possible -- if we're flat out of memory, NULL
    may be returned), even if the platform malloc and realloc don't.
    Returned pointers must be checked for NULL explicitly.  No action is
-   performed on failure (no exception is set, no warning is printed, etc).` */
+   performed on failure (no exception is set, no warning is printed, etc).
+*/
 
 extern DL_IMPORT(void *) PyMem_Malloc(size_t);
 extern DL_IMPORT(void *) PyMem_Realloc(void *, size_t);
@@ -56,7 +59,6 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 /* Redirect all memory operations to Python's debugging allocator. */
 #define PyMem_MALLOC		PyObject_MALLOC
 #define PyMem_REALLOC		PyObject_REALLOC
-#define PyMem_FREE		PyObject_FREE
 
 #else	/* ! PYMALLOC_DEBUG */
 
@@ -65,41 +67,44 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 #else
 #define PyMem_MALLOC		malloc
 #endif
+
 /* Caution:  whether MALLOC_ZERO_RETURNS_NULL is #defined has nothing to
    do with whether platform realloc(non-NULL, 0) normally frees the memory
    or returns NULL.  Rather than introduce yet another config variation,
    just make a realloc to 0 bytes act as if to 1 instead. */
 #define PyMem_REALLOC(p, n)     realloc((p), (n) ? (n) : 1)
 
-#define PyMem_FREE           	free
 #endif	/* PYMALLOC_DEBUG */
+
+/* In order to avoid breaking old code mixing PyObject_{New, NEW} with
+   PyMem_{Del, DEL} and PyMem_{Free, FREE}, the PyMem "release memory"
+   functions have to be redirected to the object deallocator. */
+#define PyMem_FREE           	PyObject_FREE
 
 /*
  * Type-oriented memory interface
  * ==============================
  *
  * These are carried along for historical reasons.  There's rarely a good
- * reason to use them anymore.
+ * reason to use them anymore (you can just as easily do the multiply and
+ * cast yourself).
  */
 
-/* Functions */
 #define PyMem_New(type, n) \
 	( (type *) PyMem_Malloc((n) * sizeof(type)) )
-#define PyMem_Resize(p, type, n) \
-	( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
-
-/* In order to avoid breaking old code mixing PyObject_{New, NEW} with
-   PyMem_{Del, DEL} (there was no choice about this in 1.5.2), the latter
-   have to be redirected to the object allocator. */
-#define PyMem_Del  PyObject_Free
-
-/* Macros */
 #define PyMem_NEW(type, n) \
 	( (type *) PyMem_MALLOC((n) * sizeof(type)) )
+
+#define PyMem_Resize(p, type, n) \
+	( (p) = (type *) PyMem_Realloc((p), (n) * sizeof(type)) )
 #define PyMem_RESIZE(p, type, n) \
 	( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
 
-#define PyMem_DEL PyObject_FREE
+/* In order to avoid breaking old code mixing PyObject_{New, NEW} with
+   PyMem_{Del, DEL} and PyMem_{Free, FREE}, the PyMem "release memory"
+   functions have to be redirected to the object deallocator. */
+#define PyMem_Del		PyObject_Free
+#define PyMem_DEL		PyObject_FREE
 
 #ifdef __cplusplus
 }
