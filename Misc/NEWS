@@ -12,6 +12,14 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- Finally fixed the bug in compile() and exec where a string ending
+  with an indented code block but no newline would raise SyntaxError.
+  This would have been a four-line change in parsetok.c...  Except
+  codeop.py depends on this behavior, so a compilation flag had to be
+  invented that causes the tokenizer to revert to the old behavior;
+  this required extra changes to 2 .h files, 2 .c files, and 2 .py
+  files.
+
 - If a new-style class defines neither __new__ nor __init__, its
   constructor would ignore all arguments.  This is changed now: the
   constructor refuses arguments in this case.  This might break code

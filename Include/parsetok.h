@@ -21,6 +21,8 @@ typedef struct {
 #define PyPARSE_YIELD_IS_KEYWORD	0x0001
 #endif
 
+#define PyPARSE_DONT_IMPLY_DEDENT	0x0002
+
 PyAPI_FUNC(node *) PyParser_ParseString(const char *, grammar *, int,
                                               perrdetail *);
 PyAPI_FUNC(node *) PyParser_ParseFile (FILE *, const char *, grammar *, int,

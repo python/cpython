@@ -380,7 +380,9 @@ builtin_compile(PyObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (supplied_flags & ~(PyCF_MASK | PyCF_MASK_OBSOLETE)) {
+	if (supplied_flags &
+	    ~(PyCF_MASK | PyCF_MASK_OBSOLETE | PyCF_DONT_IMPLY_DEDENT))
+	{
 		PyErr_SetString(PyExc_ValueError,
 				"compile(): unrecognised flags");
 		return NULL;

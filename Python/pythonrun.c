@@ -548,13 +548,9 @@ PyRun_InteractiveOne(FILE *fp, const char *filename)
 }
 
 /* compute parser flags based on compiler flags */
-#if 0 /* future keyword */
 #define PARSER_FLAGS(flags) \
-	(((flags) && (flags)->cf_flags & CO_GENERATOR_ALLOWED) ? \
-		PyPARSE_YIELD_IS_KEYWORD : 0)
-#else
-#define PARSER_FLAGS(flags) 0
-#endif
+	(((flags) && (flags)->cf_flags & PyCF_DONT_IMPLY_DEDENT) ? \
+		PyPARSE_DONT_IMPLY_DEDENT : 0)
 
 int
 PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
