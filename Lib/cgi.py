@@ -506,7 +506,7 @@ class FieldStorage:
         if self.headers.has_key('content-length'):
             try:
                 clen = int(self.headers['content-length'])
-            except:
+            except ValueError:
                 pass
             if maxlen and clen > maxlen:
                 raise ValueError, 'Maximum content length exceeded'
