@@ -10,6 +10,7 @@ except ImportError:
 
 from time import time as _time, sleep as _sleep
 from traceback import format_exc as _format_exc
+from collections import deque
 
 # Rename some stuff so "from threading import *" is safe
 __all__ = ['activeCount', 'Condition', 'currentThread', 'enumerate', 'Event',
@@ -639,7 +640,7 @@ def _test():
             self.rc = Condition(self.mon)
             self.wc = Condition(self.mon)
             self.limit = limit
-            self.queue = []
+            self.queue = deque()
 
         def put(self, item):
             self.mon.acquire()
@@ -657,7 +658,7 @@ def _test():
             while not self.queue:
                 self._note("get(): queue empty")
                 self.rc.wait()
-            item = self.queue.pop(0)
+            item = self.queue.popleft()
             self._note("get(): got %s, %d left", item, len(self.queue))
             self.wc.notify()
             self.mon.release()

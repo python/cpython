@@ -55,6 +55,7 @@ Mynd you, møøse bites Kan be pretty nasti..."""
 import sys, imp, os, re, types, inspect, __builtin__
 from repr import Repr
 from string import expandtabs, find, join, lower, split, strip, rfind, rstrip
+from collections import deque
 
 # --------------------------------------------------------- common routines
 
@@ -685,7 +686,7 @@ class HTMLDoc(Doc):
         hr = HorizontalRule()
 
         # List the mro, if non-trivial.
-        mro = list(inspect.getmro(object))
+        mro = deque(inspect.getmro(object))
         if len(mro) > 2:
             hr.maybe()
             push('<dl><dt>Method resolution order:</dt>\n')
@@ -763,7 +764,7 @@ class HTMLDoc(Doc):
 
         while attrs:
             if mro:
-                thisclass = mro.pop(0)
+                thisclass = mro.popleft()
             else:
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
@@ -1083,7 +1084,7 @@ class TextDoc(Doc):
         push = contents.append
 
         # List the mro, if non-trivial.
-        mro = list(inspect.getmro(object))
+        mro = deque(inspect.getmro(object))
         if len(mro) > 2:
             push("Method resolution order:")
             for base in mro:
@@ -1152,7 +1153,7 @@ class TextDoc(Doc):
                        inspect.classify_class_attrs(object))
         while attrs:
             if mro:
-                thisclass = mro.pop(0)
+                thisclass = mro.popleft()
             else:
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
