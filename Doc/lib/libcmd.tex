@@ -138,4 +138,9 @@ headers.  If empty, no ruler line is drawn.  It defaults to
 \character{=}.
 \end{memberdesc}
 
-
+\begin{memberdesc}{use_rawinput}
+A flag, defaulting to true.  If true, \method{cmdloop()} uses
+\function{raw_input()} to display a prompt and read the next command;
+if false, \function{sys.stdout.write()} and
+\function{sys.stdin.readline()} are used.
+\end{memberdesc}
