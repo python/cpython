@@ -221,6 +221,13 @@ Core
   to a dictionary object.  Getting func.__dict__ before any attributes
   have been assigned now returns an empty dictionary instead of None.
 
+- A new command line option, -E, was added which disables the use of
+  all environment variables, or at least those that are specifically
+  significant to Python.  Usually those have a name starting with
+  "PYTHON".  This was used to fix a problem where the tests fail if
+  the user happens to have PYTHONHOME or PYTHONPATH pointing to an
+  older distribution.
+
 Library
 
 - New class Differ and new functions ndiff() and restore() in difflib.py.
