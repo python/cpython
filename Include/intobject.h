@@ -83,7 +83,7 @@ extern DL_IMPORT(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct; /* Don't use these
 #define Py_True ((PyObject *) &_Py_TrueStruct)
 
 /* Macro, trading safety for speed */
-#define PyInt_AS_LONG(op) ((op)->ob_ival)
+#define PyInt_AS_LONG(op) (((PyIntObject *)(op))->ob_ival)
 
 #ifdef __cplusplus
 }
