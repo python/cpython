@@ -224,11 +224,12 @@ above) so we can remove them!)
 	contain code that is quite wordsize sensitive.  (If you have a
 	fix, let us know!)
 
-Solaris: When using Sun's C compiler with threads, at least on Solaris
-	2.5.1, you need to add the "-mt" compiler option (the simplest
-	way is probably to specify the compiler with this option as
-	the "CC" environment variable when running the configure
-	script).
+Solaris: When using Sun's C compiler, it's necessary to compile in
+        strict ANSI mode with multithreading enabled. This can be done
+        by setting the 'CC' environment variable to 'cc -Xc -mt'
+        before running the configure script. ANSI-compatibility mode
+        ('-Xa') has been seen to compile the code without problems,
+        but generate faulty code.
 
 Linux:  A problem with threads and fork() was tracked down to a bug in
 	the pthreads code in glibc version 2.0.5; glibc version 2.0.7
