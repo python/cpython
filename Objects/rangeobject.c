@@ -218,9 +218,9 @@ typedef struct {
 	long	len;
 } rangeiterobject;
 
-PyTypeObject Pyrangeiter_Type;
+staticforward PyTypeObject Pyrangeiter_Type;
 
-PyObject *
+static PyObject *
 range_iter(PyObject *seq)
 {
 	rangeiterobject *it;
@@ -261,11 +261,11 @@ static PyMethodDef rangeiter_methods[] = {
 	{NULL,          NULL}           /* sentinel */
 };
 
-PyTypeObject Pyrangeiter_Type = {
+static PyTypeObject Pyrangeiter_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,                                      /* ob_size */
-	"rangeiterator",                         /* tp_name */
-	sizeof(rangeiterobject),                 /* tp_basicsize */
+	"rangeiterator",                        /* tp_name */
+	sizeof(rangeiterobject),                /* tp_basicsize */
 	0,                                      /* tp_itemsize */
 	/* methods */
 	(destructor)PyObject_Del,		/* tp_dealloc */
