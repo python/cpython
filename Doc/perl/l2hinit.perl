@@ -613,7 +613,7 @@ sub make_head_and_body {
         $MY_PARTIAL_HEADER = join('',
             ($CHARSET && $HTML_VERSION ge "2.1"
              ? ('<meta http-equiv="Content-Type" content="text/html; '
-                . "charset=$charset\">\n")
+                . "charset=$CHARSET\">\n")
              : ''),
             ($BASE ? "<base href=\"$BASE\">\n" : ''),
             "<link rel=\"STYLESHEET\" href=\"$STYLESHEET\">\n",
