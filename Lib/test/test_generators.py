@@ -654,14 +654,14 @@ syntax_tests = """
 ...     yield 1
 Traceback (most recent call last):
   ..
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.syntax[0]>, line 2)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[0]>, line 2)
 
 >>> def f():
 ...     yield 1
 ...     return 22
 Traceback (most recent call last):
   ..
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.syntax[1]>, line 3)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[1]>, line 3)
 
 "return None" is not the same as "return" in a generator:
 
@@ -670,7 +670,7 @@ SyntaxError: 'return' with argument inside generator (<doctest test.test_generat
 ...     return None
 Traceback (most recent call last):
   ..
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.syntax[2]>, line 3)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[2]>, line 3)
 
 This one is fine:
 
@@ -685,7 +685,7 @@ This one is fine:
 ...         pass
 Traceback (most recent call last):
   ..
-SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<doctest test.test_generators.syntax[4]>, line 3)
+SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<doctest test.test_generators.__test__.syntax[4]>, line 3)
 
 >>> def f():
 ...     try:
@@ -699,7 +699,7 @@ SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<doct
 ...         pass
 Traceback (most recent call last):
   ...
-SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<doctest test.test_generators.syntax[5]>, line 6)
+SyntaxError: 'yield' not allowed in a 'try' block with a 'finally' clause (<doctest test.test_generators.__test__.syntax[5]>, line 6)
 
 But this is fine:
 
@@ -805,7 +805,7 @@ SyntaxError: invalid syntax
 ...     if 0:
 ...         yield 2             # because it's a generator
 Traceback (most recent call last):
-SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.syntax[22]>, line 8)
+SyntaxError: 'return' with argument inside generator (<doctest test.test_generators.__test__.syntax[22]>, line 8)
 
 This one caused a crash (see SF bug 567538):
 

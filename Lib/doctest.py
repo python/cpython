@@ -1019,7 +1019,7 @@ class DocTestFinder:
                                      "must be strings, functions, methods, "
                                      "classes, or modules: %r" %
                                      (type(val),))
-                valname = '%s.%s' % (name, valname)
+                valname = '%s.__test__.%s' % (name, valname)
                 self._find(tests, val, valname, module, source_lines,
                            globs, seen)
 
