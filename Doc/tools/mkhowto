@@ -79,6 +79,7 @@ class Options:
     program = os.path.basename(sys.argv[0])
     #
     address = ''
+    builddir = None
     debugging = 0
     discard_temps = 1
     have_temps = 0
@@ -117,8 +118,8 @@ class Options:
                                     "address=", "a4", "letter", "l2h-init=",
                                     "link=", "split=", "logging", "debugging",
                                     "keep", "quiet", "runs=", "image-type=",
-                                    "about=", "numeric", "style=",
-                                    "up-link=", "up-title=",
+                                    "about=", "numeric", "style=", "paper=",
+                                    "up-link=", "up-title=", "dir=",
                                     "global-module-index="]
                                    + list(self.ALL_FORMATS))
         for opt, arg in opts:
@@ -167,6 +168,10 @@ class Options:
                 self.up_title = arg
             elif opt == "--global-module-index":
                 self.global_module_index = arg
+            elif opt == "--dir":
+                self.builddir = arg
+            elif opt == "--paper":
+                self.paper = arg
             #
             # Format specifiers:
             #
@@ -228,7 +233,7 @@ class Job:
             self.build_ps()
         if "html" in formats:
             self.require_temps()
-            self.build_html(self.doc)
+            self.build_html(self.options.builddir or self.doc)
             if self.options.icon_server == ".":
                 pattern = os.path.join(TOPDIR, "html", "icons",
                                        "*." + self.options.image_type)
