@@ -663,7 +663,7 @@ initregex(void)
 	if (PyErr_Warn(PyExc_DeprecationWarning,
 		       "the regex module is deprecated; "
 		       "please use the re module") < 0)
-		return NULL;
+		return;
 	
 	/* Initialize regex.error exception */
 	v = RegexError = PyErr_NewException("regex.error", NULL, NULL);
