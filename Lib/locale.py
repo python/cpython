@@ -290,9 +290,12 @@ def getdefaultlocale(envvars=('LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LANG')):
     except (ImportError, AttributeError):
         pass
     else:
+        # make sure the code/encoding values are valid
         if sys.platform == "win32" and code and code[:2] == "0x":
             # map windows language identifier to language name
             code = windows_locale.get(int(code, 0))
+        # ...add other platform-specific processing here, if
+        # necessary...
         return code, encoding
 
     # fall back on POSIX behaviour
@@ -306,8 +309,6 @@ def getdefaultlocale(envvars=('LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LANG')):
         localename = 'C'
     return _parse_localename(localename)
 
-# compatibility
-get_default = getdefaultlocale
 
 def getlocale(category=LC_CTYPE):
 
