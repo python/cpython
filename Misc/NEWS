@@ -10,8 +10,8 @@ Core and builtins
   finally clause.  [SF bug 567538]
 
 - Most builtin sequences now support "extended slices", i.e. slices
-  with a third "stride" parameter.  For example, "range(10)[1:6:2]"
-  evaluates to [1, 3, 5].
+  with a third "stride" parameter.  For example, "hello world"[::-1]
+  gives "dlrow olleh".
 
 - Cycles going through the __class__ link of a new-style instance are
   now detected by the garbage collector.
