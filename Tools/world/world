@@ -291,6 +291,7 @@ nameorgs = {
     #
     # See <url:http://www.ripe.net/docs/ripe-159.html#222123>
     "uk": "United Kingdom (common practice)",
+    "su": "Soviet Union (still in limited use)",
     }
 
 
