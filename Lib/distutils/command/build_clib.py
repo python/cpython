@@ -4,9 +4,6 @@ Implements the Distutils 'build_clib' command, to build a C/C++ library
 that is included in the module distribution and needed by an extension
 module."""
 
-# created (an empty husk) 1999/12/18, Greg Ward
-# fleshed out 2000/02/03-04
-
 __revision__ = "$Id$"
 
 

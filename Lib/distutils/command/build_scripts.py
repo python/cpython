@@ -2,8 +2,6 @@
 
 Implements the Distutils 'build_scripts' command."""
 
-# created 2000/05/23, Bastian Kleineidam
-
 __revision__ = "$Id$"
 
 import sys, os, re

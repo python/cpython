@@ -19,8 +19,6 @@ handles the EMX port of the GNU C compiler to OS/2.
 #
 # * EMX gcc 2.81/EMX 0.9d fix03
 
-# created 2001/5/7, Andrew MacIntyre, from Rene Liebscher's cywinccompiler.py
-
 __revision__ = "$Id$"
 
 import os,sys,copy

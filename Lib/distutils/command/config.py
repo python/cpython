@@ -9,8 +9,6 @@ configure-like tasks: "try to compile this C code", or "figure out where
 this header file lives".
 """
 
-# created 2000/05/29, Greg Ward
-
 __revision__ = "$Id$"
 
 import sys, os, string, re

@@ -41,8 +41,6 @@ cygwin in no-cygwin mode).
 #     in the dlls.
 #   *** only the version of June 2000 shows these problems
 
-# created 2000/05/05, Rene Liebscher
-
 __revision__ = "$Id$"
 
 import os,sys,copy

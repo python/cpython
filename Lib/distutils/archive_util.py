@@ -3,8 +3,6 @@
 Utility functions for creating archive files (tarballs, zip files,
 that sort of thing)."""
 
-# created 2000/04/03, Greg Ward (extracted from util.py)
-
 __revision__ = "$Id$"
 
 import os

@@ -4,8 +4,6 @@
 # Implements multiple version numbering conventions for the
 # Python Module Distribution Utilities.
 #
-# written by Greg Ward, 1998/12/17
-#
 # $Id$
 #
 

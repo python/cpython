@@ -4,8 +4,6 @@ Miscellaneous utility functions -- anything that doesn't fit into
 one of the other *util.py modules.
 """
 
-# created 1999/03/08, Greg Ward
-
 __revision__ = "$Id$"
 
 import sys, os, string, re

@@ -6,8 +6,6 @@ Also provides the 'find_executable()' to search the path for a given
 executable name.
 """
 
-# created 1999/07/24, Greg Ward
-
 __revision__ = "$Id$"
 
 import sys, os, string

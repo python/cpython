@@ -3,8 +3,6 @@
 Provides the Extension class, used to describe C/C++ extension
 modules in setup scripts."""
 
-# created 2000/05/30, Greg Ward
-
 __revision__ = "$Id$"
 
 import os, string

@@ -3,8 +3,6 @@
 Implements the Distutils 'bdist_rpm' command (create RPM source and binary
 distributions)."""
 
-# created 2000/04/25, by Harry Henry Gebel
-
 __revision__ = "$Id$"
 
 import sys, os, string
