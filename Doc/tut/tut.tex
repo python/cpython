@@ -3069,6 +3069,15 @@ the file, returning \code{None}.
 >>> f.write('This is a test\n')
 \end{verbatim}
 
+To write something other than a string, it needs to be converted to a
+string first:
+
+\begin{verbatim}
+>>> value = ('the answer', 42)
+>>> s = str(value)
+>>> f.write(s)
+\end{verbatim}
+
 \code{f.tell()} returns an integer giving the file object's current
 position in the file, measured in bytes from the beginning of the
 file.  To change the file object's position, use
@@ -3081,7 +3090,7 @@ reference point.  \var{from_what} can be omitted and defaults to 0,
 using the beginning of the file as the reference point.
 
 \begin{verbatim}
->>> f=open('/tmp/workfile', 'r+')
+>>> f = open('/tmp/workfile', 'r+')
 >>> f.write('0123456789abcdef')
 >>> f.seek(5)     # Go to the 6th byte in the file
 >>> f.read(1)        
