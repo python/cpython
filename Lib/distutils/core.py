@@ -13,19 +13,25 @@ __rcsid__ = "$Id$"
 import sys, os
 import string, re
 from types import *
+from copy import copy
 from distutils.errors import *
-from distutils.fancy_getopt import fancy_getopt
+from distutils.fancy_getopt import fancy_getopt, print_help
 from distutils import util
 
-# This is not *quite* the same as a Python NAME; I don't allow leading
-# underscores.  The fact that they're very similar is no coincidence...
+# Regex to define acceptable Distutils command names.  This is not *quite*
+# the same as a Python NAME -- I don't allow leading underscores.  The fact
+# that they're very similar is no coincidence; the default naming scheme is
+# to look for a Python module named after the command.
 command_re = re.compile (r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
 # Defining this as a global is probably inadequate -- what about
 # listing the available options (or even commands, which can vary
 # quite late as well)
-usage = '%s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]' % sys.argv[0]
-
+usage = """\
+usage: %s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
+   or: %s --help
+   or: %s cmd --help
+""" % (sys.argv[0], sys.argv[0], sys.argv[0])
 
 
 def setup (**attrs):
@@ -79,12 +85,20 @@ def setup (**attrs):
     # Parse the command line; any command-line errors are the end-users
     # fault, so turn them into SystemExit to suppress tracebacks.
     try:
-        dist.parse_command_line (sys.argv[1:])
+        ok = dist.parse_command_line (sys.argv[1:])
     except DistutilsArgError, msg:
+        sys.stderr.write (usage + "\n")
         raise SystemExit, msg
 
     # And finally, run all the commands found on the command line.
-    dist.run_commands ()
+    if ok:
+        try:
+            dist.run_commands ()
+        except KeyboardInterrupt:
+            raise SystemExit, "interrupted"
+        except IOError, exc:
+            # is this 1.5.2-specific? 1.5-specific?
+            raise SystemExit, "error: %s: %s" % (exc.filename, exc.strerror)
 
 # setup ()
 
@@ -114,14 +128,17 @@ class Distribution:
     # don't want to pollute the commands with too many options that they
     # have minimal control over.
     global_options = [('verbose', 'v',
-                       "run verbosely"),
-                      ('quiet=!verbose', 'q',
+                       "run verbosely (default)"),
+                      ('quiet', 'q',
                        "run quietly (turns verbosity off)"),
                       ('dry-run', 'n',
                        "don't actually do anything"),
                       ('force', 'f',
                        "skip dependency checking between files"),
+                      ('help', 'h',
+                       "show this help message"),
                      ]
+    negative_opt = {'quiet': 'verbose'}
 
 
     # -- Creation/initialization methods -------------------------------
@@ -138,17 +155,20 @@ class Distribution:
            command objects by 'parse_command_line()'."""
 
         # Default values for our command-line options
-        self.verbose = 0
+        self.verbose = 1
         self.dry_run = 0
         self.force = 0
+        self.help = 0
 
         # And the "distribution meta-data" options -- these can only
         # come from setup.py (the caller), not the command line
-        # (or a hypothetical config file)..
+        # (or a hypothetical config file).
         self.name = None
         self.version = None
         self.author = None
         self.author_email = None
+        self.maintainer = None
+        self.maintainer_email = None
         self.url = None
         self.licence = None
         self.description = None
@@ -236,7 +256,11 @@ class Distribution:
            'options' attribute.  Any error in that 'options' attribute
            raises DistutilsGetoptError; any error on the command-line
            raises DistutilsArgError.  If no Distutils commands were found
-           on the command line, raises DistutilsArgError."""
+           on the command line, raises DistutilsArgError.  Return true if
+           command-line successfully parsed and we should carry on with
+           executing commands; false if no errors but we shouldn't execute
+           commands (currently, this only happens if user asks for
+           help)."""
 
         # We have to parse the command line a bit at a time -- global
         # options, then the first command, then its options, and so on --
@@ -246,7 +270,14 @@ class Distribution:
         # happen until we know what the command is.
 
         self.commands = []
-        args = fancy_getopt (self.global_options, self, sys.argv[1:])
+        args = fancy_getopt (self.global_options, self.negative_opt,
+                             self, sys.argv[1:])
+
+        if self.help:
+            print_help (self.global_options, header="Global options:")
+            print
+            print usage
+            return
 
         while args:
             # Pull the current command from the head of the command line
@@ -258,7 +289,10 @@ class Distribution:
             # Make sure we have a command object to put the options into
             # (this either pulls it out of a cache of command objects,
             # or finds and instantiates the command class).
-            cmd_obj = self.find_command_obj (command)
+            try:
+                cmd_obj = self.find_command_obj (command)
+            except DistutilsModuleError, msg:
+                raise DistutilsArgError, msg
 
             # Require that the command class be derived from Command --
             # that way, we can be sure that we at least have the 'run'
@@ -279,8 +313,24 @@ class Distribution:
 
             # Poof! like magic, all commands support the global
             # options too, just by adding in 'global_options'.
-            args = fancy_getopt (self.global_options + cmd_obj.options,
+            negative_opt = self.negative_opt
+            if hasattr (cmd_obj, 'negative_opt'):
+                negative_opt = copy (negative_opt)
+                negative_opt.update (cmd_obj.negative_opt)
+
+            options = self.global_options + cmd_obj.options
+            args = fancy_getopt (options, negative_opt,
                                  cmd_obj, args[1:])
+            if cmd_obj.help:
+                print_help (self.global_options,
+                            header="Global options:")
+                print
+                print_help (cmd_obj.options,
+                            header="Options for '%s' command:" % command)
+                print
+                print usage
+                return
+                
             self.command_obj[command] = cmd_obj
             self.have_run[command] = 0
 
@@ -288,8 +338,10 @@ class Distribution:
 
         # Oops, no commands found -- an end-user error
         if not self.commands:
-            sys.stderr.write (usage + "\n")
             raise DistutilsArgError, "no commands supplied"
+
+        # All is well: return true
+        return 1
 
     # parse_command_line()
 
@@ -318,7 +370,7 @@ class Distribution:
             module = sys.modules[module_name]
         except ImportError:
             raise DistutilsModuleError, \
-                  "invalid command '%s' (no module named %s)" % \
+                  "invalid command '%s' (no module named '%s')" % \
                   (command, module_name)
 
         try:
@@ -359,7 +411,8 @@ class Distribution:
            'create_command_obj()'.  If none found, the action taken
            depends on 'create': if true (the default), create a new
            command object by calling 'create_command_obj()' and return
-           it; otherwise, return None."""
+           it; otherwise, return None.  If 'command' is an invalid
+           command name, then DistutilsModuleError will be raised."""
 
         cmd_obj = self.command_obj.get (command)
         if not cmd_obj and create:
@@ -519,6 +572,10 @@ class Command:
         self._verbose = None
         self._dry_run = None
         self._force = None
+
+        # The 'help' flag is just used for command-line parsing, so
+        # none of that complicated bureaucracy is needed.
+        self.help = 0
 
         # 'ready' records whether or not 'set_final_options()' has been
         # called.  'set_final_options()' itself should not pay attention to
