@@ -529,7 +529,7 @@ static struct PyMethodDef SHA_functions[] = {
 	if (o!=NULL) PyDict_SetItemString(d,n,o); \
 	Py_XDECREF(o); }
 
-void
+DL_EXPORT(void)
 initsha(void)
 {
     PyObject *d, *m;

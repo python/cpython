@@ -27,6 +27,9 @@
 #else
 #include <readline/readline.h> /* You may need to add an -I option to Setup */
 
+#ifdef __CYGWIN__
+#include <readline/history.h>
+#else /* !__CYGWIN__ */
 extern int rl_parse_and_bind(char *);
 extern int rl_read_init_file(char *);
 extern int rl_insert_text(char *);
@@ -38,11 +41,12 @@ extern int read_history(char *);
 extern int write_history(char *);
 extern int history_truncate_file(char *, int);
 extern Function *rl_event_hook;
+#endif /* !__CYGWIN__ */
 #endif
 
 /* Pointers needed from outside (but not declared in a header file). */
-extern int (*PyOS_InputHook)(void);
-extern char *(*PyOS_ReadlineFunctionPointer)(char *);
+extern DL_IMPORT(int) (*PyOS_InputHook)(void);
+extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer)(char *);
 
 
 /* Exported function to send one line to readline's init file parser */

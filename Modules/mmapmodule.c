@@ -952,13 +952,7 @@ static struct PyMethodDef mmap_functions[] = {
 	{NULL,		NULL}	     /* Sentinel */
 };
 
-#ifdef MS_WIN32
-__declspec(dllexport) void
-#endif /* MS_WIN32 */
-#ifdef UNIX
-extern void
-#endif
-
+DL_EXPORT(void)
 initmmap(void)
 {
 	PyObject *dict, *module;
