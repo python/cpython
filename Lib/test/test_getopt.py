@@ -3,7 +3,7 @@
 
 import getopt
 from getopt import GetoptError
-from test.test_support import verify, verbose
+from test.test_support import verify, verbose, run_doctest
 import os
 
 def expectException(teststr, expected, failure=AssertionError):
@@ -161,8 +161,8 @@ Using long option names is equally easy:
 
 __test__ = {'libreftest' : libreftest}
 
-import doctest, sys
-doctest.testmod(sys.modules[__name__])
+import sys
+run_doctest(sys.modules[__name__], verbose)
 
 #------------------------------------------------------------------------------
 
