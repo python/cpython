@@ -99,23 +99,6 @@ static PyTypeObject noddy_NoddyType = {
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
     "Noddy objects",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
-    0,		               /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    0,                         /* tp_init */
-    0,                         /* tp_alloc */
-    PyType_GenericNew,         /* tp_new */
 };
 \end{verbatim}
 
@@ -209,10 +192,17 @@ For now, all we want to be able to do is to create new \class{Noddy}
 objects. To enable object creation, we have to provide a
 \member{tp_new} implementation. In this case, we can just use the
 default implementation provided by the API function
-\cfunction{PyType_GenericNew}.
+\cfunction{PyType_GenericNew}.  We'd like to just assign this to the
+\member{tp_new} slot, but we can't, for portability sake, On some
+platforms or compilers, we can't statically initialize a structure
+member with a function defined in another C module, so, instead, we'll
+assign the \member{tp_new} slot in the module initialization function
+just before calling \cfunction{PyType_Ready()}:
 
 \begin{verbatim}
-    PyType_GenericNew,         /* tp_new */
+    noddy_NoddyType.tp_new = PyType_GenericNew;
+    if (PyType_Ready(&noddy_NoddyType) < 0)
+        return;
 \end{verbatim}
 
 All the other type methods are \NULL, so we'll go over them later
@@ -397,7 +387,7 @@ default allocation.
 We provide an initialization function:
 
 \begin{verbatim}
-static PyObject *
+static int
 Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 {
     PyObject *first=NULL, *last=NULL;
@@ -407,7 +397,7 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
     if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist, 
                                       &first, &last, 
                                       &self->number))
-        return NULL; 
+        return -1; 
 
     if (first) {
         Py_XDECREF(self->first);
@@ -421,8 +411,7 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
         self->last = last;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    return 0;
 }
 \end{verbatim}
 
