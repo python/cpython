@@ -78,11 +78,35 @@ class ConsoleTextWidget(W.EditText):
 				text = string.join(string.split(text, "\r"), "\n")
 				if hasattr(MacOS, 'EnableAppswitch'):
 					saveyield = MacOS.EnableAppswitch(0)
-				self.pyinteractive.executeline(text, self, self._namespace)
+				self._scriptDone = False
+				if sys.platform == "darwin":
+					# see identical construct in PyEdit.py
+					from threading import Thread
+					t = Thread(target=self._userCancelledMonitor,
+							name="UserCancelledMonitor")
+					t.start()
+				try:
+					self.pyinteractive.executeline(text, self, self._namespace)
+				finally:
+					self._scriptDone = True
 				if hasattr(MacOS, 'EnableAppswitch'):
 					MacOS.EnableAppswitch(saveyield)
 				selstart, selend = self.getselection()
 				self._inputstart = selstart
+	
+	def _userCancelledMonitor(self):
+		# XXX duplicate code from PyEdit.py
+		import time, os
+		from signal import SIGINT
+		from Carbon import Evt
+		while not self._scriptDone:
+			if Evt.CheckEventQueueForUserCancel():
+				# Send a SIGINT signal to ourselves.
+				# This gets delivered to the main thread,
+				# cancelling the running script.
+				os.kill(os.getpid(), SIGINT)
+				break
+			time.sleep(0.25)
 	
 	def domenu_save_as(self, *args):
 		filename = EasyDialogs.AskFileForSave(message='Save console text as:', 
