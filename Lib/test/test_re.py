@@ -186,6 +186,21 @@ class ReTests(unittest.TestCase):
         else:
             self.fail("re.match('(x)*', 50000*'x') should have failed")
 
+    def test_sre_character_literals(self):
+        for i in [0, 8, 16, 32, 64, 127, 128, 255]:
+            self.assertNotEqual(re.match(r"\%03o" % i, chr(i)), None)
+            self.assertNotEqual(re.match(r"\%03o0" % i, chr(i)+"0"), None)
+            self.assertNotEqual(re.match(r"\%03o8" % i, chr(i)+"8"), None)
+            self.assertNotEqual(re.match(r"\x%02x" % i, chr(i)), None)
+            self.assertNotEqual(re.match(r"\x%02x0" % i, chr(i)+"0"), None)
+            self.assertNotEqual(re.match(r"\x%02xz" % i, chr(i)+"z"), None)
+        self.assertRaises(re.error, re.match, "\911", "")
+
+    def test_bug_113254(self):
+        self.assertEqual(re.match(r'(a)|(b)', 'b').start(1), -1)
+        self.assertEqual(re.match(r'(a)|(b)', 'b').end(1), -1)
+        self.assertEqual(re.match(r'(a)|(b)', 'b').span(1), (-1, -1))
+
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
