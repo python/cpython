@@ -501,6 +501,30 @@ report failures.
   \var{second}.
 \end{methoddesc}
 
+\begin{methoddesc}[TestCase]{assertAlmostEqual}{first, second\optional{,
+						places\optional{, msg}}}
+\methodline{failUnlessAlmostEqual}{first, second\optional{,
+						places\optional{, msg}}}
+  Test that \var{first} and \var{second} are approximately equal
+  by computing the difference, rounding to the given number of \var{places},
+  and comparing to zero.  Note that comparing a given number of decimal places
+  is not the same as comparing a given number of significant digits.
+  If the values do not compare equal, the test will fail with the explanation
+  given by \var{msg}, or \code{None}.  
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{assertNotAlmostEqual}{first, second\optional{,
+						places\optional{, msg}}}
+\methodline{failIfAlmostEqual}{first, second\optional{,
+						places\optional{, msg}}}
+  Test that \var{first} and \var{second} are not approximately equal
+  by computing the difference, rounding to the given number of \var{places},
+  and comparing to zero.  Note that comparing a given number of decimal places
+  is not the same as comparing a given number of significant digits.
+  If the values do not compare equal, the test will fail with the explanation
+  given by \var{msg}, or \code{None}.  
+\end{methoddesc}
+
 \begin{methoddesc}[TestCase]{assertRaises}{exception, callable, \moreargs}
 \methodline{failUnlessRaises}{exception, callable, \moreargs}
   Test that an exception is raised when \var{callable} is called with
