@@ -276,7 +276,7 @@ except TypeError:
 	exc = 1
 except:
 	e = sys.exc_info()[0]
-	raise TestFailed, 'zip() - no args, expected TypeError, got', e
+	raise TestFailed, 'zip() - no args, expected TypeError, got %s' % e
 if not exc:
 	raise TestFailed, 'zip() - no args, missing expected TypeError'
 
@@ -287,7 +287,7 @@ except TypeError:
 	exc = 1
 except:
 	e = sys.exc_info()[0]
-	raise TestFailed, 'zip(None) - expected TypeError, got', e
+	raise TestFailed, 'zip(None) - expected TypeError, got %s' % e
 if not exc:
 	raise TestFailed, 'zip(None) - missing expected TypeError'
 
