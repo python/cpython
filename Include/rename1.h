@@ -317,6 +317,7 @@ typedef struct methodlist PyMethodDef;
 #define Py_BuildValue mkvalue
 #define Py_VaBuildValue vmkvalue
 #define PyArg_Parse getargs
+#define PyArg_NoArgs(v) getargs(v, "")
 #define PyArg_GetChar getichararg
 #define PyArg_GetDoubleArray getidoublearray
 #define PyArg_GetFloat getifloatarg
