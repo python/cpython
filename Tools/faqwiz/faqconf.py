@@ -29,6 +29,9 @@ RCSBINDIR = "/depot/gnu/plat/bin/"	# Directory containing RCS commands
 MAXHITS = 10				# Max #hits to be shown directly
 COOKIE_LIFETIME = 28*24*3600		# Cookie expiration in seconds
 					# (28*24*3600 = 28 days = 4 weeks)
+PROCESS_PREFORMAT = 1                   # toggle whether preformatted text
+                                        # will replace urls and emails with 
+                                        # HTML links
 
 # Markers appended to title to indicate recently change
 # (may contain HTML, e.g. <IMG>); and corresponding 
@@ -46,7 +49,7 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "0.8.2"			# FAQ Wizard version
+WIZVERSION = "0.8.3"			# FAQ Wizard version
 
 # This parameter is normally overwritten with a dynamic value
 
