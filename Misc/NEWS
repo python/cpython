@@ -33,6 +33,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- Thanks to Scott David Daniels, a subtle bug in how the zlib
+  extension implemented flush() was fixed.  Scott also rewrite the
+  zlib test suite using the unittest module.  (SF bug #640230 and
+  patch #678531.)
+
 - Added an itertools module containing high speed, memory efficient
   looping constructs inspired by tools from Haskell and SML.
 
