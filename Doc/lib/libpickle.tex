@@ -11,7 +11,9 @@
 
 The \code{pickle} module implements a basic but powerful algorithm for
 ``pickling'' (a.k.a.\ serializing, marshalling or flattening) nearly
-arbitrary Python objects.  This is a more primitive notion than
+arbitrary Python objects.  This is the act of converting objects to a
+stream of bytes (and back: ``unpickling'').
+This is a more primitive notion than
 persistency --- although \code{pickle} reads and writes file objects,
 it does not handle the issue of naming persistent objects, nor the
 (even more complicated) area of concurrent access to persistent
@@ -54,7 +56,8 @@ advantage of using printable \ASCII{} (and of some other characteristics
 of \code{pickle}'s representation) is that for debugging or recovery
 purposes it is possible for a human to read the pickled file with a
 standard text editor.  (I could have gone a step further and used a
-notation like S-expressions, but the parser would have been
+notation like S-expressions, but the parser
+(currently written in Python) would have been
 considerably more complicated and slower, and the files would probably
 have become much larger.)
 

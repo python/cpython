@@ -1,0 +1,23 @@
+\chapter{Optional Operating System Services}
+
+The modules described in this chapter provide interfaces to operating
+system features that are available on selected operating systems only.
+The interfaces are generally modelled after the \UNIX{} or C
+interfaces but they are available on some other systems as well
+(e.g. Windows or NT).  Here's an overview:
+
+\begin{description}
+
+\item[signal]
+--- Set handlers for asynchronous events.
+
+\item[socket]
+--- Low-level networking interface.
+
+\item[select]
+--- Wait for I/O completion on multiple streams.
+
+\item[thread]
+--- Create multiple threads of control within one namespace.
+
+\end{description}

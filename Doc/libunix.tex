@@ -1,5 +1,36 @@
-\chapter{UNIX ONLY}
+\chapter{UNIX Specific Services}
 
 The modules described in this chapter provide interfaces to features
 that are unique to the \UNIX{} operating system, or in some cases to
-some or many variants of it.
+some or many variants of it.  Here's an overview:
+
+\begin{description}
+
+\item[posix]
+--- The most common Posix system calls (normally used via module \code{os}).
+
+\item[posixpath]
+--- Common Posix pathname manipulations (normally used via \code{os.path}).
+
+\item[pwd]
+--- The password database (\code{getpwnam()} and friends).
+
+\item[grp]
+--- The group database (\code{getgrnam()} and friends).
+
+\item[dbm]
+--- The standard ``database'' interface, based on \code{ndbm}.
+
+\item[gdbm]
+--- GNU's reinterpretation of dbm.
+
+\item[termios]
+--- Posix style tty control.
+
+\item[fcntl]
+--- The \code{fcntl()} and \code{ioctl()} system calls.
+
+\item[posixfile]
+--- A file-like object with support for locking.
+
+\end{description}

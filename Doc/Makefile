@@ -98,7 +98,8 @@ ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib.tex \
-libal.tex libaifc.tex libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
+libal.tex libaifc.tex liballos.tex \
+	libamoeba.tex libarray.tex libaudio.tex libaudioop.tex \
 libbltin.tex \
 libcd.tex \
 libcgi.tex libcopy.tex libctb.tex libcrypto.tex \
@@ -112,16 +113,17 @@ libjpeg.tex \
 libmac.tex libmacconsole.tex libmacdnr.tex \
 	libmacfs.tex libmactcp.tex libmacspeech.tex \
 	libmain.tex libmarshal.tex libmath.tex \
-	libmd5.tex libmimetools.tex libmm.tex libmods.tex libmpz.tex \
+	libmd5.tex libmimetools.tex libmisc.tex \
+	libmm.tex libmods.tex libmpz.tex \
 libnntplib.tex \
 libobjs.tex libos.tex \
 libpanel.tex libpickle.tex libposix.tex libposixfile.tex \
-	libppath.tex libprofile.tex libpwd.tex \
+	libppath.tex libprofile.tex libpwd.tex libpython.tex \
 librand.tex libregex.tex libregsub.tex \
 	librfc822.tex librgbimg.tex librotor.tex \
 libselect.tex libsgi.tex libsgmllib.tex \
-	libshelve.tex libsocket.tex libstd.tex libstdwin.tex \
-	libstring.tex libstruct.tex libsun.tex libsys.tex \
+	libshelve.tex libsocket.tex libsomeos.tex libstd.tex libstdwin.tex \
+	libstring.tex libstrings.tex libstruct.tex libsun.tex libsys.tex \
 libtempfile.tex libthread.tex libtime.tex \
 	libtraceback.tex libtypes.tex libtypes2.tex \
 libunix.tex liburllib.tex liburlparse.tex \

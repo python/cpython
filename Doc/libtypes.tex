@@ -17,7 +17,7 @@ implicitly used when an object is written by the \code{print} statement.
 
 Any object can be tested for truth value, for use in an \code{if} or
 \code{while} condition or as operand of the Boolean operations below.
-The following values are false:
+The following values are considered false:
 \stindex{if}
 \stindex{while}
 \indexii{truth}{value}
@@ -36,21 +36,32 @@ The following values are false:
 
 \item	any empty mapping, e.g., \code{\{\}}.
 
+\item	instances of user-defined classes, if the class defines a
+	\code{__nonzero__()} or \code{__len__()} method, when that
+	method returns zero.
+
 \end{itemize}
 
-\emph{All} other values are true --- so objects of many types are
+All other values are considered true --- so objects of many types are
 always true.
 \index{true}
 
+Operations and built-in functions that have a Boolean result always
+return \code{0} for false and \code{1} for true, unless otherwise
+stated.  (Important exception: the Boolean operations \samp{or} and
+\samp{and} always return one of their operands.)
+
 \subsection{Boolean Operations}
 
-These are the Boolean operations:
+These are the Boolean operations, ordered by ascending priority:
 \indexii{Boolean}{operations}
 
 \begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
   \lineiii{\var{x} or \var{y}}{if \var{x} is false, then \var{y}, else \var{x}}{(1)}
+  \hline
   \lineiii{\var{x} and \var{y}}{if \var{x} is false, then \var{x}, else \var{y}}{(1)}
-  \lineiii{not \var{x}}{if \var{x} is false, then \code{1}, else \code{0}}{}
+  \hline
+  \lineiii{not \var{x}}{if \var{x} is false, then \code{1}, else \code{0}}{(2)}
 \end{tableiii}
 \opindex{and}
 \opindex{or}
@@ -64,11 +75,24 @@ Notes:
 \item[(1)]
 These only evaluate their second argument if needed for their outcome.
 
+\item[(2)]
+\samp{not} has a lower priority than non-Boolean operators, so e.g.
+\code{not a == b} is interpreted as \code{not(a == b)}, and
+\code{a == not b} is a syntax error.
+
 \end{description}
 
 \subsection{Comparisons}
 
-Comparison operations are supported by all objects:
+Comparison operations are supported by all objects.  They all have the
+same priority (which is higher than that of the Boolean operations).
+Comparisons can be chained arbitrarily, e.g. \code{x < y <= z} is
+equivalent to \code{x < y and y <= z}, except that \code{y} is
+evaluated only once (but in both cases \code{z} is not evaluated at
+all when \code{x < y} is found to be false).
+\indexii{chaining}{comparisons}
+
+This table summarizes the comparison operations:
 
 \begin{tableiii}{|c|l|c|}{code}{Operation}{Meaning}{Notes}
   \lineiii{<}{strictly less than}{}
@@ -161,20 +185,26 @@ to coerce numbers to a specific type.
 \bifuncindex{long}
 \bifuncindex{float}
 
-All numeric types support the following operations:
+All numeric types support the following operations, sorted by
+ascending priority (operations in the same box have the same
+priority; all numeric operations have a higher priority than
+comparison operations):
 
 \begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
-  \lineiii{abs(\var{x})}{absolute value of \var{x}}{}
-  \lineiii{int(\var{x})}{\var{x} converted to integer}{(1)}
-  \lineiii{long(\var{x})}{\var{x} converted to long integer}{(1)}
-  \lineiii{float(\var{x})}{\var{x} converted to floating point}{}
-  \lineiii{-\var{x}}{\var{x} negated}{}
-  \lineiii{+\var{x}}{\var{x} unchanged}{}
   \lineiii{\var{x} + \var{y}}{sum of \var{x} and \var{y}}{}
   \lineiii{\var{x} - \var{y}}{difference of \var{x} and \var{y}}{}
+  \hline
   \lineiii{\var{x} * \var{y}}{product of \var{x} and \var{y}}{}
-  \lineiii{\var{x} / \var{y}}{quotient of \var{x} and \var{y}}{(2)}
+  \lineiii{\var{x} / \var{y}}{quotient of \var{x} and \var{y}}{(1)}
   \lineiii{\var{x} \%{} \var{y}}{remainder of \code{\var{x} / \var{y}}}{}
+  \hline
+  \lineiii{-\var{x}}{\var{x} negated}{}
+  \lineiii{+\var{x}}{\var{x} unchanged}{}
+  \hline
+  \lineiii{abs(\var{x})}{absolute value of \var{x}}{}
+  \lineiii{int(\var{x})}{\var{x} converted to integer}{(2)}
+  \lineiii{long(\var{x})}{\var{x} converted to long integer}{(2)}
+  \lineiii{float(\var{x})}{\var{x} converted to floating point}{}
   \lineiii{divmod(\var{x}, \var{y})}{the pair \code{(\var{x} / \var{y}, \var{x} \%{} \var{y})}}{(3)}
   \lineiii{pow(\var{x}, \var{y})}{\var{x} to the power \var{y}}{}
 \end{tableiii}
@@ -183,21 +213,23 @@ All numeric types support the following operations:
 \noindent
 Notes:
 \begin{description}
-\item[(1)]
-Conversion from floating point to (long or plain) integer may round or
-% XXXJH xref here
-truncate as in \C{}; see functions \code{floor} and \code{ceil} in module
-\code{math} for well-defined conversions.
-\indexii{numeric}{conversions}
-\stmodindex{math}
-\indexii{\C{}}{language}
 
-\item[(2)]
+\item[(1)]
 For (plain or long) integer division, the result is an integer; it
 always truncates towards zero.
 % XXXJH integer division is better defined nowadays
 \indexii{integer}{division}
 \indexiii{long}{integer}{division}
+
+\item[(2)]
+Conversion from floating point to (long or plain) integer may round or
+truncate as in \C{}; see functions \code{floor()} and \code{ceil()} in
+module \code{math} for well-defined conversions.
+\bifuncindex{floor}
+\bifuncindex{ceil}
+\indexii{numeric}{conversions}
+\stmodindex{math}
+\indexii{\C{}}{language}
 
 \item[(3)]
 See the section on built-in functions for an exact definition.
@@ -210,52 +242,89 @@ See the section on built-in functions for an exact definition.
 
 Plain and long integer types support additional operations that make
 sense only for bit-strings.  Negative numbers are treated as their 2's
-complement value:
+complement value (for long integers, this assumes a sufficiently large
+number of bits that no overflow occurs during the operation).
+
+The priorities of the binary bit-wise operations are all lower than
+the numeric operations and higher than the comparisons; the unary
+operation \samp{~} has the same priority as the other unary numeric
+operations (\samp{+} and \samp{-}).
+
+This table lists the bit-string operations sorted in ascending
+priority (operations in the same box have the same priority):
 
 \begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
-  \lineiii{\~\var{x}}{the bits of \var{x} inverted}{}
-  \lineiii{\var{x} \^{} \var{y}}{bitwise \dfn{exclusive or} of \var{x} and \var{y}}{}
-  \lineiii{\var{x} \&{} \var{y}}{bitwise \dfn{and} of \var{x} and \var{y}}{}
   \lineiii{\var{x} | \var{y}}{bitwise \dfn{or} of \var{x} and \var{y}}{}
-  \lineiii{\var{x} << \var{n}}{\var{x} shifted left by \var{n} bits}{}
-  \lineiii{\var{x} >> \var{n}}{\var{x} shifted right by \var{n} bits}{}
+  \hline
+  \lineiii{\var{x} \^{} \var{y}}{bitwise \dfn{exclusive or} of \var{x} and \var{y}}{}
+  \hline
+  \lineiii{\var{x} \&{} \var{y}}{bitwise \dfn{and} of \var{x} and \var{y}}{}
+  \hline
+  \lineiii{\var{x} << \var{n}}{\var{x} shifted left by \var{n} bits}{(1), (2)}
+  \lineiii{\var{x} >> \var{n}}{\var{x} shifted right by \var{n} bits}{(1), (3)}
+  \hline
+  \hline
+  \lineiii{\~\var{x}}{the bits of \var{x} inverted}{}
 \end{tableiii}
-% XXXJH what's `left'? `right'? maybe better use lsb or msb or something
 \indexiii{operations on}{integer}{types}
 \indexii{bit-string}{operations}
 \indexii{shifting}{operations}
 \indexii{masking}{operations}
 
+\noindent
+Notes:
+\begin{description}
+\item[(1)] Negative shift counts are illegal.
+\item[(2)] A left shift by \var{n} bits is equivalent to
+multiplication by \code{pow(2, \var{n})} without overflow check.
+\item[(3)] A right shift by \var{n} bits is equivalent to
+division by \code{pow(2, \var{n})} without overflow check.
+\end{description}
+
 \subsection{Sequence Types}
 
 There are three sequence types: strings, lists and tuples.
-Strings literals are written in single quotes: \code{'xyzzy'}.
-Lists are constructed with square brackets,
-separating items with commas:
-\code{[a, b, c]}.
-Tuples are constructed by the comma operator
-(not within square brackets), with or without enclosing parentheses,
-but an empty tuple must have the enclosing parentheses, e.g.,
-\code{a, b, c} or \code{()}.  A single item tuple must have a trailing comma,
-e.g., \code{(d,)}.
+
+Strings literals are written in single or double quotes:
+\code{'xyzzy'}, \code{"frobozz"}.  See Chapter 2 of the Python
+Reference Manual for more about string literals.  Lists are
+constructed with square brackets, separating items with commas:
+\code{[a, b, c]}.  Tuples are constructed by the comma operator (not
+within square brackets), with or without enclosing parentheses, but an
+empty tuple must have the enclosing parentheses, e.g.,
+\code{a, b, c} or \code{()}.  A single item tuple must have a trailing
+comma, e.g., \code{(d,)}.
 \indexii{sequence}{types}
 \indexii{string}{type}
 \indexii{tuple}{type}
 \indexii{list}{type}
 
-Sequence types support the following operations (\var{s} and \var{t} are
-sequences of the same type; \var{n}, \var{i} and \var{j} are integers):
+Sequence types support the following operations.  The \samp{in} and
+\samp{not\,in} operations have the same priorities as the comparison
+operations.  The \samp{+} and \samp{*} operations have the same
+priority as the corresponding numeric operations.\footnote{They must
+have since the parser can't tell the type of the operands.}
+
+This table lists the sequece operations sorted in ascending priority
+(operations in the same box have the same priority).  In the table,
+\var{s} and \var{t} are sequences of the same type; \var{n}, \var{i}
+and \var{j} are integers:
 
 \begin{tableiii}{|c|l|c|}{code}{Operation}{Result}{Notes}
+  \lineiii{\var{x} in \var{s}}{\code{1} if an item of \var{s} is equal to \var{x}, else \code{0}}{}
+  \lineiii{\var{x} not in \var{s}}{\code{0} if an item of \var{s} is
+equal to \var{x}, else \code{1}}{}
+  \hline
+  \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
+  \hline
+  \lineiii{\var{s} * \var{n}{\rm ,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{}
+  \hline
+  \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(1)}
+  \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(1), (2)}
+  \hline
   \lineiii{len(\var{s})}{length of \var{s}}{}
   \lineiii{min(\var{s})}{smallest item of \var{s}}{}
   \lineiii{max(\var{s})}{largest item of \var{s}}{}
-  \lineiii{\var{x} in \var{s}}{\code{1} if an item of \var{s} is equal to \var{x}, else \code{0}}{}
-  \lineiii{\var{x} not in \var{s}}{\code{0} if an item of \var{s} is equal to \var{x}, else \code{1}}{}
-  \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
-  \lineiii{\var{s} * \var{n}{\rm ,} \var{n} * \var{s}}{\var{n} copies of \var{s} concatenated}{}
-  \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(1)}
-  \lineiii{\var{s}[\var{i}:\var{j}]}{slice of \var{s} from \var{i} to \var{j}}{(1), (2)}
 \end{tableiii}
 \indexiii{operations on}{sequence}{types}
 \bifuncindex{len}
@@ -271,7 +340,6 @@ sequences of the same type; \var{n}, \var{i} and \var{j} are integers):
 \noindent
 Notes:
 
-% XXXJH all TeX-math expressions replaced by python-syntax expressions
 \begin{description}
   
 \item[(1)] If \var{i} or \var{j} is negative, the index is relative to
@@ -423,9 +491,9 @@ can be used interchangeably to index the same dictionary entry.
 \indexii{dictionary}{type}
 
 Dictionaries are created by placing a comma-separated list of
-\code{\var{key}:\ \var{value}} pairs within braces, for example:
-\code{\{'jack':\ 4098, 'sjoerd':\ 4127\}} or
-\code{\{4098:\ 'jack', 4127:\ 'sjoerd'\}}.
+\code{\var{key}:\,var{value}} pairs within braces, for example:
+\code{\{'jack':\,4098, 'sjoerd':\,4127\}} or
+\code{\{4098:\,'jack', 4127:\,'sjoerd'\}}.
 
 The following operations are defined on mappings (where \var{a} is a
 mapping, \var{k} is a key and \var{x} is an arbitrary object):
@@ -448,8 +516,6 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
 \ttindex{keys}
 \ttindex{has_key}
 
-% XXXJH some lines above, you talk about `true', elsewhere you
-% explicitely states \code{0} or \code{1}.
 \noindent
 Notes:
 \begin{description}
@@ -485,8 +551,8 @@ Modules are written like this: \code{<module 'sys'>}.
 
 \subsubsection{Classes and Class Instances}
 \nodename{Classes and Instances}
-% XXXJH cross ref here
-(See the Python Reference Manual for these.)
+
+(See Chapters 3 and 7 of the Python Reference Manual for these.)
 
 \subsubsection{Functions}
 
@@ -547,9 +613,11 @@ source string) to the \code{exec} statement or the built-in
 \subsubsection{Type Objects}
 
 Type objects represent the various object types.  An object's type is
-% XXXJH xref here
 accessed by the built-in function \code{type()}.  There are no special
-operations on types.
+operations on types.  The standard module \code{types} defines names
+for all standard built-in types.
+\bifuncindex{type}
+\stmodindex{types}
 
 Types are written like this: \code{<type 'int'>}.
 
@@ -564,9 +632,15 @@ It is written as \code{None}.
 \subsubsection{File Objects}
 
 File objects are implemented using \C{}'s \code{stdio} package and can be
-% XXXJH xref here
 created with the built-in function \code{open()} described under
-Built-in Functions below.
+Built-in Functions below.  They are also returned by some other
+built-in functions and methods, e.g.\ \code{posix.popen()} and
+\code{posix.fdopen()} and the \code{makefile()} method of socket
+objects.
+\bifuncindex{open}
+\bifuncindex{popen}
+\bifuncindex{fdopen}
+\bifuncindex{makefile}
 
 When a file operation fails for an I/O-related reason, the exception
 \code{IOError} is raised.  This includes situations where the
@@ -661,8 +735,7 @@ object's (writable) attributes;
 
 \item
 \code{\var{x}.__methods__} lists the methods of many built-in object types,
-e.g., \code{[].__methods__} is
-% XXXJH results in?, yields?, written down as an example
+e.g., \code{[].__methods__} yields
 \code{['append', 'count', 'index', 'insert', 'remove', 'reverse', 'sort']};
 
 \item

@@ -22,8 +22,8 @@
 \begin{abstract}
 
 \noindent
-This document describes the built-in types, exceptions and functions
-and the standard modules that come with the Python system.  It assumes
+This document describes the built-in and standard types, exceptions,
+functions and modules that come with the Python system.  It assumes
 basic knowledge about the Python language.  For an informal
 introduction to the language, see the {\em Python Tutorial}.  The {\em
 Python Reference Manual} gives a more formal definition of the
@@ -51,52 +51,58 @@ language.
 \input{libexcs}
 \input{libfuncs}
 
-\input{libmods}			% Built-in modules
+\input{libpython}		% Python Services
 \input{libsys}
-\input{libbltin}		% really __builtin__
-\input{libimp}
-\input{libmain}			% really __main__
-\input{libarray}
-\input{libmath}
-\input{libtime}
-\input{libregex}
-\input{libmarshal}
-\input{libstruct}
-
-\input{libstd}			% Standard Modules
-\input{libgetopt}
-\input{libos}
-\input{librand}
-\input{libregsub}
-\input{libstring}
-\input{libwhrandom}
-\input{libaifc}
+\input{libtypes2}		% types is already taken :-(
+\input{libtraceback}
 \input{libpickle}
 \input{libshelve}
 \input{libcopy}
-\input{libtypes2}		% types is already taken :-(
+\input{libmarshal}
+\input{libimp}
+\input{libbltin}		% really __builtin__
+\input{libmain}			% really __main__
+
+\input{libstrings}		% String Services
+\input{libstring}
+\input{libregex}
+\input{libregsub}
+\input{libstruct}
+
+\input{libmisc}			% Miscellaneous Services
+\input{libmath}
+\input{librand}
+\input{libwhrandom}
+\input{libarray}
+
+\input{liballos}		% Generic Operating System Services
+\input{libos}
+\input{libtime}
+\input{libgetopt}
 \input{libtempfile}
-\input{libtraceback}
+
+\input{libsomeos}		% Optional Operating System Services
+\input{libsignal}
+\input{libsocket}
+\input{libselect}
+\input{libthread}
+
+\input{libunix}			% UNIX Specific Services
+\input{libposix}
+\input{libppath}		% == posixpath
+\input{libpwd}
+\input{libgrp}
+\input{libdbm}
+\input{libgdbm}
+\input{libtermios}
+\input{libfcntl}
+\input{libposixfile}
 
 \input{libpdb}			% The Python Debugger
 
 \input{libprofile}		% The Python Profiler
 
-\input{libunix}			% UNIX ONLY
-\input{libdbm}
-\input{libfcntl}
-\input{libgdbm}
-\input{libgrp}
-\input{libposix}
-\input{libposixfile}
-\input{libppath}		% really posixpath
-\input{libpwd}
-\input{libselect}
-\input{libsignal}
-\input{libsocket}
-\input{libthread}
-
-\input{libwww}			% WWW EXTENSIONS
+\input{libwww}			% Internet and WWW Services
 \input{libcgi}
 \input{liburllib}
 \input{libhttplib}
@@ -109,13 +115,14 @@ language.
 \input{librfc822}
 \input{libmimetools}
 
-\input{libmm}			% MULTIMEDIA EXTENSIONS
+\input{libmm}			% Multimedia Services
 \input{libaudioop}
 \input{libimageop}
+\input{libaifc}
 \input{libjpeg}
 \input{librgbimg}
 
-\input{libcrypto}		% CRYPTOGRAPHIC EXTENSIONS
+\input{libcrypto}		% Cryptographic Services
 \input{libmd5}
 \input{libmpz}
 \input{librotor}
