@@ -53,6 +53,23 @@ type_module(PyTypeObject *type, void *context)
 	return NULL;
 }
 
+static int
+type_set_module(PyTypeObject *type, PyObject *value, void *context)
+{
+	if (!(type->tp_flags & Py_TPFLAGS_DYNAMICTYPE) ||
+	    strrchr(type->tp_name, '.')) {
+		PyErr_Format(PyExc_TypeError,
+			     "can't set %s.__module__", type->tp_name);
+		return -1;
+	}
+	if (!value) {
+		PyErr_Format(PyExc_TypeError,
+			     "can't delete %s.__module__", type->tp_name);
+		return -1;
+	}
+	return PyDict_SetItemString(type->tp_dict, "__module__", value);
+}
+
 static PyObject *
 type_dict(PyTypeObject *type, void *context)
 {
@@ -93,7 +110,7 @@ type_dynamic(PyTypeObject *type, void *context)
 
 PyGetSetDef type_getsets[] = {
 	{"__name__", (getter)type_name, NULL, NULL},
-	{"__module__", (getter)type_module, NULL, NULL},
+	{"__module__", (getter)type_module, (setter)type_set_module, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
 	{"__defined__",  (getter)type_defined,  NULL, NULL},
 	{"__dynamic__", (getter)type_dynamic, NULL, NULL},
@@ -656,14 +673,10 @@ subtype_dict(PyObject *obj, void *context)
 		return NULL;
 	}
 	dict = *dictptr;
-	if (dict == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	else {
-		Py_INCREF(dict);
-		return dict;
-	}
+	if (dict == NULL)
+		*dictptr = dict = PyDict_New();
+	Py_XINCREF(dict);
+	return dict;
 }
 
 PyGetSetDef subtype_getsets[] = {
@@ -1283,6 +1296,31 @@ static PyGetSetDef object_getsets[] = {
 	{0}
 };
 
+static PyObject *
+object_reduce(PyObject *self, PyObject *args)
+{
+	/* Call copy_reg._reduce(self) */
+	static PyObject *copy_reg_str;
+	PyObject *copy_reg, *res;
+
+	if (!copy_reg_str) {
+		copy_reg_str = PyString_InternFromString("copy_reg");
+		if (copy_reg_str == NULL)
+			return NULL;
+	}
+	copy_reg = PyImport_Import(copy_reg_str);
+	if (!copy_reg)
+		return NULL;
+	res = PyEval_CallMethod(copy_reg, "_reduce", "(O)", self);
+	Py_DECREF(copy_reg);
+	return res;
+}
+
+static PyMethodDef object_methods[] = {
+	{"__reduce__", object_reduce, METH_NOARGS, "helper for pickle"},
+	{0}
+};
+
 PyTypeObject PyBaseObject_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
  	0,					/* ob_size */
@@ -1312,7 +1350,7 @@ PyTypeObject PyBaseObject_Type = {
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	0,					/* tp_methods */
+	object_methods,				/* tp_methods */
 	0,					/* tp_members */
 	object_getsets,				/* tp_getset */
 	0,					/* tp_base */
@@ -3009,7 +3047,8 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
 		res = PyObject_GenericGetAttr(self, name);
 	else
 		res = PyObject_CallFunction(getattribute, "OO", self, name);
-	if (res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+	if (getattr != NULL &&
+	    res == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
 		PyErr_Clear();
 		res = PyObject_CallFunction(getattr, "OO", self, name);
 	}

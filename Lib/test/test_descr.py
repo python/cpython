@@ -785,7 +785,7 @@ def objects():
     class Cdict(object):
         pass
     x = Cdict()
-    verify(x.__dict__ is None)
+    verify(x.__dict__ == {})
     x.foo = 1
     verify(x.foo == 1)
     verify(x.__dict__ == {'foo': 1})
@@ -2032,6 +2032,66 @@ def setclass():
     cant(object(), list)
     cant(list(), object)
 
+def pickles():
+    if verbose: print "Testing pickling new-style classes and objects..."
+    import pickle, cPickle
+
+    def sorteditems(d):
+        L = d.items()
+        L.sort()
+        return L
+
+    global C
+    class C(object):
+        def __init__(self, a, b):
+            super(C, self).__init__()
+            self.a = a
+            self.b = b
+        def __repr__(self):
+            return "C(%r, %r)" % (self.a, self.b)
+
+    global C1
+    class C1(list):
+        def __new__(cls, a, b):
+            return super(C1, cls).__new__(cls)
+        def __init__(self, a, b):
+            self.a = a
+            self.b = b
+        def __repr__(self):
+            return "C1(%r, %r)<%r>" % (self.a, self.b, list(self))
+
+    global C2
+    class C2(int):
+        def __new__(cls, a, b, val=0):
+            return super(C2, cls).__new__(cls, val)
+        def __init__(self, a, b, val=0):
+            self.a = a
+            self.b = b
+        def __repr__(self):
+            return "C2(%r, %r)<%r>" % (self.a, self.b, int(self))
+
+    for p in pickle, cPickle:
+        for bin in 0, 1:
+
+            for cls in C, C1, C2:
+                s = p.dumps(cls, bin)
+                cls2 = p.loads(s)
+                verify(cls2 is cls)
+
+            a = C1(1, 2); a.append(42); a.append(24)
+            b = C2("hello", "world", 42)
+            s = p.dumps((a, b), bin)
+            x, y = p.loads(s)
+            assert x.__class__ == a.__class__
+            assert sorteditems(x.__dict__) == sorteditems(a.__dict__)
+            assert y.__class__ == b.__class__
+            assert sorteditems(y.__dict__) == sorteditems(b.__dict__)
+            assert `x` == `a`
+            assert `y` == `b`
+            if verbose:
+                print "a = x =", a
+                print "b = y =", b
+
 
 def test_main():
     lists()
@@ -2075,6 +2135,7 @@ def test_main():
     coercions()
     descrdoc()
     setclass()
+    pickles()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
