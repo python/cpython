@@ -272,7 +272,7 @@ typedef union _gc_head {
 		union _gc_head *gc_prev;
 		int gc_refs;
 	} gc;
-	double dummy;  /* force worst-case alignment */
+	long double dummy;  /* force worst-case alignment */
 } PyGC_Head;
 
 extern PyGC_Head _PyGC_generation0;
