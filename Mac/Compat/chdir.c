@@ -4,9 +4,14 @@
 
 #include "macdefs.h"
 
+#ifdef __MWERKS__
+/* XXXX All compilers should use this, really */
+#include <LowMem.h>
+#else
 /* Last directory used by Standard File */
 #define SFSaveDisk	(*(short *)0x214)
 #define CurDirStore (*(long *)0x398)
+#endif
 
 /* Change current directory. */
 
@@ -25,8 +30,13 @@ chdir(path)
 	}
 	if (PBHGetVol(&pb, FALSE) == noErr) {
 		/* Set the Standard File directory */
+#ifdef __MWERKS__
+		LMSetSFSaveDisk(-pb.ioWDVRefNum);
+		LMSetCurDirStore(pb.ioWDDirID);
+#else
 		SFSaveDisk= -pb.ioWDVRefNum;
 		CurDirStore= pb.ioWDDirID;
+#endif
 	}
 	return 0;
 }
