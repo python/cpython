@@ -212,16 +212,18 @@ class AppBuilder(BundleBuilder):
 			it will simply be used as the main executable.
 		nibname: The name of the main nib, for Cocoa apps. Defaults
 			to None, but must be specified when building a Cocoa app.
+		symlink_exec: Symlink the executable instead of copying it.
 
 	For the other keyword arguments see the BundleBuilder doc string.
 	"""
 
 	def __init__(self, name=None, mainprogram=None, executable=None,
-			nibname=None, **kwargs):
+			nibname=None, symlink_exec=0, **kwargs):
 		"""See the class doc string for a description of the arguments."""
 		self.mainprogram = mainprogram
 		self.executable = executable
 		self.nibname = nibname
+		self.symlink_exec = symlink_exec
 		BundleBuilder.__init__(self, name=name, **kwargs)
 
 	def setup(self):
@@ -254,7 +256,10 @@ class AppBuilder(BundleBuilder):
 				execpath = pathjoin(self.execdir, self.name)
 			else:
 				execpath = pathjoin(resdir, os.path.basename(self.executable))
-			self.files.append((self.executable, execpath))
+			if not self.symlink_exec:
+				self.files.append((self.executable, execpath))
+			else:
+				self.execpath = execpath
 			# For execve wrapper
 			setexecutable = setExecutableTemplate % os.path.basename(self.executable)
 		else:
@@ -271,6 +276,14 @@ class AppBuilder(BundleBuilder):
 			makedirs(execdir)
 			open(mainwrapperpath, "w").write(mainWrapperTemplate % locals())
 			os.chmod(mainwrapperpath, 0777)
+
+	def postProcess(self):
+		if self.symlink_exec and self.executable:
+			self.message("Symlinking executable %s to %s" % (self.executable,
+					self.execpath), 2)
+			dst = pathjoin(self.bundlepath, self.execpath)
+			makedirs(os.path.dirname(dst))
+			os.symlink(os.path.abspath(self.executable), dst)
 
 
 def copy(src, dst, mkdirs=0):
@@ -329,6 +342,7 @@ Options:
       --nib=NAME         main nib name
   -c, --creator=CCCC     4-char creator code (default: '????')
   -l, --link             symlink files/folder instead of copying them
+      --link-exec        symlink the executable instead of copying it
   -v, --verbose          increase verbosity level
   -q, --quiet            decrease verbosity level
   -h, --help             print this message
@@ -346,8 +360,8 @@ def main(builder=None):
 
 	shortopts = "b:n:r:e:m:c:plhvq"
 	longopts = ("builddir=", "name=", "resource=", "executable=",
-		"mainprogram=", "creator=", "nib=", "plist=", "link", "help",
-		"verbose", "quiet")
+		"mainprogram=", "creator=", "nib=", "plist=", "link",
+		"link-exec", "help", "verbose", "quiet")
 
 	try:
 		options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -373,6 +387,8 @@ def main(builder=None):
 			builder.plist = Plist.fromFile(arg)
 		elif opt in ('-l', '--link'):
 			builder.symlink = 1
+		elif opt == '--link-exec':
+			builder.symlink_exec = 1
 		elif opt in ('-h', '--help'):
 			usage()
 		elif opt in ('-v', '--verbose'):
