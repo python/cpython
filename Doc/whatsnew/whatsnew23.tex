@@ -415,6 +415,110 @@ by Raymond D. Hettinger.}
 
 
 %======================================================================
+\section{PEP 282: The \module{logging} Package}
+
+A standard package for writing logs, the \module{logging} package, was
+added.  It provides a powerful and flexible way for components to
+generate logging output which can then be filtered and processed in
+various ways.  The logging system can parse a configuration file to
+control its behaviour.  Logs can be written to standard error, a file
+or a socket, sent to the system log, e-mailed to a particular address,
+or buffered in memory.  It's also possible to write your own handler
+classes, of course.
+
+You can have multiple \class{Logger} objects, each one used by a
+particular subsystem of your code.  Each \class{Logger} is identified
+by a name, and names are organized into a hierarchy using \samp{.}  as
+the component separator.  For example, you might have \class{Logger}
+instances named \samp{server}, \samp{server.auth} and
+\samp{server.network}.  The latter two instances fall under the
+\samp{server} \class{Logger} in the hierarchy.  This means that if you 
+turn up the verbosity for \samp{server}, or direct 
+\samp{server} messages to a different handler, 
+the changes will also apply to \samp{server.auth} and
+\samp{server.network}.
+There's also a root \class{Logger} with the name \samp{root}, 
+parent of all other instances.
+
+The \module{logging} package contains some convenience functions
+that always use the root log:
+
+\begin{verbatim}
+import logging
+
+logging.debug('Debugging information')
+logging.info('Informational message')
+logging.warn('Warning: config file %s not found', 'server.conf')
+logging.error('Error occurred')
+logging.critical('Critical error -- shutting down')
+\end{verbatim}
+
+This produces the following output:
+
+\begin{verbatim}
+WARN:root:Warning: config file not found
+ERROR:root:Error occurred
+CRITICAL:root:Critical error -- shutting down
+\end{verbatim}
+
+In the default configuration, informational and debugging messages are
+suppressed and the output is sent to standard error.  Note the
+\function{warn()} call's use of string formatting operators; all of
+the functions for logging messages take the arguments 
+\code{(\var{msg}, \var{arg1}, \var{arg2}, ...)} and log the string resulting from
+\code{\var{msg} \% (\var{arg1}, \var{arg2}, ...)}.
+
+There's also an \function{exception()} function that records the most
+recent traceback.  Any of the other functions will also record the
+traceback by specifying the keyword argument \code{exc_info} as
+\code{True}.
+
+\begin{verbatim}
+def f():
+    try:    1/0
+    except: logging.exception('Problem recorded')
+
+f()
+\end{verbatim}
+
+This produces the following output:
+
+\begin{verbatim}
+ERROR:root:Problem recorded
+Traceback (most recent call last):
+  File "t.py", line 6, in f
+    1/0
+ZeroDivisionError: integer division or modulo by zero
+\end{verbatim}
+
+The \function{getLogger(\var{name})} is used to get a particular log.
+
+\begin{verbatim}
+log = logging.getLogger('server')
+ ...
+log.info('Listening on port %i', port)
+ ...
+log.critical('Disk full')
+ ...
+\end{verbatim}
+
+XXX finish this section
+
+This is only a partial overview of the \module{logging} package's
+features; see the
+\citetitle[http://www.python.org/dev/doc/devel/lib/module-logging.html]{\module{logging}
+package's reference documentation} for all of the details.
+
+
+\begin{seealso}
+
+\seepep{282}{A Logging System}{Written by Vinay Sajip and Trent Mick;
+implemented by Vinay Sajip.}
+
+\end{seealso}
+
+
+%======================================================================
 \section{PEP 285: The \class{bool} Type\label{section-bool}}
 
 A Boolean type was added to Python 2.3.  Two new constants were added
@@ -684,13 +788,13 @@ dictionary:
 {1: 2}
 >>> d.pop(4)
 Traceback (most recent call last):
-  File ``stdin'', line 1, in ?
+  File "stdin", line 1, in ?
 KeyError: 4
 >>> d.pop(1)
 2
 >>> d.pop(1)
 Traceback (most recent call last):
-  File ``stdin'', line 1, in ?
+  File "stdin", line 1, in ?
 KeyError: pop(): dictionary is empty
 >>> d
 {}
@@ -1019,9 +1123,9 @@ For example:
 [4, 2, 3, 0, 5, 1]
 >>> random.sample(pop, 7)          # Can't choose more than six
 Traceback (most recent call last):
-  File ``<stdin>'', line 1, in ?
-  File ``/home/amk/src/sf/python/dist/src/Lib/random.py'', line 396, in sample
-    raise ValueError, ``sample larger than population''
+  File "<stdin>", line 1, in ?
+  File "random.py", line 396, in sample
+    raise ValueError, "sample larger than population"
 ValueError: sample larger than population
 >>>
 \end{verbatim}
