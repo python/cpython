@@ -21,6 +21,7 @@ def path(path):
     return test_support.findfile(path)
 
 testtar = path("testtar.tar")
+print testtar
 tempdir = path("testtar.dir")
 tempname = path("testtar.tmp")
 membercount = 10

@@ -16,11 +16,11 @@ import zipimport
 def make_pyc(co, mtime):
     data = marshal.dumps(co)
     if type(mtime) is type(0.0):
-    	# Mac mtimes need a bit of special casing
-    	if mtime < 0x7fffffff:
-    		mtime = int(mtime)
-    	else:
-    		mtime = int(-0x100000000L + long(mtime))
+        # Mac mtimes need a bit of special casing
+        if mtime < 0x7fffffff:
+            mtime = int(mtime)
+        else:
+            mtime = int(-0x100000000L + long(mtime))
     pyc = imp.get_magic() + struct.pack("<i", int(mtime)) + data
     return pyc
 

@@ -53,7 +53,7 @@ class TestAepack(unittest.TestCase):
             packed = aepack.pack(o)
             unpacked = aepack.unpack(packed)
             self.assertEqual(repr(o), repr(unpacked))
-            
+
     def test_roundtrip_FSSpec(self):
         try:
             import Carbon.File
@@ -72,9 +72,9 @@ class TestAepack(unittest.TestCase):
         o = Carbon.File.FSSpec(os.curdir).NewAliasMinimal()
         packed = aepack.pack(o)
         unpacked = aepack.unpack(packed)
-        self.assertEqual(o.FSResolveAlias(None)[0].as_pathname(), 
+        self.assertEqual(o.FSResolveAlias(None)[0].as_pathname(),
             unpacked.FSResolveAlias(None)[0].as_pathname())
-    
+
 
 def test_main():
     test_support.run_unittest(TestAepack)

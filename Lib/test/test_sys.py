@@ -127,18 +127,18 @@ class SysModuleTest(unittest.TestCase):
     # testing sys.setprofile() is done in test_profile.py
 
     def test_setcheckinterval(self):
-         self.assertRaises(TypeError, sys.setcheckinterval)
-         sys.setcheckinterval(120)
-         sys.setcheckinterval(100)
+        self.assertRaises(TypeError, sys.setcheckinterval)
+        sys.setcheckinterval(120)
+        sys.setcheckinterval(100)
 
     def test_recursionlimit(self):
-         self.assertRaises(TypeError, sys.getrecursionlimit, 42)
-         oldlimit = sys.getrecursionlimit()
-         self.assertRaises(TypeError, sys.setrecursionlimit)
-         self.assertRaises(ValueError, sys.setrecursionlimit, -42)
-         sys.setrecursionlimit(10000)
-         self.assertEqual(sys.getrecursionlimit(), 10000)
-         sys.setrecursionlimit(oldlimit)
+        self.assertRaises(TypeError, sys.getrecursionlimit, 42)
+        oldlimit = sys.getrecursionlimit()
+        self.assertRaises(TypeError, sys.setrecursionlimit)
+        self.assertRaises(ValueError, sys.setrecursionlimit, -42)
+        sys.setrecursionlimit(10000)
+        self.assertEqual(sys.getrecursionlimit(), 10000)
+        sys.setrecursionlimit(oldlimit)
 
     def test_getwindowsversion(self):
         if hasattr(sys, "getwindowsversion"):

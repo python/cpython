@@ -933,7 +933,7 @@ class _ExpectedSkips:
             if sys.platform != "win32":
                 self.expected.add("test_winreg")
                 self.expected.add("test_winsound")
-    
+
             self.valid = True
 
     def isvalid(self):

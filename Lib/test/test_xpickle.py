@@ -39,7 +39,7 @@ def test_main():
     for test in (DumpCPickle_LoadPickle,
                  DumpPickle_LoadCPickle,
                 ):
-         suite.addTest(unittest.makeSuite(test))
+        suite.addTest(unittest.makeSuite(test))
     test_support.run_suite(suite)
 
 if __name__ == "__main__":

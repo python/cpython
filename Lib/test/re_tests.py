@@ -553,7 +553,7 @@ tests = [
     # escaping with \ as we know it
     ('(?<!\\\):(.*?)(?<!\\\):', 'a:bc\\:de:f', SUCCEED, 'g1', 'bc\\:de' ),
     # terminating with ' and escaping with ? as in edifact
-    ("(?<!\\?)'(.*?)(?<!\\?)'", "a'bc?'de'f", SUCCEED, 'g1', "bc?'de" ), 
+    ("(?<!\\?)'(.*?)(?<!\\?)'", "a'bc?'de'f", SUCCEED, 'g1', "bc?'de" ),
 
     # Comments using the (?#...) syntax
 

@@ -44,7 +44,7 @@ if 'posix' in _names:
     except ImportError:
         pass
     import posixpath as path
-    
+
     import posix
     __all__.extend(_get_exports_list(posix))
     del posix
@@ -58,7 +58,7 @@ elif 'nt' in _names:
     except ImportError:
         pass
     import ntpath as path
-    
+
     import nt
     __all__.extend(_get_exports_list(nt))
     del nt
@@ -75,7 +75,7 @@ elif 'os2' in _names:
         import ntpath as path
     else:
         import os2emxpath as path
-    
+
     import os2
     __all__.extend(_get_exports_list(os2))
     del os2
@@ -89,7 +89,7 @@ elif 'mac' in _names:
     except ImportError:
         pass
     import macpath as path
-    
+
     import mac
     __all__.extend(_get_exports_list(mac))
     del mac
@@ -104,7 +104,7 @@ elif 'ce' in _names:
         pass
     # We can use the standard Windows path.
     import ntpath as path
-    
+
     import ce
     __all__.extend(_get_exports_list(ce))
     del ce
@@ -118,7 +118,7 @@ elif 'riscos' in _names:
     except ImportError:
         pass
     import riscospath as path
-    
+
     import riscos
     __all__.extend(_get_exports_list(riscos))
     del riscos

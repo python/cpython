@@ -103,9 +103,9 @@ class TestTZInfo(unittest.TestCase):
         orig = tzinfo.__new__(tzinfo)
         self.failUnless(type(orig) is tzinfo)
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.failUnless(type(derived) is tzinfo)
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.failUnless(type(derived) is tzinfo)
 
     def test_pickling_subclass(self):
         # Make sure we can pickle/unpickle an instance of a subclass.
@@ -116,12 +116,12 @@ class TestTZInfo(unittest.TestCase):
         self.assertEqual(orig.utcoffset(None), offset)
         self.assertEqual(orig.tzname(None), 'cookie')
         for pickler, unpickler, proto in pickle_choices:
-                green = pickler.dumps(orig, proto)
-                derived = unpickler.loads(green)
-                self.failUnless(isinstance(derived, tzinfo))
-                self.failUnless(type(derived) is PicklableFixedOffset)
-                self.assertEqual(derived.utcoffset(None), offset)
-                self.assertEqual(derived.tzname(None), 'cookie')
+            green = pickler.dumps(orig, proto)
+            derived = unpickler.loads(green)
+            self.failUnless(isinstance(derived, tzinfo))
+            self.failUnless(type(derived) is PicklableFixedOffset)
+            self.assertEqual(derived.utcoffset(None), offset)
+            self.assertEqual(derived.tzname(None), 'cookie')
 
 #############################################################################
 # Base clase for testing a particular aspect of timedelta, time, date and
@@ -517,8 +517,8 @@ class TestDate(HarmlessMixedComparison):
             fromord = self.theclass.fromordinal(n)
             self.assertEqual(d, fromord)
             if hasattr(fromord, "hour"):
-                # if we're checking something fancier than a date, verify
-                # the extra fields have been zeroed out
+            # if we're checking something fancier than a date, verify
+            # the extra fields have been zeroed out
                 self.assertEqual(fromord.hour, 0)
                 self.assertEqual(fromord.minute, 0)
                 self.assertEqual(fromord.second, 0)

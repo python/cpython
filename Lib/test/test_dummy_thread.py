@@ -31,7 +31,7 @@ class LockTests(unittest.TestCase):
         self.lock.release()
         self.failUnless(not self.lock.locked(),
                         "Lock object did not release properly.")
-    
+
     def test_improper_release(self):
         #Make sure release of an unlocked thread raises _thread.error
         self.failUnlessRaises(_thread.error, self.lock.release)
@@ -58,7 +58,7 @@ class LockTests(unittest.TestCase):
         #Make sure that an unconditional locking returns True.
         self.failUnless(self.lock.acquire(1) is True,
                         "Unconditional locking did not return True.")
-    
+
     def test_uncond_acquire_blocking(self):
         #Make sure that unconditional acquiring of a locked lock blocks.
         def delay_unlock(to_unlock, delay):
@@ -125,14 +125,14 @@ class ThreadTests(unittest.TestCase):
         self.failUnless(result[0] and result[1],
                         "Argument passing for thread creation using both tuple"
                         " and kwargs failed")
-    
+
     def test_multi_creation(self):
         #Make sure multiple threads can be created.
         def queue_mark(queue, delay):
             """Wait for ``delay`` seconds and then put something into ``queue``"""
             time.sleep(delay)
             queue.put(_thread.get_ident())
-        
+
         thread_count = 5
         delay = 1.5
         testing_queue = Queue.Queue(thread_count)
@@ -147,7 +147,7 @@ class ThreadTests(unittest.TestCase):
         if test_support.verbose:
             print 'done'
         self.failUnless(testing_queue.qsize() == thread_count,
-                        "Not all %s threads executed properly after %s sec." % 
+                        "Not all %s threads executed properly after %s sec." %
                         (thread_count, delay))
 
 def test_main(imported_module=None):
