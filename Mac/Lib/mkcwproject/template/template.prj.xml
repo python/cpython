@@ -78,7 +78,7 @@
                 </SETTING>
 
                 <!-- Settings for "Access Paths" panel -->
-                <SETTING><NAME>AlwaysSearchUserPaths</NAME><VALUE>false</VALUE></SETTING>
+                <SETTING><NAME>AlwaysSearchUserPaths</NAME><VALUE>true</VALUE></SETTING>
                 <SETTING><NAME>InterpretDOSAndUnixPaths</NAME><VALUE>true</VALUE></SETTING>
                 <SETTING><NAME>UserSearchPaths</NAME>
                     <SETTING>
@@ -532,7 +532,7 @@
                 <SETTING><NAME>MWFrontEnd_C_onlystdkeywords</NAME><VALUE>0</VALUE></SETTING>
                 <SETTING><NAME>MWFrontEnd_C_enumsalwaysint</NAME><VALUE>0</VALUE></SETTING>
                 <SETTING><NAME>MWFrontEnd_C_mpwpointerstyle</NAME><VALUE>0</VALUE></SETTING>
-                <SETTING><NAME>MWFrontEnd_C_prefixname</NAME><VALUE>mwerks_plugin_config.h</VALUE></SETTING>
+                <SETTING><NAME>MWFrontEnd_C_prefixname</NAME><VALUE>%(prefixname)s</VALUE></SETTING>
                 <SETTING><NAME>MWFrontEnd_C_ansistrict</NAME><VALUE>0</VALUE></SETTING>
                 <SETTING><NAME>MWFrontEnd_C_mpwcnewline</NAME><VALUE>0</VALUE></SETTING>
                 <SETTING><NAME>MWFrontEnd_C_wchar_type</NAME><VALUE>1</VALUE></SETTING>
@@ -702,6 +702,7 @@
                     <FILEKIND>Text</FILEKIND>
                     <FILEFLAGS>Debug</FILEFLAGS>
                 </FILE>
+%(tmp_alllibraries)s
                 <FILE>
                     <PATHTYPE>Name</PATHTYPE>
                     <PATH>PythonCore</PATH>
@@ -736,6 +737,7 @@
                     <PATH>%(mac_exportname)s</PATH>
                     <PATHFORMAT>MacOS</PATHFORMAT>
                 </FILEREF>
+%(tmp_linkorderlib)s
                 <FILEREF>
                     <PATHTYPE>Name</PATHTYPE>
                     <PATH>PythonCore</PATH>
@@ -776,6 +778,7 @@
                 <PATH>MSL ShLibRuntime.Lib</PATH>
                 <PATHFORMAT>MacOS</PATHFORMAT>
             </FILEREF>
+%(tmp_grouplistlib)s
             <FILEREF>
                 <TARGETNAME>%(mac_targetname)s</TARGETNAME>
                 <PATHTYPE>Name</PATHTYPE>
