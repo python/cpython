@@ -6,11 +6,6 @@
 \moduleauthor{Neil Schemenauer}{nas@arctrix.com}
 \sectionauthor{Neil Schemenauer}{nas@arctrix.com}
 
-The \module{gc} module is only available if the interpreter was built
-with the optional cyclic garbage detector (enabled by default).  If
-this was not enabled, an \exception{ImportError} is raised by attempts
-to import this module.
-
 This module provides an interface to the optional garbage collector.  It
 provides the ability to disable the collector, tune the collection
 frequency, and set debugging options.  It also provides access to
