@@ -211,6 +211,18 @@ environment.  The value for \class{RExec} is \code{('ps1', 'ps2',
 'copyright', 'version', 'platform', 'exit', 'maxint')}.
 \end{memberdesc}
 
+\begin{memberdesc}{ok_file_types}
+Contains the file types from which modules are allowed to be loaded.
+Each file type is an integer constant defined in the \refmodule{imp} module.
+The meaningful values are \constant{PY_SOURCE}, \constant{PY_COMPILED}, and
+\constant{C_EXTENSION}.  The value for \class{RExec} is \code{(C_EXTENSION,
+PY_SOURCE)}.  Adding \constant{PY_COMPILED} in subclasses is not recommended;
+an attacker could exit the restricted execution mode by putting a forged
+byte-compiled file (\file{.pyc}) anywhere in your file system, for example
+by writing it to \file{/tmp} or uploading it to the \file{/incoming}
+directory of your public FTP server.
+\end{memberdesc}
+
 
 \subsection{An example}
 
