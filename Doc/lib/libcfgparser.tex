@@ -1,8 +1,7 @@
 \section{\module{ConfigParser} ---
-         Configuration file parser.}
+         Configuration file parser}
 
 \declaremodule{standard}{ConfigParser}
-
 \modulesynopsis{Configuration file parser.}
 \sectionauthor{Christopher G. Petrilli}{petrilli@amber.org}
 
@@ -98,7 +97,7 @@ Read and parse a list of filenames.
 
 \begin{methoddesc}{get}{section, option\optional{, raw\optional{, vars}}}
 Get an \var{option} value for the provided \var{section}.  All the
-\samp{\%} interpolations are expanded in the return values, based on
+\character{\%} interpolations are expanded in the return values, based on
 the defaults passed into the constructor, as well as the options
 \var{vars} provided, unless the \var{raw} argument is true.
 \end{methoddesc}
