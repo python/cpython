@@ -53,6 +53,8 @@ includestuff = includestuff + """
 #include <CoreServices/CoreServices.h>
 #endif
 
+#include "pycfbridge.h"
+
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_CFTypeRefObj_New(CFTypeRef);
 extern int _CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
@@ -484,6 +486,37 @@ return _res;
 f = ManualGenerator("CFStringGetUnicode", getasunicode_body);
 f.docstring = lambda: "() -> (unicode _rv)"
 CFStringRef_object.add(f)
+
+toPython_body = """
+return PyCF_CF2Python(_self->ob_itself);
+"""
+
+f = ManualGenerator("toPython", toPython_body);
+f.docstring = lambda: "() -> (python_object)"
+CFTypeRef_object.add(f)
+
+toCF_body = """
+CFTypeRef rv;
+CFTypeID typeid;
+
+if (!PyArg_ParseTuple(_args, "O&", PyCF_Python2CF, &rv))
+	return NULL;
+typeid = CFGetTypeID(rv);
+
+if (typeid == CFStringGetTypeID())
+	return Py_BuildValue("O&", CFStringRefObj_New, rv);
+if (typeid == CFArrayGetTypeID())
+	return Py_BuildValue("O&", CFArrayRefObj_New, rv);
+if (typeid == CFDictionaryGetTypeID())
+	return Py_BuildValue("O&", CFDictionaryRefObj_New, rv);
+if (typeid == CFURLGetTypeID())
+	return Py_BuildValue("O&", CFURLRefObj_New, rv);
+
+return Py_BuildValue("O&", CFTypeRefObj_New, rv);
+"""
+f = ManualGenerator("toCF", toCF_body);
+f.docstring = lambda: "(python_object) -> (CF_object)"
+module.add(f)
 
 # ADD add forloop here
 
