@@ -644,6 +644,8 @@ posix_listdir(self, args)
 	hFindFile = FindFirstFile(namebuf, &FileData);
 	if (hFindFile == INVALID_HANDLE_VALUE) {
 		errno = GetLastError();
+		if (errno == ERROR_FILE_NOT_FOUND)
+			return PyList_New(0);
 		return posix_error();
 	}
 	do {
