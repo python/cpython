@@ -405,18 +405,23 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 }
 
 static PyObject *
+binop_type_error(PyObject *v, PyObject *w, const char *op_name)
+{
+	PyErr_Format(PyExc_TypeError,
+		     "unsupported operand type(s) for %s: '%s' and '%s'",
+		     op_name,
+		     v->ob_type->tp_name,
+		     w->ob_type->tp_name);
+	return NULL;
+}
+
+static PyObject *
 binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 {
 	PyObject *result = binary_op1(v, w, op_slot);
 	if (result == Py_NotImplemented) {
-		Py_DECREF(Py_NotImplemented);
-		PyErr_Format(
-			PyExc_TypeError,
-			"unsupported operand type(s) for %s: '%s' and '%s'",
-			op_name,
-			v->ob_type->tp_name,
-			w->ob_type->tp_name);
-		return NULL;
+		Py_DECREF(result);
+		return binop_type_error(v, w, op_name);
 	}
 	return result;
 }
@@ -595,7 +600,6 @@ BINARY_FUNC(PyNumber_And, nb_and, "&")
 BINARY_FUNC(PyNumber_Lshift, nb_lshift, "<<")
 BINARY_FUNC(PyNumber_Rshift, nb_rshift, ">>")
 BINARY_FUNC(PyNumber_Subtract, nb_subtract, "-")
-BINARY_FUNC(PyNumber_Multiply, nb_multiply, "*")
 BINARY_FUNC(PyNumber_Divide, nb_divide, "/")
 BINARY_FUNC(PyNumber_Divmod, nb_divmod, "divmod()")
 
@@ -611,13 +615,70 @@ PyNumber_Add(PyObject *v, PyObject *w)
 		}
 		if (result == Py_NotImplemented) {
 			Py_DECREF(result);
-			PyErr_Format(
-			    PyExc_TypeError,
-			    "unsupported operand types for +: '%s' and '%s'",
-			    v->ob_type->tp_name,
-			    w->ob_type->tp_name);
-			result = NULL;
+			return binop_type_error(v, w, "+");
                 }
+	}
+	return result;
+}
+
+static PyObject *
+sequence_repeat(intargfunc repeatfunc, PyObject *seq, PyObject *n)
+{
+	long count;
+	if (PyInt_Check(n)) {
+		count  = PyInt_AsLong(n);
+	}
+	else if (PyLong_Check(n)) {
+		count = PyLong_AsLong(n);
+		if (count == -1 && PyErr_Occurred())
+			return NULL;
+	}
+	else {
+		return type_error(
+			"can't multiply sequence to non-int");
+	}
+#if LONG_MAX != INT_MAX
+	if (count > INT_MAX) {
+		PyErr_SetString(PyExc_ValueError,
+				"sequence repeat count too large");
+		return NULL;
+	}
+	else if (count < INT_MIN)
+		count = INT_MIN;
+	/* XXX Why don't I either
+
+	   - set count to -1 whenever it's negative (after all,
+	     sequence repeat usually treats negative numbers
+	     as zero(); or
+
+	   - raise an exception when it's less than INT_MIN?
+
+	   I'm thinking about a hypothetical use case where some
+	   sequence type might use a negative value as a flag of
+	   some kind.  In those cases I don't want to break the
+	   code by mapping all negative values to -1.  But I also
+	   don't want to break e.g. []*(-sys.maxint), which is
+	   perfectly safe, returning [].  As a compromise, I do
+	   map out-of-range negative values.
+	*/
+#endif
+	return (*repeatfunc)(seq, (int)count);
+}
+
+PyObject *
+PyNumber_Multiply(PyObject *v, PyObject *w)
+{
+	PyObject *result = binary_op1(v, w, NB_SLOT(nb_multiply));
+	if (result == Py_NotImplemented) {
+		PySequenceMethods *mv = v->ob_type->tp_as_sequence;
+		PySequenceMethods *mw = w->ob_type->tp_as_sequence;
+		if  (mv && mv->sq_repeat) {
+			return sequence_repeat(mv->sq_repeat, v, w);
+		}
+		else if (mw && mw->sq_repeat) {
+			return sequence_repeat(mw->sq_repeat, w, v);
+		}
+		result = binop_type_error(v, w, "*");
 	}
 	return result;
 }
@@ -668,8 +729,7 @@ PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
 	PyType_HasFeature((t)->ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)
 
 static PyObject *
-binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
-		const char *op_name)
+binary_iop1(PyObject *v, PyObject *w, const int iop_slot, const int op_slot)
 {
 	PyNumberMethods *mv = v->ob_type->tp_as_number;
 	if (mv != NULL && HASINPLACE(v)) {
@@ -682,7 +742,19 @@ binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
 			Py_DECREF(x);
 		}
 	}
-	return binary_op(v, w, op_slot, op_name);
+	return binary_op1(v, w, op_slot);
+}
+
+static PyObject *
+binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
+		const char *op_name)
+{
+	PyObject *result = binary_iop1(v, w, iop_slot, op_slot);
+	if (result == Py_NotImplemented) {
+		Py_DECREF(result);
+		return binop_type_error(v, w, op_name);
+	}
+	return result;
 }
 
 #define INPLACE_BINOP(func, iop, op, op_name) \
@@ -718,47 +790,53 @@ PyNumber_InPlaceTrueDivide(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
 {
-	binaryfunc f = NULL;
-
-	if (v->ob_type->tp_as_sequence != NULL) {
-		if (HASINPLACE(v))
-			f = v->ob_type->tp_as_sequence->sq_inplace_concat;
-		if (f == NULL)
-			f = v->ob_type->tp_as_sequence->sq_concat;
-		if (f != NULL)
-			return (*f)(v, w);
+	PyObject *result = binary_iop1(v, w, NB_SLOT(nb_inplace_add),
+				       NB_SLOT(nb_add));
+	if (result == Py_NotImplemented) {
+		PySequenceMethods *m = v->ob_type->tp_as_sequence;
+		Py_DECREF(result);
+		if (m != NULL) {
+			binaryfunc f = NULL;
+			if (HASINPLACE(v))
+				f = m->sq_inplace_concat;
+			if (f == NULL)
+				f = m->sq_concat;
+			if (f != NULL)
+				return (*f)(v, w);
+		}
+		result = binop_type_error(v, w, "+=");
 	}
-	return binary_iop(v, w, NB_SLOT(nb_inplace_add),
-			  NB_SLOT(nb_add), "+=");
+	return result;
 }
 
 PyObject *
 PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 {
-	PyObject * (*g)(PyObject *, int) = NULL;
-	if (HASINPLACE(v) &&
-	    v->ob_type->tp_as_sequence &&
-	    (g = v->ob_type->tp_as_sequence->sq_inplace_repeat) &&
-	    !(v->ob_type->tp_as_number &&
-	      v->ob_type->tp_as_number->nb_inplace_multiply))
-	{
-		long n;
-		if (PyInt_Check(w)) {
-			n  = PyInt_AsLong(w);
+	PyObject *result = binary_iop1(v, w, NB_SLOT(nb_inplace_multiply),
+				       NB_SLOT(nb_multiply));
+	if (result == Py_NotImplemented) {
+		intargfunc f = NULL;
+		PySequenceMethods *mv = v->ob_type->tp_as_sequence;
+		PySequenceMethods *mw = w->ob_type->tp_as_sequence;
+		Py_DECREF(result);
+		if (mv != NULL) {
+			if (HASINPLACE(v))
+				f = mv->sq_inplace_repeat;
+			if (f == NULL)
+				f = mv->sq_repeat;
+			if (f != NULL)
+				return sequence_repeat(f, v, w);
 		}
-		else if (PyLong_Check(w)) {
-			n = PyLong_AsLong(w);
-			if (n == -1 && PyErr_Occurred())
-				return NULL;
+		else if (mw != NULL) {
+			/* Note that the right hand operand should not be
+			 * mutated in this case so sq_inplace_repeat is not
+			 * used. */
+			if (mw->sq_repeat)
+				return sequence_repeat(mw->sq_repeat, w, v);
 		}
-		else {
-			return type_error(
-				"can't multiply sequence to non-int");
-		}
-		return (*g)(v, (int)n);
+		result = binop_type_error(v, w, "*=");
 	}
-	return binary_iop(v, w, NB_SLOT(nb_inplace_multiply),
-				NB_SLOT(nb_multiply), "*=");
+	return result;
 }
 
 PyObject *
