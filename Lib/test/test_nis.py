@@ -1,8 +1,13 @@
-from test_support import verbose
+from test_support import verbose, TestFailed
 import nis
 
 print 'nis.maps()'
-maps = nis.maps()
+try:
+    # the following could fail if NIS isn't active
+    maps = nis.maps()
+except nis.error, msg:
+    raise TestFailed, msg 
+
 done = 0
 for nismap in maps:
     if verbose:
