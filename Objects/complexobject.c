@@ -29,7 +29,8 @@
 
 static Py_complex c_1 = {1., 0.};
 
-Py_complex c_sum(Py_complex a, Py_complex b)
+Py_complex
+c_sum(Py_complex a, Py_complex b)
 {
 	Py_complex r;
 	r.real = a.real + b.real;
@@ -37,7 +38,8 @@ Py_complex c_sum(Py_complex a, Py_complex b)
 	return r;
 }
 
-Py_complex c_diff(Py_complex a, Py_complex b)
+Py_complex
+c_diff(Py_complex a, Py_complex b)
 {
 	Py_complex r;
 	r.real = a.real - b.real;
@@ -45,7 +47,8 @@ Py_complex c_diff(Py_complex a, Py_complex b)
 	return r;
 }
 
-Py_complex c_neg(Py_complex a)
+Py_complex
+c_neg(Py_complex a)
 {
 	Py_complex r;
 	r.real = -a.real;
@@ -53,7 +56,8 @@ Py_complex c_neg(Py_complex a)
 	return r;
 }
 
-Py_complex c_prod(Py_complex a, Py_complex b)
+Py_complex
+c_prod(Py_complex a, Py_complex b)
 {
 	Py_complex r;
 	r.real = a.real*b.real - a.imag*b.imag;
@@ -61,8 +65,16 @@ Py_complex c_prod(Py_complex a, Py_complex b)
 	return r;
 }
 
-Py_complex c_quot(Py_complex a, Py_complex b)
+Py_complex
+c_quot(Py_complex a, Py_complex b)
 {
+	/******************************************************************
+	This was the original algorithm.  It's grossly prone to spurious
+	overflow and underflow errors.  It also merrily divides by 0 despite
+	checking for that(!).  The code still serves a doc purpose here, as
+	the algorithm following is a simple by-cases transformation of this
+	one:
+
 	Py_complex r;
 	double d = b.real*b.real + b.imag*b.imag;
 	if (d == 0.)
@@ -70,9 +82,45 @@ Py_complex c_quot(Py_complex a, Py_complex b)
 	r.real = (a.real*b.real + a.imag*b.imag)/d;
 	r.imag = (a.imag*b.real - a.real*b.imag)/d;
 	return r;
+	******************************************************************/
+
+	/* This algorithm is better, and is pretty obvious:  first divide the
+	 * numerators and denominator by whichever of {b.real, b.imag} has
+	 * larger magnitude.  The earliest reference I found was to CACM
+	 * Algorithm 116 (Complex Division, Robert L. Smith, Stanford
+	 * University).  As usual, though, we're still ignoring all IEEE
+	 * endcases.
+	 */
+	 Py_complex r;	/* the result */
+ 	 const double abs_breal = b.real < 0 ? -b.real : b.real;
+	 const double abs_bimag = b.imag < 0 ? -b.imag : b.imag;
+
+	 if (abs_breal >= abs_bimag) {
+ 		/* divide tops and bottom by b.real */
+	 	if (abs_breal == 0.0) {
+	 		errno = EDOM;
+	 		r.real = r.imag = 0.0;
+	 	}
+	 	else {
+	 		const double ratio = b.imag / b.real;
+	 		const double denom = b.real + b.imag * ratio;
+	 		r.real = (a.real + a.imag * ratio) / denom;
+	 		r.imag = (a.imag - a.real * ratio) / denom;
+	 	}
+	}
+	else {
+		/* divide tops and bottom by b.imag */
+		const double ratio = b.real / b.imag;
+		const double denom = b.real * ratio + b.imag;
+		assert(b.imag != 0.0);
+		r.real = (a.real * ratio + a.imag) / denom;
+		r.imag = (a.imag * ratio - a.real) / denom;
+	}
+	return r;
 }
 
-Py_complex c_pow(Py_complex a, Py_complex b)
+Py_complex
+c_pow(Py_complex a, Py_complex b)
 {
 	Py_complex r;
 	double vabs,len,at,phase;
@@ -101,7 +149,8 @@ Py_complex c_pow(Py_complex a, Py_complex b)
 	return r;
 }
 
-static Py_complex c_powu(Py_complex x, long n)
+static Py_complex
+c_powu(Py_complex x, long n)
 {
 	Py_complex r, p;
 	long mask = 1;
@@ -116,7 +165,8 @@ static Py_complex c_powu(Py_complex x, long n)
 	return r;
 }
 
-static Py_complex c_powi(Py_complex x, long n)
+static Py_complex
+c_powi(Py_complex x, long n)
 {
 	Py_complex cn;
 
