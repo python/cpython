@@ -63,7 +63,7 @@ class bdist_dumb (Command):
         # command object that has *not* been finalized, so we can set
         # options on it!  (The option we set, 'root', is so that we can do
         # a proper "fake install" using this install command object.)
-        install = self.distribution.find_command_obj('install')
+        install = self.distribution.get_command_obj('install')
         install.root = self.bdist_dir
 
         self.announce ("installing to %s" % self.bdist_dir)

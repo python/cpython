@@ -183,7 +183,7 @@ class Command:
 
         # Option_pairs: list of (src_option, dst_option) tuples
 
-        src_cmd_obj = self.distribution.find_command_obj (src_cmd)
+        src_cmd_obj = self.distribution.get_command_obj (src_cmd)
         src_cmd_obj.ensure_ready ()
         for (src_option, dst_option) in option_pairs:
             if getattr (self, dst_option) is None:
@@ -192,11 +192,11 @@ class Command:
 
 
     def find_peer (self, command, create=1):
-        """Wrapper around Distribution's 'find_command_obj()' method:
+        """Wrapper around Distribution's 'get_command_obj()' method:
            find (create if necessary and 'create' is true) the command
            object for 'command'.."""
 
-        cmd_obj = self.distribution.find_command_obj (command, create)
+        cmd_obj = self.distribution.get_command_obj (command, create)
         cmd_obj.ensure_ready ()
         return cmd_obj
 
