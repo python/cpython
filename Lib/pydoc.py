@@ -298,6 +298,7 @@ class Doc:
             if inspect.isroutine(object): return self.docroutine(*args)
         except AttributeError:
             pass
+        if isinstance(object, property): return self.docproperty(*args)
         return self.docother(*args)
 
     def fail(self, object, name=None, *args):
@@ -724,20 +725,7 @@ class HTMLDoc(Doc):
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push('<dl><dt><strong>%s</strong></dt>\n' % name)
-                    if value.__doc__ is not None:
-                        doc = self.markup(value.__doc__, self.preformat,
-                                          funcs, classes, mdict)
-                        push('<dd><tt>%s</tt></dd>\n' % doc)
-                    for attr, tag in [('fget', '<em>get</em>'),
-                                      ('fset', '<em>set</em>'),
-                                      ('fdel', '<em>delete</em>')]:
-                        func = getattr(value, attr)
-                        if func is not None:
-                            base = self.document(func, tag, mod,
-                                                 funcs, classes, mdict, object)
-                            push('<dd>%s</dd>\n' % base)
-                    push('</dl>\n')
+                    push(self._docproperty(name, value, mod))
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -883,6 +871,30 @@ class HTMLDoc(Doc):
                 getdoc(object), self.preformat, funcs, classes, methods)
             doc = doc and '<dd><tt>%s</tt></dd>' % doc
             return '<dl><dt>%s</dt>%s</dl>\n' % (decl, doc)
+
+    def _docproperty(self, name, value, mod):
+        results = []
+        push = results.append
+
+        if name:
+            push('<dl><dt><strong>%s</strong></dt>\n' % name)
+        if value.__doc__ is not None:
+            doc = self.markup(value.__doc__, self.preformat)
+            push('<dd><tt>%s</tt></dd>\n' % doc)
+        for attr, tag in [('fget', '<em>get</em>'),
+                          ('fset', '<em>set</em>'),
+                          ('fdel', '<em>delete</em>')]:
+            func = getattr(value, attr)
+            if func is not None:
+                base = self.document(func, tag, mod)
+                push('<dd>%s</dd>\n' % base)
+        push('</dl>\n')
+
+        return ''.join(results)
+
+    def docproperty(self, object, name=None, mod=None, cl=None):
+        """Produce html documentation for a property."""
+        return self._docproperty(name, object, mod)
 
     def docother(self, object, name=None, mod=None, *ignored):
         """Produce HTML documentation for a data object."""
@@ -1138,22 +1150,7 @@ class TextDoc(Doc):
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push(name)
-                    need_blank_after_doc = 0
-                    doc = getdoc(value) or ''
-                    if doc:
-                        push(self.indent(doc))
-                        need_blank_after_doc = 1
-                    for attr, tag in [('fget', '<get>'),
-                                      ('fset', '<set>'),
-                                      ('fdel', '<delete>')]:
-                        func = getattr(value, attr)
-                        if func is not None:
-                            if need_blank_after_doc:
-                                push('')
-                                need_blank_after_doc = 0
-                            base = self.document(func, tag, mod)
-                            push(self.indent(base))
+                    push(self._docproperty(name, value, mod))
             return attrs
 
         def spilldata(msg, attrs, predicate):
@@ -1257,6 +1254,34 @@ class TextDoc(Doc):
         else:
             doc = getdoc(object) or ''
             return decl + '\n' + (doc and rstrip(self.indent(doc)) + '\n')
+
+    def _docproperty(self, name, value, mod):
+        results = []
+        push = results.append
+
+        if name:
+            push(name)
+        need_blank_after_doc = 0
+        doc = getdoc(value) or ''
+        if doc:
+            push(self.indent(doc))
+            need_blank_after_doc = 1
+        for attr, tag in [('fget', '<get>'),
+                          ('fset', '<set>'),
+                          ('fdel', '<delete>')]:
+            func = getattr(value, attr)
+            if func is not None:
+                if need_blank_after_doc:
+                    push('')
+                    need_blank_after_doc = 0
+                base = self.document(func, tag, mod)
+                push(self.indent(base))
+
+        return '\n'.join(results)
+
+    def docproperty(self, object, name=None, mod=None, cl=None):
+        """Produce text documentation for a property."""
+        return self._docproperty(name, object, mod)
 
     def docother(self, object, name=None, mod=None, maxlen=None, doc=None):
         """Produce text documentation for a data object."""
