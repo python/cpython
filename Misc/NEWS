@@ -1202,6 +1202,11 @@ Mac
 
 - MacPython no longer maps both \r and \n to \n on input for any text file.
   This feature has been replaced by universal newline support (PEP278).
+  
+- The default encoding for Python sourcefiles in MacPython-OS9 is no longer
+  mac-roman (or whatever your local Mac encoding was but "ascii", like on
+  other platforms. If you really need sourcefiles with Mac characters in them
+  you can change this in site.py.
 
 What's New in Python 2.2 final?
 ===============================
