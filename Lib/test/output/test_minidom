@@ -1,6 +1,8 @@
 test_minidom
+Passed testAAA
 Test Succeeded testAAA
 Passed assertion: len(Node.allnodes) == 0
+Passed testAAB
 Test Succeeded testAAB
 Passed assertion: len(Node.allnodes) == 0
 Passed Test
@@ -56,11 +58,17 @@ Test Succeeded testCloneDocumentDeep
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testCloneDocumentShallow
 Passed assertion: len(Node.allnodes) == 0
+Passed clone of element has same attribute keys
+Passed clone of attribute node has proper attribute values
+Passed clone of attribute node correctly owned
+Passed testCloneElementDeep
 Test Succeeded testCloneElementDeep
 Passed assertion: len(Node.allnodes) == 0
+Passed clone of element has same attribute keys
+Passed clone of attribute node has proper attribute values
+Passed clone of attribute node correctly owned
+Passed testCloneElementShallow
 Test Succeeded testCloneElementShallow
-Passed assertion: len(Node.allnodes) == 0
-Test Succeeded testCloneElementShallowCopiesAttributes
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testClonePIDeep
 Passed assertion: len(Node.allnodes) == 0
@@ -108,11 +116,18 @@ Test Succeeded testGetEmptyNodeListFromElementsByTagNameNS
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testHasChildNodes
 Passed assertion: len(Node.allnodes) == 0
+Passed testInsertBefore -- node properly placed in tree
+Passed testInsertBefore -- node properly placed in tree
+Passed testInsertBefore -- node properly placed in tree
 Test Succeeded testInsertBefore
 Passed assertion: len(Node.allnodes) == 0
 Passed Test
 Passed Test
 Test Succeeded testNonZero
+Passed assertion: len(Node.allnodes) == 0
+Passed testNormalize -- preparation
+Passed testNormalize -- result
+Test Succeeded testNormalize
 Passed assertion: len(Node.allnodes) == 0
 Passed testParents
 Test Succeeded testParents
@@ -163,6 +178,7 @@ Test Succeeded testTextNodeRepr
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testTextRepr
 Passed assertion: len(Node.allnodes) == 0
+Caught expected exception when adding extra document element.
 Test Succeeded testTooManyDocumentElements
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testUnlink
