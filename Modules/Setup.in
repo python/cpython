@@ -203,6 +203,10 @@ rotor rotormodule.o
 # syslog syslogmodule.o
 
 
-# Example -- included for reference only
+# Anthony Baxter's gdbm module (derived from Jack's dbm module)
+# GNU dbm(3) will require -lgdbm
+gdbm gdbmmodule.o -I/usr/local/include -L/usr/local/lib -lgdbm
 
+
+# Example -- included for reference only
 # xx xxmodule.o
