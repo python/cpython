@@ -202,7 +202,6 @@ raise_test_long_error(const char* msg)
 #define F_PY_TO_S	PyLong_AsLong
 #define F_U_TO_PY	PyLong_FromUnsignedLong
 #define F_PY_TO_U	PyLong_AsUnsignedLong
-#define F_ERROR		raise_test_long_error
 
 #include "testcapi_long.h"
 
@@ -212,7 +211,7 @@ test_long_api(PyObject* self, PyObject* args)
         if (!PyArg_ParseTuple(args, ":test_long_api"))
                 return NULL;
 
-	return TESTNAME();
+	return TESTNAME(raise_test_long_error);
 }
 
 #undef TESTNAME
@@ -221,7 +220,6 @@ test_long_api(PyObject* self, PyObject* args)
 #undef F_PY_TO_S
 #undef F_U_TO_PY
 #undef F_PY_TO_U
-#undef F_ERROR
 
 #ifdef HAVE_LONG_LONG
 
@@ -237,7 +235,6 @@ raise_test_longlong_error(const char* msg)
 #define F_PY_TO_S	PyLong_AsLongLong
 #define F_U_TO_PY	PyLong_FromUnsignedLongLong
 #define F_PY_TO_U	PyLong_AsUnsignedLongLong
-#define F_ERROR		raise_test_longlong_error
 
 #include "testcapi_long.h"
 
@@ -247,7 +244,7 @@ test_longlong_api(PyObject* self, PyObject* args)
         if (!PyArg_ParseTuple(args, ":test_longlong_api"))
                 return NULL;
 
-	return TESTNAME();
+	return TESTNAME(raise_test_longlong_error);
 }
 
 #undef TESTNAME
@@ -256,7 +253,6 @@ test_longlong_api(PyObject* self, PyObject* args)
 #undef F_PY_TO_S
 #undef F_U_TO_PY
 #undef F_PY_TO_U
-#undef F_ERROR
 
 #endif	/* ifdef HAVE_LONG_LONG */
 
