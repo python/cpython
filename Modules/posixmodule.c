@@ -75,7 +75,24 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 
+/* XXX Aren't these always declared in unistd.h? */
 extern char *strerror PROTO((int));
+extern int chmod PROTO((const char *, mode_t));
+extern char *getcwd PROTO((char *, int)); /* XXX or size_t? */
+extern int mkdir PROTO((const char *, mode_t));
+extern int chdir PROTO((const char *));
+extern int link PROTO((const char *, const char *));
+extern int rename PROTO((const char *, const char *));
+extern int rmdir PROTO((const char *));
+extern int stat PROTO((const char *, struct stat *));
+extern int unlink PROTO((const char *));
+extern int pclose PROTO((FILE *));
+#ifdef NO_LSTAT
+#define lstat stat
+#else
+extern int lstat PROTO((const char *, struct stat *));
+extern int symlink PROTO((const char *, const char *));
+#endif
 
 
 /* Return a dictionary corresponding to the POSIX environment table */
@@ -225,7 +242,6 @@ posix_chdir(self, args)
 	object *self;
 	object *args;
 {
-	extern int chdir PROTO((const char *));
 	return posix_1str(args, chdir);
 }
 
@@ -234,7 +250,6 @@ posix_chmod(self, args)
 	object *self;
 	object *args;
 {
-	extern int chmod PROTO((const char *, mode_t));
 	return posix_strint(args, chmod);
 }
 
@@ -245,7 +260,6 @@ posix_getcwd(self, args)
 {
 	char buf[1026];
 	char *res;
-	extern char *getcwd PROTO((char *, int));
 	if (!getnoarg(args))
 		return NULL;
 	BGN_SAVE
@@ -262,7 +276,6 @@ posix_link(self, args)
 	object *self;
 	object *args;
 {
-	extern int link PROTO((const char *, const char *));
 	return posix_2str(args, link);
 }
 #endif /* !MSDOS */
@@ -342,7 +355,6 @@ posix_mkdir(self, args)
 	object *self;
 	object *args;
 {
-	extern int mkdir PROTO((const char *, mode_t));
 	return posix_strint(args, mkdir);
 }
 
@@ -366,7 +378,6 @@ posix_rename(self, args)
 	object *self;
 	object *args;
 {
-	extern int rename PROTO((const char *, const char *));
 	return posix_2str(args, rename);
 }
 
@@ -375,7 +386,6 @@ posix_rmdir(self, args)
 	object *self;
 	object *args;
 {
-	extern int rmdir PROTO((const char *));
 	return posix_1str(args, rmdir);
 }
 
@@ -384,7 +394,6 @@ posix_stat(self, args)
 	object *self;
 	object *args;
 {
-	extern int stat PROTO((const char *, struct stat *));
 	return posix_do_stat(self, args, stat);
 }
 
@@ -424,19 +433,19 @@ posix_unlink(self, args)
 	object *self;
 	object *args;
 {
-	extern int unlink PROTO((const char *));
 	return posix_1str(args, unlink);
 }
 
 #ifndef NO_UNAME
 #include <sys/utsname.h>
 
+extern int uname PROTO((struct utsname *));
+
 static object *
 posix_uname(self, args)
 	object *self;
 	object *args;
 {
-	extern int uname PROTO((struct utsname *));
 	struct utsname u;
 	object *v;
 	int res;
@@ -696,7 +705,6 @@ posix_popen(self, args)
 	object *self;
 	object *args;
 {
-	extern int pclose PROTO((FILE *));
 	char *name, *mode;
 	FILE *fp;
 	if (!getargs(args, "(ss)", &name, &mode))
@@ -759,10 +767,6 @@ posix_lstat(self, args)
 	object *self;
 	object *args;
 {
-#ifdef NO_LSTAT
-#define lstat stat
-#endif
-	extern int lstat PROTO((const char *, struct stat *));
 	return posix_do_stat(self, args, lstat);
 }
 
@@ -798,7 +802,6 @@ posix_symlink(self, args)
 	err_setstr(PosixError, "symlink not implemented on this system");
 	return NULL;
 #else
-	extern int symlink PROTO((const char *, const char *));
 	return posix_2str(args, symlink);
 #endif
 }
