@@ -50,7 +50,7 @@ class Editor:
 		fl.set_event_call_back(self.do_event)
 		return self
 
-	def do_event(self, (dev, val)):
+	def do_event(self, dev, val):
 		if dev == DEVICE.REDRAW:
 			if self.vin:
 				self.vin.redraw(val)
@@ -80,34 +80,34 @@ class Editor:
 		return 1
 
 
-	def cb_in_new(self, args):
+	def cb_in_new(self, *args):
 		self.msg('')
 		hd, tl = os.path.split(self.ifile)
 		filename = fl.file_selector('Input video file', hd, '', tl)
 		if not filename: return
 		self.open_input(filename)
 
-	def cb_in_close(self, args):
+	def cb_in_close(self, *args):
 		self.msg('')
 		self.close_input()
 
-	def cb_in_skip(self, args):
+	def cb_in_skip(self, *args):
 		if not self.icheck(): return
 		if not self.vin.get(): self.err('End of input file')
 		self.ishow()
 
-	def cb_in_back(self, args):
+	def cb_in_back(self, *args):
 		if not self.icheck(): return
 		if not self.vin.backup(): self.err('Input buffer exhausted')
 		self.ishow()
 
-	def cb_in_rewind(self, args):
+	def cb_in_rewind(self, *args):
 		if not self.icheck(): return
 		self.vin.rewind()
 		self.ishow()
 
 
-	def cb_copy(self, args):
+	def cb_copy(self, *args):
 		if not self.iocheck(): return
 		data = self.vin.get()
 		if not data:
@@ -121,7 +121,7 @@ class Editor:
 		self.oshow()
 		self.ishow()
 
-	def cb_uncopy(self, args):
+	def cb_uncopy(self, *args):
 		if not self.iocheck(): return
 		if not self.vout.backup():
 			self.err('Output buffer exhausted')
@@ -133,34 +133,34 @@ class Editor:
 		self.ishow()
 
 
-	def cb_out_new(self, args):
+	def cb_out_new(self, *args):
 		self.msg('')
 		hd, tl = os.path.split(self.ofile)
 		filename = fl.file_selector('Output video file', hd, '', tl)
 		if not filename: return
 		self.open_output(filename)
 
-	def cb_out_close(self, args):
+	def cb_out_close(self, *args):
 		self.msg('')
 		self.close_output()
 
-	def cb_out_skip(self, arg):
+	def cb_out_skip(self, *args):
 		if not self.ocheck(): return
 		if not self.vout.forward(): self.err('Output buffer exhausted')
 		self.oshow()
 		
-	def cb_out_back(self, args):
+	def cb_out_back(self, *args):
 		if not self.ocheck(): return
 		if not self.vout.backup(): self.err('Output buffer exhausted')
 		self.oshow()
 
-	def cb_out_rewind(self, args):
+	def cb_out_rewind(self, *args):
 		if not self.ocheck(): return
 		self.vout.rewind()
 		self.oshow()
 
 
-	def cb_quit(self, args):
+	def cb_quit(self, *args):
 		self.close_input()
 		self.close_output()
 		sys.exit(0)
