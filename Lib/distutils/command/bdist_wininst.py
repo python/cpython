@@ -253,8 +253,14 @@ class bdist_wininst (Command):
             # empty pre-install script
             cfgdata = cfgdata + "\0"
         file.write(cfgdata)
+
+        # The 'magic number' 0x1234567B is used to make sure that the
+        # binary layout of 'cfgdata' is what the wininst.exe binary
+        # expects.  If the layout changes, increment that number, make
+        # the corresponding changes to the wininst.exe sources, and
+        # recompile them.
         header = struct.pack("<iii",
-                             0x1234567A,       # tag
+                             0x1234567B,       # tag
                              len(cfgdata),     # length
                              bitmaplen,        # number of bytes in bitmap
                              )
