@@ -77,6 +77,54 @@ typedef struct {
 
 /* --- C API ----------------------------------------------------*/
 
+/* Short explanation of what this C API export mechanism does
+   and how it works:
+
+    The _ssl module needs access to the type object defined in 
+    the _socket module. Since cross-DLL linking introduces a lot of
+    problems on many platforms, the "trick" is to wrap the
+    C API of a module in a struct which then gets exported to
+    other modules via a PyCObject.
+
+    The code in socketmodule.c defines this struct (which currently
+    only contains the type object reference, but could very
+    well also include other C APIs needed by other modules)
+    and exports it as PyCObject via the module dictionary
+    under the name "CAPI".
+
+    Other modules can now include the socketmodule.h file
+    which defines the needed C APIs to import and set up
+    a static copy of this struct in the importing module.
+
+    After initialization, the importing module can then
+    access the C APIs from the _socket module by simply
+    referring to the static struct, e.g.
+
+    Load _socket module and its C API; this sets up the global
+    PySocketModule:
+    
+	if (PySocketModule_ImportModuleAndAPI())
+	    return;
+
+
+    Now use the C API as if it were defined in the using
+    module:
+
+        if (!PyArg_ParseTuple(args, "O!|zz:ssl",
+
+			      PySocketModule.Sock_Type,
+
+			      (PyObject*)&Sock,
+			      &key_file, &cert_file))
+	    return NULL;
+
+    Support could easily be extended to export more C APIs/symbols
+    this way. Currently, only the type object is exported, 
+    other candidates would be socket constructors and socket
+    access functions.
+
+*/
+
 /* C API for usage by other Python modules */
 typedef struct {
 	PyTypeObject *Sock_Type;
@@ -84,7 +132,12 @@ typedef struct {
 
 /* XXX The net effect of the following appears to be to define a function
    XXX named PySocketModule_APIObject in _ssl.c.  It's unclear why it isn't
-   XXX defined there directly. */
+   XXX defined there directly. 
+
+   >>> It's defined here because other modules might also want to use
+   >>> the C API.
+
+*/
 #ifndef PySocket_BUILDING_SOCKET
 
 /* --- C API ----------------------------------------------------*/
