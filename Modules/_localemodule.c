@@ -13,6 +13,7 @@ This software comes with no warranty. Use at your own risk.
 #include <locale.h>
 #include <string.h>
 #include <limits.h>
+#include <ctype.h>
 #include "Python.h"
 #ifdef macintosh
 char *strdup Py_PROTO((char *));
