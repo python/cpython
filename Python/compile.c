@@ -1032,7 +1032,7 @@ com_subscript(c, n)
 	ch = CHILD(n,0);
 	/* check for rubber index */
 	if (TYPE(ch) == DOT && TYPE(CHILD(n,1)) == DOT)
-		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_Ellipses));
+		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_Ellipsis));
 	else {
 		/* check for slice */
 		if ((TYPE(ch) == COLON || NCH(n) > 1))
