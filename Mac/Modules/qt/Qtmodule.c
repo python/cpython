@@ -4300,7 +4300,7 @@ static PyObject *MovieObj_GetMovieGWorld(_self, _args)
 	               &gdh);
 	_res = Py_BuildValue("O&O&",
 	                     GrafObj_New, port,
-	                     ResObj_New, gdh);
+	                     OptResObj_New, gdh);
 	return _res;
 }
 
@@ -4313,7 +4313,7 @@ static PyObject *MovieObj_SetMovieGWorld(_self, _args)
 	GDHandle gdh;
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      GrafObj_Convert, &port,
-	                      ResObj_Convert, &gdh))
+	                      OptResObj_Convert, &gdh))
 		return NULL;
 	SetMovieGWorld(_self->ob_itself,
 	               port,
@@ -7650,6 +7650,22 @@ static PyObject *Qt_DragAlignedWindow(_self, _args)
 	return _res;
 }
 
+static PyObject *Qt_MoviesTask(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long maxMilliSecToUse;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &maxMilliSecToUse))
+		return NULL;
+	MoviesTask((Movie)0,
+	           maxMilliSecToUse);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef Qt_methods[] = {
 	{"EnterMovies", (PyCFunction)Qt_EnterMovies, 1,
 	 "() -> None"},
@@ -7787,6 +7803,8 @@ static PyMethodDef Qt_methods[] = {
 	 "(WindowPtr wp, Boolean front) -> None"},
 	{"DragAlignedWindow", (PyCFunction)Qt_DragAlignedWindow, 1,
 	 "(WindowPtr wp, Point startPt, Rect boundsRect) -> None"},
+	{"MoviesTask", (PyCFunction)Qt_MoviesTask, 1,
+	 "(long maxMilliSecToUse) -> None"},
 	{NULL, NULL, 0}
 };
 
