@@ -763,7 +763,7 @@ descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
   internal buffer size) are read.
 \end{methoddesc}
 
-\begin{methoddesc}[file]{seek}{offset, whence}
+\begin{methoddesc}[file]{seek}{offset\optional{, whence}}
   Set the file's current position, like \code{stdio}'s \cfunction{fseek()}.
   The \var{whence} argument is optional and defaults to \code{0}
   (absolute file positioning); other values are \code{1} (seek
