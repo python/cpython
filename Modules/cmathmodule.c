@@ -70,8 +70,9 @@ c_asin(Py_complex x)
 	/* -i * log[(sqrt(1-x**2) + i*x] */
 	const Py_complex squared = c_prod(x, x);
 	const Py_complex sqrt_1_minus_x_sq = c_sqrt(c_diff(c_one, squared));
-	const Py_complex sum = c_sum(sqrt_1_minus_x_sq, c_prod(c_i, x));
-        return c_neg(c_prodi(c_log(sum)));
+        return c_neg(c_prodi(c_log(
+        		c_sum(sqrt_1_minus_x_sq, c_prodi(x))
+		    )       )     );
 }
 
 static char c_asin_doc[] =
