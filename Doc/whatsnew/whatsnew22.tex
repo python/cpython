@@ -222,10 +222,10 @@ actually performs are:
 
 \begin{verbatim}
 descriptor = obj.__class__.x
-descriptor.get(obj)
+descriptor.__get__(obj)
 \end{verbatim}
 
-For methods, \method{descriptor.get} returns a temporary object that's
+For methods, \method{descriptor.__get__} returns a temporary object that's
 callable, and wraps up the instance and the method to be called on it.
 This is also why static methods and class methods are now possible;
 they have descriptors that wrap up just the method, or the method and
@@ -1369,7 +1369,7 @@ The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Fred Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr.,
 Carel Fellinger, Mark Hammond, Stephen Hansen, Michael Hudson, Jack Jansen,
-Marc-Andr\'e Lemburg, Fredrik Lundh, Tim Peters, Jens Quade, Tom Reinhardt, 
-Neil Schemenauer, Guido van Rossum.
+Marc-Andr\'e Lemburg, Fredrik Lundh, Michael McLay, Tim Peters, Jens
+Quade, Tom Reinhardt, Neil Schemenauer, Guido van Rossum.
 
 \end{document}
