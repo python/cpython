@@ -371,10 +371,15 @@ class MenuBar:
 	
 	def addmenu(self, title, after = 0):
 		id = self.getnextid()
+		print 'Newmenu', title, id # XXXX
 		m = NewMenu(id, title)
 		m.InsertMenu(after)
 		DrawMenuBar()
 		return id, m
+		
+	def delmenu(self, id):
+		print 'Delmenu', id # XXXX
+		DeleteMenu(id)
 	
 	def addpopup(self, title = ''):
 		return self.addmenu(title, -1)
@@ -401,6 +406,14 @@ class Menu:
 		self.id, self.menu = self.bar.addmenu(title, after)
 		bar.menus[self.id] = self
 		self.items = []
+		
+	def delete(self):
+		self.bar.delmenu(self.id)
+		del self.bar.menus[self.id]
+		del self.bar
+		del self.items
+		del self.menu
+		del self.id
 	
 	def additem(self, label, shortcut=None, callback=None, kind=None):
 		self.menu.AppendMenu('x')		# add a dummy string
@@ -436,6 +449,11 @@ class Menu:
 class MenuItem:
 	def __init__(self, menu, title, shortcut=None, callback=None, kind=None):
 		self.item = menu.additem(title, shortcut, callback)
+		self.menu = menu
+		
+	def check(self, onoff):
+		self.menu.menu.CheckItem(self.item, onoff)
+		
 
 class RadioItem(MenuItem):
 	def __init__(self, menu, title, shortcut=None, callback=None):
