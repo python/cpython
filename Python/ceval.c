@@ -2769,9 +2769,12 @@ fast_cfunction(PyObject *func, PyObject ***pp_stack, int na)
 
 	if (na == 0)
 		return (*meth)(self, NULL);
-	else if (na == 1)
-		return (*meth)(self, EXT_POP(*pp_stack));
-	else {
+	else if (na == 1) {
+		PyObject *arg = EXT_POP(*pp_stack);
+		PyObject *result =  (*meth)(self, arg); 
+		Py_DECREF(arg);
+		return result;
+	} else {
 		PyObject *args = load_args(pp_stack, na);
 		PyObject *result = (*meth)(self, args);
 		Py_DECREF(args);
