@@ -224,15 +224,7 @@ class bdist_wininst (Command):
 
         cfgdata = self.get_inidata()
 
-        if self.target_version:
-            # if we create an installer for a specific python version,
-            # it's better to include this in the name
-            installer_name = os.path.join(self.dist_dir,
-                                          "%s.win32-py%s.exe" %
-                                           (fullname, self.target_version))
-        else:
-            installer_name = os.path.join(self.dist_dir,
-                                          "%s.win32.exe" % fullname)
+        installer_name = self.get_installer_filename(fullname)
         self.announce("creating %s" % installer_name)
 
         if bitmap:
@@ -279,6 +271,19 @@ class bdist_wininst (Command):
         file.write(open(arcname, "rb").read())
 
     # create_exe()
+
+    def get_installer_filename(self, fullname):
+        # Factored out to allow overriding in subclasses
+        if self.target_version:
+            # if we create an installer for a specific python version,
+            # it's better to include this in the name
+            installer_name = os.path.join(self.dist_dir,
+                                          "%s.win32-py%s.exe" %
+                                           (fullname, self.target_version))
+        else:
+            installer_name = os.path.join(self.dist_dir,
+                                          "%s.win32.exe" % fullname)
+    # get_installer_filename()
 
     def get_exe_bytes (self):
         from distutils.msvccompiler import get_build_version
