@@ -397,3 +397,32 @@ else: raise TestFailed, 'type(), w/2 args expected TypeError'
 try: type(1, 2, 3, 4)
 except TypeError: pass
 else: raise TestFailed, 'type(), w/4 args expected TypeError'
+
+print '6.7 Buffers'
+try: buffer('asdf', -1)
+except ValueError: pass
+else: raise TestFailed, "buffer('asdf', -1) should raise ValueError"
+
+try: buffer(None)
+except TypeError: pass
+else: raise TestFailed, "buffer(None) should raise TypeError"
+
+a = buffer('asdf')
+hash(a)
+b = a * 5
+if a == b:
+    raise TestFailed, 'buffers should not be equal'
+if str(b) != ('asdf' * 5):
+    raise TestFailed, 'repeated buffer has wrong content'
+if str(a * 0) != '':
+    raise TestFailed, 'repeated buffer zero times has wrong content'
+if str(a + buffer('def')) != 'asdfdef':
+    raise TestFailed, 'concatenation of buffers yields wrong content'
+
+try: a[1] = 'g'
+except TypeError: pass
+else: raise TestFailed, "buffer assignment should raise TypeError"
+
+try: a[0:1] = 'g'
+except TypeError: pass
+else: raise TestFailed, "buffer slice assignment should raise TypeError"
