@@ -258,7 +258,7 @@ libinstall:	python $(srcdir)/Lib/$(MACHDEP)
 			./python $(LIBDEST)/compileall.py $(LIBDEST)
 
 # Create the MACHDEP source directory, if one wasn't distributed..
-$(srcdir)/Lib/$(MACHDEP): python
+$(srcdir)/Lib/$(MACHDEP):
 		mkdir $(srcdir)/Lib/$(MACHDEP)
 		cp $(srcdir)/Lib/generic/regen $(srcdir)/Lib/$(MACHDEP)/regen
 		export PATH; PATH="`pwd`:$PATH"; \
