@@ -26,8 +26,10 @@
 \newif\ifpy@doing@page@targets
 \py@doing@page@targetsfalse
 
+\newif\ifpdf\pdffalse
 \ifx\pdfoutput\undefined\else\ifcase\pdfoutput
 \else
+  \pdftrue
   \input{pdfcolor}
   \let\py@LinkColor=\NavyBlue
   \let\py@NormalColor=\Black
@@ -253,14 +255,14 @@
 
 % Refer to a module's documentation using a hyperlink of the module's
 % name, at least if we're building PDF:
-\@ifundefined{pdfannotlink}{%
-  \newcommand{\refmodule}[2][\py@modulebadkey]{\module{#2}}
-}{%
+\ifpdf
   \newcommand{\refmodule}[2][\py@modulebadkey]{%
     \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
     \py@linkToName{label-module-\py@modulekey}{\module{#2}}%
   }
-}
+\else
+  \newcommand{\refmodule}[2][\py@modulebadkey]{\module{#2}}
+\fi
 
 % support for the module index
 \newif\ifpy@UseModuleIndex
@@ -434,13 +436,13 @@
   }{}
 }
 
-\@ifundefined{pdfoutput}{
-  \newcommand{\py@ModSynopsisSummary}[4]{\bfcode{#2} & #4\\}
-}{
+\ifpdf
   \newcommand{\py@ModSynopsisSummary}[4]{%
     \py@linkToName{label-module-#1}{\bfcode{#2}} & #4\\
   }
-}
+\else
+  \newcommand{\py@ModSynopsisSummary}[4]{\bfcode{#2} & #4\\}
+\fi
 \newenvironment{synopsistable}{
   % key, name, type, synopsis
   \let\modulesynopsis=\py@ModSynopsisSummary
@@ -784,18 +786,17 @@
 
 % Use this def/redef approach for \url{} since hyperref defined this already,
 % but only if we actually used hyperref:
-\@ifundefined{pdfannotlink}{
-  \newcommand{\py@url}[1]{\mbox{\small\textsf{#1}}}
-}{
-  \newcommand{\py@url}[1]{{%
+\ifpdf
+  \newcommand{\url}[1]{{%
     \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
     \py@LinkColor%                              color of the link text
-    \mbox{\small\textsf{#1}}%
+    \small\sf #1%
     \py@NormalColor%                    Turn it back off; these are declarative
     \pdfendlink}%                       and don't appear bound to the current
   }%                                    formatting "box".
-}
-\let\url=\py@url
+\else
+  \newcommand{\url}[1]{\mbox{\small\textsf{#1}}}
+\fi
 \newcommand{\email}[1]{{\small\textsf{#1}}}
 \newcommand{\newsgroup}[1]{{\small\textsf{#1}}}
 
@@ -843,7 +844,7 @@
   }}
 \newcommand{\envvar}[1]{%
   #1%
-  \index{#1@{#1}}%
+  \index{#1}%
   \index{environment variables!{#1}}%
 }
 \newcommand{\makevar}[1]{#1}            % variable in a Makefile
@@ -859,12 +860,32 @@
 \newcommand{\programopt}[1]{\strong{#1}}
 % Note that \longprogramopt provides the '--'!
 \newcommand{\longprogramopt}[1]{\strong{-{}-#1}}
+
 % \ulink{link text}{URL}
-\newcommand{\ulink}[2]{#1}
+\ifpdf
+  % The \noindent here is a hack -- we're forcing pdfTeX into
+  % horizontal mode since \pdfannotlink requires that.
+  \newcommand{\ulink}[2]{\noindent{%
+    \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#2)}%
+    \py@LinkColor%                              color of the link text
+    #1%
+    \py@NormalColor%                    Turn it back off; these are declarative
+    \pdfendlink}%                       and don't appear bound to the current
+  }%                                    formatting "box".
+\else
+  \newcommand{\ulink}[2]{#1}
+\fi
 
 % cited titles:  \citetitle{Title of Work}
 %       online:  \citetitle[url-to-resource]{Title of Work}
-\newcommand{\citetitle}[2][URL]{\emph{#2}}
+\ifpdf
+  \newcommand{\citetitle}[2][\py@modulebadkey]{%
+    \ifx\py@modulebadkey#1\emph{#2}\else\ulink{\emph{#2}}{#1}\fi%
+  }
+\else
+  \newcommand{\citetitle}[2][URL]{#1}
+\fi
+
 
 
 \newcommand{\grammartoken}[1]{\texttt{#1}}
@@ -1019,16 +1040,8 @@
 % Note that the last parameter for \seemodule and \seetext should be complete
 % sentences and be terminated with the proper punctuation.
 
-\@ifundefined{pdfannotlink}{%
+\ifpdf
   \newcommand{\py@seemodule}[3][\py@modulebadkey]{%
-    \par%
-    \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
-    \begin{fulllineitems}
-      \item[Module \module{#2} (section \ref{module-\py@modulekey}):]
-      #3
-    \end{fulllineitems}
-  }
-}{\newcommand{\py@seemodule}[3][\py@modulebadkey]{%
     \par%
     \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
     \begin{fulllineitems}
@@ -1037,7 +1050,17 @@
       #3
     \end{fulllineitems}
   }
-}
+\else
+  \newcommand{\py@seemodule}[3][\py@modulebadkey]{%
+    \par%
+    \ifx\py@modulebadkey#1\def\py@modulekey{#2}\else\def\py@modulekey{#1}\fi%
+    \begin{fulllineitems}
+      \item[Module \module{#2} (section \ref{module-\py@modulekey}):]
+      #3
+    \end{fulllineitems}
+  }
+\fi
+
 % \seetitle[url]{title}{why it's interesting}
 \newcommand{\py@seetitle}[3][\py@modulebadkey]{%
   \par
