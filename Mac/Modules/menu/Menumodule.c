@@ -43,7 +43,6 @@ extern int BMObj_Convert(PyObject *, BitMapPtr *);
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Devices.h> /* Defines OpenDeskAcc in universal headers */
-#include <Desk.h> /* Defines OpenDeskAcc in old headers */
 #include <Menus.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */

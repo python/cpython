@@ -40,7 +40,17 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
-			# "GetComponentInfo"  # XXXX I dont know how the Handle args are expected...
+			"OpenADefaultComponent",
+			"GetComponentTypeModSeed",
+			"OpenAComponentResFile",
+			"CallComponentUnregister",
+			"CallComponentTarget",
+			"CallComponentRegister",
+			"CallComponentVersion",
+			"CallComponentCanDo",
+			"CallComponentClose",
+			"CallComponentOpen",
+			"OpenAComponent",
 			]
 
 	def makeblacklisttypes(self):
@@ -54,6 +64,7 @@ class MyScanner(Scanner):
 			"ComponentParameters",
 			
 			"ComponentRoutineUPP",
+			"ComponentMPWorkFunctionUPP",
 			]
 
 	def makerepairinstructions(self):

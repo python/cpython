@@ -25,7 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
-#include <GestaltEqu.h>
+#include <Gestalt.h>
 #include "Speech.h"
 
 #ifdef __MWERKS__
@@ -37,7 +37,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif /* __MWERKS__ */
 
 #ifdef __powerc
-#include <FragLoad.h>
+#include <CodeFragments.h>
 int lib_available;
 #endif /* __powerc */
 
@@ -150,7 +150,7 @@ sc_SpeakText(self, args)
 	char *str;
 	int len;
 	
-	if (!PyArg_Parse(args, "s#", &str, &len))
+	if (!PyArg_Parse(args, "m#", &str, &len))
 		return NULL;
 	if ( self->curtext ) {
 		StopSpeech(self->chan);

@@ -56,6 +56,34 @@ class MyScanner(Scanner):
 			"AddTESample",
 			"AddHiliteSample",
 			"HiliteTextSample",
+			# Missing in CW11 quicktime library
+			"SpriteMediaGetDisplayedSampleNumber",
+			"SpriteMediaGetIndImageDescription",
+			"SpriteMediaCountImages",
+			"SpriteMediaCountSprites",
+			"SpriteMediaHitTestSprites",
+			"SpriteMediaGetProperty",
+			"SpriteMediaSetProperty",
+			"TextMediaSetTextSampleData",
+			"TextMediaHiliteTextSample",
+			"TextMediaFindNextText",
+			"TextMediaAddHiliteSample",
+			"TextMediaAddTESample",
+			"TextMediaAddTextSample",
+			"VideoMediaGetStatistics",
+			"VideoMediaResetStatistics",
+			"EndFullScreen",
+			"NewMovieFromDataRef",
+			"MCPtInController",
+			"MCRemoveAMovie",
+			"MCRemoveAllMovies",
+			"MCInvalidate",
+			"InvalidateMovieRegion",
+			"GetMovieCompositeBufferFlags",
+			"SetMovieCompositeBufferFlags",
+			"SetTrackSoundLocalizationSettings",
+			"GetTrackSoundLocalizationSettings",
+			"GetMovieNaturalBoundsRect",
 			]
 
 	def makeblacklisttypes(self):
@@ -91,6 +119,9 @@ class MyScanner(Scanner):
 			"MCActionFilterWithRefConUPP",
 			"GetMovieUPP",
 			"ModalFilterUPP",
+			"QTAtomContainer",
+			"SpriteWorld",
+			"Sprite",
 			]
 
 	def makerepairinstructions(self):
@@ -105,8 +136,9 @@ class MyScanner(Scanner):
 			([('short', 'resId', 'OutMode'), ('StringPtr', 'resName', 'InMode')],
 			 [('dummyshortptr', 'resId', 'InMode'), ('dummyStringPtr', 'resName', 'InMode')]),
 			 
-			# MCDoAction
-			([('void', 'params', 'OutMode')], [('mcactionparams', 'params', 'InMode')]),
+			# MCDoAction and more
+			([('void', '*', 'OutMode')], [('mcactionparams', '*', 'InMode')]),
+			
 			]
 			
 if __name__ == "__main__":

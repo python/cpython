@@ -32,7 +32,6 @@ unsigned_char = Type('unsigned char', 'b')
 
 includestuff = includestuff + """
 #include <Devices.h> /* Defines OpenDeskAcc in universal headers */
-#include <Desk.h> /* Defines OpenDeskAcc in old headers */
 #include <%s>""" % MACHEADERFILE + """
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */

@@ -27,7 +27,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 
 #include <Types.h>
-#include <GestaltEqu.h>
+#include <Gestalt.h>
 
 static PyObject *
 gestalt_gestalt(self, args)

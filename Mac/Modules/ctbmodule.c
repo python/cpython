@@ -269,7 +269,7 @@ ctbcm_write(self, args)
 	char *buf;
 	ConnectionCompletionUPP cb_upp = NewConnectionCompletionProc(ctbcm_ctbcallback);
 	
-	if (!PyArg_Parse(args, "(s#ili)", &buf, &ilen, &chan, &timeout, &flags))
+	if (!PyArg_Parse(args, "(m#ili)", &buf, &ilen, &chan, &timeout, &flags))
 		return NULL;
 	len = ilen;
 	if ((err=CMWrite(self->hdl, (Ptr)buf, &len, (CMChannel)chan,

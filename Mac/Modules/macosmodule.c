@@ -117,7 +117,7 @@ rf_write(self, args)
 		PyErr_SetString(PyExc_ValueError, "Operation on closed file");
 		return NULL;
 	}
-	if (!PyArg_ParseTuple(args, "s#", &buffer, &size))
+	if (!PyArg_ParseTuple(args, "m#", &buffer, &size))
 		return NULL;
 	err = FSWrite(self->fRefNum, &size, buffer);
 	if (err) {
