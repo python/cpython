@@ -23,7 +23,7 @@ __revision__ = "$Id: bdist_pkgtool.py,v 0.3 mwa "
 # default request script - Is also wrapped around user's request script
 # unless --no-autorelocate is requested. Finds the python site-packages
 # directory and prompts for verification
-DEFAULT_REQUEST="""#!/bin/sh 
+DEFAULT_REQUEST="""#!/bin/sh
 ######################################################################
 #         Distutils internal package relocation support              #
 ######################################################################
@@ -34,7 +34,7 @@ trap `exit 3` 15
 /usr/bin/which python 2>&1 >/dev/null
 if [ $? -ne 0 ]; then
     echo "The python interpretor needs to be on your path!"
-    echo 
+    echo
     echo "If you have more than one, make sure the first one is where"
     echo "you want this module installed:"
     exit 1
@@ -45,26 +45,26 @@ PY_PKG_DIR=`python -c "import sys;print '%s/lib/python%s/site-packages' % (sys.e
 
 echo ""
 if [ -z "${PY_DIR}" ]; then
-	echo "I can't seem to find the python distribution."
-	echo "I'm assuming the default path for site-packages"
+        echo "I can't seem to find the python distribution."
+        echo "I'm assuming the default path for site-packages"
 else
-	BASEDIR="${PY_PKG_DIR}"
-	cat <<EOF
-	Python found! The default path:
+        BASEDIR="${PY_PKG_DIR}"
+        cat <<EOF
+        Python found! The default path:
 
-	${BASEDIR}
+        ${BASEDIR}
 
-	will install ${PRODUCT} such that all python users 
-	can import it.
+        will install ${PRODUCT} such that all python users
+        can import it.
 
-	If you just want individual access, you can install into
-	any directory and add that directory to your \$PYTHONPATH
+        If you just want individual access, you can install into
+        any directory and add that directory to your \$PYTHONPATH
 EOF
 fi
 echo ""
 
 BASEDIR=`ckpath -d ${BASEDIR} -ay \
-	-p "Where should ${PRODUCT} be installed? [${BASEDIR}]"` || exit $?
+        -p "Where should ${PRODUCT} be installed? [${BASEDIR}]"` || exit $?
 
 ######################################################################
 #                user supplied request script follows                #
@@ -77,8 +77,8 @@ BASEDIR=`ckpath -d ${BASEDIR} -ay \
 DEFAULT_POSTINSTALL="""#!/bin/sh
 /usr/bin/test -d ${BASEDIR}/__DISTUTILS_NAME__
 if [ $? -eq 0 ]; then
-	python -c "import compileall;compileall.compile_dir(\\"${BASEDIR}/__DISTUTILS_NAME__\\")"
-	chown -R root:other ${BASEDIR}/__DISTUTILS_NAME__
+        python -c "import compileall;compileall.compile_dir(\\"${BASEDIR}/__DISTUTILS_NAME__\\")"
+        chown -R root:other ${BASEDIR}/__DISTUTILS_NAME__
 fi
 """
 
@@ -91,7 +91,7 @@ DEFAULT_PREREMOVE="""#!/bin/sh
 /usr/bin/which python 2>&1 >/dev/null
 if [ $? -ne 0 ]; then
     echo "The python interpretor needs to be on your path!"
-    echo 
+    echo
     echo "If you have more than one, make sure the first one is where"
     echo "you want this module removed from"
     exit 1
@@ -99,8 +99,8 @@ fi
 
 /usr/bin/test -d ${BASEDIR}/__DISTUTILS_NAME__
 if [ $? -eq 0 ]; then
-	find ${BASEDIR}/__DISTUTILS_NAME__ -name "*.pyc" -exec rm {} \;
-	find ${BASEDIR}/__DISTUTILS_NAME__ -name "*.pyo" -exec rm {} \;
+        find ${BASEDIR}/__DISTUTILS_NAME__ -name "*.pyc" -exec rm {} \;
+        find ${BASEDIR}/__DISTUTILS_NAME__ -name "*.pyo" -exec rm {} \;
 fi
 """
 
@@ -111,9 +111,9 @@ DEFAULT_POSTREMOVE="""#!/bin/sh
 
 /usr/bin/test -d ${BASEDIR}/__DISTUTILS_NAME__
 if [ $? -eq 0 ]; then
-	if [ `find ${BASEDIR}/__DISTUTILS_NAME__ ! -type d | wc -l` -eq 0 ]; then
-    	rm -rf ${BASEDIR}/__DISTUTILS_NAME__
-	fi
+        if [ `find ${BASEDIR}/__DISTUTILS_NAME__ ! -type d | wc -l` -eq 0 ]; then
+        rm -rf ${BASEDIR}/__DISTUTILS_NAME__
+        fi
 fi
 """
 
@@ -171,13 +171,13 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         self.ensure_script('postremove')
         self.ensure_string('vendor', None)
         if self.__dict__.has_key('author'):
-                if self.__dict__.has_key('author_email'):
-                        self.ensure_string('vendor',
-                                "%s <%s>" % (self.author,
-                                   self.author_email))
-                else:
-                        self.ensure_string('vendor',
-                             "%s" % (self.author))
+            if self.__dict__.has_key('author_email'):
+                self.ensure_string('vendor',
+                        "%s <%s>" % (self.author,
+                           self.author_email))
+            else:
+                self.ensure_string('vendor',
+                     "%s" % (self.author))
         self.ensure_string('category', "System,application")
         self.ensure_script('compver')
         self.ensure_script('depend')
@@ -188,7 +188,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
             raise DistutilsOptionError, \
             "pkg-abrev (%s) must be less than 9 characters" % self.pkg_abrev
         # Update default scripts with our metadata name
-        DEFAULT_REQUEST = string.replace(DEFAULT_REQUEST, 
+        DEFAULT_REQUEST = string.replace(DEFAULT_REQUEST,
             "__DISTUTILS_NAME__", self.root_package)
         DEFAULT_POSTINSTALL = string.replace(DEFAULT_POSTINSTALL,
             "__DISTUTILS_NAME__", self.root_package)
@@ -243,7 +243,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
                  'compver',None)
         self.write_script(os.path.join(pkg_dir, "depend"),
                  'depend',None)
-            
+
         self.announce('Creating prototype file')
         path = os.path.join(pkg_dir, "prototype")
         self.execute(write_file,
@@ -263,14 +263,14 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         pkg_cmd.append(os.environ['PWD'])
         self.spawn(pkg_cmd)
         pkg_cmd = ['pkgtrans', '-s', '/var/spool/pkg']
-        path = os.path.join(os.environ['PWD'],pkg_dir, 
-		           self.get_binary_name() + ".pkg")
+        path = os.path.join(os.environ['PWD'],pkg_dir,
+                           self.get_binary_name() + ".pkg")
         self.announce('Transferring package to ' + pkg_dir)
         pkg_cmd.append(path)
         pkg_cmd.append(self.pkg_abrev)
         self.spawn(pkg_cmd)
         os.system("rm -rf /var/spool/pkg/%s" % self.pkg_abrev)
-        
+
 
     def run (self):
         if self.subpackages:
@@ -281,7 +281,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
             self.make_package()
     # run()
 
-  
+
     def _make_prototype(self):
         proto_file = ["i pkginfo"]
         if self.request:
@@ -302,15 +302,15 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         build = self.get_finalized_command('build')
 
         try:
-                self.distribution.packages[0]
-                file_list=string.split( 
-                getoutput("pkgproto %s/%s=%s" % (build.build_lib,
-                self.distribution.packages[0], 
-		self.distribution.packages[0])),"\012")
+            self.distribution.packages[0]
+            file_list=string.split(
+            getoutput("pkgproto %s/%s=%s" % (build.build_lib,
+            self.distribution.packages[0],
+            self.distribution.packages[0])),"\012")
         except:
-                file_list=string.split( 
-                getoutput("pkgproto %s=" % (build.build_lib)),"\012")
-        ownership="%s %s" % (pwd.getpwuid(os.getuid())[0], 
+            file_list=string.split(
+            getoutput("pkgproto %s=" % (build.build_lib)),"\012")
+        ownership="%s %s" % (pwd.getpwuid(os.getuid())[0],
             grp.getgrgid(os.getgid())[0])
         for i in range(len(file_list)):
             file_list[i] = string.replace(file_list[i],ownership,"root bin")
@@ -324,7 +324,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         # script with the autorelocation script. If no script is provided,
         # The request script will simply be the autorelocate script
         if self.no_autorelocate==0:
-                request=string.split(DEFAULT_REQUEST,"\012")
+            request=string.split(DEFAULT_REQUEST,"\012")
         else:
             self.announce('Creating relocation request script')
         if self.request:
@@ -334,7 +334,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
                     users_request.remove(users_request[0])
                 for i in users_request:
                     request.append(i)
-            
+
         if self.no_autorelocate==0:
             request.append("#############################################")
             request.append("#        finalize relocation support        #")
@@ -355,12 +355,12 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
             'PSTAMP="%s"' % self.revision,
             ]
         info_file.extend(['VENDOR="%s (%s)"' % (self.distribution.maintainer, \
-		self.distribution.license) ])
+                self.distribution.license) ])
         info_file.extend(['EMAIL="%s"' % self.distribution.maintainer_email ])
-        
+
         p = self.distribution.get_platforms()
-	if p is None or p==['UNKNOWN']:
-	    archs=getoutput('uname -p')
+        if p is None or p==['UNKNOWN']:
+            archs=getoutput('uname -p')
         else:
             archs=string.join(self.distribution.get_platforms(),',')
         #else:
@@ -381,7 +381,7 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
                 break
         if site:
             info_file.extend(['BASEDIR="%s"' % site ])
-                      
+
         return info_file
 
     # _make_info_file ()
@@ -400,11 +400,11 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
                 new_changelog.append(line)
             else:
                 new_changelog.append('  ' + line)
-                
+
         # strip trailing newline inserted by first changelog entry
         if not new_changelog[0]:
             del new_changelog[0]
-        
+
         return new_changelog
 
     # _format_changelog()
