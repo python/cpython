@@ -15,8 +15,9 @@ object):
 
         d[key] = data   # store data at key (overwrites old data if
                         # using an existing key)
-        data = d[key]   # retrieve data at key (raise KeyError if no
-                        # such key)
+        data = d[key]   # retrieve a COPY of the data at key (raise 
+                        # KeyError if no such key) -- NOTE that this
+                        # access returns a *copy* of the entry!
         del d[key]      # delete data stored at key (raises KeyError
                         # if no such key)
         flag = d.has_key(key)   # true if the key exists; same as "key in d"
@@ -26,6 +27,33 @@ object):
 
 Dependent on the implementation, closing a persistent dictionary may
 or may not be necessary to flush changes to disk.
+
+Normally, d[key] returns a COPY of the entry.  This needs care when
+mutable entries are mutated: for example, if d[key] is a list,
+        d[key].append(anitem)
+does NOT modify the entry d[key] itself, as stored in the persistent
+mapping -- it only modifies the copy, which is then immediately
+discarded, so that the append has NO effect whatsoever.  To append an
+item to d[key] in a way that will affect the persistent mapping, use:
+        data = d[key]
+        data.append(anitem)
+        d[key] = data
+
+To avoid the problem with mutable entries, you may pass the keyword
+argument writeback=True in the call to shelve.open.  When you use:
+        d = shelve.open(filename, writeback=True)
+then d keeps a cache of all entries you access, and writes them all back
+to the persistent mapping when you call d.close().  This ensures that
+such usage as d[key].append(anitem) works as intended.
+
+However, using keyword argument writeback=True may consume vast amount
+of memory for the cache, and it may make d.close() very slow, if you
+access many of d's entries after opening it in this way: d has no way to
+check which of the entries you access are mutable and/or which ones you
+actually mutate, so it must cache, and write back at close, all of the
+entries that you access.  You can call d.sync() to write back all the
+entries in the cache, and empty the cache (d.sync() also synchronizes
+the persistent dictionary on disk, if feasible).
 """
 
 # Try using cPickle and cStringIO if available.
@@ -41,6 +69,7 @@ except ImportError:
     from StringIO import StringIO
 
 import UserDict
+import warnings
 
 __all__ = ["Shelf","BsdDbShelf","DbfilenameShelf","open"]
 
@@ -51,9 +80,19 @@ class Shelf(UserDict.DictMixin):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict, binary=False):
+    def __init__(self, dict, protocol=None, writeback=False, binary=None):
         self.dict = dict
-        self._binary = binary
+        if protocol is not None and binary is not None:
+            raise ValueError, "can't specify both 'protocol' and 'binary'"
+        if binary is not None:
+            warnings.warn("The 'binary' argument to Shelf() is deprecated",
+                          PendingDeprecationWarning)
+            protocol = int(binary)
+        if protocol is None:
+            protocol = 0
+        self._protocol = protocol
+        self.writeback = writeback
+        self.cache = {}
 
     def keys(self):
         return self.dict.keys()
@@ -73,19 +112,32 @@ class Shelf(UserDict.DictMixin):
         return default
 
     def __getitem__(self, key):
-        f = StringIO(self.dict[key])
-        return Unpickler(f).load()
+        try:
+            value = self.cache[key]
+        except KeyError:
+            f = StringIO(self.dict[key])
+            value = Unpickler(f).load()
+            if self.writeback:
+                self.cache[key] = value
+        return value
 
     def __setitem__(self, key, value):
+        if self.writeback:
+            self.cache[key] = value
         f = StringIO()
-        p = Pickler(f, self._binary)
+        p = Pickler(f, self._protocol)
         p.dump(value)
         self.dict[key] = f.getvalue()
 
     def __delitem__(self, key):
         del self.dict[key]
+        try:
+            del self.cache[key]
+        except KeyError:
+            pass
 
     def close(self):
+        self.sync()
         try:
             self.dict.close()
         except:
@@ -96,6 +148,12 @@ class Shelf(UserDict.DictMixin):
         self.close()
 
     def sync(self):
+        if self.writeback and self.cache:
+            self.writeback = False
+            for key, entry in self.cache.iteritems():
+                self[key] = entry
+            self.writeback = True
+            self.cache = {}
         if hasattr(self.dict, 'sync'):
             self.dict.sync()
 
@@ -113,8 +171,8 @@ class BsdDbShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, dict, binary=False):
-        Shelf.__init__(self, dict, binary)
+    def __init__(self, dict, protocol=None, writeback=False, binary=None):
+        Shelf.__init__(self, dict, protocol, writeback, binary)
 
     def set_location(self, key):
         (key, value) = self.dict.set_location(key)
@@ -149,22 +207,25 @@ class DbfilenameShelf(Shelf):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    def __init__(self, filename, flag='c', binary=False):
+    def __init__(self, filename, flag='c', protocol=None, writeback=False, binary=None):
         import anydbm
-        Shelf.__init__(self, anydbm.open(filename, flag), binary)
+        Shelf.__init__(self, anydbm.open(filename, flag), protocol, writeback, binary)
 
 
-def open(filename, flag='c', binary=False):
+def open(filename, flag='c', protocol=None, writeback=False, binary=None):
     """Open a persistent dictionary for reading and writing.
 
-    The filename parameter is the base filename for the underlying database.
-    As a side-effect, an extension may be added to the filename and more
-    than one file may be created.  The optional flag parameter has the
-    same interpretation as the flag parameter of anydbm.open().  The
-    optional binary parameter may be set to True to force the use of binary
-    pickles for serializing data values.
+    The filename parameter is the base filename for the underlying
+    database.  As a side-effect, an extension may be added to the
+    filename and more than one file may be created.  The optional flag
+    parameter has the same interpretation as the flag parameter of
+    anydbm.open(). The optional protocol parameter specifies the
+    version of the pickle protocol (0, 1, or 2).
+
+    The optional binary parameter is deprecated and may be set to True
+    to force the use of binary pickles for serializing data values.
 
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return DbfilenameShelf(filename, flag, binary)
+    return DbfilenameShelf(filename, flag, binary, writeback)
