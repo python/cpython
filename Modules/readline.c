@@ -27,13 +27,13 @@
 #else
 #include <readline/readline.h> /* You may need to add an -I option to Setup */
 
-extern int rl_parse_and_bind();
-extern int rl_read_init_file();
-extern int rl_insert_text();
-extern int rl_bind_key();
-extern int rl_bind_key_in_map();
-extern int rl_initialize();
-extern int add_history();
+extern int rl_parse_and_bind(char *);
+extern int rl_read_init_file(char *);
+extern int rl_insert_text(char *);
+extern int rl_bind_key(int, Function *);
+extern int rl_bind_key_in_map(int, Function *, Keymap);
+extern int rl_initialize(void);
+extern int add_history(char *);
 extern Function *rl_event_hook;
 #endif
 
