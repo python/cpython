@@ -7,12 +7,12 @@
 #     nmake /f grammar.mak clean
 #
 # I don't understand the maze of preprocessor #define's on Windows, and
-# as a result this requires linking with python22.lib, so it's of no use
+# as a result this requires linking with python23.lib, so it's of no use
 # for bootstrapping (the cause appears to be a useless-- in this
 # particular case --pragma in PC\pyconfig.h, which demands that
-# python22.lib get linked in).
+# python23.lib get linked in).
 
-LIBS= ..\PCbuild\python22.lib
+LIBS= ..\PCbuild\python23.lib
 
 CFLAGS= /I ..\Include /I ..\PC /D MS_NO_COREDLL
 
