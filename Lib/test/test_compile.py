@@ -1,6 +1,17 @@
 from test_support import verbose, TestFailed
 
 if verbose:
+    print "Testing whether compiler catches assignment to __debug__"
+
+try:
+    compile('__debug__ = 1', '?', 'single')
+except SyntaxError:
+    pass
+
+import __builtin__
+setattr(__builtin__, '__debug__', 'sure')
+
+if verbose:
     print 'Running tests on argument handling'
 
 try:
@@ -21,7 +32,8 @@ try:
 except SyntaxError:
     pass
 
-print "testing complex args"
+if verbose:
+    print "testing complex args"
 
 def comp_args((a, b)):
     print a,b

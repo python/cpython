@@ -5459,8 +5459,13 @@ symtable_assign(struct symtable *st, node *n, int def_flag)
 			n = CHILD(n, 1);
 			goto loop;
 		} else if (TYPE(tmp) == NAME) {
-			if (strcmp(STR(tmp), "__debug__") == 0)
-				symtable_warn(st, ASSIGN_DEBUG);
+			if (strcmp(STR(tmp), "__debug__") == 0) {
+				PyErr_SetString(PyExc_SyntaxError, 
+						ASSIGN_DEBUG);
+				PyErr_SyntaxLocation(st->st_filename,
+					     st->st_cur->ste_opt_lineno);
+				st->st_errors++;
+			}
 			symtable_add_def(st, STR(tmp), DEF_LOCAL | def_flag);
 		}
 		return;
