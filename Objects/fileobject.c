@@ -32,6 +32,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
+#define BUF(v) GETSTRINGVALUE((stringobject *)v)
+
 #include "errno.h"
 #ifndef errno
 extern int errno;
@@ -161,34 +163,131 @@ file_close(f, args)
 }
 
 static object *
-file_read(f, args)
+file_seek(f, args)
 	fileobject *f;
 	object *args;
 {
-	int n;
-	object *v;
+	long offset;
+	long whence;
+	
 	if (f->f_fp == NULL) {
 		err_badarg();
 		return NULL;
 	}
-	if (args == NULL || !is_intobject(args)) {
+	if (args != NULL && is_intobject(args)) {
+		offset = getintvalue(args);
+		whence = 0; /* SEEK_SET */
+	}
+	else {
+		if (!getlonglongargs(args, &offset, &whence))
+			return NULL;
+	}
+	errno = 0;
+	if (fseek(f->f_fp, offset, (int)whence) != 0) {
+		if (errno == 0)
+			errno = EIO;
+		return err_errno(RuntimeError);
+	}
+	INCREF(None);
+	return None;
+}
+
+static object *
+file_tell(f, args)
+	fileobject *f;
+	object *args;
+{
+	long offset;
+	if (args != NULL || f->f_fp == NULL) {
 		err_badarg();
 		return NULL;
 	}
-	n = getintvalue(args);
-	if (n < 0) {
+	errno = 0;
+	offset = ftell(f->f_fp);
+	if (offset == -1L) {
+		if (errno == 0)
+			errno = EIO;
+		return err_errno(RuntimeError);
+	}
+	return newintobject(offset);
+}
+
+static object *
+file_flush(f, args)
+	fileobject *f;
+	object *args;
+{
+	if (args != NULL || f->f_fp == NULL) {
 		err_badarg();
 		return NULL;
 	}
-	v = newsizedstringobject((char *)NULL, n);
+	errno = 0;
+	if (fflush(f->f_fp) != 0) {
+		if (errno == 0)
+			errno = EIO;
+		return err_errno(RuntimeError);
+	}
+	INCREF(None);
+	return None;
+}
+
+static object *
+file_read(f, args)
+	fileobject *f;
+	object *args;
+{
+	int n, n1, n2, n3;
+	object *v;
+	
+	if (f->f_fp == NULL) {
+		err_badarg();
+		return NULL;
+	}
+	if (args == 0)
+		n = 0;
+	else {
+		if (!getintarg(args, &n))
+			return NULL;
+		if (n < 0) {
+			err_badarg();
+			return NULL;
+		}
+	}
+	
+	n2 = n != 0 ? n : BUFSIZ;
+	v = newsizedstringobject((char *)NULL, n2);
 	if (v == NULL)
 		return NULL;
-	n = fread(getstringvalue(v), 1, n, f->f_fp);
-	/* EOF is reported as an empty string */
-	/* XXX should detect real I/O errors? */
-	resizestring(&v, n);
+	n1 = 0;
+	for (;;) {
+		n3 = fread(BUF(v)+n1, 1, n2-n1, f->f_fp);
+		/* XXX Error check? */
+		if (n3 == 0)
+			break;
+		n1 += n3;
+		if (n1 == n)
+			break;
+		if (n == 0) {
+			n2 = n1 + BUFSIZ;
+			if (resizestring(&v, n2) < 0)
+				return NULL;
+		}
+	}
+	if (n1 != n2)
+		resizestring(&v, n1);
 	return v;
 }
+
+/* Read a line.
+   Without argument, or with a zero argument, read until end of line
+   or EOF, whichever comes first.
+   With a positive argument n, read at most n bytes until end of line
+   or EOF, whichever comes first.
+   Negative and non-integer arguments are illegal.
+   When EOF is hit immediately, return an empty string.
+   A newline character is returned as the last character of the buffer
+   if it is read.
+*/
 
 /* XXX Should this be unified with raw_input()? */
 
@@ -197,43 +296,81 @@ file_readline(f, args)
 	fileobject *f;
 	object *args;
 {
-	int n;
+	register FILE *fp;
+	register int c;
+	register char *buf, *end;
+	int n, n1, n2;
 	object *v;
-	if (f->f_fp == NULL) {
+	
+	if ((fp = f->f_fp) == NULL) {
 		err_badarg();
 		return NULL;
 	}
-	if (args == NULL) {
-		n = 10000; /* XXX should really be unlimited */
-	}
-	else if (is_intobject(args)) {
-		n = getintvalue(args);
+	
+	if (args == NULL)
+		n = 0; /* Unlimited */
+	else {
+		if (!getintarg(args, &n))
+			return NULL;
 		if (n < 0) {
 			err_badarg();
 			return NULL;
 		}
 	}
-	else {
-		err_badarg();
-		return NULL;
-	}
-	v = newsizedstringobject((char *)NULL, n);
+	
+	n2 = n != 0 ? n : 100;
+	v = newsizedstringobject((char *)NULL, n2);
 	if (v == NULL)
 		return NULL;
-#ifndef THINK_C_3_0
-	/* XXX Think C 3.0 wrongly reads up to n characters... */
-	n = n+1;
-#endif
-	if (fgets(getstringvalue(v), n, f->f_fp) == NULL) {
-		/* EOF is reported as an empty string */
-		/* XXX should detect real I/O errors? */
-		n = 0;
+	buf = BUF(v);
+	end = buf + n2;
+	
+	for (;;) {
+		if ((c = getc(fp)) == EOF || (*buf++ = c) == '\n')
+			break;
+		/* XXX Error check? */
+		if (buf == end) {
+			if (n != 0)
+				break;
+			n1 = n2;
+			n2 += 1000;
+			if (resizestring(&v, n2) < 0)
+				return NULL;
+			buf = BUF(v) + n1;
+			end = BUF(v) + n2;
+		}
 	}
-	else {
-		n = strlen(getstringvalue(v));
-	}
-	resizestring(&v, n);
+	
+	n1 = buf - BUF(v);
+	if (n1 != n2)
+		resizestring(&v, n1);
 	return v;
+}
+
+static object *
+file_readlines(f, args)
+	fileobject *f;
+	object *args;
+{
+	object *list;
+	object *line;
+	
+	if ((list = newlistobject(0)) == NULL)
+		return NULL;
+	for (;;) {
+		line = file_readline(f, args);
+		if (line != NULL && getstringsize(line) == 0) {
+			DECREF(line);
+			break;
+		}
+		if (line == NULL || addlistitem(list, line) != 0) {
+			DECREF(list);
+			XDECREF(line);
+			return NULL;
+		}
+		DECREF(line);
+	}
+	return list;
 }
 
 static object *
@@ -263,10 +400,14 @@ file_write(f, args)
 }
 
 static struct methodlist file_methods[] = {
-	{"write",	file_write},
+	{"close",	file_close},
+	{"flush",	file_flush},
 	{"read",	file_read},
 	{"readline",	file_readline},
-	{"close",	file_close},
+	{"readlines",	file_readlines},
+	{"seek",	file_seek},
+	{"tell",	file_tell},
+	{"write",	file_write},
 	{NULL,		NULL}		/* sentinel */
 };
 
