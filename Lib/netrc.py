@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Module and documentation by Eric S. Raymond, 21 Dec 1998 
 
 import sys, os, string, shlex
