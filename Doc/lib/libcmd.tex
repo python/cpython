@@ -43,9 +43,9 @@ An end-of-file on input is passed back as the string \code{'EOF'}.
 
 An interpreter instance will recognize a command name \samp{foo} if
 and only if it has a method \method{do_foo()}.  As a special case,
-a line containing only the character \character{?} is dispatched to
+a line beginning with the character \character{?} is dispatched to
 the method \method{do_help()}.  As another special case, a line
-containing only the character \character{!} is dispatched to the
+beginning with the character \character{!} is dispatched to the
 method \method{do_shell} (if such a method is defined).
 
 All subclasses of \class{Cmd} inherit a predefined \method{do_help}.
