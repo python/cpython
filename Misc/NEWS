@@ -210,8 +210,6 @@ Tools/Demos
 - New script combinerefs.py helps analyze new PYTHONDUMPREFS output.
   See the module docstring for details.
 
-TBD
-
 Build
 -----
 
@@ -229,6 +227,7 @@ C API
 
 - LONG_LONG was renamed to PY_LONG_LONG.  Extensions that use this and
   need compatibility with previous versions can use this:
+
     #ifndef  PY_LONG_LONG
     #define  PY_LONG_LONG  LONG_LONG
     #endif
@@ -243,7 +242,7 @@ C API
 New platforms
 -------------
 
-TBD
+None this time.
 
 Tests
 -----
