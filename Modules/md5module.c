@@ -94,6 +94,14 @@ md5_update(self, args)
 	return Py_None;
 }
 
+static char update_doc [] =
+"update (arg)\n\
+\n\
+Update the md5 object with the string arg. Repeated calls are\n\
+equivalent to a single call with the concatenation of all the\n\
+arguments.";
+
+
 static PyObject *
 md5_digest(self, args)
 	md5object *self;
@@ -113,6 +121,14 @@ md5_digest(self, args)
 	return PyString_FromStringAndSize((char *)aDigest, 16);
 }
 
+static char digest_doc [] =
+"digest() -> string\n\
+\n\
+Return the digest of the strings passed to the update() method so\n\
+far. This is an 16-byte string which may contain non-ASCII characters,\n\
+including null bytes.";
+
+
 static PyObject *
 md5_copy(self, args)
 	md5object *self;
@@ -131,10 +147,16 @@ md5_copy(self, args)
 	return (PyObject *)md5p;
 }
 
+static char copy_doc [] =
+"copy() -> md5 object\n\
+\n\
+Return a copy (``clone'') of the md5 object.";
+
+
 static PyMethodDef md5_methods[] = {
-	{"update",		(PyCFunction)md5_update},
-	{"digest",		(PyCFunction)md5_digest},
-	{"copy",		(PyCFunction)md5_copy},
+	{"update",		(PyCFunction)md5_update, 0, update_doc},
+	{"digest",		(PyCFunction)md5_digest, 0, digest_doc},
+	{"copy",		(PyCFunction)md5_copy, 0, copy_doc},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -145,6 +167,37 @@ md5_getattr(self, name)
 {
 	return Py_FindMethod(md5_methods, (PyObject *)self, name);
 }
+
+static char module_doc [] =
+
+"This module implements the interface to RSA's MD5 message digest\n\
+algorithm (see also Internet RFC 1321). Its use is quite\n\
+straightforward: use the new() to create an md5 object. You can now\n\
+feed this object with arbitrary strings using the update() method, and\n\
+at any point you can ask it for the digest (a strong kind of 128-bit\n\
+checksum, a.k.a. ``fingerprint'') of the contatenation of the strings\n\
+fed to it so far using the digest() method.\n\
+\n\
+Functions:\n\
+\n\
+new([arg]) -- return a new md5 object, initialized with arg if provided\n\
+md5([arg]) -- DEPRECATED, same as new, but for compatibility\n\
+\n\
+Special Objects:\n\
+\n\
+MD5Type -- type object for md5 objects\n\
+";
+
+static char md5type_doc [] =
+"An md5 represents the object used to calculate the MD5 checksum of a\n\
+string of information.\n\
+\n\
+Methods:\n\
+\n\
+update() -- updates the current digest with an additional string\n\
+digest() -- return the current digest value\n\
+copy() -- return a copy of the current md5 object\n\
+";
 
 statichere PyTypeObject MD5type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -160,6 +213,16 @@ statichere PyTypeObject MD5type = {
 	0,			  /*tp_compare*/
 	0,			  /*tp_repr*/
         0,			  /*tp_as_number*/
+	0,                        /*tp_as_sequence*/
+	0,			  /*tp_as_mapping*/
+	0, 			  /*tp_hash*/
+	0,			  /*tp_call*/
+	0,			  /*tp_str*/
+	0,			  /*tp_getattro*/
+	0,			  /*tp_setattro*/
+	0,	                  /*tp_as_buffer*/
+	0,			  /*tp_xxx4*/
+	md5type_doc,		  /*tp_doc*/
 };
 
 
@@ -186,12 +249,18 @@ MD5_new(self, args)
 	return (PyObject *)md5p;
 }
 
+static char new_doc [] =
+"new([arg]) -> md5 object\n\
+\n\
+Return a new md5 object. If arg is present, the method call update(arg)\n\
+is made.";
+
 
 /* List of functions exported by this module */
 
 static PyMethodDef md5_functions[] = {
-	{"new",		(PyCFunction)MD5_new, 1},
-	{"md5",		(PyCFunction)MD5_new, 1}, /* Backward compatibility */
+	{"new",		(PyCFunction)MD5_new, 1, new_doc},
+	{"md5",		(PyCFunction)MD5_new, 1, new_doc}, /* Backward compatibility */
 	{NULL,		NULL}	/* Sentinel */
 };
 
@@ -201,5 +270,9 @@ static PyMethodDef md5_functions[] = {
 void
 initmd5()
 {
-	(void)Py_InitModule("md5", md5_functions);
+	PyObject *m, *d;
+	m = Py_InitModule3("md5", md5_functions, module_doc);
+	d = PyModule_GetDict(m);
+	PyDict_SetItemString(d, "MD5Type", (PyObject *)&MD5type);
+	/* No need to check the error here, the caller will do that */
 }
