@@ -37,7 +37,7 @@ refers to a directory (rather than a file).  No item is added to
 For example, suppose \code{sys.prefix} and \code{sys.exec_prefix} are
 set to \file{/usr/local}.  The Python \version\ library is then
 installed in \file{/usr/local/lib/python\version}.  Suppose this has a
-subdirectory \file{/usr/local/python\version/site-packages} with three
+subdirectory \file{/usr/local/lib/python\version/site-packages} with three
 subsubdirectories, \file{foo}, \file{bar} and \file{spam}, and two
 path configuration files, \file{foo.pth} and \file{bar.pth}.  Assume
 \file{foo.pth} contains the following:
@@ -62,8 +62,8 @@ Then the following directories are added to \code{sys.path}, in this
 order:
 
 \begin{verbatim}
-/usr/local/python1.5/site-packages/bar
-/usr/local/python1.5/site-packages/foo
+/usr/local/lib/python1.5/site-packages/bar
+/usr/local/lib/python1.5/site-packages/foo
 \end{verbatim}
 
 Note that \file{bletch} is omitted because it doesn't exist; the
