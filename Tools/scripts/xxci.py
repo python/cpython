@@ -1,5 +1,5 @@
 #! /ufs/guido/bin/sgi/python
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # xxci
 #
@@ -111,5 +111,8 @@ def askyesno(prompt):
 	s = raw_input(prompt)
 	return s in ['y', 'yes']
 
-setup()
-go(getargs())
+try:
+	setup()
+	go(getargs())
+except KeyboardInterrupt:
+	print '[Intr]'
