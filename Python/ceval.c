@@ -1646,7 +1646,7 @@ eval_frame(PyFrameObject *f)
 					Py_DECREF(v);
 				}
 			}
-			break;
+			continue;
 
 		case END_FINALLY:
 			v = POP();
@@ -1689,6 +1689,7 @@ eval_frame(PyFrameObject *f)
 			if ((x = f->f_locals) != NULL) {
 				err = PyDict_SetItem(x, w, v);
 				Py_DECREF(v);
+				if (err == 0) continue;
 				break;
 			}
 			PyErr_Format(PyExc_SystemError,
@@ -1719,6 +1720,8 @@ eval_frame(PyFrameObject *f)
 					Py_INCREF(w);
 					PUSH(w);
 				}
+				Py_DECREF(v);
+				continue;
 			} else if (PyList_CheckExact(v) && PyList_GET_SIZE(v) == oparg) {
 				PyObject **items = ((PyListObject *)v)->ob_item;
 				while (oparg--) {
@@ -1746,6 +1749,7 @@ eval_frame(PyFrameObject *f)
 			err = PyObject_SetAttr(v, w, u); /* v.w = u */
 			Py_DECREF(v);
 			Py_DECREF(u);
+			if (err == 0) continue;
 			break;
 
 		case DELETE_ATTR:
@@ -1761,6 +1765,7 @@ eval_frame(PyFrameObject *f)
 			v = POP();
 			err = PyDict_SetItem(f->f_globals, w, v);
 			Py_DECREF(v);
+			if (err == 0) continue;
 			break;
 
 		case DELETE_GLOBAL:
@@ -1835,7 +1840,7 @@ eval_frame(PyFrameObject *f)
 			}
 			Py_INCREF(x);
 			PUSH(x);
-			break;
+			continue;
 
 		case DELETE_FAST:
 			x = GETLOCAL(oparg);
@@ -1854,6 +1859,7 @@ eval_frame(PyFrameObject *f)
 			x = freevars[oparg];
 			Py_INCREF(x);
 			PUSH(x);
+			if (x != NULL) continue;
 			break;
 
 		case LOAD_DEREF:
