@@ -124,7 +124,7 @@ Exported functions:
                  name (None if not present).
 """
 
-import re, string, sys, time, operator
+import re, string, time, operator
 
 from types import *
 
