@@ -79,7 +79,8 @@ extern int _PyString_Resize Py_PROTO((PyObject **, int));
 extern PyObject *PyString_Format Py_PROTO((PyObject *, PyObject *));
 
 /* Macro, trading safety for speed */
-#define PyString_AS_STRING(op) ((op)->ob_sval)
+#define PyString_AS_STRING(op) (((PyStringObject *)(op))->ob_sval)
+#define PyString_GET_SIZE(op)  (((PyStringObject *)(op))->ob_size)
 
 #ifdef __cplusplus
 }
