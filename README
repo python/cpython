@@ -620,12 +620,13 @@ however this assumes that you only need to add modules.)
 Building on non-UNIX systems
 ----------------------------
 
-Building Python for a PC is now a piece of cake!
+For Windows 95/98 or NT, assuming you have MS VC++ 5.0 or 6.0, the
+project files are in PCbuild, the workspace is pcbuild.dsw.  (The
+project files are for VC++ 5.0, but VC++ 6.0 will convert them for
+you -- start VC++ and then use Open Workspace.)
 
-Enter the directory "PC" and read the file "readme.txt".  Most popular
-non-Unix PC platforms and compilers are supported (Unix ports to the
-PC such as Linux, FreeBSD or Solaris-x86 of course use the standard
-Unix build instructions).
+For other non-Unix Windows compilers, in particular Windows 3.1 and
+for OS/2, enter the directory "PC" and read the file "readme.txt".
 
 For the Mac, a separate source distribution will be made available,
 for use with the CodeWarrior compiler.  If you are interested in Mac
