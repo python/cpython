@@ -47,6 +47,10 @@ compatible_formats = ["1.0",            # Original protocol 0
                       "2.0",            # Protocol 2
                       ]                 # Old format versions we can read
 
+# Keep in synch with cPickle.  This is the highest protocol number we
+# know how to read.
+HIGHEST_PROTOCOL = 2
+
 # Why use struct.pack() for pickling but marshal.loads() for
 # unpickling?  struct.pack() is 40% faster than marshal.dumps(), but
 # marshal.loads() is twice as fast as struct.unpack()!
@@ -200,9 +204,9 @@ class Pickler:
         if protocol is None:
             protocol = 0
         if protocol < 0:
-            protocol = 2
-        elif protocol not in (0, 1, 2):
-            raise ValueError, "pickle protocol must be 0, 1 or 2"
+            protocol = HIGHEST_PROTOCOL
+        elif not 0 <= protocol <= HIGHEST_PROTOCOL:
+            raise ValueError("pickle protocol must be <= %d" % HIGHEST_PROTOCOL)
         self.write = file.write
         self.memo = {}
         self.proto = int(protocol)

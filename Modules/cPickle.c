@@ -15,7 +15,7 @@ PyDoc_STRVAR(cPickle_module_documentation,
 #define WRITE_BUF_SIZE 256
 
 /* Bump this when new opcodes are added to the pickle protocol. */
-#define CURRENT_PROTOCOL_NUMBER 2
+#define HIGHEST_PROTOCOL 2
 
 /*
  * Pickle opcodes.  These must be kept in synch with pickle.py.  Extensive
@@ -2743,11 +2743,11 @@ newPicklerobject(PyObject *file, int proto)
 	Picklerobject *self;
 
 	if (proto < 0)
-		proto = CURRENT_PROTOCOL_NUMBER;
-	if (proto > CURRENT_PROTOCOL_NUMBER) {
+		proto = HIGHEST_PROTOCOL;
+	if (proto > HIGHEST_PROTOCOL) {
 		PyErr_Format(PyExc_ValueError, "pickle protocol %d asked for; "
 			     "the highest available protocol is %d",
-			     proto, CURRENT_PROTOCOL_NUMBER);
+			     proto, HIGHEST_PROTOCOL);
 		return NULL;
 	}
 
@@ -4308,7 +4308,7 @@ load_proto(Unpicklerobject *self)
 	 * int when chewing on 1 byte.
 	 */
 	assert(i >= 0);
-	if (i <= CURRENT_PROTOCOL_NUMBER)
+	if (i <= HIGHEST_PROTOCOL)
 		return 0;
 
 	PyErr_Format(PyExc_ValueError, "unsupported pickle protocol: %d", i);
@@ -5561,6 +5561,10 @@ initcPickle(void)
 		}
 	}
 	Py_DECREF(di);
+
+	i = PyModule_AddIntConstant(m, "HIGHEST_PROTOCOL", HIGHEST_PROTOCOL);
+	if (i < 0)
+		return;
 
 	/* These are purely informational; no code uses them. */
 	/* File format version we write. */

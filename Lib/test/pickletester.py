@@ -1,5 +1,6 @@
 import unittest
 import pickle
+import cPickle
 import pickletools
 import copy_reg
 
@@ -7,8 +8,9 @@ from test.test_support import TestFailed, have_unicode, TESTFN
 
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
-# kind of outer loop.  Bump the 3 to 4 if/when protocol 3 is invented.
-protocols = range(3)
+# kind of outer loop.
+assert pickle.HIGHEST_PROTOCOL == cPickle.HIGHEST_PROTOCOL == 2
+protocols = range(pickle.HIGHEST_PROTOCOL + 1)
 
 
 # Return True if opcode code appears in the pickle, else False.
