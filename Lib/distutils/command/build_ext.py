@@ -149,6 +149,8 @@ class build_ext (Command):
             self.libraries = []
         if self.library_dirs is None:
             self.library_dirs = []
+        elif type(self.library_dirs) is StringType:
+            self.library_dirs = string.split(self.library_dirs, os.pathsep)
         if self.rpath is None:
             self.rpath = []
 
