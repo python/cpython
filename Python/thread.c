@@ -209,6 +209,15 @@ static int nkeys = 0;  /* PyThread_create_key() hands out nkeys+1 next */
  * So when value==NULL, this acts like a pure lookup routine, and when
  * value!=NULL, this acts like dict.setdefault(), returning an existing
  * mapping if one exists, else creating a new mapping.
+ *
+ * Caution:  this used to be too clever, trying to hold keymutex only
+ * around the "p->next = keyhead; keyhead = p" pair.  That allowed
+ * another thread to mutate the list, via key deletion, concurrent with
+ * find_key() crawling over the list.  Hilarity ensued.  For example, when
+ * the for-loop here does "p = p->next", p could end up pointing at a
+ * record that PyThread_delete_key_value() was concurrently free()'ing.
+ * That could lead to anything, from failing to find a key that exists, to
+ * segfaults.  Now we lock the whole routine.
  */
 static struct key *
 find_key(int key, void *value)
@@ -216,22 +225,25 @@ find_key(int key, void *value)
 	struct key *p;
 	long id = PyThread_get_thread_ident();
 
+	PyThread_acquire_lock(keymutex, 1);
 	for (p = keyhead; p != NULL; p = p->next) {
 		if (p->id == id && p->key == key)
-			return p;
+			goto Done;
 	}
-	if (value == NULL)
-		return NULL;
+	if (value == NULL) {
+		assert(p == NULL);
+		goto Done;
+	}
 	p = (struct key *)malloc(sizeof(struct key));
 	if (p != NULL) {
 		p->id = id;
 		p->key = key;
 		p->value = value;
-		PyThread_acquire_lock(keymutex, 1);
 		p->next = keyhead;
 		keyhead = p;
-		PyThread_release_lock(keymutex);
 	}
+ Done:
+	PyThread_release_lock(keymutex);
 	return p;
 }
 
