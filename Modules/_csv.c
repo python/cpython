@@ -97,6 +97,7 @@ typedef struct {
 	int field_size;		/* size of allocated buffer */
 	int field_len;		/* length of current field */
 	int had_parse_error;	/* did we have a parse error? */
+	int numeric_field;	/* treat field as numeric */
 } ReaderObj;
 
 staticforward PyTypeObject Reader_Type;
@@ -495,17 +496,30 @@ _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 	return dialect;
 }
 
-static void
+static int
 parse_save_field(ReaderObj *self)
 {
 	PyObject *field;
 
 	field = PyString_FromStringAndSize(self->field, self->field_len);
-	if (field != NULL) {
-		PyList_Append(self->fields, field);
-		Py_XDECREF(field);
-	}
+	if (field == NULL)
+		return -1;
 	self->field_len = 0;
+	if (self->numeric_field) {
+		PyObject *tmp;
+
+		self->numeric_field = 0;
+		tmp = PyNumber_Float(field);
+		if (tmp == NULL) {
+			Py_DECREF(field);
+			return -1;
+		}
+		Py_DECREF(field);
+		field = tmp;
+	}
+	PyList_Append(self->fields, field);
+	Py_DECREF(field);
+	return 0;
 }
 
 static int
@@ -526,6 +540,22 @@ parse_grow_buff(ReaderObj *self)
 		return 0;
 	}
 	return 1;
+}
+
+static int
+parse_reset(ReaderObj *self)
+{
+	if (self->fields) {
+		Py_DECREF(self->fields);
+	}
+	self->fields = PyList_New(0);
+	if (self->fields == NULL)
+		return -1;
+	self->field_len = 0;
+	self->state = START_RECORD;
+	self->had_parse_error = 0;
+	self->numeric_field = 0;
+	return 0;
 }
 
 static int
@@ -560,7 +590,8 @@ parse_process_char(ReaderObj *self, char c)
 		/* expecting field */
 		if (c == '\n') {
 			/* save empty field - return [fields] */
-			parse_save_field(self);
+			if (parse_save_field(self) < 0)
+				return -1;
 			self->state = START_RECORD;
 		}
 		else if (c == dialect->quotechar && 
@@ -577,10 +608,13 @@ parse_process_char(ReaderObj *self, char c)
 			;
 		else if (c == dialect->delimiter) {
 			/* save empty field */
-			parse_save_field(self);
+			if (parse_save_field(self) < 0)
+				return -1;
 		}
 		else {
 			/* begin new unquoted field */
+			if (dialect->quoting == QUOTE_NONNUMERIC)
+				self->numeric_field = 1;
 			if (parse_add_char(self, c) < 0)
 				return -1;
 			self->state = IN_FIELD;
@@ -597,7 +631,8 @@ parse_process_char(ReaderObj *self, char c)
 		/* in unquoted field */
 		if (c == '\n') {
 			/* end of line - return [fields] */
-			parse_save_field(self);
+			if (parse_save_field(self) < 0)
+				return -1;
 			self->state = START_RECORD;
 		}
 		else if (c == dialect->escapechar) {
@@ -606,7 +641,8 @@ parse_process_char(ReaderObj *self, char c)
 		}
 		else if (c == dialect->delimiter) {
 			/* save field - wait for new field */
-			parse_save_field(self);
+			if (parse_save_field(self) < 0)
+				return -1;
 			self->state = START_FIELD;
 		}
 		else {
@@ -662,12 +698,14 @@ parse_process_char(ReaderObj *self, char c)
 		}
 		else if (c == dialect->delimiter) {
 			/* save field - wait for new field */
-			parse_save_field(self);
+			if (parse_save_field(self) < 0)
+				return -1;
 			self->state = START_FIELD;
 		}
 		else if (c == '\n') {
 			/* end of line - return [fields] */
-			parse_save_field(self);
+			if (parse_save_field(self) < 0)
+				return -1;
 			self->state = START_RECORD;
 		}
 		else if (!dialect->strict) {
@@ -716,15 +754,11 @@ Reader_iternext(ReaderObj *self)
                         return NULL;
                 }
 
-                if (self->had_parse_error) {
-                        if (self->fields) {
-                                Py_XDECREF(self->fields);
-                        }
-                        self->fields = PyList_New(0);
-                        self->field_len = 0;
-                        self->state = START_RECORD;
-                        self->had_parse_error = 0;
-                }
+                if (self->had_parse_error)
+			if (parse_reset(self) < 0) {
+				Py_DECREF(lineobj);
+				return NULL;
+			}
                 line = PyString_AsString(lineobj);
 
                 if (line == NULL) {
@@ -886,15 +920,15 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
                 return NULL;
 
         self->dialect = NULL;
-        self->input_iter = self->fields = NULL;
-
         self->fields = NULL;
         self->input_iter = NULL;
-	self->had_parse_error = 0;
 	self->field = NULL;
 	self->field_size = 0;
-	self->field_len = 0;
-	self->state = START_RECORD;
+
+	if (parse_reset(self) < 0) {
+                Py_DECREF(self);
+                return NULL;
+	}
 
 	if (!PyArg_UnpackTuple(args, "", 1, 2, &iterator, &dialect)) {
                 Py_DECREF(self);
@@ -912,11 +946,6 @@ csv_reader(PyObject *module, PyObject *args, PyObject *keyword_args)
                 Py_DECREF(self);
                 return NULL;
         }
-	self->fields = PyList_New(0);
-	if (self->fields == NULL) {
-		Py_DECREF(self);
-		return NULL;
-	}
 
 	PyObject_GC_Track(self);
         return (PyObject *)self;

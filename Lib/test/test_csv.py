@@ -241,6 +241,12 @@ class Test_Csv(unittest.TestCase):
                         quotechar=None, escapechar='\\')
         self._read_test(['1,",3,",5'], [['1', '"', '3', '"', '5']],
                         quoting=csv.QUOTE_NONE, escapechar='\\')
+        # will this fail where locale uses comma for decimals?
+        self._read_test([',3,"5",7.3'], [['', 3, '5', 7.3]],
+                        quoting=csv.QUOTE_NONNUMERIC)
+        self.assertRaises(ValueError, self._read_test, 
+                          ['abc,3'], [[]],
+                          quoting=csv.QUOTE_NONNUMERIC)
 
     def test_read_bigfield(self):
         # This exercises the buffer realloc functionality and field size
