@@ -702,7 +702,10 @@ imported by that module.  The names given in \code{__all__} are all
 considered public and are required to exist.  If \code{__all__} is not
 defined, the set of public names includes all names found in the
 module's namespace which do not begin with an underscore character
-(\character{_}).
+(\character{_}).  \code{__all__} should contain the entire public API.
+It is intended to avoid accidentally exporting items that are not part
+of the API (such as library modules which were imported and used within
+the module).
 \withsubitem{(optional module attribute)}{\ttindex{__all__}}
 
 The \keyword{from} form with \samp{*} may only occur in a module
