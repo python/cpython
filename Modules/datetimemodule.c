@@ -82,7 +82,6 @@ static PyTypeObject PyDateTime_DateTimeTZType;
 static PyTypeObject PyDateTime_DeltaType;
 static PyTypeObject PyDateTime_TimeType;
 static PyTypeObject PyDateTime_TZInfoType;
-static PyTypeObject PyDateTime_TimeTZType;
 
 /* ---------------------------------------------------------------------------
  * Math utilities.
@@ -607,8 +606,8 @@ get_tzinfo_member(PyObject *self)
 
 	if (PyDateTimeTZ_Check(self))
 		tzinfo = ((PyDateTime_DateTimeTZ *)self)->tzinfo;
-	else if (PyTimeTZ_Check(self))
-		tzinfo = ((PyDateTime_TimeTZ *)self)->tzinfo;
+	else if (PyTime_Check(self) && ((PyDateTime_Time *)self)->hastzinfo)
+		tzinfo = ((PyDateTime_Time *)self)->tzinfo;
 
 	return tzinfo;
 }
@@ -783,8 +782,8 @@ typedef enum {
 	      /* an exception has been set; the caller should pass it on */
 	      OFFSET_ERROR,
 
-	      /* type isn't date, datetime, datetimetz subclass, time, or
-	       * timetz subclass
+	      /* type isn't date, datetime, datetimetz subclass, or time
+	       * subclass
 	       */
 	      OFFSET_UNKNOWN,
 
@@ -792,13 +791,13 @@ typedef enum {
 	       * datetime,
 	       * datetimetz with None tzinfo,
 	       * datetimetz where utcoffset() returns None
-	       * time,
-	       * timetz with None tzinfo,
-	       * timetz where utcoffset() returns None
+	       * time with !hastzinfo
+	       * time with None tzinfo,
+	       * time where utcoffset() returns None
 	       */
 	      OFFSET_NAIVE,
 
-	      /* timetz where utcoffset() doesn't return None,
+	      /* time where utcoffset() doesn't return None,
 	       * datetimetz where utcoffset() doesn't return None
 	       */
 	      OFFSET_AWARE,
@@ -1264,7 +1263,7 @@ set_datetime_time_fields(PyDateTime_Date *self, int h, int m, int s, int us)
 	DATE_SET_MICROSECOND(self, us);
 }
 
-/* For time and timetz. */
+/* For time. */
 static void
 set_time_fields(PyDateTime_Time *self, int h, int m, int s, int us)
 {
@@ -1327,30 +1326,23 @@ new_datetimetz(int year, int month, int day, int hour, int minute,
 
 /* Create a time instance with no range checking. */
 static PyObject *
-new_time(int hour, int minute, int second, int usecond)
+new_time(int hour, int minute, int second, int usecond, PyObject *tzinfo)
 {
 	PyDateTime_Time *self;
+	char aware = tzinfo != Py_None;
 
-	self = PyObject_New(PyDateTime_Time, &PyDateTime_TimeType);
-	if (self != NULL)
-		set_time_fields(self, hour, minute, second, usecond);
-	return (PyObject *) self;
-}
-
-/* Create a timetz instance with no range checking. */
-static PyObject *
-new_timetz(int hour, int minute, int second, int usecond, PyObject *tzinfo)
-{
-	PyDateTime_TimeTZ *self;
-
-	self = PyObject_New(PyDateTime_TimeTZ, &PyDateTime_TimeTZType);
-	if (self != NULL) {
-		set_time_fields((PyDateTime_Time *)self,
-				hour, minute, second, usecond);
+	self = (PyDateTime_Time *)PyObject_MALLOC(aware ?
+				sizeof(PyDateTime_Time) :
+				sizeof(_PyDateTime_BaseTime));
+	if (self == NULL)
+		return PyErr_NoMemory();
+	self->hastzinfo = aware;
+	set_time_fields(self, hour, minute, second, usecond);
+	if (aware) {
 		Py_INCREF(tzinfo);
 		self->tzinfo = tzinfo;
 	}
-	return (PyObject *) self;
+	return (PyObject *)PyObject_INIT(self, &PyDateTime_TimeType);
 }
 
 /* Create a timedelta instance.  Normalize the members iff normalize is
@@ -1401,7 +1393,7 @@ static PyObject *seconds_per_day = NULL; /* 3600*24 as Python int */
 static PyObject *date_unpickler_object = NULL;
 static PyObject *datetimetz_unpickler_object = NULL;
 static PyObject *tzinfo_unpickler_object = NULL;
-static PyObject *timetz_unpickler_object = NULL;
+static PyObject *time_unpickler_object = NULL;
 
 /* ---------------------------------------------------------------------------
  * Class implementations.
@@ -2953,7 +2945,7 @@ datetime_utcnow(PyObject *cls, PyObject *dummy)
 }
 
 /* Return new datetime or datetimetz from date/datetime/datetimetz and
- * time/timetz arguments.
+ * time arguments.
  */
 static PyObject *
 datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
@@ -2974,9 +2966,11 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 				    		TIME_GET_MINUTE(time),
 				    		TIME_GET_SECOND(time),
 				    		TIME_GET_MICROSECOND(time));
-	if (result && PyTimeTZ_Check(time) && PyDateTimeTZ_Check(result)) {
+	if (result &&
+	    ((PyDateTime_Time *)time)->hastzinfo &&
+	    PyDateTimeTZ_Check(result)) {
 		/* Copy the tzinfo field. */
-		replace_tzinfo(result, ((PyDateTime_TimeTZ *)time)->tzinfo);
+		replace_tzinfo(result, ((PyDateTime_Time *)time)->tzinfo);
 	}
 	return result;
 }
@@ -3343,11 +3337,11 @@ datetime_getdate(PyDateTime_DateTime *self)
 static PyObject *
 datetime_gettime(PyDateTime_DateTime *self)
 {
-	return new_timetz(DATE_GET_HOUR(self),
-			  DATE_GET_MINUTE(self),
-			  DATE_GET_SECOND(self),
-			  DATE_GET_MICROSECOND(self),
-			  Py_None);
+	return new_time(DATE_GET_HOUR(self),
+			DATE_GET_MINUTE(self),
+			DATE_GET_SECOND(self),
+			DATE_GET_MICROSECOND(self),
+			Py_None);
 }
 
 static PyMethodDef datetime_methods[] = {
@@ -3398,7 +3392,7 @@ static PyMethodDef datetime_methods[] = {
 	 PyDoc_STR("Return datetime with new specified fields.")},
 
 	{"astimezone",  (PyCFunction)datetime_astimezone, METH_KEYWORDS,
-	 PyDoc_STR("tz -> datetimetz with same date & time, and tzinfo=tz\n")},
+	 PyDoc_STR("tz -> datetime with same date & time, and tzinfo=tz\n")},
 
 	{NULL,	NULL}
 };
@@ -3465,361 +3459,13 @@ statichere PyTypeObject PyDateTime_DateTimeType = {
 };
 
 /*
- * PyDateTime_Time implementation.
- */
-
-/* Accessor properties. */
-
-static PyObject *
-time_hour(PyDateTime_Time *self, void *unused)
-{
-	return PyInt_FromLong(TIME_GET_HOUR(self));
-}
-
-static PyObject *
-time_minute(PyDateTime_Time *self, void *unused)
-{
-	return PyInt_FromLong(TIME_GET_MINUTE(self));
-}
-
-static PyObject *
-py_time_second(PyDateTime_Time *self, void *unused)
-{
-	return PyInt_FromLong(TIME_GET_SECOND(self));
-}
-
-static PyObject *
-time_microsecond(PyDateTime_Time *self, void *unused)
-{
-	return PyInt_FromLong(TIME_GET_MICROSECOND(self));
-}
-
-static PyGetSetDef time_getset[] = {
-	{"hour",        (getter)time_hour},
-	{"minute",      (getter)time_minute},
-	{"second",      (getter)py_time_second},
-	{"microsecond", (getter)time_microsecond},
-	{NULL}
-};
-
-/* Constructors. */
-
-static char *time_kws[] = {"hour", "minute", "second", "microsecond", NULL};
-
-static PyObject *
-time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
-{
-	PyObject *self = NULL;
-	int hour = 0;
-	int minute = 0;
-	int second = 0;
-	int usecond = 0;
-
-
-	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiii", time_kws,
-					&hour, &minute, &second, &usecond)) {
-		if (check_time_args(hour, minute, second, usecond) < 0)
-			return NULL;
-		self = new_time(hour, minute, second, usecond);
-	}
-	return self;
-}
-
-/* Various ways to turn a time into a string. */
-
-static PyObject *
-time_repr(PyDateTime_Time *self)
-{
-	char buffer[100];
-	char *typename = self->ob_type->tp_name;
-	int h = TIME_GET_HOUR(self);
-	int m = TIME_GET_MINUTE(self);
-	int s = TIME_GET_SECOND(self);
-	int us = TIME_GET_MICROSECOND(self);
-
-	if (us)
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d, %d, %d)", typename, h, m, s, us);
-	else if (s)
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d, %d)", typename, h, m, s);
-	else
-		PyOS_snprintf(buffer, sizeof(buffer),
-			      "%s(%d, %d)", typename, h, m);
-	return PyString_FromString(buffer);
-}
-
-static PyObject *
-time_str(PyDateTime_Time *self)
-{
-	return PyObject_CallMethod((PyObject *)self, "isoformat", "()");
-}
-
-static PyObject *
-time_isoformat(PyDateTime_Time *self)
-{
-	char buffer[100];
-	/* Reuse the time format code from the datetime type. */
-	PyDateTime_DateTime datetime;
-	PyDateTime_DateTime *pdatetime = &datetime;
-
-	/* Copy over just the time bytes. */
-	memcpy(pdatetime->data + _PyDateTime_DATE_DATASIZE,
-	       self->data,
-	       _PyDateTime_TIME_DATASIZE);
-
-	isoformat_time(pdatetime, buffer, sizeof(buffer));
-	return PyString_FromString(buffer);
-}
-
-static PyObject *
-time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
-{
-	PyObject *result;
-	PyObject *format;
-	PyObject *tuple;
-	static char *keywords[] = {"format", NULL};
-
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:strftime", keywords,
-					  &PyString_Type, &format))
-		return NULL;
-
-	/* Python's strftime does insane things with the year part of the
-	 * timetuple.  The year is forced to (the otherwise nonsensical)
-	 * 1900 to worm around that.
-	 */
-	tuple = Py_BuildValue("iiiiiiiii",
-		              1900, 0, 0, /* year, month, day */
-			      TIME_GET_HOUR(self),
-			      TIME_GET_MINUTE(self),
-			      TIME_GET_SECOND(self),
-			      0, 0, -1); /* weekday, daynum, dst */
-	if (tuple == NULL)
-		return NULL;
-	assert(PyTuple_Size(tuple) == 9);
-	result = wrap_strftime((PyObject *)self, format, tuple, Py_None);
-	Py_DECREF(tuple);
-	return result;
-}
-
-/* Miscellaneous methods. */
-
-/* This is more natural as a tp_compare, but doesn't work then:  for whatever
- * reason, Python's try_3way_compare ignores tp_compare unless
- * PyInstance_Check returns true, but these aren't old-style classes.
- * Note that this routine handles all comparisons for time and timetz.
- */
-static PyObject *
-time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
-{
-	int diff;
-	naivety n1, n2;
-	int offset1, offset2;
-
-	if (! PyTime_Check(other)) {
-		/* Stop this from falling back to address comparison. */
-		PyErr_Format(PyExc_TypeError,
-			     "can't compare '%s' to '%s'",
-			     self->ob_type->tp_name,
-			     other->ob_type->tp_name);
-		return NULL;
-	}
-	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1, Py_None,
-				     other, &offset2, &n2, Py_None) < 0)
-		return NULL;
-	assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
-	/* If they're both naive, or both aware and have the same offsets,
-	 * we get off cheap.  Note that if they're both naive, offset1 ==
-	 * offset2 == 0 at this point.
-	 */
-	if (n1 == n2 && offset1 == offset2) {
-		diff = memcmp(self->data, ((PyDateTime_Time *)other)->data,
-			      _PyDateTime_TIME_DATASIZE);
-		return diff_to_bool(diff, op);
-	}
-
-	if (n1 == OFFSET_AWARE && n2 == OFFSET_AWARE) {
-		assert(offset1 != offset2);	/* else last "if" handled it */
-		/* Convert everything except microseconds to seconds.  These
-		 * can't overflow (no more than the # of seconds in 2 days).
-		 */
-		offset1 = TIME_GET_HOUR(self) * 3600 +
-			  (TIME_GET_MINUTE(self) - offset1) * 60 +
-			  TIME_GET_SECOND(self);
-		offset2 = TIME_GET_HOUR(other) * 3600 +
-			  (TIME_GET_MINUTE(other) - offset2) * 60 +
-			  TIME_GET_SECOND(other);
-		diff = offset1 - offset2;
-		if (diff == 0)
-			diff = TIME_GET_MICROSECOND(self) -
-			       TIME_GET_MICROSECOND(other);
-		return diff_to_bool(diff, op);
-	}
-
-	assert(n1 != n2);
-	PyErr_SetString(PyExc_TypeError,
-			"can't compare offset-naive and "
-			"offset-aware times");
-	return NULL;
-}
-
-static long
-time_hash(PyDateTime_Time *self)
-{
-	if (self->hashcode == -1) {
-		naivety n;
-		int offset;
-		PyObject *temp;
-
-		n = classify_utcoffset((PyObject *)self, Py_None, &offset);
-		assert(n != OFFSET_UNKNOWN);
-		if (n == OFFSET_ERROR)
-			return -1;
-
-		/* Reduce this to a hash of another object. */
-		if (offset == 0)
-			temp = PyString_FromStringAndSize((char *)self->data,
-						_PyDateTime_TIME_DATASIZE);
-		else {
-			int hour;
-			int minute;
-
-			assert(n == OFFSET_AWARE);
-			assert(PyTimeTZ_Check(self));
-			hour = divmod(TIME_GET_HOUR(self) * 60 +
-					TIME_GET_MINUTE(self) - offset,
-				      60,
-				      &minute);
-			if (0 <= hour && hour < 24)
-				temp = new_time(hour, minute,
-						TIME_GET_SECOND(self),
-						TIME_GET_MICROSECOND(self));
-			else
-				temp = Py_BuildValue("iiii",
-					   hour, minute,
-					   TIME_GET_SECOND(self),
-					   TIME_GET_MICROSECOND(self));
-		}
-		if (temp != NULL) {
-			self->hashcode = PyObject_Hash(temp);
-			Py_DECREF(temp);
-		}
-	}
-	return self->hashcode;
-}
-
-static PyObject *
-time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
-{
-	PyObject *clone;
-	PyObject *tuple;
-	int hh = TIME_GET_HOUR(self);
-	int mm = TIME_GET_MINUTE(self);
-	int ss = TIME_GET_SECOND(self);
-	int us = TIME_GET_MICROSECOND(self);
-
-	if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiii:replace",
-					  time_kws,
-					  &hh, &mm, &ss, &us))
-		return NULL;
-	tuple = Py_BuildValue("iiii", hh, mm, ss, us);
-	if (tuple == NULL)
-		return NULL;
-	clone = time_new(self->ob_type, tuple, NULL);
-	Py_DECREF(tuple);
-	return clone;
-}
-
-static int
-time_nonzero(PyDateTime_Time *self)
-{
-	return TIME_GET_HOUR(self) ||
-	       TIME_GET_MINUTE(self) ||
-	       TIME_GET_SECOND(self) ||
-	       TIME_GET_MICROSECOND(self);
-}
-
-static PyMethodDef time_methods[] = {
-	{"isoformat",   (PyCFunction)time_isoformat,	METH_KEYWORDS,
-	 PyDoc_STR("Return string in ISO 8601 format, HH:MM:SS[.mmmmmm].")},
-
-	{"strftime",   	(PyCFunction)time_strftime,	METH_KEYWORDS,
-	 PyDoc_STR("format -> strftime() style string.")},
-
-	{"replace",     (PyCFunction)time_replace,	METH_KEYWORDS,
-	 PyDoc_STR("Return datetime with new specified fields.")},
-	{NULL,	NULL}
-};
-
-static char time_doc[] =
-PyDoc_STR("Basic time type.");
-
-static PyNumberMethods time_as_number = {
-	0,					/* nb_add */
-	0,					/* nb_subtract */
-	0,					/* nb_multiply */
-	0,					/* nb_divide */
-	0,					/* nb_remainder */
-	0,					/* nb_divmod */
-	0,					/* nb_power */
-	0,					/* nb_negative */
-	0,					/* nb_positive */
-	0,					/* nb_absolute */
-	(inquiry)time_nonzero,			/* nb_nonzero */
-};
-
-statichere PyTypeObject PyDateTime_TimeType = {
-	PyObject_HEAD_INIT(NULL)
-	0,					/* ob_size */
-	"datetime.time",			/* tp_name */
-	sizeof(PyDateTime_Time),		/* tp_basicsize */
-	0,					/* tp_itemsize */
-	(destructor)PyObject_Del,		/* tp_dealloc */
-	0,					/* tp_print */
-	0,					/* tp_getattr */
-	0,					/* tp_setattr */
-	0,					/* tp_compare */
-	(reprfunc)time_repr,			/* tp_repr */
-	&time_as_number,			/* tp_as_number */
-	0,					/* tp_as_sequence */
-	0,					/* tp_as_mapping */
-	(hashfunc)time_hash,			/* tp_hash */
-	0,              			/* tp_call */
-	(reprfunc)time_str,			/* tp_str */
-	PyObject_GenericGetAttr,		/* tp_getattro */
-	0,					/* tp_setattro */
-	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
-        Py_TPFLAGS_BASETYPE,			/* tp_flags */
-	time_doc,				/* tp_doc */
-	0,					/* tp_traverse */
-	0,					/* tp_clear */
-	(richcmpfunc)time_richcompare,		/* tp_richcompare */
-	0,					/* tp_weaklistoffset */
-	0,					/* tp_iter */
-	0,					/* tp_iternext */
-	time_methods,				/* tp_methods */
-	0,					/* tp_members */
-	time_getset,				/* tp_getset */
-	0,					/* tp_base */
-	0,					/* tp_dict */
-	0,					/* tp_descr_get */
-	0,					/* tp_descr_set */
-	0,					/* tp_dictoffset */
-	0,					/* tp_init */
-	0,					/* tp_alloc */
-	time_new,				/* tp_new */
-	_PyObject_Del,				/* tp_free */
-};
-
-/*
  * PyDateTime_TZInfo implementation.
  */
 
 /* This is a pure abstract base class, so doesn't do anything beyond
  * raising NotImplemented exceptions.  Real tzinfo classes need
  * to derive from this.  This is mostly for clarity, and for efficiency in
- * datetimetz and timetz constructors (their tzinfo arguments need to
+ * datetimetz and time constructors (their tzinfo arguments need to
  * be subclasses of this tzinfo class, which is easy and quick to check).
  *
  * Note:  For reasons having to do with pickling of subclasses, we have
@@ -3938,22 +3584,51 @@ PyDoc_STR("Abstract base class for time zone info objects.");
 };
 
 /*
- * PyDateTime_TimeTZ implementation.
+ * PyDateTime_Time implementation.
  */
 
-/* Accessor properties.  Properties for hour, minute, second and microsecond
- * are inherited from time.
+/* Accessor properties.
  */
 
 static PyObject *
-timetz_tzinfo(PyDateTime_TimeTZ *self, void *unused)
+time_hour(PyDateTime_Time *self, void *unused)
 {
-	Py_INCREF(self->tzinfo);
-	return self->tzinfo;
+	return PyInt_FromLong(TIME_GET_HOUR(self));
 }
 
-static PyGetSetDef timetz_getset[] = {
-	{"tzinfo", (getter)timetz_tzinfo},
+static PyObject *
+time_minute(PyDateTime_Time *self, void *unused)
+{
+	return PyInt_FromLong(TIME_GET_MINUTE(self));
+}
+
+/* The name time_second conflicted with some platform header file. */
+static PyObject *
+py_time_second(PyDateTime_Time *self, void *unused)
+{
+	return PyInt_FromLong(TIME_GET_SECOND(self));
+}
+
+static PyObject *
+time_microsecond(PyDateTime_Time *self, void *unused)
+{
+	return PyInt_FromLong(TIME_GET_MICROSECOND(self));
+}
+
+static PyObject *
+time_tzinfo(PyDateTime_Time *self, void *unused)
+{
+	PyObject *result = self->hastzinfo ? self->tzinfo : Py_None;
+	Py_INCREF(result);
+	return result;
+}
+
+static PyGetSetDef time_getset[] = {
+	{"hour",        (getter)time_hour},
+	{"minute",      (getter)time_minute},
+	{"second",      (getter)py_time_second},
+	{"microsecond", (getter)time_microsecond},
+	{"tzinfo",	(getter)time_tzinfo},
 	{NULL}
 };
 
@@ -3961,11 +3636,11 @@ static PyGetSetDef timetz_getset[] = {
  * Constructors.
  */
 
-static char *timetz_kws[] = {"hour", "minute", "second", "microsecond",
-			     "tzinfo", NULL};
+static char *time_kws[] = {"hour", "minute", "second", "microsecond",
+			   "tzinfo", NULL};
 
 static PyObject *
-timetz_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	PyObject *self = NULL;
 	int hour = 0;
@@ -3974,14 +3649,14 @@ timetz_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int usecond = 0;
 	PyObject *tzinfo = Py_None;
 
-	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO", timetz_kws,
+	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO", time_kws,
 					&hour, &minute, &second, &usecond,
 					&tzinfo)) {
 		if (check_time_args(hour, minute, second, usecond) < 0)
 			return NULL;
 		if (check_tzinfo_subclass(tzinfo) < 0)
 			return NULL;
-		self = new_timetz(hour, minute, second, usecond, tzinfo);
+		self = new_time(hour, minute, second, usecond, tzinfo);
 	}
 	return self;
 }
@@ -3991,9 +3666,10 @@ timetz_new(PyTypeObject *type, PyObject *args, PyObject *kw)
  */
 
 static void
-timetz_dealloc(PyDateTime_TimeTZ *self)
+time_dealloc(PyDateTime_Time *self)
 {
-	Py_XDECREF(self->tzinfo);
+	if (self->hastzinfo)
+		Py_XDECREF(self->tzinfo);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
@@ -4003,43 +3679,76 @@ timetz_dealloc(PyDateTime_TimeTZ *self)
 
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
-timetz_utcoffset(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return offset_as_timedelta(self->tzinfo, "utcoffset", Py_None);
+time_utcoffset(PyDateTime_Time *self, PyObject *unused) {
+	return offset_as_timedelta(self->hastzinfo ? self->tzinfo : Py_None,
+				   "utcoffset", Py_None);
 }
 
 static PyObject *
-timetz_dst(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return offset_as_timedelta(self->tzinfo, "dst", Py_None);
+time_dst(PyDateTime_Time *self, PyObject *unused) {
+	return offset_as_timedelta(self->hastzinfo ? self->tzinfo : Py_None,
+				   "dst", Py_None);
 }
 
 static PyObject *
-timetz_tzname(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return call_tzname(self->tzinfo, Py_None);
+time_tzname(PyDateTime_Time *self, PyObject *unused) {
+	return call_tzname(self->hastzinfo ? self->tzinfo : Py_None,
+			   Py_None);
 }
 
 /*
- * Various ways to turn a timetz into a string.
+ * Various ways to turn a time into a string.
  */
 
 static PyObject *
-timetz_repr(PyDateTime_TimeTZ *self)
+time_repr(PyDateTime_Time *self)
 {
-	PyObject *baserepr = time_repr((PyDateTime_Time *)self);
+	char buffer[100];
+	char *typename = self->ob_type->tp_name;
+	int h = TIME_GET_HOUR(self);
+	int m = TIME_GET_MINUTE(self);
+	int s = TIME_GET_SECOND(self);
+	int us = TIME_GET_MICROSECOND(self);
+	PyObject *result = NULL;
 
-	if (baserepr == NULL)
-		return NULL;
-	return append_keyword_tzinfo(baserepr, self->tzinfo);
+	if (us)
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "%s(%d, %d, %d, %d)", typename, h, m, s, us);
+	else if (s)
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "%s(%d, %d, %d)", typename, h, m, s);
+	else
+		PyOS_snprintf(buffer, sizeof(buffer),
+			      "%s(%d, %d)", typename, h, m);
+	result = PyString_FromString(buffer);
+	if (result != NULL && self->hastzinfo)
+		result = append_keyword_tzinfo(result, self->tzinfo);
+	return result;
 }
 
-/* Note:  tp_str is inherited from time. */
+static PyObject *
+time_str(PyDateTime_Time *self)
+{
+	return PyObject_CallMethod((PyObject *)self, "isoformat", "()");
+}
 
 static PyObject *
-timetz_isoformat(PyDateTime_TimeTZ *self)
+time_isoformat(PyDateTime_Time *self)
 {
 	char buf[100];
-	PyObject *result = time_isoformat((PyDateTime_Time *)self);
+	PyObject *result;
+	/* Reuse the time format code from the datetime type. */
+	PyDateTime_DateTime datetime;
+	PyDateTime_DateTime *pdatetime = &datetime;
 
-	if (result == NULL || self->tzinfo == Py_None)
+	/* Copy over just the time bytes. */
+	memcpy(pdatetime->data + _PyDateTime_DATE_DATASIZE,
+	       self->data,
+	       _PyDateTime_TIME_DATASIZE);
+
+	isoformat_time(pdatetime, buf, sizeof(buf));
+	result = PyString_FromString(buf);
+	if (result == NULL || ! self->hastzinfo || self->tzinfo == Py_None)
 		return result;
 
 	/* We need to append the UTC offset. */
@@ -4052,16 +3761,146 @@ timetz_isoformat(PyDateTime_TimeTZ *self)
 	return result;
 }
 
-/* Note:  strftime() is inherited from time. */
+static PyObject *
+time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
+{
+	PyObject *result;
+	PyObject *format;
+	PyObject *tuple;
+	static char *keywords[] = {"format", NULL};
+
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "O!:strftime", keywords,
+					  &PyString_Type, &format))
+		return NULL;
+
+	/* Python's strftime does insane things with the year part of the
+	 * timetuple.  The year is forced to (the otherwise nonsensical)
+	 * 1900 to worm around that.
+	 */
+	tuple = Py_BuildValue("iiiiiiiii",
+		              1900, 0, 0, /* year, month, day */
+			      TIME_GET_HOUR(self),
+			      TIME_GET_MINUTE(self),
+			      TIME_GET_SECOND(self),
+			      0, 0, -1); /* weekday, daynum, dst */
+	if (tuple == NULL)
+		return NULL;
+	assert(PyTuple_Size(tuple) == 9);
+	result = wrap_strftime((PyObject *)self, format, tuple, Py_None);
+	Py_DECREF(tuple);
+	return result;
+}
 
 /*
  * Miscellaneous methods.
  */
 
-/* Note:  tp_richcompare and tp_hash are inherited from time. */
+/* This is more natural as a tp_compare, but doesn't work then:  for whatever
+ * reason, Python's try_3way_compare ignores tp_compare unless
+ * PyInstance_Check returns true, but these aren't old-style classes.
+ */
+static PyObject *
+time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
+{
+	int diff;
+	naivety n1, n2;
+	int offset1, offset2;
+
+	if (! PyTime_Check(other)) {
+		/* Stop this from falling back to address comparison. */
+		PyErr_Format(PyExc_TypeError,
+			     "can't compare '%s' to '%s'",
+			     self->ob_type->tp_name,
+			     other->ob_type->tp_name);
+		return NULL;
+	}
+	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1, Py_None,
+				     other, &offset2, &n2, Py_None) < 0)
+		return NULL;
+	assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
+	/* If they're both naive, or both aware and have the same offsets,
+	 * we get off cheap.  Note that if they're both naive, offset1 ==
+	 * offset2 == 0 at this point.
+	 */
+	if (n1 == n2 && offset1 == offset2) {
+		diff = memcmp(self->data, ((PyDateTime_Time *)other)->data,
+			      _PyDateTime_TIME_DATASIZE);
+		return diff_to_bool(diff, op);
+	}
+
+	if (n1 == OFFSET_AWARE && n2 == OFFSET_AWARE) {
+		assert(offset1 != offset2);	/* else last "if" handled it */
+		/* Convert everything except microseconds to seconds.  These
+		 * can't overflow (no more than the # of seconds in 2 days).
+		 */
+		offset1 = TIME_GET_HOUR(self) * 3600 +
+			  (TIME_GET_MINUTE(self) - offset1) * 60 +
+			  TIME_GET_SECOND(self);
+		offset2 = TIME_GET_HOUR(other) * 3600 +
+			  (TIME_GET_MINUTE(other) - offset2) * 60 +
+			  TIME_GET_SECOND(other);
+		diff = offset1 - offset2;
+		if (diff == 0)
+			diff = TIME_GET_MICROSECOND(self) -
+			       TIME_GET_MICROSECOND(other);
+		return diff_to_bool(diff, op);
+	}
+
+	assert(n1 != n2);
+	PyErr_SetString(PyExc_TypeError,
+			"can't compare offset-naive and "
+			"offset-aware times");
+	return NULL;
+}
+
+static long
+time_hash(PyDateTime_Time *self)
+{
+	if (self->hashcode == -1) {
+		naivety n;
+		int offset;
+		PyObject *temp;
+
+		n = classify_utcoffset((PyObject *)self, Py_None, &offset);
+		assert(n != OFFSET_UNKNOWN);
+		if (n == OFFSET_ERROR)
+			return -1;
+
+		/* Reduce this to a hash of another object. */
+		if (offset == 0)
+			temp = PyString_FromStringAndSize((char *)self->data,
+						_PyDateTime_TIME_DATASIZE);
+		else {
+			int hour;
+			int minute;
+
+			assert(n == OFFSET_AWARE);
+			assert(self->hastzinfo);
+			hour = divmod(TIME_GET_HOUR(self) * 60 +
+					TIME_GET_MINUTE(self) - offset,
+				      60,
+				      &minute);
+			if (0 <= hour && hour < 24)
+				temp = new_time(hour, minute,
+						TIME_GET_SECOND(self),
+						TIME_GET_MICROSECOND(self),
+						Py_None);
+			else
+				temp = Py_BuildValue("iiii",
+					   hour, minute,
+					   TIME_GET_SECOND(self),
+					   TIME_GET_MICROSECOND(self));
+		}
+		if (temp != NULL) {
+			self->hashcode = PyObject_Hash(temp);
+			Py_DECREF(temp);
+		}
+	}
+	return self->hashcode;
+}
 
 static PyObject *
-timetz_replace(PyDateTime_TimeTZ *self, PyObject *args, PyObject *kw)
+time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
 	PyObject *clone;
 	PyObject *tuple;
@@ -4069,22 +3908,22 @@ timetz_replace(PyDateTime_TimeTZ *self, PyObject *args, PyObject *kw)
 	int mm = TIME_GET_MINUTE(self);
 	int ss = TIME_GET_SECOND(self);
 	int us = TIME_GET_MICROSECOND(self);
-	PyObject *tzinfo = self->tzinfo;
+	PyObject *tzinfo = self->hastzinfo ? self->tzinfo : Py_None;
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO:replace",
-					  timetz_kws,
+					  time_kws,
 					  &hh, &mm, &ss, &us, &tzinfo))
 		return NULL;
 	tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
 	if (tuple == NULL)
 		return NULL;
-	clone = timetz_new(self->ob_type, tuple, NULL);
+	clone = time_new(self->ob_type, tuple, NULL);
 	Py_DECREF(tuple);
 	return clone;
 }
 
 static int
-timetz_nonzero(PyDateTime_TimeTZ *self)
+time_nonzero(PyDateTime_Time *self)
 {
 	int offset;
 	int none;
@@ -4096,7 +3935,7 @@ timetz_nonzero(PyDateTime_TimeTZ *self)
 		return 1;
 	}
 	offset = 0;
-	if (self->tzinfo != Py_None) {
+	if (self->hastzinfo && self->tzinfo != Py_None) {
 		offset = call_utcoffset(self->tzinfo, Py_None, &none);
 		if (offset == -1 && PyErr_Occurred())
 			return -1;
@@ -4113,7 +3952,7 @@ timetz_nonzero(PyDateTime_TimeTZ *self)
  * So it's a tuple in any (non-error) case.
  */
 static PyObject *
-timetz_getstate(PyDateTime_TimeTZ *self)
+time_getstate(PyDateTime_Time *self)
 {
 	PyObject *basestate;
 	PyObject *result = NULL;
@@ -4121,7 +3960,7 @@ timetz_getstate(PyDateTime_TimeTZ *self)
 	basestate =  PyString_FromStringAndSize((char *)self->data,
 						_PyDateTime_TIME_DATASIZE);
 	if (basestate != NULL) {
-		if (self->tzinfo == Py_None)
+		if (! self->hastzinfo || self->tzinfo == Py_None)
 			result = Py_BuildValue("(O)", basestate);
 		else
 			result = Py_BuildValue("OO", basestate, self->tzinfo);
@@ -4131,7 +3970,7 @@ timetz_getstate(PyDateTime_TimeTZ *self)
 }
 
 static PyObject *
-timetz_setstate(PyDateTime_TimeTZ *self, PyObject *state)
+time_setstate(PyDateTime_Time *self, PyObject *state)
 {
 	PyObject *basestate;
 	PyObject *tzinfo = Py_None;
@@ -4146,33 +3985,41 @@ timetz_setstate(PyDateTime_TimeTZ *self, PyObject *state)
 				"bad argument to time.__setstate__");
 		return NULL;
 	}
+	if (tzinfo != Py_None && ! self->hastzinfo) {
+		PyErr_SetString(PyExc_ValueError, "time.__setstate__ can't "
+				"add a non-None tzinfo to a time object that "
+				"doesn't have one already");
+		return NULL;
+	}
 	memcpy((char *)self->data,
 	       PyString_AsString(basestate),
 	       _PyDateTime_TIME_DATASIZE);
 	self->hashcode = -1;
-	Py_INCREF(tzinfo);
-	Py_XDECREF(self->tzinfo);
-	self->tzinfo = tzinfo;
+	if (self->hastzinfo) {
+		Py_INCREF(tzinfo);
+		Py_XDECREF(self->tzinfo);
+		self->tzinfo = tzinfo;
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
 static PyObject *
-timetz_pickler(PyObject *module, PyDateTime_TimeTZ *timetz)
+time_pickler(PyObject *module, PyDateTime_Time *time)
 {
 	PyObject *state;
 	PyObject *result = NULL;
 
-	if (! PyTimeTZ_CheckExact(timetz)) {
+	if (! PyTime_CheckExact(time)) {
 		PyErr_Format(PyExc_TypeError,
-			     "bad type passed to timetz pickler: %s",
-			     timetz->ob_type->tp_name);
+			     "bad type passed to time pickler: %s",
+			     time->ob_type->tp_name);
 		return NULL;
 	}
-	state = timetz_getstate(timetz);
+	state = time_getstate(time);
 	if (state) {
 		result = Py_BuildValue("O(O)",
-				       timetz_unpickler_object,
+				       time_unpickler_object,
 				       state);
 		Py_DECREF(state);
 	}
@@ -4180,55 +4027,70 @@ timetz_pickler(PyObject *module, PyDateTime_TimeTZ *timetz)
 }
 
 static PyObject *
-timetz_unpickler(PyObject *module, PyObject *arg)
+time_unpickler(PyObject *module, PyObject *arg)
 {
-	PyDateTime_TimeTZ *self;
+	PyDateTime_Time *self;
+	PyObject *tzinfo = Py_None;
 
-	self = PyObject_New(PyDateTime_TimeTZ, &PyDateTime_TimeTZType);
+	/* We don't want to allocate space for tzinfo if it's not needed.
+	 * Figuring that out in advance is irritating, so for now we
+	 * realloc later.
+	 */
+	self = PyObject_New(PyDateTime_Time, &PyDateTime_TimeType);
 	if (self != NULL) {
 		PyObject *res;
 
-		self->tzinfo = NULL;
-		res = timetz_setstate(self, arg);
+		self->tzinfo = Py_None;
+		Py_INCREF(self->tzinfo);
+		self->hastzinfo = (char)1;	/* true */
+		res = time_setstate(self, arg);
 		if (res == NULL) {
 			Py_DECREF(self);
 			return NULL;
 		}
 		Py_DECREF(res);
+		if (self->tzinfo == Py_None) {
+			/* shrinking; can't fail */
+			Py_DECREF(self->tzinfo);
+			PyObject_Realloc(self, sizeof(_PyDateTime_BaseTime));
+			self->hastzinfo = (char)0;
+ 		}
 	}
 	return (PyObject *)self;
 }
 
-static PyMethodDef timetz_methods[] = {
-	{"isoformat",   (PyCFunction)timetz_isoformat,	METH_KEYWORDS,
+static PyMethodDef time_methods[] = {
+	{"isoformat",   (PyCFunction)time_isoformat,	METH_KEYWORDS,
 	 PyDoc_STR("Return string in ISO 8601 format, HH:MM:SS[.mmmmmm]"
 	 	   "[+HH:MM].")},
 
-	{"utcoffset",	(PyCFunction)timetz_utcoffset,	METH_NOARGS,
+	{"strftime",   	(PyCFunction)time_strftime,	METH_KEYWORDS,
+	 PyDoc_STR("format -> strftime() style string.")},
+
+	{"utcoffset",	(PyCFunction)time_utcoffset,	METH_NOARGS,
 	 PyDoc_STR("Return self.tzinfo.utcoffset(self).")},
 
-	{"tzname",	(PyCFunction)timetz_tzname,	METH_NOARGS,
+	{"tzname",	(PyCFunction)time_tzname,	METH_NOARGS,
 	 PyDoc_STR("Return self.tzinfo.tzname(self).")},
 
-	{"dst",		(PyCFunction)timetz_dst,	METH_NOARGS,
+	{"dst",		(PyCFunction)time_dst,		METH_NOARGS,
 	 PyDoc_STR("Return self.tzinfo.dst(self).")},
 
-	{"replace",     (PyCFunction)timetz_replace,	METH_KEYWORDS,
-	 PyDoc_STR("Return timetz with new specified fields.")},
+	{"replace",     (PyCFunction)time_replace,	METH_KEYWORDS,
+	 PyDoc_STR("Return time with new specified fields.")},
 
-	{"__setstate__", (PyCFunction)timetz_setstate,	METH_O,
+	{"__setstate__", (PyCFunction)time_setstate,	METH_O,
 	 PyDoc_STR("__setstate__(state)")},
 
-	{"__getstate__", (PyCFunction)timetz_getstate,	METH_NOARGS,
+	{"__getstate__", (PyCFunction)time_getstate,	METH_NOARGS,
 	 PyDoc_STR("__getstate__() -> state")},
 	{NULL,	NULL}
-
 };
 
-static char timetz_doc[] =
+static char time_doc[] =
 PyDoc_STR("Time type.");
 
-static PyNumberMethods timetz_as_number = {
+static PyNumberMethods time_as_number = {
 	0,					/* nb_add */
 	0,					/* nb_subtract */
 	0,					/* nb_multiply */
@@ -4239,50 +4101,50 @@ static PyNumberMethods timetz_as_number = {
 	0,					/* nb_negative */
 	0,					/* nb_positive */
 	0,					/* nb_absolute */
-	(inquiry)timetz_nonzero,		/* nb_nonzero */
+	(inquiry)time_nonzero,			/* nb_nonzero */
 };
 
-statichere PyTypeObject PyDateTime_TimeTZType = {
+statichere PyTypeObject PyDateTime_TimeType = {
 	PyObject_HEAD_INIT(NULL)
 	0,					/* ob_size */
 	"datetime.time",			/* tp_name */
-	sizeof(PyDateTime_TimeTZ),		/* tp_basicsize */
+	sizeof(PyDateTime_Time),		/* tp_basicsize */
 	0,					/* tp_itemsize */
-	(destructor)timetz_dealloc,		/* tp_dealloc */
+	(destructor)time_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
-	(reprfunc)timetz_repr,			/* tp_repr */
-	&timetz_as_number,			/* tp_as_number */
+	(reprfunc)time_repr,			/* tp_repr */
+	&time_as_number,			/* tp_as_number */
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
+	(hashfunc)time_hash,			/* tp_hash */
 	0,              			/* tp_call */
-	0,					/* tp_str */
+	(reprfunc)time_str,			/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
         Py_TPFLAGS_BASETYPE,			/* tp_flags */
-	timetz_doc,				/* tp_doc */
+	time_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
+	(richcmpfunc)time_richcompare,		/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	0,					/* tp_iter */
 	0,					/* tp_iternext */
-	timetz_methods,				/* tp_methods */
+	time_methods,				/* tp_methods */
 	0,					/* tp_members */
-	timetz_getset,				/* tp_getset */
-	&PyDateTime_TimeType,			/* tp_base */
+	time_getset,				/* tp_getset */
+	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
 	0,					/* tp_alloc */
-	timetz_new,				/* tp_new */
+	time_new,				/* tp_new */
 	_PyObject_Del,				/* tp_free */
 };
 
@@ -4789,11 +4651,11 @@ datetimetz_utctimetuple(PyDateTime_DateTimeTZ *self)
 static PyObject *
 datetimetz_gettimetz(PyDateTime_DateTimeTZ *self)
 {
-	return new_timetz(DATE_GET_HOUR(self),
-			  DATE_GET_MINUTE(self),
-			  DATE_GET_SECOND(self),
-			  DATE_GET_MICROSECOND(self),
-			  self->tzinfo);
+	return new_time(DATE_GET_HOUR(self),
+			DATE_GET_MINUTE(self),
+			DATE_GET_SECOND(self),
+			DATE_GET_MICROSECOND(self),
+			self->tzinfo);
 }
 
 /*
@@ -5019,8 +4881,8 @@ static PyMethodDef module_methods[] = {
 	{"_date_unpickler",	(PyCFunction)date_unpickler, 	METH_O, NULL},
 	{"_datetimetz_pickler",	(PyCFunction)datetimetz_pickler,METH_O, NULL},
 	{"_datetimetz_unpickler",(PyCFunction)datetimetz_unpickler,METH_O, NULL},
-	{"_timetz_pickler",	(PyCFunction)timetz_pickler,	METH_O, NULL},
-	{"_timetz_unpickler",	(PyCFunction)timetz_unpickler,	METH_O, NULL},
+	{"_time_pickler",	(PyCFunction)time_pickler,	METH_O, NULL},
+	{"_time_unpickler",	(PyCFunction)time_unpickler,	METH_O, NULL},
 	{"_tzinfo_pickler",	(PyCFunction)tzinfo_pickler,	METH_O, NULL},
 	{"_tzinfo_unpickler",	(PyCFunction)tzinfo_unpickler,	METH_NOARGS,
 	 NULL},
@@ -5054,8 +4916,6 @@ initdatetime(void)
 		return;
 	if (PyType_Ready(&PyDateTime_TZInfoType) < 0)
 		return;
-	if (PyType_Ready(&PyDateTime_TimeTZType) < 0)
-		return;
 	if (PyType_Ready(&PyDateTime_DateTimeTZType) < 0)
 		return;
 
@@ -5079,15 +4939,15 @@ initdatetime(void)
 		Py_DECREF(x);
 		Py_DECREF(pickler);
 
-		pickler = PyObject_GetAttrString(m, "_timetz_pickler");
+		pickler = PyObject_GetAttrString(m, "_time_pickler");
 		if (pickler == NULL) return;
-		timetz_unpickler_object = PyObject_GetAttrString(m,
-						"_timetz_unpickler");
-		if (timetz_unpickler_object == NULL) return;
+		time_unpickler_object = PyObject_GetAttrString(m,
+						"_time_unpickler");
+		if (time_unpickler_object == NULL) return;
 	    	x = PyObject_CallMethod(copyreg, "pickle", "OOO",
-	    				&PyDateTime_TimeTZType,
+	    				&PyDateTime_TimeType,
 	    				pickler,
-		                	timetz_unpickler_object);
+		                	time_unpickler_object);
 		if (x == NULL) return;
 		Py_DECREF(x);
 		Py_DECREF(pickler);
@@ -5160,15 +5020,15 @@ initdatetime(void)
 		return;
 	Py_DECREF(x);
 
-	/* timetz values */
-	d = PyDateTime_TimeTZType.tp_dict;
+	/* time values */
+	d = PyDateTime_TimeType.tp_dict;
 
-	x = new_timetz(0, 0, 0, 0, Py_None);
+	x = new_time(0, 0, 0, 0, Py_None);
 	if (x == NULL || PyDict_SetItemString(d, "min", x) < 0)
 		return;
 	Py_DECREF(x);
 
-	x = new_timetz(23, 59, 59, 999999, Py_None);
+	x = new_time(23, 59, 59, 999999, Py_None);
 	if (x == NULL || PyDict_SetItemString(d, "max", x) < 0)
 		return;
 	Py_DECREF(x);
@@ -5211,8 +5071,8 @@ initdatetime(void)
 	Py_INCREF(&PyDateTime_TZInfoType);
 	PyModule_AddObject(m, "tzinfo", (PyObject *) &PyDateTime_TZInfoType);
 
-	Py_INCREF(&PyDateTime_TimeTZType);
-	PyModule_AddObject(m, "time", (PyObject *) &PyDateTime_TimeTZType);
+	Py_INCREF(&PyDateTime_TimeType);
+	PyModule_AddObject(m, "time", (PyObject *) &PyDateTime_TimeType);
 
 	Py_INCREF(&PyDateTime_DateTimeTZType);
 	PyModule_AddObject(m, "datetime",
