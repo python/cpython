@@ -430,6 +430,8 @@ def _run_examples_inner(out, fakeout, examples, globs, verbose, name,
                          compileflags, 1) in globs
             got = fakeout.get()
             state = OK
+        except KeyboardInterrupt:
+            raise
         except:
             # See whether the exception was expected.
             if want.find("Traceback (innermost last):\n") == 0 or \
@@ -521,6 +523,8 @@ def run_docstring_examples(f, globs, verbose=0, name="NoName",
         # just in case CT invents a doc object that has to be forced
         # to look like a string <0.9 wink>
         doc = str(doc)
+    except KeyboardInterrupt:
+        raise
     except:
         return 0, 0
 
