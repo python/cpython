@@ -249,7 +249,7 @@ sizeofimage(self, args)
 	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
 
-	inf = fopen(name, "r");
+	inf = fopen(name, "rw");
 	if (!inf) {
 		PyErr_SetString(ImgfileError, "can't open image file");
 		return NULL;
@@ -289,7 +289,7 @@ longimagedata(self, args)
 	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
 
-	inf = fopen(name,"r");
+	inf = fopen(name,"rb");
 	if (!inf) {
 		PyErr_SetString(ImgfileError, "can't open image file");
 		return NULL;
@@ -594,7 +594,7 @@ longstoimage(self, args)
 		return NULL;
 
 	goodwrite = 1;
-	outf = fopen(name, "w");
+	outf = fopen(name, "wb");
 	if (!outf) {
 		PyErr_SetString(ImgfileError, "can't open output file");
 		return NULL;
