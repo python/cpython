@@ -94,7 +94,7 @@ class Scanner:
 		self.whole_pat = "\(<type>[a-zA-Z0-9_]+\)[ \t\n]+" + \
 		                 "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*(\(<args>[^()]*\))"
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,]*\),?"
+		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,}]*\),?"
 		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
 
 	def compilepatterns(self):
