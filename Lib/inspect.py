@@ -769,7 +769,7 @@ def currentframe():
     try:
         1/0
     except ZeroDivisionError:
-        return sys.exc_traceback.tb_frame.f_back
+        return sys.exc_info()[2].tb_frame.f_back
 
 if hasattr(sys, '_getframe'): currentframe = sys._getframe
 
@@ -779,4 +779,4 @@ def stack(context=1):
 
 def trace(context=1):
     """Return a list of records for the stack below the current exception."""
-    return getinnerframes(sys.exc_traceback, context)
+    return getinnerframes(sys.exc_info()[2], context)

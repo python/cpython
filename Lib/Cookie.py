@@ -231,6 +231,9 @@ except ImportError:
 __all__ = ["CookieError","BaseCookie","SimpleCookie","SerialCookie",
            "SmartCookie","Cookie"]
 
+_nulljoin = ''.join
+_spacejoin = ' '.join
+
 #
 # Define an exception visible to External modules
 #
@@ -311,7 +314,7 @@ _Translator       = {
     }
 
 def _quote(str, LegalChars=_LegalChars,
-    join=string.join, idmap=string._idmap, translate=string.translate):
+           idmap=string._idmap, translate=string.translate):
     #
     # If the string does not need to be double-quoted,
     # then just return the string.  Otherwise, surround
@@ -321,14 +324,14 @@ def _quote(str, LegalChars=_LegalChars,
     if "" == translate(str, idmap, LegalChars):
         return str
     else:
-        return '"' + join( map(_Translator.get, str, str), "" ) + '"'
+        return '"' + _nulljoin( map(_Translator.get, str, str) ) + '"'
 # end _quote
 
 
 _OctalPatt = re.compile(r"\\[0-3][0-7][0-7]")
 _QuotePatt = re.compile(r"[\\].")
 
-def _unquote(str, join=string.join, atoi=string.atoi):
+def _unquote(str):
     # If there aren't any doublequotes,
     # then there can't be any special characters.  See RFC 2109.
     if  len(str) < 2:
@@ -365,9 +368,9 @@ def _unquote(str, join=string.join, atoi=string.atoi):
             i = k+2
         else:                                      # OctalPatt matched
             res.append(str[i:j])
-            res.append( chr( atoi(str[j+1:j+4], 8) ) )
+            res.append( chr( int(str[j+1:j+4], 8) ) )
             i = j+4
-    return join(res, "")
+    return _nulljoin(res)
 # end _unquote
 
 # The _getdate() routine is used to set the expiration time in
@@ -435,14 +438,14 @@ class Morsel(UserDict):
     # end __init__
 
     def __setitem__(self, K, V):
-        K = string.lower(K)
+        K = K.lower()
         if not K in self._reserved_keys:
             raise CookieError("Invalid Attribute %s" % K)
         UserDict.__setitem__(self, K, V)
     # end __setitem__
 
     def isReservedKey(self, K):
-        return string.lower(K) in self._reserved_keys
+        return K.lower() in self._reserved_keys
     # end isReservedKey
 
     def set(self, key, val, coded_val,
@@ -450,7 +453,7 @@ class Morsel(UserDict):
             idmap=string._idmap, translate=string.translate ):
         # First we verify that the key isn't a reserved word
         # Second we make sure it only contains legal characters
-        if string.lower(key) in self._reserved_keys:
+        if key.lower() in self._reserved_keys:
             raise CookieError("Attempt to set a reserved key: %s" % key)
         if "" != translate(key, idmap, LegalChars):
             raise CookieError("Illegal key value: %s" % key)
@@ -508,7 +511,7 @@ class Morsel(UserDict):
                 RA("%s=%s;" % (self._reserved[K], V))
 
         # Return the result
-        return string.join(result, " ")
+        return _spacejoin(result)
     # end OutputString
 # end Morsel class
 
@@ -592,7 +595,7 @@ class BaseCookie(UserDict):
         items.sort()
         for K,V in items:
             result.append( V.output(attrs, header) )
-        return string.join(result, sep)
+        return sep.join(result)
     # end output
 
     __str__ = output
@@ -603,7 +606,7 @@ class BaseCookie(UserDict):
         items.sort()
         for K,V in items:
             L.append( '%s=%s' % (K,repr(V.value) ) )
-        return '<%s: %s>' % (self.__class__.__name__, string.join(L))
+        return '<%s: %s>' % (self.__class__.__name__, _spacejoin(L))
 
     def js_output(self, attrs=None):
         """Return a string suitable for JavaScript."""
@@ -612,7 +615,7 @@ class BaseCookie(UserDict):
         items.sort()
         for K,V in items:
             result.append( V.js_output(attrs) )
-        return string.join(result, "")
+        return _nulljoin(result)
     # end js_output
 
     def load(self, rawdata):
@@ -648,7 +651,7 @@ class BaseCookie(UserDict):
                 # (Does anyone care?)
                 if M:
                     M[ K[1:] ] = V
-            elif string.lower(K) in Morsel._reserved_keys:
+            elif K.lower() in Morsel._reserved_keys:
                 if M:
                     M[ K ] = _unquote(V)
             else:

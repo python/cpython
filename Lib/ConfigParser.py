@@ -301,10 +301,10 @@ class ConfigParser:
         return conv(self.get(section, option))
 
     def getint(self, section, option):
-        return self.__get(section, string.atoi, option)
+        return self.__get(section, int, option)
 
     def getfloat(self, section, option):
-        return self.__get(section, string.atof, option)
+        return self.__get(section, float, option)
 
     def getboolean(self, section, option):
         states = {'1': 1, 'yes': 1, 'true': 1, 'on': 1,
