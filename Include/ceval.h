@@ -105,6 +105,8 @@ extern void PyEval_RestoreThread Py_PROTO((PyThreadState *));
 #ifdef WITH_THREAD
 
 extern void PyEval_InitThreads Py_PROTO((void));
+extern void PyEval_AcquireLock Py_PROTO((void));
+extern void PyEval_ReleaseLock Py_PROTO((void));
 extern void PyEval_AcquireThread Py_PROTO((PyThreadState *tstate));
 extern void PyEval_ReleaseThread Py_PROTO((PyThreadState *tstate));
 
