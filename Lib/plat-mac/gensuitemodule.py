@@ -523,14 +523,18 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
                 fp.write("getbaseclasses(%s)\n" % v)
 
     # Generate a code-to-name mapper for all of the types (classes) declared in this module
+    application_class = None
     if allprecompinfo:
         fp.write("\n#\n# Indices of types declared in this module\n#\n")
         fp.write("_classdeclarations = {\n")
         for codenamemapper in allprecompinfo:
             for k, v in codenamemapper.getall('class'):
                 fp.write("    %s : %s,\n" % (`k`, v))
+            if k == 'capp':
+                application_class = v
         fp.write("}\n")
 
+    
     if suitelist:
         fp.write("\n\nclass %s(%s_Events"%(packagename, suitelist[0][1]))
         for code, modname in suitelist[1:]:
@@ -538,6 +542,9 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
         fp.write(",\n        aetools.TalkTo):\n")
         fp.write("    _signature = %s\n\n"%`creatorsignature`)
         fp.write("    _moduleName = '%s'\n\n"%packagename)
+        if application_class:
+            fp.write("    _elemdict = %s._elemdict\n" % application_class)
+            fp.write("    _propdict = %s._propdict\n" % application_class)
     fp.close()
 
 class SuiteCompiler:
@@ -966,14 +973,15 @@ class ObjectCompiler:
                 self.fp.write('    """%s - %s """\n' % (ascii(name), ascii(desc)))
                 self.fp.write('    want = %s\n' % `code`)
         self.namemappers[0].addnamecode('class', pname, code)
+        is_application_class = (code == 'capp')
         properties.sort()
         for prop in properties:
-            self.compileproperty(prop)
+            self.compileproperty(prop, is_application_class)
         elements.sort()
         for elem in elements:
             self.compileelement(elem)
     
-    def compileproperty(self, prop):
+    def compileproperty(self, prop, is_application_class=False):
         [name, code, what] = prop
         if code == 'c@#!':
             # Something silly with plurals. Skip it.
@@ -993,6 +1001,8 @@ class ObjectCompiler:
                 self.fp.write("    which = %s\n" % `code`)
                 self.fp.write("    want = %s\n" % `what[0]`)
         self.namemappers[0].addnamecode('property', pname, code)
+        if is_application_class and self.fp:
+            self.fp.write("%s = _Prop_%s()\n" % (pname, pname))
     
     def compileelement(self, elem):
         [code, keyform] = elem
