@@ -177,7 +177,7 @@ exists(filename)
 
 
 static void
-join(buffer, stuff)
+joinpath(buffer, stuff)
 	char *buffer;
 	char *stuff;
 {
@@ -207,7 +207,7 @@ search_for_prefix(argv0_path, home)
 
 	/* Check to see if argv[0] is in the build directory */
 	strcpy(prefix, argv0_path);
-	join(prefix, "Modules/Setup");
+	joinpath(prefix, "Modules/Setup");
 	if (exists(prefix)) {
 		/* Check VPATH to see if argv0_path is in the build directory.
 		 * Complication: the VPATH passed in is relative to the
@@ -222,10 +222,10 @@ search_for_prefix(argv0_path, home)
 		if (vpath[0] == '.' && vpath[1] == '.' && vpath[2] == '/')
 			vpath += 3;
 		strcpy(prefix, argv0_path);
-		join(prefix, vpath);
+		joinpath(prefix, vpath);
 		reduce(prefix);
-		join(prefix, "Lib");
-		join(prefix, LANDMARK);
+		joinpath(prefix, "Lib");
+		joinpath(prefix, LANDMARK);
 		if (exists(prefix))
 			return -1;
 	}
@@ -237,8 +237,8 @@ search_for_prefix(argv0_path, home)
 		delim = strchr(prefix, DELIM);
 		if (delim)
 			*delim = '\0';
-		join(prefix, lib_python);
-		join(prefix, LANDMARK);
+		joinpath(prefix, lib_python);
+		joinpath(prefix, LANDMARK);
 		if (exists(prefix))
 			return 1;
 	}
@@ -247,8 +247,8 @@ search_for_prefix(argv0_path, home)
 	strcpy(prefix, argv0_path);
 	do {
 		n = strlen(prefix);
-		join(prefix, lib_python);
-		join(prefix, LANDMARK);
+		joinpath(prefix, lib_python);
+		joinpath(prefix, LANDMARK);
 		if (exists(prefix))
 			return 1;
 		prefix[n] = '\0';
@@ -257,8 +257,8 @@ search_for_prefix(argv0_path, home)
 
 	/* Look at configure's PREFIX */
 	strcpy(prefix, PREFIX);
-	join(prefix, lib_python);
-	join(prefix, LANDMARK);
+	joinpath(prefix, lib_python);
+	joinpath(prefix, LANDMARK);
 	if (exists(prefix))
 		return 1;
 
@@ -276,7 +276,7 @@ search_for_exec_prefix(argv0_path, home)
 
 	/* Check to see if argv[0] is in the build directory */
 	strcpy(exec_prefix, argv0_path);
-	join(exec_prefix, "Modules/Setup");
+	joinpath(exec_prefix, "Modules/Setup");
 	if (exists(exec_prefix)) {
 		reduce(exec_prefix);
 		return -1;
@@ -290,8 +290,8 @@ search_for_exec_prefix(argv0_path, home)
 			strcpy(exec_prefix, delim+1);
 		else
 			strcpy(exec_prefix, home);
-		join(exec_prefix, lib_python);
-		join(exec_prefix, "sharedmodules");
+		joinpath(exec_prefix, lib_python);
+		joinpath(exec_prefix, "sharedmodules");
 		if (exists(exec_prefix))
 			return 1;
 	}
@@ -300,8 +300,8 @@ search_for_exec_prefix(argv0_path, home)
 	strcpy(exec_prefix, argv0_path);
 	do {
 		n = strlen(exec_prefix);
-		join(exec_prefix, lib_python);
-		join(exec_prefix, "sharedmodules");
+		joinpath(exec_prefix, lib_python);
+		joinpath(exec_prefix, "sharedmodules");
 		if (exists(exec_prefix))
 			return 1;
 		exec_prefix[n] = '\0';
@@ -310,8 +310,8 @@ search_for_exec_prefix(argv0_path, home)
 
 	/* Look at configure's EXEC_PREFIX */
 	strcpy(exec_prefix, EXEC_PREFIX);
-	join(exec_prefix, lib_python);
-	join(exec_prefix, "sharedmodules");
+	joinpath(exec_prefix, lib_python);
+	joinpath(exec_prefix, "sharedmodules");
 	if (exists(exec_prefix))
 		return 1;
 
@@ -361,7 +361,7 @@ calculate_path()
 			else
 				strcpy(progpath, path);
 
-			join(progpath, prog);
+			joinpath(progpath, prog);
 			if (exists(progpath))
 				break;
 
@@ -389,7 +389,7 @@ calculate_path()
 			else {
 				/* Interpret relative to progpath */
 				reduce(argv0_path);
-				join(argv0_path, tmpbuffer);
+				joinpath(argv0_path, tmpbuffer);
 			}
 		}
 	}
@@ -401,7 +401,7 @@ calculate_path()
 		fprintf(stderr,
 		   "Could not find platform independent libraries <prefix>\n");
 		strcpy(prefix, PREFIX);
-		join(prefix, lib_python);
+		joinpath(prefix, lib_python);
 	}
 	else
 		reduce(prefix);
@@ -410,7 +410,7 @@ calculate_path()
 		fprintf(stderr,
 		"Could not find platform dependent libraries <exec_prefix>\n");
 		strcpy(exec_prefix, EXEC_PREFIX);
-		join(exec_prefix, "lib/sharedmodules");
+		joinpath(exec_prefix, "lib/sharedmodules");
 	}
 	/* If we found EXEC_PREFIX do *not* reduce it!  (Yet.) */
 
