@@ -2821,12 +2821,14 @@ load_string(Unpicklerobject *self) {
         if (*p==q && nslash%2==0) break;
         if (*p=='\\') nslash++;
         else nslash=0;
-      }
-    if (*p==q)
-      {
-        for (p++; *p; p++) if (*p > ' ') goto insecure;
-      }
-    else goto insecure;
+    }
+    if (*p == q) {
+        for (p++; *p; p++)
+            if (*(unsigned char *)p > ' ')
+                goto insecure;
+    }
+    else
+        goto insecure;
     /********************************************/
 
     UNLESS (eval_dict)
