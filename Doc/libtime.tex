@@ -48,8 +48,8 @@ integers: year (e.g.\ 1993), month (1--12), day (1--31), hour
 (0--23), minute (0--59), second (0--59), weekday (0--6, monday is 0),
 Julian day (1--366) and daylight savings flag (-1, 0  or 1).
 Note that unlike the C structure, the month value is a range of 1-12, not
-0-11.  A year value of $<$ 100 will typically be silently converted to
-1900 $+$ year value.  A -1 argument as daylight savings flag, passed to
+0-11.  A year value less than 100 will typically be silently converted to
+1900 plus the year value.  A -1 argument as daylight savings flag, passed to
 \code{mktime()} will usually result in the correct daylight savings
 state to be filled in.
 
