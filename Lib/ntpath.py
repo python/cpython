@@ -312,7 +312,8 @@ def expandvars(path):
 
 
 # Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B.
-# Also, components of the path are silently truncated to 8+3 notation.
+# Previously, this function also truncated pathnames to 8+3 format,
+# but as this module is called "ntpath", that's obviously wrong!
 
 def normpath(path):
 	path = normcase(path)
@@ -331,17 +332,9 @@ def normpath(path):
 			i = i-1
 		elif comps[i] == '' and i > 0 and comps[i-1] <> '':
 			del comps[i]
-		elif '.' in comps[i]:
-			comp = string.splitfields(comps[i], '.')
-			comps[i] = comp[0][:8] + '.' + comp[1][:3]
-			i = i+1
-		elif len(comps[i]) > 8:
-			comps[i] = comps[i][:8]
-			i = i+1
 		else:
 			i = i+1
 	# If the path is now empty, substitute '.'
 	if not prefix and not comps:
 		comps.append('.')
 	return prefix + string.joinfields(comps, os.sep)
-
