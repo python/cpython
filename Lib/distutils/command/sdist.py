@@ -272,21 +272,22 @@ class sdist (Command):
     # search_dir ()
 
 
-    def exclude_pattern (self, pattern):
-        """Remove filenames from 'self.files' that match 'pattern'."""
-        print "exclude_pattern: pattern=%s" % pattern
-        pattern_re = translate_pattern (pattern)
-        for i in range (len (self.files)-1, -1, -1):
-            if pattern_re.match (self.files[i]):
-                print "removing %s" % self.files[i]
-                del self.files[i]
+#     def exclude_pattern (self, pattern):
+#         """Remove filenames from 'self.files' that match 'pattern'."""
+#         self.debug_print("exclude_pattern: pattern=%s" % pattern)
+#         pattern_re = translate_pattern (pattern)
+#         for i in range (len (self.files)-1, -1, -1):
+#             if pattern_re.match (self.files[i]):
+#                 self.debug_print("removing %s" % self.files[i])
+#                 del self.files[i]
 
 
     def recursive_exclude_pattern (self, dir, pattern=None):
         """Remove filenames from 'self.files' that are under 'dir'
            and whose basenames match 'pattern'."""
 
-        print "recursive_exclude_pattern: dir=%s, pattern=%s" % (dir, pattern)
+        self.debug_print("recursive_exclude_pattern: dir=%s, pattern=%s" %
+                         (dir, pattern))
         if pattern is None:
             pattern_re = None
         else:
@@ -296,7 +297,7 @@ class sdist (Command):
             (cur_dir, cur_base) = os.path.split (self.files[i])
             if (cur_dir == dir and
                 (pattern_re is None or pattern_re.match (cur_base))):
-                print "removing %s" % self.files[i]
+                self.debug_print("removing %s" % self.files[i])
                 del self.files[i]
 
 
@@ -307,6 +308,7 @@ class sdist (Command):
            and add the resulting filenames to 'self.files'."""
 
         assert self.files is not None and type (self.files) is ListType
+        self.announce("reading manifest template '%s'" % self.template)
 
         template = TextFile (self.template,
                              strip_comments=1,
@@ -374,27 +376,28 @@ class sdist (Command):
             # digging stuff up out of 'words'.
 
             if action == 'include':
-                print "include", string.join(pattern_list)
+                self.debug_print("include " + string.join(pattern_list))
                 for pattern in pattern_list:
-                    files = select_pattern (all_files, pattern, anchor=1)
+                    files = self.select_pattern (all_files, pattern, anchor=1)
                     if not files:
-                        template.warn ("no files found matching '%s'" % pattern)
+                        template.warn ("no files found matching '%s'" %
+                                       pattern)
                     else:
                         self.files.extend (files)
 
             elif action == 'exclude':
-                print "exclude", string.join(pattern_list)
+                self.debug_print("exclude " + string.join(pattern_list))
                 for pattern in pattern_list:
-                    num = exclude_pattern (self.files, pattern, anchor=1)
+                    num = self.exclude_pattern (self.files, pattern, anchor=1)
                     if num == 0:
                         template.warn (
                             "no previously-included files found matching '%s'"%
                             pattern)
 
             elif action == 'global-include':
-                print "global-include", string.join(pattern_list)
+                self.debug_print("global-include " + string.join(pattern_list))
                 for pattern in pattern_list:
-                    files = select_pattern (all_files, pattern, anchor=0)
+                    files = self.select_pattern (all_files, pattern, anchor=0)
                     if not files:
                         template.warn (("no files found matching '%s' " +
                                         "anywhere in distribution") %
@@ -403,9 +406,9 @@ class sdist (Command):
                         self.files.extend (files)
 
             elif action == 'global-exclude':
-                print "global-exclude", string.join(pattern_list)
+                self.debug_print("global-exclude " + string.join(pattern_list))
                 for pattern in pattern_list:
-                    num = exclude_pattern (self.files, pattern, anchor=0)
+                    num = self.exclude_pattern (self.files, pattern, anchor=0)
                     if num == 0:
                         template.warn \
                             (("no previously-included files matching '%s' " +
@@ -413,9 +416,11 @@ class sdist (Command):
                              pattern)
 
             elif action == 'recursive-include':
-                print "recursive-include", dir, string.join(pattern_list)
+                self.debug_print("recursive-include %s %s" %
+                                 (dir, string.join(pattern_list)))
                 for pattern in pattern_list:
-                    files = select_pattern (all_files, pattern, prefix=dir)
+                    files = self.select_pattern (
+                        all_files, pattern, prefix=dir)
                     if not files:
                         template.warn (("no files found matching '%s' " +
                                         "under directory '%s'") %
@@ -424,9 +429,11 @@ class sdist (Command):
                         self.files.extend (files)
 
             elif action == 'recursive-exclude':
-                print "recursive-exclude", dir, string.join(pattern_list)
+                self.debug_print("recursive-exclude %s %s" %
+                                 (dir, string.join(pattern_list)))
                 for pattern in pattern_list:
-                    num = exclude_pattern (self.files, pattern, prefix=dir)
+                    num = self.exclude_pattern(
+                        self.files, pattern, prefix=dir)
                     if num == 0:
                         template.warn \
                             (("no previously-included files matching '%s' " +
@@ -434,8 +441,9 @@ class sdist (Command):
                              (pattern, dir))
 
             elif action == 'graft':
-                print "graft", dir_pattern
-                files = select_pattern (all_files, None, prefix=dir_pattern)
+                self.debug_print("graft " + dir_pattern)
+                files = self.select_pattern(
+                    all_files, None, prefix=dir_pattern)
                 if not files:
                     template.warn ("no directories found matching '%s'" %
                                    dir_pattern)
@@ -443,8 +451,9 @@ class sdist (Command):
                     self.files.extend (files)
 
             elif action == 'prune':
-                print "prune", dir_pattern
-                num = exclude_pattern (self.files, None, prefix=dir_pattern)
+                self.debug_print("prune " + dir_pattern)
+                num = self.exclude_pattern(
+                    self.files, None, prefix=dir_pattern)
                 if num == 0:
                     template.warn \
                         (("no previously-included directories found " +
@@ -458,12 +467,61 @@ class sdist (Command):
 
         # Prune away the build and source distribution directories
         build = self.get_finalized_command ('build')
-        exclude_pattern (self.files, None, prefix=build.build_base)
+        self.exclude_pattern (self.files, None, prefix=build.build_base)
 
         base_dir = self.distribution.get_fullname()
-        exclude_pattern (self.files, None, prefix=base_dir)
+        self.exclude_pattern (self.files, None, prefix=base_dir)
 
     # read_template ()
+
+
+    def select_pattern (self, files, pattern, anchor=1, prefix=None):
+        """Select strings (presumably filenames) from 'files' that match
+        'pattern', a Unix-style wildcard (glob) pattern.  Patterns are not
+        quite the same as implemented by the 'fnmatch' module: '*' and '?'
+        match non-special characters, where "special" is platform-dependent:
+        slash on Unix, colon, slash, and backslash on DOS/Windows, and colon on
+        Mac OS.
+
+        If 'anchor' is true (the default), then the pattern match is more
+        stringent: "*.py" will match "foo.py" but not "foo/bar.py".  If
+        'anchor' is false, both of these will match.
+
+        If 'prefix' is supplied, then only filenames starting with 'prefix'
+        (itself a pattern) and ending with 'pattern', with anything in between
+        them, will match.  'anchor' is ignored in this case.
+
+        Return the list of matching strings, possibly empty.
+        """
+        matches = []
+        pattern_re = translate_pattern (pattern, anchor, prefix)
+        self.debug_print("select_pattern: applying regex r'%s'" %
+                         pattern_re.pattern)
+        for name in files:
+            if pattern_re.search (name):
+                matches.append (name)
+                self.debug_print(" adding " + name)
+
+        return matches
+
+    # select_pattern ()
+
+
+    def exclude_pattern (self, files, pattern, anchor=1, prefix=None):
+        """Remove strings (presumably filenames) from 'files' that match
+        'pattern'.  'pattern', 'anchor', 'and 'prefix' are the same
+        as for 'select_pattern()', above.  The list 'files' is modified
+        in place.
+        """
+        pattern_re = translate_pattern (pattern, anchor, prefix)
+        self.debug_print("exclude_pattern: applying regex r'%s'" %
+                         pattern_re.pattern)
+        for i in range (len(files)-1, -1, -1):
+            if pattern_re.search (files[i]):
+                self.debug_print(" removing " + files[i])
+                del files[i]
+
+    # exclude_pattern ()
 
 
     def write_manifest (self):
@@ -473,7 +531,7 @@ class sdist (Command):
 
         self.execute(write_file,
                      (self.manifest, self.files),
-                     "writing manifest file")
+                     "writing manifest file '%s'" % self.manifest)
 
     # write_manifest ()
 
@@ -483,6 +541,7 @@ class sdist (Command):
            it to fill in 'self.files', the list of files to include
            in the source distribution."""
 
+        self.announce("reading manifest file '%s'" % self.manifest)
         manifest = open (self.manifest)
         while 1:
             line = manifest.readline ()
@@ -494,7 +553,6 @@ class sdist (Command):
 
     # read_manifest ()
             
-
 
     def make_release_tree (self, base_dir, files):
 
@@ -533,7 +591,7 @@ class sdist (Command):
 
         # Remove any files that match "base_dir" from the fileset -- we
         # don't want to go distributing the distribution inside itself!
-        self.exclude_pattern (base_dir + "*")
+        self.exclude_pattern (self.files, base_dir + "*")
  
         self.make_release_tree (base_dir, self.files)
         archive_files = []              # remember names of files we create
@@ -581,49 +639,6 @@ def findall (dir = os.curdir):
                 push (fullname)
 
     return list
-
-
-def select_pattern (files, pattern, anchor=1, prefix=None):
-    """Select strings (presumably filenames) from 'files' that match
-       'pattern', a Unix-style wildcard (glob) pattern.  Patterns are not
-       quite the same as implemented by the 'fnmatch' module: '*' and '?'
-       match non-special characters, where "special" is platform-dependent:
-       slash on Unix, colon, slash, and backslash on DOS/Windows, and colon
-       on Mac OS.
-
-       If 'anchor' is true (the default), then the pattern match is more
-       stringent: "*.py" will match "foo.py" but not "foo/bar.py".  If
-       'anchor' is false, both of these will match.
-
-       If 'prefix' is supplied, then only filenames starting with 'prefix'
-       (itself a pattern) and ending with 'pattern', with anything in
-       between them, will match.  'anchor' is ignored in this case.
-
-       Return the list of matching strings, possibly empty."""
-
-    matches = []
-    pattern_re = translate_pattern (pattern, anchor, prefix)
-    print "select_pattern: applying re %s" % pattern_re.pattern
-    for name in files:
-        if pattern_re.search (name):
-            matches.append (name)
-            print " adding", name
-
-    return matches
-
-# select_pattern ()
-
-
-def exclude_pattern (files, pattern, anchor=1, prefix=None):
-
-    pattern_re = translate_pattern (pattern, anchor, prefix)
-    print "exclude_pattern: applying re %s" % pattern_re.pattern
-    for i in range (len(files)-1, -1, -1):
-        if pattern_re.search (files[i]):
-            print " removing", files[i]
-            del files[i]
-
-# exclude_pattern ()
 
 
 def glob_to_re (pattern):
