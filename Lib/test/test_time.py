@@ -37,6 +37,18 @@ class TimeTestCase(unittest.TestCase):
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
 
+    def test_strptime(self):
+        tt = time.gmtime(self.t)
+        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
+                          'j', 'm', 'M', 'p', 'S',
+                          'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
+            format = ' %' + directive
+            try:
+                time.strptime(time.strftime(format, tt), format)
+            except ValueError:
+                self.fail('conversion specifier: %r failed.' % format)
+
+
     def test_asctime(self):
         time.asctime(time.gmtime(self.t))
         self.assertRaises(TypeError, time.asctime, 0)
