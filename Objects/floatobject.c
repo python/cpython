@@ -492,11 +492,13 @@ static PyObject *
 float_pow(PyObject *v, PyObject *w, PyObject *z)
 {
 	double iv, iw, ix;
- /* XXX Doesn't handle overflows if z!=None yet; it may never do so :(
-  * The z parameter is really only going to be useful for integers and
-  * long integers.  Maybe something clever with logarithms could be done.
-  * [AMK]
-  */
+
+	if ((PyObject *)z != Py_None) {
+		PyErr_SetString(PyExc_TypeError,
+			"3rd argument to floating pow() must be None");
+		return NULL;
+	}
+
 	CONVERT_TO_DOUBLE(v, iv);
 	CONVERT_TO_DOUBLE(w, iw);
 
@@ -537,16 +539,6 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		/* XXX could it be another type of error? */
 		PyErr_SetFromErrno(PyExc_OverflowError);
 		return NULL;
-	}
-	if ((PyObject *)z != Py_None) {
-		double iz;
-		CONVERT_TO_DOUBLE(z, iz);
-		PyFPE_START_PROTECT("pow", return 0)
-	 	ix = fmod(ix, iz);	/* XXX To Be Rewritten */
-	 	if (ix != 0 && ((iv < 0 && iz > 0) || (iv > 0 && iz < 0) )) {
-		     ix += iz;
-		}
-  		PyFPE_END_PROTECT(ix)
 	}
 	return PyFloat_FromDouble(ix);
 }

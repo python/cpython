@@ -1598,12 +1598,17 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 	
 	size_b = b->ob_size;
 	if (size_b < 0) {
-		/* Return a float.  This works because we know that
-		   this calls float_pow() which converts its
-		   arguments to double. */
 		Py_DECREF(a);
 		Py_DECREF(b);
 		Py_DECREF(c);
+		if (x != Py_None) {
+			PyErr_SetString(PyExc_TypeError, "integer pow() arg "
+			     "3 must not be specified when arg 2 is < 0");
+			return NULL;
+		}
+		/* Return a float.  This works because we know that
+		   this calls float_pow() which converts its
+		   arguments to double. */
 		return PyFloat_Type.tp_as_number->nb_power(v, w, x);
 	}
 	z = (PyLongObject *)PyLong_FromLong(1L);
