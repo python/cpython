@@ -384,31 +384,9 @@ extern int fsync(int fd);
 extern double hypot(double, double);
 #endif
 
-
-/************************************
- * MALLOC COMPATIBILITY FOR pymem.h *
- ************************************/
-
 #ifndef DL_IMPORT       /* declarations for DLL import */
 #define DL_IMPORT(RTYPE) RTYPE
 #endif
-
-#ifdef MALLOC_ZERO_RETURNS_NULL
-/* Allocate an extra byte if the platform malloc(0) returns NULL.
-   Caution:  this bears no relation to whether realloc(p, 0) returns NULL
-   when p != NULL.  Even on platforms where malloc(0) does not return NULL,
-   realloc(p, 0) may act like free(p) and return NULL.  Examples include
-   Windows, and Python's own obmalloc.c (as of 2-Mar-2002).  For whatever
-   reason, our docs promise that PyMem_Realloc(p, 0) won't act like
-   free(p) or return NULL, so realloc() calls may have to be hacked
-   too, but MALLOC_ZERO_RETURNS_NULL's state is irrelevant to realloc (it
-   needs a different hack).
-*/
-#define _PyMem_EXTRA 1
-#else
-#define _PyMem_EXTRA 0
-#endif
-
 
 /* If the fd manipulation macros aren't defined,
    here is a set that should do the job */

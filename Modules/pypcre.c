@@ -3078,8 +3078,11 @@ static int grow_stack(match_data *md)
       else {md->length = 80;}
     }
   PyMem_RESIZE(md->offset_top, int, md->length);
-  PyMem_RESIZE(md->eptr, const uschar *, md->length);
-  PyMem_RESIZE(md->ecode, const uschar *, md->length);
+  /* Can't realloc a pointer-to-const; cast const away. */
+  md->eptr = (const uschar **)PyMem_Realloc((void *)md->eptr,
+  					    sizeof(uschar *) * md->length);
+  md->ecode = (const uschar **)PyMem_Realloc((void *)md->ecode,
+  					     sizeof(uschar *) * md->length);
   PyMem_RESIZE(md->off_num, int, md->length);
   PyMem_RESIZE(md->r1, int, md->length);
   PyMem_RESIZE(md->r2, int, md->length);

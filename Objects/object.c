@@ -1897,18 +1897,13 @@ int (*_Py_abstract_hack)(PyObject *) = &PyObject_Size;
 void *
 PyMem_Malloc(size_t nbytes)
 {
-#if _PyMem_EXTRA > 0
-	if (nbytes == 0)
-		nbytes = _PyMem_EXTRA;
-#endif
 	return PyMem_MALLOC(nbytes);
 }
 
 void *
 PyMem_Realloc(void *p, size_t nbytes)
 {
-	/* See comment near MALLOC_ZERO_RETURNS_NULL in pyport.h. */
-	return PyMem_REALLOC(p, nbytes ? nbytes : 1);
+	return PyMem_REALLOC(p, nbytes);
 }
 
 void
