@@ -3,6 +3,9 @@ What's New in IDLE 1.1b3/rc1?
 
 *Release date: XX-XXX-2004*
 
+- A change to the linecache.py API caused IDLE to exit when an exception was
+  raised while running without the subprocess (-n switch).  Python Bug 1063840.
+
 What's New in IDLE 1.1b2?
 =========================
 
