@@ -381,6 +381,39 @@ def metaclass():
         class __metaclass__(type):
             def myself(cls): return cls
     verify(D.myself() == D)
+    d = D()
+    verify(d.__class__ is D)
+    class M1(type):
+        def __new__(cls, name, bases, dict):
+            dict['__spam__'] = 1
+            return type.__new__(cls, name, bases, dict)
+    class C:
+        __metaclass__ = M1
+    verify(C.__spam__ == 1)
+    c = C()
+    verify(c.__spam__ == 1)
+    class _instance(object):
+        pass
+    class M2(object):
+        def __new__(cls, name, bases, dict):
+            self = object.__new__(cls)
+            self.name = name
+            self.bases = bases
+            self.dict = dict
+            return self
+        __new__ = staticmethod(__new__)
+        def __call__(self):
+            it = _instance()
+            # XXX Should do more, but that doesn't work yet
+            return it
+    class C:
+        __metaclass__ = M2
+        def spam(self):
+            return 42
+    verify(C.name == 'C')
+    verify(C.bases == ())
+    verify('spam' in C.dict)
+    c = C()
 
 def pymods():
     if verbose: print "Testing Python subclass of module..."
