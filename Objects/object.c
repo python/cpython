@@ -100,10 +100,6 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
 	/* Any changes should be reflected in PyObject_INIT (objimpl.h) */
 	op->ob_type = tp;
 	_Py_NewReference(op);
-	if (PyType_SUPPORTS_WEAKREFS(tp)) {
-		PyObject **weaklist = PyObject_GET_WEAKREFS_LISTPTR(op);
-		*weaklist = NULL;
-	}
 	return op;
 }
 
