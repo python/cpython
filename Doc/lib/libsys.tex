@@ -79,7 +79,7 @@ the other two are undefined.
 A string giving the site-specific
 directory prefix where the platform-dependent Python files are
 installed; by default, this is also \code{"/usr/local"}.  This can be
-set at build time with the \code{--exec-prefix} argument to the
+set at build time with the \code{-}\code{-exec-prefix} argument to the
 \program{configure} script.  Specifically, all configuration files
 (e.g. the \file{config.h} header file) are installed in the directory
 \code{exec_prefix + "/lib/python\var{version}/config"}, and shared library
@@ -165,7 +165,7 @@ components to \code{path}, for instance.
 A string giving the site-specific directory prefix where the platform
 independent Python files are installed; by default, this is the string
 \code{"/usr/local"}.  This can be set at build time with the
-\code{--prefix} argument to the \program{configure} script.  The main
+\code{-}\code{-prefix} argument to the \program{configure} script.  The main
 collection of Python library modules is installed in the directory
 \code{prefix + "/lib/python\var{version}"} while the platform
 independent header files (all except \file{config.h}) are stored in
