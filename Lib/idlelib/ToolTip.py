@@ -1,3 +1,6 @@
+# general purpose 'tooltip' routines - currently unused in idlefork
+# (although the 'calltips' extension is partly based on this code)
+# may be useful for some purposes in (or almost in ;) the current project scope
 # Ideas gleaned from PySol
 
 import os
