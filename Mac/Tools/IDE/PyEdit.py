@@ -57,20 +57,17 @@ class Editor(W.Window):
 			f.close()
 			self._creator, filetype = MacOS.GetCreatorAndType(path)
 			self.addrecentfile(path)
+			if '\n' in text:
+				if string.find(text, '\r\n') >= 0:
+					self._eoln = '\r\n'
+				else:
+					self._eoln = '\n'
+				text = string.replace(text, self._eoln, '\r')
+			else:
+				self._eoln = '\r'
 		else:
 			raise IOError, "file '%s' does not exist" % path
 		self.path = path
-		
-		if '\n' in text:
-			if string.find(text, '\r\n') >= 0:
-				self._eoln = '\r\n'
-			else:
-				self._eoln = '\n'
-			text = string.replace(text, self._eoln, '\r')
-			change = 0
-		else:
-			change = 0
-			self._eoln = '\r'
 		
 		self.settings = {}
 		if self.path:
@@ -93,8 +90,6 @@ class Editor(W.Window):
 		
 		W.Window.__init__(self, bounds, self.title, minsize = (330, 120), tabbable = 0)
 		self.setupwidgets(text)
-		if change > 0:
-			self.editgroup.editor.textchanged()
 		
 		if self.settings.has_key("selection"):
 			selstart, selend = self.settings["selection"]
