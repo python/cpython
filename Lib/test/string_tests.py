@@ -504,7 +504,7 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal('abcabcabc', 'abc', '__mul__', 3)
         self.checkraises(TypeError, 'abc', '__mul__')
         self.checkraises(TypeError, 'abc', '__mul__', '')
-        self.checkraises(OverflowError, 10000*'abc', '__mul__', sys.maxint)
+        self.checkraises(OverflowError, 10000*'abc', '__mul__', 2000000000)
 
     def test_join(self):
         # join now works with any sequence type
