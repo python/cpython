@@ -151,7 +151,18 @@ func_getattro(PyObject *op, PyObject *name)
 		  "function attributes not accessible in restricted mode");
 		return NULL;
 	}
-
+	/* If func_dict is being accessed but no attribute has been set
+	 * yet, then initialize it to the empty dictionary.
+	 */
+	if ((!strcmp(sname, "func_dict") || !strcmp(sname, "__dict__"))
+	     && ((PyFunctionObject*)op)->func_dict == NULL)
+	{
+		PyFunctionObject* funcop = (PyFunctionObject*)op;
+		
+		funcop->func_dict = PyDict_New();
+		if (funcop->func_dict == NULL)
+			return NULL;
+	}
 	return PyObject_GenericGetAttr(op, name);
 }
 
@@ -190,19 +201,22 @@ func_setattro(PyObject *op, PyObject *name, PyObject *value)
 		}
 	}
 	else if (!strcmp(sname, "func_dict") || !strcmp(sname, "__dict__")) {
-		/* legal to del f.func_dict.  Can only set func_dict to
-		 * NULL or a dictionary.
+		/* It is illegal to del f.func_dict.  Can only set
+		 * func_dict to a dictionary.
 		 */
-		if (value == Py_None)
-			value = NULL;
-		if (value != NULL && !PyDict_Check(value)) {
+		if (value == NULL) {
 			PyErr_SetString(
 				PyExc_TypeError,
-				"func_dict must be set to a dict object");
+				"function's dictionary may not be deleted");
+			return -1;
+		}
+		if (!PyDict_Check(value)) {
+			PyErr_SetString(
+				PyExc_TypeError,
+				"setting function's dictionary to a non-dict");
 			return -1;
 		}
 	}
-
 	return PyObject_GenericSetAttr(op, name, value);
 }
 
