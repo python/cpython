@@ -31,12 +31,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Built-in functions */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #include "node.h"
 #include "graminit.h"
-#include "bltinmodule.h"
-#include "import.h"
 #include "compile.h"
 #include "eval.h"
 
@@ -49,104 +47,106 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 /* Forward */
-static object *filterstring PROTO((object *, object *));
-static object *filtertuple  PROTO((object *, object *));
-static object *int_from_string PROTO((object *));
-static object *long_from_string PROTO((object *));
-static object *float_from_string PROTO((object *));
+static PyObject *filterstring Py_PROTO((PyObject *, PyObject *));
+static PyObject *filtertuple  Py_PROTO((PyObject *, PyObject *));
+static PyObject *int_from_string Py_PROTO((PyObject *));
+static PyObject *long_from_string Py_PROTO((PyObject *));
+static PyObject *float_from_string Py_PROTO((PyObject *));
 
-static object *
+static PyObject *
 builtin___import__(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *name;
-	object *globals = NULL;
-	object *locals = NULL;
-	object *fromlist = NULL;
+	PyObject *globals = NULL;
+	PyObject *locals = NULL;
+	PyObject *fromlist = NULL;
 
-	if (!newgetargs(args, "s|OOO:__import__",
+	if (!PyArg_ParseTuple(args, "s|OOO:__import__",
 			&name, &globals, &locals, &fromlist))
 		return NULL;
-	return import_module(name);
+	return PyImport_ImportModule(name);
 }
 
 
-static object *
+static PyObject *
 builtin_abs(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	number_methods *nm;
+	PyObject *v;
+	PyNumberMethods *nm;
 
-	if (!newgetargs(args, "O:abs", &v))
+	if (!PyArg_ParseTuple(args, "O:abs", &v))
 		return NULL;
 	if ((nm = v->ob_type->tp_as_number) == NULL) {
-		err_setstr(TypeError, "abs() requires numeric argument");
+		PyErr_SetString(PyExc_TypeError,
+				"abs() requires numeric argument");
 		return NULL;
 	}
 	return (*nm->nb_absolute)(v);
 }
 
-static object *
+static PyObject *
 builtin_apply(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *func, *alist = NULL, *kwdict = NULL;
+	PyObject *func, *alist = NULL, *kwdict = NULL;
 
-	if (!newgetargs(args, "O|OO:apply", &func, &alist, &kwdict))
+	if (!PyArg_ParseTuple(args, "O|OO:apply", &func, &alist, &kwdict))
 		return NULL;
-	if (alist != NULL && !is_tupleobject(alist)) {
-		err_setstr(TypeError, "apply() 2nd argument must be tuple");
+	if (alist != NULL && !PyTuple_Check(alist)) {
+		PyErr_SetString(PyExc_TypeError,
+				"apply() 2nd argument must be tuple");
 		return NULL;
 	}
-	if (kwdict != NULL && !is_dictobject(kwdict)) {
-		err_setstr(TypeError,
+	if (kwdict != NULL && !PyDict_Check(kwdict)) {
+		PyErr_SetString(PyExc_TypeError,
 			   "apply() 3rd argument must be dictionary");
 		return NULL;
 	}
 	return PyEval_CallObjectWithKeywords(func, alist, kwdict);
 }
 
-static object *
+static PyObject *
 builtin_callable(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 
-	if (!newgetargs(args, "O:callable", &v))
+	if (!PyArg_ParseTuple(args, "O:callable", &v))
 		return NULL;
-	return newintobject((long)callable(v));
+	return PyInt_FromLong((long)PyCallable_Check(v));
 }
 
-static object *
+static PyObject *
 builtin_filter(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *func, *seq, *result;
-	sequence_methods *sqf;
+	PyObject *func, *seq, *result;
+	PySequenceMethods *sqf;
 	int len;
 	register int i, j;
 
-	if (!newgetargs(args, "OO:filter", &func, &seq))
+	if (!PyArg_ParseTuple(args, "OO:filter", &func, &seq))
 		return NULL;
 
-	if (is_stringobject(seq)) {
-		object *r = filterstring(func, seq);
+	if (PyString_Check(seq)) {
+		PyObject *r = filterstring(func, seq);
 		return r;
 	}
 
-	if (is_tupleobject(seq)) {
-		object *r = filtertuple(func, seq);
+	if (PyTuple_Check(seq)) {
+		PyObject *r = filtertuple(func, seq);
 		return r;
 	}
 
 	if ((sqf = seq->ob_type->tp_as_sequence) == NULL) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 			   "argument 2 to filter() must be a sequence type");
 		goto Fail_2;
 	}
@@ -154,132 +154,133 @@ builtin_filter(self, args)
 	if ((len = (*sqf->sq_length)(seq)) < 0)
 		goto Fail_2;
 
-	if (is_listobject(seq) && seq->ob_refcnt == 1) {
-		INCREF(seq);
+	if (PyList_Check(seq) && seq->ob_refcnt == 1) {
+		Py_INCREF(seq);
 		result = seq;
 	}
 	else {
-		if ((result = newlistobject(len)) == NULL)
+		if ((result = PyList_New(len)) == NULL)
 			goto Fail_2;
 	}
 
 	for (i = j = 0; ; ++i) {
-		object *item, *good;
+		PyObject *item, *good;
 		int ok;
 
 		if ((item = (*sqf->sq_item)(seq, i)) == NULL) {
 			if (i < len)
 				goto Fail_1;
-			if (err_occurred() == IndexError) {
-				err_clear();
+			if (PyErr_Occurred() == PyExc_IndexError) {
+				PyErr_Clear();
 				break;
 			}
 			goto Fail_1;
 		}
 
-		if (func == None) {
+		if (func == Py_None) {
 			good = item;
-			INCREF(good);
+			Py_INCREF(good);
 		}
 		else {
-			object *arg = mkvalue("(O)", item);
+			PyObject *arg = Py_BuildValue("(O)", item);
 			if (arg == NULL)
 				goto Fail_1;
-			good = call_object(func, arg);
-			DECREF(arg);
+			good = PyEval_CallObject(func, arg);
+			Py_DECREF(arg);
 			if (good == NULL) {
-				DECREF(item);
+				Py_DECREF(item);
 				goto Fail_1;
 			}
 		}
-		ok = testbool(good);
-		DECREF(good);
+		ok = PyObject_IsTrue(good);
+		Py_DECREF(good);
 		if (ok) {
 			if (j < len) {
-				if (setlistitem(result, j++, item) < 0)
+				if (PyList_SetItem(result, j++, item) < 0)
 					goto Fail_1;
 			}
 			else {
 				j++;
-				if (addlistitem(result, item) < 0)
+				if (PyList_Append(result, item) < 0)
 					goto Fail_1;
 			}
 		} else {
-			DECREF(item);
+			Py_DECREF(item);
 		}
 	}
 
 
-	if (j < len && setlistslice(result, j, len, NULL) < 0)
+	if (j < len && PyList_SetSlice(result, j, len, NULL) < 0)
 		goto Fail_1;
 
 	return result;
 
 Fail_1:
-	DECREF(result);
+	Py_DECREF(result);
 Fail_2:
 	return NULL;
 }
 
-static object *
+static PyObject *
 builtin_chr(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long x;
 	char s[1];
 
-	if (!newgetargs(args, "l:chr", &x))
+	if (!PyArg_ParseTuple(args, "l:chr", &x))
 		return NULL;
 	if (x < 0 || x >= 256) {
-		err_setstr(ValueError, "chr() arg not in range(256)");
+		PyErr_SetString(PyExc_ValueError,
+				"chr() arg not in range(256)");
 		return NULL;
 	}
 	s[0] = (char)x;
-	return newsizedstringobject(s, 1);
+	return PyString_FromStringAndSize(s, 1);
 }
 
-static object *
+static PyObject *
 builtin_cmp(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *a, *b;
+	PyObject *a, *b;
 
-	if (!newgetargs(args, "OO:cmp", &a, &b))
+	if (!PyArg_ParseTuple(args, "OO:cmp", &a, &b))
 		return NULL;
-	return newintobject((long)cmpobject(a, b));
+	return PyInt_FromLong((long)PyObject_Compare(a, b));
 }
 
-static object *
+static PyObject *
 builtin_coerce(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v, *w;
-	object *res;
+	PyObject *v, *w;
+	PyObject *res;
 
-	if (!newgetargs(args, "OO:coerce", &v, &w))
+	if (!PyArg_ParseTuple(args, "OO:coerce", &v, &w))
 		return NULL;
-	if (coerce(&v, &w) < 0)
+	if (PyNumber_Coerce(&v, &w) < 0)
 		return NULL;
-	res = mkvalue("(OO)", v, w);
-	DECREF(v);
-	DECREF(w);
+	res = Py_BuildValue("(OO)", v, w);
+	Py_DECREF(v);
+	Py_DECREF(w);
 	return res;
 }
 
-static object *
+static PyObject *
 builtin_compile(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *str;
 	char *filename;
 	char *startstr;
 	int start;
 
-	if (!newgetargs(args, "sss:compile", &str, &filename, &startstr))
+	if (!PyArg_ParseTuple(args, "sss:compile", &str, &filename, &startstr))
 		return NULL;
 	if (strcmp(startstr, "exec") == 0)
 		start = file_input;
@@ -288,122 +289,122 @@ builtin_compile(self, args)
 	else if (strcmp(startstr, "single") == 0)
 		start = single_input;
 	else {
-		err_setstr(ValueError,
+		PyErr_SetString(PyExc_ValueError,
 		   "compile() mode must be 'exec' or 'eval' or 'single'");
 		return NULL;
 	}
-	return compile_string(str, filename, start);
+	return Py_CompileString(str, filename, start);
 }
 
 #ifndef WITHOUT_COMPLEX
 
-static object *
+static PyObject *
 builtin_complex(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *r, *i, *tmp;
-	number_methods *nbr, *nbi = NULL;
+	PyObject *r, *i, *tmp;
+	PyNumberMethods *nbr, *nbi = NULL;
 	Py_complex cr, ci;
 	int own_r = 0;
 
 	i = NULL;
-	if (!newgetargs(args, "O|O:complex", &r, &i))
+	if (!PyArg_ParseTuple(args, "O|O:complex", &r, &i))
 		return NULL;
 	if ((nbr = r->ob_type->tp_as_number) == NULL ||
 	    nbr->nb_float == NULL ||
 	    (i != NULL &&
 	     ((nbi = i->ob_type->tp_as_number) == NULL ||
 	      nbi->nb_float == NULL))) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 			   "complex() argument can't be converted to complex");
 		return NULL;
 	}
 	/* XXX Hack to support classes with __complex__ method */
-	if (is_instanceobject(r)) {
-		static object *complexstr;
-		object *f;
+	if (PyInstance_Check(r)) {
+		static PyObject *complexstr;
+		PyObject *f;
 		if (complexstr == NULL) {
 			complexstr = PyString_InternFromString("__complex__");
 			if (complexstr == NULL)
 				return NULL;
 		}
-		f = getattro(r, complexstr);
+		f = PyObject_GetAttr(r, complexstr);
 		if (f == NULL)
-			err_clear();
+			PyErr_Clear();
 		else {
-			object *args = mkvalue("()");
+			PyObject *args = Py_BuildValue("()");
 			if (args == NULL)
 				return NULL;
-			r = call_object(f, args);
-			DECREF(args);
+			r = PyEval_CallObject(f, args);
+			Py_DECREF(args);
 			if (r == NULL)
 				return NULL;
 			own_r = 1;
 		}
 	}
-	if (is_complexobject(r)) {
-		cr = ((complexobject*)r)->cval;
+	if (PyComplex_Check(r)) {
+		cr = ((PyComplexObject*)r)->cval;
 		if (own_r)
-			DECREF(r);
+			Py_DECREF(r);
 	}
 	else {
 		tmp = (*nbr->nb_float)(r);
 		if (own_r)
-			DECREF(r);
+			Py_DECREF(r);
 		if (tmp == NULL)
 			return NULL;
-		cr.real = getfloatvalue(tmp);
-		DECREF(tmp);
+		cr.real = PyFloat_AsDouble(tmp);
+		Py_DECREF(tmp);
 		cr.imag = 0.;
 	}
 	if (i == NULL) {
 		ci.real = 0.;
 		ci.imag = 0.;
 	}
-	else if (is_complexobject(i))
-		ci = ((complexobject*)i)->cval;
+	else if (PyComplex_Check(i))
+		ci = ((PyComplexObject*)i)->cval;
 	else {
 		tmp = (*nbi->nb_float)(i);
 		if (tmp == NULL)
 			return NULL;
-		ci.real = getfloatvalue(tmp);
-		DECREF(tmp);
+		ci.real = PyFloat_AsDouble(tmp);
+		Py_DECREF(tmp);
 		ci.imag = 0.;
 	}
 	cr.real -= ci.imag;
 	cr.imag += ci.real;
-	return newcomplexobject(cr);
+	return PyComplex_FromCComplex(cr);
 }
 
 #endif
 
-static object *
+static PyObject *
 builtin_dir(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v = NULL;
-	object *d;
+	PyObject *v = NULL;
+	PyObject *d;
 
-	if (!newgetargs(args, "|O:dir", &v))
+	if (!PyArg_ParseTuple(args, "|O:dir", &v))
 		return NULL;
 	if (v == NULL) {
-		d = getlocals();
-		INCREF(d);
+		d = PyEval_GetLocals();
+		Py_INCREF(d);
 	}
 	else {
-		d = getattr(v, "__dict__");
+		d = PyObject_GetAttrString(v, "__dict__");
 		if (d == NULL) {
-			err_setstr(TypeError,
+			PyErr_SetString(PyExc_TypeError,
 				"dir() argument must have __dict__ attribute");
 			return NULL;
 		}
 	}
-	if (is_dictobject(d)) {
-		v = getdictkeys(d);
-		if (sortlist(v) != 0) {
-			DECREF(v);
+	if (PyDict_Check(d)) {
+		v = PyDict_Keys(d);
+		if (PyList_Sort(v) != 0) {
+			Py_DECREF(v);
 			v = NULL;
 		}
 	}
@@ -411,244 +412,247 @@ builtin_dir(self, args)
 		v = PyObject_CallMethod(d, "keys", NULL);
 		if (v == NULL) {
 			PyErr_Clear();
-			v = newlistobject(0);
+			v = PyList_New(0);
 		}
 	}
-	DECREF(d);
+	Py_DECREF(d);
 	return v;
 }
 
-static object *
+static PyObject *
 do_divmod(v, w)
-	object *v, *w;
+	PyObject *v, *w;
 {
-	object *res;
+	PyObject *res;
 
-	if (is_instanceobject(v) || is_instanceobject(w))
-		return instancebinop(v, w, "__divmod__", "__rdivmod__",
+	if (PyInstance_Check(v) || PyInstance_Check(w))
+		return PyInstance_DoBinOp(v, w, "__divmod__", "__rdivmod__",
 				     do_divmod);
 	if (v->ob_type->tp_as_number == NULL ||
 				w->ob_type->tp_as_number == NULL) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 		    "divmod() requires numeric or class instance arguments");
 		return NULL;
 	}
-	if (coerce(&v, &w) != 0)
+	if (PyNumber_Coerce(&v, &w) != 0)
 		return NULL;
 	res = (*v->ob_type->tp_as_number->nb_divmod)(v, w);
-	DECREF(v);
-	DECREF(w);
+	Py_DECREF(v);
+	Py_DECREF(w);
 	return res;
 }
 
-static object *
+static PyObject *
 builtin_divmod(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v, *w;
+	PyObject *v, *w;
 
-	if (!newgetargs(args, "OO:divmod", &v, &w))
+	if (!PyArg_ParseTuple(args, "OO:divmod", &v, &w))
 		return NULL;
 	return do_divmod(v, w);
 }
 
-static object *
+static PyObject *
 builtin_eval(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *cmd;
-	object *globals = None, *locals = None;
+	PyObject *cmd;
+	PyObject *globals = Py_None, *locals = Py_None;
 	char *str;
 
-	if (!newgetargs(args, "O|O!O!:eval",
+	if (!PyArg_ParseTuple(args, "O|O!O!:eval",
 			&cmd,
-			&Mappingtype, &globals,
-			&Mappingtype, &locals))
+			&PyDict_Type, &globals,
+			&PyDict_Type, &locals))
 		return NULL;
-	if (globals == None) {
-		globals = getglobals();
-		if (locals == None)
-			locals = getlocals();
+	if (globals == Py_None) {
+		globals = PyEval_GetGlobals();
+		if (locals == Py_None)
+			locals = PyEval_GetLocals();
 	}
-	else if (locals == None)
+	else if (locals == Py_None)
 		locals = globals;
-	if (dictlookup(globals, "__builtins__") == NULL) {
-		if (dictinsert(globals, "__builtins__", getbuiltins()) != 0)
+	if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
+		if (PyDict_SetItemString(globals, "__builtins__",
+					 PyEval_GetBuiltins()) != 0)
 			return NULL;
 	}
-	if (is_codeobject(cmd))
-		return eval_code((codeobject *) cmd, globals, locals);
-	if (!is_stringobject(cmd)) {
-		err_setstr(TypeError,
+	if (PyCode_Check(cmd))
+		return PyEval_EvalCode((PyCodeObject *) cmd, globals, locals);
+	if (!PyString_Check(cmd)) {
+		PyErr_SetString(PyExc_TypeError,
 			   "eval() argument 1 must be string or code object");
 		return NULL;
 	}
-	str = getstringvalue(cmd);
-	if ((int)strlen(str) != getstringsize(cmd)) {
-		err_setstr(ValueError,
+	str = PyString_AsString(cmd);
+	if ((int)strlen(str) != PyString_Size(cmd)) {
+		PyErr_SetString(PyExc_ValueError,
 			   "embedded '\\0' in string arg");
 		return NULL;
 	}
 	while (*str == ' ' || *str == '\t')
 		str++;
-	return run_string(str, eval_input, globals, locals);
+	return PyRun_String(str, eval_input, globals, locals);
 }
 
-static object *
+static PyObject *
 builtin_execfile(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *filename;
-	object *globals = None, *locals = None;
-	object *res;
+	PyObject *globals = Py_None, *locals = Py_None;
+	PyObject *res;
 	FILE* fp;
 
-	if (!newgetargs(args, "s|O!O!:execfile",
+	if (!PyArg_ParseTuple(args, "s|O!O!:execfile",
 			&filename,
-			&Mappingtype, &globals,
-			&Mappingtype, &locals))
+			&PyDict_Type, &globals,
+			&PyDict_Type, &locals))
 		return NULL;
-	if (globals == None) {
-		globals = getglobals();
-		if (locals == None)
-			locals = getlocals();
+	if (globals == Py_None) {
+		globals = PyEval_GetGlobals();
+		if (locals == Py_None)
+			locals = PyEval_GetLocals();
 	}
-	else if (locals == None)
+	else if (locals == Py_None)
 		locals = globals;
-	if (dictlookup(globals, "__builtins__") == NULL) {
-		if (dictinsert(globals, "__builtins__", getbuiltins()) != 0)
+	if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
+		if (PyDict_SetItemString(globals, "__builtins__",
+					 PyEval_GetBuiltins()) != 0)
 			return NULL;
 	}
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	fp = fopen(filename, "r");
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	if (fp == NULL) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	res = run_file(fp, filename, file_input, globals, locals);
-	BGN_SAVE
+	res = PyRun_File(fp, filename, file_input, globals, locals);
+	Py_BEGIN_ALLOW_THREADS
 	fclose(fp);
-	END_SAVE
+	Py_END_ALLOW_THREADS
 	return res;
 }
 
-static object *
+static PyObject *
 builtin_float(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	number_methods *nb;
+	PyObject *v;
+	PyNumberMethods *nb;
 
-	if (!newgetargs(args, "O:float", &v))
+	if (!PyArg_ParseTuple(args, "O:float", &v))
 		return NULL;
-	if (is_stringobject(v))
+	if (PyString_Check(v))
 		return float_from_string(v);
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_float == NULL) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 			   "float() argument can't be converted to float");
 		return NULL;
 	}
 	return (*nb->nb_float)(v);
 }
 
-static object *
+static PyObject *
 builtin_getattr(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	object *name;
+	PyObject *v;
+	PyObject *name;
 
-	if (!newgetargs(args, "OS:getattr", &v, &name))
+	if (!PyArg_ParseTuple(args, "OS:getattr", &v, &name))
 		return NULL;
-	return getattro(v, name);
+	return PyObject_GetAttr(v, name);
 }
 
-static object *
+static PyObject *
 builtin_globals(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *d;
+	PyObject *d;
 
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
-	d = getglobals();
-	INCREF(d);
+	d = PyEval_GetGlobals();
+	Py_INCREF(d);
 	return d;
 }
 
-static object *
+static PyObject *
 builtin_hasattr(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	object *name;
+	PyObject *v;
+	PyObject *name;
 
-	if (!newgetargs(args, "OS:hasattr", &v, &name))
+	if (!PyArg_ParseTuple(args, "OS:hasattr", &v, &name))
 		return NULL;
-	v = getattro(v, name);
+	v = PyObject_GetAttr(v, name);
 	if (v == NULL) {
-		err_clear();
-		return newintobject(0L);
+		PyErr_Clear();
+		return PyInt_FromLong(0L);
 	}
-	DECREF(v);
-	return newintobject(1L);
+	Py_DECREF(v);
+	return PyInt_FromLong(1L);
 }
 
-static object *
+static PyObject *
 builtin_id(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 
-	if (!newgetargs(args, "O:id", &v))
+	if (!PyArg_ParseTuple(args, "O:id", &v))
 		return NULL;
-	return newintobject((long)v);
+	return PyInt_FromLong((long)v);
 }
 
-static object *
+static PyObject *
 builtin_map(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	typedef struct {
-		object *seq;
-		sequence_methods *sqf;
+		PyObject *seq;
+		PySequenceMethods *sqf;
 		int len;
 	} sequence;
 
-	object *func, *result;
+	PyObject *func, *result;
 	sequence *seqs = NULL, *sqp;
 	int n, len;
 	register int i, j;
 
-	n = gettuplesize(args);
+	n = PyTuple_Size(args);
 	if (n < 2) {
-		err_setstr(TypeError, "map() requires at least two args");
+		PyErr_SetString(PyExc_TypeError,
+				"map() requires at least two args");
 		return NULL;
 	}
 
-	func = gettupleitem(args, 0);
+	func = PyTuple_GetItem(args, 0);
 	n--;
 
-	if ((seqs = NEW(sequence, n)) == NULL) {
-		err_nomem();
+	if ((seqs = PyMem_NEW(sequence, n)) == NULL) {
+		PyErr_NoMemory();
 		goto Fail_2;
 	}
 
 	for (len = 0, i = 0, sqp = seqs; i < n; ++i, ++sqp) {
 		int curlen;
 	
-		if ((sqp->seq = gettupleitem(args, i + 1)) == NULL)
+		if ((sqp->seq = PyTuple_GetItem(args, i + 1)) == NULL)
 			goto Fail_2;
 
 		if (! (sqp->sqf = sqp->seq->ob_type->tp_as_sequence)) {
@@ -657,7 +661,7 @@ builtin_map(self, args)
 			char errbuf[sizeof(errmsg) + 3];
 
 			sprintf(errbuf, errmsg, i+2);
-			err_setstr(TypeError, errbuf);
+			PyErr_SetString(PyExc_TypeError, errbuf);
 			goto Fail_2;
 		}
 
@@ -668,35 +672,36 @@ builtin_map(self, args)
 			len = curlen;
 	}
 
-	if ((result = (object *) newlistobject(len)) == NULL)
+	if ((result = (PyObject *) PyList_New(len)) == NULL)
 		goto Fail_2;
 
 	/* XXX Special case map(None, single_list) could be more efficient */
 	for (i = 0; ; ++i) {
-		object *alist, *item=NULL, *value;
+		PyObject *alist, *item=NULL, *value;
 		int any = 0;
 
-		if (func == None && n == 1)
+		if (func == Py_None && n == 1)
 			alist = NULL;
 		else {
-			if ((alist = newtupleobject(n)) == NULL)
+			if ((alist = PyTuple_New(n)) == NULL)
 				goto Fail_1;
 		}
 
 		for (j = 0, sqp = seqs; j < n; ++j, ++sqp) {
 			if (sqp->len < 0) {
-				INCREF(None);
-				item = None;
+				Py_INCREF(Py_None);
+				item = Py_None;
 			}
 			else {
 				item = (*sqp->sqf->sq_item)(sqp->seq, i);
 				if (item == NULL) {
 					if (i < sqp->len)
 						goto Fail_0;
-					if (err_occurred() == IndexError) {
-						err_clear();
-						INCREF(None);
-						item = None;
+					if (PyErr_Occurred() ==
+					    PyExc_IndexError) {
+						PyErr_Clear();
+						Py_INCREF(Py_None);
+						item = Py_None;
 						sqp->len = -1;
 					}
 					else {
@@ -709,14 +714,14 @@ builtin_map(self, args)
 			}
 			if (!alist)
 				break;
-			if (settupleitem(alist, j, item) < 0) {
-				DECREF(item);
+			if (PyTuple_SetItem(alist, j, item) < 0) {
+				Py_DECREF(item);
 				goto Fail_0;
 			}
 			continue;
 
 		Fail_0:
-			XDECREF(alist);
+			Py_XDECREF(alist);
 			goto Fail_1;
 		}
 
@@ -724,134 +729,135 @@ builtin_map(self, args)
 			alist = item;
 
 		if (!any) {
-			DECREF(alist);
+			Py_DECREF(alist);
 			break;
 		}
 
-		if (func == None)
+		if (func == Py_None)
 			value = alist;
 		else {
-			value = call_object(func, alist);
-			DECREF(alist);
+			value = PyEval_CallObject(func, alist);
+			Py_DECREF(alist);
 			if (value == NULL)
 				goto Fail_1;
 		}
 		if (i >= len) {
-			if (addlistitem(result, value) < 0)
+			if (PyList_Append(result, value) < 0)
 				goto Fail_1;
 		}
 		else {
-			if (setlistitem(result, i, value) < 0)
+			if (PyList_SetItem(result, i, value) < 0)
 				goto Fail_1;
 		}
 	}
 
-	DEL(seqs);
+	PyMem_DEL(seqs);
 	return result;
 
 Fail_1:
-	DECREF(result);
+	Py_DECREF(result);
 Fail_2:
-	if (seqs) DEL(seqs);
+	if (seqs) PyMem_DEL(seqs);
 	return NULL;
 }
 
-static object *
+static PyObject *
 builtin_setattr(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	object *name;
-	object *value;
+	PyObject *v;
+	PyObject *name;
+	PyObject *value;
 
-	if (!newgetargs(args, "OSO:setattr", &v, &name, &value))
+	if (!PyArg_ParseTuple(args, "OSO:setattr", &v, &name, &value))
 		return NULL;
-	if (setattro(v, name, value) != 0)
+	if (PyObject_SetAttr(v, name, value) != 0)
 		return NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 builtin_delattr(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	object *name;
+	PyObject *v;
+	PyObject *name;
 
-	if (!newgetargs(args, "OS:delattr", &v, &name))
+	if (!PyArg_ParseTuple(args, "OS:delattr", &v, &name))
 		return NULL;
-	if (setattro(v, name, (object *)NULL) != 0)
+	if (PyObject_SetAttr(v, name, (PyObject *)NULL) != 0)
 		return NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 builtin_hash(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 	long x;
 
-	if (!newgetargs(args, "O:hash", &v))
+	if (!PyArg_ParseTuple(args, "O:hash", &v))
 		return NULL;
-	x = hashobject(v);
+	x = PyObject_Hash(v);
 	if (x == -1)
 		return NULL;
-	return newintobject(x);
+	return PyInt_FromLong(x);
 }
 
-static object *
+static PyObject *
 builtin_hex(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	number_methods *nb;
+	PyObject *v;
+	PyNumberMethods *nb;
 
-	if (!newgetargs(args, "O:hex", &v))
+	if (!PyArg_ParseTuple(args, "O:hex", &v))
 		return NULL;
 	
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_hex == NULL) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 			   "hex() argument can't be converted to hex");
 		return NULL;
 	}
 	return (*nb->nb_hex)(v);
 }
 
-static object *builtin_raw_input PROTO((object *, object *));
+static PyObject *builtin_raw_input Py_PROTO((PyObject *, PyObject *));
 
-static object *
+static PyObject *
 builtin_input(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *line;
+	PyObject *line;
 	char *str;
-	object *res;
-	object *globals, *locals;
+	PyObject *res;
+	PyObject *globals, *locals;
 
 	line = builtin_raw_input(self, args);
 	if (line == NULL)
 		return line;
-	if (!getargs(line, "s;embedded '\\0' in input line", &str))
+	if (!PyArg_Parse(line, "s;embedded '\\0' in input line", &str))
 		return NULL;
 	while (*str == ' ' || *str == '\t')
 			str++;
-	globals = getglobals();
-	locals = getlocals();
-	if (dictlookup(globals, "__builtins__") == NULL) {
-		if (dictinsert(globals, "__builtins__", getbuiltins()) != 0)
+	globals = PyEval_GetGlobals();
+	locals = PyEval_GetLocals();
+	if (PyDict_GetItemString(globals, "__builtins__") == NULL) {
+		if (PyDict_SetItemString(globals, "__builtins__",
+					 PyEval_GetBuiltins()) != 0)
 			return NULL;
 	}
-	res = run_string(str, eval_input, globals, locals);
-	DECREF(line);
+	res = PyRun_String(str, eval_input, globals, locals);
+	Py_DECREF(line);
 	return res;
 }
 
@@ -868,37 +874,37 @@ builtin_intern(self, args)
 	return s;
 }
 
-static object *
+static PyObject *
 builtin_int(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	number_methods *nb;
+	PyObject *v;
+	PyNumberMethods *nb;
 
-	if (!newgetargs(args, "O:int", &v))
+	if (!PyArg_ParseTuple(args, "O:int", &v))
 		return NULL;
-	if (is_stringobject(v))
+	if (PyString_Check(v))
 		return int_from_string(v);
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 			   "int() argument can't be converted to int");
 		return NULL;
 	}
 	return (*nb->nb_int)(v);
 }
 
-static object *
+static PyObject *
 builtin_len(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 	long len;
-	typeobject *tp;
+	PyTypeObject *tp;
 
-	if (!newgetargs(args, "O:len", &v))
+	if (!PyArg_ParseTuple(args, "O:len", &v))
 		return NULL;
 	tp = v->ob_type;
 	if (tp->tp_as_sequence != NULL) {
@@ -908,47 +914,47 @@ builtin_len(self, args)
 		len = (*tp->tp_as_mapping->mp_length)(v);
 	}
 	else {
-		err_setstr(TypeError, "len() of unsized object");
+		PyErr_SetString(PyExc_TypeError, "len() of unsized object");
 		return NULL;
 	}
 	if (len < 0)
 		return NULL;
 	else
-		return newintobject(len);
+		return PyInt_FromLong(len);
 }
 
-static object *
+static PyObject *
 builtin_list(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	sequence_methods *sqf;
+	PyObject *v;
+	PySequenceMethods *sqf;
 
-	if (!newgetargs(args, "O:list", &v))
+	if (!PyArg_ParseTuple(args, "O:list", &v))
 		return NULL;
 	if ((sqf = v->ob_type->tp_as_sequence) != NULL) {
 		int n = (*sqf->sq_length)(v);
 		int i;
-		object *l;
+		PyObject *l;
 		if (n < 0)
 			return NULL;
-		l = newlistobject(n);
+		l = PyList_New(n);
 		if (l == NULL)
 			return NULL;
 		for (i = 0; i < n; i++) {
-			object *item = (*sqf->sq_item)(v, i);
+			PyObject *item = (*sqf->sq_item)(v, i);
 			if (item == NULL) {
-				DECREF(l);
+				Py_DECREF(l);
 				l = NULL;
 				break;
 			}
-			setlistitem(l, i, item);
+			PyList_SetItem(l, i, item);
 		}
 		/* XXX Should support indefinite-length sequences */
 		return l;
 	}
-	err_setstr(TypeError, "list() argument must be a sequence");
+	PyErr_SetString(PyExc_TypeError, "list() argument must be a sequence");
 	return NULL;
 }
 
@@ -974,247 +980,252 @@ builtin_slice(self, args)
   return PySlice_New(start, stop, step);
 }
 
-static object *
+static PyObject *
 builtin_locals(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *d;
+	PyObject *d;
 
-	if (!newgetargs(args, ""))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
-	d = getlocals();
-	INCREF(d);
+	d = PyEval_GetLocals();
+	Py_INCREF(d);
 	return d;
 }
 
-static object *
+static PyObject *
 builtin_long(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	number_methods *nb;
+	PyObject *v;
+	PyNumberMethods *nb;
 	
-	if (!newgetargs(args, "O:long", &v))
+	if (!PyArg_ParseTuple(args, "O:long", &v))
 		return NULL;
-	if (is_stringobject(v))
+	if (PyString_Check(v))
 		return long_from_string(v);
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_long == NULL) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 			   "long() argument can't be converted to long");
 		return NULL;
 	}
 	return (*nb->nb_long)(v);
 }
 
-static object *
+static PyObject *
 min_max(args, sign)
-	object *args;
+	PyObject *args;
 	int sign;
 {
 	int i;
-	object *v, *w, *x;
-	sequence_methods *sq;
+	PyObject *v, *w, *x;
+	PySequenceMethods *sq;
 
-	if (gettuplesize(args) > 1)
+	if (PyTuple_Size(args) > 1)
 		v = args;
-	else if (!newgetargs(args, "O:min/max", &v))
+	else if (!PyArg_ParseTuple(args, "O:min/max", &v))
 		return NULL;
 	sq = v->ob_type->tp_as_sequence;
 	if (sq == NULL) {
-		err_setstr(TypeError, "min() or max() of non-sequence");
+		PyErr_SetString(PyExc_TypeError,
+				"min() or max() of non-sequence");
 		return NULL;
 	}
 	w = NULL;
 	for (i = 0; ; i++) {
 		x = (*sq->sq_item)(v, i); /* Implies INCREF */
 		if (x == NULL) {
-			if (err_occurred() == IndexError) {
-				err_clear();
+			if (PyErr_Occurred() == PyExc_IndexError) {
+				PyErr_Clear();
 				break;
 			}
-			XDECREF(w);
+			Py_XDECREF(w);
 			return NULL;
 		}
 		if (w == NULL)
 			w = x;
 		else {
-			if (cmpobject(x, w) * sign > 0) {
-				DECREF(w);
+			if (PyObject_Compare(x, w) * sign > 0) {
+				Py_DECREF(w);
 				w = x;
 			}
 			else
-				DECREF(x);
+				Py_DECREF(x);
 		}
 	}
 	if (w == NULL)
-		err_setstr(ValueError, "min() or max() of empty sequence");
+		PyErr_SetString(PyExc_ValueError,
+				"min() or max() of empty sequence");
 	return w;
 }
 
-static object *
+static PyObject *
 builtin_min(self, v)
-	object *self;
-	object *v;
+	PyObject *self;
+	PyObject *v;
 {
 	return min_max(v, -1);
 }
 
-static object *
+static PyObject *
 builtin_max(self, v)
-	object *self;
-	object *v;
+	PyObject *self;
+	PyObject *v;
 {
 	return min_max(v, 1);
 }
 
-static object *
+static PyObject *
 builtin_oct(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	number_methods *nb;
+	PyObject *v;
+	PyNumberMethods *nb;
 
-	if (!newgetargs(args, "O:oct", &v))
+	if (!PyArg_ParseTuple(args, "O:oct", &v))
 		return NULL;
 	if (v == NULL || (nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_oct == NULL) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 			   "oct() argument can't be converted to oct");
 		return NULL;
 	}
 	return (*nb->nb_oct)(v);
 }
 
-static object *
+static PyObject *
 builtin_open(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *name;
 	char *mode = "r";
 	int bufsize = -1;
-	object *f;
+	PyObject *f;
 
-	if (!newgetargs(args, "s|si:open", &name, &mode, &bufsize))
+	if (!PyArg_ParseTuple(args, "s|si:open", &name, &mode, &bufsize))
 		return NULL;
-	f = newfileobject(name, mode);
+	f = PyFile_FromString(name, mode);
 	if (f != NULL)
-		setfilebufsize(f, bufsize);
+		PyFile_SetBufSize(f, bufsize);
 	return f;
 }
 
-static object *
+static PyObject *
 builtin_ord(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char c;
 
-	if (!newgetargs(args, "c:ord", &c))
+	if (!PyArg_ParseTuple(args, "c:ord", &c))
 		return NULL;
-	return newintobject((long)(c & 0xff));
+	return PyInt_FromLong((long)(c & 0xff));
 }
 
-static object *
+static PyObject *
 do_pow(v, w)
-	object *v, *w;
+	PyObject *v, *w;
 {
-	object *res;
-	if (is_instanceobject(v) || is_instanceobject(w))
-		return instancebinop(v, w, "__pow__", "__rpow__", do_pow);
+	PyObject *res;
+	if (PyInstance_Check(v) || PyInstance_Check(w))
+		return PyInstance_DoBinOp(v, w, "__pow__", "__rpow__", do_pow);
 	if (v->ob_type->tp_as_number == NULL ||
 	    w->ob_type->tp_as_number == NULL) {
-		err_setstr(TypeError, "pow() requires numeric arguments");
+		PyErr_SetString(PyExc_TypeError,
+				"pow() requires numeric arguments");
 		return NULL;
 	}
 	if (
 #ifndef WITHOUT_COMPLEX
-            !is_complexobject(v) && 
+            !PyComplex_Check(v) && 
 #endif
-            is_floatobject(w) && getfloatvalue(v) < 0.0) {
-		if (!err_occurred())
-		    err_setstr(ValueError, "negative number to float power");
+            PyFloat_Check(w) && PyFloat_AsDouble(v) < 0.0) {
+		if (!PyErr_Occurred())
+		    PyErr_SetString(PyExc_ValueError,
+				    "negative number to float power");
 		return NULL;
 	}
-	if (coerce(&v, &w) != 0)
+	if (PyNumber_Coerce(&v, &w) != 0)
 		return NULL;
-	res = (*v->ob_type->tp_as_number->nb_power)(v, w, None);
-	DECREF(v);
-	DECREF(w);
+	res = (*v->ob_type->tp_as_number->nb_power)(v, w, Py_None);
+	Py_DECREF(v);
+	Py_DECREF(w);
 	return res;
 }
 
-static object *
+static PyObject *
 builtin_pow(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v, *w, *z = None, *res;
-	object *v1, *z1, *w2, *z2;
+	PyObject *v, *w, *z = Py_None, *res;
+	PyObject *v1, *z1, *w2, *z2;
 
-	if (!newgetargs(args, "OO|O:pow", &v, &w, &z))
+	if (!PyArg_ParseTuple(args, "OO|O:pow", &v, &w, &z))
 		return NULL;
-	if (z == None)
+	if (z == Py_None)
 		return do_pow(v, w);
 	/* XXX The ternary version doesn't do class instance coercions */
-	if (is_instanceobject(v))
+	if (PyInstance_Check(v))
 		return v->ob_type->tp_as_number->nb_power(v, w, z);
 	if (v->ob_type->tp_as_number == NULL ||
 	    z->ob_type->tp_as_number == NULL ||
 	    w->ob_type->tp_as_number == NULL) {
-		err_setstr(TypeError, "pow() requires numeric arguments");
+		PyErr_SetString(PyExc_TypeError,
+				"pow() requires numeric arguments");
 		return NULL;
 	}
-	if (coerce(&v, &w) != 0)
+	if (PyNumber_Coerce(&v, &w) != 0)
 		return NULL;
 	res = NULL;
 	v1 = v;
 	z1 = z;
-	if (coerce(&v1, &z1) != 0)
+	if (PyNumber_Coerce(&v1, &z1) != 0)
 		goto error2;
 	w2 = w;
 	z2 = z1;
- 	if (coerce(&w2, &z2) != 0)
+ 	if (PyNumber_Coerce(&w2, &z2) != 0)
 		goto error1;
 	res = (*v1->ob_type->tp_as_number->nb_power)(v1, w2, z2);
-	DECREF(w2);
-	DECREF(z2);
+	Py_DECREF(w2);
+	Py_DECREF(z2);
  error1:
-	DECREF(v1);
-	DECREF(z1);
+	Py_DECREF(v1);
+	Py_DECREF(z1);
  error2:
-	DECREF(v);
-	DECREF(w);
+	Py_DECREF(v);
+	Py_DECREF(w);
 	return res;
 }
 
-static object *
+static PyObject *
 builtin_range(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long ilow = 0, ihigh = 0, istep = 1;
 	int i, n;
-	object *v;
+	PyObject *v;
 
-	if (gettuplesize(args) <= 1) {
-		if (!newgetargs(args,
+	if (PyTuple_Size(args) <= 1) {
+		if (!PyArg_ParseTuple(args,
 				"l;range() requires 1-3 int arguments",
 				&ihigh))
 			return NULL;
 	}
 	else {
-		if (!newgetargs(args,
+		if (!PyArg_ParseTuple(args,
 				"ll|l;range() requires 1-3 int arguments",
 				&ilow, &ihigh, &istep))
 			return NULL;
 	}
 	if (istep == 0) {
-		err_setstr(ValueError, "zero step for range()");
+		PyErr_SetString(PyExc_ValueError, "zero step for range()");
 		return NULL;
 	}
 	/* XXX ought to check overflow of subtraction */
@@ -1224,43 +1235,43 @@ builtin_range(self, args)
 		n = (ihigh - ilow + istep + 1) / istep;
 	if (n < 0)
 		n = 0;
-	v = newlistobject(n);
+	v = PyList_New(n);
 	if (v == NULL)
 		return NULL;
 	for (i = 0; i < n; i++) {
-		object *w = newintobject(ilow);
+		PyObject *w = PyInt_FromLong(ilow);
 		if (w == NULL) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
-		setlistitem(v, i, w);
+		PyList_SetItem(v, i, w);
 		ilow += istep;
 	}
 	return v;
 }
 
-static object *
+static PyObject *
 builtin_xrange(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	long ilow = 0, ihigh = 0, istep = 1;
 	long n;
 
-	if (gettuplesize(args) <= 1) {
-		if (!newgetargs(args,
+	if (PyTuple_Size(args) <= 1) {
+		if (!PyArg_ParseTuple(args,
 				"l;xrange() requires 1-3 int arguments",
 				&ihigh))
 			return NULL;
 	}
 	else {
-		if (!newgetargs(args,
+		if (!PyArg_ParseTuple(args,
 				"ll|l;xrange() requires 1-3 int arguments",
 				&ilow, &ihigh, &istep))
 			return NULL;
 	}
 	if (istep == 0) {
-		err_setstr(ValueError, "zero step for xrange()");
+		PyErr_SetString(PyExc_ValueError, "zero step for xrange()");
 		return NULL;
 	}
 	/* XXX ought to check overflow of subtraction */
@@ -1270,107 +1281,107 @@ builtin_xrange(self, args)
 		n = (ihigh - ilow + istep + 1) / istep;
 	if (n < 0)
 		n = 0;
-	return newrangeobject(ilow, n, istep, 1);
+	return PyRange_New(ilow, n, istep, 1);
 }
 
-extern char *my_readline PROTO((char *));
+extern char *PyOS_Readline Py_PROTO((char *));
 
-static object *
+static PyObject *
 builtin_raw_input(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v = NULL;
-	object *f;
+	PyObject *v = NULL;
+	PyObject *f;
 
-	if (!newgetargs(args, "|O:[raw_]input", &v))
+	if (!PyArg_ParseTuple(args, "|O:[raw_]input", &v))
 		return NULL;
-	if (getfilefile(sysget("stdin")) == stdin &&
-	    getfilefile(sysget("stdout")) == stdout &&
+	if (PyFile_AsFile(PySys_GetObject("stdin")) == stdin &&
+	    PyFile_AsFile(PySys_GetObject("stdout")) == stdout &&
 	    isatty(fileno(stdin)) && isatty(fileno(stdout))) {
-		object *po;
+		PyObject *po;
 		char *prompt;
 		char *s;
-		object *result;
+		PyObject *result;
 		if (v != NULL) {
-			po = strobject(v);
+			po = PyObject_Str(v);
 			if (po == NULL)
 				return NULL;
-			prompt = getstringvalue(po);
+			prompt = PyString_AsString(po);
 		}
 		else {
 			po = NULL;
 			prompt = "";
 		}
-		s = my_readline(prompt);
-		XDECREF(po);
+		s = PyOS_Readline(prompt);
+		Py_XDECREF(po);
 		if (s == NULL) {
-			err_set(KeyboardInterrupt);
+			PyErr_SetNone(PyExc_KeyboardInterrupt);
 			return NULL;
 		}
 		if (*s == '\0') {
-			err_set(EOFError);
+			PyErr_SetNone(PyExc_EOFError);
 			result = NULL;
 		}
 		else { /* strip trailing '\n' */
-			result = newsizedstringobject(s, strlen(s)-1);
+			result = PyString_FromStringAndSize(s, strlen(s)-1);
 		}
 		free(s);
 		return result;
 	}
 	if (v != NULL) {
-		f = sysget("stdout");
+		f = PySys_GetObject("stdout");
 		if (f == NULL) {
-			err_setstr(RuntimeError, "lost sys.stdout");
+			PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
 			return NULL;
 		}
-		flushline();
-		if (writeobject(v, f, PRINT_RAW) != 0)
+		Py_FlushLine();
+		if (PyFile_WriteObject(v, f, Py_PRINT_RAW) != 0)
 			return NULL;
 	}
-	f = sysget("stdin");
+	f = PySys_GetObject("stdin");
 	if (f == NULL) {
-		err_setstr(RuntimeError, "lost sys.stdin");
+		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
 		return NULL;
 	}
-	return filegetline(f, -1);
+	return PyFile_GetLine(f, -1);
 }
 
-static object *
+static PyObject *
 builtin_reduce(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *seq, *func, *result = NULL;
-	sequence_methods *sqf;
+	PyObject *seq, *func, *result = NULL;
+	PySequenceMethods *sqf;
 	register int i;
 
-	if (!newgetargs(args, "OO|O:reduce", &func, &seq, &result))
+	if (!PyArg_ParseTuple(args, "OO|O:reduce", &func, &seq, &result))
 		return NULL;
 	if (result != NULL)
-		INCREF(result);
+		Py_INCREF(result);
 
 	if ((sqf = seq->ob_type->tp_as_sequence) == NULL) {
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 		    "2nd argument to reduce() must be a sequence object");
 		return NULL;
 	}
 
-	if ((args = newtupleobject(2)) == NULL)
+	if ((args = PyTuple_New(2)) == NULL)
 		goto Fail;
 
 	for (i = 0; ; ++i) {
-		object *op2;
+		PyObject *op2;
 
 		if (args->ob_refcnt > 1) {
-			DECREF(args);
-			if ((args = newtupleobject(2)) == NULL)
+			Py_DECREF(args);
+			if ((args = PyTuple_New(2)) == NULL)
 				goto Fail;
 		}
 
 		if ((op2 = (*sqf->sq_item)(seq, i)) == NULL) {
-			if (err_occurred() == IndexError) {
-				err_clear();
+			if (PyErr_Occurred() == PyExc_IndexError) {
+				PyErr_Clear();
 				break;
 			}
 			goto Fail;
@@ -1379,62 +1390,62 @@ builtin_reduce(self, args)
 		if (result == NULL)
 			result = op2;
 		else {
-			settupleitem(args, 0, result);
-			settupleitem(args, 1, op2);
-			if ((result = call_object(func, args)) == NULL)
+			PyTuple_SetItem(args, 0, result);
+			PyTuple_SetItem(args, 1, op2);
+			if ((result = PyEval_CallObject(func, args)) == NULL)
 				goto Fail;
 		}
 	}
 
-	DECREF(args);
+	Py_DECREF(args);
 
 	if (result == NULL)
-		err_setstr(TypeError,
+		PyErr_SetString(PyExc_TypeError,
 			   "reduce of empty sequence with no initial value");
 
 	return result;
 
 Fail:
-	XDECREF(args);
-	XDECREF(result);
+	Py_XDECREF(args);
+	Py_XDECREF(result);
 	return NULL;
 }
 
-static object *
+static PyObject *
 builtin_reload(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 
-	if (!newgetargs(args, "O:reload", &v))
+	if (!PyArg_ParseTuple(args, "O:reload", &v))
 		return NULL;
-	return reload_module(v);
+	return PyImport_ReloadModule(v);
 }
 
-static object *
+static PyObject *
 builtin_repr(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 
-	if (!newgetargs(args, "O:repr", &v))
+	if (!PyArg_ParseTuple(args, "O:repr", &v))
 		return NULL;
-	return reprobject(v);
+	return PyObject_Repr(v);
 }
 
-static object *
+static PyObject *
 builtin_round(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double x;
 	double f;
 	int ndigits = 0;
 	int i;
 
-	if (!newgetargs(args, "d|i:round", &x, &ndigits))
+	if (!PyArg_ParseTuple(args, "d|i:round", &x, &ndigits))
 			return NULL;
 	f = 1.0;
 	for (i = ndigits; --i >= 0; )
@@ -1442,53 +1453,54 @@ builtin_round(self, args)
 	for (i = ndigits; ++i <= 0; )
 		f = f*0.1;
 	if (x >= 0.0)
-		return newfloatobject(floor(x*f + 0.5) / f);
+		return PyFloat_FromDouble(floor(x*f + 0.5) / f);
 	else
-		return newfloatobject(ceil(x*f - 0.5) / f);
+		return PyFloat_FromDouble(ceil(x*f - 0.5) / f);
 }
 
-static object *
+static PyObject *
 builtin_str(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 
-	if (!newgetargs(args, "O:str", &v))
+	if (!PyArg_ParseTuple(args, "O:str", &v))
 		return NULL;
-	return strobject(v);
+	return PyObject_Str(v);
 }
 
-static object *
+static PyObject *
 builtin_tuple(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
-	sequence_methods *sqf;
+	PyObject *v;
+	PySequenceMethods *sqf;
 
-	if (!newgetargs(args, "O:tuple", &v))
+	if (!PyArg_ParseTuple(args, "O:tuple", &v))
 		return NULL;
-	if (is_tupleobject(v)) {
-		INCREF(v);
+	if (PyTuple_Check(v)) {
+		Py_INCREF(v);
 		return v;
 	}
-	if (is_listobject(v))
-		return listtuple(v);
-	if (is_stringobject(v)) {
-		int n = getstringsize(v);
-		object *t = newtupleobject(n);
+	if (PyList_Check(v))
+		return PyList_AsTuple(v);
+	if (PyString_Check(v)) {
+		int n = PyString_Size(v);
+		PyObject *t = PyTuple_New(n);
 		if (t != NULL) {
 			int i;
-			char *p = getstringvalue(v);
+			char *p = PyString_AsString(v);
 			for (i = 0; i < n; i++) {
-				object *item = newsizedstringobject(p+i, 1);
+				PyObject *item =
+					PyString_FromStringAndSize(p+i, 1);
 				if (item == NULL) {
-					DECREF(t);
+					Py_DECREF(t);
 					t = NULL;
 					break;
 				}
-				settupleitem(t, i, item);
+				PyTuple_SetItem(t, i, item);
 			}
 		}
 		return t;
@@ -1497,66 +1509,68 @@ builtin_tuple(self, args)
 	if ((sqf = v->ob_type->tp_as_sequence) != NULL) {
 		int n = (*sqf->sq_length)(v);
 		int i;
-		object *t;
+		PyObject *t;
 		if (n < 0)
 			return NULL;
-		t = newtupleobject(n);
+		t = PyTuple_New(n);
 		if (t == NULL)
 			return NULL;
 		for (i = 0; i < n; i++) {
-			object *item = (*sqf->sq_item)(v, i);
+			PyObject *item = (*sqf->sq_item)(v, i);
 			if (item == NULL) {
-				DECREF(t);
+				Py_DECREF(t);
 				t = NULL;
 				break;
 			}
-			settupleitem(t, i, item);
+			PyTuple_SetItem(t, i, item);
 		}
 		/* XXX Should support indefinite-length sequences */
 		return t;
 	}
 	/* None of the above */
-	err_setstr(TypeError, "tuple() argument must be a sequence");
+	PyErr_SetString(PyExc_TypeError,
+			"tuple() argument must be a sequence");
 	return NULL;
 }
 
-static object *
+static PyObject *
 builtin_type(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v;
+	PyObject *v;
 
-	if (!newgetargs(args, "O:type", &v))
+	if (!PyArg_ParseTuple(args, "O:type", &v))
 		return NULL;
-	v = (object *)v->ob_type;
-	INCREF(v);
+	v = (PyObject *)v->ob_type;
+	Py_INCREF(v);
 	return v;
 }
 
-static object *
+static PyObject *
 builtin_vars(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	object *v = NULL;
-	object *d;
+	PyObject *v = NULL;
+	PyObject *d;
 
-	if (!newgetargs(args, "|O:vars", &v))
+	if (!PyArg_ParseTuple(args, "|O:vars", &v))
 		return NULL;
 	if (v == NULL) {
-		d = getlocals();
+		d = PyEval_GetLocals();
 		if (d == NULL) {
-			if (!err_occurred())
-				err_setstr(SystemError, "no locals!?");
+			if (!PyErr_Occurred())
+				PyErr_SetString(PyExc_SystemError,
+						"no locals!?");
 		}
 		else
-			INCREF(d);
+			Py_INCREF(d);
 	}
 	else {
-		d = getattr(v, "__dict__");
+		d = PyObject_GetAttrString(v, "__dict__");
 		if (d == NULL) {
-			err_setstr(TypeError,
+			PyErr_SetString(PyExc_TypeError,
 			    "vars() argument must have __dict__ attribute");
 			return NULL;
 		}
@@ -1564,7 +1578,7 @@ builtin_vars(self, args)
 	return d;
 }
 
-static struct methodlist builtin_methods[] = {
+static PyMethodDef builtin_methods[] = {
 	{"__import__",	builtin___import__, 1},
 	{"abs",		builtin_abs, 1},
 	{"apply",	builtin_apply, 1},
@@ -1619,201 +1633,202 @@ static struct methodlist builtin_methods[] = {
 	{NULL,		NULL},
 };
 
-static object *builtin_mod;
-static object *builtin_dict;
+static PyObject *builtin_mod;
+static PyObject *builtin_dict;
 
-object *
-getbuiltinmod()
+PyObject *
+PyBuiltin_GetModule()
 {
 	return builtin_mod;
 }
 
-object *
-getbuiltindict()
+PyObject *
+PyBuiltin_GetDict()
 {
 	return builtin_dict;
 }
 
 /* Predefined exceptions */
 
-object *AccessError;
-object *PyExc_AssertionError;
-object *AttributeError;
-object *EOFError;
-object *FloatingPointError;
-object *IOError;
-object *ImportError;
-object *IndexError;
-object *KeyError;
-object *KeyboardInterrupt;
-object *MemoryError;
-object *NameError;
-object *OverflowError;
-object *RuntimeError;
-object *SyntaxError;
-object *SystemError;
-object *SystemExit;
-object *TypeError;
-object *ValueError;
-object *ZeroDivisionError;
+PyObject *PyExc_AccessError;
+PyObject *PyExc_AssertionError;
+PyObject *PyExc_AttributeError;
+PyObject *PyExc_EOFError;
+PyObject *FloatingPointError;
+PyObject *PyExc_IOError;
+PyObject *PyExc_ImportError;
+PyObject *PyExc_IndexError;
+PyObject *PyExc_KeyError;
+PyObject *PyExc_KeyboardInterrupt;
+PyObject *PyExc_MemoryError;
+PyObject *PyExc_NameError;
+PyObject *PyExc_OverflowError;
+PyObject *PyExc_RuntimeError;
+PyObject *PyExc_SyntaxError;
+PyObject *PyExc_SystemError;
+PyObject *PyExc_SystemExit;
+PyObject *PyExc_TypeError;
+PyObject *PyExc_ValueError;
+PyObject *PyExc_ZeroDivisionError;
 
-static object *
+static PyObject *
 newstdexception(name)
 	char *name;
 {
-	object *v = newstringobject(name);
-	if (v == NULL || dictinsert(builtin_dict, name, v) != 0)
-		fatal("no mem for new standard exception");
+	PyObject *v = PyString_FromString(name);
+	if (v == NULL || PyDict_SetItemString(builtin_dict, name, v) != 0)
+		Py_FatalError("no mem for new standard exception");
 	return v;
 }
 
 static void
 initerrors()
 {
-	AccessError = newstdexception("AccessError");
+	PyExc_AccessError = newstdexception("AccessError");
 	PyExc_AssertionError = newstdexception("AssertionError");
-	AttributeError = newstdexception("AttributeError");
-	EOFError = newstdexception("EOFError");
+	PyExc_AttributeError = newstdexception("AttributeError");
+	PyExc_EOFError = newstdexception("EOFError");
 	FloatingPointError = newstdexception("FloatingPointError");
-	IOError = newstdexception("IOError");
-	ImportError = newstdexception("ImportError");
-	IndexError = newstdexception("IndexError");
-	KeyError = newstdexception("KeyError");
-	KeyboardInterrupt = newstdexception("KeyboardInterrupt");
-	MemoryError = newstdexception("MemoryError");
-	NameError = newstdexception("NameError");
-	OverflowError = newstdexception("OverflowError");
-	RuntimeError = newstdexception("RuntimeError");
-	SyntaxError = newstdexception("SyntaxError");
-	SystemError = newstdexception("SystemError");
-	SystemExit = newstdexception("SystemExit");
-	TypeError = newstdexception("TypeError");
-	ValueError = newstdexception("ValueError");
-	ZeroDivisionError = newstdexception("ZeroDivisionError");
+	PyExc_IOError = newstdexception("IOError");
+	PyExc_ImportError = newstdexception("ImportError");
+	PyExc_IndexError = newstdexception("IndexError");
+	PyExc_KeyError = newstdexception("KeyError");
+	PyExc_KeyboardInterrupt = newstdexception("KeyboardInterrupt");
+	PyExc_MemoryError = newstdexception("MemoryError");
+	PyExc_NameError = newstdexception("NameError");
+	PyExc_OverflowError = newstdexception("OverflowError");
+	PyExc_RuntimeError = newstdexception("RuntimeError");
+	PyExc_SyntaxError = newstdexception("SyntaxError");
+	PyExc_SystemError = newstdexception("SystemError");
+	PyExc_SystemExit = newstdexception("SystemExit");
+	PyExc_TypeError = newstdexception("TypeError");
+	PyExc_ValueError = newstdexception("ValueError");
+	PyExc_ZeroDivisionError = newstdexception("ZeroDivisionError");
 }
 
 void
-initbuiltin()
+PyBuiltin_Init()
 {
-	builtin_mod = initmodule("__builtin__", builtin_methods);
-	builtin_dict = getmoduledict(builtin_mod);
-	INCREF(builtin_dict);
+	builtin_mod = Py_InitModule("__builtin__", builtin_methods);
+	builtin_dict = PyModule_GetDict(builtin_mod);
+	Py_INCREF(builtin_dict);
 	initerrors();
-	(void) dictinsert(builtin_dict, "None", None);
-	(void) dictinsert(builtin_dict, "Ellipsis", Py_Ellipsis);
-	(void) dictinsert(builtin_dict, "__debug__",
-			  newintobject(Py_OptimizeFlag == 0));
-	if (err_occurred())
-		fatal("error creating None/Ellipsis/__debug__ in __builtin__");
+	(void) PyDict_SetItemString(builtin_dict, "None", Py_None);
+	(void) PyDict_SetItemString(builtin_dict, "Ellipsis", Py_Ellipsis);
+	(void) PyDict_SetItemString(builtin_dict, "__debug__",
+			  PyInt_FromLong(Py_OptimizeFlag == 0));
+	if (PyErr_Occurred())
+		Py_FatalError(
+		  "error creating None/Ellipsis/__debug__ in __builtin__");
 }
 
 
 /* Helper for filter(): filter a tuple through a function */
 
-static object *
+static PyObject *
 filtertuple(func, tuple)
-	object *func;
-	object *tuple;
+	PyObject *func;
+	PyObject *tuple;
 {
-	object *result;
+	PyObject *result;
 	register int i, j;
-	int len = gettuplesize(tuple);
+	int len = PyTuple_Size(tuple);
 
 	if (len == 0) {
-		INCREF(tuple);
+		Py_INCREF(tuple);
 		return tuple;
 	}
 
-	if ((result = newtupleobject(len)) == NULL)
+	if ((result = PyTuple_New(len)) == NULL)
 		return NULL;
 
 	for (i = j = 0; i < len; ++i) {
-		object *item, *good;
+		PyObject *item, *good;
 		int ok;
 
-		if ((item = gettupleitem(tuple, i)) == NULL)
+		if ((item = PyTuple_GetItem(tuple, i)) == NULL)
 			goto Fail_1;
-		if (func == None) {
-			INCREF(item);
+		if (func == Py_None) {
+			Py_INCREF(item);
 			good = item;
 		}
 		else {
-			object *arg = mkvalue("(O)", item);
+			PyObject *arg = Py_BuildValue("(O)", item);
 			if (arg == NULL)
 				goto Fail_1;
-			good = call_object(func, arg);
-			DECREF(arg);
+			good = PyEval_CallObject(func, arg);
+			Py_DECREF(arg);
 			if (good == NULL)
 				goto Fail_1;
 		}
-		ok = testbool(good);
-		DECREF(good);
+		ok = PyObject_IsTrue(good);
+		Py_DECREF(good);
 		if (ok) {
-			INCREF(item);
-			if (settupleitem(result, j++, item) < 0)
+			Py_INCREF(item);
+			if (PyTuple_SetItem(result, j++, item) < 0)
 				goto Fail_1;
 		}
 	}
 
-	if (resizetuple(&result, j, 0) < 0)
+	if (_PyTuple_Resize(&result, j, 0) < 0)
 		return NULL;
 
 	return result;
 
 Fail_1:
-	DECREF(result);
+	Py_DECREF(result);
 	return NULL;
 }
 
 
 /* Helper for filter(): filter a string through a function */
 
-static object *
+static PyObject *
 filterstring(func, strobj)
-	object *func;
-	object *strobj;
+	PyObject *func;
+	PyObject *strobj;
 {
-	object *result;
+	PyObject *result;
 	register int i, j;
-	int len = getstringsize(strobj);
+	int len = PyString_Size(strobj);
 
-	if (func == None) {
+	if (func == Py_None) {
 		/* No character is ever false -- share input string */
-		INCREF(strobj);
+		Py_INCREF(strobj);
 		return strobj;
 	}
-	if ((result = newsizedstringobject(NULL, len)) == NULL)
+	if ((result = PyString_FromStringAndSize(NULL, len)) == NULL)
 		return NULL;
 
 	for (i = j = 0; i < len; ++i) {
-		object *item, *arg, *good;
+		PyObject *item, *arg, *good;
 		int ok;
 
 		item = (*strobj->ob_type->tp_as_sequence->sq_item)(strobj, i);
 		if (item == NULL)
 			goto Fail_1;
-		arg = mkvalue("(O)", item);
-		DECREF(item);
+		arg = Py_BuildValue("(O)", item);
+		Py_DECREF(item);
 		if (arg == NULL)
 			goto Fail_1;
-		good = call_object(func, arg);
-		DECREF(arg);
+		good = PyEval_CallObject(func, arg);
+		Py_DECREF(arg);
 		if (good == NULL)
 			goto Fail_1;
-		ok = testbool(good);
-		DECREF(good);
+		ok = PyObject_IsTrue(good);
+		Py_DECREF(good);
 		if (ok)
-			GETSTRINGVALUE((stringobject *)result)[j++] =
-				GETSTRINGVALUE((stringobject *)item)[0];
+			PyString_AS_STRING((PyStringObject *)result)[j++] =
+				PyString_AS_STRING((PyStringObject *)item)[0];
 	}
 
-	if (j < len && resizestring(&result, j) < 0)
+	if (j < len && _PyString_Resize(&result, j) < 0)
 		return NULL;
 
 	return result;
 
 Fail_1:
-	DECREF(result);
+	Py_DECREF(result);
 	return NULL;
 }
 

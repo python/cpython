@@ -31,35 +31,36 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Map C struct members to Python object attributes */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #include "structmember.h"
 
-static object *
+static PyObject *
 listmembers(mlist)
 	struct memberlist *mlist;
 {
 	int i, n;
-	object *v;
+	PyObject *v;
 	for (n = 0; mlist[n].name != NULL; n++)
 		;
-	v = newlistobject(n);
+	v = PyList_New(n);
 	if (v != NULL) {
 		for (i = 0; i < n; i++)
-			setlistitem(v, i, newstringobject(mlist[i].name));
-		if (err_occurred()) {
-			DECREF(v);
+			PyList_SetItem(v, i,
+				       PyString_FromString(mlist[i].name));
+		if (PyErr_Occurred()) {
+			Py_DECREF(v);
 			v = NULL;
 		}
 		else {
-			sortlist(v);
+			PyList_Sort(v);
 		}
 	}
 	return v;
 }
 
-object *
-getmember(addr, mlist, name)
+PyObject *
+PyMember_Get(addr, mlist, name)
 	char *addr;
 	struct memberlist *mlist;
 	char *name;
@@ -70,111 +71,118 @@ getmember(addr, mlist, name)
 		return listmembers(mlist);
 	for (l = mlist; l->name != NULL; l++) {
 		if (strcmp(l->name, name) == 0) {
-			object *v;
+			PyObject *v;
 			addr += l->offset;
 			switch (l->type) {
 			case T_BYTE:
-				v = newintobject((long)
+				v = PyInt_FromLong((long)
 						 (((*(char*)addr & 0xff)
 						   ^ 0x80) - 0x80));
 				break;
 			case T_UBYTE:
-				v = newintobject((long) *(char*)addr & 0xff);
+				v = PyInt_FromLong((long) *(char*)addr & 0xff);
 				break;
 			case T_SHORT:
-				v = newintobject((long) *(short*)addr);
+				v = PyInt_FromLong((long) *(short*)addr);
 				break;
 			case T_USHORT:
-				v = newintobject((long)
+				v = PyInt_FromLong((long)
 						 *(unsigned short*)addr);
 				break;
 			case T_INT:
-				v = newintobject((long) *(int*)addr);
+				v = PyInt_FromLong((long) *(int*)addr);
 				break;
 			case T_UINT:
-				v = newintobject((long) *(unsigned int*)addr);
+				v = PyInt_FromLong((long)
+						   *(unsigned int*)addr);
 				break;
 			case T_LONG:
-				v = newintobject(*(long*)addr);
+				v = PyInt_FromLong(*(long*)addr);
 				break;
 			case T_ULONG:
-				v = dnewlongobject((double)
+				v = PyLong_FromDouble((double)
 						   *(unsigned long*)addr);
 				break;
 			case T_FLOAT:
-				v = newfloatobject((double)*(float*)addr);
+				v = PyFloat_FromDouble((double)*(float*)addr);
 				break;
 			case T_DOUBLE:
-				v = newfloatobject(*(double*)addr);
+				v = PyFloat_FromDouble(*(double*)addr);
 				break;
 			case T_STRING:
 				if (*(char**)addr == NULL) {
-					INCREF(None);
-					v = None;
+					Py_INCREF(Py_None);
+					v = Py_None;
 				}
 				else
-					v = newstringobject(*(char**)addr);
+					v = PyString_FromString(*(char**)addr);
 				break;
 			case T_STRING_INPLACE:
-				v = newstringobject((char*)addr);
+				v = PyString_FromString((char*)addr);
 				break;
 #ifdef macintosh
 			case T_PSTRING:
 				if (*(char**)addr == NULL) {
-					INCREF(None);
-					v = None;
+					Py_INCREF(Py_None);
+					v = Py_None;
 				}
 				else
-					v = newsizedstringobject((*(char**)addr)+1,
-											**(unsigned char**)addr);
+					v = PyString_FromStringAndSize(
+						(*(char**)addr)+1,
+						**(unsigned char**)addr);
 				break;
 			case T_PSTRING_INPLACE:
-				v = newsizedstringobject(((char*)addr)+1,
-											*(unsigned char*)addr);
+				v = PyString_FromStringAndSize(
+					((char*)addr)+1,
+					*(unsigned char*)addr);
 				break;
 #endif /* macintosh */
 			case T_CHAR:
-				v = newsizedstringobject((char*)addr, 1);
+				v = PyString_FromStringAndSize((char*)addr, 1);
 				break;
 			case T_OBJECT:
-				v = *(object **)addr;
+				v = *(PyObject **)addr;
 				if (v == NULL)
-					v = None;
-				INCREF(v);
+					v = Py_None;
+				Py_INCREF(v);
 				break;
 			default:
-				err_setstr(SystemError, "bad memberlist type");
+				PyErr_SetString(PyExc_SystemError,
+						"bad memberlist type");
 				v = NULL;
 			}
 			return v;
 		}
 	}
 	
-	err_setstr(AttributeError, name);
+	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;
 }
 
 int
-setmember(addr, mlist, name, v)
+PyMember_Set(addr, mlist, name, v)
 	char *addr;
 	struct memberlist *mlist;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	struct memberlist *l;
 	
 	for (l = mlist; l->name != NULL; l++) {
 		if (strcmp(l->name, name) == 0) {
 #ifdef macintosh
-			if (l->readonly || l->type == T_STRING || l->type == T_PSTRING) {
+			if (l->readonly || l->type == T_STRING ||
+			    l->type == T_PSTRING)
+			{
 #else
 			if (l->readonly || l->type == T_STRING ) {
 #endif /* macintosh */
-				err_setstr(TypeError, "readonly attribute");
+				PyErr_SetString(PyExc_TypeError,
+						"readonly attribute");
 				return -1;
 			}
 			if (v == NULL && l->type != T_OBJECT) {
-				err_setstr(TypeError,
+				PyErr_SetString(PyExc_TypeError,
 				  "can't delete numeric/char attribute");
 				return -1;
 			}
@@ -182,90 +190,92 @@ setmember(addr, mlist, name, v)
 			switch (l->type) {
 			case T_BYTE:
 			case T_UBYTE:
-				if (!is_intobject(v)) {
-					err_badarg();
+				if (!PyInt_Check(v)) {
+					PyErr_BadArgument();
 					return -1;
 				}
-				*(char*)addr = (char) getintvalue(v);
+				*(char*)addr = (char) PyInt_AsLong(v);
 				break;
 			case T_SHORT:
 			case T_USHORT:
-				if (!is_intobject(v)) {
-					err_badarg();
+				if (!PyInt_Check(v)) {
+					PyErr_BadArgument();
 					return -1;
 				}
-				*(short*)addr = (short) getintvalue(v);
+				*(short*)addr = (short) PyInt_AsLong(v);
 				break;
 			case T_UINT:
 			case T_INT:
-				if (!is_intobject(v)) {
-					err_badarg();
+				if (!PyInt_Check(v)) {
+					PyErr_BadArgument();
 					return -1;
 				}
-				*(int*)addr = (int) getintvalue(v);
+				*(int*)addr = (int) PyInt_AsLong(v);
 				break;
 			case T_LONG:
-				if (!is_intobject(v)) {
-					err_badarg();
+				if (!PyInt_Check(v)) {
+					PyErr_BadArgument();
 					return -1;
 				}
-				*(long*)addr = getintvalue(v);
+				*(long*)addr = PyInt_AsLong(v);
 				break;
 			case T_ULONG:
-				if (is_intobject(v))
-					*(long*)addr = getintvalue(v);
-				else if (is_longobject(v))
-					*(long*)addr = getlongvalue(v);
+				if (PyInt_Check(v))
+					*(long*)addr = PyInt_AsLong(v);
+				else if (PyLong_Check(v))
+					*(long*)addr = PyLong_AsLong(v);
 				else {
-					err_badarg();
+					PyErr_BadArgument();
 					return -1;
 				}
 				break;
 			case T_FLOAT:
-				if (is_intobject(v))
-					*(float*)addr = (float) getintvalue(v);
-				else if (is_floatobject(v))
+				if (PyInt_Check(v))
 					*(float*)addr =
-						(float) getfloatvalue(v);
+						(float) PyInt_AsLong(v);
+				else if (PyFloat_Check(v))
+					*(float*)addr =
+						(float) PyFloat_AsDouble(v);
 				else {
-					err_badarg();
+					PyErr_BadArgument();
 					return -1;
 				}
 				break;
 			case T_DOUBLE:
-				if (is_intobject(v))
+				if (PyInt_Check(v))
 					*(double*)addr =
-						(double) getintvalue(v);
-				else if (is_floatobject(v))
-					*(double*)addr = getfloatvalue(v);
+						(double) PyInt_AsLong(v);
+				else if (PyFloat_Check(v))
+					*(double*)addr = PyFloat_AsDouble(v);
 				else {
-					err_badarg();
+					PyErr_BadArgument();
 					return -1;
 				}
 				break;
 			case T_OBJECT:
-				XDECREF(*(object **)addr);
-				XINCREF(v);
-				*(object **)addr = v;
+				Py_XDECREF(*(PyObject **)addr);
+				Py_XINCREF(v);
+				*(PyObject **)addr = v;
 				break;
 			case T_CHAR:
-				if (is_stringobject(v) &&
-				    getstringsize(v) == 1) {
+				if (PyString_Check(v) &&
+				    PyString_Size(v) == 1) {
 					*(char*)addr =
-						getstringvalue(v)[0];
+						PyString_AsString(v)[0];
 				}
 				else {
-					err_badarg();
+					PyErr_BadArgument();
 					return -1;
 				}
 			default:
-				err_setstr(SystemError, "bad memberlist type");
+				PyErr_SetString(PyExc_SystemError,
+						"bad memberlist type");
 				return -1;
 			}
 			return 0;
 		}
 	}
 	
-	err_setstr(AttributeError, name);
+	PyErr_SetString(PyExc_AttributeError, name);
 	return -1;
 }

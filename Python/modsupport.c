@@ -31,8 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Module support implementation */
 
-#include "allobjects.h"
-#include "import.h"
+#include "Python.h"
 
 #ifdef MPW /* MPW pushes 'extended' for float and double types with varargs */
 typedef extended va_double;
@@ -53,37 +52,39 @@ static char api_version_warning[] =
 "WARNING: Python C API version mismatch for module %s:\n\
   This Python has API version %d, module %s has version %d.\n";
 
-object *
-initmodule4(name, methods, doc, passthrough, module_api_version)
+PyObject *
+Py_InitModule4(name, methods, doc, passthrough, module_api_version)
 	char *name;
-	struct methodlist *methods;
+	PyMethodDef *methods;
 	char *doc;
-	object *passthrough;
+	PyObject *passthrough;
 	int module_api_version;
 {
-	object *m, *d, *v;
-	struct methodlist *ml;
+	PyObject *m, *d, *v;
+	PyMethodDef *ml;
 	if (module_api_version != PYTHON_API_VERSION)
 		fprintf(stderr, api_version_warning,
 			name, PYTHON_API_VERSION, name, module_api_version);
-	if ((m = add_module(name)) == NULL) {
+	if ((m = PyImport_AddModule(name)) == NULL) {
 		fprintf(stderr, "initializing module: %s\n", name);
-		fatal("can't create a module");
+		Py_FatalError("can't create a module");
 	}
-	d = getmoduledict(m);
+	d = PyModule_GetDict(m);
 	for (ml = methods; ml->ml_name != NULL; ml++) {
-		v = newmethodobject(ml, passthrough);
-		if (v == NULL || dictinsert(d, ml->ml_name, v) != 0) {
+		v = PyCFunction_New(ml, passthrough);
+		if (v == NULL ||
+		    PyDict_SetItemString(d, ml->ml_name, v) != 0)
+		{
 			fprintf(stderr, "initializing module: %s\n", name);
-			fatal("can't initialize module");
+			Py_FatalError("can't initialize module");
 		}
-		DECREF(v);
+		Py_DECREF(v);
 	}
 	if (doc != NULL) {
-		v = newstringobject(doc);
-		if (v == NULL || dictinsert(d, "__doc__", v) != 0)
-			fatal("can't add doc string");
-		DECREF(v);
+		v = PyString_FromString(doc);
+		if (v == NULL || PyDict_SetItemString(d, "__doc__", v) != 0)
+			Py_FatalError("can't add doc string");
+		Py_DECREF(v);
 	}
 	return m;
 }
@@ -91,7 +92,7 @@ initmodule4(name, methods, doc, passthrough, module_api_version)
 
 /* Helper for mkvalue() to scan the length of a format */
 
-static int countformat PROTO((char *format, int endchar));
+static int countformat Py_PROTO((char *format, int endchar));
 static int countformat(format, endchar)
 	char *format;
 	int endchar;
@@ -102,7 +103,8 @@ static int countformat(format, endchar)
 		switch (*format) {
 		case '\0':
 			/* Premature end */
-			err_setstr(SystemError, "unmatched paren in format");
+			PyErr_SetString(PyExc_SystemError,
+					"unmatched paren in format");
 			return -1;
 		case '(':
 		case '[':
@@ -136,118 +138,121 @@ static int countformat(format, endchar)
 /* Generic function to create a value -- the inverse of getargs() */
 /* After an original idea and first implementation by Steven Miale */
 
-static object *do_mktuple PROTO((char**, va_list *, int, int));
-static object *do_mklist PROTO((char**, va_list *, int, int));
-static object *do_mkdict PROTO((char**, va_list *, int, int));
-static object *do_mkvalue PROTO((char**, va_list *));
+static PyObject *do_mktuple Py_PROTO((char**, va_list *, int, int));
+static PyObject *do_mklist Py_PROTO((char**, va_list *, int, int));
+static PyObject *do_mkdict Py_PROTO((char**, va_list *, int, int));
+static PyObject *do_mkvalue Py_PROTO((char**, va_list *));
 
 
-static object *
+static PyObject *
 do_mkdict(p_format, p_va, endchar, n)
 	char **p_format;
 	va_list *p_va;
 	int endchar;
 	int n;
 {
-	object *d;
+	PyObject *d;
 	int i;
 	if (n < 0)
 		return NULL;
-	if ((d = newdictobject()) == NULL)
+	if ((d = PyDict_New()) == NULL)
 		return NULL;
 	for (i = 0; i < n; i+= 2) {
-		object *k, *v;
+		PyObject *k, *v;
 		k = do_mkvalue(p_format, p_va);
 		if (k == NULL) {
-			DECREF(d);
+			Py_DECREF(d);
 			return NULL;
 		}
 		v = do_mkvalue(p_format, p_va);
 		if (v == NULL) {
-			DECREF(k);
-			DECREF(d);
+			Py_DECREF(k);
+			Py_DECREF(d);
 			return NULL;
 		}
-		if (dict2insert(d, k, v) < 0) {
-			DECREF(k);
-			DECREF(v);
-			DECREF(d);
+		if (PyDict_SetItem(d, k, v) < 0) {
+			Py_DECREF(k);
+			Py_DECREF(v);
+			Py_DECREF(d);
 			return NULL;
 		}
 	}
 	if (d != NULL && **p_format != endchar) {
-		DECREF(d);
+		Py_DECREF(d);
 		d = NULL;
-		err_setstr(SystemError, "Unmatched paren in format");
+		PyErr_SetString(PyExc_SystemError,
+				"Unmatched paren in format");
 	}
 	else if (endchar)
 		++*p_format;
 	return d;
 }
 
-static object *
+static PyObject *
 do_mklist(p_format, p_va, endchar, n)
 	char **p_format;
 	va_list *p_va;
 	int endchar;
 	int n;
 {
-	object *v;
+	PyObject *v;
 	int i;
 	if (n < 0)
 		return NULL;
-	if ((v = newlistobject(n)) == NULL)
+	if ((v = PyList_New(n)) == NULL)
 		return NULL;
 	for (i = 0; i < n; i++) {
-		object *w = do_mkvalue(p_format, p_va);
+		PyObject *w = do_mkvalue(p_format, p_va);
 		if (w == NULL) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
-		setlistitem(v, i, w);
+		PyList_SetItem(v, i, w);
 	}
 	if (v != NULL && **p_format != endchar) {
-		DECREF(v);
+		Py_DECREF(v);
 		v = NULL;
-		err_setstr(SystemError, "Unmatched paren in format");
+		PyErr_SetString(PyExc_SystemError,
+				"Unmatched paren in format");
 	}
 	else if (endchar)
 		++*p_format;
 	return v;
 }
 
-static object *
+static PyObject *
 do_mktuple(p_format, p_va, endchar, n)
 	char **p_format;
 	va_list *p_va;
 	int endchar;
 	int n;
 {
-	object *v;
+	PyObject *v;
 	int i;
 	if (n < 0)
 		return NULL;
-	if ((v = newtupleobject(n)) == NULL)
+	if ((v = PyTuple_New(n)) == NULL)
 		return NULL;
 	for (i = 0; i < n; i++) {
-		object *w = do_mkvalue(p_format, p_va);
+		PyObject *w = do_mkvalue(p_format, p_va);
 		if (w == NULL) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
-		settupleitem(v, i, w);
+		PyTuple_SetItem(v, i, w);
 	}
 	if (v != NULL && **p_format != endchar) {
-		DECREF(v);
+		Py_DECREF(v);
 		v = NULL;
-		err_setstr(SystemError, "Unmatched paren in format");
+		PyErr_SetString(PyExc_SystemError,
+				"Unmatched paren in format");
 	}
 	else if (endchar)
 		++*p_format;
 	return v;
 }
 
-static object *
+static PyObject *
 do_mkvalue(p_format, p_va)
 	char **p_format;
 	va_list *p_va;
@@ -269,26 +274,27 @@ do_mkvalue(p_format, p_va)
 		case 'b':
 		case 'h':
 		case 'i':
-			return newintobject((long)va_arg(*p_va, int));
+			return PyInt_FromLong((long)va_arg(*p_va, int));
 
 		case 'l':
-			return newintobject((long)va_arg(*p_va, long));
+			return PyInt_FromLong((long)va_arg(*p_va, long));
 
 		case 'f':
 		case 'd':
-			return newfloatobject((double)va_arg(*p_va, va_double));
+			return PyFloat_FromDouble(
+				(double)va_arg(*p_va, va_double));
 
 		case 'c':
 		{
 			char p[1];
 			p[0] = va_arg(*p_va, int);
-			return newsizedstringobject(p, 1);
+			return PyString_FromStringAndSize(p, 1);
 		}
 
 		case 's':
 		case 'z':
 		{
-			object *v;
+			PyObject *v;
 			char *str = va_arg(*p_va, char *);
 			int n;
 			if (**p_format == '#') {
@@ -298,13 +304,13 @@ do_mkvalue(p_format, p_va)
 			else
 				n = -1;
 			if (str == NULL) {
-				v = None;
-				INCREF(v);
+				v = Py_None;
+				Py_INCREF(v);
 			}
 			else {
 				if (n < 0)
 					n = strlen(str);
-				v = newsizedstringobject(str, n);
+				v = PyString_FromStringAndSize(str, n);
 			}
 			return v;
 		}
@@ -312,18 +318,18 @@ do_mkvalue(p_format, p_va)
 		case 'S':
 		case 'O':
 		if (**p_format == '&') {
-			typedef object *(*converter) PROTO((void *));
+			typedef PyObject *(*converter) Py_PROTO((void *));
 			converter func = va_arg(*p_va, converter);
 			void *arg = va_arg(*p_va, void *);
 			++*p_format;
 			return (*func)(arg);
 		}
 		else {
-			object *v;
-			v = va_arg(*p_va, object *);
+			PyObject *v;
+			v = va_arg(*p_va, PyObject *);
 			if (v != NULL)
-				INCREF(v);
-			else if (!err_occurred())
+				Py_INCREF(v);
+			else if (!PyErr_Occurred())
 				/* If a NULL was passed
 				 * because a call that should
 				 * have constructed a value
@@ -332,7 +338,7 @@ do_mkvalue(p_format, p_va)
 				 * no error occurred it's not
 				 * clear that the caller knew
 				 * what she was doing. */
-				err_setstr(SystemError,
+				PyErr_SetString(PyExc_SystemError,
 					   "NULL object passed to mkvalue");
 			return v;
 		}
@@ -344,7 +350,7 @@ do_mkvalue(p_format, p_va)
 			break;
 
 		default:
-			err_setstr(SystemError,
+			PyErr_SetString(PyExc_SystemError,
 				   "bad format char passed to mkvalue");
 			return NULL;
 
@@ -355,14 +361,14 @@ do_mkvalue(p_format, p_va)
 
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS 2 */
-object *mkvalue(char *format, ...)
+PyObject *Py_BuildValue(char *format, ...)
 #else
 /* VARARGS */
-object *mkvalue(va_alist) va_dcl
+PyObject *Py_BuildValue(va_alist) va_dcl
 #endif
 {
 	va_list va;
-	object* retval;
+	PyObject* retval;
 #ifdef HAVE_STDARG_PROTOTYPES
 	va_start(va, format);
 #else
@@ -370,13 +376,13 @@ object *mkvalue(va_alist) va_dcl
 	va_start(va);
 	format = va_arg(va, char *);
 #endif
-	retval = vmkvalue(format, va);
+	retval = Py_VaBuildValue(format, va);
 	va_end(va);
 	return retval;
 }
 
-object *
-vmkvalue(format, va)
+PyObject *
+Py_VaBuildValue(format, va)
 	char *format;
 	va_list va;
 {
@@ -393,8 +399,8 @@ vmkvalue(format, va)
 	if (n < 0)
 		return NULL;
 	if (n == 0) {
-		INCREF(None);
-		return None;
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
 	if (n == 1)
 		return do_mkvalue(&f, &lva);
@@ -403,19 +409,19 @@ vmkvalue(format, va)
 
 
 #ifdef HAVE_STDARG_PROTOTYPES
-object *
-PyEval_CallFunction(object *obj, char *format, ...)
+PyObject *
+PyEval_CallFunction(PyObject *obj, char *format, ...)
 #else
-object *
+PyObject *
 PyEval_CallFunction(obj, format, va_alist)
-	object *obj;
+	PyObject *obj;
 	char *format;
 	va_dcl
 #endif
 {
 	va_list vargs;
-	object *args;
-	object *res;
+	PyObject *args;
+	PyObject *res;
 
 #ifdef HAVE_STDARG_PROTOTYPES
 	va_start(vargs, format);
@@ -423,37 +429,37 @@ PyEval_CallFunction(obj, format, va_alist)
 	va_start(vargs);
 #endif
 
-	args = vmkvalue(format, vargs);
+	args = Py_VaBuildValue(format, vargs);
 	va_end(vargs);
 
 	if (args == NULL)
 		return NULL;
 
-	res = call_object(obj, args);
-	DECREF(args);
+	res = PyEval_CallObject(obj, args);
+	Py_DECREF(args);
 
 	return res;
 }
 
 
 #ifdef HAVE_STDARG_PROTOTYPES
-object *
-PyEval_CallMethod(object *obj, char *methonname, char *format, ...)
+PyObject *
+PyEval_CallMethod(PyObject *obj, char *methonname, char *format, ...)
 #else
-object *
+PyObject *
 PyEval_CallMethod(obj, methonname, format, va_alist)
-	object *obj;
+	PyObject *obj;
 	char *methonname;
 	char *format;
 	va_dcl
 #endif
 {
 	va_list vargs;
-	object *meth;
-	object *args;
-	object *res;
+	PyObject *meth;
+	PyObject *args;
+	PyObject *res;
 
-	meth = getattr(obj, methonname);
+	meth = PyObject_GetAttrString(obj, methonname);
 	if (meth == NULL)
 		return NULL;
 
@@ -463,17 +469,17 @@ PyEval_CallMethod(obj, methonname, format, va_alist)
 	va_start(vargs);
 #endif
 
-	args = vmkvalue(format, vargs);
+	args = Py_VaBuildValue(format, vargs);
 	va_end(vargs);
 
 	if (args == NULL) {
-		DECREF(meth);
+		Py_DECREF(meth);
 		return NULL;
 	}
 
-	res = call_object(meth, args);
-	DECREF(meth);
-	DECREF(args);
+	res = PyEval_CallObject(meth, args);
+	Py_DECREF(meth);
+	Py_DECREF(args);
 
 	return res;
 }
