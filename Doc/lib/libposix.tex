@@ -80,6 +80,12 @@ When exceptions are strings, the string for the exception is
 
 It defines the following functions and constants:
 
+\begin{funcdesc}{access}{path, mode}
+Check read/write/execute permissions for this process or extance of file
+\var{path}.  Return \code{1} if access is granted, \code{0} if not.
+See the \UNIX{} manual for the semantics.
+\end{funcdesc}
+
 \begin{funcdesc}{chdir}{path}
 Change the current working directory to \var{path}.
 \end{funcdesc}
@@ -319,6 +325,12 @@ actually preferable to assign to items of \code{os.environ}.
 
 \begin{funcdesc}{strerror}{code}
 Return the error message corresponding to the error code in \var{code}.
+\end{funcdesc}
+
+\begin{funcdesc}{ttyname}{fd}
+Return a string which specifies the terminal device associated with
+file-descriptor \var{fd}.  If \var{fd} is not associated with a terminal
+device, an exception is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{read}{fd, n}
