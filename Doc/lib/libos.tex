@@ -96,7 +96,7 @@ environment.  \function{putenv()} will be called automatically when
 the mapping is modified.
 
 If \function{putenv()} is not provided, this mapping may be passed to
-the appropriate process-creation functions to cause child processes to 
+the appropriate process-creation functions to cause child processes to
 use a modified environment.
 \end{datadesc}
 
@@ -184,7 +184,7 @@ When \function{putenv()} is
 supported, assignments to items in \code{os.environ} are automatically
 translated into corresponding calls to \function{putenv()}; however,
 calls to \function{putenv()} don't update \code{os.environ}, so it is
-actually preferable to assign to items of \code{os.environ}.  
+actually preferable to assign to items of \code{os.environ}.
 \end{funcdesc}
 
 \begin{funcdesc}{setegid}{egid}
@@ -413,7 +413,7 @@ Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{ftruncate}{fd, length}
-Truncate the file corresponding to file descriptor \var{fd}, 
+Truncate the file corresponding to file descriptor \var{fd},
 so that it is at most \var{length} bytes in size.
 Availability: \UNIX.
 \end{funcdesc}
@@ -909,7 +909,7 @@ will seem to be ignored.
 
 \begin{funcdesc}{abort}{}
 Generate a \constant{SIGABRT} signal to the current process.  On
-\UNIX, the default behavior is to produce a core dump; on Windows, the 
+\UNIX, the default behavior is to produce a core dump; on Windows, the
 process immediately returns an exit code of \code{3}.  Be aware that
 programs which use \function{signal.signal()} to register a handler
 for \constant{SIGABRT} will behave differently.
@@ -1166,12 +1166,14 @@ Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{waitpid}{pid, options}
+The details of this function differ on \UNIX and Windows.
+
+On \UNIX:
 Wait for completion of a child process given by process id \var{pid},
 and return a tuple containing its process id and exit status
 indication (encoded as for \function{wait()}).  The semantics of the
 call are affected by the value of the integer \var{options}, which
 should be \code{0} for normal operation.
-Availability: \UNIX.
 
 If \var{pid} is greater than \code{0}, \function{waitpid()} requests
 status information for that specific process.  If \var{pid} is
@@ -1180,6 +1182,19 @@ group of the current process.  If \var{pid} is \code{-1}, the request
 pertains to any child of the current process.  If \var{pid} is less
 than \code{-1}, status is requested for any process in the process
 group \code{-\var{pid}} (the absolute value of \var{pid}).
+
+On Windows:
+Wait for completion of a process given by process id \var{pid},
+and return a tuple containing \var{pid},
+and its exit status shifted left by 8 bits (shifting makes cross-platform
+use of the function easier).
+A \var{pid} less than or equal to \code{0} has no special meaning on
+Windows, and raises an exception.
+The value of integer \var{options} has no effect.
+\var{pid} can refer to any process whose id is known, not necessarily a
+child process.
+The \function{spawn()} functions called with \constant{P_NOWAIT}
+return suitable process ids.
 \end{funcdesc}
 
 \begin{datadesc}{WNOHANG}
@@ -1211,7 +1226,7 @@ Availability: \UNIX.
 
 \begin{funcdesc}{WEXITSTATUS}{status}
 If \code{WIFEXITED(\var{status})} is true, return the integer
-parameter to the \manpage{exit}{2} system call.  Otherwise, the return 
+parameter to the \manpage{exit}{2} system call.  Otherwise, the return
 value is meaningless.
 Availability: \UNIX.
 \end{funcdesc}
