@@ -157,7 +157,7 @@ setattr(v, name, w)
 			err_setstr(TypeError, "attribute-less object");
 		else
 			err_setstr(TypeError, "object has read-only attributes");
-		return NULL;
+		return -1;
 	}
 	else {
 		return (*v->ob_type->tp_setattr)(v, name, w);

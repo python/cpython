@@ -107,7 +107,7 @@ module_setattr(m, name, v)
 {
 	if (strcmp(name, "__dict__") == 0 || strcmp(name, "__name__") == 0) {
 		err_setstr(NameError, "can't assign to reserved member name");
-		return NULL;
+		return -1;
 	}
 	if (v == NULL)
 		return dictremove(m->md_dict, name);
