@@ -295,7 +295,7 @@ meta-data is in \rfc{822}-style \code{key: value} pairs, and must
 contain the \code{Project-Id-Version}.  If the key
 \code{Content-Type} is found, then the \code{charset} property is used
 to initialize the ``protected'' \member{_charset} instance variable,
-defaulting to \code{iso-8859-1} if not found.  The entire set of
+defaulting to \code{None} if not found.  The entire set of
 key/value pairs are placed into a dictionary and set as the
 ``protected'' \member{_info} instance variable.
 
