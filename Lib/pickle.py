@@ -329,8 +329,7 @@ class Pickler:
                                 "exactly two or three elements" % reduce)
 
         # Save the reduce() output and finally memoize the object
-        self.save_reduce(func, args, state)
-        self.memoize(obj)
+        self.save_reduce(func, args, state, obj)
 
     def persistent_id(self, obj):
         # This exists so a subclass can override it
@@ -344,7 +343,7 @@ class Pickler:
         else:
             self.write(PERSID + str(pid) + '\n')
 
-    def save_reduce(self, func, args, state=None):
+    def save_reduce(self, func, args, state=None, obj=None):
         # This API is be called by some subclasses
 
         # Assert that args is a tuple or None
@@ -397,6 +396,9 @@ class Pickler:
             if not hasattr(cls, "__new__"):
                 raise PicklingError(
                     "args[0] from __newobj__ args has no __new__")
+            if obj is not None and cls is not obj.__class__:
+                raise PicklingError(
+                    "args[0] from __newobj__ args has the wrong class")
             args = args[1:]
             save(cls)
             save(args)
@@ -405,6 +407,9 @@ class Pickler:
             save(func)
             save(args)
             write(REDUCE)
+
+        if obj is not None:
+            self.memoize(obj)
 
         if state is not None:
             save(state)
