@@ -173,7 +173,7 @@ class BaseServer:
 
     - address_family
     - socket_type
-    - reuse_address
+    - allow_reuse_address
 
     Instance variables:
 
