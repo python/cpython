@@ -89,7 +89,8 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 
 /* Helper for mkvalue() to scan the length of a format */
 
-static int countformat(char *format, int endchar)
+static int
+countformat(char *format, int endchar)
 {
 	int count = 0;
 	int level = 0;
@@ -400,7 +401,8 @@ do_mkvalue(char **p_format, va_list *p_va)
 }
 
 
-PyObject *Py_BuildValue(char *format, ...)
+PyObject *
+Py_BuildValue(char *format, ...)
 {
 	va_list va;
 	PyObject* retval;
