@@ -30,7 +30,7 @@ Returned values will range between 0 and 1.
 Circular uniform distribution.  \var{mean} is the mean angle, and
 \var{arc} is the range of the distribution, centered around the mean
 angle.  Both values must be expressed in radians, and can range
-between 0 and $\pi$.  Returned values will range between
+between 0 and pi.  Returned values will range between
 \code{\var{mean} - \var{arc}/2} and \code{\var{mean} + \var{arc}/2}.
 \end{funcdesc}
 
@@ -65,11 +65,11 @@ standard deviation.
 \end{funcdesc}
 
 \begin{funcdesc}{vonmisesvariate}{mu, kappa}
-\var{mu} is the mean angle, expressed in radians between 0 and pi,
+\var{mu} is the mean angle, expressed in radians between 0 and 2*pi,
 and \var{kappa} is the concentration parameter, which must be greater
-then or equal to zero.  If \var{kappa} is equal to zero, this
+than or equal to zero.  If \var{kappa} is equal to zero, this
 distribution reduces to a uniform random angle over the range 0 to
-$2\pi$.
+2*pi.
 \end{funcdesc}
 
 \begin{funcdesc}{paretovariate}{alpha}
