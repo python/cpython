@@ -24,7 +24,11 @@ class CompilerTest(unittest.TestCase):
                 f = open(path)
                 buf = f.read()
                 f.close()
-                compiler.compile(buf, basename, "exec")
+                if "badsyntax" in basename:
+                    self.assertRaises(SyntaxError, compiler.compile,
+                                      buf, basename, "exec")
+                else:
+                    compiler.compile(buf, basename, "exec")
 
 def test_main():
     test.test_support.requires("compiler")
