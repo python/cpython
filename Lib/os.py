@@ -309,7 +309,7 @@ def execvp(file, args):
     _execvpe(file, args)
 
 def execvpe(file, args, env):
-    """execv(file, args, env)
+    """execvpe(file, args, env)
 
     Execute the executable file (which is searched for along $PATH)
     with argument list args and environment env , replacing the
@@ -339,14 +339,21 @@ def _execvpe(file, args, env=None):
     else:
         envpath = defpath
     PATH = envpath.split(pathsep)
+    saved_exc = None
+    saved_tb = None
     for dir in PATH:
         fullname = path.join(dir, file)
         try:
             apply(func, (fullname,) + argrest)
-        except error, (errno, msg):
-            if errno != ENOENT and errno != ENOTDIR:
-                raise
-    raise error, (errno, msg)
+        except error, e:
+            tb = sys.exc_info()[2]
+            if (e.errno != ENOENT and e.errno != ENOTDIR
+                and saved_exc is None):
+                saved_exc = e
+                saved_tb = tb
+    if saved_exc:
+        raise error, saved_exc, saved_tb
+    raise error, e, tb
 
 # Change environ to automatically call putenv() if it exists
 try:
