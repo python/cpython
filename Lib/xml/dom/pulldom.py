@@ -83,10 +83,11 @@ class PullDOM(xml.sax.ContentHandler):
                 else:
                     qname = a_localname
                 attr = self.document.createAttributeNS(a_uri, qname)
+                node.setAttributeNodeNS(attr)
             else:
                 attr = self.document.createAttribute(a_localname)
+                node.setAttributeNode(attr)
             attr.value = value
-            node.setAttributeNode(attr)
 
         self.lastEvent[1] = [(START_ELEMENT, node), None]
         self.lastEvent = self.lastEvent[1]
