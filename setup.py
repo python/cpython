@@ -146,19 +146,19 @@ class PyBuildExt(build_ext):
     def detect_modules(self):
         # Ensure that /usr/local is always used
         if '/usr/local/lib' not in self.compiler.library_dirs:
-            self.compiler.library_dirs.append('/usr/local/lib')
+            self.compiler.library_dirs.insert(0, '/usr/local/lib')
         if '/usr/local/include' not in self.compiler.include_dirs:
-            self.compiler.include_dirs.append( '/usr/local/include' )
+            self.compiler.include_dirs.insert(0, '/usr/local/include' )
 
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
         lib_dirs = self.compiler.library_dirs + ['/lib', '/usr/lib']
-        inc_dirs = ['/usr/include'] + self.compiler.include_dirs
+        inc_dirs = self.compiler.include_dirs + ['/usr/include'] 
         exts = []
 
         platform = self.get_platform()
-
+        
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
         if platform in ['Darwin1.2', 'beos']:
