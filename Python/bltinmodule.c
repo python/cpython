@@ -49,6 +49,9 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Forward */
 static object *filterstring PROTO((object *, object *));
 static object *filtertuple  PROTO((object *, object *));
+static object *int_from_string PROTO((object *));
+static object *long_from_string PROTO((object *));
+static object *float_from_string PROTO((object *));
 
 static object *
 builtin___import__(self, args)
@@ -300,14 +303,16 @@ builtin_complex(self, args)
 	object *r, *i, *tmp;
 	number_methods *nbr, *nbi;
 	Py_complex cr, ci;
+	int own_r = 0;
 
 	i = NULL;
 	if (!newgetargs(args, "O|O:complex", &r, &i))
 		return NULL;
 	if ((nbr = r->ob_type->tp_as_number) == NULL ||
-	     nbr->nb_float == NULL || (i != NULL &&
-	   ((nbi = i->ob_type->tp_as_number) == NULL ||
-	     nbi->nb_float == NULL))) {
+	    nbr->nb_float == NULL ||
+	    (i != NULL &&
+	     ((nbi = i->ob_type->tp_as_number) == NULL ||
+	      nbi->nb_float == NULL))) {
 		err_setstr(TypeError,
 			   "complex() argument can't be converted to complex");
 		return NULL;
@@ -332,12 +337,18 @@ builtin_complex(self, args)
 			DECREF(args);
 			if (r == NULL)
 				return NULL;
+			own_r = 1;
 		}
 	}
-	if (is_complexobject(r))
+	if (is_complexobject(r)) {
 		cr = ((complexobject*)r)->cval;
+		if (own_r)
+			DECREF(r);
+	}
 	else {
 		tmp = (*nbr->nb_float)(r);
+		if (own_r)
+			DECREF(r);
 		if (tmp == NULL)
 			return NULL;
 		cr.real = getfloatvalue(tmp);
@@ -351,7 +362,7 @@ builtin_complex(self, args)
 	else if (is_complexobject(i))
 		ci = ((complexobject*)i)->cval;
 	else {
-		tmp = (*nbr->nb_float)(i);
+		tmp = (*nbi->nb_float)(i);
 		if (tmp == NULL)
 			return NULL;
 		ci.real = getfloatvalue(tmp);
@@ -533,6 +544,8 @@ builtin_float(self, args)
 
 	if (!newgetargs(args, "O:float", &v))
 		return NULL;
+	if (is_stringobject(v))
+		return float_from_string(v);
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_float == NULL) {
 		err_setstr(TypeError,
@@ -863,6 +876,8 @@ builtin_int(self, args)
 
 	if (!newgetargs(args, "O:int", &v))
 		return NULL;
+	if (is_stringobject(v))
+		return int_from_string(v);
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
 		err_setstr(TypeError,
@@ -981,6 +996,8 @@ builtin_long(self, args)
 	
 	if (!newgetargs(args, "O:long", &v))
 		return NULL;
+	if (is_stringobject(v))
+		return long_from_string(v);
 	if ((nb = v->ob_type->tp_as_number) == NULL ||
 	    nb->nb_long == NULL) {
 		err_setstr(TypeError,
@@ -1618,8 +1635,8 @@ getbuiltindict()
 /* Predefined exceptions */
 
 object *AccessError;
+object *PyExc_AssertionError;
 object *AttributeError;
-object *ConflictError;
 object *EOFError;
 object *FloatingPointError;
 object *IOError;
@@ -1652,8 +1669,8 @@ static void
 initerrors()
 {
 	AccessError = newstdexception("AccessError");
+	PyExc_AssertionError = newstdexception("AssertionError");
 	AttributeError = newstdexception("AttributeError");
-	ConflictError = newstdexception("ConflictError");
 	EOFError = newstdexception("EOFError");
 	FloatingPointError = newstdexception("FloatingPointError");
 	IOError = newstdexception("IOError");
@@ -1796,4 +1813,107 @@ filterstring(func, strobj)
 Fail_1:
 	DECREF(result);
 	return NULL;
+}
+
+/* Copied with modifications from stropmodule.c: atoi,atof.atol */
+
+static PyObject *
+int_from_string(v)
+	PyObject *v;
+{
+	extern long PyOS_strtol Py_PROTO((const char *, char **, int));
+	char *s, *end;
+	long x;
+	char buffer[256]; /* For errors */
+
+	if (!PyArg_Parse(v, "s", &s))
+		return NULL;
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	if (s[0] == '\0') {
+		PyErr_SetString(PyExc_ValueError, "empty string for int()");
+		return NULL;
+	}
+	errno = 0;
+	x = PyOS_strtol(s, &end, 10);
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
+	if (*end != '\0') {
+		sprintf(buffer, "invalid literal for int(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	else if (errno != 0) {
+		sprintf(buffer, "int() literal too large: %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	return PyInt_FromLong(x);
+}
+
+static PyObject *
+long_from_string(v)
+	PyObject *v;
+{
+	char *s, *end;
+	PyObject *x;
+	char buffer[256]; /* For errors */
+
+	if (!PyArg_Parse(v, "s", &s))
+		return NULL;
+
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	if (s[0] == '\0') {
+		PyErr_SetString(PyExc_ValueError, "empty string for long()");
+		return NULL;
+	}
+	x = PyLong_FromString(s, &end, 10);
+	if (x == NULL)
+		return NULL;
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
+	if (*end != '\0') {
+		sprintf(buffer, "invalid literal for long(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		Py_DECREF(x);
+		return NULL;
+	}
+	return x;
+}
+
+static PyObject *
+float_from_string(v)
+	PyObject *v;
+{
+	extern double strtod Py_PROTO((const char *, char **));
+	char *s, *end;
+	double x;
+	char buffer[256]; /* For errors */
+
+	if (!PyArg_Parse(v, "s", &s))
+		return NULL;
+	while (*s && isspace(Py_CHARMASK(*s)))
+		s++;
+	if (s[0] == '\0') {
+		PyErr_SetString(PyExc_ValueError, "empty string for float()");
+		return NULL;
+	}
+	errno = 0;
+	PyFPE_START_PROTECT("float_from_string", return 0)
+	x = strtod(s, &end);
+	PyFPE_END_PROTECT(x)
+	while (*end && isspace(Py_CHARMASK(*end)))
+		end++;
+	if (*end != '\0') {
+		sprintf(buffer, "invalid literal for float(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	else if (errno != 0) {
+		sprintf(buffer, "float() literal too large: %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	return PyFloat_FromDouble(x);
 }
