@@ -588,6 +588,7 @@ static void RTR_d_region(r, beg, len, doinit)
     (list k1 (logior 1 k2) k3 k4 k5)))*/
 /* This is done in set_key() above */
 
+#if 0
 /*(defun encrypt-region (beg end key)
   "Interactivly encrypt the region"
   (interactive "r\nsKey:")
@@ -611,6 +612,7 @@ static void decrypt_region(r, region, len)
 {
 	RTR_d_region(r,region,len,TRUE);
 }
+#endif
 
 /* Rotor methods */
 
@@ -726,7 +728,6 @@ PyRotor_SetKey(self, args)
 	PyRotorObject *self;
 	PyObject * args;
 {
-	char *key;
 	char *string;
 
 	if (PyArg_Parse(args,"s",&string))

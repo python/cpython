@@ -239,10 +239,8 @@ newarrayobject(size, descr)
 	int size;
 	struct arraydescr *descr;
 {
-	int i;
 	arrayobject *op;
 	size_t nbytes;
-	int itemsize;
 	if (size < 0) {
 		err_badcall();
 		return NULL;
@@ -308,7 +306,6 @@ ins1(self, where, v)
 	int where;
 	object *v;
 {
-	int i;
 	char *items;
 	if (v == NULL) {
 		err_badcall();
@@ -366,7 +363,6 @@ static void
 array_dealloc(op)
 	arrayobject *op;
 {
-	int i;
 	if (op->ob_item != NULL)
 		DEL(op->ob_item);
 	DEL(op);
@@ -422,7 +418,6 @@ array_slice(a, ilow, ihigh)
 	int ilow, ihigh;
 {
 	arrayobject *np;
-	int i;
 	if (ilow < 0)
 		ilow = 0;
 	else if (ilow > a->ob_size)
@@ -447,7 +442,6 @@ array_concat(a, bb)
 	object *bb;
 {
 	int size;
-	int i;
 	arrayobject *np;
 	if (!is_arrayobject(bb)) {
 		err_badarg();
@@ -475,7 +469,7 @@ array_repeat(a, n)
 	arrayobject *a;
 	int n;
 {
-	int i, j;
+	int i;
 	int size;
 	arrayobject *np;
 	char *p;
@@ -504,7 +498,6 @@ array_ass_slice(a, ilow, ihigh, v)
 	char *item;
 	int n; /* Size of replacement array */
 	int d; /* Change in size */
-	int k; /* Loop index */
 #define b ((arrayobject *)v)
 	if (v == NULL)
 		n = 0;

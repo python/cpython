@@ -161,7 +161,7 @@ static typeobject MD5type = {
 /* MD5 functions */
 
 static object *
-MD5_md5(self, args)
+MD5_new(self, args)
 	object *self;
 	object *args;
 {
@@ -188,7 +188,8 @@ MD5_md5(self, args)
 /* List of functions exported by this module */
 
 static struct methodlist md5_functions[] = {
-	{"md5",			(method)MD5_md5},
+	{"new",			(method)MD5_new},
+	{"md5",			(method)MD5_new}, /* Backward compatibility */
 	{NULL,			NULL}		 /* Sentinel */
 };
 

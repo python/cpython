@@ -297,8 +297,13 @@ floattime()
 #ifdef HAVE_GETTIMEOFDAY
     {
 	struct timeval t;
+#ifdef GETTIMEOFDAY_NO_TZ
+	if (gettimeofday(&t) == 0)
+		return (double)t.tv_sec + t.tv_usec*0.000001;
+#else /* !GETTIMEOFDAY_NO_TZ */
 	if (gettimeofday(&t, (struct timezone *)NULL) == 0)
 		return (double)t.tv_sec + t.tv_usec*0.000001;
+#endif /* !GETTIMEOFDAY_NO_TZ */
     }
 #endif /* !HAVE_GETTIMEOFDAY */
     {

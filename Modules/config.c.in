@@ -182,6 +182,7 @@ getpythonpath()
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void initmarshal();
+extern void initimp();
 
 struct {
 	char *name;
@@ -192,6 +193,9 @@ struct {
 
 	/* This module "lives in" with marshal.c */
 	{"marshal", initmarshal},
+
+	/* This lives it with import.c */
+	{"imp", initimp},
 
 	/* These entries are here for sys.builtin_module_names */
 	{"__main__", NULL},

@@ -121,7 +121,9 @@ FUNC1(math_exp, exp)
 FUNC1(math_fabs, fabs)
 FUNC1(math_floor, floor)
 FUNC2(math_fmod, fmod)
+#ifdef HAVE_HYPOT
 FUNC2(math_hypot, hypot)
+#endif
 FUNC1(math_log, log)
 FUNC1(math_log10, log10)
 #ifdef MPW_3_1 /* This hack is needed for MPW 3.1 but not for 3.2 ... */
@@ -215,7 +217,9 @@ static struct methodlist math_methods[] = {
 	{"floor", math_floor},
 	{"fmod", math_fmod},
 	{"frexp", math_frexp},
+#ifdef HAVE_HYPOT
 	{"hypot", math_hypot},
+#endif
 	{"ldexp", math_ldexp},
 	{"log", math_log},
 	{"log10", math_log10},
