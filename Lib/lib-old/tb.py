@@ -74,7 +74,10 @@ def browserexec(tb, cmd):
 		exec(cmd+'\n', globals, locals)
 	except:
 		print '*** Exception:',
-		print sys.exc_type,
+		if type(sys.exc_type) == type(''):
+			print sys.exc_type,
+		else:
+			print sys.exc_type.__name__,
 		if sys.exc_value <> None:
 			print ':', sys.exc_value,
 		print
