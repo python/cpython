@@ -1755,6 +1755,46 @@ This \UNIX\ is also followed by a space.
     \end{description}
 
 
+  \subsection{Working on Cygwin \label{cygwin}}
+
+    \begin{notice}[warning]
+      This section is a work in progress.  It really doesn't work
+      yet.  If anyone knows Cygwin and wants to help, send email to
+      \email{python-docs@python.org}.
+    \end{notice}
+
+    Installing the required tools under Cygwin under Cygwin can be a
+    little tedious, if only because many packages are more difficult
+    to install under Cygwin.
+
+    Using the Cygwin installer, make sure your Cygwin installation
+    includes Perl, Python, and the \TeX{} packages.  Perl and Python
+    are located under \menuselection{Interpreters} in the installer
+    The \TeX{} packages are located in the \menuselection{Text}
+    section; installing the tetex-beta, texmf, texmf-base, and
+    texmf-extra ensures that all the required packages are available.
+    (There may be a more minimal set, but I've not spent time trying
+    to minimize the installation.)
+
+    The netpbm package is used by \LaTeX2HTML, and \emph{must} be
+    installed before \LaTeX2HTML can be successfully installed, even
+    though they will never be used for most Python documentation.
+    References to download locations are located in the \ulink{netpbm
+    README}{http://netpbm.sourceforge.net/README}.  Install according
+    to the instructions.
+
+    \LaTeX2HTML can be installed from the source archive, but only
+    after munging one of the files in the distribution.  Edit the file
+    \file{L2hos.pm} in the top level of the unpacked distribution;
+    near the bottom of the file, change the text
+    \code{\$\textasciicircum{}O} with the text \code{'unix'}.  Proceed
+    using this command to build and install the software:
+
+\begin{verbatim}
+% configure && make install
+\end{verbatim}
+
+
 \section{Future Directions \label{futures}}
 
   The history of the Python documentation is full of changes, most of
