@@ -416,15 +416,20 @@ sub make_mod_index_entry{
 $THIS_MODULE = '';
 $THIS_CLASS = '';
 
-sub my_module_index_helper{
-    local($word, $_) = @_;
-    my($str,$br_id) = next_argument_id();
-    swallow_newline();
+sub define_module{
+    my($word,$name) = @_;
     my $section_tag = join('', @curr_sec_id);
     $word = "$word " if $word;
-    $THIS_MODULE = "$str";
+    $THIS_MODULE = "$name";
     make_mod_index_entry("SECTION$section_tag",
-			 "<tt>$str</tt> (${word}module)", 'DEF') . $_;
+			 "<tt>$name</tt> (${word}module)", 'DEF');
+}
+
+sub my_module_index_helper{
+    local($word, $_) = @_;
+    my $name = next_argument();
+    swallow_newline();
+    define_module($word, $name) . $_;
 }
 
 sub ref_module_index_helper{
@@ -690,15 +695,16 @@ sub do_cmd_memberlineni{
     "<dt><b>$member</b><dd>" . $_;
 }
 
-@col_aligns = ("<td>", "<td>", "<td>");
+@col_aligns = ("<td>", "<td>", "<td>", "<td>");
 
 sub setup_column_alignments{
     local($_) = @_;
-    my($a1,$a2,$a3) = split(/[|]/,$_);
-    my($th1,$th2,$th3) = ('<th>', '<th>', '<th>');
+    my($a1,$a2,$a3,$a4) = split(/[|]/,$_);
+    my($th1,$th2,$th3,$th4) = ('<th>', '<th>', '<th>', '<th>');
     $col_aligns[0] = (($a1 eq 'c') ? '<td align=center>' : '<td>');
     $col_aligns[1] = (($a2 eq 'c') ? '<td align=center>' : '<td>');
     $col_aligns[2] = (($a3 eq 'c') ? '<td align=center>' : '<td>');
+    $col_aligns[3] = (($a4 eq 'c') ? '<td align=center>' : '<td>');
     # return the aligned header start tags; only used for \begin{tableiii?}
     $th1 = (($a1 eq 'l') ? '<th align=left>'
 	    : ($a1 eq 'r' ? '<th align=right>' : '<th>'));
@@ -706,12 +712,14 @@ sub setup_column_alignments{
 	    : ($a2 eq 'r' ? '<th align=right>' : '<th>'));
     $th3 = (($a3 eq 'l') ? '<th align=left>'
 	    : ($a3 eq 'r' ? '<th align=right>' : '<th>'));
-    ($th1, $th2, $th3);
+    $th4 = (($a4 eq 'l') ? '<th align=left>'
+	    : ($a4 eq 'r' ? '<th align=right>' : '<th>'));
+    ($th1, $th2, $th3, $th4);
 }
 
 sub do_env_tableii{
     local($_) = @_;
-    my($th1,$th2,$th3) = setup_column_alignments(next_argument());
+    my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
     my $font = next_argument();
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -742,7 +750,7 @@ sub do_cmd_lineii{
 
 sub do_env_tableiii{
     local($_) = @_;
-    my($th1,$th2,$th3) = setup_column_alignments(next_argument());
+    my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
     my $font = next_argument();
     my $h1 = next_argument();
     my $h2 = next_argument();
@@ -768,35 +776,51 @@ sub do_cmd_lineiii{
 	$sfont = "<$font>";
 	$efont = "</$font>";
     }
-    my($c1align,$c2align,$c3align) = @col_aligns;
+    my($c1align,$c2align,$c3align) = @col_aligns[0,1,2];
     "<tr>$c1align$sfont$c1$efont</td>\n"
       . "      $c2align$c2</td>\n"
       . "      $c3align$c3</td>"
       . $_;
 }
 
-sub do_env_seealso{
-    "<p><b>See Also:</b></p>\n" . @_[0];
+sub do_env_tableiv{
+    local($_) = @_;
+    my($th1,$th2,$th3,$th4) = setup_column_alignments(next_argument());
+    my $font = next_argument();
+    my $h1 = next_argument();
+    my $h2 = next_argument();
+    my $h3 = next_argument();
+    my $h4 = next_argument();
+    $font = ''
+        if ($font eq 'textrm');
+    $globals{'lineifont'} = $font;
+    '<table border align=center>'
+      . "\n  <tr>$th1<b>$h1</b></th>"
+      . "\n      $th2<b>$h2</b></th>"
+      . "\n      $th3<b>$h3</b></th>"
+      . "\n      $th4<b>$h4</b></th>"
+      . $_
+      . "\n</table>";
 }
 
-sub do_cmd_seemodule{
-    # Insert the right magic to jump to the module definition.  This should
-    # work most of the time, at least for repeat builds....
+sub do_cmd_lineiv{
     local($_) = @_;
-    my $key = next_optional_argument();
-    my $module = next_argument();
-    my $text = next_argument();
-    $key = $module
-        unless $key;
-    "<p>Module <tt><b><a href=\"module-$key.html\">$module</a></b></tt>"
-      . "&nbsp;&nbsp;&nbsp;($text)</p>"
+    my $c1 = next_argument();
+    my $c2 = next_argument(); 
+    my $c3 = next_argument();
+    my $c4 = next_argument();
+    my($font,$sfont,$efont) = ($globals{'lineifont'}, '', '');
+    if ($font) {
+	$sfont = "<$font>";
+	$efont = "</$font>";
+    }
+    my($c1align,$c2align,$c3align,$c4align) = @col_aligns;
+    "<tr>$c1align$sfont$c1$efont</td>\n"
+      . "      $c2align$c2</td>\n"
+      . "      $c3align$c3</td>\n"
+      . "      $c4align$c4</td>"
       . $_;
 }
-
-sub do_cmd_seetext{
-    '<p>' . @_[0];
-}
-
 
 sub do_cmd_maketitle {
     local($_) = @_;
@@ -834,6 +858,94 @@ sub do_cmd_maketitle {
 	$the_title .= "\n<p>$t_email</p>";
     }# else { $the_title .= "</p>" }
     $the_title . "<hr>\n" . $_ ;
+}
+
+
+#
+#  Module synopsis support
+#
+
+require SynopsisTable;
+
+$MY_CHAPTER_COUNTER = 0;
+
+sub get_chapter_id{
+    return $MY_CHAPTER_COUNTER;
+}
+
+sub get_synopsis_table{
+    my $chap = @_;
+    my $st = $ModuleSynopses{$chap};
+    if (!$st) {
+	$st = SynopsisTable->new();
+	$ModuleSynopses{$chap} = $st;
+    }
+    return $st;
+}
+
+sub do_cmd_declaremodule{
+    local($_) = @_;
+    my $key = next_optional_argument();
+    my $type = next_argument();
+    my $name = next_argument();
+    my $st = get_synopsis_table(get_chapter_id());
+    #
+    $key = $name unless $key;
+    $type = 'built-in' if $type eq 'builtin';
+    $st->declare($name, $key, $type);
+    define_module($type, $name);
+    anchor_label("module-$key",$CURRENT_FILE,$_)
+}
+
+sub do_cmd_modulesynopsis{
+    local($_) = @_;
+    my $st = get_synopsis_table(get_chapter_id());
+    $st->set_synopsis($THIS_MODULE, next_argument());
+    swallow_newline();
+    $_;
+}
+
+sub do_cmd_localmoduletable{
+    local($_) = @_;
+    $MY_CHAPTER_COUNTER = $MY_CHAPTER_COUNTER + 1;
+    my $chap = get_chapter_id();
+    "<tex2htmllocalmoduletable><$chap>" . $_;
+}
+
+sub process_all_localmoduletables{
+    while (/<tex2htmllocalmoduletable><(\d+)>/) {
+	my $chap = $1;
+	my $st = get_synopsis_table($chap);
+	my $data = $st->tohtml();
+	s/$&/$data/;
+    }
+}
+
+
+#
+#  "See also:" -- references placed at the end of a \section
+#
+
+sub do_env_seealso{
+    "<p><b>See Also:</b></p>\n" . @_[0];
+}
+
+sub do_cmd_seemodule{
+    # Insert the right magic to jump to the module definition.  This should
+    # work most of the time, at least for repeat builds....
+    local($_) = @_;
+    my $key = next_optional_argument();
+    my $module = next_argument();
+    my $text = next_argument();
+    $key = $module
+        unless $key;
+    "<p>Module <tt><b><a href=\"module-$key.html\">$module</a></b></tt>"
+      . "&nbsp;&nbsp;&nbsp;($text)</p>"
+      . $_;
+}
+
+sub do_cmd_seetext{
+    '<p>' . @_[0];
 }
 
 
