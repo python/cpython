@@ -24,6 +24,10 @@ Core and builtins
 Extension modules
 -----------------
 
+- Using createfilehandler, deletefilehandler, createtimerhandler functions
+  on Tkinter.tkinter (_tkinter module) no longer crashes the interpreter.
+  See SF bug #692416.
+
 - Modified the fcntl.ioctl() function to allow modification of a passed
   mutable buffer (for details see the reference documentation).
 

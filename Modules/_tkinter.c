@@ -2243,7 +2243,19 @@ Tkapp_DeleteFileHandler(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O:deletefilehandler", &file))
 		return NULL;
-	CHECK_TCL_APPARTMENT;
+
+	if (!self && !tcl_lock) {
+		/* We don't have the Tcl lock since Tcl is threaded. */
+		PyErr_SetString(PyExc_RuntimeError,
+				"_tkinter.deletefilehandler not supported "
+				"for threaded Tcl");
+		return NULL;
+	}
+
+	if (self) {
+		CHECK_TCL_APPARTMENT;
+	}
+
 	tfile = PyObject_AsFileDescriptor(file);
 	if (tfile < 0)
 		return NULL;
