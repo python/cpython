@@ -12,10 +12,6 @@
 #include <signal.h>
 #include <errno.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h> /* For isatty() */
-#endif
-
 /* GNU readline definitions */
 #undef HAVE_CONFIG_H /* Else readline/chardefs.h includes strings.h */
 #include <readline/readline.h>

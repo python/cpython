@@ -8,10 +8,6 @@
 #include <sys/types.h>
 #endif /* DONT_HAVE_SYS_TYPES_H */
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #ifdef MS_WIN32
 #define fileno _fileno
 /* can (almost fully) duplicate with _chsize, see file_truncate */

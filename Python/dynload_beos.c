@@ -4,7 +4,6 @@
 #include <kernel/image.h>
 #include <kernel/OS.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "Python.h"
 #include "importdl.h"

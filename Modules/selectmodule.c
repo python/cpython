@@ -18,9 +18,6 @@
 #define FD_SETSIZE 512
 #endif 
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 #if defined(HAVE_POLL_H)
 #include <poll.h>
 #elif defined(HAVE_SYS_POLL_H)

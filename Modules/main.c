@@ -4,10 +4,6 @@
 #include "osdefs.h"
 #include "compile.h" /* For CO_FUTURE_DIVISION */
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #ifdef MS_WINDOWS
 #include <fcntl.h>
 #endif

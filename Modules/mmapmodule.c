@@ -36,7 +36,6 @@ my_getpagesize(void)
 #endif
 
 #ifdef UNIX
-#include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 

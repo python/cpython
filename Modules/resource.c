@@ -2,7 +2,6 @@
 #include "Python.h"
 #include <sys/resource.h>
 #include <sys/time.h>
-#include <unistd.h>
 #include <string.h>
 #include <errno.h>
 
