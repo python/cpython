@@ -1315,6 +1315,84 @@ The installer file will be written to the ``distribution directory''
 --- normally \file{dist/}, but customizable with the
 \longprogramopt{dist-dir} option.
 
+\subsubsection{The Postinstallation script}
+\label{postinstallation-script}
+
+Starting with Python 2.3, a postinstallation script can be specified
+which the \longprogramopt{install-script} option.  The basename of the
+script must be specified, and the script filename must also be listed
+in the scripts argument to the setup function.
+
+This script will be run at installation time on the target system
+after all the files have been copied, with argv[1] set to '-install',
+and again at uninstallation time before the files are removed with argv[1]
+set to '-remove'.
+
+The installation script runs embedded in the windows installer, every
+output (sys.stdout, sys.stderr) is redirected into a buffer and will
+be displayed in the GUI after the script has finished.
+
+Some functions especially useful in this context are available in the
+installation script.
+
+\begin{verbatim}
+dir_created(pathname)
+file_created(pathname)
+\end{verbatim}
+
+These functions should be called when a directory or file is created
+by the postinstall script at installation time.  It will register the
+pathname with the uninstaller, so that it will be removed when the
+distribution is uninstalled.  To be safe, directories are only removed
+if they are empty.
+
+\begin{verbatim}
+get_special_folder_path(csidl_string)
+\end{verbatim}
+
+This function can be used to retrieve special folder locations on
+Windows like the Start Menu or the Desktop.  It returns the full path
+to the folder.  'csidl_string' must be on of the following strings:
+
+\begin{verbatim}
+"CSIDL_APPDATA"
+
+"CSIDL_COMMON_STARTMENU"
+"CSIDL_STARTMENU"
+
+"CSIDL_COMMON_DESKTOPDIRECTORY"
+"CSIDL_DESKTOPDIRECTORY"
+
+"CSIDL_COMMON_STARTUP"
+"CSIDL_STARTUP"
+
+"CSIDL_COMMON_PROGRAMS"
+"CSIDL_PROGRAMS"
+
+"CSIDL_FONTS"
+\end{verbatim}
+
+If the folder cannot be retrieved, OSError is raised.
+
+Which folders are available depends on the exact Windows version, and probably
+also the configuration. For details refer to Microsoft's documentation of the
+SHGetSpecialFolderPath function.
+
+\begin{verbatim}
+create_shortcut(target, description, filename[, arguments[,
+                workdir[, iconpath[, iconindex]]]])
+\end{verbatim}
+
+This function creates a shortcut.
+target is the path to the program to be started by the shortcut.
+description is displayed in a popup window when the
+filename is the title of the shortcut that the user will see.
+arguments specifies the command line arguments, if any.
+workdir is the working directory for the program.
+iconpath is the file containing the icon for the shortcut,
+and iconindex is the iconindex in the file.
+Again, for details consult the Microsoft documentation for the IShellLink
+interface.
 
 \section{Examples}
 \label{examples}
