@@ -29,10 +29,10 @@ class MetaHelper:
 	    raw = self.__formalclass__.__getattr__(name)
 	except AttributeError:
 	    try:
-		_getattr_ = self.__dict__['_getattr_']
+		ga = self.__formalclass__.__getattr__('__usergetattr__')
 	    except KeyError:
 		raise AttributeError, name
-	    return _getattr_(name)
+	    return ga(self, name)
 	if type(raw) != types.FunctionType:
 	    return raw
 	return self.__methodwrapper__(raw, self)
@@ -50,8 +50,13 @@ class MetaClass:
     __inited = 0
 
     def __init__(self, name, bases, dict):
-	if dict.has_key('__getattr__'):
-	    raise TypeError, "Can't override __getattr__; use _getattr_"
+	try:
+	    ga = dict['__getattr__']
+	except KeyError:
+	    pass
+	else:
+	    dict['__usergetattr__'] = ga
+	    del dict['__getattr__']
 	self.__name__ = name
 	self.__bases__ = bases
 	self.__realdict__ = dict
@@ -98,7 +103,16 @@ def _test():
     x = C()
     print x
     x.m1(12)
-    
+    class D(C):
+	def __getattr__(self, name):
+	    if name[:2] == '__': raise AttributeError, name
+	    return "getattr:%s" % name
+    x = D()
+    print x.foo
+    print x._foo
+##     print x.__foo
+##     print x.__foo__
+
 
 if __name__ == '__main__':
     _test()
