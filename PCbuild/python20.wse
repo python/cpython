@@ -997,7 +997,7 @@ item: Edit Registry
 end
 item: Edit Registry
   Key=Software\Python\PythonCore\%PY_VERSION%\Dll
-  New Value=%_SYSDEST_%\Python20.dll
+  New Value=%_DLLDEST_%\Python20.dll
   Root=2
 end
 item: Edit Registry
