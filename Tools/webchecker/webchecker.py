@@ -546,6 +546,15 @@ class Page:
         self.maxpage = maxpage
         self.checker = checker
 
+    def note(self, level, msg, *args):
+        if self.checker:
+            apply(self.checker.note, (level, msg) + args)
+        else:
+            if self.verbose >= level:
+                if args:
+                    msg = msg%args
+                print msg
+
     def getlinkinfos(self):
         size = len(self.text)
         if size > self.maxpage:
