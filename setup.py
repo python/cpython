@@ -364,6 +364,7 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_socket', ['socketmodule.c'],
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
+                                   runtime_library_dirs = ssl_libs,
                                    libraries = ['ssl', 'crypto'],
                                    define_macros = [('USE_SSL',1)] ) )
         else:
