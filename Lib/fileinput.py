@@ -166,7 +166,10 @@ class FileInput:
         self.nextfile()
         self._files = ()
 
-    def __getitem__(self, i):
+    def __iter__(self):
+        return self
+
+    def next(self):
         try:
             line = self._buffer[self._bufindex]
         except IndexError:
@@ -176,12 +179,18 @@ class FileInput:
             self._lineno += 1
             self._filelineno += 1
             return line
-        if i != self._lineno:
-            raise RuntimeError, "accessing lines out of order"
         line = self.readline()
         if not line:
-            raise IndexError, "end of input reached"
+            raise StopIteration
         return line
+        
+    def __getitem__(self, i):
+        if i != self._lineno:
+            raise RuntimeError, "accessing lines out of order"
+        try:
+            return self.next()
+        except StopIteration:
+            raise IndexError, "end of input reached"
 
     def nextfile(self):
         savestdout = self._savestdout
