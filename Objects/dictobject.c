@@ -173,14 +173,13 @@ lookdict(mp, key, hash)
 	   as for ints <sigh>, can have lots of leading zeros. It's not
 	   really a performance risk, but better safe than sorry. */
 	ep = &ep0[i];
-	if (ep->me_key == NULL)
+	if (ep->me_key == NULL || ep->me_key == key)
 		return ep;
 	if (ep->me_key == dummy)
 		freeslot = ep;
 	else {
-		if (ep->me_key == key ||
-		 (ep->me_hash == hash &&
-		  PyObject_Compare(ep->me_key, key) == 0))
+		if (ep->me_hash == hash &&
+		    PyObject_Compare(ep->me_key, key) == 0)
 		{
 			return ep;
 		}
