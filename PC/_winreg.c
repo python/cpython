@@ -592,7 +592,6 @@ PyHKEY_AsHKEY(PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
 		*pHANDLE = (HKEY)PyLong_AsVoidPtr(ob);
 		if (PyErr_Occurred())
 			return FALSE;
-		*pHANDLE = (HKEY)PyInt_AsLong(ob);
 	}
 	else {
 		PyErr_SetString(
@@ -628,12 +627,21 @@ PyWinObject_CloseHKEY(PyObject *obHandle)
 	if (PyHKEY_Check(obHandle)) {
 		ok = PyHKEY_Close(obHandle);
 	}
+#if SIZEOF_LONG >= SIZEOF_HKEY
 	else if (PyInt_Check(obHandle)) {
 		long rc = RegCloseKey((HKEY)PyInt_AsLong(obHandle));
 		ok = (rc == ERROR_SUCCESS);
 		if (!ok)
 			PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
 	}
+#else
+	else if (PyLong_Check(obHandle)) {
+		long rc = RegCloseKey((HKEY)PyLong_AsVoidPtr(obHandle));
+		ok = (rc == ERROR_SUCCESS);
+		if (!ok)
+			PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
+	}
+#endif
 	else {
 		PyErr_SetString(
 			PyExc_TypeError,
@@ -880,13 +888,22 @@ Reg2Py(char *retDataBuf, DWORD retDataSize, DWORD typ)
 
 				fixupMultiSZ(str, retDataBuf, retDataSize);
 				obData = PyList_New(s);
+				if (obData == NULL)
+					return NULL;
 				for (index = 0; index < s; index++)
 				{
+					size_t len = _mbstrlen(str[index]);
+					if (len > INT_MAX) {
+						PyErr_SetString(PyExc_OverflowError,
+							"registry string is too long for a Python string");
+						Py_DECREF(obData);
+						return NULL;
+					}
 					PyList_SetItem(obData,
 						       index,
 						       PyUnicode_DecodeMBCS(
 						            (const char *)str[index],
-							    _mbstrlen(str[index]),
+							   (int)len,
 							    NULL)
 						       );
 				}
