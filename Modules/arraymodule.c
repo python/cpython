@@ -1732,7 +1732,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	if (!(initial == NULL || PyList_Check(initial)
-	      || PyString_Check(initial)
+	      || PyString_Check(initial) || PyTuple_Check(initial)
 	      || (c == 'u' && PyUnicode_Check(initial)))) {
 		PyErr_SetString(PyExc_TypeError,
 		    "array initializer must be list or string");
@@ -1742,10 +1742,12 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		if (descr->typecode == c) {
 			PyObject *a;
 			int len;
-			if (initial == NULL || !PyList_Check(initial))
+
+			if (initial == NULL || !(PyList_Check(initial) 
+				|| PyTuple_Check(initial)))
 				len = 0;
 			else
-				len = PyList_Size(initial);
+				len = PySequence_Size(initial);
 
 			a = newarrayobject(type, len, descr);
 			if (a == NULL)
@@ -1755,7 +1757,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 				int i;
 				for (i = 0; i < len; i++) {
 					PyObject *v =
-					        PyList_GetItem(initial, i);
+					        PySequence_GetItem(initial, i);
 					if (setarrayitem(a, i, v) != 0) {
 						Py_DECREF(a);
 						return NULL;
