@@ -9,7 +9,7 @@ This module uses DLOG resources 256, 257 and 258.
 Based upon STDWIN dialogs with the same names and functions.
 """
 
-from Dlg import GetNewDialog, SetIText, GetIText, ModalDialog
+from Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
 
 
 def Message(msg):
@@ -25,8 +25,8 @@ def Message(msg):
 	if not d:
 		print "Can't get DLOG resource with id =", id
 		return
-	tp, h, rect = d.GetDItem(2)
-	SetIText(h, msg)
+	tp, h, rect = d.GetDialogItem(2)
+	SetDialogItemText(h, msg)
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
@@ -51,16 +51,16 @@ def AskString(prompt, default = ""):
 	if not d:
 		print "Can't get DLOG resource with id =", id
 		return
-	tp, h, rect = d.GetDItem(3)
-	SetIText(h, prompt)
-	tp, h, rect = d.GetDItem(4)
-	SetIText(h, default)
-	d.SelIText(4, 0, 255)
+	tp, h, rect = d.GetDialogItem(3)
+	SetDialogItemText(h, prompt)
+	tp, h, rect = d.GetDialogItem(4)
+	SetDialogItemText(h, default)
+#	d.SetDialogItem(4, 0, 255)
 	while 1:
 		n = ModalDialog(None)
 		if n == 1:
-			tp, h, rect = d.GetDItem(4)
-			return GetIText(h)
+			tp, h, rect = d.GetDialogItem(4)
+			return GetDialogItemText(h)
 		if n == 2: return None
 
 
@@ -88,8 +88,8 @@ def AskYesNoCancel(question, default = 0):
 	# 3 = No
 	# 4 = Cancel
 	# The question string is item 5
-	tp, h, rect = d.GetDItem(5)
-	SetIText(h, question)
+	tp, h, rect = d.GetDialogItem(5)
+	SetDialogItemText(h, question)
 	while 1:
 		n = ModalDialog(None)
 		if n == 1: return default
