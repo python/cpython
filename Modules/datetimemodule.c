@@ -3518,8 +3518,12 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 					  &PyString_Type, &format))
 		return NULL;
 
+	/* Python's strftime does insane things with the year part of the
+	 * timetuple.  The year is forced to (the otherwise nonsensical)
+	 * 1900 to worm around that.
+	 */
 	tuple = Py_BuildValue("iiiiiiiii",
-		              0, 0, 0, /* year, month, day */
+		              1900, 0, 0, /* year, month, day */
 			      TIME_GET_HOUR(self),
 			      TIME_GET_MINUTE(self),
 			      TIME_GET_SECOND(self),
