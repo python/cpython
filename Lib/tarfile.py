@@ -814,7 +814,6 @@ class TarFile(object):
         # Init datastructures
         self.closed      = False
         self.members     = []       # list of members as TarInfo objects
-        self.membernames = []       # names of members
         self._loaded     = False    # flag if all members have been read
         self.offset      = 0L       # current position in the archive file
         self.inodes      = {}       # dictionary caching the inodes of
@@ -1034,12 +1033,10 @@ class TarFile(object):
            than once in the archive, its last occurence is assumed to be the
            most up-to-date version.
         """
-        self._check()
-        if name not in self.membernames and not self._loaded:
-            self._load()
-        if name not in self.membernames:
+        tarinfo = self._getmember(name)
+        if tarinfo is None:
             raise KeyError, "filename %r not found" % name
-        return self._getmember(name)
+        return tarinfo
 
     def getmembers(self):
         """Return the members of the archive as a list of TarInfo objects. The
@@ -1055,10 +1052,7 @@ class TarFile(object):
         """Return the members of the archive as a list of their names. It has
            the same order as the list returned by getmembers().
         """
-        self._check()
-        if not self._loaded:
-            self._load()
-        return self.membernames
+        return [tarinfo.name for tarinfo in self.getmembers()]
 
     def gettarinfo(self, name=None, arcname=None, fileobj=None):
         """Create a TarInfo object for either the file `name' or the file
@@ -1307,7 +1301,7 @@ class TarFile(object):
                 blocks += 1
             self.offset += blocks * BLOCKSIZE
 
-        self._record_member(tarinfo)
+        self.members.append(tarinfo)
 
     def extract(self, member, path=""):
         """Extract a member from the archive to the current working directory,
@@ -1632,7 +1626,7 @@ class TarFile(object):
             # some old tar programs don't know DIRTYPE
             tarinfo.type = DIRTYPE
 
-        self._record_member(tarinfo)
+        self.members.append(tarinfo)
         return tarinfo
 
     #--------------------------------------------------------------------------
@@ -1647,8 +1641,8 @@ class TarFile(object):
     #    if there is data to follow.
     # 2. set self.offset to the position where the next member's header will
     #    begin.
-    # 3. call self._record_member() if the tarinfo object is supposed to
-    #    appear as a member of the TarFile object.
+    # 3. append the tarinfo object to self.members, if it is supposed to appear
+    #    as a member of the TarFile object.
     # 4. return tarinfo or another valid TarInfo object.
 
     def proc_gnulong(self, tarinfo):
@@ -1729,7 +1723,7 @@ class TarFile(object):
         self.offset += self._block(tarinfo.size)
         tarinfo.size = origsize
 
-        self._record_member(tarinfo)
+        self.members.append(tarinfo)
         return tarinfo
 
     # The type mapping for the next() method. The keys are single character
@@ -1757,20 +1751,17 @@ class TarFile(object):
         """Find an archive member by name from bottom to top.
            If tarinfo is given, it is used as the starting point.
         """
+        # Ensure that all members have been loaded.
+        members = self.getmembers()
+
         if tarinfo is None:
-            end = len(self.members)
+            end = len(members)
         else:
-            end = self.members.index(tarinfo)
+            end = members.index(tarinfo)
 
         for i in xrange(end - 1, -1, -1):
-            if name == self.membernames[i]:
-                return self.members[i]
-
-    def _record_member(self, tarinfo):
-        """Record a tarinfo object in the internal datastructures.
-        """
-        self.members.append(tarinfo)
-        self.membernames.append(tarinfo.name)
+            if name == members[i].name:
+                return members[i]
 
     def _load(self):
         """Read through the entire archive file and look for readable

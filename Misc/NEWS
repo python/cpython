@@ -22,6 +22,9 @@ Extension modules
 Library
 -------
 
+- The (undocumented) tarfile.Tarfile.membernames has been removed;
+  applications should use the getmember function.
+
 - httplib now offers symbolic constants for the HTTP status codes.
 
 - SF bug #1028306:  Trying to compare a ``datetime.date`` to a
