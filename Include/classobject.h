@@ -42,3 +42,6 @@ extern object *newinstancemethodobject PROTO((object *, object *));
 
 extern object *instancemethodgetfunc PROTO((object *));
 extern object *instancemethodgetself PROTO((object *));
+
+extern int instance_coerce PROTO((object **, object **));
+extern object *instance_convert PROTO((object *, char *));

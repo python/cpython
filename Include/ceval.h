@@ -77,13 +77,13 @@ void flushline PROTO((void));
 */
 
 extern void init_save_thread PROTO((void));
-extern void *save_thread PROTO((void));
-extern void restore_thread PROTO((void *));
+extern object *save_thread PROTO((void));
+extern void restore_thread PROTO((object *));
 
 #ifdef USE_THREAD
 
 #define BGN_SAVE { \
-			void *_save; \
+			object *_save; \
 			_save = save_thread();
 #define RET_SAVE	restore_thread(_save);
 #define RES_SAVE	_save = save_thread();
