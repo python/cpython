@@ -9,7 +9,8 @@ ending (row, column) coordinates of the token, and the original line.  It is
 designed to match the working of the Python tokenizer exactly, except that
 it produces COMMENT tokens for comments and gives type OP for all operators."""
 
-__version__ = "Ka-Ping Yee, 26 October 1997; patched, GvR 3/30/98"
+__author__ = 'Ka-Ping Yee <ping@lfw.org>'
+__credits__ = 'first version, 26 October 1997; patched, GvR 3/30/98'
 
 import string, re
 from token import *
