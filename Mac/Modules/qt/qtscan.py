@@ -62,24 +62,21 @@ class MyScanner(Scanner):
 			"MakeTrackTimeTable", # Uses long * return?
 			"MakeMediaTimeTable", # ditto
 ##			"VideoMediaGetStallCount", # Undefined in CW Pro 3 library
-			]
+			# OS8 only:
+			'SpriteMediaGetIndImageProperty',	# XXXX Why isn't this in carbon?
+			'CheckQuickTimeRegistration',
+			'SetMovieAnchorDataRef',
+			'GetMovieAnchorDataRef',
+			'GetMovieLoadState',
+			'OpenADataHandler',
+			'MovieMediaGetCurrentMovieProperty',
+			'MovieMediaGetCurrentTrackProperty',
+			'MovieMediaGetChildMovieDataReference',
+			'MovieMediaSetChildMovieDataReference',
+			'MovieMediaLoadChildMovieFromDataReference',
+			'Media3DGetViewObject',
 
-	def makegreylist(self):
-		return [
-			('#if !TARGET_API_MAC_CARBON', [
-				'SpriteMediaGetIndImageProperty',	# XXXX Why isn't this in carbon?
-				'CheckQuickTimeRegistration',
-				'SetMovieAnchorDataRef',
-				'GetMovieAnchorDataRef',
-				'GetMovieLoadState',
-				'OpenADataHandler',
-				'MovieMediaGetCurrentMovieProperty',
-				'MovieMediaGetCurrentTrackProperty',
-				'MovieMediaGetChildMovieDataReference',
-				'MovieMediaSetChildMovieDataReference',
-				'MovieMediaLoadChildMovieFromDataReference',
-				'Media3DGetViewObject',
-			])]
+			]
 
 	def makeblacklisttypes(self):
 		return [

@@ -27,15 +27,6 @@
 #include <Carbon/Carbon.h>
 #endif
 
-#if !TARGET_API_MAC_CARBON
-/* Create a SndCommand object (an (int, int, int) tuple) */
-static PyObject *
-SndCmd_New(SndCommand *pc)
-{
-	return Py_BuildValue("hhl", pc->cmd, pc->param1, pc->param2);
-}
-#endif
-
 /* Convert a SndCommand argument */
 static int
 SndCmd_Convert(PyObject *v, SndCommand *pc)
@@ -54,9 +45,6 @@ SndCmd_Convert(PyObject *v, SndCommand *pc)
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */
 static pascal void SPB_completion(SPBPtr my_spb); /* Forward */
-#if !TARGET_API_MAC_CARBON
-static pascal void SPB_interrupt(SPBPtr my_spb); /* Forward */
-#endif
 
 static PyObject *Snd_Error;
 
@@ -147,72 +135,6 @@ static PyObject *SndCh_SndPlay(SndChannelObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *SndCh_SndStartFilePlay(SndChannelObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	short fRefNum;
-	short resNum;
-	long bufferSize;
-	Boolean async;
-	if (!PyArg_ParseTuple(_args, "hhlb",
-	                      &fRefNum,
-	                      &resNum,
-	                      &bufferSize,
-	                      &async))
-		return NULL;
-	_err = SndStartFilePlay(_self->ob_itself,
-	                        fRefNum,
-	                        resNum,
-	                        bufferSize,
-	                        0,
-	                        0,
-	                        0,
-	                        async);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *SndCh_SndPauseFilePlay(SndChannelObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = SndPauseFilePlay(_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *SndCh_SndStopFilePlay(SndChannelObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	Boolean quietNow;
-	if (!PyArg_ParseTuple(_args, "b",
-	                      &quietNow))
-		return NULL;
-	_err = SndStopFilePlay(_self->ob_itself,
-	                       quietNow);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
 static PyObject *SndCh_SndChannelStatus(SndChannelObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -276,21 +198,6 @@ static PyMethodDef SndCh_methods[] = {
 	 PyDoc_STR("(SndCommand cmd) -> None")},
 	{"SndPlay", (PyCFunction)SndCh_SndPlay, 1,
 	 PyDoc_STR("(SndListHandle sndHandle, Boolean async) -> None")},
-
-#if !TARGET_API_MAC_CARBON
-	{"SndStartFilePlay", (PyCFunction)SndCh_SndStartFilePlay, 1,
-	 PyDoc_STR("(short fRefNum, short resNum, long bufferSize, Boolean async) -> None")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SndPauseFilePlay", (PyCFunction)SndCh_SndPauseFilePlay, 1,
-	 PyDoc_STR("() -> None")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"SndStopFilePlay", (PyCFunction)SndCh_SndStopFilePlay, 1,
-	 PyDoc_STR("(Boolean quietNow) -> None")},
-#endif
 	{"SndChannelStatus", (PyCFunction)SndCh_SndChannelStatus, 1,
 	 PyDoc_STR("(short theLength) -> (SCStatus theStatus)")},
 	{"SndGetInfo", (PyCFunction)SndCh_SndGetInfo, 1,
@@ -579,26 +486,6 @@ static PyObject *Snd_SndNewChannel(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Snd_SndControl(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	short id;
-	SndCommand cmd;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &id))
-		return NULL;
-	_err = SndControl(id,
-	                  &cmd);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     SndCmd_New, &cmd);
-	return _res;
-}
-#endif
-
 static PyObject *Snd_SndSoundManagerVersion(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -654,201 +541,6 @@ static PyObject *Snd_SndSetSysBeepState(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Snd_MACEVersion(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	NumVersion _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = MACEVersion();
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildNumVersion, _rv);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Snd_Comp3to1(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	char *buffer__in__;
-	char *buffer__out__;
-	long buffer__len__;
-	int buffer__in_len__;
-	StateBlock *state__in__;
-	StateBlock state__out__;
-	int state__in_len__;
-	unsigned long numChannels;
-	unsigned long whichChannel;
-	if (!PyArg_ParseTuple(_args, "s#s#ll",
-	                      &buffer__in__, &buffer__in_len__,
-	                      (char **)&state__in__, &state__in_len__,
-	                      &numChannels,
-	                      &whichChannel))
-		return NULL;
-	if ((buffer__out__ = malloc(buffer__in_len__)) == NULL)
-	{
-		PyErr_NoMemory();
-		goto buffer__error__;
-	}
-	buffer__len__ = buffer__in_len__;
-	if (state__in_len__ != sizeof(StateBlock))
-	{
-		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(StateBlock)");
-		goto state__error__;
-	}
-	Comp3to1(buffer__in__, buffer__out__, (long)buffer__len__,
-	         state__in__, &state__out__,
-	         numChannels,
-	         whichChannel);
-	_res = Py_BuildValue("s#s#",
-	                     buffer__out__, (int)buffer__len__,
-	                     (char *)&state__out__, (int)sizeof(StateBlock));
- state__error__: ;
-	free(buffer__out__);
- buffer__error__: ;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Snd_Exp1to3(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	char *buffer__in__;
-	char *buffer__out__;
-	long buffer__len__;
-	int buffer__in_len__;
-	StateBlock *state__in__;
-	StateBlock state__out__;
-	int state__in_len__;
-	unsigned long numChannels;
-	unsigned long whichChannel;
-	if (!PyArg_ParseTuple(_args, "s#s#ll",
-	                      &buffer__in__, &buffer__in_len__,
-	                      (char **)&state__in__, &state__in_len__,
-	                      &numChannels,
-	                      &whichChannel))
-		return NULL;
-	if ((buffer__out__ = malloc(buffer__in_len__)) == NULL)
-	{
-		PyErr_NoMemory();
-		goto buffer__error__;
-	}
-	buffer__len__ = buffer__in_len__;
-	if (state__in_len__ != sizeof(StateBlock))
-	{
-		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(StateBlock)");
-		goto state__error__;
-	}
-	Exp1to3(buffer__in__, buffer__out__, (long)buffer__len__,
-	        state__in__, &state__out__,
-	        numChannels,
-	        whichChannel);
-	_res = Py_BuildValue("s#s#",
-	                     buffer__out__, (int)buffer__len__,
-	                     (char *)&state__out__, (int)sizeof(StateBlock));
- state__error__: ;
-	free(buffer__out__);
- buffer__error__: ;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Snd_Comp6to1(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	char *buffer__in__;
-	char *buffer__out__;
-	long buffer__len__;
-	int buffer__in_len__;
-	StateBlock *state__in__;
-	StateBlock state__out__;
-	int state__in_len__;
-	unsigned long numChannels;
-	unsigned long whichChannel;
-	if (!PyArg_ParseTuple(_args, "s#s#ll",
-	                      &buffer__in__, &buffer__in_len__,
-	                      (char **)&state__in__, &state__in_len__,
-	                      &numChannels,
-	                      &whichChannel))
-		return NULL;
-	if ((buffer__out__ = malloc(buffer__in_len__)) == NULL)
-	{
-		PyErr_NoMemory();
-		goto buffer__error__;
-	}
-	buffer__len__ = buffer__in_len__;
-	if (state__in_len__ != sizeof(StateBlock))
-	{
-		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(StateBlock)");
-		goto state__error__;
-	}
-	Comp6to1(buffer__in__, buffer__out__, (long)buffer__len__,
-	         state__in__, &state__out__,
-	         numChannels,
-	         whichChannel);
-	_res = Py_BuildValue("s#s#",
-	                     buffer__out__, (int)buffer__len__,
-	                     (char *)&state__out__, (int)sizeof(StateBlock));
- state__error__: ;
-	free(buffer__out__);
- buffer__error__: ;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Snd_Exp1to6(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	char *buffer__in__;
-	char *buffer__out__;
-	long buffer__len__;
-	int buffer__in_len__;
-	StateBlock *state__in__;
-	StateBlock state__out__;
-	int state__in_len__;
-	unsigned long numChannels;
-	unsigned long whichChannel;
-	if (!PyArg_ParseTuple(_args, "s#s#ll",
-	                      &buffer__in__, &buffer__in_len__,
-	                      (char **)&state__in__, &state__in_len__,
-	                      &numChannels,
-	                      &whichChannel))
-		return NULL;
-	if ((buffer__out__ = malloc(buffer__in_len__)) == NULL)
-	{
-		PyErr_NoMemory();
-		goto buffer__error__;
-	}
-	buffer__len__ = buffer__in_len__;
-	if (state__in_len__ != sizeof(StateBlock))
-	{
-		PyErr_SetString(PyExc_TypeError, "buffer length should be sizeof(StateBlock)");
-		goto state__error__;
-	}
-	Exp1to6(buffer__in__, buffer__out__, (long)buffer__len__,
-	        state__in__, &state__out__,
-	        numChannels,
-	        whichChannel);
-	_res = Py_BuildValue("s#s#",
-	                     buffer__out__, (int)buffer__len__,
-	                     (char *)&state__out__, (int)sizeof(StateBlock));
- state__error__: ;
-	free(buffer__out__);
- buffer__error__: ;
-	return _res;
-}
-#endif
 
 static PyObject *Snd_GetSysBeepVolume(PyObject *_self, PyObject *_args)
 {
@@ -1041,31 +733,6 @@ static PyObject *Snd_SndRecord(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Snd_SndRecordToFile(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	Point corner;
-	OSType quality;
-	short fRefNum;
-	if (!PyArg_ParseTuple(_args, "O&O&h",
-	                      PyMac_GetPoint, &corner,
-	                      PyMac_GetOSType, &quality,
-	                      &fRefNum))
-		return NULL;
-	_err = SndRecordToFile((ModalFilterUPP)0,
-	                       corner,
-	                       quality,
-	                       fRefNum);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
 static PyObject *Snd_SPBSignInDevice(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1171,30 +838,6 @@ static PyObject *Snd_SPBRecord(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Snd_SPBRecordToFile(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	short fRefNum;
-	SPBPtr inParamPtr;
-	Boolean asynchFlag;
-	if (!PyArg_ParseTuple(_args, "hO&b",
-	                      &fRefNum,
-	                      SPBObj_Convert, &inParamPtr,
-	                      &asynchFlag))
-		return NULL;
-	_err = SPBRecordToFile(fRefNum,
-	                       inParamPtr,
-	                       asynchFlag);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
 
 static PyObject *Snd_SPBPauseRecording(PyObject *_self, PyObject *_args)
 {
@@ -1356,11 +999,6 @@ static PyMethodDef Snd_methods[] = {
 	 PyDoc_STR("(short duration) -> None")},
 	{"SndNewChannel", (PyCFunction)Snd_SndNewChannel, 1,
 	 PyDoc_STR("(short synth, long init, PyObject* userRoutine) -> (SndChannelPtr chan)")},
-
-#if !TARGET_API_MAC_CARBON
-	{"SndControl", (PyCFunction)Snd_SndControl, 1,
-	 PyDoc_STR("(short id) -> (SndCommand cmd)")},
-#endif
 	{"SndSoundManagerVersion", (PyCFunction)Snd_SndSoundManagerVersion, 1,
 	 PyDoc_STR("() -> (NumVersion _rv)")},
 	{"SndManagerStatus", (PyCFunction)Snd_SndManagerStatus, 1,
@@ -1369,31 +1007,6 @@ static PyMethodDef Snd_methods[] = {
 	 PyDoc_STR("() -> (short sysBeepState)")},
 	{"SndSetSysBeepState", (PyCFunction)Snd_SndSetSysBeepState, 1,
 	 PyDoc_STR("(short sysBeepState) -> None")},
-
-#if !TARGET_API_MAC_CARBON
-	{"MACEVersion", (PyCFunction)Snd_MACEVersion, 1,
-	 PyDoc_STR("() -> (NumVersion _rv)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"Comp3to1", (PyCFunction)Snd_Comp3to1, 1,
-	 PyDoc_STR("(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"Exp1to3", (PyCFunction)Snd_Exp1to3, 1,
-	 PyDoc_STR("(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"Comp6to1", (PyCFunction)Snd_Comp6to1, 1,
-	 PyDoc_STR("(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)")},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"Exp1to6", (PyCFunction)Snd_Exp1to6, 1,
-	 PyDoc_STR("(Buffer buffer, StateBlock state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, StateBlock state)")},
-#endif
 	{"GetSysBeepVolume", (PyCFunction)Snd_GetSysBeepVolume, 1,
 	 PyDoc_STR("() -> (long level)")},
 	{"SetSysBeepVolume", (PyCFunction)Snd_SetSysBeepVolume, 1,
@@ -1416,11 +1029,6 @@ static PyMethodDef Snd_methods[] = {
 	 PyDoc_STR("() -> (NumVersion _rv)")},
 	{"SndRecord", (PyCFunction)Snd_SndRecord, 1,
 	 PyDoc_STR("(Point corner, OSType quality) -> (SndListHandle sndHandle)")},
-
-#if !TARGET_API_MAC_CARBON
-	{"SndRecordToFile", (PyCFunction)Snd_SndRecordToFile, 1,
-	 PyDoc_STR("(Point corner, OSType quality, short fRefNum) -> None")},
-#endif
 	{"SPBSignInDevice", (PyCFunction)Snd_SPBSignInDevice, 1,
 	 PyDoc_STR("(short deviceRefNum, Str255 deviceName) -> None")},
 	{"SPBSignOutDevice", (PyCFunction)Snd_SPBSignOutDevice, 1,
@@ -1433,11 +1041,6 @@ static PyMethodDef Snd_methods[] = {
 	 PyDoc_STR("(long inRefNum) -> None")},
 	{"SPBRecord", (PyCFunction)Snd_SPBRecord, 1,
 	 PyDoc_STR("(SPBPtr inParamPtr, Boolean asynchFlag) -> None")},
-
-#if !TARGET_API_MAC_CARBON
-	{"SPBRecordToFile", (PyCFunction)Snd_SPBRecordToFile, 1,
-	 PyDoc_STR("(short fRefNum, SPBPtr inParamPtr, Boolean asynchFlag) -> None")},
-#endif
 	{"SPBPauseRecording", (PyCFunction)Snd_SPBPauseRecording, 1,
 	 PyDoc_STR("(long inRefNum) -> None")},
 	{"SPBResumeRecording", (PyCFunction)Snd_SPBResumeRecording, 1,
@@ -1521,20 +1124,6 @@ SPB_completion(SPBPtr my_spb)
 	}
 }
 
-#if !TARGET_API_MAC_CARBON
-static pascal void
-SPB_interrupt(SPBPtr my_spb)
-{
-	SPBObject *p = (SPBObject *)(my_spb->userLong);
-	
-	if (p && p->ob_interrupt) {
-		long A5 = SetA5(p->ob_A5);
-		p->ob_thiscallback = p->ob_interrupt;	/* Hope we cannot get two at the same time */
-		Py_AddPendingCall(SPB_CallCallBack, (void *)p);
-		SetA5(A5);
-	}
-}
-#endif
 
 
 void init_Snd(void)

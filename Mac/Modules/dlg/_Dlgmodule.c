@@ -447,8 +447,6 @@ static PyObject *DlgObj_ShortenDITL(DialogObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *DlgObj_InsertDialogItem(DialogObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -476,9 +474,6 @@ static PyObject *DlgObj_InsertDialogItem(DialogObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *DlgObj_RemoveDialogItems(DialogObject *_self, PyObject *_args)
 {
@@ -504,7 +499,6 @@ static PyObject *DlgObj_RemoveDialogItems(DialogObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *DlgObj_StdFilterProc(DialogObject *_self, PyObject *_args)
 {
@@ -911,16 +905,10 @@ static PyMethodDef DlgObj_methods[] = {
 	 PyDoc_STR("() -> (DialogItemIndex _rv)")},
 	{"ShortenDITL", (PyCFunction)DlgObj_ShortenDITL, 1,
 	 PyDoc_STR("(DialogItemIndex numberItems) -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"InsertDialogItem", (PyCFunction)DlgObj_InsertDialogItem, 1,
 	 PyDoc_STR("(DialogItemIndex afterItem, DialogItemType itemType, Handle itemHandle, Rect box) -> None")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"RemoveDialogItems", (PyCFunction)DlgObj_RemoveDialogItems, 1,
 	 PyDoc_STR("(DialogItemIndex itemNo, DialogItemIndex amountToRemove, Boolean disposeItemData) -> None")},
-#endif
 	{"StdFilterProc", (PyCFunction)DlgObj_StdFilterProc, 1,
 	 PyDoc_STR("() -> (Boolean _rv, EventRecord event, DialogItemIndex itemHit)")},
 	{"SetDialogDefaultItem", (PyCFunction)DlgObj_SetDialogDefaultItem, 1,
@@ -1390,8 +1378,6 @@ static PyObject *Dlg_ResetAlertStage(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *Dlg_GetParamText(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1416,7 +1402,6 @@ static PyObject *Dlg_GetParamText(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *Dlg_NewFeaturesDialog(PyObject *_self, PyObject *_args)
 {
@@ -1539,11 +1524,8 @@ static PyMethodDef Dlg_methods[] = {
 	 PyDoc_STR("(SInt16 fontNum) -> None")},
 	{"ResetAlertStage", (PyCFunction)Dlg_ResetAlertStage, 1,
 	 PyDoc_STR("() -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"GetParamText", (PyCFunction)Dlg_GetParamText, 1,
 	 PyDoc_STR("(Str255 param0, Str255 param1, Str255 param2, Str255 param3) -> None")},
-#endif
 	{"NewFeaturesDialog", (PyCFunction)Dlg_NewFeaturesDialog, 1,
 	 PyDoc_STR("(Rect inBoundsRect, Str255 inTitle, Boolean inIsVisible, SInt16 inProcID, WindowPtr inBehind, Boolean inGoAwayFlag, SInt32 inRefCon, Handle inItemListHandle, UInt32 inFlags) -> (DialogPtr _rv)")},
 	{"GetDialogFromWindow", (PyCFunction)Dlg_GetDialogFromWindow, 1,

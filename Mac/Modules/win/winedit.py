@@ -6,12 +6,6 @@ f = Method(Boolean, 'IsWindowVisible',
 )
 methods.append(f)
 
-f = Method(Boolean, 'GetWindowZoomFlag',
-    (WindowRef, 'theWindow', InMode),
-    condition='#if !TARGET_API_MAC_CARBON'
-)
-methods.append(f)
-
 f = Method(void, 'GetWindowStructureRgn',
 	(WindowRef, 'theWindow', InMode),
 	(RgnHandle, 'r', InMode),
@@ -30,22 +24,8 @@ f = Method(void, 'GetWindowUpdateRgn',
 )
 methods.append(f)
 
-f = Method(short, 'GetWindowTitleWidth',
-    (WindowRef, 'theWindow', InMode),
-    condition='#if !TARGET_API_MAC_CARBON'
-)
-methods.append(f)
-
 f = Method(ExistingWindowPtr, 'GetNextWindow',
 	(WindowRef, 'theWindow', InMode),
-)
-methods.append(f)
-
-# These have Mac prefixed to their name in the 3.1 universal headers,
-# so we add the old/real names by hand.
-f = Method(void, 'CloseWindow',
-    (WindowPtr, 'theWindow', InMode),
-    condition='#if !TARGET_API_MAC_CARBON'
 )
 methods.append(f)
 

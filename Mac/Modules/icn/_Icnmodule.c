@@ -606,23 +606,6 @@ static PyObject *Icn_PlotCIconHandle(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Icn_IconServicesTerminate(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-#ifndef IconServicesTerminate
-	PyMac_PRECHECK(IconServicesTerminate);
-#endif
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	IconServicesTerminate();
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
 static PyObject *Icn_IconRefToIconFamily(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1338,8 +1321,6 @@ static PyObject *Icn_IsIconRefMaskEmpty(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *Icn_GetIconRefVariant(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1362,9 +1343,6 @@ static PyObject *Icn_GetIconRefVariant(PyObject *_self, PyObject *_args)
 	                     outTransform);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *Icn_RegisterIconRefFromIconFile(PyObject *_self, PyObject *_args)
 {
@@ -1391,9 +1369,6 @@ static PyObject *Icn_RegisterIconRefFromIconFile(PyObject *_self, PyObject *_arg
 	                     ResObj_New, theIconRef);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *Icn_ReadIconFile(PyObject *_self, PyObject *_args)
 {
@@ -1414,9 +1389,6 @@ static PyObject *Icn_ReadIconFile(PyObject *_self, PyObject *_args)
 	                     ResObj_New, iconFamily);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *Icn_WriteIconFile(PyObject *_self, PyObject *_args)
 {
@@ -1438,7 +1410,6 @@ static PyObject *Icn_WriteIconFile(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyMethodDef Icn_methods[] = {
 	{"GetCIcon", (PyCFunction)Icn_GetCIcon, 1,
@@ -1491,11 +1462,6 @@ static PyMethodDef Icn_methods[] = {
 	 PyDoc_STR("(Rect theRect, IconAlignmentType align, IconTransformType transform, Handle theSICN) -> None")},
 	{"PlotCIconHandle", (PyCFunction)Icn_PlotCIconHandle, 1,
 	 PyDoc_STR("(Rect theRect, IconAlignmentType align, IconTransformType transform, CIconHandle theCIcon) -> None")},
-
-#if !TARGET_API_MAC_CARBON
-	{"IconServicesTerminate", (PyCFunction)Icn_IconServicesTerminate, 1,
-	 PyDoc_STR("() -> None")},
-#endif
 	{"IconRefToIconFamily", (PyCFunction)Icn_IconRefToIconFamily, 1,
 	 PyDoc_STR("(IconRef theIconRef, IconSelectorValue whichIcons) -> (IconFamilyHandle iconFamily)")},
 	{"IconFamilyToIconSuite", (PyCFunction)Icn_IconFamilyToIconSuite, 1,
@@ -1558,26 +1524,14 @@ static PyMethodDef Icn_methods[] = {
 	 PyDoc_STR("(SInt16 vRefNum) -> (Boolean customIconsEnabled)")},
 	{"IsIconRefMaskEmpty", (PyCFunction)Icn_IsIconRefMaskEmpty, 1,
 	 PyDoc_STR("(IconRef iconRef) -> (Boolean _rv)")},
-
-#if TARGET_API_MAC_CARBON
 	{"GetIconRefVariant", (PyCFunction)Icn_GetIconRefVariant, 1,
 	 PyDoc_STR("(IconRef inIconRef, OSType inVariant) -> (IconRef _rv, IconTransformType outTransform)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"RegisterIconRefFromIconFile", (PyCFunction)Icn_RegisterIconRefFromIconFile, 1,
 	 PyDoc_STR("(OSType creator, OSType iconType, FSSpec iconFile) -> (IconRef theIconRef)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"ReadIconFile", (PyCFunction)Icn_ReadIconFile, 1,
 	 PyDoc_STR("(FSSpec iconFile) -> (IconFamilyHandle iconFamily)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"WriteIconFile", (PyCFunction)Icn_WriteIconFile, 1,
 	 PyDoc_STR("(IconFamilyHandle iconFamily, FSSpec iconFile) -> None")},
-#endif
 	{NULL, NULL, 0}
 };
 

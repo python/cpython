@@ -244,16 +244,8 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_Scrap", init_Scrap},
 	{"_TE", init_TE},
 	{"ColorPicker", initColorPicker},
-#if !TARGET_API_MAC_CARBON
-	{"_Help", init_Help},
-	{"Printing", initPrinting},
-#endif
-#if TARGET_API_MAC_CARBON
 	{"_CF", init_CF},
-#endif
-#if TARGET_API_MAC_CARBON
 	{"hfsplus", inithfsplus},
-#endif
 #endif /* USE_TOOLBOX */
 #ifdef USE_QT
 	{"_Cm", init_Cm},

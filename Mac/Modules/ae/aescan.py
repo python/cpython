@@ -51,12 +51,6 @@ class AppleEventsScanner(Scanner):
 			"kAEUseStandardDispatch",
 			]
 
-	def makegreylist(self):
-		return [
-			('#if TARGET_API_MAC_CARBON', [
-				'AEGetDescDataSize',
-				'AEReplaceDescData',
-			])]
 	def makeblacklisttypes(self):
 		return [
 			"ProcPtr",

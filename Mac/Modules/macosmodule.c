@@ -348,49 +348,6 @@ MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-#if TARGET_API_MAC_OS8
-/*----------------------------------------------------------------------*/
-/* STDWIN High Level Event interface */
-
-#include <EPPC.h>
-#include <Events.h>
-
-static char accepthle_doc[] = "Get arguments of pending high-level event";
-
-static PyObject *
-MacOS_AcceptHighLevelEvent(self, args)
-	PyObject *self;
-	PyObject *args;
-{
-	TargetID sender;
-	unsigned long refcon;
-	Ptr buf;
-	unsigned long len;
-	OSErr err;
-	PyObject *res;
-	
-	buf = NULL;
-	len = 0;
-	err = AcceptHighLevelEvent(&sender, &refcon, buf, &len);
-	if (err == bufferIsSmall) {
-		buf = malloc(len);
-		if (buf == NULL)
-			return PyErr_NoMemory();
-		err = AcceptHighLevelEvent(&sender, &refcon, buf, &len);
-		if (err != noErr) {
-			free(buf);
-			return PyErr_Mac(MacOS_Error, (int)err);
-		}
-	}
-	else if (err != noErr)
-		return PyErr_Mac(MacOS_Error, (int)err);
-	res = Py_BuildValue("s#ls#",
-		(char *)&sender, (int)(sizeof sender), refcon, (char *)buf, (int)len);
-	free(buf);
-	return res;
-}
-#endif
-
 #if !TARGET_API_MAC_OSX
 static char schedparams_doc[] = "Set/return mainloop interrupt check flag, etc";
 
@@ -701,9 +658,6 @@ MacOS_OutputSeen(PyObject *self, PyObject *args)
 #endif /* !TARGET_API_MAC_OSX */
 
 static PyMethodDef MacOS_Methods[] = {
-#if TARGET_API_MAC_OS8
-	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1,	accepthle_doc},
-#endif
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1,	getcrtp_doc},
 	{"SetCreatorAndType",		MacOS_SetCreatorAndType, 1,	setcrtp_doc},
 #if !TARGET_API_MAC_OSX
@@ -759,8 +713,6 @@ initMacOS(void)
 	}
 #if TARGET_API_MAC_OSX
 #define PY_RUNTIMEMODEL "macho"
-#elif TARGET_API_MAC_OS8
-#define PY_RUNTIMEMODEL "ppc"
 #elif TARGET_API_MAC_CARBON
 #define PY_RUNTIMEMODEL "carbon"
 #else

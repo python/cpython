@@ -38,11 +38,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #endif
 
-#ifdef TARGET_API_MAC_OSX
-#define PATHNAMELEN 1024
-#else
 #define PATHNAMELEN 256
-#endif
 
 /* Return the initial python search path.  This is called once from
 ** initsys() to initialize sys.path.

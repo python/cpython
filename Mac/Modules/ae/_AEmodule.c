@@ -610,8 +610,6 @@ static PyObject *AEDesc_AEPutAttributeDesc(AEDescObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *AEDesc_AEGetDescDataSize(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -626,7 +624,6 @@ static PyObject *AEDesc_AEGetDescDataSize(AEDescObject *_self, PyObject *_args)
 	                     _rv);
 	return _res;
 }
-#endif
 
 static PyObject *AEDesc_AESend(AEDescObject *_self, PyObject *_args)
 {
@@ -807,11 +804,8 @@ static PyMethodDef AEDesc_methods[] = {
 	 PyDoc_STR("(AEKeyword theAEKeyword, DescType typeCode, Buffer dataPtr) -> None")},
 	{"AEPutAttributeDesc", (PyCFunction)AEDesc_AEPutAttributeDesc, 1,
 	 PyDoc_STR("(AEKeyword theAEKeyword, AEDesc theAEDesc) -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"AEGetDescDataSize", (PyCFunction)AEDesc_AEGetDescDataSize, 1,
 	 PyDoc_STR("() -> (Size _rv)")},
-#endif
 	{"AESend", (PyCFunction)AEDesc_AESend, 1,
 	 PyDoc_STR("(AESendMode sendMode, AESendPriority sendPriority, long timeOutInTicks) -> (AppleEvent reply)")},
 	{"AEResetTimer", (PyCFunction)AEDesc_AEResetTimer, 1,
@@ -1048,8 +1042,6 @@ static PyObject *AE_AECreateAppleEvent(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *AE_AEReplaceDescData(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1075,7 +1067,6 @@ static PyObject *AE_AEReplaceDescData(PyObject *_self, PyObject *_args)
 	                     AEDesc_New, &theAEDesc);
 	return _res;
 }
-#endif
 
 static PyObject *AE_AEProcessAppleEvent(PyObject *_self, PyObject *_args)
 {
@@ -1360,11 +1351,8 @@ static PyMethodDef AE_methods[] = {
 	 PyDoc_STR("(Buffer factoringPtr, Boolean isRecord) -> (AEDescList resultList)")},
 	{"AECreateAppleEvent", (PyCFunction)AE_AECreateAppleEvent, 1,
 	 PyDoc_STR("(AEEventClass theAEEventClass, AEEventID theAEEventID, AEAddressDesc target, AEReturnID returnID, AETransactionID transactionID) -> (AppleEvent result)")},
-
-#if TARGET_API_MAC_CARBON
 	{"AEReplaceDescData", (PyCFunction)AE_AEReplaceDescData, 1,
 	 PyDoc_STR("(DescType typeCode, Buffer dataPtr) -> (AEDesc theAEDesc)")},
-#endif
 	{"AEProcessAppleEvent", (PyCFunction)AE_AEProcessAppleEvent, 1,
 	 PyDoc_STR("(EventRecord theEventRecord) -> None")},
 	{"AEGetInteractionAllowed", (PyCFunction)AE_AEGetInteractionAllowed, 1,

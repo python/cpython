@@ -1,9 +1,3 @@
-f = Function(void, 'OpenDeskAcc',
-	(Str255, 'name', InMode),
-	condition='#if !TARGET_API_MAC_CARBON'
-)
-functions.append(f)
-
 f = Function(MenuHandle, 'as_Menu', (Handle, 'h', InMode))
 functions.append(f)
 
@@ -67,7 +61,6 @@ functions.append(f)
 f = Function(ItemCount, 'CountMenuItemsWithCommandID',
     (OptMenuRef, 'inMenu', InMode),
     (MenuCommand, 'inCommandID', InMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 
@@ -77,28 +70,24 @@ f = Function(OSStatus, 'GetIndMenuItemWithCommandID',
     (UInt32, 'inItemIndex', InMode),
     (MenuRef, 'outMenu', OutMode),
     (MenuItemIndex, 'outIndex', OutMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 
 f = Function(void, 'EnableMenuCommand',
     (OptMenuRef, 'inMenu', InMode),
     (MenuCommand, 'inCommandID', InMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 
 f = Function(void, 'DisableMenuCommand',
     (OptMenuRef, 'inMenu', InMode),
     (MenuCommand, 'inCommandID', InMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 
 f = Function(Boolean, 'IsMenuCommandEnabled',
     (OptMenuRef, 'inMenu', InMode),
     (MenuCommand, 'inCommandID', InMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 
@@ -106,7 +95,6 @@ f = Function(OSStatus, 'SetMenuCommandMark',
     (OptMenuRef, 'inMenu', InMode),
     (MenuCommand, 'inCommandID', InMode),
     (UniChar, 'inMark', InMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 
@@ -114,7 +102,6 @@ f = Function(OSStatus, 'GetMenuCommandMark',
     (OptMenuRef, 'inMenu', InMode),
     (MenuCommand, 'inCommandID', InMode),
     (UniChar, 'outMark', OutMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 
@@ -124,7 +111,6 @@ f = Function(OSStatus, 'GetMenuCommandPropertySize',
     (OSType, 'inPropertyCreator', InMode),
     (OSType, 'inPropertyTag', InMode),
     (ByteCount, 'outSize', OutMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 
@@ -133,7 +119,6 @@ f = Function(OSStatus, 'RemoveMenuCommandProperty',
     (MenuCommand, 'inCommandID', InMode),
     (OSType, 'inPropertyCreator', InMode),
     (OSType, 'inPropertyTag', InMode),
-    condition='#if TARGET_API_MAC_CARBON',
 )
 functions.append(f)
 

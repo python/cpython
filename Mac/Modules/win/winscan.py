@@ -49,62 +49,30 @@ class MyScanner(Scanner):
 			# Constants with funny definitions
 			'kMouseUpOutOfSlop',
 			'kAllWindowClasses',
+			# OS8 only:
+			'GetAuxWin',
+			'GetWindowDataHandle',
+			'SaveOld',
+			'DrawNew',
+			'SetWinColor',
+			'SetDeskCPat',
+			'InitWindows',
+			'InitFloatingWindows',
+			'GetWMgrPort',
+			'GetCWMgrPort',
+			'ValidRgn',		# Use versions with Window in their name
+			'ValidRect',
+			'InvalRgn',
+			'InvalRect',
+			'IsValidWindowPtr', # I think this is useless for Python, but not sure...
+			'GetWindowZoomFlag',	# Not available in Carbon
+			'GetWindowTitleWidth',	# Ditto
+			'GetWindowGoAwayFlag',
+			'GetWindowSpareFlag',
 			]
 			
 	def makegreylist(self):
 		return [
-			('#if !TARGET_API_MAC_CARBON', [
-				'GetAuxWin',
-				'GetWindowDataHandle',
-				'SaveOld',
-				'DrawNew',
-				'SetWinColor',
-				'SetDeskCPat',
-				'InitWindows',
-				'InitFloatingWindows',
-				'GetWMgrPort',
-				'GetCWMgrPort',
-				'ValidRgn',		# Use versions with Window in their name
-				'ValidRect',
-				'InvalRgn',
-				'InvalRect',
-				'IsValidWindowPtr', # I think this is useless for Python, but not sure...
-				'GetWindowZoomFlag',	# Not available in Carbon
-				'GetWindowTitleWidth',	# Ditto
-				'GetWindowGoAwayFlag',
-				'GetWindowSpareFlag',
-			]),
-			('#if !TARGET_API_MAC_OS8', [
-				'IsWindowUpdatePending',
-				'FindWindowOfClass',
-				'GetFrontWindowOfClass',
-				'ChangeWindowPropertyAttributes',
-				'GetWindowPropertyAttributes',
-				'GetNextWindowOfClass',
-				'ScrollWindowRegion',
-				'ScrollWindowRect',
-				'ChangeWindowAttributes',
-				'ReshapeCustomWindow',
-				'EnableScreenUpdates',
-				'DisableScreenUpdates',
-				'GetAvailableWindowPositioningBounds',
-				'CreateStandardWindowMenu',
-				'GetSheetWindowParent',
-				'HideSheetWindow',
-				'ShowSheetWindow',
-				'ConstrainWindowToScreen',
-				'GetWindowGreatestAreaDevice',
-				'CopyWindowTitleAsCFString',
-				'SetWindowTitleWithCFString',
-				'CopyWindowAlternateTitle',
-				'SetWindowAlternateTitle',
-				'GetWindowModality',
-				'SetWindowModality',
-				'SetWindowClass',
-				'ReleaseWindow',
-				'RetainWindow',
-				'GetWindowRetainCount',
-			]),
 			('#if TARGET_API_MAC_OSX', [
 				'TransitionWindowAndParent',
 			])]

@@ -40,20 +40,11 @@ class MyScanner(Scanner):
 	def makeblacklistnames(self):
 		return [
 			"GetScrapFlavorInfoList",
+			'InfoScrap',
+			'GetScrap',
+			'ZeroScrap',
+			'PutScrap',
 			]
-
-	def makegreylist(self):
-		return [
-			('#if !TARGET_API_MAC_CARBON', [
-				'InfoScrap',
-				'GetScrap',
-				'ZeroScrap',
-				'PutScrap',
-			]),
-			('#if TARGET_API_MAC_CARBON', [
-				'CallInScrapPromises',
-				'ClearCurrentScrap',
-			])]
 
 	def makeblacklisttypes(self):
 		return [

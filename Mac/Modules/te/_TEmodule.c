@@ -1197,8 +1197,6 @@ static PyObject *TE_TEToScrap(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-#if TARGET_API_MAC_CARBON
-
 static PyObject *TE_TEGetScrapHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1213,9 +1211,6 @@ static PyObject *TE_TEGetScrapHandle(PyObject *_self, PyObject *_args)
 	                     ResObj_New, _rv);
 	return _res;
 }
-#endif
-
-#if TARGET_API_MAC_CARBON
 
 static PyObject *TE_TESetScrapHandle(PyObject *_self, PyObject *_args)
 {
@@ -1232,7 +1227,6 @@ static PyObject *TE_TESetScrapHandle(PyObject *_self, PyObject *_args)
 	_res = Py_None;
 	return _res;
 }
-#endif
 
 static PyObject *TE_LMGetWordRedraw(PyObject *_self, PyObject *_args)
 {
@@ -1299,16 +1293,10 @@ static PyMethodDef TE_methods[] = {
 	 PyDoc_STR("() -> None")},
 	{"TEToScrap", (PyCFunction)TE_TEToScrap, 1,
 	 PyDoc_STR("() -> None")},
-
-#if TARGET_API_MAC_CARBON
 	{"TEGetScrapHandle", (PyCFunction)TE_TEGetScrapHandle, 1,
 	 PyDoc_STR("() -> (Handle _rv)")},
-#endif
-
-#if TARGET_API_MAC_CARBON
 	{"TESetScrapHandle", (PyCFunction)TE_TESetScrapHandle, 1,
 	 PyDoc_STR("(Handle value) -> None")},
-#endif
 	{"LMGetWordRedraw", (PyCFunction)TE_LMGetWordRedraw, 1,
 	 PyDoc_STR("() -> (UInt8 _rv)")},
 	{"LMSetWordRedraw", (PyCFunction)TE_LMSetWordRedraw, 1,

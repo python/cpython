@@ -64,39 +64,6 @@ extern int _ListObj_Convert(PyObject *, ListHandle *);
 
 static ListDefUPP myListDefFunctionUPP;
 
-#if !TARGET_API_MAC_CARBON
-
-#define kJumpAbs 0x4EF9
-
-#pragma options align=mac68k
-typedef struct {
-	short jmpabs;       /* 4EF9 */
-	ListDefUPP theUPP;  /* 00000000 */
-} LDEFStub, **LDEFStubHandle;
-#pragma options align=reset
-
-static OSErr installLDEFStub(ListHandle list) {
-	LDEFStubHandle stubH;
-
-	stubH = (LDEFStubHandle)NewHandleClear(sizeof(LDEFStub));
-	if (stubH == NULL)
-		return MemError();
-	
-	(*stubH)->jmpabs = kJumpAbs;
-	(*stubH)->theUPP = myListDefFunctionUPP;
-	HLock((Handle) stubH);
-	
-	(*list)->listDefProc = (Handle)stubH;
-	return noErr;
-}
-
-static void removeLDEFStub(ListHandle list) {
-	if ((*list)->listDefProc)
-		DisposeHandle((Handle)(*list)->listDefProc);
-	(*list)->listDefProc = NULL;
-}
-
-#endif
 
 static PyObject *List_Error;
 
@@ -110,7 +77,6 @@ typedef struct ListObject {
 	PyObject_HEAD
 	ListHandle ob_itself;
 	PyObject *ob_ldef_func;
-	int ob_have_ldef_stub;
 	int ob_must_be_disposed;
 } ListObject;
 
@@ -125,7 +91,6 @@ PyObject *ListObj_New(ListHandle itself)
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
 	it->ob_ldef_func = NULL;
-	it->ob_have_ldef_stub = 0;
 	it->ob_must_be_disposed = 1;
 	SetListRefCon(itself, (long)it);
 	return (PyObject *)it;
@@ -145,9 +110,6 @@ static void ListObj_dealloc(ListObject *self)
 {
 	Py_XDECREF(self->ob_ldef_func);
 	self->ob_ldef_func = NULL;
-#if !TARGET_API_MAC_CARBON
-	if (self->ob_have_ldef_stub) removeLDEFStub(self->ob_itself);
-#endif
 	SetListRefCon(self->ob_itself, (long)0);
 	if (self->ob_must_be_disposed && self->ob_itself) LDispose(self->ob_itself);
 	PyObject_Del(self);
@@ -901,7 +863,6 @@ static PyObject *List_CreateCustomList(PyObject *_self, PyObject *_args)
 		return NULL;
 
 
-#if TARGET_API_MAC_CARBON
 	/* Carbon applications use the CreateCustomList API */ 
 	theSpec.u.userProc = myListDefFunctionUPP;
 	CreateCustomList(&rView,
@@ -915,33 +876,12 @@ static PyObject *List_CreateCustomList(PyObject *_self, PyObject *_args)
 	                 scrollVert,
 	                 &outList);
 
-#else
-	/* pre-Carbon applications set the address in the LDEF
-	to a routine descriptor referring to their list
-	definition routine. */
-	outList = LNew(&rView,
-	               &dataBounds,
-	               cellSize,
-	               0,
-	               theWindow,
-	               drawIt, /* XXX must be false */
-	               hasGrow,
-	               scrollHoriz,
-	               scrollVert);
-	if (installLDEFStub(outList) != noErr) {
-		PyErr_SetString(PyExc_MemoryError, "can't create LDEF stub");
-		return NULL;
-	}
-#endif
 
 	_res = ListObj_New(outList);
 	if (_res == NULL)
 		return NULL;
 	Py_INCREF(listDefFunc);
 	((ListObject*)_res)->ob_ldef_func = listDefFunc;
-#if !TARGET_API_MAC_CARBON
-	((ListObject*)_res)->ob_have_ldef_stub = 1;
-#endif
 	return _res;
 }
 

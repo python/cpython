@@ -96,15 +96,6 @@ SMStatus = StructOutputBufferType('SMStatus')
 CompressionInfo = StructOutputBufferType('CompressionInfo')
 
 includestuff = includestuff + """
-#if !TARGET_API_MAC_CARBON
-/* Create a SndCommand object (an (int, int, int) tuple) */
-static PyObject *
-SndCmd_New(SndCommand *pc)
-{
-	return Py_BuildValue("hhl", pc->cmd, pc->param1, pc->param2);
-}
-#endif
-
 /* Convert a SndCommand argument */
 static int
 SndCmd_Convert(PyObject *v, SndCommand *pc)
@@ -123,9 +114,6 @@ SndCmd_Convert(PyObject *v, SndCommand *pc)
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */
 static pascal void SPB_completion(SPBPtr my_spb); /* Forward */
-#if !TARGET_API_MAC_CARBON
-static pascal void SPB_interrupt(SPBPtr my_spb); /* Forward */
-#endif
 """
 
 
@@ -192,20 +180,6 @@ SPB_completion(SPBPtr my_spb)
 	}
 }
 
-#if !TARGET_API_MAC_CARBON
-static pascal void
-SPB_interrupt(SPBPtr my_spb)
-{
-	SPBObject *p = (SPBObject *)(my_spb->userLong);
-	
-	if (p && p->ob_interrupt) {
-		long A5 = SetA5(p->ob_A5);
-		p->ob_thiscallback = p->ob_interrupt;	/* Hope we cannot get two at the same time */
-		Py_AddPendingCall(SPB_CallCallBack, (void *)p);
-		SetA5(A5);
-	}
-}
-#endif
 """
 
 

@@ -351,15 +351,11 @@ navrr_getattr(navrrobject *self, char *name)
 				PyErr_Mac(ErrorObject, err);
 				return NULL;
 			}
-#if TARGET_API_MAC_CARBON
 			if (err=AEGetDescData(&desc, &fss, sizeof(FSSpec))) {
 				Py_DECREF(rv);
 				PyErr_Mac(ErrorObject, err);
 				return NULL;
 			}
-#else
-			memcpy((void *)&fss, (void *)*desc.dataHandle, sizeof(FSSpec));
-#endif
 			rvitem = PyMac_BuildFSSpec(&fss);
 			PyList_SetItem(rv, i, rvitem);
 			AEDisposeDesc(&desc);

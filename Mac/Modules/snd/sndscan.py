@@ -49,24 +49,20 @@ class SoundScanner(Scanner):
 			'rate48khz',
 			'rate44khz',
 			'kInvalidSource',
+			# OS8 only:
+			'MACEVersion',
+			'SPBRecordToFile',
+			'Exp1to6',
+			'Comp6to1',
+			'Exp1to3',
+			'Comp3to1',
+			'SndControl',
+			'SndStopFilePlay',
+			'SndStartFilePlay',
+			'SndPauseFilePlay',
+			'SndRecordToFile',
 
 			]
-
-	def makegreylist(self):
-		return [
-			('#if !TARGET_API_MAC_CARBON', [
-				'MACEVersion',
-				'SPBRecordToFile',
-				'Exp1to6',
-				'Comp6to1',
-				'Exp1to3',
-				'Comp3to1',
-				'SndControl',
-				'SndStopFilePlay',
-				'SndStartFilePlay',
-				'SndPauseFilePlay',
-				'SndRecordToFile',
-			])]
 
 	def makeblacklisttypes(self):
 		return [
