@@ -259,10 +259,42 @@ tupleconcat(a, bb)
 #undef b
 }
 
+static object *
+tuplerepeat(a, n)
+	tupleobject *a;
+	int n;
+{
+	int i, j;
+	int size;
+	tupleobject *np;
+	object **p;
+	if (n < 0)
+		n = 0;
+	if (a->ob_size*n == a->ob_size) {
+		/* Since tuples are immutable, we can return a shared
+		   copy in this case */
+		INCREF(a);
+		return (object *)a;
+	}
+	size = a->ob_size * n;
+	np = (tupleobject *) newtupleobject(size);
+	if (np == NULL)
+		return NULL;
+	p = np->ob_item;
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < a->ob_size; j++) {
+			*p = a->ob_item[j];
+			INCREF(*p);
+			p++;
+		}
+	}
+	return (object *) np;
+}
+
 static sequence_methods tuple_as_sequence = {
 	tuplelength,	/*sq_length*/
 	tupleconcat,	/*sq_concat*/
-	0,		/*sq_repeat*/
+	tuplerepeat,	/*sq_repeat*/
 	tupleitem,	/*sq_item*/
 	tupleslice,	/*sq_slice*/
 	0,		/*sq_ass_item*/
