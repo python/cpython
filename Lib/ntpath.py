@@ -479,4 +479,5 @@ def abspath(path):
 # realpath is a no-op on systems without islink support
 realpath = abspath
 # Win9x family and earlier have no Unicode filename support.
-supports_unicode_filenames = sys.getwindowsversion()[3] >= 2
+supports_unicode_filenames = (hasattr(sys, "getwindowsversion") and
+                              sys.getwindowsversion()[3] >= 2)
