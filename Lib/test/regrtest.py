@@ -28,7 +28,25 @@ import traceback
 
 import test_support
 
-def main():
+def main(tests=None, testdir=None):
+    """Execute a test suite.
+
+    This also parses command-line options and modifies its behaviour
+    accordingly. 
+
+    tests -- a list of strings containing test names (optional)
+    testdir -- the directory in which to look for tests (optional)
+
+    Users other than the Python test suite will certainly want to
+    specify testdir; if it's omitted, the directory containing the
+    Python test suite is searched for.  
+
+    If the tests argument is omitted, the tests listed on the
+    command-line will be used.  If that's empty, too, then all *.py
+    files beginning with test_ will be used.
+    
+    """
+    
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'vgqx')
     except getopt.error, msg:
@@ -57,12 +75,12 @@ def main():
     if exclude:
         nottests[:0] = args
         args = []
-    tests = args or findtests()
+    tests = tests or args or findtests()    
     test_support.verbose = verbose      # Tell tests to be moderately quiet
     for test in tests:
         if not quiet:
             print test
-        ok = runtest(test, generate, verbose)
+        ok = runtest(test, generate, verbose, testdir)
         if ok > 0:
             good.append(test)
         elif ok == 0:
@@ -84,7 +102,7 @@ def main():
         print string.join(skipped)
     return len(bad) > 0
 
-stdtests = [
+STDTESTS = [
     'test_grammar',
     'test_opcodes',
     'test_operations',
@@ -93,15 +111,15 @@ stdtests = [
     'test_types',
    ]
 
-nottests = [
+NOTTESTS = [
     'test_support',
     'test_b1',
     'test_b2',
     ]
 
-def findtests():
+def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     """Return a list of all applicable test modules."""
-    testdir = findtestdir()
+    if not testdir: testdir = findtestdir()
     names = os.listdir(testdir)
     tests = []
     for name in names:
@@ -112,9 +130,16 @@ def findtests():
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate, verbose):
+def runtest(test, generate, verbose, testdir = None):
+    """Run a single test.
+    test -- the name of the test
+    generate -- if true, generate output, instead of running the test
+    and comparing it to a previously created output file
+    verbose -- if true, print more messages
+    testdir -- test directory
+    """
     test_support.unload(test)
-    testdir = findtestdir()
+    if not testdir: testdir = findtestdir()
     outputdir = os.path.join(testdir, "output")
     outputfile = os.path.join(outputdir, test)
     try:
