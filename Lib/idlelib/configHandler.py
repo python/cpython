@@ -49,14 +49,6 @@ class IdleConfParser(ConfigParser):
         else:  #return a default value
             return []
 
-    def GetHighlight(self, theme, element):
-        fore = self.Get(theme, element + "-foreground")
-        back = self.Get(theme, element + "-background")
-        style = self.Ge(theme, element + "-fontStyle", default='')
-        return {"fg": fore,
-                "bg": back,
-                "fStyle": style}
-
     def Load(self):
         """ 
         Load the configuration file from disk 
@@ -160,7 +152,12 @@ class IdleConf:
         
         return cfgParser.sections()
     
-    
+    def GetHighlight(self, theme, element):
+        fore = self.GetOption('highlight', theme, element + "-foreground")
+        back = self.GetOption('highlight', theme, element + "-background")
+        return {"foreground": fore,
+                "background": back}
+
     def GetTheme(self, name=None):
         """
         Gets the requested theme or returns a final fallback theme in case 
