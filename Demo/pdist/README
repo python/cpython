@@ -1,2 +1,84 @@
+Filesystem, RCS and CVS client and server classes
+=================================================
+
 This directory contains various modules and classes that support
-remote file system operations
+remote file system operations.
+
+rrcs.py			Remote RCS client command line interface
+rrcs			Script to put in your bin directory
+
+rcvs.py			Remote CVS client command line interface
+rcvs			Script to put in your bin directory
+
+sumtree.py		Old demo for FSProxy
+cmptree.py		First FSProxy client (used to sync from the Mac)
+
+cvslib.py		CVS admin files classes (used by rrcs)
+rcsclient.py		Return an RCSProxyClient instance
+			(has reasonable default server/port/directory)
+
+FSProxy.py		Filesystem interface classes
+RCSProxy.py		RCS interface classes
+
+client.py		Client class
+server.py		Server class
+
+cmdfw.py		CommandFrameWork class
+			(used by rcvs, should be used by rrcs as well)
+
+
+Client/Server operation
+-----------------------
+
+The Client and Server classes implement a simple-minded RPC protocol,
+using Python's pickle module to transfer arguments, return values and
+exceptions with the most generality.  The Server class is instantiated
+with a port number on which it should listen for requests; the Client
+class is instantiated with a host name and a port number where it
+should connect to.  Once a client is connected, a TCP connection is
+maintained between client and server.
+
+The Server class currently handles only one connection at a time;
+however it could be rewritten to allow various modes of operations,
+using multiple threads or processes or the select() system call as
+desired to serve multiple clients simultaneously (when using select(),
+still handling one request at a time).  This would not require
+rewriting of the Client class.  It may also be possible to adapt the
+code to use UDP instead of TCP, but then both classes will have to be
+rewritten (and unless extensive acknowlegements and request serial
+numbers are used, the server should handle duplicate requests, so its
+semantics should be idempotent -- shrudder).
+
+Even though the FSProxy and RCSProxy modules define client classes,
+the client class is fully generic -- what methods it supports is
+determined entirely by the server.  The server class, however, must be
+derived from.  This is generally done as follows:
+
+	from server import Server
+	from client import Client
+
+	# Define a class that performs the operations locally
+	class MyClassLocal:
+		def __init__(self): ...
+		def _close(self): ...
+
+	# Derive a server class using multiple inheritance
+	class MyClassServer(MyClassLocal, Server):
+		def __init__(self, address):
+			# Must initialize MyClassLocal as well as Server
+			MyClassLocal.__init__(self)
+			Server.__init__(self, address)
+		def _close(self):
+			Server._close()
+			MyClassLocal._close()
+
+	# A dummy client class
+	class MyClassClient(Client): pass
+
+Note that because MyClassLocal isn't used in the definition of
+MyClassClient, it would actually be better to place it in a separate
+module so the definition of MyClassLocal isn't executed when we only
+instantiate a client.
+
+The modules client and server should probably be renamed to Client and
+Server in order to match the class names.
