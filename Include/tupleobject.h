@@ -49,7 +49,7 @@ typedef struct {
 	object *ob_item[1];
 } tupleobject;
 
-extern typeobject Tupletype;
+extern DL_IMPORT typeobject Tupletype;
 
 #define is_tupleobject(op) ((op)->ob_type == &Tupletype)
 

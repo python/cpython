@@ -39,25 +39,25 @@ void err_clear PROTO((void));
 
 /* Predefined exceptions */
 
-extern object *AccessError;
-extern object *AttributeError;
-extern object *ConflictError;
-extern object *EOFError;
-extern object *IOError;
-extern object *ImportError;
-extern object *IndexError;
-extern object *KeyError;
-extern object *KeyboardInterrupt;
-extern object *MemoryError;
-extern object *NameError;
-extern object *OverflowError;
-extern object *RuntimeError;
-extern object *SyntaxError;
-extern object *SystemError;
-extern object *SystemExit;
-extern object *TypeError;
-extern object *ValueError;
-extern object *ZeroDivisionError;
+extern DL_IMPORT object *AccessError;
+extern DL_IMPORT object *AttributeError;
+extern DL_IMPORT object *ConflictError;
+extern DL_IMPORT object *EOFError;
+extern DL_IMPORT object *IOError;
+extern DL_IMPORT object *ImportError;
+extern DL_IMPORT object *IndexError;
+extern DL_IMPORT object *KeyError;
+extern DL_IMPORT object *KeyboardInterrupt;
+extern DL_IMPORT object *MemoryError;
+extern DL_IMPORT object *NameError;
+extern DL_IMPORT object *OverflowError;
+extern DL_IMPORT object *RuntimeError;
+extern DL_IMPORT object *SyntaxError;
+extern DL_IMPORT object *SystemError;
+extern DL_IMPORT object *SystemExit;
+extern DL_IMPORT object *TypeError;
+extern DL_IMPORT object *ValueError;
+extern DL_IMPORT object *ZeroDivisionError;
 
 /* Convenience functions */
 

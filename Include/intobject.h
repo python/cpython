@@ -50,7 +50,7 @@ typedef struct {
 	long ob_ival;
 } intobject;
 
-extern typeobject Inttype;
+extern DL_IMPORT typeobject Inttype;
 
 #define is_intobject(op) ((op)->ob_type == &Inttype)
 
@@ -69,7 +69,7 @@ Hope these macros don't conflict with other people's.
 Don't forget to apply INCREF() when returning True or False!!!
 */
 
-extern intobject FalseObject, TrueObject; /* Don't use these directly */
+extern DL_IMPORT intobject FalseObject, TrueObject; /* Don't use these directly */
 
 #define False ((object *) &FalseObject)
 #define True ((object *) &TrueObject)

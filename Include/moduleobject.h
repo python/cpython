@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Module object interface */
 
-extern typeobject Moduletype;
+extern DL_IMPORT typeobject Moduletype;
 
 #define is_moduleobject(op) ((op)->ob_type == &Moduletype)
 

@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Mapping object type -- mapping from hashable object to object */
 
-extern typeobject Mappingtype;
+extern DL_IMPORT typeobject Mappingtype;
 
 #define is_mappingobject(op) ((op)->ob_type == &Mappingtype)
 

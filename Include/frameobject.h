@@ -58,7 +58,7 @@ typedef struct _frame {
 
 /* Standard object interface */
 
-extern typeobject Frametype;
+extern DL_IMPORT typeobject Frametype;
 
 #define is_frameobject(op) ((op)->ob_type == &Frametype)
 

@@ -35,7 +35,7 @@ int sysset PROTO((char *, object *));
 FILE *sysgetfile PROTO((char *, FILE *));
 void initsys PROTO((void));
 
-extern object *sys_trace, *sys_profile;
+extern DL_IMPORT object *sys_trace, *sys_profile;
 
 #ifdef __cplusplus
 }

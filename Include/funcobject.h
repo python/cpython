@@ -39,7 +39,7 @@ typedef struct {
 	object *func_argdefs;
 } funcobject;
 
-extern typeobject Functype;
+extern DL_IMPORT typeobject Functype;
 
 #define is_funcobject(op) ((op)->ob_type == &Functype)
 

@@ -57,7 +57,7 @@ typedef struct {
 	char ob_sval[1];
 } stringobject;
 
-extern typeobject Stringtype;
+extern DL_IMPORT typeobject Stringtype;
 
 #define is_stringobject(op) ((op)->ob_type == &Stringtype)
 

@@ -39,7 +39,7 @@ typedef struct {
 	double ob_fval;
 } floatobject;
 
-extern typeobject Floattype;
+extern DL_IMPORT typeobject Floattype;
 
 #define is_floatobject(op) ((op)->ob_type == &Floattype)
 

@@ -46,7 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define AC_R_PUBLIC	0004
 #define AC_W_PUBLIC	0002
 
-extern typeobject Accesstype;
+extern DL_IMPORT typeobject Accesstype;
 
 #define is_accessobject(v) ((v)->ob_type == &Accesstype)
 
@@ -58,7 +58,7 @@ void setaccessowner PROTO((object *, object *));
 object *cloneaccessobject PROTO((object *));
 int hasaccessvalue PROTO((object *));
 
-extern typeobject Anynumbertype, Anysequencetype, Anymappingtype;
+extern DL_IMPORT typeobject Anynumbertype, Anysequencetype, Anymappingtype;
 
 #ifdef __cplusplus
 }

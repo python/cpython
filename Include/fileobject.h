@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* File object interface */
 
-extern typeobject Filetype;
+extern DL_IMPORT typeobject Filetype;
 
 #define is_fileobject(op) ((op)->ob_type == &Filetype)
 

@@ -47,7 +47,7 @@ typedef struct {
 	object *co_name;	/* string */
 } codeobject;
 
-extern typeobject Codetype;
+extern DL_IMPORT typeobject Codetype;
 
 #define is_codeobject(op) ((op)->ob_type == &Codetype)
 
