@@ -1096,7 +1096,7 @@ csv_writerows(WriterObj *self, PyObject *seqseq)
         row_iter = PyObject_GetIter(seqseq);
         if (row_iter == NULL) {
                 PyErr_SetString(PyExc_TypeError,
-                                "writerows() argument must be iteratable");
+                                "writerows() argument must be iterable");
                 return NULL;
         }
         while ((row_obj = PyIter_Next(row_iter))) {
