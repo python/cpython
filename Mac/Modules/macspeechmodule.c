@@ -419,7 +419,6 @@ ms_Busy(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	OSErr err;
 	short result;
 	
 	if (!getnoarg(args))
@@ -438,7 +437,6 @@ ms_SpeakString(self, args)
 	object *args;
 {
 	OSErr err;
-	short result;
 	char *str;
 	int len;
 	
@@ -473,7 +471,6 @@ ms_CountVoices(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	OSErr err;
 	short result;
 	
 	if (!getnoarg(args))
@@ -489,7 +486,6 @@ ms_GetIndVoice(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	OSErr err;
 	mvobject *rv;
 	long ind;
 	
@@ -511,7 +507,6 @@ ms_Version(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	OSErr err;
 	NumVersion v;
 	
 	if (!getnoarg(args))
