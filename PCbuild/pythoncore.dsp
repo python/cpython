@@ -298,6 +298,10 @@ SOURCE=..\Parser\grammar1.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Modules\heapqmodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\imageop.c
 # End Source File
 # Begin Source File

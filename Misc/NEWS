@@ -104,6 +104,8 @@ Extension modules
 Library
 -------
 
+- heapq.py has been converted to C for improved performance
+
 - traceback.format_exc has been added (similar to print_exc but it returns
   a string).
 

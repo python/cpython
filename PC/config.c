@@ -46,6 +46,7 @@ extern void initxxsubtype(void);
 extern void initzipimport(void);
 extern void init_random(void);
 extern void inititertools(void);
+extern void initheapq(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -98,6 +99,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"_weakref", init_weakref},
 	{"_hotshot", init_hotshot},
 	{"_random", init_random},
+        {"heapq", initheapq},
 	{"itertools", inititertools},
 
 	{"xxsubtype", initxxsubtype},
