@@ -498,31 +498,6 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	return (mp->ma_lookup)(mp, key, hash)->me_value;
 }
 
-static PyObject *
-dict_getitem(PyObject *op, PyObject *key)
-{
-	long hash;
-	dictobject *mp = (dictobject *)op;
-	PyObject *v;
-
-	if (!PyDict_Check(op)) {
-		return NULL;
-	}
-	if (!PyString_CheckExact(key) ||
-	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
-	{
-		hash = PyObject_Hash(key);
-		if (hash == -1)
-			return NULL;
-	}
-	v = (mp->ma_lookup)(mp, key, hash) -> me_value;
-	if (v == NULL)
-		PyErr_SetObject(PyExc_KeyError, key);
-	else
-		Py_INCREF(v);
-	return v;
-}
-
 /* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
  * dictionary if it is merely replacing the value for an existing key.
  * This is means that it's safe to loop over a dictionary with
@@ -1813,7 +1788,7 @@ PyDoc_STRVAR(iteritems__doc__,
 static PyMethodDef mapp_methods[] = {
 	{"__contains__",(PyCFunction)dict_has_key,      METH_O | METH_COEXIST,
 	 contains__doc__},
-	{"__getitem__", (PyCFunction)dict_getitem,	METH_O | METH_COEXIST,
+	{"__getitem__", (PyCFunction)dict_subscript,	METH_O | METH_COEXIST,
 	 getitem__doc__},
 	{"has_key",	(PyCFunction)dict_has_key,      METH_O,
 	 has_key__doc__},
