@@ -2,13 +2,19 @@
 
 
 #-------------------------#
-# Recognize sound headers #
+# Recognize image headers #
 #-------------------------#
 
-def what(filename, h=None):
+def what(file, h=None):
 	if h is None:
-		f = open(filename, 'r')
-		h = f.read(32)
+		if type(file) == type(''):
+			f = open(file, 'rb')
+			h = f.read(32)
+		else:
+			location = file.tell()
+			h = file.read(32)
+			file.seek(location)
+			f = None	
 	else:
 		f = None
 	try:
