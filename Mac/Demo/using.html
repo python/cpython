@@ -31,8 +31,8 @@ Python's power. <P>
 <h2>Invoking the interpreter</h2>
 
 The name of the interpreter may differ on different installations: it
-may be called <CODE>Python</CODE>, <CODE>PythonPPC</CODE> (for powerpc
-macs), <CODE>PythonCFM68K</CODE> or<CODE>Python68K</CODE> (both for 68K macs). 
+may be called <CODE>PythonFAT</CODE> (for powerpc macs and 68K macs with
+CFM68K installed) or <CODE>Python68K</CODE> (for 68K macs). 
 It will always
 be recognizable by the "16 ton" icon, though. You start the
 interpreter in interactive mode by double-clicking its icon: <p>
@@ -42,7 +42,7 @@ interpreter in interactive mode by double-clicking its icon: <p>
 This should give you a text window with an informative version string
 and a prompt, something like the following:
 <PRE>
-Python 1.5 (#0 Aug 27, 1997)  [CW PPC w/GUSI MSL]
+Python 1.5 (#12 Aug 27, 1997)  [CW PPC w/GUSI MSL]
 Copyright 1991-1997 Stichting Mathematisch Centrum, Amsterdam
 &gt;&gt;&gt;
 </PRE>
@@ -299,9 +299,8 @@ itself. Note that the text field may extend "beyond the bottom" even
 though it does not have a scroll bar. Using the arrow keys works,
 though.<p>
 
-The Python home folder $(PYTHON) is initially, when you execute the
-interpreter for the first time, set to the folder where the
-interpreter lives. You can change it here. <p>
+The Python home folder $(PYTHON) is initially, when you install Python,
+set to the folder where the interpreter lives. You can change it here. <p>
 
 Finally, you can set the default startup options here, through a
 sub-dialog.
@@ -373,6 +372,11 @@ message should actually say "Not enough memory in the system heap to
 load PythonCore".
 Blame Apple for the confusing message. <p>
 
+There appear to be problems with QuickTime for the CFM68K version of the
+interpreter. If you experience these please contact the SIG: some people
+use quicktime without problems and some not, and we are still hunting for
+the cause. <p>
+
 Python is a rather safe language, and hence it should be difficult to
 crash the interpreter of the system with a Python script. There is an
 exception to this rule, though: the modules that interface to the
@@ -408,7 +412,7 @@ The next section to check out is the <a href="index.html">annotated sample progr
 
 <HR>
 <A HREF="http://www.cwi.nl/~jack">Jack Jansen</A>,
-<A HREF="mailto:jack@cwi.nl">jack@cwi.nl</A>, 27-Aug-1997.
+<A HREF="mailto:jack@cwi.nl">jack@cwi.nl</A>, 08-Sep-1997.
 
 </BODY>
 </HTML>
