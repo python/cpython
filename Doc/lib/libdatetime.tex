@@ -219,12 +219,25 @@ Supported operations:
           {(1)}
   \lineiii{\var{t1} = \var{t2} * \var{i} or \var{t1} = \var{i} * \var{t2}}
           {Delta multiplied by an integer or long.
-           Afterwards \var{t1} // i == \var{t2} is true, provided i != 0.
+           Afterwards \var{t1} // i == \var{t2} is true, provided \code{i != 0}.
            In general, \var{t1} * i == \var{t1} * (i-1) + \var{t1} is true.}
           {(1)}
   \lineiii{\var{t1} = \var{t2} // \var{i}}
           {The floor is computed and the remainder (if any) is thrown away.}
           {(2)}
+  \lineiii{+\var{t1}}
+	  {Returns a \class{timedelta} object with the same value.}
+	  {}
+  \lineiii{-\var{t1}}
+	  {equivalent to \class{timedelta}(-\var{t1.days}, -\var{t1.seconds},
+	   -\var{t1.microseconds}),and to \var{t1}* -1.}
+	  {(1)(3)}	  
+  \lineiii{abs(\var{t})}
+          {equivalent to +\var{t} when \code{t.days >= 0}, and to -\var{t} when
+           \code{t.days < 0}.}
+          {(1)}
+
+    
 \end{tableiii}
 \noindent
 Notes:
@@ -235,45 +248,24 @@ This is exact, but may overflow.
 
 \item[(2)]
 Division by 0 raises \exception{ZeroDivisionError}.
+
+\item[(3)]
+-\var{timedelta.max} is not representable as a \class{timedelta} object).
+
 \end{description}
 
+In addition to the operations listed above \class{timedelta} objects
+support certain additions and subtractions with \class{date},
+\class{datetime}, and \class{datimetz} objects (see below).
 
+Comparisons of \class{timedelta} objects are supported with the
+\class{timedelta} object representing the smaller duration considered
+to be the smaller timedelta.
 
-
-\begin{itemize}
-  \item
-    certain additions and subtractions with date, datetime, and datimetz
-    objects (see below)
-
-  \item
-    +timedelta -> timedelta
-    Returns a \class{timedelta} object with the same value.
-
-  \item
-    -timedelta -> timedelta
-    -t is equivalent to timedelta(-t.days, -t.seconds, -t.microseconds),
-    and to t*-1.  This is exact, but may overflow (for example,
-    -timedelta.max is not representable as a \class{timedelta} object).
-
-  \item
-    \code{abs(timedelta) -> timedelta}:
-    \code{abs(t)} is equivalent to +t when \code{t.days >= 0}, and to -t when
-    \code{t.days < 0}.  This is exact, and cannot overflow.
-
-  \item
-    comparison of \class{timedelta} to timedelta; the \class{timedelta} representing
-    the smaller duration is considered to be the smaller timedelta
-
-  \item
-    hash, use as dict key
-
-  \item
-    efficient pickling
-
-  \item
-    in Boolean contexts, a \class{timedelta} object is considered to be true
-    if and only if it isn't equal to \code{timedelta(0)}
-\end{itemize}
+\class{timedelta} objects are hashable (usable as dictionary key),
+support efficient pickling, and in Boolean contexts, a \class{timedelta}
+object is considered to be true if and only if it isn't equal to
+\code{timedelta(0)}.
 
 
 \subsection{\class{date} Objects \label{datetime-date}}
@@ -922,7 +914,7 @@ When \code{None} is passed, it's up to the class designer to decide the
 best response.  For example, returning \code{None} is appropriate if the
 class wishes to say that timetz objects don't participate in the
 \class{tzinfo} protocol.  In other applications, it may be more useful
-for \code{utcoffset(None}} to return the standard UTC offset.
+for \code{utcoffset(None)} to return the standard UTC offset.
 
 When a \class{datetimetz} object is passed in response to a
 \class{datetimetz} method, \code{dt.tzinfo} is the same object as
