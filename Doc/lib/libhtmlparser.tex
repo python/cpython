@@ -123,8 +123,22 @@ inside the \code{<!}...\code{>} markup.It is intended to be overridden
 by a derived class; the base class implementation does nothing.
 \end{methoddesc}
 
+\begin{methoddesc}{handle_pi}{data}
+Method called when a processing instruction is encountered.  The
+\var{data} parameter will contain the entire processing instruction.
+For example, for the processing instruction \code{<?proc color='red'>},
+this method would be called as \code{handle_pi("proc color='red'")}.  It
+is intended to be overridden by a derived class; the base class
+implementation does nothing.
 
-\subsection{Example HTML Parser \label{htmlparser-example}}
+\note{The \class{HTMLParser} class uses the SGML syntactic rules for
+processing instruction.  An XHTML processing instruction using the
+trailing \character{?} will cause the \character{?} to be included in
+\var{data}.}
+\end{methoddesc}
+
+
+\subsection{Example HTML Parser Application \label{htmlparser-example}}
 
 As a basic example, below is a very basic HTML parser that uses the
 \class{HTMLParser} class to print out tags as they are encountered:
