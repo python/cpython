@@ -410,29 +410,48 @@ to those used by Standard C.  The recognized escape sequences are:
 \index{Standard C}
 \index{C}
 
-\begin{tableii}{l|l}{code}{Escape Sequence}{Meaning}
-\lineii{\e\var{newline}} {Ignored}
-\lineii{\e\e}	{Backslash (\code{\e})}
-\lineii{\e'}	{Single quote (\code{'})}
-\lineii{\e"}	{Double quote (\code{"})}
-\lineii{\e a}	{\ASCII{} Bell (BEL)}
-\lineii{\e b}	{\ASCII{} Backspace (BS)}
-\lineii{\e f}	{\ASCII{} Formfeed (FF)}
-\lineii{\e n}	{\ASCII{} Linefeed (LF)}
-\lineii{\e N\{\var{name}\}}
-       {Character named \var{name} in the Unicode database (Unicode only)}
-\lineii{\e r}	{\ASCII{} Carriage Return (CR)}
-\lineii{\e t}	{\ASCII{} Horizontal Tab (TAB)}
-\lineii{\e u\var{xxxx}}    {Character with 16-bit hex value \var{xxxx} (Unicode only)}
-\lineii{\e U\var{xxxxxxxx}}{Character with 32-bit hex value \var{xxxxxxxx} (Unicode only)}
-\lineii{\e v}	{\ASCII{} Vertical Tab (VT)}
-\lineii{\e\var{ooo}} {\ASCII{} character with octal value \var{ooo}}
-\lineii{\e x\var{hh}} {\ASCII{} character with hex value \var{hh}}
-\end{tableii}
+\begin{tableiii}{l|l|c}{code}{Escape Sequence}{Meaning}{Notes}
+\lineiii{\e\var{newline}} {Ignored}{}
+\lineiii{\e\e}	{Backslash (\code{\e})}{}
+\lineiii{\e'}	{Single quote (\code{'})}{}
+\lineiii{\e"}	{Double quote (\code{"})}{}
+\lineiii{\e a}	{\ASCII{} Bell (BEL)}{}
+\lineiii{\e b}	{\ASCII{} Backspace (BS)}{}
+\lineiii{\e f}	{\ASCII{} Formfeed (FF)}{}
+\lineiii{\e n}	{\ASCII{} Linefeed (LF)}{}
+\lineiii{\e N\{\var{name}\}}
+        {Character named \var{name} in the Unicode database (Unicode only)}{}
+\lineiii{\e r}	{\ASCII{} Carriage Return (CR)}{}
+\lineiii{\e t}	{\ASCII{} Horizontal Tab (TAB)}{}
+\lineiii{\e u\var{xxxx}}
+        {Character with 16-bit hex value \var{xxxx} (Unicode only)}{(1)}
+\lineiii{\e U\var{xxxxxxxx}}
+        {Character with 32-bit hex value \var{xxxxxxxx} (Unicode only)}{(2)}
+\lineiii{\e v}	{\ASCII{} Vertical Tab (VT)}{}
+\lineiii{\e\var{ooo}} {\ASCII{} character with octal value \var{ooo}}{(3)}
+\lineiii{\e x\var{hh}} {\ASCII{} character with hex value \var{hh}}{(4)}
+\end{tableiii}
 \index{ASCII@\ASCII}
 
-As in Standard C, up to three octal digits are accepted.  However,
-exactly two hex digits are taken in hex escapes.
+\noindent
+Notes:
+
+\begin{itemize}
+\item[(1)]
+  Individual code units which form parts of a surrogate pair can be
+  encoded using this escape sequence.
+\item[(2)]
+  Any Unicode character can be encoded this way, but characters
+  outside the Basic Multilingual Plane (BMP) will be encoded using a
+  surrogate pair if Python is compiled to use 16-bit code units (the
+  default).  Individual code units which form parts of a surrogate
+  pair can be encoded using this escape sequence.
+\item[(3)]
+  As in Standard C, up to three octal digits are accepted.
+\item[(4)]
+  Unlike in Standard C, at most two hex digits are accepted.
+\end{itemize}
+
 
 Unlike Standard \index{unrecognized escape sequence}C,
 all unrecognized escape sequences are left in the string unchanged,
@@ -460,12 +479,12 @@ as part of the string, \emph{not} as a line continuation.
 When an \character{r} or \character{R} prefix is used in conjunction
 with a \character{u} or \character{U} prefix, then the \code{\e uXXXX}
 escape sequence is processed while \emph{all other backslashes are
-left in the string}.  For example, the string literal \code{ur"\e
-u0062\e n"} consists of three Unicode characters: `LATIN SMALL LETTER
-B', `REVERSE SOLIDUS', and `LATIN SMALL LETTER N'.  Backslashes can be
-escaped with a preceding backslash; however, both remain in the
-string.  As a result, \code{\e uXXXX} escape sequences are only
-recognized when there are an odd number of backslashes.
+left in the string}.  For example, the string literal
+\code{ur"\e{}u0062\e n"} consists of three Unicode characters: `LATIN
+SMALL LETTER B', `REVERSE SOLIDUS', and `LATIN SMALL LETTER N'.
+Backslashes can be escaped with a preceding backslash; however, both
+remain in the string.  As a result, \code{\e uXXXX} escape sequences
+are only recognized when there are an odd number of backslashes.
 
 \subsection{String literal concatenation\label{string-catenation}}
 

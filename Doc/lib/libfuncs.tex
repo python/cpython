@@ -568,10 +568,6 @@ def my_import(name):
 \begin{funcdesc}{len}{s}
   Return the length (the number of items) of an object.  The argument
   may be a sequence (string, tuple or list) or a mapping (dictionary).
-  In the case of Unicode strings, \function{len()} returns the number
-  of storage units, not abstract characters.  In particular, when a
-  surrogate pair is encountered, each component of the pair is counted
-  as a separate character.
 \end{funcdesc}
 
 \begin{funcdesc}{list}{\optional{sequence}}
