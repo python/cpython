@@ -1181,7 +1181,9 @@ class LineAndFileWrapper:
         self.readlines = self._file.readlines
 
     def read(self, amt=None):
-        assert not self._line_consumed and self._line_left
+        if self._line_consumed:
+            return self._file.read(amt)
+        assert self._line_left
         if amt is None or amt > self._line_left:
             s = self._line[self._line_offset:]
             self._done()
@@ -1201,11 +1203,17 @@ class LineAndFileWrapper:
             return s
 
     def readline(self):
+        if self._line_consumed:
+            return self._file.readline()
+        assert self._line_left
         s = self._line[self._line_offset:]
         self._done()
         return s
 
     def readlines(self, size=None):
+        if self._line_consumed:
+            return self._file.readlines(size)
+        assert self._line_left
         L = [self._line[self._line_offset:]]
         self._done()
         if size is None:

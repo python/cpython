@@ -322,6 +322,8 @@ Extension modules
 Library
 -------
 
+- urllib.urlopen().readline() now handles HTTP/0.9 correctly.
+
 - refactored site.py into functions.  Also wrote regression tests for the
   module.
 
