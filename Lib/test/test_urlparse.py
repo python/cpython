@@ -28,6 +28,9 @@ class UrlParseTestCase(unittest.TestCase):
             ('imap://mail.python.org/mbox1',
              ('imap', 'mail.python.org', '/mbox1', '', '', ''),
              ('imap', 'mail.python.org', '/mbox1', '', '')),
+            ('mms://wms.sys.hinet.net/cts/Drama/09006251100.asf',
+             ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf', '', '', ''),
+             ('mms', 'wms.sys.hinet.net', '/cts/Drama/09006251100.asf', '', '')),
             ]:
             result = urlparse.urlparse(url)
             self.assertEqual(result, parsed)
