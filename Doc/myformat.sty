@@ -18,7 +18,12 @@
 \newcommand{\Python}{Python}
 \newcommand{\UNIX}{U{\sc nix}}
 
-% Code environment (use together with verbatim!)
+% Calculate the text width for the minipage in the code environment:
+\newlength{\codewidth}
+\setlength{\codewidth}{\textwidth}
+\addtolength{\codewidth}{-\parindent}
+
+% Code environment.  Use together with begin/end verbatim!
 \newenvironment{code}%
-{\nopagebreak\begin{list}{\nopagebreak}{\nopagebreak}\nopagebreak}%
-{\nopagebreak\end{list}\nopagebreak}
+{\vspace{10pt}\par\begin{minipage}{\codewidth}}% begin stuff
+{\end{minipage}\par\vspace{10pt}\noindent}% end stuff
