@@ -12,7 +12,7 @@ Some facts and figures:
 
 \begin{itemize}
 \item reads and writes \module{gzip} and \module{bzip2} compressed archives.
-\item creates POSIX 1003.1-1990 compliant or GNU tar compatible archives.
+\item creates \POSIX{} 1003.1-1990 compliant or GNU tar compatible archives.
 \item reads GNU tar extensions \emph{longname}, \emph{longlink} and
       \emph{sparse}.
 \item stores pathnames of unlimited length using GNU tar extensions.
@@ -52,19 +52,19 @@ Some facts and figures:
     a file object opened for \var{name}.
 
     For special purposes, there is a second format for \var{mode}:
-    \code{'filemode|[compression]'}.  \code{open} will return a \class{TarFile}
-    object that processes its data as a stream of blocks. No random
-    seeking will be done on the file. If given, \var{fileobj} may be any
-    object that has a \code{read()} resp. \code{write()} method.
-    \var{bufsize} specifies the blocksize and defaults to \code{20 * 512}
-    bytes. Use this variant in combination with e.g. \code{sys.stdin}, a socket
-    file object or a tape device.
-    However, such a \class{TarFile} object is limited in that it does not allow
-    to be accessed randomly, see \citetitle{Examples} (section
-    \ref{tar-examples}).
-    The currently possible modes:
+    \code{'filemode|[compression]'}.  \function{open()} will return a
+    \class{TarFile} object that processes its data as a stream of
+    blocks.  No random seeking will be done on the file. If given,
+    \var{fileobj} may be any object that has a \method{read()} or
+    \method{write()} method (depending on the \var{mode}).
+    \var{bufsize} specifies the blocksize and defaults to \code{20 *
+    512} bytes. Use this variant in combination with
+    e.g. \code{sys.stdin}, a socket file object or a tape device.
+    However, such a \class{TarFile} object is limited in that it does
+    not allow to be accessed randomly, see ``Examples''
+    (section~\ref{tar-examples}).  The currently possible modes:
 
-    \begin{tableii}{c|l}{code}{mode}{action}
+    \begin{tableii}{c|l}{code}{Mode}{Action}
     \lineii{'r|'}{Open a \emph{stream} of uncompressed tar blocks for reading.}
     \lineii{'r|gz'}{Open a gzip compressed \emph{stream} for reading.}
     \lineii{'r|bz2'}{Open a bzip2 compressed \emph{stream} for reading.}
@@ -77,26 +77,25 @@ Some facts and figures:
 \begin{classdesc*}{TarFile}
     Class for reading and writing tar archives. Do not use this
     class directly, better use \function{open()} instead.
-    See \citetitle{TarFile Objects} (section \ref{tarfile-objects}).
+    See ``TarFile Objects'' (section~\ref{tarfile-objects}).
 \end{classdesc*}
 
 \begin{funcdesc}{is_tarfile}{name}
-    Return \code{True} if \var{name} is a tar archive file, that the
-    \module{tarfile} module can read.
+    Return \constant{True} if \var{name} is a tar archive file, that
+    the \module{tarfile} module can read.
 \end{funcdesc}
 
 \begin{classdesc}{TarFileCompat}{filename\optional{, mode\optional{,
-    compression}}}
-
-    Class for limited access to tar archives with a \code{zipfile}-like
-    interface. Please consult the documentation of \code{zipfile} for more
-    details.
-    \code{compression} must be one of the following constants:
+                                 compression}}}
+    Class for limited access to tar archives with a
+    \refmodule{zipfile}-like interface. Please consult the
+    documentation of the \refmodule{zipfile} module for more details.
+    \var{compression} must be one of the following constants:
     \begin{datadesc}{TAR_PLAIN}
         Constant for an uncompressed tar archive.
     \end{datadesc}
     \begin{datadesc}{TAR_GZIPPED}
-        Constant for a \code{gzip} compressed tar archive.
+        Constant for a \refmodule{gzip} compressed tar archive.
     \end{datadesc}
 \end{classdesc}
 
@@ -125,7 +124,7 @@ Some facts and figures:
 \end{excdesc}
 
 \begin{seealso}
-    \seemodule{zipfile}{Documentation of the \code{zipfile}
+    \seemodule{zipfile}{Documentation of the \refmodule{zipfile}
     standard module.}
 
     \seetitle[http://www.gnu.org/manual/tar/html_chapter/tar_8.html\#SEC118]
@@ -162,7 +161,7 @@ tar archive several times. Each archive member is represented by a
 
 \begin{methoddesc}{open}{...}
     Alternative constructor. The \function{open()} function on module level is
-    actually a shortcut to this classmethod. See section \ref{module-tarfile}
+    actually a shortcut to this classmethod. See section~\ref{module-tarfile}
     for details.
 \end{methoddesc}
 
@@ -187,8 +186,8 @@ tar archive several times. Each archive member is represented by a
 
 \begin{methoddesc}{list}{verbose=True}
     Print a table of contents to \code{sys.stdout}. If \var{verbose} is
-    \code{False}, only the names of the members are printed. If it is
-    \code{True}, an \code{"ls -l"}-like output is produced.
+    \constant{False}, only the names of the members are printed. If it is
+    \constant{True}, output similar to that of \program{ls -l} is produced.
 \end{methoddesc}
 
 \begin{methoddesc}{next}{}
@@ -219,17 +218,18 @@ tar archive several times. Each archive member is represented by a
     \end{notice}
 \end{methoddesc}
 
-\begin{methoddesc}{add}{name\optional{, arcname\optional{, recursive=True}}}
+\begin{methoddesc}{add}{name\optional{, arcname\optional{, recursive}}}
     Add the file \var{name} to the archive. \var{name} may be any type
     of file (directory, fifo, symbolic link, etc.).
     If given, \var{arcname} specifies an alternative name for the file in the
     archive. Directories are added recursively by default.
-    This can be avoided by setting \var{recursive} to \code{False}.
+    This can be avoided by setting \var{recursive} to \constant{False};
+    the default is \constant{True}.
 \end{methoddesc}
 
 \begin{methoddesc}{addfile}{tarinfo\optional{, fileobj}}
     Add the \class{TarInfo} object \var{tarinfo} to the archive.
-    If \var{fileobj} is given, \code{tarinfo.size} bytes are read
+    If \var{fileobj} is given, \code{\var{tarinfo}.size} bytes are read
     from it and added to the archive.  You can create \class{TarInfo} objects
     using \method{gettarinfo()}.
     \begin{notice}
@@ -238,57 +238,57 @@ tar archive several times. Each archive member is represented by a
     \end{notice}
 \end{methoddesc}
 
-\begin{methoddesc}{gettarinfo}{\optional{name\optional{, arcname
-                               \optional{, fileobj}}}}
-    Create a \class{TarInfo} object for either the file \var{name} or the
-    file object \var{fileobj} (using \code{os.fstat()} on its file descriptor).
-    You can modify some of the \class{TarInfo}'s attributes before you add it
-    using \method{addfile()}.
-    If given, \var{arcname} specifies an alternative name for the file in the
+\begin{methoddesc}{gettarinfo}{\optional{name\optional{,
+                               arcname\optional{, fileobj}}}}
+    Create a \class{TarInfo} object for either the file \var{name} or
+    the file object \var{fileobj} (using \function{os.fstat()} on its
+    file descriptor).  You can modify some of the \class{TarInfo}'s
+    attributes before you add it using \method{addfile()}.  If given,
+    \var{arcname} specifies an alternative name for the file in the
     archive.
 \end{methoddesc}
 
 \begin{methoddesc}{close}{}
-    Close the \class{TarFile}. In write-mode, two finishing zero blocks are
-    appended to the archive.
+    Close the \class{TarFile}. In write mode, two finishing zero
+    blocks are appended to the archive.
 \end{methoddesc}
 
-\begin{memberdesc}{posix=True}
-    If \code{True}, create a POSIX 1003.1-1990 compliant archive. GNU
-    extensions are not used, because they are not part of the POSIX standard.
-    This limits the length of filenames to at most 256 and linknames to 100
-    characters. A \exception{ValueError} is raised, if a pathname exceeds this
-    limit.
-    If \code{False}, create a GNU tar compatible archive. It will not be POSIX
-    compliant, but can store pathnames of unlimited length.
+\begin{memberdesc}{posix}
+    If true, create a \POSIX{} 1003.1-1990 compliant archive. GNU
+    extensions are not used, because they are not part of the \POSIX{}
+    standard.  This limits the length of filenames to at most 256 and
+    link names to 100 characters. A \exception{ValueError} is raised
+    if a pathname exceeds this limit.  If false, create a GNU tar
+    compatible archive. It will not be \POSIX{} compliant, but can
+    store pathnames of unlimited length.
 \end{memberdesc}
 
-\begin{memberdesc}{dereference=False}
-    If \code{False}, add symbolic and hard links to archive. If \code{True},
-    add the content of the target files to the archive. This has no effect on
-    systems that do not support links.
+\begin{memberdesc}{dereference}
+    If false, add symbolic and hard links to archive. If true, add the
+    content of the target files to the archive.  This has no effect on
+    systems that do not support symbolic links.
 \end{memberdesc}
 
-\begin{memberdesc}{ignore_zeros=False}
-    If \code{False}, treat an empty block as the end of the archive. If
-    \code{True}, skip empty (and invalid) blocks and try to get as many
-    members as possible. This is only useful for concatenated or damaged
+\begin{memberdesc}{ignore_zeros}
+    If false, treat an empty block as the end of the archive. If true,
+    skip empty (and invalid) blocks and try to get as many members as
+    possible. This is only useful for concatenated or damaged
     archives.
 \end{memberdesc}
 
 \begin{memberdesc}{debug=0}
-    To be set from \code{0}(no debug messages) up to \code{3}(all debug
-    messages). The messages are written to \code{sys.stdout}.
+    To be set from \code{0} (no debug messages; the default) up to
+    \code{3} (all debug messages). The messages are written to
+    \code{sys.stdout}.
 \end{memberdesc}
 
-\begin{memberdesc}{errorlevel=0}
-    If \code{0}, all errors are ignored when using \method{extract()}.
-    Nevertheless, they appear as error messages in the debug output, when
-    debugging is enabled.
-    If \code{1}, all \emph{fatal} errors are raised as \exception{OSError}
-    or \exception{IOError} exceptions.
-    If \code{2}, all \emph{non-fatal} errors are raised as \exception{TarError}
-    exceptions as well.
+\begin{memberdesc}{errorlevel}
+    If \code{0} (the default), all errors are ignored when using
+    \method{extract()}.  Nevertheless, they appear as error messages
+    in the debug output, when debugging is enabled.  If \code{1}, all
+    \emph{fatal} errors are raised as \exception{OSError} or
+    \exception{IOError} exceptions.  If \code{2}, all \emph{non-fatal}
+    errors are raised as \exception{TarError} exceptions as well.
 \end{memberdesc}
 
 %-----------------
@@ -297,13 +297,14 @@ tar archive several times. Each archive member is represented by a
 
 \subsection{TarInfo Objects \label{tarinfo-objects}}
 
-A \class{TarInfo} object represents one member in a \class{TarFile}. Aside from
-storing all required attributes of a file (like file type, size, time,
-permissions, owner etc.), it provides some useful methods to determine its
-type. It does \emph{not} contain the file's data itself.
+A \class{TarInfo} object represents one member in a
+\class{TarFile}. Aside from storing all required attributes of a file
+(like file type, size, time, permissions, owner etc.), it provides
+some useful methods to determine its type. It does \emph{not} contain
+the file's data itself.
 
-\class{TarInfo} objects are returned by \code{TarFile}'s methods
-\code{getmember()}, \code{getmembers()} and \code{gettarinfo()}.
+\class{TarInfo} objects are returned by \class{TarFile}'s methods
+\method{getmember()}, \method{getmembers()} and \method{gettarinfo()}.
 
 \begin{classdesc}{TarInfo}{\optional{name}}
     Create a \class{TarInfo} object.
@@ -318,6 +319,7 @@ type. It does \emph{not} contain the file's data itself.
 \end{methoddesc}
 
 A \code{TarInfo} object has the following public data attributes:
+
 \begin{memberdesc}{name}
     Name of the archive member.
 \end{memberdesc}
@@ -335,30 +337,42 @@ A \code{TarInfo} object has the following public data attributes:
 \end{memberdesc}
 
 \begin{memberdesc}{type}
-    File type.
-    \var{type} is usually one of these constants:
-    \code{REGTYPE, AREGTYPE, LNKTYPE, SYMTYPE, DIRTYPE, FIFOTYPE, CONTTYPE,
-    CHRTYPE, BLKTYPE, GNUTYPE_SPARSE}.
-    To determine the type of a \class{TarInfo} object more conveniently, use
-    the \code{is_*()} methods below.
+    File type.  \var{type} is usually one of these constants:
+    \constant{REGTYPE}, \constant{AREGTYPE}, \constant{LNKTYPE},
+    \constant{SYMTYPE}, \constant{DIRTYPE}, \constant{FIFOTYPE},
+    \constant{CONTTYPE}, \constant{CHRTYPE}, \constant{BLKTYPE},
+    \constant{GNUTYPE_SPARSE}.  To determine the type of a
+    \class{TarInfo} object more conveniently, use the \code{is_*()}
+    methods below.
 \end{memberdesc}
 
 \begin{memberdesc}{linkname}
-    Name of the target file name, which is only present in \class{TarInfo}
-    objects of type LNKTYPE and SYMTYPE.
+    Name of the target file name, which is only present in
+    \class{TarInfo} objects of type \constant{LNKTYPE} and
+    \constant{SYMTYPE}.
 \end{memberdesc}
 
-\begin{memberdesc}{uid, gid}
-    User and group ID of who originally stored this member.
+\begin{memberdesc}{uid}
+    User ID of the user who originally stored this member.
 \end{memberdesc}
 
-\begin{memberdesc}{uname, gname}
-    User and group name.
+\begin{memberdesc}{gid}
+    Group ID of the user who originally stored this member.
+\end{memberdesc}
+
+\begin{memberdesc}{uname}
+    User name.
+\end{memberdesc}
+
+\begin{memberdesc}{gname}
+    Group name.
 \end{memberdesc}
 
 A \class{TarInfo} object also provides some convenient query methods:
+
 \begin{methoddesc}{isfile}{}
-    Return \code{True} if the \class{Tarinfo} object is a regular file.
+    Return \constant{True} if the \class{Tarinfo} object is a regular
+    file.
 \end{methoddesc}
 
 \begin{methoddesc}{isreg}{}
@@ -366,31 +380,32 @@ A \class{TarInfo} object also provides some convenient query methods:
 \end{methoddesc}
 
 \begin{methoddesc}{isdir}{}
-    Return \code{True} if it is a directory.
+    Return \constant{True} if it is a directory.
 \end{methoddesc}
 
 \begin{methoddesc}{issym}{}
-    Return \code{True} if it is a symbolic link.
+    Return \constant{True} if it is a symbolic link.
 \end{methoddesc}
 
 \begin{methoddesc}{islnk}{}
-    Return \code{True} if it is a hard link.
+    Return \constant{True} if it is a hard link.
 \end{methoddesc}
 
 \begin{methoddesc}{ischr}{}
-    Return \code{True} if it is a character device.
+    Return \constant{True} if it is a character device.
 \end{methoddesc}
 
 \begin{methoddesc}{isblk}{}
-    Return \code{True} if it is a block device.
+    Return \constant{True} if it is a block device.
 \end{methoddesc}
 
 \begin{methoddesc}{isfifo}{}
-    Return \code{True} if it is a FIFO.
+    Return \constant{True} if it is a FIFO.
 \end{methoddesc}
 
 \begin{methoddesc}{isdev}{}
-    Return \code{True} if it is one of character device, block device or FIFO.
+    Return \constant{True} if it is one of character device, block
+    device or FIFO.
 \end{methoddesc}
 
 %------------------------
@@ -447,4 +462,3 @@ for tarinfo in tar:
     tar.extract(tarinfo)
 tar.close()
 \end{verbatim}
-
