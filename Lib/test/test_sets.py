@@ -230,6 +230,10 @@ class TestBinaryOps(unittest.TestCase):
         result = self.set ^ Set([8])
         self.assertEqual(result, Set([2, 4, 6, 8]))
 
+    def test_cmp(self):
+        a, b = Set('a'), Set('b')
+        self.assertRaises(TypeError, cmp, (a,b))
+
 #==============================================================================
 
 class TestUpdateOps(unittest.TestCase):
@@ -634,6 +638,36 @@ class TestCopyingNested(TestCopying):
 
 #==============================================================================
 
+libreftest = """
+Example from the Library Reference:  Doc/lib/libsets.tex
+
+>>> from sets import Set
+>>> engineers = Set(['John', 'Jane', 'Jack', 'Janice'])
+>>> programmers = Set(['Jack', 'Sam', 'Susan', 'Janice'])
+>>> management = Set(['Jane', 'Jack', 'Susan', 'Zack'])
+>>> employees = engineers | programmers | management           # union
+>>> engineering_management = engineers & programmers           # intersection
+>>> fulltime_management = management - engineers - programmers # difference
+>>> engineers.add('Marvin')
+>>> print engineers
+Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
+>>> employees.issuperset(engineers)           # superset test
+False
+>>> employees.update(engineers)               # update from another set
+>>> employees.issuperset(engineers)
+True
+>>> for group in [engineers, programmers, management, employees]:
+...     group.discard('Susan')                # unconditionally remove element
+...     print group
+...
+Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
+Set(['Janice', 'Jack', 'Sam'])
+Set(['Jane', 'Zack', 'Jack'])
+Set(['Zack', 'Sam', 'Marvin', 'Jack', 'Jane', 'Janice', 'John'])
+"""
+
+#==============================================================================
+
 def makeAllTests():
     suite = unittest.TestSuite()
     for klass in (TestSetOfSets,
@@ -664,9 +698,13 @@ def makeAllTests():
 
 #------------------------------------------------------------------------------
 
-def test_main():
+__test__ = {'libreftest' : libreftest}
+
+def test_main(verbose=None):
+    from test import test_sets
     suite = makeAllTests()
     test_support.run_suite(suite)
+    test_support.run_doctest(test_sets, verbose)
 
 if __name__ == "__main__":
-    test_main()
+    test_main(verbose=True)
