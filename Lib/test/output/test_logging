@@ -1,5 +1,4 @@
 test_logging
-About to start TCP server...
 -- log_test0  begin  ---------------------------------------------------
 CRITICAL:ERR:Message 0
 ERROR:ERR:Message 1
