@@ -12,6 +12,10 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- Negative positions returned from PEP 293 error callbacks are now
+  treated as being relative to the end of the input string. Positions
+  that are out of bounds raise an IndexError.
+
 - sys.path[0] (the directory from which the script is loaded) is now
   turned into an absolute pathname, unless it is the empty string.
   (SF patch #664376.)
