@@ -66,7 +66,7 @@ TOOLSDIR=	tools
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
-RELEASE=2.3b1
+RELEASE=2.3b2
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
