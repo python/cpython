@@ -59,19 +59,11 @@ class PythonIDE(Wapplication.Application):
 		if debug_stderr:
 			sys.stderr = debug_stderr
 		for path in sys.argv[1:]:
+			if path.startswith("-p"):
+				# process number added by the OS
+				continue
 			self.opendoc(path)
-		try:
-			import Wthreading
-		except ImportError:
-			self.mainloop()
-		else:
-			if Wthreading.haveThreading:
-				self.mainthread = Wthreading.Thread("IDE event loop", self.mainloop)
-				self.mainthread.start()
-				#self.mainthread.setResistant(1)
-				Wthreading.run()
-			else:
-				self.mainloop()
+		self.mainloop()
 	
 	def makeusermenus(self):
 		m = Wapplication.Menu(self.menubar, "File")
@@ -273,9 +265,6 @@ class PythonIDE(Wapplication.Application):
 	
 	def _quit(self):
 		import PyConsole, PyEdit
-		PyConsole.console.writeprefs()
-		PyConsole.output.writeprefs()
-		PyEdit.searchengine.writeprefs()
 		for window in self._windows.values():
 			try:
 				rv = window.close() # ignore any errors while quitting
@@ -283,6 +272,16 @@ class PythonIDE(Wapplication.Application):
 				rv = 0   # (otherwise, we can get stuck!)
 			if rv and rv > 0:
 				return
+		try:
+			PyConsole.console.writeprefs()
+			PyConsole.output.writeprefs()
+			PyEdit.searchengine.writeprefs()
+		except:
+			# Write to __stderr__ so the msg end up in Console.app and has
+			# at least _some_ chance of getting read...
+			# But: this is a workaround for way more serious problems with
+			# the Python 2.2 Jaguar addon.
+			sys.__stderr__.write("*** PythonIDE: Can't write preferences ***\n")
 		self.quitting = 1
 		
 	def makehelpmenu(self):
