@@ -206,7 +206,9 @@ class SMTPChannel(asynchat.async_chat):
         keylen = len(keyword)
         if arg[:keylen].upper() == keyword:
             address = arg[keylen:].strip()
-            if address[0] == '<' and address[-1] == '>' and address != '<>':
+            if not address:
+                pass
+            elif address[0] == '<' and address[-1] == '>' and address != '<>':
                 # Addresses can be in the form <person@dom.com> but watch out
                 # for null address, e.g. <>
                 address = address[1:-1]
