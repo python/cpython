@@ -5210,8 +5210,7 @@ supercheck(PyTypeObject *type, PyObject *obj)
 			Py_DECREF(class_attr);
 	}
 
-  fail:
-	PyErr_SetString(PyExc_TypeError,
+  	PyErr_SetString(PyExc_TypeError,
 			"super(type, obj): "
 			"obj must be an instance or subtype of type");
 	return NULL;
