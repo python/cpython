@@ -1654,7 +1654,7 @@ listsort(PyListObject *self, PyObject *args)
 
 	assert(self != NULL);
 	if (args != NULL) {
-		if (!PyArg_ParseTuple(args, "|O:sort", &compare))
+		if (!PyArg_UnpackTuple(args, "sort", 0, 1, &compare))
 			return NULL;
 	}
 	merge_init(&ms, compare);

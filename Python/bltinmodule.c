@@ -70,7 +70,7 @@ builtin_apply(PyObject *self, PyObject *args)
 	PyObject *func, *alist = NULL, *kwdict = NULL;
 	PyObject *t = NULL, *retval = NULL;
 
-	if (!PyArg_ParseTuple(args, "O|OO:apply", &func, &alist, &kwdict))
+	if (!PyArg_UnpackTuple(args, "apply", 1, 3, &func, &alist, &kwdict))
 		return NULL;
 	if (alist != NULL) {
 		if (!PyTuple_Check(alist)) {
@@ -126,7 +126,7 @@ builtin_filter(PyObject *self, PyObject *args)
 	int len;   /* guess for result list size */
 	register int j;
 
-	if (!PyArg_ParseTuple(args, "OO:filter", &func, &seq))
+	if (!PyArg_UnpackTuple(args, "filter", 2, 2, &func, &seq))
 		return NULL;
 
 	/* Strings and tuples return a result of the same type. */
@@ -284,7 +284,7 @@ builtin_cmp(PyObject *self, PyObject *args)
 	PyObject *a, *b;
 	int c;
 
-	if (!PyArg_ParseTuple(args, "OO:cmp", &a, &b))
+	if (!PyArg_UnpackTuple(args, "cmp", 2, 2, &a, &b))
 		return NULL;
 	if (PyObject_Cmp(a, b, &c) < 0)
 		return NULL;
@@ -303,7 +303,7 @@ builtin_coerce(PyObject *self, PyObject *args)
 	PyObject *v, *w;
 	PyObject *res;
 
-	if (!PyArg_ParseTuple(args, "OO:coerce", &v, &w))
+	if (!PyArg_UnpackTuple(args, "coerce", 2, 2, &v, &w))
 		return NULL;
 	if (PyNumber_Coerce(&v, &w) < 0)
 		return NULL;
@@ -381,7 +381,7 @@ builtin_dir(PyObject *self, PyObject *args)
 {
 	PyObject *arg = NULL;
 
-	if (!PyArg_ParseTuple(args, "|O:dir", &arg))
+	if (!PyArg_UnpackTuple(args, "dir", 0, 1, &arg))
 		return NULL;
 	return PyObject_Dir(arg);
 }
@@ -404,7 +404,7 @@ builtin_divmod(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w;
 
-	if (!PyArg_ParseTuple(args, "OO:divmod", &v, &w))
+	if (!PyArg_UnpackTuple(args, "divmod", 2, 2, &v, &w))
 		return NULL;
 	return PyNumber_Divmod(v, w);
 }
@@ -580,7 +580,7 @@ builtin_getattr(PyObject *self, PyObject *args)
 	PyObject *v, *result, *dflt = NULL;
 	PyObject *name;
 
-	if (!PyArg_ParseTuple(args, "OO|O:getattr", &v, &name, &dflt))
+	if (!PyArg_UnpackTuple(args, "getattr", 2, 3, &v, &name, &dflt))
 		return NULL;
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(name)) {
@@ -636,7 +636,7 @@ builtin_hasattr(PyObject *self, PyObject *args)
 	PyObject *v;
 	PyObject *name;
 
-	if (!PyArg_ParseTuple(args, "OO:hasattr", &v, &name))
+	if (!PyArg_UnpackTuple(args, "hasattr", 2, 2, &v, &name))
 		return NULL;
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(name)) {
@@ -856,7 +856,7 @@ builtin_setattr(PyObject *self, PyObject *args)
 	PyObject *name;
 	PyObject *value;
 
-	if (!PyArg_ParseTuple(args, "OOO:setattr", &v, &name, &value))
+	if (!PyArg_UnpackTuple(args, "setattr", 3, 3, &v, &name, &value))
 		return NULL;
 	if (PyObject_SetAttr(v, name, value) != 0)
 		return NULL;
@@ -877,7 +877,7 @@ builtin_delattr(PyObject *self, PyObject *args)
 	PyObject *v;
 	PyObject *name;
 
-	if (!PyArg_ParseTuple(args, "OO:delattr", &v, &name))
+	if (!PyArg_UnpackTuple(args, "delattr", 2, 2, &v, &name))
 		return NULL;
 	if (PyObject_SetAttr(v, name, (PyObject *)NULL) != 0)
 		return NULL;
@@ -990,7 +990,7 @@ builtin_iter(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w = NULL;
 
-	if (!PyArg_ParseTuple(args, "O|O:iter", &v, &w))
+	if (!PyArg_UnpackTuple(args, "iter", 1, 2, &v, &w))
 		return NULL;
 	if (w == NULL)
 		return PyObject_GetIter(v);
@@ -1051,7 +1051,7 @@ min_max(PyObject *args, int op)
 
 	if (PyTuple_Size(args) > 1)
 		v = args;
-	else if (!PyArg_ParseTuple(args, "O:min/max", &v))
+	else if (!PyArg_UnpackTuple(args, "min/max", 1, 1, &v))
 		return NULL;
 
 	it = PyObject_GetIter(v);
@@ -1188,7 +1188,7 @@ builtin_pow(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w, *z = Py_None;
 
-	if (!PyArg_ParseTuple(args, "OO|O:pow", &v, &w, &z))
+	if (!PyArg_UnpackTuple(args, "pow", 2, 3, &v, &w, &z))
 		return NULL;
 	return PyNumber_Power(v, w, z);
 }
@@ -1296,7 +1296,7 @@ builtin_raw_input(PyObject *self, PyObject *args)
 	PyObject *fin = PySys_GetObject("stdin");
 	PyObject *fout = PySys_GetObject("stdout");
 
-	if (!PyArg_ParseTuple(args, "|O:[raw_]input", &v))
+	if (!PyArg_UnpackTuple(args, "[raw_]input", 0, 1, &v))
 		return NULL;
 
 	if (fin == NULL) {
@@ -1377,7 +1377,7 @@ builtin_reduce(PyObject *self, PyObject *args)
 {
 	PyObject *seq, *func, *result = NULL, *it;
 
-	if (!PyArg_ParseTuple(args, "OO|O:reduce", &func, &seq, &result))
+	if (!PyArg_UnpackTuple(args, "reduce", 2, 3, &func, &seq, &result))
 		return NULL;
 	if (result != NULL)
 		Py_INCREF(result);
@@ -1513,7 +1513,7 @@ builtin_vars(PyObject *self, PyObject *args)
 	PyObject *v = NULL;
 	PyObject *d;
 
-	if (!PyArg_ParseTuple(args, "|O:vars", &v))
+	if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
 		return NULL;
 	if (v == NULL) {
 		d = PyEval_GetLocals();
@@ -1549,7 +1549,7 @@ builtin_isinstance(PyObject *self, PyObject *args)
 	PyObject *cls;
 	int retval;
 
-	if (!PyArg_ParseTuple(args, "OO:isinstance", &inst, &cls))
+	if (!PyArg_UnpackTuple(args, "isinstance", 2, 2, &inst, &cls))
 		return NULL;
 
 	retval = PyObject_IsInstance(inst, cls);
@@ -1574,7 +1574,7 @@ builtin_issubclass(PyObject *self, PyObject *args)
 	PyObject *cls;
 	int retval;
 
-	if (!PyArg_ParseTuple(args, "OO:issubclass", &derived, &cls))
+	if (!PyArg_UnpackTuple(args, "issubclass", 2, 2, &derived, &cls))
 		return NULL;
 
 	retval = PyObject_IsSubclass(derived, cls);

@@ -12,12 +12,12 @@ used for special class methods; variants without leading and trailing\n\
 
 #define spam1(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; \
-  if(! PyArg_ParseTuple(a,"O:" #OP,&a1)) return NULL; \
+  if(! PyArg_UnpackTuple(a,#OP,1,1,&a1)) return NULL; \
   return AOP(a1); }
 
 #define spam2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; \
-  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
+  if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   return AOP(a1,a2); }
 
 #define spamoi(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
@@ -27,39 +27,39 @@ used for special class methods; variants without leading and trailing\n\
 
 #define spam2n(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; \
-  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
+  if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   if(-1 == AOP(a1,a2)) return NULL; \
   Py_INCREF(Py_None); \
   return Py_None; }
 
 #define spam3n(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2, *a3; \
-  if(! PyArg_ParseTuple(a,"OOO:" #OP,&a1,&a2,&a3)) return NULL; \
+  if(! PyArg_UnpackTuple(a,#OP,3,3,&a1,&a2,&a3)) return NULL; \
   if(-1 == AOP(a1,a2,a3)) return NULL; \
   Py_INCREF(Py_None); \
   return Py_None; }
 
 #define spami(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; long r; \
-  if(! PyArg_ParseTuple(a,"O:" #OP,&a1)) return NULL; \
+  if(! PyArg_UnpackTuple(a,#OP,1,1,&a1)) return NULL; \
   if(-1 == (r=AOP(a1))) return NULL; \
   return PyBool_FromLong(r); }
 
 #define spami2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; long r; \
-  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
+  if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   if(-1 == (r=AOP(a1,a2))) return NULL; \
   return PyInt_FromLong(r); }
 
 #define spami2b(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; long r; \
-  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
+  if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   if(-1 == (r=AOP(a1,a2))) return NULL; \
   return PyBool_FromLong(r); }
 
 #define spamrc(OP,A) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; \
-  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
+  if(! PyArg_UnpackTuple(a,#OP,2,2,&a1,&a2)) return NULL; \
   return PyObject_RichCompare(a1,a2,A); }
 
 spami(isCallable       , PyCallable_Check)
@@ -105,7 +105,7 @@ static PyObject*
 op_pow(PyObject *s, PyObject *a)
 {
 	PyObject *a1, *a2;
-	if (PyArg_ParseTuple(a,"OO:pow",&a1,&a2))
+	if (PyArg_UnpackTuple(a,"pow", 2, 2, &a1, &a2))
 		return PyNumber_Power(a1, a2, Py_None);
 	return NULL;
 }

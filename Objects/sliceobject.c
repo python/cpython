@@ -174,7 +174,7 @@ slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 	start = stop = step = NULL;
 
-	if (!PyArg_ParseTuple(args, "O|OO:slice", &start, &stop, &step))
+	if (!PyArg_UnpackTuple(args, "slice", 1, 3, &start, &stop, &step))
 		return NULL;
 
 	/* This swapping of stop and start is to maintain similarity with

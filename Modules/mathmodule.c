@@ -254,7 +254,7 @@ math_log(PyObject *self, PyObject *args)
 	PyObject *ans;
 	PyObject *newargs;
 
-	if (! PyArg_ParseTuple(args, "O|O:log", &arg, &base))
+	if (!PyArg_UnpackTuple(args, "log", 1, 2, &arg, &base))
 		return NULL;
 	if (base == NULL)
 		return loghelper(args, log, "d:log", arg);
@@ -298,7 +298,7 @@ math_log10(PyObject *self, PyObject *args)
 {
 	PyObject *arg;
 
-	if (! PyArg_ParseTuple(args, "O:log10", &arg))
+	if (!PyArg_UnpackTuple(args, "log10", 1, 1, &arg))
 		return NULL;
 	return loghelper(args, log10, "d:log10", arg);
 }
