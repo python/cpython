@@ -315,7 +315,7 @@ class Scanner:
 		return arglist
 	
 	def matcharg(self, patarg, arg):
-		return len(filter(None, map(fnmatch.fnmatch, arg, patarg))) == 3
+		return len(filter(None, map(fnmatch.fnmatchcase, arg, patarg))) == 3
 
 	def substituteargs(self, pattern, replacement, old):
 		new = []
