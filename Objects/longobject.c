@@ -358,7 +358,11 @@ _PyLong_AsByteArray(PyLongObject* v,
 		pincr = -1;
 	}
 
-	/* Copy over all the Python digits. */
+	/* Copy over all the Python digits.
+	   It's crucial that every Python digit except for the MSD contribute
+	   exactly SHIFT bits to the total, so first assert that the long is
+	   normalized. */
+	assert(ndigits == 0 || v->ob_digit[ndigits - 1] != 0);
 	j = 0;
 	accum = 0;
 	accumbits = 0;
