@@ -69,6 +69,7 @@ functions = []
 resmethods = []
 
 execfile('resgen.py')
+execfile('resedit.py')
 
 for f in functions: module.add(f)
 for f in resmethods: resobject.add(f)

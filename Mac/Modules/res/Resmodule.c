@@ -30,6 +30,8 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
 
+extern PyObject *WinObj_WhichWindow(WindowPtr);
+
 #include <Resources.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
@@ -1161,6 +1163,30 @@ static PyObject *Res_FSpCreateResFile(_self, _args)
 	return _res;
 }
 
+static PyObject *Res_Resource(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	char *buf;
+	int len;
+	Handle h;
+
+	if (!PyArg_ParseTuple(_args, "s#", &buf, &len))
+		return NULL;
+	h = NewHandle(len);
+	if ( h == NULL ) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+	HLock(h);
+	memcpy(*h, buf, len);
+	HUnlock(h);
+	return (PyObject *)ResObj_New(h);
+
+}
+
 static PyMethodDef Res_methods[] = {
 	{"InitResources", (PyCFunction)Res_InitResources, 1,
 	 "() -> (short _rv)"},
@@ -1228,6 +1254,8 @@ static PyMethodDef Res_methods[] = {
 	 "(FSSpec spec, SignedByte permission) -> (short _rv)"},
 	{"FSpCreateResFile", (PyCFunction)Res_FSpCreateResFile, 1,
 	 "(FSSpec spec, OSType creator, OSType fileType, ScriptCode scriptTag) -> None"},
+	{"Resource", (PyCFunction)Res_Resource, 1,
+	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle.\nApply AddResource() to write it to a resource file.\n"},
 	{NULL, NULL, 0}
 };
 
