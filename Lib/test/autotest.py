@@ -93,7 +93,11 @@ def do_one_test(t, outdir):
 		print 'Generating:', filename
 		fake_stdout = open(filename, 'w')
 	else:
-		fake_stdout = Compare(filename)
+		try:
+			fake_stdout = Compare(filename)
+		except IOError:
+			print 'Could not find output file for test:', t
+			return
 	try:
 		sys.stdout = fake_stdout
 		print t
