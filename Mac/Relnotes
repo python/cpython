@@ -1,5 +1,5 @@
-Changes in 2.0b1 since 1.5.2
-----------------------------
+Changes in 2.0b1+ since 1.5.2
+-----------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
 for machine-independent changes.
@@ -28,6 +28,15 @@ have to leave it at the highlights:
 - Added macos.FreeMem(), MaxBlock() and CompactMem(), mainly so apps in Python can
   give low-memory warnings.
 - MediaDescr module parses some QuickTime media descriptions (but definitely not all).
+- A new method EasyDialogs.GetArgv() which makes it easy for the end-user to provide
+  unix-style sys.argv arguments. (new since 2.0b1)
+- There's a new package, mkcwproject, that creates and builds CodeWarrior
+  projects. (new since 2.0b1)
+- The "keep console open" options are now always, never, on error and on unseen output. The
+  latter is the new default. (new since 2.0b1)
+- Missing Numeric modules are included. They may not be on sys.path, however. (new since 2.0b1)
+- gdbm works again. (new since 2.0b1)
+
 
 What is not in this distribution
 --------------------------------
@@ -36,7 +45,7 @@ What is not in this distribution
 - Stackless Python/microthreads hasn't been ported to 2.0 yet. If/when it becomes available
   Just will undoubtedly announce it on pythonmac-sig.
 - Carbon support is not in here, but should be happening as soon as GUSI is ready.
-- Distutils is not in here, again due to lack of time.
+- Distutils is not in here, but Corran Webster and myself are working on it.
 
 Known problems
 --------------
@@ -48,4 +57,3 @@ http://www.cwi.nl/~jack/macpython.html.
 - Aliases do not work in sys.path entries.
 - Once you have used multiple threads you cannot raise KeyboardInterrupt anymore:
   typing command-. will immedeately exit the interpreter.
-- The gdbm module does not work.
