@@ -554,7 +554,7 @@ int PyUnicode_GetSize(PyObject *unicode)
     return -1;
 }
 
-const char *PyUnicode_GetDefaultEncoding()
+const char *PyUnicode_GetDefaultEncoding(void)
 {
     return unicode_default_encoding;
 }
@@ -4530,10 +4530,7 @@ unicode_buffer_getcharbuf(PyUnicodeObject *self,
 /* Helpers for PyUnicode_Format() */
 
 static PyObject *
-getnextarg(args, arglen, p_argidx)
-    PyObject *args;
-int arglen;
-int *p_argidx;
+getnextarg(PyObject *args, int arglen, int *p_argidx)
 {
     int argidx = *p_argidx;
     if (argidx < arglen) {
@@ -4555,26 +4552,13 @@ int *p_argidx;
 #define F_ZERO	(1<<4)
 
 static
-#ifdef HAVE_STDARG_PROTOTYPES
 int usprintf(register Py_UNICODE *buffer, char *format, ...)
-#else
-int usprintf(va_alist) va_dcl
-#endif
 {
     register int i;
     int len;
     va_list va;
     char *charbuffer;
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(va, format);
-#else
-    Py_UNICODE *args;
-    char *format;
-	
-    va_start(va);
-    buffer = va_arg(va, Py_UNICODE *);
-    format = va_arg(va, char *);
-#endif
 
     /* First, format the string as char array, then expand to Py_UNICODE
        array. */
@@ -5121,7 +5105,7 @@ PyTypeObject PyUnicode_Type = {
 
 /* Initialize the Unicode implementation */
 
-void _PyUnicode_Init()
+void _PyUnicode_Init(void)
 {
     /* Doublecheck the configuration... */
     if (sizeof(Py_UNICODE) != 2)
@@ -5138,7 +5122,7 @@ void _PyUnicode_Init()
 /* Finalize the Unicode implementation */
 
 void
-_PyUnicode_Fini()
+_PyUnicode_Fini(void)
 {
     PyUnicodeObject *u = unicode_freelist;
 

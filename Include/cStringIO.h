@@ -107,9 +107,7 @@ static struct PycStringIO_CAPI {
   ((O)->ob_type==PycStringIO->OutputType)
 
 static void *
-xxxPyCObject_Import(module_name, name)
-  char *module_name;
-  char *name;
+xxxPyCObject_Import(char *module_name, char *name)
 {
   PyObject *m, *c;
   void *r=NULL;

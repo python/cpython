@@ -2,11 +2,9 @@
 
 #include "Python.h"
 
-void initxyzzy(); /* Forward */
+void initxyzzy(void); /* Forward */
 
-main(argc, argv)
-	int argc;
-	char **argv;
+main(int argc, char **argv)
 {
 	/* Pass argv[0] to the Python interpreter */
 	Py_SetProgramName(argv[0]);
@@ -46,10 +44,9 @@ main(argc, argv)
 
 /* A static module */
 
+/* 'self' is not used */
 static PyObject *
-xyzzy_foo(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+xyzzy_foo(PyObject *self, PyObjecT *args)
 {
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
@@ -62,7 +59,7 @@ static PyMethodDef xyzzy_methods[] = {
 };
 
 void
-initxyzzy()
+initxyzzy(void)
 {
 	PyImport_AddModule("xyzzy");
 	Py_InitModule("xyzzy", xyzzy_methods);

@@ -7,7 +7,9 @@ file names and #include names to 8x3 lower case */
 
 char *usage = "You must be in the \"pc\" directory.\n";
 char *list[] = {"..\\Include", "..\\Modules", "..\\Objects", "..\\Parser", "..\\Python", ".", 0};
-main()
+
+int
+main(int argc, char ** argv)
 {
   DIR *dpath;
   struct dirent *dir;
@@ -64,4 +66,4 @@ main()
     closedir(dpath);
     }
   return 0;
-  }
+}
