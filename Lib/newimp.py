@@ -68,10 +68,10 @@ also denoted in the module by '__package__'.  Additionally, modules have
 associated with them a '__pkgpath__', a path by which sibling modules are
 found."""
 
-__version__ = "Revision: 1.13"
+__version__ = "Revision: 1.14"
 
-# Id: newimp.py,v 1.13 1995/04/13 23:23:33 klm Exp First release:
-# Ken.Manheimer@nist.gov, 5-Apr-1995, for python 1.2
+# Id: newimp.py,v 1.14 1995/05/10 19:15:07 klm Exp 
+# First release: Ken.Manheimer@nist.gov, 5-Apr-1995, for python 1.2
 
 # Developers Notes:
 #
@@ -82,7 +82,7 @@ __version__ = "Revision: 1.13"
 # - The test routines are cool, including a transient directory
 #   hierarchy facility, and a means of skipping to later tests by giving
 #   the test routine a numeric arg.
-# - This could be substantially optimized, and there are many loose ends
+# - This could be substantially optimized, and there are some loose ends
 #   lying around, since i wanted to get this released for 1.2.
 
 VERBOSE = 0
@@ -606,10 +606,17 @@ def compile_source(sourcePath, sourceFile):
     mtime = os.stat(sourcePath)[8]
     sourceFile.seek(0)			# rewind
     try:
+	compiled = compile(sourceFile.read(), sourcePath, 'exec')
+    except SyntaxError:
+	# Doctor the exception a bit, to include the source file name in the
+	# report, and then reraise the doctored version.
+	os.unlink(compiledFile.name)
+	sys.exc_value = ((sys.exc_value[0] + ' in ' + sourceFile.name,)
+			 + sys.exc_value[1:])
+	raise sys.exc_type, sys.exc_value
+    try:
 	compiledFile.write(imp.get_magic())		# compiled magic number
 	compiledFile.seek(8, 0)				# mtime space holder
-	# We let compilation errors go their own way...
-	compiled = compile(sourceFile.read(), sourcePath, 'exec')
 	marshal.dump(compiled, compiledFile)		# write the code obj
 	compiledFile.seek(4, 0)				# position for mtime
 	compiledFile.write(marshal.dumps(mtime)[1:])	# register mtime
@@ -617,7 +624,7 @@ def compile_source(sourcePath, sourceFile):
 	compiledFile.close()
 	return compiledPath
     except IOError:
-	return None
+	return None							# ===>
 
 
 def PathExtension(locals, globals):	# Probably obsolete.
