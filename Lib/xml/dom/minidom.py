@@ -553,6 +553,8 @@ class Text(Node):
     childNodeTypes = ()
     
     def __init__(self, data):
+        if type(data) not in _StringTypes:
+            raise TypeError, "node contents must be a string"
         Node.__init__(self)
         self.data = self.nodeValue = data
 
