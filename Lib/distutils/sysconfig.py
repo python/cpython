@@ -11,24 +11,26 @@ Initial date: 17-Dec-1998
 
 __version__ = "$Revision$"
 
+import os
+import re
+import string
+import sys
 
-def _init_posix():
-    import os
-    import re
-    import string
-    import sys
 
-    g = globals()
+def get_config_h_filename():
+    return os.path.join(sys.exec_prefix, "lib", "python" + sys.version[:3],
+                        "config", "config.h")
 
-    version = sys.version[:3]
-    config_dir = os.path.join(
-        sys.exec_prefix, "lib", "python" + version, "config")
+def get_makefile_filename():
+    return os.path.join(sys.exec_prefix, "lib", "python" + sys.version[:3],
+                        "config", "Makefile")
 
-    # load the installed config.h:
+def parse_config_h(fp, g=None):
+    if g is None:
+        g = {}
     define_rx = re.compile("#define ([A-Z][A-Z0-9_]+) (.*)\n")
     undef_rx = re.compile("/[*] #undef ([A-Z][A-Z0-9_]+) [*]/\n")
-    fp = open(os.path.join(config_dir, "config.h"))
-
+    #
     while 1:
         line = fp.readline()
         if not line:
@@ -43,13 +45,15 @@ def _init_posix():
             m = undef_rx.match(line)
             if m:
                 g[m.group(1)] = 0
+    return g
 
-    # load the installed Makefile.pre.in:
+def parse_makefile(fp, g=None):
+    if g is None:
+        g = {}
     variable_rx = re.compile("([a-zA-Z][a-zA-Z0-9_]+)\s*=\s*(.*)\n")
     done = {}
     notdone = {}
-    fp = open(os.path.join(config_dir, "Makefile"))
-
+    #
     while 1:
         line = fp.readline()
         if not line:
@@ -106,9 +110,24 @@ def _init_posix():
 
     # save the results in the global dictionary
     g.update(done)
+    return g
 
 
-import os
-exec "_init_%s()" % os.name
-del os
+def _init_posix():
+    g = globals()
+    # load the installed config.h:
+    parse_config_h(open(get_config_h_filename()), g)
+    # load the installed Makefile.pre.in:
+    parse_makefile(open(get_makefile_filename()), g)
+
+
+
+try:
+    exec "_init_" + os.name
+except NameError:
+    # not needed for this platform
+    pass
+else:
+    exec "_init_%s()" % os.name
+
 del _init_posix
