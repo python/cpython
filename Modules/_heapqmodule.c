@@ -28,8 +28,10 @@ _siftdown(PyListObject *heap, int startpos, int pos)
 		parentpos = (pos - 1) >> 1;
 		parent = PyList_GET_ITEM(heap, parentpos);
 		cmp = PyObject_RichCompareBool(parent, newitem, Py_LE);
-		if (cmp == -1)
+		if (cmp == -1) {
+			Py_DECREF(newitem);
 			return -1;
+		}
 		if (cmp == 1)
 			break;
 		Py_INCREF(parent);
@@ -69,8 +71,10 @@ _siftup(PyListObject *heap, int pos)
 				PyList_GET_ITEM(heap, rightpos),
 				PyList_GET_ITEM(heap, childpos),
 				Py_LE);
-			if (cmp == -1)
+			if (cmp == -1) {
+				Py_DECREF(newitem);
 				return -1;
+			}
 			if (cmp == 1)
 				childpos = rightpos;
 		}
@@ -315,8 +319,10 @@ _siftdownmax(PyListObject *heap, int startpos, int pos)
 		parentpos = (pos - 1) >> 1;
 		parent = PyList_GET_ITEM(heap, parentpos);
 		cmp = PyObject_RichCompareBool(newitem, parent, Py_LE);
-		if (cmp == -1)
+		if (cmp == -1) {
+			Py_DECREF(newitem);
 			return -1;
+		}
 		if (cmp == 1)
 			break;
 		Py_INCREF(parent);
@@ -356,8 +362,10 @@ _siftupmax(PyListObject *heap, int pos)
 				PyList_GET_ITEM(heap, childpos),
 				PyList_GET_ITEM(heap, rightpos),
 				Py_LE);
-			if (cmp == -1)
+			if (cmp == -1) {
+				Py_DECREF(newitem);
 				return -1;
+			}
 			if (cmp == 1)
 				childpos = rightpos;
 		}
