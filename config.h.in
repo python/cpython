@@ -407,6 +407,12 @@
 /* Define if you have the select function.  */
 #undef HAVE_SELECT
 
+/* Define if you have the setegid function.  */
+#undef HAVE_SETEGID
+
+/* Define if you have the seteuid function.  */
+#undef HAVE_SETEUID
+
 /* Define if you have the setgid function.  */
 #undef HAVE_SETGID
 
@@ -418,6 +424,12 @@
 
 /* Define if you have the setpgrp function.  */
 #undef HAVE_SETPGRP
+
+/* Define if you have the setregid function.  */
+#undef HAVE_SETREGID
+
+/* Define if you have the setreuid function.  */
+#undef HAVE_SETREUID
 
 /* Define if you have the setsid function.  */
 #undef HAVE_SETSID

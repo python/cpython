@@ -822,7 +822,8 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid ctermid_r dlopen execv \
  kill link lstat mkfifo mktime mremap \
  nice pathconf pause plock pthread_init \
  putenv readlink \
- select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
+ select setegid seteuid setgid \
+ setlocale setregid setreuid setsid setpgid setpgrp setuid setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink sysconf \
  tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname waitpid)

@@ -2618,6 +2618,82 @@ posix_setuid(PyObject *self, PyObject *args)
 #endif /* HAVE_SETUID */
 
 
+#ifdef HAVE_SETEUID
+static char posix_seteuid__doc__[] =
+"seteuid(uid) -> None\n\
+Set the current process's effective user id.";
+static PyObject *
+posix_seteuid (PyObject *self, PyObject *args)
+{
+	int euid;
+	if (!PyArg_ParseTuple(args, "i", &euid)) {
+		return NULL;
+	} else if (seteuid(euid) < 0) {
+		return posix_error();
+	} else {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+}
+#endif /* HAVE_SETEUID */
+
+#ifdef HAVE_SETEGID
+static char posix_setegid__doc__[] =
+"setegid(gid) -> None\n\
+Set the current process's effective group id.";
+static PyObject *
+posix_setegid (PyObject *self, PyObject *args)
+{
+	int egid;
+	if (!PyArg_ParseTuple(args, "i", &egid)) {
+		return NULL;
+	} else if (setegid(egid) < 0) {
+		return posix_error();
+	} else {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+}
+#endif /* HAVE_SETEGID */
+
+#ifdef HAVE_SETREUID
+static char posix_setreuid__doc__[] =
+"seteuid(ruid, euid) -> None\n\
+Set the current process's real and effective user ids.";
+static PyObject *
+posix_setreuid (PyObject *self, PyObject *args)
+{
+	int ruid, euid;
+	if (!PyArg_ParseTuple(args, "ii", &ruid, &euid)) {
+		return NULL;
+	} else if (setreuid(ruid, euid) < 0) {
+		return posix_error();
+	} else {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+}
+#endif /* HAVE_SETREUID */
+
+#ifdef HAVE_SETREGID
+static char posix_setregid__doc__[] =
+"setegid(rgid, egid) -> None\n\
+Set the current process's real and effective group ids.";
+static PyObject *
+posix_setregid (PyObject *self, PyObject *args)
+{
+	int rgid, egid;
+	if (!PyArg_ParseTuple(args, "ii", &rgid, &egid)) {
+		return NULL;
+	} else if (setregid(rgid, egid) < 0) {
+		return posix_error();
+	} else {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+}
+#endif /* HAVE_SETREGID */
+
 #ifdef HAVE_SETGID
 static char posix_setgid__doc__[] =
 "setgid(gid) -> None\n\
@@ -4898,6 +4974,18 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_SETUID
 	{"setuid",	posix_setuid, METH_VARARGS, posix_setuid__doc__},
 #endif /* HAVE_SETUID */
+#ifdef HAVE_SETEUID
+	{"seteuid",	posix_seteuid, METH_VARARGS, posix_seteuid__doc__},
+#endif /* HAVE_SETEUID */
+#ifdef HAVE_SETEGID
+	{"setegid",	posix_setegid, METH_VARARGS, posix_setegid__doc__},
+#endif /* HAVE_SETEGID */
+#ifdef HAVE_SETREUID
+	{"setreuid",	posix_setreuid, METH_VARARGS, posix_setreuid__doc__},
+#endif /* HAVE_SETREUID */
+#ifdef HAVE_SETREGID
+	{"setregid",	posix_setregid,	METH_VARARGS, posix_setregid__doc__},
+#endif /* HAVE_SETREGID */
 #ifdef HAVE_SETGID
 	{"setgid",	posix_setgid, METH_VARARGS, posix_setgid__doc__},
 #endif /* HAVE_SETGID */
