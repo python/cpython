@@ -103,6 +103,12 @@
         </tr>
       </tbody>
     </table>
+    <p>
 
+    <address>
+      <hr>
+      See <i><a href="about.html">About the Python Documentation</a></i>
+      for information on suggesting changes.
+    </address>
   </body>
 </html>
