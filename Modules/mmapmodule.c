@@ -251,20 +251,16 @@ mmap_find_method(mmap_object *self,
 			start = 0;
                 else if ((size_t)start > self->size)
 			start = self->size;
-                p = self->data + start;
 
-		while (p < e) {
-			char *s = p;
-			char *n = needle;
-			while ((s<e) && (*n) && !(*s-*n)) {
-				s++, n++;
-			}
-			if (!*n) {
+		for (p = self->data + start; p + len <= e; ++p) {
+			int i;
+			for (i = 0; i < len && needle[i] == p[i]; ++i)
+				/* nothing */;
+			if (i == len) {
 				return Py_BuildValue (
 					"l",
 					(long) (p - self->data));
 			}
-			p++;
 		}
 		return Py_BuildValue ("l", (long) -1);
 	}
