@@ -16,6 +16,9 @@ def flatten(list):
             l.append(elt)
     return l
 
+def flatten_nodes(list):
+    return [n for n in flatten(list) if isinstance(n, Node)]
+
 def asList(nodes):
     l = []
     for item in nodes:
@@ -31,29 +34,38 @@ def asList(nodes):
 
 nodes = {}
 
-class Node:
-    lineno = None
+class Node: # an abstract base class
+    lineno = None # provide a lineno for nodes that don't have one
     def getType(self):
-        pass
+        pass # implemented by subclass
     def getChildren(self):
-        # XXX It would be better to generate flat values to begin with
-        return flatten(self._getChildren())
+        pass # implemented by subclasses
     def asList(self):
         return tuple(asList(self.getChildren()))
     def getChildNodes(self):
-        return [n for n in self.getChildren() if isinstance(n, Node)]
+        pass # implemented by subclasses
 
 class EmptyNode(Node):
-    def __init__(self):
-        self.lineno = None
+    pass
 
 class If(Node):
     nodes["if"] = "If"
     def __init__(self, tests, else_):
         self.tests = tests
         self.else_ = else_
-    def _getChildren(self):
-        return self.tests, self.else_
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.tests))
+        children.append(self.else_)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.tests))
+        if self.else_ is not None:            nodes.append(self.else_)
+        return tuple(nodes)
+
     def __repr__(self):
         return "If(%s, %s)" % (repr(self.tests), repr(self.else_))
 
@@ -62,8 +74,19 @@ class ListComp(Node):
     def __init__(self, expr, quals):
         self.expr = expr
         self.quals = quals
-    def _getChildren(self):
-        return self.expr, self.quals
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr)
+        children.extend(flatten(self.quals))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.expr)
+        nodes.extend(flatten_nodes(self.quals))
+        return tuple(nodes)
+
     def __repr__(self):
         return "ListComp(%s, %s)" % (repr(self.expr), repr(self.quals))
 
@@ -71,8 +94,17 @@ class Bitor(Node):
     nodes["bitor"] = "Bitor"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Bitor(%s)" % (repr(self.nodes),)
 
@@ -80,8 +112,13 @@ class Pass(Node):
     nodes["pass"] = "Pass"
     def __init__(self, ):
         pass
-    def _getChildren(self):
+
+    def getChildren(self):
         return ()
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "Pass()"
 
@@ -90,8 +127,13 @@ class Module(Node):
     def __init__(self, doc, node):
         self.doc = doc
         self.node = node
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.doc, self.node
+
+    def getChildNodes(self):
+        return self.node,
+
     def __repr__(self):
         return "Module(%s, %s)" % (repr(self.doc), repr(self.node))
 
@@ -99,8 +141,13 @@ class Global(Node):
     nodes["global"] = "Global"
     def __init__(self, names):
         self.names = names
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.names,
+
+    def getChildNodes(self):
+        return self.names,
+
     def __repr__(self):
         return "Global(%s)" % (repr(self.names),)
 
@@ -111,8 +158,23 @@ class CallFunc(Node):
         self.args = args
         self.star_args = star_args
         self.dstar_args = dstar_args
-    def _getChildren(self):
-        return self.node, self.args, self.star_args, self.dstar_args
+
+    def getChildren(self):
+        children = []
+        children.append(self.node)
+        children.extend(flatten(self.args))
+        children.append(self.star_args)
+        children.append(self.dstar_args)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.node)
+        nodes.extend(flatten_nodes(self.args))
+        if self.star_args is not None:            nodes.append(self.star_args)
+        if self.dstar_args is not None:            nodes.append(self.dstar_args)
+        return tuple(nodes)
+
     def __repr__(self):
         return "CallFunc(%s, %s, %s, %s)" % (repr(self.node), repr(self.args), repr(self.star_args), repr(self.dstar_args))
 
@@ -121,8 +183,19 @@ class Printnl(Node):
     def __init__(self, nodes, dest):
         self.nodes = nodes
         self.dest = dest
-    def _getChildren(self):
-        return self.nodes, self.dest
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        children.append(self.dest)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        if self.dest is not None:            nodes.append(self.dest)
+        return tuple(nodes)
+
     def __repr__(self):
         return "Printnl(%s, %s)" % (repr(self.nodes), repr(self.dest))
 
@@ -130,8 +203,17 @@ class Tuple(Node):
     nodes["tuple"] = "Tuple"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Tuple(%s)" % (repr(self.nodes),)
 
@@ -140,8 +222,19 @@ class Compare(Node):
     def __init__(self, expr, ops):
         self.expr = expr
         self.ops = ops
-    def _getChildren(self):
-        return self.expr, self.ops
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr)
+        children.extend(flatten(self.ops))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.expr)
+        nodes.extend(flatten_nodes(self.ops))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Compare(%s, %s)" % (repr(self.expr), repr(self.ops))
 
@@ -149,8 +242,17 @@ class And(Node):
     nodes["and"] = "And"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "And(%s)" % (repr(self.nodes),)
 
@@ -167,8 +269,13 @@ class Lambda(Node):
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
 
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.argnames, self.defaults, self.flags, self.code
+
+    def getChildNodes(self):
+        return self.code,
+
     def __repr__(self):
         return "Lambda(%s, %s, %s, %s)" % (repr(self.argnames), repr(self.defaults), repr(self.flags), repr(self.code))
 
@@ -177,8 +284,19 @@ class Assign(Node):
     def __init__(self, nodes, expr):
         self.nodes = nodes
         self.expr = expr
-    def _getChildren(self):
-        return self.nodes, self.expr
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        children.append(self.expr)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        nodes.append(self.expr)
+        return tuple(nodes)
+
     def __repr__(self):
         return "Assign(%s, %s)" % (repr(self.nodes), repr(self.expr))
 
@@ -187,8 +305,13 @@ class Sub(Node):
     def __init__(self, (left, right)):
         self.left = left
         self.right = right
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
     def __repr__(self):
         return "Sub((%s, %s))" % (repr(self.left), repr(self.right))
 
@@ -196,8 +319,13 @@ class ListCompIf(Node):
     nodes["listcompif"] = "ListCompIf"
     def __init__(self, test):
         self.test = test
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.test,
+
+    def getChildNodes(self):
+        return self.test,
+
     def __repr__(self):
         return "ListCompIf(%s)" % (repr(self.test),)
 
@@ -206,8 +334,13 @@ class Div(Node):
     def __init__(self, (left, right)):
         self.left = left
         self.right = right
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
     def __repr__(self):
         return "Div((%s, %s))" % (repr(self.left), repr(self.right))
 
@@ -215,8 +348,13 @@ class Discard(Node):
     nodes["discard"] = "Discard"
     def __init__(self, expr):
         self.expr = expr
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.expr,
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "Discard(%s)" % (repr(self.expr),)
 
@@ -224,8 +362,13 @@ class Backquote(Node):
     nodes["backquote"] = "Backquote"
     def __init__(self, expr):
         self.expr = expr
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.expr,
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "Backquote(%s)" % (repr(self.expr),)
 
@@ -234,8 +377,13 @@ class RightShift(Node):
     def __init__(self, (left, right)):
         self.left = left
         self.right = right
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
     def __repr__(self):
         return "RightShift((%s, %s))" % (repr(self.left), repr(self.right))
 
@@ -243,8 +391,13 @@ class Continue(Node):
     nodes["continue"] = "Continue"
     def __init__(self, ):
         pass
-    def _getChildren(self):
+
+    def getChildren(self):
         return ()
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "Continue()"
 
@@ -254,8 +407,21 @@ class While(Node):
         self.test = test
         self.body = body
         self.else_ = else_
-    def _getChildren(self):
-        return self.test, self.body, self.else_
+
+    def getChildren(self):
+        children = []
+        children.append(self.test)
+        children.append(self.body)
+        children.append(self.else_)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.test)
+        nodes.append(self.body)
+        if self.else_ is not None:            nodes.append(self.else_)
+        return tuple(nodes)
+
     def __repr__(self):
         return "While(%s, %s, %s)" % (repr(self.test), repr(self.body), repr(self.else_))
 
@@ -264,8 +430,13 @@ class AssName(Node):
     def __init__(self, name, flags):
         self.name = name
         self.flags = flags
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.name, self.flags
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "AssName(%s, %s)" % (repr(self.name), repr(self.flags))
 
@@ -274,8 +445,13 @@ class LeftShift(Node):
     def __init__(self, (left, right)):
         self.left = left
         self.right = right
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
     def __repr__(self):
         return "LeftShift((%s, %s))" % (repr(self.left), repr(self.right))
 
@@ -284,8 +460,13 @@ class Mul(Node):
     def __init__(self, (left, right)):
         self.left = left
         self.right = right
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
     def __repr__(self):
         return "Mul((%s, %s))" % (repr(self.left), repr(self.right))
 
@@ -293,8 +474,13 @@ class Yield(Node):
     nodes["yield"] = "Yield"
     def __init__(self, value):
         self.value = value
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.value,
+
+    def getChildNodes(self):
+        return self.value,
+
     def __repr__(self):
         return "Yield(%s)" % (repr(self.value),)
 
@@ -302,8 +488,17 @@ class List(Node):
     nodes["list"] = "List"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "List(%s)" % (repr(self.nodes),)
 
@@ -313,8 +508,13 @@ class AugAssign(Node):
         self.node = node
         self.op = op
         self.expr = expr
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.node, self.op, self.expr
+
+    def getChildNodes(self):
+        return self.node, self.expr
+
     def __repr__(self):
         return "AugAssign(%s, %s, %s)" % (repr(self.node), repr(self.op), repr(self.expr))
 
@@ -322,8 +522,17 @@ class Or(Node):
     nodes["or"] = "Or"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Or(%s)" % (repr(self.nodes),)
 
@@ -332,8 +541,13 @@ class Keyword(Node):
     def __init__(self, name, expr):
         self.name = name
         self.expr = expr
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.name, self.expr
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "Keyword(%s, %s)" % (repr(self.name), repr(self.expr))
 
@@ -343,8 +557,13 @@ class AssAttr(Node):
         self.expr = expr
         self.attrname = attrname
         self.flags = flags
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.expr, self.attrname, self.flags
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "AssAttr(%s, %s, %s)" % (repr(self.expr), repr(self.attrname), repr(self.flags))
 
@@ -352,8 +571,13 @@ class Const(Node):
     nodes["const"] = "Const"
     def __init__(self, value):
         self.value = value
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.value,
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "Const(%s)" % (repr(self.value),)
 
@@ -362,8 +586,13 @@ class Mod(Node):
     def __init__(self, (left, right)):
         self.left = left
         self.right = right
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
     def __repr__(self):
         return "Mod((%s, %s))" % (repr(self.left), repr(self.right))
 
@@ -374,8 +603,13 @@ class Class(Node):
         self.bases = bases
         self.doc = doc
         self.code = code
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.name, self.bases, self.doc, self.code
+
+    def getChildNodes(self):
+        return self.code,
+
     def __repr__(self):
         return "Class(%s, %s, %s, %s)" % (repr(self.name), repr(self.bases), repr(self.doc), repr(self.code))
 
@@ -383,8 +617,13 @@ class Not(Node):
     nodes["not"] = "Not"
     def __init__(self, expr):
         self.expr = expr
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.expr,
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "Not(%s)" % (repr(self.expr),)
 
@@ -392,8 +631,17 @@ class Bitxor(Node):
     nodes["bitxor"] = "Bitxor"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Bitxor(%s)" % (repr(self.nodes),)
 
@@ -402,17 +650,46 @@ class TryFinally(Node):
     def __init__(self, body, final):
         self.body = body
         self.final = final
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.body, self.final
+
+    def getChildNodes(self):
+        return self.body, self.final
+
     def __repr__(self):
         return "TryFinally(%s, %s)" % (repr(self.body), repr(self.final))
+
+class FloorDiv(Node):
+    nodes["floordiv"] = "FloorDiv"
+    def __init__(self, (left, right)):
+        self.left = left
+        self.right = right
+
+    def getChildren(self):
+        return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
+    def __repr__(self):
+        return "FloorDiv((%s, %s))" % (repr(self.left), repr(self.right))
 
 class Bitand(Node):
     nodes["bitand"] = "Bitand"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Bitand(%s)" % (repr(self.nodes),)
 
@@ -420,8 +697,13 @@ class Break(Node):
     nodes["break"] = "Break"
     def __init__(self, ):
         pass
-    def _getChildren(self):
+
+    def getChildren(self):
         return ()
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "Break()"
 
@@ -429,8 +711,17 @@ class Stmt(Node):
     nodes["stmt"] = "Stmt"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Stmt(%s)" % (repr(self.nodes),)
 
@@ -439,8 +730,19 @@ class Assert(Node):
     def __init__(self, test, fail):
         self.test = test
         self.fail = fail
-    def _getChildren(self):
-        return self.test, self.fail
+
+    def getChildren(self):
+        children = []
+        children.append(self.test)
+        children.append(self.fail)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.test)
+        if self.fail is not None:            nodes.append(self.fail)
+        return tuple(nodes)
+
     def __repr__(self):
         return "Assert(%s, %s)" % (repr(self.test), repr(self.fail))
 
@@ -450,8 +752,21 @@ class Exec(Node):
         self.expr = expr
         self.locals = locals
         self.globals = globals
-    def _getChildren(self):
-        return self.expr, self.locals, self.globals
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr)
+        children.append(self.locals)
+        children.append(self.globals)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.expr)
+        if self.locals is not None:            nodes.append(self.locals)
+        if self.globals is not None:            nodes.append(self.globals)
+        return tuple(nodes)
+
     def __repr__(self):
         return "Exec(%s, %s, %s)" % (repr(self.expr), repr(self.locals), repr(self.globals))
 
@@ -460,8 +775,13 @@ class Power(Node):
     def __init__(self, (left, right)):
         self.left = left
         self.right = right
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
     def __repr__(self):
         return "Power((%s, %s))" % (repr(self.left), repr(self.right))
 
@@ -469,8 +789,13 @@ class Ellipsis(Node):
     nodes["ellipsis"] = "Ellipsis"
     def __init__(self, ):
         pass
-    def _getChildren(self):
+
+    def getChildren(self):
         return ()
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "Ellipsis()"
 
@@ -478,8 +803,13 @@ class Return(Node):
     nodes["return"] = "Return"
     def __init__(self, value):
         self.value = value
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.value,
+
+    def getChildNodes(self):
+        return self.value,
+
     def __repr__(self):
         return "Return(%s)" % (repr(self.value),)
 
@@ -488,8 +818,13 @@ class Add(Node):
     def __init__(self, (left, right)):
         self.left = left
         self.right = right
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.left, self.right
+
+    def getChildNodes(self):
+        return self.left, self.right
+
     def __repr__(self):
         return "Add((%s, %s))" % (repr(self.left), repr(self.right))
 
@@ -509,8 +844,13 @@ class Function(Node):
             self.kwargs = 1
     
 
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.name, self.argnames, self.defaults, self.flags, self.doc, self.code
+
+    def getChildNodes(self):
+        return self.code,
+
     def __repr__(self):
         return "Function(%s, %s, %s, %s, %s, %s)" % (repr(self.name), repr(self.argnames), repr(self.defaults), repr(self.flags), repr(self.doc), repr(self.code))
 
@@ -520,8 +860,21 @@ class TryExcept(Node):
         self.body = body
         self.handlers = handlers
         self.else_ = else_
-    def _getChildren(self):
-        return self.body, self.handlers, self.else_
+
+    def getChildren(self):
+        children = []
+        children.append(self.body)
+        children.extend(flatten(self.handlers))
+        children.append(self.else_)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.body)
+        nodes.extend(flatten_nodes(self.handlers))
+        if self.else_ is not None:            nodes.append(self.else_)
+        return tuple(nodes)
+
     def __repr__(self):
         return "TryExcept(%s, %s, %s)" % (repr(self.body), repr(self.handlers), repr(self.else_))
 
@@ -531,8 +884,20 @@ class Subscript(Node):
         self.expr = expr
         self.flags = flags
         self.subs = subs
-    def _getChildren(self):
-        return self.expr, self.flags, self.subs
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr)
+        children.append(self.flags)
+        children.extend(flatten(self.subs))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.expr)
+        nodes.extend(flatten_nodes(self.subs))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Subscript(%s, %s, %s)" % (repr(self.expr), repr(self.flags), repr(self.subs))
 
@@ -540,8 +905,13 @@ class Import(Node):
     nodes["import"] = "Import"
     def __init__(self, names):
         self.names = names
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.names,
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "Import(%s)" % (repr(self.names),)
 
@@ -550,8 +920,19 @@ class Print(Node):
     def __init__(self, nodes, dest):
         self.nodes = nodes
         self.dest = dest
-    def _getChildren(self):
-        return self.nodes, self.dest
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        children.append(self.dest)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        if self.dest is not None:            nodes.append(self.dest)
+        return tuple(nodes)
+
     def __repr__(self):
         return "Print(%s, %s)" % (repr(self.nodes), repr(self.dest))
 
@@ -559,8 +940,13 @@ class UnaryAdd(Node):
     nodes["unaryadd"] = "UnaryAdd"
     def __init__(self, expr):
         self.expr = expr
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.expr,
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "UnaryAdd(%s)" % (repr(self.expr),)
 
@@ -570,8 +956,21 @@ class ListCompFor(Node):
         self.assign = assign
         self.list = list
         self.ifs = ifs
-    def _getChildren(self):
-        return self.assign, self.list, self.ifs
+
+    def getChildren(self):
+        children = []
+        children.append(self.assign)
+        children.append(self.list)
+        children.extend(flatten(self.ifs))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.assign)
+        nodes.append(self.list)
+        nodes.extend(flatten_nodes(self.ifs))
+        return tuple(nodes)
+
     def __repr__(self):
         return "ListCompFor(%s, %s, %s)" % (repr(self.assign), repr(self.list), repr(self.ifs))
 
@@ -579,8 +978,17 @@ class Dict(Node):
     nodes["dict"] = "Dict"
     def __init__(self, items):
         self.items = items
-    def _getChildren(self):
-        return self.items,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.items))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.items))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Dict(%s)" % (repr(self.items),)
 
@@ -589,8 +997,13 @@ class Getattr(Node):
     def __init__(self, expr, attrname):
         self.expr = expr
         self.attrname = attrname
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.expr, self.attrname
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "Getattr(%s, %s)" % (repr(self.expr), repr(self.attrname))
 
@@ -598,8 +1011,17 @@ class AssList(Node):
     nodes["asslist"] = "AssList"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "AssList(%s)" % (repr(self.nodes),)
 
@@ -607,8 +1029,13 @@ class UnarySub(Node):
     nodes["unarysub"] = "UnarySub"
     def __init__(self, expr):
         self.expr = expr
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.expr,
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "UnarySub(%s)" % (repr(self.expr),)
 
@@ -616,8 +1043,17 @@ class Sliceobj(Node):
     nodes["sliceobj"] = "Sliceobj"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "Sliceobj(%s)" % (repr(self.nodes),)
 
@@ -625,8 +1061,13 @@ class Invert(Node):
     nodes["invert"] = "Invert"
     def __init__(self, expr):
         self.expr = expr
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.expr,
+
+    def getChildNodes(self):
+        return self.expr,
+
     def __repr__(self):
         return "Invert(%s)" % (repr(self.expr),)
 
@@ -634,8 +1075,13 @@ class Name(Node):
     nodes["name"] = "Name"
     def __init__(self, name):
         self.name = name
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.name,
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "Name(%s)" % (repr(self.name),)
 
@@ -643,8 +1089,17 @@ class AssTuple(Node):
     nodes["asstuple"] = "AssTuple"
     def __init__(self, nodes):
         self.nodes = nodes
-    def _getChildren(self):
-        return self.nodes,
+
+    def getChildren(self):
+        children = []
+        children.extend(flatten(self.nodes))
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.extend(flatten_nodes(self.nodes))
+        return tuple(nodes)
+
     def __repr__(self):
         return "AssTuple(%s)" % (repr(self.nodes),)
 
@@ -655,8 +1110,23 @@ class For(Node):
         self.list = list
         self.body = body
         self.else_ = else_
-    def _getChildren(self):
-        return self.assign, self.list, self.body, self.else_
+
+    def getChildren(self):
+        children = []
+        children.append(self.assign)
+        children.append(self.list)
+        children.append(self.body)
+        children.append(self.else_)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.assign)
+        nodes.append(self.list)
+        nodes.append(self.body)
+        if self.else_ is not None:            nodes.append(self.else_)
+        return tuple(nodes)
+
     def __repr__(self):
         return "For(%s, %s, %s, %s)" % (repr(self.assign), repr(self.list), repr(self.body), repr(self.else_))
 
@@ -666,8 +1136,21 @@ class Raise(Node):
         self.expr1 = expr1
         self.expr2 = expr2
         self.expr3 = expr3
-    def _getChildren(self):
-        return self.expr1, self.expr2, self.expr3
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr1)
+        children.append(self.expr2)
+        children.append(self.expr3)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        if self.expr1 is not None:            nodes.append(self.expr1)
+        if self.expr2 is not None:            nodes.append(self.expr2)
+        if self.expr3 is not None:            nodes.append(self.expr3)
+        return tuple(nodes)
+
     def __repr__(self):
         return "Raise(%s, %s, %s)" % (repr(self.expr1), repr(self.expr2), repr(self.expr3))
 
@@ -676,8 +1159,13 @@ class From(Node):
     def __init__(self, modname, names):
         self.modname = modname
         self.names = names
-    def _getChildren(self):
+
+    def getChildren(self):
         return self.modname, self.names
+
+    def getChildNodes(self):
+        return ()
+
     def __repr__(self):
         return "From(%s, %s)" % (repr(self.modname), repr(self.names))
 
@@ -688,8 +1176,22 @@ class Slice(Node):
         self.flags = flags
         self.lower = lower
         self.upper = upper
-    def _getChildren(self):
-        return self.expr, self.flags, self.lower, self.upper
+
+    def getChildren(self):
+        children = []
+        children.append(self.expr)
+        children.append(self.flags)
+        children.append(self.lower)
+        children.append(self.upper)
+        return tuple(children)
+
+    def getChildNodes(self):
+        nodes = []
+        nodes.append(self.expr)
+        if self.lower is not None:            nodes.append(self.lower)
+        if self.upper is not None:            nodes.append(self.upper)
+        return tuple(nodes)
+
     def __repr__(self):
         return "Slice(%s, %s, %s, %s)" % (repr(self.expr), repr(self.flags), repr(self.lower), repr(self.upper))
 
