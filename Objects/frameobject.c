@@ -337,7 +337,6 @@ locals_2_fast(f, clear)
 			INCREF(value);
 		if (value != NULL || clear) {
 			XDECREF(fast[j]);
-			XINCREF(value);
 			fast[j] = value;
 		}
 	}
