@@ -97,7 +97,7 @@ def v3(a, (b, c), *rest): pass
 print 'simple_stmt'
 x = 1; pass; del x
 
-### small_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt
+### small_stmt: expr_stmt | print_stmt  | pass_stmt | del_stmt | flow_stmt | import_stmt | global_stmt | access_stmt | exec_stmt
 # Tested below
 
 print 'expr_stmt' # (exprlist '=')* exprlist
@@ -164,6 +164,25 @@ def f():
 	global a
 	global a, b
 	global one, two, three, four, five, six, seven, eight, nine, ten
+
+print 'exec_stmt' # 'exec' expr ['in' expr [',' expr]]
+def f():
+	z = None
+	del z
+	exec 'z=1+1\n'
+	if z <> 2: raise TestFailed, 'exec \'z=1+1\'\\n'
+	del z
+	exec 'z=1+1'
+	if z <> 2: raise TestFailed, 'exec \'z=1+1\''
+f()
+g = {}
+exec 'z = 1' in g
+if g <> {'z': 1}: raise TestFailed, 'exec \'z = 1\' in g'
+g = {}
+l = {}
+exec 'global a; a = 1; b = 2' in g, l
+if (g, l) <> ({'a':1}, {'b':2}): raise TestFailed, 'exec ... in g, l'
+
 
 ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 # Tested below
