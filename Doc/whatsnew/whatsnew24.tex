@@ -21,15 +21,15 @@
 \maketitle
 \tableofcontents
 
-This article explains the new features in Python 2.4 alpha2, scheduled
-for release in late July 2004.  The final version of Python 2.4 is
-expected to be released around September 2004.
+This article explains the new features in Python 2.4 alpha3, scheduled
+for release in early September.  The final version of Python 2.4 is
+expected to be released around December 2004.
 
 Python 2.4 is a medium-sized release.  It doesn't introduce as many
 changes as the radical Python 2.2, but introduces more features than
 the conservative 2.3 release did.  The most significant new language
-feature (as of this writing) is the addition of generator expressions;
-most other changes are to the standard library.
+features (as of this writing) are function decorators and generator
+expressions; most other changes are to the standard library.
 
 This article doesn't attempt to provide a complete specification of
 every single new feature, but instead provides a convenient overview.
@@ -656,6 +656,42 @@ type.  Much of this material was written by Mike Cowlishaw, designer of the
 Rexx language.}
 
 \end{seealso}      
+
+
+%======================================================================
+\section{PEP 328: Multi-line Imports}
+
+One language change is a small syntactic tweak aimed at making it
+easier to import many names from a module.  In a
+\code{from \var{module} import \var{names}} statement, 
+\var{names} is a sequence of names separated by commas.  If the sequence is 
+very long, you can either write multiple imports from the same module,
+or you can use backslashes to escape the line endings:
+
+\begin{verbatim}
+from SimpleXMLRPCServer import SimpleXMLRPCServer,\
+            SimpleXMLRPCRequestHandler,\
+            CGIXMLRPCRequestHandler,\
+            resolve_dotted_attribute
+\end{verbatim}
+
+The syntactic change simply allows putting the names within
+parentheses.  Python ignores newlines within a parenthesized
+expression, so the backslashes are no longer needed:
+
+\begin{verbatim}
+from SimpleXMLRPCServer import (SimpleXMLRPCServer,
+            SimpleXMLRPCRequestHandler,
+            CGIXMLRPCRequestHandler,
+            resolve_dotted_attribute)
+\end{verbatim}
+
+The PEP also proposes that all \keyword{import} statements be
+absolute imports, with a leading \samp{.} character to indicate a
+relative import.  This part of the PEP is not yet implemented.
+
+\begin{seealso}
+\seepep{328}{Imports: Multi-Line and Absolute/Relative}{Written by Aahz.  Multi-line imports were implemented by Dima Dorfman.}
 
 
 %======================================================================
