@@ -33,7 +33,7 @@ The difference in default timer function is because on Windows,
 clock() has microsecond granularity but time()'s granularity is 1/60th
 of a second; on Unix, clock() has 1/100th of a second granularity and
 time() is much more precise.  On either platform, the default timer
-functions measures wall clock time, not the CPU time.  This means that
+functions measure wall clock time, not the CPU time.  This means that
 other processes running on the same computer may interfere with the
 timing.  The best thing to do when accurate timing is necessary is to
 repeat the timing a few times and use the best time.  The -r option is
