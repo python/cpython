@@ -305,12 +305,12 @@ def test_exception(lhs, rhs, msg):
         raise TestFailed, msg
 
 def run_contains_tests(test):
-    vereq('' in '', True)
-    vereq('' in 'abc', True)
-    vereq('\0' in 'abc', False)
-    vereq('\0' in '\0abc', True)
-    vereq('\0' in 'abc\0', True)
-    vereq('a' in '\0abc', True)
-    vereq('asdf' in 'asdf', True)
-    vereq('asdf' in 'asd', False)
-    vereq('asdf' in '', False)
+    test('__contains__', '', True, '')         # vereq('' in '', True)
+    test('__contains__', 'abc', True, '')      # vereq('' in 'abc', True)
+    test('__contains__', 'abc', False, '\0')   # vereq('\0' in 'abc', False)
+    test('__contains__', '\0abc', True, '\0')  # vereq('\0' in '\0abc', True)
+    test('__contains__', 'abc\0', True, '\0')  # vereq('\0' in 'abc\0', True)
+    test('__contains__', '\0abc', True, 'a')   # vereq('a' in '\0abc', True)
+    test('__contains__', 'asdf', True, 'asdf') # vereq('asdf' in 'asdf', True)
+    test('__contains__', 'asd', False, 'asdf') # vereq('asdf' in 'asd', False)
+    test('__contains__', '', False, 'asdf')    # vereq('asdf' in '', False)
