@@ -192,13 +192,8 @@ static PyObject *the_builtins;
 static void
 init_python()
 {
-	if (the_interp)
-		return;
-	Py_Initialize(); /* Initialize the interpreter */
-	the_builtins = PyEval_GetBuiltins(); /* Get __builtins__ */
 	PyEval_InitThreads(); /* Create and acquire the interpreter lock */
-	the_tstate = PyEval_SaveThread(); /* Release lock & get thread state */
-	the_interp = the_tstate->interpreter_state; /* Get interp state */
+	PyEval_ReleaseLock(); /* Release the lock */
 }
 
 static void *
@@ -250,24 +245,24 @@ run_interpreter(FILE *input, FILE *output)
 {
 	PyThreadState *tstate;
 	PyObject *new_stdin, *new_stdout;
-	PyObject *old_stdin, *old_stdout, *old_stderr;
-	PyObject *globals;
+	PyObject *mainmod, *globals;
 	char buffer[1000];
 	char *p, *q;
 	int n, end;
 
-	tstate = PyThreadState_New(the_interp);
-	PyEval_AcquireThread(tstate);
+	PyEval_AcquireLock();
+	tstate = Py_NewInterpreter();
+	if (tstate == NULL) {
+		fprintf(output, "Sorry -- can't create an interpreter\n");
+		return;
+	}
 
-	globals = PyDict_New();
-	PyDict_SetItemString(globals, "__builtins__", the_builtins);
+	mainmod = PyImport_AddModule("__main__");
+	globals = PyModule_GetDict(mainmod);
+	Py_INCREF(globals);
 
 	new_stdin = PyFile_FromFile(input, "<socket-in>", "r", NULL);
 	new_stdout = PyFile_FromFile(output, "<socket-out>", "w", NULL);
-
-	old_stdin = PySys_GetObject("stdin");
-	old_stdout = PySys_GetObject("stdout");
-	old_stderr = PySys_GetObject("stderr");
 
 	for (n = 1; !PyErr_Occurred(); n++) {
 		Py_BEGIN_ALLOW_THREADS
@@ -299,10 +294,6 @@ run_interpreter(FILE *input, FILE *output)
 		if (end < 0)
 			PyErr_Print();
 
-		PySys_SetObject("stdin", old_stdin);
-		PySys_SetObject("stdout", old_stdout);
-		PySys_SetObject("stderr", old_stderr);
-
 		if (end)
 			break;
 	}
@@ -311,8 +302,8 @@ run_interpreter(FILE *input, FILE *output)
 	Py_XDECREF(new_stdin);
 	Py_XDECREF(new_stdout);
 
-	PyEval_ReleaseThread(tstate);
-	PyThreadState_Delete(tstate);
+	Py_EndInterpreter(tstate);
+	PyEval_ReleaseLock();
 
 	fprintf(output, "Goodbye!\n");
 }
@@ -321,6 +312,9 @@ static int
 run_command(char *buffer, PyObject *globals)
 {
 	PyObject *m, *d, *v;
+	fprintf(stderr, "run_command: %s", buffer);
+	if (strchr(buffer, '\n') == NULL)
+		fprintf(stderr, "\n");
 	v = PyRun_String(buffer, Py_single_input, globals, globals);
 	if (v == NULL) {
 		if (PyErr_Occurred() == PyExc_SystemExit) {
