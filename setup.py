@@ -296,7 +296,6 @@ class PyBuildExt(build_ext):
 
         # Some modules that are normally always on:
         exts.append( Extension('regex', ['regexmodule.c', 'regexpr.c']) )
-        exts.append( Extension('pcre', ['pcremodule.c', 'pypcre.c']) )
 
         exts.append( Extension('_hotshot', ['_hotshot.c']) )
         exts.append( Extension('_weakref', ['_weakref.c']) )
