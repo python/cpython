@@ -183,6 +183,38 @@ class ReferencesTestCase(TestBase):
         self.assertEqual(L3[:5], p3[:5])
         self.assertEqual(L3[2:5], p3[2:5])
 
+    # The PyWeakref_* C API is documented as allowing either NULL or
+    # None as the value for the callback, where either means "no
+    # callback".  The "no callback" ref and proxy objects are supposed
+    # to be shared so long as they exist by all callers so long as
+    # they are active.  In Python 2.3.3 and earlier, this guaranttee
+    # was not honored, and was broken in different ways for
+    # PyWeakref_NewRef() and PyWeakref_NewProxy().  (Two tests.)
+
+    def test_shared_ref_without_callback(self):
+        self.check_shared_without_callback(weakref.ref)
+
+    def test_shared_proxy_without_callback(self):
+        self.check_shared_without_callback(weakref.proxy)
+
+    def check_shared_without_callback(self, makeref):
+        o = Object(1)
+        p1 = makeref(o, None)
+        p2 = makeref(o, None)
+        self.assert_(p1 is p2, "both callbacks were None in the C API")
+        del p1, p2
+        p1 = makeref(o)
+        p2 = makeref(o, None)
+        self.assert_(p1 is p2, "callbacks were NULL, None in the C API")
+        del p1, p2
+        p1 = makeref(o)
+        p2 = makeref(o)
+        self.assert_(p1 is p2, "both callbacks were NULL in the C API")
+        del p1, p2
+        p1 = makeref(o, None)
+        p2 = makeref(o)
+        self.assert_(p1 is p2, "callbacks were None, NULL in the C API")
+
     def test_callable_proxy(self):
         o = Callable()
         ref1 = weakref.proxy(o)
@@ -249,6 +281,11 @@ class ReferencesTestCase(TestBase):
         self.assert_(weakref.getweakrefcount(o) == 4,
                      "got wrong number of weak reference objects")
 
+        del ref1, ref2, proxy1, proxy2
+        self.assert_(weakref.getweakrefcount(o) == 0,
+                     "weak reference objects not unlinked from"
+                     " referent when discarded.")
+
         # assumes ints do not support weakrefs
         self.assert_(weakref.getweakrefcount(1) == 0,
                      "got wrong number of weak reference objects for int")
@@ -267,6 +304,10 @@ class ReferencesTestCase(TestBase):
         del ref2
         self.assert_(weakref.getweakrefs(o) == [ref1],
                      "list of refs does not match")
+
+        del ref1
+        self.assert_(weakref.getweakrefs(o) == [],
+                     "list of refs not cleared")
 
         # assumes ints do not support weakrefs
         self.assert_(weakref.getweakrefs(1) == [],
