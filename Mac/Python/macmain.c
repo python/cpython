@@ -283,7 +283,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	} else {
 		/* Create argc/argv. Do it before we go into the options event loop. */
 		*argcp = PyMac_GetArgv(argvp, PyMac_options.noargs);
-#ifdef USE_ARGV0_CHDIR
+#ifndef NO_ARGV0_CHDIR
 		if (*argcp >= 1 && (*argvp)[0] && (*argvp)[0][0]) {
 			/* Workaround for MacOS X, which currently (DP4) doesn't set
 			** the working folder correctly
@@ -544,7 +544,7 @@ Py_Main(argc, argv)
 void
 PyMac_OutputSeen()
 {
-#if defined(USE_GUSI) && !TARGET_API_MAC_CARBON_NOTYET
+#ifdef GUSISIOUX_STATE_UNKNOWN
 	gusisioux_state = GUSISIOUX_STATE_LASTREAD;
 #endif
 }
@@ -569,7 +569,7 @@ PyMac_Exit(status)
 		keep = 0;
 		break;
 	case POPT_KEEPCONSOLE_OUTPUT:
-#if defined(USE_GUSI) && !TARGET_API_MAC_CARBON_NOTYET
+#ifdef GUSISIOUX_STATE_UNKNOWN
 		if (gusisioux_state == GUSISIOUX_STATE_LASTWRITE ||
 				gusisioux_state == GUSISIOUX_STATE_UNKNOWN )
 			keep = 1;
