@@ -154,8 +154,8 @@ set to \code{1} when DST applies to the given time.
 
 \begin{funcdesc}{mktime}{tuple}
 This is the inverse function of \function{localtime()}.  Its argument
-is the full 9-tuple (since the dst flag is needed --- pass \code{-1}
-as the dst flag if it is unknown) which expresses the time in
+is the full 9-tuple (since the dst flag is needed; use \code{-1} as
+the dst flag if it is unknown) which expresses the time in
 \emph{local} time, not UTC.  It returns a floating point number, for
 compatibility with \function{time()}.  If the input value cannot be
 represented as a valid time, \exception{OverflowError} is raised.
