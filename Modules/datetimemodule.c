@@ -3168,6 +3168,7 @@ datetime_richcompare(PyDateTime_DateTime *self, PyObject *other, int op)
 	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1,
 				     other, &offset2, &n2) < 0)
 		return NULL;
+	assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
  	/* If they're both naive, or both aware and have the same offsets,
 	 * we get off cheap.  Note that if they're both naive, offset1 ==
 	 * offset2 == 0 at this point.
@@ -3681,6 +3682,7 @@ time_richcompare(PyDateTime_Time *self, PyObject *other, int op)
 	if (classify_two_utcoffsets((PyObject *)self, &offset1, &n1,
 				     other, &offset2, &n2) < 0)
 		return NULL;
+	assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
 	/* If they're both naive, or both aware and have the same offsets,
 	 * we get off cheap.  Note that if they're both naive, offset1 ==
 	 * offset2 == 0 at this point.
@@ -4619,6 +4621,7 @@ datetimetz_subtract(PyObject *left, PyObject *right)
 			if (classify_two_utcoffsets(left, &offset1, &n1,
 						    right, &offset2, &n2) < 0)
 				return NULL;
+			assert(n1 != OFFSET_UNKNOWN && n2 != OFFSET_UNKNOWN);
 			if (n1 != n2) {
 				PyErr_SetString(PyExc_TypeError,
 					"can't subtract offset-naive and "
