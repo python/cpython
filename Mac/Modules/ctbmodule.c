@@ -186,7 +186,7 @@ ctbcm_dealloc(self)
 		CMDispose(self->hdl);
 		self->hdl = NULL;
 	}
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *

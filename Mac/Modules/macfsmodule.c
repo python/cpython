@@ -227,7 +227,7 @@ mfsa_dealloc(mfsaobject *self)
 	}
 #endif
 		
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 statichere PyTypeObject Mfsatype = {
@@ -276,7 +276,7 @@ newmfsiobject(void)
 static void
 mfsi_dealloc(mfsiobject *self)
 {
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *
@@ -700,7 +700,7 @@ newmfssobject(FSSpec *fss)
 static void
 mfss_dealloc(mfssobject *self)
 {
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *
@@ -846,7 +846,7 @@ mfsr_compare(mfsrobject *v, mfsrobject *w)
 static void
 mfsr_dealloc(mfsrobject *self)
 {
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 statichere PyTypeObject Mfsrtype = {

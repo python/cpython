@@ -83,7 +83,7 @@ static void HtmlObj_dealloc(self)
 	HtmlObjectObject *self;
 {
 	/* Cleanup of self->ob_itself goes here */
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *HtmlObj_HRDisposeReference(_self, _args)

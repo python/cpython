@@ -309,7 +309,7 @@ static void
 navrr_dealloc(navrrobject *self)
 {
 	NavDisposeReply(&self->itself);
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *

@@ -543,7 +543,7 @@ static void
 cdr_dealloc(self)
 	cdrobject *self;
 {
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *
@@ -631,7 +631,7 @@ cdc_dealloc(self)
 	cdcobject *self;
 {
 	Py_XDECREF(self->routine);
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 
@@ -855,7 +855,7 @@ static void
 cdf_dealloc(self)
 	cdfobject *self;
 {
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *

@@ -460,7 +460,7 @@ newiciobject(OSType creator)
 		return NULL;
 	if ((err=ICStart(&self->inst, creator)) != 0 ) {
 		(void)PyMac_Error(err);
-		PyMem_DEL(self);
+		PyObject_DEL(self);
 		return NULL;
 	}
 	return self;
@@ -471,7 +471,7 @@ static void
 ici_dealloc(iciobject *self)
 {
 	(void)ICStop(self->inst);
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *

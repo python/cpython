@@ -117,7 +117,7 @@ sc_dealloc(self)
 	scobject *self;
 {
 	DisposeSpeechChannel(self->chan);
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *
@@ -324,7 +324,7 @@ static void
 mv_dealloc(self)
 	mvobject *self;
 {
-	PyMem_DEL(self);
+	PyObject_DEL(self);
 }
 
 static PyObject *
