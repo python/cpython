@@ -782,6 +782,7 @@ eval_code(co, globals, locals, owner, arg)
 			while (is_tupleobject(w) && gettuplesize(w) > 0) {
 				u = w;
 				w = gettupleitem(u, 0);
+				INCREF(w);
 				DECREF(u);
 			}
 			if (!is_stringobject(w))
@@ -2494,7 +2495,7 @@ import_from(locals, v, name)
 {
 	object *w, *x;
 	if (!is_moduleobject(v)) {
-		err_setstr(TypeError, "import-from require module object");
+		err_setstr(TypeError, "import-from requires module object");
 		return -1;
 	}
 	w = getmoduledict(v);
