@@ -1,4 +1,4 @@
-# Copyright 2001-2004 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2005 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -29,6 +29,11 @@ To use, simply 'import logging' and log away!
 
 import sys, logging, socket, types, os, string, cPickle, struct, time, glob
 
+try:
+    import codecs
+except ImportError:
+    codecs = None
+
 #
 # Some constants...
 #
@@ -45,11 +50,15 @@ class BaseRotatingHandler(logging.FileHandler):
     Not meant to be instantiated directly.  Instead, use RotatingFileHandler
     or TimedRotatingFileHandler.
     """
-    def __init__(self, filename, mode):
+    def __init__(self, filename, mode, encoding=None):
         """
         Use the specified filename for streamed logging
         """
-        logging.FileHandler.__init__(self, filename, mode)
+        if codecs is None:
+            encoding = None
+        logging.FileHandler.__init__(self, filename, mode, encoding)
+        self.mode = mode
+        self.encoding = encoding
 
     def emit(self, record):
         """
@@ -70,7 +79,7 @@ class RotatingFileHandler(BaseRotatingHandler):
     Handler for logging to a set of files, which switches from one file
     to the next when the current file reaches a certain size.
     """
-    def __init__(self, filename, mode="a", maxBytes=0, backupCount=0):
+    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None):
         """
         Open the specified file and use it as the stream for logging.
 
@@ -91,10 +100,9 @@ class RotatingFileHandler(BaseRotatingHandler):
 
         If maxBytes is zero, rollover never occurs.
         """
-        self.mode = mode
         if maxBytes > 0:
-            self.mode = "a" # doesn't make sense otherwise!
-        BaseRotatingHandler.__init__(self, filename, self.mode)
+            mode = 'a' # doesn't make sense otherwise!
+        BaseRotatingHandler.__init__(self, filename, mode, encoding)
         self.maxBytes = maxBytes
         self.backupCount = backupCount
 
@@ -118,7 +126,10 @@ class RotatingFileHandler(BaseRotatingHandler):
                 os.remove(dfn)
             os.rename(self.baseFilename, dfn)
             #print "%s -> %s" % (self.baseFilename, dfn)
-        self.stream = open(self.baseFilename, "w")
+        if self.encoding:
+            self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
+        else:
+            self.stream = open(self.baseFilename, 'w')
 
     def shouldRollover(self, record):
         """
@@ -142,8 +153,8 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     If backupCount is > 0, when rollover is done, no more than backupCount
     files are kept - the oldest ones are deleted.
     """
-    def __init__(self, filename, when='h', interval=1, backupCount=0):
-        BaseRotatingHandler.__init__(self, filename, 'a')
+    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None):
+        BaseRotatingHandler.__init__(self, filename, 'a', encoding)
         self.when = string.upper(when)
         self.backupCount = backupCount
         # Calculate the real rollover interval, which is just the number of
@@ -262,7 +273,10 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
                 s.sort()
                 os.remove(s[0])
         #print "%s -> %s" % (self.baseFilename, dfn)
-        self.stream = open(self.baseFilename, "w")
+        if self.encoding:
+            self.stream = codecs.open(self.baseFilename, 'w', self.encoding)
+        else:
+            self.stream = open(self.baseFilename, 'w')
         self.rolloverAt = int(time.time()) + self.interval
 
 class SocketHandler(logging.Handler):
@@ -555,20 +569,23 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         if type(address) == types.StringType:
-            self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-            # syslog may require either DGRAM or STREAM sockets
-            try:
-                self.socket.connect(address)
-            except socket.error:
-                self.socket.close()
-                self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.socket.connect(address)
+            self._connect_unixsocket(address)
             self.unixsocket = 1
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.unixsocket = 0
 
         self.formatter = None
+
+    def _connect_unixsocket(self, address):
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        # syslog may require either DGRAM or STREAM sockets
+        try:
+            self.socket.connect(address)
+        except socket.error:
+            self.socket.close()
+            self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.socket.connect(address)
 
     # curious: when talking to the unix-domain '/dev/log' socket, a
     #   zero-terminator seems to be required.  this string is placed
@@ -615,7 +632,11 @@ class SysLogHandler(logging.Handler):
             msg)
         try:
             if self.unixsocket:
-                self.socket.send(msg)
+                try:
+                    self.socket.send(msg)
+                except socket.error:
+                    self._connect_unixsocket(self.address)
+                    self.socket.send(msg)
             else:
                 self.socket.sendto(msg, self.address)
         except:
