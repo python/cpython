@@ -136,6 +136,12 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 	PyObject *value = *val;
 	PyObject *inclass = NULL;
 
+	if (type == NULL) {
+		/* This is a bug.  Should never happen.  Don't dump core. */
+		PyErr_SetString(PyExc_SystemError,
+			"PyErr_NormalizeException() called without exception");
+	}
+
 	/* If PyErr_SetNone() was used, the value will have been actually
 	   set to NULL.
 	*/
