@@ -240,6 +240,9 @@ def main():
     outfp = open(frozen_c, 'w')
     try:
         makefreeze.makefreeze(outfp, dict)
+        if win and subsystem == 'windows':
+            import winmakemakefile
+            outfp.write(winmakemakefile.WINMAINTEMPLATE)
     finally:
         outfp.close()
     if backup:
