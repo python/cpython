@@ -98,6 +98,7 @@ extern DL_IMPORT(PyObject *) PyDict_Items(PyObject *mp);
 extern DL_IMPORT(int) PyDict_Size(PyObject *mp);
 extern DL_IMPORT(PyObject *) PyDict_Copy(PyObject *mp);
 extern DL_IMPORT(int) PyDict_Update(PyObject *mp, PyObject *other);
+extern DL_IMPORT(int) PyDict_Merge(PyObject *mp, PyObject *other, int override);
 
 
 extern DL_IMPORT(PyObject *) PyDict_GetItemString(PyObject *dp, char *key);
