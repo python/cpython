@@ -28,9 +28,9 @@ cd ..
 make --no-print-directory || exit $?
 make --no-print-directory bziphtml || exit $?
 RELEASE=`grep '^RELEASE=' Makefile | sed 's|RELEASE=||'`
-scp "html-$RELEASE.tar.bz2" $TARGET/python-docs-update.tar.bz2 || exit $?
-scp tools/update-docs.sh $TARGET/update-docs.sh || exit $?
-ssh python.sourceforge.net 'tmp/update-docs.sh && rm tmp/update-docs.sh' || exit $?
+PACKAGE="html-$RELEASE.tar.bz2"
+scp "$PACKAGE" tools/update-docs.sh $TARGET/ || exit $?
+ssh python.sourceforge.net tmp/update-docs.sh $PACKAGE '&&' rm tmp/update-docs.sh || exit $?
 
 Mail -s '[development doc updates]' $ADDRESSES <<EOF
 The development version of the documentation has been updated:
