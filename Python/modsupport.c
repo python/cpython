@@ -345,9 +345,10 @@ do_mkvalue(p_format, p_va)
 		else {
 			PyObject *v;
 			v = va_arg(*p_va, PyObject *);
-			if (v != NULL)
+			if (v != NULL) {
 				if (*(*p_format - 1) != 'N')
 					Py_INCREF(v);
+			}
 			else if (!PyErr_Occurred())
 				/* If a NULL was passed
 				 * because a call that should
