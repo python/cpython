@@ -164,7 +164,7 @@ any_handler(WESelector what, WEObjectReference who, PyObject *args, PyObject **r
 	Py_DECREF(func);
 	Py_DECREF(key);
 	if ( *rv == NULL ) {
-		fprintf(stderr, "--Exception in callback: ");
+		PySys_WriteStderr("--Exception in callback: ");
 		PyErr_Print();
 		return errAEReplyNotArrived;
 	}

@@ -377,7 +377,7 @@ MacOS_HighLevelEventProc(EventRecord *e)
 			Py_DECREF(args);
 		}
 		if (res == NULL) {
-			fprintf(stderr, "Exception in MacOS_HighLevelEventProc:\n");
+			PySys_WriteStderr("Exception in MacOS_HighLevelEventProc:\n");
 			PyErr_Print();
 		}
 		else

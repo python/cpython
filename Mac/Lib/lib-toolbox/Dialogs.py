@@ -1,4 +1,4 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Dialogs.h'
+# Generated from 'moes:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Dialogs.h'
 
 kControlDialogItem = 4
 kButtonDialogItem = kControlDialogItem | 0
