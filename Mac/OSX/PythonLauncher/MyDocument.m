@@ -60,6 +60,7 @@
     [nosite setState: [settings nosite]];
     [tabs setState: [settings tabs]];
     [others setStringValue: [settings others]];
+    [scriptargs setStringValue: [settings scriptargs]];
     [with_terminal setState: [settings with_terminal]];
     
     [commandline setStringValue: [settings commandLineForScript: script]];
@@ -161,6 +162,7 @@
 - (BOOL) nosite { return [nosite state];};
 - (BOOL) tabs { return [tabs state];};
 - (NSString *) others { return [others stringValue];};
+- (NSString *) scriptargs { return [scriptargs stringValue];};
 - (BOOL) with_terminal { return [with_terminal state];};
 
 // Delegates

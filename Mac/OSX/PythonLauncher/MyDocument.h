@@ -23,6 +23,7 @@
     IBOutlet NSButton *tabs;
     IBOutlet NSTextField *others;
     IBOutlet NSButton *with_terminal;
+    IBOutlet NSTextField *scriptargs;
     IBOutlet NSTextField *commandline;
 
     NSString *script;

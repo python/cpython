@@ -19,6 +19,7 @@
 - (BOOL) tabs;
 - (NSString *) others;
 - (BOOL) with_terminal;
+- (NSString *) scriptargs;
 @end
 
 @interface FileSettings : NSObject <FileSettingsSource>
@@ -33,6 +34,7 @@
     BOOL nosite;		// -S option: don't import site.py
     BOOL tabs;			// -t option: warn about inconsistent tabs
     NSString *others;		// other options
+    NSString *scriptargs;	// script arguments (not for preferences)
     BOOL with_terminal;		// Run in terminal window
 
     FileSettings *origsource;
