@@ -40,7 +40,7 @@ def main():
 			sts = dofile(f) or sts
 			f.close()
 		else:
-			sys.stderr('%s: not found\n' % arg)
+			sys.stderr.write('%s: not found\n' % arg)
 			sts = 1
 	if sts:
 		sys.exit(sts)
