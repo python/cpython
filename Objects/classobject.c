@@ -523,7 +523,9 @@ instance_dealloc(inst)
 	PyObject *error_type, *error_value, *error_traceback;
 	PyObject *del;
 	static PyObject *delstr;
+#ifdef Py_TRACE_REFS
 	extern long _Py_RefTotal;
+#endif
 	PyObject_GC_Fini(inst);
 	/* Call the __del__ method if it exists.  First temporarily
 	   revive the object and save the current exception, if any. */
