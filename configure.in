@@ -135,6 +135,8 @@ then
 	case $ac_sys_system in
 	AIX*)
 	   LINKCC="\$(srcdir)/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
+	dgux*)
+	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
 	*) LINKCC="\$(PURIFY) \$(CC)";;
 	esac
 fi
@@ -146,6 +148,7 @@ AC_CHECK_PROGS(AR, ar aal, ar)
 AC_SUBST(INSTALL)
 AC_SUBST(INSTALL_PROGRAM)
 AC_SUBST(INSTALL_DATA)
+AC_SUBST(REALLIBRARY)
 # Install just never works :-(
 if test -z "$INSTALL"
 then
@@ -180,6 +183,8 @@ fi
 AC_AIX
 AC_MINIX
 
+if test "$MACHDEP" != "dguxR4"
+then
 AC_MSG_CHECKING(whether $CC accepts -Olimit 1500)
 AC_CACHE_VAL(ac_cv_olimit_ok,
 [ac_save_cc="$CC"
@@ -193,6 +198,7 @@ if test $ac_cv_olimit_ok = yes; then
   OPT="$OPT -Olimit 1500"
 fi
 
+AC_SUBST(DGUX_IS_BROKEN)
 AC_MSG_CHECKING(whether $CC accepts -OPT:Olimit=0)
 AC_CACHE_VAL(ac_cv_opt_olimit_ok,
 [ac_save_cc="$CC"
@@ -204,6 +210,13 @@ CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_opt_olimit_ok)
 if test $ac_cv_opt_olimit_ok = yes; then
   OPT="$OPT -OPT:Olimit=0"
+fi
+  REALLIBRARY='libpython$(VERSION).a'
+  DGUX_IS_BROKEN="# dgux rule not included"
+else
+  REALLIBRARY='libpython$(VERSION).so'
+  OPT="$OPT -pic"
+  DGUX_IS_BROKEN="make $REALLIBRARY"
 fi
 
 # check for ANSI or K&R ("traditional") preprocessor
@@ -279,6 +292,7 @@ then
 	DYNIX/ptx*) LDSHARED="ld -G";;
 	next/*) LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';;
 	Linux*) LDSHARED="gcc -shared";;
+	dgux*) LDSHARED="ld -G";;
 	FreeBSD*|NetBSD*) LDSHARED="ld -Bshareable";;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	*)	LDSHARED="ld";;

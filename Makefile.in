@@ -170,6 +170,7 @@ python:		$(LIBRARY) buildno
 		      $(srcdir)/Modules/getbuildinfo.c
 		$(AR) cr $(LIBRARY) getbuildinfo.o
 		$(RANLIB) $(LIBRARY)
+		@DGUX_IS_BROKEN@
 		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
 			LIBRARY=../$(LIBRARY) link
@@ -190,6 +191,12 @@ $(LIBRARY):	$(SUBDIRS)
 		else true; fi
 		for i in $(SUBDIRS); do \
 			(cd $$i; $(MAKE) VERSION="$(VERSION)" add2lib); done
+
+# This rule is only here for DG/UX!!!
+libpython$(VERSION).so:	$(LIBRARY)
+		test -d dgux || mkdir dgux
+		(cd dgux;ar x ../$^;ld -G -o ../$@ * )
+		/bin/rm -rf ./dgux
 
 $(SUBDIRS):	Makefiles
 
@@ -245,6 +252,8 @@ altbininstall:	python
 			fi; \
 		done
 		$(INSTALL_PROGRAM) python$(EXE) $(BINDIR)/python$(VERSION)$(EXE)
+		@DGUX_IS_BROKEN@
+		test -f libpython$(VERSION).so && $(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR)
 
 # Install the manual page
 maninstall:
