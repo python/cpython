@@ -89,28 +89,30 @@ class HeaderFile:
 def mime_decode(line):
 	'''Decode a single line of quoted-printable text to 8bit.'''
 	newline = ''
+	pos = 0
 	while 1:
-		res = mime_code.search(line)
+		res = mime_code.search(line, pos)
 		if res is None:
 			break
-		newline = newline + line[:res.start(0)] + \
+		newline = newline + line[pos:res.start(0)] + \
 			  chr(string.atoi(res.group(1), 16))
-		line = line[res.end(0):]
-	return newline + line
+		pos = res.end(0)
+	return newline + line[pos:]
 
 def mime_decode_header(line):
 	'''Decode a header line to 8bit.'''
 	newline = ''
+	pos = 0
 	while 1:
-		res = mime_head.search(line)
+		res = mime_head.search(line, pos)
 		if res is None:
 			break
 		match = res.group(1)
 		# convert underscores to spaces (before =XX conversion!)
 		match = string.join(string.split(match, '_'), ' ')
-		newline = newline + line[:res.start(0)] + mime_decode(match)
-		line = line[res.end(0):]
-	return newline + line
+		newline = newline + line[pos:res.start(0)] + mime_decode(match)
+		pos = res.end(0)
+	return newline + line[pos:]
 
 def unmimify_part(ifile, ofile, decode_base64 = 0):
 	'''Convert a quoted-printable part of a MIME mail message to 8bit.'''
@@ -223,18 +225,19 @@ def mime_encode(line, header):
 	else:
 		reg = mime_char
 	newline = ''
+	pos = 0
 	if len(line) >= 5 and line[:5] == 'From ':
 		# quote 'From ' at the start of a line for stupid mailers
 		newline = string.upper('=%02x' % ord('F'))
-		line = line[1:]
+		pos = 1
 	while 1:
-		res = reg.search(line)
+		res = reg.search(line, pos)
 		if res is None:
 			break
-		newline = newline + line[:res.start(0)] + \
-			  string.upper('=%02x' % ord(line[res.group(0)]))
-		line = line[res.end(0):]
-	line = newline + line
+		newline = newline + line[pos:res.start(0)] + \
+			  string.upper('=%02x' % ord(res.group(0)))
+		pos = res.end(0)
+	line = newline + line[pos:]
 
 	newline = ''
 	while len(line) >= 75:
@@ -251,16 +254,16 @@ mime_header = re.compile('([ \t(]|^)([-a-zA-Z0-9_+]*[\240-\377][-a-zA-Z0-9_+\240
 def mime_encode_header(line):
 	'''Code a single header line as quoted-printable.'''
 	newline = ''
+	pos = 0
 	while 1:
-		res = mime_header.search(line)
+		res = mime_header.search(line, pos)
 		if res is None:
 			break
-		newline = newline + line[:res.start(0)] + res.group(1) + \
-			  '=?' + CHARSET + '?Q?' + \
-			  mime_encode(res.group(2), 1) + \
-			  '?=' + res.group(3)
-		line = line[res.end(0):]
-	return newline + line
+		newline = '%s%s%s=?%s?Q?%s?=%s' % \
+			  (newline, line[pos:res.start(0)], res.group(1),
+			   CHARSET, mime_encode(res.group(2), 1), res.group(3))
+		pos = res.end(0)
+	return newline + line[pos:]
 
 mv = re.compile('^mime-version:', re.I)
 cte = re.compile('^content-transfer-encoding:', re.I)
@@ -340,11 +343,12 @@ def mimify_part(ifile, ofile, is_mime):
 			if has_iso_chars:
 				# change us-ascii into iso-8859-1
 				if string.lower(chrset_res.group(2)) == 'us-ascii':
-					line = chrset_res.group(1) + \
-					       CHARSET + chrset_res.group(3)
+					line = '%s%s%s' % (chrset_res.group(1),
+							   CHARSET,
+							   chrset_res.group(3))
 			else:
 				# change iso-8859-* into us-ascii
-				line = chrset_res.group(1) + 'us-ascii' + chrset_res.group(3)
+				line = '%sus-ascii%s' % chrset_res.group(1, 3)
 		if has_cte and cte.match(line):
 			line = 'Content-Transfer-Encoding: '
 			if is_base64:
