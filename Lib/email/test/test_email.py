@@ -1604,10 +1604,10 @@ class TestMiscellaneous(unittest.TestCase):
         all = module.__all__
         all.sort()
         self.assertEqual(all, ['Charset', 'Encoders', 'Errors', 'Generator',
-                               'Header', 'Iterators', 'MIMEAudio',
-                               'MIMEBase', 'MIMEImage', 'MIMEMessage',
-                               'MIMEText', 'Message', 'Parser',
-                               'Utils', 'base64MIME',
+                               'Header', 'Iterators', 'MIMEAudio', 'MIMEBase',
+                               'MIMEImage', 'MIMEMessage', 'MIMEMultipart',
+                               'MIMENonMultipart', 'MIMEText', 'Message',
+                               'Parser', 'Utils', 'base64MIME',
                                'message_from_file', 'message_from_string',
                                'quopriMIME'])
 
