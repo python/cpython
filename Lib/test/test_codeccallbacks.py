@@ -258,7 +258,7 @@ class CodecCallbackTest(unittest.TestCase):
         self.check_exceptionobjectargs(
             UnicodeEncodeError,
             ["ascii", u"g\xfcrk", 1, 2, "ouch"],
-            "'ascii' codec can't encode character '\ufc' in position 1: ouch"
+            "'ascii' codec can't encode character '\\xfc' in position 1: ouch"
         )
         self.check_exceptionobjectargs(
             UnicodeEncodeError,
@@ -268,8 +268,24 @@ class CodecCallbackTest(unittest.TestCase):
         self.check_exceptionobjectargs(
             UnicodeEncodeError,
             ["ascii", u"\xfcx", 0, 1, "ouch"],
-            "'ascii' codec can't encode character '\ufc' in position 0: ouch"
+            "'ascii' codec can't encode character '\\xfc' in position 0: ouch"
         )
+        self.check_exceptionobjectargs(
+            UnicodeEncodeError,
+            ["ascii", u"\u0100x", 0, 1, "ouch"],
+            "'ascii' codec can't encode character '\\u0100' in position 0: ouch"
+        )
+        self.check_exceptionobjectargs(
+            UnicodeEncodeError,
+            ["ascii", u"\uffffx", 0, 1, "ouch"],
+            "'ascii' codec can't encode character '\\uffff' in position 0: ouch"
+        )
+        if sys.maxunicode > 0xffff:
+            self.check_exceptionobjectargs(
+                UnicodeEncodeError,
+                ["ascii", u"\U00010000x", 0, 1, "ouch"],
+                "'ascii' codec can't encode character '\\U00010000' in position 0: ouch"
+            )
 
     def test_unicodedecodeerror(self):
         self.check_exceptionobjectargs(
@@ -287,8 +303,24 @@ class CodecCallbackTest(unittest.TestCase):
         self.check_exceptionobjectargs(
             UnicodeTranslateError,
             [u"g\xfcrk", 1, 2, "ouch"],
-            "can't translate character '\\ufc' in position 1: ouch"
+            "can't translate character '\\xfc' in position 1: ouch"
         )
+        self.check_exceptionobjectargs(
+            UnicodeTranslateError,
+            [u"g\u0100rk", 1, 2, "ouch"],
+            "can't translate character '\\u0100' in position 1: ouch"
+        )
+        self.check_exceptionobjectargs(
+            UnicodeTranslateError,
+            [u"g\uffffrk", 1, 2, "ouch"],
+            "can't translate character '\\uffff' in position 1: ouch"
+        )
+        if sys.maxunicode > 0xffff:
+            self.check_exceptionobjectargs(
+                UnicodeTranslateError,
+                [u"g\U00010000rk", 1, 2, "ouch"],
+                "can't translate character '\\U00010000' in position 1: ouch"
+            )
         self.check_exceptionobjectargs(
             UnicodeTranslateError,
             [u"g\xfcrk", 1, 3, "ouch"],
