@@ -34,10 +34,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define NO_UNAME
 #endif
 
-#ifndef MSDOS
-#define DO_TIMES /* Comment this out if it causes trouble */
-#endif
-
 #include <signal.h>
 #include <string.h>
 #include <setjmp.h>
