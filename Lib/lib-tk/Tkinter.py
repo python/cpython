@@ -121,6 +121,7 @@ def getboolean(s):
 
 # Methods defined on both toplevel and interior widgets
 class Misc:
+	# XXX font command?
 	_tclCommands = None
 	def destroy(self):
 		if self._tclCommands is not None:
@@ -131,8 +132,10 @@ class Misc:
 	def deletecommand(self, name):
 		#print '- Tkinter: deleted command', name
 		self.tk.deletecommand(name)
-		index = self._tclCommands.index(name)
-		del self._tclCommands[index]
+		try:
+			self._tclCommands.remove(name)
+		except ValueError:
+			pass
 	def tk_strictMotif(self, boolean=None):
 		return self.tk.getboolean(self.tk.call(
 			'set', 'tk_strictMotif', boolean))
@@ -435,12 +438,13 @@ class Misc:
 				self.tk.call('bindtags', self._w))
 		else:
 			self.tk.call('bindtags', self._w, tagList)
-	def _bind(self, what, sequence, func, add):
+	def _bind(self, what, sequence, func, add, needcleanup=1):
 		if func:
 			cmd = ("%sset _tkinter_break [%s %s]\n"
 			       'if {"$_tkinter_break" == "break"} break\n') \
 			       % (add and '+' or '',
-				  self._register(func, self._substitute),
+				  self._register(func, self._substitute,
+						 needcleanup),
 				  _string.join(self._subst_format))
 			apply(self.tk.call, what + (sequence, cmd))
 		elif func == '':
@@ -452,11 +456,11 @@ class Misc:
 	def unbind(self, sequence):
 		self.tk.call('bind', self._w, sequence, '')
 	def bind_all(self, sequence=None, func=None, add=None):
-		return self._bind(('bind', 'all'), sequence, func, add)
+		return self._bind(('bind', 'all'), sequence, func, add, 0)
 	def unbind_all(self, sequence):
 		self.tk.call('bind', 'all' , sequence, '')
 	def bind_class(self, className, sequence=None, func=None, add=None):
-		return self._bind(('bind', className), sequence, func, add)
+		return self._bind(('bind', className), sequence, func, add, 0)
 	def unbind_class(self, className, sequence):
 		self.tk.call('bind', className , sequence, '')
 	def mainloop(self, n=0):
@@ -506,7 +510,7 @@ class Misc:
 			w = w.children[name]
 			name = tail
 		return w
-	def _register(self, func, subst=None):
+	def _register(self, func, subst=None, needcleanup=1):
 		f = CallWrapper(func, subst, self).__call__
 		name = `id(f)`
 		try:
@@ -518,9 +522,10 @@ class Misc:
 		except AttributeError:
 			pass
 		self.tk.createcommand(name, f)
-		if self._tclCommands is None:
-			self._tclCommands = []
-		self._tclCommands.append(name)
+		if needcleanup:
+			if self._tclCommands is None:
+				self._tclCommands = []
+       			self._tclCommands.append(name)
 		#print '+ Tkinter created command', name
 		return name
 	register = _register
@@ -1737,6 +1742,7 @@ class PhotoImage(Image):
 	# XXX config
 	def __getitem__(self, key):
 		return self.tk.call(self.name, 'cget', '-' + key)
+	# XXX copy -from, -to, ...?
 	def copy(self):
 		destImage = PhotoImage()
 		self.tk.call(destImage, 'copy', self.name)
