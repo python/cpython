@@ -22,6 +22,15 @@ Type/class unification and new-style classes
 
 Core
 
+- A very subtle syntactical pitfall in list comprehensions was fixed.
+  For example: [a+b for a in 'abc', for b in 'def'].  The comma in
+  this example is a mistake.  Previously, this would silently let 'a'
+  iterate over the singleton tuple ('abc',), yielding ['abcd', 'abce',
+  'abcf'] rather than the intended ['ad', 'ae', 'af', 'bd', 'be',
+  'bf', 'cd', 'ce', 'cf'].  Now, this is flagged as a syntax error.
+  Note that [a for a in <singleton>] is a convoluted way to say
+  [<singleton>] anyway, so it's not like any expressiveness is lost.
+
 - binascii has now two quopri support functions, a2b_qp and b2a_qp.
 
 - readline now supports setting the startup_hook and the pre_event_hook.
