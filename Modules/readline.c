@@ -32,8 +32,8 @@
 #endif
 
 /* Pointers needed from outside (but not declared in a header file). */
-extern DL_IMPORT(int) (*PyOS_InputHook)(void);
-extern DL_IMPORT(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *,char *);
+PyAPI_FUNC(int) (*PyOS_InputHook)(void);
+PyAPI_FUNC(char) *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *,char *);
 
 
 /* Exported function to send one line to readline's init file parser */

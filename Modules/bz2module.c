@@ -2167,7 +2167,7 @@ interface, one shot (de)compression functions, and types for\n\
 sequential (de)compression.\n\
 ");
 
-DL_EXPORT(void)
+PyMODINIT_FUNC
 initbz2(void)
 {
 	PyObject *m;

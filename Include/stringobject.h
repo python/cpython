@@ -65,7 +65,7 @@ PyAPI_FUNC(int) _PyString_Eq(PyObject *, PyObject*);
 PyAPI_FUNC(PyObject *) PyString_Format(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyString_FormatLong(PyObject*, int, int,
 						  int, char**, int*);
-extern DL_IMPORT(PyObject *) PyString_DecodeEscape(const char *, int, 
+PyAPI_FUNC(PyObject *) PyString_DecodeEscape(const char *, int, 
 						   const char *, int,
 						   const char *);
 
