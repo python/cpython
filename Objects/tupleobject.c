@@ -280,6 +280,7 @@ tuplehash(PyTupleObject *v)
 		x = (x ^ y) * mult;
 		mult += 82520L + len + len;
 	}
+	x += 97531L;
 	if (x == -1)
 		x = -2;
 	return x;
