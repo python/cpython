@@ -265,8 +265,8 @@ def mkstemp(suffix="", prefix=template, dir=gettempdir(), binary=True):
     If 'dir' is specified, the file will be created in that directory,
     otherwise a default directory is used.
 
-    If 'binary' is specified and false, the file is opened in binary
-    mode.  Otherwise, the file is opened in text mode.  On some
+    If 'binary' is specified and false, the file is opened in text
+    mode.  Otherwise, the file is opened in binary mode.  On some
     operating systems, this makes no difference.
 
     The file is readable and writable only by the creating user ID.
