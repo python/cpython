@@ -15,8 +15,6 @@
 #pragma lib_export on
 #endif
 
-#if defined(HAVE_HYPOT)
-/* Defined in <math.h> */
-#else
-extern double hypot Py_PROTO((double, double)); /* defined in mathmodule.c */
+#ifndef HAVE_HYPOT
+extern double hypot Py_PROTO((double, double));
 #endif
