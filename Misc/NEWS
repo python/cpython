@@ -499,10 +499,13 @@ Tools/Demos
 Build
 -----
 
+- The fpectl module is not built by default; it's dangerous or useless
+  except in the hands of experts.
+
 - The public Python C API will generally be declared using PyAPI_FUNC
-   and PyAPI_DATA macros, while Python extension module init functions
-   will be declared with PyMODINIT_FUNC.  DL_EXPORT/DL_IMPORT macros
-   are deprecated.
+  and PyAPI_DATA macros, while Python extension module init functions
+  will be declared with PyMODINIT_FUNC.  DL_EXPORT/DL_IMPORT macros
+  are deprecated.
 
 - A bug was fixed that could cause COUNT_ALLOCS builds to segfault, or
   get into infinite loops, when a new-style class got garbage-collected.
