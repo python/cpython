@@ -14,6 +14,7 @@ ncurses.py	-- currently only a panels demo
                    XXX this won't work until panel support is checked in
 rain.py		-- raindrops keep falling on my desktop
 tclock.py	-- ASCII clock, by Howard Jones
+xmas.py		-- I'm dreaming of an ASCII christmas
 
 Please send bugfixes and new contributions to me or, even better,
 submit them to the Python Bug Tracker on SourceForge
