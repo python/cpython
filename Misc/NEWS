@@ -6,6 +6,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Previously, "str1 in str2" required str1 to be a string of length 1.
+  This restriction has been relaxed to allow str1 to be a string of
+  any length.  Thus "'el' in 'hello world'" returns True now.
+
 - File objects are now their own iterators.  For a file f, iter(f) now
   returns f (unless f is closed), and f.next() is similar to
   f.readline() when EOF is not reached; however, f.next() uses a
