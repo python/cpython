@@ -157,8 +157,8 @@ SIGNAL_OBJS=	@SIGNAL_OBJS@
 
 ##########################################################################
 # Grammar
-GRAMMAR_H=	Include/graminit.h
-GRAMMAR_C=	Python/graminit.c
+GRAMMAR_H=	$(srcdir)/Include/graminit.h
+GRAMMAR_C=	$(srcdir)/Python/graminit.c
 GRAMMAR_INPUT=	$(srcdir)/Grammar/Grammar
 
 
@@ -379,7 +379,7 @@ Modules/ccpython.o: $(srcdir)/Modules/ccpython.cc
 
 
 $(GRAMMAR_H) $(GRAMMAR_C): $(PGEN) $(GRAMMAR_INPUT)
-		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
+		-$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
 
 $(PGEN):	$(PGENOBJS)
 		$(CC) $(OPT) $(PGENOBJS) $(LIBS) -o $(PGEN)
