@@ -480,10 +480,10 @@ load_dynamic_module(name, pathname, fp)
 		shl_t lib;
 		int flags;
 
-		flags = BIND_DEFERRED;
+		flags = BIND_FIRST | BIND_DEFERRED;
 		if (verbose)
                 {
-                        flags = BIND_IMMEDIATE | BIND_NONFATAL | BIND_VERBOSE;
+                        flags = DYNAMIC_PATH | BIND_FIRST | BIND_IMMEDIATE | BIND_NONFATAL | BIND_VERBOSE;
                         printf("shl_load %s\n",pathname);
                 }
                 lib = shl_load(pathname, flags, 0);
