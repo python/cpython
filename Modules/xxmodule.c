@@ -132,8 +132,10 @@ Xxo_setattr(self, name, v)
 		return PyDict_SetItemString(self->x_attr, name, v);
 }
 
-staticforward PyTypeObject Xxo_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+statichere PyTypeObject Xxo_Type = {
+	/* The ob_type field must be initialized in the module init function
+	 * to be portable to Windows without using C++. */
+	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
 	"Xxo",			/*tp_name*/
 	sizeof(XxoObject),	/*tp_basicsize*/
@@ -241,6 +243,10 @@ DL_EXPORT(void)
 initxx()
 {
 	PyObject *m, *d;
+
+	/* Initialize the type of the new type object here; doing it here
+	 * is required for portability to Windows without requiring C++. */
+	Xxo_Type.ob_type = &PyType_Type;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("xx", xx_methods);
