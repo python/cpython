@@ -545,44 +545,8 @@ included in the list above, send me email!
 
 2.3. Q. Are there any commercial projects going on using Python?
 
-A. Several companies have revealed to me that they are planning or
-considering use of Python in a future product.
-
-Sunrise Software has a product out using Python -- they use Python
-for a GUI management application and an SNMP network management
-application.  Contact: <info@sunrise.com>.
-
-Infoseek uses Python to implement their commercial WWW information
-retrieval service <URL:http://www.infoseek.com/>.  Contact:
-<info@infoseek.com>.
-
-Paul Everitt of Connecting Minds is planning a Lotus Notes gateway.
-Contact: <Paul.Everitt@cminds.com>.  Or see their WWW server
-<URL:http://www.cminds.com/>.
-
-KaPRE in Boulder, CO is using Python for on-site customization of C++
-applications, rapid-prototyping/development,
-language-based-components, and possibly more.  This is pretty solid:
-Python's being shipped with their tool-set now, to beta sites.
-Contact: <lutz@KaPRE.COM> (Mark Lutz).
-
-Individuals at many other companies are using Python for internal
-development or for as yet unannounced products (witness their
-contributions to the Python mailing list or newsgroup).
-
-SGI has advertised in the Python list looking for Python programmers
-for a project involving interactive television.
-
-See also the workshop minutes at
-<URL:http://www.python.org/workshops/> -- in general the WWW server is
-more up to date than the FAQ for these issues.
-
-Python has also been elected as an extension language by MADE, a
-consortium supported by the European Committee's ESPRIT program and
-consisting of Bull, CWI and some other European companies.  Contact:
-Ivan Herman <ivan@cwi.nl>.
-
-If you'd like to be included in the list above, send me email!
+A. Yes, there's lots of commercial activity using Python.  See
+<URL:http://www.python.org/python/Users.html> for a list.
 
 2.4. Q. How stable is Python?
 
