@@ -64,6 +64,7 @@ then
 	MACHDEP="$ac_md_system$ac_md_release"
 
 	case $MACHDEP in
+	cygwin*) MACHDEP="cygwin";;
 	'')	MACHDEP="unknown";;
 	esac
 fi
