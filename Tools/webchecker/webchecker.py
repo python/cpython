@@ -251,11 +251,21 @@ class Checker:
 
     def addroot(self, root):
 	if root not in self.roots:
-	    self.roots.append(root)
+	    troot = root
+	    scheme, netloc, path, params, query, fragment = \
+		    urlparse.urlparse(root)
+	    i = string.rfind(path, "/") + 1
+	    if 0 < i < len(path):
+		path = path[:i]
+		troot = urlparse.urlunparse((scheme, netloc, path,
+					     params, query, fragment))
+	    self.roots.append(troot)
 	    self.addrobot(root)
 	    self.newlink(root, ("<root>", root))
 
     def addrobot(self, root):
+	root = urlparse.urljoin(root, "/")
+	if self.robots.has_key(root): return
 	url = urlparse.urljoin(root, "/robots.txt")
 	self.robots[root] = rp = robotparser.RobotFileParser()
 	if verbose > 2:
@@ -357,6 +367,7 @@ class Checker:
     def inroots(self, url):
 	for root in self.roots:
 	    if url[:len(root)] == root:
+		root = urlparse.urljoin(root, "/")
 		return self.robots[root].can_fetch(AGENTNAME, url)
 	return 0
 
@@ -528,6 +539,9 @@ class MyHTMLParser(sgmllib.SGMLParser):
 
     def end_a(self): pass
 
+    def do_area(self, attributes):
+	self.link_attr(attributes, 'href')
+
     def do_img(self, attributes):
 	self.link_attr(attributes, 'src', 'lowsrc')
 
@@ -580,11 +594,15 @@ def sanitize(msg):
 
 
 def safeclose(f):
-    url = f.geturl()
-    if url[:4] == 'ftp:' or url[:7] == 'file://':
-	# Apparently ftp connections don't like to be closed
-	# prematurely...
-	text = f.read()
+    try:
+	url = f.geturl()
+    except AttributeError:
+	pass
+    else:
+	if url[:4] == 'ftp:' or url[:7] == 'file://':
+	    # Apparently ftp connections don't like to be closed
+	    # prematurely...
+	    text = f.read()
     f.close()
 
 
