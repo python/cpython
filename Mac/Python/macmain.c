@@ -192,6 +192,10 @@ PyMac_InitApplication()
 			*endp = '\0';
 
 			chdir(curwd);
+#ifdef USE_GUSI
+			/* Change MacOS's idea of wd too */
+			PyMac_FixGUSIcd();
+#endif
 		}
 	}
 	Py_Main(argc, argv);

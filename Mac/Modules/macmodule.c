@@ -176,7 +176,17 @@ mac_chdir(self, args)
 	object *self;
 	object *args;
 {
+#ifdef USE_GUSI
+	object *rv;
+	
+	/* Change MacOS's idea of wd too */
+	rv = mac_1str(args, chdir);
+	PyMac_FixGUSIcd();
+	return rv;
+#else
 	return mac_1str(args, chdir);
+#endif
+
 }
 
 static object *
