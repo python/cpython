@@ -122,22 +122,24 @@ sub make_nav_sectref{
 }
 
 sub make_nav_panel{
-    return ("<table align=center width=\"100%\" cellpadding=0 cellspacing=2>"
-	    . "\n<tr>"
-	    . "\n<td>$NEXT</td>"
-	    . "\n<td>$UP</td>"
-	    . "\n<td>$PREVIOUS</td>"
-	    . "\n<td align=center$NAV_BGCOLOR width=\"100%\">"
-	    . "\n <b class=title>$t_title</b></td>"
-	    . ($CONTENTS ? "\n<td>$CONTENTS</td>" : $BLANK_ICON)
-	    . "\n<td>$CUSTOM_BUTTONS</td>" # module index
-	    . ($INDEX ? "\n<td>$INDEX</td>" : $BLANK_ICON)
-	    . "\n</tr></table>"
-	    #. "<hr>"
-	    . make_nav_sectref("Next", $NEXT_TITLE)
-	    . make_nav_sectref("Up", $UP_TITLE)
-	    . make_nav_sectref("Previous", $PREVIOUS_TITLE)
-	   );
+    my $s;
+    $s = "<table align=center width=\"100%\" cellpadding=0 cellspacing=2>"
+         . "\n<tr>"
+	 . "\n<td>$NEXT</td>"
+	 . "\n<td>$UP</td>"
+	 . "\n<td>$PREVIOUS</td>"
+	 . "\n<td align=center$NAV_BGCOLOR width=\"100%\">"
+	 . "\n <b class=title>$t_title</b></td>"
+	 . ($CONTENTS ? "\n<td>$CONTENTS</td>" : $BLANK_ICON)
+	 . "\n<td>$CUSTOM_BUTTONS</td>" # module index
+	 . ($INDEX ? "\n<td>$INDEX</td>" : $BLANK_ICON)
+	 . "\n</tr></table>"
+	 #. "<hr>"
+	 . make_nav_sectref("Next", $NEXT_TITLE)
+	 . make_nav_sectref("Up", $UP_TITLE)
+	 . make_nav_sectref("Previous", $PREVIOUS_TITLE);
+    $s =~ s/ NAME="tex2html\d+"\n//g;
+    return $s;
 }
 
 sub top_navigation_panel {
