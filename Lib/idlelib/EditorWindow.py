@@ -283,6 +283,7 @@ class EditorWindow:
         tkMessageBox.showinfo('Advice', "Don't Panic!", master=self.text)
 
     def view_readme(self, event=None):
+        print>>sys.__stderr__, "** __file__: ", __file__
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'README.txt')
         textView.TextViewer(self.top,'IDLEfork - README',fn)        
 
@@ -438,7 +439,7 @@ class EditorWindow:
             f.close()
         except IOError:
             return False
-        return line.startswith('#!') and 'python' in line
+        return line.startswith('#!') and line.find('python') >= 0
 
     def close_hook(self):
         if self.flist:
