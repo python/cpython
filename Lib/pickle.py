@@ -519,7 +519,7 @@ class Unpickler:
     dispatch[NONE] = load_none
 
     def load_int(self):
-        self.append(string.atoi(self.readline()[:-1], 0))
+        self.append(string.atoi(self.readline()[:-1]))
     dispatch[INT] = load_int
 
     def load_binint(self):
