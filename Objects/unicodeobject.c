@@ -2736,6 +2736,8 @@ static PyObject *charmapencode_lookup(Py_UNICODE c, PyObject *mapping)
 	} else
 	    return NULL;
     }
+    else if (x == Py_None)
+	return x;
     else if (PyInt_Check(x)) {
 	long value = PyInt_AS_LONG(x);
 	if (value < 0 || value > 255) {
