@@ -2295,7 +2295,7 @@ imp_is_builtin(PyObject *self, PyObject *args)
 	char *name;
 	if (!PyArg_ParseTuple(args, "s:is_builtin", &name))
 		return NULL;
-	return PyBool_FromLong(is_builtin(name));
+	return PyInt_FromLong(is_builtin(name));
 }
 
 static PyObject *
