@@ -17,6 +17,12 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #116172, curses module fails to build on SGI, _curses
 
+- Patch #103485, compile on NetBSD
+
+- Rename lines to nlines, macro sometimes defined in term.h
+
+- Patch #130117: add a prototype required to compile cleanly on IRIX
+
 What's New in Python 2.0?
 =========================
 
