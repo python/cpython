@@ -1161,6 +1161,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 return i;
             state->repeat = rp;
             state->ptr = ptr;
+            LASTMARK_RESTORE();
             return 0;
 
         case SRE_OP_MIN_UNTIL:
@@ -1171,12 +1172,14 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             if (!rp)
                 return SRE_ERROR_STATE;
 
+            state->ptr = ptr;
+
             count = rp->count + 1;
 
             TRACE(("|%p|%p|MIN_UNTIL %d %p\n", pattern, ptr, count,
                    rp->pattern));
 
-            state->ptr = ptr;
+            LASTMARK_SAVE();
 
             if (count < rp->pattern[1]) {
                 /* not enough matches */
@@ -1187,10 +1190,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                     return i;
                 rp->count = count-1;
                 state->ptr = ptr;
+                LASTMARK_RESTORE();
                 return 0;
             }
-
-            LASTMARK_SAVE();
 
             /* see if the tail matches */
             state->repeat = rp->prev;
@@ -1202,7 +1204,6 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             state->repeat = rp;
 
             LASTMARK_RESTORE();
-
             if (count >= rp->pattern[2] && rp->pattern[2] != 65535)
                 return 0;
 
@@ -1213,6 +1214,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 return i;
             rp->count = count - 1;
             state->ptr = ptr;
+            LASTMARK_RESTORE();
             return 0;
 
         default:
