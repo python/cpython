@@ -84,6 +84,10 @@ Type/class unification and new-style classes
 Core and builtins
 -----------------
 
+- A frame object's f_lineno attribute can now be written to from a
+  trace function to change which line will execute next.  A command to
+  exploit this from pdb has been added.  [SF patch #643835]
+
 - The _codecs support module for codecs.py was turned into a builtin
   module to assure that at least the builtin codecs are available
   to the Python parser for source code decoding according to PEP 263.
@@ -118,8 +122,8 @@ Core and builtins
 
 - SET_LINENO is gone.  co_lnotab is now consulted to determine when to
   call the trace function.  C code that accessed f_lineno should call
-  PyCode_Addr2Line instead (f_lineno is still there, but not kept up
-  to date).
+  PyCode_Addr2Line instead (f_lineno is still there, but only kept up
+  to date when there is a trace function set).
 
 - There's a new warning category, FutureWarning.  This is used to warn
   about a number of situations where the value or sign of an integer
@@ -438,6 +442,9 @@ Extension modules
 
 Library
 -------
+
+- pdb has a new 'j(ump)' command to select the next line to be
+  executed.
 
 - The distutils created windows installers now can run a
   postinstallation script.

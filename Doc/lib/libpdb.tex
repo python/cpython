@@ -255,6 +255,16 @@ Continue execution until the current function returns.
 
 Continue execution, only stop when a breakpoint is encountered.
 
+\item[j(ump) \var{lineno}]
+
+Set the next line that will be executed.  Only available in the
+bottom-most frame.  This lets you jump back and execute code
+again, or jump forward to skip code that you don't want to run.
+
+It should be noted that not all jumps are allowed -- for instance it
+it not possible to jump into the middle of a for loop or out of a
+finally clause.
+
 \item[l(ist) \optional{\var{first\optional{, last}}}]
 
 List source code for the current file.  Without arguments, list 11
@@ -303,7 +313,7 @@ alias pi for k in %1.__dict__.keys(): print "%1.",k,"=",%1.__dict__[k]
 #Print instance variables in self
 alias ps pi self
 \end{verbatim}
-		
+                
 \item[unalias \var{name}]
 
 Deletes the specified alias.

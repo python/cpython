@@ -812,8 +812,7 @@ frame; \member{f_locals} is the dictionary used to look up local
 variables; \member{f_globals} is used for global variables;
 \member{f_builtins} is used for built-in (intrinsic) names;
 \member{f_restricted} is a flag indicating whether the function is
-executing in restricted execution mode;
-\member{f_lineno} gives the line number and \member{f_lasti} gives the
+executing in restricted execution mode; \member{f_lasti} gives the
 precise instruction (this is an index into the bytecode string of
 the code object).
 \withsubitem{(frame attribute)}{
@@ -821,7 +820,6 @@ the code object).
   \ttindex{f_code}
   \ttindex{f_globals}
   \ttindex{f_locals}
-  \ttindex{f_lineno}
   \ttindex{f_lasti}
   \ttindex{f_builtins}
   \ttindex{f_restricted}}
@@ -830,12 +828,16 @@ Special writable attributes: \member{f_trace}, if not \code{None}, is a
 function called at the start of each source code line (this is used by
 the debugger); \member{f_exc_type}, \member{f_exc_value},
 \member{f_exc_traceback} represent the most recent exception caught in
-this frame.
+this frame; \member{f_lineno} is the current line number of the frame
+--- writing to this from within a trace function jumps to the given line
+(only for the bottom-most frame).  A debugger can implement a Jump
+command (aka Set Next Statement) by writing to f_lineno.
 \withsubitem{(frame attribute)}{
   \ttindex{f_trace}
   \ttindex{f_exc_type}
   \ttindex{f_exc_value}
-  \ttindex{f_exc_traceback}}
+  \ttindex{f_exc_traceback}
+  \ttindex{f_lineno}}
 
 \item[Traceback objects] \label{traceback}
 Traceback objects represent a stack trace of an exception.  A

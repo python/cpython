@@ -12,6 +12,8 @@
 
 % MacOS framework-related changes (section of its own, probably)
 
+% the new set-next-statement functionality of pdb (SF #643835)
+
 %\section{Introduction \label{intro}}
 
 {\large This article is a draft, and is currently up to date for some
@@ -1201,13 +1203,13 @@ For example:
 
 \begin{verbatim}
 >>> days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'St', 'Sn']
->>> random.sample(days, 3)	# Choose 3 elements
+>>> random.sample(days, 3)      # Choose 3 elements
 ['St', 'Sn', 'Th']
->>> random.sample(days, 7)	# Choose 7 elements
+>>> random.sample(days, 7)      # Choose 7 elements
 ['Tu', 'Th', 'Mo', 'We', 'St', 'Fr', 'Sn']
->>> random.sample(days, 7)	# Choose 7 again
+>>> random.sample(days, 7)      # Choose 7 again
 ['We', 'Mo', 'Sn', 'Fr', 'Tu', 'St', 'Th']
->>> random.sample(days, 8)	# Can't choose eight
+>>> random.sample(days, 8)      # Can't choose eight
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
   File "random.py", line 414, in sample
