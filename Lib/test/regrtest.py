@@ -64,6 +64,7 @@ import traceback
 import random
 import StringIO
 import warnings
+from sets import Set
 
 # I see no other way to suppress these warnings;
 # putting them in test_grammar.py has no effect:
@@ -262,7 +263,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         e = _ExpectedSkips()
         plat = sys.platform
         if e.isvalid():
-            surprise = _Set(skipped) - e.getexpected()
+            surprise = Set(skipped) - e.getexpected()
             if surprise:
                 print count(len(surprise), "skip"), \
                       "unexpected on", plat + ":"
@@ -468,7 +469,7 @@ def count(n, word):
         return "%d %ss" % (n, word)
 
 def printlist(x, width=70, indent=4):
-    """Print the elements of a sequence to stdout.
+    """Print the elements of iterable x to stdout.
 
     Optional arg width (default 70) is the maximum line length.
     Optional arg indent (default 4) is the number of blanks with which to
@@ -479,34 +480,6 @@ def printlist(x, width=70, indent=4):
     blanks = ' ' * indent
     print fill(' '.join(map(str, x)), width,
                initial_indent=blanks, subsequent_indent=blanks)
-
-class _Set:
-    def __init__(self, seq=[]):
-        data = self.data = {}
-        for x in seq:
-            data[x] = 1
-
-    def __len__(self):
-        return len(self.data)
-
-    def __sub__(self, other):
-        "Return set of all elements in self not in other."
-        result = _Set()
-        data = result.data = self.data.copy()
-        for x in other.data:
-            if x in data:
-                del data[x]
-        return result
-
-    def __iter__(self):
-        return iter(self.data)
-
-    def tolist(self, sorted=1):
-        "Return _Set elements as a list."
-        data = self.data.keys()
-        if sorted:
-            data.sort()
-        return data
 
 # Map sys.platform to a string containing the basenames of tests
 # expected to be skipped on that platform.
@@ -776,11 +749,11 @@ _expectations = {
 
 class _ExpectedSkips:
     def __init__(self):
-        self.valid = 0
+        self.valid = False
         if sys.platform in _expectations:
             s = _expectations[sys.platform]
-            self.expected = _Set(s.split())
-            self.valid = 1
+            self.expected = Set(s.split())
+            self.valid = True
 
     def isvalid(self):
         "Return true iff _ExpectedSkips knows about the current platform."
