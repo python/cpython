@@ -86,6 +86,9 @@ class PyBuildExt(build_ext):
         # Fix up the autodetected modules, prefixing all the source files
         # with Modules/ and adding Python's include directory to the path.
         (srcdir,) = sysconfig.get_config_vars('srcdir')
+        if not srcdir:
+            # Maybe running on Windows but not using CYGWIN?
+            raise ValueError("No source directory; cannot proceed.")
 
         # Figure out the location of the source code for extension modules
         moddir = os.path.join(os.getcwd(), srcdir, 'Modules')
