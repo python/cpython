@@ -50,11 +50,9 @@ Copyright (C) 1994 Steen Lumholt.
 
 #ifdef TK_FRAMEWORK
 #include <Tcl/tcl.h>
-#include <Tcl/tclInt.h>
 #include <Tk/tk.h>
 #else
 #include <tcl.h>
-#include <tclInt.h>
 #include <tk.h>
 #endif
 
@@ -222,6 +220,15 @@ typedef struct {
 	PyObject_HEAD
 	Tcl_Interp *interp;
 	int wantobjects;
+	/* We cannot include tclInt.h, as this is internal. 
+	   So we cache interesting types here. */
+	Tcl_ObjType *BooleanType;
+	Tcl_ObjType *ByteArrayType;
+	Tcl_ObjType *DoubleType;
+	Tcl_ObjType *IntType;
+	Tcl_ObjType *ListType;
+	Tcl_ObjType *ProcBodyType;
+	Tcl_ObjType *StringType;
 } TkappObject;
 
 #define Tkapp_Check(v) ((v)->ob_type == &Tkapp_Type)
@@ -535,6 +542,14 @@ Tkapp_New(char *screenName, char *baseName, char *className,
 	v->interp = Tcl_CreateInterp();
 	v->wantobjects = wantobjects;
 
+	v->BooleanType = Tcl_GetObjType("boolean");
+	v->ByteArrayType = Tcl_GetObjType("bytearray");
+	v->DoubleType = Tcl_GetObjType("double");
+	v->IntType = Tcl_GetObjType("int");
+	v->ListType = Tcl_GetObjType("list");
+	v->ProcBodyType = Tcl_GetObjType("procbody");
+	v->StringType = Tcl_GetObjType("string");
+
 #if defined(macintosh)
 	/* This seems to be needed */
 	ClearMenuBar();
@@ -753,31 +768,32 @@ static PyObject*
 FromObj(PyObject* tkapp, Tcl_Obj *value)
 {
 	PyObject *result = NULL;
+	TkappObject *app = (TkappObject*)tkapp;
 
 	if (value->typePtr == NULL)
 		return PyString_FromStringAndSize(value->bytes, value->length);
 
-	if (value->typePtr == &tclBooleanType) {
+	if (value->typePtr == app->BooleanType) {
 		result = value->internalRep.longValue ? Py_True : Py_False;
 		Py_INCREF(result);
 		return result;
 	}
 
-	if (value->typePtr == &tclByteArrayType) {
+	if (value->typePtr == app->ByteArrayType) {
 		int size;
 		char *data = Tcl_GetByteArrayFromObj(value, &size);
 		return PyString_FromStringAndSize(data, size);
 	}
 
-	if (value->typePtr == &tclDoubleType) {
+	if (value->typePtr == app->DoubleType) {
 		return PyFloat_FromDouble(value->internalRep.doubleValue);
 	}
 
-	if (value->typePtr == &tclIntType) {
+	if (value->typePtr == app->IntType) {
 		return PyInt_FromLong(value->internalRep.longValue);
 	}
 
-	if (value->typePtr == &tclListType) {
+	if (value->typePtr == app->ListType) {
 		int size;
 		int i, status;
 		PyObject *elem;
@@ -806,11 +822,11 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 		return result;
 	}
 
-	if (value->typePtr == &tclProcBodyType) {
+	if (value->typePtr == app->ProcBodyType) {
 		// fall through: return tcl object
 	}
 
-	if (value->typePtr == &tclStringType) {
+	if (value->typePtr == app->StringType) {
 #ifdef Py_USING_UNICODE
 #ifdef Py_UNICODE_WIDE
 		PyObject *result;
@@ -2188,7 +2204,7 @@ Tkinter_Create(PyObject *self, PyObject *args)
 		baseName = Py_GetProgramName();
 	className = "Tk";
   
-	if (!PyArg_ParseTuple(args, "|zssi:create",
+	if (!PyArg_ParseTuple(args, "|zssii:create",
 			      &screenName, &baseName, &className,
 			      &interactive, &wantobjects))
 		return NULL;
