@@ -1155,9 +1155,6 @@ to Unicode using the system default encoding.
 The following methods can be defined to customize the meaning of
 attribute access (use of, assignment to, or deletion of \code{x.name})
 for class instances.
-For performance reasons, these methods are cached in the class object
-at class definition time; therefore, they cannot be changed after the
-class definition is executed.
 
 \begin{methoddesc}[object]{__getattr__}{self, name}
 Called when an attribute lookup has not found the attribute in the
@@ -1171,10 +1168,11 @@ Note that if the attribute is found through the normal mechanism,
 asymmetry between \method{__getattr__()} and \method{__setattr__()}.)
 This is done both for efficiency reasons and because otherwise
 \method{__setattr__()} would have no way to access other attributes of
-the instance.
-Note that at least for instance variables, you can fake
-total control by not inserting any values in the instance
-attribute dictionary (but instead inserting them in another object).
+the instance.  Note that at least for instance variables, you can fake
+total control by not inserting any values in the instance attribute
+dictionary (but instead inserting them in another object).  See the
+\method{__getattribute__()} method below for a way to actually get
+total control in new-style classes.
 \withsubitem{(object method)}{\ttindex{__setattr__()}}
 \end{methoddesc}
 
@@ -1188,7 +1186,10 @@ If \method{__setattr__()} wants to assign to an instance attribute, it
 should not simply execute \samp{self.\var{name} = value} --- this
 would cause a recursive call to itself.  Instead, it should insert the
 value in the dictionary of instance attributes, e.g.,
-\samp{self.__dict__[\var{name}] = value}.
+\samp{self.__dict__[\var{name}] = value}.  For new-style classes,
+rather than accessing the instance dictionary, it should call the base
+class method with the same name, for example,
+\samp{object.__setattr__(self, name, value)}.
 \withsubitem{(instance attribute)}{\ttindex{__dict__}}
 \end{methoddesc}
 
@@ -1196,6 +1197,51 @@ value in the dictionary of instance attributes, e.g.,
 Like \method{__setattr__()} but for attribute deletion instead of
 assignment.  This should only be implemented if \samp{del
 obj.\var{name}} is meaningful for the object.
+\end{methoddesc}
+
+\subsubsection{More attribute access for new-style classes \lable{new-style-attribute-access}}
+
+The following methods only apply to new-style classes.
+
+\begin{methoddesc}[object]{__getattribute__}{self, name}
+Called unconditionally to implement attribute accesses for instances
+of the class. If the class also defines \method{__getattr__}, it will
+never be called (unless called explicitly).
+This method should return the (computed) attribute
+value or raise an \exception{AttributeError} exception.
+In order to avoid infinite recursion in this method, its
+implementation should always call the base class method with the same
+name to access any attributes it needs to access, for example,
+\samp{object.__getattribute__(self, name)}.
+\end{methoddesc}
+
+\subsubsubsection{Implementing Descriptors \label{descriptors}}
+
+The following methods only apply when an instance of the class
+containing the method (a so-called \emph{descriptor} class) is in
+the class dictionary of another new-style class, known as the
+\emph{owner} class. In the examples below, ``the attribute'' refers to
+the attribute whose name is the key of the property in the accessed
+class' \code{__dict__}.
+
+\begin{methoddesc}[object]{__get__}{self, instance, owner}
+Called to get the attribute of the owner class (class attribute acess)
+or of an instance of that class (instance attribute acces).
+\var{owner} is always the owner class, while \var{instance} is the
+instance that the attribute was accessed through, or \code{None} when
+the attribute is accessed through the \var{owner}.  This method should
+return the (computed) attribute value or raise an
+\exception{AttributeError} exception.
+\end{methoddesc}
+
+\begin{methoddesc}[object]{__set__}{self, instance, value}
+Called to set the attribute on an instance \{instance} of the owner
+class to a new value, \var{value}.
+\end{methoddesc}
+
+\begin{methoddesc}[object]{__delete__}{self, instance}
+Called to delete the attribute on an instance \{instance} of the owner
+class.
 \end{methoddesc}
 
 
