@@ -111,6 +111,8 @@ class Textbox:
             if x == 0 and self._end_of_line(y) == 0:
                 self.win.deleteln()
             else:
+                # first undo the effect of self._end_of_line
+                self.win.move(y, x)
                 self.win.clrtoeol()
         elif ch == ascii.FF:                            # ^l
             self.win.refresh()
