@@ -53,10 +53,44 @@ See the \UNIX{} manual \manpage{flock}{3} for details.  (On some
 systems, this function is emulated using \cfunction{fcntl()}.)
 \end{funcdesc}
 
-\begin{funcdesc}{lockf}{fd, code, \optional{len, \optional{start, \optional{whence}}}}
-This is a wrapper around the \constant{FCNTL.F_SETLK} and
-\constant{FCNTL.F_SETLKW} \function{fcntl()} calls.  See the \UNIX{}
-manual for details.
+\begin{funcdesc}{lockf}{fd, operation,
+    \optional{len, \optional{start, \optional{whence}}}}
+This is essentially a wrapper around the \function{fcntl()} locking
+calls.  \var{fd} is the file descriptor of the file to lock or unlock,
+and \var{operation} is one of the following values:
+
+\begin{itemize}
+\item \constant{LOCK_UN} -- unlock
+\item \constant{LOCK_SH} -- acquire a shared lock
+\item \constant{LOCK_EX} -- acquire an exclusive lock
+\end{itemize}
+
+When \var{operation} is \constant{LOCK_SH} or \constant{LOCK_EX}, it
+can also be bit-wise OR'd with \constant{LOCK_NB} to avoid blocking on
+lock acquisition.  If \constant{LOCK_NB} is used and the lock cannot
+be acquired, an \exception{IOError} will be raised and the exception
+will have an \var{errno} attribute set to \constant{EACCES} or
+\constant{EAGAIN} (depending on the operating system; for portability,
+check for both values).
+
+\var{length} is the number of bytes to lock, \var{start} is the byte
+offset at which the lock starts, relative to \var{whence}, and
+\var{whence} is as with \function{fileobj.seek()}, specifically:
+
+\begin{itemize}
+\item \constant{0} -- relative to the start of the file
+      (\constant{SEEK_SET})
+\item \constant{1} -- relative to the current buffer position
+      (\constant{SEEK_CUR})
+\item \constant{2} -- relative to the end of the file
+      (\constant{SEEK_END})
+\end{itemize}
+
+The default for \var{start} is 0, which means to start at the
+beginning of the file.  The default for \var{length} is 0 which means
+to lock to the end of the file.  The default for \var{whence} is also
+0.
+
 \end{funcdesc}
 
 If the library modules \module{FCNTL}\refstmodindex{FCNTL} or
