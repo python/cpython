@@ -29,7 +29,7 @@
 #include "modsupport.h"
 #include "errors.h"
 
-extern char *strerror();
+extern char *strerror PROTO((int));
 
 #ifdef AMOEBA
 #define NO_LSTAT
