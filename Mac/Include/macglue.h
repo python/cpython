@@ -54,6 +54,7 @@ void PyMac_FixGUSIcd Py_PROTO((void));		/* Workaround for GUSI chdir() call */
 #endif
 
 char *PyMac_StrError(int);			/* strerror with mac errors */
+unsigned char *Pstring(char *str);		/* Convert c-string to pascal-string in static buffer */
 
 #ifdef USE_GUSI
 extern int PyMac_ConsoleIsDead;			/* True when exiting */
@@ -84,6 +85,8 @@ void PyMac_RestoreMenuBar(void);		/* Restore menu bar for ease of exiting */
 
 int PyMac_FindResourceModule(PyStringObject *, char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
+int PyMac_FindCodeResourceModule(PyStringObject *, char *, char *); /* Test for 'PYD ' resource in a file */
+PyObject * PyMac_LoadCodeResourceModule(char *, char *); /* Load 'PYD ' resource from file */
 struct filedescr *PyMac_FindModuleExtension(char *, int *, char *); /* Look for module in single folder */
 
 int PyMac_GetDirectory(FSSpec *dirfss, char *prompt);		/* Ask user for a directory */
