@@ -12,6 +12,12 @@ __revision__ = "$Id$"
 import sys, os, string, re
 from types import *
 from copy import copy
+
+try:
+    import warnings
+except:
+    warnings = None
+
 from distutils.errors import *
 from distutils.fancy_getopt import FancyGetopt, translate_longopt
 from distutils.util import check_environ, strtobool, rfc822_escape
@@ -206,8 +212,11 @@ class Distribution:
                 elif hasattr(self, key):
                     setattr(self, key, val)
                 else:
-                    raise DistutilsSetupError, \
-                          "invalid distribution option '%s'" % key
+                    msg = "Unknown distribution option: %s" % repr(key)
+                    if warnings is not None:
+                        warnings.warn(msg)
+                    else:
+                        sys.stderr.write(msg + "\n")
 
         self.finalize_options()
 
