@@ -45,6 +45,7 @@ APPSUBDIRS=MacOS Resources Resources/English.lproj
 RESOURCEDIR=$(srcdir)/Mac/Resources
 RESOURCEFILE=python.rsrc
 RFCONVERTER=$(srcdir)/Mac/Lib/applesingle.py
+CACHERSRC=$(srcdir)/Mac/scripts/cachersrc.py
 
 installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE
 
@@ -114,9 +115,9 @@ install_BuildApplet: $(INSTALLED_PYTHONW)
 		--output $(PYTHONAPPSDIR)/BuildApplet.app \
 		$(srcdir)/Mac/scripts/BuildApplet.py
 		
-LIBDEST=$(prefix)/Mac/Lib
-LIBSRC=$(srcdir)/Mac/Lib
-LIBSUBDIRS= \
+MACLIBDEST=$(prefix)/Mac/Lib
+MACLIBSRC=$(srcdir)/Mac/Lib
+MACLIBSUBDIRS= \
 	Carbon \
 	lib-scriptpackages \
 	lib-scriptpackages/_builtinSuites \
@@ -130,11 +131,11 @@ LIBSUBDIRS= \
 	mkcwproject/template \
 	mkcwproject/template-carbon \
 	mkcwproject/template-ppc
-TOOLSDEST=$(prefix)/Mac/Tools
-TOOLSSRC=$(srcdir)/Mac/Tools
-TOOLSSUBDIRS=IDE
-installmacsubtree:
-	@for i in $(LIBDEST) $(TOOLSDEST); \
+MACTOOLSDEST=$(prefix)/Mac/Tools
+MACTOOLSSRC=$(srcdir)/Mac/Tools
+MACTOOLSSUBDIRS=IDE
+installmacsubtree: $(INSTALLED_PYTHON)
+	@for i in $(MACLIBDEST) $(MACTOOLSDEST); \
 	do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
@@ -142,32 +143,32 @@ installmacsubtree:
 		else	true; \
 		fi; \
 	done
-	@for d in $(LIBSUBDIRS); \
+	@for d in $(MACLIBSUBDIRS); \
 	do \
-		a=$(LIBSRC)/$$d; \
+		a=$(MACLIBSRC)/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
-		b=$(LIBDEST)/$$d; \
+		b=$(MACLIBDEST)/$$d; \
 		if test ! -d $$b; then \
 			echo "Creating directory $$b"; \
 			$(INSTALL) -d -m $(DIRMODE) $$b; \
 		else	true; \
 		fi; \
 	done
-	@for i in $(LIBSRC)/*.py $(LIBSRC)/*.rsrc; \
+	@for i in $(MACLIBSRC)/*.py $(MACLIBSRC)/*.rsrc; \
 	do \
 		if test -x $$i; then \
-			$(INSTALL_SCRIPT) $$i $(LIBDEST); \
-			echo $(INSTALL_SCRIPT) $$i $(LIBDEST); \
+			$(INSTALL_SCRIPT) $$i $(MACLIBDEST); \
+			echo $(INSTALL_SCRIPT) $$i $(MACLIBDEST); \
 		else \
-			$(INSTALL_DATA) $$i $(LIBDEST); \
-			echo $(INSTALL_DATA) $$i $(LIBDEST); \
+			$(INSTALL_DATA) $$i $(MACLIBDEST); \
+			echo $(INSTALL_DATA) $$i $(MACLIBDEST); \
 		fi; \
 	done
-	@for d in $(LIBSUBDIRS); \
+	@for d in $(MACLIBSUBDIRS); \
 	do \
-		a=$(LIBSRC)/$$d; \
+		a=$(MACLIBSRC)/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
-		b=$(LIBDEST)/$$d; \
+		b=$(MACLIBDEST)/$$d; \
 		for i in $$a/*; \
 		do \
 			case $$i in \
@@ -187,22 +188,22 @@ installmacsubtree:
 			esac; \
 		done; \
 	done
-	@for d in $(TOOLSSUBDIRS); \
+	@for d in $(MACTOOLSSUBDIRS); \
 	do \
-		a=$(TOOLSSRC)/$$d; \
+		a=$(MACTOOLSSRC)/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
-		b=$(TOOLSDEST)/$$d; \
+		b=$(MACTOOLSDEST)/$$d; \
 		if test ! -d $$b; then \
 			echo "Creating directory $$b"; \
 			$(INSTALL) -d -m $(DIRMODE) $$b; \
 		else	true; \
 		fi; \
 	done
-	@for d in $(TOOLSSUBDIRS); \
+	@for d in $(MACTOOLSSUBDIRS); \
 	do \
-		a=$(TOOLSSRC)/$$d; \
+		a=$(MACTOOLSSRC)/$$d; \
 		if test ! -d $$a; then continue; else true; fi; \
-		b=$(TOOLSDEST)/$$d; \
+		b=$(MACTOOLSDEST)/$$d; \
 		for i in $$a/*; \
 		do \
 			case $$i in \
@@ -222,8 +223,13 @@ installmacsubtree:
 			esac; \
 		done; \
 	done
-
+	
 	$(INSTALL_DATA) $(srcdir)/Mac/OSX/Mac.pth $(LIBDEST)/site-packages/
+
+	$(PYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
+	$(INSTALLED_PYTHON) $(srcdir)/Lib/compileall.py $(MACLIBDEST) $(MACTOOLSDEST)
+	$(INSTALLED_PYTHON) -O $(srcdir)/Lib/compileall.py $(MACLIBDEST) $(MACTOOLSDEST)
+
 	
 # Put symlinks "python" and "pythonw" in the standard place
 $(INSTALLED_PYTHONW): install_Python
@@ -240,5 +246,5 @@ installunixtools: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW) $(srcdir)/Mac/OSX/pyt
 # directories
 dontinstallmacsubtree:
 	l=`cd $(srcdir)/Mac/Lib; pwd`; \
-	echo $$l > $(LIBDEST)/site-packages/Mac.pth ; \
-	echo $$l/lib-scriptpackages >> $(LIBDEST)/site-packages/Mac.pth
+	echo $$l > $(MACLIBDEST)/site-packages/Mac.pth ; \
+	echo $$l/lib-scriptpackages >> $(MACLIBDEST)/site-packages/Mac.pth
