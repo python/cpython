@@ -2111,4 +2111,41 @@ will need to write the main program in \Cpp{}, and use the \Cpp{} compiler
 to compile and link your program.  There is no need to recompile Python
 itself using \Cpp{}.
 
+
+\section{Linking Requirements
+         \label{link-reqs}}
+
+While the \program{configure} script shipped with the Python sources
+will correctly build Python to export the symbols needed by
+dynamically linked extensions, this is not automatically inherited by
+applications which embed the Python library statically, at least on
+\UNIX.  This is an issue when the application is linked to the static
+runtime library (\file{libpython.a}) and needs to load dynamic
+extensions (implemented as \file{.so} files).
+
+The problem is that some entry points are defined by the Python
+runtime solely for extension modules to use.  If the embedding
+application does not use any of these entry points, some linkers will
+not include those entries in the symbol table of the finished
+executable.  Some additional options are needed to inform the linker
+not to remove these symbols.
+
+Determining the right options to use for any given platform can be
+quite difficult, but fortunately the Python configuration already has
+those values.  To retrieve them from an installed Python interpreter,
+start an interactive interpreter and have a short session like this:
+
+\begin{verbatim}
+>>> import distutils.sysconfig
+>>> distutils.sysconfig.LINKFORSHARED 
+'-Xlinker -export-dynamic'
+\end{verbatim}
+\refstmodindex{distutils.sysconfig}
+
+The contents of the string presented will be the options that should
+be used.  If the string is empty, there's no need to add any
+additional options.  The \constant{LINKFORSHARED} definition
+corresponds to the variable of the same name in Python's top-level
+\file{Makefile}.
+
 \end{document}
