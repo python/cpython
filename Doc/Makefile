@@ -217,7 +217,7 @@ postscript-$(PAPER)-$(RELEASE).tgz: ps
 	(cd paper-$(PAPER); tar cf - *.ps README) | gzip -9 >$@
 
 html-$(RELEASE).tgz:	html
-	(cd $(HTMLDIR); tar cf - index.html ???/???.css ???/*.html */*.gif) \
+	(cd $(HTMLDIR); tar cf - index.html ???/???.css ???/*.html ???/*.gif) \
 		| gzip -9 >$@
 
 # convenience targets:
