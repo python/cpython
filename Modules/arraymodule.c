@@ -1478,6 +1478,179 @@ array_repr(arrayobject *a)
 	return s;
 }
 
+static PyObject*
+array_subscr(arrayobject* self, PyObject* item)
+{
+	if (PyInt_Check(item)) {
+		long i = PyInt_AS_LONG(item);
+		if (i < 0)
+			i += self->ob_size;
+		return array_item(self, i);
+	}
+	else if (PyLong_Check(item)) {
+		long i = PyLong_AsLong(item);
+		if (i == -1 && PyErr_Occurred())
+			return NULL;
+		if (i < 0)
+			i += self->ob_size;
+		return array_item(self, i);
+	}
+	else if (PySlice_Check(item)) {
+		int start, stop, step, slicelength, cur, i;
+		PyObject* result;
+		arrayobject* ar;
+		int itemsize = self->ob_descr->itemsize;
+
+		if (PySlice_GetIndicesEx((PySliceObject*)item, self->ob_size,
+				 &start, &stop, &step, &slicelength) < 0) {
+			return NULL;
+		}
+
+		if (slicelength <= 0) {
+			return newarrayobject(&Arraytype, 0, self->ob_descr);
+		}
+		else {
+			result = newarrayobject(&Arraytype, slicelength, self->ob_descr);
+			if (!result) return NULL;
+
+			ar = (arrayobject*)result;
+
+			for (cur = start, i = 0; i < slicelength; 
+			     cur += step, i++) {
+				memcpy(ar->ob_item + i*itemsize,
+				       self->ob_item + cur*itemsize,
+				       itemsize);
+			}
+			
+			return result;
+		}		
+	}
+	else {
+		PyErr_SetString(PyExc_TypeError, 
+				"list indices must be integers");
+		return NULL;
+	}
+}
+
+static int
+array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
+{
+	if (PyInt_Check(item)) {
+		long i = PyInt_AS_LONG(item);
+		if (i < 0)
+			i += self->ob_size;
+		return array_ass_item(self, i, value);
+	}
+	else if (PyLong_Check(item)) {
+		long i = PyLong_AsLong(item);
+		if (i == -1 && PyErr_Occurred())
+			return -1;
+		if (i < 0)
+			i += self->ob_size;
+		return array_ass_item(self, i, value);
+	}
+	else if (PySlice_Check(item)) {
+		int start, stop, step, slicelength;
+		int itemsize = self->ob_descr->itemsize;
+
+		if (PySlice_GetIndicesEx((PySliceObject*)item, self->ob_size,
+				 &start, &stop, &step, &slicelength) < 0) {
+			return -1;
+		}
+
+		/* treat A[slice(a,b)] = v _exactly_ like A[a:b] = v */
+		if (step == 1 && ((PySliceObject*)item)->step == Py_None)
+			return array_ass_slice(self, start, stop, value);
+
+		if (value == NULL) {
+			/* delete slice */
+			int cur, i;
+			
+			if (slicelength <= 0)
+				return 0;
+
+			if (step < 0) {
+				stop = start + 1;
+				start = stop + step*(slicelength - 1) - 1;
+				step = -step;
+			}
+
+			for (cur = start, i = 0; cur < stop; 
+			     cur += step, i++) {
+				memmove(self->ob_item + (cur - i)*itemsize,
+					self->ob_item + (cur + 1)*itemsize,
+					(step - 1) * itemsize);
+			}
+			if (self->ob_size > (start + slicelength*step)) {
+				memmove(self->ob_item + (start + slicelength*(step - 1))*itemsize,
+					self->ob_item + (start + slicelength*step)*itemsize,
+					(self->ob_size - (start + slicelength*step))*itemsize);
+			}
+
+			self->ob_size -= slicelength;
+			self->ob_item = PyMem_REALLOC(self->ob_item, itemsize*self->ob_size);
+
+
+			return 0;
+		}
+		else {
+			/* assign slice */
+			int cur, i;
+			arrayobject* av;
+
+			if (!array_Check(value)) {
+				PyErr_Format(PyExc_TypeError,
+			     "must assign array (not \"%.200s\") to slice",
+					     value->ob_type->tp_name);
+				return -1;
+			}
+
+			av = (arrayobject*)value;
+
+			if (av->ob_size != slicelength) {
+				PyErr_Format(PyExc_ValueError,
+            "attempt to assign array of size %d to extended slice of size %d",
+					     av->ob_size, slicelength);
+				return -1;
+			}
+
+			if (!slicelength)
+				return 0;
+
+			/* protect against a[::-1] = a */
+			if (self == av) { 
+				value = array_slice(av, 0, av->ob_size);
+				av = (arrayobject*)value;
+			} 
+			else {
+				Py_INCREF(value);
+			}
+
+			for (cur = start, i = 0; i < slicelength; 
+			     cur += step, i++) {
+				memcpy(self->ob_item + cur*itemsize,
+				       av->ob_item + i*itemsize,
+				       itemsize);
+			}
+
+			Py_DECREF(value);
+			
+			return 0;
+		}
+	} 
+	else {
+		PyErr_SetString(PyExc_TypeError, 
+				"list indices must be integers");
+		return -1;
+	}
+}
+
+static PyMappingMethods array_as_mapping = {
+	(inquiry)array_length,
+	(binaryfunc)array_subscr,
+	(objobjargproc)array_ass_subscr
+};
+
 static int
 array_buffer_getreadbuf(arrayobject *self, int index, const void **ptr)
 {
@@ -1699,7 +1872,7 @@ statichere PyTypeObject Arraytype = {
 	(reprfunc)array_repr,			/* tp_repr */
 	0,					/* tp_as _number*/
 	&array_as_sequence,			/* tp_as _sequence*/
-	0,					/* tp_as _mapping*/
+	&array_as_mapping,			/* tp_as _mapping*/
 	0, 					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */

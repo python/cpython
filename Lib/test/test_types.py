@@ -410,6 +410,14 @@ vereq(a, [0, 10, 2, 3, 4, 10, 6, 7, 8 ,10])
 a = range(4)
 a[::-1] = a
 vereq(a, [3, 2, 1, 0])
+a = range(10)
+b = a[:]
+c = a[:]
+a[2:3] = ["two", "elements"]
+b[slice(2,3)] = ["two", "elements"]
+c[2:3:] = ["two", "elements"]
+vereq(a, b)
+vereq(a, c)
 
 print '6.6 Mappings == Dictionaries'
 d = {}
