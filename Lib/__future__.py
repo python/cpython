@@ -55,13 +55,13 @@ all_feature_names = [
 
 __all__ = ["all_feature_names"] + all_feature_names
 
-try:
-    import new as _new  # for CO_xxx symbols
-except ImportError: # May happen during build
-    class _new:
-        CO_NESTED = 0x0010
-        CO_GENERATOR_ALLOWED = 0x1000
-        CO_FUTURE_DIVISION = 0x2000
+# The CO_xxx symbols are defined here under the same names used by
+# compile.h, so that an editor search will find them here.  However,
+# they're not exported in __all__, because they don't really belong to
+# this module.
+CO_NESTED            = 0x0010   # nested_scopes
+CO_GENERATOR_ALLOWED = 0x1000   # generators
+CO_FUTURE_DIVISION   = 0x2000   # division
 
 class _Feature:
     def __init__(self, optionalRelease, mandatoryRelease, compiler_flag):
@@ -92,12 +92,12 @@ class _Feature:
 
 nested_scopes = _Feature((2, 1, 0, "beta",  1),
                          (2, 2, 0, "alpha", 0),
-                         _new.CO_NESTED)
+                         CO_NESTED)
 
 generators = _Feature((2, 2, 0, "alpha", 1),
                       (2, 3, 0, "final", 0),
-                      _new.CO_GENERATOR_ALLOWED)
+                      CO_GENERATOR_ALLOWED)
 
 division = _Feature((2, 2, 0, "alpha", 2),
                     (3, 0, 0, "alpha", 0),
-                    _new.CO_FUTURE_DIVISION)
+                    CO_FUTURE_DIVISION)
