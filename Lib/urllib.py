@@ -144,6 +144,7 @@ class URLopener:
 		if self.tempcache and self.tempcache.has_key(url):
 			return self.tempcache[url]
 		url1 = unwrap(url)
+		self.openedurl = url1
 		if self.tempcache and self.tempcache.has_key(url1):
 			self.tempcache[url] = self.tempcache[url1]
 			return self.tempcache[url1]
