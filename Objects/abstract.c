@@ -879,7 +879,7 @@ PySequence_Index(s, o)
       err=PyObject_Cmp(item,o,&not_equal) == -1;
       Py_DECREF(item);
       if(err) return -1;
-      if(! not_equal) return n;
+      if(! not_equal) return i;
     }
   return -1;
 }
