@@ -1353,11 +1353,23 @@ subtype_getweakref(PyObject *obj, void *context)
 	return result;
 }
 
-static PyGetSetDef subtype_getsets[] = {
-	/* Not all objects have these attributes!
-	   The descriptor's __get__ method may raise AttributeError. */
+/* Three variants on the subtype_getsets list. */
+
+static PyGetSetDef subtype_getsets_full[] = {
 	{"__dict__", subtype_dict, subtype_setdict,
 	 PyDoc_STR("dictionary for instance variables (if defined)")},
+	{"__weakref__", subtype_getweakref, NULL,
+	 PyDoc_STR("list of weak references to the object (if defined)")},
+	{0}
+};
+
+static PyGetSetDef subtype_getsets_dict_only[] = {
+	{"__dict__", subtype_dict, subtype_setdict,
+	 PyDoc_STR("dictionary for instance variables (if defined)")},
+	{0}
+};
+
+static PyGetSetDef subtype_getsets_weakref_only[] = {
 	{"__weakref__", subtype_getweakref, NULL,
 	 PyDoc_STR("list of weak references to the object (if defined)")},
 	{0}
@@ -1810,7 +1822,15 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	type->tp_basicsize = slotoffset;
 	type->tp_itemsize = base->tp_itemsize;
 	type->tp_members = et->members;
-	type->tp_getset = subtype_getsets;
+
+	if (type->tp_weaklistoffset && type->tp_dictoffset)
+		type->tp_getset = subtype_getsets_full;
+	else if (type->tp_weaklistoffset && !type->tp_dictoffset)
+		type->tp_getset = subtype_getsets_weakref_only;
+	else if (!type->tp_weaklistoffset && type->tp_dictoffset)
+		type->tp_getset = subtype_getsets_dict_only;
+	else
+		type->tp_getset = NULL;
 
 	/* Special case some slots */
 	if (type->tp_dictoffset != 0 || nslots > 0) {

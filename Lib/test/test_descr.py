@@ -3686,6 +3686,19 @@ def subclass_right_op():
     vereq(E(1) / C(1), "C.__div__")
     vereq(C(1) / E(1), "C.__div__") # This one would fail
 
+def dict_type_with_metaclass():
+    if verbose:
+        print "Testing type of __dict__ when __metaclass__ set..."
+
+    class B(object):
+        pass
+    class M(type):
+        pass
+    class C:
+        # In 2.3a1, C.__dict__ was a real dict rather than a dict proxy
+        __metaclass__ = M
+    veris(type(C.__dict__), type(B.__dict__))
+
 
 def test_main():
     do_this_first()
@@ -3771,6 +3784,7 @@ def test_main():
     test_mutable_bases_catch_mro_conflict()
     mutable_names()
     subclass_right_op()
+    dict_type_with_metaclass()
 
     if verbose: print "All OK"
 
