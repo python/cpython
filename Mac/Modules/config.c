@@ -31,6 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef macintosh
 /* The Macintosh main program is in macmain.c */
 #define NO_MAIN
+char *fileargument;		/* So main() can tell us the program name */
 #endif
 
 #include <stdio.h>
@@ -41,6 +42,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "osdefs.h"
 #include "intrcheck.h"
 
+char *PyMac_GetPythonDir();
 
 #ifndef NO_MAIN
 
@@ -154,15 +156,12 @@ getpythonpath()
 	** - Chdir to where the source file (if any) lives
 	*/
 	static char *pythonpath;
-	extern char *fileargument;
-	char curwd[256];
+	char *curwd;
 	char *p, *endp;
 	int newlen;
 	
 	if ( pythonpath ) return pythonpath;
-	if (getwd(curwd) < 0 ) {
-		return PYTHONPATH;
-	}
+	curwd = PyMac_GetPythonDir();
 	p = PYTHONPATH;
 	endp = p;
 	pythonpath = malloc(2);
