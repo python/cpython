@@ -234,7 +234,7 @@ def sumfile(file):
 	return md5.new(open(file).read()).digest()
 
 
-def test():
+def main():
 	import sys
 	import getopt
 	from rcsclient import openrcsclient
@@ -269,4 +269,4 @@ def test():
 		x.report()
 
 if __name__ == "__main__":
-	test()
+	main()
