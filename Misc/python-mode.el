@@ -8,7 +8,7 @@
 ;; Created:    Feb 1992
 ;; Keywords:   python languages oop
 
-(defconst py-version "$Revision$"
+(defconst py-version "$Revision$ a"
   "`python-mode' version number.")
 
 ;; This software is provided as-is, without express or implied
@@ -257,9 +257,9 @@ variable section, e.g.:
     # End:
 
 so that typing \\[py-execute-buffer] in that buffer executes the named
-master file instead of the buffer's file.  Note that if the file name
-has a relative path, the value of `default-directory' for the buffer
-is prepended to come up with a file name.")
+master file instead of the buffer's file.  If the file name has a
+relative path, the value of variable `default-directory' for the
+buffer is prepended to come up with a file name.")
 (make-variable-buffer-local 'py-master-file)
 
 
@@ -716,7 +716,7 @@ package.  Note that the latest X/Emacs releases contain this package.")
   )
 
 (defvar imenu-example--python-method-no-arg-parens '(2 8)
-  "Indicies into groups of the Python regexp for use with imenu.
+  "Indices into groups of the Python regexp for use with imenu.
 
 Using these values will result in smaller imenu lists, as arguments to
 functions are not listed.
@@ -725,7 +725,7 @@ See the variable `imenu-example--python-show-method-args-p' for more
 information.")
 
 (defvar imenu-example--python-method-arg-parens '(2 7)
-  "Indicies into groups of the Python regexp for use with imenu.
+  "Indices into groups of the Python regexp for use with imenu.
 Using these values will result in large imenu lists, as arguments to
 functions are listed.
 
