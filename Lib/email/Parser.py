@@ -4,6 +4,7 @@
 """A parser of RFC 2822 and MIME email messages.
 """
 
+import re
 from cStringIO import StringIO
 from types import ListType
 
@@ -117,25 +118,34 @@ class Parser:
             if start > 0:
                 # there's some pre-MIME boundary preamble
                 preamble = payload[0:start]
-            start += len(separator) + 1 + isdigest
-            terminator = payload.find('\n' + separator + '--', start)
-            if terminator < 0:
+            # Find out what kind of line endings we're using
+            start += len(separator)
+            cre = re.compile('\r\n|\r|\n')
+            mo = cre.search(payload, start)
+            if mo:
+                start += len(mo.group(0)) * (1 + isdigest)
+            # We create a compiled regexp first because we need to be able to
+            # specify the start position, and the module function doesn't
+            # support this signature. :(
+            cre = re.compile('(?P<sep>\r\n|\r|\n)' +
+                             re.escape(separator) + '--')
+            mo = cre.search(payload, start)
+            if not mo:
                 raise Errors.BoundaryError(
                     "Couldn't find terminating boundary: %s" % boundary)
-            if terminator+len(separator)+3 < len(payload):
+            terminator = mo.start()
+            linesep = mo.group('sep')
+            if mo.end() < len(payload):
                 # there's some post-MIME boundary epilogue
-                epilogue = payload[terminator+len(separator)+3:]
+                epilogue = payload[mo.end():]
             # We split the textual payload on the boundary separator, which
             # includes the trailing newline.  If the container is a
             # multipart/digest then the subparts are by default message/rfc822
             # instead of text/plain.  In that case, they'll have an extra
             # newline before the headers to distinguish the message's headers
             # from the subpart headers.
-            if isdigest:
-                separator += '\n\n'
-            else:
-                separator += '\n'
-            parts = payload[start:terminator].split('\n' + separator)
+            separator += linesep * (1 + isdigest)
+            parts = payload[start:terminator].split(linesep + separator)
             for part in parts:
                 msgobj = self.parsestr(part)
                 container.preamble = preamble
