@@ -29,7 +29,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 
 	flags = BIND_FIRST | BIND_DEFERRED;
 	if (Py_VerboseFlag) {
-		flags = DYNAMIC_PATH | BIND_FIRST | BIND_IMMEDIATE |
+		flags = BIND_FIRST | BIND_IMMEDIATE |
 			BIND_NONFATAL | BIND_VERBOSE;
 		printf("shl_load %s\n",pathname);
 	}
