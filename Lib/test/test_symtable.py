@@ -2,7 +2,8 @@ from test_support import verify
 
 import _symtable
 
-symbols, scopes = _symtable.symtable("def f(x): return x", "?", "exec")
+symbols = _symtable.symtable("def f(x): return x", "?", "exec")
 
-verify(symbols.has_key(0))
-verify(scopes.has_key(0))
+verify(symbols[0].name == "global")
+verify(len([ste for ste in symbols.values() if ste.name == "f"]) == 1)
+
