@@ -2369,7 +2369,8 @@ call_builtin(func, arg, kw)
 		Py_DECREF(call);
 		return res;
 	}
-	PyErr_SetString(PyExc_TypeError, "call of non-function");
+	PyErr_Format(PyExc_TypeError, "call of non-function (type %s)",
+		     func->ob_type->tp_name);
 	return NULL;
 }
 
@@ -2438,8 +2439,9 @@ call_function(func, arg, kw)
 	}
 	else {
 		if (!PyFunction_Check(func)) {
-			PyErr_SetString(PyExc_TypeError,
-					"call of non-function");
+			PyErr_Format(PyExc_TypeError,
+				     "call of non-function (type %s)",
+				     func->ob_type->tp_name);
 			return NULL;
 		}
 		Py_INCREF(arg);
