@@ -3929,7 +3929,7 @@ super_getattro(PyObject *self, PyObject *name)
 			else
 				continue;
 			res = PyDict_GetItem(dict, name);
-			if (res != NULL) {
+			if (res != NULL  && !PyDescr_IsData(res)) {
 				Py_INCREF(res);
 				f = res->ob_type->tp_descr_get;
 				if (f != NULL) {
@@ -3944,6 +3944,21 @@ super_getattro(PyObject *self, PyObject *name)
 	return PyObject_GenericGetAttr(self, name);
 }
 
+static int
+supercheck(PyTypeObject *type, PyObject *obj)
+{
+	if (!PyType_IsSubtype(obj->ob_type, type) &&
+	    !(PyType_Check(obj) &&
+	      PyType_IsSubtype((PyTypeObject *)obj, type))) {
+		PyErr_SetString(PyExc_TypeError,
+			"super(type, obj): "
+			"obj must be an instance or subtype of type");
+		return -1;
+	}
+	else
+		return 0;
+}
+
 static PyObject *
 super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
@@ -3955,14 +3970,25 @@ super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 		Py_INCREF(self);
 		return self;
 	}
-	new = (superobject *)PySuper_Type.tp_new(&PySuper_Type, NULL, NULL);
-	if (new == NULL)
-		return NULL;
-	Py_INCREF(su->type);
-	Py_INCREF(obj);
-	new->type = su->type;
-	new->obj = obj;
-	return (PyObject *)new;
+	if (su->ob_type != &PySuper_Type)
+		/* If su is an instance of a subclass of super,
+		   call its type */
+		return PyObject_CallFunction((PyObject *)su->ob_type,
+					     "OO", su->type, obj);
+	else {
+		/* Inline the common case */
+		if (supercheck(su->type, obj) < 0)
+			return NULL;
+		new = (superobject *)PySuper_Type.tp_new(&PySuper_Type,
+							 NULL, NULL);
+		if (new == NULL)
+			return NULL;
+		Py_INCREF(su->type);
+		Py_INCREF(obj);
+		new->type = su->type;
+		new->obj = obj;
+		return (PyObject *)new;
+	}
 }
 
 static int
@@ -3976,15 +4002,8 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 		return -1;
 	if (obj == Py_None)
 		obj = NULL;
-	if (obj != NULL &&
-	    !PyType_IsSubtype(obj->ob_type, type) &&
-	    !(PyType_Check(obj) &&
-	      PyType_IsSubtype((PyTypeObject *)obj, type))) {
-		PyErr_SetString(PyExc_TypeError,
-			"super(type, obj): "
-			"obj must be an instance or subtype of type");
+	if (obj != NULL && supercheck(type, obj) < 0)
 		return -1;
-	}
 	Py_INCREF(type);
 	Py_XINCREF(obj);
 	su->type = type;

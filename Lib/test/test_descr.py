@@ -1572,7 +1572,57 @@ def supers():
         def meth(self, a):
             return "D(%r)" % a + super(D, self).meth(a)
 
-    verify (D().meth(4) == "D(4)C(4)B(4)A(4)")
+    vereq(D().meth(4), "D(4)C(4)B(4)A(4)")
+
+    # Test for subclassing super
+
+    class mysuper(super):
+        def __init__(self, *args):
+            return super(mysuper, self).__init__(*args)
+
+    class E(D):
+        def meth(self, a):
+            return "E(%r)" % a + mysuper(E, self).meth(a)
+
+    vereq(E().meth(5), "E(5)D(5)C(5)B(5)A(5)")
+
+    class F(E):
+        def meth(self, a):
+            s = self.__super
+            return "F(%r)[%s]" % (a, s.__class__.__name__) + s.meth(a)
+    F._F__super = mysuper(F)
+
+    vereq(F().meth(6), "F(6)[mysuper]E(6)D(6)C(6)B(6)A(6)")
+
+    # Make sure certain errors are raised
+
+    try:
+        super(D, 42)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't allow super(D, 42)"
+
+    try:
+        super(D, C())
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't allow super(D, C())"
+
+    try:
+        super(D).__get__(12)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't allow super(D).__get__(12)"
+
+    try:
+        super(D).__get__(C())
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't allow super(D).__get__(C())"
 
 def inherits():
     if verbose: print "Testing inheritance from basic types..."
