@@ -276,12 +276,16 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 	PyGC_Head *gc = unreachable->gc.gc_next;
 	for (; gc != unreachable; gc=next) {
 		PyObject *op = FROM_GC(gc);
-		next = gc->gc.gc_next;
+		/* has_finalizer() may result in arbitrary Python
+		   code being run. */
 		if (has_finalizer(op)) {
+			next = gc->gc.gc_next;
 			gc_list_remove(gc);
 			gc_list_append(gc, finalizers);
 			gc->gc.gc_refs = GC_MOVED;
 		}
+		else
+			next = gc->gc.gc_next;
 	}
 }
 
