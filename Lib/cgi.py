@@ -397,7 +397,7 @@ backwards compatible and debugging classes and functions?
 
 """
 
-__version__ = "2.0b1"
+__version__ = "2.0b2"
 
 
 # Imports
@@ -540,16 +540,20 @@ def parse_multipart(fp, pdict):
 		terminator = string.strip(line)
 		if terminator in (nextpart, lastpart):
 		    break
-	    if line[-2:] == '\r\n':
-		line = line[:-2]
-	    elif line[-1:] == '\n':
-		line = line[:-1]
 	    lines.append(line)
 	# Done with part.
 	if data is None:
 	    continue
 	if bytes < 0:
-	    data = string.joinfields(lines, "\n")
+	    if lines:
+		# Strip final line terminator
+		line = lines[-1]
+		if line[-2:] == "\r\n":
+		    line = line[:-2]
+		elif line[-1:] == "\n":
+		    line = line[:-1]
+		lines[-1] = line
+		data = string.joinfields(lines, "")
 	line = headers['content-disposition']
 	if not line:
 	    continue
@@ -859,8 +863,6 @@ class FieldStorage:
 		self.done = -1
 		break
 	    self.lines.append(line)
-	    if line[-2:] == '\r\n':
-		line = line[:-2] + '\n'
 	    self.file.write(line)
 
     def read_lines_to_outerboundary(self):
@@ -882,11 +884,14 @@ class FieldStorage:
 		    self.done = 1
 		    break
 	    if line[-2:] == "\r\n":
+		delim = "\r\n"
 		line = line[:-2]
 	    elif line[-1] == "\n":
+		delim = "\n"
 		line = line[:-1]
+	    else:
+		delim = ""
 	    self.file.write(delim + line)
-	    delim = "\n"
 
     def skip_lines(self):
 	"""Internal: skip lines until outer boundary if defined."""
