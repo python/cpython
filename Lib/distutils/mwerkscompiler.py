@@ -84,7 +84,8 @@ class MWerksCompiler (CCompiler) :
               debug=0,
               extra_preargs=None,
               extra_postargs=None,
-              build_temp=None):
+              build_temp=None,
+              target_lang=None):
         # First fixup.
         (objects, output_dir) = self._fix_object_args (objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \

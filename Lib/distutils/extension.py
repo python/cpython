@@ -75,6 +75,9 @@ class Extension:
         extension_name.
       depends : [string]
         list of files that the extension depends on
+      language : string
+        extension language (i.e. "c", "c++", "objc"). Will be detected
+        from the source extensions if not provided.
     """
 
     def __init__ (self, name, sources,
@@ -89,6 +92,7 @@ class Extension:
                   extra_link_args=None,
                   export_symbols=None,
                   depends=None,
+                  language=None,
                  ):
 
         assert type(name) is StringType, "'name' must be a string"
@@ -109,6 +113,7 @@ class Extension:
         self.extra_link_args = extra_link_args or []
         self.export_symbols = export_symbols or []
         self.depends = depends or []
+        self.language = language
 
 # class Extension
 

@@ -57,6 +57,7 @@ class UnixCCompiler(CCompiler):
     executables = {'preprocessor' : None,
                    'compiler'     : ["cc"],
                    'compiler_so'  : ["cc"],
+                   'compiler_cxx' : ["cc"],
                    'linker_so'    : ["cc", "-shared"],
                    'linker_exe'   : ["cc"],
                    'archiver'     : ["ar", "-cr"],
@@ -114,7 +115,7 @@ class UnixCCompiler(CCompiler):
             raise CompileError, msg
 
     def create_static_lib(self, objects, output_libname,
-                          output_dir=None, debug=0):
+                          output_dir=None, debug=0, target_lang=None):
         objects, output_dir = self._fix_object_args(objects, output_dir)
 
         output_filename = \
@@ -143,7 +144,7 @@ class UnixCCompiler(CCompiler):
              output_filename, output_dir=None, libraries=None,
              library_dirs=None, runtime_library_dirs=None,
              export_symbols=None, debug=0, extra_preargs=None,
-             extra_postargs=None, build_temp=None):
+             extra_postargs=None, build_temp=None, target_lang=None):
         objects, output_dir = self._fix_object_args(objects, output_dir)
         libraries, library_dirs, runtime_library_dirs = \
             self._fix_lib_args(libraries, library_dirs, runtime_library_dirs)
@@ -167,9 +168,12 @@ class UnixCCompiler(CCompiler):
             self.mkpath(os.path.dirname(output_filename))
             try:
                 if target_desc == CCompiler.EXECUTABLE:
-                    self.spawn(self.linker_exe + ld_args)
+                    linker = self.linker_exe[:]
                 else:
-                    self.spawn(self.linker_so + ld_args)
+                    linker = self.linker_so[:]
+                if target_lang == "c++" and self.compiler_cxx:
+                    linker[0] = self.compiler_cxx[0]
+                self.spawn(linker + ld_args)
             except DistutilsExecError, msg:
                 raise LinkError, msg
         else:
