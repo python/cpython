@@ -110,6 +110,28 @@ DVIFILES=	$(MANDVIFILES) $(HOWTODVIFILES)
 PDFFILES=	$(MANPDFFILES) $(HOWTOPDFFILES)
 PSFILES=	$(MANPSFILES) $(HOWTOPSFILES)
 
+HTMLCSSFILES=html/api/api.css \
+	html/doc/doc.css \
+	html/ext/ext.css \
+	html/lib/lib.css \
+	html/mac/mac.css \
+	html/ref/ref.css \
+	html/tut/tut.css \
+	html/inst/inst.css \
+	html/dist/dist.css
+
+ISILOCSSFILES=isilo/api/api.css \
+	isilo/doc/doc.css \
+	isilo/ext/ext.css \
+	isilo/lib/lib.css \
+	isilo/mac/mac.css \
+	isilo/ref/ref.css \
+	isilo/tut/tut.css \
+	isilo/inst/inst.css \
+	isilo/dist/dist.css
+
+ALLCSSFILES=$(HTMLCSSFILES) $(ISILOCSSFILES)
+
 INDEXFILES=html/api/api.html \
 	html/doc/doc.html \
 	html/ext/ext.html \
@@ -238,6 +260,9 @@ info:
 # instead.  The standard set does *not* include all the icons used in the
 # Python documentation.
 
+$(ALLCSSFILES): html/style.css
+	cp $< $@
+
 $(INDEXFILES): $(COMMONPERL) html/about.dat tools/node2label.pl
 
 html/acks.html: ACKS $(TOOLSDIR)/support.py $(TOOLSDIR)/mkackshtml
@@ -263,33 +288,42 @@ html/modindex.html: html/lib/lib.html html/mac/mac.html
 		--output modindex.html --address $(PYTHONDOCS) \
 		lib/modindex.html mac/modindex.html
 
-html:	$(ALLHTMLFILES)
+html:	$(ALLHTMLFILES) $(HTMLCSSFILES)
 
-api html/api/api.html: $(APIFILES)
+api: html/api/api.html html/api/api.css
+html/api/api.html: $(APIFILES)
 	$(MKHTML) --dir html/api api/api.tex
 
-doc html/doc/doc.html: $(DOCFILES)
+doc: html/doc/doc.html html/doc/doc.css
+html/doc/doc.html: $(DOCFILES)
 	$(MKHTML) --dir html/doc doc/doc.tex
 
-ext html/ext/ext.html: $(EXTFILES)
+ext: html/ext/ext.html html/ext/ext.css
+html/ext/ext.html: $(EXTFILES)
 	$(MKHTML) --dir html/ext ext/ext.tex
 
-lib html/lib/lib.html: $(LIBFILES)
+lib: html/lib/lib.html html/lib/lib.css
+html/lib/lib.html: $(LIBFILES)
 	$(MKHTML) --dir html/lib lib/lib.tex
 
-mac html/mac/mac.html: $(MACFILES)
+mac: html/mac/mac.html html/mac/mac.css
+html/mac/mac.html: $(MACFILES)
 	$(MKHTML) --dir html/mac mac/mac.tex
 
-ref html/ref/ref.html: $(REFFILES)
+ref: html/ref/ref.html html/ref/ref.css
+html/ref/ref.html: $(REFFILES)
 	$(MKHTML) --dir html/ref ref/ref.tex
 
-tut html/tut/tut.html: $(TUTFILES)
+tut: html/tut/tut.html html/tut/tut.css
+html/tut/tut.html: $(TUTFILES)
 	$(MKHTML) --dir html/tut --numeric --split 3 tut/tut.tex
 
-inst html/inst/inst.html: $(INSTFILES) perl/distutils.perl
+inst: html/inst/inst.html html/inst/inst.css
+html/inst/inst.html: $(INSTFILES) perl/distutils.perl
 	$(MKHTML) --dir html/inst --split 4 inst/inst.tex
 
-dist html/dist/dist.html: $(DISTFILES) perl/distutils.perl
+dist: html/dist/dist.html html/dist/dist.css
+html/dist/dist.html: $(DISTFILES) perl/distutils.perl
 	$(MKHTML) --dir html/dist --split 4 dist/dist.tex
 
 
@@ -317,39 +351,39 @@ isilo:	isilo/python-api-$(RELEASE).pdb \
 	isilo/python-dist-$(RELEASE).pdb \
 	isilo/python-inst-$(RELEASE).pdb
 
-isilo/python-api-$(RELEASE).pdb: isilo/api/api.html
+isilo/python-api-$(RELEASE).pdb: isilo/api/api.html isilo/api/api.css
 	$(MKISILO) "-iPython/C API Reference Manual" \
 		isilo/api/api.html $@
 
-isilo/python-doc-$(RELEASE).pdb: isilo/doc/doc.html
+isilo/python-doc-$(RELEASE).pdb: isilo/doc/doc.html isilo/doc/doc.css
 	$(MKISILO) "-iDocumenting Python" \
 		isilo/doc/doc.html $@
 
-isilo/python-ext-$(RELEASE).pdb: isilo/ext/ext.html
+isilo/python-ext-$(RELEASE).pdb: isilo/ext/ext.html isilo/ext/ext.css
 	$(MKISILO) "-iExtending & Embedding Python" \
 		isilo/ext/ext.html $@
 
-isilo/python-lib-$(RELEASE).pdb: isilo/lib/lib.html
+isilo/python-lib-$(RELEASE).pdb: isilo/lib/lib.html isilo/lib/lib.css
 	$(MKISILO) "-iPython Library Reference" \
 		isilo/lib/lib.html $@
 
-isilo/python-mac-$(RELEASE).pdb: isilo/mac/mac.html
+isilo/python-mac-$(RELEASE).pdb: isilo/mac/mac.html isilo/mac/mac.css
 	$(MKISILO) "-iPython/C API Reference Manual" \
 		isilo/mac/mac.html $@
 
-isilo/python-ref-$(RELEASE).pdb: isilo/ref/ref.html
+isilo/python-ref-$(RELEASE).pdb: isilo/ref/ref.html isilo/ref/ref.css
 	$(MKISILO) "-iPython Reference Manual" \
 		isilo/ref/ref.html $@
 
-isilo/python-tut-$(RELEASE).pdb: isilo/tut/tut.html
+isilo/python-tut-$(RELEASE).pdb: isilo/tut/tut.html isilo/tut/tut.css
 	$(MKISILO) "-iPython Tutorial" \
 		isilo/tut/tut.html $@
 
-isilo/python-dist-$(RELEASE).pdb: isilo/dist/dist.html
+isilo/python-dist-$(RELEASE).pdb: isilo/dist/dist.html isilo/dist/dist.css
 	$(MKISILO) "-iDistributing Python Modules" \
 		isilo/dist/dist.html $@
 
-isilo/python-inst-$(RELEASE).pdb: isilo/inst/inst.html
+isilo/python-inst-$(RELEASE).pdb: isilo/inst/inst.html isilo/inst/inst.css
 	$(MKISILO) "-iInstalling Python Modules" \
 		isilo/inst/inst.html $@
 
@@ -467,7 +501,7 @@ postscript-$(PAPER)-$(RELEASE).zip: $(PSFILES) paper-$(PAPER)/README
 	rm -f $@
 	cd paper-$(PAPER) && zip -q -9 ../$@ *.ps README
 
-html-$(RELEASE).tar:	$(ALLHTMLFILES)
+html-$(RELEASE).tar:	$(ALLHTMLFILES) $(HTMLCSSFILES)
 	cd html && \
 		tar cf ../html-$(RELEASE).tar *.html */*.css */*.html \
 					      */*.gif */*.txt
@@ -478,7 +512,7 @@ html-$(RELEASE).tgz:	html-$(RELEASE).tar
 html-$(RELEASE).tar.bz2: html-$(RELEASE).tar
 	bzip2 -9 <$? >$@
 
-html-$(RELEASE).zip:	$(ALLHTMLFILES)
+html-$(RELEASE).zip:	$(ALLHTMLFILES) $(HTMLCSSFILES)
 	rm -f $@
 	cd html && \
 		zip -q -9 ../$@ *.html */*.css */*.html */*.gif */*.txt
