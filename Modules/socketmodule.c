@@ -1327,6 +1327,8 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen)
 		if (res < 0 && errno == EINPROGRESS) {
 			internal_select(s, 1);
 			res = connect(s->sock_fd, addr, addrlen);
+			if (res < 0 && errno == EISCONN)
+				res = 0;
 		}
 	}
 
