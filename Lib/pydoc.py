@@ -636,16 +636,26 @@ TT { font-family: lucidatypewriter, lucida console, courier }
                     push('\n')
             return attrs
 
-        # pydoc can't make any reasonable sense of properties on its own,
-        # and it doesn't appear that the getter, setter and del'er methods
-        # are discoverable.  For now, just pump out their names.
         def spillproperties(msg, attrs, predicate):
             ok, attrs = _split_list(attrs, predicate)
             if ok:
                 hr.maybe()
                 push(msg)
                 for name, kind, homecls, value in ok:
-                    push('<dl><dt><strong>%s</strong></dl>\n' % name)
+                    push('<dl><dt><strong>%s</strong></dt>\n' % name)
+                    if value.__doc__ is not None:
+                        doc = self.markup(value.__doc__, self.preformat,
+                                          funcs, classes, mdict)
+                        push('<dd><small><tt>%s</tt></small></dd>\n' % doc)
+                    for attr, tag in [("fset", " setter"),
+                                      ("fget", " getter"),
+                                      ("fdel", " deleter")]:
+                        func = getattr(value, attr)
+                        if func is not None:
+                            base = self.document(func, name + tag, mod,
+                                                 funcs, classes, mdict, object)
+                            push('<dd>%s</dd>\n' % base)
+                    push('</dl>\n')
             return attrs
 
         def spilldata(msg, attrs, predicate):
