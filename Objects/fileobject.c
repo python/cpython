@@ -639,7 +639,7 @@ file_readinto(PyFileObject *f, PyObject *args)
    Size argument interpretation:
    > 0: max length;
    = 0: read arbitrary line;
-   < 0: illegal (use get_line_raw() instead)
+   < 0: invalid
 */
 
 #ifdef HAVE_GETC_UNLOCKED
@@ -709,38 +709,27 @@ get_line(PyFileObject *f, int n)
 	return v;
 }
 
-/* Internal routine to get a line for raw_input():
-   strip trailing '\n', raise EOFError if EOF reached immediately
-*/
-
-static PyObject *
-get_line_raw(PyFileObject *f)
-{
-	PyObject *line;
-
-	line = get_line(f, 0);
-	if (line == NULL || PyString_GET_SIZE(line) > 0)
-		return line;
-	else {
-		Py_DECREF(line);
-		PyErr_SetString(PyExc_EOFError, "EOF when reading a line");
-		return NULL;
-	}
-}
-
 /* External C interface */
 
 PyObject *
 PyFile_GetLine(PyObject *f, int n)
 {
+	PyObject *result;
+
 	if (f == NULL) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	if (!PyFile_Check(f)) {
+
+	if (PyFile_Check(f)) {
+		if (((PyFileObject*)f)->f_fp == NULL)
+			return err_closed();
+		result = get_line((PyFileObject *)f, n);
+	}
+	else {
 		PyObject *reader;
 		PyObject *args;
-		PyObject *result;
+
 		reader = PyObject_GetAttrString(f, "readline");
 		if (reader == NULL)
 			return NULL;
@@ -761,35 +750,29 @@ PyFile_GetLine(PyObject *f, int n)
 			PyErr_SetString(PyExc_TypeError,
 				   "object.readline() returned non-string");
 		}
-		if (n < 0 && result != NULL) {
-			char *s = PyString_AsString(result);
-			int len = PyString_Size(result);
-			if (len == 0) {
+	}
+
+	if (n < 0 && result != NULL && PyString_Check(result)) {
+		char *s = PyString_AS_STRING(result);
+		int len = PyString_GET_SIZE(result);
+		if (len == 0) {
+			Py_DECREF(result);
+			result = NULL;
+			PyErr_SetString(PyExc_EOFError,
+					"EOF when reading a line");
+		}
+		else if (s[len-1] == '\n') {
+			if (result->ob_refcnt == 1)
+				_PyString_Resize(&result, len-1);
+			else {
+				PyObject *v;
+				v = PyString_FromStringAndSize(s, len-1);
 				Py_DECREF(result);
-				result = NULL;
-				PyErr_SetString(PyExc_EOFError,
-					   "EOF when reading a line");
-			}
-			else if (s[len-1] == '\n') {
-				if (result->ob_refcnt == 1)
-					_PyString_Resize(&result, len-1);
-				else {
-					PyObject *v;
-					v = PyString_FromStringAndSize(s,
-								       len-1);
-					Py_DECREF(result);
-					result = v;
-				}
+				result = v;
 			}
 		}
-		return result;
 	}
-	if (((PyFileObject*)f)->f_fp == NULL)
-		return err_closed();
-	if (n < 0)
-		return get_line_raw((PyFileObject *)f);
-	else
-		return get_line((PyFileObject *)f, n);
+	return result;
 }
 
 /* Python method */
