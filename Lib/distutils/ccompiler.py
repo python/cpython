@@ -842,7 +842,10 @@ class CCompiler:
 _default_compilers = (
 
     # Platform string mappings
-    ('cygwin.*', 'cygwin'),
+
+    # on a cygwin built python we can use gcc like an ordinary UNIXish
+    # compiler
+    ('cygwin.*', 'unix'),
     
     # OS name mappings
     ('posix', 'unix'),
