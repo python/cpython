@@ -75,8 +75,7 @@ class Shelf:
 	
 	def close(self):
 		try:
-			if self.dict:
-				self.dict.close()
+                    self.dict.close()
 		except:
 			pass
 		self.dict = 0
