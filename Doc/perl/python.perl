@@ -324,7 +324,7 @@ sub do_cmd_manpage{
     return "<span class=\"manpage\"><i>$page</i>($section)</span>" . $_;
 }
 
-$PEP_FORMAT = "http://python.sourceforge.net/peps/pep-%04d.html";
+$PEP_FORMAT = "http://www.python.org/peps/pep-%04d.html";
 #$RFC_FORMAT = "http://www.ietf.org/rfc/rfc%04d.txt";
 $RFC_FORMAT = "http://www.faqs.org/rfcs/rfc%d.html";
 
