@@ -7,6 +7,10 @@ What's New in Python 2.1 final?
   with pdb, in either the shell window or the *Python* window, the
   source file and line will be tracked by an arrow.
 
+- New port: SCO Unixware 7, by Billy G. Allie.
+
+- Updated the RISCOS port.
+
 
 What's New in Python 2.1 beta 2?
 ================================
