@@ -110,8 +110,13 @@ xx_setattr(xp, name, v)
 		if (xp->x_attr == NULL)
 			return -1;
 	}
-	if (v == NULL)
-		return dictremove(xp->x_attr, name);
+	if (v == NULL) {
+		int rv = dictremove(xp->x_attr, name);
+		if (rv < 0)
+			err_setstr(AttributeError,
+			        "delete non-existing xx attribute");
+		return rv;
+	}
 	else
 		return dictinsert(xp->x_attr, name, v);
 }

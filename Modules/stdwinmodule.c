@@ -1051,8 +1051,13 @@ text_setattr(tp, name, v)
 		if (tp->t_attr == NULL)
 			return -1;
 	}
-	if (v == NULL)
-		return dictremove(tp->t_attr, name);
+	if (v == NULL) {
+		int rv = dictremove(tp->t_attr, name);
+		if (rv < 0)
+			err_setstr(AttributeError,
+			        "delete non-existing text object attribute");
+		return rv;
+	}
 	else
 		return dictinsert(tp->t_attr, name, v);
 }
@@ -1253,8 +1258,13 @@ menu_setattr(mp, name, v)
 		if (mp->m_attr == NULL)
 			return -1;
 	}
-	if (v == NULL)
-		return dictremove(mp->m_attr, name);
+	if (v == NULL) {
+		int rv = dictremove(mp->m_attr, name);
+		if (rv < 0)
+			err_setstr(AttributeError,
+			        "delete non-existing menu object attribute");
+		return rv;
+	}
 	else
 		return dictinsert(mp->m_attr, name, v);
 }
@@ -1655,8 +1665,13 @@ window_setattr(wp, name, v)
 		if (wp->w_attr == NULL)
 			return -1;
 	}
-	if (v == NULL)
-		return dictremove(wp->w_attr, name);
+	if (v == NULL) {
+		int rv = dictremove(wp->w_attr, name);
+		if (rv < 0)
+			err_setstr(AttributeError,
+			        "delete non-existing menu object attribute");
+		return rv;
+	}
 	else
 		return dictinsert(wp->w_attr, name, v);
 }

@@ -133,8 +133,13 @@ class_setattr(op, name, v)
 			return -1;
 		}
 	}
-	if (v == NULL)
-		return dictremove(op->cl_methods, name);
+	if (v == NULL) {
+		int rv = dictremove(op->cl_methods, name);
+		if (rv < 0)
+			err_setstr(AttributeError,
+				   "delete non-existing class attribute");
+		return rv;
+	}
 	else
 		return dictinsert(op->cl_methods, name, v);
 }
@@ -245,8 +250,13 @@ instance_setattr(inst, name, v)
 			return -1;
 		}
 	}
-	if (v == NULL)
-		return dictremove(inst->in_attr, name);
+	if (v == NULL) {
+		int rv = dictremove(inst->in_attr, name);
+		if (rv < 0)
+			err_setstr(AttributeError,
+				   "delete non-existing instance attribute");
+		return rv;
+	}
 	else
 		return dictinsert(inst->in_attr, name, v);
 }
