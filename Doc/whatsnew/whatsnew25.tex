@@ -37,7 +37,24 @@ Here are all of the changes that Python 2.5 makes to the core Python
 language.
 
 \begin{itemize}
-\item TBD
+
+\item The \function{min()} and \function{max()} built-in functions
+gained a \code{key} keyword argument analogous to the \code{key}
+argument for \function{sort()}.  This argument supplies a function
+that takes a single argument and is called for every value in the list; 
+\function{min()}/\function{max()} will return the element with the 
+smallest/largest return value from this function.
+For example, to find the longest string in a list, you can do:
+
+\begin{verbatim}
+L = ['medium', 'longest', 'short']
+# Prints 'longest'
+print max(L, key=len)		   
+# Prints 'short', because lexicographically 'short' has the largest value
+print max(L)         
+\end{verbatim}
+
+(Contributed by Steven Bethard and Raymond Hettinger.)
 
 \end{itemize}
 
