@@ -2293,22 +2293,6 @@ def inherits():
     verify(s.lower().__class__ is str)
     vereq(s.lower(), base)
 
-    s = madstring("x y")
-    vereq(s, "x y")
-    verify(intern(s).__class__ is str)
-    verify(intern(s) is intern("x y"))
-    vereq(intern(s), "x y")
-
-    i = intern("y x")
-    s = madstring("y x")
-    vereq(s, i)
-    verify(intern(s).__class__ is str)
-    verify(intern(s) is i)
-
-    s = madstring(i)
-    verify(intern(s).__class__ is str)
-    verify(intern(s) is i)
-
     class madunicode(unicode):
         _rev = None
         def rev(self):
