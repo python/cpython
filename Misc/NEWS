@@ -274,6 +274,9 @@ Core and builtins
 
 Extension modules
 
+- The time stamps in os.stat_result are floating point numbers now if
+  the system supports that.
+
 - If the size passed to mmap.mmap() is larger than the length of the
   file on non-Windows platforms, a ValueError is raised. [SF bug 585792]
 
