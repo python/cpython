@@ -21,6 +21,7 @@ type 'Popt' {
 	byte argcArgv = 0, noArgcArgv = 1;
 	byte newStandardExceptions = 0, oldStandardExceptions = 1;
 	byte sitePython = 0, noSitePython = 1;
+	byte navService = 0, noNavService = 1;
 };
 
 type 'TMPL' {
@@ -48,6 +49,7 @@ resource 'TMPL' (PYTHONOPTIONS_ID, "Popt") {
 		"No argc/argv emulation",		'DBYT',
 		"Old standard exceptions",		'DBYT',
 		"No site-python support",		'DBYT',
+		"No NavServices in macfs",		'DBYT',
 	}
 };
 
@@ -66,6 +68,7 @@ resource 'Popt' (PYTHONOPTIONS_ID, "Options") {
 	argcArgv,
 	newStandardExceptions,
 	sitePython,
+	navService,
 };
 
 /* The sys.path initializer */

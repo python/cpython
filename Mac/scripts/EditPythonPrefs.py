@@ -48,8 +48,10 @@ opt_dialog_map = [
 	"noargs",
 	"delayconsole",
 	None, None, None, None, None, None, None, None, # 11-18 are different
-	"oldexc",
-	"nosite"]
+	"tabwarn",
+	"nosite",
+	None,
+	"nonavservices"]
 opt_dialog_dict = {}
 for i in range(len(opt_dialog_map)):
 	if opt_dialog_map[i]:
