@@ -160,9 +160,8 @@ def main():
 	# Create the PythonCore alias(es)
 	MacOS.splash(SPLASH_COPYCORE)
 	if verbose:
-		print "Copying PythonCore..."
+		print "Copying PythonCoreCarbon..."
 	n = 0
-	n = n + mkcorealias('PythonCore', 'PythonCore')
 	n = n + mkcorealias('PythonCoreCarbon', 'PythonCoreCarbon')
 	if n == 0:
 		from Carbon import Dlg
@@ -170,32 +169,6 @@ def main():
 		if verbose:
 			print "Warning: PythonCore not copied to Extensions folder"
 			print "         (Applets will not work unless run from the Python folder)"
-	if sys.argv[0][-7:] == 'Classic':
-		do_classic = 1
-	elif sys.argv[0][-6:] == 'Carbon':
-		do_classic = 0
-	else:
-		print "I don't know the sys.argv[0] function", sys.argv[0]
-		if verbose:
-			print "Configure classic or carbon - ",
-			rv = string.strip(sys.stdin.readline())
-			while rv and rv != "classic" and rv != "carbon":
-				print "Configure classic or carbon - ",
-				rv = string.strip(sys.stdin.readline())
-			if rv == "classic":
-				do_classic = 1
-			elif rv == "carbon":
-				do_classic = 0
-			else:
-				return
-		else:
-			sys.exit(1)
-	if do_classic:
-		MacOS.splash(SPLASH_COPYCLASSIC)
-		buildcopy(sys.prefix, None, [("PythonInterpreterClassic", "PythonInterpreter")])
-	else:
-		MacOS.splash(SPLASH_COPYCARBON)
-		buildcopy(sys.prefix, None, [("PythonInterpreterCarbon", "PythonInterpreter")])
 	MacOS.splash(SPLASH_BUILDAPPLETS)
 	buildapplet(sys.prefix, None, APPLET_LIST)
 

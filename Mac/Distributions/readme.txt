@@ -2,18 +2,17 @@ How to make a Python-distribution.
 ----------------------------------
 
 These notes are mainly for myself, or for whoever tries to make a MacPython
-distribution when I'm fed up with it. They were last updated for 2.2b1.
+distribution when I'm fed up with it. They were last updated for 2.3a1.
 
 - Increase fragment version number in PythonCore and PythonCoreCarbon.
   the fragment number is Python's sys.hexversion, it should be set in the
   "PEF" preferences.
 - Increase version number in _versioncheck.py
 - Build PythonStandSmall, run once in root folder
-- Update Relnotes, readme's, Demo:build.html
-- Make sure tkresources.rsrc is up-to-date
+- Update NEWS, readme's, Demo:build.html
 - fullbuild everything with increase-buildno
-- Test both classic and Carbon with test.regrtest
-- Update Numeric and build/install it both with Classic and with Carbon python
+- Test with test.regrtest
+- Update Numeric and build/install it
 - Recompile OSAm and possibly other Contrib stuff
 - mkdistr binary.include
 - mkdistr dev.include
@@ -33,8 +32,7 @@ distribution when I'm fed up with it. They were last updated for 2.2b1.
   Only the :Lib:plat-xxxx should be missing. Otherwise go back to Installer Vise and
   add the missing stuff. Make sure of all settings for the new files (esp. "where"
   and "gestalt" are easy to miss).
-- test on virgin systems (OSX, OS9, OS8 without Carbon). Make sure to test
-  tkinter too.
+- test on virgin systems (both OS9 and OSX). 
 - Remove the local installation so you don't get confused by it.
 - checkin everything except PythonX.Y.vct.
 - mkdistr src.include

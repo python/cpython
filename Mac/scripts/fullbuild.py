@@ -202,6 +202,7 @@ def buildcarbonplugins(top, dummy1, dummy2):
 		(":Mac:Build:xxsubtype.carbon.mcp", "xxsubtype.carbon"),
 		(":Mac:Build:pyexpat.carbon.mcp", "pyexpat.carbon"),
 		(":Mac:Build:calldll.carbon.mcp", "calldll.carbon"),
+		(":Mac:Build:datetime.carbon.mcp", "datetime.carbon"),
 		(":Mac:Build:gdbm.carbon.mcp", "gdbm.carbon"),
 		(":Mac:Build:icglue.carbon.mcp", "icglue.carbon"),
 		(":Mac:Build:waste.carbon.mcp", "waste.carbon"),

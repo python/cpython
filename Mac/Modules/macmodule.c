@@ -218,16 +218,21 @@ mac_fdopen(self, args)
 {
 	extern int fclose(FILE *);
 	int fd;
-	char *mode;
+	char *mode = "r";
+	int bufsize = -1;
 	FILE *fp;
-	if (!PyArg_ParseTuple(args, "is", &fd, &mode))
+	PyObject *f;
+	if (!PyArg_ParseTuple(args, "i|si", &fd, &mode, &bufsize))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	fp = fdopen(fd, mode);
 	Py_END_ALLOW_THREADS
 	if (fp == NULL)
 		return mac_error();
-	return PyFile_FromFile(fp, "(fdopen)", mode, fclose);
+	f = PyFile_FromFile(fp, "<fdopen>", mode, fclose);
+	if (f != NULL)
+		PyFile_SetBufSize(f, bufsize);
+	return f;
 }
 #endif
 
