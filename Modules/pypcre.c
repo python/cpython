@@ -1832,7 +1832,7 @@ for (;; ptr++)
 	      }
 
 	      refnum = PyInt_AsLong(intobj);
-	      Py_DECREF(string); Py_DECREF(intobj);
+	      Py_DECREF(string); 
 	      *code++ = OP_REF;
 	      *code++ = refnum;
 	      /* The continue will cause the top-level for() loop to
