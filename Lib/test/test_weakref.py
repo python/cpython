@@ -252,6 +252,11 @@ class MappingTestCase(TestBase):
         del objects, o
         self.assert_(len(dict) == 0,
                      "deleting the values did not clear the dictionary")
+        # regression on SF bug #447152:
+        dict = weakref.WeakValueDictionary()
+        self.assertRaises(KeyError, dict.__getitem__, 1)
+        dict[2] = C()
+        self.assertRaises(KeyError, dict.__getitem__, 2)
 
     def test_weak_keys(self):
         #
