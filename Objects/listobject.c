@@ -2242,10 +2242,6 @@ list_fill(PyListObject *result, PyObject *v)
 	int n;		   /* guess for result list size */
 	int i;
 
-	/* if source is destination, we're done. */
-	if (v == (PyObject *)result)
-		return 0;
-
 	n = result->ob_size;
 
 	/* Special-case list(a_list), for speed. */
