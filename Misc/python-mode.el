@@ -477,6 +477,9 @@ Currently-active file is at the head of the list.")
   (define-key py-mode-map "\e\C-e"    'py-end-of-def-or-class)
   (define-key py-mode-map "\C-c-"     'py-up-exception)
   (define-key py-mode-map "\C-c="     'py-down-exception)
+  ;; stuff that is `standard' but doesn't interface well with
+  ;; python-mode, which forces us to rebind to special commands
+  (define-key py-mode-map "\C-xnd"    'py-narrow-to-defun)
   ;; information
   (define-key py-mode-map "\C-c\C-b" 'py-submit-bug-report)
   (define-key py-mode-map "\C-c\C-v" 'py-version)
@@ -1826,6 +1829,18 @@ it's tried again going backward."
       (skip-chars-backward " \t")
       (max comment-column (+ (current-column) (if (bolp) 0 1)))
       )))
+
+(defun py-narrow-to-defun (&optional class)
+  "Make text outside current defun invisible.
+The defun visible is the one that contains point or follows point.
+Optional CLASS is passed directly to `py-beginning-of-def-or-class'."
+  (interactive "P")
+  (save-excursion
+    (widen)
+    (py-end-of-def-or-class class)
+    (let ((end (point)))
+      (py-beginning-of-def-or-class class)
+      (narrow-to-region (point) end))))
 
 
 (defun py-shift-region (start end count)
