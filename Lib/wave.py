@@ -73,7 +73,8 @@ is destroyed.
 
 import __builtin__
 
-Error = 'wave.Error'
+class Error(Exception):
+    pass
 
 WAVE_FORMAT_PCM = 0x0001
 

@@ -76,7 +76,10 @@ endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "R'''": single3prog, 'R"""': double3prog, 'r': None, 'R': None}
 
 tabsize = 8
-TokenError = 'TokenError'
+
+class TokenError(Exception):
+    pass
+
 def printtoken(type, token, (srow, scol), (erow, ecol), line): # for testing
     print "%d,%d-%d,%d:\t%s\t%s" % \
         (srow, scol, erow, ecol, tok_name[type], repr(token))

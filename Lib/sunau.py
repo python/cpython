@@ -128,7 +128,8 @@ _simple_encodings = [AUDIO_FILE_ENCODING_MULAW_8,
 		     AUDIO_FILE_ENCODING_LINEAR_32,
 		     AUDIO_FILE_ENCODING_ALAW_8]
 
-Error = 'sunau.Error'
+class Error(Exception):
+	pass
 
 def _read_u32(file):
 	x = 0L
