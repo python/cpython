@@ -160,8 +160,8 @@ class BuildPy (Command):
 
     def check_module (self, module, module_file):
         if not os.path.isfile (module_file):
-            self.warn ("file %s (for module %s) not found" %
-                       module_file, module)
+            self.warn ("file %s (for module %s) not found" % 
+                       (module_file, module))
             return 0
         else:
             return 1
