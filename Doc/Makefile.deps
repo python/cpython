@@ -17,7 +17,18 @@ HOWTOSTYLES= texinputs/howto.cls \
 	$(COMMONSTYLES)
 
 
-APIFILES= api/api.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
+APIFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
+	api/api.tex \
+	api/abstract.tex \
+	api/concrete.tex \
+	api/exceptions.tex \
+	api/init.tex \
+	api/intro.tex \
+	api/memory.tex \
+	api/newtypes.tex \
+	api/refcounting.tex \
+	api/utilities.tex \
+	api/veryhigh.tex \
 	texinputs/reportingbugs.tex
 
 DOCFILES= $(HOWTOSTYLES) \
