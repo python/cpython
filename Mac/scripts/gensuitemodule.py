@@ -247,10 +247,18 @@ def compileaete(aete, resinfo, fname):
 		basepackage = None
 	macfs.SetFolder(pathname)
 	suitelist = []
+	allprecompinfo = []
+	allsuites = []
 	for suite in suites:
-		code, modname = compilesuite(suite, major, minor, language, script, fname, basepackage)
-		if modname:
-			suitelist.append((code, modname))
+		code, suite, fss, modname, precompinfo = precompilesuite(suite, basepackage)
+		if not code:
+			continue
+		allprecompinfo = allprecompinfo + precompinfo
+		suiteinfo = suite, fss, modname
+		suitelist.append((code, modname))
+		allsuites.append(suiteinfo)
+	for suiteinfo in allsuites:
+		compilesuite(suiteinfo, major, minor, language, script, fname, basepackage, allprecompinfo)
 	fss, ok = macfs.StandardPutFile('Package module', '__init__.py')
 	if not ok:
 		return
@@ -269,20 +277,22 @@ def compileaete(aete, resinfo, fname):
 	fp.write("}\n\n")
 	fp.write("\n\n_code_to_fullname = {\n")
 	for code, modname in suitelist:
-		fp.write("\t'%s' : '%s.%s',\n"%(code, packagename, modname))
+		fp.write("\t'%s' : ('%s.%s', '%s'),\n"%(code, packagename, modname, modname))
 	fp.write("}\n\n")
 	for code, modname in suitelist:
 		fp.write("from %s import *\n"%modname)
 	if suitelist:
 		fp.write("\n\nclass %s(%s_Events"%(packagename, suitelist[0][1]))
 		for code, modname in suitelist[1:]:
-			fp.write(",\n\t%s_Events"%modname)
-		fp.write(",\n\taetools.TalkTo):\n")
+			fp.write(",\n\t\t%s_Events"%modname)
+		fp.write(",\n\t\taetools.TalkTo):\n")
 		fp.write("\t_signature = '%s'\n\n"%creatorsignature)
 	fp.close()
-
-def compilesuite(suite, major, minor, language, script, fname, basepackage=None):
-	"""Generate code for a single suite"""
+	
+def precompilesuite(suite, basepackage=None):
+	"""Parse a single suite without generating the output. This step is needed
+	so we can resolve recursive references by suites to enums/comps/etc declared
+	in other suites"""
 	[name, desc, code, level, version, events, classes, comps, enums] = suite
 	
 	modname = identify(name)
@@ -290,9 +300,47 @@ def compilesuite(suite, major, minor, language, script, fname, basepackage=None)
 		modname = modname[:27]
 	fss, ok = macfs.StandardPutFile('Python output file', modname+'.py')
 	if not ok:
-		return None, None
+		return None, None, None, None, None
+
 	pathname = fss.as_pathname()
 	modname = os.path.splitext(os.path.split(pathname)[1])[0]
+	
+	if basepackage and basepackage._code_to_module.has_key(code):
+		# We are an extension of a baseclass (usually an application extending
+		# Standard_Suite or so). Import everything from our base module
+		basemodule = basepackage._code_to_module[code]
+	else:
+		# We are not an extension.
+		basemodule = None
+
+	enumsneeded = {}
+	for event in events:
+		findenumsinevent(event, enumsneeded)
+
+	objc = ObjectCompiler(None, basemodule)
+	for cls in classes:
+		objc.compileclass(cls)
+	for cls in classes:
+		objc.fillclasspropsandelems(cls)
+	for comp in comps:
+		objc.compilecomparison(comp)
+	for enum in enums:
+		objc.compileenumeration(enum)
+	
+	for enum in enumsneeded.keys():
+		objc.checkforenum(enum)
+		
+	objc.dumpindex()
+	
+	precompinfo = objc.getprecompinfo(modname)
+	
+	return code, suite, fss, modname, precompinfo
+
+def compilesuite((suite, fss, modname), major, minor, language, script, fname, basepackage, precompinfo):
+	"""Generate code for a single suite"""
+	[name, desc, code, level, version, events, classes, comps, enums] = suite
+	
+	pathname = fss.as_pathname()
 	fp = open(fss.as_pathname(), 'w')
 	fss.SetCreatorType('Pyth', 'TEXT')
 	
@@ -309,7 +357,7 @@ def compilesuite(suite, major, minor, language, script, fname, basepackage=None)
 	if basepackage and basepackage._code_to_module.has_key(code):
 		# We are an extension of a baseclass (usually an application extending
 		# Standard_Suite or so). Import everything from our base module
-		fp.write('from %s import *\n'%basepackage._code_to_fullname[code])
+		fp.write('from %s import *\n'%basepackage._code_to_fullname[code][0])
 		basemodule = basepackage._code_to_module[code]
 	else:
 		# We are not an extension.
@@ -323,7 +371,7 @@ def compilesuite(suite, major, minor, language, script, fname, basepackage=None)
 	else:
 		fp.write("\tpass\n\n")
 
-	objc = ObjectCompiler(fp, basemodule)
+	objc = ObjectCompiler(fp, basemodule, precompinfo)
 	for cls in classes:
 		objc.compileclass(cls)
 	for cls in classes:
@@ -343,8 +391,10 @@ def compilesuite(suite, major, minor, language, script, fname, basepackage=None)
 def compileclassheader(fp, name, module=None):
 	"""Generate class boilerplate"""
 	classname = '%s_Events'%name
-	if module and hasattr(module, classname):
-		fp.write("class %s(%s):\n\n"%(classname, classname))
+	if module:
+		modshortname = string.split(module.__name__, '.')[-1]
+		baseclassname = '%s_Events'%modshortname
+		fp.write("class %s(%s):\n\n"%(classname, baseclassname))
 	else:
 		fp.write("class %s:\n\n"%classname)
 	
@@ -457,69 +507,128 @@ def compileargument(arg):
 	[name, keyword, what] = arg
 	print "#        %s (%s)" % (name, `keyword`), compiledata(what)
 
+def findenumsinevent(event, enumsneeded):
+	"""Find all enums for a single event"""
+	[name, desc, code, subcode, returns, accepts, arguments] = event
+	for a in arguments:
+		if is_enum(a[2]):
+			ename = a[2][0]
+			if ename <> '****':
+				enumsneeded[ename] = 1
+
+#
+# This class stores the code<->name translations for a single module. It is used
+# to keep the information while we're compiling the module, but we also keep these objects
+# around so if one suite refers to, say, an enum in another suite we know where to
+# find it. Finally, if we really can't find a code, the user can add modules by
+# hand.
+#
+class CodeNameMapper:
+	
+	def __init__(self):
+		self.code2name = {
+			"property" : {},
+			"class" : {},
+			"enum" : {},
+			"comparison" : {},
+		}
+		self.name2code =  {
+			"property" : {},
+			"class" : {},
+			"enum" : {},
+			"comparison" : {},
+		}
+		self.modulename = None
+		self.star_imported = 0
+		
+	def addnamecode(self, type, name, code):
+		self.name2code[type][name] = code
+		if not self.code2name[type].has_key(code):
+			self.code2name[type][code] = name
+		
+	def hasname(self, type, name):
+		return self.name2code[type].has_key(name)
+		
+	def hascode(self, type, code):
+		return self.code2name[type].has_key(code)
+		
+	def findcodename(self, type, code):
+		if not self.hascode(type, code):
+			return None, None, None
+		name = self.code2name[type][code]
+		if self.modulename and not self.star_imported:
+			qualname = '%s.%s'%(self.modulename, name)
+		else:
+			qualname = name
+		return name, qualname, self.modulename
+		
+	def getall(self, type):
+		return self.code2name[type].items()
+			
+	def addmodule(self, module, name, star_imported):
+		self.modulename = name
+		self.star_imported = star_imported
+		for code, name in module._propdeclarations.items():
+			self.addnamecode('property', name, code)
+		for code, name in module._classdeclarations.items():
+			self.addnamecode('class', name, code)
+		for code in module._enumdeclarations.keys():
+			self.addnamecode('enum', '_Enum_'+identify(code), code)
+		for code, name in module._compdeclarations.items():
+			self.addnamecode('comparison', name, code)
+		
+	def prepareforexport(self, name=None):
+		if not self.modulename:
+			self.modulename = name
+		return self
+			
 class ObjectCompiler:
-	def __init__(self, fp, basesuite=None):
+	def __init__(self, fp, basesuite=None, othernamemappers=None):
 		self.fp = fp
-		self.propnames = {}
-		self.classnames = {}
-		self.propcodes = {}
-		self.classcodes = {}
-		self.compcodes = {}
-		self.enumcodes = {}
-		self.othersuites = []
 		self.basesuite = basesuite
+		self.namemappers = [CodeNameMapper()]
+		if othernamemappers:
+			self.othernamemappers = othernamemappers[:]
+		else:
+			self.othernamemappers = []
+		if basesuite:
+			basemapper = CodeNameMapper()
+			basemapper.addmodule(basesuite, '', 1)
+			self.namemappers.append(basemapper)
+		
+	def getprecompinfo(self, modname):
+		list = []
+		for mapper in self.namemappers:
+			emapper = mapper.prepareforexport(modname)
+			if emapper:
+				list.append(emapper)
+		return list
 		
 	def findcodename(self, type, code):
 		while 1:
-			if type == 'property':
-				# First we check whether we ourselves have defined it
-				if self.propcodes.has_key(code):
-					return self.propcodes[code], self.propcodes[code], None
-				# Next we check whether our base suite module has defined it
-				if self.basesuite and self.basesuite._propdeclarations.has_key(code):
-					name = self.basesuite._propdeclarations[code].__name__
-					return name, name, None
-				# Finally we test whether one of the other suites we know about has defined
-				# it.
-				for s in self.othersuites:
-					if s._propdeclarations.has_key(code):
-						name = s._propdeclarations[code].__name__
-						return name, '%s.%s' % (s.__name__, name), s.__name__
-			if type == 'class':
-				if self.classcodes.has_key(code):
-					return self.classcodes[code], self.classcodes[code], None
-				if self.basesuite and self.basesuite._classdeclarations.has_key(code):
-					name = self.basesuite._classdeclarations[code].__name__
-					return name, name, None
-				for s in self.othersuites:
-					if s._classdeclarations.has_key(code):
-						name = s._classdeclarations[code].__name__
-						return name, '%s.%s' % (s.__name__, name), s.__name__
-			if type == 'enum':
-				if self.enumcodes.has_key(code):
-					return self.enumcodes[code], self.enumcodes[code], None
-				if self.basesuite and self.basesuite._enumdeclarations.has_key(code):
-					name = '_Enum_' + identify(code)
-					return name, name, None
-				for s in self.othersuites:
-					if s._enumdeclarations.has_key(code):
-						name = '_Enum_' + identify(code)
-						return name, '%s.%s' % (s.__name__, name), s.__name__
-			if type == 'comparison':
-				if self.compcodes.has_key(code):
-					return self.compcodes[code], self.compcodes[code], None
-				if self.basesuite and self.basesuite._compdeclarations.has_key(code):
-					name = self.basesuite._compdeclarations[code].__name__
-					return name, name, None
-				for s in self.othersuites:
-					if s._compdeclarations.has_key(code):
-						name = s._compdeclarations[code].__name__
-						return name, '%s.%s' % (s.__name__, name), s.__name__
-			# If all this has failed we ask the user for a guess on where it could
-			# be and retry.	
-			m = self.askdefinitionmodule(type, code)
-			if not m: return None, None, None
-			self.othersuites.append(m)
+			# First try: check whether we already know about this code.
+			for mapper in self.namemappers:
+				if mapper.hascode(type, code):
+					return mapper.findcodename(type, code)
+			# Second try: maybe one of the other modules knows about it.
+			for mapper in self.othernamemappers:
+				if mapper.hascode(type, code):
+					self.othernamemappers.remove(mapper)
+					self.namemappers.append(mapper)
+					if self.fp:
+						self.fp.write("import %s\n"%mapper.modulename)
+					break
+			else:
+				# If all this has failed we ask the user for a guess on where it could
+				# be and retry.
+				if self.fp:
+					m = self.askdefinitionmodule(type, code)
+				else:
+					m = None
+				if not m: return None, None, None
+				mapper = CodeNameMapper()
+				mapper.addmodule(m, m.__name__, 0)
+				self.namemappers.append(mapper)
 	
 	def askdefinitionmodule(self, type, code):
 		fss, ok = macfs.PromptGetFile('Where is %s %s declared?'%(type, code))
@@ -535,16 +644,17 @@ class ObjectCompiler:
 	def compileclass(self, cls):
 		[name, code, desc, properties, elements] = cls
 		pname = identify(name)
-		if self.classcodes.has_key(code):
+		if self.namemappers[0].hascode('class', code):
 			# plural forms and such
-			self.fp.write("\n%s = %s\n"%(pname, self.classcodes[code]))
-			self.classnames[pname] = code
+			othername, dummy, dummy = self.namemappers[0].findcodename('class', code)
+			if self.fp:
+				self.fp.write("\n%s = %s\n"%(pname, othername))
 		else:
-			self.fp.write('\nclass %s(aetools.ComponentItem):\n' % pname)
-			self.fp.write('\t"""%s - %s """\n' % (name, desc))
-			self.fp.write('\twant = %s\n' % `code`)
-			self.classnames[pname] = code
-			self.classcodes[code] = pname
+			if self.fp:
+				self.fp.write('\nclass %s(aetools.ComponentItem):\n' % pname)
+				self.fp.write('\t"""%s - %s """\n' % (name, desc))
+				self.fp.write('\twant = %s\n' % `code`)
+		self.namemappers[0].addnamecode('class', pname, code)
 		for prop in properties:
 			self.compileproperty(prop)
 		for elem in elements:
@@ -556,24 +666,28 @@ class ObjectCompiler:
 			# Something silly with plurals. Skip it.
 			return
 		pname = identify(name)
-		if self.propcodes.has_key(code):
-			self.fp.write("# repeated property %s %s\n"%(pname, what[1]))
+		if self.namemappers[0].hascode('property', code):
+			# XXXX Why don't we handle these the same as classes??
+			if self.fp:
+				self.fp.write("# repeated property %s %s\n"%(pname, what[1]))
 		else:
-			self.fp.write("class %s(aetools.NProperty):\n" % pname)
-			self.fp.write('\t"""%s - %s """\n' % (name, what[1]))
-			self.fp.write("\twhich = %s\n" % `code`)
-			self.fp.write("\twant = %s\n" % `what[0]`)
-			self.propnames[pname] = code
-			self.propcodes[code] = pname
+			if self.fp:
+				self.fp.write("class %s(aetools.NProperty):\n" % pname)
+				self.fp.write('\t"""%s - %s """\n' % (name, what[1]))
+				self.fp.write("\twhich = %s\n" % `code`)
+				self.fp.write("\twant = %s\n" % `what[0]`)
+			self.namemappers[0].addnamecode('property', pname, code)
 	
 	def compileelement(self, elem):
 		[code, keyform] = elem
-		self.fp.write("#        element %s as %s\n" % (`code`, keyform))
+		if self.fp:
+			self.fp.write("#        element %s as %s\n" % (`code`, keyform))
 
 	def fillclasspropsandelems(self, cls):
 		[name, code, desc, properties, elements] = cls
 		cname = identify(name)
-		if self.classcodes[code] != cname:
+		if self.namemappers[0].hascode('class', code) and \
+				self.namemappers[0].findcodename('class', code)[0] != cname:
 			# This is an other name (plural or so) for something else. Skip.
 			return
 		plist = []
@@ -590,34 +704,38 @@ class ObjectCompiler:
 				continue
 			name, ename, module = self.findcodename('class', ecode)
 			if not name:
-				self.fp.write("# XXXX %s element %s not found!!\n"%(cname, `ecode`))
+				if self.fp:
+					self.fp.write("# XXXX %s element %s not found!!\n"%(cname, `ecode`))
 			else:
 				elist.append((name, ename))
-			
-		self.fp.write("%s._propdict = {\n"%cname)
-		for n in plist:
-			self.fp.write("\t'%s' : %s,\n"%(n, n))
-		self.fp.write("}\n")
-		self.fp.write("%s._elemdict = {\n"%cname)
-		for n, fulln in elist:
-			self.fp.write("\t'%s' : %s,\n"%(n, fulln))
-		self.fp.write("}\n")
+		
+		if self.fp:
+			self.fp.write("%s._propdict = {\n"%cname)
+			for n in plist:
+				self.fp.write("\t'%s' : %s,\n"%(n, n))
+			self.fp.write("}\n")
+			self.fp.write("%s._elemdict = {\n"%cname)
+			for n, fulln in elist:
+				self.fp.write("\t'%s' : %s,\n"%(n, fulln))
+			self.fp.write("}\n")
 	
 	def compilecomparison(self, comp):
 		[name, code, comment] = comp
 		iname = identify(name)
-		self.compcodes[code] = iname
-		self.fp.write("class %s(aetools.NComparison):\n" % iname)
-		self.fp.write('\t"""%s - %s """\n' % (name, comment))
+		self.namemappers[0].addnamecode('comparison', iname, code)
+		if self.fp:
+			self.fp.write("class %s(aetools.NComparison):\n" % iname)
+			self.fp.write('\t"""%s - %s """\n' % (name, comment))
 		
 	def compileenumeration(self, enum):
 		[code, items] = enum
 		name = "_Enum_%s" % identify(code)
-		self.fp.write("%s = {\n" % name)
-		for item in items:
-			self.compileenumerator(item)
-		self.fp.write("}\n\n")
-		self.enumcodes[code] = name
+		if self.fp:
+			self.fp.write("%s = {\n" % name)
+			for item in items:
+				self.compileenumerator(item)
+			self.fp.write("}\n\n")
+		self.namemappers[0].addnamecode('enum', name, code)
 		return code
 	
 	def compileenumerator(self, item):
@@ -628,28 +746,32 @@ class ObjectCompiler:
 		"""This enum code is used by an event. Make sure it's available"""
 		name, fullname, module = self.findcodename('enum', enum)
 		if not name:
-			self.fp.write("# XXXX enum %s not found!!\n"%(enum))
+			if self.fp:
+				self.fp.write("# XXXX enum %s not found!!\n"%(enum))
 			return
 		if module:
-			self.fp.write("from %s import %s\n"%(module, name))
+			if self.fp:
+				self.fp.write("from %s import %s\n"%(module, name))
 		
 	def dumpindex(self):
+		if not self.fp:
+			return
 		self.fp.write("\n#\n# Indices of types declared in this module\n#\n")
 		self.fp.write("_classdeclarations = {\n")
-		for k in self.classcodes.keys():
-			self.fp.write("\t%s : %s,\n" % (`k`, self.classcodes[k]))
+		for k, v in self.namemappers[0].getall('class'):
+			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
 		self.fp.write("\n_propdeclarations = {\n")
-		for k in self.propcodes.keys():
-			self.fp.write("\t%s : %s,\n" % (`k`, self.propcodes[k]))
+		for k, v in self.namemappers[0].getall('property'):
+			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
 		self.fp.write("\n_compdeclarations = {\n")
-		for k in self.compcodes.keys():
-			self.fp.write("\t%s : %s,\n" % (`k`, self.compcodes[k]))
+		for k, v in self.namemappers[0].getall('comparison'):
+			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
 		self.fp.write("\n_enumdeclarations = {\n")
-		for k in self.enumcodes.keys():
-			self.fp.write("\t%s : %s,\n" % (`k`, self.enumcodes[k]))
+		for k, v in self.namemappers[0].getall('enum'):
+			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
 
 def compiledata(data):
