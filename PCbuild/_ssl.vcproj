@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="7.10"
+	Name="_ssl"
+	SccProjectName=""
+	SccLocalPath=""
+	Keyword="MakeFileProj">
+	<Platforms>
+		<Platform
+			Name="Win32"/>
+	</Platforms>
+	<Configurations>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory=".\."
+			IntermediateDirectory=".\x86-temp-release\_ssl"
+			ConfigurationType="0"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="python build_ssl.py"
+				ReBuildCommandLine="python build_ssl.py -a"
+				Output="_ssl.pyd"/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory=".\."
+			IntermediateDirectory=".\x86-temp-debug\_ssl"
+			ConfigurationType="0"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="python_d -u build_ssl.py -d"
+				ReBuildCommandLine="python_d -u build_ssl.py -d -a"
+				Output="_ssl_d.pyd"/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<File
+			RelativePath="..\Modules\_ssl.c">
+		</File>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
