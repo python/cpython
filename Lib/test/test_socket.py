@@ -359,13 +359,14 @@ class BasicUDPTest(ThreadedUDPSocketTest):
         self.cli.sendto(MSG, 0, (HOST, PORT))
 
     def testRecvFrom(self):
-        """Testing recfrom() over UDP."""
+        """Testing recvfrom() over UDP."""
         msg, addr = self.serv.recvfrom(len(MSG))
         hostname, port = addr
         ##self.assertEqual(hostname, socket.gethostbyname('localhost'))
         self.assertEqual(msg, MSG)
 
     def _testRecvFrom(self):
+        time.sleep(1) # Give server a chance to set up
         self.cli.sendto(MSG, 0, (HOST, PORT))
 
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
