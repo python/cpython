@@ -1749,6 +1749,28 @@ class TestHeader(TestEmailBase):
         eq(decode_header(enc),
            [(g_head, "iso-8859-1"), (cz_head, "iso-8859-2"),
             (utf8_head, "utf-8")])
+        # Test for conversion to unicode.  BAW: Python 2.1 doesn't support the
+        # __unicode__() protocol, so do things this way for compatibility.
+        ustr = h.__unicode__()
+        # For Python 2.2 and beyond
+        #ustr = unicode(h)
+        eq(ustr.encode('utf-8'),
+           'Die Mieter treten hier ein werden mit einem Foerderband '
+           'komfortabel den Korridor entlang, an s\xc3\xbcdl\xc3\xbcndischen '
+           'Wandgem\xc3\xa4lden vorbei, gegen die rotierenden Klingen '
+           'bef\xc3\xb6rdert. Finan\xc4\x8dni metropole se hroutily pod '
+           'tlakem jejich d\xc5\xafvtipu.. \xe6\xad\xa3\xe7\xa2\xba\xe3\x81'
+           '\xab\xe8\xa8\x80\xe3\x81\x86\xe3\x81\xa8\xe7\xbf\xbb\xe8\xa8\xb3'
+           '\xe3\x81\xaf\xe3\x81\x95\xe3\x82\x8c\xe3\x81\xa6\xe3\x81\x84\xe3'
+           '\x81\xbe\xe3\x81\x9b\xe3\x82\x93\xe3\x80\x82\xe4\xb8\x80\xe9\x83'
+           '\xa8\xe3\x81\xaf\xe3\x83\x89\xe3\x82\xa4\xe3\x83\x84\xe8\xaa\x9e'
+           '\xe3\x81\xa7\xe3\x81\x99\xe3\x81\x8c\xe3\x80\x81\xe3\x81\x82\xe3'
+           '\x81\xa8\xe3\x81\xaf\xe3\x81\xa7\xe3\x81\x9f\xe3\x82\x89\xe3\x82'
+           '\x81\xe3\x81\xa7\xe3\x81\x99\xe3\x80\x82\xe5\xae\x9f\xe9\x9a\x9b'
+           '\xe3\x81\xab\xe3\x81\xaf\xe3\x80\x8cWenn ist das Nunstuck git '
+           'und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt '
+           'gersput.\xe3\x80\x8d\xe3\x81\xa8\xe8\xa8\x80\xe3\x81\xa3\xe3\x81'
+           '\xa6\xe3\x81\x84\xe3\x81\xbe\xe3\x81\x99\xe3\x80\x82')
 
     def test_explicit_maxlinelen(self):
         eq = self.ndiffAssertEqual
