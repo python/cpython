@@ -20,9 +20,11 @@ file type and creator codes will not be correct.
 
 \begin{funcdesc}{copyfile}{src, dst}
   Copy the contents of the file named \var{src} to a file named
-  \var{dst}.  If \var{dst} exists, it will be replaced, otherwise it
-  will be created.  Special files such as character or block devices
-  and pipes cannot not be copied with this function.  \var{src} and
+  \var{dst}.  The destination location must be writable; otherwise, 
+  an \exception{IOError} exception will be raised.
+  If \var{dst} already exists, it will be replaced.  
+  Special files such as character or block devices
+  and pipes cannot be copied with this function.  \var{src} and
   \var{dst} are path names given as strings.
 \end{funcdesc}
 
