@@ -49,10 +49,6 @@ typedef struct {
 #define HAVE_UNIVERSAL_HEADERS
 #endif
 
-#ifdef SYMANTEC__CFM68K__
-#pragma lib_export on
-#endif
-
 #ifdef USE_GUSI1
 void PyMac_FixGUSIcd(void);		/* Workaround for GUSI chdir() call */
 extern void PyMac_SetGUSISpin(void);		/* Install our private GUSI spin routine */

@@ -69,11 +69,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef MPW
-#ifdef __SC__
-#define COMPILER " [Symantec MPW]"
-#else
 #define COMPILER " [Apple MPW]"
-#endif
 #endif
 
 const char *
