@@ -487,6 +487,9 @@ Martin
 Walter
 Samuele
 
+>>> def take(n, seq):
+...     return list(islice(seq, n))
+
 >>> def enumerate(iterable):
 ...     return izip(count(), iterable)
 
@@ -539,11 +542,25 @@ Samuele
 ...         result = result[1:] + (elem,)
 ...         yield result
 
->>> def take(n, seq):
-...     return list(islice(seq, n))
+>>> def tee(iterable):
+...     "Return two independent iterators from a single iterable"
+...     def gen(next, data={}, cnt=[0]):
+...         dpop = data.pop
+...         for i in count():
+...             if i == cnt[0]:
+...                 item = data[i] = next()
+...                 cnt[0] += 1
+...             else:
+...                 item = dpop(i)
+...             yield item
+...     next = iter(iterable).next
+...     return (gen(next), gen(next))
 
 This is not part of the examples but it tests to make sure the definitions
 perform as purported.
+
+>>> take(10, count())
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 >>> list(enumerate('abc'))
 [(0, 'a'), (1, 'b'), (2, 'c')]
@@ -590,8 +607,17 @@ False
 >>> dotproduct([1,2,3], [4,5,6])
 32
 
->>> take(10, count())
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> def irange(start, stop):
+...     for i in range(start, stop):
+...         yield i
+
+>>> x, y = tee(irange(2,10))
+>>> list(x), list(y)
+([2, 3, 4, 5, 6, 7, 8, 9], [2, 3, 4, 5, 6, 7, 8, 9])
+
+>>> x, y = tee(irange(2,10))
+>>> zip(x, y)
+[(2, 2), (3, 3), (4, 4), (5, 5), (6, 6), (7, 7), (8, 8), (9, 9)]
 
 """
 
