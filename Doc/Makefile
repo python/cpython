@@ -75,9 +75,18 @@ VPATH=.
 RELEASE=1.5.1
 VERSION=1.5
 
-DVIFILES=	api.dvi ext.dvi lib.dvi mac.dvi ref.dvi tut.dvi
-PDFFILES=	api.pdf ext.pdf lib.pdf mac.pdf ref.pdf tut.pdf
-PSFILES=	api.ps ext.ps lib.ps mac.ps ref.ps tut.ps
+MANDVIFILES=	api.dvi ext.dvi lib.dvi ref.dvi tut.dvi
+HOWTODVIFILES=	mac.dvi
+
+MANPDFFILES=	api.pdf ext.pdf lib.pdf ref.pdf tut.pdf
+HOWTOPDFFILES=	mac.pdf
+
+MANPSFILES=	api.ps ext.ps lib.ps ref.ps tut.ps
+HOWTOPSFILES=	mac.ps
+
+DVIFILES=	$(MANDVIFILES) $(HOWTODVIFILES)
+PDFFILES=	$(MANPDFFILES) $(HOWTOPDFFILES)
+PSFILES=	$(MANPSFILES) $(HOWTOPSFILES)
 
 # Be careful when messing with this one!
 TEXINPUTS=	.:../texinputs:
@@ -109,7 +118,7 @@ world:	all-ps all-pdf l2h tarballs
 
 
 # Targets for each document:
-.PHONY: api ext lib ref tut
+.PHONY: api ext lib mac ref tut
 
 api:
 	(cd paper-$(PAPER); \
@@ -125,6 +134,11 @@ lib:
 	(cd paper-$(PAPER); \
 		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
 		-f ../Makefile lib.ps)
+
+mac:
+	(cd paper-$(PAPER); \
+		$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) \
+		-f ../Makefile mac.ps)
 
 ref:
 	(cd paper-$(PAPER); \
@@ -161,21 +175,30 @@ all-formats:  $(PSFILES) $(PDFFILES)
 # Dependencies
 # We really need some support of dependency generator for this...
 
-MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls \
-	  texinputs/python.sty texinputs/pypaper.sty texinputs/myindex.ist
+COMMONSTYLES=texinputs/python.sty texinputs/pypaper.sty texinputs/myindex.ist
+COMMONTEX=texinputs/copyright.tex texinputs/boilerplate.tex
 
-COMMONTEX=$(MANSTYLES) texinputs/copyright.tex texinputs/boilerplate.tex
+MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls $(COMMONSTYLES)
+HOWTOSTYLES=texinputs/howto.cls $(COMMONSTYLES)
 
-$(DVIFILES): tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
-$(PDFFILES): tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
+
+$(DVIFILES):	  tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
+$(PDFFILES):	  tools/fix_hack tools/mkdvi.sh $(COMMONTEX)
+
+$(MANDVIFILES):	  $(MANSTYLES)
+$(MANPDFFILES):	  $(MANSTYLES)
+
+$(HOWTODVIFILES): tools/mkhowto.sh $(HOWTOSTYLES)
+$(HOWTOPDFFILES): tools/mkhowto.sh $(HOWTOSTYLES)
+
 
 REFFILES = ref/ref1.tex ref/ref2.tex ref/ref3.tex ref/ref4.tex \
 	   ref/ref5.tex ref/ref6.tex ref/ref7.tex ref/ref8.tex
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib/lib.tex \
-    lib/libintro.tex lib/libobjs.tex lib/libtypes.tex lib/libexcs.tex \
-    lib/libfuncs.tex lib/libpython.tex lib/libsys.tex lib/libtypes2.tex \
+    lib/libintro.tex lib/libobjs.tex lib/libstdtypes.tex lib/libexcs.tex \
+    lib/libfuncs.tex lib/libpython.tex lib/libsys.tex lib/libtypes.tex \
     lib/libtraceback.tex lib/libpickle.tex lib/libshelve.tex \
     lib/libcopy.tex lib/libmarshal.tex lib/libimp.tex lib/libparser.tex \
     lib/libbltin.tex lib/libmain.tex lib/libstrings.tex lib/libstring.tex \
@@ -184,7 +207,7 @@ LIBFILES = lib/lib.tex \
     lib/liballos.tex lib/libos.tex lib/libtime.tex lib/libgetopt.tex \
     lib/libtempfile.tex lib/liberrno.tex lib/libsomeos.tex lib/libsignal.tex \
     lib/libsocket.tex lib/libselect.tex lib/libthread.tex lib/libunix.tex \
-    lib/libposix.tex lib/libppath.tex lib/libpwd.tex lib/libgrp.tex \
+    lib/libposix.tex lib/libposixpath.tex lib/libpwd.tex lib/libgrp.tex \
     lib/libcrypt.tex lib/libdbm.tex lib/libgdbm.tex lib/libtermios.tex \
     lib/libfcntl.tex lib/libposixfile.tex lib/libsyslog.tex lib/libpdb.tex \
     lib/libprofile.tex lib/libwww.tex lib/libcgi.tex lib/liburllib.tex \
@@ -198,7 +221,8 @@ LIBFILES = lib/lib.tex \
     lib/libgl.tex lib/libimgfile.tex lib/libsun.tex lib/libxdrlib.tex \
     lib/libimghdr.tex lib/librestricted.tex lib/librexec.tex \
     lib/libbastion.tex lib/libformatter.tex lib/liboperator.tex \
-    lib/libsoundex.tex lib/libresource.tex lib/libstat.tex lib/libstrio.tex \
+    lib/libsoundex.tex lib/libresource.tex lib/libstat.tex \
+    lib/libstringio.tex lib/libtoken.tex \
     lib/libundoc.tex lib/libmailcap.tex lib/libglob.tex lib/libuser.tex \
     lib/libanydbm.tex lib/librandom.tex lib/libsite.tex lib/libwhichdb.tex \
     lib/libbase64.tex lib/libfnmatch.tex lib/libquopri.tex lib/libzlib.tex \
@@ -206,7 +230,7 @@ LIBFILES = lib/lib.tex \
     lib/libcmath.tex lib/libgzip.tex lib/libpprint.tex \
     lib/libcode.tex lib/libmimify.tex lib/libre.tex lib/libuserdict.tex \
     lib/libdis.tex lib/libxmllib.tex lib/libqueue.tex lib/liblocale.tex \
-    lib/libbasehttp.tex lib/libcopyreg.tex lib/libsymbol.tex lib/libtoken.tex \
+    lib/libbasehttp.tex lib/libcopyreg.tex lib/libsymbol.tex \
     lib/libbinhex.tex lib/libuu.tex \
     lib/libsunaudio.tex lib/libfileinput.tex lib/libimaplib.tex \
     lib/libpoplib.tex lib/libcalendar.tex lib/libpopen2.tex \
@@ -255,10 +279,10 @@ ext.pdf: ext/ext.tex
 	$(MKPDF) ext
 
 # Macintosh Library Modules
-mac.dvi: $(MACLIBFILES) tools/mkhowto.sh
+mac.dvi: $(MACLIBFILES)
 	$(MKHOWTO) --dvi $(srcdir)/$*/$*.tex
 
-mac.pdf: $(MACLIBFILES) tools/mkhowto.sh
+mac.pdf: $(MACLIBFILES)
 	$(MKHOWTO) --pdf $(srcdir)/$*/$*.tex
 
 # Python Reference Manual
@@ -369,7 +393,7 @@ tarballs:  tarpdf tarps tarhtml tarinfo tarlatex
 # - sources: .tex, .bib, .sty, *.cls
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
-	(cd paper-$(PAPER); rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm)
+	(cd paper-$(PAPER); rm -f *~ *.aux *.idx *.ilg *.ind *.log *.toc *.bkm *.syn)
 	(cd $(INFODIR); $(MAKE) clean)
 	(cd $(HTMLDIR); rm -f @webchecker.pickle)
 	rm -f html-$(RELEASE).tgz info-$(RELEASE).tgz
