@@ -85,7 +85,10 @@ class JoinTestCase(unittest.TestCase):
         try:
             # lets look up all of the red Products
             sCursor = secDB.cursor()
-            assert sCursor.set('red')
+            # Don't do the .set() in an assert, or you can get a bogus failure
+            # when running python -O
+            tmp = sCursor.set('red')
+            assert tmp
 
             # FIXME: jCursor doesn't properly hold a reference to its
             # cursors, if they are closed before jcursor is used it
