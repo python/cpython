@@ -59,6 +59,12 @@ ImportError exception, it is silently ignored.
 
 import sys, os
 
+if os.sep==".":
+    endsep = "/"
+else:
+    endsep = "."
+
+
 def makepath(*paths):
     dir = os.path.join(*paths)
     return os.path.normcase(os.path.abspath(dir))
@@ -99,7 +105,7 @@ def addsitedir(sitedir):
     names = map(os.path.normcase, names)
     names.sort()
     for name in names:
-        if name[-4:] == ".pth":
+        if name[-4:] == endsep + "pth":
             addpackage(sitedir, name)
 
 def addpackage(sitedir, name):

@@ -48,7 +48,8 @@ __all__.extend(os._get_exports_list(_socket))
 del _socket
 
 if (sys.platform.lower().startswith("win")
-    or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")):
+    or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")
+    or (sys.platform=="RISCOS")):
 
     # be sure this happens only once, even in the face of reload():
     try:
