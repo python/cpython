@@ -2059,7 +2059,8 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 				PyErr_Clear();
 			}
 			else {
-				if (c != inst->ob_type && PyType_Check(c))
+				if (c != (PyObject *)(inst->ob_type) &&
+				    PyType_Check(c))
 					retval = PyType_IsSubtype(
 						(PyTypeObject *)c,
 						(PyTypeObject *)cls);
