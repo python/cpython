@@ -109,6 +109,25 @@ See the Python Mode home page for details:
   :type 'string
   :group 'python)
 
+(defcustom py-default-interpreter 'cpython
+  "*Which Python interpreter is used by default.
+The value for this variable can be either `cpython' or `jpython'.
+
+When the value is `cpython', the variables `py-python-command' and
+`py-python-command-args' are consulted to determine the interpreter
+and arguments to use.
+
+When the value is `jpython', the variables `py-jpython-command' and
+`py-jpython-command-args' are consulted to determine the interpreter
+and arguments to use.
+
+Note that this variable is consulted only the first time that a Python 
+interpreter shell is started during an Emacs session.  After that, use 
+\\[py-toggle-shells] to change the interpreter shell."
+  :type '(choice (const :tag "Python (a.k.a. CPython)" cpython)
+		 (const :tag "JPython" jpython))
+  :group 'python)
+
 (defcustom py-python-command-args '("-i")
   "*List of string arguments to be used when starting a Python shell."
   :type '(repeat string)
@@ -555,7 +574,9 @@ Currently-active file is at the head of the list.")
   ;; Guido and I have hashed this out and have decided to keep
   ;; underscore in word class.  If you're tempted to change it, try
   ;; binding M-f and M-b to py-forward-into-nomenclature and
-  ;; py-backward-into-nomenclature instead.
+  ;; py-backward-into-nomenclature instead.  This doesn't help in all
+  ;; situations where you'd want the different behavior
+  ;; (e.g. backward-kill-word).
   (modify-syntax-entry ?\_ "w"  py-mode-syntax-table)
   ;; Both single quote and double quote are string delimiters
   (modify-syntax-entry ?\' "\"" py-mode-syntax-table)
@@ -1092,7 +1113,7 @@ If an exception occurred return t, otherwise return nil.  BUF must exist."
 (make-variable-buffer-local 'py-output-buffer)
 
 ;; for toggling between CPython and JPython
-(defvar py-which-shell py-python-command)
+(defvar py-which-shell nil)
 (defvar py-which-args  py-python-command-args)
 (defvar py-which-bufname "Python")
 (make-variable-buffer-local 'py-which-shell)
@@ -1165,6 +1186,15 @@ filter."
   ;; BAW - should undo be disabled in the python process buffer, if
   ;; this bug still exists?
   (interactive)
+  (if (null py-which-shell)
+      (cond ((eq py-default-interpreter 'cpython)
+	     (setq py-which-shell py-python-command
+		   py-which-args py-python-command-args))
+	    ((eq py-default-interpreter 'jpython)
+	     (setq py-which-shell py-jpython-command
+		   py-which-args py-jpython-command-args))
+	    (t (error "Illegal value for `py-default-interpreter': %s"
+		      py-default-interpreter))))
   (switch-to-buffer-other-window
    (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
   (make-local-variable 'comint-prompt-regexp)
