@@ -61,6 +61,27 @@ Python/C API
 - Py_BuildValue() now has a "D" conversion to create a Python complex
   number from a Py_complex C value.
 
+Distutils
+
+- the sdist command now writes a PKG-INFO file, as described in PEP 241,
+  into the release tree.
+
+- several enhancements to the bdist_wininst command from Thomas Heller 
+  (an uninstaller, more customization of the installer's display)
+
+- from Jack Jansen: added Mac-specific code to generate a dialog for
+  users to specify the command-line (because providing a command-line with
+  MacPython is awkward).  Jack also made various fixes for the Mac 
+  and the Metrowerks compiler.
+  
+- added 'platforms' and 'keywords' to the set of metadata that can be 
+  specified for a distribution.  Supplying a version number has been made
+  compulsory.
+
+- applied patches from Jason Tishler to make the compiler class work with
+  Cygwin.
+
+
 What's New in Python 2.1 beta 1?
 ================================
 
