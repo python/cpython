@@ -130,12 +130,26 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
     def test_import_from_statement(self):
         self.check_suite("from sys.path import *")
         self.check_suite("from sys.path import dirname")
+        self.check_suite("from sys.path import (dirname)")
+        self.check_suite("from sys.path import (dirname,)")
         self.check_suite("from sys.path import dirname as my_dirname")
+        self.check_suite("from sys.path import (dirname as my_dirname)")
+        self.check_suite("from sys.path import (dirname as my_dirname,)")
         self.check_suite("from sys.path import dirname, basename")
+        self.check_suite("from sys.path import (dirname, basename)")
+        self.check_suite("from sys.path import (dirname, basename,)")
         self.check_suite(
             "from sys.path import dirname as my_dirname, basename")
         self.check_suite(
+            "from sys.path import (dirname as my_dirname, basename)")
+        self.check_suite(
+            "from sys.path import (dirname as my_dirname, basename,)")
+        self.check_suite(
             "from sys.path import dirname, basename as my_basename")
+        self.check_suite(
+            "from sys.path import (dirname, basename as my_basename)")
+        self.check_suite(
+            "from sys.path import (dirname, basename as my_basename,)")
 
     def test_basic_import_statement(self):
         self.check_suite("import sys")

@@ -18,18 +18,18 @@ future_check_features(PyFutureFeatures *ff, node *n, const char *filename)
 {
 	int i;
 	char *feature;
-	node *ch;
+	node *ch, *nn;
 
-	REQ(n, import_stmt); /* must by from __future__ import ... */
-
-	for (i = 3; i < NCH(n); i += 2) {
-		ch = CHILD(n, i);
-		if (TYPE(ch) == STAR) {
-			PyErr_SetString(PyExc_SyntaxError,
-					FUTURE_IMPORT_STAR);
-			PyErr_SyntaxLocation(filename, ch->n_lineno);
-			return -1;
-		}
+	REQ(n, import_from);
+	nn = CHILD(n, 3 + (TYPE(CHILD(n, 3)) == LPAR));
+	if (TYPE(nn) == STAR) {
+		PyErr_SetString(PyExc_SyntaxError, FUTURE_IMPORT_STAR);
+		PyErr_SyntaxLocation(filename, nn->n_lineno);
+		return -1;
+	}
+	REQ(nn, import_as_names);
+	for (i = 0; i < NCH(nn); i += 2) {
+		ch = CHILD(nn, i);
 		REQ(ch, import_as_name);
 		feature = STR(CHILD(ch, 0));
 		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
@@ -188,7 +188,8 @@ future_parse(PyFutureFeatures *ff, node *n, const char *filename)
 	case import_stmt: {
 		node *name;
 
-		if (STR(CHILD(n, 0))[0] != 'f') { /* from */
+		n = CHILD(n, 0);
+		if (TYPE(n) != import_from) {
 			ff->ff_last_lineno = n->n_lineno;
 			return 0;
 		}

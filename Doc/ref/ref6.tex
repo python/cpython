@@ -623,6 +623,9 @@ It continues with the next cycle of the nearest enclosing loop.
   \productioncont{| "from" \token{module} "import" \token{identifier}
                     ["as" \token{name}]}
   \productioncont{  ( "," \token{identifier} ["as" \token{name}] )*}
+  \productioncont{| "from" \token{module} "import" "(" \token{identifier}
+                    ["as" \token{name}]}
+  \productioncont{  ( "," \token{identifier} ["as" \token{name}] )* [","] ")"}
   \productioncont{| "from" \token{module} "import" "*"}
   \production{module}
              {(\token{identifier} ".")* \token{identifier}}
@@ -744,8 +747,8 @@ before the release in which the feature becomes standard.
 
 \begin{productionlist}[*]
   \production{future_statement}
-             {"from" "__future__" "import" feature ["as" name]}
-  \productioncont{("," feature ["as" name])*}
+             {"from" "__future__" "import" feature ["as" name] ("," feature ["as" name])*}
+  \productioncont{| "from" "__future__" "import" "(" feature ["as" name] ("," feature ["as" name])* [","] ")"}
   \production{feature}{identifier}
   \production{name}{identifier}
 \end{productionlist}

@@ -417,12 +417,16 @@ except RuntimeError: pass
 try: raise KeyboardInterrupt
 except KeyboardInterrupt: pass
 
-print 'import_stmt' # 'import' NAME (',' NAME)* | 'from' NAME 'import' ('*' | NAME (',' NAME)*)
+print 'import_name' # 'import' dotted_as_names
 import sys
 import time, sys
+print 'import_from' # 'from' dotted_name 'import' ('*' | '(' import_as_names ')' | import_as_names)
 from time import time
+from time import (time)
 from sys import *
 from sys import path, argv
+from sys import (path, argv)
+from sys import (path, argv,)
 
 print 'global_stmt' # 'global' NAME (',' NAME)*
 def f():

@@ -839,6 +839,7 @@ VALIDATER(expr_stmt);           VALIDATER(power);
 VALIDATER(print_stmt);          VALIDATER(del_stmt);
 VALIDATER(return_stmt);         VALIDATER(list_iter);
 VALIDATER(raise_stmt);          VALIDATER(import_stmt);
+VALIDATER(import_name);         VALIDATER(import_from);
 VALIDATER(global_stmt);         VALIDATER(list_if);
 VALIDATER(assert_stmt);         VALIDATER(list_for);
 VALIDATER(exec_stmt);           VALIDATER(compound_stmt);
@@ -1714,53 +1715,98 @@ validate_dotted_as_name(node *tree)
 }
 
 
-/*  import_stmt:
- *
- *    'import' dotted_as_name (',' dotted_as_name)*
- *  | 'from' dotted_name 'import' ('*' | import_as_name (',' import_as_name)*)
+/* dotted_as_name (',' dotted_as_name)* */
+static int
+validate_dotted_as_names(node *tree)
+{
+	int nch = NCH(tree);
+	int res = is_odd(nch) && validate_dotted_as_name(CHILD(tree, 0));
+	int i;
+
+	for (i = 1; res && (i < nch); i += 2)
+	    res = (validate_comma(CHILD(tree, i))
+		   && validate_dotted_as_name(CHILD(tree, i + 1)));
+	return (res);
+}
+
+
+/* import_as_name (',' import_as_name)* [','] */
+static int
+validate_import_as_names(node *tree)
+{
+    int nch = NCH(tree);
+    int res = validate_import_as_name(CHILD(tree, 0));
+    int i;
+
+    for (i = 1; res && (i + 1 < nch); i += 2)
+	res = (validate_comma(CHILD(tree, i))
+	       && validate_import_as_name(CHILD(tree, i + 1)));
+    return (res);
+}
+
+
+/* 'import' dotted_as_names */
+static int
+validate_import_name(node *tree)
+{
+	return (validate_ntype(tree, import_name)
+		&& validate_numnodes(tree, 2, "import_name")
+		&& validate_name(CHILD(tree, 0), "import")
+		&& validate_dotted_as_names(CHILD(tree, 1)));
+}
+
+
+/* 'from' dotted_name 'import' ('*' | '(' import_as_names ')' |
+ *     import_as_names
  */
+static int
+validate_import_from(node *tree)
+{
+	int nch = NCH(tree);
+	int res = validate_ntype(tree, import_from)
+		  && (nch >= 4)
+		  && validate_name(CHILD(tree, 0), "from")
+		  && validate_dotted_name(CHILD(tree, 1))
+		  && validate_name(CHILD(tree, 2), "import");
+
+	if (res && TYPE(CHILD(tree, 3)) == LPAR)
+	    res = ((nch == 6)
+		   && validate_lparen(CHILD(tree, 3))
+		   && validate_import_as_names(CHILD(tree, 4))
+		   && validate_rparen(CHILD(tree, 5)));
+	else if (res && TYPE(CHILD(tree, 3)) != STAR)
+	    res = validate_import_as_names(CHILD(tree, 3));
+	return (res);
+}
+
+
+/* import_stmt: import_name | import_from */
 static int
 validate_import_stmt(node *tree)
 {
     int nch = NCH(tree);
-    int res = (validate_ntype(tree, import_stmt)
-               && (nch >= 2) && is_even(nch)
-               && validate_ntype(CHILD(tree, 0), NAME));
+    int res = validate_numnodes(tree, 1, "import_stmt");
 
-    if (res && (strcmp(STR(CHILD(tree, 0)), "import") == 0)) {
-        int j;
+    if (res) {
+	int ntype = TYPE(CHILD(tree, 0));
 
-        res = validate_dotted_as_name(CHILD(tree, 1));
-        for (j = 2; res && (j < nch); j += 2)
-            res = (validate_comma(CHILD(tree, j))
-                   && validate_dotted_as_name(CHILD(tree, j + 1)));
-    }
-    else if (res && (res = validate_name(CHILD(tree, 0), "from"))) {
-        res = ((nch >= 4) && is_even(nch)
-               && validate_dotted_name(CHILD(tree, 1))
-               && validate_name(CHILD(tree, 2), "import"));
-        if (nch == 4) {
-            if (TYPE(CHILD(tree, 3)) == import_as_name)
-                res = validate_import_as_name(CHILD(tree, 3));
-            else
-                res = validate_star(CHILD(tree, 3));
-        }
+	if (ntype == import_name || ntype == import_from)
+            res = validate_node(CHILD(tree, 0));
         else {
-            /*  'from' dotted_name 'import' import_as_name
-             *      (',' import_as_name)+
-             */
-            int j;
-            res = validate_import_as_name(CHILD(tree, 3));
-            for (j = 4; res && (j < nch); j += 2)
-                res = (validate_comma(CHILD(tree, j))
-                       && validate_import_as_name(CHILD(tree, j + 1)));
+            res = 0;
+            err_string("illegal import_stmt child type");
         }
     }
-    else
+    else if (nch == 1) {
         res = 0;
-
+        PyErr_Format(parser_error,
+                     "Unrecognized child node of import_stmt: %d.",
+                     TYPE(CHILD(tree, 0)));
+    }
     return (res);
 }
+
+
 
 
 static int
@@ -2823,6 +2869,12 @@ validate_node(node *tree)
           case import_stmt:
             res = validate_import_stmt(tree);
             break;
+	  case import_name:
+	    res = validate_import_name(tree);
+	    break;
+	  case import_from:
+	    res = validate_import_from(tree);
+	    break;
           case global_stmt:
             res = validate_global_stmt(tree);
             break;

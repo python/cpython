@@ -438,28 +438,28 @@ class Transformer:
         return n
 
     def import_stmt(self, nodelist):
-        # import_stmt: 'import' dotted_as_name (',' dotted_as_name)* |
-        # from: 'from' dotted_name 'import'
-        #                        ('*' | import_as_name (',' import_as_name)*)
-        if nodelist[0][1] == 'from':
-            names = []
-            if nodelist[3][0] == token.NAME:
-                for i in range(3, len(nodelist), 2):
-                    names.append((nodelist[i][1], None))
-            else:
-                for i in range(3, len(nodelist), 2):
-                    names.append(self.com_import_as_name(nodelist[i]))
-            n = From(self.com_dotted_name(nodelist[1]), names)
-            n.lineno = nodelist[0][2]
-            return n
+        # import_stmt: import_name | import_from
+        assert len(nodelist) == 1
+        return self.com_node(nodelist[0])
 
-        if nodelist[1][0] == symbol.dotted_name:
-            names = [(self.com_dotted_name(nodelist[1][1:]), None)]
+    def import_name(self, nodelist):
+        # import_name: 'import' dotted_as_names
+        n = Import(self.com_dotted_as_names(nodelist[1]))
+        n.lineno = nodelist[0][2]
+        return n
+
+    def import_from(self, nodelist):
+        # import_from: 'from' dotted_name 'import' ('*' |
+        #    '(' import_as_names ')' | import_as_names)
+        assert nodelist[0][1] == 'from'
+        assert nodelist[1][0] == symbol.dotted_name
+        assert nodelist[2][1] == 'import'
+        fromname = self.com_dotted_name(nodelist[1])
+        if nodelist[3][0] == token.STAR:
+            n = From(fromname, [('*', None)])
         else:
-            names = []
-            for i in range(1, len(nodelist), 2):
-                names.append(self.com_dotted_as_name(nodelist[i]))
-        n = Import(names)
+            node = nodelist[3 + (nodelist[3][0] == token.LPAR)]
+            n = From(fromname, self.com_import_as_names(node))
         n.lineno = nodelist[0][2]
         return n
 
@@ -895,28 +895,40 @@ class Transformer:
         return name[:-1]
 
     def com_dotted_as_name(self, node):
-        dot = self.com_dotted_name(node[1])
-        if len(node) <= 2:
+        assert node[0] == symbol.dotted_as_name
+        node = node[1:]
+        dot = self.com_dotted_name(node[0][1:])
+        if len(node) == 1:
             return dot, None
-        if node[0] == symbol.dotted_name:
-            pass
-        else:
-            assert node[2][1] == 'as'
-            assert node[3][0] == token.NAME
-            return dot, node[3][1]
+        assert node[1][1] == 'as'
+        assert node[2][0] == token.NAME
+        return dot, node[2][1]
+
+    def com_dotted_as_names(self, node):
+        assert node[0] == symbol.dotted_as_names
+        node = node[1:]
+        names = [self.com_dotted_as_name(node[0])]
+        for i in range(2, len(node), 2):
+            names.append(self.com_dotted_as_name(node[i]))
+        return names
 
     def com_import_as_name(self, node):
-        if node[0] == token.STAR:
-            return '*', None
         assert node[0] == symbol.import_as_name
         node = node[1:]
+        assert node[0][0] == token.NAME
         if len(node) == 1:
-            assert node[0][0] == token.NAME
             return node[0][1], None
-
         assert node[1][1] == 'as', node
         assert node[2][0] == token.NAME
         return node[0][1], node[2][1]
+
+    def com_import_as_names(self, node):
+        assert node[0] == symbol.import_as_names
+        node = node[1:]
+        names = [self.com_import_as_name(node[0])]
+        for i in range(2, len(node), 2):
+            names.append(self.com_import_as_name(node[i]))
+        return names
 
     def com_bases(self, node):
         bases = []
