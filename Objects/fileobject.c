@@ -416,6 +416,8 @@ new_buffersize(f, currentsize)
 	if (fstat(fileno(f->f_fp), &st) == 0) {
 		end = st.st_size;
 		pos = ftell(f->f_fp);
+		if (pos < 0)
+			clearerr(f->f_fp);
 		if (end > pos && pos >= 0)
 			return end - pos + 1;
 		/* Add 1 so if the file were to grow we'd notice. */
