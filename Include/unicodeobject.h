@@ -58,6 +58,14 @@ Copyright (c) Corporation for National Research Initiatives.
 
 /* --- Internal Unicode Format -------------------------------------------- */
 
+/* FIXME: MvL's new implementation assumes that Py_UNICODE_SIZE is
+   properly set, but the default rules below doesn't set it.  I'll
+   sort this out some other day -- fredrik@pythonware.com */
+
+#ifndef Py_UNICODE_SIZE
+#error Must define Py_UNICODE_SIZE
+#endif
+
 /* experimental UCS-4 support.  enable at your own risk! */
 #undef USE_UCS4_STORAGE
 #if Py_UNICODE_SIZE == 4
