@@ -584,7 +584,6 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
-        test_socketserver
         test_sunaudiodev
         test_timing
         """,
@@ -603,7 +602,6 @@ _expectations = {
         test_nis
         test_ntpath
         test_ossaudiodev
-        test_socketserver
         test_sunaudiodev
         """,
    'mac':
@@ -644,7 +642,6 @@ _expectations = {
         test_pwd
         test_resource
         test_signal
-        test_socketserver
         test_sunaudiodev
         test_sundry
         test_tarfile
@@ -667,7 +664,6 @@ _expectations = {
         test_openpty
         test_pyexpat
         test_sax
-        test_socketserver
         test_sunaudiodev
         test_sundry
         """,
@@ -688,7 +684,6 @@ _expectations = {
         test_openpty
         test_pyexpat
         test_sax
-        test_socketserver
         test_sunaudiodev
         test_sundry
         """,
@@ -714,7 +709,6 @@ _expectations = {
         test_pyexpat
         test_queue
         test_sax
-        test_socketserver
         test_sunaudiodev
         test_sundry
         test_thread
@@ -750,7 +744,6 @@ _expectations = {
         test_popen2
         test_pty
         test_pwd
-        test_socketserver
         test_strop
         test_sunaudiodev
         test_sundry
@@ -782,7 +775,6 @@ _expectations = {
         test_ntpath
         test_ossaudiodev
         test_poll
-        test_socketserver
         test_sunaudiodev
         """,
     'sunos5':
@@ -801,7 +793,6 @@ _expectations = {
         test_linuxaudiodev
         test_mpz
         test_openpty
-        test_socketserver
         test_zipfile
         test_zlib
         """,
@@ -826,7 +817,6 @@ _expectations = {
         test_openpty
         test_pyexpat
         test_sax
-        test_socketserver
         test_sunaudiodev
         test_zipfile
         test_zlib
@@ -852,7 +842,6 @@ _expectations = {
         test_poll
         test_popen2
         test_resource
-        test_socketserver
         test_sunaudiodev
         """,
     'cygwin':
