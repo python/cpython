@@ -9,7 +9,9 @@ from distutils.core import Distribution
 from distutils.tests import support
 
 
-class InstallScriptsTestCase(support.TempdirManager, unittest.TestCase):
+class InstallScriptsTestCase(support.TempdirManager,
+                             support.LoggingSilencer,
+                             unittest.TestCase):
 
     def test_default_settings(self):
         dist = Distribution()

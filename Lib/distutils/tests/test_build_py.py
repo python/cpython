@@ -9,7 +9,9 @@ from distutils.core import Distribution
 from distutils.tests import support
 
 
-class BuildPyTestCase(support.TempdirManager, unittest.TestCase):
+class BuildPyTestCase(support.TempdirManager,
+                      support.LoggingSilencer,
+                      unittest.TestCase):
 
     def test_package_data(self):
         sources = self.mkdtemp()
