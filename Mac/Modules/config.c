@@ -337,17 +337,13 @@ struct {
 	{"mactcp", initmactcp},
 #endif
 	{"AE", initAE},
-#ifndef __MWERKS__
 	{"Ctl", initCtl},
 	{"Dlg", initDlg},
-#endif
 	{"Evt", initEvt},
 	{"Menu", initMenu},
-#ifndef __MWERKS__
 	{"Qd", initQd},
 	{"Snd", initSnd},
 	{"Win", initWin},
-#endif
 	{"Res", initRes},
 
 /* -- ADDMODULE MARKER 2 -- */
