@@ -17,7 +17,7 @@ def test_both():
         f.write('\0'* PAGESIZE)
         f.write('foo')
         f.write('\0'* (PAGESIZE-3) )
-
+        f.flush()
         m = mmap.mmap(f.fileno(), 2 * PAGESIZE)
         f.close()
 
