@@ -37,7 +37,7 @@ class SAXException(Exception):
     def __getitem__(self, ix):
         """Avoids weird error messages if someone does exception[ix] by
         mistake, since Exception has __getitem__ defined."""
-        raise NameError("__getitem__")
+        raise AttributeError("__getitem__")
 
 
 # ===== SAXPARSEEXCEPTION =====
