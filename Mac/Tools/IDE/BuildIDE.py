@@ -1,3 +1,7 @@
+"""Build a "big" applet for the IDE, and put it in the Python home 
+directory. It will contain all IDE-specific modules as PYC resources,
+which reduces the startup time (especially on slower machines)."""
+
 import sys
 import os
 import buildtools
@@ -20,13 +24,18 @@ Res.UseResFile(targetref)
 
 files = os.listdir(ide_home)
 
-files = filter(lambda x: x[-3:] == '.py' and x not in ("BuildIDE.py", "PythonIDE.py"), files)
+# skip this script and the main program
+files = filter(lambda x: x[-3:] == '.py' and 
+		x not in ("BuildIDE.py", "PythonIDE.py"), files)
 
+# add the modules as PYC resources
 for name in files:
 	print "adding", name
 	fullpath = os.path.join(ide_home, name)
 	id, name = py_resource.frompyfile(fullpath, name[:-3], preload=1,
 		ispackage=0)
 
+# add W resources
 wresref = Res.OpenResFile(os.path.join(ide_home, "Widgets.rsrc"))
 buildtools.copyres(wresref, targetref, [], 0)
+
