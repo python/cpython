@@ -467,13 +467,14 @@ class ModuleImporter(BasicModuleImporter):
                 if not submod:
                     raise ImportError, "No module named " + subname
 
-    def import_it(self, partname, fqname, parent):
+    def import_it(self, partname, fqname, parent, force_load=0):
         if not partname:
             raise ValueError, "Empty module name"
-        try:
-            return self.modules[fqname]
-        except KeyError:
-            pass
+        if not force_load:
+            try:
+                return self.modules[fqname]
+            except KeyError:
+                pass
         try:
             path = parent and parent.__path__
         except AttributeError:
@@ -489,11 +490,11 @@ class ModuleImporter(BasicModuleImporter):
     def reload(self, module):
         name = module.__name__
         if '.' not in name:
-            return self.import_it(name, name, None)
+            return self.import_it(name, name, None, force_load=1)
         i = string.rfind(name, '.')
         pname = name[:i]
         parent = self.modules[pname]
-        return self.import_it(name[i+1:], name, parent)
+        return self.import_it(name[i+1:], name, parent, force_load=1)
 
 
 default_importer = None
