@@ -53,8 +53,17 @@ main(argc, argv)
 	char **argv;
 {
 #ifdef macintosh
+
+#ifndef MPW /* XXX RJW undefined in MPW */
 	wargs(&argc, &argv);
 #endif
+
+#ifndef MPW_3 /* XXX RJW doesn't seem to work with MPW C 3.0 */
+	extern int std_open_hook();
+	set_open_hook (std_open_hook);
+#endif
+#endif
+
 	argv0 = argv[0];
 	realmain(argc, argv);
 }
