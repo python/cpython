@@ -980,14 +980,15 @@ posix_listdir(PyObject *self, PyObject *args)
 	char namebuf[MAX_PATH*2+5];
 	char *bufptr = namebuf;
 	int len = sizeof(namebuf)/sizeof(namebuf[0]);
-	char ch;
 
 	if (!PyArg_ParseTuple(args, "et#:listdir",
 	                      Py_FileSystemDefaultEncoding, &bufptr, &len))
 		return NULL;
-	ch = namebuf[len-1];
-	if (ch != SEP && ch != ALTSEP && ch != ':')
-		namebuf[len++] = '/';
+	if (len > 0) {
+		char ch = namebuf[len-1];
+		if (ch != SEP && ch != ALTSEP && ch != ':')
+			namebuf[len++] = '/';
+	}
 	strcpy(namebuf + len, "*.*");
 
 	if ((d = PyList_New(0)) == NULL)
