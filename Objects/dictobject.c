@@ -1781,7 +1781,7 @@ static int
 dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
 	PyObject *arg = NULL;
-	static char *kwlist[] = {"x", 0};
+	static char *kwlist[] = {"items", 0};
 	int result = 0;
 
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:dictionary",
@@ -1807,12 +1807,10 @@ static char dictionary_doc[] =
 "dictionary() -> new empty dictionary.\n"
 "dictionary(mapping) -> new dict initialized from a mapping object's\n"
 "    (key, value) pairs.\n"
-"dictionary(seq) -> new dict initialized from the 2-element elements of\n"
-"    a sequence; for example, from mapping.items().  seq must be an\n"
-"    iterable object, producing iterable objects each producing exactly\n"
-"    two objects, the first of which is used as a key and the second as\n"
-"    its value.  If a given key is seen more than once, the dict retains\n"
-"    the last value associated with it.";
+"dictionary(seq) -> new dict initialized as if via:\n"
+"    d = {}\n"
+"    for k, v in seq:\n"
+"        d[k] = v";
 
 PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
