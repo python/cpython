@@ -443,3 +443,13 @@ byte_compile(files, optimize=%s, force=%s,
                               (file, cfile_base)
 
 # byte_compile ()
+
+def rfc822_escape (header):
+    """Return a version of the string escaped for inclusion in an
+    RFC-822 header, by adding a space after each newline.
+    """
+    header = string.rstrip(header)
+    header = string.replace(header, '\n', '\n ')
+    return header
+
+
