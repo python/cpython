@@ -25,6 +25,50 @@ full details, you should refer to the documentation for Python 2.4.
 If you want to understand the complete implementation and design
 rationale, refer to the PEP for a particular new feature.
 
+%======================================================================
+\section{PEP 218: Built-In Set Objects}
+
+Two new built-in types, \function{set(iterable)} and
+\function{frozenset(iterable)} provide high speed data types for
+membership testing, for eliminating duplicates from sequences, and
+for mathematical operations like unions, intersections, differences,
+and symmetric differences.  
+
+\begin{verbatim}
+>>> a = set('abracadabra')              # form a set from a string
+>>> 'z' in a                            # fast membership testing
+False
+>>> a                                   # unique letters in a
+set(['a', 'r', 'b', 'c', 'd'])
+>>> ''.join(a)                          # convert back into a string
+'arbcd'
+>>> b = set('alacazam')                 # form a second set
+>>> a - b                               # letters in a but not in b
+set(['r', 'd', 'b'])
+>>> a | b                               # letters in either a or b
+set(['a', 'c', 'r', 'd', 'b', 'm', 'z', 'l'])
+>>> a & b                               # letters in both a and b
+set(['a', 'c'])
+>>> a ^ b                               # letters in a or b but not both
+set(['r', 'd', 'b', 'm', 'z', 'l'])
+>>> a.add('z')                          # add a new element
+>>> a.update('wxy')                     # add multiple new elements
+>>> a
+set(['a', 'c', 'b', 'd', 'r', 'w', 'y', 'x', 'z'])       
+>>> a.remove('x')                       # take one element out
+>>> a
+set(['a', 'c', 'b', 'd', 'r', 'w', 'y', 'z'])       
+\end{verbatim}
+
+The type \function{frozenset()} is an immutable version of \function{set()}.
+Since it is immutable and hashable, it may be used as a dictionary key or
+as a member of another set.  Accordingly, it does not have methods
+like \method{add()} and \method{remove()} which could alter its contents.
+
+\begin{seealso}
+\seepep{218}{Adding a Built-In Set Object Type}{Originally proposed by
+Greg Wilson and ultimately implemented by Raymond Hettinger.}
+\end{seealso}
 
 %======================================================================
 \section{PEP 322: Reverse Iteration}
