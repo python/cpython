@@ -31,7 +31,8 @@ OBJS=		abstract.o accessobject.o \
 		fileobject.o floatobject.o \
 		frameobject.o funcobject.o intobject.o listobject.o \
 		longobject.o mappingobject.o methodobject.o \
-		moduleobject.o object.o rangeobject.o stringobject.o \
+		moduleobject.o object.o rangeobject.o \
+		sliceobject.o stringobject.o \
 		tupleobject.o typeobject.o
 
 SRCS=		abstract.c accessobject.c \
@@ -39,7 +40,8 @@ SRCS=		abstract.c accessobject.c \
 		fileobject.c floatobject.c \
 		frameobject.c funcobject.c intobject.c listobject.c \
 		longobject.c mappingobject.c methodobject.c \
-		moduleobject.c object.c rangeobject.c stringobject.c \
+		moduleobject.c object.c rangeobject.c \
+		sliceobject.c stringobject.c \
 		tupleobject.c typeobject.c
 
 LIB=		libObjects.a
@@ -87,6 +89,7 @@ methodobject.o: methodobject.c
 moduleobject.o: moduleobject.c
 object.o: object.c
 rangeobject.o: rangeobject.c
+sliceobject.o: sliceobject.c
 stringobject.o: stringobject.c
 tupleobject.o: tupleobject.c
 typeobject.o: typeobject.c
