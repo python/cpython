@@ -78,6 +78,9 @@ Extension modules
 Library
 -------
 
+- SimpleXMLRPCServer now supports CGI through the CGIXMLRPCRequestHandler
+  class.
+
 - The sets module now raises TypeError in __cmp__, to clarify that
   sets are not intended to be three-way-compared; the comparison
   operators are overloaded as subset/superset tests.
