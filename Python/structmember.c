@@ -66,14 +66,33 @@ getmember(addr, mlist, name)
 			object *v;
 			addr += l->offset;
 			switch (l->type) {
+			case T_BYTE:
+				v = newintobject((long)
+						 (((*(char*)addr & 0xff)
+						   ^ 0x80) - 0x80));
+				break;
+			case T_UBYTE:
+				v = newintobject((long) *(char*)addr & 0xff);
+				break;
 			case T_SHORT:
 				v = newintobject((long) *(short*)addr);
+				break;
+			case T_USHORT:
+				v = newintobject((long)
+						 *(unsigned short*)addr);
 				break;
 			case T_INT:
 				v = newintobject((long) *(int*)addr);
 				break;
+			case T_UINT:
+				v = newintobject((long) *(unsigned int*)addr);
+				break;
 			case T_LONG:
 				v = newintobject(*(long*)addr);
+				break;
+			case T_ULONG:
+				v = dnewlongobject((double)
+						   *(unsigned long*)addr);
 				break;
 			case T_FLOAT:
 				v = newfloatobject((double)*(float*)addr);
@@ -88,6 +107,9 @@ getmember(addr, mlist, name)
 				}
 				else
 					v = newstringobject(*(char**)addr);
+				break;
+			case T_CHAR:
+				v = newsizedstringobject((char*)addr, 1);
 				break;
 			case T_OBJECT:
 				v = *(object **)addr;
@@ -124,13 +146,23 @@ setmember(addr, mlist, name, v)
 			}
 			addr += l->offset;
 			switch (l->type) {
+			case T_BYTE:
+			case T_UBYTE:
+				if (!is_intobject(v)) {
+					err_badarg();
+					return -1;
+				}
+				*(char*)addr = getintvalue(v);
+				break;
 			case T_SHORT:
+			case T_USHORT:
 				if (!is_intobject(v)) {
 					err_badarg();
 					return -1;
 				}
 				*(short*)addr = getintvalue(v);
 				break;
+			case T_UINT:
 			case T_INT:
 				if (!is_intobject(v)) {
 					err_badarg();
@@ -144,6 +176,16 @@ setmember(addr, mlist, name, v)
 					return -1;
 				}
 				*(long*)addr = getintvalue(v);
+				break;
+			case T_ULONG:
+				if (is_intobject(v))
+					*(long*)addr = getintvalue(v);
+				else if (is_longobject(v))
+					*(long*)addr = getlongvalue(v);
+				else {
+					err_badarg();
+					return -1;
+				}
 				break;
 			case T_FLOAT:
 				if (is_intobject(v))
@@ -170,6 +212,16 @@ setmember(addr, mlist, name, v)
 				XINCREF(v);
 				*(object **)addr = v;
 				break;
+			case T_CHAR:
+				if (is_stringobject(v) &&
+				    getstringsize(v) == 1) {
+					*(char*)addr =
+						getstringvalue(v)[0];
+				}
+				else {
+					err_badarg();
+					return -1;
+				}
 			default:
 				err_setstr(SystemError, "bad memberlist type");
 				return -1;
