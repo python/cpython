@@ -270,6 +270,17 @@ Py_Finalize(void)
 	fprintf(stderr, "[%ld refs]\n", _Py_RefTotal);
 #endif
 
+#ifdef Py_TRACE_REFS
+	/* Display all objects still alive -- this can invoke arbitrary
+	 * __repr__ overrides, so requires a mostly-intact interpreter.
+	 * Alas, a lot of stuff may still be alive now that will be cleaned
+	 * up later.
+	 */
+	if (Py_GETENV("PYTHONDUMPREFS")) {
+		_Py_PrintReferences(stderr);
+	}
+#endif /* Py_TRACE_REFS */
+
 	/* Now we decref the exception classes.  After this point nothing
 	   can raise an exception.  That's okay, because each Fini() method
 	   below has been checked to make sure no exceptions are ever
@@ -305,14 +316,6 @@ Py_Finalize(void)
 	*/
 
 	PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
-
-#ifdef Py_TRACE_REFS
-	/* Dump references -- this may implicitly need the thread state,
-	   so this is the last possible place where we can do this. */
-	if (Py_GETENV("PYTHONDUMPREFS")) {
-		_Py_PrintReferences(stderr);
-	}
-#endif /* Py_TRACE_REFS */
 
 #ifdef PYMALLOC_DEBUG
 	if (Py_GETENV("PYTHONMALLOCSTATS"))
