@@ -41,6 +41,10 @@ Class \class{Random} can also be subclassed if you want to use a
 different basic generator of your own devising: in that case, override
 the \method{random()}, \method{seed()}, \method{getstate()},
 \method{setstate()} and \method{jumpahead()} methods.
+Optionally, a new generator can supply a \method{getrandombits()}
+method --- this allows \method{randrange()} to produce selections
+over an arbitrarily large range.
+\versionadded[the \method{getrandombits()} method]{2.4}
 
 As an example of subclassing, the \module{random} module provides
 the \class{WichmannHill} class which implements an alternative generator
@@ -92,6 +96,14 @@ Bookkeeping functions:
   separated by many steps.]{2.3}
  \end{funcdesc}
 
+\begin{funcdesc}{getrandbits}{k}
+  Returns a python \class{long} int with \var{k} random bits.
+  This method is supplied with the MersenneTwister generator and some
+  other generators may also provide it as an optional part of the API.
+  When available, \method{getrandbits()} enables \method{randrange()}
+  to handle arbitrarily large ranges.
+  \versionadded{2.4}   
+\end{funcdesc} 
 
 Functions for integers:
 

@@ -39,6 +39,8 @@ General notes on the underlying Mersenne Twister core generator:
 
 """
 
+from warnings import warn as _warn
+from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from math import floor as _floor
@@ -47,12 +49,14 @@ __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
            "expovariate","vonmisesvariate","gammavariate",
            "gauss","betavariate","paretovariate","weibullvariate",
-           "getstate","setstate","jumpahead"]
+           "getstate","setstate","jumpahead", "WichmannHill", "getrandbits",
+           "Random"]
 
 NV_MAGICCONST = 4 * _exp(-0.5)/_sqrt(2.0)
 TWOPI = 2.0*_pi
 LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
+BPF = 53        # Number of bits in a float
 
 # Translated by Guido van Rossum from C source provided by
 # Adrian Baddeley.  Adapted by Raymond Hettinger for use with
@@ -72,6 +76,8 @@ class Random(_random.Random):
     Class Random can also be subclassed if you want to use a different basic
     generator of your own devising: in that case, override the following
     methods:  random(), seed(), getstate(), setstate() and jumpahead().
+    Optionally, implement a getrandombits() method so that randrange()
+    can cover arbitrarily large ranges.
 
     """
 
@@ -131,12 +137,13 @@ class Random(_random.Random):
 
 ## -------------------- integer methods  -------------------
 
-    def randrange(self, start, stop=None, step=1, int=int, default=None):
+    def randrange(self, start, stop=None, step=1, int=int, default=None,
+                  maxwidth=1L<<BPF):
         """Choose a random item from range(start, stop[, step]).
 
         This fixes the problem with randint() which includes the
         endpoint; in Python this is usually not what you want.
-        Do not supply the 'int' and 'default' arguments.
+        Do not supply the 'int', 'default', and 'maxwidth' arguments.
         """
 
         # This code is a bit messy to make it fast for the
@@ -146,6 +153,8 @@ class Random(_random.Random):
             raise ValueError, "non-integer arg 1 for randrange()"
         if stop is default:
             if istart > 0:
+                if istart >= maxwidth:
+                    return self._randbelow(istart)
                 return int(self.random() * istart)
             raise ValueError, "empty range for randrange()"
 
@@ -153,36 +162,43 @@ class Random(_random.Random):
         istop = int(stop)
         if istop != stop:
             raise ValueError, "non-integer stop for randrange()"
-        if step == 1 and istart < istop:
+        width = istop - istart
+        if step == 1 and width > 0:
             # Note that
-            #     int(istart + self.random()*(istop - istart))
+            #     int(istart + self.random()*width)
             # instead would be incorrect.  For example, consider istart
             # = -2 and istop = 0.  Then the guts would be in
             # -2.0 to 0.0 exclusive on both ends (ignoring that random()
             # might return 0.0), and because int() truncates toward 0, the
             # final result would be -1 or 0 (instead of -2 or -1).
-            #     istart + int(self.random()*(istop - istart))
+            #     istart + int(self.random()*width)
             # would also be incorrect, for a subtler reason:  the RHS
             # can return a long, and then randrange() would also return
             # a long, but we're supposed to return an int (for backward
             # compatibility).
-            return int(istart + int(self.random()*(istop - istart)))
+
+            if width >= maxwidth:
+                    return int(istart + self._randbelow(width))
+            return int(istart + int(self.random()*width))
         if step == 1:
-            raise ValueError, "empty range for randrange()"
+            raise ValueError, "empty range for randrange() (%d,%d, %d)" % (istart, istop, width)
 
         # Non-unit step argument supplied.
         istep = int(step)
         if istep != step:
             raise ValueError, "non-integer step for randrange()"
         if istep > 0:
-            n = (istop - istart + istep - 1) / istep
+            n = (width + istep - 1) / istep
         elif istep < 0:
-            n = (istop - istart + istep + 1) / istep
+            n = (width + istep + 1) / istep
         else:
             raise ValueError, "zero step for randrange()"
 
         if n <= 0:
             raise ValueError, "empty range for randrange()"
+
+        if n >= maxwidth:
+            return istart + self._randbelow(n)
         return istart + istep*int(self.random() * n)
 
     def randint(self, a, b):
@@ -190,6 +206,33 @@ class Random(_random.Random):
         """
 
         return self.randrange(a, b+1)
+
+    def _randbelow(self, n, _log=_log, int=int, _maxwidth=1L<<BPF,
+                   _Method=_MethodType, _BuiltinMethod=_BuiltinMethodType):
+        """Return a random int in the range [0,n)
+
+        Handles the case where n has more bits than returned
+        by a single call to the underlying generator.
+        """
+
+        try:
+            getrandbits = self.getrandbits
+        except AttributeError:
+            pass
+        else:
+            # Only call self.getrandbits if the original random() builtin method
+            # has not been overridden or if a new getrandbits() was supplied.
+            # This assures that the two methods correspond.
+            if type(self.random) is _BuiltinMethod or type(getrandbits) is _Method:
+                k = int(1.00001 + _log(n-1, 2.0))   # 2**k > n-1 > 2**(k-2)
+                r = getrandbits(k)
+                while r >= n:
+                    r = getrandbits(k)
+                return r
+        if n >= _maxwidth:
+            _warn("Underlying random() generator does not supply \n"
+                "enough bits to choose from a population range this large")
+        return int(self.random() * n)
 
 ## -------------------- sequence methods  -------------------
 
@@ -757,6 +800,7 @@ weibullvariate = _inst.weibullvariate
 getstate = _inst.getstate
 setstate = _inst.setstate
 jumpahead = _inst.jumpahead
+getrandbits = _inst.getrandbits
 
 if __name__ == '__main__':
     _test()

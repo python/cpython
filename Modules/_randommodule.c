@@ -435,6 +435,47 @@ random_jumpahead(RandomObject *self, PyObject *n)
 }
 
 static PyObject *
+random_getrandbits(RandomObject *self, PyObject *args)
+{
+	int k, i, bytes;
+	unsigned long r;
+	unsigned char *bytearray;
+	PyObject *result;
+
+	if (!PyArg_ParseTuple(args, "i:getrandbits", &k))
+		return NULL;
+
+	if (k <= 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"number of bits must be greater than zero");
+		return NULL;
+	}
+
+	bytes = ((k - 1) / 32 + 1) * 4;
+	bytearray = (unsigned char *)PyMem_Malloc(bytes);
+	if (bytearray == NULL) {
+		PyErr_NoMemory();
+		return NULL;
+	}
+
+	/* Fill-out whole words, byte-by-byte to avoid endianness issues */
+	for (i=0 ; i<bytes ; i+=4, k-=32) {
+		r = genrand_int32(self);
+		if (k < 32)
+			r >>= (32 - k);
+		bytearray[i+0] = (unsigned char)r;
+		bytearray[i+1] = (unsigned char)(r >> 8);
+		bytearray[i+2] = (unsigned char)(r >> 16);
+		bytearray[i+3] = (unsigned char)(r >> 24);
+	}
+
+	/* little endian order to match bytearray assignment order */
+	result = _PyLong_FromByteArray(bytearray, bytes, 1, 0);
+	PyMem_Free(bytearray);
+	return result;
+}
+
+static PyObject *
 random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	RandomObject *self;
@@ -464,6 +505,9 @@ static PyMethodDef random_methods[] = {
 	{"jumpahead",	(PyCFunction)random_jumpahead,	METH_O,
 		PyDoc_STR("jumpahead(int) -> None.  Create new state from "
 			  "existing state and integer.")},
+	{"getrandbits",	(PyCFunction)random_getrandbits,  METH_VARARGS,
+		PyDoc_STR("getrandbits(k) -> x.  Generates a long int with "
+			  "k random bits.")},
 	{NULL,		NULL}		/* sentinel */
 };
 
