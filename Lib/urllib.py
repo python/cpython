@@ -748,6 +748,7 @@ def getproxies():
 	"""
 	proxies = {}
 	for name, value in os.environ.items():
+		name = string.lower(name)
 		if value and name[-6:] == '_proxy':
 			proxies[name[:-6]] = value
 	return proxies
