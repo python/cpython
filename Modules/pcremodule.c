@@ -74,7 +74,8 @@ PyPcre_exec(PcreObject *self, PyObject *args)
 	int offsets[100*2]; 
 	PyObject *list;
 
-	if (!PyArg_ParseTuple(args, "t#|iiii:match", &string, &stringlen, &pos, &endpos, &options))
+	if (!PyArg_ParseTuple(args, "t#|iii:match", &string, &stringlen, 
+                                     &pos, &endpos, &options))
 		return NULL;
 	if (endpos == -1) {endpos = stringlen;}
 	count = pcre_exec(self->regex, self->regex_extra, 
