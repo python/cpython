@@ -1008,9 +1008,9 @@ class IMAP4:
 
         if type(arg) is not type(''):
             return arg
-        if (arg[0],arg[-1]) in (('(',')'),('"','"')):
+        if len(arg) >= 2 and (arg[0],arg[-1]) in (('(',')'),('"','"')):
             return arg
-        if self.mustquote.search(arg) is None:
+        if arg and self.mustquote.search(arg) is None:
             return arg
         return self._quote(arg)
 
