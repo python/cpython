@@ -866,7 +866,6 @@ subsequent arguments are converted to output by the C library's
 \cfunction{vsprintf()} function.  The buffer used internally by
 PyErr_Format is 500 bytes long.  The caller is responsible for
 guaranteeing that the formatted output does not overflow the buffer.
-The return value is always \NULL{}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_SetNone}{PyObject *type}
