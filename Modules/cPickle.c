@@ -10,10 +10,6 @@ PyDoc_STRVAR(cPickle_module_documentation,
 #define Py_eval_input eval_input
 #endif /* Py_eval_input */
 
-#include <errno.h>
-
-
-
 #define DEL_LIST_SLICE(list, from, to) (PyList_SetSlice(list, from, to, NULL))
 
 #define WRITE_BUF_SIZE 256
