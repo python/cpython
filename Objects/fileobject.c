@@ -804,8 +804,7 @@ ms_getline_hack(FILE *fp)
 /* Internal routine to get a line.
    Size argument interpretation:
    > 0: max length;
-   = 0: read arbitrary line;
-   < 0: invalid
+   <= 0: read arbitrary line
 */
 
 #ifdef HAVE_GETC_UNLOCKED
@@ -828,7 +827,8 @@ get_line(PyFileObject *f, int n)
 	PyObject *v;
 
 #ifdef USE_MS_GETLINE_HACK
-	if (n == 0)
+	
+	if (n <= 0)
 		return ms_getline_hack(fp);
 #endif
 	n2 = n > 0 ? n : 100;
