@@ -1,6 +1,3 @@
-import addpack
-addpack.addpack(':Tools:bgen:evt')
-
 from Dlg import *
 from Events import *
 from Evt import *

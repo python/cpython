@@ -1,11 +1,5 @@
 # Progress dialog
 
-from addpack import addpack
-addpack('Tools')
-addpack('bgen')
-addpack('dlg')
-addpack('evt')
-
 from Dlg import GetNewDialog, ModalDialog, SetDialogItemText
 
 count = 0

@@ -5,19 +5,6 @@ DEBUG=0
 import MacOS
 import traceback
 
-from addpack import addpack
-addpack('Tools')
-addpack('bgen')
-addpack('ae')
-addpack('ctl')
-addpack('dlg')
-addpack('evt')
-addpack('menu')
-addpack('qd')
-#addpack('res')
-#addpack('snd')
-addpack('win')
-
 from AE import *
 from AppleEvents import *
 from Ctl import *

@@ -5,10 +5,6 @@ Generated from Moes:Programma's:Eudora:Eudora Light
 AETE/AEUT resource version 2/16, language 0, script 0
 """
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
 
 import aetools
 import MacOS
@@ -199,7 +195,7 @@ class Eudora_Suite:
 			return _arguments['----']
 
 	def unqueue(self, _object, _attributes={}, **_arguments):
-		"""unqueue: Remove a message from the queue, so it wonÕt be sent
+		"""unqueue: Remove a message from the queue, so it won’t be sent
 		Required argument: the message to unqueue
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""

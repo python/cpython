@@ -6,14 +6,6 @@ Build an applet from this source, and include the aete resource that you
 want to test. Use the AEservertest script to try things.
 """
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
-addpack.addpack('evt')
-#addpack.addpack('menu')
-addpack.addpack('win')
-
 import sys
 sys.stdout = sys.stderr
 import traceback
