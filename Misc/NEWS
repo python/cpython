@@ -1,4 +1,4 @@
-What's New in Python 2.2c1?
+What's New in Python 2.2c1
 XXX Release date: ??-Dec-2001 XXX
 ===========================
 
@@ -21,6 +21,13 @@ Tools/Demos
 Build
 
 C API
+
+- PyArg_ParseTupleAndKeywords() requires that the number of entries in
+  the keyword list equals the number of argument specifiers.  This
+  wasn't checked correctly, and PyArg_ParseTupleAndKeywords could even
+  dump core in some bad cases.  This has been repaired.  As a result,
+  PyArg_ParseTupleAndKeywords may raise RuntimeError in bad cases that
+  previously went unchallenged.
 
 New platforms
 
