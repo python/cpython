@@ -147,25 +147,24 @@ These functiona are used to retrieve resource usage information:
   for detailed information about these values. A brief summary is
   presented here:
 
-\begin{tabular}{rl}
-	\emph{offset} &	\emph{resource} \\
-	0  &	time in user mode (float) \\
-	1  &	time in system mode (float) \\
-	2  &	maximum resident set size \\
-	3  &	shared memory size \\
-	4  &	unshared memory size \\
-	5  &	unshared stack size \\
-	6  &	page faults not requiring I/O \\
-	7  &	page faults requiring I/O \\
-	8  &	number of swap outs \\
-	9  &	block input operations \\
-	10 &	block output operations \\
-	11 &	messages sent \\
-	12 &	messages received \\
-	13 &	signals received \\
-	14 &	voluntary context switches \\
-	15 &	involuntary context switches \\
-\end{tabular}
+\begin{tableii}{|r|l|}{code}{Offset}{Resource}
+  \lineii{0}{time in user mode (float)}
+  \lineii{1}{time in system mode (float)}
+  \lineii{2}{maximum resident set size}
+  \lineii{3}{shared memory size}
+  \lineii{4}{unshared memory size}
+  \lineii{5}{unshared stack size}
+  \lineii{6}{page faults not requiring I/O}
+  \lineii{7}{page faults requiring I/O}
+  \lineii{8}{number of swap outs}
+  \lineii{9}{block input operations}
+  \lineii{10}{block output operations}
+  \lineii{11}{messages sent}
+  \lineii{12}{messages received}
+  \lineii{13}{signals received}
+  \lineii{14}{voluntary context switches}
+  \lineii{15}{involuntary context switches}
+\end{tableii}
 
   This function will raise a \code{ValueError} if an invalid \var{who}
   parameter is specified. It may also raise a \code{resource.error}
