@@ -240,10 +240,8 @@ struct _inittab _PyImport_Inittab[] = {
 	{"Qdoffs", initQdoffs},
 	{"Snd", initSnd},
 	{"Sndihooks", initSndihooks},
-#if !TARGET_API_MAC_CARBON_NOTYET
 	/* Carbon scrap manager is completely different */
 	{"Scrap", initScrap},
-#endif
 	{"TE", initTE},
 	{"ColorPicker", initColorPicker},
 #if !TARGET_API_MAC_CARBON
