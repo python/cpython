@@ -247,7 +247,7 @@ def dict_constructor():
     vereq(d, dictionary([(i, i+1) for i in range(4)]))
 
     # Bad sequence lengths.
-    for bad in ['tooshort'], ['too', 'long', 'by 1']:
+    for bad in [('tooshort',)], [('too', 'long', 'by 1')]:
         try:
             dictionary(bad)
         except ValueError:
