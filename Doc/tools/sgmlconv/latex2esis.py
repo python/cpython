@@ -22,15 +22,10 @@ import re
 import string
 import sys
 import UserList
+import xml.sax
 import xml.sax.saxutils
 
 from types import ListType, StringType, TupleType
-
-try:
-    from xml.parsers.xmllib import XMLParser
-except ImportError:
-    from xmllib import XMLParser
-
 
 from esistools import encode
 
@@ -439,14 +434,11 @@ class Parameter:
         self.implied = 0
 
 
-class TableParser(XMLParser):
-    def __init__(self, table=None):
-        if table is None:
-            table = {}
-        self.__table = table
-        self.__current = None
+class TableHandler(xml.sax.handler.ContentHandler):
+    def __init__(self):
+        self.__table = {}
         self.__buffer = ''
-        XMLParser.__init__(self)
+        self.__methods = {}
 
     def get_table(self):
         for entry in self.__table.values():
@@ -456,6 +448,27 @@ class TableParser(XMLParser):
                 entry.parameters.append(p)
                 entry.has_content = 1
         return self.__table
+
+    def startElement(self, tag, attrs):
+        try:
+            start, end = self.__methods[tag]
+        except KeyError:
+            start = getattr(self, "start_" + tag, None)
+            end = getattr(self, "end_" + tag, None)
+            self.__methods[tag] = (start, end)
+        if start:
+            start(attrs)
+
+    def endElement(self, tag):
+        start, end = self.__methods[tag]
+        if end:
+            end()
+
+    def endDocument(self):
+        self.__methods.clear()
+
+    def characters(self, data):
+        self.__buffer += data
 
     def start_environment(self, attrs):
         name = attrs["name"]
@@ -517,15 +530,11 @@ class TableParser(XMLParser):
         p.text = self.__buffer
         self.__current.parameters.append(p)
 
-    def handle_data(self, data):
-        self.__buffer = self.__buffer + data
 
-
-def load_table(fp, table=None):
-    parser = TableParser(table=table)
-    parser.feed(fp.read())
-    parser.close()
-    return parser.get_table()
+def load_table(fp):
+    ch = TableHandler()
+    xml.sax.parse(fp, ch)
+    return ch.get_table()
 
 
 def main():
