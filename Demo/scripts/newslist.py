@@ -105,7 +105,8 @@ for dir in os.curdir, os.environ['HOME']:
 from nntplib import NNTP
 from stat import *
 
-rcsrev = '$Revision$'[11:15]
+rcsrev = '$Revision$'
+rcsrev = string.join(filter(lambda s: '$' not in s, string.split(rcsrev)))
 desc = {}
 
 # Make (possibly) relative filenames into absolute ones
