@@ -34,7 +34,7 @@ python_build = os.path.isfile(landmark)
 del argv0_path, landmark
 
 
-def get_python_version ():
+def get_python_version():
     """Return a string containing the major and minor Python version,
     leaving off the patchlevel.  Sample return values could be '1.5'
     or '2.2'.
@@ -65,7 +65,7 @@ def get_python_inc(plat_specific=0, prefix=None):
                 if not os.path.exists(inc_dir):
                     inc_dir = os.path.join(os.path.dirname(base), "Include")
             return inc_dir
-        return os.path.join(prefix, "include", "python" + sys.version[:3])
+        return os.path.join(prefix, "include", "python" + get_python_version())
     elif os.name == "nt":
         return os.path.join(prefix, "include")
     elif os.name == "mac":
@@ -110,7 +110,7 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
         if standard_lib:
             return os.path.join(prefix, "Lib")
         else:
-            if sys.version < "2.2":
+            if get_python_version() < "2.2":
                 return prefix
             else:
                 return os.path.join(PREFIX, "Lib", "site-packages")
@@ -189,7 +189,7 @@ def get_config_h_filename():
         inc_dir = os.curdir
     else:
         inc_dir = get_python_inc(plat_specific=1)
-    if sys.version < '2.2':
+    if get_python_version() < '2.2':
         config_h = 'config.h'
     else:
         # The name of the config.h file changed in 2.2
@@ -378,7 +378,7 @@ def _init_posix():
     if python_build:
         g['LDSHARED'] = g['BLDSHARED']
 
-    elif sys.version < '2.1':
+    elif get_python_version() < '2.1':
         # The following two branches are for 1.5.2 compatibility.
         if sys.platform == 'aix4':          # what about AIX 3.x ?
             # Linker script is in the config directory, not in Modules as the
@@ -405,7 +405,7 @@ def _init_posix():
             # it's taken care of for them by the 'build_ext.get_libraries()'
             # method.)
             g['LDSHARED'] = ("%s -L%s/lib -lpython%s" %
-                             (linkerscript, PREFIX, sys.version[0:3]))
+                             (linkerscript, PREFIX, get_python_version()))
 
     global _config_vars
     _config_vars = g
