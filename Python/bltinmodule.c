@@ -50,32 +50,25 @@ builtin_abs(self, v)
 }
 
 static object *
-builtin_apply(self, v)
+builtin_apply(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	object *func, *args;
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2) {
-		err_setstr(TypeError, "apply() requires (func,args)");
+	object *func, *arglist;
+	if (!getargs(args, "(OO)", &func, &arglist))
 		return NULL;
-	}
-	func = gettupleitem(v, 0);
-	args = gettupleitem(v, 1);
-	return call_object(func, args);
+	return call_object(func, arglist);
 }
 
 static object *
-builtin_chr(self, v)
+builtin_chr(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
 	long x;
 	char s[1];
-	if (v == NULL || !is_intobject(v)) {
-		err_setstr(TypeError, "chr() requires int argument");
+	if (!getargs(args, "l", &x))
 		return NULL;
-	}
-	x = getintvalue(v);
 	if (x < 0 || x >= 256) {
 		err_setstr(ValueError, "chr() arg not in range(256)");
 		return NULL;
@@ -140,12 +133,8 @@ builtin_divmod(self, args)
 	object *args;
 {
 	object *v, *w, *x;
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
-		err_setstr(TypeError, "divmod() requires 2 arguments");
+	if (!getargs(args, "(OO)", &v, &w))
 		return NULL;
-	}
-	v = gettupleitem(args, 0);
-	w = gettupleitem(args, 1);
 	if (v->ob_type->tp_as_number == NULL ||
 				w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError, "divmod() requires numeric arguments");
@@ -186,6 +175,10 @@ exec_eval(v, start)
 		return NULL;
 	}
 	s = getstringvalue(str);
+	if (strlen(s) != getstringsize(str)) {
+		err_setstr(ValueError, "embedded '\\0' in string arg");
+		return NULL;
+	}
 	if (start == eval_input) {
 		while (*s == ' ' || *s == '\t')
 			s++;
@@ -216,6 +209,7 @@ builtin_execfile(self, v)
 {
 	object *str = NULL, *globals = NULL, *locals = NULL, *w;
 	FILE* fp;
+	char *s;
 	int n;
 	if (v != NULL) {
 		if (is_stringobject(v))
@@ -235,8 +229,12 @@ builtin_execfile(self, v)
 		    "execfile arguments must be filename[,dict[,dict]]");
 		return NULL;
 	}
+	if (strlen(s) != getstringsize(str)) {
+		err_setstr(ValueError, "embedded '\\0' in string arg");
+		return NULL;
+	}
 	BGN_SAVE
-	fp = fopen(getstringvalue(str), "r");
+	fp = fopen(s, "r");
 	END_SAVE
 	if (fp == NULL) {
 		err_setstr(IOError, "execfile cannot open the file argument");
@@ -276,34 +274,28 @@ builtin_float(self, v)
 }
 
 static object *
-builtin_getattr(self, v)
+builtin_getattr(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	object *name;
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2 ||
-		(name = gettupleitem(v, 1), !is_stringobject(name))) {
-		err_setstr(TypeError,
-			"getattr() arguments must be (object, string)");
+	object *v;
+	char *name;
+	if (!getargs(args, "(Os)", &v, &name))
 		return NULL;
-	}
-	return getattr(gettupleitem(v, 0), getstringvalue(name));
+	return getattr(v, name);
 }
 
 static object *
-builtin_setattr(self, v)
+builtin_setattr(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	object *name;
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 3 ||
-		(name = gettupleitem(v, 1), !is_stringobject(name))) {
-		err_setstr(TypeError,
-		  "setattr() arguments must be (object, string, object)");
+	object *v;
+	char *name;
+	object *value;
+	if (!getargs(args, "(OsO)", &v, &name, &value))
 		return NULL;
-	}
-	if (setattr(gettupleitem(v, 0),
-		    getstringvalue(name), gettupleitem(v, 2)) != 0)
+	if (setattr(v, name, value) != 0)
 		return NULL;
 	INCREF(None);
 	return None;
@@ -502,7 +494,9 @@ builtin_oct(self, v)
 		if (is_intobject(v)) {
 			char buf[20];
 			long x = getintvalue(v);
-			if (x >= 0)
+			if (x == 0)
+				strcpy(buf, "0");
+			else if (x > 0)
 				sprintf(buf, "0%lo", x);
 			else
 				sprintf(buf, "-0%lo", -x);
@@ -517,35 +511,30 @@ builtin_oct(self, v)
 }
 
 static object *
-builtin_open(self, v)
+builtin_open(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	object *name, *mode;
-	if (v == NULL || !is_tupleobject(v) || gettuplesize(v) != 2 ||
-		!is_stringobject(name = gettupleitem(v, 0)) ||
-		!is_stringobject(mode = gettupleitem(v, 1))) {
-		err_setstr(TypeError, "open() requires 2 string arguments");
+	char *name, *mode;
+	if (!getargs(args, "(ss)", &name, &mode))
 		return NULL;
-	}
-	v = newfileobject(getstringvalue(name), getstringvalue(mode));
-	return v;
+	return newfileobject(name, mode);
 }
 
 static object *
-builtin_ord(self, v)
+builtin_ord(self, args)
 	object *self;
-	object *v;
+	object *args;
 {
-	if (v == NULL || !is_stringobject(v)) {
-		err_setstr(TypeError, "ord() must have string argument");
+	char *s;
+	int len;
+	if (!getargs(args, "s#", &s, &len))
 		return NULL;
-	}
-	if (getstringsize(v) != 1) {
+	if (len != 1) {
 		err_setstr(ValueError, "ord() arg must have length 1");
 		return NULL;
 	}
-	return newintobject((long)(getstringvalue(v)[0] & 0xff));
+	return newintobject((long)(s[0] & 0xff));
 }
 
 static object *
@@ -554,12 +543,8 @@ builtin_pow(self, args)
 	object *args;
 {
 	object *v, *w, *x;
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
-		err_setstr(TypeError, "pow() requires 2 arguments");
+	if (!getargs(args, "(OO)", &v, &w))
 		return NULL;
-	}
-	v = gettupleitem(args, 0);
-	w = gettupleitem(args, 1);
 	if (v->ob_type->tp_as_number == NULL ||
 				w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError, "pow() requires numeric arguments");
