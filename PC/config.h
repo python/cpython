@@ -359,6 +359,9 @@ typedef int pid_t;
 /* Define if you have lstat.  */
 /* #undef HAVE_LSTAT */
 
+/* Define if you have the mktime function.  */
+#define HAVE_MKTIME
+
 /* Define if you have nice.  */
 /* #undef HAVE_NICE */
 
