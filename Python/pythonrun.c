@@ -69,7 +69,6 @@ static PyObject *run_pyc_file Py_PROTO((FILE *fp, char *filename,
 				   PyObject *globals, PyObject *locals));
 static void err_input Py_PROTO((perrdetail *));
 static void initsigs Py_PROTO((void));
-static void finisigs Py_PROTO((void));
 static void call_sys_exitfunc Py_PROTO((void));
 static void call_ll_exitfuncs Py_PROTO((void));
 
@@ -78,6 +77,7 @@ int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c */
+int Py_UsingLocale = 0; /* needed by compile.c, modified by localemodule */
 
 static int initialized = 0;
 
@@ -134,8 +134,8 @@ Py_Initialize()
 	bimod = _PyBuiltin_Init_1();
 	if (bimod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize __builtin__");
-	interp->builtins = PyModule_GetDict(bimod);
-	Py_INCREF(interp->builtins);
+	Py_INCREF(bimod);
+	interp->builtins = bimod;
 
 	sysmod = _PySys_Init();
 	if (sysmod == NULL)
@@ -148,7 +148,7 @@ Py_Initialize()
 			     interp->modules);
 
 	/* phase 2 of builtins */
-	_PyBuiltin_Init_2(interp->builtins);
+	_PyBuiltin_Init_2(PyModule_GetDict(bimod));
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
 
 	_PyImport_Init();
@@ -186,21 +186,24 @@ Py_Finalize()
 		return;
 	initialized = 0;
 
-	/* We must call this before the current thread gets removed because
-	   it decrefs class instances, which in turn save and restore the
-	   current error state, which is a per thread data structure.
-	*/
-	_PyBuiltin_Fini_1();
-
+	/* Get current thread state and interpreter pointer */
 	tstate = PyThreadState_Get();
 	interp = tstate->interp;
 
+	/* Disable signal handling */
+	PyOS_FiniInterrupts();
+
+	/* Destroy PyExc_MemoryErrorInst */
+	_PyBuiltin_Fini_1();
+
+	/* Destroy all modules */
 	PyImport_Cleanup();
+
+	/* Delete current thread
 	PyInterpreterState_Clear(interp);
 	PyThreadState_Swap(NULL);
 	PyInterpreterState_Delete(interp);
 
-	finisigs();
 	_PyImport_Fini();
 
 	/* Now we decref the exception classes.  After this point nothing
@@ -284,8 +287,8 @@ Py_NewInterpreter()
 
 	bimod = _PyImport_FindExtension("__builtin__", "__builtin__");
 	if (bimod != NULL) {
-		interp->builtins = PyModule_GetDict(bimod);
-		Py_INCREF(interp->builtins);
+		Py_INCREF(bimod);
+		interp->builtins = bimod;
 	}
 	sysmod = _PyImport_FindExtension("sys", "sys");
 	if (bimod != NULL && sysmod != NULL) {
@@ -1100,12 +1103,6 @@ initsigs()
 #endif
 #endif /* HAVE_SIGNAL_H */
 	PyOS_InitInterrupts(); /* May imply initsignal() */
-}
-
-static void
-finisigs()
-{
-	PyOS_FiniInterrupts(); /* May imply finisignal() */
 }
 
 #ifdef Py_TRACE_REFS
