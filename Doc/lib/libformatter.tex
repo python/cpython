@@ -1,0 +1,304 @@
+\section{Standard Module \sectcode{formatter}}
+\stmodindex{formatter}
+
+\renewcommand{\indexsubitem}{(in module formatter)}
+
+This module supports two interface definitions, each with mulitple
+implementations.  The \emph{formatter} interface is used by the
+\code{HTMLParser} class of the \code{htmllib} module, and the
+\emph{writer} interface is required by the formatter interface.
+
+Formatter objects transform an abstract flow of formatting events into
+specific output events on writer objects.  Formatters manage several
+stack structures to allow various properties of a writer object to be
+changed and restored; writers need not be able to handle relative
+changes nor any sort of ``change back'' operation.  Specific writer
+properties which may be controlled via formatter objects are
+horizontal alignment, font, and left margin indentations.  A mechanism
+is provided which supports providing arbitrary, non-exclusive style
+settings to a writer as well.  Additional interfaces facilitate
+formatting events which are not reversible, such as paragraph
+separation.
+
+Writer objects encapsulate device interfaces.  Abstract devices, such
+as file formats, are supported as well as physical devices.  The
+provided implementations all work with abstract devices.  The
+interface makes available mechanisms for setting the properties which
+formatter objects manage and inserting data into the output.
+
+
+\subsection{The Formatter Interface}
+
+Interfaces to create formatters are dependent on the specific
+formatter class being instantiated.  The interfaces described below
+are the required interfaces which all formatters must support once
+initialized.
+
+One data element is defined at the module level:
+
+\begin{datadesc}{AS_IS}
+Value which can be used in the font specification passed to the
+\code{push_font()} method described below, or as the new value to any
+other \code{push_\var{property}()} method.  Pushing the \code{AS_IS}
+value allows the corresponding \code{pop_\var{property}()} method to
+be called without having to track whether the property was changed.
+\end{datadesc}
+
+The following attributes are defined for formatter instance objects:
+
+\begin{datadesc}{writer}
+The writer instance with which the formatter interacts.
+\end{datadesc}
+
+
+\begin{funcdesc}{end_paragraph}{blanklines}
+Close any open paragraphs and insert at least \code{blanklines}
+before the next paragraph.
+\end{funcdesc}
+
+\begin{funcdesc}{add_line_break}{}
+Add a hard line break if one does not already exist.  This does not
+break the logical paragraph.
+\end{funcdesc}
+
+\begin{funcdesc}{add_hor_rule}{*args\, **kw}
+Insert a horizontal rule in the output.  A hard break is inserted if
+there is data in the current paragraph, but the logical paragraph is
+not broken.  The arguments and keywords are passed on to the writer's
+\code{send_line_break()} method.
+\end{funcdesc}
+
+\begin{funcdesc}{add_flowing_data}{data}
+Provide data which should be formatted with collapsed whitespaces.
+Whitespace from preceeding and successive calls to
+\code{add_flowing_data()} is considered as well when the whitespace
+collapse is performed.  The data which is passed to this method is
+expected to be word-wrapped by the output device.  Note that any
+word-wrapping still must be performed by the writer object due to the
+need to rely on device and font information.
+\end{funcdesc}
+
+\begin{funcdesc}{add_literal_data}{data}
+Provide data which should be passed to the writer unchanged.
+Whitespace, including newline and tab characters, are considered legal
+in the value of \code{data}.  
+\end{funcdesc}
+
+\begin{funcdesc}{add_label_data}{format, counter}
+Insert a label which should be placed to the left of the current left
+margin.  This should be used for constructing bulleted or numbered
+lists.  If the \code{format} value is a string, it is interpreted as a
+format specification for \code{counter}, which should be an integer.
+The result of this formatting becomes the value of the label; if
+\code{format} is not a string it is used as the label value directly.
+The label value is passed as the only argument to the writer's
+\code{send_label_data()} method.  Interpretation of non-string label
+values is dependent on the associated writer.
+
+Format specifications are strings which, in combination with a counter
+value, are used to compute label values.  Each character in the format
+string is copied to the label value, with some characters recognized
+to indicate a transform on the counter value.  Specifically, the
+character ``\code{1}'' represents the counter value formatter as an
+arabic number, the characters ``\code{A}'' and ``\code{a}'' represent
+alphabetic representations of the counter value in upper and lower
+case, respectively, and ``\code{I}'' and ``\code{i}'' represent the
+counter value in Roman numerals, in upper and lower case.  Note that
+the alphabetic and roman transforms require that the counter value be
+greater than zero.
+\end{funcdesc}
+
+\begin{funcdesc}{flush_softspace}{}
+Send any pending whitespace buffered from a previous call to
+\code{add_flowing_data()} to the associated writer object.  This
+should be called before any direct manipulation of the writer object.
+\end{funcdesc}
+
+\begin{funcdesc}{push_alignment}{align}
+Push a new alignment setting onto the alignment stack.  This may be
+\code{AS_IS} if no change is desired.  If the alignment value is
+changed from the previous setting, the writer's \code{new_alignment()}
+method is called with the \code{align} value.
+\end{funcdesc}
+
+\begin{funcdesc}{pop_alignment}{}
+Restore the previous alignment.
+\end{funcdesc}
+
+\begin{funcdesc}{push_font}{(size, italic, bold, teletype)}
+Change some or all font properties of the writer object.  Properties
+which are not set to \code{AS_IS} are set to the values passed in
+while others are maintained at their current settings.  The writer's
+\code{new_font()} method is called with the fully resolved font
+specification.
+\end{funcdesc}
+
+\begin{funcdesc}{pop_font}{}
+Restore the previous font.
+\end{funcdesc}
+
+\begin{funcdesc}{push_margin}{margin}
+Increase the number of left margin indentations by one, associating
+the logical tag \code{margin} with the new indentation.  The initial
+margin level is \code{0}.  Changed values of the logical tag must be
+true values; false values other than \code{AS_IS} are not sufficient
+to change the margin.
+\end{funcdesc}
+
+\begin{funcdesc}{pop_margin}{}
+Restore the previous margin.
+\end{funcdesc}
+
+\begin{funcdesc}{push_style}{*styles}
+Push any number of arbitrary style specifications.  All styles are
+pushed onto the styles stack in order.  A tuple representing the
+entire stack, including \code{AS_IS} values, is passed to the writer's
+\code{new_styles()} method.
+\end{funcdesc}
+
+\begin{funcdesc}{pop_style}{\optional{n\code{ = 1}}}
+Pop the last \code{n} style specifications passed to
+\code{push_style()}.  A tuple representing the revised stack,
+including \code{AS_IS} values, is passed to the writer's
+\code{new_styles()} method.
+\end{funcdesc}
+
+\begin{funcdesc}{set_spacing}{spacing}
+Set the spacing style for the writer.
+\end{funcdesc}
+
+\begin{funcdesc}{assert_line_data}{\optional{flag\code{ = 1}}}
+Inform the formatter that data has been added to the current paragraph
+out-of-band.  This should be used when the writer has been manipulated
+directly.  The optional \code{flag} argument can be set to false if
+the writer manipulations produced a hard line break at the end of the
+output.
+\end{funcdesc}
+
+
+\subsection{Formatter Implementations}
+
+\begin{funcdesc}{NullFormatter}{\optional{writer\code{ = None}}}
+A formatter which does nothing.  If \code{writer} is omitted, a
+\code{NullWriter} instance is created.  No methods of the writer are
+called by \code{NullWriter} instances.
+\end{funcdesc}
+
+\begin{funcdesc}{AbstractFormatter}{writer}
+The standard formatter.  This implementation has demonstrated wide
+applicability to many writers, and may be used directly in most
+circumstances.
+\end{funcdesc}
+
+
+
+\subsection{The Writer Interface}
+
+Interfaces to create writers are dependent on the specific writer
+class being instantiated.  The interfaces described below are the
+required interfaces which all writers must support once initialized.
+Note that while most applications can use the \code{AbstractFormatter}
+class as a formatter, the writer must typically be provided by the
+application.
+
+\begin{funcdesc}{new_alignment}{align}
+Set the alignment style.  The \code{align} value can be any object,
+but by convention is a string or \code{None}, where \code{None}
+indicates that the writer's ``preferred'' alignment should be used.
+Conventional \code{align} values are \code{'left'}, \code{'center'},
+\code{'right'}, and \code{'justify'}.
+\end{funcdesc}
+
+\begin{funcdesc}{new_font}{font}
+Set the font style.  The value of \code{font} will be \code{None},
+indicating that the device's default font should be used, or a tuple
+of the form (\var{size}, \var{italic}, \var{bold}, \var{teletype}).
+Size will be a string indicating the size of font that should be used;
+specific strings and their interpretation must be defined by the
+application.  The \var{italic}, \var{bold}, and \var{teletype} values
+are boolean indicators specifying which of those font attributes
+should be used.
+\end{funcdesc}
+
+\begin{funcdesc}{new_margin}{margin, level}
+Set the margin level to the integer \code{level} and the logical tag
+to \code{margin}.  Interpretation of the logical tag is at the
+writer's discretion; the only restriction on the value of the logical
+tag is that it not be a false value for non-zero values of
+\code{level}.
+\end{funcdesc}
+
+\begin{funcdesc}{new_spacing}{spacing}
+Set the spacing style to \code{spacing}.
+\end{funcdesc}
+
+\begin{funcdesc}{new_styles}{styles}
+Set additional styles.  The \code{styles} value is a tuple of
+arbitrary values; the value \code{AS_IS} should be ignored.  The
+\code{styles} tuple may be interpreted either as a set or as a stack
+depending on the requirements of the application and writer
+implementation.
+\end{funcdesc}
+
+\begin{funcdesc}{send_line_break}{}
+Break the current line.
+\end{funcdesc}
+
+\begin{funcdesc}{send_paragraph}{blankline}
+Produce a paragraph separation of at least \code{blankline} blank
+lines, or the equivelent.  The \code{blankline} value will be an
+integer.
+\end{funcdesc}
+
+\begin{funcdesc}{send_hor_rule}{*args\, **kw}
+Display a horizontal rule on the output device.  The arguments to this
+method are entirely application- and writer-specific, and should be
+interpreted with care.  The method implementation may assume that a
+line break has already been issued via \code{send_line_break()}.
+\end{funcdesc}
+
+\begin{funcdesc}{send_flowing_data}{data}
+Output character data which may be word-wrapped and re-flowed as
+needed.  Within any sequence of calls to this method, the writer may
+assume that spans of multiple whitespace characters have been
+collapsed to single space characters.
+\end{funcdesc}
+
+\begin{funcdesc}{send_literal_data}{data}
+Output character data which has already been formatted
+for display.  Generally, this should be interpreted to mean that line
+breaks indicated by newline characters should be preserved and no new
+line breaks should be introduced.  The data may contain embedded
+newline and tab characters, unlike data provided to the
+\code{send_formatted_data()} interface.
+\end{funcdesc}
+
+\begin{funcdesc}{send_label_data}{data}
+Set \code{data} to the left of the current left margin, if possible.
+The value of \code{data} is not restricted; treatment of non-string
+values is entirely application- and writer-dependent.  This method
+will only be called at the beginning of a line.
+\end{funcdesc}
+
+
+\subsection{Writer Implementations}
+
+\begin{funcdesc}{NullWriter}{}
+A writer which only provides the interface definition; no actions are
+taken on any methods.  This should be the base class for all writers
+which do not need to inherit any implementation methods.
+\end{funcdesc}
+
+\begin{funcdesc}{AbstractWriter}{}
+A writer which can be used in debugging formatters, but not much
+else.  Each method simply accounces itself by printing its name and
+arguments on standard output.
+\end{funcdesc}
+
+\begin{funcdesc}{DumbWriter}{\optional{file\code{ = None}\optional{\, maxcol\code{ = 72}}}}
+Simple writer class which writes output on the file object passed in
+as \code{file} or, if \code{file} is omitted, on standard output.  The
+output is simply word-wrapped to the number of columns specified by
+\code{maxcol}.  This class is suitable for reflowing a sequence of
+paragraphs.
+\end{funcdesc}
