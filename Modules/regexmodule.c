@@ -40,8 +40,7 @@ typedef struct {
 /* Regex object methods */
 
 static void
-reg_dealloc(re)
-	regexobject *re;
+reg_dealloc(regexobject *re)
 {
 	if (re->re_patbuf.buffer)
 		PyMem_DEL(re->re_patbuf.buffer);
@@ -54,8 +53,7 @@ reg_dealloc(re)
 }
 
 static PyObject *
-makeresult(regs)
-	struct re_registers *regs;
+makeresult(struct re_registers *regs)
 {
 	PyObject *v;
 	int i;
@@ -89,9 +87,7 @@ makeresult(regs)
 }
 
 static PyObject *
-regobj_match(re, args)
-	regexobject *re;
-	PyObject *args;
+regobj_match(regexobject *re, PyObject *args)
 {
 	PyObject *argstring;
 	char *buffer;
@@ -127,9 +123,7 @@ regobj_match(re, args)
 }
 
 static PyObject *
-regobj_search(re, args)
-	regexobject *re;
-	PyObject *args;
+regobj_search(regexobject *re, PyObject *args)
 {
 	PyObject *argstring;
 	char *buffer;
@@ -174,9 +168,7 @@ regobj_search(re, args)
    an integer index [0 .. 99]
  */
 static PyObject*
-group_from_index(re, index)
-	regexobject *re;
-	PyObject *index;
+group_from_index(regexobject *re, PyObject *index)
 {
 	int i, a, b;
 	char *v;
@@ -218,9 +210,7 @@ group_from_index(re, index)
 
 
 static PyObject *
-regobj_group(re, args)
-	regexobject *re;
-	PyObject *args;
+regobj_group(regexobject *re, PyObject *args)
 {
 	int n = PyTuple_Size(args);
 	int i;
@@ -281,9 +271,7 @@ static char* members[] = {
 
 
 static PyObject *
-regobj_getattr(re, name)
-	regexobject *re;
-	char *name;
+regobj_getattr(regexobject *re, char *name)
 {
 	if (strcmp(name, "regs") == 0) {
 		if (re->re_lastok == NULL) {
@@ -380,11 +368,7 @@ static PyTypeObject Regextype = {
    groupindex: transferred
 */
 static PyObject *
-newregexobject(pattern, translate, givenpat, groupindex)
-	PyObject *pattern;
-	PyObject *translate;
-	PyObject *givenpat;
-	PyObject *groupindex;
+newregexobject(PyObject *pattern, PyObject *translate, PyObject *givenpat, PyObject *groupindex)
 {
 	regexobject *re;
 	char *pat;
@@ -432,9 +416,7 @@ newregexobject(pattern, translate, givenpat, groupindex)
 }
 
 static PyObject *
-regex_compile(self, args)
-	PyObject *self;
-	PyObject *args;
+regex_compile(PyObject *self, PyObject *args)
 {
 	PyObject *pat = NULL;
 	PyObject *tran = NULL;
@@ -445,9 +427,7 @@ regex_compile(self, args)
 }
 
 static PyObject *
-symcomp(pattern, gdict)
-	PyObject *pattern;
-	PyObject *gdict;
+symcomp(PyObject *pattern, PyObject *gdict)
 {
 	char *opat, *oend, *o, *n, *g, *v;
 	int group_count = 0;
@@ -554,9 +534,7 @@ symcomp(pattern, gdict)
 }
 
 static PyObject *
-regex_symcomp(self, args)
-	PyObject *self;
-	PyObject *args;
+regex_symcomp(PyObject *self, PyObject *args)
 {
 	PyObject *pattern;
 	PyObject *tran = NULL;
@@ -583,8 +561,7 @@ static PyObject *cache_pat;
 static PyObject *cache_prog;
 
 static int
-update_cache(pat)
-	PyObject *pat;
+update_cache(PyObject *pat)
 {
 	PyObject *tuple = Py_BuildValue("(O)", pat);
 	int status = 0;
@@ -610,9 +587,7 @@ update_cache(pat)
 }
 
 static PyObject *
-regex_match(self, args)
-	PyObject *self;
-	PyObject *args;
+regex_match(PyObject *self, PyObject *args)
 {
 	PyObject *pat, *string;
 	PyObject *tuple, *v;
@@ -630,9 +605,7 @@ regex_match(self, args)
 }
 
 static PyObject *
-regex_search(self, args)
-	PyObject *self;
-	PyObject *args;
+regex_search(PyObject *self, PyObject *args)
 {
 	PyObject *pat, *string;
 	PyObject *tuple, *v;
@@ -650,9 +623,7 @@ regex_search(self, args)
 }
 
 static PyObject *
-regex_set_syntax(self, args)
-	PyObject *self;
-	PyObject *args;
+regex_set_syntax(PyObject *self, PyObject *args)
 {
 	int syntax;
 	if (!PyArg_Parse(args, "i", &syntax))
@@ -667,9 +638,7 @@ regex_set_syntax(self, args)
 }
 
 static PyObject *
-regex_get_syntax(self, args)
-	PyObject *self;
-	PyObject *args;
+regex_get_syntax(PyObject *self, PyObject *args)
 {
 	if (!PyArg_Parse(args, ""))
 		return NULL;
