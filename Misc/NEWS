@@ -86,7 +86,7 @@ Build
 C API
 -----
 
-- Added PyObject_GenericGetIter() to fill the tp_iter slot for the
+- Added PyObject_SelfIter() to fill the tp_iter slot for the
   typical case where the method returns its self argument.
 
 - The extended type structure used for heap types (new-style
