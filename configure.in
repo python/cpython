@@ -1841,7 +1841,7 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
  fchdir flock fork fsync fdatasync fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getpwent getwd \
- hstrerror inet_pton kill killpg lchown lstat mkfifo mknod mktime \
+ hstrerror inet_aton inet_pton kill killpg lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
  putenv readlink \
  select setegid seteuid setgid \

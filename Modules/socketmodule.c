@@ -2713,7 +2713,7 @@ socket_inet_aton(PyObject *self, PyObject *args)
 
 	/* Have to use inet_addr() instead */
 	char *ip_addr;
-#if 1
+#if HAVE_INET_ATON
 	struct in_addr buf;
 
 	if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr)) {
