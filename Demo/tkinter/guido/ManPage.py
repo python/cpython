@@ -24,9 +24,9 @@ class EditableManPage(ScrolledText):
 		ScrolledText.__init__(self, master, cnf)
 
 		# Define tags for formatting styles
-		self.tag_config('X', {'font': BOLDFONT})
-		self.tag_config('!', {'font': ITALICFONT})
-		self.tag_config('_', {'underline': 1})
+		self.tag_config('X', {'underline': 1})
+		self.tag_config('!', {'font': BOLDFONT})
+		self.tag_config('_', {'font': ITALICFONT})
 
 		# Set state to idle
 		self.fp = None
@@ -133,6 +133,10 @@ class EditableManPage(ScrolledText):
 			return
 		savestate = self['state']
 		self['state'] = 'normal'
+		if TkVersion >= 4.0:
+			self.mark_set('insert', 'end-1c')
+		else:
+			self.mark_set('insert', 'end')
 		if self.empty:
 			# One or more previous lines were empty
 			# -- insert one blank line in the text
@@ -158,13 +162,14 @@ class EditableManPage(ScrolledText):
 
 	# Insert a string at the end, with at most one property (tag)
 	def _insert_prop(self, str, prop = ' '):
-		here = self.index('end')
-		self.insert('end', str)
-		tags = self.tag_names(here)
-		for tag in tags:
-			self.tag_remove(tag, here, 'end')
+		here = self.index(AtInsert())
+		self.insert(AtInsert(), str)
+		if TkVersion <= 4.0:
+			tags = self.tag_names(here)
+			for tag in tags:
+				self.tag_remove(tag, here, AtInsert())
 		if prop != ' ':
-			self.tag_add(prop, here, 'end')
+			self.tag_add(prop, here, AtInsert())
 
 # Readonly Man Page class -- disables editing, otherwise the same
 class ReadonlyManPage(EditableManPage):
