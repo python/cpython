@@ -48,7 +48,7 @@ def checkin(x, copts, fn):
 	f = open(fn)
 	data = f.read()
 	f.close()
-	new = not x.isfile(fn)
+	new = not x.isvalid(fn)
 	if not new and same(x, copts, fn, data):
 		print "%s: unchanged since last checkin" % fn
 		return
@@ -64,6 +64,12 @@ def checkout(x, copts, fn):
 	f.write(data)
 	f.close()
 
+def lock(x, copts, fn):
+	x.lock(fn)
+
+def unlock(x, copts, fn):
+	x.unlock(fn)
+
 def info(x, copts, fn):
 	dict = x.info(fn)
 	keys = dict.keys()
@@ -77,7 +83,7 @@ def head(x, copts, fn):
 	print fn, head
 
 def list(x, copts, fn):
-	if x.isfile(fn):
+	if x.isvalid(fn):
 		print fn
 
 def log(x, copts, fn):
@@ -148,6 +154,8 @@ commands = {
 	'info': ('', info),
 	'head': ('', head),
 	'list': ('', list),
+	'lock': ('', lock),
+	'unlock': ('', unlock),
 	'log': ('bhLRtd:l:r:s:w:V:', log),
 	'diff': ('c', diff),
 	}
