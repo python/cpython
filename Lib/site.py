@@ -145,11 +145,43 @@ del exit
 class _Printer:
     MAXLINES = 23
 
-    def __init__(self, s):
-        self.__lines = s.split('\n')
+    def __init__(self, name, data, files=(), dirs=()):
+        self.__name = name
+        self.__data = data
+        self.__files = files
+        self.__dirs = dirs
+        self.__lines = None
+
+    def __setup(self):
+        if self.__lines:
+            return
+        data = None
+        for dir in self.__dirs:
+            for file in self.__files:
+                file = os.path.join(dir, file)
+                try:
+                    fp = open(file)
+                    data = fp.read()
+                    fp.close()
+                    break
+                except IOError:
+                    pass
+            if data:
+                break
+        if not data:
+            data = self.__data
+        self.__lines = data.split('\n')
         self.__linecnt = len(self.__lines)
 
     def __repr__(self):
+        self.__setup()
+        if len(self.__lines) <= self.MAXLINES:
+            return "\n".join(self.__lines)
+        else:
+            return "Type %s() to see the full %s text" % ((self.__name,)*2)
+
+    def __call__(self):
+        self.__setup()
         prompt = 'Hit Return for more, or q (and Return) to quit: '
         lineno = 0
         while 1:
@@ -167,29 +199,15 @@ class _Printer:
                         key = None
                 if key == 'q':
                     break
-        return ''
 
-__builtin__.copyright = _Printer(sys.copyright)
-__builtin__.credits = _Printer(
-    '''Python development is led by BeOpen PythonLabs (www.pythonlabs.com).''')
-
-def make_license(filename):
-    try:
-        return _Printer(open(filename).read())
-    except IOError:
-        return None
-
+__builtin__.copyright = _Printer("copyright", sys.copyright)
+__builtin__.credits = _Printer("credits",
+    "Python development is led by BeOpen PythonLabs (www.pythonlabs.com).")
 here = os.path.dirname(os.__file__)
-for dir in here, os.path.join(here, os.pardir), os.curdir:
-    for file in "LICENSE.txt", "LICENSE":
-        lic = make_license(os.path.join(dir, file))
-        if lic:
-            break
-    if lic:
-        __builtin__.license = lic
-        break
-else:
-    __builtin__.license = _Printer('See http://hdl.handle.net/1895.22/1012')
+__builtin__.license = _Printer(
+    "license", "See http://www.pythonlabs.com/products/python2.0/license.html",
+    ["LICENSE.txt", "LICENSE"],
+    [here, os.path.join(here, os.pardir), os.curdir])
 
 
 # Set the string encoding used by the Unicode implementation.  The
