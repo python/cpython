@@ -167,7 +167,7 @@ def buildcopy(top, dummy, list):
 	for src, dst in list:
 		src = os.path.join(top, src)
 		dst = os.path.join(top, dst)
-		macostools.copy(src, dst)
+		macostools.copy(src, dst, forcetype="APPL")
 		
 def handle_dialog(filename):
 	"""Handle selection dialog, return list of selected items"""
