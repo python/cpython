@@ -36,7 +36,6 @@ python ftplib.py -d localhost -l -p -l
 
 import os
 import sys
-import string
 
 # Import SOCKS module if it exists, else standard socket module socket
 try:
@@ -266,7 +265,7 @@ class FTP:
         if af == 0:
             raise error_proto, 'unsupported address family'
         fields = ['', `af`, host, `port`, '']
-        cmd = 'EPRT ' + string.joinfields(fields, '|')
+        cmd = 'EPRT ' + '|'.join(fields)
         return self.voidcmd(cmd)
 
     def makeport(self):
@@ -585,18 +584,18 @@ def parse229(resp, peer):
 
     if resp[:3] <> '229':
         raise error_reply, resp
-    left = string.find(resp, '(')
+    left = resp.find('(')
     if left < 0: raise error_proto, resp
-    right = string.find(resp, ')', left + 1)
+    right = resp.find(')', left + 1)
     if right < 0:
         raise error_proto, resp # should contain '(|||port|)'
     if resp[left + 1] <> resp[right - 1]:
         raise error_proto, resp
-    parts = string.split(resp[left + 1:right], resp[left+1])
+    parts = resp[left+1].split(resp[left + 1:right])
     if len(parts) <> 5:
         raise error_proto, resp
     host = peer[0]
-    port = string.atoi(parts[3])
+    port = int(parts[3])
     return host, port
 
 

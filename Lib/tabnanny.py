@@ -261,12 +261,11 @@ class Whitespace:
         return a
 
 def format_witnesses(w):
-    import string
     firsts = map(lambda tup: str(tup[0]), w)
     prefix = "at tab size"
     if len(w) > 1:
         prefix = prefix + "s"
-    return prefix + " " + string.join(firsts, ', ')
+    return prefix + " " + ', '.join(firsts)
 
 def process_tokens(tokens):
     INDENT = tokenize.INDENT
