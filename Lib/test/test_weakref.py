@@ -391,6 +391,17 @@ class MappingTestCase(TestBase):
             values.remove(v)
         self.assert_(len(values) == 0, "itervalues() did not touch all values")
 
+    def test_make_weak_keyed_dict_from_dict(self):
+        o = Object(3)
+        dict = weakref.WeakKeyDictionary({o:364})
+        self.assert_(dict[o] == 364)
+
+    def test_make_weak_keyed_dict_from_weak_keyed_dict(self):
+        o = Object(3)
+        dict = weakref.WeakKeyDictionary({o:364})
+        dict2 = weakref.WeakKeyDictionary(dict)
+        self.assert_(dict[o] == 364)
+
     def make_weak_keyed_dict(self):
         dict = weakref.WeakKeyDictionary()
         objects = map(Object, range(self.COUNT))
