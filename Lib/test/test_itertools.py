@@ -607,6 +607,12 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, list, tee(N(s))[0])
             self.assertRaises(ZeroDivisionError, list, tee(E(s))[0])
 
+class LengthTransparency(unittest.TestCase):
+
+    def test_repeat(self):
+        self.assertEqual(len(repeat(None, 50)), 50)
+        self.assertRaises(TypeError, len, repeat(None))
+
 class RegressionTests(unittest.TestCase):
 
     def test_sf_793826(self):
@@ -826,7 +832,7 @@ __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
     test_classes = (TestBasicOps, TestVariousIteratorArgs, TestGC,
-                    RegressionTests)
+                    RegressionTests, LengthTransparency)
     test_support.run_unittest(*test_classes)
 
     # verify reference counting
