@@ -37,7 +37,7 @@ getmoduledict(m)
 	object *m;
 {
 	if (!is_moduleobject(m)) {
-		errno = EBADF;
+		err_badarg();
 		return NULL;
 	}
 	return ((moduleobject *)m) -> md_dict;
@@ -48,10 +48,14 @@ setmoduledict(m, v)
 	object *m;
 	object *v;
 {
-	if (!is_moduleobject(m))
-		return errno = EBADF;
-	if (!is_dictobject(v))
-		return errno = EINVAL;
+	if (!is_moduleobject(m)) {
+		err_badarg();
+		return -1;
+	}
+	if (!is_dictobject(v)) {
+		err_badarg();
+		return -1;
+	}
 	DECREF(((moduleobject *)m) -> md_dict);
 	INCREF(v);
 	((moduleobject *)m) -> md_dict = v;
@@ -94,7 +98,12 @@ modulegetattr(m, name)
 	moduleobject *m;
 	char *name;
 {
-	object *res = dictlookup(m->md_dict, name);
+	object *res;
+	if (strcmp(name, "__dict") == 0) {
+		INCREF(m->md_dict);
+		return m->md_dict;
+	}
+	res = dictlookup(m->md_dict, name);
 	if (res == NULL)
 		err_setstr(NameError, name);
 	else
@@ -108,6 +117,12 @@ modulesetattr(m, name, v)
 	char *name;
 	object *v;
 {
+	if (strcmp(name, "__dict") == 0) {
+		/* Can't allow assignment to __dict, it would screw up
+		   module's functions which still use the old dictionary. */
+		err_setstr(NameError, "__dict is a reserved member name");
+		return NULL;
+	}
 	if (v == NULL)
 		return dictremove(m->md_dict, name);
 	else
