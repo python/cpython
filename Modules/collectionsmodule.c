@@ -376,14 +376,14 @@ deque_remove(dequeobject *deque, PyObject *value)
 	for (i=0 ; i<n ; i++) {
 		PyObject *item = deque->leftblock->data[deque->leftindex];
 		int cmp = PyObject_RichCompareBool(item, value, Py_EQ);
+
+		if (deque->len != n) {
+			PyErr_SetString(PyExc_IndexError, 
+				"deque mutated during remove().");
+			return NULL;
+		}
 		if (cmp > 0) {
-			PyObject *tgt;
-			if (deque->len != n) {
-				PyErr_SetString(PyExc_IndexError, 
-					"deque mutated during remove().");
-				return NULL;
-			}
-			tgt = deque_popleft(deque, NULL);
+			PyObject *tgt = deque_popleft(deque, NULL);
 			assert (tgt != NULL);
 			Py_DECREF(tgt);
 			if (_deque_rotate(deque, i) == -1)
