@@ -83,6 +83,9 @@ Extension modules
 Library
 -------
 
+- The cgitb module has been extended to support plain text display (SF patch
+  569574).
+
 - A brand new version of IDLE (from the IDLEfork project at
   SourceForge) is now included as Lib/idlelib.  The old Tools/idle is
   no more.
