@@ -327,12 +327,13 @@ directories (where appropriate on each platform).  An example:
 \end{datadesc}
 
 \begin{datadesc}{version_info}
-A tuple containing the four components of the version number:
-\var{major}, \var{minor}, \var{micro} as integers, and
-\var{releaselevel} as a string.  The \var{releaselevel} value will be
-an empty string for a final release.  The \code{version_info} value
-corresponding to the \code{version} string shown above is
-\code{(1, 5, 2, '')}.
+A tuple containing the five components of the version number:
+\var{major}, \var{minor}, \var{micro}, \var{releaselevel}, and
+\var{serial}.  All values except \var{releaselevel} are integers; the
+release level is \code{'alpha'}, \code{'beta'},
+\code{'candidate'}, or \code{'final'}.  The \code{version_info} value
+corresponding to the Python version 1.6 is
+\code{(1, 6, 0, 'final', 0)}.
 \versionadded{1.6}
 \end{datadesc}
 
