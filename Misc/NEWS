@@ -426,6 +426,9 @@ Extension modules
 Library
 -------
 
+- The distutils created windows installers now can run a
+  postinstallation script.
+
 - doctest.testmod can now be called without argument, which means to
   test the current module.
 
