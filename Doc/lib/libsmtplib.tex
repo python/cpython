@@ -138,6 +138,7 @@ consult the module code.
 
 \begin{verbatim}
 import rfc822, string, sys
+import smtplib
 
 def prompt(prompt):
     sys.stdout.write(prompt + ": ")
@@ -154,7 +155,7 @@ while 1:
     msg = msg + line
 print "Message length is " + `len(msg)`
 
-server = SMTP('localhost')
+server = smtplib.SMTP('localhost')
 server.set_debuglevel(1)
 server.sendmail(fromaddr, toaddrs, msg)
 server.quit()
