@@ -70,6 +70,10 @@
   This would typically be done in your init function.
 
   $Log$
+  Revision 2.4  1997/04/09 18:04:08  guido
+  Got rid of the static decl of PyCObject_Import, which was a 1.4
+  compatibility hack.
+
   Revision 2.3  1997/04/09 17:34:28  guido
   Changed the way the C API was exported.  Jim Fulton.
 
@@ -116,25 +120,6 @@ static struct PycStringIO_CAPI {
   ((O)->ob_type==PycStringIO->InputType)
 #define PycStringIO_OutputCheck(O) \
   ((O)->ob_type==PycStringIO->OutputType)
-
-static void *
-PyCObject_Import(char *module_name, char *name)
-{
-  PyObject *m, *c;
-  void *r=NULL;
-  
-  if(m=PyImport_ImportModule(module_name))
-    {
-      if(c=PyObject_GetAttrString(m,name))
-	{
-	  r=PyCObject_AsVoidPtr(c);
-	  Py_DECREF(c);
-	}
-      Py_DECREF(m);
-    }
-
-  return r;
-}
 
 #define PycString_IMPORT \
   PycStringIO=PyCObject_Import("cStringIO", "cStringIO_CAPI")
