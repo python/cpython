@@ -5,10 +5,12 @@
 
 
 /*
- * MINSIZE is the minimum size of a dictionary.
+ * MINSIZE is the minimum size of a dictionary.  This many slots are
+ * allocated directly in the dict object (in the ma_smalltable member).
+ * This must be a power of 2, and the first entry in the polys[] vector must
+ * match.
  */
-
-#define MINSIZE 4
+#define MINSIZE 8
 
 /* define this out if you don't want conversion statistics on exit */
 #undef SHOW_CONVERSION_COUNTS
@@ -16,10 +18,24 @@
 /*
 Table of irreducible polynomials to efficiently cycle through
 GF(2^n)-{0}, 2<=n<=30.  A table size is always a power of 2.
+For a table size of 2**i, the polys entry is 2**i + j for some j in 1 thru
+2**i-1 inclusive.  The polys[] entries here happen to add in the smallest j
+values "that work".  Work means this:  given any integer k in 1 thru 2**i-1
+inclusive, a poly works if & only if repeating this code:
+	print k
+	k <<= 1
+	if k >= 2**i:
+		k ^= poly
+prints every integer in 1 thru 2**i-1 inclusive exactly once before printing 
+k a second time.  Theory can be used to find such polys efficiently, but the 
+operational defn. of "works" is sufficient to find them in reasonable time 
+via brute force program (hint:  any poly that has an even number of 1 bits 
+cannot work; ditto any poly with low bit 0; exploit those).
 */
+
 static long polys[] = {
-	4 + 3,
-	8 + 3,
+/*	4 + 3, */	/* first active entry if MINSIZE == 4 */
+	8 + 3,		/* first active entry if MINSIZE == 8 */
 	16 + 3,
 	32 + 5,
 	64 + 3,
@@ -46,7 +62,8 @@ static long polys[] = {
 	134217728 + 39,
 	268435456 + 9,
 	536870912 + 5,
-	1073741824 + 83,
+	1073741824 + 83
+	/* 2147483648 + 9 -- if we ever boost this to unsigned long */
 };
 
 /* Object used as dummy key to fill deleted entries */
@@ -100,8 +117,14 @@ struct dictobject {
 	int ma_used;  /* # Active */
 	int ma_size;  /* total # slots in ma_table */
 	int ma_poly;  /* appopriate entry from polys vector */
+	/* ma_table points to ma_smalltable for small tables, else to
+	 * additional malloc'ed memory.  ma_table is never NULL!  This rule
+	 * saves repeated runtime null-tests in the workhorse getitem and
+	 * setitem calls.
+	 */
 	dictentry *ma_table;
 	dictentry *(*ma_lookup)(dictobject *mp, PyObject *key, long hash);
+	dictentry ma_smalltable[MINSIZE];
 };
 
 /* forward declarations */
@@ -121,6 +144,16 @@ show_counts(void)
 }
 #endif
 
+/* Set dictobject* mp to empty but w/ MINSIZE slots, using ma_smalltable. */
+#define empty_to_minsize(mp) do { 					\
+	memset((mp)->ma_smalltable, 0, sizeof((mp)->ma_smalltable));	\
+	(mp)->ma_table = (mp)->ma_smalltable;				\
+	(mp)->ma_size = MINSIZE;					\
+	(mp)->ma_used = (mp)->ma_fill = 0;				\
+	(mp)->ma_poly = polys[0];					\
+	assert(MINSIZE < (mp)->ma_poly && (mp)->ma_poly < MINSIZE*2);	\
+    } while(0)
+
 PyObject *
 PyDict_New(void)
 {
@@ -136,11 +169,7 @@ PyDict_New(void)
 	mp = PyObject_NEW(dictobject, &PyDict_Type);
 	if (mp == NULL)
 		return NULL;
-	mp->ma_size = 0;
-	mp->ma_poly = 0;
-	mp->ma_table = NULL;
-	mp->ma_fill = 0;
-	mp->ma_used = 0;
+	empty_to_minsize(mp);
 	mp->ma_lookup = lookdict_string;
 #ifdef SHOW_CONVERSION_COUNTS
 	++created;
@@ -320,7 +349,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 		        && ep->me_key != dummy
 			&& compare(ep->me_key, key) == 0))
 			return ep;
-		else if (ep->me_key == dummy && freeslot == NULL)
+		if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
 		/* Cycle through GF(2^n)-{0} */
 		incr <<= 1;
@@ -374,43 +403,60 @@ dictresize(dictobject *mp, int minused)
 	register int i;
 
 	assert(minused >= 0);
-	for (i = 0, newsize = MINSIZE; ; i++, newsize <<= 1) {
-		if (i >= sizeof(polys)/sizeof(polys[0])) {
-			/* Ran out of polynomials */
-			PyErr_NoMemory();
-			return -1;
-		}
+	assert(oldtable != NULL);
+	newpoly = 0;
+	newsize = MINSIZE;
+	for (i = 0; i < sizeof(polys)/sizeof(polys[0]); ++i) {
 		if (newsize > minused) {
 			newpoly = polys[i];
 			break;
 		}
+		newsize <<= 1;
+		if (newsize < 0)   /* overflow */
+			break;
 	}
-	newtable = PyMem_NEW(dictentry, newsize);
-	if (newtable == NULL) {
+	if (newpoly == 0) {
+		/* Ran out of polynomials or newsize overflowed. */
 		PyErr_NoMemory();
 		return -1;
 	}
-	memset(newtable, '\0', sizeof(dictentry) * newsize);
-	mp->ma_size = newsize;
-	mp->ma_poly = newpoly;
+	if (newsize == MINSIZE) {
+		newtable = mp->ma_smalltable;
+		if (newtable == oldtable)
+			return 0;
+	}
+	else {
+		newtable = PyMem_NEW(dictentry, newsize);
+		if (newtable == NULL) {
+			PyErr_NoMemory();
+			return -1;
+		}
+	}
+	assert(newtable != oldtable);
 	mp->ma_table = newtable;
-	mp->ma_fill = 0;
+	mp->ma_size = newsize;
+	memset(newtable, 0, sizeof(dictentry) * newsize);
+	mp->ma_poly = newpoly;
 	mp->ma_used = 0;
+	i = mp->ma_fill;
+	mp->ma_fill = 0;
 
 	/* Copy the data over; this is refcount-neutral for active entries;
 	   dummy entries aren't copied over, of course */
-	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
-		if (ep->me_value != NULL)	/* active entry */
+	for (ep = oldtable; i > 0; ep++) {
+		if (ep->me_value != NULL) {	/* active entry */
+			--i;
 			insertdict(mp, ep->me_key, ep->me_hash, ep->me_value);
-
+		}
 		else if (ep->me_key != NULL) {	/* dummy entry */
+			--i;
 			assert(ep->me_key == dummy);
 			Py_DECREF(ep->me_key);
 		}
 		/* else key == value == NULL:  nothing to do */
 	}
 
-	if (oldtable != NULL)
+	if (oldtable != mp->ma_smalltable)
 		PyMem_DEL(oldtable);
 	return 0;
 }
@@ -423,8 +469,6 @@ PyDict_GetItem(PyObject *op, PyObject *key)
 	if (!PyDict_Check(op)) {
 		return NULL;
 	}
-	if (mp->ma_table == NULL)
-		return NULL;
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
@@ -479,16 +523,7 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 		if (hash == -1)
 			return -1;
 	}
-	if (mp->ma_fill >= mp->ma_size) {
-		/* No room for a new key.
-		 * This only happens when the dict is empty.
-		 * Let dictresize() create a minimal dict.
-		 */
-		assert(mp->ma_used == 0);
-		if (dictresize(mp, 0) != 0)
-			return -1;
-		assert(mp->ma_fill < mp->ma_size);
-	}
+	assert(mp->ma_fill < mp->ma_size);
 	n_used = mp->ma_used;
 	Py_INCREF(value);
 	Py_INCREF(key);
@@ -528,11 +563,8 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 			return -1;
 	}
 	mp = (dictobject *)op;
-	if (((dictobject *)op)->ma_table == NULL)
-		goto empty;
 	ep = (mp->ma_lookup)(mp, key, hash);
 	if (ep->me_value == NULL) {
-	empty:
 		PyErr_SetObject(PyExc_KeyError, key);
 		return -1;
 	}
@@ -550,23 +582,70 @@ PyDict_DelItem(PyObject *op, PyObject *key)
 void
 PyDict_Clear(PyObject *op)
 {
-	int i, n;
-	register dictentry *table;
 	dictobject *mp;
+	dictentry *ep, *table;
+	int table_is_malloced;
+	int fill;
+	dictentry small_copy[MINSIZE];
+#ifdef Py_DEBUG
+	int i, n;
+#endif
+
 	if (!PyDict_Check(op))
 		return;
 	mp = (dictobject *)op;
-	table = mp->ma_table;
-	if (table == NULL)
-		return;
+#ifdef Py_DEBUG
 	n = mp->ma_size;
-	mp->ma_size = mp->ma_used = mp->ma_fill = 0;
-	mp->ma_table = NULL;
-	for (i = 0; i < n; i++) {
-		Py_XDECREF(table[i].me_key);
-		Py_XDECREF(table[i].me_value);
+	i = 0;
+#endif
+
+	table = mp->ma_table;
+	assert(table != NULL);
+	table_is_malloced = table != mp->ma_smalltable;
+
+	/* This is delicate.  During the process of clearing the dict,
+	 * decrefs can cause the dict to mutate.  To avoid fatal confusion
+	 * (voice of experience), we have to make the dict empty before
+	 * clearing the slots, and never refer to anything via mp->xxx while
+	 * clearing.
+	 */
+	fill = mp->ma_fill;
+	if (table_is_malloced)
+		empty_to_minsize(mp);
+
+	else if (fill > 0) {
+		/* It's a small table with something that needs to be cleared.
+		 * Afraid the only safe way is to copy the dict entries into
+		 * another small table first.
+		 */
+		memcpy(small_copy, table, sizeof(small_copy));
+		table = small_copy;
+		empty_to_minsize(mp);
 	}
-	PyMem_DEL(table);
+	/* else it's a small table that's already empty */
+
+	/* Now we can finally clear things.  If C had refcounts, we could
+	 * assert that the refcount on table is 1 now, i.e. that this function
+	 * has unique access to it, so decref side-effects can't alter it.
+	 */
+	for (ep = table; fill > 0; ++ep) {
+#ifdef Py_DEBUG
+		assert(i < n);
+		++i;
+#endif
+		if (ep->me_key) {
+			--fill;
+			Py_DECREF(ep->me_key);
+			Py_XDECREF(ep->me_value);
+		}
+#ifdef Py_DEBUG
+		else
+			assert(ep->me_value == NULL);
+#endif
+	}
+
+	if (table_is_malloced)
+		PyMem_DEL(table);
 }
 
 /* CAUTION:  In general, it isn't safe to use PyDict_Next in a loop that
@@ -602,19 +681,18 @@ PyDict_Next(PyObject *op, int *ppos, PyObject **pkey, PyObject **pvalue)
 static void
 dict_dealloc(register dictobject *mp)
 {
-	register int i;
 	register dictentry *ep;
+	int fill = mp->ma_fill;
 	Py_TRASHCAN_SAFE_BEGIN(mp)
 	PyObject_GC_Fini(mp);
-	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
-		if (ep->me_key != NULL) {
+	for (ep = mp->ma_table; fill > 0; ep++) {
+		if (ep->me_key) {
+			--fill;
 			Py_DECREF(ep->me_key);
-		}
-		if (ep->me_value != NULL) {
-			Py_DECREF(ep->me_value);
+			Py_XDECREF(ep->me_value);
 		}
 	}
-	if (mp->ma_table != NULL)
+	if (mp->ma_table != mp->ma_smalltable)
 		PyMem_DEL(mp->ma_table);
 	mp = (dictobject *) PyObject_AS_GC(mp);
 	PyObject_DEL(mp);
@@ -705,10 +783,7 @@ dict_subscript(dictobject *mp, register PyObject *key)
 {
 	PyObject *v;
 	long hash;
-	if (mp->ma_table == NULL) {
-		PyErr_SetObject(PyExc_KeyError, key);
-		return NULL;
-	}
+	assert(mp->ma_table != NULL);
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1)
@@ -1168,8 +1243,7 @@ dict_has_key(register dictobject *mp, PyObject *args)
 		if (hash == -1)
 			return NULL;
 	}
-	ok = (mp->ma_size != 0
-	      && (mp->ma_lookup)(mp, key, hash)->me_value != NULL);
+	ok = (mp->ma_lookup)(mp, key, hash)->me_value != NULL;
 	return PyInt_FromLong(ok);
 }
 
@@ -1183,8 +1257,6 @@ dict_get(register dictobject *mp, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O|O:get", &key, &failobj))
 		return NULL;
-	if (mp->ma_table == NULL)
-		goto finally;
 
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
@@ -1197,7 +1269,6 @@ dict_get(register dictobject *mp, PyObject *args)
 	}
 	val = (mp->ma_lookup)(mp, key, hash)->me_value;
 
-  finally:
 	if (val == NULL)
 		val = failobj;
 	Py_INCREF(val);
@@ -1215,8 +1286,6 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O|O:setdefault", &key, &failobj))
 		return NULL;
-	if (mp->ma_table == NULL)
-		goto finally;
 
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
@@ -1228,8 +1297,6 @@ dict_setdefault(register dictobject *mp, PyObject *args)
 			return NULL;
 	}
 	val = (mp->ma_lookup)(mp, key, hash)->me_value;
-
-  finally:
 	if (val == NULL) {
 		val = failobj;
 		if (PyDict_SetItem((PyObject*)mp, key, failobj))
@@ -1283,12 +1350,10 @@ dict_popitem(dictobject *mp, PyObject *args)
 	ep = &mp->ma_table[0];
 	if (ep->me_value == NULL) {
 		i = (int)ep->me_hash;
-		/* The hash field may be uninitialized trash, or it
-		 * may be a real hash value, or it may be a legit
-		 * search finger, or it may be a once-legit search
-		 * finger that's out of bounds now because it
-		 * wrapped around or the table shrunk -- simply
-		 * make sure it's in bounds now.
+		/* The hash field may be a real hash value, or it may be a
+		 * legit search finger, or it may be a once-legit search
+		 * finger that's out of bounds now because it wrapped around
+		 * or the table shrunk -- simply make sure it's in bounds now.
 		 */
 		if (i >= mp->ma_size || i < 1)
 			i = 1;	/* skip slot 0 */
@@ -1480,8 +1545,7 @@ dict_contains(dictobject *mp, PyObject *key)
 		if (hash == -1)
 			return -1;
 	}
-	return (mp->ma_size != 0
-		&& (mp->ma_lookup)(mp, key, hash)->me_value != NULL);
+	return (mp->ma_lookup)(mp, key, hash)->me_value != NULL;
 }
 
 /* Hack to implement "key in dict" */
