@@ -48,6 +48,7 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - Importing should now be safe with multiple Py_Initialize/Py_Finalize
   sequences.
 
+- Add TELL64() hack #ifdef to FreeBSD, Apple and BSDI
 
 What's New in Python 2.0?
 =========================
