@@ -621,7 +621,6 @@ strop_capitalize(self, args)
 static char expandtabs__doc__[] =
 "expandtabs(string, [tabsize]) -> string\n\
 \n\
-
 Expand tabs in a string, i.e. replace them by one or more spaces,\n\
 depending on the current column and the given tab size (default 8).\n\
 The column number is reset to zero after each newline occurring in the\n\
