@@ -159,8 +159,12 @@ class EditorWindow:
         vbar.pack(side=RIGHT, fill=Y)
 
         text['yscrollcommand'] = vbar.set
+        fontWeight='normal'
+        if idleConf.GetOption('main','EditorWindow','font-bold',type='bool'):
+            fontWeight='bold'
         text.config(font=(idleConf.GetOption('main','EditorWindow','font'),
-                idleConf.GetOption('main','EditorWindow','font-size')))
+                idleConf.GetOption('main','EditorWindow','font-size'),
+                fontWeight))
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
@@ -477,6 +481,16 @@ class EditorWindow:
         if self.color:
             self.color = self.ColorDelegator()
             self.per.insertfilter(self.color)
+
+    def ResetFont(self):
+        #this function is called from configDialog.py
+        #to update the text widgets' font if it is changed
+        fontWeight='normal'
+        if idleConf.GetOption('main','EditorWindow','font-bold',type='bool'):
+            fontWeight='bold'
+        self.text.config(font=(idleConf.GetOption('main','EditorWindow','font'),
+                idleConf.GetOption('main','EditorWindow','font-size'),
+                fontWeight))
 
     def saved_change_hook(self):
         short = self.short_title()
