@@ -120,8 +120,9 @@ code_repr(PyCodeObject *co)
 		filename = PyString_AS_STRING(co->co_filename);
 	if (co->co_name && PyString_Check(co->co_name))
 		name = PyString_AS_STRING(co->co_name);
-	sprintf(buf, "<code object %.100s at %p, file \"%.300s\", line %d>",
-		name, co, filename, lineno);
+	PyOS_snprintf(buf, sizeof(buf),
+		      "<code object %.100s at %p, file \"%.300s\", line %d>",
+		      name, co, filename, lineno);
 	return PyString_FromString(buf);
 }
 
@@ -1020,7 +1021,8 @@ com_addop_varname(struct compiling *c, int kind, char *name)
 			break;
 		case NAME_CLOSURE: {
 			char buf[500];
-			sprintf(buf, DEL_CLOSURE_ERROR, name);
+			PyOS_snprintf(buf, sizeof(buf),
+				      DEL_CLOSURE_ERROR, name);
 			com_error(c, PyExc_SyntaxError, buf);
 			i = 255;
 			break;
@@ -1366,8 +1368,8 @@ static void
 com_list_comprehension(struct compiling *c, node *n)
 {
 	/* listmaker: test list_for */
-	char tmpname[12];
-	sprintf(tmpname, "_[%d]", ++c->c_tmpname);
+	char tmpname[30];
+	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", ++c->c_tmpname);
 	com_addoparg(c, BUILD_LIST, 0);
 	com_addbyte(c, DUP_TOP); /* leave the result on the stack */
 	com_push(c, 2);
@@ -3789,7 +3791,7 @@ com_arglist(struct compiling *c, node *n)
 {
 	int nch, i, narg;
 	int complex = 0;
-	char nbuf[10];
+	char nbuf[30];
 	REQ(n, varargslist);
 	/* varargslist:
 		(fpdef ['=' test] ',')* (fpdef ['=' test] | '*' .....) */
@@ -3803,7 +3805,7 @@ com_arglist(struct compiling *c, node *n)
 		REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
 		fp = CHILD(ch, 0);
 		if (TYPE(fp) != NAME) {
-			sprintf(nbuf, ".%d", i);
+			PyOS_snprintf(nbuf, sizeof(nbuf), ".%d", i);
 			complex = 1;
 		}
 		narg++;
@@ -4455,31 +4457,37 @@ symtable_check_unoptimized(struct compiling *c,
 
 	if (ste->ste_child_free) {
 		if (ste->ste_optimized == OPT_IMPORT_STAR)
-			sprintf(buf, ILLEGAL_IMPORT_STAR, 
-				PyString_AS_STRING(ste->ste_name),
-				ILLEGAL_CONTAINS);
+			PyOS_snprintf(buf, sizeof(buf),
+				      ILLEGAL_IMPORT_STAR, 
+				      PyString_AS_STRING(ste->ste_name),
+				      ILLEGAL_CONTAINS);
 		else if (ste->ste_optimized == (OPT_BARE_EXEC | OPT_EXEC))
-			sprintf(buf, ILLEGAL_BARE_EXEC,
-				PyString_AS_STRING(ste->ste_name),
-				ILLEGAL_CONTAINS);
+			PyOS_snprintf(buf, sizeof(buf),
+				      ILLEGAL_BARE_EXEC,
+				      PyString_AS_STRING(ste->ste_name),
+				      ILLEGAL_CONTAINS);
 		else {
-			sprintf(buf, ILLEGAL_EXEC_AND_IMPORT_STAR,
-				PyString_AS_STRING(ste->ste_name),
-				ILLEGAL_CONTAINS);
+			PyOS_snprintf(buf, sizeof(buf),
+				      ILLEGAL_EXEC_AND_IMPORT_STAR,
+				      PyString_AS_STRING(ste->ste_name),
+				      ILLEGAL_CONTAINS);
 		}
 	} else {
 		if (ste->ste_optimized == OPT_IMPORT_STAR)
-			sprintf(buf, ILLEGAL_IMPORT_STAR, 
-				PyString_AS_STRING(ste->ste_name),
-				ILLEGAL_IS);
+			PyOS_snprintf(buf, sizeof(buf),
+				      ILLEGAL_IMPORT_STAR, 
+				      PyString_AS_STRING(ste->ste_name),
+				      ILLEGAL_IS);
 		else if (ste->ste_optimized == (OPT_BARE_EXEC | OPT_EXEC))
-			sprintf(buf, ILLEGAL_BARE_EXEC,
-				PyString_AS_STRING(ste->ste_name),
-				ILLEGAL_IS);
+			PyOS_snprintf(buf, sizeof(buf),
+				      ILLEGAL_BARE_EXEC,
+				      PyString_AS_STRING(ste->ste_name),
+				      ILLEGAL_IS);
 		else {
-			sprintf(buf, ILLEGAL_EXEC_AND_IMPORT_STAR,
-				PyString_AS_STRING(ste->ste_name),
-				ILLEGAL_IS);
+			PyOS_snprintf(buf, sizeof(buf),
+				      ILLEGAL_EXEC_AND_IMPORT_STAR,
+				      PyString_AS_STRING(ste->ste_name),
+				      ILLEGAL_IS);
 		}
 	}
 
@@ -5231,8 +5239,8 @@ symtable_params(struct symtable *st, node *n)
 		if (TYPE(CHILD(c, 0)) == NAME)
 			symtable_add_def(st, STR(CHILD(c, 0)), DEF_PARAM);
 		else {
-			char nbuf[10];
-			sprintf(nbuf, ".%d", i);
+			char nbuf[30];
+			PyOS_snprintf(nbuf, sizeof(nbuf), ".%d", i);
 			symtable_add_def(st, nbuf, DEF_PARAM);
 			complex = i;
 		}
@@ -5318,10 +5326,12 @@ symtable_global(struct symtable *st, node *n)
 			}
 			else {
 				if (flags & DEF_LOCAL)
-					sprintf(buf, GLOBAL_AFTER_ASSIGN,
-						name);
+					PyOS_snprintf(buf, sizeof(buf),
+						      GLOBAL_AFTER_ASSIGN,
+						      name);
 				else
-					sprintf(buf, GLOBAL_AFTER_USE, name);
+					PyOS_snprintf(buf, sizeof(buf),
+						      GLOBAL_AFTER_USE, name);
 				symtable_warn(st, buf);
 			}
 		}
@@ -5332,9 +5342,9 @@ symtable_global(struct symtable *st, node *n)
 static void
 symtable_list_comprehension(struct symtable *st, node *n)
 {
-	char tmpname[12];
+	char tmpname[30];
 
-	sprintf(tmpname, "_[%d]", st->st_tmpname);
+	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", st->st_tmpname);
 	symtable_add_def(st, tmpname, DEF_LOCAL);
 	symtable_assign(st, CHILD(n, 1), 0);
 	symtable_node(st, CHILD(n, 3));
