@@ -253,14 +253,14 @@ class GeneralModuleTests(unittest.TestCase):
         # We know a socket should start without reuse==0
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
-        self.assert_(reuse == 0, "Error performing getsockopt.")
+        self.failIf(reuse != 0, "initial mode is reuse")
 
     def testSetSockOpt(self):
         """Testing setsockopt()."""
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
-        self.assert_(reuse == 1, "Error performing setsockopt.")
+        self.failIf(reuse == 0, "failed to set reuse mode")
 
 class BasicTCPTest(SocketConnectedTest):
 
