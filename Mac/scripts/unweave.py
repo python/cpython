@@ -10,9 +10,10 @@ import macostools
 BEGINDEFINITION=re.compile("^<<(?P<name>.*)>>=\s*")
 USEDEFINITION=re.compile("^(?P<pre>.*)<<(?P<name>.*)>>(?P<post>[^=].*)")
 ENDDEFINITION=re.compile("^@")
+GREMLINS=re.compile("[\xa0\xca]")
 
 DEFAULT_CONFIG="""
-config = [
+filepatterns = [
 	("^.*\.cp$", ":unweave-src"),
 	("^.*\.h$", ":unweave-include"),
 ]
@@ -38,6 +39,13 @@ class Processor:
 			self.gencomments = config["gencomments"]
 		else:
 			self.gencomments = 0
+		if config.has_key("filepatterns"):
+			self.filepatterns = config["filepatterns"]
+		else:
+			self.filepatterns = []
+		self.filepattern_relist = []
+		for pat, dummy in self.filepatterns:
+			self.filepattern_relist.append(re.compile(pat))
 		
 	def _readline(self):
 		"""Read a line. Allow for pushback"""
@@ -100,9 +108,16 @@ class Processor:
 						savedcomment = savedcomment + [(lineno, '//\n')] + defline
 					else:
 						savedcomment = defline
-					savedcomment = self._extendlines(savedcomment)
+					savedcomment = self._processcomment(savedcomment)
 					value = savedcomment + value
 					savedcomment = []
+				isfilepattern = 0
+				for rexp in self.filepattern_relist:
+					if rexp.search(name):
+						isfilepattern = 1
+						break
+				if 0 and not isfilepattern:
+					value = self._addspace(value)
 				self._define(name, value)
 			else:
 				if self.gencomments:
@@ -110,15 +125,23 @@ class Processor:
 					if savedcomment or line.strip():
 						savedcomment.append((lineno, '// '+line))
 						
-	def _extendlines(self, comment):
+	def _processcomment(self, comment):
 		# This routine mimicks some artefact of Matthias' code.
 		rv = []
 		for lineno, line in comment:
 			line = line[:-1]
+			line = GREMLINS.subn(' ', line)[0]
 			if len(line) < 75:
 				line = line + (75-len(line))*' '
 			line = line + '\n'
 			rv.append((lineno, line))
+		return rv
+		
+	def _addspace(self, value, howmany):
+		# Yet another routine to mimick yet another artefact
+		rv = value[0:1]
+		for lineno, line in value[1:]:
+			rv.append((lineno, (' '*howmany)+line))
 		return rv
 		
 	def resolve(self):
@@ -141,15 +164,22 @@ class Processor:
 		# No rest for the wicked: we have work to do.
 		self.resolving[name] = 1
 		result = []
+		lastlineincomplete = 0
 		for lineno, line in self.items[name]:
 			mo = USEDEFINITION.search(line)
 			if mo:
 				# We replace the complete line. Is this correct?
 				macro = mo.group('name')
 				replacement = self._resolve_one(macro)
+				if lastlineincomplete:
+					replacement = self._addspace(replacement, lastlineincomplete)
 				result = result + replacement
 			else:
 				result.append((lineno, line))
+			if line[-1] == '\n':
+				lastlineincomplete = 0
+			else:
+				lastlineincomplete = len(line)
 		self.items[name] = result
 		self.resolved[name] = 1
 		del self.resolving[name]
@@ -194,7 +224,7 @@ def process(file, config):
 	pr = Processor(file, config)
 	pr.read()
 	pr.resolve()
-	for pattern, folder in config['config']:
+	for pattern, folder in config['filepatterns']:
 		pr.save(folder, pattern)
 	
 def readconfig():
