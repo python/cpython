@@ -94,7 +94,6 @@ index used on a mapping or sequence is invalid: \exception{IndexError},
 \end{excdesc}
 
 \begin{excdesc}{EnvironmentError}
-\versionadded{1.5.2}
 The base class for exceptions that
 can occur outside the Python system: \exception{IOError},
 \exception{OSError}.  When exceptions of this type are created with a
@@ -103,6 +102,7 @@ attribute (it is assumed to be an error number), and the second item
 is available on the \member{strerror} attribute (it is usually the
 associated error message).  The tuple itself is also available on the
 \member{args} attribute.
+\versionadded{1.5.2}
 
 When an \exception{EnvironmentError} exception is instantiated with a
 3-tuple, the first two items are available as above, while the third
@@ -154,7 +154,6 @@ Raised when an \keyword{assert} statement fails.
 \end{excdesc}
 
 \begin{excdesc}{IOError}
-  \versionchanged{1.5.2}
 % XXXJH xrefs here
   Raised when an I/O operation (such as a \keyword{print} statement,
   the built-in \function{open()} function or a method of a file
@@ -214,19 +213,19 @@ Raised when an \keyword{assert} statement fails.
 \end{excdesc}
 
 \begin{excdesc}{NotImplementedError}
-  \versionadded{1.5.2}
   This exception is derived from \exception{RuntimeError}.  In user
   defined base classes, abstract methods should raise this exception
   when they require derived classes to override the method.
+  \versionadded{1.5.2}
 \end{excdesc}
 
 \begin{excdesc}{OSError}
-  \versionadded{1.5.2}
   %xref for os module
   This class is derived from \exception{EnvironmentError} and is used
   primarily as the \module{os} module's \code{os.error} exception.
   See \exception{EnvironmentError} above for a description of the
   possible associated values.
+  \versionadded{1.5.2}
 \end{excdesc}
 
 \begin{excdesc}{OverflowError}
