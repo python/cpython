@@ -194,6 +194,15 @@ class MessageTestCase(unittest.TestCase):
 ##        self.assertEqual(len(lst), OBSCENELY_LONG_HEADER_MULTIPLIER)
 
 
+    def test_parseaddr(self):
+        eq = self.assertEqual
+        eq(rfc822.parseaddr('<>'), ('', ''))
+        eq(rfc822.parseaddr('aperson@dom.ain'), ('', 'aperson@dom.ain'))
+        eq(rfc822.parseaddr('bperson@dom.ain (Bea A. Person)'),
+           ('Bea A. Person', 'bperson@dom.ain'))
+        eq(rfc822.parseaddr('Cynthia Person <cperson@dom.ain>'),
+           ('Cynthia Person', 'cperson@dom.ain'))
+
 def test_main():
     test_support.run_unittest(MessageTestCase)
 
