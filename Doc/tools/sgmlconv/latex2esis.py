@@ -360,6 +360,8 @@ def main():
         "memberdesc": (["class", "name"], 1, 0, 1, 0),
         "methoddesc": (["class", "name", ("args",)], 1, 0, 1, 0),
         "methoddescni": (["class", "name", ("args",)], 1, 0, 1, 0),
+        "methodline": (["class", "name"], 1, 0, 0, 0),
+        "methodlineni": (["class", "name"], 1, 0, 0, 0),
         "moduleauthor": (["name", "email"], 0, 1, 0, 0),
         "opcodedesc": (["name", "var"], 0, 0, 1, 0),
         "par": ([], 0, 1, 0, 0),
