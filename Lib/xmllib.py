@@ -90,6 +90,7 @@ class XMLParser:
     __accept_missing_endtag_name = 0
     __map_case = 0
     __accept_utf8 = 0
+    __translate_attribute_references = 1
 
     # Interface -- initialize and reset this instance
     def __init__(self, **kw):
@@ -102,6 +103,8 @@ class XMLParser:
             self.__map_case = kw['map_case']
         if kw.has_key('accept_utf8'):
             self.__accept_utf8 = kw['accept_utf8']
+        if kw.has_key('translate_attribute_references'):
+            self.__translate_attribute_references = kw['translate_attribute_references']
         self.reset()
 
     def __fixelements(self):
@@ -171,6 +174,8 @@ class XMLParser:
 
     # Interface -- translate references
     def translate_references(self, data, all = 1):
+        if not self.__translate_attribute_references:
+            return data
         i = 0
         while 1:
             res = amp.search(data, i)
@@ -277,7 +282,7 @@ class XMLParser:
                 if cdataopen.match(rawdata, i):
                     k = self.parse_cdata(i)
                     if k < 0: break
-                    self.lineno = self.lineno + string.count(rawdata[i:i], '\n')
+                    self.lineno = self.lineno + string.count(rawdata[i:k], '\n')
                     i = k
                     continue
                 res = xmldecl.match(rawdata, i)
@@ -691,11 +696,6 @@ class XMLParser:
                     found = i
             if found == -1:
                 self.syntax_error('unopened end tag')
-                method = self.elements.get(tag, (None, None))[1]
-                if method is not None:
-                    self.handle_endtag(tag, method)
-                else:
-                    self.unknown_endtag(tag)
                 return
         while len(self.stack) > found:
             if found < len(self.stack) - 1:
