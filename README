@@ -41,9 +41,12 @@ If you don't read instructions
 Congratulations on getting this far. :-)
 
 To start building right away (on UNIX): type "./configure" in the
-current directory and when it finishes, type "make".  The section
-`Build instructions' below is still recommended reading, especially
-the part on customizing Modules/Setup.
+current directory and when it finishes, type "make".  This creates an
+executable "./python"; to install in /usr/local, first do "su root"
+and then "make install".
+
+The section `Build Instructions' below is still recommended reading,
+especially the part on customizing Modules/Setup.
 
 
 What is Python anyway?
@@ -248,6 +251,13 @@ Linux:  A problem with threads and fork() was tracked down to a bug in
 	Under Linux systems using GNU libc 2 (aka libc6), the crypt
 	module now needs the -lcrypt option.  The setup.py script
 	takes care of this automatically.
+
+Red Hat Linux: There's an executable /usr/bin/python which is Python
+	1.5.2 on most Red Hat installations; several key Red Hat tools
+	require this version.  Python 2.1.x may be installed as
+	/usr/bin/python2.  The Makefile installs Python as
+	/usr/local/bin/python, which may or may not take precedence
+	over /usr/bin/python, depending on how you have set up $PATH.
 
 FreeBSD 3.x and probably platforms with NCurses that use libmytinfo or
 	similar: When using cursesmodule, the linking is not done in
