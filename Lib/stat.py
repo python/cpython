@@ -22,6 +22,8 @@ ST_ATIME = 7
 ST_MTIME = 8
 ST_CTIME = 9
 
+def S_IMODE(mode):
+	return mode%4096
 def S_IFMT(mode):
 	return mode - mode%4096
 
