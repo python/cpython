@@ -49,6 +49,8 @@ Extension modules
 Library
 -------
 
+- Bug #1013882: Flush bz2 data even if nothing had been written so far.
+
 - Patch #997284: Allow pydoc to work with XP Themes (.manifest file)
 
 - Patch #808719: Ignore locale's encoding in IDLE if it is an empty string.
