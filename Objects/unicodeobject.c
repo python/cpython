@@ -132,7 +132,12 @@ int unicode_resize(register PyUnicodeObject *unicode,
        instead ! */
     if (unicode == unicode_empty || 
 	(unicode->length == 1 && 
-	 unicode->str[0] < 256U &&
+         /* MvL said unicode->str[] may be signed.  Python generally assumes
+          * an int contains at least 32 bits, and we don't use more than
+          * 32 bits even in a UCS4 build, so casting to unsigned int should
+          * be correct.
+          */
+	 (unsigned int)unicode->str[0] < 256U &&
 	 unicode_latin1[unicode->str[0]] == unicode)) {
         PyErr_SetString(PyExc_SystemError,
                         "can't resize shared unicode objects");
@@ -211,6 +216,13 @@ PyUnicodeObject *_PyUnicode_New(int length)
 	PyErr_NoMemory();
 	goto onError;
     }
+    /* Initialize the first element to guard against cases where
+     * the caller fails before initializing str -- unicode_resize()
+     * reads str[0], and the Keep-Alive optimization can keep memory
+     * allocated for str alive across a call to unicode_dealloc(unicode).
+     * We don't want unicode_resize to read uninitialized memory in
+     * that case.
+     */
     unicode->str[0] = 0;
     unicode->str[length] = 0;
     unicode->length = length;
