@@ -845,7 +845,7 @@ PyDoc_STRVAR(gc_isenabled__doc__,
 static PyObject *
 gc_isenabled(PyObject *self, PyObject *noargs)
 {
-	return Py_BuildValue("i", enabled);
+	return PyBool_FromLong((long)enabled);
 }
 
 PyDoc_STRVAR(gc_collect__doc__,
