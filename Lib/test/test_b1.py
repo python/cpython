@@ -140,6 +140,10 @@ if complex(0.0, 3.14) != 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
 if complex("1") != 1+0j: raise TestFailed, 'complex("1")'
 if complex("1j") != 1j: raise TestFailed, 'complex("1j")'
 
+c = 3.14 + 1j
+if complex(c) is not c: raise TestFailed, 'complex(3.14+1j) changed identity'
+del c
+
 try: complex("1", "1")
 except TypeError: pass
 else: raise TestFailed, 'complex("1", "1")'

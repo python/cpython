@@ -823,6 +823,15 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:complex", kwlist,
 					 &r, &i))
 		return NULL;
+
+	/* Special-case for single argumet that is already complex */
+	if (PyComplex_CheckExact(r) && i == NULL) {
+		/* Note that we can't know whether it's safe to return
+		   a complex *subclass* instance as-is, hence the restriction
+		   to exact complexes here.  */
+		Py_INCREF(r);
+		return r;
+	}
 	if (PyString_Check(r) || PyUnicode_Check(r)) {
 		if (i != NULL) {
 			PyErr_SetString(PyExc_TypeError,
