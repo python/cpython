@@ -65,9 +65,9 @@ extern void SIOUXDoAboutBox(void);
 /* Functions we redefine because they're in obscure libraries */
 extern void SpinCursor(short x);
 extern void RotateCursor(short x);
-extern pascal void PLstrcpy(unsigned char *, unsigned char *);
-extern pascal int PLstrcmp(unsigned char *, unsigned char *);
-extern pascal unsigned char *PLstrrchr(unsigned char *, unsigned char);
+extern pascal unsigned char * PLstrcpy(unsigned char *, const unsigned char *);
+extern pascal short PLstrcmp(const unsigned char *, const unsigned char *);
+extern pascal char *PLstrrchr(const unsigned char *, short);
 
 #endif
 
