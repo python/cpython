@@ -33,15 +33,20 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+/* Speed optimization to avoid frequent malloc/free of small tuples */
 #ifndef MAXSAVESIZE
-#define MAXSAVESIZE	20
+#define MAXSAVESIZE	20  /* Largest tuple to save on free list */
+#endif
+#ifndef MAXSAVEDTUPLES 
+#define MAXSAVEDTUPLES  2000  /* Maximum number of tuples of each size to save */
 #endif
 
 #if MAXSAVESIZE > 0
-/* Entries 1 upto MAXSAVESIZE are free lists, entry 0 is the empty
+/* Entries 1 up to MAXSAVESIZE are free lists, entry 0 is the empty
    tuple () of which at most one instance will be allocated.
 */
 static PyTupleObject *free_tuples[MAXSAVESIZE];
+static int num_free_tuples[MAXSAVESIZE];
 #endif
 #ifdef COUNT_ALLOCS
 int fast_tuple_allocs;
@@ -71,6 +76,7 @@ PyTuple_New(size)
 	    (op = free_tuples[size]) != NULL)
 	{
 		free_tuples[size] = (PyTupleObject *) op->ob_item[0];
+		num_free_tuples[size]--;
 #ifdef COUNT_ALLOCS
 		fast_tuple_allocs++;
 #endif
@@ -104,6 +110,7 @@ PyTuple_New(size)
 #if MAXSAVESIZE > 0
 	if (size == 0) {
 		free_tuples[0] = op;
+		++num_free_tuples[0];
 		Py_INCREF(op);	/* extra INCREF so that this is never freed */
 	}
 #endif
@@ -171,16 +178,17 @@ tupledealloc(op)
 	register PyTupleObject *op;
 {
 	register int i;
-
+	register int len =  op->ob_size;
 	Py_TRASHCAN_SAFE_BEGIN(op)
-	if (op->ob_size > 0) {
-		i = op->ob_size;
+	if (len > 0) {
+		i = len;
 		while (--i >= 0)
 			Py_XDECREF(op->ob_item[i]);
 #if MAXSAVESIZE > 0
-		if (op->ob_size < MAXSAVESIZE) {
-			op->ob_item[0] = (PyObject *) free_tuples[op->ob_size];
-			free_tuples[op->ob_size] = op;
+		if (len < MAXSAVESIZE && num_free_tuples[len] < MAXSAVEDTUPLES) {
+			op->ob_item[0] = (PyObject *) free_tuples[len];
+			num_free_tuples[len]++;
+			free_tuples[len] = op;
 			goto done; /* return */
 		}
 #endif
@@ -469,14 +477,49 @@ _PyTuple_Resize(pv, newsize, last_is_sticky)
 		Py_XDECREF(v->ob_item[i]);
 		v->ob_item[i] = NULL;
 	}
-	sv = (PyTupleObject *)
-		realloc((char *)v,
-			sizeof(PyTupleObject) + newsize * sizeof(PyObject *));
-	*pv = (PyObject *) sv;
-	if (sv == NULL) {
-		PyMem_DEL(v);
-		PyErr_NoMemory();
-		return -1;
+#if MAXSAVESIZE > 0
+	if (newsize == 0 && free_tuples[0]) {
+		num_free_tuples[0]--;
+		sv = free_tuples[0];
+		sv->ob_size = 0;
+		Py_INCREF(sv);
+#ifdef COUNT_ALLOCS
+		tuple_zero_allocs++;
+#endif
+		tupledealloc(v);
+		*pv = (PyObject*) sv;
+		return 0;
+	}
+	if (0 < newsize && newsize < MAXSAVESIZE &&
+	    (sv = free_tuples[newsize]) != NULL)
+	{
+		free_tuples[newsize] = (PyTupleObject *) sv->ob_item[0];
+		num_free_tuples[newsize]--;
+#ifdef COUNT_ALLOCS
+		fast_tuple_allocs++;
+#endif
+#ifdef Py_TRACE_REFS 
+		sv->ob_type = &PyTuple_Type; 
+#endif 
+		for (i = 0; i < newsize; ++i){
+			sv->ob_item[i] = v->ob_item[i];
+			v->ob_item[i] = NULL;
+		}
+		sv->ob_size = v->ob_size;
+		tupledealloc(v);
+		*pv = (PyObject *) sv;
+	} else 
+#endif		
+	{
+		sv = (PyTupleObject *)
+			realloc((char *)v,
+				sizeof(PyTupleObject) + newsize * sizeof(PyObject *));
+		*pv = (PyObject *) sv;
+		if (sv == NULL) {
+			PyMem_DEL(v);
+			PyErr_NoMemory();
+			return -1;
+		}
 	}
 	_Py_NewReference((PyObject *)sv);
 	for (i = sv->ob_size; i < newsize; i++)
