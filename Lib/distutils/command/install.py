@@ -18,24 +18,28 @@ INSTALL_SCHEMES = {
     'unix_prefix': {
         'purelib': '$base/lib/python$py_version_short/site-packages',
         'platlib': '$platbase/lib/python$py_version_short/site-packages',
+        'headers': '$base/include/python/$py_version_short/$dist_name',
         'scripts': '$base/bin',
         'data'   : '$base/share',
         },
     'unix_home': {
         'purelib': '$base/lib/python',
         'platlib': '$base/lib/python',
+        'headers': '$base/include/python/$dist_name',
         'scripts': '$base/bin',
         'data'   : '$base/share',
         },
     'nt': {
         'purelib': '$base',
         'platlib': '$base',
+        'headers': '$base\\Include\\$dist_name',
         'scripts': '$base\\Scripts',
         'data'   : '$base\\Data',
         },
     'mac': {
         'purelib': '$base:Lib',
         'platlib': '$base:Mac:PlugIns',
+        'headers': '$base:Include:$dist_name',
         'scripts': '$base:Scripts',
         'data'   : '$base:Data',
         }
@@ -73,6 +77,8 @@ class install (Command):
          "installation directory for all module distributions " +
          "(overrides --install-purelib and --install-platlib)"),
 
+        ('install-headers=', None,
+         "installation directory for C/C++ headers"),
         ('install-scripts=', None,
          "installation directory for Python scripts"),
         ('install-data=', None,
@@ -99,6 +105,7 @@ class install (Command):
     # true if 'command' (the sub-command name, a string) needs to be run.
     # If 'method' is None, assume that 'command' must always be run.
     sub_commands = [('has_lib', 'install_lib'),
+                    ('has_headers', 'install_headers'),
                     ('has_scripts', 'install_scripts'),
                     ('has_data', 'install_data'),
                    ]
@@ -125,6 +132,7 @@ class install (Command):
         # that installation scheme.
         self.install_purelib = None     # for pure module distributions
         self.install_platlib = None     # non-pure (dists w/ extensions)
+        self.install_headers = None     # for C/C++ headers
         self.install_lib = None         # set to either purelib or platlib
         self.install_scripts = None
         self.install_data = None
@@ -200,21 +208,26 @@ class install (Command):
         # install_{purelib,platlib,lib,scripts,data,...}, and the
         # INSTALL_SCHEME dictionary above.  Phew!
 
-        self.dump_dirs ("pre-finalize_xxx")
+        self.dump_dirs ("pre-finalize_{unix,other}")
 
         if os.name == 'posix':
             self.finalize_unix ()
         else:
             self.finalize_other ()
 
-        self.dump_dirs ("post-finalize_xxx()")
+        self.dump_dirs ("post-finalize_{unix,other}()")
 
         # Expand configuration variables, tilde, etc. in self.install_base
         # and self.install_platbase -- that way, we can use $base or
         # $platbase in the other installation directories and not worry
         # about needing recursive variable expansion (shudder).
 
-        self.config_vars = {'py_version_short': sys.version[0:3],
+        py_version = (string.split(sys.version))[0]
+        self.config_vars = {'dist_name': self.distribution.get_name(),
+                            'dist_version': self.distribution.get_version(),
+                            'dist_fullname': self.distribution.get_fullname(),
+                            'py_version': py_version,
+                            'py_version_short': py_version[0:3],
                             'sys_prefix': sysconfig.PREFIX,
                             'sys_exec_prefix': sysconfig.EXEC_PREFIX,
                            }
@@ -295,12 +308,12 @@ class install (Command):
             if ((self.install_lib is None and
                  self.install_purelib is None and
                  self.install_platlib is None) or
+                self.install_headers is None or
                 self.install_scripts is None or
                 self.install_data is None):
                 raise DistutilsOptionError, \
                       "install-base or install-platbase supplied, but " + \
                       "installation scheme is incomplete"
-
             return
 
         if self.home is not None:
@@ -359,7 +372,7 @@ class install (Command):
     def select_scheme (self, name):
         # it's the caller's problem if they supply a bad name!
         scheme = INSTALL_SCHEMES[name]
-        for key in ('purelib', 'platlib', 'scripts', 'data'):
+        for key in ('purelib', 'platlib', 'headers', 'scripts', 'data'):
             attrname = 'install_' + key
             if getattr(self, attrname) is None:
                 setattr(self, attrname, scheme[key])
@@ -384,6 +397,7 @@ class install (Command):
         self._expand_attrs (['install_purelib',
                              'install_platlib',
                              'install_lib',
+                             'install_headers',
                              'install_scripts',
                              'install_data',])
 
@@ -477,6 +491,9 @@ class install (Command):
         modules to install."""
         return (self.distribution.has_pure_modules() or
                 self.distribution.has_ext_modules())
+
+    def has_headers (self):
+        return self.distribution.has_headers()
 
     def has_scripts (self):
         return self.distribution.has_scripts()
