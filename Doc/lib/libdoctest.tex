@@ -203,7 +203,7 @@ attempted.
   Only docstrings attached to objects belonging to module \var{m} are
   searched.
 
-  Return \code{(#failures, #tests)}.
+  Return \code{(\var{failure_count}, \var{test_count})}.
 
   Optional argument \var{name} gives the name of the module; by default,
   or if \code{None}, \code{\var{m}.__name__} is used.
@@ -286,7 +286,7 @@ attempted.
   private according to Python's underscore naming convention.
   \deprecated{2.4}{\var{isprivate} was a stupid idea -- don't use it.
   If you need to skip tests based on name, filter the list returned by
-  \code{\class{DocTestFinder.find()} instead.}
+  \code{DocTestFinder.find()} instead.}
 
 %  """ [XX] This is no longer true:
 %  Advanced tomfoolery:  testmod runs methods of a local instance of
