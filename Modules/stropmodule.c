@@ -33,6 +33,12 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#else
+#define INT_MAX 2147483647
+#endif
+
 #include <ctype.h>
 /* XXX This file assumes that the <ctype.h> is*() functions
    XXX are defined for all 8-bit characters! */
@@ -286,11 +292,17 @@ strop_find(self, args)
 	PyObject *args;
 {
 	char *s, *sub;
-	int len, n, i = 0;
+	int len, n, i = 0, last = INT_MAX;
 
-	if (!PyArg_ParseTuple(args, "s#s#|i", &s, &len, &sub, &n, &i))
+	if (!PyArg_ParseTuple(args, "s#s#|ii", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
+	if (last > len)
+		last = len;
+	if (last < 0)
+		last += len;
+	if (last < 0)
+		last = 0;
 	if (i < 0)
 		i += len;
 	if (i < 0)
@@ -299,8 +311,8 @@ strop_find(self, args)
 	if (n == 0)
 		return PyInt_FromLong((long)i);
 
-	len -= n;
-	for (; i <= len; ++i)
+	last -= n;
+	for (; i <= last; ++i)
 		if (s[i] == sub[0] &&
 		    (n == 1 || memcmp(&s[i+1], &sub[1], n-1) == 0))
 			return PyInt_FromLong((long)i);
@@ -316,20 +328,26 @@ strop_rfind(self, args)
 {
 	char *s, *sub;
 	int len, n, j;
-	int i = 0;
+	int i = 0, last = INT_MAX;
 
-	if (!PyArg_ParseTuple(args, "s#s#|i", &s, &len, &sub, &n, &i))
+	if (!PyArg_ParseTuple(args, "s#s#|ii", &s, &len, &sub, &n, &i, &last))
 		return NULL;
 
+	if (last > len)
+		last = len;
+	if (last < 0)
+		last += len;
+	if (last < 0)
+		last = 0;
 	if (i < 0)
 		i += len;
 	if (i < 0)
 		i = 0;
 
 	if (n == 0)
-		return PyInt_FromLong((long)len);
+		return PyInt_FromLong((long)last);
 
-	for (j = len-n; j >= i; --j)
+	for (j = last-n; j >= i; --j)
 		if (s[j] == sub[0] &&
 		    (n == 1 || memcmp(&s[j+1], &sub[1], n-1) == 0))
 			return PyInt_FromLong((long)j);
@@ -663,7 +681,7 @@ strop_atof(self, args)
 	errno = 0;
 	PyFPE_START_PROTECT("strop_atof", return 0)
 	x = strtod(s, &end);
-	PyFPE_END_PROTECT
+	PyFPE_END_PROTECT(x)
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
