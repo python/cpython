@@ -106,7 +106,6 @@ class EditorWindow:
         text.bind("<<paste>>", self.paste)
         text.bind("<<center-insert>>", self.center_insert_event)
         text.bind("<<help>>", self.help_dialog)
-        text.bind("<<view-readme>>", self.view_readme)
         text.bind("<<python-docs>>", self.python_docs)
         text.bind("<<about-idle>>", self.about_dialog)
         text.bind("<<open-config-dialog>>", self.config_dialog)
@@ -297,14 +296,10 @@ class EditorWindow:
         self.rmenu = rmenu
 
     def about_dialog(self, event=None):
-        aboutDialog.AboutDialog(self.top,'About IDLEfork')
+        aboutDialog.AboutDialog(self.top,'About IDLE')
 
     def config_dialog(self, event=None):
         configDialog.ConfigDialog(self.top,'Settings')
-
-    def view_readme(self, event=None):
-        fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'README.txt')
-        textView.TextViewer(self.top,'IDLEfork - README',fn)
 
     def help_dialog(self, event=None):
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'help.txt')
