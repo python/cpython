@@ -2,10 +2,27 @@
 
 import sys
 import string
+import types
 
 def dis(x=None):
 	if not x:
 		distb()
+		return
+	if type(x) is types.InstanceType:
+		x = x.__class__
+	if hasattr(x, '__dict__'):
+		items = x.__dict__.items()
+		items.sort()
+		for name, x1 in items:
+			if type(x1) in (types.MethodType,
+					types.FunctionType,
+					types.CodeType):
+				print "Disassembly of %s:" % name
+				try:
+					dis(x1)
+				except TypeError, msg:
+					print "Sorry:", msg
+				print
 	else:
 		if hasattr(x, 'im_func'):
 			x = x.im_func
