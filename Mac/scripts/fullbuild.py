@@ -292,6 +292,7 @@ I_CARBON_PLUGINS :  (buildmwproject, "CWIE", [
 	(":Mac:Build:waste.carbon.mcp", "waste.carbon"),
 	(":Mac:Build:zlib.carbon.mcp", "zlib.carbon"),
 	(":Mac:Build:_dummy_tkinter.mcp", "_tkinter.carbon"),
+	(":Mac:Build:hfsplus.mcp", "hfsplus.carbon"),
 ##	(":Extensions:Imaging:_tkinter.carbon.mcp", "_tkinter.carbon"),
 	(":Mac:Build:ColorPicker.carbon.mcp", "ColorPicker.carbon"),
 	(":Mac:Build:_AE.carbon.mcp", "_AE.carbon"),
