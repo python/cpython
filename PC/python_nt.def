@@ -1,7 +1,3 @@
-LIBRARY		Python15.dll
-;CODE		PRELOAD MOVEABLE DISCARDABLE
-;DATA		PRELOAD SINGLE
-
 EXPORTS
 	PyCFunction_Type DATA
 	PyCObject_Type DATA
@@ -155,6 +151,8 @@ EXPORTS
 	PyGrammar_LabelRepr
 	PyImport_AddModule
 	PyImport_Cleanup
+	PyImport_ExtendInittab
+	PyImport_AppendInittab
 	PyImport_GetMagicNumber
 	PyImport_GetModuleDict
 	PyImport_Import
@@ -307,6 +305,8 @@ EXPORTS
 	PySys_SetArgv
 	PySys_SetObject
 	PySys_SetPath
+	PySys_WriteStdout
+	PySys_WriteStderr
 	PyThreadState_Clear
 	PyThreadState_Delete
 	PyThreadState_Get
