@@ -4746,6 +4746,7 @@ if (using_temporary_offsets)
 printf(">>>> returning %d\n", match_block.errorcode);
 #endif
 
+ free_stack(&match_block); 
  return match_block.errorcode;
 }
 
