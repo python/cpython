@@ -1651,38 +1651,68 @@ instance_ipow(PyObject *v, PyObject *w, PyObject *z)
 
 
 /* Map rich comparison operators to their __xx__ namesakes */
-static char *name_op[] = {
-	"__lt__",
-	"__le__",
-	"__eq__",
-	"__ne__",
-	"__gt__",
-	"__ge__",
-};
+#define NAME_OPS 6
+static PyObject **name_op = NULL;
+
+static int 
+init_name_op()
+{
+	int i;
+	char *_name_op[] = {
+		"__lt__",
+		"__le__",
+		"__eq__",
+		"__ne__",
+		"__gt__",
+		"__ge__",
+	};
+
+	name_op = (PyObject **)malloc(sizeof(PyObject *) * NAME_OPS);
+	if (name_op == NULL)
+		return -1;
+	for (i = 0; i < NAME_OPS; ++i) {
+		name_op[i] = PyString_InternFromString(_name_op[i]);
+		if (name_op[i] == NULL)
+			return -1;
+	}
+	return 0;
+}
 
 static PyObject *
 half_richcompare(PyObject *v, PyObject *w, int op)
 {
-	PyObject *name;
 	PyObject *method;
 	PyObject *args;
 	PyObject *res;
 
 	assert(PyInstance_Check(v));
 
-	name = PyString_InternFromString(name_op[op]);
-	if (name == NULL)
-		return NULL;
-
-	method = PyObject_GetAttr(v, name);
-	Py_DECREF(name);
-	if (method == NULL) {
-		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+	if (name_op == NULL) {
+		if (init_name_op() < 0)
 			return NULL;
-		PyErr_Clear();
-		res = Py_NotImplemented;
-		Py_INCREF(res);
-		return res;
+	}
+	/* If the instance doesn't define an __getattr__ method, use
+	   instance_getattr2 directly because it will not set an
+	   exception on failure. */
+	if (((PyInstanceObject *)v)->in_class->cl_getattr == NULL) {
+		method = instance_getattr2((PyInstanceObject *)v, 
+					   name_op[op]);
+		if (method == NULL) {
+			assert(!PyErr_Occurred());
+			res = Py_NotImplemented;
+			Py_INCREF(res);
+			return res;
+		}
+	} else {
+		method = PyObject_GetAttr(v, name_op[op]);
+		if (method == NULL) {
+			if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+				return NULL;
+			PyErr_Clear();
+			res = Py_NotImplemented;
+			Py_INCREF(res);
+			return res;
+		}
 	}
 
 	args = Py_BuildValue("(O)", w);
