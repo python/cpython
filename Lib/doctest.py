@@ -497,8 +497,8 @@ class DocTestParser:
                   )*)
         ''', re.MULTILINE | re.VERBOSE)
 
-    # This regular expression matcher checks if a given string is a
-    # blank line or contains a single comment.
+    # A callable returning a true value iff its argument is a blank line
+    # or contains a single comment.
     _IS_BLANK_OR_COMMENT = re.compile(r'^[ ]*(#.*)?$').match
 
     def get_doctest(self, string, globs, name, filename, lineno):
