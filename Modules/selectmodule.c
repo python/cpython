@@ -641,10 +641,18 @@ initselect(void)
 	insint(d, "POLLHUP", POLLHUP);
 	insint(d, "POLLNVAL", POLLNVAL);
 
+#ifdef POLLRDNORM
 	insint(d, "POLLRDNORM", POLLRDNORM);
+#endif
+#ifdef POLLRDBAND
 	insint(d, "POLLRDBAND", POLLRDBAND);
+#endif
+#ifdef POLLWRNORM
 	insint(d, "POLLWRNORM", POLLWRNORM);
+#endif
+#ifdef POLLWRBAND
 	insint(d, "POLLWRBAND", POLLWRBAND);
+#endif
 #ifdef POLLMSG
 	insint(d, "POLLMSG", POLLMSG);
 #endif
