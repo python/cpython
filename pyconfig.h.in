@@ -726,6 +726,9 @@
    SunOS 4 or 5, they already have dynamic linking using shared libraries. */
 #undef WITH_DL_DLD
 
+/* Define if you want documentation strings in extension modules */
+#undef WITH_DOC_STRINGS
+
 /* Define if you want to use the new-style (Openstep, Rhapsody, MacOS) dynamic
    linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
    Dyld is necessary to support frameworks. */

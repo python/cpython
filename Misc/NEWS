@@ -240,6 +240,10 @@ Tools/Demos
 
 Build
 
+- The configure option --without-doc-strings can be used to remove the
+  doc strings from the builtin functions and modules; this reduces the
+  size of the executable.
+
 - XXX WITH_UNIVERSAL_NEWLINES Somebody fill this in; the PEP doesn't
   say how or when to configure it, or how to turn it off.
 

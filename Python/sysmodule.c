@@ -103,10 +103,11 @@ sys_displayhook(PyObject *self, PyObject *o)
 	return Py_None;
 }
 
-static char displayhook_doc[] =
+PyDoc_STRVAR(displayhook_doc,
 "displayhook(object) -> None\n"
 "\n"
-"Print an object to sys.stdout and also save it in __builtin__._\n";
+"Print an object to sys.stdout and also save it in __builtin__._\n"
+);
 
 static PyObject *
 sys_excepthook(PyObject* self, PyObject* args)
@@ -119,10 +120,11 @@ sys_excepthook(PyObject* self, PyObject* args)
 	return Py_None;
 }
 
-static char excepthook_doc[] =
+PyDoc_STRVAR(excepthook_doc,
 "excepthook(exctype, value, traceback) -> None\n"
 "\n"
-"Handle an exception by displaying it with a traceback on sys.stderr.\n";
+"Handle an exception by displaying it with a traceback on sys.stderr.\n"
+);
 
 static PyObject *
 sys_exc_info(PyObject *self)
@@ -137,11 +139,12 @@ sys_exc_info(PyObject *self)
 			tstate->exc_traceback : Py_None);
 }
 
-static char exc_info_doc[] =
+PyDoc_STRVAR(exc_info_doc,
 "exc_info() -> (type, value, traceback)\n\
 \n\
 Return information about the exception that is currently being handled.\n\
-This should be called from inside an except clause only.";
+This should be called from inside an except clause only."
+);
 
 static PyObject *
 sys_exit(PyObject *self, PyObject *args)
@@ -154,14 +157,15 @@ sys_exit(PyObject *self, PyObject *args)
 	return NULL;
 }
 
-static char exit_doc[] =
+PyDoc_STRVAR(exit_doc,
 "exit([status])\n\
 \n\
 Exit the interpreter by raising SystemExit(status).\n\
 If the status is omitted or None, it defaults to zero (i.e., success).\n\
 If the status is numeric, it will be used as the system exit status.\n\
 If it is another kind of object, it will be printed and the system\n\
-exit status will be one (i.e., failure).";
+exit status will be one (i.e., failure)."
+);
 
 #ifdef Py_USING_UNICODE
 
@@ -171,11 +175,12 @@ sys_getdefaultencoding(PyObject *self)
 	return PyString_FromString(PyUnicode_GetDefaultEncoding());
 }
 
-static char getdefaultencoding_doc[] =
+PyDoc_STRVAR(getdefaultencoding_doc,
 "getdefaultencoding() -> string\n\
 \n\
 Return the current default string encoding used by the Unicode \n\
-implementation.";
+implementation."
+);
 
 static PyObject *
 sys_setdefaultencoding(PyObject *self, PyObject *args)
@@ -189,10 +194,11 @@ sys_setdefaultencoding(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char setdefaultencoding_doc[] =
+PyDoc_STRVAR(setdefaultencoding_doc,
 "setdefaultencoding(encoding)\n\
 \n\
-Set the current default string encoding used by the Unicode implementation.";
+Set the current default string encoding used by the Unicode implementation."
+);
 
 #endif
 
@@ -316,11 +322,12 @@ sys_settrace(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char settrace_doc[] =
+PyDoc_STRVAR(settrace_doc,
 "settrace(function)\n\
 \n\
 Set the global debug tracing function.  It will be called on each\n\
-function call.  See the debugger chapter in the library manual.";
+function call.  See the debugger chapter in the library manual."
+);
 
 static PyObject *
 sys_setprofile(PyObject *self, PyObject *args)
@@ -335,11 +342,12 @@ sys_setprofile(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char setprofile_doc[] =
+PyDoc_STRVAR(setprofile_doc,
 "setprofile(function)\n\
 \n\
 Set the profiling function.  It will be called on each function call\n\
-and return.  See the profiler chapter in the library manual.";
+and return.  See the profiler chapter in the library manual."
+);
 
 static PyObject *
 sys_setcheckinterval(PyObject *self, PyObject *args)
@@ -351,11 +359,12 @@ sys_setcheckinterval(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char setcheckinterval_doc[] =
+PyDoc_STRVAR(setcheckinterval_doc,
 "setcheckinterval(n)\n\
 \n\
 Tell the Python interpreter to check for asynchronous events every\n\
-n instructions.  This also affects how often thread switches occur.";
+n instructions.  This also affects how often thread switches occur."
+);
 
 static PyObject *
 sys_setrecursionlimit(PyObject *self, PyObject *args)
@@ -373,13 +382,14 @@ sys_setrecursionlimit(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char setrecursionlimit_doc[] =
+PyDoc_STRVAR(setrecursionlimit_doc,
 "setrecursionlimit(n)\n\
 \n\
 Set the maximum depth of the Python interpreter stack to n.  This\n\
 limit prevents infinite recursion from causing an overflow of the C\n\
 stack and crashing Python.  The highest possible limit is platform-\n\
-dependent.";
+dependent."
+);
 
 static PyObject *
 sys_getrecursionlimit(PyObject *self)
@@ -387,12 +397,13 @@ sys_getrecursionlimit(PyObject *self)
 	return PyInt_FromLong(Py_GetRecursionLimit());
 }
 
-static char getrecursionlimit_doc[] =
+PyDoc_STRVAR(getrecursionlimit_doc,
 "getrecursionlimit()\n\
 \n\
 Return the current value of the recursion limit, the maximum depth\n\
 of the Python interpreter stack.  This limit prevents infinite\n\
 recursion from causing an overflow of the C stack and crashing Python.";
+);
 
 #ifdef HAVE_DLOPEN
 static PyObject *
@@ -409,14 +420,15 @@ sys_setdlopenflags(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char setdlopenflags_doc[] =
+PyDoc_STRVAR(setdlopenflags_doc,
 "setdlopenflags(n) -> None\n\
 \n\
 Set the flags that will be used for dlopen() calls. Among other\n\
 things, this will enable a lazy resolving of symbols when importing\n\
 a module, if called as sys.setdlopenflags(0)\n\
 To share symbols across extension modules, call as\n\
-sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)";
+sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)"
+);
 
 static PyObject *
 sys_getdlopenflags(PyObject *self, PyObject *args)
@@ -427,11 +439,12 @@ sys_getdlopenflags(PyObject *self, PyObject *args)
         return PyInt_FromLong(tstate->interp->dlopenflags);
 }
 
-static char getdlopenflags_doc[] =
+PyDoc_STRVAR(getdlopenflags_doc,
 "getdlopenflags() -> int\n\
 \n\
 Return the current value of the flags that are used for dlopen()\n\
-calls. The flag constants are defined in the dl module.";
+calls. The flag constants are defined in the dl module."
+);
 #endif
 
 #ifdef USE_MALLOPT
@@ -466,11 +479,12 @@ sys_gettotalrefcount(PyObject *self)
 
 #endif /* Py_TRACE_REFS */
 
-static char getrefcount_doc[] =
+PyDoc_STRVAR(getrefcount_doc,
 "getrefcount(object) -> integer\n\
 \n\
 Return the current reference count for the object.  This includes the\n\
-temporary reference in the argument list, so it is at least 2.";
+temporary reference in the argument list, so it is at least 2."
+);
 
 #ifdef COUNT_ALLOCS
 static PyObject *
@@ -482,7 +496,7 @@ sys_getcounts(PyObject *self)
 }
 #endif
 
-static char getframe_doc[] =
+PyDoc_STRVAR(getframe_doc,
 "_getframe([depth]) -> frameobject\n\
 \n\
 Return a frame object from the call stack.  If optional integer depth is\n\
@@ -491,7 +505,8 @@ If that is deeper than the call stack, ValueError is raised.  The default\n\
 for depth is zero, returning the frame at the top of the call stack.\n\
 \n\
 This function should be used for internal and specialized\n\
-purposes only.";
+purposes only."
+);
 
 static PyObject *
 sys_getframe(PyObject *self, PyObject *args)
@@ -633,7 +648,8 @@ PySys_AddWarnOption(char *s)
    Two literals concatenated works just fine.  If you have a K&R compiler
    or other abomination that however *does* understand longer strings,
    get rid of the !!! comment in the middle and the quotes that surround it. */
-static char sys_doc[] =
+PyDoc_VAR(sys_doc) =
+PyDoc_STR(
 "This module provides access to some objects used or maintained by the\n\
 interpreter and to functions that interact strongly with the interpreter.\n\
 \n\
@@ -669,8 +685,10 @@ exc_traceback -- traceback of exception currently being handled\n\
   The function exc_info() should be used instead of these three,\n\
   because it is thread-safe.\n\
 "
+)
 #ifndef MS_WIN16
 /* concatenating string here */
+PyDoc_STR(
 "\n\
 Static objects:\n\
 \n\
@@ -686,12 +704,16 @@ executable -- pathname of this Python interpreter\n\
 prefix -- prefix used to find the Python library\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
 "
+)
 #ifdef MS_WINDOWS
 /* concatenating string here */
+PyDoc_STR(
 "dllhandle -- [Windows only] integer handle of the Python DLL\n\
 winver -- [Windows only] version number of the Python DLL\n\
 "
+)
 #endif /* MS_WINDOWS */
+PyDoc_STR(
 "__stdin__ -- the original stdin; don't touch!\n\
 __stdout__ -- the original stdout; don't touch!\n\
 __stderr__ -- the original stderr; don't touch!\n\
@@ -713,6 +735,7 @@ setprofile() -- set the global profiling function\n\
 setrecursionlimit() -- set the max recursion depth for the interpreter\n\
 settrace() -- set the global debug tracing function\n\
 "
+)
 #endif /* MS_WIN16 */
 /* end of sys_doc */ ;
 
