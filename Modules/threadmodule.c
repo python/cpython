@@ -54,18 +54,6 @@ typedef struct {
 
 staticforward PyTypeObject Locktype;
 
-#define is_lockobject(v)		((v)->ob_type == &Locktype)
-
-static type_lock
-getlocklock(lock)
-	PyObject *lock;
-{
-	if (lock == NULL || !is_lockobject(lock))
-		return NULL;
-	else
-		return ((lockobject *) lock)->lock_lock;
-}
-
 static lockobject *
 newlockobject()
 {
