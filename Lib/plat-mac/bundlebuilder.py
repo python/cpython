@@ -127,6 +127,8 @@ class BundleBuilder(Defaults):
 			else:
 				self.creator = "????"
 		plist.CFBundleSignature = self.creator
+		if not hasattr(plist, "CFBundleIdentifier"):
+			plist.CFBundleIdentifier = self.name
 
 	def build(self):
 		"""Build the bundle."""
