@@ -1839,7 +1839,7 @@ instance_getiter(PyInstanceObject *self)
 	}
 	PyErr_Clear();
 	if ((func = instance_getattr(self, getitemstr)) == NULL) {
-		PyErr_SetString(PyExc_TypeError, "iter() of non-sequence");
+		PyErr_SetString(PyExc_TypeError, "iteration over non-sequence");
 		return NULL;
 	}
 	Py_DECREF(func);

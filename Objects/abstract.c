@@ -1859,7 +1859,7 @@ PyObject_GetIter(PyObject *o)
 	if (f == NULL) {
 		if (PySequence_Check(o))
 			return PySeqIter_New(o);
-		PyErr_SetString(PyExc_TypeError, "iter() of non-sequence");
+		PyErr_SetString(PyExc_TypeError, "iteration over non-sequence");
 		return NULL;
 	}
 	else {
