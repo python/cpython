@@ -139,7 +139,8 @@ class Misc:
 		return self.tk.getboolean(self.tk.call(
 			'set', 'tk_strictMotif', boolean))
 	def tk_menuBar(self, *args):
-		apply(self.tk.call, ('tk_menuBar', self._w) + args)
+		if TkVersion < 4.1:
+			apply(self.tk.call, ('tk_menuBar', self._w) + args)
 	def wait_variable(self, name='PY_VAR'):
 		self.tk.call('tkwait', 'variable', name)
 	waitvar = wait_variable # XXX b/w compat
@@ -1217,7 +1218,8 @@ class Menu(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'menu', cnf, kw)
 	def tk_bindForTraversal(self):
-		self.tk.call('tk_bindForTraversal', self._w)
+		if TkVersion < 4.1:
+			self.tk.call('tk_bindForTraversal', self._w)
 	def tk_mbPost(self):
 		self.tk.call('tk_mbPost', self._w)
 	def tk_mbUnpost(self):
