@@ -2,7 +2,6 @@
 /* Execute compiled code */
 
 /* XXX TO DO:
-   XXX how to pass arguments to profile and trace functions?
    XXX speed up searching for keywords by using a dictionary
    XXX document it!
    */
@@ -605,7 +604,6 @@ eval_frame(PyFrameObject *f)
 			   whenever an exception is detected. */
 			if (call_trace(tstate->c_tracefunc, tstate->c_traceobj,
 				       f, PyTrace_CALL, Py_None)) {
-				/* XXX Need way to compute arguments?? */
 				/* Trace function raised an error */
 				return NULL;
 			}
@@ -616,7 +614,6 @@ eval_frame(PyFrameObject *f)
 			if (call_trace(tstate->c_profilefunc,
 				       tstate->c_profileobj,
 				       f, PyTrace_CALL, Py_None)) {
-				/* XXX Need way to compute arguments?? */
 				/* Profile function raised an error */
 				return NULL;
 			}
