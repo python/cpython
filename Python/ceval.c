@@ -3614,8 +3614,8 @@ _PyEval_SliceIndex(PyObject *v, int *pi)
 
 				/* It's an overflow error, so we need to
 				   check the sign of the long integer,
-				   set the value to INT_MAX or 0, and clear
-				   the error. */
+				   set the value to INT_MAX or -INT_MAX, 
+				   and clear the error. */
 
 				/* Create a long integer with a value of 0 */
 				long_zero = PyLong_FromLong(0L);
@@ -3628,10 +3628,10 @@ _PyEval_SliceIndex(PyObject *v, int *pi)
 				Py_DECREF(long_zero);
 				if (cmp < 0)
 					return 0;
-				else if (cmp > 0)
+				else if (cmp)
 					x = INT_MAX;
 				else
-					x = 0;
+					x = -INT_MAX;
 			}
 		} else {
 			PyErr_SetString(PyExc_TypeError,
