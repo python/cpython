@@ -4,6 +4,12 @@ Release date: 28-Sep-2100
 
 Type/class unification and new-style classes
 
+- C.__doc__ now works as expected for new-style classes (in 2.2a4 it
+  always returned None, even when there was a class docstring).
+
+- doctest now finds and runs docstrings attached to new-style classes,
+  class methods, static methods, and properties.
+
 Core
 
 - binascii has now two quopri support functions, a2b_qp and b2a_qp.
