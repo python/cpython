@@ -95,9 +95,11 @@ class Sucker(webchecker.Checker):
         host, port = urllib.splitnport(host)
         host = string.lower(host)
         if not path or path[-1] == "/":
-                path = path + "index.html"
+            path = path + "index.html"
         if os.sep != "/":
             path = string.join(string.split(path, "/"), os.sep)
+            if os.name == "mac":
+                path = os.sep + path
         path = os.path.join(host, path)
         return path
 
