@@ -2703,6 +2703,31 @@ class TestTimezoneConversions(unittest.TestCase):
         # self.convert_between_tz_and_utc(Eastern, Central)  # can't work
         # self.convert_between_tz_and_utc(Central, Eastern)  # can't work
 
+    def test_tricky(self):
+        # 22:00 on day before daylight starts.
+        fourback = self.dston - timedelta(hours=4)
+        ninewest = FixedOffset(-9*60, "-0900", 0)
+        fourback = fourback.astimezone(ninewest)
+        # 22:00-0900 is 7:00 UTC == 2:00 EST == 3:00 DST.  Since it's "after
+        # 2", we should get the 3 spelling.
+        # If we plug 22:00 the day before into Eastern, it "looks like std
+        # time", so its offset is returned as -5, and -5 - -9 = 4.  Adding 4
+        # to 22:00 lands on 2:00, which makes no sense in local time (the
+        # local clock jumps from 1 to 3).  The point here is to make sure we
+        # get the 3 spelling.
+        expected = self.dston.replace(hour=3)
+        got = fourback.astimezone(Eastern).astimezone(None)
+        self.assertEqual(expected, got)
+
+        # Similar, but map to 6:00 UTC == 1:00 EST == 2:00 DST.  In that
+        # case we want the 1:00 spelling.
+        sixutc = self.dston.replace(hour=6).astimezone(utc_real)
+        # Now 6:00 "looks like daylight", so the offset wrt Eastern is -4,
+        # and adding -4-0 == -4 gives the 2:00 spelling.  We want the 1:00 EST
+        # spelling.
+        expected = self.dston.replace(hour=1)
+        got = sixutc.astimezone(Eastern).astimezone(None)
+        self.assertEqual(expected, got)
 
 def test_suite():
     allsuites = [unittest.makeSuite(klass, 'test')

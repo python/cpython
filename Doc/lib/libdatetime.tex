@@ -887,10 +887,10 @@ implement all of them.
   the magnitude of the offset must be less than one day), or a
   \class{timedelta} object representing a whole number of minutes
   in the same range.  Most implementations of \method{utcoffset()}
-  will probably look like:
+  will probably look like one of these two:
 
 \begin{verbatim}
-    return CONSTANT  # fixed-offset class
+    return CONSTANT                 # fixed-offset class
     return CONSTANT + self.dst(dt)  # daylight-aware class
 \end{verbatim}
 \end{methoddesc}
@@ -905,12 +905,13 @@ implement all of them.
   rather than a fixed string primarily because some \class{tzinfo} objects
   will wish to return different names depending on the specific value
   of \var{dt} passed, especially if the \class{tzinfo} class is
-  accounting for DST.
+  accounting for daylight time.
 \end{methoddesc}
 
 \begin{methoddesc}{dst}{self, dt}
-  Return the DST offset, in minutes east of UTC, or \code{None} if
-  DST information isn't known.  Return \code{0} if DST is not in effect.
+  Return the daylight savings time (DST) adjustment, in minutes east of
+  UTC, or \code{None} if DST information isn't known.  Return \code{0} if
+  DST is not in effect.
   If DST is in effect, return the offset as an integer or
   \class{timedelta} object (see \method{utcoffset()} for details).
   Note that DST offset, if applicable, has
@@ -919,7 +920,23 @@ implement all of them.
   unless you're interested in displaying DST info separately.  For
   example, \method{datetimetz.timetuple()} calls its \member{tzinfo}
   member's \method{dst()} method to determine how the
-  \member{tm_isdst} flag should be set.
+  \member{tm_isdst} flag should be set, and
+  \method{datetimetz.astimezone()} calls \method{dst()} to account for
+  DST changes when crossing time zones.
+
+  An instance \var{tz} of a \class{tzinfo} subclass that models both
+  standard and daylight times must be consistent in this sense:
+
+      \code{tz.utcoffset(dt) - tz.dst(dt)}
+
+  must return the same result for every \class{datetimetz} \var{dt}
+  in a given year with \code{dt.tzinfo==tz}  For sane \class{tzinfo}
+  subclasses, this expression yields the time zone's "standard offset"
+  within the year, which should be the same across all days in the year.
+  The implementation of \method{datetimetz.astimezone()} relies on this,
+  but cannot detect violations; it's the programmer's responsibility to
+  ensure it.
+
 \end{methoddesc}
 
 These methods are called by a \class{datetimetz} or \class{timetz} object,
