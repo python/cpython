@@ -528,7 +528,13 @@ class Menu:
 		self.items.append(label, shortcut, callback, kind)
 		item = len(self.items)
 		self.menu.SetMenuItemText(item, label)		# set the actual text
-		if shortcut:
+		if shortcut and type(shortcut) == type(()):
+			modifiers, char = shortcut[:2]
+			self.menu.SetItemCmd(item, ord(char))
+			self.menu.SetMenuItemModifiers(item, modifiers)
+			if len(shortcut) > 2:
+				self.menu.SetMenuItem
+		elif shortcut:	
 			self.menu.SetItemCmd(item, ord(shortcut))
 		return item
 		
@@ -1018,9 +1024,9 @@ class TestApp(Application):
 		self.saveitem = MenuItem(m, "Save", "S", self.save)
 		Separator(m)
 		self.optionsmenu = mm = SubMenu(m, "Options")
-		self.opt1 = CheckItem(mm, "Arguments")
-		self.opt2 = CheckItem(mm, "Being hit on the head lessons")
-		self.opt3 = CheckItem(mm, "Complaints")
+		self.opt1 = CheckItem(mm, "Arguments", "A")
+		self.opt2 = CheckItem(mm, "Being hit on the head lessons", (kMenuOptionModifier, "A"))
+		self.opt3 = CheckItem(mm, "Complaints", (kMenuOptionModifier|kMenuNoCommandModifier, "A"))
 		Separator(m)
 		self.quititem = MenuItem(m, "Quit", "Q", self.quit)
 	
