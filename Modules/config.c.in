@@ -26,12 +26,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "patchlevel.h"
 
-#define VERSION "0.9.%d alpha (%s)"
+#define VERSION "0.9.%d (%s)"
 
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= Dec 27 1991"
+#define DATE ">= 1 Jan 1992"
 #endif
 
 #include <stdio.h>
@@ -42,6 +42,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 char version[80];
 
+char *argv0;
+
 /*ARGSUSED*/
 void
 initargs(p_argc, p_argv)
@@ -49,6 +51,8 @@ initargs(p_argc, p_argv)
 	char ***p_argv;
 {
 	sprintf(version, VERSION, PATCHLEVEL, DATE);
+
+	argv0 = **p_argv;
 
 #ifdef USE_STDWIN
 	wargs(p_argc, p_argv);
