@@ -45,9 +45,9 @@ single expression).
 In interactive mode, if the value is not \code{None}, it is converted
 to a string using the built-in \function{repr()}\bifuncindex{repr}
 function and the resulting string is written to standard output (see
-section \ref{print}) on a line by itself.  (Expression statements
-yielding None are not written, so that procedure calls do not cause
-any output.)
+section~\ref{print}) on a line by itself.  (Expression statements
+yielding \code{None} are not written, so that procedure calls do not
+cause any output.)
 \ttindex{None}
 \indexii{string}{conversion}
 \index{output}
@@ -119,7 +119,7 @@ objects:
               | \token{slicing}}
 \end{productionlist}
 
-(See section \ref{primaries} for the syntax definitions for the last
+(See section~\ref{primaries} for the syntax definitions for the last
 three symbols.)
 
 An assignment statement evaluates the expression list (remember that
@@ -134,7 +134,7 @@ reference, subscription or slicing), the mutable object must
 ultimately perform the assignment and decide about its validity, and
 may raise an exception if the assignment is unacceptable.  The rules
 observed by various types and the exceptions raised are given with the
-definition of the object types (see section \ref{types}).
+definition of the object types (see section~\ref{types}).
 \index{target}
 \indexii{target}{list}
 
@@ -285,7 +285,7 @@ operation and an assignment statement:
               | \token{slicing}}
 \end{productionlist}
 
-(See section \ref{primaries} for the syntax definitions for the last
+(See section~\ref{primaries} for the syntax definitions for the last
 three symbols.)
 
 An augmented assignment evaluates the target (which, unlike normal
@@ -304,7 +304,7 @@ modified instead.
 With the exception of assigning to tuples and multiple targets in a single
 statement, the assignment done by augmented assignment statements is handled
 the same way as normal assignments. Similarly, with the exception of the
-possible \emph{in-place} behaviour, the binary operation performed by
+possible \emph{in-place} behavior, the binary operation performed by
 augmented assignment is the same as the normal binary operations.
 
 
@@ -379,7 +379,10 @@ to standard output, (2) when the last character written to standard
 output is \character{\e n}, or (3) when the last write operation on
 standard output was not a \keyword{print} statement.  (In some cases
 it may be functional to write an empty string to standard output for
-this reason.)
+this reason.)  \note{Objects which act like file objects but which are
+not the built-in file objects often do not properly emulate this
+aspect of the file object's behavior, so it is best not to rely on
+this.}
 \index{output}
 \indexii{writing}{values}
 
@@ -470,7 +473,7 @@ determined in the previous step, with the instance as
 its parameter.
 
 If a third object is present, and it is not \code{None}, it should be
-a traceback object (see section \ref{traceback}), and it is
+a traceback object (see section~\ref{traceback}), and it is
 substituted instead of the current location as the place where the
 exception occurred.  This is useful to re-raise an exception
 transparently in an except clause.
