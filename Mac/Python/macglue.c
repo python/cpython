@@ -374,6 +374,11 @@ PyOS_InitInterrupts()
 		signal(SIGINT, intcatcher);
 }
 
+void
+PyOS_FiniInterrupts()
+{
+}
+
 /*
 ** This routine scans the event queue looking for cmd-.
 ** This is the only way to get an interrupt under THINK (since it
