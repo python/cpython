@@ -38,6 +38,9 @@ Core and builtins
 Library
 -------
 
+- Bug #883604: Fix Lib/test/test_strftime.py to escape characters from locale
+  time values that might be mistaken as regex syntax.
+
 - Bug #700055: .pth files can now have any type of line endings.
 
 - Patch 817379: Allow absolute ftp paths in urllib2.
