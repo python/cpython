@@ -8,6 +8,13 @@ Core and builtins
   that have an attribute print_file_and_line, not just SyntaxErrors. This
   fixes the bug that no proper line number is given for bad \x escapes.
 
+Extension modules
+
+- A security hole ("double free") was found in zlib-1.1.3, a popular
+  third party compression library used by some Python modules.  The
+  hole was quickly plugged in zlib-1.1.4, and the Windows build of
+  Python 2.2.1 now ships with zlib-1.1.4.
+
 Library
 
 - webbrowser: tightened up the command passed to os.system() so that
