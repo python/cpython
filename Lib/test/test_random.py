@@ -490,11 +490,14 @@ class TestModule(unittest.TestCase):
         self.failUnless(set(random.__all__) <= set(dir(random)))
 
 def test_main(verbose=None):
-    testclasses =    (WichmannHill_TestBasicOps,
+    testclasses =    [WichmannHill_TestBasicOps,
                       MersenneTwister_TestBasicOps,
-                      HardwareRandom_TestBasicOps,
                       TestDistributions,
-                      TestModule)
+                      TestModule]
+
+    if random._urandom is not None:
+        testclasses.append(HardwareRandom_TestBasicOps)
+
     test_support.run_unittest(*testclasses)
 
     # verify reference counting
