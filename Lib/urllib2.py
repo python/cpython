@@ -72,11 +72,11 @@ f = urllib2.urlopen('http://www.python.org/')
 
 # XXX issues:
 # If an authentication error handler that tries to perform
- # authentication for some reason but fails, how should the error be
- # signalled?  The client needs to know the HTTP error code.  But if
- # the handler knows that the problem was, e.g., that it didn't know
- # that hash algo that requested in the challenge, it would be good to
- # pass that information along to the client, too.
+# authentication for some reason but fails, how should the error be
+# signalled?  The client needs to know the HTTP error code.  But if
+# the handler knows that the problem was, e.g., that it didn't know
+# that hash algo that requested in the challenge, it would be good to
+# pass that information along to the client, too.
 
 # XXX to do:
 # name!
@@ -328,8 +328,8 @@ class OpenerDirector:
 
     def error(self, proto, *args):
         if proto in ['http', 'https']:
-            # XXX http[s] protocols are special cased
-            dict = self.handle_error['http'] # https is not different then http
+            # XXX http[s] protocols are special-cased
+            dict = self.handle_error['http'] # https is not different than http
             proto = args[2]  # YUCK!
             meth_name = 'http_error_%d' % proto
             http_err = 1
