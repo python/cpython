@@ -3293,6 +3293,14 @@ jcompile(node *n, char *filename, struct compiling *base)
 		Py_XDECREF(filename);
 		Py_XDECREF(name);
 	}
+	else if (!PyErr_Occurred()) {
+		/* This could happen if someone called PyErr_Clear() after an
+		   error was reported above.  That's not supposed to happen,
+		   but I just plugged one case and I'm not sure there can't be
+		   others.  In that case, raise SystemError so that at least
+		   it gets reported instead dumping core. */
+		PyErr_SetString(PyExc_SystemError, "lost syntax error");
+	}
 	com_free(&sc);
 	return co;
 }
