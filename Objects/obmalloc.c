@@ -1,3 +1,7 @@
+#include "Python.h"
+
+#ifdef WITH_PYMALLOC
+
 /* An object allocator for Python.
 
    Here is an introduction to the layers of the Python memory architecture,
@@ -636,3 +640,49 @@ _PyMalloc_Calloc(size_t nbel, size_t elsz)
 }
 */
 
+#else	/* ! WITH_PYMALLOC */
+void
+*_PyMalloc_Malloc(size_t n)
+{
+	return PyMem_MALLOC(n);
+}
+
+void
+*_PyMalloc_Realloc(void *p, size_t n)
+{
+	return PyMem_REALLOC(p, n);
+}
+
+void
+_PyMalloc_Free(void *p)
+{
+	PyMem_FREE(p);
+}
+#endif /* WITH_PYMALLOC */
+
+PyObject
+*_PyMalloc_New(PyTypeObject *tp)
+{
+	PyObject *op;
+	op = (PyObject *) _PyMalloc_MALLOC(_PyObject_SIZE(tp));
+	if (op == NULL)
+		return PyErr_NoMemory();
+	return PyObject_INIT(op, tp);
+}
+
+PyVarObject *
+_PyMalloc_NewVar(PyTypeObject *tp, int nitems)
+{
+	PyVarObject *op;
+	const size_t size = _PyObject_VAR_SIZE(tp, nitems);
+	op = (PyVarObject *) _PyMalloc_MALLOC(size);
+	if (op == NULL)
+		return (PyVarObject *)PyErr_NoMemory();
+	return PyObject_INIT_VAR(op, tp, nitems);
+}
+
+void
+_PyMalloc_Del(PyObject *op)
+{
+	_PyMalloc_FREE(op);
+}
