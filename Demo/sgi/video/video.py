@@ -6,6 +6,8 @@ import time
 import sys
 import al
 import AL
+
+sys.path.append('/ufs/guido/src/video') # Increase chance to find colorsys
 import colorsys
 
 BUFFERSIZE = 32000
