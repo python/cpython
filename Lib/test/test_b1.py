@@ -499,6 +499,17 @@ if list((0, 1, 2, 3)) != [0, 1, 2, 3]: raise TestFailed, 'list((0, 1, 2, 3))'
 if list('') != []: raise TestFailed, 'list('')'
 if list('spam') != ['s', 'p', 'a', 'm']: raise TestFailed, "list('spam')"
 
+try:
+    # Verify clearing of bug #556025
+    # this assumes that the max data size (sys.maxint) == max address size
+    # this also assumes that the address size is at least 4 bytes
+    # with 8 byte addresses, the bug is not well tested
+    list(xrange(sys.maxint / 4))
+except MemoryError:
+    pass
+else:
+    raise TestFailed, 'list(xrange(sys.maxint / 4))'
+
 print 'long'
 if long(314) != 314L: raise TestFailed, 'long(314)'
 if long(3.14) != 3L: raise TestFailed, 'long(3.14)'

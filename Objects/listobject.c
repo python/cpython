@@ -44,7 +44,14 @@ roundupsize(int n)
 	return ((n >> nbits) + 1) << nbits;
  }
 
-#define NRESIZE(var, type, nitems) PyMem_RESIZE(var, type, roundupsize(nitems))
+#define NRESIZE(var, type, nitems)				\
+do {								\
+	size_t _new_size = roundupsize(nitems);			\
+	if (_new_size <= ((~(size_t)0) / sizeof(type)))		\
+		PyMem_RESIZE(var, type, _new_size);		\
+	else							\
+		var = NULL;					\
+} while (0)
 
 PyObject *
 PyList_New(int size)
@@ -1565,8 +1572,10 @@ list_fill(PyListObject *result, PyObject *v)
 	if (n < 0)
 		n = 8;	/* arbitrary */
 	NRESIZE(result->ob_item, PyObject*, n);
-	if (result->ob_item == NULL)
+	if (result->ob_item == NULL) {
+		PyErr_NoMemory();
 		goto error;
+	}
 	for (i = 0; i < n; i++)
 		result->ob_item[i] = NULL;
 	result->ob_size = n;
@@ -1714,7 +1723,7 @@ PyTypeObject PyList_Type = {
 	(initproc)list_init,			/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_GC_Del,			/* tp_free */
+	_PyObject_GC_Del,        		/* tp_free */
 };
 
 
