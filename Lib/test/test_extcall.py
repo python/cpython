@@ -138,11 +138,46 @@ else:
     print "should raise TypeError: * argument must be a tuple"
 
 try:
+    dir(*h)
+except TypeError, err:
+    print err
+else:
+    print "should raise TypeError: * argument must be a tuple"
+
+try:
+    None(*h)
+except TypeError, err:
+    print err
+else:
+    print "should raise TypeError: * argument must be a tuple"
+
+try:
     h(**h)
 except TypeError, err:
     print err
 else:
     print "should raise TypeError: ** argument must be a dictionary"
+
+try:
+    dir(**h)
+except TypeError, err:
+    print err
+else:
+    print "should raise TypeError: ** argument must be a dictionary"
+
+try:
+    None(**h)
+except TypeError, err:
+    print err
+else:
+    print "should raise TypeError: ** argument must be a dictionary"
+
+try:
+    dir(b=1,**{'b':1})
+except TypeError, err:
+    print err
+else:
+    print "should raise TypeError: dir() got multiple values for keyword argument 'b'"
 
 def f2(*a, **b):
     return a, b
