@@ -1,35 +1,34 @@
-# An FTP client class.  Based on RFC 959: File Transfer Protocol
-# (FTP), by J. Postel and J. Reynolds
+'''An FTP client class, and some helper functions.
+Based on RFC 959: File Transfer Protocol
+(FTP), by J. Postel and J. Reynolds
 
-# Changes and improvements suggested by Steve Majewski
-# Modified by Jack to work on the mac.
+Changes and improvements suggested by Steve Majewski.
+Modified by Jack to work on the mac.
+Modified by Siebren to support docstrings and PASV.
 
 
-# Example:
-#
-# >>> from ftplib import FTP
-# >>> ftp = FTP('ftp.python.org') # connect to host, default port
-# >>> ftp.login() # default, i.e.: user anonymous, passwd user@hostname
-# >>> ftp.retrlines('LIST') # list directory contents
-# total 9
-# drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 .
-# drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 ..
-# drwxr-xr-x   2 root     wheel        1024 Jan  3  1994 bin
-# drwxr-xr-x   2 root     wheel        1024 Jan  3  1994 etc
-# d-wxrwxr-x   2 ftp      wheel        1024 Sep  5 13:43 incoming
-# drwxr-xr-x   2 root     wheel        1024 Nov 17  1993 lib
-# drwxr-xr-x   6 1094     wheel        1024 Sep 13 19:07 pub
-# drwxr-xr-x   3 root     wheel        1024 Jan  3  1994 usr
-# -rw-r--r--   1 root     root          312 Aug  1  1994 welcome.msg
-# >>> ftp.quit()
-# >>> 
-#
-# To download a file, use ftp.retrlines('RETR ' + filename),
-# or ftp.retrbinary() with slightly different arguments.
-# To upload a file, use ftp.storlines() or ftp.storbinary(), which have
-# an open file as argument (see their definitions below for details).
-# The download/upload functions first issue appropriate TYPE and PORT
-# commands.
+Example:
+
+>>> from ftplib import FTP
+>>> ftp = FTP('ftp.python.org') # connect to host, default port
+>>> ftp.login() # default, i.e.: user anonymous, passwd user@hostname
+>>> ftp.retrlines('LIST') # list directory contents
+total 9
+drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 .
+drwxr-xr-x   8 root     wheel        1024 Jan  3  1994 ..
+drwxr-xr-x   2 root     wheel        1024 Jan  3  1994 bin
+drwxr-xr-x   2 root     wheel        1024 Jan  3  1994 etc
+d-wxrwxr-x   2 ftp      wheel        1024 Sep  5 13:43 incoming
+drwxr-xr-x   2 root     wheel        1024 Nov 17  1993 lib
+drwxr-xr-x   6 1094     wheel        1024 Sep 13 19:07 pub
+drwxr-xr-x   3 root     wheel        1024 Jan  3  1994 usr
+-rw-r--r--   1 root     root          312 Aug  1  1994 welcome.msg
+>>> ftp.quit()
+>>> 
+
+A nice test that reveals some of the network dialogue would be:
+python ftplib.py -d localhost -l -p -l
+'''
 
 
 import os
@@ -71,7 +70,23 @@ CRLF = '\r\n'
 # The class itself
 class FTP:
 
-	# New initialization method (called by class instantiation)
+	'''An FTP client class.
+
+	To create a connection, call the class using these argument:
+		host, user, passwd, acct
+	These are all strings, and have default value ''.
+	Then use self.connect() with optional host and port argument.
+
+	To download a file, use ftp.retrlines('RETR ' + filename),
+	or ftp.retrbinary() with slightly different arguments.
+	To upload a file, use ftp.storlines() or ftp.storbinary(),
+	which have an open file as argument (see their definitions
+	below for details).
+	The download/upload functions first issue appropriate TYPE
+	and PORT or PASV commands.
+'''
+
+	# Initialization method (called by class instantiation).
 	# Initialize host to localhost, port to standard ftp port
 	# Optional arguments are host (for connect()),
 	# and user, passwd, acct (for login())
@@ -87,31 +102,39 @@ class FTP:
 			self.connect(host)
 			if user: self.login(user, passwd, acct)
 
-	# Connect to host.  Arguments:
-	# - host: hostname to connect to (default previous host)
-	# - port: port to connect to (default previous port)
 	def connect(self, host = '', port = 0):
+		'''Connect to host.  Arguments are:
+		- host: hostname to connect to (string, default previous host)
+		- port: port to connect to (integer, default previous port)'''
 		if host: self.host = host
 		if port: self.port = port
+		self.passiveserver = 0
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.sock.connect(self.host, self.port)
-		self.file = self.sock.makefile('rb')
+		self.file = self.sock.makefile('r')
 		self.welcome = self.getresp()
 
-	# Get the welcome message from the server
-	# (this is read and squirreled away by connect())
 	def getwelcome(self):
+		'''Get the welcome message from the server.
+		(this is read and squirreled away by connect())'''
 		if self.debugging:
 			print '*welcome*', self.sanitize(self.welcome)
 		return self.welcome
 
-	# Set the debugging level.  Argument level means:
-	# 0: no debugging output (default)
-	# 1: print commands and responses but not body text etc.
-	# 2: also print raw lines read and sent before stripping CR/LF
 	def set_debuglevel(self, level):
+		'''Set the debugging level.
+		The required argument level means:
+		0: no debugging output (default)
+		1: print commands and responses but not body text etc.
+		2: also print raw lines read and sent before stripping CR/LF'''
 		self.debugging = level
 	debug = set_debuglevel
+
+	def set_pasv(self, val):
+		'''Use passive or active mode for data transfers.
+		With a false argument, use the normal PORT mode,
+		With a true argument, use the PASV command.'''
+		self.passiveserver = val
 
 	# Internal: "sanitize" a string for printing
 	def sanitize(self, s):
@@ -175,17 +198,17 @@ class FTP:
 			raise error_proto, resp
 		return resp
 
-	# Expect a response beginning with '2'
 	def voidresp(self):
+		"""Expect a response beginning with '2'."""
 		resp = self.getresp()
 		if resp[0] <> '2':
 			raise error_reply, resp
 
-	# Abort a file transfer.  Uses out-of-band data.
-	# This does not follow the procedure from the RFC to send Telnet
-	# IP and Synch; that doesn't seem to work with the servers I've
-	# tried.  Instead, just send the ABOR command as OOB data.
 	def abort(self):
+		'''Abort a file transfer.  Uses out-of-band data.
+		This does not follow the procedure from the RFC to send Telnet
+		IP and Synch; that doesn't seem to work with the servers I've
+		tried.  Instead, just send the ABOR command as OOB data.'''
 		line = 'ABOR' + CRLF
 		if self.debugging > 1: print '*put urgent*', self.sanitize(line)
 		self.sock.send(line, MSG_OOB)
@@ -193,26 +216,26 @@ class FTP:
 		if resp[:3] not in ('426', '226'):
 			raise error_proto, resp
 
-	# Send a command and return the response
 	def sendcmd(self, cmd):
+		'''Send a command and return the response.'''
 		self.putcmd(cmd)
 		return self.getresp()
 
-	# Send a command and expect a response beginning with '2'
 	def voidcmd(self, cmd):
+		"""Send a command and expect a response beginning with '2'."""
 		self.putcmd(cmd)
 		self.voidresp()
 
-	# Send a PORT command with the current host and the given port number
 	def sendport(self, host, port):
+		'''Send a PORT command with the current host and the given port number.'''
 		hbytes = string.splitfields(host, '.')
 		pbytes = [`port/256`, `port%256`]
 		bytes = hbytes + pbytes
 		cmd = 'PORT ' + string.joinfields(bytes, ',')
 		self.voidcmd(cmd)
 
-	# Create a new socket and send a PORT command for it
 	def makeport(self):
+		'''Create a new socket and send a PORT command for it.'''
 		global nextport
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.bind(('', 0))
@@ -222,18 +245,30 @@ class FTP:
 		resp = self.sendport(host, port)
 		return sock
 
-	# Send a port command and a transfer command, accept the connection
-	# and return the socket for the connection
 	def transfercmd(self, cmd):
-		sock = self.makeport()
-		resp = self.sendcmd(cmd)
-		if resp[0] <> '1':
-			raise error_reply, resp
-		conn, sockaddr = sock.accept()
+		'''Initiate a transfer over the data connection.
+		If the transfer is active, send a port command and
+		the transfer command, and accept the connection.
+		If the server is passive, send a pasv command, connect
+		to it, and start the transfer command.
+		Either way, return the socket for the connection'''
+		if self.passiveserver:
+			host, port = parse227(self.sendcmd('PASV'))
+			conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			conn.connect(host, port)
+			resp = self.sendcmd(cmd)
+			if resp[0] <> '1':
+				raise error_reply, resp
+		else:
+			sock = self.makeport()
+			resp = self.sendcmd(cmd)
+			if resp[0] <> '1':
+				raise error_reply, resp
+			conn, sockaddr = sock.accept()
 		return conn
 
-	# Login, default anonymous
 	def login(self, user = '', passwd = '', acct = ''):
+		'''Login, default anonymous.'''
 		if not user: user = 'anonymous'
 		if user == 'anonymous' and passwd in ('', '-'):
 			thishost = socket.gethostname()
@@ -264,11 +299,11 @@ class FTP:
 		if resp[0] <> '2':
 			raise error_reply, resp
 
-	# Retrieve data in binary mode.
-	# The argument is a RETR command.
-	# The callback function is called for each block.
-	# This creates a new port for you
 	def retrbinary(self, cmd, callback, blocksize):
+		'''Retrieve data in binary mode.
+		The argument is a RETR command.
+		The callback function is called for each block.
+		This creates a new port for you'''
 		self.voidcmd('TYPE I')
 		conn = self.transfercmd(cmd)
 		while 1:
@@ -279,16 +314,16 @@ class FTP:
 		conn.close()
 		self.voidresp()
 
-	# Retrieve data in line mode.
-	# The argument is a RETR or LIST command.
-	# The callback function is called for each line, with trailing
-	# CRLF stripped.  This creates a new port for you.
-	# print_lines is the default callback 
 	def retrlines(self, cmd, callback = None):
+		'''Retrieve data in line mode.
+		The argument is a RETR or LIST command.
+		The callback function (2nd argument) is called for each line,
+		with trailing CRLF stripped.  This creates a new port for you.
+		print_lines is the default callback.'''
 		if not callback: callback = print_line
 		resp = self.sendcmd('TYPE A')
 		conn = self.transfercmd(cmd)
-		fp = conn.makefile('rb')
+		fp = conn.makefile('r')
 		while 1:
 			line = fp.readline()
 			if self.debugging > 2: print '*retr*', `line`
@@ -303,8 +338,8 @@ class FTP:
 		conn.close()
 		self.voidresp()
 
-	# Store a file in binary mode
 	def storbinary(self, cmd, fp, blocksize):
+		'''Store a file in binary mode.'''
 		self.voidcmd('TYPE I')
 		conn = self.transfercmd(cmd)
 		while 1:
@@ -314,8 +349,8 @@ class FTP:
 		conn.close()
 		self.voidresp()
 
-	# Store a file in line mode
 	def storlines(self, cmd, fp):
+		'''Store a file in line mode.'''
 		self.voidcmd('TYPE A')
 		conn = self.transfercmd(cmd)
 		while 1:
@@ -328,13 +363,13 @@ class FTP:
 		conn.close()
 		self.voidresp()
 
-	# Send new account name
 	def acct(self, password):
+		'''Send new account name.'''
 		cmd = 'ACCT ' + password
 		self.voidcmd(cmd)
 
-	# Return a list of files in a given directory (default the current)
 	def nlst(self, *args):
+		'''Return a list of files in a given directory (default the current).'''
 		cmd = 'NLST'
 		for arg in args:
 			cmd = cmd + (' ' + arg)
@@ -342,11 +377,12 @@ class FTP:
 		self.retrlines(cmd, files.append)
 		return files
 
-	# List a directory in long form.  By default list current directory
-	# to stdout.  Optional last argument is callback function;
-	# all non-empty arguments before it are concatenated to the
-	# LIST command.  (This *should* only be used for a pathname.)
 	def dir(self, *args):
+		'''List a directory in long form.
+		By default list current directory to stdout.
+		Optional last argument is callback function; all
+		non-empty arguments before it are concatenated to the
+		LIST command.  (This *should* only be used for a pathname.)'''
 		cmd = 'LIST' 
 		func = None
 		if args[-1:] and type(args[-1]) != type(''):
@@ -356,15 +392,15 @@ class FTP:
 				cmd = cmd + (' ' + arg) 
 		self.retrlines(cmd, func)
 
-	# Rename a file
 	def rename(self, fromname, toname):
+		'''Rename a file.'''
 		resp = self.sendcmd('RNFR ' + fromname)
 		if resp[0] <> '3':
 			raise error_reply, resp
 		self.voidcmd('RNTO ' + toname)
 
-        # Delete a file
         def delete(self, filename):
+		'''Delete a file.'''
                 resp = self.sendcmd('DELE ' + filename)
                 if resp[:3] == '250':
                         return
@@ -373,8 +409,8 @@ class FTP:
                 else:
                         raise error_reply, resp
 
-	# Change to a directory
 	def cwd(self, dirname):
+		'''Change to a directory.'''
 		if dirname == '..':
 			try:
 				self.voidcmd('CDUP')
@@ -385,36 +421,61 @@ class FTP:
 		cmd = 'CWD ' + dirname
 		self.voidcmd(cmd)
 
-	# Retrieve the size of a file
 	def size(self, filename):
+		'''Retrieve the size of a file.'''
+		# Note that the RFC doesn't say anything about 'SIZE'
 		resp = self.sendcmd('SIZE ' + filename)
 		if resp[:3] == '213':
 			return string.atoi(string.strip(resp[3:]))
 
-	# Make a directory, return its full pathname
 	def mkd(self, dirname):
+		'''Make a directory, return its full pathname.'''
 		resp = self.sendcmd('MKD ' + dirname)
 		return parse257(resp)
 
-	# Return current wording directory
 	def pwd(self):
+		'''Return current working directory.'''
 		resp = self.sendcmd('PWD')
 		return parse257(resp)
 
-	# Quit, and close the connection
 	def quit(self):
+		'''Quit, and close the connection.'''
 		self.voidcmd('QUIT')
 		self.close()
 
-	# Close the connection without assuming anything about it
 	def close(self):
+		'''Close the connection without assuming anything about it.'''
 		self.file.close()
 		self.sock.close()
 		del self.file, self.sock
 
 
-# Parse a response type 257
+def parse227(resp):
+	'''Parse the '227' response for a PASV request.
+	Raises error_proto if it does not contain '(h1,h2,h3,h4,p1,p2)'
+	Return ('host.addr.as.numbers', port#) tuple.'''
+
+	if resp[:3] <> '227':
+		raise error_reply, resp
+	left = string.find(resp, '(')
+	if left < 0: raise error_proto, resp
+	right = string.find(resp, ')', left + 1)
+	if right < 0:
+		raise error_proto, resp	# should contain '(h1,h2,h3,h4,p1,p2)'
+	numbers = string.split(resp[left+1:right], ',')
+	if len(numbers) <> 6:
+		raise error_proto, resp
+	host = string.join(numbers[:4], '.')
+	port = (string.atoi(numbers[4]) << 8) + string.atoi(numbers[5])
+	return host, port
+# end parse227
+
+
 def parse257(resp):
+	'''Parse the '257' response for a MKD or RMD request.
+	This is a response to a MKD or RMD request: a directory name.
+	Returns the directoryname in the 257 reply.'''
+
 	if resp[:3] <> '257':
 		raise error_reply, resp
 	if resp[3:5] <> ' "':
@@ -432,15 +493,32 @@ def parse257(resp):
 		dirname = dirname + c
 	return dirname
 
-# Default retrlines callback to print a line
 def print_line(line):
+	'''Default retrlines callback to print a line.'''
 	print line
 
+def ftpcp(source, sourcename, target, targetname = '', type = 'I'):
+	'''Copy file from one FTP-instance to another.'''
+	if not targetname: targetname = sourcename
+	type = 'TYPE ' + type
+	source.voidcmd(type)
+	target.voidcmd(type)
+	sourcehost, sourceport = parse227(source.sendcmd('PASV'))
+	target.sendport(sourcehost, sourceport)
+	# RFC 959: the user must "listen" [...] BEFORE sending the
+	# transfer request.
+	# So: STOR before RETR, because here the target is a "user".
+	treply = target.sendcmd('STOR ' + targetname)
+	if treply[:3] not in ('125', '150'): raise error_proto	# RFC 959
+	sreply = source.sendcmd('RETR ' + sourcename)
+	if sreply[:3] not in ('125', '150'): raise error_proto	# RFC 959
+	source.voidresp()
+	target.voidresp()
 
-# Test program.
-# Usage: ftp [-d] host [-l[dir]] [-d[dir]] [file] ...
 def test():
-	import marshal
+	'''Test program.
+	Usage: ftp [-d] host [-l[dir]] [-d[dir]] [-p] [file] ...'''
+
 	debugging = 0
 	while sys.argv[1] == '-d':
 		debugging = debugging+1
@@ -456,6 +534,8 @@ def test():
 			cmd = 'CWD'
 			if file[2:]: cmd = cmd + ' ' + file[2:]
 			resp = ftp.sendcmd(cmd)
+		elif file == '-p':
+			ftp.set_pasv(not ftp.passiveserver)
 		else:
 			ftp.retrbinary('RETR ' + file, \
 				       sys.stdout.write, 1024)
