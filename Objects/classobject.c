@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "structmember.h"
 
+
 /* Forward */
 static PyObject *class_lookup(PyClassObject *, PyObject *,
 			      PyClassObject **);
@@ -755,36 +756,6 @@ instance_repr(PyInstanceObject *inst)
 	return res;
 }
 
-static PyObject *
-instance_compare1(PyObject *inst, PyObject *other)
-{
-	return PyInstance_DoBinOp(inst, other, "__cmp__", "__rcmp__",
-			     instance_compare1);
-}
-
-static int
-instance_compare(PyObject *inst, PyObject *other)
-{
-	PyObject *result;
-	long outcome;
-	result = instance_compare1(inst, other);
-	if (result == NULL)
-		return -1;
-	if (!PyInt_Check(result)) {
-		Py_DECREF(result);
-		PyErr_SetString(PyExc_TypeError,
-				"comparison did not return an int");
-		return -1;
-	}
-	outcome = PyInt_AsLong(result);
-	Py_DECREF(result);
-	if (outcome < 0)
-		return -1;
-	else if (outcome > 0)
-		return 1;
-	return 0;
-}
-
 static long
 instance_hash(PyInstanceObject *inst)
 {
@@ -1185,117 +1156,119 @@ generic_unary_op(PyInstanceObject *self, PyObject *methodname)
 	return res;
 }
 
-
-/* Implement a binary operator involving at least one class instance. */
-
-PyObject *
-PyInstance_DoBinOp(PyObject *v, PyObject *w, char *opname, char *ropname,
-                   PyObject * (*thisfunc)(PyObject *, PyObject *))
+static PyObject *
+generic_binary_op(PyObject *v, PyObject *w, char *opname)
 {
-	char buf[256];
-	PyObject *result = NULL;
-
-	if (PyInstance_HalfBinOp(v, w, opname, &result, thisfunc, 0) <= 0)
-		return result;
-	if (PyInstance_HalfBinOp(w, v, ropname, &result, thisfunc, 1) <= 0)
-		return result;
-	/* Sigh -- special case for comparisons */
-	if (strcmp(opname, "__cmp__") == 0) {
-		Py_uintptr_t iv = (Py_uintptr_t)v;
-		Py_uintptr_t iw = (Py_uintptr_t)w;
-		long c = (iv < iw) ? -1 : (iv > iw) ? 1 : 0;
-		return PyInt_FromLong(c);
-	}
-	sprintf(buf, "%s nor %s defined for these operands", opname, ropname);
-	PyErr_SetString(PyExc_TypeError, buf);
-	return NULL;
-}
-
-
-/* Try one half of a binary operator involving a class instance.
-   Return value:
-   -1 if an exception is to be reported right away
-   0  if we have a valid result
-   1  if we could try another operation
-*/
-
-static PyObject *coerce_obj;
-
-int
-PyInstance_HalfBinOp(PyObject *v, PyObject *w, char *opname, PyObject **r_result,
-		     PyObject * (*thisfunc)(PyObject *, PyObject *), int swapped)
-{
-	PyObject *func;
+	PyObject *result;
 	PyObject *args;
-	PyObject *coercefunc;
-	PyObject *coerced = NULL;
-	PyObject *v1;
-	
-	if (!PyInstance_Check(v))
-		return 1;
-	if (coerce_obj == NULL) {
-		coerce_obj = PyString_InternFromString("__coerce__");
-		if (coerce_obj == NULL)
-			return -1;
-	}
-	coercefunc = PyObject_GetAttr(v, coerce_obj);
-	if (coercefunc == NULL) {
-		PyErr_Clear();
-	}
-	else {
-		args = Py_BuildValue("(O)", w);
-		if (args == NULL) {
-			return -1;
-		}
-		coerced = PyEval_CallObject(coercefunc, args);
-		Py_DECREF(args);
-		Py_DECREF(coercefunc);
-		if (coerced == NULL) {
-			return -1;
-		}
-		if (coerced == Py_None) {
-			Py_DECREF(coerced);
-			return 1;
-		}
-		if (!PyTuple_Check(coerced) || PyTuple_Size(coerced) != 2) {
-			Py_DECREF(coerced);
-			PyErr_SetString(PyExc_TypeError,
-				   "coercion should return None or 2-tuple");
-			return -1;
-		}
-		v1 = PyTuple_GetItem(coerced, 0);
-		w = PyTuple_GetItem(coerced, 1);
-		if (v1 != v) {
-			v = v1;
-			if (!PyInstance_Check(v) && !PyInstance_Check(w)) {
-				if (swapped)
-					*r_result = (*thisfunc)(w, v);
-				else
-					*r_result = (*thisfunc)(v, w);
-				Py_DECREF(coerced);
-				return *r_result == NULL ? -1 : 0;
-			}
-		}
-	}
-	func = PyObject_GetAttrString(v, opname);
+	PyObject *func = PyObject_GetAttrString(v, opname);
 	if (func == NULL) {
-		Py_XDECREF(coerced);
 		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-			return -1;
+			return NULL;
 		PyErr_Clear();
-		return 1;
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
 	}
 	args = Py_BuildValue("(O)", w);
 	if (args == NULL) {
 		Py_DECREF(func);
-		Py_XDECREF(coerced);
-		return -1;
+		return NULL;
 	}
-	*r_result = PyEval_CallObject(func, args);
+	result = PyEval_CallObject(func, args);
 	Py_DECREF(args);
 	Py_DECREF(func);
-	Py_XDECREF(coerced);
-	return *r_result == NULL ? -1 : 0;
+	return result;
+}
+
+
+static PyObject *coerce_obj;
+
+/* Try one half of a binary operator involving a class instance. */
+static PyObject *
+half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc, 
+		int swapped)
+{
+	PyObject *args;
+	PyObject *coercefunc;
+	PyObject *coerced = NULL;
+	PyObject *v1;
+	PyObject *result;
+	
+	if (!PyInstance_Check(v)) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	if (coerce_obj == NULL) {
+		coerce_obj = PyString_InternFromString("__coerce__");
+		if (coerce_obj == NULL)
+			return NULL;
+	}
+	coercefunc = PyObject_GetAttr(v, coerce_obj);
+	if (coercefunc == NULL) {
+		PyErr_Clear();
+		return generic_binary_op(v, w, opname);
+	}
+
+	args = Py_BuildValue("(O)", w);
+	if (args == NULL) {
+		return NULL;
+	}
+	coerced = PyEval_CallObject(coercefunc, args);
+	Py_DECREF(args);
+	Py_DECREF(coercefunc);
+	if (coerced == NULL) {
+		return NULL;
+	}
+	if (coerced == Py_None || coerced == Py_NotImplemented) {
+		Py_DECREF(coerced);
+		return generic_binary_op(v, w, opname);
+	}
+	if (!PyTuple_Check(coerced) || PyTuple_Size(coerced) != 2) {
+		Py_DECREF(coerced);
+		PyErr_SetString(PyExc_TypeError,
+				"coercion should return None or 2-tuple");
+		return NULL;
+	}
+	v1 = PyTuple_GetItem(coerced, 0);
+	w = PyTuple_GetItem(coerced, 1);
+	if (v1 == v) {
+		/* prevent recursion if __coerce__ returns self as the first
+		 * argument */
+		result = generic_binary_op(v, w, opname);
+	} else {
+		if (swapped)
+			result = (thisfunc)(w, v1);
+		else
+			result = (thisfunc)(v1, w);
+	}
+	Py_DECREF(coerced);
+	return result;
+}
+
+/* Implement a binary operator involving at least one class instance. */
+static PyObject *
+do_binop(PyObject *v, PyObject *w, char *opname, char *ropname,
+                   binaryfunc thisfunc)
+{
+	PyObject *result = half_binop(v, w, opname, thisfunc, 0);
+	if (result == Py_NotImplemented) {
+		Py_DECREF(Py_NotImplemented);
+		result = half_binop(w, v, ropname, thisfunc, 1);
+	}
+	return result;
+}
+
+static PyObject *
+do_binop_inplace(PyObject *v, PyObject *w, char *iopname, char *opname,
+			char *ropname, binaryfunc thisfunc)
+{
+	PyObject *result = half_binop(v, w, iopname, thisfunc, 0);
+	if (result == Py_NotImplemented) {
+		Py_DECREF(Py_NotImplemented);
+		result = do_binop(v, w, opname, ropname, thisfunc);
+	}
+	return result;
 }
 
 static int
@@ -1314,11 +1287,11 @@ instance_coerce(PyObject **pv, PyObject **pw)
 	}
 	coercefunc = PyObject_GetAttr(v, coerce_obj);
 	if (coercefunc == NULL) {
-		/* No __coerce__ method: always OK */
+		/* No __coerce__ method */
 		PyErr_Clear();
 		Py_INCREF(v);
 		Py_INCREF(w);
-		return 0;
+		return 1;
 	}
 	/* Has __coerce__ method: call it */
 	args = Py_BuildValue("(O)", w);
@@ -1332,7 +1305,7 @@ instance_coerce(PyObject **pv, PyObject **pw)
 		/* __coerce__ call raised an exception */
 		return -1;
 	}
-	if (coerced == Py_None) {
+	if (coerced == Py_None || coerced == Py_NotImplemented) {
 		/* __coerce__ says "I can't do it" */
 		Py_DECREF(coerced);
 		return 1;
@@ -1353,7 +1326,6 @@ instance_coerce(PyObject **pv, PyObject **pw)
 	return 0;
 }
 
-
 #define UNARY(funcname, methodname) \
 static PyObject *funcname(PyInstanceObject *self) { \
 	static PyObject *o; \
@@ -1361,9 +1333,101 @@ static PyObject *funcname(PyInstanceObject *self) { \
 	return generic_unary_op(self, o); \
 }
 
+#define BINARY(f, m, n) \
+static PyObject *f(PyObject *v, PyObject *w) { \
+	return do_binop(v, w, "__" m "__", "__r" m "__", n); \
+}
+
+#define BINARY_INPLACE(f, m, n) \
+static PyObject *f(PyObject *v, PyObject *w) { \
+	return do_binop_inplace(v, w, "__i" m "__", "__" m "__", \
+			"__r" m "__", n); \
+}
+
 UNARY(instance_neg, "__neg__")
 UNARY(instance_pos, "__pos__")
 UNARY(instance_abs, "__abs__")
+
+BINARY(instance_or, "or", PyNumber_Or)
+BINARY(instance_and, "and", PyNumber_And)
+BINARY(instance_xor, "xor", PyNumber_Xor)
+BINARY(instance_lshift, "lshift", PyNumber_Lshift)
+BINARY(instance_rshift, "rshift", PyNumber_Rshift)
+BINARY(instance_add, "add", PyNumber_Add)
+BINARY(instance_sub, "sub", PyNumber_Subtract)
+BINARY(instance_mul, "mul", PyNumber_Multiply)
+BINARY(instance_div, "div", PyNumber_Divide)
+BINARY(instance_mod, "mod", PyNumber_Remainder)
+BINARY(instance_divmod, "divmod", PyNumber_Divmod)
+
+BINARY_INPLACE(instance_ior, "or", PyNumber_InPlaceOr)
+BINARY_INPLACE(instance_ixor, "xor", PyNumber_InPlaceXor)
+BINARY_INPLACE(instance_iand, "and", PyNumber_InPlaceAnd)
+BINARY_INPLACE(instance_ilshift, "lshift", PyNumber_InPlaceLshift)
+BINARY_INPLACE(instance_irshift, "rshift", PyNumber_InPlaceRshift)
+BINARY_INPLACE(instance_iadd, "add", PyNumber_InPlaceAdd)
+BINARY_INPLACE(instance_isub, "sub", PyNumber_InPlaceSubtract)
+BINARY_INPLACE(instance_imul, "mul", PyNumber_InPlaceMultiply)
+BINARY_INPLACE(instance_idiv, "div", PyNumber_InPlaceDivide)
+BINARY_INPLACE(instance_imod, "mod", PyNumber_InPlaceRemainder)
+
+static PyObject *
+do_cmp(PyObject *v, PyObject *w)
+{
+	int cmp = PyObject_Compare(v, w);
+	if (PyErr_Occurred()) {
+		return NULL;
+	}
+    	return PyInt_FromLong(cmp);
+}
+
+static PyObject *
+instance_cmp(PyObject *v, PyObject *w)
+{
+	PyObject *result = half_binop(v, w, "__cmp__", do_cmp, 0);
+	if (result == Py_NotImplemented) {
+		Py_DECREF(Py_NotImplemented);
+                /* __rcmp__ is not called on instances, instead they
+                 * automaticly reverse the arguments and return the negative of
+                 * __cmp__ if it exists */
+		result = half_binop(w, v, "__cmp__", do_cmp, 0);
+                        
+                if (result != Py_NotImplemented && result != NULL) {
+			PyObject *r = PyNumber_Negative(result);
+			Py_DECREF(result);
+			result = r;
+		}
+	}
+	return result;
+}
+
+static int
+instance_compare(PyObject *inst, PyObject *other)
+{
+	PyObject *result;
+	long outcome;
+	result = instance_cmp(inst, other);
+	if (result == NULL) {
+		return -1;
+	}
+	if (result == Py_NotImplemented) {
+		Py_DECREF(result);
+		return -1;
+	}
+	if (!PyInt_Check(result)) {
+		Py_DECREF(result);
+		PyErr_SetString(PyExc_TypeError,
+				"comparison did not return an int");
+		return -1;
+	}
+	outcome = PyInt_AsLong(result);
+	Py_DECREF(result);
+	if (outcome < 0)
+		return -1;
+	else if (outcome > 0)
+		return 1;
+	return 0;
+}
 
 static int
 instance_nonzero(PyInstanceObject *self)
@@ -1412,97 +1476,117 @@ UNARY(instance_float, "__float__")
 UNARY(instance_oct, "__oct__")
 UNARY(instance_hex, "__hex__")
 
+static PyObject *
+bin_power(PyObject *v, PyObject *w)
+{
+	return PyNumber_Power(v, w, Py_None);
+}
+
 /* This version is for ternary calls only (z != None) */
 static PyObject *
 instance_pow(PyObject *v, PyObject *w, PyObject *z)
-{
-	/* XXX Doesn't do coercions... */
-	PyObject *func;
-	PyObject *args;
-	PyObject *result;
-	static PyObject *powstr;
-
-	if (powstr == NULL)
-		powstr = PyString_InternFromString("__pow__");
-	func = PyObject_GetAttr(v, powstr);
-	if (func == NULL)
-		return NULL;
-	args = Py_BuildValue("(OO)", w, z);
-	if (args == NULL) {
-		Py_DECREF(func);
-		return NULL;
+{	
+	if (z == Py_None) {
+		return do_binop(v, w, "__pow__", "__rpow__", bin_power);
 	}
-	result = PyEval_CallObject(func, args);
-	Py_DECREF(func);
-	Py_DECREF(args);
-	return result;
+	else {
+		PyObject *func;
+		PyObject *args;
+		PyObject *result;
+
+		/* XXX Doesn't do coercions... */
+		func = PyObject_GetAttrString(v, "__pow__");
+		if (func == NULL)
+			return NULL;
+		args = Py_BuildValue("(OO)", w, z);
+		if (args == NULL) {
+			Py_DECREF(func);
+			return NULL;
+		}
+		result = PyEval_CallObject(func, args);
+		Py_DECREF(func);
+		Py_DECREF(args);
+		return result;
+	}
 }
 
 static PyObject *
-instance_inplace_pow(PyObject *v, PyObject *w, PyObject *z)
+bin_inplace_power(PyObject *v, PyObject *w)
 {
-	/* XXX Doesn't do coercions... */
-	PyObject *func;
-	PyObject *args;
-	PyObject *result;
-	static PyObject *ipowstr;
-
-	if (ipowstr == NULL)
-		ipowstr = PyString_InternFromString("__ipow__");
-	func = PyObject_GetAttr(v, ipowstr);
-	if (func == NULL) {
-		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
-			return NULL;
-		PyErr_Clear();
-		return instance_pow(v, w, z);
-	}
-	args = Py_BuildValue("(OO)", w, z);
-	if (args == NULL) {
-		Py_DECREF(func);
-		return NULL;
-	}
-	result = PyEval_CallObject(func, args);
-	Py_DECREF(func);
-	Py_DECREF(args);
-	return result;
+	return PyNumber_InPlacePower(v, w, Py_None);
 }
 
 
+static PyObject *
+instance_ipow(PyObject *v, PyObject *w, PyObject *z)
+{
+	if (z == Py_None) {
+		return do_binop_inplace(v, w, "__ipow__", "__pow__",
+			"__rpow__", bin_inplace_power);
+	}
+	else {
+		/* XXX Doesn't do coercions... */
+		PyObject *func;
+		PyObject *args;
+		PyObject *result;
+
+		func = PyObject_GetAttrString(v, "__ipow__");
+		if (func == NULL) {
+			if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+				return NULL;
+			PyErr_Clear();
+			return instance_pow(v, w, z);
+		}
+		args = Py_BuildValue("(OO)", w, z);
+		if (args == NULL) {
+			Py_DECREF(func);
+			return NULL;
+		}
+		result = PyEval_CallObject(func, args);
+		Py_DECREF(func);
+		Py_DECREF(args);
+		return result;
+	}
+}
+
+
+
 static PyNumberMethods instance_as_number = {
-	0, /*nb_add*/
-	0, /*nb_subtract*/
-	0, /*nb_multiply*/
-	0, /*nb_divide*/
-	0, /*nb_remainder*/
-	0, /*nb_divmod*/
+	(binaryfunc)instance_add, /*nb_add*/
+	(binaryfunc)instance_sub, /*nb_subtract*/
+	(binaryfunc)instance_mul, /*nb_multiply*/
+	(binaryfunc)instance_div, /*nb_divide*/
+	(binaryfunc)instance_mod, /*nb_remainder*/
+	(binaryfunc)instance_divmod, /*nb_divmod*/
 	(ternaryfunc)instance_pow, /*nb_power*/
 	(unaryfunc)instance_neg, /*nb_negative*/
 	(unaryfunc)instance_pos, /*nb_positive*/
 	(unaryfunc)instance_abs, /*nb_absolute*/
 	(inquiry)instance_nonzero, /*nb_nonzero*/
 	(unaryfunc)instance_invert, /*nb_invert*/
-	0, /*nb_lshift*/
-	0, /*nb_rshift*/
-	0, /*nb_and*/
-	0, /*nb_xor*/
-	0, /*nb_or*/
+	(binaryfunc)instance_lshift, /*nb_lshift*/
+	(binaryfunc)instance_rshift, /*nb_rshift*/
+	(binaryfunc)instance_and, /*nb_and*/
+	(binaryfunc)instance_xor, /*nb_xor*/
+	(binaryfunc)instance_or, /*nb_or*/
 	(coercion)instance_coerce, /*nb_coerce*/
 	(unaryfunc)instance_int, /*nb_int*/
 	(unaryfunc)instance_long, /*nb_long*/
 	(unaryfunc)instance_float, /*nb_float*/
 	(unaryfunc)instance_oct, /*nb_oct*/
 	(unaryfunc)instance_hex, /*nb_hex*/
-	0, /*nb_inplace_add*/
-	0, /*nb_inplace_subtract*/
-	0, /*nb_inplace_multiply*/
-	0, /*nb_inplace_divide*/
-	0, /*nb_inplace_remainder*/
-	(ternaryfunc)instance_inplace_pow, /*nb_inplace_power*/
-	0, /*nb_inplace_lshift*/
-	0, /*nb_inplace_rshift*/
-	0, /*nb_inplace_and*/
-	0, /*nb_inplace_xor*/
-	0, /*nb_inplace_or*/
+	(binaryfunc)instance_iadd, /*nb_inplace_add*/
+	(binaryfunc)instance_isub, /*nb_inplace_subtract*/
+	(binaryfunc)instance_imul, /*nb_inplace_multiply*/
+	(binaryfunc)instance_idiv, /*nb_inplace_divide*/
+	(binaryfunc)instance_imod, /*nb_inplace_remainder*/
+	(ternaryfunc)instance_ipow, /*nb_inplace_power*/
+	(binaryfunc)instance_ilshift, /*nb_inplace_lshift*/
+	(binaryfunc)instance_irshift, /*nb_inplace_rshift*/
+	(binaryfunc)instance_iand, /*nb_inplace_and*/
+	(binaryfunc)instance_ixor, /*nb_inplace_xor*/
+	(binaryfunc)instance_ior, /*nb_inplace_or*/
+	(binaryfunc)instance_cmp, /*nb_cmp*/
 };
 
 PyTypeObject PyInstance_Type = {
@@ -1525,8 +1609,8 @@ PyTypeObject PyInstance_Type = {
 	0,			/*tp_str*/
 	(getattrofunc)instance_getattr, /*tp_getattro*/
 	(setattrofunc)instance_setattr, /*tp_setattro*/
-        0, /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
+	0, /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC | Py_TPFLAGS_NEWSTYLENUMBER, /*tp_flags*/
 	0,		/* tp_doc */
 	(traverseproc)instance_traverse,	/* tp_traverse */
 };
