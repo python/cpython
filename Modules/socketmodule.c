@@ -575,7 +575,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args, struct sockaddr **addr_ret
    through len_ret. */
 
 static int
-getsockaddrlen(PySocketSockObject *s, unsigned int *len_ret)
+getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 {
 	switch (s->sock_family) {
 
