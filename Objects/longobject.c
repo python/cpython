@@ -792,38 +792,26 @@ long_format(PyObject *aa, int base, int addL)
 	}
 	else if ((base & (base - 1)) == 0) {
 		/* JRH: special case for power-of-2 bases */
-		twodigits temp = a->ob_digit[0];
-		int bitsleft = SHIFT;
-		int rem;
-		int last = size_a;
-		int basebits = 1;
+		twodigits accum = 0;
+		int accumbits = 0;	/* # of bits in accum */
+		int basebits = 1;	/* # of bits in base-1 */
 		i = base;
 		while ((i >>= 1) > 1)
 			++basebits;
-		
-		i = 0;
-		for (;;) {
-			while (bitsleft >= basebits) {
-				if ((temp == 0) && (i >= last - 1)) break;
-				rem = temp & (base - 1);
-				if (rem < 10)
-					rem += '0';
-				else
-					rem += 'A' - 10;
+
+		for (i = 0; i < size_a; ++i) {
+			accum |= a->ob_digit[i] << accumbits;
+			accumbits += SHIFT;
+			assert(accumbits >= basebits);
+			do {
+				char digit = (char)(accum & (base - 1));
+				digit += (digit < 10) ? '0' : 'A'-10;
 				assert(p > PyString_AS_STRING(str));
-				*--p = (char) rem;
-				bitsleft -= basebits;
-				temp >>= basebits;
-			}
-			if (++i >= last) {
-				if (temp == 0) break;
-				bitsleft = 99;
-				/* loop again to pick up final digits */
-			}
-			else {
-				temp = (a->ob_digit[i] << bitsleft) | temp;
-				bitsleft += SHIFT;
-			}
+				*--p = digit;
+				accumbits -= basebits;
+				accum >>= basebits;
+			} while (i < size_a-1 ? accumbits >= basebits :
+					 	accum > 0);
 		}
 	}
 	else {
