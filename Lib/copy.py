@@ -49,7 +49,7 @@ __getstate__() and __setstate__().  See the documentation for module
 """
 
 import types
-from copy_reg import _better_reduce, dispatch_table
+from copy_reg import dispatch_table
 
 class Error(Exception):
     pass
