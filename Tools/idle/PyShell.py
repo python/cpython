@@ -135,18 +135,41 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def __init__(self, tkconsole):
         self.tkconsole = tkconsole
-        InteractiveInterpreter.__init__(self)
+        locals = sys.modules['__main__'].__dict__
+        InteractiveInterpreter.__init__(self, locals=locals)
 
     gid = 0
 
+    def execsource(self, source):
+        # Like runsource() but assumes complete exec source
+        filename = self.stuffsource(source)
+        self.execfile(filename, source)
+
+    def execfile(self, filename, source=None):
+        # Execute an existing file
+        if source is None:
+            source = open(filename, "r").read()
+        try:
+            code = compile(source, filename, "exec")
+        except (OverflowError, SyntaxError):
+            self.tkconsole.resetoutput()
+            InteractiveInterpreter.showsyntaxerror(self, filename)
+        else:
+            self.runcode(code)
+
     def runsource(self, source):
-        # Extend base class to stuff the source in the line cache
+        # Extend base class to stuff the source in the line cache first
+        filename = self.stuffsource(source)
+        self.more = 0
+        return InteractiveInterpreter.runsource(self, source, filename)
+
+    def stuffsource(self, source):
+        # Stuff source in the filename cache
         filename = "<pyshell#%d>" % self.gid
         self.gid = self.gid + 1
         lines = string.split(source, "\n")
         linecache.cache[filename] = len(source)+1, 0, lines, filename
-        self.more = 0
-        return InteractiveInterpreter.runsource(self, source, filename)
+        return filename
 
     def showsyntaxerror(self, filename=None):
         # Extend base class to color the offending position
@@ -166,14 +189,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
         text.tag_add("ERROR", pos)
         text.see(pos)
         char = text.get(pos)
-        if char in string.letters + string.digits + "_":
+        if char and char in string.letters + string.digits + "_":
             text.tag_add("ERROR", pos + " wordstart", pos)
         self.tkconsole.resetoutput()
         self.write("SyntaxError: %s\n" % str(msg))
 
     def unpackerror(self):
         type, value, tb = sys.exc_info()
-        ok = type == SyntaxError
+        ok = type is SyntaxError
         if ok:
             try:
                 msg, (dummy_filename, lineno, offset, line) = value
@@ -241,6 +264,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
 class PyShell(OutputWindow):
 
+    shell_title = "Python Shell"
+
     # Override classes
     ColorDelegator = ModifiedColorDelegator
 
@@ -279,6 +304,9 @@ class PyShell(OutputWindow):
         text.bind("<<open-python-shell>>", self.flist.open_shell)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
 
+        self.save_stdout = sys.stdout
+        self.save_stderr = sys.stderr
+        self.save_stdin = sys.stdin
         sys.stdout = PseudoFile(self, "stdout")
         sys.stderr = PseudoFile(self, "stderr")
         sys.stdin = self
@@ -304,10 +332,11 @@ class PyShell(OutputWindow):
                 self.close_debugger()
             else:
                 self.open_debugger()
-    
+
     def set_debugger_indicator(self):
         db = self.interp.getdebugger()
         self.setvar("<<toggle-debugger>>", not not db)
+
     def toggle_jit_stack_viewer( self, event=None):
         pass # All we need is the variable
 
@@ -360,9 +389,9 @@ class PyShell(OutputWindow):
         if reply != "cancel":
             self.flist.pyshell = None
             # Restore std streams
-            sys.stdout = sys.__stdout__
-            sys.stderr = sys.__stderr__
-            sys.stdin = sys.__stdin__
+            sys.stdout = self.save_stdout
+            sys.stderr = self.save_stderr
+            sys.stdin = self.save_stdin
             # Break cycles
             self.interp = None
             self.console = None
@@ -373,7 +402,7 @@ class PyShell(OutputWindow):
         return 1
 
     def short_title(self):
-        return "Python Shell"
+        return self.shell_title
 
     def begin(self):
         self.resetoutput()
@@ -604,37 +633,97 @@ class PseudoFile:
         pass
 
 
+usage_msg = """\
+usage: idle.py [-c command] [-d] [-e] [-s] [-t title] [arg] ...
+
+-c command  run this command
+-d          enable debugger
+-e          edit mode; arguments are files to be edited
+-s          run $PYTHONSTARTUP before anything else
+-t title    set title of shell window
+
+When neither -c nor -e is used, and there are arguments, and the first
+argument is not '-', the first argument is run as a script.  Remaining
+arguments are arguments to the script or to the command run by -c.
+"""
+
 def main():
+    cmd = None
+    edit = 0
     debug = 0
+    startup = 0
+
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "d")
+        opts, args = getopt.getopt(sys.argv[1:], "c:deist:")
     except getopt.error, msg:
         sys.stderr.write("Error: %s\n" % str(msg))
+        sys.stderr.write(usage_msg)
         sys.exit(2)
+
     for o, a in opts:
-        if o == "-d":
+        if o == '-c':
+            cmd = a
+        if o == '-d':
             debug = 1
+        if o == '-e':
+            edit = 1
+        if o == '-s':
+            startup = 1
+        if o == '-t':
+            PyShell.shell_title = a
+
+    if not edit:
+        if cmd:
+            sys.argv = ["-c"] + args
+        else:
+            sys.argv = args or [""]
+
+    for i in range(len(sys.path)):
+        sys.path[i] = os.path.abspath(sys.path[i])
+
+    pathx = []
+    if edit:
+        for filename in args:
+            pathx.append(os.path.dirname(filename))
+    elif args and args[0] != "-":
+        pathx.append(os.path.dirname(args[0]))
+    else:
+        pathx.append(os.curdir)
+    for dir in pathx:
+        dir = os.path.abspath(dir)
+        if not dir in sys.path:
+            sys.path.insert(0, dir)
+
     global flist, root
     root = Tk()
     fixwordbreaks(root)
     root.withdraw()
     flist = PyShellFileList(root)
-    if args:
-        for filename in sys.argv[1:]:
+
+    if edit:
+        for filename in args:
             flist.open(filename)
-            aPath = os.path.abspath(os.path.dirname(filename))
-            if not aPath in sys.path:
-                sys.path.insert(0, aPath)
-    else:
-        aPath = os.getcwd()
-        if not aPath in sys.path:
-            sys.path.insert(0, aPath)
-    t = PyShell(flist)
-    flist.pyshell = t
-    t.begin()
+
+    shell = PyShell(flist)
+    interp = shell.interp
+    flist.pyshell = shell
+
+    if startup:
+        filename = os.environ.get("IDLESTARTUP") or \
+                   os.environ.get("PYTHONSTARTUP")
+        if filename and os.path.isfile(filename):
+            interp.execfile(filename)
+
     if debug:
-        t.open_debugger()
+        shell.open_debugger()
+    if cmd:
+        interp.execsource(cmd)
+    elif not edit and args and args[0] != "-":
+        interp.execfile(args[0])
+
+    shell.begin()
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
