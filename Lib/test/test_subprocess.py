@@ -338,10 +338,12 @@ class ProcessTestCase(unittest.TestCase):
             # Interpreter without universal newline support
             self.assertEqual(stdout, "line1\nline2\rline3\r\nline4\r\nline5\nline6")
 
-    # XXX test_no_leaking takes > a minute to run on a high-end WinXP Pro box
     def test_no_leaking(self):
         # Make sure we leak no resources
-        for i in range(1026):
+        max_handles = 1026 # too much for most UNIX systems
+        if mswindows:
+            max_handles = 65 # a full test is too slow on Windows
+        for i in range(max_handles):
             p = subprocess.Popen([sys.executable, "-c",
                     "import sys;sys.stdout.write(sys.stdin.read())"],
                     stdin=subprocess.PIPE,
