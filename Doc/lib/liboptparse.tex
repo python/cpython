@@ -109,7 +109,7 @@ than \var{sys.argv[1:]}, so you should read ``argument'' as ``an element of
 
 \begin{itemize}
 \item a hyphen followed by a few letters, e.g. \programopt{-pf} (this is
-      *not* the same as multiple options merged into a single
+      \emph{not} the same as multiple options merged into a single
       argument.)
 \item a hyphen followed by a whole word, e.g. \programopt{-file} (this is
       technically equivalent to the previous syntax, but they aren't
@@ -449,7 +449,7 @@ parser.add_option("-m", "--mode",
 \end{verbatim}
 
 If \module{optparse} encounters either \programopt{-h} or
-\longprogramopt{--help} on the command-line, or if you just call
+\longprogramopt{help} on the command-line, or if you just call
 \method{parser.print_help()}, it prints the following to stdout:
 
 \begin{verbatim}
@@ -561,7 +561,7 @@ parser = OptionParser(usage="%prog [-f] [-q]", version="%prog 1.0")
 
 Note that ``\%prog'' is expanded just like it is in \var{usage}.  Apart from
 that, \var{version} can contain anything you like.  When you supply it,
-\module{optparse} automatically adds a\ longprogramopt{version} option to your
+\module{optparse} automatically adds a \longprogramopt{version} option to your
 parser. If it encounters this option on the command line, it expands
 your \var{version} string (by replacing ``\%prog''), prints it to
 stdout, and exits.
@@ -786,7 +786,8 @@ then \module{optparse}, on seeing the \programopt{-f} or
 
 Clearly, the \var{type} and \var{dest} arguments are (usually) almost
 as important as \var{action}.  \var{action} is the only attribute that
-is meaningful for *all* options, though, so it is the most important.
+is meaningful for \emph{all} options, though, so it is the most
+important.
 
 \subsubsection{Option actions\label{optparse-option-actions}}
 
@@ -812,9 +813,9 @@ If \var{type} is not supplied, it defaults to ``string''.
 
 If \var{dest} is not supplied, \module{optparse} derives a
 destination from the first long option strings (e.g.,
-\longprogramopt{foo-bar} -> \var{foo_bar}).  If there are no long
+\longprogramopt{foo-bar} becomes \var{foo_bar}).  If there are no long
 option strings, \module{optparse} derives a destination from the first
-short option string (e.g., \programopt{-f} -> \var{f}).
+short option string (e.g., \programopt{-f} becomes \var{f}).
 
 Example:
 
@@ -902,7 +903,7 @@ values.tracks = []
 values.tracks.append(int("3"))
 \end{verbatim}
 
-If, a little later on, \samp{--tracks=4} is seen, it does:
+If, a little later on, \longprogramopt{tracks=4} is seen, it does:
 
 \begin{verbatim}
 values.tracks.append(int("4"))
@@ -910,7 +911,7 @@ values.tracks.append(int("4"))
 
 See ``Error handling'' (section~\ref{optparse-error-handling}) for
 information on how \module{optparse} deals with something like
-\samp{--tracks=x}.
+\longprogramopt{tracks=x}.
 
 \term{count} [required: \var{dest}]
 
@@ -982,9 +983,9 @@ parser = OptionParser(usage, option_list=[
   make_option("--secret", help=SUPPRESS_HELP)
 \end{verbatim}
 
-If \module{optparse} sees either \longprogramopt{-h} or \longprogramopt{help} on
-the command line, it will print something like the following help
-message to stdout:
+If \module{optparse} sees either \programopt{-h} or
+\longprogramopt{help} on the command line, it will print something
+like the following help message to stdout:
 
 \begin{verbatim}
 usage: <yourscript> [options]
