@@ -48,12 +48,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 #endif
 
-#ifdef USE_MSL
-#define HASMSL " w/MSL"
-#else
-#define HASMSL ""
-#endif
-
 #ifdef WITH_THREAD
 #define HASTHREAD " w/THREADS"
 #else
@@ -61,12 +55,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifdef __powerc
-#define COMPILER " [CW PPC" HASGUSI HASMSL HASTHREAD"]"
+#define COMPILER " [CW PPC" HASGUSI HASTHREAD"]"
 #else
 #ifdef __CFM68K__
-#define COMPILER " [CW CFM68K" HASGUSI HASMSL  HASTHREAD"]"
+#define COMPILER " [CW CFM68K" HASGUSI HASTHREAD"]"
 #else
-#define COMPILER " [CW 68K" HASGUSI HASMSL  HASTHREAD"]"
+#define COMPILER " [CW 68K" HASGUSI HASTHREAD"]"
 #endif
 #endif
 #endif
