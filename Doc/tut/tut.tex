@@ -2543,6 +2543,10 @@ Sound/                          Top-level package
               ...
 \end{verbatim}
 
+When importing the package, Python searchs through the directories
+on \code{sys.path} looking for a subdirectory containing the
+top-level package.
+
 The \file{__init__.py} files are required to make Python treat the
 directories as containing packages; this is done to prevent
 directories with a common name, such as \samp{string}, from
