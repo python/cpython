@@ -96,7 +96,7 @@ linecache.checkcache = extended_linecache_checkcache
 
 
 class PyShellEditorWindow(EditorWindow):
-    "Regular text edit window when a shell is present"
+    "Regular text edit window in IDLE, supports breakpoints"
 
     def __init__(self, *args):
         self.breakpoints = []
@@ -258,15 +258,17 @@ class PyShellEditorWindow(EditorWindow):
 
 
 class PyShellFileList(FileList):
-    "Extend base class: file list when a shell is present"
+    "Extend base class: IDLE supports a shell and breakpoints"
 
+    # override FileList's class variable, instances return PyShellEditorWindow
+    # instead of EditorWindow when new edit windows are created.
     EditorWindow = PyShellEditorWindow
 
     pyshell = None
 
     def open_shell(self, event=None):
         if self.pyshell:
-            self.pyshell.wakeup()
+            self.pyshell.top.wakeup()
         else:
             self.pyshell = PyShell(self)
             if self.pyshell:
@@ -802,7 +804,6 @@ class PyShell(OutputWindow):
         text.bind("<<end-of-file>>", self.eof_callback)
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
-        text.bind("<<open-python-shell>>", self.flist.open_shell)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
         if use_subprocess:
             text.bind("<<view-restart>>", self.view_restart_mark)

@@ -1,27 +1,12 @@
-# changes by dscherer@cmu.edu
-#   - FileList.open() takes an optional 3rd parameter action, which is
-#       called instead of creating a new EditorWindow.  This enables
-#       things like 'open in same window'.
-
 import os
 from Tkinter import *
 import tkMessageBox
 
-import WindowList
-
-#$ event <<open-new-window>>
-#$ win <Control-n>
-#$ unix <Control-x><Control-n>
-
-# (This is labeled as 'Exit'in the File menu)
-#$ event <<close-all-windows>>
-#$ win <Control-q>
-#$ unix <Control-x><Control-c>
 
 class FileList:
 
-    from EditorWindow import EditorWindow
-    EditorWindow.Toplevel = WindowList.ListedToplevel # XXX Patch it!
+    from EditorWindow import EditorWindow  # class variable, may be overridden
+                                           # e.g. by PyShellFileList
 
     def __init__(self, root):
         self.root = root
@@ -33,25 +18,22 @@ class FileList:
         assert filename
         filename = self.canonize(filename)
         if os.path.isdir(filename):
+            # This can happen when bad filename is passed on command line:
             tkMessageBox.showerror(
-                "Is A Directory",
-                "The path %r is a directory." % (filename,),
+                "File Error",
+                "%r is a directory." % (filename,),
                 master=self.root)
             return None
         key = os.path.normcase(filename)
         if self.dict.has_key(key):
             edit = self.dict[key]
-            edit.wakeup()
+            edit.top.wakeup()
             return edit
-        if not os.path.exists(filename):
-            tkMessageBox.showinfo(
-                "New File",
-                "Opening non-existent file %r" % (filename,),
-                master=self.root)
-        if action is None:
-            return self.EditorWindow(self, filename, key)
-        else:
+        if action:
+            # Don't create window, perform 'action', e.g. open in same window
             return action(filename)
+        else:
+            return self.EditorWindow(self, filename, key)
 
     def gotofileline(self, filename, lineno=None):
         edit = self.open(filename)
