@@ -45,7 +45,7 @@ try:
 except ImportError:
     _MacOS = None
 
-want_objects = 1
+wantobjects = 1
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
@@ -1523,7 +1523,7 @@ class Tk(Misc, Wm):
             if ext not in ('.py', '.pyc', '.pyo'):
                 baseName = baseName + ext
         self.tk = _tkinter.create(screenName, baseName, className)
-        self.tk.wantobjects(want_objects)
+        self.tk.wantobjects(wantobjects)
         if _MacOS and hasattr(_MacOS, 'SchedParams'):
             # Disable event scanning except for Command-Period
             _MacOS.SchedParams(1, 0)
