@@ -27,7 +27,7 @@ CHARSET = 'ISO-8859-1'  # default charset for non-US-ASCII mail
 QUOTE = '> '            # string replies are quoted with
 # End configure
 
-import re, string
+import re
 
 __all__ = ["mimify","unmimify","mime_encode_header","mime_decode_header"]
 
@@ -96,7 +96,7 @@ def mime_decode(line):
         if res is None:
             break
         newline = newline + line[pos:res.start(0)] + \
-                  chr(string.atoi(res.group(1), 16))
+                  chr(int(res.group(1), 16))
         pos = res.end(0)
     return newline + line[pos:]
 
@@ -110,7 +110,7 @@ def mime_decode_header(line):
             break
         match = res.group(1)
         # convert underscores to spaces (before =XX conversion!)
-        match = string.join(string.split(match, '_'), ' ')
+        match = ' '.join(string.split(match, '_'))
         newline = newline + line[pos:res.start(0)] + mime_decode(match)
         pos = res.end(0)
     return newline + line[pos:]
@@ -232,14 +232,14 @@ def mime_encode(line, header):
     pos = 0
     if len(line) >= 5 and line[:5] == 'From ':
         # quote 'From ' at the start of a line for stupid mailers
-        newline = string.upper('=%02x' % ord('F'))
+        newline = ('=%02x' % ord('F')).upper()
         pos = 1
     while 1:
         res = reg.search(line, pos)
         if res is None:
             break
         newline = newline + line[pos:res.start(0)] + \
-                  string.upper('=%02x' % ord(res.group(0)))
+                  ('=%02x' % ord(res.group(0))).upper()
         pos = res.end(0)
     line = newline + line[pos:]
 
@@ -346,7 +346,7 @@ def mimify_part(ifile, ofile, is_mime):
         if chrset_res:
             if has_iso_chars:
                 # change us-ascii into iso-8859-1
-                if string.lower(chrset_res.group(2)) == 'us-ascii':
+                if chrset_res.group(2).lower() == 'us-ascii':
                     line = '%s%s%s' % (chrset_res.group(1),
                                        CHARSET,
                                        chrset_res.group(3))
@@ -447,7 +447,7 @@ if __name__ == '__main__' or (len(sys.argv) > 0 and sys.argv[0] == 'mimify'):
             encode = unmimify
         elif o == '-l':
             try:
-                MAXLEN = string.atoi(a)
+                MAXLEN = int(a)
             except:
                 print usage
                 sys.exit(1)
