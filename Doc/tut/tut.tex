@@ -238,7 +238,7 @@ not consumed by the Python interpreter's option processing but left in
 When commands are read from a tty, the interpreter is said to be in
 \emph{interactive mode}.  In this mode it prompts for the next command
 with the \emph{primary prompt}, usually three greater-than signs
-(\samp{>>>~}); for continuation lines it prompts with the
+(\samp{>\code{>}>~}); for continuation lines it prompts with the
 \emph{secondary prompt}, by default three dots (\samp{...~}).
 The interpreter prints a welcome message stating its version number
 and a copyright notice before printing the first prompt, e.g.:
@@ -340,7 +340,7 @@ if filename and os.path.isfile(filename):
 \chapter{An Informal Introduction to Python \label{informal}}
 
 In the following examples, input and output are distinguished by the
-presence or absence of prompts (\samp{>>>~} and \samp{...~}): to repeat
+presence or absence of prompts (\samp{>\code{>}>~} and \samp{...~}): to repeat
 the example, you must type everything after the prompt, when the
 prompt appears; lines that do not begin with a prompt are output from
 the interpreter. %
@@ -372,7 +372,7 @@ STRING = "# This is not a comment."
 \section{Using Python as a Calculator \label{calculator}}
 
 Let's try some simple Python commands.  Start the interpreter and wait
-for the primary prompt, \samp{>>> }.  (It shouldn't take long.)
+for the primary prompt, \samp{>\code{>}>~}.  (It shouldn't take long.)
 
 \subsection{Numbers \label{numbers}}
 
@@ -420,7 +420,7 @@ A value can be assigned to several variables simultaneously:
 >>> z
 0
 \end{verbatim}
-%
+
 There is full support for floating point; operators with mixed type
 operands convert the integer operand to floating point:
 
@@ -430,7 +430,7 @@ operands convert the integer operand to floating point:
 >>> 7.0 / 2
 3.5
 \end{verbatim}
-%
+
 Complex numbers are also supported; imaginary numbers are written with
 a suffix of \samp{j} or \samp{J}.  Complex numbers with a nonzero
 real component are written as \samp{(\var{real}+\var{imag}j)}, or can
@@ -448,7 +448,7 @@ be created with the \samp{complex(\var{real}, \var{imag})} function.
 >>> (1+2j)/(1+1j)
 (1.5+0.5j)
 \end{verbatim}
-%
+
 Complex numbers are always represented as two floating point numbers,
 the real and imaginary part.  To extract these parts from a complex
 number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.  
@@ -460,7 +460,7 @@ number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.
 >>> a.imag
 0.5
 \end{verbatim}
-%
+
 The conversion functions to floating point and integer
 (\function{float()}, \function{int()} and \function{long()}) don't
 work for complex numbers --- there is no one correct way to convert a
@@ -478,7 +478,7 @@ TypeError: can't convert complex to float; use e.g. abs(z)
 >>> abs(a)
 1.58113883008
 \end{verbatim}
-%
+
 In interactive mode, the last printed expression is assigned to the
 variable \code{_}.  This means that when you are using Python as a
 desk calculator, it is somewhat easier to continue calculations, for
@@ -749,9 +749,9 @@ in every script used in modern and ancient texts. Previously, there
 were only 256 possible ordinals for script characters and texts were
 typically bound to a code page which mapped the ordinals to script
 characters. This lead to very much confusion especially with respect
-to internalization (usually written as \samp{i18n} --- \character{i} +
-18 characters + \character{n}) of software. Unicode solves these
-problems by defining one code page for all scripts.
+to internationalization (usually written as \samp{i18n} ---
+\character{i} + 18 characters + \character{n}) of software.  Unicode
+solves these problems by defining one code page for all scripts.
 
 Creating Unicode strings in Python is just as simple as creating
 normal strings:
@@ -1167,6 +1167,7 @@ which searches for prime numbers:
 9 equals 3 * 3
 \end{verbatim}
 
+
 \section{\keyword{pass} Statements \label{pass}}
 
 The \keyword{pass} statement does nothing.
@@ -1179,6 +1180,7 @@ For example:
 ...       pass # Busy-wait for keyboard interrupt
 ... 
 \end{verbatim}
+
 
 \section{Defining Functions \label{functions}}
 
@@ -1277,7 +1279,7 @@ the Fibonacci series, instead of printing it:
 >>> f100                # write the result
 [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
 \end{verbatim}
-%
+
 This example, as usual, demonstrates some new Python features:
 
 \begin{itemize}
@@ -1466,6 +1468,7 @@ client : John Cleese
 shopkeeper : Michael Palin
 sketch : Cheese Shop Sketch
 \end{verbatim}
+
 
 \subsection{Arbitrary Argument Lists \label{arbitraryArgs}}
 
@@ -1753,6 +1756,7 @@ item, then to the result and the next item, and so on.  For example,
 0
 \end{verbatim}
 
+
 \subsection{List Comprehensions}
 
 List comprehensions provide a concise way to create lists without resorting
@@ -1795,6 +1799,7 @@ SyntaxError: invalid syntax
 [6, 5, -7, 8, 7, -5, 10, 9, -3]
 \end{verbatim}
 
+
 \section{The \keyword{del} statement \label{del}}
 
 There is a way to remove an item from a list given its index instead
@@ -1822,6 +1827,7 @@ empty list to the slice).  For example:
 Referencing the name \code{a} hereafter is an error (at least until
 another value is assigned to it).  We'll find other uses for
 \keyword{del} later.
+
 
 \section{Tuples and Sequences \label{tuples}}
 
@@ -1855,7 +1861,8 @@ Tuples have many uses, e.g., (x, y) coordinate pairs, employee records
 from a database, etc.  Tuples, like strings, are immutable: it is not
 possible to assign to the individual items of a tuple (you can
 simulate much of the same effect with slicing and concatenation,
-though).
+though).  It is also possible to create tuples which contain mutable
+objects, such as lists.
 
 A special problem is the construction of tuples containing 0 or 1
 items: the syntax has some extra quirks to accommodate these.  Empty
@@ -1884,24 +1891,17 @@ is also possible, e.g.:
 >>> x, y, z = t
 \end{verbatim}
 
-This is called, appropriately enough, \emph{tuple unpacking}.  Tuple
-unpacking requires that the list of variables on the left have the same
-number of elements as the length of the tuple.  Note that multiple
-assignment is really just a combination of tuple packing and tuple
-unpacking!
+This is called, appropriately enough, \emph{sequence unpacking}.
+Sequence unpacking requires that the list of variables on the left
+have the same number of elements as the length of the sequence.  Note
+that multiple assignment is really just a combination of tuple packing
+and sequence unpacking!
 
-% XXX This is no longer necessary!
-Occasionally, the corresponding operation on lists is useful: \emph{list
-unpacking}.  This is supported by enclosing the list of variables in
-square brackets:
-
-\begin{verbatim}
->>> a = ['spam', 'eggs', 100, 1234]
->>> [a1, a2, a3, a4] = a
-\end{verbatim}
+There is a small bit of asymmetry here:  packing multiple values
+always creates a tuple, and unpacking works for any sequence.
 
 % XXX Add a bit on the difference between tuples and lists.
-% XXX Also explain that a tuple can *contain* a mutable object!
+
 
 \section{Dictionaries \label{dictionaries}}
 
@@ -1911,11 +1911,14 @@ memories'' or ``associative arrays''.  Unlike sequences, which are
 indexed by a range of numbers, dictionaries are indexed by \emph{keys},
 which can be any immutable type; strings and numbers can always be
 keys.  Tuples can be used as keys if they contain only strings,
-numbers, or tuples.  You can't use lists as keys, since lists can be
-modified in place using their \code{append()} method.
+numbers, or tuples; if a tuple contains any mutable object either
+directly or indirectly, it cannot be used as a key.  You can't use
+lists as keys, since lists can be modified in place using their
+\method{append()} and \method{extend()} methods, as well as slice and
+indexed assignments.
 
 It is best to think of a dictionary as an unordered set of
-\emph{key:value} pairs, with the requirement that the keys are unique
+\emph{key: value} pairs, with the requirement that the keys are unique
 (within one dictionary).
 A pair of braces creates an empty dictionary: \code{\{\}}.
 Placing a comma-separated list of key:value pairs within the
@@ -2000,6 +2003,7 @@ Note that in Python, unlike C, assignment cannot occur inside expressions.
 C programmers may grumble about this, but it avoids a common class of
 problems encountered in C programs: typing \code{=} in an expression when
 \code{==} was intended.
+
 
 \section{Comparing Sequences and Other Types \label{comparing}}
 
@@ -2102,7 +2106,7 @@ Using the module name you can access the functions:
 >>> fibo.__name__
 'fibo'
 \end{verbatim}
-%
+
 If you intend to use a function often you can assign it to a local name:
 
 \begin{verbatim}
@@ -2164,9 +2168,8 @@ There is even a variant to import all names that a module defines:
 This imports all names except those beginning with an underscore
 (\code{_}).
 
-\subsection{The Module Search Path \label{searchPath}}
 
-% XXX Need to document that a lone .pyc/.pyo is acceptable too!
+\subsection{The Module Search Path \label{searchPath}}
 
 \indexiii{module}{search}{path}
 When a module named \module{spam} is imported, the interpreter searches
@@ -2238,13 +2241,14 @@ When a script is run by giving its name on the command line, the
 bytecode for the script is never written to a \file{.pyc} or
 \file{.pyo} file.  Thus, the startup time of a script may be reduced
 by moving most of its code to a module and having a small bootstrap
-script that imports that module.
+script that imports that module.  It is also possible to name a
+\file{.pyc} or \file{.pyo} file directly on the command line.
 
 \item
 It is possible to have a file called \file{spam.pyc} (or
-\file{spam.pyo} when \programopt{-O} is used) without a module
-\file{spam.py} in the same module.  This can be used to distribute
-a library of Python code in a form that is moderately hard to reverse
+\file{spam.pyo} when \programopt{-O} is used) without a file
+\file{spam.py} for the same module.  This can be used to distribute a
+library of Python code in a form that is moderately hard to reverse
 engineer.
 
 \item
@@ -2343,6 +2347,7 @@ standard module \module{__builtin__}\refbimodindex{__builtin__}:
 'reduce', 'reload', 'repr', 'round', 'setattr', 'str', 'type', 'xrange']
 \end{verbatim}
 
+
 \section{Packages \label{packages}}
 
 Packages are a way of structuring Python's module namespace
@@ -2392,6 +2397,7 @@ Sound/                          Top-level package
               karaoke.py
               ...
 \end{verbatim}
+
 The \file{__init__.py} files are required to make Python treat the
 directories as containing packages; this is done to prevent
 directories with a common name, such as \samp{string}, from
@@ -2406,17 +2412,20 @@ package, for example:
 \begin{verbatim}
 import Sound.Effects.echo
 \end{verbatim}
+
 This loads the submodule \module{Sound.Effects.echo}.  It must be referenced
 with its full name, e.g.
 
 \begin{verbatim}
 Sound.Effects.echo.echofilter(input, output, delay=0.7, atten=4)
 \end{verbatim}
+
 An alternative way of importing the submodule is:
 
 \begin{verbatim}
 from Sound.Effects import echo
 \end{verbatim}
+
 This also loads the submodule \module{echo}, and makes it available without
 its package prefix, so it can be used as follows:
 
@@ -2499,7 +2508,6 @@ import Sound.Effects.echo
 import Sound.Effects.surround
 from Sound.Effects import *
 \end{verbatim}
-
 
 In this example, the echo and surround modules are imported in the
 current namespace because they are defined in the
@@ -2664,7 +2672,7 @@ minus signs:
 >>> string.zfill('3.14159265359', 5)
 '3.14159265359'
 \end{verbatim}
-%
+
 Using the \code{\%} operator looks like this:
 
 \begin{verbatim}
@@ -3630,7 +3638,6 @@ class Bag:
         self.add(x)
 \end{verbatim}
 
-
 Methods may reference global names in the same way as ordinary
 functions.  The global scope associated with a method is the module
 containing the class definition.  (The class itself is never used as a
@@ -3790,20 +3797,6 @@ class VirtualAttributes:
         self.__vdict[name] = value
 \end{verbatim}
 
-%\emph{Warning: this is an experimental feature.}  To avoid all
-%potential problems, refrain from using identifiers starting with
-%double underscore except for predefined uses like \samp{__init__}.  To
-%use private names while maintaining future compatibility: refrain from
-%using the same private name in classes related via subclassing; avoid
-%explicit (manual) mangling/unmangling; and assume that at some point
-%in the future, leading double underscore will revert to being just a
-%naming convention.  Discussion on extensive compile-time declarations
-%are currently underway, and it is impossible to predict what solution
-%will eventually be chosen for private names.  Double leading
-%underscore is still a candidate, of course --- just not the only one.
-%It is placed in the distribution in the belief that it is useful, and
-%so that widespread experience with its use can be gained.  It will not
-%be removed without providing a better solution and a migration path.
 
 \section{Odds and Ends \label{odds}}
 
@@ -3822,7 +3815,6 @@ john.name = 'John Doe'
 john.dept = 'computer lab'
 john.salary = 1000
 \end{verbatim}
-
 
 A piece of Python code that expects a particular abstract data type
 can often be passed a class that emulates the methods of that data
