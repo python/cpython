@@ -120,7 +120,8 @@ typedef struct { /* Subtype of IOobject */
   PyObject_HEAD
   char *buf;
   int pos, string_size;
-
+  /* We store a reference to the object here in order to keep
+     the buffer alive during the lifetime of the Iobject. */
   PyObject *pbuf;
 } Iobject;
 
@@ -424,14 +425,11 @@ O_cwrite(PyObject *self, char *c, int  l) {
 
 static PyObject *
 O_write(Oobject *self, PyObject *args) {
-        PyObject *s;
         char *c;
         int l;
 
-        UNLESS (PyArg_ParseTuple(args, "O:write", &s)) return NULL;
+        UNLESS (PyArg_ParseTuple(args, "s#:write", &c, &l)) return NULL;
 
-        UNLESS (-1 != (l=PyString_Size(s))) return NULL;
-        UNLESS (c=PyString_AsString(s)) return NULL;
         if (O_cwrite((PyObject*)self,c,l) < 0) return NULL;
 
         Py_INCREF(Py_None);
@@ -713,13 +711,11 @@ newIobject(PyObject *s) {
   char *buf;
   int size;
 
-  if (!PyString_Check(s)) {
-      PyErr_Format(PyExc_TypeError, "expected string, %.200s found",
+  if (PyObject_AsReadBuffer(s, (const void **)&buf, &size)) {
+      PyErr_Format(PyExc_TypeError, "expected read buffer, %.200s found",
 		   s->ob_type->tp_name);
       return NULL;
   }
-  buf = PyString_AS_STRING(s);
-  size = PyString_GET_SIZE(s);
   UNLESS (self = PyObject_New(Iobject, &Itype)) return NULL;
   Py_INCREF(s);
   self->buf=buf;
