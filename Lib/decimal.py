@@ -31,7 +31,7 @@ of the expected Decimal("0.00") returned by decimal floating point).
 Here are some examples of using the decimal module:
 
 >>> from decimal import *
->>> getcontext().prec=9
+>>> setcontext(ExtendedContext)
 >>> Decimal(0)
 Decimal("0")
 >>> Decimal("1")
@@ -405,8 +405,8 @@ if hasattr(threading.currentThread(), '__decimal_context__'):
 
 def setcontext(context):
     """Set this thread's context to context."""
-    if context == DefaultContext:
-        context = Context()
+    if context in (DefaultContext, BasicContext, ExtendedContext):
+        context = context.copy()
     threading.currentThread().__decimal_context__ = context
 
 def getcontext():
@@ -2960,27 +2960,29 @@ def _isnan(num):
 
 ##### Setup Specific Contexts ################################
 
-_basic_traps = dict.fromkeys(Signals, 1)
-_basic_traps.update({Inexact:0, Rounded:0, Subnormal:0})
-
 # The default context prototype used by Context()
 # Is mutable, so than new contexts can have different default values
 
+_default_traps = dict.fromkeys(Signals, 0)
+_default_traps.update({DivisionByZero:1, Overflow:1, InvalidOperation:1})
+
 DefaultContext = Context(
         prec=28, rounding=ROUND_HALF_EVEN,
-        trap_enablers=dict.fromkeys(Signals, 0),
+        trap_enablers=_default_traps,
         flags=None,
         _rounding_decision=ALWAYS_ROUND,
         Emax=DEFAULT_MAX_EXPONENT,
         Emin=DEFAULT_MIN_EXPONENT,
         capitals=1
 )
-DefaultContext.trap_enablers.update({ConversionSyntax : 1})
 
 # Pre-made alternate contexts offered by the specification
 # Don't change these; the user should be able to select these
 # contexts and be able to reproduce results from other implementations
 # of the spec.
+
+_basic_traps = dict.fromkeys(Signals, 1)
+_basic_traps.update({Inexact:0, Rounded:0, Subnormal:0})
 
 BasicContext = Context(
         prec=9, rounding=ROUND_HALF_UP,
