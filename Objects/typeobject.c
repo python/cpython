@@ -191,9 +191,7 @@ PyObject *
 PyType_GenericAlloc(PyTypeObject *type, int nitems)
 {
 	PyObject *obj;
-	size_t size;
-
-	_PyObject_VAR_SIZE(size, type, nitems);
+	const size_t size = _PyObject_VAR_SIZE(type, nitems);
 
 	if (PyType_IS_GC(type))
 		obj = _PyObject_GC_Malloc(type, nitems);

@@ -130,9 +130,7 @@ PyVarObject *
 _PyObject_NewVar(PyTypeObject *tp, int nitems)
 {
 	PyVarObject *op;
-	size_t size;
-
-	_PyObject_VAR_SIZE(size, tp, nitems);
+	const size_t size = _PyObject_VAR_SIZE(tp, nitems);
 	op = (PyVarObject *) PyObject_MALLOC(size);
 	if (op == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
@@ -1158,8 +1156,8 @@ _PyObject_GetDictPtr(PyObject *obj)
 	if (dictoffset == 0)
 		return NULL;
 	if (dictoffset < 0) {
-		size_t size;
-		_PyObject_VAR_SIZE(size, tp, ((PyVarObject *)obj)->ob_size);
+		const size_t size = _PyObject_VAR_SIZE(tp,
+					((PyVarObject *)obj)->ob_size);
 		dictoffset += (long)size;
 		assert(dictoffset > 0);
 		assert(dictoffset % SIZEOF_VOID_P == 0);
