@@ -169,6 +169,7 @@ do_mkdict(p_format, p_va, endchar, n)
 		return NULL;
 	for (i = 0; i < n; i+= 2) {
 		PyObject *k, *v;
+		int err;
 		k = do_mkvalue(p_format, p_va);
 		if (k == NULL) {
 			Py_DECREF(d);
@@ -180,9 +181,10 @@ do_mkdict(p_format, p_va, endchar, n)
 			Py_DECREF(d);
 			return NULL;
 		}
-		if (PyDict_SetItem(d, k, v) < 0) {
-			Py_DECREF(k);
-			Py_DECREF(v);
+		err = PyDict_SetItem(d, k, v);
+		Py_DECREF(k);
+		Py_DECREF(v);
+		if (err < 0) {
 			Py_DECREF(d);
 			return NULL;
 		}
