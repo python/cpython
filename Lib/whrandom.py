@@ -33,6 +33,10 @@ have to use a lock around all calls.  (I didn't want to slow this
 down in the serial case by using a lock here.)
 """
 
+import warnings
+warnings.warn("the whrandom module is deprecated; please use the random module",
+              DeprecationWarning)
+
 # Translated by Guido van Rossum from C source provided by
 # Adrian Baddeley.
 
