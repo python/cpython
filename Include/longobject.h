@@ -29,4 +29,6 @@ extern typeobject Longtype;
 #define is_longobject(op) ((op)->ob_type == &Longtype)
 
 extern object *newlongobject PROTO((long));
+extern object *dnewlongobject PROTO((double));
 extern long getlongvalue PROTO((object *));
+extern double dgetlongvalue PROTO((object *));
