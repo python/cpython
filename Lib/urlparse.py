@@ -45,15 +45,40 @@ def clear_cache():
 # (e.g. netloc is a single string) and we don't expand % escapes.
 def urlparse(url, scheme = '', allow_fragments = 1):
 	key = url, scheme, allow_fragments
-	try:
-	    return _parse_cache[key]
-	except KeyError:
-	    pass
+	cached = _parse_cache.get(key, None)
+	if cached:
+		return cached
 	if len(_parse_cache) >= MAX_CACHE_SIZE:	# avoid runaway growth
 	    clear_cache()
+	find = string.find
 	netloc = path = params = query = fragment = ''
-	i = string.find(url, ':')
+	i = find(url, ':')
 	if i > 0:
+		if url[:i] == 'http': # optimizie the common case
+			scheme = string.lower(url[:i])
+			url = url[i+1:]
+			if url[:2] == '//':
+				i = find(url, '/', 2)
+				if i < 0:
+					i = len(url)
+				netloc = url[2:i]
+				url = url[i:]
+			if allow_fragments:
+				i = string.rfind(url, '#')
+				if i >= 0:
+					url = url[:i]
+					fragment = url[i+1:]
+			i = find(url, '?')
+			if i >= 0:
+				url = url[:i]
+				query = url[i+1:]
+			i = find(url, ';')
+			if i >= 0:
+				url = url[:i]
+				params = url[i+1:]
+			tuple = scheme, netloc, url, params, query, fragment
+			_parse_cache[key] = tuple
+			return tuple
 		for c in url[:i]:
 			if c not in scheme_chars:
 				break
@@ -61,7 +86,7 @@ def urlparse(url, scheme = '', allow_fragments = 1):
 			scheme, url = string.lower(url[:i]), url[i+1:]
 	if scheme in uses_netloc:
 		if url[:2] == '//':
-			i = string.find(url, '/', 2)
+			i = find(url, '/', 2)
 			if i < 0:
 				i = len(url)
 			netloc, url = url[2:i], url[i:]
@@ -70,11 +95,11 @@ def urlparse(url, scheme = '', allow_fragments = 1):
 		if i >= 0:
 			url, fragment = url[:i], url[i+1:]
 	if scheme in uses_query:
-		i = string.find(url, '?')
+		i = find(url, '?')
 		if i >= 0:
 			url, query = url[:i], url[i+1:]
 	if scheme in uses_params:
-		i = string.find(url, ';')
+		i = find(url, ';')
 		if i >= 0:
 			url, params = url[:i], url[i+1:]
 	tuple = scheme, netloc, url, params, query, fragment
