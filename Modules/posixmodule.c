@@ -40,6 +40,11 @@ corresponding Unix manual entries for more information on calls.";
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
+/* pick up declaration of confstr on some systems? */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif /* HAVE_UNISTD_H */
+
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into config.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
