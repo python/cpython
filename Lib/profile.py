@@ -406,7 +406,7 @@ class Profile:
 
 	# This method is more useful to profile a single function call.
 	def runcall(self, func, *args):
-		self.set_cmd(func.__name__)
+		self.set_cmd(`func`)
 		sys.setprofile(self.trace_dispatch)
 		try:
 			apply(func, args)
