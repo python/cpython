@@ -2,7 +2,7 @@
 
 Each line is of the form:
 
-    FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease) ")"
+    FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease ")"
 
 where, normally, OptionalRelease < MandatoryRelease, and both are 5-tuples
 of the same form as sys.version_info:
