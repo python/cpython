@@ -648,6 +648,7 @@ PyZlib_flush(compobject *self, PyObject *args)
 	zlib_error(self->zst, err, "while flushing");
 	Py_DECREF(RetVal);
 	RetVal = NULL;
+	goto error;
     }
 
     if (_PyString_Resize(&RetVal, self->zst.total_out - start_total_out) < 0)
