@@ -1143,6 +1143,10 @@ class TestIdempotent(TestEmailBase):
         msg, text = self._msgobj('msg_02.txt')
         self._idempotent(msg, text)
 
+    def test_long_header(self):
+        msg, text = self._msgobj('msg_27.txt')
+        self._idempotent(msg, text)
+
 ##    def test_MIME_digest_with_part_headers(self):
 ##        msg, text = self._msgobj('msg_28.txt')
 ##        self._idempotent(msg, text)
