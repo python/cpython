@@ -919,7 +919,8 @@ PyNumber_Float(PyObject *o)
 int
 PySequence_Check(PyObject *s)
 {
-	return s != NULL && s->ob_type->tp_as_sequence;
+	return s != NULL && s->ob_type->tp_as_sequence &&
+		s->ob_type->tp_as_sequence->sq_item != NULL;
 }
 
 int
@@ -1509,7 +1510,8 @@ PySequence_Index(PyObject *s, PyObject *o)
 int
 PyMapping_Check(PyObject *o)
 {
-	return o && o->ob_type->tp_as_mapping;
+	return o && o->ob_type->tp_as_mapping &&
+		o->ob_type->tp_as_mapping->mp_subscript;
 }
 
 int
