@@ -173,6 +173,13 @@ class install (Command):
 
         self.record = None
 
+
+    # -- Option finalizing methods -------------------------------------
+    # (This is rather more involved than for most commands,
+    # because this is where the policy for installing third-
+    # party Python modules on various platforms given a wide
+    # array of user input is decided.  Yes, it's quite complex!)
+
     def finalize_options (self):
 
         # This method (and its pliant slaves, like 'finalize_unix()',
@@ -450,6 +457,8 @@ class install (Command):
             setattr(self, attr, change_root(self.root, getattr(self, attr)))
 
 
+    # -- Command execution methods -------------------------------------
+
     def run (self):
 
         # Obviously have to build before we can install
@@ -486,6 +495,38 @@ class install (Command):
 
     # run ()
 
+    def create_path_file (self):
+        filename = os.path.join (self.install_libbase,
+                                 self.path_file + ".pth")
+        if self.install_path_file:
+            self.execute (write_file,
+                          (filename, [self.extra_dirs]),
+                          "creating %s" % filename)
+        else:
+            self.warn("path file '%s' not created" % filename)
+
+
+    # -- Reporting methods ---------------------------------------------
+
+    def get_outputs (self):
+        # This command doesn't have any outputs of its own, so just
+        # get the outputs of all its sub-commands.
+        outputs = []
+        for cmd_name in self.get_sub_commands():
+            cmd = self.get_finalized_command (cmd_name)
+            outputs.extend (cmd.get_outputs())
+
+        return outputs
+
+    def get_inputs (self):
+        # XXX gee, this looks familiar ;-(
+        inputs = []
+        for cmd_name in self.get_sub_commands():
+            cmd = self.get_finalized_command (cmd_name)
+            inputs.extend (cmd.get_inputs())
+
+        return inputs
+
 
     # -- Predicates for sub-command list -------------------------------
 
@@ -504,37 +545,6 @@ class install (Command):
     def has_data (self):
         return self.distribution.has_data_files()
 
-
-    def get_outputs (self):
-        # This command doesn't have any outputs of its own, so just
-        # get the outputs of all its sub-commands.
-        outputs = []
-        for cmd_name in self.get_sub_commands():
-            cmd = self.get_finalized_command (cmd_name)
-            outputs.extend (cmd.get_outputs())
-
-        return outputs
-
-
-    def get_inputs (self):
-        # XXX gee, this looks familiar ;-(
-        inputs = []
-        for cmd_name in self.get_sub_commands():
-            cmd = self.get_finalized_command (cmd_name)
-            inputs.extend (cmd.get_inputs())
-
-        return inputs
-
-
-    def create_path_file (self):
-        filename = os.path.join (self.install_libbase,
-                                 self.path_file + ".pth")
-        if self.install_path_file:
-            self.execute (write_file,
-                          (filename, [self.extra_dirs]),
-                          "creating %s" % filename)
-        else:
-            self.warn("path file '%s' not created" % filename)
 
     # 'sub_commands': a list of commands this command might have to run to
     # get its work done.  See cmd.py for more info.
