@@ -63,12 +63,6 @@ corresponding Unix manual entries for more information on calls.";
 #ifdef __BORLANDC__		/* Borland compiler */
 #define HAVE_EXECV      1
 #define HAVE_GETCWD     1
-#define HAVE_GETEGID    1
-#define HAVE_GETEUID    1
-#define HAVE_GETGID     1
-#define HAVE_GETPPID    1
-#define HAVE_GETUID     1
-#define HAVE_KILL       1
 #define HAVE_OPENDIR    1
 #define HAVE_PIPE       1
 #define HAVE_POPEN      1
@@ -152,7 +146,11 @@ extern int rmdir(char *);
 extern int chdir(const char *);
 extern int rmdir(const char *);
 #endif
+#ifdef __BORLANDC__
+extern int chmod(const char *, int);
+#else
 extern int chmod(const char *, mode_t);
+#endif
 extern int chown(const char *, uid_t, gid_t);
 extern char *getcwd(char *, int);
 extern char *strerror(int);
@@ -5617,17 +5615,17 @@ all_ins(PyObject *d)
 }
 
 
-#if ( defined(_MSC_VER) || defined(__WATCOMC__) ) && !defined(__QNX__)
+#if (defined(_MSC_VER) || defined(__WATCOMC__) || defined(__BORLANDC__)) && !defined(__QNX__) 
 #define INITFUNC initnt
 #define MODNAME "nt"
-#else
-#if defined(PYOS_OS2)
+
+#elif defined(PYOS_OS2)
 #define INITFUNC initos2
 #define MODNAME "os2"
+
 #else
 #define INITFUNC initposix
 #define MODNAME "posix"
-#endif
 #endif
 
 DL_EXPORT(void)
