@@ -813,12 +813,12 @@ PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
 					PyNumber_Add, 0) <= 0)
 			return x;
 	}
-	else if ((HASINPLACE(v)
+	else if (HASINPLACE(v)
 		  && ((v->ob_type->tp_as_sequence != NULL &&
 		       (f = v->ob_type->tp_as_sequence->sq_inplace_concat)
-		       != NULL)))
+		       != NULL)
 		 || (v->ob_type->tp_as_number != NULL &&
-		     (f = v->ob_type->tp_as_number->nb_inplace_add) != NULL))
+		     (f = v->ob_type->tp_as_number->nb_inplace_add) != NULL)))
 		return (*f)(v, w);
 
 	BINOP(v, w, "__add__", "__radd__", PyNumber_Add);
