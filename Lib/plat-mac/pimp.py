@@ -14,6 +14,7 @@ intention is that the end user will use this through a GUI.
 """
 import sys
 import os
+import popen2
 import urllib
 import urllib2
 import urlparse
@@ -395,16 +396,15 @@ class PimpPackage:
 			output.write("+ %s\n" % cmd)
 		if NO_EXECUTE:
 			return 0
-		dummy, fp = os.popen4(cmd, "r")
-		dummy.close()
+		child = popen2.Popen4(cmd)
+		child.tochild.close()
 		while 1:
-			line = fp.readline()
+			line = child.fromchild.readline()
 			if not line:
 				break
 			if output:
 				output.write(line)
-		rv = fp.close()
-		return rv
+		return child.wait()
 		
 	def downloadPackageOnly(self, output=None):
 		"""Download a single package, if needed.
@@ -588,7 +588,8 @@ class PimpPackage_source(PimpPackage):
 		if not installcmd:
 			installcmd = '"%s" setup.py install' % sys.executable
 		if self._cmd(output, self._buildDirname, installcmd):
-			return "install %s: running \"%s\" failed" % self.fullname()
+			return "install %s: running \"%s\" failed" % \
+				(self.fullname(), installcmd)
 		
 		self.afterInstall()
 		
