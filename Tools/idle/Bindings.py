@@ -1,174 +1,198 @@
-# The first three items of each tupel pertain to the menu bar.  All
-# three are None if the item is not to appeat in a menu.  Otherwise,
-# the first item is the menu name (in lowercase), the second item is
-# the menu item label; the third item is the keyboard shortcut to be
-# listed in the menu, if any.  Menu items are added in the order of
-# their occurrence in this table.  An item of the form
-# ("menu", None, None) can be used to insert a separator in the menu.
-#
-# The fourth item, if present is the virtual event; each of the
-# remaining items is an actual key binding for the event.  (Thus,
-# items[3:] conveniently forms an argument list for event_add().)
+# This file defines the menu contents and key bindings.  Note that
+# there is additional configuration information in the EditorWindow
+# class (and subclasses): the menus are created there based on the
+# menu_specs (class) variable, and menus not created are silently
+# skipped by the code here.  This makes it possible to define the
+# Debug menu here, which is only present in the PythonShell window.
 
-win_bindings = [
-    (None, None, None, "<<beginning-of-line>>", "<Control-a>", "<Home>"),
+import sys
+import string
+import re
 
-    (None, None, None, "<<expand-word>>", "<Meta-slash>", "<Alt-slash>"),
-
-    (None, None, None, "<<newline-and-indent>>", "<Key-Return>", "<KP_Enter>"),
-    (None, None, None, "<<plain-newline-and-indent>>", "<Control-j>"),
-
-    (None, None, None, "<<interrupt-execution>>", "<Control-c>"),
-    (None, None, None, "<<end-of-file>>", "<Control-d>"),
-
-    (None, None, None, "<<dedent-region>>", "<Control-bracketleft>"),
-    (None, None, None, "<<indent-region>>", "<Control-bracketright>"),
-
-    (None, None, None, "<<comment-region>>", "<Meta-Key-3>", "<Alt-Key-3>"),
-    (None, None, None, "<<uncomment-region>>", "<Meta-Key-4>", "<Alt-Key-4>"),
-
-    (None, None, None, "<<history-previous>>", "<Meta-p>", "<Alt-p>"),
-    (None, None, None, "<<history-next>>", "<Meta-n>", "<Alt-n>"),
-
-    (None, None, None, "<<toggle-auto-coloring>>", "<Control-slash>"),
-
-    (None, None, None, "<<close-all-windows>>", "<Control-q>"),
-    (None, None, None, "<<open-new-window>>", "<Control-n>"),
-    (None, None, None, "<<open-window-from-file>>", "<Control-o>"),
-    (None, None, None, "<<save-window>>", "<Control-s>"),
-    (None, None, None, "<<save-window-as-file>>", "<Control-w>"),
-    (None, None, None, "<<save-copy-of-window-as-file>>", "<Meta-w>"),
-
-    (None, None, None, "<<find>>", "<Control-f>"),
-    (None, None, None, "<<find-next>>", "<F3>"),
-    (None, None, None, "<<find-same>>", "<Control-F3>"),
-    (None, None, None, "<<goto-line>>", "<Alt-g>", "<Meta-g>"),
-
-    (None, None, None, "<<undo>>", "<Control-z>"),
-    (None, None, None, "<<redo>>", "<Control-y>"),
-    (None, None, None, "<<dump-undo-state>>", "<Control-backslash>"),
+menudefs = [
+ # underscore prefixes character to underscore
+ ('file', [
+   ('_New window', '<<open-new-window>>'),
+   ('_Open...', '<<open-window-from-file>>'),
+   ('Open _module...', '<<open-module>>'),
+   ('Class _browser...', '<<open-class-browser>>'),
+   None,
+   ('_Save', '<<save-window>>'),
+   ('Save _As...', '<<save-window-as-file>>'),
+   ('Save Co_py As...', '<<save-copy-of-window-as-file>>'),
+   None,
+   ('_Close', '<<close-window>>'),
+   ('E_xit', '<<close-all-windows>>'),
+  ]),
+ ('edit', [
+   ('_Undo', '<<undo>>'),
+   ('_Redo', '<<redo>>'),
+   None,
+   ('Cu_t', '<<Cut>>'),
+   ('_Copy', '<<Copy>>'),
+   ('_Paste', '<<Paste>>'),
+   None,
+   ('_Find...', '<<find>>'),
+   ('Find _next', '<<find-next>>'),
+   ('Find _same', '<<find-same>>'),
+   ('_Go to line', '<<goto-line>>'),
+   None,
+   ('_Dedent region', '<<dedent-region>>'),
+   ('_Indent region', '<<indent-region>>'),
+   ('Comment _out region', '<<comment-region>>'),
+   ('U_ncomment region', '<<uncomment-region>>'),
+  ]),
+ ('debug', [
+   ('_Go to line from traceback', '<<goto-traceback-line>>'),
+   ('_Open stack viewer', '<<open-stack-viewer>>'),
+   ('_Debugger toggle', '<<toggle-debugger>>'),
+  ]),
+ ('help', [
+   ('_Help...', '<<help>>'),
+   None,
+   ('_About IDLE...', '<<about-idle>>'),
+  ]),
 ]
 
-emacs_bindings = [
+windows_keydefs = {
+ '<<beginning-of-line>>': ['<Control-a>', '<Home>'],
+ '<<close-all-windows>>': ['<Control-q>'],
+ '<<comment-region>>': ['<Meta-Key-3>', '<Alt-Key-3>'],
+ '<<dedent-region>>': ['<Control-bracketleft>'],
+ '<<dump-undo-state>>': ['<Control-backslash>'],
+ '<<end-of-file>>': ['<Control-d>'],
+ '<<expand-word>>': ['<Meta-slash>', '<Alt-slash>'],
+ '<<find-next>>': ['<F3>', '<Control-g>'],
+ '<<find-same>>': ['<Control-F3>'],
+ '<<find>>': ['<Control-f>'],
+ '<<goto-line>>': ['<Alt-g>', '<Meta-g>'],
+ '<<history-next>>': ['<Meta-n>', '<Alt-n>'],
+ '<<history-previous>>': ['<Meta-p>', '<Alt-p>'],
+ '<<indent-region>>': ['<Control-bracketright>'],
+ '<<interrupt-execution>>': ['<Control-c>'],
+ '<<newline-and-indent>>': ['<Key-Return>', '<KP_Enter>'],
+ '<<open-new-window>>': ['<Control-n>'],
+ '<<open-window-from-file>>': ['<Control-o>'],
+ '<<plain-newline-and-indent>>': ['<Control-j>'],
+ '<<redo>>': ['<Control-y>'],
+ '<<save-copy-of-window-as-file>>': ['<Meta-w>'],
+ '<<save-window-as-file>>': ['<Control-w>'],
+ '<<save-window>>': ['<Control-s>'],
+ '<<toggle-auto-coloring>>': ['<Control-slash>'],
+ '<<uncomment-region>>': ['<Meta-Key-4>', '<Alt-Key-4>'],
+ '<<undo>>': ['<Control-z>'],
+}
 
-    # File menu
+emacs_keydefs = {
+ '<<Copy>>': ['<Alt-w>'],
+ '<<Cut>>': ['<Control-w>'],
+ '<<Paste>>': ['<Control-y>'],
+ '<<about-idle>>': [],
+ '<<beginning-of-line>>': ['<Control-a>', '<Home>'],
+ '<<center-insert>>': ['<Control-l>'],
+ '<<close-all-windows>>': ['<Control-x><Control-c>'],
+ '<<close-window>>': ['<Control-x><Control-0>'],
+ '<<comment-region>>': ['<Meta-Key-3>', '<Alt-Key-3>'],
+ '<<dedent-region>>': ['<Meta-bracketleft>',
+                       '<Alt-bracketleft>',
+                       '<Control-bracketleft>'],
+ '<<do-nothing>>': ['<Control-x>'],
+ '<<dump-undo-state>>': ['<Control-backslash>'],
+ '<<end-of-file>>': ['<Control-d>'],
+ '<<expand-word>>': ['<Meta-slash>', '<Alt-slash>'],
+ '<<find-next>>': ['<Control-u><Control-s>'],
+ '<<find-same>>': ['<Control-s>'],
+ '<<find>>': ['<Control-u><Control-u><Control-s>'],
+ '<<goto-line>>': ['<Alt-g>', '<Meta-g>'],
+ '<<goto-traceback-line>>': [],
+ '<<help>>': [],
+ '<<history-next>>': ['<Meta-n>', '<Alt-n>'],
+ '<<history-previous>>': ['<Meta-p>', '<Alt-p>'],
+ '<<indent-region>>': ['<Meta-bracketright>',
+                       '<Alt-bracketright>',
+                       '<Control-bracketright>'],
+ '<<interrupt-execution>>': ['<Control-c>'],
+ '<<newline-and-indent>>': ['<Key-Return>', '<KP_Enter>'],
+ '<<open-class-browser>>': ['<Control-x><Control-b>'],
+ '<<open-module>>': ['<Control-x><Control-m>'],
+ '<<open-new-window>>': ['<Control-x><Control-n>'],
+ '<<open-stack-viewer>>': [],
+ '<<open-window-from-file>>': ['<Control-x><Control-f>'],
+ '<<plain-newline-and-indent>>': ['<Control-j>'],
+ '<<redo>>': ['<Alt-z>', '<Meta-z>'],
+ '<<save-copy-of-window-as-file>>': ['<Control-x><w>'],
+ '<<save-window-as-file>>': ['<Control-x><Control-w>'],
+ '<<save-window>>': ['<Control-x><Control-s>'],
+ '<<toggle-auto-coloring>>': ['<Control-slash>'],
+ '<<toggle-debugger>>': [],
+ '<<uncomment-region>>': ['<Meta-Key-4>', '<Alt-Key-4>'],
+ '<<undo>>': ['<Control-z>'],
+}
 
-    ("file", "New window", "C-x C-n",
-     "<<open-new-window>>", "<Control-x><Control-n>"),
-    ("file", "Open...", "C-x C-f",
-     "<<open-window-from-file>>", "<Control-x><Control-f>"),
-    ("file", "Open module...", "C-x C-m",
-     "<<open-module>>", "<Control-x><Control-m>"),
-    ("file", "Class browser...", "C-x C-b",
-     "<<open-class-browser>>", "<Control-x><Control-b>"),
-    ("file", None, None),
+def prepstr(s):
+    # Helper to extract the underscore from a string,
+    # e.g. prepstr("Co_py") returns (2, "Copy").
+    i = string.find(s, '_')
+    if i >= 0:
+        s = s[:i] + s[i+1:]
+    return i, s
 
-    ("file", "Save", "C-x C-s",
-     "<<save-window>>", "<Control-x><Control-s>"),
-    ("file", "Save As...", "C-x C-w",
-     "<<save-window-as-file>>", "<Control-x><Control-w>"),
-    ("file", "Save Copy As...", "C-x w",
-     "<<save-copy-of-window-as-file>>", "<Control-x><w>"),
-    ("file", None, None),
+keynames = {
+ 'bracketleft': '[',
+ 'bracketright': ']',
+}
 
-    ("file", "Close", "C-x C-0",
-     "<<close-window>>", "<Control-x><Control-0>"),
-    ("file", "Exit", "C-x C-c",
-     "<<close-all-windows>>", "<Control-x><Control-c>"),
+def getaccelerator(keydefs, event):
+    keylist = keydefs.get(event)
+    if not keylist:
+        return ""
+    s = keylist[0]
+    if s[:6] == "<Meta-":
+        # Prefer Alt over Meta -- they should be the same thing anyway
+        alts = "<Alt-" + s[6:]
+        if alts in keylist:
+            s = alts
+    s = re.sub(r"-[a-z]\b", lambda m: string.upper(m.group()), s)
+    s = re.sub(r"\b\w+\b", lambda m: keynames.get(m.group(), m.group()), s)
+    s = re.sub("Key-", "", s)
+    s = re.sub("Control-", "Ctrl-", s)
+    s = re.sub("-", "+", s)
+    s = re.sub("><", " ", s)
+    s = re.sub("<", "", s)
+    s = re.sub(">", "", s)
+    return s
 
-    # Edit menu
+if sys.platform == 'win32':
+    default_keydefs = windows_keydefs
+else:
+    default_keydefs = emacs_keydefs
 
-    ("edit", "Undo", "C-z", "<<undo>>", "<Control-z>"),
-    ("edit", "Redo", "Alt-z", "<<redo>>", "<Alt-z>", "<Meta-z>"),
-    ("edit", None, None),
+def apply_bindings(text, keydefs=default_keydefs):
+    text.keydefs = keydefs
+    for event, keylist in keydefs.items():
+        if keylist:
+            apply(text.event_add, (event,) + tuple(keylist))
 
-    ("edit", "Cut", None, "<<Cut>>", "<Control-w>"),
-    ("edit", "Copy", None, "<<Copy>>", "<Alt-w>"),
-    ("edit", "Paste", None, "<<Paste>>", "<Control-y>"),
-    ("edit", None, None),
-
-    ("edit", "Find...", "C-s",
-     "<<find>>", "<Control-u><Control-u><Control-s>"),
-    ("edit", "Find next", "C-u C-s",
-     "<<find-next>>", "<Control-u><Control-s>"),
-    ("edit", "Find same", "C-s", "<<find-same>>", "<Control-s>"),
-    ("edit", "Go to line", "Alt-g", "<<goto-line>>", "<Alt-g>", "<Meta-g>"),
-    ("edit", None, None),
-
-    ("edit", "Dedent region", "Ctrl-[", "<<dedent-region>>",
-     "<Meta-bracketleft>", "<Alt-bracketleft>", "<Control-bracketleft>"),
-    ("edit", "Indent region", "Ctrl-]", "<<indent-region>>",
-     "<Meta-bracketright>", "<Alt-bracketright>", "<Control-bracketright>"),
-
-    ("edit", "Comment out region", "Alt-3",
-     "<<comment-region>>", "<Meta-Key-3>", "<Alt-Key-3>"),
-    ("edit", "Uncomment region", "Alt-4",
-     "<<uncomment-region>>", "<Meta-Key-4>", "<Alt-Key-4>"),
-    
-    # Debug menu
-    
-    ("debug", "Go to line from traceback", None, "<<goto-traceback-line>>"),
-    ("debug", "Open stack viewer", None, "<<open-stack-viewer>>"),
-    ("debug", "Toggle debugger", None, "<<toggle-debugger>>"),
-    
-    # Help menu
-    
-    ("help", "Help...", None, "<<help>>"),
-    ("help", None, None),
-    ("help", "About IDLE...", None, "<<about-idle>>"),
-
-    # Not in any menu
-
-    (None, None, None, "<<beginning-of-line>>", "<Control-a>", "<Home>"),
-    (None, None, None, "<<center-insert>>", "<Control-l>"),
-
-    (None, None, None, "<<expand-word>>", "<Meta-slash>", "<Alt-slash>"),
-
-    (None, None, None, "<<newline-and-indent>>", "<Key-Return>", "<KP_Enter>"),
-    (None, None, None, "<<plain-newline-and-indent>>", "<Control-j>"),
-
-    (None, None, None, "<<interrupt-execution>>", "<Control-c>"),
-    (None, None, None, "<<end-of-file>>", "<Control-d>"),
-
-    (None, None, None, "<<history-previous>>", "<Meta-p>", "<Alt-p>"),
-    (None, None, None, "<<history-next>>", "<Meta-n>", "<Alt-n>"),
-
-    (None, None, None, "<<toggle-auto-coloring>>", "<Control-slash>"),
-
-    (None, None, None, "<<dump-undo-state>>", "<Control-backslash>"),
-    
-    (None, None, None, "<<do-nothing>>", "<Control-x>"),
-]
-
-default_bindings = emacs_bindings
-
-def apply_bindings(text, bindings=default_bindings):
-    event_add = text.event_add
-    for args in bindings:
-        args = args[3:]
-        if args[1:]:
-            apply(event_add, args)
-
-def fill_menus(text, dict, bindings=default_bindings):
-    # Fill the menus for the given text widget.  The dict argument is
+def fill_menus(text, menudict, defs=menudefs):
+    # Fill the menus for the given text widget.  The menudict argument is
     # a dictionary containing the menus, keyed by their lowercased name.
     # Menus that are absent or None are ignored.
-    for args in bindings:
-        menu, label, accelerator = args[:3]
+    if hasattr(text, "keydefs"):
+        keydefs = text.keydefs
+    else:
+        keydefs = default_keydefs
+    for mname, itemlist in defs:
+        menu = menudict.get(mname)
         if not menu:
             continue
-        menu = dict.get(menu)
-        if not menu:
-            continue
-        if accelerator is None:
-            accelerator = ""
-        args = args[3:]
-        if args:
-            def command(text=text, event=args[0]):
-                text.event_generate(event)
-            menu.add_command(label=label, accelerator=accelerator,
-                             command=command)
-        elif label or accelerator:
-            menu.add_command(label=label, accelerator=accelerator)
-        else:
-            menu.add_separator()
+        for item in itemlist:
+            if not item:
+                menu.add_separator()
+            else:
+                label, event = item
+                underline, label = prepstr(label)
+                accelerator = getaccelerator(keydefs, event)
+                def command(text=text, event=event):
+                    text.event_generate(event)
+                menu.add_command(label=label, underline=underline,
+                                 command=command, accelerator=accelerator)
