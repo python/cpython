@@ -146,7 +146,7 @@ class Global(Node):
         return self.names,
 
     def getChildNodes(self):
-        return self.names,
+        return ()
 
     def __repr__(self):
         return "Global(%s)" % (repr(self.names),)
