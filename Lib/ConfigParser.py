@@ -555,6 +555,7 @@ class ConfigParser(RawConfigParser):
         while depth:                    # Loop through this until it's done
             depth -= 1
             if "%(" in value:
+                value = self._KEYCRE.sub(self._interpolation_replace, value)
                 try:
                     value = value % vars
                 except KeyError, e:
@@ -565,6 +566,15 @@ class ConfigParser(RawConfigParser):
         if "%(" in value:
             raise InterpolationDepthError(option, section, rawval)
         return value
+
+    _KEYCRE = re.compile(r"%\(([^)]*)\)s|.")
+
+    def _interpolation_replace(self, match):
+        s = match.group(1)
+        if s is None:
+            return match.group()
+        else:
+            return "%%(%s)s" % self.optionxform(s)
 
 
 class SafeConfigParser(ConfigParser):
@@ -598,7 +608,7 @@ class SafeConfigParser(ConfigParser):
                 if m is None:
                     raise InterpolationSyntaxError(option, section,
                         "bad interpolation variable reference %r" % rest)
-                var = m.group(1)
+                var = self.optionxform(m.group(1))
                 rest = rest[m.end():]
                 try:
                     v = map[var]
