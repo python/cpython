@@ -426,6 +426,7 @@ rd_object(fp)
 {
 	RFILE rf;
 	if (err_occurred()) {
+		fatal("XXX rd_object called with exception set"); /* tmp */
 		fprintf(stderr, "XXX rd_object called with exception set\n");
 		return NULL;
 	}
