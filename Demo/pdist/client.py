@@ -135,6 +135,7 @@ class SecureClient(Client, Security):
 		import string
 		apply(self._pre_init, args)
 		Security.__init__(self)
+		self._wf.flush()
 		line = self._rf.readline()
 		challenge = string.atoi(string.strip(line))
 		response = self._encode_challenge(challenge)
