@@ -18,7 +18,7 @@ class Debugger(bdb.Bdb):
         self.pyshell = pyshell
         self.make_gui()
 
-    def close(self):
+    def close(self, event=None):
         if self.interacting:
             self.top.bell()
             return
@@ -51,6 +51,7 @@ class Debugger(bdb.Bdb):
         self.top.wm_title("Debug Control")
         self.top.wm_iconname("Debug")
         top.wm_protocol("WM_DELETE_WINDOW", self.close)
+        self.top.bind("<Escape>", self.close)
         #
         self.bframe = bframe = Frame(top)
         self.bframe.pack(anchor="w")
