@@ -432,8 +432,10 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 		char buf[200];
 		sprintf(buf, "Non-ASCII character '\\x%.2x', "
 			"but no declared encoding", badchar);
+		/* Need to add 1 to the line number, since this line
+		   has not been counted, yet.  */
 		PyErr_WarnExplicit(PyExc_DeprecationWarning,
-				   buf, tok->filename, tok->lineno, 
+				   buf, tok->filename, tok->lineno + 1, 
 				   NULL, NULL);
 		tok->issued_encoding_warning = 1;
 	}
