@@ -7,6 +7,8 @@ One public function, register, is defined.
 
 __all__ = ["register"]
 
+import sys
+
 _exithandlers = []
 def _run_exitfuncs():
     """run any registered exit functions
@@ -23,7 +25,7 @@ def _run_exitfuncs():
         except SystemExit:
             exc_info = sys.exc_info()
         except:
-            import sys, traceback
+            import traceback
             print >> sys.stderr, "Error in atexit._run_exitfuncs:"
             traceback.print_exc()
             exc_info = sys.exc_info()
@@ -41,12 +43,10 @@ def register(func, *targs, **kargs):
     """
     _exithandlers.append((func, targs, kargs))
 
-import sys
 if hasattr(sys, "exitfunc"):
     # Assume it's another registered exit function - append it to our list
     register(sys.exitfunc)
 sys.exitfunc = _run_exitfuncs
-del sys
 
 if __name__ == "__main__":
     def x1():
