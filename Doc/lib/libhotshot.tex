@@ -1,0 +1,123 @@
+\section{\module{hotshot} ---
+         High performance logging profiler}
+
+\declaremodule{standard}{hotshot}
+\moduleauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+\sectionauthor{Anthony Baxter}{anthony@interlink.com.au}
+
+
+\versionadded{2.2}
+
+\modulesynopsis{High performance logging profiler, mostly written in C.}
+
+
+This module provides a nicer interface to the \code{_hotshot} C module.
+Hotshot is a replacement for the existing \refmodule{profile} module. As it's
+written mostly in C, it should result in a much smaller performance impact 
+than the existing profile module.
+
+\begin{classdesc}{Profile}{logfile, \optional{, lineevents=0, linetimings=1}}
+
+The profiler object. The argument \var{logfile} is the name of a log file
+to use for logged profile data. The argument \var{lineevents} specifies whether
+to generate events for every source line, or just on function call/return. It
+defaults to 0 (only log function call/return). The argument \var{linetimings}
+specifies whether to record timing information. It defaults to 1 (store timing
+information).
+
+\end{classdesc}
+
+\subsection{Profile Objects \label{hotshot-objects}}
+
+Profile objects have the following methods:
+
+\begin{methoddesc}{addinfo}{key, value}
+Add an arbitrary labelled value to the profile output.
+\end{methoddesc}
+
+\begin{methoddesc}{close}{}
+Close the logfile and terminate the profiler.
+\end{methoddesc}
+ 
+%
+\begin{methoddesc}{fileno}{}
+Return the file descriptor of the profiler's log file.
+\end{methoddesc}
+
+\begin{methoddesc}{run}{cmd}
+Profile an exec-compatible string in the script environment.
+
+The globals from the \module{__main__} module are used as 
+both the globals and locals for the script.
+\end{methoddesc}
+
+\begin{methoddesc}{runcall}{func, *args, **keywords}
+Profile a single call of a callable.
+
+Additional positional and keyword arguments may be passed
+along; the result of the call is returned, and exceptions are
+allowed to propogate cleanly, while ensuring that profiling is
+disabled on the way out.
+\end{methoddesc}
+
+
+\begin{methoddesc}{runctx}{cmd, globals, locals}
+Evaluate an exec-compatible string in a specific environment.
+
+The string is compiled before profiling begins.
+\end{methoddesc}
+
+\begin{methoddesc}{start}{}
+Start the profiler.
+\end{methoddesc}
+
+\begin{methoddesc}{stop}{}
+Stop the profiler.
+\end{methoddesc}
+
+\subsection{Using hotshot data}
+\declaremodule{standard}{hotshot.stats}
+
+\modulesynopsis{Statistical analysis for Hotshot}
+
+\versionadded{2.2}
+
+This module loads hotshot profiling data into the standard \module{pstats} 
+Stats objects.
+
+\begin{funcdesc}{load}{filename}
+Load hotshot data from \var{filename}. Returns an instance 
+of the \class{pstats.Stats} class.
+\end{funcdesc}
+
+\begin{seealso}
+  \seemodule{profile}{The profile module's \class{Stats} class. }
+\end{seealso}
+
+\subsection{Example Usage \label{hotshot-example}}
+
+\begin{verbatim}
+
+>>> import hotshot, hotshot.stats, test.pystone
+>>> prof = hotshot.Profile("stones.prof")
+>>> benchtime, stones = prof.runcall(test.pystone.pystones)
+>>> prof.close()
+>>> stats = hotshot.stats.load("stones.prof")
+>>> stats.strip_dirs()
+>>> stats.sort_stats('time', 'calls')
+>>> stats.print_stats(20)
+         850004 function calls in 10.090 CPU seconds
+
+   Ordered by: internal time, call count
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    3.295    3.295   10.090   10.090 pystone.py:79(Proc0)
+   150000    1.315    0.000    1.315    0.000 pystone.py:203(Proc7)
+    50000    1.313    0.000    1.463    0.000 pystone.py:229(Func2)
+ .
+ .
+ .
+
+\end{verbatim}
+
+
