@@ -2,14 +2,16 @@
          HTTP protocol client}
 
 \declaremodule{standard}{httplib}
-\modulesynopsis{HTTP protocol client (requires sockets).}
+\modulesynopsis{HTTP and HTTPS protocol client (requires sockets).}
 
 \indexii{HTTP}{protocol}
 
-This module defines a class which implements the client side of the
-HTTP protocol.  It is normally not used directly --- the module
-\refmodule{urllib}\refstmodindex{urllib} uses it to handle URLs that
-use HTTP.
+This module defines classes which implement the client side of the
+HTTP and HTTPS protocols.  It is normally not used directly --- the
+module \refmodule{urllib}\refstmodindex{urllib} uses it to handle URLs
+that use HTTP and HTTPS.  \strong{Note:}  HTTPS support is only
+available if the \refmodule{socket} module was compiled with SSL
+support.
 
 The module defines one class, \class{HTTP}:
 
@@ -110,6 +112,7 @@ Return a file object from which the data returned by the server can be
 read, using the \method{read()}, \method{readline()} or
 \method{readlines()} methods.
 \end{methoddesc}
+
 
 \subsection{Examples \label{httplib-examples}}
 
