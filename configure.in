@@ -120,7 +120,10 @@ AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 		ppc)
 			CC="mwcc -I$PWD/BeOS"
 			without_gcc=yes
-			OPT="-DUSE_DL_EXPORT -O7 -opt schedule604"
+			case `uname -r` in
+				4.0*) OPT="-DUSE_DL_EXPORT -O7 -opt schedule604 -export pragma" ;;
+				*) OPT="-DUSE_DL_EXPORT -O2 -proc 604e -export pragma" ;;
+			esac
 			CCSHARED=-UUSE_DL_EXPORT
 			LDFLAGS="$LDFLAGS -nodup"
 
