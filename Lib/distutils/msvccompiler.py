@@ -167,6 +167,13 @@ class MSVCCompiler (CCompiler) :
 
     compiler_type = 'msvc'
 
+    # Just set this so CCompiler's constructor doesn't barf.  We currently
+    # don't use the 'set_executables()' bureaucracy provided by CCompiler,
+    # as it really isn't necessary for this sort of single-compiler class.
+    # Would be nice to have a consistent interface with UnixCCompiler,
+    # though, so it's worth thinking about.
+    executables = {}
+
     # Private class data (need to distinguish C from C++ source for compiler)
     _c_extensions = ['.c']
     _cpp_extensions = ['.cc','.cpp']
@@ -295,7 +302,7 @@ class MSVCCompiler (CCompiler) :
             if extra_postargs:
                 lib_args.extend (extra_postargs)
             try:
-                self.spawn ([self.link] + ld_args)
+                self.spawn ([self.lib] + lib_args)
             except DistutilsExecError, msg:
                 raise LibError, msg
                 
