@@ -315,35 +315,6 @@ staticforward PyTypeObject SndChannel_Type = {
 /* ------------------- End object type SndChannel ------------------- */
 
 
-static PyObject *Snd_SetSoundVol(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short level;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &level))
-		return NULL;
-	SetSoundVol(level);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Snd_GetSoundVol(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short level;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	GetSoundVol(&level);
-	_res = Py_BuildValue("h",
-	                     level);
-	return _res;
-}
-
 static PyObject *Snd_SndNewChannel(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -742,10 +713,6 @@ static PyObject *Snd_GetSoundHeaderOffset(_self, _args)
 }
 
 static PyMethodDef Snd_methods[] = {
-	{"SetSoundVol", (PyCFunction)Snd_SetSoundVol, 1,
-	 "(short level) -> None"},
-	{"GetSoundVol", (PyCFunction)Snd_GetSoundVol, 1,
-	 "() -> (short level)"},
 	{"SndNewChannel", (PyCFunction)Snd_SndNewChannel, 1,
 	 "(short synth, long init, PyObject* userRoutine) -> (SndChannelPtr chan)"},
 	{"SndControl", (PyCFunction)Snd_SndControl, 1,
