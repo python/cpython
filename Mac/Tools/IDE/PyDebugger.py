@@ -173,9 +173,9 @@ class Debugger(bdb.Bdb):
 		buttons.stopbutton = W.Button((58, 0, 50, 16), "Stop", self.do_stop)
 		buttons.killbutton = W.Button((116, 0, 50, 16), "Kill", self.do_kill)
 		buttons.line = W.VerticalLine((173, 0, 0, 0))
-		buttons.stepbutton = W.Button((181, 0, 50, 16), "Step", self.do_step)
-		buttons.stepinbutton = W.Button((239, 0, 50, 16), "Step in", self.do_stepin)
-		buttons.stepoutbutton = W.Button((297, 0, 50, 16), "Step out", self.do_stepout)
+		buttons.stepbutton = W.Button((181, 0, 60, 16), "Step", self.do_step)
+		buttons.stepinbutton = W.Button((249, 0, 60, 16), "Step in", self.do_stepin)
+		buttons.stepoutbutton = W.Button((317, 0, 60, 16), "Step out", self.do_stepout)
 		
 		w.bind('cmdr', buttons.runbutton.push)
 		w.bind('cmd.', buttons.stopbutton.push)
