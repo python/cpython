@@ -1,0 +1,66 @@
+# Generic Makefile for dynamically linked extension modules.
+#
+# Jim Fulton, Digital Creations, jim@digicool.com
+
+
+# Uncomment this line if you want to fix the location of the PYTHON
+# installation.  Otherwise, set the environment variable before using this
+# Makefile.
+# $(PYTHONHOME)= /usr/local/
+
+# The following lines should be left as is:
+pyinstalldir=	$(PYTHONHOME)
+installdir=	$(PYTHONHOME)
+exec_installdir=$(pyinstalldir)
+INCLUDEPY=	$(pyinstalldir)/include/Py
+LIBP=		$(exec_installdir)/lib/python
+LIBPL=		$(LIBP)/lib
+PYMAKE=		make -f $(LIBPL)/Makefile
+
+# LIBSO is the location of platform-dependent dynamically linked 
+# extension libraries.  This can be handy when you need to build 
+# shared libraries that are not extensions but want to store them
+# with other extensions and need to know where they are.
+# Leave this line as it is.
+LIBSO=		`$(PYMAKE) -s echodestshared`
+
+# Put your module name here:
+MODULE=your-module
+
+# Put the object files for your module here:
+OBS=$(MODULE).o
+
+# Put extra linker options, such as libraries here:
+EXTRA=
+
+# If you have any Python modules, include them here, so that they
+# can be installed.
+PYMODULES=
+
+build:
+	if [ "$(MODULE)" != your-module ]; then \
+	  $(PYMAKE) INCLDIR=$(INCLUDEPY) CONFIGINCLDIR=$(LIBPL) \
+		ASHAREDMODULE=$(MODULE) \
+		'ASHAREDMODULESOBS=$(OBS)' \
+		'ASHAREDMODULESEXTRA=$(EXTRA)' \
+		asharedmodule; \
+	fi
+
+install: installso installpy
+
+installso: build
+	if [ "$(MODULE)" != your-module ]; then \
+	  $(PYMAKE) exec_prefix=$(installdir) \
+		ASHAREDMODULE=$(MODULE) asharedinstall; \
+	fi
+
+installpy:
+	for m in $(PYMODULES) the-end; do \
+	  if [ "$$m" != the-end ]; then \
+	    python -c "import $$m"; \
+	    cp $$m.pyc $(installdir)/lib/python/; \
+	  fi; \
+	done
+
+clean::
+	-rm -f *.o *.so *~ *# so_locations
