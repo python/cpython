@@ -42,6 +42,7 @@
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\./pythonw_d.pdb"
 				SubSystem="2"
+				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
 				TargetMachine="1"/>
 			<Tool
@@ -108,6 +109,7 @@
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\./pythonw.pdb"
 				SubSystem="2"
+				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
 				TargetMachine="1"/>
 			<Tool
@@ -179,6 +181,7 @@
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\./pythonw.pdb"
 				SubSystem="2"
+				StackReserveSize="2000000"
 				BaseAddress="0x1d000000"
 				TargetMachine="0"/>
 			<Tool

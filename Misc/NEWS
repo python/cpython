@@ -75,6 +75,16 @@ Tests
 Windows
 -------
 
+- Boosted the stack reservation for python.exe and pythonw.exe from
+  the default 1MB to 2MB.  Stack frames under VC 7.1 for 2.4 are enough
+  bigger than under VC 6.0 for 2.3.4 that deeply recursive progams
+  within the default sys.getrecursionlimit() default value of 1000 were
+  able to suffer undetected C stack overflows.  The standard test program
+  test_compiler was one such program.  If a Python process on Windows
+  "just vanishes" without a trace, and without an error message of any
+  kind, but with an exit code of 128, undetected stack overflow may be
+  the problem.
+
 Mac
 ---
 
