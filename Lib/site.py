@@ -91,16 +91,11 @@ del dir, dircase, L
 # using the -S option for Python.  See http://www.python.org/sf/586680
 if (os.name == "posix" and sys.path and
     os.path.basename(sys.path[-1]) == "Modules"):
-    s = "build/lib.%s-%.3s" % ("linux-i686", sys.version)
+    from distutils.util import get_platform
+    s = "build/lib.%s-%.3s" % (get_platform(), sys.version)
     s = os.path.join(os.path.dirname(sys.path[-1]), s)
     sys.path.append(s)
-##if (os.name == "posix" and sys.path and
-##    os.path.basename(sys.path[-1]) == "Modules"):
-##    from distutils.util import get_platform
-##    s = "build/lib.%s-%.3s" % (get_platform(), sys.version)
-##    s = os.path.join(os.path.dirname(sys.path[-1]), s)
-##    sys.path.append(s)
-##    del get_platform, s
+    del get_platform, s
 
 def _init_pathinfo():
     global _dirs_in_sys_path
