@@ -30,7 +30,9 @@ class install_data (Command):
         self.outfiles = []
         self.root = None
         self.force = 0
+
         self.data_files = self.distribution.data_files
+        self.warn_dir = 1
 
     def finalize_options (self):
         self.set_undefined_options('install',
@@ -44,9 +46,10 @@ class install_data (Command):
         for f in self.data_files:
             if type(f) == StringType:
                 # it's a simple file, so copy it
-                self.warn("setup script did not provide a directory for "
-                          "'%s' -- installing right in '%s'" %
-                          (f, self.install_dir))
+                if self.warn_dir:
+                    self.warn("setup script did not provide a directory for "
+                              "'%s' -- installing right in '%s'" %
+                              (f, self.install_dir))
                 out = self.copy_file(f, self.install_dir)
                 self.outfiles.append(out)
             else:
