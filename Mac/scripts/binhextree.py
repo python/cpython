@@ -4,11 +4,6 @@
 #
 # Jack Jansen, CWI, August 1995.
 #
-# To do:
-# - Also do project files (.µ and .Ü), after using AppleEvents to the
-#   various builders to clean the projects
-# - Don't hexbin (and clean) if there exists a .hqx file that is newer.
-#
 
 import os
 import binhex
@@ -138,11 +133,37 @@ def copycwproject(path, name):
 	else:
 		project_files[creator] = [fss]	
 	
+def copycwexpfile(path, name):
+	"""Copy CW export file"""
+	global project_files
+	
+	dstdir = os.path.join(TOP, CWDIR)
+	if not os.path.exists(dstdir):
+		print dstdir
+		print 'No CW-project dir, skip', name
+		return
+	dstfile = os.path.join(dstdir, name)
+	if dstfile[-6:] == '.µ.exp':
+		dstfile = dstfile[:-6]+'.mu.exp'
+	# Check that we're not in the dest directory
+	if dstfile == path:
+		return
+
+	# If the destination doesn't exists or is older that the source
+	# we copy and remember it
+	
+	if os.path.exists(dstfile) and \
+			os.stat(dstfile)[8] > os.stat(path)[8]:
+		print 'Not copying', path,'- Up-to-date'
+	else:
+		print 'Copy', path
+		macostools.copy(path, dstfile)	
 
 extensions = [
 	('.rsrc', binhexit),
 	('.gif', binhexit),
-	('.µ', copycwproject)
+	('.µ', copycwproject),
+	('.µ.exp', copycwexpfile)
 	]
 
 def walker(arg, top, names):
