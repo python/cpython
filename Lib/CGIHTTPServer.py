@@ -6,7 +6,7 @@ requests to cgi-bin scripts.
 """
 
 
-__version__ = "0.2"
+__version__ = "0.3"
 
 
 import os
@@ -89,14 +89,14 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 	scriptname = dir + '/' + script
 	scriptfile = self.translate_path(scriptname)
 	if not os.path.exists(scriptfile):
-	    self.send_error(404, "No such CGI script (%s)", `scriptname`)
+	    self.send_error(404, "No such CGI script (%s)" % `scriptname`)
 	    return
 	if not os.path.isfile(scriptfile):
-	    self.send_error(403, "CGI script is not a plain file (%s)",
+	    self.send_error(403, "CGI script is not a plain file (%s)" %
 			    `scriptname`)
 	    return
 	if not executable(scriptfile):
-	    self.send_error(403, "CGI script is not executable (%s)",
+	    self.send_error(403, "CGI script is not executable (%s)" %
 			    `scriptname`)
 	    return
 	nobody = nobody_uid()
