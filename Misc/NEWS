@@ -12,6 +12,9 @@ What's New in Python 2.4.1?
 Core and builtins
 -----------------
 
+- Bug #1155938: new style classes did not verify that __init__()
+  returns None.
+
 - Bug #723201: Raise a TypeError for passing bad objects to 'L' format.
 
 - Bug #1124295: the __name__ attribute of file objects was
