@@ -45,6 +45,8 @@ import sys
 from types import DictType
 import marshal
 
+
+
 class Switchboard:
     def __init__(self, initfile):
         self.__initfile = initfile
@@ -63,11 +65,10 @@ class Switchboard:
                     fp = open(initfile)
                     self.__optiondb = marshal.load(fp)
                     if type(self.__optiondb) <> DictType:
-                        sys.stderr.write(
-                            'Problem reading options from file: %s\n' %
-                            initfile)
+                        print >> sys.stderr, \
+                              'Problem reading options from file:', initfile
                         self.__optiondb = {}
-                except (IOError, EOFError):
+                except (IOError, EOFError, ValueError):
                     pass
             finally:
                 if fp:
@@ -118,8 +119,8 @@ class Switchboard:
             try:
                 fp = open(self.__initfile, 'w')
             except IOError:
-                sys.stderr.write('Cannot write options to file: %s\n' %
-                                 self.__initfile)
+                print >> sys.stderr, 'Cannot write options to file:', \
+                      self.__initfile
             else:
                 marshal.dump(self.__optiondb, fp)
         finally:
