@@ -86,6 +86,14 @@ r(SyntaxError)
 try: exec '/\n'
 except SyntaxError: pass
 
+r(IndentationError)
+
+r(TabError)
+# can only be tested under -tt, and is the only test for -tt
+#try: compile("try:\n\t1/0\n    \t1/0\nfinally:\n pass\n", '<string>', 'exec')
+#except TabError: pass
+#else: raise TestFailed
+
 r(SystemError)
 print '(hard to reproduce)'
 

@@ -28,6 +28,10 @@ RuntimeError
 spam
 SyntaxError
 spam
+IndentationError
+spam
+TabError
+spam
 SystemError
 (hard to reproduce)
 spam

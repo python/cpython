@@ -68,6 +68,11 @@ Exception\n\
       |\n\
       +-- AttributeError\n\
       +-- SyntaxError\n\
+      |    |\n\
+      |    +-- IndentationError\n\
+      |         |\n\
+      |         +-- TabError\n\
+      |\n\
       +-- TypeError\n\
       +-- AssertionError\n\
       +-- LookupError\n\
@@ -783,6 +788,12 @@ the Python version, and the hardware/OS platform and version.";
 static char
 MemoryError__doc__[] = "Out of memory.";
 
+static char
+IndentationError__doc__[] = "Improper indentation.";
+
+static char
+TabError__doc__[] = "Improper mixture of spaces and tabs.";
+
 
 
 /* module global functions */
@@ -817,6 +828,8 @@ PyObject *PyExc_OverflowError;
 PyObject *PyExc_RuntimeError;
 PyObject *PyExc_NotImplementedError;
 PyObject *PyExc_SyntaxError;
+PyObject *PyExc_IndentationError;
+PyObject *PyExc_TabError;
 PyObject *PyExc_SystemError;
 PyObject *PyExc_SystemExit;
 PyObject *PyExc_UnboundLocalError;
@@ -878,6 +891,10 @@ exctable[] = {
  {"AttributeError",     &PyExc_AttributeError, 0, AttributeError__doc__},
  {"SyntaxError",        &PyExc_SyntaxError,    0, SyntaxError__doc__,
   SyntaxError_methods, SyntaxError__classinit__},
+ {"IndentationError",   &PyExc_IndentationError, &PyExc_SyntaxError,
+  IndentationError__doc__},
+ {"TabError",   &PyExc_TabError, &PyExc_IndentationError,
+  TabError__doc__},
  {"AssertionError",     &PyExc_AssertionError, 0, AssertionError__doc__},
  {"LookupError",        &PyExc_LookupError,    0, LookupError__doc__},
  {"IndexError",         &PyExc_IndexError,     &PyExc_LookupError,

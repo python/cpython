@@ -412,13 +412,13 @@ indenterror(tok)
 	struct tok_state *tok;
 {
 	if (tok->alterror) {
-		tok->done = E_INDENT;
+		tok->done = E_TABSPACE;
 		tok->cur = tok->inp;
 		return 1;
 	}
 	if (tok->altwarning) {
-		PySys_WriteStderr("%s: inconsistent tab/space usage\n",
-			tok->filename);
+		PySys_WriteStderr("%s: inconsistent use of tabs and spaces "
+                                  "in indentation\n", tok->filename);
 		tok->altwarning = 0;
 	}
 	return 0;
@@ -484,9 +484,7 @@ PyTokenizer_Get(tok, p_start, p_end)
 			else if (col > tok->indstack[tok->indent]) {
 				/* Indent -- always one */
 				if (tok->indent+1 >= MAXINDENT) {
-					PySys_WriteStderr(
-						"excessive indent\n");
-					tok->done = E_TOKEN;
+					tok->done = E_TOODEEP;
 					tok->cur = tok->inp;
 					return ERRORTOKEN;
 				}
@@ -506,9 +504,7 @@ PyTokenizer_Get(tok, p_start, p_end)
 					tok->indent--;
 				}
 				if (col != tok->indstack[tok->indent]) {
-					PySys_WriteStderr(
-						"inconsistent dedent\n");
-					tok->done = E_TOKEN;
+					tok->done = E_DEDENT;
 					tok->cur = tok->inp;
 					return ERRORTOKEN;
 				}
