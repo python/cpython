@@ -955,11 +955,16 @@ invent a value anyway, it does not bother to return a value of the
 same type as its argument, so e.g., \code{not 'foo'} yields \code{0},
 not \code{''}.)
 
+\section{Lambdas\label{lambdas}}
+\indexii{lambda}{expression}
+\indexii{lambda}{form}
+\indexii{anonmymous}{function}
+
 Lambda forms (lambda expressions) have the same syntactic position as
 expressions.  They are a shorthand to create anonymous functions; the
 expression \code{lambda \var{arguments}: \var{expression}}
-yields a function object that behaves virtually identical to one
-defined with
+yields a function object.  The unnamed object behaves like a function
+object define with
 
 \begin{verbatim}
 def name(arguments):
@@ -969,34 +974,6 @@ def name(arguments):
 See section \ref{function} for the syntax of parameter lists.  Note
 that functions created with lambda forms cannot contain statements.
 \label{lambda}
-\indexii{lambda}{expression}
-\indexii{lambda}{form}
-\indexii{anonmymous}{function}
-
-\strong{Programmer's note:} Prior to Python 2.1, a lambda form defined
-inside a function has no access to names defined in the function's
-namespace.  This is because Python had only two scopes: local and
-global.  A common work-around was to use default argument values to
-pass selected variables into the lambda's namespace, e.g.:
-
-\begin{verbatim}
-def make_incrementor(increment):
-    return lambda x, n=increment: x+n
-\end{verbatim}
-
-As of Python 2.1, nested scopes were introduced, and this work-around
-has not been necessary.  Python 2.1 supports nested scopes in modules
-which include the statement \samp{from __future__ import
-nested_scopes}, and more recent versions of Python enable nested
-scopes by default.  This version works starting with Python 2.1:
-
-\begin{verbatim}
-from __future__ import nested_scopes
-
-def make_incrementor(increment):
-    return lambda x: x+increment
-\end{verbatim}
-
 
 \section{Expression lists\label{exprlists}}
 \indexii{expression}{list}
