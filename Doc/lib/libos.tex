@@ -781,6 +781,7 @@ files if \var{dir} is omitted or \code{None}.  If given and not
 filename.  Applications are responsible for properly creating and
 managing files created using paths returned by \function{tempnam()};
 no automatic cleanup is provided.
+Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{tmpnam}{}
@@ -790,11 +791,13 @@ entry in a common location for temporary files.  Applications are
 responsible for properly creating and managing files created using
 paths returned by \function{tmpnam()}; no automatic cleanup is
 provided.
+Availability: \UNIX.
 \end{funcdesc}
 
 \begin{datadesc}{TMP_MAX}
 The maximum number of unique names that \function{tmpnam()} will
 generate before reusing names.
+Availability: \UNIX, Windows.
 \end{datadesc}
 
 \begin{funcdesc}{unlink}{path}
