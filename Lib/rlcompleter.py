@@ -41,12 +41,8 @@ used, and this module (and the readline module) are silently inactive.
 """
 
 import readline
-import keyword
 import __builtin__
 import __main__
-import string
-import re
-import traceback
 
 class Completer:
 
@@ -71,6 +67,7 @@ class Completer:
 	currently defines in __main__ that match.
 
 	"""
+	import keyword
 	matches = []
 	n = len(text)
 	for list in [keyword.kwlist,
@@ -93,6 +90,7 @@ class Completer:
 	with a __getattr__ hook is evaluated.
 
 	"""
+	import re
 	m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
 	if not m:
 	    return
