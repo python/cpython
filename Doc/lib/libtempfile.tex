@@ -55,11 +55,24 @@ current working directory (all other systems).  No check is made to
 see whether its value is valid.
 \end{datadesc}
 
+\begin{funcdesc}{gettempprefix}{}
+Return the filename prefix used to create temporary files.  This does
+not contain the directory component.  Using this function is preferred
+over using the \code{template} variable directly.
+\versionadded{1.5.2}
+\end{funcdesc}
+
 \begin{datadesc}{template}
+\deprecated{1.6}{Use \function{gettempprefix()} instead.}
 When set to a value other than \code{None}, this variable defines the
 prefix of the final component of the filenames returned by
 \function{mktemp()}.  A string of decimal digits is added to generate
 unique filenames.  The default is either \file{@\var{pid}.} where
-\var{pid} is the current process ID (on \UNIX{}), or \file{tmp} (all
-other systems).
+\var{pid} is the current process ID (on \UNIX{}),
+\file{\textasciitilde\var{pid}-} on Windows NT, \file{Python-Tmp-} on
+MacOS, or \file{tmp} (all other systems).
+
+Older versions of this module used to require that \code{template} be
+set to \code{None} after a call to \function{os.fork()}; this has not
+been necessary since version 1.5.2.
 \end{datadesc}
