@@ -407,7 +407,6 @@ $(PGEN):	$(PGENOBJS)
 		$(CC) $(OPT) $(PGENOBJS) $(LIBS) -o $(PGEN)
 
 Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
-				$(srcdir)/Parser/assert.h \
 				$(srcdir)/Include/token.h \
 				$(srcdir)/Include/grammar.h
 Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c

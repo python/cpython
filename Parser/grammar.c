@@ -1,11 +1,11 @@
 
 /* Grammar implementation */
 
+#include "Python.h"
 #include "pgenheaders.h"
 
 #include <ctype.h>
 
-#include "assert.h"
 #include "token.h"
 #include "grammar.h"
 
