@@ -26,22 +26,29 @@ extern "C" {
 
 static struct PycStringIO_CAPI {
   
-  /* Read a string.  If the last argument is -1, the remainder will be read. */
+ /* Read a string from an input object.  If the last argument
+    is -1, the remainder will be read.
+    */
   int(*cread)(PyObject *, char **, int);
 
-  /* Read a line */
+ /* Read a line from an input object.  Returns the length of the read
+    line as an int and a pointer inside the object buffer as char** (so
+    the caller doesn't have to provide its own buffer as destination).
+    */
   int(*creadline)(PyObject *, char **);
 
-  /* Write a string */
+  /* Write a string to an output object*/
   int(*cwrite)(PyObject *, char *, int);
 
-  /* Get the cStringIO object as a Python string */
+  /* Get the output object as a Python string (returns new reference). */
   PyObject *(*cgetvalue)(PyObject *);
 
   /* Create a new output object */
   PyObject *(*NewOutput)(int);
 
-  /* Create an input object from a Python string */
+  /* Create an input object from a Python string
+     (copies the Python string reference).
+     */
   PyObject *(*NewInput)(PyObject *);
 
   /* The Python types for cStringIO input and output objects.
