@@ -287,6 +287,7 @@ static int com_init PROTO((struct compiling *, char *));
 static void com_free PROTO((struct compiling *));
 static void com_done PROTO((struct compiling *));
 static void com_node PROTO((struct compiling *, struct _node *));
+static void com_factor PROTO((struct compiling *, struct _node *));
 static void com_addbyte PROTO((struct compiling *, int));
 static void com_addint PROTO((struct compiling *, int));
 static void com_addoparg PROTO((struct compiling *, int, int));
@@ -563,8 +564,16 @@ parsenumber(s)
 	extern double atof PROTO((const char *));
 	char *end;
 	long x;
+#ifndef WITHOUT_COMPLEX
+	complex c;
+	int imflag;
+#endif
+
 	errno = 0;
 	end = s + strlen(s) - 1;
+#ifndef WITHOUT_COMPLEX
+	imflag = *end == 'i' || *end == 'I' || *end == 'j' || *end == 'J';
+#endif
 	if (*end == 'l' || *end == 'L')
 		return long_scan(s, 0);
 	if (s[0] == '0')
@@ -580,7 +589,15 @@ parsenumber(s)
 		return newintobject(x);
 	}
 	/* XXX Huge floats may silently fail */
-	return newfloatobject(atof(s));
+#ifndef WITHOUT_COMPLEX
+	if (imflag) {
+		c.real = 0.;
+		c.imag = atof(s);
+		return newcomplexobject(c);
+	}
+	else
+#endif
+		return newfloatobject(atof(s));
 }
 
 static object *
@@ -810,14 +827,22 @@ com_apply_subscript(c, n)
 	node *n;
 {
 	REQ(n, subscript);
-	if (NCH(n) == 1 && TYPE(CHILD(n, 0)) != COLON) {
-		/* It's a single subscript */
-		com_node(c, CHILD(n, 0));
-		com_addbyte(c, BINARY_SUBSCR);
-	}
-	else {
+	if (TYPE(CHILD(n, 0)) == COLON || (NCH(n) > 1 && TYPE(CHILD(n, 1)) == COLON)) {
 		/* It's a slice: [expr] ':' [expr] */
 		com_slice(c, n, SLICE);
+	}
+	else {
+		/* It's a list of subscripts */
+		if (NCH(n) == 1)
+			com_node(c, CHILD(n, 0));
+		else {
+			int i;
+			int len = (NCH(n)+1)/2;
+			for (i = 0; i < NCH(n); i += 2)
+				com_node(c, CHILD(n, i));
+			com_addoparg(c, BUILD_TUPLE, len);
+		}
+		com_addbyte(c, BINARY_SUBSCR);
 	}
 }
 
@@ -922,6 +947,25 @@ com_apply_trailer(c, n)
 }
 
 static void
+com_power(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i;
+	REQ(n, power);
+	com_atom(c, CHILD(n, 0));
+	for (i = 1; i < NCH(n); i++) {
+		if (TYPE(CHILD(n, i)) == DOUBLESTAR) {
+			com_factor(c, CHILD(n, i+1));
+			com_addbyte(c, BINARY_POWER);
+			break;
+		}
+		else
+			com_apply_trailer(c, CHILD(n, i));
+	}
+}
+
+static void
 com_factor(c, n)
 	struct compiling *c;
 	node *n;
@@ -941,9 +985,7 @@ com_factor(c, n)
 		com_addbyte(c, UNARY_INVERT);
 	}
 	else {
-		com_atom(c, CHILD(n, 0));
-		for (i = 1; i < NCH(n); i++)
-			com_apply_trailer(c, CHILD(n, i));
+		com_power(c, CHILD(n, 0));
 	}
 }
 
@@ -1338,7 +1380,15 @@ com_assign_subscript(c, n, assigning)
 	node *n;
 	int assigning;
 {
-	com_node(c, n);
+	if (NCH(n) == 1)
+		com_node(c, CHILD(n, 0));
+	else {
+		int i;
+		int len = (NCH(n)+1)/2;
+		for (i = 0; i < NCH(n); i += 2)
+			com_node(c, CHILD(n, i));
+		com_addoparg(c, BUILD_TUPLE, len);
+	}
 	com_addbyte(c, assigning ? STORE_SUBSCR : DELETE_SUBSCR);
 }
 
@@ -1359,11 +1409,11 @@ com_assign_trailer(c, n, assigning)
 		break;
 	case LSQB: /* '[' subscript ']' */
 		n = CHILD(n, 1);
-		REQ(n, subscript); /* subscript: expr | [expr] ':' [expr] */
-		if (NCH(n) > 1 || TYPE(CHILD(n, 0)) == COLON)
+		REQ(n, subscript); /* subscript: expr (',' expr)* | [expr] ':' [expr] */
+		if (TYPE(CHILD(n, 0)) == COLON || (NCH(n) > 1 && TYPE(CHILD(n, 1)) == COLON))
 			com_assign_slice(c, n, assigning);
 		else
-			com_assign_subscript(c, CHILD(n, 0), assigning);
+			com_assign_subscript(c, n, assigning);
 		break;
 	default:
 		err_setstr(SystemError, "unknown trailer type");
@@ -1438,6 +1488,7 @@ com_assign(c, n, assigning)
 		case shift_expr:
 		case arith_expr:
 		case term:
+		case factor:
 			if (NCH(n) > 1) {
 				err_setstr(SyntaxError,
 					"can't assign to operator");
@@ -1447,17 +1498,24 @@ com_assign(c, n, assigning)
 			n = CHILD(n, 0);
 			break;
 		
-		case factor: /* ('+'|'-'|'~') factor | atom trailer* */
-			if (TYPE(CHILD(n, 0)) != atom) { /* '+'|'-'|'~' */
+		case power: /* atom trailer* ('**' power)* */
+/* ('+'|'-'|'~') factor | atom trailer* */
+			if (TYPE(CHILD(n, 0)) != atom) {
 				err_setstr(SyntaxError,
 					"can't assign to operator");
 				c->c_errors++;
 				return;
 			}
-			if (NCH(n) > 1) { /* trailer present */
+			if (NCH(n) > 1) { /* trailer or exponent present */
 				int i;
 				com_node(c, CHILD(n, 0));
 				for (i = 1; i+1 < NCH(n); i++) {
+					if (TYPE(CHILD(n, i)) == DOUBLESTAR) {
+						err_setstr(SyntaxError,
+							"can't assign to operator");
+						c->c_errors++;
+						return;
+					}
 					com_apply_trailer(c, CHILD(n, i));
 				} /* NB i is still alive */
 				com_assign_trailer(c,
@@ -2059,6 +2117,7 @@ get_docstring(n)
 	case arith_expr:
 	case term:
 	case factor:
+	case power:
 		if (NCH(n) == 1)
 			return get_docstring(CHILD(n, 0));
 		break;
@@ -2136,7 +2195,7 @@ com_argdefs(c, n)
 	ndefs = 0;
 	for (i = 0; i < nch; i++) {
 		int t;
-		if (TYPE(CHILD(n, i)) == STAR)
+		if (TYPE(CHILD(n, i)) == STAR || TYPE(CHILD(n, i)) == DOUBLESTAR)
 			break;
 		nargs++;
 		i++;
@@ -2373,6 +2432,9 @@ com_node(c, n)
 	case factor:
 		com_factor(c, n);
 		break;
+	case power:
+		com_power(c, n);
+		break;
 	case atom:
 		com_atom(c, n);
 		break;
@@ -2431,7 +2493,7 @@ com_arglist(c, n)
 		node *ch = CHILD(n, i);
 		node *fp;
 		char *name;
-		if (TYPE(ch) == STAR)
+		if (TYPE(ch) == STAR || TYPE(ch) == DOUBLESTAR)
 			break;
 		REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
 		fp = CHILD(ch, 0);
@@ -2455,22 +2517,28 @@ com_arglist(c, n)
 	if (i < nch) {
 		node *ch;
 		ch = CHILD(n, i);
-		REQ(ch, STAR);
-		ch = CHILD(n, i+1);
-		if (TYPE(ch) == NAME) {
-			c->c_flags |= CO_VARARGS;
-			i += 3;
-			com_newlocal(c, STR(ch));
+		if (TYPE(ch) != DOUBLESTAR) {
+			REQ(ch, STAR);
+			ch = CHILD(n, i+1);
+			if (TYPE(ch) == NAME) {
+				c->c_flags |= CO_VARARGS;
+				i += 3;
+				com_newlocal(c, STR(ch));
+			}
 		}
 	}
 	/* Handle **keywords */
 	if (i < nch) {
 		node *ch;
 		ch = CHILD(n, i);
-		REQ(ch, STAR);
-		ch = CHILD(n, i+1);
-		REQ(ch, STAR);
-		ch = CHILD(n, i+2);
+		if (TYPE(ch) != DOUBLESTAR) {
+			REQ(ch, STAR);
+			ch = CHILD(n, i+1);
+			REQ(ch, STAR);
+			ch = CHILD(n, i+2);
+		}
+		else
+			ch = CHILD(n, i+1);
 		REQ(ch, NAME);
 		c->c_flags |= CO_VARKEYWORDS;
 		com_newlocal(c, STR(ch));
@@ -2482,7 +2550,7 @@ com_arglist(c, n)
 		for (i = 0; i < nch; i++) {
 			node *ch = CHILD(n, i);
 			node *fp;
-			if (TYPE(ch) == STAR)
+			if (TYPE(ch) == STAR || TYPE(ch) == DOUBLESTAR)
 				break;
 			REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
 			fp = CHILD(ch, 0);
