@@ -7,6 +7,9 @@ import Carbon.Res
 import Carbon.File
 import warnings
 
+warnings.warn("macfs is deprecated, use Carbon.File, Carbon.Folder or EasyDialogs",
+              DeprecationWarning, stacklevel=2)
+              
 # First step: ensure we also emulate the MACFS module, which contained
 # all the constants
 
