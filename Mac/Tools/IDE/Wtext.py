@@ -871,7 +871,7 @@ class PyEditor(TextEditor):
 			if onoff:
 				if not __debug__:
 					import W
-					raise W.AlertError, "Can¹t debug in ³Optimize bytecode² mode.\r(see ³Default startup options² in EditPythonPreferences)"
+					raise W.AlertError, "CanÕt debug in –Optimize bytecode” mode.\r(see –Default startup options” in EditPythonPreferences)"
 				import PyDebugger
 				self._debugger = PyDebugger.getdebugger()
 				self._debugger.register_editor(self, self.file)
