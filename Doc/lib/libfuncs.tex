@@ -331,8 +331,10 @@ module from which it is called).
   representable as a Python integer, possibly embedded in whitespace;
   this behaves identical to \code{string.atoi(\var{x}\optional{,
   \var{radix}})}.  The \var{radix} parameter gives the base for the
-  conversion and may be any integer in the range [2, 36].  If
-  \var{radix} is specified and \var{x} is not a string,
+  conversion and may be any integer in the range [2, 36], or zero.  If
+  \var{radix} is zero, the proper radix is guessed based on the
+  contents of string; the interpretation is the same as for integer
+  literals.  If \var{radix} is specified and \var{x} is not a string,
   \exception{TypeError} is raised.
   Otherwise, the argument may be a plain or
   long integer or a floating point number.  Conversion of floating
@@ -392,11 +394,13 @@ modified; changes may not affect the values of local variables used by
 the interpreter.
 \end{funcdesc}
 
-\begin{funcdesc}{long}{x}
+\begin{funcdesc}{long}{x\optional{, radix}}
   Convert a string or number to a long integer.  If the argument is a
   string, it must contain a possibly signed decimal number of
   arbitrary size, possibly embedded in whitespace;
-  this behaves identical to \code{string.atol(\var{x})}.
+  this behaves identical to \code{string.atol(\var{x})}.  The
+  \var{radix} argument is interpreted in the same way as for
+  \function{int()}, and may only be given when \var{x} is a string.
   Otherwise, the argument may be a plain or
   long integer or a floating point number, and a long integer with
   the same value is returned.    Conversion of floating
