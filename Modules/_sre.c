@@ -570,6 +570,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 #if defined(USE_STACKCHECK)
     if (level % 10 == 0 && PyOS_CheckStack()) {
         return SRE_ERROR_RECURSION_LIMIT;
+    }
 #endif
 
 #if defined(USE_RECURSION_LIMIT)
