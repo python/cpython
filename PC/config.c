@@ -8,8 +8,8 @@
 extern void initarray(void);
 #ifndef MS_WIN64
 extern void initaudioop(void);
-extern void initbinascii(void);
 #endif
+extern void initbinascii(void);
 extern void initcmath(void);
 extern void initerrno(void);
 #ifdef WITH_CYCLE_GC
@@ -56,9 +56,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"audioop", initaudioop},
 #endif
 #endif
-#ifndef MS_WIN64
         {"binascii", initbinascii},
-#endif
         {"cmath", initcmath},
         {"errno", initerrno},
 #ifdef WITH_CYCLE_GC
