@@ -292,10 +292,10 @@ class TestMutate(unittest.TestCase):
         self.set.clear()
         assert len(self.set) == 0, "Clearing set"
 
-    def test_popitem(self):
+    def test_pop(self):
         popped = {}
         while self.set:
-            popped[self.set.popitem()] = None
+            popped[self.set.pop()] = None
         assert len(popped) == len(self.values), "Popping items"
         for v in self.values:
             assert v in popped, "Popping items"
