@@ -163,7 +163,7 @@ static void
 reduce(dir)
 	char *dir;
 {
-	int i = strlen(dir);
+	size_t i = strlen(dir);
 	while (i > 0 && dir[i] != SEP)
 		--i;
 	dir[i] = '\0';
@@ -241,7 +241,7 @@ joinpath(buffer, stuff)
 	char *buffer;
 	char *stuff;
 {
-	int n, k;
+	size_t n, k;
 	if (stuff[0] == SEP)
 		n = 0;
 	else {
@@ -262,7 +262,7 @@ search_for_prefix(argv0_path, home)
 	char *argv0_path;
 	char *home;
 {
-	int n;
+	size_t n;
 	char *vpath;
 
 	/* If PYTHONHOME is set, we believe it unconditionally */
@@ -331,7 +331,7 @@ search_for_exec_prefix(argv0_path, home)
 	char *argv0_path;
 	char *home;
 {
-	int n;
+	size_t n;
 
 	/* If PYTHONHOME is set, we believe it unconditionally */
 	if (home) {
@@ -393,8 +393,8 @@ calculate_path()
 	char argv0_path[MAXPATHLEN+1];
 	int pfound, efound; /* 1 if found; -1 if found build directory */
 	char *buf;
-	int bufsz;
-	int prefixsz;
+	size_t bufsz;
+	size_t prefixsz;
 	char *defpath = pythonpath;
 #ifdef WITH_NEXT_FRAMEWORK
         NSModule pythonModule;
@@ -429,7 +429,7 @@ calculate_path()
 			char *delim = strchr(path, DELIM);
 
 			if (delim) {
-				int len = delim - path;
+				size_t len = delim - path;
 				strncpy(progpath, path, len);
 				*(progpath + len) = '\0';
 			}
@@ -557,8 +557,8 @@ calculate_path()
 			}
 
 			if (delim) {
-				int len = delim - defpath + 1;
-				int end = strlen(buf) + len;
+				size_t len = delim - defpath + 1;
+				size_t end = strlen(buf) + len;
 				strncat(buf, defpath, len);
 				*(buf + end) = '\0';
 			}
