@@ -42,7 +42,7 @@ NULL=nul
 !ENDIF 
 ################################################################################
 # Begin Project
-# PROP Target_Last_Scanned "fast_umath - Win32 Release"
+# PROP Target_Last_Scanned "_tkinter - Win32 Release"
 
 !IF  "$(CFG)" == "python14 - Win32 Release"
 
@@ -197,12 +197,13 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)/python14.bsc"
 BSC32_SBRS=
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /base:0x1e100000 /subsystem:windows /dll /machine:I386
 LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib\
- odbccp32.lib wsock32.lib /nologo /subsystem:windows /dll /incremental:no\
- /pdb:"$(OUTDIR)/python14.pdb" /machine:I386 /def:".\PC\python_nt.def"\
- /out:"$(OUTDIR)/python14.dll" /implib:"$(OUTDIR)/python14.lib" 
+ odbccp32.lib wsock32.lib /nologo /base:0x1e100000 /subsystem:windows /dll\
+ /incremental:no /pdb:"$(OUTDIR)/python14.pdb" /machine:I386\
+ /def:".\PC\python_nt.def" /out:"$(OUTDIR)/python14.dll"\
+ /implib:"$(OUTDIR)/python14.lib" 
 DEF_FILE= \
 	".\PC\python_nt.def"
 LINK32_OBJS= \
@@ -2554,7 +2555,7 @@ DEP_CPP_THREA=\
 	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 NODEP_CPP_THREA=\
-	".\..\..\..\..\usr\include\thread.h"\
+	"..\..\..\..\usr\include\thread.h"\
 	
 
 "$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
