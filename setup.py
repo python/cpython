@@ -737,21 +737,26 @@ class PyBuildExt(build_ext):
         else:
             xmlbo = "4321"
         expatinc = os.path.join(os.getcwd(), srcdir, 'Modules', 'expat')
-        exts.append(Extension('pyexpat',
-                              sources = [
-            'pyexpat.c',
-            'expat/xmlparse.c',
-            'expat/xmlrole.c',
-            'expat/xmltok.c',
-            ],
-                              define_macros = [
+        define_macros = [
             ('XML_NS', '1'),
             ('XML_DTD', '1'),
             ('BYTEORDER', xmlbo),
             ('XML_CONTEXT_BYTES','1024'),
-            ],
-                              include_dirs = [expatinc]
-                               ))
+            ]
+        config_h = sysconfig.get_config_h_filename()
+        config_h_vars = sysconfig.parse_config_h(open(config_h))
+        for feature_macro in ['HAVE_MEMMOVE', 'HAVE_BCOPY']:
+            if config_h_vars.has_key(feature_macro):
+                define_macros.append((feature_macro, '1'))
+        exts.append(Extension('pyexpat',
+                              define_macros = define_macros,
+                              include_dirs = [expatinc],
+                              sources = ['pyexpat.c',
+                                         'expat/xmlparse.c',
+                                         'expat/xmlrole.c',
+                                         'expat/xmltok.c',
+                                         ],
+                              ))
 
         # Dynamic loading module
         if sys.maxint == 0x7fffffff:
