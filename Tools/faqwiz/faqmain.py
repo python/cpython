@@ -8,31 +8,41 @@ XXX TO DO
 
 XXX User Features TO DO
 
-- next/prev/index links in do_show?
+- next/prev/index links in do_show???
 - explanation of editing somewhere
-- embellishments, GIFs, crosslinks, hints, etc.
-- make references to other Q's and whole sections into links
+- embellishments, GIFs, hints, etc.
 - support adding annotations, too
+- restrict recent changes to last week (or make it an option)
+- extended search capabilities
 
 XXX Management Features TO DO
 
+- username/password for authors
 - create new sections
 - rearrange entries
 - delete entries
+- freeze entries
 - send email on changes?
 - send email on ERRORS!
 - optional staging of entries until reviewed?
-- freeze entries
-- username/password for authors
-- read section titles from a file (could be a Python file: import faqcustom)
+  (could be done using rcs branches!)
+- prevent race conditions on nearly simultaneous commits
+
+XXX Performance
+
+- could cache generated HTML
+- could speed up searches with a separate index file
 
 XXX Code organization TO DO
 
+- read section titles from a file (could be a Python file: import faqcustom)
 - customize rcs command pathnames (and everything else)
 - make it more generic (so you can create your own FAQ)
 - more OO structure, e.g. add a class representing one FAQ entry
 
 """
+
+# NB for timing purposes, the imports are at the end of this file
 
 NAMEPAT = "faq??.???.htp"
 NAMEREG = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
@@ -160,11 +170,24 @@ class FAQServer:
 	self.show(name, headers['title'], text)
 
     def do_all(self):
+	import fnmatch, stat
 	self.prologue("The Whole Python FAQ")
-	print "<HR>"
 	names = os.listdir(os.curdir)
+	lastmtime = 0
+	for name in names:
+	    if not fnmatch.fnmatch(name, NAMEPAT):
+		continue
+	    try:
+		st = os.stat(name)
+	    except os.error:
+		continue
+	    lastmtime = max(lastmtime, st[stat.ST_MTIME])
+	if lastmtime:
+	    print time.strftime("Last changed on %c %Z",
+				time.localtime(lastmtime))
 	names.sort()
 	section = None
+	print "<HR>"
 	for name in names:
 	    headers, text = self.read(name)
 	    if headers:
@@ -419,10 +442,23 @@ class FAQServer:
 	version = self.version
 	curversion = self.getversion(name)
 	if version != curversion:
-	    self.error("Version conflict.",
-		       "You edited version %s but current version is %s." % (
-			   version, curversion),
-		       '<A HREF="faq.py?req=show&name=%s">Reload.</A>' % name)
+	    self.error(
+		"Version conflict.",
+		"You edited version %s but current version is %s." % (
+		    version, curversion),
+		"""
+		<P>
+		The two most common causes of this problem are:
+		<UL>
+		<LI>After committing a change, you went back in your browser,
+		    edited the entry some more, and clicked Commit again.
+		<LI>Someone else started editing the same entry and committed
+		    before you did.
+		</UL>
+		<P>
+		""",
+		'<A HREF="faq.py?req=show&name=%s"' % name,
+		'>Click here to reload the entry and try again.</A>')
 	    return
 	text = self.text
 	title = self.title
@@ -494,6 +530,16 @@ class FAQServer:
 	f.write(log)
 	f.write("\n")
 	f.close()
+
+	# Do this for show() below
+	self.headers = {
+	    'title': title,
+	    'last-changed-date': now,
+	    'last-changed-author': author,
+	    'last-changed-email': email,
+	    'last-changed-remote-host': remhost,
+	    'last-changed-remote-address': remaddr,
+	    }
 	
 	p = os.popen("""
 	/depot/gnu/plat/bin/rcs -l %s </dev/null 2>&1
@@ -514,8 +560,6 @@ class FAQServer:
 		       "Exit status 0x%04x" % sts)
 	    if output:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
-	print '<HR>'
-	print '<A HREF="faq.py?req=show&name=%s">Reload this entry.</A>' % name
 
     def set_cookie(self, author, email):
 	name = "Python-FAQ-ID"
@@ -558,19 +602,19 @@ class FAQServer:
 	    email = email or e
 	print """
 	Title: <INPUT TYPE=text SIZE=70 NAME=title VALUE="%s"><BR>
-	<TEXTAREA COLS=80 ROWS=20 NAME=text>""" % self.escape(title)
-	print cgi.escape(string.strip(text))
-	print """</TEXTAREA>
+	<TEXTAREA COLS=80 ROWS=20 NAME=text>%s</TEXTAREA>
+	""" % (self.escape(title), cgi.escape(string.strip(text)))
+	print """
+	<BR>
+	Log message (reason for the change):<BR>
+	<TEXTAREA COLS=80 ROWS=5 NAME=log>%s\n</TEXTAREA>
 	<BR>
 	Please provide the following information for logging purposes:
 	<BR>
 	<CODE>Name : </CODE><INPUT TYPE=text SIZE=40 NAME=author VALUE="%s">
 	<BR>
 	<CODE>Email: </CODE><INPUT TYPE=text SIZE=40 NAME=email VALUE="%s">
-	<BR>
-	Log message (reason for the change):<BR>
-	<TEXTAREA COLS=80 ROWS=5 NAME=log>%s\n</TEXTAREA>
-	""" % (self.escape(author), self.escape(email), self.escape(self.log))
+	""" % (self.escape(self.log), self.escape(author), self.escape(email))
 
     def escape(self, s):
 	import regsub
@@ -619,8 +663,6 @@ class FAQServer:
 	return headers, text
 
     def show(self, name, title, text, edit=1):
-	# XXX Should put <A> tags around recognizable URLs
-	# XXX Should also turn "see section N" into hyperlinks
 	print "<H2>%s</H2>" % cgi.escape(title)
 	pre = 0
 	for line in string.split(text, '\n'):
@@ -765,7 +807,7 @@ class FAQServer:
 
 print "Content-type: text/html"
 dt = 0
-wanttime = 1
+wanttime = 0
 try:
     import time
     t1 = time.time()
@@ -774,6 +816,7 @@ try:
     x.main()
     t2 = time.time()
     dt = t2-t1
+    wanttime = 1
 except:
     print "\n<HR>Sorry, an error occurred"
     cgi.print_exception()
