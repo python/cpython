@@ -893,7 +893,7 @@ PyTypeObject PyInt_Type = {
 	0,					/* tp_as_mapping */
 	(hashfunc)int_hash,			/* tp_hash */
         0,					/* tp_call */
-        0,					/* tp_str */
+        (reprfunc)int_repr,			/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
