@@ -750,6 +750,10 @@
 /* Define if you have the ieee library (-lieee).  */
 #undef HAVE_LIBIEEE
 
+/* Defined for Solaris 2.6 bug in pthread header. */
+#undef HAVE_PTHREAD_DESTRUCTOR
+
+
 #ifdef __CYGWIN__
 #ifdef USE_DL_IMPORT
 #define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
