@@ -939,7 +939,8 @@ array_fromfile(self, args)
 		size_t newbytes;
 		/* Be careful here about overflow */
 		if ((newlength = self->ob_size + n) <= 0 ||
-		    (newbytes = newlength * itemsize) / itemsize != newlength)
+		    (newbytes = newlength * itemsize) / itemsize !=
+		    (size_t)newlength)
 			goto nomem;
 		PyMem_RESIZE(item, char, newbytes);
 		if (item == NULL) {
