@@ -98,7 +98,7 @@ getcwd.o: getcwd.c
 getmtime.o: getmtime.c
 getopt.o: getopt.c
 getplatform.o: getplatform.c
-getversion.o: getversion.c
+getversion.o: getversion.c ../Include/patchlevel.h
 graminit.o: graminit.c
 import.o: import.c
 importdl.o: importdl.c
