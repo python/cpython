@@ -2,14 +2,14 @@
 \bimodindex{thread}
 
 This module provides low-level primitives for working with multiple
-threads (a.k.a. \dfn{light-weight processes} or \dfn{tasks}) --- multiple
+threads (a.k.a.\ \dfn{light-weight processes} or \dfn{tasks}) --- multiple
 threads of control sharing their global data space.  For
-synchronization, simple locks (a.k.a. \dfn{mutexes} or \dfn{binary
+synchronization, simple locks (a.k.a.\ \dfn{mutexes} or \dfn{binary
 semaphores}) are provided.
 
 The module is optional and supported on SGI IRIX 4.x and 5.x and Sun
 Solaris 2.x systems, as well as on systems that have a PTHREAD
-implementation (e.g. KSR).
+implementation (e.g.\ KSR).
 
 It defines the following constant and functions:
 
@@ -21,7 +21,7 @@ Raised on thread-specific errors.
 \begin{funcdesc}{start_new_thread}{func\, arg}
 Start a new thread.  The thread executes the function \var{func}
 with the argument list \var{arg} (which must be a tuple).  When the
-function returns, the thread silently exits.  When the function raises
+function returns, the thread silently exits.  When the function
 terminates with an unhandled exception, a stack trace is printed and
 then the thread exits (but other threads continue to run).
 \end{funcdesc}
@@ -59,7 +59,7 @@ Without the optional argument, this method acquires the lock
 unconditionally, if necessary waiting until it is released by another
 thread (only one thread at a time can acquire a lock --- that's their
 reason for existence), and returns \code{None}.  If the integer
-\var{waitflag} argument is present, the action depends on its value:
+\var{waitflag} argument is present, the action depends on its value:\
 if it is zero, the lock is only acquired if it can be acquired
 immediately without waiting, while if it is nonzero, the lock is
 acquired unconditionally as before.  If an argument is present, the
@@ -72,7 +72,7 @@ necessarily by the same thread.
 \end{funcdesc}
 
 \begin{funcdesc}{locked}{}
-Return the status of the lock: 1 if it has been acquired by some
+Return the status of the lock:\ 1 if it has been acquired by some
 thread, 0 if not.
 \end{funcdesc}
 

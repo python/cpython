@@ -48,13 +48,13 @@ Return true if \var{p} is an absolute pathname (begins with a slash).
 
 \begin{funcdesc}{isfile}{p}
 Return true if \var{p} is an existing regular file.  This follows
-symbolic links, so both islink() and isfile() can be true for the same
+symbolic links, so both \code{islink()} and \code{isfile()} can be true for the same
 path.
 \end{funcdesc}
 
 \begin{funcdesc}{isdir}{p}
 Return true if \var{p} is an existing directory.  This follows
-symbolic links, so both islink() and isdir() can be true for the same
+symbolic links, so both \code{islink()} and \code{isdir()} can be true for the same
 path.
 \end{funcdesc}
 
@@ -109,7 +109,7 @@ everything leading up to that.  If \var{p} ends in a slash (except if
 it is the root), the trailing slash is removed and the operation
 applied to the result; otherwise, \code{join(\var{head}, \var{tail})} equals
 \var{p}.  The \var{tail} part never contains a slash.  Some boundary
-cases: if \var{p} is the root, \var{head} equals \var{p} and
+cases:\ if \var{p} is the root, \var{head} equals \var{p} and
 \var{tail} is empty; if \var{p} is empty, both \var{head} and
 \var{tail} are empty; if \var{p} contains no slash, \var{head} is
 empty and \var{tail} equals \var{p}.

@@ -72,7 +72,7 @@ or more digits, optionally preceded by a sign (\samp{+} or \samp{-}).
 \end{funcdesc}
 
 \begin{funcdesc}{expandtabs}{s\, tabsize}
-Expand tabs in a string, i.e. replace them by one or more spaces,
+Expand tabs in a string, i.e.\ replace them by one or more spaces,
 depending on the current column and the given tab size.  The column
 number is reset to zero after each newline occurring in the string.
 This doesn't understand other non-printing characters or escape
@@ -88,7 +88,7 @@ negative, \code{len(\var{s})} is added.
 \end{funcdesc}
 
 \begin{funcdesc}{rfind}{s\, sub\optional{\, start}}
-Like \code{find} but finds the highest index.
+Like \code{find} but find the highest index.
 \end{funcdesc}
 
 \begin{funcdesc}{index}{s\, sub\optional{\, start}}
@@ -101,7 +101,7 @@ Like \code{rfind} but raise \code{ValueError} when the substring is
 not found.
 \end{funcdesc}
 
-\begin{funcdesc}{count}{s\, sub\, i}
+\begin{funcdesc}{count}{s\, sub\optional{\, i}}
 Return the number of (non-overlapping) occurrences of substring
 \var{sub} in string \var{s} with index at least \var{i}.
 If \var{i} is omitted, it defaults to \code{0}.
@@ -112,12 +112,12 @@ Convert letters to lower case.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{s}
-Returns a list of the whitespace-delimited words of the string
+Return a list of the whitespace-delimited words of the string
 \var{s}.
 \end{funcdesc}
 
 \begin{funcdesc}{splitfields}{s\, sep}
-  Returns a list containing the fields of the string \var{s}, using
+  Return a list containing the fields of the string \var{s}, using
   the string \var{sep} as a separator.  The list will have one more
   items than the number of non-overlapping occurrences of the
   separator in the string.  Thus, \code{string.splitfields(\var{s}, '
@@ -139,12 +139,12 @@ equals \var{t}.
 \end{funcdesc}
 
 \begin{funcdesc}{strip}{s}
-Removes leading and trailing whitespace from the string
+Remove leading and trailing whitespace from the string
 \var{s}.
 \end{funcdesc}
 
 \begin{funcdesc}{swapcase}{s}
-Converts lower case letters to upper case and vice versa.
+Convert lower case letters to upper case and vice versa.
 \end{funcdesc}
 
 \begin{funcdesc}{upper}{s}

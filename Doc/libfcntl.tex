@@ -1,11 +1,11 @@
 % Manual text by Jaap Vermeulen
 \section{Built-in module \sectcode{fcntl}}
 \bimodindex{fcntl}
-\indexii{UNIX}{file control}
-\indexii{UNIX}{IO control}
+\indexii{\UNIX{}}{file control}
+\indexii{\UNIX{}}{I/O control}
 
-This module performs file control and IO control on file descriptors.
-It is an interface to the \dfn{fcntl()} and \dfn{ioctl()} \UNIX routines.
+This module performs file control and I/O control on file descriptors.
+It is an interface to the \dfn{fcntl()} and \dfn{ioctl()} \UNIX{} routines.
 File descriptors can be obtained with the \dfn{fileno()} method of a
 file or socket object.
 
@@ -23,10 +23,10 @@ The module defines the following functions:
   the argument missing or an integer value, the return value of this
   function is the integer return value of the real \code{fcntl()}
   call.  When the argument is a string it represents a binary
-  structure, e.g.  created by \code{struct.pack()}. The binary data is
+  structure, e.g.\ created by \code{struct.pack()}. The binary data is
   copied to a buffer whose address is passed to the real \code{fcntl()}
   call.  The return value after a successful call is the contents of
-  the buffer, converted to a string object.  In the case the
+  the buffer, converted to a string object.  In case the
   \code{fcntl()} fails, an \code{IOError} will be raised.
 \end{funcdesc}
 

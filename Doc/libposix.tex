@@ -3,7 +3,7 @@
 \bimodindex{posix}
 
 This module provides access to operating system functionality that is
-standardized by the C Standard and the POSIX standard (a thinly diguised
+standardized by the C Standard and the POSIX standard (a thinly disguised
 \UNIX{} interface).
 It is available in all Python versions except on the Macintosh;
 the MS-DOS version does not support certain functions.
@@ -31,7 +31,7 @@ in C.
 
 \renewcommand{\indexsubitem}{(exception in module posix)}
 \begin{excdesc}{error}
-This exception is raised when an POSIX function returns a
+This exception is raised when a POSIX function returns a
 POSIX-related error (e.g., not for illegal argument types).  Its
 string value is \code{'posix.error'}.  The accompanying value is a
 pair containing the numeric error code from \code{errno} and the
@@ -279,7 +279,7 @@ systems without symbolic links, this always raises
 \begin{funcdesc}{system}{command}
 Execute the command (a string) in a subshell.  This is implemented by
 calling the Standard C function \code{system()}, and has the same
-limitations.  Changes to \code{posix.environ}, \code{sys.stdin} etc. are
+limitations.  Changes to \code{posix.environ}, \code{sys.stdin} etc.\ are
 not reflected in the environment of the executed command.  The return
 value is the exit status of the process as returned by Standard C
 \code{system()}.
@@ -302,7 +302,7 @@ Return a 5-tuple containing information identifying the current
 operating system.  The tuple contains 5 strings:
 \code{(\var{sysname}, \var{nodename}, \var{release}, \var{version}, \var{machine})}.
 Some systems truncate the nodename to 8
-characters or to the leading component; an better way to get the
+characters or to the leading component; a better way to get the
 hostname is \code{socket.gethostname()}.  (Not on MS-DOS, nor on older
 \UNIX{} systems.)
 \end{funcdesc}

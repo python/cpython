@@ -1,9 +1,9 @@
 \section{Built-in module \sectcode{imageop}}
 \bimodindex{imageop}
 
-The imageop module contains some useful operations on images.
+The \code{imageop} module contains some useful operations on images.
 It operates on images consisting of 8 or 32 bit pixels
-stored in python strings. This is the same format as used
+stored in Python strings. This is the same format as used
 by \code{gl.lrectwrite} and the \code{imgfile} module.
 
 The module defines the following variables and functions:
@@ -17,20 +17,20 @@ per pixel, etc.
 
 
 \begin{funcdesc}{crop}{image\, psize\, width\, height\, x0\, y0\, x1\, y1}
-This function takes the image in \code{image}, which should by
-\code{width} by \code{height} in size and consist of pixels of
-\code{psize} bytes, and returns the selected part of that image. \code{x0},
-\code{y0}, \code{x1} and \code{y1} are like the \code{lrectread}
+This function takes the image in \var{image}, which should by
+\var{width} by \var{height} in size and consist of pixels of
+\var{psize} bytes, and returns the selected part of that image. \var{x0},
+\var{y0}, \var{x1} and \var{y1} are like the \code{lrectread}
 parameters, i.e. the boundary is included in the new image.
 The new boundaries need not be inside the picture. Pixels that fall
 outside the old image will have their value set to zero.
-If \code{x0} is bigger than \code{x1} the new image is mirrored. The
+If \var{x0} is bigger than \var{x1} the new image is mirrored. The
 same holds for the y coordinates.
 \end{funcdesc}
 
 \begin{funcdesc}{scale}{image\, psize\, width\, height\, newwidth\, newheight}
-This function returns a \code{image} scaled to size \code{newwidth} by
-\code{newheight}. No interpolation is done, scaling is done by
+This function returns an \var{image} scaled to size \var{newwidth} by
+\var{newheight}. No interpolation is done, scaling is done by
 simple-minded pixel duplication or removal. Therefore, computer-generated
 images or dithered images will not look nice after scaling.
 \end{funcdesc}
@@ -57,7 +57,7 @@ monochrome image but it uses a (simple-minded) dithering algorithm.
 \begin{funcdesc}{mono2grey}{image\, width\, height\, p0\, p1}
 This function converts a 1-bit monochrome image to an 8 bit greyscale
 or color image. All pixels that are zero-valued on input get value
-\code{p0} on output and all one-value input pixels get value \code{p1}
+\var{p0} on output and all one-value input pixels get value \var{p1}
 on output. To convert a monochrome black-and-white image to greyscale
 pass the values \code{0} and \code{255} respectively.
 \end{funcdesc}

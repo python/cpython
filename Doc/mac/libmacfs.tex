@@ -7,9 +7,9 @@ This module provides access to macintosh FSSpec handling, the Alias
 Manager, finder aliases and the Standard File package.
 
 Whenever a function or method expects a \var{file} argument, this
-argument can be one of three things: (1) a full or partial macintosh
+argument can be one of three things:\ (1) a full or partial Macintosh
 pathname, (2) an FSSpec object or (3) a 3-tuple \code{(wdRefNum,
-parID, name)} as described in Inside Mac VI. A description of aliases
+parID, name)} as described in Inside Mac VI\@. A description of aliases
 and the standard file package can also be found there.
 
 \begin{funcdesc}{FSSpec}{file}
@@ -26,15 +26,15 @@ Create an Alias object given the raw data for the alias.
 \end{funcdesc}
 
 \begin{funcdesc}{ResolveAliasFile}{file}
-Resolve an alias file. Returns a 3-tuple \code{(fsspec, isfolder,
-aliased)} where \var{fsspec} is the resulting FSSpec object,
+Resolve an alias file. Returns a 3-tuple \code{(\var{fsspec}, \var{isfolder},
+\var{aliased})} where \var{fsspec} is the resulting FSSpec object,
 \var{isfolder} is true if \var{fsspec} points to a folder and
 \var{aliased} is true if the file was an alias in the first place
 (otherwise the FSSpec object for the file itself is returned).
 \end{funcdesc}
 
 \begin{funcdesc}{StandardGetFile}{\optional{type\, ...}}
-Present the user with a standard ``open onput file''
+Present the user with a standard ``open input file''
 dialog. Optionally, you can pass up to four 4-char file types to limit
 the files the user can choose from. The function returns an FSSpec
 object and a flag indicating that the user completed the dialog
@@ -44,14 +44,14 @@ without cancelling.
 \begin{funcdesc}{StandardPutFile}{prompt\, \optional{default}}
 Present the user with a standard ``open output file''
 dialog. \var{prompt} is the prompt string, and the optional
-\var{default} argument initialized the output file name. The function
+\var{default} argument initializes the output file name. The function
 returns an FSSpec object and a flag indicating that the user completed
 the dialog without cancelling.
 \end{funcdesc}
 
 \begin{funcdesc}{GetDirectory}{}
 Present the user with a non-standard ``select a directory''
-dialog. Returns an FSSpec object and a success-indicator.
+dialog. Return an FSSpec object and a success-indicator.
 \end{funcdesc}
 
 \subsection{FSSpec objects}
@@ -67,13 +67,13 @@ Return the full pathname of the file described by the FSSpec object.
 \end{funcdesc}
 
 \begin{funcdesc}{as_tuple}{}
-Return the \code{(wdRefNum, parID, name)} tuple of the file described
+Return the \code{(\var{wdRefNum}, \var{parID}, \var{name})} tuple of the file described
 by the FSSpec object.
 \end{funcdesc}
 
 \begin{funcdesc}{NewAlias}{\optional{file}}
 Create an Alias object pointing to the file described by this
-FSSpec. If the optional \code{file} parameter is present the alias
+FSSpec. If the optional \var{file} parameter is present the alias
 will be relative to that file, otherwise it will be absolute.
 \end{funcdesc}
 
@@ -99,7 +99,7 @@ or transmitting to other programs.
 
 \begin{funcdesc}{Resolve}{\optional{file}}
 Resolve the alias. If the alias was created as a relative alias you
-should pass the file relative to which it is. Returns the FSSpec for
+should pass the file relative to which it is. Return the FSSpec for
 the file pointed to and a flag indicating whether the alias object
 itself was modified during the search process. 
 \end{funcdesc}
@@ -113,9 +113,9 @@ Update the alias to point to the \var{file} given. If \var{file2} is
 present a relative alias will be created.
 \end{funcdesc}
 
-Note that is currently not possible to directly manipulate a resource
+Note that it is currently not possible to directly manipulate a resource
 as an alias object. Hence, after calling \var{Update} or after
-\var{Resolve} indicates that the alias has changed the python program
+\var{Resolve} indicates that the alias has changed the Python program
 is responsible for getting the \var{data} from the alias object and
 modifying the resource.
 

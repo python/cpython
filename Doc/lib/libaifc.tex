@@ -11,14 +11,14 @@ The sampling rate or frame rate is the number of times per second the
 sound is sampled.  The number of channels indicate if the audio is
 mono, stereo, or quadro.  Each frame consists of one sample per
 channel.  The sample size is the size in bytes of each sample.  Thus a
-frame consists of nchannels*framesize bytes, and a second's worth of
-audio consists of nchannels*framesize*framerate bytes.
+frame consists of \var{nchannels}*\var{framesize} bytes, and a second's worth of
+audio consists of \var{nchannels}*\var{framesize}*\var{framerate} bytes.
 
 Module \code{aifc} defines the following function:
 
 \renewcommand{\indexsubitem}{(in module aifc)}
 \begin{funcdesc}{open}{file\, mode}
-Opens an AIFF or AIFF-C file and returns an object instance with
+Open an AIFF or AIFF-C file and return an object instance with
 methods that are described below.  The argument file is either a
 string naming a file or a file object.  The mode is either the string
 'r' when the file must be opened for reading, or 'w' when the file
@@ -75,7 +75,7 @@ the given id.
 \end{funcdesc}
 
 \begin{funcdesc}{readframes}{nframes}
-Read and return the next nframes frames from the audio file.  The
+Read and return the next \var{nframes} frames from the audio file.  The
 returned data is a string containing for each frame the uncompressed
 samples of all channels.
 \end{funcdesc}
@@ -175,6 +175,6 @@ not updated.
 
 \begin{funcdesc}{close}{}
 Close the AIFF file.  The header of the file is updated to reflect the
-actual size of the audio data After calling this method, the object
+actual size of the audio data. After calling this method, the object
 can no longer be used.
 \end{funcdesc}
