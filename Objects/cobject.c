@@ -46,9 +46,9 @@ PyCObject_FromVoidPtrAndDesc(void *cobj, void *desc,
     self = PyObject_NEW(PyCObject, &PyCObject_Type);
     if (self == NULL)
         return NULL;
-    self->cobject=cobj;
-    self->destructor=(destructor1)destr;
-    self->desc=desc;
+    self->cobject = cobj;
+    self->destructor = (destructor1)destr;
+    self->desc = desc;
 
     return (PyObject *)self;
 }
