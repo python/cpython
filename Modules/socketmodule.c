@@ -187,7 +187,12 @@ Socket methods:
 #include <GUSI.h>
 #endif
 
+/* XXX 24-Jun-2000 Tim:  I have no idea what the code inside this block is
+   trying to do, and don't have time to look.  Looks like Unix-specific code
+   in those files, though, which will never compile on Windows. */
+#ifndef MS_WINDOWS
 #include "addrinfo.h"
+#endif /* ifndef MS_WINDOWS hack */
 
 #ifdef USE_SSL
 #include "openssl/rsa.h"
@@ -198,6 +203,11 @@ Socket methods:
 #include "openssl/err.h"
 #endif /* USE_SSL */
 
+/* XXX 24-Jun-2000 Tim:  I have no idea what the code inside this block is
+   trying to do, and don't have time to look.  Looks like Unix-specific code
+   in those files, though, which will never compile on Windows. */
+#ifndef MS_WINDOWS
+
 /* I know this is a bad practice, but it is the easiest... */
 #ifndef HAVE_GETADDRINFO
 #include "getaddrinfo.c"
@@ -205,6 +215,8 @@ Socket methods:
 #ifndef HAVE_GETNAMEINFO
 #include "getnameinfo.c"
 #endif
+
+#endif /* ifndef MS_WINDOWS hack */
 
 #if defined(MS_WINDOWS) || defined(__BEOS__)
 /* BeOS suffers from the same socket dichotomy as Win32... - [cjh] */
