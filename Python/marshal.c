@@ -852,10 +852,10 @@ marshal_loads(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef marshal_methods[] = {
-	{"dump",	marshal_dump,	1},
-	{"load",	marshal_load,	1},
-	{"dumps",	marshal_dumps,	1},
-	{"loads",	marshal_loads,	1},
+	{"dump",	marshal_dump,	METH_VARARGS},
+	{"load",	marshal_load,	METH_VARARGS},
+	{"dumps",	marshal_dumps,	METH_VARARGS},
+	{"loads",	marshal_loads,	METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 

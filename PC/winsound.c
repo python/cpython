@@ -175,8 +175,8 @@ sound_beep(PyObject *self, PyObject *args)
 
 static struct PyMethodDef sound_methods[] =
 {
-    {"PlaySound", sound_playsound, 1, sound_playsound_doc},
-    {"Beep",      sound_beep,      1, sound_beep_doc},
+    {"PlaySound", sound_playsound, METH_VARARGS, sound_playsound_doc},
+    {"Beep",      sound_beep,      METH_VARARGS, sound_beep_doc},
     {NULL,  NULL}
 };
 
