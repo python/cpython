@@ -41,21 +41,15 @@ extern void initsignal();
 #ifdef WITH_THREAD
 extern void initthread();
 #endif
-#if !HAVE_DYNAMIC_LOADING
 extern void init_codecs();
-extern void init_curses();
-extern void init_curses_panel();
-extern void init_hotshot();
+extern void init_csv();
 extern void init_locale();
 extern void init_random();
 extern void init_sre();
 extern void init_symtable();
-extern void init_testcapi();
 extern void init_weakref();
 extern void initarray();
 extern void initbinascii();
-extern void initbsddb185();
-extern void initbz2();
 extern void initcPickle();
 extern void initcStringIO();
 extern void initcmath();
@@ -63,29 +57,36 @@ extern void initdatetime();
 extern void initdl();
 extern void initerrno();
 extern void initfcntl();
-extern void initfpectl();
-extern void initfpetest();
 extern void initimageop();
 extern void inititertools();
 extern void initmath();
 extern void initmd5();
 extern void initoperator();
-extern void initparser();
 extern void initpcre();
-extern void initpwd();
 extern void initregex();
 extern void initrgbimg();
-extern void initrotor();
 extern void initsha();
 extern void initstrop();
 extern void initstruct();
 extern void inittermios();
 extern void inittime();
 extern void inittiming();
-extern void initunicodedata();
 extern void initxreadlines();
 extern void initxxsubtype();
 extern void initzipimport();
+#if !HAVE_DYNAMIC_LOADING
+extern void init_curses();
+extern void init_curses_panel();
+extern void init_hotshot();
+extern void init_testcapi();
+extern void initbsddb185();
+extern void initbz2();
+extern void initfpectl();
+extern void initfpetest();
+extern void initparser();
+extern void initpwd();
+extern void initrotor();
+extern void initunicodedata();
 extern void initzlib();
 #ifdef USE_SOCKET
 extern void init_socket();
@@ -105,21 +106,15 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef WITH_THREAD
 	{"thread", initthread},
 #endif
-#if !HAVE_DYNAMIC_LOADING
 	{"_codecs", init_codecs},
-	{"_curses", init_curses},
-	{"_curses_panel", init_curses_panel},
-	{"_hotshot", init_hotshot},
+	{"_csv", init_codecs},
 	{"_locale", init_locale},
 	{"_random", init_random},
 	{"_sre", init_sre},
 	{"_symtable", init_symtable},
-	{"_testcapi", init_testcapi},
 	{"_weakref", init_weakref},
 	{"array", initarray},
 	{"binascii", initbinascii},
-	{"bsddb185", initbsddb185},
-	{"bz2", initbz2},
 	{"cPickle", initcPickle},
 	{"cStringIO", initcStringIO},
 	{"cmath", initcmath},
@@ -127,29 +122,36 @@ struct _inittab _PyImport_Inittab[] = {
 	{"dl", initdl},
 	{"errno", initerrno},
 	{"fcntl", initfcntl},
-	{"fpectl", initfpectl},
-	{"fpetest", initfpetest},
 	{"imageop", initimageop},
 	{"itertools", inititertools},
 	{"math", initmath},
 	{"md5", initmd5},
 	{"operator", initoperator},
-	{"parser", initparser},
 	{"pcre", initpcre},
-	{"pwd", initpwd},
 	{"regex", initregex},
 	{"rgbimg", initrgbimg},
-	{"rotor", initrotor},
 	{"sha", initsha},
 	{"strop", initstrop},
 	{"struct", initstruct},
 	{"termios", inittermios},
 	{"time", inittime},
 	{"timing", inittiming},
-	{"unicodedata", initunicodedata},
 	{"xreadlines", initxreadlines},
 	{"xxsubtype", initxxsubtype},
 	{"zipimport", initzipimport},
+#if !HAVE_DYNAMIC_LOADING
+	{"_curses", init_curses},
+	{"_curses_panel", init_curses_panel},
+	{"_hotshot", init_hotshot},
+	{"_testcapi", init_testcapi},
+	{"bsddb185", initbsddb185},
+	{"bz2", initbz2},
+	{"fpectl", initfpectl},
+	{"fpetest", initfpetest},
+	{"parser", initparser},
+	{"pwd", initpwd},
+	{"rotor", initrotor},
+	{"unicodedata", initunicodedata},
 	{"zlib", initzlib},
 #ifdef USE_SOCKET
 	{"_socket", init_socket},

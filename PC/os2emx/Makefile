@@ -264,7 +264,43 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/gcmodule.c \
 		Modules/signalmodule.c \
 		Modules/posixmodule.c \
-		Modules/threadmodule.c
+		Modules/threadmodule.c \
+		Modules/arraymodule.c \
+		Modules/binascii.c \
+		Modules/cmathmodule.c \
+		Modules/_codecsmodule.c \
+		Modules/cPickle.c \
+		Modules/cStringIO.c \
+		Modules/_csv.c \
+		Modules/datetimemodule.c \
+		Modules/dlmodule.c \
+		Modules/errnomodule.c \
+		Modules/fcntlmodule.c \
+		Modules/imageop.c \
+		Modules/itertoolsmodule.c \
+		Modules/_localemodule.c \
+		Modules/mathmodule.c \
+		Modules/md5c.c \
+		Modules/md5module.c \
+		Modules/operator.c \
+		Modules/pcremodule.c \
+		Modules/pypcre.c \
+		Modules/_randommodule.c \
+		Modules/regexmodule.c \
+		Modules/regexpr.c \
+		Modules/rgbimgmodule.c \
+		Modules/shamodule.c \
+		Modules/_sre.c \
+		Modules/stropmodule.c \
+		Modules/structmodule.c \
+		Modules/symtablemodule.c \
+		Modules/termios.c \
+		Modules/timemodule.c \
+		Modules/timingmodule.c \
+		Modules/_weakref.c \
+		Modules/xreadlinesmodule.c \
+		Modules/xxsubtype.c \
+		Modules/zipimport.c)
 SRC.PARSE1=	$(addprefix $(TOP), \
 		Parser/acceler.c \
 		Parser/grammar1.c \
@@ -376,53 +412,20 @@ SRC.PMEXE=	pythonpm.c
 #   2) use the standard module naming convention
 #      (the 'module' in ?????module.c is assumed)
 # - these can be built with implicit rules
-EASYEXTMODULES=	array \
-		cmath \
-		_codecs \
-		datetime \
-		dl \
-		errno \
-		fcntl \
-		fpectl \
+EASYEXTMODULES=	fpectl \
 		fpetest \
-		_locale \
-		math \
 		parser \
 		pwd \
-		_random \
-		rgbimg \
 		rotor \
-		select \
-		sha \
-		strop \
-		struct \
-		time \
-		timing
+		select 
 
 # Python modules to be dynamically loaded that need explicit build rules
 #  (either multiple source files and/or non-standard module naming)
 #  (NOTE: use shortened names for modules affected by 8 char name limit)
-HARDEXTMODULES=	binascii \
-		cPickle \
-		cStringI \
-		_csv \
-		_hotshot \
-		imageop \
-		itertool \
-		md5 \
-		operator \
-		pcre \
-		regex \
+HARDEXTMODULES=	_hotshot \
 		_socket \
-		_sre \
-		_symtabl \
-		termios \
 		_testcap \
-		unicoded \
-		_weakref \
-		xreadlin \
-		xxsubtyp \
-		zipimpor
+		unicoded
 
 # Python external ($(MODULE.EXT)) modules - can be EASY or HARD
 ifeq ($(HAVE_ZLIB),yes)
@@ -528,61 +531,11 @@ $(PGEN.EXE): $(OBJ.PGEN) $(OUT)pgen.def
 # Explicit building instructions for those external modules that require 
 # awkward handling (due e.g. to non-std naming, or multiple source files)
 # - standard modules
-binascii$(MODULE.EXT): $(OUT)binascii$O $(OUT)binascii_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-cPickle$(MODULE.EXT): $(OUT)cPickle$O $(OUT)cPickle_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-# cStringIO needs to be renamed to be useful (8 char DLL name limit)
-cStringIO$(MODULE.EXT): $(OUT)cStringIO$O $(OUT)cStringIO_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-cStringI$(MODULE.EXT): cStringIO$(MODULE.EXT)
-	cp $^ $@
-
-_csv$(MODULE.EXT): $(OUT)_csv$O $(OUT)_csv_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
 
 _hotshot$(MODULE.EXT): $(OUT)_hotshot$O $(OUT)_hotshot_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
 
-imageop$(MODULE.EXT): $(OUT)imageop$O $(OUT)imageop_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-# itertools needs to be renamed to be useful
-itertools$(MODULE.EXT): $(OUT)itertoolsmodule$O $(OUT)itertools_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-itertool$(MODULE.EXT): itertools$(MODULE.EXT)
-	cp $^ $@
-
-md5$(MODULE.EXT): $(OUT)md5module$O $(OUT)md5c$O $(OUT)md5_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-operator$(MODULE.EXT): $(OUT)operator$O $(OUT)operator_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-pcre$(MODULE.EXT): $(OUT)pcremodule$O $(OUT)pypcre$O $(OUT)pcre_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-regex$(MODULE.EXT): $(OUT)regexmodule$O $(OUT)regexpr$O $(OUT)regex_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
 _socket$(MODULE.EXT): $(OUT)socketmodule$O $(OUT)_socket_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-_sre$(MODULE.EXT): $(OUT)_sre$O $(OUT)_sre_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-# _symtable needs to be renamed to be useful
-_symtable$(MODULE.EXT): $(OUT)symtablemodule$O $(OUT)_symtable_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-_symtabl$(MODULE.EXT): _symtable$(MODULE.EXT)
-	cp $^ $@
-
-termios$(MODULE.EXT): $(OUT)termios$O $(OUT)termios_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
 
 # _testcapi needs to be renamed to be useful
@@ -597,30 +550,6 @@ unicodedata$(MODULE.EXT): $(OUT)unicodedata$O $(OUT)unicodedata_m.def $(PYTHON.I
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS) $(MODULE_LIBS)
 
 unicoded$(MODULE.EXT): unicodedata$(MODULE.EXT)
-	cp $^ $@
-
-_weakref$(MODULE.EXT): $(OUT)_weakref$O $(OUT)_weakref_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-# xreadlines needs to be renamed to be useful
-xreadlines$(MODULE.EXT): $(OUT)xreadlinesmodule$O $(OUT)xreadlines_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-xreadlin$(MODULE.EXT): xreadlines$(MODULE.EXT)
-	cp $^ $@
-
-# xxsubtype needs to be renamed to be useful
-xxsubtype$(MODULE.EXT): $(OUT)xxsubtype$O $(OUT)xxsubtype_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-xxsubtyp$(MODULE.EXT): xxsubtype$(MODULE.EXT)
-	cp $^ $@
-
-# zipimport needs to be renamed to be useful
-zipimport$(MODULE.EXT): $(OUT)zipimport$O $(OUT)zipimport_m.def $(PYTHON.IMPLIB)
-	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
-
-zipimpor$(MODULE.EXT): zipimport$(MODULE.EXT)
 	cp $^ $@
 
 # - optional modules (requiring other software to be installed)
