@@ -8,6 +8,7 @@
 \modulesynopsis{Package supporting the parsing, manipulating, and
     generating email messages, including MIME documents.}
 \moduleauthor{Barry A. Warsaw}{barry@zope.com}
+\sectionauthor{Barry A. Warsaw}{barry@zope.com}
 
 \versionadded{2.2}
 
@@ -182,15 +183,15 @@ Changes have been made so that
 method names are more consistent, and some methods or modules have
 either been added or removed.  The semantics of some of the methods
 have also changed.  For the most part, any functionality available in
-\module{mimelib} is still available in the \module{email} package,
+\module{mimelib} is still available in the \refmodule{email} package,
 albeit often in a different way.
 
 Here is a brief description of the differences between the
-\module{mimelib} and the \module{email} packages, along with hints on
+\module{mimelib} and the \refmodule{email} packages, along with hints on
 how to port your applications.
 
 Of course, the most visible difference between the two packages is
-that the package name has been changed to \module{email}.  In
+that the package name has been changed to \refmodule{email}.  In
 addition, the top-level package has the following differences:
 
 \begin{itemize}
@@ -249,7 +250,7 @@ It does have some additional smarts to recognize
 a \class{Message} instance containing separate \class{Message}
 subparts for each header block in the delivery status
 notification\footnote{Delivery Status Notifications (DSN) are defined
-in \rfc{1894}}.
+in \rfc{1894}.}.
 
 The \class{Generator} class has no differences in its public
 interface.  There is a new class in the \refmodule{email.Generator}
