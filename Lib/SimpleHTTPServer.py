@@ -6,7 +6,7 @@ and HEAD requests in a fairly straightforward manner.
 """
 
 
-__version__ = "0.3"
+__version__ = "0.4"
 
 
 import os
@@ -14,6 +14,8 @@ import string
 import posixpath
 import BaseHTTPServer
 import urllib
+import cgi
+from StringIO import StringIO
 
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -58,16 +60,43 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         if os.path.isdir(path):
-            self.send_error(403, "Directory listing not supported")
-            return None
-        try:
-            f = open(path, 'rb')
-        except IOError:
-            self.send_error(404, "File not found")
-            return None
+            f = self.list_directory(path)
+            if f is None:
+                return None
+            ctype = "text/HTML"
+        else:
+            try:
+                f = open(path, 'rb')
+            except IOError:
+                self.send_error(404, "File not found")
+                return None
+            ctype = self.guess_type(path)
         self.send_response(200)
-        self.send_header("Content-type", self.guess_type(path))
+        self.send_header("Content-type", ctype)
         self.end_headers()
+        return f
+
+    def list_directory(self, path):
+        try:
+            list = os.listdir(path)
+        except os.error:
+            self.send_error(404, "No permission to list directory");
+            return None
+        list.sort(lambda a, b: cmp(a.lower(), b.lower()))
+        f = StringIO()
+        f.write("<h2>Directory listing for %s</h2>\n" % self.path)
+        f.write("<hr>\n<ul>\n")
+        for name in list:
+            fullname = os.path.join(path, name)
+            displayname = name = cgi.escape(name)
+            if os.path.islink(fullname):
+                displayname = name + "@"
+            elif os.path.isdir(fullname):
+                displayname = name + "/"
+                name = name + os.sep
+            f.write('<li><a href="%s">%s</a>\n' % (name, displayname))
+        f.write("</ul>\n<hr>\n")
+        f.seek(0)
         return f
 
     def translate_path(self, path):
