@@ -167,21 +167,21 @@ PySignal_Signal(self, args)
 		return (PyObject *)NULL;
 #ifdef WITH_THREAD
 	if (get_thread_ident() != main_thread) {
-		PyErr_SetString(PyExc_ValueError, "signal only works in main thread");
+		PyErr_SetString(PyExc_ValueError,
+				"signal only works in main thread");
 		return (PyObject *)NULL;
 	}
 #endif
 	if (sig_num < 1 || sig_num >= NSIG) {
-		PyErr_SetString(PyExc_ValueError, "signal number out of range");
+		PyErr_SetString(PyExc_ValueError,
+				"signal number out of range");
 		return (PyObject *)NULL;
 	}
 	if (obj == PySignal_SignalIgnoreHandler)
 		func = SIG_IGN;
 	else if (obj == PySignal_SignalDefaultHandler)
 		func = SIG_DFL;
-	else if (!PyCFunction_Check(obj) &&
-		 !PyFunction_Check(obj) &&
-		 !PyMethod_Check(obj)) {
+	else if (!PyCallable_Check(obj)) {
 		PyErr_SetString(PyExc_TypeError,
 "signal handler must be signal.SIG_IGN, signal.SIG_DFL, or a callable object");
 		return (PyObject *)NULL;
@@ -209,7 +209,8 @@ PySignal_GetSignal(self, args)
 	if (!PyArg_Parse(args, "i", &sig_num))
 		return (PyObject *)NULL;
 	if (sig_num < 1 || sig_num >= NSIG) {
-		PyErr_SetString(PyExc_ValueError, "signal number out of range");
+		PyErr_SetString(PyExc_ValueError,
+				"signal number out of range");
 		return (PyObject *)NULL;
 	}
 	old_handler = PySignal_SignalHandlerArray[sig_num].func;
@@ -265,17 +266,22 @@ initsignal()
 		signal(i, t);
 		PySignal_SignalHandlerArray[i].tripped = 0;
 		if (t == SIG_DFL)
-			PySignal_SignalHandlerArray[i].func = PySignal_SignalDefaultHandler;
+			PySignal_SignalHandlerArray[i].func =
+				PySignal_SignalDefaultHandler;
 		else if (t == SIG_IGN)
-			PySignal_SignalHandlerArray[i].func = PySignal_SignalIgnoreHandler;
+			PySignal_SignalHandlerArray[i].func =
+				PySignal_SignalIgnoreHandler;
 		else
-			PySignal_SignalHandlerArray[i].func = Py_None; /* None of our business */
+			PySignal_SignalHandlerArray[i].func =
+				Py_None; /* None of our business */
 		Py_INCREF(PySignal_SignalHandlerArray[i].func);
 	}
-	if (PySignal_SignalHandlerArray[SIGINT].func == PySignal_SignalDefaultHandler) {
+	if (PySignal_SignalHandlerArray[SIGINT].func ==
+	    PySignal_SignalDefaultHandler) {
 		/* Install default int handler */
 		Py_DECREF(PySignal_SignalHandlerArray[SIGINT].func);
-		PySignal_SignalHandlerArray[SIGINT].func = PySignal_DefaultIntHandler;
+		PySignal_SignalHandlerArray[SIGINT].func =
+			PySignal_DefaultIntHandler;
 		Py_INCREF(PySignal_DefaultIntHandler);
 		signal(SIGINT, &PySignal_Handler);
 	}
@@ -443,7 +449,8 @@ PyErr_CheckSignals()
 			if (arglist == (PyObject *)NULL)
 				result = (PyObject *)NULL;
 			else {
-				result = PyEval_CallObject(PySignal_SignalHandlerArray[i].func,arglist);
+				result = PyEval_CallObject(
+				 PySignal_SignalHandlerArray[i].func, arglist);
 				Py_DECREF(arglist);
 			}
 			if (result == (PyObject *)NULL) {
