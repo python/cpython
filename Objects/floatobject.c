@@ -606,13 +606,19 @@ static PyObject *
 float_int(PyObject *v)
 {
 	double x = PyFloat_AsDouble(v);
-	if (x < 0 ? (x = ceil(x)) < (double)LONG_MIN
-	          : (x = floor(x)) > (double)LONG_MAX) {
-		PyErr_SetString(PyExc_OverflowError,
-				"float too large to convert");
-		return NULL;
-	}
-	return PyInt_FromLong((long)x);
+	double wholepart;	/* integral portion of x, rounded toward 0 */
+	long aslong;		/* (long)wholepart */
+
+	(void)modf(x, &wholepart);
+	/* doubles may have more bits than longs, or vice versa; and casting
+	   to long may yield gibberish in either case.  What really matters
+	   is whether converting back to double again reproduces what we
+	   started with. */
+	aslong = (long)wholepart;
+	if ((double)aslong == wholepart)
+		return PyInt_FromLong(aslong);
+	PyErr_SetString(PyExc_OverflowError, "float too large to convert");
+	return NULL;
 }
 
 static PyObject *
