@@ -34,7 +34,7 @@ have any value except INVALID_SOCKET.
 
 #include <sys/types.h>
 
-#ifdef _MSC_VER
+#ifdef MS_WINDOWS
 #include <winsock.h>
 #else
 #include "myselect.h" /* Also includes mytime.h */

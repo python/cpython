@@ -82,7 +82,7 @@ Socket methods:
 #include "mytime.h"
 
 #include <signal.h>
-#ifndef _MSC_VER
+#ifndef MS_WINDOWS
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -487,7 +487,7 @@ BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 	if (!PyArg_GetInt(args, &block))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#ifndef _MSC_VER
+#ifndef MS_WINDOWS
 	delay_flag = fcntl (s->sock_fd, F_GETFL, 0);
 	if (block)
 		delay_flag &= (~O_NDELAY);
@@ -1108,7 +1108,7 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 {
 	PySocketSockObject *s;
-#ifdef _MSC_VER
+#ifdef MS_WINDOWS
 	SOCKET fd;
 #else
 	int fd;
@@ -1119,7 +1119,7 @@ BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 	Py_BEGIN_ALLOW_THREADS
 	fd = socket(family, type, proto);
 	Py_END_ALLOW_THREADS
-#ifdef _MSC_VER
+#ifdef MS_WINDOWS
 	if (fd == INVALID_SOCKET)
 #else
 	if (fd < 0)

@@ -415,7 +415,7 @@ find_module(name, path, buf, buflen, p_fp)
 	struct filedescr *fdp;
 	FILE *fp = NULL;
 
-#ifdef NT
+#ifdef PYTHONWIN
 	if ((fp=PyWin_FindRegisteredModule(name, &fdp, buf, buflen))!=NULL) {
 		*p_fp = fp;
 		return fdp;
@@ -463,12 +463,11 @@ find_module(name, path, buf, buflen, p_fp)
 					buf[len++] = ch;
 		}
 		else /* Not in dos_8x3, use the full name */
-#else
+#endif
 		{
 			strcpy(buf+len, name);
 			len += namelen;
 		}
-#endif
 		for (fdp = import_filetab; fdp->suffix != NULL; fdp++) {
 			strcpy(buf+len, fdp->suffix);
 			if (verbose > 1)
