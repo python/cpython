@@ -13,7 +13,6 @@ Here are two small examples of how it can be used.  To list some
 statistics about a newsgroup and print the subjects of the last 10
 articles:
 
-\small{
 \bcode\begin{verbatim}
 >>> s = NNTP('news.cwi.nl')
 >>> resp, count, first, last, name = s.group('comp.lang.python')
@@ -36,7 +35,6 @@ Group comp.lang.python has 59 articles, range 3742 to 3803
 '205 news.cwi.nl closing connection.  Goodbye.'
 >>> 
 \end{verbatim}\ecode
-}
 
 To post an article from a file (this assumes that the article has
 valid headers):
