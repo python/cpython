@@ -578,6 +578,12 @@ try:
 except SyntaxError:
     print "good: got a SyntaxError as expected"
 
+try:
+    eval("[x if y]")
+    print "FAIL: should have raised a SyntaxError!"
+except SyntaxError:
+        print "good: got a SyntaxError as expected"
+
 suppliers = [
   (1, "Boeing"),
   (2, "Ford"),
