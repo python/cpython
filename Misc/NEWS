@@ -3,9 +3,9 @@
 ===================================
 
 
-- Most known bugs have been fixed.  For example the pow(2,2,3L) bug on
-Linux has been fixed.  Also the re-entrancy problems with __del__ have
-been fixed.
+- Virtually all known bugs have been fixed.  For example the
+pow(2,2,3L) bug on Linux has been fixed.  Also the re-entrancy
+problems with __del__ have been fixed.
 
 - Most known memory leaks have been fixed.
 
@@ -62,6 +62,52 @@ shortly, plus instructions on how to compile with THINK C 6.0.)
 
 - Used autoconf 2.0 to generate the configure script.  Adapted
 configure.in to use the new features in autoconf 2.0.
+
+- It should now build on the NeXT without intervention, even on the
+3.3 Sparc pre-release.
+
+- __import__ is now called with 4 arguments:
+(modulename, globals, locals, fromlist)
+
+- Characters passed to isspace() and friends are masked to nonnegative
+values
+
+- Correctly compute pow(-3.0, 3)
+
+- Fix portability problems with getopt (configure now checks for a
+non-GNU getopt)
+
+- Don't add frozenmain.o to libPython.a
+
+- Exceptions can now be classes
+
+- The socket module exports a long list of socket related symbols
+
+- Lots of Mac specific changes (this area of the source is not
+completed!)
+
+- When a module object is deleted, it clears out its own dictionary
+(this fixes a circularity in the references between functions and
+their global dictionary)
+
+- Changed the error handling by [new]getargs() e.g. for "O&"
+
+- Dynamic loading of modules using shared libraries is supported for
+several new platforms
+
+- Support "O&" in mkvalue()
+
+- Extension to findmethod(): findmethodinchain() (where a chain is a
+linked list of methodlist arrays)
+
+- Callable() function is now public
+
+
+Known bugs still remaining:
+---------------------------
+
+- There's still a memory leak in threads; bigger when
+thread.exit_thread() is used
 
 
 --Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
