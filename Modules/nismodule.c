@@ -68,7 +68,11 @@ nis_mapname (char *map, int *pfix)
 	return map;
 }
 
+#ifdef __APPLE__
+typedef int (*foreachfunc)(unsigned long, char *, int, char *, int, void *);
+#else
 typedef int (*foreachfunc)(int, char *, int, char *, int, char *);
+#endif
 
 struct ypcallback_data {
 	PyObject	*dict;
