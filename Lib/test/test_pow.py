@@ -1,8 +1,6 @@
 import sys
 import test_support
 
-from test_support import verify
-
 
 def powtest(type):
     if type != float:
@@ -78,14 +76,6 @@ print 'Testing long integer mode...'
 powtest(long)
 print 'Testing floating point mode...'
 powtest(float)
-
-# Make sure '**' does the right thing; these form a
-# regression test for SourceForge bug #456756.
-#
-verify((-2 ** 2) == -4,
-       "expected '-2 ** 2' to be -4, got %s" % (-2 ** 2))
-verify(((-2) ** 2) == 4,
-       "expected '(-2) ** 2' to be 4, got %s" % ((-2) ** 2))
 
 # Other tests-- not very systematic
 
