@@ -1,4 +1,3 @@
-#define DEBUG
 /* Compile an expression node to intermediate code */
 
 #include <stdio.h>
@@ -174,7 +173,8 @@ com_addint(c, x)
 	struct compiling *c;
 	int x;
 {
-	com_addbyte(c, x);
+	com_addbyte(c, x & 0xff);
+	com_addbyte(c, x >> 8); /* XXX x should be positive */
 }
 
 static void
@@ -215,22 +215,10 @@ com_backpatch(c, anchor)
 	int prev;
 	for (;;) {
 		/* Make the JUMP instruction at anchor point to target */
-		prev = code[anchor];
-		dist = target - (anchor+1);
-		if (dist > 255 && lastanchor &&
-				code[lastanchor-1] == code[anchor-1]) {
-			/* Attempt to jump to a similar jump closer by */
-/* XXX Show that it works */
-fprintf(stderr, "com_backpatch: huge jump rescued (?)\n");
-			target = lastanchor-1;
-			dist = target - (anchor+1);
-			lastanchor = 0;
-		}
-		if (dist > 255) {
-			err_setstr(SystemError, "relative jump > 255 bytes");
-			c->c_errors++;
-		}
-		code[anchor] = dist;
+		prev = code[anchor] + (code[anchor+1] << 8);
+		dist = target - (anchor+2);
+		code[anchor] = dist & 0xff;
+		code[anchor+1] = dist >> 8;
 		if (!prev)
 			break;
 		lastanchor = anchor;
@@ -246,11 +234,16 @@ com_add(c, list, v)
 	object *list;
 	object *v;
 {
-	/* XXX Should look through list for object with same value */
-	int i = getlistsize(list);
+	int n = getlistsize(list);
+	int i;
+	for (i = n; --i >= 0; ) {
+		object *w = getlistitem(list, i);
+		if (cmpobject(v, w) == 0)
+			return i;
+	}
 	if (addlistitem(list, v) != 0)
 		c->c_errors++;
-	return i;
+	return n;
 }
 
 static int
@@ -926,6 +919,7 @@ com_assign(c, n, assigning)
 	/* Loop to avoid trivial recursion */
 	for (;;) {
 		switch (TYPE(n)) {
+		
 		case exprlist:
 		case testlist:
 			if (NCH(n) > 1) {
@@ -934,6 +928,7 @@ com_assign(c, n, assigning)
 			}
 			n = CHILD(n, 0);
 			break;
+		
 		case test:
 		case and_test:
 		case not_test:
@@ -945,6 +940,7 @@ com_assign(c, n, assigning)
 			}
 			n = CHILD(n, 0);
 			break;
+		
 		case comparison:
 			if (NCH(n) > 1) {
 				err_setstr(TypeError,
@@ -954,6 +950,7 @@ com_assign(c, n, assigning)
 			}
 			n = CHILD(n, 0);
 			break;
+		
 		case expr:
 			if (NCH(n) > 1) {
 				err_setstr(TypeError,
@@ -963,6 +960,7 @@ com_assign(c, n, assigning)
 			}
 			n = CHILD(n, 0);
 			break;
+		
 		case term:
 			if (NCH(n) > 1) {
 				err_setstr(TypeError,
@@ -972,6 +970,7 @@ com_assign(c, n, assigning)
 			}
 			n = CHILD(n, 0);
 			break;
+		
 		case factor: /* ('+'|'-') factor | atom trailer* */
 			if (TYPE(CHILD(n, 0)) != atom) { /* '+' | '-' */
 				err_setstr(TypeError,
@@ -991,6 +990,7 @@ com_assign(c, n, assigning)
 			}
 			n = CHILD(n, 0);
 			break;
+		
 		case atom:
 			switch (TYPE(CHILD(n, 0))) {
 			case LPAR:
@@ -1023,11 +1023,13 @@ com_assign(c, n, assigning)
 				return;
 			}
 			break;
+		
 		default:
 			fprintf(stderr, "node type %d\n", TYPE(n));
 			err_setstr(SystemError, "com_assign: bad node");
 			c->c_errors++;
 			return;
+		
 		}
 	}
 }
@@ -1065,6 +1067,7 @@ com_print_stmt(c, n)
 	}
 	if (TYPE(CHILD(n, NCH(n)-2)) != COMMA)
 		com_addbyte(c, PRINT_NEWLINE);
+		/* XXX Alternatively, LOAD_CONST '\n' and then PRINT_ITEM */
 }
 
 static void
@@ -1112,6 +1115,7 @@ com_import_stmt(c, n)
 		com_addbyte(c, POP_TOP);
 	}
 	else {
+		/* 'import' ... */
 		for (i = 1; i < NCH(n); i += 2) {
 			com_addopname(c, IMPORT_NAME, CHILD(n, i));
 			com_addopname(c, STORE_NAME, CHILD(n, i));
@@ -1197,6 +1201,91 @@ com_for_stmt(c, n)
 	com_backpatch(c, break_anchor);
 }
 
+/* Although 'execpt' and 'finally' clauses can be combined
+   syntactically, they are compiled separately.  In fact,
+	try: S
+	except E1: S1
+	except E2: S2
+	...
+	finally: Sf
+   is equivalent to
+	try:
+	    try: S
+	    except E1: S1
+	    except E2: S2
+	    ...
+	finally: Sf
+   meaning that the 'finally' clause is entered even if things
+   go wrong again in an exception handler.  Note that this is
+   not the case for exception handlers: at most one is entered.
+   
+   Code generated for "try: S finally: Sf" is as follows:
+   
+		SETUP_FINALLY	L
+		<code for S>
+		POP_BLOCK
+		LOAD_CONST	<nil>
+		LOAD_CONST	<nil>
+	L:	<code for Sf>
+		END_FINALLY
+   
+   The special instructions use the block stack.  Each block
+   stack entry contains the instruction that created it (here
+   SETUP_FINALLY), the level of the value stack at the time the
+   block stack entry was created, and a label (here L).
+   
+   SETUP_FINALLY:
+	Pushes the current value stack level and the label
+	onto the block stack.
+   POP_BLOCK:
+	Pops en entry from the block stack, and pops the value
+	stack until its level is the same as indicated on the
+	block stack.  (The label is ignored.)
+   END_FINALLY:
+	Pops two entries from the *value* stack and re-raises
+	the exception they specify.  If the top entry is nil,
+	no exception is raised.  If it is a number, a pseudo
+	exception is raised ('return' or 'break').  Otherwise,
+	a real exception (specified by a string) is raised.
+	The second entry popped from the is the value that goes
+	with the exception (or the return value).
+   
+   The block stack is unwound when an exception is raised:
+   when a SETUP_FINALLY entry is found, the exception is pushed
+   onto the value stack (and the exception condition is cleared),
+   and the interpreter jumps to the label gotten from the block
+   stack.
+   
+   Code generated for "try: S except E1, V1: S1 except E2, V2: S2 ...":
+   
+   Value stack		Label	Instruction	Argument
+   []				SETUP_EXCEPT	L1
+   []				<code for S>
+   []				POP_BLOCK
+   []				JUMP_FORWARD	L0
+   
+   [val, exc]		L1:	DUP
+   [val, exc, exc]		<evaluate E1>
+   [val, exc, exc, E1]		COMPARE_OP	EXC_MATCH
+   [val, exc, 1-or-0]		JUMP_IF_FALSE	L2
+   [val, exc, 1]		POP
+   [val, exc]			POP
+   [val]			<assign to V1>
+   []				<code for S1>
+   				JUMP_FORWARD	L0
+   
+   [val, exc, 0]	L2:	POP
+   [val, exc]			DUP
+   .............................etc.......................
+
+   [val, exc, 0]	Ln+1:	POP
+   [val, exc]	   		END_FINALLY	# re-raise exception
+   
+   []			L0:	<next statement>
+   
+   Of course, parts are not generated if Vi or Ei is not present.
+*/
+
 static void
 com_try_stmt(c, n)
 	struct compiling *c;
@@ -1206,6 +1295,7 @@ com_try_stmt(c, n)
 	int except_anchor = 0;
 	REQ(n, try_stmt);
 	/* 'try' ':' suite (except_clause ':' suite)* ['finally' ':' suite] */
+	
 	if (NCH(n) > 3 && TYPE(CHILD(n, NCH(n)-3)) != except_clause) {
 		/* Have a 'finally' clause */
 		com_addfwref(c, SETUP_FINALLY, &finally_anchor);
@@ -1226,12 +1316,18 @@ com_try_stmt(c, n)
 			i < NCH(n) && TYPE(ch = CHILD(n, i)) == except_clause;
 								i += 3) {
 			/* except_clause: 'except' [expr [',' expr]] */
-			int next_anchor = 0;
+			if (except_anchor == 0) {
+				err_setstr(TypeError,
+					"default 'except:' must be last");
+				c->c_errors++;
+				break;
+			}
+			except_anchor = 0;
 			if (NCH(ch) > 1) {
 				com_addbyte(c, DUP_TOP);
 				com_node(c, CHILD(ch, 1));
 				com_addoparg(c, COMPARE_OP, EXC_MATCH);
-				com_addfwref(c, JUMP_IF_FALSE, &next_anchor);
+				com_addfwref(c, JUMP_IF_FALSE, &except_anchor);
 				com_addbyte(c, POP_TOP);
 			}
 			com_addbyte(c, POP_TOP);
@@ -1241,8 +1337,10 @@ com_try_stmt(c, n)
 				com_addbyte(c, POP_TOP);
 			com_node(c, CHILD(n, i+2));
 			com_addfwref(c, JUMP_FORWARD, &end_anchor);
-			if (next_anchor)
-				com_backpatch(c, next_anchor);
+			if (except_anchor) {
+				com_backpatch(c, except_anchor);
+				com_addbyte(c, POP_TOP);
+			}
 		}
 		com_addbyte(c, END_FINALLY);
 		com_backpatch(c, end_anchor);
@@ -1297,18 +1395,49 @@ com_funcdef(c, n)
 }
 
 static void
+com_bases(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i, nbases;
+	REQ(n, baselist);
+	/*
+	baselist: atom arguments (',' atom arguments)*
+	arguments: '(' [testlist] ')'
+	*/
+	for (i = 0; i < NCH(n); i += 3)
+		com_node(c, CHILD(n, i));
+	com_addoparg(c, BUILD_TUPLE, (NCH(n)+1) / 3);
+}
+
+static void
 com_classdef(c, n)
 	struct compiling *c;
 	node *n;
 {
+	object *v;
 	REQ(n, classdef);
 	/*
 	classdef: 'class' NAME parameters ['=' baselist] ':' suite
 	baselist: atom arguments (',' atom arguments)*
 	arguments: '(' [testlist] ')'
 	*/
-	err_setstr(SystemError, "can't compile 'class' yet");
-	c->c_errors++;
+	if (NCH(n) == 7)
+		com_bases(c, CHILD(n, 4));
+	else
+		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+	v = (object *)compile(n);
+	if (v == NULL)
+		c->c_errors++;
+	else {
+		int i = com_addconst(c, v);
+		com_addoparg(c, LOAD_CONST, i);
+		com_addbyte(c, BUILD_FUNCTION);
+		com_addbyte(c, UNARY_CALL);
+		com_addbyte(c, BUILD_CLASS);
+		com_addopname(c, STORE_NAME, CHILD(n, 1));
+		DECREF(v);
+	}
 }
 
 static void
@@ -1485,6 +1614,22 @@ compile_funcdef(c, n)
 }
 
 static void
+compile_classdef(c, n)
+	struct compiling *c;
+	node *n;
+{
+	node *ch;
+	REQ(n, classdef);
+	/*
+	classdef: 'class' NAME parameters ['=' baselist] ':' suite
+	*/
+	com_addbyte(c, REFUSE_ARGS);
+	com_node(c, CHILD(n, NCH(n)-1));
+	com_addbyte(c, LOAD_LOCALS);
+	com_addbyte(c, RETURN_VALUE);
+}
+
+static void
 compile_node(c, n)
 	struct compiling *c;
 	node *n;
@@ -1509,6 +1654,10 @@ compile_node(c, n)
 	
 	case funcdef:
 		compile_funcdef(c, n);
+		break;
+	
+	case classdef:
+		compile_classdef(c, n);
 		break;
 	
 	default:
