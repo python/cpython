@@ -8,7 +8,7 @@
 ;; Created:    Feb 1992
 ;; Keywords:   python languages oop
 
-(defconst py-version "$Revision$"
+(defconst py-version "4.3"
   "`python-mode' version number.")
 
 ;; This software is provided as-is, without express or implied
@@ -124,9 +124,10 @@ you're editing someone else's Python code."
   :group 'python)
 
 (defcustom py-continuation-offset 4
-  "*Additional amount of offset to give for continuation lines.
+  "*Additional amount of offset to give for some continuation lines.
 Continuation lines are those that immediately follow a backslash
-terminated line."
+terminated line.  Only those continuation lines for a block opening
+statement are given this extra offset."
   :type 'integer
   :group 'python)
 
@@ -1833,7 +1834,11 @@ dedenting."
 		  (progn
 		    (goto-char startpos)
 		    (skip-chars-forward "^ \t\n")))
-	      (+ (current-column) py-continuation-offset 1)
+	      ;; if this is a continuation for a block opening
+	      ;; statement, add some extra offset.
+	      (+ (current-column) (if (py-statement-opens-block-p)
+				      py-continuation-offset 0)
+		 1)
 	      ))))
 
        ;; not on a continuation line
