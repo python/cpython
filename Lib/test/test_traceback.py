@@ -1,7 +1,7 @@
 """Test cases for traceback module"""
 
 import unittest
-from test.test_support import run_unittest
+from test.test_support import run_unittest, is_jython
 
 import traceback
 
@@ -32,6 +32,9 @@ class TracebackCases(unittest.TestCase):
         self.assert_(err[1].strip() == "return x!")
 
     def test_nocaret(self):
+        if is_jython:
+            # jython adds a caret in this case (why shouldn't it?)
+            return
         err = self.get_exception_format(self.syntax_error_without_caret,
                                         SyntaxError)
         self.assert_(len(err) == 3)
