@@ -69,7 +69,7 @@ recommended to use PyObject_{New, NewVar, Del}. */
  * ============================
  */
 
-/* The purpose of the object allocator is to make make the distinction
+/* The purpose of the object allocator is to make the distinction
    between "object memory" and the rest within the Python heap.
    
    Object memory is the one allocated by PyObject_{New, NewVar}, i.e.
