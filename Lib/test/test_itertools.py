@@ -427,10 +427,6 @@ Samuele
 ...     "Returns True if pred(x) is False for every element in the iterable"
 ...     return not nth(ifilter(pred, seq), 0)
 
->>> def pairwise(seq):
-...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-...     return izip(seq, islice(seq,1,len(seq)))
-
 >>> def padnone(seq):
 ...     "Returns the sequence elements and then returns None indefinitely"
 ...     return chain(seq, repeat(None))
@@ -442,6 +438,16 @@ Samuele
 >>> def dotproduct(vec1, vec2):
 ...     return sum(imap(operator.mul, vec1, vec2))
 
+>>> def window(seq, n=2):
+...     "Returns a sliding window (of width n) over data from the iterable"
+...     "   s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...                   "
+...     it = iter(seq)
+...     result = tuple(islice(it, n))
+...     if len(result) == n:
+...         yield result
+...     for elem in it:
+...         result = result[1:] + (elem,)
+...         yield result
 
 This is not part of the examples but it tests to make sure the definitions
 perform as purported.
@@ -473,8 +479,11 @@ True
 >>> no(lambda x: x%2==0, [1, 2, 5, 9])
 False
 
->>> list(pairwise('abc'))
+>>> list(window('abc'))
 [('a', 'b'), ('b', 'c')]
+
+>>> list(window('abc',5))
+[]
 
 >>> list(islice(padnone('abc'), 0, 6))
 ['a', 'b', 'c', None, None, None]
