@@ -7,15 +7,43 @@ import os
 import string
 import regex
 from Tkinter import *
-
-import addpack
-addpack.addpack('/ufs/guido/src/python/Demo/guido/tkinter')
 from ManPage import ManPage
 
-MANNDIR = '/usr/local/man/mann'
-MAN3DIR = '/usr/local/man/man3'
-MANNDIR = '/depot/sundry/man/mann'
-MAN3DIR = '/depot/sundry/man/man3'
+MANNDIRLIST = ['/depot/sundry/man/mann','/usr/local/man/mann']
+MAN3DIRLIST = ['/depot/sundry/man/man3','/usr/local/man/man3']
+
+foundmanndir = 0
+for dir in MANNDIRLIST:
+    if os.path.exists(dir):
+	MANNDIR = dir
+	foundmanndir = 1
+
+foundman3dir = 0
+for dir in MAN3DIRLIST:
+    if os.path.exists(dir):
+	MAN3DIR = dir
+	foundman3dir =  1
+
+if not foundmanndir or not foundman3dir:
+    sys.stderr.write('\n')
+    if not foundmanndir:
+	msg = """\
+Failed to find mann directory.
+Please add the correct entry to the MANNDIRLIST 
+at the top of %s script.""" % \
+sys.argv[0]
+	sys.stderr.write("%s\n\n" % msg)
+    if not foundman3dir:
+	msg = """\
+Failed to find man3 directory.
+Please add the correct entry to the MAN3DIRLIST 
+at the top of %s script.""" % \
+sys.argv[0]
+	sys.stderr.write("%s\n\n" % msg)
+    sys.exit(1)
+
+del foundmanndir
+del foundman3dir
 
 def listmanpages(mandir):
 	files = os.listdir(mandir)
