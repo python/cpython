@@ -552,6 +552,8 @@ Py_Main(argc, argv)
 void
 PyMac_OutputSeen()
 {
+	if ( console_output_state == STATE_UNKNOWN )
+		PyMac_InitMenuBar();
 	console_output_state = STATE_LASTREAD;
 }
 
@@ -561,6 +563,8 @@ PyMac_OutputSeen()
 void
 PyMac_OutputNotSeen()
 {
+	if ( console_output_state == STATE_UNKNOWN )
+		PyMac_InitMenuBar();
 	console_output_state = STATE_LASTWRITE;
 }
 	
