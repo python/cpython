@@ -1124,7 +1124,7 @@ class Canvas(Widget):
 		if cnf is None and not kw:
 			cnf = {}
 			for x in self.tk.split(
-				self._do('itemconfigure', (tagOrId))):
+				self._do('itemconfigure', (tagOrId,))):
 				cnf[x[0][1:]] = (x[0][1:],) + x[1:]
 			return cnf
 		if type(cnf) == StringType and not kw:
