@@ -135,13 +135,16 @@ class NNTP:
                     raise
         # If no login/password was specified, try to get them from ~/.netrc
         # Presume that if .netc has an entry, NNRP authentication is required.
-        if not user:
-            import netrc
-            credentials = netrc.netrc()
-            auth = credentials.authenticators(host)
-            if auth:
-                user = auth[0]
-                password = auth[2]
+        try:
+            if not user:
+                import netrc
+                credentials = netrc.netrc()
+                auth = credentials.authenticators(host)
+                if auth:
+                    user = auth[0]
+                    password = auth[2]
+        except IOError:
+            pass
         # Perform NNRP authentication if needed.
         if user:
             resp = self.shortcmd('authinfo user '+user)
