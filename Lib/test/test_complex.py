@@ -1,4 +1,4 @@
-import unittest
+import unittest, os
 from test import test_support
 
 import warnings
@@ -106,6 +106,14 @@ class ComplexTest(unittest.TestCase):
     def test_mod(self):
         self.assertRaises(ZeroDivisionError, (1+1j).__mod__, 0+0j)
 
+        a = 3.33+4.43j
+        try:
+            a % 0
+        except ZeroDivisionError:
+            pass
+        else:
+            self.fail("modulo parama can't be 0")
+
     def test_divmod(self):
         self.assertRaises(ZeroDivisionError, divmod, 1+1j, 0+0j)
 
@@ -116,6 +124,37 @@ class ComplexTest(unittest.TestCase):
         self.assertAlmostEqual(pow(1j, -1), 1/1j)
         self.assertAlmostEqual(pow(1j, 200), 1)
         self.assertRaises(ValueError, pow, 1+1j, 1+1j, 1+1j)
+
+        a = 3.33+4.43j
+        self.assertEqual(a ** 0j, 1)
+        self.assertEqual(a ** 0.+0.j, 1)
+
+        self.assertEqual(3j ** 0j, 1)
+        self.assertEqual(3j ** 0, 1)
+
+        try:
+            0j ** a
+        except ZeroDivisionError:
+            pass
+        else:
+            self.fail("should fail 0.0 to negative or complex power")
+
+        try:
+            0j ** (3-2j)
+        except ZeroDivisionError:
+            pass
+        else:
+            self.fail("should fail 0.0 to negative or complex power")
+
+        # The following is used to exercise certain code paths
+        self.assertEqual(a ** 105, a ** 105)
+        self.assertEqual(a ** -105, a ** -105)
+        self.assertEqual(a ** -30, a ** -30)
+
+        self.assertEqual(0.0j ** 0, 1)
+
+        b = 5.1+2.3j
+        self.assertRaises(ValueError, pow, a, b, 0)
 
     def test_boolcontext(self):
         for i in xrange(100):
@@ -243,6 +282,24 @@ class ComplexTest(unittest.TestCase):
     def test_neg(self):
         self.assertEqual(-(1+6j), -1-6j)
 
+    def test_file(self):
+        a = 3.33+4.43j
+        b = 5.1+2.3j
+
+        fo = None
+        try:
+            fo = open(test_support.TESTFN, "wb")
+            print >>fo, a, b
+            fo.close()
+            fo = open(test_support.TESTFN, "rb")
+            self.assertEqual(fo.read(), "%s %s\n" % (a, b))
+        finally:
+            if (fo is not None) and (not fo.closed):
+                fo.close()
+            try:
+                os.remove(test_support.TESTFN)
+            except (OSError, IOError):
+                pass
 
 def test_main():
     test_support.run_unittest(ComplexTest)
