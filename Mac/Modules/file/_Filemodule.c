@@ -14,9 +14,9 @@
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
@@ -2999,6 +2999,23 @@ static PyObject *File_FSUpdateAlias(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *File_pathname(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	PyObject *obj;
+
+	if (!PyArg_ParseTuple(_args, "O", &obj))
+		return NULL;
+	if (PyString_Check(obj))
+		return obj;
+	if (PyUnicode_Check(obj))
+		return PyUnicode_AsEncodedString(obj, "utf8", "strict");
+	_res = PyObject_CallMethod(obj, "as_pathname", NULL);
+	return _res;
+
+}
+
 static PyMethodDef File_methods[] = {
 	{"UnmountVol", (PyCFunction)File_UnmountVol, 1,
 	 PyDoc_STR("(Str63 volName, short vRefNum) -> None")},
@@ -3100,6 +3117,8 @@ static PyMethodDef File_methods[] = {
 	 PyDoc_STR("(Boolean resolveAliasChains) -> (FSRef theRef, Boolean targetIsFolder, Boolean wasAliased)")},
 	{"FSUpdateAlias", (PyCFunction)File_FSUpdateAlias, 1,
 	 PyDoc_STR("(FSRef fromFile, FSRef target, AliasHandle alias) -> (Boolean wasChanged)")},
+	{"pathname", (PyCFunction)File_pathname, 1,
+	 PyDoc_STR("(str|unicode|FSSpec|FSref) -> pathname")},
 	{NULL, NULL, 0}
 };
 
