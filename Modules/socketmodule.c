@@ -59,7 +59,7 @@ Socket methods:
 - s.getsockname() --> sockaddr
 - s.getpeername() --> sockaddr
 - s.listen(n) --> Py_None
-- s.makefile(mode) --> file object
+- s.makefile([mode[, bufsize]]) --> file object
 - s.recv(nbytes [,flags]) --> string
 - s.recvfrom(nbytes [,flags]) --> string, sockaddr
 - s.send(string [,flags]) --> nbytes
@@ -733,15 +733,24 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 {
 	extern int fclose Py_PROTO((FILE *));
-	char *mode;
+	char *mode = "r";
+	int bufsize = -1;
 	int fd;
 	FILE *fp;
-	if (!PyArg_Parse(args, "s", &mode))
+	PyObject *f;
+
+	if (!PyArg_ParseTuple(args, "|si", &mode, &bufsize))
 		return NULL;
 	if ((fd = dup(s->sock_fd)) < 0 ||
-	    (fp = fdopen(fd, mode)) == NULL)
+	    (fp = fdopen(fd, mode)) == NULL) {
+		if (fd >= 0)
+			close(fd);
 		return PySocket_Err();
-	return PyFile_FromFile(fp, "<socket>", mode, fclose);
+	}
+	f = PyFile_FromFile(fp, "<socket>", mode, fclose);
+	if (f != NULL)
+		PyFile_SetBufSize(f, bufsize);
+	return f;
 }
 #endif /* NO_DUP */
 
@@ -900,7 +909,7 @@ static PyMethodDef PySocketSock_methods[] = {
 #endif
 	{"listen",		(PyCFunction)PySocketSock_listen},
 #ifndef NO_DUP
-	{"makefile",		(PyCFunction)PySocketSock_makefile},
+	{"makefile",		(PyCFunction)PySocketSock_makefile, 1},
 #endif
 	{"recv",		(PyCFunction)PySocketSock_recv},
 	{"recvfrom",		(PyCFunction)PySocketSock_recvfrom},
