@@ -220,7 +220,7 @@ PyImport_Cleanup()
 	if (value != NULL && PyModule_Check(value)) {
 		dict = PyModule_GetDict(value);
 		if (Py_VerboseFlag)
-			fprintf(stderr, "# clear __builtin__._\n");
+			PySys_WriteStderr("# clear __builtin__._\n");
 		PyDict_SetItemString(dict, "_", Py_None);
 	}
 	value = PyDict_GetItemString(modules, "sys");
@@ -230,12 +230,12 @@ PyImport_Cleanup()
 		dict = PyModule_GetDict(value);
 		for (p = sys_deletes; *p != NULL; p++) {
 			if (Py_VerboseFlag)
-				fprintf(stderr, "# clear sys.%s\n", *p);
+				PySys_WriteStderr("# clear sys.%s\n", *p);
 			PyDict_SetItemString(dict, *p, Py_None);
 		}
 		for (p = sys_files; *p != NULL; p+=2) {
 			if (Py_VerboseFlag)
-				fprintf(stderr, "# restore sys.%s\n", *p);
+				PySys_WriteStderr("# restore sys.%s\n", *p);
 			v = PyDict_GetItemString(dict, *(p+1));
 			if (v == NULL)
 				v = Py_None;
@@ -247,7 +247,7 @@ PyImport_Cleanup()
 	value = PyDict_GetItemString(modules, "__main__");
 	if (value != NULL && PyModule_Check(value)) {
 		if (Py_VerboseFlag)
-			fprintf(stderr, "# cleanup __main__\n");
+			PySys_WriteStderr("# cleanup __main__\n");
 		_PyModule_Clear(value);
 		PyDict_SetItemString(modules, "__main__", Py_None);
 	}
@@ -281,7 +281,7 @@ PyImport_Cleanup()
 				if (strcmp(name, "sys") == 0)
 					continue;
 				if (Py_VerboseFlag)
-					fprintf(stderr,
+					PySys_WriteStderr(
 						"# cleanup[1] %s\n", name);
 				_PyModule_Clear(value);
 				PyDict_SetItem(modules, key, Py_None);
@@ -300,7 +300,7 @@ PyImport_Cleanup()
 			if (strcmp(name, "sys") == 0)
 				continue;
 			if (Py_VerboseFlag)
-				fprintf(stderr, "# cleanup[2] %s\n", name);
+				PySys_WriteStderr("# cleanup[2] %s\n", name);
 			_PyModule_Clear(value);
 			PyDict_SetItem(modules, key, Py_None);
 		}
@@ -310,14 +310,14 @@ PyImport_Cleanup()
 	value = PyDict_GetItemString(modules, "sys");
 	if (value != NULL && PyModule_Check(value)) {
 		if (Py_VerboseFlag)
-			fprintf(stderr, "# cleanup sys\n");
+			PySys_WriteStderr("# cleanup sys\n");
 		_PyModule_Clear(value);
 		PyDict_SetItemString(modules, "sys", Py_None);
 	}
 	value = PyDict_GetItemString(modules, "__builtin__");
 	if (value != NULL && PyModule_Check(value)) {
 		if (Py_VerboseFlag)
-			fprintf(stderr, "# cleanup __builtin__\n");
+			PySys_WriteStderr("# cleanup __builtin__\n");
 		_PyModule_Clear(value);
 		PyDict_SetItemString(modules, "__builtin__", Py_None);
 	}
@@ -399,7 +399,7 @@ _PyImport_FindExtension(name, filename)
 		return NULL;
 	Py_DECREF(result);
 	if (Py_VerboseFlag)
-		fprintf(stderr, "import %s # previously loaded (%s)\n",
+		PySys_WriteStderr("import %s # previously loaded (%s)\n",
 			name, filename);
 	return mod;
 }
@@ -542,19 +542,19 @@ check_compiled_module(pathname, mtime, cpathname)
 	magic = PyMarshal_ReadLongFromFile(fp);
 	if (magic != MAGIC) {
 		if (Py_VerboseFlag)
-			fprintf(stderr, "# %s has bad magic\n", cpathname);
+			PySys_WriteStderr("# %s has bad magic\n", cpathname);
 		fclose(fp);
 		return NULL;
 	}
 	pyc_mtime = PyMarshal_ReadLongFromFile(fp);
 	if (pyc_mtime != mtime) {
 		if (Py_VerboseFlag)
-			fprintf(stderr, "# %s has bad mtime\n", cpathname);
+			PySys_WriteStderr("# %s has bad mtime\n", cpathname);
 		fclose(fp);
 		return NULL;
 	}
 	if (Py_VerboseFlag)
-		fprintf(stderr, "# %s matches %s\n", cpathname, pathname);
+		PySys_WriteStderr("# %s matches %s\n", cpathname, pathname);
 	return fp;
 }
 
@@ -605,7 +605,7 @@ load_compiled_module(name, cpathname, fp)
 	if (co == NULL)
 		return NULL;
 	if (Py_VerboseFlag)
-		fprintf(stderr, "import %s # precompiled from %s\n",
+		PySys_WriteStderr("import %s # precompiled from %s\n",
 			name, cpathname);
 	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, cpathname);
 	Py_DECREF(co);
@@ -649,7 +649,7 @@ write_compiled_module(co, cpathname, mtime)
 	fp = fopen(cpathname, "wb");
 	if (fp == NULL) {
 		if (Py_VerboseFlag)
-			fprintf(stderr,
+			PySys_WriteStderr(
 				"# can't create %s\n", cpathname);
 		return;
 	}
@@ -659,7 +659,7 @@ write_compiled_module(co, cpathname, mtime)
 	PyMarshal_WriteObjectToFile((PyObject *)co, fp);
 	if (ferror(fp)) {
 		if (Py_VerboseFlag)
-			fprintf(stderr, "# can't write %s\n", cpathname);
+			PySys_WriteStderr("# can't write %s\n", cpathname);
 		/* Don't keep partial file */
 		fclose(fp);
 		(void) unlink(cpathname);
@@ -671,7 +671,7 @@ write_compiled_module(co, cpathname, mtime)
 	fflush(fp);
 	fclose(fp);
 	if (Py_VerboseFlag)
-		fprintf(stderr, "# wrote %s\n", cpathname);
+		PySys_WriteStderr("# wrote %s\n", cpathname);
 #ifdef macintosh
 	setfiletype(cpathname, 'Pyth', 'PYC ');
 #endif
@@ -704,7 +704,7 @@ load_source_module(name, pathname, fp)
 		if (co == NULL)
 			return NULL;
 		if (Py_VerboseFlag)
-			fprintf(stderr, "import %s # precompiled from %s\n",
+			PySys_WriteStderr("import %s # precompiled from %s\n",
 				name, cpathname);
 		pathname = cpathname;
 	}
@@ -713,7 +713,7 @@ load_source_module(name, pathname, fp)
 		if (co == NULL)
 			return NULL;
 		if (Py_VerboseFlag)
-			fprintf(stderr, "import %s # from %s\n",
+			PySys_WriteStderr("import %s # from %s\n",
 				name, pathname);
 		write_compiled_module(co, cpathname, mtime);
 	}
@@ -748,7 +748,7 @@ load_package(name, pathname)
 	if (m == NULL)
 		return NULL;
 	if (Py_VerboseFlag)
-		fprintf(stderr, "import %s # directory %s\n",
+		PySys_WriteStderr("import %s # directory %s\n",
 			name, pathname);
 	d = PyModule_GetDict(m);
 	file = PyString_FromString(pathname);
@@ -962,7 +962,7 @@ find_module(realname, path, buf, buflen, p_fp)
 		for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
 			strcpy(buf+len, fdp->suffix);
 			if (Py_VerboseFlag > 1)
-				fprintf(stderr, "# trying %s\n", buf);
+				PySys_WriteStderr("# trying %s\n", buf);
 			fp = fopen(buf, fdp->mode);
 			if (fp != NULL)
 				break;
@@ -1286,7 +1286,7 @@ init_builtin(name)
 				return -1;
 			}
 			if (Py_VerboseFlag)
-				fprintf(stderr, "import %s # builtin\n", name);
+				PySys_WriteStderr("import %s # builtin\n", name);
 			(*p->initfunc)();
 			if (PyErr_Occurred())
 				return -1;
@@ -1357,7 +1357,7 @@ PyImport_ImportFrozenModule(name)
 	if (ispackage)
 		size = -size;
 	if (Py_VerboseFlag)
-		fprintf(stderr, "import %s # frozen%s\n",
+		PySys_WriteStderr("import %s # frozen%s\n",
 			name, ispackage ? " package" : "");
 	co = PyMarshal_ReadObjectFromString((char *)p->code, size);
 	if (co == NULL)

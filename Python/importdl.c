@@ -809,7 +809,7 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		PyErr_Clear(); /* Not important enough to report */
 	Py_XDECREF(s);
 	if (Py_VerboseFlag)
-		fprintf(stderr,
+		PySys_WriteStderr(
 			"import %s # dynamically loaded from %s\n",
 			name, pathname);
 	Py_INCREF(m);
