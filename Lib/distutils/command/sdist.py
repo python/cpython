@@ -33,9 +33,8 @@ class sdist (Command):
          "just regenerate the manifest and then stop"),
         ('force-manifest', None,
          "forcibly regenerate the manifest and carry on as usual"),
-
         ('formats=', None,
-         "formats for source distribution (tar, ztar, gztar, or zip)"),
+         "formats for source distribution (tar, ztar, gztar, bztar, or zip)"),
         ('keep-tree', 'k',
          "keep the distribution tree around after creating " +
          "archive file(s)"),

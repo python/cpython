@@ -18,7 +18,8 @@ class bdist (Command):
     description = "create a built (binary) distribution"
 
     user_options = [('format=', 'f',
-                     "format for distribution (tar, ztar, gztar, zip, ... )"),
+                     "format for distribution " +
+                     "(tar, ztar, gztar, bztar, zip, ... )"),
                    ]
 
     # This won't do in reality: will need to distinguish RPM-ish Linux,
@@ -27,6 +28,7 @@ class bdist (Command):
                        'nt': 'zip', }
 
     format_command = { 'gztar': 'bdist_dumb',
+                       'bztar': 'bdist_dumb',
                        'ztar':  'bdist_dumb',
                        'tar':   'bdist_dumb',
                        'zip':   'bdist_dumb', }
