@@ -28,6 +28,23 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(right, range(150, 400))
         self.assertEqual(list(d), range(50, 150))
 
+    def test_comparisons(self):
+        d = deque('xabc'); d.popleft()
+        for e in [d, deque('abc'), deque('ab'), deque(), list(d)]:
+            self.assertEqual(d==e, type(d)==type(e) and list(d)==list(e))
+            self.assertEqual(d!=e, not(type(d)==type(e) and list(d)==list(e)))
+
+        args = map(deque, ('', 'a', 'b', 'ab', 'ba', 'abc', 'xba', 'xabc', 'cba'))
+        for x in args:
+            for y in args:
+                self.assertEqual(x == y, list(x) == list(y), (x,y))
+                self.assertEqual(x != y, list(x) != list(y), (x,y))
+                self.assertEqual(x <  y, list(x) <  list(y), (x,y))
+                self.assertEqual(x <= y, list(x) <= list(y), (x,y))
+                self.assertEqual(x >  y, list(x) >  list(y), (x,y))
+                self.assertEqual(x >= y, list(x) >= list(y), (x,y))
+                self.assertEqual(cmp(x,y), cmp(list(x),list(y)), (x,y))
+
     def test_extend(self):
         d = deque('a')
         self.assertRaises(TypeError, d.extend, 1)
@@ -39,6 +56,14 @@ class TestBasic(unittest.TestCase):
         self.assertRaises(TypeError, d.extendleft, 1)
         d.extendleft('bcd')
         self.assertEqual(list(d), list(reversed('abcd')))
+
+    def test_leftright(self):
+        d = deque('superman')
+        self.assertEqual(d.left(), 's')
+        self.assertEqual(d.right(), 'n')
+        d = deque()
+        self.assertRaises(IndexError, d.left)
+        self.assertRaises(IndexError, d.right)
 
     def test_rotate(self):
         s = tuple('abcde')
@@ -93,7 +118,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(len(d), 1)
         d.pop()
         self.assertEqual(len(d), 0)
-        self.assertRaises(LookupError, d.pop)
+        self.assertRaises(IndexError, d.pop)
         self.assertEqual(len(d), 0)
         d.append('c')
         self.assertEqual(len(d), 1)
@@ -104,8 +129,8 @@ class TestBasic(unittest.TestCase):
 
     def test_underflow(self):
         d = deque()
-        self.assertRaises(LookupError, d.pop)
-        self.assertRaises(LookupError, d.popleft)
+        self.assertRaises(IndexError, d.pop)
+        self.assertRaises(IndexError, d.popleft)
 
     def test_clear(self):
         d = deque(xrange(100))
@@ -374,6 +399,63 @@ class TestSubclass(unittest.TestCase):
 
 #==============================================================================
 
+libreftest = """
+Example from the Library Reference:  Doc/lib/libcollections.tex
+
+>>> from collections import deque
+>>> d = deque('ghi')                 # make a new deque with three items
+>>> for elem in d:                   # iterate over the deque's elements
+...     print elem.upper()	
+G
+H
+I
+>>> d.append('j')                    # add a new entry to the right side
+>>> d.appendleft('f')                # add a new entry to the left side
+>>> d                                # show the representation of the deque
+deque(['f', 'g', 'h', 'i', 'j'])
+>>> d.pop()                          # return and remove the rightmost item
+'j'
+>>> d.popleft()                      # return and remove the leftmost item
+'f'
+>>> list(d)                          # list the contents of the deque
+['g', 'h', 'i']
+>>> d.left()                         # peek at leftmost item
+'g'
+>>> d.right()                        # peek at rightmost item
+'i'
+>>> list(reversed(d))                # list the contents of a deque in reverse
+['i', 'h', 'g']
+>>> 'h' in d                         # search the deque
+True
+>>> d.extend('jkl')                  # add multiple elements at once
+>>> d
+deque(['g', 'h', 'i', 'j', 'k', 'l'])
+>>> d.rotate(1)                      # right rotation
+>>> d
+deque(['l', 'g', 'h', 'i', 'j', 'k'])
+>>> d.rotate(-1)                     # left rotation
+>>> d
+deque(['g', 'h', 'i', 'j', 'k', 'l'])
+>>> deque(reversed(d))               # make a new deque in reverse order
+deque(['l', 'k', 'j', 'i', 'h', 'g'])
+>>> d.clear()                        # empty the deque
+>>> d.pop()                          # cannot pop from an empty deque
+Traceback (most recent call last):
+  File "<pyshell#6>", line 1, in -toplevel-
+    d.pop()
+IndexError: pop from an empty deque
+
+>>> d.extendleft('abc')              # extendleft() reverses the input order
+>>> d
+deque(['c', 'b', 'a'])
+
+"""
+
+
+#==============================================================================
+
+__test__ = {'libreftest' : libreftest}
+
 def test_main(verbose=None):
     import sys
     from test import test_sets
@@ -394,6 +476,10 @@ def test_main(verbose=None):
             gc.collect()
             counts[i] = sys.gettotalrefcount()
         print counts
+        
+    # doctests
+    from test import test_deque
+    test_support.run_doctest(test_deque, verbose)
 
 if __name__ == "__main__":
     test_main(verbose=True)
