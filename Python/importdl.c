@@ -54,6 +54,10 @@ extern int verbose; /* Defined in pythonrun.c */
 
 /* Configure dynamic linking */
 
+#ifdef __hpux
+#define hpux
+#endif
+
 #ifdef hpux
 #define DYNAMIC_LINK
 #include <errno.h>
