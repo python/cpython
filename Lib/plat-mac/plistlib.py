@@ -20,23 +20,17 @@ dictionaries, Data or datetime.datetime objects. String values (including
 dictionary keys) may be unicode strings -- they will be written out as
 UTF-8.
 
-This module exports a class named Dict(), which allows you to easily
-construct (nested) dicts using keyword arguments as well as accessing
-values with attribute notation, where d.foo is equivalent to d["foo"].
-Regular dictionaries work, too. Dictionaries are always represented with
-Dict instances when loading plist data.
-
 The <data> plist type is supported through the Data class. This is a
 thin wrapper around a Python string.
 
 Generate Plist example:
 
-    pl = Dict(
+    pl = dict(
         aString="Doodah",
         aList=["A", "B", 12, 32.1, [1, 2, 3]],
         aFloat = 0.1,
         anInt = 728,
-        aDict=Dict(
+        aDict=dict(
             anotherString="<hello & hi there!>",
             aUnicodeValue=u'M\xe4ssig, Ma\xdf',
             aTrueValue=True,
@@ -53,9 +47,7 @@ Generate Plist example:
 Parse Plist example:
 
     pl = readPlist(pathOrFile)
-    print pl.aKey  # same as pl["aKey"]
-
-
+    print pl["aKey"]
 """
 
 
@@ -64,7 +56,7 @@ __all__ = [
     "readPlistFromResource", "writePlistToResource",
     "Plist", "Data", "Dict"
 ]
-# Note: the Plist class has been deprecated.
+# Note: the Plist and Dict classes have been deprecated.
 
 import base64
 import datetime
@@ -282,20 +274,26 @@ class PlistWriter(DumbXMLWriter):
         self.endElement("array")
 
 
-class Dict(dict):
+class _InternalDict(dict):
 
-    """Convenience dictionary subclass: it allows attribute notation
-    to retrieve values, making d.foo equivalent to d["foo"].
-    """
+    # This class is needed while Dict is scheduled for deprecation:
+    # we only need to warn when a *user* instantiates Dict or when
+    # the "attribute notation for dict keys" is used.
 
     def __getattr__(self, attr):
         try:
             value = self[attr]
         except KeyError:
             raise AttributeError, attr
+        from warnings import warn
+        warn("Attribute access from plist dicts is deprecated, use d[key] "
+             "notation instead", PendingDeprecationWarning)
         return value
 
     def __setattr__(self, attr, value):
+        from warnings import warn
+        warn("Attribute access from plist dicts is deprecated, use d[key] "
+             "notation instead", PendingDeprecationWarning)
         self[attr] = value
 
     def __delattr__(self, attr):
@@ -303,12 +301,23 @@ class Dict(dict):
             del self[attr]
         except KeyError:
             raise AttributeError, attr
+        from warnings import warn
+        warn("Attribute access from plist dicts is deprecated, use d[key] "
+             "notation instead", PendingDeprecationWarning)
+
+class Dict(_InternalDict):
+
+    def __init__(self, **kwargs):
+        from warnings import warn
+        warn("The plistlib.Dict class is deprecated, use builtin dict instead",
+             PendingDeprecationWarning)
+        super(Dict, self).__init__(**kwargs)
 
 
-class Plist(Dict):
+class Plist(_InternalDict):
 
-    """This class has been deprecated. Use the Dict with readPlist() and
-    writePlist() functions instead.
+    """This class has been deprecated. Use readPlist() and writePlist() 
+    functions instead, together with regular dict objects.
     """
 
     def __init__(self, **kwargs):
@@ -408,7 +417,7 @@ class PlistParser:
     # element handlers
 
     def begin_dict(self, attrs):
-        d = Dict()
+        d = _InternalDict()
         self.addObject(d)
         self.stack.append(d)
     def end_dict(self):
