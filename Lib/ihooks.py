@@ -252,19 +252,22 @@ class ModuleLoader(BasicModuleLoader):
 
     def load_module(self, name, stuff):
 	file, filename, (suff, mode, type) = stuff
-	if type == BUILTIN_MODULE:
-	    return self.hooks.init_builtin(name)
-	if type == FROZEN_MODULE:
-	    return self.hooks.init_frozen(name)
-	if type == C_EXTENSION:
-	    m = self.hooks.load_dynamic(name, filename, file)
-	elif type == PY_SOURCE:
-	    m = self.hooks.load_source(name, filename, file)
-	elif type == PY_COMPILED:
-	    m = self.hooks.load_compiled(name, filename, file)
-	else:
-	    raise ImportError, "Unrecognized module type (%s) for %s" % \
-		  (`type`, name)
+	try:
+	    if type == BUILTIN_MODULE:
+		return self.hooks.init_builtin(name)
+	    if type == FROZEN_MODULE:
+		return self.hooks.init_frozen(name)
+	    if type == C_EXTENSION:
+		m = self.hooks.load_dynamic(name, filename, file)
+	    elif type == PY_SOURCE:
+		m = self.hooks.load_source(name, filename, file)
+	    elif type == PY_COMPILED:
+		m = self.hooks.load_compiled(name, filename, file)
+	    else:
+		raise ImportError, "Unrecognized module type (%s) for %s" % \
+		      (`type`, name)
+	finally:
+	    if file: file.close()
 	m.__file__ = filename
 	return m
 
