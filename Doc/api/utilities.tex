@@ -388,6 +388,53 @@ Interpreter}.
   purpose.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyArg_UnpackTuple}{PyObject *args, char *name,
+                                          int min, int max, \moreargs}
+  A simpler form of parameter retrieval which does not use a format
+  string to specify the types of the arguments.  Functions which use
+  this method to retrieve their parameters should be declared as
+  \constant{METH_VARARGS} in function or method tables.  The tuple
+  containing the actual parameters should be passed as \var{args}; it
+  must actually be a tuple.  The length of the tuple must be at least
+  \var{min} and no more than \var{max}; \var{min} and \var{max} may be
+  equal.  Additional arguments must be passed to the function, each of
+  which should be a pointer to a \ctype{PyObject*} variable; these
+  will be filled in with the values from \var{args}; they will contain
+  borrowed references.  The variables which correspond to optional
+  parameters not given by \var{args} will not be filled in; these
+  should be initialized by the caller.
+  This function returns true on success and false if \var{args} is not
+  a tuple or contains the wrong number of elements; an exception will
+  be set if there was a failure.
+
+  This is an example of the use of this function, taken from the
+  sources for the \module{_weakref} helper module for weak references:
+
+\begin{verbatim}
+static PyObject *
+weakref_ref(PyObject *self, PyObject *args)
+{
+    PyObject *object;
+    PyObject *callback = NULL;
+    PyObject *result = NULL;
+
+    if (PyArg_UnpackTuple(args, "ref", 1, 2, &object, &callback)) {
+        result = PyWeakref_NewRef(object, callback);
+    }
+    return result;
+}
+\end{verbatim}
+
+  The call to \cfunction{PyArg_UnpackTuple()} in this example is
+  entirely equivalent to this call to \cfunction{PyArg_ParseTuple()}:
+
+\begin{verbatim}
+PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
+\end{verbatim}
+
+  \versionadded{2.2}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{Py_BuildValue}{char *format,
                                             \moreargs}
   Create a new value based on a format string similar to those
