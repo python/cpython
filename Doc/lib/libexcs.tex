@@ -10,7 +10,8 @@ Python 1.5 and newer versions, all standard exceptions have been
 converted to class objects, and users are encouraged to do the same.
 The exceptions are defined in the module \module{exceptions}.  This
 module never needs to be imported explicitly: the exceptions are
-provided in the built-in namespace.
+provided in the built-in namespace as well as the \module{exceptions}
+module.
 
 Two distinct string objects with the same value are considered different
 exceptions.  This is done to force programmers to use exception names
@@ -46,6 +47,13 @@ exception handler or to report an error condition ``just like'' the
 situation in which the interpreter raises the same exception; but
 beware that there is nothing to prevent user code from raising an
 inappropriate error.
+
+The built-in exception classes can be sub-classed to define new
+exceptions; programmers are encouraged to at least derive new
+exceptions from the \exception{Exception} base class.  More
+information on defining exceptions is available in the
+\citetitle[../tut/tut.html]{Python Tutorial} under the heading
+``User-defined Exceptions.''
 
 \setindexsubitem{(built-in exception base class)}
 
@@ -254,12 +262,10 @@ Raised when an \keyword{assert} statement fails.
   when reading the initial script or standard input (also
   interactively).
 
-When class exceptions are used, instances of this class have
-atttributes \member{filename}, \member{lineno}, \member{offset} and
-\member{text} for easier access to the details; for string exceptions,
-the associated value is usually a tuple of the form
-\code{(message, (filename, lineno, offset, text))}.
-For class exceptions, \function{str()} returns only the message.
+  Instances of this class have atttributes \member{filename},
+  \member{lineno}, \member{offset} and \member{text} for easier access
+  to the details.  \function{str()} of the exception instance returns
+  only the message.
 \end{excdesc}
 
 \begin{excdesc}{SystemError}
@@ -269,7 +275,7 @@ For class exceptions, \function{str()} returns only the message.
   low-level terms).
   
   You should report this to the author or maintainer of your Python
-  interpreter.  Be sure to report the version string of the Python
+  interpreter.  Be sure to report the version of the Python
   interpreter (\code{sys.version}; it is also printed at the start of an
   interactive Python session), the exact error message (the exception's
   associated value) and if possible the source of the program that
@@ -342,7 +348,7 @@ For class exceptions, \function{str()} returns only the message.
 \end{excdesc}
 
 
-\setindexsubitem{(built-in warning category)}
+\setindexsubitem{(built-in warning)}
 
 The following exceptions are used as warning categories; see the
 \module{warnings} module for more information.
