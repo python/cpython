@@ -21,6 +21,11 @@ Library
 - doctest now excludes functions and classes not defined by the module
   being tested, thanks to Tim Hochberg.
 
+- profile now produces correct output in situations where an exception
+  raised in Python is cleared by C code (e.g. hasattr()).  This used
+  to cause wrong output, including spurious claims of recursive
+  functions and attribution of time spent to the wrong function.
+
 - quopri's encode and decode methods take an optional header parameter,
   which indicates whether output is intended for the header 'Q' encoding.
 
