@@ -288,9 +288,9 @@ class RExec(ihooks._Verbose):
     # Add a module -- return an existing module or create one
 
     def add_module(self, mname):
-        if self.modules.has_key(mname):
-            return self.modules[mname]
-        self.modules[mname] = m = self.hooks.new_module(mname)
+        m = self.modules.get(mname)
+        if m is None:
+            self.modules[mname] = m = self.hooks.new_module(mname)
         m.__builtins__ = self.modules['__builtin__']
         return m
 
