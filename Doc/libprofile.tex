@@ -495,23 +495,12 @@ ordering are identical to the \method{print_callers()} method.
 \end{methoddesc}
 
 \begin{methoddesc}{ignore}{}
-This method of the \class{Stats} class is used to dispose of the value
-returned by earlier methods.  All standard methods in this class
-return the instance that is being processed, so that the commands can
-be strung together.  For example:
-
-\begin{verbatim}
-pstats.Stats('foofile').strip_dirs().sort_stats('cum') \
-                       .print_stats().ignore()
-\end{verbatim}
-
-would perform all the indicated functions, but it would not return
-the final reference to the \class{Stats} instance.%
+\deprecated{1.5.1}{This is not needed in modern versions of Python.%
 \footnote{
 This was once necessary, when Python would print any unused expression
 result that was not \code{None}.  The method is still defined for
 backward compatibility.
-}
+}}
 \end{methoddesc}
 
 
