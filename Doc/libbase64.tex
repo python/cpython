@@ -1,6 +1,9 @@
 \section{Standard Module \sectcode{base64}}
 \label{module-base64}
 \stmodindex{base64}
+\indexii{base-64}{encoding}
+\index{RFC!1421}
+\index{MIME!base 64 encoding}
 
 This module perform base-64 encoding and decoding of arbitrary binary
 strings into text strings that can be safely emailed or posted.  The
@@ -9,13 +12,10 @@ various other Internet-related applications; it is not the same as the
 output produced by the \file{uuencode} program.  For example, the
 string \code{'www.python.org'} is encoded as the string
 \code{'d3d3LnB5dGhvbi5vcmc=\e n'}.  
-\indexii{base-64}{encoding}
-\indexii{RFC}{1421}
-\index{MIME, base 64 encoding}
 
 \renewcommand{\indexsubitem}{(in module base64)}
 
-\begin{funcdesc}{decode}{input\, output}
+\begin{funcdesc}{decode}{input, output}
 Decode the contents of the \var{input} file and write the resulting
 binary data to the \var{output} file.
 \var{input} and \var{output} must either be file objects or objects that
@@ -29,7 +29,7 @@ base-64 encoded data, and return a string containing the resulting
 binary data.
 \end{funcdesc}
 
-\begin{funcdesc}{encode}{input\, output}
+\begin{funcdesc}{encode}{input, output}
 Encode the contents of the \var{input} file and write the resulting
 base-64 encoded data to the \var{output} file.
 \var{input} and \var{output} must either be file objects or objects that
