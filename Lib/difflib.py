@@ -600,7 +600,7 @@ class SequenceMatcher:
         """Return a measure of the sequences' similarity (float in [0,1]).
 
         Where T is the total number of elements in both sequences, and
-        M is the number of matches, this is 2,0*M / T.
+        M is the number of matches, this is 2.0*M / T.
         Note that this is 1 if the sequences are identical, and 0 if
         they have nothing in common.
 
