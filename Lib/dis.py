@@ -99,6 +99,7 @@ def_op('UNARY_NEGATIVE', 11)
 def_op('UNARY_NOT', 12)
 def_op('UNARY_CONVERT', 13)
 def_op('UNARY_CALL', 14)
+def_op('UNARY_INVERT', 15)
 
 def_op('BINARY_MULTIPLY', 20)
 def_op('BINARY_DIVIDE', 21)
@@ -134,8 +135,7 @@ def_op('BREAK_LOOP', 80)
 def_op('RAISE_EXCEPTION', 81)
 def_op('LOAD_LOCALS', 82)
 def_op('RETURN_VALUE', 83)
-def_op('REQUIRE_ARGS', 84)
-def_op('REFUSE_ARGS', 85)
+
 def_op('BUILD_FUNCTION', 86)
 def_op('POP_BLOCK', 87)
 def_op('END_FINALLY', 88)
@@ -152,6 +152,7 @@ name_op('STORE_ATTR', 95)	# Index in name list
 name_op('DELETE_ATTR', 96)	# ""
 name_op('STORE_GLOBAL', 97)	# ""
 name_op('DELETE_GLOBAL', 98)	# ""
+name_op('UNPACK_VARARG', 99)	# Minimal number of arguments
 
 def_op('LOAD_CONST', 100)	# Index in const list 
 hasconst.append(100)
@@ -176,6 +177,12 @@ name_op('LOAD_GLOBAL', 116)	# Index in name list
 jrel_op('SETUP_LOOP', 120)	# Distance to target address
 jrel_op('SETUP_EXCEPT', 121)	# ""
 jrel_op('SETUP_FINALLY', 122)	# ""
+
+def_op('RESERVE_FAST', 123)	# Number of local variables
+hasconst.append(123)
+def_op('LOAD_FAST', 124)	# Local variable number
+def_op('STORE_FAST', 125)	# Local variable number
+def_op('DELETE_FAST', 126)	# Local variable number
 
 def_op('SET_LINENO', 127)	# Current line number
 SET_LINENO = 127
