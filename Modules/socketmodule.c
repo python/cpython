@@ -969,7 +969,7 @@ PySocketSock_sleeptaskw(PySocketSockObject *s,PyObject *args)
 {
  int block;
  int delay_flag;
- if (!PyArg_GetInt(args, &block))
+ if (!PyArg_Parse(args, "i", &block))
   return NULL;
  Py_BEGIN_ALLOW_THREADS
   socketioctl(s->sock_fd, 0x80046679, (u_long*)&block);
