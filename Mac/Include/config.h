@@ -1,10 +1,9 @@
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
 
-/* Define if on Macintosh, compiling with THINK C. */
-#define THINK_C
-
-/* Define if on Macintosh, compiling with anyu C compiler. */
+/* Define if on Macintosh, compiling with any C compiler. */
 #define macintosh
+
+#define HAVE_STDARG_PROTOTYPES 1
 
 /* Define if on AIX 3.
    System headers sometimes define this.
@@ -141,6 +140,9 @@
 
 /* Define if you have setsid.  */
 #undef HAVE_SETSID
+
+/* Define if you have setvbuf.  */
+#define HAVE_SETVBUF 1
 
 /* Define if you have siginterrupt.  */
 #undef HAVE_SIGINTERRUPT
