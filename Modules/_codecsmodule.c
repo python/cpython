@@ -706,6 +706,32 @@ mbcs_encode(PyObject *self,
 #endif /* MS_WINDOWS */
 #endif /* Py_USING_UNICODE */
 
+/* --- Error handler registry --------------------------------------------- */
+
+static PyObject *register_error(PyObject *self, PyObject *args)
+{
+    const char *name;
+    PyObject *handler;
+
+    if (!PyArg_ParseTuple(args, "sO:register_error",
+			  &name, &handler))
+	return NULL;
+    if (PyCodec_RegisterError(name, handler))
+        return NULL;
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *lookup_error(PyObject *self, PyObject *args)
+{
+    const char *name;
+
+    if (!PyArg_ParseTuple(args, "s:lookup_error",
+			  &name))
+	return NULL;
+    return PyCodec_LookupError(name);
+}
+
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
@@ -744,6 +770,8 @@ static PyMethodDef _codecs_functions[] = {
     {"mbcs_decode", 		mbcs_decode,			METH_VARARGS},
 #endif
 #endif /* Py_USING_UNICODE */
+    {"register_error", 		register_error,			METH_VARARGS},
+    {"lookup_error", 		lookup_error,			METH_VARARGS},
     {NULL, NULL}		/* sentinel */
 };
 

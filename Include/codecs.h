@@ -117,6 +117,36 @@ PyAPI_FUNC(PyObject *) PyCodec_StreamWriter(
        const char *errors
        );
 
+/* Unicode encoding error handling callback registry API */
+
+/* Register the error handling callback function error under the name
+   name. This function will be called by the codec when it encounters
+   unencodable characters/undecodable bytes and doesn't know the
+   callback name, when name is specified as the error parameter
+   in the call to the encode/decode function.
+   Return 0 on success, -1 on error */
+PyAPI_FUNC(int) PyCodec_RegisterError(const char *name, PyObject *error);
+
+/* Lookup the error handling callback function registered under the
+   name error. As a special case NULL can be passed, in which case
+   the error handling callback for "strict" will be returned. */
+PyAPI_FUNC(PyObject *) PyCodec_LookupError(const char *name);
+
+/* raise exc as an exception */
+PyAPI_FUNC(PyObject *) PyCodec_StrictErrors(PyObject *exc);
+
+/* ignore the unicode error, skipping the faulty input */
+PyAPI_FUNC(PyObject *) PyCodec_IgnoreErrors(PyObject *exc);
+
+/* replace the unicode error with ? or U+FFFD */
+PyAPI_FUNC(PyObject *) PyCodec_ReplaceErrors(PyObject *exc);
+
+/* replace the unicode encode error with XML character references */
+PyAPI_FUNC(PyObject *) PyCodec_XMLCharRefReplaceErrors(PyObject *exc);
+
+/* replace the unicode encode error with backslash escapes (\x, \u and \U) */
+PyAPI_FUNC(PyObject *) PyCodec_BackslashReplaceErrors(PyObject *exc);
+
 #ifdef __cplusplus
 }
 #endif

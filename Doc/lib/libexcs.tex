@@ -335,6 +335,24 @@ Raised when an \keyword{assert} statement fails.
 \versionadded{2.0}
 \end{excdesc}
 
+\begin{excdesc}{UnicodeEncodeError}
+  Raised when a Unicode-related error occurs during encoding.  It
+  is a subclass of \exception{UnicodeError}.
+\versionadded{2.3}
+\end{excdesc}
+
+\begin{excdesc}{UnicodeDecodeError}
+  Raised when a Unicode-related error occurs during decoding.  It
+  is a subclass of \exception{UnicodeError}.
+\versionadded{2.3}
+\end{excdesc}
+
+\begin{excdesc}{UnicodeTranslateError}
+  Raised when a Unicode-related error occurs during translating.  It
+  is a subclass of \exception{UnicodeError}.
+\versionadded{2.3}
+\end{excdesc}
+
 \begin{excdesc}{ValueError}
   Raised when a built-in operation or function receives an argument
   that has the right type but an inappropriate value, and the
@@ -426,6 +444,9 @@ The class hierarchy for built-in exceptions is:
      |    |    +-- FloatingPointError
      |    +-- ValueError
      |    |    +-- UnicodeError
+     |    |        +-- UnicodeEncodeError
+     |    |        +-- UnicodeDecodeError
+     |    |        +-- UnicodeTranslateError
      |    +-- ReferenceError
      |    +-- SystemError
      |    +-- MemoryError

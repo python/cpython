@@ -17,7 +17,7 @@
 
 This module defines base classes for standard Python codecs (encoders
 and decoders) and provides access to the internal Python codec
-registry which manages the codec lookup process.
+registry which manages the codec and error handling lookup process.
 
 It defines the following functions:
 
@@ -97,6 +97,43 @@ Raises a \exception{LookupError} in case the encoding cannot be found.
 
 To simplify working with encoded files or stream, the module
 also defines these utility functions:
+
+\begin{funcdesc}{register_error}{name, error_handler}
+Register the error handling function \var{error_handler} under the
+name \var{name}. \vari{error_handler} will be called during encoding
+and decoding in case of an error, when \var{name} is specified as the
+errors parameter. \var{error_handler} will be called with an
+\exception{UnicodeEncodeError}, \exception{UnicodeDecodeError} or
+\exception{UnicodeTranslateError} instance and must return a tuple
+with a replacement for the unencodable/undecodable part of the input
+and a position where encoding/decoding should continue.
+\end{funcdesc}
+
+\begin{funcdesc}{lookup_error}{name}
+Return the error handler previously register under the name \var{name}.
+
+Raises a \exception{LookupError} in case the handler cannot be found.
+\end{funcdesc}
+
+\begin{funcdesc}{strict_errors}{exception}
+Implements the \code{strict} error handling.
+\end{funcdesc}
+
+\begin{funcdesc}{replace_errors}{exception}
+Implements the \code{replace} error handling.
+\end{funcdesc}
+
+\begin{funcdesc}{ignore_errors}{exception}
+Implements the \code{ignore} error handling.
+\end{funcdesc}
+
+\begin{funcdesc}{xmlcharrefreplace_errors_errors}{exception}
+Implements the \code{xmlcharrefreplace} error handling.
+\end{funcdesc}
+
+\begin{funcdesc}{backslashreplace_errors_errors}{exception}
+Implements the \code{backslashreplace} error handling.
+\end{funcdesc}
 
 \begin{funcdesc}{open}{filename, mode\optional{, encoding\optional{,
                        errors\optional{, buffering}}}}

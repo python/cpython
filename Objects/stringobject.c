@@ -2468,7 +2468,9 @@ PyDoc_STRVAR(encode__doc__,
 Encodes S using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme. Default is 'strict' meaning that encoding errors raise\n\
-a ValueError. Other possible values are 'ignore' and 'replace'.");
+a UnicodeEncodeError. Other possible values are 'ignore', 'replace' and\n\
+'xmlcharrefreplace' as well as any other name registered with\n\
+codecs.register_error that is able to handle UnicodeEncodeErrors.");
 
 static PyObject *
 string_encode(PyStringObject *self, PyObject *args)
@@ -2487,7 +2489,9 @@ PyDoc_STRVAR(decode__doc__,
 Decodes S using the codec registered for encoding. encoding defaults\n\
 to the default encoding. errors may be given to set a different error\n\
 handling scheme. Default is 'strict' meaning that encoding errors raise\n\
-a ValueError. Other possible values are 'ignore' and 'replace'.");
+a UnicodeDecodeError. Other possible values are 'ignore' and 'replace'\n\
+as well as any other name registerd with codecs.register_error that is\n\
+able to handle UnicodeDecodeErrors.");
 
 static PyObject *
 string_decode(PyStringObject *self, PyObject *args)

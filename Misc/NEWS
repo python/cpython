@@ -57,6 +57,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Codec error handling callbacks (PEP 293) are implemented.
+  Error handling in unicode.encode or str.decode can now be customized.
+
 - A subtle change to the semantics of the built-in function intern():
   interned strings are no longer immortal.  You must keep a reference
   to the return value intern() around to get the benefit.
