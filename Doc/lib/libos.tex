@@ -85,6 +85,7 @@ doesn't have a \code{'PATH'} key.
 \end{datadesc}
 
 \begin{funcdesc}{makedirs}{path\optional{, mode}}
+\versionadded{1.5.2}
 Recursive directory creation function.  Like \function{mkdir()},
 but makes all intermediate-level directories needed to contain the
 leaf directory.  Throws an \exception{os.error} exception if the leaf
@@ -93,6 +94,7 @@ is \code{0777} (octal).
 \end{funcdesc}
 
 \begin{funcdesc}{removedirs}{path}
+\versionadded{1.5.2}
 Recursive directory removal function.  Works like
 \function{rmdir()} except that, if the leaf directory is
 successfully removed, directories corresponding to rightmost path
@@ -103,6 +105,7 @@ exception if the leaf directory could not be successfully removed.
 \end{funcdesc}
 
 \begin{funcdesc}{renames}{path}
+\versionadded{1.5.2}
 Recursive directory or file renaming function.
 Works like \function{rename()}, except creation of any intermediate
 directories needed to make the new pathname good is attempted first.
