@@ -1887,8 +1887,26 @@ setup(name='foobar',
 %\section{Putting it all together}
 
 
-%\chapter{Extending the Distutils}
-%\label{extending}
+\chapter{Extending Distutils \label{extending}}
+
+Distutils can be extended in various ways.  Most extensions take the
+form of new commands or replacements for existing commands.  New
+commands may be written to support new types of platform-specific
+packaging, for example, while replacements for existing commands may
+be made to modify details of how the command operates on a package.
+
+Most extensions of the distutils are made within \file{setup.py}
+scripts that want to modify existing commands; many simply add a few
+file extensions that should be copied into packages in addition to
+\file{.py} files as a convenience.
+
+Most distutils command implementations are subclasses of the
+\class{Command} class from \refmodule{distutils.cmd}.  New commands
+may directly inherit from \class{Command}, while replacements often
+derive from \class{Command} indirectly, directly subclassing the
+command they are replacing.  Commands are not required to derive from
+\class{Command}, but must implement the interface documented as part
+of that class.
 
 
 %\section{Extending existing commands}
@@ -1900,6 +1918,34 @@ setup(name='foobar',
 
 %\XXX{Would an uninstall command be a good example here?}
 
+\section{Integrating new commands}
+
+There are different ways to integrate new command implementations into
+distutils.  The most difficult is to lobby for the inclusion of the
+new features in distutils itself, and wait for (and require) a version
+of Python that provides that support.  This is really hard for many
+reasons.
+
+The most common, and possibly the most reasonable for most needs, is
+to include the new implementations with your \file{setup.py} script,
+and cause the \function{distutils.core.setup()} function use them:
+
+\begin{verbatim}
+from distutils.command.build_py import build_py as _build_py
+from distutils.core import setup
+
+class build_py(_build_py):
+    """Specialized Python source builder."""
+
+    # implement whatever needs to be different...
+
+setup(cmdclass={'build_py': build_py},
+      ...)
+\end{verbatim}
+
+This approach is most valuable if the new implementations must be used
+to use a particular package, as everyone interested in the package
+will need to have the new command implementation.
 
 
 \chapter{Command Reference}
