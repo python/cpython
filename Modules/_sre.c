@@ -65,36 +65,39 @@ static char copyright[] =
 
 /* prevent run-away recursion (bad patterns on long strings) */
 
-#if !defined(USE_STACKCHECK)
-#if defined(MS_WIN64) || defined(__LP64__) || defined(_LP64)
-/* require smaller recursion limit for a number of 64-bit platforms:
-   Win64 (MS_WIN64), Linux64 (__LP64__), Monterey (64-bit AIX) (_LP64) */
-/* FIXME: maybe the limit should be 40000 / sizeof(void*) ? */
-#define USE_RECURSION_LIMIT 7500
+#ifndef USE_STACKCHECK
+    #if defined(MS_WIN64) || defined(__LP64__) || defined(_LP64)
+        /* require smaller recursion limit for a number of 64-bit platforms:
+         * Win64 (MS_WIN64), Linux64 (__LP64__), Monterey (64-bit AIX) (_LP64)
+         */
+        /* FIXME: maybe the limit should be 40000 / sizeof(void*) ? */
+        #define USE_RECURSION_LIMIT 7500
 
-#elif defined(__FreeBSD__)
-/* FreeBSD/amd64 and /sparc64 require even smaller limits */
-#if defined(__amd64__)
-#define USE_RECURSION_LIMIT 6000
-#elif defined(__sparc64__)
-#define USE_RECURSION_LIMIT 3000
-#elif defined(__GNUC__) && defined(WITH_THREAD)
-/* the pthreads library on FreeBSD has a fixed 1MB stack size for the
- * initial (or "primary") thread, which is insufficient for the default
- * recursion limit.  gcc 3.x at the default optimisation
- * level (-O3) uses stack space more aggressively than gcc 2.95.
- */
-#if (__GNUC__ > 2)
-#define USE_RECURSION_LIMIT 6500
-#else
-#define USE_RECURSION_LIMIT 7500
-#endif
+    #elif defined(__FreeBSD__)
+        /* FreeBSD/amd64 and /sparc64 require even smaller limits */
+        #if defined(__amd64__)
+            #define USE_RECURSION_LIMIT 6000
+        #elif defined(__sparc64__)
+            #define USE_RECURSION_LIMIT 3000
+        #elif defined(__GNUC__) && defined(WITH_THREAD)
+            /* the pthreads library on FreeBSD has a fixed 1MB stack size for
+             * the initial (or "primary") thread, which is insufficient for
+             * the default recursion limit.  gcc 3.x at the default
+             * optimisation level (-O3) uses stack space more aggressively
+             * than gcc 2.95.
+             */
+            #if (__GNUC__ > 2)
+                #define USE_RECURSION_LIMIT 6500
+            #else
+                #define USE_RECURSION_LIMIT 7500
+            #endif
+        #endif
+    #endif 	/* special cases for USE_RECURSION_LIMIT */
 
-#else
-#define USE_RECURSION_LIMIT 10000
-#endif
-#endif
-#endif
+    #ifndef USE_RECURSION_LIMIT		/* default if not overriden above */
+        #define USE_RECURSION_LIMIT 10000
+    #endif
+#endif	/* !USE_STACKCHECK */
 
 /* enables fast searching */
 #define USE_FAST_SEARCH
@@ -209,7 +212,7 @@ static unsigned int sre_lower_unicode(unsigned int ch)
     return (unsigned int) Py_UNICODE_TOLOWER((Py_UNICODE)(ch));
 }
 
-#endif
+#endif	/* HAVE_UNICODE */
 
 LOCAL(int)
 sre_category(SRE_CODE category, unsigned int ch)
@@ -525,7 +528,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
                 if (ch < 256 && (set[ch >> 4] & (1 << (ch & 15))))
                     return ok;
                 set += 16;
-            } 
+            }
             else {
                 /* <CHARSET> <bitmap> (32 bits per code word) */
                 if (ch < 256 && (set[ch >> 5] & (1 << (ch & 31))))
@@ -553,7 +556,7 @@ SRE_CHARSET(SRE_CODE* set, SRE_CODE ch)
                 else
                     block = -1;
                 set += 64;
-                if (block >=0 && 
+                if (block >=0 &&
                     (set[block*8 + ((ch & 255)>>5)] & (1 << (ch & 31))))
                     return ok;
                 set += count*8;
@@ -636,7 +639,7 @@ SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount, int level)
         while (ptr < end && (SRE_CODE) *ptr != chr)
             ptr++;
         break;
-                
+
     case SRE_OP_NOT_LITERAL_IGNORE:
         /* repeated non-literal */
         chr = pattern[1];
@@ -719,7 +722,7 @@ SRE_INFO(SRE_STATE* state, SRE_CODE* pattern)
  * - Recursive SRE_MATCH() returned false, and will continue the
  *   outside 'for' loop: must be protected when breaking, since the next
  *   OP could potentially depend on lastmark;
- *   
+ *
  * - Recursive SRE_MATCH() returned false, and will be called again
  *   inside a local for/while loop: must be protected between each
  *   loop iteration, since the recursive SRE_MATCH() could do anything,
@@ -1107,7 +1110,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 if (count < 0)
                     return count;   /* exception */
                 if (count < (int) pattern[1])
-                    return 0;       /* did not match minimum number of times */ 
+                    return 0;       /* did not match minimum number of times */
                 ptr += count;       /* advance past minimum matches of repeat */
             }
 
@@ -1357,7 +1360,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
                     }
                     break;
                 }
-                
+
             }
             ptr++;
         }
@@ -1412,7 +1415,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 
     return status;
 }
-    
+
 LOCAL(int)
 SRE_LITERAL_TEMPLATE(SRE_CHAR* ptr, int len)
 {
@@ -1534,7 +1537,7 @@ getstring(PyObject* string, int* p_length, int* p_charsize)
     /* given a python object, return a data pointer, a length (in
        characters), and a character size.  return NULL if the object
        is not a string (or not compatible) */
-    
+
     PyBufferProcs *buffer;
     int size, bytes, charsize;
     void* ptr;
@@ -2010,7 +2013,7 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
     while (state.start <= state.end) {
 
         PyObject* item;
-        
+
         state_reset(&state);
 
         state.ptr = state.start;
@@ -2029,7 +2032,7 @@ pattern_findall(PatternObject* self, PyObject* args, PyObject* kw)
             pattern_error(status);
             goto error;
         }
-        
+
         /* don't bother to build a match object */
         switch (self->groups) {
         case 0:
@@ -2078,7 +2081,7 @@ error:
     Py_DECREF(list);
     state_fini(&state);
     return NULL;
-    
+
 }
 
 #if PY_VERSION_HEX >= 0x02020000
@@ -2156,7 +2159,7 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
             pattern_error(status);
             goto error;
         }
-        
+
         if (state.start == state.ptr) {
             if (last == state.end)
                 break;
@@ -2212,7 +2215,7 @@ error:
     Py_DECREF(list);
     state_fini(&state);
     return NULL;
-    
+
 }
 
 static PyObject*
@@ -2303,7 +2306,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
             pattern_error(status);
             goto error;
         }
-        
+
         b = STATE_OFFSET(&state, state.start);
         e = STATE_OFFSET(&state, state.ptr);
 
@@ -2349,7 +2352,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
             if (status < 0)
                 goto error;
         }
-        
+
         i = e;
         n = n + 1;
 
@@ -2393,7 +2396,7 @@ error:
     state_fini(&state);
     Py_DECREF(filter);
     return NULL;
-    
+
 }
 
 static PyObject*
@@ -2433,7 +2436,7 @@ pattern_copy(PatternObject* self, PyObject* args)
 
     if (args != Py_None && !PyArg_ParseTuple(args, ":__copy__"))
         return NULL;
-    
+
     copy = PyObject_NEW_VAR(PatternObject, &Pattern_Type, self->codesize);
     if (!copy)
         return NULL;
@@ -2459,7 +2462,7 @@ pattern_deepcopy(PatternObject* self, PyObject* args)
 {
 #ifdef USE_BUILTIN_COPY
     PatternObject* copy;
-    
+
     PyObject* memo;
     if (!PyArg_ParseTuple(args, "O:__deepcopy__", &memo))
         return NULL;
@@ -2497,7 +2500,7 @@ static PyMethodDef pattern_methods[] = {
     {NULL, NULL}
 };
 
-static PyObject*  
+static PyObject*
 pattern_getattr(PatternObject* self, char* name)
 {
     PyObject* res;
@@ -2858,7 +2861,7 @@ match_copy(MatchObject* self, PyObject* args)
 #ifdef USE_BUILTIN_COPY
     MatchObject* copy;
     int slots, offset;
-    
+
     if (args != Py_None && !PyArg_ParseTuple(args, ":__copy__"))
         return NULL;
 
@@ -2891,7 +2894,7 @@ match_deepcopy(MatchObject* self, PyObject* args)
 {
 #ifdef USE_BUILTIN_COPY
     MatchObject* copy;
-    
+
     PyObject* memo;
     if (!PyArg_ParseTuple(args, "O:__deepcopy__", &memo))
         return NULL;
@@ -2926,7 +2929,7 @@ static PyMethodDef match_methods[] = {
     {NULL, NULL}
 };
 
-static PyObject*  
+static PyObject*
 match_getattr(MatchObject* self, char* name)
 {
     PyObject* res;
@@ -3084,7 +3087,7 @@ static PyMethodDef scanner_methods[] = {
     {NULL, NULL}
 };
 
-static PyObject*  
+static PyObject*
 scanner_getattr(ScannerObject* self, char* name)
 {
     PyObject* res;
@@ -3121,7 +3124,7 @@ static PyMethodDef _functions[] = {
     {NULL, NULL}
 };
 
-#if PY_VERSION_HEX < 0x02030000 
+#if PY_VERSION_HEX < 0x02030000
 DL_EXPORT(void) init_sre(void)
 #else
 PyMODINIT_FUNC init_sre(void)
