@@ -101,8 +101,8 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
             self._parser.EndElementHandler = self.end_element_ns
         else:
             self._parser = pyexpat.ParserCreate()
-            self._parser.StartElementHandler = self._cont_handler.startElement
-            self._parser.EndElementHandler = self._cont_handler.endElement
+            self._parser.StartElementHandler = self.start_element
+            self._parser.EndElementHandler = self.end_element
 
         self._parser.ProcessingInstructionHandler = \
                                     self._cont_handler.processingInstruction
@@ -133,25 +133,22 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
     def getSystemId(self):
         return self._parser.GetBase()
     
-    # internal methods
-
     # event handlers
-
     def start_element(self, name, attrs):
-        self._cont_handler.startElement(name, 
+        self._cont_handler.startElement(name, name,
                                  xmlreader.AttributesImpl(attrs, attrs))
 
     def end_element(self, name):
-        self._cont_handler.endElement(name)
+        self._cont_handler.endElement( name, name )
 
     def start_element_ns(self, name, attrs):
         pair = split(name)
         if len(pair) == 1:
-            tup = (None, name, None)
+            tup = (None, name )
         else:
-            tup = pair+[None] # prefix is not implemented yet!
+            tup = pair
 
-        self._cont_handler.startElement(tup,
+        self._cont_handler.startElement(tup, None,
                                         xmlreader.AttributesImpl(attrs, None))        
 
     def end_element_ns(self, name):
@@ -161,11 +158,13 @@ class ExpatParser( xmlreader.IncrementalParser, xmlreader.Locator ):
         else:
             name = pair+[None] # prefix is not implemented yet!
             
-        self._cont_handler.endElement(name)
+        self._cont_handler.endElement(name, None)
 
+    # this is not used
     def processing_instruction(self, target, data):
         self._cont_handler.processingInstruction(target, data)
 
+    # this is not used
     def character_data(self, data):
         self._cont_handler.characters(data)
 
