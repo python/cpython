@@ -16,15 +16,16 @@ TEXINPUTS=$srcdir/$part:$TEXINPUTS
 export TEXINPUTS
 
 if [ -d $part ] ; then
-    (set -x; rm -f $part/*.html)
+    rm -f $part/*.html
 fi
 
-set -x
-
+echo "latex2html -init_file $srcdir/perl/l2hinit.perl ${1:+$@} " \
+ "$srcdir/$part/$part.tex"
 latex2html \
  -init_file $srcdir/perl/l2hinit.perl \
  ${1:+$@} \
  $srcdir/$part/$part.tex
 
+echo '(cd '$part'; '$srcdir'/tools/node2label.pl *.html)'
 cd $part
 $srcdir/tools/node2label.pl *.html
