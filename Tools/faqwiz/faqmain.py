@@ -4,6 +4,8 @@
 
 XXX TO DO
 
+- generic error handler
+- should have files containing section headers
 - customize rcs command pathnames
 - recognize urls and email addresses and turn them into <A> tags
 - use cookies to keep Name/email the same
@@ -12,10 +14,8 @@ XXX TO DO
 - create new sections
 - rearrange entries
 - delete entries
-- log changes
 - send email on changes
 - optional staging of entries until reviewed?
-- review revision log and older versions
 - freeze entries
 - username/password for editors
 - Change references to other Q's and whole sections
@@ -24,8 +24,6 @@ XXX TO DO
 - support adding annotations, too
 
 """
-
-import cgi, string, os, sys
 
 NAMEPAT = "faq??.???.htp"
 NAMEREG = "^faq\([0-9][0-9]\)\.\([0-9][0-9][0-9]\)\.htp$"
@@ -44,9 +42,11 @@ class FAQServer:
 	    print "Unrecognized request type", req
 	else:
 	    method()
+	    self.epilogue()
 
     KEYS = ['req', 'query', 'name', 'text', 'commit', 'title',
-	    'author', 'email', 'log', 'section', 'number', 'add']
+	    'author', 'email', 'log', 'section', 'number', 'add',
+	    'version']
 
     def __getattr__(self, key):
 	if key not in self.KEYS:
@@ -59,9 +59,8 @@ class FAQServer:
 	    return ''
 
     def do_frontpage(self):
+	self.prologue("Python FAQ (alpha) Front Page")
 	print """
-	<TITLE>Python FAQ (alpha 1)</TITLE>
-	<H1>Python FAQ Front Page</H1>
 	<UL>
 	<LI><A HREF="faq.py?req=index">FAQ index</A>
 	<LI><A HREF="faq.py?req=all">The whole FAQ</A>
@@ -83,10 +82,7 @@ class FAQServer:
 	"""
 
     def do_index(self):
-	print """
-	<TITLE>Python FAQ Index</TITLE>
-	<H1>Python FAQ Index</H1>
-	"""
+	self.prologue("Python FAQ Index")
 	names = os.listdir(os.curdir)
 	names.sort()
 	section = None
@@ -128,11 +124,8 @@ class FAQServer:
 	self.show(name, headers['title'], text, 1)
 
     def do_all(self):
-	print """
-	<TITLE>Python FAQ</TITLE>
-	<H1>Python FAQ</H1>
-	<HR>
-	"""
+	self.prologue("The Whole Python FAQ")
+	print "<HR>"
 	names = os.listdir(os.curdir)
 	names.sort()
 	section = None
@@ -152,9 +145,8 @@ class FAQServer:
 
     def do_roulette(self):
 	import whrandom
+	self.prologue("Python FAQ Roulette")
 	print """
-	<TITLE>Python FAQ Roulette</TITLE>
-	<H1>Python FAQ Roulette</H1>
 	Please check the correctness of the entry below.
 	If you find any problems, please edit the entry.
 	<P>
@@ -189,11 +181,8 @@ class FAQServer:
 	    list.append(tuple)
 	list.sort()
 	list.reverse()
-	print """
-	<TITLE>Python FAQ, Most Recently Modified First</TITLE>
-	<H1>Python FAQ, Most Recently Modified First</H1>
-	<HR>
-	"""
+	self.prologue("Python FAQ, Most Recently Modified First")
+	print "<HR>"
 	n = 0
 	for (mtime, name) in list:
 	    headers, text = self.read(name)
@@ -205,8 +194,7 @@ class FAQServer:
 
     def do_query(self):
 	import regex
-	print "<TITLE>Python FAQ Query Results</TITLE>"
-	print "<H1>Python FAQ Query Results</H1>"
+	self.prologue("Python FAQ Query Results")
 	query = self.query
 	if not query:
 	    print "No query string"
@@ -229,10 +217,8 @@ class FAQServer:
     def do_add(self):
 	section = self.section
 	if not section:
+	    self.prologue("How to add a new FAQ entry")
 	    print """
-	    <TITLE>How to add a new FAQ entry</TITLE>
-	    <H1>How to add a new FAQ entry</H1>
-
 	    Go to the <A HREF="faq.py?req=index">FAQ index</A>
 	    and click on the "Add new entry" link at the end
 	    of the section to which you want to add the entry.
@@ -269,11 +255,9 @@ class FAQServer:
 	if not headers:
 	    print "Invalid file name", name
 	    return
-	print """
-	<TITLE>Python FAQ Edit Form</TITLE>
-	<H1>Python FAQ Edit Form</H1>
-	"""
+	self.prologue("Python FAQ Edit Form")
 	title = headers['title']
+	version = self.getversion(name)
 	print "<FORM METHOD=POST ACTION=faq.py>"
 	self.showedit(name, title, text)
 	if self.add:
@@ -286,9 +270,10 @@ class FAQServer:
 	<INPUT TYPE=submit VALUE="Review Edit">
 	<INPUT TYPE=hidden NAME=req VALUE=review>
 	<INPUT TYPE=hidden NAME=name VALUE=%s>
+	<INPUT TYPE=hidden NAME=version VALUE=%s>
 	</FORM>
 	<HR>
-	""" % name
+	""" % (name, version)
 	self.show(name, title, text)
 
     def do_review(self):
@@ -302,11 +287,8 @@ class FAQServer:
 	if not headers:
 	    print "Invalid file name", name
 	    return
-	print """
-	<TITLE>Python FAQ Review Form</TITLE>
-	<H1>Python FAQ Review Form</H1>
-	<HR>
-	"""
+	self.prologue("Python FAQ Review Form")
+	print "<HR>"
 	self.show(name, title, text)
 	print "<FORM METHOD=POST ACTION=faq.py>"
 	if self.log and self.author and '@' in self.email:
@@ -337,9 +319,10 @@ class FAQServer:
 	<INPUT TYPE=submit VALUE="Review Edit">
 	<INPUT TYPE=hidden NAME=req VALUE=review>
 	<INPUT TYPE=hidden NAME=name VALUE=%s>
+	<INPUT TYPE=hidden NAME=version VALUE=%s>
 	</FORM>
 	<HR>
-	""" % name
+	""" % (name, self.version)
 
     def do_info(self):
 	name = self.name
@@ -371,6 +354,14 @@ class FAQServer:
 	headers, oldtext = self.read(name)
 	if not headers:
 	    print "Invalid file name", name
+	    return
+	version = self.version
+	curversion = self.getversion(name)
+	if version != curversion:
+	    print "Version conflict."
+	    print "You edited version %s but current version is %s." % (
+		version, curversion)
+	    print '<A HREF="faq.py?req=show&name=%s">Reload.</A>' % name
 	    return
 	text = self.text
 	title = self.title
@@ -454,11 +445,8 @@ class FAQServer:
 	output = p.read()
 	sts = p.close()
 	if not sts:
-	    print """
-	    <TITLE>Python FAQ Entry Edited</TITLE>
-	    <H1>Python FAQ Entry Edited</H1>
-	    <HR>
-	    """
+	    self.prologue("Python FAQ Entry Edited")
+	    print "<HR>"
 	    self.show(name, title, text, 1)
 	    if output:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
@@ -549,12 +537,48 @@ class FAQServer:
 	    print '<P>'
 	print "<HR>"
 
+    def getversion(self, name):
+	p = os.popen("/depot/gnu/plat/bin/rlog -h %s </dev/null 2>&1" % name)
+	head = ""
+	while 1:
+	    line = p.readline()
+	    if not line:
+		break
+	    if line[:5] == 'head:':
+		head = string.strip(line[5:])
+	p.close()
+	return head
+
+    def prologue(self, title):
+	title = cgi.escape(title)
+	print '''\
+	<HTML>
+	<HEAD>
+	<TITLE>%s</TITLE>
+	</HEAD>
+	<BODY BACKGROUND="http://www.python.org/pics/RedShort.gif"
+	      BGCOLOR="#FFFFFF"
+	      TEXT="#000000"
+	      LINK="#AA0000"
+	      VLINK="#906A6A">
+	<H1>%s</H1>
+	''' % (title, title)
+
+    def epilogue(self):
+	print '''
+	<P>
+	<HR>
+	<A HREF="mailto:guido@python.org">GvR</A>
+	</BODY>
+	</HTML>
+	'''
 
 print "Content-type: text/html\n"
 dt = 0
 try:
     import time
     t1 = time.time()
+    import cgi, string, os, sys
     x = FAQServer()
     x.main()
     t2 = time.time()
@@ -562,4 +586,4 @@ try:
 except:
     print "<HR>Sorry, an error occurred"
     cgi.print_exception()
-print "<P>(time = %s seconds)" % str(round(dt, 3))
+print "<P>(running time = %s seconds)" % str(round(dt, 3))
