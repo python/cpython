@@ -21,11 +21,11 @@ class TestMacfs(unittest.TestCase):
 
     def test_fsspec(self):
         fss = macfs.FSSpec(test_support.TESTFN)
-        self.assertEqual(os.path.abspath(test_support.TESTFN), fss.as_pathname())
+        self.assertEqual(os.path.realpath(test_support.TESTFN), fss.as_pathname())
         
     def test_fsref(self):
         fsr = macfs.FSRef(test_support.TESTFN)
-        self.assertEqual(os.path.abspath(test_support.TESTFN), fsr.as_pathname())
+        self.assertEqual(os.path.realpath(test_support.TESTFN), fsr.as_pathname())
         
     def test_coercion(self):
         fss = macfs.FSSpec(test_support.TESTFN)
