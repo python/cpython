@@ -852,7 +852,7 @@ int get_int(PyObject *exc, const char *name, int *value)
     if (!attr)
 	return -1;
     if (!PyInt_Check(attr)) {
-	PyErr_Format(PyExc_TypeError, "%s attribute must be int", name);
+	PyErr_Format(PyExc_TypeError, "%.200s attribute must be int", name);
 	Py_DECREF(attr);
 	return -1;
     }
@@ -884,7 +884,7 @@ PyObject *get_string(PyObject *exc, const char *name)
     if (!attr)
 	return NULL;
     if (!PyString_Check(attr)) {
-	PyErr_Format(PyExc_TypeError, "%s attribute must be str", name);
+	PyErr_Format(PyExc_TypeError, "%.200s attribute must be str", name);
 	Py_DECREF(attr);
 	return NULL;
     }
@@ -914,7 +914,7 @@ PyObject *get_unicode(PyObject *exc, const char *name)
     if (!attr)
 	return NULL;
     if (!PyUnicode_Check(attr)) {
-	PyErr_Format(PyExc_TypeError, "%s attribute must be unicode", name);
+	PyErr_Format(PyExc_TypeError, "%.200s attribute must be unicode", name);
 	Py_DECREF(attr);
 	return NULL;
     }
