@@ -214,6 +214,51 @@ class Distribution:
                 else:
                     sys.stderr.write(msg + "\n")
 
+            # Build up the requires sequence
+            from distutils.version import LooseVersion
+            requires = attrs.get('requires')
+            if requires:
+                if isinstance(requires, type('')):
+                    raise DistutilsOptionError, 'requires should be a sequence'
+                newreq = []
+                for req in requires:
+                    if '-' not in req:
+                        # We have a plain package name - any version will do
+                        newreq.append((req,None))
+                    else:
+                        pkg, ver = string.split(req, '-', 1)
+                        newreq.append((pkg, LooseVersion(ver)))
+                attrs['requires'] = newreq
+
+            # Build up the provides object. If the setup() has no 
+            # provides line, we use packages or modules and the version
+            # to synthesise the provides. If no version is provided (no
+            # pun intended) we don't have a provides entry at all.
+            provides = attrs.get('provides')
+            if provides:
+                if isinstance(provides, type('')):
+                    raise DistutilsOptionError, 'provides should be a sequence'
+                newprov = []
+                for prov in provides:
+                    if '-' not in prov:
+                        # We have a plain package name - any version will do
+                        newprov.append((prov,None))
+                    else:
+                        pkg, ver = string.split(prov, '-', 1)
+                        newprov.append((pkg, LooseVersion(ver)))
+                attrs['provides'] = newprov
+            elif attrs.get('version'):
+                # Build a provides line
+                prov = []
+                if attrs.get('packages'):
+                    for pkg in attrs['packages']:
+                        pkg = string.replace(pkg, '/', '.')
+                        prov.append('%s-%s'%(pkg, attrs['version']))
+                elif attrs.get('modules'):
+                    for mod in attrs['modules']:
+                        prov.append('%s-%s'%(mod, attrs['version']))
+                attrs['provides'] = prov
+
             # Now work on the rest of the attributes.  Any attribute that's
             # not already defined is invalid!
             for (key,val) in attrs.items():
@@ -974,7 +1019,7 @@ class DistributionMetadata:
                          "license", "description", "long_description",
                          "keywords", "platforms", "fullname", "contact",
                          "contact_email", "license", "classifiers",
-                         "download_url")
+                         "download_url", "provides", "requires",)
 
     def __init__ (self):
         self.name = None
@@ -991,6 +1036,8 @@ class DistributionMetadata:
         self.platforms = None
         self.classifiers = None
         self.download_url = None
+        self.requires = []
+        self.provides = []
 
     def write_pkg_info (self, base_dir):
         """Write the PKG-INFO file into the release tree.
@@ -1006,6 +1053,10 @@ class DistributionMetadata:
         pkg_info.write('Author: %s\n' % self.get_contact() )
         pkg_info.write('Author-email: %s\n' % self.get_contact_email() )
         pkg_info.write('License: %s\n' % self.get_license() )
+        for req in self.get_requires():
+            pkg_info.write('Requires: %s\n' % req )
+        for prov in self.get_provides():
+            pkg_info.write('Provides: %s\n' % prov )
         if self.download_url:
             pkg_info.write('Download-URL: %s\n' % self.download_url)
 
@@ -1083,6 +1134,13 @@ class DistributionMetadata:
 
     def get_download_url(self):
         return self.download_url or "UNKNOWN"
+
+    def get_requires(self):
+        return [ '%s%s%s'%(x, (y and '-') or '', y or '') 
+                                                for x,y in self.requires ]
+
+    def get_provides(self):
+        return self.provides
 
 # class DistributionMetadata
 

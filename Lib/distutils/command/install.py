@@ -126,6 +126,8 @@ class install (Command):
          "force installation (overwrite any existing files)"),
         ('skip-build', None,
          "skip rebuilding everything (for testing/debugging)"),
+        ('skip-checkdep', None,
+         "skip checking dependencies (use at own risk)"),
 
         # Where to install documentation (eventually!)
         #('doc-format=', None, "format of documentation to generate"),
@@ -183,12 +185,15 @@ class install (Command):
 
         # 'force' forces installation, even if target files are not
         # out-of-date.  'skip_build' skips running the "build" command,
-        # handy if you know it's not necessary.  'warn_dir' (which is *not*
+        # handy if you know it's not necessary.  'skip_checkdep' skips
+        # the 'checkdep' command, if you are sure you can work around the
+        # dependency failure in another way. 'warn_dir' (which is *not*
         # a user option, it's just there so the bdist_* commands can turn
         # it off) determines whether we warn about installing to a
         # directory not in sys.path.
         self.force = 0
         self.skip_build = 0
+        self.skip_checkdep = 0
         self.warn_dir = 1
 
         # These are only here as a conduit from the 'build' command to the
@@ -499,6 +504,12 @@ class install (Command):
         # Obviously have to build before we can install
         if not self.skip_build:
             self.run_command('build')
+
+        # We check dependencies before we install
+        # For now, this is disabled. Before 2.4 is released, this will
+        # be turned on.
+        #if not self.skip_checkdep:
+        #    self.run_command('checkdep')
 
         # Run all sub-commands (at least those that need to be run)
         for cmd_name in self.get_sub_commands():
