@@ -42,7 +42,7 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             except:
                 # report exception back to server
                 response = xmlrpclib.dumps(
-                    xmlrpclib.Fault(1, "%s:%s" % (sys.exc_type, sys.exc_value))
+                    xmlrpclib.Fault(1, "%s:%s" % sys.exc_info()[:2])
                     )
             else:
                 response = xmlrpclib.dumps(
