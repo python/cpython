@@ -218,20 +218,34 @@ class Header:
             charset = self._charset
         elif not isinstance(charset, Charset):
             charset = Charset(charset)
-        # Normalize and check the string
-        if isinstance(s, StringType):
-            # Possibly raise UnicodeError if it can't be encoded
-            unicode(s, charset.get_output_charset())
-        elif isinstance(s, UnicodeType):
-            # Convert Unicode to byte string for later concatenation
-            for charset in USASCII, charset, UTF8:
-                try:
-                    s = s.encode(charset.get_output_charset())
-                    break
-                except UnicodeError:
-                    pass
-            else:
-                assert False, 'Could not encode to utf-8'
+        # If the charset is our faux 8bit charset, leave the string unchanged
+        if charset <> '8bit':
+            # We need to test that the string can be converted to unicode and
+            # back to a byte string, given the input and output codecs of the
+            # charset.
+            if isinstance(s, StringType):
+                # Possibly raise UnicodeError if the byte string can't be
+                # converted to a unicode with the input codec of the charset.
+                incodec = charset.input_codec or 'us-ascii'
+                ustr = unicode(s, incodec)
+                # Now make sure that the unicode could be converted back to a
+                # byte string with the output codec, which may be different
+                # than the iput coded.  Still, use the original byte string.
+                outcodec = charset.output_codec or 'us-ascii'
+                ustr.encode(outcodec)
+            elif isinstance(s, UnicodeType):
+                # Now we have to be sure the unicode string can be converted
+                # to a byte string with a reasonable output codec.  We want to
+                # use the byte string in the chunk.
+                for charset in USASCII, charset, UTF8:
+                    try:
+                        outcodec = charset.output_codec or 'us-ascii'
+                        s = s.encode(outcodec)
+                        break
+                    except UnicodeError:
+                        pass
+                else:
+                    assert False, 'utf-8 conversion failed'
         self._chunks.append((s, charset))
 
     def _split(self, s, charset, firstline=False):
