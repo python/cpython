@@ -19,6 +19,8 @@ Core
   arguments:
     filter()
     list()
+    max()
+    min()
 
 
 What's New in Python 2.1 (final)?

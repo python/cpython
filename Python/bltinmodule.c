@@ -1444,30 +1444,37 @@ static PyObject *
 min_max(PyObject *args, int op)
 {
 	int i;
-	PyObject *v, *w, *x;
-	PySequenceMethods *sq;
+	PyObject *v, *w, *x, *it;
 
 	if (PyTuple_Size(args) > 1)
 		v = args;
 	else if (!PyArg_ParseTuple(args, "O:min/max", &v))
 		return NULL;
-	sq = v->ob_type->tp_as_sequence;
-	if (sq == NULL || sq->sq_item == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"min() or max() arg must be a sequence");
+	
+	it = PyObject_GetIter(v);
+	if (it == NULL)
 		return NULL;
-	}
-	w = NULL;
+
+	w = NULL;  /* the result */
 	for (i = 0; ; i++) {
-		x = (*sq->sq_item)(v, i); /* Implies INCREF */
+		x = PyIter_Next(it);
 		if (x == NULL) {
-			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
-				PyErr_Clear();
-				break;
+			/* We're out of here in any case, but if this is a
+			 * StopIteration exception it's expected, but if
+			 * any other kind of exception it's an error.
+			 */
+			if (PyErr_Occurred()) {
+				if (PyErr_ExceptionMatches(PyExc_StopIteration))
+					PyErr_Clear();
+				else {
+					Py_XDECREF(w);
+					Py_DECREF(it);
+					return NULL;
+				}
 			}
-			Py_XDECREF(w);
-			return NULL;
+			break;
 		}
+
 		if (w == NULL)
 			w = x;
 		else {
@@ -1478,7 +1485,8 @@ min_max(PyObject *args, int op)
 			}
 			else if (cmp < 0) {
 				Py_DECREF(x);
-				Py_XDECREF(w);
+				Py_DECREF(w);
+				Py_DECREF(it);
 				return NULL;
 			}
 			else
@@ -1488,6 +1496,7 @@ min_max(PyObject *args, int op)
 	if (w == NULL)
 		PyErr_SetString(PyExc_ValueError,
 				"min() or max() arg is an empty sequence");
+	Py_DECREF(it);
 	return w;
 }
 
