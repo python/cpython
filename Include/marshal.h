@@ -33,6 +33,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 void PyMarshal_WriteLongToFile Py_PROTO((long, FILE *));
 void PyMarshal_WriteShortToFile Py_PROTO((int, FILE *));
 void PyMarshal_WriteObjectToFile Py_PROTO((PyObject *, FILE *));
+PyObject *PyMarshal_WriteObjectToString Py_PROTO((PyObject *));
 
 long PyMarshal_ReadLongFromFile Py_PROTO((FILE *));
 int PyMarshal_ReadShortFromFile Py_PROTO((FILE *));
