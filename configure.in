@@ -763,15 +763,15 @@ AC_MSG_RESULT($was_it_defined)
 
 # Check whether using makedev requires defining _OSF_SOURCE
 AC_MSG_CHECKING(for makedev)
-AC_TRY_LINK([ #include <sys/types.h> ],
+AC_TRY_LINK([#include <sys/types.h> ],
 	    [ makedev(0, 0) ],
 	    ac_cv_has_makedev=yes,
 	    ac_cv_has_makedev=no)
 if test "$ac_cv_has_makedev" = "no"; then
     # we didn't link, try if _OSF_SOURCE will allow us to link
     AC_TRY_LINK([
-    #define _OSF_SOURCE 1
-    #include <sys/types.h>
+#define _OSF_SOURCE 1
+#include <sys/types.h>
     ],
     [ makedev(0, 0) ],
     ac_cv_has_makedev=yes,
@@ -929,7 +929,7 @@ if test "$have_pthread_t" = yes ; then
   AC_MSG_CHECKING(size of pthread_t)
   AC_CACHE_VAL(ac_cv_sizeof_pthread_t,
   [AC_TRY_RUN([#include <stdio.h>
-  #include <pthread.h>
+#include <pthread.h>
   main()
   {
     FILE *f=fopen("conftestval", "w");
@@ -1357,10 +1357,11 @@ else
     # define _POSIX_THREADS in unistd.h. Some apparently don't (which ones?)
     AC_MSG_CHECKING(for _POSIX_THREADS in unistd.h)
     AC_EGREP_CPP(yes,
-    [#include <unistd.h>
-     #ifdef _POSIX_THREADS
-     yes
-     #endif
+    [
+#include <unistd.h>
+#ifdef _POSIX_THREADS
+yes
+#endif
     ], unistd_defines_pthreads=yes, unistd_defines_pthreads=no)
     AC_MSG_RESULT($unistd_defines_pthreads)
 
@@ -1927,13 +1928,13 @@ AC_CHECK_FUNCS(gettimeofday,
 
 AC_MSG_CHECKING(for major, minor, and makedev)
 AC_TRY_LINK([
-  #if defined(MAJOR_IN_MKDEV)
-  #include <sys/mkdev.h>
-  #elif defined(MAJOR_IN_SYSMACROS)
-  #include <sys/sysmacros.h>
-  #else
-  #include <sys/types.h>
-  #endif
+#if defined(MAJOR_IN_MKDEV)
+#include <sys/mkdev.h>
+#elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/sysmacros.h>
+#else
+#include <sys/types.h>
+#endif
 ],[
   makedev(major(0),minor(0));
 ],[
