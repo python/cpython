@@ -184,6 +184,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 			break;
 
 		case POP_BLOCK:
+			assert(blockstack_top > 0);
 			setup_op = code[blockstack[blockstack_top-1]];
 			if (setup_op == SETUP_FINALLY) {
 				in_finally[blockstack_top-1] = 1;
@@ -196,10 +197,13 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 		case END_FINALLY:
 			/* Ignore END_FINALLYs for SETUP_EXCEPTs - they exist
 			 * in the bytecode but don't correspond to an actual
-			 * 'finally' block. */
-			setup_op = code[blockstack[blockstack_top-1]];
-			if (setup_op == SETUP_FINALLY) {
-				blockstack_top--;
+			 * 'finally' block.  (If blockstack_top is 0, we must
+			 * be seeing such an END_FINALLY.) */
+			if (blockstack_top > 0) {
+				setup_op = code[blockstack[blockstack_top-1]];
+				if (setup_op == SETUP_FINALLY) {
+					blockstack_top--;
+				}
 			}
 			break;
 		}
@@ -233,6 +237,10 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
 		}
 	}
 
+	/* Verify that the blockstack tracking code didn't get lost. */
+	assert(blockstack_top == 0);
+
+	/* After all that, are we jumping into / out of a 'finally' block? */
 	if (new_lasti_setup_addr != f_lasti_setup_addr) {
 		PyErr_SetString(PyExc_ValueError,
 			    "can't jump into or out of a 'finally' block");
