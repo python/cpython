@@ -170,23 +170,6 @@ This example uses bisect() to look up a letter grade for an exam total
     >>> map(grade, [33, 99, 77, 44, 12, 88])
     ['E', 'A', 'B', 'D', 'F', 'A']
 
-The bisect module can be used with the Queue module to implement
-a priority queue (example courtesy of Fredrik Lundh):
-
->>> import Queue, bisect
->>> class PriorityQueue(Queue.Queue):
-...     def _put(self, item):
-...         bisect.insort(self.queue, item)
-...
->>> queue = PriorityQueue(0)
->>> queue.put((2, "second"))
->>> queue.put((1, "first"))
->>> queue.put((3, "third"))
->>> queue.get()
-(1, 'first')
->>> queue.get()
-(2, 'second')
-
 """
 
 #------------------------------------------------------------------------------

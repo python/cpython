@@ -80,22 +80,5 @@ breakpoints: 85 and up is an `A', 75..84 is a `B', etc.
 'C'
 >>> map(grade, [33, 99, 77, 44, 12, 88])
 ['E', 'A', 'B', 'D', 'F', 'A']
-\end{verbatim}
 
-The bisect module can be used with the Queue module to implement a priority
-queue (example courtesy of Fredrik Lundh): \index{Priority Queue}
-
-\begin{verbatim}
-import Queue, bisect
-
-class PriorityQueue(Queue.Queue):
-    def _put(self, item):
-        bisect.insort(self.queue, item)
-
-# usage
-queue = PriorityQueue(0)
-queue.put((2, "second"))
-queue.put((1, "first"))
-queue.put((3, "third"))
-priority, value = queue.get()
 \end{verbatim}

@@ -269,6 +269,10 @@ SOURCE=..\..\Python\codecs.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\collectionsmodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\compile.c
 # End Source File
 # Begin Source File

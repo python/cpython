@@ -1,6 +1,7 @@
 """A multi-producer, multi-consumer queue."""
 
 from time import time as _time, sleep as _sleep
+from collections import deque
 
 __all__ = ['Empty', 'Full', 'Queue']
 
@@ -184,7 +185,7 @@ class Queue:
     # Initialize the queue representation
     def _init(self, maxsize):
         self.maxsize = maxsize
-        self.queue = []
+        self.queue = deque()
 
     def _qsize(self):
         return len(self.queue)
@@ -203,4 +204,4 @@ class Queue:
 
     # Get an item from the queue
     def _get(self):
-        return self.queue.pop(0)
+        return self.queue.popleft()

@@ -46,6 +46,7 @@ extern void initxxsubtype(void);
 extern void initzipimport(void);
 extern void init_random(void);
 extern void inititertools(void);
+extern void initcollections(void);
 extern void initheapq(void);
 extern void init_bisect(void);
 extern void init_symtable(void);
@@ -136,6 +137,7 @@ struct _inittab _PyImport_Inittab[] = {
         {"_bisect", init_bisect},
         {"heapq", initheapq},
 	{"itertools", inititertools},
+        {"collections", initcollections},
 	{"_symtable", init_symtable},
 	{"mmap", initmmap},
 	{"_csv", init_csv},
