@@ -260,8 +260,8 @@ class AECaptureParser:
 				'type(': [('type(', "aetypes.Type('"), (')', "')")],
 				"'null'()": [("'null'()", "None")],
 				'abso(': [('abso(', "aetypes.Unknown('abso', ")],
-				'³':	[('³', '"')],
-				'²':	[('²', '"')],
+				'–':	[('–', '"')],
+				'”':	[('”', '"')],
 				'[':	[('[', '('), (', ', ',')],
 				']':	[(']', ')')],
 				'«':	[('«', "«")],
@@ -353,7 +353,7 @@ def addquotes(txt):
 eventreceptacle = """
 
 [event: target="Finder", class=core, id=setd]
-'----':obj {form:prop, want:type(prop), seld:type(posn), from:obj {form:name, want:type(cfol), seld:³MoPar:Data:DevDev:Python:Python 1.5.2c1:Extensions², from:'null'()}}, data:[100, 10]
+'----':obj {form:prop, want:type(prop), seld:type(posn), from:obj {form:name, want:type(cfol), seld:–MoPar:Data:DevDev:Python:Python 1.5.2c1:Extensions”, from:'null'()}}, data:[100, 10]
 [/event]
 
 """

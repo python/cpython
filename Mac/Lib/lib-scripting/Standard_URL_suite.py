@@ -4,7 +4,7 @@
 
 Level 1, version 1
 
-Generated from flap:Programma's:Netscape Navigator Folder:Netscape Navigator 3.01
+Generated from flap:Programma's:Netscape Navigator Folder:Netscape Navigator 3.01
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

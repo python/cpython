@@ -791,7 +791,7 @@ class Metrowerks_Shell_Suite_Events:
 
 
 class Access_Paths(aetools.ComponentItem):
-	"""Access Paths - Contains the definitions of a projectπs access (search) paths. """
+	"""Access Paths - Contains the definitions of a project’s access (search) paths. """
 	want = 'PATH'
 class User_Paths(aetools.NProperty):
 	"""User Paths - To add an access path for the source files. """
@@ -994,7 +994,7 @@ class Launch_Apps_on_Open(aetools.NProperty):
 	which = 'Dg03'
 	want = 'bool'
 class Confirm_Kill(aetools.NProperty):
-	"""Confirm Kill - Confirm the åkillingπ of the process. """
+	"""Confirm Kill - Confirm the ïkilling’ of the process. """
 	which = 'Dg04'
 	want = 'bool'
 class Stop_at_Main(aetools.NProperty):
@@ -1006,7 +1006,7 @@ class Select_Stack_Crawl(aetools.NProperty):
 	which = 'Dg06'
 	want = 'bool'
 class Dont_Step_in_Runtime(aetools.NProperty):
-	"""Dont Step in Runtime - Donπt step into runtime code when debugging. """
+	"""Dont Step in Runtime - Don’t step into runtime code when debugging. """
 	which = 'Dg07'
 	want = 'bool'
 class Auto_Target_Libraries(aetools.NProperty):
@@ -1043,7 +1043,7 @@ class Temp_breakpoint_names(aetools.NProperty):
 	which = 'Dt14'
 	want = 'ctxt'
 class Cache_symbolics(aetools.NProperty):
-	"""Cache symbolics - Cache symbolics between runs when executable doesnπt change, else release symbolics files after killing process. """
+	"""Cache symbolics - Cache symbolics between runs when executable doesn’t change, else release symbolics files after killing process. """
 	which = 'Dt15'
 	want = 'bool'
 class Temp_Breakpoint_Type(aetools.NProperty):
@@ -1071,7 +1071,7 @@ class Flash_Delay(aetools.NProperty):
 	which = 'ED01'
 	want = 'long'
 class Dynamic_Scroll(aetools.NProperty):
-	"""Dynamic Scroll - Display a windowπs contents as you move the scroll box. """
+	"""Dynamic Scroll - Display a window’s contents as you move the scroll box. """
 	which = 'ED02'
 	want = 'bool'
 class Balance(aetools.NProperty):
@@ -1175,11 +1175,11 @@ class Full_Screen_Zoom(aetools.NProperty):
 	which = 'EX07'
 	want = 'bool'
 class Recent_Editor_Count(aetools.NProperty):
-	"""Recent Editor Count - Maximum number of editor documents to show in the ≥Open Recent≤ menu """
+	"""Recent Editor Count - Maximum number of editor documents to show in the ñOpen Recentî menu """
 	which = 'EX16'
 	want = 'shor'
 class Recent_Project_Count(aetools.NProperty):
-	"""Recent Project Count - Maximum number of project documents to show in the ≥Open Recent≤ menu """
+	"""Recent Project Count - Maximum number of project documents to show in the ñOpen Recentî menu """
 	which = 'EX17'
 	want = 'shor'
 class Use_Editor_Extensions(aetools.NProperty):
@@ -1294,7 +1294,7 @@ class origin(aetools.NProperty):
 	which = 'Orig'
 	want = 'PPrm'
 class root(aetools.NProperty):
-	"""root - Name of the root of the relative path. Pre-defined values are ≥Absolute≤, ≥Project≤, ≥CodeWarrior≤, and  ≥System≤. Anything else is a user-defined root. """
+	"""root - Name of the root of the relative path. Pre-defined values are ñAbsoluteî, ñProjectî, ñCodeWarriorî, and  ñSystemî. Anything else is a user-defined root. """
 	which = 'Root'
 	want = 'TEXT'
 class recursive(aetools.NProperty):
@@ -1325,14 +1325,14 @@ class filetype(aetools.NProperty):
 	"""filetype - What kind of file is this ? """
 	which = 'SrcT'
 	want = 'SrcT'
-# repeated property name The fileπs name
-# repeated property disk_file The fileπs location on disk
+# repeated property name The file’s name
+# repeated property disk_file The file’s location on disk
 class codesize(aetools.NProperty):
-	"""codesize - The size of this fileπs code. """
+	"""codesize - The size of this file’s code. """
 	which = 'CSiz'
 	want = 'long'
 class datasize(aetools.NProperty):
-	"""datasize - The size of this fileπs data. """
+	"""datasize - The size of this file’s data. """
 	which = 'DSiz'
 	want = 'long'
 class up_to_date(aetools.NProperty):
@@ -1476,7 +1476,7 @@ class String_Color(aetools.NProperty):
 # repeated property Custom_Color_4 The color for the fourth set of custom keywords.
 
 class Target_Settings(aetools.ComponentItem):
-	"""Target Settings - Contains the definitions of a projectπs target. """
+	"""Target Settings - Contains the definitions of a project’s target. """
 	want = 'TARG'
 class Linker(aetools.NProperty):
 	"""Linker - The name of the current linker. """
@@ -1495,11 +1495,11 @@ class Target_Name(aetools.NProperty):
 	which = 'TA10'
 	want = 'TEXT'
 class Output_Directory_Path(aetools.NProperty):
-	"""Output Directory Path - Path to output directory. Usage of this property is deprecated. Use the ≥Output Directory Location≤ property instead. """
+	"""Output Directory Path - Path to output directory. Usage of this property is deprecated. Use the ñOutput Directory Locationî property instead. """
 	which = 'TA11'
 	want = 'TEXT'
 class Output_Directory_Origin(aetools.NProperty):
-	"""Output Directory Origin - Origin of path to output directory. Usage of this property is deprecated. Use the ≥Output Directory Location≤ property instead. """
+	"""Output Directory Origin - Origin of path to output directory. Usage of this property is deprecated. Use the ñOutput Directory Locationî property instead. """
 	which = 'TA12'
 	want = 'PPrm'
 class Output_Directory_Location(aetools.NProperty):
@@ -2043,14 +2043,14 @@ _Enum_SrcT = {
 
 _Enum_PPrm = {
 	'absolute' : 'Abso',	# An absolute path name, including volume name.
-	'project_relative' : 'PRel',	# A path relative to the current projectπs folder.
-	'shell_relative' : 'SRel',	# A path relative to the CodeWarriorÅ folder.
+	'project_relative' : 'PRel',	# A path relative to the current project’s folder.
+	'shell_relative' : 'SRel',	# A path relative to the CodeWarrioré folder.
 	'system_relative' : 'YRel',	# A path relative to the system folder
 	'root_relative' : 'RRel',	# 
 }
 
 _Enum_DbSA = {
-	'No_Action' : 'DSA1',	# Donπt do anything to non-debug windows
+	'No_Action' : 'DSA1',	# Don’t do anything to non-debug windows
 	'Hide_Windows' : 'DSA2',	# Hide non-debugging windows
 	'Collapse_Windows' : 'DSA3',	# Collapse non-debugging windows
 	'Close_Windows' : 'DSA4',	# Close non-debugging windows
@@ -2103,9 +2103,9 @@ _Enum_BXbr = {
 }
 
 _Enum_STKd = {
-	'Absolute_Path' : 'STK0',	# The ≥path≤ property is an absolute path to the location of the source tree.
-	'Registry_Key' : 'STK1',	# The ≥path≤ property is the name of a registry key that contains the path to the root.
-	'Environment_Variable' : 'STK2',	# The ≥path≤ property is the name of an environment variable that contains the path to the root.
+	'Absolute_Path' : 'STK0',	# The ñpathî property is an absolute path to the location of the source tree.
+	'Registry_Key' : 'STK1',	# The ñpathî property is the name of a registry key that contains the path to the root.
+	'Environment_Variable' : 'STK2',	# The ñpathî property is the name of an environment variable that contains the path to the root.
 }
 
 _Enum_PthF = {

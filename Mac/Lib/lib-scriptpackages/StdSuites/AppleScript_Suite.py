@@ -129,7 +129,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def tell(self, _no_object=None, _attributes={}, **_arguments):
-		"""tell: Record or log a åtellπ statement
+		"""tell: Record or log a ïtell’ statement
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'ascr'
@@ -148,7 +148,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def end_tell(self, _no_object=None, _attributes={}, **_arguments):
-		"""end tell: Record or log an åend tellπ statement
+		"""end tell: Record or log an ïend tell’ statement
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'ascr'
@@ -229,7 +229,7 @@ class AppleScript_Suite_Events:
 	}
 
 	def Call_a5_subroutine(self, _object=None, _attributes={}, **_arguments):
-		"""CallÄsubroutine: A subroutine call
+		"""CallÇsubroutine: A subroutine call
 		Required argument: anything
 		Keyword argument at: a preposition
 		Keyword argument _from: a preposition
@@ -299,7 +299,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def _ad_(self, _object, _attributes={}, **_arguments):
-		"""Ç: Inequality
+		"""≠: Inequality
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -488,7 +488,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def _b3_(self, _object, _attributes={}, **_arguments):
-		"""Ñ: Greater than or equal to
+		"""≥: Greater than or equal to
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -530,7 +530,7 @@ class AppleScript_Suite_Events:
 			return _arguments['----']
 
 	def _b2_(self, _object, _attributes={}, **_arguments):
-		"""æ: Less than or equal to
+		"""≤: Less than or equal to
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -820,7 +820,7 @@ class name(aetools.NProperty):
 	which = 'pnam'
 	want = 'TEXT'
 class parent(aetools.NProperty):
-	"""parent - its parent, i.e. the script that will handle events that this script doesnπt """
+	"""parent - its parent, i.e. the script that will handle events that this script doesn’t """
 	which = 'pare'
 	want = 'scpt'
 

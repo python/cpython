@@ -59,7 +59,7 @@ class locked_obsolete(aetools.NProperty):
 	want = 'bool'
 
 class information_window(aetools.ComponentItem):
-	"""information window - An information window (opened by ³Get Info²) """
+	"""information window - An information window (opened by –Get Info”) """
 	want = 'iwnd'
 class creation_date_obsolete(aetools.NProperty):
 	"""creation date obsolete - the date on which the item was created (DEPRECATED - for use with scripts compiled before Finder 8.0. Will be removed in the next release) """
@@ -87,7 +87,7 @@ class sharing_window(aetools.NProperty):
 	want = 'obj '
 
 class sharing_window(aetools.ComponentItem):
-	"""sharing window - A sharing window (opened by ³SharingŠ²) """
+	"""sharing window - A sharing window (opened by –Sharingƒ”) """
 	want = 'swnd'
 class sharable_container(aetools.NProperty):
 	"""sharable container - the sharable container from which the window was opened """

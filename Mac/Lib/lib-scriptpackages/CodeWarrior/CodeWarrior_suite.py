@@ -396,7 +396,7 @@ class linked(aetools.NProperty):
 	which = 'LINK'
 	want = 'bool'
 class link_index(aetools.NProperty):
-	"""link index - the index of the source file in its targetπs link order (-1 if source file is not in link order) """
+	"""link index - the index of the source file in its target’s link order (-1 if source file is not in link order) """
 	which = 'LIDX'
 	want = 'long'
 class modified_date(aetools.NProperty):
@@ -424,7 +424,7 @@ class weak_link(aetools.NProperty):
 	which = 'WEAK'
 	want = 'bool'
 class init_before(aetools.NProperty):
-	"""init before - is the åinitialize beforeπ flag set for this shared library? """
+	"""init before - is the ïinitialize before’ flag set for this shared library? """
 	which = 'INIT'
 	want = 'bool'
 class merge_output(aetools.NProperty):

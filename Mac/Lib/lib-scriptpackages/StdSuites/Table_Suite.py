@@ -70,7 +70,7 @@ table._propdict = {
 table._elemdict = {
 }
 _Enum_prtn = {
-	'read_only' : 'nmod',	# Canπt change values or formulas
+	'read_only' : 'nmod',	# Can’t change values or formulas
 	'formulas_protected' : 'fpro',	# Can changes values but not formulas
 	'read_2f_write' : 'modf',	# Can change values and formulas
 }

@@ -156,8 +156,8 @@ class PyConsole(W.Window):
 	def makenamespacemenu(self, *args):
 		W.SetCursor('watch')
 		namespacelist = self.getnamespacelist()
-		self.namespacemenu.set([("Clear window", self.clearbuffer), ("Font settingsŠ", self.dofontsettings), 
-				["Namespace"] + namespacelist, ("Browse namespaceŠ", self.browsenamespace)])
+		self.namespacemenu.set([("Clear window", self.clearbuffer), ("Font settingsƒ", self.dofontsettings), 
+				["Namespace"] + namespacelist, ("Browse namespaceƒ", self.browsenamespace)])
 		currentname = self.consoletext._namespace["__name__"]
 		for i in range(len(namespacelist)):
 			if namespacelist[i][0] == currentname:
@@ -264,7 +264,7 @@ class PyOutput:
 				tabbable = 0)
 		self.w.outputtext = OutputTextWidget((-1, -1, -14, 1), inset = (6, 5), 
 				fontsettings = self.fontsettings, tabsettings = self.tabsettings, readonly = 1)
-		menuitems = [("Clear window", self.clearbuffer), ("Font settingsŠ", self.dofontsettings)]
+		menuitems = [("Clear window", self.clearbuffer), ("Font settingsƒ", self.dofontsettings)]
 		self.w.popupmenu = W.PopupMenu((-15, -1, 16, 16), menuitems)
 		
 		self.w._bary = W.Scrollbar((-15, 14, 16, -14), self.w.outputtext.vscroll, max = 32767)

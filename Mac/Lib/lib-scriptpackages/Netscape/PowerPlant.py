@@ -1,7 +1,7 @@
 """Suite PowerPlant: 
 Level 0, version 0
 
-Generated from Macintosh HD:Internet:Internet-programma's:Netscape CommunicatorÅ-map:Netscape CommunicatorÅ
+Generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -42,7 +42,7 @@ class PowerPlant_Events:
 	}
 
 	def SwitchTellTarget(self, _no_object=None, _attributes={}, **_arguments):
-		"""SwitchTellTarget: Makes an object the ≥focus≤ of AppleEvents
+		"""SwitchTellTarget: Makes an object the ñfocusî of AppleEvents
 		Keyword argument to: reference to new focus of AppleEvents
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""

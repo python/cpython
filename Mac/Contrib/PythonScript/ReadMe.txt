@@ -29,7 +29,7 @@ from the target before going on to the next event
 
 Object is a appleevent object specifier and is of the form
 
-PythonScript.PsClass.Class1(arg).Class2(arg)Š.Property()
+PythonScript.PsClass.Class1(arg).Class2(arg)ƒ.Property()
 
 All applescript event, class and property names are capitalised to 
 distinguish them from python methods.

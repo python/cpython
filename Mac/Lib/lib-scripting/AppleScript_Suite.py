@@ -275,7 +275,7 @@ class AppleScript_Suite:
 	}
 
 	def Call_a5_subroutine(self, _object=None, _attributes={}, **_arguments):
-		"""Call€subroutine: A subroutine call
+		"""Call‚subroutine: A subroutine call
 		Required argument: anything
 		Keyword argument at: a preposition
 		Keyword argument _from: a preposition
@@ -347,7 +347,7 @@ class AppleScript_Suite:
 			return _arguments['----']
 
 	def _ad_(self, _object, _attributes={}, **_arguments):
-		"""‚: Inequality
+		"""­: Inequality
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -536,7 +536,7 @@ class AppleScript_Suite:
 			return _arguments['----']
 
 	def _b3_(self, _object, _attributes={}, **_arguments):
-		"""„: Greater than or equal to
+		"""³: Greater than or equal to
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything
@@ -578,7 +578,7 @@ class AppleScript_Suite:
 			return _arguments['----']
 
 	def _b2_(self, _object, _attributes={}, **_arguments):
-		"""¾: Less than or equal to
+		"""²: Less than or equal to
 		Required argument: an AE object reference
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: anything

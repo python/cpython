@@ -1,7 +1,7 @@
 """Suite Required suite: 
 Level 0, version 0
 
-Generated from Macintosh HD:Internet:Internet-programma's:Netscape CommunicatorÅ-map:Netscape CommunicatorÅ
+Generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 

@@ -39,18 +39,18 @@ class stationery(aetools.NProperty):
 	which = 'pspd'
 	want = 'bool'
 class product_version(aetools.NProperty):
-	"""product version - the version of the product (visible at the top of the ³Get Info² window) """
+	"""product version - the version of the product (visible at the top of the –Get Info” window) """
 	which = 'ver2'
 	want = 'itxt'
 class version(aetools.NProperty):
-	"""version - the version of the file (visible at the bottom of the ³Get Info² window) """
+	"""version - the version of the file (visible at the bottom of the –Get Info” window) """
 	which = 'vers'
 	want = 'itxt'
 
 files = file
 
 class alias_file(aetools.ComponentItem):
-	"""alias file - An alias file (created with ³Make Alias²) """
+	"""alias file - An alias file (created with –Make Alias”) """
 	want = 'alia'
 class original_item(aetools.NProperty):
 	"""original item - the original item pointed to by the alias """

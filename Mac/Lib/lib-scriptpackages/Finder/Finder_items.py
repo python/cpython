@@ -79,7 +79,7 @@ class Finder_items_Events:
 
 	def empty(self, _object=None, _attributes={}, **_arguments):
 		"""empty: Empty the trash
-		Required argument: ³empty² and ³empty trash² both do the same thing
+		Required argument: –empty” and –empty trash” both do the same thing
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'fndr'
@@ -227,7 +227,7 @@ class description(aetools.NProperty):
 	which = 'dscr'
 	want = 'itxt'
 class comment(aetools.NProperty):
-	"""comment - the comment of the item, displayed in the ³Get Info² window """
+	"""comment - the comment of the item, displayed in the –Get Info” window """
 	which = 'comt'
 	want = 'itxt'
 class size(aetools.NProperty):

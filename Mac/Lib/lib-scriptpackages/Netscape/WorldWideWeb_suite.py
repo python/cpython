@@ -1,7 +1,7 @@
 """Suite WorldWideWeb suite, as defined in Spyglass spec.: 
 Level 1, version 1
 
-Generated from Macintosh HD:Internet:Internet-programma's:Netscape CommunicatorÅ-map:Netscape CommunicatorÅ
+Generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -212,7 +212,7 @@ class WorldWideWeb_suite_Events:
 			return _arguments['----']
 
 	def register_URL_echo(self, _object=None, _attributes={}, **_arguments):
-		"""register URL echo: Registers the ≥echo≤ application. Each download from now on will be echoed to this application.
+		"""register URL echo: Registers the ñechoî application. Each download from now on will be echoed to this application.
 		Required argument: Application signature
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
@@ -257,7 +257,7 @@ class WorldWideWeb_suite_Events:
 	}
 
 	def register_viewer(self, _object, _attributes={}, **_arguments):
-		"""register viewer: Registers an application as a åspecialπ viewer for this MIME type. The application will be launched with ViewDoc events
+		"""register viewer: Registers an application as a ïspecial’ viewer for this MIME type. The application will be launched with ViewDoc events
 		Required argument: Application sig
 		Keyword argument MIME_type: MIME type viewer is registering for
 		Keyword argument with_file_type: Mac file type for the downloaded files
@@ -310,9 +310,9 @@ class WorldWideWeb_suite_Events:
 	}
 
 	def register_protocol(self, _object=None, _attributes={}, **_arguments):
-		"""register protocol: Registers application as a ≥handler≤ for this protocol with a given prefix. The handler will receive ≥OpenURL≤, or if that fails, ≥GetURL≤ event.
+		"""register protocol: Registers application as a ñhandlerî for this protocol with a given prefix. The handler will receive ñOpenURLî, or if that fails, ñGetURLî event.
 		Required argument: Application sig
-		Keyword argument for_protocol: protocol prefix: ≥finger:≤, ≥file≤,
+		Keyword argument for_protocol: protocol prefix: ñfinger:î, ñfileî,
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: TRUE if registration has been successful
 		"""
@@ -336,7 +336,7 @@ class WorldWideWeb_suite_Events:
 	}
 
 	def unregister_protocol(self, _object=None, _attributes={}, **_arguments):
-		"""unregister protocol: reverses the effects of ≥register protocol≤
+		"""unregister protocol: reverses the effects of ñregister protocolî
 		Required argument: Application sig. 
 		Keyword argument for_protocol: protocol prefix. If none, unregister for all protocols
 		Keyword argument _attributes: AppleEvent attribute dictionary

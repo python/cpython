@@ -145,7 +145,7 @@ class application(aetools.ComponentItem):
 	"""application - The Finder """
 	want = 'capp'
 class clipboard(aetools.NProperty):
-	"""clipboard - the Finder¹s clipboard window """
+	"""clipboard - the FinderÕs clipboard window """
 	which = 'pcli'
 	want = 'obj '
 class largest_free_block(aetools.NProperty):
@@ -153,11 +153,11 @@ class largest_free_block(aetools.NProperty):
 	which = 'mfre'
 	want = 'long'
 class name(aetools.NProperty):
-	"""name - the Finder¹s name """
+	"""name - the FinderÕs name """
 	which = 'pnam'
 	want = 'itxt'
 class visible(aetools.NProperty):
-	"""visible - Is the Finder¹s layer visible? """
+	"""visible - Is the FinderÕs layer visible? """
 	which = 'pvis'
 	want = 'bool'
 class frontmost(aetools.NProperty):
@@ -169,7 +169,7 @@ class selection(aetools.NProperty):
 	which = 'sele'
 	want = 'obj '
 class insertion_location(aetools.NProperty):
-	"""insertion location - the container in which a new folder would appear if ³New Folder² was selected """
+	"""insertion location - the container in which a new folder would appear if –New Folder” was selected """
 	which = 'pins'
 	want = 'obj '
 class file_sharing(aetools.NProperty):
@@ -189,7 +189,7 @@ class version(aetools.NProperty):
 	which = 'vers'
 	want = 'itxt'
 class about_this_computer(aetools.NProperty):
-	"""about this computer - the ³About this Computer² dialog and the list of running processes displayed in it """
+	"""about this computer - the –About this Computer” dialog and the list of running processes displayed in it """
 	which = 'abbx'
 	want = 'obj '
 class desktop(aetools.NProperty):
@@ -235,35 +235,35 @@ class system_folder(aetools.NProperty):
 	which = 'macs'
 	want = 'obj '
 class apple_menu_items_folder(aetools.NProperty):
-	"""apple menu items folder - the special folder named ³Apple Menu Items,² the contents of which appear in the Apple menu """
+	"""apple menu items folder - the special folder named –Apple Menu Items,” the contents of which appear in the Apple menu """
 	which = 'amnu'
 	want = 'obj '
 class control_panels_folder(aetools.NProperty):
-	"""control panels folder - the special folder named ³Control Panels² """
+	"""control panels folder - the special folder named –Control Panels” """
 	which = 'ctrl'
 	want = 'obj '
 class extensions_folder(aetools.NProperty):
-	"""extensions folder - the special folder named ³Extensions² """
+	"""extensions folder - the special folder named –Extensions” """
 	which = 'extn'
 	want = 'obj '
 class fonts_folder(aetools.NProperty):
-	"""fonts folder - the special folder named ³Fonts² """
+	"""fonts folder - the special folder named –Fonts” """
 	which = 'font'
 	want = 'obj '
 class preferences_folder(aetools.NProperty):
-	"""preferences folder - the special folder named ³Preferences² """
+	"""preferences folder - the special folder named –Preferences” """
 	which = 'pref'
 	want = 'obj '
 class shutdown_items_folder(aetools.NProperty):
-	"""shutdown items folder - the special folder named ³Shutdown Items² """
+	"""shutdown items folder - the special folder named –Shutdown Items” """
 	which = 'shdf'
 	want = 'obj '
 class startup_items_folder(aetools.NProperty):
-	"""startup items folder - the special folder named ³Startup Items² """
+	"""startup items folder - the special folder named –Startup Items” """
 	which = 'strt'
 	want = 'obj '
 class temporary_items_folder(aetools.NProperty):
-	"""temporary items folder - the special folder named ³Temporary Items² (invisible) """
+	"""temporary items folder - the special folder named –Temporary Items” (invisible) """
 	which = 'temp'
 	want = 'obj '
 import Earlier_terms

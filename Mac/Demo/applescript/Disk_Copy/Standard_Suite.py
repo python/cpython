@@ -30,7 +30,7 @@ class Standard_Suite_Events:
 		Keyword argument _in: the target object
 		Keyword argument using_format: the format for the target
 		Keyword argument checksum_verification: Should the checksum be verified before saving?
-		Keyword argument signature_verification: Should the DigiSignÅ signature be verified before saving?
+		Keyword argument signature_verification: Should the DigiSigné signature be verified before saving?
 		Keyword argument image_signing: Should the image be signed?
 		Keyword argument leave_image_mounted: Should the image be mounted after saving?
 		Keyword argument percent_free_space: percent free space to reserve (for image folder operation, 0-255%)
@@ -258,7 +258,7 @@ class file_format(aetools.NProperty):
 	which = 'Ifmt'
 	want = 'TEXT'
 class signed(aetools.NProperty):
-	"""signed - Does the disk image have a DigiSignÅ signature? """
+	"""signed - Does the disk image have a DigiSigné signature? """
 	which = 'Isin'
 	want = 'bool'
 class compressed(aetools.NProperty):
@@ -384,7 +384,7 @@ Save_reply_record._propdict = {
 Save_reply_record._elemdict = {
 }
 _Enum_UIAc = {
-	'never_interact' : 'eNvr',	# Donπt allow any interaction at all
+	'never_interact' : 'eNvr',	# Don’t allow any interaction at all
 	'interact_with_self' : 'eInS',	# Only allow interaction from internal events
 	'interact_with_local' : 'eInL',	# Allow interaction from any event originating on this machine
 	'interact_with_all' : 'eInA',	# Allow interaction from network events
@@ -399,7 +399,7 @@ _Enum_SvAs = {
 
 _Enum_rcpT = {
 	'block_disk_copy' : 'cpBl',	# block-by-block disk-level copy
-	'files_and_file_ID_copy' : 'cpID',	# all files including desktop databases and file IDπs
+	'files_and_file_ID_copy' : 'cpID',	# all files including desktop databases and file ID’s
 	'files_and_desktop_info' : 'cpDT',	# all files and most desktop information
 	'files_only' : 'cpFI',	# all files but no desktop information
 	'disk_image_conversion' : 'cpCV',	# disk image format conversion

@@ -24,7 +24,7 @@ class Special_Events_Events:
 		Required argument: a reference to the disk image to be mounted
 		Keyword argument access_mode: the access mode for mounted volume (default is "any", i.e. best possible)
 		Keyword argument checksum_verification: Verify the checksum before mounting?
-		Keyword argument signature_verification: Verify the DigiSignÅ signature before mounting?
+		Keyword argument signature_verification: Verify the DigiSigné signature before mounting?
 		Keyword argument RAM_caching: Cache the disk image in RAM? (if omitted, don't cache)
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: a reference to mounted disk
@@ -57,7 +57,7 @@ class Special_Events_Events:
 		"""execute DiskScript: Executes a Disk Copy-specific DiskScript
 		Required argument: a reference to the DiskScript to execute
 		Keyword argument checksum_verification: Should checksums be verified when mounting images referenced in the DiskScript?
-		Keyword argument signature_verification: Should the DigiSignÅ signature of the DiskScript and the images it references be verified?
+		Keyword argument signature_verification: Should the DigiSigné signature of the DiskScript and the images it references be verified?
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		"""
 		_code = 'ddsk'
@@ -158,10 +158,10 @@ class Special_Events_Events:
 			return _arguments['----']
 
 	def verify_signature(self, _object, _attributes={}, **_arguments):
-		"""verify signature: Verify the DigiSignÅ signature for a Disk Copy document
+		"""verify signature: Verify the DigiSigné signature for a Disk Copy document
 		Required argument: the disk image to be verified
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: Is the DigiSignÅ signature valid?
+		Returns: Is the DigiSigné signature valid?
 		"""
 		_code = 'ddsk'
 		_subcode = 'Vsig'
@@ -183,7 +183,7 @@ class Special_Events_Events:
 	}
 
 	def sign_image(self, _object, _attributes={}, **_arguments):
-		"""sign image: Add a DigiSignÅ signature to a Disk Copy document
+		"""sign image: Add a DigiSigné signature to a Disk Copy document
 		Required argument: the disk image to be signed
 		Keyword argument using_signer: a reference to signer file to use
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -213,7 +213,7 @@ class Special_Events_Events:
 	def create_a_floppy_from(self, _object, _attributes={}, **_arguments):
 		"""create a floppy from: create a floppy disk from a Disk Copy document
 		Required argument: the disk image to make a floppy from
-		Keyword argument signature_verification: Should the DigiSignÅ signature be verified before creating a floppy disk?
+		Keyword argument signature_verification: Should the DigiSigné signature be verified before creating a floppy disk?
 		Keyword argument erase_confirmation: Should the user be asked to confirm the erasure of the previous contents of floppy disks?
 		Keyword argument make_multiple_floppies: Should the user be prompted to create multiple floppy disks?
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -241,7 +241,7 @@ class Special_Events_Events:
 	}
 
 	def check_image(self, _object, _attributes={}, **_arguments):
-		"""check image: Check the disk imageπs internal data structures for any inconsistencies.  Works on NDIF, Disk Copy 4.2, DARTÅ, or DiskSet images.
+		"""check image: Check the disk image’s internal data structures for any inconsistencies.  Works on NDIF, Disk Copy 4.2, DARTé, or DiskSet images.
 		Required argument: the disk image to be verified
 		Keyword argument details: Should the disk image details be displayed?
 		Keyword argument _attributes: AppleEvent attribute dictionary
@@ -313,7 +313,7 @@ class Special_Events_Events:
 		Keyword argument launching_document: the path to a document to open
 		Keyword argument version_string: sets the 'vers' 1 resource of the self-mounting image
 		Keyword argument checksum_verification: Should the checksum of the source images be verified before creating the SMI?
-		Keyword argument signature_verification: Should the DigiSignÅ signature of the source images be verified before creating the SMI?
+		Keyword argument signature_verification: Should the DigiSigné signature of the source images be verified before creating the SMI?
 		Keyword argument image_signing: Should the SMI be given a digital signature when it is created?
 		Keyword argument _attributes: AppleEvent attribute dictionary
 		Returns: a reference to the self-mounting image created

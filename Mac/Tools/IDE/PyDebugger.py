@@ -72,7 +72,7 @@ class Debugger(bdb.Bdb):
 		self.botframe = bottomframe
 		if running:
 			self.set_continue()
-			self.reason = 'Runningä'
+			self.reason = 'RunningÉ'
 			self.setstate('running')
 		else:
 			self.set_step()
@@ -187,7 +187,7 @@ class Debugger(bdb.Bdb):
 	def makeoptionsmenu(self):
 		options = [('Clear breakpoints', self.w.panes.bottom.src.source.clearbreakpoints), 
 				('Clear all breakpoints', self.clear_all_breaks),
-				('Edit breakpointsä', self.edit_breaks), '-',
+				('Edit breakpointsÉ', self.edit_breaks), '-',
 				(self.tracemagic and 
 					'Disable __magic__ tracing' or 'Enable __magic__ tracing', self.togglemagic)]
 		self.w.panes.bottom.src.optionsmenu.set(options)
@@ -318,7 +318,7 @@ class Debugger(bdb.Bdb):
 	
 	def running(self):
 		W.SetCursor('watch')
-		self.reason = 'Runningä'
+		self.reason = 'RunningÉ'
 		self.setstate('running')
 		#self.w.panes.bottom.src.source.set('')
 		#self.w.panes.browserpanes.stacklist.stack.set([])
@@ -350,7 +350,7 @@ class Debugger(bdb.Bdb):
 						try:
 							f, filename, (suff, mode, dummy) = imp.find_module(modname)
 						except ImportError:
-							self.w.panes.bottom.src.source.set('canπt find file')
+							self.w.panes.bottom.src.source.set('can’t find file')
 						else:
 							if f:
 								f.close()
@@ -360,9 +360,9 @@ class Debugger(bdb.Bdb):
 								f.close()
 								self.w.panes.bottom.src.source.set(data, filename)
 							else:
-								self.w.panes.bottom.src.source.set('canπt find file')
+								self.w.panes.bottom.src.source.set('can’t find file')
 					else:
-						self.w.panes.bottom.src.source.set('canπt find file')
+						self.w.panes.bottom.src.source.set('can’t find file')
 				else:
 					self.w.panes.bottom.src.source.set(data, filename)
 			self.file = filename
@@ -682,7 +682,7 @@ class BreakpointsViewer:
 		self.w.panes.files = W.List(None, callback = self.filehit)		#, flags = Lists.lOnlyOne)
 		self.w.panes.gr = W.Group(None)
 		self.w.panes.gr.breaks = W.List((0, 0, -130, 0), callback = self.linehit)	#, flags = Lists.lOnlyOne)
-		self.w.panes.gr.openbutton = W.Button((-80, 4, 0, 16), 'Viewä', self.openbuttonhit)
+		self.w.panes.gr.openbutton = W.Button((-80, 4, 0, 16), 'ViewÉ', self.openbuttonhit)
 		self.w.panes.gr.deletebutton = W.Button((-80, 28, 0, 16), 'Delete', self.deletebuttonhit)
 		
 		self.w.bind('<close>', self.close)
@@ -880,7 +880,7 @@ _debugger = None
 
 def getdebugger():
 	if not __debug__:
-		raise W.AlertError, "Canπt debug in ≥Optimize bytecode≤ mode.\r(see ≥Default startup options≤ in EditPythonPreferences)"
+		raise W.AlertError, "Can’t debug in ñOptimize bytecodeî mode.\r(see ñDefault startup optionsî in EditPythonPreferences)"
 	global _debugger
 	if _debugger is None:
 		_debugger = Debugger()

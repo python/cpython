@@ -212,7 +212,7 @@ class folder(aetools.ComponentItem):
 folders = folder
 
 class desktop_2d_object(aetools.ComponentItem):
-	"""desktop-object - Desktop-object is the class of the ³desktop² object """
+	"""desktop-object - Desktop-object is the class of the –desktop” object """
 	want = 'cdsk'
 class startup_disk(aetools.NProperty):
 	"""startup disk - the startup disk """
@@ -242,7 +242,7 @@ class trash(aetools.NProperty):
 #        element 'dsut' as ['indx', 'name']
 
 class trash_2d_object(aetools.ComponentItem):
-	"""trash-object - Trash-object is the class of the ³trash² object """
+	"""trash-object - Trash-object is the class of the –trash” object """
 	want = 'ctrs'
 class warns_before_emptying(aetools.NProperty):
 	"""warns before emptying - Display a dialog when emptying the trash? """

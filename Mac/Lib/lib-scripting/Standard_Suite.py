@@ -21,7 +21,7 @@ class Standard_Suite:
 		Required argument: the object class about which information is requested
 		Keyword argument _in: the human language and script system in which to return information
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: a record containing the object¹s properties and elements
+		Returns: a record containing the objectÕs properties and elements
 		"""
 		_code = 'core'
 		_subcode = 'qobj'
@@ -615,11 +615,11 @@ class _3d_(aetools.NComparison):
 class _3e_(aetools.NComparison):
 	"""> - Greater than"""
 class _b3_(aetools.NComparison):
-	"""„ - Greater than or equal to"""
+	"""³ - Greater than or equal to"""
 class _3c_(aetools.NComparison):
 	"""< - Less than"""
 class _b2_(aetools.NComparison):
-	"""¾ - Less than or equal to"""
+	"""² - Less than or equal to"""
 _Enum_savo = {
 	'yes' : 'yes ',	# Save objects now
 	'no' : 'no  ',	# Do not save objects

@@ -1,7 +1,7 @@
 """Suite Text: 
 Level 0, version 0
 
-Generated from Macintosh HD:Internet:Internet-programma's:Netscape CommunicatorÅ-map:Netscape CommunicatorÅ
+Generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -42,7 +42,7 @@ class justbehind(aetools.NProperty):
 #        element 'stys' as ['indx', 'name']
 
 class styleset(aetools.ComponentItem):
-	"""styleset - A style ≥set≤ that may be used repeatedly in text objects. """
+	"""styleset - A style ñsetî that may be used repeatedly in text objects. """
 	want = 'stys'
 class name(aetools.NProperty):
 	"""name - style name """
