@@ -279,7 +279,7 @@ then
         if test -z "$CXX"; then
               LINKCC="\$(PURIFY) \$(CC)"
         else
-              echo 'int main(){return 0;}' > conftest.$ac_ext
+              echo 'void foo();int main(){foo();}void foo(){}' > conftest.$ac_ext
               $CXX -c conftest.$ac_ext 2>&5
               if $CC -o conftest$ac_exeext conftest.$ac_objext 2>&5 \
                  && test -s conftest$ac_exeext && ./conftest$ac_exeext
