@@ -164,9 +164,9 @@ source tree, see the section on VPATH below.
 Start by running the script "./configure", which determines your
 system configuration and creates several Makefiles.  (It takes a
 minute or two -- please be patient!)  You may want to pass options to
-the configure script or edit the Modules/Setup file at this point --
-see the section below on configuration options and variables.  When
-it's done, you are ready to run make.
+the configure script or edit the Modules/Setup file after running
+configure -- see the section below on configuration options and
+variables.  When it's done, you are ready to run make.
 
 To build Python, you normally type "make" in the toplevel directory.
 This will recursively run make in each of the subdirectories: Grammar,
@@ -179,7 +179,9 @@ dynamically loadable modules, if you have any).
 
 Once you have built a Python interpreter, see the subsections below on
 testing, configuring additional modules, and installation.  If you run
-into trouble, see the next section.
+into trouble, see the next section.  Editing the Modules/Setup file
+after running make is supported; just run "make" again after making
+the desired changes.
 
 
 Troubleshooting
@@ -322,9 +324,8 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 	1) CONFIG_SHELL=/usr/local/bin/bash CC=cc RANLIB=: \
 	    ./configure --verbose --without-gcc --with-libm=""
 
-	2) copy Modules/Setup.in to Modules/Setup; edit Modules/Setup to
-	   activate everything that makes sense for your system... tested
-	   here at QNX with the following modules:
+	2) edit Modules/Setup to activate everything that makes sense for
+	   your system... tested here at QNX with the following modules:
 
 		array, audioop, binascii, cPickle, cStringIO, cmath,
 		crypt, curses, errno, fcntl, gdbm, grp, imageop,
@@ -462,9 +463,9 @@ Configuring additional built-in modules
 
 You can configure the interpreter to contain fewer or more built-in
 modules by editing the Modules/Setup file.  This file is initially
-copied (when the toplevel Makefile makes Modules/Makefile for the
-first time) from Setup.in; if it does not exist yet, create it by
-copying Modules/Setup.in.  Never edit Setup.in -- always edit Setup or
+copied from Setup.dist by the configure script; if it does not exist
+yet, create it by copying Modules/Setup.dist yourself (configure will
+never overwrite it).  Never edit Setup.dist -- always edit Setup or
 Setup.local (see below).  Read the comments in the file for
 information on what kind of edits are allowed.  When you have edited
 Setup in the Modules directory, the interpreter will automatically be
