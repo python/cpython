@@ -9,12 +9,11 @@
 "
 " All setting are protected by 'au' ('autocmd') statements.  Only files ending
 " in .py or .pyw will trigger the Python settings while files ending in *.c or
-" *.h will trigger the C settings.  This make the file "safe" in terms of only
+" *.h will trigger the C settings.  This makes the file "safe" in terms of only
 " adjusting settings for Python and C files.
 "
 " Only basic settings needed to enforce the style guidelines are set.
 " Some suggested options are listed but commented out at the end of this file.
-"
 
 
 " Number of spaces to use for an indent.
@@ -38,6 +37,12 @@ au BufRead,BufNewFile *py,*pyw,*.c,*.h set tabstop=8
 au BufRead,BufNewFile *.py,*.pyw set expandtab
 au BufRead,BufNewFile *.c,*.h set noexpandtab
 au BufRead,BufNewFile Makefile* set noexpandtab
+
+" Use the below highlight group when displaying bad whitespace is desired
+highlight BadWhitespace ctermbg=red guibg=red
+
+" Display tabs at the beginning of a line in Python mode as bad
+au BufRead,BufNewFile *.py,*.pyw match BadWhitespace /^\t\+/
 
 " Wrap text after a certain number of characters
 " Python: 79 
@@ -67,7 +72,7 @@ au BufNewFile *.py,*.pyw,*.c,*.h set fileformat=unix
 
 " Set the default file encoding to UTF-8: ``set encoding=utf-8``
 
-" Put a marker at the beginning of the file to differentiate between UTF and
+" Puts a marker at the beginning of the file to differentiate between UTF and
 " UCS encoding (WARNING: can trick shells into thinking a text file is actually
 " a binary file when executing the text file): ``set bomb``
 
@@ -79,9 +84,11 @@ au BufNewFile *.py,*.pyw,*.c,*.h set fileformat=unix
 
 " Folding based on indentation: ``set foldmethod=indent``
 
-" Make trailing whitespace explicit:
-"highlight WhitespaceEOL ctermbg=red guibg=red 
-"match WhitespaceEOL /\s\+$/
-" or
-"set list listchars=trail:-
+" Make trailing whitespace explicit (left off since this will automatically
+" insert the highlight or characters *as you type*, which can get annoying):
+"``match BadWhitespace /\s\+$/``
+"
+" or, for a non-colored, character-based solution:
+"
+"``set list listchars=trail:-``
 
