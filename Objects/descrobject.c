@@ -929,7 +929,7 @@ getset_init(PyObject *self, PyObject *args, PyObject *kwds)
 	PyObject *get = NULL, *set = NULL, *del = NULL;
 	getsetobject *gs = (getsetobject *)self;
 
-	if (!PyArg_ParseTuple(args, "|OOO:getset.__init__", &get, &set, &del))
+	if (!PyArg_ParseTuple(args, "|OOO:getset", &get, &set, &del))
 		return -1;
 	if (get == Py_None)
 		get = NULL;
