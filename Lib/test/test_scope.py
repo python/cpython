@@ -461,8 +461,7 @@ def adaptgetter(name, klass, getter):
     kind, des = getter
     if kind == 1:       # AV happens when stepping from this line to next
         if des == "":
-##            des = "_%s__%s" % (klass.__name__, name)
-            des = "1"
+            des = "_%s__%s" % (klass.__name__, name)
         return lambda obj: getattr(obj, des)
 
 class TestClass:
