@@ -293,6 +293,8 @@ class Application(FrameWork.Application):
 			if done.has_key(path):
 				continue
 			name = string.strip(name)
+			if os.name == "posix":
+				name = unicode(name, "utf-8")
 			if name[-3:] == '---':
 				menu.addseparator()
 			elif isdir:
