@@ -4,28 +4,32 @@ IDLEfork NEWS
 ---------------------------------------------------------
 
 
-IDLEfork 0.8.1 (xx JUN 2001)
+IDLEfork 0.8.1 (22 JUL 2001)
 ----------------------------
 New tarball released as a result of the 'revitalisation' of the IDLEfork
 project. 
+
+This release requires python 2.1 or better. Compatability with earlier
+versions of python (especially ancient ones like 1.5x) is no longer
+a priority in IDLEfork development.
 
 This release is based on a merging of the earlier IDLE fork work with
 current cvs IDLE (post IDLE version 0.8), with some minor additional
 coding by Kurt B. Kaiser and Stephen M. Gava.
 
 This release is basically functional but also contains some known 
-breakages, for instance with running things from the shell window, that
-may well have been introduced in a hasty attempt to change IDLEfork's
-previous startup behaviour.
+breakages, particularly with running things from the shell window. Also
+the debugger is not working, but I believe this was the case with the
+previous IDLE fork release (0.7.1) as well.
 
 This release is being made now to mark the point at which IDLEfork is 
 launching into a new stage of development. 
 
 IDLEfork CVS will now be branched to enable further development and 
 exploration of the two "execution in a remote process" patches submitted 
-by David Scherer (David's is currently in IDLEfork) and GvR on a branch, 
-while stabilisation and development of less heavyweight improvements 
-(like user customisation) can continue on the trunk.
+by David Scherer (David's is currently in IDLEfork) and GvR, while 
+stabilisation and development of less heavyweight improvements (like 
+user customisation) can continue on the trunk.
 
 
 IDLE fork 0.7.1 (15 AUG 2000)

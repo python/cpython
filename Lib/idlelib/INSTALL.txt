@@ -1,5 +1,22 @@
-INSTALLATION from IDLE fork 0.7.1 :
-===================================
+IDLEfork INSTALL notes
+======================
+
+The emphasis in IDLEfork is now for the project to be able to be run
+directly from the unpacked source directory. This is to enable easy testing
+of (and hacking on) IDLEfork, and will also prevent interfering with the 
+stable Python IDLE set up in any way.
+
+To install IDLEfork just unpack the archive into its own directory wherever
+you like. To run IDLEfork just go to the directory you unpacked IDLEfork
+into and then run 'python idle.py' in an xterm under unix/linux, or 
+'idle.pyw' under windows 98/2000. Remember that IDLEfork 0.8.1 and greater 
+require python 2.1 or greater.
+
+See README.txt and NEWS.txt for more details on this version of IDLEfork. 
+
+
+INSTALLATION notes from IDLE fork 0.7.1 :
+=========================================
 
 IDLE Fork Installation on Linux:
 
