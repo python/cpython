@@ -32,7 +32,7 @@ Core and builtins
   constructor would ignore all arguments.  This is changed now: the
   constructor refuses arguments in this case.  This might break code
   that worked under Python 2.2.  The simplest fix is to add a no-op
-  __init__: "def __init__(self, *args, **kw): pass".
+  __init__: ``def __init__(self, *args, **kw): pass``.
 
 - Through a bytecode optimizer bug (and I bet you didn't even know
   Python *had* a bytecode optimizer :-), "unsigned" hex/oct constants
@@ -189,8 +189,10 @@ Extension modules
   already).  With a tz argument, now(tz) used to return the local date
   and time, and attach tz to it, without any conversion of date and time
   members.  This was less than useful.  Now now(tz) returns the current
-  date and time as local time in tz's time zone, akin to
+  date and time as local time in tz's time zone, akin to ::
+
       tz.fromutc(datetime.utcnow().replace(tzinfo=utc))
+
   where "utc" is an instance of a tzinfo subclass modeling UTC.  Without
   a tz argument, now() continues to return the current local date and time,
   as a naive datetime object.
@@ -211,10 +213,12 @@ Extension modules
   for mixed-type comparisons in the last paragraph doesn't apply, if
   the comparison is == then False is returned, and if the comparison is
   != then True is returned.  Because dict lookup and the "in" operator
-  only invoke __eq__, this allows, for example,
+  only invoke __eq__, this allows, for example, ::
 
       if some_datetime in some_sequence:
-  and
+
+  and ::
+
       some_dict[some_timedelta] = whatever
 
   to work as expected, without raising TypeError just because the
@@ -265,7 +269,7 @@ Library
 - Bastion.py and rexec.py are disabled.  These modules are not safe in
   Python 2.2. or 2.3.
 
-- realpath is now exported when doing from poxixpath import *.
+- realpath is now exported when doing ``from poxixpath import *``.
   It is also exported for ntpath, macpath, and os2emxpath.
   See SF bug #659228.
 
@@ -306,7 +310,8 @@ Build
 - The audio driver tests (test_ossaudiodev.py and
   test_linuxaudiodev.py) are no longer run by default.  This is
   because they don't always work, depending on your hardware and
-  software.  To run these tests, you must use an invocation like
+  software.  To run these tests, you must use an invocation like ::
+
     ./python Lib/test/regrtest.py -u audio test_ossaudiodev
 
 - On systems which build using the configure script, compiler flags which
@@ -330,8 +335,8 @@ Build
 C API
 -----
 
-- PyEval_GetFrame() is now declared to return a PyFrameObject *
-  instead of a plain PyObject *.  (SF patch #686601.)
+- PyEval_GetFrame() is now declared to return a ``PyFrameObject *``
+  instead of a plain ``PyObject *``.  (SF patch #686601.)
 
 - PyNumber_Check() now checks that the object has a nb_int or nb_float
   slot, rather than simply checking whether it has a non-NULL
