@@ -3054,6 +3054,72 @@ def funnynew():
     vereq(isinstance(d, D), True)
     vereq(d.foo, 1)
 
+def subclass_right_op():
+    if verbose:
+        print "Testing correct dispatch of subclass overloading __r<op>__..."
+
+    # This code tests various cases where right-dispatch of a subclass
+    # should be preferred over left-dispatch of a base class.
+
+    # Case 1: subclass of int; this tests code in abstract.c::binary_op1()
+
+    class B(int):
+        def __div__(self, other):
+            return "B.__div__"
+        def __rdiv__(self, other):
+            return "B.__rdiv__"
+
+    vereq(B(1) / 1, "B.__div__")
+    vereq(1 / B(1), "B.__rdiv__")
+
+    # Case 2: subclass of object; this is just the baseline for case 3
+
+    class C(object):
+        def __div__(self, other):
+            return "C.__div__"
+        def __rdiv__(self, other):
+            return "C.__rdiv__"
+
+    vereq(C(1) / 1, "C.__div__")
+    vereq(1 / C(1), "C.__rdiv__")
+
+    # Case 3: subclass of new-style class; here it gets interesting
+
+    class D(C):
+        def __div__(self, other):
+            return "D.__div__"
+        def __rdiv__(self, other):
+            return "D.__rdiv__"
+
+    vereq(D(1) / C(1), "D.__div__")
+    vereq(C(1) / D(1), "D.__rdiv__")
+
+    # Case 4: this didn't work right in 2.2.2 and 2.3a1
+
+    class E(C):
+        pass
+
+    vereq(E.__rdiv__, C.__rdiv__)
+
+    vereq(E(1) / 1, "C.__div__")
+    vereq(1 / E(1), "C.__rdiv__")
+    vereq(E(1) / C(1), "C.__div__")
+    vereq(C(1) / E(1), "C.__div__") # This one would fail
+
+def dict_type_with_metaclass():
+    if verbose:
+        print "Testing type of __dict__ when __metaclass__ set..."
+
+    class B(object):
+        pass
+    class M(type):
+        pass
+    class C:
+        # In 2.3a1, C.__dict__ was a real dict rather than a dict proxy
+        __metaclass__ = M
+    veris(type(C.__dict__), type(B.__dict__))
+
+
 def test_main():
     class_docstrings()
     lists()
@@ -3116,6 +3182,9 @@ def test_main():
     copy_setstate()
     subtype_resurrection()
     funnynew()
+    subclass_right_op()
+    dict_type_with_metaclass()
+
     if verbose: print "All OK"
 
 if __name__ == "__main__":
