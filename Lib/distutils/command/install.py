@@ -272,7 +272,8 @@ class install (Command):
         # If a new root directory was supplied, make all the installation
         # dirs relative to it.
         if self.root is not None:
-            for name in ('lib', 'purelib', 'platlib', 'scripts', 'data'):
+            for name in ('lib', 'purelib', 'platlib',
+                         'scripts', 'data', 'headers'):
                 attr = "install_" + name
                 new_val = change_root (self.root, getattr (self, attr))
                 setattr (self, attr, new_val)
