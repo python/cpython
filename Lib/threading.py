@@ -517,7 +517,7 @@ def currentThread():
     try:
         return _active[_get_ident()]
     except KeyError:
-        print "currentThread(): no current thread for", _get_ident()
+        ##print "currentThread(): no current thread for", _get_ident()
         return _DummyThread()
 
 def activeCount():
