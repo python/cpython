@@ -4,7 +4,7 @@
 <HR>
 
 In this document we will (eventually) explain how to create Python CGI scripts
-for use with NetPresenz and probably other Mac-based HTTP servers too.
+for use with Personal WebServer, WebStar and probably other Mac-based HTTP servers too.
 Since CGI scripts are AppleEvent servers on the mac we will also learn
 a little about general AppleEvent server programming and about applet
 debugging. <p>
@@ -44,7 +44,8 @@ drag a file onto the interpreter the script will tell you what event it got. <p>
 
 <h2>A Minimal CGI script</h2>
 
-To try a CGI script you will first need a http server. I have used the
+To try a CGI script you will first need a http server. Apple's Personal Webserver
+is fine, but I have also used the
 shareware 
 <a href="http://www.stairways.com/netpresenz/">NetPresenz</a>
 by Peter Lewis
@@ -78,5 +79,12 @@ http://www.biap.com/datapig/mrwheat/cgi_params.html</a>. <p>
 
 To test the script drop <code>cgitest.cgi.py</code> onto <code>mkapplet</code>,
 move the resulting <code>cgitest.cgi</code> to somewhere where it is reachable
-by NetPresenz, and point your web browser towards it.
+by NetPresenz, and point your web browser towards it. Note that this assume you have
+already renamed realcgitest.py to cgitest.cgi.py, otherwise you'll also have
+to copy that file along. <p>
+
+For Apple's Personal Webserver you need to do a bit more: you have to copy the
+cgi applet to somewhere in your "Webpages" folder and you have to tell the webserver
+(in the control panels) that your CGI script exists. I don't understand what the various
+types of cgi scripts mean, but experiment with them.
 </BODY></HTML>
