@@ -481,8 +481,8 @@ def main():
     # Create the enclosing (outer) message
     outer = MIMEBase('multipart', 'mixed')
     outer['Subject'] = 'Contents of directory %s' % os.path.abspath(dir)
-    outer['To'] = sender
-    outer['From'] = COMMASPACE.join(recips)
+    outer['To'] = COMMASPACE.join(recips)
+    outer['From'] = sender
     outer.preamble = 'You will not see this in a MIME-aware mail reader.\n'
     # To guarantee the message ends with a newline
     outer.epilogue = ''
