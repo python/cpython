@@ -25,15 +25,15 @@ if abs(-1234L) <> 1234L: raise TestFailed, 'abs(-1234L)'
 
 print 'apply'
 def f0(*args):
-	if args != (): raise TestFailed, 'f0 called with ' + `args`
+    if args != (): raise TestFailed, 'f0 called with ' + `args`
 def f1(a1):
-	if a1 != 1: raise TestFailed, 'f1 called with ' + `a1`
+    if a1 != 1: raise TestFailed, 'f1 called with ' + `a1`
 def f2(a1, a2):
-	if a1 != 1 or a2 != 2:
-		raise TestFailed, 'f2 called with ' + `a1, a2`
+    if a1 != 1 or a2 != 2:
+        raise TestFailed, 'f2 called with ' + `a1, a2`
 def f3(a1, a2, a3):
-	if a1 != 1 or a2 != 2 or a3 != 3:
-		raise TestFailed, 'f3 called with ' + `a1, a2, a3`
+    if a1 != 1 or a2 != 2 or a3 != 3:
+        raise TestFailed, 'f3 called with ' + `a1, a2, a3`
 apply(f0, ())
 apply(f1, (1,))
 apply(f2, (1, 2))
@@ -44,13 +44,13 @@ if not callable(len):raise TestFailed, 'callable(len)'
 def f(): pass
 if not callable(f): raise TestFailed, 'callable(f)'
 class C:
-	def meth(self): pass
+    def meth(self): pass
 if not callable(C): raise TestFailed, 'callable(C)'
 x = C()
 if not callable(x.meth): raise TestFailed, 'callable(x.meth)'
 if callable(x): raise TestFailed, 'callable(x)'
 class D(C):
-	def __call__(self): pass
+    def __call__(self): pass
 y = D()
 if not callable(y): raise TestFailed, 'callable(y)'
 
@@ -127,13 +127,13 @@ if divmod(12L, -7) <> (-2L, -2): raise TestFailed, 'divmod(12L, -7)'
 if divmod(-12L, -7) <> (1L, -5): raise TestFailed, 'divmod(-12L, -7)'
 #
 if fcmp(divmod(3.25, 1.0), (3.0, 0.25)):
-	raise TestFailed, 'divmod(3.25, 1.0)'
+    raise TestFailed, 'divmod(3.25, 1.0)'
 if fcmp(divmod(-3.25, 1.0), (-4.0, 0.75)):
-	raise TestFailed, 'divmod(-3.25, 1.0)'
+    raise TestFailed, 'divmod(-3.25, 1.0)'
 if fcmp(divmod(3.25, -1.0), (-4.0, -0.75)):
-	raise TestFailed, 'divmod(3.25, -1.0)'
+    raise TestFailed, 'divmod(3.25, -1.0)'
 if fcmp(divmod(-3.25, -1.0), (3.0, -0.25)):
-	raise TestFailed, 'divmod(-3.25, -1.0)'
+    raise TestFailed, 'divmod(-3.25, -1.0)'
 
 print 'eval'
 if eval('1+1') <> 2: raise TestFailed, 'eval(\'1+1\')'
@@ -163,27 +163,27 @@ unlink(TESTFN)
 
 print 'filter'
 if filter(lambda c: 'a' <= c <= 'z', 'Hello World') <> 'elloorld':
-	raise TestFailed, 'filter (filter a string)'
+    raise TestFailed, 'filter (filter a string)'
 if filter(None, [1, 'hello', [], [3], '', None, 9, 0]) <> [1, 'hello', [3], 9]:
-	raise TestFailed, 'filter (remove false values)'
+    raise TestFailed, 'filter (remove false values)'
 if filter(lambda x: x > 0, [1, -3, 9, 0, 2]) <> [1, 9, 2]:
-	raise TestFailed, 'filter (keep positives)'
+    raise TestFailed, 'filter (keep positives)'
 class Squares:
-	def __init__(self, max):
-		self.max = max
-		self.sofar = []
-	def __len__(self): return len(self.sofar)
-	def __getitem__(self, i):
-		if not 0 <= i < self.max: raise IndexError
-		n = len(self.sofar)
-		while n <= i:
-			self.sofar.append(n*n)
-			n = n+1
-		return self.sofar[i]
+    def __init__(self, max):
+        self.max = max
+        self.sofar = []
+    def __len__(self): return len(self.sofar)
+    def __getitem__(self, i):
+        if not 0 <= i < self.max: raise IndexError
+        n = len(self.sofar)
+        while n <= i:
+            self.sofar.append(n*n)
+            n = n+1
+        return self.sofar[i]
 if filter(None, Squares(10)) != [1, 4, 9, 16, 25, 36, 49, 64, 81]:
-	raise TestFailed, 'filter(None, Squares(10))'
+    raise TestFailed, 'filter(None, Squares(10))'
 if filter(lambda x: x%2, Squares(10)) != [1, 9, 25, 49, 81]:
-	raise TestFailed, 'filter(oddp, Squares(10))'
+    raise TestFailed, 'filter(oddp, Squares(10))'
 
 print 'float'
 if float(3.14) <> 3.14: raise TestFailed, 'float(3.14)'
@@ -237,35 +237,35 @@ if int(3.5) <> 3: raise TestFailed, 'int(3.5)'
 if int(-3.5) <> -3: raise TestFailed, 'int(-3.5)'
 # Test conversion fron strings and various anomalies
 L = [
-    ('0', 0),
-    ('1', 1),
-    ('9', 9),
-    ('10', 10),
-    ('99', 99),
-    ('100', 100),
-    ('314', 314),
-    (' 314', 314),
-    ('314 ', 314),
-    ('  \t\t  314  \t\t  ', 314),
-    (`sys.maxint`, sys.maxint),
-    ('', ValueError),
-    (' ', ValueError),
-    ('  \t\t  ', ValueError),
+        ('0', 0),
+        ('1', 1),
+        ('9', 9),
+        ('10', 10),
+        ('99', 99),
+        ('100', 100),
+        ('314', 314),
+        (' 314', 314),
+        ('314 ', 314),
+        ('  \t\t  314  \t\t  ', 314),
+        (`sys.maxint`, sys.maxint),
+        ('', ValueError),
+        (' ', ValueError),
+        ('  \t\t  ', ValueError),
 ]
 for s, v in L:
     for sign in "", "+", "-":
-	for prefix in "", " ", "\t", "  \t\t  ":
-	    ss = prefix + sign + s
-	    vv = v
-	    if sign == "-" and v is not ValueError:
-		vv = -v
-	    try:
-		if int(ss) != vv:
-		    raise TestFailed, "int(%s)" % `ss`
-	    except v:
-		pass
-	    except ValueError, e:
-		raise TestFailed, "int(%s) raised ValueError: %s" % (`ss`, e)
+        for prefix in "", " ", "\t", "  \t\t  ":
+            ss = prefix + sign + s
+            vv = v
+            if sign == "-" and v is not ValueError:
+                vv = -v
+            try:
+                if int(ss) != vv:
+                    raise TestFailed, "int(%s)" % `ss`
+            except v:
+                pass
+            except ValueError, e:
+                raise TestFailed, "int(%s) raised ValueError: %s" % (`ss`, e)
 s = `-1-sys.maxint`
 if int(s)+1 != -sys.maxint:
     raise TestFailed, "int(%s)" % `s`
@@ -332,61 +332,61 @@ if long(3.5) <> 3L: raise TestFailed, 'long(3.5)'
 if long(-3.5) <> -3L: raise TestFailed, 'long(-3.5)'
 # Check conversions from string (same test set as for int(), and then some)
 LL = [
-    ('1' + '0'*20, 10L**20),
-    ('1' + '0'*100, 10L**100),
+        ('1' + '0'*20, 10L**20),
+        ('1' + '0'*100, 10L**100),
 ]
 for s, v in L + LL:
     for sign in "", "+", "-":
-	for prefix in "", " ", "\t", "  \t\t  ":
-	    ss = prefix + sign + s
-	    vv = v
-	    if sign == "-" and v is not ValueError:
-		vv = -v
-	    try:
-		if long(ss) != long(vv):
-		    raise TestFailed, "int(%s)" % `ss`
-	    except v:
-		pass
-	    except ValueError, e:
-		raise TestFailed, "int(%s) raised ValueError: %s" % (`ss`, e)
+        for prefix in "", " ", "\t", "  \t\t  ":
+            ss = prefix + sign + s
+            vv = v
+            if sign == "-" and v is not ValueError:
+                vv = -v
+            try:
+                if long(ss) != long(vv):
+                    raise TestFailed, "int(%s)" % `ss`
+            except v:
+                pass
+            except ValueError, e:
+                raise TestFailed, "int(%s) raised ValueError: %s" % (`ss`, e)
 
 print 'map'
 if map(None, 'hello world') <> ['h','e','l','l','o',' ','w','o','r','l','d']:
-	raise TestFailed, 'map(None, \'hello world\')'
+    raise TestFailed, 'map(None, \'hello world\')'
 if map(None, 'abcd', 'efg') <> \
-	  [('a', 'e'), ('b', 'f'), ('c', 'g'), ('d', None)]:
-	raise TestFailed, 'map(None, \'abcd\', \'efg\')'
+   [('a', 'e'), ('b', 'f'), ('c', 'g'), ('d', None)]:
+    raise TestFailed, 'map(None, \'abcd\', \'efg\')'
 if map(None, range(10)) <> [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
-	raise TestFailed, 'map(None, range(10))'
+    raise TestFailed, 'map(None, range(10))'
 if map(lambda x: x*x, range(1,4)) <> [1, 4, 9]:
-	raise TestFailed, 'map(lambda x: x*x, range(1,4))'
+    raise TestFailed, 'map(lambda x: x*x, range(1,4))'
 try:
-	from math import sqrt
+    from math import sqrt
 except ImportError:
-	def sqrt(x):
-		return pow(x, 0.5)
+    def sqrt(x):
+        return pow(x, 0.5)
 if map(lambda x: map(sqrt,x), [[16, 4], [81, 9]]) <> [[4.0, 2.0], [9.0, 3.0]]:
-	raise TestFailed, 'map(lambda x: map(sqrt,x), [[16, 4], [81, 9]])'
+    raise TestFailed, 'map(lambda x: map(sqrt,x), [[16, 4], [81, 9]])'
 if map(lambda x, y: x+y, [1,3,2], [9,1,4]) <> [10, 4, 6]:
-	raise TestFailed, 'map(lambda x,y: x+y, [1,3,2], [9,1,4])'
+    raise TestFailed, 'map(lambda x,y: x+y, [1,3,2], [9,1,4])'
 def plus(*v):
-	accu = 0
-	for i in v: accu = accu + i
-	return accu
+    accu = 0
+    for i in v: accu = accu + i
+    return accu
 if map(plus, [1, 3, 7]) <> [1, 3, 7]:
-	raise TestFailed, 'map(plus, [1, 3, 7])'
+    raise TestFailed, 'map(plus, [1, 3, 7])'
 if map(plus, [1, 3, 7], [4, 9, 2]) <> [1+4, 3+9, 7+2]:
-	raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2])'
+    raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2])'
 if map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0]) <> [1+4+1, 3+9+1, 7+2+0]:
-	raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0])'
+    raise TestFailed, 'map(plus, [1, 3, 7], [4, 9, 2], [1, 1, 0])'
 if map(None, Squares(10)) != [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]:
-	raise TestFailed, 'map(None, Squares(10))'
+    raise TestFailed, 'map(None, Squares(10))'
 if map(int, Squares(10)) != [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]:
-	raise TestFailed, 'map(int, Squares(10))'
+    raise TestFailed, 'map(int, Squares(10))'
 if map(None, Squares(3), Squares(2)) != [(0,0), (1,1), (4,None)]:
-	raise TestFailed, 'map(None, Squares(3), Squares(2))'
+    raise TestFailed, 'map(None, Squares(3), Squares(2))'
 if map(max, Squares(3), Squares(2)) != [0, 1, None]:
-	raise TestFailed, 'map(max, Squares(3), Squares(2))'
+    raise TestFailed, 'map(max, Squares(3), Squares(2))'
 
 print 'max'
 if max('123123') <> '3': raise TestFailed, 'max(\'123123\')'
