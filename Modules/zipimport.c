@@ -103,7 +103,7 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
 			break;
 		}
 		/* back up one path element */
-		p = strchr(buf, SEP);
+		p = strrchr(buf, SEP);
 		if (prefix != NULL)
 			*prefix = SEP;
 		if (p == NULL)

@@ -30,7 +30,8 @@ else:
 
 TESTMOD = "ziptestmodule"
 TESTPACK = "ziptestpackage"
-TEMP_ZIP = "junk95142.zip"
+TESTPACK2 = "ziptestpackage2"
+TEMP_ZIP = os.path.abspath("junk95142.zip")
 
 
 class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
@@ -139,11 +140,11 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def testDeepPackage(self):
         packdir = TESTPACK + os.sep
-        packdir2 = packdir + packdir
+        packdir2 = packdir + TESTPACK2 + os.sep
         files = {packdir + "__init__" + pyc_ext: (NOW, test_pyc),
                  packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
-        self.doTest(pyc_ext, files, TESTPACK, TESTPACK, TESTMOD)
+        self.doTest(pyc_ext, files, TESTPACK, TESTPACK2, TESTMOD)
 
     def testGetData(self):
         z = ZipFile(TEMP_ZIP, "w")
@@ -163,7 +164,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
         src = """if 1:  # indent hack
         def get_file():
             return __file__
-        if __importer__.get_data("some.data") != "some data":
+        if __loader__.get_data("some.data") != "some data":
             raise AssertionError, "bad data"\n"""
         pyc = make_pyc(compile(src, "<???>", "exec"), NOW)
         files = {TESTMOD + pyc_ext: (NOW, pyc),
