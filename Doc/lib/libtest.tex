@@ -31,8 +31,10 @@ style; these styles of tests will not be covered.
 
 It is preferred that tests for the \module{test} package use the
 \refmodule{unittest} module and follow a few guidelines.
-One is to have the name of all the test methods start with \samp{test_} as
-well as the module's name.
+One is to name the test module by starting it with \samp{test_} and end it with
+the name of the module being tested.
+The test methods in the test module should start with \samp{test_} and end with
+a description of what the method is testing.
 This is needed so that the methods are recognized by the test driver as
 test methods.
 Also, no documentation string for the method should be included.
@@ -109,6 +111,8 @@ This leads to a few guidelines to be followed:
       changed in the future.
 \item Make sure to clean up after your tests (such as close and remove all
       temporary files).
+\item If a test is dependent on a specific condition of the operating system
+      then verify the condition already exists before attempting the test.
 \item Import as few modules as possible and do it as soon as possible.
       This minimizes external dependencies of tests and also minimizes possible
       anomalous behavior from side-effects of importing a module.

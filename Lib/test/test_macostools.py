@@ -75,6 +75,12 @@ class TestMacostools(unittest.TestCase):
             os.unlink(TESTFN2)
         except:
             pass
+        # If the directory doesn't exist, then chances are this is a new
+        # install of Python so don't create it since the user might end up
+        # running ``sudo make install`` and creating the directory here won't
+        # leave it with the proper permissions.
+        if not os.path.exists(sys.prefix):
+            return
         macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
         fss, _, _ = Carbon.File.ResolveAliasFile(TESTFN2, 0)
         self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
