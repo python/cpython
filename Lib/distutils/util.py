@@ -427,11 +427,3 @@ byte_compile(files, optimize=%s, force=%s,
                               (file, cfile_base)
 
 # byte_compile ()
-
-
-if __name__ == "__main__":
-    import glob
-    f = glob.glob("command/*.py")
-    byte_compile(f, optimize=0, prefix="command/", base_dir="/usr/lib/python")
-    #byte_compile(f, optimize=1)
-    #byte_compile(f, optimize=2)
