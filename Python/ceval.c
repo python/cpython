@@ -1637,12 +1637,8 @@ eval_code2(co, globals, locals,
 			    }
 			    nstar = PySequence_Length(stararg);
 			    if (nstar < 0) {
-				    if (!PyErr_Occurred)
-					    PyErr_SetString(
-						    PyExc_TypeError,
-						    "len() of unsized object");
-				    x = NULL;
-				    break;
+				x = NULL;
+				break;
 			    }
 			}
 			if (nk > 0) {
