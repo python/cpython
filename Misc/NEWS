@@ -1,13 +1,65 @@
 What's New in Python 2.1 beta 2?
 ================================
 
+(Unlisted are many fixed bugs, more documentation, etc.)
+
 Core language, builtins, and interpreter
+
+- The nested scopes work (enabled by "from __future__ import
+  nested_scopes") is completed; in particular, the future now extends
+  into code executed through exec, eval() and execfile(), and into the
+  interactive interpreter.
+
+- When calling a base class method (e.g. BaseClass.__init__(self)),
+  this is now allowed even if self is not strictly spoken a class
+  instance (e.g. when using metaclasses or the Don Beaudry hook).
+
+- Slice objects are now comparable but not hashable; this prevents
+  dict[:] from being accepted but meaningless.
+
+- Complex division is now calculated using less braindead algorithms.
+  This doesn't change semantics except it's more likely to give useful
+  results in extreme cases.  Complex repr() now uses full precision
+  like float repr().
+
+- sgmllib.py now calls handle_decl() for simple <!...> declarations.
 
 Standard library
 
-- A new module Tix was added, which wraps the Tix extension library for Tk.
-  With that module, it is not necessary to statically link Tix with _tkinter,
-  since Tix will be loaded with Tcl's "package require" command.
+- unittest.py, a unit testing framework by Steve Purcell (PyUNIT,
+  inspired by JUnit), is now part of the standard library.  You now
+  have a choice of two testing frameworks: unittest requires you to
+  write testcases as separate code, doctest gathers them from
+  docstrings.  Both approaches have their advantages and
+  disadvantages.
+
+- A new module Tix was added, which wraps the Tix extension library
+  for Tk.  With that module, it is not necessary to statically link
+  Tix with _tkinter, since Tix will be loaded with Tcl's "package
+  require" command.  See Demo/tix/.
+
+- tzparse.py is now obsolete.
+
+- In gzip.py, the seek() and tell() methods are removed -- they were
+  non-functional anyway, and it's better if callers can test for their
+  existence with hasattr().
+
+Python/C API
+
+- PyDict_Next(): it is now safe to call PyDict_SetItem() with a key
+  that's already in the dictionary during a PyDict_Next() iteration.
+  This used to fail occasionally when a dictionary resize operation
+  could be triggered that would rehash all the keys.  All other
+  modifications to the dictionary are still off-limits during a
+  PyDict_Next() iteration!
+
+- New extended APIs related to passing compiler variables around.
+
+- New abstract APIs PyObject_IsInstance(), PyObject_IsSubclass()
+  implement isinstance() and issubclass().
+
+- Py_BuildValue() now has a "D" conversion to create a Python complex
+  number from a Py_complex C value.
 
 What's New in Python 2.1 beta 1?
 ================================
