@@ -355,7 +355,19 @@ def _init_posix():
 
         raise DistutilsPlatformError(my_msg)
 
-
+    # On MacOSX we need to check the setting of the environment variable
+    # MACOSX_DEPLOYMENT_TARGET: configure bases some choices on it so
+    # it needs to be compatible.
+    # An alternative would be to force MACOSX_DEPLOYMENT_TARGET to be
+    # the same as during configure.
+    if sys.platform == 'darwin' and g.has_key('CONFIGURE_MACOSX_DEPLOYMENT_TARGET'):
+        cfg_target = g['CONFIGURE_MACOSX_DEPLOYMENT_TARGET']
+        cur_target = os.getenv('MACOSX_DEPLOYMENT_TARGET', '')
+        if cfg_target != cur_target:
+            my_msg = ('$MACOSX_DEPLOYMENT_TARGET mismatch: now "%s" but "%s" during configure'
+                % (cur_target, cfg_target))
+            raise DistutilsPlatformError(my_msg)
+        
     # On AIX, there are wrong paths to the linker scripts in the Makefile
     # -- these paths are relative to the Python source, but when installed
     # the scripts are in another directory.
