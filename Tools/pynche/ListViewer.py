@@ -7,6 +7,7 @@ class ListViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
         self.__lastbox = None
+        self.__dontcenter = 0
         root = self.__root = Toplevel(parent, class_='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__withdraw)
         root.title('Pynche %s' % __version__)
@@ -18,7 +19,8 @@ class ListViewer:
         #
         frame = self.__frame = Frame(root)
         frame.pack()
-        canvas = self.__canvas = Canvas(frame, width=160, height=300)
+        canvas = self.__canvas = Canvas(frame, width=160, height=300,
+                                        borderwidth=2, relief=SUNKEN)
         self.__scrollbar = Scrollbar(frame)
         self.__scrollbar.pack(fill=Y, side=RIGHT)
         canvas.pack(fill=BOTH, expand=1)
@@ -28,11 +30,9 @@ class ListViewer:
         # create all the buttons
         colordb = switchboard.colordb()
         row = 0
-        names = colordb.all_names()
-        names.sort()
         widest = 0
         bboxes = self.__bboxes = []
-        for name in names:
+        for name in colordb.unique_names():
             exactcolor = ColorDB.triplet_to_rrggbb(colordb.find_byname(name))
             canvas.create_rectangle(5, row*20 + 5,
                                     20, row*20 + 20,
@@ -55,6 +55,21 @@ class ListViewer:
         for box in bboxes:
             x1, y1, x2, y2 = canvas.coords(box)
             canvas.coords(box, x1, y1, widest, y2)
+        #
+        # Update on click
+        self.__uoc = BooleanVar()
+        self.__uoc.set(1)
+        self.__uocbtn = Checkbutton(root,
+                                    text='Update on Click',
+                                    variable=self.__uoc)
+        self.__uocbtn.pack(expand=1, fill=BOTH)
+        #
+        # alias list
+        self.__alabel = Label(root, text='Aliases:')
+        self.__alabel.pack()
+        self.__aliases = Listbox(root, height=5,
+                                 selectmode=BROWSE)
+        self.__aliases.pack(expand=1, fill=BOTH)
 
     def __onrelease(self, event=None):
         canvas = self.__canvas
@@ -76,7 +91,11 @@ class ListViewer:
 ##            print 'No color tag found!'
             return
         red, green, blue = ColorDB.rrggbb_to_triplet(t)
-        self.__sb.update_views(red, green, blue)
+        self.__dontcenter = 1
+        if self.__uoc.get():
+            self.__sb.update_views(red, green, blue)
+        else:
+            self.update_yourself(red, green, blue)
 
     def __quit(self, event=None):
         sys.exit(0)
@@ -96,3 +115,24 @@ class ListViewer:
         colortag = ColorDB.triplet_to_rrggbb((red, green, blue))
         canvas.itemconfigure(colortag, outline='black')
         self.__lastbox = colortag
+        # fill the aliases
+        self.__aliases.delete(0, END)
+        try:
+            aliases = self.__sb.colordb().aliases_of(red, green, blue)[1:]
+        except ColorDB.BadColor:
+            self.__aliases.insert(END, '<no matching color>')
+            return
+        if not aliases:
+            self.__aliases.insert(END, '<no aliases>')
+        else:
+            for name in aliases:
+                self.__aliases.insert(END, name)
+        # maybe scroll the canvas so that the item is visible
+        if self.__dontcenter:
+            self.__dontcenter = 0
+        else:
+            height = canvas['height']
+            ig, ig, ig, y1 = canvas.coords(colortag)
+            ig, ig, ig, y2 = canvas.coords(self.__bboxes[-1])
+            h = int(canvas['height']) * 0.5
+            canvas.yview('moveto', (y1-h) / y2)
