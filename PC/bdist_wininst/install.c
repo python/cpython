@@ -590,6 +590,22 @@ PyMethodDef meth[] = {
 	{"message_box", PyMessageBox, METH_VARARGS, NULL},
 };
 
+static HINSTANCE LoadPythonDll(char *fname)
+{
+	char fullpath[_MAX_PATH];
+	LONG size = sizeof(fullpath);
+	HINSTANCE h = LoadLibrary(fname);
+	if (h)
+		return h;
+	if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER,
+					   "SOFTWARE\\Python\\PythonCore\\2.3\\InstallPath",
+					   fullpath, &size))
+		return NULL;
+	strcat(fullpath, "\\");
+	strcat(fullpath, fname);
+	return LoadLibrary(fullpath);
+}
+
 static int prepare_script_environment(HINSTANCE hPython)
 {
 	PyObject *mod;
@@ -715,7 +731,7 @@ static int run_simple_script(char *script)
 	freopen(tempname, "a", stderr);
 	freopen(tempname, "a", stdout);
 
-	hPython = LoadLibrary (pythondll);
+	hPython = LoadPythonDll(pythondll);
 	if (!hPython) {
 		set_failure_reason("Can't load Python for pre-install script");
 		return -1;
@@ -1745,7 +1761,7 @@ InstallFilesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						"Compiling files to .pyc...");
 
 				SetDlgItemText(hDialog, IDC_INFO, "Loading python...");
-				hPython = LoadLibrary(pythondll);
+				hPython = LoadPythonDll(pythondll);
 				if (hPython) {
 					errors = compile_filelist(hPython, FALSE);
 					FreeLibrary(hPython);
@@ -1764,7 +1780,7 @@ InstallFilesDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 						"Compiling files to .pyo...");
 
 				SetDlgItemText(hDialog, IDC_INFO, "Loading python...");
-				hPython = LoadLibrary(pythondll);
+				hPython = LoadPythonDll(pythondll);
 				if (hPython) {
 					errors = compile_filelist(hPython, TRUE);
 					FreeLibrary(hPython);
@@ -1840,7 +1856,7 @@ FinishedDlgProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 			argv[0] = fname;
 
-			hPython = LoadLibrary(pythondll);
+			hPython = LoadPythonDll(pythondll);
 			if (hPython) {
 				int result;
 				result = run_installscript(hPython, fname, 2, argv);
