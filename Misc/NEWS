@@ -102,6 +102,13 @@ Extension modules
 
 Library
 
+- ftplib.retrlines() now tests for callback is None rather than testing
+  for False.  Was causing an error when given a callback object which
+  was callable but also returned len() as zero.  The change may
+  create new breakage if the caller relied on the undocumented behavior
+  and called with callback set to [] or some other False value not
+  identical to None.
+
 - random.gauss() uses a piece of hidden state used by nothing else,
   and the .seed() and .whseed() methods failed to reset it.  In other
   words, setting the seed didn't completely determine the sequence of
