@@ -495,7 +495,7 @@ class XMLParser:
                 self.syntax_error('xml:namespace prefix not unique')
             self.__namespaces[prefix] = attrdict['ns']
         else:
-            if string.find(string.lower(name), 'xml') >= 0:
+            if string.lower(name) == 'xml':
                 self.syntax_error('illegal processing instruction target name')
             self.handle_proc(name, rawdata[k:j])
         return end.end(0)
