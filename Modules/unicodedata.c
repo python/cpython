@@ -277,7 +277,7 @@ _gethash(const char *s, int len, int scale)
 }
 
 static int
-_getname(Py_UCS4 code, char* buffer, int buflen)
+_Py_getname(Py_UCS4 code, char* buffer, int buflen)
 {
     int offset;
     int i;
@@ -334,7 +334,7 @@ _cmpname(int code, const char* name, int namelen)
     /* check if code corresponds to the given name */
     int i;
     char buffer[NAME_MAXLEN];
-    if (!_getname(code, buffer, sizeof(buffer)))
+    if (!_Py_getname(code, buffer, sizeof(buffer)))
         return 0;
     for (i = 0; i < namelen; i++) {
         if (toupper(name[i]) != buffer[i])
@@ -384,7 +384,7 @@ _getcode(const char* name, int namelen, Py_UCS4* code)
 static const _PyUnicode_Name_CAPI hashAPI = 
 {
     sizeof(_PyUnicode_Name_CAPI),
-    _getname,
+    _Py_getname,
     _getcode
 };
 
@@ -407,7 +407,7 @@ unicodedata_name(PyObject* self, PyObject* args)
 	return NULL;
     }
 
-    if (!_getname((Py_UCS4) *PyUnicode_AS_UNICODE(v),
+    if (!_Py_getname((Py_UCS4) *PyUnicode_AS_UNICODE(v),
                              name, sizeof(name))) {
 	if (defobj == NULL) {
 	    PyErr_SetString(PyExc_ValueError, "no such name");

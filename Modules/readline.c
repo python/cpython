@@ -507,6 +507,10 @@ static void
 setup_readline(void)
 {
 	rl_readline_name = "python";
+#if defined(PYOS_OS2) && defined(PYCC_GCC)
+	/* Allow $if term= in .inputrc to work */
+	rl_terminal_name = getenv("TERM");
+#endif
 	/* Force rebind of TAB to insert-tab */
 	rl_bind_key('\t', rl_insert);
 	/* Bind both ESC-TAB and ESC-ESC to the completion function */
