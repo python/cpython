@@ -44,7 +44,7 @@ regular expression represented as a string literal, you have to
 E.g.\  to extract \LaTeX\ \samp{\e section\{\textrm{\ldots}\}} headers
 from a document, you can use this pattern:
 \code{'[\e ]section\{\e (.*\e )\}'}.  \emph{Another exception:}
-the escape sequece \samp{\e b} is significant in string literals
+the escape sequence \samp{\e b} is significant in string literals
 (where it means the ASCII bell character) as well as in Emacs regular
 expressions (where it stands for a word boundary), so in order to
 search for a word boundary, you should use the pattern \code{'\e \e b'}.
