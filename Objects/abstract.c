@@ -666,12 +666,14 @@ PySequence_GetItem(s, i)
 
   if(! s) return Py_ReturnNullError();
 
-  if(! ((m=s->ob_type->tp_as_sequence) && m->sq_length && m->sq_item))
+  if(! ((m=s->ob_type->tp_as_sequence) && m->sq_item))
     return Py_ReturnMethodError("__getitem__");  
 
-  if(0 > (l=m->sq_length(s))) return NULL;
-
-  if(i < 0) i += l;
+  if(i < 0)
+    {
+      if(0 > (l=m->sq_length(s))) return NULL;
+      i += l;
+    }
       
   return m->sq_item(s,i);
 }
