@@ -1,33 +1,26 @@
 """Thread module emulating a subset of Java's threading model."""
 
-import sys
-import time
-import thread
-import traceback
-import StringIO
+import sys as _sys
+
+try:
+    import thread
+except ImportError:
+    del _sys.modules[__name__]
+    raise
+
+from StringIO import StringIO as _StringIO
+from time import time as _time, sleep as _sleep
+from traceback import print_exc as _print_exc
 
 # Rename some stuff so "from threading import *" is safe
 __all__ = ['activeCount', 'Condition', 'currentThread', 'enumerate', 'Event',
            'Lock', 'RLock', 'Semaphore', 'BoundedSemaphore', 'Thread', 'Timer']
-
-_sys = sys
-del sys
-
-_time = time.time
-_sleep = time.sleep
-del time
 
 _start_new_thread = thread.start_new_thread
 _allocate_lock = thread.allocate_lock
 _get_ident = thread.get_ident
 ThreadError = thread.error
 del thread
-
-_print_exc = traceback.print_exc
-del traceback
-
-_StringIO = StringIO.StringIO
-del StringIO
 
 
 # Debug support (adapted from ihooks.py)
