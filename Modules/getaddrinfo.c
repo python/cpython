@@ -188,6 +188,7 @@ if (pai->ai_flags & AI_CANONNAME) {\
 	memcpy(ai, pai, sizeof(struct addrinfo));\
 	(ai)->ai_addr = (struct sockaddr *)((ai) + 1);\
 	memset((ai)->ai_addr, 0, (gai_afd)->a_socklen);\
+	(ai)->ai_addrlen = (gai_afd)->a_socklen;\
 	(ai)->ai_addr->sa_family = (ai)->ai_family = (gai_afd)->a_af;\
 	((struct sockinet *)(ai)->ai_addr)->si_port = port;\
 	p = (char *)((ai)->ai_addr);\
