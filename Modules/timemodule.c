@@ -273,7 +273,7 @@ time_convert(time_t when, struct tm * (*function)(const time_t *))
 		if (errno == 0)
 			errno = EINVAL;
 #endif
-		return PyErr_SetFromErrno(PyExc_IOError);
+		return PyErr_SetFromErrno(PyExc_ValueError);
 	}
 	return tmtotuple(p);
 }
