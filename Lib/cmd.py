@@ -55,8 +55,8 @@ class Cmd:
 				return
 			func()
 		else:
-			import getattr
-			names = getattr.dir(self)
+			import newdir
+			names = newdir.dir(self)
 			cmds = []
 			for name in names:
 				if name[:3] == 'do_':
