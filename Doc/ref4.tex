@@ -169,13 +169,33 @@ code from the top).
 When an exception is not handled at all, the interpreter terminates
 execution of the program, or returns to its interactive main loop.
 
-Exceptions are identified by string objects.  Two different string
-objects with the same value identify different exceptions.
+Exceptions are identified by string objects or class instances.  Two
+different string objects with the same value identify different
+exceptions.  An exception can be raised with a class instance.  Such
+exceptions are caught by specifying an except clause that has the
+class name (or a base class) as the condition.
 
 When an exception is raised, an object (maybe \verb@None@) is passed
 as the exception's ``parameter''; this object does not affect the
 selection of an exception handler, but is passed to the selected
-exception handler as additional information.
+exception handler as additional information.  For exceptions raised
+with a class instance, the instance is passed as the ``parameter''.
+
+For example:
+
+\begin{verbatim}
+>>> class Error:
+...     def __init__(self, msg): self.msg = msg
+... 
+>>> class SpecificError(Error): pass
+... 
+>>> try:
+...     raise SpecificError('broken')
+... except Error, obj:
+...     print obj.msg
+... 
+broken
+\end{verbatim}
 
 See also the description of the \verb@try@ and \verb@raise@
 statements.
