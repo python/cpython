@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import unittest, operator, copy
+import unittest, operator, copy, pickle
 from sets import Set, ImmutableSet
 from test import test_support
 
@@ -73,6 +73,14 @@ class TestBasicOps(unittest.TestCase):
     def test_iteration(self):
         for v in self.set:
             self.assert_(v in self.values)
+
+    def test_pickling(self):
+        p = pickle.dumps(self.set)
+        print repr(p)
+        copy = pickle.loads(p)
+        repr(copy)
+        self.assertEqual(self.set, copy,
+                         "%s != %s" % (self.set, copy))
 
 #------------------------------------------------------------------------------
 
