@@ -51,14 +51,14 @@ def main():
 	print 'socket connected'
 
 	parser = cd.createparser()
-	parser.setcallback(0, audiocallback, port)
-	parser.setcallback(1, pnumcallback, player)
-	parser.setcallback(2, indexcallback, None)
-	## 3 = ptime: too many calls
-	## 4 = atime: too many calls
-	parser.setcallback(5, catalogcallback, None)
-	parser.setcallback(6, identcallback, None)
-	parser.setcallback(7, controlcallback, None)
+	parser.setcallback(cd.audio, audiocallback, port)
+	parser.setcallback(cd.pnum, pnumcallback, player)
+	parser.setcallback(cd.index, indexcallback, None)
+	## cd.ptime: too many calls
+	## cd.atime: too many calls
+	parser.setcallback(cd.catalog, catalogcallback, None)
+	parser.setcallback(cd.ident, identcallback, None)
+	parser.setcallback(cd.control, controlcallback, None)
 
 	if len(args) >= 2:
 		if len(args) >= 3:

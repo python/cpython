@@ -2,7 +2,7 @@ import sys
 import readcd
 import aifc
 import AL
-import CD
+import cd
 
 Error = 'cdaiff.Error'
 
@@ -26,7 +26,7 @@ def main():
 			r.appendstretch(x[0], x[1])
 		except TypeError:
 			r.appendtrack(x)
-	r.setcallback(CD.AUDIO, writeaudio, a)
+	r.setcallback(cd.audio, writeaudio, a)
 	r.play()
 	a.close()
 

@@ -50,7 +50,7 @@ def prstatus(status):
 	print 'Future:', dummy
 
 def main():
-	import sys, readcd, al, AL, CD, cdplayer
+	import sys, readcd, al, AL, cd, cdplayer
 	verbose = 0
 	r = readcd.Readcd()
 	prstatus(r.getstatus())
@@ -84,13 +84,13 @@ def main():
 		for i in range(8):
 			r.setcallback(i, callback, None)
 		if verbose:
-			r.setcallback(CD.PTIME, tcallback, None)
-			r.setcallback(CD.ATIME, tcallback, None)
+			r.setcallback(cd.ptime, tcallback, None)
+			r.setcallback(cd.atime, tcallback, None)
 		else:
-			r.removecallback(CD.PTIME)
-			r.removecallback(CD.ATIME)
-		r.setcallback(CD.PNUM, prtrack, cdinfo)
-		r.setcallback(CD.AUDIO, playaudio, port)
+			r.removecallback(cd.ptime)
+			r.removecallback(cd.atime)
+		r.setcallback(cd.pnum, prtrack, cdinfo)
+		r.setcallback(cd.audio, playaudio, port)
 
 		data = r.play()
 	except KeyboardInterrupt:

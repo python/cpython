@@ -1,7 +1,6 @@
 # Window interface to (some of) the CD player's vital audio functions
 
 import cd
-import CD
 import stdwin
 from stdwinevents import *
 import mainloop
@@ -44,9 +43,9 @@ def but1(win):
 
 def but2(win):
 	state = win.player.getstatus()[0]
-	if state == CD.READY:
+	if state == cd.ready:
 		win.player.play(1, 1)
-	elif state in (CD.PLAYING, CD.PAUSED):
+	elif state in (cd.playing, cd.paused):
 		win.player.togglepause()
 	else:
 		stdwin.fleep()
