@@ -223,6 +223,7 @@ class URLopener:
 		else:
 			host, selector = url
 			urltype, rest = splittype(selector)
+			url = rest
 			user_passwd = None
 			if string.lower(urltype) != 'http':
 				realhost = None
@@ -459,8 +460,8 @@ class FancyURLopener(URLopener):
 		user, passwd = self.get_user_passwd(host, realm, i)
 		if not (user or passwd): return None
 		host = user + ':' + passwd + '@' + host
-		newurl = '//' + host + selector
-		return self.open_http(newurl)
+		newurl = 'http://' + host + selector
+		return self.open(newurl)
 
 	def get_user_passwd(self, host, realm, clear_cache = 0):
 		key = realm + '@' + string.lower(host)
