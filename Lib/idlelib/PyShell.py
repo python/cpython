@@ -311,6 +311,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         locals = sys.modules['__main__'].__dict__
         InteractiveInterpreter.__init__(self, locals=locals)
         self.save_warnings_filters = None
+        self.restarting = False
 
     port = 8833
     rpcclt = None
@@ -357,6 +358,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.poll_subprocess()
 
     def restart_subprocess(self):
+        if self.restarting:
+            return
+        self.restarting = True
         # close only the subprocess debugger
         debug = self.getdebugger()
         if debug:
@@ -369,12 +373,16 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.close()
         self.unix_terminate()
         console = self.tkconsole
+        was_executing = console.executing
         console.executing = False
         self.spawn_subprocess()
         self.rpcclt.accept()
         self.transfer_path()
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
+        if was_executing:
+            console.write('\n')
+            console.showprompt()
         halfbar = ((int(console.width) - 16) // 2) * '='
         console.write(halfbar + ' RESTART ' + halfbar)
         console.text.mark_set("restart", "end-1c")
@@ -386,6 +394,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
+        self.restarting = False
 
     def __request_interrupt(self):
         self.rpcclt.remotecall("exec", "interrupt_the_server", (), {})
