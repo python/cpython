@@ -145,11 +145,6 @@ static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
 { if (!PyArg_NoArgs(args)) return NULL; \
   return PyCursesCheckERR(X(self->pan), # X); }
 
-#define Panel_NoArgReturnStringFunction(X) \
-static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
-{ if (!PyArg_NoArgs(args)) return NULL; \
-  return PyString_FromString(X(self->pan)); }
-
 #define Panel_NoArgTrueFalseFunction(X) \
 static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
 { \
@@ -229,7 +224,7 @@ PyCursesPanel_above(PyCursesPanelObject *self, PyObject *args)
 }
 
 /* panel_below(NULL) returns the top panel in the stack. To get
-   this behaviour we use curses.panel_below(). */
+   this behaviour we use curses.panel.top_panel(). */
 static PyObject *
 PyCursesPanel_below(PyCursesPanelObject *self, PyObject *args)
 {
@@ -389,8 +384,8 @@ PyCurses_bottom_panel(PyObject *self, PyObject *args)
 
     pan = panel_above(NULL);
 
-    if (pan == NULL) {		/* valid output, it means there's no panel at
-                                   all */  
+    if (pan == NULL) {		/* valid output, it means
+				   there's no panel at all */  
 	Py_INCREF(Py_None);
 	return Py_None;
     }
