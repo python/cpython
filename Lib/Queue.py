@@ -55,13 +55,24 @@ class Queue:
         elif not self.fsema.acquire(0):
             raise Full
         self.mutex.acquire()
-        was_empty = self._empty()
-        self._put(item)
-        if was_empty:
-            self.esema.release()
-        if not self._full():
-            self.fsema.release()
-        self.mutex.release()
+        release_fsema = True
+        try:
+            was_empty = self._empty()
+            self._put(item)
+            # If we fail before here, the empty state has
+            # not changed, so we can skip the release of esema
+            if was_empty:
+                self.esema.release()
+            # If we fail before here, the queue can not be full, so
+            # release_full_sema remains True
+            release_fsema = not self._full()
+        finally:
+            # Catching system level exceptions here (RecursionDepth,
+            # OutOfMemory, etc) - so do as little as possible in terms
+            # of Python calls.
+            if release_fsema:
+                self.fsema.release()
+            self.mutex.release()
 
     def put_nowait(self, item):
         """Put an item into the queue without blocking.
@@ -84,13 +95,21 @@ class Queue:
         elif not self.esema.acquire(0):
             raise Empty
         self.mutex.acquire()
-        was_full = self._full()
-        item = self._get()
-        if was_full:
-            self.fsema.release()
-        if not self._empty():
-            self.esema.release()
-        self.mutex.release()
+        release_esema = True
+        try:
+            was_full = self._full()
+            item = self._get()
+            # If we fail before here, the full state has
+            # not changed, so we can skip the release of fsema
+            if was_full:
+                self.fsema.release()
+            # Failure means empty state also unchanged - release_esema
+            # remains True.
+            release_esema = not self._empty()
+        finally:
+            if release_esema:
+                self.esema.release()
+            self.mutex.release()
         return item
 
     def get_nowait(self):
