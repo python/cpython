@@ -42,4 +42,3 @@ class _Environ:
             return value
         else:
             return failobj
-
