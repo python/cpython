@@ -38,12 +38,12 @@ import imp
 import re
 import string
 
-id = '(?P<id>[A-Za-z_][A-Za-z0-9_]*)'	# match identifier
+id = '[A-Za-z_][A-Za-z0-9_]*'	# match identifier
 blank_line = re.compile('^[ \t]*($|#)')
-is_class = re.compile('^class[ \t]+'+id+'[ \t]*(?P<sup>\([^)]*\))?[ \t]*:')
-is_method = re.compile('^[ \t]+def[ \t]+'+id+'[ \t]*\(')
+is_class = re.compile('^class[ \t]+(?P<id>'+id+')[ \t]*(?P<sup>\([^)]*\))?[ \t]*:')
+is_method = re.compile('^[ \t]+def[ \t]+(?P<id>'+id+')[ \t]*\(')
 is_import = re.compile('^import[ \t]*(?P<imp>[^#]+)')
-is_from = re.compile('^from[ \t]+'+id+'[ \t]+import[ \t]+(?P<imp>[^#]+)')
+is_from = re.compile('^from[ \t]+(?P<module>'+id+'([ \t]*\\.[ \t]*'+id+')*)[ \t]+import[ \t]+(?P<imp>[^#]+)')
 dedent = re.compile('^[^ \t]')
 indent = re.compile('^[^ \t]*')
 
@@ -75,8 +75,8 @@ def readmodule(module, path=[], inpackage=0):
 	i = string.rfind(module, '.')
 	if i >= 0:
 		# Dotted module name
-		package = module[:i]
-		submodule = module[i+1:]
+		package = string.strip(module[:i])
+		submodule = string.strip(module[i+1:])
 		parent = readmodule(package, path, inpackage)
 		child = readmodule(submodule, parent['__path__'], 1)
 		return child
@@ -146,7 +146,7 @@ def readmodule(module, path=[], inpackage=0):
 		res = is_from.match(line)
 		if res:
 			# from module import stuff
-			mod = res.group('id')
+			mod = res.group('module')
 			names = string.splitfields(res.group('imp'), ',')
 			try:
 				# recursively read the imported module
