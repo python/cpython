@@ -1199,8 +1199,8 @@ is inserted at the end.  See also the command `py-clear-queue'."
 		   (prog1
 		       (format "python-%d" py-serial-number)
 		     (setq py-serial-number (1+ py-serial-number)))
-		 (make-temp-name "python")))
-	 (file (concat (file-name-as-directory py-temp-directory) temp)))
+		 (make-temp-name "python-")))
+	 (file (expand-file-name temp py-temp-directory)))
     (write-region start end file nil 'nomsg)
     (cond
      ;; always run the code in it's own asynchronous subprocess
@@ -1224,6 +1224,7 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (shell-command-on-region start end py-python-command py-output-buffer)
       (setq py-exception-buffer (current-buffer))
       (py-postprocess-output-buffer py-output-buffer)
+      (pop-to-buffer py-output-buffer)
       ))))
 
 ;; Code execution command
