@@ -3416,11 +3416,8 @@ conv_confname(arg, valuep, table, tablesize)
         int hi = tablesize;
         int cmp, mid;
         char *confname = PyString_AS_STRING(arg);
-        printf("table: %d entries\n", tablesize);
         while (lo < hi) {
             mid = (lo + hi) / 2;
-            printf("%d confname='%s'; other='%s';\n",
-                   mid, confname, table[mid].name);
             cmp = strcmp(confname, table[mid].name);
             if (cmp < 0)
                 hi = mid;
@@ -3620,7 +3617,6 @@ posix_confstr(self, args)
     if (PyArg_ParseTuple(args, "O&:confstr", conv_confstr_confname, &name)) {
         int len = confstr(name, buffer, sizeof(buffer));
 
-        printf("confstr(%d) --> %d, '%s'\n", name, len, buffer);
         errno = 0;
         if (len == 0) {
             if (errno != 0)
