@@ -219,8 +219,8 @@ PyErr_NormalizeException(exc, val, tb)
 	*val = value;
 	return;
 finally:
-	Py_DECREF(*exc);
-	Py_DECREF(*val);
+	Py_DECREF(type);
+	Py_DECREF(value);
 	Py_XDECREF(*tb);
 	PyErr_Fetch(exc, val, tb);
 	/* normalize recursively */
