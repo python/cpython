@@ -72,10 +72,11 @@ Tests
   detection code works correctly (as was intended).
 
 - The MacOSX (both 10.1 and 10.2) tests will crash with SEGV in
-  test_re and test_sre due to the small default stack size.  Do
-  "ulimit -s 2048" before "make test" to avoid the failure.  Note that
-  this is a built-in bash command so if you're using a different
-  shell, the command may be different too.
+  test_re and test_sre due to the small default stack size.  If you
+  set the stack size to 2048 before doing a "make test" the failure
+  can be avoided.  If you're using the tcsh (the default on OSX), or
+  csh shells use "limit stacksize 2048" and for the bash shell, use
+  "ulimit -s 2048".
 
 Windows
 
