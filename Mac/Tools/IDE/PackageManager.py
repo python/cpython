@@ -182,7 +182,7 @@ class PackageManagerMain(Wapplication.Application):
         if filename:
             filename = urllib.pathname2url(filename)
             if filename[:5] != 'file:':
-            	filename = 'file:' + filename
+                filename = 'file:' + filename
             self.opendoc(filename)
 
     def domenu_openURL(self, *args):
