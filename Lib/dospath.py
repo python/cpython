@@ -3,6 +3,7 @@
 import os
 import stat
 import string
+import re
 
 
 def normcase(s):
