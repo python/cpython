@@ -35,13 +35,14 @@ PERFORMANCE OF THIS SOFTWARE.
 /* TCL/TK VERSION INFO:
 
    Unix:
-	This should work with any version from Tcl 4.0 / Tck 7.4.
-	Do not use older versions.
+	Tcl/Tk 8.0 (even alpha or beta) or 7.6/4.2 are recommended.
+	This should work with any version from 7.4/4.0 upwards.
+	Tk 3.x is no longer supported.
 
    Mac and Windows:
-	Use Tcl 4.1p1 / Tk 7.5p1 or possibly newer.
-	It does not seem to work reliably with the original 4.1/7.5
-	release.  (4.0/7.4 were never released for these platforms.)
+	Use Tcl 8.0 if available (even alpha or beta).
+	The oldest usable version is 4.1p1/7.5p1.
+
 */
 
 #include "Python.h"
@@ -67,7 +68,7 @@ extern int tk_NumMainWindows;
 #endif
 
 #if TK_MAJOR_VERSION < 4
-extern struct { Tk_Window win; } *tkMainWindowList;
+#error "Tk 3.x is not supported"
 #endif
 
 #ifdef macintosh
@@ -1462,19 +1463,6 @@ EventHook ()
 }
 #endif /* WITH_READLINE */
 
-static void
-Tkinter_Cleanup ()
-{
-	/* This segfault with Tk 4.0 beta and seems unnecessary there as
-	 * well */
-
-#if TK_MAJOR_VERSION < 4
-	/* XXX rl_deprep_terminal is static, damned! */
-	while (tkMainWindowList != 0)
-		Tk_DestroyWindow(tkMainWindowList->win);
-#endif
-}
-
 
 /* all errors will be checked in one fell swoop in init_tkinter() */
 static void
@@ -1506,8 +1494,6 @@ ins_string(d, name, val)
 void
 init_tkinter ()
 {
-	static inited = 0;
-
 #ifdef WITH_READLINE
 	extern int (*rl_event_hook) ();
 #endif /* WITH_READLINE */
@@ -1537,13 +1523,6 @@ init_tkinter ()
 #ifdef WITH_READLINE
 	rl_event_hook = EventHook;
 #endif /* WITH_READLINE */
-
-	if (!inited) {
-		inited = 1;
-		if (Py_AtExit(Tkinter_Cleanup) != 0)
-			fprintf(stderr,
-		       "Tkinter: warning: cleanup procedure not registered\n");
-	}
 
 	if (PyErr_Occurred())
 		Py_FatalError ("can't initialize module _tkinter");
