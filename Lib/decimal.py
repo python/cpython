@@ -4,7 +4,7 @@
 # Written by Eric Price <eprice at tjhsst.edu>
 #    and Facundo Batista <facundo at taniquetil.com.ar>
 #    and Raymond Hettinger <python at rcn.com>
-#    and Aahz (aahz at pobox.com)
+#    and Aahz <aahz at pobox.com>
 #    and Tim Peters
 
 
