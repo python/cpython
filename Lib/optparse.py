@@ -767,7 +767,7 @@ class Values:
         elif isinstance(other, dict):
             return self.__dict__ == other
         else:
-            return false
+            return False
 
     def __ne__(self, other):
         return not (self == other)
