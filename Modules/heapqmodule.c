@@ -8,7 +8,7 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 
 #include "Python.h"
 
-int
+static int
 _siftdown(PyListObject *heap, int startpos, int pos)
 {
 	PyObject *newitem, *parent;
@@ -42,7 +42,7 @@ _siftdown(PyListObject *heap, int startpos, int pos)
 	return 0;
 }
 
-int
+static int
 _siftup(PyListObject *heap, int pos)
 {
 	int startpos, endpos, childpos, rightpos;
@@ -90,7 +90,7 @@ _siftup(PyListObject *heap, int pos)
 	return _siftdown(heap, startpos, pos);
 }
 
-PyObject *
+static PyObject *
 heappush(PyObject *self, PyObject *args)
 {
 	PyObject *heap, *item;
@@ -115,7 +115,7 @@ heappush(PyObject *self, PyObject *args)
 PyDoc_STRVAR(heappush_doc,
 "Push item onto heap, maintaining the heap invariant.");
 
-PyObject *
+static PyObject *
 heappop(PyObject *self, PyObject *heap)
 {
 	PyObject *lastelt, *returnitem;
@@ -152,7 +152,7 @@ heappop(PyObject *self, PyObject *heap)
 PyDoc_STRVAR(heappop_doc,
 "Pop the smallest item off the heap, maintaining the heap invariant.");
 
-PyObject *
+static PyObject *
 heapreplace(PyObject *self, PyObject *args)
 {
 	PyObject *heap, *item, *returnitem;
@@ -188,7 +188,7 @@ more appropriate when using a fixed-size heap.  Note that the value\n\
 returned may be larger than item!  That constrains reasonable uses of\n\
 this routine.\n");
 
-PyObject *
+static PyObject *
 heapify(PyObject *self, PyObject *heap)
 {
 	int i, n;
