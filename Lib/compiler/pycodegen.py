@@ -1152,6 +1152,9 @@ class AbstractClassCode:
         if klass.doc:
             self.setDocstring(klass.doc)
 
+    def _nameOp(self, prefix, name):
+        self.emit(prefix + '_NAME', name)
+
     def finish(self):
         self.graph.startExitBlock()
         self.emit('LOAD_LOCALS')
