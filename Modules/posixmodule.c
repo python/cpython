@@ -6014,5 +6014,5 @@ INITFUNC(void)
 
 	statvfs_result_desc.name = MODNAME ".statvfs_result";
 	PyStructSequence_InitType(&StatVFSResultType, &statvfs_result_desc);
-	PyDict_SetItemString(d, "statvfs_result", (PyObject*) &StatResultType);
+	PyDict_SetItemString(d, "statvfs_result", (PyObject*) &StatVFSResultType);
 }
