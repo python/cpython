@@ -31,6 +31,9 @@ NO_EXECUTE=0
 
 PIMP_VERSION="0.1"
 
+# Flavors:
+# source: setup-based package
+# binary: tar (or other) archive created with setup.py bdist.
 DEFAULT_FLAVORORDER=['source', 'binary']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
@@ -38,11 +41,11 @@ DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
 DEFAULT_PIMPDATABASE="http://www.cwi.nl/~jack/pimp/pimp-%s.plist" % distutils.util.get_platform()
 
 ARCHIVE_FORMATS = [
-	(".tar.Z", "zcat \"%s\" | tar xf -"),
-	(".taz", "zcat \"%s\" | tar xf -"),
-	(".tar.gz", "zcat \"%s\" | tar xf -"),
-	(".tgz", "zcat \"%s\" | tar xf -"),
-	(".tar.bz", "bzcat \"%s\" | tar xf -"),
+	(".tar.Z", "zcat \"%s\" | tar -xf -"),
+	(".taz", "zcat \"%s\" | tar -xf -"),
+	(".tar.gz", "zcat \"%s\" | tar -xf -"),
+	(".tgz", "zcat \"%s\" | tar -xf -"),
+	(".tar.bz", "bzcat \"%s\" | tar -xf -"),
 ]
 
 class MyURLopener(urllib.FancyURLopener):
@@ -132,6 +135,11 @@ class PimpDatabase:
 		self._maintainer = ""
 		self._description = ""
 		
+	def close(self):
+		"""Clean up"""
+		self._packages = []
+		self.preferences = None
+		
 	def appendURL(self, url, included=0):
 		"""Append packages from the database with the given URL.
 		Only the first database should specify included=0, so the
@@ -161,7 +169,14 @@ class PimpDatabase:
 		to our internal storage."""
 		
 		for p in packages:
-			pkg = PimpPackage(self, dict(p))
+			p = dict(p)
+			flavor = p.get('Flavor')
+			if flavor == 'source':
+				pkg = PimpPackage_source(self, p)
+			elif flavor == 'binary':
+				pkg = PimpPackage_binary(self, p)
+			else:
+				pkg = PimpPackage(self, dict(p))
 			self._packages.append(pkg)
 			
 	def list(self):
@@ -175,6 +190,7 @@ class PimpDatabase:
 		rv = []
 		for pkg in self._packages:
 			rv.append(pkg.fullname())
+		rv.sort()
 		return rv
 		
 	def dump(self, pathOrFile):
@@ -266,7 +282,7 @@ class PimpPackage:
 	def version(self): return self._dict['Version']
 	def flavor(self): return self._dict['Flavor']
 	def description(self): return self._dict['Description']
-	def homepage(self): return self._dict['Home-page']
+	def homepage(self): return self._dict.get('Home-page')
 	def downloadURL(self): return self._dict['Download-URL']
 	
 	def fullname(self):
@@ -342,7 +358,7 @@ class PimpPackage:
 		rv = []
 		if not self._dict.get('Download-URL'):
 			return [(None, "This package needs to be installed manually")]
-		if not self._dict['Prerequisites']:
+		if not self._dict.get('Prerequisites'):
 			return []
 		for item in self._dict['Prerequisites']:
 			if type(item) == str:
@@ -381,7 +397,7 @@ class PimpPackage:
 		rv = fp.close()
 		return rv
 		
-	def downloadSinglePackage(self, output=None):
+	def downloadPackageOnly(self, output=None):
 		"""Download a single package, if needed.
 		
 		An MD5 signature is used to determine whether download is needed,
@@ -422,7 +438,7 @@ class PimpPackage:
 		checksum = md5.new(data).hexdigest()
 		return checksum == self._dict['MD5Sum']
 			
-	def unpackSinglePackage(self, output=None):
+	def unpackPackageOnly(self, output=None):
 		"""Unpack a downloaded package archive."""
 		
 		filename = os.path.split(self.archiveFilename)[1]
@@ -433,12 +449,12 @@ class PimpPackage:
 			return "unknown extension for archive file: %s" % filename
 		basename = filename[:-len(ext)]
 		cmd = cmd % self.archiveFilename
-		self._buildDirname = os.path.join(self._db.preferences.buildDir, basename)
 		if self._cmd(output, self._db.preferences.buildDir, cmd):
 			return "unpack command failed"
-		setupname = os.path.join(self._buildDirname, "setup.py")
-		if not os.path.exists(setupname) and not NO_EXECUTE:
-			return "no setup.py found after unpack of archive"
+			
+	def installPackageOnly(self, output=None):
+		"""Default install method, to be overridden by subclasses"""
+		return "Cannot automatically install package %s" % self.fullname()
 			
 	def installSinglePackage(self, output=None):
 		"""Download, unpack and install a single package.
@@ -448,39 +464,27 @@ class PimpPackage:
 		
 		if not self._dict['Download-URL']:
 			return "%s: This package needs to be installed manually" % _fmtpackagename(self)
-		msg = self.downloadSinglePackage(output)
+		msg = self.downloadPackageOnly(output)
 		if msg:
 			return "download %s: %s" % (self.fullname(), msg)
 			
-		msg = self.unpackSinglePackage(output)
+		msg = self.unpackPackageOnly(output)
 		if msg:
 			return "unpack %s: %s" % (self.fullname(), msg)
 			
-		if self._dict.has_key('Pre-install-command'):
-			if self._cmd(output, self._buildDirname, self._dict['Pre-install-command']):
-				return "pre-install %s: running \"%s\" failed" % \
-					(self.fullname(), self._dict['Pre-install-command'])
-					
-		old_contents = os.listdir(self._db.preferences.installDir)
-		installcmd = self._dict.get('Install-command')
-		if not installcmd:
-			installcmd = '"%s" setup.py install' % sys.executable
-		if self._cmd(output, self._buildDirname, installcmd):
-			return "install %s: running \"%s\" failed" % self.fullname()
+		return self.installPackageOnly(output)
 		
+	def beforeInstall(self):
+		"""Bookkeeping before installation: remember what we have in site-packages"""
+		self._old_contents = os.listdir(self._db.preferences.installDir)
+		
+	def afterInstall(self):
+		"""Bookkeeping after installation: interpret any new .pth files that have
+		appeared"""
+				
 		new_contents = os.listdir(self._db.preferences.installDir)
-		self._interpretPthFiles(old_contents, new_contents)
-		
-		if self._dict.has_key('Post-install-command'):
-			if self._cmd(output, self._buildDirname, self._dict['Post-install-command']):
-				return "post-install %s: running \"%s\" failed" % \
-					(self.fullname(), self._dict['Post-install-command'])
-		return None
-		
-	def _interpretPthFiles(self, old_contents, new_contents):
-		"""Evaluate any new .pth files that have appeared after installing"""
 		for fn in new_contents:
-			if fn in old_contents:
+			if fn in self._old_contents:
 				continue
 			if fn[-4:] != '.pth':
 				continue
@@ -500,9 +504,91 @@ class PimpPackage:
 					line = os.path.join(self._db.preferences.installDir, line)
 				line = os.path.realpath(line)
 				if not line in sys.path:
-					sys.path.append(line)
-				
+					sys.path.append(line)			
 
+class PimpPackage_binary(PimpPackage):
+
+	def unpackPackageOnly(self, output=None):
+		"""We don't unpack binary packages until installing"""
+		pass
+			
+	def installPackageOnly(self, output=None):
+		"""Install a single source package.
+		
+		If output is given it should be a file-like object and it
+		will receive a log of what happened."""
+					
+		msgs = []
+		if self._dict.has_key('Pre-install-command'):
+			msg.append("%s: Pre-install-command ignored" % self.fullname())
+		if self._dict.has_key('Install-command'):
+			msgs.append("%s: Install-command ignored" % self.fullname())
+		if self._dict.has_key('Post-install-command'):
+			msgs.append("%s: Post-install-command ignored" % self.fullname())
+					
+		self.beforeInstall()
+
+		# Install by unpacking
+		filename = os.path.split(self.archiveFilename)[1]
+		for ext, cmd in ARCHIVE_FORMATS:
+			if filename[-len(ext):] == ext:
+				break
+		else:
+			return "unknown extension for archive file: %s" % filename
+		
+		# Modify where the files are extracted
+		prefixmod = '-C /'
+		cmd = cmd % self.archiveFilename
+		if self._cmd(output, self._db.preferences.buildDir, cmd, prefixmod):
+			return "unpack command failed"
+		
+		self.afterInstall()
+		
+		if self._dict.has_key('Post-install-command'):
+			if self._cmd(output, self._buildDirname, self._dict['Post-install-command']):
+				return "post-install %s: running \"%s\" failed" % \
+					(self.fullname(), self._dict['Post-install-command'])
+		return None
+		
+	
+class PimpPackage_source(PimpPackage):
+
+	def unpackPackageOnly(self, output=None):
+		"""Unpack a source package and check that setup.py exists"""
+		PimpPackage.unpackPackageOnly(self, output)
+		# Test that a setup script has been create
+		self._buildDirname = os.path.join(self._db.preferences.buildDir, basename)
+		setupname = os.path.join(self._buildDirname, "setup.py")
+		if not os.path.exists(setupname) and not NO_EXECUTE:
+			return "no setup.py found after unpack of archive"
+
+	def installPackageOnly(self, output=None):
+		"""Install a single source package.
+		
+		If output is given it should be a file-like object and it
+		will receive a log of what happened."""
+					
+		if self._dict.has_key('Pre-install-command'):
+			if self._cmd(output, self._buildDirname, self._dict['Pre-install-command']):
+				return "pre-install %s: running \"%s\" failed" % \
+					(self.fullname(), self._dict['Pre-install-command'])
+					
+		self.beforeInstall()
+		installcmd = self._dict.get('Install-command')
+		if not installcmd:
+			installcmd = '"%s" setup.py install' % sys.executable
+		if self._cmd(output, self._buildDirname, installcmd):
+			return "install %s: running \"%s\" failed" % self.fullname()
+		
+		self.afterInstall()
+		
+		if self._dict.has_key('Post-install-command'):
+			if self._cmd(output, self._buildDirname, self._dict['Post-install-command']):
+				return "post-install %s: running \"%s\" failed" % \
+					(self.fullname(), self._dict['Post-install-command'])
+		return None
+		
+	
 class PimpInstaller:
 	"""Installer engine: computes dependencies and installs
 	packages in the right order."""
