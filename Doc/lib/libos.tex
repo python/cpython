@@ -942,24 +942,58 @@ Run child processes, returning opened pipes for communications.  These
 functions are described in section \ref{os-newstreams}.
 \end{funcdescni}
 
-\begin{funcdesc}{spawnv}{mode, path, args}
-Execute the program \var{path} in a new process, passing the arguments 
-specified in \var{args} as command-line parameters.  \var{args} may be 
-a list or a tuple.  \var{mode} is a magic operational constant.  See
-the Visual \Cpp{} Runtime Library documentation for further
-information; the constants are exposed to the Python programmer as
-listed below.
-Availability: \UNIX{}, Windows.
-\versionadded{1.6}
-\end{funcdesc}
+\begin{funcdesc}{spawnl}{mode, path, \moreargs}
+\funcline{spawnle}{mode, path, \moreargs, env}
+\funcline{spawnlp}{mode, path, \moreargs}
+\funcline{spawnlpe}{mode, path, \moreargs, env}
+\funcline{spawnv}{mode, path, args}
+\funcline{spawnve}{mode, path, args, env}
+\funcline{spawnvp}{mode, path, args}
+\funcline{spawnvpe}{mode, path, args, env}
+Execute the program \var{path} in a new process.  If \var{mode} is
+\constant{P_NOWAIT}, this function returns the process ID of the new
+process; it \var{mode} is \constant{P_WAIT}, returns the process's
+exit code if it exits normally, or \code{-\var{signal}}, where
+\var{signal} is the signal that killed the process.
 
-\begin{funcdesc}{spawnve}{mode, path, args, env}
-Execute the program \var{path} in a new process, passing the arguments 
-specified in \var{args} as command-line parameters and the contents of 
-the mapping \var{env} as the environment.  \var{args} may be a list or
-a tuple.  \var{mode} is a magic operational constant.  See the Visual
-\Cpp{} Runtime Library documentation for further information; the
-constants are exposed to the Python programmer as listed below.
+For \function{spawnle()}, \function{spawnlpe()}, \function{spawnve()},
+and \function{spawnvpe()} (note that these all end in \character{e}),
+the \var{env} parameter must be a mapping which is used to define the
+environment variables for the new process; the \function{spawnl()},
+\function{spawnlp()}, \function{spawnv()}, and \function{spawnvp()}
+all cause the new process to inherit the environment of the current
+process.
+
+The variants which include a second \character{p} near the end
+(\function{spawnlp()}, \function{spawnlpe()}, \function{spawnvp()},
+and \function{spawnvpe()}) will use the \envvar{PATH} environment
+variable to locate the program \var{path}.  The other variants,
+\function{spawnl()}, \function{spawnle()}, \function{spawnv()}, and
+\function{spawnve()}, will not use the \envvar{PATH} variable to
+locate the executable.
+
+The \character{l} and \character{v} variants of the
+\function{spawn*()} functions differ in how command-line arguments are
+passed.  The \character{l} variants are perhaps the easiest to work
+with if the number of parameters is fixed when the code is written;
+the individual parameters simply become additional parameters to the
+\function{spawnl*()} functions.  The \character{v} variants are good
+when the number of parameters is variable, with the arguments being
+passed in a list or tuple as the \var{args} parameter.  In either
+case, the arguments to the child process must start with the name of
+the command being run.
+
+As an example, the following calls to \function{spawnlp()} and
+\function{spawnvpe()} are equivalent:
+
+\begin{verbatim}
+import os
+os.spawnlp(os.P_WAIT, 'cp', 'cp', 'index.html', '/dev/null')
+
+L = ['cp', 'index.html', '/dev/null']
+os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
+\end{verbatim}
+
 Availability: \UNIX{}, Windows.
 \versionadded{1.6}
 \end{funcdesc}
