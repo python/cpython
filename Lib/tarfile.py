@@ -353,6 +353,7 @@ class _Stream:
         if self.mode == "w" and self.buf:
             if self.type != "tar":
                 self.buf += self.cmp.flush()
+            self.__write("")            # Write remaining blocks to output
             self.fileobj.write(self.buf)
             self.buf = ""
             if self.type == "gz":
