@@ -1,3 +1,10 @@
+# Many of these entries are unnecessary because of the extra file copying
+# built into IDLE's setup.py.  However, if that should change, they may
+# become necessary and meanwhile do no harm.
+include *.bat
+include *.def
+include *.gif
+include *.pyw
 include *.txt
 include idle
 include MANIFEST.in
