@@ -1,10 +1,12 @@
-# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QDOffscreen.h'
+# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QDOffscreen.h'
 
 def FOUR_CHAR_CODE(x): return x
 pixPurgeBit = 0
 noNewDeviceBit = 1
 useTempMemBit = 2
 keepLocalBit = 3
+useDistantHdwrMemBit = 4
+useLocalHdwrMemBit = 5
 pixelsPurgeableBit = 6
 pixelsLockedBit = 7
 mapPixBit = 16
@@ -20,6 +22,8 @@ pixPurge = 1L << pixPurgeBit
 noNewDevice = 1L << noNewDeviceBit
 useTempMem = 1L << useTempMemBit
 keepLocal = 1L << keepLocalBit
+useDistantHdwrMem = 1L << useDistantHdwrMemBit
+useLocalHdwrMem = 1L << useLocalHdwrMemBit
 pixelsPurgeable = 1L << pixelsPurgeableBit
 pixelsLocked = 1L << pixelsLockedBit
 kAllocDirectDrawSurface = 1L << 14

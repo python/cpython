@@ -1,4 +1,4 @@
-# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDraw.h'
+# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDraw.h'
 
 
 def FOUR_CHAR_CODE(x): return x
@@ -10,7 +10,7 @@ outline						= 8
 shadow						= 0x10
 condense					= 0x20
 extend						= 0x40
-invalColReq = -1
+invalColReq = -1                            
 srcCopy = 0
 srcOr = 1
 srcXor = 2
@@ -68,7 +68,7 @@ picRParen = 1
 clutType = 0
 fixedType = 1
 directType = 2
-gdDevType = 0
+gdDevType = 0                             
 interlacedDevice = 2
 roundedDevice = 5
 hasAuxMenuBar = 6
@@ -84,7 +84,7 @@ hiliteBit = 7
 pHiliteBit = 0
 defQDColors = 127
 RGBDirect = 16
-baseAddr32 = 4
+baseAddr32 = 4                             
 sysPatListID = 0
 iBeamCursor = 1
 crossCursor = 2
@@ -124,8 +124,9 @@ k32ARGBPixelFormat = 0x00000020
 k1IndexedGrayPixelFormat = 0x00000021
 k2IndexedGrayPixelFormat = 0x00000022
 k4IndexedGrayPixelFormat = 0x00000024
-k8IndexedGrayPixelFormat = 0x00000028
+k8IndexedGrayPixelFormat = 0x00000028                    
 k16LE555PixelFormat = FOUR_CHAR_CODE('L555')
+k16LE5551PixelFormat = FOUR_CHAR_CODE('5551')
 k16BE565PixelFormat = FOUR_CHAR_CODE('B565')
 k16LE565PixelFormat = FOUR_CHAR_CODE('L565')
 k24BGRPixelFormat = FOUR_CHAR_CODE('24BG')
@@ -138,10 +139,41 @@ kYVU9PixelFormat = FOUR_CHAR_CODE('YVU9')
 kYUV411PixelFormat = FOUR_CHAR_CODE('Y411')
 kYVYU422PixelFormat = FOUR_CHAR_CODE('YVYU')
 kUYVY422PixelFormat = FOUR_CHAR_CODE('UYVY')
-kYUV211PixelFormat = FOUR_CHAR_CODE('Y211')
+kYUV211PixelFormat = FOUR_CHAR_CODE('Y211')        
 kCursorImageMajorVersion = 0x0001
 kCursorImageMinorVersion = 0x0000
-# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDrawText.h'
+kQDParseRegionFromTop = (1 << 0)
+kQDParseRegionFromBottom = (1 << 1)
+kQDParseRegionFromLeft = (1 << 2)
+kQDParseRegionFromRight = (1 << 3)
+kQDParseRegionFromTopLeft = kQDParseRegionFromTop | kQDParseRegionFromLeft
+kQDParseRegionFromBottomRight = kQDParseRegionFromBottom | kQDParseRegionFromRight
+kQDRegionToRectsMsgInit = 1
+kQDRegionToRectsMsgParse = 2
+kQDRegionToRectsMsgTerminate = 3
+colorXorXFer = 52
+noiseXFer = 53
+customXFer = 54
+kXFer1PixelAtATime = 0x00000001
+kXFerConvertPixelToRGB32 = 0x00000002                    
+kCursorComponentsVersion = 0x00010001
+kCursorComponentType = FOUR_CHAR_CODE('curs')
+cursorDoesAnimate = 1L << 0
+cursorDoesHardware = 1L << 1
+cursorDoesUnreadableScreenBits = 1L << 2
+kRenderCursorInHardware = 1L << 0
+kRenderCursorInSoftware = 1L << 1
+kCursorComponentInit = 0x0001
+kCursorComponentGetInfo = 0x0002
+kCursorComponentSetOutputMode = 0x0003
+kCursorComponentSetData = 0x0004
+kCursorComponentReconfigure = 0x0005
+kCursorComponentDraw = 0x0006
+kCursorComponentErase = 0x0007
+kCursorComponentMove = 0x0008
+kCursorComponentAnimate = 0x0009
+kCursorComponentLastReserved = 0x0050
+# Generated from 'Macintosh HD:SWDev:Metrowerks Codewarrior 6.0:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDrawText.h'
 
 
 def FOUR_CHAR_CODE(x): return x
@@ -155,10 +187,10 @@ condense					= 0x20
 extend						= 0x40
 leftCaret = 0
 rightCaret = -1
-kHilite = 1
+kHilite = 1                             
 smLeftCaret = 0
 smRightCaret = -1
-smHilite = 1
+smHilite = 1                             
 onlyStyleRun = 0
 leftStyleRun = 1
 rightStyleRun = 2
@@ -166,4 +198,6 @@ middleStyleRun = 3
 smOnlyStyleRun = 0
 smLeftStyleRun = 1
 smRightStyleRun = 2
-smMiddleStyleRun = 3
+smMiddleStyleRun = 3                             
+tfAntiAlias = 1 << 0
+tfUnicode = 1 << 1
