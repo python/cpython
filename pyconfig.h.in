@@ -825,6 +825,16 @@
 #undef volatile
 
 
+#ifdef __CYGWIN__
+#ifdef USE_DL_IMPORT
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#else
+#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#endif
+#endif
+
 /* Define the macros needed if on a UnixWare 7.x system. */
 #if defined(__USLC__) && defined(__SCO_VERSION__)
 #define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
