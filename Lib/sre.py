@@ -104,7 +104,7 @@ __all__ = [ "match", "search", "sub", "subn", "split", "findall",
     "U", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "error" ]
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 
 # this module works under 1.5.2 and later.  don't use string methods
 import string
@@ -244,26 +244,33 @@ def _expand(pattern, match, template):
     template = sre_parse.parse_template(template, pattern)
     return sre_parse.expand_template(template, match)
 
-def _sub(pattern, template, text, count=0):
-    # internal: pattern.sub implementation hook
-    return _subn(pattern, template, text, count, 1)[0]
-
-def _subn(pattern, template, text, count=0, sub=0):
-    # internal: pattern.subn implementation hook
+def _subx(pattern, template):
+    # internal: pattern.sub/subn implementation helper
     if callable(template):
         filter = template
     else:
         template = _compile_repl(template, pattern)
-        literals = template[1]
-        if sub and not count:
-            literal = pattern._getliteral()
-            if literal and "\\" in literal:
-                literal = None # may contain untranslated escapes
-            if literal is not None and len(literals) == 1 and literals[0]:
-                # shortcut: both pattern and string are literals
-                return string.replace(text, pattern.pattern, literals[0]), 0
-        def filter(match, template=template):
-            return sre_parse.expand_template(template, match)
+        if not template[0] and len(template[1]) == 1:
+            # literal replacement
+            filter = template[1][0]
+        else:
+            def filter(match, template=template):
+                return sre_parse.expand_template(template, match)
+    return filter
+
+def _sub(pattern, template, text, count=0):
+    # internal: pattern.sub implementation hook
+    # FIXME: not used in SRE 2.2.1 and later; will be removed soon
+    return _subn(pattern, template, text, count)[0]
+
+def _subn(pattern, template, text, count=0):
+    # internal: pattern.subn implementation hook
+    # FIXME: not used in SRE 2.2.1 and later; will be removed soon
+    filter = _subx(pattern, template)
+    if not callable(filter):
+        # literal replacement
+        def filter(match, literal=filter):
+            return literal
     n = i = 0
     s = []
     append = s.append
@@ -286,6 +293,7 @@ def _subn(pattern, template, text, count=0, sub=0):
 
 def _split(pattern, text, maxsplit=0):
     # internal: pattern.split implementation hook
+    # FIXME: not used in SRE 2.2.1 and later; will be removed soon
     n = i = 0
     s = []
     append = s.append
