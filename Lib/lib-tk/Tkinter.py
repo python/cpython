@@ -457,11 +457,11 @@ class Misc:
 		if func:
 			funcid = self._register(func, self._substitute,
 						needcleanup)
-			cmd = ("%sset _tkinter_break [%s %s]\n"
-			       'if {"$_tkinter_break" == "break"} break\n') \
-			       % (add and '+' or '',
-				  funcid,
-				  _string.join(self._subst_format))
+			cmd = ('%sif {"[%s %s]" == "break"} break\n'
+			       %
+			       (add and '+' or '',
+				funcid,
+				_string.join(self._subst_format)))
 			self.tk.call(what + (sequence, cmd))
 			return funcid
 		elif func == '':
