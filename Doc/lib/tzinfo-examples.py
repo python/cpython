@@ -91,7 +91,7 @@ def first_sunday_on_or_after(dt):
 DSTSTART = datetime(1, 4, 1, 2)
 # and ends at 2am (DST time; 1am standard time) on the last Sunday of Oct.
 # which is the first Sunday on or after Oct 25.
-DSTEND = datetime(1, 10, 25, 2)
+DSTEND = datetime(1, 10, 25, 1)
 
 class USTimeZone(tzinfo):
 

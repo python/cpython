@@ -2561,8 +2561,10 @@ DAY = timedelta(days=1)
 # In the US, DST starts at 2am (standard time) on the first Sunday in April.
 DSTSTART = datetime(1, 4, 1, 2)
 # and ends at 2am (DST time; 1am standard time) on the last Sunday of Oct,
-# which is the first Sunday on or after Oct 25.
-DSTEND = datetime(1, 10, 25, 2)
+# which is the first Sunday on or after Oct 25.  Because we view 1:MM as
+# being standard time on that day, there is no spelling in local time of
+# the last hour of DST (that's 1:MM DST, but 1:MM is taken as standard time).
+DSTEND = datetime(1, 10, 25, 1)
 
 class USTimeZone(tzinfo):
 
@@ -2616,9 +2618,9 @@ utc_real = FixedOffset(0, "UTC", 0)
 utc_fake = FixedOffset(-12*60, "UTCfake", 0)
 
 class TestTimezoneConversions(unittest.TestCase):
-    # The DST switch times for 2002, in local time.
+    # The DST switch times for 2002, in std time.
     dston = datetime(2002, 4, 7, 2)
-    dstoff = datetime(2002, 10, 27, 2)
+    dstoff = datetime(2002, 10, 27, 1)
 
     theclass = datetime
 
@@ -2656,25 +2658,25 @@ class TestTimezoneConversions(unittest.TestCase):
             # We're not in the redundant hour.
             self.assertEqual(dt, there_and_back)
 
-        # Because we have a redundant spelling when DST begins,
-        # there is (unforunately) an hour when DST ends that can't
-        # be spelled at all in local time.  When DST ends, the
-        # clock jumps from 1:59:59 back to 1:00:00 again.  The
-        # hour beginning then has no spelling in local time:
-        # 1:MM:SS is taken to be daylight time, and 2:MM:SS as
-        # standard time.  The hour 1:MM:SS standard time ==
-        # 2:MM:SS daylight time can't be expressed in local time.
-        # Nevertheless, we want conversion back from UTC to mimic
-        # the local clock's "repeat an hour" behavior.
+        # Because we have a redundant spelling when DST begins, there is
+        # (unforunately) an hour when DST ends that can't be spelled at all in
+        # local time.  When DST ends, the clock jumps from 1:59 back to 1:00
+        # again.  The hour 1:MM DST has no spelling then:  1:MM is taken to be
+        # standard time.  1:MM DST == 0:MM EST, but 0:MM is taken to be
+        # daylight time.  The hour 1:MM daylight == 0:MM standard can't be
+        # expressed in local time.  Nevertheless, we want conversion back
+        # from UTC to mimic the local clock's "repeat an hour" behavior.
         nexthour_utc = asutc + HOUR
         nexthour_tz = nexthour_utc.astimezone(tz)
-        if dt.date() == dstoff.date() and dt.hour == 1:
-            # We're in the hour before DST ends.  The hour after
+        if dt.date() == dstoff.date() and dt.hour == 0:
+            # We're in the hour before the last DST hour.  The last DST hour
             # is ineffable.  We want the conversion back to repeat 1:MM.
-            expected_diff = ZERO
+            self.assertEqual(nexthour_tz, dt.replace(hour=1))
+            nexthour_utc += HOUR
+            nexthour_tz = nexthour_utc.astimezone(tz)
+            self.assertEqual(nexthour_tz, dt.replace(hour=1))
         else:
-            expected_diff = HOUR
-        self.assertEqual(nexthour_tz - dt, expected_diff)
+            self.assertEqual(nexthour_tz - dt, HOUR)
 
     # Check a time that's outside DST.
     def checkoutside(self, dt, tz, utc):
@@ -2687,6 +2689,11 @@ class TestTimezoneConversions(unittest.TestCase):
 
     def convert_between_tz_and_utc(self, tz, utc):
         dston = self.dston.replace(tzinfo=tz)
+        # Because 1:MM on the day DST ends is taken as being standard time,
+        # there is no spelling in tz for the last hour of daylight time.
+        # For purposes of the test, the last hour of DST is 0:MM, which is
+        # taken as being daylight time (and 1:MM is taken as being standard
+        # time).
         dstoff = self.dstoff.replace(tzinfo=tz)
         for delta in (timedelta(weeks=13),
                       DAY,
@@ -2759,7 +2766,7 @@ class TestTimezoneConversions(unittest.TestCase):
         # wall  0:MM  1:MM  1:MM  2:MM  against these
         for utc in utc_real, utc_fake:
             for tz in Eastern, Pacific:
-                first_std_hour = self.dstoff - timedelta(hours=3) # 23:MM
+                first_std_hour = self.dstoff - timedelta(hours=2) # 23:MM
                 # Convert that to UTC.
                 first_std_hour -= tz.utcoffset(None)
                 # Adjust for possibly fake UTC.

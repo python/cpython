@@ -4046,7 +4046,7 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 
 	PyObject *result;
 	PyObject *temp;
-	int selfoff, resoff, dst1, dst2;
+	int selfoff, resoff, dst1;
 	int none;
 	int delta;
 
@@ -4128,26 +4128,8 @@ datetime_astimezone(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 	temp = new_datetime(y, m, d, hh, mm, ss, us, tzinfo);
 	if (temp == NULL)
 		goto Fail;
-
-	dst2 = call_dst(tzinfo, temp, &none);
-	if (dst2 == -1 && PyErr_Occurred()) {
-		Py_DECREF(temp);
-		goto Fail;
-	}
-	if (none) {
-		Py_DECREF(temp);
-		goto Inconsistent;
-	}
-
-	if (dst1 == dst2) {
-		/* The normal case:  we want temp, not result. */
-		Py_DECREF(result);
-		result = temp;
-	}
-	else {
-		/* The "unspellable hour" at the end of DST. */
-		Py_DECREF(temp);
-	}
+	Py_DECREF(result);
+	result = temp;
 	return result;
 
 Inconsistent:
