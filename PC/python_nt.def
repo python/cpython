@@ -337,6 +337,11 @@ EXPORTS
 	Py_GetProgramName
 	PySlice_New
 	PySlice_GetIndices
+	PyMarshal_WriteLongToFile
+	PyMarshal_WriteObjectToFile
+	PyMarshal_ReadLongFromFile
+	PyMarshal_ReadObjectFromFile
+	PyMarshal_ReadObjectFromString
 	_Py_c_pow
 	_Py_c_quot
 	_Py_c_neg
