@@ -15,7 +15,6 @@ bindir=$(dstroot)/usr/local/bin
 PYTHONAPPSPATH=/Applications/MacPython-$(VERSION)
 PYTHONAPPSDIR=$(dstroot)$(PYTHONAPPSPATH)
 APPINSTALLDIR=$(prefix)/Resources/Python.app
-PTHFILE=$(srcdir)/Mac/OSX/Mac.pth
 
 # Variables for installing the "normal" unix binaries
 INSTALLED_PYTHON=$(prefix)/bin/python
@@ -214,7 +213,6 @@ installmacsubtree:
 		done; \
 	done
 	
-	$(INSTALL_DATA) $(PTHFILE) $(LIBDEST)/site-packages/
 
 	$(BUILDPYTHON) $(CACHERSRC) -v $(MACLIBDEST) $(MACTOOLSDEST)
 	$(BUILDPYTHON) -Wi -tt $(compileall) -x badsyntax $(MACTOOLSDEST)
