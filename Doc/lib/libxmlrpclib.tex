@@ -28,6 +28,13 @@ URLs and an internal HTTP \class{Transport} instance otherwise.  The
 optional third argument is an encoding, by default UTF-8. The optional
 fourth argument is a debugging flag.
 
+Both the HTTP and HTTPS transports support the URL syntax extension for
+HTTP Basic Authorization: \code{http://user:pass@host:port/path}.  The 
+\code{user:pass} portion will be base64-encoded as an HTTP `Authorization'
+header, and sent to the remote server as part of the connection process
+when invoking an XML-RPC method.  You only need to use this if the
+remote server requires a Basic Authentication user and password.
+
 The returned instance is a proxy object with methods that can be used
 to invoke corresponding RPC calls on the remote server.  If the remote
 server supports the introspection API, the proxy can also be used to query
