@@ -2,6 +2,7 @@ Python main documentation -- in Latex
 -------------------------------------
 
 This directory contains the Latex sources to the Python documentation.
+They now require latex2e (latex 2.09 compatibility is dropped).
 
 The Python Reference Manual is no longer maintained in Latex.  It is
 now a FrameMaker document.  The FrameMaker 5.0 files (ref.book,
