@@ -17,14 +17,16 @@ def test_true_division():
     verify(1 / huge == 0.0)
     verify(1L / huge == 0.0)
     verify(1 / mhuge == 0.0)
-    verify(1L / mhuge ==- 0.0)
+    verify(1L / mhuge == 0.0)
     verify((666 * huge + (huge >> 1)) / huge == 666.5)
     verify((666 * mhuge + (mhuge >> 1)) / mhuge == 666.5)
     verify((666 * huge + (huge >> 1)) / mhuge == -666.5)
     verify((666 * mhuge + (mhuge >> 1)) / huge == -666.5)
     verify(huge / (huge << 1) == 0.5)
+    verify((1000000 * huge) / huge == 1000000)
 
     namespace = {'huge': huge, 'mhuge': mhuge}
+
     for overflow in ["float(huge)", "float(mhuge)",
                      "huge / 1", "huge / 2L", "huge / -1", "huge / -2L",
                      "mhuge / 100", "mhuge / 100L"]:
@@ -34,5 +36,14 @@ def test_true_division():
             pass
         else:
             raise TestFailed("expected OverflowError from %r" % overflow)
+
+    for zero in ["huge / 0", "huge / 0L",
+                 "mhuge / 0", "mhuge / 0L"]:
+        try:
+            eval(zero, namespace)
+        except ZeroDivisionError:
+            pass
+        else:
+            raise TestFailed("expected ZeroDivisionError from %r" % zero)
 
 test_true_division()
