@@ -58,6 +58,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <time.h>
 #endif /* !unix */
 
+#ifdef sgi
+#define DO_TIMES
+#endif
+
+#ifdef sun
+#define DO_TIMES
+#endif
+
+#ifdef DO_TIMES
+#include <sys/times.h>
+#include <sys/param.h>
+#include <errno.h>
+#endif
+
 /* Time methods */
 
 static object *
@@ -169,12 +183,47 @@ time_millitimer(self, args)
 
 #endif /* DO_MILLI */
 
+#ifdef DO_TIMES
+
+static object *
+time_times(self, args)
+	object *self;
+	object *args;
+{
+	struct tms t;
+	clock_t c;
+	object *tuple;
+	errno = 0;
+	c = times(&t);
+	if (c == (clock_t) -1) {
+		err_errno(IOError);
+		return NULL;
+	}
+	tuple = newtupleobject(4);
+	if (tuple == NULL)
+		return NULL;
+	settupleitem(tuple, 0, newfloatobject((double)t.tms_utime / HZ));
+	settupleitem(tuple, 1, newfloatobject((double)t.tms_stime / HZ));
+	settupleitem(tuple, 2, newfloatobject((double)t.tms_cutime / HZ));
+	settupleitem(tuple, 3, newfloatobject((double)t.tms_cstime / HZ));
+	if (err_occurred()) {
+		DECREF(tuple);
+		return NULL;
+	}
+	return tuple;
+}
+
+#endif
+
 
 static struct methodlist time_methods[] = {
 #ifdef DO_MILLI
 	{"millisleep",	time_millisleep},
 	{"millitimer",	time_millitimer},
 #endif /* DO_MILLI */
+#ifdef DO_TIMES
+	{"times",	time_times},
+#endif
 	{"sleep",	time_sleep},
 	{"time",	time_time},
 	{NULL,		NULL}		/* sentinel */
