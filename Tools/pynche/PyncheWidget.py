@@ -15,6 +15,7 @@ class PyncheWidget:
         self.__sb = switchboard
         self.__version = version
         self.__textwin = None
+        self.__listwin = None
         # create the first and top window
         root = self.__root = Tk(className='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__quit)
@@ -50,6 +51,9 @@ class PyncheWidget:
         viewbtn['menu'] = viewmenu
         viewmenu.add_command(label='Text Window...',
                              command=self.__popup_text,
+                             underline=0)
+        viewmenu.add_command(label='Color List Window...',
+                             command=self.__popup_listwin,
                              underline=0)
         #
         # Help menu
@@ -98,3 +102,10 @@ email:   bwarsaw@python.org''')
             self.__textwin = TextViewer(self.__sb, self.__root)
             self.__sb.add_view(self.__textwin)
         self.__textwin.deiconify()
+
+    def __popup_listwin(self, event=None):
+        if not self.__listwin:
+            from ListViewer import ListViewer
+            self.__listwin = ListViewer(self.__sb, self.__root)
+            self.__sb.add_view(self.__listwin)
+        self.__listwin.deiconify()
