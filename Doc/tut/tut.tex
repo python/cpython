@@ -2803,7 +2803,7 @@ The value of x is 32.5, and y is 40000...
 >>> print hellos
 'hello, world\n'
 >>> # The argument to repr() may be any Python object:
-... repr(x, y, ('spam', 'eggs'))
+... repr((x, y, ('spam', 'eggs')))
 "(32.5, 40000, ('spam', 'eggs'))"
 >>> # reverse quotes are convenient in interactive sessions:
 ... `x, y, ('spam', 'eggs')`
