@@ -476,7 +476,7 @@ class PyBuildExt(build_ext):
         # when sorted in reverse order, keys for this dict must appear in the
         # order you wish to search - e.g., search for db4 before db3
         db_try_this = {
-            'db4': {'libs': ('db-4.1', 'db-4.0',),
+            'db4': {'libs': ('db-4.1', 'db41', 'db-4.0', 'db4',),
                     'libdirs': ('/usr/local/BerkeleyDB.4.1/lib',
                                 '/usr/local/BerkeleyDB.4.0/lib',
                                 '/usr/local/lib',
@@ -484,13 +484,14 @@ class PyBuildExt(build_ext):
                                 '/sw/lib',
                                 ),
                     'incdirs': ('/usr/local/BerkeleyDB.4.1/include',
+                                '/usr/local/include/db41',
                                 '/usr/local/BerkeleyDB.4.0/include',
                                 '/usr/local/include/db4',
                                 '/opt/sfw/include/db4',
                                 '/sw/include/db4',
                                 '/usr/include/db4',
                                 )},
-            'db3': {'libs': ('db-3.3', 'db-3.2', 'db-3.1'),
+            'db3': {'libs': ('db-3.3', 'db-3.2', 'db-3.1', 'db3',),
                     'libdirs': ('/usr/local/BerkeleyDB.3.3/lib',
                                 '/usr/local/BerkeleyDB.3.2/lib',
                                 '/usr/local/BerkeleyDB.3.1/lib',
