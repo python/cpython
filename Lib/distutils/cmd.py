@@ -59,6 +59,12 @@ class Command:
         self._verbose = None
         self._dry_run = None
 
+        # Some commands define a 'self.force' option to ignore file
+        # timestamps, but methods defined *here* assume that
+        # 'self.force' exists for all commands.  So define it here
+        # just to be safe.
+        self.force = None
+
         # The 'help' flag is just used for command-line parsing, so
         # none of that complicated bureaucracy is needed.
         self.help = 0
@@ -79,11 +85,6 @@ class Command:
                 return getattr (self.distribution, attr)
             else:
                 return myval
-
-        # Needed because some Command methods assume 'self.force' exists,
-        # but not all commands define 'self.force'.  Ugh.
-        elif attr == 'force':
-            return None
         else:
             raise AttributeError, attr
 
