@@ -1,6 +1,7 @@
 # test for xml.dom.minidom
 
 from xml.dom.minidom import parse, Node, Document, parseString
+import xml.parsers.expat
 
 import os.path
 import sys
