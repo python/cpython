@@ -112,7 +112,7 @@ vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 		}
 		else if (level != 0)
 			; /* Pass */
-                else if (c == 'e')
+		else if (c == 'e')
 			; /* Pass */
 		else if (isalpha(c))
 			max++;
