@@ -364,7 +364,7 @@ class RegexObject:
             # See if repl contains group references
             try:
                 repl = pcre_expand(_Dummy, repl)
-            except:
+            except error:
                 m = MatchObject(self, source, 0, end, [])
                 repl = lambda m, repl=repl, expand=pcre_expand: expand(m, repl)
             else:
