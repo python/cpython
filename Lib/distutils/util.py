@@ -18,6 +18,30 @@ from distutils.dep_util import *
 from distutils.archive_util import *
 
 
+# Need to define 'abspath()', because it was new with Python 1.5.2
+if hasattr (os.path, 'abspath'):
+    abspath = os.path.abspath
+else:
+    def abspath(path):
+        if not os.path.isabs(path):
+            path = os.path.join(os.getcwd(), path)
+        return os.path.normpath(path)
+
+
+# More backwards compatability hacks
+def extend (list, new_list):
+    """Appends the list 'new_list' to 'list', just like the 'extend()'
+       list method does in Python 1.5.2 -- but this works on earlier
+       versions of Python too."""
+
+    if hasattr (list, 'extend'):
+        list.extend (new_list)
+    else:
+        list[len(list):] = new_list
+
+# extend ()
+
+
 def get_platform ():
     """Return a string (suitable for tacking onto directory names) that
        identifies the current platform.  Under Unix, identifies both the OS
