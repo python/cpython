@@ -42,6 +42,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Fix some bugs in the parser module.  SF bug #678518.
+
 - Thanks to Scott David Daniels, a subtle bug in how the zlib
   extension implemented flush() was fixed.  Scott also rewrote the
   zlib test suite using the unittest module.  (SF bug #640230 and
