@@ -195,6 +195,16 @@ typedef int pid_t;
 #endif /* !MS_WIN16 */
 #endif /* !MS_WIN32 */
 
+#ifdef MS_WIN32
+/* EXPERIMENTAL FEATURE: When CHECK_IMPORT_CASE is defined, check case of
+   imported modules against case of file; this causes "import String" to fail
+   with a NameError exception when it finds "string.py".  Normally, you set
+   the environment variable PYTHONCASEOK (to anything) to disable this
+   feature; to permanently disable it, #undef it here.  This only works on
+   case-preserving filesystems; otherwise you definitely want it off. */
+#define CHECK_IMPORT_CASE
+#endif
+
 /* Fairly standard from here! */
 
 /* Define if on AIX 3.
