@@ -114,8 +114,8 @@ class _Database(UserDict.DictMixin):
             self._addkey(key, (pos, siz))
         else:
             pos, siz = self._index[key]
-            oldblocks = (siz + _BLOCKSIZE - 1) / _BLOCKSIZE
-            newblocks = (len(val) + _BLOCKSIZE - 1) / _BLOCKSIZE
+            oldblocks = (siz + _BLOCKSIZE - 1) // _BLOCKSIZE
+            newblocks = (len(val) + _BLOCKSIZE - 1) // _BLOCKSIZE
             if newblocks <= oldblocks:
                 pos, siz = self._setval(pos, val)
                 self._index[key] = pos, siz
