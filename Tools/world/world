@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /bin/env python
 
 """Print the long name of an Internet domain.
 
@@ -43,11 +43,11 @@ def resolve(rawaddr):
 	return
     addr = parts[-1]
     if nameorg.has_key(addr):
-	print addr, 'is from a USA', nameorg[addr], 'organization'
+	print rawaddr, 'is from a USA', nameorg[addr], 'organization'
     elif country.has_key(addr):
-	print addr, 'originated from', country[addr]
+	print rawaddr, 'originated from', country[addr]
     else:
-	print 'Where in the world is %s?' % addr
+	print 'Where in the world is %s?' % rawaddr
 
 
 
