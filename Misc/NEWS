@@ -76,6 +76,8 @@ Library
   to return a list of all doctests, and you can filter that list by
   any computable criteria before passing it to a DocTestRunner instance.
 
+- Bug #891637, patch #1005466: fix inspect.getargs() crash on def foo((bar)).
+
 Tools/Demos
 -----------
 

@@ -374,3 +374,11 @@ test(defaults is None, 'A.m defaults')
 # Doc/lib/libinspect.tex claims there are 11 such functions
 count = len(filter(lambda x:x.startswith('is'), dir(inspect)))
 test(count == 11, "There are %d (not 11) is* functions", count)
+
+def sublistOfOne((foo)): return 1
+
+args, varargs, varkw, defaults = inspect.getargspec(sublistOfOne)
+test(args == [['foo']], 'sublistOfOne args')
+test(varargs is None, 'sublistOfOne varargs')
+test(varkw is None, 'sublistOfOne varkw')
+test(defaults is None, 'sublistOfOn defaults')
