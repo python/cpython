@@ -28,6 +28,7 @@ DL_IMPORT(PyObject *) PyEval_GetLocals(void);
 DL_IMPORT(PyObject *) PyEval_GetOwner(void);
 DL_IMPORT(PyObject *) PyEval_GetFrame(void);
 DL_IMPORT(int) PyEval_GetRestricted(void);
+DL_IMPORT(int) PyEval_GetNestedScopes(void);
 
 DL_IMPORT(int) Py_FlushLine(void);
 

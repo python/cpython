@@ -32,6 +32,7 @@ typedef struct {
 #define CO_NEWLOCALS	0x0002
 #define CO_VARARGS	0x0004
 #define CO_VARKEYWORDS	0x0008
+#define CO_NESTED       0x0010
 
 extern DL_IMPORT(PyTypeObject) PyCode_Type;
 

@@ -4276,6 +4276,8 @@ static int
 symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
 		      struct symbol_info *si)
 {
+	if (c->c_future && c->c_future->ff_nested_scopes)
+		c->c_flags |= CO_NESTED;
 	if (ste->ste_type != TYPE_MODULE)
 		c->c_flags |= CO_NEWLOCALS;
 	if (ste->ste_type == TYPE_FUNCTION) {
