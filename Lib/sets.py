@@ -32,7 +32,7 @@ _TemporarilyImmutableSet -- Not a subclass of BaseSet: just a wrapper
 
 Only hashable objects can be added to a Set. In particular, you cannot
 really add a Set as an element to another Set; if you try, what is
-actuallly added is an ImmutableSet built from it (it compares equal to
+actually added is an ImmutableSet built from it (it compares equal to
 the one you tried adding).
 
 When you ask if `x in y' where x is a Set and y is a Set or
