@@ -636,6 +636,8 @@ is_builtin(name)
 extern FILE *PyWin_FindRegisteredModule();
 #endif
 
+static int find_init_module Py_PROTO((char *)); /* Forward */
+
 static struct filedescr *
 find_module(name, path, buf, buflen, p_fp)
 	char *name;
@@ -733,8 +735,10 @@ find_module(name, path, buf, buflen, p_fp)
 #ifdef HAVE_STAT
 		if (stat(buf, &statbuf) == 0) {
 			static struct filedescr fd = {"", "", PKG_DIRECTORY};
-			if (S_ISDIR(statbuf.st_mode))
-				return &fd;
+			if (S_ISDIR(statbuf.st_mode)) {
+				if (find_init_module(buf))
+					return &fd;
+			}
 		}
 #else
 		/* XXX How are you going to test for directories? */
@@ -765,6 +769,38 @@ find_module(name, path, buf, buflen, p_fp)
 	*p_fp = fp;
 	return fdp;
 }
+
+#ifdef HAVE_STAT
+/* Helper to look for __init__.py or __init__.py[co] in potential package */
+static int
+find_init_module(buf)
+	char *buf;
+{
+	int save_len = strlen(buf);
+	int i = save_len;
+	struct stat statbuf;
+
+	if (save_len + 13 >= MAXPATHLEN)
+		return 0;
+	buf[i++] = SEP;
+	strcpy(buf+i, "__init__.py");
+	if (stat(buf, &statbuf) == 0) {
+		buf[save_len] = '\0';
+		return 1;
+	}
+	i += strlen(buf+i);
+	if (Py_OptimizeFlag)
+		strcpy(buf+i, "o");
+	else
+		strcpy(buf+i, "c");
+	if (stat(buf, &statbuf) == 0) {
+		buf[save_len] = '\0';
+		return 1;
+	}
+	buf[save_len] = '\0';
+	return 0;
+}
+#endif /* HAVE_STAT */
 
 
 static int init_builtin Py_PROTO((char *)); /* Forward */
