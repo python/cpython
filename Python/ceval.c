@@ -2667,6 +2667,14 @@ PyEval_GetRestricted(void)
 }
 
 int
+PyEval_GetNestedScopes(void)
+{
+	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	return current_frame == NULL ? 0 : 
+	    current_frame->f_code->co_flags & CO_NESTED;
+}
+
+int
 Py_FlushLine(void)
 {
 	PyObject *f = PySys_GetObject("stdout");
@@ -3448,7 +3456,7 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	else if (PyFile_Check(prog)) {
 		FILE *fp = PyFile_AsFile(prog);
 		char *name = PyString_AsString(PyFile_Name(prog));
-		v = PyRun_File(fp, name, Py_file_input, globals, locals);
+		v = PyRun_File(fp, name, Py_file_input, globals, locals); 
 	}
 	else {
 		char *str;
