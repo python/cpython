@@ -268,11 +268,10 @@ Py_Main(int argc, char **argv)
 				}
 			}
 		}
-		sts = PyRun_AnyFile(
+		sts = PyRun_AnyFileEx(
 			fp,
-			filename == NULL ? "<stdin>" : filename) != 0;
-		if (filename != NULL)
-			fclose(fp);
+			filename == NULL ? "<stdin>" : filename,
+			filename != NULL) != 0;
 	}
 
 	if (inspect && stdin_is_interactive &&
