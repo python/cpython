@@ -267,9 +267,10 @@ class Misc:
 	def selection_own_get(self, **kw):
 		"Find owner of X selection."
 		if not kw.has_key('displayof'): kw['displayof'] = self._w
-		return self._nametowidget(
-			apply(self.tk.call,
-			      ('selection', 'own') + self._options(kw)))
+		name = apply(self.tk.call,
+			     ('selection', 'own') + self._options(kw))
+		if not name: return None
+		return self._nametowidget(name)
 	def send(self, interp, cmd, *args):
 		return apply(self.tk.call, ('send', interp, cmd) + args)
 	def lower(self, belowThis=None):
