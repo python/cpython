@@ -46,7 +46,7 @@ patch914575_to2 = """
     \tLine 2: preceeded by from:[sstt] to:[sssst]
       Line 3: preceeded by from:[sstst] to:[ssssss]
 Line 4:   has from:[sst] to:[sss] after :
-Line 5: has from:[t] to:[ss] at end
+Line 5: has from:[t] to:[ss] at end  
 """
 
 patch914575_from3 = """line 0
@@ -54,9 +54,9 @@ patch914575_from3 = """line 0
 line 1
 line 2
 line 3
-line 4   changed
-line 5   changed
-line 6   changed
+line 4   changed 
+line 5   changed 
+line 6   changed 
 line 7
 line 8  subtracted
 line 9
@@ -71,9 +71,9 @@ patch914575_to3 = """line 0
 line 1
 line 2    added
 line 3
-line 4   chanGEd
-line 5a  chanGed
-line 6a  changEd
+line 4   chanGEd 
+line 5a  chanGed 
+line 6a  changEd 
 line 7
 line 8
 line 9
@@ -102,21 +102,21 @@ class TestSFpatches(unittest.TestCase):
         i = difflib.HtmlDiff()
         j = difflib.HtmlDiff(tabsize=2)
         k = difflib.HtmlDiff(wrapcolumn=14)
-
+        
         full = i.make_file(f1a,t1a,'from','to',context=False,numlines=5)
         tables = '\n'.join(
             [
-             '<h2>Context (first diff within numlines=5(default))</h2>',
+             '<h2>Context (first diff within numlines=5(default))</h2>', 
              i.make_table(f1a,t1a,'from','to',context=True),
-             '<h2>Context (first diff after numlines=5(default))</h2>',
+             '<h2>Context (first diff after numlines=5(default))</h2>', 
              i.make_table(f1b,t1b,'from','to',context=True),
-             '<h2>Context (numlines=6)</h2>',
+             '<h2>Context (numlines=6)</h2>', 
              i.make_table(f1a,t1a,'from','to',context=True,numlines=6),
-             '<h2>Context (numlines=0)</h2>',
+             '<h2>Context (numlines=0)</h2>', 
              i.make_table(f1a,t1a,'from','to',context=True,numlines=0),
-             '<h2>Same Context</h2>',
+             '<h2>Same Context</h2>', 
              i.make_table(f1a,f1a,'from','to',context=True),
-             '<h2>Same Full</h2>',
+             '<h2>Same Full</h2>', 
              i.make_table(f1a,f1a,'from','to',context=False),
              '<h2>Empty Context</h2>',
              i.make_table([],[],'from','to',context=True),
@@ -139,8 +139,8 @@ class TestSFpatches(unittest.TestCase):
         #f.write(actual)
         #f.close()
         expect = open(findfile('test_difflib_expect.html')).read()
-
-
+        
+                          
         self.assertEqual(actual,expect)
 
 Doctests = doctest.DocTestSuite(difflib)

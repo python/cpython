@@ -1289,7 +1289,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                if None, all from/to text lines will be generated.
     linejunk -- passed on to ndiff (see ndiff documentation)
     charjunk -- passed on to ndiff (see ndiff documentation)
-
+    
     This function returns an interator which returns a tuple:
     (from line tuple, to line tuple, boolean flag)
 
@@ -1300,7 +1300,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             '\0-' -- marks start of deleted text
             '\0^' -- marks start of changed text
             '\1' -- marks end of added/deleted/changed text
-
+        
     boolean flag -- None indicates context separation, True indicates
         either "from" or "to" line contains a change, otherwise False.
 
@@ -1310,13 +1310,13 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
 
     Note, this function utilizes the ndiff function to generate the side by
     side difference markup.  Optional ndiff arguments may be passed to this
-    function and they in turn will be passed to ndiff.
+    function and they in turn will be passed to ndiff.    
     """
-    import re
+    import re 
 
     # regular expression for finding intraline change indices
     change_re = re.compile('(\++|\-+|\^+)')
-
+    
     # create the difference iterator to generate the differences
     diff_lines_iterator = ndiff(fromlines,tolines,linejunk,charjunk)
 
@@ -1375,7 +1375,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
         # thing (such as adding the line number) then replace the special
         # marks with what the user's change markup.
         return (num_lines[side],text)
-
+    
     def _line_iterator():
         """Yields from/to lines of text with a change indication.
 
@@ -1392,7 +1392,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
         """
         lines = []
         num_blanks_pending, num_blanks_to_yield = 0, 0
-        while True:
+        while True:        
             # Load up next 4 lines so we can look ahead, create strings which
             # are a concatenation of the first character of each of the 4 lines
             # so we can do some very readable comparisons.
@@ -1550,7 +1550,7 @@ _file_template = """
 <html>
 
 <head>
-    <meta http-equiv="Content-Type"
+    <meta http-equiv="Content-Type" 
           content="text/html; charset=ISO-8859-1" />
     <title></title>
     <style type="text/css">%(styles)s
@@ -1573,9 +1573,9 @@ _styles = """
         .diff_sub {background-color:#ffaaaa}"""
 
 _table_template = """
-    <table class="diff" id="difflib_chg_%(prefix)s_top"
-           cellspacing="0" cellpadding="0" rules="groups" >
-        <colgroup></colgroup> <colgroup></colgroup> <colgroup></colgroup>
+    <table class="diff" id="difflib_chg_%(prefix)s_top"  
+           cellspacing="0" cellpadding="0" rules="groups" > 
+        <colgroup></colgroup> <colgroup></colgroup> <colgroup></colgroup> 
         <colgroup></colgroup> <colgroup></colgroup> <colgroup></colgroup>
         %(header_row)s
         <tbody>
@@ -1604,15 +1604,15 @@ class HtmlDiff(object):
 
     This class can be used to create an HTML table (or a complete HTML file
     containing the table) showing a side by side, line by line comparision
-    of text with inter-line and intra-line change highlights.  The table can
+    of text with inter-line and intra-line change highlights.  The table can 
     be generated in either full or contextual difference mode.
-
+    
     The following methods are provided for HTML generation:
 
     make_table -- generates HTML for a single side by side table
     make_file -- generates complete HTML file with a single side by side table
 
-    See tools/scripts/diff.py for an example usage of this class.
+    See tools/scripts/diff.py for an example usage of this class.    
     """
 
     _file_template = _file_template
@@ -1620,7 +1620,7 @@ class HtmlDiff(object):
     _table_template = _table_template
     _legend = _legend
     _default_prefix = 0
-
+    
     def __init__(self,tabsize=8,wrapcolumn=None,linejunk=None,
                  charjunk=IS_CHARACTER_JUNK):
         """HtmlDiff instance initializer
@@ -1630,7 +1630,7 @@ class HtmlDiff(object):
         wrapcolumn -- column number where lines are broken and wrapped,
             defaults to None where lines are not wrapped.
         linejunk,charjunk -- keyword arguments passed into ndiff() (used to by
-            HtmlDiff() to generate the side by side HTML differences).  See
+            HtmlDiff() to generate the side by side HTML differences).  See 
             ndiff() documentation for argument default values and descriptions.
         """
         self._tabsize = tabsize
@@ -1655,13 +1655,13 @@ class HtmlDiff(object):
             the "next" link anchors before the next change (so click of
             "next" link jumps to just before the change).
         """
-
+                
         return self._file_template % dict(
             styles = self._styles,
             legend = self._legend,
             table = self.make_table(fromlines,tolines,fromdesc,todesc,
                                     context=context,numlines=numlines))
-
+    
     def _tab_newline_replace(self,fromlines,tolines):
         """Returns from/to line lists with tabs expanded and newlines removed.
 
@@ -1734,10 +1734,10 @@ class HtmlDiff(object):
             line1 = line1 + '\1'
             line2 = '\0' + mark + line2
 
-        # tack on first line onto the output list
+        # tack on first line onto the output list            
         data_list.append((line_num,line1))
 
-        # use this routine again to wrap the remaining text
+        # use this routine again to wrap the remaining text        
         self._split_line(data_list,'>',line2)
 
     def _line_wrapper(self,diffs):
@@ -1776,7 +1776,7 @@ class HtmlDiff(object):
         """
 
         fromlist,tolist,flaglist = [],[],[]
-        # pull from/to data and flags from mdiff style iterator
+        # pull from/to data and flags from mdiff style iterator        
         for fromdata,todata,flag in diffs:
             try:
                 # store HTML markup of the lines into the lists
@@ -1788,7 +1788,7 @@ class HtmlDiff(object):
                 tolist.append(None)
             flaglist.append(flag)
         return fromlist,tolist,flaglist
-
+    
     def _format_line(self,side,flag,linenum,text):
         """Returns HTML markup of "from" / "to" text lines
 
@@ -1802,7 +1802,7 @@ class HtmlDiff(object):
             id = ' id="%s%s"' % (self._prefix[side],linenum)
         except TypeError:
             # handle blank lines where linenum is '>' or ''
-            id = ''
+            id = '' 
         # replace those things that would get confused with HTML symbols
         text=text.replace("&","&amp;").replace(">","&gt;").replace("<","&lt;")
 
@@ -1825,10 +1825,10 @@ class HtmlDiff(object):
 
     def _convert_flags(self,fromlist,tolist,flaglist,context,numlines):
         """Makes list of "next" links"""
-
+        
         # all anchor names will be generated using the unique "to" prefix
         toprefix = self._prefix[1]
-
+        
         # process change flags, generating middle column of next anchors/links
         next_id = ['']*len(flaglist)
         next_href = ['']*len(flaglist)
@@ -1840,11 +1840,11 @@ class HtmlDiff(object):
                     in_change = True
                     last = i
                     # at the beginning of a change, drop an anchor a few lines
-                    # (the context lines) before the change for the previous
+                    # (the context lines) before the change for the previous 
                     # link
                     i = max([0,i-numlines])
                     next_id[i] = ' id="difflib_chg_%s_%d"' % (toprefix,num_chg)
-                    # at the beginning of a change, drop a link to the next
+                    # at the beginning of a change, drop a link to the next 
                     # change
                     num_chg += 1
                     next_href[last] = '<a href="#difflib_chg_%s_%d">n</a>' % (
@@ -1891,11 +1891,11 @@ class HtmlDiff(object):
         # make unique anchor prefixes so that multiple tables may exist
         # on the same page without conflict.
         self._make_prefix()
-
+        
         # change tabs to spaces before it gets more difficult after we insert
         # markkup
         fromlines,tolines = self._tab_newline_replace(fromlines,tolines)
-
+            
         # create diffs iterator which generates side by side from/to data
         if context:
             context_lines = numlines
@@ -1907,7 +1907,7 @@ class HtmlDiff(object):
         # set up iterator to wrap lines that exceed desired width
         if self._wrapcolumn:
             diffs = self._line_wrapper(diffs)
-
+            
         # collect up from/to lines and flags into lists (also format the lines)
         fromlist,tolist,flaglist = self._collect_lines(diffs)
 
@@ -1947,7 +1947,7 @@ class HtmlDiff(object):
                      replace('\0^','<span class="diff_chg">'). \
                      replace('\1','</span>'). \
                      replace('\t','&nbsp;')
-
+            
 del re
 
 def restore(delta, which):
