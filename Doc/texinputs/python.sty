@@ -30,8 +30,8 @@
   % Pad the number with '0' to 3 digits wide so no page name is a prefix
   % of any other.
   %
-  \def\py@targetno#1{\ifnum#1<100 0\fi\ifnum#1<10 0\fi#1}
-  \def\py@pageno{\py@targetno\thepage}
+  \newcommand{\py@targetno}[1]{\ifnum#1<100 0\fi\ifnum#1<10 0\fi#1}
+  \newcommand{\py@pageno}{\py@targetno\thepage}
   %
   % This definition allows the entries in the page-view of the ToC to be
   % active links.  Some work, some don't.
@@ -184,51 +184,8 @@
   \endgroup%
 }
 
-\newcommand{\reset@python}{
-  \global\let\py@thisclass=\@undefined
-  \global\let\py@thismodule=\@undefined
-}
-\reset@python
 
-% Augment the sectioning commands used to get our own font family in place,
-% and reset some internal data items:
-\renewcommand{\section}{\reset@python%
-                        \@startsection{section}{1}{\z@}%
-                                    {-3.5ex \@plus -1ex \@minus -.2ex}%
-                                    {2.3ex \@plus.2ex}%
-                                    {\reset@font\Large\py@HeaderFamily}}
-\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}%
-                                    {-3.25ex\@plus -1ex \@minus -.2ex}%
-                                    {1.5ex \@plus .2ex}%
-                                    {\reset@font\large\py@HeaderFamily}}
-\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}%
-                                    {-3.25ex\@plus -1ex \@minus -.2ex}%
-                                    {1.5ex \@plus .2ex}%
-                                    {\reset@font\normalsize\py@HeaderFamily}}
-\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}%
-                                    {3.25ex \@plus1ex \@minus.2ex}%
-                                    {-1em}%
-                                    {\reset@font\normalsize\py@HeaderFamily}}
-\renewcommand{\subparagraph}{\@startsection{subparagraph}{5}{\parindent}%
-                                    {3.25ex \@plus1ex \@minus .2ex}%
-                                    {-1em}%
-                                    {\reset@font\normalsize\py@HeaderFamily}}
-
-
-% Underscore hack (only act like subscript operator if in math mode)
-%
-% The following is due to Mark Wooding (the old version didn't work with
-% Latex 2e.
-
-\DeclareRobustCommand\hackscore{%
-  \ifmmode_\else\textunderscore\fi%
-}
-\begingroup
-\catcode`\_\active
-\def\next{%
-  \AtBeginDocument{\catcode`\_\active\def_{\hackscore{}}}%
-}
-\expandafter\endgroup\next
+\newcommand{\py@modulebadkey}{{--just-some-junk--}}
 
 
 %%  Lots of index-entry generation support.
@@ -236,7 +193,7 @@
 % Command to wrap around stuff that refers to function / module /
 % attribute names  in the index.  Default behavior: like \code{}.  To
 % just keep the index entries in the roman font, uncomment the second
-% definition to use instead; it matches O'Reilly style more.
+% definition; it matches O'Reilly style more.
 %
 \newcommand{\py@idxcode}[1]{\texttt{#1}}
 %\renewcommand{\py@idxcode}[1]{#1}
@@ -283,7 +240,7 @@
 
 % Add the defining entry for a module
 \newcommand{\py@modindex}[2]{%
-  \global\def\py@thismodule{#1}
+  \renewcommand{\py@thismodule}{#1}
   \setindexsubitem{(in module #1)}%
   \index{#1@{\py@idxcode{#1}} (#2module)|textbf}%
   \ifpy@UseModuleIndex%
@@ -309,6 +266,151 @@
   \def\index@subitem{#1}#2%
   \endgroup%
 }
+
+
+% Module synopsis processing -----------------------------------------------
+%
+\newcommand{\py@standardIndexModule}[1]{\stmodindex{#1}}
+\newcommand{\py@builtinIndexModule}[1]{\bimodindex{#1}}
+\newcommand{\py@extensionIndexModule}[1]{\exmodindex{#1}}
+\newcommand{\py@IndexModule}[1]{\modindex{#1}}
+
+\newif\ifpy@HaveModSynopsis\py@HaveModSynopsisfalse
+\newif\ifpy@ModSynopsisFileIsOpen\py@ModSynopsisFileIsOpenfalse
+
+% \declaremodule[key]{type}{name}
+\newcommand{\declaremodule}[3][\py@modulebadkey]{
+  \py@openModSynopsisFile
+  \renewcommand{\py@thismoduletype}{#2}
+  \csname py@#2IndexModule\endcsname{#3}
+  \ifx\py@modulebadkey#1
+    \renewcommand{\py@thismodulekey}{#3}
+  \else
+    \renewcommand{\py@thismodulekey}{#1}
+  \fi
+  \label{module-\py@thismodulekey}
+  \py@HaveModSynopsistrue
+}
+
+
+\newcommand{\py@defsynopsis}{Module has no synopsis.}
+\newcommand{\py@modulesynopsis}{\py@defsynopsis}
+\newcommand{\modulesynopsis}[1]{
+  \renewcommand{\py@modulesynopsis}{#1}
+}
+
+% define the file
+\newwrite\py@ModSynopsisFile
+
+% hacked from \addtocontents from latex.ltx:
+\long\def\py@writeModSynopsisFile#1{%
+  \protected@write\py@ModSynopsisFile%
+      {\let\label\@gobble \let\index\@gobble \let\glossary\@gobble}%
+      {\string#1}%
+}
+\newcommand{\py@closeModSynopsisFile}{
+  \ifpy@ModSynopsisFileIsOpen
+    \closeout\py@ModSynopsisFile
+    \py@ModSynopsisFileIsOpenfalse
+  \fi
+}
+\newcommand{\py@openModSynopsisFile}{
+  \ifpy@ModSynopsisFileIsOpen\else
+    \openout\py@ModSynopsisFile=\py@ModSynopsisFilename
+    \py@ModSynopsisFileIsOpentrue
+  \fi
+}
+
+\newcommand{\py@ProcessModSynopsis}{
+  \ifpy@HaveModSynopsis
+    \py@writeModSynopsisFile{\modulesynopsis%
+      {\py@thismodulekey}{\py@thismodule}%
+      {\py@thismoduletype}{\py@modulesynopsis}}%
+    \py@HaveModSynopsisfalse
+  \fi
+  \renewcommand{\py@modulesynopsis}{\py@defsynopsis}
+}
+\AtEndDocument{\py@ProcessModSynopsis\py@closeModSynopsisFile}
+
+\newcommand{\localmoduletable}{
+  \IfFileExists{\py@ModSynopsisFilename}{
+    \begin{synopsistable}
+      \input{\py@ModSynopsisFilename}
+    \end{synopsistable}
+  }{}
+}
+
+\@ifundefined{pdfoutput}{
+  \newcommand{\py@ModSynopsisSummary}[4]{\bfcode{#2} & #4\\}
+}{
+  \newcommand{\py@ModSynopsisSummary}[4]{
+    {\pdfannotlink attr{/Border [0 0 0]} goto name{label-module-#1}
+     \py@LinkColor \bfcode{#2} \py@NormalColor
+     \pdfendlink}& #4\\}
+}
+\newenvironment{synopsistable}{
+  % key, name, type, synopsis
+  \let\modulesynopsis=\py@ModSynopsisSummary
+  \begin{tabular}{ll}
+}{
+  \end{tabular}
+}
+%
+% --------------------------------------------------------------------------
+
+
+\newcommand{\py@thisclass}{}
+\newcommand{\py@thismodule}{}
+\newcommand{\py@thismodulekey}{}
+\newcommand{\py@thismoduletype}{}
+
+\newcommand{\py@reset}{
+  \py@ProcessModSynopsis
+  \renewcommand{\py@thisclass}{}
+  \renewcommand{\py@thismodule}{}
+  \renewcommand{\py@thismodulekey}{}
+  \renewcommand{\py@thismoduletype}{}
+}
+
+% Augment the sectioning commands used to get our own font family in place,
+% and reset some internal data items:
+\renewcommand{\section}{\py@reset%
+                        \@startsection{section}{1}{\z@}%
+                                    {-3.5ex \@plus -1ex \@minus -.2ex}%
+                                    {2.3ex \@plus.2ex}%
+                                    {\reset@font\Large\py@HeaderFamily}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}%
+                                    {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                    {1.5ex \@plus .2ex}%
+                                    {\reset@font\large\py@HeaderFamily}}
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}%
+                                    {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                    {1.5ex \@plus .2ex}%
+                                    {\reset@font\normalsize\py@HeaderFamily}}
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}%
+                                    {3.25ex \@plus1ex \@minus.2ex}%
+                                    {-1em}%
+                                    {\reset@font\normalsize\py@HeaderFamily}}
+\renewcommand{\subparagraph}{\@startsection{subparagraph}{5}{\parindent}%
+                                    {3.25ex \@plus1ex \@minus .2ex}%
+                                    {-1em}%
+                                    {\reset@font\normalsize\py@HeaderFamily}}
+
+
+% Underscore hack (only act like subscript operator if in math mode)
+%
+% The following is due to Mark Wooding (the old version didn't work with
+% Latex 2e.
+
+\DeclareRobustCommand\hackscore{%
+  \ifmmode_\else\textunderscore\fi%
+}
+\begingroup
+\catcode`\_\active
+\def\next{%
+  \AtBeginDocument{\catcode`\_\active\def_{\hackscore{}}}%
+}
+\expandafter\endgroup\next
 
 
 % Now for a lot of semantically-loaded environments that do a ton of magical
@@ -383,7 +485,7 @@
 % classes ----------------------------------------------------------------
 % \begin{classdesc}{name}{constructor args}
 \newenvironment{classdesc}[2]{
-  \global\def\py@thisclass{#1}
+  \renewcommand{\py@thisclass}{#1}
   \begin{fulllineitems}
     \item[\code{\bfcode{#1}(\py@varvars{#2})}%
       \withsubitem{(class in \py@thismodule)}{\ttindex{#1}}]
@@ -643,8 +745,6 @@
 %    \seemodule[copyreg]{copy_reg}{pickle interface constructor registration}
 %
 %  \end{seealso}
-
-\newcommand{\py@modulebadkey}{{--just-some-junk--}}
 
 \@ifundefined{pdfannotlink}{%
   \newcommand{\py@seemodule}[3][\py@modulebadkey]{%
