@@ -56,7 +56,7 @@ PyTypeObject PyType_Type = {
 	0,			/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
-	_Py_HashPointer,	/*tp_hash*/
+	(hashfunc)_Py_HashPointer,	/*tp_hash*/
 	0,			/*tp_call*/
 	0,			/*tp_str*/
 	0,			/*tp_xxx1*/
