@@ -469,20 +469,27 @@ class TestDate(unittest.TestCase):
                 self.assertEqual(fromord.second, 0)
                 self.assertEqual(fromord.microsecond, 0)
 
-        # Check first and last days of year spottily across the whole
-        # range of years supported.
-        for year in xrange(MINYEAR, MAXYEAR+1, 7):
+        # Check first and last days of year across the whole range of years
+        # supported.
+        ordinal = 1
+        for year in xrange(MINYEAR, MAXYEAR+1):
             # Verify (year, 1, 1) -> ordinal -> y, m, d is identity.
             d = self.theclass(year, 1, 1)
             n = d.toordinal()
+            self.assertEqual(ordinal, n)
             d2 = self.theclass.fromordinal(n)
             self.assertEqual(d, d2)
-            # Verify that moving back a day gets to the end of year-1.
-            if year > 1:
-                d = self.theclass.fromordinal(n-1)
-                d2 = self.theclass(year-1, 12, 31)
-                self.assertEqual(d, d2)
-                self.assertEqual(d2.toordinal(), n-1)
+            self.assertEqual(d.timetuple().tm_yday, 1)
+            # Same for (year, 12, 31).
+            isleap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+            days_in_year = 365 + isleap
+            d = self.theclass(year, 12, 31)
+            n = d.toordinal()
+            self.assertEqual(n, ordinal + days_in_year - 1)
+            self.assertEqual(d.timetuple().tm_yday, days_in_year)
+            d2 = self.theclass.fromordinal(n)
+            self.assertEqual(d, d2)
+            ordinal += days_in_year
 
         # Test every day in a leap-year and a non-leap year.
         dim = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]

@@ -812,7 +812,7 @@ format_ctime(PyDateTime_Date *date,
  * bogus, an appropriate exception is set and -1 is returned.
  */
 static int
-format_utcoffset(char *buf, int buflen, const char *sep,
+format_utcoffset(char *buf, size_t buflen, const char *sep,
 		PyObject *tzinfo, PyObject *tzinfoarg)
 {
 	int offset;
@@ -863,13 +863,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple)
 	char *ptoappend; /* pointer to string to append to output buffer */
 	int ntoappend;	/* # of bytes to append to output buffer */
 
-	char buf[100];	/* scratch buffer */
-
 	assert(object && format && timetuple);
 	assert(PyString_Check(format));
 
 	/* Scan the input format, looking for %z and %Z escapes, building
-	 * a new format.
+	 * a new format.  Since computing the replacements for those codes
+	 * is expensive, don't unless they're actually used.
 	 */
 	totalnew = PyString_Size(format);	/* realistic if no %z/%Z */
 	newfmt = PyString_FromStringAndSize(NULL, totalnew);
@@ -880,8 +879,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple)
 	pin = PyString_AsString(format);
 	while ((ch = *pin++) != '\0') {
 		if (ch != '%') {
-			buf[0] = ch;
-			ptoappend = buf;
+			ptoappend = pin - 1;
 			ntoappend = 1;
 		}
 		else if ((ch = *pin++) == '\0') {
@@ -894,12 +892,13 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple)
 		else if (ch == 'z') {
 			if (zreplacement == NULL) {
 				/* format utcoffset */
+				char buf[100];
 				PyObject *tzinfo = get_tzinfo_member(object);
 				zreplacement = PyString_FromString("");
 				if (zreplacement == NULL) goto Done;
 				if (tzinfo != Py_None && tzinfo != NULL) {
 					if (format_utcoffset(buf,
-							     (int)sizeof(buf),
+							     sizeof(buf),
 							     "",
 							     tzinfo,
 							     object) < 0)
@@ -948,9 +947,8 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple)
 			ntoappend = PyString_Size(Zreplacement);
 		}
 		else {
-			buf[0] = '%';
-			buf[1] = ch;
-			ptoappend = buf;
+			/* percent followed by neither z nor Z */
+			ptoappend = pin - 2;
 			ntoappend = 2;
 		}
 
