@@ -8,8 +8,9 @@ one of the other *util.py modules.
 
 __revision__ = "$Id$"
 
-import sys, os, string, re, shutil
-from distutils.errors import *
+import sys, os, string, re
+from distutils.errors import DistutilsPlatformError
+from distutils.dep_util import newer
 from distutils.spawn import spawn
 
 
@@ -289,3 +290,129 @@ def strtobool (val):
         return 0
     else:
         raise ValueError, "invalid truth value %s" % `val`
+
+
+def byte_compile (py_files,
+                  optimize=0, force=0,
+                  prefix=None, base_dir=None,
+                  verbose=1, dry_run=0,
+                  direct=None):
+    """Byte-compile a collection of Python source files to either
+    .pyc or .pyo files in the same directory.  'optimize' must be
+    one of the following:
+      0 - don't optimize (generate .pyc)
+      1 - normal optimization (like "python -O")
+      2 - extra optimization (like "python -OO")
+    If 'force' is true, all files are recompiled regardless of
+    timestamps.
+
+    The source filename encoded in each bytecode file defaults to the
+    filenames listed in 'py_files'; you can modify these with 'prefix' and
+    'basedir'.  'prefix' is a string that will be stripped off of each
+    source filename, and 'base_dir' is a directory name that will be
+    prepended (after 'prefix' is stripped).  You can supply either or both
+    (or neither) of 'prefix' and 'base_dir', as you wish.
+
+    If 'verbose' is true, prints out a report of each file.  If 'dry_run'
+    is true, doesn't actually do anything that would affect the filesystem.
+
+    Byte-compilation is either done directly in this interpreter process
+    with the standard py_compile module, or indirectly by writing a
+    temporary script and executing it.  Normally, you should let
+    'byte_compile()' figure out to use direct compilation or not (see
+    the source for details).  The 'direct' flag is used by the script
+    generated in indirect mode; unless you know what you're doing, leave
+    it set to None.
+    """
+
+    # First, if the caller didn't force us into direct or indirect mode,
+    # figure out which mode we should be in.  We take a conservative
+    # approach: choose direct mode *only* if the current interpreter is
+    # in debug mode and optimize is 0.  If we're not in debug mode (-O
+    # or -OO), we don't know which level of optimization this
+    # interpreter is running with, so we can't do direct
+    # byte-compilation and be certain that it's the right thing.  Thus,
+    # always compile indirectly if the current interpreter is in either
+    # optimize mode, or if either optimization level was requested by
+    # the caller.
+    if direct is None:
+        direct = (__debug__ and optimize == 0)
+
+    # "Indirect" byte-compilation: write a temporary script and then
+    # run it with the appropriate flags.
+    if not direct:
+        from tempfile import mktemp
+        script_name = mktemp(".py")
+        if verbose:
+            print "writing byte-compilation script '%s'" % script_name
+        if not dry_run:
+            script = open(script_name, "w")
+
+            script.write("""\
+from distutils.util import byte_compile
+files = [
+""")
+            script.write(string.join(map(repr, py_files), ",\n") + "]\n")
+            script.write("""
+byte_compile(files, optimize=%s, force=%s,
+             prefix=%s, base_dir=%s,
+             verbose=%s, dry_run=0,
+             direct=1)
+""" % (`optimize`, `force`, `prefix`, `base_dir`, `verbose`))
+
+            script.close()
+
+        cmd = [sys.executable, script_name]
+        if optimize == 1:
+            cmd.insert(1, "-O")
+        elif optimize == 2:
+            cmd.insert(1, "-OO")
+        spawn(cmd, verbose=verbose, dry_run=dry_run)
+        
+    # "Direct" byte-compilation: use the py_compile module to compile
+    # right here, right now.  Note that the script generated in indirect
+    # mode simply calls 'byte_compile()' in direct mode, a weird sort of
+    # cross-process recursion.  Hey, it works!
+    else:
+        from py_compile import compile
+
+        for file in py_files:
+            if file[-3:] != ".py":
+                raise ValueError, \
+                      "invalid filename: %s doesn't end with '.py'" % `file`
+
+            # Terminology from the py_compile module:
+            #   cfile - byte-compiled file
+            #   dfile - purported source filename (same as 'file' by default)
+            cfile = file + (__debug__ and "c" or "o")
+            dfile = file
+            if prefix:
+                if file[:len(prefix)] != prefix:
+                    raise ValueError, \
+                          ("invalid prefix: filename %s doesn't start with %s"
+                           % (`file`, `prefix`))
+                dfile = dfile[len(prefix):]
+            if base_dir:
+                dfile = os.path.join(base_dir, dfile)
+
+            cfile_base = os.path.basename(cfile)
+            if direct:
+                if force or newer(file, cfile):
+                    if verbose:
+                        print "byte-compiling %s to %s" % (file, cfile_base)
+                    if not dry_run:
+                        compile(file, cfile, dfile)
+                else:
+                    if verbose:
+                        print "skipping byte-compilation of %s to %s" % \
+                              (file, cfile_base)
+
+# byte_compile ()
+
+
+if __name__ == "__main__":
+    import glob
+    f = glob.glob("command/*.py")
+    byte_compile(f, optimize=0, prefix="command/", base_dir="/usr/lib/python")
+    #byte_compile(f, optimize=1)
+    #byte_compile(f, optimize=2)
