@@ -295,6 +295,7 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	if not is_update:
 		exceptlist = ["Contents/Info.plist", 
 				"Contents/Resources/English.lproj/InfoPlist.strings", 
+				"Contents/Resources/English.lproj/Documentation", 
 				"Contents/Resources/python.rsrc",
 				]
 		copyapptree(template, destname, exceptlist, progress)
