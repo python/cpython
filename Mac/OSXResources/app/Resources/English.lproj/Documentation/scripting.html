@@ -14,20 +14,22 @@
 <p>Python has a fairly complete implementation of the Open Scripting
 Architecure (OSA, also commonly referred to as AppleScript), allowing
 you to control scriptable applications from your Python program,
-and with a fairly pythonic interface. The following pieces of
-AppleScript and Python are rougly identical (XXXX Not true right now!):</p>
+and with a fairly pythonic interface. This piece of
+Python:</p>
 	
-<blockquote><tt><pre>
-tell application "Finder"
-	get name of window 1
-end tell
-</pre></tt></blockquote>
-
 <blockquote><tt><pre>
 import Finder
 
 f = Finder.Finder()
 print f.get(Finder.window(1).name)
+</pre></tt></blockquote>
+
+<p>is identical to the following piece of AppleScript:</p>
+
+<blockquote><tt><pre>
+tell application "Finder"
+	get name of window 1
+end tell
 </pre></tt></blockquote>
 
 <p>To send AppleEvents to an application you must first create the Python
