@@ -742,6 +742,14 @@ get_inprogress_dict(void)
 	return inprogress;
 }
 
+/* If the comparison "v op w" is already in progress in this thread, returns
+ * a borrowed reference to Py_None (the caller must not decref).
+ * If it's not already in progress, returns "a token" which must eventually
+ * be passed to delete_token().  The caller must not decref this either
+ * (delete_token decrefs it).  The token must not survive beyond any point
+ * where v or w may die.
+ * If an error occurs (out-of-memory), returns NULL.
+ */
 static PyObject *
 check_recursion(PyObject *v, PyObject *w, int op)
 {
@@ -830,10 +838,9 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	vtp = v->ob_type;
 	compare_nesting++;
 	if (compare_nesting > NESTING_LIMIT &&
-		(vtp->tp_as_mapping
-		 || (vtp->tp_as_sequence
-		     && !PyString_Check(v)
-		     && !PyTuple_Check(v)))) {
+	    (vtp->tp_as_mapping || vtp->tp_as_sequence) &&
+	    !PyString_CheckExact(v) &&
+	    !PyTuple_CheckExact(v)) {
 		/* try to detect circular data structures */
 		PyObject *token = check_recursion(v, w, -1);
 
@@ -927,11 +934,9 @@ PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 
 	compare_nesting++;
 	if (compare_nesting > NESTING_LIMIT &&
-		(v->ob_type->tp_as_mapping
-		 || (v->ob_type->tp_as_sequence
-		     && !PyString_Check(v)
-		     && !PyTuple_Check(v)))) {
-
+	    (v->ob_type->tp_as_mapping || v->ob_type->tp_as_sequence) &&
+	    !PyString_CheckExact(v) &&
+	    !PyTuple_CheckExact(v)) {
 		/* try to detect circular data structures */
 		PyObject *token = check_recursion(v, w, op);
 		if (token == NULL) {
