@@ -82,15 +82,19 @@ static PyObject *
 type_get_doc(PyTypeObject *type, void *context)
 {
 	PyObject *result;
-	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-		if (type->tp_doc == NULL) {
-			Py_INCREF(Py_None);
-			return Py_None;
-		}
+	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL)
 		return PyString_FromString(type->tp_doc);
-	}
 	result = PyDict_GetItemString(type->tp_dict, "__doc__");
-	Py_INCREF(result);
+	if (result == NULL) {
+		result = Py_None;
+		Py_INCREF(result);
+	}
+	else if (result->ob_type->tp_descr_get) {
+		result = result->ob_type->tp_descr_get(result, NULL, type);
+	}
+	else {
+		Py_INCREF(result);
+	}
 	return result;
 }
 
