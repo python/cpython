@@ -109,7 +109,7 @@ _prefix = None
 def choose_boundary():
 	global _prefix
 	import time
-	import rand
+	import whrandom
 	if _prefix == None:
 		import socket
 		import os
@@ -122,10 +122,9 @@ def choose_boundary():
 		    pid = `os.getpid()`
 		except:
 		    pid = '1'
-		seed = `rand.rand()`
 		_prefix = hostid + '.' + uid + '.' + pid
-	timestamp = `int(time.time())`
-	seed = `rand.rand()`
+	timestamp = '%.3f' % time.time()
+	seed = `whrandom.randint(0, 32767)`
 	return _prefix + '.' + timestamp + '.' + seed
 
 
