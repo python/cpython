@@ -87,14 +87,14 @@ my_fgets(char *buf, int len, FILE *fp)
 /* Readline implementation using fgets() */
 
 char *
-PyOS_StdioReadline(char *prompt)
+PyOS_StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
 	size_t n;
 	char *p;
 	n = 100;
 	if ((p = PyMem_MALLOC(n)) == NULL)
 		return NULL;
-	fflush(stdout);
+	fflush(sys_stdout);
 #ifndef RISCOS
 	if (prompt)
 		fprintf(stderr, "%s", prompt);
@@ -107,7 +107,7 @@ PyOS_StdioReadline(char *prompt)
 	}
 #endif
 	fflush(stderr);
-	switch (my_fgets(p, (int)n, stdin)) {
+	switch (my_fgets(p, (int)n, sys_stdin)) {
 	case 0: /* Normal case */
 		break;
 	case 1: /* Interrupt */
@@ -135,7 +135,7 @@ PyOS_StdioReadline(char *prompt)
 		if (incr > INT_MAX) {
 			PyErr_SetString(PyExc_OverflowError, "input line too long");
 		}
-		if (my_fgets(p+n, (int)incr, stdin) != 0)
+		if (my_fgets(p+n, (int)incr, sys_stdin) != 0)
 			break;
 		n += strlen(p+n);
 	}
@@ -148,20 +148,32 @@ PyOS_StdioReadline(char *prompt)
 
    Note: Python expects in return a buffer allocated with PyMem_Malloc. */
 
-char *(*PyOS_ReadlineFunctionPointer)(char *);
+char *(*PyOS_ReadlineFunctionPointer)(FILE *, FILE *, char *);
 
 
 /* Interface used by tokenizer.c and bltinmodule.c */
 
 char *
-PyOS_Readline(char *prompt)
+PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
 	char *rv;
+
 	if (PyOS_ReadlineFunctionPointer == NULL) {
-			PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
+                PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
 	}
+
 	Py_BEGIN_ALLOW_THREADS
-	rv = (*PyOS_ReadlineFunctionPointer)(prompt);
+
+        /* This is needed to handle the unlikely case that the
+         * interpreter is in interactive mode *and* stdin/out are not
+         * a tty.  This can happen, for example if python is run like
+         * this: python -i < test1.py
+         */
+        if (!isatty (fileno (sys_stdin)) || !isatty (fileno (sys_stdout)))
+                rv = PyOS_StdioReadline (sys_stdin, sys_stdout, prompt);
+        else
+                rv = (*PyOS_ReadlineFunctionPointer)(sys_stdin, sys_stdout,
+                                                     prompt);
 	Py_END_ALLOW_THREADS
 	return rv;
 }
