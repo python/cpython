@@ -151,7 +151,7 @@ then
 	AIX*)
 	   LINKCC="\$(srcdir)/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
 	BeOS*)
-	   LINKCC="\$(srcdir)/../BeOS/linkcc \$(LIBRARY) \$(PURIFY) \$(CC) -nodup \$(OPT)"
+	   LINKCC="\$(srcdir)/../BeOS/linkcc \$(LIBRARY) \$(PURIFY) \$(CC) \$(OPT)"
 	   REALLIBRARY='libpython$(VERSION).so';;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
@@ -331,6 +331,7 @@ then
 	next/*) LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';;
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
+	FreeBSD*/3*) LDSHARED="gcc -shared";;
 	FreeBSD*|NetBSD*|OpenBSD*) LDSHARED="ld -Bshareable";;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	*)	LDSHARED="ld";;
@@ -366,6 +367,7 @@ then
 	AIX*)	LINKFORSHARED='-Wl,-bE:python.exp -lld';;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
+	FreeBSD/3*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
@@ -442,7 +444,7 @@ AC_DEFINE(_REENTRANT)
 AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(C_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
-AC_CHECK_FUNC(pthread_create, [AC_DEFINE(WITH_THREAD)
+AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
 AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
