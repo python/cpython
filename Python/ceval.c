@@ -920,7 +920,7 @@ eval_frame(PyFrameObject *f)
 				err = 0;
 				continue;
 			}
-			POP();
+			STACKADJ(-1);
 			break;
 
 		case UNARY_CONVERT:
@@ -1960,7 +1960,7 @@ eval_frame(PyFrameObject *f)
 				SET_TOP(x);
 				continue;
 			}
-			POP();
+			STACKADJ(-1);
 			break;
 
 		case FOR_ITER:
