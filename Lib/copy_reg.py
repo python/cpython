@@ -54,4 +54,12 @@ def _reduce(self):
         state = None
     else:
         state = base(self)
-    return _reconstructor, (self.__class__, base, state), self.__dict__
+    args = (self.__class__, base, state)
+    try:
+        dict = self.__dict__
+    except AttributeError:
+        dict = None
+    if dict:
+        return _reconstructor, args, dict
+    else:
+        return _reconstructor, args
