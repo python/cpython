@@ -1,19 +1,3 @@
-#
-# Copyright (C) 1997-1998 Greg Stein. All Rights Reserved.
-#
-# This module is provided under a BSD-ish license. See
-#   http://www.opensource.org/licenses/bsd-license.html
-# and replace OWNER, ORGANIZATION, and YEAR as appropriate.
-#
-#
-# Written by Greg Stein (gstein@lyra.org)
-#        and Bill Tutt (rassilon@lima.mudlib.org)
-# February 1997.
-#
-# Support for ast.Node subclasses written and other revisions by
-#  Jeremy Hylton (jeremy@beopen.com)
-#
-
 """Parse tree transformation module.
 
 Transforms Python source code into an abstract syntax tree (AST)
@@ -24,7 +8,21 @@ parse(buf) -> AST
 parseFile(path) -> AST
 """
 
+# Original version written by Greg Stein (gstein@lyra.org)
+#                         and Bill Tutt (rassilon@lima.mudlib.org)
+# February 1997.
 #
+# Modifications and improvements for Python 2.0 by Jeremy Hylton and
+# Mark Hammond
+
+# Portions of this file are:
+# Copyright (C) 1997-1998 Greg Stein. All Rights Reserved.
+#
+# This module is provided under a BSD-ish license. See
+#   http://www.opensource.org/licenses/bsd-license.html
+# and replace OWNER, ORGANIZATION, and YEAR as appropriate.
+
+
 # The output tree has the following nodes:
 #
 # Source Python line #'s appear at the end of each of all of these nodes
@@ -49,9 +47,10 @@ parseFile(path) -> AST
 # tryexcept:  trySuiteNode, [ (exprNode, assgnNode, suiteNode), ... ], elseNode
 # return:     valueNode
 # const:      value
-# print:      [ node1, ..., nodeN ]
-# printnl:    [ node1, ..., nodeN ]
+# print:      [ node1, ..., nodeN ] [, dest]
+# printnl:    [ node1, ..., nodeN ] [, dest]
 # discard:    exprNode
+# augassign:  node, op, expr
 # assign:     [ node1, ..., nodeN ], exprNode
 # ass_tuple:  [ node1, ..., nodeN ]
 # ass_list:   [ node1, ..., nodeN ]
@@ -97,11 +96,11 @@ parseFile(path) -> AST
 
 import ast
 import parser
+# Care must be taken to use only symbols and tokens defined in Python
+# 1.5.2 for code branches executed in 1.5.2
 import symbol
 import token
 import string
-
-import pprint
 
 error = 'walker.error'
 
@@ -328,27 +327,44 @@ class Transformer:
     #
 
     def expr_stmt(self, nodelist):
-        # testlist ('=' testlist)*
+        # augassign testlist | testlist ('=' testlist)*
         exprNode = self.com_node(nodelist[-1])
         if len(nodelist) == 1:
             return Node('discard', exprNode)
-        nodes = [ ]
-        for i in range(0, len(nodelist) - 2, 2):
-            nodes.append(self.com_assign(nodelist[i], OP_ASSIGN))
-        n = Node('assign', nodes, exprNode)
-        n.lineno = nodelist[1][2]
+        if nodelist[1][0] == token.EQUAL:
+            nodes = [ ]
+            for i in range(0, len(nodelist) - 2, 2):
+                nodes.append(self.com_assign(nodelist[i], OP_ASSIGN))
+            n = Node('assign', nodes, exprNode)
+            n.lineno = nodelist[1][2]
+        else:
+            lval = self.com_augassign(nodelist[0])
+            op = self.com_augassign_op(nodelist[1])
+            n = Node('augassign', lval, op[1], exprNode)
+            n.lineno = op[2]
         return n
 
     def print_stmt(self, nodelist):
-        # print: (test ',')* [test]
+        # print ([ test (',' test)* [','] ] | '>>' test [ (',' test)+ [','] ])
         items = [ ]
-        for i in range(1, len(nodelist), 2):
+        if len(nodelist) == 1:
+            start = 1
+            dest = None
+        elif nodelist[1][0] == token.RIGHTSHIFT:
+            assert len(nodelist) == 3 \
+                   or nodelist[3][0] == token.COMMA
+            dest = self.com_node(nodelist[2])
+            start = 4
+        else:
+            dest = None
+            start = 1
+        for i in range(start, len(nodelist), 2):
             items.append(self.com_node(nodelist[i]))
         if nodelist[-1][0] == token.COMMA:
-            n = Node('print', items)
+            n = Node('print', items, dest)
             n.lineno = nodelist[0][2]
             return n
-        n = Node('printnl', items)
+        n = Node('printnl', items, dest)
         n.lineno = nodelist[0][2]
         return n
 
@@ -405,17 +421,24 @@ class Transformer:
         # import_stmt: 'import' dotted_as_name (',' dotted_as_name)* |
         # from: 'from' dotted_name 'import'
         #                        ('*' | import_as_name (',' import_as_name)*)
-        names = []
-        is_as = 0
         if nodelist[0][1] == 'from':
-            for i in range(3, len(nodelist), 2):
-                names.append(self.com_import_as_name(nodelist[i][1]))
+            names = []
+            if nodelist[3][0] == token.NAME:
+                for i in range(3, len(nodelist), 2):
+                    names.append((nodelist[i][1], None))
+            else:
+                for i in range(3, len(nodelist), 2):
+                    names.append(self.com_import_as_name(nodelist[i][1]))
             n = Node('from', self.com_dotted_name(nodelist[1]), names)
             n.lineno = nodelist[0][2]
             return n
 
-        for i in range(1, len(nodelist), 2):
-            names.append(self.com_dotted_as_name(nodelist[i]))
+        if nodelist[1][0] == symbol.dotted_name:
+            names = [(self.com_dotted_name(nodelist[1][1:]), None)]
+        else:
+            names = []
+            for i in range(1, len(nodelist), 2):
+                names.append(self.com_dotted_as_name(nodelist[i]))
         n = Node('import', names)
         n.lineno = nodelist[0][2]
         return n
@@ -737,7 +760,7 @@ class Transformer:
             return Node('discard', Node('const', None))
 
         if node[0] not in _legal_node_types:
-            raise error, 'illegal node passed to com_node: %s' % node[0]
+            raise error, 'illegal node passed to com_node: %s' % `node`
 
 #    print "dispatch", self._dispatch[node[0]].__name__, node
         return self._dispatch[node[0]](node[1:])
@@ -818,11 +841,14 @@ class Transformer:
 
     def com_dotted_as_name(self, node):
         dot = self.com_dotted_name(node[1])
-        if len(node) == 2:
+        if len(node) <= 2:
             return dot, None
-        assert node[2][1] == 'as'
-        assert node[3][0] == token.NAME
-        return dot, node[3][1]
+        if node[0] == symbol.dotted_name:
+            pass
+        else:
+            assert node[2][1] == 'as'
+            assert node[3][0] == token.NAME
+            return dot, node[3][1]
 
     def com_import_as_name(self, node):
         if node == '*':
@@ -871,6 +897,20 @@ class Transformer:
         n = Node('tryexcept', self.com_node(nodelist[2]), clauses, elseNode)
         n.lineno = nodelist[0][2]
         return n
+
+    def com_augassign_op(self, node):
+        assert node[0] == symbol.augassign
+        return node[1]
+
+    def com_augassign(self, node):
+        """Return node suitable for lvalue of augmented assignment
+
+        Names, slices, and attributes are the only allowable nodes.
+        """
+        l = self.com_node(node)
+        if l[0] in ('name', 'slice', 'subscript', 'getattr'):
+            return l
+        raise SyntaxError, "can't assign to %s" % l[0]
 
     def com_assign(self, node, assigning):
         # return a node suitable for use as an "lvalue"
@@ -955,7 +995,6 @@ class Transformer:
         return Node(type, items)
 
     def com_stmt(self, node):
-        #pprint.pprint(node)
         result = self.com_node(node)
         try:
             result[0]
@@ -976,17 +1015,71 @@ class Transformer:
         else:
             stmts.append(result)
 
-    def com_list_constructor(self, nodelist):
-        values = [ ]
-        for i in range(1, len(nodelist), 2):
-            values.append(self.com_node(nodelist[i]))
-        return Node('list', values)
+    if hasattr(symbol, 'list_for'):
+        def com_list_constructor(self, nodelist):
+            # listmaker: test ( list_for | (',' test)* [','] )
+            values = [ ]
+            for i in range(1, len(nodelist)):
+                if nodelist[i][0] == symbol.list_for:
+                    assert len(nodelist[i:]) == 1
+                    return self.com_list_comprehension(values[0],
+                                                       nodelist[i])
+                elif nodelist[i][0] == token.COMMA:
+                    continue
+                values.append(self.com_node(nodelist[i]))
+            return Node('list', values)
+
+        def com_list_comprehension(self, expr, node):
+            # list_iter: list_for | list_if
+            # list_for: 'for' exprlist 'in' testlist [list_iter]
+            # list_if: 'if' test [list_iter]
+            lineno = node[1][2]
+            fors = []
+            while node:
+                if node[1][1] == 'for':
+                    assignNode = self.com_assign(node[2], OP_ASSIGN)
+                    listNode = self.com_node(node[4])
+                    newfor = Node('listcomp_for', assignNode,
+                                  listNode, [])
+                    newfor.lineno = node[1][2]
+                    fors.append(newfor)
+                    if len(node) == 5:
+                        node = None
+                    else:
+                        node = self.com_list_iter(node[5])
+                elif node[1][1] == 'if':
+                    test = self.com_node(node[2])
+                    newif = Node('listcomp_if', test)
+                    newif.lineno = node[1][2]
+                    newfor.ifs.append(newif)
+                    if len(node) == 3:
+                        node = None
+                    else:
+                        node = self.com_list_iter(node[3])
+                else:
+                    raise SyntaxError, \
+                          ("unexpected list comprehension element: %s %d"
+                           % (node, lineno))
+            n = Node('listcomp', expr, fors)
+            n.lineno = lineno
+            return n
+
+        def com_list_iter(self, node):
+            assert node[0] == symbol.list_iter
+            return node[1]
+    else:
+        def com_list_constructor(self, nodelist):
+            values = [ ]
+            for i in range(1, len(nodelist), 2):
+                values.append(self.com_node(nodelist[i]))
+            return Node('list', values)
 
     def com_dictmaker(self, nodelist):
         # dictmaker: test ':' test (',' test ':' value)* [',']
         items = [ ]
         for i in range(1, len(nodelist), 4):
-            items.append((self.com_node(nodelist[i]), self.com_node(nodelist[i+2])))
+            items.append((self.com_node(nodelist[i]),
+                          self.com_node(nodelist[i+2])))
         return Node('dict', items)
 
     def com_apply_trailer(self, primaryNode, nodelist):
@@ -1250,3 +1343,21 @@ _assign_types = [
     symbol.term,
     symbol.factor,
     ]
+
+import types
+_names = {}
+for k, v in symbol.sym_name.items():
+    _names[k] = v
+for k, v in token.tok_name.items():
+    _names[k] = v
+
+def debug_tree(tree):
+    l = []
+    for elt in tree:
+        if type(elt) == types.IntType:
+            l.append(_names.get(elt, elt))
+        elif type(elt) == types.StringType:
+            l.append(elt)
+        else:
+            l.append(debug_tree(elt))
+    return l

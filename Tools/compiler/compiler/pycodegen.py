@@ -1,14 +1,22 @@
+import imp
 import os
 import marshal
 import stat
 import string
 import struct
+import sys
 import types
 from cStringIO import StringIO
 
 from compiler import ast, parse, walk
 from compiler import pyassem, misc
 from compiler.pyassem import CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS, TupleArg
+
+# Do we have Python 1.x or Python 2.x?
+try:
+    VERSION = sys.version_info[0]
+except AttributeError:
+    VERSION = 1
 
 callfunc_opcode_info = {
     # (Have *args, Have **args) : opcode
@@ -18,12 +26,12 @@ callfunc_opcode_info = {
     (1,1) : "CALL_FUNCTION_VAR_KW",
 }
 
-def compile(filename):
+def compile(filename, display=0):
     f = open(filename)
     buf = f.read()
     f.close()
     mod = Module(buf, filename)
-    mod.compile()
+    mod.compile(display)
     f = open(filename + "c", "wb")
     mod.dump(f)
     f.close()
@@ -34,28 +42,30 @@ class Module:
         self.source = source
         self.code = None
 
-    def compile(self):
+    def compile(self, display=0):
         ast = parse(self.source)
         root, filename = os.path.split(self.filename)
         gen = ModuleCodeGenerator(filename)
         walk(ast, gen, 1)
+        if display:
+            import pprint
+            print pprint.pprint(ast)
         self.code = gen.getCode()
 
     def dump(self, f):
         f.write(self.getPycHeader())
         marshal.dump(self.code, f)
 
-    MAGIC = (50823 | (ord('\r')<<16) | (ord('\n')<<24))
+    MAGIC = imp.get_magic()
 
     def getPycHeader(self):
         # compile.c uses marshal to write a long directly, with
         # calling the interface that would also generate a 1-byte code
         # to indicate the type of the value.  simplest way to get the
         # same effect is to call marshal and then skip the code.
-        magic = marshal.dumps(self.MAGIC)[1:]
         mtime = os.stat(self.filename)[stat.ST_MTIME]
         mtime = struct.pack('i', mtime)
-        return magic + mtime
+        return self.MAGIC + mtime
 
 class CodeGenerator:
 
@@ -63,7 +73,7 @@ class CodeGenerator:
 
     def __init__(self, filename):
 ## Subclasses must define a constructor that intializes self.graph
-## before calling this init function
+## before calling this init function, e.g.
 ##         self.graph = pyassem.PyFlowGraph()
         self.filename = filename
         self.locals = misc.Stack()
@@ -142,7 +152,6 @@ class CodeGenerator:
 
     def visitLambda(self, node):
         self._visitFuncOrLambda(node, isLambda=1)
-##        self.storeName("<lambda>")
 
     def _visitFuncOrLambda(self, node, isLambda):
         gen = FunctionCodeGenerator(node, self.filename, isLambda)
@@ -180,10 +189,6 @@ class CodeGenerator:
             test, suite = node.tests[i]
             self.set_lineno(test)
             self.visit(test)
-##            if i == numtests - 1 and not node.else_:
-##                nextTest = end
-##            else:
-##                nextTest = self.newBlock()
             nextTest = self.newBlock()
             self.emit('JUMP_IF_FALSE', nextTest)
             self.nextBlock()
@@ -304,6 +309,70 @@ class CodeGenerator:
             self.emit('POP_TOP')
             self.nextBlock(end)
 
+    # list comprehensions
+    __list_count = 0
+    
+    def visitListComp(self, node):
+        # XXX would it be easier to transform the AST into the form it
+        # would have if the list comp were expressed as a series of
+        # for and if stmts and an explicit append?
+        self.set_lineno(node)
+        # setup list
+        append = "$append%d" % self.__list_count
+        self.__list_count = self.__list_count + 1
+        self.emit('BUILD_LIST', 0)
+        self.emit('DUP_TOP')
+        self.emit('LOAD_ATTR', 'append')
+        self.storeName(append)
+        l = len(node.quals)
+        stack = []
+        for i, for_ in zip(range(l), node.quals):
+            start, anchor = self.visit(for_)
+            cont = None
+            for if_ in for_.ifs:
+                if cont is None:
+                    cont = self.newBlock()
+                self.visit(if_, cont)
+            stack.insert(0, (start, cont, anchor))
+            
+        self.loadName(append)
+        self.visit(node.expr)
+        self.emit('CALL_FUNCTION', 1)
+        self.emit('POP_TOP')
+        
+        for start, cont, anchor in stack:
+            if cont:
+                skip_one = self.newBlock()
+                self.emit('JUMP_FORWARD', skip_one)
+                self.nextBlock(cont)
+                self.emit('POP_TOP')
+                self.nextBlock(skip_one)
+            self.emit('JUMP_ABSOLUTE', start)
+            self.nextBlock(anchor)
+        self.delName(append)
+        
+        self.__list_count = self.__list_count - 1
+
+    def visitListCompFor(self, node):
+        self.set_lineno(node)
+        start = self.newBlock()
+        anchor = self.newBlock()
+
+        self.visit(node.list)
+        self.visit(ast.Const(0))
+        self.emit('SET_LINENO', node.lineno)
+        self.nextBlock(start)
+        self.emit('FOR_LOOP', anchor)
+        self.visit(node.assign)
+        return start, anchor
+
+    def visitListCompIf(self, node, branch):
+        self.set_lineno(node)
+        self.visit(node.test)
+        self.emit('JUMP_IF_FALSE', branch)
+        self.newBlock()
+        self.emit('POP_TOP')
+
     # exception related
 
     def visitAssert(self, node):
@@ -397,10 +466,6 @@ class CodeGenerator:
 
     # misc
 
-##     def visitStmt(self, node):
-##         # nothing to do except walk the children
-##         pass
-
     def visitDiscard(self, node):
         self.visit(node.expr)
         self.emit('POP_TOP')
@@ -426,27 +491,32 @@ class CodeGenerator:
     def visitImport(self, node):
         self.set_lineno(node)
         for name, alias in node.names:
-            self.emit('LOAD_CONST', None)
+            if VERSION > 1:
+                self.emit('LOAD_CONST', None)
             self.emit('IMPORT_NAME', name)
-            self._resolveDots(name)
-            self.storeName(alias or name)
+            mod = string.split(name, ".")[0]
+            self.storeName(alias or mod)
 
     def visitFrom(self, node):
         self.set_lineno(node)
         fromlist = map(lambda (name, alias): name, node.names)
-        self.emit('LOAD_CONST', tuple(fromlist))
+        if VERSION > 1:
+            self.emit('LOAD_CONST', tuple(fromlist))
         self.emit('IMPORT_NAME', node.modname)
         for name, alias in node.names:
-            if name == '*':
-                self.namespace = 0
-                self.emit('IMPORT_STAR')
-                # There can only be one name w/ from ... import *
-                assert len(node.names) == 1
-                return
+            if VERSION > 1:
+                if name == '*':
+                    self.namespace = 0
+                    self.emit('IMPORT_STAR')
+                    # There can only be one name w/ from ... import *
+                    assert len(node.names) == 1
+                    return
+                else:
+                    self.emit('IMPORT_FROM', name)
+                    self._resolveDots(name)
+                    self.storeName(alias or name)
             else:
                 self.emit('IMPORT_FROM', name)
-                self._resolveDots(name)
-                self.storeName(alias or name)
         self.emit('POP_TOP')
 
     def _resolveDots(self, name):
@@ -491,13 +561,85 @@ class CodeGenerator:
             print "warning: unexpected flags:", node.flags
             print node
 
-    def visitAssTuple(self, node):
+    def _visitAssSequence(self, node, op='UNPACK_SEQUENCE'):
         if findOp(node) != 'OP_DELETE':
-            self.emit('UNPACK_SEQUENCE', len(node.nodes))
+            self.emit(op, len(node.nodes))
         for child in node.nodes:
             self.visit(child)
 
-    visitAssList = visitAssTuple
+    if VERSION > 1:
+        visitAssTuple = _visitAssSequence
+        visitAssList = _visitAssSequence
+    else:
+        def visitAssTuple(self, node):
+            self._visitAssSequence(node, 'UNPACK_TUPLE')
+
+        def visitAssList(self, node):
+            self._visitAssSequence(node, 'UNPACK_LIST')
+
+    # augmented assignment
+
+    def visitAugAssign(self, node):
+        aug_node = wrap_aug(node.node)
+        self.visit(aug_node, "load")
+        self.visit(node.expr)
+        self.emit(self._augmented_opcode[node.op])
+        self.visit(aug_node, "store")
+
+    _augmented_opcode = {
+        '+=' : 'INPLACE_ADD',
+        '-=' : 'INPLACE_SUBTRACT',
+        '*=' : 'INPLACE_MULTIPLY',
+        '/=' : 'INPLACE_DIVIDE',
+        '%=' : 'INPLACE_MODULO',
+        '**=': 'INPLACE_POWER',
+        '>>=': 'INPLACE_RSHIFT',
+        '<<=': 'INPLACE_LSHIFT',
+        '&=' : 'INPLACE_AND',
+        '^=' : 'INPLACE_XOR',
+        '|=' : 'INPLACE_OR',
+        }
+
+    def visitAugName(self, node, mode):
+        if mode == "load":
+            self.loadName(node.name)
+        elif mode == "store":
+            self.storeName(node.name)
+
+    def visitAugGetattr(self, node, mode):
+        if mode == "load":
+            self.visit(node.expr)
+            self.emit('DUP_TOP')
+            self.emit('LOAD_ATTR', node.attrname)
+        elif mode == "store":
+            self.emit('ROT_TWO')
+            self.emit('STORE_ATTR', node.attrname)
+
+    def visitAugSlice(self, node, mode):
+        if mode == "load":
+            self.visitSlice(node, 1)
+        elif mode == "store":
+            slice = 0
+            if node.lower:
+                slice = slice | 1
+            if node.upper:
+                slice = slice | 2
+            if slice == 0:
+                self.emit('ROT_TWO')
+            elif slice == 3:
+                self.emit('ROT_FOUR')
+            else:
+                self.emit('ROT_THREE')
+            self.emit('STORE_SLICE+%d' % slice)
+
+    def visitAugSubscript(self, node, mode):
+        if len(node.subs) > 1:
+            raise SyntaxError, "augmented assignment to tuple is not possible"
+        if mode == "load":
+            self.visitSubscript(node, 1)
+        elif mode == "store":
+            self.emit('ROT_THREE')
+            self.emit('STORE_SUBSCR')
 
     def visitExec(self, node):
         self.visit(node.expr)
@@ -533,13 +675,24 @@ class CodeGenerator:
 
     def visitPrint(self, node):
         self.set_lineno(node)
+        if node.dest:
+            self.visit(node.dest)
         for child in node.nodes:
+            if node.dest:
+                self.emit('DUP_TOP')
             self.visit(child)
-            self.emit('PRINT_ITEM')
+            if node.dest:
+                self.emit('ROT_TWO')
+                self.emit('PRINT_ITEM_TO')
+            else:
+                self.emit('PRINT_ITEM')
 
     def visitPrintnl(self, node):
         self.visitPrint(node)
-        self.emit('PRINT_NEWLINE')
+        if node.dest:
+            self.emit('PRINT_NEWLINE_TO')
+        else:
+            self.emit('PRINT_NEWLINE')
 
     def visitReturn(self, node):
         self.set_lineno(node)
@@ -548,7 +701,8 @@ class CodeGenerator:
 
     # slice and subscript stuff
 
-    def visitSlice(self, node):
+    def visitSlice(self, node, aug_flag=None):
+        # aug_flag is used by visitAugSlice
         self.visit(node.expr)
         slice = 0
         if node.lower:
@@ -557,6 +711,13 @@ class CodeGenerator:
         if node.upper:
             self.visit(node.upper)
             slice = slice | 2
+        if aug_flag:
+            if slice == 0:
+                self.emit('DUP_TOP')
+            elif slice == 3:
+                self.emit('DUP_TOPX', 3)
+            else:
+                self.emit('DUP_TOPX', 2)
         if node.flags == 'OP_APPLY':
             self.emit('SLICE+%d' % slice)
         elif node.flags == 'OP_ASSIGN':
@@ -567,10 +728,12 @@ class CodeGenerator:
             print "weird slice", node.flags
             raise
 
-    def visitSubscript(self, node):
+    def visitSubscript(self, node, aug_flag=None):
         self.visit(node.expr)
         for sub in node.subs:
             self.visit(sub)
+        if aug_flag:
+            self.emit('DUP_TOPX', 2)
         if len(node.subs) > 1:
             self.emit('BUILD_TUPLE', len(node.subs))
         if node.flags == 'OP_APPLY':
@@ -740,7 +903,10 @@ class FunctionCodeGenerator(CodeGenerator):
                 self.unpackSequence(arg)
                         
     def unpackSequence(self, tup):
-        self.emit('UNPACK_SEQUENCE', len(tup))
+        if VERSION > 1:
+            self.emit('UNPACK_SEQUENCE', len(tup))
+        else:
+            self.emit('UNPACK_TUPLE', len(tup))
         for elt in tup:
             if type(elt) == types.TupleType:
                 self.unpackSequence(elt)
@@ -764,7 +930,6 @@ class ClassCodeGenerator(CodeGenerator):
         self.graph.startExitBlock()
         self.emit('LOAD_LOCALS')
         self.emit('RETURN_VALUE')
-
 
 def generateArgList(arglist):
     """Generate an arg list marking TupleArgs"""
@@ -837,6 +1002,45 @@ class OpFinder:
             self.op = node.flags
         elif self.op != node.flags:
             raise ValueError, "mixed ops in stmt"
+
+class Delegator:
+    """Base class to support delegation for augmented assignment nodes
+
+    To generator code for augmented assignments, we use the following
+    wrapper classes.  In visitAugAssign, the left-hand expression node
+    is visited twice.  The first time the visit uses the normal method
+    for that node .  The second time the visit uses a different method
+    that generates the appropriate code to perform the assignment.
+    These delegator classes wrap the original AST nodes in order to
+    support the variant visit methods.
+    """
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __getattr__(self, attr):
+        return getattr(self.obj, attr)
+
+class AugGetattr(Delegator):
+    pass
+
+class AugName(Delegator):
+    pass
+
+class AugSlice(Delegator):
+    pass
+
+class AugSubscript(Delegator):
+    pass
+
+wrapper = {
+    ast.Getattr: AugGetattr,
+    ast.Name: AugName,
+    ast.Slice: AugSlice,
+    ast.Subscript: AugSubscript,
+    }
+
+def wrap_aug(node):
+    return wrapper[node.__class__](node)
 
 if __name__ == "__main__":
     import sys

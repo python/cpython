@@ -279,22 +279,24 @@ class Const(Node):
 class Print(Node):
   nodes['print'] = 'Print'
 
-  def __init__(self, nodes):
+  def __init__(self, nodes, dest):
     self.nodes = nodes
-    self._children = ('print', nodes)
+    self.dest = dest
+    self._children = ('print', nodes, dest)
 
   def __repr__(self):
-    return "Print(%s)" % self._children[1:]
+    return "Print(%s, %s)" % (self._children[1:-1], self._children[-1])
 
 class Printnl(Node):
   nodes['printnl'] = 'Printnl'
 
-  def __init__(self, nodes):
+  def __init__(self, nodes, dest):
     self.nodes = nodes
-    self._children = ('printnl', nodes)
+    self.dest = dest
+    self._children = ('printnl', nodes, dest)
 
   def __repr__(self):
-    return "Printnl(%s)" % self._children[1:]
+    return "Printnl(%s, %s)" % (self._children[1:-1], self._children[-1])
 
 class Discard(Node):
   nodes['discard'] = 'Discard'
@@ -305,6 +307,18 @@ class Discard(Node):
 
   def __repr__(self):
     return "Discard(%s)" % self._children[1:]
+
+class AugAssign(Node):
+  nodes['augassign'] = 'AugAssign'
+
+  def __init__(self, node, op, expr):
+    self.node = node
+    self.op = op
+    self.expr = expr
+    self._children = ('augassign', node, op, expr)
+
+  def __repr__(self):
+    return "AugAssign(%s)" % str(self._children[1:])
 
 class Assign(Node):
   nodes['assign'] = 'Assign'
@@ -359,6 +373,41 @@ class AssAttr(Node):
 
   def __repr__(self):
     return "AssAttr(%s,%s,%s)" % self._children[1:]
+
+class ListComp(Node):
+  nodes['listcomp'] = 'ListComp'
+
+  def __init__(self, expr, quals):
+    self.expr = expr
+    self.quals = quals
+    self._children = ('listcomp', expr, quals)
+
+  def __repr__(self):
+    return "ListComp(%s, %s)" % self._children[1:]
+
+class ListCompFor(Node):
+  nodes['listcomp_for'] = 'ListCompFor'
+
+  # transformer fills in ifs after node is created
+
+  def __init__(self, assign, list, ifs):
+    self.assign = assign
+    self.list = list
+    self.ifs = ifs
+    self._children = ('listcomp_for', assign, list, ifs)
+
+  def __repr__(self):
+    return "ListCompFor(%s, %s, %s)" % self._children[1:]
+
+class ListCompIf(Node):
+  nodes['listcomp_if'] = 'ListCompIf'
+
+  def __init__(self, test):
+    self.test = test
+    self._children = ('listcomp_if', test)
+
+  def __repr__(self):
+    return "ListCompIf(%s)" % self._children[1:]
 
 class List(Node):
   nodes['list'] = 'List'
