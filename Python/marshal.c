@@ -244,6 +244,7 @@ w_object(v, p)
 		w_byte(TYPE_CODE, p);
 		w_short(co->co_argcount, p);
 		w_short(co->co_nlocals, p);
+		w_short(co->co_stacksize, p);
 		w_short(co->co_flags, p);
 		w_object((object *)co->co_code, p);
 		w_object(co->co_consts, p);
@@ -511,6 +512,7 @@ r_object(p)
 		{
 			int argcount = r_short(p);
 			int nlocals = r_short(p);
+			int stacksize = r_short(p);
 			int flags = r_short(p);
 			object *code = NULL;
 			object *consts = NULL;
@@ -528,7 +530,7 @@ r_object(p)
 			
 			if (!err_occurred()) {
 				v = (object *) newcodeobject(
-					argcount, nlocals, flags, 
+					argcount, nlocals, stacksize, flags, 
 					code, consts, names, varnames,
 					filename, name);
 			}
