@@ -603,7 +603,7 @@ needed so that only a single column position is deleted."
   (interactive)
   (let* ((ci (current-indentation))
 	 (move-to-indentation-p (<= (current-column) ci))
-	 (need (py-compute-indentation)) )
+	 (need (py-compute-indentation)))
     (if (/= ci need)
 	(save-excursion
 	  (beginning-of-line)
