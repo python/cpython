@@ -373,8 +373,17 @@ class TimeRE(dict):
         return '%s)' % regex
 
     def pattern(self, format):
-        """Return re pattern for the format string."""
+        """Return re pattern for the format string.
+        
+        Need to make sure that any characters that might be interpreted as
+        regex syntax is escaped.
+        
+        """
         processed_format = ''
+        # The sub() call escapes all characters that might be misconstrued
+        # as regex syntax.
+        regex_chars = re_compile(r"([\\.^$*+?{}\[\]|])")
+        format = regex_chars.sub(r"\\\1", format)
         whitespace_replacement = re_compile('\s+')
         format = whitespace_replacement.sub('\s*', format)
         while format.find('%') != -1:

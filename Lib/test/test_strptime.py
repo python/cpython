@@ -168,6 +168,14 @@ class TimeRETests(unittest.TestCase):
                         "did not find 'd' directive pattern string '%s'" %
                          pattern_string)
 
+    def test_pattern_escaping(self):
+        # Make sure any characters in the format string that might be taken as
+        # regex syntax is escaped.
+        pattern_string = self.time_re.pattern("\d+")
+        self.failUnless(r"\\d\+" in pattern_string,
+                        "%s does not have re characters escaped properly" %
+                        pattern_string)
+
     def test_compile(self):
         # Check that compiled regex is correct
         found = self.time_re.compile(r"%A").match(self.locale_time.f_weekday[6])
@@ -200,6 +208,12 @@ class TimeRETests(unittest.TestCase):
         test_locale = _strptime.LocaleTime(timezone=('',''))
         self.failUnless(_strptime.TimeRE(test_locale).pattern("%Z") == '',
                         "with timezone == ('',''), TimeRE().pattern('%Z') != ''")
+
+    def test_matching_with_escapes(self):
+        # Make sure a format that requires escaping of characters works
+        compiled_re = self.time_re.compile("\w+ %m")
+        found = compiled_re.match("\w+ 10")
+        self.failUnless(found, "Escaping failed of format '\w+ 10'")
 
 class StrptimeTests(unittest.TestCase):
     """Tests for _strptime.strptime."""
