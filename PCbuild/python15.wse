@@ -70,10 +70,6 @@ item: Set Variable
   Value=1.5
 end
 item: Set Variable
-  Variable=PY_FULLVERSION
-  Value=1.5.2
-end
-item: Set Variable
   Variable=MAINDIR
   Value=Python
 end
@@ -983,8 +979,7 @@ item: Edit Registry
 end
 item: Edit Registry
   Key=Software\Python\PythonCore\CurrentVersion
-  New Value=%PY_FULLVERSION%
-  Root=2
+  Root=130
 end
 item: Edit Registry
   Key=Software\Python\PythonCore\%PY_VERSION%\InstallPath
