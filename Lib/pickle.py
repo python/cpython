@@ -45,7 +45,6 @@ compatible_formats = ["1.0",            # Original protocol 0
                       "2.0",            # Protocol 2
                       ]                 # Old format versions we can read
 
-mdumps = marshal.dumps
 mloads = marshal.loads
 
 class PickleError(Exception):
@@ -220,25 +219,22 @@ class Pickler:
         self.memo[id(obj)] = memo_len, obj
 
     # Return a PUT (BINPUT, LONG_BINPUT) opcode string, with argument i.
-    def put(self, i):
+    def put(self, i, pack=struct.pack):
         if self.bin:
-            s = mdumps(i)[1:]
             if i < 256:
-                return BINPUT + s[0]
-
-            return LONG_BINPUT + s
+                return BINPUT + chr(i)
+            else:
+                return LONG_BINPUT + pack("<i", i)
 
         return PUT + `i` + '\n'
 
     # Return a GET (BINGET, LONG_BINGET) opcode string, with argument i.
-    def get(self, i):
+    def get(self, i, pack=struct.pack):
         if self.bin:
-            s = mdumps(i)[1:]
-
             if i < 256:
-                return BINGET + s[0]
-
-            return LONG_BINGET + s
+                return BINGET + chr(i)
+            else:
+                return LONG_BINGET + pack("<i", i)
 
         return GET + `i` + '\n'
 
@@ -362,24 +358,25 @@ class Pickler:
         self.write(object and TRUE or FALSE)
     dispatch[bool] = save_bool
 
-    def save_int(self, object):
+    def save_int(self, object, pack=struct.pack):
         if self.bin:
             # If the int is small enough to fit in a signed 4-byte 2's-comp
             # format, we can store it more efficiently than the general
             # case.
+            # First one- and two-byte unsigned ints:
+            if object >= 0:
+                if object < 0xff:
+                    self.write(BININT1 + chr(object))
+                    return
+                if object < 0xffff:
+                    self.write(BININT2 + chr(object&0xff) + chr(object>>8))
+                    return
+            # Next check for 4-byte signed ints:
             high_bits = object >> 31  # note that Python shift sign-extends
             if  high_bits == 0 or high_bits == -1:
                 # All high bits are copies of bit 2**31, so the value
                 # fits in a 4-byte signed int.
-                i = mdumps(object)[1:]
-                assert len(i) == 4
-                if i[-2:] == '\000\000':    # fits in 2-byte unsigned int
-                    if i[-3] == '\000':     # fits in 1-byte unsigned int
-                        self.write(BININT1 + i[0])
-                    else:
-                        self.write(BININT2 + i[:2])
-                else:
-                    self.write(BININT + i)
+                self.write(BININT + pack("<i", object))
                 return
         # Text pickle, or int too big to fit in signed 4-byte format.
         self.write(INT + `object` + '\n')
@@ -396,24 +393,23 @@ class Pickler:
             self.write(FLOAT + `object` + '\n')
     dispatch[FloatType] = save_float
 
-    def save_string(self, object):
+    def save_string(self, object, pack=struct.pack):
         if self.bin:
             n = len(object)
             if n < 256:
                 self.write(SHORT_BINSTRING + chr(n) + object)
             else:
-                self.write(BINSTRING + mdumps(n)[1:] + object)
+                self.write(BINSTRING + pack("<i", n) + object)
         else:
             self.write(STRING + `object` + '\n')
         self.memoize(object)
     dispatch[StringType] = save_string
 
-    def save_unicode(self, object):
+    def save_unicode(self, object, pack=struct.pack):
         if self.bin:
             encoding = object.encode('utf-8')
             n = len(encoding)
-            s = mdumps(n)[1:]
-            self.write(BINUNICODE + s + encoding)
+            self.write(BINUNICODE + pack("<i", n) + encoding)
         else:
             object = object.replace("\\", "\\u005c")
             object = object.replace("\n", "\\u000a")
@@ -423,17 +419,17 @@ class Pickler:
 
     if StringType == UnicodeType:
         # This is true for Jython
-        def save_string(self, object):
+        def save_string(self, object, pack=struct.pack):
             unicode = object.isunicode()
 
             if self.bin:
                 if unicode:
                     object = object.encode("utf-8")
                 l = len(object)
-                s = mdumps(l)[1:]
                 if l < 256 and not unicode:
-                    self.write(SHORT_BINSTRING + s[0] + object)
+                    self.write(SHORT_BINSTRING + chr(l) + object)
                 else:
+                    s = pack("<i", l)
                     if unicode:
                         self.write(BINUNICODE + s + object)
                     else:
