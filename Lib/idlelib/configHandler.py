@@ -346,11 +346,27 @@ class IdleConf:
             del(names[index])
         return names
         
+    def GetExtnNameForEvent(self,virtualEvent):
+        """
+        Returns the name of the extension that virtualEvent is bound in, or
+        None if not bound in any extension.
+        virtualEvent - string, name of the virtual event to test for, without
+                       the enclosing '<< >>'
+        """
+        extName=None
+        vEvent='<<'+virtualEvent+'>>'
+        for extn in self.GetExtensions(activeOnly=0):
+            for event in self.GetExtensionKeys(extn).keys():
+                if event == vEvent:
+                    extName=extn
+                    print extName
+        return extName
+    
     def GetExtensionKeys(self,extensionName):
         """
         returns a dictionary of the configurable keybindings for a particular
         extension,as they exist in the dictionary returned by GetCurrentKeySet;
-        that is, where previously re-used bindings are disabled.
+        that is, where previously used bindings are disabled.
         """
         keysName=extensionName+'_cfgBindings'
         activeKeys=self.GetCurrentKeySet()
@@ -432,6 +448,14 @@ class IdleConf:
                     keySet[event]=extKeys[event] #add binding
         return keySet
 
+    def IsCoreBinding(self,virtualEvent):
+        """
+        returns true if the virtual event is bound in the core idle keybindings.
+        virtualEvent - string, name of the virtual event to test for, without
+                       the enclosing '<< >>'
+        """
+        return ('<<'+virtualEvent+'>>') in self.GetCoreKeys().keys()
+    
     def GetCoreKeys(self, keySetName=None):
         """
         returns the requested set of core keybindings, with fallbacks if
@@ -442,9 +466,9 @@ class IdleConf:
         defined here.
         """
         keyBindings={
-            '<<Copy>>': ['<Control-c>', '<Control-C>'],
-            '<<Cut>>': ['<Control-x>', '<Control-X>'],
-            '<<Paste>>': ['<Control-v>', '<Control-V>'],
+            '<<copy>>': ['<Control-c>', '<Control-C>'],
+            '<<cut>>': ['<Control-x>', '<Control-X>'],
+            '<<paste>>': ['<Control-v>', '<Control-V>'],
             '<<beginning-of-line>>': ['<Control-a>', '<Home>'],
             '<<center-insert>>': ['<Control-l>'],
             '<<close-all-windows>>': ['<Control-q>'],

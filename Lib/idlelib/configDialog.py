@@ -36,16 +36,7 @@ class ConfigDialog(Toplevel):
             'Shell Normal Text':('console','09'),
             'Shell Stdout Text':('stdout','10'),
             'Shell Stderr Text':('stderr','11')}
-        #changedItems. When any config item is changed in this dialog, an entry
-        #should be made in the relevant section (config type) of this 
-        #dictionary. The key should be the config file section name and the 
-        #value a dictionary, whose key:value pairs are item=value pairs for
-        #that config file section.
-        self.changedItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
-#         #defaultItems. This dictionary is loaded with the values from the
-#         #default config files. It is used for comparison with self.changedItems
-#         #to decide which changed items actually need saving.
-#         self.defaultItems=self.GetDefaultItems()
+        self.ResetChangedItems() #load initial values in changed items dict
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
         self.transient(parent)
@@ -444,15 +435,19 @@ class ConfigDialog(Toplevel):
         theme=self.customTheme.get()
         element=self.themeElements[self.highlightTarget.get()][0]
         self.AddChangedItem('highlight',theme,element,value)
-        print params
         
     def VarChanged_keyBinding(self,*params):
         value=self.keyBinding.get()
         keySet=self.customKeys.get()
         event=self.listBindings.get(ANCHOR).split()[0]
-        self.AddChangedItem('keys',keySet,event,value)
-        print params
-
+        if idleConf.IsCoreBinding(event):
+            #this is a core keybinding
+            self.AddChangedItem('keys',keySet,event,value)
+        else: #this is an extension key binding
+            extName=idleConf.GetExtnNameForEvent(event)
+            extKeybindSection=extName+'_cfgBindings'
+            self.AddChangedItem('extensions',extKeybindSection,event,value)
+        
     def VarChanged_winWidth(self,*params):
         value=self.winWidth.get()
         self.AddChangedItem('main','EditorWindow','width',value)
@@ -471,12 +466,19 @@ class ConfigDialog(Toplevel):
         extension=self.listExt.get(ANCHOR)
         self.AddChangedItem('extensions',extension,'enabled',value)
 
+    def ResetChangedItems(self):
+        #changedItems. When any config item is changed in this dialog, an entry
+        #should be made in the relevant section (config type) of this 
+        #dictionary. The key should be the config file section name and the 
+        #value a dictionary, whose key:value pairs are item=value pairs for
+        #that config file section.
+        self.changedItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
+
     def AddChangedItem(self,type,section,item,value):
         value=str(value) #make sure we use a string
         if not self.changedItems[type].has_key(section):
             self.changedItems[type][section]={}    
         self.changedItems[type][section][item]=value
-        print type,section,item,value
     
     def GetDefaultItems(self):
         dItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
@@ -552,18 +554,17 @@ class ConfigDialog(Toplevel):
             keySetName=self.builtinKeys.get()
         else:  
             keySetName=self.customKeys.get()
-        prevKeySet=idleConf.GetKeySet(keySetName)
         #add the new key set to changedItems
-        for event in prevKeySet.keys():
+        prevCoreKeys=idleConf.GetCoreKeys(keySetName)
+        for event in prevCoreKeys.keys(): #add core key set to changed items
             eventName=event[2:-2] #trim off the angle brackets
             self.AddChangedItem('keys',newKeySetName,eventName,
-                    prevKeySet[event])
+                    string.join(prevCoreKeys[event]))
         #change gui over to the new key set
         customKeyList=idleConf.GetSectionList('user','keys')
         for newName in self.changedItems['keys'].keys():
             if newName not in customKeyList: customKeyList.append(newName)
         customKeyList.sort()
-        print newKeySetName,customKeyList,self.changedItems['keys'][newKeySetName]
         self.optMenuKeysCustom.SetMenu(customKeyList,newKeySetName)
         self.keysAreDefault.set(0)
         self.SetKeysType()
@@ -610,7 +611,6 @@ class ConfigDialog(Toplevel):
         for newName in self.changedItems['highlight'].keys():
             if newName not in customThemeList: customThemeList.append(newName)
         customThemeList.sort()
-        print newThemeName,customThemeList,newTheme
         self.optMenuThemeCustom.SetMenu(customThemeList,newThemeName)
         self.themeIsBuiltin.set(0)
         self.SetThemeType()
@@ -760,7 +760,7 @@ class ConfigDialog(Toplevel):
                 self.customKeys.set('- no custom keys -')    
             else:
                 self.optMenuKeysCustom.SetMenu(itemList,itemList[0])
-        else: #user theme selected
+        else: #user key set selected
             itemList=idleConf.GetSectionList('user','keys')
             itemList.sort()
             self.optMenuKeysCustom.SetMenu(itemList,currentOption)
@@ -813,7 +813,6 @@ class ConfigDialog(Toplevel):
         self.LoadGeneralCfg()
         
     def SetUserValue(self,configType,section,item,value):
-        print idleConf.defaultCfg[configType].Get(section,item),value
         if idleConf.defaultCfg[configType].has_option(section,item):
             if idleConf.defaultCfg[configType].Get(section,item)==value:
                 #the setting equals a default setting, remove it from user cfg
@@ -830,12 +829,12 @@ class ConfigDialog(Toplevel):
             for section in self.changedItems[configType].keys():
                 for item in self.changedItems[configType][section].keys():
                     value=self.changedItems[configType][section][item]
-                    print configType,section,item,value
                     if self.SetUserValue(configType,section,item,value):
                         cfgTypeHasChanges=1
             if cfgTypeHasChanges: 
                 idleConf.userCfg[configType].Save()                
-    
+        self.ResetChangedItems() #clear the changed items dict
+         
     def Cancel(self):
         self.destroy()
 
