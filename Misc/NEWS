@@ -26,6 +26,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- A new module _iconv_codec has been added, to expose the iconv(3)
+  library.
+
 - os/posixmodule has grown the sysexits.h constants (EX_OK and friends).
 
 - Fixed broken threadstate swap in readline that could cause fatal
