@@ -1,0 +1,81 @@
+# This Makefile, which should be run from the current directory, will build
+# a MacPython based on the /usr/bin/python installed by Apple as of 10.2.
+
+VERSION=2.2
+
+builddir = ../..
+srcdir = ../..
+dstroot=/.
+PYTHONAPPSDIR=$(dstroot)/Applications/MacPython-OSX
+prefix=/usr
+
+# These are normally computed form the previous ones
+osxdir=$(srcdir)/Mac/OSX
+PYTHON=$(prefix)/bin/python
+pythonw=$(prefix)/bin/pythonw
+LIBDEST=$(prefix)/lib/python$(VERSION)
+datadir=$(PYTHONAPPSDIR)/python-additions
+MACLIBDEST=$(datadir)/Lib
+MACDYNLIBDEST=$(datadir)/lib-dynload
+MACTOOLSDEST=$(datadir)/Tools
+APPINSTALLDIR=$(datadir)/Python.app
+INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
+
+# The usual stuff
+DIRMODE=755
+INSTALL=/usr/bin/install -c
+INSTALL_SYMLINK=ln -fs
+INSTALL_PROGRAM=${INSTALL}
+INSTALL_SCRIPT= ${INSTALL_PROGRAM}
+INSTALL_DATA=	${INSTALL} -m 644
+
+install: install_dirs install_dynlib install_lib \
+	install_Python install_IDE install_IDLE install_BuildApplet \
+	install_pythonw 
+	
+install_dirs:
+	$(INSTALL) -d -m $(DIRMODE) $(PYTHONAPPSDIR)
+	$(INSTALL) -d -m $(DIRMODE) $(datadir)
+	$(INSTALL) -d -m $(DIRMODE) $(MACDYNLIBDEST)
+	
+install_lib: Mac.jaguar.pth
+	$(MAKE) -f $(osxdir)/Makefile installmacsubtree \
+		LIBDEST=$(LIBDEST) MACLIBDEST=$(MACLIBDEST) MACTOOLSDEST=$(MACTOOLSDEST) \
+		builddir=$(builddir) srcdir=$(srcdir) PTHFILE=Mac.jaguar.pth \
+		PYTHON=$(PYTHON) compileall=$(LIBDEST)/compileall.py
+		
+Mac.jaguar.pth:
+	echo $(MACLIBDEST) > Mac.jaguar.pth
+	echo $(MACDYNLIBDEST) >> Mac.jaguar.pth
+##	echo "import macresource; macresource.open_error_resource()" >> Mac.jaguar.pth
+	
+install_dynlib:
+	$(PYTHON) $(osxdir)/setup.jaguar.py install --install-lib=$(MACDYNLIBDEST)
+	touch $(MACDYNLIBDEST)/OverrideFrom23/__init__.py
+		
+install_Python:
+	$(PYTHON) $(srcdir)/Mac/scripts/buildappbundle.py -l \
+		-o $(APPINSTALLDIR) \
+		-r $(srcdir)/Mac/OSXResources/app/Resources/Applet-Info.plist \
+		-r $(srcdir)/Mac/OSXResources/app/Resources/PythonApplet.icns \
+		$(PYTHON)
+		
+install_IDE:
+	$(MAKE) -f $(osxdir)/Makefile install_IDE \
+		srcdir=$(srcdir) INSTALLED_PYTHONW=$(INSTALLED_PYTHONW) \
+		PYTHONAPPSDIR=$(PYTHONAPPSDIR)
+	
+install_IDLE:
+	$(MAKE) -f $(osxdir)/Makefile install_IDLE \
+		srcdir=$(srcdir) INSTALLED_PYTHONW=$(INSTALLED_PYTHONW) \
+		PYTHONAPPSDIR=$(PYTHONAPPSDIR)
+	
+install_BuildApplet:
+	$(MAKE) -f $(osxdir)/Makefile install_BuildApplet \
+		srcdir=$(srcdir) INSTALLED_PYTHONW=$(INSTALLED_PYTHONW) \
+		PYTHONAPPSDIR=$(PYTHONAPPSDIR)
+	
+install_pythonw:
+	echo "#!/bin/sh" > pythonw.sh
+	echo "exec \"$(INSTALLED_PYTHONW)\" \"\$$@\"" >> pythonw.sh
+	$(INSTALL) pythonw.sh $(prefix)/bin/pythonw
