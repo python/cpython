@@ -49,8 +49,10 @@ verbose = 0
 
 def errprint(*args):
     strings = map(str, args)
-    sys.stderr.write(' '.join(strings))
-    sys.stderr.write("\n")
+    msg = ' '.join(strings)
+    if msg[-1:] != '\n':
+        msg += '\n'
+    sys.stderr.write(msg)
 
 def main():
     import getopt
@@ -94,9 +96,11 @@ def check(file):
         errprint("%r: I/O Error: %s" % (file, str(msg)))
         return
 
-    ff = FutureFinder(f)
-    f.close()
+    ff = FutureFinder(f, file)
     changed = ff.run()
+    if changed:
+        ff.gettherest()
+    f.close()
     if changed:
         if verbose:
             print "changed."
@@ -118,9 +122,9 @@ def check(file):
             os.rename(file, bak)
             if verbose:
                 print "renamed", file, "to", bak
-            f = open(file, "w")
-            ff.write(f)
-            f.close()
+            g = open(file, "w")
+            ff.write(g)
+            g.close()
             if verbose:
                 print "wrote new", file
     else:
@@ -129,21 +133,24 @@ def check(file):
 
 class FutureFinder:
 
-    def __init__(self, f):
-        # Raw file lines.
-        self.lines = f.readlines()
-        self.index = 0  # index into self.lines of next line
+    def __init__(self, f, fname):
+        self.f = f
+        self.fname = fname
+        self.ateof = 0
+        self.lines = [] # raw file lines
 
         # List of (start_index, end_index, new_line) triples.
         self.changed = []
 
     # Line-getter for tokenize.
     def getline(self):
-        if self.index >= len(self.lines):
-            line = ""
+        if self.ateof:
+            return ""
+        line = self.f.readline()
+        if line == "":
+            self.ateof = 1
         else:
-            line = self.lines[self.index]
-            self.index += 1
+            self.lines.append(line)
         return line
 
     def run(self):
@@ -154,21 +161,26 @@ class FutureFinder:
         NAME = tokenize.NAME
         OP = tokenize.OP
 
-        saw_string = 0
         changed = self.changed
         get = tokenize.generate_tokens(self.getline).next
         type, token, (srow, scol), (erow, ecol), line = get()
 
-        # Chew up initial comments, blank lines, and docstring (if any).
-        while type in (COMMENT, NL, NEWLINE, STRING):
-            if type is STRING:
-                if saw_string:
-                    return changed
-                saw_string = 1
+        # Chew up initial comments and blank lines (if any).
+        while type in (COMMENT, NL, NEWLINE):
+            type, token, (srow, scol), (erow, ecol), line = get()
+
+        # Chew up docstring (if any -- and it may be implicitly catenated!).
+        while type is STRING:
             type, token, (srow, scol), (erow, ecol), line = get()
 
         # Analyze the future stmts.
-        while type is NAME and token == "from":
+        while 1:
+            # Chew up comments and blank lines (if any).
+            while type in (COMMENT, NL, NEWLINE):
+                type, token, (srow, scol), (erow, ecol), line = get()
+
+            if not (type is NAME and token == "from"):
+                break
             startline = srow - 1    # tokenize is one-based
             type, token, (srow, scol), (erow, ecol), line = get()
 
@@ -197,7 +209,8 @@ class FutureFinder:
                 type, token, (srow, scol), (erow, ecol), line = get()
 
             if type is not NEWLINE:
-                errprint("Skipping file; can't parse line:\n", line)
+                errprint("Skipping file %r; can't parse line %d:\n%s" %
+                         (self.fname, srow, line))
                 return []
 
             endline = srow - 1
@@ -219,8 +232,8 @@ class FutureFinder:
                     else:
                         okfeatures.append(f)
 
+            # Rewrite the line if at least one future-feature is obsolete.
             if len(okfeatures) < len(features):
-                # At least one future-feature is obsolete.
                 if len(okfeatures) == 0:
                     line = None
                 else:
@@ -231,11 +244,15 @@ class FutureFinder:
                     line += '\n'
                 changed.append((startline, endline, line))
 
-            # Chew up comments and blank lines (if any).
-            while type in (COMMENT, NL, NEWLINE):
-                type, token, (srow, scol), (erow, ecol), line = get()
+            # Loop back for more future statements.
 
         return changed
+
+    def gettherest(self):
+        if self.ateof:
+            self.therest = ''
+        else:
+            self.therest = self.f.read()
 
     def write(self, f):
         changed = self.changed
@@ -251,6 +268,9 @@ class FutureFinder:
             else:
                 self.lines[s:e+1] = [line]
         f.writelines(self.lines)
+        # Copy over the remainder of the file.
+        if self.therest:
+            f.write(self.therest)
 
 if __name__ == '__main__':
     main()
