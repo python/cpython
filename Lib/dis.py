@@ -101,6 +101,7 @@ def_op('UNARY_CONVERT', 13)
 def_op('UNARY_CALL', 14)
 def_op('UNARY_INVERT', 15)
 
+def_op('BINARY_POWER', 19)
 def_op('BINARY_MULTIPLY', 20)
 def_op('BINARY_DIVIDE', 21)
 def_op('BINARY_MODULO', 22)
@@ -188,3 +189,7 @@ def_op('DELETE_FAST', 126)	# Local variable number
 
 def_op('SET_LINENO', 127)	# Current line number
 SET_LINENO = 127
+
+def_op('RAISE_VARARGS', 130)
+def_op('CALL_FUNCTION', 131)
+def_op('MAKE_FUNCTION', 132)
