@@ -260,10 +260,10 @@ mmap_size_method(mmap_object *self,
 #ifdef MS_WIN32
 	if (self->file_handle != (INT_PTR) -1) {
 		return (Py_BuildValue (
-			"l",
+			"l", (long)
 			GetFileSize ((HANDLE)self->file_handle, NULL)));
 	} else {
-		return (Py_BuildValue ("l", self->size) );
+		return (Py_BuildValue ("l", (long) self->size) );
 	}
 #endif /* MS_WIN32 */
 
@@ -274,7 +274,7 @@ mmap_size_method(mmap_object *self,
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
-		return (Py_BuildValue ("l", buf.st_size) );
+		return (Py_BuildValue ("l", (long) buf.st_size) );
 	}
 #endif /* UNIX */
 }
@@ -371,7 +371,7 @@ mmap_tell_method(mmap_object *self, PyObject *args)
 	CHECK_VALID(NULL);
         if (!PyArg_ParseTuple(args, ":tell"))
 		return NULL;
-	return (Py_BuildValue ("l", self->pos) );
+	return (Py_BuildValue ("l", (long) self->pos) );
 }
 
 static PyObject *
@@ -388,8 +388,8 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 		return NULL;
 	} else {
 #ifdef MS_WIN32
-		return (Py_BuildValue (
-			"l", FlushViewOfFile (self->data+offset, size)));
+		return (Py_BuildValue("l", (long)
+                                      FlushViewOfFile(self->data+offset, size)));
 #endif /* MS_WIN32 */
 #ifdef UNIX
 		/* XXX semantics of return value? */
@@ -400,7 +400,7 @@ mmap_flush_method(mmap_object *self, PyObject *args)
 			PyErr_SetFromErrno(mmap_module_error);
 			return NULL;
 		}
-		return Py_BuildValue ("l", 0);	
+		return Py_BuildValue ("l", (long) 0);	
 #endif /* UNIX */   
 	}
 }
