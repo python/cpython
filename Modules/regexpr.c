@@ -1884,7 +1884,7 @@ int re_match(regexp_t bufp,
 	{
 		if (text == textend)
 			goto fail;
-		if (SYNTAX(*text) & Sword)
+		if (!(SYNTAX(*text) & Sword))
 			goto fail;
 		if (text == textstart)
 			goto continue_matching;
