@@ -4,9 +4,6 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 
 * Document native package semantics.  (Where?  Guido?)
 
-* Figure out indexing in the HTML version.  Fix module index for Library
-  Reference.
-
 * Update the pickle documentation to describe all of the current behavior;
   only a subset is described.  __reduce__, etc.
 
@@ -16,8 +13,4 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
   avoid image creation, & if necessary, make sure image creation at least
   doesn't fail.
 
-* Separate modules which share a section.  (UserDict/UserList, and one
-  other which I can't recall at the moment.)
-
-* Find a way to get the <PRE> for a {verbatim} *inside* the <dl> used to
-  indent the code sample even on the new LaTeX2HTML.  Needed for Lynx.
+* Separate modules which share a section.  (I think only one case remains.)
