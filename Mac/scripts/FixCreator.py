@@ -5,6 +5,7 @@
 import os
 import macfs
 import sys
+import macostools
 
 OLD='PYTH'
 NEW='Pyth'
@@ -15,6 +16,7 @@ def walktree(name, change):
 		cur_cr, cur_tp = fs.GetCreatorType()
 		if cur_cr == OLD:
 			fs.SetCreatorType(NEW, cur_tp)
+			macostools.touched(fs)
 			print 'Fixed ', name
 	elif os.path.isdir(name):
 		print '->', name

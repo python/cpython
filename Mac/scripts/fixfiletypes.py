@@ -10,6 +10,7 @@
 import os
 import macfs
 import sys
+import macostools
 
 list = [
 	('.py', 'Pyth', 'TEXT'),
@@ -33,6 +34,7 @@ def walktree(name, change):
 				if curcrtp <> (cr, tp):
 					if change:
 						fs.SetCreatorType(cr, tp)
+						macostools.touched(fs)
 						print 'Fixed ', name
 					else:
 						print 'Wrong', curcrtp, name
