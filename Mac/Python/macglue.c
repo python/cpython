@@ -173,7 +173,7 @@ PyMac_FixGUSIcd()
 	pb.ioNamePtr= "\p";
 	pb.ioVRefNum= curdirfss.vRefNum;
 	pb.ioWDDirID= curdirfss.parID;
-	if (PBHSetVol(&pb, 0) != noErr)
+	if (PBHSetVolSync(&pb) != noErr)
 		return;
 }
 
@@ -540,7 +540,7 @@ PyMac_InitMenuBar()
 	MenuHandle applemenu;
 	
 	if ( (bar=GetMenuBar()) == NULL ) return;
-	if ( (applemenu=GetMHandle(SIOUX_APPLEID)) == NULL ) return;
+	if ( (applemenu=GetMenuHandle(SIOUX_APPLEID)) == NULL ) return;
 	SetMenuItemText(applemenu, 1, "\pAbout Python...");
 }
 

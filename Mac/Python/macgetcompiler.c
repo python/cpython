@@ -43,13 +43,18 @@ PERFORMANCE OF THIS SOFTWARE.
 #else
 #define HASGUSI ""
 #endif
+#ifdef USE_MSL
+#define HASMSL " w/MSL"
+#else
+#define HASMSL ""
+#endif
 #ifdef __powerc
-#define COMPILER " [CW PPC" HASGUSI "]"
+#define COMPILER " [CW PPC" HASGUSI HASMSL "]"
 #else
 #ifdef __CFM68K__
-#define COMPILER " [CW CFM68K" HASGUSI "]"
+#define COMPILER " [CW CFM68K" HASGUSI HASMSL "]"
 #else
-#define COMPILER " [CW 68K" HASGUSI "]"
+#define COMPILER " [CW 68K" HASGUSI HASMSL "]"
 #endif
 #endif
 #endif
