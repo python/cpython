@@ -10,7 +10,7 @@
 #	- We don't fork a process to run 'cmp' but read the files ourselves
 
 import posix
-import stat
+from stat import *
 import statcache
 
 
@@ -26,7 +26,7 @@ def cmp(f1, f2):
 	# Return 1 for identical files, 0 for different.
 	# Raise exceptions if either file could not be statted, read, etc.
 	s1, s2 = sig(statcache.stat(f1)), sig(statcache.stat(f2))
-	if not stat.S_ISREG(s1[0]) or not stat.S_ISREG(s2[0]):
+	if not S_ISREG(s1[0]) or not S_ISREG(s2[0]):
 		# Either is a not a plain file -- always report as different
 		return 0
 	if s1 = s2:
@@ -52,7 +52,7 @@ def cmp(f1, f2):
 # Return signature (i.e., type, size, mtime) from raw stat data.
 #
 def sig(st):
-	return stat.S_IFMT(st[ST_MODE]), st[stat.ST_SIZE], st[stat.ST_MTIME]
+	return S_IFMT(st[ST_MODE]), st[ST_SIZE], st[ST_MTIME]
 
 # Compare two files, really.
 #
