@@ -61,6 +61,7 @@ class Scope:
         d = {}
         d.update(self.defs)
         d.update(self.uses)
+        d.update(self.globals)
         return d.keys()
 
     def add_child(self, child):
@@ -111,8 +112,7 @@ class SymbolVisitor:
             self.visit(n, parent)
         scope = FunctionScope(node.name, self.module, self.klass)
         self.scopes[node] = scope
-        for name in node.argnames:
-            scope.add_param(name)
+        self._do_args(scope, node.argnames)
         self.visit(node.code, scope)
 
     def visitLambda(self, node, parent):
@@ -120,9 +120,15 @@ class SymbolVisitor:
             self.visit(n, parent)
         scope = LambdaScope(self.module, self.klass)
         self.scopes[node] = scope
-        for name in node.argnames:
-            scope.add_param(name)
+        self._do_args(scope, node.argnames)
         self.visit(node.code, scope)
+
+    def _do_args(self, scope, args):
+        for name in args:
+            if type(name) == types.TupleType:
+                self._do_args(scope, name)
+            else:
+                scope.add_param(name)
 
     def visitClass(self, node, parent):
         parent.add_def(node.name)
@@ -217,7 +223,7 @@ if __name__ == "__main__":
 
     def get_names(syms):
         return [s for s in [s.get_name() for s in syms.get_symbols()]
-                if not s.startswith('_[')]        
+                if not (s.startswith('_[') or s.startswith('.'))]        
     
     for file in sys.argv[1:]:
         print file
@@ -256,6 +262,6 @@ if __name__ == "__main__":
                     if not list_eq(get_names(s.get_namespace()),
                                    l[0].get_names()):
                         print s.get_name()
-                        print get_names(s.get_namespace())
-                        print l[0].get_names()
+                        print sort(get_names(s.get_namespace()))
+                        print sort(l[0].get_names())
                         sys.exit(-1)
