@@ -9,7 +9,7 @@ effort at RFC 2822 updates have been made, but a thorough audit has not been
 performed.  Consider any RFC 2822 non-conformance to be a bug.
 
     RFC 2822: http://www.faqs.org/rfcs/rfc2822.html
-    RFC  822: http://www.faqs.org/rfcs/rfc822.html (obsolete)
+    RFC 822 : http://www.faqs.org/rfcs/rfc822.html (obsolete)
 
 Directions for use:
 
