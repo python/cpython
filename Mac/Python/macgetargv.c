@@ -54,10 +54,16 @@ typedef unsigned long refcontype;
 #include "Python.h"
 #include "macglue.h"
 
+#ifdef TARGET_API_MAC_OSX
+#define PATHNAMELEN 1024
+#else
+#define PATHNAMELEN 256
+#endif
+
 static int arg_count;
 static char *arg_vector[256];
 FSSpec PyMac_ApplicationFSSpec;
-char PyMac_ApplicationPath[256];
+char PyMac_ApplicationPath[PATHNAMELEN];
 
 /* Duplicate a string to the heap. We also export this since it isn't standard
 ** and others use it
@@ -72,22 +78,6 @@ strdup(const char *src)
 	return dst;
 }
 #endif
-
-#if TARGET_API_MAC_OSX
-OSErr
-PyMac_GetFullPath(FSSpec *fss, char *path)
-{
-	FSRef fsr;
-	OSErr err;
-	
-	*path = '\0';
-	err = FSpMakeFSRef(fss, &fsr);
-	if ( err ) return err;
-	err = (OSErr)FSRefMakePath(&fsr, path, 1024);
-	if ( err ) return err;
-	return 0;
-}
-#endif /* TARGET_API_MAC_OSX */
 
 
 #if !TARGET_API_MAC_OSX
@@ -109,7 +99,7 @@ PyMac_init_process_location(void)
 	info.processAppSpec = &PyMac_ApplicationFSSpec;
 	if ( err=GetProcessInformation(&currentPSN, &info))
 		return err;
-	if ( err=PyMac_GetFullPath(&PyMac_ApplicationFSSpec, PyMac_ApplicationPath) )
+	if ( err=PyMac_GetFullPathname(&PyMac_ApplicationFSSpec, PyMac_ApplicationPath, PATHNAMELEN) )
 		return err;
 	applocation_inited = 1;
 	return 0;
@@ -170,7 +160,7 @@ handle_open_doc(const AppleEvent *theAppleEvent, AppleEvent *reply, refcontype r
 	DescType rttype;
 	long i, ndocs, size;
 	FSSpec fss;
-	char path[1024];
+	char path[PATHNAMELEN];
 	
 	got_one = 1;
 	if ((err = AEGetParamDesc(theAppleEvent,
@@ -185,7 +175,7 @@ handle_open_doc(const AppleEvent *theAppleEvent, AppleEvent *reply, refcontype r
 				  &keywd, &rttype, &fss, sizeof(fss), &size);
 		if (err)
 			break;
-		PyMac_GetFullPath(&fss, path);
+		PyMac_GetFullPathname(&fss, path, PATHNAMELEN);
 		arg_vector[arg_count++] = strdup(path);
 	}
 	return err;

@@ -40,6 +40,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
+#ifdef TARGET_API_MAC_OSX
+#define PATHNAMELEN 1024
+#else
+#define PATHNAMELEN 256
+#endif
+
 #ifdef MPW
 #define bufferIsSmall -607	/*error returns from Post and Accept */
 #endif
@@ -596,15 +602,14 @@ MacOS_openrf(PyObject *self, PyObject *args)
 		
 	err = HOpenRF(fss.vRefNum, fss.parID, fss.name, permission, &fp->fRefNum);
 	
-#if !TARGET_API_MAC_OSX
 	if ( err == fnfErr ) {
 		/* In stead of doing complicated things here to get creator/type
 		** correct we let the standard i/o library handle it
 		*/
 		FILE *tfp;
-		char pathname[257];
+		char pathname[PATHNAMELEN];
 		
-		if ( err=PyMac_GetFullPath(&fss, pathname) ) {
+		if ( err=PyMac_GetFullPathname(&fss, pathname, PATHNAMELEN) ) {
 			PyMac_Error(err);
 			Py_DECREF(fp);
 			return NULL;
@@ -618,7 +623,6 @@ MacOS_openrf(PyObject *self, PyObject *args)
 		fclose(tfp);
 		err = HOpenRF(fss.vRefNum, fss.parID, fss.name, permission, &fp->fRefNum);
 	}
-#endif
 	if ( err ) {
 		Py_DECREF(fp);
 		PyMac_Error(err);

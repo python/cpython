@@ -62,7 +62,6 @@ extern short PyMac_AppRefNum;			/* RefNum of application rsrcfork (from macmain.
 extern FSSpec PyMac_ApplicationFSSpec;		/* Application location (from macargv.c) */
 extern char PyMac_ApplicationPath[];		/* Application location (from macargv.c) */
 extern OSErr PyMac_init_application_location(void);	/* Init the above */
-extern OSErr PyMac_GetFullPath(FSSpec *, char *); /* convert fsspec->path (macargv.c) */
 extern int PyMac_GetArgv(char ***, int);	/* Get argc, argv (from macargv.c) */
 extern int PyMac_AppearanceCompliant;	/* True if in appearance support mode */
 
