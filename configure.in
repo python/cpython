@@ -1896,31 +1896,6 @@ x.sa_len = 0;],
 	AC_DEFINE(HAVE_SOCKADDR_SA_LEN, 1, [Define if sockaddr has sa_len member]),
 	AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(for bad static forward)
-AC_CACHE_VAL(ac_cv_bad_static_forward,
-[AC_TRY_RUN([
-struct s { int a; int b; };
-static struct s foo;
-int foobar() {
- static int random;
- random = (int) &foo;
- return random;
-}
-static struct s foo = { 1, 2 };
-main() {
- exit(!((int)&foo == foobar()));
-}],
-ac_cv_bad_static_forward=no,
-ac_cv_bad_static_forward=yes,
-ac_cv_bad_static_forward=no)])
-AC_MSG_RESULT($ac_cv_bad_static_forward)
-if test "$ac_cv_bad_static_forward" = yes
-then
-    AC_DEFINE(BAD_STATIC_FORWARD, 1, 
-    [Define if your compiler botches static forward declarations
-    (as it does on SCI ODT 3.0)])
-fi
-
 va_list_is_array=no
 AC_MSG_CHECKING(whether va_list is an array)
 AC_TRY_COMPILE([

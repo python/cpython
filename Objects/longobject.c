@@ -2199,7 +2199,8 @@ long_hex(PyObject *v)
 {
 	return long_format(v, 16, 1);
 }
-staticforward PyObject *
+
+static PyObject *
 long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *

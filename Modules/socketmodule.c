@@ -276,7 +276,7 @@ static int taskwindow;
    The sock_type variable contains pointers to various functions,
    some of which call new_sockobject(), which uses sock_type, so
    there has to be a circular reference. */
-staticforward PyTypeObject sock_type;
+static PyTypeObject sock_type;
 
 /* Convenience function to raise an error according to errno
    and return a NULL pointer from a function. */

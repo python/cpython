@@ -34,7 +34,7 @@ typedef struct {
     GDBM_FILE di_dbm;
 } dbmobject;
 
-staticforward PyTypeObject Dbmtype;
+static PyTypeObject Dbmtype;
 
 #define is_dbmobject(v) ((v)->ob_type == &Dbmtype)
 #define check_dbmobject_open(v) if ((v)->di_dbm == NULL) \

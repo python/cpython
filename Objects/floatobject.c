@@ -678,7 +678,7 @@ float_float(PyObject *v)
 }
 
 
-staticforward PyObject *
+static PyObject *
 float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *

@@ -17,9 +17,9 @@ static Py_complex c_i = {0., 1.};
 static Py_complex c_halfi = {0., 0.5};
 
 /* forward declarations */
-staticforward Py_complex c_log(Py_complex);
-staticforward Py_complex c_prodi(Py_complex);
-staticforward Py_complex c_sqrt(Py_complex);
+static Py_complex c_log(Py_complex);
+static Py_complex c_prodi(Py_complex);
+static Py_complex c_sqrt(Py_complex);
 
 
 static Py_complex

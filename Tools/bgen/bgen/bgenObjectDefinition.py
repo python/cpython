@@ -40,7 +40,7 @@ class ObjectDefinition(GeneratorGroup):
 
 		OutHeader2("Object type " + self.name)
 
-		sf = self.static and "staticforward "
+		sf = self.static and "static "
 		Output("%sPyTypeObject %s;", sf, self.typename)
 		Output()
 		Output("#define %s_Check(x) ((x)->ob_type == &%s)",
@@ -164,7 +164,7 @@ class ObjectDefinition(GeneratorGroup):
 		Output("#define %s_hash NULL", self.prefix)
 
 	def outputTypeObject(self):
-		sf = self.static and "staticforward "
+		sf = self.static and "static "
 		Output()
 		Output("%sPyTypeObject %s = {", sf, self.typename)
 		IndentLevel()

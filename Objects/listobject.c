@@ -1282,7 +1282,7 @@ samplesortslice(PyObject **lo, PyObject **hi, PyObject *compare)
 
 #undef SETK
 
-staticforward PyTypeObject immutable_list_type;
+static PyTypeObject immutable_list_type;
 
 static PyObject *
 listsort(PyListObject *self, PyObject *args)

@@ -79,7 +79,7 @@ static PyMethodDef spamlist_methods[] = {
 	{NULL,	NULL},
 };
 
-staticforward PyTypeObject spamlist_type;
+static PyTypeObject spamlist_type;
 
 static int
 spamlist_init(spamlistobject *self, PyObject *args, PyObject *kwds)
@@ -179,7 +179,7 @@ static PyMethodDef spamdict_methods[] = {
 	{NULL,	NULL},
 };
 
-staticforward PyTypeObject spamdict_type;
+static PyTypeObject spamdict_type;
 
 static int
 spamdict_init(spamdictobject *self, PyObject *args, PyObject *kwds)

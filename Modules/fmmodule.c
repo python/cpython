@@ -15,7 +15,7 @@ typedef struct {
 	fmfonthandle fh_fh;
 } fhobject;
 
-staticforward PyTypeObject Fhtype;
+static PyTypeObject Fhtype;
 
 #define is_fhobject(v)		((v)->ob_type == &Fhtype)
 

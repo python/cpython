@@ -322,7 +322,7 @@ typedef struct {
         struct pollfd *ufds;
 } pollObject;
 
-staticforward PyTypeObject poll_Type;
+static PyTypeObject poll_Type;
 
 /* Update the malloc'ed array of pollfds to match the dictionary 
    contained within a pollObject.  Return 1 on success, 0 on an error.

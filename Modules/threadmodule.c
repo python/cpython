@@ -22,7 +22,7 @@ typedef struct {
 	PyThread_type_lock lock_lock;
 } lockobject;
 
-staticforward PyTypeObject Locktype;
+static PyTypeObject Locktype;
 
 static lockobject *
 newlockobject(void)

@@ -39,7 +39,7 @@ typedef struct {
 #endif
 } bsddbobject;
 
-staticforward PyTypeObject Bsddbtype;
+static PyTypeObject Bsddbtype;
 
 #define is_bsddbobject(v) ((v)->ob_type == &Bsddbtype)
 #define check_bsddbobject_open(v, r) if ((v)->di_bsddb == NULL) \

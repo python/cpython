@@ -35,7 +35,7 @@ typedef struct arrayobject {
 	struct arraydescr *ob_descr;
 } arrayobject;
 
-staticforward PyTypeObject Arraytype;
+static PyTypeObject Arraytype;
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
 #define array_CheckExact(op) ((op)->ob_type == &Arraytype)

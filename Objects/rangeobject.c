@@ -163,7 +163,7 @@ static PySequenceMethods range_as_sequence = {
 	0,			/* sq_slice */
 };
 
-staticforward PyObject * range_iter(PyObject *seq);
+static PyObject * range_iter(PyObject *seq);
 
 PyTypeObject PyRange_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -217,7 +217,7 @@ typedef struct {
 	long	len;
 } rangeiterobject;
 
-staticforward PyTypeObject Pyrangeiter_Type;
+static PyTypeObject Pyrangeiter_Type;
 
 static PyObject *
 range_iter(PyObject *seq)

@@ -471,7 +471,7 @@ typedef struct {
 	char name[MAXNAME+1];
 } cdfobject;
 
-staticforward PyTypeObject Cdftype;
+static PyTypeObject Cdftype;
 
 
 
@@ -485,7 +485,7 @@ typedef struct {
 	char name[MAXNAME+1];
 } cdrobject;
 
-staticforward PyTypeObject Cdrtype;
+static PyTypeObject Cdrtype;
 
 
 
@@ -503,7 +503,7 @@ typedef struct {
 	conventry *argconv[MAXARG];	/* Value converter list */
 } cdcobject;
 
-staticforward PyTypeObject Cdctype;
+static PyTypeObject Cdctype;
 
 
 

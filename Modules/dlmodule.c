@@ -15,7 +15,7 @@ typedef struct {
 	PyUnivPtr *dl_handle;
 } dlobject;
 
-staticforward PyTypeObject Dltype;
+static PyTypeObject Dltype;
 
 static PyObject *Dlerror;
 

@@ -75,7 +75,7 @@ typedef struct {
         MP_INT	mpz;		/* the actual number */
 } mpzobject;
 
-staticforward PyTypeObject MPZtype;
+static PyTypeObject MPZtype;
 
 #define is_mpzobject(v)		((v)->ob_type == &MPZtype)
 

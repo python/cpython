@@ -24,7 +24,7 @@ typedef struct {
 	ALport port;
 } alpobject;
 
-staticforward PyTypeObject Alptype;
+static PyTypeObject Alptype;
 
 
 
@@ -38,7 +38,7 @@ typedef struct {
 	ALconfig config;
 } alcobject;
 
-staticforward PyTypeObject Alctype;
+static PyTypeObject Alctype;
 
 
 static void

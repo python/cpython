@@ -6,7 +6,7 @@ typedef struct {
 	/* XXXX Add your own stuff here */
 } $abbrev$object;
 
-staticforward PyTypeObject $Abbrev$type;
+static PyTypeObject $Abbrev$type;
 
 
 

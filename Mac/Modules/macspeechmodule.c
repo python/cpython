@@ -88,7 +88,7 @@ typedef struct {
 	PyObject *curtext;	/* If non-NULL current text being spoken */
 } scobject;
 
-staticforward PyTypeObject sctype;
+static PyTypeObject sctype;
 
 #define is_scobject(v)		((v)->ob_type == &sctype)
 
@@ -285,7 +285,7 @@ typedef struct {
 	VoiceDescription vd;
 } mvobject;
 
-staticforward PyTypeObject mvtype;
+static PyTypeObject mvtype;
 
 #define is_mvobject(v)		((v)->ob_type == &mvtype)
 

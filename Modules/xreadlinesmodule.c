@@ -14,7 +14,7 @@ typedef struct {
 	int abslineno;
 } PyXReadlinesObject;
 
-staticforward PyTypeObject XReadlinesObject_Type;
+static PyTypeObject XReadlinesObject_Type;
 
 static void
 xreadlines_dealloc(PyXReadlinesObject *op)

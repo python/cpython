@@ -1293,9 +1293,9 @@ SRE_LITERAL_TEMPLATE(SRE_CHAR* ptr, int len)
 
 /* see sre.h for object declarations */
 
-staticforward PyTypeObject Pattern_Type;
-staticforward PyTypeObject Match_Type;
-staticforward PyTypeObject Scanner_Type;
+static PyTypeObject Pattern_Type;
+static PyTypeObject Match_Type;
+static PyTypeObject Scanner_Type;
 
 static PyObject *
 _compile(PyObject* self_, PyObject* args)

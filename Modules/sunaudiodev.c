@@ -36,8 +36,8 @@ typedef struct {
 	audio_info_t ai;
 } sadstatusobject;
 
-staticforward PyTypeObject Sadtype;
-staticforward PyTypeObject Sadstatustype;
+static PyTypeObject Sadtype;
+static PyTypeObject Sadstatustype;
 static sadstatusobject *sads_alloc(void);	/* Forward */
 
 static PyObject *SunAudioError;

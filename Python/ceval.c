@@ -84,7 +84,7 @@ static long dxp[256];
 #endif
 #endif
 
-staticforward PyTypeObject gentype;
+static PyTypeObject gentype;
 
 typedef struct {
 	PyObject_HEAD

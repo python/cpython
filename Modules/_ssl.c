@@ -61,9 +61,9 @@ typedef struct {
 
 } PySSLObject;
 
-staticforward PyTypeObject PySSL_Type;
-staticforward PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args);
-staticforward PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args);
+static PyTypeObject PySSL_Type;
+static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args);
+static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args);
 
 #define PySSLObject_Check(v)	((v)->ob_type == &PySSL_Type)
 
@@ -354,7 +354,7 @@ static PyObject *PySSL_getattr(PySSLObject *self, char *name)
 	return Py_FindMethod(PySSLMethods, (PyObject *)self, name);
 }
 
-staticforward PyTypeObject PySSL_Type = {
+static PyTypeObject PySSL_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
 	"socket.SSL",			/*tp_name*/

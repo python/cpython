@@ -80,7 +80,7 @@ typedef struct {
 	int err;			/* Error to pass to the callback */
 } ctbcmobject;
 
-staticforward PyTypeObject ctbcmtype;
+static PyTypeObject ctbcmtype;
 
 #define is_ctbcmobject(v)		((v)->ob_type == &ctbcmtype)
 

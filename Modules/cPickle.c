@@ -288,7 +288,7 @@ typedef struct Picklerobject {
 #define PY_CPICKLE_FAST_LIMIT 50
 #endif
 
-staticforward PyTypeObject Picklertype;
+static PyTypeObject Picklertype;
 
 typedef struct Unpicklerobject {
 	PyObject_HEAD
@@ -313,7 +313,7 @@ typedef struct Unpicklerobject {
 	PyObject *find_class;
 } Unpicklerobject;
 
-staticforward PyTypeObject Unpicklertype;
+static PyTypeObject Unpicklertype;
 
 /* Forward decls that need the above structs */
 static int save(Picklerobject *, PyObject *, int);

@@ -66,7 +66,7 @@ typedef struct {
 
 #define CHARACTER_DATA_BUFFER_SIZE 8192
 
-staticforward PyTypeObject Xmlparsetype;
+static PyTypeObject Xmlparsetype;
 
 typedef void (*xmlhandlersetter)(XML_Parser *self, void *meth);
 typedef void* xmlhandler;
@@ -79,7 +79,7 @@ struct HandlerInfo {
     PyObject *nameobj;
 };
 
-staticforward struct HandlerInfo handler_info[64];
+static struct HandlerInfo handler_info[64];
 
 /* Set an integer attribute on the error object; return true on success,
  * false on an exception.

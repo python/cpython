@@ -157,14 +157,9 @@ typedef struct {
 } PyST_Object;
 
 
-staticforward void
-parser_free(PyST_Object *st);
-
-staticforward int
-parser_compare(PyST_Object *left, PyST_Object *right);
-
-staticforward PyObject *
-parser_getattr(PyObject *self, char *name);
+static void parser_free(PyST_Object *st);
+static int parser_compare(PyST_Object *left, PyST_Object *right);
+static PyObject *parser_getattr(PyObject *self, char *name);
 
 
 static
@@ -550,9 +545,9 @@ parser_suite(PyST_Object *self, PyObject *args, PyObject *kw)
  */
 
 
-staticforward node* build_node_tree(PyObject *tuple);
-staticforward int   validate_expr_tree(node *tree);
-staticforward int   validate_file_input(node *tree);
+static node* build_node_tree(PyObject *tuple);
+static int   validate_expr_tree(node *tree);
+static int   validate_file_input(node *tree);
 
 
 /*  PyObject* parser_tuple2st(PyObject* self, PyObject* args)
@@ -793,7 +788,7 @@ build_node_tree(PyObject *tuple)
 /*
  *  Validation routines used within the validation section:
  */
-staticforward int validate_terminal(node *terminal, int type, char *string);
+static int validate_terminal(node *terminal, int type, char *string);
 
 #define validate_ampersand(ch)  validate_terminal(ch,      AMPER, "&")
 #define validate_circumflex(ch) validate_terminal(ch, CIRCUMFLEX, "^")
