@@ -7,11 +7,13 @@
 extern "C" {
 #endif
 
+struct _frame; /* Avoid including frameobject.h */
+
 typedef struct {
 	PyObject_HEAD
 	/* The gi_ prefix is intended to remind of generator-iterator. */
 
-	PyFrameObject *gi_frame;
+	struct _frame *gi_frame;
 
 	/* True if generator is being executed. */
 	int gi_running;
@@ -25,7 +27,7 @@ PyAPI_DATA(PyTypeObject) PyGen_Type;
 #define PyGen_Check(op) PyObject_TypeCheck(op, &PyGen_Type)
 #define PyGen_CheckExact(op) ((op)->ob_type == &PyGen_Type)
 
-PyAPI_FUNC(PyObject *) PyGen_New(PyFrameObject *);
+PyAPI_FUNC(PyObject *) PyGen_New(struct _frame *);
 
 #ifdef __cplusplus
 }

@@ -64,7 +64,7 @@ PyAPI_FUNC(char *) PyEval_GetFuncName(PyObject *);
 PyAPI_FUNC(char *) PyEval_GetFuncDesc(PyObject *);
 
 PyAPI_FUNC(PyObject *) PyEval_GetCallStats(PyObject *);
-PyAPI_FUNC(PyObject *) PyEval_EvaluateFrame(PyObject *);
+PyAPI_FUNC(PyObject *) PyEval_EvalFrame(struct _frame *);
 
 /* this used to be handled on a per-thread basis - now just two globals */
 PyAPI_DATA(volatile int) _Py_Ticker;
