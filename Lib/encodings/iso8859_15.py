@@ -16,14 +16,14 @@ class Codec(codecs.Codec):
     def encode(self,input,errors='strict'):
 
         return codecs.charmap_encode(input,errors,encoding_map)
-        
+
     def decode(self,input,errors='strict'):
 
         return codecs.charmap_decode(input,errors,decoding_map)
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
-        
+
 class StreamReader(Codec,codecs.StreamReader):
     pass
 
@@ -37,14 +37,14 @@ def getregentry():
 
 decoding_map = codecs.make_identity_dict(range(256))
 decoding_map.update({
-	0x00a4: 0x20ac,	# 	EURO SIGN
-	0x00a6: 0x0160,	# 	LATIN CAPITAL LETTER S WITH CARON
-	0x00a8: 0x0161,	# 	LATIN SMALL LETTER S WITH CARON
-	0x00b4: 0x017d,	# 	LATIN CAPITAL LETTER Z WITH CARON
-	0x00b8: 0x017e,	# 	LATIN SMALL LETTER Z WITH CARON
-	0x00bc: 0x0152,	# 	LATIN CAPITAL LIGATURE OE
-	0x00bd: 0x0153,	# 	LATIN SMALL LIGATURE OE
-	0x00be: 0x0178,	# 	LATIN CAPITAL LETTER Y WITH DIAERESIS
+        0x00a4: 0x20ac, #       EURO SIGN
+        0x00a6: 0x0160, #       LATIN CAPITAL LETTER S WITH CARON
+        0x00a8: 0x0161, #       LATIN SMALL LETTER S WITH CARON
+        0x00b4: 0x017d, #       LATIN CAPITAL LETTER Z WITH CARON
+        0x00b8: 0x017e, #       LATIN SMALL LETTER Z WITH CARON
+        0x00bc: 0x0152, #       LATIN CAPITAL LIGATURE OE
+        0x00bd: 0x0153, #       LATIN SMALL LIGATURE OE
+        0x00be: 0x0178, #       LATIN CAPITAL LETTER Y WITH DIAERESIS
 })
 
 ### Encoding Map

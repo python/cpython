@@ -51,7 +51,7 @@ class Codec(codecs.Codec):
 
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
-        
+
 class StreamReader(Codec,codecs.StreamReader):
     pass
 

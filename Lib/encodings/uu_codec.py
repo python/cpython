@@ -37,7 +37,7 @@ def uu_encode(input,errors='strict',filename='<data>',mode=0666):
         write(b2a_uu(chunk))
         chunk = read(45)
     write(' \nend\n')
-    
+
     return (outfile.getvalue(), len(input))
 
 def uu_decode(input,errors='strict'):
@@ -98,10 +98,10 @@ class Codec(codecs.Codec):
         return uu_encode(input,errors)
     def decode(self,input,errors='strict'):
         return uu_decode(input,errors)
-    
+
 class StreamWriter(Codec,codecs.StreamWriter):
     pass
-        
+
 class StreamReader(Codec,codecs.StreamReader):
     pass
 

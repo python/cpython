@@ -231,7 +231,7 @@ def _siftup(heap, pos):
         # Set childpos to index of smaller child.
         rightpos = childpos + 1
         if rightpos < endpos and heap[rightpos] <= heap[childpos]:
-                childpos = rightpos
+            childpos = rightpos
         # Move the smaller child up.
         heap[pos] = heap[childpos]
         pos = childpos

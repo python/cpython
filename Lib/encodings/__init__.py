@@ -39,7 +39,7 @@ class CodecRegistryError(exceptions.LookupError,
     pass
 
 def search_function(encoding):
-    
+
     # Cache lookup
     entry = _cache.get(encoding, _unknown)
     if entry is not _unknown:
@@ -72,8 +72,8 @@ def search_function(encoding):
     if mod is None:
         # Cache misses
         _cache[encoding] = None
-        return None    
-    
+        return None
+
     # Now ask the module for the registry entry
     entry = tuple(getregentry())
     if len(entry) != 4:

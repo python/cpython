@@ -571,7 +571,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
 class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
 
     """Repeat the tests from FileObjectClassTestCase with bufsize==0.
-    
+
     In this case (and in this case only), it should be possible to
     create a file object, read a line from it, create another file
     object, read another line from it, without loss of data in the

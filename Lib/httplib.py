@@ -560,7 +560,7 @@ class HTTPConnection:
 
     def _output(self, s):
         """Add a line of output to the current request buffer.
-        
+
         Assumes that the line does *not* end with \\r\\n.
         """
         self._buffer.append(s)

@@ -20,7 +20,7 @@ class LocaleTime_Tests(unittest.TestCase):
         self.LT_ins = _strptime.LocaleTime()
 
     def compare_against_time(self, testing, directive, tuple_position, error_msg):
-        """Helper method that tests testing against directive based on the 
+        """Helper method that tests testing against directive based on the
         tuple_position of time_tuple.  Uses error_msg as error message.
 
         """
@@ -28,17 +28,17 @@ class LocaleTime_Tests(unittest.TestCase):
         comparison = testing[self.time_tuple[tuple_position]]
         self.failUnless(strftime_output in testing, "%s: not found in tuple" % error_msg)
         self.failUnless(comparison == strftime_output, "%s: position within tuple incorrect; %s != %s" % (error_msg, comparison, strftime_output))
-    
+
     def test_weekday(self):
-        """Make sure that full and abbreviated weekday names are correct in 
+        """Make sure that full and abbreviated weekday names are correct in
         both string and position with tuple.
-        
+
         """
         self.compare_against_time(self.LT_ins.f_weekday, '%A', 6, "Testing of full weekday name failed")
         self.compare_against_time(self.LT_ins.a_weekday, '%a', 6, "Testing of abbreviated weekday name failed")
 
     def test_month(self):
-        """Test full and abbreviated month names; both string and position 
+        """Test full and abbreviated month names; both string and position
         within the tuple.
 
         """
@@ -125,9 +125,9 @@ class TimeRETests(unittest.TestCase):
         self.failUnless(found and found.group('A') == self.locale_time.f_weekday[6], "re object for '%A' failed")
         compiled = self.time_re.compile(r"%a %b")
         found = compiled.match("%s %s" % (self.locale_time.a_weekday[4], self.locale_time.a_month[4]))
-        self.failUnless(found, 
+        self.failUnless(found,
             "Match failed with '%s' regex and '%s' string" % (compiled.pattern, "%s %s" % (self.locale_time.a_weekday[4], self.locale_time.a_month[4])))
-        self.failUnless(found.group('a') == self.locale_time.a_weekday[4] and found.group('b') == self.locale_time.a_month[4], 
+        self.failUnless(found.group('a') == self.locale_time.a_weekday[4] and found.group('b') == self.locale_time.a_month[4],
             "re object couldn't find the abbreviated weekday month in '%s' using '%s'; group 'a' = '%s', group 'b' = %s'" % (found.string, found.re.pattern, found.group('a'), found.group('b')))
         for directive in ('a','A','b','B','c','d','H','I','j','m','M','p','S','U','w','W','x','X','y','Y','Z','%'):
             compiled = self.time_re.compile("%%%s"% directive)
@@ -199,9 +199,9 @@ class StrptimeTests(unittest.TestCase):
 
     def test_timezone(self):
         """Test timezone directives.
-        
+
         When gmtime() is used with %Z, entire result of strftime() is empty.
-        
+
         """
         time_tuple = time.localtime()
         strf_output = time.strftime("%Z")  #UTC does not have a timezone
@@ -246,7 +246,7 @@ class FxnTests(unittest.TestCase):
         strf_output = time.strftime("%Y-%m-%d", self.time_tuple)
         strp_output = _strptime.strptime(strf_output, "%Y-%m-%d")
         self.failUnless(strp_output[7] == self.time_tuple[7], "strptime did not trigger julianday(); %s != %s" % (strp_output[7], self.time_tuple[7]))
-        
+
     def test_gregorian_result(self):
         """Test gregorian."""
         result = _strptime.gregorian(self.time_tuple[7], self.time_tuple[0])

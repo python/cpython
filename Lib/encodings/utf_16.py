@@ -31,7 +31,7 @@ class StreamWriter(Codec,codecs.StreamWriter):
             else:
                 self.encode = codecs.utf_16_be_encode
         return result
-        
+
 class StreamReader(Codec,codecs.StreamReader):
     def __init__(self, stream, errors='strict'):
         self.bom_read = 0
@@ -61,4 +61,3 @@ class StreamReader(Codec,codecs.StreamReader):
 def getregentry():
 
     return (Codec.encode,Codec.decode,StreamReader,StreamWriter)
-

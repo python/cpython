@@ -221,4 +221,3 @@ if have_unicode:
 
 test_exc('%d', '1', TypeError, "int argument required")
 test_exc('%g', '1', TypeError, "float argument required")
-

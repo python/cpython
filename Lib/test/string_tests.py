@@ -314,4 +314,3 @@ def run_contains_tests(test):
     vereq('asdf' in 'asdf', True)
     vereq('asdf' in 'asd', False)
     vereq('asdf' in '', False)
-
