@@ -2794,7 +2794,7 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyDateTime_DateTime *dt)
 	mm += delta;
 	if ((mm < 0 || mm >= 60) &&
 	    normalize_datetime(&y, &m, &d, &hh, &mm, &ss, &us) < 0)
-		goto Fail;
+		return NULL;
 	result = new_datetime(y, m, d, hh, mm, ss, us, dt->tzinfo);
 	if (result == NULL)
 		return result;
