@@ -877,15 +877,15 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 	char name[MAXPATHLEN+1];
 
 	if (strlen(realname) > MAXPATHLEN) {
-		PyErr_SetString(PyExc_OverflowError, "module name is too long");
+		PyErr_SetString(PyExc_OverflowError,
+				"module name is too long");
 		return NULL;
 	}
 	strcpy(name, realname);
 
 	if (path != NULL && PyString_Check(path)) {
-		/* Submodule of "frozen" package:
-		   Set name to the fullname, path to NULL
-		   and continue as "usual" */
+		/* The only type of submodule allowed inside a "frozen"
+		   package are other frozen modules or packages. */
 		if (PyString_Size(path) + 1 + strlen(name) >= (size_t)buflen) {
 			PyErr_SetString(PyExc_ImportError,
 					"full frozen module name too long");
@@ -895,7 +895,13 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		strcat(buf, ".");
 		strcat(buf, name);
 		strcpy(name, buf);
-		path = NULL;
+		if (find_frozen(name) != NULL) {
+			strcpy(buf, name);
+			return &fd_frozen;
+		}
+		PyErr_Format(PyExc_ImportError,
+			     "No frozen submodule named %.200s", name);
+		return NULL;
 	}
 	if (path == NULL) {
 		if (is_builtin(name)) {
@@ -1441,6 +1447,12 @@ get_frozen_object(char *name)
 			     name);
 		return NULL;
 	}
+	if (p->code == NULL) {
+		PyErr_Format(PyExc_ImportError,
+			     "Excluded frozen object named %.200s",
+			     name);
+		return NULL;
+	}
 	size = p->size;
 	if (size < 0)
 		size = -size;
@@ -1463,6 +1475,12 @@ PyImport_ImportFrozenModule(char *name)
 
 	if (p == NULL)
 		return 0;
+	if (p->code == NULL) {
+		PyErr_Format(PyExc_ImportError,
+			     "Excluded frozen object named %.200s",
+			     name);
+		return -1;
+	}
 	size = p->size;
 	ispackage = (size < 0);
 	if (ispackage)
