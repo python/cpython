@@ -14,9 +14,7 @@ int null_strings, one_strings;
 #endif
 
 static PyStringObject *characters[UCHAR_MAX + 1];
-#ifndef DONT_SHARE_SHORT_STRINGS
 static PyStringObject *nullstring;
-#endif
 
 /*
    For both PyString_FromString() and PyString_FromStringAndSize(), the 
@@ -47,7 +45,6 @@ PyObject *
 PyString_FromStringAndSize(const char *str, int size)
 {
 	register PyStringObject *op;
-#ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
 		null_strings++;
@@ -64,7 +61,6 @@ PyString_FromStringAndSize(const char *str, int size)
 		Py_INCREF(op);
 		return (PyObject *)op;
 	}
-#endif /* DONT_SHARE_SHORT_STRINGS */
 
 	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
@@ -77,7 +73,7 @@ PyString_FromStringAndSize(const char *str, int size)
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
-#ifndef DONT_SHARE_SHORT_STRINGS
+	/* share short strings */
 	if (size == 0) {
 		PyObject *t = (PyObject *)op;
 		PyString_InternInPlace(&t);
@@ -91,7 +87,6 @@ PyString_FromStringAndSize(const char *str, int size)
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
 	}
-#endif
 	return (PyObject *) op;
 }
 
@@ -108,7 +103,6 @@ PyString_FromString(const char *str)
 			"string is too long for a Python string");
 		return NULL;
 	}
-#ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
 		null_strings++;
@@ -123,7 +117,6 @@ PyString_FromString(const char *str)
 		Py_INCREF(op);
 		return (PyObject *)op;
 	}
-#endif /* DONT_SHARE_SHORT_STRINGS */
 
 	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
@@ -134,7 +127,7 @@ PyString_FromString(const char *str)
 	op->ob_shash = -1;
 	op->ob_sinterned = NULL;
 	memcpy(op->ob_sval, str, size+1);
-#ifndef DONT_SHARE_SHORT_STRINGS
+	/* share short strings */
 	if (size == 0) {
 		PyObject *t = (PyObject *)op;
 		PyString_InternInPlace(&t);
@@ -148,7 +141,6 @@ PyString_FromString(const char *str)
 		characters[*str & UCHAR_MAX] = op;
 		Py_INCREF(op);
 	}
-#endif
 	return (PyObject *) op;
 }
 
@@ -3637,10 +3629,8 @@ PyString_Fini(void)
 		Py_XDECREF(characters[i]);
 		characters[i] = NULL;
 	}
-#ifndef DONT_SHARE_SHORT_STRINGS
 	Py_XDECREF(nullstring);
 	nullstring = NULL;
-#endif
 	if (interned) {
 		int pos, changed;
 		PyObject *key, *value;
