@@ -172,6 +172,9 @@ _socket socketmodule.c
 
 # The crypt module is now disabled by default because it breaks builds
 # on many systems (where -lcrypt is needed), e.g. Linux (I believe).
+#
+# First, look at Setup.config; configure may have set this for you.
+
 #crypt cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 
 
@@ -359,10 +362,14 @@ new newmodule.c
 # it will be compiled as a shared library by default.  Compiling it as
 # a built-in module causes conflicts with the pybsddb3 module since it
 # creates a static dependency on an out-of-date version of db.so.
+#
+# First, look at Setup.config; configure may have set this for you.
 
 #dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
 
 # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
+#
+# First, look at Setup.config; configure may have set this for you.
 
 #gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
