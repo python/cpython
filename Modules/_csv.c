@@ -1368,42 +1368,26 @@ csv_list_dialects(PyObject *module, PyObject *args)
 }
 
 static PyObject *
-csv_register_dialect(PyObject *module, PyObject *args)
+csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
 {
-        PyObject *name_obj, *dialect_obj;
+	PyObject *name_obj, *dialect_obj = NULL;
+	PyObject *dialect;
 
-	if (!PyArg_UnpackTuple(args, "", 2, 2, &name_obj, &dialect_obj))
+	if (!PyArg_UnpackTuple(args, "", 1, 2, &name_obj, &dialect_obj))
                 return NULL;
         if (!IS_BASESTRING(name_obj)) {
                 PyErr_SetString(PyExc_TypeError, 
                                 "dialect name must be a string or unicode");
                 return NULL;
         }
-        Py_INCREF(dialect_obj);
-        /* A class rather than an instance? Instantiate */
-        if (PyObject_TypeCheck(dialect_obj, &PyClass_Type)) {
-                PyObject * new_dia;
-                new_dia = PyObject_CallFunction(dialect_obj, "");
-                Py_DECREF(dialect_obj);
-                if (new_dia == NULL)
-                        return NULL;
-                dialect_obj = new_dia;
-        }
-        /* Make sure we finally have an instance */
-        if (!PyInstance_Check(dialect_obj)) {
-                PyErr_SetString(PyExc_TypeError, "dialect must be an instance");
-                Py_DECREF(dialect_obj);
+	dialect = _call_dialect(dialect_obj, kwargs);
+	if (dialect == NULL)
+		return NULL;
+	if (PyDict_SetItem(dialects, name_obj, dialect) < 0) {
+		Py_DECREF(dialect);
                 return NULL;
         }
-        if (PyObject_SetAttrString(dialect_obj, "_name", name_obj) < 0) {
-                Py_DECREF(dialect_obj);
-                return NULL;
-        }
-        if (PyDict_SetItem(dialects, name_obj, dialect_obj) < 0) {
-                Py_DECREF(dialect_obj);
-                return NULL;
-        }
-        Py_DECREF(dialect_obj);
+	Py_DECREF(dialect);
         Py_INCREF(Py_None);
         return Py_None;
 }
@@ -1538,7 +1522,7 @@ static struct PyMethodDef csv_methods[] = {
         { "list_dialects", (PyCFunction)csv_list_dialects, 
             METH_NOARGS, csv_list_dialects_doc},
         { "register_dialect", (PyCFunction)csv_register_dialect, 
-            METH_VARARGS, csv_register_dialect_doc},
+		METH_VARARGS | METH_KEYWORDS, csv_register_dialect_doc},
         { "unregister_dialect", (PyCFunction)csv_unregister_dialect, 
             METH_O, csv_unregister_dialect_doc},
         { "get_dialect", (PyCFunction)csv_get_dialect, 
