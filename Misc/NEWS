@@ -93,11 +93,13 @@ Core and builtins
   inputs have roughly the same size.  If they both have about N digits,
   Karatsuba multiplication has O(N**1.58) runtime (the exponent is
   log_base_2(3)) instead of the previous O(N**2).  Measured results may
-  be better or worse than that, depending on platform quirks.  Note that
-  this is a simple implementation, and there's no intent here to compete
-  with, e.g., GMP.  It gives a very nice speedup when it applies, but
-  a package devoted to fast large-integer arithmetic should run circles
-  around it.
+  be better or worse than that, depending on platform quirks.  Besides
+  the O() improvement in raw instruction count, the Karatsuba algorithm
+  appears to have much better cache behavior on extremely large integers
+  (starting in the ballpark of a million bits).  Note that this is a
+  simple implementation, and there's no intent here to compete with,
+  e.g., GMP.  It gives a very nice speedup when it applies, but a package
+  devoted to fast large-integer arithmetic should run circles around it.
 
 - u'%c' will now raise a ValueError in case the argument is an
   integer outside the valid range of Unicode code point ordinals.
@@ -295,6 +297,11 @@ Extension modules
   been added where available.
 
 Library
+
+- random.randrange(-sys.maxint-1, sys.maxint) no longer raises
+  OverflowError.  That is, it now accepts any combination of 'start'
+  and 'stop' arguments so long as each is in the range of Python's
+  bounded integers.
 
 - New "algorithms" module: heapq, implements a heap queue.  Thanks to
   Kevin O'Connor for the code and François Pinard for an entertaining
