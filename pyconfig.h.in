@@ -1,5 +1,10 @@
 /* pyconfig.h.in.  Generated from configure.in by autoheader.  */
 
+
+#ifndef Py_PYCONFIG_H
+#define Py_PYCONFIG_H
+
+
 /* Define for AIX if your compiler is a genuine IBM xlC/xlC_r and you want
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
@@ -851,4 +856,6 @@
 #if defined(__USLC__) && defined(__SCO_VERSION__)
 #define STRICT_SYSV_CURSES /* Don't use ncurses extensions */
 #endif
+
+#endif /*Py_PYCONFIG_H*/
 
