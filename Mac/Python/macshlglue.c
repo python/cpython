@@ -43,7 +43,11 @@ OSErr pascal
 PythonCore_init(InitBlockPtr data)
 {
 	/* Call the MW runtime's initialization routine */
+#ifdef __CFM68K__
 	__initialize();
+#else
+	__sinit();
+#endif
 	
 	if ( data == nil ) return noErr;
 	if ( data->fragLocator.where == kOnDiskFlat ) {
