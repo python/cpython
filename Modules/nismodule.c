@@ -20,6 +20,11 @@
 #include <rpcsvc/yp_prot.h>
 #include <rpcsvc/ypclnt.h>
 
+#ifdef __sgi
+/* This is missing from rpcsvc/ypclnt.h */
+extern int yp_get_default_domain();
+#endif
+
 static object *NisError;
 
 static object *
