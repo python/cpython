@@ -311,7 +311,7 @@ extern "C" {
 	} while(0)
 
 /* Py_DEPRECATED(version)
- * Declare a macro or function deprecated.
+ * Declare a variable, type, or function deprecated.
  * Usage:
  *    extern int old_var Py_DEPRECATED(2.3);
  *    typedef int T1 Py_DEPRECATED(2.4);
