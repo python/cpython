@@ -144,8 +144,9 @@ much more efficient pickling of new-style classes.
 Refer to PEP 307 for more information.
 
 If a \var{protocol} is not specified, protocol 0 is used.
-If \var{protocol} is specified as a negative value,
-the highest protocol version will be used.
+If \var{protocol} is specified as a negative value
+or \constant{HIGHEST_PROTOCOL},
+the highest protocol version available will be used.
 
 \versionchanged[The \var{bin} parameter is deprecated and only provided
 for backwards compatibility.  You should use the \var{protocol}
@@ -162,6 +163,14 @@ To serialize an object hierarchy, you first create a pickler, then you
 call the pickler's \method{dump()} method.  To de-serialize a data
 stream, you first create an unpickler, then you call the unpickler's
 \method{load()} method.  The \module{pickle} module provides the
+following constant:
+
+\begin{datadesc}{HIGHEST_PROTOCOL}
+The highest protocol version available.  This value can be passed
+as a \var{protocol} value.
+\end{datadesc}
+
+The \module{pickle} module provides the
 following functions to make this process more convenient:
 
 \begin{funcdesc}{dump}{object, file\optional{, protocol\optional{, bin}}}
@@ -170,7 +179,8 @@ Write a pickled representation of \var{object} to the open file object
 \code{Pickler(\var{file}, \var{protocol}, \var{bin}).dump(\var{object})}.
 
 If the \var{protocol} parameter is ommitted, protocol 0 is used.
-If \var{protocol} is specified as a negative value,
+If \var{protocol} is specified as a negative value
+or \constant{HIGHEST_PROTOCOL},
 the highest protocol version will be used.
 
 \versionchanged[The \var{protocol} parameter was added.
@@ -209,7 +219,8 @@ Return the pickled representation of the object as a string, instead
 of writing it to a file.
 
 If the \var{protocol} parameter is ommitted, protocol 0 is used.
-If \var{protocol} is specified as a negative value,
+If \var{protocol} is specified as a negative value
+or \constant{HIGHEST_PROTOCOL},
 the highest protocol version will be used.
 
 \versionchanged[The \var{protocol} parameter was added.
