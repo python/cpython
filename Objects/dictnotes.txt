@@ -43,6 +43,10 @@ Membership Testing
     Similar access patterns occur with replacement dictionaries
         such as with the % formatting operator.
 
+Dynamic Mappings
+    Characterized by deletions interspersed with adds and replacments.
+    Performance benefits greatly from the re-use of dummy entries.
+
 
 Data Layout (assuming a 32-bit box with 64 bytes per cache line)
 ----------------------------------------------------------------
@@ -90,6 +94,12 @@ vary dramatically depending on the exact number of keys, whether the
 keys are all strings, whether reads or writes dominate, the exact
 hash values of the keys (some sets of values have fewer collisions than
 others).  Any one test or benchmark is likely to prove misleading.
+
+While making a dictionary more sparse reduces collisions, it impairs
+iteration and key listing.  Those methods loop over every potential
+entry.  Doubling the size of dictionary results in twice as many
+non-overlapping memory accesses for keys(), items(), values(),
+__iter__(), iterkeys(), iteritems(), itervalues(), and update().
 
 
 Results of Cache Locality Experiments
@@ -165,7 +175,7 @@ sizes and access patterns, the user may be able to provide useful hints.
 1) For example, if membership testing or lookups dominate runtime and memory
    is not at a premium, the user may benefit from setting the maximum load
    ratio at 5% or 10% instead of the usual 66.7%.  This will sharply
-   curtail the number of collisions.
+   curtail the number of collisions but will increase iteration time.
 
 2) Dictionary creation time can be shortened in cases where the ultimate
    size of the dictionary is known in advance.  The dictionary can be
