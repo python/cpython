@@ -1910,6 +1910,13 @@ file; the only thing that's faster about \file{.pyc} or \file{.pyo}
 files is the speed with which they are loaded.
 
 \item
+When a script is run by giving its name on the command line, the
+bytecode for the script is never written to a \file{.pyc} or
+\file{.pyo} file.  Thus, the startup time of a script may be reduced
+by moving most of its code to a module and having a small bootstrap
+script that imports that module.
+
+\item
 It is possible to have a file called \file{spam.pyc} (or
 \file{spam.pyo} when \code{-O} is used) without a module
 \file{spam.py} in the same module.  This can be used to distribute
