@@ -47,10 +47,13 @@ h1, h2, h3, h4, h5, h6  { font-family: avantgarde, sans-serif;
 h1                      { font-size: 180%; }
 h2                      { font-size: 150%; }
 h3, h4                  { font-size: 120%; }
-code, tt                { font-family: monospace; }
+code, tt                { font-family: lucida typewriter, lucidatypewriter,
+                                       monospace; }
 var                     { font-family: times, serif;
                           font-style: italic;
                           font-weight: normal; }
+
+.typelabel              { font-family: lucida, sans serif; }
 
 .navigation td          { background-color: #99ccff;
                           font-weight: bold;
@@ -61,7 +64,9 @@ var                     { font-family: times, serif;
 
 .titlegraphic           { vertical-align: top; }
 
-.verbatim               { color: #00008b; }
+.verbatim               { color: #00008b;
+                          font-family: lucida typewriter, lucidatypewriter,
+                                       monospace; }
 
 .grammar                { background-color: #99ccff;
                           margin-right: 0.5in;
