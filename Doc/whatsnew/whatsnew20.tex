@@ -2,8 +2,8 @@
 
 \title{What's New in Python 1.6}
 \release{0.01}
-\author{A.M. Kuchling}
-\authoraddress{\email{amk1@bigfoot.com}}
+\author{A.M. Kuchling and Moshe Zadka}
+\authoraddress{\email{amk1@bigfoot.com}, \email{moshez@math.huji.ac.il} }
 \begin{document}
 \maketitle\tableofcontents
 
@@ -12,44 +12,281 @@
 A new release of Python, version 1.6, will be released some time this
 summer.  Alpha versions are already available from
 \url{http://www.python.org/1.6/}.  This article talks about the
-exciting new features in 1.6, highlights some useful new features, and
-points out a few incompatible changes that may require rewriting code.
+exciting new features in 1.6, highlights some other useful changes,
+and points out a few incompatible changes that may require rewriting
+code.
 
-Python's development never ceases, and a steady flow of bug fixes and
-improvements are always being submitted.  A host of minor bug-fixes, a
-few optimizations, additional docstrings, and better error messages
-went into 1.6; to list them all would be impossible, but they're
-certainly significant.  Consult the publicly-available CVS logs if you
-want to see the full list.
+Python's development never completely stops between releases, and a
+steady flow of bug fixes and improvements are always being submitted.
+A host of minor fixes, a few optimizations, additional docstrings, and
+better error messages went into 1.6; to list them all would be
+impossible, but they're certainly significant.  Consult the
+publicly-available CVS logs if you want to see the full list.
 
 % ======================================================================
 \section{Unicode}
 
-XXX
+The largest new feature in Python 1.6 is a new fundamental data type:
+Unicode strings.  Unicode uses 16-bit numbers to represent characters
+instead of the 8-bit number used by ASCII, meaning that 65,536
+distinct characters can be supported.
 
-unicode support: Unicode strings are marked with u"string", and there
-is support for arbitrary encoders/decoders
+The final interface for Unicode support was arrived at through
+countless often-stormy discussions on the python-dev mailing list.  A
+detailed explanation of the interface is in \file{Misc/unicode.txt} in
+the Python source distribution; this file is also available on the Web
+at \url{http://starship.python.net/crew/lemburg/unicode-proposal.txt}.
+This article will simply cover the most significant points from the
+full interface.
 
-Added -U command line option.  With the option enabled the Python
-compiler interprets all "..."  strings as u"..." (same with r"..." and
-ur"...").  (Is this just for experimenting?)
+In Python source code, Unicode strings are written as
+\code{u"string"}.  Arbitrary Unicode characters can be written using a
+new escape sequence, \code{\\u\var{HHHH}}, where \var{HHHH} is a
+4-digit hexadecimal number from 0000 to FFFF.  The existing
+\code{\\x\var{HHHH}} escape sequence can also be used, and octal
+escapes can be used for characters up to U+01FF, which is represented
+by \code{\\777}.
 
+Unicode strings, just like regular strings, are an immutable sequence
+type, so they can be indexed and sliced.  They also have an
+\method{encode( \optional{encoding} )} method that returns an 8-bit
+string in the desired encoding.  Encodings are named by strings, such
+as \code{'ascii'}, \code{'utf-8'}, \code{'iso-8859-1'}, or whatever.
+A codec API is defined for implementing and registering new encodings
+that are then available throughout a Python program.  If an encoding
+isn't specified, the default encoding is always 7-bit ASCII.  (XXX is
+that the current default encoding?)
+
+Combining 8-bit and Unicode strings always coerces to Unicode, using
+the default ASCII encoding; the result of \code{'a' + u'bc'} is
+\code{'abc'}.
+
+New built-in functions have been added, and existing built-ins
+modified to support Unicode:
+
+\begin{itemize}
+\item \code{unichr(\var{ch})} returns a Unicode string 1 character
+long, containing the character \var{ch}.
+
+\item \code{ord(\var{u})}, where \var{u} is a 1-character regular or Unicode string, returns the number of the character as an integer.
+
+\item \code{unicode(\var{string}, \optional{encoding = '\var{encoding
+string}', } \optional{errors = 'strict' \textit{or} 'ignore'
+\textit{or} 'replace'} ) } creates a Unicode string from an 8-bit
+string.  \code{encoding} is a string naming the encoding to use.
+
+The \code{errors} parameter specifies the treatment of characters that
+are invalid for the current encoding; passing \code{'strict'} as the
+value causes an exception to be raised on any encoding error, while
+\code{'ignore'} causes errors to be silently ignored and
+\code{'replace'} uses U+FFFD, the official replacement character, in
+case of any problems.
+
+\end{itemize}
+
+A new module, \module{unicodedata}, provides an interface to Unicode
+character properties.  For example, \code{unicodedata.category(u'A')}
+returns the 2-character string 'Lu', the 'L' denoting it's a letter,
+and 'u' meaning that it's uppercase.
+\code{u.bidirectional(u'\x0660')} returns 'AN', meaning that U+0660 is
+an Arabic number.
+
+The \module{codecs} module contains coders and decoders for various
+encodings, along with functions to register new encodings and look up
+existing ones.  Unless you want to implement a new encoding, you'll
+most often use the \function{codecs.lookup(\var{encoding})} function,
+which returns a 4-element tuple: \code{(\var{encode_func},
+\var{decode_func}, \var{stream_reader}, \var{stream_writer}.
+
+\begin{itemize}
+\item \var{encode_func} is a function that takes a Unicode string, and
+returns a 2-tuple \code{(\var{string}, \var{length})}.  \var{string}
+is an 8-bit string containing a portion (perhaps all) of the Unicode
+string converted into the given encoding, and \var{length} tells you how much of the Unicode string was converted.
+
+\item \var{decode_func} is the mirror of \var{encode_func}, 
+taking a Unicode string and
+returns a 2-tuple \code{(\var{ustring}, \var{length})} containing a Unicode string
+and \var{length} telling you how much of the string was consumed.
+
+\item \var{stream_reader} is a class that supports decoding input from
+a stream.  \var{stream_reader(\var{file_obj})} returns an object that
+supports the \method{read()}, \method{readline()}, and
+\method{readlines()} methods.  These methods will all translate from
+the given encoding and return Unicode strings.
+
+\item \var{stream_writer}, similarly, is a class that supports
+encoding output to a stream.  \var{stream_writer(\var{file_obj})}
+returns an object that supports the \method{write()} and 
+\method{writelines()} methods.  These methods expect Unicode strings, translating them to the given encoding on output.
+\end{itemize}
+
+For example, the following code writes a Unicode string into a file, 
+encoding it as UTF-8:
+
+\begin{verbatim}
+import codecs
+
+unistr = u'\u0660\u2000ab ...'
+
+(UTF8_encode, UTF8_decode,
+ UTF8_streamreader, UTF8_streamwriter) = codecs.lookup('UTF-8')
+
+output = UTF8_streamwriter( open( '/tmp/output', 'wb') )
+output.write( unistr )
+output.close()
+\end{verbatim}
+
+The following code would then read UTF-8 input from the file:
+
+\begin{verbatim}
+input = UTF8_streamread( open( '/tmp/output', 'rb') )
+print repr(input.read())
+input.close()
+\end{verbatim}
+
+Unicode-aware regular expressions are available through the
+\module{re} module, which has a new underlying implementation called
+SRE written by Fredrik Lundh of Secret Labs AB. 
+
+% Added -U command line option.  With the option enabled the Python
+% compiler interprets all "..."  strings as u"..." (same with r"..." and
+% ur"...").  (XXX Is this just for experimenting?)
 
 % ======================================================================
-\section{Distribution Utilities}
+\section{Distutils: Making Modules Easy to Install}
 
-XXX
+Before Python 1.6, installing modules was a tedious affair -- there
+was no way to figure out automatically where Python is installed, or
+what compiler options to use for extension modules.  Software authors
+had to go through an ardous ritual of editing Makefiles and
+configuration files, which only really work on Unix and leave Windows
+and MacOS unsupported.  Software users faced wildly differing
+installation instructions 
+
+The SIG for distribution utilities, shepherded by Greg Ward, has
+created the Distutils, a system to make package installation much
+easier.  They form the \package{distutils} package, a new part of
+Python's standard library. In the best case, installing a Python
+module from source will require the same steps: first you simply mean
+unpack the tarball or zip archive, and the run ``\code{python setup.py
+install}''.  The platform will be automatically detected, the compiler
+will be recognized, C extension modules will be compiled, and the
+distribution installed into the proper directory.  Optional
+command-line arguments provide more control over the installation
+process, the distutils package offers many places to override defaults
+-- separating the build from the install, building or installing in
+non-default directories, and more.
+
+In order to use the Distutils, you need to write a \file{setup.py}
+script.  For the simple case, when the software contains only .py
+files, a minimal \file{setup.py} can be just a few lines long:
+
+\begin{verbatim}
+from distutils.core import setup
+setup (name = "foo", version = "1.0", 
+       py_modules = ["module1", "module2"])
+\end{verbatim}
+
+The \file{setup.py} file isn't much more complicated if the software
+consists of a few packages:
+
+\begin{verbatim}
+from distutils.core import setup
+setup (name = "foo", version = "1.0", 
+       packages = ["package", "package.subpackage"])
+\end{verbatim}
+
+A C extension can be the most complicated case; here's an example taken from 
+the PyXML package:
+
+
+\begin{verbatim}
+from distutils.core import setup, Extension
+
+expat_extension = Extension('xml.parsers.pyexpat',
+	define_macros = [('XML_NS', None)],
+	include_dirs = [ 'extensions/expat/xmltok',
+	                 'extensions/expat/xmlparse' ],
+	sources = [ 'extensions/pyexpat.c',
+	            'extensions/expat/xmltok/xmltok.c',
+ 		    'extensions/expat/xmltok/xmlrole.c',
+                  ]
+       )
+setup (name = "PyXML", version = "0.5.4", 
+       ext_modules =[ expat_extension ] )
+	        
+\end{verbatim}
+
+The Distutils can also take care of creating source and binary
+distributions.  The ``sdist'' command, run by ``\code{python setup.py
+sdist}', builds a source distribution such as \file{foo-1.0.tar.gz}.
+Adding new commands isn't difficult, and a ``bdist_rpm'' command has
+already been contributed to create an RPM distribution for the
+software.  Commands to create Windows installer programs, Debian
+packages, and Solaris .pkg files have been discussed and are in
+various stages of development.
+
+All this is documented in a new manual, \textit{Distributing Python
+Modules}.
 
 % ======================================================================
 \section{String Methods}
+
+Until now string-manipulation functionality was in the \module{string}
+Python module, which was usually a front-end for the \module{strop}
+module written in C.  The addition of Unicode posed a difficulty for
+the \module{strop} module, because the functions would all need to be
+rewritten in order to accept either 8-bit or Unicode strings.  For
+functions such as \function{string.replace()}, which takes 3 string
+arguments, that means eight possible permutations, and correspondingly
+complicated code.
+
+Instead, Python 1.6 pushes the problem onto the string type, making
+string manipulation functionality available through methods on both
+8-bit strings and Unicode strings.  
+
+\begin{verbatim}
+>>> 'andrew'.capitalize()
+'Andrew'
+>>> 'hostname'.replace('os', 'linux')
+'hlinuxtname'
+>>> 'moshe'.find('sh')
+2
+\end{verbatim}
+
+One thing that hasn't changed, April Fools' jokes notwithstanding, is
+that Python strings are immutable. Thus, the string methods return new
+strings, and do not modify the string on which they operate.
+
+The old \module{string} module is still around for backwards
+compatibility, but it mostly acts as a front-end to the new string
+methods.
+
+Two methods which have no parallel in pre-1.6 versions, although they
+did exist in JPython for quite some time, are \method{startswith()}
+and \method{endswith}.  \code{s.startswith(t)} is equivalent to \code{s[:len(t)]
+== t}, while \code{s.endswith(t)} is equivalent to \code{s[-len(t):] == t}.
+
+(XXX what'll happen to join?)  One other method which deserves special
+mention is \method{join}.  The \method{join} method of a list receives
+one parameter, a sequence of strings, and is equivalent to the
+\function{string.join} function from the old \module{string} module,
+with the arguments reversed. In other words, \code{s.join(seq)} is
+equivalent to the old \code{string.join(seq, s)}.
+
+Some list methods, such as \method{find}, \method{index},
+\method{count}, \method{rindex}, and \method{rfind} are now available
+on strings, allowing some nice polymorphic code which can deal with
+either lists or strings without changes.
 
 % ======================================================================
 \section{Porting to 1.6}
 
 New Python releases try hard to be compatible with previous releases,
 and the record has been pretty good.  However, some changes are
-considered useful enough (often fixing design decisions that were
-initially bad) that breaking backward compatibility in subtle ways
+considered useful enough, often fixing initial design decisions that
+turned to be actively mistaken, that breaking backward compatibility
 can't always be avoided.  This section lists the changes in Python 1.6
 that may cause old Python code to break.
 
@@ -58,9 +295,7 @@ the arguments accepted by some methods.  Some methods would take
 multiple arguments and treat them as a tuple, particularly various
 list methods such as \method{.append()}, \method{.insert()},
 \method{remove()}, and \method{.count()}.
-%
-% XXX did anyone ever call the last 2 methods with multiple args?
-%
+(XXX did anyone ever call the last 2 methods with multiple args?)
 In earlier versions of Python, if \code{L} is a list, \code{L.append(
 1,2 )} appends the tuple \code{(1,2)} to the list.  In Python 1.6 this
 causes a \exception{TypeError} exception to be raised, with the
@@ -118,7 +353,6 @@ formatting precision than \function{str()}.  \function{repr()} uses
 \function{str()} uses ``%.12g'' as before.  The effect is that
 \function{repr()} may occasionally show more decimal places than 
 \function{str()}, for numbers 
-
 XXX need example value here to demonstrate problem.
 
 
@@ -149,7 +383,7 @@ def f(*args, **kw):
 A new format style is available when using the \operator{\%} operator.
 '\%r' will insert the \function{repr()} of its argument.  This was
 also added from symmetry considerations, this time for symmetry with
-the existing '\%s' format style which inserts the \function{str()} of
+the existing '\%s' format style, which inserts the \function{str()} of
 its argument.  For example, \code{'%r %s' % ('abc', 'abc')} returns a
 string containing \verb|'abc' abc|.
 
@@ -166,7 +400,9 @@ present in the sequence \var{seq}; Python computes this by simply
 trying every index of the sequence until either \var{obj} is found or
 an \exception{IndexError} is encountered.  Moshe Zadka contributed a
 patch which adds a \method{__contains__} magic method for providing a
-custom implementation for \operator{in}.
+custom implementation for \operator{in}. Additionally, new built-in objects
+can define what \operator{in} means for them via a new slot in the sequence
+protocol.
 
 Earlier versions of Python used a recursive algorithm for deleting
 objects.  Deeply nested data structures could cause the interpreter to
@@ -190,22 +426,35 @@ data structures are isomorphic.
 }
 
 Work has been done on porting Python to 64-bit Windows on the Itanium
-processor, mostly by Trent Mick of ActiveState.  (Confusingly, for
-complicated reasons \code{sys.platform} is still \code{'win32'} on
-Win64.)  PythonWin also supports Windows CE; see the Python CE page at
+processor, mostly by Trent Mick of ActiveState.  (Confusingly, \code{sys.platform} is still \code{'win32'} on
+Win64 because it seems that for ease of porting, MS Visual C++ treats code
+as 32 bit.
+)  PythonWin also supports Windows CE; see the Python CE page at
 \url{http://www.python.net/crew/mhammond/ce/} for more information.
 
-XXX UnboundLocalError is raised when a local variable is undefined
+An attempt has been made to alleviate one of Python's warts, the
+often-confusing \exception{NameError} exception when code refers to a
+local variable before the variable has been assigned a value.  For
+example, the following code raises an exception on the \keyword{print}
+statement in both 1.5.2 and 1.6; in 1.5.2 a \exception{NameError}
+exception is raised, while 1.6 raises \exception{UnboundLocalError}.
+
+\begin{verbatim}
+def f():
+    print "i=",i
+    i = i + 1 
+f()
+\end{verbatim}
 
 A new variable holding more detailed version information has been
 added to the \module{sys} module.  \code{sys.version_info} is a tuple
 \code{(\var{major}, \var{minor}, \var{micro}, \var{level},
 \var{serial})} For example, in 1.6a2 \code{sys.version_info} is
 \code{(1, 6, 0, 'alpha', 2)}.  \var{level} is a string such as
-"alpha", "beta", or '' for a final release.
+\code{"alpha"}, \code{"beta"}, or \code{""} for a final release.
 
 % ======================================================================
-\section{Extending/embedding Changes}
+\section{Extending/Embedding Changes}
 
 Some of the changes are under the covers, and will only be apparent to
 people writing C extension modules, or embedding a Python interpreter
@@ -233,7 +482,7 @@ the comments in \file{Include/mymalloc.h} and
 the interface was hammered out, see the Web archives of the 'patches'
 and 'python-dev' lists at python.org.
 
-Recent versions of the GUSI % XXX what is GUSI?  
+Recent versions of the GUSI (XXX what is GUSI?)
 development environment for MacOS support POSIX threads.  Therefore,
 POSIX threads are now supported on the Macintosh too.  Threading
 support using the user-space GNU pth library was also contributed.
@@ -249,17 +498,36 @@ contributed by Yakov Markovitch.
 % ======================================================================
 \section{Module changes}
 
-re - changed to be a frontend to sre
+Lots of improvements and bugfixes were made to Python's extensive
+standard library; some of the affected modules include
+\module{readline}, \module{ConfigParser}, \module{cgi},
+\module{calendar}, \module{posix}, \module{readline}, \module{xmllib},
+\module{aifc}, \module{chunk, wave}, \module{random}, \module{shelve},
+and \module{nntplib}.  Consult the CVS logs for the exact
+patch-by-patch details.  
 
-readline, ConfigParser, cgi, calendar, posix, readline, xmllib, aifc, chunk,
-wave, random, shelve, nntplib - minor enhancements
+Brian Gallew contributed OpenSSL support for the \module{socket}
+module.  When compiling Python, you can edit \file{Modules/Setup} to
+include SSL support.  When enabled, an additional function
+\function{socket.ssl(\var{socket}, \var{keyfile}, \var{certfile})},
+which takes a socket object and returns an SSL socket.  When SSL
+support is available, the \module{httplib} and \module{urllib} modules
+will support ``https://'' URLs.
 
-socket, httplib, urllib - optional OpenSSL support
+The \module{Tkinter} module now supports Tcl/Tk version 8.1, 8.2, or
+8.3, and support for the older 7.x versions has been dropped.  The
+Tkinter module also supports displaying Unicode strings in Tk
+widgets.  
 
-_tkinter - support for 8.1,8.2,8.3 (support for versions older then 8.0
-has been dropped).  Supports Unicode (Lib/lib-tk/Tkinter.py has a test)
+The \module{curses} module has been greatly extended, starting from
+Oliver Andrich's enhanced version, to provide many additional
+functions from ncurses and SYSV curses, such as colour, alternative
+character set support, pads, and other new features.  This means the
+module is no longer compatible with operating systems that only have
+BSD curses, but there don't seem to be any currently maintained OSes
+that fall into this category.
 
-curses -- changed to use ncurses
+XXX re - changed to be a frontend to sre
 
 % ======================================================================
 \section{New modules}
@@ -284,7 +552,7 @@ XXX IDLE -- complete overhaul; what are the changes?
 % ======================================================================
 \section{Deleted and Deprecated Modules}
 
-stdwin
+XXX stdwin, others?
 
 \end{document}
 
