@@ -335,27 +335,34 @@ dbmopen(self, args)
     object *args;
 {
     char *name;
-    char *flags = "r";
+    char *flags = "r ";
     int iflags;
    int mode = 0666;
 
-/* XXXX add other flags */
-        if ( !newgetargs(args, "s|si", &name, &flags, &mode) )
+/* XXXX add other flags. 2nd character can be "f" meaning open in fast mode. */
+    if ( !newgetargs(args, "s|si", &name, &flags, &mode) )
 	  return NULL;
-	if ( strcmp(flags, "r") == 0 )
+	switch (flags[0]) {
+	case 'r':
 	  iflags = GDBM_READER;
-	else if ( strcmp(flags, "w") == 0 )
+	  break;
+	case 'w':
 	  iflags = GDBM_WRITER;
-	else if ( strcmp(flags, "c") == 0 )
+	  break;
+	case 'c':
 	  iflags = GDBM_WRCREAT;
-	else if ( strcmp(flags, "n") == 0 )
+	  break;
+	case 'n':
 	  iflags = GDBM_NEWDB;
-	else {
+	  break;
+    default:
 	    err_setstr(DbmError,
 		       "Flags should be one of 'r', 'w', 'c' or 'n'");
 	    return NULL;
 	}
-        return newdbmobject(name, iflags, mode);
+	if (flags[1] == 'f')
+	  iflags |= GDBM_FAST;
+    return newdbmobject(name, iflags, mode);
 }
 
 static struct methodlist dbmmodule_methods[] = {
