@@ -1,39 +1,51 @@
+import test_support
 import time
+import unittest
 
-time.altzone
-time.clock()
-t = time.time()
-time.asctime(time.gmtime(t))
-if time.ctime(t) != time.asctime(time.localtime(t)):
-    print 'time.ctime(t) != time.asctime(time.localtime(t))'
 
-time.daylight
-if long(time.mktime(time.localtime(t))) != long(t):
-    print 'time.mktime(time.localtime(t)) != t'
+class TimeTestCase(unittest.TestCase):
 
-time.sleep(1.2)
-tt = time.gmtime(t)
-for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
-                  'j', 'm', 'M', 'p', 'S',
-                  'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
-    format = ' %' + directive
-    try:
-        time.strftime(format, tt)
-    except ValueError:
-        print 'conversion specifier:', format, ' failed.'
+    def setUp(self):
+        self.t = time.time()
 
-time.timezone
-time.tzname
+    def test_data_attributes(self):
+        time.altzone
+        time.daylight
+        time.timezone
+        time.tzname
 
-# expected errors
-try:
-    time.asctime(0)
-except TypeError:
-    pass
+    def test_clock(self):
+        time.clock()
 
-try:
-    time.mktime((999999, 999999, 999999, 999999,
-                 999999, 999999, 999999, 999999,
-                 999999))
-except OverflowError:
-    pass
+    def test_conversions(self):
+        self.assert_(time.ctime(self.t)
+                     == time.asctime(time.localtime(self.t)))
+        self.assert_(long(time.mktime(time.localtime(self.t)))
+                     == long(self.t))
+
+    def test_sleep(self):
+        time.sleep(1.2)
+
+    def test_strftime(self):
+        tt = time.gmtime(self.t)
+        for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
+                          'j', 'm', 'M', 'p', 'S',
+                          'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
+            format = ' %' + directive
+            try:
+                time.strftime(format, tt)
+            except ValueError:
+                self.fail('conversion specifier: %r failed.' % format)
+
+    def test_asctime(self):
+        time.asctime(time.gmtime(self.t))
+        self.assertRaises(TypeError, time.asctime, 0)
+
+    def test_mktime(self):
+        self.assertRaises(OverflowError,
+                          time.mktime, (999999, 999999, 999999, 999999,
+                                        999999, 999999, 999999, 999999,
+                                        999999))
+
+
+test_support.run_unittest(TimeTestCase)
