@@ -10,9 +10,9 @@ a Tkinter-based IDE for Python.  It has the following features:
 - 100% pure Python
 - works on Windows and Unix (probably works on Mac too)
 
-The main program is in the file "idle"; on Windows you can use
-idle.pyw to avoid popping up a DOS console.  Any arguments passed are
-interpreted as files that will be opened for editing.
+The main program is in the file "idle"; on Windows you can use idle.pyw
+to avoid popping up a DOS console.  Any arguments passed are interpreted
+as files that will be opened for editing.
 
 IDLE requires Python 1.5.2, so it is currently only usable with the
 Python 1.5.2 beta distribution (luckily, IDLE is bundled with Python
@@ -119,8 +119,8 @@ Notes after trying to run Grail
 -------------------------------
 
 - Grail does stuff to sys.path based on sys.argv[0]; you must set
-sys.argv[0] to something decent first (it is normally set to the path
-of the idle script).
+sys.argv[0] to something decent first (it is normally set to the path of
+the idle script).
 
 - Grail must be exec'ed in __main__ because that's imported by some
 other parts of Grail.
