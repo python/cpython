@@ -189,7 +189,7 @@ class bdist_rpm (Command):
         if type(self.doc_files) is ListType:
             for readme in ('README', 'README.txt'):
                 if os.path.exists(readme) and readme not in self.doc_files:
-                    self.doc.append(readme)
+                    self.doc_files.append(readme)
 
         self.ensure_string('release', "1")
         self.ensure_string('serial')   # should it be an int?
