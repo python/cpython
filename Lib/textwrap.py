@@ -306,3 +306,45 @@ def fill(text, width=70, **kwargs):
     """
     w = TextWrapper(width=width, **kwargs)
     return w.fill(text)
+
+
+# -- Loosely related functionality -------------------------------------
+
+def dedent(text):
+    """dedent(text : string) -> string
+
+    Remove any whitespace than can be uniformly removed from the left
+    of every line in `text`.
+
+    This can be used e.g. to make triple-quoted strings line up with
+    the left edge of screen/whatever, while still presenting it in the
+    source code in indented form. 
+
+    For example:
+
+        def test():
+            # end first line with \ to avoid the empty line!
+            s = '''\
+            Hey
+            there
+            '''
+            print repr(s)          # prints '    Hey\n    there\n    '
+            print repr(dedent(s))  # prints 'Hey\nthere\n'
+    """
+    lines = text.expandtabs().split('\n')
+    margin = None
+    for line in lines:
+        content = len(line.lstrip())
+        if not content:
+            continue
+        indent = len(line) - content
+        if margin is None:
+            margin = indent
+        else:
+            margin = min(margin, indent)
+
+    if margin is not None:
+        for i in range(len(lines)):
+            lines[i] = lines[i][margin:]
+
+    return '\n'.join(lines)
