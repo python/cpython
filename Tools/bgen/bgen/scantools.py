@@ -234,10 +234,13 @@ if missing: raise "Missing Types"
 		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
 #		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-#		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
+#		               "[ \t]*\(<defn>[-0-9'\"(][^\t\n,;}]*\),?"
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"][^\t\n,;}]*\),?"
+		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"(][^\t\n,;}]*\),?"
 		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
+		self.comment1_pat = "\(<rest>.*\)//.*"
+		# note that the next pattern only removes comments that are wholly within one line
+		self.comment2_pat = "\(<rest>.*\)/\*.*\*/"
 
 	def compilepatterns(self):
 		for name in dir(self):
@@ -372,6 +375,10 @@ if missing: raise "Missing Types"
 			while 1:
 				try: line = self.getline()
 				except EOFError: break
+				if self.comment1.match(line) >= 0:
+					line = self.comment1.group('rest')
+				if self.comment2.match(line) >= 0:
+					line = self.comment2.group('rest')
 				if self.defsfile and self.sym.match(line) >= 0:
 					self.dosymdef()
 					continue
@@ -386,6 +393,8 @@ if missing: raise "Missing Types"
 		name, defn = self.sym.group('name', 'defn')
 		if not name in self.blacklistnames:
 			self.defsfile.write("%s = %s\n" % (name, defn))
+		else:
+			self.defsfile.write("# %s = %s\n" % (name, defn))
 
 	def dofuncspec(self):
 		raw = self.line
