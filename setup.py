@@ -960,17 +960,25 @@ class PyBuildExt(build_ext):
 
         # Now check for the header files
         if tklib and tcllib:
-            # Check for the include files on Debian, where
+            # Check for the include files on Debian and {Free,Open}BSD, where
             # they're put in /usr/include/{tcl,tk}X.Y
-            debian_tcl_include = [ '/usr/include/tcl' + version ]
-            debian_tk_include =  [ '/usr/include/tk'  + version ] + \
-                                 debian_tcl_include
-            tcl_includes = find_file('tcl.h', inc_dirs, debian_tcl_include)
-            tk_includes = find_file('tk.h', inc_dirs, debian_tk_include)
+            dotversion = version
+            if '.' not in dotversion and "bsd" in sys.platform.lower():
+                # OpenBSD and FreeBSD use Tcl/Tk library names like libtcl83.a,
+                # but the include subdirs are named like .../include/tcl8.3.
+                dotversion = dotversion[:-1] + '.' + dotversion[-1]
+            tcl_include_sub = []
+            tk_include_sub = []
+            for dir in inc_dirs:
+                tcl_include_sub += [dir + os.sep + "tcl" + dotversion]
+                tk_include_sub += [dir + os.sep + "tk" + dotversion]
+            tk_include_sub += tcl_include_sub
+            tcl_includes = find_file('tcl.h', inc_dirs, tcl_include_sub)
+            tk_includes = find_file('tk.h', inc_dirs, tk_include_sub)
 
         if (tcllib is None or tklib is None or
             tcl_includes is None or tk_includes is None):
-            # Something's missing, so give up
+            self.announce("INFO: Can't locate Tcl/Tk libs and/or headers", 2)
             return
 
         # OK... everything seems to be present for Tcl/Tk.

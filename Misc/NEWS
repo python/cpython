@@ -7,7 +7,7 @@ Python News
 What's New in Python 2.3.5?
 ===========================
 
-*Release date: xx-xxx-2004*
+*Release date: xx-xxx-2005*
 
 Core and builtins
 -----------------
@@ -161,6 +161,8 @@ Macintosh
   
 Build
 -----
+
+- Patch #850977: Detect Tk on FreeBSD and OpenBSD.
 
 - Bug #1034496: Use -h instead of -soname for Solaris compatibility.
 
