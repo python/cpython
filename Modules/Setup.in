@@ -43,6 +43,9 @@
 # installed using "make sharedinstall", which is implied by the
 # toplevel "make install" target.)  (For compatibility,
 # *noconfig* has the same effect as *shared*.)
+#
+# In addition, *static* reverses this effect (negating a previous
+# *shared* line).
 
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
@@ -107,7 +110,7 @@ GLHACK=-Dclear=__GLclear
 
 # Uncommenting the following line tells makesetup that all following
 # modules are to be built as shared libraries (see above for more
-# detail):
+# detail; also note that *static* reverses this effect):
 
 #*shared*
 
