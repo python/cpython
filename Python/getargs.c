@@ -1032,7 +1032,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	char *fname, *message;
 	int min, max;
 	char *formatsave;
-	int i, len, nargs, nkeywords, nkwlist;
+	int i, len, nargs, nkeywords;
 	char *msg, *ks, **p;
 	int pos, match, converted;
 	PyObject *key, *value;
@@ -1093,7 +1093,6 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		min = max;
 	}
 
-	nkwlist = max;
 	nargs = PyTuple_GET_SIZE(args);
 	nkeywords = keywords == NULL ? 0 : PyDict_Size(keywords);
 
@@ -1170,7 +1169,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	/* convert the keyword arguments; this uses the format 
 	   string where it was left after processing args */
 	converted = 0;
-	for (i = nargs; i < nkwlist; i++) {
+	for (i = nargs; i < max; i++) {
 		PyObject *item;
 		if (*format == '|')
 			format++;
@@ -1202,7 +1201,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		while (PyDict_Next(keywords, &pos, &key, &value)) {
 			match = 0;
 			ks = PyString_AsString(key);
-			for (i = 0; i < nkwlist; i++) {
+			for (i = 0; i < max; i++) {
 				if (!strcmp(ks, kwlist[i])) {
 					match = 1;
 					break;
