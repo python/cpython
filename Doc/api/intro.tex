@@ -280,7 +280,7 @@ caller becomes the owner of the reference).
 
 It is important to realize that whether you own a reference returned 
 by a function depends on which function you call only --- \emph{the
-plumage} (the type of the type of the object passed as an
+plumage} (the type of the object passed as an
 argument to the function) \emph{doesn't enter into it!}  Thus, if you 
 extract an item from a list using \cfunction{PyList_GetItem()}, you
 don't own the reference --- but if you obtain the same item from the
