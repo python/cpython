@@ -4,15 +4,11 @@
 # how to choose a temp directory or filename on MS-DOS or other
 # systems so it may have to be changed...
 
-
 import os
 
-
 # Parameters that the caller may set to override the defaults
-
 tempdir = None
 template = None
-
 
 def gettempdir():
     """Function to calculate the directory to use."""
@@ -92,19 +88,13 @@ def gettempprefix():
     return template
 
 
-# Counter for generating unique names
-
-counter = 0
-
-
 def mktemp(suffix=""):
     """User-callable function to return a unique temporary file name."""
-    global counter
     dir = gettempdir()
     pre = gettempprefix()
     while 1:
-        counter = counter + 1
-        file = os.path.join(dir, pre + `counter` + suffix)
+        i = _counter.get_next()
+        file = os.path.join(dir, pre + str(i) + suffix)
         if not os.path.exists(file):
             return file
 
@@ -152,3 +142,46 @@ def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
         # Non-unix -- can't unlink file that's still open, use wrapper
         file = open(name, mode, bufsize)
         return TemporaryFileWrapper(file, name)
+
+# In order to generate unique names, mktemp() uses _counter.get_next().
+# This returns a unique integer on each call, in a threadsafe way (i.e.,
+# multiple threads will never see the same integer).  The integer will
+# usually be a Python int, but if _counter.get_next() is called often
+# enough, it will become a Python long.
+# Note that the only name that survives this next block of code
+# is "_counter".
+
+class _ThreadSafeCounter:
+    def __init__(self, mutex, initialvalue=0):
+        self.mutex = mutex
+        self.i = initialvalue
+
+    def get_next(self):
+        self.mutex.acquire()
+        result = self.i
+        try:
+            newi = result + 1
+        except OverflowError:
+            newi = long(result) + 1
+        self.i = newi
+        self.mutex.release()
+        return result
+
+try:
+    import thread
+
+except ImportError:
+    class _DummyMutex:
+        def acquire(self):
+            pass
+
+        release = acquire
+
+    _counter = _ThreadSafeCounter(_DummyMutex())
+    del _DummyMutex
+
+else:
+    _counter = _ThreadSafeCounter(thread.allocate_lock())
+    del thread
+
+del _ThreadSafeCounter
