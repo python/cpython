@@ -24,7 +24,7 @@ Core and builtins
   See SF bug #667147.
 
 - Fixed an invalid RuntimeWarning and an undetected error when trying
-  to convert a long integer into a float which couldn't fit.  
+  to convert a long integer into a float which couldn't fit.
   See SF bug #676155.
 
 Extension modules
@@ -125,6 +125,11 @@ Extension modules
   seconds".  Leap seconds are ignored now.  On such platforms, it's
   possible to have timestamps that differ by a second, yet where
   datetimes constructed from them are equal.
+
+  The pickle format of date, time and datetime objects has changed
+  completely.  The undocumented pickler and unpickler functions no
+  longer exist.  The undocumented __setstate__() methods no longer
+  exist either.
 
 Library
 -------
