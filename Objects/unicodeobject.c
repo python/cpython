@@ -631,11 +631,12 @@ int utf8_decoding_error(const char **source,
     }
 }
 
-#define UTF8_ERROR(details)  do {                       \
-    if (utf8_decoding_error(&s, &p, errors, details))   \
-        goto onError;                                   \
-    goto nextChar;                                      \
-} while (0)
+#define UTF8_ERROR(details) \
+  if (1) {                                                  \
+      if (utf8_decoding_error(&s, &p, errors, (details)))   \
+          goto onError;                                     \
+      continue;                                             \
+  } else
 
 PyObject *PyUnicode_DecodeUTF8(const char *s,
 			       int size,
@@ -731,8 +732,6 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
             UTF8_ERROR("unsupported Unicode code range");
         }
         s += n;
-nextChar:
-	/* empty */;
     }
 
     /* Adjust length */
