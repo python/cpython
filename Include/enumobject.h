@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-extern DL_IMPORT(PyTypeObject) PyEnum_Type;
+PyAPI_DATA(PyTypeObject) PyEnum_Type;
 
 #ifdef __cplusplus
 }

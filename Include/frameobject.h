@@ -44,11 +44,11 @@ typedef struct _frame {
 
 /* Standard object interface */
 
-extern DL_IMPORT(PyTypeObject) PyFrame_Type;
+PyAPI_DATA(PyTypeObject) PyFrame_Type;
 
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
 
-DL_IMPORT(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
+PyAPI_FUNC(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
                                        PyObject *, PyObject *);
 
 
@@ -56,17 +56,17 @@ DL_IMPORT(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
 
 /* Block management functions */
 
-DL_IMPORT(void) PyFrame_BlockSetup(PyFrameObject *, int, int, int);
-DL_IMPORT(PyTryBlock *) PyFrame_BlockPop(PyFrameObject *);
+PyAPI_FUNC(void) PyFrame_BlockSetup(PyFrameObject *, int, int, int);
+PyAPI_FUNC(PyTryBlock *) PyFrame_BlockPop(PyFrameObject *);
 
 /* Extend the value stack */
 
-DL_IMPORT(PyObject **) PyFrame_ExtendStack(PyFrameObject *, int, int);
+PyAPI_FUNC(PyObject **) PyFrame_ExtendStack(PyFrameObject *, int, int);
 
 /* Conversions between "fast locals" and locals in dictionary */
 
-DL_IMPORT(void) PyFrame_LocalsToFast(PyFrameObject *, int);
-DL_IMPORT(void) PyFrame_FastToLocals(PyFrameObject *);
+PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
+PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
 #ifdef __cplusplus
 }

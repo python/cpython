@@ -7,9 +7,9 @@
 extern "C" {
 #endif
 
-DL_IMPORT(PyObject *) PyEval_EvalCode(PyCodeObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyEval_EvalCode(PyCodeObject *, PyObject *, PyObject *);
 
-DL_IMPORT(PyObject *) PyEval_EvalCodeEx(PyCodeObject *co,
+PyAPI_FUNC(PyObject *) PyEval_EvalCodeEx(PyCodeObject *co,
 					PyObject *globals,
 					PyObject *locals,
 					PyObject **args, int argc,

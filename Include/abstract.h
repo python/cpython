@@ -223,7 +223,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 #define  PyObject_DelAttr(O,A) PyObject_SetAttr((O),(A),NULL)
 
-     DL_IMPORT(int) PyObject_Cmp(PyObject *o1, PyObject *o2, int *result);
+     PyAPI_FUNC(int) PyObject_Cmp(PyObject *o1, PyObject *o2, int *result);
 
        /*
 	 Compare the values of o1 and o2 using a routine provided by
@@ -283,7 +283,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(int) PyCallable_Check(PyObject *o);
+     PyAPI_FUNC(int) PyCallable_Check(PyObject *o);
 
        /*
 	 Determine if the object, o, is callable.  Return 1 if the
@@ -295,7 +295,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 
 
-     DL_IMPORT(PyObject *) PyObject_Call(PyObject *callable_object,
+     PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *callable_object,
 					 PyObject *args, PyObject *kw);
 
        /*
@@ -305,7 +305,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
      
-     DL_IMPORT(PyObject *) PyObject_CallObject(PyObject *callable_object,
+     PyAPI_FUNC(PyObject *) PyObject_CallObject(PyObject *callable_object,
                                                PyObject *args);
 
        /*
@@ -317,7 +317,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyObject_CallFunction(PyObject *callable_object,
+     PyAPI_FUNC(PyObject *) PyObject_CallFunction(PyObject *callable_object,
                                                  char *format, ...);
 
        /*
@@ -331,7 +331,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     DL_IMPORT(PyObject *) PyObject_CallMethod(PyObject *o, char *m,
+     PyAPI_FUNC(PyObject *) PyObject_CallMethod(PyObject *o, char *m,
                                                char *format, ...);
 
        /*
@@ -344,7 +344,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     DL_IMPORT(PyObject *) PyObject_CallFunctionObjArgs(PyObject *callable,
+     PyAPI_FUNC(PyObject *) PyObject_CallFunctionObjArgs(PyObject *callable,
                                                         ...);
 
        /*
@@ -357,7 +357,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     DL_IMPORT(PyObject *) PyObject_CallMethodObjArgs(PyObject *o,
+     PyAPI_FUNC(PyObject *) PyObject_CallMethodObjArgs(PyObject *o,
                                                       PyObject *m, ...);
 
        /*
@@ -404,7 +404,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 
        */
 
-     DL_IMPORT(PyObject *) PyObject_Type(PyObject *o);
+     PyAPI_FUNC(PyObject *) PyObject_Type(PyObject *o);
 
        /*
 	 On success, returns a type object corresponding to the object
@@ -412,7 +412,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 equivalent to the Python expression: type(o).
        */
 
-     DL_IMPORT(int) PyObject_Size(PyObject *o);
+     PyAPI_FUNC(int) PyObject_Size(PyObject *o);
 
        /*
          Return the size of object o.  If the object, o, provides
@@ -424,11 +424,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        /* For DLL compatibility */
 #undef PyObject_Length
-     DL_IMPORT(int) PyObject_Length(PyObject *o);
+     PyAPI_FUNC(int) PyObject_Length(PyObject *o);
 #define PyObject_Length PyObject_Size
 
 
-     DL_IMPORT(PyObject *) PyObject_GetItem(PyObject *o, PyObject *key);
+     PyAPI_FUNC(PyObject *) PyObject_GetItem(PyObject *o, PyObject *key);
 
        /*
 	 Return element of o corresponding to the object, key, or NULL
@@ -437,7 +437,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(int) PyObject_SetItem(PyObject *o, PyObject *key, PyObject *v);
+     PyAPI_FUNC(int) PyObject_SetItem(PyObject *o, PyObject *key, PyObject *v);
 
        /*
 	 Map the object, key, to the value, v.  Returns
@@ -445,7 +445,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 statement: o[key]=v.
        */
 
-     DL_IMPORT(int) PyObject_DelItemString(PyObject *o, char *key);
+     PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, char *key);
 
        /*
          Remove the mapping for object, key, from the object *o.
@@ -453,14 +453,14 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
          the Python statement: del o[key].
        */
 
-     DL_IMPORT(int) PyObject_DelItem(PyObject *o, PyObject *key);
+     PyAPI_FUNC(int) PyObject_DelItem(PyObject *o, PyObject *key);
 
        /*
 	 Delete the mapping for key from *o.  Returns -1 on failure.
 	 This is the equivalent of the Python statement: del o[key].
        */
 
-     DL_IMPORT(int) PyObject_AsCharBuffer(PyObject *obj,
+     PyAPI_FUNC(int) PyObject_AsCharBuffer(PyObject *obj,
 					  const char **buffer,
 					  int *buffer_len);
 
@@ -476,7 +476,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(int) PyObject_CheckReadBuffer(PyObject *obj);
+     PyAPI_FUNC(int) PyObject_CheckReadBuffer(PyObject *obj);
 
       /*  
 	  Checks whether an arbitrary object supports the (character,
@@ -485,7 +485,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
       */
 
-     DL_IMPORT(int) PyObject_AsReadBuffer(PyObject *obj,
+     PyAPI_FUNC(int) PyObject_AsReadBuffer(PyObject *obj,
 					  const void **buffer,
 					  int *buffer_len);
 
@@ -501,7 +501,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(int) PyObject_AsWriteBuffer(PyObject *obj,
+     PyAPI_FUNC(int) PyObject_AsWriteBuffer(PyObject *obj,
 					   void **buffer,
 					   int *buffer_len);
 
@@ -518,7 +518,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 /* Iterators */
 
-     DL_IMPORT(PyObject *) PyObject_GetIter(PyObject *);
+     PyAPI_FUNC(PyObject *) PyObject_GetIter(PyObject *);
      /* Takes an object and returns an iterator for it.
         This is typically a new iterator but if the argument
 	is an iterator, this returns itself. */
@@ -527,7 +527,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
     (PyType_HasFeature((obj)->ob_type, Py_TPFLAGS_HAVE_ITER) && \
      (obj)->ob_type->tp_iternext != NULL)
 
-     DL_IMPORT(PyObject *) PyIter_Next(PyObject *);
+     PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
      /* Takes an iterator object and calls its tp_iternext slot,
 	returning the next value.  If the iterator is exhausted,
 	this returns NULL without setting an exception.
@@ -535,7 +535,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 /*  Number Protocol:*/
 
-     DL_IMPORT(int) PyNumber_Check(PyObject *o);
+     PyAPI_FUNC(int) PyNumber_Check(PyObject *o);
 
        /*
          Returns 1 if the object, o, provides numeric protocols, and
@@ -545,7 +545,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Add(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Add(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of adding o1 and o2, or null on failure.
@@ -554,7 +554,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Subtract(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Subtract(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of subtracting o2 from o1, or null on
@@ -563,7 +563,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Multiply(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Multiply(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of multiplying o1 and o2, or null on
@@ -573,7 +573,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Divide(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Divide(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of dividing o1 by o2, or null on failure.
@@ -582,7 +582,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_FloorDivide(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_FloorDivide(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of dividing o1 by o2 giving an integral result,
@@ -592,7 +592,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_TrueDivide(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_TrueDivide(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of dividing o1 by o2 giving a float result,
@@ -602,7 +602,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Remainder(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Remainder(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the remainder of dividing o1 by o2, or null on
@@ -612,7 +612,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Divmod(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Divmod(PyObject *o1, PyObject *o2);
 
        /*
 	 See the built-in function divmod.  Returns NULL on failure.
@@ -622,7 +622,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Power(PyObject *o1, PyObject *o2,
+     PyAPI_FUNC(PyObject *) PyNumber_Power(PyObject *o1, PyObject *o2,
                                           PyObject *o3);
 
        /*
@@ -632,7 +632,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Negative(PyObject *o);
+     PyAPI_FUNC(PyObject *) PyNumber_Negative(PyObject *o);
 
        /*
 	 Returns the negation of o on success, or null on failure.
@@ -640,7 +640,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Positive(PyObject *o);
+     PyAPI_FUNC(PyObject *) PyNumber_Positive(PyObject *o);
 
        /*
          Returns the (what?) of o on success, or NULL on failure.
@@ -648,7 +648,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Absolute(PyObject *o);
+     PyAPI_FUNC(PyObject *) PyNumber_Absolute(PyObject *o);
 
        /*
 	 Returns the absolute value of o, or null on failure.  This is
@@ -656,7 +656,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Invert(PyObject *o);
+     PyAPI_FUNC(PyObject *) PyNumber_Invert(PyObject *o);
 
        /*
 	 Returns the bitwise negation of o on success, or NULL on
@@ -666,7 +666,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Lshift(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Lshift(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of left shifting o1 by o2 on success, or
@@ -676,7 +676,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Rshift(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Rshift(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of right shifting o1 by o2 on success, or
@@ -685,7 +685,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_And(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_And(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of bitwise and of o1 and o2 on success, or
@@ -695,7 +695,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Xor(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Xor(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the bitwise exclusive or of o1 by o2 on success, or
@@ -705,7 +705,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Or(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_Or(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of bitwise or or o1 and o2 on success, or
@@ -733,7 +733,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Int(PyObject *o);
+     PyAPI_FUNC(PyObject *) PyNumber_Int(PyObject *o);
 
        /*
 	 Returns the o converted to an integer object on success, or
@@ -742,7 +742,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Long(PyObject *o);
+     PyAPI_FUNC(PyObject *) PyNumber_Long(PyObject *o);
 
        /*
 	 Returns the o converted to a long integer object on success,
@@ -751,7 +751,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_Float(PyObject *o);
+     PyAPI_FUNC(PyObject *) PyNumber_Float(PyObject *o);
 
        /*
 	 Returns the o converted to a float object on success, or NULL
@@ -761,7 +761,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 
 /*  In-place variants of (some of) the above number protocol functions */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceAdd(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceAdd(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of adding o2 to o1, possibly in-place, or null
@@ -770,7 +770,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceSubtract(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceSubtract(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of subtracting o2 from o1, possibly in-place or
@@ -779,7 +779,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceMultiply(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceMultiply(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of multiplying o1 by o2, possibly in-place, or
@@ -788,7 +788,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceDivide(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceDivide(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of dividing o1 by o2, possibly in-place, or null
@@ -797,7 +797,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceFloorDivide(PyObject *o1,
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceFloorDivide(PyObject *o1,
 						       PyObject *o2);
 
        /*
@@ -808,7 +808,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceTrueDivide(PyObject *o1,
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceTrueDivide(PyObject *o1,
 						      PyObject *o2);
 
        /*
@@ -819,7 +819,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceRemainder(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceRemainder(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the remainder of dividing o1 by o2, possibly in-place, or
@@ -828,7 +828,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlacePower(PyObject *o1, PyObject *o2,
+     PyAPI_FUNC(PyObject *) PyNumber_InPlacePower(PyObject *o1, PyObject *o2,
      						 PyObject *o3);
 
        /*
@@ -838,7 +838,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceLshift(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceLshift(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of left shifting o1 by o2, possibly in-place, or
@@ -847,7 +847,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceRshift(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceRshift(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of right shifting o1 by o2, possibly in-place or
@@ -856,7 +856,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceAnd(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceAnd(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of bitwise and of o1 and o2, possibly in-place,
@@ -865,7 +865,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceXor(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceXor(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the bitwise exclusive or of o1 by o2, possibly in-place, or
@@ -874,7 +874,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PyNumber_InPlaceOr(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PyNumber_InPlaceOr(PyObject *o1, PyObject *o2);
 
        /*
 	 Returns the result of bitwise or or o1 and o2, possibly in-place,
@@ -886,7 +886,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 /*  Sequence protocol:*/
 
-     DL_IMPORT(int) PySequence_Check(PyObject *o);
+     PyAPI_FUNC(int) PySequence_Check(PyObject *o);
 
        /*
          Return 1 if the object provides sequence protocol, and zero
@@ -896,7 +896,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(int) PySequence_Size(PyObject *o);
+     PyAPI_FUNC(int) PySequence_Size(PyObject *o);
 
        /*
          Return the size of sequence object o, or -1 on failure.
@@ -905,11 +905,11 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        /* For DLL compatibility */
 #undef PySequence_Length
-     DL_IMPORT(int) PySequence_Length(PyObject *o);
+     PyAPI_FUNC(int) PySequence_Length(PyObject *o);
 #define PySequence_Length PySequence_Size
 
 
-     DL_IMPORT(PyObject *) PySequence_Concat(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PySequence_Concat(PyObject *o1, PyObject *o2);
 
        /*
 	 Return the concatenation of o1 and o2 on success, and NULL on
@@ -918,7 +918,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PySequence_Repeat(PyObject *o, int count);
+     PyAPI_FUNC(PyObject *) PySequence_Repeat(PyObject *o, int count);
 
        /*
 	 Return the result of repeating sequence object o count times,
@@ -927,14 +927,14 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PySequence_GetItem(PyObject *o, int i);
+     PyAPI_FUNC(PyObject *) PySequence_GetItem(PyObject *o, int i);
 
        /*
 	 Return the ith element of o, or NULL on failure. This is the
 	 equivalent of the Python expression: o[i].
        */
 
-     DL_IMPORT(PyObject *) PySequence_GetSlice(PyObject *o, int i1, int i2);
+     PyAPI_FUNC(PyObject *) PySequence_GetSlice(PyObject *o, int i1, int i2);
 
        /*
 	 Return the slice of sequence object o between i1 and i2, or
@@ -943,7 +943,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(int) PySequence_SetItem(PyObject *o, int i, PyObject *v);
+     PyAPI_FUNC(int) PySequence_SetItem(PyObject *o, int i, PyObject *v);
 
        /*
 	 Assign object v to the ith element of o.  Returns
@@ -952,7 +952,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(int) PySequence_DelItem(PyObject *o, int i);
+     PyAPI_FUNC(int) PySequence_DelItem(PyObject *o, int i);
 
        /*
 	 Delete the ith element of object v.  Returns
@@ -960,7 +960,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 statement: del o[i].
        */
 
-     DL_IMPORT(int) PySequence_SetSlice(PyObject *o, int i1, int i2,
+     PyAPI_FUNC(int) PySequence_SetSlice(PyObject *o, int i1, int i2,
                                         PyObject *v);
 
        /*
@@ -969,7 +969,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 equivalent of the Python statement: o[i1:i2]=v.
        */
 
-     DL_IMPORT(int) PySequence_DelSlice(PyObject *o, int i1, int i2);
+     PyAPI_FUNC(int) PySequence_DelSlice(PyObject *o, int i1, int i2);
 
        /*
 	 Delete the slice in sequence object, o, from i1 to i2.
@@ -977,7 +977,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 statement: del o[i1:i2].
        */
 
-     DL_IMPORT(PyObject *) PySequence_Tuple(PyObject *o);
+     PyAPI_FUNC(PyObject *) PySequence_Tuple(PyObject *o);
 
        /*
 	 Returns the sequence, o, as a tuple on success, and NULL on failure.
@@ -985,13 +985,13 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
-     DL_IMPORT(PyObject *) PySequence_List(PyObject *o);
+     PyAPI_FUNC(PyObject *) PySequence_List(PyObject *o);
        /*
 	 Returns the sequence, o, as a list on success, and NULL on failure.
 	 This is equivalent to the Python expression: list(o)
        */
 
-     DL_IMPORT(PyObject *) PySequence_Fast(PyObject *o, const char* m);
+     PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
        /*
          Returns the sequence, o, as a tuple, unless it's already a
          tuple or list.  Use PySequence_Fast_GET_ITEM to access the
@@ -1021,7 +1021,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	  need to be corrected for a negative index
        */     
 
-     DL_IMPORT(int) PySequence_Count(PyObject *o, PyObject *value);
+     PyAPI_FUNC(int) PySequence_Count(PyObject *o, PyObject *value);
 
        /*
          Return the number of occurrences on value on o, that is,
@@ -1030,7 +1030,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 expression: o.count(value).
        */
 
-     DL_IMPORT(int) PySequence_Contains(PyObject *seq, PyObject *ob);
+     PyAPI_FUNC(int) PySequence_Contains(PyObject *seq, PyObject *ob);
        /*
          Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
          Use __contains__ if possible, else _PySequence_IterSearch().
@@ -1039,7 +1039,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 #define PY_ITERSEARCH_COUNT    1
 #define PY_ITERSEARCH_INDEX    2
 #define PY_ITERSEARCH_CONTAINS 3
-     DL_IMPORT(int) _PySequence_IterSearch(PyObject *seq, PyObject *obj,
+     PyAPI_FUNC(int) _PySequence_IterSearch(PyObject *seq, PyObject *obj,
      		    int operation);
 	/*
 	  Iterate over seq.  Result depends on the operation:
@@ -1054,7 +1054,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 /* For DLL-level backwards compatibility */
 #undef PySequence_In
-     DL_IMPORT(int) PySequence_In(PyObject *o, PyObject *value);
+     PyAPI_FUNC(int) PySequence_In(PyObject *o, PyObject *value);
 
 /* For source-level backwards compatibility */
 #define PySequence_In PySequence_Contains
@@ -1065,7 +1065,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 is equivalent to the Python expression: value in o.
        */
 
-     DL_IMPORT(int) PySequence_Index(PyObject *o, PyObject *value);
+     PyAPI_FUNC(int) PySequence_Index(PyObject *o, PyObject *value);
 
        /*
 	 Return the first index for which o[i]=value.  On error,
@@ -1075,7 +1075,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 /* In-place versions of some of the above Sequence functions. */
 
-     DL_IMPORT(PyObject *) PySequence_InPlaceConcat(PyObject *o1, PyObject *o2);
+     PyAPI_FUNC(PyObject *) PySequence_InPlaceConcat(PyObject *o1, PyObject *o2);
 
        /*
 	 Append o2 to o1, in-place when possible. Return the resulting
@@ -1084,7 +1084,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        */
 
-     DL_IMPORT(PyObject *) PySequence_InPlaceRepeat(PyObject *o, int count);
+     PyAPI_FUNC(PyObject *) PySequence_InPlaceRepeat(PyObject *o, int count);
 
        /*
 	 Repeat o1 by count, in-place when possible. Return the resulting
@@ -1095,7 +1095,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
 /*  Mapping protocol:*/
 
-     DL_IMPORT(int) PyMapping_Check(PyObject *o);
+     PyAPI_FUNC(int) PyMapping_Check(PyObject *o);
 
        /*
          Return 1 if the object provides mapping protocol, and zero
@@ -1104,7 +1104,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 This function always succeeds.
        */
 
-     DL_IMPORT(int) PyMapping_Size(PyObject *o);
+     PyAPI_FUNC(int) PyMapping_Size(PyObject *o);
 
        /*
          Returns the number of keys in object o on success, and -1 on
@@ -1114,7 +1114,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
        /* For DLL compatibility */
 #undef PyMapping_Length
-     DL_IMPORT(int) PyMapping_Length(PyObject *o);
+     PyAPI_FUNC(int) PyMapping_Length(PyObject *o);
 #define PyMapping_Length PyMapping_Size
 
 
@@ -1138,7 +1138,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 #define PyMapping_DelItem(O,K) PyObject_DelItem((O),(K))
 
-     DL_IMPORT(int) PyMapping_HasKeyString(PyObject *o, char *key);
+     PyAPI_FUNC(int) PyMapping_HasKeyString(PyObject *o, char *key);
 
        /*
 	 On success, return 1 if the mapping object has the key, key,
@@ -1148,7 +1148,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 This function always succeeds.
        */
 
-     DL_IMPORT(int) PyMapping_HasKey(PyObject *o, PyObject *key);
+     PyAPI_FUNC(int) PyMapping_HasKey(PyObject *o, PyObject *key);
 
        /*
 	 Return 1 if the mapping object has the key, key,
@@ -1191,7 +1191,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 #define PyMapping_Items(O) PyObject_CallMethod(O,"items",NULL)
 
-     DL_IMPORT(PyObject *) PyMapping_GetItemString(PyObject *o, char *key);
+     PyAPI_FUNC(PyObject *) PyMapping_GetItemString(PyObject *o, char *key);
 
        /*
 	 Return element of o corresponding to the object, key, or NULL
@@ -1199,7 +1199,7 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 o[key].
        */
 
-     DL_IMPORT(int) PyMapping_SetItemString(PyObject *o, char *key,
+     PyAPI_FUNC(int) PyMapping_SetItemString(PyObject *o, char *key,
                                             PyObject *value);
 
        /*
@@ -1209,10 +1209,10 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
       */
 
 
-DL_IMPORT(int) PyObject_IsInstance(PyObject *object, PyObject *typeorclass);
+PyAPI_FUNC(int) PyObject_IsInstance(PyObject *object, PyObject *typeorclass);
       /* isinstance(object, typeorclass) */
 
-DL_IMPORT(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
+PyAPI_FUNC(int) PyObject_IsSubclass(PyObject *object, PyObject *typeorclass);
       /* issubclass(object, typeorclass) */
 
 

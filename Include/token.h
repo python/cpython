@@ -71,10 +71,10 @@ extern "C" {
 #define ISEOF(x)		((x) == ENDMARKER)
 
 
-extern DL_IMPORT(char *) _PyParser_TokenNames[]; /* Token names */
-extern DL_IMPORT(int) PyToken_OneChar(int);
-extern DL_IMPORT(int) PyToken_TwoChars(int, int);
-extern DL_IMPORT(int) PyToken_ThreeChars(int, int, int);
+PyAPI_DATA(char *) _PyParser_TokenNames[]; /* Token names */
+PyAPI_FUNC(int) PyToken_OneChar(int);
+PyAPI_FUNC(int) PyToken_TwoChars(int, int);
+PyAPI_FUNC(int) PyToken_ThreeChars(int, int, int);
 
 #ifdef __cplusplus
 }

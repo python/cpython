@@ -74,25 +74,25 @@ typedef struct _ts {
 } PyThreadState;
 
 
-DL_IMPORT(PyInterpreterState *) PyInterpreterState_New(void);
-DL_IMPORT(void) PyInterpreterState_Clear(PyInterpreterState *);
-DL_IMPORT(void) PyInterpreterState_Delete(PyInterpreterState *);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
+PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
+PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
 
-DL_IMPORT(PyThreadState *) PyThreadState_New(PyInterpreterState *);
-DL_IMPORT(void) PyThreadState_Clear(PyThreadState *);
-DL_IMPORT(void) PyThreadState_Delete(PyThreadState *);
+PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
+PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);
+PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
 #ifdef WITH_THREAD
-DL_IMPORT(void) PyThreadState_DeleteCurrent(void);
+PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 #endif
 
-DL_IMPORT(PyThreadState *) PyThreadState_Get(void);
-DL_IMPORT(PyThreadState *) PyThreadState_Swap(PyThreadState *);
-DL_IMPORT(PyObject *) PyThreadState_GetDict(void);
+PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
+PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
+PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 
 
 /* Variable and macro for in-line access to current thread state */
 
-extern DL_IMPORT(PyThreadState *) _PyThreadState_Current;
+PyAPI_DATA(PyThreadState *) _PyThreadState_Current;
 
 #ifdef Py_DEBUG
 #define PyThreadState_GET() PyThreadState_Get()
@@ -102,10 +102,10 @@ extern DL_IMPORT(PyThreadState *) _PyThreadState_Current;
 
 /* Routines for advanced debuggers, requested by David Beazley.
    Don't use unless you know what you are doing! */
-DL_IMPORT(PyInterpreterState *) PyInterpreterState_Head(void);
-DL_IMPORT(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
-DL_IMPORT(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
-DL_IMPORT(PyThreadState *) PyThreadState_Next(PyThreadState *);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
+PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
+PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
 
 #ifdef __cplusplus
 }

@@ -67,22 +67,22 @@ typedef struct {
 	void *d_wrapped; /* This can be any function pointer */
 } PyWrapperDescrObject;
 
-extern DL_IMPORT(PyTypeObject) PyWrapperDescr_Type;
+PyAPI_DATA(PyTypeObject) PyWrapperDescr_Type;
 
-extern DL_IMPORT(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
-extern DL_IMPORT(PyObject *) PyDescr_NewMember(PyTypeObject *,
+PyAPI_FUNC(PyObject *) PyDescr_NewMethod(PyTypeObject *, PyMethodDef *);
+PyAPI_FUNC(PyObject *) PyDescr_NewMember(PyTypeObject *,
 					       struct PyMemberDef *);
-extern DL_IMPORT(PyObject *) PyDescr_NewGetSet(PyTypeObject *,
+PyAPI_FUNC(PyObject *) PyDescr_NewGetSet(PyTypeObject *,
 					       struct PyGetSetDef *);
-extern DL_IMPORT(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
+PyAPI_FUNC(PyObject *) PyDescr_NewWrapper(PyTypeObject *,
 						struct wrapperbase *, void *);
-extern DL_IMPORT(int) PyDescr_IsData(PyObject *);
+PyAPI_FUNC(int) PyDescr_IsData(PyObject *);
 
-extern DL_IMPORT(PyObject *) PyDictProxy_New(PyObject *);
-extern DL_IMPORT(PyObject *) PyWrapper_New(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyDictProxy_New(PyObject *);
+PyAPI_FUNC(PyObject *) PyWrapper_New(PyObject *, PyObject *);
 
 
-extern DL_IMPORT(PyTypeObject) PyProperty_Type;
+PyAPI_DATA(PyTypeObject) PyProperty_Type;
 #ifdef __cplusplus
 }
 #endif

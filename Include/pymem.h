@@ -47,9 +47,9 @@ extern "C" {
    performed on failure (no exception is set, no warning is printed, etc).
 */
 
-extern DL_IMPORT(void *) PyMem_Malloc(size_t);
-extern DL_IMPORT(void *) PyMem_Realloc(void *, size_t);
-extern DL_IMPORT(void) PyMem_Free(void *);
+PyAPI_FUNC(void *) PyMem_Malloc(size_t);
+PyAPI_FUNC(void *) PyMem_Realloc(void *, size_t);
+PyAPI_FUNC(void) PyMem_Free(void *);
 
 /* Starting from Python 1.6, the wrappers Py_{Malloc,Realloc,Free} are
    no longer supported. They used to call PyErr_NoMemory() on failure. */

@@ -19,17 +19,17 @@ typedef struct {
     PyObject *func_weakreflist;
 } PyFunctionObject;
 
-extern DL_IMPORT(PyTypeObject) PyFunction_Type;
+PyAPI_DATA(PyTypeObject) PyFunction_Type;
 
 #define PyFunction_Check(op) ((op)->ob_type == &PyFunction_Type)
 
-extern DL_IMPORT(PyObject *) PyFunction_New(PyObject *, PyObject *);
-extern DL_IMPORT(PyObject *) PyFunction_GetCode(PyObject *);
-extern DL_IMPORT(PyObject *) PyFunction_GetGlobals(PyObject *);
-extern DL_IMPORT(PyObject *) PyFunction_GetDefaults(PyObject *);
-extern DL_IMPORT(int) PyFunction_SetDefaults(PyObject *, PyObject *);
-extern DL_IMPORT(PyObject *) PyFunction_GetClosure(PyObject *);
-extern DL_IMPORT(int) PyFunction_SetClosure(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_New(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_GetCode(PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_GetGlobals(PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_GetDefaults(PyObject *);
+PyAPI_FUNC(int) PyFunction_SetDefaults(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyFunction_GetClosure(PyObject *);
+PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
@@ -43,11 +43,11 @@ extern DL_IMPORT(int) PyFunction_SetClosure(PyObject *, PyObject *);
 	(((PyFunctionObject *)func) -> func_closure)
 
 /* The classmethod and staticmethod types lives here, too */
-extern DL_IMPORT(PyTypeObject) PyClassMethod_Type;
-extern DL_IMPORT(PyTypeObject) PyStaticMethod_Type;
+PyAPI_DATA(PyTypeObject) PyClassMethod_Type;
+PyAPI_DATA(PyTypeObject) PyStaticMethod_Type;
 
-extern DL_IMPORT(PyObject *) PyClassMethod_New(PyObject *);
-extern DL_IMPORT(PyObject *) PyStaticMethod_New(PyObject *);
+PyAPI_FUNC(PyObject *) PyClassMethod_New(PyObject *);
+PyAPI_FUNC(PyObject *) PyStaticMethod_New(PyObject *);
 
 #ifdef __cplusplus
 }

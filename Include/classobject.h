@@ -35,21 +35,21 @@ typedef struct {
     PyObject *im_weakreflist; /* List of weak references */
 } PyMethodObject;
 
-extern DL_IMPORT(PyTypeObject) PyClass_Type, PyInstance_Type, PyMethod_Type;
+PyAPI_DATA(PyTypeObject) PyClass_Type, PyInstance_Type, PyMethod_Type;
 
 #define PyClass_Check(op) ((op)->ob_type == &PyClass_Type)
 #define PyInstance_Check(op) ((op)->ob_type == &PyInstance_Type)
 #define PyMethod_Check(op) ((op)->ob_type == &PyMethod_Type)
 
-extern DL_IMPORT(PyObject *) PyClass_New(PyObject *, PyObject *, PyObject *);
-extern DL_IMPORT(PyObject *) PyInstance_New(PyObject *, PyObject *,
+PyAPI_FUNC(PyObject *) PyClass_New(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyInstance_New(PyObject *, PyObject *,
                                             PyObject *);
-extern DL_IMPORT(PyObject *) PyInstance_NewRaw(PyObject *, PyObject *);
-extern DL_IMPORT(PyObject *) PyMethod_New(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyInstance_NewRaw(PyObject *, PyObject *);
+PyAPI_FUNC(PyObject *) PyMethod_New(PyObject *, PyObject *, PyObject *);
 
-extern DL_IMPORT(PyObject *) PyMethod_Function(PyObject *);
-extern DL_IMPORT(PyObject *) PyMethod_Self(PyObject *);
-extern DL_IMPORT(PyObject *) PyMethod_Class(PyObject *);
+PyAPI_FUNC(PyObject *) PyMethod_Function(PyObject *);
+PyAPI_FUNC(PyObject *) PyMethod_Self(PyObject *);
+PyAPI_FUNC(PyObject *) PyMethod_Class(PyObject *);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
@@ -60,7 +60,7 @@ extern DL_IMPORT(PyObject *) PyMethod_Class(PyObject *);
 #define PyMethod_GET_CLASS(meth) \
 	(((PyMethodObject *)meth) -> im_class)
 
-extern DL_IMPORT(int) PyClass_IsSubclass(PyObject *, PyObject *);
+PyAPI_FUNC(int) PyClass_IsSubclass(PyObject *, PyObject *);
 
 
 #ifdef __cplusplus

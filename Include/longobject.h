@@ -9,16 +9,16 @@ extern "C" {
 
 typedef struct _longobject PyLongObject; /* Revealed in longintrepr.h */
 
-extern DL_IMPORT(PyTypeObject) PyLong_Type;
+PyAPI_DATA(PyTypeObject) PyLong_Type;
 
 #define PyLong_Check(op) PyObject_TypeCheck(op, &PyLong_Type)
 #define PyLong_CheckExact(op) ((op)->ob_type == &PyLong_Type)
 
-extern DL_IMPORT(PyObject *) PyLong_FromLong(long);
-extern DL_IMPORT(PyObject *) PyLong_FromUnsignedLong(unsigned long);
-extern DL_IMPORT(PyObject *) PyLong_FromDouble(double);
-extern DL_IMPORT(long) PyLong_AsLong(PyObject *);
-extern DL_IMPORT(unsigned long) PyLong_AsUnsignedLong(PyObject *);
+PyAPI_FUNC(PyObject *) PyLong_FromLong(long);
+PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLong(unsigned long);
+PyAPI_FUNC(PyObject *) PyLong_FromDouble(double);
+PyAPI_FUNC(long) PyLong_AsLong(PyObject *);
+PyAPI_FUNC(unsigned long) PyLong_AsUnsignedLong(PyObject *);
 
 /* _PyLong_AsScaledDouble returns a double x and an exponent e such that
    the true value is approximately equal to x * 2**(SHIFT*e).  e is >= 0.
@@ -26,22 +26,22 @@ extern DL_IMPORT(unsigned long) PyLong_AsUnsignedLong(PyObject *);
    zeroes).  Overflow is impossible.  Note that the exponent returned must
    be multiplied by SHIFT!  There may not be enough room in an int to store
    e*SHIFT directly. */
-extern DL_IMPORT(double) _PyLong_AsScaledDouble(PyObject *vv, int *e);
+PyAPI_FUNC(double) _PyLong_AsScaledDouble(PyObject *vv, int *e);
 
-extern DL_IMPORT(double) PyLong_AsDouble(PyObject *);
-extern DL_IMPORT(PyObject *) PyLong_FromVoidPtr(void *);
-extern DL_IMPORT(void *) PyLong_AsVoidPtr(PyObject *);
+PyAPI_FUNC(double) PyLong_AsDouble(PyObject *);
+PyAPI_FUNC(PyObject *) PyLong_FromVoidPtr(void *);
+PyAPI_FUNC(void *) PyLong_AsVoidPtr(PyObject *);
 
 #ifdef HAVE_LONG_LONG
-extern DL_IMPORT(PyObject *) PyLong_FromLongLong(LONG_LONG);
-extern DL_IMPORT(PyObject *) PyLong_FromUnsignedLongLong(unsigned LONG_LONG);
-extern DL_IMPORT(LONG_LONG) PyLong_AsLongLong(PyObject *);
-extern DL_IMPORT(unsigned LONG_LONG) PyLong_AsUnsignedLongLong(PyObject *);
+PyAPI_FUNC(PyObject *) PyLong_FromLongLong(LONG_LONG);
+PyAPI_FUNC(PyObject *) PyLong_FromUnsignedLongLong(unsigned LONG_LONG);
+PyAPI_FUNC(LONG_LONG) PyLong_AsLongLong(PyObject *);
+PyAPI_FUNC(unsigned LONG_LONG) PyLong_AsUnsignedLongLong(PyObject *);
 #endif /* HAVE_LONG_LONG */
 
-DL_IMPORT(PyObject *) PyLong_FromString(char *, char **, int);
+PyAPI_FUNC(PyObject *) PyLong_FromString(char *, char **, int);
 #ifdef Py_USING_UNICODE
-DL_IMPORT(PyObject *) PyLong_FromUnicode(Py_UNICODE*, int, int);
+PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, int, int);
 #endif
 
 /* _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
@@ -57,7 +57,7 @@ DL_IMPORT(PyObject *) PyLong_FromUnicode(Py_UNICODE*, int, int);
    + Return NULL with the appropriate exception set if there's not
      enough memory to create the Python long.
 */
-extern DL_IMPORT(PyObject *) _PyLong_FromByteArray(
+PyAPI_FUNC(PyObject *) _PyLong_FromByteArray(
 	const unsigned char* bytes, size_t n,
 	int little_endian, int is_signed);
 
@@ -80,7 +80,7 @@ extern DL_IMPORT(PyObject *) _PyLong_FromByteArray(
      being large enough to hold a sign bit.  OverflowError is set in this
      case, but bytes holds the least-signficant n bytes of the true value.
 */
-extern DL_IMPORT(int) _PyLong_AsByteArray(PyLongObject* v,
+PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
 	unsigned char* bytes, size_t n,
 	int little_endian, int is_signed);
 

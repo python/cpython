@@ -23,7 +23,7 @@ Copyright (c) Corporation for National Research Initiatives.
 
    The search_function's refcount is incremented by this function. */
 
-extern DL_IMPORT(int) PyCodec_Register(
+PyAPI_FUNC(int) PyCodec_Register(
        PyObject *search_function
        );
 
@@ -45,7 +45,7 @@ extern DL_IMPORT(int) PyCodec_Register(
 
  */
 
-extern DL_IMPORT(PyObject *) _PyCodec_Lookup(
+PyAPI_FUNC(PyObject *) _PyCodec_Lookup(
        const char *encoding
        );
 
@@ -59,7 +59,7 @@ extern DL_IMPORT(PyObject *) _PyCodec_Lookup(
 
  */
 
-extern DL_IMPORT(PyObject *) PyCodec_Encode(
+PyAPI_FUNC(PyObject *) PyCodec_Encode(
        PyObject *object,
        const char *encoding,
        const char *errors
@@ -75,7 +75,7 @@ extern DL_IMPORT(PyObject *) PyCodec_Encode(
 
  */
 
-extern DL_IMPORT(PyObject *) PyCodec_Decode(
+PyAPI_FUNC(PyObject *) PyCodec_Decode(
        PyObject *object,
        const char *encoding,
        const char *errors
@@ -91,19 +91,19 @@ extern DL_IMPORT(PyObject *) PyCodec_Decode(
 
 /* Get an encoder function for the given encoding. */
 
-extern DL_IMPORT(PyObject *) PyCodec_Encoder(
+PyAPI_FUNC(PyObject *) PyCodec_Encoder(
        const char *encoding
        );
 
 /* Get a decoder function for the given encoding. */
 
-extern DL_IMPORT(PyObject *) PyCodec_Decoder(
+PyAPI_FUNC(PyObject *) PyCodec_Decoder(
        const char *encoding
        );
 
 /* Get a StreamReader factory function for the given encoding. */
 
-extern DL_IMPORT(PyObject *) PyCodec_StreamReader(
+PyAPI_FUNC(PyObject *) PyCodec_StreamReader(
        const char *encoding,
        PyObject *stream,
        const char *errors
@@ -111,7 +111,7 @@ extern DL_IMPORT(PyObject *) PyCodec_StreamReader(
 
 /* Get a StreamWriter factory function for the given encoding. */
 
-extern DL_IMPORT(PyObject *) PyCodec_StreamWriter(
+PyAPI_FUNC(PyObject *) PyCodec_StreamWriter(
        const char *encoding,
        PyObject *stream,
        const char *errors
