@@ -10,13 +10,10 @@ __version__ = "0.3"
 
 
 import os
-import sys
-import time
-import socket
 import string
 import posixpath
-import SocketServer
 import BaseHTTPServer
+import urllib
 
 
 class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
@@ -81,7 +78,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         probably be diagnosed.)
 
         """
-        path = posixpath.normpath(path)
+        path = posixpath.normpath(urllib.unquote(path))
         words = string.splitfields(path, '/')
         words = filter(None, words)
         path = os.getcwd()

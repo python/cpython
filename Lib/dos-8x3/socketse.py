@@ -207,7 +207,10 @@ class TCPServer:
 
     def handle_request(self):
         """Handle one request, possibly blocking."""
-        request, client_address = self.get_request()
+        try:
+            request, client_address = self.get_request()
+        except socket.error:
+            return
         if self.verify_request(request, client_address):
             try:
                 self.process_request(request, client_address)
@@ -278,11 +281,21 @@ class ForkingMixIn:
     """Mix-in class to handle each request in a new process."""
 
     active_children = None
+    max_children = 40
 
     def collect_children(self):
         """Internal routine to wait for died children."""
         while self.active_children:
-            pid, status = os.waitpid(0, os.WNOHANG)
+            if len(self.active_children) < self.max_children:
+                options = os.WNOHANG
+            else:
+                # If the maximum number of children are already
+                # running, block while waiting for a child to exit
+                options = 0
+            try:
+                pid, status = os.waitpid(0, options)
+            except os.error:
+                pid = None
             if not pid: break
             self.active_children.remove(pid)
 
@@ -300,6 +313,7 @@ class ForkingMixIn:
             # Child process.
             # This must never return, hence os._exit()!
             try:
+                self.socket.close()
                 self.finish_request(request, client_address)
                 os._exit(0)
             except:
@@ -311,14 +325,14 @@ class ForkingMixIn:
 
 
 class ThreadingMixIn:
-
     """Mix-in class to handle each request in a new thread."""
 
     def process_request(self, request, client_address):
         """Start a new thread to process the request."""
-        import thread
-        thread.start_new_thread(self.finish_request,
-                                (request, client_address))
+        import threading
+        t = threading.Thread(target = self.finish_request,
+                             args = (request, client_address))
+        t.start()
 
 
 class ForkingUDPServer(ForkingMixIn, UDPServer): pass

@@ -33,6 +33,8 @@ Exception(*)
       |    |
       |    +-- IOError
       |    +-- OSError(*)
+      |         |
+      |         +-- WindowsError(*)
       |
       +-- EOFError
       +-- RuntimeError
@@ -40,6 +42,9 @@ Exception(*)
       |    +-- NotImplementedError(*)
       |
       +-- NameError
+      |    |
+      |    +-- UnboundLocalError(*)
+      |
       +-- AttributeError
       +-- SyntaxError
       +-- TypeError
@@ -56,6 +61,9 @@ Exception(*)
       |    +-- FloatingPointError
       |
       +-- ValueError
+      |    |
+      |    +-- UnicodeError(*)
+      |
       +-- SystemError
       +-- MemoryError
 """
@@ -136,6 +144,10 @@ class OSError(EnvironmentError):
     """OS system call failed."""
     pass
 
+class WindowsError(OSError):
+    """MS-Windows OS system call failed."""
+    pass
+
 class RuntimeError(StandardError):
     """Unspecified run-time error."""
     pass
@@ -208,7 +220,15 @@ class AttributeError(StandardError):
     pass
 
 class NameError(StandardError):
-    """Name not found locally or globally."""
+    """Name not found globally."""
+    pass
+
+class UnboundLocalError(NameError):
+    """Local name referenced but not bound to a value."""
+    pass
+
+class UnicodeError(ValueError):
+    """Unicode related error."""
     pass
 
 class MemoryError(StandardError):

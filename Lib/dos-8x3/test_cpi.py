@@ -79,18 +79,29 @@ def dotest():
     f.close()
     try:
         cPickle.dump(123, f)
-    except IOError:
+    except ValueError:
         pass
     else:
-        print "dump to closed file should raise IOError"
+        print "dump to closed file should raise ValueError"
     f = open(fn, "r")
     f.close()
     try:
         cPickle.load(f)
-    except IOError:
+    except ValueError:
         pass
     else:
-        print "load from closed file should raise IOError"
+        print "load from closed file should raise ValueError"
     os.remove(fn)
+
+    # Test specific bad cases
+    for i in range(10):
+        try:
+            x = cPickle.loads('garyp')
+        except cPickle.BadPickleGet, y:
+            del y
+        else:
+            print "unexpected success!"
+            break
+    
 
 dotest()

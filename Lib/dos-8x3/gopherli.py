@@ -1,4 +1,4 @@
-# Gopher protocol client interface
+"""Gopher protocol client interface."""
 
 import string
 
@@ -29,180 +29,180 @@ A_IMAGE      = 'I'
 A_WHOIS      = 'w'
 A_QUERY      = 'q'
 A_GIF        = 'g'
-A_HTML       = 'h'			# HTML file
-A_WWW        = 'w'			# WWW address
+A_HTML       = 'h'          # HTML file
+A_WWW        = 'w'          # WWW address
 A_PLUS_IMAGE = ':'
 A_PLUS_MOVIE = ';'
 A_PLUS_SOUND = '<'
 
 
-# Function mapping all file types to strings; unknown types become TYPE='x'
 _names = dir()
 _type_to_name_map = {}
 def type_to_name(gtype):
-	global _type_to_name_map
-	if _type_to_name_map=={}:
-		for name in _names:
-			if name[:2] == 'A_':
-				_type_to_name_map[eval(name)] = name[2:]
-	if _type_to_name_map.has_key(gtype):
-		return _type_to_name_map[gtype]
-	return 'TYPE=' + `gtype`
+    """Map all file types to strings; unknown types become TYPE='x'."""
+    global _type_to_name_map
+    if _type_to_name_map=={}:
+        for name in _names:
+            if name[:2] == 'A_':
+                _type_to_name_map[eval(name)] = name[2:]
+    if _type_to_name_map.has_key(gtype):
+        return _type_to_name_map[gtype]
+    return 'TYPE=' + `gtype`
 
 # Names for characters and strings
 CRLF = '\r\n'
 TAB = '\t'
 
-# Send a selector to a given host and port, return a file with the reply
 def send_selector(selector, host, port = 0):
-	import socket
-	import string
-	if not port:
-		i = string.find(host, ':')
-		if i >= 0:
-			host, port = host[:i], string.atoi(host[i+1:])
-	if not port:
-		port = DEF_PORT
-	elif type(port) == type(''):
-		port = string.atoi(port)
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect(host, port)
-	s.send(selector + CRLF)
-	s.shutdown(1)
-	return s.makefile('rb')
+    """Send a selector to a given host and port, return a file with the reply."""
+    import socket
+    import string
+    if not port:
+        i = string.find(host, ':')
+        if i >= 0:
+            host, port = host[:i], string.atoi(host[i+1:])
+    if not port:
+        port = DEF_PORT
+    elif type(port) == type(''):
+        port = string.atoi(port)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((host, port))
+    s.send(selector + CRLF)
+    s.shutdown(1)
+    return s.makefile('rb')
 
-# Send a selector and a query string
 def send_query(selector, query, host, port = 0):
-	return send_selector(selector + '\t' + query, host, port)
+    """Send a selector and a query string."""
+    return send_selector(selector + '\t' + query, host, port)
 
-# Takes a path as returned by urlparse and returns the appropriate selector
 def path_to_selector(path):
-	if path=="/":
-		return "/"
-	else:
-		return path[2:] # Cuts initial slash and data type identifier
+    """Takes a path as returned by urlparse and returns the appropriate selector."""
+    if path=="/":
+        return "/"
+    else:
+        return path[2:] # Cuts initial slash and data type identifier
 
-# Takes a path as returned by urlparse and maps it to a string
-# See section 3.4 of RFC 1738 for details
 def path_to_datatype_name(path):
-	if path=="/":
-		# No way to tell, although "INDEX" is likely
-		return "TYPE='unknown'"
-	else:
-		return type_to_name(path[1])
+    """Takes a path as returned by urlparse and maps it to a string.
+    See section 3.4 of RFC 1738 for details."""
+    if path=="/":
+        # No way to tell, although "INDEX" is likely
+        return "TYPE='unknown'"
+    else:
+        return type_to_name(path[1])
 
 # The following functions interpret the data returned by the gopher
 # server according to the expected type, e.g. textfile or directory
 
-# Get a directory in the form of a list of entries
 def get_directory(f):
-	import string
-	list = []
-	while 1:
-		line = f.readline()
-		if not line:
-			print '(Unexpected EOF from server)'
-			break
-		if line[-2:] == CRLF:
-			line = line[:-2]
-		elif line[-1:] in CRLF:
-			line = line[:-1]
-		if line == '.':
-			break
-		if not line:
-			print '(Empty line from server)'
-			continue
-		gtype = line[0]
-		parts = string.splitfields(line[1:], TAB)
-		if len(parts) < 4:
-			print '(Bad line from server:', `line`, ')'
-			continue
-		if len(parts) > 4:
-			if parts[4:] != ['+']:
-				print '(Extra info from server:',
-				print parts[4:], ')'
-		else:
-			parts.append('')
-		parts.insert(0, gtype)
-		list.append(parts)
-	return list
+    """Get a directory in the form of a list of entries."""
+    import string
+    list = []
+    while 1:
+        line = f.readline()
+        if not line:
+            print '(Unexpected EOF from server)'
+            break
+        if line[-2:] == CRLF:
+            line = line[:-2]
+        elif line[-1:] in CRLF:
+            line = line[:-1]
+        if line == '.':
+            break
+        if not line:
+            print '(Empty line from server)'
+            continue
+        gtype = line[0]
+        parts = string.splitfields(line[1:], TAB)
+        if len(parts) < 4:
+            print '(Bad line from server:', `line`, ')'
+            continue
+        if len(parts) > 4:
+            if parts[4:] != ['+']:
+                print '(Extra info from server:',
+                print parts[4:], ')'
+        else:
+            parts.append('')
+        parts.insert(0, gtype)
+        list.append(parts)
+    return list
 
-# Get a text file as a list of lines, with trailing CRLF stripped
 def get_textfile(f):
-	list = []
-	get_alt_textfile(f, list.append)
-	return list
+    """Get a text file as a list of lines, with trailing CRLF stripped."""
+    list = []
+    get_alt_textfile(f, list.append)
+    return list
 
-# Get a text file and pass each line to a function, with trailing CRLF stripped
 def get_alt_textfile(f, func):
-	while 1:
-		line = f.readline()
-		if not line:
-			print '(Unexpected EOF from server)'
-			break
-		if line[-2:] == CRLF:
-			line = line[:-2]
-		elif line[-1:] in CRLF:
-			line = line[:-1]
-		if line == '.':
-			break
-		if line[:2] == '..':
-			line = line[1:]
-		func(line)
+    """Get a text file and pass each line to a function, with trailing CRLF stripped."""
+    while 1:
+        line = f.readline()
+        if not line:
+            print '(Unexpected EOF from server)'
+            break
+        if line[-2:] == CRLF:
+            line = line[:-2]
+        elif line[-1:] in CRLF:
+            line = line[:-1]
+        if line == '.':
+            break
+        if line[:2] == '..':
+            line = line[1:]
+        func(line)
 
-# Get a binary file as one solid data block
 def get_binary(f):
-	data = f.read()
-	return data
+    """Get a binary file as one solid data block."""
+    data = f.read()
+    return data
 
-# Get a binary file and pass each block to a function
 def get_alt_binary(f, func, blocksize):
-	while 1:
-		data = f.read(blocksize)
-		if not data:
-			break
-		func(data)
+    """Get a binary file and pass each block to a function."""
+    while 1:
+        data = f.read(blocksize)
+        if not data:
+            break
+        func(data)
 
-# Trivial test program
 def test():
-	import sys
-	import getopt
-	opts, args = getopt.getopt(sys.argv[1:], '')
-	selector = DEF_SELECTOR
-	type = selector[0]
-	host = DEF_HOST
-	port = DEF_PORT
-	if args:
-		host = args[0]
-		args = args[1:]
-	if args:
-		type = args[0]
-		args = args[1:]
-		if len(type) > 1:
-			type, selector = type[0], type
-		else:
-			selector = ''
-			if args:
-				selector = args[0]
-				args = args[1:]
-		query = ''
-		if args:
-			query = args[0]
-			args = args[1:]
-	if type == A_INDEX:
-		f = send_query(selector, query, host)
-	else:
-		f = send_selector(selector, host)
-	if type == A_TEXT:
-		list = get_textfile(f)
-		for item in list: print item
-	elif type in (A_MENU, A_INDEX):
-		list = get_directory(f)
-		for item in list: print item
-	else:
-		data = get_binary(f)
-		print 'binary data:', len(data), 'bytes:', `data[:100]`[:40]
+    """Trivial test program."""
+    import sys
+    import getopt
+    opts, args = getopt.getopt(sys.argv[1:], '')
+    selector = DEF_SELECTOR
+    type = selector[0]
+    host = DEF_HOST
+    port = DEF_PORT
+    if args:
+        host = args[0]
+        args = args[1:]
+    if args:
+        type = args[0]
+        args = args[1:]
+        if len(type) > 1:
+            type, selector = type[0], type
+        else:
+            selector = ''
+            if args:
+                selector = args[0]
+                args = args[1:]
+        query = ''
+        if args:
+            query = args[0]
+            args = args[1:]
+    if type == A_INDEX:
+        f = send_query(selector, query, host)
+    else:
+        f = send_selector(selector, host)
+    if type == A_TEXT:
+        list = get_textfile(f)
+        for item in list: print item
+    elif type in (A_MENU, A_INDEX):
+        list = get_directory(f)
+        for item in list: print item
+    else:
+        data = get_binary(f)
+        print 'binary data:', len(data), 'bytes:', `data[:100]`[:40]
 
 # Run the test when run as script
 if __name__ == '__main__':
-	test()
+    test()

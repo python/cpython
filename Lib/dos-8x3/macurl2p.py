@@ -1,5 +1,6 @@
-"""Mac specific module for conversion between pathnames and URLs.
-Do not import directly, use urllib instead."""
+"""Macintosh-specific module for conversion between pathnames and URLs.
+
+Do not import directly; use urllib instead."""
 
 import string
 import urllib
@@ -12,6 +13,11 @@ def url2pathname(pathname):
     #
     tp = urllib.splittype(pathname)[0]
     if tp and tp <> 'file':
+        raise RuntimeError, 'Cannot convert non-local URL to pathname'
+    # Turn starting /// into /, an empty hostname means current host
+    if pathname[:3] == '///':
+    	pathname = pathname[2:]
+    elif pathname[:2] == '//':
         raise RuntimeError, 'Cannot convert non-local URL to pathname'
     components = string.split(pathname, '/')
     # Remove . and embedded ..

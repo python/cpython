@@ -33,11 +33,24 @@ ConfigParser -- responsible for for parsing a list of
     sections()
         return all the configuration section names, sans DEFAULT
 
+    has_section(section)
+        return whether the given section exists
+
     options(section)
         return list of configuration options for the named section
 
+    has_option(section, option)
+        return whether the given section has the given option
+
     read(filenames)
-        read and parse the list of named configuration files
+        read and parse the list of named configuration files, given by
+        name.  A single filename is also allowed.  Non-existing files
+        are ignored.
+
+    readfp(fp, filename=None)
+        read and parse one configuration file, given as a file object.
+        The filename defaults to fp.name; it is only used in error
+        messages (if fp has no `name' attribute, the string `<???>' is used).
 
     get(section, option, raw=0, vars=None)
         return a string value for the named option.  All % interpolations are
@@ -158,6 +171,7 @@ class ConfigParser:
         return self.__sections.has_key(section)
 
     def options(self, section):
+        """Return a list of option names for the given section name."""
         try:
             opts = self.__sections[section].copy()
         except KeyError:
@@ -165,16 +179,49 @@ class ConfigParser:
         opts.update(self.__defaults)
         return opts.keys()
 
+    def has_option(self, section, option):
+        """Return whether the given section has the given option."""
+        try:
+            opts = self.__sections[section]
+        except KeyError:
+            raise NoSectionError(section)
+        return opts.has_key(option)
+
     def read(self, filenames):
-        """Read and parse a list of filenames."""
+        """Read and parse a filename or a list of filenames.
+        
+        Files that cannot be opened are silently ignored; this is
+        designed so that you can specify a list of potential
+        configuration file locations (e.g. current directory, user's
+        home directory, systemwide directory), and all existing
+        configuration files in the list will be read.  A single
+        filename may also be given.
+        """
         if type(filenames) is type(''):
             filenames = [filenames]
-        for file in filenames:
+        for filename in filenames:
             try:
-                fp = open(file, 'r')
-                self.__read(fp)
+                fp = open(filename)
             except IOError:
-                pass
+                continue
+            self.__read(fp, filename)
+            fp.close()
+
+    def readfp(self, fp, filename=None):
+        """Like read() but the argument must be a file-like object.
+
+        The `fp' argument must have a `readline' method.  Optional
+        second argument is the `filename', which if not given, is
+        taken from fp.name.  If fp has no `name' attribute, `<???>' is
+        used.
+
+        """
+        if filename is None:
+            try:
+                filename = fp.name
+            except AttributeError:
+                filename = '<???>'
+        self.__read(fp, filename)
 
     def get(self, section, option, raw=0, vars=None):
         """Get an option value for a given section.
@@ -199,7 +246,7 @@ class ConfigParser:
         # Update with the entry specific variables
         if vars:
             d.update(vars)
-        option = string.lower(option)
+        option = self.optionxform(option)
         try:
             rawval = d[option]
         except KeyError:
@@ -212,7 +259,7 @@ class ConfigParser:
         depth = 0                       
         while depth < 10:               # Loop through this until it's done
             depth = depth + 1
-            if not string.find(value, "%("):
+            if string.find(value, "%(") >= 0:
                 try:
                     value = value % d
                 except KeyError, key:
@@ -236,25 +283,28 @@ class ConfigParser:
             raise ValueError, 'Not a boolean: %s' % v
         return val
 
+    def optionxform(self, optionstr):
+        return string.lower(optionstr)
+
     #
     # Regular expressions for parsing section headers and options.  Note a
     # slight semantic change from the previous version, because of the use
     # of \w, _ is allowed in section header names.
-    __SECTCRE = re.compile(
+    SECTCRE = re.compile(
         r'\['                                 # [
-        r'(?P<header>[-\w]+)'                 # `-', `_' or any alphanum
+        r'(?P<header>[-\w_.*,(){}]+)'         # a lot of stuff found by IvL
         r'\]'                                 # ]
         )
-    __OPTCRE = re.compile(
-        r'(?P<option>[-.\w]+)'                # - . _ alphanum
-        r'[ \t]*[:=][ \t]*'                   # any number of space/tab,
+    OPTCRE = re.compile(
+        r'(?P<option>[-\w_.*,(){}]+)'         # a lot of stuff found by IvL
+        r'[ \t]*(?P<vi>[:=])[ \t]*'           # any number of space/tab,
                                               # followed by separator
                                               # (either : or =), followed
                                               # by any # space/tab
         r'(?P<value>.*)$'                     # everything up to eol
         )
 
-    def __read(self, fp):
+    def __read(self, fp, fpname):
         """Parse a sectioned setup file.
 
         The sections in setup file contains a title line at the top,
@@ -277,7 +327,7 @@ class ConfigParser:
             if string.strip(line) == '' or line[0] in '#;':
                 continue
             if string.lower(string.split(line)[0]) == 'rem' \
-               and line[0] == "r":      # no leading whitespace
+               and line[0] in "rR":      # no leading whitespace
                 continue
             # continuation line?
             if line[0] in ' \t' and cursect is not None and optname:
@@ -287,7 +337,7 @@ class ConfigParser:
             # a section header or option header?
             else:
                 # is it a section header?
-                mo = self.__SECTCRE.match(line)
+                mo = self.SECTCRE.match(line)
                 if mo:
                     sectname = mo.group('header')
                     if self.__sections.has_key(sectname):
@@ -301,13 +351,19 @@ class ConfigParser:
                     optname = None
                 # no section header in the file?
                 elif cursect is None:
-                    raise MissingSectionHeaderError(fp.name, lineno, `line`)
+                    raise MissingSectionHeaderError(fpname, lineno, `line`)
                 # an option line?
                 else:
-                    mo = self.__OPTCRE.match(line)
+                    mo = self.OPTCRE.match(line)
                     if mo:
-                        optname, optval = mo.group('option', 'value')
+                        optname, vi, optval = mo.group('option', 'vi', 'value')
                         optname = string.lower(optname)
+                        if vi in ('=', ':') and ';' in optval:
+                            # ';' is a comment delimiter only if it follows
+                            # a spacing character
+                            pos = string.find(optval, ';')
+                            if pos and optval[pos-1] in string.whitespace:
+                                optval = optval[:pos]
                         optval = string.strip(optval)
                         # allow empty values
                         if optval == '""':
@@ -319,7 +375,7 @@ class ConfigParser:
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         if not e:
-                            e = ParsingError(fp.name)
+                            e = ParsingError(fpname)
                         e.append(lineno, `line`)
         # if any parsing errors occurred, raise an exception
         if e:

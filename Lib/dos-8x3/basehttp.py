@@ -68,7 +68,6 @@ import sys
 import time
 import socket # For gethostbyaddr()
 import string
-import rfc822
 import mimetools
 import SocketServer
 
@@ -94,12 +93,16 @@ class HTTPServer(SocketServer.TCPServer):
         host, port = self.socket.getsockname()
         if not host or host == '0.0.0.0':
             host = socket.gethostname()
-        hostname, hostnames, hostaddrs = socket.gethostbyaddr(host)
-        if '.' not in hostname:
-            for host in hostnames:
-                if '.' in host:
-                    hostname = host
-                    break
+        try:
+            hostname, hostnames, hostaddrs = socket.gethostbyaddr(host)
+        except socket.error:
+            hostname = host
+        else:
+            if '.' not in hostname:
+                for host in hostnames:
+                    if '.' in host:
+                        hostname = host
+                        break
         self.server_name = hostname
         self.server_port = port
 
@@ -169,7 +172,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
 
     This server parses the request and the headers, and then calls a
     function specific to the request type (<command>).  Specifically,
-    a request SPAM will be handled by a method handle_SPAM().  If no
+    a request SPAM will be handled by a method do_SPAM().  If no
     such method exists the server sends an error response to the
     client.  If it exists, it is called with no arguments:
 
@@ -216,16 +219,17 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     # where each string is of the form name[/version].
     server_version = "BaseHTTP/" + __version__
 
-    def handle(self):
-        """Handle a single HTTP request.
+    def parse_request(self):
+        """Parse a request (internal).
 
-        You normally don't need to override this method; see the class
-        __doc__ string for information on how to handle specific HTTP
-        commands such as GET and POST.
+        The request should be stored in self.raw_request; the results
+        are in self.command, self.path, self.request_version and
+        self.headers.
+
+        Return value is 1 for success, 0 for failure; on failure, an
+        error is sent back.
 
         """
-
-        self.raw_requestline = self.rfile.readline()
         self.request_version = version = "HTTP/0.9" # Default
         requestline = self.raw_requestline
         if requestline[-2:] == '\r\n':
@@ -238,21 +242,35 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
             [command, path, version] = words
             if version[:5] != 'HTTP/':
                 self.send_error(400, "Bad request version (%s)" % `version`)
-                return
+                return 0
         elif len(words) == 2:
             [command, path] = words
             if command != 'GET':
                 self.send_error(400,
                                 "Bad HTTP/0.9 request type (%s)" % `command`)
-                return
+                return 0
         else:
             self.send_error(400, "Bad request syntax (%s)" % `requestline`)
-            return
+            return 0
         self.command, self.path, self.request_version = command, path, version
         self.headers = self.MessageClass(self.rfile, 0)
-        mname = 'do_' + command
+        return 1
+
+    def handle(self):
+        """Handle a single HTTP request.
+
+        You normally don't need to override this method; see the class
+        __doc__ string for information on how to handle specific HTTP
+        commands such as GET and POST.
+
+        """
+
+        self.raw_requestline = self.rfile.readline()
+        if not self.parse_request(): # An error code has been sent, just exit
+            return
+        mname = 'do_' + self.command
         if not hasattr(self, mname):
-            self.send_error(501, "Unsupported method (%s)" % `command`)
+            self.send_error(501, "Unsupported method (%s)" % `self.command`)
             return
         method = getattr(self, mname)
         method()

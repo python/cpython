@@ -1,4 +1,4 @@
-# Various tools used by MIME-reading or MIME-writing programs.
+"""Various tools used by MIME-reading or MIME-writing programs."""
 
 
 import os
@@ -7,10 +7,9 @@ import string
 import tempfile
 
 
-# A derived class of rfc822.Message that knows about MIME headers and
-# contains some hooks for decoding encoded and multipart messages.
-
 class Message(rfc822.Message):
+	"""A derived class of rfc822.Message that knows about MIME headers and
+	contains some hooks for decoding encoded and multipart messages."""
 
 	def __init__(self, fp, seekable = 1):
 		rfc822.Message.__init__(self, fp, seekable)
@@ -96,17 +95,17 @@ class Message(rfc822.Message):
 # -----------------
 
 
-# Return a random string usable as a multipart boundary.
-# The method used is so that it is *very* unlikely that the same
-# string of characters will every occur again in the Universe,
-# so the caller needn't check the data it is packing for the
-# occurrence of the boundary.
-#
-# The boundary contains dots so you have to quote it in the header.
-
 _prefix = None
 
 def choose_boundary():
+	"""Return a random string usable as a multipart boundary.
+	The method used is so that it is *very* unlikely that the same
+	string of characters will every occur again in the Universe,
+	so the caller needn't check the data it is packing for the
+	occurrence of the boundary.
+
+	The boundary contains dots so you have to quote it in the header."""
+
 	global _prefix
 	import time
 	import random
@@ -131,6 +130,7 @@ def choose_boundary():
 # Subroutines for decoding some common content-transfer-types
 
 def decode(input, output, encoding):
+	"""Decode common content-transfer-encodings (base64, quopri, uuencode)."""
 	if encoding == 'base64':
 		import base64
 		return base64.decode(input, output)
@@ -140,6 +140,8 @@ def decode(input, output, encoding):
 	if encoding in ('uuencode', 'x-uuencode', 'uue', 'x-uue'):
 		import uu
 		return uu.decode(input, output)
+	if encoding in ('7bit', '8bit'):
+		output.write(input.read())
 	if decodetab.has_key(encoding):
 		pipethrough(input, decodetab[encoding], output)
 	else:
@@ -147,6 +149,7 @@ def decode(input, output, encoding):
 		      'unknown Content-Transfer-Encoding: %s' % encoding
 
 def encode(input, output, encoding):
+	"""Encode common content-transfer-encodings (base64, quopri, uuencode)."""
 	if encoding == 'base64':
 		import base64
 		return base64.encode(input, output)
@@ -156,6 +159,8 @@ def encode(input, output, encoding):
 	if encoding in ('uuencode', 'x-uuencode', 'uue', 'x-uue'):
 		import uu
 		return uu.encode(input, output)
+	if encoding in ('7bit', '8bit'):
+		output.write(input.read())
 	if encodetab.has_key(encoding):
 		pipethrough(input, encodetab[encoding], output)
 	else:
