@@ -15,6 +15,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #117278, #117167: _tkinter
 
+- #116172, curses module fails to build on SGI, _curses
+
 What's New in Python 2.0?
 =========================
 
