@@ -1,6 +1,6 @@
 /*
  /  Author: Sam Rushing <rushing@nightmare.com>
- /  Hacked for Unix by A.M. Kuchling <amk1@bigfoot.com> 
+ /  Hacked for Unix by AMK
  /  $Id$
 
  / mmapmodule.cpp -- map a view of a file into memory

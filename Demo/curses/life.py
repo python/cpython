@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # life.py -- A curses-based version of Conway's Game of Life.
-# Contributed by A.M. Kuchling <amk1@bigfoot.com>
+# Contributed by AMK
 #
 # An empty board will be displayed, and the following commands are available:
 #  E : Erase the board
