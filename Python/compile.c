@@ -245,8 +245,10 @@ com_addbyte(c, byte)
 {
 	int len;
 	if (byte < 0 || byte > 255) {
+		/*
 		fprintf(stderr, "XXX compiling bad byte: %d\n", byte);
 		abort();
+		*/
 		err_setstr(SystemError, "com_addbyte: byte out of range");
 		c->c_errors++;
 	}
@@ -758,14 +760,18 @@ cmp_type(n)
 	node *n;
 {
 	REQ(n, comp_op);
-	/* comp_op: '<' | '>' | '=' | '>' '=' | '<' '=' | '<' '>'
+	/* comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
 	          | 'in' | 'not' 'in' | 'is' | 'is' not' */
 	if (NCH(n) == 1) {
 		n = CHILD(n, 0);
 		switch (TYPE(n)) {
 		case LESS:	return LT;
 		case GREATER:	return GT;
+		case EQEQUAL:			/* == */
 		case EQUAL:	return EQ;
+		case LESSEQUAL:	return LE;
+		case GREATEREQUAL: return GE;
+		case NOTEQUAL:	return NE;	/* <> or != */
 		case NAME:	if (strcmp(STR(n), "in") == 0) return IN;
 				if (strcmp(STR(n), "is") == 0) return IS;
 		}
@@ -773,11 +779,6 @@ cmp_type(n)
 	else if (NCH(n) == 2) {
 		int t2 = TYPE(CHILD(n, 1));
 		switch (TYPE(CHILD(n, 0))) {
-		case LESS:	if (t2 == EQUAL)	return LE;
-				if (t2 == GREATER)	return NE;
-				break;
-		case GREATER:	if (t2 == EQUAL)	return GE;
-				break;
 		case NAME:	if (strcmp(STR(CHILD(n, 1)), "in") == 0)
 					return NOT_IN;
 				if (strcmp(STR(CHILD(n, 0)), "is") == 0)
