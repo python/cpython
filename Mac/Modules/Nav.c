@@ -947,6 +947,11 @@ initNav()
 {
 	PyObject *m, *d;
 
+	/* Test that we have NavServices */
+	if ( !NavServicesAvailable() ) {
+		PyErr_SetString(PyExc_ImportError, "Navigation Services not available");
+		return;
+	}
 	/* Create the module and add the functions */
 	m = Py_InitModule4("Nav", nav_methods,
 		Nav_module_documentation,
