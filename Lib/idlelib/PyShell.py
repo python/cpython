@@ -1299,4 +1299,5 @@ details.
 """
 
 if __name__ == "__main__":
+    sys.modules['PyShell'] = sys.modules['__main__']
     main()
