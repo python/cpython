@@ -5,7 +5,7 @@ which accepts a string containing a URL or a Request object (described
 below).  It opens the URL and returns the results as file-like
 object; the returned object has some extra methods described below.
 
-The OpenerDirectory manages a collection of Handler objects that do
+The OpenerDirector manages a collection of Handler objects that do
 all the actual work.  Each Handler implements a particular protocol or
 option.  The OpenerDirector is a composite object that invokes the
 Handlers needed to open the requested URL.  For example, the
