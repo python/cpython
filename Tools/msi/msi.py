@@ -295,47 +295,15 @@ def add_ui(db):
     # UpdateEditIDLE sets the REGISTRY.tcl component into
     # the installed/uninstalled state according to both the
     # Extensions and TclTk features.
-    open("inst.vbs","w").write("""
-    Function CheckDir()
-      Set FSO = CreateObject("Scripting.FileSystemObject")
-      if FSO.FolderExists(Session.Property("TARGETDIR")) then
-        Session.Property("TargetExists") = "1"
-      else
-        Session.Property("TargetExists") = "0"
-      end if
-    End Function
-    Function UpdateEditIDLE()
-      Dim ext_new, tcl_new, regtcl_old
-      ext_new = Session.FeatureRequestState("Extensions")
-      tcl_new = Session.FeatureRequestState("TclTk")
-      if ext_new=-1 then
-         ext_new = Session.FeatureCurrentState("Extensions")
-      end if
-      if tcl_new=-1 then
-         tcl_new = Session.FeatureCurrentState("TclTk")
-      end if
-      regtcl_old = Session.ComponentCurrentState("REGISTRY.tcl")
-      if ext_new=3 and (tcl_new=3 or tcl_new=4) and regtcl_old<>3 then
-         Session.ComponentRequestState("REGISTRY.tcl")=3
-      end if
-      if (ext_new=2 or tcl_new=2) and regtcl_old<>2 then
-         Session.ComponentRequestState("REGISTRY.tcl")=2
-      end if
-    End Function
-    """)
-    # To add debug messages into scripts, the following fragment can be used
-    #     set objRec = Session.Installer.CreateRecord(1)
-    #     objRec.StringData(1) = "Debug message"
-    #     Session.message &H04000000, objRec
-    add_data(db, "Binary", [("Script", msilib.Binary("inst.vbs"))])
-    # See "Custom Action Type 6"
+    if os.system("nmake /nologo /c /f msisupport.mak") != 0:
+        raise "'nmake /f msisupport.mak' failed"
+    add_data(db, "Binary", [("Script", msilib.Binary("msisupport.dll"))])
+    # See "Custom Action Type 1"
     add_data(db, "CustomAction",
-        [("CheckDir", 6, "Script", "CheckDir")])
+        [("CheckDir", 1, "Script", "_CheckDir@4")])
     if have_tcl:
         add_data(db, "CustomAction",
-        [("UpdateEditIDLE", 6, "Script", "UpdateEditIDLE")])
-    os.unlink("inst.vbs")
-
+        [("UpdateEditIDLE", 1, "Script", "_UpdateEditIDLE@4")])
 
     # UI customization properties
     add_data(db, "Property",
