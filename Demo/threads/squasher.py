@@ -1,6 +1,7 @@
 # Coroutine example:  general coroutine transfers
 #
 # The program is a variation of a Simula 67 program due to Dahl & Hoare,
+# (Dahl/Dijkstra/Hoare, Structured Programming; Academic Press, 1972)
 # who in turn credit the original example to Conway.
 #
 # We have a number of input lines, terminated by a 0 byte.  The problem
@@ -43,7 +44,7 @@ from Coroutine import *
 
 def getline(text):
     for line in string.splitfields(text, '\n'):
-        co.back(line)
+        co.tran(codisassembler, line)
 
 def disassembler():
     while 1:
