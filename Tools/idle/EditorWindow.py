@@ -100,7 +100,7 @@ class EditorWindow:
         self.vbar = vbar = Scrollbar(top, name='vbar')
         self.text = text = Text(top, name='text', padx=5,
                                 foreground=cprefs.CNormal[0],
-                                background=cprefs.CNormal[1], 
+                                background=cprefs.CNormal[1],
                                 highlightcolor=cprefs.CHilite[0],
                                 highlightbackground=cprefs.CHilite[1],
                                 insertbackground=cprefs.CCursor[1],
@@ -134,6 +134,7 @@ class EditorWindow:
         text['yscrollcommand'] = vbar.set
         if sys.platform[:3] == 'win':
             text['font'] = ("lucida console", 8)
+#            text['font'] = ("courier new", 10)
         text.pack(side=LEFT, fill=BOTH, expand=1)
         text.focus_set()
 
@@ -172,6 +173,10 @@ class EditorWindow:
                 end = end + 1
             self.wmenu_end = end
             WindowList.register_callback(self.postwindowsmenu)
+
+        if self.extensions.has_key('AutoIndent'):
+            self.extensions['AutoIndent'].set_indentation_params(
+                self.ispythonsource(filename))
 
     def wakeup(self):
         if self.top.wm_state() == "iconic":
@@ -323,7 +328,7 @@ class EditorWindow:
         import ClassBrowser
         ClassBrowser.ClassBrowser(self.flist, base, [head])
         self.text["cursor"] = save_cursor
-    
+
     def open_path_browser(self, event=None):
         import PathBrowser
         PathBrowser.PathBrowser(self.flist)
@@ -558,23 +563,22 @@ class EditorWindow:
                     else:
                         menu.add_command(label=label, underline=underline,
                             command=command, accelerator=accelerator)
-    
+
     def getvar(self, name):
         var = self.getrawvar(name)
         if var:
             return var.get()
-    
+
     def setvar(self, name, value, vartype=None):
         var = self.getrawvar(name, vartype)
         if var:
             var.set(value)
-    
+
     def getrawvar(self, name, vartype=None):
         var = self.vars.get(name)
         if not var and vartype:
             self.vars[name] = var = vartype(self.text)
         return var
-
 
 def prepstr(s):
     # Helper to extract the underscore from a string,
