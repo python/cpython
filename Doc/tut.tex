@@ -147,8 +147,8 @@ modules that can save you a lot of time when writing Python programs.
 
 \section{Invoking the Interpreter}
 
-The Python interpreter is usually installed as {\tt /usr/local/python}
-on those machines where it is available; putting {\tt /usr/local} in
+The Python interpreter is usually installed as {\tt /usr/local/bin/python}
+on those machines where it is available; putting {\tt /usr/local/bin} in
 your {\UNIX} shell's search path makes it possible to start it by
 typing the command
 
@@ -159,7 +159,7 @@ python
 to the shell.  Since the choice of the directory where the interpreter
 lives is an installation option, other places are possible; check with
 your local Python guru or system administrator.  (E.g., {\tt
-/usr/local/bin/python} is a popular alternative location.)
+/usr/local/python} is a popular alternative location.)
 
 The interpreter operates somewhat like the {\UNIX} shell: when called
 with standard input connected to a tty device, it reads and executes
@@ -211,7 +211,7 @@ and a copyright notice before printing the first prompt, e.g.:
 
 \bcode\begin{verbatim}
 python
-Python 0.9.5 (Jan  2 1992).
+Python 0.9.7 (Aug 28 1992).
 Copyright 1990, 1991, 1992 Stichting Mathematisch Centrum, Amsterdam
 >>>
 \end{verbatim}\ecode
@@ -248,12 +248,12 @@ When a module named {\tt foo} is imported, the interpreter searches
 for a file named {\tt foo.py} in the list of directories specified by
 the environment variable {\tt PYTHONPATH}.  It has the same syntax as
 the {\UNIX} shell variable {\tt PATH}, i.e., a list of colon-separated
-directory names.  When {\tt PYTHONPATH} is not set, an
-installation-dependent default path is used, usually {\tt
-.:/usr/local/lib/python}.
+directory names.  When {\tt PYTHONPATH} is not set, or when the file
+is not found there, the search continues in an installation-dependent
+default path, usually {\tt .:/usr/local/lib/python}.
 
 Actually, modules are searched in the list of directories given by the
-variable {\tt sys.path} which is initialized from {\tt PYTHONPATH} or
+variable {\tt sys.path} which is initialized from {\tt PYTHONPATH} and
 the installation-dependent default.  This allows Python programs that
 know what they're doing to modify or replace the module search path.
 See the section on Standard Modules later.
@@ -280,12 +280,34 @@ On BSD'ish {\UNIX} systems, Python scripts can be made directly
 executable, like shell scripts, by putting the line
 
 \bcode\begin{verbatim}
-#! /usr/local/python
+#! /usr/local/bin/python
 \end{verbatim}\ecode
 %
 (assuming that's the name of the interpreter) at the beginning of the
 script and giving the file an executable mode.  The {\tt \#!} must be
 the first two characters of the file.
+
+\subsection{The Interactive Startup File}
+
+When you use Python interactively, it is frequently handy to have some
+standard commands executed every time the interpreter is started.  You
+can do this by setting an environment variable named {\tt
+PYTHONSTARTUP} to the name of a file containing your start-up
+commands.  This is similar to the {\tt /profile} feature of the UNIX
+shells.
+
+This file is only read in interactive sessions, not when Python reads
+commands from a script, and not when {\tt /dev/tty} is given as the
+explicit source of commands (which otherwise behaves like an
+interactive session).  It is executed in the same name space where
+interactive commands are executed, so that objects that it defines or
+imports can be used without qualification in the interactive session.
+
+If you want to read an additional start-up file from the current
+directory, you can program this in the global start-up file, e.g.
+\verb\execfile('.pythonrc')\.  If you want to use the startup file
+in a script, you must write this explicitly in the script, e.g.
+\verb\import os;\ \verb\execfile(os.environ['PYTHONSTARTUP'])\.
 
 \section{Interactive Input Editing and History Substitution}
 
