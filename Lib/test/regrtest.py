@@ -753,6 +753,7 @@ _expectations = {
     'darwin':
         """
         test_al
+        test_bsddb
         test_bsddb3
         test_cd
         test_cl
@@ -764,10 +765,12 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
+        test_locale
         test_minidom
         test_mpz
         test_nis
         test_ntpath
+        test_ossaudiodev
         test_poll
         test_socketserver
         test_sunaudiodev
