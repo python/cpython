@@ -50,6 +50,8 @@ kTXNUseCurrentSelection = 0xFFFFFFFF
 kTXNStartOffset = 0
 kTXNEndOffset = 0x7FFFFFFF
 MovieFileType = FOUR_CHAR_CODE('moov')
+kTXNUseEncodingWordRulesMask = 0x80000000
+kTXNFontSizeAttributeSize = 4
 """)
 
 	def makeblacklistnames(self):
@@ -72,6 +74,8 @@ MovieFileType = FOUR_CHAR_CODE('moov')
 			"kTXNQDFontStyleAttributeSize",
 			"kTXNQDFontColorAttributeSize",
 			"kTXNTextEncodingAttributeSize",
+			"kTXNUseEncodingWordRulesMask",
+			"kTXNFontSizeAttributeSize",
 			"status",
 			"justification",
 			]

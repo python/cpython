@@ -45,8 +45,8 @@ class MyScanner(Scanner):
 
 	def writeinitialdefs(self):
 		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
-		self.defsfile.write("from TextEdit import *\n")
-		self.defsfile.write("from QuickDraw import *\n")
+		self.defsfile.write("from Carbon.TextEdit import *\n")
+		self.defsfile.write("from Carbon.QuickDraw import *\n")
 		self.defsfile.write("\n")
 		# Defines unparseable in Drag.h
 		self.defsfile.write(MISSING_DEFINES)

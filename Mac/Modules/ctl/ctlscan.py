@@ -34,14 +34,14 @@ class MyScanner(Scanner):
 
 	def writeinitialdefs(self):
 		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
-		self.defsfile.write("from TextEdit import *\n")
-		self.defsfile.write("from QuickDraw import *\n")
-		self.defsfile.write("from Dragconst import *\n")
-		self.defsfile.write("from CarbonEvents import *\n")
-		self.defsfile.write("from Appearance import *\n")
+		self.defsfile.write("from Carbon.TextEdit import *\n")
+		self.defsfile.write("from Carbon.QuickDraw import *\n")
+		self.defsfile.write("from Carbon.Dragconst import *\n")
+		self.defsfile.write("from Carbon.CarbonEvents import *\n")
+		self.defsfile.write("from Carbon.Appearance import *\n")
 		self.defsfile.write("kDataBrowserItemAnyState = -1\n")
 		self.defsfile.write("kControlBevelButtonCenterPopupGlyphTag = -1\n")
-		self.defsfile.write("kDataBrowserClientPropertyFlagsMask = 0xFF << 24  # kDataBrowserClientPropertyFlagsOffset\n")
+		self.defsfile.write("kDataBrowserClientPropertyFlagsMask = 0xFF000000\n")
 		self.defsfile.write("\n")
 
 	def makeblacklistnames(self):
