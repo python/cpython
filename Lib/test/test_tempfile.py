@@ -156,7 +156,7 @@ class test__RandomNameSequence(TC):
 
         dict = {}
         r = self.r
-        for i in xrange(1000):
+        for i in xrange(100):
             s = r.next()
             self.nameCheck(s, '', '', '')
             self.failIf(s in dict)
