@@ -3,14 +3,14 @@ Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
 Reply-to: guido@cnri.reston.va.us (Guido van Rossum)
-Expires: Sun, 1 Oct 1995 00:00:00 GMT
-Supersedes: <DCA29p.A9A@cwi.nl>
+Expires: Wed, 1 Nov 1995 00:00:00 GMT
+Supersedes: <DE1DI9.8MF@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.27
-Last-modified: 28 August 1995
+Version: 1.28
+Last-modified: 28 September 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -74,10 +74,9 @@ Here's an overview of the questions per chapter:
   1.11. Q. Are there short introductory papers or talks on Python?
   1.12. Q. How does the Python version numbering scheme work?
   1.13. Q. How do I get a beta test version of Python?
-  1.14. Q. Are there other ftp sites that carry Python related material?
-  1.15. Q. Are there copyright restrictions on the use of Python?
-  1.16. Q. Why was Python created in the first place?
-  1.17. Q. What happened to Tim Peters (the author of python-mode.el, and many
+  1.14. Q. Are there copyright restrictions on the use of Python?
+  1.15. Q. Why was Python created in the first place?
+  1.16. Q. What happened to Tim Peters (the author of python-mode.el, and many
         entertaining and enlightening pieces of Python email)?
 
  2. Python in the real world
@@ -89,6 +88,9 @@ Here's an overview of the questions per chapter:
   2.6. Q. What new developments are expected for Python in the future?
   2.7. Q. Is it reasonable to propose incompatible changes to Python?
   2.8. Q. What is the future of Python?
+  2.9. Q. What is the PSA, anyway?
+  2.10. Q. How do I join the PSA?
+  2.11. Q. What are the benefits of joining the PSA?
 
  3. Building Python and Other Known Bugs
   3.1. Q. Is there a test set?
@@ -110,10 +112,10 @@ Here's an overview of the questions per chapter:
   3.13. Q. How to configure dynamic loading on Lixux.
   3.14. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
   3.15. Q. Errors when linking with a shared library containing C++ code.
-  3.16. Q. Tk menus don't work properly in Python 1.2
-  3.17. Q. I built with tkintermodule.c enabled but get "Tkinter not found"
-  3.18. Q. I built with Tk 4.0 but Tkinter complains about the Tk version
-  3.19. Q. Tk doesn't work right on DEC Alpha
+  3.16. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
+  3.17. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+  3.18. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+  3.19. Q. Tk doesn't work right on DEC Alpha.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -204,6 +206,7 @@ Here's an overview of the questions per chapter:
   6.12. Q. Why is there no more efficient way of iterating over a dictionary
         than first constructing the list of keys()?
   6.13. Q. Can Python be compiled to machine code, C or some other language?
+  6.14. Q. Why doesn't Python use proper garbage collection?
 
  7. Using Python on non-UNIX platforms
   7.1. Q. Is there a Mac version of Python?
@@ -301,12 +304,13 @@ distribution:
 
         <URL:ftp://ftp.cwi.nl/pub/python/>
         <URL:ftp://gatekeeper.dec.com/pub/plan/python/>
-        <URL:ftp://ftp.uu.net/languages/python/>
         <URL:ftp://ftp.wustl.edu/graphics/graphics/sgi-stuff/python/>
+	<URL:ftp://ftp.uu.net/languages/python/>
         <URL:ftp://ftp.funet.fi/pub/languages/python/>
         <URL:ftp://ftp.sunet.se/pub/lang/python/>
         <URL:ftp://unix.hensa.ac.uk/mirrors/uunet/languages/python/>
         <URL:ftp://ftp.sterling.com/programming/languages/python/>
+	<URL:ftp://uiarchive.cso.uiuc.edu/pub/lang/python/>
         <URL:ftp://ftp.ibp.fr/pub/python/>
         <URL:ftp://ftp.switch.ch/software/sources/python/>
         <URL:ftp://ftp.informatik.tu-muenchen.de/pub/comp/programming/languages/python/>
@@ -371,9 +375,18 @@ Python in some detail is:
 LaTeX source for this paper is available as part of the Python source
 distribution.
 
+See also the next section (supposedly Aaron Watters' paper has been
+refereed).
+
 1.11. Q. Are there short introductory papers or talks on Python?
 
-A. A recent high-level description of Python is:
+A. A recent, very entertaining introduction to Python is the tutorial by
+Aaron Watters in UnixWorld Online:
+
+    Aaron R. Watters: "The What, Why, Who, and Where of Python",
+    <URL:http://www.wcmh.com/uworld/archives/95/tutorial/005.html>
+
+An olded paper is:
 
     Guido van Rossum, "An Introduction to Python for UNIX/C
     Programmers", in the proceedings of the NLUUG najaarsconferentie
@@ -385,42 +398,30 @@ presentation is available by ftp as
 <URL:ftp://ftp.python.org/pub/python/doc/nluug-slides.ps>, respectively.
 
 Slides for a talk on Python that I gave at the Usenix Symposium on
-Very High Level Languages in Santa Fe, NM, USA in October 1995 are
+Very High Level Languages in Santa Fe, NM, USA in October 1994 are
 available as <URL:ftp://ftp.python.org/pub/python/doc/vhll-slides.ps>.
 
 1.12. Q. How does the Python version numbering scheme work?
 
-A. Python versions are numbered A.B.C.  A is the major version number
--- it is only incremented for major changes in functionality or source
-structure.  B is the minor version number, incremented for less
+A. Python versions are numbered A.B.C or A.B.  A is the major version
+number -- it is only incremented for major changes in functionality or
+source structure.  B is the minor version number, incremented for less
 earth-shattering changes to a release.  C is the patchlevel -- it is
-incremented for each new release.  Note that in the past, patches have
-added significant changes; in fact the changeover from 0.9.9 to 1.0.0
-was the first time that either A or B changed!
+incremented for each new patch release.  Not all releases have patch
+releases.  Note that in the past, patches have added significant
+changes; in fact the changeover from 0.9.9 to 1.0.0 was the first time
+that either A or B changed!
 
 Beta versions have an additional suffix of "-beta-N" for some small
 number N.  Note that (for instance) all versions labeled 1.2-beta-N
-*precede* the actual release of 1.2.
+*precede* the actual release of 1.2.  1.3b1 is short for 1.3-beta-1.
 
 1.13. Q. How do I get a beta test version of Python?
 
-A. Write me.  I might like you :-) Seriously, anybody who has
-previously used and installed Python can become a beta tester, but I
-expect feedback, so you have to write me first before I divulge the
-secret location of the latest beta release.
+A. If there are any beta releases, they are published in the normal
+source directory (e.g. <URL:ftp://ftp.python.org/pub/python/src/>).
 
-1.14. Q. Are there other ftp sites that carry Python related material?
-
-A. An interesting ftp site for Python users is ftp.markv.com; the
-directory pub/python contains a growing collection of interesting
-Python scripts <URL:ftp://ftp.markv.com/pub/python/>.  To submit a
-script for inclusion, place it together with a readme file (with
-extension .readme) in the publicly writable directory
-/incoming/python.  This service is maintained by Lance Ellinghaus
-<lance@markv.com>.  (I've heard complaints about this service not
-being very responsive -- try at your own risk.)
-
-1.15. Q. Are there copyright restrictions on the use of Python?
+1.14. Q. Are there copyright restrictions on the use of Python?
 
 A. Hardly.  You can do anything you want with the source, as long as
 you leave the copyrights in, and display those copyrights in any
@@ -435,7 +436,7 @@ or to sell products that enhance Python or incorporate Python (or part
 of it) in some form.  I would still like to know about all commercial
 use of Python!
 
-1.16. Q. Why was Python created in the first place?
+1.15. Q. Why was Python created in the first place?
 
 A. Here's a *very* brief summary of what got me started:
 
@@ -479,7 +480,7 @@ me add many early improvements.
 - In February 1991, after just over a year of development, I decided
 to post to USENET.  The rest is in the Misc/HISTORY file.
 
-1.17. Q. What happened to Tim Peters (the author of python-mode.el, and many
+1.16. Q. What happened to Tim Peters (the author of python-mode.el, and many
 entertaining and enlightening pieces of Python email)?
 
 A. He worked at KSR (Kendall Square Research, a start-up building a
@@ -625,6 +626,31 @@ committed to improving Python, and my current benefactor, CNRI (see
 <URL:http://www.cnri.reston.va.us>) is just as committed to continue
 its support of Python and the PSA.  In fact, we have great plans for
 Python -- we just can't tell yet!
+
+2.9. Q. What is the PSA, anyway?
+
+A. The Python Software Activity <URL:http://www.python.org/psa/> was
+created by a number of Python aficionados who want Python to be more
+than the product and responsibility of a single individual.  It has
+found a home at CNRI <URL:http://www.cnri.reston.va.us>.  Anybody who
+wishes Python well should join the PSA.
+
+2.10. Q. How do I join the PSA?
+
+A. The full scoop is available on the web, see
+<URL:http://www.python.org/psa/Joining.html>.  Summary: send a check
+of at least $50 to CNRI/PSA, 1895 Preston White Drive, Suite 100, in
+Reston, VA 22091.  Full-time students pay $25.  Companies can join for
+a mere $500.
+
+2.11. Q. What are the benefits of joining the PSA?
+
+A. Like National Public Radio, if not enough people join, Python will
+wither.  Your name will be mentioned on the PSA's web server.
+Workshops organized by the PSA <URL:http://www.python.org/workshops/>
+are only accessible to PSA members (you can join at the door).  The
+PSA is working on additional benefits, such as reduced prices for
+books and software, and early access to beta versions of Python.
 
 
 3. Building Python and Other Known Bugs
@@ -838,7 +864,7 @@ A. Link the main Python binary with C++.  Change the definition of
 LINKCC in Modules/Makefile to be your C++ compiler.  You may have to
 edit config.c slightly to make it compilable with C++.
 
-3.16. Q. Tk menus don't work properly in Python 1.2.
+3.16. Q. Tk menus or radiobuttons don't work properly in Python 1.2.
 
 A. There's a bug in Tkinter.py; remove ClassType and InstanceType from
 the definition of CallableTypes near the top of Lib/tkinter/Tkinter.py.
@@ -1958,6 +1984,38 @@ Hints for proper usage of freeze.py:
 	make libinstall
 	make inclinstall
 	make libainstall
+
+6.14. Q. Why doesn't Python use proper garbage collection?
+
+A. It's looking less and less likely that Python will ever get
+"automatic" garbage collection (GC).  For one thing, unless this were
+added to C as a standard feature, it's a portability pain in the ass.
+And yes, I know about the Xerox library.  It has bits of assembler
+code for *most* *common* platforms.  Not for all.  And although it is
+mostly transparent, it isn't completely transparent (when I once
+linked Python with it, it dumped core).
+
+"Proper" GC also becomes a problem when Python gets embedded into
+other applications.  While in a stand-alone Python it may be fine to
+replace the standard malloc() and free() with versions provided by the
+GC library, an application embedding Python may want to have its *own*
+substitute for malloc() and free(), and may not want Python's.  Right
+now, Python works with anything that implements malloc() and free()
+properly.
+
+Besides, the predictability of destructor calls in Python is kind of
+attractive.  With GC, the following code (which is fine in current
+Python) will run out of file descriptors long before it runs out of
+memory:
+
+	for file in <very long list of files>:
+		f = open(file)
+		c = file.read(1)
+
+Using the current reference counting and destructor scheme, each new
+assignment to f closes the previous file.  Using GC, this is not
+guaranteed.  Sure, you can think of ways to fix this.  But it's not
+off-the-shelf technology.
 
 
 7. Using Python on non-UNIX platforms
