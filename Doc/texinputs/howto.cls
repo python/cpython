@@ -48,12 +48,16 @@
 %
 \renewcommand{\maketitle}{
   \py@doHorizontalRule
-  \@ifundefined{pdfinfo}{}{
+  \@ifundefined{pdfinfo}{}{{
+    % This \def is required to deal with multi-line authors; it
+    % changes \\ to ', ' (comma-space), making it pass muster for
+    % generating document info in the PDF file.
+    \def\\{, }
     \pdfinfo{
       /Author (\@author)
       /Title (\@title)
     }
-  }
+  }}
   \begin{flushright}
     {\rm\Huge\py@HeaderFamily \@title} \par
     {\em\large\py@HeaderFamily \py@release} \par
