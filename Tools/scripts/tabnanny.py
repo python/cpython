@@ -2,9 +2,9 @@
 
 """The Tab Nanny despises ambiguous indentation.  She knows no mercy."""
 
-# Released to the public domain, by Tim Peters, 6 April 1998.
+# Released to the public domain, by Tim Peters, 15 April 1998.
 
-__version__ = "4"
+__version__ = "5"
 
 import os
 import sys
@@ -270,7 +270,13 @@ if hasattr(tokenize, 'NL'):
          # that when the run of DEDENTs ends, the indentation of the
          # program statement (or ENDMARKER) that triggered the run is
          # equal to what's left at the top of the indents stack
-         assert check_equal  # else no earlier NEWLINE, or an earlier INDENT
+
+         # Ouch!  This assert triggers if the last line of the source
+         # is indented *and* lacks a newline -- then DEDENTs pop out
+         # of thin air.
+         # assert check_equal  # else no earlier NEWLINE, or an earlier INDENT
+         check_equal = 1
+
          del indents[-1]
 
      elif check_equal and type not in JUNK:
