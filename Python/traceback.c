@@ -31,19 +31,17 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Traceback implementation */
 
-#include "allobjects.h"
+#include "Python.h"
 
-#include "sysmodule.h"
 #include "compile.h"
 #include "frameobject.h"
-#include "traceback.h"
 #include "structmember.h"
 #include "osdefs.h"
 
 typedef struct _tracebackobject {
-	OB_HEAD
+	PyObject_HEAD
 	struct _tracebackobject *tb_next;
-	frameobject *tb_frame;
+	PyFrameObject *tb_frame;
 	int tb_lasti;
 	int tb_lineno;
 } tracebackobject;
@@ -58,28 +56,28 @@ static struct memberlist tb_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
-static object *
+static PyObject *
 tb_getattr(tb, name)
 	tracebackobject *tb;
 	char *name;
 {
-	return getmember((char *)tb, tb_memberlist, name);
+	return PyMember_Get((char *)tb, tb_memberlist, name);
 }
 
 static void
 tb_dealloc(tb)
 	tracebackobject *tb;
 {
-	XDECREF(tb->tb_next);
-	XDECREF(tb->tb_frame);
-	DEL(tb);
+	Py_XDECREF(tb->tb_next);
+	Py_XDECREF(tb->tb_frame);
+	PyMem_DEL(tb);
 }
 
 #define Tracebacktype PyTraceBack_Type
 #define is_tracebackobject PyTraceBack_Check
 
-typeobject Tracebacktype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject Tracebacktype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"traceback",
 	sizeof(tracebackobject),
@@ -98,20 +96,20 @@ typeobject Tracebacktype = {
 static tracebackobject *
 newtracebackobject(next, frame, lasti, lineno)
 	tracebackobject *next;
-	frameobject *frame;
+	PyFrameObject *frame;
 	int lasti, lineno;
 {
 	tracebackobject *tb;
 	if ((next != NULL && !is_tracebackobject(next)) ||
-			frame == NULL || !is_frameobject(frame)) {
-		err_badcall();
+			frame == NULL || !PyFrame_Check(frame)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	tb = NEWOBJ(tracebackobject, &Tracebacktype);
+	tb = PyObject_NEW(tracebackobject, &Tracebacktype);
 	if (tb != NULL) {
-		XINCREF(next);
+		Py_XINCREF(next);
 		tb->tb_next = next;
-		XINCREF(frame);
+		Py_XINCREF(frame);
 		tb->tb_frame = frame;
 		tb->tb_lasti = lasti;
 		tb->tb_lineno = lineno;
@@ -122,44 +120,45 @@ newtracebackobject(next, frame, lasti, lineno)
 static tracebackobject *tb_current = NULL;
 
 int
-tb_here(frame)
-	frameobject *frame;
+PyTraceBack_Here(frame)
+	PyFrameObject *frame;
 {
 	tracebackobject *tb;
-	tb = newtracebackobject(tb_current, frame, frame->f_lasti, frame->f_lineno);
+	tb = newtracebackobject(tb_current, frame,
+				frame->f_lasti, frame->f_lineno);
 	if (tb == NULL)
 		return -1;
-	XDECREF(tb_current);
+	Py_XDECREF(tb_current);
 	tb_current = tb;
 	return 0;
 }
 
-object *
-tb_fetch()
+PyObject *
+PyTraceBack_Fetch()
 {
-	object *v;
-	v = (object *)tb_current;
+	PyObject *v;
+	v = (PyObject *)tb_current;
 	tb_current = NULL;
 	return v;
 }
 
 int
-tb_store(v)
-	object *v;
+PyTraceBack_Store(v)
+	PyObject *v;
 {
 	if (v != NULL && !is_tracebackobject(v)) {
-		err_badcall();
+		PyErr_BadInternalCall();
 		return -1;
 	}
-	XDECREF(tb_current);
-	XINCREF(v);
+	Py_XDECREF(tb_current);
+	Py_XINCREF(v);
 	tb_current = (tracebackobject *)v;
 	return 0;
 }
 
 static void
 tb_displayline(f, filename, lineno, name)
-	object *f;
+	PyObject *f;
 	char *filename;
 	int lineno;
 	char *name;
@@ -177,25 +176,25 @@ tb_displayline(f, filename, lineno, name)
 	xfp = fopen(filename, "r");
 	if (xfp == NULL) {
 		/* Search tail of filename in sys.path before giving up */
-		object *path;
+		PyObject *path;
 		char *tail = strrchr(filename, SEP);
 		if (tail == NULL)
 			tail = filename;
 		else
 			tail++;
-		path = sysget("path");
-		if (path != NULL && is_listobject(path)) {
-			int npath = getlistsize(path);
+		path = PySys_GetObject("path");
+		if (path != NULL && PyList_Check(path)) {
+			int npath = PyList_Size(path);
 			int taillen = strlen(tail);
 			char namebuf[MAXPATHLEN+1];
 			for (i = 0; i < npath; i++) {
-				object *v = getlistitem(path, i);
-				if (is_stringobject(v)) {
+				PyObject *v = PyList_GetItem(path, i);
+				if (PyString_Check(v)) {
 					int len;
-					len = getstringsize(v);
+					len = PyString_Size(v);
 					if (len + 1 + taillen >= MAXPATHLEN)
 						continue; /* Too long */
-					strcpy(namebuf, getstringvalue(v));
+					strcpy(namebuf, PyString_AsString(v));
 					if ((int)strlen(namebuf) != len)
 						continue; /* v contains '\0' */
 					if (len > 0 && namebuf[len-1] != SEP)
@@ -211,7 +210,7 @@ tb_displayline(f, filename, lineno, name)
 		}
 	}
 	sprintf(linebuf, FMT, filename, lineno, name);
-	writestring(linebuf, f);
+	PyFile_WriteString(linebuf, f);
 	if (xfp == NULL)
 		return;
 	for (i = 0; i < lineno; i++) {
@@ -222,10 +221,10 @@ tb_displayline(f, filename, lineno, name)
 		char *p = linebuf;
 		while (*p == ' ' || *p == '\t' || *p == '\014')
 			p++;
-		writestring("    ", f);
-		writestring(p, f);
+		PyFile_WriteString("    ", f);
+		PyFile_WriteString(p, f);
 		if (strchr(p, '\n') == NULL)
-			writestring("\n", f);
+			PyFile_WriteString("\n", f);
 	}
 	fclose(xfp);
 }
@@ -233,7 +232,7 @@ tb_displayline(f, filename, lineno, name)
 static void
 tb_printinternal(tb, f, limit)
 	tracebackobject *tb;
-	object *f;
+	PyObject *f;
 	int limit;
 {
 	int depth = 0;
@@ -242,14 +241,15 @@ tb_printinternal(tb, f, limit)
 		depth++;
 		tb1 = tb1->tb_next;
 	}
-	while (tb != NULL && !intrcheck()) {
+	while (tb != NULL && !PyOS_InterruptOccurred()) {
 		if (depth <= limit) {
 			tb->tb_lineno = PyCode_Addr2Line(tb->tb_frame->f_code,
 							 tb->tb_lasti);
 			tb_displayline(f,
-			    getstringvalue(tb->tb_frame->f_code->co_filename),
+			    PyString_AsString(
+				    tb->tb_frame->f_code->co_filename),
 			    tb->tb_lineno,
-			    getstringvalue(tb->tb_frame->f_code->co_name));
+			    PyString_AsString(tb->tb_frame->f_code->co_name));
 		}
 		depth--;
 		tb = tb->tb_next;
@@ -257,25 +257,25 @@ tb_printinternal(tb, f, limit)
 }
 
 int
-tb_print(v, f)
-	object *v;
-	object *f;
+PyTraceBack_Print(v, f)
+	PyObject *v;
+	PyObject *f;
 {
-	object *limitv;
+	PyObject *limitv;
 	int limit = 1000;
 	if (v == NULL)
 		return 0;
 	if (!is_tracebackobject(v)) {
-		err_badcall();
+		PyErr_BadInternalCall();
 		return -1;
 	}
-	limitv = sysget("tracebacklimit");
-	if (limitv && is_intobject(limitv)) {
-		limit = getintvalue(limitv);
+	limitv = PySys_GetObject("tracebacklimit");
+	if (limitv && PyInt_Check(limitv)) {
+		limit = PyInt_AsLong(limitv);
 		if (limit <= 0)
 			return 0;
 	}
-	writestring("Traceback (innermost last):\n", f);
+	PyFile_WriteString("Traceback (innermost last):\n", f);
 	tb_printinternal((tracebackobject *)v, f, limit);
 	return 0;
 }
