@@ -544,7 +544,7 @@ Py_Main(argc, argv)
 void
 PyMac_OutputSeen()
 {
-#ifdef USE_GUSI
+#if defined(USE_GUSI) && !TARGET_API_MAC_CARBON_NOTYET
 	gusisioux_state = GUSISIOUX_STATE_LASTREAD;
 #endif
 }
@@ -569,7 +569,7 @@ PyMac_Exit(status)
 		keep = 0;
 		break;
 	case POPT_KEEPCONSOLE_OUTPUT:
-#ifdef USE_GUSI
+#if defined(USE_GUSI) && !TARGET_API_MAC_CARBON_NOTYET
 		if (gusisioux_state == GUSISIOUX_STATE_LASTWRITE ||
 				gusisioux_state == GUSISIOUX_STATE_UNKNOWN )
 			keep = 1;
