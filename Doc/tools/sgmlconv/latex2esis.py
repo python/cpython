@@ -13,6 +13,8 @@ import string
 import StringIO
 import sys
 
+from esistools import encode
+
 
 class Error(Exception):
     pass
@@ -27,28 +29,18 @@ _begin_macro_rx = re.compile("[\\\\]([a-zA-Z]+[*]?)({|\\s*\n?)")
 _comment_rx = re.compile("%+ ?(.*)\n *")
 _text_rx = re.compile(r"[^]%\\{}]+")
 _optional_rx = re.compile(r"\s*[[]([^]]*)[]]")
-_parameter_rx = re.compile("[ \n]*{([^}]*)}")
+# _parameter_rx is this complicated to allow {...} inside a parameter;
+# this is useful to match tabular layout specifications like {c|p{24pt}}
+_parameter_rx = re.compile("[ \n]*{(([^{}}]|{[^}]*})*)}")
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
 _start_group_rx = re.compile("[ \n]*{")
 _start_optional_rx = re.compile("[ \n]*[[]")
 
 
-_charmap = {}
-for c in map(chr, range(256)):
-    _charmap[c] = c
-_charmap["\n"] = r"\n"
-_charmap["\\"] = r"\\"
-del c
-
-def encode(s):
-    return string.join(map(_charmap.get, s), '')
-
-
 ESCAPED_CHARS = "$%#^ {}&~"
 
 
-def subconvert(line, ofp, table, discards, autoclosing, knownempty,
-               endchar=None):
+def subconvert(line, ofp, table, discards, autoclosing, endchar=None):
     stack = []
     while line:
         if line[0] == endchar and not stack:
@@ -87,8 +79,8 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                 del stack[-1]
             else:
                 print stack
-                print envname
-                raise LaTeXFormatError("environment close doesn't match")
+                raise LaTeXFormatError(
+                    "environment close for %s doesn't match" % envname)
             line = line[m.end():]
             continue
         m = _begin_macro_rx.match(line)
@@ -122,7 +114,6 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
             #
             conversion = table.get(macroname, ([], 0, 0, 0))
             params, optional, empty, environ = conversion
-            empty = empty or knownempty(macroname)
             if empty:
                 ofp.write("e\n")
             if not numbered:
@@ -150,7 +141,7 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                 if m:
                     line = line[m.end():]
                     line = subconvert(line, ofp, table, discards,
-                                      autoclosing, knownempty, endchar="]")
+                                      autoclosing, endchar="]")
                 line = "}" + line
                 continue
             # handle attribute mappings here:
@@ -258,12 +249,9 @@ def subconvert(line, ofp, table, discards, autoclosing, knownempty,
                                + string.join(stack))
 
 
-def convert(ifp, ofp, table={}, discards=(), autoclosing=(), knownempties=()):
-    d = {}
-    for gi in knownempties:
-        d[gi] = gi
+def convert(ifp, ofp, table={}, discards=(), autoclosing=()):
     try:
-        subconvert(ifp.read(), ofp, table, discards, autoclosing, d.has_key)
+        subconvert(ifp.read(), ofp, table, discards, autoclosing)
     except IOError, (err, msg):
         if err != errno.EPIPE:
             raise
@@ -280,9 +268,11 @@ def main():
         usage()
         sys.exit(2)
     convert(ifp, ofp, {
-        # entries are name
-        #          -> ([list of attribute names], first_is_optional, empty)
+        # entries have the form:
+        # name: ([attribute names], first_is_optional, empty, isenv)
+        "appendix": ([], 0, 1, 0),
         "bifuncindex": (["name"], 0, 1, 0),
+        "catcode": ([], 0, 1, 0),
         "cfuncdesc": (["type", "name", ("args",)], 0, 0, 1),
         "chapter": ([("title",)], 0, 0, 0),
         "chapter*": ([("title",)], 0, 0, 0),
@@ -305,7 +295,14 @@ def main():
         "input": (["source"], 0, 1, 0),
         "item": ([("leader",)], 1, 0, 0),
         "label": (["id"], 0, 1, 0),
+        "labelwidth": ([], 0, 1, 0),
+        "LaTeX": ([], 0, 1, 0),
+        "leftmargin": ([], 0, 1, 0),
         "leq": ([], 0, 1, 0),
+        "localmoduletable": ([], 0, 1, 0),
+        "makeindex": ([], 0, 1, 0), 
+        "makemodindex": ([], 0, 1, 0), 
+        "maketitle": ([], 0, 1, 0),
         "manpage": (["name", "section"], 0, 1, 0),
         "memberdesc": (["class", "name"], 1, 0, 1),
         "methoddesc": (["class", "name", ("args",)], 1, 0, 1),
@@ -323,10 +320,12 @@ def main():
         "subparagraph": ([("title",)], 0, 0, 0),
         "subsection": ([("title",)], 0, 0, 0),
         "subsubsection": ([("title",)], 0, 0, 0),
+        "list": (["bullet", "init"], 0, 0, 1),
         "tableii": (["colspec", "style", "head1", "head2"], 0, 0, 1),
         "tableiii": (["colspec", "style", "head1", "head2", "head3"], 0, 0, 1),
         "tableiv": (["colspec", "style", "head1", "head2", "head3", "head4"],
                     0, 0, 1),
+        "version": ([], 0, 1, 0),
         "versionadded": (["version"], 0, 1, 0),
         "versionchanged": (["version"], 0, 1, 0),
         "withsubitem": (["text"], 0, 0, 0),
@@ -355,10 +354,7 @@ def main():
             discards=["fi", "ifhtml", "makeindex", "makemodindex", "maketitle",
                       "noindent", "tableofcontents"],
             autoclosing=["chapter", "section", "subsection", "subsubsection",
-                         "paragraph", "subparagraph", ],
-            knownempties=["appendix",
-                          "maketitle", "makeindex", "makemodindex",
-                          "localmoduletable"])
+                         "paragraph", "subparagraph", ])
 
 
 if __name__ == "__main__":
