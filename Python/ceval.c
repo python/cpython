@@ -395,6 +395,8 @@ Py_AddPendingCall(int (*func)(void *), void *arg)
 	pendingcalls[i].func = func;
 	pendingcalls[i].arg = arg;
 	pendinglast = j;
+
+	_Py_Ticker = 0;
 	things_to_do = 1; /* Signal main loop */
 	busy = 0;
 	/* XXX End critical section */
@@ -465,6 +467,10 @@ enum why_code {
 static enum why_code do_raise(PyObject *, PyObject *, PyObject *);
 static int unpack_iterable(PyObject *, int, PyObject **);
 
+/* for manipulating the thread switch and periodic "stuff" - used to be
+   per thread, now just a pair o' globals */
+int _Py_CheckInterval = 10;
+volatile int _Py_Ticker = 10;
 
 PyObject *
 PyEval_EvalCode(PyCodeObject *co, PyObject *globals, PyObject *locals)
@@ -669,8 +675,8 @@ eval_frame(PyFrameObject *f)
 		   async I/O handler); see Py_AddPendingCall() and
 		   Py_MakePendingCalls() above. */
 
-		if (things_to_do || --tstate->ticker < 0) {
-			tstate->ticker = tstate->interp->checkinterval;
+		if (--_Py_Ticker < 0) {
+			_Py_Ticker = _Py_CheckInterval;
 			if (things_to_do) {
 				if (Py_MakePendingCalls() < 0) {
 					why = WHY_EXCEPTION;
