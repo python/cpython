@@ -1369,7 +1369,11 @@ class Scale(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
 		Widget.__init__(self, master, 'scale', cnf, kw)
 	def get(self):
-		return self.tk.getint(self.tk.call(self._w, 'get'))
+		value = self.tk.call(self._w, 'get')
+		try:
+			return self.tk.getint(value)
+		except TclError:
+			return self.tk.getdouble(value)
 	def set(self, value):
 		self.tk.call(self._w, 'set', value)
 
