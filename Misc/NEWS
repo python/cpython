@@ -20,8 +20,8 @@ What's new in 2.0 beta 2 (since beta 1)?
 
 Core language, builtins, and interpreter
 
-- Add support for unbounded ints in %d,i,y,x,X,o formats for string
-  inter
+- Add support for unbounded ints in %d,i,u,x,X,o formats; for example
+  "%d" % 2L**64 == "18446744073709551616"
 
 - Add -h and -V flags to print the usage message and Python version
   number and exit immediately.polation.  
@@ -73,11 +73,12 @@ Standard library and extensions
 - os: Add support for popen2 and popen3 on all platforms where fork
   exists.  
 
-- os: (Windows only) Add startfile function athat exposes part of
-  Win32 ShellExecute functionality.
+- os: (Windows only) Add startfile function that acts like double-
+  clicking on a file in Explorer (or passing the file name to the
+  DOS "start" command).
 
-- os.path: (NT, DOS) Treat trailing colon correctly in os.path.join.
-  os.path.join("a:", "b") yields "a:b".
+- os.path: (Windows, DOS) Treat trailing colon correctly in
+  os.path.join.  os.path.join("a:", "b") yields "a:b".
 
 - pickle: Now raises ValueError when an invalid pickle that contains
   a non-string repr where a string repr was expected.  This behavior
@@ -94,7 +95,7 @@ Standard library and extensions
   getdomainliteral are now properly wrapped in brackets.
 
 - site: sys.setdefaultencoding() should only be called in case the
-  standard default encoding ("ascii") is changed. This safes quite a
+  standard default encoding ("ascii") is changed. This saves quite a
   few cycles during startup since the first call to
   setdefaultencoding() will initialize the codec registry and the
   encodings package.
@@ -121,7 +122,7 @@ Standard library and extensions
 
 - webbrower: On Windows, use os.startfile instead of os.popen, which
   works around a bug in certain versions of Norton AntiVirus that
-  leads directly to a Blue Screen.
+  leads directly to a Blue Screen freeze.
 
 - xml: New version detection code allows PyXML to override standard
   XML package if PyXML version is greater than 0.6.1.
@@ -160,7 +161,8 @@ Internals
   unicode_internal_decode function to support Unicode objects directly
   rather than by generating a copy of the object.
 
-- XXX Unicode database compression
+- Several of the internal Unicode tables are much smaller now, and
+  the source code should be much friendlier to weaker compilers.
 
 Build and platform-specific issues
 
