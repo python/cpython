@@ -799,6 +799,35 @@ print_error_text(PyObject *f, int offset, char *text)
 }
 
 void
+PyRun_HandleSystemExit(PyObject* value)
+{
+	if (Py_FlushLine())
+		PyErr_Clear();
+	fflush(stdout);
+	if (value == NULL || value == Py_None)
+		Py_Exit(0);
+	if (PyInstance_Check(value)) {
+		/* The error code should be in the `code' attribute. */
+		PyObject *code = PyObject_GetAttrString(value, "code");
+		if (code) {
+			Py_DECREF(value);
+			value = code;
+			if (value == Py_None)
+				Py_Exit(0);
+		}
+		/* If we failed to dig out the 'code' attribute,
+		   just let the else clause below print the error. */
+	}
+	if (PyInt_Check(value))
+		Py_Exit((int)PyInt_AsLong(value));
+	else {
+		PyObject_Print(value, stderr, Py_PRINT_RAW);
+		PySys_WriteStderr("\n");
+		Py_Exit(1);
+	}
+}
+
+void
 PyErr_PrintEx(int set_sys_last_vars)
 {
 	PyObject *exception, *v, *tb, *hook;
@@ -809,35 +838,7 @@ PyErr_PrintEx(int set_sys_last_vars)
 		return;
 
 	if (PyErr_GivenExceptionMatches(exception, PyExc_SystemExit)) {
-		if (Py_FlushLine())
-			PyErr_Clear();
-		fflush(stdout);
-		if (v == NULL || v == Py_None)
-			Py_Exit(0);
-		if (PyInstance_Check(v)) {
-			/* we expect the error code to be store in the
-			   `code' attribute
-			*/
-			PyObject *code = PyObject_GetAttrString(v, "code");
-			if (code) {
-				Py_DECREF(v);
-				v = code;
-				if (v == Py_None)
-					Py_Exit(0);
-			}
-			/* if we failed to dig out the "code" attribute,
-			   then just let the else clause below print the
-			   error
-			*/
-		}
-		if (PyInt_Check(v))
-			Py_Exit((int)PyInt_AsLong(v));
-		else {
-			/* OK to use real stderr here */
-			PyObject_Print(v, stderr, Py_PRINT_RAW);
-			fprintf(stderr, "\n");
-			Py_Exit(1);
-		}
+		PyRun_HandleSystemExit(v);
 	}
 	if (set_sys_last_vars) {
 		PySys_SetObject("last_type", exception);
@@ -853,6 +854,10 @@ PyErr_PrintEx(int set_sys_last_vars)
 			PyObject *exception2, *v2, *tb2;
 			PyErr_Fetch(&exception2, &v2, &tb2);
 			PyErr_NormalizeException(&exception2, &v2, &tb2);
+			if (PyErr_GivenExceptionMatches(
+				exception2, PyExc_SystemExit)) {
+				PyRun_HandleSystemExit(v2);
+			}
 			if (Py_FlushLine())
 				PyErr_Clear();
 			fflush(stdout);
@@ -1254,11 +1259,11 @@ call_sys_exitfunc(void)
 		PyObject *res, *f;
 		Py_INCREF(exitfunc);
 		PySys_SetObject("exitfunc", (PyObject *)NULL);
-		f = PySys_GetObject("stderr");
 		res = PyEval_CallObject(exitfunc, (PyObject *)NULL);
 		if (res == NULL) {
-			if (f)
-			    PyFile_WriteString("Error in sys.exitfunc:\n", f);
+			if (!PyErr_ExceptionMatches(PyExc_SystemExit)) {
+				PySys_WriteStderr("Error in sys.exitfunc:\n");
+			}
 			PyErr_Print();
 		}
 		Py_DECREF(exitfunc);
