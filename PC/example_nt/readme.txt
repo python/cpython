@@ -3,10 +3,11 @@ Example Python extension for Windows NT
 
 This directory contains everything needed (except for the Python
 distribution!) to build a Python extension module using Microsoft VC++
-("Developer Studio") version 6.  It has been tested with VC++ 6.0 on Python
-2.2c1.  You can also use earlier versions of VC to build Python extensions,
-but the sample VC project file (example.dsw in this directory) is in VC 6
-format.
+("Developer Studio") version 7.1.  It has been tested with VC++ 7.1 on 
+Python 2.4.  You can also use earlier versions of VC to build Python 
+extensions, but the sample VC project file (example.dsw in this directory) 
+is in VC 7.1 format. Notice that you need to use the same compiler version
+that was used to build Python itself.
 
 COPY THIS DIRECTORY!
 --------------------
@@ -19,10 +20,10 @@ this new location -- sorry, but you'll be sorry if you don't.
 
 OPEN THE PROJECT
 ----------------
-From VC 6.x, use the
-    File -> Open Workspace...
+From VC 7.1, use the
+    File -> Open Solution...
 dialog (*not* the "File -> Open..." dialog!).  Navigate to and select the
-file "example.dsw", in the *copy* of the example_nt directory you made
+file "example.sln", in the *copy* of the example_nt directory you made
 above.
 Click Open.
 
@@ -31,15 +32,12 @@ BUILD THE EXAMPLE DLL
 In order to check that everything is set up right, try building:
 
 1. Select a configuration.  This step is optional.  Do
-       Build -> Select Active Configuration...
-   and select either "example - Win32 Release" or "example - Win32 Debug".
+       Build -> Configuration Manager... -> Active Solution Configuration
+   and select either "Release" or "Debug".
    If you skip this step, you'll use the Debug configuration by default.
 
 2. Build the DLL.  Do
-       Build -> Build example_d.dll
-   in Debug mode, or
-       Build -> Build example.dll
-   in Release mode.
+       Build -> Build Solution
    This creates all intermediate and result files in a subdirectory which
    is called either Debug or Release, depending on which configuration you
    picked in the preceding step.
@@ -96,7 +94,7 @@ in Release mode, or spam_d.dll or spam_d.pyd in Debug mode.
 
 Now your options are:
 
-1) Copy example.dsw and example.dsp, rename them to spam.*, and edit them
+1) Copy example.sln and example.vcproj, rename them to spam.*, and edit them
 by hand.
 
 or
@@ -109,7 +107,8 @@ created a new project yourself, add the file spam.def to the project now.
 (This is an annoying little file with only two lines.  An alternative
 approach is to forget about the .def file, and add the option
 "/export:initspam" somewhere to the Link settings, by manually editing the
-"Project Options" box).
+"Project -> Properties -> Linker -> Command Line -> Additional Options" 
+box).
 
 You are now all set to build your extension, unless it requires other
 external libraries, include files, etc.  See Python's Extending and
@@ -119,47 +118,44 @@ Embedding manual for instructions on how to write an extension.
 CREATING A BRAND NEW PROJECT
 ----------------------------
 Use the
-    File -> New... -> Projects
-dialog to create a new Project Workspace.  Select "Win32 Dynamic-Link
-Library", enter the name ("spam"), and make sure the "Location" is set to
-the spam directory you have created (which should be a direct subdirectory
-of the Python build tree, a sibling of Include and PC).  Select Win32 as the
-platform (in my version, this is the only choice).  Make sure the "Create
-new workspace" radio button is selected.  Click OK.
+    File -> New -> Project...
+dialog to create a new Project Workspace.  Select "Visual C++ Projects/Win32/
+Win32 Project", enter the name ("spam"), and make sure the "Location" is 
+set to parent of the spam directory you have created (which should be a direct 
+subdirectory of the Python build tree, a sibling of Include and PC).  
+In "Application Settings", select "DLL", and "Empty Project".  Click OK.
+
+You should now create the file spam.def as instructed in the previous
+section. Add the source files (including the .def file) to the project, 
+using "Project", "Add Existing Item".
 
 Now open the
-    Project -> Settings...
+    Project -> spam properties...
 dialog.  (Impressive, isn't it? :-) You only need to change a few
 settings.  Make sure "All Configurations" is selected from the "Settings
-for:" dropdown list.  Select the "C/C++" tab.  Choose the "Preprocessor"
+for:" dropdown list.  Select the "C/C++" tab.  Choose the "General"
 category in the popup menu at the top.  Type the following text in the
-entry box labeled "Addditional include directories:"
+entry box labeled "Addditional Include Directories:"
 
     ..\Include,..\PC
 
-Then, choose the "Input" category in the Link tab, and enter
+Then, choose the "General" category in the "Linker" tab, and enter
     ..\PCbuild
-in the "Additional library path:" box.
+in the "Additional library Directories" box.
 
-Now you need to add some mode-specific settings:
+Now you need to add some mode-specific settings (select "Accept"
+when asked to confirm your changes):
 
-Select "Win32 Release" in the "Settings for:" dropdown list.  Click the
-"Link" tab, choose the "Input" Category, and append "python22.lib" to the
-list in the "Object/library modules:" box.
+Select "Release" in the "Configuration" dropdown list.  Click the
+"Link" tab, choose the "Input" Category, and append "python24.lib" to the
+list in the "Additional Dependencies" box.
 
-Select "Win32 Debug" in the "Settings for:" dropdown list, and append
-"python22_d.lib" to the list in the "Object/library modules:" box.  Then
-click on the C/C++ tab, select "Code Generation" from the "Category:"
-dropdown list, and select "Debug Multithreaded DLL" from the "Use run-time
-library:" dropdown list.
+Select "Debug" in the "Settings for:" dropdown list, and append
+"python24_d.lib" to the list in the Additional Dependencies" box.  Then
+click on the C/C++ tab, select "Code Generation", and select 
+"Multi-threaded Debug DLL" from the "Runtime library" dropdown list.
 
-Select "Win32 Release" again from the "Settings for:" dropdown list.
-Select "Multithreaded DLL" from the "Use run-time library:" dropdown list.
+Select "Release" again from the "Settings for:" dropdown list.
+Select "Multi-threaded DLL" from the "Use run-time library:" dropdown list.
 
 That's all <wink>.
-
-You should now create the file spam.def as instructed in the previous
-section.  Then chose the
-    Insert -> Files into Project...
-dialog.  Set the pattern to *.* and select both spam.c and spam.def and
-click OK.  (Inserting them one by one is fine too.)
