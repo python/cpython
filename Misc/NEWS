@@ -112,6 +112,8 @@ Extension modules
 Library
 -------
 
+- Patch #841977: modulefinder didn't find extension modules in packages
+
 - imaplib.IMAP4.thread was added.
 
 - Plugged a minor hole in tempfile.mktemp() due to the use of
