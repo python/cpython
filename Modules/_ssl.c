@@ -186,47 +186,62 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 		goto fail;
 	}
 
+	Py_BEGIN_ALLOW_THREADS
 	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
+	Py_END_ALLOW_THREADS
 	if (self->ctx == NULL) {
 		errstr = "SSL_CTX_new error";
 		goto fail;
 	}
 
 	if (key_file) {
-		if (SSL_CTX_use_PrivateKey_file(self->ctx, key_file,
-						SSL_FILETYPE_PEM) < 1) {
+		Py_BEGIN_ALLOW_THREADS
+		ret = SSL_CTX_use_PrivateKey_file(self->ctx, key_file,
+						SSL_FILETYPE_PEM);
+		Py_END_ALLOW_THREADS
+		if (ret < 1) {
 			errstr = "SSL_CTX_use_PrivateKey_file error";
 			goto fail;
 		}
 
-		if (SSL_CTX_use_certificate_chain_file(self->ctx,
-						       cert_file) < 1) {
+		Py_BEGIN_ALLOW_THREADS
+		ret = SSL_CTX_use_certificate_chain_file(self->ctx,
+						       cert_file);
+		Py_END_ALLOW_THREADS
+		if (ret < 1) {
 			errstr = "SSL_CTX_use_certificate_chain_file error";
 			goto fail;
 		}
 	}
 
+	Py_BEGIN_ALLOW_THREADS
 	SSL_CTX_set_verify(self->ctx,
 			   SSL_VERIFY_NONE, NULL); /* set verify lvl */
 	self->ssl = SSL_new(self->ctx); /* New ssl struct */
+	Py_END_ALLOW_THREADS
 	SSL_set_fd(self->ssl, Sock->sock_fd);	/* Set the socket for SSL */
+	Py_BEGIN_ALLOW_THREADS
 	SSL_set_connect_state(self->ssl);
+
 
 	/* Actually negotiate SSL connection */
 	/* XXX If SSL_connect() returns 0, it's also a failure. */
 	ret = SSL_connect(self->ssl);
+	Py_END_ALLOW_THREADS
 	if (ret <= 0) {
 		PySSL_SetError(self, ret);
 		goto fail;
 	}
 	self->ssl->debug = 1;
 
+	Py_BEGIN_ALLOW_THREADS
 	if ((self->server_cert = SSL_get_peer_certificate(self->ssl))) {
 		X509_NAME_oneline(X509_get_subject_name(self->server_cert),
 				  self->server, X509_NAME_MAXLEN);
 		X509_NAME_oneline(X509_get_issuer_name(self->server_cert),
 				  self->issuer, X509_NAME_MAXLEN);
 	}
+	Py_END_ALLOW_THREADS
 	self->Socket = Sock;
 	Py_INCREF(self->Socket);
 	return self;
