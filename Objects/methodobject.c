@@ -105,10 +105,10 @@ meth_repr(m)
 {
 	char buf[200];
 	if (m->m_self == NULL)
-		sprintf(buf, "<built-in function '%.80s'>", m->m_name);
+		sprintf(buf, "<built-in function %.80s>", m->m_name);
 	else
 		sprintf(buf,
-			"<built-in method '%.80s' of %.80s object at %lx>",
+			"<built-in method %.80s of %.80s object at %lx>",
 			m->m_name, m->m_self->ob_type->tp_name,
 			(long)m->m_self);
 	return newstringobject(buf);

@@ -121,18 +121,24 @@ class_getattr(op, name)
 		return v;
 	}
 	v = class_lookup(op, name, &class);
-	if (v != NULL) {
-		if (is_accessobject(v))
-			v = getaccessvalue(v, getclass());
-		else if (is_funcobject(v))
-			v = newinstancemethodobject(v, (object *)NULL,
-						    (object *)class);
-		else
-			INCREF(v);
-		return v;
+	if (v == NULL) {
+		err_setstr(AttributeError, name);
+		return NULL;
 	}
-	err_setstr(AttributeError, name);
-	return NULL;
+	if (is_accessobject(v)) {
+		v = getaccessvalue(v, getclass());
+		if (v == NULL)
+			return NULL;
+	}
+	else
+		INCREF(v);
+	if (is_funcobject(v)) {
+		object *w = newinstancemethodobject(v, (object *)NULL,
+						    (object *)class);
+		DECREF(v);
+		v = w;
+	}
+	return v;
 }
 
 static int
@@ -217,12 +223,6 @@ issubclass(class, base)
 
 /* Instance objects */
 
-typedef struct {
-	OB_HEAD
-	classobject	*in_class;	/* The class object */
-	object		*in_dict;	/* A dictionary */
-} instanceobject;
-
 static object *instance_getattr PROTO((instanceobject *, char *));
 
 static int
@@ -241,7 +241,10 @@ addaccess(class, inst)
 	
 	pos = 0;
 	while (mappinggetnext(class->cl_dict, &pos, &key, &value)) {
+		object *v;
 		if (!is_accessobject(value))
+			continue;
+		if (hasaccessvalue(value))
 			continue;
 		ac = dict2lookup(inst->in_dict, key);
 		if (ac != NULL && is_accessobject(ac)) {
@@ -361,22 +364,27 @@ instance_getattr(inst, name)
 		return (object *)inst->in_class;
 	}
 	v = dictlookup(inst->in_dict, name);
-	if (v != NULL) {
-		if (is_accessobject(v))
-			v = getaccessvalue(v, getclass());
-		else
-			INCREF(v);
-		return v;
+	if (v == NULL) {
+		v = class_lookup(inst->in_class, name, &class);
+		if (v == NULL) {
+			err_setstr(AttributeError, name);
+			return NULL;
+		}
 	}
-	v = class_lookup(inst->in_class, name, &class);
-	if (v == NULL)
-		goto error;
-	if (is_funcobject(v))
-		return newinstancemethodobject(v, (object *)inst,
-					       (object *)class);
- error:
-	err_setstr(AttributeError, name);
-	return NULL;
+	if (is_accessobject(v)) {
+		v = getaccessvalue(v, getclass());
+		if (v == NULL)
+			return NULL;
+	}
+	else
+		INCREF(v);
+	if (is_funcobject(v)) {
+		object *w = newinstancemethodobject(v, (object *)inst,
+						    (object *)class);
+		DECREF(v);
+		v = w;
+	}
+	return v;
 }
 
 static int

@@ -24,11 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Class object interface */
 
-/*
-Classes are really hacked in at the last moment.
-It should be possible to use other object types as base classes,
-but currently it isn't.  We'll see if we can fix that later, sigh...
-*/
+/* Revealing some structures (not for general use) */
 
 typedef struct {
 	OB_HEAD
@@ -36,6 +32,12 @@ typedef struct {
 	object	*cl_dict;	/* A dictionary */
 	object	*cl_name;	/* A string */
 } classobject;
+
+typedef struct {
+	OB_HEAD
+	classobject	*in_class;	/* The class object */
+	object		*in_dict;	/* A dictionary */
+} instanceobject;
 
 extern typeobject Classtype, Instancetype, Instancemethodtype;
 

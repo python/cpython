@@ -87,7 +87,7 @@ static int import_from PROTO((object *, object *, object *));
 static object *build_class PROTO((object *, object *, object *));
 static void locals_2_fast PROTO((frameobject *, int));
 static void fast_2_locals PROTO((frameobject *));
-static int access_statement PROTO((object *, int, frameobject *));
+static int access_statement PROTO((object *, object *, frameobject *));
 
 
 /* Pointer to current frame, used to link new frames to */
@@ -184,7 +184,8 @@ eval_code(co, globals, locals, class, arg)
 	object *trace = NULL;	/* Trace function or NULL */
 	object *retval;		/* Return value iff why == WHY_RETURN */
 	char *name;		/* Name used by some instructions */
-	int needmerge = 0;
+	int needmerge = 0;	/* Set if need to merge locals back at end */
+	int defmode = 0;	/* Default access mode for new variables */
 #ifdef LLTRACE
 	int lltrace;
 #endif
@@ -760,7 +761,22 @@ eval_code(co, globals, locals, class, arg)
 			w = GETNAMEV(oparg);
 			v = POP();
 			u = dict2lookup(f->f_locals, w);
-			if (u != NULL && is_accessobject(u)) {
+			if (u == NULL) {
+				if (defmode != 0) {
+					if (v != None)
+						u = (object *)v->ob_type;
+					else
+						u = NULL;
+					x = newaccessobject(v, class,
+							    (typeobject *)u,
+							    defmode);
+					DECREF(v);
+					if (x == NULL)
+						break;
+					v = x;
+				}
+			}
+			else if (is_accessobject(u)) {
 				err = setaccessvalue(u, class, v);
 				DECREF(v);
 				break;
@@ -1190,7 +1206,10 @@ eval_code(co, globals, locals, class, arg)
 		case ACCESS_MODE:
 			v = POP();
 			w = GETNAMEV(oparg);
-			err = access_statement(w, (int)getintvalue(v), f);
+			if (getstringvalue(w)[0] == '*')
+				defmode = getintvalue(v);
+			else
+				err = access_statement(w, v, f);
 			DECREF(v);
 			break;
 		
@@ -1995,7 +2014,28 @@ call_function(func, arg)
 		object *self = instancemethodgetself(func);
 		class = instancemethodgetclass(func);
 		func = instancemethodgetfunc(func);
-		if (self != NULL) {
+		if (self == NULL) {
+			/* Unbound methods must be called with an instance of
+			   the class (or a derived class) as first argument */
+			if (arg != NULL && is_tupleobject(arg) &&
+			    gettuplesize(arg) >= 1) {
+				self = gettupleitem(arg, 0);
+				if (self != NULL &&
+				    is_instanceobject(self) &&
+				    issubclass((object *)
+				      (((instanceobject *)self)->in_class),
+					       class))
+					/* self = self */ ;
+				else
+					self = NULL;
+			}
+			if (self == NULL) {
+				err_setstr(TypeError,
+	   "unbound method must be called with class instance argument");
+				return NULL;
+			}
+		}
+		else {
 			int argcount;
 			if (arg == NULL)
 				argcount = 0;
@@ -2380,11 +2420,12 @@ build_class(methods, bases, name)
 }
 
 static int
-access_statement(name, mode, f)
+access_statement(name, vmode, f)
 	object *name;
-	int mode;
+	object *vmode;
 	frameobject *f;
 {
+	int mode = getintvalue(vmode);
 	object *value, *ac;
 	typeobject *type;
 	int fastind, ret;
@@ -2415,7 +2456,7 @@ access_statement(name, mode, f)
 		type = value->ob_type;
 	else
 		type = NULL;
-	ac = newaccessobject(value, (object*)NULL, type, mode);
+	ac = newaccessobject(value, f->f_class, type, mode);
 	if (ac == NULL)
 		return -1;
 	if (fastind >= 0)
