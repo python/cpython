@@ -826,6 +826,10 @@ the \ctype{stat} structure, namely:
 \member{st_ctime}
 (time of most recent content modification or metadata change).
 
+\versionchanged [The time values are floats, measuring
+  seconds. Fractions of a second may be reported if the system
+  supports that]{2.3}
+
 On some Unix systems (such as Linux), the following attributes may
 also be available:
 \member{st_blocks} (number of blocks allocated for file),
@@ -856,12 +860,7 @@ order
 \member{st_atime},
 \member{st_mtime},
 \member{st_ctime}.
-More items may be added at the end by some implementations.  Note that
-on the Mac OS, the time values are floating point values, like all
-time values on the Mac OS.
-\versionchanged
-[On other systems, the values are floats if the system reports
- fractions of a second]{2.3}
+More items may be added at the end by some implementations. 
 The standard module \refmodule{stat}\refstmodindex{stat} defines
 functions and constants that are useful for extracting information
 from a \ctype{stat} structure.

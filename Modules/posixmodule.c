@@ -616,15 +616,7 @@ static void
 fill_time(PyObject *v, int index, time_t sec, unsigned long nsec)
 {
 	PyObject *val;
-	if (nsec) {
-		val = PyFloat_FromDouble(sec + 1e-9*nsec);
-	} else {
-#if SIZEOF_TIME_T > SIZEOF_LONG
-		val = PyLong_FromLongLong((LONG_LONG)sec);
-#else
-		val = PyInt_FromLong((long)sec);
-#endif
-	}
+        val = PyFloat_FromDouble(sec + 1e-9*nsec);
 	PyStructSequence_SET_ITEM(v, index, val);
 }
 
