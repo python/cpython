@@ -2296,6 +2296,14 @@ eval_frame(PyFrameObject *f)
 
 	} /* main loop */
 
+	if (why != WHY_YIELD) {
+		/* Pop remaining stack entries -- but when yielding */
+		while (!EMPTY()) {
+			v = POP();
+			Py_XDECREF(v);
+		}
+	}
+
 	if (why != WHY_RETURN && why != WHY_YIELD)
 		retval = NULL;
 
