@@ -11,7 +11,10 @@ KEEPALIVE_TIMER = 500
 
 
 class PyncheWidget:
-    def __init__(self, version):
+    def __init__(self, version, switchboard):
+        self.__sb = switchboard
+        self.__version = version
+        self.__textwin = None
         # create the first and top window
         root = self.__root = Tk(className='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__quit)
@@ -37,6 +40,17 @@ class PyncheWidget:
                              underline=0)
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
+        #
+        # View menu
+        #
+        viewbtn = Menubutton(menubar, text='View',
+                             underline=0)
+        viewbtn.pack(side=LEFT)
+        viewmenu = Menu(viewbtn, tearoff=0)
+        viewbtn['menu'] = viewmenu
+        viewmenu.add_command(label='Text Window...',
+                             command=self.__popup_text,
+                             underline=0)
         #
         # Help menu
         #
@@ -77,3 +91,10 @@ All rights reserved
 For information about Pynche
 contact: Barry A. Warsaw
 email:   bwarsaw@python.org''')
+
+    def __popup_text(self, event=None):
+        if not self.__textwin:
+            from TextViewer import TextViewer
+            self.__textwin = TextViewer(self.__sb, self.__root)
+            self.__sb.add_view(self.__textwin)
+        self.__textwin.deiconify()
