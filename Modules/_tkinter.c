@@ -25,6 +25,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* _tkinter.c -- Interface to libtk.a and libtcl.a. */
 
+/* TCL/TK VERSION INFO:
+
+   Unix:
+	This should work with any version from Tcl 4.0 / Tck 7.4.
+	Do not use older versions.
+
+   Mac and Windows:
+	Use Tcl 4.1p1 / Tk 7.5p1 or possibly newer.
+	It does not seem to work reliably with the original 4.1/7.5
+	release.  (4.0/7.4 were never released for these platforms.)
+*/
+
 #include "Python.h"
 #include <ctype.h>
 
@@ -53,7 +65,7 @@ extern struct { Tk_Window win; } *tkMainWindowList;
 ** This is for Tcl 7.5 and Tk 4.1 (patch release 1).
 */
 
-/* free() expects a char* */
+/* ckfree() expects a char* */
 #define FREECAST (char *)
 
 #include <Events.h> /* For EventRecord */
@@ -67,7 +79,7 @@ staticforward int PyMacConvertEvent Py_PROTO((EventRecord *eventPtr));
 #endif /* macintosh */
 
 #ifndef FREECAST
-#define FREECAST
+#define FREECAST (char *)
 #endif
 
 /**** Tkapp Object Declaration ****/
@@ -175,8 +187,8 @@ Merge (args)
 
       if (PyTuple_Size (args) > ARGSZ)
 	{
-	  argv = (char **) malloc (PyTuple_Size (args) * sizeof (char *));
-	  fv = (int *) malloc (PyTuple_Size (args) * sizeof (int));
+	  argv = (char **) ckalloc (PyTuple_Size (args) * sizeof (char *));
+	  fv = (int *) ckalloc (PyTuple_Size (args) * sizeof (int));
 	  if (argv == NULL || fv == NULL)
 	    PyErr_NoMemory ();
 	}
@@ -207,11 +219,11 @@ Merge (args)
 
   Py_DECREF (tmp);
   for (i = 0; i < argc; i++)
-    if (fv[i]) free (argv[i]);
+    if (fv[i]) ckfree (argv[i]);
   if (argv != argvStore)
-    free (FREECAST argv);
+    ckfree (FREECAST argv);
   if (fv != fvStore)
-    free (FREECAST fv);
+    ckfree (FREECAST fv);
 
   return res;
 }
@@ -247,7 +259,7 @@ Split (self, list)
 	PyTuple_SetItem (v, i, Split (self, argv[i]));
     }
 
-  free (FREECAST argv);
+  ckfree (FREECAST argv);
   return v;
 }
 
@@ -310,13 +322,13 @@ Tkapp_New (screenName, baseName, className, interactive)
     Tcl_SetVar (v->interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
 
   /* This is used to get the application class for Tk 4.1 and up */
-  argv0 = (char*) malloc (strlen (className) + 1);
+  argv0 = (char*) ckalloc (strlen (className) + 1);
   if (argv0 != NULL) {
     strcpy (argv0, className);
     if (isupper (argv0[0]))
       argv0[0] = tolower (argv0[0]);
     Tcl_SetVar (v->interp, "argv0", argv0, TCL_GLOBAL_ONLY);
-    free (argv0);
+    ckfree (argv0);
   }
 
   if (Tcl_AppInit (v->interp) != TCL_OK)
@@ -337,11 +349,11 @@ Tkapp_Call (self, args)
   cmd = Merge (args);
   if (Tcl_Eval (Tkapp_Interp (self), cmd) == TCL_ERROR)
     {
-      free (cmd);
+      ckfree (cmd);
       return Tkinter_Error (self);
     }
 
-  free (cmd);
+  ckfree (cmd);
   return PyString_FromString (Tkapp_Result (self));
 }
 
@@ -355,11 +367,11 @@ Tkapp_GlobalCall (self, args)
   cmd = Merge (args);
   if (Tcl_GlobalEval (Tkapp_Interp (self), cmd) == TCL_ERROR)
     {
-      free (cmd);
+      ckfree (cmd);
       return Tkinter_Error (self);
     }
   
-  free (cmd);
+  ckfree (cmd);
   return PyString_FromString (Tkapp_Result (self));
 }
 
@@ -696,7 +708,7 @@ Tkapp_SplitList (self, args)
   for (i = 0; i < argc; i++)
     PyTuple_SetItem (v, i, PyString_FromString (argv[i]));
 
-  free (FREECAST argv);
+  ckfree (FREECAST argv);
   return v;
 }
 
@@ -722,7 +734,7 @@ Tkapp_Merge (self, args)
 
   s = Merge (args);
   v = PyString_FromString (s);
-  free (s);
+  ckfree (s);
   return v;
 }
 
