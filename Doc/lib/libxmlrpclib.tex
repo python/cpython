@@ -17,9 +17,9 @@ structured data.  This module supports writing XML-RPC client code; it
 handles all the details of translating between conformable Python
 objects and XML on the wire.
 
-\begin{classdesc}{Server}{uri\optional{, transport\optional{,
-                          encoding\optional{, verbose}}}}
-A \class{Server} instance is a server proxy that manages communication
+\begin{classdesc}{ServerProxy}{uri\optional{, transport\optional{,
+                               encoding\optional{, verbose}}}}
+A \class{ServerProxy} instance is an object that manages communication
 with a remote XML-RPC server.  The required first argument is a URI
 (Uniform Resource Indicator), and will normally be the URL of the
 server.  The optional second argument is a transport factory instance;
@@ -34,7 +34,7 @@ server supports the introspection API, the proxy can also be used to query
 the remote server for the methods it supports (service discovery) and
 fetch other server-associated metadata.
 
-\class{Server} instance methods take Python basic types and objects as 
+\class{ServerProxy} instance methods take Python basic types and objects as 
 arguments and return Python basic types and classes.  Types that are
 conformable (e.g. that can be marshalled through XML), include the
 following (and except where noted, they are unmarshalled as the same
@@ -69,6 +69,9 @@ an XML-RPC request that isn't well-formed XML.  If you have to pass
 arbitrary strings via XML-RPC, use the \class{Binary} wrapper class
 described below.
 
+\class{Server} is retained as an alias for \class{ServerProxy} for backwards
+compatibility.  New code should use \class{ServerProxy}.
+
 \end{classdesc}
 
 
@@ -83,9 +86,9 @@ described below.
 \end{seealso}
 
 
-\subsection{Server Objects \label{server-objects}}
+\subsection{ServerProxy Objects \label{serverproxy-objects}}
 
-A \class{Server} instance proxy object has a method corresponding to
+A \class{ServerProxy} instance has a method corresponding to
 each remote procedure call accepted by the XML-RPC server.  Calling
 the method performs an RPC, dispatched by both name and argument
 signature (e.g. the same method name can be overloaded with multiple
@@ -244,8 +247,8 @@ Trivially convert any Python string to a \class{Binary} object.
 \begin{verbatim}
 # simple test program (from the XML-RPC specification)
 
-# server = Server("http://localhost:8000") # local server
-server = Server("http://betty.userland.com")
+# server = ServerProxy("http://localhost:8000") # local server
+server = ServerProxy("http://betty.userland.com")
 
 print server
 
