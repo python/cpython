@@ -12,7 +12,7 @@ def main():
 		try:
 			f = open(file, 'r+')
 		except IOError:
-			print f, ': can\'t open for update'
+			print file, ': can\'t open for update'
 			continue
 		line = f.readline()
 		if regex.match('^#! */usr/local/python', line) < 0:
