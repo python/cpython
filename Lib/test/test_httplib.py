@@ -8,7 +8,7 @@ class FakeSocket:
 
     def makefile(self, mode, bufsize=None):
         if mode != 'r' and mode != 'rb':
-            raise UnimplementedFileMode()
+            raise httplib.UnimplementedFileMode()
         return StringIO.StringIO(self.text)
 
 # Test HTTP status lines
