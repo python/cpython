@@ -258,7 +258,7 @@ ok
    8 tests in doctest
    6 tests in doctest.Tester
   10 tests in doctest.Tester.merge
-   7 tests in doctest.Tester.rundict
+  14 tests in doctest.Tester.rundict
    3 tests in doctest.Tester.rundoc
    3 tests in doctest.Tester.runstring
    2 tests in doctest.__test__._TestClass
@@ -267,8 +267,8 @@ ok
    1 tests in doctest.__test__._TestClass.square
    2 tests in doctest.__test__.string
    7 tests in doctest.is_private
-53 tests in 17 items.
-53 passed and 0 failed.
+60 tests in 17 items.
+60 passed and 0 failed.
 Test passed.
 """
 
@@ -295,6 +295,7 @@ from types import StringTypes as _StringTypes
 from inspect import isclass    as _isclass
 from inspect import isfunction as _isfunction
 from inspect import ismodule   as _ismodule
+from inspect import classify_class_attrs as _classify_class_attrs
 
 # Extract interactive examples from a string.  Return a list of triples,
 # (source, outcome, lineno).  "source" is the source code, and ends
@@ -747,9 +748,51 @@ see its docs for details.
             print f, "of", t, "examples failed in", name + ".__doc__"
         self.__record_outcome(name, f, t)
         if _isclass(object):
-            f2, t2 = self.rundict(object.__dict__, name)
-            f = f + f2
-            t = t + t2
+            # In 2.2, class and static methods complicate life.  Build
+            # a dict "that works", by hook or by crook.
+            d = {}
+            for tag, kind, homecls, value in _classify_class_attrs(object):
+
+                if homecls is not object:
+                    # Only look at names defined immediately by the class.
+                    continue
+
+                elif self.isprivate(name, tag):
+                    continue
+
+                elif kind == "method":
+                    # value is already a function
+                    d[tag] = value
+
+                elif kind == "static method":
+                    # value isn't a function, but getattr reveals one
+                    d[tag] = getattr(object, tag)
+
+                elif kind == "class method":
+                    # Hmm.  A classmethod object doesn't seem to reveal
+                    # enough.  But getattr turns it into a bound method,
+                    # and from there .im_func retrieves the underlying
+                    # function.
+                    d[tag] = getattr(object, tag).im_func
+
+                elif kind == "property":
+                    # The methods implementing the property have their
+                    # own docstrings -- but the property may have one too.
+                    if value.__doc__ is not None:
+                        d[tag] = str(value.__doc__)
+
+                elif kind == "data":
+                    # Grab nested classes.
+                    if _isclass(value):
+                        d[tag] = value
+
+                else:
+                    raise ValueError("teach doctest about %r" % kind)
+
+            f2, t2 = self.run__test__(d, name)
+            f += f2
+            t += t2
+
         return f, t
 
     def rundict(self, d, name, module=None):

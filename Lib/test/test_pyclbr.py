@@ -101,7 +101,10 @@ class PyclbrTest(unittest.TestCase):
     def test_easy(self):
         self.checkModule('pyclbr')
         self.checkModule('doctest',
-                         ignore=['_isclass', '_isfunction', '_ismodule'])
+                         ignore=['_isclass',
+                                 '_isfunction',
+                                 '_ismodule',
+                                 '_classify_class_attrs'])
         self.checkModule('rfc822')
         self.checkModule('xmllib')
         self.checkModule('difflib')
