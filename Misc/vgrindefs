@@ -1,4 +1,4 @@
-# vgrind is a prety-printer that takes source code and outputs
+# vgrind is a pretty-printer that takes source code and outputs
 # eye-pleasing postscript.  The entry below should be added to your
 # local vgrindefs file.  Contributed by Neale Pickett <neale@lanl.gov>.
 
@@ -7,4 +7,4 @@ python|Python|py:\
         :cb=#:ce=$:sb=":se=\e":lb=':le=\e':\
         :kw=assert and break class continue def del elif else except\
          exec finally for from global if import in is lambda not or\
-         pass print raise return try while:
+         pass print raise return try while yield:
