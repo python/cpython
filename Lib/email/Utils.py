@@ -54,8 +54,8 @@ EMPTYSTRING = ''
 UEMPTYSTRING = u''
 CRLF = '\r\n'
 
-specialsre = re.compile(r'[][\()<>@,:;".]')
-escapesre = re.compile(r'[][\()"]')
+specialsre = re.compile(r'[][\\()<>@,:;".]')
+escapesre = re.compile(r'[][\\()"]')
 
 
 
