@@ -777,6 +777,18 @@ sub do_cmd_memberlineni{
 
 $TABLE_HEADER_BGCOLOR = $NAV_BGCOLOR;
 
+sub get_th{
+    my $a = @_[0];
+    my $r = '<th>';
+    if ($a eq 'l')
+      { $r = '<th align=left>'; }
+    elsif (substr($a, 0, 1) eq 'p')
+      { $r = '<th align=left>'; }
+    elsif ($a eq 'r')
+      { $r = '<th align=right>'; }
+    return $r;
+}
+
 sub setup_column_alignments{
     local($_) = @_;
     my($a1,$a2,$a3,$a4) = split(/[|]/,$_);
@@ -785,16 +797,8 @@ sub setup_column_alignments{
     $col_aligns[1] = (($a2 eq 'c') ? '<td align=center>' : '<td>');
     $col_aligns[2] = (($a3 eq 'c') ? '<td align=center>' : '<td>');
     $col_aligns[3] = (($a4 eq 'c') ? '<td align=center>' : '<td>');
-    # return the aligned header start tags; only used for \begin{tableiii?}
-    $th1 = (($a1 eq 'l') ? '<th align=left>'
-	    : ($a1 eq 'r' ? '<th align=right>' : '<th>'));
-    $th2 = (($a2 eq 'l') ? '<th align=left>'
-	    : ($a2 eq 'r' ? '<th align=right>' : '<th>'));
-    $th3 = (($a3 eq 'l') ? '<th align=left>'
-	    : ($a3 eq 'r' ? '<th align=right>' : '<th>'));
-    $th4 = (($a4 eq 'l') ? '<th align=left>'
-	    : ($a4 eq 'r' ? '<th align=right>' : '<th>'));
-    return ($th1, $th2, $th3, $th4);
+    # return the aligned header start tags
+    return (get_th($a1), get_th($a2), get_th($a3), get_th($a4));
 }
 
 sub do_env_tableii{
@@ -806,12 +810,14 @@ sub do_env_tableii{
     $font = ''
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
-    return '<table border align=center>'
+    return '<table border align=center><thead>'
            . "\n  <tr$TABLE_HEADER_BGCOLOR>"
 	   . "\n    $th1<b>$h1</b></th>"
 	   . "\n    $th2<b>$h2</b></th>"
+	   . "\n</thead>"
+	   . "\n<tbody valign=baseline>"
 	   . $_
-	   . "\n</table>";
+	   . "\n</tbody></table>";
 }
 
 sub do_cmd_lineii{
@@ -839,13 +845,15 @@ sub do_env_tableiii{
     $font = ''
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
-    return '<table border align=center>'
+    return '<table border align=center><thead>'
            . "\n  <tr$TABLE_HEADER_BGCOLOR>"
 	   . "\n    $th1<b>$h1</b></th>"
 	   . "\n    $th2<b>$h2</b></th>"
 	   . "\n    $th3<b>$h3</b></th>"
+	   . "\n</thead>"
+	   . "\n<tbody valign=baseline>"
 	   . $_
-	   . "\n</table>";
+	   . "\n</tbody></table>";
 }
 
 sub do_cmd_lineiii{
@@ -876,14 +884,16 @@ sub do_env_tableiv{
     $font = ''
         if ($font eq 'textrm');
     $globals{'lineifont'} = $font;
-    return '<table border align=center>'
+    return '<table border align=center><thead>'
            . "\n  <tr$TABLE_HEADER_BGCOLOR>"
 	   . "\n    $th1<b>$h1</b></th>"
 	   . "\n    $th2<b>$h2</b></th>"
 	   . "\n    $th3<b>$h3</b></th>"
 	   . "\n    $th4<b>$h4</b></th>"
+	   . "\n</thead>"
+	   . "\n<tbody valign=baseline>"
 	   . $_
-	   . "\n</table>";
+	   . "\n</tbody></table>";
 }
 
 sub do_cmd_lineiv{
@@ -1056,7 +1066,9 @@ sub do_cmd_seemodule{
 }
 
 sub do_cmd_seetext{
-    return '<div class=seetext><p>' . @_[0] . '</div>';
+    local($_) = @_;
+    my $content = next_argument();
+    return '<div class=seetext><p>' . $content . '</div>' . $_;
 }
 
 
