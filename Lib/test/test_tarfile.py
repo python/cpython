@@ -334,7 +334,7 @@ class FileModeTest(unittest.TestCase):
         self.assertEqual(tarfile.filemode(0755), '-rwxr-xr-x')
         self.assertEqual(tarfile.filemode(07111), '---s--s--t')
 
-    
+
 if bz2:
     # Bzip2 TestCases
     class ReadTestBzip2(ReadTestGzip):
