@@ -122,9 +122,7 @@ class Distribution:
         # worth it.  Also delegate 'get_XXX()' methods to the 'metadata'
         # object in a sneaky and underhanded (but efficient!) way.
         self.metadata = DistributionMetadata()
-        method_basenames = dir(self.metadata) + \
-                           ['fullname', 'contact', 'contact_email']
-        for basename in method_basenames:
+        for basename in self.metadata._METHOD_BASENAMES:
             method_name = "get_" + basename
             setattr(self, method_name, getattr(self.metadata, method_name))
 
@@ -961,6 +959,12 @@ class DistributionMetadata:
     """Dummy class to hold the distribution meta-data: name, version,
     author, and so forth.
     """
+
+    _METHOD_BASENAMES = ("name", "version", "author", "author_email",
+                         "maintainer", "maintainer_email", "url",
+                         "license", "description", "long_description",
+                         "keywords", "platforms", "fullname", "contact",
+                         "contact_email", "licence")
 
     def __init__ (self):
         self.name = None
