@@ -88,7 +88,7 @@ def copytree(src, dst, symlinks=0):
                 linkto = os.readlink(srcname)
                 os.symlink(linkto, dstname)
             elif os.path.isdir(srcname):
-                copytree(srcname, dstname)
+                copytree(srcname, dstname, symlinks)
             else:
                 copy2(srcname, dstname)
             # XXX What about devices, sockets etc.?
