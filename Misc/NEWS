@@ -8,6 +8,8 @@ Core and builtins
 
 Extension modules
 
+- gc.get_referents was renamed to gc.get_referrers.
+
 Library
 
 Tools/Demos
@@ -904,6 +906,8 @@ Library
 - Added Ka-Ping Yee's cgitb.py module.
 
 - The `new' module now exposes the CO_xxx flags.
+
+- The gc module offers the get_referents function.
 
 New platforms
 
