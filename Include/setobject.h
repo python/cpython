@@ -16,6 +16,14 @@ typedef struct {
 	PyObject *data;
 	long hash;	/* only used by frozenset objects */
 	PyObject *weakreflist; /* List of weak references */
+
+	/* Invariants:
+	 *     data is a dictionary whose values are all True.
+	 *     data points to the same dict for the whole life of the set.
+	 * For frozensets only:
+	 *     data is immutable.
+	 *     hash is the hash of the frozenset or -1 if not computed yet.
+	 */
 } PySetObject;
 
 PyAPI_DATA(PyTypeObject) PySet_Type;

@@ -11,7 +11,7 @@ returns -1 and sets errno to EBADF if the object is not an PyIntObject.
 None of the functions should be applied to nil objects.
 
 The type PyIntObject is (unfortunately) exposed here so we can declare
-_Py_TrueStruct and _Py_ZeroStruct below; don't use this.
+_Py_TrueStruct and _Py_ZeroStruct in boolobject.h; don't use this.
 */
 
 #ifndef Py_INTOBJECT_H

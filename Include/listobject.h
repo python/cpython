@@ -31,6 +31,9 @@ typedef struct {
      *     len(list) == ob_size
      *     ob_item == NULL implies ob_size == allocated == 0
      * list.sort() temporarily sets allocated to -1 to detect mutations.
+     *
+     * Items must normally not be NULL, except during construction when
+     * the list is not yet visible outside the function that builds it.
      */
     int allocated;
 } PyListObject;

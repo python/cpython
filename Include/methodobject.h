@@ -7,6 +7,10 @@
 extern "C" {
 #endif
 
+/* This is about the type 'builtin_function_or_method',
+   not Python methods in user-defined classes.  See classobject.h
+   for the latter. */
+
 PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 
 #define PyCFunction_Check(op) ((op)->ob_type == &PyCFunction_Type)
@@ -31,10 +35,11 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
-    char	*ml_name;
-    PyCFunction  ml_meth;
-    int		 ml_flags;
-    char	*ml_doc;
+    char	*ml_name;	/* The name of the built-in function/method */
+    PyCFunction  ml_meth;	/* The C function that implements it */
+    int		 ml_flags;	/* Combination of METH_xxx flags, which mostly
+				   describe the args expected by the C func */
+    char	*ml_doc;	/* The __doc__ attribute, or NULL */
 };
 typedef struct PyMethodDef PyMethodDef;
 
@@ -75,9 +80,9 @@ PyAPI_FUNC(PyObject *) Py_FindMethodInChain(PyMethodChain *, PyObject *,
 
 typedef struct {
     PyObject_HEAD
-    PyMethodDef *m_ml;
-    PyObject    *m_self;
-    PyObject    *m_module;
+    PyMethodDef *m_ml; /* Description of the C function to call */
+    PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
+    PyObject    *m_module; /* The __module__ attribute, can be anything */
 } PyCFunctionObject;
 
 #ifdef __cplusplus

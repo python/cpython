@@ -37,6 +37,15 @@ typedef struct {
     long ob_shash;
     int ob_sstate;
     char ob_sval[1];
+
+    /* Invariants:
+     *     ob_sval contains space for 'ob_size+1' elements.
+     *     ob_sval[ob_size] == 0.
+     *     ob_shash is the hash of the string or -1 if not computed yet.
+     *     ob_sstate != 0 iff the string object is in stringobject.c's
+     *       'interned' dictionary; in this case the two references
+     *       from 'interned' to this object are *not counted* in ob_refcnt.
+     */
 } PyStringObject;
 
 #define SSTATE_NOT_INTERNED 0

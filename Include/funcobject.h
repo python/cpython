@@ -7,17 +7,34 @@
 extern "C" {
 #endif
 
+/* Function objects and code objects should not be confused with each other:
+ *
+ * Function objects are created by the execution of the 'def' statement.
+ * They reference a code object in their func_code attribute, which is a
+ * purely syntactic object, i.e. nothing more than a compiled version of some
+ * source code lines.  There is one code object per source code "fragment",
+ * but each code object can be referenced by zero or many function objects
+ * depending only on how many times the 'def' statement in the source was
+ * executed so far.
+ */
+
 typedef struct {
     PyObject_HEAD
-    PyObject *func_code;
-    PyObject *func_globals;
-    PyObject *func_defaults;
-    PyObject *func_closure;
-    PyObject *func_doc;
-    PyObject *func_name;
-    PyObject *func_dict;
-    PyObject *func_weakreflist;
-    PyObject *func_module;
+    PyObject *func_code;	/* A code object */
+    PyObject *func_globals;	/* A dictionary (other mappings won't do) */
+    PyObject *func_defaults;	/* NULL or a tuple */
+    PyObject *func_closure;	/* NULL or a tuple of cell objects */
+    PyObject *func_doc;		/* The __doc__ attribute, can be anything */
+    PyObject *func_name;	/* The __name__ attribute, a string object */
+    PyObject *func_dict;	/* The __dict__ attribute, a dict or NULL */
+    PyObject *func_weakreflist;	/* List of weak references */
+    PyObject *func_module;	/* The __module__ attribute, can be anything */
+
+    /* Invariant:
+     *     func_closure contains the bindings for func_code->co_freevars, so
+     *     PyTuple_Size(func_closure) == PyCode_GetNumFree(func_code)
+     *     (func_closure may be NULL if PyCode_GetNumFree(func_code) == 0).
+     */
 } PyFunctionObject;
 
 PyAPI_DATA(PyTypeObject) PyFunction_Type;

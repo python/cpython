@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+/* This is about the type 'xrange', not the built-in function range(), which
+   returns regular lists. */
+
 /*
 A range object represents an integer range.  This is an immutable object;
 a range cannot change its value after creation.

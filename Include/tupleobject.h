@@ -8,9 +8,11 @@ extern "C" {
 #endif
 
 /*
-Another generally useful object type is an tuple of object pointers.
-This is a mutable type: the tuple items can be changed (but not their
-number).  Out-of-range indices or non-tuple objects are ignored.
+Another generally useful object type is a tuple of object pointers.
+For Python, this is an immutable type.  C code can change the tuple items
+(but not their number), and even use tuples are general-purpose arrays of
+object references, but in general only brand new tuples should be mutated,
+not ones that might already have been exposed to Python code.
 
 *** WARNING *** PyTuple_SetItem does not increment the new item's reference
 count, but does decrement the reference count of the item it replaces,
@@ -22,6 +24,11 @@ returned item's reference count.
 typedef struct {
     PyObject_VAR_HEAD
     PyObject *ob_item[1];
+
+    /* ob_item contains space for 'ob_size' elements.
+     * Items must normally not be NULL, except during construction when
+     * the tuple is not yet visible outside the function that builds it.
+     */
 } PyTupleObject;
 
 PyAPI_DATA(PyTypeObject) PyTuple_Type;
