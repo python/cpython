@@ -139,6 +139,11 @@ See the Python Mode home page for details:
   :type 'string
   :group 'python)
 
+(defcustom py-python-command-args '("-i")
+  "*List of string arguments to be used when starting a Python shell."
+  :type '(repeat string)
+  :group 'python)
+
 (defcustom py-indent-offset 4
   "*Amount of offset per level of indentation
 Note that `\\[py-guess-indent-offset]' can usually guess a good value
@@ -1148,7 +1153,7 @@ filter."
   (interactive)
   (require 'comint)
   (switch-to-buffer-other-window
-   (make-comint "Python" py-python-command nil "-i"))
+   (apply 'make-comint "Python" py-python-command nil py-python-command-args))
   (make-local-variable 'comint-prompt-regexp)
   (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
   (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
