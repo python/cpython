@@ -131,7 +131,7 @@ div.note .label         { margin-right: 0.5em;
  */
 .seealso                { background-color: #fffaf0;
                           border: thin solid black;
-                          padding: 4pt; }
+                          padding: 0pt 1em 4pt 1em; }
 
 .seealso .heading       { font-size: 110%; }
 
