@@ -1908,6 +1908,19 @@ sub do_cmd_seetitle{
       . $_;
 }
 
+sub do_cmd_seelink{
+    local($_) = @_;
+    my $url = next_argument();
+    my $linktext = next_argument();
+    my $text = next_argument();
+    my $icon = get_link_icon($url);
+    return '<dl compact class="seeurl">'
+      . "\n    <dt><a href='$url'"
+      . "\n        >$linktext$icon</a></dt>"
+      . "\n    <dd>$text</dd>\n  </dl>"
+      . $_;
+}
+
 sub do_cmd_seeurl{
     local($_) = @_;
     my $url = next_argument();

@@ -1400,6 +1400,15 @@ This \UNIX\ is also followed by a space.
     These macros are only defined within the content of the
     \env{seealso} and \env{seealso*} environments.
 
+    \begin{macrodesc}{seelink}{\p{url}\p{linktext}\p{why}}
+      References to specific on-line resources should be given using
+      the \macro{seelink} macro if they don't have a meaningful title
+      but there is some short description of what's at the end of the
+      link.  Online documents which have identifiable titles should be
+      referenced using the \macro{seetitle} macro, using the optional
+      parameter to that macro to provide the URL.
+    \end{macrodesc}
+
     \begin{macrodesc}{seemodule}{\op{key}\p{name}\p{why}}
       Refer to another module.  \var{why} should be a brief
       explanation of why the reference may be interesting.  The module
