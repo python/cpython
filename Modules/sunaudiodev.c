@@ -421,7 +421,7 @@ sads_setattr(xp, name, v)
 	if (v == NULL) {
 		err_setstr(TypeError,
 			   "can't delete sun audio status attributes");
-		return 0;
+		return -1;
 	}
 	return setmember((char *)&xp->ai, sads_ml, name, v);
 }
