@@ -96,7 +96,7 @@ class FAQServer:
 	return value
 
     def do_frontpage(self):
-	self.prologue("Python FAQ (beta test) Front Page")
+	self.prologue("Python FAQ Wizard (beta test)")
 	print """
 	<UL>
 	<LI><A HREF="faq.py?req=index">FAQ index</A>
@@ -574,7 +574,7 @@ class FAQServer:
 		print "<PRE>%s</PRE>" % cgi.escape(output)
 
     def set_cookie(self, author, email, password):
-	name = "Python-FAQ-ID"
+	name = "Python-FAQ-Wizard"
 	value = "%s/%s/%s" % (author, email, password)
 	import urllib
 	value = urllib.quote(value)
@@ -587,18 +587,19 @@ class FAQServer:
 
     def get_cookie(self):
 	if not os.environ.has_key('HTTP_COOKIE'):
-	    return "", ""
+	    return "", "", ""
 	raw = os.environ['HTTP_COOKIE']
-	words = string.split(raw, ';')
+	words = map(string.strip, string.split(raw, ';'))
 	cookies = {}
 	for word in words:
 	    i = string.find(word, '=')
 	    if i >= 0:
 		key, value = word[:i], word[i+1:]
 		cookies[key] = value
-	if not cookies.has_key('Python-FAQ-ID'):
+	print "\n<PRE>Cookies:", cookies, "</PRE>"
+	if not cookies.has_key('Python-FAQ-Wizard'):
 	    return "", "", ""
-	value = cookies['Python-FAQ-ID']
+	value = cookies['Python-FAQ-Wizard']
 	import urllib
 	value = urllib.unquote(value)
 	words = string.split(value, '/')
@@ -613,7 +614,7 @@ class FAQServer:
 	author = self.author
 	email = self.email
 	password = self.password
-	if not author or not email:
+	if not author or not email or not password:
 	    a, e, p = self.get_cookie()
 	    author = author or a
 	    email = email or e
