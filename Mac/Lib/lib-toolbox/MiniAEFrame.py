@@ -176,7 +176,7 @@ class _Test(AEServer, MiniApplication):
 		AEServer.__init__(self)
 		self.installaehandler('aevt', 'oapp', self.open_app)
 		self.installaehandler('aevt', 'quit', self.quit)
-		self.installaehandler('aevt', '****', self.other)
+		self.installaehandler('****', '****', self.other)
 		self.mainloop()
 
 	def quit(self, **args):
