@@ -33,52 +33,44 @@ If you code or decode textfiles on non-Macintosh platforms they will
 still use the macintosh newline convention (carriage-return as end of
 line).
 
-As of this writing, hexbin appears to not work in all cases.
+As of this writing, \var{hexbin} appears to not work in all cases.
 
 \section{Standard module \sectcode{uu}}
 \stmodindex{uu}
 
 This module encodes and decodes files in uuencode format, allowing
 arbitrary binary data to be transferred over ascii-only connections.
+Whereever a file argument is expected, the methods accept either a
+pathname (\code{'-'} for stdin/stdout) or a file-like object.
+
+Normally you would pass filenames, but there is one case where you
+have to open the file yourself: if you are on a non-unix platform and
+your binary file is actually a textfile that you want encoded
+unix-compatible you will have to open the file yourself as a textfile,
+so newline conversion is performed.
+
+This code was contributed by Lance Ellinghouse, and modified by Jack
+Jansen.
 
 The \code{uu} module defines the following functions:
 
 \renewcommand{\indexsubitem}{(in module uu)}
 
-\begin{funcdesc}{encode}{filename\, mode\, in_file\, out_file}
-Uuencode file \var{in_file} into file \var{out_file}. Both are
-file-like objects supporting a \var{read} and \var{write} method
-respectively. The uuencoded file will have the header specifying
-\var{filename} and \var{mode} as the defaults for the results of
-decoding the file.
+\begin{funcdesc}{encode}{in_file\, out_file\optional{\, name\, mode}}
+Uuencode file \var{in_file} into file \var{out_file}.  The uuencoded
+file will have the header specifying \var{name} and \var{mode} as the
+defaults for the results of decoding the file. The default defaults
+are taken from \var{in_file}, or \code{'-'} and \code{0666}
+respectively. 
 \end{funcdesc}
 
-\begin{funcdesc}{decode}{filename\, mode\, in_file}
-Note that this function uses a non-standard form of variable
-arguments, see below for other variants of argument lists.
-
-This call decodes uuencoded file \var{in_file} (an object supporting a
-\var{readline} method), placing the result on a file with name
-\var{filename} and mode \var{mode}.
+\begin{funcdesc}{decode}{in_file\optional{\, out_file\, mode}}
+This call decodes uuencoded file \var{in_file} placing the result on
+file \var{out_file}. If \var{out_file} is a pathname the \var{mode} is
+also set. Defaults for \var{out_file} and \var{mode} are taken from
+the uuencode header.
 \end{funcdesc}
 
-\begin{funcdesc}{decode}{in_file\, out_file}
-An alternative form of \var{decode} which writes the resulting data to
-\var{out_file} (an object supporting a \var{write} method).
-\end{funcdesc}
-
-\begin{funcdesc}{decode}{in_file}
-An alternative form of \var{decode} which stores the result in the
-file specified in the uuencoded file.
-\end{funcdesc}
-
-\subsection{notes}
-This code was contributed by Lance Ellinghouse, and modified by Jack
-Jansen to use the \var{binascii} module.
-
-Encoding a file on a non-unix platforms may well result in a file
-with the incorrect newline semantics or a file extractable only on the
-original platform.
 \section{Built-in Module \sectcode{binascii}}	% If implemented in C
 \bimodindex{binascii}
 
