@@ -142,12 +142,13 @@ class SubPattern:
 
 class Tokenizer:
     def __init__(self, string):
-        self.index = 0
         self.string = string
-        self.next = self.__next()
+        self.index = 0
+        self.__next()
     def __next(self):
         if self.index >= len(self.string):
-            return None
+            self.next = None
+            return
         char = self.string[self.index]
         if char[0] == "\\":
             try:
@@ -156,21 +157,20 @@ class Tokenizer:
                 raise error, "bogus escape"
             char = char + c
         self.index = self.index + len(char)
-        return char
+        self.next = char
     def match(self, char):
         if char == self.next:
-            self.next = self.__next()
-            return 1
-        return 0
-    def match_set(self, set):
-        if self.next and self.next in set:
-            self.next = self.__next()
+            self.__next()
             return 1
         return 0
     def get(self):
         this = self.next
-        self.next = self.__next()
+        self.__next()
         return this
+    def tell(self):
+        return self.index, self.next
+    def seek(self, index):
+        self.index, self.next = index
 
 def isident(char):
     return "a" <= char <= "z" or "A" <= char <= "Z" or char == "_"
@@ -381,6 +381,7 @@ def _parse(source, state):
             elif this == "+":
                 min, max = 1, MAXREPEAT
             elif this == "{":
+                here = source.tell()
                 min, max = 0, MAXREPEAT
                 lo = hi = ""
                 while source.next in DIGITS:
@@ -391,7 +392,9 @@ def _parse(source, state):
                 else:
                     hi = lo
                 if not source.match("}"):
-                    raise error, "bogus range"
+                    subpattern.append((LITERAL, ord(this)))
+                    source.seek(here)
+                    continue
                 if lo:
                     min = int(lo)
                 if hi:

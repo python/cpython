@@ -19,7 +19,7 @@
  * 00-06-25 fl	major changes to better deal with nested repeats (0.9)
  * 00-06-28 fl	fixed findall (0.9.1)
  * 00-06-29 fl	fixed split, added more scanner features (0.9.2)
- * 00-06-30 fl	tuning, fast search (0.9.3)
+ * 00-06-30 fl	added fast search optimization (0.9.3)
  * 00-06-30 fl	added assert (lookahead) primitives, etc (0.9.4)
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
@@ -365,18 +365,21 @@ SRE_MEMBER(SRE_CODE* set, SRE_CODE ch)
 			return !ok;
 
 		case SRE_OP_LITERAL:
+            /* args: <literal> */
 			if (ch == set[0])
 				return ok;
 			set++;
 			break;
 
 		case SRE_OP_RANGE:
+            /* args: <lower> <upper> */
 			if (set[0] <= ch && ch <= set[1])
 				return ok;
 			set += 2;
 			break;
 
 		case SRE_OP_CATEGORY:
+            /* args: <category> */
 			if (sre_category(set[0], (int) ch))
 				return ok;
 			set += 1;
