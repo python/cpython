@@ -166,7 +166,7 @@ def tabulate(c1=Number, c2=Number):
         print '----------+-' * 4
     print
     print '*' * 50
-                
+
 def misbehavin():
     class Misb:
         def __lt__(self, other): return 0
