@@ -53,9 +53,7 @@ static PyObject *S_ident_o = NULL;			/*  identifier, held by openlog()  */
 
 
 static PyObject * 
-syslog_openlog(self, args)
-	PyObject * self;
-	PyObject * args;
+syslog_openlog(PyObject * self, PyObject * args)
 {
 	long logopt = 0;
 	long facility = LOG_USER;
@@ -80,9 +78,7 @@ syslog_openlog(self, args)
 
 
 static PyObject * 
-syslog_syslog(self, args)
-	PyObject * self;
-	PyObject * args;
+syslog_syslog(PyObject * self, PyObject * args)
 {
 	char *message;
 	int   priority = LOG_INFO;
@@ -101,9 +97,7 @@ syslog_syslog(self, args)
 }
 
 static PyObject * 
-syslog_closelog(self, args)
-	PyObject * self;
-	PyObject * args;
+syslog_closelog(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":closelog"))
 		return NULL;
@@ -115,9 +109,7 @@ syslog_closelog(self, args)
 }
 
 static PyObject * 
-syslog_setlogmask(self, args)
-	PyObject * self;
-	PyObject * args;
+syslog_setlogmask(PyObject *self, PyObject *args)
 {
 	long maskpri, omaskpri;
 
@@ -128,9 +120,7 @@ syslog_setlogmask(self, args)
 }
 
 static PyObject * 
-syslog_log_mask(self, args)
-	PyObject * self;
-	PyObject * args;
+syslog_log_mask(PyObject *self, PyObject *args)
 {
 	long mask;
 	long pri;
@@ -141,9 +131,7 @@ syslog_log_mask(self, args)
 }
 
 static PyObject * 
-syslog_log_upto(self, args)
-	PyObject * self;
-	PyObject * args;
+syslog_log_upto(PyObject *self, PyObject *args)
 {
 	long mask;
 	long pri;
@@ -168,10 +156,7 @@ static PyMethodDef syslog_methods[] = {
 /* helper function for initialization function */
 
 static void
-ins(d, s, x)
-	PyObject *d;
-	char *s;
-	long x;
+ins(PyObject *d, char *s, long x)
 {
 	PyObject *v = PyInt_FromLong(x);
 	if (v) {
