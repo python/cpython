@@ -1,8 +1,15 @@
-What's New in Python 2.2.2?
-Release date: dd-mmm-2002
-===========================
+What's New in Python 2.2.2b1?
+Release date: 7-Oct-2002
+=============================
 
 Core and builtins
+
+- Changed new-style class instantiation so that when C's __new__
+  method returns something that's not a C instance, its __init__ is
+  not called.  [SF bug #537450]  (This is arguably a semantic change,
+  but it's hard to imagine a reason for wanting to depend on the old
+  behavior.  If problems with this are reported within a week of the
+  release of 2.2.2 beta 1, we may revert this change.)
 
 - u'%c' will now raise a ValueError in case the argument is an
   integer outside the valid range of Unicode code point ordinals.

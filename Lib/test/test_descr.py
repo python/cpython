@@ -3017,6 +3017,27 @@ def subtype_resurrection():
     # it as a leak.
     del C.__del__
 
+def funnynew():
+    if verbose: print "Testing __new__ returning something unexpected..."
+    class C(object):
+        def __new__(cls, arg):
+            if isinstance(arg, str): return [1, 2, 3]
+            elif isinstance(arg, int): return object.__new__(D)
+            else: return object.__new__(cls)
+    class D(C):
+        def __init__(self, arg):
+            self.foo = arg
+    vereq(C("1"), [1, 2, 3])
+    vereq(D("1"), [1, 2, 3])
+    d = D(None)
+    veris(d.foo, None)
+    d = C(1)
+    vereq(isinstance(d, D), True)
+    vereq(d.foo, 1)
+    d = D(1)
+    vereq(isinstance(d, D), True)
+    vereq(d.foo, 1)
+
 def test_main():
     class_docstrings()
     lists()
@@ -3078,6 +3099,7 @@ def test_main():
     imulbug()
     copy_setstate()
     subtype_resurrection()
+    funnynew()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
