@@ -118,7 +118,8 @@ def main(args):
 
 def restore(which):
     restored = difflib.restore(sys.stdin.readlines(), which)
-    sys.stdout.writelines(restored)
+    for line in restored:
+        print line,
 
 if __name__ == '__main__':
     args = sys.argv[1:]
