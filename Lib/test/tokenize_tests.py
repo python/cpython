@@ -144,7 +144,7 @@ if 0:
 # Operators
 
 def d22(a, b, c=1, d=2): pass
-def d01v(a=1, *rest, **rest): pass
+def d01v(a=1, *restt, **restd): pass
 
 (x, y) <> ({'a':1}, {'b':2})
 
