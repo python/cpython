@@ -61,6 +61,30 @@ class FrameWindow(basewin.BaseWindow):
 			dummy = self.editor.event(WE_COMMAND, \
 						self.win, detail)
 	
+	def mouse_down(self, detail):
+		(h, v), clicks, button, mask = detail
+		i = v / stdwin.lineheight()
+		if 5 <= i < len(self.displaylist):
+			import string
+			name = string.splitfields(self.displaylist[i],' = ')[0]
+			if not self.dict.has_key(name):
+				stdwin.fleep()
+				return
+			value = self.dict[name]
+			if not hasattr(value, '__dict__'):
+				stdwin.fleep()
+				return
+			name = 'instance ' + `value`
+			if self.debugger.framewindows.has_key(name):
+				self.debugger.framewindows[name].popup()
+			else:
+				self.debugger.framewindows[name] = \
+					  FrameWindow().init(self.debugger,
+						  self.frame, value.__dict__,
+						  name)
+			return
+		stdwin.fleep()
+
 	def re_eval(self):
 		import string, repr
 		expr = string.strip(self.editor.gettext())
