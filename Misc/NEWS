@@ -67,7 +67,7 @@ Core and builtins
 
 - Weak reference objects are now part of the core and offers a C API.
   A bug which could allow a core dump when binary operations involved
-  proxy reference has been fixed.  weekref.ReferenceError is now a
+  proxy reference has been fixed.  weakref.ReferenceError is now a
   built-in exception.
 
 - unicode(obj) now behaves more like str(obj), accepting arbitrary
@@ -279,7 +279,7 @@ Type/class unification and new-style classes
 
 - For new-style classes, what was previously called __getattr__ is now
   called __getattribute__.  This method, if defined, is called for
-  *every* attribute access.  A new __getattr__ hook mor similar to the
+  *every* attribute access.  A new __getattr__ hook more similar to the
   one in classic classes is defined which is called only if regular
   attribute access raises AttributeError; to catch *all* attribute
   access, you can use __getattribute__ (for new-style classes).  If
@@ -323,8 +323,8 @@ Core
   makes unicode() behave like str() when applied to non-string/buffer
   objects.
 
-- PyFile_WriteObject now passes Unicode object to the file's write
-  method. As a result, all file-like object which may be the target
+- PyFile_WriteObject now passes Unicode objects to the file's write
+  method. As a result, all file-like objects which may be the target
   of a print statement must support Unicode objects, i.e. they must
   at least convert them into ASCII strings.
 
