@@ -4841,8 +4841,15 @@ unicode_zfill(PyUnicodeObject *self, PyObject *args)
         return NULL;
 
     if (self->length >= width) {
-        Py_INCREF(self);
-        return (PyObject*) self;
+        if (PyUnicode_CheckExact(self)) {
+            Py_INCREF(self);
+            return (PyObject*) self;
+        }
+        else
+            return PyUnicode_FromUnicode(
+                PyUnicode_AS_UNICODE(self),
+                PyUnicode_GET_SIZE(self)
+            );
     }
 
     fill = width - self->length;
