@@ -3129,8 +3129,10 @@ PyType_Ready(PyTypeObject *type)
 
 	/* Initialize tp_base (defaults to BaseObject unless that's us) */
 	base = type->tp_base;
-	if (base == NULL && type != &PyBaseObject_Type)
+	if (base == NULL && type != &PyBaseObject_Type) {
 		base = type->tp_base = &PyBaseObject_Type;
+		Py_INCREF(base);
+	}
 
 	/* Initialize the base class */
 	if (base && base->tp_dict == NULL) {
