@@ -1,15 +1,16 @@
 # Scan AppleEvents.h header file, generate aegen.py and AppleEvents.py files.
 # Then run aesupport to generate AEmodule.c.
-0# (Should learn how to tell the compiler to compile it as well.)
+# (Should learn how to tell the compiler to compile it as well.)
 
-import addpack
-addpack.addpack(':Tools:bgen:bgen')
 import sys
 import os
 import string
 import regex
 import regsub
 import MacOS
+
+BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+sys.path.append(BGENDIR)
 from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner

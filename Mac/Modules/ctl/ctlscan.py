@@ -1,6 +1,8 @@
 # Scan <Controls.h>, generating ctlgen.py.
-import addpack
-addpack.addpack(':Tools:bgen:bgen')
+import sys
+import os
+BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+sys.path.append(BGENDIR)
 
 from scantools import Scanner
 from bgenlocations import TOOLBOXDIR

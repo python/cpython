@@ -1,6 +1,8 @@
 # Scan an Apple header file, generating a Python file of generator calls.
-import addpack
-addpack.addpack(':Tools:bgen:bgen')
+import sys
+import os
+BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+sys.path.append(BGENDIR)
 from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner

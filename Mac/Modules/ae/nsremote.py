@@ -11,12 +11,7 @@ Jack Jansen, CWI, January 1996.
 # be nicer to use the more "object oriented" standard OSA stuff, when it
 # is implemented in Netscape.
 #
-import addpack
 import sys
-
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
 
 import aetools
 import Standard_Suite

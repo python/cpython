@@ -2,8 +2,10 @@
 # Then import sndsupport (which execs sndgen.py) to generate Sndmodule.c.
 # (Should learn how to tell the compiler to compile it as well.)
 
-import addpack
-addpack.addpack(':Tools:bgen:bgen')
+import sys
+import os
+BGENDIR=os.path.join(sys.prefix, ':Tools:bgen:bgen')
+sys.path.append(BGENDIR)
 from bgenlocations import TOOLBOXDIR
 
 from scantools import Scanner

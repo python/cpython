@@ -5,9 +5,6 @@
 
 import string
 
-import addpack
-addpack.addpack(':Tools:bgen:bgen')
-
 # Declarations that change for each manager
 MACHEADERFILE = 'Menus.h'		# The Apple header file
 MODNAME = 'Menu'			# The name of the module
