@@ -491,9 +491,12 @@ class PyFlowGraph(FlowGraph):
     _convert_STORE_FAST = _convert_LOAD_FAST
     _convert_DELETE_FAST = _convert_LOAD_FAST
 
-    def _convert_NAME(self, arg):
+    def _convert_LOAD_NAME(self, arg):
         return self._lookupName(arg, self.names)
-    _convert_LOAD_NAME = _convert_NAME
+
+    def _convert_NAME(self, arg):
+        self._lookupName(arg, self.varnames)
+        return self._lookupName(arg, self.names)
     _convert_STORE_NAME = _convert_NAME
     _convert_DELETE_NAME = _convert_NAME
     _convert_IMPORT_NAME = _convert_NAME
