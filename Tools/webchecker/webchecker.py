@@ -93,6 +93,8 @@ rooturl   -- URL to start checking
 
 """
 
+__version__ = "0.1"
+
 
 import sys
 import os
@@ -135,7 +137,6 @@ def main():
     except getopt.error, msg:
 	sys.stdout = sys.stderr
 	print msg
-	print __doc__ % globals()
 	sys.exit(2)
     for o, a in opts:
 	if o == '-R':
@@ -150,6 +151,9 @@ def main():
 	    roundsize = string.atoi(a)
 	if o == '-v':
 	    verbose = verbose + 1
+
+    if verbose:
+	print AGENTNAME, "version", __version__
 
     if restart:
 	if verbose > 0:
@@ -234,13 +238,17 @@ class Checker:
 	    self.addrobot(root)
 
     def addrobot(self, root):
-	self.robots[root] = rp = robotparser.RobotFileParser()
-	if verbose > 3:
-	    print "Parsing robots.txt file"
-	    rp.debug = 1
 	url = urlparse.urljoin(root, "/robots.txt")
+	self.robots[root] = rp = robotparser.RobotFileParser()
+	if verbose > 2:
+	    print "Parsing", url
+	    rp.debug = 1
 	rp.set_url(url)
-	rp.read()
+	try:
+	    rp.read()
+	except IOError, msg:
+	    if verbose > 1:
+		print "I/O error parsing", url, ":", msg
 
     def run(self):
 	while self.todo:
