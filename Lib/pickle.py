@@ -381,7 +381,7 @@ class Unpickler:
 
 	def load_persid(self):
 		pid = self.readline()[:-1]
-		self.stack.append(self.persisent_load(pid))
+		self.stack.append(self.persistent_load(pid))
 	dispatch[PERSID] = load_persid
 
 	def load_none(self):
