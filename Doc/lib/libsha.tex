@@ -1,5 +1,5 @@
 \section{\module{sha} ---
-         SHA message digest algorithm}
+         SHA-1 message digest algorithm}
 
 \declaremodule{builtin}{sha}
 \modulesynopsis{NIST's secure hash algorithm, SHA.}
@@ -7,12 +7,13 @@
 
 
 This module implements the interface to NIST's\index{NIST} secure hash 
-algorithm,\index{Secure Hash Algorithm} known as SHA.  It is used in
+algorithm,\index{Secure Hash Algorithm} known as SHA-1.  SHA-1 is an
+improved version of the original SHA hash algorithm.  It is used in
 the same way as the \refmodule{md5} module:\ use \function{new()}
 to create an sha object, then feed this object with arbitrary strings
 using the \method{update()} method, and at any point you can ask it
 for the \dfn{digest} of the concatenation of the strings fed to it
-so far.\index{checksum!SHA}  SHA digests are 160 bits instead of
+so far.\index{checksum!SHA}  SHA-1 digests are 160 bits instead of
 MD5's 128 bits.
 
 
