@@ -297,6 +297,24 @@ extern DL_IMPORT(int) PyUnicode_Resize(
 
 */
 
+extern DL_IMPORT(PyObject*) PyUnicode_FromEncodedObject(
+    register PyObject *obj, 	/* Object */
+    const char *encoding,       /* encoding */
+    const char *errors          /* error handling */
+    );
+
+/* Shortcut for PyUnicode_FromEncodedObject(obj, NULL, "strict");
+   which results in using the default encoding as basis for 
+   decoding the object.
+
+   Coerces obj to an Unicode object and return a reference with
+   *incremented* refcount.
+
+   The API returns NULL in case of an error. The caller is responsible
+   for decref'ing the returned objects.
+
+*/
+
 extern DL_IMPORT(PyObject*) PyUnicode_FromObject(
     register PyObject *obj 	/* Object */
     );
