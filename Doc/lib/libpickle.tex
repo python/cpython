@@ -126,10 +126,35 @@ some other characteristics of \module{pickle}'s representation) is that
 for debugging or recovery purposes it is possible for a human to read
 the pickled file with a standard text editor.
 
+There are currently 3 different protocols which can be used for pickling.
+
+\begin{itemize}
+
+\item Protocol version 0 is the original ASCII protocol and is backwards
+compatible with earlier versions of Python.
+
+\item Protocol version 1 is the old binary format which is also compatible
+with earlier versions of Python.
+
+\item Protocol version 2 was introduced in Python 2.3.  It provides
+much more efficient pickling of new-style classes.
+
+\end{itemize}
+
+Refer to PEP 307 for more information.
+
+If a \var{protocol} is not specified, protocol 0 is used.
+If \var{protocol} is specified as a negative value,
+the highest protocol version will be used.
+
+\versionchanged[The \var{bin} parameter is deprecated and only provided
+for backwards compatibility.  You should use the \var{protocol}
+parameter instead]{2.3}
+
 A binary format, which is slightly more efficient, can be chosen by
 specifying a true value for the \var{bin} argument to the
 \class{Pickler} constructor or the \function{dump()} and \function{dumps()}
-functions.
+functions.  A \var{protocol} version >= 1 implies use of a binary format.
 
 \subsection{Usage}
 
@@ -139,10 +164,20 @@ stream, you first create an unpickler, then you call the unpickler's
 \method{load()} method.  The \module{pickle} module provides the
 following functions to make this process more convenient:
 
-\begin{funcdesc}{dump}{object, file\optional{, bin}}
+\begin{funcdesc}{dump}{object, file\optional{, protocol\optional{, bin}}}
 Write a pickled representation of \var{object} to the open file object
 \var{file}.  This is equivalent to
-\code{Pickler(\var{file}, \var{bin}).dump(\var{object})}.
+\code{Pickler(\var{file}, \var{protocol}, \var{bin}).dump(\var{object})}.
+
+If the \var{protocol} parameter is ommitted, protocol 0 is used.
+If \var{protocol} is specified as a negative value,
+the highest protocol version will be used.
+
+\versionchanged[The \var{protocol} parameter was added.
+The \var{bin} parameter is deprecated and only provided
+for backwards compatibility.  You should use the \var{protocol}
+parameter instead]{2.3}
+
 If the optional \var{bin} argument is true, the binary pickle format
 is used; otherwise the (less efficient) text pickle format is used
 (for backwards compatibility, this is the default).
@@ -169,9 +204,20 @@ This function automatically determines whether the data stream was
 written in binary mode or not.
 \end{funcdesc}
 
-\begin{funcdesc}{dumps}{object\optional{, bin}}
+\begin{funcdesc}{dumps}{object\optional{, protocol\optional{, bin}}}
 Return the pickled representation of the object as a string, instead
-of writing it to a file.  If the optional \var{bin} argument is
+of writing it to a file.
+
+If the \var{protocol} parameter is ommitted, protocol 0 is used.
+If \var{protocol} is specified as a negative value,
+the highest protocol version will be used.
+
+\versionchanged[The \var{protocol} parameter was added.
+The \var{bin} parameter is deprecated and only provided
+for backwards compatibility.  You should use the \var{protocol}
+parameter instead]{2.3}
+
+If the optional \var{bin} argument is
 true, the binary pickle format is used; otherwise the (less efficient)
 text pickle format is used (this is the default).
 \end{funcdesc}
@@ -210,9 +256,19 @@ objects can actually be unpickled.  See section~\ref{pickle-sec} for
 more details on security concerns.}, \class{Pickler} and
 \class{Unpickler}:
 
-\begin{classdesc}{Pickler}{file\optional{, bin}}
+\begin{classdesc}{Pickler}{file\optional{, protocol\optional{, bin}}}
 This takes a file-like object to which it will write a pickle data
-stream.  Optional \var{bin} if true, tells the pickler to use the more
+stream.  
+
+If the \var{protocol} parameter is ommitted, protocol 0 is used.
+If \var{protocol} is specified as a negative value,
+the highest protocol version will be used.
+
+\versionchanged[The \var{bin} parameter is deprecated and only provided
+for backwards compatibility.  You should use the \var{protocol}
+parameter instead]{2.3}
+
+Optional \var{bin} if true, tells the pickler to use the more
 efficient binary pickle format, otherwise the \ASCII{} format is used
 (this is the default).
 
