@@ -20,10 +20,7 @@ from distutils.ccompiler import \
 
 _can_read_reg = 0
 try:
-    try:
-        import _winreg
-    except ImportError:
-        import winreg                   # for pre-2000/06/29 CVS Python
+    import _winreg
 
     _can_read_reg = 1
     hkey_mod = _winreg
