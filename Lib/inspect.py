@@ -740,12 +740,14 @@ def getframeinfo(frame, context=1):
     The optional second argument specifies the number of lines of context
     to return, which are centered around the current line."""
     if istraceback(frame):
+        lineno = frame.tb_lineno
         frame = frame.tb_frame
+    else:
+        lineno = frame.f_lineno
     if not isframe(frame):
         raise TypeError('arg is not a frame or traceback object')
 
     filename = getsourcefile(frame) or getfile(frame)
-    lineno = frame.f_lineno
     if context > 0:
         start = lineno - 1 - context//2
         try:
