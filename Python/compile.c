@@ -35,6 +35,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    XXX other JAR tricks?
 */
 
+#ifndef NO_PRIVATE_NAME_MANGLING
+#define PRIVATE_NAME_MANGLING
+#endif
+
 #include "allobjects.h"
 
 #include "node.h"
@@ -252,6 +256,9 @@ struct compiling {
 	int c_nblocks;		/* current block stack level */
 	char *c_filename;	/* filename of current node */
 	char *c_name;		/* name of object (e.g. function) */
+#ifdef PRIVATE_NAME_MANGLING
+	char *c_private;	/* for private name mangling */
+#endif
 };
 
 
@@ -304,6 +311,8 @@ static void com_addopname PROTO((struct compiling *, int, node *));
 static void com_list PROTO((struct compiling *, node *, int));
 static int com_argdefs PROTO((struct compiling *, node *));
 static int com_newlocal PROTO((struct compiling *, char *));
+static codeobject *icompile PROTO((struct _node *, struct compiling *));
+static codeobject *jcompile PROTO((struct _node *, char *, struct compiling *));
 
 static int
 com_init(c, filename)
@@ -489,6 +498,41 @@ com_addname(c, v)
 	return com_add(c, c->c_names, v);
 }
 
+#ifdef PRIVATE_NAME_MANGLING
+static int
+com_mangle(c, name, buffer, maxlen)
+	struct compiling *c;
+	char *name;
+	char *buffer;
+	int maxlen;
+{
+	/* Name mangling: __private becomes _classname_private.
+	   This is independent from how the name is used. */
+	char *p;
+	int nlen, plen;
+	nlen = strlen(name);
+	if (nlen+1 >= maxlen)
+		return 0; /* Don't mangle __extremely_long_names */
+	if (name[nlen-1] == '_' && name[nlen-2] == '_')
+		return 0; /* Don't mangle __whatever__ */
+	p = c->c_private;
+	/* Strip leading underscores from class name */
+	while (*p == '_')
+		p++;
+	if (*p == '\0')
+		return 0; /* Don't mangle if class is just underscores */
+	plen = strlen(p);
+	if (plen + nlen >= maxlen)
+		plen = maxlen-nlen-1; /* Truncate class name if too long */
+	/* buffer = "_" + p[:plen] + name[1:] # i.e. plen+nlen bytes */
+	buffer[0] = '_';
+	strncpy(buffer+1, p, plen);
+	strcpy(buffer+plen+1, name+1);
+	/* fprintf(stderr, "mangle %s -> %s\n", name, buffer); */
+	return 1;
+}
+#endif
+
 static void
 com_addopnamestr(c, op, name)
 	struct compiling *c;
@@ -497,6 +541,13 @@ com_addopnamestr(c, op, name)
 {
 	object *v;
 	int i;
+#ifdef PRIVATE_NAME_MANGLING
+	char buffer[256];
+	if (name != NULL && name[0] == '_' && name[1] == '_' &&
+	    c->c_private != NULL &&
+	    com_mangle(c, name, buffer, (int)sizeof(buffer)))
+		name = buffer;
+#endif
 	if (name == NULL || (v = newstringobject(name)) == NULL) {
 		c->c_errors++;
 		i = 255;
@@ -1382,7 +1433,7 @@ com_test(c, n)
 		object *v;
 		int i;
 		int ndefs = com_argdefs(c, CHILD(n, 0));
-		v = (object *) compile(CHILD(n, 0), c->c_filename);
+		v = (object *) icompile(CHILD(n, 0), c);
 		if (v == NULL) {
 			c->c_errors++;
 			i = 255;
@@ -2285,7 +2336,7 @@ com_funcdef(c, n)
 {
 	object *v;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
-	v = (object *)compile(n, c->c_filename);
+	v = (object *)icompile(n, c);
 	if (v == NULL)
 		c->c_errors++;
 	else {
@@ -2333,7 +2384,7 @@ com_classdef(c, n)
 		com_addoparg(c, BUILD_TUPLE, 0);
 	else
 		com_bases(c, CHILD(n, 3));
-	v = (object *)compile(n, c->c_filename);
+	v = (object *)icompile(n, c);
 	if (v == NULL)
 		c->c_errors++;
 	else {
@@ -2706,6 +2757,9 @@ compile_classdef(c, n)
 	REQ(n, classdef);
 	/* classdef: 'class' NAME ['(' testlist ')'] ':' suite */
 	c->c_name = STR(CHILD(n, 1));
+#ifdef PRIVATE_NAME_MANGLING
+	c->c_private = c->c_name;
+#endif
 	ch = CHILD(n, NCH(n)-1); /* The suite */
 	doc = get_docstring(ch);
 	if (doc != NULL) {
@@ -2878,10 +2932,33 @@ compile(n, filename)
 	node *n;
 	char *filename;
 {
+	return jcompile(n, filename, NULL);
+}
+
+static codeobject *
+icompile(n, base)
+	node *n;
+	struct compiling *base;
+{
+	return jcompile(n, base->c_filename, base);
+}
+
+static codeobject *
+jcompile(n, filename, base)
+	node *n;
+	char *filename;
+	struct compiling *base;
+{
 	struct compiling sc;
 	codeobject *co;
 	if (!com_init(&sc, filename))
 		return NULL;
+#ifdef PRIVATE_NAME_MANGLING
+	if (base)
+		sc.c_private = base->c_private;
+	else
+		sc.c_private = NULL;
+#endif
 	compile_node(&sc, n);
 	com_done(&sc);
 	if ((TYPE(n) == funcdef || TYPE(n) == lambdef) && sc.c_errors == 0) {
