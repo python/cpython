@@ -6,7 +6,8 @@
 # - os.name is either 'posix' or 'mac'
 # - os.curdir is a string representing the current directory ('.' or ':')
 # - os.pardir is a string representing the parent directory ('..' or '::')
-# - os.sep is the (or a most common) pathname separator ('/' or ':')
+# - os.sep is the (or a most common) pathname separator ('/' or ':' or '\\')
+# - os.altsep is the alternatte pathname separator (None or '/')
 # - os.pathsep is the component separator used in $PATH etc
 # - os.defpath is the default search path for executables
 
@@ -16,38 +17,70 @@
 # and opendir), and leave all pathname manipulation to os.path
 # (e.g., split and join).
 
-_osindex = {
-	  'posix': ('.', '..', '/', ':', ':/bin:/usr/bin'),
-	  'dos':   ('.', '..', '\\', ';', '.;C:\\bin'),
-	  'nt':    ('.', '..', '\\', ';', '.;C:\\bin'),
-	  'mac':   (':', '::', ':', '\n', ':'),
-}
-
-# For freeze.py script:
-if 0:
-	import posix
-	import posixpath
-
 import sys
-for name in _osindex.keys():
-	if name in sys.builtin_module_names:
-		curdir, pardir, sep, pathsep, defpath = _osindex[name]
-		exec 'from %s import *' % name
-		exec 'import %spath' % name
-		exec 'path = %spath' % name
-		exec 'del %spath' % name
-		try:
-			exec 'from %s import _exit' % name
-		except ImportError:
-			pass
-		try:
-			environ
-		except:
-			environ = {} # Make sure os.environ exists, at least
-		break
+
+_names = sys.builtin_module_names
+
+altsep = None
+
+if 'posix' in _names:
+	name = 'posix'
+	curdir = '.'; pardir = '..'; sep = '/'; pathsep = ':'
+	defpath = ':/bin:/usr/bin'
+	from posix import *
+	try:
+		from posix import _exit
+	except ImportError:
+		pass
+	import posixpath
+	path = posixpath
+	del posixpath
+elif 'nt' in _names:
+	name = 'nt'
+	curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
+	defpath = '.;C:\\bin'
+	from nt import *
+	try:
+		from nt import _exit
+	except ImportError:
+		pass
+	import ntpath
+	path = ntpath
+	del ntpath
+elif 'dos' in _names:
+	name = 'dos'
+	curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
+	defpath = '.;C:\\bin'
+	from dos import *
+	try:
+		from dos import _exit
+	except ImportError:
+		pass
+	import dospath
+	path = dospath
+	del dospath
+elif 'mac' in _names:
+	name = 'mac'
+	curdir = ':'; pardir = '::'; sep = ':'; pathsep = '\n'
+	defpath = ':'
+	from mac import *
+	try:
+		from mac import _exit
+	except ImportError:
+		pass
+	import macpath
+	path = macpath
+	del macpath
 else:
-	del name
 	raise ImportError, 'no os specific module found'
+
+del _names
+
+# Make sure os.environ exists, at least
+try:
+	environ
+except NameError:
+	environ = {}
 
 def execl(file, *args):
 	execv(file, args)
@@ -104,31 +137,13 @@ def _execvpe(file, args, env = None):
 				exc, arg = error, (errno, msg)
 	raise exc, arg
 
-# Provide listdir for Windows NT that doesn't have it built in
-if name == 'nt':
-	try:
-		_tmp = listdir
-		del _tmp
-	except NameError:
-		def listdir(name):
-			if path.ismount(name):
-				list = ['.']
-			else:
-				list = ['.', '..']
-			f = popen('dir/l/b ' + name, 'r')
-			line = f.readline()
-			while line:
-				list.append(line[:-1])
-				line = f.readline()
-			return list
-
-
 # Change environ to automatically call putenv() if it exists
 try:
-	_putenv = putenv
+	# This will fail if there's no putenv
+	putenv
 except NameError:
-	_putenv = None
-if _putenv:
+	pass
+else:
 	import UserDict
 
 	class _Environ(UserDict.UserDict):
