@@ -30,17 +30,18 @@ class CommandTests(unittest.TestCase):
         self.assertNotEquals(status, 0)
 
     def test_getstatus(self):
-        # This pattern should match 'ls -ld /bin/ls' on any posix
+        # This pattern should match 'ls -ld /.' on any posix
         # system, however perversely configured.
-        pat = r'''[l-]..x..x..x # It is executable. (May be a symlink.)
+        pat = r'''d.........   # It is a directory.
                   \s+\d+       # It has some number of links.
                   \s+\w+\s+\w+ # It has a user and group, which may
                                #     be named anything.
+                  \s+\d+       # It has a size.
                   [^/]*        # Skip the date.
-                  /bin/ls      # and end with the name of the file.
+                  /.           # and end with the name of the file.
                '''
 
-        self.assert_(re.match(pat, getstatus("/bin/ls"), re.VERBOSE))
+        self.assert_(re.match(pat, getstatus("/."), re.VERBOSE))
 
 
 def test_main():
