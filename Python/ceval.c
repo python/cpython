@@ -1360,9 +1360,7 @@ eval_code2(co, globals, locals,
 			if (x != NULL) {
 				for (; --oparg >= 0;) {
 					w = POP();
-					err = PyList_SetItem(x, oparg, w);
-					if (err != 0)
-						break;
+					PyList_SET_ITEM(x, oparg, w);
 				}
 				PUSH(x);
 				continue;
