@@ -60,7 +60,7 @@ PyObject _Py_EllipsisObject = {
 PyObject *
 PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 {
-	PySliceObject *obj = PyObject_NEW(PySliceObject, &PySlice_Type);
+	PySliceObject *obj = PyMalloc_New(PySliceObject, &PySlice_Type);
 
 	if (obj == NULL)
 		return NULL;
@@ -115,7 +115,7 @@ slice_dealloc(PySliceObject *r)
 	Py_DECREF(r->step);
 	Py_DECREF(r->start);
 	Py_DECREF(r->stop);
-	PyObject_DEL(r);
+	PyMalloc_Del(r);
 }
 
 static PyObject *

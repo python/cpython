@@ -68,7 +68,7 @@ PyString_FromStringAndSize(const char *str, int size)
 
 	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
-		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
+		_PyMalloc_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
@@ -131,7 +131,7 @@ PyString_FromString(const char *str)
 
 	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
-		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
+		_PyMalloc_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
@@ -733,7 +733,7 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 	size = a->ob_size + b->ob_size;
 	/* PyObject_NewVar is inlined */
 	op = (PyStringObject *)
-		PyObject_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
+		_PyMalloc_MALLOC(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
@@ -780,7 +780,7 @@ string_repeat(register PyStringObject *a, register int n)
 		return NULL;
 	}
 	op = (PyStringObject *)
-		PyObject_MALLOC(sizeof(PyStringObject) + nbytes);
+		_PyMalloc_MALLOC(sizeof(PyStringObject) + nbytes);
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
@@ -2789,7 +2789,7 @@ PyTypeObject PyString_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	string_new,				/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	_PyMalloc_Del,				/* tp_free */
 };
 
 void
@@ -2841,10 +2841,10 @@ _PyString_Resize(PyObject **pv, int newsize)
 #endif
 	_Py_ForgetReference(v);
 	*pv = (PyObject *)
-		PyObject_REALLOC((char *)v,
+		_PyMalloc_REALLOC((char *)v,
 			sizeof(PyStringObject) + newsize * sizeof(char));
 	if (*pv == NULL) {
-		PyObject_DEL(v);
+		PyMalloc_Del(v);
 		PyErr_NoMemory();
 		return -1;
 	}
