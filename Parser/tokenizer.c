@@ -85,6 +85,10 @@ char *tok_name[] = {
 	"NOTEQUAL",
 	"LESSEQUAL",
 	"GREATEREQUAL",
+	"TILDE",
+	"CIRCUMFLEX",
+	"LEFTSHIFT",
+	"RIGHTSHIFT",
 	/* This table must match the #defines in token.h! */
 	"OP",
 	"<ERRORTOKEN>",
@@ -301,6 +305,8 @@ tok_1char(c)
 	case '`':	return BACKQUOTE;
 	case '{':	return LBRACE;
 	case '}':	return RBRACE;
+	case '^':	return CIRCUMFLEX;
+	case '~':	return TILDE;
 	default:	return OP;
 	}
 }
@@ -325,11 +331,13 @@ tok_2char(c1, c2)
 		switch (c2) {
 		case '>':	return NOTEQUAL;
 		case '=':	return LESSEQUAL;
+		case '<':	return LEFTSHIFT;
 		}
 		break;
 	case '>':
 		switch (c2) {
 		case '=':	return GREATEREQUAL;
+		case '>':	return RIGHTSHIFT;
 		}
 		break;
 	}
@@ -438,7 +446,7 @@ tok_get(tok, p_start, p_end)
 		   beginning or end of the file.  (Will vi never die...?)
 		   For Python it must be at the beginning of the file! */
 		int x;
-		/* XXX The case to (unsigned char *) is needed by THINK C 3.0 */
+		/* XXX The cast to (unsigned char *) is needed by THINK C 3.0 */
 		if (sscanf(/*(unsigned char *)*/tok->cur,
 				" vi:set tabsize=%d:", &x) == 1 &&
 						x >= 1 && x <= 40) {
@@ -451,8 +459,10 @@ tok_get(tok, p_start, p_end)
 	}
 	
 	/* Check for EOF and errors now */
-	if (c == EOF)
+	if (c == EOF) {
+		*p_start = *p_end = tok->cur;
 		return tok->done == E_EOF ? ENDMARKER : ERRORTOKEN;
+	}
 	
 	/* Identifier (most frequent token!) */
 	if (isalpha(c) || c == '_') {
@@ -471,6 +481,19 @@ tok_get(tok, p_start, p_end)
 			goto nextline;
 		*p_end = tok->cur - 1; /* Leave '\n' out of the string */
 		return NEWLINE;
+	}
+	
+	/* Period or number starting with period? */
+	if (c == '.') {
+		c = tok_nextc(tok);
+		if (isdigit(c)) {
+			goto fraction;
+		}
+		else {
+			tok_backup(tok, c);
+			*p_end = tok->cur;
+			return DOT;
+		}
 	}
 	
 	/* Number */
