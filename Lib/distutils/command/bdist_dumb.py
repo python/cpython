@@ -70,7 +70,7 @@ class bdist_dumb (Command):
 
         # And make an archive relative to the root of the
         # pseudo-installation tree.
-        archive_basename = "%s.%s" % (self.distribution.get_full_name(),
+        archive_basename = "%s.%s" % (self.distribution.get_fullname(),
                                       get_platform())
         print "output_dir = %s" % output_dir
         print "self.format = %s" % self.format
