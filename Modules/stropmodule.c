@@ -117,12 +117,12 @@ split_whitespace(s, len, maxsplit)
 
 
 static char splitfields__doc__[] =
-"split(str [,sep [,maxsplit]]) -> list of strings\n\
-splitfields(str [,sep [,maxsplit]]) -> list of strings\n\
+"split(s [,sep [,maxsplit]]) -> list of strings\n\
+splitfields(s [,sep [,maxsplit]]) -> list of strings\n\
 \n\
 Return a list of the words in the string s, using sep as the\n\
 delimiter string.  If maxsplit is nonzero, splits into at most\n\
-maxsplit words If sep is not specified, any whitespace string\n\
+maxsplit words.  If sep is not specified, any whitespace string\n\
 is a separator.  Maxsplit defaults to 0.\n\
 \n\
 (split and splitfields are synonymous)";
