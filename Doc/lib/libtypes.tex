@@ -5,7 +5,7 @@
 \modulesynopsis{Names for built-in types.}
 
 
-This module defines names for types some object types that are used by
+This module defines names for some object types that are used by
 the standard Python interpreter, but not for the types defined by various
 extension modules.  Also, it does not include some of the types that
 arise during processing such the \code{listiterator} type.
@@ -35,9 +35,9 @@ the example above should be written as follows:
 \begin{verbatim}
 def delete(mylist, item):
     if isinstance(item, int):
-       del list[item]
+       del mylist[item]
     else:
-       list.remove(item)
+       mylist.remove(item)
 \end{verbatim}
 
 The module defines the following names:
