@@ -50,19 +50,12 @@ def test_class():
     del A
     expect_nonzero(gc.collect(), "class")
 
-def test_staticclass():
+def test_newstyleclass():
     class A(object):
-        __dynamic__ = 0
+        pass
     gc.collect()
     del A
     expect_nonzero(gc.collect(), "staticclass")
-
-def test_dynamicclass():
-    class A(object):
-        __dynamic__ = 1
-    gc.collect()
-    del A
-    expect_nonzero(gc.collect(), "dynamicclass")
 
 def test_instance():
     class A:
@@ -185,8 +178,7 @@ def test_all():
     run_test("dicts", test_dict)
     run_test("tuples", test_tuple)
     run_test("classes", test_class)
-    run_test("static classes", test_staticclass)
-    run_test("dynamic classes", test_dynamicclass)
+    run_test("new style classes", test_newstyleclass)
     run_test("instances", test_instance)
     run_test("new instances", test_newinstance)
     run_test("methods", test_method)
