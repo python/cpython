@@ -1,0 +1,17 @@
+CVS committal...
+renaming project?  (promised but not even started yet!)
+better way to specify PYTHONPATH
+improve 'install' targets in toplevel Makefile
+Add Demo directory again
+Add NEWS and HISTORY to Misc directory
+fix compilation warnings
+non-Sun dynamic linking (SGI 4 dl, and dl-dld elsewhere)
+put some stuff into Contrib dir
+make freeze script working again (use Extensions/mkext.py as a base?)
+write porting guide
+update documentation (especially ext.tex!)
+test set?
+.
+.
+.
+release!
