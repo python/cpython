@@ -463,21 +463,15 @@ static char *unicodedata_docstring = "unicode character database";
 DL_EXPORT(void)
 initunicodedata(void)
 {
-    PyObject *m, *d, *v;
+    PyObject *m, *v;
 
     m = Py_InitModule3(
         "unicodedata", unicodedata_functions, unicodedata_docstring);
     if (!m)
         return;
 
-    d = PyModule_GetDict(m);
-    if (!d)
-        return;
-
     /* Export C API */
     v = PyCObject_FromVoidPtr((void *) &hashAPI, NULL);
-    if (v != NULL) {
-        PyDict_SetItemString(d, "ucnhash_CAPI", v);
-        Py_DECREF(v);
-    }
+    if (v != NULL)
+        PyModule_AddObject(m, "ucnhash_CAPI", v);
 }
