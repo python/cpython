@@ -198,16 +198,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
         args = [sys.executable] + w + ["-c", "__import__('run').main()",
                                        str(port)]
         self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
-        # Idle starts listening for connection on localhost, retry since
-        # Idle may be restarted before port is available for rebinding
-        # XXX 25 July 2002 KBK Find out what is causing the delayed release!
-        for i in range(12):
+        # Idle starts listening for connection on localhost
+        for i in range(6):
             time.sleep(i)
             try:
                 self.rpcclt = rpc.RPCClient(addr)
                 break
             except socket.error, err:
-                if i < 5:
+                if i < 3:
                     print>>sys.__stderr__, ". ",
                 else:
                     print>>sys.__stderr__,"\nIdle socket error: " + err[1]\

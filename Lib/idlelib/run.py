@@ -26,13 +26,13 @@ def main():
         port = int(sys.argv[1])
     sys.argv[:] = [""]
     addr = ("localhost", port)
-    for i in range(12):
+    for i in range(6):
         time.sleep(i)
         try:
             svr = rpc.RPCServer(addr, MyHandler)
             break
         except socket.error, err:
-            if i < 5:
+            if i < 3:
                 print>>sys.__stderr__, ".. ",
             else:
                 print>>sys.__stderr__,"\nPython subprocess socket error: "\

@@ -403,6 +403,7 @@ class RPCClient(SocketIO):
 
     def __init__(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
         self.sock = socket.socket(family, type)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(address)
         self.sock.listen(1)
 
