@@ -1121,7 +1121,7 @@ strop_replace(PyObject *self, PyObject *args)
 {
 	char *str, *pat,*sub,*new_s;
 	int len,pat_len,sub_len,out_len;
-	int count = 0;
+	int count = -1;
 	PyObject *new;
 
 	if (!PyArg_ParseTuple(args, "t#t#t#|i:replace",
