@@ -49,14 +49,17 @@ recent versions of FreeBSD.
 
 \module{ossaudiodev} defines the following variables and functions:
 
-\begin{excdesc}{error}
+\begin{excdesc}{OSSAudioError}
 This exception is raised on certain errors.  The argument is a string
 describing what went wrong.
 
 (If \module{ossaudiodev} receives an error from a system call such as
 \cfunction{open()}, \cfunction{write()}, or \cfunction{ioctl()}, it
 raises \exception{IOError}.  Errors detected directly by
-\module{ossaudiodev} result in \exception{ossaudiodev.error}.)
+\module{ossaudiodev} result in \exception{OSSAudioError}.)
+
+(For backwards compatibility, the exception class is also available as
+\code{ossaudiodev.error}.)
 \end{excdesc}
 
 \begin{funcdesc}{open}{\optional{device, }mode}
@@ -201,8 +204,8 @@ of
 \constant{AFMT_QUERY}.  
 \end{methoddesc}
 
-\begin{methoddesc}[audio device]{channels}{num_channels}
-Set the number of output channels to \var{num_channels}.  A value of 1
+\begin{methoddesc}[audio device]{channels}{nchannels}
+Set the number of output channels to \var{nchannels}.  A value of 1
 indicates monophonic sound, 2 stereophonic.  Some devices may have more
 than 2 channels, and some high-end devices may not support mono.
 Returns the number of channels the device was set to.
@@ -241,16 +244,33 @@ might use this after playing a spot sound effect, before waiting for
 user input, or before doing disk I/O.
 \end{methoddesc}
 
-Convenience methods
+The following convenience methods combine several ioctls, or one ioctl
+and some simple calculations.
 
-\begin{methoddesc}[audio device]{setparameters}{samplerate,num_channels,format,emulate}
-Initialise the sound device in one method.  \var{samplerate},
-\var{channels} and \var{format} should be as specified in the
-\method{speed()}, \method{channels()} and \method{setfmt()}
-methods.  If \var{emulate} is true, attempt to find the closest matching
-format instead, otherwise raise ValueError if the device does not
-support the format.  The default is to raise ValueError on unsupported
-formats.
+\begin{methoddesc}[audio device]{setparameters}
+  {format, nchannels, samplerate \optional{, strict=False}}
+
+Set the key audio sampling parameters---sample format, number of
+channels, and sampling rate---in one method call.  \var{format}, 
+\var{nchannels}, and \var{samplerate} should be as specified in the
+\method{setfmt()}, \method{channels()}, and \method{speed()} 
+methods.  If \var{strict} is true, \method{setparameters()} checks to
+see if each parameter was actually set to the requested value, and
+raises \exception{OSSAudioError} if not.  Returns a tuple (\var{format},
+\var{nchannels}, \var{samplerate}) indicating the parameter values that
+were actually set by the device driver (i.e., the same as the return
+valus of \method{setfmt()}, \method{channels()}, and \method{speed()}).
+
+For example,
+\begin{verbatim}
+  (fmt, channels, rate) = dsp.setparameters(fmt, channels, rate)
+\end{verbatim}
+is equivalent to
+\begin{verbatim}
+  fmt = dsp.setfmt(fmt)
+  channels = dsp.channels(channels)
+  rate = dsp.rate(channels)
+\end{verbatim}
 \end{methoddesc}
 
 \begin{methoddesc}[audio device]{bufsize}{}
