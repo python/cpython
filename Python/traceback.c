@@ -35,8 +35,8 @@ tb_getattr(tracebackobject *tb, char *name)
 static void
 tb_dealloc(tracebackobject *tb)
 {
+	PyObject_GC_UnTrack(tb);
 	Py_TRASHCAN_SAFE_BEGIN(tb)
-	_PyObject_GC_UNTRACK(tb);
 	Py_XDECREF(tb->tb_next);
 	Py_XDECREF(tb->tb_frame);
 	PyObject_GC_Del(tb);
