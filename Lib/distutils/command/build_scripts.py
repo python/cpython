@@ -10,10 +10,8 @@ import sys, os, re
 from distutils.core import Command
 from distutils.dep_util import newer
 
-# check if Python is called on the first line with this expression.
-# This expression will leave lines using /usr/bin/env alone; presumably
-# the script author knew what they were doing...)
-first_line_re = re.compile(r'^#!(?!\s*/usr/bin/env\b).*python(\s+.*)?')
+# check if Python is called on the first line with this expression
+first_line_re = re.compile(r'^#!.*python(\s+.*)?')
 
 class build_scripts (Command):
 
