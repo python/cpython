@@ -930,11 +930,18 @@ eval_code2(co, globals, locals,
 			    (err = PyDict_SetItemString(
 				    f->f_builtins, "_", v)) == 0 &&
 			    !Py_SuppressPrintingFlag) {
-				Py_FlushLine();
-				x = PySys_GetObject("stdout");
-				err = PyFile_WriteObject(v, x, 0);
-				PyFile_SoftSpace(x, 1);
-				Py_FlushLine();
+				err = Py_FlushLine();
+				if (err == NULL) {
+					x = PySys_GetObject("stdout");
+					if (x == NULL)
+						err = -1;
+				}
+				if (err == 0)
+					err = PyFile_WriteObject(v, x, 0);
+				if (err == 0) {
+					PyFile_SoftSpace(x, 1);
+					err = Py_FlushLine();
+				}
 			}
 			Py_DECREF(v);
 			break;
@@ -943,8 +950,9 @@ eval_code2(co, globals, locals,
 			v = POP();
 			w = PySys_GetObject("stdout");
 			if (PyFile_SoftSpace(w, 1))
-				PyFile_WriteString(" ", w);
-			err = PyFile_WriteObject(v, w, Py_PRINT_RAW);
+				err = PyFile_WriteString(" ", w);
+			if (err == 0)
+				err = PyFile_WriteObject(v, w, Py_PRINT_RAW);
 			if (err == 0 && PyString_Check(v)) {
 				/* XXX move into writeobject() ? */
 				char *s = PyString_AsString(v);
@@ -964,8 +972,9 @@ eval_code2(co, globals, locals,
 				PyErr_SetString(PyExc_RuntimeError,
 						"lost sys.stdout");
 			else {
-				PyFile_WriteString("\n", x);
-				PyFile_SoftSpace(x, 0);
+				err = PyFile_WriteString("\n", x);
+				if (err == 0)
+					PyFile_SoftSpace(x, 0);
 			}
 			break;
 		
@@ -2111,12 +2120,15 @@ PyEval_GetRestricted()
 	return current_frame == NULL ? 0 : current_frame->f_restricted;
 }
 
-void
+int
 Py_FlushLine()
 {
 	PyObject *f = PySys_GetObject("stdout");
-	if (PyFile_SoftSpace(f, 0))
-		PyFile_WriteString("\n", f);
+	if (f == NULL)
+		return 0;
+	if (!PyFile_SoftSpace(f, 0))
+		return 0;
+	return PyFile_WriteString("\n", f);
 }
 
 
