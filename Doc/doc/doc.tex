@@ -153,6 +153,43 @@ distribution, to create or maintain whole documents or sections.
   \end{definitions}
 
 
+\section{Style Guide}
+
+  The Python documentation should follow the \citetitle
+  [http://developer.apple.com/techpubs/macos8/pdf/apple_styleguide00.pdf]
+  {Apple Publications Style Guide} wherever possible.  This particular
+  style guide was selected mostly because it seems reasonable and is
+  easy to get online.  (Printed copies are available; see the Apple's
+  \citetitle[http://developer.apple.com/techpubs/faq.html]{Developer
+  Documentation FAQ} for more information.)
+
+  Topics which are not covered in the Apple's style guide will be
+  discussed in this document if necessary.
+
+  Many special names are used in the Python documentation, including
+  the names of operating systems, programming languages, standards
+  bodies, and the like.  Many of these were assigned \LaTeX{} macros
+  at some point in the distant past, and these macros lived on long
+  past their usefulness.  In the current markup, these entities are
+  not assigned any special markup, but the preferred spellings are
+  given here to aid authors in maintaining the consistency of
+  presentation in the Python documentation.
+
+  \begin{description}
+    \item[POSIX]
+	The name assigned to a particular group of standards.  This is
+	always uppercase.
+
+    \item[Python]
+	The name of our favorite programming language is always
+	capitalized.
+
+    \item[Unicode]
+	The name of a character set and matching encoding.  This is
+        always written capitalized.
+  \end{description}
+
+
 \section{\LaTeX{} Primer \label{latex-primer}}
 
   This section is a brief introduction to \LaTeX{} concepts and
@@ -741,6 +778,12 @@ This \UNIX\ is also followed by a space.
       The name of a Python function; dotted names may be used.
     \end{macrodesc}
 
+    \begin{macrodesc}{infinity}{}
+      The symbol for mathematical infinity: \infinity.  Some Web
+      browsers are not able to render the HTML representation of this
+      symbol properly, but support is growing.
+    \end{macrodesc}
+
     \begin{macrodesc}{kbd}{\p{key sequence}}
       Mark a sequence of keystrokes.  What form \var{key sequence}
       takes may depend on platform- or application-specific
@@ -783,6 +826,20 @@ This \UNIX\ is also followed by a space.
       The name of a USENET newsgroup.
     \end{macrodesc}
 
+    \begin{macrodesc}{pep}{\p{number}}
+      A reference to a Python Enhancement Proposal.  This generates
+      appropriate index entries.  The text \samp{PEP \var{number}} is
+      generated; in the HTML output, this text is a hyperlink to an
+      online copy of the specified PEP.
+    \end{macrodesc}
+
+    \begin{macrodesc}{plusminus}{}
+      The symbol for indicating a value that may take a positive or
+      negative value of a specified magnitude, typically represented
+      by a plus sign placed over a minus sign.  For example:
+      \emph{The lateral movement has a tolerance of \plusminus 3\%{}}.
+    \end{macrodesc}
+
     \begin{macrodesc}{program}{\p{name}}
       The name of an executable program.  This may differ from the
       file name for the executable for some platforms.  In particular, 
@@ -800,13 +857,6 @@ This \UNIX\ is also followed by a space.
       should only be used for long option names which will be prefixed
       by two hyphens; the hyphens should not be provided as part of
       \var{option}.
-    \end{macrodesc}
-
-    \begin{macrodesc}{pep}{\p{number}}
-      A reference to a Python Enhancement Proposal.  This generates
-      appropriate index entries.  The text \samp{PEP \var{number}} is
-      generated; in the HTML output, this text is a hyperlink to an
-      online copy of the specified PEP.
     \end{macrodesc}
 
     \begin{macrodesc}{refmodule}{\op{key}\p{name}}
@@ -851,15 +901,26 @@ This \UNIX\ is also followed by a space.
       font.
     \end{macrodesc}
 
+    \begin{macrodesc}{ulink}{\p{text}\p{url}}
+      A hypertext link with a target specified by a URL, but for which
+      the link text should not be the title of the resource.  For
+      resources being referenced by name, use the \macro{citetitle}
+      macro.  Not all formatted versions support arbitrary hypertext
+      links.  Note that many characters are special to \LaTeX{} and
+      this macro does not always do the right thing.  In particular,
+      the tilde character (\character{\~}) is mis-handled; encoding it
+      as a hex-sequence does work, use \samp{\%7e} in place of the
+      tilde character.
+    \end{macrodesc}
+
     \begin{macrodesc}{url}{\p{url}}
       A URL (or URN).  The URL will be presented as text.  In the HTML 
       and PDF formatted versions, the URL will also be a hyperlink.
-      This can be used when referring to external resources.  Note
-      that many characters are special to \LaTeX{} and this macro
-      does not always do the right thing.  In particular, the tilde
-      character (\character{\~}) is mis-handled; encoding it as a
-      hex-sequence does work, use \samp{\%7e} in place of the tilde
-      character.
+      This can be used when referring to external resources without
+      specific titles; references to resources which have titles
+      should be marked using the \macro{citetitle} macro.  See the
+      comments about special characters in the description of the
+      \macro{ulink} macro for special considerations.
     \end{macrodesc}
 
     \begin{macrodesc}{var}{\p{name}}
@@ -916,7 +977,7 @@ This \UNIX\ is also followed by a space.
   Python packages\index{packages} --- collections of modules that can
   be described as a unit --- are documented using the same markup as
   modules.  The name for a module in a package should be typed in
-  ``fully qualified'' form (i.e., it should include the package name).
+  ``fully qualified'' form (it should include the package name).
   For example, a module ``foo'' in package ``bar'' should be marked as
   \samp{\e module\{bar.foo\}}, and the beginning of the reference
   section would appear as:
@@ -1299,31 +1360,73 @@ This \UNIX\ is also followed by a space.
       \code{\e index\{\var{word4}!\var{word1} \var{word2} \var{word3}\}}.
     \end{macrodesc}
 
+  \subsection{Grammar Production Displays \label{grammar-displays}}
 
-\section{Special Names}
+    Special markup is available for displaying the productions of a
+    formal grammar.  The markup is simple and does not attempt to
+    model all aspects of BNF (or any derived forms), but provides
+    enough to allow context-free grammars to be displayed in a way
+    that causes uses of a symbol to be rendered as hyperlinks to the
+    definition of the symbol.  There is one environment and a pair of
+    macros:
 
-  Many special names are used in the Python documentation, including
-  the names of operating systems, programming languages, standards
-  bodies, and the like.  Many of these were assigned \LaTeX{} macros
-  at some point in the distant past, and these macros lived on long
-  past their usefulness.  In the current markup, these entities are
-  not assigned any special markup, but the preferred spellings are
-  given here to aid authors in maintaining the consistency of
-  presentation in the Python documentation.
+    \begin{envdesc}{productionlist}{\op{language}}
+      This environment is used to enclose a group of productions.  The
+      two macros are only defined within this environment.  If a
+      document descibes more than one language, the optional parameter
+      \var{language} should be used to distinguish productions between
+      languages.  The value of the parameter should be a short name
+      that can be used as part of a filename; colons or other
+      characters that can't be used in filename across platforms
+      should be included.
+    \end{envdesc}
 
-  \begin{description}
-    \item[POSIX]
-	The name assigned to a particular group of standards.  This is
-	always uppercase.
+    \begin{macrodesc}{production}{\p{name}\p{definition}}
+      A production rule in the grammar.  The rule defines the symbol
+      \var{name} to be \var{definition}.  \var{name} should not
+      contain any markup, and the use of hyphens in a document which
+      supports more than one grammar is undefined.  \var{definition}
+      may contain \macro{token} macros and any additional content
+      needed to describe the grammatical model of \var{symbol}.  Only
+      one \macro{production} may be used to define a symbol ---
+      multiple definitions are not allowed.
+    \end{macrodesc}
 
-    \item[Python]
-	The name of our favorite programming language is always
-	capitalized.
+    \begin{macrodesc}{token}{\p{name}}
+      The name of a symbol defined by a \macro{production} macro, used
+      in the \var{definition} of a symbol.  Where possible, this will
+      be rendered as a hyperlink to the definition of the symbol
+      \var{name}.
+    \end{macrodesc}
 
-    \item[Unicode]
-	The name of a character set and matching encoding.  This is
-        always written capitalized.
-  \end{description}
+    Note that the entire grammar does not need to be defined in a
+    single \env{productionlist} environment; any number of
+    groupings may be used to describe the grammar.  Every use of the
+    \macro{token} must correspond to a \macro{production}.
+
+    The following is an example taken from the
+    \citetitle[../ref/identifiers.html]{Python Reference Manual}:
+
+\begin{verbatim}
+\begin{productionlist}
+  \production{identifier}
+             {(\token{letter}|"_") (\token{letter} | \token{digit} | "_")*}
+  \production{letter}
+             {\token{lowercase} | \token{uppercase}}
+  \production{lowercase}
+             {"a"..."z"}
+  \production{uppercase}
+             {"A"..."Z"}
+  \production{digit}
+             {"0"..."9"}
+\end{productionlist}
+\end{verbatim}
+
+
+\section{Graphical Interface Components}
+
+  The components of graphical interfaces will be assigned markup, but
+  the specifics have not been determined.
 
 
 \section{Processing Tools}
