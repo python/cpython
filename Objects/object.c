@@ -2109,3 +2109,27 @@ void _PyMalloc_Free(void *p)
 	PyMem_FREE(p);
 }
 #endif /* !WITH_PYMALLOC */
+
+PyObject *_PyMalloc_New(PyTypeObject *tp)
+{
+	PyObject *op;
+	op = (PyObject *) _PyMalloc_MALLOC(_PyObject_SIZE(tp));
+	if (op == NULL)
+		return PyErr_NoMemory();
+	return PyObject_INIT(op, tp);
+}
+
+PyVarObject *_PyMalloc_NewVar(PyTypeObject *tp, int nitems)
+{
+	PyVarObject *op;
+	const size_t size = _PyObject_VAR_SIZE(tp, nitems);
+	op = (PyVarObject *) _PyMalloc_MALLOC(size);
+	if (op == NULL)
+		return (PyVarObject *)PyErr_NoMemory();
+	return PyObject_INIT_VAR(op, tp, nitems);
+}
+
+void _PyMalloc_Del(PyObject *op)
+{
+	_PyMalloc_FREE(op);
+}
