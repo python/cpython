@@ -182,6 +182,9 @@ Extension modules
 Library
 -------
 
+- base64 now supports RFC 3548 Base16, Base32, and Base64 encoding and
+  decoding standards.
+
 - urllib2 now supports processors.  A processor is a handler that
   implements an xxx_request or xxx_response method.  These methods are
   called for all requests.
