@@ -1,19 +1,25 @@
-% XXX The module has been extended (by Jeremy) but this documentation hasn't been updated yet
+% XXX The module has been extended (by Jeremy) but this documentation
+% hasn't been updated yet
 
-\section{Built-in Module \sectcode{zlib}}
+\section{Built-in Module \module{zlib}}
 \label{module-zlib}
 \bimodindex{zlib}
 
 For applications that require data compression, the functions in this
 module allow compression and decompression, using the zlib library,
-which is based on GNU zip.  The zlib library has its own home page at
-\url{http://www.cdrom.com/pub/infozip/zlib/}.
-Version 1.0.4 is the most recent version as of December, 1997; use a
-later version if one is available.
+which is based on the GNU \program{gzip} program.  The zlib library
+has its own home page at
+\url{http://www.cdrom.com/pub/infozip/zlib/}.  Version 1.0.4 is the
+most recent version as of December, 1997; use a later version if one
+is available.
 
-The available functions in this module are:
+The available exception and functions in this module are:
 
-\setindexsubitem{(in module zlib)}
+\begin{excdesc}{error}
+  Exception raised on compression and decompression errors.
+\end{excdesc}
+
+
 \begin{funcdesc}{adler32}{string\optional{, value}}
    Computes a Adler-32 checksum of \var{string}.  (An Adler-32
    checksum is almost as reliable as a CRC32 but can be computed much
@@ -30,7 +36,7 @@ Compresses the data in \var{string}, returning a string contained
 compressed data.  \var{level} is an integer from \code{1} to \code{9}
 controlling the level of compression; \code{1} is fastest and produces
 the least compression, \code{9} is slowest and produces the most.  The
-default value is \code{6}.  Raises the \exception{zlib.error}
+default value is \code{6}.  Raises the \exception{error}
 exception if any error occurs.
 \end{funcdesc}
 
@@ -43,17 +49,19 @@ exception if any error occurs.
 \end{funcdesc}
 
 \begin{funcdesc}{crc32}{string\optional{, value}}
-   Computes a CRC (Cyclic Redundancy Check) sum of \var{string}. If
-   \var{value} is present, it is used as the starting value of the
-   checksum; otherwise, a fixed default value is used.  This allows
-   computing a running checksum over the concatenation of several
-   input strings.  The algorithm is not cryptographically strong, and
-   should not be used for authentication or digital signatures.
+  Computes a CRC (Cyclic Redundancy Check)%
+  \index{Cyclic Redundancy Check}
+  checksum of \var{string}. If
+  \var{value} is present, it is used as the starting value of the
+  checksum; otherwise, a fixed default value is used.  This allows
+  computing a running checksum over the concatenation of several
+  input strings.  The algorithm is not cryptographically strong, and
+  should not be used for authentication or digital signatures.
 \end{funcdesc}
 
 \begin{funcdesc}{decompress}{string}
 Decompresses the data in \var{string}, returning a string containing
-the uncompressed data.  Raises the \exception{zlib.error} exception if any
+the uncompressed data.  Raises the \exception{error} exception if any
 error occurs.
 \end{funcdesc}
 
@@ -66,41 +74,41 @@ alone.
 
 Compression objects support the following methods:
 
-\begin{funcdesc}{compress}{string}
+\begin{methoddesc}[Compress]{compress}{string}
 Compress \var{string}, returning a string containing compressed data
 for at least part of the data in \var{string}.  This data should be
 concatenated to the output produced by any preceding calls to the
 \method{compress()} method.  Some input may be kept in internal buffers
 for later processing.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{flush}{}
+\begin{methoddesc}[Compress]{flush}{}
 All pending input is processed, and an string containing the remaining
 compressed output is returned.  After calling \method{flush()}, the
 \method{compress()} method cannot be called again; the only realistic
 action is to delete the object.
-\end{funcdesc}
+\end{methoddesc}
 
 Decompression objects support the following methods:
 
-\begin{funcdesc}{decompress}{string}
+\begin{methoddesc}[Decompress]{decompress}{string}
 Decompress \var{string}, returning a string containing the
 uncompressed data corresponding to at least part of the data in
 \var{string}.  This data should be concatenated to the output produced
 by any preceding calls to the
 \method{decompress()} method.  Some of the input data may be preserved
 in internal buffers for later processing.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{flush}{}
+\begin{methoddesc}[Decompress]{flush}{}
 All pending input is processed, and a string containing the remaining
 uncompressed output is returned.  After calling \method{flush()}, the
 \method{decompress()} method cannot be called again; the only realistic
 action is to delete the object.
-\end{funcdesc}
+\end{methoddesc}
 
 \begin{seealso}
-\seemodule{gzip}{reading and writing \file{gzip}-format files}
+\seemodule{gzip}{reading and writing \program{gzip}-format files}
 \end{seealso}
 
 
