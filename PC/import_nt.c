@@ -33,30 +33,25 @@ BOOL PyWin_IsWin32s()
 FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppFileDesc, char *pathBuf, int pathLen)
 {
 	char *moduleKey;
-	char *pos;
 	const char keyPrefix[] = "Software\\Python\\PythonCore\\";
 	const char keySuffix[] = "\\Modules\\";
+#ifdef _DEBUG
+	// In debugging builds, we _must_ have the debug version registered.
+	const char debugString[] = "\\Debug";
+#else
+	const char debugString[] = "";
+#endif
 	struct filedescr *fdp = NULL;
 	FILE *fp;
-	int modNameSize = pathLen;
-	int versionLen, moduleLen;
 	HKEY keyBase = PyWin_IsWin32s() ? HKEY_CLASSES_ROOT : HKEY_LOCAL_MACHINE;
+	int modNameSize;
 
-	// conceptually, this code is setting up:
-	// sprintf(buf, "Software\\Python\\PythonCore\\%s\\Modules\\%s", PyWin_DLLVersionString, moduleName);
-	// the sprintf would be clearer, but slower and less "length-safe"
-	versionLen = strlen(PyWin_DLLVersionString);
-	moduleLen = strlen(moduleName);
+	// Calculate the size for the sprintf buffer.
+	// Get the size of the chars only, plus 1 NULL.
+	int bufSize = sizeof(keyPrefix)-1 + strlen(PyWin_DLLVersionString) + sizeof(keySuffix) + strlen(moduleName) + sizeof(debugString) - 1;
 	// alloca == no free required, but memory only local to fn, also no heap fragmentation!
-	moduleKey = alloca(sizeof(keyPrefix)-1 + versionLen + sizeof(keySuffix) + moduleLen); // chars only, plus 1 NULL.
-	pos = moduleKey;
-	memcpy(pos, keyPrefix, sizeof(keyPrefix)-1);
-	pos += sizeof(keyPrefix)-1;
-	memcpy(pos, PyWin_DLLVersionString, versionLen);
-	pos +=versionLen;
-	memcpy(pos, keySuffix, sizeof(keySuffix));
-	pos += sizeof(keySuffix)-1;
-	memcpy(pos, moduleName, moduleLen+1); // NULL comes with this one!
+	moduleKey = alloca(bufSize); 
+	sprintf(moduleKey, "Software\\Python\\PythonCore\\%s\\Modules\\%s%s", PyWin_DLLVersionString, moduleName, debugString);
 
 	if (RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize)!=ERROR_SUCCESS)
 		return NULL;
@@ -73,3 +68,4 @@ FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppF
 		*ppFileDesc = fdp;
 	return fp;
 }
+
