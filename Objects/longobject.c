@@ -260,6 +260,41 @@ PyLong_AsUnsignedLong(PyObject *vv)
 	return x;
 }
 
+size_t
+_PyLong_NumBits(PyObject *vv)
+{
+	PyLongObject *v = (PyLongObject *)vv;
+	size_t result = 1;	/* for the sign bit */
+	size_t ndigits = ABS(v->ob_size);
+
+	assert(v != NULL);
+	assert(PyLong_Check(v));
+	assert(ndigits == 0 || v->ob_digit[ndigits - 1] != 0);
+	if (ndigits > 0) {
+		size_t product;
+		digit msd = v->ob_digit[ndigits - 1];
+
+		product = (ndigits - 1) * SHIFT;
+		if (product / SHIFT != ndigits - 1)
+			goto Overflow;
+		result += product;
+		if (result < product)
+			goto Overflow;
+		do {
+			++result;
+			if (result == 0)
+				goto Overflow;
+			msd >>= 1;
+		} while (msd);
+	}
+	return result;
+
+Overflow:
+	PyErr_SetString(PyExc_OverflowError, "long has too many bits "
+			"to express in a platform size_t");
+	return (size_t)-1;
+}
+
 PyObject *
 _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
 		      int little_endian, int is_signed)
