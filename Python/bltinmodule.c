@@ -256,23 +256,31 @@ builtin_cmp(self, args)
 }
 
 static object *
-builtin_coerce(self, args)
-	object *self;
-	object *args;
-{
+do_coerce(v, w)
 	object *v, *w;
+{
 	object *res;
-
-	if (!newgetargs(args, "OO:coerce", &v, &w))
-		return NULL;
 	if (is_instanceobject(v) || is_instanceobject(w))
-		return instancebinop(v, w, "__coerce__", "__rcoerce__");
+		return instancebinop(v, w, "__coerce__", "__rcoerce__",
+				     do_coerce);
 	if (coerce(&v, &w) < 0)
 		return NULL;
 	res = mkvalue("(OO)", v, w);
 	DECREF(v);
 	DECREF(w);
 	return res;
+}
+
+static object *
+builtin_coerce(self, args)
+	object *self;
+	object *args;
+{
+	object *v, *w;
+
+	if (!newgetargs(args, "OO:coerce", &v, &w))
+		return NULL;
+	return do_coerce(v, w);
 }
 
 static object *
@@ -336,16 +344,14 @@ builtin_dir(self, args)
 }
 
 static object *
-builtin_divmod(self, args)
-	object *self;
-	object *args;
+do_divmod(v, w)
+	object *v, *w;
 {
-	object *v, *w, *x;
+	object *res;
 
-	if (!newgetargs(args, "OO:divmod", &v, &w))
-		return NULL;
 	if (is_instanceobject(v) || is_instanceobject(w))
-		return instancebinop(v, w, "__divmod__", "__rdivmod__");
+		return instancebinop(v, w, "__divmod__", "__rdivmod__",
+				     do_divmod);
 	if (v->ob_type->tp_as_number == NULL ||
 				w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError,
@@ -354,10 +360,22 @@ builtin_divmod(self, args)
 	}
 	if (coerce(&v, &w) != 0)
 		return NULL;
-	x = (*v->ob_type->tp_as_number->nb_divmod)(v, w);
+	res = (*v->ob_type->tp_as_number->nb_divmod)(v, w);
 	DECREF(v);
 	DECREF(w);
-	return x;
+	return res;
+}
+
+static object *
+builtin_divmod(self, args)
+	object *self;
+	object *args;
+{
+	object *v, *w;
+
+	if (!newgetargs(args, "OO:divmod", &v, &w))
+		return NULL;
+	return do_divmod(v, w);
 }
 
 static object *
@@ -897,57 +915,67 @@ builtin_ord(self, args)
 }
 
 static object *
-builtin_pow(self, args)
-	object *self;
-	object *args;
+do_pow(v, w)
+	object *v, *w;
 {
-	object *v, *w, *z = None, *x;
-
-	if (!newgetargs(args, "OO|O:pow", &v, &w, &z))
-		return NULL;
-	if (z == None) {
-		if (is_instanceobject(v) || is_instanceobject(w))
-			return instancebinop(v, w, "__pow__", "__rpow__");
-	}
-	else {
-		/* XXX The ternary version doesn't do coercions */
-		if (is_instanceobject(v))
-			return v->ob_type->tp_as_number->nb_power(v, w, z);
-	}
+	object *res;
+	if (is_instanceobject(v) || is_instanceobject(w))
+		return instancebinop(v, w, "__pow__", "__rpow__", do_pow);
 	if (v->ob_type->tp_as_number == NULL ||
-	    (z!=None && z->ob_type->tp_as_number == NULL) ||
 	    w->ob_type->tp_as_number == NULL) {
 		err_setstr(TypeError, "pow() requires numeric arguments");
 		return NULL;
 	}
 	if (coerce(&v, &w) != 0)
 		return NULL;
-	if (z == None) {
-		x = (*v->ob_type->tp_as_number->nb_power)(v, w, z);
-	}
-	else {
-		object *v1, *z1, *w2, *z2;
-		x = NULL;
-		v1 = v;
-		z1 = z;
-		if (coerce(&v1, &z1) != 0)
-			goto error2;
-		w2 = w;
-		z2 = z1;
-	 	if (coerce(&w2, &z2) != 0)
-			goto error1;
-		x = (*v1->ob_type->tp_as_number->nb_power)(v1, w2, z2);
-		DECREF(w2);
-		DECREF(z2);
-	error1:
-		DECREF(v1);
-		DECREF(z1);
-	error2:
-		;
-	}
+	res = (*v->ob_type->tp_as_number->nb_power)(v, w, None);
 	DECREF(v);
 	DECREF(w);
-	return x;
+	return res;
+}
+
+static object *
+builtin_pow(self, args)
+	object *self;
+	object *args;
+{
+	object *v, *w, *z = None, *res;
+	object *v1, *z1, *w2, *z2;
+
+	if (!newgetargs(args, "OO|O:pow", &v, &w, &z))
+		return NULL;
+	if (z == None)
+		return do_pow(v, w);
+	/* XXX The ternary version doesn't do class instance coercions */
+	if (is_instanceobject(v))
+		return v->ob_type->tp_as_number->nb_power(v, w, z);
+	if (v->ob_type->tp_as_number == NULL ||
+	    z->ob_type->tp_as_number == NULL ||
+	    w->ob_type->tp_as_number == NULL) {
+		err_setstr(TypeError, "pow() requires numeric arguments");
+		return NULL;
+	}
+	if (coerce(&v, &w) != 0)
+		return NULL;
+	res = NULL;
+	v1 = v;
+	z1 = z;
+	if (coerce(&v1, &z1) != 0)
+		goto error2;
+	w2 = w;
+	z2 = z1;
+ 	if (coerce(&w2, &z2) != 0)
+		goto error1;
+	res = (*v1->ob_type->tp_as_number->nb_power)(v1, w2, z2);
+	DECREF(w2);
+	DECREF(z2);
+ error1:
+	DECREF(v1);
+	DECREF(z1);
+ error2:
+	DECREF(v);
+	DECREF(w);
+	return res;
 }
 
 static object *
