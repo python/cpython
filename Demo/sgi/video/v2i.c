@@ -1,9 +1,14 @@
+/* Convert the first image of a CMIF video movie file to SGI .rgb format.
+   usage: v2i videofile imagefile [planemask]
+   link with -limage
+*/
+
 #include <stdio.h>
 #include <gl/image.h>
 
 long bm[1280];
 short rb[1280], gb[1280], bb[1280];
-long h, w;
+long w, h, pf;
 
 #define R(comp) ((comp) & 0xff)
 #define G(comp) (((comp)>>8) & 0xff)
@@ -20,7 +25,7 @@ main(argc, argv)
 
     if( argc != 3 && argc != 4) {
        fprintf(stderr, "Usage: v2i videofile imgfile [planemask]\n");
-       exit(1);
+       exit(2);
     }
     if ( argc == 4)
 	pmask = atoi(argv[3]);
@@ -30,12 +35,23 @@ main(argc, argv)
 	perror(argv[1]);
 	exit(1);
     }
-    gets(lbuf);
-    if ( sscanf(lbuf, "(%d,%d)", &w, &h) != 2) {
+    if (fgets(lbuf, sizeof lbuf, stdin) == NULL) {
+	    fprintf(stderr, "Immediate EOF\n");
+	    exit(1);
+    }
+    if (strncmp(lbuf, "CMIF", 4) == 0) {
+	    /* Skip optional header line */
+	    if (fgets(lbuf, sizeof lbuf, stdin) == NULL) {
+		    fprintf(stderr, "Immediate EOF after header\n");
+		    exit(1);
+	    }
+    }
+    pf = 2; /* Default */
+    if ( sscanf(lbuf, "(%d,%d,%d)", &w, &h, &pf) < 2) {
 	fprintf(stderr, "%s: bad size spec: %s\n", argv[0], lbuf);
 	exit(1);
     }
-    gets(lbuf);		/* Skip time info */
+    fgets(lbuf, sizeof lbuf, stdin); /* Skip time info */
     if ( w > 1280 ) {
 	fprintf(stderr, "%s: Sorry, too wide\n", argv[0]);
 	exit(1);
