@@ -62,7 +62,7 @@ operating on strings.
 
 The module defines these functions:
 
-\begin{funcdesc}{dump}{value, file}
+\begin{funcdesc}{dump}{value, file\optional{, version}}
   Write the value on the open file.  The value must be a supported
   type.  The file must be an open file object such as
   \code{sys.stdout} or returned by \function{open()} or
@@ -75,7 +75,7 @@ The module defines these functions:
   read back by \function{load()}.
 
   \versionadded[The \var{version} argument indicates the data
-  format that \code{dumps} should use.]{2.4}
+  format that \code{dump} should use (see below)]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{load}{file}
@@ -96,7 +96,7 @@ The module defines these functions:
   contains an object that has) an unsupported type.
 
   \versionadded[The \var{version} argument indicates the data
-  format that \code{dumps} should use.]{2.4}
+  format that \code{dumps} should use (see below)]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{loads}{string}
