@@ -67,9 +67,23 @@ nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
 	object *indata;
 {
 	if (instatus == YP_TRUE) {
-		inkey[inkeylen]=0;
-		inval[invallen]=0;
-		dictinsert (indata, inkey, newstringobject (inval));
+		object *key = newsizedstringobject(inkey, inkeylen);
+		object *val = newsizedstringobject(inval, invallen);
+		int err;
+		if (key == NULL || val == NULL) {
+			/* XXX error -- don't know how to handle */
+			err_clear();
+			XDECREF(key);
+			XDECREF(val);
+			return 1;
+		}
+		err = mappinginsert(indata, key, val);
+		DECREF(key);
+		DECREF(val);
+		if (err != 0) {
+			err_clear();
+			return 1;
+		}
 		return 0;
 	}
 	return 1;
@@ -82,18 +96,18 @@ nis_match (self, args)
 {
 	char *match;
 	char *domain;
-	int len;
+	int keylen, len;
 	char *key, *map;
 	int err;
 	object *res;
 
-	if (!getargs(args, "(ss)", &key, &map))
+	if (!getargs(args, "(s#s)", &key, &keylen, &map))
 		return NULL;
 	if ((err = yp_get_default_domain(&domain)) != 0)
 		return nis_error(err);
 	BGN_SAVE
 	map = nis_mapname (map);
-	err = yp_match (domain, map, key, strlen (key), &match, &len);
+	err = yp_match (domain, map, key, keylen, &match, &len);
 	END_SAVE
 	if (err != 0)
 		return nis_error(err);

@@ -62,12 +62,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "patchlevel.h"
 
-#define VERSION "0.9.%d (%s)"
+#define VERSION "0.9.%d++ (%s)"
 
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= 29 Jul 1993"
+#define DATE ">= 3 Nov 1993"
 #endif
 
 char version[80];

@@ -144,6 +144,28 @@ h_setitem(ap, i, v)
 }
 
 static object *
+i_getitem(ap, i)
+	arrayobject *ap;
+	int i;
+{
+	return newintobject((long) ((int *)ap->ob_item)[i]);
+}
+
+static int
+i_setitem(ap, i, v)
+	arrayobject *ap;
+	int i;
+	object *v;
+{
+	int x;
+	if (!getargs(v, "i;array item must be integer", &x))
+		return -1;
+	if (i >= 0)
+		     ((int *)ap->ob_item)[i] = x;
+	return 0;
+}
+
+static object *
 l_getitem(ap, i)
 	arrayobject *ap;
 	int i;
@@ -214,11 +236,13 @@ static struct arraydescr descriptors[] = {
 	{'c', sizeof(char), c_getitem, c_setitem},
 	{'b', sizeof(char), b_getitem, b_setitem},
 	{'h', sizeof(short), h_getitem, h_setitem},
+	{'i', sizeof(int), i_getitem, i_setitem},
 	{'l', sizeof(long), l_getitem, l_setitem},
 	{'f', sizeof(float), f_getitem, f_setitem},
 	{'d', sizeof(double), d_getitem, d_setitem},
 	{'\0', 0, 0, 0} /* Sentinel */
 };
+/* If we ever allow items larger than double, we must change reverse()! */
 	
 
 object *
@@ -239,7 +263,7 @@ newarrayobject(size, descr)
 	if (nbytes / descr->itemsize != size) {
 		return err_nomem();
 	}
-	op = (arrayobject *) malloc(sizeof(arrayobject));
+	op = NEW(arrayobject, 1);
 	if (op == NULL) {
 		return err_nomem();
 	}
@@ -247,9 +271,9 @@ newarrayobject(size, descr)
 		op->ob_item = NULL;
 	}
 	else {
-		op->ob_item = malloc(nbytes);
+		op->ob_item = NEW(char, nbytes);
 		if (op->ob_item == NULL) {
-			free((ANY *)op);
+			DEL(op);
 			return err_nomem();
 		}
 	}
@@ -355,8 +379,8 @@ array_dealloc(op)
 {
 	int i;
 	if (op->ob_item != NULL)
-		free((ANY *)op->ob_item);
-	free((ANY *)op);
+		DEL(op->ob_item);
+	DEL(op);
 }
 
 static int
@@ -644,6 +668,22 @@ array_byteswap(self, args)
 			p[3] = p0;
 		}
 		break;
+	case 8:
+		for (p = self->ob_item, i = self->ob_size; --i >= 0; p += 8) {
+			char p0 = p[0];
+			char p1 = p[1];
+			char p2 = p[2];
+			char p3 = p[3];
+			p[0] = p[7];
+			p[1] = p[6];
+			p[2] = p[5];
+			p[3] = p[4];
+			p[4] = p3;
+			p[5] = p2;
+			p[6] = p1;
+			p[7] = p0;
+		}
+		break;
 	default:
 		err_setstr(RuntimeError,
 			   "don't know how to byteswap this array type");
@@ -653,33 +693,37 @@ array_byteswap(self, args)
 	return None;
 }
 
-#if 0
 static object *
 array_reverse(self, args)
 	arrayobject *self;
 	object *args;
 {
-	register object **p, **q;
-	register object *tmp;
-	
+	register int itemsize = self->ob_descr->itemsize;
+	register char *p, *q;
+	char tmp[sizeof(double)]; /* Assume that's the max item size */
+
 	if (args != NULL) {
 		err_badarg();
 		return NULL;
 	}
 
 	if (self->ob_size > 1) {
-		for (p = self->ob_item, q = self->ob_item + self->ob_size - 1;
-						p < q; p++, q--) {
-			tmp = *p;
-			*p = *q;
-			*q = tmp;
+		for (p = self->ob_item,
+		     q = self->ob_item + (self->ob_size - 1)*itemsize;
+		     p < q;
+		     p += itemsize, q -= itemsize) {
+			memmove(tmp, p, itemsize);
+			memmove(p, q, itemsize);
+			memmove(q, tmp, itemsize);
 		}
 	}
 	
 	INCREF(None);
 	return None;
 }
-#endif
+
+/* The following routines were adapted from listobject.c but not converted.
+   To make them work you will have to work! */
 
 #if 0
 static object *
@@ -750,7 +794,7 @@ array_remove(self, args)
 #endif
 
 static object *
-array_read(self, args)
+array_fromfile(self, args)
 	arrayobject *self;
 	object *args;
 {
@@ -790,7 +834,7 @@ array_read(self, args)
 }
 
 static object *
-array_write(self, args)
+array_tofile(self, args)
 	arrayobject *self;
 	object *args;
 {
@@ -921,17 +965,19 @@ static struct methodlist array_methods[] = {
 	{"append",	array_append},
 	{"byteswap",	array_byteswap},
 /*	{"count",	array_count},*/
+	{"fromfile",	array_fromfile},
+	{"fromlist",	array_fromlist},
+	{"fromstring",	array_fromstring},
 /*	{"index",	array_index},*/
 	{"insert",	array_insert},
-/*	{"sort",	array_sort},*/
+	{"read",	array_fromfile},
 /*	{"remove",	array_remove},*/
-/*	{"reverse",	array_reverse},*/
-	{"read",	array_read},
-	{"write",	array_write},
-	{"fromlist",	array_fromlist},
+	{"reverse",	array_reverse},
+/*	{"sort",	array_sort},*/
+	{"tofile",	array_tofile},
 	{"tolist",	array_tolist},
-	{"fromstring",	array_fromstring},
 	{"tostring",	array_tostring},
+	{"write",	array_tofile},
 	{NULL,		NULL}		/* sentinel */
 };
 
