@@ -16,8 +16,16 @@ data2 = """/* zlibmodule.c -- gzip-compatible data compression */
 /* See http://www.winimage.com/zLibDll for Windows */
 """
 
-f = gzip.GzipFile(filename, 'wb') ; f.write(data1 * 50) ; f.close()
+f = gzip.GzipFile(filename, 'wb') ; f.write(data1 * 50)
 
+# Try flush and fileno.
+f.flush()
+f.fileno()
+if hasattr(os, 'fsync'):
+    os.fsync(f.fileno())
+f.close()
+
+# Try reading.
 f = gzip.GzipFile(filename, 'r') ; d = f.read() ; f.close()
 verify(d == data1*50)
 

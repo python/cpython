@@ -5,7 +5,7 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import struct, sys, time
+import os, struct, sys, time
 import zlib
 import __builtin__
 
@@ -333,6 +333,14 @@ class GzipFile:
 
     def flush(self):
         self.fileobj.flush()
+
+    def fileno(self):
+        """Invoke the underlying file object's fileno() method.
+
+        This will raise AttributeError if the underlying file object
+        doesn't support fileno().
+        """
+        return self.fileobj.fileno()
 
     def isatty(self):
         return False

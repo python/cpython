@@ -46,6 +46,10 @@ Extension modules
 Library
 -------
 
+- gzip.GzipFile has a new fileno() method, to retrieve the handle of the
+  underlying file object (provided it has a fileno() method).  This is
+  needed if you want to use os.fsync() on a GzipFile.
+
 - imaplib has two new methods: deleteacl and myrights.
 
 - nntplib has two new methods: description and descriptions. They
