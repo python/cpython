@@ -99,12 +99,12 @@ b_setitem(ap, i, v)
 	   the overflow checking */
 	if (!PyArg_Parse(v, "h;array item must be integer", &x))
 		return -1;
-	else if (x < CHAR_MIN) {
+	else if (x < -128) {
 		PyErr_SetString(PyExc_OverflowError,
 			"signed char is less than minimum");
 		return -1;
 	}
-	else if (x > CHAR_MAX) {
+	else if (x > 127) {
 		PyErr_SetString(PyExc_OverflowError,
 			"signed char is greater than maximum");
 		return -1;
