@@ -68,14 +68,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #endif
 
-#ifdef _SEQUENT_
-#include <sys/select.h>
-struct timezone {
-    int tz_minuteswest;
-    int tz_dsttime;
-};
-#endif
-
 /* Time methods */
 
 static object *
@@ -285,10 +277,7 @@ millitimer()
 
 #ifdef BSD_TIME
 
-#ifdef _AIX /* I *think* this works */
-/* AIX defines fd_set in a separate file.  Sigh... */
-#include <sys/select.h>
-#endif
+#include "myselect.h" /* Implies <sys/types.h>, <sys/time.h>, <sys/param.h> */
 
 long
 millitimer()

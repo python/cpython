@@ -73,17 +73,13 @@ Socket methods:
 #include "allobjects.h"
 #include "modsupport.h"
 
+#include "myselect.h" /* Implies <sys/types.h>, <sys/time.h>, <sys/param.h> */
+
 #include <signal.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/time.h> /* Needed for struct timeval */
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <netdb.h>
-#ifdef _AIX /* I *think* this works */
-/* AIX defines fd_set in a separate file.  Sigh... */
-#include <sys/select.h>
-#endif
 
 
 /* Global variable holding the exception type for errors detected
@@ -526,6 +522,19 @@ sock_connect(s, args)
 }
 
 
+/* s.fileno() method */
+
+static object *
+sock_fileno(s, args)
+	sockobject *s;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long) s->sock_fd);
+}
+
+
 /* s.listen(n) method */
 
 static object *
@@ -699,6 +708,7 @@ static struct methodlist sock_methods[] = {
 	{"bind",	sock_bind},
 	{"close",	sock_close},
 	{"connect",	sock_connect},
+	{"fileno",	sock_fileno},
 	{"listen",	sock_listen},
 	{"makefile",	sock_makefile},
 	{"recv",	sock_recv},

@@ -34,7 +34,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= 3 Jun 1992"
+#define DATE ">= 23 Jun 1992"
 #endif
 
 #include <stdio.h>
@@ -122,6 +122,7 @@ extern void initposix();
 extern void initpwd();
 extern void initgrp();
 extern void initmarshal();
+extern void initselect();
 
 #ifdef USE_AUDIO
 extern void initaudio();
@@ -171,6 +172,7 @@ struct {
 	{"pwd",		initpwd},
 	{"grp",		initgrp},
 	{"marshal",	initmarshal},
+	{"select",	initselect},
 
 
 	/* Optional modules */

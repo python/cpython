@@ -222,6 +222,16 @@ file_tell(f, args)
 }
 
 static object *
+file_fileno(f, args)
+	fileobject *f;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long) fileno(f->f_fp));
+}
+
+static object *
 file_flush(f, args)
 	fileobject *f;
 	object *args;
@@ -462,6 +472,7 @@ file_write(f, args)
 static struct methodlist file_methods[] = {
 	{"close",	file_close},
 	{"flush",	file_flush},
+	{"fileno",	file_fileno},
 	{"isatty",	file_isatty},
 	{"read",	file_read},
 	{"readline",	file_readline},
