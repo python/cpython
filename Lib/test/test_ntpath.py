@@ -66,6 +66,13 @@ tester('ntpath.join("a\\", "b", "c")', 'a\\b\\c')
 tester('ntpath.join("a", "b\\", "c")', 'a\\b\\c')
 tester('ntpath.join("a", "b", "\\c")', '\\c')
 tester('ntpath.join("d:\\", "\\pleep")', 'd:\\pleep')
+tester('ntpath.join("d:\\", "a", "b")', 'd:\\a\\b')
+tester("ntpath.join('c:', '/a')", 'c:/a')
+tester("ntpath.join('c:/', '/a')", 'c:/a')
+tester("ntpath.join('c:/a', '/b')", '/b')
+tester("ntpath.join('c:', 'd:/')", 'd:/')
+tester("ntpath.join('c:/', 'd:/')", 'd:/')
+tester("ntpath.join('c:/', 'd:/a/b')", 'd:/a/b')
 
 if errors:
     raise TestFailed(str(errors) + " errors.")
