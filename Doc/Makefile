@@ -1,27 +1,20 @@
+# Makefile for Python documentation.
+
 LATEX=		latex
 DVIPS=		dvips
-TEXPREVIEW=	texsgi
+TEXPREVIEW=	xdvi
 
 PRINT=		lpr
-
-TBL=		tbl
-TROFF=		ditroff
-MS=		-ms
-FUNNYTAB=	$$HOME/lib/funnytab
-PREVIEW=	dpv -Pfa -f $(FUNNYTAB)
-PSDIT=		psdit
-REFER=		refer
-PROCESS=	$(REFER) -e -n $*.ms | $(TBL) | $(TROFF) $(MS)
 
 tut:		tut.dvi
 		$(TEXPREVIEW) tut
 
-tut.dvi:	tut.tex tut.toc
+tut.dvi tut.ps:	tut.toc tut.tex myformat.sty
 
 mod:		mod.dvi
 		$(TEXPREVIEW) mod
 
-mod.dvi:	mod.tex mod.toc
+mod.dvi mod.ps:	mod.toc mod.tex myformat.sty
 
 ALL=		tut.ps mod.ps
 
@@ -30,14 +23,12 @@ all:		$(ALL)
 print:		$(ALL)
 		$(PRINT) $(ALL)
 
-$(ALL):		mystyle.sty
-
 clean:
-		rm -f *.dit *.ps core @* ,*
+		rm -f *.dvi *.aux *.toc *.log *.ps core @* ,*
 
 .SUFFIXES:	# Remove default suffixes
 
-.SUFFIXES:	.ms .dit .tex .aux .toc .dvi .ps
+.SUFFIXES:	.tex .aux .toc .dvi .ps
 
 .tex.aux:
 		$(LATEX) $*
@@ -54,12 +45,3 @@ clean:
 .tex.ps:
 		$(LATEX) $*
 		$(DVIPS) $* >$*.ps
-
-.ms.dit:
-		$(PROCESS) >$@
-
-.dit.ps:
-		$(PSDIT) <$*.dit >$@
-
-.ms.ps:
-		$(PROCESS) | $(PSDIT) >$@
