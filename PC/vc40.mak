@@ -37,7 +37,7 @@ NULL=nul
 !ENDIF 
 ################################################################################
 # Begin Project
-# PROP Target_Last_Scanned "_tkinter - Win32 Release"
+# PROP Target_Last_Scanned "python15 - Win32 Debug"
 
 !IF  "$(CFG)" == "python15 - Win32 Release"
 
@@ -107,6 +107,7 @@ CLEAN :
 	-@erase "$(INTDIR)\methodobject.obj"
 	-@erase "$(INTDIR)\modsupport.obj"
 	-@erase "$(INTDIR)\moduleobject.obj"
+	-@erase "$(INTDIR)\msvcrtmodule.obj"
 	-@erase "$(INTDIR)\myreadline.obj"
 	-@erase "$(INTDIR)\mystrtoul.obj"
 	-@erase "$(INTDIR)\newmodule.obj"
@@ -255,6 +256,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\methodobject.obj" \
 	"$(INTDIR)\modsupport.obj" \
 	"$(INTDIR)\moduleobject.obj" \
+	"$(INTDIR)\msvcrtmodule.obj" \
 	"$(INTDIR)\myreadline.obj" \
 	"$(INTDIR)\mystrtoul.obj" \
 	"$(INTDIR)\newmodule.obj" \
@@ -314,7 +316,7 @@ INTDIR=.\vc40\tmp
 ALL : "$(OUTDIR)\python.exe"
 
 CLEAN : 
-	-@erase "$(INTDIR)\main_nt.obj"
+	-@erase "$(INTDIR)\python.obj"
 	-@erase "$(OUTDIR)\python.exe"
 
 "$(OUTDIR)" :
@@ -366,7 +368,7 @@ LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib\
  odbccp32.lib /nologo /subsystem:console /incremental:no\
  /pdb:"$(OUTDIR)/python.pdb" /machine:I386 /out:"$(OUTDIR)/python.exe" 
 LINK32_OBJS= \
-	"$(INTDIR)\main_nt.obj" \
+	"$(INTDIR)\python.obj" \
 	"$(OUTDIR)\python15.lib"
 
 "$(OUTDIR)\python.exe" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -405,9 +407,9 @@ CLEAN :
 
 CPP=cl.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\TCL80A2\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
-CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\TCL80A2\include"\
- /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H"\
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\TCL\include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H" /YX /c
+CPP_PROJ=/nologo /MD /W3 /GX /O2 /I "PC" /I "Include" /I "C:\TCL\include" /D\
+ "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "HAVE_CONFIG_H"\
  /Fp"$(INTDIR)/_tkinter.pch" /YX /Fo"$(INTDIR)/" /c 
 CPP_OBJS=.\vc40\tmp/
 CPP_SBRS=.\.
@@ -532,6 +534,7 @@ CLEAN :
 	-@erase "$(INTDIR)\methodobject.obj"
 	-@erase "$(INTDIR)\modsupport.obj"
 	-@erase "$(INTDIR)\moduleobject.obj"
+	-@erase "$(INTDIR)\msvcrtmodule.obj"
 	-@erase "$(INTDIR)\myreadline.obj"
 	-@erase "$(INTDIR)\mystrtoul.obj"
 	-@erase "$(INTDIR)\newmodule.obj"
@@ -679,6 +682,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\methodobject.obj" \
 	"$(INTDIR)\modsupport.obj" \
 	"$(INTDIR)\moduleobject.obj" \
+	"$(INTDIR)\msvcrtmodule.obj" \
 	"$(INTDIR)\myreadline.obj" \
 	"$(INTDIR)\mystrtoul.obj" \
 	"$(INTDIR)\newmodule.obj" \
@@ -738,12 +742,8 @@ LINK32_OBJS= \
 # Begin Source File
 
 SOURCE=.\Objects\longobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_LONGO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -784,66 +784,14 @@ DEP_CPP_LONGO=\
 "$(INTDIR)\longobject.obj" : $(SOURCE) $(DEP_CPP_LONGO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_LONGO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longintrepr.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\longobject.obj" : $(SOURCE) $(DEP_CPP_LONGO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\listobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_LISTO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -883,65 +831,14 @@ DEP_CPP_LISTO=\
 "$(INTDIR)\listobject.obj" : $(SOURCE) $(DEP_CPP_LISTO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_LISTO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-
-"$(INTDIR)\listobject.obj" : $(SOURCE) $(DEP_CPP_LISTO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\intobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_INTOB=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -980,64 +877,14 @@ DEP_CPP_INTOB=\
 "$(INTDIR)\intobject.obj" : $(SOURCE) $(DEP_CPP_INTOB) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_INTOB=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\intobject.obj" : $(SOURCE) $(DEP_CPP_INTOB) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\importdl.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_IMPOR=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1085,73 +932,14 @@ NODEP_CPP_IMPOR=\
 "$(INTDIR)\importdl.obj" : $(SOURCE) $(DEP_CPP_IMPOR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_IMPOR=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\osdefs.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	".\Python\importdl.h"\
-	{$(INCLUDE)}"\sys\STAT.H"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-NODEP_CPP_IMPOR=\
-	".\Python\dl.h"\
-	".\Python\macdefs.h"\
-	".\Python\macglue.h"\
-	
-
-"$(INTDIR)\importdl.obj" : $(SOURCE) $(DEP_CPP_IMPOR) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\imageop.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_IMAGE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1190,52 +978,6 @@ DEP_CPP_IMAGE=\
 "$(INTDIR)\imageop.obj" : $(SOURCE) $(DEP_CPP_IMAGE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_IMAGE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\imageop.obj" : $(SOURCE) $(DEP_CPP_IMAGE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1281,12 +1023,8 @@ DEP_CPP_GRAMI=\
 # Begin Source File
 
 SOURCE=.\Python\getversion.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_GETVE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1326,65 +1064,14 @@ DEP_CPP_GETVE=\
 "$(INTDIR)\getversion.obj" : $(SOURCE) $(DEP_CPP_GETVE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_GETVE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\patchlevel.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\getversion.obj" : $(SOURCE) $(DEP_CPP_GETVE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\getplatform.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_GETPL=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1423,52 +1110,6 @@ DEP_CPP_GETPL=\
 "$(INTDIR)\getplatform.obj" : $(SOURCE) $(DEP_CPP_GETPL) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_GETPL=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\getplatform.obj" : $(SOURCE) $(DEP_CPP_GETPL) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1490,12 +1131,8 @@ DEP_CPP_GETMT=\
 # Begin Source File
 
 SOURCE=.\Python\getcopyright.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_GETCO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1534,64 +1171,14 @@ DEP_CPP_GETCO=\
 "$(INTDIR)\getcopyright.obj" : $(SOURCE) $(DEP_CPP_GETCO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_GETCO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\getcopyright.obj" : $(SOURCE) $(DEP_CPP_GETCO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\getcompiler.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_GETCOM=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1630,64 +1217,14 @@ DEP_CPP_GETCOM=\
 "$(INTDIR)\getcompiler.obj" : $(SOURCE) $(DEP_CPP_GETCOM) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_GETCOM=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\getcompiler.obj" : $(SOURCE) $(DEP_CPP_GETCOM) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\getargs.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_GETAR=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1726,52 +1263,6 @@ DEP_CPP_GETAR=\
 "$(INTDIR)\getargs.obj" : $(SOURCE) $(DEP_CPP_GETAR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_GETAR=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\getargs.obj" : $(SOURCE) $(DEP_CPP_GETAR) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -1783,7 +1274,6 @@ SOURCE=.\Objects\funcobject.c
 
 DEP_CPP_FUNCO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1829,7 +1319,6 @@ DEP_CPP_FUNCO=\
 
 DEP_CPP_FUNCO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1878,12 +1367,8 @@ DEP_CPP_FUNCO=\
 # Begin Source File
 
 SOURCE=.\Python\frozen.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_FROZE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -1922,64 +1407,14 @@ DEP_CPP_FROZE=\
 "$(INTDIR)\frozen.obj" : $(SOURCE) $(DEP_CPP_FROZE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_FROZE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\frozen.obj" : $(SOURCE) $(DEP_CPP_FROZE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\frameobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_FRAME=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2022,56 +1457,6 @@ DEP_CPP_FRAME=\
 "$(INTDIR)\frameobject.obj" : $(SOURCE) $(DEP_CPP_FRAME) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_FRAME=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\frameobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\opcode.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\structmember.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\frameobject.obj" : $(SOURCE) $(DEP_CPP_FRAME) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2080,7 +1465,6 @@ DEP_CPP_FRAME=\
 SOURCE=.\Objects\floatobject.c
 DEP_CPP_FLOAT=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2131,7 +1515,6 @@ SOURCE=.\Objects\fileobject.c
 
 DEP_CPP_FILEO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2178,7 +1561,6 @@ DEP_CPP_FILEO=\
 
 DEP_CPP_FILEO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2228,12 +1610,8 @@ DEP_CPP_FILEO=\
 # Begin Source File
 
 SOURCE=.\Python\errors.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_ERROR=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2272,64 +1650,14 @@ DEP_CPP_ERROR=\
 "$(INTDIR)\errors.obj" : $(SOURCE) $(DEP_CPP_ERROR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_ERROR=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\errors.obj" : $(SOURCE) $(DEP_CPP_ERROR) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\PC\config.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_CONFI=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2368,64 +1696,14 @@ DEP_CPP_CONFI=\
 "$(INTDIR)\config.obj" : $(SOURCE) $(DEP_CPP_CONFI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_CONFI=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\config.obj" : $(SOURCE) $(DEP_CPP_CONFI) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\complexobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_COMPL=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2465,65 +1743,14 @@ DEP_CPP_COMPL=\
 "$(INTDIR)\complexobject.obj" : $(SOURCE) $(DEP_CPP_COMPL) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_COMPL=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\complexobject.obj" : $(SOURCE) $(DEP_CPP_COMPL) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\compile.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_COMPI=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2568,70 +1795,14 @@ DEP_CPP_COMPI=\
 "$(INTDIR)\compile.obj" : $(SOURCE) $(DEP_CPP_COMPI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_COMPI=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\graminit.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\node.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\opcode.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\structmember.h"\
-	".\Include\sysmodule.h"\
-	".\Include\token.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\compile.obj" : $(SOURCE) $(DEP_CPP_COMPI) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\cobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_COBJE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2670,64 +1841,14 @@ DEP_CPP_COBJE=\
 "$(INTDIR)\cobject.obj" : $(SOURCE) $(DEP_CPP_COBJE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_COBJE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\cobject.obj" : $(SOURCE) $(DEP_CPP_COBJE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\cmathmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_CMATH=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2767,53 +1888,6 @@ DEP_CPP_CMATH=\
 "$(INTDIR)\cmathmodule.obj" : $(SOURCE) $(DEP_CPP_CMATH) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_CMATH=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\cmathmodule.obj" : $(SOURCE) $(DEP_CPP_CMATH) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -2825,7 +1899,6 @@ SOURCE=.\Objects\classobject.c
 
 DEP_CPP_CLASS=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2870,7 +1943,6 @@ DEP_CPP_CLASS=\
 
 DEP_CPP_CLASS=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2918,12 +1990,8 @@ DEP_CPP_CLASS=\
 # Begin Source File
 
 SOURCE=.\Python\ceval.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_CEVAL=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -2967,69 +2035,14 @@ DEP_CPP_CEVAL=\
 "$(INTDIR)\ceval.obj" : $(SOURCE) $(DEP_CPP_CEVAL) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_CEVAL=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\eval.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\frameobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\opcode.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\thread.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\ceval.obj" : $(SOURCE) $(DEP_CPP_CEVAL) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\bltinmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_BLTIN=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3072,68 +2085,14 @@ DEP_CPP_BLTIN=\
 "$(INTDIR)\bltinmodule.obj" : $(SOURCE) $(DEP_CPP_BLTIN) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_BLTIN=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\eval.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\node.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\bltinmodule.obj" : $(SOURCE) $(DEP_CPP_BLTIN) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\binascii.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_BINAS=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3172,64 +2131,14 @@ DEP_CPP_BINAS=\
 "$(INTDIR)\binascii.obj" : $(SOURCE) $(DEP_CPP_BINAS) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_BINAS=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\binascii.obj" : $(SOURCE) $(DEP_CPP_BINAS) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\audioop.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_AUDIO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3269,65 +2178,14 @@ DEP_CPP_AUDIO=\
 "$(INTDIR)\audioop.obj" : $(SOURCE) $(DEP_CPP_AUDIO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_AUDIO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\audioop.obj" : $(SOURCE) $(DEP_CPP_AUDIO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\arraymodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_ARRAY=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3367,53 +2225,6 @@ DEP_CPP_ARRAY=\
 "$(INTDIR)\arraymodule.obj" : $(SOURCE) $(DEP_CPP_ARRAY) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_ARRAY=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-
-"$(INTDIR)\arraymodule.obj" : $(SOURCE) $(DEP_CPP_ARRAY) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3442,12 +2253,8 @@ DEP_CPP_ACCEL=\
 # Begin Source File
 
 SOURCE=.\Objects\abstract.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_ABSTR=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3486,52 +2293,6 @@ DEP_CPP_ABSTR=\
 "$(INTDIR)\abstract.obj" : $(SOURCE) $(DEP_CPP_ABSTR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_ABSTR=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\abstract.obj" : $(SOURCE) $(DEP_CPP_ABSTR) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3551,12 +2312,8 @@ DEP_CPP_YUVCO=\
 # Begin Source File
 
 SOURCE=.\Objects\typeobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_TYPEO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3595,64 +2352,14 @@ DEP_CPP_TYPEO=\
 "$(INTDIR)\typeobject.obj" : $(SOURCE) $(DEP_CPP_TYPEO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_TYPEO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\typeobject.obj" : $(SOURCE) $(DEP_CPP_TYPEO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\tupleobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_TUPLE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3691,64 +2398,14 @@ DEP_CPP_TUPLE=\
 "$(INTDIR)\tupleobject.obj" : $(SOURCE) $(DEP_CPP_TUPLE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_TUPLE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\tupleobject.obj" : $(SOURCE) $(DEP_CPP_TUPLE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\traceback.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_TRACE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3791,56 +2448,6 @@ DEP_CPP_TRACE=\
 "$(INTDIR)\traceback.obj" : $(SOURCE) $(DEP_CPP_TRACE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_TRACE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\frameobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\osdefs.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\structmember.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\traceback.obj" : $(SOURCE) $(DEP_CPP_TRACE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3867,12 +2474,8 @@ DEP_CPP_TOKEN=\
 # Begin Source File
 
 SOURCE=.\Modules\timemodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_TIMEM=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -3916,57 +2519,6 @@ DEP_CPP_TIMEM=\
 "$(INTDIR)\timemodule.obj" : $(SOURCE) $(DEP_CPP_TIMEM) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_TIMEM=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\myselect.h"\
-	".\Include\mytime.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	{$(INCLUDE)}"\sys\TIMEB.H"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-
-"$(INTDIR)\timemodule.obj" : $(SOURCE) $(DEP_CPP_TIMEM) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -3977,12 +2529,16 @@ DEP_CPP_THREA=\
 	".\Include\thread.h"\
 	".\PC\config.h"\
 	".\Python\thread_cthread.h"\
+	".\Python\thread_foobar.h"\
 	".\Python\thread_lwp.h"\
 	".\Python\thread_nt.h"\
 	".\Python\thread_pthread.h"\
 	".\Python\thread_sgi.h"\
 	".\Python\thread_solaris.h"\
 	{$(INCLUDE)}"\sys\TYPES.H"\
+	
+NODEP_CPP_THREA=\
+	"\usr\include\thread.h"\
 	
 
 "$(INTDIR)\thread.obj" : $(SOURCE) $(DEP_CPP_THREA) "$(INTDIR)"
@@ -3994,12 +2550,8 @@ DEP_CPP_THREA=\
 # Begin Source File
 
 SOURCE=.\Modules\structmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_STRUC=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4039,65 +2591,14 @@ DEP_CPP_STRUC=\
 "$(INTDIR)\structmodule.obj" : $(SOURCE) $(DEP_CPP_STRUC) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_STRUC=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\structmodule.obj" : $(SOURCE) $(DEP_CPP_STRUC) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\structmember.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_STRUCT=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4137,65 +2638,14 @@ DEP_CPP_STRUCT=\
 "$(INTDIR)\structmember.obj" : $(SOURCE) $(DEP_CPP_STRUCT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_STRUCT=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\structmember.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\structmember.obj" : $(SOURCE) $(DEP_CPP_STRUCT) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\stropmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_STROP=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4234,64 +2684,14 @@ DEP_CPP_STROP=\
 "$(INTDIR)\stropmodule.obj" : $(SOURCE) $(DEP_CPP_STROP) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_STROP=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\stropmodule.obj" : $(SOURCE) $(DEP_CPP_STROP) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\stringobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_STRIN=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4331,65 +2731,14 @@ DEP_CPP_STRIN=\
 "$(INTDIR)\stringobject.obj" : $(SOURCE) $(DEP_CPP_STRIN) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_STRIN=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\stringobject.obj" : $(SOURCE) $(DEP_CPP_STRIN) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\soundex.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_SOUND=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4428,64 +2777,14 @@ DEP_CPP_SOUND=\
 "$(INTDIR)\soundex.obj" : $(SOURCE) $(DEP_CPP_SOUND) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_SOUND=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\soundex.obj" : $(SOURCE) $(DEP_CPP_SOUND) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\signalmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_SIGNA=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4520,70 +2819,20 @@ DEP_CPP_SIGNA=\
 	".\Include\traceback.h"\
 	".\Include\tupleobject.h"\
 	".\PC\config.h"\
+	{$(INCLUDE)}"\sys\TYPES.H"\
 	
 
 "$(INTDIR)\signalmodule.obj" : $(SOURCE) $(DEP_CPP_SIGNA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_SIGNA=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\thread.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\signalmodule.obj" : $(SOURCE) $(DEP_CPP_SIGNA) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\rotormodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_ROTOR=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4623,65 +2872,14 @@ DEP_CPP_ROTOR=\
 "$(INTDIR)\rotormodule.obj" : $(SOURCE) $(DEP_CPP_ROTOR) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_ROTOR=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\rotormodule.obj" : $(SOURCE) $(DEP_CPP_ROTOR) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\rgbimgmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_RGBIM=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4720,52 +2918,6 @@ DEP_CPP_RGBIM=\
 "$(INTDIR)\rgbimgmodule.obj" : $(SOURCE) $(DEP_CPP_RGBIM) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_RGBIM=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\rgbimgmodule.obj" : $(SOURCE) $(DEP_CPP_RGBIM) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -4787,12 +2939,8 @@ DEP_CPP_REGEX=\
 # Begin Source File
 
 SOURCE=.\Modules\regexmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_REGEXM=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4832,65 +2980,14 @@ DEP_CPP_REGEXM=\
 "$(INTDIR)\regexmodule.obj" : $(SOURCE) $(DEP_CPP_REGEXM) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_REGEXM=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\Modules\regexpr.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\regexmodule.obj" : $(SOURCE) $(DEP_CPP_REGEXM) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\rangeobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_RANGE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -4929,65 +3026,15 @@ DEP_CPP_RANGE=\
 "$(INTDIR)\rangeobject.obj" : $(SOURCE) $(DEP_CPP_RANGE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_RANGE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\rangeobject.obj" : $(SOURCE) $(DEP_CPP_RANGE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\pythonrun.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_PYTHO=\
 	".\Include\abstract.h"\
 	".\Include\bitset.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5034,61 +3081,6 @@ DEP_CPP_PYTHO=\
 "$(INTDIR)\pythonrun.obj" : $(SOURCE) $(DEP_CPP_PYTHO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_PYTHO=\
-	".\Include\abstract.h"\
-	".\Include\bitset.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\errcode.h"\
-	".\Include\eval.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\grammar.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\marshal.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\node.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\parsetok.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\thread.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\pythonrun.obj" : $(SOURCE) $(DEP_CPP_PYTHO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5143,12 +3135,8 @@ DEP_CPP_PARSER=\
 # Begin Source File
 
 SOURCE=.\Objects\object.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_OBJEC=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5187,52 +3175,6 @@ DEP_CPP_OBJEC=\
 "$(INTDIR)\object.obj" : $(SOURCE) $(DEP_CPP_OBJEC) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_OBJEC=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\object.obj" : $(SOURCE) $(DEP_CPP_OBJEC) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5257,12 +3199,8 @@ DEP_CPP_NODE_=\
 # Begin Source File
 
 SOURCE=.\Modules\newmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_NEWMO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5302,65 +3240,14 @@ DEP_CPP_NEWMO=\
 "$(INTDIR)\newmodule.obj" : $(SOURCE) $(DEP_CPP_NEWMO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_NEWMO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\newmodule.obj" : $(SOURCE) $(DEP_CPP_NEWMO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\marshal.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_MARSH=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5402,55 +3289,6 @@ DEP_CPP_MARSH=\
 "$(INTDIR)\marshal.obj" : $(SOURCE) $(DEP_CPP_MARSH) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_MARSH=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longintrepr.h"\
-	".\Include\longobject.h"\
-	".\Include\marshal.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\marshal.obj" : $(SOURCE) $(DEP_CPP_MARSH) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5486,12 +3324,8 @@ DEP_CPP_MYREA=\
 # Begin Source File
 
 SOURCE=.\Objects\moduleobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_MODUL=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5530,64 +3364,14 @@ DEP_CPP_MODUL=\
 "$(INTDIR)\moduleobject.obj" : $(SOURCE) $(DEP_CPP_MODUL) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_MODUL=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\moduleobject.obj" : $(SOURCE) $(DEP_CPP_MODUL) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\modsupport.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_MODSU=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5626,64 +3410,14 @@ DEP_CPP_MODSU=\
 "$(INTDIR)\modsupport.obj" : $(SOURCE) $(DEP_CPP_MODSU) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_MODSU=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\modsupport.obj" : $(SOURCE) $(DEP_CPP_MODSU) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\methodobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_METHO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5723,65 +3457,14 @@ DEP_CPP_METHO=\
 "$(INTDIR)\methodobject.obj" : $(SOURCE) $(DEP_CPP_METHO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_METHO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\token.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\methodobject.obj" : $(SOURCE) $(DEP_CPP_METHO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\md5module.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_MD5MO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5821,53 +3504,6 @@ DEP_CPP_MD5MO=\
 "$(INTDIR)\md5module.obj" : $(SOURCE) $(DEP_CPP_MD5MO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_MD5MO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\Modules\md5.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\md5module.obj" : $(SOURCE) $(DEP_CPP_MD5MO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -5888,12 +3524,8 @@ DEP_CPP_MD5C_=\
 # Begin Source File
 
 SOURCE=.\Modules\mathmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_MATHM=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -5933,65 +3565,14 @@ DEP_CPP_MATHM=\
 "$(INTDIR)\mathmodule.obj" : $(SOURCE) $(DEP_CPP_MATHM) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_MATHM=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\mathmodule.obj" : $(SOURCE) $(DEP_CPP_MATHM) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\socketmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_SOCKE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6032,66 +3613,14 @@ DEP_CPP_SOCKE=\
 "$(INTDIR)\socketmodule.obj" : $(SOURCE) $(DEP_CPP_SOCKE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_SOCKE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\mytime.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-
-"$(INTDIR)\socketmodule.obj" : $(SOURCE) $(DEP_CPP_SOCKE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\selectmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_SELEC=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6133,67 +3662,14 @@ DEP_CPP_SELEC=\
 "$(INTDIR)\selectmodule.obj" : $(SOURCE) $(DEP_CPP_SELEC) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_SELEC=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\myselect.h"\
-	".\Include\mytime.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	
-
-"$(INTDIR)\selectmodule.obj" : $(SOURCE) $(DEP_CPP_SELEC) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\sysmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_SYSMO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6233,65 +3709,14 @@ DEP_CPP_SYSMO=\
 "$(INTDIR)\sysmodule.obj" : $(SOURCE) $(DEP_CPP_SYSMO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_SYSMO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\osdefs.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\sysmodule.obj" : $(SOURCE) $(DEP_CPP_SYSMO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Python\import.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_IMPORT=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6341,75 +3766,14 @@ NODEP_CPP_IMPORT=\
 "$(INTDIR)\import.obj" : $(SOURCE) $(DEP_CPP_IMPORT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_IMPORT=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\compile.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\errcode.h"\
-	".\Include\eval.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\marshal.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\node.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\osdefs.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\token.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	".\Python\importdl.h"\
-	
-NODEP_CPP_IMPORT=\
-	".\Python\macglue.h"\
-	
-
-"$(INTDIR)\import.obj" : $(SOURCE) $(DEP_CPP_IMPORT) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\posixmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_POSIX=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6452,68 +3816,14 @@ DEP_CPP_POSIX=\
 "$(INTDIR)\posixmodule.obj" : $(SOURCE) $(DEP_CPP_POSIX) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_POSIX=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\mytime.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	{$(INCLUDE)}"\sys\STAT.H"\
-	{$(INCLUDE)}"\sys\TYPES.H"\
-	{$(INCLUDE)}"\sys\UTIME.H"\
-	
-
-"$(INTDIR)\posixmodule.obj" : $(SOURCE) $(DEP_CPP_POSIX) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\operator.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_OPERA=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6552,64 +3862,14 @@ DEP_CPP_OPERA=\
 "$(INTDIR)\operator.obj" : $(SOURCE) $(DEP_CPP_OPERA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_OPERA=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\operator.obj" : $(SOURCE) $(DEP_CPP_OPERA) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\errnomodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_ERRNO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6648,64 +3908,14 @@ DEP_CPP_ERRNO=\
 "$(INTDIR)\errnomodule.obj" : $(SOURCE) $(DEP_CPP_ERRNO) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_ERRNO=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\errnomodule.obj" : $(SOURCE) $(DEP_CPP_ERRNO) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Objects\sliceobject.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_SLICE=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6744,64 +3954,14 @@ DEP_CPP_SLICE=\
 "$(INTDIR)\sliceobject.obj" : $(SOURCE) $(DEP_CPP_SLICE) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_SLICE=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\sliceobject.obj" : $(SOURCE) $(DEP_CPP_SLICE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\main.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_MAIN_=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6840,52 +4000,6 @@ DEP_CPP_MAIN_=\
 "$(INTDIR)\main.obj" : $(SOURCE) $(DEP_CPP_MAIN_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_MAIN_=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\main.obj" : $(SOURCE) $(DEP_CPP_MAIN_) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -6902,12 +4016,8 @@ SOURCE=.\Python\getopt.c
 # Begin Source File
 
 SOURCE=.\PC\import_nt.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_IMPORT_=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -6948,66 +4058,14 @@ DEP_CPP_IMPORT_=\
 "$(INTDIR)\import_nt.obj" : $(SOURCE) $(DEP_CPP_IMPORT_) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_IMPORT_=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\osdefs.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	".\Python\importdl.h"\
-	
-
-"$(INTDIR)\import_nt.obj" : $(SOURCE) $(DEP_CPP_IMPORT_) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\PC\getpath_nt.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_GETPA=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -7047,65 +4105,14 @@ DEP_CPP_GETPA=\
 "$(INTDIR)\getpath_nt.obj" : $(SOURCE) $(DEP_CPP_GETPA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_GETPA=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\osdefs.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\getpath_nt.obj" : $(SOURCE) $(DEP_CPP_GETPA) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\PC\dl_nt.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_DL_NT=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -7144,52 +4151,6 @@ DEP_CPP_DL_NT=\
 "$(INTDIR)\dl_nt.obj" : $(SOURCE) $(DEP_CPP_DL_NT) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_DL_NT=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\dl_nt.obj" : $(SOURCE) $(DEP_CPP_DL_NT) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -7208,12 +4169,8 @@ SOURCE=.\PC\python_nt.def
 # Begin Source File
 
 SOURCE=.\Modules\threadmodule.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_THREAD=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -7253,53 +4210,6 @@ DEP_CPP_THREAD=\
 "$(INTDIR)\threadmodule.obj" : $(SOURCE) $(DEP_CPP_THREAD) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_THREAD=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\thread.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\threadmodule.obj" : $(SOURCE) $(DEP_CPP_THREAD) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -7346,12 +4256,8 @@ DEP_CPP_GETBU=\
 # Begin Source File
 
 SOURCE=.\Python\pystate.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_PYSTA=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -7390,64 +4296,14 @@ DEP_CPP_PYSTA=\
 "$(INTDIR)\pystate.obj" : $(SOURCE) $(DEP_CPP_PYSTA) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_PYSTA=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\pystate.obj" : $(SOURCE) $(DEP_CPP_PYSTA) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\cStringIO.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_CSTRI=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -7487,65 +4343,14 @@ DEP_CPP_CSTRI=\
 "$(INTDIR)\cStringIO.obj" : $(SOURCE) $(DEP_CPP_CSTRI) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_CSTRI=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\cStringIO.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\cStringIO.obj" : $(SOURCE) $(DEP_CPP_CSTRI) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
 # Begin Source File
 
 SOURCE=.\Modules\cPickle.c
-
-!IF  "$(CFG)" == "python15 - Win32 Release"
-
 DEP_CPP_CPICK=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -7586,54 +4391,6 @@ DEP_CPP_CPICK=\
 "$(INTDIR)\cPickle.obj" : $(SOURCE) $(DEP_CPP_CPICK) "$(INTDIR)"
    $(CPP) $(CPP_PROJ) $(SOURCE)
 
-
-!ELSEIF  "$(CFG)" == "python15 - Win32 Debug"
-
-DEP_CPP_CPICK=\
-	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
-	".\Include\ceval.h"\
-	".\Include\classobject.h"\
-	".\Include\cobject.h"\
-	".\Include\complexobject.h"\
-	".\Include\cStringIO.h"\
-	".\Include\dictobject.h"\
-	".\Include\fileobject.h"\
-	".\Include\floatobject.h"\
-	".\Include\funcobject.h"\
-	".\Include\import.h"\
-	".\Include\intobject.h"\
-	".\Include\intrcheck.h"\
-	".\Include\listobject.h"\
-	".\Include\longobject.h"\
-	".\Include\methodobject.h"\
-	".\Include\modsupport.h"\
-	".\Include\moduleobject.h"\
-	".\Include\mymalloc.h"\
-	".\Include\mymath.h"\
-	".\Include\myproto.h"\
-	".\Include\object.h"\
-	".\Include\objimpl.h"\
-	".\Include\pydebug.h"\
-	".\Include\pyerrors.h"\
-	".\Include\pyfpe.h"\
-	".\Include\pystate.h"\
-	".\Include\Python.h"\
-	".\Include\pythonrun.h"\
-	".\Include\rangeobject.h"\
-	".\Include\sliceobject.h"\
-	".\Include\stringobject.h"\
-	".\Include\sysmodule.h"\
-	".\Include\traceback.h"\
-	".\Include\tupleobject.h"\
-	".\PC\config.h"\
-	
-
-"$(INTDIR)\cPickle.obj" : $(SOURCE) $(DEP_CPP_CPICK) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
-!ENDIF 
 
 # End Source File
 ################################################################################
@@ -7642,7 +4399,6 @@ DEP_CPP_CPICK=\
 SOURCE=.\Objects\dictobject.c
 DEP_CPP_DICTO=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -7683,6 +4439,52 @@ DEP_CPP_DICTO=\
 
 
 # End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\PC\msvcrtmodule.c
+DEP_CPP_MSVCR=\
+	".\Include\abstract.h"\
+	".\Include\ceval.h"\
+	".\Include\classobject.h"\
+	".\Include\cobject.h"\
+	".\Include\complexobject.h"\
+	".\Include\dictobject.h"\
+	".\Include\fileobject.h"\
+	".\Include\floatobject.h"\
+	".\Include\funcobject.h"\
+	".\Include\import.h"\
+	".\Include\intobject.h"\
+	".\Include\intrcheck.h"\
+	".\Include\listobject.h"\
+	".\Include\longobject.h"\
+	".\Include\methodobject.h"\
+	".\Include\modsupport.h"\
+	".\Include\moduleobject.h"\
+	".\Include\mymalloc.h"\
+	".\Include\myproto.h"\
+	".\Include\object.h"\
+	".\Include\objimpl.h"\
+	".\Include\pydebug.h"\
+	".\Include\pyerrors.h"\
+	".\Include\pyfpe.h"\
+	".\Include\pystate.h"\
+	".\Include\Python.h"\
+	".\Include\pythonrun.h"\
+	".\Include\rangeobject.h"\
+	".\Include\sliceobject.h"\
+	".\Include\stringobject.h"\
+	".\Include\sysmodule.h"\
+	".\Include\traceback.h"\
+	".\Include\tupleobject.h"\
+	".\PC\config.h"\
+	
+
+"$(INTDIR)\msvcrtmodule.obj" : $(SOURCE) $(DEP_CPP_MSVCR) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+# End Source File
 # End Target
 ################################################################################
 # Begin Target
@@ -7691,17 +4493,17 @@ DEP_CPP_DICTO=\
 ################################################################################
 # Begin Source File
 
-SOURCE=.\PC\main_nt.c
-
-"$(INTDIR)\main_nt.obj" : $(SOURCE) "$(INTDIR)"
-   $(CPP) $(CPP_PROJ) $(SOURCE)
-
-
+SOURCE=.\vc40\python15.lib
 # End Source File
 ################################################################################
 # Begin Source File
 
-SOURCE=.\vc40\python15.lib
+SOURCE=.\Modules\python.c
+
+"$(INTDIR)\python.obj" : $(SOURCE) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
+
 # End Source File
 # End Target
 ################################################################################
@@ -7714,7 +4516,6 @@ SOURCE=.\vc40\python15.lib
 SOURCE=.\Modules\_tkinter.c
 DEP_CPP__TKIN=\
 	".\Include\abstract.h"\
-	".\Include\bltinmodule.h"\
 	".\Include\ceval.h"\
 	".\Include\classobject.h"\
 	".\Include\cobject.h"\
@@ -7750,6 +4551,11 @@ DEP_CPP__TKIN=\
 	".\Include\traceback.h"\
 	".\Include\tupleobject.h"\
 	".\PC\config.h"\
+	"C:\TCL\include\tcl.h"\
+	"C:\TCL\include\tk.h"\
+	"C:\TCL\include\X11\X.h"\
+	"C:\TCL\include\X11\Xfuncproto.h"\
+	"C:\TCL\include\X11\Xlib.h"\
 	
 
 "$(INTDIR)\_tkinter.obj" : $(SOURCE) $(DEP_CPP__TKIN) "$(INTDIR)"
