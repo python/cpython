@@ -252,8 +252,7 @@ SRC.MODULES=	$(addprefix $(TOP), \
 		Modules/gcmodule.c \
 		Modules/signalmodule.c \
 		Modules/posixmodule.c \
-		Modules/threadmodule.c \
-		Modules/_sre.c)
+		Modules/threadmodule.c)
 SRC.PARSER=	$(addprefix $(TOP), \
 		Parser/acceler.c \
 		Parser/grammar1.c \
@@ -382,11 +381,13 @@ HARDEXTMODULES=	binascii \
 		pcre \
 		regex \
 		_socket \
+		_sre \
 		termios \
 		_testcap \
 		unicoded \
 		_weakref \
-		xreadlin
+		xreadlin \
+		xxsubtyp
 
 # Python external ($(MODULE.EXT)) modules - can be EASY or HARD
 ifeq ($(ZLIB),yes)
@@ -513,6 +514,9 @@ regex$(MODULE.EXT): $(OUT)regexmodule$O $(OUT)regexpr$O $(OUT)regex_m.def $(PYTH
 _socket$(MODULE.EXT): $(OUT)socketmodule$O $(OUT)_socket_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
 
+_sre$(MODULE.EXT): $(OUT)_sre$O $(OUT)_sre_m.def $(PYTHON.IMPLIB)
+	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
+
 # _symtable needs to be renamed to be useful
 _symtable$(MODULE.EXT): $(OUT)symtablemodule$O $(OUT)_symtable_m.def $(PYTHON.IMPLIB)
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
@@ -545,6 +549,13 @@ xreadlines$(MODULE.EXT): $(OUT)xreadlinesmodule$O $(OUT)xreadlines_m.def $(PYTHO
 	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
 
 xreadlin$(MODULE.EXT): xreadlines$(MODULE.EXT)
+	cp $^ $@
+
+# xxsubtype needs to be renamed to be useful
+xxsubtype$(MODULE.EXT): $(OUT)xxsubtype$O $(OUT)xxsubtype_m.def $(PYTHON.IMPLIB)
+	$(LD) $(LDFLAGS.DLL) -o $@ $(^^) $(L^) $(LIBS)
+
+xxsubtyp$(MODULE.EXT): xxsubtype$(MODULE.EXT)
 	cp $^ $@
 
 # - optional modules (requiring other software to be installed)
