@@ -3916,6 +3916,20 @@ def weakref_segfault():
     o.whatever = Provoker(o)
     del o
 
+# Fix SF #762455, segfault when sys.stdout is changed in getattr
+def filefault():
+    if verbose:
+        print "Testing sys.stdout is changed in getattr..."
+    import sys
+    class StdoutGuard:
+        def __getattr__(self, attr):
+            sys.stdout = sys.__stdout__
+            raise RuntimeError("Premature access to sys.stdout.%s" % attr)
+    sys.stdout = StdoutGuard()
+    try:
+        print "Oops!"
+    except RuntimeError:
+        pass
 
 def test_main():
     weakref_segfault() # Must be first, somehow
@@ -4007,6 +4021,7 @@ def test_main():
     isinst_isclass()
     proxysuper()
     carloverre()
+    filefault()
 
     if verbose: print "All OK"
 
