@@ -13,6 +13,7 @@ import macfs
 import MacOS
 import gestalt
 import string
+import Res
 
 SPLASH_COPYCORE=512
 SPLASH_COPYCARBON=513
@@ -108,8 +109,9 @@ def main():
 	try:
 		h = Res.GetResource('DLOG', SPLASH_COPYCORE)
 		del h
-	except:
+	except Res.Error:
 		verbose = 1
+		print "Not running as applet: verbose on"
 	os.chdir(sys.prefix)
 	
 	sys.path.append('::Mac:Lib')
@@ -158,3 +160,4 @@ def main():
 
 if __name__ == '__main__':
 	main()
+	MacOS.splash()
