@@ -1117,6 +1117,29 @@ BUILD_FUNC_DEF_2(PySocket_getservbyname,PyObject *,self, PyObject *,args)
 }
 
 
+/* Python interface to getprotobyname(name).
+   This only returns the protocol number, since the other info is
+   already known or not useful (like the list of aliases). */
+
+/*ARGSUSED*/
+static PyObject *
+BUILD_FUNC_DEF_2(PySocket_getprotobyname,PyObject *,self, PyObject *,args)
+{
+	char *name;
+	struct protoent *sp;
+	if (!PyArg_Parse(args, "s", &name))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	sp = getprotobyname(name);
+	Py_END_ALLOW_THREADS
+	if (sp == NULL) {
+		PyErr_SetString(PySocket_Error, "protocol not found");
+		return NULL;
+	}
+	return PyInt_FromLong((long) sp->p_proto);
+}
+
+
 /* Python interface to socket(family, type, proto).
    The third (protocol) argument is optional.
    Return a new socket object. */
@@ -1238,6 +1261,7 @@ static PyMethodDef PySocket_methods[] = {
 	{"gethostbyaddr",	PySocket_gethostbyaddr},
 	{"gethostname",		PySocket_gethostname},
 	{"getservbyname",	PySocket_getservbyname},
+	{"getprotobyname",	PySocket_getprotobyname},
 	{"socket",		PySocket_socket, 1},
 #ifndef NO_DUP
 	{"fromfd",		PySocket_fromfd, 1},
