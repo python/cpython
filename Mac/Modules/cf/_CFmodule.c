@@ -2791,7 +2791,7 @@ static PyObject *CFURLRefObj_CFURLGetFSRef(CFURLRefObject *_self, PyObject *_arg
 	                    &fsRef);
 	_res = Py_BuildValue("lO&",
 	                     _rv,
-	                     PyMac_BuildFSRef, fsRef);
+	                     PyMac_BuildFSRef, &fsRef);
 	return _res;
 }
 
