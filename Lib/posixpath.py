@@ -241,6 +241,7 @@ def expanduser(path):
 		except KeyError:
 			return path
 		userhome = pwent[5]
+	if userhome[-1:] == '/': i = i+1
 	return userhome + path[i:]
 
 
