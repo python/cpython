@@ -318,8 +318,8 @@ String literals are described by the following lexical definitions:
              {"'" \token{shortstringitem}* "'"
               | '"' \token{shortstringitem}* '"'}
   \production{longstring}
-             {"'''" \token{longstringitem}* "'''"
-              | '"""' \token{longstringitem}* '"""'}
+             {"'''" \token{longstringitem}* "'''"}
+  \productioncont{| '"""' \token{longstringitem}* '"""'}
   \production{shortstringitem}
              {\token{shortstringchar} | \token{escapeseq}}
   \production{longstringitem}

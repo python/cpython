@@ -53,10 +53,10 @@
   % the same for each link, and avoids having lots of garbage all over 
   % this style file.
   \newcommand{\py@linkToName}[2]{%
-    \pdfannotlink attr{/Border [0 0 0]} goto name{#1}%
+    \pdfstartlink attr{/Border [0 0 0]} goto name{#1}%
       \py@LinkColor#2\py@NormalColor%
     \pdfendlink%
-  }    
+  }
   % Compute the padded page number separately since we end up with a pair of
   % \relax tokens; this gets the right string computed and works.
   \renewcommand{\contentsline}[3]{%
@@ -788,7 +788,7 @@
 % but only if we actually used hyperref:
 \ifpdf
   \newcommand{\url}[1]{{%
-    \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
+    \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
     \py@LinkColor%                              color of the link text
     \small\sf #1%
     \py@NormalColor%                    Turn it back off; these are declarative
@@ -864,9 +864,9 @@
 % \ulink{link text}{URL}
 \ifpdf
   % The \noindent here is a hack -- we're forcing pdfTeX into
-  % horizontal mode since \pdfannotlink requires that.
+  % horizontal mode since \pdfstartlink requires that.
   \newcommand{\ulink}[2]{\noindent{%
-    \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#2)}%
+    \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#2)}%
     \py@LinkColor%                              color of the link text
     #1%
     \py@NormalColor%                    Turn it back off; these are declarative
@@ -899,17 +899,7 @@
 \newenvironment{productionlist}[1][\py@badkey]{
   \def\optional##1{{\Large[}##1{\Large]}}
   \def\production##1##2{\code{##1}&::=&\code{##2}\\}
-  \def\orgroup##1{{\def\oritem{\textbar\ }##1}}
-  \def\orgroup*##1{{
-      \def\oritem{\\ \textbar&}
-      % This uses math mode's ``negative thin space'' to avoid a weird
-      % indentation that I've not been able to figure out, but
-      % probably relates to nesting tabular environments.
-      $\!\!\!\!\!\!\!\!\!\!$%
-      \begin{tabular}[t]{ll}
-        \ & ##1
-      \end{tabular}
-    }}
+  \def\productioncont##1{& &\code{##1}\\}
   \def\token##1{##1}
   \let\grammartoken=\token
   \parindent=2em

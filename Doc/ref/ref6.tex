@@ -6,22 +6,21 @@ Several simple statements may occur on a single line separated
 by semicolons.  The syntax for simple statements is:
 
 \begin{productionlist}
-  \production{simple_stmt}
-             {\token{expression_stmt}
-              | \token{assert_stmt}
-              | \token{assignment_stmt}
-              | \token{augmented_assignment_stmt}
-              | \token{pass_stmt}
-              | \token{del_stmt}
-              | \token{print_stmt}
-              | \token{return_stmt}
-              | \token{yield_stmt}
-              | \token{raise_stmt}
-              | \token{break_stmt}
-              | \token{continue_stmt}
-              | \token{import_stmt}
-              | \token{global_stmt}
-              | \token{exec_stmt}}
+  \production{simple_stmt}{\token{expression_stmt}}
+  \productioncont{| \token{assert_stmt}}
+  \productioncont{| \token{assignment_stmt}}
+  \productioncont{| \token{augmented_assignment_stmt}}
+  \productioncont{| \token{pass_stmt}}
+  \productioncont{| \token{del_stmt}}
+  \productioncont{| \token{print_stmt}}
+  \productioncont{| \token{return_stmt}}
+  \productioncont{| \token{yield_stmt}}
+  \productioncont{| \token{raise_stmt}}
+  \productioncont{| \token{break_stmt}}
+  \productioncont{| \token{continue_stmt}}
+  \productioncont{| \token{import_stmt}}
+  \productioncont{| \token{global_stmt}}
+  \productioncont{| \token{exec_stmt}}
 \end{productionlist}
 
 
@@ -112,12 +111,12 @@ objects:
   \production{target_list}
              {\token{target} ("," \token{target})* [","]}
   \production{target}
-             {\token{identifier}
-              | "(" \token{target_list} ")"
-              | "[" \token{target_list} "]"
-              | \token{attributeref}
-              | \token{subscription}
-              | \token{slicing}}
+             {\token{identifier}}
+  \productioncont{| "(" \token{target_list} ")"}
+  \productioncont{| "[" \token{target_list} "]"}
+  \productioncont{| \token{attributeref}}
+  \productioncont{| \token{subscription}}
+  \productioncont{| \token{slicing}}
 \end{productionlist}
 
 (See section~\ref{primaries} for the syntax definitions for the last
@@ -264,7 +263,7 @@ print x
 \end{verbatim}
 
 
-\subsection{Augmented Assignment statements \label{augassign}}
+\subsection{Augmented assignment statements \label{augassign}}
 
 Augmented assignment is the combination, in a single statement, of a binary
 operation and an assignment statement:
@@ -275,15 +274,8 @@ operation and an assignment statement:
   \production{augmented_assignment_stmt}
              {\token{target} \token{augop} \token{expression_list}}
   \production{augop}
-             {"+=" | "-=" | "*=" | "/=" | "\%=" | "**="
-              | ">>=" | "<<=" | "\&=" | "\textasciicircum=" | "|="}
-  \production{target}
-             {\token{identifier}
-              | "(" \token{target_list} ")"
-              | "[" \token{target_list} "]"
-              | \token{attributeref}
-              | \token{subscription}
-              | \token{slicing}}
+             {"+=" | "-=" | "*=" | "/=" | "\%=" | "**="}
+  \productioncont{| ">>=" | "<<=" | "\&=" | "\textasciicircum=" | "|="}
 \end{productionlist}
 
 (See section~\ref{primaries} for the syntax definitions for the last
@@ -364,9 +356,9 @@ right type (but even this is determined by the sliced object).
 
 \begin{productionlist}
   \production{print_stmt}
-             {"print" ( \optional{\token{expression} ("," \token{expression})* \optional{","}}
-                      | ">\code{>}" \token{expression}
-                        \optional{("," \token{expression})+ \optional{","}})}
+             {"print" ( \optional{\token{expression} ("," \token{expression})* \optional{","}}}
+  \productioncont{| ">\code{>}" \token{expression}
+                  \optional{("," \token{expression})+ \optional{","}} )}
 \end{productionlist}
 
 \keyword{print} evaluates each expression in turn and writes the
@@ -600,11 +592,11 @@ It continues with the next cycle of the nearest enclosing loop.
 \begin{productionlist}
   \production{import_stmt}
              {"import" \token{module} ["as" \token{name}]
-                ( "," \token{module} ["as" \token{name}] )*
-              | "from" \token{module} "import" \token{identifier}
-                ["as" \token{name}]
-                ( "," \token{identifier} ["as" \token{name}] )*
-              | "from" \token{module} "import" "*"}
+                ( "," \token{module} ["as" \token{name}] )*}
+  \productioncont{| "from" \token{module} "import" \token{identifier}
+                    ["as" \token{name}]}
+  \productioncont{  ( "," \token{identifier} ["as" \token{name}] )*}
+  \productioncont{| "from" \token{module} "import" "*"}
   \production{module}
              {(\token{identifier} ".")* \token{identifier}}
 \end{productionlist}
