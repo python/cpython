@@ -105,7 +105,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int stacksize;
 	int flags;
 	PyObject *co;
-	PyObject *empty;
+	PyObject *empty = NULL;
 	PyObject *code;
 	PyObject *consts;
 	PyObject *names;
@@ -135,19 +135,21 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 		return NULL;
 	}
 
-	empty = PyTuple_New(0);
-	if (empty == NULL)
-		return NULL;
-	if (freevars == NULL)
-		freevars = empty;
-	if (cellvars == NULL)
-		cellvars = empty;
+	if (freevars == NULL || cellvars == NULL) {
+		empty = PyTuple_New(0);
+		if (empty == NULL)
+			return NULL;
+		if (freevars == NULL)
+			freevars = empty;
+		if (cellvars == NULL)
+			cellvars = empty;
+	}
 
 	co = (PyObject *) PyCode_New(argcount, nlocals, stacksize, flags,
 				      code, consts, names, varnames,
 				      freevars, cellvars, filename, name,
 				      firstlineno, lnotab);
-	Py_DECREF(empty);
+	Py_XDECREF(empty);
 	return co;
 }
 
