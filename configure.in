@@ -1628,7 +1628,8 @@ else
     fi
 
     # According to the POSIX spec, a pthreads implementation must
-    # define _POSIX_THREADS in unistd.h. Some apparently don't (which ones?)
+    # define _POSIX_THREADS in unistd.h. Some apparently don't
+    # (e.g. gnu pth with pthread emulation)
     AC_MSG_CHECKING(for _POSIX_THREADS in unistd.h)
     AC_EGREP_CPP(yes,
     [

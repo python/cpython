@@ -90,6 +90,9 @@ Build
 - patch #1006629: Define _XOPEN_SOURCE to 500 on Solaris 8/9 to match
   GCC's definition and avoid redefinition warnings.
 
+- Detect pthreads support (provided by gnu pth pthread emulation) on
+  GNU/k*BSD systems.
+
 C API
 -----
 
