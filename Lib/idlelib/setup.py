@@ -6,10 +6,6 @@ import idlever
 
 idle_name = "idle"
 
-# IDLE not being imported as a package by its script.  It is now being
-# installed as a collection of modules in a directory in .../site-packages/,
-# with a .pth file which will add IDLE to sys.path
-
 # Name of 'package' to be installed in site-packages:
 pkgname = idle_name + "lib"
 
@@ -28,8 +24,8 @@ else:
         raise SystemExit
 
 # the normal build_py would not incorporate anything but .py files
-txt_files = ['extend.txt', 'help.txt', 'CREDITS.txt', 'LICENSE.txt',
-             'README.txt']
+txt_files = ['extend.txt', 'help.txt', 'CREDITS.txt', 'HISTORY.txt',
+             'INSTALL.txt', 'LICENSE.txt', 'NEWS.txt', 'README.txt']
 txt_files += ['config-extensions.def', 'config-highlight.def',
               'config-keys.def', 'config-main.def']
 txt_files += [idle_name + '.bat', idle_name + '.pyw']
@@ -101,7 +97,7 @@ text editor with multiple undo, Python colorizing, and many other
 things, as well as a Python shell window and a debugger.
 
 IDLEfork is a separate line of development which was initiated by
-D. Scherer at CMU as part of Visual Python.  It features execution in a
+David Scherer at CMU as part of VPython.  It features execution in a
 separate process which is newly initiated for each run.  At version 0.9
 the RPC was changed to incorporate code by GvR, which supports the
 debugger.  IDLEfork also incorporates a GUI configuration utilility.
