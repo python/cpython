@@ -77,14 +77,18 @@ the fields "name" and "addr" are both set to a non-empty string:
 		return
 	...further form processing here...
 
-If your form contains multiple fields with the same name, the value 
-attribute will be a list when multiple fields were actually filled by the 
-user.  In order to test for this, use the type() function.  If this is the 
-case, the value attribute is a list of FieldStorage items.  For example, 
-here's code that concatenates all fields with the same name with 
-intervening commas:
+Here the fields, accessed through form[key], are themselves instances
+of FieldStorage (or MiniFieldStorage, depending on the form encoding).
 
-	username = form["username"].value
+If the submitted form data contains more than one field with the same
+name, the object retrieved by form[key] is not a (Mini)FieldStorage
+instance but a list of such instances.  If you expect this possibility
+(i.e., when your HTML form comtains multiple fields with the same
+name), use the type() function to determine whether you have a single
+instance or a list of instances.  For example, here's code that
+concatenates any number of username fields, separated by commas:
+
+	username = form["username"]
 	if type(username) is type([]):
 		# Multiple username fields specified
 		usernames = ""
@@ -97,7 +101,7 @@ intervening commas:
 				usernames = item.value
 	else:
 		# Single username field specified
-		usernames = username
+		usernames = username.value
 
 If a field represents an uploaded file, the value attribute reads the 
 entire file in memory as a string.  This may not be what you want.  You can 
@@ -113,6 +117,14 @@ attribute:
 			line = fileitem.file.readline()
 			if not line: break
 			linecount = linecount + 1
+
+The file upload draft standard entertains the possibility of uploading
+multiple files from one field (using a recursive multipart/*
+encoding).  When this occurs, the item will be a dictionary-like
+FieldStorage item.  This can be determined by testing its type
+attribute, which should have the value "multipart/form-data" (or
+perhaps another string beginning with "multipart/").  It this case, it
+can be iterated over recursively just like the top-level form object.
 
 When a form is submitted in the "old" format (as the query string or as a 
 single data part of type application/x-www-form-urlencoded), the items 
@@ -567,7 +579,7 @@ class MiniFieldStorage:
     filename = None
     list = None
     type = None
-    typ_options = {}
+    type_options = {}
     disposition = None
     disposition_options = {}
     headers = {}
@@ -874,25 +886,28 @@ class FieldStorage:
 	The 'binary' argument is 'b' if the file should be created in
 	binary mode (on non-Unix systems), '' otherwise.
 
-	The intention is that you can override this method to
-	selectively create a real (temporary) file or use a memory
-	file dependent on the perceived size of the file or the
-	presence of a filename, etc.
+	This version opens a temporary file for reading and writing,
+	and immediately deletes (unlinks) it.  The trick (on Unix!) is
+	that the file can still be used, but it can't be opened by
+	another process, and it will automatically be deleted when it
+	is closed or when the current process terminates.
+
+	If you want a more permanent file, you derive a class which
+	overrides this method.  If you want a visible temporary file
+	that is nevertheless automatically deleted when the script
+	terminates, try defining a __del__ method in a derived class
+	which unlinks the temporary files you have created.
 
 	"""
-
-	# Prefer ArrayIO over StringIO, if it's available
-	try:
-	    from ArrayIO import ArrayIO
-	    ioclass = ArrayIO
-	except ImportError:
-	    from StringIO import StringIO
-	    ioclass = StringIO
-	return ioclass()
+	import tempfile
+	tfn = tempfile.mktemp()
+	f = open(tfn, "w%s+" % binary)
+	os.unlink(tfn)
+	return f
 
 
-# Main classes
-# ============
+# Backwards Compatibility Classes
+# ===============================
 
 class FormContentDict:
     """Basic (multiple values per field) form content as dictionary.
