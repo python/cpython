@@ -405,7 +405,7 @@ libainstall:	all
 			echo; echo "See Misc/AIX-NOTES for details.";	\
 		else true; \
 		fi
-		@if [ "$(MACHDEP)" == "beos" ] ; then \
+		@if [ "$(MACHDEP)" = "beos" ] ; then \
 			echo; echo "Installing support files for building shared extension modules on BeOS:"; \
 			$(INSTALL_DATA) BeOS/README $(LIBPL)/README;	\
 			echo; echo "$(LIBPL)/README";			\
