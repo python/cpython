@@ -20,7 +20,11 @@ At the moment the name and location of this INI file is hardcoded,
 but an obvious enhancement would be to provide command line options.
 """
 
-import os, win32api, string, sys
+import os, string, sys
+try:
+	import win32api
+except ImportError:
+	win32api = None # User has already been warned
 
 class CExtension:
 	"""An abstraction of an extension implemented in C/C++
@@ -60,6 +64,7 @@ def checkextensions(unknown, ignored):
 	return ret
 
 def get_extension_defn(moduleName, mapFileName):
+	if win32api is None: return None
 	dsp = win32api.GetProfileVal(moduleName, "dsp", "", mapFileName)
 	if dsp=="":
 		sys.stderr.write("No definition of module %s in map file '%s'\n" % (moduleName, mapFileName))
