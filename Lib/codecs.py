@@ -310,6 +310,15 @@ class StreamReader(Codec):
                 data = data[1:]
             if data:
                 self.atcr = data.endswith(u"\r")
+                # If we're at a "\r" (and are allowed to read more), read one
+                # extra character (which might be a "\n") to get a proper
+                # line ending. (If the stream is temporarily exhausted we return
+                # the wrong line ending, but at least we won't generate a bogus
+                # second line.)
+                if self.atcr and size is None:
+                    data += self.read(size=1, chars=1)
+                    self.atcr = data.endswith(u"\r")
+
             line += data
             lines = line.splitlines(True)
             if lines:
