@@ -8,8 +8,8 @@ import random
 def check_invariant(heap):
     # Check the heap invariant.
     for pos, item in enumerate(heap):
-        parentpos = ((pos+1) >> 1) - 1
-        if parentpos >= 0:
+        if pos: # pos 0 has no parent
+            parentpos = (pos-1) >> 1
             verify(heap[parentpos] <= item)
 
 def test_main():
