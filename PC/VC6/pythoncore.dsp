@@ -361,6 +361,10 @@ SOURCE=..\..\Modules\gcmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Objects\genobject.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\getargs.c
 # End Source File
 # Begin Source File
