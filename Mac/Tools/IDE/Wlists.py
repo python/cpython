@@ -74,7 +74,7 @@ class List(Wbase.SelectableWidget):
 			# now *why* doesn't the list manager recalc the cellrect???
 			l, t, r, b = self._list.LRect((0,0))
 			cellheight = b - t
-			self._list.LCellSize((width, cellheight))
+			self._list.LCellSize((width/self._cols, cellheight))
 			# reset visRgn
 			self._parentwindow.wid.CalcVis()
 		else:
@@ -456,10 +456,10 @@ class TwoLineList(CustomList):
 				line2 = lines[1]
 			else:
 				line2 = ""
-			Qd.MoveTo(left + 4, top + ascent)
+			Qd.MoveTo(int(left + 4), int(top + ascent))
 			Qd.DrawText(line1, 0, len(line1))
 			if line2:
-				Qd.MoveTo(left + 4, top + ascent + linefeed)
+				Qd.MoveTo(int(left + 4), int(top + ascent + linefeed))
 				Qd.DrawText(line2, 0, len(line2))
 			Qd.PenPat("\x11\x11\x11\x11\x11\x11\x11\x11")
 			bottom = top + theList.cellSize[1]
