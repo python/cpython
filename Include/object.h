@@ -346,6 +346,10 @@ extern DL_IMPORT(int) PyNumber_CoerceEx(PyObject **, PyObject **);
 
 extern DL_IMPORT(void) (*PyObject_ClearWeakRefs)(PyObject *);
 
+/* A slot function whose address we need to compare */
+extern int _PyObject_SlotCompare(PyObject *, PyObject *);
+
+
 /* PyObject_Dir(obj) acts like Python __builtin__.dir(obj), returning a
    list of strings.  PyObject_Dir(NULL) is like __builtin__.dir(),
    returning the names of the current locals.  In this case, if there are

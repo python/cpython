@@ -455,10 +455,24 @@ try_3way_compare(PyObject *v, PyObject *w)
 	/* Comparisons involving instances are given to instance_compare,
 	   which has the same return conventions as this function. */
 
+	f = v->ob_type->tp_compare;
 	if (PyInstance_Check(v))
-		return (*v->ob_type->tp_compare)(v, w);
+		return (*f)(v, w);
 	if (PyInstance_Check(w))
 		return (*w->ob_type->tp_compare)(v, w);
+
+	/* If both have the same (non-NULL) tp_compare, use it. */
+	if (f != NULL && f == w->ob_type->tp_compare) {
+		c = (*f)(v, w);
+		if (c < 0 && PyErr_Occurred())
+			return -1;
+		return c < 0 ? -1 : c > 0 ? 1 : 0;
+	}
+
+	/* If either tp_compare is _PyObject_SlotCompare, that's safe. */
+	if (f == _PyObject_SlotCompare ||
+	    w->ob_type->tp_compare == _PyObject_SlotCompare)
+		return _PyObject_SlotCompare(v, w);
 
 	/* Try coercion; if it fails, give up */
 	c = PyNumber_CoerceEx(&v, &w);
