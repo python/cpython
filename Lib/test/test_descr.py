@@ -1214,6 +1214,14 @@ def classmethods():
     vereq(ff.__get__(0, int)(42), (int, 42))
     vereq(ff.__get__(0)(42), (int, 42))
 
+    # Test super() with classmethods (SF bug 535444)
+    veris(C.goo.im_self, C)
+    veris(D.goo.im_self, D)
+    veris(super(D,D).goo.im_self, D)
+    veris(super(D,d).goo.im_self, D)
+    vereq(super(D,D).goo(), (D,))
+    vereq(super(D,d).goo(), (D,))
+
 def staticmethods():
     if verbose: print "Testing static methods..."
     class C(object):
