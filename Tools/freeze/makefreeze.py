@@ -32,7 +32,7 @@ main(argc, argv)
 
 """
 
-def makefreeze(base, dict, debug=0, entry_point = None):
+def makefreeze(base, dict, debug=0, entry_point=None, fail_import=()):
     if entry_point is None: entry_point = default_entry_point
     done = []
     files = []
@@ -63,6 +63,13 @@ def makefreeze(base, dict, debug=0, entry_point = None):
     outfp.write(header)
     for mod, mangled, size in done:
         outfp.write('\t{"%s", M_%s, %d},\n' % (mod, mangled, size))
+    outfp.write('\n')
+    # The following modules have a NULL code pointer, indicating
+    # that the prozen program should not search for them on the host
+    # system. Importing them will *always* raise an ImportError.
+    # The zero value size is never used.
+    for mod in fail_import:
+        outfp.write('\t{"%s", NULL, 0},\n' % (mod,))
     outfp.write(trailer)
     outfp.write(entry_point)
     outfp.close()

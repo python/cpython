@@ -42,7 +42,14 @@ Options:
 
 -h:           Print this help message.
 
--x module     Exclude the specified module.
+-x module     Exclude the specified module. It will still be imported
+              by the frozen binary if it exists on the host system.
+
+-X module     Like -x, except the module can never be imported by
+              the frozen binary.
+
+-E:           Freeze will fail if any modules can't be found (that
+              were not excluded using -x or -X).
 
 -i filename:  Include a file with additional command line options.  Used
               to prevent command lines growing beyond the capabilities of
@@ -114,10 +121,15 @@ def main():
     odir = ''
     win = sys.platform[:3] == 'win'
     replace_paths = []                  # settable with -r option
+    error_if_any_missing = 0
 
     # default the exclude list for each platform
     if win: exclude = exclude + [
-        'dos', 'dospath', 'mac', 'macpath', 'macfs', 'MACFS', 'posix', 'os2', 'ce']
+        'dos', 'dospath', 'mac', 'macpath', 'macfs', 'MACFS', 'posix',
+        'os2', 'ce', 'riscos', 'riscosenviron', 'riscospath',
+        ]
+
+    fail_import = exclude[:]
 
     # modules that are imported by the Python runtime
     implicits = ["site", "exceptions"]
@@ -129,14 +141,17 @@ def main():
     makefile = 'Makefile'
     subsystem = 'console'
 
-    # parse command line by first replacing any "-i" options with the file contents.
+    # parse command line by first replacing any "-i" options with the
+    # file contents.
     pos = 1
-    while pos < len(sys.argv)-1: # last option can not be "-i", so this ensures "pos+1" is in range!
+    while pos < len(sys.argv)-1:
+        # last option can not be "-i", so this ensures "pos+1" is in range!
         if sys.argv[pos] == '-i':
             try:
                 options = string.split(open(sys.argv[pos+1]).read())
             except IOError, why:
-                usage("File name '%s' specified with the -i option can not be read - %s" % (sys.argv[pos+1], why) )
+                usage("File name '%s' specified with the -i option "
+                      "can not be read - %s" % (sys.argv[pos+1], why) )
             # Replace the '-i' and the filename with the read params.
             sys.argv[pos:pos+2] = options
             pos = pos + len(options) - 1 # Skip the name and the included args.
@@ -144,7 +159,7 @@ def main():
 
     # Now parse the command line with the extras inserted.
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'r:a:de:hmo:p:P:qs:wx:l:')
+        opts, args = getopt.getopt(sys.argv[1:], 'r:a:dEe:hmo:p:P:qs:wX:x:l:')
     except getopt.error, msg:
         usage('getopt error: ' + str(msg))
 
@@ -175,6 +190,11 @@ def main():
             subsystem = a
         if o == '-x':
             exclude.append(a)
+        if o == '-X':
+            exclude.append(a)
+            fail_import.append(a)
+        if o == '-E':
+            error_if_any_missing = 1
         if o == '-l':
             addn_link.append(a)
         if o == '-a':
@@ -225,7 +245,9 @@ def main():
 
     # sanity check of directories and files
     check_dirs = [prefix, exec_prefix, binlib, incldir]
-    if not win: check_dirs = check_dirs + extensions # These are not directories on Windows.
+    if not win:
+        # These are not directories on Windows.
+        check_dirs = check_dirs + extensions
     for dir in check_dirs:
         if not os.path.exists(dir):
             usage('needed directory %s not found' % dir)
@@ -350,8 +372,14 @@ def main():
         print
     dict = mf.modules
 
+    if error_if_any_missing:
+        missing = mf.any_missing()
+        if missing:
+            sys.exit("There are some missing modules: %r" % missing)
+
     # generate output for frozen modules
-    files = makefreeze.makefreeze(base, dict, debug, custom_entry_point)
+    files = makefreeze.makefreeze(base, dict, debug, custom_entry_point,
+                                  fail_import)
 
     # look for unfrozen modules (builtin and of unknown origin)
     builtins = []

@@ -356,8 +356,12 @@ class ModuleFinder:
         return m
 
     def find_module(self, name, path):
-        if name in self.excludes:
-            self.msgout(3, "find_module -> Excluded")
+        if path:
+            fullname = '.'.join(path)+'.'+name
+        else:
+            fullname = name
+        if fullname in self.excludes:
+            self.msgout(3, "find_module -> Excluded", fullname)
             raise ImportError, name
 
         if path is None:
@@ -396,6 +400,15 @@ class ModuleFinder:
                 mods = self.badmodules[key].keys()
                 mods.sort()
                 print "?", key, "from", string.join(mods, ', ')
+
+    def any_missing(self):
+        keys = self.badmodules.keys()
+        missing = []
+        for key in keys:
+            if key not in self.excludes:
+                # Missing, and its not supposed to be
+                missing.append(key)
+        return missing
 
     def replace_paths_in_code(self, co):
         new_filename = original_filename = os.path.normpath(co.co_filename)
