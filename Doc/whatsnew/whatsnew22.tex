@@ -52,17 +52,219 @@ features, and was written by Cameron Laird and Kathryn Soraiz.}
 %======================================================================
 \section{PEP 252: Type and Class Changes}
 
-XXX I need to read and digest the relevant PEPs.
+The largest and most far-reaching changes in Python 2.2 are to
+Python's model of objects and classes.  The changes should be backward
+compatible, so it's likely that your code will continue to run
+unchanged, but the changes provide some amazing new capabilities.
+Before beginning this, the longest and most complicated section of
+this article, I'll provide an overview of the changes and offer some
+comments.
 
-\begin{seealso}
+A long time ago I wrote a Web page
+(\url{http://www.amk.ca/python/writing/warts.html}) listing flaws in
+Python's design.  One of the most significant flaws was that it's
+impossible to subclass Python types implemented in C.  In particular,
+it's not possible to subclass built-in types, so you can't just
+subclass, say, lists in order to add a single useful method to them.
+The \module{UserList} module provides a class that supports all of the
+methods of lists and that can be subclassed further, but there's lots
+of C code that expects a regular Python list and won't accept a
+\class{UserList} instance.
 
-\seepep{252}{Making Types Look More Like Classes}{Written and implemented 
-by Guido van Rossum.}
+Python 2.2 fixes this, and in the process adds some exciting new
+capabilities.  A brief summary:
 
-\seeurl{http://www.python.org/2.2/descrintro.html}{A tutorial
-on the type/class changes in 2.2.}
+\begin{itemize}
 
-\end{seealso}
+\item You can subclass built-in types such as lists and even integers,
+and your subclasses should work in every place that requires the
+original type.
+
+\item It's now possible to define static and class methods, in addition
+to the instance methods available in previous versions of Python.
+
+\item It's also possible to automatically call methods on accessing or
+setting an instance attribute by using a new mechanism called
+\dfn{properties}.  Many uses of \method{__getattr__} can be rewritten
+to use properties instead, making the resulting code simpler and
+faster.  As a small side benefit, attributes can now have docstrings,
+too.
+
+\item The list of legal attributes for an instance can be limited to a
+particular set using \dfn{slots}, making it possible to safeguard
+against typos and perhaps make more optimizations possible in future
+versions of Python.
+
+\end{itemize}
+
+Some users have voiced concern about all these changes.  Sure, they
+say, the new features are neat and lend themselves to all sorts of
+tricks that weren't possible in previous versions of Python, but
+they also make the language more complicated.  Some people have said
+that they've always recommended Python for its simplicity, and feel
+that its simplicity is being lost.
+
+Personally, I think there's no need to worry.  Many of the new
+features are quite esoteric, and you can write a lot of Python code
+without ever needed to be aware of them.  Writing a simple class is no
+more difficult than it ever was, so you don't need to bother learning
+or teaching them unless they're actually needed.  Some very
+complicated tasks that were previously only possible from C will now
+be possible in pure Python, and to my mind that's all for the better.
+
+I'm not going to attempt to cover every single corner case and small
+change that were required to make the new features work.  Instead this
+section will paint only the broad strokes.  See section~\cite{sect-rellinks},
+``Related Links'', for further sources of information about Python 2.2's new
+object model.
+
+
+\subsection{Old and New Classes}
+
+First, you should know that Python 2.2 really has two kinds of
+classes: classic or old-style classes, and new-style classes.  The
+old-style class model is exactly the same as the class model in
+earlier versions of Python.  All the new features described in this
+section apply only to new-style classes. This divergence isn't
+intended to last forever; eventually old-style classes will be
+dropped, possibly in Python 3.0.
+
+So how do you define a new-style class?  XXX
+Subclass object -- subclass a built-in type.
+
+
+\subsection{Descriptors}
+
+In previous versions of Python, there was no consistent way to
+discover what attributes and methods were supported by an object.
+There were some informal conventions, such as defining
+\member{__members__} and \member{__methods__} attributes that were
+lists of names, but often the author of an extension type or a class
+wouldn't bother to define them.  You could fall back on inspecting the
+\member{__dict__} of an object, but when class inheritance or an
+arbitrary \method{__getattr__} hook were in use this could still be
+inaccurate.
+
+The one big idea underlying the new class model is that an API for
+describing the attributes of an object using \dfn{descriptors} has
+been formalized.  Descriptors specify the value of an attribute,
+stating whether it's a method or a field.  With the descriptor API,
+static methods and class methods become possible, as well as more
+exotic constructs.
+
+Attribute descriptors are objects that live inside class objects, and
+have a few attributes of their own:
+
+\begin{itemize}
+
+\item \member{__name__} is the attribute's name.
+
+\item \member{__doc__} is the attribute's docstring.
+
+\item \method{__get__(\var{object})} is a method that retrieves the attribute value from \var{object}.
+
+\item \method{__get__(\var{object}, \var{value})} sets the attribute
+on \var{object} to \var{value}.
+
+\end{itemize}
+
+For example, when you write \code{obj.x}, the steps that Python
+actually performs are:
+
+\begin{verbatim}
+descriptor = obj.__class__.x
+descriptor.get(obj)
+\end{verbatim}
+
+For methods, \method{descriptor.get} returns a temporary object that's
+callable, and wraps up the instance and the method to be called on it.
+This is also why static methods and class methods are now possible;
+they have descriptors that wrap up just the method, or the method and
+the class.  As a brief explanation of these new kinds of methods,
+static methods aren't passed the instance, and therefore resemble
+regular functions.  Class methods are passed the class of the object,
+but not the object itself.  Static and class methods is defined like
+this:
+
+\begin{verbatim}
+class C:
+    def f(arg1, arg2):
+        ...
+    f = staticmethod(f)
+
+    def g(cls, arg1, arg2):
+        ...
+    g = classmethod(g)
+\end{verbatim}
+
+The \function{staticmethod()} function takes the function
+\function{f}, and returns it wrapped up in a descriptor so it can be
+stored in the class object.  You might expect there to be special
+syntax for creating such methods (\code{def static f()},
+\code{defstatic f()}, or something like that) but no such syntax has
+been defined yet; that's been left for future versions.
+
+More new features, such as slots and properties, are also implemented
+as new kinds of descriptors, and it's not difficult to write a
+descriptor class that does something novel.  For example, it would be
+possible to write a descriptor class that made it possible to write
+Eiffel-style preconditions and postconditions for a method.  A class
+that used this feature might be defined like this:
+
+\begin{verbatim}
+from eiffel import eiffelmethod
+
+class C:
+    def f(self, arg1, arg2):
+        # The actual function
+    def pre_f(self):
+        # Check preconditions
+    def post_f(self):
+        # Check postconditions
+
+    f = eiffelmethod(f, pre_f, post_f)
+\end{verbatim}
+
+Note that a person using the new \function{eiffelmethod()} doesn't
+have to understand anything about descriptors.  This is why I think
+the new features don't increase the basic complexity of the language.
+There will be a few wizards who need to know about it in order to
+write \function{eiffelmethod()} or the ZODB or whatever, but most
+users will just write code on top of the resulting libraries and
+ignore the implementation details.
+
+\subsection{Inheritance Lookup: The Diamond Rule}
+
+XXX
+
+\subsection{Attribute Access}
+
+XXX __getattribute__, __getattr__
+
+\subsection{Related Links}
+\ref{sect-rellinks}
+
+This section has just been a quick overview of the new features,
+giving enough of an explanation to start you programming, but many
+details have been simplified or ignored.  Where should you go to get a
+more complete picture?
+
+\url{http://www.python.org/2.2/descrintro.html} is a tutorial
+introduction to the descriptor features, written by Guido van Rossum.
+% XXX read it and comment on it
+
+Next, there are two relevant PEPs, \pep{252} and \pep{253}.  \pep{252}
+is titled "Making Types Look More Like Classes", and covers the
+descriptor API.  \pep{253} is titled "Subtyping Built-in Types", and
+describes the changes to type objects that make it possible to subtype
+built-in objects.  This is the more complicated PEP of the two, and at
+a few points the necessary explanations of types and meta-types may
+cause your head to explode.  Both PEPs were written and implemented by
+Guido van Rossum, with substantial assistance from the rest of the
+Zope Corp. team.
+
+Finally, there's the ultimate authority: the source code.
+% XXX point people at the right files
 
 
 %======================================================================
@@ -485,7 +687,7 @@ All this is the province of the still-unimplemented PEP 261, ``Support
 for `wide' Unicode characters''; consult it for further details, and
 please offer comments on the PEP and on your experiences with the
 2.2 beta releases.
-% XXX update previous line once 2.2 reaches beta.
+% XXX update previous line once 2.2 reaches beta or final.
 
 Another change is much simpler to explain. Since their introduction,
 Unicode strings have supported an \method{encode()} method to convert
@@ -825,13 +1027,13 @@ changes are:
 
   \item The code for the MacOS port for Python, maintained by Jack
   Jansen, is now kept in the main Python CVS tree, and many changes
-  have been made to support MacOS X.
+  have been made to support MacOS~X.
 
 The most significant change is the ability to build Python as a
 framework, enabled by supplying the \longprogramopt{enable-framework}
 option to the configure script when compiling Python.  According to
 Jack Jansen, ``This installs a self-contained Python installation plus
-the OSX framework "glue" into
+the OS~X framework "glue" into
 \file{/Library/Frameworks/Python.framework} (or another location of
 choice).  For now there is little immediate added benefit to this
 (actually, there is the disadvantage that you have to change your PATH
@@ -840,8 +1042,8 @@ full-blown Python application, porting the MacPython IDE, possibly
 using Python as a standard OSA scripting language and much more.''
 
 Most of the MacPython toolbox modules, which interface to MacOS APIs
-such as windowing, QuickTime, scripting, etc. have been ported to OS
-X, but they've been left commented out in \filename{setup.py}.  People who want
+such as windowing, QuickTime, scripting, etc. have been ported to OS~X,
+but they've been left commented out in \filename{setup.py}.  People who want
 to experiment with these modules can uncomment them manually.
 
 % Jack's original comments:
