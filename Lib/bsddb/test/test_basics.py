@@ -290,7 +290,7 @@ class BasicTestCase(unittest.TestCase):
 
     #----------------------------------------
 
-    def test03_SimpleCursorStuff(self, get_raises_error=0, set_raises_error=1):
+    def test03_SimpleCursorStuff(self, get_raises_error=0, set_raises_error=0):
         if verbose:
             print '\n', '-=' * 30
             print "Running %s.test03_SimpleCursorStuff (get_error %s, set_error %s)..." % \
@@ -459,8 +459,19 @@ class BasicTestCase(unittest.TestCase):
                   self.__class__.__name__
 
         old = self.d.set_get_returns_none(0)
-        assert old == 1
+        assert old == 2
         self.test03_SimpleCursorStuff(get_raises_error=1, set_raises_error=1)
+
+    def test03b_SimpleCursorWithGetReturnsNone1(self):
+        # same test but raise exceptions instead of returning None
+        if verbose:
+            print '\n', '-=' * 30
+            print "Running %s.test03b_SimpleCursorStuffWithoutGetReturnsNone..." % \
+                  self.__class__.__name__
+
+        old = self.d.set_get_returns_none(1)
+        self.test03_SimpleCursorStuff(get_raises_error=0, set_raises_error=1)
+
 
     def test03c_SimpleCursorGetReturnsNone2(self):
         # same test but raise exceptions instead of returning None
@@ -469,10 +480,10 @@ class BasicTestCase(unittest.TestCase):
             print "Running %s.test03c_SimpleCursorStuffWithoutSetReturnsNone..." % \
                   self.__class__.__name__
 
+        old = self.d.set_get_returns_none(1)
+        assert old == 2
         old = self.d.set_get_returns_none(2)
         assert old == 1
-        old = self.d.set_get_returns_none(2)
-        assert old == 2
         self.test03_SimpleCursorStuff(get_raises_error=0, set_raises_error=0)
 
     #----------------------------------------
