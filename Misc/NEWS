@@ -83,6 +83,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- The socket module now provides the functions inet_pton and inet_ntop
+  for converting between string and packed representation of IP
+  addresses.  There is also a new module variable, has_ipv6, which is
+  True iff the current Python has IPv6 support.  See SF patch #658327.
+
 - Tkinter wrappers around Tcl variables now pass objects directly
   to Tcl, instead of first converting them to strings.
 
@@ -382,10 +387,6 @@ Extension modules
   extension implemented flush() was fixed.  Scott also rewrote the
   zlib test suite using the unittest module.  (SF bug #640230 and
   patch #678531.)
-
-- The socket module now provides the functions inet_pton and inet_ntop
-  for converting between string and packed representation of IP addresses.
-  See SF patch #658327.
 
 - Added an itertools module containing high speed, memory efficient
   looping constructs inspired by tools from Haskell and SML.
