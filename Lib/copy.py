@@ -234,8 +234,8 @@ d[types.TupleType] = _deepcopy_tuple
 def _deepcopy_dict(x, memo):
     y = {}
     memo[id(x)] = y
-    for key in x.keys():
-        y[deepcopy(key, memo)] = deepcopy(x[key], memo)
+    for key, value in x.iteritems():
+        y[deepcopy(key, memo)] = deepcopy(value, memo)
     return y
 d[types.DictionaryType] = _deepcopy_dict
 if PyStringMap is not None:
@@ -335,8 +335,8 @@ def _test():
         def __getstate__(self):
             return {'a': self.a, 'arg': self.arg}
         def __setstate__(self, state):
-            for key in state.keys():
-                setattr(self, key, state[key])
+            for key, value in state.iteritems():
+                setattr(self, key, value)
         def __deepcopy__(self, memo = None):
             new = self.__class__(deepcopy(self.arg, memo))
             new.a = self.a

@@ -553,7 +553,7 @@ def getclasstree(classes, unique=0):
                 if unique and parent in classes: break
         elif c not in roots:
             roots.append(c)
-    for parent in children.keys():
+    for parent in children:
         if parent not in classes:
             roots.append(parent)
     return walktree(roots, children, None)
