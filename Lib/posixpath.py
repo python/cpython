@@ -4,19 +4,24 @@ import posix
 import stat
 
 
-# Intelligent pathname concatenation.
-# Inserts a '/' unless the first part is empty or already ends in '/'.
-# Ignores the first part altogether if the second part is absolute
+# Join two pathnames.
+# Insert a '/' unless the first part is empty or already ends in '/'.
+# Ignore the first part altogether if the second part is absolute
 # (begins with '/').
 #
-def cat(a, b):
+def join(a, b):
 	if b[:1] = '/': return b
 	if a = '' or a[-1:] = '/': return a + b
+	# Note: join('x', '') returns 'x/'; is this what we want?
 	return a + '/' + b
+
+
+cat = join # For compatibility
 
 
 # Split a path in head (empty or ending in '/') and tail (no '/').
 # The tail will be empty if the path ends in '/'.
+# It is always true that head+tail = p.
 #
 def split(p):
 	head, tail = '', ''
@@ -25,6 +30,23 @@ def split(p):
 		if c = '/':
 			head, tail = head + tail, ''
 	return head, tail
+
+
+# Split a path in root and extension.
+# The extension is everything starting at the first dot in the last
+# pathname component; the root is everything before that.
+# It is always true that root+ext = p.
+#
+def splitext(p):
+	root, ext = '', ''
+	for c in p:
+		if c = '/':
+			root, ext = root + ext + c, ''
+		elif c = '.' or ext:
+			ext = ext + c
+		else:
+			root = root + c
+	return root, ext
 
 
 # Return the tail (basename) part of a path.
@@ -120,6 +142,6 @@ def walk(top, func, arg):
 	exceptions = ('.', '..')
 	for name in names:
 		if name not in exceptions:
-			name = cat(top, name)
+			name = join(top, name)
 			if isdir(name):
 				walk(name, func, arg)
