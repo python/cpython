@@ -22,7 +22,7 @@ DictType = DictionaryType = type({})
 
 def _f(): pass
 FunctionType = type(_f)
-LambdaType = type(lambda: None)		# Same as FunctionType
+LambdaType = type(lambda: None)         # Same as FunctionType
 try:
     CodeType = type(_f.func_code)
 except:
@@ -31,18 +31,18 @@ except:
 class _C:
     def _m(self): pass
 ClassType = type(_C)
-UnboundMethodType = type(_C._m)		# Same as MethodType
+UnboundMethodType = type(_C._m)         # Same as MethodType
 _x = _C()
 InstanceType = type(_x)
 MethodType = type(_x._m)
 
 BuiltinFunctionType = type(len)
-BuiltinMethodType = type([].append)	# Same as BuiltinFunctionType
+BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 
 ModuleType = type(sys)
 
 try:
-    FileType = type(sys.stdin)		# XXX what if it was assigned to?
+    FileType = type(sys.stdin)          # XXX what if it was assigned to?
 except:
     pass
 XRangeType = type(xrange(0))
@@ -51,14 +51,14 @@ try:
     raise TypeError
 except TypeError:
     try:
-	tb = sys.exc_info()[2]
-	TracebackType = type(tb)
-	FrameType = type(tb.tb_frame)
+        tb = sys.exc_info()[2]
+        TracebackType = type(tb)
+        FrameType = type(tb.tb_frame)
     except:
-	pass
+        pass
     tb = None; del tb
 
 SliceType = type(slice(0))
 EllipsisType = type(Ellipsis)
 
-del sys, _f, _C, _x			# Not for export
+del sys, _f, _C, _x                     # Not for export

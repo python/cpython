@@ -48,18 +48,18 @@ Exception(*)
 
 class Exception:
     def __init__(self, *args):
-	self.args = args
+        self.args = args
 
     def __str__(self):
         if not self.args:
             return ''
-	elif len(self.args) == 1:
-	    return str(self.args[0])
-	else:
-	    return str(self.args)
+        elif len(self.args) == 1:
+            return str(self.args[0])
+        else:
+            return str(self.args)
 
     def __getitem__(self, i):
-	return self.args[i]
+        return self.args[i]
 
 class StandardError(Exception):
     pass
@@ -68,21 +68,21 @@ class SyntaxError(StandardError):
     filename = lineno = offset = text = None
     msg = ""
     def __init__(self, *args):
-	self.args = args
-	if len(self.args) >= 1:
-	    self.msg = self.args[0]
-	if len(self.args) == 2:
-	    info = self.args[1]
-	    try:
-		self.filename, self.lineno, self.offset, self.text = info
-	    except:
-		pass
+        self.args = args
+        if len(self.args) >= 1:
+            self.msg = self.args[0]
+        if len(self.args) == 2:
+            info = self.args[1]
+            try:
+                self.filename, self.lineno, self.offset, self.text = info
+            except:
+                pass
     def __str__(self):
         return str(self.msg)
 
 class IOError(StandardError):
     def __init__(self, *args):
-	self.args = args
+        self.args = args
         self.errno = None
         self.strerror = None
         if len(args) == 2:
@@ -146,7 +146,7 @@ class MemoryError(StandardError):
 
 class SystemExit(Exception):
     def __init__(self, *args):
-	self.args = args
+        self.args = args
         if len(args) == 0:
             self.code = None
         elif len(args) == 1:

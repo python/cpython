@@ -63,10 +63,10 @@ def main():
     while 1:
         line = fp.readline()
         if not line: break
-	if string.find(line, '{1, "') > -1:
-	    match = strprog.search(line)
-	    if match:
-		lines.append("        '" + match.group(1) + "',\n")
+        if string.find(line, '{1, "') > -1:
+            match = strprog.search(line)
+            if match:
+                lines.append("        '" + match.group(1) + "',\n")
     fp.close()
     lines.sort()
 

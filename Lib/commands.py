@@ -72,11 +72,11 @@ def mk2arg(head, x):
 #
 def mkarg(x):
     if '\'' not in x:
-	return ' \'' + x + '\''
+        return ' \'' + x + '\''
     s = ' "'
     for c in x:
-	if c in '\\$"`':
-	    s = s + '\\'
-	s = s + c
+        if c in '\\$"`':
+            s = s + '\\'
+        s = s + c
     s = s + '"'
     return s

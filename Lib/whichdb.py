@@ -17,19 +17,19 @@ def whichdb(filename):
 
     # Check for dbm first -- this has a .pag and a .dir file
     try:
-	f = open(filename + ".pag", "rb")
-	f.close()
-	f = open(filename + ".dir", "rb")
-	f.close()
-	return "dbm"
+        f = open(filename + ".pag", "rb")
+        f.close()
+        f = open(filename + ".dir", "rb")
+        f.close()
+        return "dbm"
     except IOError:
-	pass
+        pass
 
     # See if the file exists, return None if not
     try:
-	f = open(filename, "rb")
+        f = open(filename, "rb")
     except IOError:
-	return None
+        return None
 
     # Read the first 4 bytes of the file -- the magic number
     s = f.read(4)
@@ -37,21 +37,21 @@ def whichdb(filename):
 
     # Return "" if not at least 4 bytes
     if len(s) != 4:
-	return ""
+        return ""
 
     # Convert to 4-byte int in native byte order -- return "" if impossible
     try:
-	(magic,) = struct.unpack("=l", s)
+        (magic,) = struct.unpack("=l", s)
     except struct.error:
-	return ""
+        return ""
 
     # Check for GNU dbm
     if magic == 0x13579ace:
-	return "gdbm"
+        return "gdbm"
 
     # Check for BSD hash
     if magic == 0x061561:
-	return "dbhash"
+        return "dbhash"
 
     # Unknown
     return ""

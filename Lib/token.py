@@ -56,7 +56,7 @@ NT_OFFSET = 256
 tok_name = {}
 for _name, _value in globals().items():
     if type(_value) is type(0):
-	tok_name[_value] = _name
+        tok_name[_value] = _name
 
 
 def ISTERMINAL(x):
@@ -77,49 +77,49 @@ def main():
     inFileName = args and args[0] or "Include/token.h"
     outFileName = "Lib/token.py"
     if len(args) > 1:
-	outFileName = args[1]
+        outFileName = args[1]
     try:
-	fp = open(inFileName)
+        fp = open(inFileName)
     except IOError, err:
-	sys.stdout.write("I/O error: %s\n" % str(err))
-	sys.exit(1)
+        sys.stdout.write("I/O error: %s\n" % str(err))
+        sys.exit(1)
     lines = string.splitfields(fp.read(), "\n")
     fp.close()
     prog = re.compile(
-	"#define[ \t][ \t]*([A-Z][A-Z_]*)[ \t][ \t]*([0-9][0-9]*)",
-	re.IGNORECASE)
+        "#define[ \t][ \t]*([A-Z][A-Z_]*)[ \t][ \t]*([0-9][0-9]*)",
+        re.IGNORECASE)
     tokens = {}
     for line in lines:
-	match = prog.match(line)
-	if match:
-	    name, val = match.group(1, 2)
-	    val = string.atoi(val)
-	    tokens[val] = name		# reverse so we can sort them...
+        match = prog.match(line)
+        if match:
+            name, val = match.group(1, 2)
+            val = string.atoi(val)
+            tokens[val] = name          # reverse so we can sort them...
     keys = tokens.keys()
     keys.sort()
     # load the output skeleton from the target:
     try:
-	fp = open(outFileName)
+        fp = open(outFileName)
     except IOError, err:
-	sys.stderr.write("I/O error: %s\n" % str(err))
-	sys.exit(2)
+        sys.stderr.write("I/O error: %s\n" % str(err))
+        sys.exit(2)
     format = string.splitfields(fp.read(), "\n")
     fp.close()
     try:
-	start = format.index("#--start constants--") + 1
-	end = format.index("#--end constants--")
+        start = format.index("#--start constants--") + 1
+        end = format.index("#--end constants--")
     except ValueError:
-	sys.stderr.write("target does not contain format markers")
-	sys.exit(3)
+        sys.stderr.write("target does not contain format markers")
+        sys.exit(3)
     lines = []
     for val in keys:
-	lines.append("%s = %d" % (tokens[val], val))
+        lines.append("%s = %d" % (tokens[val], val))
     format[start:end] = lines
     try:
-	fp = open(outFileName, 'w')
+        fp = open(outFileName, 'w')
     except IOError, err:
-	sys.stderr.write("I/O error: %s\n" % str(err))
-	sys.exit(4)
+        sys.stderr.write("I/O error: %s\n" % str(err))
+        sys.exit(4)
     fp.write(string.joinfields(format, "\n"))
     fp.close()
 

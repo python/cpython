@@ -34,12 +34,12 @@ class HTMLParser(SGMLParser):
 
     def handle_data(self, data):
         if self.savedata is not None:
-	    self.savedata = self.savedata + data
+            self.savedata = self.savedata + data
         else:
-	    if self.nofill:
-		self.formatter.add_literal_data(data)
-	    else:
-		self.formatter.add_flowing_data(data)
+            if self.nofill:
+                self.formatter.add_literal_data(data)
+            else:
+                self.formatter.add_flowing_data(data)
 
     # --- Hooks to save data; shouldn't need to be overridden
 
@@ -49,21 +49,21 @@ class HTMLParser(SGMLParser):
     def save_end(self):
         data = self.savedata
         self.savedata = None
-	if not self.nofill:
-	    data = string.join(string.split(data))
-	return data
+        if not self.nofill:
+            data = string.join(string.split(data))
+        return data
 
     # --- Hooks for anchors; should probably be overridden
 
     def anchor_bgn(self, href, name, type):
         self.anchor = href
         if self.anchor:
-	    self.anchorlist.append(href)
+            self.anchorlist.append(href)
 
     def anchor_end(self):
         if self.anchor:
-	    self.handle_data("[%d]" % len(self.anchorlist))
-	    self.anchor = None
+            self.handle_data("[%d]" % len(self.anchorlist))
+            self.anchor = None
 
     # --- Hook for images; should probably be overridden
 
@@ -218,10 +218,10 @@ class HTMLParser(SGMLParser):
     def do_li(self, attrs):
         self.formatter.end_paragraph(0)
         if self.list_stack:
-	    [dummy, label, counter] = top = self.list_stack[-1]
-	    top[2] = counter = counter+1
+            [dummy, label, counter] = top = self.list_stack[-1]
+            top[2] = counter = counter+1
         else:
-	    label, counter = '*', 0
+            label, counter = '*', 0
         self.formatter.add_label_data(label, counter)
 
     def start_ol(self, attrs):
@@ -230,8 +230,8 @@ class HTMLParser(SGMLParser):
         label = '1.'
         for a, v in attrs:
             if a == 'type':
-		if len(v) == 1: v = v + '.'
-		label = v
+                if len(v) == 1: v = v + '.'
+                label = v
         self.list_stack.append(['ol', label, 0])
 
     def end_ol(self):
@@ -271,8 +271,8 @@ class HTMLParser(SGMLParser):
         self.formatter.end_paragraph(bl)
         if self.list_stack:
             if self.list_stack[-1][0] == 'dd':
-		del self.list_stack[-1]
-		self.formatter.pop_margin()
+                del self.list_stack[-1]
+                self.formatter.pop_margin()
 
     # --- Phrase Markup
 
@@ -302,26 +302,26 @@ class HTMLParser(SGMLParser):
     # Typographic Elements
 
     def start_i(self, attrs):
-	self.formatter.push_font((AS_IS, 1, AS_IS, AS_IS))
+        self.formatter.push_font((AS_IS, 1, AS_IS, AS_IS))
     def end_i(self):
-	self.formatter.pop_font()
+        self.formatter.pop_font()
 
     def start_b(self, attrs):
-	self.formatter.push_font((AS_IS, AS_IS, 1, AS_IS))
+        self.formatter.push_font((AS_IS, AS_IS, 1, AS_IS))
     def end_b(self):
-	self.formatter.pop_font()
+        self.formatter.pop_font()
 
     def start_tt(self, attrs):
-	self.formatter.push_font((AS_IS, AS_IS, AS_IS, 1))
+        self.formatter.push_font((AS_IS, AS_IS, AS_IS, 1))
     def end_tt(self):
-	self.formatter.pop_font()
+        self.formatter.pop_font()
 
     def start_a(self, attrs):
         href = ''
         name = ''
         type = ''
         for attrname, value in attrs:
-	    value = string.strip(value)
+            value = string.strip(value)
             if attrname == 'href':
                 href = value
             if attrname == 'name':
@@ -350,8 +350,8 @@ class HTMLParser(SGMLParser):
         alt = '(image)'
         ismap = ''
         src = ''
-	width = 0
-	height = 0
+        width = 0
+        height = 0
         for attrname, value in attrs:
             if attrname == 'align':
                 align = value
@@ -361,12 +361,12 @@ class HTMLParser(SGMLParser):
                 ismap = value
             if attrname == 'src':
                 src = value
-	    if attrname == 'width':
-		try: width = string.atoi(value)
-		except: pass
-	    if attrname == 'height':
-		try: height = string.atoi(value)
-		except: pass
+            if attrname == 'width':
+                try: width = string.atoi(value)
+                except: pass
+            if attrname == 'height':
+                try: height = string.atoi(value)
+                except: pass
         self.handle_image(src, alt, ismap, align, width, height)
 
     # --- Really Old Unofficial Deprecated Stuff
@@ -388,35 +388,35 @@ def test(args = None):
     import sys, formatter
 
     if not args:
-	args = sys.argv[1:]
+        args = sys.argv[1:]
 
     silent = args and args[0] == '-s'
     if silent:
-	del args[0]
+        del args[0]
 
     if args:
-	file = args[0]
+        file = args[0]
     else:
-	file = 'test.html'
+        file = 'test.html'
 
     if file == '-':
-	f = sys.stdin
+        f = sys.stdin
     else:
-	try:
-	    f = open(file, 'r')
-	except IOError, msg:
-	    print file, ":", msg
-	    sys.exit(1)
+        try:
+            f = open(file, 'r')
+        except IOError, msg:
+            print file, ":", msg
+            sys.exit(1)
 
     data = f.read()
 
     if f is not sys.stdin:
-	f.close()
+        f.close()
     
     if silent:
-	f = formatter.NullFormatter()
+        f = formatter.NullFormatter()
     else:
-	f = formatter.AbstractFormatter(formatter.DumbWriter())
+        f = formatter.AbstractFormatter(formatter.DumbWriter())
 
     p = HTMLParser(f)
     p.feed(data)

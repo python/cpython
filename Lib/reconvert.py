@@ -108,36 +108,36 @@ def convert(s, syntax=None):
     """
     table = mastertable.copy()
     if syntax is None:
-	syntax = regex.get_syntax()
+        syntax = regex.get_syntax()
     if syntax & RE_NO_BK_PARENS:
-	del table[r'\('], table[r'\)']
-	del table['('], table[')']
+        del table[r'\('], table[r'\)']
+        del table['('], table[')']
     if syntax & RE_NO_BK_VBAR:
-	del table[r'\|']
-	del table['|']
+        del table[r'\|']
+        del table['|']
     if syntax & RE_BK_PLUS_QM:
-	table['+'] = r'\+'
-	table['?'] = r'\?'
-	table[r'\+'] = '+'
-	table[r'\?'] = '?'
+        table['+'] = r'\+'
+        table['?'] = r'\?'
+        table[r'\+'] = '+'
+        table[r'\?'] = '?'
     if syntax & RE_NEWLINE_OR:
-	table['\n'] = '|'
+        table['\n'] = '|'
     res = ""
 
     i = 0
     end = len(s)
     while i < end:
-	c = s[i]
-	i = i+1
-	if c == '\\':
-	    c = s[i]
-	    i = i+1
-	    key = '\\' + c
-	    key = table.get(key, key)
-	    res = res + key
-	else:
-	    c = table.get(c, c)
-	    res = res + c
+        c = s[i]
+        i = i+1
+        if c == '\\':
+            c = s[i]
+            i = i+1
+            key = '\\' + c
+            key = table.get(key, key)
+            res = res + key
+        else:
+            c = table.get(c, c)
+            res = res + c
     return res
 
 
@@ -155,21 +155,21 @@ def quote(s, quote=None):
 
     """
     if quote is None:
-	q = "'"
-	altq = "'"
-	if q in s and altq not in s:
-	    q = altq
+        q = "'"
+        altq = "'"
+        if q in s and altq not in s:
+            q = altq
     else:
-	assert quote in ('"', "'")
-	q = quote
+        assert quote in ('"', "'")
+        q = quote
     res = q
     for c in s:
-	if c == q: c = '\\' + c
-	elif c < ' ' or c > '~': c = "\\%03o" % ord(c)
-	res = res + c
+        if c == q: c = '\\' + c
+        elif c < ' ' or c > '~': c = "\\%03o" % ord(c)
+        res = res + c
     res = res + q
     if '\\' in res:
-	res = 'r' + res
+        res = 'r' + res
     return res
 
 
@@ -179,7 +179,7 @@ def main():
     s = eval(sys.stdin.read())
     sys.stdout.write(quote(convert(s)))
     if sys.stdout.isatty():
-	sys.stdout.write("\n")
+        sys.stdout.write("\n")
 
 
 if __name__ == '__main__':

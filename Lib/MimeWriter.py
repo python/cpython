@@ -47,7 +47,7 @@ class MimeWriter:
     w.startmultipartbody(subtype)
     for each part:
         subwriter = w.nextpart()
-	...use the subwriter's methods to create the subpart...
+        ...use the subwriter's methods to create the subpart...
     w.lastpart()
 
     The subwriter is another MimeWriter instance, and should be
@@ -82,46 +82,46 @@ class MimeWriter:
     """
 
     def __init__(self, fp):
-	self._fp = fp
-	self._headers = []
+        self._fp = fp
+        self._headers = []
 
     def addheader(self, key, value, prefix=0):
-	lines = string.splitfields(value, "\n")
-	while lines and not lines[-1]: del lines[-1]
-	while lines and not lines[0]: del lines[0]
-	for i in range(1, len(lines)):
-	    lines[i] = "    " + string.strip(lines[i])
-	value = string.joinfields(lines, "\n") + "\n"
-	line = key + ": " + value
-	if prefix:
-	    self._headers.insert(0, line)
-	else:
-	    self._headers.append(line)
+        lines = string.splitfields(value, "\n")
+        while lines and not lines[-1]: del lines[-1]
+        while lines and not lines[0]: del lines[0]
+        for i in range(1, len(lines)):
+            lines[i] = "    " + string.strip(lines[i])
+        value = string.joinfields(lines, "\n") + "\n"
+        line = key + ": " + value
+        if prefix:
+            self._headers.insert(0, line)
+        else:
+            self._headers.append(line)
 
     def flushheaders(self):
-	self._fp.writelines(self._headers)
-	self._headers = []
+        self._fp.writelines(self._headers)
+        self._headers = []
 
     def startbody(self, ctype, plist=[], prefix=1):
-	for name, value in plist:
-	    ctype = ctype + ';\n %s=\"%s\"' % (name, value)
-	self.addheader("Content-Type", ctype, prefix=prefix)
-	self.flushheaders()
-	self._fp.write("\n")
-	return self._fp
+        for name, value in plist:
+            ctype = ctype + ';\n %s=\"%s\"' % (name, value)
+        self.addheader("Content-Type", ctype, prefix=prefix)
+        self.flushheaders()
+        self._fp.write("\n")
+        return self._fp
 
     def startmultipartbody(self, subtype, boundary=None, plist=[], prefix=1):
-	self._boundary = boundary or mimetools.choose_boundary()
-	return self.startbody("multipart/" + subtype,
-			      [("boundary", self._boundary)] + plist,
-			      prefix=prefix)
+        self._boundary = boundary or mimetools.choose_boundary()
+        return self.startbody("multipart/" + subtype,
+                              [("boundary", self._boundary)] + plist,
+                              prefix=prefix)
 
     def nextpart(self):
-	self._fp.write("\n--" + self._boundary + "\n")
-	return self.__class__(self._fp)
+        self._fp.write("\n--" + self._boundary + "\n")
+        return self.__class__(self._fp)
 
     def lastpart(self):
-	self._fp.write("\n--" + self._boundary + "--\n")
+        self._fp.write("\n--" + self._boundary + "--\n")
 
 
 if __name__ == '__main__':
