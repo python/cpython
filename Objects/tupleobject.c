@@ -596,6 +596,8 @@ static PyMappingMethods tuple_as_mapping = {
 	0
 };
 
+static PyObject *tuple_iter(PyObject *seq);
+
 PyTypeObject PyTuple_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -624,7 +626,7 @@ PyTypeObject PyTuple_Type = {
 	0,					/* tp_clear */
 	tuplerichcompare,			/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
-	0,					/* tp_iter */
+	tuple_iter,	    			/* tp_iter */
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	0,					/* tp_members */
@@ -722,3 +724,112 @@ PyTuple_Fini(void)
 	}
 #endif
 }
+
+/*********************** Tuple Iterator **************************/
+
+typedef struct {
+	PyObject_HEAD
+	long it_index;
+	PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
+} tupleiterobject;
+
+PyTypeObject PyTupleIter_Type;
+
+static PyObject *
+tuple_iter(PyObject *seq)
+{
+	tupleiterobject *it;
+
+	if (!PyTuple_Check(seq)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	it = PyObject_GC_New(tupleiterobject, &PyTupleIter_Type);
+	if (it == NULL)
+		return NULL;
+	it->it_index = 0;
+	Py_INCREF(seq);
+	it->it_seq = (PyTupleObject *)seq;
+	_PyObject_GC_TRACK(it);
+	return (PyObject *)it;
+}
+
+static void
+tupleiter_dealloc(tupleiterobject *it)
+{
+	_PyObject_GC_UNTRACK(it);
+	Py_XDECREF(it->it_seq);
+	PyObject_GC_Del(it);
+}
+
+static int
+tupleiter_traverse(tupleiterobject *it, visitproc visit, void *arg)
+{
+	if (it->it_seq == NULL)
+		return 0;
+	return visit((PyObject *)it->it_seq, arg);
+}
+
+
+static PyObject *
+tupleiter_getiter(PyObject *it)
+{
+	Py_INCREF(it);
+	return it;
+}
+
+static PyObject *
+tupleiter_next(tupleiterobject *it)
+{
+	PyTupleObject *seq;
+	PyObject *item;
+
+	assert(it != NULL);
+	seq = it->it_seq;
+	if (seq == NULL)
+		return NULL;
+	assert(PyTuple_Check(seq));
+
+	if (it->it_index < PyTuple_GET_SIZE(seq)) {
+		item = PyTuple_GET_ITEM(seq, it->it_index);
+		++it->it_index;
+		Py_INCREF(item);
+		return item;
+	}
+
+	Py_DECREF(seq);
+	it->it_seq = NULL;
+	return NULL;
+}
+
+PyTypeObject PyTupleIter_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"tupleiterator",			/* tp_name */
+	sizeof(tupleiterobject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)tupleiter_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+	0,					/* tp_doc */
+	(traverseproc)tupleiter_traverse,	/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	(getiterfunc)tupleiter_getiter,		/* tp_iter */
+	(iternextfunc)tupleiter_next,		/* tp_iternext */
+};
