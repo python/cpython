@@ -153,8 +153,21 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
         if host != self.client_address[0]:
             env['REMOTE_HOST'] = host
         env['REMOTE_ADDR'] = self.client_address[0]
-        # XXX AUTH_TYPE
-        # XXX REMOTE_USER
+        authorization = self.headers.getheader("authorization")
+        if authorization:
+            authorization = authorization.split()
+            if len(authorization) == 2:
+                import base64, binascii
+                env['AUTH_TYPE'] = authorization[0]
+                if authorization[0].lower() == "basic":
+                    try:
+                        authorization = base64.decodestring(authorization[1])
+                    except binascii.Error:
+                        pass
+                    else:
+                        authorization = authorization.split(':')
+                        if len(authorization) == 2:
+                            env['REMOTE_USER'] = authorization[0]
         # XXX REMOTE_IDENT
         if self.headers.typeheader is None:
             env['CONTENT_TYPE'] = self.headers.type
