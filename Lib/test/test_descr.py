@@ -2571,6 +2571,29 @@ def delhook():
     del c
     vereq(log, [1])
 
+def hashinherit():
+    if verbose: print "Testing hash of mutable subclasses..."
+
+    class mydict(dict):
+        pass
+    d = mydict()
+    try:
+        hash(d)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "hash() of dict subclass should fail"
+
+    class mylist(list):
+        pass
+    d = mylist()
+    try:
+        hash(d)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "hash() of list subclass should fail"
+
 def test_main():
     class_docstrings()
     lists()
@@ -2623,6 +2646,7 @@ def test_main():
     str_of_str_subclass()
     kwdargs()
     delhook()
+    hashinherit()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
