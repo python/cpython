@@ -18,6 +18,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- The xml.parsers.expat module now provides Expat 1.95.7.
+
 - Patch #813445: Add missing socket.IPPROTO_IPV6.
 
 - Bug #807314: Properly raise an exception if non-existent Tcl
