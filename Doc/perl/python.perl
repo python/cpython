@@ -230,25 +230,30 @@ sub do_cmd_versionchanged{
 $INDEX_SUBITEM = "";
 
 sub get_indexsubitem{
-    #$INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
-    return '';
+    return $INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
 }
 
 sub do_cmd_setindexsubitem{
     local($_) = @_;
-    $INDEX_SUBITEM = next_argument();
+    my $subitem = next_argument();
+    $INDEX_SUBITEM = $subitem;
     return $_;
 }
 
 sub do_cmd_withsubitem{
-    # We can't really do the right right thing, because LaTeX2HTML doesn't
+    # We can't really do the right thing, because LaTeX2HTML doesn't
     # do things in the right order, but we need to at least strip this stuff
     # out, and leave anything that the second argument expanded out to.
     #
     local($_) = @_;
-    next_argument();
+    my $oldsubitem = $INDEX_SUBITEM;
+    $INDEX_SUBITEM = next_argument();
     my $stuff = next_argument();
-    return $stuff . $_;
+    my ($open, $close) = ($O, $C);
+    return
+      $stuff
+      . "\\setindexsubitem${open}1$close$oldsubitem${open}1$close"
+      . $_;
 }
 
 # This is the prologue macro which is required to start writing the
@@ -639,6 +644,25 @@ sub do_env_methoddesc{
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+}
+
+
+sub do_cmd_methodline{
+    local($_) = @_;
+    my $class_name = next_optional_argument();
+    $class_name = $THIS_CLASS
+        unless $class_name;
+    my $method = next_argument();
+    my $arg_list = next_argument();
+    my $extra = '';
+    if ($class_name) {
+	$extra = " ($class_name method)";
+    }
+    my $idx = make_str_index_entry($br_id, "<tt>$method_name()</tt>$extra");
+    $idx =~ s/ \(.*\)//;
+    $idx =~ s/\(\)//;
+    return "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>"
+           . $_;
 }
 
 
