@@ -69,8 +69,8 @@ extern DL_IMPORT(PyTypeObject) PyString_Type;
 
 #define PyString_Check(op) ((op)->ob_type == &PyString_Type)
 
-extern PyObject *PyString_FromStringAndSize Py_PROTO((char *, int));
-extern PyObject *PyString_FromString Py_PROTO((char *));
+extern PyObject *PyString_FromStringAndSize Py_PROTO((const char *, int));
+extern PyObject *PyString_FromString Py_PROTO((const char *));
 extern int PyString_Size Py_PROTO((PyObject *));
 extern char *PyString_AsString Py_PROTO((PyObject *));
 extern void PyString_Concat Py_PROTO((PyObject **, PyObject *));

@@ -39,7 +39,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 void PyErr_SetNone Py_PROTO((PyObject *));
 void PyErr_SetObject Py_PROTO((PyObject *, PyObject *));
-void PyErr_SetString Py_PROTO((PyObject *, char *));
+void PyErr_SetString Py_PROTO((PyObject *, const char *));
 PyObject *PyErr_Occurred Py_PROTO((void));
 void PyErr_Clear Py_PROTO((void));
 void PyErr_Fetch Py_PROTO((PyObject **, PyObject **, PyObject **));

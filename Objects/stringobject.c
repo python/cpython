@@ -69,7 +69,7 @@ static stringobject *nullstring;
 */
 object *
 newsizedstringobject(str, size)
-	char *str;
+	const char *str;
 	int size;
 {
 	register stringobject *op;
@@ -116,7 +116,7 @@ newsizedstringobject(str, size)
 
 object *
 newstringobject(str)
-	char *str;
+	const char *str;
 {
 	register unsigned int size = strlen(str);
 	register stringobject *op;
