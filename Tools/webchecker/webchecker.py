@@ -117,6 +117,7 @@ import pickle
 import urllib
 import urlparse
 import sgmllib
+import cgi
 
 import mimetypes
 import robotparser
@@ -543,7 +544,7 @@ class Checker:
 
     def checkforhtml(self, info, url):
         if info.has_key('content-type'):
-            ctype = string.lower(info['content-type'])
+            ctype = string.lower(cgi.parse_header(info['content-type'])[0])
         else:
             if url[-1:] == "/":
                 return 1
