@@ -1,4 +1,5 @@
-# Echo server program using Unix sockets (handles one connection only)
+# Echo server demo using Unix sockets (handles one connection only)
+# Piet van Oostrum
 from socket import *
 FILE = 'blabla'             
 s = socket(AF_UNIX, SOCK_STREAM)
