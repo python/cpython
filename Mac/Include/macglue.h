@@ -37,7 +37,8 @@ int PyMac_Idle Py_PROTO((void));			/* Idle routine */
 void PyMac_Yield Py_PROTO((void));			/* optional idle routine for mainloop */
 void PyMac_SetYield Py_PROTO((long, long, long, long));	/* Set timeouts */
 PyObject *PyErr_Mac(PyObject *, int);		/* Exception with a mac error */
-PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */ 
+PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
+void PyMac_HandleEvent Py_PROTO((EventRecord *));	/* Handle one event, if possible */
 
 int PyMac_Idle(void);				/* Idle routine */
 
