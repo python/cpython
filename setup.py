@@ -652,14 +652,23 @@ class PyBuildExt(build_ext):
             exts.append( Extension('fpectl', ['fpectlmodule.c']) )
 
 
-        # Andrew Kuchling's zlib module.
-        # This requires zlib 1.1.4 (1.1.3 has a security problem).
-        # See http://www.gzip.org/zlib/
+        # Andrew Kuchling's zlib module.  Note that some versions of zlib
+        # 1.1.3 have security problems.  See CERT Advisory CA-2002-07:
+        # http://www.cert.org/advisories/CA-2002-07.html
+        #
+        # zlib 1.1.4 is fixed, but at least one vendor (RedHat) has decided to
+        # patch its zlib 1.1.3 package instead of upgrading to 1.1.4.  For
+        # now, we still accept 1.1.3, because we think it's difficult to
+        # exploit this in Python, and we'd rather make it RedHat's problem
+        # than our problem <wink>.
+        #
+        # You can upgrade zlib to version 1.1.4 yourself by going to
+        # http://www.gzip.org/zlib/
         zlib_inc = find_file('zlib.h', [], inc_dirs)
         if zlib_inc is not None:
             zlib_h = zlib_inc[0] + '/zlib.h'
             version = '"0.0.0"'
-            version_req = '"1.1.4"'
+            version_req = '"1.1.3"'
             fp = open(zlib_h)
             while 1:
                 line = fp.readline()
