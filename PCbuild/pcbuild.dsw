@@ -247,6 +247,22 @@ Package=<4>
 
 ###############################################################################
 
+Project: "winsound"=".\winsound.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+    begin source code control
+    winsound
+    ..\pc
+    end source code control
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
 Project: "zlib"=".\zlib.dsp" - Package Owner=<4>
 
 Package=<5>
