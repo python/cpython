@@ -97,9 +97,9 @@ building and installing modules from standard source distributions.
 \label{new-standard}
 
 If you download a module source distribution, you can tell pretty
-quickly if was packaged and distributed in the standard way, i.e. using
-the Distutils.  First, the distribution's name and version number will
-be featured prominently in the name of the downloaded archive, e.g.
+quickly if it was packaged and distributed in the standard way, i.e.
+using the Distutils.  First, the distribution's name and version number
+will be featured prominently in the name of the downloaded archive, e.g.
 \file{foo-1.0.tar.gz} or \file{widget-0.9.7.zip}.  Next, the archive
 will unpack into a similarly-named directory: \file{foo-1.0} or
 \file{widget-0.9.7}.  Additionally, the distribution will contain a
@@ -126,7 +126,7 @@ really possible to write a general manual for installing Python modules
 that don't use the Distutils; the only truly general statement that can
 be made is, ``Read the module's own installation instructions.''
 
-However, if such instructions exists at all, they are often woefully
+However, if such instructions exist at all, they are often woefully
 inadequate and targeted at experienced Python developers.  Such users
 are already familiar with how the Python library is laid out on their
 platform, and know where to copy various files in order for Python to
@@ -421,7 +421,7 @@ Python installation).  If this sounds a trifle unusual, it is---that's
 why the ``home scheme'' comes first.  However, there are at least two
 known cases where the prefix scheme will be useful.
 
-First, consider that many Linux distribution put Python in \file{/usr},
+First, consider that many Linux distributions put Python in \file{/usr},
 rather than the more traditional \file{/usr/local}.  This is entirely
 appropriate, since in those cases Python is part of ``the system''
 rather than a local add-on.  However, if you are installing Python
@@ -558,7 +558,7 @@ As you might expect, you can override this directory with the
 sense to supply a relative path, which will be interpreted relative to
 the installation base directory (your home directory, in this case):
 \begin{verbatim}
-python setup.py install --home --install-scripts=scripts
+python setup.py install --home=~ --install-scripts=scripts
 \end{verbatim}
 
 Another Unix example: suppose your Python installation was built and
@@ -606,7 +606,7 @@ or, equivalently,
 \begin{verbatim}
 python setup.py install --home=~/python \
                         --install-purelib=lib \
-                        --install-platlib=lib.$PLAT \
+                        --install-platlib='lib.$PLAT' \
                         --install-scripts=scripts
                         --install-data=data
 \end{verbatim}

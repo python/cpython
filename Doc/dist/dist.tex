@@ -55,13 +55,12 @@ Each of these tasks is covered in this document.
 Not all module developers have access to a multitude of platforms, so
 it's not always feasible to expect them to create a multitude of built
 distributions.  It is hoped that a class of intermediaries, called
-\emph{packagers}, will arise to take address this need.  Packagers will
-take source distributions released by module developers, build them on
-one or more platforms, and release the resulting built distributions.
-Thus, users on the most popular platforms will be able to install most
-popular Python module distributions in the most natural way for their
-platform, without having to run a single setup script or compile a line
-of code.
+\emph{packagers}, will arise to address this need.  Packagers will take
+source distributions released by module developers, build them on one or
+more platforms, and release the resulting built distributions.  Thus,
+users on the most popular platforms will be able to install most popular
+Python module distributions in the most natural way for their platform,
+without having to run a single setup script or compile a line of code.
 
 
 \subsection{A simple example}
@@ -373,8 +372,8 @@ simplest case,
 \begin{verbatim}
 python setup.py sdist
 \end{verbatim}
-(assuming you haven't specified any \command{sdist} options in the setup 
-script or config file), \command{sdist} creates the the archive of the
+(assuming you haven't specified any \command{sdist} options in the setup
+script or config file), \command{sdist} creates the archive of the
 default format for the current platform.  The default formats are:
 \begin{tableii}{ll}{textrm}%
   {Platform}{Default archive format for source distributions}
@@ -539,7 +538,7 @@ distributions for every platform under the sun, so the Distutils is
 designed to enable module developers to concentrate on their
 specialty---writing code and creating source distributions---while an
 intermediary species of \emph{packager} springs up to turn source
-distributions into build distributions for as many platforms as there
+distributions into built distributions for as many platforms as there
 are packagers.
 
 Of course, the module developer could be his own packager; or the
