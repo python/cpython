@@ -59,6 +59,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define LONG_MIN (-LONG_MAX-1)
 #endif
 
+#ifdef __NeXT__
+#ifdef __sparc__
+/*
+ * This works around a bug in the NS/Sparc 3.3 pre-release
+ * limits.h header file.
+ * 10-Feb-1995 bwarsaw@cnri.reston.va.us
+ */
+#undef LONG_MIN
+#define LONG_MIN (-LONG_MAX-1)
+#endif
+#endif
+
 #ifndef __STDC__
 extern double fmod PROTO((double, double));
 extern double pow PROTO((double, double));
@@ -406,7 +418,7 @@ float_int(v)
 	double x = getfloatvalue(v);
 	if (x < 0 ? (x = ceil(x)) < (double)LONG_MIN
 	          : (x = floor(x)) > (double)LONG_MAX) {
-		err_setstr(OverflowError, "float to large to convert");
+		err_setstr(OverflowError, "float too large to convert");
 		return NULL;
 	}
 	return newintobject((long)x);
