@@ -1052,6 +1052,35 @@ extracting a slice may not make sense.  (One example of this is the
 
 \subsection{Basic customization\label{customization}}
 
+\begin{methoddesc}[object]{__new__}{cls\optional{, \moreargs}}
+Called to create a new instance of class \var{cls}.  \method{__new__()}
+is a static method (special-cased so you need not declare it as such)
+that takes the class of which an instance was requested as its first
+argument.  The remaining arguments are those passed to the object
+constructor expression (the call to the class).  The return value of
+\method{__new__()} should be the new object instance (usually an
+instance of \var{cls}).
+
+Typical implementations create a new instance of the class by invoking
+the superclass's \method{__new__()} method using
+\samp{super(\var{currentclass}, \var{cls}).__new__(\var{cls}[, ...])}
+with appropriate arguments and then modifying the newly-created instance
+as necessary before returning it.
+
+If \method{__new__()} returns an instance of \var{cls}, then the new
+instance's \method{__init__()} method will be invoked like
+\samp{__init__(\var{self}[, ...])}, where \var{self} is the new instance
+and the remaining arguments are the same as were passed to
+\method{__new__()}.
+
+If \method{__new__()} does not return an instance of \var{cls}, then the
+new instance's \method{__init__()} method will not be invoked.
+
+\method{__new__()} is intended mainly to allow subclasses of
+immutable types (like int, str, or tuple) to customize instance
+creation.
+\end{methoddesc}
+
 \begin{methoddesc}[object]{__init__}{self\optional{, \moreargs}}
 Called\indexii{class}{constructor} when the instance is created.  The
 arguments are those passed to the class constructor expression.  If a
