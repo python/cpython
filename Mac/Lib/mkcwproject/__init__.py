@@ -4,7 +4,7 @@ import os
 import AppleEvents
 import macfs
 
-def mkproject(outputfile, modulename, settings):
+def mkproject(outputfile, modulename, settings, force=0):
 	#
 	# Copy the dictionary
 	#
@@ -29,6 +29,14 @@ def mkproject(outputfile, modulename, settings):
 	#
 	xmlbuilder = cwxmlgen.ProjectBuilder(dictcopy)
 	xmlbuilder.generate()
+	if not force:
+		# check whether it is the same as it was
+		if os.path.exists(dictcopy['mac_projectxmlname']):
+			fp = open(dictcopy['mac_projectxmlname'])
+			data = fp.read()
+			fp.close()
+			if data == dictcopy["tmp_projectxmldata"]:
+				return
 	fp = open(dictcopy['mac_projectxmlname'], "w")
 	fp.write(dictcopy["tmp_projectxmldata"])
 	fp.close()
