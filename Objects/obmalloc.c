@@ -213,9 +213,6 @@
 #undef  uchar
 #define uchar			unsigned char	/* assuming == 8 bits  */
 
-#undef  ushort
-#define ushort			unsigned short	/* assuming >= 16 bits */
-
 #undef  uint
 #define uint			unsigned int	/* assuming >= 16 bits */
 
@@ -235,7 +232,7 @@ struct pool_header {
 	block *freeblock;		/* pool's free list head         */
 	struct pool_header *nextpool;	/* next pool of this size class  */
 	struct pool_header *prevpool;	/* previous pool       ""        */
-	ulong arenaindex;		/* index into arenas of base adr */
+	uint arenaindex;		/* index into arenas of base adr */
 	uint szidx;			/* block size class index	 */
 	uint capacity;			/* pool capacity in # of blocks  */
 };
@@ -312,8 +309,8 @@ static poolp freepools = NULL;		/* free list for cached pools */
  * to the OS.
  */
 static uptr *arenas = NULL;
-static ulong narenas = 0;
-static ulong maxarenas = 0;
+static uint narenas = 0;
+static uint maxarenas = 0;
 
 /* Number of pools still available to be allocated in the current arena. */
 static uint nfreepools = 0;
@@ -330,7 +327,7 @@ dumpem(void *ptr)
 {
 	if (ptr)
 		printf("inserted new arena at %08x\n", ptr);
-	printf("# arenas %d\n", narenas);
+	printf("# arenas %u\n", narenas);
 	printf("was mine %lu wasn't mine %lu\n", wasmine, wasntmine);
 }
 #define INCMINE ++wasmine
@@ -403,8 +400,12 @@ new_arena(void)
 		 * XXX until after the PyMem_FREE(oldarenas) below completes.
 		 */
 		uptr *oldarenas;
-		int newmax = maxarenas + (maxarenas >> 1);
-		uptr *p = (uptr *)PyMem_MALLOC(newmax * sizeof(*arenas));
+		uptr *p;
+		uint newmax = maxarenas + (maxarenas >> 1);
+
+		if (newmax <= maxarenas)	/* overflow */
+			goto error;
+		p = (uptr *)PyMem_MALLOC(newmax * sizeof(*arenas));
 		if (p == NULL)
 			goto error;
 		memcpy(p, arenas, narenas * sizeof(*arenas));
@@ -417,7 +418,7 @@ new_arena(void)
 	/* Append the new arena address to arenas. */
 	assert(narenas < maxarenas);
 	arenas[narenas] = (uptr)bp;
-	++narenas;
+	++narenas;	/* can't overflow, since narenas < maxarenas before */
 	dumpem(bp);
 	return bp;
 
