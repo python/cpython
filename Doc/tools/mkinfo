@@ -49,7 +49,7 @@ run() {
 # generate the Texinfo file:
 
 run $EMACS -batch -q --no-site-file -l $TOOLSDIR/py2texi.el \
-    --eval "(setq py2texi-dirs '(\"./\" \"../texinputs/\" \"$DOCDIR\"))" \
+    --eval "(setq py2texi-dirs '(\"$DOCDIR\" \"../commontex\" \"../texinputs\"))" \
     --eval "(setq py2texi-texi-file-name \"$TEXINAME\")" \
     --eval "(setq py2texi-info-file-name \"$INFONAME\")" \
     --eval "(py2texi \"$DOCDIR/$DOCFILE\")" \
