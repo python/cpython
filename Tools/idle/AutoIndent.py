@@ -47,8 +47,12 @@ class AutoIndent:
         ]),
     ]
 
-    windows_keydefs = {
+    keydefs = {
+        '<<smart-backspace>>': ['<Key-BackSpace>'],
         '<<newline-and-indent>>': ['<Key-Return>', '<KP_Enter>'],
+    }
+
+    windows_keydefs = {
         '<<indent-region>>': ['<Control-bracketright>'],
         '<<dedent-region>>': ['<Control-bracketleft>'],
         '<<comment-region>>': ['<Alt-Key-3>'],
@@ -58,7 +62,6 @@ class AutoIndent:
     }
 
     unix_keydefs = {
-        '<<newline-and-indent>>': ['<Key-Return>', '<KP_Enter>'],
         '<<indent-region>>': ['<Alt-bracketright>',
                               '<Meta-bracketright>',
                               '<Control-bracketright>'],
@@ -85,6 +88,29 @@ class AutoIndent:
                 self.spaceindent = value
             else:
                 raise KeyError, "bad option name: %s" % `key`
+
+    def smart_backspace_event(self, event):
+        text = self.text
+        try:
+            first = text.index("sel.first")
+            last = text.index("sel.last")
+        except TclError:
+            first = last = None
+        if first and last:
+            text.delete(first, last)
+            text.mark_set("insert", first)
+            return "break"
+        # After Tim Peters
+        ndelete = 1
+        chars = text.get("insert linestart", "insert")
+        i = 0
+        n = len(chars)
+        while i < n and chars[i] in " \t":
+            i = i+1
+        if i == n and chars[-4:] == "    ":
+            ndelete = 4
+        text.delete("insert - %d chars" % ndelete, "insert")
+        return "break"
 
     def newline_and_indent_event(self, event):
         text = self.text
