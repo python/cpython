@@ -506,7 +506,6 @@ class Distribution:
         cmd_obj = self.command_obj.get (command)
         if not cmd_obj and create:
             cmd_obj = self.create_command_obj (command)
-            cmd_obj.ensure_ready ()
             self.command_obj[command] = cmd_obj
 
         return cmd_obj
@@ -873,7 +872,9 @@ class Command:
            find (create if necessary and 'create' is true) the command
            object for 'command'.."""
 
-        return self.distribution.find_command_obj (command, create)
+        cmd_obj = self.distribution.find_command_obj (command, create)
+        cmd_obj.ensure_ready ()
+        return cmd_obj
 
 
     def get_peer_option (self, command, option):
