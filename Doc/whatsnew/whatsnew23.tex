@@ -3,9 +3,12 @@
 % $Id$
 
 \title{What's New in Python 2.3}
-\release{1.00}
+\release{1.01}
 \author{A.M.\ Kuchling}
-\authoraddress{\email{amk@amk.ca}}
+\authoraddress{
+	\strong{Python Software Foundation}\\
+	Email: \email{amk@amk.ca}
+}
 
 \begin{document}
 \maketitle
@@ -2136,33 +2139,6 @@ Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
-\item The C-level interface to the garbage collector has been changed
-to make it easier to write extension types that support garbage
-collection and to debug misuses of the functions.
-Various functions have slightly different semantics, so a bunch of
-functions had to be renamed.  Extensions that use the old API will
-still compile but will \emph{not} participate in garbage collection,
-so updating them for 2.3 should be considered fairly high priority.
-
-To upgrade an extension module to the new API, perform the following
-steps:
-
-\begin{itemize}
-
-\item Rename \cfunction{Py_TPFLAGS_GC} to \cfunction{PyTPFLAGS_HAVE_GC}.
-
-\item Use \cfunction{PyObject_GC_New} or \cfunction{PyObject_GC_NewVar} to
-allocate objects, and \cfunction{PyObject_GC_Del} to deallocate them.
-
-\item Rename \cfunction{PyObject_GC_Init} to \cfunction{PyObject_GC_Track} and
-\cfunction{PyObject_GC_Fini} to \cfunction{PyObject_GC_UnTrack}.
-
-\item Remove \cfunction{PyGC_HEAD_SIZE} from object size calculations.
-
-\item Remove calls to \cfunction{PyObject_AS_GC} and \cfunction{PyObject_FROM_GC}.
-
-\end{itemize}
-
 \item The cycle detection implementation used by the garbage collection
 has proven to be stable, so it's now been made mandatory.  You can no
 longer compile Python without it, and the
@@ -2195,6 +2171,11 @@ the argument checking can then be removed.  If compatibility with
 pre-2.2 versions of Python is important, the code could use
 \code{PyArg_ParseTuple(\var{args}, "")} instead, but this will be slower
 than using \constant{METH_NOARGS}.
+
+\item \cfunction{PyArg_ParseTuple()} accepts new format characters for various sizes of unsigned integers: \samp{B} for \ctype{unsigned char},
+\samp{H} for \ctype{unsigned short int}, 
+\samp{I} for \ctype{unsigned int}, 
+and \samp{K} for \ctype{unsigned long long}.
 
 \item A new function, \cfunction{PyObject_DelItemString(\var{mapping},
 char *\var{key})} was added as shorthand for
@@ -2242,7 +2223,7 @@ of the EMX port into CVS.  (Contributed by Andrew MacIntyre.)
 
 On MacOS, most toolbox modules have been weaklinked to improve
 backward compatibility.  This means that modules will no longer fail
-to load if a single routine is missing on the curent OS version.
+to load if a single routine is missing on the current OS version.
 Instead calling the missing routine will raise an exception.
 (Contributed by Jack Jansen.)
 
@@ -2388,7 +2369,7 @@ name.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Jeff Bauer, Simon Brunning, Brett Cannon, Michael Chermside,
-Andrew Dalke, Scott David Daniels, Fred~L. Drake, Jr., David Fraser,
+Andrew Dalke, Scott David Daniels, Fred~L. Drake, Jr., David Fraser, 
 Kelly Gerber,
 Raymond Hettinger, Michael Hudson, Chris Lambert, Detlef Lannert,
 Martin von~L\"owis, Andrew MacIntyre, Lalo Martins, Chad Netzer,
