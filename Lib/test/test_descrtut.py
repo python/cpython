@@ -225,7 +225,8 @@ Instead, you can get the same information from the list type:
      'pop',
      'remove',
      'reverse',
-     'sort']
+     'sort',
+     'sorted']
 
 The new introspection API gives more information than the old one:  in
 addition to the regular methods, it also shows the methods that are
