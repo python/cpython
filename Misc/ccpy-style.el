@@ -1,6 +1,6 @@
 ;;; ccpy-style.el  ---  cc-mode style definition for Python C code
 ;;
-;; Author:  1996 Barry A. Warsaw
+;; Author:   1996 Barry A. Warsaw
 ;; Created:  6-Dec-1996
 ;; Keywords: c python languages oop
 
