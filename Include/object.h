@@ -162,7 +162,7 @@ typedef struct _typeobject {
 	/* Methods to implement standard operations */
 	
 	void (*tp_dealloc) FPROTO((object *));
-	void (*tp_print) FPROTO((object *, FILE *, int));
+	int (*tp_print) FPROTO((object *, FILE *, int));
 	object *(*tp_getattr) FPROTO((object *, char *));
 	int (*tp_setattr) FPROTO((object *, char *, object *));
 	int (*tp_compare) FPROTO((object *, object *));
@@ -180,7 +180,7 @@ extern typeobject Typetype; /* The type of type objects */
 #define is_typeobject(op) ((op)->ob_type == &Typetype)
 
 /* Generic operations on objects */
-extern void printobject PROTO((object *, FILE *, int));
+extern int printobject PROTO((object *, FILE *, int));
 extern object * reprobject PROTO((object *));
 extern int cmpobject PROTO((object *, object *));
 extern object *getattr PROTO((object *, char *));
