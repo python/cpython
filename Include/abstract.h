@@ -932,7 +932,17 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 expression: o.count(value).
        */
 
-     DL_IMPORT(int) PySequence_Contains(PyObject *o, PyObject *value);
+     DL_IMPORT(int) PySequence_Contains(PyObject *seq, PyObject *ob);
+       /*
+         Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
+         Use __contains__ if possible, else _PySequence_IterContains().
+       */
+
+     DL_IMPORT(int) _PySequence_IterContains(PyObject *seq, PyObject *ob);
+       /*
+         Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
+         Always uses the iteration protocol, and only Py_EQ comparisons.
+       */
 
 /* For DLL-level backwards compatibility */
 #undef PySequence_In

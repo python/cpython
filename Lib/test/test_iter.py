@@ -474,24 +474,12 @@ class TestCase(unittest.TestCase):
 
     # Test iterators with 'x in y' and 'x not in y'.
     def test_in_and_not_in(self):
-        sc5 = IteratingSequenceClass(5)
-        for i in range(5):
-            self.assert_(i in sc5)
-        # CAUTION:  This test fails on 3-12j if sc5 is SequenceClass(5)
-        # instead, with:
-        #     TypeError: cannot compare complex numbers using <, <=, >, >=
-        # The trail leads back to instance_contains() in classobject.c,
-        # under comment:
-        #     /* fall back to previous behavior */
-        # IteratingSequenceClass(5) avoids the same problem only because
-        # it lacks __getitem__:  instance_contains *tries* to do a wrong
-        # thing with it too, but aborts with an AttributeError the first
-        # time it calls instance_item(); PySequence_Contains() then catches
-        # that and clears it, and tries the iterator-based "contains"
-        # instead.  But this is hanging together by a thread.
-        for i in "abc", -1, 5, 42.42, (3, 4), [], {1: 1}, 3-12j, sc5:
-            self.assert_(i not in sc5)
-        del sc5
+        for sc5 in IteratingSequenceClass(5), SequenceClass(5):
+            for i in range(5):
+                self.assert_(i in sc5)
+            for i in "abc", -1, 5, 42.42, (3, 4), [], {1: 1}, 3-12j, sc5:
+                self.assert_(i not in sc5)
+            del sc5
 
         self.assertRaises(TypeError, lambda: 3 in 12)
         self.assertRaises(TypeError, lambda: 3 not in map)

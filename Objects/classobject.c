@@ -1131,11 +1131,15 @@ instance_ass_slice(PyInstanceObject *inst, int i, int j, PyObject *value)
 	return 0;
 }
 
-static int instance_contains(PyInstanceObject *inst, PyObject *member)
+static int
+instance_contains(PyInstanceObject *inst, PyObject *member)
 {
 	static PyObject *__contains__;
-	PyObject *func, *arg, *res;
-	int ret;
+	PyObject *func;
+
+	/* Try __contains__ first.
+	 * If that can't be done, try iterator-based searching.
+	 */
 
 	if(__contains__ == NULL) {
 		__contains__ = PyString_InternFromString("__contains__");
@@ -1143,45 +1147,34 @@ static int instance_contains(PyInstanceObject *inst, PyObject *member)
 			return -1;
 	}
 	func = instance_getattr(inst, __contains__);
-	if(func == NULL) {
-		/* fall back to previous behavior */
-		int i, cmp_res;
-
-		if(!PyErr_ExceptionMatches(PyExc_AttributeError))
+	if (func) {
+		PyObject *res;
+		int ret;
+		PyObject *arg = Py_BuildValue("(O)", member);
+		if(arg == NULL) {
+			Py_DECREF(func);
 			return -1;
-		PyErr_Clear();
-		for(i=0;;i++) {
-			PyObject *obj = instance_item(inst, i);
-			int ret = 0;
-
-			if(obj == NULL) {
-				if(!PyErr_ExceptionMatches(PyExc_IndexError))
-					return -1;
-				PyErr_Clear();
-				return 0;
-			}
-			if(PyObject_Cmp(obj, member, &cmp_res) == -1)
-				ret = -1;
-			if(cmp_res == 0) 
-				ret = 1;
-			Py_DECREF(obj);
-			if(ret)
-				return ret;
 		}
-	}
-	arg = Py_BuildValue("(O)", member);
-	if(arg == NULL) {
+		res = PyEval_CallObject(func, arg);
 		Py_DECREF(func);
-		return -1;
+		Py_DECREF(arg);
+		if(res == NULL) 
+			return -1;
+		ret = PyObject_IsTrue(res);
+		Py_DECREF(res);
+		return ret;
 	}
-	res = PyEval_CallObject(func, arg);
-	Py_DECREF(func);
-	Py_DECREF(arg);
-	if(res == NULL) 
+
+	/* Couldn't find __contains__. */
+	if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+		/* Assume the failure was simply due to that there is no
+		 * __contains__ attribute, and try iterating instead.
+		 */
+		PyErr_Clear();
+		return _PySequence_IterContains((PyObject *)inst, member);
+	}
+	else
 		return -1;
-	ret = PyObject_IsTrue(res);
-	Py_DECREF(res);
-	return ret;
 }
 
 static PySequenceMethods
