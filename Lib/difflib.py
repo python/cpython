@@ -572,6 +572,8 @@ class SequenceMatcher:
         """
 
         codes = self.get_opcodes()
+        if not codes:
+            codes = [("equal", 0, 1, 0, 1)]
         # Fixup leading and trailing groups if they show no changes.
         if codes[0][0] == 'equal':
             tag, i1, i2, j1, j2 = codes[0]
