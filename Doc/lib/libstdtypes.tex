@@ -1072,8 +1072,8 @@ Files have the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}[file]{isatty}{}
-  Return true if the file is connected to a tty(-like) device, else
-  false.  \note{If a file-like object is not associated
+  Return \code{True} if the file is connected to a tty(-like) device, else
+  \code{False}.  \note{If a file-like object is not associated
   with a real file, this method should \emph{not} be implemented.}
 \end{methoddesc}
 
@@ -1193,7 +1193,7 @@ These are not required for file-like objects, but should be
 implemented if they make sense for the particular object.
 
 \begin{memberdesc}[file]{closed}
-Boolean indicating the current state of the file object.  This is a
+bool indicating the current state of the file object.  This is a
 read-only attribute; the \method{close()} method changes the value.
 It may not be available on all file-like objects.
 \end{memberdesc}
