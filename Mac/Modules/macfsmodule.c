@@ -24,6 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "macglue.h"
+#include "pymactoolbox.h"
 
 #ifdef WITHOUT_FRAMEWORKS
 #include <Memory.h>
@@ -38,7 +39,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "getapplbycreator.h"
 
-
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern int _PyMac_GetFSSpec(PyObject *, FSSpec *);
+#define PyMac_GetFSSpec _PyMac_GetFSSpec
+#endif
 static PyObject *ErrorObject;
 
 /* ----------------------------------------------------- */
@@ -1201,8 +1205,17 @@ PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 	if ( _mfs_GetFSRefFromFSSpec(v, fsr) )
 		return 1;
 	if ( PyString_Check(v) ) {
+#if TARGET_API_MAC_OSX
+		OSStatus err;
+		if ( (err=FSPathMakeRef(PyString_AsString(v), fsr, NULL)) ) {
+			PyErr_Mac(ErrorObject, err);
+			return 0;
+		}
+		return 1;
+#else
 		PyErr_SetString(PyExc_NotImplementedError, "Cannot create an FSRef from a pathname on this platform");
 		return 0;
+#endif
 	}
 	PyErr_SetString(PyExc_TypeError, "FSRef argument should be existing FSRef, FSSpec or (OSX only) pathname");
 	return 0;
@@ -1269,6 +1282,8 @@ void
 initmacfs()
 {
 	PyObject *m, *d;
+
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, PyMac_GetFSSpec);
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("macfs", mfs_methods);
