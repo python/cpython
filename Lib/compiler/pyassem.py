@@ -140,11 +140,27 @@ class PyAssembler:
         if self.flags & CO_VARKEYWORDS:
             self.argcount = self.argcount - 1
 	stacksize = findDepth(self.insts)
-        co = new.code(self.argcount, nlocals, stacksize,
-                      self.flags, lnotab.getCode(), self._getConsts(),
-                      tuple(self.names), tuple(self.varnames),
-                      self.filename, self.name, self.firstlineno,
-                      lnotab.getTable())
+        try:
+            co = new.code(self.argcount, nlocals, stacksize,
+                          self.flags, lnotab.getCode(), self._getConsts(),
+                          tuple(self.names), tuple(self.varnames),
+                          self.filename, self.name, self.firstlineno,
+                          lnotab.getTable())
+        except SystemError, err:
+            print err
+            print repr(self.argcount)
+            print repr(nlocals)
+            print repr(stacksize)
+            print repr(self.flags)
+            print repr(lnotab.getCode())
+            print repr(self._getConsts())
+            print repr(self.names)
+            print repr(self.varnames)
+            print repr(self.filename)
+            print repr(self.name)
+            print repr(self.firstlineno)
+            print repr(lnotab.getTable())
+            raise
         return co
 
     def _getConsts(self):
