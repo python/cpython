@@ -457,10 +457,11 @@ class HTTPResponse:
 
         if amt is None:
             # unbounded read
-            if self.will_close:
+            if self.length is None:
                 s = self.fp.read()
             else:
                 s = self._safe_read(self.length)
+                self.length = 0
             self.close()        # we read everything
             return s
 
@@ -468,12 +469,13 @@ class HTTPResponse:
             if amt > self.length:
                 # clip the read to the "end of response"
                 amt = self.length
-            self.length -= amt
 
         # we do not use _safe_read() here because this may be a .will_close
         # connection, and the user is reading more bytes than will be provided
         # (for example, reading in 1k chunks)
         s = self.fp.read(amt)
+        if self.length is not None:
+            self.length -= len(s)
 
         return s
 
