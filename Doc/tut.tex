@@ -3942,10 +3942,10 @@ e.g. \code{x[1, 2, 3]} is equivalent to \code{x[(1, 2, 3)]}.
 New slicing syntax.  In support of the Numerical Python extension
 (distributed independently), slice indices of the form
 \code{x[lo:hi:stride]} are possible, multiple slice indices separated by
-commas are allowed, and an index position may be replaced by ellipses,
+commas are allowed, and an index position may be replaced by an ellipsis,
 as follows: \code{x[a, ..., z]}.  There's also a new built-in function
 \code{slice(lo, hi, stride)} and a new built-in object
-\code{Ellipses}, which yield the same effect without using special
+\code{Ellipsis}, which yield the same effect without using special
 syntax.  None of the standard sequence types support indexing with
 slice objects or ellipses yet.
 
@@ -3964,7 +3964,7 @@ x[::-1]          -> slice(None, None, -1)
 x[::]            -> slice(None, None, None)
 x[1, 2:3]        -> (1, slice(2, 3, None))
 x[1:2, 3:4]      -> (slice(1, 2, None), slice(3, 4, None))
-x[1:2, ..., 3:4] -> (slice(1, 2, None), Ellipses,
+x[1:2, ..., 3:4] -> (slice(1, 2, None), Ellipsis,
                      slice(3, 4, None))
 \end{verbatim}
 
