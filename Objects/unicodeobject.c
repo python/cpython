@@ -2030,6 +2030,7 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 	unsigned char c;
 	Py_UCS4 x;
 	int i;
+        int count;
 
 	/* Non-escape characters are interpreted as Unicode ordinals */
 	if (*s != '\\') {
@@ -2048,15 +2049,16 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 	}
 	if (((s - bs) & 1) == 0 ||
 	    s >= end ||
-	    *s != 'u') {
+	    (*s != 'u' && *s != 'U')) {
 	    continue;
 	}
 	p--;
+        count = *s=='u' ? 4 : 8;
 	s++;
 
-	/* \uXXXX with 4 hex digits */
+	/* \uXXXX with 4 hex digits, \Uxxxxxxxx with 8 */
 	outpos = p-PyUnicode_AS_UNICODE(v);
-	for (x = 0, i = 0; i < 4; ++i, ++s) {
+	for (x = 0, i = 0; i < count; ++i, ++s) {
 	    c = (unsigned char)*s;
 	    if (!isxdigit(c)) {
 		endinpos = s-starts;
@@ -2076,6 +2078,16 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 	    else
 		x += 10 + c - 'A';
 	}
+#ifndef Py_UNICODE_WIDE
+        if (x > 0x10000) {
+            if (unicode_decode_call_errorhandler(
+                    errors, &errorHandler,
+                    "rawunicodeescape", "\\Uxxxxxxxx out of range",
+		    starts, size, &startinpos, &endinpos, &exc, &s,
+		    (PyObject **)&v, &outpos, &p))
+		    goto onError;
+        }
+#endif
 	*p++ = x;
 	nextByte:
 	;
@@ -2102,7 +2114,11 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
 
     static const char *hexdigit = "0123456789abcdef";
 
+#ifdef Py_UNICODE_WIDE
+    repr = PyString_FromStringAndSize(NULL, 10 * size);
+#else
     repr = PyString_FromStringAndSize(NULL, 6 * size);
+#endif
     if (repr == NULL)
         return NULL;
     if (size == 0)
@@ -2111,6 +2127,22 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     p = q = PyString_AS_STRING(repr);
     while (size-- > 0) {
         Py_UNICODE ch = *s++;
+#ifdef Py_UNICODE_WIDE
+	/* Map 32-bit characters to '\Uxxxxxxxx' */
+	if (ch >= 0x10000) {
+            *p++ = '\\';
+            *p++ = 'U';
+            *p++ = hexdigit[(ch >> 28) & 0xf];
+            *p++ = hexdigit[(ch >> 24) & 0xf];
+            *p++ = hexdigit[(ch >> 20) & 0xf];
+            *p++ = hexdigit[(ch >> 16) & 0xf];
+            *p++ = hexdigit[(ch >> 12) & 0xf];
+            *p++ = hexdigit[(ch >> 8) & 0xf];
+            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[ch & 15];
+        } 
+        else
+#endif
 	/* Map 16-bit characters to '\uxxxx' */
 	if (ch >= 256) {
             *p++ = '\\';
@@ -6769,3 +6801,10 @@ _PyUnicode_Fini(void)
     unicode_freelist = NULL;
     unicode_freelist_size = 0;
 }
+
+/*
+Local variables:
+c-basic-offset: 4
+indent-tabs-mode: nil
+End:
+*/
