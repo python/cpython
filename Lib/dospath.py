@@ -7,28 +7,18 @@ import string
 
 # Normalize the case of a pathname.
 # On MS-DOS it maps the pathname to lowercase, turns slashes into
-# backslashes and maps invalid consecutive characters to a single '_'.
+# backslashes.
 # Other normalizations (such as optimizing '../' away) are not allowed
 # (this is done by normpath).
-#
-# Amrit: Things that can be valid regular expressions cannot be normalized
-#        away.  (which is pretty much all special characters)
-#
-#        I am assuming that at least these chars may be used:
-#				[, ], |, *, +, ?
-
-mapchar = '_'
+# Previously, this version mapped invalid consecutive characters to a 
+# single '_', but this has been removed.  This functionality should 
+# possibly be added as a new function.
 
 def normcase(s):
 	res, s = splitdrive(s)
 	for c in s:
 		if c in '/\\':
 			res = res + os.sep
-		elif c == '.' and res[-1:] == os.sep:
-			res = res + mapchar + c
-		elif ord(c) < 32 or c in ' ",:;<=>':
-			if res[-1:] != mapchar:
-				res = res + mapchar
 		else:
 			res = res + c
 	return string.lower(res)
@@ -59,6 +49,7 @@ def join(a, b):
 # Split a path in a drive specification (a drive letter followed by a
 # colon) and the path specification.
 # It is always true that drivespec + pathspec == p
+
 def splitdrive(p):
 	if p[1:2] == ':':
 		return p[0:2], p[2:]
