@@ -88,8 +88,8 @@ class radio:
 	def __init__(self, dlg, *items):
 		self.items = {}
 		for item in items:
-			tp, h, rect = dlg.GetDialogItem(item)
-			self.items[item] = h.as_Control()
+			ctl = dlg.GetDialogItemAsControl(item)
+			self.items[item] = ctl
 	
 	def set(self, setitem):
 		for item, ctl in self.items.items():
