@@ -28,7 +28,9 @@ import os
 import sys
 
 
-__version__ = '1.6'
+__version__ = '1.7'
+
+MAXFTPCACHE = 10		# Trim the ftp cache beyond this size
 
 # Helper for non-unix systems
 if os.name == 'mac':
@@ -317,6 +319,13 @@ class URLopener:
 		dirs, file = dirs[:-1], dirs[-1]
 		if dirs and not dirs[0]: dirs = dirs[1:]
 		key = (user, host, port, string.joinfields(dirs, '/'))
+		if len(self.ftpcache) > MAXFTPCACHE:
+			# Prune the cache, rather arbitrarily
+			for k in self.ftpcache.keys():
+				if k != key:
+					v = self.ftpcache[k]
+					del self.ftpcache[k]
+					v.close()
 		try:
 			if not self.ftpcache.has_key(key):
 				self.ftpcache[key] = \
@@ -506,7 +515,17 @@ class ftpwrapper:
 			if file: cmd = 'LIST ' + file
 			else: cmd = 'LIST'
 			conn = self.ftp.transfercmd(cmd)
-		return addclosehook(conn.makefile('rb'), self.ftp.voidresp)
+		return addclosehook(conn.makefile('rb'), self.endtransfer)
+	def endtransfer(self):
+		try:
+			self.ftp.voidresp()
+		except ftperrors():
+			pass
+	def close(self):
+		try:
+			self.ftp.close()
+		except ftperrors():
+			pass
 
 # Base class for addinfo and addclosehook
 class addbase:
