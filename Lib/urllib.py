@@ -333,6 +333,8 @@ class URLopener:
             if auth: h.putheader('Authorization: Basic %s' % auth)
             for args in self.addheaders: apply(h.putheader, args)
             h.endheaders()
+            if data is not None:
+                h.send(data + '\r\n')
             errcode, errmsg, headers = h.getreply()
             fp = h.getfile()
             if errcode == 200:
