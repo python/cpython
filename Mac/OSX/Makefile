@@ -37,9 +37,6 @@ LD=cc
 REZ=/Developer/Tools/Rez
 DEREZ=/Developer/Tools/DeRez
 
-OBJECTS=$(builddir)/Mac/Python/macmain.o \
-	$(builddir)/Mac/Python/macgetargv.o
-
 PYTHON=$(builddir)/python.exe
 APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
@@ -53,7 +50,7 @@ install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
 	pbxbuild -target PythonLauncher -buildstyle Deployment DSTROOT=/ install
 	
-install_Python: pythonforbundle
+install_Python: $(PYTHON)
 	@for i in $(PYTHONAPPSDIR) $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
 		if test ! -d $$i; then \
 			echo "Creating directory $$i"; \
@@ -91,7 +88,7 @@ install_Python: pythonforbundle
 			esac; \
 		done; \
 	done
-	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonforbundle $(APPINSTALLDIR)/Contents/MacOS/python
+	$(INSTALL_PROGRAM) $(STRIPFLAG) $(PYTHON) $(APPINSTALLDIR)/Contents/MacOS/python
 	# Create a temporary version of the resources here
 	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc
 	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc
@@ -231,14 +228,3 @@ dontinstallmacsubtree:
 	l=`cd $(srcdir)/Mac/Lib; pwd`; \
 	echo $$l > $(prefix)/lib/python$(VERSION)/site-packages/Mac.pth ; \
 	echo $$l/lib-scriptpackages >> $(prefix)/lib/python$(VERSION)/site-packages/Mac.pth
-
-pythonforbundle: $(OBJECTS)
-	$(LD) $(LDFLAGS) $(OBJECTS) -o pythonforbundle
-
-# Rules to build each file in OBJECTS - is there a better way?
-$(builddir)/Mac/Python/macmain.o: $(srcdir)/Mac/Python/macmain.c
-	$(CC) $(CFLAGS) -c $(srcdir)/Mac/Python/macmain.c -o $@
-
-$(builddir)/Mac/Python/macgetargv.o: $(srcdir)/Mac/Python/macgetargv.c
-	$(CC) $(CFLAGS) -c $(srcdir)/Mac/Python/macgetargv.c -o $@
-

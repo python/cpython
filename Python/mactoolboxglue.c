@@ -175,6 +175,94 @@ PyMac_GetFullPathname(FSSpec *fss, char *path, int len)
 }
 
 #endif /* TARGET_API_MAC_OSX */
+
+#ifdef WITH_NEXT_FRAMEWORK
+/*
+** In a bundle, find a file "resourceName" of type "resourceType". Return the
+** full pathname in "resourceURLCstr".
+*/
+static int
+locateResourcePy(CFStringRef resourceType, CFStringRef resourceName, char *resourceURLCStr, int length)
+{
+    CFBundleRef mainBundle = NULL;
+    CFURLRef URL, absoluteURL;
+    CFStringRef filenameString, filepathString;
+    CFIndex size, i;
+    CFArrayRef arrayRef = NULL;
+    int success = 0;
+    
+#if TARGET_API_MAC_OSX
+	CFURLPathStyle thePathStyle = kCFURLPOSIXPathStyle;
+#else
+	CFURLPathStyle thePathStyle = kCFURLHFSPathStyle;
+#endif
+
+    /* Get a reference to our main bundle */
+    mainBundle = CFBundleGetMainBundle();
+
+	/* If we are running inside a bundle, look through it. Otherwise, do nothing. */
+	if (mainBundle) {
+
+	    /* Look for py files in the main bundle by type */
+	    arrayRef = CFBundleCopyResourceURLsOfType( mainBundle, 
+	            resourceType, 
+	           NULL );
+
+	    /* See if there are any filename matches */
+	    size = CFArrayGetCount(arrayRef);
+	    for (i = 0; i < size; i++) {
+	        URL = CFArrayGetValueAtIndex(arrayRef, i);
+	        filenameString = CFURLCopyLastPathComponent(URL);
+	        if (CFStringCompare(filenameString, resourceName, 0) == kCFCompareEqualTo) {
+	            /* We found a match, get the file's full path */
+	            absoluteURL = CFURLCopyAbsoluteURL(URL);
+	            filepathString = CFURLCopyFileSystemPath(absoluteURL, thePathStyle);
+	            CFRelease(absoluteURL);
+
+	            /* Copy the full path into the caller's character buffer */
+	            success = CFStringGetCString(filepathString, resourceURLCStr, length,
+	                                        kCFStringEncodingMacRoman);
+
+	            CFRelease(filepathString);
+	        }
+	        CFRelease(filenameString);
+	    }
+		CFRelease(arrayRef);
+	}
+    return success;
+}
+
+/*
+** iff we are running in a .app framework then we could be
+** the main program for an applet. In that case, return the
+** script filename for the applet.
+** Otherwise return NULL.
+*/
+char *
+PyMac_GetAppletScriptFile(void)
+{
+    static char scriptpath[1024];
+
+	/* First we see whether we have __rawmain__.py and run that if it
+	** is there. This is used for applets that want sys.argv to be
+	** unix-like: __rawmain__ will construct it (from the initial appleevent)
+	** and then call __main__.py.
+	*/
+	if (locateResourcePy(CFSTR("py"), CFSTR("__rawmain__.py"), scriptpath, 1024)) {
+		return scriptpath;
+	} else if (locateResourcePy(CFSTR("pyc"), CFSTR("__rawmain__.pyc"), scriptpath, 1024)) {
+		return scriptpath;
+	} else if (locateResourcePy(CFSTR("py"), CFSTR("__main__.py"), scriptpath, 1024)) {
+		return scriptpath;
+	} else if (locateResourcePy(CFSTR("pyc"), CFSTR("__main__.pyc"), scriptpath, 1024)) {
+		return scriptpath;
+	}
+	return NULL;
+}
+
+#endif
+
+
 /* Convert a 4-char string object argument to an OSType value */
 int
 PyMac_GetOSType(PyObject *v, OSType *pr)
