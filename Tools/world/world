@@ -25,6 +25,10 @@ Usage: %s [-d] [-h] addr [addr ...]
     -h (--help)  -- print this help message
 
 """
+__version__ = '1.0'
+__author__ = 'Barry Warsaw <bwarsaw@python.org>'
+__source__ = '<url:http://www.python.org/~bwarsaw/pyware/>'
+
 
 import sys
 import string
