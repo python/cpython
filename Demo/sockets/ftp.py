@@ -114,7 +114,7 @@ def getreply(f):
 			line = f.readline()
 			if not line: break # Really an error
 			print line,
-			if line[:3] == code: break
+			if line[:3] == code and line[3:4] != '-': break
 	return code
 
 
@@ -134,7 +134,9 @@ def getdata(r):
 #
 def getcommand():
 	try:
-		return raw_input('ftp.py> ')
+		while 1:
+			line = raw_input('ftp.py> ')
+			if line: return line
 	except EOFError:
 		return ''
 
