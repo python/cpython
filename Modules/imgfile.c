@@ -75,7 +75,7 @@ imgfile_ttob(PyObject *self, PyObject *args)
 	int newval;
 	PyObject *rv;
     
-	if (!PyArg_Parse(args, "i", &newval))
+	if (!PyArg_ParseTuple(args, "i:ttob", &newval))
 		return NULL;
 	rv = PyInt_FromLong(top_to_bottom);
 	top_to_bottom = newval;
@@ -95,7 +95,7 @@ imgfile_read(PyObject *self, PyObject *args)
 	IMAGE *image;
 	int yfirst, ylast, ystep;
 
-	if ( !PyArg_Parse(args, "s", &fname) )
+	if ( !PyArg_ParseTuple(args, "s:read", &fname) )
 		return NULL;
     
 	if ( (image = imgfile_open(fname)) == NULL )
@@ -250,10 +250,9 @@ imgfile_readscaled(PyObject *self, PyObject *args)
 	int x, y;
 	int xwtd, ywtd, xorig, yorig;
 	float xfac, yfac;
-	int cnt;
 	IMAGE *image;
 	char *filter;
-	double blur;
+	double blur = 1.0;
 	int extended;
 	int fmode = 0;
 	int yfirst, ylast, ystep;
@@ -263,20 +262,9 @@ imgfile_readscaled(PyObject *self, PyObject *args)
 	** (filter name and blur factor). Also, 4 or 5 arguments indicates
 	** extended scale algorithm in stead of simple-minded pixel drop/dup.
 	*/
-	extended = 0;
-	cnt = PyTuple_Size(args);
-	if ( cnt == 5 ) {
-		extended = 1;
-		if ( !PyArg_Parse(args, "(siisd)",
-				  &fname, &xwtd, &ywtd, &filter, &blur) )
-			return NULL;
-	} else if ( cnt == 4 ) {
-		extended = 1;
-		if ( !PyArg_Parse(args, "(siis)",
-				  &fname, &xwtd, &ywtd, &filter) )
-			return NULL;
-		blur = 1.0;
-	} else if ( !PyArg_Parse(args, "(sii)", &fname, &xwtd, &ywtd) )
+	extended = PyTuple_Size(args) >= 4;
+	if ( !PyArg_ParseTuple(args, "sii|sd",
+			       &fname, &xwtd, &ywtd, &filter, &blur) )
 		return NULL;
 
 	/*
@@ -391,7 +379,7 @@ imgfile_getsizes(PyObject *self, PyObject *args)
 	PyObject *rv;
 	IMAGE *image;
     
-	if ( !PyArg_Parse(args, "s", &fname) )
+	if ( !PyArg_ParseTuple(args, "s:getsizes", &fname) )
 		return NULL;
     
 	if ( (image = imgfile_open(fname)) == NULL )
@@ -416,7 +404,7 @@ imgfile_write(PyObject *self, PyObject *args)
 	int yfirst, ylast, ystep;
 
 
-	if ( !PyArg_Parse(args, "(ss#iii)",
+	if ( !PyArg_ParseTuple(args, "ss#iii:write",
 			  &fname, &cdatap, &len, &xsize, &ysize, &zsize) )
 		return NULL;
     
@@ -490,11 +478,11 @@ imgfile_write(PyObject *self, PyObject *args)
 
 
 static PyMethodDef imgfile_methods[] = {
-	{ "getsizes",	imgfile_getsizes, METH_OLDARGS },
-	{ "read",	imgfile_read, METH_OLDARGS },
+	{ "getsizes",	imgfile_getsizes, METH_VARARGS },
+	{ "read",	imgfile_read, METH_VARARGS },
 	{ "readscaled",	imgfile_readscaled, METH_VARARGS},
-	{ "write",	imgfile_write, METH_OLDARGS },
-	{ "ttob",	imgfile_ttob, METH_OLDARGS },
+	{ "write",	imgfile_write, METH_VARARGS },
+	{ "ttob",	imgfile_ttob, METH_VARARGS },
 	{ NULL,		NULL } /* Sentinel */
 };
 
