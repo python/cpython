@@ -576,7 +576,7 @@ def open(filename, mode='rb', encoding=None, errors='strict', buffering=1):
 
         Note: The wrapped version will only accept the object format
         defined by the codecs, i.e. Unicode objects for most builtin
-        codecs. Output is also codec dependent and will usually by
+        codecs. Output is also codec dependent and will usually be
         Unicode as well.
 
         Files are always opened in binary mode, even if no binary mode
