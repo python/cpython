@@ -1237,7 +1237,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         for (;;) {
             while (ptr < end && (SRE_CODE) ptr[0] != chr)
                 ptr++;
-            if (ptr == end)
+            if (ptr >= end)
                 return 0;
             TRACE(("|%p|%p|SEARCH LITERAL\n", pattern, ptr));
             state->start = ptr;
@@ -1254,7 +1254,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         for (;;) {
             while (ptr < end && !SRE_CHARSET(charset, ptr[0]))
                 ptr++;
-            if (ptr == end)
+            if (ptr >= end)
                 return 0;
             TRACE(("|%p|%p|SEARCH CHARSET\n", pattern, ptr));
             state->start = ptr;
@@ -2896,7 +2896,8 @@ scanner_match(ScannerObject* self, PyObject* args)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
 
-    if (status == 0 || state->ptr == state->start)
+    if ((status == 0 || state->ptr == state->start) &&
+        state->ptr < state->end)
         state->start = (void*) ((char*) state->ptr + state->charsize);
     else
         state->start = state->ptr;
@@ -2927,7 +2928,8 @@ scanner_search(ScannerObject* self, PyObject* args)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
 
-    if (status == 0 || state->ptr == state->start)
+    if ((status == 0 || state->ptr == state->start) &&
+        state->ptr < state->end)
         state->start = (void*) ((char*) state->ptr + state->charsize);
     else
         state->start = state->ptr;

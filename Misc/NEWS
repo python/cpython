@@ -359,6 +359,11 @@ Extension modules
   when running the expression r'(a)(b)?b' over 'ab', lastindex must be
   1, not 2.
 
+- Fixed bug #581080: sre scanner was not checking the buffer limit
+  before increasing the current pointer. This was creating an infinite
+  loop in the search function, once the pointer exceeded the buffer
+  limit.
+
 Library
 -------
 
