@@ -169,12 +169,16 @@ from that file.%
 	you want) they are satisfied from whatever file or device is
 	connected to standard input of the Python interpreter.
 }
-If available, the script name and additional arguments thereafter are
+A third possibility is ``{\tt python -c command [arg] ...}'', which
+executes the statement(s) in {\tt command}, in analogy of the shell's
+{\tt -c} option.
+When available, the script name and additional arguments thereafter are
 passed to the script in the variable
 {\tt sys.argv},
 which is a list of strings.
+When {\tt -c command} is used, {\tt sys.argv} is set to {\tt '-c'}.
 
-When standard input is a tty, the interpreter is said to be in
+When commands are read from a tty, the interpreter is said to be in
 {\em interactive\ mode}.
 In this mode it prompts for the next command with the
 {\em primary\ prompt},
