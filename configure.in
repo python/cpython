@@ -407,20 +407,29 @@ fi
 
 # -Kpthread, if available, provides the right #defines
 # and linker options to make pthread_create available
+# Some compilers won't report that they do not support -Kpthread,
+# so we need to run a program to see whether it really made the
+# function available.
 AC_MSG_CHECKING(whether $CC accepts -Kpthread)
 AC_CACHE_VAL(ac_cv_kpthread,
 [ac_save_cc="$CC"
 CC="$CC -Kpthread"
-AC_TRY_LINK([#include <pthread.h>],[pthread_create(0,0,0,0)],
+AC_TRY_RUN([
+#include <pthread.h>
+
+void* routine(void* p){return NULL;}
+
+int main(){
+  pthread_t p;
+  if(pthread_create(&p,NULL,routine,NULL)!=0)
+    return 1;
+  return 0;
+}
+],
   ac_cv_kpthread=yes,
+  ac_cv_kpthread=no,
   ac_cv_kpthread=no)
 CC="$ac_save_cc"])
-
-# GCC does not reject -Kpthread as an illegal option, it merely complains that
-# it is unrecognized
-if test "$GCC" = "yes"
-then ac_cv_kpthread="no, we have gcc"
-fi
 AC_MSG_RESULT($ac_cv_kpthread)
 
 dnl # check for ANSI or K&R ("traditional") preprocessor
