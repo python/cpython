@@ -1,3 +1,13 @@
+What's New in Python 2.2.3
+Release date: XX-XXX-2003
+==========================
+
+- XXX There's more, but nobody has updated NEWS so far.
+
+- Fixed broken threadstate swap in readline that could cause fatal
+  errors when a readline hook was being invoked while a background
+  thread was active.  (SF bugs #660476 and #513033.)
+
 What's New in Python 2.2.2 (final) ?
 Release date: 14-Oct-2002
 ====================================
