@@ -5600,12 +5600,61 @@ offset into tz's daylight time).
 
 Let
 
-    z' = z + z.d = z + diff
+    z' = z + z.d = z + diff                     [7]
 
-we can again ask whether
+and we can again ask whether
 
-    z'.n - z'.o = x.n - x.o
+    z'.n - z'.o = x.n - x.o                     [8]
 
 If so, we're done.  If not, the tzinfo class is insane, or we're trying to
-convert to the hour that can't be spelled in tz.
+convert to the hour that can't be spelled in tz.  This also requires a
+bit of proof.  As before, let's compute the difference between the LHS and
+RHS of [8] (and skipping some of the justifications for the kinds of
+substitutions we've done several times already):
+
+    diff' = (x.n - x.o) - (z'.n - z'.o) =       replacing z'.n via [7]
+            (x.n - x.o) - (z.n + diff - z'.o) = replacing diff via [6]
+            (x.n - x.o) - (z.n + (x.n - x.o) - (z.n - z.o) - z'.o) =
+            x.n - x.o - z.n - x.n + x.o + z.n - z.o + z'.o = cancel x.n
+            - x.o - z.n + x.o + z.n - z.o + z'.o = cancel x.o
+            - z.n + z.n - z.o + z'.o =          cancel z.n
+            - z.o + z'.o =                      #1 twice
+            -z.s - z.d + z'.s + z'.d =          z and z' have same tzinfo
+            z'.d - z.d
+
+So z' is UTC-equivalent to x iff z'.d = z.d at this point.  If they are equal,
+we've found the UTC-equivalent so are done.
+
+How could they differ?  z' = z + z.d [7], so merely moving z' by a dst()
+offset, and starting *from* a time already in DST (we know z.d != 0), would
+have to change the result dst() returns:  we start in DST, and moving a
+little further into it takes us out of DST.
+
+There's (only) one sane case where this can happen:  at the end of DST,
+there's an hour in UTC with no spelling in a hybrid tzinfo class.  In US
+Eastern, that's 6:MM UTC = 1:MM EST = 2:MM EDT.  During that hour, on an
+Eastern clock 1:MM is taken as being in daylight time (5:MM UTC), but 2:MM is
+taken as being in standard time (7:MM UTC).  There is no local time mapping to
+6:MM UTC.  The local clock jumps from 1:59 back to 1:00 again, and repeats the
+1:MM hour in standard time.  Since that's what the local clock *does*, we want
+to map both UTC hours 5:MM and 6:MM to 1:MM Eastern.  The result is ambiguous
+in local time, but so it goes -- it's the way the local clock works.
+
+When x = 6:MM UTC is the input to this algorithm, x.o=0, y.o=-5 and y.d=0,
+so z=1:MM.  z.d=60 (minutes) then, so [5] doesn't hold and we keep going.
+z' = z + z.d = 2:MM then, and z'.d=0, and z'.d - z.d = -60 != 0 so [8]
+(correctly) concludes that z' is not UTC-equivalent to x.
+
+Because we know z.d said z was in daylight time (else [5] would have held and
+we would have stopped then), and we know z.d != z'.d (else [8] would have held
+and we we have stopped then), and there are only 2 possible values dst() can
+return in Eastern, it follows that z'.d must be 0 (which it is in the example,
+but the reasoning doesn't depend on the example -- it depends on there being
+two possible dst() outcomes, one zero and the other non-zero).  Therefore
+z' must be in standard time, and is not the spelling we want in this case.
+z is in daylight time, and is the spelling we want.  Note again that z is
+not UTC-equivalent as far as the hybrid tzinfo class is concerned (because
+it takes z as being in standard time rather than the daylight time we intend
+here), but returning it gives the real-life "local clock repeats an hour"
+behavior when mapping the "unspellable" UTC hour into tz.
 --------------------------------------------------------------------------- */
