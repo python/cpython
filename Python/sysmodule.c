@@ -469,7 +469,8 @@ _PySys_Init(void)
 		else
 			value = "little";
 		PyDict_SetItemString(sysdict, "byteorder",
-				     PyString_FromString(value));
+				     v = PyString_FromString(value));
+		Py_XDECREF(v);
 	}
 #ifdef MS_COREDLL
 	PyDict_SetItemString(sysdict, "dllhandle",
