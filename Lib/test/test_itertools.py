@@ -87,7 +87,7 @@ class TestBasicOps(unittest.TestCase):
         self.assertEqual(list(izip('abcdef', range(3))), zip('abcdef', range(3)))
         self.assertEqual(take(3,izip('abcdef', count())), zip('abcdef', range(3)))
         self.assertEqual(list(izip('abcdef')), zip('abcdef'))
-        self.assertEqual(list(izip()), zip())
+        self.assertEqual(list(izip()), [])
         self.assertRaises(TypeError, izip, 3)
         self.assertRaises(TypeError, izip, range(3), 3)
         # Check tuple re-use (implementation detail)
