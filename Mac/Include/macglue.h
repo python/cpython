@@ -79,6 +79,7 @@ PyObject *PyMac_Error(OSErr);			/* Uses PyMac_GetOSErrException */
 void PyMac_HandleEvent Py_PROTO((EventRecord *, int)); /* Handle one event, if possible */
 
 void PyMac_InitMenuBar(void);			/* Setup menu bar as we want it */
+void PyMac_RestoreMenuBar(void);		/* Restore menu bar for ease of exiting */
 
 int PyMac_FindResourceModule(char *, char *); /* Test for 'PYC ' resource in a file */
 PyObject * PyMac_LoadResourceModule(char *, char *); /* Load 'PYC ' resource from file */
