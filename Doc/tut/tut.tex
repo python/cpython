@@ -11,6 +11,8 @@
 
 \input{boilerplate}
 
+\makeindex
+
 \begin{document}
 
 \maketitle
@@ -1404,8 +1406,8 @@ arguments than it is defined
 def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
     while True:
         ok = raw_input(prompt)
-        if ok in ('y', 'ye', 'yes'): return 1
-        if ok in ('n', 'no', 'nop', 'nope'): return 0
+        if ok in ('y', 'ye', 'yes'): return True
+        if ok in ('n', 'no', 'nop', 'nope'): return False
         retries = retries - 1
         if retries < 0: raise IOError, 'refusenik user'
         print complaint
@@ -2111,11 +2113,11 @@ pattern, list comprehensions can compactly specify the key-value list.
 \section{Looping Techniques \label{loopidioms}}
 
 When looping through dictionaries, the key and corresponding value can
-be retrieved at the same time using the \method{items()} method.
+be retrieved at the same time using the \method{iteritems()} method.
 
 \begin{verbatim}
 >>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
->>> for k, v in knights.items():
+>>> for k, v in knights.iteritems():
 ...     print k, v
 ...
 gallahad the pure
@@ -3896,7 +3898,7 @@ list, and the function object is called with this new argument list.
 
 \section{Random Remarks \label{remarks}}
 
-[These should perhaps be placed more carefully...]
+% [These should perhaps be placed more carefully...]
 
 
 Data attributes override method attributes with the same name; to
@@ -4296,11 +4298,11 @@ be trivially easy to create:
 
 \begin{verbatim}
 >>> def reverse(data):
-	for index in range(len(data)-1, -1, -1):
-		yield data[index]
+        for index in range(len(data)-1, -1, -1):
+            yield data[index]
 		
 >>> for char in reverse('golf'):
-	print char
+        print char
 
 f
 l
@@ -4322,6 +4324,323 @@ In addition to automatic method creation and saving program state, when
 generators terminate, they automatically raise \exception{StopIteration}.
 In combination, these features make it easy to create iterators with no
 more effort than writing a regular function.
+
+
+
+\chapter{Brief Tour of the Standard Library \label{briefTour}}
+
+
+\section{Operating System Interface\label{os-interface}}
+
+The \ulink{\module{os}}{../lib/module-os.html}
+module provides dozens of functions for interacting with the
+operating system:
+
+\begin{verbatim}
+>>> import os
+>>> os.system('copy /data/mydata.fil /backup/mydata.fil')
+0
+>>> os.getcwd()      # Return the current working directory
+'C:\\Python24'
+>>> os.chdir('/server/accesslogs')
+\end{verbatim}
+
+Be sure to use the \samp{import os} style instead of
+\samp{from os import *}.  This will keep \function{os.open()} from
+shadowing the builtin \function{open()} function which operates much
+differently.
+
+The builtin \function{dir()} and \function{help()} functions are useful
+as interactive aids for working with large modules like \module{os}:
+
+\begin{verbatim}
+>>> import os
+>>> dir(os)
+<returns a listi of all module functions>
+>>> help(os)
+<returns an extensive manual page created from the module's docstrings>
+\end{verbatim}
+
+For daily file and directory management tasks, the 
+\ulink{\module{shutil}}{../lib/module-shutil.html}
+module provides a higher level interface that is easier to use:
+
+\begin{verbatim}
+>>> import shutil
+>>> shutil.copyfile('data.db', 'archive.db')
+>>> shutil.move('/build/excecutables', 'installdir')
+\end{verbatim}
+
+
+\section{File Wildcards\label{file-wildcards}}
+
+The \ulink{\module{glob}}{../lib/module-glob.html}
+module provides a function for making file lists from directory
+wildcard searches:
+
+\begin{verbatim}
+>>> import glob
+>>> glob.glob('*.py')
+['primes.py', 'random.py', 'quote.py']
+\end{verbatim}
+
+
+\section{Command Line Arguments\label{command-line-arguments}}
+
+Common utility scripts often invoke processing command line arguments.
+These arguments are stored in the
+\ulink{\module{sys}}{../lib/module-sys.html}\ module's \var{argv}
+attribute as a list.  For instance the following output results from
+running \samp{python demo.py one two three} at the command line:
+
+\begin{verbatim}
+>>> import sys
+>>> print sys.argv[]
+['demo.py', 'one', 'two', 'three']
+\end{verbatim}
+
+The \ulink{\module{getopt}}{../lib/module-getopt.html}
+module processes \var{sys.argv} using the conventions of the \UNIX{}
+\function{getopt()} function.  More powerful and flexible command line
+processing is provided by the
+\ulink{\module{optparse}}{../lib/module-optparse.html} module.
+
+
+\section{Error Output Redirection and Program Termination\label{stderr}}
+
+The \ulink{\module{sys}}{../lib/module-sys.html}
+module also has attributes for \var{stdin}, \var{stdout}, and
+\var{stderr}.  The latter is useful for emitting warnings and error
+messages to make them visible even when \var{stdout} has been redirected:
+
+\begin{verbatim}
+>>> sys.stderr.write('Warning, log file not found starting a new one')
+Warning, log file not found starting a new one
+\end{verbatim}
+
+The most direct way to terminate a script is to use \samp{sys.exit()}.
+
+
+\section{String Pattern Matching\label{string-pattern-matching}}
+
+The \ulink{\module{re}}{../lib/module-re.html}
+module provides regular expression tools for advanced string processing.
+When only simple capabilities are needed, string methods are preferred
+because they are easier to read and debug.  However, for more
+sophisticated applications, regular expressions can provide succinct,
+optimized solutions:
+
+\begin{verbatim}
+>>> import re
+>>> re.findall(r'\bf[a-z]*', 'which foot or hand fell fastest')
+['foot', 'fell', 'fastest']
+>>> re.sub(r'(\b[a-z]+) \1', r'\1', 'cat in the the hat')
+'cat in the hat'
+\end{verbatim}
+
+
+\section{Mathematics\label{mathematics}}
+
+The \ulink{\module{math}}{../lib/module-math.html} math module gives
+access to the underlying C library functions for floating point math:
+
+\begin{verbatim}
+>>> import math
+>>> math.cos(math.pi / 4.0)
+0.70710678118654757
+>>> math.log(1024, 2)
+10.0
+\end{verbatim}
+
+The \ulink{\module{random}}{../lib/module-random.html}
+module provides tools for making random selections:
+
+\begin{verbatim}
+>>> import random
+>>> random.choice(['apple', 'pear', 'banana'])
+'apple'
+>>> random.sample(xrange(100), 10)   # sampling without replacement
+[30, 83, 16, 4, 8, 81, 41, 50, 18, 33]
+>>> random.random()    # random float
+0.17970987693706186
+>>> random.randrange(6)    # random integer chosen from range(6)
+4   
+\end{verbatim}
+
+
+\section{Internet Access\label{internet-access}}
+
+There are a number of modules for accessing the internet and processing
+internet protocols. Two of the simplest are
+\ulink{\module{urllib2}}{../lib/module-urllib2.html}
+for retrieving data from urls and
+\ulink{\module{smtplib}}{../lib/module-smtplib.html} 
+for sending mail:
+
+\begin{verbatim}
+>>> import urllib2
+>>> for line in urllib2.urlopen('http://tycho.usno.navy.mil/cgi-bin/timer.pl'):
+... if 'EST' in line:      # look for Eastern Standard Time
+...     print line
+    
+<BR>Nov. 25, 09:43:32 PM EST
+
+>>> import smtplib
+>>> server = smtplib.SMTP('localhost')
+>>> server.sendmail('soothsayer@tmp.org', 'jceasar@tmp.org',
+"""To: jceasar@tmp.org
+From: soothsayer@tmp.org
+
+Beware the Ides of March.
+""")
+>>> server.quit()
+\end{verbatim}
+
+
+\section{Dates and Times\label{dates-and-times}}
+
+The \ulink{\module{datetime}}{../lib/module-datetime.html} module
+supplies classes for manipulating dates and times in both simple
+and complex ways. While date and time arithmetic is supported, the
+focus of the implementation is on efficient member extraction for
+output formatting and manipulation.  The module also supports objects
+that are time zone aware.
+
+\begin{verbatim}
+# dates are easily constructed and formatted
+>>> from datetime import date
+>>> now = date.today()
+>>> now
+datetime.date(2003, 12, 2)
+>>> now.strftime("%m-%d-%y or %d%b %Y is a %A on the %d day of %B")
+'12-02-03 or 02Dec 2003 is a Tuesday on the 02 day of December'
+
+# dates support calendar arithmetic
+>>> birthday = date(1964, 7, 31)
+>>> age = now - birthday
+>>> age.days
+14368
+\end{verbatim}
+
+
+\section{Data Compression\label{data-compression}}
+
+Common data archiving and compression formats are directly supported
+by modules including: \module{zlib}, \module{gzip}, \module{bz2},
+\module{zipfile}, and \module{tar}.
+
+\begin{verbatim}
+>>> import zlib
+>>> s = 'witch which has which witches wrist watch'
+>>> len(s)
+41
+>>> t = zlib.compress(s)
+>>> len(t)
+37
+>>> zlib.decompress(t)
+'witch which has which witches wrist watch'
+>>> zlib.crc32(t)
+-1438085031
+\end{verbatim}
+
+
+\section{Performance Measurement\label{performance-measurement}}
+
+Some Python users develop a deep interest in knowing the relative
+performance between different approaches to the same problem.
+Python provides a measurement tool that answers those questions
+immediately.
+
+For example, it may be tempting to use the tuple packing and unpacking
+feature instead of the traditional approach to swapping arguments.
+The \ulink{\module{timeit}}{../lib/module-timeit.html} module
+quickly demonstrates that the traditional approach is faster:
+
+\begin{verbatim}
+>>> from timeit import Timer
+>>> dir(Timer)
+>>> Timer('t=a; a=b; b=t', 'a=1; b=1').timeit()
+0.60864915603680925
+>>> Timer('a,b = b,a', 'a=1; b=1').timeit()
+0.8625194857439773
+\end{verbatim}
+
+In contrast to \module{timeit}'s fine level of granularity, the
+\ulink{\module{profile}}{../lib/module-profile.html} and \module{pstats}
+modules provide tools for identifying time critical sections in larger
+blocks of code.
+
+
+\section{Quality Control\label{quality-control}}
+
+One approach for developing high quality software is to write tests for
+each function as it is developed and to run those tests frequently during
+the development process.
+
+The \ulink{\module{doctest}}{../lib/module-doctest.html} module provides
+a tool for scanning a module and validating tests embedded in a program's
+docstrings.  Test construction is as simple as cutting-and-pasting a
+typical call along with its results into the docstring.  This improves
+the documentation by providing the user with an example and it allows the
+doctest module to make sure the code remains true to the documentation:
+
+\begin{verbatim}
+def average(values):
+    """Computes the arithmetic mean of a list of numbers.
+
+    >>> print average([20, 30, 70])
+    40.0
+    """
+    return sum(values, 0.0) / len(values)
+
+import doctest
+doctest.testmod()   # automatically validate the embedded tests
+\end{verbatim}
+
+The \ulink{\module{unittest}}{../lib/module-unittest.html} module is not
+as effortless as the \module{doctest} module, but it allows a more
+comprehensive set of tests to be maintained in a separate file:
+
+\begin{verbatim}
+import unittest
+
+class TestStatisticalFunctions(unittest.TestCase):
+
+    def test_average(self):
+        self.assertEqual(average([20, 30, 70]), 40.0)
+        self.assertEqual(round(average([1, 5, 7]), 1), 4.3)
+        self.assertRaises(ZeroDivisionError, average, [])
+        self.assertRaises(TypeError, average, 20, 30, 70)
+
+unittest.main() # Calling from the command line invokes all tests
+\end{verbatim}
+
+\section{Batteries Included\label{batteries-included}}
+
+Python has a ``batteries included'' philosophy.  The is best seen
+through the sophisticated and robust capabilites of its larger
+packages. For example:
+
+* The \module{xmlrpclib} and \module{SimpleXMLRPCServer} modules make
+implementing remote procedure calls into an almost trivial task.
+Despite the names, no direct knowledge or handling of XML is needed.
+
+* The \module{email} package is a library for managing email messages,
+including MIME and other RFC 2822-based message documents.  Unlike
+\module{smtplib} and \module{poplib} which actually send and receive
+messages, the email package has a complete toolset for building or
+decoding complex message structures (including attachments)
+and for implementing internet encoding and header protocols.
+
+* The \module{xml.dom} and \module{xml.sax} packages provide robust
+support for parsing this popular data interchange format.  Likewise,
+the \module{csv} module supports direct reads and writes in a common
+database format.  Together, these modules and packages greatly simplify
+data interchange between python applications and other tools.
+
+* Internationalization is supported by a number of modules including
+\module{gettext}, \module{locale}, and the \module{codecs} package.
+
 
 
 \chapter{What Now? \label{whatNow}}
@@ -4803,5 +5122,9 @@ not!).
 
 \chapter{History and License}
 \input{license}
+
+\input{glossary}
+
+\input{tut.ind}
 
 \end{document}
