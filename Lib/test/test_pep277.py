@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Test the Unicode versions of normal file functions
 # open, os.open, os.stat. os.listdir, os.rename, os.remove, os.mkdir, os.chdir, os.rmdir
 import os, unittest
@@ -9,15 +8,15 @@ except ImportError:
     raise TestSkipped, "test works only on NT+"
 
 filenames = [
-    "abc",
-    unicode("ascii","utf-8"),
-    unicode("Grüß-Gott","utf-8"),
-    unicode("Γειά-σας","utf-8"),
-    unicode("Здравствуйте","utf-8"),
-    unicode("にぽん","utf-8"),
-    unicode("השקצץס","utf-8"),
-    unicode("曨曩曫","utf-8"),
-    unicode("曨שんдΓß","utf-8"),
+    'abc',
+    u'ascii',
+    u'Gr\xfc\xdf-Gott',
+    u'\u0393\u03b5\u03b9\u03ac-\u03c3\u03b1\u03c2',
+    u'\u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435',
+    u'\u306b\u307d\u3093',
+    u'\u05d4\u05e9\u05e7\u05e6\u05e5\u05e1',
+    u'\u66e8\u66e9\u66eb',
+    u'\u66e8\u05e9\u3093\u0434\u0393\xdf',
     ]
 
 # Destroy directory dirname and all files under it, to one level.
@@ -92,8 +91,8 @@ class UnicodeFileTests(unittest.TestCase):
             os.rename("tmp",name)
 
     def test_directory(self):
-        dirname = unicode(os.path.join(TESTFN,"Grüß-曨曩曫"),"utf-8")
-        filename = unicode("ß-曨曩曫","utf-8")
+        dirname = os.path.join(TESTFN,u'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
+        filename = u'\xdf-\u66e8\u66e9\u66eb'
         oldwd = os.getcwd()
         os.mkdir(dirname)
         os.chdir(dirname)
