@@ -92,7 +92,6 @@ static object *apply_subscript PROTO((object *, object *));
 static object *loop_subscript PROTO((object *, object *));
 static int slice_index PROTO((object *, int, int *));
 static object *apply_slice PROTO((object *, object *, object *));
-static object *build_slice PROTO((object *, object *, object *));
 static int assign_subscript PROTO((object *, object *, object *));
 static int assign_slice PROTO((object *, object *, object *, object *));
 static int cmp_exception PROTO((object *, object *));
@@ -557,7 +556,7 @@ eval_code2(co, globals, locals,
 		   So we do it only every Nth instruction.
 
 		   The ticker is reset to zero if there are pending
-		   calls (see Py_AddPendingCalls() and
+		   calls (see Py_AddPendingCall() and
 		   Py_MakePendingCalls() above). */
 		
 		if (--ticker < 0) {
@@ -568,10 +567,15 @@ eval_code2(co, globals, locals,
 					goto on_error;
 				}
 			}
+#ifndef HAVE_SIGNAL_H /* Is this the right #define? */
+/* If we have true signals, the signal handler will call
+   Py_AddPendingCall() so we don't have to call sigcheck().
+   On the Mac and DOS, alas, we have to call it. */
 			if (sigcheck()) {
 				why = WHY_EXCEPTION;
 				goto on_error;
 			}
+#endif
 
 #ifdef WITH_THREAD
 			if (interpreter_lock) {
