@@ -4,6 +4,10 @@
 
 #include "macdefs.h"
 
+/* Last directory used by Standard File */
+#define SFSaveDisk	(*(short *)0x214)
+#define CurDirStore (*(long *)0x398)
+
 /* Change current directory. */
 
 int
@@ -18,6 +22,11 @@ chdir(path)
 	if (PBHSetVol(&pb, FALSE) != noErr) {
 		errno= ENOENT;
 		return -1;
+	}
+	if (PBHGetVol(&pb, FALSE) == noErr) {
+		/* Set the Standard File directory */
+		SFSaveDisk= -pb.ioWDVRefNum;
+		CurDirStore= pb.ioWDDirID;
 	}
 	return 0;
 }
