@@ -39,7 +39,7 @@ PyGrammar_LabelRepr(label *lb)
 		return "EMPTY";
 	else if (ISNONTERMINAL(lb->lb_type)) {
 		if (lb->lb_str == NULL) {
-			sprintf(buf, "NT%d", lb->lb_type);
+			PyOS_snprintf(buf, sizeof(buf), "NT%d", lb->lb_type);
 			return buf;
 		}
 		else
@@ -49,7 +49,7 @@ PyGrammar_LabelRepr(label *lb)
 		if (lb->lb_str == NULL)
 			return _PyParser_TokenNames[lb->lb_type];
 		else {
-			sprintf(buf, "%.32s(%.32s)",
+			PyOS_snprintf(buf, sizeof(buf), "%.32s(%.32s)",
 				_PyParser_TokenNames[lb->lb_type], lb->lb_str);
 			return buf;
 		}
