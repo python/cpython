@@ -830,7 +830,7 @@ VALIDATER(trailer);             VALIDATER(subscript);
 VALIDATER(subscriptlist);       VALIDATER(sliceop);
 VALIDATER(exprlist);            VALIDATER(dictmaker);
 VALIDATER(arglist);             VALIDATER(argument);
-VALIDATER(listmaker);
+VALIDATER(listmaker);           VALIDATER(yield_stmt);
 
 #undef VALIDATER
 
@@ -1535,6 +1535,18 @@ validate_raise_stmt(node *tree)
                && validate_test(CHILD(tree, 3)));
 
     return (res);
+}
+
+
+/* yield_stmt: 'yield' testlist
+ */
+static int
+validate_yield_stmt(node *tree)
+{
+    return (validate_ntype(tree, yield_stmt)
+            && validate_numnodes(tree, 2, "yield_stmt")
+            && validate_name(CHILD(tree, 0), "yield")
+            && validate_testlist(CHILD(tree, 1)));
 }
 
 
@@ -2555,12 +2567,16 @@ validate_node(node *tree)
             res  = (validate_numnodes(tree, 1, "flow_stmt")
                     && ((TYPE(CHILD(tree, 0)) == break_stmt)
                         || (TYPE(CHILD(tree, 0)) == continue_stmt)
+                        || (TYPE(CHILD(tree, 0)) == yield_stmt)
                         || (TYPE(CHILD(tree, 0)) == return_stmt)
                         || (TYPE(CHILD(tree, 0)) == raise_stmt)));
             if (res)
                 next = CHILD(tree, 0);
             else if (nch == 1)
                 err_string("illegal flow_stmt type");
+            break;
+          case yield_stmt:
+            res = validate_yield_stmt(tree);
             break;
             /*
              *  Compound statements.
