@@ -31,7 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define getdoublearg(v, a) getargs(v, "d", a)
 #define get2doublearg(v, a, b) getargs(v, "(dd)", a, b)
 
-#include <math.h>
+#include "mymath.h"
 
 #ifndef __STDC__
 extern double fmod PROTO((double, double));
