@@ -12,7 +12,7 @@
 \tableofcontents
 
 This article explains the new features in Python 2.4.  No release date
-for Python 2.4 has been set; expect that this will happen in 2004.
+for Python 2.4 has been set; expect that this will happen mid-2004.
 
 While Python 2.3 was primarily a library development release, Python
 2.4 may extend the core language and interpreter in
@@ -42,6 +42,7 @@ False
 set(['a', 'r', 'b', 'c', 'd'])
 >>> ''.join(a)                          # convert back into a string
 'arbcd'
+
 >>> b = set('alacazam')                 # form a second set
 >>> a - b                               # letters in a but not in b
 set(['r', 'd', 'b'])
@@ -51,6 +52,7 @@ set(['a', 'c', 'r', 'd', 'b', 'm', 'z', 'l'])
 set(['a', 'c'])
 >>> a ^ b                               # letters in a or b but not both
 set(['r', 'd', 'b', 'm', 'z', 'l'])
+
 >>> a.add('z')                          # add a new element
 >>> a.update('wxy')                     # add multiple new elements
 >>> a
@@ -115,6 +117,11 @@ Here are all of the changes that Python 2.4 makes to the core Python
 language.
 
 \begin{itemize}
+
+\item The string methods, \method{ljust()}, \method{rjust()}, and
+\method{center()} now take a optional argument for specifying a
+fill character other than a space.
+
 \item The \method{sort()} method of lists gained three keyword
 arguments, \var{cmp}, \var{key}, and \var{reverse}.  These arguments
 make some common usages of \method{sort()} simpler.  All are optional.
@@ -185,10 +192,12 @@ use in expressions.  The differences are:
 [11, 12, 13, 14, 15, 16, 17, 18, 19]
 >>> L = [9,7,8,3,2,4,1,6,5]         # original is left unchanged
 [9,7,8,3,2,4,1,6,5]   
+
 >>> list.sorted('Monte Python')     # any iterable may be an input
 [' ', 'M', 'P', 'e', 'h', 'n', 'n', 'o', 'o', 't', 't', 'y']
+
+>>> # List the contents of a dict sorted by key values
 >>> colormap = dict(red=1, blue=2, green=3, black=4, yellow=5)
->>> # Lists the contents of the dict sorted by key values
 >>> for k, v in list.sorted(colormap.iteritems()):
 ...     print k, v
 ...
@@ -202,7 +211,7 @@ yellow 5
 
 
 \item The \function{zip()} built-in function and \function{itertools.izip()}
-  now return an empty list instead of raising a \exception{TypeError}
+  now returns an empty list instead of raising a \exception{TypeError}
   exception if called with no arguments.  This makes the functions more
   suitable for use with variable length argument lists:
 
@@ -296,6 +305,12 @@ Changes to Python's build process and to the C API include:
   \item A new function, \cfunction{PyTuple_Pack(N, obj1, obj2, ...,
   objN)}, constructs tuples from a variable length argument list of
   Python objects.
+
+  \item A new function, \function{PyDict_Contains(d, k)}, implements
+  fast dictionary lookups without masking exceptions raised during
+  the loop-up process (compare with \function{PySequence_Contains()}
+  which is slower or \function{PyMapping_HasKey()} which clears all
+  exceptions).
 
 \end{itemize}
 
