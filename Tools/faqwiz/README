@@ -13,7 +13,7 @@ program to maintain some other FAQ than the Python FAQ is contained in
 the configuration module, faqconf.py.
 
 Note that this is not an executable script; it's an importable module.
-The actual script in cgi-bin minimal.
+The actual script in cgi-bin is minimal.
 
 Files:
 
@@ -21,5 +21,9 @@ faqw.py		executable script to be edited and installed in cgi-bin
 faqwin.py	main module, lives in same directory as FAQ entry files
 faqconf.py	main configuration module
 faqcust.py	additional local customization module (optional)
+
+The most important setup consideration is that the directory and the
+RCS subdirectory must be world-writable, since the CGI script runs as
+nobody!
 
 --Guido van Rossum (home page: http://www.python.org/~guido/)
