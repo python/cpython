@@ -35,8 +35,8 @@ tb_getattr(tracebackobject *tb, char *name)
 static void
 tb_dealloc(tracebackobject *tb)
 {
+	PyObject_GC_UnTrack(tb);
 	Py_TRASHCAN_SAFE_BEGIN(tb)
-	_PyObject_GC_UNTRACK(tb);
 	Py_XDECREF(tb->tb_next);
 	Py_XDECREF(tb->tb_frame);
 	PyObject_GC_Del(tb);
@@ -120,7 +120,7 @@ newtracebackobject(tracebackobject *next, PyFrameObject *frame, int lasti,
 		tb->tb_frame = frame;
 		tb->tb_lasti = lasti;
 		tb->tb_lineno = lineno;
-		_PyObject_GC_TRACK(tb);
+		PyObject_GC_Track(tb);
 	}
 	return tb;
 }
