@@ -85,7 +85,8 @@ The module in the test package is simply a wrapper that causes doctest
 to run over the tests in the module.  The test for the difflib module
 provides a convenient example:
 
-    import difflib, test_support
+    import difflib
+    from test import test_support
     test_support.run_doctest(difflib)
 
 If the test is successful, nothing is written to stdout (so you should not
@@ -101,8 +102,8 @@ of the regrtest framework.  The tail end of test_descrtut.py is a good
 example:
 
     def test_main(verbose=None):
-        import test_support, test.test_descrtut
-        test_support.run_doctest(test.test_descrtut, verbose)
+        from test import test_support, test_descrtut
+        test_support.run_doctest(test_descrtut, verbose)
 
     if __name__ == "__main__":
         test_main(1)
@@ -275,7 +276,7 @@ based tests should follow the conventions natural to those frameworks):
 
 Miscellaneous
 
-There is a test_support module in the test package you can import from
+There is a test_support module in the test package you can import for
 your test case.  Import this module using either
 
     import test.test_support
