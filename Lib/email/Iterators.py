@@ -15,7 +15,7 @@ except SyntaxError:
 def _structure(msg, level=0):
     """A handy debugging aid"""
     tab = ' ' * (level * 4)
-    print tab + msg.get('content-type', msg.get_default_type())
+    print tab + msg.get_type(msg.get_default_type())
     if msg.is_multipart():
         for subpart in msg.get_payload():
             _structure(subpart, level+1)
