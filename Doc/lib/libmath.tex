@@ -1,14 +1,11 @@
 \section{\module{math} ---
-         Mathematical functions (\function{sin()} etc.).}
+         Mathematical functions}
+
 \declaremodule{builtin}{math}
-
-
 \modulesynopsis{Mathematical functions (\function{sin()} etc.).}
 
-This module is always available.
-It provides access to the mathematical functions defined by the \C{}
-standard.
-They are:
+This module is always available.  It provides access to the
+mathematical functions defined by the C standard.  They are:
 
 \begin{funcdesc}{acos}{x}
 Return the arc cosine of \var{x}.
@@ -105,7 +102,7 @@ Return the hyperbolic tangent of \var{x}.
 \end{funcdesc}
 
 Note that \function{frexp()} and \function{modf()} have a different
-call/return pattern than their \C{} equivalents: they take a single
+call/return pattern than their C equivalents: they take a single
 argument and return a pair of values, rather than returning their
 second return value through an `output parameter' (there is no such
 thing in Python).
