@@ -27,6 +27,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 
+#include <ctype.h>
+
 
 static object *
 strop_split(self, args)
@@ -47,12 +49,12 @@ strop_split(self, args)
 	i = 0;
 	while (i < len) {
 		while (i < len &&
-		       ((c = s[i]) == ' ' || c == '\t' || c == '\n')) {
+		       ((c = s[i]), isspace(c))) {
 			i = i+1;
 		}
 		j = i;
 		while (i < len &&
-		       !((c = s[i]) == ' ' || c == '\t' || c == '\n')) {
+		       !((c = s[i]), isspace(c))) {
 			i = i+1;
 		}
 		if (j < i) {
@@ -226,14 +228,14 @@ strop_strip(self, args)
 		return NULL;
 
 	i = 0;
-	while (i < len && ((c = s[i]) == ' ' || c == '\t' || c == '\n')) {
+	while (i < len && ((c = s[i]), isspace(c))) {
 		i++;
 	}
 
 	j = len;
 	do {
 		j--;
-	} while (j >= i &&  ((c = s[j]) == ' ' || c == '\t' || c == '\n'));
+	} while (j >= i &&  ((c = s[j]), isspace(c)));
 	j++;
 
 	if (i == 0 && j == len) {
@@ -244,8 +246,6 @@ strop_strip(self, args)
 		return newsizedstringobject(s+i, j-i);
 }
 
-
-#include <ctype.h>
 
 static object *
 strop_lower(self, args)
@@ -370,5 +370,17 @@ static struct methodlist strop_methods[] = {
 void
 initstrop()
 {
-	initmodule("strop", strop_methods);
+	object *m, *d, *s;
+	char buf[256];
+	int c, n;
+	m = initmodule("strop", strop_methods);
+	d = getmoduledict(m);
+	n = 0;
+	for (c = 1; c < 256; c++) {
+		if (isspace(c))
+			buf[n++] = c;
+	}
+	s = newsizedstringobject(buf, n);
+	dictinsert(d, "whitespace", s);
+	DECREF(s);
 }
