@@ -863,6 +863,8 @@ def basejoin(base, url):
                 basepath = ''
 
         path = basepath + path
+    if host and path and path[0] != '/':
+        path = '/' + path
     if type and host: return type + '://' + host + path
     elif type: return type + ':' + path
     elif host: return '//' + host + path # don't know what this means
