@@ -495,6 +495,7 @@ _expectations = {
         test_pwd
         test_signal
         test_socket_ssl
+        test_socketserver
         test_sunaudiodev
         test_timing
         """,
