@@ -545,7 +545,7 @@ class build_ext (Command):
             return self.package + '.' + ext_name
 
     def get_ext_filename (self, ext_name):
-        """Convert the name of an extension (eg. "foo.bar") into the name
+        r"""Convert the name of an extension (eg. "foo.bar") into the name
         of the file from which it will be loaded (eg. "foo/bar.so", or
         "foo\bar.pyd").
         """
