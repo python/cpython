@@ -56,7 +56,7 @@ class build_ext (Command):
          "C preprocessor macros to define"),
         ('undef=', 'U',
          "C preprocessor macros to undefine"),
-        ('libs=', 'l',
+        ('libraries=', 'l',
          "external C libraries to link with"),
         ('library-dirs=', 'L',
          "directories to search for external C libraries"),
@@ -79,7 +79,7 @@ class build_ext (Command):
         self.include_dirs = None
         self.define = None
         self.undef = None
-        self.libs = None
+        self.libraries = None
         self.library_dirs = None
         self.rpath = None
         self.link_objects = None
@@ -117,8 +117,8 @@ class build_ext (Command):
         if exec_py_include != py_include:
             self.include_dirs.insert (0, exec_py_include)
 
-        if type (self.libs) is StringType:
-            self.libs = [self.libs]
+        if type (self.libraries) is StringType:
+            self.libraries = [self.libraries]
 
         # XXX how the heck are 'self.define' and 'self.undef' supposed to
         # be set?
@@ -144,11 +144,33 @@ class build_ext (Command):
         # First, sanity-check the 'self.extensions' list
         self.check_extensions_list (self.extensions)
 
+        # Simplify the following logic (eg. don't have to worry about
+        # appending to None)
+        if self.libraries is None:
+            self.libraries = []
+        if self.library_dirs is None:
+            self.library_dirs = []
+        if self.rpath is None:
+            self.rpath = []
+
+        # If we were asked to build any C/C++ libraries, make sure that the
+        # directory where we put them is in the library search path for
+        # linking extensions.
+        if self.distribution.libraries:
+            build_clib = self.find_peer ('build_clib')
+            self.libraries.extend (build_clib.get_library_names() or [])
+            self.library_dirs.append (build_clib.build_clib)
+
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
         self.compiler = new_compiler (verbose=self.verbose,
                                       dry_run=self.dry_run,
                                       force=self.force)
+
+        # And make sure that any compile/link-related options (which might
+        # come from the command-line or from the setup script) are set in
+        # that CCompiler object -- that way, they automatically apply to
+        # all compiling and linking done here.
         if self.include_dirs is not None:
             self.compiler.set_include_dirs (self.include_dirs)
         if self.define is not None:
@@ -158,8 +180,8 @@ class build_ext (Command):
         if self.undef is not None:
             for macro in self.undef:
                 self.compiler.undefine_macro (macro)
-        if self.libs is not None:
-            self.compiler.set_libraries (self.libs)
+        if self.libraries is not None:
+            self.compiler.set_libraries (self.libraries)
         if self.library_dirs is not None:
             self.compiler.set_library_dirs (self.library_dirs)
         if self.rpath is not None:
@@ -167,15 +189,7 @@ class build_ext (Command):
         if self.link_objects is not None:
             self.compiler.set_link_objects (self.link_objects)
 
-        if self.distribution.libraries:
-            build_clib = self.find_peer ('build_clib')
-            self.libraries = build_clib.get_library_names () or []
-            self.library_dirs = [build_clib.build_clib]
-        else:
-            self.libraries = []
-            self.library_dirs = []
-
-        # Now the real loop over extensions
+        # Now actually compile and link everything.
         self.build_extensions (self.extensions)
 
             
@@ -257,10 +271,9 @@ class build_ext (Command):
             extra_objects = build_info.get ('extra_objects')
             if extra_objects:
                 objects.extend (extra_objects)
-            libraries = (self.libraries +
-                         (build_info.get ('libraries') or []))
-            library_dirs = (self.library_dirs +
-                            (build_info.get ('library_dirs') or []))
+            libraries = build_info.get ('libraries')
+            library_dirs = build_info.get ('library_dirs')
+            rpath = build_info.get ('rpath')
             extra_args = build_info.get ('extra_link_args') or []
 
             if self.compiler.compiler_type == 'msvc':
@@ -299,6 +312,7 @@ class build_ext (Command):
             self.compiler.link_shared_object (objects, ext_filename, 
                                               libraries=libraries,
                                               library_dirs=library_dirs,
+                                              runtime_library_dirs=rpath,
                                               extra_postargs=extra_args,
                                               debug=self.debug)
 
