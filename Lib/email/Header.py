@@ -1,42 +1,23 @@
-# Copyright (C) 2002 Python Software Foundation
-# Author: che@debian.org (Ben Gertzfield), barry@zope.com (Barry Warsaw)
+# Copyright (C) 2002-2004 Python Software Foundation
+# Author: che@debian.org (Ben Gertzfield), barry@python.org (Barry Warsaw)
 
 """Header encoding and decoding functionality."""
 
 import re
 import binascii
-from types import StringType, UnicodeType
 
 import email.quopriMIME
 import email.base64MIME
 from email.Errors import HeaderParseError
 from email.Charset import Charset
 
-try:
-    from email._compat22 import _floordiv
-except SyntaxError:
-    # Python 2.1 spells integer division differently
-    from email._compat21 import _floordiv
-
-try:
-    True, False
-except NameError:
-    True = 1
-    False = 0
-
-CRLFSPACE = '\r\n '
-CRLF = '\r\n'
 NL = '\n'
 SPACE = ' '
 USPACE = u' '
 SPACE8 = ' ' * 8
-EMPTYSTRING = ''
 UEMPTYSTRING = u''
 
 MAXLINELEN = 76
-
-ENCODE = 1
-DECODE = 2
 
 USASCII = Charset('us-ascii')
 UTF8 = Charset('utf-8')
@@ -51,8 +32,6 @@ ecre = re.compile(r'''
   (?P<encoded>.*?)      # non-greedy up to the next ?= is the encoded string
   \?=                   # literal ?=
   ''', re.VERBOSE | re.IGNORECASE)
-
-pcre = re.compile('([,;])')
 
 # Field name regexp, including trailing colon, but not separating whitespace,
 # according to RFC 2822.  Character range is from tilde to exclamation mark.
@@ -244,8 +223,8 @@ class Header:
         constructor is used.
 
         s may be a byte string or a Unicode string.  If it is a byte string
-        (i.e. isinstance(s, StringType) is true), then charset is the encoding
-        of that byte string, and a UnicodeError will be raised if the string
+        (i.e. isinstance(s, str) is true), then charset is the encoding of
+        that byte string, and a UnicodeError will be raised if the string
         cannot be decoded with that charset.  If s is a Unicode string, then
         charset is a hint specifying the character set of the characters in
         the string.  In this case, when producing an RFC 2822 compliant header
@@ -265,7 +244,7 @@ class Header:
             # We need to test that the string can be converted to unicode and
             # back to a byte string, given the input and output codecs of the
             # charset.
-            if isinstance(s, StringType):
+            if isinstance(s, str):
                 # Possibly raise UnicodeError if the byte string can't be
                 # converted to a unicode with the input codec of the charset.
                 incodec = charset.input_codec or 'us-ascii'
@@ -275,7 +254,7 @@ class Header:
                 # than the iput coded.  Still, use the original byte string.
                 outcodec = charset.output_codec or 'us-ascii'
                 ustr.encode(outcodec, errors)
-            elif isinstance(s, UnicodeType):
+            elif isinstance(s, unicode):
                 # Now we have to be sure the unicode string can be converted
                 # to a byte string with a reasonable output codec.  We want to
                 # use the byte string in the chunk.
