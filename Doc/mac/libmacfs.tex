@@ -17,7 +17,13 @@ Whenever a function or method expects a \var{file} argument, this
 argument can be one of three things:\ (1) a full or partial Macintosh
 pathname, (2) an \pytype{FSSpec} object or (3) a 3-tuple
 \code{(\var{wdRefNum}, \var{parID}, \var{name})} as described in
-\citetitle{Inside Macintosh:\ Files}. A description of aliases and the
+\citetitle{Inside Macintosh:\ Files}. An \pytype{FSSpec} can point to
+a non-existing file, as long as the folder containing the file exists.
+Under MacPython the same is true for a pathname, but not under unix-Pyton
+because of the way pathnames and FSRefs works. See Apple's documentation
+for details.
+
+A description of aliases and the
 Standard File package can also be found there.
 
 \note{A module, \refmodule{macfsn}, is auto-imported to replace
