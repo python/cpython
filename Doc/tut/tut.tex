@@ -1411,7 +1411,7 @@ arguments.  There are three forms, which can be combined.
 
 The most useful form is to specify a default value for one or more
 arguments.  This creates a function that can be called with fewer
-arguments than it is defined
+arguments than it is defined to allow.  For example:
 
 \begin{verbatim}
 def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
@@ -3282,7 +3282,7 @@ the message: the types in the example are
 \exception{ZeroDivisionError}, \exception{NameError} and
 \exception{TypeError}.
 The string printed as the exception type is the name of the built-in
-name for the exception that occurred.  This is true for all built-in
+exception that occurred.  This is true for all built-in
 exceptions, but need not be true for user-defined exceptions (although
 it is a useful convention).
 Standard exception names are built-in identifiers (not reserved
