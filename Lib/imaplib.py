@@ -15,7 +15,7 @@ Public functions:	Internaldate2tuple
 			Time2Internaldate
 """
 
-__version__ = "2.16"
+__version__ = "2.30"
 
 import binascii, re, socket, string, time, random, sys
 
@@ -66,7 +66,7 @@ InternalDate = re.compile(r'.*INTERNALDATE "'
 	r' (?P<hour>[0-9][0-9]):(?P<min>[0-9][0-9]):(?P<sec>[0-9][0-9])'
 	r' (?P<zonen>[-+])(?P<zoneh>[0-9][0-9])(?P<zonem>[0-9][0-9])'
 	r'"')
-Literal = re.compile(r'(?P<data>.*) {(?P<size>\d+)}$')
+Literal = re.compile(r'.*{(?P<size>\d+)}$')
 Response_code = re.compile(r'\[(?P<type>[A-Z-]+)( (?P<data>[^\]]*))?\]')
 Untagged_response = re.compile(r'\* (?P<type>[A-Z-]+)( (?P<data>.*))?')
 Untagged_status = re.compile(r'\* (?P<data>\d+) (?P<type>[A-Z-]+)( (?P<data2>.*))?')
@@ -117,7 +117,7 @@ class IMAP4:
 	class abort(error): pass	# Service errors - close and retry
 	class readonly(abort): pass	# Mailbox status changed to READ-ONLY
 
-	mustquote = re.compile(r'\W')	# Match any non-alphanumeric character
+	mustquote = re.compile(r"[^\w!#$%&'*+,.:;<=>?^`|~-]")
 
 	def __init__(self, host = '', port = IMAP4_PORT):
 		self.host = host
@@ -699,7 +699,7 @@ class IMAP4:
 					dat2 = self.mo.group('data2')
 
 			if self.mo is None:
-				# Only other possibility is '+' (continuation) rsponse...
+				# Only other possibility is '+' (continuation) response...
 
 				if self._match(Continuation, resp):
 					self.continuation_response = self.mo.group('data')
@@ -753,7 +753,19 @@ class IMAP4:
 			if result is not None:
 				del self.tagged_commands[tag]
 				return result
-			self._get_response()
+
+			# Some have reported "unexpected response" exceptions.
+			# (Isn't this non-IMAP4-compliant behaviour?
+			# Please mail me details printed below!)
+			# Anyway, ignore them here.
+
+			try:
+				self._get_response()
+			except self.abort, val:
+				if __debug__:
+					if self.debug >= 1:
+						_mesg('abort exception ignored: %s' % val)
+						print_log()
 
 
 	def _get_line(self):
@@ -1015,14 +1027,15 @@ if __name__ == '__main__':
 	if sys.argv[1:]: host = sys.argv[1]
 
 	USER = getpass.getuser()
-	PASSWD = getpass.getpass("IMAP password for %s: " % (host or "localhost"))
+	PASSWD = getpass.getpass("IMAP password for %s on %s" % (USER, host or "localhost"))
 
+	test_mesg = 'From: %s@localhost\nSubject: IMAP4 test\n\ndata...\n' % USER
 	test_seq1 = (
 	('login', (USER, PASSWD)),
 	('create', ('/tmp/xxx 1',)),
 	('rename', ('/tmp/xxx 1', '/tmp/yyy')),
 	('CREATE', ('/tmp/yyz 2',)),
-	('append', ('/tmp/yyz 2', None, None, 'From: anon@x.y.z\n\ndata...')),
+	('append', ('/tmp/yyz 2', None, None, test_mesg)),
 	('list', ('/tmp', 'yy*')),
 	('select', ('/tmp/yyz 2',)),
 	('search', (None, '(TO zork)')),
@@ -1038,7 +1051,7 @@ if __name__ == '__main__':
 	('response',('UIDVALIDITY',)),
 	('uid', ('SEARCH', 'ALL')),
 	('response', ('EXISTS',)),
-	('append', (None, None, None, 'From: anon@x.y.z\n\ndata...')),
+	('append', (None, None, None, test_mesg)),
 	('recent', ()),
 	('logout', ()),
 	)
