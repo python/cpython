@@ -33,7 +33,12 @@ PIMP_VERSION="0.1"
 DEFAULT_FLAVORORDER=['source', 'binary']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
-DEFAULT_INSTALLDIR=os.path.join(sys.prefix, "Lib", "site-packages")
+for _p in sys.path:
+	if _p[-13:] == 'site-packages':
+		DEFAULT_INSTALLDIR=_p
+		break
+else:
+	DEFAULT_INSTALLDIR=sys.prefix # Have to put things somewhere
 DEFAULT_PIMPDATABASE="http://www.cwi.nl/~jack/pimp/pimp-%s.plist" % distutils.util.get_platform()
 
 ARCHIVE_FORMATS = [
@@ -339,7 +344,7 @@ class PimpPackage:
 		string should tell the user what to do."""
 		
 		rv = []
-		if not self._dict['Download-URL']:
+		if not self._dict.get('Download-URL'):
 			return [(None, "This package needs to be installed manually")]
 		if not self._dict['Prerequisites']:
 			return []
@@ -369,7 +374,8 @@ class PimpPackage:
 			output.write("+ %s\n" % cmd)
 		if NO_EXECUTE:
 			return 0
-		fp = os.popen(cmd, "r")
+		dummy, fp = os.popen4(cmd, "r")
+		dummy.close()
 		while 1:
 			line = fp.readline()
 			if not line:
@@ -449,23 +455,57 @@ class PimpPackage:
 		msg = self.downloadSinglePackage(output)
 		if msg:
 			return "download %s: %s" % (self.fullname(), msg)
+			
 		msg = self.unpackSinglePackage(output)
 		if msg:
 			return "unpack %s: %s" % (self.fullname(), msg)
+			
 		if self._dict.has_key('Pre-install-command'):
 			if self._cmd(output, self._buildDirname, self._dict['Pre-install-command']):
 				return "pre-install %s: running \"%s\" failed" % \
 					(self.fullname(), self._dict['Pre-install-command'])
+					
+		old_contents = os.listdir(self._db.preferences.installDir)
 		installcmd = self._dict.get('Install-command')
 		if not installcmd:
 			installcmd = '"%s" setup.py install' % sys.executable
 		if self._cmd(output, self._buildDirname, installcmd):
 			return "install %s: running \"%s\" failed" % self.fullname()
+		
+		new_contents = os.listdir(self._db.preferences.installDir)
+		self._interpretPthFiles(old_contents, new_contents)
+		
 		if self._dict.has_key('Post-install-command'):
 			if self._cmd(output, self._buildDirname, self._dict['Post-install-command']):
 				return "post-install %s: running \"%s\" failed" % \
 					(self.fullname(), self._dict['Post-install-command'])
 		return None
+		
+	def _interpretPthFiles(self, old_contents, new_contents):
+		"""Evaluate any new .pth files that have appeared after installing"""
+		for fn in new_contents:
+			if fn in old_contents:
+				continue
+			if fn[-4:] != '.pth':
+				continue
+			fullname = os.path.join(self._db.preferences.installDir, fn)
+			f = open(fullname)
+			for line in f.readlines():
+				if not line:
+					continue
+				if line[0] == '#':
+					continue
+				if line[:6] == 'import':
+					exec line
+					continue
+				if line[-1] == '\n':
+					line = line[:-1]
+				if not os.path.isabs(line):
+					line = os.path.join(self._db.preferences.installDir, line)
+				line = os.path.realpath(line)
+				if not line in sys.path:
+					sys.path.append(line)
+				
 
 class PimpInstaller:
 	"""Installer engine: computes dependencies and installs
