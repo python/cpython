@@ -1,6 +1,6 @@
 # Python test set -- part 4a, built-in functions a-m
 
-from test_support import *
+from test.test_support import TestFailed, fcmp, have_unicode, TESTFN, unlink
 
 print '__import__'
 __import__('sys')

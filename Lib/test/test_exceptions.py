@@ -1,6 +1,6 @@
 # Python test set -- part 5, built-in exceptions
 
-from test_support import *
+from test.test_support import TestFailed, TESTFN, unlink
 from types import ClassType
 import warnings
 import sys, traceback

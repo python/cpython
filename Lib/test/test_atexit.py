@@ -1,5 +1,5 @@
 # Test the atexit module.
-from test_support import TESTFN, vereq
+from test.test_support import TESTFN, vereq
 import atexit
 from os import popen, unlink
 import sys

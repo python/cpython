@@ -1,7 +1,7 @@
 import ConfigParser
 import StringIO
 
-from test_support import TestFailed, verify
+from test.test_support import TestFailed, verify
 
 
 def basic(src):

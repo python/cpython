@@ -113,6 +113,6 @@ def do_prefix_binops():
 warnings.filterwarnings("ignore",
                         r'complex divmod\(\), // and % are deprecated',
                         DeprecationWarning,
-                        r'test_coercion$')
+                        r'test.test_coercion$')
 do_infix_binops()
 do_prefix_binops()

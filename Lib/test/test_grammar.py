@@ -1,7 +1,7 @@
 # Python test set -- part 1, grammar.
 # This just tests whether the parser accepts them all.
 
-from test_support import *
+from test.test_support import TestFailed, verify, check_syntax
 import sys
 
 print '1. Parser'

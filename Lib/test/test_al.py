@@ -3,7 +3,7 @@
    Roger E. Masse
 """
 import al
-from test_support import verbose
+from test.test_support import verbose
 
 alattrs = ['__doc__', '__name__', 'getdefault', 'getminmax', 'getname', 'getparams',
            'newconfig', 'openport', 'queryparams', 'setparams']

@@ -2,7 +2,7 @@ import sys
 import os
 from array import array
 
-from test_support import verify, TESTFN, TestFailed
+from test.test_support import verify, TESTFN, TestFailed
 from UserList import UserList
 
 # verify writelines with instance sequence

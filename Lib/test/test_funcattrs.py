@@ -1,4 +1,4 @@
-from test_support import verbose, TestFailed, verify
+from test.test_support import verbose, TestFailed, verify
 import types
 
 class F:

@@ -12,36 +12,36 @@ def check_error_location(msg):
 # The first two tests should work
 
 unload('test_future1')
-import test_future1
+from test import test_future1
 
 unload('test_future2')
-import test_future2
+from test import test_future2
 
 unload('test_future3')
-import test_future3
+from test import test_future3
 
 # The remaining tests should fail
 try:
-    import badsyntax_future3
+    from test import badsyntax_future3
 except SyntaxError, msg:
     check_error_location(str(msg))
 
 try:
-    import badsyntax_future4
+    from test import badsyntax_future4
 except SyntaxError, msg:
     check_error_location(str(msg))
 
 try:
-    import badsyntax_future5
+    from test import badsyntax_future5
 except SyntaxError, msg:
     check_error_location(str(msg))
 
 try:
-    import badsyntax_future6
+    from test import badsyntax_future6
 except SyntaxError, msg:
     check_error_location(str(msg))
 
 try:
-    import badsyntax_future7
+    from test import badsyntax_future7
 except SyntaxError, msg:
     check_error_location(str(msg))

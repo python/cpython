@@ -22,7 +22,7 @@ class TracebackCases(unittest.TestCase):
 
     def syntax_error_without_caret(self):
         # XXX why doesn't compile raise the same traceback?
-        import badsyntax_nocaret
+        import test.badsyntax_nocaret
 
     def test_caret(self):
         err = self.get_exception_format(self.syntax_error_with_caret,

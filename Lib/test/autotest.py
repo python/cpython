@@ -2,5 +2,5 @@
 # It can be especially handy if you're in an interactive shell, e.g.,
 # from test import autotest.
 
-import regrtest
+from test import regrtest
 regrtest.main()

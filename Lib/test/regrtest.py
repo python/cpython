@@ -244,8 +244,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             print "All",
         print count(len(good), "test"), "OK."
         if verbose:
-            print "CAUTION:  stdout isn't compared in verbose mode:  a test"
-            print "that passes in verbose mode may fail without it."
+            print "CAUTION:  stdout isn't compared in verbose mode:"
+            print "a test that passes in verbose mode may fail without it."
     if bad:
         print count(len(bad), "test"), "failed:"
         printlist(bad)
@@ -338,7 +338,13 @@ def runtest(test, generate, verbose, quiet, testdir = None):
             if cfp:
                 sys.stdout = cfp
                 print test              # Output file starts with test name
-            the_module = __import__(test, globals(), locals(), [])
+            if test.startswith('test.'):
+                abstest = test
+            else:
+                # Always import it from the test package
+                abstest = 'test.' + test
+            the_package = __import__(abstest, globals(), locals(), [])
+            the_module = getattr(the_package, test)
             # Most tests run to completion simply as a side-effect of
             # being imported.  For the benefit of tests that can't run
             # that way (like test_threaded_import), explicitly invoke
@@ -784,4 +790,18 @@ class _ExpectedSkips:
         return self.expected
 
 if __name__ == '__main__':
+    # Remove regrtest.py's own directory from the module search path.  This
+    # prevents relative imports from working, and relative imports will screw
+    # up the testing framework.  E.g. if both test.test_support and
+    # test_support are imported, they will not contain the same globals, and
+    # much of the testing framework relies on the globals in the
+    # test.test_support module.
+    mydir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
+    i = pathlen = len(sys.path)
+    while i >= 0:
+        i -= 1
+        if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
+            del sys.path[i]
+    if len(sys.path) == pathlen:
+        print 'Could not find %r in sys.path to remove it' % mydir
     main()

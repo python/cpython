@@ -1,6 +1,6 @@
 # Python test set -- part 2, opcodes
 
-from test.test_support import *
+from test.test_support import TestFailed
 
 
 print '2. Opcodes'
