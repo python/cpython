@@ -302,7 +302,7 @@ Example: Build a dictionary that maps the ordinals from \code{0} to
 
 The \module{operator} module also defines tools for generalized attribute
 and item lookups.  These are useful for making fast field extractors
-as arguments for \function{map()}, \method{list.sort()},
+as arguments for \function{map()}, \function{sorted()},
 \method{itertools.groupby()}, or other functions that expect a
 function argument.
 
@@ -328,7 +328,7 @@ Examples:
 >>> getcount = itemgetter(1)
 >>> map(getcount, inventory)
 [3, 2, 5, 1]
->>> list.sorted(inventory, key=getcount)
+>>> sorted(inventory, key=getcount)
 [('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)]
 \end{verbatim}
                 
