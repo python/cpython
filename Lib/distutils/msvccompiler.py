@@ -333,15 +333,13 @@ class MSVCCompiler (CCompiler) :
         (libraries, library_dirs, runtime_library_dirs) = \
             self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
 
-        if self.runtime_library_dirs:
+        if runtime_library_dirs:
             self.warn ("I don't know what to do with 'runtime_library_dirs': "
                        + str (runtime_library_dirs))
         
         lib_opts = gen_lib_options (self,
                                     library_dirs, runtime_library_dirs,
                                     libraries)
-        if type (output_dir) not in (StringType, NoneType):
-            raise TypeError, "'output_dir' must be a string or None"
         if output_dir is not None:
             output_filename = os.path.join (output_dir, output_filename)
 
@@ -370,6 +368,53 @@ class MSVCCompiler (CCompiler) :
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
     # link_shared_object ()
+
+
+    def link_executable (self,
+                         objects,
+                         output_progname,
+                         output_dir=None,
+                         libraries=None,
+                         library_dirs=None,
+                         runtime_library_dirs=None,
+                         debug=0,
+                         extra_preargs=None,
+                         extra_postargs=None):
+
+        (objects, output_dir) = self._fix_object_args (objects, output_dir)
+        (libraries, library_dirs, runtime_library_dirs) = \
+            self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
+
+        if runtime_library_dirs:
+            self.warn ("I don't know what to do with 'runtime_library_dirs': "
+                       + str (runtime_library_dirs))
+        
+        lib_opts = gen_lib_options (self,
+                                    library_dirs, runtime_library_dirs,
+                                    libraries)
+        output_filename = output_progname + self.exe_extension
+        if output_dir is not None:
+            output_filename = os.path.join (output_dir, output_filename)
+
+        if self._need_link (objects, output_filename):
+
+            if debug:
+                ldflags = self.ldflags_shared_debug[1:]
+            else:
+                ldflags = self.ldflags_shared[1:]
+
+            ld_args = ldflags + lib_opts + \
+                      objects + ['/OUT:' + output_filename]
+
+            if extra_preargs:
+                ld_args[:0] = extra_preargs
+            if extra_postargs:
+                ld_args.extend (extra_postargs)
+
+            self.mkpath (os.path.dirname (output_filename))
+            self.spawn ([self.link] + ld_args)
+        else:
+            self.announce ("skipping %s (up-to-date)" % output_filename)   
     
 
     # -- Miscellaneous methods -----------------------------------------
