@@ -148,8 +148,6 @@ builtin_unicode(self, args)
 	PyObject *args;
 {
         PyObject *v;
-	const void *buffer;
-	int len;
 	char *encoding = NULL;
 	char *errors = NULL;
 
