@@ -12,8 +12,9 @@
 \section{Built-in Module \sectcode{parser}}
 \label{module-parser}
 \bimodindex{parser}
+\index{parsing!Python source code}
 
-The \code{parser} module provides an interface to Python's internal
+The \module{parser} module provides an interface to Python's internal
 parser and byte-code compiler.  The primary purpose for this interface
 is to allow Python code to edit the parse tree of a Python expression
 and create executable code from this.  This is better than trying
@@ -24,17 +25,17 @@ forming the application.  It is also faster.
 There are a few things to note about this module which are important
 to making use of the data structures created.  This is not a tutorial
 on editing the parse trees for Python code, but some examples of using
-the \code{parser} module are presented.
+the \module{parser} module are presented.
 
 Most importantly, a good understanding of the Python grammar processed
 by the internal parser is required.  For full information on the
-language syntax, refer to the Language Reference.  The parser itself
-is created from a grammar specification defined in the file
+language syntax, refer to the \emph{Python Language Reference}.  The
+parser itself is created from a grammar specification defined in the file
 \file{Grammar/Grammar} in the standard Python distribution.  The parse
 trees stored in the ``AST objects'' created by this module are the
 actual output from the internal parser when created by the
-\code{expr()} or \code{suite()} functions, described below.  The AST
-objects created by \code{sequence2ast()} faithfully simulate those
+\function{expr()} or \function{suite()} functions, described below.  The AST
+objects created by \function{sequence2ast()} faithfully simulate those
 structures.  Be aware that the values of the sequences which are
 considered ``correct'' will vary from one version of Python to another
 as the formal grammar for the language is revised.  However,
@@ -46,19 +47,19 @@ constructs.  The parse trees are not typically compatible from one
 version to another, whereas source code has always been
 forward-compatible.
 
-Each element of the sequences returned by \code{ast2list} or
-\code{ast2tuple()} has a simple form.  Sequences representing
+Each element of the sequences returned by \function{ast2list()} or
+\function{ast2tuple()} has a simple form.  Sequences representing
 non-terminal elements in the grammar always have a length greater than
 one.  The first element is an integer which identifies a production in
 the grammar.  These integers are given symbolic names in the C header
 file \file{Include/graminit.h} and the Python module
-\code{symbol}.  Each additional element of the sequence represents
+\module{symbol}.  Each additional element of the sequence represents
 a component of the production as recognized in the input string: these
 are always sequences which have the same form as the parent.  An
 important aspect of this structure which should be noted is that
 keywords used to identify the parent node type, such as the keyword
-\code{if} in an \code{if_stmt}, are included in the node tree without
-any special treatment.  For example, the \code{if} keyword is
+\keyword{if} in an \constant{if_stmt}, are included in the node tree without
+any special treatment.  For example, the \keyword{if} keyword is
 represented by the tuple \code{(1, 'if')}, where \code{1} is the
 numeric value associated with all \code{NAME} tokens, including
 variable and function names defined by the user.  In an alternate form
@@ -68,10 +69,10 @@ represents the line number at which the terminal symbol was found.
 
 Terminal elements are represented in much the same way, but without
 any child elements and the addition of the source text which was
-identified.  The example of the \code{if} keyword above is
+identified.  The example of the \keyword{if} keyword above is
 representative.  The various types of terminal symbols are defined in
 the C header file \file{Include/token.h} and the Python module
-\code{token}.
+\module{token}.
 
 The AST objects are not required to support the functionality of this
 module, but are provided for three purposes: to allow an application
@@ -80,10 +81,9 @@ parse tree representation which conserves memory space when compared
 to the Python list or tuple representation, and to ease the creation
 of additional modules in C which manipulate parse trees.  A simple
 ``wrapper'' class may be created in Python to hide the use of AST
-objects; the \code{AST} library module provides a variety of such
-classes.
+objects.
 
-The \code{parser} module defines functions for a few distinct
+The \module{parser} module defines functions for a few distinct
 purposes.  The most important purposes are to create AST objects and
 to convert AST objects to other representations such as parse trees
 and compiled code objects, but there are also functions which serve to
@@ -99,16 +99,16 @@ When creating an AST object from source, different functions are used
 to create the \code{'eval'} and \code{'exec'} forms.
 
 \begin{funcdesc}{expr}{string}
-The \code{expr()} function parses the parameter \code{\var{string}}
-as if it were an input to \code{compile(\var{string}, 'eval')}.  If
+The \function{expr()} function parses the parameter \code{\var{string}}
+as if it were an input to \samp{compile(\var{string}, 'eval')}.  If
 the parse succeeds, an AST object is created to hold the internal
 parse tree representation, otherwise an appropriate exception is
 thrown.
 \end{funcdesc}
 
 \begin{funcdesc}{suite}{string}
-The \code{suite()} function parses the parameter \code{\var{string}}
-as if it were an input to \code{compile(\var{string}, 'exec')}.  If
+The \function{suite()} function parses the parameter \code{\var{string}}
+as if it were an input to \samp{compile(\var{string}, 'exec')}.  If
 the parse succeeds, an AST object is created to hold the internal
 parse tree representation, otherwise an appropriate exception is
 thrown.
@@ -121,11 +121,11 @@ that the tree conforms to the Python grammar and all nodes are valid
 node types in the host version of Python, an AST object is created
 from the internal representation and returned to the called.  If there
 is a problem creating the internal representation, or if the tree
-cannot be validated, a \code{ParserError} exception is thrown.  An AST
+cannot be validated, a \exception{ParserError} exception is thrown.  An AST
 object created this way should not be assumed to compile correctly;
 normal exceptions thrown by compilation may still be initiated when
-the AST object is passed to \code{compileast()}.  This may indicate
-problems not related to syntax (such as a \code{MemoryError}
+the AST object is passed to \function{compileast()}.  This may indicate
+problems not related to syntax (such as a \exception{MemoryError}
 exception), but may also be due to constructs such as the result of
 parsing \code{del f(0)}, which escapes the Python parser but is
 checked by the bytecode compiler.
@@ -139,7 +139,7 @@ tree.
 \end{funcdesc}
 
 \begin{funcdesc}{tuple2ast}{sequence}
-This is the same function as \code{sequence2ast()}.  This entry point
+This is the same function as \function{sequence2ast()}.  This entry point
 is maintained for backward compatibility.
 \end{funcdesc}
 
@@ -158,7 +158,7 @@ equivelent parse tree.  The resulting list representation can be used
 for inspection or the creation of a new parse tree in list form.  This
 function does not fail so long as memory is available to build the
 list representation.  If the parse tree will only be used for
-inspection, \code{ast2tuple()} should be used instead to reduce memory
+inspection, \function{ast2tuple()} should be used instead to reduce memory
 consumption and fragmentation.  When the list representation is
 required, this function is significantly faster than retrieving a
 tuple representation and converting that to nested lists.
@@ -166,7 +166,7 @@ tuple representation and converting that to nested lists.
 If \code{\var{line_info}} is true, line number information will be
 included for all terminal tokens as a third element of the list
 representing the token.  Note that the line number provided specifies
-the line on which the token \emph{ends\/}.  This information is
+the line on which the token \emph{ends}.  This information is
 omitted if the flag is false or omitted.
 \end{funcdesc}
 
@@ -174,7 +174,7 @@ omitted if the flag is false or omitted.
 This function accepts an AST object from the caller in
 \code{\var{ast}} and returns a Python tuple representing the
 equivelent parse tree.  Other than returning a tuple instead of a
-list, this function is identical to \code{ast2list()}.
+list, this function is identical to \function{ast2list()}.
 
 If \code{\var{line_info}} is true, line number information will be
 included for all terminal tokens as a third element of the list
@@ -185,19 +185,20 @@ false or omitted.
 \begin{funcdesc}{compileast}{ast\optional{\, filename\code{ = '<ast>'}}}
 The Python byte compiler can be invoked on an AST object to produce
 code objects which can be used as part of an \code{exec} statement or
-a call to the built-in \code{eval()} function.  This function provides
-the interface to the compiler, passing the internal parse tree from
-\code{\var{ast}} to the parser, using the source file name specified
-by the \code{\var{filename}} parameter.  The default value supplied
-for \code{\var{filename}} indicates that the source was an AST object.
+a call to the built-in \function{eval()}\bifuncindex{eval} function.
+This function provides the interface to the compiler, passing the
+internal parse tree from \code{\var{ast}} to the parser, using the
+source file name specified by the \code{\var{filename}} parameter.
+The default value supplied for \code{\var{filename}} indicates that
+the source was an AST object.
 
 Compiling an AST object may result in exceptions related to
-compilation; an example would be a \code{SyntaxError} caused by the
+compilation; an example would be a \exception{SyntaxError} caused by the
 parse tree for \code{del f(0)}: this statement is considered legal
 within the formal grammar for Python but is not a legal language
-construct.  The \code{SyntaxError} raised for this condition is
+construct.  The \exception{SyntaxError} raised for this condition is
 actually generated by the Python byte-compiler normally, which is why
-it can be raised at this point by the \code{parser} module.  Most
+it can be raised at this point by the \module{parser} module.  Most
 causes of compilation failure can be diagnosed programmatically by
 inspection of the parse tree.
 \end{funcdesc}
@@ -208,25 +209,25 @@ inspection of the parse tree.
 Two functions are provided which allow an application to determine if
 an AST was create as an expression or a suite.  Neither of these
 functions can be used to determine if an AST was created from source
-code via \code{expr()} or \code{suite()} or from a parse tree via
-\code{sequence2ast()}.
+code via \function{expr()} or \function{suite()} or from a parse tree
+via \function{sequence2ast()}.
 
 \begin{funcdesc}{isexpr}{ast}
 When \code{\var{ast}} represents an \code{'eval'} form, this function
-returns a true value (\code{1}), otherwise it returns false
-(\code{0}).  This is useful, since code objects normally cannot be
-queried for this information using existing built-in functions.  Note
-that the code objects created by \code{compileast()} cannot be queried
-like this either, and are identical to those created by the built-in
-\code{compile()} function.
+returns true, otherwise it returns false.  This is useful, since code
+objects normally cannot be queried for this information using existing
+built-in functions.  Note that the code objects created by
+\function{compileast()} cannot be queried like this either, and are
+identical to those created by the built-in
+\function{compile()}\bifuncindex{compile} function.
 \end{funcdesc}
 
 
 \begin{funcdesc}{issuite}{ast}
-This function mirrors \code{isexpr()} in that it reports whether an
+This function mirrors \function{isexpr()} in that it reports whether an
 AST object represents an \code{'exec'} form, commonly known as a
 ``suite.''  It is not safe to assume that this function is equivelent
-to \code{not isexpr(\var{ast})}, as additional syntactic fragments may
+to \samp{not isexpr(\var{ast})}, as additional syntactic fragments may
 be supported in the future.
 \end{funcdesc}
 
@@ -241,28 +242,28 @@ it can raise.
 \begin{excdesc}{ParserError}
 Exception raised when a failure occurs within the parser module.  This
 is generally produced for validation failures rather than the built in
-\code{SyntaxError} thrown during normal parsing.
+\exception{SyntaxError} thrown during normal parsing.
 The exception argument is either a string describing the reason of the
 failure or a tuple containing a sequence causing the failure from a parse
-tree passed to \code{sequence2ast()} and an explanatory string.  Calls to
-\code{sequence2ast()} need to be able to handle either type of exception,
+tree passed to \function{sequence2ast()} and an explanatory string.  Calls to
+\function{sequence2ast()} need to be able to handle either type of exception,
 while calls to other functions in the module will only need to be
 aware of the simple string values.
 \end{excdesc}
 
-Note that the functions \code{compileast()}, \code{expr()}, and
-\code{suite()} may throw exceptions which are normally thrown by the
+Note that the functions \function{compileast()}, \function{expr()}, and
+\function{suite()} may throw exceptions which are normally thrown by the
 parsing and compilation process.  These include the built in
-exceptions \code{MemoryError}, \code{OverflowError},
-\code{SyntaxError}, and \code{SystemError}.  In these cases, these
+exceptions \exception{MemoryError}, \exception{OverflowError},
+\exception{SyntaxError}, and \exception{SystemError}.  In these cases, these
 exceptions carry all the meaning normally associated with them.  Refer
 to the descriptions of each function for detailed information.
 
 
 \subsection{AST Objects}
 
-AST objects returned by \code{expr()}, \code{suite()}, and
-\code{sequence2ast()} have no methods of their own.
+AST objects returned by \function{expr()}, \function{suite()}, and
+\function{sequence2ast()} have no methods of their own.
 Some of the functions defined which accept an AST object as their
 first argument may change to object methods in the future.  The type
 of these objects is available as \code{ASTType} in the module.
@@ -277,14 +278,15 @@ The parser modules allows operations to be performed on the parse tree
 of Python source code before the bytecode is generated, and provides
 for inspection of the parse tree for information gathering purposes.
 Two examples are presented.  The simple example demonstrates emulation
-of the \code{compile()} built-in function and the complex example
-shows the use of a parse tree for information discovery.
+of the \function{compile()}\bifuncindex{compile} built-in function and
+the complex example shows the use of a parse tree for information
+discovery.
 
 \subsubsection{Emulation of \sectcode{compile()}}
 
 While many useful operations may take place between parsing and
 bytecode generation, the simplest operation is to do nothing.  For
-this purpose, using the \code{parser} module to produce an
+this purpose, using the \module{parser} module to produce an
 intermediate data structure is equivelent to the code
 
 \bcode\begin{verbatim}
@@ -294,7 +296,7 @@ intermediate data structure is equivelent to the code
 10
 \end{verbatim}\ecode
 %
-The equivelent operation using the \code{parser} module is somewhat
+The equivelent operation using the \module{parser} module is somewhat
 longer, and allows the intermediate internal parse tree to be retained
 as an AST object:
 
@@ -330,7 +332,7 @@ Some applications benefit from direct access to the parse tree.  The
 remainder of this section demonstrates how the parse tree provides
 access to module documentation defined in docstrings without requiring
 that the code being examined be loaded into a running interpreter via
-\code{import}.  This can be very useful for performing analyses of
+\keyword{import}.  This can be very useful for performing analyses of
 untrusted code.
 
 Generally, the example will demonstrate how the parse tree may be
@@ -349,7 +351,7 @@ The dynamic nature of Python allows the programmer a great deal of
 flexibility, but most modules need only a limited measure of this when
 defining classes, functions, and methods.  In this example, the only
 definitions that will be considered are those which are defined in the
-top level of their context, e.g., a function defined by a \code{def}
+top level of their context, e.g., a function defined by a \keyword{def}
 statement at column zero of a module, but not a function defined
 within a branch of an \code{if} ... \code{else} construct, though
 there are some good reasons for doing so in some situations.  Nesting
@@ -408,21 +410,22 @@ The numbers at the first element of each node in the tree are the node
 types; they map directly to terminal and non-terminal symbols in the
 grammar.  Unfortunately, they are represented as integers in the
 internal representation, and the Python structures generated do not
-change that.  However, the \code{symbol} and \code{token} modules
+change that.  However, the \module{symbol} and \module{token} modules
 provide symbolic names for the node types and dictionaries which map
 from the integers to the symbolic names for the node types.
 
 In the output presented above, the outermost tuple contains four
 elements: the integer \code{257} and three additional tuples.  Node
-type \code{257} has the symbolic name \code{file_input}.  Each of
+type \code{257} has the symbolic name \constant{file_input}.  Each of
 these inner tuples contains an integer as the first element; these
 integers, \code{264}, \code{4}, and \code{0}, represent the node types
-\code{stmt}, \code{NEWLINE}, and \code{ENDMARKER}, respectively.
+\constant{stmt}, \constant{NEWLINE}, and \constant{ENDMARKER},
+respectively.
 Note that these values may change depending on the version of Python
 you are using; consult \file{symbol.py} and \file{token.py} for
 details of the mapping.  It should be fairly clear that the outermost
 node is related primarily to the input source rather than the contents
-of the file, and may be disregarded for the moment.  The \code{stmt}
+of the file, and may be disregarded for the moment.  The \constant{stmt}
 node is much more interesting.  In particular, all docstrings are
 found in subtrees which are formed exactly as this node is formed,
 with the only difference being the string itself.  The association
@@ -494,7 +497,7 @@ DOCSTRING_STMT_PATTERN = (
      ))
 \end{verbatim}\ecode
 %
-Using the \code{match()} function with this pattern, extracting the
+Using the \function{match()} function with this pattern, extracting the
 module docstring from the parse tree created previously is easy:
 
 \bcode\begin{verbatim}
@@ -508,14 +511,14 @@ module docstring from the parse tree created previously is easy:
 Once specific data can be extracted from a location where it is
 expected, the question of where information can be expected
 needs to be answered.  When dealing with docstrings, the answer is
-fairly simple: the docstring is the first \code{stmt} node in a code
-block (\code{file_input} or \code{suite} node types).  A module
-consists of a single \code{file_input} node, and class and function
-definitions each contain exactly one \code{suite} node.  Classes and
+fairly simple: the docstring is the first \constant{stmt} node in a code
+block (\constant{file_input} or \constant{suite} node types).  A module
+consists of a single \constant{file_input} node, and class and function
+definitions each contain exactly one \constant{suite} node.  Classes and
 functions are readily identified as subtrees of code block nodes which
 start with \code{(stmt, (compound_stmt, (classdef, ...} or
 \code{(stmt, (compound_stmt, (funcdef, ...}.  Note that these subtrees
-cannot be matched by \code{match()} since it does not support multiple
+cannot be matched by \function{match()} since it does not support multiple
 sibling nodes to match without regard to number.  A more elaborate
 matching function could be used to overcome this limitation, but this
 is sufficient for the example.
@@ -535,13 +538,13 @@ parse tree which it represents.  The \code{ModuleInfo} constructor
 accepts an optional \code{\var{name}} parameter since it cannot
 otherwise determine the name of the module.
 
-The public classes include \code{ClassInfo}, \code{FunctionInfo},
-and \code{ModuleInfo}.  All objects provide the
-methods \code{get_name()}, \code{get_docstring()},
-\code{get_class_names()}, and \code{get_class_info()}.  The
-\code{ClassInfo} objects support \code{get_method_names()} and
-\code{get_method_info()} while the other classes provide
-\code{get_function_names()} and \code{get_function_info()}.
+The public classes include \class{ClassInfo}, \class{FunctionInfo},
+and \class{ModuleInfo}.  All objects provide the
+methods \method{get_name()}, \method{get_docstring()},
+\method{get_class_names()}, and \method{get_class_info()}.  The
+\class{ClassInfo} objects support \method{get_method_names()} and
+\method{get_method_info()} while the other classes provide
+\method{get_function_names()} and \method{get_function_info()}.
 
 Within each of the forms of code block that the public classes
 represent, most of the required information is in the same form and is
@@ -551,20 +554,20 @@ Since the difference in nomenclature reflects a real semantic
 distinction from functions defined outside of a class, the
 implementation needs to maintain the distinction.
 Hence, most of the functionality of the public classes can be
-implemented in a common base class, \code{SuiteInfoBase}, with the
+implemented in a common base class, \class{SuiteInfoBase}, with the
 accessors for function and method information provided elsewhere.
 Note that there is only one class which represents function and method
-information; this parallels the use of the \code{def} statement to
+information; this parallels the use of the \keyword{def} statement to
 define both types of elements.
 
-Most of the accessor functions are declared in \code{SuiteInfoBase}
+Most of the accessor functions are declared in \class{SuiteInfoBase}
 and do not need to be overriden by subclasses.  More importantly, the
 extraction of most information from a parse tree is handled through a
-method called by the \code{SuiteInfoBase} constructor.  The example
+method called by the \class{SuiteInfoBase} constructor.  The example
 code for most of the classes is clear when read alongside the formal
 grammar, but the method which recursively creates new information
 objects requires further examination.  Here is the relevant part of
-the \code{SuiteInfoBase} definition from \file{example.py}:
+the \class{SuiteInfoBase} definition from \file{example.py}:
 
 \bcode\begin{verbatim}
 class SuiteInfoBase:
@@ -599,13 +602,13 @@ class SuiteInfoBase:
 \end{verbatim}\ecode
 %
 After initializing some internal state, the constructor calls the
-\code{_extract_info()} method.  This method performs the bulk of the
+\method{_extract_info()} method.  This method performs the bulk of the
 information extraction which takes place in the entire example.  The
 extraction has two distinct phases: the location of the docstring for
 the parse tree passed in, and the discovery of additional definitions
 within the code block represented by the parse tree.
 
-The initial \code{if} test determines whether the nested suite is of
+The initial \keyword{if} test determines whether the nested suite is of
 the ``short form'' or the ``long form.''  The short form is used when
 the code block is on the same line as the definition of the code
 block, as in
@@ -626,23 +629,23 @@ def make_power(exp):
 \end{verbatim}\ecode
 %
 When the short form is used, the code block may contain a docstring as
-the first, and possibly only, \code{small_stmt} element.  The
+the first, and possibly only, \constant{small_stmt} element.  The
 extraction of such a docstring is slightly different and requires only
 a portion of the complete pattern used in the more common case.  As
 implemented, the docstring will only be found if there is only
-one \code{small_stmt} node in the \code{simple_stmt} node.  Since most
-functions and methods which use the short form do not provide a
-docstring, this may be considered sufficient.  The extraction of the
-docstring proceeds using the \code{match()} function as described
-above, and the value of the docstring is stored as an attribute of the
-\code{SuiteInfoBase} object.
+one \constant{small_stmt} node in the \constant{simple_stmt} node.
+Since most functions and methods which use the short form do not
+provide a docstring, this may be considered sufficient.  The
+extraction of the docstring proceeds using the \function{match()} function
+as described above, and the value of the docstring is stored as an
+attribute of the \class{SuiteInfoBase} object.
 
 After docstring extraction, a simple definition discovery
-algorithm operates on the \code{stmt} nodes of the \code{suite} node.  The
-special case of the short form is not tested; since there are no
-\code{stmt} nodes in the short form, the algorithm will silently skip
-the single \code{simple_stmt} node and correctly not discover any
-nested definitions.
+algorithm operates on the \constant{stmt} nodes of the
+\constant{suite} node.  The special case of the short form is not
+tested; since there are no \constant{stmt} nodes in the short form,
+the algorithm will silently skip the single \constant{simple_stmt}
+node and correctly not discover any nested definitions.
 
 Each statement in the code block is categorized as
 a class definition, function or method definition, or
@@ -654,7 +657,7 @@ are stored in instance variables and may be retrieved by name using
 the appropriate accessor methods.
 
 The public classes provide any accessors required which are more
-specific than those provided by the \code{SuiteInfoBase} class, but
+specific than those provided by the \class{SuiteInfoBase} class, but
 the real extraction algorithm remains common to all forms of code
 blocks.  A high-level function can be used to extract the complete set
 of information from a source file.  (See file \file{example.py}.)
