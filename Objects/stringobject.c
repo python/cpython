@@ -1143,7 +1143,7 @@ Return a titlecased version of S, i.e. words start with uppercase\n\
 characters, all remaining cased characters have lowercase.";
 
 static PyObject*
-string_title(PyUnicodeObject *self, PyObject *args)
+string_title(PyStringObject *self, PyObject *args)
 {
 	char *s = PyString_AS_STRING(self), *s_new;
 	int i, n = PyString_GET_SIZE(self);
@@ -1974,7 +1974,7 @@ Return 1 if  all characters in S are alphabetic\n\
 and there is at least one character in S, 0 otherwise.";
 
 static PyObject*
-string_isalpha(PyUnicodeObject *self, PyObject *args)
+string_isalpha(PyStringObject *self, PyObject *args)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
@@ -2008,7 +2008,7 @@ Return 1 if  all characters in S are alphanumeric\n\
 and there is at least one character in S, 0 otherwise.";
 
 static PyObject*
-string_isalnum(PyUnicodeObject *self, PyObject *args)
+string_isalnum(PyStringObject *self, PyObject *args)
 {
     register const unsigned char *p
         = (unsigned char *) PyString_AS_STRING(self);
