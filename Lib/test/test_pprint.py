@@ -154,6 +154,12 @@ class QueryTestCase(unittest.TestCase):
         for type in [tuple, tuple2]:
             self.assertEqual(pprint.pformat(type(o)), exp)
 
+        # indent parameter
+        o = range(100)
+        exp = '[   %s]' % ',\n    '.join(map(str, o))
+        for type in [list, list2]:
+            self.assertEqual(pprint.pformat(type(o), indent=4), exp)
+
     def test_subclassing(self):
         o = {'names with spaces': 'should be presented using repr()',
              'others.should.not.be': 'like.this'}

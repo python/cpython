@@ -48,14 +48,15 @@ _len = len
 _type = type
 
 
-def pprint(object, stream=None):
+def pprint(object, stream=None, indent=1, width=80, depth=None):
     """Pretty-print a Python object to a stream [default is sys.sydout]."""
-    printer = PrettyPrinter(stream=stream)
+    printer = PrettyPrinter(
+        stream=stream, indent=indent, width=width, depth=depth)
     printer.pprint(object)
 
-def pformat(object):
+def pformat(object, indent=1, width=80, depth=None):
     """Format a Python object into a pretty-printed representation."""
-    return PrettyPrinter().pformat(object)
+    return PrettyPrinter(indent=indent, width=width, depth=depth).pformat(object)
 
 def saferepr(object):
     """Version of repr() which can handle recursive data structures."""

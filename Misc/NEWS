@@ -170,6 +170,9 @@ Extension modules
 Library
 -------
 
+- pprint.pprint() and pprint.pformat() now have additional parameters
+  indent, width and depth.
+
 - Patch #750542: pprint now will pretty print subclasses of list, tuple
   and dict too, as long as they don't overwrite __repr__().
 
