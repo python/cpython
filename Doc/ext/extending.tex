@@ -217,12 +217,13 @@ the error checking for now):
 void
 initspam(void)
 {
-    PyObject *m, *d;
+    PyObject *m;
 
     m = Py_InitModule("spam", SpamMethods);
-    d = PyModule_GetDict(m);
+
     SpamError = PyErr_NewException("spam.error", NULL, NULL);
-    PyDict_SetItemString(d, "error", SpamError);
+    Py_INCREF(SpamError);
+    PyModule_AddObject(m, "error", SpamError);
 }
 \end{verbatim}
 
@@ -1277,13 +1278,8 @@ initspam(void)
     /* Create a CObject containing the API pointer array's address */
     c_api_object = PyCObject_FromVoidPtr((void *)PySpam_API, NULL);
 
-    if (c_api_object != NULL) {
-        /* Create a name for this object in the module's namespace */
-        PyObject *d = PyModule_GetDict(m);
-
-        PyDict_SetItemString(d, "_C_API", c_api_object);
-        Py_DECREF(c_api_object);
-    }
+    if (c_api_object != NULL)
+        PyModule_AddObject(m, "_C_API", c_api_object);
 }
 \end{verbatim}
 
@@ -1324,16 +1320,21 @@ static void **PySpam_API;
 #define PySpam_System \
  (*(PySpam_System_RETURN (*)PySpam_System_PROTO) PySpam_API[PySpam_System_NUM])
 
-#define import_spam() \
-{ \
-  PyObject *module = PyImport_ImportModule("spam"); \
-  if (module != NULL) { \
-    PyObject *module_dict = PyModule_GetDict(module); \
-    PyObject *c_api_object = PyDict_GetItemString(module_dict, "_C_API"); \
-    if (PyCObject_Check(c_api_object)) { \
-      PySpam_API = (void **)PyCObject_AsVoidPtr(c_api_object); \
-    } \
-  } \
+/* Return -1 and set exception on error, 0 on success. */
+static int
+import_spam(void)
+{
+    PyObject *module = PyImport_ImportModule("spam");
+
+    if (module != NULL) {
+        PyObject *c_api_object = PyObject_GetAttrString(module, "_C_API");
+        if (c_api_object == NULL)
+            return -1;
+        if (PyCObject_Check(c_api_object))
+            PySpam_API = (void **)PyCObject_AsVoidPtr(c_api_object);
+        Py_DECREF(c_api_object);
+    }
+    return 0;
 }
 
 #endif
@@ -1357,7 +1358,9 @@ initclient(void)
     PyObject *m;
 
     Py_InitModule("client", ClientMethods);
-    import_spam();
+    if (import_spam() < 0)
+        return;
+    /* additional initialization can happen here */
 }
 \end{verbatim}
 
@@ -1370,6 +1373,7 @@ Finally it should be mentioned that CObjects offer additional
 functionality, which is especially useful for memory allocation and
 deallocation of the pointer stored in a CObject. The details
 are described in the \citetitle[../api/api.html]{Python/C API
-Reference Manual} in the section ``CObjects'' and in the
-implementation of CObjects (files \file{Include/cobject.h} and
+Reference Manual} in the section
+``\ulink{CObjects}{../api/cObjects.html}'' and in the implementation
+of CObjects (files \file{Include/cobject.h} and
 \file{Objects/cobject.c} in the Python source code distribution).
