@@ -95,6 +95,7 @@ class Application:
 	"Application framework -- your application should be a derived class"
 	
 	def __init__(self, nomenubar=0):
+		self._doing_asyncevents = 0
 		self.quitting = 0
 		self.needmenubarredraw = 0
 		self._windows = {}
@@ -102,6 +103,11 @@ class Application:
 			self.menubar = None
 		else:
 			self.makemenubar()
+			
+	def __del__(self):
+		if self._doing_asyncevents:
+			self._doing_asyncevents = 0
+			MacOS.SetEventHandler()
 	
 	def makemenubar(self):
 		self.menubar = MenuBar(self)
@@ -158,6 +164,11 @@ class Application:
 	
 	schedparams = MacOS.SchedParams()
 	
+	def dopendingevents(self, mask = everyEvent):
+		"""dopendingevents - Handle all pending events"""
+		while self.do1event(mask, wait=0):
+			pass
+	
 	def do1event(self, mask = everyEvent, wait = 0):
 		ok, event = self.getevent(mask, wait)
 		if IsDialogEvent(event):
@@ -179,6 +190,11 @@ class Application:
 		return ok, event
 			
 	def dispatch(self, event):
+		# The following appears to be double work (already done in do1event)
+		# but we need it for asynchronous event handling
+		if IsDialogEvent(event):
+			if self.do_dialogevent(event):
+				return
 		(what, message, when, where, modifiers) = event
 		if eventname.has_key(what):
 			name = "do_" + eventname[what]
@@ -190,6 +206,21 @@ class Application:
 			handler = self.do_unknownevent
 		handler(event)
 		
+	def asyncevents(self, onoff):
+		"""asyncevents - Set asynchronous event handling on or off"""
+		old = self._doing_asyncevents
+		if old:
+			MacOS.SetEventHandler()
+			apply(MacOS.SchedParams, self.schedparams)
+		if onoff:
+			MacOS.SetEventHandler(self.dispatch)
+			doint, dummymask, benice, howoften, bgyield = \
+			       self.schedparams
+			MacOS.SchedParams(doint, everyEvent, benice,
+					  howoften, bgyield)
+		self._doing_asyncevents = onoff
+		return old
+			
 	def do_dialogevent(self, event):
 		gotone, window, item = DialogSelect(event)
 		if gotone:
