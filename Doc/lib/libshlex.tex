@@ -1,7 +1,7 @@
 % Module and documentation by Eric S. Raymond, 21 Dec 1998 
 
 \section{\module{shlex} ---
-         Simple lexical analysis.}
+         Simple lexical analysis}
 
 \declaremodule{standard}{shlex}
 \modulesynopsis{Simple lexical analysis for \UNIX{} shell-like languages.}
@@ -21,8 +21,14 @@ object.  The initialization argument, if present, specifies where to
 read characters from. It must be a file- or stream-like object with
 \method{read()} and \method{readline()} methods.  If no argument is given,
 input will be taken from \code{sys.stdin}.
-
 \end{classdesc}
+
+
+\begin{seealso}
+  \seemodule{ConfigParser}{Parser for configuration files similar to the
+                           Windows \file{.ini} files.}
+\end{seealso}
+
 
 \subsection{shlex Objects \label{shlex-objects}}
 
@@ -64,7 +70,7 @@ carriage-return.
 \begin{memberdesc}{quotes}
 Characters that will be considered string quotes.  The token
 accumulates until the same quote is encountered again (thus, different
-quote types protect each other as in the shall.)  By default, includes
+quote types protect each other as in the shell.)  By default, includes
 \ASCII{} single and double quotes.
 \end{memberdesc}
 
