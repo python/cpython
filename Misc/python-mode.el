@@ -1359,10 +1359,16 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (let ((needs-if (/= (py-point 'bol) (py-point 'boi))))
 	(set-buffer buf)
 	(python-mode)
-	(setq shell py-which-shell)
 	(when needs-if
 	  (insert "if 1:\n"))
-	(insert-buffer-substring cur start end)))
+	(insert-buffer-substring cur start end)
+	;; Set the shell either to the #! line command, or to the
+	;; py-which-shell buffer local variable.
+	(goto-char (point-min))
+	(if (looking-at "^#!\\s *\\(.*\\)$")
+	    (setq shell (match-string 1))
+	  ;; No useable #! line
+	  (setq shell py-which-shell))))
     (cond
      ;; always run the code in its own asynchronous subprocess
      (async
@@ -1392,10 +1398,9 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (setq py-file-queue (append py-file-queue (list file)))
       (setq py-exception-buffer (cons file (current-buffer))))
      (t
-      ;; TBD: a horrible hack, buy why create new Custom variables?
-      (let ((cmd (concat shell
-			 (if (string-equal py-which-bufname "JPython")
-			     " -" ""))))
+      ;; TBD: a horrible hack, but why create new Custom variables?
+      (let ((cmd (concat shell (if (string-equal py-which-bufname "JPython")
+				   " -" ""))))
 	;; otherwise either run it synchronously in a subprocess
 	(save-excursion
 	  (set-buffer buf)
