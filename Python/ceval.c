@@ -1709,13 +1709,37 @@ eval_frame(PyFrameObject *f)
 
 		case LOAD_GLOBAL:
 			w = GETITEM(names, oparg);
+			if (PyString_CheckExact(w)) {
+				long hash = ((PyStringObject *)w)->ob_shash;
+				if (hash != -1) {
+					/* Inline the PyDict_GetItem() calls */
+					PyDictObject *d;
+					d = (PyDictObject *)(f->f_globals);
+					x = d->ma_lookup(d, w, hash)->me_value;
+					if (x != NULL) {
+						Py_INCREF(x);
+						PUSH(x);
+						continue;
+					}
+					d = (PyDictObject *)(f->f_builtins);
+					x = d->ma_lookup(d, w, hash)->me_value;
+					if (x != NULL) {
+						Py_INCREF(x);
+						PUSH(x);
+						continue;
+					}
+					goto load_global_error;
+				}
+			}
+			/* This is the un-inlined version of the code above */
 			x = PyDict_GetItem(f->f_globals, w);
 			if (x == NULL) {
 				x = PyDict_GetItem(f->f_builtins, w);
 				if (x == NULL) {
+				  load_global_error:
 					format_exc_check_arg(
 						    PyExc_NameError,
-						    GLOBAL_NAME_ERROR_MSG ,w);
+						    GLOBAL_NAME_ERROR_MSG, w);
 					break;
 				}
 			}
