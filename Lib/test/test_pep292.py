@@ -134,6 +134,7 @@ class TestTemplate(unittest.TestCase):
 
     def test_keyword_arguments_safe(self):
         eq = self.assertEqual
+        raises = self.assertRaises
         s = Template('$who likes $what')
         eq(s.safe_substitute(who='tim', what='ham'), 'tim likes ham')
         eq(s.safe_substitute(dict(who='tim'), what='ham'), 'tim likes ham')
@@ -145,6 +146,9 @@ class TestTemplate(unittest.TestCase):
            'the mapping is bozo')
         eq(s.safe_substitute(dict(mapping='one'), mapping='two'),
            'the mapping is two')
+        d = dict(mapping='one')
+        raises(TypeError, s.substitute, d, {})
+        raises(TypeError, s.safe_substitute, d, {})
 
 
 def suite():
