@@ -929,4 +929,12 @@ funny:
 
 Python/thread.o: @THREADHEADERS@
 
+# Declare targets that aren't real files
+.PHONY: all sharedmods oldsharedmods test quicktest memtest
+.PHONY: install altinstall oldsharedinstall bininstall altbininstall
+.PHONY: maninstall libinstall inclinstall libainstall sharedinstall
+.PHONY: frameworkinstall frameworkinstallframework frameworkinstallstructure
+.PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
+.PHONY: recheck autoconf clean clobber distclean smelly funny
+
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
