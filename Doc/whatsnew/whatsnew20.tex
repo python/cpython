@@ -370,6 +370,13 @@ standard exceptions will now always be classes.  The
 translated from Python to a built-in C module, written by Barry Warsaw
 and Fredrik Lundh.
 
+% Commented out for now -- I don't think anyone will care.
+%The pattern and match objects provided by SRE are C types, not Python
+%class instances as in 1.5.  This means you can no longer inherit from
+%\class{RegexObject} or \class{MatchObject}, but that shouldn't be much
+%of a problem since no one should have been doing that in the first
+%place.
+
 % ======================================================================
 \section{Optional Collection of Cycles}
 
@@ -621,8 +628,10 @@ interfaces.
 
 The \module{Tkinter} module now supports Tcl/Tk version 8.1, 8.2, or
 8.3, and support for the older 7.x versions has been dropped.  The
-Tkinter module also supports displaying Unicode strings in Tk
-widgets.  
+Tkinter module now supports displaying Unicode strings in Tk widgets.
+Also, Fredrik Lundh contributed an optimization which make operations
+like \code{create_line} and \code{create_polygon} are much faster,
+especially when using lots of coordinates.
 
 The \module{curses} module has been greatly extended, starting from
 Oliver Andrich's enhanced version, to provide many additional
