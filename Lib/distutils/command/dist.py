@@ -274,7 +274,7 @@ class Dist (Command):
             files = []
             for file in allfiles:
                 for (include,regexp) in act_patterns:
-                    if regexp.match (file):
+                    if regexp.search (file):
                         if include:
                             files.append (file)
                         break           # continue to next file
@@ -290,7 +290,7 @@ class Dist (Command):
 
         regexp = re.compile (fnmatch.translate (pattern))
         for i in range (len (self.files)-1, -1, -1):
-            if regexp.match (self.files[i]):
+            if regexp.search (self.files[i]):
                 del self.files[i]
 
 
