@@ -1643,7 +1643,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 			w = GETITEM(names, oparg);
 			v = POP();
 			if ((x = f->f_locals) != NULL) {
-				if (PyDict_CheckExact(v))
+				if (PyDict_CheckExact(x))
 					err = PyDict_SetItem(x, w, v);
 				else
 					err = PyObject_SetItem(x, w, v);
@@ -4116,9 +4116,9 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 		    "exec: arg 2 must be a dictionary or None");
 		return -1;
 	}
-	if (!PyDict_Check(locals)) {
+	if (!PyMapping_Check(locals)) {
 		PyErr_SetString(PyExc_TypeError,
-		    "exec: arg 3 must be a dictionary or None");
+		    "exec: arg 3 must be a mapping or None");
 		return -1;
 	}
 	if (PyDict_GetItemString(globals, "__builtins__") == NULL)

@@ -269,7 +269,8 @@ Core and builtins
 - Bug #951851: Python crashed when reading import table of certain
   Windows DLLs.
 
-- Bug #215126.  The locals argument to eval() now accepts any mapping type.
+- Bug #215126.  The locals argument to eval(), execfile(), and exec now
+  accept any mapping type.
 
 - marshal now shares interned strings. This change introduces
   a new .pyc magic.

@@ -282,6 +282,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(eval('globals()', g, m), g)
         self.assertEqual(eval('locals()', g, m), m)
         self.assertRaises(TypeError, eval, 'a', m)
+        class A:
+            "Non-mapping"
+            pass
+        m = A()
+        self.assertRaises(TypeError, eval, 'a', g, m)
 
         # Verify that dict subclasses work as well
         class D(dict):
@@ -336,6 +341,26 @@ class BuiltinTest(unittest.TestCase):
         locals['z'] = 0
         execfile(TESTFN, globals, locals)
         self.assertEqual(locals['z'], 2)
+
+        class M:
+            "Test mapping interface versus possible calls from execfile()."
+            def __init__(self):
+                self.z = 10
+            def __getitem__(self, key):
+                if key == 'z':
+                    return self.z
+                raise KeyError
+            def __setitem__(self, key, value):
+                if key == 'z':
+                    self.z = value
+                    return
+                raise KeyError
+
+        locals = M()
+        locals['z'] = 0
+        execfile(TESTFN, globals, locals)
+        self.assertEqual(locals['z'], 2)
+
         unlink(TESTFN)
         self.assertRaises(TypeError, execfile)
         import os
