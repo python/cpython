@@ -227,7 +227,7 @@ target sequence, if the object allows it.
 \indexii{slicing}{assignment}
 
 \end{itemize}
-	
+        
 (In the current implementation, the syntax for targets is taken
 to be the same as for expressions, and invalid syntax is rejected
 during the code generation phase, causing less detailed error
@@ -612,3 +612,12 @@ for use by \keyword{exec}.
 \bifuncindex{eval}
 \bifuncindex{globals}
 \bifuncindex{locals}
+
+Also, in the current implementation, multi-line compound statements must
+end with a newline:
+\code{exec "for v in seq:\e{}n\e{}tprint v\e{}n"} works, but
+\code{exec "for v in seq:\e{}n\e{}tprint v"} fails with
+\exception{SyntaxError}.
+\exindex{SyntaxError}
+  
+
