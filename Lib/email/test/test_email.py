@@ -687,6 +687,22 @@ from babylon.socal-raves.org (localhost [127.0.0.1]);
 \tfor <mailman-admin@babylon.socal-raves.org>;
 \tSat, 2 Feb 2002 17:00:06 -0800 (PST)""")
 
+    def test_splitting_first_line_only_is_long(self):
+        eq = self.ndiffAssertEqual
+        hstr = """\
+from modemcable093.139-201-24.que.mc.videotron.ca ([24.201.139.93] helo=cthulhu.gerg.ca)
+\tby kronos.mems-exchange.org with esmtp (Exim 4.05)
+\tid 17k4h5-00034i-00
+\tfor test@mems-exchange.org; Wed, 28 Aug 2002 11:25:20 -0400"""
+        h = Header(hstr, maxlinelen=78, header_name='Received',
+                   continuation_ws='\t')
+        eq(h.encode(), """\
+from modemcable093.139-201-24.que.mc.videotron.ca ([24.201.139.93]
+\thelo=cthulhu.gerg.ca)
+\tby kronos.mems-exchange.org with esmtp (Exim 4.05)
+\tid 17k4h5-00034i-00
+\tfor test@mems-exchange.org; Wed, 28 Aug 2002 11:25:20 -0400""")
+
 
 
 # Test mangling of "From " lines in the body of a message
@@ -1011,7 +1027,7 @@ class TestNonConformant(TestEmailBase):
             data = fp.read()
         finally:
             fp.close()
-        p = Parser()
+        p = Parser(strict=1)
         # Note, under a future non-strict parsing mode, this would parse the
         # message into the intended message tree.
         self.assertRaises(Errors.BoundaryError, p.parsestr, data)
@@ -1044,6 +1060,23 @@ class TestNonConformant(TestEmailBase):
         g = Generator(s)
         g.flatten(msg)
         neq(s.getvalue(), 'Content-Type: foo\n\n')
+
+    def test_no_start_boundary(self):
+        eq = self.ndiffAssertEqual
+        msg = self._msgobj('msg_31.txt')
+        eq(msg.get_payload(), """\
+--BOUNDARY
+Content-Type: text/plain
+
+message 1
+
+--BOUNDARY
+Content-Type: text/plain
+
+message 2
+
+--BOUNDARY--
+""")
 
 
 
@@ -1426,6 +1459,10 @@ class TestIdempotent(TestEmailBase):
 
     def test_multipart_no_parts(self):
         msg, text = self._msgobj('msg_24.txt')
+        self._idempotent(msg, text)
+
+    def test_no_start_boundary(self):
+        msg, text = self._msgobj('msg_31.txt')
         self._idempotent(msg, text)
 
     def test_content_type(self):
