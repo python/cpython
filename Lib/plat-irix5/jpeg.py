@@ -14,22 +14,22 @@ decomp = None
 
 def compress(imgdata, width, height, bytesperpixel):
 	global comp
-	import cl, CL
-	if comp is None: comp = cl.OpenCompressor(CL.JPEG)
+	import cl
+	if comp is None: comp = cl.OpenCompressor(cl.JPEG)
 	if bytesperpixel == 1:
-		format = CL.GRAYSCALE
+		format = cl.GRAYSCALE
 	elif bytesperpixel == 4:
-		format = CL.RGBX
+		format = cl.RGBX
 	if options['forcegray']:
-		iformat = CL.GRAYSCALE
+		iformat = cl.GRAYSCALE
 	else:
-		iformat = CL.YUV
+		iformat = cl.YUV
 	# XXX How to support 'optimize'?
-	params = [CL.IMAGE_WIDTH, width, CL.IMAGE_HEIGHT, height, \
-		  CL.ORIGINAL_FORMAT, format, \
-		  CL.ORIENTATION, CL.BOTTOM_UP, \
-		  CL.QUALITY_FACTOR, options['quality'], \
-		  CL.INTERNAL_FORMAT, iformat, \
+	params = [cl.IMAGE_WIDTH, width, cl.IMAGE_HEIGHT, height, \
+		  cl.ORIGINAL_FORMAT, format, \
+		  cl.ORIENTATION, cl.BOTTOM_UP, \
+		  cl.QUALITY_FACTOR, options['quality'], \
+		  cl.INTERNAL_FORMAT, iformat, \
 		 ]
 	comp.SetParams(params)
 	jpegdata = comp.Compress(1, imgdata)
@@ -37,22 +37,22 @@ def compress(imgdata, width, height, bytesperpixel):
 
 def decompress(jpegdata):
 	global decomp
-	import cl, CL
-	if decomp is None: decomp = cl.OpenDecompressor(CL.JPEG)
+	import cl
+	if decomp is None: decomp = cl.OpenDecompressor(cl.JPEG)
 	headersize = decomp.ReadHeader(jpegdata)
-	params = [CL.IMAGE_WIDTH, 0, CL.IMAGE_HEIGHT, 0, CL.INTERNAL_FORMAT, 0]
+	params = [cl.IMAGE_WIDTH, 0, cl.IMAGE_HEIGHT, 0, cl.INTERNAL_FORMAT, 0]
 	decomp.GetParams(params)
 	width, height, format = params[1], params[3], params[5]
-	if format == CL.GRAYSCALE or options['forcegray']:
-		format = CL.GRAYSCALE
+	if format == cl.GRAYSCALE or options['forcegray']:
+		format = cl.GRAYSCALE
 		bytesperpixel = 1
 	else:
-		format = CL.RGBX
+		format = cl.RGBX
 		bytesperpixel = 4
 	# XXX How to support 'smooth'?
-	params = [CL.ORIGINAL_FORMAT, format, \
-		  CL.ORIENTATION, CL.BOTTOM_UP, \
-		  CL.FRAME_BUFFER_SIZE, width*height*bytesperpixel]
+	params = [cl.ORIGINAL_FORMAT, format, \
+		  cl.ORIENTATION, cl.BOTTOM_UP, \
+		  cl.FRAME_BUFFER_SIZE, width*height*bytesperpixel]
 	decomp.SetParams(params)
 	imgdata = decomp.Decompress(1, jpegdata)
 	return imgdata, width, height, bytesperpixel

@@ -135,10 +135,6 @@
 
 import struct
 import __builtin__
-try:
-	import CL
-except ImportError:
-	pass
 
 Error = 'aifc.Error'
 
@@ -378,13 +374,14 @@ class Aifc_read:
 		if not self._comm_chunk_read or not self._ssnd_chunk:
 			raise Error, 'COMM chunk and/or SSND chunk missing'
 		if self._aifc and self._decomp:
-			params = [CL.ORIGINAL_FORMAT, 0,
-				  CL.BITS_PER_COMPONENT, self._sampwidth * 8,
-				  CL.FRAME_RATE, self._framerate]
+			import cl
+			params = [cl.ORIGINAL_FORMAT, 0,
+				  cl.BITS_PER_COMPONENT, self._sampwidth * 8,
+				  cl.FRAME_RATE, self._framerate]
 			if self._nchannels == 1:
-				params[1] = CL.MONO
+				params[1] = cl.MONO
 			elif self._nchannels == 2:
-				params[1] = CL.STEREO_INTERLEAVED
+				params[1] = cl.STEREO_INTERLEAVED
 			else:
 				raise Error, 'cannot compress more than 2 channels'
 			self._decomp.SetParams(params)
@@ -483,7 +480,8 @@ class Aifc_read:
 ## 	if 0: access *: private
 
 	def _decomp_data(self, data):
-		dummy = self._decomp.SetParam(CL.FRAME_BUFFER_SIZE,
+		import cl
+		dummy = self._decomp.SetParam(cl.FRAME_BUFFER_SIZE,
 					      len(data) * 2)
 		return self._decomp.Decompress(len(data) / self._nchannels,
 					       data)
@@ -537,7 +535,7 @@ class Aifc_read:
 						return
 				# for ULAW and ALAW try Compression Library
 				try:
-					import cl, CL
+					import cl
 				except ImportError:
 					if self._comptype == 'ULAW':
 						try:
@@ -549,10 +547,10 @@ class Aifc_read:
 							pass
 					raise Error, 'cannot read compressed AIFF-C files'
 				if self._comptype == 'ULAW':
-					scheme = CL.G711_ULAW
+					scheme = cl.G711_ULAW
 					self._framesize = self._framesize / 2
 				elif self._comptype == 'ALAW':
-					scheme = CL.G711_ALAW
+					scheme = cl.G711_ALAW
 					self._framesize = self._framesize / 2
 				else:
 					raise Error, 'unsupported compression type'
@@ -810,8 +808,9 @@ class Aifc_write:
 ## 	if 0: access *: private
 
 	def _comp_data(self, data):
-		dum = self._comp.SetParam(CL.FRAME_BUFFER_SIZE, len(data))
-		dum = self._comp.SetParam(CL.COMPRESSED_BUFFER_SIZE, len(data))
+		import cl
+		dum = self._comp.SetParam(cl.FRAME_BUFFER_SIZE, len(data))
+		dum = self._comp.SetParam(cl.COMPRESSED_BUFFER_SIZE, len(data))
 		return self._comp.Compress(nframes, data)
 
 	def _lin2ulaw(self, data):
@@ -852,7 +851,7 @@ class Aifc_write:
 			self._convert = self._lin2adpcm
 			return
 		try:
-			import cl, CL
+			import cl
 		except ImportError:
 			if self._comptype == 'ULAW':
 				try:
@@ -863,21 +862,21 @@ class Aifc_write:
 					pass
 			raise Error, 'cannot write compressed AIFF-C files'
 		if self._comptype == 'ULAW':
-			scheme = CL.G711_ULAW
+			scheme = cl.G711_ULAW
 		elif self._comptype == 'ALAW':
-			scheme = CL.G711_ALAW
+			scheme = cl.G711_ALAW
 		else:
 			raise Error, 'unsupported compression type'
 		self._comp = cl.OpenCompressor(scheme)
-		params = [CL.ORIGINAL_FORMAT, 0,
-			  CL.BITS_PER_COMPONENT, self._sampwidth * 8,
-			  CL.FRAME_RATE, self._framerate,
-			  CL.FRAME_BUFFER_SIZE, 100,
-			  CL.COMPRESSED_BUFFER_SIZE, 100]
+		params = [cl.ORIGINAL_FORMAT, 0,
+			  cl.BITS_PER_COMPONENT, self._sampwidth * 8,
+			  cl.FRAME_RATE, self._framerate,
+			  cl.FRAME_BUFFER_SIZE, 100,
+			  cl.COMPRESSED_BUFFER_SIZE, 100]
 		if self._nchannels == 1:
-			params[1] = CL.MONO
+			params[1] = cl.MONO
 		elif self._nchannels == 2:
-			params[1] = CL.STEREO_INTERLEAVED
+			params[1] = cl.STEREO_INTERLEAVED
 		else:
 			raise Error, 'cannot compress more than 2 channels'
 		self._comp.SetParams(params)
