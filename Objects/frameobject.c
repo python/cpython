@@ -222,13 +222,11 @@ PyFrame_New(tstate, code, globals, locals)
 	f->f_locals = locals;
 	f->f_trace = NULL;
 	f->f_exc_type = f->f_exc_value = f->f_exc_traceback = NULL;
-	f->f_tstate = PyThreadState_Get();
-	if (f->f_tstate == NULL)
-		Py_FatalError("can't create new frame without thread");
+	f->f_tstate = tstate;
 
 	f->f_lasti = 0;
 	f->f_lineno = code->co_firstlineno;
-	f->f_restricted = (builtins != PyBuiltin_GetDict());
+	f->f_restricted = (builtins != tstate->interp->builtins);
 	f->f_iblock = 0;
 	f->f_nlocals = code->co_nlocals;
 	f->f_stacksize = extras - code->co_nlocals;
