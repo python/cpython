@@ -99,7 +99,7 @@ def checkit(source, opts, morecmds=[]):
     delimiters = re.compile(r'\\(begin|end){([_a-zA-Z]+)}|([()\[\]])')
     braces = re.compile(r'({)|(})')
     doubledwords = re.compile(r'(\b[A-za-z]+\b) \b\1\b')
-    nullmarkup = re.compile(r'\NULL(?!\{\})')
+    spacingmarkup = re.compile(r'\\(ABC|ASCII|C|Cpp|EOF|infinity|NULL|plusminus|POSIX|UNIX)\s')
 
     openers = []                            # Stack of pending open delimiters
     bracestack = []                         # Stack of pending open braces
@@ -152,9 +152,9 @@ def checkit(source, opts, morecmds=[]):
             if '\\' + cmd in validcmds:
                 print 'Warning, forward slash used on line %d with cmd: /%s' % (lineno, cmd)
 
-        # Check for bad markup
-        if nullmarkup.search(line):
-            print r'Warning, \NULL should be written as \NULL{} on line %d' % (lineno,)
+        # Check for markup requiring {} for correct spacing
+        for cmd in spacingmarkup.findall(line):
+            print r'Warning, \%s should be written as \%s{} on line %d' % (cmd, cmd, lineno)
 
         # Validate commands
         nc = line.find(r'\newcommand')
