@@ -13,13 +13,13 @@ sys.stdin or call os.popen().
 Then pass the open file object to the Message() constructor:
   m = Message(fp)
 
-This class can work with any input object that supports read and seek
-methods.  The initialization method which parses the message will work
-even without seek capability, but in that case the final seek to the
-start of the delimiter line won't take place.  However, if the input
-object has an `unread' method that can push back a line of input,
-Message will use that to push back the delimiter line.   Thus this class
-can be used to parse messages coming from a buffered stream.
+This class can work with any input object that supports a readline
+method.  If the input object has seek and tell capability, the
+rewindbody method will work; also illegal lines will be pushed back
+onto the input stream.  If the input object lacks seek but has an
+`unread' method that can push back a line of input, Message will use
+that to push back illegal lines.  Thus this class can be used to parse
+messages coming from a buffered stream.
 
 The optional `seekable' argument is provided as a workaround for
 certain stdio libraries in which tell() discards buffered data before
@@ -134,29 +134,30 @@ class Message:
                 self.unixfrom = self.unixfrom + line
                 continue
             firstline = 0
-            if self.islast(line):
-                break
-            elif headerseen and line[0] in ' \t':
+            if headerseen and line[0] in ' \t':
                 # It's a continuation line.
                 list.append(line)
-                x = (self.dict[headerseen] + "\n " +
-                string.strip(line))
+                x = (self.dict[headerseen] + "\n " + string.strip(line))
                 self.dict[headerseen] = string.strip(x)
-            elif ':' in line:
-                # It's a header line.
-                list.append(line)
-                i = string.find(line, ':')
-                headerseen = string.lower(line[:i])
-                self.dict[headerseen] = string.strip(
-                line[i+1:])
+                continue
             elif self.iscomment(line):
-                pass
+                # It's a comment.  Ignore it.
+                continue
+            elif self.islast(line):
+                # Note! No pushback here!  The delimiter line gets eaten.
+                break
+            headerseen = self.isheader(line)
+            if headerseen:
+                # It's a legal header line, save it.
+                list.append(line)
+                self.dict[headerseen] = string.strip(line[len(headerseen)+2:])
+                continue
             else:
-                # It's not a header line; stop here.
-                if not headerseen:
+                # It's not a header line; throw it back and stop here.
+                if not self.dict:
                     self.status = 'No headers'
                 else:
-                    self.status = 'Bad header'
+                    self.status = 'Non-header line where header expected'
                 # Try to undo the read.
                 if getattr(self.fp, 'unread'):
                     self.fp.unread(line)
@@ -165,6 +166,19 @@ class Message:
                 else:
                     self.status = self.status + '; bad seek'
                 break
+
+    def isheader(self, line):
+        """Determine whether a given line is a legal header.
+
+        This method should return the header name, suitably canonicalized.
+        You may override this method in order to use Message parsing
+        on tagged data in RFC822-like formats with special header formats.
+        """
+        i = string.find(line, ':')
+        if i > 0:
+            return string.lower(line[:i])
+        else:
+            return None
     
     def islast(self, line):
         """Determine whether a line is a legal end of RFC-822 headers.
@@ -323,6 +337,15 @@ class Message:
     def __getitem__(self, name):
         """Get a specific header, as from a dictionary."""
         return self.dict[string.lower(name)]
+
+    def __setitem__(self, name, value):
+        """Set the value of a header."""
+        del self[name] # Won't fail if it doesn't exist
+        self.dict[string.lower(name)] = value
+        text = name + ": " + value
+        lines = string.split(text, "\n")
+        for line in lines:
+            self.headers.append(line + "\n")
     
     def __delitem__(self, name):
         """Delete all occurrences of a specific header, if it is present."""
@@ -646,7 +669,8 @@ class AddrlistClass:
         """Parse a sequence of RFC-822 phrases.
         
         A phrase is a sequence of words, which are in turn either
-        RFC-822 atoms or quoted-strings.
+        RFC-822 atoms or quoted-strings.  Phrases are canonicalized
+        by squeezing all runs of continuous whitespace into one space.
         """
         plist = []
         
