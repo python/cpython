@@ -320,7 +320,7 @@ def add_ui(db):
       end if
       if (ext_new=2 or tcl_new=2) and regtcl_old<>2 then
          Session.ComponentRequestState("REGISTRY.tcl")=2
-      end if      
+      end if
     End Function
     """)
     # To add debug messages into scripts, the following fragment can be used
@@ -329,7 +329,7 @@ def add_ui(db):
     #     Session.message &H04000000, objRec
     add_data(db, "Binary", [("Script", msilib.Binary("inst.vbs"))])
     # See "Custom Action Type 6"
-    add_data(db, "CustomAction", 
+    add_data(db, "CustomAction",
         [("CheckDir", 6, "Script", "CheckDir"),
         ("UpdateEditIDLE", 6, "Script", "UpdateEditIDLE")])
     os.unlink("inst.vbs")

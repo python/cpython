@@ -97,24 +97,24 @@ class bdist_rpm (Command):
          "RPM 2 compatibility mode"),
 
         # Add the hooks necessary for specifying custom scripts
-        ('prep-script=', None, 
+        ('prep-script=', None,
          "Specify a script for the PREP phase of RPM building"),
-        ('build-script=', None, 
+        ('build-script=', None,
          "Specify a script for the BUILD phase of RPM building"),
 
-        ('pre-install=', None, 
+        ('pre-install=', None,
          "Specify a script for the pre-INSTALL phase of RPM building"),
-        ('install-script=', None, 
+        ('install-script=', None,
          "Specify a script for the INSTALL phase of RPM building"),
-        ('post-install=', None, 
+        ('post-install=', None,
          "Specify a script for the post-INSTALL phase of RPM building"),
 
-        ('pre-uninstall=', None, 
+        ('pre-uninstall=', None,
          "Specify a script for the pre-UNINSTALL phase of RPM building"),
-        ('post-uninstall=', None, 
+        ('post-uninstall=', None,
          "Specify a script for the post-UNINSTALL phase of RPM building"),
 
-        ('clean-script=', None, 
+        ('clean-script=', None,
          "Specify a script for the CLEAN phase of RPM building"),
 
         ('verify-script=', None,

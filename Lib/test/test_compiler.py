@@ -50,9 +50,9 @@ class CompilerTest(unittest.TestCase):
 
     def _check_lineno(self, node):
         if not node.__class__ in NOLINENO:
-            self.assert_(isinstance(node.lineno, int), 
+            self.assert_(isinstance(node.lineno, int),
                 "lineno=%s on %s" % (node.lineno, node.__class__))
-            self.assert_(node.lineno > 0, 
+            self.assert_(node.lineno > 0,
                 "lineno=%s on %s" % (node.lineno, node.__class__))
         for child in node.getChildNodes():
             self.check_lineno(child)
@@ -84,12 +84,12 @@ except:
     yo = 3
 else:
     yo += 3
-    
+
 try:
     a += b
 finally:
     b = 0
-    
+
 ###############################################################################
 
 def test_main():

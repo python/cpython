@@ -79,7 +79,7 @@ def extractLineNo(ast):
             lineno = extractLineNo(child)
             if lineno is not None:
                 return lineno
-        
+
 def Node(*args):
     kind = args[0]
     if nodes.has_key(kind):
@@ -127,7 +127,7 @@ class Transformer:
     def parsesuite(self, text):
         """Return a modified parse tree for the given suite text."""
         return self.transform(parser.suite(text))
-        
+
     def parseexpr(self, text):
         """Return a modified parse tree for the given expression text."""
         return self.transform(parser.expr(text))
@@ -426,7 +426,7 @@ class Transformer:
 
     def import_name(self, nodelist):
         # import_name: 'import' dotted_as_names
-        return Import(self.com_dotted_as_names(nodelist[1]), 
+        return Import(self.com_dotted_as_names(nodelist[1]),
                       lineno=nodelist[0][2])
 
     def import_from(self, nodelist):
@@ -514,7 +514,7 @@ class Transformer:
         else:
             elseNode = None
 
-        return For(assignNode, listNode, bodyNode, elseNode, 
+        return For(assignNode, listNode, bodyNode, elseNode,
                    lineno=nodelist[0][2])
 
     def try_stmt(self, nodelist):
@@ -887,7 +887,7 @@ class Transformer:
     def com_try_finally(self, nodelist):
         # try_fin_stmt: "try" ":" suite "finally" ":" suite
         return TryFinally(self.com_node(nodelist[2]),
-                       self.com_node(nodelist[5]), 
+                       self.com_node(nodelist[5]),
                        lineno=nodelist[0][2])
 
     def com_try_except(self, nodelist):
@@ -1226,7 +1226,7 @@ class Transformer:
         subscripts = []
         for i in range(1, len(nodelist), 2):
             subscripts.append(self.com_subscript(nodelist[i]))
-        return Subscript(primary, assigning, subscripts, 
+        return Subscript(primary, assigning, subscripts,
                          lineno=extractLineNo(nodelist))
 
     def com_subscript(self, node):

@@ -104,7 +104,7 @@ class ReTests(unittest.TestCase):
 
         self.assertEqual(re.sub('x', r'\400', 'x'), '\0')
         self.assertEqual(re.sub('x', r'\777', 'x'), '\377')
-        
+
         self.assertRaises(re.error, re.sub, 'x', r'\1', 'x')
         self.assertRaises(re.error, re.sub, 'x', r'\8', 'x')
         self.assertRaises(re.error, re.sub, 'x', r'\9', 'x')
