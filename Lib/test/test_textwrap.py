@@ -1,3 +1,13 @@
+#
+# Test script for the textwrap module.
+#
+# Original tests written by Greg Ward <gward@python.net>.
+# Converted to PyUnit by Peter Hansen <peter@engcorp.com>.
+# Currently maintained by Greg Ward.
+#
+# $Id$
+#
+
 import unittest
 from test import test_support
 
@@ -24,25 +34,16 @@ class WrapperTestCase(unittest.TestCase):
                 self.show(result), self.show(expect)))
 
 
-
-# Note: a new TestCase instance is created before running each
-# test method.
 class WrapTestCase(WrapperTestCase):
 
-    # called before each test method
     def setUp(self):
         self.wrapper = TextWrapper(width=45, fix_sentence_endings=True)
-
-
-    # Note: any methods that start with "test" are called automatically
-    # by the unittest framework.
 
     def test_simple(self):
         '''Simple case: just words, spaces, and a bit of punctuation.'''
 
         t = "Hello there, how are you this fine day?  I'm glad to hear it!"
 
-        # bizarre formatting intended to increase maintainability
         subcases = [
             ( (t, 12), [
                 "Hello there,",
@@ -77,7 +78,6 @@ Some lines are \ttabbed too.
 What a mess!
 """
 
-        # bizarre formatting intended to increase maintainability
         expect = [
                 "This is a paragraph that already has line",
                 "breaks.  But some of its lines are much",
@@ -98,7 +98,6 @@ What a mess!
 
         t = "This is a\nshort paragraph."
 
-        # bizarre formatting intended to increase maintainability
         subcases = [
             ( (t, 20), [
                 "This is a short",
@@ -158,7 +157,6 @@ What a mess!
 Did you say "supercalifragilisticexpialidocious?"
 How *do* you spell that odd word, anyways?
 '''
-        # bizarre formatting intended to increase maintainability
         subcases = [
             ( (t, 30), [
                 'Did you say "supercalifragilis',
