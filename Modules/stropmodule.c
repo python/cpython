@@ -169,52 +169,73 @@ strop_joinfields(self, args)
 	PyObject *args;
 {
 	PyObject *seq, *item, *res;
-	char *sep, *p;
-	int seplen, seqlen, reslen, itemlen, i;
+	char *p, *sep = NULL;
+	int seqlen, reslen, itemlen, i, seplen = 0;
+	int ownrefs = 0;
+	PyObject* (*getitemfunc) Py_PROTO((PyObject*, int));
 
-	sep = NULL;
-	seplen = 0;
 	if (!PyArg_ParseTuple(args, "O|s#", &seq, &sep, &seplen))
 		return NULL;
 	if (sep == NULL) {
 		sep = " ";
 		seplen = 1;
 	}
-	if (!PySequence_Check(seq)) {
+	/* do it this way to optimize for the common cases, but also
+	 * support the more general sequence protocol
+	 */
+	if (PyList_Check(seq)) {
+		getitemfunc = PyList_GetItem;
+		seqlen = PyList_Size(seq);
+	}
+	else if (PyTuple_Check(seq)) {
+		getitemfunc = PyTuple_GetItem;
+		seqlen = PyTuple_Size(seq);
+	}
+	else if (PySequence_Check(seq)) {
+		getitemfunc = PySequence_GetItem;
+		seqlen = PySequence_Length(seq);
+		ownrefs = 1;
+	}
+	else {
 		PyErr_SetString(PyExc_TypeError,
 				"first argument must be a sequence");
 		return NULL;
 	}
-	seqlen = PySequence_Length(seq);
 	if (seqlen < 0 && PyErr_Occurred())
 		return NULL;
 
 	reslen = 0;
 	for (i = 0; i < seqlen; i++) {
-		if (!(item = PySequence_GetItem(seq, i)))
+		if (!(item = getitemfunc(seq, i)))
 			return NULL;
 
 		if (!PyString_Check(item)) {
 			PyErr_SetString(PyExc_TypeError,
 				 "first argument must be sequence of strings");
-			Py_DECREF(item);
+			if (ownrefs)
+				Py_DECREF(item);
 			return NULL;
 		}
 		if (i > 0)
 			reslen += seplen;
 		reslen += PyString_Size(item);
-		Py_DECREF(item);
+		if (ownrefs)
+			Py_DECREF(item);
 	}
-	if (seqlen == 1)
+	if (seqlen == 1) {
 		/* Optimization if there's only one item */
-		return PySequence_GetItem(seq, 0);
+		item = getitemfunc(seq, 0);
+		if (!ownrefs)
+			Py_XINCREF(item);
+		return item;
+	}
 
 	res = PyString_FromStringAndSize((char *)NULL, reslen);
 	if (res == NULL)
 		return NULL;
 	p = PyString_AsString(res);
 	for (i = 0; i < seqlen; i++) {
-		if (!(item = PySequence_GetItem(seq, i))) {
+		if (!(item = getitemfunc(seq, i))) {
 			Py_DECREF(res);
 			return NULL;
 		}
@@ -225,7 +246,8 @@ strop_joinfields(self, args)
 		itemlen = PyString_Size(item);
 		memcpy(p, PyString_AsString(item), itemlen);
 		p += itemlen;
-		Py_DECREF(item);
+		if (ownrefs)
+			Py_DECREF(item);
 	}
 	if (p != PyString_AsString(res) + reslen) {
 		PyErr_SetString(PyExc_SystemError,
@@ -356,11 +378,9 @@ strop_rstrip(self, args)
 
 
 static PyObject *
-do_casechange(self, args, test, conv)
+strop_lower(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
-	int (*test) Py_PROTO((int));
-	int (*conv) Py_PROTO((int));
 {
 	char *s, *s_new;
 	int i, n;
@@ -376,9 +396,9 @@ do_casechange(self, args, test, conv)
 	changed = 0;
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
-		if (test(c)) {
+		if (isupper(c)) {
 			changed = 1;
-			*s_new = conv(c);
+			*s_new = tolower(c);
 		} else
 			*s_new = c;
 		s_new++;
@@ -391,21 +411,39 @@ do_casechange(self, args, test, conv)
 	return new;
 }
 
-static PyObject *
-strop_lower(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
-{
-	return do_casechange(self, args, isupper, tolower);
-}
-
 
 static PyObject *
 strop_upper(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
-	return do_casechange(self, args, islower, toupper);
+	char *s, *s_new;
+	int i, n;
+	PyObject *new;
+	int changed;
+
+	if (!PyArg_Parse(args, "s#", &s, &n))
+		return NULL;
+	new = PyString_FromStringAndSize(NULL, n);
+	if (new == NULL)
+		return NULL;
+	s_new = PyString_AsString(new);
+	changed = 0;
+	for (i = 0; i < n; i++) {
+		int c = Py_CHARMASK(*s++);
+		if (islower(c)) {
+			changed = 1;
+			*s_new = toupper(c);
+		} else
+			*s_new = c;
+		s_new++;
+	}
+	if (!changed) {
+		Py_DECREF(new);
+		Py_INCREF(args);
+		return args;
+	}
+	return new;
 }
 
 
