@@ -1276,17 +1276,9 @@ PySequence_List(PyObject *v)
 	for (i = 0; ; i++) {
 		PyObject *item = PyIter_Next(it);
 		if (item == NULL) {
-			/* We're out of here in any case, but if this is a
-			 * StopIteration exception it's expected, but if
-			 * any other kind of exception it's an error.
-			 */
 			if (PyErr_Occurred()) {
-				if (PyErr_ExceptionMatches(PyExc_StopIteration))
-					PyErr_Clear();
-				else {
-					Py_DECREF(result);
-					result = NULL;
-				}
+				Py_DECREF(result);
+				result = NULL;
 			}
 			break;
 		}
@@ -1796,14 +1788,27 @@ PyObject_GetIter(PyObject *o)
 	}
 }
 
+/* Return next item.
+ * If an error occurs, return NULL.  PyErr_Occurred() will be true.
+ * If the iteration terminates normally, return NULL and clear the
+ * PyExc_StopIteration exception (if it was set).  PyErr_Occurred()
+ * will be false.
+ * Else return the next object.  PyErr_Occurred() will be false.
+ */
 PyObject *
 PyIter_Next(PyObject *iter)
 {
+	PyObject *result;
 	if (!PyIter_Check(iter)) {
 		PyErr_Format(PyExc_TypeError,
 			     "'%.100s' object is not an iterator",
 			     iter->ob_type->tp_name);
 		return NULL;
 	}
-	return (*iter->ob_type->tp_iternext)(iter);
+	result = (*iter->ob_type->tp_iternext)(iter);
+	if (result == NULL &&
+	    PyErr_Occurred() &&
+	    PyErr_ExceptionMatches(PyExc_StopIteration))
+		PyErr_Clear();
+	return result;
 }

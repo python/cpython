@@ -1894,11 +1894,9 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				PUSH(x);
 				continue;
 			}
-			if (!PyErr_Occurred() ||
-			    PyErr_ExceptionMatches(
-				    PyExc_StopIteration))
-			{
-				x = v = POP();
+			if (!PyErr_Occurred()) {
+				/* iterator ended normally */
+ 				x = v = POP();
 				Py_DECREF(v);
 				JUMPBY(oparg);
 				continue;
