@@ -1029,11 +1029,7 @@ class SearchEngine:
 			from Carbon import Res
 			editor.textchanged()
 			editor.selectionchanged()
-			editor.ted.WEUseText(Res.Resource(Text))
-			editor.ted.WECalText()
-			editor.SetPort()
-			editor.GetWindow().InvalWindowRect(editor._bounds)
-			#editor.ted.WEUpdate(self.w.wid.GetWindowPort().visRgn)
+			editor.set(Text)
 			EasyDialogs.Message("Replaced %d occurrences" % counter)
 	
 	def dont(self):
