@@ -17,6 +17,7 @@ import sys, os, string, re
 from types import *
 from distutils.core import Command
 from distutils.errors import DistutilsExecError
+from distutils.sysconfig import customize_compiler
 from distutils import log
 
 LANG_EXT = {'c': '.c',
@@ -104,6 +105,7 @@ class config (Command):
         if not isinstance(self.compiler, CCompiler):
             self.compiler = new_compiler(compiler=self.compiler,
                                          dry_run=self.dry_run, force=1)
+            customize_compiler(self.compiler)
             if self.include_dirs:
                 self.compiler.set_include_dirs(self.include_dirs)
             if self.libraries:
