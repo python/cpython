@@ -515,6 +515,10 @@ instance_dealloc(register PyInstanceObject *inst)
 #ifdef Py_REF_DEBUG
 	extern long _Py_RefTotal;
 #endif
+
+	if (!PyObject_ClearWeakRefs((PyObject *) inst))
+		return;
+
 	/* Temporarily resurrect the object. */
 #ifdef Py_TRACE_REFS
 #ifndef Py_REF_DEBUG
@@ -1771,6 +1775,7 @@ PyTypeObject PyInstance_Type = {
 	(traverseproc)instance_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
 	instance_richcompare,			/* tp_richcompare */
+ 	offsetof(PyInstanceObject, in_weakreflist) /* tp_weaklistoffset */
 };
 
 

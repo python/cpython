@@ -246,8 +246,8 @@ typedef struct _typeobject {
 	/* rich comparisons */
 	richcmpfunc tp_richcompare;
 
-	/* More spares */
-	long tp_xxx8;
+	/* weak reference enabler */
+	long tp_weaklistoffset;
 
 #ifdef COUNT_ALLOCS
 	/* these must be last */
@@ -283,6 +283,8 @@ extern DL_IMPORT(int) PyObject_Not(PyObject *);
 extern DL_IMPORT(int) PyCallable_Check(PyObject *);
 extern DL_IMPORT(int) PyNumber_Coerce(PyObject **, PyObject **);
 extern DL_IMPORT(int) PyNumber_CoerceEx(PyObject **, PyObject **);
+
+extern DL_IMPORT(int) (*PyObject_ClearWeakRefs)(PyObject *);
 
 /* Helpers for printing recursive container types */
 extern DL_IMPORT(int) Py_ReprEnter(PyObject *);
@@ -418,7 +420,7 @@ extern DL_IMPORT(long) _Py_RefTotal;
 
 #define Py_INCREF(op) (_Py_RefTotal++, (op)->ob_refcnt++)
 #define Py_DECREF(op) \
-	if (--_Py_RefTotal, --(op)->ob_refcnt != 0) \
+	if (--_Py_RefTotal, (--((op)->ob_refcnt) != 0)) \
 		; \
 	else \
 		_Py_Dealloc((PyObject *)(op))
