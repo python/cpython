@@ -780,7 +780,7 @@ docompare(PyObject *x, PyObject *y, PyObject *compare)
 	Py_INCREF(y);
 	PyTuple_SET_ITEM(args, 0, x);
 	PyTuple_SET_ITEM(args, 1, y);
-	res = PyEval_CallObject(compare, args);
+	res = PyObject_Call(compare, args, NULL);
 	Py_DECREF(args);
 	if (res == NULL)
 		return CMPERROR;
