@@ -149,6 +149,8 @@ Py_Initialize()
 	/* Init Unicode implementation; relies on the codec registry */
 	_PyUnicode_Init();
 
+	_PyCompareState_Key = PyString_InternFromString("cmp_state");
+
 	bimod = _PyBuiltin_Init_1();
 	if (bimod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize __builtin__");

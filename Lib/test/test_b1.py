@@ -63,6 +63,15 @@ print 'cmp'
 if cmp(-1, 1) <> -1: raise TestFailed, 'cmp(-1, 1)'
 if cmp(1, -1) <> 1: raise TestFailed, 'cmp(1, -1)'
 if cmp(1, 1) <> 0: raise TestFailed, 'cmp(1, 1)'
+# verify that circular objects are handled
+a = []; a.append(a)
+b = []; b.append(b)
+from UserList import UserList
+c = UserList(); c.append(c)
+if cmp(a, b) != 0: raise TestFailed, "cmp(%s, %s)" % (a, b)
+if cmp(b, c) != 0: raise TestFailed, "cmp(%s, %s)" % (b, c)
+if cmp(c, a) != 0: raise TestFailed, "cmp(%s, %s)" % (c, a)
+if cmp(a, c) != 0: raise TestFailed, "cmp(%s, %s)" % (a, c)
 
 print 'coerce'
 if fcmp(coerce(1, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1, 1.1)'
