@@ -742,7 +742,7 @@ sub do_env_productionlist{
     $DefinedGrammars{$lang} .= $_;
     return ("<dl><dd class=\"grammar\">\n"
             . "<div class=\"productions\">\n"
-            . "<table cellpadding=\"2\" valign=\"baseline\">\n"
+            . "<table cellpadding=\"2\">\n"
             . translate_commands(translate_environments($_))
             . "</table>\n"
             . "</div>\n"
@@ -761,7 +761,7 @@ sub do_cmd_production{
     my $lang = $CURRENT_GRAMMAR;
     local($CURRENT_TOKEN) = $token;
     if ($lang eq '*') {
-        return ("<tr>\n"
+        return ("<tr valign=\"baseline\">\n"
                 . "    <td><code>$token</code></td>\n"
                 . "    <td>&nbsp;::=&nbsp;</td>\n"
                 . "    <td><code>"
@@ -777,7 +777,7 @@ sub do_cmd_production{
         $target = "$CURRENT_FILE\#tok-$lang-$token";
     }
     $TokenToTargetMapping{"$CURRENT_GRAMMAR:$token"} = $target;
-    return ("<tr>\n"
+    return ("<tr valign=\"baseline\">\n"
             . "    <td><code><a name=\"tok-$token\">$token</a></code></td>\n"
             . "    <td>&nbsp;::=&nbsp;</td>\n"
             . "    <td><code>"
