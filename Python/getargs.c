@@ -411,7 +411,7 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 			      "byte-sized integer bitfield is less than minimum");
 				return "integer<B>";
 			}
-			else if (ival > UCHAR_MAX) {
+			else if (ival > (int)UCHAR_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
 			      "byte-sized integer bitfield is greater than maximum");
 				return "integer<B>";
