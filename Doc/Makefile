@@ -141,7 +141,7 @@ lib.ps:	lib.dvi
 	$(DVIPS) lib >lib.ps
 
 # Extensions document
-ext.dvi: ext.tex 
+ext.dvi: ext.tex extref.tex
 	touch ext.ind
 	$(LATEX) ext
 	./fix_hack ext.idx
@@ -201,17 +201,17 @@ libwww: lib.texi
 
 l2h: l2htut l2href l2hext
 
-l2htut: tut
+l2htut: tut.dvi
 	$(L2H) $(L2HARGS) tut.tex
 	@rm -rf python-tut
 	mv tut python-tut
 
-l2href: ref
+l2href: ref.dvi
 	$(L2H) $(L2HARGS) ref.tex
 	@rm -rf python-ref
 	mv ref python-ref
 
-l2hext: ext
+l2hext: ext.dvi
 	$(L2H) $(L2HARGS) ext.tex
 	@rm -rf python-ext
 	mv ext python-ext
@@ -219,7 +219,7 @@ l2hext: ext
 # This target doesn't quite work, since l2h doesn't understand the
 # funcdesc and similar environments, and turns them into GIF images.
 # Use the "libwww" target above instead.
-l2hlib: lib
+l2hlib: lib.dvi
 	$(L2H) $(L2HARGS) lib.tex
 	@rm -rf python-lib
 	mv lib python-lib
