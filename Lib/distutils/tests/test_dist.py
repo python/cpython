@@ -175,7 +175,7 @@ class MetadataTestCase(unittest.TestCase):
                           {"name": "package",
                            "version": "1.0",
                            "obsoletes": ["my.pkg (splat)"]})
- 
+
     def format_metadata(self, dist):
         sio = StringIO.StringIO()
         dist.metadata.write_pkg_file(sio)

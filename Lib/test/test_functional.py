@@ -139,7 +139,7 @@ class TestPartial(unittest.TestCase):
         self.assertEqual(join(data), '0123456789')
         join = self.thetype(''.join)
         self.assertEqual(join(data), '0123456789')
-    
+
 class PartialSubclass(functional.partial):
     pass
 
