@@ -39,17 +39,7 @@ PERFORMANCE OF THIS SOFTWARE.
    - a malloc'ed string ending in \n normally
 */
 
-#define Py_USE_NEW_NAMES 1
-
-#include "config.h"
-
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-
-#include "myproto.h"
-#include "mymalloc.h"
-#include "intrcheck.h"
+#include "Python.h"
 
 int (*PyOS_InputHook)() = NULL;
 
@@ -153,5 +143,7 @@ PyOS_Readline(prompt)
 	if (PyOS_ReadlineFunctionPointer == NULL) {
 			PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
 	}
+	Py_BEGIN_ALLOW_THREADS
 	return (*PyOS_ReadlineFunctionPointer)(prompt);
+	Py_END_ALLOW_THREADS
 }
