@@ -297,6 +297,9 @@ from inspect import isfunction as _isfunction
 from inspect import ismodule   as _ismodule
 from inspect import classify_class_attrs as _classify_class_attrs
 
+# Option constants.
+DONT_ACCEPT_TRUE_FOR_1 = 1 << 0
+
 # Extract interactive examples from a string.  Return a list of triples,
 # (source, outcome, lineno).  "source" is the source code, and ends
 # with a newline iff the source spans more than one line.  "outcome" is
@@ -414,7 +417,7 @@ def _tag_out(printer, *tag_msg_pairs):
 # that captures the examples' std output.  Return (#failures, #tries).
 
 def _run_examples_inner(out, fakeout, examples, globs, verbose, name,
-                        compileflags):
+                        compileflags, optionflags):
     import sys, traceback
     OK, BOOM, FAIL = range(3)
     NADA = "nothing"
@@ -449,7 +452,11 @@ def _run_examples_inner(out, fakeout, examples, globs, verbose, name,
                 state = BOOM
 
         if state == OK:
-            if got == want:
+            if (got == want or
+                (not (optionflags & DONT_ACCEPT_TRUE_FOR_1) and
+                 (got, want) in (("True\n", "1\n"), ("False\n", "0\n"))
+                )
+               ):
                 if verbose:
                     out("ok\n")
                 continue
@@ -482,14 +489,16 @@ def _extract_future_flags(globs):
 # Run list of examples, in a shallow copy of context (dict) globs.
 # Return (#failures, #tries).
 
-def _run_examples(examples, globs, verbose, name, compileflags):
+def _run_examples(examples, globs, verbose, name, compileflags,
+                  optionflags):
     import sys
     saveout = sys.stdout
     globs = globs.copy()
     try:
         sys.stdout = fakeout = _SpoofOut()
         x = _run_examples_inner(saveout.write, fakeout, examples,
-                                globs, verbose, name, compileflags)
+                                globs, verbose, name, compileflags,
+                                optionflags)
     finally:
         sys.stdout = saveout
         # While Python gc can clean up most cycles on its own, it doesn't
@@ -504,7 +513,7 @@ def _run_examples(examples, globs, verbose, name, compileflags):
     return x
 
 def run_docstring_examples(f, globs, verbose=0, name="NoName",
-                           compileflags=None):
+                           compileflags=None, optionflags=0):
     """f, globs, verbose=0, name="NoName" -> run examples from f.__doc__.
 
     Use (a shallow copy of) dict globs as the globals for execution.
@@ -533,7 +542,7 @@ def run_docstring_examples(f, globs, verbose=0, name="NoName",
         return 0, 0
     if compileflags is None:
         compileflags = _extract_future_flags(globs)
-    return _run_examples(e, globs, verbose, name, compileflags)
+    return _run_examples(e, globs, verbose, name, compileflags, optionflags)
 
 def is_private(prefix, base):
     """prefix, base -> true iff name prefix + "." + base is "private".
@@ -637,8 +646,9 @@ Got: 84
 """
 
     def __init__(self, mod=None, globs=None, verbose=None,
-                 isprivate=None):
-        """mod=None, globs=None, verbose=None, isprivate=None
+                 isprivate=None, optionflags=0):
+        """mod=None, globs=None, verbose=None, isprivate=None,
+optionflags=0
 
 See doctest.__doc__ for an overview.
 
@@ -658,6 +668,8 @@ failures if false; by default, it's true iff "-v" is in sys.argv.
 Optional keyword arg "isprivate" specifies a function used to determine
 whether a name is private.  The default function is doctest.is_private;
 see its docs for details.
+
+See doctest.testmod docs for the meaning of optionflags.
 """
 
         if mod is None and globs is None:
@@ -677,6 +689,8 @@ see its docs for details.
         if isprivate is None:
             isprivate = is_private
         self.isprivate = isprivate
+
+        self.optionflags = optionflags
 
         self.name2ft = {}   # map name to (#failures, #trials) pair
 
@@ -714,7 +728,7 @@ see its docs for details.
         e = _extract_examples(s)
         if e:
             f, t = _run_examples(e, self.globs, self.verbose, name,
-                                 self.compileflags)
+                                 self.compileflags, self.optionflags)
         if self.verbose:
             print f, "of", t, "examples failed in string", name
         self.__record_outcome(name, f, t)
@@ -1045,8 +1059,9 @@ see its docs for details.
 master = None
 
 def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
-               report=1):
-    """m=None, name=None, globs=None, verbose=None, isprivate=None, report=1
+               report=True, optionflags=0):
+    """m=None, name=None, globs=None, verbose=None, isprivate=None,
+       report=True, optionflags=0
 
     Test examples in docstrings in functions and classes reachable
     from module m (or the current module if m is not supplied), starting
@@ -1080,6 +1095,16 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     else prints nothing at the end.  In verbose mode, the summary is
     detailed, else very brief (in fact, empty if all tests passed).
 
+    Optional keyword arg "optionflags" or's together module constants,
+    and defaults to 0.  This is new in 2.3.  Possible values:
+
+        DONT_ACCEPT_TRUE_FOR_1
+            By default, if an expected output block contains just "1",
+            an actual output block containing just "True" is considered
+            to be a match, and similarly for "0" versus "False".  When
+            DONT_ACCEPT_TRUE_FOR_1 is specified, neither substitution
+            is allowed.
+
     Advanced tomfoolery:  testmod runs methods of a local instance of
     class doctest.Tester, then merges the results into (or creates)
     global Tester instance doctest.master.  Methods of doctest.master
@@ -1102,11 +1127,12 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         raise TypeError("testmod: module required; " + `m`)
     if name is None:
         name = m.__name__
-    tester = Tester(m, globs=globs, verbose=verbose, isprivate=isprivate)
+    tester = Tester(m, globs=globs, verbose=verbose, isprivate=isprivate,
+                    optionflags=optionflags)
     failures, tries = tester.rundoc(m, name)
     f, t = tester.rundict(m.__dict__, name, m)
-    failures = failures + f
-    tries = tries + t
+    failures += f
+    tries += t
     if hasattr(m, "__test__"):
         testdict = m.__test__
         if testdict:
@@ -1114,8 +1140,8 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
                 raise TypeError("testmod: module.__test__ must support "
                                 ".items(); " + `testdict`)
             f, t = tester.run__test__(testdict, name + ".__test__")
-            failures = failures + f
-            tries = tries + t
+            failures += f
+            tries += t
     if report:
         tester.summarize()
     if master is None:
@@ -1174,7 +1200,22 @@ __test__ = {"_TestClass": _TestClass,
                       >>> x = 1; y = 2
                       >>> x + y, x * y
                       (3, 2)
-                      """
+                      """,
+            "bool-int equivalence": r"""
+                                    In 2.2, boolean expressions displayed
+                                    0 or 1.  By default, we still accept
+                                    them.  This can be disabled by passing
+                                    DONT_ACCEPT_TRUE_FOR_1 to the new
+                                    optionflags argument.
+                                    >>> 4 == 4
+                                    1
+                                    >>> 4 == 4
+                                    True
+                                    >>> 4 > 4
+                                    0
+                                    >>> 4 > 4
+                                    False
+                                    """,
            }
 
 def _test():

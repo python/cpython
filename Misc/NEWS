@@ -83,6 +83,14 @@ Extension modules
 Library
 -------
 
+- For compatibility with doctests created before 2.3, if an expected
+  output block consists solely of "1" and the actual output block
+  consists solely of "True", it's accepted as a match; similarly
+  for "0" and "False".  This is quite un-doctest-like, but is practical.
+  The behavior can be disabled by passing the new doctest module
+  constant DONT_ACCEPT_TRUE_FOR_1 to the new optionflags optional
+  argument.
+
 - The cgitb module has been extended to support plain text display (SF patch
   569574).
 
