@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright (C) 1997, 2002 Martin von Loewis
+Copyright (C) 1997, 2002, 2003 Martin von Loewis
 
 Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose and without fee is hereby granted,
@@ -177,7 +177,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         result = setlocale(category, locale);
         if (!result) {
             /* operation failed, no setting was changed */
-            PyErr_SetString(Error, "locale setting not supported");
+            PyErr_SetString(Error, "unsupported locale setting");
             return NULL;
         }
         result_object = PyString_FromString(result);
