@@ -38,6 +38,15 @@ Library
   to cause wrong output, including spurious claims of recursive
   functions and attribution of time spent to the wrong function.
 
+  The code and documentation for the derived OldProfile and HotProfile
+  profiling classes was removed.  The code hasn't worked for years (if
+  you tried to use them, they raised exceptions).  OldProfile
+  intended to reproduce the behavior of the profiler Python used more
+  than 7 years ago, and isn't interesting anymore.  HotProfile intended
+  to provide a faster profiler (but producing less information), and
+  that's a worthy goal we intend to meet via a different approach (but
+  without losing information).
+
 - quopri's encode and decode methods take an optional header parameter,
   which indicates whether output is intended for the header 'Q' encoding.
 

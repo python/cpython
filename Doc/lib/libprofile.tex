@@ -210,7 +210,7 @@ now (\samp{p} is still sorted according to the last criteria) do:
 p.print_callers(.5, 'init')
 \end{verbatim}
 
-and you would get a list of callers for each of the listed functions. 
+and you would get a list of callers for each of the listed functions.
 
 If you want more functionality, you're going to have to read the
 manual, or guess what the following functions do:
@@ -309,7 +309,7 @@ The column headings include:
 \begin{description}
 
 \item[ncalls ]
-for the number of calls, 
+for the number of calls,
 
 \item[tottime ]
 for the total time spent in the given function (and excluding time
@@ -406,7 +406,7 @@ all the entries according to their function name, and resolve all ties
 
 Abbreviations can be used for any key names, as long as the
 abbreviation is unambiguous.  The following are the keys currently
-defined: 
+defined:
 
 \begin{tableii}{l|l}{code}{Valid Arg}{Meaning}
   \lineii{'calls'}{call count}
@@ -628,181 +628,34 @@ at this point, when a constant can be used.
 \nodename{Profiler Extensions}
 
 The \class{Profile} class of module \module{profile} was written so that
-derived classes could be developed to extend the profiler.  Rather
-than describing all the details of such an effort, I'll just present
-the following two examples of derived classes that can be used to do
-profiling.  If the reader is an avid Python programmer, then it should
-be possible to use these as a model and create similar (and perchance
-better) profile classes.
+derived classes could be developed to extend the profiler.  The details
+are not described here, as doing this successfully requires an expert
+understanding of how the \class{Profile} class works internally.  Study
+the source code of module \module{profile} carefully if you want to
+pursue this.
 
-If all you want to do is change how the timer is called, or which
-timer function is used, then the basic class has an option for that in
-the constructor for the class.  Consider passing the name of a
-function to call into the constructor:
+If all you want to do is change how current time is determined (for
+example, to force use of wall-clock time or elapsed process time),
+pass the timing function you want to the \class{Profile} class
+constructor:
 
 \begin{verbatim}
 pr = profile.Profile(your_time_func)
 \end{verbatim}
 
-The resulting profiler will call \code{your_time_func()} instead of
-\function{os.times()}.  The function should return either a single number
-or a list of numbers (like what \function{os.times()} returns).  If the
-function returns a single time number, or the list of returned numbers
-has length 2, then you will get an especially fast version of the
-dispatch routine.
+The resulting profiler will then call \code{your_time_func()}.
+The function should return a single number, or a list of
+numbers whose sum is the current time (like what \function{os.times()}
+returns).  If the function returns a single time number, or the list of
+returned numbers has length 2, then you will get an especially fast
+version of the dispatch routine.
 
-Be warned that you \emph{should} calibrate the profiler class for the
+Be warned that you should calibrate the profiler class for the
 timer function that you choose.  For most machines, a timer that
 returns a lone integer value will provide the best results in terms of
 low overhead during profiling.  (\function{os.times()} is
-\emph{pretty} bad, as it returns a tuple of floating point values,
-so all arithmetic is floating point in the profiler!).  If you want to
-substitute a better timer in the cleanest fashion, you should derive a
-class, and simply put in the replacement dispatch method that better
+\emph{pretty} bad, as it returns a tuple of floating point values).  If
+you want to substitute a better timer in the cleanest fashion,
+derive a class and hardwire a replacement dispatch method that best
 handles your timer call, along with the appropriate calibration
 constant.
-
-Note that subclasses which override any of the
-\method{trace_dispatch_call()}, \method{trace_dispatch_exception()},
-or \method{trace_dispatch_return()} methods also need to specify a
-dispatch table as well.  The table, named \member{dispatch}, should
-have the three keys \code{'call'}, \code{'exception'}, and
-\code{'return'}, each giving the function of the corresponding
-handler.  Note that best performance is achieved by using the
-\emph{function} objects for the handlers and not bound methods.  This
-is preferred since calling a simple function object executes less code
-in the runtime than calling either bound or unbound methods.  For
-example, if the derived profiler overrides only one method, the
-\member{dispatch} table can be built like this:
-
-\begin{verbatim}
-from profile import Profile
-
-class MyProfiler(Profile):
-    def trace_dispath_call(self, frame, t):
-        # do something interesting here
-        ...
-
-    dispatch = {
-        'call': trace_dispatch_call,
-        'exception': Profile.__dict__['trace_dispatch_exception'],
-        'return': Profile.__dict__['trace_dispatch_return'],
-    }
-\end{verbatim}
-
-
-\subsection{OldProfile Class \label{profile-old}}
-
-The following derived profiler simulates the old style profiler,
-providing errant results on recursive functions. The reason for the
-usefulness of this profiler is that it runs faster (less
-overhead) than the new profiler.  It still creates all the caller
-stats, and is quite useful when there is \emph{no} recursion in the
-user's code.  It is also a lot more accurate than the old profiler, as
-it does not charge all its overhead time to the user's code.
-
-\begin{verbatim}
-class OldProfile(Profile):
-
-    def trace_dispatch_exception(self, frame, t):
-        rt, rtt, rct, rfn, rframe, rcur = self.cur
-        if rcur and not rframe is frame:
-            return self.trace_dispatch_return(rframe, t)
-        return 0
-
-    def trace_dispatch_call(self, frame, t):
-        fn = `frame.f_code`
-
-        self.cur = (t, 0, 0, fn, frame, self.cur)
-        if self.timings.has_key(fn):
-            tt, ct, callers = self.timings[fn]
-            self.timings[fn] = tt, ct, callers
-        else:
-            self.timings[fn] = 0, 0, {}
-        return 1
-
-    def trace_dispatch_return(self, frame, t):
-        rt, rtt, rct, rfn, frame, rcur = self.cur
-        rtt = rtt + t
-        sft = rtt + rct
-
-        pt, ptt, pct, pfn, pframe, pcur = rcur
-        self.cur = pt, ptt+rt, pct+sft, pfn, pframe, pcur
-
-        tt, ct, callers = self.timings[rfn]
-        if callers.has_key(pfn):
-            callers[pfn] = callers[pfn] + 1
-        else:
-            callers[pfn] = 1
-        self.timings[rfn] = tt+rtt, ct + sft, callers
-
-        return 1
-
-    dispatch = {
-        "call": trace_dispatch_call,
-        "exception": trace_dispatch_exception,
-        "return": trace_dispatch_return,
-        }
-
-    def snapshot_stats(self):
-        self.stats = {}
-        for func in self.timings.keys():
-            tt, ct, callers = self.timings[func]
-            callers = callers.copy()
-            nc = 0
-            for func_caller in callers.keys():
-                nc = nc + callers[func_caller]
-            self.stats[func] = nc, nc, tt, ct, callers
-\end{verbatim}
-
-
-\subsection{HotProfile Class \label{profile-HotProfile}}
-
-This profiler is the fastest derived profile example.  It does not
-calculate caller-callee relationships, and does not calculate
-cumulative time under a function.  It only calculates time spent in a
-function, so it runs very quickly (re: very low overhead).  In truth,
-the basic profiler is so fast, that is probably not worth the savings
-to give up the data, but this class still provides a nice example.
-
-\begin{verbatim}
-class HotProfile(Profile):
-
-    def trace_dispatch_exception(self, frame, t):
-        rt, rtt, rfn, rframe, rcur = self.cur
-        if rcur and not rframe is frame:
-            return self.trace_dispatch_return(rframe, t)
-        return 0
-
-    def trace_dispatch_call(self, frame, t):
-        self.cur = (t, 0, frame, self.cur)
-        return 1
-
-    def trace_dispatch_return(self, frame, t):
-        rt, rtt, frame, rcur = self.cur
-
-        rfn = `frame.f_code`
-
-        pt, ptt, pframe, pcur = rcur
-        self.cur = pt, ptt+rt, pframe, pcur
-
-        if self.timings.has_key(rfn):
-            nc, tt = self.timings[rfn]
-            self.timings[rfn] = nc + 1, rt + rtt + tt
-        else:
-            self.timings[rfn] =      1, rt + rtt
-
-        return 1
-
-    dispatch = {
-        "call": trace_dispatch_call,
-        "exception": trace_dispatch_exception,
-        "return": trace_dispatch_return,
-        }
-
-    def snapshot_stats(self):
-        self.stats = {}
-        for func in self.timings.keys():
-            nc, tt = self.timings[func]
-            self.stats[func] = nc, nc, tt, 0, {}
-\end{verbatim}
