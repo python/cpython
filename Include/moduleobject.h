@@ -9,7 +9,7 @@ extern "C" {
 
 extern DL_IMPORT(PyTypeObject) PyModule_Type;
 
-#define PyModule_Check(op) ((op)->ob_type == &PyModule_Type)
+#define PyModule_Check(op) PyObject_TypeCheck(op, &PyModule_Type)
 
 extern DL_IMPORT(PyObject *) PyModule_New(char *);
 extern DL_IMPORT(PyObject *) PyModule_GetDict(PyObject *);
