@@ -22,33 +22,53 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* Include files and extern declarations used by most of the parser.
-   This is a precompiled header for THINK C. */
-
-#ifdef THINK_C
-#define macintosh
-/* #define THINK_C_3_0		/*** TURN THIS ON FOR THINK C 3.0 ***/
-#endif
-
-#include <stdio.h>
-#include <string.h>
-
-#ifdef THINK_C
-#define label label_
-#undef label
-#endif
-
-#ifdef THINK_C_3_0
-#include <proto.h>
-#endif
+/* Lowest-level memory allocation interface */
 
 #ifdef macintosh
+#define ANY void
 #ifndef THINK_C_3_0
+#define HAVE_STDLIB
+#endif
+#endif
+
+#ifdef sun
+/* Maybe not for very old versions of SunOS ? */
+#define HAVE_STDLIB
+#endif
+
+#ifdef sgi
+#define HAVE_STDLIB
+#endif
+
+#ifdef __STDC__
+#define ANY void
+#define HAVE_STDLIB
+#endif
+
+#ifndef ANY
+#define ANY char
+#endif
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+#define NEW(type, n) ( (type *) malloc((n) * sizeof(type)) )
+#define RESIZE(p, type, n) \
+	if ((p) == NULL) \
+		(p) =  (type *) malloc((n) * sizeof(type)); \
+	else \
+		(p) = (type *) realloc((ANY *)(p), (n) * sizeof(type))
+#define DEL(p) free((ANY *)p)
+#define XDEL(p) if ((p) == NULL) ; else DEL(p)
+
+#ifdef HAVE_STDLIB
 #include <stdlib.h>
+#define MALLARG size_t
+#else
+#define MALLARG size_t
+extern ANY *malloc PROTO((MALLARG));
+extern ANY *calloc PROTO((MALLARG, MALLARG));
+extern ANY *realloc PROTO((ANY *, MALLARG));
+extern void free PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
 #endif
-#endif
-
-#include "PROTO.h"
-#include "mymalloc.h"
-
-extern void fatal PROTO((char *));
