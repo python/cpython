@@ -287,6 +287,11 @@ class PyBuildExt(build_ext):
             inc_dirs += ['/system/include', '/atheos/autolnk/include']
             inc_dirs += os.getenv('C_INCLUDE_PATH', '').split(os.pathsep)
 
+        # OSF/1 has some stuff in /usr/ccs/lib (like -ldb)
+        if platform[:4] == 'osf1':
+            platform = 'osf1'
+            lib_dirs += ['/usr/ccs/lib']
+
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
         if platform in ['darwin', 'beos', 'mac']:
@@ -559,6 +564,29 @@ class PyBuildExt(build_ext):
             db_incs = None
             dblibs = []
             dblib_dir = None
+
+
+        # Look for Berkeley db 1.85.   Note that it is built as a different
+        # module name so it can be included even when later versions are
+        # available.  A very restrictive search is performed to avoid
+        # accidentally building this module with a later version of the
+        # underlying db library.  May BSD-ish Unixes incorporate db 1.85
+        # symbols into libc and place the include file in /usr/include.
+        f = "/usr/include/db.h"
+        if os.path.exists(f):
+            data = open(f).read()
+            m = re.search(r"#s*define\s+HASHVERSION\s+2\s*", data)
+            if m is not None:
+                # bingo - old version used hash file format version 2
+                ### XXX this should be fixed to not be platform-dependent
+                ### but I don't have direct access to an osf1 platform and
+                ### seemed to be muffing the search somehow
+                libraries = platform == "osf1" and ['db'] or None
+                if libraries is not None:
+                    exts.append(Extension('bsddb185', ['bsddbmodule.c'],
+                                          libraries=libraries))
+                else:
+                    exts.append(Extension('bsddb185', ['bsddbmodule.c']))
 
         # The standard Unix dbm module:
         if platform not in ['cygwin']:
