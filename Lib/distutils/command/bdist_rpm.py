@@ -347,7 +347,7 @@ class bdist_rpm (Command):
                 srpms = glob.glob(os.path.join(rpm_dir['SRPMS'], "*.rpm"))
                 assert len(srpms) == 1, \
                        "unexpected number of SRPM files found: %s" % srpms
-                dist_file = ('bdist_rpm', '',
+                dist_file = ('bdist_rpm', 'any',
                              os.path.join(self.dist_dir,
                                           os.path.basename(srpms[0])))
                 self.distribution.dist_files.append(dist_file)
