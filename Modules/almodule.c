@@ -2195,7 +2195,7 @@ inital()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ErrorObject = PyString_FromString("al.error");
+	ErrorObject = PyErr_NewException("al.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* XXXX Add constants here */

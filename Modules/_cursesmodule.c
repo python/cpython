@@ -2329,7 +2329,7 @@ init_curses()
 	ModDict = d; /* For PyCurses_InitScr */
 
 	/* For exception curses.error */
-	PyCursesError = PyString_FromString("_curses.error");
+	PyCursesError = PyErr_NewException("_curses.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", PyCursesError);
 
 	/* Make the version available */

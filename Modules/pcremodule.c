@@ -654,7 +654,7 @@ initpcre()
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ErrorObject = PyString_FromString("pcre.error");
+	ErrorObject = PyErr_NewException("pcre.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* Insert the flags */
