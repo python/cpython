@@ -105,6 +105,26 @@ def testtype(type, example):
             a[1:-1] = a
             if a != array.array(type, "aabcdee"):
                 raise TestFailed, "array(%s) self-slice-assign (cntr)" % `type`
+            if a.index("e") != 5:
+            	raise TestFailed, "array(%s) index-test" % `type`
+            if a.count("a") != 2:
+            	raise TestFailed, "array(%s) count-test" % `type`
+            a.remove("e")
+            if a != array.array(type, "aabcde"):
+            	raise TestFailed, "array(%s) remove-test" % `type`
+            if a.pop(0) != "a":
+            	raise TestFailed, "array(%s) pop-test" % `type`
+            if a.pop(1) != "b":
+            	raise TestFailed, "array(%s) pop-test" % `type`
+            a.extend(array.array(type, "xyz"))
+            if a != array.array(type, "acdexyz"):
+                raise TestFailed, "array(%s) extend-test" % `type`
+            a.pop()
+            a.pop()
+            a.pop()
+            a.pop()
+            if a != array.array(type, "acd"):
+            	raise TestFailed, "array(%s) pop-test" % `type`
         else:
             a = array.array(type, [1, 2, 3, 4, 5])
             a[:-1] = a
@@ -118,6 +138,26 @@ def testtype(type, example):
             a[1:-1] = a
             if a != array.array(type, [1, 1, 2, 3, 4, 5, 5]):
                 raise TestFailed, "array(%s) self-slice-assign (cntr)" % `type`
+            if a.index(5) != 5:
+            	raise TestFailed, "array(%s) index-test" % `type`
+            if a.count(1) != 2:
+            	raise TestFailed, "array(%s) count-test" % `type`
+            a.remove(5)
+            if a != array.array(type, [1, 1, 2, 3, 4, 5]):
+            	raise TestFailed, "array(%s) remove-test" % `type`
+            if a.pop(0) != 1:
+            	raise TestFailed, "array(%s) pop-test" % `type`
+            if a.pop(1) != 2:
+            	raise TestFailed, "array(%s) pop-test" % `type`
+            a.extend(array.array(type, [7, 8, 9]))
+            if a != array.array(type, [1, 3, 4, 5, 7, 8, 9]):
+                raise TestFailed, "array(%s) extend-test" % `type`
+            a.pop()
+            a.pop()
+            a.pop()
+            a.pop()
+            if a != array.array(type, [1, 3, 4]):
+            	raise TestFailed, "array(%s) pop-test" % `type`
 
         # test that overflow exceptions are raised as expected for assignment
         # to array of specific integral types

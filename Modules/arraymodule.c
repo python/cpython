@@ -674,6 +674,163 @@ ins(arrayobject *self, int where, PyObject *v)
 }
 
 static PyObject *
+array_count(arrayobject *self, PyObject *args)
+{
+	int count = 0;
+	int i;
+	PyObject *v;
+
+        if (!PyArg_ParseTuple(args, "O:count", &v))
+		return NULL;
+	for (i = 0; i < self->ob_size; i++) {
+		PyObject *selfi = getarrayitem((PyObject *)self, i);
+		if (PyObject_Compare(selfi, v) == 0)
+			count++;
+		Py_DECREF(selfi);
+		if (PyErr_Occurred())
+			return NULL;
+	}
+	return PyInt_FromLong((long)count);
+}
+
+static char count_doc [] =
+"count (x)\n\
+\n\
+Return number of occurences of x in the array.";
+
+static PyObject *
+array_index(arrayobject *self, PyObject *args)
+{
+	int i;
+	PyObject *v;
+
+	if (!PyArg_ParseTuple(args, "O:index", &v))
+		return NULL;
+	for (i = 0; i < self->ob_size; i++) {
+		PyObject *selfi = getarrayitem((PyObject *)self, i);
+		if (PyObject_Compare(selfi, v) == 0) {
+			Py_DECREF(selfi);
+			return PyInt_FromLong((long)i);
+		}
+		Py_DECREF(selfi);
+		if (PyErr_Occurred())
+			return NULL;
+	}
+	PyErr_SetString(PyExc_ValueError, "array.index(x): x not in list");
+	return NULL;
+}
+
+static char index_doc [] =
+"index (x)\n\
+\n\
+Return index of first occurence of x in the array.";
+
+static PyObject *
+array_remove(arrayobject *self, PyObject *args)
+{
+	int i;
+	PyObject *v;
+
+        if (!PyArg_ParseTuple(args, "O:remove", &v))
+		return NULL;
+	for (i = 0; i < self->ob_size; i++) {
+		PyObject *selfi = getarrayitem((PyObject *)self,i);
+		if (PyObject_Compare(selfi, v) == 0) {
+			Py_DECREF(selfi);
+			if (array_ass_slice(self, i, i+1,
+					   (PyObject *)NULL) != 0)
+				return NULL;
+			Py_INCREF(Py_None);
+			return Py_None;
+		}
+		Py_DECREF(selfi);
+		if (PyErr_Occurred())
+			return NULL;
+	}
+	PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in list");
+	return NULL;
+}
+
+static char remove_doc [] =
+"remove (x)\n\
+\n\
+Remove the first occurence of x in the array.";
+
+static PyObject *
+array_pop(arrayobject *self, PyObject *args)
+{
+	int i = -1;
+	PyObject *v;
+	if (!PyArg_ParseTuple(args, "|i:pop", &i))
+		return NULL;
+	if (self->ob_size == 0) {
+		/* Special-case most common failure cause */
+		PyErr_SetString(PyExc_IndexError, "pop from empty array");
+		return NULL;
+	}
+	if (i < 0)
+		i += self->ob_size;
+	if (i < 0 || i >= self->ob_size) {
+		PyErr_SetString(PyExc_IndexError, "pop index out of range");
+		return NULL;
+	}
+	v = getarrayitem((PyObject *)self,i);
+	if (array_ass_slice(self, i, i+1, (PyObject *)NULL) != 0) {
+		Py_DECREF(v);
+		return NULL;
+	}
+	return v;
+}
+
+static char pop_doc [] =
+"pop ([i])\n\
+\n\
+Return the i-th element and delete it from the array. i defaults to -1.";
+
+static PyObject *
+array_extend(self, args)
+	arrayobject *self;
+	PyObject *args;
+{
+	int size;
+        PyObject    *bb;
+        arrayobject *np;
+        
+	if (!PyArg_ParseTuple(args, "O:extend", &bb))
+            return NULL;
+        
+	if (!is_arrayobject(bb)) {
+		PyErr_Format(PyExc_TypeError,
+			     "can only append array (not \"%.200s\") to array",
+			     bb->ob_type->tp_name);
+		return NULL;
+	}
+#define b ((arrayobject *)bb)
+	if (self->ob_descr != b->ob_descr) {
+		PyErr_SetString(PyExc_TypeError,
+			     "can only append arrays of same kind");
+		return NULL;
+	}
+	size = self->ob_size + b->ob_size;
+        PyMem_RESIZE(self->ob_item, char, size*self->ob_descr->itemsize);
+        if (self->ob_item == NULL) {
+                PyObject_Del(self);
+                return PyErr_NoMemory();
+        }
+	memcpy(self->ob_item + self->ob_size*self->ob_descr->itemsize,
+               b->ob_item, b->ob_size*b->ob_descr->itemsize);
+        self->ob_size = size;
+        Py_INCREF(Py_None);
+	return Py_None;
+#undef b
+}
+
+static char extend_doc [] =
+"extend(array)\n\
+\n\
+ Append array items to the end of the array.";
+
+static PyObject *
 array_insert(arrayobject *self, PyObject *args)
 {
 	int i;
@@ -815,74 +972,6 @@ static char reverse_doc [] =
 "reverse()\n\
 \n\
 Reverse the order of the items in the array.";
-
-/* The following routines were adapted from listobject.c but not converted.
-   To make them work you will have to work! */
-
-#if 0
-static PyObject *
-array_index(arrayobject *self, PyObject *args)
-{
-	int i;
-	
-	if (args == NULL) {
-		PyErr_BadArgument();
-		return NULL;
-	}
-	for (i = 0; i < self->ob_size; i++) {
-		if (PyObject_Compare(self->ob_item[i], args) == 0)
-			return PyInt_FromLong((long)i);
-		/* XXX PyErr_Occurred */
-	}
-	PyErr_SetString(PyExc_ValueError, "array.index(x): x not in array");
-	return NULL;
-}
-#endif
-
-#if 0
-static PyObject *
-array_count(arrayobject *self, PyObject *args)
-{
-	int count = 0;
-	int i;
-	
-	if (args == NULL) {
-		PyErr_BadArgument();
-		return NULL;
-	}
-	for (i = 0; i < self->ob_size; i++) {
-		if (PyObject_Compare(self->ob_item[i], args) == 0)
-			count++;
-		/* XXX PyErr_Occurred */
-	}
-	return PyInt_FromLong((long)count);
-}
-#endif
-
-#if 0
-static PyObject *
-array_remove(arrayobject *self, PyObject *args)
-{
-	int i;
-	
-	if (args == NULL) {
-		PyErr_BadArgument();
-		return NULL;
-	}
-	for (i = 0; i < self->ob_size; i++) {
-		if (PyObject_Compare(self->ob_item[i], args) == 0) {
-			if (array_ass_slice(self, i, i+1,
-					    (PyObject *)NULL) != 0)
-				return NULL;
-			Py_INCREF(Py_None);
-			return Py_None;
-		}
-		/* XXX PyErr_Occurred */
-	}
-	PyErr_SetString(PyExc_ValueError, "array.remove(x): x not in array");
-	return NULL;
-}
-#endif
 
 static PyObject *
 array_fromfile(arrayobject *self, PyObject *args)
@@ -1095,16 +1184,18 @@ PyMethodDef array_methods[] = {
 	{"buffer_info", (PyCFunction)array_buffer_info, 0, buffer_info_doc},
 	{"byteswap",	(PyCFunction)array_byteswap, METH_VARARGS,
          byteswap_doc},
-/*	{"count",	(method)array_count},*/
+	{"count",	(PyCFunction)array_count, 1, count_doc},
+	{"extend",      (PyCFunction)array_extend, 1, extend_doc},
 	{"fromfile",	(PyCFunction)array_fromfile, 0, fromfile_doc},
 	{"fromlist",	(PyCFunction)array_fromlist, 0, fromlist_doc},
 	{"fromstring",	(PyCFunction)array_fromstring, 0, fromstring_doc},
-/*	{"index",	(method)array_index},*/
+	{"index",	(PyCFunction)array_index, 1, index_doc},
 	{"insert",	(PyCFunction)array_insert, 0, insert_doc},
+	{"pop",		(PyCFunction)array_pop, 1, pop_doc},
 	{"read",	(PyCFunction)array_fromfile, 0, fromfile_doc},
-/*	{"remove",	(method)array_remove},*/
+	{"remove",	(PyCFunction)array_remove, 1, remove_doc},
 	{"reverse",	(PyCFunction)array_reverse, 0, reverse_doc},
-/*	{"sort",	(method)array_sort},*/
+/*	{"sort",	(PyCFunction)array_sort, 0, sort_doc},*/
 	{"tofile",	(PyCFunction)array_tofile, 0, tofile_doc},
 	{"tolist",	(PyCFunction)array_tolist, 0, tolist_doc},
 	{"tostring",	(PyCFunction)array_tostring, 0, tostring_doc},
@@ -1364,11 +1455,16 @@ Methods:\n\
 append() -- append a new item to the end of the array\n\
 buffer_info() -- return information giving the current memory info\n\
 byteswap() -- byteswap all the items of the array\n\
+count() -- return number of occurences of an object\n\
+extend() -- extend array by appending array elements\n\
 fromfile() -- read items from a file object\n\
 fromlist() -- append items from the list\n\
 fromstring() -- append items from the string\n\
+index() -- return index of first occurence of an object\n\
 insert() -- insert a new item into the array at a provided position\n\
+pop() -- remove and return item (default last)\n\
 read() -- DEPRECATED, use fromfile()\n\
+remove() -- remove first occurence of an object\n\
 reverse() -- reverse the order of the items in the array\n\
 tofile() -- write all items to a file object\n\
 tolist() -- return the array converted to an ordinary list\n\
