@@ -1,4 +1,5 @@
 import sys
+import test_support
 
 def powtest(type):
     if (type!=float): 
@@ -27,8 +28,10 @@ def powtest(type):
     il, ih = -20, 20
     jl, jh = -5,   5
     kl, kh = -10, 10
+    compare = cmp
     if (type==float):
         il=1
+	compare = test_support.fcmp
     elif (type==int):
         jl=0
     elif (type==long):
@@ -37,7 +40,7 @@ def powtest(type):
          for j in range(jl,jh+1):
              for k in range(kl, kh+1):
       	         if (k!=0):
-		     if (pow(type(i),j,k)!=pow(type(i),j)% type(k) ):
+		     if compare(pow(type(i),j,k), pow(type(i),j)% type(k)):
                          raise ValueError, "pow(" +str(i)+ "," +str(j)+ \
 			      "," +str(k)+ ") != pow(" +str(i)+ "," + \
 			      str(j)+ ") % " +str(k)
