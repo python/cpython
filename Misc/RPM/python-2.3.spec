@@ -30,7 +30,7 @@
 #################################
 
 %define name python
-%define version 2.3b1
+%define version 2.3.1
 %define libvers 2.3
 %define release 1pydotorg
 %define __prefix /usr
@@ -49,9 +49,8 @@ Copyright: Modified CNRI Open Source License
 Group: Development/Languages
 Source: Python-%{version}.tgz
 Source1: html-%{version}.tar.bz2
-Patch0: Python-2.1-pythonpath.patch
-#Patch1: Python-2.1-expat.patch
-BuildRoot: /var/tmp/%{name}-%{version}-root
+#Patch0: Python-2.1-pythonpath.patch
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildPrereq: expat-devel
 BuildPrereq: db4-devel
 BuildPrereq: gdbm-devel
@@ -122,6 +121,9 @@ Documentation relating to the Python programming language in HTML and info
 formats.
 
 %changelog
+* Fri Sep 19 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.1-1pydotorg]
+- Updating to the 2.3.1 release.
+
 * Mon Feb 24 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3b1-1pydotorg]
 - Updating to 2.3b1 release.
 
@@ -175,14 +177,13 @@ formats.
 #######
 %prep
 %setup -n Python-%{version}
-%patch0 -p1
-#%patch1
+#%patch0 -p1
 
 ########
 #  BUILD
 ########
 %build
-./configure %{ipv6} %{pymalloc} --prefix=%{__prefix}
+./configure --enable-unicode=ucs4 %{ipv6} %{pymalloc} --prefix=%{__prefix}
 make
 
 ##########
@@ -223,7 +224,7 @@ fi
 ########
 #  Tools
 echo '#!/bin/bash' >${RPM_BUILD_ROOT}%{_bindir}/idle%{binsuffix}
-echo 'exec %{_prefix}/bin/python%{binsuffix} /usr/lib/python%{libvers}/Tools/idle/idle.py' >>$RPM_BUILD_ROOT%{_bindir}/idle%{binsuffix}
+echo 'exec %{_prefix}/bin/python%{binsuffix} /usr/lib/python%{libvers}/idlelib/idle.py' >>$RPM_BUILD_ROOT%{_bindir}/idle%{binsuffix}
 chmod 755 $RPM_BUILD_ROOT%{_bindir}/idle%{binsuffix}
 cp -a Tools $RPM_BUILD_ROOT%{_prefix}/lib/python%{libvers}
 
@@ -237,8 +238,9 @@ find "$RPM_BUILD_ROOT""%{__prefix}"/bin -type f |
 	grep -v -e '/bin/idle%{binsuffix}$' >>mainpkg.files
 
 rm -f tools.files
-find "$RPM_BUILD_ROOT""%{__prefix}"/lib/python%{libvers}/Tools -type f |
-	sed "s|^${RPM_BUILD_ROOT}|/|" >tools.files
+find "$RPM_BUILD_ROOT""%{__prefix}"/lib/python%{libvers}/idlelib \
+      "$RPM_BUILD_ROOT""%{__prefix}"/lib/python%{libvers}/Tools -type f |
+      sed "s|^${RPM_BUILD_ROOT}|/|" >tools.files
 echo "%{__prefix}"/bin/idle%{binsuffix} >>tools.files
 
 ######
@@ -249,12 +251,22 @@ mkdir -p "$RPM_BUILD_ROOT"/var/www/html/python
    bunzip2 < %{SOURCE1} | tar x
 )
 
+#  clean up the /usr/local/bin/python references
+find "$RPM_BUILD_ROOT" -type f | xargs grep -l /usr/local/bin/python | while read file
+do
+   rm -f /tmp/pypathtmp
+   sed 's|/usr/local/bin/python|/usr/bin/python%{binsuffix}|g' <"$file" >/tmp/pypathtmp
+   cat </tmp/pypathtmp >"$file"
+   rm -f /tmp/pypathtmp
+done
+
 ########
 #  CLEAN
 ########
 %clean
-rm -fr $RPM_BUILD_ROOT
-rm -f mainpkg.files tools.files
+#@@@
+#rm -fr $RPM_BUILD_ROOT
+#rm -f mainpkg.files tools.files
 
 ########
 #  FILES
@@ -274,7 +286,6 @@ rm -f mainpkg.files tools.files
 %{__prefix}/lib/python%{libvers}/curses
 %{__prefix}/lib/python%{libvers}/distutils
 %{__prefix}/lib/python%{libvers}/encodings
-%dir %{__prefix}/lib/python%{libvers}/lib-old
 %{__prefix}/lib/python%{libvers}/plat-linux2
 %{__prefix}/lib/python%{libvers}/site-packages
 %{__prefix}/lib/python%{libvers}/test
