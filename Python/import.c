@@ -969,15 +969,30 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 	npath = PyList_Size(path);
 	namelen = strlen(name);
 	for (i = 0; i < npath; i++) {
+		PyObject *copy = NULL;
 		PyObject *v = PyList_GetItem(path, i);
+#ifdef Py_USING_UNICODE
+		if (PyUnicode_Check(v)) {
+			copy = PyUnicode_Encode(PyUnicode_AS_UNICODE(v),
+				PyUnicode_GET_SIZE(v), Py_FileSystemDefaultEncoding, NULL);
+			if (copy == NULL)
+				return NULL;
+			v = copy;
+		}
+		else
+#endif
 		if (!PyString_Check(v))
 			continue;
 		len = PyString_Size(v);
-		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen)
+		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen) {
+			Py_XDECREF(copy);
 			continue; /* Too long */
+		}
 		strcpy(buf, PyString_AsString(v));
-		if (strlen(buf) != len)
+		if (strlen(buf) != len) {
+			Py_XDECREF(copy);
 			continue; /* v contains '\0' */
+		}
 #ifdef macintosh
 		/*
 		** Speedup: each sys.path item is interned, and
@@ -991,12 +1006,14 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			static struct filedescr resfiledescr =
 				{"", "", PY_RESOURCE};
 
+			Py_XDECREF(copy);
 			return &resfiledescr;
 		}
 		if (PyMac_FindCodeResourceModule((PyStringObject *)v, name, buf)) {
 			static struct filedescr resfiledescr =
 				{"", "", PY_CODERESOURCE};
 
+			Py_XDECREF(copy);
 			return &resfiledescr;
 		}
 #endif
@@ -1012,18 +1029,22 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		/* Check for package import (buf holds a directory name,
 		   and there's an __init__ module in that directory */
 #ifdef HAVE_STAT
-		if (stat(buf, &statbuf) == 0 &&       /* it exists */
-		    S_ISDIR(statbuf.st_mode) &&       /* it's a directory */
-		    find_init_module(buf) &&          /* it has __init__.py */
-		    case_ok(buf, len, namelen, name)) /* and case matches */
+		if (stat(buf, &statbuf) == 0 &&         /* it exists */
+		    S_ISDIR(statbuf.st_mode) &&         /* it's a directory */
+		    find_init_module(buf) &&            /* it has __init__.py */
+		    case_ok(buf, len, namelen, name)) { /* and case matches */
+			Py_XDECREF(copy);
 			return &fd_package;
+		}
 #else
 		/* XXX How are you going to test for directories? */
 #ifdef RISCOS
 		if (isdir(buf) &&
 		    find_init_module(buf) &&
-		    case_ok(buf, len, namelen, name))
+		    case_ok(buf, len, namelen, name)) {
+			Py_XDECREF(copy);
 			return &fd_package;
+		}
 #endif
 #endif
 #ifdef macintosh
@@ -1095,6 +1116,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			saved_buf = NULL;
 		}
 #endif
+		Py_XDECREF(copy);
 		if (fp != NULL)
 			break;
 	}
