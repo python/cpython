@@ -388,12 +388,21 @@ class Unpickler:
 		self.stack.append(None)
 	dispatch[NONE] = load_none
 
-	def load_atomic(self):
+	def load_int(self):
+		self.stack.append(string.atoi(self.readline()[:-1]))
+	dispatch[INT] = load_int
+
+	def load_long(self):
+		self.stack.append(string.atol(self.readline()[:-1]))
+	dispatch[LONG] = load_long
+
+	def load_float(self):
+		self.stack.append(string.atof(self.readline()[:-1]))
+	dispatch[FLOAT] = load_float
+
+	def load_string(self):
 		self.stack.append(eval(self.readline()[:-1]))
-	dispatch[INT] = load_atomic
-	dispatch[LONG] = load_atomic
-	dispatch[FLOAT] = load_atomic
-	dispatch[STRING] = load_atomic
+	dispatch[STRING] = load_string
 
 	def load_tuple(self):
 		k = self.marker()
@@ -459,11 +468,11 @@ class Unpickler:
 	dispatch[DUP] = load_dup
 
 	def load_get(self):
-		self.stack.append(self.memo[string.atoi(self.readline()[:-1])])
+		self.stack.append(self.memo[self.readline()[:-1]])
 	dispatch[GET] = load_get
 
 	def load_put(self):
-		self.memo[string.atoi(self.readline()[:-1])] = self.stack[-1]
+		self.memo[self.readline()[:-1]] = self.stack[-1]
 	dispatch[PUT] = load_put
 
 	def load_append(self):
