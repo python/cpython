@@ -567,6 +567,10 @@ SOURCE=..\..\Python\pystate.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Python\pystrtod.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\python_nt.rc
 # End Source File
 # Begin Source File
