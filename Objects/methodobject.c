@@ -17,9 +17,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 static PyCFunctionObject *free_list = NULL;
 
 PyObject *
-PyCFunction_New(ml, self)
-	PyMethodDef *ml;
-	PyObject *self;
+PyCFunction_New(PyMethodDef *ml, PyObject *self)
 {
 	PyCFunctionObject *op;
 	op = free_list;
@@ -39,8 +37,7 @@ PyCFunction_New(ml, self)
 }
 
 PyCFunction
-PyCFunction_GetFunction(op)
-	PyObject *op;
+PyCFunction_GetFunction(PyObject *op)
 {
 	if (!PyCFunction_Check(op)) {
 		PyErr_BadInternalCall();
@@ -50,8 +47,7 @@ PyCFunction_GetFunction(op)
 }
 
 PyObject *
-PyCFunction_GetSelf(op)
-	PyObject *op;
+PyCFunction_GetSelf(PyObject *op)
 {
 	if (!PyCFunction_Check(op)) {
 		PyErr_BadInternalCall();
@@ -61,8 +57,7 @@ PyCFunction_GetSelf(op)
 }
 
 int
-PyCFunction_GetFlags(op)
-	PyObject *op;
+PyCFunction_GetFlags(PyObject *op)
 {
 	if (!PyCFunction_Check(op)) {
 		PyErr_BadInternalCall();
@@ -74,8 +69,7 @@ PyCFunction_GetFlags(op)
 /* Methods (the standard built-in methods, that is) */
 
 static void
-meth_dealloc(m)
-	PyCFunctionObject *m;
+meth_dealloc(PyCFunctionObject *m)
 {
 	Py_XDECREF(m->m_self);
 	m->m_self = (PyObject *)free_list;
@@ -83,9 +77,7 @@ meth_dealloc(m)
 }
 
 static PyObject *
-meth_getattr(m, name)
-	PyCFunctionObject *m;
-	char *name;
+meth_getattr(PyCFunctionObject *m, char *name)
 {
 	if (strcmp(name, "__name__") == 0) {
 		return PyString_FromString(m->m_ml->ml_name);
@@ -119,8 +111,7 @@ meth_getattr(m, name)
 }
 
 static PyObject *
-meth_repr(m)
-	PyCFunctionObject *m;
+meth_repr(PyCFunctionObject *m)
 {
 	char buf[200];
 	if (m->m_self == NULL)
@@ -134,8 +125,7 @@ meth_repr(m)
 }
 
 static int
-meth_compare(a, b)
-	PyCFunctionObject *a, *b;
+meth_compare(PyCFunctionObject *a, PyCFunctionObject *b)
 {
 	if (a->m_self != b->m_self)
 		return (a->m_self < b->m_self) ? -1 : 1;
@@ -148,8 +138,7 @@ meth_compare(a, b)
 }
 
 static long
-meth_hash(a)
-	PyCFunctionObject *a;
+meth_hash(PyCFunctionObject *a)
 {
 	long x,y;
 	if (a->m_self == NULL)
@@ -189,8 +178,7 @@ PyTypeObject PyCFunction_Type = {
 /* List all methods in a chain -- helper for findmethodinchain */
 
 static PyObject *
-listmethodchain(chain)
-	PyMethodChain *chain;
+listmethodchain(PyMethodChain *chain)
 {
 	PyMethodChain *c;
 	PyMethodDef *ml;
@@ -223,10 +211,7 @@ listmethodchain(chain)
 /* Find a method in a method chain */
 
 PyObject *
-Py_FindMethodInChain(chain, self, name)
-	PyMethodChain *chain;
-	PyObject *self;
-	char *name;
+Py_FindMethodInChain(PyMethodChain *chain, PyObject *self, char *name)
 {
 	if (name[0] == '_' && name[1] == '_') {
 		if (strcmp(name, "__methods__") == 0)
@@ -253,10 +238,7 @@ Py_FindMethodInChain(chain, self, name)
 /* Find a method in a single method list */
 
 PyObject *
-Py_FindMethod(methods, self, name)
-	PyMethodDef *methods;
-	PyObject *self;
-	char *name;
+Py_FindMethod(PyMethodDef *methods, PyObject *self, char *name)
 {
 	PyMethodChain chain;
 	chain.methods = methods;
@@ -267,7 +249,7 @@ Py_FindMethod(methods, self, name)
 /* Clear out the free list */
 
 void
-PyCFunction_Fini()
+PyCFunction_Fini(void)
 {
 	while (free_list) {
 		PyCFunctionObject *v = free_list;
