@@ -1968,6 +1968,7 @@ fail:
 	merge_freemem(&ms);
 
 	if (keyfunc != NULL) {
+		len = PyList_GET_SIZE(self);
 		for (i=0 ; i < len ; i++) {
 			kvpair = PyList_GET_ITEM(self, i);
 			value = sortwrapper_getvalue(kvpair);
