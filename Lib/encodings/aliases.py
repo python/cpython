@@ -87,5 +87,8 @@ aliases = {
     'zip': 'zlib_codec',
     'hex': 'hex_codec',
     'uu': 'uu_codec',
+    'quopri': 'quopri_codec',
+    'quotedprintable': 'quopri_codec',
+    'quoted_printable': 'quopri_codec',
 
 }
