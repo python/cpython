@@ -321,12 +321,12 @@ complicated to explain, but does the right thing in this situation.
 \item List all the base classes, following the classic lookup rule and
 include a class multiple times if it's visited repeatedly.  In the
 above example, the list of visited classes is [\class{D}, \class{B},
-\class{A}, \class{C}, class{A}].
+\class{A}, \class{C}, \class{A}].
 
 \item Scan the list for duplicated classes.  If any are found, remove
 all but one occurrence, leaving the \emph{last} one in the list.  In
 the above example, the list becomes [\class{D}, \class{B}, \class{C},
-class{A}] after dropping duplicates.
+\class{A}] after dropping duplicates.
 
 \end{enumerate}
 
@@ -417,10 +417,10 @@ this clear:
 >>> obj = C()
 >>> print obj.template
 None
->>> obj.template = 'Test' ; obj.name = 'abc'
+>>> obj.template = 'Test'
 >>> print obj.template
 Test
->>> obj.templtae
+>>> obj.templtae = None
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 AttributeError: 'C' object has no attribute 'templtae'
@@ -1361,7 +1361,7 @@ to experiment with these modules can uncomment them manually.
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Fred Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr.,
-Carel Fellinger, Mark Hammond, Stephen Hansen, Jack Jansen,
+Carel Fellinger, Mark Hammond, Stephen Hansen, Michael Hudson, Jack Jansen,
 Marc-Andr\'e Lemburg, Fredrik Lundh, Tim Peters, Tom Reinhardt, Neil
 Schemenauer, Guido van Rossum.
 
