@@ -59,7 +59,15 @@ class StringIO:
         self.softspace = 0
 
     def __iter__(self):
-        return iter(self.readline, '')
+        return self
+
+    def next(self):
+        if self.closed:
+            raise StopIteration
+        r = self.readline()
+        if not r:
+            raise StopIteration
+        return r
 
     def close(self):
         """Free the memory buffer.
