@@ -203,7 +203,7 @@ told <grin>."
   :type 'boolean
   :group 'python)
 
-(defvar py-temp-directory
+(defcustom py-temp-directory
   (let ((ok '(lambda (x)
 	       (and x
 		    (setq x (expand-file-name x)) ; always true
@@ -223,7 +223,7 @@ can write into:  the value (if any) of the environment variable TMPDIR,
   :type 'string
   :group 'python)
 
-(defvar py-beep-if-tab-change t
+(defcustom py-beep-if-tab-change t
   "*Ring the bell if tab-width is changed.
 If a comment of the form
 
