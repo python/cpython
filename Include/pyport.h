@@ -366,8 +366,16 @@ extern double hypot(double, double);
 #endif
 
 #ifdef MALLOC_ZERO_RETURNS_NULL
-/* XXX Always allocate one extra byte, since some malloc's return NULL
-   XXX for malloc(0) or realloc(p, 0). */
+/* Allocate an extra byte if the platform malloc(0) returns NULL.
+   Caution:  this bears no relation to whether realloc(p, 0) returns NULL
+   when p != NULL.  Even on platforms where malloc(0) does not return NULL,
+   realloc(p, 0) may act like free(p) and return NULL.  Examples include
+   Windows, and Python's own obmalloc.c (as of 2-Mar-2002).  For whatever
+   reason, our docs promise that PyMem_Realloc(p, 0) won't act like
+   free(p) or return NULL, so realloc() calls may have to be hacked
+   too, but MALLOC_ZERO_RETURNS_NULL's state is irrelevant to realloc (it
+   needs a different hack).
+*/
 #define _PyMem_EXTRA 1
 #else
 #define _PyMem_EXTRA 0
