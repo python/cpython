@@ -104,7 +104,7 @@ class async_chat (asyncore.dispatcher):
                 # no terminator, collect it all
                 self.collect_incoming_data (self.ac_in_buffer)
                 self.ac_in_buffer = ''
-            elif type(terminator) == type(0):
+            elif isinstance(terminator, int):
                 # numeric terminator
                 n = terminator
                 if lb < n:
@@ -183,7 +183,6 @@ class async_chat (asyncore.dispatcher):
     # refill the outgoing buffer by calling the more() method
     # of the first producer in the queue
     def refill_buffer (self):
-        _string_type = type('')
         while 1:
             if len(self.producer_fifo):
                 p = self.producer_fifo.first()
@@ -194,7 +193,7 @@ class async_chat (asyncore.dispatcher):
                         self.producer_fifo.pop()
                         self.close()
                     return
-                elif type(p) is _string_type:
+                elif isinstance(p, str):
                     self.producer_fifo.pop()
                     self.ac_out_buffer = self.ac_out_buffer + p
                     return
