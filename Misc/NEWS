@@ -101,6 +101,15 @@ Release date: XX-XXX-2003
 
 - SF #649762, fix infinite loop in asynchat when null string used as terminator
 
+- SF #570655, fix misleading option text for bdist_rpm
+
+- Distutils: Allow unknown keyword arguments to the setup() function 
+  and the Extension constructor, printing a warning about them instead
+  of reporting an error and stopping.
+
+- Distutils: Translate spaces in the machine name to underscores
+  (Power Macintosh -> Power_Macintosh)
+
 
 What's New in Python 2.2.2 (final) ?
 Release date: 14-Oct-2002
