@@ -800,14 +800,11 @@ ins(arrayobject *self, int where, PyObject *v)
 }
 
 static PyObject *
-array_count(arrayobject *self, PyObject *args)
+array_count(arrayobject *self, PyObject *v)
 {
 	int count = 0;
 	int i;
-	PyObject *v;
 
-        if (!PyArg_ParseTuple(args, "O:count", &v))
-		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		PyObject *selfi = getarrayitem((PyObject *)self, i);
 		int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
@@ -826,13 +823,10 @@ PyDoc_STRVAR(count_doc,
 Return number of occurences of x in the array.");
 
 static PyObject *
-array_index(arrayobject *self, PyObject *args)
+array_index(arrayobject *self, PyObject *v)
 {
 	int i;
-	PyObject *v;
 
-	if (!PyArg_ParseTuple(args, "O:index", &v))
-		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		PyObject *selfi = getarrayitem((PyObject *)self, i);
 		int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
@@ -853,13 +847,10 @@ PyDoc_STRVAR(index_doc,
 Return index of first occurence of x in the array.");
 
 static PyObject *
-array_remove(arrayobject *self, PyObject *args)
+array_remove(arrayobject *self, PyObject *v)
 {
 	int i;
-	PyObject *v;
 
-        if (!PyArg_ParseTuple(args, "O:remove", &v))
-		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
 		PyObject *selfi = getarrayitem((PyObject *)self,i);
 		int cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
@@ -915,12 +906,8 @@ PyDoc_STRVAR(pop_doc,
 Return the i-th element and delete it from the array. i defaults to -1.");
 
 static PyObject *
-array_extend(arrayobject *self, PyObject *args)
+array_extend(arrayobject *self, PyObject *bb)
 {
-        PyObject    *bb;
-
-	if (!PyArg_ParseTuple(args, "O:extend", &bb))
-		return NULL;
 	if (array_do_extend(self, bb) == -1)
 		return NULL;
 	Py_INCREF(Py_None);
@@ -949,11 +936,9 @@ Insert a new item x into the array before position i.");
 
 
 static PyObject *
-array_buffer_info(arrayobject *self, PyObject *args)
+array_buffer_info(arrayobject *self, PyObject *unused)
 {
 	PyObject* retval = NULL;
-        if (!PyArg_ParseTuple(args, ":buffer_info"))
-                return NULL;
 	retval = PyTuple_New(2);
 	if (!retval)
 		return NULL;
@@ -974,11 +959,8 @@ the buffer length in bytes.");
 
 
 static PyObject *
-array_append(arrayobject *self, PyObject *args)
+array_append(arrayobject *self, PyObject *v)
 {
-	PyObject *v;
-        if (!PyArg_ParseTuple(args, "O:append", &v))
-		return NULL;
 	return ins(self, (int) self->ob_size, v);
 }
 
@@ -989,13 +971,10 @@ Append new value x to the end of the array.");
 
 
 static PyObject *
-array_byteswap(arrayobject *self, PyObject *args)
+array_byteswap(arrayobject *self, PyObject *unused)
 {
 	char *p;
 	int i;
-
-        if (!PyArg_ParseTuple(args, ":byteswap"))
-                return NULL;
 
 	switch (self->ob_descr->itemsize) {
 	case 1:
@@ -1049,16 +1028,13 @@ Byteswap all items of the array.  If the items in the array are not 1, 2,\n\
 4, or 8 bytes in size, RuntimeError is raised.");
 
 static PyObject *
-array_reverse(arrayobject *self, PyObject *args)
+array_reverse(arrayobject *self, PyObject *unused)
 {
 	register int itemsize = self->ob_descr->itemsize;
 	register char *p, *q;
 	/* little buffer to hold items while swapping */
 	char tmp[256];	/* 8 is probably enough -- but why skimp */
 	assert(itemsize <= sizeof(tmp));
-
-        if (!PyArg_ParseTuple(args, ":reverse"))
-                return NULL;
 
 	if (self->ob_size > 1) {
 		for (p = self->ob_item,
@@ -1138,12 +1114,10 @@ array.  Also called as read.");
 
 
 static PyObject *
-array_tofile(arrayobject *self, PyObject *args)
+array_tofile(arrayobject *self, PyObject *f)
 {
-	PyObject *f;
 	FILE *fp;
-        if (!PyArg_ParseTuple(args, "O:tofile", &f))
-		return NULL;
+
 	fp = PyFile_AsFile(f);
 	if (fp == NULL) {
 		PyErr_SetString(PyExc_TypeError, "arg must be open file");
@@ -1169,13 +1143,11 @@ write.");
 
 
 static PyObject *
-array_fromlist(arrayobject *self, PyObject *args)
+array_fromlist(arrayobject *self, PyObject *list)
 {
 	int n;
-	PyObject *list;
 	int itemsize = self->ob_descr->itemsize;
-        if (!PyArg_ParseTuple(args, "O:fromlist", &list))
-		return NULL;
+
 	if (!PyList_Check(list)) {
 		PyErr_SetString(PyExc_TypeError, "arg must be list");
 		return NULL;
@@ -1214,12 +1186,11 @@ Append items to array from list.");
 
 
 static PyObject *
-array_tolist(arrayobject *self, PyObject *args)
+array_tolist(arrayobject *self, PyObject *unused)
 {
 	PyObject *list = PyList_New(self->ob_size);
 	int i;
-        if (!PyArg_ParseTuple(args, ":tolist"))
-                return NULL;
+
 	if (list == NULL)
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
@@ -1277,10 +1248,8 @@ values,as if it had been read from a file using the fromfile() method).");
 
 
 static PyObject *
-array_tostring(arrayobject *self, PyObject *args)
+array_tostring(arrayobject *self, PyObject *unused)
 {
-	if (!PyArg_ParseTuple(args, ":tostring"))
-		return NULL;
 	return PyString_FromStringAndSize(self->ob_item,
 				    self->ob_size * self->ob_descr->itemsize);
 }
@@ -1335,10 +1304,8 @@ append Unicode data to an array of some other type.");
 
 
 static PyObject *
-array_tounicode(arrayobject *self, PyObject *args)
+array_tounicode(arrayobject *self, PyObject *unused)
 {
-	if (!PyArg_ParseTuple(args, ":tounicode"))
-		return NULL;
 	if (self->ob_descr->typecode != 'u') {
 		PyErr_SetString(PyExc_ValueError,
 			"tounicode() may only be called on type 'u' arrays");
@@ -1380,19 +1347,19 @@ static PyGetSetDef array_getsets [] = {
 };
 
 PyMethodDef array_methods[] = {
-	{"append",	(PyCFunction)array_append,	METH_VARARGS,
+	{"append",	(PyCFunction)array_append,	METH_O,
 	 append_doc},
-	{"buffer_info", (PyCFunction)array_buffer_info, METH_VARARGS,
+	{"buffer_info", (PyCFunction)array_buffer_info, METH_NOARGS,
 	 buffer_info_doc},
-	{"byteswap",	(PyCFunction)array_byteswap,	METH_VARARGS,
+	{"byteswap",	(PyCFunction)array_byteswap,	METH_NOARGS,
 	 byteswap_doc},
-	{"count",	(PyCFunction)array_count,	METH_VARARGS,
+	{"count",	(PyCFunction)array_count,	METH_O,
 	 count_doc},
-	{"extend",      (PyCFunction)array_extend,	METH_VARARGS,
+	{"extend",      (PyCFunction)array_extend,	METH_O,
 	 extend_doc},
 	{"fromfile",	(PyCFunction)array_fromfile,	METH_VARARGS,
 	 fromfile_doc},
-	{"fromlist",	(PyCFunction)array_fromlist,	METH_VARARGS,
+	{"fromlist",	(PyCFunction)array_fromlist,	METH_O,
 	 fromlist_doc},
 	{"fromstring",	(PyCFunction)array_fromstring,	METH_VARARGS,
 	 fromstring_doc},
@@ -1400,7 +1367,7 @@ PyMethodDef array_methods[] = {
 	{"fromunicode",	(PyCFunction)array_fromunicode,	METH_VARARGS,
 	 fromunicode_doc},
 #endif
-	{"index",	(PyCFunction)array_index,	METH_VARARGS,
+	{"index",	(PyCFunction)array_index,	METH_O,
 	 index_doc},
 	{"insert",	(PyCFunction)array_insert,	METH_VARARGS,
 	 insert_doc},
@@ -1408,23 +1375,23 @@ PyMethodDef array_methods[] = {
 	 pop_doc},
 	{"read",	(PyCFunction)array_fromfile,	METH_VARARGS,
 	 fromfile_doc},
-	{"remove",	(PyCFunction)array_remove,	METH_VARARGS,
+	{"remove",	(PyCFunction)array_remove,	METH_O,
 	 remove_doc},
-	{"reverse",	(PyCFunction)array_reverse,	METH_VARARGS,
+	{"reverse",	(PyCFunction)array_reverse,	METH_NOARGS,
 	 reverse_doc},
 /*	{"sort",	(PyCFunction)array_sort,	METH_VARARGS,
 	sort_doc},*/
-	{"tofile",	(PyCFunction)array_tofile,	METH_VARARGS,
+	{"tofile",	(PyCFunction)array_tofile,	METH_O,
 	 tofile_doc},
-	{"tolist",	(PyCFunction)array_tolist,	METH_VARARGS,
+	{"tolist",	(PyCFunction)array_tolist,	METH_NOARGS,
 	 tolist_doc},
-	{"tostring",	(PyCFunction)array_tostring,	METH_VARARGS,
+	{"tostring",	(PyCFunction)array_tostring,	METH_NOARGS,
 	 tostring_doc},
 #ifdef Py_USING_UNICODE
-	{"tounicode",   (PyCFunction)array_tounicode,	METH_VARARGS,
+	{"tounicode",   (PyCFunction)array_tounicode,	METH_NOARGS,
 	 tounicode_doc},
 #endif
-	{"write",	(PyCFunction)array_tofile,	METH_VARARGS,
+	{"write",	(PyCFunction)array_tofile,	METH_O,
 	 tofile_doc},
 	{NULL,		NULL}		/* sentinel */
 };
@@ -1444,18 +1411,16 @@ array_repr(arrayobject *a)
 	}
         
 	if (typecode == 'c' || typecode == 'u') {
-		PyObject *t_empty = PyTuple_New(0);
 		PyOS_snprintf(buf, sizeof(buf), "array('%c', ", typecode);
 		s = PyString_FromString(buf);
 #ifdef Py_USING_UNICODE
 		if (typecode == 'c')
 #endif
-			v = array_tostring(a, t_empty);
+			v = array_tostring(a, NULL);
 #ifdef Py_USING_UNICODE
 		else
-			v = array_tounicode(a, t_empty);
+			v = array_tounicode(a, NULL);
 #endif
-		Py_DECREF(t_empty);
 		t = PyObject_Repr(v);
 		Py_XDECREF(v);
 		PyString_ConcatAndDel(&s, t);
