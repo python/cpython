@@ -99,6 +99,7 @@ extern DL_IMPORT(void) PyEval_AcquireLock(void);
 extern DL_IMPORT(void) PyEval_ReleaseLock(void);
 extern DL_IMPORT(void) PyEval_AcquireThread(PyThreadState *tstate);
 extern DL_IMPORT(void) PyEval_ReleaseThread(PyThreadState *tstate);
+extern DL_IMPORT(void) PyEval_ReInitThreads(void);
 
 #define Py_BEGIN_ALLOW_THREADS { \
 			PyThreadState *_save; \
