@@ -56,6 +56,10 @@ extern PyMac_AddLibResources(void);
 
 #define STARTUP "PythonStartup"
 
+#define COPYRIGHT \
+    "Type \"copyright\", \"credits\" or \"license\" for more information."
+
+
 extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
 extern int Py_VerboseFlag; /* For import.c, declared in pythonrun.c */
 short PyMac_AppRefNum;	/* RefNum of application resource fork */
@@ -277,7 +281,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	}
 	
 	/* Copy selected options to where the machine-independent stuff wants it */
-	Py_VerboseFlag = options.verbose;
+	Py_VerboseFlag = options.verbose *2;
 /*	Py_SuppressPrintingFlag = options.suppress_print; */
 	Py_OptimizeFlag = options.optimize;
 	Py_DebugFlag = options.debugging;
@@ -474,8 +478,8 @@ Py_Main(argc, argv)
 
 	if (Py_VerboseFlag ||
 	    command == NULL && filename == NULL && isatty((int)fileno(fp)))
-		fprintf(stderr, "Python %s\n%s\n",
-			Py_GetVersion(), Py_GetCopyright());
+		fprintf(stderr, "Python %s on %s\n%s\n",
+			Py_GetVersion(), Py_GetPlatform(), COPYRIGHT);
 	
 	if (filename != NULL) {
 		if ((fp = fopen(filename, "r")) == NULL) {
