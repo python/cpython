@@ -1,4 +1,3 @@
-
 /* Array object implementation */
 
 /* An array is a uniform list -- all items have the same type.
@@ -19,6 +18,10 @@
 
 struct arrayobject; /* Forward */
 
+/* All possible arraydescr values are defined in the vector "descriptors"
+ * below.  That's defined later because the appropriate get and set
+ * functions aren't visible yet.
+ */
 struct arraydescr {
 	int typecode;
 	int itemsize;
@@ -36,17 +39,17 @@ staticforward PyTypeObject Arraytype;
 
 #define is_arrayobject(op) ((op)->ob_type == &Arraytype)
 
-/* Forward */
-static PyObject *newarrayobject(int, struct arraydescr *);
-#if 0
-static int getarraysize(PyObject *);
-#endif
-static PyObject *getarrayitem(PyObject *, int);
-static int setarrayitem(PyObject *, int, PyObject *);
-#if 0
-static int insarrayitem(PyObject *, int, PyObject *);
-static int addarrayitem(PyObject *, PyObject *);
-#endif
+/****************************************************************************
+Get and Set functions for each type.
+A Get function takes an arrayobject* and an integer index, returning the
+array value at that index wrapped in an appropriate PyObject*.
+A Set function takes an arrayobject, integer index, and PyObject*; sets
+the array value at that index to the raw C data extracted from the PyObject*,
+and returns 0 if successful, else nonzero on failure (PyObject* not of an
+appropriate type or value).
+Note that the basic Get and Set functions do NOT check that the index is
+in bounds; that's the responsibility of the caller.
+****************************************************************************/
 
 static PyObject *
 c_getitem(arrayobject *ap, int i)
@@ -208,7 +211,7 @@ II_setitem(arrayobject *ap, int i, PyObject *v)
 			return -1;
 		}
 		x = (unsigned long)y;
-						
+
 	}
 	if (x > UINT_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
@@ -263,14 +266,14 @@ LL_setitem(arrayobject *ap, int i, PyObject *v)
 			return -1;
 		}
 		x = (unsigned long)y;
-						
+
 	}
 	if (x > ULONG_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
 			"unsigned long is greater than maximum");
 		return -1;
 	}
-		
+
 	if (i >= 0)
 		((unsigned long *)ap->ob_item)[i] = x;
 	return 0;
@@ -326,7 +329,10 @@ static struct arraydescr descriptors[] = {
 	{'\0', 0, 0, 0} /* Sentinel */
 };
 /* If we ever allow items larger than double, we must change reverse()! */
-	
+
+/****************************************************************************
+Implementations of array object methods.
+****************************************************************************/
 
 static PyObject *
 newarrayobject(int size, struct arraydescr *descr)
@@ -360,26 +366,11 @@ newarrayobject(int size, struct arraydescr *descr)
 	return (PyObject *) op;
 }
 
-#if 0
-static int
-getarraysize(PyObject *op)
-{
-	if (!is_arrayobject(op)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
-	return ((arrayobject *)op) -> ob_size;
-}
-#endif
-
 static PyObject *
 getarrayitem(PyObject *op, int i)
 {
 	register arrayobject *ap;
-	if (!is_arrayobject(op)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
+	assert(is_arrayobject(op));
 	ap = (arrayobject *)op;
 	if (i < 0 || i >= ap->ob_size) {
 		PyErr_SetString(PyExc_IndexError, "array index out of range");
@@ -416,29 +407,6 @@ ins1(arrayobject *self, int where, PyObject *v)
 	self->ob_size++;
 	return (*self->ob_descr->setitem)(self, where, v);
 }
-
-#if 0
-static int
-insarrayitem(PyObject *op, int where, PyObject *newitem)
-{
-	if (!is_arrayobject(op)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
-	return ins1((arrayobject *)op, where, newitem);
-}
-
-static int
-addarrayitem(PyObject *op, PyObject *newitem)
-{
-	if (!is_arrayobject(op)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
-	return ins1((arrayobject *)op,
-		(int) ((arrayobject *)op)->ob_size, newitem);
-}
-#endif
 
 /* Methods */
 
@@ -648,10 +616,7 @@ array_ass_item(arrayobject *a, int i, PyObject *v)
 static int
 setarrayitem(PyObject *a, int i, PyObject *v)
 {
-	if (!is_arrayobject(a)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
+	assert(is_arrayobject(a));
 	return array_ass_item((arrayobject *)a, i, v);
 }
 
@@ -783,10 +748,10 @@ array_extend(arrayobject *self, PyObject *args)
 {
 	int size;
         PyObject    *bb;
-        
+
 	if (!PyArg_ParseTuple(args, "O:extend", &bb))
             return NULL;
-        
+
 	if (!is_arrayobject(bb)) {
 		PyErr_Format(PyExc_TypeError,
 			     "can only extend array with array (not \"%.200s\")",
@@ -951,7 +916,7 @@ array_reverse(arrayobject *self, PyObject *args)
 			memmove(q, tmp, itemsize);
 		}
 	}
-	
+
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1336,9 +1301,6 @@ static PyBufferProcs array_as_buffer = {
 	(getwritebufferproc)array_buffer_getwritebuf,
 	(getsegcountproc)array_buffer_getsegcount,
 };
-
-
-
 
 static PyObject *
 a_array(PyObject *self, PyObject *args)
