@@ -254,11 +254,6 @@ Py_Finalize(void)
 	call_sys_exitfunc();
 	initialized = 0;
 
-	/* Cleanup auto-thread-state */
-#ifdef WITH_THREAD
-	_PyGILState_Fini();
-#endif /* WITH_THREAD */
-
 	/* Get current thread state and interpreter pointer */
 	tstate = PyThreadState_Get();
 	interp = tstate->interp;
@@ -309,6 +304,11 @@ Py_Finalize(void)
 	   raised.
 	*/
 	_PyExc_Fini();
+
+	/* Cleanup auto-thread-state */
+#ifdef WITH_THREAD
+	_PyGILState_Fini();
+#endif /* WITH_THREAD */
 
 	/* Clear interpreter state */
 	PyInterpreterState_Clear(interp);
