@@ -14,6 +14,8 @@ class Set:
         self.elts = {}
     def __len__(self):
         return len(self.elts)
+    def __contains__(self, elt):
+        return self.elts.has_key(elt)
     def add(self, elt):
         self.elts[elt] = elt
     def elements(self):
@@ -22,6 +24,10 @@ class Set:
         return self.elts.has_key(elt)
     def remove(self, elt):
         del self.elts[elt]
+    def copy(self):
+        c = Set()
+        c.elts.update(self.elts)
+        return c
 
 class Stack:
     def __init__(self):
