@@ -65,7 +65,7 @@ item: Set Variable
   Variable=DISABLED
   Value=!
 end
-item: Set Variable
+remarked item: Set Variable
   Variable=MAINDIR
   Value=Python
 end
@@ -92,9 +92,16 @@ end
 item: Remark
   Text=Dont use "Program Files" for Python! (why not?)
 end
+item: Get Registry Key Value
+  Variable=MAINDIR
+  Key=SOFTWARE\Microsoft\Windows\CurrentVersion
+  Default=C:
+  Value Name=ProgramFilesDir
+  Flags=00000100
+end
 item: Set Variable
   Variable=MAINDIR
-  Value=C:\%MAINDIR%
+  Value=%MAINDIR%\Python
 end
 item: Set Variable
   Variable=BACKUP
@@ -830,6 +837,12 @@ item: Install File
   Description=Python Documentation (HTML)
   Flags=0000000000000010
 end
+item: Install File
+  Source=%_SRC_%\Doc\ref\*.html
+  Destination=%MAINDIR%\Doc\ref
+  Description=Python Documentation (HTML)
+  Flags=0000000000000010
+end
 item: End Block
 end
 item: If/While Statement
@@ -948,7 +961,7 @@ item: If/While Statement
 end
 item: Edit Registry
   Key=Software\Python\PythonCore\%PY_VERSION%\Help\Main Python Documentation
-  New Value=%MAINDIR%\doc\lib\index.html
+  New Value=%MAINDIR%\doc\index.html
   Root=2
 end
 item: End Block
