@@ -12,30 +12,31 @@ from distutils.core import Command
 
 class Build (Command):
 
-    options = [('basedir=', 'b', "base directory for build library"),
-               ('libdir=', 'l', "directory for platform-shared files"),
-               ('platdir=', 'p', "directory for platform-specific files"),
+    options = [('build-base=', 'b',
+                "base directory for build library"),
+               ('build-lib=', 'l',
+                "directory for platform-shared files"),
+               ('build-platlib=', 'p',
+                "directory for platform-specific files"),
               ]
 
     def set_default_options (self):
-        self.basedir = 'build'
-        # these are decided only after 'basedir' has its final value
+        self.build_base = 'build'
+        # these are decided only after 'build_base' has its final value
         # (unless overridden by the user or client)
-        self.libdir = None
-        self.platdir = None
+        self.build_lib = None
+        self.build_platlib = None
 
     def set_final_options (self):
-        # 'libdir' and 'platdir' just default to 'lib' and 'plat' under
-        # the base build directory
-        if self.libdir is None:
-            self.libdir = os.path.join (self.basedir, 'lib')
-        if self.platdir is None:
-            self.platdir = os.path.join (self.basedir, 'platlib')
+        # 'build_lib' and 'build_platlib' just default to 'lib' and
+        # 'platlib' under the base build directory
+        if self.build_lib is None:
+            self.build_lib = os.path.join (self.build_base, 'lib')
+        if self.build_platlib is None:
+            self.build_platlib = os.path.join (self.build_base, 'platlib')
 
 
     def run (self):
-
-        self.set_final_options ()
 
         # For now, "build" means "build_py" then "build_ext".  (Eventually
         # it should also build documentation.)

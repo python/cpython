@@ -8,7 +8,7 @@ from distutils.util import copy_tree
 
 class InstallPy (Command):
 
-    options = [('dir=', 'd', "directory to install to"),
+    options = [('install-dir=', 'd', "directory to install to"),
                ('build-dir=','b', "build directory (where to install from)"),
                ('compile', 'c', "compile .py to .pyc"),
                ('optimize', 'o', "compile .py to .pyo (optimized)"),
@@ -17,7 +17,7 @@ class InstallPy (Command):
 
     def set_default_options (self):
         # let the 'install' command dictate our installation directory
-        self.dir = None
+        self.install_dir = None
         self.build_dir = None
         self.compile = 1
         self.optimize = 1
@@ -39,18 +39,16 @@ class InstallPy (Command):
         # install (target) directory, and whether to compile .py files.
         self.set_undefined_options ('install',
                                     ('build_lib', 'build_dir'),
-                                    (dir_option, 'dir'),
+                                    (dir_option, 'install_dir'),
                                     ('compile_py', 'compile'),
                                     ('optimize_py', 'optimize'))
 
 
     def run (self):
 
-        self.set_final_options ()
-
         # Dump entire contents of the build directory to the installation
         # directory (that's the beauty of having a build directory!)
-        outfiles = self.copy_tree (self.build_dir, self.dir)
+        outfiles = self.copy_tree (self.build_dir, self.install_dir)
                    
         # (Optionally) compile .py to .pyc
         # XXX hey! we can't control whether we optimize or not; that's up
