@@ -26,7 +26,7 @@ class Stuff(Canvas):
 				{'width': 100, 'height': 100})
 		Canvas.config(self, cnf)
 		self.create_rectangle(30, 30, 70, 70, 
-				      {'fill': 'red', 'tags': 'box'})
+				      {'fill': 'blue', 'tags': 'box'})
 		Canvas.bind(self, 'box', '<Enter>', self.enter)
 		Canvas.bind(self, 'box', '<Leave>', self.leave)
 
