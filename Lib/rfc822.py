@@ -253,6 +253,18 @@ class Message:
 			return None
 		return parsedate(data)
 
+	# Retrieve a date field from a header as a 10-tuple.  
+	# The first 9 elements make up a tuple compatible
+	# with time.mktime(), and the 10th is the offset
+	# of the poster's time zone from GMT/UTC.
+
+	def getdate_tz(self, name):
+		try:
+			data = self[name]
+		except KeyError:
+			return None
+		return parsedate_tz(data)
+
 
 	# Access as a dictionary (only finds *last* header of each type):
 
@@ -386,8 +398,21 @@ def parseaddr(address):
 _monthnames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
 	  'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-def parsedate(data):
-	# XXX This still mostly ignores timezone matters at the moment...
+# The timezone table does not include the military time zones defined
+# in RFC822, other than Z.  According to RFC1123, the description in
+# RFC822 gets the signs wrong, so we can't rely on any such time
+# zones.  RFC1123 recommends that numeric timezone indicators be used
+# instead of timezone names.
+
+_timezones = {'UT':0, 'UTC':0, 'GMT':0, 'Z':0, 
+	      'AST': -400, 'ADT': -300,  # Atlantic standard
+	      'EST': -500, 'EDT': -400,  # Eastern
+	      'CST': -600, 'CDT':-500,   # Centreal
+	      'MST':-700, 'MDT':-600,    # Mountain
+	      'PST':-800, 'PDT':-700     # Pacific
+	     }    
+
+def parsedate_tz(data):
 	data = string.split(data)
 	if data[0][-1] == ',':
 		# There's a dayname here. Skip it
@@ -420,8 +445,28 @@ def parsedate(data):
 		tss = string.atoi(tss)
 	except string.atoi_error:
 		return None
-	tuple = (yy, mm, dd, thh, tmm, tss, 0, 0, 0)
+	tzoffset=0
+	tz=string.upper(tz)
+	if _timezones.has_key(tz):
+		tzoffset=_timezones[tz]
+	else:
+		try: 
+			tzoffset=string.atoi(tz)
+		except string.atoi_error: 
+			pass
+	# Convert a timezone offset into seconds ; -0500 -> -18000
+	if tzoffset<0: tzsign=-1
+	else: tzsign=1
+	tzoffset=tzoffset*tzsign
+	tzoffset = tzsign * ( (tzoffset/100)*3600 + (tzoffset % 100)*60)
+	tuple = (yy, mm, dd, thh, tmm, tss, 0, 0, 0, tzoffset)
 	return tuple
+
+def parsedate(data):
+	t=parsedate_tz(data)
+	if type(t)==type( () ):
+		return t[:9]
+	else: return t    
 
 
 # When used as script, run a small test program.
@@ -430,7 +475,7 @@ def parsedate(data):
 
 if __name__ == '__main__':
 	import sys, os
-	file = os.path.join(os.environ['HOME'], 'Mail/drafts/,1')
+	file = os.path.join(os.environ['HOME'], 'Mail/inbox/1')
 	if sys.argv[1:]: file = sys.argv[1]
 	f = open(file, 'r')
 	m = Message(f)
@@ -438,9 +483,15 @@ if __name__ == '__main__':
 	print 'To:', m.getaddrlist('to')
 	print 'Subject:', m.getheader('subject')
 	print 'Date:', m.getheader('date')
-	date = m.getdate('date')
+	date = m.getdate_tz('date')
 	if date:
-		print 'ParsedDate:', time.asctime(date)
+		print 'ParsedDate:', time.asctime(date[:-1]),
+		hhmmss = date[-1]
+		hhmm, ss = divmod(hhmmss, 60)
+		hh, mm = divmod(hhmm, 60)
+		print "%+03d%02d" % (hh, mm),
+		if ss: print ".%02d" % ss,
+		print
 	else:
 		print 'ParsedDate:', None
 	m.rewindbody()
