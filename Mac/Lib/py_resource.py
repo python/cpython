@@ -28,9 +28,18 @@ def open(dst):
 	Res.UseResFile(output)
 	return output
 
-def writemodule(name, id, data, type='PYC ', preload=0):
+def writemodule(name, id, data, type='PYC ', preload=0, ispackage=0):
 	"""Write pyc code to a PYC resource with given name and id."""
 	# XXXX Check that it doesn't exist
+	
+	# Normally, byte 4-7 are the time stamp, but that is not used
+	# for 'PYC ' resources. We abuse byte 4 as a flag to indicate
+	# that it is a package rather than an ordinary module. 
+	# See also macimport.c. (jvr)
+	if ispackage:
+		data = data[:4] + '\377\0\0\0' + data[8:] # flag resource as package
+	else:
+		data = data[:4] + '\0\0\0\0' + data[8:] # clear mod date field, used as package flag
 	res = Res.Resource(data)
 	res.AddResource(type, id, name)
 	if preload:
@@ -40,22 +49,23 @@ def writemodule(name, id, data, type='PYC ', preload=0):
 	res.WriteResource()
 	res.ReleaseResource()
 		
-def frompycfile(file, name=None, preload=0):
+def frompycfile(file, name=None, preload=0, ispackage=0):
 	"""Copy one pyc file to the open resource file"""
 	if name == None:
 		d, name = os.path.split(file)
 		name = name[:-4]
 	id = findfreeid()
-	writemodule(name, id, __builtin__.open(file, 'rb').read(), preload=preload)
+	data = __builtin__.open(file, 'rb').read()
+	writemodule(name, id, data, preload=preload, ispackage=ispackage)
 	return id, name
 
-def frompyfile(file, name=None, preload=0):
+def frompyfile(file, name=None, preload=0, ispackage=0):
 	"""Compile python source file to pyc file and add to resource file"""
 	import py_compile
 	
 	py_compile.compile(file)
 	file = file +'c'
-	return frompycfile(file, name, preload=preload)	
+	return frompycfile(file, name, preload=preload, ispackage=ispackage)
 
 # XXXX Note this is incorrect, it only handles one type and one file....
 
