@@ -465,28 +465,28 @@ convertsimple1(arg, p_format, p_va)
 	
 	switch (c) {
 	
-	case 'b': /* byte -- very short int */
+	case 'b': /* unsigned byte -- very short int */
 		{
 			char *p = va_arg(*p_va, char *);
 			long ival = PyInt_AsLong(arg);
 			if (ival == -1 && PyErr_Occurred())
 				return "integer<b>";
-			else if (ival < CHAR_MIN) {
+			else if (ival < 0) {
 				PyErr_SetString(PyExc_OverflowError,
-					"byte integer is less than minimum");
+					"unsigned byte integer is less than minimum");
 				return "integer<b>";
 			}
-			else if (ival > CHAR_MAX && ival >= 256) {
+			else if (ival > UCHAR_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-				    "byte integer is greater than maximum");
+				    "unsigned byte integer is greater than maximum");
 				return "integer<b>";
 			}
 			else
-				*p = (char) ival;
+				*p = (unsigned char) ival;
 			break;
 		}
 	
-	case 'h': /* short int */
+	case 'h': /* signed short int */
 		{
 			short *p = va_arg(*p_va, short *);
 			long ival = PyInt_AsLong(arg);
@@ -494,12 +494,12 @@ convertsimple1(arg, p_format, p_va)
 				return "integer<h>";
 			else if (ival < SHRT_MIN) {
 				PyErr_SetString(PyExc_OverflowError,
-					"short integer is less than minimum");
+					"signed short integer is less than minimum");
 				return "integer<h>";
 			}
 			else if (ival > SHRT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-				  "short integer is greater than maximum");
+				  "signed short integer is greater than maximum");
 				return "integer<h>";
 			}
 			else
@@ -507,7 +507,7 @@ convertsimple1(arg, p_format, p_va)
 			break;
 		}
 	
-	case 'i': /* int */
+	case 'i': /* signed int */
 		{
 			int *p = va_arg(*p_va, int *);
 			long ival = PyInt_AsLong(arg);
@@ -515,12 +515,12 @@ convertsimple1(arg, p_format, p_va)
 				return "integer<i>";
 			else if (ival < INT_MIN) {
 				PyErr_SetString(PyExc_OverflowError,
-					"integer is less than minimum");
+					"signed integer is less than minimum");
 				return "integer<i>";
 			}
 			else if (ival > INT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-				  "integer is greater than maximum");
+				  "signed integer is greater than maximum");
 				return "integer<i>";
 			}
 			else
