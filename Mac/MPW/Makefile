@@ -114,7 +114,7 @@ ALL = ¶
 	"{Objs}"Resmodule.c.o ¶
 	"{Objs}"Sndmodule.c.o ¶
 	"{Objs}"Winmodule.c.o ¶
-#	"{Objs}"ctbmodule.c.o ¶
+	"{Objs}"ctbmodule.c.o ¶
 #	"{Objs}"imgformat.c.o ¶
 #	"{Objs}"macmain.c.o ¶
 #	"{Objs}"stdwinmodule.c.o ¶
