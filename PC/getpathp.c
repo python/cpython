@@ -372,7 +372,7 @@ calculate_path()
 	}
 	else
 		bufsz = 0;
-	bufsz += strlen(PYTHONPATH);
+	bufsz += strlen(PYTHONPATH) + 1;
 	if (envpath != NULL)
 		bufsz += strlen(envpath) + 1;
 	bufsz += strlen(argv0_path) + 1;
