@@ -41,6 +41,8 @@ typedef struct _frame {
 	int f_nvalues;		/* size of f_valuestack */
 	int f_nblocks;		/* size of f_blockstack */
 	int f_iblock;		/* index in f_blockstack */
+	int f_lasti;		/* Last instruction if called */
+	int f_lineno;		/* Current line number */
 } frameobject;
 
 
