@@ -527,7 +527,7 @@ posix_getpgrp(self, args)
 {
 	if (!getnoarg(args))
 		return NULL;
-	return newintobject((long)getpgrp());
+	return newintobject((long)getpgrp(0));
 }
 
 static object *
