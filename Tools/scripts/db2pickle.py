@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Synopsis: %(prog)s [-h|-b|-r] dbfile [ picklefile ]
+Synopsis: %(prog)s [-h|-g|-b|-r|-a] dbfile [ picklefile ]
 
 Convert the database file given on the command line to a pickle
 representation.  The optional flags indicate the type of the database (hash,
@@ -21,6 +21,10 @@ try:
 except ImportError:
     dbm = None
 try:
+    import gdbm
+except ImportError:
+    gdbm = None
+try:
     import anydbm
 except ImportError:
     anydbm = None
@@ -37,8 +41,9 @@ def usage():
 
 def main(args):
     try:
-        opts, args = getopt.getopt(args, "hbrda",
-                                   ["hash", "btree", "recno", "dbm", "anydbm"])
+        opts, args = getopt.getopt(args, "hbrdag",
+                                   ["hash", "btree", "recno", "dbm",
+                                    "gdbm", "anydbm"])
     except getopt.error:
         usage()
         return 1
@@ -82,6 +87,12 @@ def main(args):
                 dbopen = anydbm.open
             except AttributeError:
                 sys.stderr.write("anydbm module unavailable.\n")
+                return 1
+        elif opt in ("-g", "--gdbm"):
+            try:
+                dbopen = gdbm.open
+            except AttributeError:
+                sys.stderr.write("gdbm module unavailable.\n")
                 return 1
         elif opt in ("-d", "--dbm"):
             try:
