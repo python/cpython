@@ -1,9 +1,6 @@
 import unittest
 from test import test_support
-from bisect import bisect_right, bisect_left, insort_left, insort_right
-
-# XXX optional slice arguments need tests.
-
+from bisect import bisect_right, bisect_left, insort_left, insort_right, insort, bisect
 
 class TestBisect(unittest.TestCase):
 
@@ -110,6 +107,16 @@ class TestBisect(unittest.TestCase):
             if ip > 0:
                 self.failUnless(data[ip-1] <= elem)
 
+    def test_optionalSlicing(self):
+        for func, list, elt, expected in self.precomputedCases:
+            lo = min(len(list), 1)
+            self.failUnless(func(list, elt, lo=lo) >= lo)
+            hi = min(len(list), 2)
+            self.failUnless(func(list, elt, hi=hi) <= hi)
+
+    def test_backcompatibility(self):
+        self.assertEqual(bisect, bisect_right)
+
 #==============================================================================
 
 class TestInsort(unittest.TestCase):
@@ -130,6 +137,9 @@ class TestInsort(unittest.TestCase):
         sorted = raw[:]
         sorted.sort()
         self.assertEqual(sorted, insorted)
+
+    def test_backcompatibility(self):
+        self.assertEqual(insort, insort_right)
 
 #==============================================================================
 
