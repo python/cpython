@@ -199,6 +199,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if the compiler provides a wchar.h header file. */
 #define HAVE_WCHAR_H 1
 
+/* Define if you want to have a Unicode type. */
+#define Py_USING_UNICODE 1
+
+/* Define as the integral type used for Unicode representation. */
+#define PY_UNICODE_TYPE wchar_t
+
+/* Define as the size of the unicode type. */
+#define Py_UNICODE_SIZE 2
+
 /* Define if malloc(0) returns a NULL pointer */
 #ifdef USE_MSL_MALLOC
 #define MALLOC_ZERO_RETURNS_NULL
