@@ -65,9 +65,8 @@ PyList_New(int size)
 	}
 	nbytes = size * sizeof(PyObject *);
 	/* Check for overflow */
-	if (nbytes / sizeof(PyObject *) != (size_t)size) {
+	if (nbytes / sizeof(PyObject *) != (size_t)size)
 		return PyErr_NoMemory();
-	}
 	if (num_free_lists) {
 		num_free_lists--;
 		op = free_lists[num_free_lists];
@@ -77,14 +76,12 @@ PyList_New(int size)
 		if (op == NULL)
 			return NULL;
 	}
-	if (size <= 0) {
+	if (size <= 0)
 		op->ob_item = NULL;
-	}
 	else {
 		op->ob_item = (PyObject **) PyMem_MALLOC(nbytes);
-		if (op->ob_item == NULL) {
+		if (op->ob_item == NULL)
 			return PyErr_NoMemory();
-		}
 		memset(op->ob_item, 0, sizeof(*op->ob_item) * size);
 	}
 	op->ob_size = size;
@@ -104,7 +101,7 @@ PyList_Size(PyObject *op)
 		return ((PyListObject *)op) -> ob_size;
 }
 
-static PyObject *indexerr;
+static PyObject *indexerr = NULL;
 
 PyObject *
 PyList_GetItem(PyObject *op, int i)
@@ -213,15 +210,10 @@ app1(PyListObject *self, PyObject *v)
 int
 PyList_Append(PyObject *op, PyObject *newitem)
 {
-	if (!PyList_Check(op)) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
-	if (newitem == NULL) {
-		PyErr_BadInternalCall();
-		return -1;
-	}
-	return app1((PyListObject *)op, newitem);
+	if (PyList_Check(op) && (newitem != NULL))
+		return app1((PyListObject *)op, newitem);
+	PyErr_BadInternalCall();
+	return -1;
 }
 
 /* Methods */
@@ -2314,6 +2306,7 @@ list_init(PyListObject *self, PyObject *args, PyObject *kw)
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:list", kwlist, &arg))
 		return -1;
 	/* Empty previous contents */
+	self->allocated = self->ob_size;
 	if (self->ob_size != 0) {
 		if (list_ass_slice(self, 0, self->ob_size, (PyObject *)NULL) != 0)
 			return -1;
