@@ -219,12 +219,24 @@ class Dist (Command):
 
     def find_defaults (self):
 
-        standards = ['README', 'setup.py']
+        standards = [('README', 'README.txt'), 'setup.py']
         for fn in standards:
-            if os.path.exists (fn):
-                self.files.append (fn)
+            if type (fn) is TupleType:
+                alts = fn
+                for fn in alts:
+                    if os.path.exists (fn):
+                        got_it = 1
+                        self.files.append (fn)
+                        break
+
+                if not got_it:
+                    self.warn ("standard file not found: should have one of " +
+                               string.join (alts, ', '))
             else:
-                self.warn ("standard file %s not found" % fn)
+                if os.path.exists (fn):
+                    self.files.append (fn)
+                else:
+                    self.warn ("standard file %s not found" % fn)
 
         optional = ['test/test*.py']
         for pattern in optional:
