@@ -2122,7 +2122,7 @@ associated with that key is forgotten.  It is an error to extract a
 value using a non-existent key.
 
 The \method{keys()} method of a dictionary object returns a list of all
-the keys used in the dictionary, in random order (if you want it
+the keys used in the dictionary, in arbitrary order (if you want it
 sorted, just apply the \method{sort()} method to the list of keys).  To
 check whether a single key is in the dictionary, use the
 \method{has_key()} method of the dictionary.
@@ -2231,8 +2231,8 @@ pear
 
 \section{More on Conditions \label{conditions}}
 
-The conditions used in \code{while} and \code{if} statements above can
-contain other operators besides comparisons.
+The conditions used in \code{while} and \code{if} statements can
+contain any operators, not just comparisons.
 
 The comparison operators \code{in} and \code{not in} check whether a value
 occurs (does not occur) in a sequence.  The operators \code{is} and
@@ -2247,11 +2247,11 @@ whether \code{a} is less than \code{b} and moreover \code{b} equals
 
 Comparisons may be combined by the Boolean operators \code{and} and
 \code{or}, and the outcome of a comparison (or of any other Boolean
-expression) may be negated with \code{not}.  These all have lower
-priorities than comparison operators again; between them, \code{not} has
-the highest priority, and \code{or} the lowest, so that
-\code{A and not B or C} is equivalent to \code{(A and (not B)) or C}.  Of
-course, parentheses can be used to express the desired composition.
+expression) may be negated with \code{not}.  These have lower
+priorities than comparison operators; between them, \code{not} has
+the highest priority and \code{or} the lowest, so that
+\code{A and not B or C} is equivalent to \code{(A and (not B)) or C}.
+As always, parentheses can be used to express the desired composition.
 
 The Boolean operators \code{and} and \code{or} are so-called
 \emph{short-circuit} operators: their arguments are evaluated from
@@ -2307,12 +2307,12 @@ same types:
 Note that comparing objects of different types is legal.  The outcome
 is deterministic but arbitrary: the types are ordered by their name.
 Thus, a list is always smaller than a string, a string is always
-smaller than a tuple, etc.  Mixed numeric types are compared according
-to their numeric value, so 0 equals 0.0, etc.\footnote{
+smaller than a tuple, etc.  \footnote{
         The rules for comparing objects of different types should
         not be relied upon; they may change in a future version of
         the language.
-}
+} Mixed numeric types are compared according to their numeric value, so
+0 equals 0.0, etc.
 
 
 \chapter{Modules \label{modules}}
