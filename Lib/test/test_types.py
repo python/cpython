@@ -244,6 +244,11 @@ vereq(a[-100:100:], a)
 vereq(a[100:-100:-1], a[::-1])
 vereq(a[-100L:100L:2L], (0,2,4))
 
+# Check that a specific bug in _PyTuple_Resize() is squashed.
+def f():
+    for i in range(1000):
+        yield i
+vereq(list(tuple(f())), range(1000))
 
 print '6.5.3 Lists'
 if len([]) != 0: raise TestFailed, 'len([])'
