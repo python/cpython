@@ -1098,6 +1098,7 @@ static int
 join_append_lineterminator(WriterObj *self)
 {
 	int terminator_len;
+	char *terminator;
 
 	terminator_len = PyString_Size(self->dialect->lineterminator);
 
@@ -1105,10 +1106,10 @@ join_append_lineterminator(WriterObj *self)
 	if (!join_check_rec_size(self, self->rec_len + terminator_len))
 		return 0;
 
-	memmove(self->rec + self->rec_len,
-		/* should not be NULL */
-		PyString_AsString(self->dialect->lineterminator), 
-                terminator_len);
+	terminator = PyString_AsString(self->dialect->lineterminator); 
+	if (terminator == NULL)
+		return 0;
+	memmove(self->rec + self->rec_len, terminator, terminator_len);
 	self->rec_len += terminator_len;
 
 	return 1;
