@@ -1043,8 +1043,6 @@ PyString_InternInPlace(p)
 		interned = PyDict_New();
 		if (interned == NULL)
 			return;
-		/* Force slow lookups: */
-		PyDict_SetItem(interned, Py_None, Py_None);
 	}
 	if ((t = PyDict_GetItem(interned, (PyObject *)s)) != NULL) {
 		Py_INCREF(t);
@@ -1078,10 +1076,6 @@ void
 PyString_Fini()
 {
 	int i;
-#ifdef INTERN_STRINGS
-	Py_XDECREF(interned);
-	interned = NULL;
-#endif
 	for (i = 0; i < UCHAR_MAX + 1; i++) {
 		Py_XDECREF(characters[i]);
 		characters[i] = NULL;
@@ -1089,5 +1083,21 @@ PyString_Fini()
 #ifndef DONT_SHARE_SHORT_STRINGS
 	Py_XDECREF(nullstring);
 	nullstring = NULL;
+#endif
+#ifdef INTERN_STRINGS
+	if (interned) {
+		int pos, changed;
+		PyObject *key, *value;
+		do {
+			changed = 0;
+			pos = 0;
+			while (PyDict_Next(interned, &pos, &key, &value)) {
+				if (key->ob_refcnt == 2 && key == value) {
+					PyDict_DelItem(interned, key);
+					changed = 1;
+				}
+			}
+		} while (changed);
+	}
 #endif
 }
