@@ -1755,31 +1755,41 @@ set_exc_info(tstate, type, value, tb)
 	PyObject *tb;
 {
 	PyFrameObject *frame;
+	PyObject *tmp_type, *tmp_value, *tmp_tb;
 	frame = tstate->frame;
 	if (frame->f_exc_type == NULL) {
 		/* This frame didn't catch an exception before */
 		/* Save previous exception of this thread in this frame */
-		Py_XDECREF(frame->f_exc_type);
-		Py_XDECREF(frame->f_exc_value);
-		Py_XDECREF(frame->f_exc_traceback);
 		if (tstate->exc_type == NULL) {
 			Py_INCREF(Py_None);
 			tstate->exc_type = Py_None;
 		}
+		tmp_type = frame->f_exc_type;
+		tmp_value = frame->f_exc_value;
+		tmp_tb = frame->f_exc_traceback;
 		Py_XINCREF(tstate->exc_type);
 		Py_XINCREF(tstate->exc_value);
 		Py_XINCREF(tstate->exc_traceback);
 		frame->f_exc_type = tstate->exc_type;
 		frame->f_exc_value = tstate->exc_value;
 		frame->f_exc_traceback = tstate->exc_traceback;
+		Py_XDECREF(tmp_type);
+		Py_XDECREF(tmp_value);
+		Py_XDECREF(tmp_tb);
 	}
 	/* Set new exception for this thread */
+	tmp_type = tstate->exc_type;
+	tmp_value = tstate->exc_value;
+	tmp_tb = tstate->exc_traceback;
 	Py_XINCREF(type);
 	Py_XINCREF(value);
 	Py_XINCREF(tb);
 	tstate->exc_type = type;
 	tstate->exc_value = value;
 	tstate->exc_traceback = tb;
+	Py_XDECREF(tmp_type);
+	Py_XDECREF(tmp_value);
+	Py_XDECREF(tmp_tb);
 	/* For b/w compatibility */
 	PySys_SetObject("exc_type", type);
 	PySys_SetObject("exc_value", value);
@@ -1791,29 +1801,36 @@ reset_exc_info(tstate)
 	PyThreadState *tstate;
 {
 	PyFrameObject *frame;
+	PyObject *tmp_type, *tmp_value, *tmp_tb;
 	frame = tstate->frame;
 	if (frame->f_exc_type != NULL) {
 		/* This frame caught an exception */
-		Py_XDECREF(tstate->exc_type);
-		Py_XDECREF(tstate->exc_value);
-		Py_XDECREF(tstate->exc_traceback);
+		tmp_type = tstate->exc_type;
+		tmp_value = tstate->exc_value;
+		tmp_tb = tstate->exc_traceback;
 		Py_XINCREF(frame->f_exc_type);
 		Py_XINCREF(frame->f_exc_value);
 		Py_XINCREF(frame->f_exc_traceback);
 		tstate->exc_type = frame->f_exc_type;
 		tstate->exc_value = frame->f_exc_value;
 		tstate->exc_traceback = frame->f_exc_traceback;
+		Py_XDECREF(tmp_type);
+		Py_XDECREF(tmp_value);
+		Py_XDECREF(tmp_tb);
 		/* For b/w compatibility */
 		PySys_SetObject("exc_type", frame->f_exc_type);
 		PySys_SetObject("exc_value", frame->f_exc_value);
 		PySys_SetObject("exc_traceback", frame->f_exc_traceback);
 	}
-	Py_XDECREF(frame->f_exc_type);
-	Py_XDECREF(frame->f_exc_value);
-	Py_XDECREF(frame->f_exc_traceback);
+	tmp_type = frame->f_exc_type;
+	tmp_value = frame->f_exc_value;
+	tmp_tb = frame->f_exc_traceback;
 	frame->f_exc_type = NULL;
 	frame->f_exc_value = NULL;
 	frame->f_exc_traceback = NULL;
+	Py_XDECREF(tmp_type);
+	Py_XDECREF(tmp_value);
+	Py_XDECREF(tmp_tb);
 }
 
 /* Logic for the raise statement (too complicated for inlining).
