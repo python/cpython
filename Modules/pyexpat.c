@@ -1,11 +1,17 @@
 #include "Python.h"
 #include <ctype.h>
 
+#ifdef HAVE_PYMEMCOMPAT_H
+#include "pymemcompat.h"
+#endif
+
 #include "compile.h"
 #include "frameobject.h"
 #include "expat.h"
 
 #ifndef PyDoc_STRVAR
+#define PyDoc_STR(str)         (str)
+#define PyDoc_VAR(name)        static char name[]
 #define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
 #endif
 
@@ -1160,14 +1166,15 @@ newxmlparseobject(char *encoding, char *namespace_separator, PyObject *intern)
     }
     XML_SetUserData(self->itself, (void *)self);
 #ifdef Py_USING_UNICODE
-    XML_SetUnknownEncodingHandler(self->itself, (XML_UnknownEncodingHandler) PyUnknownEncodingHandler, NULL);
+    XML_SetUnknownEncodingHandler(self->itself,
+                  (XML_UnknownEncodingHandler) PyUnknownEncodingHandler, NULL);
 #endif
 
     for (i = 0; handler_info[i].name != NULL; i++)
         /* do nothing */;
 
-    self->handlers = malloc(sizeof(PyObject *)*i);
-    if (!self->handlers){
+    self->handlers = malloc(sizeof(PyObject *) * i);
+    if (!self->handlers) {
         Py_DECREF(self);
         return PyErr_NoMemory();
     }
