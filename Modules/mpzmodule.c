@@ -1488,6 +1488,8 @@ mpz_float(self)
 	/* let those bits come, let those bits go,
 	   e.g. dismantle mpzscratch, build PyFloatObject */
 
+	/* Can this overflow?  Dunno, protect against that possibility. */
+	PyFPE_START_PROTECT("mpz_float", return 0)
 	x = 0.0;
 	mulstate = 1.0;
 	while (i--) {
@@ -1495,6 +1497,7 @@ mpz_float(self)
 		mulstate *= multiplier;
 		mpz_div_2exp(&mpzscratch, &mpzscratch, BITS_PER_MP_LIMB);
 	}
+	PyFPE_END_PROTECT
 
 	assert(mpz_cmp_ui(&mpzscratch, (unsigned long int)0) == 0);
 	mpz_clear(&mpzscratch);

@@ -661,7 +661,9 @@ strop_atof(self, args)
 		return NULL;
 	}
 	errno = 0;
+	PyFPE_START_PROTECT("strop_atof", return 0)
 	x = strtod(s, &end);
+	PyFPE_END_PROTECT
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {

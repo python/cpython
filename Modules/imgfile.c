@@ -387,8 +387,10 @@ PyObject *args;
 		iclose(image);
 		return NULL;
 	}
+	PyFPE_START_PROTECT("readscaled", return 0)
 	xfac = (float)xsize/(float)xwtd;
 	yfac = (float)ysize/(float)ywtd;
+	PyFPE_END_PROTECT
 	cdatap = PyString_AsString(rv);
 	idatap = (long *)cdatap;
 
