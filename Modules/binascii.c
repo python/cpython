@@ -753,6 +753,7 @@ initbinascii()
 	d = PyModule_GetDict(m);
 	x = PyString_FromString(doc_binascii);
 	PyDict_SetItemString(d, "__doc__", x);
+	Py_XDECREF(x);
 
 	Error = PyString_FromString("binascii.Error");
 	PyDict_SetItemString(d, "Error", Error);
