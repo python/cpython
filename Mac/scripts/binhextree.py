@@ -57,7 +57,14 @@ def hexbincwprojects(creator):
 		return
 	for fss in project_files[creator]:
 		srcfile = fss.as_pathname()
-		dstfile = srcfile + '.hqx'
+		
+		if srcfile[-1] == 'µ':
+			dstfile = srcfile[:-1]+'mu.hqx'
+		elif ord(srcfile[-1]) >= 128:
+			dstfile = srcfile[:-1]+`ord(srcfile[-1])`+'.hqx'
+		else:
+			dstfile = srcfile + '.hqx'
+			
 		if os.path.exists(dstfile) and \
 				os.stat(dstfile)[8] > os.stat(srcfile)[8]:
 			print 'Skip', dstfile,'- Up-to-date'
