@@ -22,6 +22,7 @@ simple_stmt:    expression_stmt
               | exec_stmt
 \end{verbatim}
 
+
 \section{Expression statements \label{exprstmts}}
 \indexii{expression}{statement}
 
@@ -51,6 +52,7 @@ any output.)
 \indexii{standard}{output}
 \indexii{writing}{values}
 \indexii{procedure}{call}
+
 
 \section{Assert statements \label{assert}}
 
@@ -88,6 +90,7 @@ it will be displayed as part of the stack trace.
 
 Assignments to \code{__debug__} are illegal.  The value for the
 built-in variable is determined when the interpreter starts.
+
 
 \section{Assignment statements \label{assignment}}
 
@@ -306,6 +309,7 @@ def f(arg): pass    # a function that does nothing (yet)
 class C: pass       # a class with no methods (yet)
 \end{verbatim}
 
+
 \section{The \keyword{del} statement \label{del}}
 \stindex{del}
 
@@ -333,6 +337,7 @@ is passed to the primary object involved; deletion of a slicing
 is in general equivalent to assignment of an empty slice of the
 right type (but even this is determined by the sliced object).
 \indexii{attribute}{deletion}
+
 
 \section{The \keyword{print} statement \label{print}}
 \stindex{print}
@@ -385,6 +390,7 @@ the subsequent expressions are printed to this file object.  If the
 first expression evaluates to \code{None}, then \code{sys.stdout} is
 used as the file for output.
 
+
 \section{The \keyword{return} statement \label{return}}
 \stindex{return}
 
@@ -407,6 +413,7 @@ When \keyword{return} passes control out of a \keyword{try} statement
 with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the function.
 \kwindex{finally}
+
 
 \section{The \keyword{raise} statement \label{raise}}
 \stindex{raise}
@@ -448,6 +455,7 @@ exception occurred.  This is useful to re-raise an exception
 transparently in an except clause.
 \obindex{traceback}
 
+
 \section{The \keyword{break} statement \label{break}}
 \stindex{break}
 
@@ -475,6 +483,7 @@ with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the loop.
 \kwindex{finally}
 
+
 \section{The \keyword{continue} statement \label{continue}}
 \stindex{continue}
 
@@ -493,6 +502,7 @@ It continues with the next cycle of the nearest enclosing loop.
 \stindex{while}
 \indexii{loop}{statement}
 \kwindex{finally}
+
 
 \section{The \keyword{import} statement \label{import}}
 \stindex{import}
@@ -594,6 +604,7 @@ about how the module search works from inside a package.]
 [XXX Also should mention __import__().]
 \bifuncindex{__import__}
 
+
 \section{The \keyword{global} statement \label{global}}
 \stindex{global}
 
@@ -633,6 +644,7 @@ containing the \keyword{exec} statement.  The same applies to the
 \bifuncindex{eval}
 \bifuncindex{execfile}
 \bifuncindex{compile}
+
 
 \section{The \keyword{exec} statement \label{exec}}
 \stindex{exec}
