@@ -9,7 +9,6 @@ test_compare
 2 != <Empty>
 2 == <Coerce 2>
 2 == <Cmp 2.0>
-2 != <RCmp 2>
 2.0 == 2
 2.0 == 2.0
 2.0 == 2
@@ -20,7 +19,6 @@ test_compare
 2.0 != <Empty>
 2.0 == <Coerce 2>
 2.0 == <Cmp 2.0>
-2.0 != <RCmp 2>
 2 == 2
 2 == 2.0
 2 == 2
@@ -31,7 +29,6 @@ test_compare
 2 != <Empty>
 2 == <Coerce 2>
 2 == <Cmp 2.0>
-2 != <RCmp 2>
 (2+0j) == 2
 (2+0j) == 2.0
 (2+0j) == 2
@@ -42,7 +39,6 @@ test_compare
 (2+0j) != <Empty>
 (2+0j) == <Coerce 2>
 (2+0j) == <Cmp 2.0>
-(2+0j) != <RCmp 2>
 [1] != 2
 [1] != 2.0
 [1] != 2
@@ -53,7 +49,6 @@ test_compare
 [1] != <Empty>
 [1] != <Coerce 2>
 [1] != <Cmp 2.0>
-[1] != <RCmp 2>
 (3,) != 2
 (3,) != 2.0
 (3,) != 2
@@ -64,7 +59,6 @@ test_compare
 (3,) != <Empty>
 (3,) != <Coerce 2>
 (3,) != <Cmp 2.0>
-(3,) != <RCmp 2>
 None != 2
 None != 2.0
 None != 2
@@ -75,7 +69,6 @@ None == None
 None != <Empty>
 None != <Coerce 2>
 None != <Cmp 2.0>
-None != <RCmp 2>
 <Empty> != 2
 <Empty> != 2.0
 <Empty> != 2
@@ -86,7 +79,6 @@ None != <RCmp 2>
 <Empty> == <Empty>
 <Empty> != <Coerce 2>
 <Empty> != <Cmp 2.0>
-<Empty> != <RCmp 2>
 <Coerce 2> == 2
 <Coerce 2> == 2.0
 <Coerce 2> == 2
@@ -96,8 +88,7 @@ None != <RCmp 2>
 <Coerce 2> != None
 <Coerce 2> != <Empty>
 <Coerce 2> == <Coerce 2>
-<Coerce 2> != <Cmp 2.0>
-<Coerce 2> == <RCmp 2>
+<Coerce 2> == <Cmp 2.0>
 <Cmp 2.0> == 2
 <Cmp 2.0> == 2.0
 <Cmp 2.0> == 2
@@ -108,15 +99,3 @@ None != <RCmp 2>
 <Cmp 2.0> != <Empty>
 <Cmp 2.0> == <Coerce 2>
 <Cmp 2.0> == <Cmp 2.0>
-<Cmp 2.0> != <RCmp 2>
-<RCmp 2> != 2
-<RCmp 2> != 2.0
-<RCmp 2> != 2
-<RCmp 2> != (2+0j)
-<RCmp 2> != [1]
-<RCmp 2> != (3,)
-<RCmp 2> != None
-<RCmp 2> != <Empty>
-<RCmp 2> != <Coerce 2>
-<RCmp 2> != <Cmp 2.0>
-<RCmp 2> == <RCmp 2>
