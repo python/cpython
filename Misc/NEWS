@@ -57,6 +57,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Use of 'None' as a variable, argument or attribute name now
+  issues a SyntaxWarning.  In the future, None may become a keyword.
+
 - SET_LINENO is gone.  co_lnotab is now consulted to determine when to
   call the trace function.  C code that accessed f_lineno should call
   PyCode_Addr2Line instead (f_lineno is still there, but not kept up
