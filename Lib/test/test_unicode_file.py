@@ -2,6 +2,7 @@
 # We dont test many operations on files other than
 # that their names can be used with Unicode characters.
 import os, glob, time, shutil
+import unicodedata
 
 import unittest
 from test.test_support import run_suite, TestSkipped, TESTFN_UNICODE
@@ -38,7 +39,17 @@ class TestUnicodeFiles(unittest.TestCase):
             os.path.abspath(filename)==os.path.abspath(glob.glob(filename)[0]))
         # basename should appear in listdir.
         path, base = os.path.split(os.path.abspath(filename))
-        self.failUnless(base in os.listdir(path))
+        if (isinstance (filename, str)):
+            new_base = base.decode(TESTFN_ENCODING)
+            file_list = [f.decode(TESTFN_ENCODING) for f in os.listdir(path)]
+        else:
+            new_base = base 
+            file_list = os.listdir(path)
+
+        new_base = unicodedata.normalize("NFD", new_base)
+        file_list = [unicodedata.normalize("NFD", f) for f in file_list]
+
+        self.failUnless(new_base in file_list)
 
     # Do as many "equivalancy' tests as we can - ie, check that although we
     # have different types for the filename, they refer to the same file.
@@ -91,7 +102,7 @@ class TestUnicodeFiles(unittest.TestCase):
             shutil.copy2(filename1, filename2 + ".new")
             os.unlink(filename1 + ".new")
 
-    def _do_directory(self, make_name, chdir_name, getcwd_func):
+    def _do_directory(self, make_name, chdir_name, encoded):
         cwd = os.getcwd()
         if os.path.isdir(make_name):
             os.rmdir(make_name)
@@ -99,8 +110,17 @@ class TestUnicodeFiles(unittest.TestCase):
         try:
             os.chdir(chdir_name)
             try:
-                self.failUnlessEqual(os.path.basename(getcwd_func()),
-                                     make_name)
+                if not encoded:
+                    cwd_result = os.getcwdu()
+                    name_result = make_name
+                else:
+                    cwd_result = os.getcwd().decode(TESTFN_ENCODING)
+                    name_result = make_name.decode(TESTFN_ENCODING)
+
+                cwd_result = unicodedata.normalize("NFD", cwd_result)
+                name_result = unicodedata.normalize("NFD", name_result)
+
+                self.failUnlessEqual(os.path.basename(cwd_result),name_result)
             finally:
                 os.chdir(cwd)
         finally:
@@ -152,15 +172,15 @@ class TestUnicodeFiles(unittest.TestCase):
         #  Make dir with encoded, chdir with unicode, checkdir with encoded
         #  (or unicode/encoded/unicode, etc
         ext = ".dir"
-        self._do_directory(TESTFN_ENCODED+ext, TESTFN_ENCODED+ext, os.getcwd)
-        self._do_directory(TESTFN_ENCODED+ext, TESTFN_UNICODE+ext, os.getcwd)
-        self._do_directory(TESTFN_UNICODE+ext, TESTFN_ENCODED+ext, os.getcwdu)
-        self._do_directory(TESTFN_UNICODE+ext, TESTFN_UNICODE+ext, os.getcwdu)
+        self._do_directory(TESTFN_ENCODED+ext, TESTFN_ENCODED+ext, True)
+        self._do_directory(TESTFN_ENCODED+ext, TESTFN_UNICODE+ext, True)
+        self._do_directory(TESTFN_UNICODE+ext, TESTFN_ENCODED+ext, False)
+        self._do_directory(TESTFN_UNICODE+ext, TESTFN_UNICODE+ext, False)
         # Our directory name that can't use a non-unicode name.
         if TESTFN_UNICODE_UNENCODEABLE is not None:
             self._do_directory(TESTFN_UNICODE_UNENCODEABLE+ext,
                                TESTFN_UNICODE_UNENCODEABLE+ext,
-                               os.getcwdu)
+                               False)
 
 def test_main():
     suite = unittest.TestSuite()
