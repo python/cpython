@@ -9,27 +9,26 @@ to integrate certain cultural aspects into an applications, without
 requiring the programmer to know all the specifics of each country
 where the software is executed.
 
-The \code{locale} module is implemented on top of the \code{_locale}
-module, which in turn uses an ANSI \C{} locale implementation if
-available.
-\refbimodindex{_locale}
+The \module{locale} module is implemented on top of the
+\module{_locale}\refbimodindex{_locale} module, which in turn uses an
+ANSI \C{} locale implementation if available.
 
-The \code{locale} module defines the following functions:
+The \module{locale} module defines the following exception and
+functions:
 
-\setindexsubitem{(in module locale)}
 
-\begin{funcdesc}{setlocale}{category\optional{\, value}}
+\begin{funcdesc}{setlocale}{category\optional{, value}}
 If \var{value} is specified, modifies the locale setting for the
 \var{category}. The available categories are listed in the data
 description below. The value is the name of a locale. An empty string
 specifies the user's default settings. If the modification of the
-locale fails, the exception \code{locale.Error} is
+locale fails, the exception \exception{Error} is
 raised. If successful, the new locale setting is returned.
 
 If no \var{value} is specified, the current setting for the
 \var{category} is returned.
 
-\code{setlocale()} is not thread safe on most systems. Applications
+\function{setlocale()} is not thread safe on most systems. Applications
 typically start with a call of
 \begin{verbatim}
 import locale
@@ -40,6 +39,10 @@ This sets the locale for all categories to the user's default setting
 locale is not changed thereafter, using multithreading should not
 cause problems.
 \end{funcdesc}
+
+\begin{excdesc}{Error}
+Exception raised when \function{setlocale()} fails.
+\end{excdesc}
 
 \begin{funcdesc}{localeconv}{}
 Returns the database of of the local conventions as a dictionary. This
@@ -77,20 +80,22 @@ the currency symbol.
 \item \code{p_sign_posn} and \code{n_sign_posn} indicate how the
 sign should be placed for positive and negative monetary values. 
 \end{itemize}
+
 The possible values for \code{p_sign_posn} and \code{n_sign_posn}
 are given below.
-\begin{itemize}
-\item 0 - Currency and value are surrounded by parentheses.
-\item 1 - The sign should precede the value and currency symbol.
-\item 2 - The sign should follow the value and currency symbol.
-\item 3 - The sign should immediately precede the value.
-\item 4 - The sign should immediately follow the value.
-\item LC_MAX - nothing is specified in this locale.
-\end{itemize}
+
+\begin{tableii}{|c|l|}{code}{Value}{Explanation}
+\lineii{0}{Currency and value are surrounded by parentheses.}
+\lineii{1}{The sign should precede the value and currency symbol.}
+\lineii{2}{The sign should follow the value and currency symbol.}
+\lineii{3}{The sign should immediately precede the value.}
+\lineii{4}{The sign should immediately follow the value.}
+\lineii{LC_MAX}{Nothing is specified in this locale.}
+\end{tableii}
 \end{funcdesc}
 
 \begin{funcdesc}{strcoll}{string1,string2}
-Compares two strings according to the current \code{LC_COLLATE}
+Compares two strings according to the current \constant{LC_COLLATE}
 setting. As any other compare function, returns a negative, or a
 positive value, or \code{0}, depending on whether \var{string1}
 collates before or after \var{string2} or is equal to it.
@@ -98,17 +103,17 @@ collates before or after \var{string2} or is equal to it.
 
 \begin{funcdesc}{strxfrm}{string}
 Transforms a string to one that can be used for the builtin function
-\code{cmp()}, and still returns locale-aware results. This function can be
-used when the same string is compared repeatedly, e.g. when collating
-a sequence of strings.
+\function{cmp()}\bifuncindex{cmp}, and still returns locale-aware
+results.  This function can be used when the same string is compared
+repeatedly, e.g. when collating a sequence of strings.
 \end{funcdesc}
 
-\begin{funcdesc}{format}{format,val\optional{grouping=0}}
-Formats a number \var{val} according to the current \code{LC_NUMERIC}
-setting. The format follows the conventions of the \code{\%} operator. For
-floating point values, the decimal point is modified if
-appropriate. If \var{grouping} is true, also takes the grouping into
-account.
+\begin{funcdesc}{format}{format, val, \optional{grouping\code{ = 0}}}
+Formats a number \var{val} according to the current
+\constant{LC_NUMERIC} setting.  The format follows the conventions of
+the \code{\%} operator.  For floating point values, the decimal point
+is modified if appropriate.  If \var{grouping} is true, also takes the
+grouping into account.
 \end{funcdesc}
 
 \begin{funcdesc}{str}{float}
@@ -118,48 +123,50 @@ account.
 \end{funcdesc}
 
 \begin{funcdesc}{atof}{string}
-Converts a string to a floating point number, following the \code{LC_NUMERIC}
-settings.
+Converts a string to a floating point number, following the
+\constant{LC_NUMERIC} settings.
 \end{funcdesc}
 
 \begin{funcdesc}{atoi}{string}
-Converts a string to an integer, following the \code{LC_NUMERIC} conventions.
+Converts a string to an integer, following the \constant{LC_NUMERIC}
+conventions.
 \end{funcdesc}
 
 \begin{datadesc}{LC_CTYPE}
 \refstmodindex{string}
 Locale category for the character type functions. Depending on the
-settings of this category, the functions of module \code{string}
+settings of this category, the functions of module \module{string}
 dealing with case change their behaviour.
 \end{datadesc}
 
 \begin{datadesc}{LC_COLLATE}
-Locale category for sorting strings. The functions \code{strcoll()} and
-\code{strxfrm()} of the \code{locale} module are affected.
+Locale category for sorting strings. The functions
+\function{strcoll()} and \function{strxfrm()} of the \module{locale}
+module are affected.
 \end{datadesc}
 
 \begin{datadesc}{LC_TIME}
 Locale category for the formatting of time. The function
-\code{time.strftime()} follows these conventions.
+\function{time.strftime()} follows these conventions.
 \end{datadesc}
 
 \begin{datadesc}{LC_MONETARY}
 Locale category for formatting of monetary values. The available
-options are available from the \code{localeconv()} function.
+options are available from the \function{localeconv()} function.
 \end{datadesc}
 
 \begin{datadesc}{LC_MESSAGES}
 Locale category for message display. Python currently does not support
 application specific locale-aware messages. Messages displayed by the
-operating system, like those returned by \code{posix.strerror()} might
-be affected by this category.
+operating system, like those returned by \function{os.strerror()}
+might be affected by this category.
 \end{datadesc}
 
 \begin{datadesc}{LC_NUMERIC}
 Locale category for formatting numbers. The functions
-\code{format()}, \code{atoi()}, \code{atof()} and \code{str()} of the
-\code{locale} module are affected by that category. All other numeric
-formatting operations are not affected.
+\function{format()}, \function{atoi()}, \function{atof()} and
+\function{str()} of the \module{locale} module are affected by that
+category. All other numeric formatting operations are not affected.
 \end{datadesc}
 
 \begin{datadesc}{LC_ALL}
@@ -173,12 +180,8 @@ used to restore the settings.
 
 \begin{datadesc}{CHAR_MAX}
 This is a symbolic constant used for different values returned by
-\code{localeconv()}.
+\function{localeconv()}.
 \end{datadesc}
-
-\begin{excdesc}{Error}
-Exception raised when \code{setlocale()} fails.
-\end{excdesc}
 
 Example:
 
@@ -205,50 +208,54 @@ matter what the user's preferred locale is.  The program must
 explicitly say that it wants the user's preferred locale settings by
 calling \code{setlocale(LC_ALL, "")}.
 
-It is generally a bad idea to call \code{setlocale()} in some library
+It is generally a bad idea to call \function{setlocale()} in some library
 routine, since as a side effect it affects the entire program.  Saving
 and restoring it is almost as bad: it is expensive and affects other
 threads that happen to run before the settings have been restored.
 
 If, when coding a module for general use, you need a locale
 independent version of an operation that is affected by the locale
-(e.g. \code{string.lower()}, or certain formats used with
-\code{time.strftime()})), you will have to find a way to do it without
-using the standard library routine.  Even better is convincing
-yourself that using locale settings is okay.  Only as a last should
-you document that your module is not compatible with non-C locale
-settings.
+(e.g. \function{string.lower()}, or certain formats used with
+\function{time.strftime()})), you will have to find a way to do it
+without using the standard library routine.  Even better is convincing
+yourself that using locale settings is okay.  Only as a last resort
+should you document that your module is not compatible with non-C
+locale settings.
 
-The case conversion functions in the \code{string} and \code{strop}
-modules are affected by the locale settings.  When a call to the
-\code{setlocale()} function changes the \code{LC_CTYPE} settings, the
-variables \code{string.lowercase}, \code{string.uppercase} and
-\code{string.letters} (and their counterparts in \code{strop}) are
+The case conversion functions in the
+\module{string}\refstmodindex{string} and
+\module{strop}\refbimodindex{strop} modules are affected by the locale
+settings.  When a call to the \function{setlocale()} function changes
+the \constant{LC_CTYPE} settings, the variables
+\code{string.lowercase}, \code{string.uppercase} and
+\code{string.letters} (and their counterparts in \module{strop}) are
 recalculated.  Note that this code that uses these variable through
-\code{from ... import ...}, e.g. \code{from string import letters}, is
-not affected by subsequent \code{setlocale()} calls.
+`\keyword{from} ... \keyword{import} ...', e.g. \code{from string
+import letters}, is not affected by subsequent \function{setlocale()}
+calls.
 
 The only way to perform numeric operations according to the locale
 is to use the special functions defined by this module:
-\code{atof()}, \code{atoi()}, \code{format()}, \code{str()}.
+\function{atof()}, \function{atoi()}, \function{format()},
+\function{str()}.
 
-\code{For extension writers and programs that embed Python}
+\subsection{For extension writers and programs that embed Python}
 
-Extension modules should never call \code{setlocale()}, except to find
-out what the current locale is.  But since the return value can only
-be used portably to restore it, that is not very useful (except
+Extension modules should never call \function{setlocale()}, except to
+find out what the current locale is.  But since the return value can
+only be used portably to restore it, that is not very useful (except
 perhaps to find out whether or not the locale is ``C'').
 
 When Python is embedded in an application, if the application sets the
 locale to something specific before initializing Python, that is
 generally okay, and Python will use whatever locale is set,
-\strong{except} that the \code{LC_NUMERIC} locale should always be
+\strong{except} that the \constant{LC_NUMERIC} locale should always be
 ``C''.
 
-The \code{setlocale()} function in the \code{locale} module contains
+The \function{setlocale()} function in the \module{locale} module contains
 gives the Python progammer the impression that you can manipulate the
-\code{LC_NUMERIC} locale setting, but this not the case at the C
-level: C code will always find that the \code{LC_NUMERIC} locale
+\constant{LC_NUMERIC} locale setting, but this not the case at the C
+level: C code will always find that the \constant{LC_NUMERIC} locale
 setting is ``C''.  This is because too much would break when the
 decimal point character is set to something else than a period
 (e.g. the Python parser would break).  Caveat: threads that run
@@ -258,9 +265,9 @@ portable way to implement this feature is to set the numeric locale
 settings to what the user requests, extract the relevant
 characteristics, and then restore the ``C'' numeric locale.
 
-When Python code uses the \code{locale} module to change the locale,
+When Python code uses the \module{locale} module to change the locale,
 this also affect the embedding application.  If the embedding
 application doesn't want this to happen, it should remove the
-\code{_locale} extension module (which does all the work) from the
-table of built-in modules in the \code{config.c} file, and make sure
-that the \code{_locale} module is not accessible as a shared library.
+\module{_locale} extension module (which does all the work) from the
+table of built-in modules in the \file{config.c} file, and make sure
+that the \module{_locale} module is not accessible as a shared library.
