@@ -1336,3 +1336,4 @@ void pixmode		long s long s
 # New in IRIX 4.0
 #
 long qgetfd
+void dither		long s
