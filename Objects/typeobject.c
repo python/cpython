@@ -1622,6 +1622,16 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
 		return -1;
 	}
 	new = (PyTypeObject *)value;
+	if (new->tp_dealloc != old->tp_dealloc ||
+	    new->tp_free != old->tp_free)
+	{
+		PyErr_Format(PyExc_TypeError,
+			     "__class__ assignment: "
+			     "'%s' deallocator differs from '%s'",
+			     new->tp_name,
+			     old->tp_name);
+		return -1;
+	}
 	newbase = new;
 	oldbase = old;
 	while (equiv_structs(newbase, newbase->tp_base))
