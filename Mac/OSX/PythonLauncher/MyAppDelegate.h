@@ -11,4 +11,5 @@
 - (IBAction)showPreferences:(id)sender;
 - (BOOL)shouldShowUI;
 - (BOOL)shouldTerminate;
+- (void)testFileTypeBinding;
 @end
