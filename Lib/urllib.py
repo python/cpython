@@ -53,6 +53,7 @@ else:
 # Shortcut for basic usage
 _urlopener = None
 def urlopen(url, data=None):
+    """urlopen(url [, data]) -> open file-like object"""
     global _urlopener
     if not _urlopener:
         _urlopener = FancyURLopener()
@@ -1003,6 +1004,7 @@ def unquote(s):
     return string.join(res, "")
 
 def unquote_plus(s):
+    """unquote('%7e/abc+def') -> '~/abc def'"""
     if '+' in s:
         # replace '+' with ' '
         s = string.join(string.split(s, '+'), ' ')
@@ -1010,7 +1012,7 @@ def unquote_plus(s):
 
 always_safe = string.letters + string.digits + '_,.-'
 def quote(s, safe = '/'):
-    """quote('abc def') -> 'abc%20def')."""
+    """quote('abc def') -> 'abc%20def'."""
     # XXX Can speed this up an order of magnitude
     safe = always_safe + safe
     res = list(s)
