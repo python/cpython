@@ -754,7 +754,7 @@ myhook_proc(short item, DialogPtr theDialog, struct hook_args *dataptr)
 	}
 	return item;
 }	
-
+#ifndef TARGET_API_MAC_CARBON
 /*
 ** Ask the user for a directory. I still can't understand
 ** why Apple doesn't provide a standard solution for this...
@@ -769,12 +769,10 @@ PyMac_GetDirectory(dirfss, prompt)
 	StandardFileReply reply;
 	struct hook_args hook_args;
 	
-#ifndef TARGET_API_MAC_CARBON
 	if ( !upp_inited ) {
 		myhook_upp = NewDlgHookYDProc(myhook_proc);
 		upp_inited = 1;
 	}
-#endif
 	if ( prompt && *prompt )
 		hook_args.prompt = (char *)Pstring(prompt);
 	else
@@ -797,12 +795,10 @@ void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList,
 	static Point where = {-1, -1};
 	struct hook_args hook_args;
 	
-#ifndef TARGET_API_MAC_CARBON
 	if ( !upp_inited ) {
 		myhook_upp = NewDlgHookYDProc(myhook_proc);
 		upp_inited = 1;
 	}
-#endif
 	if ( prompt && *prompt )
 		hook_args.prompt = (char *)Pstring(prompt);
 	else
@@ -811,6 +807,7 @@ void PyMac_PromptGetFile(short numTypes, ConstSFTypeListPtr typeList,
 	CustomGetFile((FileFilterYDUPP)0, numTypes, typeList, reply, GETFILEPROMPT_ID, where,
 				myhook_upp, NULL, NULL, NULL, (void *)&hook_args);
 }
+#endif /* TARGET_API_MAC_CARBON */
 
 /* Convert a 4-char string object argument to an OSType value */
 int
