@@ -34,6 +34,7 @@ extern int rl_bind_key();
 extern int rl_bind_key_in_map();
 extern int rl_initialize();
 extern int add_history();
+extern Function *rl_event_hook;
 #endif
 
 /* Pointers needed from outside (but not declared in a header file). */

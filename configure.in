@@ -9,7 +9,7 @@ AC_SUBST(VERSION)
 VERSION=1.5
 
 # NEXTSTEP stuff
-if test -f /usr/lib/NextStep/software_version; then
+if test -f /usr/lib/NextStep/software_version -o -f /System/Library/CoreServices/software_version ; then
 
 	AC_MSG_CHECKING(for --with-next-archs)
 	AC_ARG_WITH(next-archs,
@@ -24,7 +24,7 @@ if test -f /usr/lib/NextStep/software_version; then
 	
 	if test -z "$MACHDEP"
 	then
-		set X `hostinfo | grep 'NeXT Mach.*:' | \
+		set X `hostinfo | egrep '(NeXT Mach|Kernel Release).*:' | \
  			sed -e 's/://' -e 's/\./_/'` && \
 			ac_sys_system=next && ac_sys_release=$4
 
@@ -32,6 +32,10 @@ if test -f /usr/lib/NextStep/software_version; then
 	fi
 fi
 
+AC_ARG_WITH(next-framework,
+[--with-next-framework     Build (OpenStep|Rhapsody|MacOS10) framework],,)
+AC_ARG_WITH(dyld, 
+[--with-dyld               Use (OpenStep|Rhapsody|MacOS10) dynamic linker],,)
 
 # Set name for machine-dependent library files
 AC_SUBST(MACHDEP)
@@ -172,6 +176,14 @@ BeOS*)
 	esac;;
 esac
 
+# LDLIBRARY is the name of the library to link against (as opposed to the
+# name of the library into which to insert object files). On systems
+# without shared libraries, LDLIBRARY is the same as LIBRARY (defined in
+# the Makefiles). 
+AC_SUBST(MAKE_LDLIBRARY)
+AC_SUBST(LDLIBRARY)
+LDLIBRARY=''
+
 # LINKCC is the command that links the python executable -- default is $(CC).
 # This is altered for AIX and BeOS in order to build the export list before 
 # linking.
@@ -184,7 +196,7 @@ then
 	   LINKCC="\$(srcdir)/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
 	BeOS*)
 	   LINKCC="\$(srcdir)/../BeOS/linkcc \$(LIBRARY) \$(PURIFY) \$(CC) \$(OPT)"
-	   REALLIBRARY='libpython$(VERSION).so';;
+	   LDLIBRARY='libpython$(VERSION).so';;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
 	*) LINKCC="\$(PURIFY) \$(CC)";;
@@ -192,13 +204,38 @@ then
 fi
 AC_MSG_RESULT($LINKCC)
 
+AC_MSG_CHECKING(LDLIBRARY)
+
+# NeXT framework builds require that the 'ar' library be converted into
+# a bundle using libtool.
+if test "$with_next_framework"
+then
+  LDLIBRARY='libpython$(VERSION).dylib'
+fi  
+
+# DG/UX requires some fancy ld contortions to produce a .so from an .a
+if test "$MACHDEP" = "dguxR4"
+then
+  LDLIBRARY='libpython$(VERSION).so'
+  OPT="$OPT -pic"
+fi
+AC_MSG_RESULT($LDLIBRARY)
+
+# If LDLIBRARY is different from LIBRARY, emit a rule to build it.
+if test -z "$LDLIBRARY"
+then
+  LDLIBRARY='libpython$(VERSION).a'
+  MAKE_LDLIBRARY="true"
+else
+  MAKE_LDLIBRARY='$(MAKE) $(LDLIBRARY)'
+fi
+
 AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
 AC_SUBST(INSTALL)
 AC_SUBST(INSTALL_PROGRAM)
 AC_SUBST(INSTALL_DATA)
-AC_SUBST(REALLIBRARY)
 # Install just never works :-(
 if test -z "$INSTALL"
 then
@@ -266,17 +303,6 @@ else
   if test $ac_cv_olimit_ok = yes; then
     OPT="$OPT -Olimit 1500"
   fi
-fi
-
-AC_SUBST(DGUX_IS_BROKEN)
-if test "$MACHDEP" != "dguxR4"
-then
-  REALLIBRARY='libpython$(VERSION).a'
-  DGUX_IS_BROKEN="true"
-else
-  REALLIBRARY='libpython$(VERSION).so'
-  OPT="$OPT -pic"
-  DGUX_IS_BROKEN="make $REALLIBRARY"
 fi
 
 # check for ANSI or K&R ("traditional") preprocessor
@@ -356,6 +382,45 @@ else
 fi
 
 
+# Minor variations in building a framework between NextStep versions 4 and 5
+AC_SUBST(LIBTOOL_CRUFT)
+case $ac_sys_system/$ac_sys_release in
+  next/4*)
+    ns_undef_sym='__environ'
+    LIBTOOL_CRUFT="-U $ns_undef_sym" ;;
+  next/5*)
+    ns_undef_sym='_environ'
+    LIBTOOL_CRUFT="-lcc_dynamic -U $ns_undef_sym" ;;
+esac
+
+AC_MSG_CHECKING(for --with-next-framework)
+if test "$with_next_framework"
+then
+	OPT="$OPT -fno-common"
+	# -U __environ is needed since bundles don't have access
+	# to crt0 when built but will always be linked against it
+	LDFLAGS="$LDFLAGS -Wl,-U,$ns_undef_sym"
+	AC_DEFINE(WITH_NEXT_FRAMEWORK)
+	AC_MSG_RESULT(yes)
+else
+	AC_MSG_RESULT(no)
+fi
+
+AC_MSG_CHECKING(for --with-dyld)
+if test "$with_next_framework" -o "$with_dyld"
+then
+	if test "$with_dyld"
+	then
+		AC_MSG_RESULT(yes)
+	else
+		AC_MSG_RESULT(required for framework build)
+	fi
+	AC_DEFINE(WITH_DYLD)
+	ns_dyld='set'
+else
+	AC_MSG_RESULT(no)
+fi
+
 # Set info about shared libraries.
 AC_SUBST(SO)
 AC_SUBST(LDSHARED)
@@ -374,6 +439,8 @@ fi
 AC_MSG_RESULT($SO)
 # LDSHARED is the ld *command* used to create shared library
 # -- "ld" on SunOS 4.x.x, "ld -G" on SunOS 5.x, "ld -shared" on IRIX 5
+# (Shared libraries in this instance are shared modules to be loaded into
+# Python, as opposed to building Python itself as a shared library.)
 AC_MSG_CHECKING(LDSHARED)
 if test -z "$LDSHARED"
 then
@@ -387,7 +454,14 @@ then
 	hp*|HP*) LDSHARED="ld -b";;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	DYNIX/ptx*) LDSHARED="ld -G";;
-	next/*) LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';;
+	next/*) 
+		if test "$ns_dyld"
+		then LDSHARED='$(CC) $(LDFLAGS) -bundle -prebind'
+		else LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';
+		fi
+                if test "$with_next_framework" ; then
+		    LDSHARED="$LDSHARED \$(LDLIBRARY)"
+		fi ;;
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
 	FreeBSD*/3*) LDSHARED="gcc -shared";;
@@ -405,7 +479,7 @@ then
 fi
 AC_MSG_RESULT($LDSHARED)
 # CCSHARED are the C *flags* used to create objects to go into a shared
-# library -- this is only needed for a few systems
+# library (module) -- this is only needed for a few systems
 AC_MSG_CHECKING(CCSHARED)
 if test -z "$CCSHARED"
 then
@@ -436,7 +510,13 @@ then
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	FreeBSD/3*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
-	next/*) LINKFORSHARED="-u libsys_s";;
+	# -u libsys_s pulls in all symbols in libsys
+	next/2*|next/3*) LINKFORSHARED="-u libsys_s";;
+	# -u __dummy makes the linker aware of the objc runtime
+	# in System.framework; otherwise, __objcInit (referenced in
+	# crt1.o) gets erroneously defined as common, which breaks dynamic
+	# loading of any modules which reference it in System.framework
+	next/4*|next/5*) LINKFORSHARED="-u __dummy -framework System" ;;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	NetBSD*) 
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]

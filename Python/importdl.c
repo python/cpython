@@ -46,7 +46,8 @@ PERFORMANCE OF THIS SOFTWARE.
    symbol	-- defined for:
 
    DYNAMIC_LINK -- any kind of dynamic linking
-   USE_RLD	-- NeXT dynamic linking
+   USE_RLD	-- NeXT dynamic linking with FVM shlibs
+   USE_DYLD     -- NeXT dynamic linking with frameworks
    USE_DL	-- Jack's dl for IRIX 4 or GNU dld with emulation for Jack's dl
    USE_SHLIB	-- SunOS or IRIX 5 (SVR4?) shared libraries
    _AIX		-- AIX style dynamic linking
@@ -117,7 +118,15 @@ typedef FARPROC dl_funcptr;
 #endif
 #endif
 
-#ifdef NeXT
+#ifdef WITH_DYLD
+#define DYNAMIC_LINK
+#define USE_DYLD
+#define SHORT_EXT ".so"
+#define LONG_EXT "module.so"
+#define FUNCNAME_PATTERN "_init%.200s"
+#endif
+
+#if defined(NeXT) && !defined(DYNAMIC_LINK)
 #define DYNAMIC_LINK
 #define USE_RLD
 /* Define this to 1 if you want be able to load ObjC modules as well:
@@ -251,16 +260,22 @@ typedef void (*dl_funcptr)();
 
 #ifdef USE_RLD
 #include <mach-o/rld.h>
-#define FUNCNAME_PATTERN "_init%.200s"
 #ifndef _DL_FUNCPTR_DEFINED
 typedef void (*dl_funcptr)();
 #endif
 #endif /* USE_RLD */
 
+#ifdef USE_DYLD
+#include <mach-o/dyld.h>
+#ifndef _DL_FUNCPTR_DEFINED
+typedef void (*dl_funcptr)();
+#endif
+#endif /* USE_DYLD */
+
 extern char *Py_GetProgramName();
 
 #ifndef FUNCNAME_PATTERN
-#if defined(__hp9000s300) || (defined(__NetBSD__) || defined(__FreeBSD__)) && !defined(__ELF__) || defined(__OpenBSD__) || defined(__BORLANDC__)
+#if defined(__hp9000s300) || (defined(__NetBSD__) || defined(__FreeBSD__)) && !defined(__ELF__) || defined(__OpenBSD__) || defined(__BORLANDC__) || defined(NeXT)
 #define FUNCNAME_PATTERN "_init%.200s"
 #else
 #define FUNCNAME_PATTERN "init%.200s"
@@ -653,6 +668,58 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 			return NULL;
 	}
 #endif /* USE_RLD */
+#ifdef USE_DYLD
+	/* This is also NeXT-specific. However, frameworks (the new style
+	of shared library) and rld() can't be used in the same program;
+	instead, you have to use dyld, which is mostly unimplemented. */
+	{
+		NSObjectFileImageReturnCode rc;
+		NSObjectFileImage image;
+		NSModule newModule;
+		NSSymbol theSym;
+		void *symaddr;
+		const char *errString;
+	
+		rc = NSCreateObjectFileImageFromFile(pathname, &image);
+		switch(rc) {
+		    default:
+		    case NSObjectFileImageFailure:
+		    NSObjectFileImageFormat:
+		    /* for these a message is printed on stderr by dyld */
+			errString = "Can't create object file image";
+			break;
+		    case NSObjectFileImageSuccess:
+			errString = NULL;
+			break;
+		    case NSObjectFileImageInappropriateFile:
+			errString = "Inappropriate file type for dynamic loading";
+			break;
+		    case NSObjectFileImageArch:
+			errString = "Wrong CPU type in object file";
+			break;
+		    NSObjectFileImageAccess:
+			errString = "Can't read object file (no access)";
+			break;
+		}
+		if (errString == NULL) {
+			newModule = NSLinkModule(image, pathname, TRUE);
+			if (!newModule)
+				errString = "Failure linking new module";
+		}
+		if (errString != NULL) {
+			PyErr_SetString(PyExc_ImportError, errString);
+			return NULL;
+		}
+		if (!NSIsSymbolNameDefined(funcname)) {
+			/* UnlinkModule() isn't implimented in current versions, but calling it does no harm */
+			NSUnLinkModule(newModule, FALSE);
+			PyErr_Format(PyExc_ImportError, "Loaded module does not contain symbol %s", funcname);
+			return NULL;
+		}
+		theSym = NSLookupAndBindSymbol(funcname);
+		p = (dl_funcptr)NSAddressOfSymbol(theSym);
+ 	}
+#endif /* USE_DYLD */
 #ifdef hpux
 	{
 		shl_t lib;

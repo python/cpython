@@ -1,10 +1,6 @@
 /* strdup() replacement (from stdwin, if you must know) */
 
-#include "config.h"
-#include "myproto.h"
-#include "mymalloc.h"
-
-#include <string.h>
+#include "pgenheaders.h"
 
 char *
 strdup(str)

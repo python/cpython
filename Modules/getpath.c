@@ -42,6 +42,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <unistd.h>
 #endif /* HAVE_UNISTD_H */
 
+#ifdef WITH_NEXT_FRAMEWORK
+#include <mach-o/dyld.h>
+#endif
+
 /* Search in some common locations for the associated Python libraries.
  *
  * Two directories must be found, the platform independent directory
@@ -394,7 +398,24 @@ calculate_path()
 	int bufsz;
 	int prefixsz;
 	char *defpath = pythonpath;
+#ifdef WITH_NEXT_FRAMEWORK
+        NSModule pythonModule;
+#endif
+	
+#ifdef WITH_NEXT_FRAMEWORK
+        pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
+	/* Use dylib functions to find out where the framework was loaded from */
+        buf = NSLibraryNameForModule(pythonModule);
+        if (buf != NULL) {
+            /* We're in a framework. */
+            strcpy(progpath, buf);
 
+            /* Frameworks have support for versioning */
+            strcpy(lib_python, "lib");
+        } else {
+            /* If we're not in a framework, fall back to the old way (even though NSNameOfModule() probably does the same thing.) */
+#endif
+	
 	/* Initialize this dynamically for K&R C */
 	sprintf(lib_python, "lib/python%s", VERSION);
 
@@ -430,6 +451,9 @@ calculate_path()
 	}
 	else
 		progpath[0] = '\0';
+#ifdef WITH_NEXT_FRAMEWORK
+        }
+#endif
 
 	strcpy(argv0_path, progpath);
 	
