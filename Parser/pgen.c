@@ -162,7 +162,7 @@ static char REQNFMT[] = "metacompile: less than %d children\n";
 #define REQN(i, count) \
  	if (i < count) { \
 		fprintf(stderr, REQNFMT, count); \
-		abort(); \
+		fatal("REQN"); \
 	} else
 
 #else
@@ -390,7 +390,7 @@ dumpnfa(ll, nf)
 
 /* PART TWO -- CONSTRUCT DFA -- Algorithm 3.1 from [Aho&Ullman 77] */
 
-static int
+static void
 addclosure(ss, nf, istate)
 	bitset ss;
 	nfa *nf;
@@ -628,7 +628,7 @@ simplify(xx_nstates, xx_state)
 	ss_state *xx_state;
 {
 	int changes;
-	int i, j, k;
+	int i, j;
 	
 	do {
 		changes = 0;
