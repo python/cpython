@@ -132,6 +132,8 @@ class EditorWindow:
         text.bind("<<untabify-region>>",self.untabify_region_event)
         text.bind("<<toggle-tabs>>",self.toggle_tabs_event)
         text.bind("<<change-indentwidth>>",self.change_indentwidth_event)
+        text.bind("<Left>", self.move_at_edge_if_selection(0))
+        text.bind("<Right>", self.move_at_edge_if_selection(1))
 
         if flist:
             flist.inversedict[self] = key
@@ -343,6 +345,26 @@ class EditorWindow:
     def remove_selection(self, event=None):
         self.text.tag_remove("sel", "1.0", "end")
         self.text.see("insert")
+
+    def move_at_edge_if_selection(self, edge_index):
+        """Cursor move begins at start or end of selection
+
+        When a left/right cursor key is pressed create and return to Tkinter a
+        function which causes a cursor move from the associated edge of the
+        selection.
+
+        """
+        self_text_index = self.text.index
+        self_text_mark_set = self.text.mark_set
+        edges_table = ("sel.first+1c", "sel.last-1c")
+        def move_at_edge(event):
+            if (event.state & 5) == 0: # no shift(==1) or control(==4) pressed
+                try:
+                    self_text_index("sel.first")
+                    self_text_mark_set("insert", edges_table[edge_index])
+                except TclError:
+                    pass
+        return move_at_edge
 
     def find_event(self, event):
         SearchDialog.find(self.text)
