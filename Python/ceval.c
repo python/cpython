@@ -708,49 +708,79 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		
 		case DUP_TOPX:
 			switch (oparg) {
-			case 5:
-			case 4:
-			case 3:
-			case 2:
 			case 1:
+				x = TOP();
+				Py_INCREF(x);
+				PUSH(x);
+				continue;
+			case 2:
 				x = POP();
-				if (oparg == 1) break;
+				Py_INCREF(x);
+				w = TOP();
+				Py_INCREF(w);
+				PUSH(x);
+				PUSH(w);
+				PUSH(x);
+				continue;
+			case 3:
+				x = POP();
+				Py_INCREF(x);
 				w = POP();
-				if (oparg == 2) break;
+				Py_INCREF(w);
+				v = TOP();
+				Py_INCREF(v);
+				PUSH(w);
+				PUSH(x);
+				PUSH(v);
+				PUSH(w);
+				PUSH(x);
+				continue;
+			case 4:
+				x = POP();
+				Py_INCREF(x);
+				w = POP();
+				Py_INCREF(w);
 				v = POP();
-				if (oparg == 3) break;
+				Py_INCREF(v);
+				u = TOP();
+				Py_INCREF(u);
+				PUSH(v);
+				PUSH(w);
+				PUSH(x);
+				PUSH(u);
+				PUSH(v);
+				PUSH(w);
+				PUSH(x);
+				continue;
+			case 5:
+				x = POP();
+				Py_INCREF(x);
+				w = POP();
+				Py_INCREF(w);
+				v = POP();
+				Py_INCREF(v);
 				u = POP();
-				if (oparg == 4) break;
-				t = POP();
-				break;
+				Py_INCREF(u);
+				t = TOP();
+				Py_INCREF(t);
+				PUSH(u);
+				PUSH(v);
+				PUSH(w);
+				PUSH(x);
+				PUSH(t);
+				PUSH(u);
+				PUSH(v);
+				PUSH(w);
+				PUSH(x);
+				continue;
 			default:
 				fprintf(stderr, "Invalid argument to DUP_TOPX: %d!\n", oparg);
 				PyErr_SetString(PyExc_SystemError,
 					"invalid argument to DUP_TOPX");
 				x = NULL;
-			}
-			if (x == NULL)
 				break;
-			switch (oparg) {
-			case 5: PUSH(t);
-				Py_INCREF(t); /* Fallthrough */
-			case 4: PUSH(u);
-				Py_INCREF(u); /* Fallthrough */
-			case 3: PUSH(v);
-				Py_INCREF(v); /* Fallthrough */
-			case 2: PUSH(w);
-				Py_INCREF(w); /* Fallthrough */
-			case 1: PUSH(x);
-				Py_INCREF(x); /* Fallthrough */
 			}
-			switch (oparg) {
-			case 5: PUSH(t); /* Fallthrough */
-			case 4: PUSH(u); /* Fallthrough */
-			case 3: PUSH(v); /* Fallthrough */
-			case 2: PUSH(w); /* Fallthrough */
-			case 1: PUSH(x); /* Fallthrough */
-			}
-			continue;
+			break;
 
 		case UNARY_POSITIVE:
 			v = POP();
