@@ -12,7 +12,9 @@
  / Note: This module currently only deals with 32-bit file
  /   sizes.
  /
- / The latest version of mmapfile is maintained by Sam at
+ / This version of mmapmodule.c has been changed significantly
+ / from the original mmapfile.c on which it was based.
+ / The original version of mmapfile is maintained by Sam at
  / ftp://squirl.nightmare.com/pub/python/python-ext.
 */
 
@@ -24,9 +26,6 @@
 
 #ifdef MS_WIN32
 #include <windows.h>
-#if _MSC_VER < 1200
-#define INT_PTR unsigned long
-#endif
 #endif
 
 #ifdef UNIX
@@ -48,7 +47,7 @@ typedef struct {
 
 #ifdef MS_WIN32
 	HANDLE	map_handle;
-	INT_PTR	file_handle;
+	HANDLE	file_handle;
 	char *	tagname;
 #endif
 
@@ -65,8 +64,8 @@ mmap_object_dealloc(mmap_object *m_obj)
 		UnmapViewOfFile (m_obj->data);
 	if (m_obj->map_handle != INVALID_HANDLE_VALUE)
 		CloseHandle (m_obj->map_handle);
-	if ((HANDLE)m_obj->file_handle != INVALID_HANDLE_VALUE)
-		CloseHandle ((HANDLE)m_obj->file_handle);
+	if (m_obj->file_handle != INVALID_HANDLE_VALUE)
+		CloseHandle (m_obj->file_handle);
 	if (m_obj->tagname)
 		PyMem_Free(m_obj->tagname);
 #endif /* MS_WIN32 */
@@ -87,10 +86,25 @@ mmap_close_method(mmap_object *self, PyObject *args)
         if (!PyArg_ParseTuple(args, ":close"))
 		return NULL;
 #ifdef MS_WIN32
-	UnmapViewOfFile (self->data);
-	CloseHandle (self->map_handle);
-	CloseHandle ((HANDLE)self->file_handle);
-	self->map_handle = (HANDLE) NULL;
+	/* For each resource we maintain, we need to check
+	   the value is valid, and if so, free the resource 
+	   and set the member value to an invalid value so
+	   the dealloc does not attempt to resource clearing
+	   again.
+	   TODO - should we check for errors in the close operations???
+	*/
+	if (self->data != NULL) {
+		UnmapViewOfFile (self->data);
+		self->data = NULL;
+	}
+	if (self->map_handle != INVALID_HANDLE_VALUE) {
+		CloseHandle (self->map_handle);
+		self->map_handle = INVALID_HANDLE_VALUE;
+	}
+	if (self->file_handle != INVALID_HANDLE_VALUE) {
+		CloseHandle (self->file_handle);
+		self->file_handle = INVALID_HANDLE_VALUE;
+	}
 #endif /* MS_WIN32 */
 
 #ifdef UNIX
@@ -263,10 +277,10 @@ mmap_size_method(mmap_object *self,
 		return NULL;
 
 #ifdef MS_WIN32
-	if (self->file_handle != (INT_PTR) -1) {
+	if (self->file_handle != INVALID_HANDLE_VALUE) {
 		return (Py_BuildValue (
 			"l", (long)
-			GetFileSize ((HANDLE)self->file_handle, NULL)));
+			GetFileSize (self->file_handle, NULL)));
 	} else {
 		return (Py_BuildValue ("l", (long) self->size) );
 	}
@@ -307,15 +321,15 @@ mmap_resize_method(mmap_object *self,
 		/* First, unmap the file view */
 		UnmapViewOfFile (self->data);
 		/* Close the mapping object */
-		CloseHandle ((HANDLE)self->map_handle);
+		CloseHandle (self->map_handle);
 		/* Move to the desired EOF position */
-		SetFilePointer ((HANDLE)self->file_handle,
+		SetFilePointer (self->file_handle,
 				new_size, NULL, FILE_BEGIN);
 		/* Change the size of the file */
-		SetEndOfFile ((HANDLE)self->file_handle);
+		SetEndOfFile (self->file_handle);
 		/* Create another mapping object and remap the file view */
 		self->map_handle = CreateFileMapping (
-			(HANDLE) self->file_handle,
+			self->file_handle,
 			NULL,
 			PAGE_READWRITE,
 			0,
@@ -802,7 +816,7 @@ new_mmap_object(PyObject *self, PyObject *args)
 
 	DWORD dwErr = 0;
 	int fileno;
-	INT_PTR fh = 0;
+	HANDLE fh = 0;
 
 	/* Patch the object type */
 	mmap_object_type.ob_type = &PyType_Type;
@@ -821,8 +835,8 @@ new_mmap_object(PyObject *self, PyObject *args)
 	
 	/* if an actual filename has been specified */
 	if (fileno != 0) {
-		fh = _get_osfhandle(fileno);
-		if (fh==-1) {
+		fh = (HANDLE)_get_osfhandle(fileno);
+		if (fh==(HANDLE)-1) {
 		    PyErr_SetFromErrno(mmap_module_error);
 		    return NULL;
 		}
@@ -836,7 +850,7 @@ new_mmap_object(PyObject *self, PyObject *args)
 	/* Set every field to an invalid marker, so we can safely
 	   destruct the object in the face of failure */
 	m_obj->data = NULL;
-	m_obj->file_handle = (INT_PTR)INVALID_HANDLE_VALUE;
+	m_obj->file_handle = INVALID_HANDLE_VALUE;
 	m_obj->map_handle = INVALID_HANDLE_VALUE;
 	m_obj->tagname = NULL;
 
@@ -845,7 +859,7 @@ new_mmap_object(PyObject *self, PyObject *args)
 		   Python code can close it on us */
 		if (!DuplicateHandle(
 			    GetCurrentProcess(), /* source process handle */
-			    (HANDLE)fh, /* handle to be duplicated */
+			    fh, /* handle to be duplicated */
 			    GetCurrentProcess(), /* target proc handle */
 			    (LPHANDLE)&m_obj->file_handle, /* result */
 			    0, /* access - ignored due to options value */
@@ -857,7 +871,7 @@ new_mmap_object(PyObject *self, PyObject *args)
 			return NULL;
 		}
 		if (!map_size) {
-			m_obj->size = GetFileSize ((HANDLE)fh, NULL);
+			m_obj->size = GetFileSize (fh, NULL);
 		} else {
 			m_obj->size = map_size;
 		}
@@ -882,7 +896,7 @@ new_mmap_object(PyObject *self, PyObject *args)
 	else
 		m_obj->tagname = NULL;
 
-	m_obj->map_handle = CreateFileMapping ((HANDLE) m_obj->file_handle,
+	m_obj->map_handle = CreateFileMapping (m_obj->file_handle,
 					       NULL,
 					       PAGE_READWRITE,
 					       0,
