@@ -42,10 +42,7 @@ tb_dealloc(tracebackobject *tb)
 	Py_TRASHCAN_SAFE_END(tb)
 }
 
-#define Tracebacktype PyTraceBack_Type
-#define is_tracebackobject PyTraceBack_Check
-
-PyTypeObject Tracebacktype = {
+PyTypeObject PyTraceBack_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"traceback",
@@ -67,12 +64,12 @@ newtracebackobject(tracebackobject *next, PyFrameObject *frame, int lasti,
 		   int lineno)
 {
 	tracebackobject *tb;
-	if ((next != NULL && !is_tracebackobject(next)) ||
+	if ((next != NULL && !PyTraceBack_Check(next)) ||
 			frame == NULL || !PyFrame_Check(frame)) {
 		PyErr_BadInternalCall();
 		return NULL;
 	}
-	tb = PyObject_NEW(tracebackobject, &Tracebacktype);
+	tb = PyObject_NEW(tracebackobject, &PyTraceBack_Type);
 	if (tb != NULL) {
 		Py_XINCREF(next);
 		tb->tb_next = next;
@@ -223,7 +220,7 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
 	int limit = 1000;
 	if (v == NULL)
 		return 0;
-	if (!is_tracebackobject(v)) {
+	if (!PyTraceBack_Check(v)) {
 		PyErr_BadInternalCall();
 		return -1;
 	}
