@@ -120,9 +120,9 @@ __builtin__.quit = __builtin__.exit = exit
 del exit
 
 #
-# Set the string encoding used by the Unicode implementation to the
-# encoding used by the default locale of this system. If the default
-# encoding cannot be determined or is unknown, it defaults to 'ascii'.
+# Set the string encoding used by the Unicode implementation.  The
+# default is 'ascii', but if you're willing to experiment, you can
+# change this.
 
 encoding = "ascii" # default
 
