@@ -506,9 +506,6 @@ class BaseRequestHandler:
     def setup(self):
         pass
 
-    def __del__(self):
-        pass
-
     def handle(self):
         pass
 
