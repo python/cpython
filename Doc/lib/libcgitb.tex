@@ -1,0 +1,40 @@
+\section{\module{cgitb} ---
+         Traceback manager for CGI scripts}
+
+\declaremodule{standard}{cgitb}
+\modulesynopsis{Configurable traceback handler for CGI scripts.}
+\moduleauthor{Ka Ping Yee}{ping@lfw.org}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+\index{CGI!tracebacks}
+\index{traceback!in CGI scripts}
+
+The \module{cgitb} module provides a special exception handler for CGI
+scripts.  Using this module, an exception raised and left uncaught in
+a CGI script can be presented as colorized HTML in the user's Web
+browser.  The options to the \function{enable()} function can be used
+to control whether the colorized traceback is presented and whether
+the traceback is logged to a file for later analysis.
+
+
+\begin{funcdesc}{enable}{\optional{display\optional{, logdir\optional{,
+                         context}}}}
+  This function causes the \module{cgitb} module to take over the
+  interpreters default handling for exceptions that propogate out of
+  the top level of a script.  The causes \module{cgitb} to set the
+  value of \code{\refmodule{sys}.excepthook}.
+
+  The optional argument \var{display} defaults to true and can be set
+  to false to suppress sending the traceback to the browser.
+  \var{logdir}, if given, should be a directory to cause tracebacks to
+  be written to files there; by default tracebacks will not be written
+  to files.  \var{context} is the number of lines of context around
+  the offending line in a traceback display; this defaults to
+  \code{5}.
+\end{funcdesc}
+
+\begin{funcdesc}{handler}{\optional{info}}
+  This function handles an exception using the default settings.  This
+  can be used when you've caught an exception and want to report it
+  using \module{cgitb}, but need to continue processing.
+\end{funcdesc}
