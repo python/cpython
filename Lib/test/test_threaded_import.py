@@ -6,7 +6,7 @@
 # randrange, and then Python hangs.
 
 import thread
-from test_support import verbose
+from test_support import verbose, TestSkipped
 
 critical_section = thread.allocate_lock()
 done = thread.allocate_lock()
@@ -32,6 +32,10 @@ def task():
 
 def test_main():        # magic name!  see above
     global N, done
+    import sys
+    for modname in sys.modules:
+        if modname.find('autotest') >= 0:
+            raise TestSkipped("can't run from autotest")
     done.acquire()
     for N in (20, 50) * 3:
         if verbose:
