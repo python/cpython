@@ -32,6 +32,8 @@ class bdist_dumb (Command):
                      "directory to put final built distributions in"),
                    ]
 
+    boolean_options = ['keep-temp']
+
     default_format = { 'posix': 'gztar',
                        'nt': 'zip', }
 

@@ -82,6 +82,8 @@ class build_ext (Command):
          "make SWIG create C++ files (default is C)"),
         ]
 
+    boolean_options = ['inplace', 'debug', 'force', 'swig-cpp']
+
     help_options = [
         ('help-compiler', None,
          "list available compilers", show_compilers),

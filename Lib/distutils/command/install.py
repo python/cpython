@@ -106,6 +106,8 @@ class install (Command):
          "filename in which to record list of installed files"),
         ]
 
+    boolean_options = ['force', 'skip-build']
+
 
     def initialize_options (self):
 

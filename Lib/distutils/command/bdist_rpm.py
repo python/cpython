@@ -111,6 +111,8 @@ class bdist_rpm (Command):
          "RPM 2 compatibility mode"),
        ]
 
+    boolean_options = ['keep-temp', 'rpm2-mode']
+
     negative_opt = {'no-keep-temp': 'keep-temp',
                     'no-rpm-opt-flags': 'use-rpm-opt-flags',
                     'rpm2-mode': 'rpm3-mode'}

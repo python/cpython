@@ -19,6 +19,8 @@ class install_lib (Command):
         ('skip-build', None, "skip the build steps"),
         ]
                
+    boolean_options = ['force', 'compile', 'optimize', 'skip-build']
+
 
     def initialize_options (self):
         # let the 'install' command dictate our installation directory

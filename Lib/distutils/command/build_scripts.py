@@ -22,6 +22,8 @@ class build_scripts (Command):
         ('force', 'f', "forcibly build everything (ignore file timestamps"),
         ]
 
+    boolean_options = ['force']
+
 
     def initialize_options (self):
         self.build_dir = None
