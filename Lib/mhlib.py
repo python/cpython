@@ -284,7 +284,7 @@ class Folder:
         match = numericprog.match
         append = messages.append
         for name in os.listdir(self.getfullname()):
-            if match(name) >= 0:
+            if match(name):
                 append(name)
         messages = map(string.atoi, messages)
         messages.sort()
