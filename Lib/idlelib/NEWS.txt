@@ -3,6 +3,15 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Removed ability to configure tabs indent from Options dialog.  This 'feature'
+  has never worked and no one has complained.  It is still possible to set a
+  default tabs (v. spaces) indent 'manually' via config-main.def (or to turn on
+  tabs for the current EditorWindow via the Format menu) but IDLE will
+  encourage indentation via spaces.
+
+- Enable setting the indentation width using the Options dialog.
+  Bug # 783877
+
 - Add keybindings for del-word-left and del-word-right.
 
 - Discourage using an indent width other than 8 when using tabs to indent
