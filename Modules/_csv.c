@@ -39,6 +39,9 @@ module instead.
 #endif
 /* end 2.2 compatibility macros */
 
+#define IS_BASESTRING(o) \
+	PyObject_TypeCheck(o, &PyBaseString_Type)
+
 static PyObject *error_obj;	/* CSV exception */
 static PyObject *dialects;      /* Dialect registry */
 
@@ -230,11 +233,7 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 	else {
 		if (src == Py_None)
 			*target = NULL;
-		else if (!PyString_Check(src)
-#ifdef Py_USING_UNICODE
-		    && !PyUnicode_Check(src)
-#endif
-		) {
+		else if (!IS_BASESTRING(src)) {
 			PyErr_Format(PyExc_TypeError, 
 				     "\"%s\" must be an string", name);
 			return -1;
@@ -298,11 +297,7 @@ dialect_instantiate(PyObject *dialect)
 {
 	Py_INCREF(dialect);
 	/* If dialect is a string, look it up in our registry */
-	if (PyString_Check(dialect)
-#ifdef Py_USING_UNICODE
-		|| PyUnicode_Check(dialect)
-#endif
-		) {
+	if (IS_BASESTRING(dialect)) {
 		PyObject * new_dia;
 		new_dia = get_dialect_from_registry(dialect);
 		Py_DECREF(dialect);
@@ -1372,11 +1367,7 @@ csv_register_dialect(PyObject *module, PyObject *args)
 
 	if (!PyArg_UnpackTuple(args, "", 2, 2, &name_obj, &dialect_obj))
                 return NULL;
-        if (!PyString_Check(name_obj)
-#ifdef Py_USING_UNICODE
-&& !PyUnicode_Check(name_obj)
-#endif
-) {
+        if (!IS_BASESTRING(name_obj)) {
                 PyErr_SetString(PyExc_TypeError, 
                                 "dialect name must be a string or unicode");
                 return NULL;
