@@ -1907,7 +1907,7 @@ deepcopy(PyObject** object, PyObject* memo)
 
     copy = call(
         "copy", "deepcopy",
-        Py_BuildValue("OO", *object, memo)
+        PyTuple_Pack(2, *object, memo)
         );
     if (!copy)
         return 0;
@@ -1968,7 +1968,7 @@ join_list(PyObject* list, PyObject* pattern)
 #else
     result = call(
         "string", "join",
-        Py_BuildValue("OO", list, joiner)
+        PyTuple_Pack(2, list, joiner)
         );
 #endif
     Py_DECREF(joiner);
@@ -2255,7 +2255,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
             /* not a literal; hand it over to the template compiler */
             filter = call(
                 SRE_MODULE, "_subx",
-                Py_BuildValue("OO", self, template)
+                PyTuple_Pack(2, self, template)
                 );
             if (!filter)
                 return NULL;
@@ -2321,7 +2321,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
             match = pattern_new_match(self, &state, 1);
             if (!match)
                 goto error;
-            args = Py_BuildValue("(O)", match);
+            args = PyTuple_Pack(1, match);
             if (!args) {
                 Py_DECREF(match);
                 goto error;
@@ -2610,7 +2610,7 @@ match_expand(MatchObject* self, PyObject* args)
     /* delegate to Python code */
     return call(
         SRE_MODULE, "_expand",
-        Py_BuildValue("OOO", self->pattern, self, template)
+        PyTuple_Pack(3, self->pattern, self, template)
         );
 }
 

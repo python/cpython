@@ -1473,7 +1473,7 @@ eval_frame(PyFrameObject *f)
 				x = NULL;
 			}
 			if (err == 0) {
-				x = Py_BuildValue("(O)", v);
+				x = PyTuple_Pack(1, v);
 				if (x == NULL)
 					err = -1;
 			}
@@ -1981,7 +1981,7 @@ eval_frame(PyFrameObject *f)
 				break;
 			}
 			u = TOP();
-			w = Py_BuildValue("(OOOO)",
+			w = PyTuple_Pack(4,
 				    w,
 				    f->f_globals,
 				    f->f_locals == NULL ?
@@ -2999,7 +2999,7 @@ call_exc_trace(Py_tracefunc func, PyObject *self, PyFrameObject *f)
 		value = Py_None;
 		Py_INCREF(value);
 	}
-	arg = Py_BuildValue("(OOO)", type, value, traceback);
+	arg = PyTuple_Pack(3, type, value, traceback);
 	if (arg == NULL) {
 		PyErr_Restore(type, value, traceback);
 		return;

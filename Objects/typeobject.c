@@ -163,7 +163,7 @@ mro_subclasses(PyTypeObject *type, PyObject* temp)
 		}
 		else {
 			PyObject* tuple;
-			tuple = Py_BuildValue("OO", subclass, old_mro);
+			tuple = PyTuple_Pack(2, subclass, old_mro);
 			Py_DECREF(old_mro);
 			if (!tuple)
 				return -1;
@@ -258,8 +258,8 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 		for (i = 0; i < PyList_Size(temp); i++) {
 			PyTypeObject* cls;
 			PyObject* mro;
-			PyArg_ParseTuple(PyList_GET_ITEM(temp, i),
-					 "OO", &cls, &mro);
+			PyArg_UnpackTuple(PyList_GET_ITEM(temp, i),
+					 "", 2, 2, &cls, &mro);
 			Py_DECREF(cls->tp_mro);
 			cls->tp_mro = mro;
 			Py_INCREF(cls->tp_mro);
@@ -1606,7 +1606,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 	/* Adjust for empty tuple bases */
 	if (nbases == 0) {
-		bases = Py_BuildValue("(O)", &PyBaseObject_Type);
+		bases = PyTuple_Pack(1, &PyBaseObject_Type);
 		if (bases == NULL)
 			return NULL;
 		nbases = 1;
@@ -1650,7 +1650,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 		/* Make it into a tuple */
 		if (PyString_Check(slots))
-			slots = Py_BuildValue("(O)", slots);
+			slots = PyTuple_Pack(1, slots);
 		else
 			slots = PySequence_Tuple(slots);
 		if (slots == NULL) {
@@ -2644,8 +2644,7 @@ reduce_2(PyObject *obj)
 		PyTuple_SET_ITEM(args2, i+1, v);
 	}
 
-	res = Py_BuildValue("(OOOOO)",
-			    newobj, args2, state, listitems, dictitems);
+	res = PyTuple_Pack(5, newobj, args2, state, listitems, dictitems);
 
   end:
 	Py_XDECREF(cls);
@@ -3142,7 +3141,7 @@ PyType_Ready(PyTypeObject *type)
 		if (base == NULL)
 			bases = PyTuple_New(0);
 		else
-			bases = Py_BuildValue("(O)", base);
+			bases = PyTuple_Pack(1, base);
 		if (bases == NULL)
 			goto error;
 		type->tp_bases = bases;
@@ -4127,7 +4126,7 @@ slot_sq_contains(PyObject *self, PyObject *value)
 
 	func = lookup_maybe(self, "__contains__", &contains_str);
 	if (func != NULL) {
-		args = Py_BuildValue("(O)", value);
+		args = PyTuple_Pack(1, value);
 		if (args == NULL)
 			res = NULL;
 		else {
@@ -4342,7 +4341,7 @@ half_compare(PyObject *self, PyObject *other)
 		PyErr_Clear();
 	}
 	else {
-		args = Py_BuildValue("(O)", other);
+		args = PyTuple_Pack(1, other);
 		if (args == NULL)
 			res = NULL;
 		else {
@@ -4571,7 +4570,7 @@ half_richcompare(PyObject *self, PyObject *other, int op)
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	args = Py_BuildValue("(O)", other);
+	args = PyTuple_Pack(1, other);
 	if (args == NULL)
 		res = NULL;
 	else {

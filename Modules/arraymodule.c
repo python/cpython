@@ -1770,7 +1770,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					Py_DECREF(v);
 				}
 			} else if (initial != NULL && PyString_Check(initial)) {
-				PyObject *t_initial = Py_BuildValue("(O)",
+				PyObject *t_initial = PyTuple_Pack(1,
 								    initial);
 				PyObject *v =
 					array_fromstring((arrayobject *)a,

@@ -901,7 +901,7 @@ alp_GetFrameTime(alpobject *self, PyObject *args)
 		Py_XDECREF(v1);
 		return NULL;
 	}
-	ret = Py_BuildValue("(OO)", v0, v1);
+	ret = PyTuple_Pack(2, v0, v1);
 	Py_DECREF(v0);
 	Py_DECREF(v1);
 	return ret;

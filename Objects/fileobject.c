@@ -1227,7 +1227,7 @@ PyFile_GetLine(PyObject *f, int n)
 		if (reader == NULL)
 			return NULL;
 		if (n <= 0)
-			args = Py_BuildValue("()");
+			args = PyTuple_New(0);
 		else
 			args = Py_BuildValue("(i)", n);
 		if (args == NULL) {
@@ -2104,7 +2104,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 		Py_DECREF(writer);
 		return -1;
 	}
-	args = Py_BuildValue("(O)", value);
+	args = PyTuple_Pack(1, value);
 	if (args == NULL) {
 		Py_DECREF(value);
 		Py_DECREF(writer);

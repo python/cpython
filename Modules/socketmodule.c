@@ -1161,7 +1161,7 @@ sock_accept(PySocketSockObject *s)
 	if (addr == NULL)
 		goto finally;
 
-	res = Py_BuildValue("OO", sock, addr);
+	res = PyTuple_Pack(2, sock, addr);
 
 finally:
 	Py_XDECREF(sock);
@@ -1911,7 +1911,7 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 				  addrlen)))
 		goto finally;
 
-	ret = Py_BuildValue("OO", buf, addr);
+	ret = PyTuple_Pack(2, buf, addr);
 
 finally:
 	Py_XDECREF(addr);

@@ -284,7 +284,7 @@ select_select(PyObject *self, PyObject *args)
                 /* optimization */
 		ifdlist = PyList_New(0);
 		if (ifdlist) {
-			ret = Py_BuildValue("OOO", ifdlist, ifdlist, ifdlist);
+			ret = PyTuple_Pack(3, ifdlist, ifdlist, ifdlist);
 			Py_DECREF(ifdlist);
 		}
 	}
@@ -299,7 +299,7 @@ select_select(PyObject *self, PyObject *args)
 		if (PyErr_Occurred())
 			ret = NULL;
 		else
-			ret = Py_BuildValue("OOO", ifdlist, ofdlist, efdlist);
+			ret = PyTuple_Pack(3, ifdlist, ofdlist, efdlist);
 
 		Py_DECREF(ifdlist);
 		Py_DECREF(ofdlist);

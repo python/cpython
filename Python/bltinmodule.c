@@ -323,7 +323,7 @@ builtin_coerce(PyObject *self, PyObject *args)
 		return NULL;
 	if (PyNumber_Coerce(&v, &w) < 0)
 		return NULL;
-	res = Py_BuildValue("(OO)", v, w);
+	res = PyTuple_Pack(2, v, w);
 	Py_DECREF(v);
 	Py_DECREF(w);
 	return res;
@@ -2185,7 +2185,7 @@ filtertuple(PyObject *func, PyObject *tuple)
 			good = item;
 		}
 		else {
-			PyObject *arg = Py_BuildValue("(O)", item);
+			PyObject *arg = PyTuple_Pack(1, item);
 			if (arg == NULL) {
 				Py_DECREF(item);
 				goto Fail_1;
@@ -2252,7 +2252,7 @@ filterstring(PyObject *func, PyObject *strobj)
 			ok = 1;
 		} else {
 			PyObject *arg, *good;
-			arg = Py_BuildValue("(O)", item);
+			arg = PyTuple_Pack(1, item);
 			if (arg == NULL) {
 				Py_DECREF(item);
 				goto Fail_1;
@@ -2346,7 +2346,7 @@ filterunicode(PyObject *func, PyObject *strobj)
 		if (func == Py_None) {
 			ok = 1;
 		} else {
-			arg = Py_BuildValue("(O)", item);
+			arg = PyTuple_Pack(1, item);
 			if (arg == NULL) {
 				Py_DECREF(item);
 				goto Fail_1;

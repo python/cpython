@@ -750,7 +750,7 @@ instance_getattr(register PyInstanceObject *inst, PyObject *name)
 		if (!PyErr_ExceptionMatches(PyExc_AttributeError))
 			return NULL;
 		PyErr_Clear();
-		args = Py_BuildValue("(OO)", inst, name);
+		args = PyTuple_Pack(2, inst, name);
 		if (args == NULL)
 			return NULL;
 		res = PyEval_CallObject(func, args);
@@ -847,9 +847,9 @@ instance_setattr(PyInstanceObject *inst, PyObject *name, PyObject *v)
 	if (func == NULL)
 		return instance_setattr1(inst, name, v);
 	if (v == NULL)
-		args = Py_BuildValue("(OO)", inst, name);
+		args = PyTuple_Pack(2, inst, name);
 	else
-		args = Py_BuildValue("(OOO)", inst, name, v);
+		args = PyTuple_Pack(3, inst, name, v);
 	if (args == NULL)
 		return -1;
 	res = PyEval_CallObject(func, args);
@@ -1038,7 +1038,7 @@ instance_subscript(PyInstanceObject *inst, PyObject *key)
 	func = instance_getattr(inst, getitemstr);
 	if (func == NULL)
 		return NULL;
-	arg = Py_BuildValue("(O)", key);
+	arg = PyTuple_Pack(1, key);
 	if (arg == NULL) {
 		Py_DECREF(func);
 		return NULL;
@@ -1069,9 +1069,9 @@ instance_ass_subscript(PyInstanceObject *inst, PyObject *key, PyObject *value)
 	if (func == NULL)
 		return -1;
 	if (value == NULL)
-		arg = Py_BuildValue("(O)", key);
+		arg = PyTuple_Pack(1, key);
 	else
-		arg = Py_BuildValue("(OO)", key, value);
+		arg = PyTuple_Pack(2, key, value);
 	if (arg == NULL) {
 		Py_DECREF(func);
 		return -1;
@@ -1281,7 +1281,7 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 	if (func) {
 		PyObject *res;
 		int ret;
-		PyObject *arg = Py_BuildValue("(O)", member);
+		PyObject *arg = PyTuple_Pack(1, member);
 		if(arg == NULL) {
 			Py_DECREF(func);
 			return -1;
@@ -1346,7 +1346,7 @@ generic_binary_op(PyObject *v, PyObject *w, char *opname)
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	args = Py_BuildValue("(O)", w);
+	args = PyTuple_Pack(1, w);
 	if (args == NULL) {
 		Py_DECREF(func);
 		return NULL;
@@ -1389,7 +1389,7 @@ half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 		return generic_binary_op(v, w, opname);
 	}
 
-	args = Py_BuildValue("(O)", w);
+	args = PyTuple_Pack(1, w);
 	if (args == NULL) {
 		Py_DECREF(coercefunc);
 		return NULL;
@@ -1474,7 +1474,7 @@ instance_coerce(PyObject **pv, PyObject **pw)
 		return 1;
 	}
 	/* Has __coerce__ method: call it */
-	args = Py_BuildValue("(O)", w);
+	args = PyTuple_Pack(1, w);
 	if (args == NULL) {
 		return -1;
 	}
@@ -1587,7 +1587,7 @@ half_cmp(PyObject *v, PyObject *w)
 		return 2;
 	}
 
-	args = Py_BuildValue("(O)", w);
+	args = PyTuple_Pack(1, w);
 	if (args == NULL) {
 		Py_DECREF(cmp_func);
 		return -2;
@@ -1747,7 +1747,7 @@ instance_pow(PyObject *v, PyObject *w, PyObject *z)
 		func = PyObject_GetAttrString(v, "__pow__");
 		if (func == NULL)
 			return NULL;
-		args = Py_BuildValue("(OO)", w, z);
+		args = PyTuple_Pack(2, w, z);
 		if (args == NULL) {
 			Py_DECREF(func);
 			return NULL;
@@ -1786,7 +1786,7 @@ instance_ipow(PyObject *v, PyObject *w, PyObject *z)
 			PyErr_Clear();
 			return instance_pow(v, w, z);
 		}
-		args = Py_BuildValue("(OO)", w, z);
+		args = PyTuple_Pack(2, w, z);
 		if (args == NULL) {
 			Py_DECREF(func);
 			return NULL;
@@ -1859,7 +1859,7 @@ half_richcompare(PyObject *v, PyObject *w, int op)
 		return res;
 	}
 
-	args = Py_BuildValue("(O)", w);
+	args = PyTuple_Pack(1, w);
 	if (args == NULL) {
 		Py_DECREF(method);
 		return NULL;

@@ -159,13 +159,13 @@ PyErr_NormalizeException(PyObject **exc, PyObject **val, PyObject **tb)
 			PyObject *args, *res;
 
 			if (value == Py_None)
-				args = Py_BuildValue("()");
+				args = PyTuple_New(0);
 			else if (PyTuple_Check(value)) {
 				Py_INCREF(value);
 				args = value;
 			}
 			else
-				args = Py_BuildValue("(O)", value);
+				args = PyTuple_Pack(1, value);
 
 			if (args == NULL)
 				goto finally;
@@ -560,7 +560,7 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 	classname = PyString_FromString(dot+1);
 	if (classname == NULL)
 		goto failure;
-	bases = Py_BuildValue("(O)", base);
+	bases = PyTuple_Pack(1, base);
 	if (bases == NULL)
 		goto failure;
 	result = PyClass_New(bases, dict, classname);

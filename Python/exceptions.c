@@ -1821,7 +1821,7 @@ _PyExc_Init(void)
     }
 
     /* Now we need to pre-allocate a MemoryError instance */
-    args = Py_BuildValue("()");
+    args = PyTuple_New(0);
     if (!args ||
 	!(PyExc_MemoryErrorInst = PyEval_CallObject(PyExc_MemoryError, args)))
     {

@@ -259,23 +259,19 @@ math_log(PyObject *self, PyObject *args)
 	if (base == NULL)
 		return loghelper(args, log, "d:log", arg);
 
-	newargs = PyTuple_New(1);
+	newargs = PyTuple_Pack(1, arg);
 	if (newargs == NULL)
 		return NULL;
-	Py_INCREF(arg);
-	PyTuple_SET_ITEM(newargs, 0, arg);
 	num = loghelper(newargs, log, "d:log", arg);
 	Py_DECREF(newargs);
 	if (num == NULL)
 		return NULL;
 
-	newargs = PyTuple_New(1);
+	newargs = PyTuple_Pack(1, base);
 	if (newargs == NULL) {
 		Py_DECREF(num);
 		return NULL;
 	}
-	Py_INCREF(base);
-	PyTuple_SET_ITEM(newargs, 0, base);
 	den = loghelper(newargs, log, "d:log", base);
 	Py_DECREF(newargs);
 	if (den == NULL) {
