@@ -1,5 +1,5 @@
 #! /ufs/guido/bin/sgi/python
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Fix Python source files to use the new class definition syntax, i.e.,
 #	class C() = base(), base(), ...: ...
@@ -38,7 +38,7 @@ rep = sys.stdout.write
 def main():
 	bad = 0
 	if not sys.argv[1:]: # No arguments
-		err('usage: ' + argv[0] + ' file-or-directory ...\n')
+		err('usage: ' + sys.argv[0] + ' file-or-directory ...\n')
 		sys.exit(2)
 	for arg in sys.argv[1:]:
 		if os.path.isdir(arg):
