@@ -11,8 +11,6 @@
 \tableofcontents
 
 % MacOS framework-related changes (section of its own, probably)
-%
-% xreadlines obsolete; files are their own iterator
 
 %\section{Introduction \label{intro}}
 
@@ -1020,6 +1018,17 @@ support using the \code{+=} assignment operator to add another array's
 contents, and the \code{*=} assignment operator to repeat an array.
 (Contributed by Jason Orendorff.)
 
+\item The \module{bsddb} module has been updated to version 3.4.0 
+of the \ulink{PyBSDDB}{http://pybsddb.sourceforge.net} package,
+providing a more complete interface to the transactional features of
+the BerkeleyDB library.
+The old version of the module has been renamed to 
+\module{bsddb185} and is no longer built automatically; you'll 
+have to edit \file{Modules/Setup} to enable it.  Note that the new
+\module{bsddb} package is intended to be compatible with the 
+old module, so be sure to file bugs if you discover any
+incompatibilities.
+ 
 \item The Distutils \class{Extension} class now supports
 an extra constructor argument named \var{depends} for listing
 additional source files that an extension depends on.  This lets
@@ -1329,6 +1338,7 @@ options:
                         set maximum length of output
 $ 
 \end{verbatim}
+% $ prevent Emacs tex-mode from getting confused
 
 Optik was written by Greg Ward, with suggestions from the readers of
 the Getopt SIG.
