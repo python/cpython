@@ -92,7 +92,7 @@ class UnixCCompiler (CCompiler):
                  sources,
                  output_dir=None,
                  macros=None,
-                 includes=None,
+                 include_dirs=None,
                  extra_preargs=None,
                  extra_postargs=None):
 
@@ -100,18 +100,19 @@ class UnixCCompiler (CCompiler):
             output_dir = self.output_dir
         if macros is None:
             macros = []
-        if includes is None:
-            includes = []
+        if include_dirs is None:
+            include_dirs = []
 
         if type (macros) is not ListType:
             raise TypeError, \
                   "'macros' (if supplied) must be a list of tuples"
-        if type (includes) is not ListType:
+        if type (include_dirs) not in (ListType, TupleType):
             raise TypeError, \
-                  "'includes' (if supplied) must be a list of strings"
+                  "'include_dirs' (if supplied) must be a list of strings"
+        include_dirs = list (include_dirs)
 
         pp_opts = gen_preprocess_options (self.macros + macros,
-                                          self.include_dirs + includes)
+                                          self.include_dirs + include_dirs)
 
         # So we can mangle 'sources' without hurting the caller's data
         orig_sources = sources
@@ -204,6 +205,15 @@ class UnixCCompiler (CCompiler):
         if library_dirs is None:
             library_dirs = []
         
+        if type (libraries) not in (ListType, TupleType):
+            raise TypeError, \
+                  "'libraries' (if supplied) must be a list of strings"
+        if type (library_dirs) not in (ListType, TupleType):
+            raise TypeError, \
+                  "'library_dirs' (if supplied) must be a list of strings"
+        libraries = list (libraries)
+        library_dirs = list (library_dirs)
+
         lib_opts = gen_lib_options (self,
                                     self.library_dirs + library_dirs,
                                     self.libraries + libraries)
