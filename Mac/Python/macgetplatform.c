@@ -1,6 +1,6 @@
 
 char *
-getplatform()
+Py_GetPlatform()
 {
 	return "mac";
 }

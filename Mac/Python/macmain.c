@@ -54,8 +54,8 @@ extern int Py_SuppressPrintingFlag; /* For ceval.c, declared in pythonrun.c */
 
 
 /* Subroutines that live in their own file */
-extern char *getversion Py_PROTO((void));
-extern char *getcopyright Py_PROTO((void));
+extern char *Py_GetVersion Py_PROTO((void));
+extern char *Py_GetCopyright Py_PROTO((void));
 
 
 /* For getprogramname(); set by main() */
@@ -336,7 +336,7 @@ Py_Main(argc, argv)
 	if (Py_VerboseFlag ||
 	    command == NULL && filename == NULL && isatty((int)fileno(fp)))
 		fprintf(stderr, "Python %s\n%s\n",
-			getversion(), getcopyright());
+			Py_GetVersion(), Py_GetCopyright());
 	
 	if (filename != NULL) {
 		if ((fp = fopen(filename, "r")) == NULL) {

@@ -30,7 +30,7 @@
 #endif
 
 char *
-getcompiler()
+Py_GetCompiler()
 {
 	return COMPILER;
 }
