@@ -68,7 +68,7 @@ sub do_cmd_NULL{ '<tt>NULL</tt>' . @_[0]; }
 
 sub do_cmd_e{ '&#92;' . @_[0]; }
 
-$AUTHOR_ADDRESS = '';
+$DEVELOPER_ADDRESS = '';
 $PYTHON_VERSION = '';
 
 sub do_cmd_version{ $PYTHON_VERSION . @_[0]; }
@@ -80,9 +80,13 @@ sub do_cmd_release{
 
 sub do_cmd_authoraddress{
     local($_) = @_;
-    $AUTHOR_ADDRESS = next_argument();
+    $DEVELOPER_ADDRESS = next_argument();
     $_;
 }
+
+sub do_cmd_developer{ do_cmd_author(@_[0]); }
+sub do_cmd_developers{ do_cmd_author(@_[0]); }
+sub do_cmd_developersaddress{ do_cmd_authoraddress(@_[0]); }
 
 sub do_cmd_hackscore{
     local($_) = @_;
@@ -783,8 +787,8 @@ sub do_cmd_maketitle {
     } else { write_warnings("\nThere is no author for this document."); }
     if ($t_institute) {
         $the_title .= "\n<p>$t_institute</p>";}
-    if ($AUTHOR_ADDRESS) {
-        $the_title .= "\n<p>$AUTHOR_ADDRESS</p>";}
+    if ($DEVELOPER_ADDRESS) {
+        $the_title .= "\n<p>$DEVELOPER_ADDRESS</p>";}
     if ($t_affil) {
 	$the_title .= "\n<p><i>$t_affil</i></p>";}
     if ($t_date) {
