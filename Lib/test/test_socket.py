@@ -208,7 +208,7 @@ class SocketPairTest(unittest.TestCase, ThreadableTest):
         self.cli = None
         ThreadableTest.clientTearDown(self)
 
-    
+
 #######################################################################
 ## Begin Tests
 
