@@ -20,7 +20,7 @@ License (GPL) was very desirable.  CNRI and the Free Software
 Foundation (FSF) interacted to develop enabling wording changes to the
 Python license.  Python 1.6.1 is essentially the same as Python 1.6,
 with a few minor bug fixes, and with a different license that enables
-later versions to be GPL-compatible.  Python 2.1 is a derivative work
+later versions to be GPL-compatible.  Python 2.0.1 is a derivative work
 of Python 1.6.1, as well as of Python 2.0.
 
 After Python 2.0 was released by BeOpen.com, Guido van Rossum and the
@@ -82,7 +82,7 @@ Licensee.  This License Agreement does not grant permission to use PSF
 trademarks or trade name in a trademark sense to endorse or promote
 products or services of Licensee, or any third party.
 
-8. By copying, installing or otherwise using Python 2.1, Licensee
+8. By copying, installing or otherwise using Python 2.0.1, Licensee
 agrees to be bound by the terms and conditions of this License
 Agreement.
 
