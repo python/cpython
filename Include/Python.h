@@ -117,6 +117,7 @@
 
 #include "abstract.h"
 
+/* PyArg_GetInt is deprecated and should not be used, use PyArg_Parse(). */
 #define PyArg_GetInt(v, a)	PyArg_Parse((v), "i", (a))
 
 /* PyArg_NoArgs should not be necessary.
