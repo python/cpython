@@ -37,7 +37,6 @@ Other options are:
 """
 
 import sys
-from Tkinter import *
 import sunaudiodev
 from SUNAUDIODEV import *
 
@@ -50,6 +49,7 @@ __version__ = '1.0'
 
 class MainWindow:
     def __init__(self, device):
+        from Tkinter import *
         self.__devctl = device
         info = device.getinfo()
         #
