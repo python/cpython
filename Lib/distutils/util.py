@@ -59,15 +59,15 @@ def get_platform ():
 
 
 def convert_path (pathname):
-    """Return 'pathname' as a name that will work on the native
-       filesystem, i.e. split it on '/' and put it back together again
-       using the current directory separator.  Needed because filenames in
-       the setup script are always supplied in Unix style, and have to be
-       converted to the local convention before we can actually use them in
-       the filesystem.  Raises ValueError if 'pathname' is
-       absolute (starts with '/') or contains local directory separators
-       (unless the local separator is '/', of course)."""
-
+    """Return 'pathname' as a name that will work on the native filesystem,
+    i.e. split it on '/' and put it back together again using the current
+    directory separator.  Needed because filenames in the setup script are
+    always supplied in Unix style, and have to be converted to the local
+    convention before we can actually use them in the filesystem.  Raises
+    ValueError if 'pathname' is absolute (starts with '/') or contains
+    local directory separators (unless the local separator is '/', of
+    course).
+    """
     if os.sep == '/':
         return pathname
     if pathname[0] == '/':
@@ -116,13 +116,12 @@ def change_root (new_root, pathname):
 _environ_checked = 0
 def check_environ ():
     """Ensure that 'os.environ' has all the environment variables we
-       guarantee that users can use in config files, command-line
-       options, etc.  Currently this includes:
-         HOME - user's home directory (Unix only)
-         PLAT - description of the current platform, including hardware
-                and OS (see 'get_platform()')
+    guarantee that users can use in config files, command-line options,
+    etc.  Currently this includes:
+      HOME - user's home directory (Unix only)
+      PLAT - description of the current platform, including hardware
+             and OS (see 'get_platform()')
     """
-
     global _environ_checked
     if _environ_checked:
         return
@@ -138,15 +137,15 @@ def check_environ ():
 
 
 def subst_vars (str, local_vars):
-    """Perform shell/Perl-style variable substitution on 'string'.
-       Every occurrence of '$' followed by a name, or a name enclosed in
-       braces, is considered a variable.  Every variable is substituted by
-       the value found in the 'local_vars' dictionary, or in 'os.environ'
-       if it's not in 'local_vars'.  'os.environ' is first checked/
-       augmented to guarantee that it contains certain values: see
-       '_check_environ()'.  Raise ValueError for any variables not found in
-       either 'local_vars' or 'os.environ'."""
-
+    """Perform shell/Perl-style variable substitution on 'string'.  Every
+    occurrence of '$' followed by a name, or a name enclosed in braces, is
+    considered a variable.  Every variable is substituted by the value
+    found in the 'local_vars' dictionary, or in 'os.environ' if it's not in
+    'local_vars'.  'os.environ' is first checked/ augmented to guarantee
+    that it contains certain values: see '_check_environ()'.  Raise
+    ValueError for any variables not found in either 'local_vars' or
+    'os.environ'.
+    """
     check_environ()
     def _subst (match, local_vars=local_vars):
         var_name = match.group(1)
