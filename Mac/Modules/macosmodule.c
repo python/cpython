@@ -220,9 +220,6 @@ rf_close(self, args)
 	rfobject *self;
 	PyObject *args;
 {
-	long where;
-	OSErr err;
-	
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	do_close(self);
