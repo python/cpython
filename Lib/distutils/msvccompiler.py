@@ -1,7 +1,7 @@
 """distutils.ccompiler
 
 Contains MSVCCompiler, an implementation of the abstract CCompiler class
-for the Microsoft Visual Studio """
+for the Microsoft Visual Studio."""
 
 
 # created 1999/08/19, Perry Stoll
@@ -18,6 +18,8 @@ from distutils.ccompiler import \
 class MSVCCompiler (CCompiler) :
     """Concrete class that implements an interface to Microsoft Visual C++,
        as defined by the CCompiler abstract class."""
+
+    compiler_type = 'msvc'
 
     def __init__ (self,
                   verbose=0,
@@ -50,26 +52,19 @@ class MSVCCompiler (CCompiler) :
     _exe_ext = '.exe'
     _shared_lib_ext = '.dll'
     _static_lib_ext = '.lib'
+
+    # XXX the 'output_dir' parameter is ignored by the methods in this
+    # class!  I just put it in to be consistent with CCompiler and
+    # UnixCCompiler, but someone who actually knows Visual C++ will
+    # have to make it work...
     
     def compile (self,
                  sources,
+                 output_dir=None,
                  macros=None,
-                 includes=None):
-        """Compile one or more C/C++ source files.  'sources' must be
-           a list of strings, each one the name of a C/C++ source
-           file.  Return a list of the object filenames generated
-           (one for each source filename in 'sources').
-
-           'macros', if given, must be a list of macro definitions.  A
-           macro definition is either a (name, value) 2-tuple or a (name,)
-           1-tuple.  The former defines a macro; if the value is None, the
-           macro is defined without an explicit value.  The 1-tuple case
-           undefines a macro.  Later definitions/redefinitions/
-           undefinitions take precedence.
-
-           'includes', if given, must be a list of strings, the directories
-           to add to the default include file search path for this
-           compilation only."""
+                 includes=None,
+                 extra_preargs=None,
+                 extra_postargs=None):
 
         if macros is None:
             macros = []
@@ -95,11 +90,16 @@ class MSVCCompiler (CCompiler) :
             inputOpt  = fileOpt + srcFile
             outputOpt = "/Fo"   + objFile
 
-            pp_opts = base_pp_opts + [ outputOpt, inputOpt ]
+            cc_args = self.compile_options + \
+                      base_pp_opts + \
+                      [outputOpt, inputOpt]
+            if extra_preargs:
+                cc_args[:0] = extra_preargs
+            if extra_postargs:
+                cc_args.extend (extra_postargs)
 
-            self.spawn( [ self.cc ] + self.compile_options + pp_opts)
+            self.spawn ([self.cc] + cc_args)
             objectFiles.append( objFile )
-
         return objectFiles
 
 
@@ -109,39 +109,27 @@ class MSVCCompiler (CCompiler) :
     def link_static_lib (self,
                          objects,
                          output_libname,
+                         output_dir=None,
                          libraries=None,
-                         library_dirs=None):
-        """Link a bunch of stuff together to create a static library
-           file.  The "bunch of stuff" consists of the list of object
-           files supplied as 'objects', the extra object files supplied
-           to 'add_link_object()' and/or 'set_link_objects()', the
-           libraries supplied to 'add_library()' and/or
-           'set_libraries()', and the libraries supplied as 'libraries'
-           (if any).
+                         library_dirs=None,
+                         extra_preargs=None,
+                         extra_postargs=None):
 
-           'output_libname' should be a library name, not a filename;
-           the filename will be inferred from the library name.
-
-           'library_dirs', if supplied, should be a list of additional
-           directories to search on top of the system default and those
-           supplied to 'add_library_dir()' and/or 'set_library_dirs()'."""
-        
         if libraries is None:
             libraries = []
         if library_dirs is None:
             library_dirs = []
-        if build_info is None:
-            build_info = {}
         
         lib_opts = gen_lib_options (self.libraries + libraries,
                                     self.library_dirs + library_dirs,
                                     "%s.lib", "/LIBPATH:%s")
 
-        if build_info.has_key('def_file') :
-            lib_opts.append('/DEF:' + build_info['def_file'] )
-                            
         ld_args = self.ldflags_static + lib_opts + \
                   objects + ['/OUT:' + output_filename]
+        if extra_preargs:
+            ld_args[:0] = extra_preargs
+        if extra_postargs:
+            ld_args.extend (extra_postargs)
 
         self.spawn ( [ self.link ] + ld_args )
     
@@ -149,25 +137,25 @@ class MSVCCompiler (CCompiler) :
     def link_shared_lib (self,
                          objects,
                          output_libname,
+                         output_dir=None,
                          libraries=None,
                          library_dirs=None,
-                         build_info=None):
-        """Link a bunch of stuff together to create a shared library
-           file.  Has the same effect as 'link_static_lib()' except
-           that the filename inferred from 'output_libname' will most
-           likely be different, and the type of file generated will
-           almost certainly be different."""
+                         extra_preargs=None,
+                         extra_postargs=None):
+
         # XXX should we sanity check the library name? (eg. no
         # slashes)
-        self.link_shared_object (objects, self.shared_library_name(output_libname),
-                                 build_info=build_info )
+        self.link_shared_object (objects,
+                                 self.shared_library_name(output_libname))
     
     def link_shared_object (self,
                             objects,
                             output_filename,
+                            output_dir=None,
                             libraries=None,
                             library_dirs=None,
-                            build_info=None):
+                            extra_preargs=None,
+                            extra_postargs=None):
         """Link a bunch of stuff together to create a shared object
            file.  Much like 'link_shared_lib()', except the output
            filename is explicitly supplied as 'output_filename'."""
@@ -175,18 +163,17 @@ class MSVCCompiler (CCompiler) :
             libraries = []
         if library_dirs is None:
             library_dirs = []
-        if build_info is None:
-            build_info = {}
         
-        lib_opts = gen_lib_options (self.libraries + libraries,
-                                    self.library_dirs + library_dirs,
-                                    "%s.lib", "/LIBPATH:%s")
+        lib_opts = gen_lib_options (self.library_dirs + library_dirs,
+                                    self.libraries + libraries,
+                                    "/LIBPATH:%s", "%s.lib")
 
-        if build_info.has_key('def_file') :
-            lib_opts.append('/DEF:' + build_info['def_file'] )
-                            
         ld_args = self.ldflags_shared + lib_opts + \
                   objects + ['/OUT:' + output_filename]
+        if extra_preargs:
+            ld_args[:0] = extra_preargs
+        if extra_postargs:
+            ld_args.extend (extra_postargs)
 
         self.spawn ( [ self.link ] + ld_args )
 
