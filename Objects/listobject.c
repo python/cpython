@@ -550,6 +550,231 @@ listappend(self, args)
 	return ins(self, (int) self->ob_size, v);
 }
 
+#define NEWSORT
+
+#ifdef NEWSORT
+
+/* New quicksort implementation for arrays of object pointers.
+   Thanks to discussions with Tim Peters. */
+
+/* CMPERROR is returned by our comparison function when an error
+   occurred.  This is the largest negative integer (0x80000000 on a
+   32-bit system). */
+#define CMPERROR (1 << (8*sizeof(int) - 1))
+
+/* Comparison function.  Takes care of calling a user-supplied
+   comparison function (any callable Python object).  Calls the
+   standard comparison function, cmpobject(), if the user-supplied
+   function is NULL. */
+
+static int
+docompare(x, y, compare)
+	object *x;
+	object *y;
+	object *compare;
+{
+	object *args, *res;
+	int i;
+
+	if (compare == NULL)
+		return cmpobject(x, y);
+
+	args = mkvalue("(OO)", x, y);
+	if (args == NULL)
+		return CMPERROR;
+	res = call_object(compare, args);
+	DECREF(args);
+	if (res == NULL)
+		return CMPERROR;
+	if (!is_intobject(res)) {
+		DECREF(res);
+		err_setstr(TypeError, "comparison function should return int");
+		return CMPERROR;
+	}
+	i = getintvalue(res);
+	DECREF(res);
+	if (i < 0)
+		return -1;
+	if (i > 0)
+		return 1;
+	return 0;
+}
+
+/* Straight insertion sort.  More efficient for sorting small arrays. */
+
+static int
+insertionsort(array, size, compare)
+	object **array;	/* Start of array to sort */
+	int size;	/* Number of elements to sort */
+	object *compare;/* Comparison function object, or NULL for default */
+{
+	register object **a = array;
+	register int i;
+
+	for (i = 1; i < size; i++) {
+		register object *key = a[i];
+		register int j = i;
+		while (--j >= 0) {
+			register int k = docompare(a[j], key, compare);
+			if (k == CMPERROR)
+				return -1;
+			if (k <= 0)
+				break;
+			a[j+1] = a[j];
+			a[j] = key; /* For consistency */
+		}
+	}
+
+	return 0;
+}
+
+/* MINSIZE is the smallest array we care to partition; smaller arrays
+   are sorted using a straight insertion sort (above). */
+#define MINSIZE 10
+
+/* STACKSIZE is the size of our work stack.  A rough estimate is that
+   this allows us to sort arrays of MINSIZE * 2**STACKSIZE, or large
+   enough.  (Because of the way we push the biggest partition first,
+   the worst case occurs when all subarrays are always partitioned
+   exactly in two.) */
+#define STACKSIZE 64
+
+/* Quicksort algorithm.  Return -1 if an exception occurred; in this
+   case we leave the array partly sorted but otherwise in good health
+   (i.e. no items have been removed or duplicated). */
+
+static int
+quicksort(array, size, compare)
+	object **array;	/* Start of array to sort */
+	int size;	/* Number of elements to sort */
+	object *compare;/* Comparison function object, or NULL for default */
+{
+	register object **a, *tmp, *pivot;
+	register int n, l, r, k;
+	int top, i, j, n2;
+	object **astack[STACKSIZE];
+	int nstack[STACKSIZE];
+
+	/* Start out with the whole array on the work stack */
+	astack[0] = array;
+	nstack[0] = size;
+	top = 1;
+
+	/* Repeat until the work stack is empty */
+	while (--top >= 0) {
+		a = astack[top];
+		n = nstack[top];
+
+		/* If it's a small one, use straight insertion sort */
+		if (n < MINSIZE) {
+			if (insertionsort(a, n, compare) < 0)
+				return -1;
+			continue;
+		}
+
+		/* Choose median of a[0], a[n/2], a[n-1] as pivot */
+		i = n>>1;
+		j = n-1;
+		k = docompare(a[0], a[i], compare);
+		if (k == CMPERROR)
+			return -1;
+		if (k < 0)
+			{ tmp = a[0]; a[0] = a[i]; a[i] = tmp; }
+		k = docompare(a[j], a[i], compare);
+		if (k == CMPERROR)
+			return -1;
+		if (k < 0)
+			{ tmp = a[j]; a[j] = a[i]; a[i] = tmp; }
+		k = docompare(a[j], a[0], compare);
+		if (k == CMPERROR)
+			return -1;
+		if (k < 0)
+			{ tmp = a[j]; a[j] = a[0]; a[0] = tmp; }
+		pivot = a[0];
+
+		/* Partition the array */
+		l = 0;
+		r = n;
+		for (;;) {
+			/* Move left index to element > pivot */
+			while (++l < n) {
+				k = docompare(a[l], pivot, compare);
+				if (k == CMPERROR)
+					return -1;
+				if (k > 0)
+					break;
+			}
+			/* Move right index to element < pivot */
+			while (--r > 0) {
+				k = docompare(a[r], pivot, compare);
+				if (k == CMPERROR)
+					return -1;
+				if (k < 0)
+					break;
+			}
+			/* If they met, we're through */
+			if (r < l)
+				break;
+			/* Swap elements and continue */
+			{ tmp = a[l]; a[l] = a[r]; a[r] = tmp; }
+		}
+
+		/* Move the pivot into the middle */
+		{ tmp = a[0]; a[0] = a[r]; a[r] = tmp; }
+
+		/* We have now reached the following conditions:
+			0 <= r < l <= n
+			all x in a[0:r] are <= pivot
+			all x in a[r:l] are == pivot
+			all x in a[l:n] are >= pivot
+		   The partitions are a[0:r] and a[l:n]
+		 */
+
+		/* Push biggest partition first */
+		n2 = n - l;
+		if (r > n2) {
+			/* First one is bigger */
+			if (r > 1) {
+				astack[top] = a;
+				nstack[top++] = r;
+				if (n2 > 1) {
+					astack[top] = a+l;
+					nstack[top++] = n2;
+				}
+			}
+		} else {
+			/* Second one is bigger */
+			if (n2 > 1) {
+				astack[top] = a+l;
+				nstack[top++] = n2;
+				if (r > 1) {
+					astack[top] = a;
+					nstack[top++] = r;
+				}
+			}
+		}
+
+		/* Should assert top < STACKSIZE-1 */
+	}
+	
+	/* Succes */
+	return 0;
+}
+
+static object *
+listsort(self, compare)
+	listobject *self;
+	object *compare;
+{
+	/* XXX Don't you *dare* changing the list's length in compare()! */
+	if (quicksort(self->ob_item, self->ob_size, compare) < 0)
+		return NULL;
+	INCREF(None);
+	return None;
+}
+
+#else /* !NEWSORT */
+
 static object *comparefunc;
 
 static int
@@ -616,6 +841,8 @@ listsort(self, args)
 	INCREF(None);
 	return None;
 }
+
+#endif
 
 static object *
 listreverse(self, args)
