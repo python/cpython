@@ -634,7 +634,8 @@ Recursive directory creation function.  Like \function{mkdir()},
 but makes all intermediate-level directories needed to contain the
 leaf directory.  Throws an \exception{error} exception if the leaf
 directory already exists or cannot be created.  The default \var{mode}
-is \code{0777} (octal).
+is \code{0777} (octal).  This function does not properly handle UNC
+paths (only relevant on Windows systems).
 \versionadded{1.5.2}
 \end{funcdesc}
 
