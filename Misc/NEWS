@@ -162,8 +162,8 @@ Extension modules
   This will create a temporary in-memory bsddb that won't be
   written to disk.
 
-- posix.killpg, posix.mknod, and posix.getpgid have been added where
-  available.
+- posix.lchown, posix.killpg, posix.mknod, and posix.getpgid have been
+  added where available.
 
 - The locale module now exposes the C library's gettext interface.
 
@@ -339,7 +339,7 @@ Build
   to require editing the core to teach the trashcan mechanism about the
   new type.
 
-- Accoring to Annex F of the current C standard,
+- According to Annex F of the current C standard,
 
     The Standard C macro HUGE_VAL and its float and long double analogs,
     HUGE_VALF and HUGE_VALL, expand to expressions whose values are

@@ -930,6 +930,33 @@ posix_chown(PyObject *self, PyObject *args)
 }
 #endif /* HAVE_CHOWN */
 
+#ifdef HAVE_LCHOWN
+PyDoc_STRVAR(posix_lchown__doc__,
+"lchown(path, uid, gid)\n\n\
+Change the owner and group id of path to the numeric uid and gid.\n\
+This function will not follow symbolic links.");
+
+static PyObject *
+posix_lchown(PyObject *self, PyObject *args)
+{
+	char *path = NULL;
+	int uid, gid;
+	int res;
+	if (!PyArg_ParseTuple(args, "etii:lchown",
+	                      Py_FileSystemDefaultEncoding, &path,
+	                      &uid, &gid))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = lchown(path, (uid_t) uid, (gid_t) gid);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error_with_allocated_filename(path);
+	PyMem_Free(path);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif /* HAVE_LCHOWN */
+
 
 #ifdef HAVE_GETCWD
 PyDoc_STRVAR(posix_getcwd__doc__,
@@ -6225,6 +6252,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_CHOWN
 	{"chown",	posix_chown, METH_VARARGS, posix_chown__doc__},
 #endif /* HAVE_CHOWN */
+#ifdef HAVE_LCHOWN
+	{"lchown",	posix_lchown, METH_VARARGS, posix_lchown__doc__},
+#endif /* HAVE_LCHOWN */
 #ifdef HAVE_CHROOT
 	{"chroot",	posix_chroot, METH_VARARGS, posix_chroot__doc__},
 #endif

@@ -641,6 +641,13 @@ and \var{gid}.
 Availability: \UNIX.
 \end{funcdesc}
 
+\begin{funcdesc}{lchown}{path, uid, gid}
+Change the owner and group id of \var{path} to the numeric \var{uid}
+and gid. This function will not follow symbolic links.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{link}{src, dst}
 Create a hard link pointing to \var{src} named \var{dst}.
 Availability: \UNIX.
