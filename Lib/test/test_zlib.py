@@ -1,16 +1,37 @@
 import zlib
 import sys
 import imp
+import string
 
 t = imp.find_module('test_zlib')
 file = t[0]
 buf = file.read() * 8
 file.close()
 
+# test the chucksums
+print zlib.crc32('penguin'), zlib.crc32('penguin', 1)
+print zlib.adler32('penguin'), zlib.adler32('penguin', 1)
+
+# make sure we generate some expected errors
+try:
+    zlib.compress('ERROR', zlib.MAX_WBITS + 1)
+except zlib.error, msg:
+    print "expecting", msg
+try:
+    zlib.compressobj(1, 8, 0)
+except ValueError, msg:
+    print "expecting", msg
+try:
+    zlib.decompressobj(0)
+except ValueError, msg:
+    print "expecting", msg
+
 x = zlib.compress(buf)
 y = zlib.decompress(x)
 if buf != y:
     print "normal compression/decompression failed"
+else:
+    print "normal compression/decompression succeeded"
 
 buf = buf * 16
 
@@ -25,6 +46,32 @@ y2 = dc.flush()
 y = y1 + y2
 if buf != y:
     print "compress/decompression obj failed"
+else:
+    print "compress/decompression obj succeeded"
+
+co = zlib.compressobj(2, 8, -12, 9, 1)
+bufs = []
+for i in range(0, len(buf), 256):
+    bufs.append(co.compress(buf[i:i+256]))
+bufs.append(co.flush())
+combuf = string.join(bufs, '')
+
+decomp1 = zlib.decompress(combuf, -12, -5)
+if decomp1 != buf:
+    print "decompress with init options failed"
+else:
+    print "decompress with init options succeeded"
+
+deco = zlib.decompressobj(-12)
+bufs = []
+for i in range(0, len(combuf), 128):
+    bufs.append(deco.decompress(combuf[i:i+128]))
+bufs.append(deco.flush())
+decomp2 = string.join(buf, '')
+if decomp2 != buf:
+    print "decompressobj with init options failed"
+else:
+    print "decompressobj with init options succeeded"
 
 def ignore():
     """An empty function with a big string.
