@@ -90,10 +90,11 @@ the strict mapping from IDL).  See section \ref{dom-conformance},
 The \module{xml.dom} contains the following functions:
 
 \begin{funcdesc}{registerDOMImplementation}{name, factory}
-Register the \var{factory} function with the \var{name}. The factory
-function should return an object which implements the
-\code{DOMImplementation| interface. The factory function can either return
-the same object, or a new one (e.g. if that implementation supports
+Register the \var{factory} function with the name \var{name}.  The
+factory function should return an object which implements the
+\class{DOMImplementation} interface.  The factory function can return
+the same object every time, or a new one for each call, as appropriate
+for the specific implementation (e.g. if that implementation supports
 some customization).
 \end{funcdesc}
 
@@ -102,7 +103,7 @@ Return a suitable DOM implementation. The \var{name} is either
 well-known, the module name of a DOM implementation, or
 \code{None}. If it is not \code{None}, imports the corresponding module and
 returns a \class{DOMImplementation} object if the import succeeds.  If
-no name is given, and if the environment variable \code{PYTHON_DOM} is
+no name is given, and if the environment variable \envvar{PYTHON_DOM} is
 set, this variable is used to find the implementation.
 
 If name is not given, consider the available implementations to find
