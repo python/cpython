@@ -590,7 +590,7 @@ class Displayer(VideoParams):
 						r, g, b = int(rv*255.0), \
 							  int(gv*255.0), \
 							  int(bv*255.0)
-						map.append(index, r, g, b)
+						map.append((index, r, g, b))
 						if self.color0 == None:
 							self.color0 = \
 								index, r, g, b
@@ -1034,7 +1034,7 @@ class RandomVinFile(BasicVinFile):
 		rv = BasicVinFile.getnextframeheader(self)
 		if self.canseek:
 			pos = self.fp.tell()
-			self.index.append(rv, pos)
+			self.index.append((rv, pos))
 		return rv
 
 	def getrandomframe(self, i):

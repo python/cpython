@@ -489,7 +489,7 @@ def imove(win, ref):
 	#
 	if win.file and win.node:
 		lastnode = '(' + win.file + ')' + win.node
-		win.last.append(lastnode, win.textobj.getfocus())
+		win.last.append((lastnode, win.textobj.getfocus()))
 	win.file = file
 	win.node = node
 	win.header = header

@@ -348,7 +348,7 @@ def makesublist(first, icolor):
 	for i in range(Gl.nparts):
 		angle = (a + i*alpha + FULLC) % FULLC
 		value = 255*(Gl.nparts-1-i)/(Gl.nparts-1)
-		list.append(angle, icolor, value)
+		list.append((angle, icolor, value))
 	list.sort()
 	a, icolor, value = list[0]
 	if a <> 0:
@@ -416,7 +416,7 @@ def render(list, (little_hand, big_hand, seconds_hand)):
 		Gl.c3i((255, 255, 255)) # White
 		circf(0.0, 0.0, 1.0)
 	else:
-		list.append(3600, 0, 255) # Sentinel
+		list.append((3600, 0, 255)) # Sentinel
 	#
 	rgb = [255, 255, 255]
 	a_prev = 0

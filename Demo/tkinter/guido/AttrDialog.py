@@ -113,7 +113,7 @@ class Dialog:
 		self.choices = {}
 		list = []
 		for k, dc in self.options.items():
-			list.append(k, dc)
+			list.append((k, dc))
 		list.sort()
 		for k, (d, c) in list:
 			try:

@@ -94,7 +94,7 @@ def parse_indirlist(buf):
 		(a,b), (a1,b1), (a2,b2) = match
 		file = buf[a1:b1]
 		offset = eval(buf[a2:b2]) # XXX What if this gets overflow?
-		list.append(file, offset)
+		list.append((file, offset))
 		i = b
 	return list
 
