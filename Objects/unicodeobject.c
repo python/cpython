@@ -3027,8 +3027,10 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	    if (charmap_encoding_error(p, size, &inpos, mapping,
 		&exc,
 		&known_errorHandler, &errorHandler, errors,
-		&res, &respos))
+		&res, &respos)) {
+		Py_DECREF(x);
 		goto onError;
+	    }
 	}
 	else
 	    /* done with this character => adjust input position */
