@@ -23,6 +23,12 @@ Tests
 
 Core
 
+- The type/class unification (PEP 252-253) was integrated into the
+  trunk and is not so tentative any more (the exact specification of
+  some features is still tentative).  A lot of work has done on fixing
+  bugs and adding robustness and features (performance still has to
+  come a long way).
+
 - Warnings about a mismatch in the Python API during extension import
   now use the Python warning framework (which makes it possible to
   write filters for these warnings).
