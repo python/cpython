@@ -799,26 +799,26 @@ Samuele
 ...     "Returns the nth item"
 ...     return list(islice(iterable, n, n+1))
 
->>> def all(seq, pred=bool):
-...     "Returns True if pred(x) is True for every element in the iterable"
+>>> def all(seq, pred=None):
+...     "Returns True if pred(x) is true for every element in the iterable"
 ...     for elem in ifilterfalse(pred, seq):
 ...         return False
 ...     return True
 
->>> def any(seq, pred=bool):
-...     "Returns True if pred(x) is True for at least one element in the iterable"
+>>> def any(seq, pred=None):
+...     "Returns True if pred(x) is true for at least one element in the iterable"
 ...     for elem in ifilter(pred, seq):
 ...         return True
 ...     return False
 
->>> def no(seq, pred=bool):
-...     "Returns True if pred(x) is False for every element in the iterable"
+>>> def no(seq, pred=None):
+...     "Returns True if pred(x) is false for every element in the iterable"
 ...     for elem in ifilter(pred, seq):
 ...         return False
 ...     return True
 
->>> def quantify(seq, pred=bool):
-...     "Count how many times the predicate is True in the sequence"
+>>> def quantify(seq, pred=None):
+...     "Count how many times the predicate is true in the sequence"
 ...     return sum(imap(pred, seq))
 
 >>> def padnone(seq):
