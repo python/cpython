@@ -572,7 +572,7 @@ PyLong_AsLongLong(PyObject *vv)
 			(PyLongObject *)vv, (unsigned char *)&bytes,
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 1);
 
-	return (LONG_LONG)(res < 0 ? res : bytes);
+	return res < 0 ? (LONG_LONG)res : bytes;
 }
 
 /* Get a C unsigned LONG_LONG int from a long int object.
@@ -594,7 +594,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 			(PyLongObject *)vv, (unsigned char *)&bytes,
 			SIZEOF_LONG_LONG, IS_LITTLE_ENDIAN, 0);
 
-	return (unsigned LONG_LONG)(res < 0 ? res : bytes);
+	return res < 0 ? (unsigned LONG_LONG)res : bytes;
 }
 
 #undef IS_LITTLE_ENDIAN
