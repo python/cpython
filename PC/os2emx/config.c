@@ -66,6 +66,7 @@ extern void initfcntl();
 extern void initfpectl();
 extern void initfpetest();
 extern void initimageop();
+extern void inititertools();
 extern void initmath();
 extern void initmd5();
 extern void initoperator();
@@ -129,6 +130,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"fpectl", initfpectl},
 	{"fpetest", initfpetest},
 	{"imageop", initimageop},
+	{"itertools", inititertools},
 	{"math", initmath},
 	{"md5", initmd5},
 	{"operator", initoperator},
