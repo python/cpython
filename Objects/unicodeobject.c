@@ -864,7 +864,6 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     return v;
 
  onError:
-    Py_DECREF(v);
     return NULL;
 }
 
@@ -1365,7 +1364,6 @@ PyObject *unicodeescape_string(const Py_UNICODE *s,
     return repr;
 
  onError:
-    Py_DECREF(repr);
     return NULL;
 }
 
@@ -1501,7 +1499,6 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     return repr;
 
  onError:
-    Py_DECREF(repr);
     return NULL;
 }
 
@@ -1589,8 +1586,10 @@ PyObject *PyUnicode_EncodeLatin1(const Py_UNICODE *p,
         Py_UNICODE ch = *p++;
 	if (ch >= 256) {
 	    if (latin1_encoding_error(&p, &s, errors, 
-				      "ordinal not in range(256)"))
+				      "ordinal not in range(256)")) {
+		Py_DECREF(repr);
 		goto onError;
+	    }
 	}
 	else
             *s++ = (char)ch;
@@ -1602,7 +1601,6 @@ PyObject *PyUnicode_EncodeLatin1(const Py_UNICODE *p,
     return repr;
 
  onError:
-    Py_DECREF(repr);
     return NULL;
 }
 
@@ -1732,8 +1730,10 @@ PyObject *PyUnicode_EncodeASCII(const Py_UNICODE *p,
         Py_UNICODE ch = *p++;
 	if (ch >= 128) {
 	    if (ascii_encoding_error(&p, &s, errors, 
-				      "ordinal not in range(128)"))
+				      "ordinal not in range(128)")) {
+		Py_DECREF(repr);
 		goto onError;
+	    }
 	}
 	else
             *s++ = (char)ch;
@@ -1745,7 +1745,6 @@ PyObject *PyUnicode_EncodeASCII(const Py_UNICODE *p,
     return repr;
 
  onError:
-    Py_DECREF(repr);
     return NULL;
 }
 
@@ -2018,7 +2017,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	/* Get mapping (Unicode ordinal -> string char, integer or None) */
 	w = PyInt_FromLong((long)ch);
 	if (w == NULL)
-	    goto onError;
+	    goto onErrorDecref;
 	x = PyObject_GetItem(mapping, w);
 	Py_DECREF(w);
 	if (x == NULL) {
@@ -2028,7 +2027,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 		x = Py_None;
 		Py_INCREF(x);
 	    } else
-		goto onError;
+		goto onErrorDecref;
 	}
 
 	/* Apply mapping */
@@ -2038,7 +2037,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 		PyErr_SetString(PyExc_TypeError,
 				"character mapping must be in range(256)");
 		Py_DECREF(x);
-		goto onError;
+		goto onErrorDecref;
 	    }
 	    *s++ = (char)value;
 	}
@@ -2047,7 +2046,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	    if (charmap_encoding_error(&p, &s, errors, 
 				       "character maps to <undefined>")) {
 		Py_DECREF(x);
-		goto onError;
+		goto onErrorDecref;
 	    }
 	}
 	else if (PyString_Check(x)) {
@@ -2066,7 +2065,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 			         (targetsize << 2);
 		    extrachars += needed;
 		    if (_PyString_Resize(&v, PyString_GET_SIZE(v) + needed)) {
-			Py_DECREF(x);
+			Py_DECREF(x); 
 			goto onError;
 		    }
 		    s = PyString_AS_STRING(v) + oldpos;
@@ -2084,7 +2083,7 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	    PyErr_SetString(PyExc_TypeError,
 		  "character mapping must return integer, None or unicode");
 	    Py_DECREF(x);
-	    goto onError;
+	    goto onErrorDecref;
 	}
 	Py_DECREF(x);
     }
@@ -2093,8 +2092,9 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	    goto onError;
     return v;
 
- onError:
+ onErrorDecref:
     Py_DECREF(v);
+ onError:
     return NULL;
 }
 
