@@ -1,8 +1,5 @@
 """Utility to compile possibly incomplete Python source code."""
 
-import sys
-import traceback
-
 __all__ = ["compile_command"]
 
 def compile_command(source, filename="<input>", symbol="single"):
