@@ -2102,11 +2102,27 @@ stdwin_getscrmm(self, args)
 	return makepoint(width, height);
 }
 
+#ifdef unix
+static object *
+stdwin_connectionnumber(self, args)
+	object *self;
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	return newintobject((long) wconnectionnumber());
+}
+#endif
+
 static struct methodlist stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
 	{"askstr",		stdwin_askstr},
 	{"askync",		stdwin_askync},
 	{"fetchcolor",		stdwin_fetchcolor},
+#ifdef unix
+	{"fileno",		stdwin_connectionnumber},
+	{"connectionnumber",	stdwin_connectionnumber},
+#endif
 	{"fleep",		stdwin_fleep},
 	{"getactive",		stdwin_getactive},
 	{"getcutbuffer",	stdwin_getcutbuffer},
