@@ -1,3 +1,42 @@
+Mon Aug  1 01:28:29 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/test/test_types.py (6.4.1): test for particular bug in
+	integer multiply
+
+Sat Jul 30 13:31:40 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/libsocket.tex, Modules/socketmodule.c: send() and sendto()
+	now return actual byte count (useful for sockets in non-blocking
+	mode)
+
+Tue Jul 26 14:21:17 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* configure.in: check for <limits.h>
+
+	* Objects/longobject.c (newlongobject): fix long(0x80000000) and
+	add warning that it isn't actually correct on 64-bit machines;
+	include <limits.h> if HAVE_LIMITS_H is defined
+
+	* Objects/intobject.c (int_mul): check int*int overflow without
+	resorting to double precision (many thanks to John Tromp)
+
+	* Modules/signalmodule.c (signal_alarm): interface to Posix alarm()
+
+	* Python/ceval.c (call_object): print message before abort()
+
+Mon Jul 25 11:30:56 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/libstring.tex (section{Standard Module \sectcode{string}}):
+	documented string.count()
+
+	* Lib/string.py: added count(s, sub, i=0), returns number of
+	occurrences of sub in s[i:]
+
+	* Doc/keywords.py: program to sort table of keywords in ref2.tex
+
+	* Doc/ref2.tex (subsection{Keywords}): add 'access' and 'lambda'
+	to list of reserved words
+
 Thu Jul 14 15:26:14 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* README, Misc/NEWS, Python/patchlevel.h,
