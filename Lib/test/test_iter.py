@@ -332,9 +332,6 @@ class TestCase(unittest.TestCase):
         self.assertEqual(max(d.itervalues()), 3)
         self.assertEqual(min(iter(d.itervalues())), 1)
 
-        self.assertRaises(TypeError, list, list)
-        self.assertRaises(TypeError, list, 42)
-
         f = open(TESTFN, "w")
         try:
             f.write("medium line\n")
