@@ -298,7 +298,7 @@ class RExec(ihooks._Verbose):
         s = self.modules['sys']
 	s.stdin = self.restricted_stdin
 	s.stdout = self.restricted_stdout
-	s.stderr = self.restricted_stdout
+	s.stderr = self.restricted_stderr
 	sys.stdin = self.delegate_stdin
 	sys.stdout = self.delegate_stdout
 	sys.stderr = self.delegate_stderr
@@ -308,7 +308,7 @@ class RExec(ihooks._Verbose):
         s = self.modules['sys']
 	self.restricted_stdin = s.stdin
 	self.restricted_stdout = s.stdout
-	self.restricted_stdout = s.stderr
+	self.restricted_stderr = s.stderr
 	
 
     def save_files(self):
