@@ -59,7 +59,7 @@ class AppleEventsScanner(Scanner):
 	def makeblacklistnames(self):
 		return [
 			"AEDisposeDesc",
-			"AEGetEventHandler",
+#			"AEGetEventHandler",
 			]
 
 	def makeblacklisttypes(self):
@@ -82,6 +82,12 @@ class AppleEventsScanner(Scanner):
 			 [("EventHandler", "*", "*")]),
 			
 			([("EventHandlerProcPtr", "*", "OutMode"), ("long", "*", "OutMode")],
+			 [("EventHandler", "*", "*")]),
+			
+			([("AEEventHandlerUPP", "*", "InMode"), ("long", "*", "InMode")],
+			 [("EventHandler", "*", "*")]),
+			
+			([("AEEventHandlerUPP", "*", "OutMode"), ("long", "*", "OutMode")],
 			 [("EventHandler", "*", "*")]),
 			
 			([("void", "*", "OutMode"), ("Size", "*", "InMode"),
