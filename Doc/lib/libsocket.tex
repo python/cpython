@@ -230,6 +230,12 @@ This is a Python type object that represents the socket object type.
 It is the same as \code{type(socket(...))}.
 \end{datadesc}
 
+
+\begin{seealso}
+  \seemodule{SocketServer}{Classes that simplify writing network servers.}
+\end{seealso}
+
+
 \subsection{Socket Objects \label{socket-objects}}
 
 Socket objects have the following methods.  Except for
@@ -393,8 +399,8 @@ Note that there are no methods \method{read()} or \method{write()};
 use \method{recv()} and \method{send()} without \var{flags} argument
 instead.
 
-\subsection{Example}
-\nodename{Socket Example}
+
+\subsection{Example \label{socket-example}}
 
 Here are two minimal example programs using the TCP/IP protocol:\ a
 server that echoes all data that it receives back (servicing only one
@@ -436,7 +442,3 @@ data = s.recv(1024)
 s.close()
 print 'Received', `data`
 \end{verbatim}
-
-\begin{seealso}
-  \seemodule{SocketServer}{classes that simplify writing network servers}
-\end{seealso}
