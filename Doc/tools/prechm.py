@@ -19,8 +19,8 @@ import sys
 import os
 from formatter import NullWriter, AbstractFormatter
 from htmllib import HTMLParser
-import string
 import getopt
+import cgi
 
 usage_mode = '''
 Usage: make_chm.py [-c] [-k] [-p] [-v 1.5[.x]] filename
@@ -56,30 +56,35 @@ Title=Python %(version)s Documentation
 [FILES]
 '''
 
-contents_header = '''
+contents_header = '''\
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+<!-- Sitemap 1.0 -->
+</HEAD><BODY>
 <OBJECT type="text/site properties">
 	<param name="Window Styles" value="0x801227">
 	<param name="ImageType" value="Folder">
 </OBJECT>
 <UL>
-<LI> <OBJECT type="text/sitemap">
-	<param name="Name" value="Python %s Docs">
-	<param name="Local" value="./index.html">
-	</OBJECT>
+<LI><OBJECT type="text/sitemap">
+       <param name="Name" value="Python %s Docs">
+       <param name="Local" value="./index.html">
+    </OBJECT>
 <UL>
 '''
 
-contents_footer = '''
-</UL></UL>
+contents_footer = '''\
+</UL></UL></BODY></HTML>
 '''
 
-object_sitemap = '''
-    <LI> <OBJECT type="text/sitemap">
-        <param name="Local" value="%s">
-        <param name="Name" value="%s">
-        </OBJECT>
+object_sitemap = '''\
+<OBJECT type="text/sitemap">
+    <param name="Name" value="%s">
+    <param name="Local" value="%s">
+</OBJECT>
 '''
-
 
 # List of words the full text search facility shouldn't index.  This
 # becomes file ARCH.stp.  Note that this list must be pretty small!
@@ -228,6 +233,9 @@ class HelpHtmlParser(HTMLParser):
         self.indent = 0     # number of tabs for pretty printing of files
         self.proc = False   # True when actively processing, else False
                             # (headers, footers, etc)
+        # XXX This shouldn't need to be a stack -- anchors shouldn't nest.
+        # XXX See SF bug <http://www.python.org/sf/546579>.
+        self.hrefstack = [] # stack of hrefs from anchor begins
 
     def begin_group(self):
         self.indent += 1
@@ -241,14 +249,18 @@ class HelpHtmlParser(HTMLParser):
     def anchor_bgn(self, href, name, type):
         if self.proc:
             self.saved_clear()
-            self.write('<OBJECT type="text/sitemap">\n')
-            self.tab('\t<param name="Local" value="%s/%s">\n' %
-                     (self.path, href))
+            self.hrefstack.append(href)
 
     def anchor_end(self):
         if self.proc:
-            self.tab('\t<param name="Name" value="%s">\n' % self.saved_get())
-            self.tab('\t</OBJECT>\n')
+            title = cgi.escape(self.saved_get(), True)
+            path = self.path + '/' + self.hrefstack.pop()
+            # XXX See SF bug <http://www.python.org/sf/546579>.
+            # XXX index.html for the 2.2 language reference manual contains
+            # XXX nested <a></a> tags in the entry for the section on blank
+            # XXX lines.  We want to ignore the nested part completely.
+            if len(self.hrefstack) == 0:
+                self.tab(object_sitemap % (title, path))
 
     def start_dl(self, atr_val):
         self.begin_group()
@@ -332,8 +344,9 @@ def do_content(library, version, output):
     output.write(contents_header % version)
     for book in library:
         print '\t', book.title, '-', book.firstpage
-        output.write(object_sitemap % (book.directory + "/" + book.firstpage,
-                                       book.title))
+        path = book.directory + "/" + book.firstpage
+        output.write('<LI>')
+        output.write(object_sitemap % (book.title, path))
         if book.contentpage:
             content(book.directory, book.contentpage, output)
     output.write(contents_footer)
