@@ -1,10 +1,13 @@
 \section{\module{resource} ---
-         Resource usage information.}
+         Resource usage information}
+
 \declaremodule{builtin}{resource}
+  \platform{UNIX}
+\modulesynopsis{An interface to provide resource usage information on
+  the current process.}
+\moduleauthor{Jeremy Hylton}{jhylton@cnri.reston.va.us}
+\sectionauthor{Jeremy Hylton}{jhylton@cnri.reston.va.us}
 
-
-\modulesynopsis{An interface to provide resource usage information on the current
-process.}
 
 This module provides basic mechanisms for measuring and controlling
 system resources utilized by a program.
@@ -76,7 +79,7 @@ value to denote the same resource.
 \begin{datadesc}{RLIMIT_CPU}
   The maximum amount of CPU time (in seconds) that a process can
   use. If this limit is exceeded, a \constant{SIGXCPU} signal is sent to
-  the process. (See the \module{signal} module documentation for
+  the process. (See the \refmodule{signal} module documentation for
   information about how to catch this signal and do something useful,
   e.g. flush open files to disk.)
 \end{datadesc}
@@ -134,7 +137,7 @@ These functiona are used to retrieve resource usage information:
   This function returns a large tuple that describes the resources
   consumed by either the current process or its children, as specified
   by the \var{who} parameter.  The \var{who} parameter should be
-  specified using one of the \code{RUSAGE_*} constants described
+  specified using one of the \constant{RUSAGE_*} constants described
   below.
 
   The elements of the return value each
@@ -183,7 +186,7 @@ These functiona are used to retrieve resource usage information:
   bytes. 
 \end{funcdesc}
 
-The following \code{RUSAGE_*} symbols are passed to the
+The following \constant{RUSAGE_*} symbols are passed to the
 \function{getrusage()} function to specify which processes information
 should be provided for.
 

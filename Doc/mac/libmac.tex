@@ -41,8 +41,9 @@ The following modules are documented here:
 
 \section{\module{mac} ---
          Implementations for the \module{os} module}
-\declaremodule{builtin}{mac}
 
+\declaremodule{builtin}{mac}
+  \platform{Mac}
 \modulesynopsis{Implementations for the \module{os} module.}
 
 
@@ -82,8 +83,10 @@ One additional function is available:
 
 \section{\module{macpath} ---
          MacOS path manipulation functions}
-\declaremodule{standard}{macpath}
 
+\declaremodule{standard}{macpath}
+% Could be labeled \platform{Mac}, but the module should work anywhere and
+% is distributed with the standard library.
 \modulesynopsis{MacOS path manipulation functions.}
 
 

@@ -1,9 +1,10 @@
 \section{\module{grp} ---
-         The group database.}
+         The group database}
+
 \declaremodule{builtin}{grp}
-
-
+  \platform{UNIX}
 \modulesynopsis{The group database (\function{getgrnam()} and friends).}
+
 
 This module provides access to the \UNIX{} group database.
 It is available on all \UNIX{} versions.
@@ -18,7 +19,7 @@ The gid is an integer, name and password are strings, and the member
 list is a list of strings.
 (Note that most users are not explicitly listed as members of the
 group they are in according to the password database.)
-A \code{KeyError} exception is raised if the entry asked for cannot be found.
+\exception{KeyError} is raised if the entry asked for cannot be found.
 
 It defines the following items:
 

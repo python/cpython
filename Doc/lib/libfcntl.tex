@@ -1,8 +1,9 @@
 % Manual text by Jaap Vermeulen
 \section{\module{fcntl} ---
-         The \function{fcntl()} and \function{ioctl()} system calls.}
-\declaremodule{builtin}{fcntl}
+         The \function{fcntl()} and \function{ioctl()} system calls}
 
+\declaremodule{builtin}{fcntl}
+  \platform{UNIX}
 \modulesynopsis{The \function{fcntl()} and \function{ioctl()} system calls.}
 
 \indexii{UNIX@\UNIX{}}{file control}
@@ -24,10 +25,10 @@ The module defines the following functions:
   is optional, and defaults to the integer value \code{0}.  When
   present, it can either be an integer value, or a string.  With
   the argument missing or an integer value, the return value of this
-  function is the integer return value of the \C{} \cfunction{fcntl()}
+  function is the integer return value of the C \cfunction{fcntl()}
   call.  When the argument is a string it represents a binary
   structure, e.g.\ created by \function{struct.pack()}. The binary
-  data is copied to a buffer whose address is passed to the \C{}
+  data is copied to a buffer whose address is passed to the C
   \cfunction{fcntl()} call.  The return value after a successful call
   is the contents of the buffer, converted to a string object.  In
   case the \cfunction{fcntl()} fails, an \exception{IOError} is
@@ -54,7 +55,7 @@ manual for details.
 
 If the library modules \module{FCNTL}\refstmodindex{FCNTL} or
 \module{IOCTL}\refstmodindex{IOCTL} are missing, you can find the
-opcodes in the \C{} include files \code{<sys/fcntl.h>} and
+opcodes in the C include files \code{<sys/fcntl.h>} and
 \code{<sys/ioctl.h>}.  You can create the modules yourself with the
 \program{h2py} script, found in the \file{Tools/scripts/} directory.
 

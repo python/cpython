@@ -1,12 +1,13 @@
 \section{\module{macdnr} ---
-         Interfaces to the Macintosh Domain Name Resolver.}
-\declaremodule{builtin}{macdnr}
+         Interface to the Macintosh Domain Name Resolver}
 
+\declaremodule{builtin}{macdnr}
+  \platform{Mac}
 \modulesynopsis{Interfaces to the Macintosh Domain Name Resolver.}
 
 
 This module provides an interface to the Macintosh Domain Name
-Resolver.  It is usually used in conjunction with the \module{mactcp}
+Resolver.  It is usually used in conjunction with the \refmodule{mactcp}
 module, to map hostnames to IP addresses.  It may not be available in
 all Mac Python versions.
 \index{Macintosh Domain Name Resolver}
@@ -55,8 +56,8 @@ the hostname of a host willing to accept SMTP\index{SMTP} mail for the
 given domain.  Returns a dnr result object of the ``mx'' variety.
 \end{funcdesc}
 
-\subsection{dnr result object}
-\label{dnr-result-object}
+
+\subsection{DNR Result Objects \label{dnr-result-object}}
 
 Since the DNR calls all execute asynchronously you do not get the
 results back immediately.  Instead, you get a dnr result object.  You
@@ -115,6 +116,7 @@ will only return a single mx record.  Valid for ``mx'' queries only.
 
 The simplest way to use the module to convert names to dotted-decimal
 strings, without worrying about idle time, etc:
+
 \begin{verbatim}
 >>> def gethostname(name):
 ...     import macdnr

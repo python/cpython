@@ -1,7 +1,8 @@
 \section{\module{termios} ---
-         \POSIX{} style tty control.}
-\declaremodule{builtin}{termios}
+         \POSIX{} style tty control}
 
+\declaremodule{builtin}{termios}
+  \platform{UNIX}
 \modulesynopsis{\POSIX{} style tty control.}
 
 \indexii{\POSIX{}}{I/O control}
@@ -19,8 +20,8 @@ first argument.  This must be an integer file descriptor, such as
 returned by \code{sys.stdin.fileno()}.
 
 This module should be used in conjunction with the
-\module{TERMIOS}\refstmodindex{TERMIOS} module, which defines the
-relevant symbolic constants (see the next section).
+\refmodule[TERMIOSuppercase]{TERMIOS}\refstmodindex{TERMIOS} module,
+which defines the relevant symbolic constants (see the next section).
 
 The module defines the following functions:
 
@@ -33,7 +34,8 @@ length 1, except the items with indices \constant{TERMIOS.VMIN} and
 \constant{TERMIOS.VTIME}, which are integers when these fields are
 defined).  The interpretation of the flags and the speeds as well as
 the indexing in the \var{cc} array must be done using the symbolic
-constants defined in the \module{TERMIOS} module.
+constants defined in the \refmodule[TERMIOSuppercase]{TERMIOS}
+module.
 \end{funcdesc}
 
 \begin{funcdesc}{tcsetattr}{fd, when, attributes}
@@ -97,18 +99,19 @@ def getpass(prompt = "Password: "):
 
 
 \section{\module{TERMIOS} ---
-         Constants used with \module{termios}}
+         Constants used with the \module{termios} module}
 
 \declaremodule[TERMIOSuppercase]{standard}{TERMIOS}
+  \platform{UNIX}
 \modulesynopsis{Symbolic constants required to use the
-\module{termios} module.}
+  \module{termios} module.}
 
 
 \indexii{\POSIX{}}{I/O control}
 \indexii{tty}{I/O control}
 
 This module defines the symbolic constants required to use the
-\module{termios}\refbimodindex{termios} module (see the previous
+\refmodule{termios}\refbimodindex{termios} module (see the previous 
 section).  See the \POSIX{} or \UNIX{} manual pages (or the source)
 for a list of those constants.
 

@@ -1,7 +1,8 @@
 \section{\module{FrameWork} ---
-         Interactive application framework.}
-\declaremodule{standard}{FrameWork}
+         Interactive application framework}
 
+\declaremodule{standard}{FrameWork}
+  \platform{Mac}
 \modulesynopsis{Interactive application framework.}
 
 
@@ -52,7 +53,7 @@ this case menu selection causes the lookup of a method in the topmost
 window and the application. The method name is the callback string
 with \code{'domenu_'} prepended.
 
-Calling the \code{MenuBar} \code{fixmenudimstate} method sets the
+Calling the \code{MenuBar} \method{fixmenudimstate()} method sets the
 correct dimming for all menu items based on the current front window.
 \end{funcdesc}
 
@@ -75,11 +76,11 @@ Creates a modeless dialog window.
 \end{funcdesc}
 
 \begin{funcdesc}{windowbounds}{width, height}
-Return a \code{(left, top, right, bottom)} tuple suitable for creation
-of a window of given width and height. The window will be staggered
-with respect to previous windows, and an attempt is made to keep the
-whole window on-screen. The window will however always be exact the
-size given, so parts may be offscreen.
+Return a \code{(\var{left}, \var{top}, \var{right}, \var{bottom})}
+tuple suitable for creation of a window of given width and height. The
+window will be staggered with respect to previous windows, and an
+attempt is made to keep the whole window on-screen. The window will
+however always be exact the size given, so parts may be offscreen.
 \end{funcdesc}
 
 \begin{funcdesc}{setwatchcursor}{}
@@ -90,31 +91,30 @@ Set the mouse cursor to a watch.
 Set the mouse cursor to an arrow.
 \end{funcdesc}
 
-\subsection{Application Objects}
-\label{application-objects}
+
+\subsection{Application Objects \label{application-objects}}
 
 Application objects have the following methods, among others:
 
-\setindexsubitem{(Application method)}
 
-\begin{funcdesc}{makeusermenus}{}
+\begin{methoddesc}[Application]{makeusermenus}{}
 Override this method if you need menus in your application. Append the
 menus to the attribute \member{menubar}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getabouttext}{}
+\begin{methoddesc}[Application]{getabouttext}{}
 Override this method to return a text string describing your
 application.  Alternatively, override the \method{do_about()} method
 for more elaborate ``about'' messages.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{mainloop}{\optional{mask\optional{, wait}}}
+\begin{methoddesc}[Application]{mainloop}{\optional{mask\optional{, wait}}}
 This routine is the main event loop, call it to set your application
 rolling. \var{Mask} is the mask of events you want to handle,
 \var{wait} is the number of ticks you want to leave to other
 concurrent application (default 0, which is probably not a good
-idea). While raising \code{self} to exit the mainloop is still
-supported it is not recommended, call \code{self._quit} instead.
+idea). While raising \var{self} to exit the mainloop is still
+supported it is not recommended: call \code{self._quit()} instead.
 
 The event loop is split into many small parts, each of which can be
 overridden. The default methods take care of dispatching events to
@@ -129,9 +129,9 @@ Calling \function{MacOS.HandleEvent()} is not allowed within
 \var{our_dispatch} or its callees, since this may result in an
 infinite loop if the code is called through the Python inner-loop
 event handler.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{asyncevents}{onoff}
+\begin{methoddesc}[Application]{asyncevents}{onoff}
 Call this method with a nonzero parameter to enable
 asynchronous event handling. This will tell the inner interpreter loop
 to call the application event handler \var{async_dispatch} whenever events
@@ -144,154 +144,157 @@ events asynchronously. Events you do not handle will be passed to Sioux
 and such.
 
 The old on/off value is returned.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{_quit}{}
+\begin{methoddesc}[Application]{_quit}{}
 Terminate the running \method{mainloop()} call at the next convenient
 moment.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{do_char}{c, event}
+\begin{methoddesc}[Application]{do_char}{c, event}
 The user typed character \var{c}. The complete details of the event
 can be found in the \var{event} structure. This method can also be
 provided in a \code{Window} object, which overrides the
 application-wide handler if the window is frontmost.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{do_dialogevent}{event}
+\begin{methoddesc}[Application]{do_dialogevent}{event}
 Called early in the event loop to handle modeless dialog events. The
 default method simply dispatches the event to the relevant dialog (not
 through the the \code{DialogWindow} object involved). Override if you
 need special handling of dialog events (keyboard shortcuts, etc).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{idle}{event}
+\begin{methoddesc}[Application]{idle}{event}
 Called by the main event loop when no events are available. The
 null-event is passed (so you can look at mouse position, etc).
-\end{funcdesc}
+\end{methoddesc}
 
-\subsection{Window Objects}
-\label{window-objects}
+
+\subsection{Window Objects \label{window-objects}}
 
 Window objects have the following methods, among others:
 
 \setindexsubitem{(Window method)}
 
-\begin{funcdesc}{open}{}
+\begin{methoddesc}[Window]{open}{}
 Override this method to open a window. Store the MacOS window-id in
-\code{self.wid} and call \code{self.do_postopen} to register the
-window with the parent application.
-\end{funcdesc}
+\member{self.wid} and call the \method{do_postopen()} method to
+register the window with the parent application.
+\end{methoddesc}
 
-\begin{funcdesc}{close}{}
+\begin{methoddesc}[Window]{close}{}
 Override this method to do any special processing on window
-close. Call \code{self.do_postclose} to cleanup the parent state.
-\end{funcdesc}
+close. Call the \method{do_postclose()} method to cleanup the parent
+state.
+\end{methoddesc}
 
-\begin{funcdesc}{do_postresize}{width, height, macoswindowid}
+\begin{methoddesc}[Window]{do_postresize}{width, height, macoswindowid}
 Called after the window is resized. Override if more needs to be done
 than calling \code{InvalRect}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{do_contentclick}{local, modifiers, event}
+\begin{methoddesc}[Window]{do_contentclick}{local, modifiers, event}
 The user clicked in the content part of a window. The arguments are
 the coordinates (window-relative), the key modifiers and the raw
 event.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{do_update}{macoswindowid, event}
+\begin{methoddesc}[Window]{do_update}{macoswindowid, event}
 An update event for the window was received. Redraw the window.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{do_activate}{activate, event}
-The window was activated (\code{activate==1}) or deactivated
-(\code{activate==0}). Handle things like focus highlighting, etc.
-\end{funcdesc}
+\begin{methoddesc}{do_activate}{activate, event}
+The window was activated (\code{\var{activate} == 1}) or deactivated
+(\code{\var{activate} == 0}). Handle things like focus highlighting,
+etc.
+\end{methoddesc}
 
-\subsection{ControlsWindow Object}
-\label{controlswindow-object}
+
+\subsection{ControlsWindow Object \label{controlswindow-object}}
 
 ControlsWindow objects have the following methods besides those of
 \code{Window} objects:
 
-\setindexsubitem{(ControlsWindow method)}
 
-\begin{funcdesc}{do_controlhit}{window, control, pcode, event}
-Part \code{pcode} of control \code{control} was hit by the
+\begin{methoddesc}[ControlsWindow]{do_controlhit}{window, control,
+                                                  pcode, event}
+Part \var{pcode} of control \var{control} was hit by the
 user. Tracking and such has already been taken care of.
-\end{funcdesc}
+\end{methoddesc}
 
-\subsection{ScrolledWindow Object}
-\label{scrolledwindow-object}
+
+\subsection{ScrolledWindow Object \label{scrolledwindow-object}}
 
 ScrolledWindow objects are ControlsWindow objects with the following
 extra methods:
 
-\setindexsubitem{(ScrolledWindow method)}
 
-\begin{funcdesc}{scrollbars}{\optional{wantx\optional{, wanty}}}
+\begin{methoddesc}[ScrolledWindow]{scrollbars}{\optional{wantx\optional{,
+                                               wanty}}}
 Create (or destroy) horizontal and vertical scrollbars. The arguments
 specify which you want (default: both). The scrollbars always have
 minimum \code{0} and maximum \code{32767}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{getscrollbarvalues}{}
+\begin{methoddesc}[ScrolledWindow]{getscrollbarvalues}{}
 You must supply this method. It should return a tuple \code{(\var{x},
 \var{y})} giving the current position of the scrollbars (between
 \code{0} and \code{32767}). You can return \code{None} for either to
 indicate the whole document is visible in that direction.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{updatescrollbars}{}
+\begin{methoddesc}[ScrolledWindow]{updatescrollbars}{}
 Call this method when the document has changed. It will call
 \method{getscrollbarvalues()} and update the scrollbars.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{scrollbar_callback}{which, what, value}
+\begin{methoddesc}[ScrolledWindow]{scrollbar_callback}{which, what, value}
 Supplied by you and called after user interaction. \var{which} will
 be \code{'x'} or \code{'y'}, \var{what} will be \code{'-'},
 \code{'--'}, \code{'set'}, \code{'++'} or \code{'+'}. For
 \code{'set'}, \var{value} will contain the new scrollbar position.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{scalebarvalues}{absmin, absmax, curmin, curmax}
+\begin{methoddesc}[ScrolledWindow]{scalebarvalues}{absmin, absmax,
+                                                   curmin, curmax}
 Auxiliary method to help you calculate values to return from
 \method{getscrollbarvalues()}. You pass document minimum and maximum value
 and topmost (leftmost) and bottommost (rightmost) visible values and
 it returns the correct number or \code{None}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{do_activate}{onoff, event}
+\begin{methoddesc}[ScrolledWindow]{do_activate}{onoff, event}
 Takes care of dimming/highlighting scrollbars when a window becomes
 frontmost vv. If you override this method call this one at the end of
 your method.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{do_postresize}{width, height, window}
+\begin{methoddesc}[ScrolledWindow]{do_postresize}{width, height, window}
 Moves scrollbars to the correct position. Call this method initially
 if you override it.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{do_controlhit}{window, control, pcode, event}
+\begin{methoddesc}[ScrolledWindow]{do_controlhit}{window, control,
+                                                  pcode, event}
 Handles scrollbar interaction. If you override it call this method
 first, a nonzero return value indicates the hit was in the scrollbars
 and has been handled.
-\end{funcdesc}
+\end{methoddesc}
 
-\subsection{DialogWindow Objects}
-\label{dialogwindow-objects}
+
+\subsection{DialogWindow Objects \label{dialogwindow-objects}}
 
 DialogWindow objects have the following methods besides those of
 \code{Window} objects:
 
-\setindexsubitem{(DialogWindow method)}
 
-\begin{funcdesc}{open}{resid}
+\begin{methoddesc}[DialogWindow]{open}{resid}
 Create the dialog window, from the DLOG resource with id
-\var{resid}. The dialog object is stored in \code{self.wid}.
-\end{funcdesc}
+\var{resid}. The dialog object is stored in \member{self.wid}.
+\end{methoddesc}
 
-\begin{funcdesc}{do_itemhit}{item, event}
+\begin{methoddesc}[DialogWindow]{do_itemhit}{item, event}
 Item number \var{item} was hit. You are responsible for redrawing
 toggle buttons, etc.
-\end{funcdesc}
+\end{methoddesc}

@@ -1,7 +1,8 @@
 \section{\module{fl} ---
-         FORMS library interface for GUI applications.}
-\declaremodule{builtin}{fl}
+         FORMS library interface for GUI applications}
 
+\declaremodule{builtin}{fl}
+  \platform{IRIX}
 \modulesynopsis{FORMS library interface for GUI applications.}
 
 
@@ -11,9 +12,9 @@ library can be retrieved by anonymous ftp from host
 \samp{ftp.cs.ruu.nl}, directory \file{SGI/FORMS}.  It was last tested
 with version 2.0b.
 
-Most functions are literal translations of their \C{} equivalents,
+Most functions are literal translations of their C equivalents,
 dropping the initial \samp{fl_} from their name.  Constants used by
-the library are defined in module \module{FL} described below.
+the library are defined in module \refmodule{FL} described below.
 
 The creation of objects is a little different in Python than in C:
 instead of the `current form' maintained by the library to which new
@@ -45,7 +46,7 @@ function \cfunction{foreground()} and to the FORMS routine
 
 Module \module{fl} defines the following functions.  For more
 information about what they do, see the description of the equivalent
-\C{} function in the FORMS documentation:
+C function in the FORMS documentation:
 
 \begin{funcdesc}{make_form}{type, width, height}
 Create a form with given type, width and height.  This returns a
@@ -73,7 +74,7 @@ Set the graphics modes.
 \end{funcdesc}
 
 \begin{funcdesc}{get_rgbmode}{}
-Return the current rgb mode.  This is the value of the \C{} global
+Return the current rgb mode.  This is the value of the C global
 variable \cdata{fl_rgbmode}.
 \end{funcdesc}
 
@@ -143,7 +144,7 @@ See the description in the FORMS documentation of
 \label{form-objects}
 
 Form objects (returned by \function{make_form()} above) have the
-following methods.  Each method corresponds to a \C{} function whose
+following methods.  Each method corresponds to a C function whose
 name is prefixed with \samp{fl_}; and whose first argument is a form
 pointer; please refer to the official FORMS documentation for
 descriptions.
@@ -465,16 +466,18 @@ FORMS objects have these data attributes; see the FORMS documentation:
   \lineiii{automatic}{int (read-only)}{(see FORMS docs)}
 \end{tableiii}
 
-\section{\module{FL} ---
-         Constants used with the \module{fl} module.}
-\declaremodule{standard}{FL}
 
+\section{\module{FL} ---
+         Constants used with the \module{fl} module}
+
+\declaremodule{standard}{FL}
+  \platform{IRIX}
 \modulesynopsis{Constants used with the \module{fl} module.}
 
 
 This module defines symbolic constants needed to use the built-in
-module \module{fl} (see above); they are equivalent to those defined in
-the \C{} header file \code{<forms.h>} except that the name prefix
+module \refmodule{fl} (see above); they are equivalent to those defined in
+the C header file \code{<forms.h>} except that the name prefix
 \samp{FL_} is omitted.  Read the module source for a complete list of
 the defined names.  Suggested use:
 
@@ -483,16 +486,18 @@ import fl
 from FL import *
 \end{verbatim}
 
-\section{\module{flp} ---
-         Loading functions for stored FORMS designs.}
-\declaremodule{standard}{flp}
 
-\modulesynopsis{Loading functions for stored FORMS designs.}
+\section{\module{flp} ---
+         Functions for loading stored FORMS designs}
+
+\declaremodule{standard}{flp}
+  \platform{IRIX}
+\modulesynopsis{Functions for loading stored FORMS designs.}
 
 
 This module defines functions that can read form definitions created
 by the `form designer' (\program{fdesign}) program that comes with the
-FORMS library (see module \module{fl} above).
+FORMS library (see module \refmodule{fl} above).
 
 For now, see the file \file{flp.doc} in the Python library source
 directory for a description.
