@@ -1,5 +1,5 @@
-# Temporary file name allocation
-#
+"""Temporary files and filenames."""
+
 # XXX This tries to be not UNIX specific, but I don't know beans about
 # how to choose a temp directory or filename on MS-DOS or other
 # systems so it may have to be changed...
@@ -14,9 +14,8 @@ tempdir = None
 template = None
 
 
-# Function to calculate the directory to use
-
 def gettempdir():
+    """Function to calculate the directory to use."""
     global tempdir
     if tempdir is not None:
         return tempdir
@@ -58,11 +57,10 @@ def gettempdir():
     return tempdir
 
 
-# Function to calculate a prefix of the filename to use
-
 _pid = None
 
 def gettempprefix():
+    """Function to calculate a prefix of the filename to use."""
     global template, _pid
     if os.name == 'posix' and _pid and _pid != os.getpid():
         # Our pid changed; we must have forked -- zap the template
@@ -85,9 +83,8 @@ def gettempprefix():
 counter = 0
 
 
-# User-callable function to return a unique temporary file name
-
 def mktemp(suffix=""):
+    """User-callable function to return a unique temporary file name."""
     global counter
     dir = gettempdir()
     pre = gettempprefix()
@@ -126,6 +123,7 @@ class TemporaryFileWrapper:
 
 
 def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
+    """Create and return a temporary file (opened read-write by default)."""
     name = mktemp(suffix)
     if os.name == 'posix':
         # Unix -- be very careful

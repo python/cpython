@@ -1,5 +1,4 @@
-# threading.py:
-# Proposed new threading module, emulating a subset of Java's threading model
+"""Proposed new threading module, emulating a subset of Java's threading model."""
 
 import sys
 import time

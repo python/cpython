@@ -1,19 +1,17 @@
-# Module 'sunaudio' -- interpret sun audio headers
+"""Interpret sun audio headers."""
 
 MAGIC = '.snd'
 
 error = 'sunaudio sound header conversion error'
 
 
-# convert a 4-char value to integer
-
 def get_long_be(s):
+	"""Convert a 4-char value to integer."""
 	return (ord(s[0])<<24) | (ord(s[1])<<16) | (ord(s[2])<<8) | ord(s[3])
 
 
-# read a sound header from an open file
-
 def gethdr(fp):
+	"""Read a sound header from an open file."""
 	if fp.read(4) <> MAGIC:
 		raise error, 'gethdr: bad magic word'
 	hdr_size = get_long_be(fp.read(4))
@@ -31,9 +29,8 @@ def gethdr(fp):
 	return (data_size, encoding, sample_rate, channels, info)
 
 
-# read and print the sound header of a named file
-
 def printhdr(file):
+	"""Read and print the sound header of a named file."""
 	hdr = gethdr(open(file, 'r'))
 	data_size, encoding, sample_rate, channels, info = hdr
 	while info[-1:] == '\0':

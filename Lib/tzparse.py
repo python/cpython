@@ -1,4 +1,5 @@
-# Parse a timezone specification.
+"""Parse a timezone specification."""
+
 # XXX Unfinished.
 # XXX Only the typical form "XXXhhYYY;ddd/hh,ddd/hh" is currently supported.
 
@@ -8,6 +9,12 @@ tzpat = ('^([A-Z][A-Z][A-Z])([-+]?[0-9]+)([A-Z][A-Z][A-Z]);'
 tzprog = None
 
 def tzparse(tzstr):
+	"""Given a timezone spec, return a tuple of information
+	(tzname, delta, dstname, daystart, hourstart, dayend, hourend),
+	where 'tzname' is the name of the timezone, 'delta' is the offset
+	in hours from GMT, 'dstname' is the name of the daylight-saving
+	timezone, and 'daystart'/'hourstart' and 'dayend'/'hourend'
+	specify the starting and ending points for daylight saving time."""
 	global tzprog
 	if tzprog == None:
 		import re
@@ -24,6 +31,9 @@ def tzparse(tzstr):
 	return (tzname, delta, dstname, daystart, hourstart, dayend, hourend)
 
 def tzlocaltime(secs, params):
+	"""Given a Unix time in seconds and a tuple of information about
+	a timezone as returned by tzparse(), return the local time in the
+	form (year, month, day, hour, min, sec, yday, wday, tzname)."""
 	import time
 	(tzname, delta, dstname, daystart, hourstart, dayend, hourend) = params
 	year, month, days, hours, mins, secs, yday, wday, isdst = \
@@ -34,6 +44,7 @@ def tzlocaltime(secs, params):
 	return year, month, days, hours, mins, secs, yday, wday, tzname
 
 def tzset():
+	"""Determine the current timezone from the "TZ" environment variable."""
 	global tzparams, timezone, altzone, daylight, tzname
 	import os
 	tzstr = os.environ['TZ']
@@ -44,6 +55,8 @@ def tzset():
 	tzname = tzparams[0], tzparams[2]
 
 def isdst(secs):
+	"""Return true if daylight-saving time is in effect for the given
+	Unix time in the current timezone."""
 	import time
 	(tzname, delta, dstname, daystart, hourstart, dayend, hourend) = \
 		tzparams
@@ -54,6 +67,7 @@ def isdst(secs):
 tzset()
 
 def localtime(secs):
+	"""Get the local time in the current timezone."""
 	return tzlocaltime(secs, tzparams)
 
 def test():
