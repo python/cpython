@@ -954,6 +954,8 @@ class EditorWindow:
         want = ((have - 1) // self.indentwidth) * self.indentwidth
         ncharsdeleted = 0
         while 1:
+            if chars == sys.ps1:
+                break
             chars = chars[:-1]
             ncharsdeleted = ncharsdeleted + 1
             have = len(chars.expandtabs(tabwidth))
@@ -1009,6 +1011,8 @@ class EditorWindow:
                 text.mark_set("insert", first)
             line = text.get("insert linestart", "insert")
             i, n = 0, len(line)
+            if line == sys.ps1:
+                return "break"
             while i < n and line[i] in " \t":
                 i = i+1
             if i == n:
