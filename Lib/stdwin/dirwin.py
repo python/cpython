@@ -13,7 +13,8 @@ def action(w, string, i, detail):
 	if clicks = 2:
 		name = path.cat(w.name, string)
 		try:
-			w = anywin.open(name)
+			w2 = anywin.open(name)
+			w2.parent = w
 		except posix.error, why:
 			stdwin.message('Can\'t open ' + name + ': ' + why[1])
 
