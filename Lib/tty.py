@@ -2,7 +2,6 @@
 
 # Author: Steen Lumholt.
 
-from TERMIOS import *
 from termios import *
 
 # Indexes for termios list.
