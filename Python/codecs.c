@@ -27,42 +27,61 @@ static int import_encodings_called = 0;
    This is done in a lazy way so that the Unicode implementation does
    not downgrade startup time of scripts not needing it.
 
-   Errors are silently ignored by this function. Only one try is made.
+   ImportErrors are silently ignored by this function. Only one try is
+   made.
 
 */
 
 static
-void import_encodings() 
+int import_encodings() 
 {
     PyObject *mod;
     
     import_encodings_called = 1;
     mod = PyImport_ImportModule("encodings");
     if (mod == NULL) {
-	PyErr_Clear();
-	return;
+	if (PyErr_ExceptionMatches(PyExc_ImportError)) {
+	    /* Ignore ImportErrors... this is done so that
+	       distributions can disable the encodings package. Note
+	       that other errors are not masked, e.g. SystemErrors
+	       raised to inform the user of an error in the Python
+	       configuration are still reported back to the user. */
+	    PyErr_Clear();
+	    return 0;
+	}
+	return -1;
     }
     Py_DECREF(mod);
+    return 0;
 }
 
 /* Register a new codec search function.
+
+   As side effect, this tries to load the encodings package, if not
+   yet done, to make sure that it is always first in the list of
+   search functions.
 
    The search_function's refcount is incremented by this function. */
 
 int PyCodec_Register(PyObject *search_function)
 {
-    if (!import_encodings_called)
-	import_encodings();
+    if (!import_encodings_called) {
+	if (import_encodings())
+	    goto onError;
+    }
     if (search_function == NULL) {
 	PyErr_BadArgument();
-	return -1;
+	goto onError;
     }
     if (!PyCallable_Check(search_function)) {
 	PyErr_SetString(PyExc_TypeError,
 			"argument must be callable");
-	return -1;
+	goto onError;
     }
     return PyList_Append(_PyCodec_SearchPath, search_function);
+
+ onError:
+    return -1;
 }
 
 static
@@ -89,20 +108,29 @@ PyObject *lowercasestring(const char *string)
    characters. This makes encodings looked up through this mechanism
    effectively case-insensitive.
 
-   If no codec is found, a KeyError is set and NULL returned.  */
+   If no codec is found, a KeyError is set and NULL returned. 
+
+   As side effect, this tries to load the encodings package, if not
+   yet done. This is part of the lazy load strategy for the encodings
+   package.
+
+*/
 
 PyObject *_PyCodec_Lookup(const char *encoding)
 {
     PyObject *result, *args = NULL, *v;
     int i, len;
 
-    if (_PyCodec_SearchCache == NULL || _PyCodec_SearchPath == NULL) {
+    if (_PyCodec_SearchCache == NULL || 
+	_PyCodec_SearchPath == NULL) {
 	PyErr_SetString(PyExc_SystemError,
 			"codec module not properly initialized");
 	goto onError;
     }
-    if (!import_encodings_called)
-	import_encodings();
+    if (!import_encodings_called) {
+	if (import_encodings())
+	    goto onError;
+    }
 
     /* Convert the encoding to a lower-cased Python string */
     v = lowercasestring(encoding);
@@ -127,6 +155,12 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     len = PyList_Size(_PyCodec_SearchPath);
     if (len < 0)
 	goto onError;
+    if (len == 0) {
+	PyErr_SetString(PyExc_LookupError,
+			"no codec search functions registered: "
+			"can't find encoding");
+	goto onError;
+    }
 
     for (i = 0; i < len; i++) {
 	PyObject *func;
