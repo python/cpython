@@ -63,7 +63,12 @@ class Chunk:
             raise EOFError
         self.chunksize = self.chunksize - 8 # subtract header
         self.size_read = 0
-        self.offset = self.file.tell()
+        try:
+            self.offset = self.file.tell()
+        except:
+            self.seekable = 0
+        else:
+            self.seekable = 1
 
     def getname(self):
         """Return the name (ID) of the current chunk."""
@@ -87,6 +92,8 @@ class Chunk:
 
         if self.closed:
             raise ValueError, "I/O operation on closed file"
+        if not self.seekable:
+            raise IOError, "cannot seek"
         if mode == 1:
             pos = pos + self.size_read
         elif mode == 2:
@@ -133,11 +140,20 @@ class Chunk:
 
         if self.closed:
             raise ValueError, "I/O operation on closed file"
-        try:
-            self.file.seek(self.chunksize - self.size_read, 1)
-        except RuntimeError:
-            while self.size_read < self.chunksize:
-                dummy = self.read(8192)
-                if not dummy:
-                    raise EOFError
+        if self.seekable:
+            try:
+                n = self.chunksize - self.size_read
+                # maybe fix alignment
+                if self.align and (self.chunksize & 1):
+                    n = n + 1
+                self.file.seek(n, 1)
+                self.size_read = self.size_read + n
+                return
+            except:
+                pass
+        while self.size_read < self.chunksize:
+            n = min(8192, self.chunksize - self.size_read)
+            dummy = self.read(n)
+            if not dummy:
+                raise EOFError
 
