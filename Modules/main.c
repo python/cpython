@@ -302,8 +302,13 @@ Py_Main(int argc, char **argv)
 #endif
 		if (filename != NULL) {
 			if ((fp = fopen(filename, "r")) == NULL) {
-				fprintf(stderr, "%s: can't open file '%s'\n",
-					argv[0], filename);
+#ifdef HAVE_STRERROR
+				fprintf(stderr, "%s: can't open file '%s': [Errno %d] %s\n",
+					argv[0], filename, errno, strerror(errno));
+#else
+				fprintf(stderr, "%s: can't open file '%s': Errno %d\n",
+					argv[0], filename, errno);
+#endif
 				return 2;
 			}
 			else if (skipfirstline) {
