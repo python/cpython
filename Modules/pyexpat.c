@@ -304,7 +304,7 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
     f = PyFrame_New(
                     tstate,			/*back*/
                     c,				/*code*/
-                    tstate->frame->f_globals,	/*globals*/
+                    PyEval_GetGlobals(),	/*globals*/
                     NULL			/*locals*/
                     );
     if (f == NULL)

@@ -35,6 +35,7 @@ static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
 static PyInterpreterState *interp_head = NULL;
 
 PyThreadState *_PyThreadState_Current = NULL;
+unaryfunc _PyThreadState_GetFrame = NULL;
 
 
 PyInterpreterState *
@@ -113,10 +114,19 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 }
 
 
+/* Default implementation for _PyThreadState_GetFrame */
+static struct _frame *
+threadstate_getframe(PyThreadState *self)
+{
+	return self->frame;
+}
+
 PyThreadState *
 PyThreadState_New(PyInterpreterState *interp)
 {
 	PyThreadState *tstate = PyMem_NEW(PyThreadState, 1);
+	if (_PyThreadState_GetFrame == NULL)
+		_PyThreadState_GetFrame = (unaryfunc)threadstate_getframe;
 
 	if (tstate != NULL) {
 		tstate->interp = interp;
@@ -125,6 +135,7 @@ PyThreadState_New(PyInterpreterState *interp)
 		tstate->recursion_depth = 0;
 		tstate->tracing = 0;
 		tstate->use_tracing = 0;
+		tstate->tick_counter = 0;
 
 		tstate->dict = NULL;
 
