@@ -772,17 +772,17 @@ u'Hello World !'
 \end{verbatim}
 
 The escape sequence \code{\e u0020} indicates to insert the Unicode
-character with the HEX ordinal 0x0020 (the space character) at the
+character with the ordinal value 0x0020 (the space character) at the
 given position.
 
 Other characters are interpreted by using their respective ordinal
-value directly as Unicode ordinal. Due to the fact that the lower 256
-Unicode are the same as the standard Latin-1 encoding used in many
-western countries, the process of entering Unicode is greatly
-simplified.
+values directly as Unicode ordinals.  If you have literal strings
+in the standard Latin-1 encoding that is used in many Western countries,
+you will find it convenient that the lower 256 characters
+of Unicode are the same as the 256 characters of Latin-1.
 
-For experts, there is also a raw mode just like for normal
-strings. You have to prepend the string with a small 'r' to have
+For experts, there is also a raw mode just like the one for normal
+strings. You have to prefix the opening quote with 'ur' to have
 Python use the \emph{Raw-Unicode-Escape} encoding. It will only apply
 the above \code{\e uXXXX} conversion if there is an uneven number of
 backslashes in front of the small 'u'.
@@ -801,31 +801,49 @@ Apart from these standard encodings, Python provides a whole set of
 other ways of creating Unicode strings on the basis of a known
 encoding. 
 
-The built-in function \function{unicode()}\bifuncindex{unicode} provides access
-to all registered Unicode codecs (COders and DECoders). Some of the
-more well known encodings which these codecs can convert are
-\emph{Latin-1}, \emph{ASCII}, \emph{UTF-8} and \emph{UTF-16}. The latter two
-are variable-length encodings which store Unicode characters
-in blocks of 8 or 16 bits. To print a Unicode string or write it to a file,
-you must convert it to a string with the \method{encode()} method.
+The built-in function \function{unicode()}\bifuncindex{unicode} provides
+access to all registered Unicode codecs (COders and DECoders). Some of
+the more well known encodings which these codecs can convert are
+\emph{Latin-1}, \emph{ASCII}, \emph{UTF-8}, and \emph{UTF-16}.
+The latter two are variable-length encodings that store each Unicode
+character in one or more bytes. The default encoding is
+normally set to ASCII, which passes through characters in the range
+0 to 127 and rejects any other characters with an error.
+When a Unicode string is printed, written to a file, or converted
+with \function{str()}, conversion takes place using this default encoding.
 
 \begin{verbatim}
+>>> u"abc"
+u'abc'
+>>> str(u"abc")
+'abc'
 >>> u"הצü"
-u'\344\366\374'
->>> u"הצü".encode('UTF-8')
-'\303\244\303\266\303\274'
+u'\xe4\xf6\xfc'
+>>> str(u"הצü")
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+UnicodeError: ASCII encoding error: ordinal not in range(128)
+\end{verbatim}
+
+To convert a Unicode string into an 8-bit string using a specific
+encoding, Unicode objects provide an \function{encode()} method
+that takes one argument, the name of the encoding.  Lowercase names
+for encodings are preferred.
+
+\begin{verbatim}
+>>> u"הצü".encode('utf-8')
+'\xc3\xa4\xc3\xb6\xc3\xbc'
 \end{verbatim}
 
 If you have data in a specific encoding and want to produce a
 corresponding Unicode string from it, you can use the
-\function{unicode()} function with the encoding name as second
+\function{unicode()} function with the encoding name as the second
 argument.
 
 \begin{verbatim}
->>> unicode('\303\244\303\266\303\274','UTF-8')
-u'\344\366\374'
+>>> unicode('\xc3\xa4\xc3\xb6\xc3\xbc', 'utf-8')
+u'\xe4\xf6\xfc'
 \end{verbatim}
-
 
 \subsection{Lists \label{lists}}
 
