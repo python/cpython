@@ -83,6 +83,7 @@ dup2.o: dup2.c
 errors.o: errors.c
 fmod.o: fmod.c
 frozenmain.o: frozenmain.c
+getargs.o: getargs.c
 getcwd.o: getcwd.c
 getmtime.o: getmtime.c
 graminit.o: graminit.c
