@@ -330,7 +330,8 @@ class IMAP4:
         be sent instead.
         """
         mech = mechanism.upper()
-        cap = 'AUTH=%s' % mech
+        # XXX: shouldn't this code be removed, not commented out?
+        #cap = 'AUTH=%s' % mech
         #if not cap in self.capabilities:       # Let the server decide!
         #    raise self.error("Server doesn't allow %s authentication." % mech)
         self.literal = _Authenticator(authobject).process
