@@ -46,14 +46,17 @@ else:
     print "writelines accepted sequence of non-string objects"
 f.close()
 
-# verify that we get a sensible error message for bad made argument
+# verify that we get a sensible error message for bad mode argument
 bad_mode = "qwerty"
 try:
     open(TESTFN, bad_mode)
 except IOError, msg:
-    s = str(msg)
-    if s.find(TESTFN) != -1 or s.find(bad_mode) == -1:
-        print "bad error message for invalid mode: %s" % s
+    if msg[0] != 0:
+        s = str(msg)
+        if s.find(TESTFN) != -1 or s.find(bad_mode) == -1:
+            print "bad error message for invalid mode: %s" % s
+    # if msg[0] == 0, we're probably on Windows where there may be
+    # no obvious way to discover why open() failed.
 else:
     print "no error for invalid mode: %s" % bad_mode
 
