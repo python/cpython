@@ -739,6 +739,11 @@ listpop(PyListObject *self, PyObject *args)
 		return NULL;
 	}
 	v = self->ob_item[i];
+	if (i == self->ob_size - 1) {
+		if (list_resize(self, self->ob_size - 1) == -1)
+			return NULL;
+		return v;
+	}
 	Py_INCREF(v);
 	if (list_ass_slice(self, i, i+1, (PyObject *)NULL) != 0) {
 		Py_DECREF(v);
