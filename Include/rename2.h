@@ -341,6 +341,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define doneimport PyImport_Cleanup
 #define get_modules PyImport_GetModuleDict
 #define get_pyc_magic PyImport_GetMagicNumber
+#define exec_code_module PyImport_ExecCodeModule
 #define import_module PyImport_ImportModule
 #define init_frozen PyImport_ImportFrozenModule
 #define initimport PyImport_Init
