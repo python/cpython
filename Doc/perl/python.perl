@@ -71,12 +71,20 @@ sub do_cmd_NULL{ '<tt class="constant">NULL</tt>' . @_[0]; }
 sub do_cmd_e{ '&#92;' . @_[0]; }
 
 $DEVELOPER_ADDRESS = '';
+$SHORT_VERSION = '';
 $PYTHON_VERSION = '';
 
 sub do_cmd_version{ $PYTHON_VERSION . @_[0]; }
+sub do_cmd_shortversion{ $SHORT_VERSION . @_[0]; }
 sub do_cmd_release{
     local($_) = @_;
     $PYTHON_VERSION = next_argument();
+    return $_;
+}
+
+sub do_cmd_setshortversion{
+    local($_) = @_;
+    $SHORT_VERSION = next_argument();
     return $_;
 }
 
@@ -109,9 +117,15 @@ sub use_italics{
     return use_wrappers(@_[0], '<i>', '</i>');
 }
 
+$IN_DESC_HANDLER = 0;
 sub do_cmd_optional{
-    return use_wrappers(@_[0], "</var><big>\[</big><var>",
-			"</var><big>\]</big><var>");
+    if ($IN_DESC_HANDLER) {
+        return use_wrappers(@_[0], "</var><big>\[</big><var>",
+                            "</var><big>\]</big><var>");
+    }
+    else {
+        return use_wrappers(@_[0], "<big>\[</big>", "<big>\]</big>");
+    }
 }
 
 # Logical formatting (some based on texinfo), needs to be converted to
@@ -720,12 +734,19 @@ sub do_env_cvardesc{
            . '</dl>';
 }
 
+sub convert_args($){
+    local($IN_DESC_HANDLER) = 1;
+    local($_) = @_;
+    return translate_commands($_);
+}
+
 sub do_env_funcdesc{
     local($_) = @_;
     my $function_name = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     my $idx = make_str_index_entry("<tt class='function'>$function_name()</tt>"
 				   . get_indexsubitem());
+    print "\n--- funcdesc arg_list:\n$arg_list\n===";
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)<\/tt>/<\/tt>/;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
@@ -734,7 +755,7 @@ sub do_env_funcdesc{
 sub do_env_funcdescni{
     local($_) = @_;
     my $function_name = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     return "<dl><dt><b><tt class='function'>$function_name</tt></b>"
       . " (<var>$arg_list</var>)\n"
       . '<dd>'
@@ -745,7 +766,7 @@ sub do_env_funcdescni{
 sub do_cmd_funcline{
     local($_) = @_;
     my $function_name = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     my $prefix = "<tt class='function'>$function_name()</tt>";
     my $idx = make_str_index_entry($prefix . get_indexsubitem());
     $prefix =~ s/\(\)//;
@@ -756,7 +777,7 @@ sub do_cmd_funcline{
 sub do_cmd_funclineni{
     local($_) = @_;
     my $function_name = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     my $prefix = "<tt class='function'>$function_name</tt>";
 
     return "<dt><b>$prefix</b> (<var>$arg_list</var>)\n<dd>" . $_;
@@ -834,7 +855,7 @@ sub do_env_fulllineitems{ return do_env_itemize(@_); }
 sub handle_classlike_descriptor{
     local($_, $what) = @_;
     $THIS_CLASS = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     $idx = make_str_index_entry(
 		"<tt class='$what'>$THIS_CLASS</tt> ($what in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
@@ -856,7 +877,7 @@ sub do_env_methoddesc{
     $class_name = $THIS_CLASS
         unless $class_name;
     my $method = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     my $extra = '';
     if ($class_name) {
 	$extra = " ($class_name method)";
@@ -874,7 +895,7 @@ sub do_cmd_methodline{
     $class_name = $THIS_CLASS
         unless $class_name;
     my $method = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     my $extra = '';
     if ($class_name) {
 	$extra = " ($class_name method)";
@@ -891,7 +912,7 @@ sub do_cmd_methodlineni{
     local($_) = @_;
     next_optional_argument();
     my $method = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     return "<dt><b>$method</b> (<var>$arg_list</var>)\n<dd>"
            . $_;
 }
@@ -900,7 +921,7 @@ sub do_env_methoddescni{
     local($_) = @_;
     next_optional_argument();
     my $method = next_argument();
-    my $arg_list = next_argument();
+    my $arg_list = convert_args(next_argument());
     return "<dl><dt><b>$method</b> (<var>$arg_list</var>)\n<dd>"
            . $_
 	   . '</dl>';
