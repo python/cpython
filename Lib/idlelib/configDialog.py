@@ -939,7 +939,6 @@ class ConfigDialog(Toplevel):
             type='bool',default=1))
         ##currently set theme
         currentOption=idleConf.CurrentTheme()
-        print 'current option',currentOption
         ##load available theme option menus
         if self.themeIsBuiltin.get(): #default theme selected
             itemList=idleConf.GetSectionList('default','highlight')
@@ -1096,6 +1095,7 @@ class ConfigDialog(Toplevel):
         winInstances=self.parent.instanceDict.keys()
         for instance in winInstances:
             instance.ResetColorizer()
+            instance.ResetFont()
         
     def Cancel(self):
         self.destroy()
