@@ -1404,6 +1404,7 @@ class Helper:
         'return': ('ref/return', 'FUNCTIONS'),
         'try': ('ref/try', 'EXCEPTIONS'),
         'while': ('ref/while', 'break continue if TRUTHVALUE'),
+        'yield': ('ref/yield', ''),
     }
 
     topics = {
