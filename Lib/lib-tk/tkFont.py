@@ -25,6 +25,11 @@ ROMAN = "roman"
 BOLD   = "bold"
 ITALIC = "italic"
 
+def nametofont(name):
+    """Given the name of a tk named font, returns a Font representation.
+    """
+    return Font(name=name, exists=True)
+    
 class Font:
 
     """Represents a named font.
@@ -32,8 +37,12 @@ class Font:
     Constructor options are:
 
     font -- font specifier (name, system font, or (family, size, style)-tuple)
+    name -- name to use for this font configuration (defaults to a unique name)
+    exists -- does a named font by this name already exist?
+       Creates a new named font if False, points to the existing font if True.
+       Raises _tkinter.TclError if the assertion is false.
 
-       or any combination of
+       the following are ignored if font is specified:
 
     family -- font 'family', e.g. Courier, Times, Helvetica
     size -- font size in points
@@ -41,7 +50,7 @@ class Font:
     slant -- font slant: ROMAN, ITALIC
     underline -- font underlining: false (0), true (1)
     overstrike -- font strikeout: false (0), true (1)
-    name -- name to use for this font configuration (defaults to a unique name)
+        
     """
 
     def _set(self, kw):
@@ -63,7 +72,7 @@ class Font:
             options[args[i][1:]] = args[i+1]
         return options
 
-    def __init__(self, root=None, font=None, name=None, **options):
+    def __init__(self, root=None, font=None, name=None, exists=False, **options):
         if not root:
             root = Tkinter._default_root
         if font:
@@ -74,7 +83,20 @@ class Font:
         if not name:
             name = "font" + str(id(self))
         self.name = name
-        root.tk.call("font", "create", name, *font)
+
+        if exists:
+            self.delete_font = False
+            # confirm font exists
+            if self.name not in root.tk.call("font", "names"):
+                raise Tkinter._tkinter.TclError, "named font %s does not already exist" % (self.name,)
+            # if font config info supplied, apply it
+            if font:
+            	print "font=%r" % font
+                root.tk.call("font", "configure", self.name, *font)
+        else:
+            # create new font (raises TclError if the font exists)
+            root.tk.call("font", "create", self.name, *font) 
+            self.delete_font = True
         # backlinks!
         self._root  = root
         self._split = root.tk.splitlist
@@ -83,12 +105,22 @@ class Font:
     def __str__(self):
         return self.name
 
+    def __eq__(self, other):
+        return self.name == other.name and isinstance(other, Font)
+
+    def __getitem__(self, key):
+        return self.cget(key)
+
+    def __setitem__(self, key, value):
+        self.configure(**{key: value})
+
     def __del__(self):
         try:
-            self._call("font", "delete", self.name)
+            if self.delete_font:
+                self._call("font", "delete", self.name)
         except (AttributeError, Tkinter.TclError):
             pass
-
+  
     def copy(self):
         "Return a distinct copy of the current font"
         return Font(self._root, **self.actual())
