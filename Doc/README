@@ -141,7 +141,7 @@ To create info files:
 
 To create HTML files:
 
-	- Perl 5.004_04 or newer.  Find the software at
+	- Perl 5.6.0 or newer.  Find the software at
 	  <http://language.perl.com/info/software.html>.
 
 	- LaTeX2HTML 99.2b8 or newer.  Older versions are not
