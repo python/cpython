@@ -889,6 +889,8 @@ if hasattr(socket, 'ssl'):
 
 
 class HTTPException(Exception):
+    # Subclasses that define an __init__ must call Exception.__init__
+    # or define self.args.  Otherwise, str() will fail.
     pass
 
 class NotConnected(HTTPException):
@@ -899,6 +901,7 @@ class InvalidURL(HTTPException):
 
 class UnknownProtocol(HTTPException):
     def __init__(self, version):
+        self.args = version,
         self.version = version
 
 class UnknownTransferEncoding(HTTPException):
@@ -909,6 +912,7 @@ class UnimplementedFileMode(HTTPException):
 
 class IncompleteRead(HTTPException):
     def __init__(self, partial):
+        self.args = partial,
         self.partial = partial
 
 class ImproperConnectionState(HTTPException):
@@ -925,6 +929,7 @@ class ResponseNotReady(ImproperConnectionState):
 
 class BadStatusLine(HTTPException):
     def __init__(self, line):
+        self.args = line,
         self.line = line
 
 # for backwards compatibility
@@ -1073,6 +1078,7 @@ def test():
         r = c.getresponse()
     except BadStatusLine, err:
         print "strict mode failed as expected"
+        print err
     else:
         print "XXX strict mode should have failed"
 
