@@ -117,7 +117,9 @@ SndCmd_Convert(PyObject *v, SndCommand *pc)
 
 static pascal void SndCh_UserRoutine(SndChannelPtr chan, SndCommand *cmd); /* Forward */
 static pascal void SPB_completion(SPBPtr my_spb); /* Forward */
+#if !TARGET_API_MAC_CARBON
 static pascal void SPB_interrupt(SPBPtr my_spb); /* Forward */
+#endif
 """
 
 
@@ -186,6 +188,7 @@ SPB_completion(SPBPtr my_spb)
 	}
 }
 
+#if !TARGET_API_MAC_CARBON
 static pascal void
 SPB_interrupt(SPBPtr my_spb)
 {
@@ -198,6 +201,7 @@ SPB_interrupt(SPBPtr my_spb)
 		SetA5(A5);
 	}
 }
+#endif
 """
 
 
@@ -309,7 +313,7 @@ class SpbObjectDefinition(ObjectDefinition):
 		self->ob_completion = value;
 		Py_INCREF(value);
 		rv = 1;
-#if !TARGET_API_MAC_CARBON_NOTYET
+#if !TARGET_API_MAC_CARBON
 	} else if (strcmp(name, "interruptRoutine") == 0) {
 		self->ob_spb.completionRoutine = NewSIInterruptProc(SPB_interrupt);
 		self->ob_interrupt = value;
