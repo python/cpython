@@ -1,7 +1,18 @@
-What's New in Python 2.2a0?
+What's New in Python 2.2a1?
 ===========================
 
 Core
+
+- Generators were added; this is a new way to create an iterator (see
+  below) using what looks like a simple function containing one of
+  more 'yield' statements.  See PEP 255.  Since this adds a new
+  keyword to the language, this feature must be enabled by including a
+  future statement: "from __future__ import generators" (see PEP 236).
+  Generators will become a standard feature in a future release
+  (probably 2.3).  Without this future statement, 'yield' remains an
+  ordinary identifier, but a warning is issued each time it is used.
+  (These warnings currently don't conform to the warnings framework of
+  PEP 230; we intend to fix this in 2.2a2.)
 
 - The UTF-16 codec was modified to be more RFC compliant. It will now
   only remove BOM characters at the start of the string and then
@@ -195,6 +206,9 @@ C API
 
 - Removed the unused last_is_sticky argument from the internal
   _PyTuple_Resize().  If this affects you, you were cheating.
+
+
+======================================================================
 
 
 What's New in Python 2.1 (final)?
