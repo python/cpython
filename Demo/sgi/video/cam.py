@@ -23,7 +23,7 @@ if sys.argv[1:]:
 
 if sys.argv[2:]:
 	HOST = sys.argv[2]
-	if HOST = 'all':
+	if HOST == 'all':
 		HOST = '<broadcast>'
 		MAX = 1400
 
@@ -47,7 +47,7 @@ def main():
 	readsource(SRC_FRAMEGRABBER)
 
 	s = socket(AF_INET, SOCK_DGRAM)
-	if HOST = '<broadcast>':
+	if HOST == '<broadcast>':
 		s.allowbroadcast(1)
 	addr = HOST, PORT
 
@@ -72,7 +72,7 @@ def main():
 	while 1:
 		while qtest():
 			dev, val = qread()
-			if dev = REDRAW:
+			if dev == REDRAW:
 				reshapeviewport()
 				w, h = getsize()
 				ortho2(0, w, 0, h)
@@ -93,7 +93,7 @@ def main():
 
 				fps = 0
 
-			elif dev = ESCKEY:
+			elif dev == ESCKEY:
 				winclose(wid)
 				return
 

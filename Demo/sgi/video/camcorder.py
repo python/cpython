@@ -93,7 +93,7 @@ def wrheader(f, w, h, pf):
     	f.write('CMIF video 1.0\n')
 	f.write(`w,h,pf` + '\n')
 	print 'width,height,pf:', w, h, pf,
-	if pf = 0: pf = 4
+	if pf == 0: pf = 4
 	print '(i.e.,', w*h*pf, 'bytes/frame)'
 
 def main():
@@ -103,14 +103,14 @@ def main():
     austart = 0
     optlist, args = getopt.getopt(sys.argv[1:],'ca:sp:')
     for opt, arg in optlist:
-	if opt = '-c':
+	if opt == '-c':
 	    pf = 0
-	elif opt = '-a':
+	elif opt == '-a':
 	    ausync = 1
 	    aumachine = arg
-	elif opt = '-s':
+	elif opt == '-s':
 	    austart = 1
-	elif opt = '-p':
+	elif opt == '-p':
 	    pf = int(eval(arg))
 	else:
 	    usage()
@@ -184,13 +184,13 @@ def main():
 	    if qtest() or \
 	    not (mousing or inrunning or insingle or outrunning or outsingle):
 		ev, val = qread()
-		if ev = LEFTMOUSE and val = 1:
+		if ev == LEFTMOUSE and val == 1:
 		    drawframe(x,y,w,h,0)
 		    mousing = 1
 		    ox, oy = getorigin()
 		    x = getvaluator(MOUSEX)-ox
 		    y = getvaluator(MOUSEY)-oy
-		elif ev = LEFTMOUSE and val = 0:
+		elif ev == LEFTMOUSE and val == 0:
 		    if h < 0:
 		    	y, h = y+h, -h
 		    if w < 0:
@@ -200,7 +200,7 @@ def main():
 		    	wrheader(f, w, h, pf)
 			sizewritten = 1
 			prealloc(w, h)
-		elif ev = RKEY and val = 1:
+		elif ev == RKEY and val == 1:
 		    if not inrunning:
 			ringbell()
 		    else:
@@ -211,7 +211,7 @@ def main():
 			starttime = time.millitimer()
 			if ausync:
 			    ctl.sendto(`(1,starttime)`, aua)
-		elif ev = PKEY and val = 1 and outrunning:
+		elif ev == PKEY and val == 1 and outrunning:
 		    outrunning = 0
 		    stoptime = time.millitimer()
 		    if ausync:
@@ -222,11 +222,11 @@ def main():
 		    print 'Saving...'
 		    saveframes(f, w, h, pf)
 		    print 'Done.'
-		elif ev = PKEY and val = 1 and not outrunning:
+		elif ev == PKEY and val == 1 and not outrunning:
 			outsingle = 1
-		elif ev = CKEY and val = 1:
+		elif ev == CKEY and val == 1:
 			inrunning = 1
-		elif ev = SKEY and val = 1:
+		elif ev == SKEY and val == 1:
 			if outrunning:
 			    ringbell()
 			elif inrunning:
@@ -237,7 +237,7 @@ def main():
 		    if ausync:
 			ctl.sendto(`(2,time.millitimer())`, aua)
 		    raise stop
-		elif ev = REDRAW:
+		elif ev == REDRAW:
 			drawframe(x,y,w,h,0)
 			reshapeviewport()
 			drawframe(x,y,w,h,1)

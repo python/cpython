@@ -59,7 +59,7 @@ class VTime():
 			    print 'Someone else syncing to us: ', other
 			    raise bad_connect
 			data = eval(data)
-			if data[:2] = (loopct+1,curtijd):
+			if data[:2] == (loopct+1,curtijd):
 			    break
 			if data[0] <> 2:
 			    print 'Illegal sync reply: ', data
@@ -83,7 +83,7 @@ class VTime():
 		if data[0] in (0,2):
 		    curtijd = time.millitimer()
 		    s.sendto(`(data[0]+1,data[1],curtijd)`,raddr)
-		elif data[0] = 4:
+		elif data[0] == 4:
 		    newtijd = time.millitimer()
 		    histime = data[1]
 		    mytime = timeavg(curtijd,newtijd)

@@ -70,8 +70,8 @@ def mainloop(ofile, ctl, inp, out, globaltime):
     # buffer. Discard all buffered data upto his starttime
     #
     startstop,histime = eval(ctl.recv(100))
-    if (ofile = None and startstop = 0) or \
-			   (ofile <> None and startstop = 1):
+    if (ofile == None and startstop == 0) or \
+			   (ofile <> None and startstop == 1):
 	print 'Sync error: saving=',save,' request=',startstop
 	sys.exit(1)
     filllevel = inp.getfilled()
@@ -89,6 +89,6 @@ def mainloop(ofile, ctl, inp, out, globaltime):
     print 'Time: ', time.millitimer()-starttime, ', Bytes: ', totbytes, ', Samples: ', totsamps
     if ofile <> None:
 	ofile.write(data)
-    return (startstop = 2)
+    return (startstop == 2)
 
 main()

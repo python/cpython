@@ -44,10 +44,10 @@ def main():
 	while 1:
 		if qtest():
 			dev, val = qread()
-			if dev = ESCKEY:
+			if dev == ESCKEY:
 				winclose(wid)
 				return
-			elif dev = REDRAW:
+			elif dev == REDRAW:
 				oldw, oldh = reshape()
 		elif s.avail():
 			data = s.recv(17000)
