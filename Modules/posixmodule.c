@@ -137,35 +137,35 @@ extern int symlink();
 extern int fsync();
 #else /* !HAVE_UNISTD_H */
 #if defined(PYCC_VACPP)
-extern int mkdir Py_PROTO((char *));
+extern int mkdir(char *);
 #else
 #if ( defined(__WATCOMC__) || defined(_MSC_VER) ) && !defined(__QNX__)
-extern int mkdir Py_PROTO((const char *));
+extern int mkdir(const char *);
 #else
-extern int mkdir Py_PROTO((const char *, mode_t));
+extern int mkdir(const char *, mode_t);
 #endif
 #endif
 #if defined(__IBMC__) || defined(__IBMCPP__)
-extern int chdir Py_PROTO((char *));
-extern int rmdir Py_PROTO((char *));
+extern int chdir(char *);
+extern int rmdir(char *);
 #else
-extern int chdir Py_PROTO((const char *));
-extern int rmdir Py_PROTO((const char *));
+extern int chdir(const char *);
+extern int rmdir(const char *);
 #endif
-extern int chmod Py_PROTO((const char *, mode_t));
-extern int chown Py_PROTO((const char *, uid_t, gid_t));
-extern char *getcwd Py_PROTO((char *, int));
-extern char *strerror Py_PROTO((int));
-extern int link Py_PROTO((const char *, const char *));
-extern int rename Py_PROTO((const char *, const char *));
-extern int stat Py_PROTO((const char *, struct stat *));
-extern int unlink Py_PROTO((const char *));
-extern int pclose Py_PROTO((FILE *));
+extern int chmod(const char *, mode_t);
+extern int chown(const char *, uid_t, gid_t);
+extern char *getcwd(char *, int);
+extern char *strerror(int);
+extern int link(const char *, const char *);
+extern int rename(const char *, const char *);
+extern int stat(const char *, struct stat *);
+extern int unlink(const char *);
+extern int pclose(FILE *);
 #ifdef HAVE_SYMLINK
-extern int symlink Py_PROTO((const char *, const char *));
+extern int symlink(const char *, const char *);
 #endif /* HAVE_SYMLINK */
 #ifdef HAVE_LSTAT
-extern int lstat Py_PROTO((const char *, struct stat *));
+extern int lstat(const char *, struct stat *);
 #endif /* HAVE_LSTAT */
 #endif /* !HAVE_UNISTD_H */
 
@@ -323,7 +323,7 @@ convertenviron()
         char   buffer[1024]; /* OS/2 Provides a Documented Max of 1024 Chars */
 
         rc = DosQueryExtLIBPATH(buffer, BEGIN_LIBPATH);
-        if (rc == NO_ERROR) { /* (not a type, envname is NOT 'BEGIN_LIBPATH') */
+	if (rc == NO_ERROR) { /* (not a type, envname is NOT 'BEGIN_LIBPATH') */
             PyObject *v = PyString_FromString(buffer);
 		    PyDict_SetItemString(d, "BEGINLIBPATH", v);
             Py_DECREF(v);
@@ -348,8 +348,7 @@ posix_error()
 	return PyErr_SetFromErrno(PyExc_OSError);
 }
 static PyObject *
-posix_error_with_filename(name)
-	char* name;
+posix_error_with_filename(char* name)
 {
 	return PyErr_SetFromErrnoWithFilename(PyExc_OSError, name);
 }
@@ -433,10 +432,7 @@ static PyObject * os2_error(int code)
 /* POSIX generic methods */
 
 static PyObject *
-posix_int(args, format, func)
-        PyObject *args;
-        char *format;
-	int (*func) Py_FPROTO((int));
+posix_int(PyObject *args, char *format, int (*func)(int))
 {
 	int fd;
 	int res;
@@ -453,10 +449,7 @@ posix_int(args, format, func)
 
 
 static PyObject *
-posix_1str(args, format, func)
-	PyObject *args;
-        char *format;
-	int (*func) Py_FPROTO((const char *));
+posix_1str(PyObject *args, char *format, int (*func)(const char*))
 {
 	char *path1;
 	int res;
@@ -472,10 +465,8 @@ posix_1str(args, format, func)
 }
 
 static PyObject *
-posix_2str(args, format, func)
-	PyObject *args;
-        char *format;
-	int (*func) Py_FPROTO((const char *, const char *));
+posix_2str(PyObject *args, char *format,
+	   int (*func)(const char *, const char *))
 {
 	char *path1, *path2;
 	int res;
@@ -492,10 +483,7 @@ posix_2str(args, format, func)
 }
 
 static PyObject *
-posix_strint(args, format, func)
-	PyObject *args;
-        char *format;
-	int (*func) Py_FPROTO((const char *, int));
+posix_strint(PyObject *args, char *format, int (*func)(const char *, int))
 {
 	char *path;
 	int i;
@@ -512,10 +500,8 @@ posix_strint(args, format, func)
 }
 
 static PyObject *
-posix_strintint(args, format, func)
-	PyObject *args;
-        char *format;
-	int (*func) Py_FPROTO((const char *, int, int));
+posix_strintint(PyObject *args, char *format,
+		int (*func)(const char *, int, int))
 {
 	char *path;
 	int i,i2;
@@ -536,8 +522,7 @@ posix_strintint(args, format, func)
 /* pack a system stat C structure into the Python stat tuple 
    (used by posix_stat() and posix_fstat()) */
 static PyObject*
-_pystat_fromstructstat(st)
-	STRUCT_STAT st;
+_pystat_fromstructstat(STRUCT_STAT st)
 {
 	PyObject *v = PyTuple_New(10);
 	if (v == NULL)
@@ -582,11 +567,8 @@ _pystat_fromstructstat(st)
 
 
 static PyObject *
-posix_do_stat(self, args, format, statfunc)
-	PyObject *self;
-	PyObject *args;
-        char *format;
-	int (*statfunc) Py_FPROTO((const char *, STRUCT_STAT *));
+posix_do_stat(PyObject *self, PyObject *args, char *format,
+	      int (*statfunc)(const char *, STRUCT_STAT *))
 {
 	STRUCT_STAT st;
 	char *path;
@@ -639,9 +621,7 @@ static char posix_access__doc__[] =
 Test for access to a file.";
 
 static PyObject *
-posix_access(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_access(PyObject *self, PyObject *args)
 {
 	char *path;
 	int mode;
@@ -674,9 +654,7 @@ static char posix_ttyname__doc__[] =
 Return the name of the terminal device connected to 'fd'.";
 
 static PyObject *
-posix_ttyname(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_ttyname(PyObject *self, PyObject *args)
 {
 	int id;
 	char *ret;
@@ -697,9 +675,7 @@ static char posix_ctermid__doc__[] =
 Return the name of the controlling terminal for this process.";
 
 static PyObject *
-posix_ctermid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_ctermid(PyObject *self, PyObject *args)
 {
         char *ret;
         char buffer[L_ctermid];
@@ -723,9 +699,7 @@ static char posix_chdir__doc__[] =
 Change the current working directory to the specified path.";
 
 static PyObject *
-posix_chdir(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_chdir(PyObject *self, PyObject *args)
 {
 	return posix_1str(args, "s:chdir", chdir);
 }
@@ -736,9 +710,7 @@ static char posix_chmod__doc__[] =
 Change the access permissions of a file.";
 
 static PyObject *
-posix_chmod(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_chmod(PyObject *self, PyObject *args)
 {
 	char *path;
 	int i;
@@ -761,9 +733,7 @@ static char posix_fsync__doc__[] =
 force write of file with filedescriptor to disk.";
 
 static PyObject *
-posix_fsync(self, args)
-       PyObject *self;
-       PyObject *args;
+posix_fsync(PyObject *self, PyObject *args)
 {
        return posix_int(args, "i:fsync", fsync);
 }
@@ -778,9 +748,7 @@ force write of file with filedescriptor to disk.\n\
 extern int fdatasync(int); /* Prototype just in case */
 
 static PyObject *
-posix_fdatasync(self, args)
-       PyObject *self;
-       PyObject *args;
+posix_fdatasync(PyObject *self, PyObject *args)
 {
        return posix_int(args, "i:fdatasync", fdatasync);
 }
@@ -793,9 +761,7 @@ static char posix_chown__doc__[] =
 Change the owner and group id of path to the numeric uid and gid.";
 
 static PyObject *
-posix_chown(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_chown(PyObject *self, PyObject *args)
 {
 	return posix_strintint(args, "sii:chown", chown);
 }
@@ -808,9 +774,7 @@ static char posix_getcwd__doc__[] =
 Return a string representing the current working directory.";
 
 static PyObject *
-posix_getcwd(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_getcwd(PyObject *self, PyObject *args)
 {
 	char buf[1026];
 	char *res;
@@ -832,9 +796,7 @@ static char posix_link__doc__[] =
 Create a hard link to a file.";
 
 static PyObject *
-posix_link(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_link(PyObject *self, PyObject *args)
 {
 	return posix_2str(args, "ss:link", link);
 }
@@ -851,9 +813,7 @@ The list is in arbitrary order.  It does not include the special\n\
 entries '.' and '..' even if they are present in the directory.";
 
 static PyObject *
-posix_listdir(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_listdir(PyObject *self, PyObject *args)
 {
 	/* XXX Should redo this putting the (now four) versions of opendir
 	   in separate files instead of having them all here... */
@@ -1097,9 +1057,7 @@ static char posix_mkdir__doc__[] =
 Create a directory.";
 
 static PyObject *
-posix_mkdir(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_mkdir(PyObject *self, PyObject *args)
 {
 	int res;
 	char *path;
@@ -1126,9 +1084,7 @@ static char posix_nice__doc__[] =
 Decrease the priority of process and return new priority.";
 
 static PyObject *
-posix_nice(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_nice(PyObject *self, PyObject *args)
 {
 	int increment, value;
 
@@ -1147,9 +1103,7 @@ static char posix_rename__doc__[] =
 Rename a file or directory.";
 
 static PyObject *
-posix_rename(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_rename(PyObject *self, PyObject *args)
 {
 	return posix_2str(args, "ss:rename", rename);
 }
@@ -1160,9 +1114,7 @@ static char posix_rmdir__doc__[] =
 Remove a directory.";
 
 static PyObject *
-posix_rmdir(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_rmdir(PyObject *self, PyObject *args)
 {
 	return posix_1str(args, "s:rmdir", rmdir);
 }
@@ -1173,9 +1125,7 @@ static char posix_stat__doc__[] =
 Perform a stat system call on the given path.";
 
 static PyObject *
-posix_stat(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_stat(PyObject *self, PyObject *args)
 {
 	return posix_do_stat(self, args, "s:stat", STAT);
 }
@@ -1187,9 +1137,7 @@ static char posix_system__doc__[] =
 Execute the command (a string) in a subshell.";
 
 static PyObject *
-posix_system(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_system(PyObject *self, PyObject *args)
 {
 	char *command;
 	long sts;
@@ -1208,9 +1156,7 @@ static char posix_umask__doc__[] =
 Set the current numeric umask and return the previous umask.";
 
 static PyObject *
-posix_umask(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_umask(PyObject *self, PyObject *args)
 {
 	int i;
 	if (!PyArg_ParseTuple(args, "i:umask", &i))
@@ -1231,9 +1177,7 @@ static char posix_remove__doc__[] =
 Remove a file (same as unlink(path)).";
 
 static PyObject *
-posix_unlink(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_unlink(PyObject *self, PyObject *args)
 {
 	return posix_1str(args, "s:remove", unlink);
 }
@@ -1245,9 +1189,7 @@ static char posix_uname__doc__[] =
 Return a tuple identifying the current operating system.";
 
 static PyObject *
-posix_uname(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_uname(PyObject *self, PyObject *args)
 {
 	struct utsname u;
 	int res;
@@ -1275,9 +1217,7 @@ Set the access and modified time of the file to the given values.  If the\n\
 second form is used, set the access and modified times to the current time.";
 
 static PyObject *
-posix_utime(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_utime(PyObject *self, PyObject *args)
 {
 	char *path;
 	long atime, mtime;
@@ -1334,9 +1274,7 @@ static char posix__exit__doc__[] =
 Exit to the system with specified status, without normal exit processing.";
 
 static PyObject *
-posix__exit(self, args)
-	PyObject *self;
-	PyObject *args;
+posix__exit(PyObject *self, PyObject *args)
 {
 	int sts;
 	if (!PyArg_ParseTuple(args, "i:_exit", &sts))
@@ -1355,15 +1293,13 @@ Execute an executable path with arguments, replacing current process.\n\
 	args: tuple or list of strings";
 
 static PyObject *
-posix_execv(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_execv(PyObject *self, PyObject *args)
 {
 	char *path;
 	PyObject *argv;
 	char **argvlist;
 	int i, argc;
-	PyObject *(*getitem) Py_PROTO((PyObject *, int));
+	PyObject *(*getitem)(PyObject *, int);
 
 	/* execv has two arguments: (path, argv), where
 	   argv is a list or tuple of strings. */
@@ -1424,9 +1360,7 @@ Execute a path with arguments and environment, replacing current process.\n\
 	env: dictonary of strings mapping to strings";
 
 static PyObject *
-posix_execve(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_execve(PyObject *self, PyObject *args)
 {
 	char *path;
 	PyObject *argv, *env;
@@ -1434,7 +1368,7 @@ posix_execve(self, args)
 	char **envlist;
 	PyObject *key, *val, *keys=NULL, *vals=NULL;
 	int i, pos, argc, envc;
-	PyObject *(*getitem) Py_PROTO((PyObject *, int));
+	PyObject *(*getitem)(PyObject *, int);
 
 	/* execve has three arguments: (path, argv, env), where
 	   argv is a list or tuple of strings and env is a dictionary
@@ -1557,16 +1491,14 @@ Execute an executable path with arguments, replacing current process.\n\
 	args: tuple or list of strings";
 
 static PyObject *
-posix_spawnv(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_spawnv(PyObject *self, PyObject *args)
 {
 	char *path;
 	PyObject *argv;
 	char **argvlist;
 	int mode, i, argc;
 	intptr_t spawnval;
-	PyObject *(*getitem) Py_PROTO((PyObject *, int));
+	PyObject *(*getitem)(PyObject *, int);
 
 	/* spawnv has three arguments: (mode, path, argv), where
 	   argv is a list or tuple of strings. */
@@ -1626,9 +1558,7 @@ Execute a path with arguments and environment, replacing current process.\n\
 	env: dictonary of strings mapping to strings";
 
 static PyObject *
-posix_spawnve(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_spawnve(PyObject *self, PyObject *args)
 {
 	char *path;
 	PyObject *argv, *env;
@@ -1637,7 +1567,7 @@ posix_spawnve(self, args)
 	PyObject *key, *val, *keys=NULL, *vals=NULL, *res=NULL;
 	int mode, i, pos, argc, envc;
 	intptr_t spawnval;
-	PyObject *(*getitem) Py_PROTO((PyObject *, int));
+	PyObject *(*getitem)(PyObject *, int);
 
 	/* spawnve has four arguments: (mode, path, argv, env), where
 	   argv is a list or tuple of strings and env is a dictionary
@@ -1745,9 +1675,7 @@ Fork a child process.\n\
 Return 0 to child process and PID of child to parent process.";
 
 static PyObject *
-posix_fork(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_fork(PyObject *self, PyObject *args)
 {
 	int pid;
 	if (!PyArg_ParseTuple(args, ":fork"))
@@ -1783,9 +1711,7 @@ static char posix_openpty__doc__[] =
 Open a pseudo-terminal, returning open fd's for both master and slave end.\n";
 
 static PyObject *
-posix_openpty(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_openpty(PyObject *self, PyObject *args)
 {
 	int master_fd, slave_fd;
 	if (!PyArg_ParseTuple(args, ":openpty"))
@@ -1804,9 +1730,7 @@ Like fork(), return 0 as pid to child process, and PID of child to parent.\n\
 To both, return fd of newly opened pseudo-terminal.\n";
 
 static PyObject *
-posix_forkpty(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_forkpty(PyObject *self, PyObject *args)
 {
 	int master_fd, pid;
 	
@@ -1827,9 +1751,7 @@ static char posix_getegid__doc__[] =
 Return the current process's effective group id.";
 
 static PyObject *
-posix_getegid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_getegid(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getegid"))
 		return NULL;
@@ -1844,9 +1766,7 @@ static char posix_geteuid__doc__[] =
 Return the current process's effective user id.";
 
 static PyObject *
-posix_geteuid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_geteuid(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":geteuid"))
 		return NULL;
@@ -1861,9 +1781,7 @@ static char posix_getgid__doc__[] =
 Return the current process's group id.";
 
 static PyObject *
-posix_getgid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_getgid(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getgid"))
 		return NULL;
@@ -1877,9 +1795,7 @@ static char posix_getpid__doc__[] =
 Return the current process id";
 
 static PyObject *
-posix_getpid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_getpid(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getpid"))
 		return NULL;
@@ -1893,9 +1809,7 @@ getgroups() -> list of group IDs\n\
 Return list of supplemental group IDs for the process.";
 
 static PyObject *
-posix_getgroups(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_getgroups(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
 
@@ -1939,9 +1853,7 @@ static char posix_getpgrp__doc__[] =
 Return the current process group id.";
 
 static PyObject *
-posix_getpgrp(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_getpgrp(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getpgrp"))
 		return NULL;
@@ -1960,9 +1872,7 @@ static char posix_setpgrp__doc__[] =
 Make this process a session leader.";
 
 static PyObject *
-posix_setpgrp(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_setpgrp(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":setpgrp"))
 		return NULL;
@@ -2001,9 +1911,7 @@ getlogin() -> string\n\
 Return the actual login name.";
 
 static PyObject *
-posix_getlogin(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_getlogin(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
 
@@ -2025,9 +1933,7 @@ static char posix_getuid__doc__[] =
 Return the current process's user id.";
 
 static PyObject *
-posix_getuid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_getuid(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getuid"))
 		return NULL;
@@ -2042,9 +1948,7 @@ static char posix_kill__doc__[] =
 Kill a process with a signal.";
 
 static PyObject *
-posix_kill(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_kill(PyObject *self, PyObject *args)
 {
 	int pid, sig;
 	if (!PyArg_ParseTuple(args, "ii:kill", &pid, &sig))
@@ -2082,9 +1986,7 @@ static char posix_plock__doc__[] =
 Lock program segments into memory.";
 
 static PyObject *
-posix_plock(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_plock(PyObject *self, PyObject *args)
 {
 	int op;
 	if (!PyArg_ParseTuple(args, "i:plock", &op))
@@ -2185,9 +2087,7 @@ popen(const char *command, const char *mode, int pipesize, int *err)
 }
 
 static PyObject *
-posix_popen(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_popen(PyObject *self, PyObject *args)
 {
 	char *name;
 	char *mode = "r";
@@ -2210,9 +2110,7 @@ posix_popen(self, args)
 
 #else
 static PyObject *
-posix_popen(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_popen(PyObject *self, PyObject *args)
 {
 	char *name;
 	char *mode = "r";
@@ -2241,9 +2139,7 @@ static char posix_setuid__doc__[] =
 "setuid(uid) -> None\n\
 Set the current process's user id.";
 static PyObject *
-posix_setuid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_setuid(PyObject *self, PyObject *args)
 {
 	int uid;
 	if (!PyArg_ParseTuple(args, "i:setuid", &uid))
@@ -2262,9 +2158,7 @@ static char posix_setgid__doc__[] =
 Set the current process's group id.";
 
 static PyObject *
-posix_setgid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_setgid(PyObject *self, PyObject *args)
 {
 	int gid;
 	if (!PyArg_ParseTuple(args, "i:setgid", &gid))
@@ -2283,9 +2177,7 @@ static char posix_waitpid__doc__[] =
 Wait for completion of a give child process.";
 
 static PyObject *
-posix_waitpid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_waitpid(PyObject *self, PyObject *args)
 {
 	int pid, options;
 #ifdef UNION_WAIT
@@ -2320,9 +2212,7 @@ static char posix_wait__doc__[] =
 Wait for completion of a child process.";
 
 static PyObject *
-posix_wait(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_wait(PyObject *self, PyObject *args)
 {
 	int pid;
 #ifdef UNION_WAIT
@@ -2352,9 +2242,7 @@ static char posix_lstat__doc__[] =
 Like stat(path), but do not follow symbolic links.";
 
 static PyObject *
-posix_lstat(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_lstat(PyObject *self, PyObject *args)
 {
 #ifdef HAVE_LSTAT
 	return posix_do_stat(self, args, "s:lstat", lstat);
@@ -2370,9 +2258,7 @@ static char posix_readlink__doc__[] =
 Return a string representing the path to which the symbolic link points.";
 
 static PyObject *
-posix_readlink(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_readlink(PyObject *self, PyObject *args)
 {
 	char buf[MAXPATHLEN];
 	char *path;
@@ -2395,9 +2281,7 @@ static char posix_symlink__doc__[] =
 Create a symbolic link.";
 
 static PyObject *
-posix_symlink(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_symlink(PyObject *self, PyObject *args)
 {
 	return posix_2str(args, "ss:symlink", symlink);
 }
@@ -2423,9 +2307,7 @@ system_uptime()
 }
 
 static PyObject *
-posix_times(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_times(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":times"))
 		return NULL;
@@ -2440,9 +2322,7 @@ posix_times(self, args)
 }
 #else /* not OS2 */
 static PyObject *
-posix_times(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_times(PyObject *self, PyObject *args)
 {
 	struct tms t;
 	clock_t c;
@@ -2466,9 +2346,7 @@ posix_times(self, args)
 #ifdef MS_WIN32
 #define HAVE_TIMES	/* so the method table will pick it up */
 static PyObject *
-posix_times(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_times(PyObject *self, PyObject *args)
 {
 	FILETIME create, exit, kernel, user;
 	HANDLE hProc;
@@ -2506,9 +2384,7 @@ static char posix_setsid__doc__[] =
 Call the system call setsid().";
 
 static PyObject *
-posix_setsid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_setsid(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":setsid"))
 		return NULL;
@@ -2525,9 +2401,7 @@ static char posix_setpgid__doc__[] =
 Call the system call setpgid().";
 
 static PyObject *
-posix_setpgid(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_setpgid(PyObject *self, PyObject *args)
 {
 	int pid, pgrp;
 	if (!PyArg_ParseTuple(args, "ii:setpgid", &pid, &pgrp))
@@ -2546,9 +2420,7 @@ static char posix_tcgetpgrp__doc__[] =
 Return the process group associated with the terminal given by a fd.";
 
 static PyObject *
-posix_tcgetpgrp(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_tcgetpgrp(PyObject *self, PyObject *args)
 {
 	int fd, pgid;
 	if (!PyArg_ParseTuple(args, "i:tcgetpgrp", &fd))
@@ -2567,9 +2439,7 @@ static char posix_tcsetpgrp__doc__[] =
 Set the process group associated with the terminal given by a fd.";
 
 static PyObject *
-posix_tcsetpgrp(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_tcsetpgrp(PyObject *self, PyObject *args)
 {
 	int fd, pgid;
 	if (!PyArg_ParseTuple(args, "ii:tcsetpgrp", &fd, &pgid))
@@ -2588,9 +2458,7 @@ static char posix_open__doc__[] =
 Open a file (for low level IO).";
 
 static PyObject *
-posix_open(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_open(PyObject *self, PyObject *args)
 {
 	char *file;
 	int flag;
@@ -2613,9 +2481,7 @@ static char posix_close__doc__[] =
 Close a file descriptor (for low level IO).";
 
 static PyObject *
-posix_close(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_close(PyObject *self, PyObject *args)
 {
 	int fd, res;
 	if (!PyArg_ParseTuple(args, "i:close", &fd))
@@ -2635,9 +2501,7 @@ static char posix_dup__doc__[] =
 Return a duplicate of a file descriptor.";
 
 static PyObject *
-posix_dup(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_dup(PyObject *self, PyObject *args)
 {
 	int fd;
 	if (!PyArg_ParseTuple(args, "i:dup", &fd))
@@ -2656,9 +2520,7 @@ static char posix_dup2__doc__[] =
 Duplicate file descriptor.";
 
 static PyObject *
-posix_dup2(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_dup2(PyObject *self, PyObject *args)
 {
 	int fd, fd2, res;
 	if (!PyArg_ParseTuple(args, "ii:dup2", &fd, &fd2))
@@ -2678,9 +2540,7 @@ static char posix_lseek__doc__[] =
 Set the current position of a file descriptor.";
 
 static PyObject *
-posix_lseek(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_lseek(PyObject *self, PyObject *args)
 {
 	int fd, how;
 #ifdef MS_WIN64
@@ -2732,9 +2592,7 @@ static char posix_read__doc__[] =
 Read a file descriptor.";
 
 static PyObject *
-posix_read(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_read(PyObject *self, PyObject *args)
 {
 	int fd, size, n;
 	PyObject *buffer;
@@ -2761,9 +2619,7 @@ static char posix_write__doc__[] =
 Write a string to a file descriptor.";
 
 static PyObject *
-posix_write(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_write(PyObject *self, PyObject *args)
 {
 	int fd, size;
 	char *buffer;
@@ -2783,9 +2639,7 @@ static char posix_fstat__doc__[]=
 Like stat(), but for an open file descriptor.";
 
 static PyObject *
-posix_fstat(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_fstat(PyObject *self, PyObject *args)
 {
 	int fd;
 	STRUCT_STAT st;
@@ -2807,11 +2661,9 @@ static char posix_fdopen__doc__[] =
 Return an open file object connected to a file descriptor.";
 
 static PyObject *
-posix_fdopen(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_fdopen(PyObject *self, PyObject *args)
 {
-	extern int fclose Py_PROTO((FILE *));
+	extern int fclose(FILE *);
 	int fd;
 	char *mode = "r";
 	int bufsize = -1;
@@ -2838,9 +2690,7 @@ static char posix_pipe__doc__[] =
 Create a pipe.";
 
 static PyObject *
-posix_pipe(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_pipe(PyObject *self, PyObject *args)
 {
 #if defined(PYOS_OS2)
     HFILE read, write;
@@ -2894,9 +2744,7 @@ static char posix_mkfifo__doc__[] =
 Create a FIFO (a POSIX named pipe).";
 
 static PyObject *
-posix_mkfifo(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_mkfifo(PyObject *self, PyObject *args)
 {
 	char *file;
 	int mode = 0666;
@@ -2920,9 +2768,7 @@ static char posix_ftruncate__doc__[] =
 Truncate a file to a specified length.";
 
 static PyObject *
-posix_ftruncate(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+posix_ftruncate(PyObject *self, PyObject *args)
 {
 	int fd;
 	off_t length;
@@ -3047,9 +2893,7 @@ int putenv( const char *str );
 static PyObject *posix_putenv_garbage;
 
 static PyObject * 
-posix_putenv(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_putenv(PyObject *self, PyObject *args)
 {
         char *s1, *s2;
         char *new;
@@ -3118,9 +2962,7 @@ static char posix_strerror__doc__[] =
 Translate an error code to a message string.";
 
 PyObject *
-posix_strerror(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_strerror(PyObject *self, PyObject *args)
 {
 	int code;
 	char *message;
@@ -3145,9 +2987,7 @@ static char posix_WIFSTOPPED__doc__[] =
 Return true if the process returning 'status' was stopped.";
 
 static PyObject *
-posix_WIFSTOPPED(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_WIFSTOPPED(PyObject *self, PyObject *args)
 {
 #ifdef UNION_WAIT
 	union wait status;
@@ -3174,9 +3014,7 @@ static char posix_WIFSIGNALED__doc__[] =
 Return true if the process returning 'status' was terminated by a signal.";
 
 static PyObject *
-posix_WIFSIGNALED(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_WIFSIGNALED(PyObject *self, PyObject *args)
 {
 #ifdef UNION_WAIT
 	union wait status;
@@ -3204,9 +3042,7 @@ Return true if the process returning 'status' exited using the exit()\n\
 system call.";
 
 static PyObject *
-posix_WIFEXITED(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_WIFEXITED(PyObject *self, PyObject *args)
 {
 #ifdef UNION_WAIT
 	union wait status;
@@ -3233,9 +3069,7 @@ static char posix_WEXITSTATUS__doc__[] =
 Return the process return code from 'status'.";
 
 static PyObject *
-posix_WEXITSTATUS(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_WEXITSTATUS(PyObject *self, PyObject *args)
 {
 #ifdef UNION_WAIT
 	union wait status;
@@ -3263,9 +3097,7 @@ Return the signal that terminated the process that provided the 'status'\n\
 value.";
 
 static PyObject *
-posix_WTERMSIG(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_WTERMSIG(PyObject *self, PyObject *args)
 {
 #ifdef UNION_WAIT
 	union wait status;
@@ -3292,9 +3124,7 @@ static char posix_WSTOPSIG__doc__[] =
 Return the signal that stopped the process that provided the 'status' value.";
 
 static PyObject *
-posix_WSTOPSIG(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_WSTOPSIG(PyObject *self, PyObject *args)
 {
 #ifdef UNION_WAIT
 	union wait status;
@@ -3332,9 +3162,7 @@ static char posix_fstatvfs__doc__[] =
 Perform an fstatvfs system call on the given fd.";
 
 static PyObject *
-posix_fstatvfs(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_fstatvfs(PyObject *self, PyObject *args)
 {
 	int fd, res;
 	struct statvfs st;
@@ -3383,9 +3211,7 @@ static char posix_statvfs__doc__[] =
 Perform a statvfs system call on the given path.";
 
 static PyObject *
-posix_statvfs(self, args)
-	PyObject *self;
-	PyObject *args;
+posix_statvfs(PyObject *self, PyObject *args)
 {
 	char *path;
 	int res;
@@ -3434,9 +3260,7 @@ The directory and a short may be specified as strings; they may be omitted\n\
 or None if not needed.";
 
 static PyObject *
-posix_tempnam(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_tempnam(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
     char *dir = NULL;
@@ -3461,9 +3285,7 @@ tmpfile() -> file object\n\
 Create a temporary file with no directory entries.";
 
 static PyObject *
-posix_tmpfile(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_tmpfile(PyObject *self, PyObject *args)
 {
     FILE *fp;
 
@@ -3483,9 +3305,7 @@ tmpnam() -> string\n\
 Return a unique name for a temporary file.";
 
 static PyObject *
-posix_tmpnam(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_tmpnam(PyObject *self, PyObject *args)
 {
     char buffer[L_tmpnam];
     char *name;
@@ -3530,11 +3350,8 @@ struct constdef {
 };
 
 static int
-conv_confname(arg, valuep, table, tablesize)
-     PyObject *arg;
-     int *valuep;
-     struct constdef *table;
-     size_t tablesize;
+conv_confname(PyObject *arg, int *valuep, struct constdef *table,
+	      size_t tablesize)
 {
     if (PyInt_Check(arg)) {
         *valuep = PyInt_AS_LONG(arg);
@@ -3624,9 +3441,7 @@ static struct constdef  posix_constants_pathconf[] = {
 };
 
 static int
-conv_path_confname(arg, valuep)
-     PyObject *arg;
-     int *valuep;
+conv_path_confname(PyObject *arg, int *valuep)
 {
     return conv_confname(arg, valuep, posix_constants_pathconf,
                          sizeof(posix_constants_pathconf)
@@ -3641,9 +3456,7 @@ Return the configuration limit name for the file descriptor fd.\n\
 If there is no limit, return -1.";
 
 static PyObject *
-posix_fpathconf(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_fpathconf(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
     int name, fd;
@@ -3671,9 +3484,7 @@ Return the configuration limit name for the file or directory path.\n\
 If there is no limit, return -1.";
 
 static PyObject *
-posix_pathconf(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_pathconf(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
     int name;
@@ -3848,9 +3659,7 @@ static struct constdef posix_constants_confstr[] = {
 };
 
 static int
-conv_confstr_confname(arg, valuep)
-     PyObject *arg;
-     int *valuep;
+conv_confstr_confname(PyObject *arg, int *valuep)
 {
     return conv_confname(arg, valuep, posix_constants_confstr,
                          sizeof(posix_constants_confstr)
@@ -3862,9 +3671,7 @@ confstr(name) -> string\n\
 Return a string-valued system configuration variable.";
 
 static PyObject *
-posix_confstr(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_confstr(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
     int name;
@@ -4392,9 +4199,7 @@ static struct constdef posix_constants_sysconf[] = {
 };
 
 static int
-conv_sysconf_confname(arg, valuep)
-     PyObject *arg;
-     int *valuep;
+conv_sysconf_confname(PyObject *arg, int *valuep)
 {
     return conv_confname(arg, valuep, posix_constants_sysconf,
                          sizeof(posix_constants_sysconf)
@@ -4406,9 +4211,7 @@ sysconf(name) -> integer\n\
 Return an integer-valued system configuration variable.";
 
 static PyObject *
-posix_sysconf(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_sysconf(PyObject *self, PyObject *args)
 {
     PyObject *result = NULL;
     int name;
@@ -4439,9 +4242,7 @@ posix_sysconf(self, args)
  */
 
 static int
-cmp_constdefs(v1, v2)
-     const void *v1;
-     const void *v2;
+cmp_constdefs(const void *v1,  const void *v2)
 {
     const struct constdef *c1 =
         (const struct constdef *) v1;
@@ -4452,11 +4253,8 @@ cmp_constdefs(v1, v2)
 }
 
 static int
-setup_confname_table(table, tablesize, tablename, moddict)
-     struct constdef *table;
-     size_t tablesize;
-     char * tablename;
-     PyObject *moddict;
+setup_confname_table(struct constdef *table, size_t tablesize,
+		     char *tablename, PyObject *moddict)
 {
     PyObject *d = NULL;
     size_t i;
@@ -4483,8 +4281,7 @@ setup_confname_table(table, tablesize, tablename, moddict)
 
 /* Return -1 on failure, 0 on success. */
 static int
-setup_confname_tables(moddict)
-     PyObject *moddict;
+setup_confname_tables(PyObject *moddict)
 {
 #if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
     if (setup_confname_table(posix_constants_pathconf,
@@ -4517,9 +4314,7 @@ Abort the interpreter immediately.  This 'dumps core' or otherwise fails\n\
 in the hardest way possible on the hosting operating system.";
 
 static PyObject *
-posix_abort(self, args)
-     PyObject *self;
-     PyObject *args;
+posix_abort(PyObject *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":abort"))
         return NULL;
@@ -4739,10 +4534,7 @@ static PyMethodDef posix_methods[] = {
 
 
 static int
-ins(d, symbol, value)
-        PyObject* d;
-        char* symbol;
-        long value;
+ins(PyObject *d, char *symbol, long value)
 {
         PyObject* v = PyInt_FromLong(value);
         if (!v || PyDict_SetItemString(d, symbol, v) < 0)
