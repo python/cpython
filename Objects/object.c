@@ -650,7 +650,7 @@ do_cmp(PyObject *v, PyObject *w)
 			   But if it returns undefined we fall through. */
 			if (c != 2)
 				return c;
-			/* Else fall throug to try_rich_to_3way_compare() */
+			/* Else fall through to try_rich_to_3way_compare() */
 		}
 		else
 			return adjust_tp_compare(c);
