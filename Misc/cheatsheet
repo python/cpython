@@ -1361,7 +1361,7 @@ getrefcount(object Returns the reference count of the object. Generally one
 )                  higher than you might expect, because of object arg temp
                    reference.
 setcheckinterval(  Sets the interpreter's thread switching interval (in number
-interval)          of virtual code instructions, default:10).
+interval)          of virtual code instructions, default:100).
 settrace(func)     Sets a trace function: called before each line ofcode is
                    exited.
 setprofile(func)   Sets a profile function for performance profiling.
