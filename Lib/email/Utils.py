@@ -280,9 +280,11 @@ def unquote(str):
 def decode_rfc2231(s):
     """Decode string according to RFC 2231"""
     import urllib
-    charset, language, s = s.split("'", 2)
-    s = urllib.unquote(s)
-    return charset, language, s
+    parts = s.split("'", 2)
+    if len(parts) == 1:
+        return None, None, s
+    charset, language, s = parts
+    return charset, language, urllib.unquote(s)
 
 
 def encode_rfc2231(s, charset=None, language=None):
@@ -335,6 +337,6 @@ def decode_params(params):
             for num, continuation in continuations:
                 value.append(continuation)
             charset, language, value = decode_rfc2231(EMPTYSTRING.join(value))
-            new_params.append((name,
-                               (charset, language, '"%s"' % quote(value))))
+            new_params.append(
+                (name, (charset, language, '"%s"' % quote(value))))
     return new_params
