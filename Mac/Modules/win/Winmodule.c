@@ -1637,6 +1637,8 @@ static PyObject *WinObj_GetAuxWin(_self, _args)
 }
 #endif
 
+#if !TARGET_API_MAC_CARBON
+
 static PyObject *WinObj_GetWindowGoAwayFlag(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -1650,6 +1652,9 @@ static PyObject *WinObj_GetWindowGoAwayFlag(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
+
+#if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_GetWindowSpareFlag(_self, _args)
 	WindowObject *_self;
@@ -1664,6 +1669,7 @@ static PyObject *WinObj_GetWindowSpareFlag(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
 
 static PyObject *WinObj_GetWindowPort(_self, _args)
 	WindowObject *_self;
@@ -2226,10 +2232,16 @@ static PyMethodDef WinObj_methods[] = {
 	{"GetAuxWin", (PyCFunction)WinObj_GetAuxWin, 1,
 	 "() -> (Boolean _rv, AuxWinHandle awHndl)"},
 #endif
+
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowGoAwayFlag", (PyCFunction)WinObj_GetWindowGoAwayFlag, 1,
 	 "() -> (Boolean _rv)"},
+#endif
+
+#if !TARGET_API_MAC_CARBON
 	{"GetWindowSpareFlag", (PyCFunction)WinObj_GetWindowSpareFlag, 1,
 	 "() -> (Boolean _rv)"},
+#endif
 	{"GetWindowPort", (PyCFunction)WinObj_GetWindowPort, 1,
 	 "() -> (CGrafPtr _rv)"},
 	{"GetWindowKind", (PyCFunction)WinObj_GetWindowKind, 1,
