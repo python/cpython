@@ -1642,13 +1642,6 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     posix_threads=yes
     LIBS="$LIBS -lc_r"
     THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
-    echo Systems with __d6_pthread_create are not supported anymore.
-    echo See README
-    exit 1
-    posix_threads=yes
-    LIBS="$LIBS -lthread"
-    THREADOBJ="Python/thread.o"], [
     AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
     LIBS="$LIBS -lpthread"
@@ -1658,7 +1651,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     LIBS="$LIBS -lcma"
     THREADOBJ="Python/thread.o"],[
     USE_THREAD_MODULE="#"])
-    ])])])])])])])])])])])
+    ])])])])])])])])])])
 
     AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
     LIBS="$LIBS -lmpc"
