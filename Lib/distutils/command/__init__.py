@@ -17,4 +17,5 @@ __all__ = ['build',
            'sdist',
            'bdist',
            'bdist_dumb',
+           'bdist_rpm',
           ]
