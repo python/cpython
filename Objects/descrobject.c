@@ -1061,6 +1061,7 @@ property_traverse(PyObject *self, visitproc visit, void *arg)
 	VISIT(prop_get);
 	VISIT(prop_set);
 	VISIT(prop_del);
+	VISIT(prop_doc);
 
 	return 0;
 }
