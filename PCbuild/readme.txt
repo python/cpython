@@ -1,12 +1,13 @@
-Building Python using VC++ 6.0 or 5.0
+Building Python using VC++ 7.1
 -------------------------------------
 This directory is used to build Python for Win32 platforms, e.g. Windows
-95, 98 and NT.  It requires Microsoft Visual C++ 6.x or 5.x.
+95, 98 and NT.  It requires Microsoft Visual C++ 7.1
+(a.k.a. Visual Studio .NET 2003).
 (For other Windows platforms and compilers, see ../PC/readme.txt.)
 
-All you need to do is open the workspace "pcbuild.dsw" in MSVC++, select
-the Debug or Release setting (using Build -> Set Active Configuration...),
-and build the projects.
+All you need to do is open the workspace "pcbuild.sln" in MSVC++, select
+the Debug or Release setting (using "Solution Configuration" from
+the "Standard" toolbar"), and build the projects.
 
 The proper order to build subprojects:
 
@@ -24,7 +25,7 @@ The proper order to build subprojects:
    to the subsystems they implement; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name:  python21_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name:  python24_d.dll, python_d.exe, parser_d.pyd, and so on.
 
 SUBPROJECTS
 -----------
@@ -83,16 +84,16 @@ _tkinter
     Go to
         http://prdownloads.sourceforge.net/tcl/
     and download
-        tcl843-src.zip
-        tk843-src.zip
+        tcl845-src.zip
+        tk845-src.zip
     Unzip into
-        dist\tcl8.4.3\
-        dist\tk8.4.3\
+        dist\tcl8.4.5\
+        dist\tk8.4.5\
     respectively.
 
     Build Tcl first (done here w/ MSVC 6 on Win98SE)
     ---------------
-    cd dist\tcl8.4.3\win
+    cd dist\tcl8.4.5\win
     run vcvars32.bat [necessary even on Win2K]
     nmake -f makefile.vc
     nmake -f makefile.vc INSTALLDIR=..\..\tcl84 install
@@ -107,9 +108,9 @@ _tkinter
 
     Build Tk
     --------
-    cd dist\tk8.4.3\win
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.3
-    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.3 INSTALLDIR=..\..\tcl84 install
+    cd dist\tk8.4.5\win
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.5
+    nmake -f makefile.vc TCLDIR=..\..\tcl8.4.5 INSTALLDIR=..\..\tcl84 install
 
     XXX Should we compile with OPTS=threads?
 
@@ -160,6 +161,8 @@ bz2
         FC: no differences encountered
     If FC finds differences, see the warning abou WinZip above (when I
     first tried it, sample3.ref failed due to CRLF conversion).
+    
+    # XXX: it fails with vc 7.1, so the tests are skipped for now.
 
     All of this managed to build bzip2-1.0.2\libbz2.lib, which the Python
     project links in.
@@ -169,35 +172,36 @@ _bsddb
     Go to Sleepycat's download page:
         http://www.sleepycat.com/download/
 
-    and download version 4.1.25.  The file name is db-4.1.25.NC.zip.
+    and download version 4.2.42.  The file name is db-4.2.52.NC.zip.
     XXX with or without strong cryptography?  I picked "without".
 
     Unpack into
-        dist\db-4.1.25
+        dist\db-4.2.52
 
-    [If using WinZip to unpack the db-4.1.25.NC distro, that requires
+    [If using WinZip to unpack the db-4.2.52.NC distro, that requires
      renaming the directory (to remove ".NC") after unpacking.
     ]
 
     Open
-        dist\db-4.1.25\docs\index.html
+        dist\db-4.2.52\docs\index.html
 
     and follow the Windows instructions for building the Sleepycat
     software.  Note that Berkeley_DB.dsw is in the build_win32 subdirectory.
     Build the Release version ("build_all -- Win32 Release").
 
-    XXX We're actually linking against Release_static\libdb41s.lib.
+    XXX We're actually linking against Release_static\libdb42s.lib.
     XXX This yields the following warnings:
 """
 Compiling...
 _bsddb.c
 Linking...
    Creating library ./_bsddb.lib and object ./_bsddb.exp
-LINK : warning LNK4049: locally defined symbol "_malloc" imported
-LINK : warning LNK4049: locally defined symbol "_free" imported
-LINK : warning LNK4049: locally defined symbol "_fclose" imported
-LINK : warning LNK4049: locally defined symbol "_fopen" imported
-_bsddb.pyd - 0 error(s), 4 warning(s)
+_bsddb.obj : warning LNK4217: locally defined symbol _malloc imported in function __db_associateCallback
+_bsddb.obj : warning LNK4217: locally defined symbol _free imported in function __DB_consume
+_bsddb.obj : warning LNK4217: locally defined symbol _fclose imported in function _DB_verify
+_bsddb.obj : warning LNK4217: locally defined symbol _fopen imported in function _DB_verify
+_bsddb.obj : warning LNK4217: locally defined symbol _strncpy imported in function _init_pybsddb
+__bsddb - 0 error(s), 5 warning(s)
 """
     XXX This isn't encouraging, but I don't know what to do about it.
 
@@ -238,9 +242,9 @@ _ssl
         http://www.openssl.org
 
     You (probably) don't want the "engine" code.  For example, get
-        openssl-0.9.6g.tar.gz
+        openssl-0.9.7c.tar.gz
     not
-        openssl-engine-0.9.6g.tar.gz
+        openssl-engine-0.9.7c.tar.gz
 
     Unpack into the "dist" directory, retaining the folder name from
     the archive - for example, the latest stable OpenSSL will install as
@@ -273,7 +277,7 @@ _ssl
     Win9x note:  If, near the start of the build process, you see
     something like
 
-        C:\Code\openssl-0.9.6g>set OPTS=no-asm
+        C:\Code\openssl-0.9.7c>set OPTS=no-asm
         Out of environment space
 
     then you're in trouble, and will probably also see these errors near
