@@ -7,25 +7,61 @@ chapter describes how the lexical analyzer breaks a file into tokens.
 \index{parser}
 \index{token}
 
+Python uses the 7-bit \ASCII{} character set for program text and string
+literals. 8-bit characters may be used in string literals and comments
+but their interpretation is platform dependent; the proper way to
+insert 8-bit characters in string literals is by using octal or
+hexadecimal escape sequences.
+
+The run-time character set depends on the I/O devices connected to the
+program but is generally a superset of \ASCII{}.
+
+\strong{Future compatibility note:} It may be tempting to assume that the
+character set for 8-bit characters is ISO Latin-1 (an \ASCII{}
+superset that covers most western languages that use the Latin
+alphabet), but it is possible that in the future Unicode text editors
+will become common.  These generally use the UTF-8 encoding, which is
+also an \ASCII{} superset, but with very different use for the
+characters with ordinals 128-255.  While there is no consensus on this
+subject yet, it is unwise to assume either Latin-1 or UTF-8, even
+though the current implementation appears to favor Latin-1.  This
+applies both to the source character set and the run-time character
+set.
+
 \section{Line structure}
 
-A Python program is divided in a number of logical lines.  The end of
+A Python program is divided into a number of \emph{logical lines}.
+\index{line structure}
+
+\subsection{Logical Lines}
+
+The end of
 a logical line is represented by the token NEWLINE.  Statements cannot
 cross logical line boundaries except where NEWLINE is allowed by the
 syntax (e.g. between statements in compound statements).
-\index{line structure}
+A logical line is constructed from one or more \emph{physical lines}
+by following the explicit or implicit \emph{line joining} rules.
 \index{logical line}
+\index{physical line}
+\index{line joining}
 \index{NEWLINE token}
+
+\subsection{Physical lines}
+
+A physical line ends in whatever the current platform's convention is
+for terminating lines.  On \UNIX{}, this is the \ASCII{} LF (linefeed)
+character.  On DOS/Windows, it is the \ASCII{} sequence CR LF (return
+followed by linefeed).  On Macintosh, it is the \ASCII{} CR (return)
+character.
 
 \subsection{Comments}
 
 A comment starts with a hash character (\code{\#}) that is not part of
 a string literal, and ends at the end of the physical line.  A comment
-always signifies the end of the logical line.  Comments are ignored by
-the syntax.
+signifies the end of the logical line unless the implicit line joining
+rules are invoked.
+Comments are ignored by the syntax; they are not tokens.
 \index{comment}
-\index{logical line}
-\index{physical line}
 \index{hash character}
 
 \subsection{Explicit line joining}
@@ -47,9 +83,11 @@ if 1900 < year < 2100 and 1 <= month <= 12 \
         return 1
 \end{verbatim}
 
-A line ending in a backslash cannot carry a comment; a backslash does
-not continue a comment (but it does continue a string literal, see
-below).
+A line ending in a backslash cannot carry a comment.  A backslash does
+not continue a comment.  A backslash does not continue a token except
+for string literals (i.e., tokens other than string literals cannot be
+split across physical lines using a backslash).  A backslash is
+illegal elsewhere on a line outside a string literal.
 
 \subsection{Implicit line joining}
 
@@ -66,13 +104,16 @@ month_names = ['Januari', 'Februari', 'Maart',      # These are the
 
 Implicitly continued lines can carry comments.  The indentation of the
 continuation lines is not important.  Blank continuation lines are
-allowed.
+allowed.  There is no NEWLINE token between implicit continuation
+lines.  Implicitly continued lines can also occur within triple-quoted
+strings (see below); in that case they cannot carry comments.
 
 \subsection{Blank lines}
 
-A logical line that contains only spaces, tabs, and possibly a
+A logical line that contains only spaces, tabs, formfeeds and possibly a
 comment, is ignored (i.e., no NEWLINE token is generated), except that
 during interactive input of statements, an entirely blank logical line
+(i.e. one containing not even whitespace or a comment)
 terminates a multi-line statement.
 \index{blank line}
 
@@ -90,11 +131,23 @@ turn is used to determine the grouping of statements.
 \index{statement grouping}
 
 First, tabs are replaced (from left to right) by one to eight spaces
-such that the total number of characters up to there is a multiple of
+such that the total number of characters up to and including the
+replacement is a multiple of
 eight (this is intended to be the same rule as used by \UNIX{}).  The
 total number of spaces preceding the first non-blank character then
 determines the line's indentation.  Indentation cannot be split over
-multiple physical lines using backslashes.
+multiple physical lines using backslashes; the whitespace up to the
+first backslash determines the indentation.
+
+\strong{Cross-platform compatibility note:} because of the nature of
+text editors on non-UNIX platforms, it is unwise to use a mixture of
+spaces and tabs for the indentation in a single source file.
+
+A formfeed character may be present at the start of the line; it will
+be ignored for the indentation calculations above.  A formfeed
+characters occurring elsewhere in the leading whitespace have an
+undefined effect (for instance, they may reset the space count to
+zero).
 
 The indentation levels of consecutive lines are used to generate
 INDENT and DEDENT tokens, using a stack, as follows.
@@ -119,7 +172,6 @@ of Python code:
 \begin{verbatim}
 def perm(l):
         # Compute the list of all permutations of l
-
     if len(l) <= 1:
                   return [l]
     r = []
@@ -134,7 +186,7 @@ def perm(l):
 The following example shows various indentation errors:
 
 \begin{verbatim}
-    def perm(l):                        # error: first line indented
+     def perm(l):                       # error: first line indented
     for i in range(len(l)):             # error: not indented
         s = l[:i] + l[i+1:]
             p = perm(l[:i] + l[i+1:])   # error: unexpected indent
@@ -147,17 +199,28 @@ The following example shows various indentation errors:
 last error is found by the lexical analyzer --- the indentation of
 \code{return r} does not match a level popped off the stack.)
 
+\subsection{Whitespace between tokens}
+
+Except at the beginning of a logical line or in string literals, the
+whitespace characters space, tab and formfeed can be used
+interchangeably to separate tokens.  Whitespace is needed between two
+tokens only if their concatenation could otherwise be interpreted as a
+different token (e.g., ab is one token, but a b is two tokens).
+
 \section{Other tokens}
 
 Besides NEWLINE, INDENT and DEDENT, the following categories of tokens
-exist: identifiers, keywords, literals, operators, and delimiters.
-Spaces and tabs are not tokens, but serve to delimit tokens.  Where
+exist: \emph{identifiers}, \emph{keywords}, \emph{literals},
+\emph{operators}, and \emph{delimiters}.
+Whitespace characters (other than line terminators, discussed earlier)
+are not tokens, but serve to delimit tokens.
+Where
 ambiguity exists, a token comprises the longest possible string that
 forms a legal token, when read from left to right.
 
-\section{Identifiers}
+\section{Identifiers and keywords}
 
-Identifiers (also referred to as names) are described by the following
+Identifiers (also referred to as \emph{names}) are described by the following
 lexical definitions:
 \index{identifier}
 \index{name}
@@ -181,15 +244,34 @@ identifiers.  They must be spelled exactly as written here:%
 \index{reserved word}
 
 \begin{verbatim}
-and        elif       global     not        try       
-break      else       if         or         while     
-class      except     import     pass      
-continue   finally    in         print     
-def        for        is         raise     
-del        from       lambda     return    
+and       del       for       is        raise    
+assert    elif      from      lambda    return   
+break     else      global    not       try      
+class     except    if        or        while    
+continue  exec      import    pass               
+def       finally   in        print              
 \end{verbatim}
 
-% When adding keywords, pipe it through keywords.py for reformatting
+% When adding keywords, use reswords.py for reformatting
+
+\subsection{Reserved classes of identifiers}
+
+Certain classes of identifiers (besides keywords) have special
+meanings.  These are:
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+Form & Meaning \\
+\hline
+\code{_*} & Not imported by \code{from \var{module} import *} \\
+\code{__*__} & System-defined name \\
+\code{__*} & Class-private name mangling \\
+\hline
+\end{tabular}
+\end{center}
+
+(XXX need section references here.)
 
 \section{Literals} \label{literals}
 
@@ -214,14 +296,27 @@ escapeseq:       "\" <any ASCII character>
 \end{verbatim}
 \index{ASCII@\ASCII{}}
 
-In ``long strings'' (strings surrounded by sets of three quotes),
+In plain English: String literals can be enclosed in matching single
+quotes (\code{'}) or double quotes (\code{"}).  They can also be
+enclosed in matching groups of three single or double quotes (these
+are generally referred to as \emph{triple-quoted strings}).  The
+backslash (\code{\e}) character is used to escape characters that
+otherwise have a special meaning, such as newline, backslash itself,
+or the quote character.  String literals may optionally be prefixed
+with a letter `r' or `R'; such strings are called raw strings and use
+different rules for backslash escape sequences.
+\index{triple-quoted string}
+\index{raw string}
+
+In triple-quoted strings,
 unescaped newlines and quotes are allowed (and are retained), except
 that three unescaped quotes in a row terminate the string.  (A
 ``quote'' is the character used to open the string, i.e. either
 \code{'} or \code{"}.)
 
-Escape sequences in strings are interpreted according to rules similar
-to those used by Standard C.  The recognized escape sequences are:
+Unless an `r' or `R' prefix is present, escape sequences in strings
+are interpreted according to rules similar
+to those used by Standard \C{}.  The recognized escape sequences are:
 \index{physical line}
 \index{escape sequence}
 \index{Standard C}
@@ -230,20 +325,21 @@ to those used by Standard C.  The recognized escape sequences are:
 \begin{center}
 \begin{tabular}{|l|l|}
 \hline
+Escape Sequence & Meaning \\
+\hline
 \code{\e}\emph{newline}	& Ignored \\
 \code{\e\e}	& Backslash (\code{\e}) \\
 \code{\e'}	& Single quote (\code{'}) \\
 \code{\e"}	& Double quote (\code{"}) \\
 \code{\e a}	& \ASCII{} Bell (BEL) \\
 \code{\e b}	& \ASCII{} Backspace (BS) \\
-%\code{\e E}	& \ASCII{} Escape (ESC) \\
 \code{\e f}	& \ASCII{} Formfeed (FF) \\
 \code{\e n}	& \ASCII{} Linefeed (LF) \\
 \code{\e r}	& \ASCII{} Carriage Return (CR) \\
 \code{\e t}	& \ASCII{} Horizontal Tab (TAB) \\
 \code{\e v}	& \ASCII{} Vertical Tab (VT) \\
 \code{\e}\emph{ooo}	& \ASCII{} character with octal value \emph{ooo} \\
-\code{\e x}\emph{xx...}	& \ASCII{} character with hex value \emph{xx...} \\
+\code{\e x}\emph{hh...}	& \ASCII{} character with hex value \emph{hh...} \\
 \hline
 \end{tabular}
 \end{center}
@@ -252,20 +348,55 @@ to those used by Standard C.  The recognized escape sequences are:
 In strict compatibility with Standard \C, up to three octal digits are
 accepted, but an unlimited number of hex digits is taken to be part of
 the hex escape (and then the lower 8 bits of the resulting hex number
-are used in all current implementations...).
+are used in 8-bit implementations).
 
-All unrecognized escape sequences are left in the string unchanged,
+Unlike Standard \C{},
+all unrecognized escape sequences are left in the string unchanged,
 i.e., \emph{the backslash is left in the string.}  (This behavior is
 useful when debugging: if an escape sequence is mistyped, the
-resulting output is more easily recognized as broken.  It also helps a
-great deal for string literals used as regular expressions or
-otherwise passed to other modules that do their own escape handling.)
+resulting output is more easily recognized as broken.)
 \index{unrecognized escape sequence}
+
+When an `r' or `R' prefix is present, backslashes are still used to
+quote the following character, but \emph{all backslashes are left in
+the string}.  For example, the string literal \code{r"\e n"} consists
+of two characters: a backslash and a lowercase `n'.  String quotes can
+be escaped with a backslash, but the backslash remains in the string;
+for example, \code{r"\""} is a valid string literal consisting of two
+characters: a backslash and a double quote; \code{r"\"} is not a value
+string literal (even a raw string cannot end in an odd number of
+backslashes).  Specifically, \emph{a raw string cannot end in a single
+backslash} (since the backslash would escape the following quote
+character).
+
+\subsection{String literal concatenation}
+
+Multiple adjacent string literals (delimited by whitespace), possibly
+using different quoting conventions, are allowed, and their meaning is
+the same as their concatenation.  Thus, \code{"hello" 'world'} is
+equivalent to \code{"helloworld"}.  This feature can be used to reduce
+the number of backslashes needed, to split long strings conveniently
+across long lines, or even to add comments to parts of strings, for
+example:
+
+\begin{verbatim}
+re.compile("[A-Za-z_]"       # letter or underscore
+           "[A-Za-z0-9_]*"   # letter, digit or underscore
+          )
+\end{verbatim}
+
+Note that this feature is defined at the syntactical level, but
+implemented at compile time.  The `+' operator must be used to
+concatenate string expressions at run time.  Also note that literal
+concatenation can use different quoting styles for each component
+(even mixing raw strings and triple quoted strings).
 
 \subsection{Numeric literals}
 
-There are three types of numeric literals: plain integers, long
-integers, and floating point numbers.
+There are four types of numeric literals: plain integers, long
+integers, floating point numbers, and imaginary numbers.  There are no
+complex literals (complex numbers can be formed by adding a real
+number and an imaginary number).
 \index{number}
 \index{numeric literal}
 \index{integer literal}
@@ -275,6 +406,14 @@ integers, and floating point numbers.
 \index{hexadecimal literal}
 \index{octal literal}
 \index{decimal literal}
+\index{imaginary literal}
+\index{complex literal}
+
+Note that numeric literals do not include a sign; a phrase like
+\code{-1} is actually an expression composed of the unary operator
+`\code{-}' and the literal \code{1}.
+
+\subsection{Integer and long integer literals}
 
 Integer and long integer literals are described by the following
 lexical definitions:
@@ -285,7 +424,6 @@ integer:        decimalinteger | octinteger | hexinteger
 decimalinteger: nonzerodigit digit* | "0"
 octinteger:     "0" octdigit+
 hexinteger:     "0" ("x"|"X") hexdigit+
-
 nonzerodigit:   "1"..."9"
 octdigit:       "0"..."7"
 hexdigit:        digit|"a"..."f"|"A"..."F"
@@ -309,6 +447,8 @@ Some examples of plain and long integer literals:
 3L    79228162514264337593543950336L    0377L   0x100000000L
 \end{verbatim}
 
+\subsection{Floating point literals}
+
 Floating point literals are described by the following lexical
 definitions:
 
@@ -316,14 +456,15 @@ definitions:
 floatnumber:    pointfloat | exponentfloat
 pointfloat:     [intpart] fraction | intpart "."
 exponentfloat:  (intpart | pointfloat) exponent
-intpart:        digit+
+intpart:        nonzerodigit digit* | "0"
 fraction:       "." digit+
 exponent:       ("e"|"E") ["+"|"-"] digit+
 \end{verbatim}
 
+Note that the integer part of a floating point number cannot look like
+an octal integer.
 The allowed range of floating point literals is
 implementation-dependent.
-
 Some examples of floating point literals:
 
 \begin{verbatim}
@@ -334,30 +475,58 @@ Note that numeric literals do not include a sign; a phrase like
 \code{-1} is actually an expression composed of the operator
 \code{-} and the literal \code{1}.
 
+\subsection{Imaginary literals}
+
+Imaginary literals are described by the following lexical definitions:
+
+\begin{verbatim}
+imagnumber:     (floatnumber | intpart) ("j"|"J")
+\end{verbatim}
+
+An imaginary literals yields a complex number with a real part of
+0.0.  Complex numbers are represented as a pair of floating point
+numbers and have the same restrictions on their range.  To create a
+complex number with a nonzero real part, add a floating point number
+to it, e.g. \code{(3+4j)}.  Some examples of imaginary literals:
+
+\begin{verbatim}
+3.14j   10.j    10 j    .001j   1e100j  3.14e-10j 
+\end{verbatim}
+
+
 \section{Operators}
 
 The following tokens are operators:
 \index{operators}
 
 \begin{verbatim}
-+       -       *       /       %
++       -       *       **      /       %
 <<      >>      &       |       ^       ~
-<       ==      >       <=      <>      !=      >=
+<       >       <=      >=      ==      !=      <>
 \end{verbatim}
 
 The comparison operators \code{<>} and \code{!=} are alternate
-spellings of the same operator.
+spellings of the same operator.  \code{!=} is the preferred spelling;
+\code{<>} is obsolescent.
 
 \section{Delimiters}
 
-The following tokens serve as delimiters or otherwise have a special
-meaning:
+The following tokens serve as delimiters in the grammar:
 \index{delimiters}
 
 \begin{verbatim}
 (       )       [       ]       {       }
-,       :       .       "       `       '
-=	;
+,       :       .       `       =       ;
+\end{verbatim}
+
+The period can also occur in floating-point and imaginary literals.  A
+sequence of three periods has a special meaning as ellipses in slices.
+
+The following printing ASCII characters have special meaning as part
+of other tokens or are otherwise significant to the lexical analyzer:
+
+\begin{verbatim}
+'       "       #       \
 \end{verbatim}
 
 The following printing \ASCII{} characters are not used in Python.  Their
@@ -368,5 +537,3 @@ error:
 \begin{verbatim}
 @       $       ?
 \end{verbatim}
-
-They may be used by future versions of the language though!
