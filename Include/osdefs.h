@@ -24,6 +24,13 @@ extern "C" {
 #endif
 #endif
 
+#ifdef RISCOS
+#define SEP '.'
+#define MAXPATHLEN 256
+#define DELIM ','
+#endif
+
+
 /* Filename separator */
 #ifndef SEP
 #define SEP '/'
