@@ -32,6 +32,7 @@
 import binascii
 import os
 import string
+import sys
 
 Error = 'uu.Error'
 
@@ -129,7 +130,6 @@ def decode(in_file, out_file=None, mode=None):
 
 def test():
     """uuencode/uudecode main program"""
-    import sys
     import getopt
 
     dopt = 0
