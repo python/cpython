@@ -26,9 +26,6 @@ from macsupport import *
 ScrapRef = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
 
 includestuff = includestuff + """
-#ifndef PyDoc_STR
-#define PyDoc_STR(x) (x)
-#endif
 #include <Carbon/Carbon.h>
 
 /*

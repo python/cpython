@@ -25,9 +25,6 @@ FSCatalogInfo_ptr = FakeType("(FSCatalogInfo *)0")
 # includestuff etc. are imported from macsupport
 
 includestuff = includestuff + """
-#ifndef PyDoc_STR
-#define PyDoc_STR(x) (x)
-#endif
 #include <Carbon/Carbon.h>
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
