@@ -31,6 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "compile.h"
 #include "ceval.h"
+#include "yuv.h"		/* for YUV conversion functions */
 
 typedef struct {
 	OB_HEAD
@@ -63,7 +64,7 @@ svc_conversion(self, args, function, factor)
 	captureobject *self;
 	object *args;
 	void (*function)();
-	int factor;
+	float factor;
 {
 	object *output;
 	int invert;
@@ -71,7 +72,7 @@ svc_conversion(self, args, function, factor)
 	if (!getargs(args, "i", &invert))
 		return NULL;
 
-	output = newsizedstringobject(NULL, self->ob_info.width * self->ob_info.height * factor);
+	output = newsizedstringobject(NULL, (int) (self->ob_info.width * self->ob_info.height * factor));
 	if (output == NULL)
 		return NULL;
 
@@ -79,6 +80,46 @@ svc_conversion(self, args, function, factor)
 		    self->ob_info.width, self->ob_info.height);
 
 	return output;
+}
+
+/*
+ * 3 functions to convert from Starter Video YUV 4:1:1 format to
+ * Compression Library 4:2:2 Duplicate Chroma format.
+ */
+static object *
+svc_YUVtoYUV422DC(self, args)
+	captureobject *self;
+	object *args;
+{
+	if (self->ob_info.format != SV_YUV411_FRAMES) {
+		err_setstr(SvError, "data has bad format");
+		return NULL;
+	}
+	return svc_conversion(self, args, yuv_sv411_to_cl422dc, 2.0);
+}
+
+static object *
+svc_YUVtoYUV422DC_quarter(self, args)
+	captureobject *self;
+	object *args;
+{
+	if (self->ob_info.format != SV_YUV411_FRAMES) {
+		err_setstr(SvError, "data has bad format");
+		return NULL;
+	}
+	return svc_conversion(self, args, yuv_sv411_to_cl422dc_quartersize, 0.5);
+}
+
+static object *
+svc_YUVtoYUV422DC_sixteenth(self, args)
+	captureobject *self;
+	object *args;
+{
+	if (self->ob_info.format != SV_YUV411_FRAMES) {
+		err_setstr(SvError, "data has bad format");
+		return NULL;
+	}
+	return svc_conversion(self, args, yuv_sv411_to_cl422dc_sixteenthsize, 0.125);
 }
 
 static object *
@@ -94,7 +135,7 @@ svc_YUVtoRGB(self, args)
 		err_setstr(SvError, "data had bad format");
 		return NULL;
 	}
-	return svc_conversion(self, args, svYUVtoRGB, sizeof(long));
+	return svc_conversion(self, args, svYUVtoRGB, (float) sizeof(long));
 }
 
 static object *
@@ -106,7 +147,7 @@ svc_RGB8toRGB32(self, args)
 		err_setstr(SvError, "data has bad format");
 		return NULL;
 	}
-	return svc_conversion(self, args, svRGB8toRGB32, sizeof(long));
+	return svc_conversion(self, args, svRGB8toRGB32, (float) sizeof(long));
 }
 
 static object *
@@ -118,7 +159,7 @@ svc_InterleaveFields(self, args)
 		err_setstr(SvError, "data has bad format");
 		return NULL;
 	}
-	return svc_conversion(self, args, svInterleaveFields, 1);
+	return svc_conversion(self, args, svInterleaveFields, 1.0);
 }
 
 static object *
@@ -241,6 +282,9 @@ static struct methodlist capture_methods[] = {
 	{"UnlockCaptureData",	svc_UnlockCaptureData},
 	{"FindVisibleRegion",	svc_FindVisibleRegion},
 	{"GetFields",		svc_GetFields},
+	{"YUVtoYUV422DC",	svc_YUVtoYUV422DC},
+	{"YUVtoYUV422DC_quarter",svc_YUVtoYUV422DC_quarter},
+	{"YUVtoYUV422DC_sixteenth",svc_YUVtoYUV422DC_sixteenth},
 #ifdef USE_GL
 	{"lrectwrite",		svc_lrectwrite},
 #endif
@@ -817,7 +861,8 @@ static object *
 sv_conversion(self, args, function, inputfactor, factor)
 	object *self, *args;
 	void (*function)();
-	int inputfactor, factor;
+	int inputfactor;
+	float factor;
 {
 	int invert, width, height, inputlength;
 	char *input;
@@ -831,7 +876,7 @@ sv_conversion(self, args, function, inputfactor, factor)
 		return NULL;
 	}
 
-	output = newsizedstringobject(NULL, width * height * factor);
+	output = newsizedstringobject(NULL, (int) (width * height * factor));
 	if (output == NULL)
 		return NULL;
 
@@ -844,21 +889,21 @@ static object *
 sv_InterleaveFields(self, args)
 	object *self, *args;
 {
-	return sv_conversion(self, args, svInterleaveFields, 1, 1);
+	return sv_conversion(self, args, svInterleaveFields, 1, 1.0);
 }
 
 static object *
 sv_RGB8toRGB32(self, args)
 	object *self, *args;
 {
-	return sv_conversion(self, args, svRGB8toRGB32, 1, sizeof(long));
+	return sv_conversion(self, args, svRGB8toRGB32, 1, (float) sizeof(long));
 }
 
 static object *
 sv_YUVtoRGB(self, args)
 	object *self, *args;
 {
-	return sv_conversion(self, args, svYUVtoRGB, 2, sizeof(long));
+	return sv_conversion(self, args, svYUVtoRGB, 2, (float) sizeof(long));
 }
 
 static void
