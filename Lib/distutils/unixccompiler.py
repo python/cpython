@@ -22,9 +22,9 @@ from types import *
 from copy import copy
 from distutils import sysconfig
 from distutils.ccompiler import \
-     CCompiler, gen_preprocess_options, gen_lib_options, \
-     CompileError, LibError, LinkError
-from distutils.errors import DistutilsExecError
+     CCompiler, gen_preprocess_options, gen_lib_options
+from distutils.errors import \
+     DistutilsExecError, CompileError, LibError, LinkError
 
 # XXX Things not currently handled:
 #   * optimization/debug/warning flags; we just use whatever's in Python's

@@ -12,11 +12,11 @@ __revision__ = "$Id$"
 
 import sys, os, string
 from types import *
-from distutils.errors import *
-from distutils.ccompiler import \
-     CCompiler, gen_preprocess_options, gen_lib_options, \
+from distutils.errors import \
+     DistutilsExecError, DistutilsPlatformError, \
      CompileError, LibError, LinkError
-
+from distutils.ccompiler import \
+     CCompiler, gen_preprocess_options, gen_lib_options
 
 _can_read_reg = 0
 try:
