@@ -210,7 +210,7 @@ class MappingTestCase(TestBase):
     COUNT = 10
 
     def test_weak_values(self):
-        dict = weakref.mapping()
+        dict = weakref.WeakValueDictionary()
         objects = map(Object, range(self.COUNT))
         for o in objects:
             dict[o.arg] = o
@@ -236,7 +236,7 @@ class MappingTestCase(TestBase):
                      "deleting the values did not clear the dictionary")
 
     def test_weak_keys(self):
-        dict = weakref.mapping(weakkeys=1)
+        dict = weakref.WeakKeyDictionary()
         objects = map(Object, range(self.COUNT))
         for o in objects:
             dict[o] = o.arg
