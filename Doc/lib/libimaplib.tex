@@ -222,7 +222,7 @@ M.LOGIN(getpass.getuser(), getpass.getpass())
 M.SELECT()
 typ, data = M.SEARCH(None, 'ALL')
 for num in string.split(data[0]):
-    typ, data - M.FETCH(num, '(RFC822)')
+    typ, data = M.FETCH(num, '(RFC822)')
     print 'Message %s\n%s\n' % (num, data[0][1])
 M.LOGOUT()
 \end{verbatim}
