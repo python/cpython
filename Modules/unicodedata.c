@@ -515,6 +515,13 @@ unicodedata_normalize(PyObject *self, PyObject *args)
                          &form, &PyUnicode_Type, &input))
         return NULL;
 
+    if (PyUnicode_GetSize(input) == 0) {
+        /* Special case empty input strings, since resizing
+           them  later would cause internal errors. */
+        Py_INCREF(input);
+        return input;
+    }
+
     if (strcmp(form, "NFC") == 0)
         return nfc_nfkc(input, 0);
     if (strcmp(form, "NFKC") == 0)

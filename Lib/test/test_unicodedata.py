@@ -170,6 +170,7 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
     def test_normalize(self):
         self.assertRaises(TypeError, self.db.normalize)
         self.assertRaises(ValueError, self.db.normalize, 'unknown', u'xx')
+        self.assertEqual(self.db.normalize('NFKC', u''), u'')
         # The rest can be found in test_normalization.py
         # which requires an external file.
 
