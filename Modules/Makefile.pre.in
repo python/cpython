@@ -66,7 +66,8 @@ INSTALL_PROGRAM=${INSTALL} -m 755
 INSTALL_DATA=	${INSTALL} -m 644
 # Shared libraries must be installed with executable mode on some systems;
 # rather than figuring out exactly which, we always give them executable mode.
-INSTALL_SHARED=	${INSTALL} -m 755
+# Also, making them read-only seems to be a good idea...
+INSTALL_SHARED=	${INSTALL} -m 555
 
 # === Variables that are customizable by hand or by inclusion in Setup ===
 
@@ -137,11 +138,14 @@ getpath.o:	getpath.c Makefile
 		      -DEXEC_PREFIX='"$(exec_prefix)"' \
 		      $(srcdir)/getpath.c
 
-config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup
-		$(SHELL) $(MAKESETUP) Setup
+config.c Makefile: Makefile.pre config.c.in $(MAKESETUP) Setup Setup.local
+		$(SHELL) $(MAKESETUP) Setup Setup.local
 
 Setup:
 		cp $(srcdir)/Setup.in Setup
+
+Setup.local:
+		echo "# Edit this file for local setup changes" >Setup.local
 
 Makefile.pre:	Makefile.pre.in ../config.status
 		(cd ..; CONFIG_FILES=Modules/Makefile.pre CONFIG_HEADERS= \
