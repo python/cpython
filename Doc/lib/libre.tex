@@ -93,8 +93,9 @@ The special characters are:
 character except a newline.  If the \constant{DOTALL} flag has been
 specified, this matches any character including a newline.
 
-\item[\character{\^}] (Caret.)  Matches the start of the string, and in
-\constant{MULTILINE} mode also matches immediately after each newline.
+\item[\character{\textasciicircum}] (Caret.)  Matches the start of the
+string, and in \constant{MULTILINE} mode also matches immediately
+after each newline.
 
 \item[\character{\$}] Matches the end of the string, and in
 \constant{MULTILINE} mode also matches before a newline.
@@ -168,9 +169,12 @@ pattern \regexp{[]]} will match \code{']'}, for example.
 
 You can match the characters not within a range by \dfn{complementing}
 the set.  This is indicated by including a
-\character{\^} as the first character of the set; \character{\^} elsewhere will
-simply match the \character{\^} character.  For example, \regexp{[{\^}5]}
-will match any character except \character{5}.
+\character{\textasciicircum} as the first character of the set;
+\character{\textasciicircum} elsewhere will simply match the
+\character{\textasciicircum} character.  For example,
+\regexp{[{\textasciicircum}5]} will match any character except
+\character{5}, and \regexp{[\textasciicircum\code{\textasciicircum}]}
+will match any character except \character{\textasciicircum}.
 
 \item[\character{|}]\code{A|B}, where A and B can be arbitrary REs,
 creates a regular expression that will match either A or B.  An
@@ -300,13 +304,13 @@ Python's string literals.
 equivalent to the set \regexp{[0-9]}.
 
 \item[\code{\e D}]Matches any non-digit character; this is
-equivalent to the set \regexp{[{\^}0-9]}.
+equivalent to the set \regexp{[{\textasciicircum}0-9]}.
 
 \item[\code{\e s}]Matches any whitespace character; this is
 equivalent to the set \regexp{[ \e t\e n\e r\e f\e v]}.
 
 \item[\code{\e S}]Matches any non-whitespace character; this is
-equivalent to the set \regexp{[\^\ \e t\e n\e r\e f\e v]}.
+equivalent to the set \regexp{[\textasciicircum\ \e t\e n\e r\e f\e v]}.
 
 \item[\code{\e w}]When the \constant{LOCALE} and \constant{UNICODE}
 flags are not specified,
@@ -319,7 +323,7 @@ in the Unicode character properties database.
 
 \item[\code{\e W}]When the \constant{LOCALE} and \constant{UNICODE}
 flags are not specified, matches any non-alphanumeric character; this
-is equivalent to the set \regexp{[{\^}a-zA-Z0-9_]}.   With
+is equivalent to the set \regexp{[{\textasciicircum}a-zA-Z0-9_]}.   With
 \constant{LOCALE}, it will match any character not in the set
 \regexp{[0-9_]}, and not defined as a letter for the current locale.
 If \constant{UNICODE} is set, this will match anything other than
@@ -343,7 +347,8 @@ semantics, the search operation is what you're looking for.  See the
 regular expression objects.
 
 Note that match may differ from search using a regular expression
-beginning with \character{\^}: \character{\^} matches only at the
+beginning with \character{\textasciicircum}:
+\character{\textasciicircum} matches only at the
 start of the string, or in \constant{MULTILINE} mode also immediately
 following a newline.  The ``match'' operation succeeds only if the
 pattern matches at the start of the string regardless of mode, or at
@@ -410,14 +415,14 @@ Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, and
 
 \begin{datadesc}{M}
 \dataline{MULTILINE}
-When specified, the pattern character \character{\^} matches at the
-beginning of the string and at the beginning of each line
-(immediately following each newline); and the pattern character
+When specified, the pattern character \character{\textasciicircum}
+matches at the beginning of the string and at the beginning of each
+line (immediately following each newline); and the pattern character
 \character{\$} matches at the end of the string and at the end of each line
-(immediately preceding each newline).
-By default, \character{\^} matches only at the beginning of the string, and
-\character{\$} only at the end of the string and immediately before the
-newline (if any) at the end of the string. 
+(immediately preceding each newline).  By default,
+\character{\textasciicircum} matches only at the beginning of the
+string, and \character{\$} only at the end of the string and
+immediately before the newline (if any) at the end of the string. 
 \end{datadesc}
 
 \begin{datadesc}{S}
@@ -591,7 +596,8 @@ attributes:
 
   The optional second parameter \var{pos} gives an index in the string
   where the search is to start; it defaults to \code{0}.  This is not
-  completely equivalent to slicing the string; the \code{'\^'} pattern
+  completely equivalent to slicing the string; the
+  \code{'\textasciicircum'} pattern
   character matches at the real beginning of the string and at positions
   just after a newline, but not necessarily at the index where the search
   is to start.
