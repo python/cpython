@@ -31,14 +31,14 @@ or may not be necessary to flush changes to disk.
 # Try using cPickle and cStringIO if available.
 
 try:
-    from cPickle import Pickler, Unpickler
+	from cPickle import Pickler, Unpickler
 except ImportError:
-    from pickle import Pickler, Unpickler
+	from pickle import Pickler, Unpickler
 
 try:
-    from cStringIO import StringIO
+	from cStringIO import StringIO
 except ImportError:
-    from StringIO import StringIO
+	from StringIO import StringIO
 
 
 class Shelf:
@@ -75,7 +75,7 @@ class Shelf:
 	
 	def close(self):
 		try:
-                    self.dict.close()
+			self.dict.close()
 		except:
 			pass
 		self.dict = 0
