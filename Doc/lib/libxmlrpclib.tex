@@ -18,7 +18,8 @@ handles all the details of translating between conformable Python
 objects and XML on the wire.
 
 \begin{classdesc}{ServerProxy}{uri\optional{, transport\optional{,
-                               encoding\optional{, verbose}}}}
+                               encoding\optional{, verbose\optional{, 
+                               allow_none}}}}}
 A \class{ServerProxy} instance is an object that manages communication
 with a remote XML-RPC server.  The required first argument is a URI
 (Uniform Resource Indicator), and will normally be the URL of the
@@ -26,7 +27,12 @@ server.  The optional second argument is a transport factory instance;
 by default it is an internal \class{SafeTransport} instance for https:
 URLs and an internal HTTP \class{Transport} instance otherwise.  The
 optional third argument is an encoding, by default UTF-8. The optional
-fourth argument is a debugging flag.
+fourth argument is a debugging flag.  If \var{allow_none} is true, 
+the Python constant \code{None} will be translated into XML; the
+default behaviour is for \code{None} to raise a \exception{TypeError}.
+This is a commonly-used extension to the XML-RPC specification, but isn't
+supported by all clients and servers; see
+\url{http://ontosys.com/xml-rpc/extensions.html} for a description. 
 
 Both the HTTP and HTTPS transports support the URL syntax extension for
 HTTP Basic Authentication: \code{http://user:pass@host:port/path}.  The 
