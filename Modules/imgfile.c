@@ -43,6 +43,15 @@ static object * ImgfileError;
 static char gfname[1024];
 static IMAGE *image;
 
+static int error_called;
+
+static imgfile_error(str)
+    char *str;
+{
+    err_setstr(ImgfileError, str);
+    error_called = 1;
+    return;	/* To imglib, which will return a failure indictaor */
+}
 
 static
 imgfile_open(args)
@@ -52,13 +61,17 @@ imgfile_open(args)
     
     if ( !getargs(args, "s", &fname) )
       return 0;
+    i_seterror(imgfile_error);
+    error_called = 0;
     if ( image != NULL && strcmp(fname, gfname) != 0 ) {
 	iclose(image);
 	image = NULL;
 	gfname[0] = '\0';
     }
     if ( (image=iopen(fname, "r")) == NULL ) {
-	err_setstr(ImgfileError, "Cannot open image file");
+	/* Error may already be set by imgfile_error */
+	if ( !error_called )
+	  err_setstr(ImgfileError, "Cannot open image file");
 	return 0;
     }
     strcpy(gfname, fname);
@@ -103,7 +116,7 @@ imgfile_read(self, args)
       return NULL;
     cdatap = getstringvalue(rv);
     idatap = (long *)cdatap;
-    for ( y=0; y < ysize; y++ ) {
+    for ( y=0; y < ysize && !error_called; y++ ) {
 	if ( zsize == 1 ) {
 	    getrow(image, rs, y, 0);
 	    for(x=0; x<xsize; x++ )
@@ -117,6 +130,10 @@ imgfile_read(self, args)
 		         ((gs[x] & 0xff)<<8) |
 		         ((bs[x] & 0xff)<<16);
 	}
+    }
+    if ( error_called ) {
+	DECREF(rv);
+	return NULL;
     }
     return rv;
 }
