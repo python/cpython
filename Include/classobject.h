@@ -30,15 +30,15 @@ It should be possible to use other object types as base classes,
 but currently it isn't.  We'll see if we can fix that later, sigh...
 */
 
-extern typeobject Classtype, Instancetype, Classmethodtype;
+extern typeobject Classtype, Instancetype, Instancemethodtype;
 
 #define is_classobject(op) ((op)->ob_type == &Classtype)
-#define is_instanceobject(op) ((op)->ob_type == &Classmembertype)
-#define is_classmethodobject(op) ((op)->ob_type == &Classmethodtype)
+#define is_instanceobject(op) ((op)->ob_type == &Instancetype)
+#define is_instancemethodobject(op) ((op)->ob_type == &Instancemethodtype)
 
 extern object *newclassobject PROTO((object *, object *));
 extern object *newinstanceobject PROTO((object *));
-extern object *newclassmethodobject PROTO((object *, object *));
+extern object *newinstancemethodobject PROTO((object *, object *));
 
-extern object *classmethodgetfunc PROTO((object *));
-extern object *classmethodgetself PROTO((object *));
+extern object *instancemethodgetfunc PROTO((object *));
+extern object *instancemethodgetself PROTO((object *));
