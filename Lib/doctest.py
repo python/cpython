@@ -590,18 +590,18 @@ class Parser:
         self.string = string.expandtabs()
 
     _EXAMPLE_RE = re.compile(r'''
-    # Source consists of a PS1 line followed by zero or more PS2 lines.
-    (?P<source>
-        (?:^(?P<indent> [ ]*) >>>    .*)    # PS1 line
-        (?:\n           [ ]*  \.\.\. .*)*)  # PS2 lines
-    \n?
-    # Want consists of any non-blank lines that do not start with PS1.
-    (?P<want> (?:(?![ ]*$)    # Not a blank line
-                 (?![ ]*>>>)  # Not a line starting with PS1
-                 .*$\n?       # But any other line
-              )*)
-    ''', re.MULTILINE | re.VERBOSE)
-    _IS_BLANK_OR_COMMENT = re.compile('^[ ]*(#.*)?$')
+        # Source consists of a PS1 line followed by zero or more PS2 lines.
+        (?P<source>
+            (?:^(?P<indent> [ ]*) >>>    .*)    # PS1 line
+            (?:\n           [ ]*  \.\.\. .*)*)  # PS2 lines
+        \n?
+        # Want consists of any non-blank lines that do not start with PS1.
+        (?P<want> (?:(?![ ]*$)    # Not a blank line
+                     (?![ ]*>>>)  # Not a line starting with PS1
+                     .*$\n?       # But any other line
+                  )*)
+        ''', re.MULTILINE | re.VERBOSE)
+    _IS_BLANK_OR_COMMENT = re.compile('^[ ]*(#.*)?$').match
 
     def get_examples(self):
         """
@@ -638,7 +638,7 @@ class Parser:
 
             # Extract source/want from the regexp match.
             (source, want) = self._parse_example(m, lineno)
-            if self._IS_BLANK_OR_COMMENT.match(source):
+            if self._IS_BLANK_OR_COMMENT(source):
                 continue
             examples.append( Example(source, want, lineno) )
 
