@@ -37,6 +37,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 char *PyMac_getscript()
 {
+#if TARGET_API_MAC_OSX
+    /* We cannot use GetSysFont because it requires the window manager
+    ** There are other APIs to query the default 8 bit encoding, but
+    ** I don't know about them (yet).
+    */
+    return "ascii";
+#else
    int font, script, lang;
     font = 0;
     font = GetSysFont();
@@ -65,6 +72,7 @@ char *PyMac_getscript()
     default:
         return "ascii"; /* better than nothing */
     }
+#endif /* TARGET_API_MAC_OSX */
 }
 
 /* Like strerror() but for Mac OS error numbers */
