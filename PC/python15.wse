@@ -702,27 +702,27 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\python.exe
+  Source=%_SRC_%\pcbuild\python.exe
   Destination=%MAINDIR%\python.exe
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\pythonw.exe
+  Source=%_SRC_%\pcbuild\pythonw.exe
   Destination=%MAINDIR%\pythonw.exe
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\parser.dll
+  Source=%_SRC_%\pcbuild\parser.pyd
   Destination=%MAINDIR%\DLLs\parser.pyd
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\_tkinter.dll
+  Source=%_SRC_%\pcbuild\_tkinter.pyd
   Destination=%MAINDIR%\DLLs\_tkinter.pyd
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\zlib.pyd
+  Source=%_SRC_%\pcbuild\zlib.pyd
   Destination=%MAINDIR%\DLLs\zlib.pyd
   Flags=0000000000000010
 end
@@ -732,17 +732,17 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\bsddb.pyd
+  Source=%_SRC_%\pcbuild\bsddb.pyd
   Destination=%MAINDIR%\DLLs\bsddb.pyd
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\python15.dll
+  Source=%_SRC_%\pcbuild\python15.dll
   Destination=%SYS32%\python15.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\python15.lib
+  Source=%_SRC_%\pcbuild\python15.lib
   Destination=%SYS32%\python15.lib
   Flags=0000000000000010
 end
@@ -780,7 +780,7 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\Release\*.lib
+  Source=%_SRC_%\pcbuild\*.lib
   Destination=%MAINDIR%\libs
   Description=.lib files
   Flags=0000000000000010
@@ -789,6 +789,12 @@ item: Install File
   Source=%_SRC_%\Include\*.h
   Destination=%MAINDIR%\include
   Description=Header files
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Pc\config.h
+  Destination=%MAINDIR%\include\config.h
+  Description=Header files (config.h)
   Flags=0000000000000010
 end
 item: Install File
