@@ -895,6 +895,9 @@ PyErr_PrintEx(int set_sys_last_vars)
 			PyErr_Display(exception2, v2, tb2);
 			PySys_WriteStderr("\nOriginal exception was:\n");
 			PyErr_Display(exception, v, tb);
+			Py_XDECREF(exception2);
+			Py_XDECREF(v2);
+			Py_XDECREF(tb2);
 		}
 		Py_XDECREF(result);
 		Py_XDECREF(args);
