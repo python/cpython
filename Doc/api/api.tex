@@ -5508,36 +5508,45 @@ references to atomic types (such as numbers or strings), do not need
 to provide any explicit support for garbage collection.
 
 To create a container type, the \member{tp_flags} field of the type
-object must include the \constant{Py_TPFLAGS_GC} and provide an
-implementation of the \member{tp_traverse} handler.  The computed
-value of the \member{tp_basicsize} field must include
-\constant{PyGC_HEAD_SIZE} as well.  If instances of the type are
-mutable, a \member{tp_clear} implementation must also be provided.
+object must include the \constant{Py_TPFLAGS_HAVE_GC} and provide an
+implementation of the \member{tp_traverse} handler.  If instances of the
+type are mutable, a \member{tp_clear} implementation must also be
+provided.
 
-\begin{datadesc}{Py_TPFLAGS_GC}
+\begin{datadesc}{Py_TPFLAGS_HAVE_GC}
   Objects with a type with this flag set must conform with the rules
   documented here.  For convenience these objects will be referred to
   as container objects.
-\end{datadesc}
-
-\begin{datadesc}{PyGC_HEAD_SIZE}
-  Extra memory needed for the garbage collector.  Container objects
-  must include this in the calculation of their tp_basicsize.  If the
-  collector is disabled at compile time then this is \code{0}.
 \end{datadesc}
 
 Constructors for container types must conform to two rules:
 
 \begin{enumerate}
 \item  The memory for the object must be allocated using
-       \cfunction{PyObject_New()} or \cfunction{PyObject_VarNew()}.
+       \cfunction{PyObject_GC_New()} or \cfunction{PyObject_GC_VarNew()}.
 
 \item  Once all the fields which may contain references to other
        containers are initialized, it must call
-       \cfunction{PyObject_GC_Init()}.
+       \cfunction{PyObject_GC_Track()}.
 \end{enumerate}
 
-\begin{cfuncdesc}{void}{PyObject_GC_Init}{PyObject *op}
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_GC_New}{TYPE, PyTypeObject *type}
+  Analogous to \cfunction{PyObject_New()} but for container objects with
+  the \constant{Py_TPFLAGS_HAVE_GC} flag set.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_GC_NewVar}{TYPE, PyTypeObject *type,
+                                                   int size}
+  Analogous to \cfunction{PyObject_NewVar()} but for container objects
+  with the \constant{Py_TPFLAGS_HAVE_GC} flag set.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyVarObject *}{PyObject_GC_Resize}{PyVarObject *op, int}
+  Resize an object allocated by \cfunction{PyObject_NewVar()}.  Returns
+  the resized object or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_GC_Track}{PyObject *op}
   Adds the object \var{op} to the set of container objects tracked by
   the collector.  The collector can run at unexpected times so objects
   must be valid while being tracked.  This should be called once all
@@ -5545,29 +5554,39 @@ Constructors for container types must conform to two rules:
   usually near the end of the constructor.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{void}{_PyObject_GC_TRACK}{PyObject *op}
+  A macro version of \cfunction{PyObject_GC_Track()}.  It should not be
+  used for extension modules.
+\end{cfuncdesc}
+
 Similarly, the deallocator for the object must conform to a similar
 pair of rules:
 
 \begin{enumerate}
 \item  Before fields which refer to other containers are invalidated,
-       \cfunction{PyObject_GC_Fini()} must be called.
+       \cfunction{PyObject_GC_UnTrack()} must be called.
 
 \item  The object's memory must be deallocated using
-       \cfunction{PyObject_Del()}.
+       \cfunction{PyObject_GC_Del()}.
 \end{enumerate}
 
-\begin{cfuncdesc}{void}{PyObject_GC_Fini}{PyObject *op}
+\begin{cfuncdesc}{void}{PyObject_GC_Del}{PyObject *op}
+  Releases memory allocated to an object using
+  \cfunction{PyObject_GC_New()} or \cfunction{PyObject_GC_NewVar()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_GC_UnTrack}{PyObject *op}
   Remove the object \var{op} from the set of container objects tracked
-  by the collector.  Note that \cfunction{PyObject_GC_Init()} can be
+  by the collector.  Note that \cfunction{PyObject_GC_Track()} can be
   called again on this object to add it back to the set of tracked
   objects.  The deallocator (\member{tp_dealloc} handler) should call
   this for the object before any of the fields used by the
   \member{tp_traverse} handler become invalid.
+\end{cfuncdesc}
 
-  \strong{Note:}  Any container which may be referenced from another
-  object reachable by the collector must itself be tracked by the
-  collector, so it is generally not safe to call this function
-  anywhere but in the object's deallocator.
+\begin{cfuncdesc}{void}{_PyObject_GC_UNTRACK}{PyObject *op}
+  A macro version of \cfunction{PyObject_GC_UnTrack()}.  It should not be
+  used for extension modules.
 \end{cfuncdesc}
 
 The \member{tp_traverse} handler accepts a function parameter of this
@@ -5650,9 +5669,9 @@ my_clear(MyObject *self)
 static void
 my_dealloc(MyObject *self)
 {
-    PyObject_GC_Fini((PyObject *) self);
+    PyObject_GC_UnTrack((PyObject *) self);
     Py_XDECREF(self->container);
-    PyObject_Del(self);
+    PyObject_GC_Del(self);
 }
 \end{verbatim}
 
@@ -5662,7 +5681,7 @@ MyObject_Type = {
     PyObject_HEAD_INIT(NULL)
     0,
     "MyObject",
-    sizeof(MyObject) + PyGC_HEAD_SIZE,
+    sizeof(MyObject),
     0,
     (destructor)my_dealloc,     /* tp_dealloc */
     0,                          /* tp_print */
@@ -5679,7 +5698,7 @@ MyObject_Type = {
     0,                          /* tp_getattro */
     0,                          /* tp_setattro */
     0,                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     0,                          /* tp_doc */
     (traverseproc)my_traverse,  /* tp_traverse */
     (inquiry)my_clear,          /* tp_clear */
@@ -5695,10 +5714,10 @@ new_object(PyObject *unused, PyObject *args)
     MyObject *result = NULL;
 
     if (PyArg_ParseTuple(args, "|O:new_object", &container)) {
-        result = PyObject_New(MyObject, &MyObject_Type);
+        result = PyObject_GC_New(MyObject, &MyObject_Type);
         if (result != NULL) {
             result->container = container;
-            PyObject_GC_Init();
+            PyObject_GC_Track(result);
         }
     }
     return (PyObject *) result;
