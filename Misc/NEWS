@@ -153,6 +153,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 - distutils/command/install.py - make .get_outputs() produce a list of unique 
                                  filenames
 
+- pyexpat.c - removed memory leaks
+
 What's New in Python 2.0?
 =========================
 
