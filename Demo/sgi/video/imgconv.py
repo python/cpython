@@ -9,7 +9,7 @@ def null(img, x, y):
 	return img
 	
 def mono2grey(img, x, y):
-	imageop.mono2grey(img, x, y, 0, 255)
+	return imageop.mono2grey(img, x, y, 0, 255)
 
 converters = [ \
 	  ('grey',  'grey4', imageop.grey2grey4,   LOSSY), \
