@@ -2,7 +2,6 @@
 ;;
 ;; Author:  1996 Barry A. Warsaw
 ;; Created:  6-Dec-1996
-;; Version: $Revision$
 ;; Keywords: c python languages oop
 
 ;;; Commentary
