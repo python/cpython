@@ -5,7 +5,7 @@
 \modulesynopsis{Efficient arrays of uniformly typed numeric values.}
 
 
-This module defines a new object type which can efficiently represent
+This module defines an object type which can efficiently represent
 an array of basic values: characters, integers, floating point
 numbers.  Arrays\index{arrays} are sequence types and behave very much
 like lists, except that the type of objects stored in them is
@@ -17,6 +17,7 @@ codes are defined:
 \lineiii{'c'}{character}{1}
 \lineiii{'b'}{signed int}{1}
 \lineiii{'B'}{unsigned int}{1}
+\lineiii{'u'}{Unicode character}{2}
 \lineiii{'h'}{signed int}{2}
 \lineiii{'H'}{unsigned int}{2}
 \lineiii{'i'}{signed int}{2}
@@ -35,23 +36,25 @@ Python long integers when retrieved, because Python's plain integer
 type cannot represent the full range of C's unsigned (long) integers.
 
 
-The module defines the following function and type object:
+The module defines the following type:
 
 \begin{funcdesc}{array}{typecode\optional{, initializer}}
-Return a new array whose items are restricted by \var{typecode}, and
-initialized from the optional \var{initializer} value, which must be a
-list or a string.  The list or string is passed to the new array's
-\method{fromlist()} or \method{fromstring()} method (see below) to add
-initial items to the array.
+Return a new array whose items are restricted by \var{typecode},
+and initialized from the optional \var{initializer} value, which
+must be a list or a string.  The list or string is passed to the
+new array's \method{fromlist()}, \method{fromstring()}, or
+\method{fromunicode()} method (see below) to add initial items to
+the array.
 \end{funcdesc}
 
 \begin{datadesc}{ArrayType}
-Type object corresponding to the objects returned by
-\function{array()}.
+Obsolete alias for \function{array}.
 \end{datadesc}
 
 
-Array objects support the following data items and methods:
+Array objects support the ordinary sequence operations of
+indexing, slicing, concatenation, and multiplication.  The
+following data items and methods are also supported:
 
 \begin{memberdesc}[array]{typecode}
 The typecode character used to create the array.
@@ -121,6 +124,13 @@ array of machine values (as if it had been read from a
 file using the \method{fromfile()} method).
 \end{methoddesc}
 
+\begin{methoddesc}[array]{fromunicode}{s}
+Extends this array with data from the given unicode string.
+The array must be a type 'u' array; otherwise a ValueError
+is raised.  Use \samp{array.fromstring(ustr.decode(enc))} to
+append Unicode data to an array of some other type.
+\end{methoddesc}
+
 \begin{methoddesc}[array]{index}{x}
 Return the smallest \var{i} such that \var{i} is the index of
 the first occurence of \var{x} in the array.
@@ -134,7 +144,7 @@ Insert a new item with value \var{x} in the array before position
 \begin{methoddesc}[array]{pop}{\optional{i}}
 Removes the item with the index \var{i} from the array and returns
 it. The optional argument defaults to \code{-1}, so that by default
-the last item is removed and returned. 
+the last item is removed and returned.
 \end{methoddesc}
 
 \begin{methoddesc}[array]{read}{f, n}
@@ -170,6 +180,13 @@ string representation (the same sequence of bytes that would
 be written to a file by the \method{tofile()} method.)
 \end{methoddesc}
 
+\begin{methoddesc}[array]{tounicode}{}
+Convert the array to a unicode string.  The array must be
+a type 'u' array; otherwise a ValueError is raised.  Use
+array.tostring().decode(enc) to obtain a unicode string
+from an array of some other type.
+\end{methoddesc}
+
 \begin{methoddesc}[array]{write}{f}
 \deprecated {1.5.1}
   {Use the \method{tofile()} method.}
@@ -188,6 +205,7 @@ imported using \code{from array import array}.  Examples:
 \begin{verbatim}
 array('l')
 array('c', 'hello world')
+array('u', u'hello \textbackslash u2641')
 array('l', [1, 2, 3, 4, 5])
 array('d', [1.0, 2.0, 3.14])
 \end{verbatim}
