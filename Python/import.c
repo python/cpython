@@ -182,6 +182,13 @@ PyImport_ExecCodeModule(name, co)
 	if (v == NULL)
 		return NULL;
 	Py_DECREF(v);
+
+	if ((m = PyDict_GetItemString(_PyImport_Modules, name)) == NULL) {
+		PyErr_SetString(PyExc_SystemError,
+				"loaded module not found in sys.modules");
+		return NULL;
+	}
+
 	Py_INCREF(m);
 
 	return m;
