@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+# -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 # 
 # $Id$
 #
@@ -43,7 +43,7 @@ def RunSample (w) :
 
     # First some styles for the headers
     style={}
-    style['header'] = Tix.DisplayStyle(Tix.TEXT, fg='black', refwindow=top,
+    style['header'] = Tix.DisplayStyle(Tix.TEXT, refwindow=top,
 	anchor=Tix.CENTER, padx=8, pady=2, font = boldfont )
 
     hlist.header_create(0, itemtype=Tix.TEXT, text='Name',
@@ -78,17 +78,13 @@ def RunSample (w) :
 	('chuck', 'jeff',       'Chuck McLean',		'Cleaner')
     ]
 
-    style['mgr_name'] = Tix.DisplayStyle(Tix.TEXT, refwindow=top,
-	fg='#202060', selectforeground = '#202060', font = boldfont )
+    style['mgr_name'] = Tix.DisplayStyle(Tix.TEXT, refwindow=top)
 
-    style['mgr_posn'] = Tix.DisplayStyle(Tix.TEXT, padx=8,  refwindow=top,
-	fg='#202060', selectforeground='#202060' )
+    style['mgr_posn'] = Tix.DisplayStyle(Tix.TEXT, padx=8,  refwindow=top)
 
-    style['empl_name'] = Tix.DisplayStyle(Tix.TEXT, refwindow=top,
-	fg='#602020', selectforeground = '#602020', font = boldfont )
+    style['empl_name'] = Tix.DisplayStyle(Tix.TEXT, refwindow=top)
 
-    style['empl_posn'] = Tix.DisplayStyle(Tix.TEXT, padx=8,  refwindow=top,
-	fg='#602020', selectforeground = '#602020' )
+    style['empl_posn'] = Tix.DisplayStyle(Tix.TEXT, padx=8,  refwindow=top)
 
     # Let configure the appearance of the HList subwidget 
     #
@@ -130,10 +126,10 @@ def RunSample (w) :
     #
     box= Tix.ButtonBox(top, orientation=Tix.HORIZONTAL )
     box.add( 'ok',  text='Ok', underline=0,  width=6,
-	command = lambda w=w: w.destroy() )
+	command = lambda w=w: w.quit() )
 
     box.add( 'cancel', text='Cancel', underline=0, width=6,
-	command = lambda w=w: w.destroy() )
+	command = lambda w=w: w.quit() )
 
     box.pack( side=Tix.BOTTOM, fill=Tix.X)
     top.pack( side=Tix.TOP,    fill=Tix.BOTH, expand=1 )
@@ -146,3 +142,4 @@ if __name__== '__main__' :
     root=Tix.Tk()
     RunSample(root)
     root.mainloop()
+    root.destroy()

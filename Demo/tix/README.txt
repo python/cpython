@@ -1,7 +1,7 @@
-About PyTix
+About Tix.py
 -----------
 
-PyTix is based on an idea of Jean-Marc Lugrin (lugrin@ms.com) who wrote
+Tix.py is based on an idea of Jean-Marc Lugrin (lugrin@ms.com) who wrote
 pytix (another Python-Tix marriage). Tix widgets are an attractive and
 useful extension to Tk. See http://tix.sourceforge.net
 for more details about Tix and how to get it.
