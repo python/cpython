@@ -73,6 +73,9 @@ class ScriptBinding:
         flist = self.editwin.flist
         shell = flist.open_shell()
         interp = shell.interp
+        if (not sys.argv or
+            os.path.basename(sys.argv[0]) != os.path.basename(filename)):
+            sys.argv = [filename]
         interp.execfile(filename)
 
     def getfilename(self):
