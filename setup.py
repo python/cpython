@@ -362,9 +362,16 @@ class PyBuildExt(build_ext):
             if platform not in ['cygwin']:
                 exts.append( Extension('resource', ['resource.c']) )
 
+            # Generic dynamic loading module
+            exts.append( Extension('dl', ['dlmodule.c']) )
+            
+            # Sun yellow pages. Some systems have the functions in libc.
             if (self.compiler.find_library_file(lib_dirs, 'nsl')):
-                exts.append( Extension('nis', ['nismodule.c'],
-                                       libraries = ['nsl']) )
+                libs = ['nsl']
+            else:
+                libs = []
+            exts.append( Extension('nis', ['nismodule.c'],
+                                   libraries = libs) )
 
         # Curses support, requring the System V version of curses, often
         # provided by the ncurses library.
