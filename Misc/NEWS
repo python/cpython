@@ -247,7 +247,7 @@ Extension modules
 - Fix a crash on Solaris that occurred when calling close() on
   an mmap'ed file which was already closed.  (SF patch #665913)
 
-- Fixed serveral serious bugs in the zipimport implementation.
+- Fixed several serious bugs in the zipimport implementation.
 
 - datetime changes:
 
@@ -621,7 +621,7 @@ Core and builtins
   compatible with those that have been implemented in Jython since
   Jython 2.1.
 
-- PEP 302 has been accepted.  Although it was inititally developed to
+- PEP 302 has been accepted.  Although it was initially developed to
   support zipimport, it offers a new, general import hook mechanism.
   Several new variables have been added to the sys module:
   sys.meta_path, sys.path_hooks, and sys.path_importer_cache; these
@@ -1023,9 +1023,9 @@ Library
 - os.path exposes getctime.
 
 - unittest.py now has two additional methods called assertAlmostEqual()
-  and failIfAlmostEqual().  They implement an approximate comparision
+  and failIfAlmostEqual().  They implement an approximate comparison
   by rounding the difference between the two arguments and comparing
-  the result to zero.  Approximate comparision is essential for
+  the result to zero.  Approximate comparison is essential for
   unit tests of floating point results.
 
 - calendar.py now depends on the new datetime module rather than
@@ -1041,7 +1041,7 @@ Library
 - doctest.testmod can now be called without argument, which means to
   test the current module.
 
-- When cancelling a server that implemented threading with a keyboard
+- When canceling a server that implemented threading with a keyboard
   interrupt, the server would shut down but not terminate (waiting on
   client threads). A new member variable, daemon_threads, was added to
   the ThreadingMixIn class in SocketServer.py to make it explicit that
@@ -1402,7 +1402,7 @@ C API
   the ob_sval member, so as a precaution the API_VERSION has been
   incremented.  The apparently unused feature of "indirect interned
   strings", supported by the ob_sinterned member, is gone.  Interned
-  strings are now usually mortal; theres a new API,
+  strings are now usually mortal; there is a new API,
   PyString_InternImmortal() that creates immortal interned strings.
   (The ob_sstate member can only take three values; however, while
   making it a char saves a few bytes per string object on average, in
@@ -1494,7 +1494,7 @@ Windows
   improvement over the previous Berkeley DB 1.85, which had many
   bugs.
   XXX What are the licensing issues here?
-  XXX If a user has a database created with a previous verion of
+  XXX If a user has a database created with a previous version of
   XXX     Python, what must they do to convert it?
   XXX I'm still not sure how to link this thing (see PCbuild/readme.txt).
   XXX The version # is likely to change before 2.3a1.
@@ -1507,7 +1507,7 @@ Windows
 
 - When Python is built under a Microsoft compiler, sys.version now
   includes the compiler version number (_MSC_VER).  For example, under
-  MSVC 6, sys.version constains the substring "MSC v.1200 ".  1200 is
+  MSVC 6, sys.version contains the substring "MSC v.1200 ".  1200 is
   the value of _MSC_VER under MSVC 6.
 
 - Sometimes the uninstall executable (UNWISE.EXE) vanishes.  One cause
@@ -1612,7 +1612,7 @@ Mac
   There are hooks in the IDE to allow accessing the Python documentation
   (and Apple's Carbon and Cocoa documentation) through the Help Viewer.
   See Mac/OSX/README for converting the Python documentation to a
-  Help Viewer comaptible form and installing it.
+  Help Viewer compatible form and installing it.
 
 - OSA support has been redesigned and the generated Python classes now
   mirror the inheritance defined by the underlying OSA classes.
@@ -2175,7 +2175,7 @@ Library
   Calibration must still be done manually (see the docs for the profile
   module).
 
-  Note that Profile.calibrate() must be overriden by subclasses.
+  Note that Profile.calibrate() must be overridden by subclasses.
   Improving the accuracy required exploiting detailed knowledge of
   profiler internals; the earlier method abstracted away the details
   and measured a simplified model instead, but consequently computed
