@@ -1,0 +1,57 @@
+\section{\module{dumbdbm} ---
+         Simple ``database'' interface written in Python}
+
+\declaremodule{builtin}{dumbdbm}
+\modulesynopsis{A dbm-style module available on all platforms.}
+
+\index{databases}
+
+\note{The \module{dumbdbm} module is intended as a last resort fallback for
+the \module{anydbm} module when no other more robust module is available.
+The \module{dumbdbm} module is not written for speed and is not nearly as
+heavily used as the other database modules.}
+
+The \module{dumbdbm} module provides a persisten dictionary-like interface
+which is written entirely in Python.  Unlike other modules such as
+{}\module{gdbm} and \module{bsddb}, no external library is required.  As
+with other persistent mappings, the keys and values must always be strings.
+
+The module defines the following:
+
+\begin{excdesc}{error}
+Raised on dumbdbm-specific errors, such as I/O errors.  \exception{KeyError}
+is raised for general mapping errors like specifying an incorrect key.
+\end{excdesc}
+
+\begin{funcdesc}{open}{filename\optional{, flag\optional{, mode}}}
+
+Open a dumbdbm database and return a dumbdbm object.  The \var{filename}
+argument is the basename of the database file (without any specific
+extensions).  When a dumbdbm database is created, files with \code{.dat} and
+\code{.dir} extensions are created.
+
+The optional \var{flag} argument is currently ignored.
+
+The optional \var{mode} argument is the \UNIX{} mode of the file, used
+only when the database has to be created.  It defaults to octal
+\code{0666}.
+\end{funcdesc}
+
+\subsection{Dumbdbm Objects \label{dumbdbm-objects}}
+
+In addition to the methods provided by the \class{UserDict.DictMixin} class,
+\class{dumbdbm} objects provide the following methods.
+
+\begin{methoddesc}{sync}{}
+Synchronize the on-disk directory and data files.  This method is called by
+the \method{sync} method of \class{Shelve} objects.
+\end{methoddesc}
+
+\begin{seealso}
+  \seemodule{anydbm}{Generic interface to \code{dbm}-style databases.}
+  \seemodule{dbm}{Similar interface to the DBM/NDBM library.}
+  \seemodule{gdbm}{Similar interface to the GNU GDBM library.}
+  \seemodule{shelve}{Persistence module which stores non-string data.}
+  \seemodule{whichdb}{Utility module used to determine the type of an
+                      existing database.}
+\end{seealso}
