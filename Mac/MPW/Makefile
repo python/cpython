@@ -11,7 +11,7 @@
 Top = :::
 CC = SC
 CFlagsNoInclude = -woff -e -model cfmseg -b ¶
-	-d HAVE_CONFIG_H=1 -d MPW=1 -d USE_MAC_SHARED_LIBRARY=1
+	-d HAVE_CONFIG_H=1 -d MPW=1 -d USE_MAC_SHARED_LIBRARY=1 -d USE_MAC_APPLET_SUPPORT
 PythonIncludes = -i "{Top}"Mac: -i "{Top}"Include:
 MacIncludes = -i "{CIncludes}"
 CFlagsMac = {CFlagsNoInclude} {MacIncludes} {PythonIncludes}
@@ -222,7 +222,7 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 	{CC} "{Top}"Mac:macapplet.c -o "{Objs}"macapplet.c.o -s macapplet.c {CFlags}
 
 "{Objs}"macmain.c.o Ä "{Top}"Mac:macmain.c
-	{CC} "{Top}"Mac:macmain.c -o "{Objs}"macmain.c.o -s macmain.c -d USE_MAC_SHARED_LIBRARY {CFlags}
+	{CC} "{Top}"Mac:macmain.c -o "{Objs}"macmain.c.o -s macmain.c {CFlags}
 
 "{Objs}"pythonmain.c.o Ä "{Top}"Python:pythonmain.c
 	{CC} "{Top}"Python:pythonmain.c -o "{Objs}"pythonmain.c.o -s pythonmain.c {CFlags}
@@ -511,3 +511,4 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 
 "{Objs}"fmod.c.o Ä "{Top}"Python:fmod.c
 	{CC} "{Top}"Python:fmod.c -o "{Objs}"fmod.c.o -s fmod.c {CFlags}
+
