@@ -349,18 +349,18 @@ postscript-$(PAPER)-$(RELEASE).zip: ps paper-$(PAPER)/README
 
 html-$(RELEASE).tgz:	html
 	(cd $(HTMLDIR); \
-		tar cf - *.html */*.css */*.html */*.gif) \
+		tar cf - *.html */*.css */*.html */*.gif */*.txt) \
 		| gzip -9 >$@
 
 html-$(RELEASE).tar.bz2:	html
 	(cd $(HTMLDIR); \
-		tar cf - *.html */*.css */*.html */*.gif) \
+		tar cf - *.html */*.css */*.html */*.gif */*.txt) \
 		| bzip2 -9 >$@
 
 html-$(RELEASE).zip:	html
 	rm -f $@
 	(cd $(HTMLDIR); \
-		zip -q -9 ../$@ *.html */*.css */*.html */*.gif)
+		zip -q -9 ../$@ *.html */*.css */*.html */*.gif */*.txt)
 
 # convenience targets:
 
