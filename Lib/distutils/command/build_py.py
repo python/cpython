@@ -93,12 +93,15 @@ class BuildPy (Command):
         if type (package) is StringType:
             path = string.split (package, '.')
         elif type (package) in (TupleType, ListType):
-            path = list (path)
+            path = list (package)
         else:
             raise TypeError, "'package' must be a string, list, or tuple"
 
         if not self.package_dir:
-            return apply (os.path.join, path)
+            if path:
+                return apply (os.path.join, path)
+            else:
+                return ''
         else:
             tail = []
             while path:
@@ -113,7 +116,10 @@ class BuildPy (Command):
             else:
                 # arg! everything failed, we might as well have not even
                 # looked in package_dir -- oh well
-                return apply (os.path.join, tail)
+                if tail:
+                    return apply (os.path.join, tail)
+                else:
+                    return ''
 
     # get_package_dir ()
 
@@ -134,7 +140,7 @@ class BuildPy (Command):
                        "but is not a directory") % package_dir
 
         # Require __init__.py for all but the "root package"
-        if package != "":
+        if package:
             init_py = os.path.join (package_dir, "__init__.py")
             if not os.path.isfile (init_py):
                 self.warn (("package init file '%s' not found " +
@@ -233,11 +239,14 @@ class BuildPy (Command):
 
         if type (package) is StringType:
             package = string.split (package, '.')
+        elif type (package) not in (ListType, TupleType):
+            raise TypeError, \
+                  "'package' must be a string (dot-separated), list, or tuple"
 
         # Now put the module source file into the "build" area -- this is
         # easy, we just copy it somewhere under self.build_dir (the build
         # directory for Python source).
-        outfile_path = package
+        outfile_path = list (package)
         outfile_path.append (module + ".py")
         outfile_path.insert (0, self.build_dir)
         outfile = apply (os.path.join, outfile_path)
