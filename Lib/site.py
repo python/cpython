@@ -123,27 +123,23 @@ del exit
 # Set the string encoding used by the Unicode implementation to the
 # encoding used by the default locale of this system. If the default
 # encoding cannot be determined or is unknown, it defaults to 'ascii'.
-#
-def locale_aware_defaultencoding():
-    import locale
-    code, encoding = locale.getdefaultlocale()
-    if encoding is None:
-        encoding = 'ascii'
-    try:
-        sys.setdefaultencoding(encoding)
-    except LookupError:
-        sys.setdefaultencoding('ascii')
 
-if 1:
+encoding = None # default
+
+if 0:
     # Enable to support locale aware default string encodings.
-    locale_aware_defaultencoding()
-elif 0:
+    import locale
+    loc = locale.getdefaultlocale()
+    if loc[1]:
+        encoding = loc[1]
+
+if 0:
     # Enable to switch off string to Unicode coercion and implicit
     # Unicode to string conversion.
-    sys.setdefaultencoding('undefined')
-elif 0:
-    # Enable to hard-code a site specific default string encoding.
-    sys.setdefaultencoding('ascii')
+    encoding = "undefined"
+
+if not encoding:
+    encoding = "ascii"
 
 #
 # Run custom site specific code, if available.
