@@ -1,7 +1,7 @@
 \section{\module{rexec} ---
-         Basic restricted execution framework.}
-\declaremodule{standard}{rexec}
+         Restricted execution framework}
 
+\declaremodule{standard}{rexec}
 \modulesynopsis{Basic restricted execution framework.}
 
 
@@ -26,7 +26,7 @@ Returns an instance of the \class{RExec} class.
 \var{hooks} is an instance of the \class{RHooks} class or a subclass of it.
 If it is omitted or \code{None}, the default \class{RHooks} class is
 instantiated.
-Whenever the \module{RExec} module searches for a module (even a
+Whenever the \module{rexec} module searches for a module (even a
 built-in one) or reads a module's code, it doesn't actually go out to
 the file system itself.  Rather, it calls methods of an \class{RHooks}
 instance that was passed to or created by its constructor.  (Actually,
@@ -85,7 +85,7 @@ the module is loaded) for unrestricted code.
 
 \begin{memberdesc}{ok_posix_names}
 % Should this be called ok_os_names?
-Contains the names of the functions in the \module{os} module which will be
+Contains the names of the functions in the \refmodule{os} module which will be
 available to programs running in the restricted environment.  The
 value for \class{RExec} is \code{('error',} \code{'fstat',}
 \code{'listdir',} \code{'lstat',} \code{'readlink',} \code{'stat',}
@@ -95,7 +95,7 @@ value for \class{RExec} is \code{('error',} \code{'fstat',}
 \end{memberdesc}
 
 \begin{memberdesc}{ok_sys_names}
-Contains the names of the functions and variables in the \module{sys}
+Contains the names of the functions and variables in the \refmodule{sys}
 module which will be available to programs running in the restricted
 environment.  The value for \class{RExec} is \code{('ps1',}
 \code{'ps2',} \code{'copyright',} \code{'version',} \code{'platform',}

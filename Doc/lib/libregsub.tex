@@ -1,23 +1,24 @@
 \section{\module{regsub} ---
-         Substitution and splitting operations that use regular expressions.}
-\declaremodule{standard}{regsub}
+         String operations using regular expressions}
 
-\modulesynopsis{Substitution and splitting operations that use regular expressions.}
+\declaremodule{standard}{regsub}
+\modulesynopsis{Substitution and splitting operations that use
+                regular expressions.}
 
 
 This module defines a number of functions useful for working with
-regular expressions (see built-in module \code{regex}).
+regular expressions (see built-in module \refmodule{regex}).
 
 Warning: these functions are not thread-safe.
 
 \strong{Obsolescence note:}
 This module is obsolete as of Python version 1.5; it is still being
 maintained because much existing code still uses it.  All new code in
-need of regular expressions should use the new \module{re} module, which
+need of regular expressions should use the new \refmodule{re} module, which
 supports the more powerful and regular Perl-style regular expressions.
 Existing code should be converted.  The standard library module
-\module{reconvert} helps in converting \code{regex} style regular
-expressions to \module{re} style regular expressions.  (For more
+\module{reconvert} helps in converting \refmodule{regex} style regular
+expressions to \refmodule{re} style regular expressions.  (For more
 conversion help, see Andrew Kuchling's\index{Kuchling, Andrew}
 ``regex-to-re HOWTO'' at
 \url{http://www.python.org/doc/howto/regex-to-re/}.)
