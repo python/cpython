@@ -157,8 +157,8 @@ encoded as strings).
 
 \begin{funcdesc}{listen}{backlog}
 Listen for connections made to the socket.
-The argument (in the range 0-5) specifies the maximum number of
-queued connections.
+The argument specifies the maximum number of queued connections and
+should be at least 1; the maximum value is system-dependent.
 \end{funcdesc}
 
 \begin{funcdesc}{makefile}{mode}
@@ -234,7 +234,7 @@ HOST = ''                 # Symbolic name meaning the local host
 PORT = 50007              # Arbitrary non-privileged server
 s = socket(AF_INET, SOCK_STREAM)
 s.bind(HOST, PORT)
-s.listen(0)
+s.listen(1)
 conn, addr = s.accept()
 print 'Connected by', addr
 while 1:
