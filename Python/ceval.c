@@ -159,6 +159,10 @@ eval_code(co, globals, locals, arg)
 
 	trace = sysget("trace");
 	if (trace != NULL) {
+	  if (trace == None) {
+		trace = NULL;
+	  }
+	  else {
 		/* sys.trace, if defined, is a function that will
 		   be called  on *every* entry to a code block.
 		   Its return value, if not None, is a function that
@@ -184,6 +188,7 @@ eval_code(co, globals, locals, arg)
 			DECREF(trace);
 			trace = NULL;
 		}
+	  }
 	}
 	
 	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
@@ -1057,11 +1062,7 @@ eval_code(co, globals, locals, arg)
 				f->f_lasti -= 2;
 			tb_here(f);
 
-			if (trace)
-				v = trace;
-			else
-				v = sysget("trace");
-			if (v) {
+			if (trace) {
 				object *type, *value, *traceback, *arg;
 				err_get(&type, &value);
 				traceback = tb_fetch();
@@ -1073,7 +1074,7 @@ eval_code(co, globals, locals, arg)
 					settupleitem(arg, 1, value);
 					settupleitem(arg, 2, traceback);
 				}
-				v = call_trace(v, f, "exception", arg);
+				v = call_trace(trace, f, "exception", arg);
 				if (v == NULL) {
 					/* Trace function raised error */
 					tb_here(f);
