@@ -461,9 +461,9 @@ Foo_Type.ob_type = &PyType_Type;
   example, long ints use a negative \member{ob_size} to indicate a
   negative number, and N is \code{abs(\member{ob_size})} there.  Also,
   the presence of an \member{ob_size} field in the instance layout
-  doesn't mean that the type is variable-length (for example, the list
-  type has fixed-length instances, yet those instances have a
-  meaningful \member{ob_size} field).
+  doesn't mean that the instance structure is variable-length (for
+  example, the structure for the list type has fixed-length instances,
+  yet those instances have a meaningful \member{ob_size} field).
 
   The basic size includes the fields in the instance declared by the
   macro \csimplemacro{PyObject_HEAD} or
