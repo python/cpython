@@ -509,3 +509,41 @@ containing the \keyword{exec} statement.  The same applies to the
 \bifuncindex{eval}
 \bifuncindex{execfile}
 \bifuncindex{compile}
+
+\section{The {\tt exec} statement} \label{exec}
+\stindex{exec}
+
+\begin{verbatim}
+exec_stmt:    "exec" expression ["in" expression ["," expression]]
+\end{verbatim}
+
+This statement supports dynamic execution of Python code.  The first
+expression should evaluate to either a string, an open file object, or
+a code object.  If it is a string, the string is parsed as a suite of
+Python statements which is then executed (unless a syntax error
+occurs).  If it is an open file, the file is parsed until EOF and
+executed.  If it is a code object, it is simply executed.
+
+In all cases, if the optional parts are omitted, the code is executed
+in the current scope.  If only the first expression after \keyword{in}
+is specified, it should be a dictionary, which will be used for both
+the global and the local variables.  If two expressions are given,
+both must be dictionaries and they are used for the global and local
+variables, respectively.
+
+As a side effect, an implementation may insert additional keys into
+the dictionaries given besides those corresponding to variable names
+set by the executed code.  For example, the current implementation
+may add a reference to the dictionary of the built-in module
+\module{__builtin__} under the key \code{__builtins__} (!).
+\ttindex{__builtins__}
+\refbimodindex{__builtin__}
+
+Hints: dynamic evaluation of expressions is supported by the built-in
+function \function{eval()}.  The built-in functions
+\function{globals()} and \function{locals()} return the current global
+and local dictionary, respectively, which may be useful to pass around
+for use by \keyword{exec}.
+\bifuncindex{eval}
+\bifuncindex{globals}
+\bifuncindex{locals}
