@@ -4,6 +4,11 @@
 \declaremodule{standard}{rfc822}
 \modulesynopsis{Parse \rfc{2822} style mail messages.}
 
+\deprecated{2.3}{The \refmodule{email} package should be used in
+                 preference to the \module{rfc822} module.  This
+                 module is present only to maintain backward
+                 compatibility.}
+
 This module defines a class, \class{Message}, which represents an
 ``email message'' as defined by the Internet standard
 \rfc{2822}.\footnote{This module originally conformed to \rfc{822},
