@@ -20,6 +20,14 @@ if [ "$1" = "-t" -o "$1" = "--tools" ] ; then
     shift 1
     TOOLS_ONLY=true
 fi
+if [ "$1" = "-z" -o "$1" = "--zip" ] ; then
+    shift 1
+    USE_ZIP=true
+fi
+if [ "$1" = "-g" -o "$1" = "--targz" ] ; then
+    shift 1
+    USE_ZIP=''
+fi
 
 RELEASE=$1; shift
 
@@ -48,11 +56,20 @@ if [ "$TOOLS_ONLY" ] ; then
     # remove the actual documents
     rm -rf api ext lib mac ref tut
     cd ..
-    (tar cf - Doc | gzip -9 >$MYDIR/tools-$RELEASE.tgz) || exit $?
+    if [ "$USE_ZIP" ] ; then
+	pwd
+	zip -r9 tools-$RELEASE.zip Doc || exit
+    else
+	(tar cf - Doc | gzip -9 >$MYDIR/tools-$RELEASE.tgz) || exit $?
+    fi
 else
     cd $TEMPDIR
-
-    (tar cf - Python-$RELEASE | gzip -9 >$MYDIR/latex-$RELEASE.tgz) || exit $?
+    if [ "$USE_ZIP" ] ; then
+	zip -r9 $MYDIR/latex-$RELEASE.zip Python-$RELEASE || exit $?
+    else
+	(tar cf - Python-$RELEASE | gzip -9 >$MYDIR/latex-$RELEASE.tgz) \
+	 || exit $?
+    fi
 fi
 cd $MYDIR
 rm -r $TEMPDIR || exit $?
