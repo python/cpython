@@ -129,7 +129,8 @@ class TestDecorators(unittest.TestCase):
         # XXX: This doesn't work unless memoize is the last decorator -
         #      see the comment in countcalls.
         counts = {}
-        @countcalls(counts) @memoize
+        @memoize
+        @countcalls(counts)
         def double(x):
             return x * 2
 
@@ -186,12 +187,20 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo.booh, 42)
 
     def test_order(self):
-        class C(object):
-            @funcattrs(abc=1) @staticmethod
-            def foo(): return 42
-        # This wouldn't work if staticmethod was called first
-        self.assertEqual(C.foo(), 42)
-        self.assertEqual(C().foo(), 42)
+        # Test that decorators are conceptually applied right-recursively;
+        # that means bottom-up
+        def ordercheck(num):
+            def deco(func):
+                return lambda: num
+            return deco
+
+        # Should go ordercheck(1)(ordercheck(2)(blah)) which should lead to
+        # blah() == 1
+        @ordercheck(1)
+        @ordercheck(2)
+        def blah(): pass
+        self.assertEqual(blah(), 1, "decorators are meant to be applied "
+                                    "bottom-up")
 
 def test_main():
     test_support.run_unittest(TestDecorators)
