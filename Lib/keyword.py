@@ -60,58 +60,34 @@ def main():
     else: optfile = "Lib/keyword.py"
 
     # scan the source file for keywords
-    try:
-        fp = open(iptfile)
-    except IOError, err:
-        sys.stderr.write("I/O error reading from %s: %s\n" % (optfile, err))
-        sys.exit(1)
-
+    fp = open(iptfile)
     strprog = regex.compile('"\([^"]+\)"')
-    labelprog = regex.compile('static[ \t]+label.*=[ \t]+{')
-    keywordlist = []
+    lines = []
     while 1:
         line = fp.readline()
         if not line: break
-        if labelprog.search(line) > -1: break
-    while line:
-        line = fp.readline()
-        if string.find(line, ';') > -1: break
-        if strprog.search(line) > -1: keywordlist.append(strprog.group(1))
+        if string.find(line, '{1, "') > -1 and strprog.search(line) > -1:
+            lines.append("        '" + strprog.group(1) + "',\n")
     fp.close()
-
-    keywordlist.sort()
-    keywordlist.remove("EMPTY")
+    lines.sort()
 
     # load the output skeleton from the target
-    try:
-        fp = open(optfile)
-        format = fp.readlines()
-        fp.close()
-    except IOError, err:
-        sys.stderr.write("I/O error reading from %s: %s\n" % (optfile, err))
-        sys.exit(2)
+    fp = open(optfile)
+    format = fp.readlines()
+    fp.close()
 
+    # insert the lines of keywords
     try:
         start = format.index("#--start keywords--\n") + 1
         end = format.index("#--end keywords--\n")
+        format[start:end] = lines
     except ValueError:
         sys.stderr.write("target does not contain format markers\n")
-        sys.exit(3)
-
-    # insert the lines of keywords
-    lines = []
-    for keyword in keywordlist:
-        lines.append("        '" + keyword + "',\n")
-    format[start:end] = lines
+        sys.exit(1)
 
     # write the output file
-    try:
-        fp = open(optfile, 'w')
-    except IOError, err:
-        sys.stderr.write("I/O error writing to %s: %s\n" % (optfile, err))
-        sys.exit(4)
+    fp = open(optfile, 'w')
     fp.write(string.join(format, ''))
     fp.close()
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
