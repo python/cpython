@@ -1,5 +1,5 @@
 #! /ufs/guido/bin/sgi/python
-#! /usr/local/python
+#! /usr/local/bin/python
 # Check that all ".pyc" files exist and are up-to-date
 # Uses module 'os'
 

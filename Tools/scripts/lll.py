@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Find symbolic links and show where they point to.
 # Arguments are directories to search; default is current directory.

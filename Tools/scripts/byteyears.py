@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Print the product of age and size of each file, in suitable units.
 #
