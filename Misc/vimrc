@@ -67,7 +67,9 @@ au BufNewFile *.py,*.pyw,*.c,*.h set fileformat=unix
 " Set the default file encoding to UTF-8: ``set encoding=utf-8``
 
 " Put a marker at the beginning of the file to differentiate between UTF and
-" UCS encoding: ``set bomb``
+" UCS encoding (warning: always done when reasonable, which can mess up shells
+" into thinking a text file is actually a binary file when executing the text
+" file): ``set bomb``
 
 " For full syntax highlighting:
 "``let python_highlight_all=1``
