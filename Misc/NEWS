@@ -3,6 +3,39 @@ What's New in Python 2.1 alpha 2?
 
 Core language, builtins, and interpreter
 
+- Scopes nest.  If a name is used in a function or class, but is not
+  local, the definition in the nearest enclosing function scope will
+  be used.  One consequence of this change is that lambda statements
+  could reference variables in the namespaces where the lambda is
+  defined.  In some unusual cases, this change will break code.
+
+  In all previous version of Python, names were resolved in exactly
+  three namespaces -- the local namespace, the global namespace, and
+  the builtin namespace.  According to this old defintion, if a
+  function A is defined within a function B, the names bound in B are
+  not visible in A.  The new rules make names bound in B visible in A,
+  unless A contains a name binding that hides the binding in B.
+
+  Section 4.1 of the reference manual describes the new scoping rules
+  in detail.  The test script in Lib/test/test_scope.py demonstrates
+  some of the effects of the change.
+
+  The new rules will cause existing code to break if it defines nested
+  functions where an outer function has local variables with the same
+  name as globals or builtins used by the inner function.  Example:
+
+    def munge(str):
+        def helper(x):
+            return str(x)
+        if type(str) != type(''):
+            str = helper(str)
+        return str.strip()
+
+  Under the old rules, the name str in helper() is bound to the
+  builtin function str().  Under the new rules, it will be bound to
+  the argument named str and an error will occur when helper() is
+  called.
+
 - repr(string) is easier to read, now using hex escapes instead of octal,
   and using \t, \n and \r instead of \011, \012 and \015 (respectively):
 
@@ -12,6 +45,12 @@ Core language, builtins, and interpreter
 
 - Functions are now compared and hashed by identity, not by value, since
   the func_code attribute is writable.
+
+- The compiler will report a SyntaxError if "from ... import *" occurs
+  in a function or class scope.  The language reference has documented
+  that this case is illegal, but the compiler never checked for it.
+  The recent introduction of nested scope makes the meaning of this
+  form of name binding ambiguous.
 
 - Weak references (PEP 205) have been added.  This involves a few
   changes in the core, an extension module (_weakref), and a Python
@@ -59,12 +98,6 @@ What's New in Python 2.1 alpha 1?
 =================================
 
 Core language, builtins, and interpreter
-
-- The compiler will report a SyntaxError if "from ... import *" occurs
-  in a function or class scope or if a name bound by the import
-  statement is declared global in the same scope.  The language
-  reference has also documented that these cases are illegal, but
-  they were not enforced.
 
 - There is a new Unicode companion to the PyObject_Str() API
   called PyObject_Unicode(). It behaves in the same way as the
