@@ -211,6 +211,9 @@ class MSVCCompiler (CCompiler) :
             self.__macros = MacroExpander(self.__version)
         else:
             self.__root = r"Software\Microsoft\Devstudio"
+        self.initialized = False
+
+    def initialize(self):
         self.__paths = self.get_msvc_paths("path")
 
         if len (self.__paths) == 0:
@@ -290,6 +293,7 @@ class MSVCCompiler (CCompiler) :
                 output_dir=None, macros=None, include_dirs=None, debug=0,
                 extra_preargs=None, extra_postargs=None, depends=None):
 
+	if not self.initialized: self.initialize()
         macros, objects, extra_postargs, pp_opts, build = \
                 self._setup_compile(output_dir, macros, include_dirs, sources,
                                     depends, extra_postargs)
@@ -381,6 +385,7 @@ class MSVCCompiler (CCompiler) :
                            debug=0,
                            target_lang=None):
 
+	if not self.initialized: self.initialize()
         (objects, output_dir) = self._fix_object_args (objects, output_dir)
         output_filename = \
             self.library_filename (output_libname, output_dir=output_dir)
@@ -414,6 +419,7 @@ class MSVCCompiler (CCompiler) :
               build_temp=None,
               target_lang=None):
 
+	if not self.initialized: self.initialize()
         (objects, output_dir) = self._fix_object_args (objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
             self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)

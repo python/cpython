@@ -72,6 +72,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1075887: Don't require MSVC in distutils if there is nothing
+  to build.
+
 - Patch #1103407: Properly deal with tarfile iterators when untarring
   symbolic links on Windows.
 
