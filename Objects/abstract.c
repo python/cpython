@@ -294,7 +294,8 @@ PyNumber_Or(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_or) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_or) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -313,7 +314,8 @@ PyNumber_Xor(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_xor) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_xor) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -332,7 +334,8 @@ PyNumber_And(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_and) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_and) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -351,7 +354,8 @@ PyNumber_Lshift(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_lshift) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_lshift) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -370,7 +374,8 @@ PyNumber_Rshift(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_rshift) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_rshift) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -394,7 +399,8 @@ PyNumber_Add(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_add) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_add) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -413,7 +419,8 @@ PyNumber_Subtract(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_subtract) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_subtract) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -431,8 +438,7 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
 
 	BINOP(v, w, "__mul__", "__rmul__", PyNumber_Multiply);
 	if (tp->tp_as_number != NULL &&
-	    w->ob_type->tp_as_sequence != NULL &&
-	    !PyInstance_Check(v)) {
+	    w->ob_type->tp_as_sequence != NULL) {
 		/* number*sequence -- swap v and w */
 		PyObject *tmp = v;
 		v = w;
@@ -442,17 +448,10 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
 	if (tp->tp_as_number != NULL) {
 		PyObject *x = NULL;
 		PyObject * (*f)(PyObject *, PyObject *);
-		if (PyInstance_Check(v)) {
-			/* Instances of user-defined classes get their
-			   other argument uncoerced, so they may
-			   implement sequence*number as well as
-			   number*number. */
-			Py_INCREF(v);
-			Py_INCREF(w);
-		}
-		else if (PyNumber_Coerce(&v, &w) != 0)
+		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_multiply) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_multiply) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -489,7 +488,8 @@ PyNumber_Divide(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_divide) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_divide) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -512,7 +512,8 @@ PyNumber_Remainder(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_remainder) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_remainder) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -531,7 +532,8 @@ PyNumber_Divmod(PyObject *v, PyObject *w)
 		PyObject * (*f)(PyObject *, PyObject *);
 		if (PyNumber_Coerce(&v, &w) != 0)
 			return NULL;
-		if ((f = v->ob_type->tp_as_number->nb_divmod) != NULL)
+		if (v->ob_type->tp_as_number != NULL &&
+		    (f = v->ob_type->tp_as_number->nb_divmod) != NULL)
 			x = (*f)(v, w);
 		Py_DECREF(v);
 		Py_DECREF(w);
@@ -557,7 +559,8 @@ do_pow(PyObject *v, PyObject *w)
 	}
 	if (PyNumber_Coerce(&v, &w) != 0)
 		return NULL;
-	if ((f = v->ob_type->tp_as_number->nb_power) != NULL)
+	if (v->ob_type->tp_as_number != NULL &&
+	    (f = v->ob_type->tp_as_number->nb_power) != NULL)
 		res = (*f)(v, w, Py_None);
 	else
 		res = type_error("pow(x, y) not defined for these operands");
@@ -594,7 +597,8 @@ PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
 	z2 = z1;
  	if (PyNumber_Coerce(&w2, &z2) != 0)
 		goto error1;
-	if ((f = v1->ob_type->tp_as_number->nb_power) != NULL)
+	if (v->ob_type->tp_as_number != NULL &&
+	    (f = v1->ob_type->tp_as_number->nb_power) != NULL)
 		res = (*f)(v1, w2, z2);
 	else
 		res = type_error(
