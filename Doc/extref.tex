@@ -202,6 +202,12 @@ From the viewpoint of of C access to Python services, we have:
 	 of the Python statement: \code{o[key]=v}.
 
 
+     \code{int PyObject_DelItem(PyObject *o, PyObject *key, PyObject *v)}\\
+	 Delete the mapping for \code{key} from \code{*o}.  Returns -1
+	 on failure.
+	 This is the equivalent of the Python statement: del o[key].
+
+
 \subsubsection{Number Protocol}
 
      \code{int PyNumber_Check(PyObject *o)}\\
@@ -361,10 +367,20 @@ From the viewpoint of of C access to Python services, we have:
 Returns -1 on failure.  This is the equivalent of the Python
 	 statement, \code{o[i]=v}.
 
+     \code{int PySequence_DelItem(PyObject *o, int i)}\\
+	 Delete the \code{i}th element of object \code{v}.  Returns
+	 -1 on failure.  This is the equivalent of the Python
+	 statement: \code{del o[i]}.
+
      \code{int PySequence_SetSlice(PyObject *o, int i1, int i2, PyObject *v)}\\
          Assign the sequence object \code{v} to the slice in sequence
 	 object \code{o} from \code{i1} to \code{i2}.  This is the equivalent of the Python
 	 statement, \code{o[i1:i2]=v}.
+
+     \code{int PySequence_DelSlice(PyObject *o, int i1, int i2)}\\
+	 Delete the slice in sequence object, \code{o}, from \code{i1} to \code{i2}.
+	 Returns -1 on failure. This is the equivalent of the Python
+	 statement: \code{del o[i1:i2]}.
 
      \code{PyObject *PySequence_Tuple(PyObject *o)}\\
 	 Returns the \code{o} as a tuple on success, and NULL on failure.
