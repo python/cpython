@@ -647,35 +647,63 @@ conv_content_model(XML_Content * const model,
     return result;
 }
 
-static PyObject *
-conv_content_model_utf8(XML_Content * const model)
+static void
+my_ElementDeclHandler(void *userData,
+                      const XML_Char *name,
+                      XML_Content *model)
 {
-    return conv_content_model(model, conv_string_to_utf8);
-}
+    xmlparseobject *self = (xmlparseobject *)userData;
+    PyObject *args = NULL;
+
+    if (self->handlers[ElementDecl] != NULL
+        && self->handlers[ElementDecl] != Py_None) {
+        PyObject *rv = NULL;
+        PyObject *modelobj, *nameobj;
 
 #ifdef Py_USING_UNICODE
-static PyObject *
-conv_content_model_unicode(XML_Content * const model)
-{
-    return conv_content_model(model, conv_string_to_unicode);
-}
-
-VOID_HANDLER(ElementDecl,
-             (void *userData,
-              const XML_Char *name,
-              XML_Content *model),
-             ("O&O&",
-              STRING_CONV_FUNC,name,
-              (self->returns_unicode ? conv_content_model_unicode
-                                     : conv_content_model_utf8),model))
+        modelobj = conv_content_model(model,
+                                      (self->returns_unicode
+                                       ? conv_string_to_unicode
+                                       : conv_string_to_utf8));
 #else
-VOID_HANDLER(ElementDecl,
-             (void *userData,
-              const XML_Char *name,
-              XML_Content *model),
-             ("O&O&",
-              STRING_CONV_FUNC,name, conv_content_model_utf8,model))
+        modelobj = conv_content_model(model, conv_string_to_utf8);
 #endif
+        if (modelobj == NULL) {
+            flag_error(self);
+            goto finally;
+        }
+        nameobj = PyString_FromString(name);
+        if (nameobj == NULL) {
+            Py_DECREF(modelobj);
+            flag_error(self);
+            goto finally;
+        }
+        args = Py_BuildValue("NN", nameobj, modelobj);
+        if (args == NULL) {
+            Py_DECREF(modelobj);
+            flag_error(self);
+            goto finally;
+        }
+        self->in_callback = 1;
+        rv = call_with_frame(getcode(ElementDecl, "ElementDecl", __LINE__),
+                             self->handlers[ElementDecl], args);
+        self->in_callback = 0;
+        if (rv == NULL) {
+            flag_error(self);
+            goto finally;
+        }
+        Py_DECREF(rv);
+    }
+ finally:
+    Py_XDECREF(args);
+    /* XML_FreeContentModel() was introduced in Expat 1.95.6. */
+#if EXPAT_VERSION >= 0x015f06
+    XML_FreeContentModel(self->itself, model);
+#else
+    free(model);
+#endif
+    return;
+}
 
 VOID_HANDLER(AttlistDecl,
              (void *userData,
