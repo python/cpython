@@ -244,7 +244,7 @@ class _DBWithCursor(_iter_mixin):
     def set_location(self, key):
         self._checkOpen()
         self._checkCursor()
-        return self.dbc.set(key)
+        return self.dbc.set_range(key)
 
     def next(self):
         self._checkOpen()
