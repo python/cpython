@@ -267,6 +267,12 @@ if not hash(1) == hash(1L) == hash(1.0): raise TestFailed, 'numeric hash()'
 hash('spam')
 hash((0,1,2,3))
 def f(): pass
+try: hash([])
+except TypeError: pass
+else: raise TestFailed, "hash([]) should raise an exception"
+try: hash({})
+except TypeError: pass
+else: raise TestFailed, "hash({}) should raise an exception"
 
 print 'hex'
 if hex(16) != '0x10': raise TestFailed, 'hex(16)'
