@@ -125,8 +125,8 @@ Calls the function \var{visit} with arguments
 directory tree rooted at \var{p} (including \var{p} itself, if it is a
 directory).  The argument \var{dirname} specifies the visited directory,
 the argument \var{names} lists the files in the directory (gotten from
-\code{posix.listdir(\var{dirname})}, so including \samp{.} and
-\samp{..}).  The \var{visit} function may modify \var{names} to
+\code{posix.listdir(\var{dirname})}).
+The \var{visit} function may modify \var{names} to
 influence the set of directories visited below \var{dirname}, e.g., to
 avoid visiting certain parts of the tree.  (The object referred to by
 \var{names} must be modified in place, using \code{del} or slice
