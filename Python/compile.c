@@ -1045,7 +1045,7 @@ static void
 com_listmaker(struct compiling *c, node *n)
 {
 	/* listmaker: test ( list_iter | (',' test)* [','] ) */
-	if (TYPE(CHILD(n, 1)) == list_iter)
+	if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_iter)
 		com_list_comprehension(c, n);
 	else {
 		int len = 0;
