@@ -13,17 +13,27 @@ from xml.sax.saxutils import quoteattr
 bang_join = "!".join
 null_join = "".join
 
+REPLACEMENTS = [
+    # Hackish way to deal with macros replaced with simple text
+    (re.compile(r"\\ABC\b"), "ABC"),
+    (re.compile(r"\\ASCII\b"), "ASCII"),
+    (re.compile(r"\\Cpp\b"), "C++"),
+    (re.compile(r"\\EOF\b"), "EOF"),
+    (re.compile(r"\\NULL\b"), "NULL"),
+    (re.compile(r"\\POSIX\b"), "POSIX"),
+    (re.compile(r"\\UNIX\b"), "Unix"),
+    # deal with turds left over from LaTeX2HTML
+    (re.compile(r"<#\d+#>"), ""),
+    ]
 
 class Node:
-    __rmjunk = re.compile("<#\d+#>")
-
     continuation = 0
 
     def __init__(self, link, str, seqno):
         self.links = [link]
         self.seqno = seqno
-        # remove <#\d+#> left in by moving the data out of LaTeX2HTML
-        str = self.__rmjunk.sub('', str)
+        for pattern, replacement in REPLACEMENTS:
+            str = pattern.sub(replacement, str)
         # build up the text
         self.text = split_entry_text(str)
         self.key = split_entry_key(str)
