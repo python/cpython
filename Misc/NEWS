@@ -33,6 +33,9 @@ Extension modules
 Library
 -------
 
+- Bug #797650:  textwrap.py now avoids an infinite loop when one of the
+  indent arguments is set longer than the total width.
+
 - Bug #796149: time.strptime() now handles having parentheses in the
   format string properly.
 
