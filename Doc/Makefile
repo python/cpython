@@ -190,7 +190,8 @@ webcheck:
 # Release packaging targets:
 
 info-$(RELEASE).tgz: info
-	(cd $(INFODIR); tar cf - python.dir python-???.info*) | gzip -9 >$@
+	(cd $(INFODIR); tar cf - README python.dir python-???.info*) \
+		| gzip -9 >$@
 
 latex-$(RELEASE).tgz:
 	$(TOOLSDIR)/mktarball.sh $(RELEASE)
@@ -214,7 +215,7 @@ tarps:		postscript-$(PAPER)-$(RELEASE).tgz
 tarpdf:		pdf-$(PAPER)-$(RELEASE).tgz
 tarlatex:	latex-$(RELEASE).tgz
 
-tarballs:	tarpdf tarps tarhtml tarlatex
+tarballs:	tarpdf tarps tarhtml tarinfo tarlatex
 
 
 # Housekeeping targets
