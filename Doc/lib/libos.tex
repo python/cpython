@@ -304,7 +304,7 @@ Availability: \UNIX{}, Windows.
 Return a new file object opened in update mode (\samp{w+}).  The file
 has no directory entries associated with it and will be automatically
 deleted once there are no file descriptors for the file.
-Availability: \UNIX{}.
+Availability: \UNIX{}, Windows.
 \end{funcdesc}
 
 
@@ -782,6 +782,7 @@ files if \var{dir} is omitted or \code{None}.  If given and not
 filename.  Applications are responsible for properly creating and
 managing files created using paths returned by \function{tempnam()};
 no automatic cleanup is provided.
+Availability: \UNIX, Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{tmpnam}{}
@@ -791,6 +792,7 @@ entry in a common location for temporary files.  Applications are
 responsible for properly creating and managing files created using
 paths returned by \function{tmpnam()}; no automatic cleanup is
 provided.
+Availability: \UNIX, Windows.
 \end{funcdesc}
 
 \begin{datadesc}{TMP_MAX}
