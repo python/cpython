@@ -213,13 +213,13 @@ info-$(RELEASE).tar.bz2: info
 		| bzip2 -9 >$@
 
 latex-$(RELEASE).tgz:
-	$(TOOLSDIR)/mktarball.sh $(RELEASE)
+	$(TOOLSDIR)/mksourcepkg --gzip $(RELEASE)
 
 latex-$(RELEASE).tar.bz2:
-	$(TOOLSDIR)/mktarball.sh --bzip2 $(RELEASE)
+	$(TOOLSDIR)/mksourcepkg --bzip2 $(RELEASE)
 
 latex-$(RELEASE).zip:
-	$(TOOLSDIR)/mktarball.sh --zip $(RELEASE)
+	$(TOOLSDIR)/mksourcepkg --zip $(RELEASE)
 
 pdf-$(PAPER)-$(RELEASE).tgz: pdf
 	(cd paper-$(PAPER); tar cf - *.pdf) | gzip -9 >$@
@@ -261,14 +261,14 @@ tarps:		postscript-$(PAPER)-$(RELEASE).tgz
 tarpdf:		pdf-$(PAPER)-$(RELEASE).tgz
 tarlatex:	latex-$(RELEASE).tgz
 
-tarballs:	tarpdf tarps tarhtml tarlatex
+tarballs:	tarpdf tarps tarhtml
 
 ziphtml:	html-$(RELEASE).zip
 zipps:		postscript-$(PAPER)-$(RELEASE).zip
 zippdf:		pdf-$(PAPER)-$(RELEASE).zip
 ziplatex:	latex-$(RELEASE).zip
 
-zips:		zippdf zipps ziphtml ziplatex
+zips:		zippdf zipps ziphtml
 
 bziphtml:	html-$(RELEASE).tar.bz2
 bzipinfo:	info-$(RELEASE).tar.bz2
@@ -276,9 +276,10 @@ bzipps:		postscript-$(PAPER)-$(RELEASE).tar.bz2
 bzippdf:	pdf-$(PAPER)-$(RELEASE).tar.bz2
 bziplatex:	latex-$(RELEASE).tar.bz2
 
-bzips:		bzippdf bzipps bziphtml bziplatex
+bzips:		bzippdf bzipps bziphtml
 
 distfiles:	tarballs zips bzips
+	$(TOOLSDIR)/mksourcepkg --all $(RELEASE)
 
 
 # Housekeeping targets
