@@ -7,13 +7,22 @@ from string import joinfields, splitfields, find, rfind
 
 # A classification of schemes ('' means apply by default)
 uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
+		 'https', 'shttp',
 		 'prospero', '']
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'wais',
+	       'https', 'shttp', 'snews',
 	       'prospero', '']
-non_hierarchical = ['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais']
-uses_params = ['ftp', 'hdl', 'prospero', 'http', '']
-uses_query = ['http', 'wais', '']
+non_hierarchical = ['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais',
+		    'snews',
+		    ]
+uses_params = ['ftp', 'hdl', 'prospero', 'http',
+	       'https', 'shttp',
+	       '']
+uses_query = ['http', 'wais',
+	      'https', 'shttp',
+	      '']
 uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
+		 'https', 'shttp', 'snews',
 		 'file', 'prospero', '']
 
 # Characters valid in scheme names
