@@ -68,7 +68,7 @@ development tools.  His patches against the Python v1.5.2 source
 distribution have become the core of this port, and without his efforts 
 this port wouldn't exist.  Andy's port also appears to have been 
 compiled with his port of gcc 2.95.2 to EMX, which I have but have 
-chosen not to use for the binary distribution of this port (see item 21 
+chosen not to use for the binary distribution of this port (see item 16 
 of the "YOU HAVE BEEN WARNED" section below).
 
 Previous Python port releases by me:-
@@ -84,7 +84,11 @@ Previous Python port releases by me:-
  - v2.2 on December 24, 2001;
  - v2.2.1c2 on March 31, 2002 (not uploaded to archive sites);
  - v2.2.1 on April 14, 2002;
- - v2.2.2 on October 24, 2002.
+ - v2.2.2 on October 24, 2002;
+ - v2.3a2 on March 2, 2003 (not uploaded to archive sites);
+ - v2.3b1 on April 27, 2003 (not uploaded to archive sites);
+ - v2.2.3c1 on May 28, 2003 (not uploaded to archive sites);
+ - v2.2.3 on June 1, 2003.
 
 It is possible to have these earlier ports still usable after installing 
 this port - see the README.os2emx.multiple_versions file, contributed by
@@ -545,18 +549,10 @@ error.
 I have not attempted to compile Python with any version of gcc prior to 
 v2.8.1.
 
-If you compile Python with pgcc 2.95, changing the optimisation from -O2 to 
--O3 is worthwhile.  While more aggressive optimisation is supported by gcc, 
-a lot of benchmarking indicates that Python's performance is impeded by 
-optimisation settings beyond just -O2 (-O3 for pgcc 2.95), at least on my 
-hardware (AMD Athlon 1.4GHz, VIA C3 800MHz). 
-
-If you wish to compile Python with gcc 3.2.1, you will need to modify the 
-Makefile to compile Modules/_sre.c with either the -Os (recommended) or 
--O options, with the global optimisation set to -O2 or -O3 (not much 
-difference between these with this compiler).  Alternatively, you could 
-change the global optimisation instead with a performance drop of 6-7% 
-compared to the special-case approach.
+While gcc supports more aggressive optimisation than I use, a lot of 
+benchmarking indicates that Python's performance is at best only 
+marginally improved by more aggressive optimisation, at least on my 
+hardware (AMD Athlon 1.4GHz, VIA C3 800MHz).
 
 17.  os.spawnv() and os.spawnve() expose EMX's library routines rather 
 than use the emulation in os.py.
