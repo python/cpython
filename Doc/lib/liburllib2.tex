@@ -33,12 +33,19 @@ This function returns a file-like object with two additional methods:
 \end{itemize}
 
 Raises \exception{URLError} on errors.
+
+Note that \code{None} may be returned if no handler handles the
+request (though the default installed global \class{OpenerDirector}
+uses \class{UnknownHandler} to ensure this never happens).
 \end{funcdesc}
 
 \begin{funcdesc}{install_opener}{opener}
-Install an \class{OpenerDirector} instance as the default opener.
-The code does not check for a real \class{OpenerDirector}, and any
-class with the appropriate interface will work.
+Install an \class{OpenerDirector} instance as the default global
+opener.  Installing an opener is only necessary if you want urlopen to
+use that opener; otherwise, simply call \method{OpenerDirector.open()}
+instead of \function{urlopen()}.  The code does not check for a real
+\class{OpenerDirector}, and any class with the appropriate interface
+will work.
 \end{funcdesc}
 
 \begin{funcdesc}{build_opener}{\optional{handler, \moreargs}}
