@@ -75,7 +75,7 @@ contains the tree.
 
 \begin{funcdesc}{parseFile}{path}
 Return an abstract syntax tree for the Python source code in the file
-specified by \var{path}.  It is equivalent to \code{parse(open(path))}.
+specified by \var{path}.  It is equivalent to \code{parse(open(path).read())}.
 \end{funcdesc}
 
 \begin{funcdesc}{walk}{ast, visitor, \optional{verbose=None}}
