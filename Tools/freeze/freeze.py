@@ -16,7 +16,7 @@
 # Usage message
 
 usage_msg = """
-usage: freeze [-p prefix] [-P exec_prefix] [-e extension] script [module] ...
+usage: freeze [-p prefix] [-P exec_prefix] [-e extension] script.py [module]...
 
 -p prefix:    This is the prefix used when you ran
               'Make inclinstall libainstall' in the Python build directory.
@@ -31,7 +31,7 @@ usage: freeze [-p prefix] [-P exec_prefix] [-e extension] script [module] ...
               should also have a Setup file describing the .o files.
               More than one -e option may be given.
 
-script:       The Python script to be executed by the resulting binary.
+script.py:    The Python script to be executed by the resulting binary.
 	      It *must* end with a .py suffix!
 
 module ...:   Additional Python modules (referenced by pathname)
@@ -41,11 +41,7 @@ module ...:   Additional Python modules (referenced by pathname)
 NOTES:
 
 In order to use freeze successfully, you must have built Python and
-installed it.  In particular, the following two non-standard make
-targets must have been executed:
-
-	make inclinstall
-	make libainstall		# Note: 'liba', not 'lib'
+installed it ("make install").
 
 The -p and -P options passed into the freeze script must correspond to
 the --prefix and --exec-prefix options passed into Python's configure
@@ -162,6 +158,10 @@ def main():
 	# check that enough arguments are passed
 	if not args:
 		usage('at least one filename argument required')
+
+	# check that the script name ends in ".py"
+	if args[0][-3:] != ".py":
+		usage('the script name must have a .py suffix')
 
 	# check that file arguments exist
 	for arg in args:
@@ -291,9 +291,10 @@ def main():
 # Print usage message and exit
 
 def usage(msg = None):
-	if msg:
-		sys.stderr.write(str(msg) + '\n')
 	sys.stderr.write(usage_msg)
+	# Put the error last since the usage message scrolls off the screen
+	if msg:
+		sys.stderr.write('\nError: ' + str(msg) + '\n')
 	sys.exit(2)
 
 
