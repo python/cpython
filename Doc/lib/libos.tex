@@ -90,12 +90,21 @@ A mapping object representing the string environment. For example,
 \code{environ['HOME']} is the pathname of your home directory (on some
 platforms), and is equivalent to \code{getenv("HOME")} in C.
 
+This mapping is captured the first time the \module{os} module is
+imported, typically during Python startup as part of processing
+\file{site.py}.  Changes to the environment made after this time are
+not reflected in \code{os.environ}, except for changes made by modifying
+\code{os.environ} directly.
+
 If the platform supports the \function{putenv()} function, this
 mapping may be used to modify the environment as well as query the
 environment.  \function{putenv()} will be called automatically when
-the mapping is modified.  \note{On some platforms, including
-FreeBSD and Mac OS X, setting \code{environ} may cause memory leaks.
-Refer to the system documentation for putenv.}
+the mapping is modified.
+\note{Calling \function{putenv()} directly does not change
+\code{os.environ}, so it's better to modify \code{os.environ}.}
+\note{On some platforms, including FreeBSD and Mac OS X, setting
+\code{environ} may cause memory leaks.  Refer to the system documentation
+for \cfunction{putenv()}.}
 
 If \function{putenv()} is not provided, this mapping may be passed to
 the appropriate process-creation functions to cause child processes to
