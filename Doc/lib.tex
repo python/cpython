@@ -15,6 +15,42 @@
 \\*[0mm]
 }
 
+% Command to generate two index entries (using subentries)
+\newcommand{\indexii}[2]{
+\index{#1!#2}
+\index{#2!#1}
+}
+
+% And three entries (using only one level of subentries)
+\newcommand{\indexiii}[3]{
+\index{#1!#2 #3}
+\index{#2!#3, #1}
+\index{#3!#1 #2}
+}
+
+% And four (again, using only one level of subentries)
+\newcommand{\indexiv}[4]{
+\index{#1!#2 #3 #4}
+\index{#2!#3 #4, #1}
+\index{#3!#4, #1 #2}
+\index{#4!#1 #2 #3}
+}
+
+% Command to generate a reference to a function, statement, keyword, operator
+\newcommand{\stindex}[1]{\indexii{statement}{#1@{\tt#1}}}
+\newcommand{\kwindex}[1]{\indexii{keyword}{#1@{\tt#1}}}
+\newcommand{\opindex}[1]{\indexii{operator}{#1@{\tt#1}}}
+\newcommand{\bifuncindex}[1]{\index{#1@{\tt#1} (built-in function)}}
+
+% Add an index entry for a module
+\newcommand{\modindex}[2]{\index{#1@{\tt#1} (#2module)}}
+\newcommand{\bimodindex}[1]{\modindex{#1}{built-in }}
+\newcommand{\stmodindex}[1]{\modindex{#1}{standard }}
+
+% Additional string for an index entry
+\newcommand{\indexsubitem}{}
+\newcommand{\ttindex}[1]{\index{#1@{\tt#1} \indexsubitem}}
+
 % Define \itemjoin: some negative vspace to join two items together
 \newcommand{\itemjoin}{
 \mbox{}
@@ -24,21 +60,21 @@
 
 % Define \funcitem{func}{args}: define a function item
 \newcommand{\funcitem}[2]{
-\index{#1@{\tt#1}}
+\ttindex{#1}
 \item[{\tt #1(#2)}]
 \ 
 }
 
 % Define \dataitem{name}: define a data item
 \newcommand{\dataitem}[1]{
-\index{#1@{\tt#1}}
+\ttindex{#1}
 \item[{\tt #1}]
 \ 
 }
 
 % Define \excitem{name}{string}: define an exception item
 \newcommand{\excitem}[2]{
-\index{#1@{\tt#1}}
+\ttindex{#1}
 \item[{\tt #1 = '#2'}]
 \itembreak
 }
@@ -54,6 +90,7 @@
 	E-mail: {\tt guido@cwi.nl}
 }
 
+% Tell \index to actually write the .idx file
 \makeindex
 
 \begin{document}
@@ -87,6 +124,6 @@ language.
 \input{lib3.tex}	% standard modules
 \input{lib4.tex}	% OS-dependent chapters
 \input{lib5.tex}	% Graphics chapters
-\input{libindex.tex}	% The index
+\input{lib.ind}		% The index
 
 \end{document}
