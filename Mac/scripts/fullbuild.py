@@ -261,7 +261,7 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:Snd.mcp", "Snd.ppc"),
 	(":Mac:Build:Sndihooks.mcp", "Sndihooks.ppc"),
 	(":Mac:Build:TE.mcp", "TE.ppc"),
-	(":Mac:Build:Mlte.ppc.mcp", "Mlte.ppc"),
+	(":Mac:Build:Mlte.mcp", "Mlte.ppc"),
 	]),
 
 I_CARBON_PLUGINS :  (buildmwproject, "CWIE", [
