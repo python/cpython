@@ -102,20 +102,40 @@ class BaseSet(object):
         """
         return self._data.iterkeys()
 
-    # Three-way comparison is not supported
+    # Three-way comparison is not supported.  However, because __eq__ is
+    # tried before __cmp__, if Set x == Set y, x.__eq__(y) returns True and
+    # then cmp(x, y) returns 0 (Python doesn't actually call __cmp__ in this
+    # case).
 
     def __cmp__(self, other):
         raise TypeError, "can't compare sets using cmp()"
 
-    # Equality comparisons using the underlying dicts
+    # Equality comparisons using the underlying dicts.  Mixed-type comparisons
+    # are allowed here, where Set == z for non-Set z always returns False,
+    # and Set != z always True.  This allows expressions like "x in y" to
+    # give the expected result when y is a sequence of mixed types, not
+    # raising a pointless TypeError just because y contains a Set, or x is
+    # a Set and y contain's a non-set ("in" invokes only __eq__).
+    # Subtle:  it would be nicer if __eq__ and __ne__ could return
+    # NotImplemented instead of True or False.  Then the other comparand
+    # would get a chance to determine the result, and if the other comparand
+    # also returned NotImplemented then it would fall back to object address
+    # comparison (which would always return False for __eq__ and always
+    # True for __ne__).  However, that doesn't work, because this type
+    # *also* implements __cmp__:  if, e.g., __eq__ returns NotImplemented,
+    # Python tries __cmp__ next, and the __cmp__ here then raises TypeError.
 
     def __eq__(self, other):
-        self._binary_sanity_check(other)
-        return self._data == other._data
+        if isinstance(other, BaseSet):
+            return self._data == other._data
+        else:
+            return False
 
     def __ne__(self, other):
-        self._binary_sanity_check(other)
-        return self._data != other._data
+        if isinstance(other, BaseSet):
+            return self._data != other._data
+        else:
+            return True
 
     # Copying operations
 

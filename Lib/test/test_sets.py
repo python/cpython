@@ -232,7 +232,16 @@ class TestBinaryOps(unittest.TestCase):
 
     def test_cmp(self):
         a, b = Set('a'), Set('b')
-        self.assertRaises(TypeError, cmp, (a,b))
+        self.assertRaises(TypeError, cmp, a, b)
+
+        # You can view this as a buglet:  cmp(a, a) does not raise TypeError,
+        # because __eq__ is tried before __cmp__, and a.__eq__(a) returns,
+        # which Python thinks is good enough to synthesize a cmp() result
+        # without calling __cmp__.
+        self.assertEqual(cmp(a, a), 0)
+
+        self.assertRaises(TypeError, cmp, a, 12)
+        self.assertRaises(TypeError, cmp, "abc", a)
 
 #==============================================================================
 
@@ -476,17 +485,19 @@ class TestSubsetNonOverlap(TestSubsets):
 
 class TestOnlySetsInBinaryOps(unittest.TestCase):
 
-    def test_cmp(self):
-        try:
-            self.other == self.set
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
-        try:
-            self.set != self.other
-            self.fail("expected TypeError")
-        except TypeError:
-            pass
+    def test_eq_ne(self):
+        # Unlike the others, this is testing that == and != *are* allowed.
+        self.assertEqual(self.other == self.set, False)
+        self.assertEqual(self.set == self.other, False)
+        self.assertEqual(self.other != self.set, True)
+        self.assertEqual(self.set != self.other, True)
+
+    def test_ge_gt_lt_le(self):
+        # Unlike the others, this is testing that == and != *are* allowed.
+        self.assertRaises(TypeError, lambda: self.set < self.other)
+        self.assertRaises(TypeError, lambda: self.set <= self.other)
+        self.assertRaises(TypeError, lambda: self.set > self.other)
+        self.assertRaises(TypeError, lambda: self.set >= self.other)
 
     def test_union_update(self):
         try:

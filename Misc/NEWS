@@ -31,6 +31,13 @@ Extension modules
 Library
 -------
 
+- sets.Set objects now support mixed-type __eq__ and __ne__, instead
+  of raising TypeError.  If x is a Set object and y is a non-Set object,
+  x == y is False, and x != y is True.  This is akin to the change made
+  for mixed-type comparisons of datetime objects in 2.3a2; more info
+  about the rationale is in the NEWS entry for that.  See also SF bug
+  report <http://www.python.org/sf/693121>.
+
 - os.listdir() now returns Unicode strings on platforms that set
   Py_FileSystemDefaultEncoding, for file names that are not representable
   in ASCII.  (This currently only affects MacOS X; on Windows versions
@@ -83,7 +90,7 @@ Mac
 
 - A new method MacOS.WMAvailable() returns true if it is safe to access
   the window manager, false otherwise.
-  
+
 - EasyDialogs dialogs are now movable-modal.
 
 
@@ -343,8 +350,8 @@ Library
 - the platform dependent path related variables sep, altsep, extsep,
   pathsep, curdir, pardir and defpath are now defined in the platform
   dependent path modules (e.g. ntpath.py) rather than os.py, so these
-  variables are now available via os.path.  They continue to be 
-  available from the os module.  
+  variables are now available via os.path.  They continue to be
+  available from the os module.
   (see <http://www.python.org/sf/680789>).
 
 - array.array was added to the types repr.py knows about (see
@@ -499,12 +506,12 @@ Mac
 
 - Type Carbon.File.FSCatalogInfo and supporting methods have been implemented.
   This also makes macfs.FSSpec.SetDates() work again.
-  
+
 - There is a new module pimp, the package install manager for Python, and
   accompanying applet PackageManager. These allow you to easily download
   and install pretested extension packages either in source or binary
   form. Only in MacPython-OSX.
-  
+
 - Applets are now built with bundlebuilder in MacPython-OSX, which should make
   them more robust and also provides a path towards BuildApplication. The
   downside of this change is that applets can no longer be run from the
