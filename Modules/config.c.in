@@ -29,7 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE "Dec 16 1991"
+#define DATE ">= Dec 16 1991"
 #endif
 
 #include <stdio.h>
