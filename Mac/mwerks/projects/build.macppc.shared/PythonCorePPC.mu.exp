@@ -1,4 +1,5 @@
 inittab
+PyMac_Initialize
 PyExc_ZeroDivisionError
 PyExc_ValueError
 PyExc_TypeError
