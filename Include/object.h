@@ -706,6 +706,11 @@ mytype_dealloc(mytype *p)
 	Py_TRASHCAN_SAFE_END(p)
 }
 
+CAUTION:  Never return from the middle of the body!  If the body needs to
+"get out early", put a label immediately before the Py_TRASHCAN_SAFE_END
+call, and goto it.  Else the call-depth counter (see below) will stay
+above 0 forever, and the trashcan will never get emptied.
+
 How it works:  The BEGIN macro increments a call-depth counter.  So long
 as this counter is small, the body of the deallocator is run directly without
 further ado.  But if the counter gets large, it instead adds p to a list of
