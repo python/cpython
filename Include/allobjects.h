@@ -84,6 +84,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "fileobject.h"
 #include "cobject.h"
 #include "traceback.h"
+#include "sliceobject.h"
 
 #include "errors.h"
 #include "mymalloc.h"
