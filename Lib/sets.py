@@ -25,10 +25,9 @@ Set -- Mutable sets, subclass of BaseSet; not hashable.
 ImmutableSet -- Immutable sets, subclass of BaseSet; hashable.
     An iterable argument is mandatory to create an ImmutableSet.
 
-_TemporarilyImmutableSet -- Not a subclass of BaseSet: just a wrapper
-    around a Set, hashable, giving the same hash value as the
-    immutable set equivalent would have.  Do not use this class
-    directly.
+_TemporarilyImmutableSet -- A wrapper around a Set, hashable,
+    giving the same hash value as the immutable set equivalent
+    would have.  Do not use this class directly.
 
 Only hashable objects can be added to a Set. In particular, you cannot
 really add a Set as an element to another Set; if you try, what is
