@@ -24,7 +24,7 @@
 %
 % The "fncychap" package is used to get the nice chapter headers.  The
 % .sty file is distributed with Python, so you should not need to disable
-% it.
+% it.  You'd also end up with a mixed page style; uglier than stock LaTeX!
 %
 \RequirePackage{fancyhdr}\typeout{Using fancier footers than usual.}
 \RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
@@ -33,13 +33,16 @@
 
 % for PDF output, use maximal compression, revise \label{} to support named
 % targets for later linking operations.
-\@ifundefined{pdfannotlink}{}{%
+\@ifundefined{pdfannotlink}{
+  \RequirePackage{hyperref}
+}{%
   \pdfcompresslevel=9
   \let\OldLabel=\label
   \renewcommand{\label}[1]{%
     \OldLabel{#1}%
     {\pdfdest name {#1} fit}%
   }
+  \RequirePackage[pdftex]{hyperref}
 }
 
 % Increase printable page size (copied from fullpage.sty)
@@ -353,10 +356,12 @@
 % let's experiment with a new font:
 \newcommand{\file}[1]{\mbox{`\small\textsf{#1}'}}
 \@ifundefined{pdfannotlink}{%
-  \newcommand{\url}[1]{\mbox{\small\textsf{#1}}}%
+  % Use \renew since hyperref defined this already:
+  \renewcommand{\url}[1]{\mbox{\small\textsf{#1}}}%
 }{
   \input{pdfcolor}%			this really isn't a package
-  \newcommand{\url}[1]{{%
+  % Use \renew since hyperref defined this already:
+  \renewcommand{\url}[1]{{%
     \pdfannotlink user{/C [1 1 1] /S /URI /URI (#1)}%
     \NavyBlue%				color of the link text
     \mbox{\small\textsf{#1}}%
@@ -540,59 +545,6 @@
   \setcounter{footnote}{0}%
   \let\thanks\relax\let\maketitle\relax
   \gdef\@thanks{}\gdef\@author{}\gdef\@title{}
-}
-
-% ``minitoc'' support; works fairly well but not all chapters do well
-% with it.  Has some weird side effects that I haven't tracked down;
-% don't use it for real at this time.
-%
-% To enable, uncomment the following line only (don't do it!):
-%\RequirePackage{minitoc}
-%
-% Maybe this should all be removed.  But I think something like this
-% would be really nice if it can be integrated with the ``list of
-% modules'' at the top of module-documentation chapters.  But it might 
-% require a completely new environment, perhaps based on {list}.
-
-\newif\if@minitocprinted
-\newcommand{\suppressminitoc}{\@minitocprintedtrue}
-\@ifundefined{minitoc}{
-  % allow \minitoc to be used even if the package hasn't been loaded.
-  \newcommand{\minitoc}{\@minitocprintedtrue}
-}{
-  \dominitoc
-  \newif\if@firstsection
-  \let\OldChapter=\chapter
-  \let\OldSection=\section
-  \let\OldMinitoc=\minitoc
-  % This will only include the minitoc once per chapter
-  \renewcommand{\minitoc}{%
-    \if@minitocprinted{}\else%
-      \OldMinitoc%
-      \@minitocprintedtrue%
-    \fi%
-  }
-  % This includes a minitoc before the first \section{}, if it hasn't
-  % already been printed using an explicit \minitoc call.
-  \newcommand{\NewSection}[1]{%
-    \if@firstsection%
-      \if@minitocprinted{}\else%
-        \vskip 15pt%
-        \minitoc%
-        \@firstsectionfalse%
-      \fi%
-    \fi%
-    \OldSection{#1}%
-  }
-  % Reset the flags for each chaper to let the automatic stuff work.
-  \newcommand{\NewChapter}[1]{%
-    \OldChapter{#1}%
-    \@firstsectiontrue%
-    \@minitocprintedfalse%
-  }
-  \let\chapter=\NewChapter
-  \let\section=\NewSection
-  \typeout{Including mini Tables of Contents in each chapter.}
 }
 
 % This sets up the fancy chapter headings that make the documents look
