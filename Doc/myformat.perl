@@ -155,12 +155,17 @@ sub my_parword_index_helper{
 
 sub make_mod_index_entry {
     local($br_id,$str,$define) = @_;
-    # If TITLE is not yet available (i.e the \index command is in the title of the
-    # current section), use $ref_before.
+    local($halfref) = &make_half_href("$CURRENT_FILE#$br_id");
+    # If TITLE is not yet available (i.e the \index command is in the title
+    # of the current section), use $ref_before.
     $TITLE = $ref_before unless $TITLE;
     # Save the reference
+    if ($define eq "DEF") {
+	local($nstr,$garbage) = split / /, $str, 2;
+	$Modules{$nstr} .= $halfref;
+    }
     $str = &gen_index_id($str, $define);
-    $index{$str} .= &make_half_href("$CURRENT_FILE#$br_id");
+    $index{$str} .= $halfref;
     "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
 }
 
