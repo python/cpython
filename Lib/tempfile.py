@@ -120,7 +120,8 @@ class TemporaryFileWrapper:
     def __getattr__(self, name):
         file = self.__dict__['file']
         a = getattr(file, name)
-        setattr(self, name, a)
+        if type(a) != type(0):
+            setattr(self, name, a)
         return a
 
 
