@@ -109,13 +109,6 @@ PyParser_ParseFile(fp, filename, g, start, ps1, ps2, err_ret)
 			tok->alterror++;
 	}
 
-#ifdef macintosh
-	{
-		int tabsize = guesstabsize(filename);
-		if (tabsize > 0)
-			tok->tabsize = tabsize;
-	}
-#endif
 
 	return parsetok(tok, g, start, err_ret);
 }
