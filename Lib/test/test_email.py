@@ -28,6 +28,7 @@ from test_support import findfile
 
 NL = '\n'
 EMPTYSTRING = ''
+SPACE = ' '
 
 
 
@@ -275,6 +276,39 @@ class TestLongHeaders(unittest.TestCase):
         g = Generator(sfp)
         g(msg)
         self.assertEqual(sfp.getvalue(), openfile('msg_18.txt').read())
+
+    def test_no_semis_header_splitter(self):
+        msg = Message()
+        msg['From'] = 'test@dom.ain'
+        refparts = []
+        for i in range(10):
+            refparts.append('<%d@dom.ain>' % i)
+        msg['References'] = SPACE.join(refparts)
+        msg.set_payload('Test')
+        sfp = StringIO()
+        g = Generator(sfp)
+        g(msg)
+        self.assertEqual(sfp.getvalue(), """\
+From: test@dom.ain
+References: <0@dom.ain> <1@dom.ain> <2@dom.ain> <3@dom.ain> <4@dom.ain>
+	<5@dom.ain> <6@dom.ain> <7@dom.ain> <8@dom.ain> <9@dom.ain>
+
+Test""")
+
+    def test_no_split_long_header(self):
+        msg = Message()
+        msg['From'] = 'test@dom.ain'
+        refparts = []
+        msg['References'] = 'x' * 80
+        msg.set_payload('Test')
+        sfp = StringIO()
+        g = Generator(sfp)
+        g(msg)
+        self.assertEqual(sfp.getvalue(), """\
+From: test@dom.ain
+References: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+Test""")
 
 
 
