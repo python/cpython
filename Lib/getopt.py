@@ -17,8 +17,6 @@ option involved with the exception.
 # Gerrit Holl <gerrit@nl.linux.org> moved the string-based exceptions
 # to class-based exceptions.
 
-import string
-
 class GetoptError(Exception):
     opt = ''
     msg = ''
