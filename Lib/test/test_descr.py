@@ -3566,11 +3566,13 @@ def test_mutable_bases_with_failing_mro():
     # check here that E's gets restored.
     
     E_mro_before = E.__mro__
+    D_mro_before = D.__mro__
 
     try:
         D.__bases__ = (C2,)
     except RuntimeError:
         vereq(E.__mro__, E_mro_before)
+        vereq(D.__mro__, D_mro_before)
     else:
         raise TestFailed, "exception not propagated"
 
