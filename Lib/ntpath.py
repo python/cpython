@@ -7,11 +7,13 @@ module as os.path.
 
 import os
 import stat
+import sys
 
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","islink","exists","isdir","isfile","ismount",
-           "walk","expanduser","expandvars","normpath","abspath","splitunc"]
+           "walk","expanduser","expandvars","normpath","abspath","splitunc",
+           "supports_unicode_filenames"]
 
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
@@ -476,3 +478,5 @@ def abspath(path):
 
 # realpath is a no-op on systems without islink support
 realpath = abspath
+# Win9x family and earlier have no Unicode filename support.
+supports_unicode_filenames = sys.getwindowsversion()[3] >= 2

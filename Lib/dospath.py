@@ -6,7 +6,8 @@ import stat
 __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","islink","exists","isdir","isfile","ismount",
-           "walk","expanduser","expandvars","normpath","abspath"]
+           "walk","expanduser","expandvars","normpath","abspath",
+           "supports_unicode_filenames"]
 
 def normcase(s):
     """Normalize the case of a pathname.
@@ -336,3 +337,4 @@ def abspath(path):
 
 # realpath is a no-op on systems without islink support
 realpath = abspath
+supports_unicode_filenames = False

@@ -2,9 +2,7 @@
 # open, os.open, os.stat. os.listdir, os.rename, os.remove, os.mkdir, os.chdir, os.rmdir
 import os, unittest
 from test.test_support import TESTFN, TestSkipped, TestFailed, run_suite
-try:
-    from nt import _getfullpathname
-except ImportError:
+if not os.path.supports_unicode_filenames:
     raise TestSkipped, "test works only on NT+"
 
 filenames = [
@@ -24,7 +22,8 @@ def deltree(dirname):
     # Don't hide legitimate errors:  if one of these suckers exists, it's
     # an error if we can't remove it.
     if os.path.exists(dirname):
-        for fname in os.listdir(dirname):
+        # must pass unicode to os.listdir() so we get back unicode results.
+        for fname in os.listdir(unicode(dirname)):
             os.unlink(os.path.join(dirname, fname))
         os.rmdir(dirname)
 
@@ -99,7 +98,7 @@ class UnicodeFileTests(unittest.TestCase):
         f = open(filename, 'w')
         f.write((filename + '\n').encode("utf-8"))
         f.close()
-        print repr(_getfullpathname(filename))
+        print repr(filename)
         os.remove(filename)
         os.chdir(oldwd)
         os.rmdir(dirname)

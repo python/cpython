@@ -20,6 +20,11 @@ Data members:
 
 #include "osdefs.h"
 
+#ifdef MS_WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#include "windows.h"
+#endif /* MS_WINDOWS */
+
 #ifdef MS_COREDLL
 extern void *PyWin_DLLhModule;
 /* A string loaded from the DLL at startup: */
@@ -404,6 +409,34 @@ of the Python interpreter stack.  This limit prevents infinite\n\
 recursion from causing an overflow of the C stack and crashing Python."
 );
 
+#ifdef MS_WINDOWS
+PyDoc_STRVAR(getwindowsversion_doc,
+"getwindowsversion()\n\
+\n\
+Return information about the running version of Windows.\n\
+The result is a tuple of (major, minor, build, platform, text)\n\
+All elements are numbers, except text which is a string.\n\
+Platform may be 0 for win32s, 1 for Windows 9x/ME, 2 for Windows NT/2000/XP\n\
+"
+);
+
+static PyObject *
+sys_getwindowsversion(PyObject *self)
+{
+	OSVERSIONINFO ver;
+	ver.dwOSVersionInfoSize = sizeof(ver);
+	if (!GetVersionEx(&ver))
+		return PyErr_SetFromWindowsErr(0);
+	return Py_BuildValue("HHHHs",
+	                     ver.dwMajorVersion,
+	                     ver.dwMinorVersion,
+	                     ver.dwBuildNumber,
+	                     ver.dwPlatformId,
+	                     ver.szCSDVersion);
+}
+
+#endif /* MS_WINDOWS */
+
 #ifdef HAVE_DLOPEN
 static PyObject *
 sys_setdlopenflags(PyObject *self, PyObject *args)
@@ -570,6 +603,10 @@ static PyMethodDef sys_methods[] = {
 	{"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS,
 	 getrecursionlimit_doc},
 	{"_getframe", sys_getframe, METH_VARARGS, getframe_doc},
+#ifdef MS_WINDOWS
+	{"getwindowsversion", (PyCFunction)sys_getwindowsversion, METH_NOARGS,
+	 getwindowsversion_doc},
+#endif /* MS_WINDOWS */
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, METH_VARARGS},
 #endif
