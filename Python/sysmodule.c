@@ -273,7 +273,6 @@ PyObject *
 _PySys_Init()
 {
 	extern int fclose Py_PROTO((FILE *));
-	PyThreadState *tstate;
 	PyObject *m, *v, *sysdict;
 	PyObject *sysin, *sysout, *syserr;
 
