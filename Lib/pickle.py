@@ -213,7 +213,7 @@ class Pickler:
         # The use of the Unpickler memo length as the memo key is just a
         # convention.  The only requirement is that the memo values be unique.
         # But there appears no advantage to any other scheme, and this
-        # scheme allows the Unpickler memo to implemented as a plain (but
+        # scheme allows the Unpickler memo to be implemented as a plain (but
         # growable) array, indexed by memo key.
         d = id(obj)
         memo_len = len(self.memo)
