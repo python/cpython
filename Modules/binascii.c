@@ -1046,7 +1046,7 @@ binascii_a2b_qp(PyObject *self, PyObject *args, PyObject *kwargs)
 		PyErr_NoMemory();
 		return NULL;
 	}
-	memset(odata, datalen, 0);
+	memset(odata, 0, datalen);
 
 	in = out = 0;
 	while (in < datalen) {
@@ -1220,7 +1220,7 @@ binascii_b2a_qp (PyObject *self, PyObject *args, PyObject *kwargs)
 		PyErr_NoMemory();
 		return NULL;
 	}
-	memset(odata, odatalen, 0);
+	memset(odata, 0, odatalen);
 
 	in = out = linelen = 0;
 	while (in < datalen) {
