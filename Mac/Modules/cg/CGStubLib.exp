@@ -57,3 +57,4 @@ CGContextSaveGState
 CGContextRelease
 CreateCGContextForPort
 SyncCGContextOriginWithPort
+ClipCGContextToRegion
