@@ -594,6 +594,12 @@ ListObj_setattr(self, name, value)
 }
 
 
+#define ListObj_compare NULL
+
+#define ListObj_repr NULL
+
+#define ListObj_hash NULL
+
 PyTypeObject List_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -605,6 +611,12 @@ PyTypeObject List_Type = {
 	0, /*tp_print*/
 	(getattrfunc) ListObj_getattr, /*tp_getattr*/
 	(setattrfunc) ListObj_setattr, /*tp_setattr*/
+	(cmpfunc) ListObj_compare, /*tp_compare*/
+	(reprfunc) ListObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) ListObj_hash, /*tp_hash*/
 };
 
 /* ---------------------- End object type List ---------------------- */
