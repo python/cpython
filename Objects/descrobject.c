@@ -904,28 +904,29 @@ PyWrapper_New(PyObject *d, PyObject *self)
 /*
     class property(object):
 
-	def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-	    self.__get = fget
-	    self.__set = fset
-	    self.__del = fdel
-	    self.__doc__ = doc
+        def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+            self.__get = fget
+            self.__set = fset
+            self.__del = fdel
+            self.__doc__ = doc
 
-	def __get__(self, inst, type=None):
-	    if self.__get is NULL:
-		raise AttributeError, "unreadable attribute"
-	    if inst is None:
-	        return self
-	    return self.__get(inst)
+        def __get__(self, inst, type=None):
+            if self.__get is None:
+                raise AttributeError, "unreadable attribute"
+            if inst is None:
+                return self
+            return self.__get(inst)
 
-	def __set__(self, inst, value):
-	    if value is None:
-	    	if self.__del is None:
-	    	    raise AttributeError, "can't delete attribute"
-	    	return self.__del(inst)
-	    else:
-	        if self.__set is None:
-	            raise AttributeError, "can't set attribute"
-	        return self.__set(inst, value)
+        def __set__(self, inst, value):
+            if self.__set is None:
+                raise AttributeError, "can't set attribute"
+            return self.__set(inst, value)
+
+        def __delete__(self, inst):
+            if self.__del is None:
+                raise AttributeError, "can't delete attribute"
+            return self.__del(inst)
+
 */
 
 typedef struct {
