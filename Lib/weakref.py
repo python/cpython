@@ -51,9 +51,7 @@ class WeakValueDictionary(UserDict.UserDict):
         return "<WeakValueDictionary at %s>" % id(self)
 
     def __setitem__(self, key, value):
-        def remove(o, data=self.data, key=key):
-            del data[key]
-        self.data[key] = ref(value, remove)
+        self.data[key] = ref(value, self.__makeremove(key))
 
     def copy(self):
         new = WeakValueDictionary()
@@ -105,9 +103,7 @@ class WeakValueDictionary(UserDict.UserDict):
         try:
             wr = self.data[key]
         except KeyError:
-            def remove(o, data=self.data, key=key):
-                del data[key]
-            self.data[key] = ref(default, remove)
+            self.data[key] = ref(default, self.__makeremove(key))
             return default
         else:
             return wr()
@@ -115,9 +111,7 @@ class WeakValueDictionary(UserDict.UserDict):
     def update(self, dict):
         d = self.data
         for key, o in dict.items():
-            def remove(o, data=d, key=key):
-                del data[key]
-            d[key] = ref(o, remove)
+            d[key] = ref(o, self.__makeremove(key))
 
     def values(self):
         L = []
@@ -126,6 +120,13 @@ class WeakValueDictionary(UserDict.UserDict):
             if o is not None:
                 L.append(o)
         return L
+
+    def __makeremove(self, key):
+        def remove(o, selfref=ref(self), key=key):
+            self = selfref()
+            if self is not None:
+                del self.data[key]
+        return remove
 
 
 class WeakKeyDictionary(UserDict.UserDict):
@@ -142,8 +143,10 @@ class WeakKeyDictionary(UserDict.UserDict):
     def __init__(self, dict=None):
         self.data = {}
         if dict is not None: self.update(dict)
-        def remove(k, data=self.data):
-            del data[k]
+        def remove(k, selfref=ref(self)):
+            self = selfref()
+            if self is not None:
+                del self.data[k]
         self._remove = remove
 
     def __delitem__(self, key):
