@@ -410,7 +410,7 @@ def _compile(pathname, timestamp):
     saved back to the filesystem for future imports. The source file's
     modification timestamp must be provided as a Long value.
     """
-    codestring = open(pathname, 'r').read()
+    codestring = open(pathname, 'rU').read()
     if codestring and codestring[-1] != '\n':
         codestring = codestring + '\n'
     code = __builtin__.compile(codestring, pathname, 'exec')
