@@ -416,27 +416,6 @@ static uint nfreepools = 0;
 /* Free space start address in current arena.  This is pool-aligned. */
 static block *arenabase = NULL;
 
-#if 0
-static ulong wasmine = 0;
-static ulong wasntmine = 0;
-
-static void
-dumpem(void *ptr)
-{
-	if (ptr)
-		printf("inserted new arena at %08x\n", ptr);
-	printf("# arenas %u\n", narenas);
-	printf("was mine %lu wasn't mine %lu\n", wasmine, wasntmine);
-}
-#define INCMINE ++wasmine
-#define INCTHEIRS ++wasntmine
-
-#else
-#define dumpem(ptr)
-#define INCMINE
-#define INCTHEIRS
-#endif
-
 /* Allocate a new arena and return its base address.  If we run out of
  * memory, return NULL.
  */
@@ -527,7 +506,6 @@ new_arena(void)
 	assert(narenas < maxarenas);
 	arenas[narenas] = (uptr)bp;
 	++narenas;	/* can't overflow, since narenas < maxarenas before */
-	dumpem(bp);
 	return bp;
 
 error:
@@ -728,7 +706,6 @@ PyObject_Free(void *p)
 	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
 		/* We allocated this address. */
 		LOCK();
-		INCMINE;
 		/*
 		 * Link p to the start of the pool's freeblock list.  Since
 		 * the pool had at least the p block outstanding, the pool
@@ -789,7 +766,6 @@ PyObject_Free(void *p)
 	}
 
 	/* We didn't allocate this address. */
-	INCTHEIRS;
 	free(p);
 }
 
@@ -812,7 +788,6 @@ PyObject_Realloc(void *p, size_t nbytes)
 	pool = POOL_ADDR(p);
 	if (ADDRESS_IN_RANGE(p, pool->arenaindex)) {
 		/* We're in charge of this block */
-		INCMINE;
 		size = INDEX2SIZE(pool->szidx);
 		if (size >= nbytes)
 			/* Don't bother if a smaller size was requested. */
@@ -827,7 +802,6 @@ PyObject_Realloc(void *p, size_t nbytes)
 		return bp;
 	}
 	/* We're not managing this block. */
-	INCTHEIRS;
 	if (nbytes <= SMALL_REQUEST_THRESHOLD) {
 		/* Take over this block. */
 		bp = PyObject_Malloc(nbytes ? nbytes : 1);
