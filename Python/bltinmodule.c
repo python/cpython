@@ -1993,8 +1993,8 @@ filterstring(PyObject *func, PyObject *strobj)
 		Py_DECREF(item);
 	}
 
-	if (j < len && _PyString_Resize(&result, j) < 0)
-		return NULL;
+	if (j < len)
+		_PyString_Resize(&result, j);
 
 	return result;
 

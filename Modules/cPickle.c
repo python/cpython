@@ -1252,14 +1252,8 @@ modified_EncodeRawUnicodeEscape(const Py_UNICODE *s, int size)
 			*p++ = (char) ch;
 	}
 	*p = '\0';
-	if (_PyString_Resize(&repr, p - q))
-		goto onError;
-
+	_PyString_Resize(&repr, p - q);
 	return repr;
-
-  onError:
-	Py_DECREF(repr);
-	return NULL;
 }
 
 

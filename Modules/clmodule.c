@@ -135,8 +135,7 @@ cl_CompressImage(PyObject *self, PyObject *args)
 	}
 
 	if (compressedBufferSize < frameBufferSize)
-		if (_PyString_Resize(&compressedBuffer, compressedBufferSize))
-			return NULL;
+		_PyString_Resize(&compressedBuffer, compressedBufferSize);
 
 	return compressedBuffer;
 }

@@ -255,9 +255,8 @@ PyZlib_decompress(PyObject *self, PyObject *args)
 	    /* fall through */
 	case(Z_OK):
 	    /* need more memory */
-	    if (_PyString_Resize(&result_str, r_strlen << 1) == -1) {
+	    if (_PyString_Resize(&result_str, r_strlen << 1) < 0) {
 		inflateEnd(&zst);
-		result_str = NULL;
 		goto error;
 	    }
 	    zst.next_out = (unsigned char *)PyString_AS_STRING(result_str) \
@@ -414,10 +413,8 @@ PyZlib_objcompress(compobject *self, PyObject *args)
     /* while Z_OK and the output buffer is full, there might be more output,
        so extend the output buffer and try again */
     while (err == Z_OK && self->zst.avail_out == 0) {
-	if (_PyString_Resize(&RetVal, length << 1) == -1) {
-	    RetVal = NULL;
+	if (_PyString_Resize(&RetVal, length << 1) < 0)
 	    goto error;
-	}
 	self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal) \
 	    + length;
 	self->zst.avail_out = length;
@@ -438,9 +435,7 @@ PyZlib_objcompress(compobject *self, PyObject *args)
 	RetVal = NULL;
 	goto error;
     }
-    if (_PyString_Resize(&RetVal,
-			 self->zst.total_out - start_total_out) < 0)
-	RetVal = NULL;
+    _PyString_Resize(&RetVal, self->zst.total_out - start_total_out);
 
  error:
     LEAVE_ZLIB
@@ -510,10 +505,8 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 	if (max_length && length > max_length)
 	    length = max_length;
 
-	if (_PyString_Resize(&RetVal, length) == -1) {
-	    RetVal = NULL;
+	if (_PyString_Resize(&RetVal, length) < 0)
 	    goto error;
-	}
 	self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal) \
 	    + old_length;
 	self->zst.avail_out = length - old_length;
@@ -561,8 +554,7 @@ PyZlib_objdecompress(compobject *self, PyObject *args)
 	goto error;
     }
 
-    if (_PyString_Resize(&RetVal, self->zst.total_out - start_total_out) < 0)
-	RetVal = NULL;
+    _PyString_Resize(&RetVal, self->zst.total_out - start_total_out);
 
  error:
     LEAVE_ZLIB
@@ -612,10 +604,8 @@ PyZlib_flush(compobject *self, PyObject *args)
     /* while Z_OK and the output buffer is full, there might be more output,
        so extend the output buffer and try again */
     while (err == Z_OK && self->zst.avail_out == 0) {
-	if (_PyString_Resize(&RetVal, length << 1) == -1)  {
-	    RetVal = NULL;
+	if (_PyString_Resize(&RetVal, length << 1) < 0)
 	    goto error;
-	}
 	self->zst.next_out = (unsigned char *)PyString_AS_STRING(RetVal) \
 	    + length;
 	self->zst.avail_out = length;
@@ -651,8 +641,7 @@ PyZlib_flush(compobject *self, PyObject *args)
 	goto error;
     }
 
-    if (_PyString_Resize(&RetVal, self->zst.total_out - start_total_out) < 0)
-	RetVal = NULL;
+    _PyString_Resize(&RetVal, self->zst.total_out - start_total_out);
 
  error:
     LEAVE_ZLIB

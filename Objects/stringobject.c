@@ -1869,8 +1869,8 @@ string_translate(PyStringObject *self, PyObject *args)
 		return input_obj;
 	}
 	/* Fix the size of the resulting string */
-	if (inlen > 0 &&_PyString_Resize(&result, output-output_start))
-		return NULL;
+	if (inlen > 0)
+		_PyString_Resize(&result, output - output_start);
 	return result;
 }
 
@@ -2927,7 +2927,14 @@ PyString_ConcatAndDel(register PyObject **pv, register PyObject *w)
    is only one module referencing the object.  You can also think of it
    as creating a new string object and destroying the old one, only
    more efficiently.  In any case, don't use this if the string may
-   already be known to some other part of the code... */
+   already be known to some other part of the code...
+   Note that if there's not enough memory to resize the string, the original
+   string object at *pv is deallocated, *pv is set to NULL, an "out of
+   memory" exception is set, and -1 is returned.  Else (on success) 0 is
+   returned, and the value in *pv may or may not be the same as on input.
+   As always, an extra byte is allocated for a trailing \0 byte (newsize
+   does *not* include that), and a trailing \0 byte is stored.
+*/
 
 int
 _PyString_Resize(PyObject **pv, int newsize)
