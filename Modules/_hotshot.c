@@ -80,11 +80,8 @@ typedef struct {
     PyObject_HEAD
     PyObject *info;
     FILE *logfp;
-    int filled;
-    int index;
     int linetimings;
     int frametimings;
-    unsigned char buffer[BUFFERSIZE];
 } LogReaderObject;
 
 static PyObject * ProfilerError = NULL;
@@ -269,25 +266,21 @@ logreader_tp_iter(LogReaderObject *self)
 static int
 unpack_packed_int(LogReaderObject *self, int *pvalue, int discard)
 {
+    int c;
     int accum = 0;
     int bits = 0;
-    int index = self->index;
     int cont;
 
     do {
-        if (index >= self->filled)
-            return ERR_EOF;
         /* read byte */
-        accum |= ((self->buffer[index] & 0x7F) >> discard) << bits;
+	if ((c = fgetc(self->logfp)) == EOF)
+            return ERR_EOF;
+        accum |= ((c & 0x7F) >> discard) << bits;
         bits += (7 - discard);
-        cont = self->buffer[index] & 0x80;
-        /* move to next */
+        cont = c & 0x80;
         discard = 0;
-        index++;
     } while (cont);
 
-    /* save state */
-    self->index = index;
     *pvalue = accum;
 
     return 0;
@@ -299,43 +292,37 @@ unpack_packed_int(LogReaderObject *self, int *pvalue, int discard)
 static int
 unpack_string(LogReaderObject *self, PyObject **pvalue)
 {
+    int i;
     int len;
-    int oldindex = self->index;
-    int err = unpack_packed_int(self, &len, 0);
+    int err;
+    char *buf;
+    
+    if ((err = unpack_packed_int(self, &len, 0)))
+        return err;
 
-    if (!err) {
-        /* need at least len bytes in buffer */
-        if (len > (self->filled - self->index)) {
-            self->index = oldindex;
-            err = ERR_EOF;
-        }
-        else {
-            *pvalue = PyString_FromStringAndSize((char *)self->buffer + self->index,
-                                                 len);
-            if (*pvalue == NULL) {
-                self->index = oldindex;
-                err = ERR_EXCEPTION;
-            }
-            else
-                self->index += len;
+    buf = malloc(len);
+    for (i=0; i < len; i++) {
+        if ((buf[i] = fgetc(self->logfp)) == EOF) {
+            free(buf);
+            return ERR_EOF;
         }
     }
-    return err;
+    *pvalue = PyString_FromStringAndSize(buf, len);
+    free(buf);
+    if (*pvalue == NULL) {
+        return ERR_EXCEPTION;
+    }
+    return 0;
 }
 
 
 static int
-unpack_add_info(LogReaderObject *self, int skip_opcode)
+unpack_add_info(LogReaderObject *self)
 {
     PyObject *key;
     PyObject *value = NULL;
     int err;
 
-    if (skip_opcode) {
-        if (self->buffer[self->index] != WHAT_ADD_INFO)
-            return ERR_BAD_RECTYPE;
-        self->index++;
-    }
     err = unpack_string(self, &key);
     if (!err) {
         err = unpack_string(self, &value);
@@ -366,25 +353,6 @@ unpack_add_info(LogReaderObject *self, int skip_opcode)
 
 
 static void
-logreader_refill(LogReaderObject *self)
-{
-    int needed;
-    size_t res;
-
-    if (self->index) {
-        memmove(self->buffer, &self->buffer[self->index],
-                self->filled - self->index);
-        self->filled = self->filled - self->index;
-        self->index = 0;
-    }
-    needed = BUFFERSIZE - self->filled;
-    if (needed > 0) {
-        res = fread(&self->buffer[self->filled], 1, needed, self->logfp);
-        self->filled += res;
-    }
-}
-
-static void
 eof_error(void)
 {
     PyErr_SetString(PyExc_EOFError,
@@ -394,7 +362,8 @@ eof_error(void)
 static PyObject *
 logreader_tp_iternext(LogReaderObject *self)
 {
-    int what, oldindex;
+    int c;
+    int what;
     int err = ERR_NONE;
     int lineno = -1;
     int fileno = -1;
@@ -410,22 +379,18 @@ logreader_tp_iternext(LogReaderObject *self)
                         "cannot iterate over closed LogReader object");
         return NULL;
     }
- restart:
-    if ((self->filled - self->index) < MAXEVENTSIZE)
-        logreader_refill(self);
 
-    /* end of input */
-    if (self->filled == 0)
+restart:
+    /* decode the record type */
+    if ((c = fgetc(self->logfp)) == EOF)
         return NULL;
 
-    oldindex = self->index;
+    what = c & WHAT_OTHER;
+    if (what == WHAT_OTHER)
+        what = c; /* need all the bits for type */
+    else
+        ungetc(c, self->logfp); /* type byte includes packed int */
 
-    /* decode the record type */
-    what = self->buffer[self->index] & WHAT_OTHER;
-    if (what == WHAT_OTHER) {
-        what = self->buffer[self->index];
-        self->index++;
-    }
     switch (what) {
     case WHAT_ENTER:
         err = unpack_packed_int(self, &fileno, 2);
@@ -444,7 +409,7 @@ logreader_tp_iternext(LogReaderObject *self)
             err = unpack_packed_int(self, &tdelta, 0);
         break;
     case WHAT_ADD_INFO:
-        err = unpack_add_info(self, 0);
+        err = unpack_add_info(self);
         break;
     case WHAT_DEFINE_FILE:
         err = unpack_packed_int(self, &fileno, 0);
@@ -465,40 +430,29 @@ logreader_tp_iternext(LogReaderObject *self)
         }
         break;
     case WHAT_LINE_TIMES:
-        if (self->index >= self->filled)
+        if ((c = fgetc(self->logfp)) == EOF)
             err = ERR_EOF;
         else {
-            self->linetimings = self->buffer[self->index] ? 1 : 0;
-            self->index++;
-            goto restart;
-        }
+            self->linetimings = c ? 1 : 0;
+	    goto restart;
+	}
         break;
     case WHAT_FRAME_TIMES:
-        if (self->index >= self->filled)
+        if ((c = fgetc(self->logfp)) == EOF)
             err = ERR_EOF;
         else {
-            self->frametimings = self->buffer[self->index] ? 1 : 0;
-            self->index++;
-            goto restart;
-        }
+            self->frametimings = c ? 1 : 0;
+	    goto restart;
+	}
         break;
     default:
         err = ERR_BAD_RECTYPE;
-    }
-    if (err == ERR_EOF && oldindex != 0) {
-        /* It looks like we ran out of data before we had it all; this
-         * could easily happen with large packed integers or string
-         * data.  Try forcing the buffer to be re-filled before failing.
-         */
-        err = ERR_NONE;
-        logreader_refill(self);
     }
     if (err == ERR_BAD_RECTYPE) {
         PyErr_SetString(PyExc_ValueError,
                         "unknown record type in log file");
     }
     else if (err == ERR_EOF) {
-        /* Could not avoid end-of-buffer error. */
         eof_error();
     }
     else if (!err) {
@@ -1386,12 +1340,12 @@ hotshot_logreader(PyObject *unused, PyObject *args)
 {
     LogReaderObject *self = NULL;
     char *filename;
+    int c;
+    int err = 0;
 
     if (PyArg_ParseTuple(args, "s:logreader", &filename)) {
         self = PyObject_New(LogReaderObject, &LogReaderType);
         if (self != NULL) {
-            self->filled = 0;
-            self->index = 0;
             self->frametimings = 1;
             self->linetimings = 0;
             self->info = NULL;
@@ -1407,14 +1361,17 @@ hotshot_logreader(PyObject *unused, PyObject *args)
                 Py_DECREF(self);
                 goto finally;
             }
-            /* Aggressively attempt to load all preliminary ADD_INFO
-             * records from the log so the info records are available
-             * from a fresh logreader object.
-             */
-            logreader_refill(self);
-            while (self->filled > self->index
-                   && self->buffer[self->index] == WHAT_ADD_INFO) {
-                int err = unpack_add_info(self, 1);
+            /* read initial info */
+            for (;;) {
+                if ((c = fgetc(self->logfp)) == EOF) {
+                    eof_error();
+                    break;
+                }
+                if (c != WHAT_ADD_INFO) {
+                    ungetc(c, self->logfp);
+                    break;
+                }
+                err = unpack_add_info(self);
                 if (err) {
                     if (err == ERR_EOF)
                         eof_error();
@@ -1423,12 +1380,6 @@ hotshot_logreader(PyObject *unused, PyObject *args)
                                         "unexpected error");
                     break;
                 }
-                /* Refill agressively so we can avoid EOF during
-                 * initialization unless there's a real EOF condition
-                 * (the tp_iternext handler loops attempts to refill
-                 * and try again).
-                 */
-                logreader_refill(self);
             }
         }
     }
