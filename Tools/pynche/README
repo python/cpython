@@ -15,16 +15,18 @@ Pynche has been tested with Python 1.5.1 using Tk 8.0.  It probably
 works with Python 1.5.  I've tested it on both Solaris 2.6 and Windows 
 NT.  There are some funky things that happen on Windows but I think
 they are primarily Tk problems.  You'll want to be sure to have Tk
-8.0.3 for Windows.  Also, Pynche is very colormap intensive, so it doesn't
-work very well on 8-bit graphics cards.  I'll probably fix that in the
-future.
+8.0.3 for Windows.  Also, Pynche is very colormap intensive, so it
+doesn't work very well on 8-bit graphics cards.  I'll probably fix
+that in the future.
 
 Pynche must find a text database of colors, in the X11 format.  Pynche
 is distributed with an rgb.txt file from the X11R6.4 distribution for
 this reason, but you can use a different file with the -d option.  The
 file xlicense.txt contains the license only for rgb.txt.
 
-Pynche is pronounced `Pinch-ee'.
+Pynche is pronounced `Pinch-ee'.  Start it by running the pynche.py
+driver.  On Windows, you probably want to rename pynche.py to
+pynche.pyw so that it doesn't bring up a console window.
 
 The top part of the main Pynche window contains the "variation
 strips".  Each strip contains a number of "color chips".  The strips
