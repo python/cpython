@@ -205,7 +205,7 @@ static PyObject *waste_Error;
 
 PyTypeObject WEO_Type;
 
-#define WEOObj_Check(x) ((x)->ob_type == &WEO_Type)
+#define WEOObj_Check(x) ((x)->ob_type == &WEO_Type || PyObject_TypeCheck((x), &WEO_Type))
 
 typedef struct WEOObject {
 	PyObject_HEAD
@@ -458,7 +458,7 @@ PyTypeObject WEO_Type = {
 
 PyTypeObject waste_Type;
 
-#define wasteObj_Check(x) ((x)->ob_type == &waste_Type)
+#define wasteObj_Check(x) ((x)->ob_type == &waste_Type || PyObject_TypeCheck((x), &waste_Type))
 
 typedef struct wasteObject {
 	PyObject_HEAD

@@ -54,7 +54,7 @@ static PyObject *Res_Error;
 
 PyTypeObject Resource_Type;
 
-#define ResObj_Check(x) ((x)->ob_type == &Resource_Type)
+#define ResObj_Check(x) ((x)->ob_type == &Resource_Type || PyObject_TypeCheck((x), &Resource_Type))
 
 typedef struct ResourceObject {
 	PyObject_HEAD

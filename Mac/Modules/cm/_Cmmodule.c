@@ -69,7 +69,7 @@ static PyObject *Cm_Error;
 
 PyTypeObject ComponentInstance_Type;
 
-#define CmpInstObj_Check(x) ((x)->ob_type == &ComponentInstance_Type)
+#define CmpInstObj_Check(x) ((x)->ob_type == &ComponentInstance_Type || PyObject_TypeCheck((x), &ComponentInstance_Type))
 
 typedef struct ComponentInstanceObject {
 	PyObject_HEAD
@@ -335,7 +335,7 @@ PyTypeObject ComponentInstance_Type = {
 
 PyTypeObject Component_Type;
 
-#define CmpObj_Check(x) ((x)->ob_type == &Component_Type)
+#define CmpObj_Check(x) ((x)->ob_type == &Component_Type || PyObject_TypeCheck((x), &Component_Type))
 
 typedef struct ComponentObject {
 	PyObject_HEAD

@@ -95,7 +95,7 @@ static PyObject *Mlte_Error;
 
 PyTypeObject TXNObject_Type;
 
-#define TXNObj_Check(x) ((x)->ob_type == &TXNObject_Type)
+#define TXNObj_Check(x) ((x)->ob_type == &TXNObject_Type || PyObject_TypeCheck((x), &TXNObject_Type))
 
 typedef struct TXNObjectObject {
 	PyObject_HEAD
@@ -1347,7 +1347,7 @@ PyTypeObject TXNObject_Type = {
 
 PyTypeObject TXNFontMenuObject_Type;
 
-#define TXNFontMenuObj_Check(x) ((x)->ob_type == &TXNFontMenuObject_Type)
+#define TXNFontMenuObj_Check(x) ((x)->ob_type == &TXNFontMenuObject_Type || PyObject_TypeCheck((x), &TXNFontMenuObject_Type))
 
 typedef struct TXNFontMenuObjectObject {
 	PyObject_HEAD

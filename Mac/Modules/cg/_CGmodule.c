@@ -212,7 +212,7 @@ static PyObject *CG_Error;
 
 PyTypeObject CGContextRef_Type;
 
-#define CGContextRefObj_Check(x) ((x)->ob_type == &CGContextRef_Type)
+#define CGContextRefObj_Check(x) ((x)->ob_type == &CGContextRef_Type || PyObject_TypeCheck((x), &CGContextRef_Type))
 
 typedef struct CGContextRefObject {
 	PyObject_HEAD

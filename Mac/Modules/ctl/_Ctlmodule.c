@@ -145,7 +145,7 @@ static PyObject *Ctl_Error;
 
 PyTypeObject Control_Type;
 
-#define CtlObj_Check(x) ((x)->ob_type == &Control_Type)
+#define CtlObj_Check(x) ((x)->ob_type == &Control_Type || PyObject_TypeCheck((x), &Control_Type))
 
 typedef struct ControlObject {
 	PyObject_HEAD

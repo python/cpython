@@ -43,7 +43,7 @@ static PyObject *Qdoffs_Error;
 
 PyTypeObject GWorld_Type;
 
-#define GWorldObj_Check(x) ((x)->ob_type == &GWorld_Type)
+#define GWorldObj_Check(x) ((x)->ob_type == &GWorld_Type || PyObject_TypeCheck((x), &GWorld_Type))
 
 typedef struct GWorldObject {
 	PyObject_HEAD

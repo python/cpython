@@ -142,7 +142,7 @@ static PyObject *CarbonEvents_Error;
 
 PyTypeObject EventRef_Type;
 
-#define EventRef_Check(x) ((x)->ob_type == &EventRef_Type)
+#define EventRef_Check(x) ((x)->ob_type == &EventRef_Type || PyObject_TypeCheck((x), &EventRef_Type))
 
 typedef struct EventRefObject {
 	PyObject_HEAD
@@ -486,7 +486,7 @@ PyTypeObject EventRef_Type = {
 
 PyTypeObject EventQueueRef_Type;
 
-#define EventQueueRef_Check(x) ((x)->ob_type == &EventQueueRef_Type)
+#define EventQueueRef_Check(x) ((x)->ob_type == &EventQueueRef_Type || PyObject_TypeCheck((x), &EventQueueRef_Type))
 
 typedef struct EventQueueRefObject {
 	PyObject_HEAD
@@ -706,7 +706,7 @@ PyTypeObject EventQueueRef_Type = {
 
 PyTypeObject EventLoopRef_Type;
 
-#define EventLoopRef_Check(x) ((x)->ob_type == &EventLoopRef_Type)
+#define EventLoopRef_Check(x) ((x)->ob_type == &EventLoopRef_Type || PyObject_TypeCheck((x), &EventLoopRef_Type))
 
 typedef struct EventLoopRefObject {
 	PyObject_HEAD
@@ -835,7 +835,7 @@ PyTypeObject EventLoopRef_Type = {
 
 PyTypeObject EventLoopTimerRef_Type;
 
-#define EventLoopTimerRef_Check(x) ((x)->ob_type == &EventLoopTimerRef_Type)
+#define EventLoopTimerRef_Check(x) ((x)->ob_type == &EventLoopTimerRef_Type || PyObject_TypeCheck((x), &EventLoopTimerRef_Type))
 
 typedef struct EventLoopTimerRefObject {
 	PyObject_HEAD
@@ -982,7 +982,7 @@ PyTypeObject EventLoopTimerRef_Type = {
 
 PyTypeObject EventHandlerRef_Type;
 
-#define EventHandlerRef_Check(x) ((x)->ob_type == &EventHandlerRef_Type)
+#define EventHandlerRef_Check(x) ((x)->ob_type == &EventHandlerRef_Type || PyObject_TypeCheck((x), &EventHandlerRef_Type))
 
 typedef struct EventHandlerRefObject {
 	PyObject_HEAD
@@ -1174,7 +1174,7 @@ PyTypeObject EventHandlerRef_Type = {
 
 PyTypeObject EventHandlerCallRef_Type;
 
-#define EventHandlerCallRef_Check(x) ((x)->ob_type == &EventHandlerCallRef_Type)
+#define EventHandlerCallRef_Check(x) ((x)->ob_type == &EventHandlerCallRef_Type || PyObject_TypeCheck((x), &EventHandlerCallRef_Type))
 
 typedef struct EventHandlerCallRefObject {
 	PyObject_HEAD
@@ -1306,7 +1306,7 @@ PyTypeObject EventHandlerCallRef_Type = {
 
 PyTypeObject EventTargetRef_Type;
 
-#define EventTargetRef_Check(x) ((x)->ob_type == &EventTargetRef_Type)
+#define EventTargetRef_Check(x) ((x)->ob_type == &EventTargetRef_Type || PyObject_TypeCheck((x), &EventTargetRef_Type))
 
 typedef struct EventTargetRefObject {
 	PyObject_HEAD
@@ -1460,7 +1460,7 @@ PyTypeObject EventTargetRef_Type = {
 
 PyTypeObject EventHotKeyRef_Type;
 
-#define EventHotKeyRef_Check(x) ((x)->ob_type == &EventHotKeyRef_Type)
+#define EventHotKeyRef_Check(x) ((x)->ob_type == &EventHotKeyRef_Type || PyObject_TypeCheck((x), &EventHotKeyRef_Type))
 
 typedef struct EventHotKeyRefObject {
 	PyObject_HEAD

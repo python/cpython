@@ -138,7 +138,7 @@ static PyObject *Dlg_Error;
 
 PyTypeObject Dialog_Type;
 
-#define DlgObj_Check(x) ((x)->ob_type == &Dialog_Type)
+#define DlgObj_Check(x) ((x)->ob_type == &Dialog_Type || PyObject_TypeCheck((x), &Dialog_Type))
 
 typedef struct DialogObject {
 	PyObject_HEAD

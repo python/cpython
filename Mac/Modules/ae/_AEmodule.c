@@ -65,7 +65,7 @@ static PyObject *AE_Error;
 
 PyTypeObject AEDesc_Type;
 
-#define AEDesc_Check(x) ((x)->ob_type == &AEDesc_Type)
+#define AEDesc_Check(x) ((x)->ob_type == &AEDesc_Type || PyObject_TypeCheck((x), &AEDesc_Type))
 
 typedef struct AEDescObject {
 	PyObject_HEAD

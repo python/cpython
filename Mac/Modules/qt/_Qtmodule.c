@@ -97,7 +97,7 @@ static PyObject *Qt_Error;
 
 PyTypeObject MovieController_Type;
 
-#define MovieCtlObj_Check(x) ((x)->ob_type == &MovieController_Type)
+#define MovieCtlObj_Check(x) ((x)->ob_type == &MovieController_Type || PyObject_TypeCheck((x), &MovieController_Type))
 
 typedef struct MovieControllerObject {
 	PyObject_HEAD
@@ -1168,7 +1168,7 @@ PyTypeObject MovieController_Type = {
 
 PyTypeObject TimeBase_Type;
 
-#define TimeBaseObj_Check(x) ((x)->ob_type == &TimeBase_Type)
+#define TimeBaseObj_Check(x) ((x)->ob_type == &TimeBase_Type || PyObject_TypeCheck((x), &TimeBase_Type))
 
 typedef struct TimeBaseObject {
 	PyObject_HEAD
@@ -1656,7 +1656,7 @@ PyTypeObject TimeBase_Type = {
 
 PyTypeObject UserData_Type;
 
-#define UserDataObj_Check(x) ((x)->ob_type == &UserData_Type)
+#define UserDataObj_Check(x) ((x)->ob_type == &UserData_Type || PyObject_TypeCheck((x), &UserData_Type))
 
 typedef struct UserDataObject {
 	PyObject_HEAD
@@ -1997,7 +1997,7 @@ PyTypeObject UserData_Type = {
 
 PyTypeObject Media_Type;
 
-#define MediaObj_Check(x) ((x)->ob_type == &Media_Type)
+#define MediaObj_Check(x) ((x)->ob_type == &Media_Type || PyObject_TypeCheck((x), &Media_Type))
 
 typedef struct MediaObject {
 	PyObject_HEAD
@@ -3209,7 +3209,7 @@ PyTypeObject Media_Type = {
 
 PyTypeObject Track_Type;
 
-#define TrackObj_Check(x) ((x)->ob_type == &Track_Type)
+#define TrackObj_Check(x) ((x)->ob_type == &Track_Type || PyObject_TypeCheck((x), &Track_Type))
 
 typedef struct TrackObject {
 	PyObject_HEAD
@@ -4527,7 +4527,7 @@ PyTypeObject Track_Type = {
 
 PyTypeObject Movie_Type;
 
-#define MovieObj_Check(x) ((x)->ob_type == &Movie_Type)
+#define MovieObj_Check(x) ((x)->ob_type == &Movie_Type || PyObject_TypeCheck((x), &Movie_Type))
 
 typedef struct MovieObject {
 	PyObject_HEAD
