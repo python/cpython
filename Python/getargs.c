@@ -1023,8 +1023,13 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	   
 	if (keywords) { 	
 		if (!PyDict_Check(keywords)) {
-			PyErr_SetString(PyExc_SystemError,
-	  "non-dictionary object received when keyword dictionary expected");
+			if (keywords == NULL)
+				PyErr_SetString(PyExc_SystemError,
+		     "NULL received when keyword dictionary expected");
+			else
+				PyErr_Format(PyExc_SystemError,
+		     "%s received when keyword dictionary expected",
+					     keywords->ob_type->tp_name);
 			return 0;
 		}	
 		kwlen = PyDict_Size(keywords);
