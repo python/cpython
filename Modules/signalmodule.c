@@ -265,7 +265,7 @@ initsignal()
 #ifdef HAVE_SIGACTION
 		struct sigaction act;
 		sigaction(i,  0, &act);
-		t = act.sa_flags;
+		t = act.sa_handler;
 #else
 		t = signal(i, SIG_IGN);
 		signal(i, t);
