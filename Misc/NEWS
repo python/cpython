@@ -12,6 +12,11 @@ What's New in Python 2.4 alpha 2?
 Core and builtins
 -----------------
 
+- Patch #980695:  Implements efficient string concatenation for statements
+  of the form s=s+t and s+=t.  This will vary across implementations.
+  Accordingly, the str.join() method is strongly preferred for performance
+  sensitive code.
+
 - PEP-0318, Function Decorators have been added to the language. These are
   implemented using the Java-style @decorator syntax, like so:
      @staticmethod

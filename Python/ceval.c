@@ -85,6 +85,8 @@ static int exec_statement(PyFrameObject *,
 static void set_exc_info(PyThreadState *, PyObject *, PyObject *, PyObject *);
 static void reset_exc_info(PyThreadState *);
 static void format_exc_check_arg(PyObject *, char *, PyObject *);
+static PyObject *string_concatenate(PyObject *, PyObject *,
+				    PyFrameObject *, unsigned char *);
 
 #define NAME_ERROR_MSG \
 	"name '%.200s' is not defined"
@@ -550,6 +552,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 #define INSTR_OFFSET()	(next_instr - first_instr)
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
+#define PEEKARG()	((next_instr[2]<<8) + next_instr[1])
 #define JUMPTO(x)	(next_instr = first_instr + (x))
 #define JUMPBY(x)	(next_instr += (x))
 
@@ -580,8 +583,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 #endif
 
 #define PREDICTED(op)		PRED_##op: next_instr++
-#define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = (next_instr[2]<<8) + \
-				next_instr[1]; next_instr += 3
+#define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = PEEKARG(); next_instr += 3
 
 /* Stack manipulation macros */
 
@@ -1066,11 +1068,18 @@ PyEval_EvalFrame(PyFrameObject *f)
 					goto slow_add;
 				x = PyInt_FromLong(i);
 			}
+			else if (PyString_CheckExact(v) &&
+				 PyString_CheckExact(w)) {
+				x = string_concatenate(v, w, f, next_instr);
+				/* string_concatenate consumed the ref to v */
+				goto skip_decref_vx;
+			}
 			else {
 			  slow_add:
 				x = PyNumber_Add(v, w);
 			}
 			Py_DECREF(v);
+		  skip_decref_vx:
 			Py_DECREF(w);
 			SET_TOP(x);
 			if (x != NULL) continue;
@@ -1261,11 +1270,18 @@ PyEval_EvalFrame(PyFrameObject *f)
 					goto slow_iadd;
 				x = PyInt_FromLong(i);
 			}
+			else if (PyString_CheckExact(v) &&
+				 PyString_CheckExact(w)) {
+				x = string_concatenate(v, w, f, next_instr);
+				/* string_concatenate consumed the ref to v */
+				goto skip_decref_v;
+			}
 			else {
 			  slow_iadd:
 				x = PyNumber_InPlaceAdd(v, w);
 			}
 			Py_DECREF(v);
+		  skip_decref_v:
 			Py_DECREF(w);
 			SET_TOP(x);
 			if (x != NULL) continue;
@@ -4189,6 +4205,79 @@ format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
 		return;
 
 	PyErr_Format(exc, format_str, obj_str);
+}
+
+static PyObject *
+string_concatenate(PyObject *v, PyObject *w,
+		   PyFrameObject *f, unsigned char *next_instr)
+{
+	/* This function implements 'variable += expr' when both arguments
+	   are strings. */
+	
+	if (v->ob_refcnt == 2) {
+		/* In the common case, there are 2 references to the value
+		 * stored in 'variable' when the += is performed: one on the
+		 * value stack (in 'v') and one still stored in the 'variable'.
+		 * We try to delete the variable now to reduce the refcnt to 1.
+		 */
+		switch (*next_instr) {
+		case STORE_FAST:
+		{
+			int oparg = PEEKARG();
+			PyObject **fastlocals = f->f_localsplus;
+			if (GETLOCAL(oparg) == v)
+				SETLOCAL(oparg, NULL);
+			break;
+		}
+		case STORE_DEREF:
+		{
+			PyObject **freevars = f->f_localsplus + f->f_nlocals;
+			PyObject *c = freevars[PEEKARG()];
+			if (PyCell_GET(c) == v)
+				PyCell_Set(c, NULL);
+			break;
+		}
+		case STORE_NAME:
+		{
+			PyObject *names = f->f_code->co_names;
+			PyObject *name = GETITEM(names, PEEKARG());
+			PyObject *locals = f->f_locals;
+			if (PyDict_CheckExact(locals) &&
+			    PyDict_GetItem(locals, name) == v) {
+				if (PyDict_DelItem(locals, name) != 0) {
+					PyErr_Clear();
+				}
+			}
+			break;
+		}
+		}
+	}
+
+	if (v->ob_refcnt == 1) {
+		/* Now we own the last reference to 'v', so we can resize it
+		 * in-place.
+		 */
+		int v_len = PyString_GET_SIZE(v);
+		int w_len = PyString_GET_SIZE(w);
+		if (_PyString_Resize(&v, v_len + w_len) != 0) {
+			/* XXX if _PyString_Resize() fails, 'v' has been
+			 * deallocated so it cannot be put back into 'variable'.
+			 * The MemoryError is raised when there is no value in
+			 * 'variable', which might (very remotely) be a cause
+			 * of incompatibilities.
+			 */
+			return NULL;
+		}
+		/* copy 'w' into the newly allocated area of 'v' */
+		memcpy(PyString_AS_STRING(v) + v_len,
+		       PyString_AS_STRING(w), w_len);
+		return v;
+	}
+	else {
+		/* When in-place resizing is not an option. */
+		PyString_Concat(&v, w);
+		return v;
+	}
 }
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
