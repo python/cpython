@@ -36,6 +36,8 @@ those requiring large file support or network connectivity.  The argument is a
 comma-separated list of words indicating the resources to test.  Currently
 only the following are defined:
 
+    all -       Enable all special resources.
+
     curses -    Tests that use curses and will modify the terminal's
                 state and output modes.
 
@@ -55,6 +57,10 @@ import random
 import StringIO
 
 import test_support
+
+
+RESOURCE_NAMES = ('curses', 'largefile', 'network')
+
 
 def usage(code, msg=''):
     print __doc__
@@ -121,8 +127,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
-                if r not in ('curses', 'largefile', 'network'):
-                    usage(1, 'Invalid -u/--use option: %s' % a)
+                if r == 'all':
+                    use_resources = RESOURCE_NAMES
+                    break
+                if r not in RESOURCE_NAMES:
+                    usage(1, 'Invalid -u/--use option: ' + a)
             use_resources.extend(u)
     if generate and verbose:
         usage(2, "-g and -v don't go together!")
