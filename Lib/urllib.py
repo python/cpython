@@ -25,7 +25,6 @@ used to query various info about the object, if available.
 import string
 import socket
 import os
-import stat
 import time
 import sys
 import types
@@ -410,8 +409,8 @@ class URLopener:
         host, file = splithost(url)
         localname = url2pathname(file)
         stats = os.stat(localname)
-        size = stats[stat.ST_SIZE]
-        modified = rfc822.formatdate(stats[stat.ST_MTIME])
+        size = stats.st_size
+        modified = rfc822.formatdate(stats.st_mtime)
         mtype = mimetypes.guess_type(url)[0]
         headers = mimetools.Message(StringIO.StringIO(
             'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
