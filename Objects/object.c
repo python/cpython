@@ -2037,6 +2037,7 @@ PyObject * _PyTrash_delete_later = NULL;
 void
 _PyTrash_deposit_object(PyObject *op)
 {
+#ifndef WITH_CYCLE_GC
 	int typecode;
 
 	if (PyTuple_Check(op))
@@ -2054,8 +2055,11 @@ _PyTrash_deposit_object(PyObject *op)
 		return; /* pacify compiler -- execution never here */
 	}
 	op->ob_refcnt = typecode;
-
 	op->ob_type = (PyTypeObject*)_PyTrash_delete_later;
+#else
+	assert (_Py_AS_GC(op)->gc.gc_next == NULL);
+	_Py_AS_GC(op)->gc.gc_prev = (PyGC_Head *)_PyTrash_delete_later;
+#endif
 	_PyTrash_delete_later = op;
 }
 
@@ -2064,6 +2068,8 @@ _PyTrash_destroy_chain(void)
 {
 	while (_PyTrash_delete_later) {
 		PyObject *shredder = _PyTrash_delete_later;
+
+#ifndef WITH_CYCLE_GC
 		_PyTrash_delete_later = (PyObject*) shredder->ob_type;
 
 		switch (shredder->ob_refcnt) {
@@ -2083,6 +2089,11 @@ _PyTrash_destroy_chain(void)
 			shredder->ob_type = &PyTraceBack_Type;
 			break;
 		}
+#else
+		_PyTrash_delete_later =
+			(PyObject*) _Py_AS_GC(shredder)->gc.gc_prev;
+#endif
+
 		_Py_NewReference(shredder);
 
 		++_PyTrash_delete_nesting;
