@@ -81,7 +81,10 @@ class EditableManPage(ScrolledText):
 		self.ok = 0
 		self.empty = 0
 		self.buffer = None
+		savestate = self['state']
+		self['state'] = 'normal'
 		self.delete('1.0', 'end')
+		self['state'] = savestate
 
 	# End parsing -- must be busy, need not be at EOF
 	def _endparser(self):
@@ -128,6 +131,8 @@ class EditableManPage(ScrolledText):
 			self.ok = 0
 			self.empty = 0
 			return
+		savestate = self['state']
+		self['state'] = 'normal'
 		if self.empty:
 			# One or more previous lines were empty
 			# -- insert one blank line in the text
@@ -137,19 +142,19 @@ class EditableManPage(ScrolledText):
 		if not propline:
 			# No properties
 			self._insert_prop(textline)
-			self.lineno = self.lineno + 1
-			return
-		# Search for properties
-		p = ''
-		j = 0
-		for i in range(min(len(propline), len(textline))):
-			if propline[i] != p:
-				if j < i:
-					self._insert_prop(textline[j:i], p)
-					j = i
-				p = propline[i]
-		self._insert_prop(textline[j:])
+		else:
+			# Search for properties
+			p = ''
+			j = 0
+			for i in range(min(len(propline), len(textline))):
+				if propline[i] != p:
+					if j < i:
+					    self._insert_prop(textline[j:i], p)
+					    j = i
+					p = propline[i]
+			self._insert_prop(textline[j:])
 		self.lineno = self.lineno + 1
+		self['state'] = savestate
 
 	# Insert a string at the end, with at most one property (tag)
 	def _insert_prop(self, str, prop = ' '):
@@ -166,21 +171,8 @@ class ReadonlyManPage(EditableManPage):
 
 	# Initialize instance
 	def __init__(self, master=None, cnf={}):
-		# Initialize base class
-		EditableManPage.__init__(self, master, cnf)
-
-		# Make the text readonly
-		self.bind('<Any-KeyPress>', self.modify_cb)
-		self.bind('<Return>', self.modify_cb)
-		self.bind('<BackSpace>', self.modify_cb)
-		self.bind('<Delete>', self.modify_cb)
-		self.bind('<Control-h>', self.modify_cb)
-		self.bind('<Control-d>', self.modify_cb)
-		self.bind('<Control-v>', self.modify_cb)
-
-	# You could override this to ring the bell, etc.
-	def modify_cb(self, e):
-		pass
+		EditableManPage.__init__(self, master,
+					 (cnf, {'state': 'disabled'}))
 
 # Alias
 ManPage = ReadonlyManPage
