@@ -42,6 +42,8 @@ class build (Command):
          "forcibly build everything (ignore file timestamps)"),
         ]
 
+    boolean_options = ['debug', 'force']
+
     help_options = [
         ('help-compiler', None,
          "list available compilers", show_compilers),

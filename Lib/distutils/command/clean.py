@@ -28,6 +28,8 @@ class clean (Command):
          "remove all build output, not just temporary by-products")
     ]
 
+    boolean_options = ['all']
+
     def initialize_options(self):
         self.build_base = None
         self.build_lib = None

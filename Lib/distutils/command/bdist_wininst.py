@@ -33,6 +33,8 @@ class bdist_wininst (Command):
                      "directory to put final built distributions in"),
                    ]
 
+    boolean_options = ['keep-temp']
+
     def initialize_options (self):
         self.bdist_dir = None
         self.keep_temp = 0

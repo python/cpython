@@ -25,6 +25,8 @@ class install_data (Command):
         ('force', 'f', "force installation (overwrite existing files)"),
         ]
 
+    boolean_options = ['force']
+
     def initialize_options (self):
         self.install_dir = None
         self.outfiles = []

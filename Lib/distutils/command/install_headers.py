@@ -21,6 +21,7 @@ class install_headers (Command):
                      "force installation (overwrite existing files)"),
                    ]
 
+    boolean_options = ['force']
 
     def initialize_options (self):
         self.install_dir = None

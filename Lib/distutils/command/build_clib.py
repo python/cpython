@@ -48,6 +48,8 @@ class build_clib (Command):
          "specify the compiler type"),
         ]
 
+    boolean_options = ['debug', 'force']
+
     help_options = [
         ('help-compiler', None,
          "list available compilers", show_compilers),

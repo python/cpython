@@ -67,6 +67,9 @@ class sdist (Command):
          "[default: dist]"),
         ]
 
+    boolean_options = ['use-defaults', 'prune',
+                       'manifest-only', 'force-manifest',
+                       'keep-tree']
 
     help_options = [
         ('help-formats', None,

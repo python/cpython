@@ -22,6 +22,9 @@ class install_scripts (Command):
         ('skip-build', None, "skip the build steps"),
     ]
 
+    boolean_options = ['force', 'skip-build']
+
+
     def initialize_options (self):
         self.install_dir = None
         self.force = 0
