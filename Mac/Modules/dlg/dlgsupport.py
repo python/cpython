@@ -40,7 +40,7 @@ static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
 	if (callback == NULL)
 		return 0; /* Default behavior */
 	Dlg_FilterProc_callback = NULL; /* We'll restore it when call successful */
-	args = Py_BuildValue("O&s#", DlgObj_New, dialog, event, (int)sizeof(EventRecord));
+	args = Py_BuildValue("O&O&", WinObj_WhichWindow, dialog, PyMac_BuildEventRecord, event);
 	if (args == NULL)
 		res = NULL;
 	else {
