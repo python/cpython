@@ -18,7 +18,9 @@ Stig Bakken
 Ulf Bartelt
 Anthony Baxter
 Donald Beaudry
+David Beazley
 Neal Becker
+Reimer Behrends
 Andy Bensky
 Eric Beser
 Stephen Bevan
@@ -34,6 +36,7 @@ Jan-Hein B"uhrman
 Dick Bulterman
 Tommy Burnette
 Mike Carlton
+Donn Cave
 Mitch Chapman
 David Chaum
 Tom Christiansen
@@ -42,16 +45,19 @@ Matt Conway
 Steve Cousins
 Tom Culliton
 John Cugini
+Andrew Dalke
 Eric Daniel
 Jonathan Dasteel
 John DeGood
 Roger Dev
 Fred Drake
+Paul Dubois
 Lance Ellinghaus
 David Ely
 Stoffel Erasmus
 Andy Eskilsson
 Stefan Esser
+Tim Everett
 Paul Everitt
 Niels Ferguson
 Sebastian Fernandez
@@ -80,6 +86,7 @@ Tim Hochberg
 Chris Hoffman
 Philip Homburg
 Ken Howard
+Brad Howes
 Jim Hugunin
 Jeremy Hylton
 John Interrante
@@ -88,14 +95,19 @@ Bill Janssen
 Drew Jenkins
 Simon Johnston
 Richard Jones
+Bob Kahn
 Lou Kates
 Steve Kirsch
 Bob Kras
+Hannu Krosing
 Andrew Kuchling
 Soren Larsen
+Chris Lawrence
+Marc-Andre Lemburg
 William Lewis
 Robert van Liere
 Per Lindqvist
+Martin von Loewis
 Anne Lord
 Fredrik Lundh
 Mark Lutz
@@ -107,6 +119,7 @@ Vladimir Marangozov
 Roger Masse
 Graham Matthews
 Michael McLay
+Craig McPheeters
 Lambert Meertens
 Steven Miale
 Doug Moen
@@ -120,14 +133,18 @@ Randy Pausch
 Marcel van der Peijl
 Steven Pemberton
 Tim Peters
+Geoff Philbrick
 Adrian Phillips
 Amrit Prem
 John Redford
 Terry Reedy
 Steven Reiz
+Case Roole
 Timothy Roscoe
 Jim Roskind
 Just van Rossum
+Hugo van Rossum
+Saskia van Rossum
 Kevin Samborn
 Michael Scharf
 Neil Schemenauer
@@ -142,6 +159,7 @@ Paul Sijben
 George Sipe
 Dirk Soede
 Per Spilling
+Greg Stein
 Jim St. Pierre
 Quentin Stafford-Fraser
 Richard Stoakley
@@ -154,18 +172,22 @@ Bennett Todd
 John Tromp
 Bill Tutt
 Jaap Vermeulen
+Al Vezza
 John Viega
 Frank Visser
 Richard Walker
+Larry Wall
 Barry Warsaw
 Steve Waterbury
 Aaron Watters
 Bob Watson
 Rickard Westman
+Truida Wiedijk
+Sue Williams
+Frank Willison
 Dik Winter
 Lars Wirzenius
 Ka-Ping Yee
 Masazumi Yoshikawa
 Siebren van der Zee
 hajime@jsk.t.u-tokyo.ac.jp
-tim@prl.philips.nl
