@@ -81,6 +81,16 @@ dictionary whose keys are strings.  It specifies keyword arguments to
 be added to the end of the the argument list.
 \end{funcdesc}
 
+\begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
+The \var{object} argument must be an object that supports the
+buffer call interface (such as strings, arrays, and buffers). A new
+buffer object will be created which references the \var{object} argument.
+The buffer object will be a slice from the beginning of \var{object}
+(or from the specified \var{offset}). The slice will extend to the
+end of \var{object} (or will have a length given by the \var{size}
+argument).
+\end{funcdesc}
+
 \begin{funcdesc}{callable}{object}
 Return true if the \var{object} argument appears callable, false if
 not.  If this returns true, it is still possible that a call fails,
