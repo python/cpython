@@ -63,6 +63,38 @@ is found, a \exception{LookupError} is raised. Otherwise, the codecs
 tuple is stored in the cache and returned to the caller.
 \end{funcdesc}
 
+To simply access to the various codecs, the module provides these
+additional functions which use \function{lookup()} for the codec
+lookup:
+
+\begin{funcdesc}{getencoder}{encoding}
+Lookup up the codec for the given encoding and return its encoder
+function.
+
+Raises a \exception{LookupError} in case the encoding cannot be found.
+\end{funcdesc}
+
+\begin{funcdesc}{getdecoder}{encoding}
+Lookup up the codec for the given encoding and return its decoder
+function.
+
+Raises a \exception{LookupError} in case the encoding cannot be found.
+\end{funcdesc}
+
+\begin{funcdesc}{getreader}{encoding}
+Lookup up the codec for the given encoding and return its StreamReader
+class or factory function.
+
+Raises a \exception{LookupError} in case the encoding cannot be found.
+\end{funcdesc}
+
+\begin{funcdesc}{getwriter}{encoding}
+Lookup up the codec for the given encoding and return its StreamWriter
+class or factory function.
+
+Raises a \exception{LookupError} in case the encoding cannot be found.
+\end{funcdesc}
+
 To simplify working with encoded files or stream, the module
 also defines these utility functions:
 

@@ -34,6 +34,10 @@ Core
 
 Library
 
+- The codecs module has grown four new helper APIs to access
+  builtin codecs: getencoder(), getdecoder(), getreader(),
+  getwriter().
+
 - SimpleXMLRPCServer: a new module (based upon SimpleHTMLServer)
   simplifies writing XML RPC servers.
 
