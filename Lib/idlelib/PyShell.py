@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import os
+import os.path
 import sys
 import string
 import getopt
@@ -24,7 +25,6 @@ from UndoDelegator import UndoDelegator
 from OutputWindow import OutputWindow
 from configHandler import idleConf
 import idlever
-import os.path
 
 import rpc
 import RemoteDebugger
@@ -417,6 +417,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         except (OverflowError, SyntaxError):
             self.tkconsole.resetoutput()
             InteractiveInterpreter.showsyntaxerror(self, filename)
+            self.tkconsole.showprompt()
         else:
             self.runcode(code)
 
@@ -458,23 +459,24 @@ class ModifiedInterpreter(InteractiveInterpreter):
         """
         text = self.tkconsole.text
         stuff = self.unpackerror()
-        if not stuff:
+        if stuff:
+            msg, lineno, offset, line = stuff
+            if lineno == 1:
+                pos = "iomark + %d chars" % (offset-1)
+            else:
+                pos = "iomark linestart + %d lines + %d chars" % \
+                      (lineno-1, offset-1)
+            text.tag_add("ERROR", pos)
+            text.see(pos)
+            char = text.get(pos)
+            if char and char in IDENTCHARS:
+                text.tag_add("ERROR", pos + " wordstart", pos)
+            self.tkconsole.resetoutput()
+            self.write("SyntaxError: %s\n" % str(msg))
+        else:
             self.tkconsole.resetoutput()
             InteractiveInterpreter.showsyntaxerror(self, filename)
-            return
-        msg, lineno, offset, line = stuff
-        if lineno == 1:
-            pos = "iomark + %d chars" % (offset-1)
-        else:
-            pos = "iomark linestart + %d lines + %d chars" % (lineno-1,
-                                                              offset-1)
-        text.tag_add("ERROR", pos)
-        text.see(pos)
-        char = text.get(pos)
-        if char and char in IDENTCHARS:
-            text.tag_add("ERROR", pos + " wordstart", pos)
-        self.tkconsole.resetoutput()
-        self.write("SyntaxError: %s\n" % str(msg))
+        self.tkconsole.showprompt()
 
     def unpackerror(self):
         type, value, tb = sys.exc_info()
