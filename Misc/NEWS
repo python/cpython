@@ -26,6 +26,8 @@ Core
 
 - readline now supports setting the startup_hook and the pre_event_hook.
 
+- posix supports chroot where available.
+
 Library
 
 - doctest now excludes functions and classes not defined by the module
