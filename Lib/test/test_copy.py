@@ -185,7 +185,33 @@ class TestCopy(unittest.TestCase):
         self.assert_(x is not y)
         self.assert_(x.tag is not y.tag)
 
-    # regression tests for metaclass-confusion
+    # regression tests for class-vs-instance and metaclass-confusion
+    def test_copy_classoverinstance(self):
+        class C(object):
+            def __init__(self, v):
+                self.v = v
+            def __cmp__(self, other):
+                return -cmp(other, self.v)
+            def __copy__(self):
+                return self.__class__(self.v)
+        x = C(23)
+        self.assertEqual(copy.copy(x), x)
+        x.__copy__ = lambda: 42
+        self.assertEqual(copy.copy(x), x)
+
+    def test_deepcopy_classoverinstance(self):
+        class C(object):
+            def __init__(self, v):
+                self.v = v
+            def __cmp__(self, other):
+                return -cmp(other, self.v)
+            def __deepcopy__(self, memo):
+                return self.__class__(copy.deepcopy(self.v, memo))
+        x = C(23)
+        self.assertEqual(copy.deepcopy(x), x)
+        x.__deepcopy__ = lambda memo: 42
+        self.assertEqual(copy.deepcopy(x), x)
+
     def test_copy_metaclassconfusion(self):
         class MyOwnError(copy.Error):
             pass
