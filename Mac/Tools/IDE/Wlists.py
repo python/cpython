@@ -1,12 +1,7 @@
 import Wbase
 import Wkeys
-from Carbon import Scrap
 import string
-from Carbon import Evt
-from Carbon import Events
-from Carbon import Qd
-from Carbon import Win
-from Carbon import Lists
+from Carbon import Evt, Events, Lists, Qd, Scrap, Win
 
 
 class List(Wbase.SelectableWidget):
