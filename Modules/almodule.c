@@ -289,12 +289,10 @@ python2param(int resource, ALpv *param, PyObject *value, ALparamInfo *pinfo)
 		case AL_ENUM_ELEM:
 			return python2elem(value, (void *) &param->value.i,
 					   pinfo->elementType);
-			break;
 		case AL_INT64_ELEM:
 		case AL_FIXED_ELEM:
 			return python2elem(value, (void *) &param->value.ll,
 					   pinfo->elementType);
-			break;
 		default:
 			PyErr_SetString(ErrorObject, "unknown element type");
 			return -1;
@@ -912,7 +910,7 @@ alp_ReadFrames(self, args)
 	int ch;
 	ALconfig c;
 
-	if (!PyArg_ParseTuple(args, "i", framecount))
+	if (!PyArg_ParseTuple(args, "i", &framecount))
 		return NULL;
 	if (framecount < 0) {
 		PyErr_SetString(ErrorObject, "negative framecount");
