@@ -202,11 +202,7 @@ postscript-$(PAPER)-$(RELEASE).tgz: ps
 	(cd paper-$(PAPER); $(MAKE) README)
 	(cd paper-$(PAPER); tar cf - *.ps README) | gzip -9 >$@
 
-html-$(RELEASE).tgz: $(HTMLDIR)/api/api.html $(HTMLDIR)/ext/ext.html \
-		     $(HTMLDIR)/lib/lib.html $(HTMLDIR)/mac/mac.html \
-		     $(HTMLDIR)/ref/ref.html $(HTMLDIR)/tut/tut.html
-
-html-$(RELEASE).tgz:
+html-$(RELEASE).tgz:	html
 	(cd $(HTMLDIR); tar cf - index.html ???/???.css ???/*.html */*.gif) \
 		| gzip -9 >$@
 
