@@ -17,7 +17,7 @@ import string
 import re
 
 class TypeinViewer:
-    def __init__(self, switchboard, parent=None):
+    def __init__(self, switchboard, master=None):
         # non-gui ivars
         self.__sb = switchboard
         optiondb = switchboard.optiondb()
@@ -26,7 +26,7 @@ class TypeinViewer:
         self.__uwtyping = BooleanVar()
         self.__uwtyping.set(optiondb.get('UPWHILETYPE', 0))
         # create the gui
-        self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
+        self.__frame = Frame(master, relief=RAISED, borderwidth=1)
         self.__frame.grid(row=3, column=1, sticky='NS')
         # Red
         self.__xl = Label(self.__frame, text='Red:')

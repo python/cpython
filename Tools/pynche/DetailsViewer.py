@@ -61,19 +61,19 @@ GRAV = 'Squash'
 
 
 class DetailsViewer:
-    def __init__(self, switchboard, parent=None):
+    def __init__(self, switchboard, master=None):
         self.__sb = switchboard
         optiondb = switchboard.optiondb()
         self.__red, self.__green, self.__blue = switchboard.current_rgb()
         # GUI
-        root = self.__root = Toplevel(parent, class_='Pynche')
-        root.protocol('WM_DELETE_WINDOW', self.__withdraw)
+        root = self.__root = Toplevel(master, class_='Pynche')
+        root.protocol('WM_DELETE_WINDOW', self.withdraw)
         root.title('Pynche Details Window')
         root.iconname('Pynche Details Window')
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
-        root.bind('<Alt-w>', self.__withdraw)
-        root.bind('<Alt-W>', self.__withdraw)
+        root.bind('<Alt-w>', self.withdraw)
+        root.bind('<Alt-W>', self.withdraw)
         # accelerators
         root.bind('<KeyPress-Left>', self.__minus1)
         root.bind('<KeyPress-Right>', self.__plus1)
@@ -158,7 +158,7 @@ class DetailsViewer:
     def __quit(self, event=None):
         self.__root.quit()
 
-    def __withdraw(self, event=None):
+    def withdraw(self, event=None):
         self.__root.withdraw()
 
     def deiconify(self, event=None):

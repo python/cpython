@@ -17,12 +17,14 @@ import marshal
 
 class Switchboard:
     def __init__(self, colordb, initfile):
+        self.__initfile = initfile
         self.__colordb = colordb
         self.__optiondb = {}
         self.__views = []
         self.__red = 0
         self.__green = 0
         self.__blue = 0
+        self.__canceled = 0
         # read the initialization file
         fp = None
         if initfile:
@@ -61,17 +63,18 @@ class Switchboard:
     def optiondb(self):
         return self.__optiondb
 
-    def save_views(self, file):
+    def save_views(self):
         # save the current color
         self.__optiondb['RED'] = self.__red
         self.__optiondb['GREEN'] = self.__green
         self.__optiondb['BLUE'] = self.__blue
         for v in self.__views:
-            v.save_options(self.__optiondb)
+            if hasattr(v, 'save_options'):
+                v.save_options(self.__optiondb)
         fp = None
         try:
             try:
-                fp = open(file, 'w')
+                fp = open(self.__initfile, 'w')
             except IOError:
                 print 'Cannot write options to file:', file
             else:
@@ -79,3 +82,14 @@ class Switchboard:
         finally:
             if fp:
                 fp.close()
+
+    def withdraw_views(self):
+        for v in self.__views:
+            if hasattr(v, 'withdraw'):
+                v.withdraw()
+
+    def canceled(self):
+        self.__canceled = 1
+
+    def canceled_p(self):
+        return self.__canceled
