@@ -1,3 +1,7 @@
+========================================
+==> Release 1.2 BETA 3 (13 Feb 1995) <==
+========================================
+
 Mon Feb 13 12:39:16 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* README: removed remark on NeXT and -posix since this is now done
