@@ -3,14 +3,15 @@
 
 \declaremodule{standard}{heapq}
 \modulesynopsis{Heap queue algorithm (a.k.a. priority queue).}
+\moduleauthor{Kevin O'Connor}{}
 \sectionauthor{Guido van Rossum}{guido@python.org}
-% Implementation contributed by Kevin O'Connor
-% Theoretical explanation by François Pinard
+% Theoretical explanation:
+\sectionauthor{Fran\c cois Pinard}{}
+\versionadded{2.3}
 
 
 This module provides an implementation of the heap queue algorithm,
 also known as the priority queue algorithm.
-\versionadded{2.3}
 
 Heaps are arrays for which
 \code{\var{heap}[\var{k}] <= \var{heap}[2*\var{k}+1]} and
