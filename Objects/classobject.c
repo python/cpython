@@ -45,10 +45,6 @@ PyClass_New(bases, dict, name)
 	PyObject *dict;
 	PyObject *name; /* String; NULL if unknown */
 {
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	int pos;
-	PyObject *key, *value;
-#endif
 	PyClassObject *op, *dummy;
 	static PyObject *getattrstr, *setattrstr, *delattrstr;
 	static PyObject *docstr;
@@ -89,13 +85,6 @@ PyClass_New(bases, dict, name)
 	Py_XINCREF(op->cl_getattr);
 	Py_XINCREF(op->cl_setattr);
 	Py_XINCREF(op->cl_delattr);
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	pos = 0;
-	while (PyDict_Next(dict, &pos, &key, &value)) {
-		if (PyAccess_Check(value))
-			PyAccess_SetOwner(value, (PyObject *)op);
-	}
-#endif
 	return (PyObject *) op;
 }
 
@@ -170,15 +159,7 @@ class_getattr(op, name)
 		PyErr_SetObject(PyExc_AttributeError, name);
 		return NULL;
 	}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	if (PyAccess_Check(v)) {
-		v = PyAccess_AsValue(v, PyEval_GetOwner());
-		if (v == NULL)
-			return NULL;
-	}
-	else
-#endif
-		Py_INCREF(v);
+	Py_INCREF(v);
 	if (PyFunction_Check(v)) {
 		PyObject *w = PyMethod_New(v, (PyObject *)NULL,
 						    (PyObject *)class);
@@ -194,9 +175,6 @@ class_setattr(op, name, v)
 	PyObject *name;
 	PyObject *v;
 {
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	PyObject *ac;
-#endif
 	char *sname = PyString_AsString(name);
 	if (sname[0] == '_' && sname[1] == '_') {
 		int n = PyString_Size(name);
@@ -211,11 +189,6 @@ class_setattr(op, name, v)
 			   "classes are read-only in restricted mode");
 		return -1;
 	}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	ac = PyDict_GetItem(op->cl_dict, name);
-	if (ac != NULL && PyAccess_Check(ac))
-		return PyAccess_SetValue(ac, PyEval_GetOwner(), v);
-#endif
 	if (v == NULL) {
 		int rv = PyDict_DelItem(op->cl_dict, name);
 		if (rv < 0)
@@ -286,45 +259,6 @@ PyClass_IsSubclass(class, base)
 
 /* Instance objects */
 
-#ifdef SUPPORT_OBSOLETE_ACCESS
-static int
-addaccess(class, inst)
-	PyClassObject *class;
-	PyInstanceObject *inst;
-{
-	int i, n, pos, ret;
-	PyObject *key, *value, *ac;
-	
-	n = PyTuple_Size(class->cl_bases);
-	for (i = 0; i < n; i++) {
-		if (addaccess((PyClassObject *)PyTuple_GetItem(
-			      class->cl_bases, i), inst) < 0)
-			return -1;
-	}
-	
-	pos = 0;
-	while (PyDict_Next(class->cl_dict, &pos, &key, &value)) {
-		if (!PyAccess_Check(value))
-			continue;
-		if (PyAccess_HasValue(value))
-			continue;
-		ac = PyDict_GetItem(inst->in_dict, key);
-		if (ac != NULL && PyAccess_Check(ac)) {
-			PyErr_SetObject(PyExc_ConflictError, key);
-			return -1;
-		}
-		ac = PyAccess_Clone(value);
-		if (ac == NULL)
-			return -1;
-		ret = PyDict_SetItem(inst->in_dict, key, ac);
-		Py_DECREF(ac);
-		if (ret != 0)
-			return -1;
-    	}
-	return 0;
-}
-#endif
-
 PyObject *
 PyInstance_New(class, arg, kw)
 	PyObject *class;
@@ -344,11 +278,7 @@ PyInstance_New(class, arg, kw)
 	Py_INCREF(class);
 	inst->in_class = (PyClassObject *)class;
 	inst->in_dict = PyDict_New();
-	if (inst->in_dict == NULL
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	    || addaccess((PyClassObject *)class, inst) != 0
-#endif
-		) {
+	if (inst->in_dict == NULL) {
 		Py_DECREF(inst);
 		return NULL;
 	}
@@ -495,15 +425,7 @@ instance_getattr1(inst, name)
 			return NULL;
 		}
 	}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	if (PyAccess_Check(v)) {
-		v = PyAccess_AsValue(v, PyEval_GetOwner());
-		if (v == NULL)
-			return NULL;
-	}
-	else
-#endif
-		Py_INCREF(v);
+	Py_INCREF(v);
 	if (class != NULL) {
 		if (PyFunction_Check(v)) {
 			PyObject *w = PyMethod_New(v, (PyObject *)inst,
@@ -551,12 +473,6 @@ instance_setattr1(inst, name, v)
 	PyObject *name;
 	PyObject *v;
 {
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	PyObject *ac;
-	ac = PyDict_GetItem(inst->in_dict, name);
-	if (ac != NULL && PyAccess_Check(ac))
-		return PyAccess_SetValue(ac, PyEval_GetOwner(), v);
-#endif
 	if (v == NULL) {
 		int rv = PyDict_DelItem(inst->in_dict, name);
 		if (rv < 0)
