@@ -72,8 +72,6 @@ import EasyDialogs
 import macostools
 
 goals = [
-	("mactcp.slb", "mactcpmodules.slb"),
-	("macdnr.slb", "mactcpmodules.slb"),
 	("AE.slb", "toolboxmodules.slb"),
 	("Cm.slb", "toolboxmodules.slb"),
 	("Ctl.slb", "toolboxmodules.slb"),
