@@ -443,6 +443,11 @@ class Job:
                     self.run("%s %s *.html" % (PERL_BINARY, NODE2LABEL_SCRIPT))
                 finally:
                     os.chdir(pwd)
+        # These files need to be cleaned up here since builddir there
+        # can be more than one, so we clean each of them.
+        if self.options.discard_temps:
+            for fn in ("images.tex", "images.log", "images.aux"):
+                safe_unlink(os.path.join(builddir, fn))
 
     def build_text(self, tempdir=None):
         if tempdir is None:
