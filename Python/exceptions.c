@@ -1251,10 +1251,18 @@ UnicodeEncodeError__str__(PyObject *self, PyObject *arg)
 	goto error;
 
     if (end==start+1) {
+	int badchar = (int)PyUnicode_AS_UNICODE(objectObj)[start];
+	char *format;
+	if (badchar <= 0xff)
+	   format = "'%.400s' codec can't encode character u'\\x%02x' in position %d: %.400s";
+	else if (badchar <= 0xffff)
+	   format = "'%.400s' codec can't encode character u'\\u%04x' in position %d: %.400s";
+	else
+	   format = "'%.400s' codec can't encode character u'\\U%08x' in position %d: %.400s";
 	PyOS_snprintf(buffer, sizeof(buffer),
-	    "'%.400s' codec can't encode character '\\u%x' in position %d: %.400s",
+	    format,
 	    PyString_AS_STRING(encodingObj),
-	    (int)PyUnicode_AS_UNICODE(objectObj)[start],
+	    badchar,
 	    start,
 	    PyString_AS_STRING(reasonObj)
 	);
@@ -1329,7 +1337,7 @@ UnicodeDecodeError__str__(PyObject *self, PyObject *arg)
 
     if (end==start+1) {
 	PyOS_snprintf(buffer, sizeof(buffer),
-	    "'%.400s' codec can't decode byte 0x%x in position %d: %.400s",
+	    "'%.400s' codec can't decode byte 0x%02x in position %d: %.400s",
 	    PyString_AS_STRING(encodingObj),
 	    ((int)PyString_AS_STRING(objectObj)[start])&0xff,
 	    start,
@@ -1438,9 +1446,17 @@ UnicodeTranslateError__str__(PyObject *self, PyObject *arg)
 	goto error;
 
     if (end==start+1) {
+	int badchar = (int)PyUnicode_AS_UNICODE(objectObj)[start];
+	char *format;
+	if (badchar <= 0xff)
+	   format = "can't translate character u'\\x%02x' in position %d: %.400s";
+	else if (badchar <= 0xffff)
+	   format = "can't translate character u'\\u%04x' in position %d: %.400s";
+	else
+	   format = "can't translate character u'\\U%08x' in position %d: %.400s";
 	PyOS_snprintf(buffer, sizeof(buffer),
-	    "can't translate character '\\u%x' in position %d: %.400s",
-	    (int)PyUnicode_AS_UNICODE(objectObj)[start],
+	    format,
+	    badchar,
 	    start,
 	    PyString_AS_STRING(reasonObj)
 	);
