@@ -192,6 +192,8 @@ def run_method_tests(test):
     table = string.maketrans('a', 'A')
     test('translate', 'abc', 'Abc', table)
     test('translate', 'xyz', 'xyz', table)
+    test('translate', 'xyz', ValueError, 'too short', 'strip')
+    test('translate', 'xyz', ValueError, 'too short')
 
     test('replace', 'one!two!three!', 'one@two!three!', '!', '@', 1)
     test('replace', 'one!two!three!', 'onetwothree', '!', '')
