@@ -27,30 +27,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pymactoolbox.h"
 
 
-/*
-** Find out what the current script is.
-** Donated by Fredrik Lund.
-*/
-char *PyMac_getscript()
-{
-    CFStringEncoding enc = CFStringGetSystemEncoding();
-    static CFStringRef name = NULL;
-    /* Return the code name for the encodings for which we have codecs. */
-    switch(enc) {
-    case kCFStringEncodingMacRoman: return "mac-roman";
-    case kCFStringEncodingMacGreek: return "mac-greek";
-    case kCFStringEncodingMacCyrillic: return "mac-cyrillic";
-    case kCFStringEncodingMacTurkish: return "mac-turkish";
-    case kCFStringEncodingMacIcelandic: return "mac-icelandic";
-    /* XXX which one is mac-latin2? */
-    }
-    if (!name) {
-        /* This leaks a an object. */
-        name = CFStringConvertEncodingToIANACharSetName(enc);
-    }
-    return (char *)CFStringGetCStringPtr(name, 0); 
-}
-
 /* Like strerror() but for Mac OS error numbers */
 char *PyMac_StrError(int err)
 {

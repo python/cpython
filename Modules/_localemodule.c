@@ -30,7 +30,7 @@ This software comes with no warranty. Use at your own risk.
 #endif
 
 #if defined(__APPLE__)
-#include "pymactoolbox.h"
+#include <CoreFoundation/CoreFoundation.h>
 #endif
 
 #if defined(MS_WINDOWS)
@@ -406,10 +406,34 @@ PyLocale_getdefaultlocale(PyObject* self)
 #endif
 
 #if defined(__APPLE__)
+/*
+** Find out what the current script is.
+** Donated by Fredrik Lund.
+*/
+static char *mac_getscript(void)
+{
+    CFStringEncoding enc = CFStringGetSystemEncoding();
+    static CFStringRef name = NULL;
+    /* Return the code name for the encodings for which we have codecs. */
+    switch(enc) {
+    case kCFStringEncodingMacRoman: return "mac-roman";
+    case kCFStringEncodingMacGreek: return "mac-greek";
+    case kCFStringEncodingMacCyrillic: return "mac-cyrillic";
+    case kCFStringEncodingMacTurkish: return "mac-turkish";
+    case kCFStringEncodingMacIcelandic: return "mac-icelandic";
+    /* XXX which one is mac-latin2? */
+    }
+    if (!name) {
+        /* This leaks a an object. */
+        name = CFStringConvertEncodingToIANACharSetName(enc);
+    }
+    return (char *)CFStringGetCStringPtr(name, 0); 
+}
+
 static PyObject*
 PyLocale_getdefaultlocale(PyObject* self)
 {
-    return Py_BuildValue("Os", Py_None, PyMac_getscript());
+    return Py_BuildValue("Os", Py_None, mac_getscript());
 }
 #endif
 
