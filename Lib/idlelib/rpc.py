@@ -240,9 +240,9 @@ class SocketIO:
         self.debug("_getresponse:myseq:", myseq)
         if threading.currentThread() is self.mainthread:
             # Main thread: does all reading of requests or responses
-            # Loop here until there is message traffic on the socket
+            # Loop here, blocking each time until socket is ready.
             while 1:
-                response = self.pollresponse(myseq, None)
+                response = self.pollresponse(myseq, wait=None)
                 if response is not None:
                     return response
         else:
@@ -346,7 +346,7 @@ class SocketIO:
             message = self.pollmessage(wait)
             if message is None:  # socket not ready
                 return None
-            wait = 0.0
+            #wait = 0.0  # poll on subsequent passes instead of blocking
             seq, resq = message
             self.debug("pollresponse:%d:myseq:%s" % (seq, myseq))
             if resq[0] == "call":
