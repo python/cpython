@@ -5363,7 +5363,6 @@ symtable_assign(struct symtable *st, node *n, int flag)
 				symtable_assign(st, CHILD(n, i), flag);
 			return;
 		}
-		goto loop;
 	case atom:
 		tmp = CHILD(n, 0);
 		if (TYPE(tmp) == LPAR || TYPE(tmp) == LSQB) {
