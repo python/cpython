@@ -14,7 +14,7 @@ regular expression into 'tokenprog' that matches Python tokens in individual
 lines of text, leaving the token in 'tokenprog.group(3)', but does not
 handle indentation, continuations, or multi-line strings."""
 
-__version__ = "Ka-Ping Yee, 26 March 1997"
+__version__ = "Ka-Ping Yee, 29 March 1997"
 
 import string, regex
 from token import *
@@ -46,13 +46,13 @@ Floatnumber = group(Pointfloat, Expfloat)
 Imagnumber = group('0[jJ]', '[1-9][0-9]*[jJ]', Floatnumber + '[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
-Single = group("^'", "[^\]'")
-Double = group('^"', '[^\]"')
-Single3 = group("^'''", "[^\]'''")
-Double3 = group('^"""', '[^\]"""')
+Single = group("[^'\]", "[\].") + "*'"
+Double = group('[^"\]', '[\].') + '*"'
+Single3 = group("[^'\]","[\].","'[^'\]","'[\].","''[^'\]","''[\].") + "*'''"
+Double3 = group('[^"\]','[\].','"[^"\]','"[\].','""[^"\]','""[\].') + '*"""'
 Triple = group("'''", '"""')
-String = group("'" + group('[\].', "[^\n'\]") + "*'",
-               '"' + group('[\].', '[^\n"\]') + '*"')
+String = group("'" + group("[^\n'\]", "[\].") + "*'",
+               '"' + group('[^\n"\]', '[\].') + '*"')
 
 Operator = group('\+', '\-', '\*\*', '\*', '\^', '~', '/', '%', '&', '|',
                  '<<', '>>', '==', '<=', '<>', '!=', '>=', '=', '<', '>')
@@ -86,7 +86,7 @@ def printtoken(type, token, (srow, scol), (erow, ecol), line): # for testing
 def tokenize(readline, tokeneater=printtoken):
     lnum = parenlev = continued = 0
     namechars, numchars = string.letters + '_', string.digits
-    contstr = ''
+    contstr, needcont = '', 0
     indents = [0]
 
     while 1:                                   # loop over lines in stream
@@ -95,12 +95,18 @@ def tokenize(readline, tokeneater=printtoken):
         pos, max = 0, len(line)
 
         if contstr:                            # continued string
-            if not line: raise TokenError, "EOF within multi-line string"
-            if endprog.search(line) >= 0:
+            if not line:
+                raise TokenError, ("EOF in multi-line string", strstart)
+            if endprog.match(line) >= 0:
                 pos = end = endprog.regs[0][1]
                 tokeneater(STRING, contstr + line[:end],
                            strstart, (lnum, end), line)
+                contstr, needcont = '', 0
+            elif needcont and line[-2:] != '\\\n' and line[-3:] != '\\\r\n':
+                tokeneater(ERRORTOKEN, contstr + line,
+                           strstart, (lnum, len(line)), line)
                 contstr = ''
+                continue
             else:
                 contstr = contstr + line
                 continue
@@ -114,7 +120,7 @@ def tokenize(readline, tokeneater=printtoken):
                 elif line[pos] == '\f': column = 0
                 else: break
                 pos = pos + 1
-	    if pos == max: break
+            if pos == max: break
 
             if line[pos] in '#\r\n':           # skip comments or blank lines
                 tokeneater((NEWLINE, COMMENT)[line[pos] == '#'], line[pos:],
@@ -126,22 +132,23 @@ def tokenize(readline, tokeneater=printtoken):
                 tokeneater(INDENT, line[:pos], (lnum, 0), (lnum, pos), line)
             while column < indents[-1]:
                 indents = indents[:-1]
-                tokeneater(DEDENT, line[:pos], (lnum, 0), (lnum, pos), line)
+                tokeneater(DEDENT, '', (lnum, pos), (lnum, pos), line)
 
         else:                                  # continued statement
-            if not line: raise TokenError, "EOF within multi-line statement"
+            if not line:
+                raise TokenError, ("EOF in multi-line statement", (lnum, 0))
             continued = 0
 
         while pos < max:
             if pseudoprog.match(line, pos) > 0:            # scan for tokens
                 start, end = pseudoprog.regs[1]
-                spos, epos = (lnum, start), (lnum, end)
+                spos, epos, pos = (lnum, start), (lnum, end), end
                 token, initial = line[start:end], line[start]
-                pos = end
 
                 if initial in namechars:                   # ordinary name
                     tokeneater(NAME, token, spos, epos, line)
-                elif initial in numchars:                  # ordinary number
+                elif initial in numchars \
+                    or (initial == '.' and token != '.'):  # ordinary number
                     tokeneater(NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
                     tokeneater(NEWLINE, token, spos, epos, line)
@@ -151,7 +158,7 @@ def tokenize(readline, tokeneater=printtoken):
                     continued = 1
                 elif token in ('\'\'\'', '"""'):           # triple-quoted
                     endprog = endprogs[token]
-                    if endprog.search(line, pos) >= 0:     # all on one line
+                    if endprog.match(line, pos) >= 0:      # all on one line
                         pos = endprog.regs[0][1]
                         token = line[start:pos]
                         tokeneater(STRING, token, spos, (lnum, pos), line)
@@ -162,7 +169,8 @@ def tokenize(readline, tokeneater=printtoken):
                 elif initial in '\'"':
                     if token[-1] == '\n':                  # continued string
                         strstart = (lnum, start)
-                        endprog, contstr = endprogs[initial], line[start:]
+                        endprog = endprogs[initial]
+                        contstr, needcont = line[start:], 1
                         break
                     else:                                  # ordinary string
                         tokeneater(STRING, token, spos, epos, line)
@@ -171,12 +179,15 @@ def tokenize(readline, tokeneater=printtoken):
                     elif initial in ')]}': parenlev = parenlev - 1
                     tokeneater(OP, token, spos, epos, line)
             else:
-                tokeneater(ERRORTOKEN, line[pos], spos, (lnum, pos+1), line)
+                tokeneater(ERRORTOKEN, line[pos],
+                           (lnum, pos), (lnum, pos+1), line)
                 pos = pos + 1
 
     for indent in indents[1:]:                 # pop remaining indent levels
         tokeneater(DEDENT, '', (lnum, 0), (lnum, 0), '')
+    tokeneater(ENDMARKER, '', (lnum, 0), (lnum, 0), '')
 
 if __name__ == '__main__':                     # testing
     import sys
-    tokenize(open(sys.argv[-1]).readline)
+    if len(sys.argv) > 1: tokenize(open(sys.argv[1]).readline)
+    else: tokenize(syss.tdin.readline)
