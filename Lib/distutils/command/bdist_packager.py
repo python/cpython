@@ -67,18 +67,16 @@ class bdist_packager (Command):
         if val is None:
             raise DistutilsOptionError, "'%s' must be provided" % option
 
-    def ensure_script (self,arg):
+    def ensure_script(self, arg):
         if not arg:
             return
         try:
-            self.ensure_string(arg, None)
+            self.ensure_string(arg)
         except:
             try:
-                self.ensure_filename(arg, None)
+                self.ensure_filename(arg)
             except:
-                raise RuntimeError, \
-                    "cannot decipher script option (%s)" \
-                    % arg
+                raise RuntimeError, "cannot decipher script option (%s)" % arg
 
     def write_script (self,path,attr,default=None):
         """ write the script specified in attr to path. if attr is None,
