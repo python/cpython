@@ -8,6 +8,17 @@ Tests
 
 Core
 
+- Warnings about a mismatch in the Python API during extension import
+  now use the Python warning framework (which makes it possible to
+  write filters for these warnings).
+
+- Two new APIs PyOS_snprintf() and PyOS_vsnprintf() were added
+  which provide a cross-platform implementations for the
+  relatively new snprintf()/vsnprintf() C lib APIs. In contrast to
+  the standard sprintf() and vsprintf() C lib APIs, these versions
+  apply bounds checking on the used buffer which enhances protection
+  against buffer overruns.
+
 Library
 
 - New function xml.sax.saxutils.quoteattr():  Quote an XML attribute
