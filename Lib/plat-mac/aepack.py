@@ -23,7 +23,7 @@ import MacOS
 import Carbon.File
 import StringIO
 import aetypes
-from aetypes import mkenum, mktype
+from aetypes import mkenum, ObjectSpecifier
 import os
 
 # These ones seem to be missing from AppleEvents
@@ -99,7 +99,7 @@ def pack(x, forcetype = None):
 	if isinstance(x, StringType):
 		return AE.AECreateDesc('TEXT', x)
 	if isinstance(x, UnicodeType):
-		data = t.encode('utf16')
+		data = x.encode('utf16')
 		if data[:2] == '\xfe\xff':
 			data = data[2:]
 		return AE.AECreateDesc('utxt', data)
@@ -114,6 +114,9 @@ def pack(x, forcetype = None):
 			packkey(record, key, value)
 			#record.AEPutParamDesc(key, pack(value))
 		return record
+	if type(x) == types.ClassType and issubclass(x, ObjectSpecifier):
+		# Note: we are getting a class object here, not an instance
+		return AE.AECreateDesc('type', x.want)
 	if hasattr(x, '__aepack__'):
 		return x.__aepack__()
 	if hasattr(x, 'which'):
@@ -231,7 +234,7 @@ def unpack(desc, formodulename=""):
 	if t == typeTrue:
 		return 1
 	if t == typeType:
-		return mktype(desc.data)
+		return mktype(desc.data, formodulename)
 	#
 	# The following are special
 	#
@@ -339,11 +342,25 @@ def mkobject(dict):
 # to __class__ is safe. Moreover, shouldn't there be a better
 # initializer for the classes in the suites?
 def mkobjectfrommodule(dict, modulename):
+	if type(dict['want']) == types.ClassType and issubclass(dict['want'], ObjectSpecifier):
+		# The type has already been converted to Python. Convert back:-(
+		classtype = dict['want']
+		dict['want'] = aetypes.mktype(classtype.want)
 	want = dict['want'].type
 	module = __import__(modulename)
 	codenamemapper = module._classdeclarations
 	classtype = codenamemapper.get(want, None)
 	newobj = mkobject(dict)
 	if classtype:
+		assert issubclass(classtype, ObjectSpecifier)
 		newobj.__class__ = classtype
 	return newobj
+	
+def mktype(typecode, modulename=None):
+	if modulename:
+		module = __import__(modulename)
+		codenamemapper = module._classdeclarations
+		classtype = codenamemapper.get(typecode, None)
+		if classtype:
+			return classtype
+	return aetypes.mktype(typecode)
