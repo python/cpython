@@ -5,11 +5,11 @@
 
 
 Exceptions can be class objects or string objects.  While
-traditionally, most exceptions have been string objects, in Python
+traditionally most exceptions have been string objects, in Python
 1.5, all standard exceptions have been converted to class objects,
-and users are encouraged to do the same.  The source code for those
-exceptions is present in the standard library module
-\module{exceptions}; this module never needs to be imported explicitly.
+and users are encouraged to do the same.  The exceptions are defined
+in the module \module{exceptions}; this module never needs to be
+imported explicitly.
 
 Two distinct string objects with the same value are considered different
 exceptions.  This is done to force programmers to use exception names
