@@ -763,7 +763,7 @@ clobber: clean
 	-rm -f $(PYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
 		config.cache config.log config.h Modules/config.c 
-	-rm -rf build
+	-rm -rf build platform
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
