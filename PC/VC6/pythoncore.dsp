@@ -301,6 +301,10 @@ SOURCE=..\..\Objects\funcobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\Modules\functionalmodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Python\future.c
 # End Source File
 # Begin Source File
