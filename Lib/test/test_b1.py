@@ -124,16 +124,29 @@ if complex(0j, 3.14) != 3.14j: raise TestFailed, 'complex(0j, 3.14)'
 if complex(0.0, 3.14) != 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
 if complex("1") != 1+0j: raise TestFailed, 'complex("1")'
 if complex("1j") != 1j: raise TestFailed, 'complex("1j")'
+
 try: complex("1", "1")
 except TypeError: pass
 else: raise TestFailed, 'complex("1", "1")'
+
 try: complex(1, "1")
 except TypeError: pass
 else: raise TestFailed, 'complex(1, "1")'
+
 if complex("  3.14+J  ") != 3.14+1j:  raise TestFailed, 'complex("  3.14+J  )"'
 if have_unicode:
     if complex(unicode("  3.14+J  ")) != 3.14+1j:
         raise TestFailed, 'complex(u"  3.14+J  )"'
+
+# SF bug 543840:  complex(string) accepts strings with \0
+# Fixed in 2.3.
+try:
+    complex('1+1j\0j')
+except ValueError:
+    pass
+else:
+    raise TestFailed("complex('1+1j\0j') should have raised ValueError")
+
 class Z:
     def __complex__(self): return 3.14j
 z = Z()
