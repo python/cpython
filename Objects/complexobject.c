@@ -532,20 +532,6 @@ complex_float(v)
 	return NULL;
 }
 
-
-static object *
-complex_new(self, args)
-	object *self;
-	object *args;
-{
-	Py_complex cval;
-
-	cval.imag = 0.;
-	if (!PyArg_ParseTuple(args, "d|d", &cval.real, &cval.imag))
-		return NULL;
-	return newcomplexobject(cval);
-}
-
 static object *
 complex_conjugate(self)
 	object *self;

@@ -626,8 +626,8 @@ _Py_GetObjects(self, args)
 
 
 /* Hack to force loading of cobject.o */
-static PyTypeObject *cobject_hack = &PyCObject_Type;
+PyTypeObject *_Py_cobject_hack = &PyCObject_Type;
 
 
 /* Hack to force loading of abstract.o */
-static int (*abstract_hack) FPROTO((PyObject *)) = &PyObject_Length;
+int (*_Py_abstract_hack) FPROTO((PyObject *)) = &PyObject_Length;

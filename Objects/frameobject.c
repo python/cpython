@@ -154,7 +154,7 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	if ((back != NULL && !is_frameobject(back)) ||
 		code == NULL || !is_codeobject(code) ||
 		globals == NULL || !is_dictobject(globals) ||
-		locals != NULL && !is_dictobject(locals) ||
+		(locals != NULL && !is_dictobject(locals)) ||
 		nvalues < 0 || nblocks < 0) {
 		err_badcall();
 		return NULL;
