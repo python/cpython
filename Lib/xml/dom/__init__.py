@@ -64,7 +64,7 @@ class DOMException(Exception):
     def __init__(self, *args, **kw):
         if self.__class__ is DOMException:
             raise RuntimeError(
-                "DOMException should not be instaniated directly")
+                "DOMException should not be instantiated directly")
         apply(Exception.__init__, (self,) + args, kw)
 
 
