@@ -42,8 +42,7 @@ static char decompressobj__doc__[] =
 ;
 
 static compobject *
-newcompobject(type)
-     PyTypeObject *type;
+newcompobject(PyTypeObject *type)
 {
         compobject *self;
         self = PyObject_New(compobject, type);
@@ -62,9 +61,7 @@ static char compress__doc__[] =
 ;
 
 static PyObject *
-PyZlib_compress(self, args)
-        PyObject *self;
-        PyObject *args;
+PyZlib_compress(PyObject *self, PyObject *args)
 {
   PyObject *ReturnVal;
   Byte *input, *output;
@@ -160,9 +157,7 @@ static char decompress__doc__[] =
 ;
 
 static PyObject *
-PyZlib_decompress(self, args)
-        PyObject *self;
-        PyObject *args;
+PyZlib_decompress(PyObject *self, PyObject *args)
 {
   PyObject *result_str;
   Byte *input;
@@ -267,9 +262,7 @@ PyZlib_decompress(self, args)
 }
 
 static PyObject *
-PyZlib_compressobj(selfptr, args)
-        PyObject *selfptr;
-        PyObject *args;
+PyZlib_compressobj(PyObject *selfptr, PyObject *args)
 {
   compobject *self;
   int level=Z_DEFAULT_COMPRESSION, method=DEFLATED;
@@ -316,9 +309,7 @@ PyZlib_compressobj(selfptr, args)
 }
 
 static PyObject *
-PyZlib_decompressobj(selfptr, args)
-        PyObject *selfptr;
-        PyObject *args;
+PyZlib_decompressobj(PyObject *selfptr, PyObject *args)
 {
   int wbits=DEF_WBITS, err;
   compobject *self;
@@ -363,8 +354,7 @@ PyZlib_decompressobj(selfptr, args)
 }
 
 static void
-Comp_dealloc(self)
-        compobject *self;
+Comp_dealloc(compobject *self)
 {
     if (self->is_initialised)
       deflateEnd(&self->zst);
@@ -373,8 +363,7 @@ Comp_dealloc(self)
 }
 
 static void
-Decomp_dealloc(self)
-        compobject *self;
+Decomp_dealloc(compobject *self)
 {
     inflateEnd(&self->zst);
     Py_XDECREF(self->unused_data);
@@ -390,9 +379,7 @@ static char comp_compress__doc__[] =
 
 
 static PyObject *
-PyZlib_objcompress(self, args)
-        compobject *self;
-        PyObject *args;
+PyZlib_objcompress(compobject *self, PyObject *args)
 {
   int err = Z_OK, inplen;
   int length = DEFAULTALLOC;
@@ -449,9 +436,7 @@ static char decomp_decompress__doc__[] =
 ;
 
 static PyObject *
-PyZlib_objdecompress(self, args)
-        compobject *self;
-        PyObject *args;
+PyZlib_objdecompress(compobject *self, PyObject *args)
 {
   int length, err, inplen;
   PyObject *RetVal;
@@ -523,9 +508,7 @@ static char comp_flush__doc__[] =
 ;
 
 static PyObject *
-PyZlib_flush(self, args)
-        compobject *self;
-        PyObject *args;
+PyZlib_flush(compobject *self, PyObject *args)
 {
   int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;
@@ -622,9 +605,7 @@ static char decomp_flush__doc__[] =
 ;
 
 static PyObject *
-PyZlib_unflush(self, args)
-        compobject *self;
-        PyObject *args;
+PyZlib_unflush(compobject *self, PyObject *args)
 {
   int length=0, err;
   PyObject *RetVal;
@@ -707,17 +688,13 @@ static PyMethodDef Decomp_methods[] =
 };
 
 static PyObject *
-Comp_getattr(self, name)
-     compobject *self;
-     char *name;
+Comp_getattr(compobject *self, char *name)
 {
         return Py_FindMethod(comp_methods, (PyObject *)self, name);
 }
 
 static PyObject *
-Decomp_getattr(self, name)
-     compobject *self;
-     char *name;
+Decomp_getattr(compobject *self, char *name)
 {
         if (strcmp(name, "unused_data") == 0) 
 	  {  
@@ -735,8 +712,7 @@ static char adler32__doc__[] =
 ;
 
 static PyObject *
-PyZlib_adler32(self, args)
-     PyObject *self, *args;
+PyZlib_adler32(PyObject *self, PyObject *args)
 {
     uLong adler32val=adler32(0L, Z_NULL, 0);
     Byte *buf;
@@ -758,8 +734,7 @@ static char crc32__doc__[] =
 ;
 
 static PyObject *
-PyZlib_crc32(self, args)
-     PyObject *self, *args;
+PyZlib_crc32(PyObject *self, PyObject *args)
 {
     uLong crc32val=crc32(0L, Z_NULL, 0);
     Byte *buf;
@@ -824,10 +799,7 @@ statichere PyTypeObject Decomptype = {
 /* Convenience routine to export an integer value.
    For simplicity, errors (which are unlikely anyway) are ignored. */
 static void
-insint(d, name, value)
-     PyObject *d;
-     char *name;
-     int value;
+insint(PyObject *d, char *name, int value)
 {
 	PyObject *v = PyInt_FromLong((long) value);
 	if (v == NULL) {
