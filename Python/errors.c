@@ -599,7 +599,7 @@ PyErr_WriteUnraisable(PyObject *obj)
 	Py_XDECREF(tb);
 }
 
-extern PyObject *PyModule_GetWarningsModule();
+extern PyObject *PyModule_GetWarningsModule(void);
 
 /* Function to issue a warning message; may raise an exception. */
 int
