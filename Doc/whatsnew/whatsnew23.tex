@@ -1735,6 +1735,7 @@ You start by creating an instance of \class{OptionParser} and telling
 it what your program's options are.
 
 \begin{verbatim}
+import sys
 from optparse import OptionParser
 
 op = OptionParser()
@@ -1750,7 +1751,9 @@ Parsing a command line is then done by calling the \method{parse_args()}
 method.
 
 \begin{verbatim}
-options, args = op.parse_args(sys.argv[1:])
+import optparse 
+
+options, args = optparse.parse_args(sys.argv[1:])
 print options
 print args
 \end{verbatim}
@@ -1768,7 +1771,7 @@ $ ./python opt.py -i data arg1
 ['arg1']
 $ ./python opt.py --input=data --length=4
 <Values at 0x400cad2c: {'input': 'data', 'length': 4}>
-['arg1']
+[]
 $
 \end{verbatim}
 
