@@ -8,6 +8,10 @@ AC_CONFIG_HEADER(config.h)
 AC_SUBST(VERSION)
 VERSION=2.1
 
+# Arguments passed to configure.
+AC_SUBST(CONFIG_ARGS)
+CONFIG_ARGS="$ac_configure_args"
+
 # NEXTSTEP|MacOSX|Darwin stuff
 if test -f /usr/lib/NextStep/software_version -o -f /System/Library/CoreServices/software_version ; then
 
