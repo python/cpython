@@ -1189,6 +1189,10 @@ call_exc_trace(p_trace, p_newtrace, f)
 	object *type, *value, *traceback, *arg;
 	int err;
 	err_get(&type, &value);
+	if (value == NULL) {
+		value = None;
+		INCREF(value);
+	}
 	traceback = tb_fetch();
 	arg = newtupleobject(3);
 	if (arg == NULL)
