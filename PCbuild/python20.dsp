@@ -694,11 +694,11 @@ SOURCE=..\Modules\getbuildinfo.c
 
 !IF  "$(CFG)" == "python20 - Win32 Release"
 
-# ADD CPP /D BUILD=3
+# ADD CPP /D BUILD=5
 
 !ELSEIF  "$(CFG)" == "python20 - Win32 Debug"
 
-# ADD CPP /D BUILD=3
+# ADD CPP /D BUILD=5
 
 !ELSEIF  "$(CFG)" == "python20 - Win32 Alpha Debug"
 
