@@ -520,6 +520,18 @@ dnl AC_MSG_RESULT($cpp_type)
 
 # checks for header files
 AC_HEADER_STDC
+
+# If the compiler generates any stderr on these tests, the header file
+# is considered absent. On some systems, gcc will produce warnings for
+# some of the headers (Redhat 6 if kernel headers don't match glibc
+# headers). Thus, disable warnings. This can go away if autoconf 2.50
+# is used, since it considers the gcc status to determine errors.
+if test $GCC == yes
+then
+   CPPFLAGS_save=$CPPFLAGS
+   CPPFLAGS="$CPPFLAGS -w"
+fi
+
 AC_CHECK_HEADERS(dlfcn.h fcntl.h grp.h limits.h langinfo.h locale.h \
 ncurses.h poll.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h termios.h \
@@ -527,6 +539,12 @@ sys/audioio.h sys/file.h sys/lock.h sys/modem.h db_185.h db.h \
 sys/param.h sys/poll.h sys/select.h sys/socket.h sys/time.h sys/times.h \
 sys/un.h sys/utsname.h sys/wait.h pty.h term.h libutil.h \
 ndbm.h db1/ndbm.h gdbm/ndbm.h sys/resource.h netpacket/packet.h)
+
+if test $GCC == yes
+then
+   CPPFLAGS=$CPPFLAGS_save
+fi
+
 AC_HEADER_DIRENT
 
 # checks for typedefs
