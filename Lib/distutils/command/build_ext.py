@@ -113,7 +113,9 @@ class build_ext (Command):
             self.include_dirs = string.split (self.include_dirs,
                                               os.pathsep)
 
-        self.include_dirs.insert (0, py_include)
+        # Put the Python "system" include dir at the end, so that
+        # any local include dirs take precedence.
+        self.include_dirs.append (py_include)
         if exec_py_include != py_include:
             self.include_dirs.insert (0, exec_py_include)
 
