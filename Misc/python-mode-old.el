@@ -1,4 +1,4 @@
-;;; Major mode for editing Python programs, version 1.08ax
+;;; Major mode for editing Python programs, version 1.08ay
 ;; by: Tim Peters <tim@ksr.com>
 ;; after an original idea by: Michael A. Guravage
 ;;
@@ -509,25 +509,74 @@ the new line indented."
     (cond
      ;; are we on a continuation line?
      ( (py-continuation-line-p)
-       (let ( (open-bracket-pos (py-nesting-level)) )
+       (let ( (startpos (point))
+	      (open-bracket-pos (py-nesting-level))
+	      endpos searching found)
 	 (if open-bracket-pos
-	     ;; line up with first real character (not whitespace or
-	     ;; comment hash) after open bracket; if none, to one
-	     ;; column beyond the open bracket
 	     (progn
-	       (goto-char (1+ open-bracket-pos)) ; just beyond bracket
-	       (and (looking-at "[ \t]*[^ \t\n#]")
-		    (goto-char (1- (match-end 0))))
-	       (current-column))
+	       ;; if preceding line in same structure, presumably the
+	       ;; user already has an indentation they like for this
+	       ;; structure, so just copy it
+	       (forward-line -1)
+	       (while (looking-at "[ \t]*[#\n]")
+		 (forward-line -1))	; ignore noise lines
+	       (if (eq open-bracket-pos (py-nesting-level))
+		   (current-indentation)
+		 ;; else copy the indentation of the first item (if
+		 ;; any) in this structure
+		 (goto-char startpos)
+		 (condition-case nil
+		     (progn (backward-list) (setq found t))
+		   (error nil))		; no preceding item
+		 (goto-char (1+ open-bracket-pos)) ; just beyond bracket
+		 (if found
+		     (progn
+		       (while (looking-at "[ \t]*[#\n\\\\]")
+			 (forward-line 1))
+		       (skip-chars-forward " \t")
+		       (current-column))
+		   ;; else to first real character (not whitespace or
+		   ;; comment hash) after open bracket; if none, to
+		   ;; 1 beyond the open bracket
+		   (and (looking-at "[ \t]*[^ \t\n#]")
+			(goto-char (1- (match-end 0))))
+		   (current-column))))
+
 	   ;; else on backslash continuation line
 	   (forward-line -1)
 	   (if (py-continuation-line-p)	; on at least 3rd line in block
 	       (current-indentation)	; so just continue the pattern
-	     ;; else started on 2nd line in block, so indent more;
-	     ;; skip first chunk of non-whitespace characters on base
-	     ;; line, + 1 more column
+	     ;; else started on 2nd line in block, so indent more.
+	     ;; if base line is an assignment with a start on a RHS,
+	     ;; indent to 2 beyond the leftmost "="; else skip first
+	     ;; chunk of non-whitespace characters on base line, + 1 more
+	     ;; column
+	     (end-of-line)
+	     (setq endpos (point)  searching t)
 	     (back-to-indentation)
-	     (skip-chars-forward "^ \t\n")
+	     (setq startpos (point))
+	     ;; look at all "=" from left to right, stopping at first
+	     ;; one not nested in a list or string
+	     (while searching
+	       (skip-chars-forward "^=" endpos)
+	       (if (= (point) endpos)
+		   (setq searching nil)
+		 (forward-char 1)
+		 (setq state (parse-partial-sexp startpos (point)))
+		 (if (and (zerop (car state)) ; not in a bracket
+			  (null (nth 3 state)))	; & not in a string
+		     (progn
+		       (setq searching nil) ; done searching in any case
+		       (setq found
+			     (not (or
+				   (eq (char-after (point)) ?=)
+				   (memq (char-after (- (point) 2))
+					 '(?< ?> ?!)))))))))
+	     (if (or (not found)	; not an assignment
+		     (looking-at "[ \t]*\\\\"))	; <=><spaces><backslash>
+		 (progn
+		   (goto-char startpos)
+		   (skip-chars-forward "^ \t\n")))
 	     (1+ (current-column))))))
 
      ;; not on a continuation line
@@ -1263,18 +1312,29 @@ statement has `:' as its last significant (non-whitespace and non-
 comment) character.  If the suggested indentation is too much, use
 \\[py-delete-char] to reduce it.
 
-Continuation lines are given extra indentation.  If a line is a
-continuation line by virtue of being in an unclosed paren/bracket/
-brace structure, it's indented to line up with the first non-whitespace
-and non-comment character following the opening paren/bracket/brace
-of the smallest such enclosing structure.  If no such character exists,
-it's indented to one column beyond the opening paren/bracket/brace.
+Continuation lines are given extra indentation.  If you don't like the
+suggested indentation, change it to something you do like, and Python-
+mode will strive to indent later lines of the statement in the same way.
+
+If a line is a continuation line by virtue of being in an unclosed
+paren/bracket/brace structure (`list', for short), the suggested
+indentation depends on whether the current line will contain the first
+item in the list.  If it is the first item, it's indented to line up with
+the first non-whitespace and non-comment character following the list's
+opening bracket; if no such character exists, it's indented to one column
+beyond the opening bracket.  If you don't like that, change it by hand.
+The remaining items in the list will mimic whatever indentation you gave
+to the first item.
 
 If a line is a continuation line because the line preceding it ends with
-a backslash, the third and following lines of the continuation block
-inherit their indentation from the line preceding them, while the second
-line in the block is indented to one column beyond the first chunk of
-non-whitespace characters in the block's initial line.
+a backslash, the third and following lines of the statement inherit their
+indentation from the line preceding them.  The indentation of the second
+line in the statement depends on the form of the first (base) line:  if
+the base line is an assignment statement with anything more interesting
+than the backslash following the leftmost assigning `=', the second line
+is indented two columns beyond that `='.  Else it's indented to two
+columns beyond the leftmost solid chunk of non-whitespace characters on
+the base line.
 
 Warning:  indent-region should not normally be used!  It calls \\[indent-for-tab-command]
 repeatedly, and as explained above, \\[indent-for-tab-command] can't guess the block
