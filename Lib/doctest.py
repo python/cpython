@@ -793,7 +793,7 @@ class DocTestFinder:
 
         The optional argument `doctest_factory` specifies a class or
         function that should be used to create new DocTest objects (or
-        objects that implement the same interface as DocTest).  This
+        objects that implement the same interface as DocTest).  The
         signature for this factory function should match the signature
         of the DocTest constructor.
 
