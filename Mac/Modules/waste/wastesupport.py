@@ -126,7 +126,10 @@ LongPt_New(LongPt *p)
 
 /* Stuff for the callbacks: */
 static PyObject *callbackdict;
-UniversalProcPtr upp_new_handler, upp_dispose_handler, upp_draw_handler, upp_click_handler;
+WENewObjectUPP upp_new_handler;
+WEDisposeObjectUPP upp_dispose_handler;
+WEDrawObjectUPP upp_draw_handler;
+WEClickObjectUPP upp_click_handler;
 
 static OSErr
 any_handler(WESelector what, WEObjectReference who, PyObject *args, PyObject **rv)
@@ -279,9 +282,9 @@ variablestuff = """
 	if (callbackdict == NULL || PyDict_SetItemString(d, "callbacks", callbackdict) != 0)
 		Py_FatalError("can't initialize Waste.callbackdict");
 	upp_new_handler = NewWENewObjectProc(my_new_handler);
-	upp_dispose_handler = NewWENewObjectProc(my_dispose_handler);
-	upp_draw_handler = NewWENewObjectProc(my_draw_handler);
-	upp_click_handler = NewWENewObjectProc(my_click_handler);
+	upp_dispose_handler = NewWEDisposeObjectProc(my_dispose_handler);
+	upp_draw_handler = NewWEDrawObjectProc(my_draw_handler);
+	upp_click_handler = NewWEClickObjectProc(my_click_handler);
 """
 
 
@@ -363,10 +366,10 @@ inshandler_body = """
 			&py_handler,
 			ExistingwasteObj_New, &we) ) return NULL;
 			
-	if ( selector == weNewHandler ) handler = upp_new_handler;
-	else if ( selector == weDisposeHandler ) handler = upp_dispose_handler;
-	else if ( selector == weDrawHandler ) handler = upp_draw_handler;
-	else if ( selector == weClickHandler ) handler = upp_click_handler;
+	if ( selector == weNewHandler ) handler = (UniversalProcPtr)upp_new_handler;
+	else if ( selector == weDisposeHandler ) handler = (UniversalProcPtr)upp_dispose_handler;
+	else if ( selector == weDrawHandler ) handler = (UniversalProcPtr)upp_draw_handler;
+	else if ( selector == weClickHandler ) handler = (UniversalProcPtr)upp_click_handler;
 	else return PyMac_Error(weUndefinedSelectorErr);
 			
 	if ((key = Py_BuildValue("O&O&", 
