@@ -5,9 +5,6 @@
 # This is the modeless version of this test program, the normal
 # modal version is in tdlg.py
 
-import addpack
-addpack.addpack(':Tools:bgen:evt')
-
 from Dlg import *
 from Evt import *
 from Events import *

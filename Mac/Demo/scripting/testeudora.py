@@ -1,10 +1,6 @@
 """A test program that allows us to control Eudora"""
 
 import sys
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
 import aetools
 import Eudora_Suite
 import Required_Suite

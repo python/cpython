@@ -3,9 +3,6 @@
 # Python library.
 # The ID can be overridden by passing a second parameter.
 
-import addpack
-addpack.addpack(':Tools:bgen:evt')
-
 from Dlg import *
 from Events import *
 import string

@@ -13,10 +13,6 @@ Based upon STDWIN dialogs with the same names and functions.
 
 from Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
 import Qd
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('qd')
 import QuickDraw
 
 

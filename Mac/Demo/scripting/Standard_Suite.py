@@ -5,10 +5,6 @@ Generated from Moes:Programma's:Eudora:Eudora Light
 AETE/AEUT resource version 2/16, language 0, script 0
 """
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
 
 import aetools
 import MacOS

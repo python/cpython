@@ -3,11 +3,6 @@
 Jack Jansen, CWI, December 1995
 """
 
-import addpack
-addpack.addpack(':Tools:bgen:qt')
-addpack.addpack(':Tools:bgen:qd')
-addpack.addpack(':Tools:bgen:evt')
-addpack.addpack(':Tools:bgen:win')
 import Qt
 import QuickTime
 import Qd

@@ -6,14 +6,6 @@ especially to figure out all the different forms an object specifier
 can have (without having to rely on Apple's implementation).
 """
 
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
-addpack.addpack('evt')
-#addpack.addpack('menu')
-addpack.addpack('win')
-
 import sys
 sys.stdout = sys.stderr
 import traceback

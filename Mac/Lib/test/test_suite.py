@@ -1,10 +1,6 @@
 #
 # Test of generated AE modules.
 #
-import addpack
-addpack.addpack('Tools')
-addpack.addpack('bgen')
-addpack.addpack('ae')
 import sys
 import macfs
 
