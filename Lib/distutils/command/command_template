@@ -1,6 +1,7 @@
 """distutils.command.x
 
-Implements the Distutils 'x' command."""
+Implements the Distutils 'x' command.
+"""
 
 # created 2000/mm/dd, John Doe
 
