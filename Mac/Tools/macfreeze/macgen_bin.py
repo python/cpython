@@ -77,8 +77,6 @@ def generate(input, output, module_dict = None, architecture = 'fat', debug=0):
 	cfmfile.mergecfmfiles([applettemplatepath, corepath] + dynamicfiles.keys(), 
 			output, architecture)
 	
-	fss = macfs.FSSpec(output)
-	fss.SetCreatorType('Pyta', 'APPL')
 	print "done!"
 
 
