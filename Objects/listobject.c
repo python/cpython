@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* List object implementation */
 
 #include "allobjects.h"
+#include "modsupport.h"
 
 object *
 newlistobject(size)
