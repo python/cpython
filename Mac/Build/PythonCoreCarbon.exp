@@ -208,7 +208,9 @@ PyThreadState_New
 PyInterpreterState_Delete
 PyInterpreterState_Clear
 PyInterpreterState_New
+PyMember_SetOne
 PyMember_Set
+PyMember_GetOne
 PyMember_Get
 PySys_WriteStderr
 PySys_WriteStdout
@@ -249,8 +251,8 @@ PyMapping_Check
 PySequence_Index
 PySequence_In
 PySequence_Contains
-_PySequence_IterContains
 PySequence_Count
+_PySequence_IterSearch
 PySequence_Fast
 PySequence_List
 PySequence_Tuple
@@ -433,6 +435,7 @@ PyLong_AsLong
 PyLong_FromDouble
 PyLong_FromUnsignedLong
 PyLong_FromLong
+_PyLong_Copy
 _PyLong_New
 PyCFunction_Type
 PyCFunction_Fini
@@ -454,7 +457,6 @@ _Py_NoneStruct
 _Py_NotImplementedStruct
 _Py_cobject_hack
 _Py_abstract_hack
-PyObject_ClearWeakRefs
 Py_DivisionWarningFlag
 _PyTrash_delete_later
 _PyTrash_delete_nesting
@@ -544,8 +546,10 @@ subtype_getsets
 PyType_Type
 PyBaseObject_Type
 PySuper_Type
+_PyObject_SlotCompare
 PyType_Ready
 _PyType_Lookup
+call_maybe
 call_method
 PyType_IsSubtype
 PyType_GenericNew
@@ -655,7 +659,7 @@ Pstring
 PyMac_StopGUSISpin
 RotateCursor
 SpinCursor
-PyMac_GetFullPath
+PyMac_GetFullPathname
 PyMac_AppRefNum
 PyMac_options
 console_output_state
@@ -790,6 +794,8 @@ PyUnicodeUCS2_DecodeUTF16
 PyUnicodeUCS2_AsUTF8String
 PyUnicodeUCS2_EncodeUTF8
 PyUnicodeUCS2_DecodeUTF8
+PyUnicode_EncodeUTF7
+PyUnicode_DecodeUTF7
 PyUnicodeUCS2_SetDefaultEncoding
 PyUnicodeUCS2_GetDefaultEncoding
 PyUnicodeUCS2_GetSize
@@ -843,6 +849,7 @@ PyExc_NotImplementedError
 PyExc_SyntaxError
 PyExc_IndentationError
 PyExc_TabError
+PyExc_ReferenceError
 PyExc_SystemError
 PyExc_SystemExit
 PyExc_UnboundLocalError
@@ -877,6 +884,7 @@ PyCallIter_New
 PySeqIter_New
 PyOS_vsnprintf
 PyOS_snprintf
+PyWrapperDescr_Type
 proxytype
 wrappertype
 PyProperty_Type
@@ -1020,6 +1028,14 @@ PyErr_Mac
 PyMac_GetOSErrException
 PyMac_StrError
 PyMac_getscript
+_PyWeakref_RefType
+_PyWeakref_ProxyType
+_PyWeakref_CallableProxyType
+PyObject_ClearWeakRefs
+PyWeakref_GetObject
+PyWeakref_NewProxy
+PyWeakref_NewRef
+_PyWeakref_GetWeakrefCount
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
