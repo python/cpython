@@ -15,16 +15,16 @@ class CompilerTest(unittest.TestCase):
         testdir = os.path.dirname(test.test_support.__file__)
 
         for dir in [libdir, testdir]:
-            for path in os.listdir(dir):
-                if not path.endswith(".py"):
+            for basename in os.listdir(dir):
+                if not basename.endswith(".py"):
                     continue
-                fpath = os.path.join(dir, path)
+                path = os.path.join(dir, basename)
                 if test.test_support.verbose:
-                    print "compiling", fpath
-                f = open(fpath)
+                    print "compiling", path
+                f = open(path)
                 buf = f.read()
                 f.close()
-                compiler.compile(buf, path, "exec")
+                compiler.compile(buf, basename, "exec")
 
 def test_main():
     test.test_support.requires("compiler")
