@@ -86,6 +86,55 @@ r(SyntaxError)
 try: exec '/\n'
 except SyntaxError: pass
 
+# make sure the right exception message is raised for each of these
+# code fragments:
+
+def ckmsg(src, msg):
+    try:
+        compile(src, '<fragment>', 'exec')
+    except SyntaxError, e:
+        print e.msg
+        if e.msg == msg:
+            print "ok"
+        else:
+            print "expected:", msg
+    else:
+        print "failed to get expected SyntaxError"
+
+s = '''\
+while 1:
+    try:
+        continue
+    except:
+        pass
+'''
+ckmsg(s, "'continue' not supported inside 'try' clause")
+s = '''\
+while 1:
+    try:
+        continue
+    finally:
+        pass
+'''
+ckmsg(s, "'continue' not supported inside 'try' clause")
+s = '''\
+while 1:
+    try:
+        if 1:
+            continue
+    finally:
+        pass
+'''
+ckmsg(s, "'continue' not supported inside 'try' clause")
+s = '''\
+try:
+    continue
+except:
+    pass
+'''
+ckmsg(s, "'continue' not properly in loop")
+ckmsg("continue\n", "'continue' not properly in loop")
+
 r(IndentationError)
 
 r(TabError)
