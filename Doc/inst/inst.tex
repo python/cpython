@@ -144,7 +144,7 @@ The idea behind the ``home scheme'' is that you are building and
 maintaining a personal stash of Python modules, probably under your home 
 directory.  Installing a new module distribution is as simple as
 \begin{verbatim}
-python setup.py install --home
+python setup.py install --home        # arg, doesn't work (getopt)
 \end{verbatim}
 or
 \begin{verbatim}
@@ -244,7 +244,7 @@ under Unix, there's no point in having separate \option{prefix} and
 \option{home} options.  Just use the \option{prefix} option to specify
 a base directory, e.g.
 \begin{verbatim}
-python setup.py install --base="\Temp\Python"
+python setup.py install --prefix="\Temp\Python"
 \end{verbatim}
 to install modules to the \file{\bslash{}Temp} directory on the current
 drive.
@@ -270,8 +270,8 @@ XXX how do MacPython users run the interpreter with command-line args?
 
 \installscheme{prefix}{:Lib}
               {prefix}{:Mac:PlugIns}
-              {prefix}{}
-              {prefix}{}
+              {prefix}{:Scripts}
+              {prefix}{:Data}
 
 XXX Corran Webster says: ``Modules are found in either \file{:Lib} or
 \file{:Mac:Lib}, while extensions usually go in
