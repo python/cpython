@@ -1,6 +1,8 @@
 # Test suite for SocketServer.py
 
+import test_support
 from test_support import verbose, verify, TESTFN, TestSkipped
+test_support.requires('network')
 
 from SocketServer import *
 import socket
