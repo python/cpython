@@ -1663,7 +1663,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	 */
 
 	/* 1. Allocate result space. */
-	ret = _PyLong_New(asize + bsize + 1);
+	ret = _PyLong_New(asize + bsize);
 	if (ret == NULL) goto fail;
 #ifdef Py_DEBUG
 	/* Fill with trash, to catch reference to uninitialized digits. */
@@ -1769,7 +1769,7 @@ long_mul(PyLongObject *v, PyLongObject *w)
 		return Py_NotImplemented;
 	}
 
-#if 1
+#if 0
 	if (Py_GETENV("KARAT") != NULL)
 		z = k_mul(a, b);
 	else
