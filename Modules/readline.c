@@ -552,6 +552,8 @@ flex_complete(char *text, int start, int end)
 static void
 setup_readline(void)
 {
+	using_history();
+
 	rl_readline_name = "python";
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 	/* Allow $if term= in .inputrc to work */
@@ -628,8 +630,23 @@ call_readline(char *prompt)
 		return p;
 	}
 	n = strlen(p);
-	if (n > 0)
-		add_history(p);
+	if (n > 0) {
+		char *line;
+		HISTORY_STATE *state = history_get_history_state();
+		if (state->length > 0)
+			line = history_get(state->length)->line;
+		else
+			line = "";
+		if (strcmp(p, line))
+			add_history(p);
+		/* the history docs don't say so, but the address of state
+		   changes each time history_get_history_state is called
+		   which makes me think it's freshly malloc'd memory...
+		   on the other hand, the address of the last line stays the
+		   same as long as history isn't extended, so it appears to
+		   be malloc'd but managed by the history package... */
+		free(state);
+	}
 	/* Copy the malloc'ed buffer into a PyMem_Malloc'ed one and
 	   release the original. */
 	q = p;
