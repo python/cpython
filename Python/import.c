@@ -857,8 +857,6 @@ imp_load_compiled(self, args)
 	if (fp == NULL)
 		return NULL;
 	m = load_compiled_module(name, pathname, fp);
-	if (fob == NULL)
-		fclose(fp);
 	return m;
 }
 
@@ -877,8 +875,6 @@ imp_load_dynamic(self, args)
 	if (fob)
 		fp = get_file(pathname, fob, "r");
 	m = load_dynamic_module(name, pathname, fp);
-	if (fob == NULL)
-		fclose(fp);
 	return m;
 }
 
@@ -898,8 +894,6 @@ imp_load_source(self, args)
 	if (fp == NULL)
 		return NULL;
 	m = load_source_module(name, pathname, fp);
-	if (fob == NULL)
-		fclose(fp);
 	return m;
 }
 
