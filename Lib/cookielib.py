@@ -26,7 +26,6 @@ are available from http://wwwsearch.sf.net/):
 """
 
 import sys, re, urlparse, copy, time, urllib, logging
-from types import StringTypes
 try:
     import threading as _threading
 except ImportError:
@@ -359,7 +358,7 @@ def split_header_words(header_values):
     [[('Basic', None), ('realm', '"foobar"')]]
 
     """
-    assert type(header_values) not in StringTypes
+    assert not isinstance(header_values, basestring)
     result = []
     for text in header_values:
         orig_text = text

@@ -71,7 +71,7 @@ if sys.version_info[:2] < (2, 2):
     False, True = 0, 1
     def isinstance(obj, clsinfo):
         import __builtin__
-        if type(clsinfo) in (types.TupleType, types.ListType):
+        if type(clsinfo) in (tuple, list):
             for cls in clsinfo:
                 if cls is type: cls = types.ClassType
                 if __builtin__.isinstance(obj, cls):

@@ -67,7 +67,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import sys, os
-import types
 import textwrap
 try:
     from gettext import gettext as _
@@ -590,7 +589,7 @@ class Option:
             if self.choices is None:
                 raise OptionError(
                     "must supply a list of choices for type 'choice'", self)
-            elif type(self.choices) not in (types.TupleType, types.ListType):
+            elif type(self.choices) not in (tuple, list):
                 raise OptionError(
                     "choices must be a list of strings ('%s' supplied)"
                     % str(type(self.choices)).split("'")[1], self)
@@ -634,12 +633,12 @@ class Option:
                 raise OptionError(
                     "callback not callable: %r" % self.callback, self)
             if (self.callback_args is not None and
-                type(self.callback_args) is not types.TupleType):
+                type(self.callback_args) is not tuple):
                 raise OptionError(
                     "callback_args, if supplied, must be a tuple: not %r"
                     % self.callback_args, self)
             if (self.callback_kwargs is not None and
-                type(self.callback_kwargs) is not types.DictType):
+                type(self.callback_kwargs) is not dict):
                 raise OptionError(
                     "callback_kwargs, if supplied, must be a dict: not %r"
                     % self.callback_kwargs, self)
@@ -927,7 +926,7 @@ class OptionContainer:
         """add_option(Option)
            add_option(opt_str, ..., kwarg=val, ...)
         """
-        if type(args[0]) is types.StringType:
+        if type(args[0]) is str:
             option = self.option_class(*args, **kwargs)
         elif len(args) == 1 and not kwargs:
             option = args[0]
@@ -1213,7 +1212,7 @@ class OptionParser (OptionContainer):
 
     def add_option_group(self, *args, **kwargs):
         # XXX lots of overlap with OptionContainer.add_option()
-        if type(args[0]) is types.StringType:
+        if type(args[0]) is str:
             group = OptionGroup(self, *args, **kwargs)
         elif len(args) == 1 and not kwargs:
             group = args[0]

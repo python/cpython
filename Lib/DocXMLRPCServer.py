@@ -12,7 +12,6 @@ modules.
 
 import pydoc
 import inspect
-import types
 import re
 import sys
 
@@ -92,7 +91,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         else:
             argspec = '(...)'
 
-        if isinstance(object, types.TupleType):
+        if isinstance(object, tuple):
             argspec = object[0] or argspec
             docstring = object[1] or ""
         else:
