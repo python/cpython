@@ -1,0 +1,44 @@
+\section{\module{tokenize} ---
+         Tokenizer for Python source}
+
+\declaremodule{standard}{tokenize}
+\modulesynopsis{Lexical scanner for Python source code.}
+\moduleauthor{Ka Ping Yee}{}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+
+The \module{tokenize} module provides a lexical scanner for Python
+source code, implemented in Python.  The scanner in this module
+returns comments as tokens as well, making it useful for implementing
+``pretty-printers,'' including colorizers for on-screen displays.
+
+The scanner is exposed via single function:
+
+
+\begin{funcdesc}{tokenize}{readline\optional{, tokeneater}}
+  The \function{tokenize()} function accepts two parameters: one
+  representing the input stream, and one providing an output mechanism 
+  for \function{tokenize()}.
+
+  The first parameter, \var{readline}, must be a callable object which
+  provides the same interface as \method{readline()} method of
+  built-in file objects (see section~\ref{bltin-file-objects}).  Each
+  call to the function should return one line of input as a string.
+
+  The second parameter, \var{tokeneater}, must also be a callable
+  object.  It is called with five parameters: the token type, the
+  token string, a tuple \code{(\var{srow}, \var{scol})} specifying the 
+  row and column where the token begins in the source, a tuple
+  \code{(\var{erow}, \var{ecol})} giving the ending position of the
+  token, and the line on which the token was found.  The line passed
+  is the \emph{logical} line; continuation lines are included.
+\end{funcdesc}
+
+
+All constants from the \refmodule{token} module are also exported from 
+\module{tokenize}, as is one additional token type value that might be 
+passed to the \var{tokeneater} function by \function{tokenize()}:
+
+\begin{datadesc}{COMMENT}
+  Token value used to indicate a comment.
+\end{datadesc}

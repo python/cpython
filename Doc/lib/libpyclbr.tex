@@ -1,0 +1,58 @@
+\section{\module{pyclbr} ---
+         Python class browser information}
+
+\declaremodule{standard}{pyclbr}
+\modulesynopsis{Supports information extraction for a Python class
+browser.}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+
+The \module{pyclbr} can be used to determine some limited information
+about the classes and methods defined in a module.  The information
+provided is sufficient to implement a traditional three-pane class
+browser.  The information is extracted from the source code rather
+than from an imported module, so this module is safe to use with
+untrusted source code.
+
+
+\begin{funcdesc}{readmodule}{module\optional{, path}}
+  % The 'inpackage' parameter appears to be for internal use only....
+  Read a module and return a dictionary mapping class names to class
+  descriptor objects.  The parameter \var{module} should be the name
+  of a module as a string; it may be the name of a module within a
+  package.  The \var{path} parameter should be a sequence, and is used
+  to augment the value of \code{sys.path}, which is used to locate
+  module source code.
+\end{funcdesc}
+
+
+\subsection{Class Descriptor Objects \label{pyclbr-class-objects}}
+
+The class descriptor objects used as values in the dictionary returned
+by \function{readmodule()} provide the following data members:
+
+
+\begin{memberdesc}[class descriptor]{name}
+  The name of the class.
+\end{memberdesc}
+
+\begin{memberdesc}[class descriptor]{super}
+  A list of class descriptors which describe the immediate base
+  classes of the class being described.  Classes which are named as
+  superclasses but which are not discoverable by
+  \function{readmodule()} are listed as a string with the class name
+  instead of class descriptors.
+\end{memberdesc}
+
+\begin{memberdesc}[class descriptor]{methods}
+  A dictionary mapping method names to line numbers.
+\end{memberdesc}
+
+\begin{memberdesc}[class descriptor]{file}
+  Name of the file containing the class statement defining the class.
+\end{memberdesc}
+
+\begin{memberdesc}[class descriptor]{lineno}
+  The line number of the class statement within the file named by
+  \member{file}.
+\end{memberdesc}
