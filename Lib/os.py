@@ -160,7 +160,6 @@ elif 'riscos' in _names:
     import riscospath
     path = riscospath
     del riscospath
-    from riscosenviron import environ
 
     import riscos
     __all__.extend(_get_exports_list(riscos))
@@ -346,17 +345,19 @@ def _execvpe(file, args, env=None):
     raise exc, arg
 
 
-if name != "riscos":
-    # Change environ to automatically call putenv() if it exists
-    try:
-        # This will fail if there's no putenv
-        putenv
-    except NameError:
-        pass
-    else:
-        import UserDict
+# Change environ to automatically call putenv() if it exists
+try:
+    # This will fail if there's no putenv
+    putenv
+except NameError:
+    pass
+else:
+    import UserDict
 
-    if name in ('os2', 'nt', 'dos'):  # Where Env Var Names Must Be UPPERCASE
+    if name == "riscos":
+        # On RISC OS, all env access goes through getenv and putenv
+        from riscosenviron import _Environ
+    elif name in ('os2', 'nt', 'dos'):  # Where Env Var Names Must Be UPPERCASE
         # But we store them as upper case
         class _Environ(UserDict.UserDict):
             def __init__(self, environ):

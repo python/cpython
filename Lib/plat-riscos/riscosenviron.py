@@ -3,7 +3,7 @@
 import riscos
 
 class _Environ:
-    def __init__(self):
+    def __init__(self, initial = None):
         pass
     def __repr__(self):
         return repr(riscos.getenvdict())
@@ -43,4 +43,3 @@ class _Environ:
         else:
             return failobj
 
-environ = _Environ()
