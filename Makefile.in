@@ -77,7 +77,7 @@
 # See also the section "Build instructions" in the README file.
 
 # Interpreter version number, for library destination pathnames
-VERSION=	1.4
+VERSION=	1.5
 
 # Substitutions by configure
 srcdir=		@srcdir@
