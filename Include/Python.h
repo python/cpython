@@ -54,8 +54,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "pyport.h"
 
-#include "myproto.h"
-
 #include "object.h"
 #include "objimpl.h"
 
@@ -85,7 +83,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "codecs.h"
 #include "pyerrors.h"
-#include "mymalloc.h"
 
 #include "pystate.h"
 

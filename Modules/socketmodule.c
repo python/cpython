@@ -126,7 +126,6 @@ Socket methods:
 #endif
 
 #include <sys/types.h>
-#include "mytime.h"
 
 #include <signal.h>
 #ifndef MS_WINDOWS

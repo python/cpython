@@ -17,7 +17,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #ifndef WITHOUT_COMPLEX
 
 #include "Python.h"
-#include "mymath.h"
 
 #ifdef HAVE_LIMITS_H
 #include <limits.h>

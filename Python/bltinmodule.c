@@ -16,8 +16,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "compile.h"
 #include "eval.h"
 
-#include "mymath.h"
-
 #include <ctype.h>
 
 #ifdef HAVE_UNISTD_H

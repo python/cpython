@@ -1,3 +1,8 @@
+/***************************************
+THIS FILE IS OBSOLETE
+USE "pyport.h" INSTEAD
+***************************************/
+
 /* On the 68K Mac, when using CFM (Code Fragment Manager),
    <math.h> requires special treatment -- we need to surround it with
    #pragma lib_export off / on...

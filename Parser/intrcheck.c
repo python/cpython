@@ -17,7 +17,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define DL_IMPORT(RTYPE) RTYPE
 #endif
 
-#include "myproto.h"
 #include "intrcheck.h"
 
 /* Copied here from ceval.h -- can't include that file. */

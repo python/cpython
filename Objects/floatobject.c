@@ -16,7 +16,6 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "Python.h"
 
 #include <ctype.h>
-#include "mymath.h"
 
 #ifdef i860
 /* Cray APP has bogus definition of HUGE_VAL in <math.h> */
