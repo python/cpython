@@ -763,11 +763,10 @@ into a shared library, which can then be used by the interpreter
 executable, and by applications embedding Python. To enable this feature,
 configure with --enable-shared. 
 
-If you do so, a static library will be created in addition to the
-shared library, which uses the same object files as the shared library
-In particular, the library likely object files using
-position-independent code (PIC) if PIC flags are needed for the shared
-library.
+If you enable this feature, the same object files will be used to create
+a static library.  In particular, the static library will contain object
+files using position-independent code (PIC) on platforms where PIC flags
+are needed for the shared library.
 
 
 Configuring additional built-in modules
