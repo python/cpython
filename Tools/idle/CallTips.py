@@ -2,18 +2,6 @@ import string
 import sys
 import types
 
-# These keys check if cancellation is nesessary.
-_check_cancel_keys = ["Left", "Right"]
-
-# These keys (with the modifiers) call cancel unconditionally.
-_cancel_keys_base = ["Up", "Down", "Next", "Prior", "Home"]
-_cancel_keys_modifiers = ['Key-', 'Control-', 'Shift-', 'Control-Shift-']
-
-_cancel_keys = []
-for key in _cancel_keys_base:
-    for mod in _cancel_keys_modifiers:
-        _cancel_keys.append(mod+key)
-
 class CallTips:
 
     menudefs = [
@@ -22,8 +10,8 @@ class CallTips:
     keydefs = {
         '<<paren-open>>': ['<Key-parenleft>'],
         '<<paren-close>>': ['<Key-parenright>'],
-        '<<check-calltip-cancel>>': map(lambda key: "<Key-%s>" % key, _check_cancel_keys),
-        '<<calltip-cancel>>': map(lambda key: "<%s>" % key, _cancel_keys),
+        '<<check-calltip-cancel>>': ['<KeyRelease>'],
+        '<<calltip-cancel>>': ['<ButtonPress>', '<Key-Escape>'],
     }
 
     windows_keydefs = {
