@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -24,18 +24,17 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Tokenizer implementation */
 
-/* XXX This is rather old, should be restructured perhaps */
-/* XXX Need a better interface to report errors than writing to stderr */
-/* XXX Should use editor resource to fetch true tab size on Macintosh */
-
 #include "pgenheaders.h"
 
 #include <ctype.h>
-#include "string.h"
 
-#include "fgetsintr.h"
 #include "tokenizer.h"
 #include "errcode.h"
+
+extern char *my_readline PROTO((char *));
+/* Return malloc'ed string including trailing \n;
+   empty malloc'ed string for EOF;
+   NULL if interrupted */
 
 /* Don't ever change this -- it would break the portability of Python code */
 #define TABSIZE 8
@@ -99,7 +98,7 @@ tok_new()
 	struct tok_state *tok = NEW(struct tok_state, 1);
 	if (tok == NULL)
 		return NULL;
-	tok->buf = tok->cur = tok->end = tok->inp = NULL;
+	tok->buf = tok->cur = tok->end = tok->inp = tok->start = NULL;
 	tok->done = E_OK;
 	tok->fp = NULL;
 	tok->tabsize = TABSIZE;
@@ -158,7 +157,6 @@ void
 tok_free(tok)
 	struct tok_state *tok;
 {
-	/* XXX really need a separate flag to say 'my buffer' */
 	if (tok->fp != NULL && tok->buf != NULL)
 		DEL(tok->buf);
 	DEL(tok);
@@ -180,58 +178,78 @@ tok_nextc(tok)
 			tok->done = E_EOF;
 			return EOF;
 		}
-#ifdef USE_READLINE
 		if (tok->prompt != NULL) {
-			extern char *readline PROTO((char *prompt));
-			static int been_here;
-			if (!been_here) {
-				/* Force rebind of TAB to insert-tab */
-				extern int rl_insert();
-				rl_bind_key('\t', rl_insert);
-				been_here++;
-			}
-			if (tok->buf != NULL)
-				free(tok->buf);
-			tok->buf = readline(tok->prompt);
-			(void) intrcheck(); /* Clear pending interrupt */
+			char *new = my_readline(tok->prompt);
 			if (tok->nextprompt != NULL)
 				tok->prompt = tok->nextprompt;
-			if (tok->buf == NULL) {
+			if (new == NULL)
+				tok->done = E_INTR;
+			else if (*new == '\0') {
+				free(new);
 				tok->done = E_EOF;
 			}
-			else {
-				tok->end = strchr(tok->buf, '\0');
-				if (tok->end > tok->buf)
-					add_history(tok->buf);
-				/* Replace trailing '\n' by '\0'
-				   (we don't need a '\0', but the
-				   tokenizer wants a '\n'...) */
-				*tok->end++ = '\n';
-				tok->inp = tok->end;
-				tok->cur = tok->buf;
-			}
-		}
-		else
-#endif
-		{
-			if (tok->prompt != NULL) {
-				fprintf(stderr, "%s", tok->prompt);
-				if (tok->nextprompt != NULL)
-					tok->prompt = tok->nextprompt;
-			}
-			if (tok->buf == NULL) {
-				tok->buf = NEW(char, BUFSIZ);
-				if (tok->buf == NULL) {
+			else if (tok->start != NULL) {
+				int start = tok->start - tok->buf;
+				int oldlen = tok->cur - tok->buf;
+				int newlen = oldlen + strlen(new);
+				char *buf = realloc(tok->buf, newlen+1);
+				tok->lineno++;
+				if (buf == NULL) {
+					free(tok->buf);
+					free(new);
 					tok->done = E_NOMEM;
 					return EOF;
 				}
-				tok->end = tok->buf + BUFSIZ;
+				tok->buf = buf;
+				tok->cur = tok->buf + oldlen;
+				strcpy(tok->buf + oldlen, new);
+				free(new);
+				tok->inp = tok->buf + newlen;
+				tok->end = tok->inp + 1;
+				tok->start = tok->buf + start;
 			}
-			tok->done = fgets_intr(tok->buf,
-				(int)(tok->end - tok->buf), tok->fp);
-			tok->inp = strchr(tok->buf, '\0');
+			else {
+				tok->lineno++;
+				if (tok->buf != NULL)
+					free(tok->buf);
+				tok->buf = new;
+				tok->cur = tok->buf;
+				tok->inp = strchr(tok->buf, '\0');
+				tok->end = tok->inp + 1;
+			}
+		}
+		else {
+			int done = 0;
+			int cur = 0;
+			if (tok->start == NULL) {
+				if (tok->buf == NULL) {
+					tok->buf = NEW(char, BUFSIZ);
+					if (tok->buf == NULL) {
+						tok->done = E_NOMEM;
+						return EOF;
+					}
+					tok->end = tok->buf + BUFSIZ;
+				}
+				if (fgets(tok->buf, (int)(tok->end - tok->buf),
+					  tok->fp) == NULL) {
+					tok->done = E_EOF;
+					done = 1;
+				}
+				else {
+					tok->done = E_OK;
+					tok->inp = strchr(tok->buf, '\0');
+					done = tok->inp[-1] == '\n';
+				}
+			}
+			else {
+				cur = tok->cur - tok->buf;
+				tok->done = E_OK;
+			}
+			tok->lineno++;
 			/* Read until '\n' or EOF */
-			while (tok->inp+1==tok->end && tok->inp[-1]!='\n') {
+			while (!done) {
+				int curstart = tok->start == NULL ? -1 :
+					       tok->start - tok->buf;
 				int curvalid = tok->inp - tok->buf;
 				int cursize = tok->end - tok->buf;
 				int newsize = cursize + BUFSIZ;
@@ -245,13 +263,19 @@ tok_nextc(tok)
 				tok->buf = newbuf;
 				tok->inp = tok->buf + curvalid;
 				tok->end = tok->buf + newsize;
-				if (fgets_intr(tok->inp,
+				tok->start = curstart < 0 ? NULL :
+					     tok->buf + curstart;
+				if (fgets(tok->inp,
 					       (int)(tok->end - tok->inp),
-					       tok->fp) != E_OK)
-					break;
+					       tok->fp) == NULL) {
+					/* Last line does not end in \n,
+					   fake one */
+					strcpy(tok->inp, "\n");
+				}
 				tok->inp = strchr(tok->inp, '\0');
+				done = tok->inp[-1] == '\n';
 			}
-			tok->cur = tok->buf;
+			tok->cur = tok->buf + cur;
 		}
 		if (tok->done != E_OK) {
 			if (tok->prompt != NULL)
@@ -360,14 +384,15 @@ tok_get(tok, p_start, p_end)
 	register int c;
 	int blankline;
 
+	*p_start = *p_end = NULL;
   nextline:
+	tok->start = NULL;
 	blankline = 0;
 
 	/* Get indentation level */
 	if (tok->atbol) {
 		register int col = 0;
 		tok->atbol = 0;
-		tok->lineno++;
 		for (;;) {
 			c = tok_nextc(tok);
 			if (c == ' ')
@@ -423,7 +448,7 @@ tok_get(tok, p_start, p_end)
 		}
 	}
 	
-	*p_start = *p_end = tok->cur;
+	tok->start = tok->cur;
 	
 	/* Return pending indents/dedents */
 	if (tok->pendin != 0) {
@@ -438,13 +463,14 @@ tok_get(tok, p_start, p_end)
 	}
 	
  again:
+	tok->start = NULL;
 	/* Skip spaces */
 	do {
 		c = tok_nextc(tok);
 	} while (c == ' ' || c == '\t');
 	
 	/* Set start of current token */
-	*p_start = tok->cur - 1;
+	tok->start = tok->cur - 1;
 	
 	/* Skip comment */
 	if (c == '#') {
@@ -467,7 +493,6 @@ tok_get(tok, p_start, p_end)
 	
 	/* Check for EOF and errors now */
 	if (c == EOF) {
-		*p_start = *p_end = tok->cur;
 		return tok->done == E_EOF ? ENDMARKER : ERRORTOKEN;
 	}
 	
@@ -477,6 +502,7 @@ tok_get(tok, p_start, p_end)
 			c = tok_nextc(tok);
 		} while (isalnum(c) || c == '_');
 		tok_backup(tok, c);
+		*p_start = tok->start;
 		*p_end = tok->cur;
 		return NAME;
 	}
@@ -486,6 +512,7 @@ tok_get(tok, p_start, p_end)
 		tok->atbol = 1;
 		if (blankline || tok->level > 0)
 			goto nextline;
+		*p_start = tok->start;
 		*p_end = tok->cur - 1; /* Leave '\n' out of the string */
 		return NEWLINE;
 	}
@@ -498,6 +525,7 @@ tok_get(tok, p_start, p_end)
 		}
 		else {
 			tok_backup(tok, c);
+			*p_start = tok->start;
 			*p_end = tok->cur;
 			return DOT;
 		}
@@ -538,9 +566,7 @@ tok_get(tok, p_start, p_end)
 			else {
 				/* Accept floating point numbers.
 				   XXX This accepts incomplete things like
-				   XXX 12e or 1e+; worry run-time.
-				   XXX Doesn't accept numbers
-				   XXX starting with a dot */
+				   XXX 12e or 1e+; worry run-time */
 				if (c == '.') {
 		fraction:
 					/* Fraction */
@@ -560,58 +586,58 @@ tok_get(tok, p_start, p_end)
 			}
 		}
 		tok_backup(tok, c);
+		*p_start = tok->start;
 		*p_end = tok->cur;
 		return NUMBER;
 	}
 	
-	/* String (single quotes) */
-	if (c == '\'') {
+	/* String */
+	if (c == '\'' || c == '"') {
+		int quote = c;
+		int triple = 0;
+		int tripcount = 0;
 		for (;;) {
 			c = tok_nextc(tok);
-			if (c == '\n' || c == EOF) {
+			if (c == '\n') {
+				if (!triple) {
+					tok->done = E_TOKEN;
+					tok_backup(tok, c);
+					return ERRORTOKEN;
+				}
+				tripcount = 0;
+			}
+			else if (c == EOF) {
 				tok->done = E_TOKEN;
 				tok->cur = tok->inp;
 				return ERRORTOKEN;
 			}
-			if (c == '\\') {
+			else if (c == quote) {
+				tripcount++;
+				if (tok->cur == tok->start+2) {
+					c = tok_nextc(tok);
+					if (c == quote) {
+						triple = 1;
+						tripcount = 0;
+						continue;
+					}
+					tok_backup(tok, c);
+				}
+				if (!triple || tripcount == 3)
+					break;
+			}
+			else if (c == '\\') {
+				tripcount = 0;
 				c = tok_nextc(tok);
-				*p_end = tok->cur;
-				if (c == '\n' || c == EOF) {
+				if (c == EOF) {
 					tok->done = E_TOKEN;
 					tok->cur = tok->inp;
 					return ERRORTOKEN;
 				}
-				continue;
 			}
-			if (c == '\'')
-				break;
+			else
+				tripcount = 0;
 		}
-		*p_end = tok->cur;
-		return STRING;
-	}
-	
-	/* String (double quotes) */
-	if (c == '\"') {
-		for (;;) {
-			c = tok_nextc(tok);
-			if (c == '\n' || c == EOF) {
-				tok->done = E_TOKEN;
-				tok->cur = tok->inp;
-				return ERRORTOKEN;
-			}
-			if (c == '\\') {
-				c = tok_nextc(tok);
-				*p_end = tok->cur;
-				if (c == '\n' || c == EOF) {
-					tok->done = E_TOKEN;
-					tok->cur = tok->inp;
-					return ERRORTOKEN;
-				}
-				continue;
-			}
-			if (c == '\"')
-				break;
-		}
+		*p_start = tok->start;
 		*p_end = tok->cur;
 		return STRING;
 	}
@@ -624,7 +650,6 @@ tok_get(tok, p_start, p_end)
 			tok->cur = tok->inp;
 			return ERRORTOKEN;
 		}
-		tok->lineno++;
 		goto again; /* Read next line */
 	}
 	
@@ -633,13 +658,14 @@ tok_get(tok, p_start, p_end)
 		int c2 = tok_nextc(tok);
 		int token = tok_2char(c, c2);
 		if (token != OP) {
+			*p_start = tok->start;
 			*p_end = tok->cur;
 			return token;
 		}
 		tok_backup(tok, c2);
 	}
 	
-	/* Keep track of parenteses nesting level */
+	/* Keep track of parentheses nesting level */
 	switch (c) {
 	case '(':
 	case '[':
@@ -654,6 +680,7 @@ tok_get(tok, p_start, p_end)
 	}
 	
 	/* Punctuation character */
+	*p_start = tok->start;
 	*p_end = tok->cur;
 	return tok_1char(c);
 }
