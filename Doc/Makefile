@@ -1,40 +1,65 @@
+LATEX=		latex
+DVIPS=		dvips
+TEXPREVIEW=	texsgi
+
+PRINT=		lpr
+
 TBL=		tbl
 TROFF=		ditroff
 MS=		-ms
 FUNNYTAB=	$$HOME/lib/funnytab
-PREVIEW=	dpv -f $(FUNNYTAB)
+PREVIEW=	dpv -Pfa -f $(FUNNYTAB)
 PSDIT=		psdit
+REFER=		refer
+PROCESS=	$(REFER) -e -n $*.ms | $(TBL) | $(TROFF) $(MS)
 
-tut:		tut.dit
-		$(PREVIEW) tut.dit
+tut:		tut.dvi
+		$(TEXPREVIEW) tut
 
-mod:		mod.dit
-		$(PREVIEW) mod.dit
+tut.dvi:	tut.tex tut.toc
 
-paper:		paper.dit
-		$(PREVIEW) paper.dit
+mod:		mod.dvi
+		$(TEXPREVIEW) mod
 
-ref:		ref.dit
-		$(PREVIEW) ref.dit
+mod.dvi:	mod.tex mod.toc
 
-ALL=		tut.dit mod.dit paper.dit ref.dit
+ALL=		tut.ps mod.ps
 
 all:		$(ALL)
 
-$(ALL):		macros.ms
+print:		$(ALL)
+		$(PRINT) $(ALL)
+
+$(ALL):		mystyle.sty
 
 clean:
-		rm -f *.dit *.ps core @* ,* 
+		rm -f *.dit *.ps core @* ,*
 
 .SUFFIXES:	# Remove default suffixes
 
-.SUFFIXES:	.ms .dit .ps
+.SUFFIXES:	.ms .dit .tex .aux .toc .dvi .ps
+
+.tex.aux:
+		$(LATEX) $*
+
+.tex.toc:
+		$(LATEX) $*
+
+.tex.dvi:
+		$(LATEX) $*
+
+.dvi.ps:
+		$(DVIPS) $* >$*.ps
+
+.tex.ps:
+		$(LATEX) $*
+		$(DVIPS) $* >$*.ps
 
 .ms.dit:
-		$(TBL) $*.ms | $(TROFF) $(MS) >$@
+		$(PROCESS) >$@
 
 .dit.ps:
 		$(PSDIT) <$*.dit >$@
 
 .ms.ps:
-		$(TBL) $*.ms | $(TROFF) $(MS) | $(PSDIT) >$@
+		$(PROCESS) | $(PSDIT) >$@
