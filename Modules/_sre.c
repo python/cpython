@@ -34,6 +34,7 @@
  * 2001-10-18 fl  fixed group reset issue (from Matthew Mueller)
  * 2001-10-20 fl  added split primitive; reenable unicode for 1.6/2.0/2.1
  * 2001-10-21 fl  added sub/subn primitive
+ * 2001-10-22 fl  check for literal sub/subn templates
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -359,6 +360,7 @@ mark_restore(SRE_STATE* state, int lo, int hi)
 #define SRE_INFO sre_info
 #define SRE_MATCH sre_match
 #define SRE_SEARCH sre_search
+#define SRE_LITERAL_TEMPLATE sre_literal_template
 
 #if defined(HAVE_UNICODE)
 
@@ -366,6 +368,7 @@ mark_restore(SRE_STATE* state, int lo, int hi)
 #include "_sre.c"
 #undef SRE_RECURSIVE
 
+#undef SRE_LITERAL_TEMPLATE
 #undef SRE_SEARCH
 #undef SRE_MATCH
 #undef SRE_INFO
@@ -383,6 +386,7 @@ mark_restore(SRE_STATE* state, int lo, int hi)
 #define SRE_INFO sre_uinfo
 #define SRE_MATCH sre_umatch
 #define SRE_SEARCH sre_usearch
+#define SRE_LITERAL_TEMPLATE sre_uliteral_template
 #endif
 
 #endif /* SRE_RECURSIVE */
@@ -1282,6 +1286,15 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
     return status;
 }
     
+LOCAL(int)
+SRE_LITERAL_TEMPLATE(SRE_CHAR* ptr, int len)
+{
+    /* check if given string is a literal template (i.e. no escapes) */
+    while (len-- > 0)
+        if (*ptr++ == '\\')
+            return 0;
+    return 1;
+}
 
 #if !defined(SRE_RECURSIVE)
 
@@ -1388,19 +1401,16 @@ state_reset(SRE_STATE* state)
     mark_fini(state);
 }
 
-LOCAL(PyObject*)
-state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
-           int start, int end)
+static void*
+getstring(PyObject* string, int* p_length, int* p_charsize)
 {
-    /* prepare state object */
-
+    /* given a python object, return a data pointer, a length (in
+       characters), and a character size.  return NULL if the object
+       is not a string (or not compatible) */
+    
     PyBufferProcs *buffer;
-    int size, bytes;
+    int size, bytes, charsize;
     void* ptr;
-
-    memset(state, 0, sizeof(SRE_STATE));
-
-    state->lastindex = -1;
 
 #if defined(HAVE_UNICODE)
     if (PyUnicode_Check(string)) {
@@ -1408,7 +1418,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
         ptr = (void*) PyUnicode_AS_DATA(string);
         bytes = PyUnicode_GET_DATA_SIZE(string);
         size = PyUnicode_GET_SIZE(string);
-        state->charsize = sizeof(Py_UNICODE);
+        charsize = sizeof(Py_UNICODE);
 
     } else {
 #endif
@@ -1436,10 +1446,10 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
 #endif
 
     if (PyString_Check(string) || bytes == size)
-        state->charsize = 1;
+        charsize = 1;
 #if defined(HAVE_UNICODE)
     else if (bytes == (int) (size * sizeof(Py_UNICODE)))
-        state->charsize = sizeof(Py_UNICODE);
+        charsize = sizeof(Py_UNICODE);
 #endif
     else {
         PyErr_SetString(PyExc_TypeError, "buffer size mismatch");
@@ -1450,16 +1460,42 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     }
 #endif
 
+    *p_length = size;
+    *p_charsize = charsize;
+
+    return ptr;
+}
+
+LOCAL(PyObject*)
+state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
+           int start, int end)
+{
+    /* prepare state object */
+
+    int length;
+    int charsize;
+    void* ptr;
+
+    memset(state, 0, sizeof(SRE_STATE));
+
+    state->lastindex = -1;
+
+    ptr = getstring(string, &length, &charsize);
+    if (!ptr)
+        return NULL;
+
     /* adjust boundaries */
     if (start < 0)
         start = 0;
-    else if (start > size)
-        start = size;
+    else if (start > length)
+        start = length;
 
     if (end < 0)
         end = 0;
-    else if (end > size)
-        end = size;
+    else if (end > length)
+        end = length;
+
+    state->charsize = charsize;
 
     state->beginning = ptr;
 
@@ -2038,6 +2074,7 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
     PyObject* filter;
     PyObject* args;
     PyObject* match;
+    void* ptr;
     int status;
     int n;
     int i, b, e;
@@ -2049,15 +2086,35 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
         Py_INCREF(filter);
         filter_is_callable = 1;
     } else {
-        /* if not callable, call the template compiler.  it may return
-           either a filter function or a literal string */
-        filter = call(
-            SRE_MODULE, "_subx",
-            Py_BuildValue("OO", self, template)
-            );
-        if (!filter)
-            return NULL;
-        filter_is_callable = PyCallable_Check(filter);
+        /* if not callable, check if it's a literal string */
+        int literal;
+        ptr = getstring(template, &n, &b);
+        if (ptr) {
+            if (b == 1) {
+                literal = sre_literal_template(ptr, n);
+            } else {
+#if defined(HAVE_UNICODE)
+                literal = sre_uliteral_template(ptr, n);
+#endif
+            }
+        } else {
+            PyErr_Clear();
+            literal = 0;
+        }
+        if (literal) {
+            filter = template;
+            Py_INCREF(filter);
+            filter_is_callable = 0;
+        } else {
+            /* not a literal; hand it over to the template compiler */
+            filter = call(
+                SRE_MODULE, "_subx",
+                Py_BuildValue("OO", self, template)
+                );
+            if (!filter)
+                return NULL;
+            filter_is_callable = PyCallable_Check(filter);
+        }
     }
 
     string = state_init(&state, self, string, 0, INT_MAX);
@@ -2132,10 +2189,12 @@ pattern_subx(PatternObject* self, PyObject* template, PyObject* string,
         }
 
         /* add to list */
-        status = PyList_Append(list, item);
-        Py_DECREF(item);
-        if (status < 0)
-            goto error;
+        if (item != Py_None) {
+            status = PyList_Append(list, item);
+            Py_DECREF(item);
+            if (status < 0)
+                goto error;
+        }
         
         i = e;
         n = n + 1;
