@@ -176,7 +176,6 @@ print 'try_stmt' # 'try' ':' suite (except_clause ':' suite)* ['finally' ':' sui
 ### except_clause: 'except' [expr [',' expr]]
 try: pass
 try: 1/0
-except RuntimeError: pass
 except ZeroDivisionError: pass
 try: 1/0
 except EOFError: pass
@@ -269,11 +268,11 @@ x = 123
 print 'classdef' # 'class' NAME parameters ['=' baselist] ':' suite
 ### baselist: atom arguments (',' atom arguments)*
 ### arguments: '(' [testlist] ')'
-class B(): pass
-class C1() = B(): pass
-class C2() = B(): pass
-class D() = C1(), C2(), B(): pass
-class C():
+class B: pass
+class C1(B): pass
+class C2(B): pass
+class D(C1, C2, B): pass
+class C:
 	def meth1(self): pass
 	def meth2(self, arg): pass
 	def meth3(self, (a1, a2)): pass
@@ -486,12 +485,9 @@ print 'Passed all tests.'
 try:
 	import mac
 	unlink = mac.unlink
-except NameError:
-	try:
-		import posix
-		unlink = posix.unlink
-	except NameError:
-		pass
+except ImportError:
+	import posix
+	unlink = posix.unlink
 
 unlink('@test')
 print 'Unlinked @test'
