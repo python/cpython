@@ -1,6 +1,6 @@
 # Try colors -- display all 256 possible colors, with their color index
 
-# import stdwingl
+import stdwingl
 
 import stdwin
 from stdwinevents import *
@@ -30,9 +30,9 @@ def main():
 					p = col*width/NCOLS, row*height/NROWS
 					q = (col+1)*width/NCOLS, \
 						(row+1)*height/NROWS
-					d.paint(p, q)
+					d.paint((p, q))
 					d.setfgcolor(0)
-					d.box(p, q)
+					d.box((p, q))
 					d.text(p, `color`)
 					p = p[0] , p[1]+ d.lineheight()
 					d.setfgcolor(7)
