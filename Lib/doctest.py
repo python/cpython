@@ -493,24 +493,24 @@ class Example:
     A single doctest example, consisting of source code and expected
     output.  Example defines the following attributes:
 
-      - source: A single python statement, ending in a newline iff the
-        statement spans more than one line.
+      - source:  A single Python statement, always ending with a newline.
+        The constructor adds a newline if needed.
 
-      - want: The expected output from running the source code (either
-        from stdout, or a traceback in case of exception).  `want`
-        should always end with a newline, unless no output is expected,
+      - want:  The expected output from running the source code (either
+        from stdout, or a traceback in case of exception).  `want` ends
+        with a newline unless it's empty, in which case it's an empty
+        string.  The constructor adds a newline if needed.
 
-      - lineno: The line number within the DocTest string containing
+      - lineno:  The line number within the DocTest string containing
         this Example where the Example begins.  This line number is
         zero-based, with respect to the beginning of the DocTest.
     """
     def __init__(self, source, want, lineno):
-        # Check invariants.
-        if (source[-1:] == '\n') != ('\n' in source[:-1]):
-            raise AssertionError("source must end with newline iff "
-                                 "source contains more than one line")
-        if  want and want[-1] != '\n':
-            raise AssertionError("non-empty want must end with newline")
+        # Normalize inputs.
+        if not source.endswith('\n'):
+            source += '\n'
+        if want and not want.endswith('\n'):
+            want += '\n'
         # Store properties.
         self.source = source
         self.want = want
@@ -625,9 +625,9 @@ class Parser:
         ...        '''
         >>> for x in Parser('<string>', text).get_examples():
         ...     print (x.source, x.want, x.lineno)
-        ('x, y = 2, 3  # no output expected', '', 1)
+        ('x, y = 2, 3  # no output expected\\n', '', 1)
         ('if 1:\\n    print x\\n    print y\\n', '2\\n3\\n', 2)
-        ('x+y', '5\\n', 9)
+        ('x+y\\n', '5\\n', 9)
         """
         examples = []
         charno, lineno = 0, 0
@@ -1283,7 +1283,7 @@ class DocTestRunner:
                 # like "if 1: print 2", then compile() requires a
                 # trailing newline.  Rather than analyze that, always
                 # append one (it never hurts).
-                exec compile(example.source + '\n', "<string>", "single",
+                exec compile(example.source, "<string>", "single",
                              compileflags, 1) in test.globs
                 exception = None
             except KeyboardInterrupt:

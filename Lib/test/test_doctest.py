@@ -127,31 +127,41 @@ an expected output string, and a line number (within the docstring):
 
     >>> example = doctest.Example('print 1', '1\n', 0)
     >>> (example.source, example.want, example.lineno)
-    ('print 1', '1\n', 0)
+    ('print 1\n', '1\n', 0)
 
-The `source` string should end in a newline iff the source spans more
-than one line:
+The `source` string ends in a newline:
 
-    >>> # Source spans a single line: no terminating newline.
+    Source spans a single line: no terminating newline.
     >>> e = doctest.Example('print 1', '1\n', 0)
+    >>> e.source, e.want
+    ('print 1\n', '1\n')
+
     >>> e = doctest.Example('print 1\n', '1\n', 0)
-    Traceback (most recent call last):
-    AssertionError: source must end with newline iff source contains more than one line
+    >>> e.source, e.want
+    ('print 1\n', '1\n')
 
-    >>> # Source spans multiple lines: require terminating newline.
+    Source spans multiple lines: require terminating newline.
     >>> e = doctest.Example('print 1;\nprint 2\n', '1\n2\n', 0)
-    >>> e = doctest.Example('print 1;\nprint 2', '1\n2\n', 0)
-    Traceback (most recent call last):
-    AssertionError: source must end with newline iff source contains more than one line
+    >>> e.source, e.want
+    ('print 1;\nprint 2\n', '1\n2\n')
 
-The `want` string should be terminated by a newline, unless it's the
-empty string:
+    >>> e = doctest.Example('print 1;\nprint 2', '1\n2\n', 0)
+    >>> e.source, e.want
+    ('print 1;\nprint 2\n', '1\n2\n')
+
+The `want` string ends with a newline, unless it's the empty string:
 
     >>> e = doctest.Example('print 1', '1\n', 0)
+    >>> e.source, e.want
+    ('print 1\n', '1\n')
+
     >>> e = doctest.Example('print 1', '1', 0)
-    Traceback (most recent call last):
-    AssertionError: non-empty want must end with newline
+    >>> e.source, e.want
+    ('print 1\n', '1\n')
+
     >>> e = doctest.Example('print', '', 0)
+    >>> e.source, e.want
+    ('print\n', '')
 """
 
 def test_DocTest(): r"""
@@ -180,9 +190,9 @@ constructor:
     2
     >>> e1, e2 = test.examples
     >>> (e1.source, e1.want, e1.lineno)
-    ('print 12', '12\n', 1)
+    ('print 12\n', '12\n', 1)
     >>> (e2.source, e2.want, e2.lineno)
-    ("print 'another\\example'", 'another\nexample\n', 6)
+    ("print 'another\\example'\n", 'another\nexample\n', 6)
 
 Source information (name, filename, and line number) is available as
 attributes on the doctest object:
@@ -264,8 +274,8 @@ will return a single test (for that function's docstring):
     >>> print tests
     [<DocTest sample_func from ...:12 (1 example)>]
     >>> e = tests[0].examples[0]
-    >>> print (e.source, e.want, e.lineno)
-    ('print sample_func(22)', '44\n', 3)
+    >>> (e.source, e.want, e.lineno)
+    ('print sample_func(22)\n', '44\n', 3)
 
     >>> doctest: -ELLIPSIS # Turn ellipsis back off
 
