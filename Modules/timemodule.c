@@ -31,9 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Time module */
 
-#include "allobjects.h"
-#include "modsupport.h"
-#include "ceval.h"
+#include "Python.h"
 
 #ifdef HAVE_SELECT
 #include "mymath.h"
@@ -80,23 +78,23 @@ extern int ftime();
 #endif /* !__WATCOMC__ */
 
 /* Forward declarations */
-static int floatsleep PROTO((double));
-static double floattime PROTO(());
+static int floatsleep Py_PROTO((double));
+static double floattime Py_PROTO(());
 
-static object *
+static PyObject *
 time_time(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double secs;
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
 	secs = floattime();
 	if (secs == 0.0) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	return newfloatobject(secs);
+	return PyFloat_FromDouble(secs);
 }
 
 #ifdef HAVE_CLOCK
@@ -109,39 +107,39 @@ time_time(self, args)
 #endif
 #endif
 
-static object *
+static PyObject *
 time_clock(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	return newfloatobject(((double)clock()) / CLOCKS_PER_SEC);
+	return PyFloat_FromDouble(((double)clock()) / CLOCKS_PER_SEC);
 }
 #endif /* HAVE_CLOCK */
 
-static object *
+static PyObject *
 time_sleep(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double secs;
-	if (!getargs(args, "d", &secs))
+	if (!PyArg_Parse(args, "d", &secs))
 		return NULL;
-	BGN_SAVE
+	Py_BEGIN_ALLOW_THREADS
 	if (floatsleep(secs) != 0) {
-		RET_SAVE
+		Py_BLOCK_THREADS
 		return NULL;
 	}
-	END_SAVE
-	INCREF(None);
-	return None;
+	Py_END_ALLOW_THREADS
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 time_convert(when, function)
 	time_t when;
-	struct tm * (*function) PROTO((const time_t *));
+	struct tm * (*function) Py_PROTO((const time_t *));
 {
 	struct tm *p;
 	errno = 0;
@@ -151,48 +149,48 @@ time_convert(when, function)
 		if (errno == 0)
 			errno = EINVAL;
 #endif
-		return err_errno(IOError);
+		return PyErr_SetFromErrno(PyExc_IOError);
 	}
-	return mkvalue("(iiiiiiiii)",
+	return Py_BuildValue("(iiiiiiiii)",
 		       p->tm_year + 1900,
-		       p->tm_mon + 1, /* Want January == 1 */
+		       p->tm_mon + 1,        /* Want January == 1 */
 		       p->tm_mday,
 		       p->tm_hour,
 		       p->tm_min,
 		       p->tm_sec,
 		       (p->tm_wday + 6) % 7, /* Want Monday == 0 */
-		       p->tm_yday + 1, /* Want January, 1 == 1 */
+		       p->tm_yday + 1,       /* Want January, 1 == 1 */
 		       p->tm_isdst);
 }
 
-static object *
+static PyObject *
 time_gmtime(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double when;
-	if (!getargs(args, "d", &when))
+	if (!PyArg_Parse(args, "d", &when))
 		return NULL;
 	return time_convert((time_t)when, gmtime);
 }
 
-static object *
+static PyObject *
 time_localtime(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double when;
-	if (!getargs(args, "d", &when))
+	if (!PyArg_Parse(args, "d", &when))
 		return NULL;
 	return time_convert((time_t)when, localtime);
 }
 
 static int
 gettmarg(args, p)
-	object *args;
+	PyObject *args;
 	struct tm *p;
 {
-	if (!getargs(args, "(iiiiiiiii)",
+	if (!PyArg_Parse(args, "(iiiiiiiii)",
 		     &p->tm_year,
 		     &p->tm_mon,
 		     &p->tm_mday,
@@ -212,10 +210,10 @@ gettmarg(args, p)
 }
 
 #ifdef HAVE_STRFTIME
-static object *
+static PyObject *
 time_strftime(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	struct tm buf;
 	const char *fmt;
@@ -244,24 +242,24 @@ time_strftime(self, args)
 	for (i = 1024 ; i < 8192 ; i += 1024) {
 		outbuf = malloc(i);
 		if (outbuf == NULL) {
-			return err_nomem();
+			return PyErr_NoMemory();
 		}
 		if (strftime(outbuf, i-1, fmt, &buf) != 0) {
-			object *ret;
-			ret = newstringobject(outbuf);
+			PyObject *ret;
+			ret = PyString_FromString(outbuf);
 			free(outbuf);
 			return ret;
 		}
 		free(outbuf);
 	}
-	return err_nomem();
+	return PyErr_NoMemory();
 }
 #endif /* HAVE_STRFTIME */
 
-static object *
+static PyObject *
 time_asctime(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	struct tm buf;
 	char *p;
@@ -270,30 +268,30 @@ time_asctime(self, args)
 	p = asctime(&buf);
 	if (p[24] == '\n')
 		p[24] = '\0';
-	return newstringobject(p);
+	return PyString_FromString(p);
 }
 
-static object *
+static PyObject *
 time_ctime(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	double dt;
 	time_t tt;
 	char *p;
-	if (!getargs(args, "d", &dt))
+	if (!PyArg_Parse(args, "d", &dt))
 		return NULL;
 	tt = (time_t)dt;
 	p = ctime(&tt);
 	if (p[24] == '\n')
 		p[24] = '\0';
-	return newstringobject(p);
+	return PyString_FromString(p);
 }
 
-static object *
+static PyObject *
 time_mktime(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	struct tm buf;
 	time_t tt;
@@ -303,13 +301,14 @@ time_mktime(self, args)
 		return NULL;
 	tt = mktime(&buf);
 	if (tt == (time_t)(-1)) {
-		err_setstr(OverflowError, "mktime argument out of range");
+		PyErr_SetString(PyExc_OverflowError,
+                                "mktime argument out of range");
 		return NULL;
 	}
-	return newfloatobject((double)tt);
+	return PyFloat_FromDouble((double)tt);
 }
 
-static struct methodlist time_methods[] = {
+static PyMethodDef time_methods[] = {
 	{"time",	time_time},
 #ifdef HAVE_CLOCK
 	{"clock",	time_clock},
@@ -328,33 +327,34 @@ static struct methodlist time_methods[] = {
 
 static void
 ins(d, name, v)
-	object *d;
+	PyObject *d;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if (v == NULL)
-		fatal("Can't initialize time module -- NULL value");
-	if (dictinsert(d, name, v) != 0)
-		fatal("Can't initialize time module -- dictinsert failed");
-	DECREF(v);
+		Py_FatalError("Can't initialize time module -- NULL value");
+	if (PyDict_SetItemString(d, name, v) != 0)
+		Py_FatalError(
+                        "Can't initialize time module -- dictinsert failed");
+	Py_DECREF(v);
 }
 
 void
 inittime()
 {
-	object *m, *d;
-	m = initmodule("time", time_methods);
-	d = getmoduledict(m);
+	PyObject *m, *d;
+	m = Py_InitModule("time", time_methods);
+	d = PyModule_GetDict(m);
 #ifdef HAVE_TZNAME
 	tzset();
-	ins(d, "timezone", newintobject((long)timezone));
+	ins(d, "timezone", PyInt_FromLong((long)timezone));
 #ifdef HAVE_ALTZONE
-	ins(d, "altzone", newintobject((long)altzone));
+	ins(d, "altzone", PyInt_FromLong((long)altzone));
 #else
-	ins(d, "altzone", newintobject((long)timezone-3600));
+	ins(d, "altzone", PyInt_FromLong((long)timezone-3600));
 #endif
-	ins(d, "daylight", newintobject((long)daylight));
-	ins(d, "tzname", mkvalue("(zz)", tzname[0], tzname[1]));
+	ins(d, "daylight", PyInt_FromLong((long)daylight));
+	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
 #else /* !HAVE_TZNAME */
 #if HAVE_TM_ZONE
 	{
@@ -375,10 +375,12 @@ inittime()
 		summerzone = -p->tm_gmtoff;
 		strncpy(summername, p->tm_zone ? p->tm_zone : "   ", 9);
 		summername[9] = '\0';
-		ins(d, "timezone", newintobject(winterzone));
-		ins(d, "altzone", newintobject(summerzone));
-		ins(d, "daylight", newintobject((long)(winterzone != summerzone)));
-		ins(d, "tzname",  mkvalue("(zz)", wintername, summername));
+		ins(d, "timezone", PyInt_FromLong(winterzone));
+		ins(d, "altzone", PyInt_FromLong(summerzone));
+		ins(d, "daylight",
+                    PyInt_FromLong((long)(winterzone != summerzone)));
+		ins(d, "tzname",
+                    Py_BuildValue("(zz)", wintername, summername));
 	}
 #endif /* HAVE_TM_ZONE */
 #endif /* !HAVE_TZNAME */
@@ -444,7 +446,7 @@ floatsleep(secs)
 	t.tv_sec = (long)secs;
 	t.tv_usec = (long)(frac*1000000.0);
 	if (select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t) != 0) {
-		err_errno(IOError);
+		PyErr_SetFromErrno(PyExc_IOError);
 		return -1;
 	}
 #else /* !HAVE_SELECT */
@@ -453,7 +455,7 @@ floatsleep(secs)
 	long deadline;
 	deadline = MacTicks + (long)(secs * 60.0);
 	while (MacTicks < deadline) {
-		if (sigcheck())
+		if (PyErr_CheckSignals())
 			return -1;
 	}
 #else /* !macintosh */
@@ -464,8 +466,8 @@ floatsleep(secs)
 #ifdef MSDOS
 	struct timeb t1, t2;
 	double frac;
-	extern double fmod PROTO((double, double));
-	extern double floor PROTO((double));
+	extern double fmod Py_PROTO((double, double));
+	extern double floor Py_PROTO((double));
 	if (secs <= 0.0)
 		return;
 	frac = fmod(secs, 1.0);
@@ -481,7 +483,7 @@ floatsleep(secs)
 #ifdef QUICKWIN
 		_wyield();
 #endif
-		if (sigcheck())
+		if (PyErr_CheckSignals())
 			return -1;
 		ftime(&t1);
 		if (t1.time > t2.time ||
