@@ -198,71 +198,6 @@ module_repr(PyModuleObject *m)
 	return PyString_FromFormat("<module '%s' from '%s'>", name, filename);
 }
 
-static PyObject *
-find_builtin_names(void)
-{
-	PyObject *builtins, *names, *key, *value;
-	int pos = 0;
-	builtins = PyEval_GetBuiltins();
-	if (builtins == NULL || !PyDict_Check(builtins)) {
-  		PyErr_SetString(PyExc_SystemError, "no builtins dict!");
-		return NULL;
-	}
-	names = PyDict_New();
-	if (names == NULL)
-		return NULL;
-	while (PyDict_Next(builtins, &pos, &key, &value)) {
-		if (PyString_Check(key) &&
-				PyString_Size(key) > 0 &&
-				PyString_AS_STRING(key)[0] != '_') {
-			if (PyDict_SetItem(names, key, Py_None) < 0) {
-				Py_DECREF(names);
-				return NULL;
-			}
-		}
-	}
-	return names;
-}
-
-/* returns 0 or 1 (and -1 on error) */
-static int
-shadows_builtin(PyObject *globals, PyObject *name)
-{
-	static PyObject *builtin_names = NULL;
-	if (builtin_names == NULL) {
-		builtin_names = find_builtin_names();
-		if (builtin_names == NULL)
-			return -1;
-	}
-	if (!PyString_Check(name))
-		return 0;
-	if (PyDict_GetItem(globals, name) == NULL &&
-	    PyDict_GetItem(builtin_names, name) != NULL) {
-		return 1;
-	}
-	else {
-		return 0;
-	}
-}
-
-static int
-module_setattr(PyObject *m, PyObject *name, PyObject *value)
-{
-	PyObject *globals = ((PyModuleObject *)m)->md_dict;
-	PyObject *builtins = PyEval_GetBuiltins();
-	if (globals != NULL && globals != builtins) {
-		int shadows = shadows_builtin(globals, name);
-		if (shadows == 1) {
-			if (PyErr_Warn(PyExc_DeprecationWarning,
-					"assignment shadows builtin") < 0)
-				return -1;
-		}
-		else if (shadows == -1)
-			return -1;
-	}
-	return PyObject_GenericSetAttr(m, name, value);
-}
-
 /* We only need a traverse function, no clear function: If the module
    is in a cycle, md_dict will be cleared as well, which will break
    the cycle. */
@@ -299,7 +234,7 @@ PyTypeObject PyModule_Type = {
 	0,					/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
-	module_setattr,				/* tp_setattro */
+	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,		/* tp_flags */
