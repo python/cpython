@@ -32,16 +32,17 @@ SHELL=		/bin/sh
 POBJS=		acceler.o grammar1.o \
 		listnode.o node.o parser.o \
 		parsetok.o tokenizer.o bitset.o \
-		firstsets.o grammar.o metagrammar.o pgen.o \
-		printgrammar.o
+		metagrammar.o
 
 OBJS=		$(POBJS) intrcheck.o myreadline.o
 
 PGENMAIN=	pgenmain.o
 
-PGENOBJS=	$(PGENMAIN) $(POBJS)
+PGOBJS=		firstsets.o grammar.o pgen.o printgrammar.o
 
-DOBJS=		$(PGENMAIN) $(OBJS)
+PGENOBJS=	$(PGENMAIN) $(POBJS) $(PGOBJS)
+
+DOBJS=		$(PGENMAIN) $(OBJS) $(PGOBJS)
 
 PGEN=		pgen
 
