@@ -834,7 +834,7 @@ int_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (tmp == NULL)
 		return NULL;
 	assert(PyInt_Check(tmp));
-	new = type->tp_alloc(type, 0);;
+	new = type->tp_alloc(type, 0);
 	if (new == NULL)
 		return NULL;
 	((PyIntObject *)new)->ob_ival = ((PyIntObject *)tmp)->ob_ival;
