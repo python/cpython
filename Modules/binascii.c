@@ -328,6 +328,35 @@ binascii_b2a_uu(self, args)
 	return rv;
 }
 
+
+static int
+binascii_find_valid(s, slen, num)
+	char *s;
+	int slen;
+	int num;
+{
+	/* Finds & returns the (num+1)th 
+	** valid character for base64, or -1 if none.
+	*/
+
+	int ret = -1;
+	unsigned char c, b64val;
+
+	while ((slen > 0) && (ret == -1)) {
+		c = *s;
+		b64val = table_a2b_base64[c & 0x7f];
+		if ( ((c <= 0x7f) && (b64val != (unsigned char)-1)) ) {
+			if (num == 0)
+				ret = *s;
+			num--;
+		}
+
+		s++;
+		slen--;
+	}
+	return ret;
+}
+
 static char doc_a2b_base64[] = "(ascii) -> bin. Decode a line of base64 data";
 
 static PyObject *
@@ -339,9 +368,9 @@ binascii_a2b_base64(self, args)
 	int leftbits = 0;
 	unsigned char this_ch;
 	unsigned int leftchar = 0;
-	int npad = 0;
 	PyObject *rv;
 	int ascii_len, bin_len;
+	int quad_pos = 0;
 	
 	if ( !PyArg_ParseTuple(args, "t#", &ascii_data, &ascii_len) )
 		return NULL;
@@ -353,39 +382,61 @@ binascii_a2b_base64(self, args)
 		return NULL;
 	bin_data = (unsigned char *)PyString_AsString(rv);
 	bin_len = 0;
-	for( ; ascii_len > 0 ; ascii_len--, ascii_data++ ) {
-		/* Skip some punctuation */
-		this_ch = (*ascii_data & 0x7f);
-		if ( this_ch == '\r' || this_ch == '\n' || this_ch == ' ' )
+
+	for( ; ascii_len > 0; ascii_len--, ascii_data++) {
+		this_ch = *ascii_data;
+
+		if (this_ch > 0x7f ||
+		    this_ch == '\r' || this_ch == '\n' || this_ch == ' ')
 			continue;
-		
-		if ( this_ch == BASE64_PAD )
-			npad++;
-		this_ch = table_a2b_base64[(*ascii_data) & 0x7f];
-		if ( this_ch == (unsigned char) -1 ) continue;
+
+		/* Check for pad sequences and ignore
+		** the invalid ones.
+		*/
+		if (this_ch == BASE64_PAD) {
+			if ( (quad_pos < 2) ||
+			     ((quad_pos == 2) &&
+			      (binascii_find_valid(ascii_data, ascii_len, 1)
+			       != BASE64_PAD)) )
+			{
+				continue;
+			}
+			else {
+				/* A pad sequence means no more input.
+				** We've already interpreted the data
+				** from the quad at this point.
+				*/
+				leftbits = 0;
+				break;
+			}
+		}
+
+		this_ch = table_a2b_base64[*ascii_data];
+		if ( this_ch == (unsigned char) -1 )
+			continue;
+
 		/*
 		** Shift it in on the low end, and see if there's
 		** a byte ready for output.
 		*/
+		quad_pos = (quad_pos + 1) & 0x03;
 		leftchar = (leftchar << 6) | (this_ch);
 		leftbits += 6;
+
 		if ( leftbits >= 8 ) {
 			leftbits -= 8;
 			*bin_data++ = (leftchar >> leftbits) & 0xff;
-			leftchar &= ((1 << leftbits) - 1);
 			bin_len++;
+			leftchar &= ((1 << leftbits) - 1);
 		}
-	}
-	/* Check that no bits are left */
-	if ( leftbits ) {
+ 	}
+
+	if (leftbits != 0) {
 		PyErr_SetString(Error, "Incorrect padding");
 		Py_DECREF(rv);
 		return NULL;
 	}
-	/* and remove any padding */
-	bin_len -= npad;
-	if (bin_len < 0)
-		bin_len = 0;
+
 	/* and set string size correctly */
 	_PyString_Resize(&rv, bin_len);
 	return rv;
