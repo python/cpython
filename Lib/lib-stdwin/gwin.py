@@ -2,16 +2,11 @@
 # Generic stdwin windows
 
 # This is used as a base class from which to derive other window types.
-# The mainloop() function here is an event dispatcher for all window types.
-
-# XXX This is really obsoleted by "mainloop.py".
-# XXX Also you should to it class-oriented...
+# XXX DON'T USE THIS CODE ANY MORE!  It is ages old!
 
 import stdwin, stdwinq
 from stdwinevents import *
-
-windows = []				# List of open windows
-
+from mainloop import mainloop, register, unregister, windows
 
 # Open a window
 
@@ -37,15 +32,10 @@ def open(title):			# Open a generic window
 	w.backspace = backspace
 	w.arrow = arrow
 	w.kleft = w.kup = w.kright = w.kdown = nop
-	windows.append(w)
+	w.dispatch = treatevent
+	register(w)
 	return w
 
-
-# Generic event dispatching
-
-def mainloop():				# Handle events until no windows left
-	while windows:
-		treatevent(stdwinq.getevent())
 
 def treatevent(e):			# Handle a stdwin event
 	type, w, detail = e
@@ -95,10 +85,9 @@ def treatcommand(w, type):		# Handle a we_command event
 # Methods
 
 def close(w):				# Close method
-	for i in range(len(windows)):
-		if windows[i] is w:
-			del windows[i]
-			break
+	unregister(w)
+	del w.close	# Delete our close function
+	w.close()	# Call the close method
 
 def arrow(w, detail):			# Arrow key method
 	if detail == WC_LEFT:
@@ -118,4 +107,4 @@ def enter(w): w.char(w, '\n')		# 'return' is a Python reserved word
 def backspace(w): w.char(w, '\b')
 def m2down(w, detail): w.mdown(w, detail)
 def m2up(w, detail): w.mup(w, detail)
-def nop(args): pass
+def nop(*args): pass

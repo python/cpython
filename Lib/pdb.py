@@ -105,7 +105,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			print '*** Error in argument:', `arg`
 			return
 		filename = self.curframe.f_code.co_filename
-		err = self.set_break(filename, lineno)
+		err = self.clear_break(filename, lineno)
 		if err: print '***', err
 	do_cl = do_clear # 'c' is already an abbreviation for 'continue'
 	

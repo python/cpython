@@ -14,7 +14,7 @@ Error = 'WindowParent.Error'	# Exception
 
 class WindowParent(ManageOneChild):
 	#
-	def create(self, (title, size)):
+	def create(self, title, size):
 		self.title = title
 		self.size = size		# (width, height)
 		self._reset()
@@ -47,7 +47,7 @@ class WindowParent(ManageOneChild):
 	def close_trigger(self):
 		if self.close_hook: self.close_hook(self)
 	#
-	def menu_trigger(self, (menu, item)):
+	def menu_trigger(self, menu, item):
 		if self.menu_hook:
 			self.menu_hook(self, menu, item)
 	#
@@ -94,7 +94,7 @@ class WindowParent(ManageOneChild):
 			width = self.size[0]
 		if self.vbar:
 			height = self.size[1]
-		self.child.setbounds((0, 0), (width, height))
+		self.child.setbounds(((0, 0), (width, height)))
 		self.child.realize()
 		self.win.dispatch = self.dispatch
 		mainloop.register(self.win)
@@ -109,7 +109,7 @@ class WindowParent(ManageOneChild):
 			width = self.size[0]
 		if self.vbar:
 			height = self.size[1]
-		self.child.setbounds((0, 0), (width, height))
+		self.child.setbounds(((0, 0), (width, height)))
 		# Force a redraw of the entire window:
 		self.win.change((0, 0), self.size)
 	#

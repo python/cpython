@@ -2,13 +2,13 @@ from TransParent import TransParent
 
 class BoxParent(TransParent):
 	#
-	def create(self, (parent, (dh, dv))):
+	def create(self, parent, (dh, dv)):
 		self = TransParent.create(self, parent)
 		self.dh = dh
 		self.dv = dv
 		return self
 	#
-	def getminsize(self, (m, (width, height))):
+	def getminsize(self, m, (width, height)):
 		width = max(0, width - 2*self.dh)
 		height = max(0, height - 2*self.dv)
 		width, height = self.child.getminsize(m, (width, height))

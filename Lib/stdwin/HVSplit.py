@@ -9,13 +9,13 @@ from Split import Split
 
 class HVSplit(Split):
 	#
-	def create(self, (parent, hv)):
+	def create(self, parent, hv):
 		# hv is 0 for HSplit, 1 for VSplit
 		self = Split.create(self, parent)
 		self.hv = hv
 		return self
 	#
-	def getminsize(self, (m, sugg_size)):
+	def getminsize(self, m, sugg_size):
 		hv, vh = self.hv, 1 - self.hv
 		size = [0, 0]
 		sugg_size = [sugg_size[0], sugg_size[1]]
@@ -46,8 +46,8 @@ class HVSplit(Split):
 			corner = [0, 0]
 			corner[vh] = end[vh]
 			corner[hv] = origin[hv] + size[hv]
-			c.setbounds((origin[0], origin[1]), \
-					(corner[0], corner[1]))
+			c.setbounds(((origin[0], origin[1]), \
+					(corner[0], corner[1])))
 			origin[hv] = corner[hv]
 			# XXX stretch
 			# XXX too-small

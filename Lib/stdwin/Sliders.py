@@ -69,12 +69,12 @@ class DragSliderAppearance(ButtonAppearance):
 	def sethook(self, hook):
 		self.hook = hook
 	#
-	def setminvalmax(self, (min, val, max)):
+	def setminvalmax(self, min, val, max):
 		self.min = min
 		self.max = max
 		self.setval(val)
 	#
-	def settexts(self, (pretext, postext)):
+	def settexts(self, pretext, postext):
 		self.pretext = pretext
 		self.postext = postext
 		self.recalctext()
@@ -95,7 +95,7 @@ class DragSliderAppearance(ButtonAppearance):
 	#
 
 class DragSlider(DragSliderReactivity, DragSliderAppearance, Define):
-	def definetext(self, (parent, text)):
+	def definetext(self, parent, text):
 		raise RuntimeError, 'DragSlider.definetext() not supported'
 
 
@@ -108,7 +108,7 @@ class _StepButton(PushButton):
 		return self
 	def setstep(self, step):
 		self.step = step
-	def definetextstep(self, (parent, text, step)):
+	def definetextstep(self, parent, text, step):
 		self = self.definetext(parent, text)
 		self.setstep(step)
 		return self
@@ -145,7 +145,7 @@ class ComplexSlider(HSplit):
 	#
 	# Override HSplit methods
 	#
-	def getminsize(self, (m, (width, height))):
+	def getminsize(self, m, (width, height)):
 		w1, h1 = self.downbutton.getminsize(m, (0, height))
 		w3, h3 = self.upbutton.getminsize(m, (0, height))
 		w1 = max(w1, h1)
@@ -156,10 +156,10 @@ class ComplexSlider(HSplit):
 	def setbounds(self, bounds):
 		(left, top), (right, bottom) = self.bounds = bounds
 		size = bottom - top
-		self.downbutton.setbounds((left, top), (left+size, bottom))
-		self.dragbutton.setbounds((left+size, top), \
-						(right-size, bottom))
-		self.upbutton.setbounds((right-size, top), (right, bottom))
+		self.downbutton.setbounds(((left, top), (left+size, bottom)))
+		self.dragbutton.setbounds(((left+size, top), \
+						(right-size, bottom)))
+		self.upbutton.setbounds(((right-size, top), (right, bottom)))
 	#
 	# Pass other Slider methods on to dragbutton
 	#

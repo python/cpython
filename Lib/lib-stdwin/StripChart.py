@@ -8,7 +8,7 @@ from Buttons import LabelAppearance, NoReactivity
 
 class StripChart(LabelAppearance, NoReactivity):
 	#
-	def define(self, (parent, scale)):
+	def define(self, parent, scale):
 		self.parent = parent
 		parent.addchild(self)
 		self.init_appearance()
@@ -49,8 +49,8 @@ class StripChart(LabelAppearance, NoReactivity):
 			area = (left+i-1, top), (left+i, bottom)
 			self.draw(self.parent.begindrawing(), area)
 	#
-	def draw(self, (d, area)):
-		area = rect.intersect(area, self.bounds)
+	def draw(self, d, area):
+		area = rect.intersect([area, self.bounds])
 		if area == rect.empty:
 			return
 		d.cliprect(area)

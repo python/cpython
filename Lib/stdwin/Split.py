@@ -39,7 +39,7 @@ class Split:
 		self.mouse_focus = None
 		self.keybd_focus = None
 	#
-	def getminsize(self, (m, (width, height))):
+	def getminsize(self, m, (width, height)):
 		return unimpl()			# Should ask children
 	def getbounds(self):
 		return unimpl()

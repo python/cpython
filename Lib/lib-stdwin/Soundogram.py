@@ -5,7 +5,7 @@ from Histogram import Histogram
 
 class Soundogram(Histogram):
 	#
-	def define(self, (win, chunk)):
+	def define(self, win, chunk):
 		width, height = corner = win.getwinsize()
 		bounds = (0, 0), corner
 		self.chunk = chunk

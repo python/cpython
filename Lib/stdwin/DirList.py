@@ -11,7 +11,7 @@ from HVSplit import HSplit, VSplit
 
 class DirList(VSplit):
 	#
-	def create(self, (parent, dirname)):
+	def create(self, parent, dirname):
 		self = VSplit.create(self, parent)
 		names = os.listdir(dirname)
 		for name in names:

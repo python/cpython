@@ -7,7 +7,7 @@ from stdwinevents import *
 
 class TextEdit:
 	#
-	def create(self, (parent, (cols, rows))):
+	def create(self, parent, (cols, rows)):
 		parent.addchild(self)
 		self.parent = parent
 		self.cols = cols
@@ -18,7 +18,7 @@ class TextEdit:
 		self.dh = self.dv = 0
 		return self
 	#
-	def createboxed(self, (parent, (cols, rows), (dh, dv))):
+	def createboxed(self, parent, (cols, rows), (dh, dv)):
 		self = self.create(parent, (cols, rows))
 		self.dh = max(0, dh)
 		self.dv = max(0, dv)
@@ -37,7 +37,7 @@ class TextEdit:
 		del self.editor
 		del self.window
 	#
-	def getminsize(self, (m, (width, height))):
+	def getminsize(self, m, (width, height)):
 		width = max(0, width - 2*self.dh)
 		height = max(0, height - 2*self.dv)
 		if width > 0 and self.editor:
@@ -96,7 +96,7 @@ class TextEdit:
 		self.parent.need_keybd(self)
 		self.parent.need_altdraw(self)
 	#
-	def draw(self, (d, area)):
+	def draw(self, d, area):
 		if self.dh and self.dv:
 			d.box(self.bounds)
 	#
@@ -114,7 +114,7 @@ class TextEdit:
 	def mouse_up(self, detail):
 		x = self.editor.event(WE_MOUSE_UP, self.window, detail)
 	#
-	def keybd(self, (type, detail)):
+	def keybd(self, type, detail):
 		x = self.editor.event(type, self.window, detail)
 	#
 	def activate(self):
