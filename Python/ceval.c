@@ -569,7 +569,7 @@ eval_code2(co, globals, locals,
 					goto on_error;
 				}
 			}
-#if !defined(HAVE_SIGNAL_H) && !defined(macintosh)
+#if !defined(HAVE_SIGNAL_H) || defined(macintosh)
 			/* If we have true signals, the signal handler
 			   will call Py_AddPendingCall() so we don't
 			   have to call sigcheck().  On the Mac and
