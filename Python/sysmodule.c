@@ -85,8 +85,12 @@ sysset(name, v)
 	char *name;
 	object *v;
 {
-	if (v == NULL)
-		return dictremove(sysdict, name);
+	if (v == NULL) {
+		if (dictlookup(sysdict, name) == NULL)
+			return 0;
+		else
+			return dictremove(sysdict, name);
+	}
 	else
 		return dictinsert(sysdict, name, v);
 }
