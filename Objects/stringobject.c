@@ -541,6 +541,7 @@ PyObject *PyString_DecodeEscape(const char *s,
 	end = s + len;
 	while (s < end) {
 		if (*s != '\\') {
+		  non_esc:
 #ifdef Py_USING_UNICODE
 			if (recode_encoding && (*s & 0x80)) {
 				PyObject *u, *w;
@@ -656,8 +657,9 @@ PyObject *PyString_DecodeEscape(const char *s,
 #endif
 		default:
 			*p++ = '\\';
-			*p++ = s[-1];
-			break;
+			s--;
+			goto non_esc; /* an arbitry number of unescaped
+					 UTF-8 bytes may follow. */
 		}
 	}
 	if (p-buf < newlen)
