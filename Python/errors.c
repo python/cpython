@@ -56,7 +56,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "allobjects.h"
-#include "modsupport.h"
+#include "traceback.h"
 
 #include <errno.h>
 
@@ -119,10 +119,14 @@ err_get(p_exc, p_val)
 void
 err_clear()
 {
+	object *tb;
 	XDECREF(last_exception);
 	last_exception = NULL;
 	XDECREF(last_exc_val);
 	last_exc_val = NULL;
+	/* Also clear interpreter stack trace */
+	tb = tb_fetch();
+	XDECREF(tb);
 }
 
 /* Convenience functions to set a type error exception and return 0 */
