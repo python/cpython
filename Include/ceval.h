@@ -43,6 +43,8 @@ DL_IMPORT(int) Py_FlushLine(void);
 DL_IMPORT(int) Py_AddPendingCall(int (*func)(void *), void *arg);
 DL_IMPORT(int) Py_MakePendingCalls(void);
 
+DL_IMPORT(void) Py_SetRecursionLimit(int);
+DL_IMPORT(int) Py_GetRecursionLimit(void);
 
 /* Interface for threads.
 
