@@ -207,14 +207,14 @@ sys.getcounts()
 ---------------------------------------------------------------------------
 LLTRACE                                          introduced well before 1.0
 
-Compile in support of Low Level TRACE-ing of the main interpreter loop.
+Compile in support for Low Level TRACE-ing of the main interpreter loop.
 
-When this preprocessor symbol is defined, before eval_frame
-(eval_code2 before 2.2) executes a frame's code it checks the frame's
-global namespace for a variable "__lltrace__".  If such a variable is
-found, mounds of information about what the interpreter is doing are
-sprayed to stdout, such as every opcode and opcode argument and values
-pushed onto and popped off the value stack.
+When this preprocessor symbol is defined, before PyEval_EvalFrame
+(eval_frame in 2.3 and 2.2, eval_code2 before that) executes a frame's code
+it checks the frame's global namespace for a variable "__lltrace__".  If
+such a variable is found, mounds of information about what the interpreter
+is doing are sprayed to stdout, such as every opcode and opcode argument
+and values pushed onto and popped off the value stack.
 
 Not useful very often, but very useful when needed.
 
@@ -245,8 +245,8 @@ that uses GCC (i.e. OS X and linux/ppc).
 
 On the PowerPC the rate at which the time base register is incremented
 is not defined by the architecture specification, so you'll need to
-find the manual for your specific processor.  For the 750CX, 750CXe,
-750FX (all sold as the G3) we find:
+find the manual for your specific processor.  For the 750CX, 750CXe
+and 750FX (all sold as the G3) we find:
 
     The time base counter is clocked at a frequency that is 
     one-fourth that of the bus clock.
