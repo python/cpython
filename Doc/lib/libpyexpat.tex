@@ -60,8 +60,8 @@ separator character, and the local part of the name.  If the namespace
 separator is a zero byte (\code{chr(0)}) then the namespace URI and
 the local part will be concatenated without any separator. 
 
-For example, if \var{namespace_separator} is set to 
-\character{ }, and the following document is parsed:
+For example, if \var{namespace_separator} is set to a space character
+(\character{ }) and the following document is parsed:
 
 \begin{verbatim}
 <?xml version="1.0"?>
@@ -85,7 +85,7 @@ elem2
 
 \class{xmlparser} objects have the following methods:
 
-\begin{methoddesc}[xmlparser]{Parse}{data \optional{, isfinal}}
+\begin{methoddesc}[xmlparser]{Parse}{data\optional{, isfinal}}
 Parses the contents of the string \var{data}, calling the appropriate
 handler functions to process the parsed data.  \var{isfinal} must be
 true on the final call to this method.    \var{data} can be the empty
