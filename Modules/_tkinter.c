@@ -1265,6 +1265,7 @@ Tkapp_MainLoop(self, args)
 	       !errorInCmd)
 	{
 		int result;
+#ifdef THIS_CODE_IS_BUGGY
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 		if (PyErr_CheckSignals() != 0)
 			return NULL;
@@ -1276,6 +1277,9 @@ Tkapp_MainLoop(self, args)
 		Py_BEGIN_ALLOW_THREADS
 		result = Tcl_WaitForEvent((Tcl_Time *)NULL);
 		Py_END_ALLOW_THREADS
+#else
+		result = Tcl_DoOneEvent(0);
+#endif
 		if (PyErr_CheckSignals() != 0)
 			return NULL;
 		if (result < 0)
