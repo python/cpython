@@ -25,9 +25,10 @@
 
 ;; At some point this mode will undergo a rewrite to bring it more in
 ;; line with GNU Emacs Lisp coding standards.  But all in all, the
-;; mode works exceedingly well, and I've simply been tweeking it as I
+;; mode works exceedingly well, and I've simply been tweaking it as I
 ;; go along.  Ain't it wonderful that Python has a much more sane
-;; syntax than C? (or <shudder> C++?! :-).
+;; syntax than C? (or <shudder> C++?! :-).  I can say that; I maintain
+;; cc-mode!
 
 ;; The following statements, placed in your .emacs file or
 ;; site-init.el, will cause this file to be autoloaded, and
@@ -50,7 +51,7 @@
 ;; - proper interaction with pending-del and del-sel modes.
 ;; - New py-electric-colon (:) command for improved outdenting.  Also
 ;;   py-indent-line (TAB) should handle outdented lines better.
-;; - New commands py-outdent-left (C-c C-l) and py-indent-right (C-c C-r)
+;; - improved (I think) C-c > and C-c <
 
 ;; Here's a brief to do list:
 ;;
@@ -667,7 +668,7 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 
 
 ;; Functions for Python style indentation
-(defun py-delete-char ()
+(defun py-delete-char (count)
   "Reduce indentation or delete character.
 If point is at the leftmost column, deletes the preceding newline.
 
@@ -676,16 +677,18 @@ neither a continuation line nor a non-indenting comment line, or if
 point is at the end of a blank line, reduces the indentation to match
 that of the line that opened the current block of code.  The line that
 opened the block is displayed in the echo area to help you keep track
-of where you are.
+of where you are.  With numeric count, outdents that many blocks (but
+not past column zero).
 
 Else the preceding character is deleted, converting a tab to spaces if
-needed so that only a single column position is deleted."
-  (interactive "*")
+needed so that only a single column position is deleted.  Numeric
+argument delets that many characters."
+  (interactive "*p")
   (if (or (/= (current-indentation) (current-column))
 	  (bolp)
 	  (py-continuation-line-p)
 	  (looking-at "#[^ \t\n]"))	; non-indenting #
-      (backward-delete-char-untabify 1)
+      (backward-delete-char-untabify count)
     ;; else indent the same as the colon line that opened the block
 
     ;; force non-blank so py-goto-block-up doesn't ignore it
@@ -694,13 +697,16 @@ needed so that only a single column position is deleted."
     (let ((base-indent 0)		; indentation of base line
 	  (base-text "")		; and text of base line
 	  (base-found-p nil))
-      (condition-case nil		; in case no enclosing block
-	  (save-excursion
-	    (py-goto-block-up 'no-mark)
-	    (setq base-indent (current-indentation)
-		  base-text   (py-suck-up-leading-text)
-		  base-found-p t))
-	(error nil))
+      (save-excursion
+	(while (< 0 count)
+	  (condition-case nil		; in case no enclosing block
+	      (progn
+		(py-goto-block-up 'no-mark)
+		(setq base-indent (current-indentation)
+		      base-text   (py-suck-up-leading-text)
+		      base-found-p t))
+	    (error nil))
+	  (setq count (1- count))))
       (delete-char 1)			; toss the dummy character
       (delete-horizontal-space)
       (indent-to base-indent)
