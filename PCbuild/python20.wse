@@ -25,7 +25,7 @@ item: Global
   Version Copyright=©2001 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
   Crystal Format=10111100101100000010001001001001
-  Step View=&Properties
+  Step View=&All
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
@@ -280,27 +280,9 @@ end
 item: Remark
   Text=D: test suite
 end
-item: Remark
-  Text=E: register file extensions (requires Admin privs)
-end
-item: If/While Statement
-  Variable=DOADMIN
-  Value=1
-end
 item: Set Variable
   Variable=COMPONENTS
-  Value=ABCDE
-end
-item: Else Statement
-end
-item: Remark
-  Text=Lowercase E grays out the "register file extension" choice.
-end
-item: Set Variable
-  Variable=COMPONENTS
-  Value=ABCDe
-end
-item: End Block
+  Value=ABCD
 end
 item: Wizard Block
   Direction Variable=DIRECTION
@@ -310,6 +292,120 @@ item: Wizard Block
   Y Position=10
   Filler Color=8421440
   Flags=00000011
+end
+item: If/While Statement
+  Variable=DISPLAY
+  Value=Start Installation
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=Install directory:  %MAINDIR%%CRLF%
+end
+item: Remark
+end
+item: If/While Statement
+  Variable=DOADMIN
+  Value=1
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%Doing admin install.%CRLF%
+  Flags=00000001
+end
+item: Else Statement
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%Doing non-admin install.%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: Remark
+end
+item: If/While Statement
+  Variable=DOBACKUP
+  Value=A
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%Make backups, into %BACKUP%%CRLF%
+  Flags=00000001
+end
+item: Else Statement
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%Don't make backups.%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: Remark
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%Components:%CRLF%
+  Flags=00000001
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=A
+  Flags=00000010
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=    Python interpreter, libraries and IDLE%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=B
+  Flags=00000010
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=    Python documentation%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=C
+  Flags=00000010
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=    Tool and utility scripts%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=D
+  Flags=00000010
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=    Python test suite%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: Remark
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%Start Menu group:  %GROUP%%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: Remark
 end
 item: Custom Dialog Set
   Name=Select Destination Directory
@@ -774,7 +870,6 @@ item: Custom Dialog Set
       Text=Python HTML docs
       Text=Python utility scripts (Tools/)
       Text=Python test suite (Lib/test/)
-      Text=Register file extensons (requires Admin privs)
       Text=
       Text French=Python interpreter, library and IDLE
       Text French=Python HTML docs
@@ -1014,24 +1109,10 @@ item: Custom Dialog Set
       Rectangle=86 54 259 175
       Help Context=16711681
       Enabled Color=00000000000000001111111111111111
-      Create Flags=01010000101000000001100010000100
+      Create Flags=01010000101100000001100000000100
       Text=%SUMMARY%
     end
   end
-end
-item: Remark
-end
-item: Remark
-  Text=If we just finished "Select Destination Directory":
-end
-item: Remark
-  Text=    %MAINDIR% is set, so reinitialize %BACKUP% to match.
-end
-item: Remark
-  Text=ElseIf we just finished "Select Program Manager Group":
-end
-item: Remark
-  Text=    "Start Installation" is next, so build a summary for "Start Installation" to display.
 end
 item: Remark
 end
@@ -1039,120 +1120,16 @@ item: If/While Statement
   Variable=DISPLAY
   Value=Select Destination Directory
 end
+item: Remark
+  Text=User may have changed MAINDIR, so reset BACKUP to match.
+end
 item: Set Variable
   Variable=BACKUP
   Value=%MAINDIR%\BACKUP
 end
-item: Remark
-end
-item: ElseIf Statement
-  Variable=DISPLAY
-  Value=Select Program Manager Group
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=Installation directory%CRLF%    %MAINDIR%%CRLF%
-end
-item: Remark
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=%CRLF%Make backups?%CRLF%
-  Flags=00000001
-end
-item: If/While Statement
-  Variable=DOBACKUP
-  Value=A
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=    Yes, into %BACKUP%%CRLF%
-  Flags=00000001
-end
-item: Else Statement
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=    No%CRLF%
-  Flags=00000001
-end
 item: End Block
 end
 item: Remark
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=%CRLF%Components%CRLF%
-  Flags=00000001
-end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=A
-  Flags=00000010
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=    Python interpreter, libraries and IDLE%CRLF%
-  Flags=00000001
-end
-item: End Block
-end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=B
-  Flags=00000010
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=    Python documentation%CRLF%
-  Flags=00000001
-end
-item: End Block
-end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=C
-  Flags=00000010
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=    Tool and utility scripts%CRLF%
-  Flags=00000001
-end
-item: End Block
-end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=D
-  Flags=00000010
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=    Python test suite%CRLF%
-  Flags=00000001
-end
-item: End Block
-end
-item: If/While Statement
-  Variable=COMPONENTS
-  Value=E
-  Flags=00000010
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=    Register file extensions%CRLF%
-  Flags=00000001
-end
-item: End Block
-end
-item: Remark
-end
-item: Set Variable
-  Variable=SUMMARY
-  Value=%CRLF%Start Menu group%CRLF%    %GROUP%%CRLF%
-  Flags=00000001
-end
-item: End Block
 end
 item: End Block
 end
@@ -1756,17 +1733,6 @@ end
 item: Remark
 end
 item: Remark
-  Text=Windows pydoc driver
-end
-item: Install File
-  Source=..\tools\scripts\*.pyw
-  Destination=%MAINDIR%\Tools\Scripts
-  Description=Windows pydoc driver
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Remark
   Text=Microsoft C runtime libraries
 end
 item: Install File
@@ -1828,24 +1794,6 @@ item: Install File
   Destination=%MAINDIR%\Tools\Scripts\README.txt
   Description=Utility Scripts
   Flags=0000000000000010
-end
-item: Remark
-  Text=*.pyw is installed by the main component; if we install it twice, a copy gets made
-end
-item: Remark
-  Text= in BACKUP, and then a rollback-uninstall will copy back the first one.
-end
-item: Check if File/Dir Exists
-  Pathname=%MAINDIR%\Tools\Scripts\pydoc.pyw
-  Flags=00000101
-end
-item: Install File
-  Source=..\tools\scripts\*.pyw
-  Destination=%MAINDIR%\Tools\Scripts
-  Description=Utility Scripts
-  Flags=0000000000000010
-end
-item: End Block
 end
 item: Remark
 end
@@ -1982,6 +1930,24 @@ end
 item: Remark
 end
 item: Remark
+  Text=Windows pydoc driver
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=AC
+  Flags=00001010
+end
+item: Install File
+  Source=..\tools\scripts\*.pyw
+  Destination=%MAINDIR%\Tools\Scripts
+  Description=Windows pydoc driver
+  Flags=0000000000000010
+end
+item: End Block
+end
+item: Remark
+end
+item: Remark
   Text=DONE with file copying.
 end
 item: Remark
@@ -1995,15 +1961,39 @@ item: If/While Statement
   Flags=00001010
 end
 item: Remark
-  Text=Register file extensions.
+  Text=Register file extensions.  As usual, Admin privs get in the way, but with a twist:
 end
 item: Remark
-  Text=Registering file extensions requires Admin privs.
+  Text=You don't need admin privs to write to HKEY_CLASSES_ROOT *except* under Win2K.
+end
+item: Remark
+  Text=On Win2K, a user without Admin privs has to register extensions under HKCU\Software\CLASSES instead.
+end
+item: Remark
+  Text=But while you can *do* that under other flavors of Windows too, it has no useful effect except in Win2K.
+end
+item: Set Variable
+  Variable=USE_HKCR
+  Value=1
+end
+item: Check Configuration
+  Flags=11110010
 end
 item: If/While Statement
-  Variable=COMPONENTS
-  Value=E
-  Flags=00001010
+  Variable=DOADMIN
+  Value=0
+end
+item: Set Variable
+  Variable=USE_HKCR
+  Value=0
+end
+item: End Block
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=USE_HKCR
+  Value=1
 end
 item: Remark
   Text=File types.
@@ -2097,6 +2087,116 @@ item: Edit Registry
   Total Keys=1
   Key=.pyo
   New Value=Python.CompiledFile
+end
+item: Else Statement
+end
+item: Remark
+  Text=File types.
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.File
+  New Value=Python File
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.File\shell\open\command
+  New Value=%MAINDIR%\python.exe "%%1" %%*
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.File\DefaultIcon
+  New Value=%MAINDIR%\Py.ico
+  Root=1
+end
+item: Remark
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.NoConFile
+  New Value=Python File (no console)
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.NoConFile\shell\open\command
+  New Value=%MAINDIR%\pythonw.exe "%%1" %%*
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.NoConFile\DefaultIcon
+  New Value=%MAINDIR%\Py.ico
+  Root=1
+end
+item: Remark
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.CompiledFile
+  New Value=Compiled Python File
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.CompiledFile\shell\open\command
+  New Value=%MAINDIR%\python.exe "%%1" %%*
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\Python.CompiledFile\DefaultIcon
+  New Value=%MAINDIR%\pyc.ico
+  Root=1
+end
+item: Remark
+end
+item: Remark
+  Text=File extensions.
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\.py
+  New Value=Python.File
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\.py
+  New Value=text/plain
+  Value Name=Content Type
+  Root=1
+end
+item: Remark
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\.pyw
+  New Value=Python.NoConFile
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\.pyw
+  New Value=text/plain
+  Value Name=Content Type
+  Root=1
+end
+item: Remark
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\.pyc
+  New Value=Python.CompiledFile
+  Root=1
+end
+item: Edit Registry
+  Total Keys=1
+  Key=Software\CLASSES\.pyo
+  New Value=Python.CompiledFile
+  Root=1
 end
 item: End Block
 end
