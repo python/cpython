@@ -36,7 +36,7 @@ SHELL=		/bin/sh
 # === Fixed definitions ===
 
 AROBJS=		\
-		bltinmodule.o \
+		bltinmodule.o exceptions.o \
 		ceval.o compile.o codecs.o \
 		errors.o \
 		frozen.o frozenmain.o \
@@ -104,6 +104,7 @@ dynload_os2.o: dynload_os2.c
 dynload_shlib.o: dynload_shlib.c
 dynload_stub.o: dynload_stub.c
 dynload_win.o: dynload_win.c
+exceptions.o: exceptions.c
 errors.o: errors.c
 fmod.o: fmod.c
 frozen.o: frozen.c
