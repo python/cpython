@@ -1,5 +1,7 @@
 #! /usr/local/bin/python
 
+# WARNING: this is an unsupported variant of freeze.py -- see README
+
 # "Freeze" a Python script into a binary.
 # Usage: see variable usage_msg below (before the imports!)
 
