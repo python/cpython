@@ -46,9 +46,8 @@ class WorkQ:
 		self.work = []
 		self.busy = 0
 
-	def addwork(self, job):
-		if not job:
-			raise TypeError, 'cannot add null job'
+	def addwork(self, func, args):
+		job = (func, args)
 		self.mutex.acquire()
 		self.work.append(job)
 		self.mutex.release()
