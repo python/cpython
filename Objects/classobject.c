@@ -202,8 +202,8 @@ typeobject Instancetype = {
 };
 
 
-/* And finally, here are class method objects */
-/* (Really methods of instances) */
+/* And finally, here are instance method objects
+   (accidentally called class methods) */
 
 typedef struct {
 	OB_HEAD
@@ -283,7 +283,7 @@ classmethod_dealloc(cm)
 typeobject Classmethodtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
-	"class method",
+	"instance method",
 	sizeof(classmethodobject),
 	0,
 	classmethod_dealloc,	/*tp_dealloc*/
