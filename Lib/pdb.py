@@ -59,20 +59,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		if os.environ.has_key('HOME'):
 			envHome = os.environ['HOME']
 			try:
-				rcFile = open (envHome + "/.pdbrc")
+				rcFile = open(os.path.join(envHome, ".pdbrc"))
 			except IOError:
 				pass
 			else:
 				for line in rcFile.readlines():
-					self.rcLines.append (line)
+					self.rcLines.append(line)
 				rcFile.close()
 		try:
-			rcFile = open ("./.pdbrc")
+			rcFile = open(".pdbrc")
 		except IOError:
 			pass
 		else:
 			for line in rcFile.readlines():
-				self.rcLines.append (line)
+				self.rcLines.append(line)
 			rcFile.close()
 	
 	def reset(self):
