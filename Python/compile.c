@@ -64,6 +64,9 @@ int Py_OptimizeFlag = 0;
 #define LOCAL_GLOBAL \
 "name '%.400s' is a function paramter and declared global"
 
+#define LATE_FUTURE \
+"from __future__ imports must occur at the beginning of the file"
+
 #define MANGLE_LEN 256
 
 #define OFF(x) offsetof(PyCodeObject, x)
@@ -605,6 +608,8 @@ com_free(struct compiling *c)
 	Py_XDECREF(c->c_freevars);
 	Py_XDECREF(c->c_cellvars);
 	Py_XDECREF(c->c_lnotab);
+	if (c->c_future)
+		PyMem_Free((void *)c->c_future);
 }
 
 static void
@@ -1544,9 +1549,12 @@ com_argument(struct compiling *c, node *n, PyObject **pkeywords)
 		PyObject *v = PyString_InternFromString(STR(m));
 		if (v != NULL && *pkeywords == NULL)
 			*pkeywords = PyDict_New();
-		if (v == NULL || *pkeywords == NULL)
+		if (v == NULL)
 			c->c_errors++;
-		else {
+		else if (*pkeywords == NULL) {
+			c->c_errors++;
+			Py_DECREF(v);
+		} else {
 			if (PyDict_GetItem(*pkeywords, v) != NULL)
 				com_error(c, PyExc_SyntaxError,
 					  "duplicate keyword argument");
@@ -3995,6 +4003,7 @@ symtable_build(struct compiling *c, node *n)
 {
 	if ((c->c_symtable = symtable_init()) == NULL)
 		return -1;
+	c->c_symtable->st_future = c->c_future;
 	if (c->c_future->ff_nested_scopes)
 		c->c_symtable->st_nested_scopes = 1;
 	c->c_symtable->st_filename = c->c_filename;
@@ -4482,12 +4491,15 @@ symtable_add_def(struct symtable *st, char *name, int flag)
 {
 	PyObject *s;
 	char buffer[MANGLE_LEN];
+	int ret;
 
 	if (mangle(st->st_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if ((s = PyString_InternFromString(name)) == NULL)
 		return -1;
-	return symtable_add_def_o(st, st->st_cur->ste_symbols, s, flag);
+	ret = symtable_add_def_o(st, st->st_cur->ste_symbols, s, flag);
+	Py_DECREF(s);
+	return ret;
 }
 
 /* Must only be called with mangled names */
@@ -4819,12 +4831,14 @@ symtable_global(struct symtable *st, node *n)
 		int flags;
 
 		flags = symtable_lookup(st, name);
+		if (flags < 0)
+			continue;
 		if (flags && flags != DEF_GLOBAL) {
 			char buf[500];
 			if (flags & DEF_PARAM) {
 				PyErr_Format(PyExc_SyntaxError,
 				     "name '%.400s' is local and global",
-					     PyString_AS_STRING(name));
+					     name);
 				set_error_location(st->st_filename,
 						   st->st_cur->ste_lineno);
 				st->st_errors++;
@@ -4873,6 +4887,18 @@ symtable_import(struct symtable *st, node *n)
 	   import_as_name: NAME [NAME NAME]
 	*/
 	if (STR(CHILD(n, 0))[0] == 'f') {  /* from */
+		node *dotname = CHILD(n, 1);
+		if (strcmp(STR(CHILD(dotname, 0)), "__future__") == 0) {
+			/* check for bogus imports */
+			if (n->n_lineno >= st->st_future->ff_last_lineno) {
+				PyErr_SetString(PyExc_SyntaxError,
+						LATE_FUTURE);
+ 				set_error_location(st->st_filename,
+						   n->n_lineno);
+				st->st_errors++;
+				return;
+			}
+		}
 		if (TYPE(CHILD(n, 3)) == STAR) {
 			st->st_cur->ste_optimized |= OPT_IMPORT_STAR;
 		} else {
