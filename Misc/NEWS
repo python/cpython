@@ -21,6 +21,8 @@ Core and builtins
 
 - set and frozenset objects can now be marshalled.  SF #1098985.
 
+- Bug #1077106: Poor argument checking could cause memory corruption
+  in calls to os.read().
 
 Extension Modules
 -----------------
