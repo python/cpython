@@ -6,6 +6,12 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- If you try to pickle an instance of a class that has __slots__ but
+  doesn't define or override __getstate__, a TypeError is now raised.
+  This is done by adding a bozo __getstate__ to the class that always
+  raises TypeError.  (Before, this would appear to be pickled, but the
+  state of the slots would be lost.)
+
 - PyErr_Display will provide file and line information for all exceptions
   that have an attribute print_file_and_line, not just SyntaxErrors.
 
