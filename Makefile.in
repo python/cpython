@@ -313,6 +313,7 @@ libainstall:	all
 		done
 		$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
 		$(INSTALL_DATA) $(srcdir)/Modules/getpath.c $(LIBPL)/getpath.c
+		$(INSTALL_DATA) $(srcdir)/Modules/getbuildinfo.c $(LIBPL)/getbuildinfo.c
 		$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
 		$(INSTALL_DATA) Modules/Makefile $(LIBPL)/Makefile
 		$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
