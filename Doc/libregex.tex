@@ -136,8 +136,10 @@ be used inside groups (see below) as well.
 \item[\code{\e( \e)}] Indicates the start and end of a group; the
 contents of a group can be matched later in the string with the
 \code{\e [1-9]} special sequence, described next.
-%
-\fulllineitems\item[\code{\e \e 1, ... \e \e 7, \e 8, \e 9}]
+\end{itemize}
+
+\begin{fulllineitems}
+\item[\code{\e \e 1, ... \e \e 7, \e 8, \e 9}]
 Matches the contents of the group of the same
 number.  For example, \code{\e (.+\e ) \e \e 1} matches 'the the' or
 '55 55', but not 'the end' (note the space after the group).  This
@@ -145,7 +147,9 @@ special sequence can only be used to match one of the first 9 groups;
 groups with higher numbers can be matched using the \code{\e v}
 sequence.  (\code{\e 8} and \code{\e 9} don't need a double backslash
 because they are not octal digits.)
-%
+\end{fulllineitems}
+
+\begin{itemize}
 \item[\code{\e \e b}] Matches the empty string, but only at the
 beginning or end of a word.  A word is defined as a sequence of
 alphanumeric characters, so the end of a word is indicated by
