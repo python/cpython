@@ -769,7 +769,8 @@ determination.
   Return the \var{i}th element of \var{o} or \NULL on failure.
   Macro form of \cfunction{PySequence_GetItem()} but without checking
   that \cfunction{PySequence_Check(\var{o})} is true and without
-  adjustment for negative indices.  
+  adjustment for negative indices.
+  \versionadded{2.3}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PySequence_Fast_GET_SIZE}{PyObject *o}
