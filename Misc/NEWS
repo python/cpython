@@ -427,6 +427,9 @@ Library
 
 - Added operator.pow(a,b) which is equivalent to a**b.
 
+- Added random.sample(population,k) for random sampling without replacement.
+  Returns a k length list of unique elements chosen from the population.								    
+
 - random.randrange(-sys.maxint-1, sys.maxint) no longer raises
   OverflowError.  That is, it now accepts any combination of 'start'
   and 'stop' arguments so long as each is in the range of Python's

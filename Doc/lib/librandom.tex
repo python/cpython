@@ -179,6 +179,25 @@ Functions for sequences:
   long sequence can never be generated.
 \end{funcdesc}
 
+\begin{funcdesc}{sample}{population, k}
+  Return a \var{k} length list of unique elements chosen from the
+  population sequence.  Used for random sampling without replacement.
+
+  Returns a new list containing elements from the population.  The
+  list itself is in random order so that all sub-slices are also
+  random samples.  The original sequence is left undisturbed.
+
+  If the population has repeated elements, then each occurence is a
+  possible selection in the sample.
+
+  If indices are needed for a large population, use \function{xrange}
+  as an argument:  \code{sample(xrange(10000000), 60)}.
+
+  Optional argument random is a 0-argument function returning a random
+  float in [0.0, 1.0); by default, the standard random.random.  			   
+  \versionadded{2.3}
+\end{funcdesc}
+
 
 The following functions generate specific real-valued distributions.
 Function parameters are named after the corresponding variables in the
