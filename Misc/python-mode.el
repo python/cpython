@@ -246,7 +246,7 @@ told <grin>."
 	(funcall ok "/tmp")
 	(funcall ok  ".")
 	(error
-	 "Couldn't find a usable temp directory -- set py-temp-directory")))
+	 "Couldn't find a usable temp directory -- set `py-temp-directory'")))
   "*Directory used for temp files created by a *Python* process.
 By default, the first directory from this list that exists and that you
 can write into:  the value (if any) of the environment variable TMPDIR,
