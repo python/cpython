@@ -315,9 +315,11 @@ PyLong_FromLongLong(ival)
 #else
 	if( ival <= (long long)LONG_MAX ) {
 		return PyLong_FromLong( (long)ival );
-	} else if( ival <= (unsigned long long)ULONG_MAX ) {
+	}
+	else if( ival <= (unsigned long long)ULONG_MAX ) {
 		return PyLong_FromUnsignedLong( (unsigned long)ival );
-	} else {
+	}
+	else {
 		/* Assume a C long long fits in at most 10 'digits'.
 		 * Should be OK if we're assuming long fits in 5.
 		 */
@@ -359,7 +361,8 @@ PyLong_FromUnsignedLongLong(ival)
 #else
 	if( ival <= (unsigned long long)ULONG_MAX ) {
 		return PyLong_FromUnsignedLong( (unsigned long)ival );
-	} else {
+	}
+	else {
 		/* Assume a C long fits in at most 10 'digits'. */
 		PyLongObject *v = _PyLong_New(10);
 
@@ -572,30 +575,71 @@ long_format(aa, base)
 	if (a->ob_size < 0)
 		sign = '-';
 	
-	Py_INCREF(a);
-	do {
-		digit rem;
-		PyLongObject *temp = divrem1(a, (digit)base, &rem);
-		if (temp == NULL) {
-			Py_DECREF(a);
-			Py_DECREF(str);
-			return NULL;
+	if (a->ob_size == 0) {
+		*--p = '0';
+	}
+	else if ((base & (base - 1)) == 0) {
+		/* JRH: special case for power-of-2 bases */
+		twodigits temp = a->ob_digit[0];
+		int bitsleft = SHIFT;
+		int rem;
+		int last = abs(a->ob_size);
+		int basebits = 1;
+		i = base;
+		while ((i >>= 1) > 1) ++basebits;
+		
+		i = 0;
+		for (;;) {
+			while (bitsleft >= basebits) {
+				if ((temp == 0) && (i >= last - 1)) break;
+				rem = temp & (base - 1);
+				if (rem < 10)
+					rem += '0';
+				else
+					rem += 'A' - 10;
+				assert(p > PyString_AS_STRING(str));
+				*--p = (char) rem;
+				bitsleft -= basebits;
+				temp >>= basebits;
+			}
+			if (++i >= last) {
+				if (temp == 0) break;
+				bitsleft = 99;
+				/* loop again to pick up final digits */
+			}
+			else {
+				temp = (a->ob_digit[i] << bitsleft) | temp;
+				bitsleft += SHIFT;
+			}
 		}
-		if (rem < 10)
-			rem += '0';
-		else
-			rem += 'A'-10;
-		assert(p > PyString_AS_STRING(str));
-		*--p = (char) rem;
-		Py_DECREF(a);
-		a = temp;
-		SIGCHECK({
+	}
+	else {
+		Py_INCREF(a);
+		do {
+			digit rem;
+			PyLongObject *temp = divrem1(a, (digit)base, &rem);
+			if (temp == NULL) {
+				Py_DECREF(a);
+				Py_DECREF(str);
+				return NULL;
+			}
+			if (rem < 10)
+				rem += '0';
+			else
+				rem += 'A'-10;
+			assert(p > PyString_AS_STRING(str));
+			*--p = (char) rem;
 			Py_DECREF(a);
-			Py_DECREF(str);
-			return NULL;
-		})
-	} while (ABS(a->ob_size) != 0);
-	Py_DECREF(a);
+			a = temp;
+			SIGCHECK({
+				Py_DECREF(a);
+				Py_DECREF(str);
+				return NULL;
+			})
+		} while (ABS(a->ob_size) != 0);
+		Py_DECREF(a);
+	}
+
 	if (base == 8) {
 		if (size_a != 0)
 			*--p = '0';
@@ -723,7 +767,8 @@ long_divrem(a, b, pdiv, prem)
 	PyLongObject *z;
 	
 	if (size_b == 0) {
-		PyErr_SetString(PyExc_ZeroDivisionError, "long division or modulo");
+		PyErr_SetString(PyExc_ZeroDivisionError,
+				"long division or modulo");
 		return -1;
 	}
 	if (size_a < size_b ||
@@ -1520,17 +1565,6 @@ long_bitwise(a, op, b)
 		maskb = 0;
 	}
 	
-	size_a = a->ob_size;
-	size_b = b->ob_size;
-	size_z = MAX(size_a, size_b);
-	z = _PyLong_New(size_z);
-	if (a == NULL || b == NULL || z == NULL) {
-		Py_XDECREF(a);
-		Py_XDECREF(b);
-		Py_XDECREF(z);
-		return NULL;
-	}
-	
 	negz = 0;
 	switch (op) {
 	case '^':
@@ -1555,6 +1589,31 @@ long_bitwise(a, op, b)
 			negz = -1;
 		}
 		break;
+	}
+	
+	/* JRH: The original logic here was to allocate the result value (z)
+	   as the longer of the two operands.  However, there are some cases
+	   where the result is guaranteed to be shorter than that: AND of two
+	   positives, OR of two negatives: use the shorter number.  AND with
+	   mixed signs: use the positive number.  OR with mixed signs: use the
+	   negative number.  After the transformations above, op will be '&'
+	   iff one of these cases applies, and mask will be non-0 for operands
+	   whose length should be ignored.
+	*/
+
+	size_a = a->ob_size;
+	size_b = b->ob_size;
+	size_z = op == '&'
+		? (maska
+		   ? size_b
+		   : (maskb ? size_a : MIN(size_a, size_b)))
+		: MAX(size_a, size_b);
+	z = _PyLong_New(size_z);
+	if (a == NULL || b == NULL || z == NULL) {
+		Py_XDECREF(a);
+		Py_XDECREF(b);
+		Py_XDECREF(z);
+		return NULL;
 	}
 	
 	for (i = 0; i < size_z; ++i) {
