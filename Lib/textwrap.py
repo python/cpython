@@ -197,6 +197,8 @@ class TextWrapper:
         lines, but apart from that whitespace is preserved.
         """
         lines = []
+        if self.width <= 0:
+            raise ValueError("invalid width %r (must be > 0)" % self.width)
 
         while chunks:
 
