@@ -21,11 +21,6 @@
 #ifdef THINK_C
 #define HAVE_FOPENRF
 #endif
-#ifdef __MWERKS__
-#ifndef USE_GUSI
-#define HAVE_FOPENRF
-#endif
-#endif
 
 #ifdef __MWERKS__
 #define HAVE_STRFTIME
