@@ -305,9 +305,9 @@ the Emacs bell is also rung as a warning."
 
 (defcustom py-jump-on-exception t
   "*Jump to innermost exception frame in *Python Output* buffer.
-When this variable is non-nil and ane exception occurs when running
+When this variable is non-nil and an exception occurs when running
 Python code synchronously in a subprocess, jump immediately to the
-source code of the innermost frame."
+source code of the innermost traceback frame."
   :type 'boolean
   :group 'python)
 
@@ -1506,7 +1506,7 @@ subtleties, including the use of the optional ASYNC argument."
     (message "Jumping to exception in file %s on line %d" file line)))
 
 (defun py-mouseto-exception (event)
-  "Jump to the code which cased the Python exception at EVENT.
+  "Jump to the code which caused the Python exception at EVENT.
 EVENT is usually a mouse click."
   (interactive "e")
   (cond
@@ -1841,12 +1841,18 @@ dedenting."
 	    (forward-comment (- (point-max)))
 	  (let (done)
 	    (while (not done)
-	      (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)"
-				  nil 'move)
-	      (setq done (or (eq py-honor-comment-indentation t)
-			     (bobp)
-			     (/= (following-char) ?#)
-			     (not (zerop (current-column)))))
+	      (re-search-backward "^[ \t]*\\([^ \t\n#]\\|#\\)" nil 'move)
+	      (setq done (or (bobp)
+			     (and (eq py-honor-comment-indentation t)
+				  (save-excursion
+				    (back-to-indentation)
+				    (not (looking-at py-block-comment-prefix))
+				    ))
+			     (and (not (eq py-honor-comment-indentation t))
+				  (save-excursion
+				    (back-to-indentation)
+				    (not (zerop (current-column)))))
+			     ))
 	      )))
 	;; if we landed inside a string, go to the beginning of that
 	;; string. this handles triple quoted, multi-line spanning
