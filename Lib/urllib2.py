@@ -422,11 +422,12 @@ class HTTPRedirectHandler(BaseHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         """Return a Request or None in response to a redirect.
 
-        This is called by the http_error_30x methods when a redirection
-        response is received.  If a redirection should take place, return a new
-        Request to allow http_error_30x to perform the redirect.  Otherwise,
-        raise HTTPError if no-one else should try to handle this url.  Return
-        None if you can't but another Handler might.
+        This is called by the http_error_30x methods when a
+        redirection response is received.  If a redirection should
+        take place, return a new Request to allow http_error_30x to
+        perform the redirect.  Otherwise, raise HTTPError if no-one
+        else should try to handle this url.  Return None if you can't
+        but another Handler might.
         """
         m = req.get_method()
         if (code in (301, 302, 303, 307) and m in ("GET", "HEAD")
@@ -612,7 +613,8 @@ class HTTPPasswordMgr:
 class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
     def find_user_password(self, realm, authuri):
-        user, password = HTTPPasswordMgr.find_user_password(self,realm,authuri)
+        user, password = HTTPPasswordMgr.find_user_password(self, realm,
+                                                            authuri)
         if user is not None:
             return user, password
         return HTTPPasswordMgr.find_user_password(self, None, authuri)
@@ -767,7 +769,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     does not transmit passwords in the clear.
     """
 
-    header = 'Authorization'
+    auth_header = 'Authorization'
 
     def http_error_401(self, req, fp, code, msg, headers):
         host = urlparse.urlparse(req.get_full_url())[1]
@@ -776,7 +778,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
 class ProxyDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
 
-    header = 'Proxy-Authorization'
+    auth_header = 'Proxy-Authorization'
 
     def http_error_407(self, req, fp, code, msg, headers):
         host = req.get_host()
