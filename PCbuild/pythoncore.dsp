@@ -1482,21 +1482,6 @@ SOURCE=..\Objects\sliceobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\soundex.c
-
-!IF  "$(CFG)" == "pythoncore - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\Objects\stringobject.c
 
 !IF  "$(CFG)" == "pythoncore - Win32 Release"
