@@ -1,18 +1,11 @@
-How to install Python 2.1a3 on your Macintosh
+How to install Python 2.1b1 on your Macintosh
 ---------------------------------------------
 
-Note that this is really an alpha: it is only lightly tested and contains a lot
-of new code. Moreover, this release is Carbon only, so it will run on MacOS 8.1
-or later and MacOS X. The next alpha will again run in "classic MacOS" (8.0 or
-later). For MacOS 8.1 through 8.6 you will have to install CarbonLib (version 1.0.4
-or later) yourself from the Apple website.
-
-I'm hoping for a fairly quick alpha cycle, with about 3 distributions in quick
-succession, so please give feedback (to pythonmac-sig@python.org) as soon as
-possible. You should definitely include the full version number of you MacOS
-and the full version string of your MacPython.
-
-Whether PIL, Tk and Numeric work in this release is a complete guess.
+This is the first beta for a MacPython that can run on classic MacOS (from 8.1
+onwards) and natively on MacOSX. The installer tries to work out whether you can
+use the Carbon version or not. This is also the first MacPython distribution
+to be packaged as an active installer, which only downloads the parts you actually
+need. Let me hear about problems in these areas.
 
 You should definitely read the Relnotes file too.
 
@@ -31,45 +24,38 @@ now. The documentation is in HTML format, start with index.html.
 
 Caveats
 -------
-This is a final candidate version, so use with caution, and please report
-problems as soon as possible, to pythonmac-sig@python.org.
-
 Aside from the general new Python 2.1 features compared to 2.0 the main
 feature of this release is Carbon support.
 
-This installer installs MacPython for Carbon only. If you have a machine
-running 8.5 or earlier you should wait for the next alfa and sitck with 2.0.
-If you want
-68k support you will have to stay with 1.5.2.
+This installer installs MacPython for classic PPC MacOS, MacPython for Carbon
+(OS X, OS 9 or OS8 with CarbonLib installed) or both, depending on your
+configuration. By selecting custom install you can bypass these tests and
+install what you want.
 
-This version of Python expects a recent version of Appearance, so it may
-be that users with pre MacOS 8.5 systems have trouble running it. If
-that is the case try getting CarbonLib from Apple, I am told this
-includes Appearance and NavServices. You may also have to disable the
-"Use navservices" preference for best results.
+If you want 68k support you will have to stay with 1.5.2.
 
 What to install
 ---------------
 
-This installer is PPC only: too many new MacOS features are not
-available on 68K, and doing workarounds, even just #ifdeffing in the
-code, is too much work for me right now. If someone wants to revive
-68K-MacPython: please do so.
-
 The optional parts in this distribution are
 - TK+PIL: Tkinter and support modules, plus Imaging, the Python image manipulation 
   package (allows you to read, write and display images and do lots of operations on them).
+  For Carbon MacPython you only get PIL: there is no Tcl/Tk for Carbon yet.
 - img: another imaging package. Has more file format support and is faster
   than imaging, but has only limited operations on images. There is a bridge
   between the packages.
 - Numeric: the LLNL Numeric Python extension. All sorts of nifty operations
   on matrices and such. This is the most recent version from the sourceforge archive.
+  Numeric has moved from Extensions to :Lib:site-python, by the way, see the release
+  notes.
 - Developers kit: all header files and some tools and sample projects to get you started on
   writing Python extensions if you have CodeWarrior.
 All these except the DevKit are installed with Easy Install.
 
-After the installer finishes it automatically launches the
-ConfigurePython applet, to finish configuration of your Python.
+After the installer finishes it automatically launches the appropriate
+ConfigurePython applet, to finish configuration of your Python. If you run MacOS9
+(or 8 with CarbonLib installed) you can switch back and forth between the classic and
+Carbon versions of Python by running either ConfigurePythonClassic or ConfigurePythonCarbon.
 
 Moving your Python installation after installing is generally not a good idea.
 If you have to do this anyway you should remove your preference file, run
@@ -88,10 +74,11 @@ After installing
 It is probably a good idea to run the automatic tests. Start
 Python and "import test.autotest". 
 
-Three tests will fail on MacOS9, all with MemoryErrors: test_gzip, test_sha,
+Three tests will fail on MacOS9, all with MemoryErrors: test_sha,
 test_longexp and test_zlib (on MacOSX nothing should fail).
 If you increase the PythonInterpreter memory
-partition size they will pass. It will, however, print some messages
+partition size they will pass (but for longexp you have to increas it by an
+incredible amount). It will, however, print some messages
 about optional features not supported. You should not worry about these,
 they are modules that are supported by Python on other platforms. Also,
 if you didn't run compileall before autotesting you may run out of
@@ -112,7 +99,7 @@ Uninstalling
 
 Two items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon lives in the Extensions folder and the
-"Python 2.1a3 Preferences" file in the Python subfolder in the
+"Python 2.1b1 Preferences" file in the Python subfolder in the
 Preferences folder. All the rest of Python lives in the folder you
 installed in.
 
