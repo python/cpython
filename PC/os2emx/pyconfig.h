@@ -53,9 +53,6 @@
 /* enable the GC module */
 #define WITH_CYCLE_GC	1
 
-/* Define if you want to read files with foreign newlines. */
-#define WITH_UNIVERSAL_NEWLINES 1
-
 /* Define if you want documentation strings in extension modules */
 #define WITH_DOC_STRINGS 1
 

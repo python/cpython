@@ -20,11 +20,9 @@ typedef struct {
 	char* f_bufend;		/* Points after last occupied position */
 	char* f_bufptr;		/* Current buffer position */
 	char *f_setbuf;		/* Buffer for setbuf(3) and setvbuf(3) */
-#ifdef WITH_UNIVERSAL_NEWLINES
 	int f_univ_newline;	/* Handle any newline convention */
 	int f_newlinetypes;	/* Types of newlines seen */
 	int f_skipnextlf;	/* Skip next \n */
-#endif
 	PyObject *f_encoding;
 } PyFileObject;
 
@@ -51,19 +49,13 @@ PyAPI_FUNC(int) PyObject_AsFileDescriptor(PyObject *);
 */
 PyAPI_DATA(const char *) Py_FileSystemDefaultEncoding;
 
-#ifdef WITH_UNIVERSAL_NEWLINES
 /* Routines to replace fread() and fgets() which accept any of \r, \n
    or \r\n as line terminators.
 */
 #define PY_STDIOTEXTMODE "b"
 char *Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
 size_t Py_UniversalNewlineFread(char *, size_t, FILE *, PyObject *);
-#else
-#define PY_STDIOTEXTMODE ""
-#define Py_UniversalNewlineFgets(buf, len, fp, obj) fgets((buf), (len), (fp))
-#define Py_UniversalNewlineFread(buf, len, fp, obj) \
-		fread((buf), 1, (len), (fp))
-#endif /* WITH_UNIVERSAL_NEWLINES */
+
 #ifdef __cplusplus
 }
 #endif

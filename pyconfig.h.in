@@ -792,9 +792,6 @@
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
 
-/* Define if you want to read files with foreign newlines. */
-#undef WITH_UNIVERSAL_NEWLINES
-
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN

@@ -1885,24 +1885,6 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	fi
 fi
 
-# Check for universal newline support
-AC_MSG_CHECKING(for --with-universal-newlines)
-AC_ARG_WITH(universal-newlines,
-            AC_HELP_STRING(--with(out)-universal-newlines, disable/enable foreign newlines))
-
-if test -z "$with_universal_newlines"
-then with_universal_newlines="yes"
-fi
-if test "$with_universal_newlines" = "no"
-then
-    echo --without-universal-newlines is unsupported, see README
-    exit 1
-else
-    AC_DEFINE(WITH_UNIVERSAL_NEWLINES, 1,
-      [Define if you want to read files with foreign newlines.])
-fi
-AC_MSG_RESULT($with_universal_newlines)
-
 # Check for --with-doc-strings
 AC_MSG_CHECKING(for --with-doc-strings)
 AC_ARG_WITH(doc-strings,

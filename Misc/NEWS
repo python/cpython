@@ -330,6 +330,11 @@ Tools/Demos
 Build
 -----
 
+- Systems requiring the D4, D6 or D7 variants of pthreads are no longer
+  supported (see PEP 11).
+
+- Universal newline support can no longer be disabled (see PEP 11).
+
 - Support for DGUX, SunOS 4, IRIX 4 and Minix was removed (see PEP 11).
 
 - Support for systems requiring --with-dl-dld or --with-sgi-dl was removed
