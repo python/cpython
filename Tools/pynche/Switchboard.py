@@ -17,9 +17,9 @@ from types import DictType
 import marshal
 
 class Switchboard:
-    def __init__(self, colordb, initfile):
+    def __init__(self, initfile):
         self.__initfile = initfile
-        self.__colordb = colordb
+        self.__colordb = None
         self.__optiondb = {}
         self.__views = []
         self.__red = 0
@@ -63,6 +63,9 @@ class Switchboard:
     def colordb(self):
         return self.__colordb
 
+    def set_colordb(self, colordb):
+        self.__colordb = colordb
+
     def optiondb(self):
         return self.__optiondb
 
@@ -74,6 +77,9 @@ class Switchboard:
         for v in self.__views:
             if hasattr(v, 'save_options'):
                 v.save_options(self.__optiondb)
+        # save the name of the file used for the color database.  we'll try to
+        # load this first.
+        self.__optiondb['DBFILE'] = self.__colordb.filename()
         fp = None
         try:
             try:

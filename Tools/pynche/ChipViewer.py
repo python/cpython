@@ -49,9 +49,9 @@ class ChipWidget:
         if releasecmd:
             self.__chip.bind('<ButtonRelease-1>', releasecmd)
 
-    def set_color(self, color):
+    def set_color(self, color, colorname=None):
         self.__chip.config(background=color)
-        self.__name.config(text=color)
+        self.__name.config(text=colorname or color)
 
     def get_color(self):
         return self.__chip['background']
@@ -83,25 +83,27 @@ class ChipViewer:
                                     releasecmd = self.__buttonrelease)
 
     def update_yourself(self, red, green, blue):
-        # TBD: should exactname default to X11 color name if their is an exact
-        # match for the rgb triplet?  Part of me says it's nice to see both
-        # names for the color, the other part says that it's better to
-        # feedback the exact match.
+        # Selected always shows the #rrggbb name of the color, nearest always
+        # shows the name of the nearest color in the database.  TBD: should
+        # an exact match be indicated in some way?
+        #
+        # Always use the #rrggbb style to actually set the color, since we may 
+        # not be using X color names (e.g. "web-safe" names)
+        colordb = self.__sb.colordb()
         rgbtuple = (red, green, blue)
-        try:
-            allcolors = self.__sb.colordb().find_byrgb(rgbtuple)
-            exactname = allcolors[0]
-        except ColorDB.BadColor:
-            exactname = ColorDB.triplet_to_rrggbb(rgbtuple)
-        nearest = self.__sb.colordb().nearest(red, green, blue)
-        self.__selected.set_color(exactname)
-        self.__nearest.set_color(nearest)
+        rrggbb = ColorDB.triplet_to_rrggbb(rgbtuple)
+        # find the nearest
+        nearest = colordb.nearest(red, green, blue)
+        nearest_tuple = colordb.find_byname(nearest)
+        nearest_rrggbb = ColorDB.triplet_to_rrggbb(nearest_tuple)
+        self.__selected.set_color(rrggbb)
+        self.__nearest.set_color(nearest_rrggbb, nearest)
 
     def __buttonpress(self, event=None):
         self.__nearest.press()
 
     def __buttonrelease(self, event=None):
         self.__nearest.release()
-        colorname = self.__nearest.get_color()
-        red, green, blue = self.__sb.colordb().find_byname(colorname)
+        rrggbb = self.__nearest.get_color()
+        red, green, blue = ColorDB.rrggbb_to_triplet(rrggbb)
         self.__sb.update_views(red, green, blue)

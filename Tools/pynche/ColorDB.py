@@ -35,7 +35,9 @@ DEFAULT_DB = None
 
 # generic class
 class ColorDB:
-    def __init__(self, fp, lineno):
+    def __init__(self, fp):
+        lineno = 2
+        self.__name = fp.name
 	# Maintain several dictionaries for indexing into the color database.
 	# Note that while Tk supports RGB intensities of 4, 8, 12, or 16 bits, 
 	# for now we only support 8 bit intensities.  At least on OpenWindows, 
@@ -54,6 +56,7 @@ class ColorDB:
 	    if not line:
 		break
 	    # get this compiled regular expression from derived class
+##            print '%3d: %s' % (lineno, line[:-1])
 	    mo = self._re.match(line)
 	    if not mo:
 		sys.stderr.write('Error in %s, line %d\n' % (fp.name, lineno))
@@ -62,9 +65,10 @@ class ColorDB:
 	    #
 	    # extract the red, green, blue, and name
 	    #
-	    red, green, blue = map(int, mo.group('red', 'green', 'blue'))
-	    name = mo.group('name')
+            red, green, blue = self._extractrgb(mo)
+            name = self._extractname(mo)
 	    keyname = string.lower(name)
+##            print keyname, '(%d, %d, %d)' % (red, green, blue)
 	    #
 	    # TBD: for now the `name' is just the first named color with the
 	    # rgb values we find.  Later, we might want to make the two word
@@ -81,13 +85,25 @@ class ColorDB:
 	    self.__byname[keyname] = key
 	    lineno = lineno + 1
 
+    # override in derived classes
+    def _extractrgb(self, mo):
+        return map(int, mo.group('red', 'green', 'blue'))
+
+    def _extractname(self, mo):
+        return mo.group('name')
+
+    def filename(self):
+        return self.__name
+
     def find_byrgb(self, rgbtuple):
+        """Return name for rgbtuple"""
 	try:
 	    return self.__byrgb[rgbtuple]
 	except KeyError:
 	    raise BadColor(rgbtuple)
 
     def find_byname(self, name):
+        """Return (red, green, blue) for name"""
 	name = string.lower(name)
 	try:
 	    return self.__byname[name]
@@ -95,9 +111,10 @@ class ColorDB:
 	    raise BadColor(name)
 
     def nearest(self, red, green, blue):
-	# TBD: use Voronoi diagrams, Delaunay triangulation, or octree for
-	# speeding up the locating of nearest point.  Exhaustive search is
-	# inefficient, but may be fast enough.
+        """Return the name of color nearest (red, green, blue)"""
+	# TBD: should we use Voronoi diagrams, Delaunay triangulation, or
+	# octree for speeding up the locating of nearest point?  Exhaustive
+	# search is inefficient, but seems fast enough.
 	nearest = -1
 	nearest_name = ''
 	for name, aliases in self.__byrgb.values():
@@ -133,7 +150,29 @@ class ColorDB:
 
 class RGBColorDB(ColorDB):
     _re = re.compile(
-	'\s*(?P<red>\d+)\s+(?P<green>\d+)\s+(?P<blue>\d+)\s+(?P<name>.*)')
+        '\s*(?P<red>\d+)\s+(?P<green>\d+)\s+(?P<blue>\d+)\s+(?P<name>.*)')
+
+
+class HTML40DB(ColorDB):
+    _re = re.compile('(?P<name>\S+)\s+(?P<hexrgb>#[0-9a-fA-F]{6})')
+
+    def _extractrgb(self, mo):
+        return rrggbb_to_triplet(mo.group('hexrgb'))
+
+class LightlinkDB(HTML40DB):
+    _re = re.compile('(?P<name>(.+))\s+(?P<hexrgb>#[0-9a-fA-F]{6})')
+
+    def _extractname(self, mo):
+        return string.strip(mo.group('name'))
+
+class WebsafeDB(ColorDB):
+    _re = re.compile('(?P<hexrgb>#[0-9a-fA-F]{6})')
+
+    def _extractrgb(self, mo):
+        return rrggbb_to_triplet(mo.group('hexrgb'))
+
+    def _extractname(self, mo):
+        return string.upper(mo.group('hexrgb'))
 
 
 
@@ -141,30 +180,36 @@ class RGBColorDB(ColorDB):
 # expression, SCANLINES is the number of header lines to scan, and CLASS is
 # the class to instantiate if a match is found
 
-X_RGB_TXT = re.compile('XConsortium'), 1, RGBColorDB
+FILETYPES = [
+    (re.compile('XConsortium'), RGBColorDB),
+    (re.compile('HTML'), HTML40DB),
+    (re.compile('lightlink'), LightlinkDB),
+    (re.compile('Websafe'), WebsafeDB),
+    ]
 
-def get_colordb(file, filetype=X_RGB_TXT):
+def get_colordb(file, filetype=None):
     colordb = None
-    fp = None
-    typere, scanlines, class_ = filetype
+    fp = open(file)
     try:
-	try:
-	    lineno = 0
-	    fp = open(file)
-	    while lineno < scanlines:
-		line = fp.readline()
-		if not line:
-		    break
-		mo = typere.search(line)
-		if mo:
-		    colordb = class_(fp, lineno)
-		    break
-		lineno = lineno + 1
-	except IOError:
-	    pass
+        line = fp.readline()
+        if not line:
+            return None
+        # try to determine the type of RGB file it is
+        if filetype is None:
+            filetypes = FILETYPES
+        else:
+            filetypes = [filetype]
+        for typere, class_ in filetypes:
+            mo = typere.search(line)
+            if mo:
+                break
+        else:
+            # no matching type
+            return None
+        # we know the type and the class to grok the type, so suck it in
+        colordb = class_(fp)
     finally:
-	if fp:
-	    fp.close()
+        fp.close()
     # save a global copy
     global DEFAULT_DB
     DEFAULT_DB = colordb
@@ -175,6 +220,7 @@ def get_colordb(file, filetype=X_RGB_TXT):
 _namedict = {}
 def rrggbb_to_triplet(color, atoi=string.atoi):
     """Converts a #rrggbb color to the tuple (red, green, blue)."""
+    global _namedict
     rgbtuple = _namedict.get(color)
     if rgbtuple is None:
         if color[0] <> '#':
@@ -190,6 +236,7 @@ def rrggbb_to_triplet(color, atoi=string.atoi):
 _tripdict = {}
 def triplet_to_rrggbb(rgbtuple):
     """Converts a (red, green, blue) tuple to #rrggbb."""
+    global _tripdict
     hexname = _tripdict.get(rgbtuple)
     if hexname is None:
 	hexname = '#%02x%02x%02x' % rgbtuple
