@@ -305,7 +305,6 @@ com_error(struct compiling *c, PyObject *exc, char *msg)
 {
 	size_t n = strlen(msg);
 	PyObject *v, *tb, *tmp;
-	char *s;
 	c->c_errors++;
 	if (c->c_lineno <= 1) {
 		/* Unknown line number or single interactive command */
