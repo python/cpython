@@ -180,7 +180,6 @@ class Maildir:
     # Qmail directory mailbox
 
     def __init__(self, dirname):
-        import string
         self.dirname = dirname
 
         # check for new mail
@@ -192,6 +191,8 @@ class Maildir:
         curdir = os.path.join(self.dirname, 'cur')
         boxes += [os.path.join(curdir, f)
                   for f in os.listdir(curdir) if f[0] != '.']
+
+        self.boxes = boxes
 
     def next(self):
         if not self.boxes:
@@ -225,7 +226,6 @@ class BabylMailbox(_Mailbox):
 def _test():
     import time
     import sys
-    import string
     import os
 
     args = sys.argv[1:]
@@ -261,7 +261,7 @@ def _test():
         if len(args) <= 1:
             msg.fp = None
     if len(args) > 1:
-        num = string.atoi(args[1])
+        num = int(args[1])
         print 'Message %d body:'%num
         msg = msgs[num-1]
         msg.rewindbody()

@@ -1,3 +1,0 @@
-#define USE_GUSI
-#define USE_MAC_SHARED_LIBRARY
-#define USE_MAC_APPLET_SUPPORT
