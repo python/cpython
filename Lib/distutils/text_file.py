@@ -134,6 +134,22 @@ class TextFile:
         self.current_line = None
 
 
+    def gen_error (self, msg, line=None):
+        outmsg = []
+        if line is None:
+            line = self.current_line
+        outmsg.append(self.filename + ", ")
+        if type (line) in (ListType, TupleType):
+            outmsg.append("lines %d-%d: " % tuple (line))
+        else:
+            outmsg.append("line %d: " % line)
+        outmsg.append(str(msg))
+        return string.join(outmsg, "")
+
+
+    def error (self, msg, line=None):
+        raise ValueError, "error: " + self.gen_error(msg, line)
+
     def warn (self, msg, line=None):
         """Print (to stderr) a warning message tied to the current logical
            line in the current file.  If the current logical line in the
@@ -142,15 +158,7 @@ class TextFile:
            the current line number; it may be a list or tuple to indicate a
            range of physical lines, or an integer for a single physical
            line."""
-
-        if line is None:
-            line = self.current_line
-        sys.stderr.write (self.filename + ", ")
-        if type (line) in (ListType, TupleType):
-            sys.stderr.write ("lines %d-%d: " % tuple (line))
-        else:
-            sys.stderr.write ("line %d: " % line)
-        sys.stderr.write (str (msg) + "\n")
+        sys.stderr.write("warning: " + self.gen_error(msg, line) + "\n")
 
 
     def readline (self):
