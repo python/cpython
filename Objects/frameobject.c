@@ -238,6 +238,7 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	return f;
 }
 
+#if 0
 object **
 extend_stack(f, level, incr)
 	frameobject *f;
@@ -254,6 +255,7 @@ extend_stack(f, level, incr)
 	}
 	return f->f_valuestack + level;
 }
+#endif
 
 /* Block management */
 
