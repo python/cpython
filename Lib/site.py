@@ -124,7 +124,7 @@ del exit
 # encoding used by the default locale of this system. If the default
 # encoding cannot be determined or is unknown, it defaults to 'ascii'.
 
-encoding = None # default
+encoding = "ascii" # default
 
 if 0:
     # Enable to support locale aware default string encodings.
@@ -138,8 +138,7 @@ if 0:
     # Unicode to string conversion.
     encoding = "undefined"
 
-if not encoding:
-    encoding = "ascii"
+sys.setdefaultencoding(encoding)
 
 #
 # Run custom site specific code, if available.
