@@ -1018,29 +1018,6 @@ This \UNIX\ is also followed by a space.
       \macro{shortversion} macro.
     \end{macrodesc}
 
-    \begin{macrodesc}{versionadded}{\op{explanation}\p{version}}
-      The version of Python which added the described feature to the
-      library or C API.  \var{explanation} should be a \emph{brief}
-      explanation of the change consisting of a capitalized sentence
-      fragment; a period will be appended by the formatting process.
-      This is typically added to the end of the first paragraph of the
-      description before any availability notes.  The location should
-      be selected so the explanation makes sense and may vary as
-      needed.
-    \end{macrodesc}
-
-    \begin{macrodesc}{versionchanged}{\op{explanation}\p{version}}
-      The version of Python in which the named feature was changed in
-      some way (new parameters, changed side effects, etc.).
-      \var{explanation} should be a \emph{brief} explanation of the
-      change consisting of a capitalized sentence fragment; a
-      period will be appended by the formatting process.
-      This is typically added to the end of the first paragraph of the
-      description before any availability notes and after
-      \macro{versionadded}.  The location should be selected so the
-      explanation makes sense and may vary as needed.
-    \end{macrodesc}
-
     \begin{macrodesc}{warning}{\p{text}}
       An important bit of information about an API that a user should
       be very aware of when using whatever bit of API the warning
@@ -1050,6 +1027,37 @@ This \UNIX\ is also followed by a space.
       and include all appropriate punctuation.  This differs from
       \macro{note} in that it is recommended over \macro{note} for
       information regarding security.
+    \end{macrodesc}
+
+    The following two macros are used to describe information that's
+    associated with changes from one release to another.  For features
+    which are described by a single paragraph, these are typically
+    added as separate source lines at the end of the paragraph.  When
+    adding these to features described by multiple paragraphs, they
+    are usually collected in a single separate paragraph after the
+    description.  When both \macro{versionadded} and
+    \macro{versionchanged} are used, \macro{versionadded} should come
+    first; the versions should be listed in chronological order.  Both
+    of these should come before availability statements.  The location
+    should be selected so the explanation makes sense and may vary as
+    needed.
+
+    \begin{macrodesc}{versionadded}{\op{explanation}\p{version}}
+      The version of Python which added the described feature to the
+      library or C API.  \var{explanation} should be a \emph{brief}
+      explanation of the change consisting of a capitalized sentence
+      fragment; a period will be appended by the formatting process.
+      When this applies to an entire module, it should be placed at
+      the top of the module section before any prose.
+    \end{macrodesc}
+
+    \begin{macrodesc}{versionchanged}{\op{explanation}\p{version}}
+      The version of Python in which the named feature was changed in
+      some way (new parameters, changed side effects, etc.).
+      \var{explanation} should be a \emph{brief} explanation of the
+      change consisting of a capitalized sentence fragment; a
+      period will be appended by the formatting process.  This should
+      not generally be applied to modules.
     \end{macrodesc}
 
 
