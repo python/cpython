@@ -1835,8 +1835,14 @@ item: Remark
   Text=More DLLs
 end
 item: Install File
-  Source=..\..\expat\libs\expat.dll
-  Destination=%MAINDIR%\DLLs\expat.dll
+  Source=..\..\expat\bin\xmlparse.dll
+  Destination=%MAINDIR%\DLLs\xmlparse.dll
+  Description=Expat library
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\..\expat\bin\xmltok.dll
+  Destination=%MAINDIR%\DLLs\xmltok.dll
   Description=Expat library
   Flags=0000000000000010
 end
@@ -1904,25 +1910,9 @@ end
 item: Remark
 end
 item: Install File
-  Source=..\lib\email\*.py
-  Destination=%MAINDIR%\Lib\email
-  Description=Library email package
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Install File
   Source=..\lib\encodings\*.py
   Destination=%MAINDIR%\Lib\encodings
   Description=Unicode encoding tables
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Install File
-  Source=..\lib\hotshot\*.py
-  Destination=%MAINDIR%\Lib\hotshot
-  Description=Fast Python profiler
   Flags=0000000000000010
 end
 item: Remark
@@ -1984,8 +1974,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\pc\pyconfig.h
-  Destination=%MAINDIR%\include\pyconfig.h
+  Source=..\pc\config.h
+  Destination=%MAINDIR%\include\config.h
   Description=Header files (pyconfig.h)
   Flags=0000000000000010
 end
@@ -2232,14 +2222,6 @@ end
 item: Install File
   Source=..\lib\test\*.out
   Destination=%MAINDIR%\Lib\test
-  Description=Python Test files
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Install File
-  Source=..\lib\test\data\*.*
-  Destination=%MAINDIR%\Lib\test\data
   Description=Python Test files
   Flags=0000000000000010
 end
