@@ -9,6 +9,7 @@
 # not supported at all.
 
 
+import markupbase
 import re
 
 __all__ = ["SGMLParser"]
@@ -27,23 +28,13 @@ charref = re.compile('&#([0-9]+)[^0-9]')
 starttagopen = re.compile('<[>a-zA-Z]')
 shorttagopen = re.compile('<[a-zA-Z][-.a-zA-Z0-9]*/')
 shorttag = re.compile('<([a-zA-Z][-.a-zA-Z0-9]*)/([^/]*)/')
-piopen = re.compile('<\?')
 piclose = re.compile('>')
-endtagopen = re.compile('</[<>a-zA-Z]')
 endbracket = re.compile('[<>]')
-special = re.compile('<![^<>]*>')
-commentopen = re.compile('<!--')
 commentclose = re.compile(r'--\s*>')
-declopen = re.compile('<!')
-declname = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*')
-declstringlit = re.compile(r'(\'[^\']*\'|"[^"]*")\s*')
 tagfind = re.compile('[a-zA-Z][-_.a-zA-Z0-9]*')
 attrfind = re.compile(
     r'\s*([a-zA-Z_][-:.a-zA-Z_0-9]*)(\s*=\s*'
     r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./:;+*%?!&$\(\)_#=~\'"]*))?')
-
-decldata = re.compile(r'[^>\'\"]+')
-declstringlit = re.compile(r'(\'[^\']*\'|"[^"]*")\s*')
 
 
 class SGMLParseError(RuntimeError):
@@ -62,7 +53,7 @@ class SGMLParseError(RuntimeError):
 # chunks).  Entity references are passed by calling
 # self.handle_entityref() with the entity reference as argument.
 
-class SGMLParser:
+class SGMLParser(markupbase.ParserBase):
 
     def __init__(self, verbose=0):
         """Initialize and reset this instance."""
@@ -76,6 +67,7 @@ class SGMLParser:
         self.lasttag = '???'
         self.nomoretags = 0
         self.literal = 0
+        markupbase.ParserBase.reset(self)
 
     def setnomoretags(self):
         """Enter literal mode (CDATA) till EOF.
@@ -106,6 +98,9 @@ class SGMLParser:
         """Handle the remaining data."""
         self.goahead(1)
 
+    def error(self, message):
+        raise SGMLParseError(message)
+
     # Internal -- handle data as far as reasonable.  May leave state
     # and data to be processed by a subsequent call.  If 'end' is
     # true, force handling all data as if followed by EOF marker.
@@ -119,9 +114,10 @@ class SGMLParser:
                 i = n
                 break
             match = interesting.search(rawdata, i)
-            if match: j = match.start(0)
+            if match: j = match.start()
             else: j = n
-            if i < j: self.handle_data(rawdata[i:j])
+            if i < j:
+                self.handle_data(rawdata[i:j])
             i = j
             if i == n: break
             if rawdata[i] == '<':
@@ -134,36 +130,31 @@ class SGMLParser:
                     if k < 0: break
                     i = k
                     continue
-                if endtagopen.match(rawdata, i):
+                if rawdata.startswith("</", i):
                     k = self.parse_endtag(i)
                     if k < 0: break
-                    i =  k
+                    i = k
                     self.literal = 0
                     continue
-                if commentopen.match(rawdata, i):
-                    if self.literal:
-                        self.handle_data(rawdata[i])
+                if self.literal:
+                    if n > (i + 1):
+                        self.handle_data("<")
                         i = i+1
-                        continue
+                    else:
+                        # incomplete
+                        break
+                    continue
+                if rawdata.startswith("<!--", i):
                     k = self.parse_comment(i)
                     if k < 0: break
-                    i = i+k
+                    i = k
                     continue
-                if piopen.match(rawdata, i):
-                    if self.literal:
-                        self.handle_data(rawdata[i])
-                        i = i+1
-                        continue
+                if rawdata.startswith("<?", i):
                     k = self.parse_pi(i)
                     if k < 0: break
                     i = i+k
                     continue
-                match = special.match(rawdata, i)
-                if match:
-                    if self.literal:
-                        self.handle_data(rawdata[i])
-                        i = i+1
-                        continue
+                if rawdata.startswith("<!", i):
                     # This is some sort of declaration; in "HTML as
                     # deployed," this should only be the document type
                     # declaration ("<!DOCTYPE html...>").
@@ -191,7 +182,7 @@ class SGMLParser:
                     if rawdata[i-1] != ';': i = i-1
                     continue
             else:
-                raise SGMLParseError('neither < nor & ??')
+                self.error('neither < nor & ??')
             # We get here only if incomplete matches but
             # nothing else
             match = incomplete.match(rawdata, i)
@@ -212,59 +203,26 @@ class SGMLParser:
         # XXX if end: check for empty stack
 
     # Internal -- parse comment, return length or -1 if not terminated
-    def parse_comment(self, i):
+    def parse_comment(self, i, report=1):
         rawdata = self.rawdata
         if rawdata[i:i+4] != '<!--':
-            raise SGMLParseError('unexpected call to parse_comment()')
+            self.error('unexpected call to parse_comment()')
         match = commentclose.search(rawdata, i+4)
         if not match:
             return -1
-        j = match.start(0)
-        self.handle_comment(rawdata[i+4: j])
-        j = match.end(0)
-        return j-i
+        if report:
+            j = match.start(0)
+            self.handle_comment(rawdata[i+4: j])
+        return match.end(0)
 
-    # Internal -- parse declaration.
-    def parse_declaration(self, i):
-        # This is some sort of declaration; in "HTML as
-        # deployed," this should only be the document type
-        # declaration ("<!DOCTYPE html...>").
-        rawdata = self.rawdata
-        j = i + 2
-        assert rawdata[i:j] == "<!", "unexpected call to parse_declaration"
-        if rawdata[j:j+1] in ("-", ""):
-            # Start of comment followed by buffer boundary,
-            # or just a buffer boundary.
-            return -1
-        # in practice, this should look like: ((name|stringlit) S*)+ '>'
-        n = len(rawdata)
-        while j < n:
-            c = rawdata[j]
-            if c == ">":
-                # end of declaration syntax
-                self.handle_decl(rawdata[i+2:j])
-                return j + 1
-            if c in "\"'":
-                m = declstringlit.match(rawdata, j)
-                if not m:
-                    return -1 # incomplete
-                j = m.end()
-            elif c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                m = declname.match(rawdata, j)
-                if not m:
-                    return -1 # incomplete
-                j = m.end()
-            else:
-                raise SGMLParseError(
-                    "unexpected char in declaration: %s" % `rawdata[j]`)
-        # end of buffer between tokens
-        return -1
+    # Extensions for the DOCTYPE scanner:
+    _decl_otherchars = '='
 
     # Internal -- parse processing instr, return length or -1 if not terminated
     def parse_pi(self, i):
         rawdata = self.rawdata
         if rawdata[i:i+2] != '<?':
-            raise SGMLParseError('unexpected call to parse_pi()')
+            self.error('unexpected call to parse_pi()')
         match = piclose.search(rawdata, i+2)
         if not match:
             return -1
@@ -311,7 +269,7 @@ class SGMLParser:
         else:
             match = tagfind.match(rawdata, i+1)
             if not match:
-                raise SGMLParseError('unexpected call to parse_starttag')
+                self.error('unexpected call to parse_starttag')
             k = match.end(0)
             tag = rawdata[i+1:k].lower()
             self.lasttag = tag
@@ -465,6 +423,7 @@ class SGMLParser:
     def unknown_endtag(self, tag): pass
     def unknown_charref(self, ref): pass
     def unknown_entityref(self, ref): pass
+    def unknown_decl(self, data): pass
 
 
 class TestSGMLParser(SGMLParser):
