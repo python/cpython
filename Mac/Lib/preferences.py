@@ -205,7 +205,7 @@ class StrListLoader:
 def preferencefile(filename, creator=None, type=None):
 	create = creator != None and type != None
 	vrefnum, dirid = macfs.FindFolder(MACFS.kOnSystemDisk, 'pref', create)
-	fss = macfs.FSSpec((vrefnum, dirid, filename))
+	fss = macfs.FSSpec((vrefnum, dirid, ":Python:" + filename))
 	oldrf = Res.CurResFile()
 	if create:
 		try:
