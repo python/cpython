@@ -301,7 +301,12 @@ def test():
 		print complex(i)
 		print
 		for j in list:
-			print i + j, i - j, i * j, i / j, i ** j, cmp(i, j)
+			print i + j, i - j, i * j, i / j, i ** j,
+                        if not (isinstance(i, ComplexType) or
+                                isinstance(j, ComplexType)):
+                                print cmp(i, j)
+                        print
+
 
 if __name__ == '__main__':
     test()
