@@ -1,7 +1,7 @@
 import string
-from Tkinter import TclError
-import tkMessageBox
-import tkSimpleDialog
+#from Tkinter import TclError
+#import tkMessageBox
+#import tkSimpleDialog
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -121,6 +121,7 @@ class AutoIndent:
     num_context_lines = 50, 500, 5000000
 
     def __init__(self, editwin):
+        self.editwin = editwin
         self.text = editwin.text
 
     def config(self, **options):
@@ -170,7 +171,7 @@ class AutoIndent:
         try:
             first = text.index("sel.first")
             last = text.index("sel.last")
-        except TclError:
+        except: # Was catching TclError, but this doesnt work for
             first = last = None
         if first and last:
             text.delete(first, last)
@@ -197,7 +198,7 @@ class AutoIndent:
         try:
             first = text.index("sel.first")
             last = text.index("sel.last")
-        except TclError:
+        except: # Was catching TclError, but this doesnt work for
             first = last = None
         text.undo_block_start()
         try:
@@ -230,7 +231,7 @@ class AutoIndent:
         try:
             first = text.index("sel.first")
             last = text.index("sel.last")
-        except TclError:
+        except: # Was catching TclError, but this doesnt work for
             first = last = None
         text.undo_block_start()
         try:
@@ -374,7 +375,7 @@ class AutoIndent:
         self.set_region(head, tail, chars, lines)
 
     def toggle_tabs_event(self, event):
-        if tkMessageBox.askyesno(
+        if self.editwin.askyesno(
               "Toggle tabs",
               "Turn tabs " + ("on", "off")[self.usetabs] + "?",
               parent=self.text):
@@ -390,7 +391,7 @@ class AutoIndent:
         return "break"
 
     def change_indentwidth_event(self, event):
-        new = tkSimpleDialog.askinteger(
+        new = self.editwin.askinteger(
                   "Indent width",
                   "New indent width (1-16)",
                   parent=self.text,
@@ -448,7 +449,7 @@ class AutoIndent:
         text.undo_block_stop()
 
     def _asktabwidth(self):
-        return tkSimpleDialog.askinteger(
+        return self.editwin.askinteger(
             "Tab width",
             "Spaces per tab?",
             parent=self.text,
