@@ -1324,6 +1324,10 @@ Mac
 
 - Mac/Relnotes is gone, the release notes are now here.
 
+- Python (the OSX-only, unix-based version, not the OS9-compatible CFM
+  version) now fully supports unicode strings as arguments to various file
+  system calls, eg. open(), file(), os.stat() and os.listdir().
+
 - The current naming convention for Python on the Macintosh is that MacPython
   refers to the unix-based OSX-only version, and MacPython-OS9 refers to the
   CFM-based version that runs on both OS9 and OSX.
