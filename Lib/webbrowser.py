@@ -296,7 +296,7 @@ except ImportError:
 else:
     # internet-config is the only supported controller on MacOS,
     # so don't mess with the default!
-    _tryorder = ("internet-config")
+    _tryorder = ("internet-config", )
     register("internet-config", InternetConfig)
 
 #
