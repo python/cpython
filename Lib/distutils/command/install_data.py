@@ -52,7 +52,7 @@ class install_data (Command):
                     self.warn("setup script did not provide a directory for "
                               "'%s' -- installing right in '%s'" %
                               (f, self.install_dir))
-                out = self.copy_file(f, self.install_dir)
+                (out, _) = self.copy_file(f, self.install_dir)
                 self.outfiles.append(out)
             else:
                 # it's a tuple with path to install to and a list of files
@@ -63,7 +63,7 @@ class install_data (Command):
                     dir = change_root(self.root, dir)
                 self.mkpath(dir)
                 for data in f[1]:
-                    out = self.copy_file(data, dir)
+                    (out, _) = self.copy_file(data, dir)
                     self.outfiles.append(out)
 
     def get_inputs (self):
