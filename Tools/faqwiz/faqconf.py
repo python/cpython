@@ -188,7 +188,7 @@ INDEX_ENDSECTION = """
 """
 
 INDEX_ENTRY = """\
-<LI><A HREF="%(FAQCGI)s?req=show&amp;file=%(file)s">%(title)s</A><BR>
+<LI><A HREF="%(FAQCGI)s?req=show&amp;file=%(file)s">%(title)s</A>
 """
 
 # Entry formatting
