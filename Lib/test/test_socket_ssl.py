@@ -45,7 +45,7 @@ def test_rude_shutdown():
 
     def connector():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('', PORT))
+        s.connect(('localhost', PORT))
         try:
             ssl_sock = socket.ssl(s)
         except socket.sslerror:
