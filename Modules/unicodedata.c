@@ -29,7 +29,7 @@ typedef struct {
 #include "unicodedata_db.h"
 
 static const _PyUnicode_DatabaseRecord*
-getrecord(PyUnicodeObject* v)
+_getrecord(PyUnicodeObject* v)
 {
     int code;
     int index;
@@ -147,7 +147,7 @@ unicodedata_category(PyObject *self, PyObject *args)
 			"need a single Unicode character as parameter");
 	return NULL;
     }
-    index = (int) getrecord(v)->category;
+    index = (int) _getrecord(v)->category;
     return PyString_FromString(_PyUnicode_CategoryNames[index]);
 }
 
@@ -165,7 +165,7 @@ unicodedata_bidirectional(PyObject *self, PyObject *args)
 			"need a single Unicode character as parameter");
 	return NULL;
     }
-    index = (int) getrecord(v)->bidirectional;
+    index = (int) _getrecord(v)->bidirectional;
     return PyString_FromString(_PyUnicode_BidirectionalNames[index]);
 }
 
@@ -182,7 +182,7 @@ unicodedata_combining(PyObject *self, PyObject *args)
 			"need a single Unicode character as parameter");
 	return NULL;
     }
-    return PyInt_FromLong((int) getrecord(v)->combining);
+    return PyInt_FromLong((int) _getrecord(v)->combining);
 }
 
 static PyObject *
@@ -198,7 +198,7 @@ unicodedata_mirrored(PyObject *self, PyObject *args)
 			"need a single Unicode character as parameter");
 	return NULL;
     }
-    return PyInt_FromLong((int) getrecord(v)->mirrored);
+    return PyInt_FromLong((int) _getrecord(v)->mirrored);
 }
 
 static PyObject *
@@ -260,7 +260,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
 /* database code (cut and pasted from the unidb package) */
 
 static unsigned long
-gethash(const char *s, int len, int scale)
+_gethash(const char *s, int len, int scale)
 {
     int i;
     unsigned long h = 0;
@@ -275,7 +275,7 @@ gethash(const char *s, int len, int scale)
 }
 
 static int
-getname(Py_UCS4 code, char* buffer, int buflen)
+_getname(Py_UCS4 code, char* buffer, int buflen)
 {
     int offset;
     int i;
@@ -327,12 +327,12 @@ getname(Py_UCS4 code, char* buffer, int buflen)
 }
 
 static int
-cmpname(int code, const char* name, int namelen)
+_cmpname(int code, const char* name, int namelen)
 {
     /* check if code corresponds to the given name */
     int i;
     char buffer[NAME_MAXLEN];
-    if (!getname(code, buffer, sizeof(buffer)))
+    if (!_getname(code, buffer, sizeof(buffer)))
         return 0;
     for (i = 0; i < namelen; i++) {
         if (toupper(name[i]) != buffer[i])
@@ -342,7 +342,7 @@ cmpname(int code, const char* name, int namelen)
 }
 
 static int
-getcode(const char* name, int namelen, Py_UCS4* code)
+_getcode(const char* name, int namelen, Py_UCS4* code)
 {
     unsigned int h, v;
     unsigned int mask = code_size-1;
@@ -352,12 +352,12 @@ getcode(const char* name, int namelen, Py_UCS4* code)
        only minor changes.  see the makeunicodedata script for more
        details */
 
-    h = (unsigned int) gethash(name, namelen, code_magic);
+    h = (unsigned int) _gethash(name, namelen, code_magic);
     i = (~h) & mask;
     v = code_hash[i];
     if (!v)
         return 0;
-    if (cmpname(v, name, namelen)) {
+    if (_cmpname(v, name, namelen)) {
         *code = v;
         return 1;
     }
@@ -369,7 +369,7 @@ getcode(const char* name, int namelen, Py_UCS4* code)
         v = code_hash[i];
         if (!v)
             return 0;
-        if (cmpname(v, name, namelen)) {
+        if (_cmpname(v, name, namelen)) {
             *code = v;
             return 1;
         }
@@ -382,8 +382,8 @@ getcode(const char* name, int namelen, Py_UCS4* code)
 static const _PyUnicode_Name_CAPI hashAPI = 
 {
     sizeof(_PyUnicode_Name_CAPI),
-    getname,
-    getcode
+    _getname,
+    _getcode
 };
 
 /* -------------------------------------------------------------------- */
@@ -405,7 +405,8 @@ unicodedata_name(PyObject* self, PyObject* args)
 	return NULL;
     }
 
-    if (!getname((Py_UCS4) *PyUnicode_AS_UNICODE(v), name, sizeof(name))) {
+    if (!_getname((Py_UCS4) *PyUnicode_AS_UNICODE(v),
+                             name, sizeof(name))) {
 	if (defobj == NULL) {
 	    PyErr_SetString(PyExc_ValueError, "no such name");
             return NULL;
@@ -430,7 +431,7 @@ unicodedata_lookup(PyObject* self, PyObject* args)
     if (!PyArg_ParseTuple(args, "s#:lookup", &name, &namelen))
         return NULL;
 
-    if (!getcode(name, namelen, &code)) {
+    if (!_getcode(name, namelen, &code)) {
         PyErr_SetString(PyExc_KeyError, "undefined character name");
         return NULL;
     }
