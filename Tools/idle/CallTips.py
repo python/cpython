@@ -111,8 +111,10 @@ def get_arg_text(ob):
                 defaults = list(map(lambda name: "=%s" % name, defaults))
                 defaults = [""] * (len(realArgs)-len(defaults)) + defaults
                 items = map(lambda arg, dflt: arg+dflt, realArgs, defaults)
-                if len(realArgs)+argOffset < (len(ob.func_code.co_varnames) - len(ob.func_code.co_names) ):
+                if ob.func_code.co_flags & 0x4:
                     items.append("...")
+                if ob.func_code.co_flags & 0x8:
+                    items.append("***")
                 argText = string.join(items , ", ")
                 argText = "(%s)" % argText
             except:
