@@ -62,7 +62,8 @@ strings that cannot be encoded as plain \ASCII{} strings.
 Another difference from the \refmodule{StringIO} module is that calling
 \function{StringIO()} with a string parameter creates a read-only object.
 Unlike an object created without a string parameter, it does not have
-write methods.
+write methods.  These objects are not generally visible.  They turn up in
+tracebacks as \class{StringI} and \class{StringO}.
 
 The following data objects are provided as well:
 
