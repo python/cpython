@@ -787,7 +787,7 @@ BZ2File_write(BZ2FileObject *self, PyObject *args)
 	int len;
 	int bzerror;
 
-	if (!PyArg_ParseTuple(args, "s#", &buf, &len))
+	if (!PyArg_ParseTuple(args, "s#:write", &buf, &len))
 		return NULL;
 
 	ACQUIRE_LOCK(self);
@@ -1500,7 +1500,7 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
 
-	if (!PyArg_ParseTuple(args, "s#", &data, &datasize))
+	if (!PyArg_ParseTuple(args, "s#:compress", &data, &datasize))
 		return NULL;
 
 	if (datasize == 0)
@@ -1781,7 +1781,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
 
-	if (!PyArg_ParseTuple(args, "s#", &data, &datasize))
+	if (!PyArg_ParseTuple(args, "s#:decompress", &data, &datasize))
 		return NULL;
 
 	ACQUIRE_LOCK(self);
@@ -2069,7 +2069,7 @@ bz2_decompress(PyObject *self, PyObject *args)
 	bz_stream *bzs = &_bzs;
 	int bzerror;
 
-	if (!PyArg_ParseTuple(args, "s#", &data, &datasize))
+	if (!PyArg_ParseTuple(args, "s#:decompress", &data, &datasize))
 		return NULL;
 
 	if (datasize == 0)
