@@ -167,7 +167,7 @@ del x
 
 class Pickler:
 
-    def __init__(self, file, proto=0):
+    def __init__(self, file, proto=None, bin=None):
         """This takes a file-like object for writing a pickle data stream.
 
         The optional proto argument tells the pickler to use the given
@@ -191,6 +191,14 @@ class Pickler:
         object, or any other custom object that meets this interface.
 
         """
+        if proto is not None and bin is not None:
+            raise ValueError, "can't specify both 'proto' and 'bin' arguments"
+        if bin is not None:
+            warnings.warn("The 'bin' argument to Pickler() is deprecated",
+                          PendingDeprecationWarning)
+            proto = bin
+        if proto is None:
+            proto = 0
         if proto < 0:
             proto = 2
         elif proto not in (0, 1, 2):
@@ -1464,12 +1472,12 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-def dump(obj, file, proto=0):
-    Pickler(file, proto).dump(obj)
+def dump(obj, file, proto=None, bin=None):
+    Pickler(file, proto, bin).dump(obj)
 
-def dumps(obj, proto=0):
+def dumps(obj, proto=None, bin=None):
     file = StringIO()
-    Pickler(file, proto).dump(obj)
+    Pickler(file, proto, bin).dump(obj)
     return file.getvalue()
 
 def load(file):
