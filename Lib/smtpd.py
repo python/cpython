@@ -61,7 +61,7 @@ and if remoteport is not given, then 25 is used.
 #
 # Please note that this script requires Python 2.0
 #
-# Author: Barry Warsaw <barry@digicool.com>
+# Author: Barry Warsaw <barry@python.org>
 #
 # TODO:
 #
