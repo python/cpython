@@ -27,16 +27,7 @@ extern DL_IMPORT(void) PyNode_Free(node *n);
 #define STR(n)		((n)->n_str)
 
 /* Assert that the type of a node is what we expect */
-#ifndef Py_DEBUG
-#define REQ(n, type) { /*pass*/ ; }
-#else
-#define REQ(n, type) \
-	{ if (TYPE(n) != (type)) { \
-	    fprintf(stderr, "FATAL: node type %d, required %d\n", \
-		    TYPE(n), type); \
-	    abort(); \
-	} }
-#endif
+#define REQ(n, type) assert(TYPE(n) == (type))
 
 extern DL_IMPORT(void) PyNode_ListTree(node *);
 
