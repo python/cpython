@@ -308,7 +308,73 @@ def testClonePIShallow(): pass
 
 def testClonePIDeep(): pass
 
+def testSiblings():
+    doc = parseString("<doc><?pi?>text?<elm/></doc>")
+    root = doc.documentElement
+    (pi, text, elm) = root.childNodes
 
+    confirm(pi.nextSibling is text and 
+            pi.previousSibling is None and 
+            text.nextSibling is elm and 
+            text.previousSibling is pi and 
+            elm.nextSibling is None and 
+            elm.previousSibling is text, "testSiblings")
+
+    doc.unlink()
+
+def testParents():
+    doc = parseString("<doc><elm1><elm2/><elm2><elm3/></elm2></elm1></doc>")
+    root = doc.documentElement
+    elm1 = root.childNodes[0]
+    (elm2a, elm2b) = elm1.childNodes
+    elm3 = elm2b.childNodes[0]
+
+    confirm(root.parentNode is doc and
+            elm1.parentNode is root and
+            elm2a.parentNode is elm1 and
+            elm2b.parentNode is elm1 and
+            elm3.parentNode is elm2b, "testParents")
+
+    doc.unlink()
+
+def testNonNSElements():
+    from xml.dom import pulldom
+
+    pulldom = pulldom.PullDOM()
+    pulldom.startDocument()
+    pulldom.startElement("doc", {})
+    pulldom.characters("text")
+    pulldom.startElement("subelm", {})
+    pulldom.characters("text")
+    pulldom.endElement("subelm")
+    pulldom.characters("text")    
+    pulldom.endElement("doc")
+    pulldom.endDocument()
+
+    doc = pulldom.document
+    root = doc.documentElement
+    (text1, elm1, text2) = root.childNodes
+    text3 = elm1.childNodes[0]
+
+    confirm(text1.previousSibling is None and
+            text1.nextSibling is elm1 and
+            elm1.previousSibling is text1 and
+            elm1.nextSibling is text2 and
+            text2.previousSibling is elm1 and
+            text2.nextSibling is None and
+            text3.previousSibling is None and
+            text3.nextSibling is None, "testNonNSElements - siblings")
+
+    confirm(root.parentNode is doc and
+            text1.parentNode is root and
+            elm1.parentNode is root and
+            text2.parentNode is root and
+            text3.parentNode is elm1, "testNonNSElements - parents")
+            
+    doc.unlink()
+
+# --- MAIN PROGRAM
+    
 names=globals().keys()
 names.sort()
 

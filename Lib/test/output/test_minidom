@@ -110,9 +110,16 @@ Test Succeeded testHasChildNodes
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testInsertBefore
 Passed assertion: len(Node.allnodes) == 0
+Passed testNonNSElements - siblings
+Passed testNonNSElements - parents
+Test Succeeded testNonNSElements
+Passed assertion: len(Node.allnodes) == 0
 Passed Test
 Passed Test
 Test Succeeded testNonZero
+Passed assertion: len(Node.allnodes) == 0
+Passed testParents
+Test Succeeded testParents
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testParse
 Passed assertion: len(Node.allnodes) == 0
@@ -148,6 +155,9 @@ Passed Test
 Test Succeeded testRemoveAttributeNode
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testSetAttrValueandNodeValue
+Passed assertion: len(Node.allnodes) == 0
+Passed testSiblings
+Test Succeeded testSiblings
 Passed assertion: len(Node.allnodes) == 0
 Test Succeeded testTextNodeRepr
 Passed assertion: len(Node.allnodes) == 0
