@@ -1858,6 +1858,7 @@ PyImport_Import(module_name)
 	/* Get the builtins from current globals */
 	globals = PyEval_GetGlobals();
 	if(globals != NULL) {
+	        Py_INCREF(globals);
 		builtins = PyObject_GetItem(globals, builtins_str);
 		if (builtins == NULL)
 			goto err;
