@@ -3,11 +3,43 @@ immediately upon receiving the first complaint I usually did not
 nother to make an entry in this file, unless it was a serious bug
 (core dump or infinite loop).
 
-==> Status indicators: (-) not fixed; (*) fixed; (?) don't know what to do.
+==> Status indicators: (-) not fixed; (*) fixed; (?) not sure.
 
 ======================================================================
 Known BUGS in 1.1.1 and 1.2
 ---------------------------
+
+(-) C-level coerce() doesn't call __coerce__ when it should (and
+similar for __cmp__)
+
+(-) tkinter seems to leave an exception around sometime which breaks
+unmarshalling code objects [hard to reproduce, have added a trap to
+catch it]
+
+(-) destroying all modules may destroy __builtin__ (or other modules)
+while destructors of other modules may still need it [hard to fix --
+could maintain a list of all modules in order of importation so we can
+destroy them in reverse order???  really hopeless -- would have to
+destroy objects in a module in reverse order too...]
+
+(-) [X]DECREF can cause the interpreter to be called recursively (for
+__del__ disciplines) -- so list and dict implementation calls doing
+DECREF can cause recursive calls to methods of the object being
+modified.  Other files too.  [Only partially fixed -- listobject.c is
+still suspect.]
+
+(-) struct module aligns doubles wrongly when compiled with -DDEBUG on
+sparc
+
+(-) if __getattr__ prints something, calling repr(x) from cmd line
+forgets a newline
+
+(-) doneimport() should be called *before* the Py_AtExit code is called
+
+Environmental bugs
+------------------
+
+(-) tkinter doesn't seem to see any declaration of malloc on sunos 4.1.3
 
 (-) arraymodule doesn't compile under Ultrix (FPROTO macro)
 
@@ -17,53 +49,35 @@ Known BUGS in 1.1.1 and 1.2
 
 (-) "make depend" assumes mkdep exists -- not portable
 
-(-) threadmodule.c leaks LOTS of memory at thread exit
-
-(-) tkinter seems to leave an exception around sometime which breaks
-unmarshalling code objects
-
-(-) memory leak (namebuf) in initmodule2
-
 (-) regen calls h2py which isn't defined by default
-
-(-) shared install in Modules still doesn't work for empty list
 
 (-) make libinstall (or similar) references to machdep directory but
 doesn't create it
 
-(-) destroying all modules may destroy __builtin__ while destructors
-of other modules may still need it
-
-(-) hash() of float values returns suspect values
-
-(-) sockets aren't thread safe (address of static struct returned,
-some calls aren't thread safe)
-
-(-) Everything else that uses err_get() should probably use err_get_tb()
-
-(-) struct module aligns doubles wrongly when compiled with -DDEBUG on sparc
-
-(-) pow(int, int, long) (etc.) dumps core on Linux (and other Intel machines?)
-
-(-) C-level coerce() doesn't call __coerce__ when it should (and
-similar for __cmp__)
-
-(-) DECREF can cause the interpreter to be called recursively (for
-__del__ disciplines) -- so list and dict implementation calls doing
-DECREF can cause recursive calls to methods of the object being
-modified.  Other files too.  (Only partially fixed.)
-
 (-) HP doesn't compile out of the box (needs LIBS=-ldld or
 LIBS=/usr/lib/libdld.sl)
-
-(-) something fishy with softspace and print_error (flushline clears
-the error)
-
-(-) tkinter doesn't seem to see any declaration of malloc on sunos 4.1.3
 
 ======================================================================
 BUGS present in 1.1.1 and fixed in 1.2
 --------------------------------------
+
+(*) memory leak (namebuf) in initmodule2
+
+(*) hash() of float values returns bogus values
+
+(*) pow(int, int, long) does wrong series of DECREF() calls.
+
+(*) flushline() may clear the exception condition so shouldn't be
+called before print_error()
+
+(*) Everything else that uses err_get() should use err_fetch()
+
+(*) sockets aren't thread safe (address of static struct returned,
+some calls aren't thread safe)
+
+(*) threadmodule.c leaks LOTS of memory at thread exit
+
+(*) shared install in Modules still doesn't work for empty list
 
 (*) threadmodule.c leaks 'res' in t_bootstrap
 

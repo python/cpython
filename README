@@ -159,12 +159,12 @@ calling python interactively.  You need to configure build the GNU
 readline library before running the configure script.  Its sources are
 not distributed with Python; you can ftp them from any GNU mirror
 site, or from its home site:
-ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz (or a higher
-version number -- using version 1.x is not recommended).
+<URL:ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz> (or a
+higher version number -- using version 1.x is not recommended).
 
 A GPL-free version was posted to comp.sources.misc in volume 31 and is
-widely available from FTP archive sites.  One URL for it is:
-ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/volume31/editline/part01.Z
+widely available from FTP archive sites, e.g.
+<URL:ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/volume31/editline/part01.Z>
 
 Pass the Python configure script the option --with-readline=DIRECTORY
 where DIRECTORY is the absolute pathname of the directory where you've
@@ -209,8 +209,8 @@ Setup.irix4 file to it).
 
 - On SGI IRIX 4, dynamic loading of extension modules is supported by
 the "dl" library by Jack Jansen, which is ftp'able from
-ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.  This is enabled (after
-you've ftp'ed and compiled the dl library!) by passing
+<URL:ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z>.  This is enabled
+(after you've ftp'ed and compiled the dl library!) by passing
 --with-sgi-dl=DIRECTORY where DIRECTORY is the absolute pathname of
 the dl library.  (Don't bother on IRIX 5, it already has dynamic
 linking using SunOS style shared libraries.)  Support for this feature
@@ -219,9 +219,9 @@ is deprecated.
 - Dynamic loading of modules is rumoured to be supported on some other
 systems: VAX (Ultrix), Sun3 (SunOS 3.4), Sequent Symmetry (Dynix), and
 Atari ST.  This is done using a combination of the GNU dynamic loading
-package (ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z) and an
+package (<URL:ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z>) and an
 emulation of the SGI dl library mentioned above (the emulation can be
-found at ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z).  To enable
+found at <URL:ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z>).  To enable
 this, ftp and compile both libraries, then call the configure passing
 it the option --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY where
 DL_DIRECTORY is the absolute pathname of the dl emulation library and
@@ -240,6 +240,44 @@ You can also build an "extended" interpreter, using modules that are
 not contained in the Modules directory.  Extensions are distributed as
 a separate tar file (currently extensions.tar.Z).  See the README file
 there.
+
+
+The Tk extension
+----------------
+
+Tk (the user interface component of John Ousterhout's Tcl language) is
+also usable from Python.  Since this requires that you first build and
+install Tcl/Tk, the Tk interface is not enabled by default.  It
+requires Tcl 7.3 and Tk 3.6.  For more info about Tk, including
+pointers to the source, see John Ousterhout's home page at
+<URL:http://playground.sun.com/~ouster/>.
+
+To enable the Python/Tk interface, once you've built and installed
+Tcl/Tk, all you need to do is edit two lines in Modules/Setup; search
+for the string "Tk".  Un-comment one (normally the first) of the lines
+beginning with "#tkinter" and un-comment the line beginning with
+"#TKPATH".  (If you have installed Tcl/Tk in unusual places you will
+have to edit the first line as well to fix the -I and -L options.)
+See the Build Instructions above for more details.
+
+There is little documentation.  Begin with fetching the "Tk Lifesaver"
+document, e.g. <URL:ftp://ftp.cwi.nl/pub/python/tkinter-doc.tar.gz> (a
+gzipped tar file containing a PostScript file).  There are demos in
+the Demo/tkinter directory, in the subdirectories guido, matt and www.
+
+Note that there's a Python module called "Tkinter" (capital T) which
+lives in Lib/tkinter/Tkinter.py, and a C module called "tkinter"
+(lower case t) which lives in Modules/tkintermodule.c.  Demos and
+normal Tk applications only import the Python Tkinter module -- only
+the latter uses the C tkinter module directly.  In order to find the C
+tkinter module, it must be compiled and linked into the Python
+interpreter -- the tkinter line in the Setup file does this.  In order
+to find the Python Tkinter module, sys.path must be set correctly --
+the TKPATH assignment in the Setup file takes care of this, but only
+if you install Python properly ("make install libinstall").  (You can
+also use dynamic loading for the C tkinter module, in which case you
+must manually fix up sys.path or set $PYTHONPATH for the Python
+Tkinter module.)
 
 
 Building for multiple architectures (using the VPATH feature)
@@ -351,11 +389,11 @@ Ftp access
 ----------
 
 The latest Python source distribution can be ftp'ed from
-ftp://ftp.cwi.nl/pub/python/python<version>.tar.gz.  You can also find
-PostScript of the main Python documentation there, Macintosh and PC
-binaries, and the latest STDWIN source distribution (in directory
-/pub/stdwin).  oFr mirror sites, see the list in the FAQ (Misc/FAQ
-this directory).
+<URL:ftp://ftp.cwi.nl/pub/python/>.  See the INDEX or index.html file
+for more information.  You can also find PostScript of the main Python
+documentation there, Macintosh and PC binaries, and the latest STDWIN
+source distribution (in directory /pub/stdwin).  oFr mirror sites, see
+the list in the FAQ (Misc/FAQ this directory).
 
 
 Mailing list and Newsgroup
@@ -386,8 +424,8 @@ Copyright Notice
 The Python source is copyrighted, but you can freely use and copy it
 as long as you don't change or remove the copyright:
 
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 

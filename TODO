@@ -1,24 +1,26 @@
+(-) interface to getdtablesize() in posix
+
 (-) reentrancy with global variables vs. decref in
 ./Modules/cdmodule.c ./Modules/flmodule.c ./Objects/accessobject.c
 ./Objects/frameobject.c ./Python/traceback.c
 
 (-) speed up regsub.gsub
 
-(-) change md5.md5() to md5.new()
+(*) change md5.md5() to md5.new()
 
 (-) try posixenviron.c and merge back into posixmodule.c?
 
-(-) document chown()
+(*) document chown()
 
 (-) add and document chroot() ?
 
-(-) use add gethostname_r and release thread lock when it exists
+(*) use add gethostname_r and release thread lock when it exists
 
 (-) Add `@CFLAGS@', `@CPPFLAGS@', and `@LDFLAGS@' to `Makefile.in'
 
 (-) modules should be able to define a module destructor hook
 
-(-) goaway() / cleanup() call AtExit funcs *after* donimport()
+(-) goaway() / cleanup() should call AtExit funcs *after* doneimport()
 
 (-) destroy modules in reverse order of importation
 
@@ -26,9 +28,7 @@
 
 (-) makesetup should accept .o files without corresponding .c file
 
-(-) use autoconf 2.0
-
-(-) configure(.in ?) contains a line beginning with '+'
+(*) use autoconf 2.0
 
 ======================================================================
 Release 1.1.1 (10 Nov 1994)
@@ -36,7 +36,7 @@ Release 1.1.1 (10 Nov 1994)
 
 (-) try Boehm/Dehmers/Weiser conservative garbage collector
 
-(-) implement new 'flatten' module
+(*) implement new 'flatten' module
 
 (-) document new Python/C API
 
@@ -47,7 +47,7 @@ where found, __version__ string?
 
 (-) pass dict of builtins to exec / execfile / eval ???
 
-(-) stack frame correspondence problem (Jim Roskind)
+(?) stack frame correspondence problem (Jim Roskind)
 (probably solved by err_setval_tb)
 
 (-) make lots of places use newgetargs
@@ -60,14 +60,11 @@ where found, __version__ string?
 like 'cd')
 
 (-) need to add truncate() and ftruncate() to posixmodule.c (Windows:
-chsize(fd, size)
+chsize(fd, size) (solution: added to file objects instead)
 
 ======================================================================
 Release 1.1 (11 Oct 1994)
 ======================================================================
-
-(-) if __getattr__ prints something, calling repr(x) from cmd line
-forgets a newline
 
 (-) improve performance of list.append/insert etc. by keeping high/low
 watermark instead of realloc'ing each time?
@@ -85,7 +82,7 @@ breaks dictlookup caching
 
 (-) whrandom doc needs update
 
-(-) mpz power is still binary insterad of ternary
+(*) mpz power is still binary insterad of ternary
 
 (*) design interface to call arbitrary asynchronous routines
 
@@ -93,7 +90,7 @@ breaks dictlookup caching
 
 (*) Lance's latest curses additions
 
-(-) Jack's new code:
+(*) Jack's new code:
 	(*) new xxmodule.c
 	(*) mac has type for .pyc files
 	(*) should run .pyc files when passed as command line argument
@@ -104,7 +101,7 @@ breaks dictlookup caching
 
 (-) fix signalmodule.c to re-establish SIGC[H]LD handler
 
-(-) try out Kees Blom's railroad diagram generator
+(*) try out Kees Blom's railroad diagram generator
 
 (-) redesign error handling (cf. Donald's mail)
 
@@ -173,11 +170,11 @@ instance -- also have separate __delattr__
 
 (-) The Great Renaming!
 
-(-) redo __xxx__ operators for class instances
+(*) redo __xxx__ operators for class instances
 
 (-) document __getattr__, __setattr__
 
-(-) add __delattr__ to class instances
+(*) add __delattr__ to class instances
 
 (-) many things that take strings should also take arrays of chars
 

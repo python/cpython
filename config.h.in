@@ -164,6 +164,9 @@
 /* Define if you have the getwd function.  */
 #undef HAVE_GETWD
 
+/* Define if you have the hypot function.  */
+#undef HAVE_HYPOT
+
 /* Define if you have the link function.  */
 #undef HAVE_LINK
 
