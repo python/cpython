@@ -27,14 +27,21 @@ which produces a sequence \code{f(0), f(1), ...}.  This toolbox
 provides \function{imap()} and \function{count()} which can be combined
 to form \code{imap(f, count())} and produce an equivalent result.
 
+Likewise, the functional tools are designed to work well with the
+high-speed functions provided by the \refmodule{operator} module.
+
+The module author welcomes suggestions for other basic building blocks
+to be added to future versions of the module.
+
 Whether cast in pure python form or C code, tools that use iterators
 are more memory efficient (and faster) than their list based counterparts.
 Adopting the principles of just-in-time manufacturing, they create
 data when and where needed instead of consuming memory with the
 computer equivalent of ``inventory''.
 
-The module author welcomes suggestions for other basic building blocks
-to be added to future versions of the module.
+The performance advantage of iterators becomes more acute as the number
+of elements increases -- at some point, lists grow large enough to
+to severely impact memory cache performance and start running slowly.
 
 \begin{seealso}
   \seetext{The Standard ML Basis Library,
@@ -105,7 +112,7 @@ by functions or loops that truncate the stream.
 
   Note, this is the only member of the toolkit that may require
   significant auxiliary storage (depending on the length of the
-  iterable.
+  iterable).
 \end{funcdesc}
 
 \begin{funcdesc}{dropwhile}{predicate, iterable}
@@ -354,5 +361,16 @@ from building blocks.
 >>> def pairwise(seq):
 ...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
 ...     return izip(seq, islice(seq,1,len(seq)))
+
+>>> def padnone(seq):
+...     "Returns the sequence elements and then returns None indefinitely"
+...     return chain(seq, repeat(None))
+
+>>> def ncycles(seq, n):
+...     "Returns the sequence elements n times"
+...     return chain(*repeat(seq, n))
+
+>>> def dotproduct(vec1, vec2):
+...     return sum(imap(operator.mul, vec1, vec2))
 
 \end{verbatim}
