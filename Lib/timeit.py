@@ -1,24 +1,43 @@
-"""Framework for timing execution speed of small code snippets.
+"""Framework for measuring execution time for small code snippets.
 
-This avoids a number of common traps for timing frameworks (see also
-Tim Peters' introduction to the timing chapter in the Python
-Cookbook).
+This module avoids a number of common traps for measuring execution
+times.  See also Tim Peters' introduction to the Algorithms chapter in
+the Python Cookbook, published by O'Reilly.
 
-(To use this with older versions of Python, the dependency on the
-itertools module is easily removed; instead of itertools.repeat(None,
-count) you can use [None]*count; this is barely slower.)
+Library usage: see the Timer class.
 
 Command line usage:
-  python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [statement]
+    python timeit.py [-n N] [-r N] [-s S] [-t] [-c] [statement]
 
 Options:
-  -n/--number N: how many times to execute 'statement' (default varies)
+  -n/--number N: how many times to execute 'statement' (default: see below)
   -r/--repeat N: how many times to repeat the timer (default 1)
   -s/--setup S: statements executed once before 'statement' (default 'pass')
   -t/--time: use time.time() (default on Unix)
   -c/--clock: use time.clock() (default on Windows)
   statement: statement to be timed (default 'pass')
+
+A multi-line statement may be given by specifying each line as a
+separate argument; indented lines are possible by enclosing an
+argument in quotes and using leading spaces.
+
+If -n is not given, a suitable number of loops is calculated by trying
+successive powers of 10 until the total time is at least 0.2 seconds.
+
+The difference in default timer function is because on Windows,
+clock() has microsecond granularity but time()'s granularity is 1/60th
+of a second; on Unix, clock() has 1/100th of a second granularity and
+time() is much more precise.  On either platform, the default timer
+functions measures wall clock time, not the CPU time.  This means that
+other processes running on the same computer may interfere with the
+timing.  The best thing to do when accurate timing is necessary is to
+repeat the timing a few times and use the best time; the -r option is
+good for this.  On Unix, you can use clock() to measure CPU time.
 """
+
+# To use this module with older versions of Python, the dependency on
+# the itertools module is easily removed; in the template, instead of
+# itertools.repeat(None, count), use [None]*count.  It's barely slower.
 
 import sys
 import math
@@ -37,6 +56,9 @@ else:
     # On most other platforms the best timer is time.time()
     default_timer = time.time
 
+# Don't change the indentation of the template; the reindent() calls
+# in Timer.__init__() depend on setup being indented 4 spaces and stmt
+# being indented 8 spaces.
 template = """
 def inner(number, timer):
     %(setup)s
@@ -49,11 +71,27 @@ def inner(number, timer):
 """
 
 def reindent(src, indent):
+    """Helper to reindent a multi-line statement."""
     return ("\n" + " "*indent).join(src.split("\n"))
 
 class Timer:
+    """Class for timing execution speed of small code snippets.
+
+    The constructor takes a statement to be timed, an additional
+    statement used for setup, and a timer function.  Both statements
+    default to 'pass'; the timer function is platform-dependent (see
+    module doc string).
+
+    To measure the execution time of the first statement, use the
+    timeit() method.  The repeat() method is a convenience to call
+    timeit() multiple times and return a list of results.
+
+    The statements may contain newlines, as long as they don't contain
+    multi-line string literals.
+    """
 
     def __init__(self, stmt="pass", setup="pass", timer=default_timer):
+        """Constructor.  See class doc string."""
         self.timer = timer
         stmt = reindent(stmt, 8)
         setup = reindent(setup, 4)
@@ -64,9 +102,26 @@ class Timer:
         self.inner = ns["inner"]
 
     def timeit(self, number=default_number):
+        """Time 'number' executions of the main statement.
+
+        To be precise, this executes the setup statement once, and
+        then returns the time it takes to execute the main statement
+        a number of times, as a float measured in seconds.  The
+        argument is the number of times through the loop, defaulting
+        to one million.  The main statement, the setup statement and
+        the timer function to be used are passed to the constructor.
+        """
         return self.inner(number, self.timer)
 
     def repeat(self, repeat=default_repeat, number=default_number):
+        """Call timer() a few times.
+
+        This is a convenience function that calls the timer()
+        repeatedly, returning a list of results.  The first argument
+        specifies how many times to call timer(), defaulting to 10;
+        the second argument specifies the timer argument, defaulting
+        to one million.
+        """
         r = []
         for i in range(repeat):
             t = self.timeit(number)
@@ -74,6 +129,14 @@ class Timer:
         return r
 
 def main(args=None):
+    """Main program, used when run as a script.
+
+    The optional argument specifies the command line to be parsed,
+    defaulting to sys.argv[1:].
+
+    The return value is an exit code to be passed to sys.exit(); it
+    may be None to indicate success.
+    """
     if args is None:
         args = sys.argv[1:]
     import getopt
@@ -118,6 +181,7 @@ def main(args=None):
         print "best of %d: %.3f usec" % (repeat, usec)
     else:
         print "time: %.3f usec" % usec
+    return None
 
 if __name__ == "__main__":
     sys.exit(main())
