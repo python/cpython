@@ -23,15 +23,14 @@ class RobotFileParser:
 
     def set_url(self, url):
         self.url = url
-##      import urlmisc
-##      self.url = urlmisc.canonical_url(url)
 
     def read(self):
         import urllib
         self.parse(urllib.urlopen(self.url).readlines())
 
     def parse(self, lines):
-        import regsub, string, regex
+        """parse the input lines from a robot.txt file"""
+        import string, re
         active = []
         for line in lines:
             if self.debug: print '>', line,
@@ -43,7 +42,7 @@ class RobotFileParser:
             line = string.strip(line[:string.find(line, '#')])
             if not line:
                 continue
-            line = regsub.split(line, ' *: *')
+            line = re.split(' *: *', line)
             if len(line) == 2:
                 line[0] = string.lower(line[0])
                 if line[0] == 'user-agent':
@@ -56,7 +55,7 @@ class RobotFileParser:
                     if line[1]:
                         if self.debug: print '>> disallow:', line[1]
                         for agent in active:
-                            self.rules[agent].append(regex.compile(line[1]))
+                            self.rules[agent].append(re.compile(line[1]))
                     else:
                         pass
                         for agent in active:
@@ -68,30 +67,31 @@ class RobotFileParser:
         self.modified()
 
     # returns true if agent is allowed to fetch url
-    def can_fetch(self, agent, url):
+    def can_fetch(self, useragent, url):
+        """using the parsed robots.txt decide if useragent can fetch url"""
         import urlparse
-        ag = agent
+        ag = useragent
         if not self.rules.has_key(ag): ag = '*'
         if not self.rules.has_key(ag):
-            if self.debug: print '>> allowing', url, 'fetch by', agent
+            if self.debug: print '>> allowing', url, 'fetch by', useragent
             return 1
         path = urlparse.urlparse(url)[2]
         for rule in self.rules[ag]:
-            if rule.match(path) != -1:
-                if self.debug: print '>> disallowing', url, 'fetch by', agent
+            if rule.match(path) is not None:
+                if self.debug: print '>> disallowing', url, 'fetch by', useragent
                 return 0
-        if self.debug: print '>> allowing', url, 'fetch by', agent
+        if self.debug: print '>> allowing', url, 'fetch by', useragent
         return 1
 
-def test():
+def _test():
     rp = RobotFileParser()
     rp.debug = 1
-    rp.set_url('http://www.automatrix.com/robots.txt')
+    rp.set_url('http://www.musi-cal.com/robots.txt')
     rp.read()
     print rp.rules
-    print rp.can_fetch('*', 'http://www.calendar.com/concerts/')
+    print rp.can_fetch('*', 'http://www.musi-cal.com.com/')
     print rp.can_fetch('Musi-Cal-Robot',
-                       'http://dolphin:80/cgi-bin/music-search?performer=Rolling+Stones')
+                       'http://www.musi-cal.com/cgi-bin/event-search?city=San+Francisco')
 
-    print rp.can_fetch('Lycos', 'http://www/~skip/volkswagen/')
-    print rp.can_fetch('Lycos', 'http://www/~skip/volkswagen/vanagon-list-001')
+if __name__ == "__main__":
+    _test()
