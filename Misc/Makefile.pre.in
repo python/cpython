@@ -149,6 +149,7 @@ BINLIBDEST=	$(LIBDIR)/python$(VERSION)
 LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
 INCLUDEPY=	$(INCLUDEDIR)/python$(VERSION)
 LIBP=		$(exec_installdir)/lib/python$(VERSION)
+DESTSHARED=	$(BINLIBDEST)/site-packages
 
 LIBPL=		$(LIBP)/config
 
@@ -163,6 +164,13 @@ SETUP=		$(LIBPL)/Setup
 SYSLIBS=	$(LIBM) $(LIBC)
 
 ADDOBJS=	$(LIBPL)/python.o config.o
+
+# Portable install script (configure doesn't always guess right)
+INSTALL=	$(LIBPL)/install-sh -c
+# Shared libraries must be installed with executable mode on some systems;
+# rather than figuring out exactly which, we always give them executable mode.
+# Also, making them read-only seems to be a good idea...
+INSTALL_SHARED=	${INSTALL} -m 555
 
 # === Fixed rules ===
 
@@ -181,6 +189,15 @@ $(TARGET):	$(ADDOBJS) lib.a $(PYTHONLIBS) Makefile $(BASELIB)
 		$(CC) $(LDFLAGS) $(ADDOBJS) lib.a $(PYTHONLIBS) \
 		 $(LINKPATH) $(BASELIB) $(MODLIBS) $(LIBS) $(SYSLIBS) \
 		 -o $(TARGET)
+
+install:	sharedmods
+		if test ! -d $(DESTSHARED) ; then \
+			mkdir $(DESTSHARED) ; else true ; fi
+		-for i in X $(SHAREDMODS); do \
+			if test $$i != X; \
+			then $(INSTALL_SHARED) $$i $(DESTSHARED)/$$i; \
+			fi; \
+		done
 
 # Build the library containing our extension modules
 lib.a:		$(MODOBJS)
