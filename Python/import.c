@@ -149,7 +149,7 @@ exec_code_module(name, co)
 		return NULL;
 	d = getmoduledict(m);
 	if (dictlookup(d, "__builtins__") == NULL) {
-		if (dictinsert(d, "__builtins__", getbuiltindict()) != 0)
+		if (dictinsert(d, "__builtins__", getbuiltins()) != 0)
 			return NULL;
 	}
 	v = eval_code((codeobject *)co, d, d, d, (object *)NULL);

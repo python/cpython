@@ -100,7 +100,7 @@ initmain()
 		fatal("can't create __main__ module");
 	d = getmoduledict(m);
 	if (dictlookup(d, "__builtins__") == NULL) {
-		if (dictinsert(d, "__builtins__", getbuiltindict()))
+		if (dictinsert(d, "__builtins__", getbuiltins()))
 			fatal("can't add __builtins__ to __main__");
 	}
 }

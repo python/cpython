@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "import.h"
 #include "sysmodule.h"
+#include "bltinmodule.h"
 #include "compile.h"
 #include "frameobject.h"
 #include "eval.h"
@@ -1691,7 +1692,7 @@ object *
 getbuiltins()
 {
 	if (current_frame == NULL)
-		return NULL;
+		return getbuiltindict();
 	else
 		return current_frame->f_builtins;
 }
