@@ -3731,7 +3731,7 @@ references, returning an integer and a method object, respectively.
 Class attributes can also be assigned to, so you can change the value
 of \code{MyClass.i} by assignment.  \member{__doc__} is also a valid
 attribute, returning the docstring belonging to the class: \code{"A
-simple example class"}). 
+simple example class"}. 
 
 Class \emph{instantiation} uses function notation.  Just pretend that
 the class object is a parameterless function that returns a new
@@ -4128,7 +4128,8 @@ Instance method objects have attributes, too: \code{m.im_self} is the
 object of which the method is an instance, and \code{m.im_func} is the
 function object corresponding to the method.
 
-\subsection{Exceptions Are Classes Too\label{exceptionClasses}}
+
+\section{Exceptions Are Classes Too\label{exceptionClasses}}
 
 User-defined exceptions are identified by classes as well.  Using this
 mechanism it is possible to create extensible hierarchies of exceptions.
@@ -4182,6 +4183,119 @@ When an error message is printed for an unhandled exception which is a
 class, the class name is printed, then a colon and a space, and
 finally the instance converted to a string using the built-in function
 \function{str()}.
+
+
+\section{Iterators\label{iterators}}
+
+By now, you've probably noticed that most container objects can looped over
+using a \code{for} statement:
+
+\begin{verbatim}
+for element in [1, 2, 3]:
+    print element
+for element in (1, 2, 3):
+    print element
+for key in {'one':1, 'two':2}:
+    print key
+for char in "123":
+    print char
+for line in open("myfile.txt"):
+    print line
+\end{verbatim}
+
+This style of access is clear, concise, and convenient.  The use of iterators
+pervades and unifies Python.  Behind the scenes, the \code{for} statement calls
+\function{iter()} on the container object.  The function returns an iterator
+object that defines the method \method{next()} which accesses elements in the
+container one at a time.  When there are no more elements, \method{next()}
+raises a \exception{StopIteration} exception which tells the \code{for} loop
+to terminate.  This example shows how it all works:
+
+\begin{verbatim}
+>>> s = 'abc'
+>>> it = iter(s)
+>>> it
+<iterator object at 0x00A1DB50>
+>>> it.next()
+'a'
+>>> it.next()
+'b'
+>>> it.next()
+'c'
+>>> it.next()
+
+Traceback (most recent call last):
+  File "<pyshell#6>", line 1, in -toplevel-
+    it.next()
+StopIteration
+\end{verbatim}
+
+Having seen the mechanics behind the iterator protocol, it is easy to add
+iterator behavior to your classes.  Define a \method{__iter__()} method
+which returns an object with a \method{next()} method.  If the class defines
+\method{next()}, then \method{__iter__()} can just return \code{self}:
+
+\begin{verbatim}
+>>> class Reverse:
+    "Iterator for looping over a sequence backwards"
+    def __init__(self, data):
+        self.data = data
+        self.index = len(data)
+    def __iter__(self):
+        return self
+    def next(self):
+        if self.index == 0:
+            raise StopIteration
+        self.index = self.index - 1
+        return self.data[self.index]
+
+>>> for char in Reverse('spam'):
+	print char
+
+m
+a
+p
+s
+\end{verbatim}
+
+
+\section{Generators\label{generators}}
+
+Generators are a simple and powerful tool for creating iterators.  They are
+written like regular functions but use the \keyword{yield} statement whenever
+they want to return data.  Each time the \method{next()} is called, the
+generator resumes where it left-off (it remembers all the data values and
+which statement was last executed).  An example shows that generators can
+be trivially easy to create:
+
+\begin{verbatim}
+>>> def reverse(data):
+	for index in range(len(data)-1, -1, -1):
+		yield data[index]
+		
+>>> for char in reverse('golf'):
+	print char
+
+f
+l
+o
+g	
+\end{verbatim}
+
+Anything that can be done with generators can also be done with class based
+iterators as described in the previous section.  What makes generators so
+compact is that the \method{__iter__()} and \method{next()} methods are
+created automatically.
+
+Another other key feature is that the local variables and execution state
+are automatically saved between calls.  This made the function easier to write
+and much more clear than an approach using class variables like
+\code{self.index} and \code{self.data}.
+
+In addition to automatic method creation and saving program state, when
+generators terminate, they automatically raise \exception{StopIteration}.
+In combination, these features make it easy to create iterators with no
+more effort than writing a regular function.
 
 
 \chapter{What Now? \label{whatNow}}
@@ -4360,7 +4474,7 @@ out to be needed in most sessions with the interpreter.
 # bound to the Esc key by default (you can change it - see readline docs).
 #
 # Store the file in ~/.pystartup, and set an environment variable to point
-# to it, e.g. "export PYTHONSTARTUP=/max/home/itamar/.pystartup" in bash.
+# to it:  "export PYTHONSTARTUP=/max/home/itamar/.pystartup" in bash.
 #
 # Note that PYTHONSTARTUP does *not* expand "~", so you have to put in the
 # full path to your home directory.
