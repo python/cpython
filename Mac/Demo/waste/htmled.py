@@ -297,14 +297,19 @@ class WasteWindow(ScrolledWindow):
 		
 	def menu_cut(self):
 		self.ted.WESelView()
-		self.ted.WECut()
-		Scrap.ZeroScrap()
+		if hasattr(Scrap, 'ZeroScrap'):
+			Scrap.ZeroScrap()
+		else:
+			Scrap.ClearCurrentScrap()
 		self.ted.WECut()
 		self.updatescrollbars()
 		self.parent.updatemenubar()
 		
 	def menu_copy(self):
-		Scrap.ZeroScrap()
+		if hasattr(Scrap, 'ZeroScrap'):
+			Scrap.ZeroScrap()
+		else:
+			Scrap.ClearCurrentScrap()
 		self.ted.WECopy()
 		self.updatescrollbars()
 		self.parent.updatemenubar()
