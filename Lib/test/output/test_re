@@ -37,12 +37,6 @@ test_re
 ('a[b-]', 'a-', 2)
 ('a[]b', '-', 2)
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 1099, in compile
-    if pattern[index] != ']':
-IndexError: string index out of range
 ('a[', '-', 2)
 ('a\\', '-', 2)
 ('abc)', '-', 2)
@@ -83,28 +77,10 @@ IndexError: string index out of range
 ('a+b+c', 'aabbabc', 0, 'found', 'abc')
 ('(a+|b)*', 'ab', 0, 'found+"-"+g1', 'ab-b')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(a+|b)+', 'ab', 0, 'found+"-"+g1', 'ab-b')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(a+|b)?', 'ab', 0, 'found+"-"+g1', 'a-a')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 (')(', '-', 2)
 ('[^ab]*', 'cde', 0, 'found', 'cde')
 ('abc', '', 1)
@@ -112,50 +88,20 @@ NameError: JumpOpcode
 ('a|b|c|d|e', 'e', 0, 'found', 'e')
 ('(a|b|c|d|e)f', 'ef', 0, 'found+"-"+g1', 'ef-e')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('abcd*efg', 'abcdefg', 0, 'found', 'abcdefg')
 ('ab*', 'xabyabbbz', 0, 'found', 'ab')
 ('ab*', 'xayabbbz', 0, 'found', 'a')
 ('(ab|cd)e', 'abcde', 0, 'found+"-"+g1', 'cde-cd')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('[abhgefdc]ij', 'hij', 0, 'found', 'hij')
 ('^(ab|cd)e', 'abcde', 1, 'xg1y', 'xy')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(abc|)ef', 'abcdef', 0, 'found+"-"+g1', 'ef-')
 === Syntax error: ('(abc|)ef', 'abcdef', 0, 'found+"-"+g1', 'ef-')
 ('(a|b)c*d', 'abcd', 0, 'found+"-"+g1', 'bcd-b')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(ab|ab*)bc', 'abc', 0, 'found+"-"+g1', 'abc-a')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('a([bc]*)c*', 'abc', 0, 'found+"-"+g1', 'abc-bc')
 === grouping error ('a([bc]*)c*', 'abc', 0, 'found+"-"+g1', 'abc-bc') 'abc-None' should be 'abc-bc'
 ('a([bc]*)(c*d)', 'abcd', 0, 'found+"-"+g1+"-"+g2', 'abcd-bc-d')
@@ -168,63 +114,21 @@ NameError: JumpOpcode
 ('a[bcd]+dcdcde', 'adcdcde', 1)
 ('(ab|a)b*c', 'abc', 0, 'found+"-"+g1', 'abc-ab')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('((a)(b)c)(d)', 'abcd', 0, 'g1+"-"+g2+"-"+g3+"-"+g4', 'abc-a-b-d')
 === grouping error ('((a)(b)c)(d)', 'abcd', 0, 'g1+"-"+g2+"-"+g3+"-"+g4', 'abc-a-b-d') 'None-None-None-None' should be 'abc-a-b-d'
 ('[a-zA-Z_][a-zA-Z0-9_]*', 'alpha', 0, 'found', 'alpha')
 ('^a(bc+|b[eh])g|.h$', 'abh', 0, 'found+"-"+g1', 'bh-None')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(bc+d$|ef*g.|h?i(j|k))', 'effgz', 0, 'found+"-"+g1+"-"+g2', 'effgz-effgz-None')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(bc+d$|ef*g.|h?i(j|k))', 'ij', 0, 'found+"-"+g1+"-"+g2', 'ij-ij-j')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(bc+d$|ef*g.|h?i(j|k))', 'effg', 1)
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(bc+d$|ef*g.|h?i(j|k))', 'bcdd', 1)
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(bc+d$|ef*g.|h?i(j|k))', 'reffgz', 0, 'found+"-"+g1+"-"+g2', 'effgz-effgz-None')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(((((((((a)))))))))', 'a', 0, 'found', 'a')
 ('multiple words of text', 'uh-uh', 1)
 ('multiple words', 'multiple words, yeah', 0, 'found', 'multiple words')
@@ -260,20 +164,8 @@ NameError: JumpOpcode
 === grouping error ('(a)ba*\\1', 'aba', 0, 'found+"-"+g1', 'aba-a') 'aba-None' should be 'aba-a'
 ('(aa|a)a\\1$', 'aaa', 0, 'found+"-"+g1', 'aaa-a')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(a|aa)a\\1$', 'aaa', 0, 'found+"-"+g1', 'aaa-a')
 *** Unexpected error ***
-Traceback (innermost last):
-  File "../Lib/test/test_re.py", line 19, in ?
-    obj=re.compile(pattern)
-  File "../Lib/re.py", line 786, in compile
-    expr[i] = JumpOpcode(label)
-NameError: JumpOpcode
 ('(a+)a\\1$', 'aaa', 0, 'found+"-"+g1', 'aaa-a')
 === grouping error ('(a+)a\\1$', 'aaa', 0, 'found+"-"+g1', 'aaa-a') 'aaa-None' should be 'aaa-a'
 ('([abc]*)\\1', 'abcabc', 0, 'found+"-"+g1', 'abcabc-abc')
