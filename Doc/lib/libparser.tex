@@ -274,11 +274,11 @@ AST objects returned by \function{expr()}, \function{suite()} and
 Some of the functions defined which accept an AST object as their
 first argument may change to object methods in the future.
 
+Ordered and equality comparisons are supported between AST objects.
+
 \begin{datadesc}{ASTType}
 The type of the objects returned by \function{expr()},
 \function{suite()} and \function{sequence2ast()}.
-
-Ordered and equality comparisons are supported between AST objects.
 \end{datadesc}
 
 
@@ -293,7 +293,7 @@ of the \function{compile()}\bifuncindex{compile} built-in function and
 the complex example shows the use of a parse tree for information
 discovery.
 
-\subsubsection{Emulation of \module{compile()}}
+\subsubsection{Emulation of \function{compile()}}
 
 While many useful operations may take place between parsing and
 bytecode generation, the simplest operation is to do nothing.  For
