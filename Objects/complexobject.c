@@ -399,6 +399,11 @@ static PyObject *
 complex_remainder(PyComplexObject *v, PyComplexObject *w)
 {
         Py_complex div, mod;
+
+	if (PyErr_Warn(PyExc_DeprecationWarning,
+		       "complex divmod(), // and % are deprecated") < 0)
+		return NULL;
+
 	errno = 0;
 	div = c_quot(v->cval,w->cval); /* The raw divisor value. */
 	if (errno == EDOM) {
@@ -420,7 +425,7 @@ complex_divmod(PyComplexObject *v, PyComplexObject *w)
 	PyObject *d, *m, *z;
 
 	if (PyErr_Warn(PyExc_DeprecationWarning,
-		       "complex divmod() and // are deprecated") < 0)
+		       "complex divmod(), // and % are deprecated") < 0)
 		return NULL;
 
 	errno = 0;
