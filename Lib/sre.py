@@ -181,7 +181,7 @@ def _split(pattern, string, maxsplit=0):
             continue
         append(string[i:b])
         if g and b != e:
-            extend(m.groups())
+            extend(list(m.groups()))
         i = e
         n = n + 1
     append(string[i:])
