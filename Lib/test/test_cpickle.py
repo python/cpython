@@ -91,5 +91,6 @@ def dotest():
         pass
     else:
         print "load from closed file should raise IOError"
+    os.remove(fn)
 
 dotest()
