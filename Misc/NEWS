@@ -245,6 +245,10 @@ Library
 Build
 -----
 
+- SF patch 1171735: Darwin 8's headers are anal about POSIX compliance,
+  and linking has changed (prebinding is now deprecated, and libcc_dynamic
+  no longer exists). This configure patch makes things right.
+
 - Bug #1158607: Build with --disable-unicode again.
 
 - spwdmodule.c is built only if either HAVE_GETSPNAM or HAVE_HAVE_GETSPENT is
