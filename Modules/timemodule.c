@@ -653,7 +653,7 @@ inittime(void)
 	PyModule_AddObject(m, "tzname",
 			   Py_BuildValue("(zz)", tzname[0], tzname[1]));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
-#ifdef HAVE_TM_ZONE
+#ifdef HAVE_STRUCT_TM_TM_ZONE
 	{
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
 		time_t t;
@@ -702,7 +702,7 @@ inittime(void)
 	PyModule_AddIntConstant(m, "daylight", 0);
 	PyModule_AddObject(m, "tzname", Py_BuildValue("(zz)", "", ""));
 #endif /* macintosh */
-#endif /* HAVE_TM_ZONE */
+#endif /* HAVE_STRUCT_TM_TM_ZONE */
 #ifdef __CYGWIN__
 	tzset();
 	PyModule_AddIntConstant(m, "timezone", _timezone);
