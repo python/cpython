@@ -738,8 +738,8 @@ def parse_template(source, pattern):
                 isoctal = False
                 if s.next in DIGITS:
                     this = this + sget()
-                    if (c in OCTDIGITS and s.next in OCTDIGITS and
-                        this[2] in OCTDIGITS):
+                    if (c in OCTDIGITS and this[2] in OCTDIGITS and
+                        s.next in OCTDIGITS):
                         this = this + sget()
                         isoctal = True
                         literal(makechar(int(this[1:], 8) & 0xff))
