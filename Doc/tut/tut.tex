@@ -307,7 +307,7 @@ comment in Python.
 
 It is possible to use encodings different than ASCII in Python source
 files. The best way to do it is to put one more special comment line
-right after \code{#!} line making proper encoding declaration:
+right after \code{\#!} line making proper encoding declaration:
 
 \begin{verbatim}
 # -*- coding: iso-8859-1 -*- 
@@ -326,7 +326,7 @@ encoding declaration. IDLE supports such saving if
 \code{Options/General/Default Source Encoding/UTF-8} is set. Notice
 that this signature is not understood in older Python releases (2.2
 and earlier), and also not understood by the operating system for
-\code{#!} files. 
+\code{\#!} files. 
 
 By using UTF-8 (either through the signature, or a an encoding
 declaration), characters of most languages in the world can be used
