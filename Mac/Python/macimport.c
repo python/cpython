@@ -68,7 +68,7 @@ findnamedresource(
 	Handle h;
 
 	/*
-	** If we have interning find_module takes care of interning all
+	** Find_module takes care of interning all
 	** sys.path components. We then keep a record of all sys.path
 	** components for which GetFInfo has failed (usually because the
 	** component in question is a folder), and we don't try opening these
@@ -85,9 +85,13 @@ findnamedresource(
 				return 0;
 	}
 	if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr ) {
-		if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned )
+	     /* doesn't exist or is folder */
+		if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned ) {
+			Py_INCREF(obj);
 			not_a_file[max_not_a_file++] = obj;
-	     	/* doesn't exist or is folder */
+			if (Py_VerboseFlag > 1)
+				PySys_WriteStderr("# %s is not a file\n", filename);
+		}
 		return 0;
 	}			
 	if ( fssequal(&fss, &PyMac_ApplicationFSSpec) ) {
@@ -100,10 +104,14 @@ findnamedresource(
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
-	     	if ( FSpGetFInfo(&fss, &finfo) != noErr ) {
-			if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned )
+     	if ( FSpGetFInfo(&fss, &finfo) != noErr ) {
+     		/* doesn't exist or is folder */
+			if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned ) {
+				Py_INCREF(obj);
 				not_a_file[max_not_a_file++] = obj;
-	     		/* doesn't exist or is folder */
+				if (Py_VerboseFlag > 1)
+					PySys_WriteStderr("# %s is not a file\n", filename);
+			}
 			return 0;
 		}			
 		oldrh = CurResFile();
@@ -114,6 +122,8 @@ findnamedresource(
 	}
 	if ( dataptr == NULL )
 		SetResLoad(0);
+	if (Py_VerboseFlag > 1)
+		PySys_WriteStderr("# Look for ('PYC ', %s) in %s\n", module, filename);
 	h = Get1NamedResource(restype, Pstring(module));
 	SetResLoad(1);
 	ok = (h != NULL);
