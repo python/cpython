@@ -307,7 +307,7 @@ calculate_path()
 	char argv0_path[MAXPATHLEN+1];
 	char *buf;
 	int bufsz;
-	char *pythonhome = getenv("PYTHONHOME");
+	char *pythonhome = Py_GetPythonHome();
 	char *envpath = getenv("PYTHONPATH");
 #ifdef MS_WIN32
 	char *machinepath, *userpath;
@@ -329,8 +329,19 @@ calculate_path()
 	if (pythonhome == NULL || *pythonhome == '\0') {
 		if (search_for_prefix(argv0_path, LANDMARK))
 			pythonhome = prefix;
-		else
-			pythonhome = NULL;
+		else {
+			/* Couldnt find a source version - lets see if a compiled version exists. */
+			char LANDMARK_Look[MAX_PATH+1];
+			strcpy(LANDMARK_Look, LANDMARK);
+			/* Turn it into ".pyc" or ".pyc" depending on the current mode. */
+			strcat(LANDMARK_Look, Py_OptimizeFlag ? "o": "c");
+			/* And search again */
+			if (search_for_prefix(argv0_path, LANDMARK_Look))
+				pythonhome = prefix;
+			else
+				/* Give up in disgust - just use the default! */
+				pythonhome = NULL;
+		}
 	}
 	else
 		strcpy(prefix, pythonhome);
@@ -478,3 +489,4 @@ Py_GetProgramFullPath()
 		calculate_path();
 	return progpath;
 }
+
