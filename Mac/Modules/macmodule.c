@@ -36,9 +36,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <fcntl.h>
 
-#include ":::unixemu:macdefs.h"
-#include ":::unixemu:dir.h"
-#include ":::unixemu:stat.h"
+#include "macdefs.h"
+#include "dirent.h"
+#include "stat.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
@@ -46,14 +46,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Prototypes for Unix simulation on Mac */
 
-int access PROTO((const char *path, int mode));
 int chdir PROTO((const char *path));
 char *getbootvol PROTO((void));
 char *getwd PROTO((char *));
 int mkdir PROTO((const char *path, int mode));
 DIR * opendir PROTO((char *));
 void closedir PROTO((DIR *));
-struct direct * readdir PROTO((DIR *));
+struct dirent * readdir PROTO((DIR *));
 int rmdir PROTO((const char *path));
 int stat PROTO((const char *path, struct stat *buf));
 int sync PROTO((void));
@@ -126,14 +125,6 @@ mac_strint(args, func)
 		return mac_error();
 	INCREF(None);
 	return None;
-}
-
-static object *
-mac_access(self, args)
-	object *self;
-	object *args;
-{
-	return mac_strint(args, access);
 }
 
 static object *
@@ -243,7 +234,7 @@ mac_listdir(self, args)
 	char *name;
 	object *d, *v;
 	DIR *dirp;
-	struct direct *ep;
+	struct dirent *ep;
 	if (!getargs(args, "s", &name))
 		return NULL;
 	BGN_SAVE
@@ -376,11 +367,17 @@ mac_stat(self, args)
 	END_SAVE
 	if (res != 0)
 		return mac_error();
-	return mkvalue("(llll)",
+	return mkvalue("(llllllllll)",
 		    (long)st.st_mode,
+		    0L /* st_ino */,
+		    (long)st.st_dev,
+		    (long)st.st_nlink,
+		    (long)st.st_uid,
+		    (long)st.st_gid,
 		    (long)st.st_size,
-		    (long)st.st_rsize,
-		    (long)st.st_mtime);
+		    (long)st.st_atime,
+		    (long)st.st_mtime,
+		    (long)st.st_ctime);
 }
 
 static object *
@@ -426,7 +423,6 @@ mac_write(self, args)
 }
 
 static struct methodlist mac_methods[] = {
-	{"access_",	mac_access}, /* "access" is a Python reserved word */
 	{"chdir",	mac_chdir},
 	{"close",	mac_close},
 #ifdef MPW

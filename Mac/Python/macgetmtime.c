@@ -1,4 +1,4 @@
-#include "::unixemu:stat.h"
+#include <stat.h>
 
 /* Interfaced used by import.c */
 
