@@ -2058,15 +2058,19 @@ instancemethod_repr(PyMethodObject *a)
 	}
 	else
 		sfuncname = PyString_AS_STRING(funcname);
-	klassname = PyObject_GetAttrString(klass, "__name__");
-	if (klassname == NULL)
-		PyErr_Clear();
-	else if (!PyString_Check(klassname)) {
-		Py_DECREF(klassname);
+	if (klass == NULL)
 		klassname = NULL;
+	else {
+		klassname = PyObject_GetAttrString(klass, "__name__");
+		if (klassname == NULL)
+			PyErr_Clear();
+		else if (!PyString_Check(klassname)) {
+			Py_DECREF(klassname);
+			klassname = NULL;
+		}
+		else
+			sklassname = PyString_AS_STRING(klassname);
 	}
-	else
-		sklassname = PyString_AS_STRING(klassname);
 	if (self == NULL)
 		sprintf(buffer, "<unbound method %.100s.%.100s>",
 			sklassname, sfuncname);
