@@ -651,17 +651,23 @@ class DOMImplementation:
         doc = Document()
         if doctype is None:
             doctype = self.createDocumentType(qualifiedName, None, None)
-        if qualifiedName:
-            prefix, localname = _nssplit(qualifiedName)
-            if prefix == "xml" \
-               and namespaceURI != "http://www.w3.org/XML/1998/namespace":
-                raise xml.dom.NamespaceErr("illegal use of 'xml' prefix")
-            if prefix and not namespaceURI:
-                raise xml.dom.NamespaceErr(
-                    "illegal use of prefix without namespaces")
-            element = doc.createElementNS(namespaceURI, qualifiedName)
-            doc.appendChild(element)
-        # XXX else, raise an error?  Empty qname is illegal in the DOM spec!
+        if not qualifiedName:
+            # The spec is unclear what to raise here; SyntaxErr
+            # would be the other obvious candidate. Since Xerces raises
+            # InvalidCharacterErr, and since SyntaxErr is not listed
+            # for createDocument, that seems to be the better choice.
+            # XXX: need to check for illegal characters here and in
+            # createElement.
+            raise xml.dom.InvalidCharacterErr("Element with no name")
+        prefix, localname = _nssplit(qualifiedName)
+        if prefix == "xml" \
+           and namespaceURI != "http://www.w3.org/XML/1998/namespace":
+            raise xml.dom.NamespaceErr("illegal use of 'xml' prefix")
+        if prefix and not namespaceURI:
+            raise xml.dom.NamespaceErr(
+                "illegal use of prefix without namespaces")
+        element = doc.createElementNS(namespaceURI, qualifiedName)
+        doc.appendChild(element)
         doctype.parentNode = doc
         doc.doctype = doctype
         doc.implementation = self
@@ -761,6 +767,7 @@ def _doparse(func, args, kwargs):
     events = apply(func, args, kwargs)
     toktype, rootNode = events.getEvent()
     events.expandNode(rootNode)
+    events.clear()
     return rootNode
 
 def parse(*args, **kwargs):
