@@ -34,11 +34,16 @@ sub find_my_file{
     $mydir;
 }
 
+
 # A little painful, but lets us clean up the top level directory a little,
 # and not be tied to the current directory (as far as I can tell).
 #
-$mydir = &find_my_file("l2hinit.perl");
-#print "\nmy dir = $mydir\n";
+use Cwd;
+use File::Basename;
+($myname, $mydir, $myext) = fileparse(__FILE__, '\..*');
+chop $mydir;			# remove trailing '/'
+$mydir = getcwd() . "$dd$mydir"
+  unless $mydir =~ s|^/|/|;
 $LATEX2HTMLSTYLES = "$mydir$envkey$LATEX2HTMLSTYLES";
 
 
