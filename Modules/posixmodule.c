@@ -108,6 +108,13 @@ corresponding Unix manual entries for more information on calls.";
 #include <unistd.h>
 #endif
 
+#if defined(sun) && !defined(__SVR4)
+/* SunOS 4.1.4 doesn't have prototypes for these: */
+extern int rename(const char *, const char *);
+extern int pclose(FILE *);
+extern int fclose(FILE *);
+#endif
+
 #ifdef NeXT
 /* NeXT's <unistd.h> and <utime.h> aren't worth much */
 #undef HAVE_UNISTD_H
