@@ -60,6 +60,22 @@ history file when saving.  Negative values imply unlimited history
 file size.
 \end{funcdesc}
 
+\begin{funcdesc}{get_current_history_length}{}
+Return the number of lines currently in the history.  (This is different
+from \function{get_history_length()}, which returns the maximum number of
+lines that will be written to a history file.)  \versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{get_history_item}{index}
+Return the current contents of history item at \var{index}.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{redisplay}{}
+Change what's displayed on the screen to reflect the current contents
+of the line buffer.  \versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{set_startup_hook}{\optional{function}}
 Set or remove the startup_hook function.  If \var{function} is specified,
 it will be used as the new startup_hook function; if omitted or
