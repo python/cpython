@@ -26,24 +26,26 @@ Supported options:
                     Documentation Index'.
 """
 import buildindex
-import getopt
 import os
 import re
 import string
+import support
 import sys
 
 
-def usage():
-    program = os.path.basename(sys.argv[0])
-    print __doc__ % {"program": program}
+class IndexOptions(support.Options):
+    def __init__(self):
+        support.Options.__init__(self)
+        self.add_args("l", ["letters"])
+        self.letters = 0
 
+    def handle_option(self, opt, val):
+        if opt in ("-l", "--letters"):
+            self.letters = 1
 
-def error(msg, rc=2):
-    sys.stdout = sys.stderr
-    print msg
-    print
-    usage()
-    sys.exit(rc)
+    def usage(self):
+        program = os.path.basename(sys.argv[0])
+        print __doc__ % {"program": program}
 
 
 _rx = re.compile(
@@ -52,56 +54,10 @@ _rx = re.compile(
     "\(<span class='platform'>.*</span>\)</em>)?)</a>")
 
 def main():
-    outputfile = "-"
-    columns = 1
-    letters = 0
-    uplink = "./"
-    uptitle = "Python Documentation Index"
-    variables = {"address": "",
-                 "iconserver": "icons",
-                 "imgtype": "gif",
-                 "title": "Global Module Index",
-                 "uplinkalt": "up",
-                 "uplinkicon": "up",
-                 }
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "a:c:hlo:",
-                                   [# script controls:
-                                    "columns=", "help", "letters", "output=",
-                                    # content components:
-                                    "address=", "iconserver=",
-                                    "title=", "uplink=", "uptitle="])
-    except getopt.error, msg:
-        error(msg)
-    for opt, val in opts:
-        if opt in ("-a", "--address"):
-            val = string.strip(val)
-            variables["address"] = val and "<address>\n%s\n</address>\n" % val
-        elif opt in ("-h", "--help"):
-            usage()
-            sys.exit()
-        elif opt in ("-o", "--output"):
-            outputfile = val
-        elif opt in ("-c", "--columns"):
-            columns = string.atoi(val)
-        elif opt in ("-l", "--letters"):
-            letters = 1
-        elif opt == "--title":
-            variables["title"] = string.strip(val)
-        elif opt == "--uplink":
-            uplink = string.strip(val)
-        elif opt == "--uptitle":
-            uptitle = string.strip(val)
-        elif opt == "--iconserver":
-            variables["iconserver"] = string.strip(val) or "."
-    if uplink and uptitle:
-        variables["uplinkalt"] = "up"
-        variables["uplinkicon"] = "up"
-    else:
-        variables["uplinkalt"] = ""
-        variables["uplinkicon"] = "blank"
-    variables["uplink"] = uplink
-    variables["uptitle"] = uptitle
+    options = IndexOptions()
+    options.variables["title"] = "Global Module Index"
+    options.parse(sys.argv[1:])
+    args = options.args
     if not args:
         args = ["-"]
     #
@@ -138,19 +94,19 @@ def main():
     #
     num_nodes = len(nodes)
     # Here's the HTML generation:
-    parts = [HEAD % variables,
-             buildindex.process_nodes(nodes, columns, letters),
-             TAIL % variables,
+    parts = [options.get_header(),
+             buildindex.process_nodes(nodes, options.columns, options.letters),
+             options.get_footer(),
              ]
     if has_plat_flag:
         parts.insert(1, PLAT_DISCUSS)
     html = string.join(parts, '')
     program = os.path.basename(sys.argv[0])
-    if outputfile == "-":
-        sys.stdout.write(html)
-        sys.stderr.write("%s: %d index nodes\n" % (program, num_nodes))
+    fp = options.get_output_file()
+    print >>fp, html.rstrip()
+    if options.outputfile == "-":
+        print >>sys.stderr, "%s: %d index nodes" % (program, num_nodes)
     else:
-        open(outputfile, "w").write(html)
         print
         print "%s: %d index nodes" % (program, num_nodes)
 
@@ -161,52 +117,6 @@ platform they are available on.</p>
 
 """
 
-NAVIGATION = '''\
-<div class="navigation">
-<table width="100%%" cellpadding="0" cellspacing="2">
-<tr>
-<td><img width="32" height="32" align="bottom" border="0" alt=""
- src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td><a href="%(uplink)s"
- title="%(uptitle)s"><img width="32" height="32" align="bottom" border="0"
- alt="%(uplinkalt)s"
- src="%(iconserver)s/%(uplinkicon)s.%(imgtype)s"></a></td>
-<td><img width="32" height="32" align="bottom" border="0" alt=""
- src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td align="center" width="100%%">%(title)s</td>
-<td><img width="32" height="32" align="bottom" border="0" alt=""
- src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td><img width="32" height="32" align="bottom" border="0" alt=""
- src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td><img width="32" height="32" align="bottom" border="0" alt=""
- src="%(iconserver)s/blank.%(imgtype)s"></td>
-</tr></table>
-<b class="navlabel">Up:</b> <span class="sectref"><a href="%(uplink)s"
- title="%(uptitle)s">%(uptitle)s</A></span>
-<br></div>
-'''
-
-HEAD = '''\
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-<html>
-<head>
-  <title>Global Module Index</title>
-  <meta name="description" content="%(title)s">
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-  <link rel="STYLESHEET" href="lib/lib.css">
-</head>
-<body>
-''' + NAVIGATION + '''\
-<hr>
-
-<h2>%(title)s</h2>
-
-'''
-
-TAIL = "<hr>\n" + NAVIGATION + '''\
-%(address)s</body>
-</html>
-'''
 
 if __name__ == "__main__":
     main()
