@@ -75,6 +75,7 @@ goals = [
 	("mactcp.slb", "mactcpmodules.slb"),
 	("macdnr.slb", "mactcpmodules.slb"),
 	("AE.slb", "toolboxmodules.slb"),
+	("Cm.slb", "toolboxmodules.slb"),
 	("Ctl.slb", "toolboxmodules.slb"),
 	("Dlg.slb", "toolboxmodules.slb"),
 	("Evt.slb", "toolboxmodules.slb"),
