@@ -52,8 +52,11 @@ class Electrons:
 
 	# Run -- never returns
 	def run(self):
-		while 1:
-			self.random_move(self.n)
+		try:
+			while 1:
+				self.random_move(self.n)
+		finally:
+			self.tk.destroy()
 
 
 # Main program
