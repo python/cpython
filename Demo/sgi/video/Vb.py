@@ -2,6 +2,8 @@
 
 # Video bag-of-tricks
 
+# XXX To do: audio; rationalize user interface; ...?
+
 import sys
 import getopt
 import string
@@ -33,9 +35,10 @@ def main():
 
 StopCapture = 'StopCapture'
 
-formats = ['rgb8', 'grey8', 'grey4', 'grey2', \
-	   'grey2_dith', 'mono_dith', 'mono_thresh']
-formatmap = {'rgb24': 'rgb', 'grey8': 'grey'}
+Labels = ['rgb8', 'grey8', 'grey4', 'grey2', \
+	  'grey2 dith', 'mono dith', 'mono thresh']
+Formats = ['rgb8', 'grey', 'grey4', 'grey2', \
+	   'grey2', 'mono', 'mono']
 
 class VideoBagOfTricks:
 
@@ -53,22 +56,13 @@ class VideoBagOfTricks:
 		fl.set_event_call_back(self.do_event)
 		return self
 
-	def setwatch(self):
-		gl.winset(self.form.window)
-		gl.setcursor(WATCH, 0, 0)
-
-	def setarrow(self):
-		gl.winset(self.form.window)
-		gl.setcursor(ARROW, 0, 0)
-
 	def setdefaults(self):
+		self.mono_thresh = 128
 		self.format = 'rgb8'
 		self.c_format.clear_choice()
-		for label in formats:
+		for label in Labels:
 			self.c_format.addto_choice(label)
-		self.c_format.set_choice(1 + formats.index(self.format))
-		self.mono_thresh = 128
-		self.mono_use_thresh = 0
+		self.get_format()
 		self.b_drop.set_button(1)
 		self.b_burst.set_button(0)
 		self.in_rate.set_input('2')
@@ -77,9 +71,14 @@ class VideoBagOfTricks:
 		self.in_file.set_input('film.video')
 
 	def openvideo(self):
-		self.video = sv.OpenVideo()
-		param = [SV.BROADCAST, 0]
-		self.video.GetParam(param)
+		try:
+			self.video = sv.OpenVideo()
+		except sv.error, msg:
+			print 'Error opening video:', msg
+			self.video = None
+			#sys.exit(1)
+		param = [SV.BROADCAST, SV.PAL]
+		if self.video: self.video.GetParam(param)
 		if param[1] == SV.PAL:
 			x = SV.PAL_XMAX
 			y = SV.PAL_YMAX
@@ -118,9 +117,12 @@ class VideoBagOfTricks:
 
 	def settitle(self):
 		gl.winset(self.window)
-		gl.wintitle(self.maketitle())
+		x, y = gl.getsize()
+		title = 'Vb:' + self.in_file.get_input() + ' (%dx%d)' % (x, y)
+		gl.wintitle(title)
 
 	def bindvideo(self):
+		if not self.video: return
 		x, y = gl.getsize()
 		self.video.SetSize(x, y)
 		drop = self.b_drop.get_button()
@@ -128,7 +130,7 @@ class VideoBagOfTricks:
 			param = [SV.FIELDDROP, 1, SV.GENLOCK, SV.GENLOCK_OFF]
 		else:
 			param = [SV.FIELDDROP, 0, SV.GENLOCK, SV.GENLOCK_ON]
-		if self.getformat()[:3] == 'rgb':
+		if self.rgb:
 			param = param+[SV.COLOR, SV.DEFAULT_COLOR, \
 				       SV.DITHER, 1, \
 				       SV.INPUT_BYPASS, 0]
@@ -150,34 +152,46 @@ class VideoBagOfTricks:
 			self.rebindvideo()
 			self.settitle()
 
-	def cb_format(self, *args):
+	def get_format(self):
 		i = self.c_format.get_choice()
-		label = format = formats[i-1]
-		if '_' in format:
-			i = string.find(format, '_')
-			format = format[:i]
-		if formatmap.has_key(format):
-			format = formatmap[format]
+		label = Labels[i-1]
+		format = Formats[i-1]
 		self.format = format
 		#
-		if label == 'mono_thresh':
-			self.mono_use_thresh = 1
+		self.rgb = (format[:3] == 'rgb')
+		self.mono = (format == 'mono')
+		self.grey = (format[:4] == 'grey')
+		self.mono_use_thresh = (label == 'mono thresh')
+		s = format[4:]
+		if s:
+			self.greybits = string.atoi(s)
+		else:
+			self.greybits = 8
+		if label == 'grey2 dith':
+			self.greybits = -2
+		#
+		convertor = None
+		if self.grey:
+			if self.greybits == 2:
+				convertor = imageop.grey2grey2
+			elif self.greybits == 4:
+				convertor = imageop.grey2grey4
+			elif self.greybits == -2:
+				convertor = imageop.dither2grey2
+		self.convertor = convertor
+
+	def cb_format(self, *args):
+		self.get_format()
+		if self.mono_use_thresh:
 			s = `self.mono_thresh`
 			s = fl.show_input('Please enter mono threshold', s)
 			if s:
 				try:
 					self.mono_thresh = string.atoi(s)
 				except string.atoi_error:
-					fl.show_message( \
-						  'Bad input, using ' + \
-						  `self.mono_thresh`)
-		else:
-			self.mono_use_thresh = 0
-		#
+					fl.show_message('Bad input, using', \
+						  `self.mono_thresh`, '')
 		self.rebindvideo()
-
-	def getformat(self):
-		return self.format
 
 	def cb_rate(self, *args):
 		pass
@@ -222,39 +236,103 @@ class VideoBagOfTricks:
 		gl.ringbell()
 
 	def cb_capture(self, *args):
+		if not self.video:
+			gl.ringbell()
+			return
+		if self.b_burst.get_button():
+			self.burst_capture()
+		else:
+			self.cont_capture()
+
+	def burst_capture(self):
 		self.setwatch()
-		self.g_main.hide_object()
-		self.cb_file() # Make sure filename is OK
-		filename = self.in_file.get_input()
-		format = self.getformat()
-		vout = VFile.VoutFile().init(filename)
-		vout.setformat(format)
 		gl.winset(self.window)
 		x, y = gl.getsize()
-		vout.setsize(x, y)
-		vout.writeheader()
-		convertor = None
-		if format[:4] == 'grey':
-			s = format[4:]
-			if s:
-				greybits = string.atoi(s)
-			else:
-				greybits = 8
-			# XXX Should get this from somewhere else?
-			if greybits == 2:
-				convertor = imageop.grey2grey2
-			elif greybits == 4:
-				convertor = imageop.grey2grey4
-			elif greybits == -2:
-				convertor = imageop.dither2grey2
-		mono = (format == 'mono')
 		vformat = SV.RGB8_FRAMES
-		qsize = 0
-		rate = eval(self.in_rate.get_input())
+		try:
+			nframes = string.atoi(self.in_nframes.get_input())
+		except string.atoi_error:
+			nframes = 0
+		if nframes == 0:
+			try:
+				maxmem = \
+				  float(eval(self.in_maxmem.get_input()))
+			except:
+				maxmem = 1.0
+			memsize = int(maxmem * 1024 * 1024)
+			nframes = calcnframes(x, y, \
+				  self.mono or self.grey, memsize)
+			print 'nframes =', nframes
+		rate = string.atoi(self.in_rate.get_input())
+		# XXX Should check ranges and not crash if non-integer
+		info = (vformat, x, y, nframes, rate)
+		try:
+			info2, data, bitvec = self.video.CaptureBurst(info)
+		except sv.error, msg:
+			fl.show_message('Capture error:', str(msg), '')
+			self.setarrow()
+			return
+		print info2
+		self.save_burst(info2, data, bitvec)
+		self.setarrow()
+
+	def save_burst(self, info, data, bitvec):
+		(vformat, x, y, nframes, rate) = info
+		self.open_file()
+		fieldsize = x*y/2
+		nskipped = 0
+		realframeno = 0
+		tpf = 1000 / 50.0     #XXXX
+		# Trying to find the pattern in frame skipping
+		okstretch = 0
+		skipstretch = 0
+		for frameno in range(0, nframes*2):
+			if frameno <> 0 and \
+				  bitvec[frameno] == bitvec[frameno-1]:
+				nskipped = nskipped + 1
+				if okstretch:
+					#print okstretch, 'ok',
+					okstretch = 0
+				skipstretch = skipstretch + 1
+				continue
+			if skipstretch:
+				#print skipstretch, 'skipped'
+				skipstretch = 0
+			okstretch = okstretch + 1
+			#
+			# Save field.
+			# XXXX Works only for fields and top-to-bottom
+			#
+			start = frameno*fieldsize
+			field = data[start:start+fieldsize]
+			realframeno = realframeno + 1
+			fn = int(realframeno*tpf)
+			if not self.write_frame(fn, field):
+				break
+		#print okstretch, 'ok',
+		#print skipstretch, 'skipped'
+		#print 'Skipped', nskipped, 'duplicate frames'
+		self.close_file()
+
+	def cont_capture(self):
+		self.setwatch()
+		self.g_main.hide_object()
+		self.open_file()
+		vformat = SV.RGB8_FRAMES
+		qsize = 1 # XXX Should be an option?
+		try:
+			rate = string.atoi(self.in_rate.get_input())
+		except string.atoi_error:
+			rate = 2
+		x, y = self.vout.getsize()
 		info = (vformat, x, y, qsize, rate)
 		ids = []
-		tpf = 50
-		self.video.InitContinuousCapture(info)
+		fps = 59.64 # Fields per second
+		# XXX (fps of Indigo monitor, not of PAL or NTSC!)
+		tpf = 1000.0 / fps # Time per field in msec
+		info2 = self.video.InitContinuousCapture(info)
+		if info2 <> info:
+			print 'Info mismatch: requested', info, 'got', info2
 		self.capturing = 1
 		self.g_stop.show_object()
 		self.setarrow()
@@ -273,37 +351,75 @@ class VideoBagOfTricks:
 			data = cd.InterleaveFields(1)
 			cd.UnlockCaptureData()
 			t = id*tpf
-			if convertor:
-				data = convertor(data, len(data), 1)
-			elif mono:
-				if self.mono_use_thresh:
-					data = imageop.grey2mono(data, \
-						  len(data), 1,\
-						  self.mono_thresh)
-				else:
-					data = imageop.dither2mono(data, \
-						  len(data), 1)
-			try:
-				vout.writeframe(t, data, None)
-			except IOError, msg:
-				if msg == (0, 'Error 0'):
-					msg = 'disk full??'
-				fl.show_message('IOError: ' + str(msg))
+			if not self.write_frame(t, data):
 				break
 		self.setwatch()
 		self.g_stop.hide_object()
 		self.capturing = 0
-		vout.close()
 		self.video.EndContinuousCapture()
+		self.close_file()
 		self.g_main.show_object()
 		self.setarrow()
+
+	def open_file(self):
+		gl.winset(self.window)
+		x, y = gl.getsize()
+		self.cb_file() # Make sure filename is OK
+		filename = self.in_file.get_input()
+		vout = VFile.VoutFile().init(filename)
+		vout.setformat(self.format)
+		vout.setsize(x, y)
+		if self.b_burst.get_button():
+			vout.setpf((1, -2))
+		vout.writeheader()
+		self.vout = vout
+
+	def close_file(self):
+		try:
+			self.vout.close()
+		except IOError, msg:
+			if msg == (0, 'Error 0'):
+				msg = 'disk full??'
+			fl.show_message('IOError', str(msg), '')
+		del self.vout
+
+	def write_frame(self, t, data):
+		if self.convertor:
+			data = self.convertor(data, len(data), 1)
+		elif self.mono:
+			if self.mono_use_thresh:
+				data = imageop.grey2mono(data, \
+					  len(data), 1,\
+					  self.mono_thresh)
+			else:
+				data = imageop.dither2mono(data, \
+					  len(data), 1)
+		try:
+			self.vout.writeframe(t, data, None)
+		except IOError, msg:
+			if msg == (0, 'Error 0'):
+				msg = 'disk full??'
+			fl.show_message('IOError', str(msg), '')
+			return 0
+		return 1
 
 	def cb_quit(self, *args):
 		raise SystemExit, 0
 
-	def maketitle(self):
-		x, y = gl.getsize()
-		return 'Vb:' + self.in_file.get_input() + ' (%dx%d)' % (x, y)
+	def setwatch(self):
+		gl.winset(self.form.window)
+		gl.setcursor(WATCH, 0, 0)
+
+	def setarrow(self):
+		gl.winset(self.form.window)
+		gl.setcursor(ARROW, 0, 0)
+
+def calcnframes(x, y, grey, memsize):
+	pixels = x*y
+	pixels = pixels/2		# XXX always assume fields
+	if grey: n = memsize/pixels
+	else: n = memsize/(4*pixels)
+	return max(1, n)
 
 try:
 	main()
