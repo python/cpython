@@ -1427,10 +1427,20 @@ PySequence_Tuple(PyObject *v)
 			break;
 		}
 		if (j >= n) {
-			if (n < 500)
-				n += 10;
-			else
-				n += 100;
+			int oldn = n;
+			/* The over-allocation strategy can grow a bit faster
+			   than for lists because unlike lists the 
+			   over-allocation isn't permanent -- we reclaim
+			   the excess before the end of this routine.
+			   So, grow by ten and then add 25%.
+			*/
+			n += 10;
+			n += n >> 2;
+			if (n < oldn) {
+				/* Check for overflow */
+				PyErr_NoMemory();
+				goto Fail; 
+			}
 			if (_PyTuple_Resize(&result, n) != 0) {
 				Py_DECREF(item);
 				goto Fail;
