@@ -418,6 +418,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
         import sys as _sys
         _sys.path = %s
         del _sys
+        _msg = 'Use File/Exit or your end-of-file key to quit IDLE'
+        __builtins__.quit = __builtins__.exit = _msg
+        del _msg
         \n""" % `sys.path`)
 
     active_seq = None
