@@ -321,7 +321,7 @@ getpythonregpath(HKEY keyBase, int skipcore)
 		if (retval)
 			WideCharToMultiByte(CP_ACP, 0, 
 					dataBuf, -1, /* source */ 
-					retval, dataSize+1, /* dest */
+					retval, reqdSize+1, /* dest */
 					NULL, NULL);
 		free(dataBuf);
 #else
