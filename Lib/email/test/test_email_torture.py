@@ -47,6 +47,7 @@ class TestCrispinTorture(TortureBase):
     # Mark Crispin's torture test from the SquirrelMail project
     def test_mondo_message(self):
         eq = self.assertEqual
+        neq = self.ndiffAssertEqual
         msg = self._msgobj('crispin-torture.txt')
         payload = msg.get_payload()
         eq(type(payload), ListType)
@@ -57,7 +58,7 @@ class TestCrispinTorture(TortureBase):
         # dump its structure and compare it against the known structure.
         fp = StringIO()
         _structure(msg, fp=fp)
-        eq(fp.getvalue(), """\
+        neq(fp.getvalue(), """\
 multipart/mixed
     text/plain
     message/rfc822
@@ -100,7 +101,7 @@ multipart/mixed
     message/rfc822
         multipart/mixed
             application/postscript
-            binary
+            text/plain
             message/rfc822
                 multipart/mixed
                     text/plain
