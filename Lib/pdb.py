@@ -1,16 +1,157 @@
 # pdb.py -- finally, a Python debugger!
 
-# To do:
-# - Keep a list of exceptions trapped (default only KeyboardInterrupt?)
-# - A blank line should repeat the previous command, not execute 'next'
-# - Don't line-trace functions (or at least files) without breakpoints
-# - Better handling of call/return events
-# - It should be possible to intercept KeyboardInterrupt completely
-# - Where and when to stop exactly when 'next' encounters a return?
-#   (should be level-based -- don't trace anything deeper than current)
-# - Show stack traces upside-down (like dbx/gdb)
-# - When stopping on an exception, show traceback stack
-# - Merge with tb (for post-mortem usage)
+# To use the debugger in its simplest form:
+#	>>> import pdb
+#	>>> pdb.run('<a statement>')
+# The debugger's prompt is '(Pdb) '.
+# This will stop in the first function call in <a statement>.
+
+# The commands recognized by the debugger are listed below.
+# Most can be abbreviated as indicated; e.g., h(elp) means that
+# 'help' can be typed as 'h' or 'help'
+# (but not as 'he' or 'hel', nor as 'H' or 'Help' or 'HELP').
+# Optional arguments are enclosed in square brackets.
+
+# A blank line repeats the previous command literally.
+# (Except for 'list', where it lists the next 11 lines.)
+
+# Commands that the debugger does not recognized are assumed to
+# be Python statements and are executed in the context of the
+# program being debugged.
+# Python statements can also be prefixed with an exclamation point ('!').
+# This is a powerful way to inspect the program being debugged;
+# it is even possible to change variables.
+# When an exception occurs in such a statement, the exception name
+# is printed but the debugger's state is not changed.
+
+# The debugger is not directly programmable; but it is implemented
+# as a class from which you can derive your own debugger class,
+# so you can make as fancy as you like.
+
+# The debugger's commands are:
+
+# h(elp)
+#	Without argument, print the list of available commands.
+#	With a command name as argument, print help about that command
+#	(this is currently not implemented).
+
+# w(here)
+#	Print a stack trace, with the most recent frame at the bottom.
+#	An arrow indicates the "current frame", which determines the
+#	context of most commands.
+
+# d(own)
+#	Move the current frame one level down in the stack trace
+#	(to an older frame).
+
+# u(p)
+#	Move the current frame one level up in the stack trace
+#	(to a newer frame).
+
+# b(reak) [lineno]
+#	With a line number argument, set a break there in the current file.
+#	Without argument, list all breaks.
+
+# cl(ear) [lineno]
+#	With a line number argument, clear that break in the current file.
+#	Without argument, clear all breaks (but first ask confirmation).
+
+# s(tep)
+#	Execute the current line, stop at the first possible occasion
+#	(either in a function that is called or in the current function).
+
+# n(ext)
+#	Continue execution until the next line in the current function
+#	is reached or it returns.
+
+# r(eturn)
+#	Continue execution until the current function returns.
+
+# c(ont(inue))
+#	Continue execution, only stop when a breakpoint is encountered.
+
+# l(ist) [first [,last]]
+#	List source code for the current file.
+#	Without arguments, list 11 lines around the current line
+#	or continue the previous listing.
+#	With one argument, list 11 lines starting at that line.
+#	With two arguments, list the given range;
+#	if the second argument is less than the first, it is a count.
+
+# a(rgs)
+#	Print the argument list of the current function.
+
+# p expression
+#	Print the value of the expression.
+
+# (!) statement
+#	Execute the (one-line) statement in the context of
+#	the current stack frame.
+#	The exclamation point can be omitted unless the first word
+#	of the statement resembles a debugger command.
+#	To assign to a global variable you must always prefix the
+#	command with a 'global' command, e.g.:
+#	(Pdb) global list_options; list_options = ['-l']
+#	(Pdb)
+
+# q(uit)
+#	Quit from the debugger.
+#	The program being executed is aborted.
+
+
+# Here's how it works.
+
+# Some changes were made to the interpreter:
+# - if sys.trace is defined (by the user), it should be a function
+# - sys.trace is called the global trace function
+# - there can also a local trace function (see later)
+
+# Trace functions have three arguments: (frame, event, arg)
+#   - frame is the current stack frame
+#   - event is a string: 'call', 'line', 'return' or 'exception'
+#   - arg is dependent on the event type
+# A trace function should return a new trace function or None.
+# Class methods are accepted (and most useful!) as trace methods.
+
+# The events have the following meaning:
+#
+#   'call':      A function is called (or some other code block entered).
+#                The global trace function is called;
+#                arg is the argument list to the function;
+#                the return value specifies the local trace function.
+#
+#   'line':      The interpreter is about to execute a new line of code
+#                (sometimes multiple line events on one line exist).
+#                The local trace function is called; arg in None;
+#                the return value specifies the new local trace function.
+#
+#   'return':    A function (or other code block) is about to return.
+#                The local trace function is called;
+#                arg is the value that will be returned.
+#                The trace function's return value is ignored.
+#
+#   'exception': An exception has occurred.
+#                The local trace function is called if there is one,
+#                else the global trace function is called;
+#                arg is a triple (exception, value, traceback);
+#                the return value specifies the new local trace function
+#
+# Note that as an exception is propagated down the chain of callers,
+# an 'exception' event is generated at each level.
+
+# A stack frame object has the following read-only attributes:
+#   f_code:      the code object being executed
+#   f_lineno:    the current line number (-1 for 'call' events)
+#   f_back:      the stack frame of the caller, or None
+#   f_locals:    dictionary containing local name bindings
+#   f_globals:   dictionary containing global name bindings
+
+# A code object has the following read-only attributes:
+#   co_code:     the code string
+#   co_names:    the list of names used by the code
+#   co_consts:   the list of (literal) constants used by the code
+#   co_filename: the filename from which the code was compiled
+
 
 import string
 import sys
@@ -26,31 +167,35 @@ class Cmd:
 	def init(self):
 		self.prompt = PROMPT
 		self.identchars = IDENTCHARS
+		self.lastcmd = ''
 		return self
-	def commandloop(self):
-		try:
-			self.innerloop()
-		except EOFError:
-			pass
-	def innerloop(self):
-		while 1:
-			line = string.strip(self.getline())
-			self.execline(line)
-	def execline(self, line):
+	def cmdloop(self):
+		stop = None
+		while not stop:
+			try:
+				line = raw_input(self.prompt)
+			except EOFError:
+				line = 'EOF'
+			stop = self.onecmd(line)
+		return stop
+	def onecmd(self, line):
+		line = string.strip(line)
+		if not line:
+			line = self.lastcmd
+			print line
+		else:
+			self.lastcmd = line
 		i, n = 0, len(line)
 		while i < n and line[i] in self.identchars: i = i+1
 		cmd, arg = line[:i], string.strip(line[i:])
 		if cmd == '':
-			self.default(line)
+			return self.default(line)
 		else:
 			try:
 				func = eval('self.do_' + cmd)
 			except AttributeError:
-				self.default(line)
-				return
-			func(arg)
-	def getline(self):
-		return raw_input(self.prompt)
+				return self.default(line)
+			return func(arg)
 	def default(self, line):
 		print '*** Unknown syntax:', line
 	def do_help(self, arg):
@@ -74,8 +219,7 @@ class Cmd:
 
 # A specialization of Cmd for use by the debugger
 
-PdbDone = 'PdbDone' # Exception used internally
-PdbQuit = 'PdbQuit' # Exception to just give up
+PdbQuit = 'pdb.PdbQuit' # Exception to give up
 
 class Pdb(Cmd):
 	
@@ -83,32 +227,32 @@ class Pdb(Cmd):
 		self = Cmd.init(self)
 		self.prompt = '(Pdb) '
 		self.reset()
-		self.breaks = {}
 		return self
 	
 	def reset(self):
-		self.whatnext = ''
+		self.breaks = {}
 		self.botframe = None
+		self.stopframe = None
 		self.forget()
 	
 	def forget(self):
-		self.curframe = self.topframe = None
-		self.stack = []
-		self.lineno = None
+		self.setup(None)
 	
 	def setup(self, frame):
 		self.curframe = self.topframe = frame
 		self.stack = []
 		self.lineno = None
-		self.stopframe = None
-		self.whatnext = ''
 	
 	def run(self, cmd):
-		if cmd[-1:] != '\n': cmd = cmd + '\n'
+		import __main__
+		dict = __main__.__dict__
+		self.runctx(cmd, dict, dict)
+	
+	def runctx(self, cmd, globals, locals):
 		self.reset()
 		sys.trace = self.dispatch
 		try:
-			exec(cmd)
+			exec(cmd + '\n', globals, locals)
 		except PdbQuit:
 			pass
 		finally:
@@ -116,64 +260,75 @@ class Pdb(Cmd):
 			del sys.trace
 			self.reset()
 	
-	def dispatch(self, frame, where, arg):
-		if self.whatnext == 'quit':
-			return
-		if self.botframe is None:
-			self.botframe = frame
-		if where == 'exception':
-			if self.whatnext == 'continue' and \
-				arg[0] is not KeyboardInterrupt:
-				return self.trace
-			stop = 1
-		elif self.whatnext == 'continue':
-			stop = 0
-		elif self.whatnext == 'next':
-			stop = (frame == self.stopframe)
-		else:
-			stop = 1
-		if not stop:
-			# Check breakpoints only
-			filename = frame.f_code.co_filename
-			if not self.breaks.has_key(filename):
-				return self.dispatch
-			lineno = frame.f_lineno
-			if lineno not in self.breaks[filename]:
-				return self.dispatch
-		if where == 'call':
-			print 'call arguments:', arg
-		elif where == 'return':
-			print 'return value:', arg
-		elif where == 'exception':
-			print 'exception:', arg[:2]
-		elif where != 'line':
-			print 'unknown trace type:', `where`
-		self.setup(frame)
-		try:
-			self.whatnext = self.commandloop()
-		finally:
-			self.forget()
-		if self.whatnext == 'quit':
-			raise PdbQuit
-		if self.whatnext == 'next':
-			if where != 'return':
-				self.stopframe = frame
-			else:
-				self.whatnext = 'step'
+	def dispatch(self, frame, event, arg):
+		if event == 'line':
+			return self.dispatch_line(frame)
+		if event == 'call':
+			return self.dispatch_call(frame, arg)
+		if event == 'return':
+			return self.dispatch_return(frame, arg)
+		if event == 'exception':
+			return self.dispatch_exception(frame, arg)
+		print '*** dispatch: unknown event type', `event`
 		return self.dispatch
 	
-	def commandloop(self):
+	def dispatch_line(self, frame):
+		if self.stop_here(frame) or self.break_here(frame):
+			self.ask_user(frame)
+		return self.dispatch
+	
+	def dispatch_call(self, frame, arg):
+		if self.botframe is None:
+			self.botframe = frame
+			return
+		if not (self.stop_here(frame) or self.break_anywhere(frame)):
+			return
+		frame.f_locals['__args__'] = arg
+		return self.dispatch
+	
+	def dispatch_return(self, frame, arg):
+		if self.stop_here(frame):
+			print '!!! return', `arg`
+		return
+	
+	def dispatch_exception(self, frame, arg):
+		if arg[0] is PdbQuit: return None
+		if self.stop_here(frame):
+			print '!!! exception', arg[0] + ':', `arg[1]`
+			self.ask_user(frame)
+		return self.dispatch
+	
+	def stop_here(self, frame):
+		if self.stopframe is None:
+			return 1
+		if frame is self.stopframe:
+			return 1
+		while frame is not self.stopframe:
+			if frame is None:
+				return 1
+			frame = frame.f_back
+		return 0
+	
+	def break_here(self, frame):
+		if not self.breaks.has_key(frame.f_code.co_filename):
+			return 0
+		if not frame.f_lineno in \
+			self.breaks[frame.f_code.co_filename]:
+			return 0
+		return 1
+	
+	def break_anywhere(self, frame):
+		return self.breaks.has_key(frame.f_code.co_filename)
+	
+	def ask_user(self, frame):
+		self.setup(frame)
 		self.printwhere(self.curframe)
-		try:
-			self.innerloop()
-		except EOFError:
-			self.do_next('')
-		except PdbDone, msg:
-			return msg
+		dummy = self.cmdloop()
+		self.forget()
 	
 	def default(self, line):
 		if not line:
-			self.do_next('')
+			return self.do_next('')
 		else:
 			if line[0] == '!': line = line[1:]
 			try:
@@ -181,7 +336,7 @@ class Pdb(Cmd):
 					self.curframe.f_globals, \
 					self.curframe.f_locals)
 			except:
-				print '***', sys.exc_type + ':',
+				print '***', sys.exc_type				 + ':',
 				print `sys.exc_value`
 	
 	do_h = Cmd.do_help
@@ -211,8 +366,13 @@ class Pdb(Cmd):
 	
 	def do_clear(self, arg):
 		if not arg:
-			self.breaks = {}
-			print 'All breaks cleared!'
+			try:
+				reply = raw_input('Clear all breaks? ')
+			except EOFError:
+				reply = 'no'
+			reply = string.lower(string.strip(reply))
+			if reply in ('y', 'yes'):
+				self.breaks = {}
 			return
 		try:
 			lineno = int(eval(arg))
@@ -222,52 +382,63 @@ class Pdb(Cmd):
 		filename = self.curframe.f_code.co_filename
 		try:
 			self.breaks[filename].remove(lineno)
-			if self.breaks[filename] == []:
-				del self.breaks[filename]
 		except (ValueError, KeyError):
 			print '*** There is no break there!'
 			return
+		if not self.breaks[filename]:
+			del self.breaks[filename]
+	do_cl = do_clear # 'c' is already an abbreviation for 'continue'
 	
 	def do_where(self, arg):
 		self.printtb()
 	do_w = do_where
 	
 	def do_up(self, arg):
-		if not self.stack: print '*** Top'
-		else:
-			self.curframe = self.stack[-1]
-			self.lineno = None
-			del self.stack[-1]
-			self.printwhere(self.curframe)
-	do_u = do_up
-	
-	def do_down(self, arg):
 		if self.curframe == self.botframe or \
-			not self.curframe.f_back: print '*** Bottom'
+			not self.curframe.f_back: print '*** Top'
 		else:
 			self.stack.append(self.curframe)
 			self.curframe = self.curframe.f_back
 			self.lineno = None
 			self.printwhere(self.curframe)
+	do_u = do_up
+	
+	def do_down(self, arg):
+		if not self.stack: print '*** Bottom'
+		else:
+			self.curframe = self.stack[-1]
+			self.lineno = None
+			del self.stack[-1]
+			self.printwhere(self.curframe)
 	do_d = do_down
 	
 	def do_step(self, arg):
-		raise PdbDone, 'step'
+		self.stopframe = None
+		return 1
 	do_s = do_step
 	
 	def do_next(self, arg):
-		raise PdbDone, 'next'
+		self.stopframe = self.curframe
+		return 1
 	do_n = do_next
 	
+	def do_return(self, arg):
+		self.stopframe = self.curframe.f_back
+		return 1
+	do_r = do_return
+	
 	def do_continue(self, arg):
-		raise PdbDone, 'continue'
+		self.stopframe = self.botframe
+		return 1
 	do_c = do_cont = do_continue
 	
 	def do_quit(self, arg):
-		raise PdbDone, 'quit'
+		self.stopframe = self.botframe
+		raise PdbQuit
 	do_q = do_quit
 	
 	def do_list(self, arg):
+		self.lastcmd = 'list'
 		last = None
 		if arg:
 			try:
@@ -313,6 +484,25 @@ class Pdb(Cmd):
 		except KeyboardInterrupt:
 			pass
 	do_l = do_list
+	
+	def do_args(self, arg):
+		try:
+			value = eval('__args__', self.curframe.f_globals, \
+					self.curframe.f_locals)
+		except:
+			print '***', sys.exc_type + ':', `sys.exc_value`
+			return
+		print `value`
+	do_a = do_args
+	
+	def do_p(self, arg):
+		try:
+			value = eval(arg, self.curframe.f_globals, \
+					self.curframe.f_locals)
+		except:
+			print '***', sys.exc_type + ':', `sys.exc_value`
+			return
+		print `value`
 
 	# Print a traceback starting at a given stack frame
 	# Note that it is printed upside-down with respect
@@ -378,7 +568,7 @@ def bar(a):
 
 def test():
 	linecache.checkcache()
-	Pdb().init().run('foo(12)')
+	Pdb().init().run('foo(12)\n')
 
 
 # --------------------- main ---------------------
@@ -396,6 +586,9 @@ def main():
 			sys.exit(2)
 		del sys.argv[0]
 		sys.path.insert(0, head)
-		Pdb().init().run('import ' + tail[:-3])
+		run('import ' + tail[:-3])
 	else:
-		Pdb().init().run('')
+		run('')
+
+def run(statement):
+	Pdb().init().run(statement)
