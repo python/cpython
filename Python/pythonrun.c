@@ -77,7 +77,7 @@ int Py_DebugFlag; /* Needed by parser.c */
 int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 int Py_NoSiteFlag; /* Suppress 'import site' */
-int Py_UseClassExceptionsFlag; /* Needed by bltinmodule.c */
+int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c */
 
 static int initialized = 0;
 
