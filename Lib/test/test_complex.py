@@ -56,6 +56,27 @@ for i in range(100):
     test_div(complex(random(), random()),
              complex(random(), random()))
 
+for i in range(100):
+    if not complex(random() + 1e-6, random() + 1e-6):
+        raise TestFailed("complex(random(), random()) should be true")
+
+if complex(0.0, 0.0):
+    raise TestFailed("complex(0.0, 0.0) should be false")
+
+try:
+    print int(5+3j)
+except TypeError:
+    pass
+else:
+    raise TestFailed("int(complex()) didn't raise TypeError")
+
+try:
+    print float(5+3j)
+except TypeError:
+    pass
+else:
+    raise TestFailed("float(complex()) didn't raise TypeError")
+
 try:
     z = 1.0 / (0+0j)
 except ZeroDivisionError:
