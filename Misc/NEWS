@@ -117,6 +117,8 @@ Core
 
 Library
 
+- calendar.py uses month and day names based on the current locale.
+
 - strop is now *really* obsolete (this was announced before with 1.6),
   and issues DeprecationWarning when used (except for the four items
   that are still imported into string.py).
