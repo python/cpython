@@ -858,7 +858,7 @@ find_module(name, path, buf, buflen, p_fp)
 	}
 	else if (PyString_Check(path)) {
 		/* Submodule of frozen package */
-		if (PyString_Size(path) + 1 + strlen(name) >= buflen) {
+		if (PyString_Size(path) + 1 + strlen(name) >= (unsigned int)buflen) {
 			PyErr_SetString(PyExc_ImportError,
 					"full frozen module name too long");
 			return NULL;
