@@ -445,13 +445,15 @@ class Getattr(Node):
 class CallFunc(Node):
   nodes['call_func'] = 'CallFunc'
 
-  def __init__(self, node, args):
+  def __init__(self, node, args, star_args = None, dstar_args = None):
     self.node = node
     self.args = args
-    self._children = ('call_func', node, args)
+    self.star_args = star_args
+    self.dstar_args = dstar_args
+    self._children = ('call_func', node, args, star_args, dstar_args)
 
   def __repr__(self):
-    return "CallFunc(%s,%s)" % self._children[1:]
+    return "CallFunc(%s,%s,*%s, **%s)" % self._children[1:]
 
 class Keyword(Node):
   nodes['keyword'] = 'Keyword'

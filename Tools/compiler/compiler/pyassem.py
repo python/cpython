@@ -149,7 +149,6 @@ class PyFlowGraph(FlowGraph):
 	    self.flags = CO_OPTIMIZED | CO_NEWLOCALS 
 	else:
 	    self.flags = 0
-	self.firstlineno = None
 	self.consts = []
 	self.names = []
         self.varnames = list(args) or []
@@ -314,8 +313,6 @@ class PyFlowGraph(FlowGraph):
                 oparg = t[1]
                 if opname == "SET_LINENO":
                     lnotab.nextLine(oparg)
-                    if self.firstlineno is None:
-                        self.firstlineno = oparg
                 hi, lo = twobyte(oparg)
 		try:
 		    lnotab.addCode(self.opnum[opname], lo, hi)
@@ -342,7 +339,7 @@ class PyFlowGraph(FlowGraph):
         return new.code(argcount, nlocals, self.stacksize, self.flags,
                         self.lnotab.getCode(), self.getConsts(),
                         tuple(self.names), tuple(self.varnames),
-                        self.filename, self.name, self.firstlineno,
+                        self.filename, self.name, self.lnotab.firstline,
                         self.lnotab.getTable())
 
     def getConsts(self):
@@ -464,14 +461,16 @@ class StackDepthTracker:
                 if depth > maxDepth:
                     maxDepth = depth
                 # now check patterns
-                for pat, delta in self.patterns:
+                for pat, pat_delta in self.patterns:
                     if opname[:len(pat)] == pat:
+                        delta = pat_delta
                         depth = depth + delta
                         break
                 # if we still haven't found a match
                 if delta == 0:
-                    meth = getattr(self, opname)
-                    depth = depth + meth(i[1])
+                    meth = getattr(self, opname, None)
+                    if meth is not None:
+                        depth = depth + meth(i[1])
             if depth < 0:
                 depth = 0
         return maxDepth
@@ -527,6 +526,12 @@ class StackDepthTracker:
     def CALL_FUNCTION(self, argc):
         hi, lo = divmod(argc, 256)
         return lo + hi * 2
+    def CALL_FUNCTION_VAR(self, argc):
+        return self.CALL_FUNCTION(argc)+1
+    def CALL_FUNCTION_KW(self, argc):
+        return self.CALL_FUNCTION(argc)+1
+    def CALL_FUNCTION_VAR_KW(self, argc):
+        return self.CALL_FUNCTION(argc)+2
     def MAKE_FUNCTION(self, argc):
         return -argc
     def BUILD_SLICE(self, argc):
