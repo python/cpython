@@ -12,172 +12,172 @@ _code = 'tpnm'
 
 class Type_Names_Suite_Events:
 
-	pass
+    pass
 
 
 class PostScript_picture(aetools.ComponentItem):
-	"""PostScript picture -  """
-	want = 'EPS '
+    """PostScript picture -  """
+    want = 'EPS '
 
 class point(aetools.ComponentItem):
-	"""point - point coordinates """
-	want = 'QDpt'
+    """point - point coordinates """
+    want = 'QDpt'
 
 class string(aetools.ComponentItem):
-	"""string - a string of characters """
-	want = 'TEXT'
+    """string - a string of characters """
+    want = 'TEXT'
 
 plain_text = string
 
 plain_text = string
 
 class TIFF_picture(aetools.ComponentItem):
-	"""TIFF picture -  """
-	want = 'TIFF'
+    """TIFF picture -  """
+    want = 'TIFF'
 
 class application_dictionary(aetools.ComponentItem):
-	"""application dictionary -  """
-	want = 'aete'
+    """application dictionary -  """
+    want = 'aete'
 
 class system_dictionary(aetools.ComponentItem):
-	"""system dictionary -  """
-	want = 'aeut'
+    """system dictionary -  """
+    want = 'aeut'
 
 class color_table(aetools.ComponentItem):
-	"""color table -  """
-	want = 'clrt'
+    """color table -  """
+    want = 'clrt'
 
 class menu_item(aetools.ComponentItem):
-	"""menu item -  """
-	want = 'cmen'
+    """menu item -  """
+    want = 'cmen'
 
 class menu(aetools.ComponentItem):
-	"""menu -  """
-	want = 'cmnu'
+    """menu -  """
+    want = 'cmnu'
 
 class double_integer(aetools.ComponentItem):
-	"""double integer -  """
-	want = 'comp'
+    """double integer -  """
+    want = 'comp'
 
 class type_element_info(aetools.ComponentItem):
-	"""type element info -  """
-	want = 'elin'
+    """type element info -  """
+    want = 'elin'
 
 class type_event_info(aetools.ComponentItem):
-	"""type event info - information about an event """
-	want = 'evin'
+    """type event info - information about an event """
+    want = 'evin'
 
 class extended_real(aetools.ComponentItem):
-	"""extended real -  """
-	want = 'exte'
+    """extended real -  """
+    want = 'exte'
 
 class fixed(aetools.ComponentItem):
-	"""fixed - a real number """
-	want = 'fixd'
+    """fixed - a real number """
+    want = 'fixd'
 
 class fixed_point(aetools.ComponentItem):
-	"""fixed point -  """
-	want = 'fpnt'
+    """fixed point -  """
+    want = 'fpnt'
 
 class fixed_rectangle(aetools.ComponentItem):
-	"""fixed rectangle -  """
-	want = 'frct'
+    """fixed rectangle -  """
+    want = 'frct'
 
 class type_class_info(aetools.ComponentItem):
-	"""type class info - information about properties and elements of a class """
-	want = 'gcli'
+    """type class info - information about properties and elements of a class """
+    want = 'gcli'
 
 class location_reference(aetools.ComponentItem):
-	"""location reference -  """
-	want = 'insl'
+    """location reference -  """
+    want = 'insl'
 
 class long_fixed_point(aetools.ComponentItem):
-	"""long fixed point -  """
-	want = 'lfpt'
+    """long fixed point -  """
+    want = 'lfpt'
 
 class long_fixed_rectangle(aetools.ComponentItem):
-	"""long fixed rectangle -  """
-	want = 'lfrc'
+    """long fixed rectangle -  """
+    want = 'lfrc'
 
 class long_fixed(aetools.ComponentItem):
-	"""long fixed -  """
-	want = 'lfxd'
+    """long fixed -  """
+    want = 'lfxd'
 
 class long_point(aetools.ComponentItem):
-	"""long point -  """
-	want = 'lpnt'
+    """long point -  """
+    want = 'lpnt'
 
 class long_rectangle(aetools.ComponentItem):
-	"""long rectangle -  """
-	want = 'lrct'
+    """long rectangle -  """
+    want = 'lrct'
 
 class machine_location(aetools.ComponentItem):
-	"""machine location -  """
-	want = 'mLoc'
+    """machine location -  """
+    want = 'mLoc'
 
 class unsigned_integer(aetools.ComponentItem):
-	"""unsigned integer -  """
-	want = 'magn'
+    """unsigned integer -  """
+    want = 'magn'
 
 class null(aetools.ComponentItem):
-	"""null -  """
-	want = 'null'
+    """null -  """
+    want = 'null'
 
 class type_property_info(aetools.ComponentItem):
-	"""type property info -  """
-	want = 'pinf'
+    """type property info -  """
+    want = 'pinf'
 
 class type_parameter_info(aetools.ComponentItem):
-	"""type parameter info -  """
-	want = 'pmin'
+    """type parameter info -  """
+    want = 'pmin'
 
 class bounding_rectangle(aetools.ComponentItem):
-	"""bounding rectangle - bounding rectangle """
-	want = 'qdrt'
+    """bounding rectangle - bounding rectangle """
+    want = 'qdrt'
 
 class small_integer(aetools.ComponentItem):
-	"""small integer -  """
-	want = 'shor'
+    """small integer -  """
+    want = 'shor'
 
 class small_real(aetools.ComponentItem):
-	"""small real -  """
-	want = 'sing'
+    """small real -  """
+    want = 'sing'
 
 class scrap_styles(aetools.ComponentItem):
-	"""scrap styles -  """
-	want = 'styl'
+    """scrap styles -  """
+    want = 'styl'
 
 class type_suite_info(aetools.ComponentItem):
-	"""type suite info -  """
-	want = 'suin'
+    """type suite info -  """
+    want = 'suin'
 
 class target_id(aetools.ComponentItem):
-	"""target id -  """
-	want = 'targ'
+    """target id -  """
+    want = 'targ'
 
 class dash_style(aetools.ComponentItem):
-	"""dash style -  """
-	want = 'tdas'
+    """dash style -  """
+    want = 'tdas'
 
 class pixel_map_record(aetools.ComponentItem):
-	"""pixel map record -  """
-	want = 'tpmm'
+    """pixel map record -  """
+    want = 'tpmm'
 
 class RGB16_color(aetools.ComponentItem):
-	"""RGB16 color -  """
-	want = 'tr16'
+    """RGB16 color -  """
+    want = 'tr16'
 
 class RGB96_color(aetools.ComponentItem):
-	"""RGB96 color -  """
-	want = 'tr96'
+    """RGB96 color -  """
+    want = 'tr96'
 
 class rotation(aetools.ComponentItem):
-	"""rotation -  """
-	want = 'trot'
+    """rotation -  """
+    want = 'trot'
 
 class version(aetools.ComponentItem):
-	"""version -  """
-	want = 'vers'
+    """version -  """
+    want = 'vers'
 PostScript_picture._superclassnames = []
 PostScript_picture._privpropdict = {
 }
@@ -383,44 +383,53 @@ version._privelemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'EPS ' : PostScript_picture,
-	'QDpt' : point,
-	'TEXT' : string,
-	'TIFF' : TIFF_picture,
-	'aete' : application_dictionary,
-	'aeut' : system_dictionary,
-	'clrt' : color_table,
-	'cmen' : menu_item,
-	'cmnu' : menu,
-	'comp' : double_integer,
-	'elin' : type_element_info,
-	'evin' : type_event_info,
-	'exte' : extended_real,
-	'fixd' : fixed,
-	'fpnt' : fixed_point,
-	'frct' : fixed_rectangle,
-	'gcli' : type_class_info,
-	'insl' : location_reference,
-	'lfpt' : long_fixed_point,
-	'lfrc' : long_fixed_rectangle,
-	'lfxd' : long_fixed,
-	'lpnt' : long_point,
-	'lrct' : long_rectangle,
-	'mLoc' : machine_location,
-	'magn' : unsigned_integer,
-	'null' : null,
-	'pinf' : type_property_info,
-	'pmin' : type_parameter_info,
-	'qdrt' : bounding_rectangle,
-	'shor' : small_integer,
-	'sing' : small_real,
-	'styl' : scrap_styles,
-	'suin' : type_suite_info,
-	'targ' : target_id,
-	'tdas' : dash_style,
-	'tpmm' : pixel_map_record,
-	'tr16' : RGB16_color,
-	'tr96' : RGB96_color,
-	'trot' : rotation,
-	'vers' : version,
+    'EPS ' : PostScript_picture,
+    'QDpt' : point,
+    'TEXT' : string,
+    'TIFF' : TIFF_picture,
+    'aete' : application_dictionary,
+    'aeut' : system_dictionary,
+    'clrt' : color_table,
+    'cmen' : menu_item,
+    'cmnu' : menu,
+    'comp' : double_integer,
+    'elin' : type_element_info,
+    'evin' : type_event_info,
+    'exte' : extended_real,
+    'fixd' : fixed,
+    'fpnt' : fixed_point,
+    'frct' : fixed_rectangle,
+    'gcli' : type_class_info,
+    'insl' : location_reference,
+    'lfpt' : long_fixed_point,
+    'lfrc' : long_fixed_rectangle,
+    'lfxd' : long_fixed,
+    'lpnt' : long_point,
+    'lrct' : long_rectangle,
+    'mLoc' : machine_location,
+    'magn' : unsigned_integer,
+    'null' : null,
+    'pinf' : type_property_info,
+    'pmin' : type_parameter_info,
+    'qdrt' : bounding_rectangle,
+    'shor' : small_integer,
+    'sing' : small_real,
+    'styl' : scrap_styles,
+    'suin' : type_suite_info,
+    'targ' : target_id,
+    'tdas' : dash_style,
+    'tpmm' : pixel_map_record,
+    'tr16' : RGB16_color,
+    'tr96' : RGB96_color,
+    'trot' : rotation,
+    'vers' : version,
+}
+
+_propdeclarations = {
+}
+
+_compdeclarations = {
+}
+
+_enumdeclarations = {
 }
