@@ -22,13 +22,13 @@ class ChipWidget(Pmw.MegaWidget):
     _HEIGHT = 80
 
     def __init__(self, parent=None, **kw):
-	optionsdefs = (('chip_borderwidth', 2,            None),
-		       ('chip_width',       self._WIDTH,  None),
-		       ('chip_height',      self._HEIGHT, None),
-		       ('label_text',       'Color',      None),
-		       ('color',            'blue',       self.__set_color),
-		       )
-	self.defineoptions(kw, optionsdefs)
+	options = (('chip_borderwidth', 2,            None),
+		   ('chip_width',       self._WIDTH,  None),
+		   ('chip_height',      self._HEIGHT, None),
+		   ('label_text',       'Color',      None),
+		   ('color',            'blue',       self.__set_color),
+		   )
+	self.defineoptions(kw, options)
 
 	# initialize base class -- after defining options
 	Pmw.MegaWidget.__init__(self, parent)
