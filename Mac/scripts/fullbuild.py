@@ -308,7 +308,6 @@ def main():
 		routine(dir, arg, list)
 		
 	print "All done!"
-	sys.exit(1)	
 	
 if __name__ == '__main__':
 	main()
