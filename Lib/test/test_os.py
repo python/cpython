@@ -111,7 +111,7 @@ class StatAttributeTests(unittest.TestCase):
         try:
             result.st_rdev = 1
             self.fail("No exception thrown")
-        except TypeError:
+        except (AttributeError, TypeError):
             pass
 
         try:
