@@ -62,8 +62,6 @@ static PyObject *ReopError;	/* Exception */
 #define BEGINNING_OF_BUFFER	7
 #define END_OF_BUFFER		8
 
-static unsigned char *reop_casefold;
-
 static PyObject *
 makeresult(regs, num_regs)
 	struct re_registers *regs;

@@ -692,7 +692,6 @@ static int
 init_builtin(name)
 	char *name;
 {
-	PyInterpreterState *interp = PyThreadState_Get()->interp;
 	struct _inittab *p;
 	PyObject *mod;
 

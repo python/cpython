@@ -279,6 +279,7 @@ all_ins(d)
         if (ins(d, "LOCK_EX", (long)LOCK_EX)) return -1;
         if (ins(d, "LOCK_NB", (long)LOCK_NB)) return -1;
         if (ins(d, "LOCK_UN", (long)LOCK_UN)) return -1;
+	return 0;
 }
 
 void
