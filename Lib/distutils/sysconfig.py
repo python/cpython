@@ -153,6 +153,27 @@ def _init_nt():
     g['exec_prefix'] = exec_prefix
 
 
+def _init_mac():
+    """Initialize the module as appropriate for Macintosh systems"""
+    g = globals()
+    # load the installed config.h (what if not installed? - still need to
+    # be able to install packages which don't require compilation)
+    parse_config_h(open(
+            os.path.join(sys.exec_prefix, "Mac", "Include", "config.h")), g)
+    # set basic install directories
+    g['LIBDEST']=os.path.join(sys.exec_prefix, "Lib")
+    g['BINLIBDEST']= os.path.join(sys.exec_prefix, "Mac", "Plugins")
+
+    # XXX hmmm.. a normal install puts include files here
+    g['INCLUDEPY'] = os.path.join (sys.prefix, 'Include' )
+
+    g['SO'] = '.ppc.slb'
+    g['exec_prefix'] = sys.exec_prefix
+    print sys.prefix
+    g['install_lib'] = os.path.join(sys.exec_prefix, "Lib")
+    g['install_platlib'] = os.path.join(sys.exec_prefix, "Mac", "Lib")
+
+
 try:
     exec "_init_" + os.name
 except NameError:
@@ -164,3 +185,4 @@ else:
 
 del _init_posix
 del _init_nt
+del _init_mac
