@@ -1,2 +1,5 @@
 test_unicodedata
-Testing unicodedata module... done.
+Testing Unicode Database...
+Methods: b88684df19fca8c3d0ab31f040dd8de89f7836fe
+Functions: 5abd7e976848725e58f5834a0e5e37615f40d3a2
+API: ok
