@@ -14,8 +14,9 @@
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
-extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
+extern PyObject *OptResObj_New(Handle);
+extern int OptResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
@@ -130,8 +131,15 @@ static PyObject *GrafObj_getattr(self, name)
 {
 	if ( strcmp(name, "device") == 0 )
 				return PyInt_FromLong((long)self->ob_itself->device);
-			if ( strcmp(name, "portBits") == 0 )
-				return BMObj_New(&self->ob_itself->portBits);
+			if ( strcmp(name, "portBits") == 0 ) {
+				CGrafPtr itself_color = (CGrafPtr)self->ob_itself;
+				
+				if ( (itself_color->portVersion&0xc000) == 0xc000 )
+					/* XXXX Do we need HLock() stuff here?? */
+					return BMObj_New((BitMapPtr)*itself_color->portPixMap);
+				else
+					return BMObj_New(&self->ob_itself->portBits);
+			}
 			if ( strcmp(name, "portRect") == 0 )
 				return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
 			/* XXXX Add more, as needed */
@@ -220,6 +228,10 @@ static PyObject *BMObj_getattr(self, name)
 			if ( strcmp(name, "bounds") == 0 )
 				return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->bounds);
 			/* XXXX Add more, as needed */
+			if ( strcmp(name, "bitmap_data") == 0 )
+				return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(BitMap));
+			if ( strcmp(name, "pixmap_data") == 0 )
+				return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));
 			
 	return Py_FindMethodInChain(&BMObj_chain, (PyObject *)self, name);
 }
@@ -1525,7 +1537,7 @@ static PyObject *Qd_CopyBits(_self, _args)
 	                      PyMac_GetRect, &srcRect,
 	                      PyMac_GetRect, &dstRect,
 	                      &mode,
-	                      ResObj_Convert, &maskRgn))
+	                      OptResObj_Convert, &maskRgn))
 		return NULL;
 	CopyBits(srcBits,
 	         dstBits,
@@ -1978,7 +1990,7 @@ static PyObject *Qd_StdBits(_self, _args)
 	                      PyMac_GetRect, &srcRect,
 	                      PyMac_GetRect, &dstRect,
 	                      &mode,
-	                      ResObj_Convert, &maskRgn))
+	                      OptResObj_Convert, &maskRgn))
 		return NULL;
 	StdBits(srcBits,
 	        &srcRect,
@@ -2721,7 +2733,7 @@ static PyObject *Qd_CopyDeepMask(_self, _args)
 	                      PyMac_GetRect, &maskRect,
 	                      PyMac_GetRect, &dstRect,
 	                      &mode,
-	                      ResObj_Convert, &maskRgn))
+	                      OptResObj_Convert, &maskRgn))
 		return NULL;
 	CopyDeepMask(srcBits,
 	             maskBits,
@@ -3071,6 +3083,31 @@ static PyObject *Qd_BitMap(_self, _args)
 
 }
 
+static PyObject *Qd_RawBitMap(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	BitMap *ptr;
+	PyObject *source;
+
+	if ( !PyArg_ParseTuple(_args, "O!", &PyString_Type, &source) )
+		return NULL;
+	if ( PyString_Size(source) != sizeof(BitMap) && PyString_Size(source) != sizeof(PixMap) ) {
+		PyErr_BadArgument();
+		return NULL;
+	}
+	ptr = (BitMapPtr)PyString_AsString(source);
+	if ( (_res = BMObj_New(ptr)) == NULL ) {
+		return NULL;
+	}
+	((BitMapObject *)_res)->referred_object = source;
+	Py_INCREF(source);
+	return _res;
+
+}
+
 static PyMethodDef Qd_methods[] = {
 	{"SetPort", (PyCFunction)Qd_SetPort, 1,
 	 "(GrafPtr port) -> None"},
@@ -3394,6 +3431,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(Fixed extra) -> None"},
 	{"BitMap", (PyCFunction)Qd_BitMap, 1,
 	 "Take (string, int, Rect) argument and create BitMap"},
+	{"RawBitMap", (PyCFunction)Qd_RawBitMap, 1,
+	 "Take string BitMap and turn into BitMap object"},
 	{NULL, NULL, 0}
 };
 

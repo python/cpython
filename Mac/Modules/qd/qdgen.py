@@ -423,7 +423,7 @@ f = Function(void, 'CopyBits',
     (Rect_ptr, 'srcRect', InMode),
     (Rect_ptr, 'dstRect', InMode),
     (short, 'mode', InMode),
-    (RgnHandle, 'maskRgn', InMode),
+    (OptRgnHandle, 'maskRgn', InMode),
 )
 functions.append(f)
 
@@ -571,7 +571,7 @@ f = Function(void, 'StdBits',
     (Rect_ptr, 'srcRect', InMode),
     (Rect_ptr, 'dstRect', InMode),
     (short, 'mode', InMode),
-    (RgnHandle, 'maskRgn', InMode),
+    (OptRgnHandle, 'maskRgn', InMode),
 )
 functions.append(f)
 
@@ -817,7 +817,7 @@ f = Function(void, 'CopyDeepMask',
     (Rect_ptr, 'maskRect', InMode),
     (Rect_ptr, 'dstRect', InMode),
     (short, 'mode', InMode),
-    (RgnHandle, 'maskRgn', InMode),
+    (OptRgnHandle, 'maskRgn', InMode),
 )
 functions.append(f)
 

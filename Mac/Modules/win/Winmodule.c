@@ -14,8 +14,9 @@
 #include <Controls.h>
 
 extern PyObject *ResObj_New(Handle);
-extern PyObject *ResObj_OptNew(Handle);
 extern int ResObj_Convert(PyObject *, Handle *);
+extern PyObject *OptResObj_New(Handle);
+extern int OptResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
@@ -35,6 +36,9 @@ extern int CtlObj_Convert(PyObject *, ControlHandle *);
 
 extern PyObject *GrafObj_New(GrafPtr);
 extern int GrafObj_Convert(PyObject *, GrafPtr *);
+
+extern PyObject *BMObj_New(BitMapPtr);
+extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 

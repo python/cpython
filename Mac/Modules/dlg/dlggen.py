@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Dialogs.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Dialogs.h'
 
 f = Function(DialogRef, 'NewDialog',
     (NullStorage, 'wStorage', InMode),
