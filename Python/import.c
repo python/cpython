@@ -152,7 +152,7 @@ get_module(m, name, m_ret)
 		if (m == NULL)
 			err_setstr(NameError, name);
 		else
-			err_setstr(RuntimeError, "no module source file");
+			err_setstr(IOError, "no module source file");
 		return NULL;
 	}
 	/* Get mtime -- always useful */
