@@ -346,9 +346,7 @@ class Distribution:
                         opt_dict[opt] = (filename, val)
 
             # Make the ConfigParser forget everything (so we retain
-            # the original filenames that options come from) -- gag,
-            # retch, puke -- another good reason for a distutils-
-            # specific config parser (sigh...)
+            # the original filenames that options come from)
             parser.__init__()
 
         # If there was a "global" section in the config file, use it
