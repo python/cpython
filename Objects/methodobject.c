@@ -78,7 +78,6 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 	switch (flags) {
 	case METH_VARARGS:
 		return (*meth)(self, arg);
-		break;
 	case METH_NOARGS:
 		if (size == 0)
 			return (*meth)(self, NULL);
@@ -86,7 +85,6 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			     "%.200s() takes no arguments (%d given)",
 			     f->m_ml->ml_name, size);
 		return NULL;
-		break;
 	case METH_O:
 		if (size == 1)
 			return (*meth)(self, PyTuple_GET_ITEM(arg, 0));
@@ -94,7 +92,6 @@ PyCFunction_Call(PyObject *func, PyObject *arg, PyObject *kw)
 			     "%.200s() takes exactly one argument (%d given)",
 			     f->m_ml->ml_name, size);
 		return NULL;
-		break;
 	case METH_OLDARGS:
 		/* the really old style */
 		if (size == 1)
