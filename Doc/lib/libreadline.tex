@@ -1,0 +1,90 @@
+\section{\module{readline} ---
+         Expose GNU readline functionality to Python}
+
+\declaremodule{builtin}{readline}
+\sectionauthor{Skip Montanaro}{skip@mojam.com}
+
+\modulesynopsis{GNU Readline in Python.}
+
+\platform{UNIX}
+
+The \module{readline} module defines a number of functions used either
+directly or from the \module{rlcompleter} module to facilitate completion
+and history file read and write from the Python interpreter.
+
+The \module{readline} module defines the following functions:
+
+\begin{funcdesc}{parse_and_bind}{string}
+Parse and execute single line of a readline init file.
+\end{funcdesc}
+
+\begin{funcdesc}{get_line_buffer}{}
+Return the current contents of the line buffer.
+\end{funcdesc}
+
+\begin{funcdesc}{insert_text}{string}
+Insert text into the command line.
+\end{funcdesc}
+
+\begin{funcdesc}{read_init_file}{\optional{filename}}
+Parse a readline initialization file.
+The default filename is the last filename used.
+\end{funcdesc}
+
+\begin{funcdesc}{read_history_file}{\optional{filename}}
+Load a readline history file.
+The default filename is ~/.history.
+\end{funcdesc}
+
+\begin{funcdesc}{write_history_file}{\optional{filename}}
+Save a readline history file.
+The default filename is ~/.history.
+\end{funcdesc}
+
+\begin{funcdesc}{set_completer}{\optional{function}}
+Set or remove the completer function.
+The function is called as function(text, state),
+\code{for i in [0, 1, 2, ...]} until it returns a non-string.
+It should return the next possible completion starting with 'text'.
+\end{funcdesc}
+
+\begin{funcdesc}{get_begidx}{}
+Get the beginning index of the readline tab-completion scope.
+\end{funcdesc}
+
+\begin{funcdesc}{get_endidx}{}
+Get the ending index of the readline tab-completion scope.
+\end{funcdesc}
+
+\begin{funcdesc}{set_completer_delims}{string}
+Set the readline word delimiters for tab-completion.
+\end{funcdesc}
+
+\begin{funcdesc}{get_completer_delims}{}
+Get the readline word delimiters for tab-completion.
+\end{funcdesc}
+
+\subsection{Example}
+\nodename{Readline Example}
+
+The following example demonstrates how to use the \module{readline} module's
+history reading and writing functions to automatically load and save a
+history file named \code{.pyhist} from the user's home directory.  The code
+below would normally be executed automatically during interactive sessions
+from the user's PYTHONSTARTUP file.
+
+\begin{verbatim}
+>>> import os
+>>> histfile = os.path.join(os.environ["HOME"], ".pyhist")
+>>> try:
+>>>     readline.read_history_file(histfile)
+>>> except IOError:
+>>>     pass
+>>> import atexit
+>>> atexit.register(readline.write_history_file, histfile)
+>>> del os, histfile
+\end{verbatim}
+
+\begin{seealso}
+  \seemodule{rlcompleter}{completion of Python identifiers}
+\end{seealso}
