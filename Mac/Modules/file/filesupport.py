@@ -57,8 +57,8 @@ class FSCatalogInfoAndBitmapType(InputOnlyType):
 		InputOnlyType.__init__(self, "BUG", "BUG")
 		
 	def declare(self, name):
-		Output("PyObject *%s__object;", name)
-		Output("FSCatalogInfoBitname %s__bitmap;", name)
+		Output("PyObject *%s__object = NULL;", name)
+		Output("FSCatalogInfoBitmap %s__bitmap = 0;", name)
 		Output("FSCatalogInfo %s;", name)
 		
 	def getargsFormat(self):
@@ -68,10 +68,13 @@ class FSCatalogInfoAndBitmapType(InputOnlyType):
 		return "%s__bitmap, %s__object"%(name, name)
 		
 	def getargsCheck(self, name):
-		Output("convert_FSCatalogInfo(%s__object, %s__bitmap, %s);", name, name, name)
+		Output("if (!convert_FSCatalogInfo(%s__object, %s__bitmap, &%s)) return NULL;", name, name, name)
 		
+	def passInput(self, name):
+		return "%s__bitmap, &%s"% (name, name)
+
 	def passOutput(self, name):
-		return "%s__bitmap, %s"% (name, name)
+		return "%s__bitmap, &%s"% (name, name)
 		
 	def mkvalueFormat(self):
 		return "O"
@@ -80,7 +83,7 @@ class FSCatalogInfoAndBitmapType(InputOnlyType):
 		return "%s__object" % (name)
 		
 	def xxxxmkvalueCheck(self, name):
-		Output("%s__object = new_FSCatalogInfo(%s__bitmap, %s);", name, name)
+		Output("if ((%s__object = new_FSCatalogInfo(%s__bitmap, &%s)) == NULL) return NULL;", name, name)
 	
 class FSCatalogInfoAndBitmap_inType(FSCatalogInfoAndBitmapType, InputOnlyMixIn):
 	
@@ -107,8 +110,8 @@ OptFSSpecPtr = OptionalFSxxxType("FSSpec", "BUG", "myPyMac_GetOptFSSpecPtr")
 FSRef = OpaqueType("FSRef", "FSRef")
 FSRef_ptr = OpaqueType("FSRef", "FSRef")
 OptFSRefPtr = OptionalFSxxxType("FSRef", "BUG", "myPyMac_GetOptFSRefPtr")
-FSCatalogInfoAndBitmap_in = FSCatalogInfoAndBitmap_inType()
-FSCatalogInfoAndBitmap_out = FSCatalogInfoAndBitmap_outType()
+FSCatalogInfo = OpaqueType("FSCatalogInfo", "FSCatalogInfo")
+FSCatalogInfo_ptr = OpaqueType("FSCatalogInfo", "FSCatalogInfo")
 
 # To be done:
 #CatPositionRec
@@ -153,6 +156,21 @@ static int FInfo_Convert(PyObject *v, FInfo *p_itself);
 static int Alias_Convert(PyObject *v, AliasHandle *p_itself);
 
 /*
+** UTCDateTime records
+*/
+static int
+UTCDateTime_Convert(PyObject *v, UTCDateTime *ptr)
+{
+	return PyArg_Parse(v, "(HlH)", &ptr->highSeconds, &ptr->lowSeconds, &ptr->fraction);
+}
+
+static PyObject *
+UTCDateTime_New(UTCDateTime *ptr)
+{
+	return Py_BuildValue("(HlH)", ptr->highSeconds, ptr->lowSeconds, ptr->fraction);
+}
+
+/*
 ** Optional fsspec and fsref pointers. None will pass NULL
 */
 static int
@@ -184,7 +202,6 @@ PyMac_BuildHFSUniStr255(HFSUniStr255 *itself)
 
 	return Py_BuildValue("u#", itself->unicode, itself->length);
 }
-
 """
 
 finalstuff = finalstuff + """
@@ -305,6 +322,163 @@ PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSRef, PyMac_GetFSRef);
 execfile(string.lower(MODPREFIX) + 'typetest.py')
 
 # Our object types:
+class FSCatalogInfoDefinition(PEP253Mixin, ObjectDefinition):
+	getsetlist = [
+		("nodeFlags",
+		 "return Py_BuildValue(\"H\", self->ob_itself.nodeFlags);",
+		 "return PyArg_Parse(v, \"H\", &self->ob_itself.nodeFlags)-1;",
+		 None
+		),
+		("volume",
+		 "return Py_BuildValue(\"h\", self->ob_itself.volume);",
+		 "return PyArg_Parse(v, \"h\", &self->ob_itself.volume)-1;",
+		 None
+		),
+		("parentDirID",
+		 "return Py_BuildValue(\"l\", self->ob_itself.parentDirID);",
+		 "return PyArg_Parse(v, \"l\", &self->ob_itself.parentDirID)-1;",
+		 None
+		),
+		("nodeID",
+		 "return Py_BuildValue(\"l\", self->ob_itself.nodeID);",
+		 "return PyArg_Parse(v, \"l\", &self->ob_itself.nodeID)-1;",
+		 None
+		),
+		("createDate",
+		 "return Py_BuildValue(\"O&\", UTCDateTime_New, &self->ob_itself.createDate);",
+		 "return PyArg_Parse(v, \"O&\", UTCDateTime_Convert, &self->ob_itself.createDate)-1;",
+		 None
+		),
+		("contentModDate",
+		 "return Py_BuildValue(\"O&\", UTCDateTime_New, &self->ob_itself.contentModDate);",
+		 "return PyArg_Parse(v, \"O&\", UTCDateTime_Convert, &self->ob_itself.contentModDate)-1;",
+		 None
+		),
+		("attributeModDate",
+		 "return Py_BuildValue(\"O&\", UTCDateTime_New, &self->ob_itself.attributeModDate);",
+		 "return PyArg_Parse(v, \"O&\", UTCDateTime_Convert, &self->ob_itself.attributeModDate)-1;",
+		 None
+		),
+		("accessDate",
+		 "return Py_BuildValue(\"O&\", UTCDateTime_New, &self->ob_itself.accessDate);",
+		 "return PyArg_Parse(v, \"O&\", UTCDateTime_Convert, &self->ob_itself.accessDate)-1;",
+		 None
+		),
+		("backupDate",
+		 "return Py_BuildValue(\"O&\", UTCDateTime_New, &self->ob_itself.backupDate);",
+		 "return PyArg_Parse(v, \"O&\", UTCDateTime_Convert, &self->ob_itself.backupDate)-1;",
+		 None
+		),
+		("permissions",
+		 "return Py_BuildValue(\"(llll)\", self->ob_itself.permissions[0], self->ob_itself.permissions[1], self->ob_itself.permissions[2], self->ob_itself.permissions[3]);",
+		 "return PyArg_Parse(v, \"(llll)\", &self->ob_itself.permissions[0], &self->ob_itself.permissions[1], &self->ob_itself.permissions[2], &self->ob_itself.permissions[3])-1;",
+		 None
+		),
+		# XXXX FinderInfo TBD
+		# XXXX FinderXInfo TBD
+		("valence",
+		 "return Py_BuildValue(\"l\", self->ob_itself.valence);",
+		 "return PyArg_Parse(v, \"l\", &self->ob_itself.valence)-1;",
+		 None
+		),
+		("dataLogicalSize",
+		 "return Py_BuildValue(\"l\", self->ob_itself.dataLogicalSize);",
+		 "return PyArg_Parse(v, \"l\", &self->ob_itself.dataLogicalSize)-1;",
+		 None
+		),
+		("dataPhysicalSize",
+		 "return Py_BuildValue(\"l\", self->ob_itself.dataPhysicalSize);",
+		 "return PyArg_Parse(v, \"l\", &self->ob_itself.dataPhysicalSize)-1;",
+		 None
+		),
+		("rsrcLogicalSize",
+		 "return Py_BuildValue(\"l\", self->ob_itself.rsrcLogicalSize);",
+		 "return PyArg_Parse(v, \"l\", &self->ob_itself.rsrcLogicalSize)-1;",
+		 None
+		),
+		("rsrcPhysicalSize",
+		 "return Py_BuildValue(\"l\", self->ob_itself.rsrcPhysicalSize);",
+		 "return PyArg_Parse(v, \"l\", &self->ob_itself.rsrcPhysicalSize)-1;",
+		 None
+		),
+		("sharingFlags",
+		 "return Py_BuildValue(\"l\", self->ob_itself.sharingFlags);",
+		 "return PyArg_Parse(v, \"l\", &self->ob_itself.sharingFlags)-1;",
+		 None
+		),
+		("userPrivileges",
+		 "return Py_BuildValue(\"b\", self->ob_itself.userPrivileges);",
+		 "return PyArg_Parse(v, \"b\", &self->ob_itself.userPrivileges)-1;",
+		 None
+		),
+	]
+	# The same info, but in a different form
+	INITFORMAT = "HhllO&O&O&O&O&(llll)llllllb"
+	INITARGS = """&((FSCatalogInfoObject *)self)->ob_itself.nodeFlags,
+		&((FSCatalogInfoObject *)self)->ob_itself.volume,
+		&((FSCatalogInfoObject *)self)->ob_itself.parentDirID,
+		&((FSCatalogInfoObject *)self)->ob_itself.nodeID,
+		UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.createDate,
+		UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.contentModDate,
+		UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.attributeModDate,
+		UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.accessDate,
+		UTCDateTime_Convert, &((FSCatalogInfoObject *)self)->ob_itself.backupDate,
+		&((FSCatalogInfoObject *)self)->ob_itself.permissions[0],
+		&((FSCatalogInfoObject *)self)->ob_itself.permissions[1],
+		&((FSCatalogInfoObject *)self)->ob_itself.permissions[2],
+		&((FSCatalogInfoObject *)self)->ob_itself.permissions[3],
+		&((FSCatalogInfoObject *)self)->ob_itself.valence,
+		&((FSCatalogInfoObject *)self)->ob_itself.dataLogicalSize,
+		&((FSCatalogInfoObject *)self)->ob_itself.dataPhysicalSize,
+		&((FSCatalogInfoObject *)self)->ob_itself.rsrcLogicalSize,
+		&((FSCatalogInfoObject *)self)->ob_itself.rsrcPhysicalSize,
+		&((FSCatalogInfoObject *)self)->ob_itself.sharingFlags,
+		&((FSCatalogInfoObject *)self)->ob_itself.userPrivileges"""
+	INITNAMES = """
+		"nodeFlags",
+		"volume",
+		"parentDirID",
+		"nodeID",
+		"createDate",
+		"contentModDate",
+		"atributeModDate",
+		"accessDate",
+		"backupDate",
+		"permissions",
+		"valence",
+		"dataLogicalSize",
+		"dataPhysicalSize",
+		"rsrcLogicalSize",
+		"rsrcPhysicalSize",
+		"sharingFlags",
+		"userPrivileges"
+		"""
+		
+	def __init__(self, name, prefix, itselftype):
+		ObjectDefinition.__init__(self, name, prefix, itselftype)
+		self.argref = "*"	# Store FSSpecs, but pass them by address
+
+	def outputCheckNewArg(self):
+		Output("if (itself == NULL) return Py_None;")
+
+	def output_tp_newBody(self):
+		Output("PyObject *self;");
+		Output()
+		Output("if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;")
+		Output("memset(&((%s *)self)->ob_itself, 0, sizeof(%s));", 
+			self.objecttype, self.itselftype)
+		Output("return self;")
+
+	def output_tp_initBody(self):
+		Output("static char *kw[] = {%s, 0};", self.INITNAMES)
+		Output()
+		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|%s\", kw, %s))", 
+			self.INITFORMAT, self.INITARGS)
+		OutLbrace()
+		Output("return -1;")
+		OutRbrace()
+		Output("return 0;")
+	
 class FInfoDefinition(PEP253Mixin, ObjectDefinition):
 	getsetlist = [
 		("Type",
@@ -352,7 +526,7 @@ class FInfoDefinition(PEP253Mixin, ObjectDefinition):
 
 	def output_tp_initBody(self):
 		Output("%s *itself = NULL;", self.itselftype)
-		Output("char *kw[] = {\"itself\", 0};")
+		Output("static char *kw[] = {\"itself\", 0};")
 		Output()
 		Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"|O&\", kw, FInfo_Convert, &itself))")
 		OutLbrace()
@@ -394,7 +568,7 @@ class FSSpecDefinition(PEP253Mixin, ObjectDefinition):
 		Output("PyObject *v = NULL;")
 		Output("char *rawdata = NULL;")
 		Output("int rawdatalen = 0;")
-		Output("char *kw[] = {\"itself\", \"rawdata\", 0};")
+		Output("static char *kw[] = {\"itself\", \"rawdata\", 0};")
 		Output()
 		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|Os#\", kw, &v, &rawdata, &rawdatalen))")
 		Output("return -1;")
@@ -467,7 +641,7 @@ class FSRefDefinition(PEP253Mixin, ObjectDefinition):
 		Output("PyObject *v = NULL;")
 		Output("char *rawdata = NULL;")
 		Output("int rawdatalen = 0;")
-		Output("char *kw[] = {\"itself\", \"rawdata\", 0};")
+		Output("static char *kw[] = {\"itself\", \"rawdata\", 0};")
 		Output()
 		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|Os#\", kw, &v, &rawdata, &rawdatalen))")
 		Output("return -1;")
@@ -543,7 +717,7 @@ class AliasDefinition(PEP253Mixin, ObjectDefinition):
 		Output("char *rawdata = NULL;")
 		Output("int rawdatalen = 0;")
 		Output("Handle h;")
-		Output("char *kw[] = {\"itself\", \"rawdata\", 0};")
+		Output("static char *kw[] = {\"itself\", \"rawdata\", 0};")
 		Output()
 		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|O&s#\", kw, %s_Convert, &itself, &rawdata, &rawdatalen))",
 			self.prefix)
@@ -595,11 +769,13 @@ class Arg2MethodGenerator(OSErrMethodGenerator):
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff,
 	longname=LONGMODNAME)
 
+fscataloginfoobject = FSCatalogInfoDefinition('FSCatalogInfo', 'FSCatalogInfo', 'FSCatalogInfo')
 finfoobject = FInfoDefinition('FInfo', 'FInfo', 'FInfo')
 aliasobject = AliasDefinition('Alias', 'Alias', 'AliasHandle')
 fsspecobject = FSSpecDefinition('FSSpec', 'FSSpec', 'FSSpec')
 fsrefobject = FSRefDefinition('FSRef', 'FSRef', 'FSRef')
 
+module.addobject(fscataloginfoobject)
 module.addobject(finfoobject)
 module.addobject(aliasobject)
 module.addobject(fsspecobject)
