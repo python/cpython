@@ -2163,19 +2163,19 @@ static PyMethodDef PyCurses_methods[] = {
 /* Initialization function for the module */
 
 void
-initcurses()
+init_curses()
 {
 	PyObject *m, *d, *v;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("curses", PyCurses_methods);
+	m = Py_InitModule("_curses", PyCurses_methods);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
 	ModDict = d; /* For PyCurses_InitScr */
 
 	/* For exception curses.error */
-	PyCursesError = PyString_FromString("curses.error");
+	PyCursesError = PyString_FromString("_curses.error");
 	PyDict_SetItemString(d, "error", PyCursesError);
 
 	/* Make the version available */
@@ -2251,5 +2251,5 @@ initcurses()
 
 	/* Check for errors */
 	if (PyErr_Occurred())
-		Py_FatalError("can't initialize module curses");
+		Py_FatalError("can't initialize module _curses");
 }
