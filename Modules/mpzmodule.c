@@ -993,7 +993,9 @@ mpz_mpzcoerce(z)
 	err_setstr(TypeError, "number coercion (to mpzobject) failed");
 	return NULL;
 } /* mpz_mpzcoerce() */
-	
+
+static void mpz_divm();
+
 static object *
 MPZ_powm(self, args)
 	object *self;
@@ -1181,7 +1183,7 @@ MPZ_sqrtrem(self, args)
 } /* MPZ_sqrtrem() */
 
 
-void
+static void
 #if __STDC__
 mpz_divm(MP_INT *res, const MP_INT *num, const MP_INT *den, const MP_INT *mod)
 #else
@@ -1544,7 +1546,7 @@ static struct methodlist mpz_methods[] = {
 	{"hex",			mpz_hex},
 	{"oct",			mpz_oct},
 #endif /* def MPZ_CONVERSIONS_AS_METHODS */
-	{"binary",		mpz_binary},
+	{"binary", (object * (*) (object *, object *)) mpz_binary},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1639,11 +1641,11 @@ static typeobject MPZtype = {
 	sizeof(mpzobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	mpz_dealloc,	/*tp_dealloc*/
+	(void (*) (object *)) mpz_dealloc,	/*tp_dealloc*/
 	0,		/*tp_print*/
-	mpz_getattr,	/*tp_getattr*/
+	(object * (*)(object *, char *)) mpz_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
-	mpz_compare,	/*tp_compare*/
+	(int (*) (object *, object *))  mpz_compare,	/*tp_compare*/
 	mpz_repr,	/*tp_repr*/
         &mpz_as_number, /*tp_as_number*/
 };
