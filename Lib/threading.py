@@ -551,8 +551,6 @@ _MainThread()
 
 def _test():
 
-    import random
-
     class BoundedQueue(_Verbose):
 
         def __init__(self, limit):
@@ -614,8 +612,6 @@ def _test():
                 item = self.queue.get()
                 print item
                 self.count = self.count - 1
-
-    import time
 
     NP = 3
     QL = 4
