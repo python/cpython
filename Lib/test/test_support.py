@@ -81,6 +81,8 @@ try:
 except NameError:
     have_unicode = 0
 
+is_jython = sys.platform.startswith('java')
+
 import os
 # Filename used for testing
 if os.name == 'java':
