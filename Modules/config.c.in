@@ -24,7 +24,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Configurable Python configuration file */
 
-char version[] = "0.9.3 beta (2)";
+#define VERSION "0.9.4 beta"
+
+#ifdef __DATE__
+#define DATE __DATE__
+#else
+#define DATE "Dec 16 1991"
+#endif
 
 #include <stdio.h>
 
@@ -32,19 +38,24 @@ char version[] = "0.9.3 beta (2)";
 #include <stdwin.h>
 #endif
 
+char version[80];
+
 /*ARGSUSED*/
 void
 initargs(p_argc, p_argv)
 	int *p_argc;
 	char ***p_argv;
 {
+	sprintf(version, "%s (%s)", VERSION, DATE);
+
 #ifdef USE_STDWIN
 	wargs(p_argc, p_argv);
 #endif
 	if (*p_argc < 2 && isatty(0) && isatty(1))
 	{
 		printf("Python %s.\n", version);
-		printf("Copyright 1990, 1991 Stichting Mathematisch Centrum, Amsterdam\n");
+		printf(
+"Copyright 1990, 1991, 1992 Stichting Mathematisch Centrum, Amsterdam\n");
 	}
 }
 
