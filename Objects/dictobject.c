@@ -158,7 +158,7 @@ PyDict_New(void)
 		Py_AtExit(show_counts);
 #endif
 	}
-	mp = PyObject_NEW(dictobject, &PyDict_Type);
+	mp = PyObject_GC_New(dictobject, &PyDict_Type);
 	if (mp == NULL)
 		return NULL;
 	EMPTY_TO_MINSIZE(mp);
@@ -166,7 +166,7 @@ PyDict_New(void)
 #ifdef SHOW_CONVERSION_COUNTS
 	++created;
 #endif
-	PyObject_GC_Init(mp);
+	_PyObject_GC_TRACK(mp);
 	return (PyObject *)mp;
 }
 
@@ -692,7 +692,7 @@ dict_dealloc(register dictobject *mp)
 	register dictentry *ep;
 	int fill = mp->ma_fill;
 	Py_TRASHCAN_SAFE_BEGIN(mp)
-	PyObject_GC_Fini(mp);
+ 	_PyObject_GC_UNTRACK(mp);
 	for (ep = mp->ma_table; fill > 0; ep++) {
 		if (ep->me_key) {
 			--fill;
@@ -702,8 +702,7 @@ dict_dealloc(register dictobject *mp)
 	}
 	if (mp->ma_table != mp->ma_smalltable)
 		PyMem_DEL(mp->ma_table);
-	mp = (dictobject *) PyObject_AS_GC(mp);
-	PyObject_DEL(mp);
+	PyObject_GC_Del(mp);
 	Py_TRASHCAN_SAFE_END(mp)
 }
 
@@ -1703,7 +1702,7 @@ PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"dictionary",
-	sizeof(dictobject) + PyGC_HEAD_SIZE,
+	sizeof(dictobject),
 	0,
 	(destructor)dict_dealloc,		/* tp_dealloc */
 	(printfunc)dict_print,			/* tp_print */
@@ -1720,7 +1719,7 @@ PyTypeObject PyDict_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC |
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
 		Py_TPFLAGS_BASETYPE,		/* tp_flags */
 	"dictionary type",			/* tp_doc */
 	(traverseproc)dict_traverse,		/* tp_traverse */

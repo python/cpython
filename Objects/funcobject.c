@@ -9,7 +9,7 @@
 PyObject *
 PyFunction_New(PyObject *code, PyObject *globals)
 {
-	PyFunctionObject *op = PyObject_NEW(PyFunctionObject,
+	PyFunctionObject *op = PyObject_GC_New(PyFunctionObject,
 					    &PyFunction_Type);
 	if (op != NULL) {
 		PyObject *doc;
@@ -37,7 +37,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 	}
 	else
 		return NULL;
-	PyObject_GC_Init(op);
+	_PyObject_GC_TRACK(op);
 	return (PyObject *)op;
 }
 
@@ -223,8 +223,8 @@ func_setattro(PyObject *op, PyObject *name, PyObject *value)
 static void
 func_dealloc(PyFunctionObject *op)
 {
+	_PyObject_GC_UNTRACK(op);
 	PyObject_ClearWeakRefs((PyObject *) op);
-	PyObject_GC_Fini(op);
 	Py_DECREF(op->func_code);
 	Py_DECREF(op->func_globals);
 	Py_DECREF(op->func_name);
@@ -232,8 +232,7 @@ func_dealloc(PyFunctionObject *op)
 	Py_XDECREF(op->func_doc);
 	Py_XDECREF(op->func_dict);
 	Py_XDECREF(op->func_closure);
-	op = (PyFunctionObject *) PyObject_AS_GC(op);
-	PyObject_DEL(op);
+	PyObject_GC_Del(op);
 }
 
 static PyObject*
@@ -352,7 +351,7 @@ PyTypeObject PyFunction_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"function",
-	sizeof(PyFunctionObject) + PyGC_HEAD_SIZE,
+	sizeof(PyFunctionObject),
 	0,
 	(destructor)func_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
@@ -369,7 +368,7 @@ PyTypeObject PyFunction_Type = {
 	func_getattro,				/* tp_getattro */
 	func_setattro,				/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	0,					/* tp_doc */
 	(traverseproc)func_traverse,		/* tp_traverse */
 	0,					/* tp_clear */

@@ -38,7 +38,7 @@ new_weakref(void)
         _Py_NewReference((PyObject *)result);
     }
     else {
-        result = PyObject_NEW(PyWeakReference, &PyWeakReference_Type);
+        result = PyObject_GC_New(PyWeakReference, &PyWeakReference_Type);
     }
     if (result)
         result->hash = -1;
@@ -77,8 +77,8 @@ clear_weakref(PyWeakReference *self)
 static void
 weakref_dealloc(PyWeakReference *self)
 {
+    PyObject_GC_UnTrack((PyObject *)self);
     clear_weakref(self);
-    PyObject_GC_Fini((PyObject *)self);
     self->wr_next = free_list;
     free_list = self;
 }
@@ -170,7 +170,7 @@ PyWeakReference_Type = {
     PyObject_HEAD_INIT(NULL)
     0,
     "weakref",
-    sizeof(PyWeakReference) + PyGC_HEAD_SIZE,
+    sizeof(PyWeakReference),
     0,
     (destructor)weakref_dealloc,/*tp_dealloc*/
     0,	                        /*tp_print*/
@@ -187,7 +187,7 @@ PyWeakReference_Type = {
     0,                          /*tp_getattro*/
     0,                          /*tp_setattro*/
     0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC | Py_TPFLAGS_HAVE_RICHCOMPARE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_RICHCOMPARE,
     0,                          /*tp_doc*/
     (traverseproc)gc_traverse,  /*tp_traverse*/
     (inquiry)gc_clear,          /*tp_clear*/
@@ -429,7 +429,7 @@ PyWeakProxy_Type = {
     PyObject_HEAD_INIT(NULL)
     0,
     "weakproxy",
-    sizeof(PyWeakReference) + PyGC_HEAD_SIZE,
+    sizeof(PyWeakReference),
     0,
     /* methods */
     (destructor)weakref_dealloc,/*tp_dealloc*/
@@ -447,7 +447,7 @@ PyWeakProxy_Type = {
     (getattrofunc)proxy_getattr,/*tp_getattro*/
     (setattrofunc)proxy_setattr,/*tp_setattro*/
     0,				/*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
     |Py_TPFLAGS_CHECKTYPES,     /*tp_flags*/
     0,                          /*tp_doc*/
     (traverseproc)gc_traverse,  /*tp_traverse*/
@@ -460,7 +460,7 @@ PyWeakCallableProxy_Type = {
     PyObject_HEAD_INIT(NULL)
     0,
     "weakcallableproxy",
-    sizeof(PyWeakReference) + PyGC_HEAD_SIZE,
+    sizeof(PyWeakReference),
     0,
     /* methods */
     (destructor)weakref_dealloc,/*tp_dealloc*/
@@ -478,7 +478,7 @@ PyWeakCallableProxy_Type = {
     (getattrofunc)proxy_getattr,/*tp_getattro*/
     (setattrofunc)proxy_setattr,/*tp_setattro*/
     0,				/*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC
     |Py_TPFLAGS_CHECKTYPES,     /*tp_flags*/
     0,                          /*tp_doc*/
     (traverseproc)gc_traverse,  /*tp_traverse*/
@@ -648,7 +648,7 @@ weakref_ref(PyObject *self, PyObject *args)
                     else
                         insert_after(result, prev);
                 }
-                PyObject_GC_Init((PyObject *) result);
+                PyObject_GC_Track(result);
             }
         }
     }
@@ -706,7 +706,7 @@ weakref_proxy(PyObject *self, PyObject *args)
                     insert_head(result, list);
                 else
                     insert_after(result, prev);
-                PyObject_GC_Init((PyObject *) result);
+                PyObject_GC_Track(result);
             }
         }
     }

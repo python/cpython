@@ -62,18 +62,14 @@ PyTuple_New(register int size)
 		int nbytes = size * sizeof(PyObject *);
 		/* Check for overflow */
 		if (nbytes / sizeof(PyObject *) != (size_t)size ||
-		    (nbytes += sizeof(PyTupleObject) - sizeof(PyObject *)
-		     		+ PyGC_HEAD_SIZE)
+		    (nbytes += sizeof(PyTupleObject) - sizeof(PyObject *))
 		    <= 0)
 		{
 			return PyErr_NoMemory();
 		}
-		/* PyObject_NewVar is inlined */
-		op = (PyTupleObject *) PyObject_MALLOC(nbytes);
+		op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
 		if (op == NULL)
-			return PyErr_NoMemory();
-		op = (PyTupleObject *) PyObject_FROM_GC(op);
-		PyObject_INIT_VAR(op, &PyTuple_Type, size);
+			return NULL;
 	}
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
@@ -84,7 +80,7 @@ PyTuple_New(register int size)
 		Py_INCREF(op);	/* extra INCREF so that this is never freed */
 	}
 #endif
-	PyObject_GC_Init(op);
+	_PyObject_GC_TRACK(op);
 	return (PyObject *) op;
 }
 
@@ -144,7 +140,7 @@ tupledealloc(register PyTupleObject *op)
 	register int i;
 	register int len =  op->ob_size;
 	Py_TRASHCAN_SAFE_BEGIN(op)
-	PyObject_GC_Fini(op);
+	_PyObject_GC_UNTRACK(op);
 	if (len > 0) {
 		i = len;
 		while (--i >= 0)
@@ -158,8 +154,7 @@ tupledealloc(register PyTupleObject *op)
 		}
 #endif
 	}
-	op = (PyTupleObject *) PyObject_AS_GC(op);
-	PyObject_DEL(op);
+	PyObject_GC_Del(op);
 done:
 	Py_TRASHCAN_SAFE_END(op)
 }
@@ -517,7 +512,7 @@ PyTypeObject PyTuple_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"tuple",
-	sizeof(PyTupleObject) - sizeof(PyObject *) + PyGC_HEAD_SIZE,
+	sizeof(PyTupleObject) - sizeof(PyObject *),
 	sizeof(PyObject *),
 	(destructor)tupledealloc,		/* tp_dealloc */
 	(printfunc)tupleprint,			/* tp_print */
@@ -534,7 +529,7 @@ PyTypeObject PyTuple_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
 	tuple_doc,				/* tp_doc */
  	(traverseproc)tupletraverse,		/* tp_traverse */
 	0,					/* tp_clear */
@@ -595,30 +590,23 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 #ifdef Py_REF_DEBUG
 	--_Py_RefTotal;
 #endif
+	_PyObject_GC_UNTRACK(v);
 	_Py_ForgetReference((PyObject *) v);
 	for (i = newsize; i < v->ob_size; i++) {
 		Py_XDECREF(v->ob_item[i]);
 		v->ob_item[i] = NULL;
 	}
-	PyObject_GC_Fini(v);
-	v = (PyTupleObject *) PyObject_AS_GC(v);
-	sv = (PyTupleObject *) PyObject_REALLOC((char *)v,
-						sizeof(PyTupleObject)
-						+ PyGC_HEAD_SIZE
-						+ newsize * sizeof(PyObject *));
+	sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
 	if (sv == NULL) {
 		*pv = NULL;
-		PyObject_DEL(v);
-		PyErr_NoMemory();
+		PyObject_GC_Del(v);
 		return -1;
 	}
-	sv = (PyTupleObject *) PyObject_FROM_GC(sv);
 	_Py_NewReference((PyObject *) sv);
 	for (i = sv->ob_size; i < newsize; i++)
 		sv->ob_item[i] = NULL;
-	sv->ob_size = newsize;
 	*pv = (PyObject *) sv;
-	PyObject_GC_Init(sv);
+	_PyObject_GC_TRACK(sv);
 	return 0;
 }
 
@@ -638,8 +626,7 @@ PyTuple_Fini(void)
 		while (p) {
 			q = p;
 			p = (PyTupleObject *)(p->ob_item[0]);
-			q = (PyTupleObject *) PyObject_AS_GC(q);
-			PyObject_DEL(q);
+			PyObject_GC_Del(q);
 		}
 	}
 #endif
