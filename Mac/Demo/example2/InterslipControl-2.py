@@ -60,7 +60,7 @@ class InterslipControl(FrameWork.Application):
 			if n == 1:
 				return
 				
-	def idle(self):
+	def idle(self, event):
 		"Idle routine - update status"
 		self.main_dialog.updatestatus()
 		
