@@ -2,8 +2,7 @@
 
 from Tkinter import Canvas
 
-StringType = type('')
-DictionaryType = type({})
+from types import *
 
 def _flatten(tuple):
 	res = ()
