@@ -569,8 +569,8 @@ arbitrary objects):
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{len(\var{a})}{the number of items in \var{a}}{}
   \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1)}
-  \lineiii{\var{a}[\var{k}] = \var{x}}
-          {set \code{\var{a}[\var{k}]} to \var{x}}
+  \lineiii{\var{a}[\var{k}] = \var{v}}
+          {set \code{\var{a}[\var{k}]} to \var{v}}
           {}
   \lineiii{del \var{a}[\var{k}]}
           {remove \code{\var{a}[\var{k}]} from \var{a}}
@@ -585,7 +585,7 @@ arbitrary objects):
           {(2)}
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
   \lineiii{\var{a}.update(\var{b})}
-          {\code{for k, v in \var{b}.items(): \var{a}[k] = v}}
+          {\code{for k in \var{b}.keys(): \var{a}[k] = \var{b}[k]}}
           {(3)}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
   \lineiii{\var{a}.get(\var{k}\optional{, \var{x}})}
