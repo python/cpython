@@ -168,23 +168,23 @@ istest(inspect.istraceback, 'git.ex[2]')
 istest(inspect.isframe, 'mod.fr')
 
 test(len(git.tr) == 2, 'trace() length')
-test(git.tr[0][1:] == ('@test', 9, 'spam', ['    eggs(b + d, c + f)\n'], 0),
+test(git.tr[0][1:] == (TESTFN, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0),
      'trace() row 1')
-test(git.tr[1][1:] == ('@test', 18, 'eggs', ['    q = y / 0\n'], 0),
+test(git.tr[1][1:] == (TESTFN, 18, 'eggs', ['    q = y / 0\n'], 0),
      'trace() row 2')
 
 test(len(mod.st) >= 5, 'stack() length')
 test(mod.st[0][1:] ==
-     ('@test', 16, 'eggs', ['    st = inspect.stack()\n'], 0),
+     (TESTFN, 16, 'eggs', ['    st = inspect.stack()\n'], 0),
      'stack() row 1')
 test(mod.st[1][1:] ==
-     ('@test', 9, 'spam', ['    eggs(b + d, c + f)\n'], 0),
+     (TESTFN, 9, 'spam', ['    eggs(b + d, c + f)\n'], 0),
      'stack() row 2')
 test(mod.st[2][1:] ==
-     ('@test', 43, 'argue', ['            spam(a, b, c)\n'], 0),
+     (TESTFN, 43, 'argue', ['            spam(a, b, c)\n'], 0),
      'stack() row 3')
 test(mod.st[3][1:] ==
-     ('@test', 39, 'abuse', ['        self.argue(a, b, c)\n'], 0),
+     (TESTFN, 39, 'abuse', ['        self.argue(a, b, c)\n'], 0),
      'stack() row 4')
 # row 4 is in test_inspect.py
 
