@@ -1,13 +1,9 @@
-# New dir() function and other attribute-related goodies
+# New dir() function
 
-# This should become a built-in function
-#
-def getattr(x, name):
-	return eval('x.'+name)
 
 # This should be the new dir(), except that it should still list
 # the current local name space by default
-#
+
 def listattrs(x):
 	try:
 		dictkeys = x.__dict__.keys()
@@ -59,21 +55,21 @@ def listattrs(x):
 			i = i+1
 	return total
 
+
 # Helper to recognize functions
-#
+
 def is_function(x):
 	return type(x) == type(is_function)
 
-# Approximation of builtin dir(); this lists the user's
+
+# Approximation of builtin dir(); but note that this lists the user's
 # variables by default, not the current local name space.
-# Use a class method to make a function that can be called
-# with or without arguments.
-#
-class _dirclass:
-	def dir(args):
-		if type(args) == type(()):
-			return listattrs(args[1])
-		else:
-			import __main__
-			return listattrs(__main__)
-dir = _dirclass().dir
+
+def dir(*args):
+	if len(args) > 0:
+		if len(args) == 1:
+			args = args[0]
+		return listattrs(args)
+	else:
+		import __main__
+		return listattrs(__main__)
