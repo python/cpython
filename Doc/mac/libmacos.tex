@@ -39,8 +39,8 @@ specifies how often (in seconds, floating point) the interpreter
 should enter the event processing code. When true, \var{doint} causes
 interrupt (command-dot) checking to be done. \var{Evtmask} tells the
 interpreter to do event processing for events in the mask (redraws,
-mouseclicks to switch to other applications, etc). \bar{Besocial}
-gives other processes a chance to run. They are granted minimal
+mouseclicks to switch to other applications, etc). The \var{besocial}
+flag gives other processes a chance to run. They are granted minimal
 runtime when Python is in the foreground and \var{bgyield} seconds per
 \var{interval} when Python runs in the background.
 
