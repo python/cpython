@@ -515,6 +515,12 @@ class TestCopy(unittest.TestCase):
         self.assert_(x is not y)
         self.assert_(x[0] is not y[0])
 
+    def test_getstate_exc(self):
+        class EvilState(object):
+            def __getstate__(self):
+                raise ValueError, "ain't got no stickin' state"
+        self.assertRaises(ValueError, copy.copy, EvilState())
+
 def test_main():
     test_support.run_unittest(TestCopy)
 

@@ -2536,6 +2536,8 @@ reduce_2(PyObject *obj)
 	if (getstate != NULL) {
 		state = PyObject_CallObject(getstate, NULL);
 		Py_DECREF(getstate);
+		if (state == NULL)
+			goto end;
 	}
 	else {
 		state = PyObject_GetAttrString(obj, "__dict__");
