@@ -5,6 +5,10 @@
 
 #ifdef macintosh
 #define MAC_TCL
+
+#include <CodeFragments.h>
+static int loaded_from_shlib = 0;
+static FSSpec library_fss;
 #endif
 
 #ifdef MAC_TCL
@@ -1271,6 +1275,9 @@ PyInit__tkinter ()
 
   if (PyErr_Occurred ())
     Py_FatalError ("can't initialize module _tkinter");
+#ifdef macintosh
+  mac_addlibresources();
+#endif
 }
 
 #ifdef macintosh
@@ -1288,5 +1295,38 @@ panic(char * format, ...)
 
     Py_FatalError("Tcl/Tk panic");
 }
+
+/*
+** If this module is dynamically loaded the following routine should
+** be the init routine. It takes care of adding the shared library to
+** the resource-file chain, so that the tk routines can find their
+** resources.
+*/
+OSErr pascal
+init_tkinter_shlib(InitBlockPtr data)
+{
+	if ( data == nil ) return noErr;
+	if ( data->fragLocator.where == kOnDiskFlat ) {
+		library_fss = *data->fragLocator.u.onDisk.fileSpec;
+		loaded_from_shlib = 1;
+	} else if ( data->fragLocator.where == kOnDiskSegmented ) {
+		library_fss = *data->fragLocator.u.inSegs.fileSpec;
+		loaded_from_shlib = 1;
+	}
+	return noErr;
+}
+
+/*
+** Insert the library resources into the search path. Put them after
+** the resources from the application. Again, we ignore errors.
+*/
+void
+mac_addlibresources()
+{
+	if ( !loaded_from_shlib ) 
+		return;
+	(void)FSpOpenResFile(&library_fss, fsRdPerm);
+}
+
 
 #endif
