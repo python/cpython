@@ -101,26 +101,10 @@ PyObject *QdFI_New(itself)
 variablestuff = """
 {
 	PyObject *o;
-	
-	o = PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
-	if (o == NULL || PyDict_SetItemString(d, "arrow", o) != 0)
-		Py_FatalError("can't initialize Qd.arrow");
-	o = PyString_FromStringAndSize((char *)&qd.black, sizeof(qd.black));
-	if (o == NULL || PyDict_SetItemString(d, "black", o) != 0)
-		Py_FatalError("can't initialize Qd.black");
-	o = PyString_FromStringAndSize((char *)&qd.white, sizeof(qd.white));
-	if (o == NULL || PyDict_SetItemString(d, "white", o) != 0)
-		Py_FatalError("can't initialize Qd.white");
-	o = PyString_FromStringAndSize((char *)&qd.gray, sizeof(qd.gray));
-	if (o == NULL || PyDict_SetItemString(d, "gray", o) != 0)
-		Py_FatalError("can't initialize Qd.gray");
-	o = PyString_FromStringAndSize((char *)&qd.ltGray, sizeof(qd.ltGray));
-	if (o == NULL || PyDict_SetItemString(d, "ltGray", o) != 0)
-		Py_FatalError("can't initialize Qd.ltGray");
-	o = PyString_FromStringAndSize((char *)&qd.dkGray, sizeof(qd.dkGray));
-	if (o == NULL || PyDict_SetItemString(d, "dkGray", o) != 0)
-		Py_FatalError("can't initialize Qd.dkGray");
-	/* thePort, screenBits and randSeed still missing... */
+ 	
+	o = QDGA_New();
+	if (o == NULL || PyDict_SetItemString(d, "qd", o) != 0)
+		Py_FatalError("can't initialize Qd.qd");
 }
 """
 
@@ -251,6 +235,46 @@ class MyBMObjectDefinition(GlobalObjectDefinition):
 		if ( strcmp(name, "pixmap_data") == 0 )
 			return PyString_FromStringAndSize((char *)self->ob_itself, sizeof(PixMap));
 		""")
+		
+# This object is instanciated once, and will access qd globals.
+class QDGlobalsAccessObjectDefinition(ObjectDefinition):
+	def outputStructMembers(self):
+		pass
+	def outputNew(self):
+		Output()
+		Output("%sPyObject *%s_New()", self.static, self.prefix)
+		OutLbrace()
+		Output("%s *it;", self.objecttype)
+		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)
+		Output("if (it == NULL) return NULL;")
+		Output("return (PyObject *)it;")
+		OutRbrace()
+	def outputConvert(self):
+		pass
+	def outputCleanupStructMembers(self):
+		pass
+
+	def outputGetattrHook(self):
+		Output("""
+	if ( strcmp(name, "arrow") == 0 )
+		return PyString_FromStringAndSize((char *)&qd.arrow, sizeof(qd.arrow));
+	if ( strcmp(name, "black") == 0 ) 
+		return PyString_FromStringAndSize((char *)&qd.black, sizeof(qd.black));
+	if ( strcmp(name, "white") == 0 ) 
+		return PyString_FromStringAndSize((char *)&qd.white, sizeof(qd.white));
+	if ( strcmp(name, "gray") == 0 ) 
+		return PyString_FromStringAndSize((char *)&qd.gray, sizeof(qd.gray));
+	if ( strcmp(name, "ltGray") == 0 ) 
+		return PyString_FromStringAndSize((char *)&qd.ltGray, sizeof(qd.ltGray));
+	if ( strcmp(name, "dkGray") == 0 ) 
+		return PyString_FromStringAndSize((char *)&qd.dkGray, sizeof(qd.dkGray));
+	if ( strcmp(name, "screenBits") == 0 ) 
+		return BMObj_New(&qd.screenBits);
+	if ( strcmp(name, "thePort") == 0 ) 
+		return GrafObj_New(qd.thePort);
+	if ( strcmp(name, "randSeed") == 0 ) 
+		return Py_BuildValue("l", &qd.randSeed);
+		""")
 
 # Create the generator groups and link them
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff, variablestuff)
@@ -262,6 +286,8 @@ gr_object = MyGRObjectDefinition("GrafPort", "GrafObj", "GrafPtr")
 module.addobject(gr_object)
 bm_object = MyBMObjectDefinition("BitMap", "BMObj", "BitMapPtr")
 module.addobject(bm_object)
+qd_object = QDGlobalsAccessObjectDefinition("QDGlobalsAccess", "QDGA", "XXXX")
+module.addobject(qd_object)
 
 
 # Create the generator classes used to populate the lists
