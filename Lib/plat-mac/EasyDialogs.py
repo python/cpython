@@ -591,7 +591,23 @@ def _process_Nav_args(dftflags, **args):
 		del args['wanted']
 	return args, tpwanted
 	
+def _dummy_Nav_eventproc(msg, data):
+	pass
+	
+_default_Nav_eventproc = _dummy_Nav_eventproc
+
+def SetDefaultEventProc(proc):
+	global _default_Nav_eventproc
+	rv = _default_Nav_eventproc
+	if proc is None:
+		proc = _dummy_Nav_eventproc
+	_default_Nav_eventproc = proc
+	return rv
+	
 def AskFileForOpen(
+		message=None,
+		typeList=None,
+		# From here on the order is not documented
 		version=None,
 		defaultLocation=None,
 		dialogOptionFlags=None,
@@ -600,13 +616,11 @@ def AskFileForOpen(
 		windowTitle=None,
 		actionButtonLabel=None,
 		cancelButtonLabel=None,
-		message=None,
 		preferenceKey=None,
 		popupExtension=None,
-		eventProc=None,
+		eventProc=_dummy_Nav_eventproc,
 		previewProc=None,
 		filterProc=None,
-		typeList=None,
 		wanted=None,
 		multiple=None):
 	"""Display a dialog asking the user for a file to open.
@@ -642,6 +656,9 @@ def AskFileForOpen(
 	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 
 def AskFileForSave(
+		message=None,
+		savedFileName=None,
+		# From here on the order is not documented
 		version=None,
 		defaultLocation=None,
 		dialogOptionFlags=None,
@@ -650,11 +667,9 @@ def AskFileForSave(
 		windowTitle=None,
 		actionButtonLabel=None,
 		cancelButtonLabel=None,
-		savedFileName=None,
-		message=None,
 		preferenceKey=None,
 		popupExtension=None,
-		eventProc=None,
+		eventProc=_dummy_Nav_eventproc,
 		fileType=None,
 		fileCreator=None,
 		wanted=None,
@@ -671,8 +686,8 @@ def AskFileForSave(
 		location=location,clientName=clientName,windowTitle=windowTitle,
 		actionButtonLabel=actionButtonLabel,cancelButtonLabel=cancelButtonLabel,
 		savedFileName=savedFileName,message=message,preferenceKey=preferenceKey,
-		popupExtension=popupExtension,fileType=fileType,fileCreator=fileCreator,
-		wanted=wanted,multiple=multiple) 
+		popupExtension=popupExtension,eventProc=eventProc,fileType=fileType,
+		fileCreator=fileCreator,wanted=wanted,multiple=multiple) 
 	try:
 		rr = Nav.NavPutFile(args)
 		good = 1
@@ -703,6 +718,8 @@ def AskFileForSave(
 	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 		
 def AskFolder(
+		message=None,
+		# From here on the order is not documented
 		version=None,
 		defaultLocation=None,
 		dialogOptionFlags=None,
@@ -711,10 +728,9 @@ def AskFolder(
 		windowTitle=None,
 		actionButtonLabel=None,
 		cancelButtonLabel=None,
-		message=None,
 		preferenceKey=None,
 		popupExtension=None,
-		eventProc=None,
+		eventProc=_dummy_Nav_eventproc,
 		filterProc=None,
 		wanted=None,
 		multiple=None):
