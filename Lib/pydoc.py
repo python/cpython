@@ -1398,7 +1398,11 @@ please set the environment variable PYTHONDOCS to indicate their location.
         parser.feed(document)
         buffer = replace(buffer.getvalue(), '\xa0', ' ', '\n', '\n  ')
         pager('  ' + strip(buffer) + '\n')
-        if xrefs: self.output.write('\nRelated help topics: %s\n' % xrefs)
+        if xrefs:
+            buffer = StringIO.StringIO()
+            formatter.DumbWriter(buffer).send_flowing_data(
+                'Related help topics: ' + join(split(xrefs), ', ') + '\n')
+            self.output.write('\n%s\n' % buffer.getvalue())
 
     def listmodules(self, key=''):
         if key:
