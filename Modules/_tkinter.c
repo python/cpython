@@ -742,6 +742,12 @@ PyTclObject_str(PyTclObject *self)
 	return PyString_FromString(Tcl_GetString(self->value));
 }
 
+static char*
+PyTclObject_TclString(PyObject *self)
+{
+	return Tcl_GetString(((PyTclObject*)self)->value);
+}
+
 /* Like _str, but create Unicode if necessary. */
 PyDoc_STRVAR(PyTclObject_string__doc__, 
 "the string representation of this object, either as string or Unicode");
@@ -1466,6 +1472,22 @@ typedef struct VarEvent {
 	Tcl_Condition cond;
 } VarEvent;
 
+static int
+varname_converter(PyObject *in, void *_out)
+{
+	char **out = (char**)_out;
+	if (PyString_Check(in)) {
+		*out = PyString_AsString(in);
+		return 1;
+	}
+	if (PyTclObject_Check(in)) {
+		*out = PyTclObject_TclString(in);
+		return 1;
+	}
+	/* XXX: Should give diagnostics. */
+	return 0;
+}	
+
 void
 var_perform(VarEvent *ev)
 {
@@ -1542,7 +1564,8 @@ SetVar(PyObject *self, PyObject *args, int flags)
 	PyObject *res = NULL;
 	Tcl_Obj *newval, *ok;
 
-	if (PyArg_ParseTuple(args, "sO:setvar", &name1, &newValue)) {
+	if (PyArg_ParseTuple(args, "O&O:setvar", 
+			     varname_converter, &name1, &newValue)) {
 		/* XXX Acquire tcl lock??? */
 		newval = AsObj(newValue);
 		if (newval == NULL)
@@ -1604,7 +1627,8 @@ GetVar(PyObject *self, PyObject *args, int flags)
 	PyObject *res = NULL;
 	Tcl_Obj *tres;
 
-	if (!PyArg_ParseTuple(args, "s|s:getvar", &name1, &name2))
+	if (!PyArg_ParseTuple(args, "O&|s:getvar", 
+			      varname_converter, &name1, &name2))
 		return NULL;
 
 	ENTER_TCL
