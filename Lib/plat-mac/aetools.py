@@ -254,26 +254,35 @@ class TalkTo:
 			if as:
 				item.__class__ = as
 			return item
+	
+	get = _get
+			
+	_argmap_set = {
+		'to' : 'data',
+	}
 
-	def _set(self, _object, _arguments = {}, _attributes = {}):
-		""" _set: set data for an object
-		Required argument: the object
-		Keyword argument _parameters: Parameter dictionary for the set operation
+	def _set(self, _object, _attributes={}, **_arguments):
+		"""set: Set an object's data.
+		Required argument: the object for the command
+		Keyword argument to: The new value.
 		Keyword argument _attributes: AppleEvent attribute dictionary
-		Returns: the data
 		"""
 		_code = 'core'
 		_subcode = 'setd'
-		
+
+		keysubst(_arguments, self._argmap_set)
 		_arguments['----'] = _object
+
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise Error, decodeerror(_arguments)
-
+		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
+			
+	set = _set
 
 # Tiny Finder class, for local use only
 
