@@ -120,6 +120,11 @@ def write_toc_entry(entry, fp, layer):
 	write_toc_entry(entry, fp, layer + 1)
 
 
+def process(ifn, ofn, bigpart=None):
+    toc = parse_toc(open(ifn), bigpart)
+    write_toc(toc, open(ofn, "w"))
+
+
 def main():
     bigpart = None
     opts, args = getopt.getopt(sys.argv[1:], "c:")
@@ -131,8 +136,7 @@ def main():
     for filename in args:
 	base, ext = os.path.splitext(filename)
 	ext = ext or ".toc"
-	toc = parse_toc(open(base + ext), bigpart)
-	write_toc(toc, open(base + ".bkm", "w"))
+        process(base + ext, base + ".bkm", bigpart)
 
 
 if __name__ == "__main__":
