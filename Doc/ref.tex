@@ -131,7 +131,7 @@ In lexical definitions (as the example above), two more conventions
 are used: Two literal characters separated by three dots mean a choice
 of any single character in the given (inclusive) range of ASCII
 characters.  A phrase between angular brackets (\verb\<...>\) gives an
-informal description of the symbol defined; e.g., this could be used
+informal description of the symbol defined; e.g. this could be used
 to describe the notion of `control character' if needed.
 \index{lexical definitions}
 \index{ASCII}
@@ -158,7 +158,7 @@ chapter describes how the lexical analyzer breaks a file into tokens.
 A Python program is divided in a number of logical lines.  The end of
 a logical line is represented by the token NEWLINE.  Statements cannot
 cross logical line boundaries except where NEWLINE is allowed by the
-syntax (e.g., between statements in compound statements).
+syntax (e.g. between statements in compound statements).
 \index{line structure}
 \index{logical line}
 \index{NEWLINE token}
@@ -326,7 +326,7 @@ def        finally    import     pass       while
 %			print string.ljust(l[j], 10),
 %		print
 
-\section{Literals}
+\section{Literals} \label{literals}
 
 Literals are notations for constant values of some built-in types.
 \index{literal}
@@ -509,7 +509,7 @@ Every object has an identity, a type and a value.  An object's {\em
 identity} never changes once it has been created; you may think of it
 as the object's address in memory.  An object's {\em type} is also
 unchangeable.  It determines the operations that an object supports
-(e.g., ``does it have a length?'') and also defines the possible
+(e.g. ``does it have a length?'') and also defines the possible
 values for objects of that type.  The {\em value} of some objects can
 change.  Objects whose value can change are said to be {\em mutable};
 objects whose value is unchangeable once they are created are called
@@ -559,7 +559,7 @@ Types affect almost all aspects of objects' lives.  Even the meaning
 of object identity is affected in some sense: for immutable types,
 operations that compute new values may actually return a reference to
 any existing object with the same type and value, while for mutable
-objects this is not allowed.  E.g., after
+objects this is not allowed.  E.g. after
 
 \begin{verbatim}
 a = 1; b = 1; c = []; d = []
@@ -574,11 +574,12 @@ lists.
 
 Below is a list of the types that are built into Python.  Extension
 modules written in C can define additional types.  Future versions of
-Python may add types to the type hierarchy (e.g., rational or complex
+Python may add types to the type hierarchy (e.g. rational or complex
 numbers, efficiently stored arrays of integers, etc.).
 \index{type}
-\index{type hierarchy}
-\index{extension module}
+\indexii{data}{type}
+\indexii{type}{hierarchy}
+\indexii{extension}{module}
 \index{C}
 
 Some of the type descriptions below contain a paragraph listing
@@ -590,8 +591,8 @@ is a list of the method names of a built-in object, if it has any;
 \verb\__members__\ is a list of the data attribute names of a built-in
 object, if it has any.
 \index{attribute}
-\index{special attribute}
-\index{generic special attribute}
+\indexii{special}{attribute}
+\indexiii{generic}{special}{attribute}
 \ttindex{__methods__}
 \ttindex{__members__}
 
@@ -602,21 +603,23 @@ This type has a single value.  There is a single object with this value.
 This object is accessed through the built-in name \verb\None\.
 It is returned from functions that don't explicitly return an object.
 \ttindex{None}
+\obindex{None@{\tt None}}
 
 \item[Numbers]
-These are created by numeric literals and returned as results
-by arithmetic operators and arithmetic built-in functions.
-Numeric objects are immutable; once created their value never changes.
-Python numbers are of course strongly related to mathematical numbers,
-but subject to the limitations of numerical representation in computers.
-\index{number}
+These are created by numeric literals and returned as results by
+arithmetic operators and arithmetic built-in functions.  Numeric
+objects are immutable; once created their value never changes.  Python
+numbers are of course strongly related to mathematical numbers, but
+subject to the limitations of numerical representation in computers.
+\obindex{number}
+\obindex{numeric}
 
 Python distinguishes between integers and floating point numbers:
 
 \begin{description}
 \item[Integers]
 These represent elements from the mathematical set of whole numbers.
-\index{integer}
+\obindex{integer}
 
 There are two types of integers:
 
@@ -632,7 +635,7 @@ For the purpose of shift and mask operations, integers are assumed to
 have a binary, 2's complement notation using 32 or more bits, and
 hiding no bits from the user (i.e., all $2^{32}$ different bit
 patterns correspond to different values).
-\index{plain integer}
+\obindex{plain integer}
 
 \item[Long integers]
 These represent numbers in an unlimited range, subject to avaiable
@@ -640,7 +643,7 @@ These represent numbers in an unlimited range, subject to avaiable
 a binary representation is assumed, and negative numbers are
 represented in a variant of 2's complement which gives the illusion of
 an infinite string of sign bits extending to the left.
-\index{long integer}
+\obindex{long integer}
 
 \end{description} % Integers
 
@@ -651,13 +654,14 @@ plain and long integer domains.  For any operation except left shift,
 if it yields a result in the plain integer domain without causing
 overflow, it will yield the same result in the long integer domain or
 when using mixed operands.
-\index{integer representation}
+\indexii{integer}{representation}
 
 \item[Floating point numbers]
 These represent machine-level double precision floating point numbers.  
 You are at the mercy of the underlying machine architecture and
 C implementation for the accepted range and handling of overflow.
-\index{floating point number}
+\obindex{floating point}
+\indexii{floating point}{number}
 \index{C}
 
 \end{description} % Numbers
@@ -668,7 +672,7 @@ The built-in function \verb\len()\ returns the number of elements
 of a sequence.  When this number is $n$, the index set contains
 the numbers $0, 1, \ldots, n-1$.  Element \verb\i\ of sequence
 \verb\a\ is selected by \verb\a[i]\.
-\index{seqence}
+\obindex{seqence}
 \bifuncindex{len}
 \index{index operation}
 \index{item selection}
@@ -690,7 +694,8 @@ created.  (If the object contains references to other objects,
 these other objects may be mutable and may be changed; however
 the collection of objects directly referenced by an immutable object
 cannot change.)
-\index{immutable sequence}
+\obindex{immutable sequence}
+\obindex{immutable}
 
 The following types are immutable sequences:
 
@@ -703,9 +708,9 @@ Characters represent (at least) 8-bit bytes.  The built-in
 functions \verb\chr()\ and \verb\ord()\ convert between characters
 and nonnegative integers representing the byte values.
 Bytes with the values 0-127 represent the corresponding ASCII values.
-The string data type is also used to represent arrays of bytes, e.g.,
+The string data type is also used to represent arrays of bytes, e.g.
 to hold data read from a file.
-\index{string}
+\obindex{string}
 \index{character}
 \index{byte}
 \index{ASCII}
@@ -720,7 +725,7 @@ Or perhaps someone can propose a better rule?)
 \index{ASCII}
 \index{EBCDIC}
 \index{character set}
-\index{string comparison}
+\indexii{string}{comparison}
 \bifuncindex{chr}
 \bifuncindex{ord}
 
@@ -732,9 +737,9 @@ by affixing a comma to an expression (an expression by itself does
 not create a tuple, since parentheses must be usable for grouping of
 expressions).  An empty tuple can be formed by enclosing `nothing' in
 parentheses.
-\index{tuple}
-\index{singleton tuple}
-\index{empty tuple}
+\obindex{tuple}
+\indexii{singleton}{tuple}
+\indexii{empty}{tuple}
 
 \end{description} % Immutable sequences
 
@@ -742,9 +747,11 @@ parentheses.
 Mutable sequences can be changed after they are created.  The
 subscription and slicing notations can be used as the target of
 assignment and \verb\del\ (delete) statements.
-\index{mutable sequece}
-\index{assignment statement}
-\kwindex{del}
+\obindex{mutable sequece}
+\obindex{mutable}
+\indexii{assignment}{statement}
+\index{delete}
+\stindex{del}
 \index{subscription}
 \index{slicing}
 
@@ -757,7 +764,7 @@ The elements of a list are arbitrary Python objects.  Lists are formed
 by placing a comma-separated list of expressions in square brackets.
 (Note that there are no special cases needed to form lists of length 0
 or 1.)
-\index{list}
+\obindex{list}
 
 \end{description} % Mutable sequences
 
@@ -772,7 +779,7 @@ The built-in function \verb\len()\ returns the number of elements
 in a mapping.
 \bifuncindex{len}
 \index{subscription}
-\index{mapping}
+\obindex{mapping}
 
 There is currently a single mapping type:
 
@@ -780,19 +787,21 @@ There is currently a single mapping type:
 
 \item[Dictionaries]
 These represent finite sets of objects indexed by strings.
-Dictionaries are created by the \verb\{...}\ notation (see section
-\ref{dict}).  (Implementation note: the strings used for indexing must
-not contain null bytes.)
-\index{dictionary}
+Dictionaries are mutable; they are created by the \verb\{...}\
+notation (see section \ref{dict}).  (Implementation note: the strings
+used for indexing must not contain null bytes.)
+\obindex{dictionary}
+\obindex{mutable}
 
 \end{description} % Mapping types
 
 \item[Callable types]
 These are the types to which the function call (invocation) operation,
 written as \verb\function(argument, argument, ...)\, can be applied:
-\index{callable type}
 \indexii{function}{call}
 \index{invocation}
+\indexii{function}{argument}
+\obindex{callable}
 
 \begin{description}
 
@@ -802,7 +811,8 @@ A user-defined function object is created by a function definition
 list containing the same number of items as the function's formal
 parameter list.
 \indexii{user-defined}{function}
-\index{function object}
+\obindex{function}
+\obindex{user-defined function}
 
 Special read-only attributes: \verb\func_code\ is the code object
 representing the compiled function body, and \verb\func_globals\ is (a
@@ -820,8 +830,10 @@ called with an argument list containing one item less than the number
 of items in the function's formal parameter list.  When called, the
 class instance becomes the first argument, and the call arguments are
 shifted one to the right.
-\indexii{object}{closure}
+\obindex{method}
+\obindex{user-defined method}
 indexii{user-defined}{method}
+\index{object closure}
 
 Special read-only attributes: \verb\im_self\ is the class instance
 object, \verb\im_func\ is the function object.
@@ -833,6 +845,8 @@ A built-in function object is a wrapper around a C function.  Examples
 of built-in functions are \verb\len\ and \verb\math.sin\.  There
 are no special attributes.  The number and type of the arguments are
 determined by the C function.
+\obindex{built-in function}
+\obindex{function}
 \index{C}
 
 \item[Built-in methods]
@@ -840,6 +854,8 @@ This is really a different disguise of a built-in function, this time
 containing an object passed to the C function as an implicit extra
 argument.  An example of a built-in method is \verb\list.append\ if
 \verb\list\ is a list object.
+\obindex{built-in method}
+\obindex{method}
 \indexii{built-in}{method}
 
 \item[Classes]
@@ -848,7 +864,10 @@ parameterless function, a new class instance (also described below) is
 created and returned.  The class's initialization function is not
 called --- this is the responsibility of the caller.  It is illegal to
 call a class object with one or more arguments.
-\index{class}
+\obindex{class}
+\obindex{class instance}
+\obindex{instance}
+\indexii{class object}{call}
 
 \end{description}
 
@@ -862,7 +881,7 @@ dictionary.  A module object does not contain the code object used to
 initialize the module (since it isn't needed once the initialization
 is done).
 \stindex{import}
-\index{module}
+\obindex{module}
 
 Attribute assignment update the module's name space dictionary.
 
@@ -871,6 +890,7 @@ space as a dictionary object; \verb\__name__\ yields the module's name
 as a string object.
 \ttindex{__dict__}
 \ttindex{__name__}
+\indexii{module}{name space}
 
 \item[Classes]
 Class objects are created by class definitions (see section
@@ -880,7 +900,10 @@ lookups in this dictionary.  When an attribute name is not found
 there, the attribute search continues in the base classes.  The search
 is depth-first, left-to-right in the order of their occurrence in the
 base class list.
-\index{class}
+\obindex{class}
+\obindex{class instance}
+\obindex{instance}
+\indexii{class object}{call}
 \index{container}
 \index{dictionary}
 \indexii{class}{attribute}
@@ -891,6 +914,7 @@ dictionary of a base class.
 
 A class can be called as a parameterless function to yield a class
 instance (see above).
+\indexii{class object}{call}
 
 Special read-only attributes: \verb\__dict__\ yields te dictionary
 containing the class's name space; \verb\__bases__\ yields a tuple
@@ -907,6 +931,8 @@ there, and the instance's class has an attribute by that name, and
 that class attribute is a user-defined function (and in no other
 cases), the instance attribute reference yields a user-defined method
 object (see above) constructed from the instance and the function.
+\obindex{class instance}
+\obindex{instance}
 \indexii{class}{instance}
 \indexii{class instance}{attribute}
 
@@ -927,7 +953,7 @@ the \verb\makefile\ method of socket objects.  \verb\sys.stdin\,
 the the interpreter's standard input, output and error streams.
 See the Python Library Reference for methods of file objects and other
 details.
-\index{file}
+\obindex{file}
 \index{C}
 \index{stdio}
 \bifuncindex{open}
@@ -936,6 +962,9 @@ details.
 \ttindex{stdin}
 \ttindex{stdout}
 \ttindex{stderr}
+\ttindex{sys.stdin}
+\ttindex{sys.stdout}
+\ttindex{sys.stderr}
 
 \item[Internal types]
 A few types used internally by the interpreter are exposed to the user.
@@ -951,7 +980,7 @@ object and a function object is that the function object contains an
 explicit reference to the function's context (the module in which it
 was defined) which a code object contains no context.  There is no way
 to execute a bare code object.
-\index{code object}
+\obindex{code}
 
 Special read-only attributes: \verb\co_code\ is a string representing
 the sequence of instructions; \verb\co_consts\ is a list of literals
@@ -968,7 +997,7 @@ example of how to do this.)
 \item[Frame objects]
 Frame objects represent execution frames.  They may occur in traceback
 objects (see below).
-\index{frame object}
+\obindex{frame}
 
 Special read-only attributes: \verb\f_back\ is to the previous
 stack frame (towards the caller), or \verb\None\ if this is the bottom
@@ -996,12 +1025,14 @@ program contains no suitable handler, the stack trace is written
 (nicely formatted) to the standard error stream; if the interpreter is
 interactive, it is also made available to the user as
 \verb\sys.last_traceback\.
-\index{traceback object}
+\obindex{traceback}
 \indexii{stack}{trace}
-\index{exception handler}
-\index{execution stack}
+\indexii{exception}{handler}
+\indexii{execution}{stack}
 \ttindex{exc_traceback}
 \ttindex{last_traceback}
+\ttindex{sys.exc_traceback}
+\ttindex{sys.last_traceback}
 
 Special read-only attributes: \verb\tb_next\ is the next level in the
 stack trace (towards the frame where the exception occurred), or
@@ -1023,8 +1054,12 @@ exception occurred in a \verb\try\ statement with no matching
 \end{description} % Types
 
 \chapter{Execution model}
+\index{execution model}
 
-\section{Code blocks, execution frames, and name spaces}
+\section{Code blocks, execution frames, and name spaces} \label{execframes}
+\index{code block}
+\indexii{execution}{frame}
+\index{name space}
 
 A {\em code block} is a piece of Python program text that can be
 executed as a unit, such as a module, a class definition or a function
@@ -1032,8 +1067,9 @@ body.  Some code blocks (like modules) are executed only once, others
 (like function bodies) may be executed many times.  Code block may
 textually contain other code blocks.  Code blocks may invoke other
 code blocks (that may or may not be textually contained in them) as
-part of their execution, e.g., by invoking (calling) a function.
+part of their execution, e.g. by invoking (calling) a function.
 \index{code block}
+\indexii{code}{block}
 
 The following are code blocks:  A module is a code block.  A function
 body is a code block.  A class definition is a code block.  Each
@@ -1049,7 +1085,7 @@ determines where and how execution continues after the code block's
 execution has completed, and (perhaps most importantly) defines two
 name spaces, the local and the global name space, that affect
 execution of the code block.
-\index{execution frame}
+\indexii{execution}{frame}
 
 A {\em name space} is a mapping from names (identifiers) to objects.
 A particular name space may be referenced by more than one execution
@@ -1166,9 +1202,11 @@ See also the description of the \verb\try\ and \verb\raise\
 statements.
 
 \chapter{Expressions and conditions}
+\index{expression}
+\index{condition}
 
-In this and the following chapters, extended BNF notation will be used
-to describe syntax, not lexical analysis.
+{\bf Note:} In this and the following chapters, extended BNF notation
+will be used to describe syntax, not lexical analysis.
 \index{BNF}
 
 This chapter explains the meaning of the elements of expressions and
@@ -1176,14 +1214,16 @@ conditions.  Conditions are a superset of expressions, and a condition
 may be used wherever an expression is required by enclosing it in
 parentheses.  The only places where expressions are used in the syntax
 instead of conditions is in expression statements and on the
-right-hand side of assignments; this catches some nasty bugs like
-accedentally writing \verb\x == 1\ instead of \verb\x = 1\.
+right-hand side of assignment statements; this catches some nasty bugs
+like accedentally writing \verb\x == 1\ instead of \verb\x = 1\.
+\indexii{assignment}{statement}
 
 The comma plays several roles in Python's syntax.  It is usually an
 operator with a lower precedence than all others, but occasionally
-serves other purposes as well; e.g., it separates function arguments,
+serves other purposes as well; e.g. it separates function arguments,
 is used in list and dictionary constructors, and has special semantics
 in \verb\print\ statements.
+\index{comma}
 
 When (one alternative of) a syntax rule has the form
 
@@ -1193,14 +1233,20 @@ name:           othername
 
 and no semantics are given, the semantics of this form of \verb\name\
 are the same as for \verb\othername\.
+\index{syntax}
 
 \section{Arithmetic conversions}
+\indexii{arithmetic}{conversion}
 
 When a description of an arithmetic operator below uses the phrase
 ``the numeric arguments are converted to a common type'',
 this both means that if either argument is not a number, a
 \verb\TypeError\ exception is raised, and that otherwise
 the following conversions are applied:
+\exindex{TypeError}
+\indexii{floating point}{number}
+\indexii{long}{integer}
+\indexii{plain}{integer}
 
 \begin{itemize}
 \item	first, if either argument is a floating point number,
@@ -1212,6 +1258,7 @@ the following conversions are applied:
 \end{itemize}
 
 \section{Atoms}
+\index{atom}
 
 Atoms are the most basic elements of expressions.  Forms enclosed in
 reverse quotes or in parentheses, brackets or braces are also
@@ -1223,6 +1270,8 @@ enclosure:      parenth_form | list_display | dict_display | string_conversion
 \end{verbatim}
 
 \subsection{Identifiers (Names)}
+\index{name}
+\index{identifier}
 
 An identifier occurring as an atom is a reference to a local, global
 or built-in name binding.  If a name can be assigned to anywhere in a
@@ -1230,12 +1279,19 @@ code block, and is not mentioned in a \verb\global\ statement in that
 code block, it refers to a local name throughout that code block.
 Otherwise, it refers to a global name if one exists, else to a
 built-in name.
+\indexii{name}{binding}
+\index{code block}
+\stindex{global}
+\indexii{built-in}{name}
+\indexii{global}{name}
 
 When the name is bound to an object, evaluation of the atom yields
 that object.  When a name is not bound, an attempt to evaluate it
 raises a \verb\NameError\ exception.
+\exindex{NameError}
 
 \subsection{Literals}
+\index{literal}
 
 Python knows string and numeric literals:
 
@@ -1243,21 +1299,23 @@ Python knows string and numeric literals:
 literal:        stringliteral | integer | longinteger | floatnumber
 \end{verbatim}
 
-Evaluation of a literal yields an object of the given type
-(string, integer, long integer, floating point number)
-with the given value.
+Evaluation of a literal yields an object of the given type (string,
+integer, long integer, floating point number) with the given value.
 The value may be approximated in the case of floating point literals.
+See section \ref{literals} for details.
 
 All literals correspond to immutable data types, and hence the
 object's identity is less important than its value.  Multiple
 evaluations of literals with the same value (either the same
 occurrence in the program text or a different occurrence) may obtain
 the same object or a different object with the same value.
+\indexiii{immutable}{data}{type}
 
 (In the original implementation, all literals in the same code block
 with the same type and value yield the same object.)
 
 \subsection{Parenthesized forms}
+\index{parenthesized form}
 
 A parenthesized form is an optional condition list enclosed in
 parentheses:
@@ -1271,14 +1329,18 @@ yields.
 
 An empty pair of parentheses yields an empty tuple object.  Since
 tuples are immutable, the rules for literals apply here.
+\indexii{empty}{tuple}
 
 (Note that tuples are not formed by the parentheses, but rather by use
 of the comma operator.  The exception is the empty tuple, for which
 parentheses {\em are} required --- allowing unparenthesized ``nothing''
 in expressions would causes ambiguities and allow common typos to
 pass uncaught.)
+\index{comma}
+\index{tuple}{display}
 
 \subsection{List displays}
+\indexii{list}{display}
 
 A list display is a possibly empty series of conditions enclosed in
 square brackets:
@@ -1288,15 +1350,21 @@ list_display:   "[" [condition_list] "]"
 \end{verbatim}
 
 A list display yields a new list object.
+\obindex{list}
 
-If it has no condition list, the list object has no items.
-Otherwise, the elements of the condition list are evaluated
-from left to right and inserted in the list object in that order.
+If it has no condition list, the list object has no items.  Otherwise,
+the elements of the condition list are evaluated from left to right
+and inserted in the list object in that order.
+\indexii{empty}{list}
 
 \subsection{Dictionary displays} \label{dict}
+\indexii{dictionary}{display}
 
 A dictionary display is a possibly empty series of key/datum pairs
 enclosed in curly braces:
+\index{key}
+\index{datum}
+\index{key/datum pair}
 
 \begin{verbatim}
 dict_display:   "{" [key_datum_list] "}"
@@ -1305,17 +1373,20 @@ key_datum:      condition ":" condition
 \end{verbatim}
 
 A dictionary display yields a new dictionary object.
+\obindex{dictionary}
 
 The key/datum pairs are evaluated from left to right to define the
 entries of the dictionary: each key object is used as a key into the
 dictionary to store the corresponding datum.
 
-Keys must be strings, otherwise a \verb\TypeError\ exception is raised.
-Clashes between duplicate keys are not detected; the last datum
-(textually rightmost in the display) stored for a given key value
-prevails.
+Keys must be strings, otherwise a \verb\TypeError\ exception is
+raised.  Clashes between duplicate keys are not detected; the last
+datum (textually rightmost in the display) stored for a given key
+value prevails.
+\exindex{TypeError}
 
 \subsection{String conversions}
+\indexii{string}{conversion}
 
 A string conversion is a condition list enclosed in reverse (or
 backward) quotes:
@@ -1324,8 +1395,9 @@ backward) quotes:
 string_conversion: "`" condition_list "`"
 \end{verbatim}
 
-A string conversion evaluates the contained condition list and converts the
-resulting object into a string according to rules specific to its type.
+A string conversion evaluates the contained condition list and
+converts the resulting object into a string according to rules
+specific to its type.
 
 If the object is a string, a number, \verb\None\, or a tuple, list or
 dictionary containing only objects whose type is one of these, the
@@ -1337,11 +1409,13 @@ involved).
 (In particular, converting a string adds quotes around it and converts
 ``funny'' characters to escape sequences that are safe to print.)
 
-It is illegal to attempt to convert recursive objects (e.g., lists or
+It is illegal to attempt to convert recursive objects (e.g. lists or
 dictionaries that contain a reference to themselves, directly or
 indirectly.)
+\obindex{recursive}
 
 \section{Primaries} \label{primaries}
+\index{primary}
 
 Primaries represent the most tightly bound operations of the language.
 Their syntax is:
@@ -1351,6 +1425,7 @@ primary:        atom | attributeref | subscription | slicing | call
 \end{verbatim}
 
 \subsection{Attribute references}
+\indexii{attribute}{reference}
 
 An attribute reference is a primary followed by a period and a name:
 
@@ -1359,16 +1434,27 @@ attributeref:   primary "." identifier
 \end{verbatim}
 
 The primary must evaluate to an object of a type that supports
-attribute references, e.g., a module or a list.  This object is then
+attribute references, e.g. a module or a list.  This object is then
 asked to produce the attribute whose name is the identifier.  If this
 attribute is not available, the exception \verb\AttributeError\ is
 raised.  Otherwise, the type and value of the object produced is
 determined by the object.  Multiple evaluations of the same attribute
 reference may yield different objects.
+\obindex{module}
+\obindex{list}
 
 \subsection{Subscriptions}
+\index{subscription}
 
-A subscription selects an item of a sequence or mapping object:
+A subscription selects an item of a sequence (string, tuple or list)
+or mapping (dictionary) object:
+\obindex{sequence}
+\obindex{mapping}
+\obindex{string}
+\obindex{tuple}
+\obindex{list}
+\obindex{dictionary}
+\indexii{sequence}{item}
 
 \begin{verbatim}
 subscription:   primary "[" condition "]"
@@ -1382,17 +1468,26 @@ the value in the mapping that corresponds to that key.
 
 If it is a sequence, the condition must evaluate to a plain integer.
 If this value is negative, the length of the sequence is added to it
-(so that, e.g., \verb\x[-1]\ selects the last item of \verb\x\.)
+(so that, e.g. \verb\x[-1]\ selects the last item of \verb\x\.)
 The resulting value must be a nonnegative integer smaller than the
 number of items in the sequence, and the subscription selects the item
 whose index is that value (counting from zero).
 
 A string's items are characters.  A character is not a separate data
 type but a string of exactly one character.
+\index{character}
+\indexii{string}{item}
 
 \subsection{Slicings}
+\index{slicing}
+\index{slice}
 
-A slicing selects a range of items in a sequence object:
+A slicing (or slice) selects a range of items in a sequence (string,
+tuple or list) object:
+\obindex{sequence}
+\obindex{string}
+\obindex{tuple}
+\obindex{list}
 
 \begin{verbatim}
 slicing:        primary "[" [condition] ":" [condition] "]"
@@ -1408,9 +1503,12 @@ empty sequence.  It is not an error if $i$ or $j$ lie outside the
 range of valid indexes (such items don't exist so they aren't
 selected).
 
-\subsection{Calls}
+\subsection{Calls} \label{calls}
+\index{call}
 
-A call calls a function with a possibly empty series of arguments:
+A call calls a callable object (e.g. a function) with a possibly empty
+series of arguments:
+\obindex{callable}
 
 \begin{verbatim}
 call:           primary "(" [condition_list] ")"
@@ -1430,23 +1528,44 @@ of the callable object.  If it is:
 
 \item[a user-defined function:] the code block for the function is
 executed, passing it the argument list.  The first thing the code
-block will do is bind the formal parameters to the arguments.  When
-the code block executes a \verb\return\ statement, this specifies the
-return value of the function call.
+block will do is bind the formal parameters to the arguments; this is
+described in section \ref{function}.  When the code block executes a
+\verb\return\ statement, this specifies the return value of the
+function call.
+\indexii{function}{call}
+\indexiii{user-defined}{function}{call}
+\obindex{user-defined function}
+\obindex{function}
 
 \item[a built-in function or method:] the result is up to the
 interpreter; see the library reference manual for the descriptions of
 built-in functions and methods.
+\indexii{function}{call}
+\indexii{built-in function}{call}
+\indexii{method}{call}
+\indexii{built-in method}{call}
+\obindex{built-in method}
+\obindex{built-in function}
+\obindex{method}
+\obindex{function}
 
 \item[a class object:] a new instance of that class is returned.
+\obindex{class}
+\indexii{class object}{call}
 
 \item[a class instance method:] the corresponding user-defined
 function is called, with an argument list that is one longer than the
 argument list of the call: the instance becomes the first argument.
+\obindex{class instance}
+\obindex{instance}
+\indexii{instance}{call}
+\indexii{class instance}{call}
 
 \end{description}
 
 \section{Unary arithmetic operations}
+\indexiii{unary}{arithmetic}{operation}
+\indexiii{unary}{bit-wise}{operation}
 
 All unary arithmetic (and bit-wise) operations have the same priority:
 
@@ -1454,19 +1573,26 @@ All unary arithmetic (and bit-wise) operations have the same priority:
 u_expr:         primary | "-" u_expr | "+" u_expr | "~" u_expr
 \end{verbatim}
 
-The unary \verb\"-"\ operator yields the negative of its
+The unary \verb\"-"\ (minus) operator yields the negation of its
 numeric argument.
+\index{negation}
+\index{minus}
 
-The unary \verb\"+"\ operator yields its numeric argument unchanged.
+The unary \verb\"+"\ (plus) operator yields its numeric argument
+unchanged.
+\index{plus}
 
-The unary \verb\"~"\ operator yields the bit-wise negation of its
-plain or long integer argument.  The bit-wise negation negation of
+The unary \verb\"~"\ (invert) operator yields the bit-wise inversion
+of its plain or long integer argument.  The bit-wise inversion of
 \verb\x\ is defined as \verb\-(x+1)\.
+\index{inversion}
 
 In all three cases, if the argument does not have the proper type,
 a \verb\TypeError\ exception is raised.
+\exindex{TypeError}
 
 \section{Binary arithmetic operations}
+\indexiii{binary}{arithmetic}{operation}
 
 The binary arithmetic operations have the conventional priority
 levels.  Note that some of these operations also apply to certain
@@ -1485,6 +1611,7 @@ must be a plain integer and the other must be a sequence.  In the
 former case, the numbers are converted to a common type and then
 multiplied together.  In the latter case, sequence repetition is
 performed; a negative repetition factor yields an empty sequence.
+\index{multiplication}
 
 The \verb\"/"\ (division) operator yields the quotient of its
 arguments.  The numeric arguments are first converted to a common
@@ -1492,15 +1619,18 @@ type.  Plain or long integer division yields an integer of the same
 type; the result is that of mathematical division with the `floor'
 function applied to the result.  Division by zero raises the
 \verb\ZeroDivisionError\ exception.
+\exindex{ZeroDivisionError}
+\index{division}
 
 The \verb\"%"\ (modulo) operator yields the remainder from the
 division of the first argument by the second.  The numeric arguments
 are first converted to a common type.  A zero right argument raises
 the \verb\ZeroDivisionError\ exception.  The arguments may be floating
-point numbers, e.g., \verb\3.14 % 0.7\ equals \verb\0.34\.  The modulo
+point numbers, e.g. \verb\3.14 % 0.7\ equals \verb\0.34\.  The modulo
 operator always yields a result with the same sign as its second
 operand (or zero); the absolute value of the result is strictly
 smaller than the second operand.
+\index{modulo}
 
 The integer division and modulo operators are connected by the
 following identity: \verb\x == (x/y)*y + (x%y)\.  Integer division and
@@ -1514,12 +1644,15 @@ The arguments must either both be numbers, or both sequences of the
 same type.  In the former case, the numbers are converted to a common
 type and then added together.  In the latter case, the sequences are
 concatenated.
+\index{addition}
 
 The \verb\"-"\ (subtraction) operator yields the difference of its
 arguments.  The numeric arguments are first converted to a common
 type.
+\index{subtraction}
 
 \section{Shifting operations}
+\indexii{shifting}{operation}
 
 The shifting operations have lower priority than the arithmetic
 operations:
@@ -1539,8 +1672,10 @@ integers there is no overflow check so this drops bits and flip the
 sign if the result is not less than $2^{31}$ in absolute value.
 
 Negative shift counts raise a \verb\ValueError\ exception.
+\exindex{ValueError}
 
-\section{Bitwise operations}
+\section{Binary bit-wise operations}
+\indexiii{binary}{bit-wise}{operation}
 
 Each of the three bitwise operations has a different priority level:
 
@@ -1553,42 +1688,49 @@ or_expr:       xor_expr | or_expr "|" xor_expr
 The \verb\"&"\ operator yields the bitwise AND of its arguments, which
 must be plain or long integers.  The arguments are converted to a
 common type.
+\indexii{bit-wise}{and}
 
-The \verb\"~"\ operator yields the bitwise XOR (exclusive OR) of its
+The \verb\"^"\ operator yields the bitwise XOR (exclusive OR) of its
 arguments, which must be plain or long integers.  The arguments are
 converted to a common type.
+\indexii{bit-wise}{xor}
+\indexii{exclusive}{or}
 
 The \verb\"|"\ operator yields the bitwise (inclusive) OR of its
 arguments, which must be plain or long integers.  The arguments are
 converted to a common type.
+\indexii{bit-wise}{or}
+\indexii{inclusive}{or}
 
 \section{Comparisons}
+\index{comparison}
 
 Contrary to C, all comparison operations in Python have the same
 priority, which is lower than that of any arithmetic, shifting or
 bitwise operation.  Also contrary to C, expressions like
 \verb\a < b < c\ have the interpretation that is conventional in
 mathematics:
+\index{C}
 
 \begin{verbatim}
 comparison:     or_expr (comp_operator or_expr)*
 comp_operator:  "<"|">"|"=="|">="|"<="|"<>"|"!="|"is" ["not"]|["not"] "in"
 \end{verbatim}
 
-Comparisons yield integer value: 1 for true, 0 for false.
+Comparisons yield integer values: 1 for true, 0 for false.
 
-Comparisons can be chained arbitrarily,
-e.g., $x < y <= z$ is equivalent to
-$x < y$ \verb\and\ $y <= z$, except that $y$ is evaluated only once
-(but in both cases $z$ is not evaluated at all when $x < y$ is
-found to be false).
+Comparisons can be chained arbitrarily, e.g. $x < y <= z$ is
+equivalent to $x < y$ \verb\and\ $y <= z$, except that $y$ is
+evaluated only once (but in both cases $z$ is not evaluated at all
+when $x < y$ is found to be false).
+\indexii{chaining}{comparisons}
 
 Formally, $e_0 op_1 e_1 op_2 e_2 ...e_{n-1} op_n e_n$ is equivalent to
 $e_0 op_1 e_1$ \verb\and\ $e_1 op_2 e_2$ \verb\and\ ... \verb\and\
 $e_{n-1} op_n e_n$, except that each expression is evaluated at most once.
 
 Note that $e_0 op_1 e_1 op_2 e_2$ does not imply any kind of comparison
-between $e_0$ and $e_2$, e.g., $x < y > z$ is perfectly legal.
+between $e_0$ and $e_2$, e.g. $x < y > z$ is perfectly legal.
 
 The forms \verb\<>\ and \verb\!=\ are equivalent; for consistency with
 C, \verb\!=\ is preferred; where \verb\!=\ is mentioned below
@@ -1600,9 +1742,9 @@ If both are numbers, they are coverted to a common type.  Otherwise,
 objects of different types {\em always} compare unequal, and are
 ordered consistently but arbitrarily.
 
-(This unusual
-definition of comparison is done to simplify the definition of
-operations like sorting and the \verb\in\ and \verb\not in\ operators.)
+(This unusual definition of comparison is done to simplify the
+definition of operations like sorting and the \verb\in\ and \verb\not
+in\ operators.)
 
 Comparison of objects of the same type depends on the type:
 
@@ -1643,12 +1785,20 @@ $x ~\verb\not in\~ y$ yields the inverse truth value.  The exception
 \verb\TypeError\ is raised when $y$ is not a sequence, or when $y$ is
 a string and $x$ is not a string of length one.%
 \footnote{The latter restriction is sometimes a nuisance.}
+\opindex{in}
+\opindex{not in}
+\indexii{membership}{test}
+\obindex{sequence}
 
-The operators \verb\is\ and \verb\is not\ compare object identity:
+The operators \verb\is\ and \verb\is not\ test for object identity:
 $x ~\verb\is\~ y$ is true if and only if $x$ and $y$ are the same
 object.  $x ~\verb\is not\~ y$ yields the inverse truth value.
+\opindex{is}
+\opindex{is not}
+\indexii{identity}{test}
 
 \section{Boolean operations} \label{Booleans}
+\indexii{Boolean}{operation}
 
 Boolean operations have the lowest priority of all Python operations:
 
@@ -1666,14 +1816,17 @@ as false: \verb\None\, numeric zero of all types, empty sequences
 other values are interpreted as true.
 
 The operator \verb\not\ yields 1 if its argument is false, 0 otherwise.
+\opindex{not}
 
 The condition $x ~\verb\and\~ y$ first evaluates $x$; if $x$ is false,
 its value is returned; otherwise, $y$ is evaluated and the resulting
 value is returned.
+\opindex{and}
 
 The condition $x ~\verb\or\~ y$ first evaluates $x$; if $x$ is true,
 its value is returned; otherwise, $y$ is evaluated and the resulting
 value is returned.
+\opindex{or}
 
 (Note that \verb\and\ and \verb\or\ do not restrict the value and type
 they return to 0 and 1, but rather return the last evaluated argument.
@@ -1685,6 +1838,8 @@ same type as its argument, so e.g. \verb\not 'foo'\ yields \verb\0\,
 not \verb\''\.)
 
 \section{Expression lists and condition lists}
+\indexii{expression}{list}
+\indexii{condition}{list}
 
 \begin{verbatim}
 expr_list:      or_expr ("," or_expr)* [","]
@@ -1707,16 +1862,19 @@ tuple.  The length of the tuple is the number of expressions
 from left to right.  (Conditions lists are used syntactically is a few
 places where no tuple is constructed but a list of values is needed
 nevertheless.)
+\obindex{tuple}
 
 The trailing comma is required only to create a single tuple (a.k.a. a
 {\em singleton}); it is optional in all other cases.  A single
 expression (condition) without a trailing comma doesn't create a
 tuple, but rather yields the value of that expression (condition).
+\indexii{trailing}{comma}
 
 (To create an empty tuple, use an empty pair of parentheses:
 \verb\()\.)
 
 \chapter{Simple statements}
+\indexii{simple}{statement}
 
 Simple statements are comprised within a single logical line.
 Several simple statements may occur on a single line separated
@@ -1737,6 +1895,7 @@ simple_stmt:    expression_stmt
 \end{verbatim}
 
 \section{Expression statements}
+\indexii{expression}{statement}
 
 Expression statements are used (mostly interactively) to compute and
 write a value, or (usually) to call a procedure (a function that
@@ -1751,16 +1910,28 @@ An expression statement evaluates the expression list (which may be a
 single expression).  If the value is not \verb\None\, it is converted
 to a string using the rules for string conversions (expressions in
 reverse quotes), and the resulting string is written to standard
-output on a line by itself.
+output (see section \ref{print}) on a line by itself.
+\indexii{expression}{list}
+\ttindex{None}
+\indexii{string}{conversion}
+\index{output}
+\indexii{standard}{output}
+\indexii{writing}{values}
 
 (The exception for \verb\None\ is made so that procedure calls, which
 are syntactically equivalent to expressions, do not cause any output.
 A tuple with only \verb\None\ items is written normally.)
+\indexii{procedure}{call}
 
 \section{Assignment statements}
+\indexii{assignment}{statement}
 
 Assignment statements are used to (re)bind names to values and to
 modify attributes or items of mutable objects:
+\indexii{binding}{name}
+\indexii{rebinding}{name}
+\obindex{mutable}
+\indexii{attribute}{assignment}
 
 \begin{verbatim}
 assignment_stmt: (target_list "=")+ expression_list
@@ -1776,6 +1947,7 @@ An assignment statement evaluates the expression list (remember that
 this can be a single expression or a comma-separated list, the latter
 yielding a tuple) and assigns the single resulting object to each of
 the target lists, from left to right.
+\indexii{expression}{list}
 
 Assignment is defined recursively depending on the form of the target
 (list).  When a target is part of a mutable object (an attribute
@@ -1784,9 +1956,12 @@ ultimately perform the assignment and decide about its validity, and
 may raise an exception if the assignment is unacceptable.  The rules
 observed by various types and the exceptions raised are given with the
 definition of the object types (see section \ref{types}).
+\index{target}
+\indexii{target}{list}
 
 Assignment of an object to a target list is recursively defined as
 follows.
+\indexiii{target}{list}{assignment}
 
 \begin{itemize}
 \item
@@ -1801,22 +1976,28 @@ corresponding targets.
 
 \end{itemize}
 
-Assignment of an object to a (simple) target is recursively defined as
+Assignment of an object to a single target is recursively defined as
 follows.
 
-\begin{itemize}
+\begin{itemize} % nested
 
 \item
 If the target is an identifier (name):
+
 \begin{itemize}
+
 \item
 If the name does not occur in a \verb\global\ statement in the current
 code block: the name is bound to the object in the current local name
 space.
+\stindex{global}
+
 \item
 Otherwise: the name is bound to the object in the current global name
 space.
-\end{itemize}
+
+\end{itemize} % nested
+
 The name is rebound if it was already bound.
 
 \item
@@ -1836,27 +2017,34 @@ attributes; if this is not the case, \verb\TypeError\ is raised.  That
 object is then asked to assign the assigned object to the given
 attribute; if it cannot perform the assignment, it raises an exception
 (usually but not necessarily \verb\AttributeError\).
+\indexii{attribute}{assignment}
 
 \item
 If the target is a subscription: The primary expression in the
 reference is evaluated.  It should yield either a mutable sequence
 (list) object or a mapping (dictionary) object.  Next, the subscript
 expression is evaluated.
+\indexii{subscription}{assignment}
+\obindex{mutable}
 
-If the primary is a sequence object, the subscript must yield a plain
-integer.  If it is negative, the sequence's length is added to it.
-The resulting value must be a nonnegative integer less than the
-sequence's length, and the sequence is asked to assign the assigned
-object to its item with that index.  If the index is out of range,
-\verb\IndexError\ is raised (assignment to a subscripted sequence
-cannot add new items to a list).
+If the primary is a mutable sequence object (a list), the subscript
+must yield a plain integer.  If it is negative, the sequence's length
+is added to it.  The resulting value must be a nonnegative integer
+less than the sequence's length, and the sequence is asked to assign
+the assigned object to its item with that index.  If the index is out
+of range, \verb\IndexError\ is raised (assignment to a subscripted
+sequence cannot add new items to a list).
+\obindex{sequence}
+\obindex{list}
 
-If the primary is a mapping object, the subscript must have a type
-compatible with the mapping's key type, and the mapping is then asked
-to to create a key/datum pair which maps the subscript to the assigned
-object.  This can either replace an existing key/value pair with the
-same key value, or insert a new key/value pair (if no key with the
-same value existed).
+If the primary is a mapping (dictionary) object, the subscript must
+have a type compatible with the mapping's key type, and the mapping is
+then asked to to create a key/datum pair which maps the subscript to
+the assigned object.  This can either replace an existing key/value
+pair with the same key value, or insert a new key/value pair (if no
+key with the same value existed).
+\obindex{mapping}
+\obindex{dictionary}
 
 \item
 If the target is a slicing: The primary expression in the reference is
@@ -1870,6 +2058,7 @@ lie between zero and the sequence's length, inclusive.  Finally, the
 sequence object is asked to replace the items indicated by the slice
 with the items of the assigned sequence.  This may change the
 sequence's length, if it allows it.
+\indexii{slicing}{assignment}
 
 \end{itemize}
 	
@@ -1879,6 +2068,7 @@ during the code generation phase, causing less detailed error
 messages.)
 
 \section{The {\tt pass} statement}
+\stindex{pass}
 
 \begin{verbatim}
 pass_stmt:      "pass"
@@ -1887,6 +2077,7 @@ pass_stmt:      "pass"
 \verb\pass\ is a null operation --- when it is executed, nothing
 happens.  It is useful as a placeholder when a statement is
 required syntactically, but no code needs to be executed, for example:
+\indexii{null}{operation}
 
 \begin{verbatim}
 def f(arg): pass    # a function that does nothing (yet)
@@ -1895,6 +2086,7 @@ class C: pass       # an class with no methods (yet)
 \end{verbatim}
 
 \section{The {\tt del} statement}
+\stindex{del}
 
 \begin{verbatim}
 del_stmt:       "del" target_list
@@ -1903,20 +2095,26 @@ del_stmt:       "del" target_list
 Deletion is recursively defined very similar to the way assignment is
 defined. Rather that spelling it out in full details, here are some
 hints.
+\indexii{deletion}{target}
+\indexiii{deletion}{target}{list}
 
-Deletion of a target list recursively deletes each target,
-from left to right.
+Deletion of a target list recursively deletes each target, from left
+to right.
 
 Deletion of a name removes the binding of that name (which must exist)
 from the local or global name space, depending on whether the name
 occurs in a \verb\global\ statement in the same code block.
+\stindex{global}
+\indexii{unbinding}{name}
 
 Deletion of attribute references, subscriptions and slicings
 is passed to the primary object involved; deletion of a slicing
 is in general equivalent to assignment of an empty slice of the
 right type (but even this is determined by the sliced object).
+\indexii{attribute}{deletion}
 
-\section{The {\tt print} statement}
+\section{The {\tt print} statement} \label{print}
+\stindex{print}
 
 \begin{verbatim}
 print_stmt:     "print" [ condition ("," condition)* [","] ]
@@ -1934,18 +2132,27 @@ output is \verb/\n/; or (3) when the last write operation on standard
 output was not a \verb\print\ statement.  (In some cases it may be
 functional to write an empty string to standard output for this
 reason.)
+\index{output}
+\indexii{writing}{values}
 
 A \verb/"\n"/ character is written at the end, unless the \verb\print\
 statement ends with a comma.  This is the only action if the statement
 contains just the keyword \verb\print\.
+\indexii{trailing}{comma}
+\indexii{newline}{suppression}
 
 Standard output is defined as the file object named \verb\stdout\
 in the built-in module \verb\sys\.  If no such object exists,
 or if it is not a writable file, a \verb\RuntimeError\ exception is raised.
 (The original implementation attempts to write to the system's original
 standard output instead, but this is not safe, and should be fixed.)
+\indexii{standard}{output}
+\bimodindex{sys}
+\ttindex{stdout}
+\exindex{RuntimeError}
 
 \section{The {\tt return} statement}
+\stindex{return}
 
 \begin{verbatim}
 return_stmt:    "return" [condition_list]
@@ -1953,6 +2160,8 @@ return_stmt:    "return" [condition_list]
 
 \verb\return\ may only occur syntactically nested in a function
 definition, not within a nested class definition.
+\indexii{function}{definition}
+\indexii{class}{definition}
 
 If a condition list is present, it is evaluated, else \verb\None\
 is substituted.
@@ -1963,8 +2172,10 @@ list (or \verb\None\) as return value.
 When \verb\return\ passes control out of a \verb\try\ statement
 with a \verb\finally\ clause, that finally clause is executed
 before really leaving the function.
+\kwindex{finally}
 
 \section{The {\tt raise} statement}
+\stindex{raise}
 
 \begin{verbatim}
 raise_stmt:     "raise" condition ["," condition]
@@ -1973,11 +2184,14 @@ raise_stmt:     "raise" condition ["," condition]
 \verb\raise\ evaluates its first condition, which must yield
 a string object.  If there is a second condition, this is evaluated,
 else \verb\None\ is substituted.
+\index{exception}
+\indexii{raising}{exception}
 
 It then raises the exception identified by the first object,
 with the second one (or \verb\None\) as its parameter.
 
 \section{The {\tt break} statement}
+\stindex{break}
 
 \begin{verbatim}
 break_stmt:     "break"
@@ -1985,18 +2199,25 @@ break_stmt:     "break"
 
 \verb\break\ may only occur syntactically nested in a \verb\for\
 or \verb\while\ loop, not nested in a function or class definition.
+\stindex{for}
+\stindex{while}
+\indexii{loop}{statement}
 
 It terminates the neares enclosing loop, skipping the optional
 \verb\else\ clause if the loop has one.
+\kwindex{else}
 
 If a \verb\for\ loop is terminated by \verb\break\, the loop control
 target keeps its current value.
+\indexii{loop control}{target}
 
 When \verb\break\ passes control out of a \verb\try\ statement
 with a \verb\finally\ clause, that finally clause is executed
 before really leaving the loop.
+\kwindex{finally}
 
 \section{The {\tt continue} statement}
+\stindex{continue}
 
 \begin{verbatim}
 continue_stmt:  "continue"
@@ -2007,10 +2228,15 @@ continue_stmt:  "continue"
 not nested in the \verb\try\ clause of a \verb\try\ statement with a
 \verb\finally\ clause (it may occur nested in a \verb\except\ or
 \verb\finally\ clause of a \verb\try\ statement though).
+\stindex{for}
+\stindex{while}
+\indexii{loop}{statement}
+\kwindex{finally}
 
 It continues with the next cycle of the nearest enclosing loop.
 
 \section{The {\tt import} statement} \label{import}
+\stindex{import}
 
 \begin{verbatim}
 import_stmt:    "import" identifier ("," identifier)*
@@ -2024,6 +2250,9 @@ name space (of the scope where the \verb\import\ statement occurs).
 The first form (without \verb\from\) repeats these steps for each
 identifier in the list, the \verb\from\ form performs them once, with
 the first identifier specifying the module name.
+\indexii{importing}{module}
+\indexii{name}{binding}
+\kwindex{from}
 
 The system maintains a table of modules that have been initialized,
 indexed by module name.  (The current implementation makes this table
@@ -2036,6 +2265,15 @@ the module name with extension \verb\".py"\.  (The current
 implementation uses the list of strings \verb\sys.path\ as the search
 path; it is initialized from the shell environment variable
 \verb\$PYTHONPATH\, with an installation-dependent default.)
+\ttindex{modules}
+\ttindex{sys.modules}
+\indexii{module}{name}
+\indexii{built-in}{module}
+\indexii{user-defined}{module}
+\bimodindex{sys}
+\ttindex{path}
+\ttindex{sys.path}
+\indexii{filename}{extension}
 
 If a built-in module is found, its built-in initialization code is
 executed and step (1) is finished.  If no matching file is found,
@@ -2045,6 +2283,10 @@ yielding an executable code block.  If a syntax error occurs,
 name is created and inserted in the module table, and then the code
 block is executed in the context of this module.  Exceptions during
 this execution terminate step (1).
+\indexii{module}{initialization}
+\exindex{SyntaxError}
+\exindex{ImportError}
+\index{code block}
 
 When step (1) finishes without raising an exception, step (2) can
 begin.
@@ -2058,11 +2300,16 @@ local name space to the object thus found.  If a name is not found,
 \verb\ImportError\ is raised.  If the list of identifiers is replaced
 by a star (\verb\*\), all names defined in the module are bound,
 except those beginning with an underscore(\verb\_\).
+\indexii{name}{binding}
+\exindex{ImportError}
 
 Names bound by import statements may not occur in \verb\global\
 statements in the same scope.
+\stindex{global}
 
 The \verb\from\ form with \verb\*\ may only occur in a module scope.
+\kwindex{from}
+\ttindex{from ... import *}
 
 (The current implementation does not enforce the latter two
 restrictions, but programs should not abuse this freedom, as future
@@ -2070,6 +2317,7 @@ implementations may enforce them or silently change the meaning of the
 program.)
 
 \section{The {\tt global} statement} \label{global}
+\stindex{global}
 
 \begin{verbatim}
 global_stmt:    "global" identifier ("," identifier)*
@@ -2080,6 +2328,7 @@ entire current scope.  It means that the listed identifiers are to be
 interpreted as globals.  While {\em using} global names is automatic
 if they are not defined in the local scope, {\em assigning} to global
 names would be impossible without \verb\global\.
+\indexiii{global}{name}{binding}
 
 Names listed in a \verb\global\ statement must not be used in the same
 scope before that \verb\global\ statement is executed.
@@ -2094,6 +2343,7 @@ implementations may enforce them or silently change the meaning of the
 program.)
 
 \chapter{Compound statements}
+\indexii{compound}{statement}
 
 Compound statements contain (groups of) other statements; they affect
 or control the execution of those other statements in some way.  In
@@ -2117,6 +2367,8 @@ lines.  Only the latter form of suite can contain nested compound
 statements; the following is illegal, mostly because it wouldn't be
 clear to which \verb\if\ clause a following \verb\else\ clause would
 belong:
+\index{clause}
+\index{suite}
 
 \begin{verbatim}
 if test1: if test2: print x
@@ -2141,16 +2393,20 @@ stmt_list:      simple_stmt (";" simple_stmt)* [";"]
 
 Note that statements always ends in a \verb\NEWLINE\ possibly followed
 by a \verb\DEDENT\.
+\index{NEWLINE token}
+\index{DEDENT token}
 
 Also note that optional continuation clauses always begin with a
 keyword that cannot start a statement, thus there are no ambiguities
 (the `dangling \verb\else\' problem is solved in Python by requiring
 nested \verb\if\ statements to be indented).
+\indexii{dangling}{else}
 
 The formatting of the grammar rules in the following sections places
 each clause on a separate line for clarity.
 
 \section{The {\tt if} statement}
+\stindex{if}
 
 The \verb\if\ statement is used for conditional execution:
 
@@ -2166,8 +2422,12 @@ the definition of true and false); then that suite is executed (and no
 other part of the \verb\if\ statement is executed or evaluated).  If
 all conditions are false, the suite of the \verb\else\ clause, if
 present, is executed.
+\kwindex{elif}
+\kwindex{else}
 
 \section{The {\tt while} statement}
+\stindex{while}
+\indexii{loop}{statement}
 
 The \verb\while\ statement is used for repeated execution as long as a
 condition is true:
@@ -2181,16 +2441,22 @@ This repeatedly tests the condition and, if it is true, executes the
 first suite; if the condition is false (which may be the first time it
 is tested) the suite of the \verb\else\ clause, if present, is
 executed and the loop terminates.
+\kwindex{else}
 
 A \verb\break\ statement executed in the first suite terminates the
 loop without executing the \verb\else\ clause's suite.  A
 \verb\continue\ statement executed in the first suited skips the rest
 of the suite and goes back to testing the condition.
+\stindex{break}
+\stindex{continue}
 
 \section{The {\tt for} statement}
+\stindex{for}
+\indexii{loop}{statement}
 
 The \verb\for\ statement is used to iterate over the elements of a
 sequence (string, tuple or list):
+\obindex{sequence}
 
 \begin{verbatim}
 for_stmt:       "for" target_list "in" condition_list ":" suite
@@ -2204,12 +2470,17 @@ target list using the standard rules for assignments, and then the
 suite is executed.  When the items are exhausted (which is immediately
 when the sequence is empty), the suite in the \verb\else\ clause, if
 present, is executed, and the loop terminates.
+\kwindex{in}
+\kwindex{else}
+\indexii{target}{list}
 
 A \verb\break\ statement executed in the first suite terminates the
 loop without executing the \verb\else\ clause's suite.  A
 \verb\continue\ statement executed in the first suited skips the rest
 of the suite and continues with the next item, or with the \verb\else\
 clause if there was no next item.
+\stindex{break}
+\stindex{continue}
 
 The suite may assign to the variable(s) in the target list; this does
 not affect the next item assigned to it.
@@ -2221,6 +2492,8 @@ loop.
 Hint: the built-in function \verb\range()\ returns a sequence of
 integers suitable to emulate the effect of Pascal's \verb\for i := a
 to b do\; e.g. \verb\range(3)\ returns the list \verb\[0, 1, 2]\.
+\bifuncindex{range}
+\index{Pascal}
 
 {\bf Warning:} There is a subtlety when the sequence is being modified
 by the loop (this can only occur for mutable sequences, i.e. lists).
@@ -2234,6 +2507,8 @@ suite inserts an item in the sequence before the current item, the
 current item will be treated again the next time through the loop.
 This can lead to nasty bugs that can be avoided by making a temporary
 copy using a slice of the whole sequence, e.g.
+\index{loop!over mutable sequence}
+\index{mutable sequence!loop over}
 
 \begin{verbatim}
 for x in a[:]:
@@ -2241,6 +2516,7 @@ for x in a[:]:
 \end{verbatim}
 
 \section{The {\tt try} statement}
+\stindex{try}
 
 The \verb\try\ statement specifies exception handlers and/or cleanup
 code for a group of statements:
@@ -2248,31 +2524,29 @@ code for a group of statements:
 \begin{verbatim}
 try_stmt:       try_exc_stmt | try_fin_stmt
 try_exc_stmt:   "try" ":" suite
-               ("except" condition ["," target] ":" suite)*
-               ["except" ":" suite]
+               ("except" [condition ["," target]] ":" suite)+
 try_fin_stmt:   "try" ":" suite
                "finally" ":" suite
 \end{verbatim}
 
 There are two forms of \verb\try\ statement: \verb\try...except\ and
-\verb\try...finally\.  These forms cannot be mixed.  A \verb\try\
-clause with neither a \verb\except\ clause nor a \verb\finally\ clause
-just executes the suite of statements in its \verb\try\ clause (it
-could be forbidden syntactically but there seems little reason to do
-so).
+\verb\try...finally\.  These forms cannot be mixed.
 
-The \verb\try...except\ form specifies one or more exception handlers.
-When no exception occurs in the \verb\try\ clause, no exception
-handler is executed.  When an exception occurs in the \verb\try\
-suite, a search for an exception handler is started.  This inspects
-the except clauses (exception handlers) in turn until one is found
-that matches the exception.  A condition-less except clause (which
-must be last) matches any exception.  For except clause with a
-condition, that condition is evaluated, and the clause matches the
-exception if the resulting object is ``compatible'' with the
-exception.  An object is compatible with an exception if it is either
-the object that identifies the exception or it is a tuple containing
-an item that is compatible with the exception.
+The \verb\try...except\ form specifies one or more exception handlers
+(the \verb\except\ clauses).  When no exception occurs in the
+\verb\try\ clause, no exception handler is executed.  When an
+exception occurs in the \verb\try\ suite, a search for an exception
+handler is started.  This inspects the except clauses in turn until
+one is found that matches the exception.  A condition-less except
+clause, if present, must be last; it matches any exception.  For an
+except clause with a condition, that condition is evaluated, and the
+clause matches the exception if the resulting object is ``compatible''
+with the exception.  An object is compatible with an exception if it
+is either the object that identifies the exception or it is a tuple
+containing an item that is compatible with the exception.  Note that
+the object identities must match, i.e. it must be the same object, not
+just an onject with the same value.
+\kwindex{except}
 
 If no except clause matches the exception, the search for an exception
 handler continues in the surrounding code and on the invocation stack.
@@ -2280,16 +2554,16 @@ handler continues in the surrounding code and on the invocation stack.
 If the evaluation of a condition in the header of an except clause
 raises an exception, the original search for a handler is cancelled
 and a search starts for the new exception in the surrounding code and
-on the call stack.
+on the call stack (it is treated as if the entire \verb\try\ statement
+raised the exception).
 
-When a matching except clause is found in a try statement, the
-exception's parameter is assigned to the target specified in the
-except clause (if present), and the except clause's suite is executed.
-When the end of this suite is reached, execution continues normally
-at the point following the entire try statement.  (This means that if
-two nested handlers exist for the same exception, and the exception
-occurs in the try clause of the inner handler, the outer handler will
-not notice the exception.)
+When a matching except clause is found, the exception's parameter is
+assigned to the target specified in that except clause, if present,
+and the except clause's suite is executed.  When the end of this suite
+is reached, execution continues normally after the entire try
+statement.  (This means that if two nested handlers exist for the same
+exception, and the exception occurs in the try clause of the inner
+handler, the outer handler will not handle the exception.)
 
 The \verb\try...finally\ form specifies a `cleanup' handler.  The
 \verb\try\ clause is executed.  When no exception occurs, the
@@ -2299,22 +2573,32 @@ The \verb\try...finally\ form specifies a `cleanup' handler.  The
 re-raised.  If the \verb\finally\ clause raises another exception or
 executes a \verb\return\, \verb\break\ or \verb\continue\ statement,
 the saved exception is lost.
+\kwindex{finally}
 
 When a \verb\return\ or \verb\break\ statement is executed in the
 \verb\try\ suite of a \verb\try...finally\ statement, the
 \verb\finally\ clause is also executed `on the way out'.  A
-\verb\continue\ statement is illegal in the \verb\try\ clause (the
+\verb\continue\ statement is illegal in the \verb\try\ clause.  (The
 reason is a problem with the current implementation --- this
 restriction may be lifted in the future).
+\stindex{return}
+\stindex{break}
+\stindex{continue}
 
 \section{Function definitions} \label{function}
+\indexii{function}{definition}
 
-A function definition defines a function:
+A function definition defines a user-defined function object (see
+section \ref{types}):
+\obindex{user-defined function}
+\obindex{function}
 
 \begin{verbatim}
-funcdef:        "def" identifier "(" [parameter_list] ")" ":" suite
-parameter_list: parameter ("," parameter)*
-parameter:      identifier | "(" parameter_list ")"
+funcdef:        "def" funcname "(" [parameter_list] ")" ":" suite
+parameter_list: (parameter ",")* ("*" identifier | parameter [","])
+sublist:        parameter ("," parameter)* [","]
+parameter:      identifier | "(" sublist ")"
+funcname:       identifier
 \end{verbatim}
 
 A function definition is an executable statement.  Its execution binds
@@ -2322,34 +2606,88 @@ the function name in the current local name space to a function object
 (a wrapper around the executable code for the function).  This
 function object contains a reference to the current global name space
 as the global name space to be used when the function is called.
+\indexii{function}{name}
+\indexii{name}{binding}
 
 The function definition does not execute the function body; this gets
-executed only when the function is called.  Function call semantics
-are described elsewhere (see XXX).
+executed only when the function is called.
+
+Function call semantics are described in section \ref{calls}.  When a
+user-defined function is called, the arguments (a.k.a. actual
+parameters) are bound to the (formal) parameters, as follows:
+\indexii{function}{call}
+\indexiii{user-defined}{function}{call}
+\index{parameter}
+\index{argument}
+\indexii{parameter}{formal}
+\indexii{parameter}{actual}
+
+\begin{itemize}
+
+\item
+If there are no formal parameters, there must be no arguments.
+
+\item
+If the formal parameter list does not end in a star followed by an
+identifier, there must be exactly as many arguments as there are
+parameters in the formal parameter list (at the top level); the
+arguments are assigned to the formal parameters one by one.  Note that
+the presence or absence of a trailing comma at the top level in either
+the formal or the actual parameter list makes no difference.  The
+assignment to a formal parameter is performed as if the parameter
+occurs on the left hand side of an assignment statement whose right
+hand side's value is that of the argument.
+
+\item
+If the formal parameter list ends in a star followed by an identifier,
+preceded by zero or more comma-followed parameters, there must be at
+least as many arguments as there are parameters preceding the star.
+Call this number {\em N}.  The first {\em N} arguments are assigned to
+the corresponding formal parameters in the way descibed above.  A
+tuple containing the remaining arguments, if any, is then assigned to
+the identifier following the star.  This variable will always be a
+tuple: if there are no extra arguments, its value is \verb\()\, if
+there is just one extra argument, it is a singleton tuple.
+\indexii{variable length}{parameter list}
+
+\end{itemize}
+
+Note that the `variable length parameter list' feature only works at
+the top level of the parameter list; individual parameters use a model
+corresponding more closely to that of ordinary assignment.  While the
+latter model is generally preferable, because of the greater type
+safety it offers (wrong-sized tuples aren't silently mistreated),
+variable length parameter lists are a sufficiently accepted practice
+in most programming languages that a compromise has been worked out.
+(And anyway, assignment has no equivalent for empty argument lists.)
 
 \section{Class definitions} \label{class}
+\indexii{class}{definition}
 
-A class definition defines a class:
+A class definition defines a class object (see section \ref{types}):
+\obindex{class}
 
 \begin{verbatim}
-classdef:       "class" identifier [inheritance] ":" suite
-inheritance:    "(" condition_list ")"
+classdef:       "class" classname [inheritance] ":" suite
+inheritance:    "(" [condition_list] ")"
+classname:      identifier
 \end{verbatim}
 
-A class definition is an executable statement.  It first executes the
-inheritance list, if present.  The class's suite is executed in a new
-execution frame, using a newly created local name space and the
-original global name space.  (Usually, the suite contains only
-function definitions.)  When the class's suite finishes execution, its
-execution frame is discarded but its local name space is saved.  A
-class object (see XXX) is created using the inheritance list for the
-base classes and the saved local name space for the attribute
-dictionary.  The class name is then bound to this class object in the
-original local name space.
-
-\section{P.M.}
-
-XXX New definition of expressions (as conditions)
+A class definition is an executable statement.  It first evaluates the
+inheritance list, if present.  Each item in the inheritance list
+should evaluate to a class object.  The class's suite is then executed
+in a new execution frame (see section \ref{execframes}), using a newly
+created local name space and the original global name space.
+(Usually, the suite contains only function definitions.)  When the
+class's suite finishes execution, its execution frame is discarded but
+its local name space is saved.  A class object is then created using
+the inheritance list for the base classes and the saved local name
+space for the attribute dictionary.  The class name is bound to this
+class object in the original local name space.
+\index{inheritance}
+\indexii{class}{name}
+\indexii{name}{binding}
+\indexii{execution}{frame}
 
 \chapter{Top-level components}
 
@@ -2357,8 +2695,10 @@ The Python interpreter can get its input from a number of sources:
 from a script passed to it as standard input or as program argument,
 typed in interactively, from a module source file, etc.  This chapter
 gives the syntax used in these cases.
+\index{interpreter}
 
 \section{Complete Python programs}
+\index{program}
 
 While a language specification need not prescribe how the language
 interpreter is invoked, it is useful to have a notion of a complete
@@ -2369,6 +2709,9 @@ available, but none have been initialized, except for \verb\sys\
 exceptions and \verb\None\) and \verb\__main__\.  The latter is used
 to provide the local and global name space for execution of the
 complete program.
+\bimodindex{sys}
+\bimodindex{__main__}
+\bimodindex{builtin}
 
 The syntax for a complete Python program is that for file input,
 described in the next section.
@@ -2378,6 +2721,7 @@ it does not read and execute a complete program but reads and executes
 one statement (possibly compound) at a time.  The initial environment
 is identical to that of a complete program; each statement is executed
 in the name space of \verb\__main__\.
+\index{interactive mode}
 
 Under {\UNIX}, a complete program can be passed to the interpreter in
 three forms: with the {\bf -c} {\it string} command line option, as a
@@ -2385,6 +2729,9 @@ file passed as the first command line argument, or as standard input.
 If the file or standard input is a tty device, the interpreter enters
 interactive mode; otherwise, it executes the file as a complete
 program.
+\index{UNIX}
+\index{command line}
+\index{standard input}
 
 \section{File input}
 
@@ -2403,8 +2750,10 @@ This syntax is used in the following situations:
 \item when parsing a module;
 
 \item when parsing a string passed to \verb\exec()\;
+\bifuncindex{exec}
 
 \item when parsing a file passed to \verb\execfile()\;
+\bifuncindex{execfile}
 
 \end{itemize}
 
@@ -2421,21 +2770,33 @@ line in interactive mode; this is needed to help the parser detect the
 end of the input.
 
 \section{Expression input}
+\index{input}
 
 There are two forms of expression input.  Both ignore leading
 whitespace.
  
 The string argument to \verb\eval()\ must have the following form:
+\bifuncindex{eval}
 
 \begin{verbatim}
 eval_input:     condition_list NEWLINE*
 \end{verbatim}
 
 The input line read by \verb\input()\ must have the following form:
+\bifuncindex{input}
 
 \begin{verbatim}
 input_input:    condition_list NEWLINE
 \end{verbatim}
+
+Note: to read `raw' input line without interpretation, you can use the
+built-in function \verb\raw_input()\  or the \verb\readline()\ method
+of file objects.
+\obindex{file}
+\index{input!raw}
+\index{raw input}
+\bifuncindex{raw_index}
+\ttindex{readline}
 
 \input{ref.ind}		% The index
 
