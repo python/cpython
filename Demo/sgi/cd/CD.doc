@@ -1,0 +1,46 @@
+Introduction.
+
+A number of programs have been written which access the Silicon
+Graphics CD-ROM player.  These programs all use the interface defined
+in readcd.py (see readcd.doc for documentation).
+
+Specifying music stretches.
+
+The programs that are capable of reading music CD's all use the same
+syntax to describe which part of the CD is to be read.  The syntax
+closely corresponds to the available methods in readcd.py.
+
+The music to be read is divided into stretches of music.  Each stretch
+must be specified as a separate argument on the command line.  A
+stretch can be a whole CD track, specified as a single number; or it
+can be a start time and a end time.  The start and end times must be
+specified as a tuple, thus: ``(starttime, endtime)''.  Don't forget to
+quote the parenthesis to the shell.  Both starttime and endtime can be
+``None'', a simple number which refers to a CD track, or a tuple
+consisting of either 3 or 4 elements.  A starttime of ``None'' refers
+to the start of the CD, an endtime of ``None'' refers to the end of
+the CD.  A tuple of 3 elements is an absolute time on the CD.  The
+three elements are (minutes, seconds, frames).  A tuple of 4 elements
+is a track-relative time.  The four elements are (track, minutes,
+seconds, frames).
+
+When one stretch ends at the end of a track and the following stretch
+starts at the next track, there is the option of either playing or not
+playing the pause between the two tracks.  When either the end time of
+the first stretch or the start time of the second stretch is specified
+using absolute or track-relative times, the pause will not be played.
+When both times are specified as simple track numbers, the pause will
+be played.
+
+If no stretches are specified, the whole CD will be played.
+
+The programs.
+
+Currently, the following programs exist.
+playcd [ stretch specification ]
+	Play (part of) a CD through the system loadspeaker or
+	headphone set.
+cdaiff [ file [ stretch specification ] ]
+	Copy (part of) a CD to a file.  The file will be written in
+	AIFF format.  If no file is specified, cdaiff will write to
+	the file ``@'' in the current directory.
