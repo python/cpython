@@ -26,12 +26,17 @@ else:
     raise TestFailed, "expected gdbm.error accessing closed database"
 g = gdbm.open(filename, 'r')
 g.close()
-g = gdbm.open(filename, 'rw')
-g.close()
 g = gdbm.open(filename, 'w')
 g.close()
 g = gdbm.open(filename, 'n')
 g.close()
+try:
+    g = gdbm.open(filename, 'rx')
+    g.close()
+except error:
+    pass
+else:
+    raise TestFailed, "expected gdbm.error when passing invalid open flags"
 
 try:
     import os
