@@ -65,15 +65,16 @@ def my_import(name):
 \begin{funcdesc}{apply}{function, args\optional{, keywords}}
   The \var{function} argument must be a callable object (a
   user-defined or built-in function or method, or a class object) and
-  the \var{args} argument must be a sequence (if it is not a tuple,
-  the sequence is first converted to a tuple).  The \var{function} is
+  the \var{args} argument must be a sequence.  The \var{function} is
   called with \var{args} as the argument list; the number of arguments
-  is the the length of the tuple.  (This is different from just
-  calling \code{\var{func}(\var{args})}, since in that case there is
-  always exactly one argument.)
+  is the the length of the tuple.
   If the optional \var{keywords} argument is present, it must be a
   dictionary whose keys are strings.  It specifies keyword arguments
   to be added to the end of the the argument list.
+  Calling \function{apply()} is different from just calling
+  \code{\var{func}(\var{args})}, since in that case there is always
+  exactly one argument.  The use of \function{apply()} is equivalent
+  to \code{\var{function}(*\var{args}, **\var{keywords})}.
 \end{funcdesc}
 
 \begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
