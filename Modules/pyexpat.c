@@ -1072,16 +1072,16 @@ static struct PyMethodDef xmlparse_methods[] = {
 */
 
 static char template_buffer[257];
-PyObject * template_string=NULL;
+PyObject *template_string = NULL;
 
 static void 
 init_template_buffer(void)
 {
     int i;
-    for (i=0;i<256;i++) {
-	template_buffer[i]=i;
+    for (i = 0; i < 256; i++) {
+	template_buffer[i] = i;
     }
-    template_buffer[256]=0;
+    template_buffer[256] = 0;
 }
 
 int 
@@ -1089,23 +1089,24 @@ PyUnknownEncodingHandler(void *encodingHandlerData,
 const XML_Char *name, 
 XML_Encoding * info)
 {
-    PyUnicodeObject * _u_string=NULL;
-    int result=0;
+    PyUnicodeObject *_u_string = NULL;
+    int result = 0;
     int i;
     
-    _u_string=(PyUnicodeObject *) PyUnicode_Decode(template_buffer, 256, name, "replace"); // Yes, supports only 8bit encodings
+    /* Yes, supports only 8bit encodings */
+    _u_string = (PyUnicodeObject *)
+        PyUnicode_Decode(template_buffer, 256, name, "replace");
     
-    if (_u_string==NULL) {
+    if (_u_string == NULL)
 	return result;
-    }
     
-    for (i=0; i<256; i++) {
-	Py_UNICODE c = _u_string->str[i] ; // Stupid to access directly, but fast
-	if (c==Py_UNICODE_REPLACEMENT_CHARACTER) {
+    for (i = 0; i < 256; i++) {
+	/* Stupid to access directly, but fast */
+	Py_UNICODE c = _u_string->str[i];
+	if (c == Py_UNICODE_REPLACEMENT_CHARACTER)
 	    info->map[i] = -1;
-	} else {
+	else
 	    info->map[i] = c;
-	}
     }
     
     info->data = NULL;
