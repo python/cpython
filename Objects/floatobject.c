@@ -314,6 +314,12 @@ static number_methods float_as_number = {
 	float_pos,	/*nb_positive*/
 	float_abs,	/*nb_absolute*/
 	float_nonzero,	/*nb_nonzero*/
+	0,		/*nb_invert*/
+	0,		/*nb_lshift*/
+	0,		/*nb_rshift*/
+	0,		/*nb_and*/
+	0,		/*nb_xor*/
+	0,		/*nb_or*/
 };
 
 typeobject Floattype = {
