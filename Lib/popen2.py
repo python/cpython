@@ -143,7 +143,6 @@ def _test():
     teststr = "abc\n"
     print "testing popen2..."
     r, w = popen2('cat')
-    print r, w
     w.write(teststr)
     w.close()
     assert r.read() == teststr
@@ -152,7 +151,6 @@ def _test():
         r, w, e = popen3(['cat'])
     except:
         r, w, e = popen3('cat')
-    print r, w, e
     w.write(teststr)
     w.close()
     assert r.read() == teststr
