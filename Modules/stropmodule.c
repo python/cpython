@@ -55,7 +55,7 @@ strop_split(self, args)
 			i = i+1;
 		}
 		j = i;
-		while (i < len && isspace(Py_CHARMASK(s[i]))) {
+		while (i < len && !isspace(Py_CHARMASK(s[i]))) {
 			i = i+1;
 		}
 		if (j < i) {
@@ -278,7 +278,7 @@ strop_strip(self, args)
 	j = len;
 	do {
 		j--;
-	} while (j >= i && isspace(Py_CHARMASK(s[i])));
+	} while (j >= i && isspace(Py_CHARMASK(s[j])));
 	j++;
 
 	if (i == 0 && j == len) {
