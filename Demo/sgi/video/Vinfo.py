@@ -65,13 +65,7 @@ def process(filename):
 		sys.stderr.write(filename + ': EOF in video file\n')
 		return 1
 
-	print 'File:    ', filename
-	print 'Version: ', vin.version
-	print 'Size:    ', vin.width, 'x', vin.height
-	print 'Pack:    ', vin.packfactor, '; chrom:', vin.chrompack
-	print 'Bits:    ', vin.c0bits, vin.c1bits, vin.c2bits
-	print 'Format:  ', vin.format
-	print 'Offset:  ', vin.offset
+	vin.printinfo()
 
 	if quick:
 		vin.close()

@@ -10,7 +10,7 @@ def report(time, iframe):
 	print 'Frame', iframe, ': t =', time
 
 def usage():
-	sys.write('usage: vcopy infile outfile\n')
+	sys.stderr.write('usage: vcopy infile outfile\n')
 	sys.exit(2)
 
 def help():
