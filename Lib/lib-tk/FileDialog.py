@@ -119,6 +119,7 @@ class FileDialog:
         self.set_selection(default)
         self.filter_command()
         self.selection.focus_set()
+        self.top.wait_visibility() # window needs to be visible for the grab
         self.top.grab_set()
         self.how = None
         self.master.mainloop()          # Exited by self.quit(how)

@@ -43,6 +43,8 @@ Extension modules
 Library
 -------
 
+- Patch #946153: Add wait_visibility before grab_set.
+
 - Patch #994595: urllib2 now recognizes Basic authentication even if
   other authentication schemes are offered.
 
