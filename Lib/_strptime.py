@@ -15,6 +15,7 @@ import locale
 import calendar
 from re import compile as re_compile
 from re import IGNORECASE
+from re import escape as re_escape
 from datetime import date as datetime_date
 try:
     from thread import allocate_lock as _thread_allocate_lock
@@ -232,7 +233,7 @@ class TimeRE(dict):
             return ''
         to_convert = to_convert[:]
         to_convert.sort(key=len, reverse=True)
-        regex = '|'.join(to_convert)
+        regex = '|'.join(re_escape(stuff) for stuff in to_convert)
         regex = '(?P<%s>%s' % (directive, regex)
         return '%s)' % regex
 
@@ -245,7 +246,8 @@ class TimeRE(dict):
         """
         processed_format = ''
         # The sub() call escapes all characters that might be misconstrued
-        # as regex syntax.
+        # as regex syntax.  Cannot use re.escape since we have to deal with
+        # format directives (%m, etc.).
         regex_chars = re_compile(r"([\\.^$*+?\(\){}\[\]|])")
         format = regex_chars.sub(r"\\\1", format)
         whitespace_replacement = re_compile('\s+')

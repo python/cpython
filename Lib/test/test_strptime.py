@@ -176,6 +176,19 @@ class TimeRETests(unittest.TestCase):
         found = compiled_re.match("\w+ 10")
         self.failUnless(found, "Escaping failed of format '\w+ 10'")
 
+    def test_locale_data_w_regex_metacharacters(self):
+        # Check that if locale data contains regex metacharacters they are
+        # escaped properly.
+        # Discovered by bug #1039270 .
+        locale_time = _strptime.LocaleTime()
+        locale_time.timezone = (frozenset(("utc", "gmt",
+                                            "Tokyo (standard time)")),
+                                frozenset("Tokyo (daylight time)"))
+        time_re = _strptime.TimeRE(locale_time)
+        self.failUnless(time_re.compile("%Z").match("Tokyo (standard time)"),
+                        "locale data that contains regex metacharacters is not"
+                        " properly escaped")
+
 class StrptimeTests(unittest.TestCase):
     """Tests for _strptime.strptime."""
 
