@@ -13,6 +13,7 @@ from glob import glob
 from shutil import rmtree
 from distutils.core import Command
 from distutils.text_file import TextFile
+from distutils.errors import DistutilsExecError
 
 
 # Possible modes of operation:
@@ -388,16 +389,30 @@ class Dist (Command):
         for dir in need_dirs:
             self.mkpath (dir)
 
-        # And walk over the list of files, making a hard link for
-        # each one that doesn't already exist in its corresponding
-        # location under 'base_dir'
+        # And walk over the list of files, either making a hard link (if
+        # os.link exists) to each one that doesn't already exist in its
+        # corresponding location under 'base_dir', or copying each file
+        # that's out-of-date in 'base_dir'.  (Usually, all files will be
+        # out-of-date, because by default we blow away 'base_dir' when
+        # we're done making the distribution archives.)
     
-        self.announce ("making hard links in %s..." % base_dir)
+        try:
+            link = os.link
+            msg = "making hard links in %s..." % base_dir
+        except AttributeError:
+            link = 0
+            msg = "copying files to %s..." % base_dir
+
+        self.announce (msg)
         for file in files:
             dest = os.path.join (base_dir, file)
-            if not os.path.exists (dest):
-                self.execute (os.link, (file, dest),
-                              "linking %s -> %s" % (file, dest))
+            if link:
+                if not os.path.exists (dest):
+                    self.execute (os.link, (file, dest),
+                                  "linking %s -> %s" % (file, dest))
+            else:
+                self.copy_file (file, dest)
+
     # make_release_tree ()
 
 
@@ -453,7 +468,7 @@ class Dist (Command):
                 import zipfile
             except ImportError:
                 raise DistutilsExecError, \
-                      ("unable to create zip file '%s.zip':" + 
+                      ("unable to create zip file '%s.zip': " + 
                        "could neither find a standalone zip utility nor " +
                        "import the 'zipfile' module") % base_dir
 
