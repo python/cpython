@@ -63,6 +63,25 @@ URL that was parsed originally had redundant delimiters, e.g. a ? with
 an empty query (the draft states that these are equivalent).
 \end{funcdesc}
 
+\begin{funcdesc}{urlsplit}{urlstring\optional{,
+                           default_scheme\optional{, allow_fragments}}}
+This is similar to \function{urlparse()}, but does not split the
+params from the URL.  This should generally be used instead of
+\function{urlparse()} if the more recent URL syntax allowing
+parameters to be applied to each segment of the \var{path} portion of
+the URL (see \rfc{2396}).  A separate function is needed to separate
+the path segments and parameters.  This function returns a 5-tuple:
+(addressing scheme, network location, path, query, fragment
+identifier).
+\versionadded{2.2}
+\end{funcdesc}
+
+\begin{funcdesc}{urlunsplit}{tuple}
+Combine the elements of a tuple as returned by \function{urlsplit()}
+into a complete URL as a string.
+\versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{urljoin}{base, url\optional{, allow_fragments}}
 Construct a full (``absolute'') URL by combining a ``base URL''
 (\var{base}) with a ``relative URL'' (\var{url}).  Informally, this
