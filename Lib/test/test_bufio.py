@@ -43,7 +43,7 @@ def try_one(s):
 
 # A pattern with prime length, to avoid simple relationships with
 # stdio buffer sizes.
-primepat = "1234567890\00\01\02\03\04\05\06\07"
+primepat = "1234567890\00\01\02\03\04\05\06"
 
 nullpat = "\0" * 1000
 
