@@ -1,6 +1,8 @@
 import os
+import tempfile
 import tkFileDialog
 import tkMessageBox
+from IdleConf import idleconf
 
 #$ event <<open-window-from-file>>
 #$ win <Control-o>
@@ -18,6 +20,10 @@ import tkMessageBox
 #$ win <Alt-Shift-s>
 #$ unix <Control-x><w>
 
+#$ event <<print-window>>
+#$ win <Control-p>
+#$ unix <Control-x><Control-p>
+
 
 class IOBinding:
 
@@ -30,6 +36,7 @@ class IOBinding:
                                           self.save_as)
         self.__id_savecopy = self.text.bind("<<save-copy-of-window-as-file>>",
                                             self.save_a_copy)
+        self.__id_print = self.text.bind("<<print-window>>", self.print_window)
 
     def close(self):
         # Undo command bindings
@@ -37,6 +44,7 @@ class IOBinding:
         self.text.unbind("<<save-window>>", self.__id_save)
         self.text.unbind("<<save-window-as-file>>",self.__id_saveas)
         self.text.unbind("<<save-copy-of-window-as-file>>", self.__id_savecopy)
+        self.text.unbind("<<print-window>>", self.__id_print)
         # Break cycles
         self.editwin = None
         self.text = None
@@ -144,6 +152,30 @@ class IOBinding:
         if filename:
             self.writefile(filename)
         self.text.focus_set()
+        return "break"
+
+    def print_window(self, event):
+        tempfilename = None
+        if self.get_saved():
+            filename = self.filename
+        else:
+            filename = tempfilename = tempfile.mktemp()
+            if not self.writefile(filename):
+                os.unlink(tempfilename)
+                return "break"
+        edconf = idleconf.getsection('EditorWindow')
+        command = edconf.get('print-command')
+        command = command % filename
+        if os.name == 'posix':
+            command = command + " 2>&1"
+        pipe = os.popen(command, "r")
+        output = pipe.read().strip()
+        status = pipe.close()
+        if status:
+            output = "Printing failed (exit status 0x%x)\n" % status + output
+        if output:
+            output = "Printing command: %s\n" % repr(command) + output
+            tkMessageBox.showerror("Print status", output, master=self.text)
         return "break"
 
     def writefile(self, filename):
