@@ -68,7 +68,7 @@ def disassemble(co, lasti=-1):
         table_index += 1
     addr = 0
     line_incr = 0
-    
+
     labels = findlabels(code)
     n = len(code)
     i = 0
