@@ -155,6 +155,9 @@ Modules/python.o: $(srcdir)/Modules/python.c
 buildno:
 		echo 0 >buildno
 
+platform: python$(EXE)
+	./python$(EXE) -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
+
 # Build the shared modules
 sharedmods: 	python$(EXE)
 		./python$(EXE) $(srcdir)/setup.py build
@@ -215,10 +218,10 @@ Modules:	Parser Python Objects
 TESTOPTS=	-l
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 TESTPYTHON=	./python$(EXE) -tt
-test:		all
+test:		all platform
 		-rm -f $(srcdir)/Lib/test/*.py[co]
-		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
-		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
+		-PYTHONPATH=$(srcdir)/build/lib.`cat platform` $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
+		PYTHONPATH=$(srcdir)/build/lib.`cat platform` $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 
 # Install everything
 install:	altinstall bininstall maninstall
@@ -541,7 +544,7 @@ distclean:	clobber
 		-$(MAKE) -f $(srcdir)/Makefile.in \
 			SUBDIRS="$(SUBDIRSTOO)" clobber
 		-rm -f config.status config.log config.cache config.h Makefile
-		-rm -f buildno
+		-rm -f buildno platform
 		-rm -f Modules/Makefile
 		-for i in $(SUBDIRS) $(SUBDIRSTOO); do \
 			 for f in $$i/*.in; do \
