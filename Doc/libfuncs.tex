@@ -5,10 +5,51 @@ are always available.  They are listed here in alphabetical order.
 
 
 \renewcommand{\indexsubitem}{(built-in function)}
+
+\begin{funcdesc}{__import__}{name\optional{, globals\optional{, locals\optional{, fromlist}}}}
+This function is invoked by the \code{import} statement.  It
+mainly exists so that you can replace it with another
+function that has a compatible interface, in order to change the
+semantics of the \code{import} statement.  For examples of why and
+how you would do this, see the standard library modules \code{ni},
+\code{ihooks} and \code{rexec}.  See also the built-in module
+\code{imp}, which defines some useful operations out of which you can
+build your own \code{__import__} function.
+\stindex{import}
+\stmodindex{ni}
+\stmodindex{ihooks}
+\stmodindex{rexec}
+\bimodindex{imp}
+
+For example, the statement \code{import spam} results in the following
+call:
+\code{__import__('spam', globals(), locals(), [])};
+the statement \code{from spam.ham import eggs} results in
+\code{__import__('spam.ham', globals(), locals(), ['eggs'])}.
+Note that even though \code{locals()} and \code{['eggs']} are passed
+in as arguments, the \code{__import__()} function does not set the
+local variable named \code{eggs}; this is done by subsequent code that
+is generated for the import statement.  (In fact, the standard
+implementation does not use its \var{locals} argument at all, and uses
+its \var{globals} only to determine the package context of the
+\code{import} statement.)
+
+When the \var{name} variable is of the form \code{package.module},
+normally, the top-level package (the name up till the first dot) is
+returned, \emph{not} the module named by \var{name}.  However, when a
+non-empty \var{fromlist} argument is given, the module named by
+\var{name} is returned.  This is done for compatibility with the
+bytecode generated for the different kinds of import statement; when
+using \code{import spam.ham.eggs}, the top-level package \code{spam}
+must be placed in the importing namespace, but when using \code{from
+spam.ham import eggs}, the \code{spam.ham} subpackage must be used to
+find the \code{eggs} variable.
+\end{funcdesc}
+
 \begin{funcdesc}{abs}{x}
   Return the absolute value of a number.  The argument may be a plain
   or long integer or a floating point number.  If the argument is a
-  complex number, its magnitude is returned. 
+  complex number, its magnitude is returned.
 \end{funcdesc}
 
 \begin{funcdesc}{apply}{function\, args\optional{, keywords}}
@@ -22,6 +63,14 @@ exactly one argument.)
 If the optional \var{keywords} argument is present, it must be a
 dictionary whose keys are strings.  It specifies keyword arguments to
 be added to the end of the the argument list.
+\end{funcdesc}
+
+\begin{funcdesc}{callable}{object}
+Return true if the \var{object} argument appears callable, false if
+not.  If this returns true, it is still possible that a call fails,
+but if it is false, calling \var{object} will never succeed.  Note
+that classes are callable (calling a class returns a new instance);
+class instances are callable if they have an attribute \code{__call__}.
 \end{funcdesc}
 
 \begin{funcdesc}{chr}{i}
@@ -76,6 +125,9 @@ be added to the end of the the argument list.
 \end{funcdesc}
 
 \begin{funcdesc}{dir}{}
+XXX New functionality takes anything and looks in __dict__,
+__methods__, __members__.
+
   Without arguments, return the list of names in the current local
   symbol table.  With a module, class or class instance object as
   argument (or anything else that has a \code{__dict__} attribute),
@@ -253,6 +305,20 @@ module from which it is called).
   language definition should require truncation towards zero.}
 \end{funcdesc}
 
+\begin{funcdesc}{isinstance}{object, class}
+Return true if the \var{object} argument is an instance of the
+\var{class} argument, or of a (direct or indirect) subclass thereof.
+If \var{object} is not a class instance, the function always returns
+false.  If \var{class} is not a class object, a \code{TypeError}
+exception is raised.
+\end{funcdesc}
+
+\begin{funcdesc}{issubclass}{class1, class2}
+Return true if \var{class1} is a subclass (direct or indirect) of
+\var{class2}.  A class is considered a subclass of itself.  If either
+argument is not a class object, a \code{TypeError} exception is raised.
+\end{funcdesc}
+
 \begin{funcdesc}{len}{s}
   Return the length (the number of items) of an object.  The argument
   may be a sequence (string, tuple or list) or a mapping (dictionary).
@@ -365,7 +431,7 @@ there's no reliable way to determine whether this is the case.}
   35000)} is not allowed.
 \end{funcdesc}
 
-\begin{funcdesc}{range}{\optional{start\,} end\optional{\, step}}
+\begin{funcdesc}{range}{\optional{start\,} stop\optional{\, step}}
   This is a versatile function to create lists containing arithmetic
   progressions.  It is most often used in \code{for} loops.  The
   arguments must be plain integers.  If the \var{step} argument is
@@ -374,9 +440,9 @@ there's no reliable way to determine whether this is the case.}
   plain integers \code{[\var{start}, \var{start} + \var{step},
   \var{start} + 2 * \var{step}, \ldots]}.  If \var{step} is positive,
   the last element is the largest \code{\var{start} + \var{i} *
-  \var{step}} less than \var{end}; if \var{step} is negative, the last
+  \var{step}} less than \var{stop}; if \var{step} is negative, the last
   element is the largest \code{\var{start} + \var{i} * \var{step}}
-  greater than \var{end}.  \var{step} must not be zero (or else an
+  greater than \var{stop}.  \var{step} must not be zero (or else an
   exception is raised).  Example:
 
 \bcode\begin{verbatim}
@@ -499,6 +565,18 @@ when passed to \code{eval()}.
   \code{\var{x}.\var{foobar} = 123}.
 \end{funcdesc}
 
+\begin{funcdesc}{slice}{\optional{start\,} stop\optional{\, step}}
+Return a slice object representing the set of indices specified by
+\code{range(\var{start}, \var{stop}, \var{step})}.  The \var{start}
+and \var{step} arguments default to None.  Slice objects have
+read-only data attributes \code{start}, \code{stop} and \code{step}
+which merely return the argument values (or their default).  They have
+no other explicit functionality; however they are used by Numerical
+Python and other third party extensions.  Slice objects are also
+generated when extended indexing syntax is used, e.g. for
+\code{a[start:stop:step]} or \code{a[start:stop, i]}.
+\end{funcdesc}
+
 \begin{funcdesc}{str}{object}
 Return a string containing a nicely printable representation of an
 object.  For strings, this returns the string itself.  The difference
@@ -541,7 +619,7 @@ cannot normally be affected this way, but variables retrieved from
 other scopes (e.g. modules) can be.  This may change.}
 \end{funcdesc}
 
-\begin{funcdesc}{xrange}{\optional{start\,} end\optional{\, step}}
+\begin{funcdesc}{xrange}{\optional{start\,} stop\optional{\, step}}
 This function is very similar to \code{range()}, but returns an
 ``xrange object'' instead of a list.  This is an opaque sequence type
 which yields the same values as the corresponding list, without
