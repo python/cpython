@@ -190,9 +190,9 @@ class build_py (Command):
         if not os.path.isfile(module_file):
             self.warn("file %s (for module %s) not found" %
                       (module_file, module))
-            return False
+            return 0
         else:
-            return True
+            return 1
 
     # check_module ()
 
