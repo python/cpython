@@ -1357,6 +1357,9 @@ initsigs(void)
 #ifdef SIGXFZ
 	signal(SIGXFZ, SIG_IGN);
 #endif
+#ifdef SIGXFSZ
+	signal(SIGXFSZ, SIG_IGN);
+#endif
 #endif /* HAVE_SIGNAL_H */
 	PyOS_InitInterrupts(); /* May imply initsignal() */
 }
