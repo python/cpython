@@ -237,7 +237,7 @@ slice_indices(PySliceObject* self, PyObject* len)
 		return NULL;
 	}
 
-	return Py_BuildValue("(lll)", start, stop, step);
+	return Py_BuildValue("(iii)", start, stop, step);
 }
 
 PyDoc_STRVAR(slice_indices_doc,
