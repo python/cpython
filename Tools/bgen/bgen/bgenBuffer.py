@@ -53,21 +53,22 @@ class FixedInputOutputBufferType(InputOnlyType):
 
 	def declareSize(self, name):
 		Output("%s %s__len__;", self.sizetype, name)
+		Output("int %s__in_len__;", name)
 
 	def getargsFormat(self):
-		# XXX This only works if the size is int-sized!!!
 		return "s#"
 
 	def getargsArgs(self, name):
-		return "&%s__in__, &%s__len__" % (name, name)
+		return "&%s__in__, &%s__in_len__" % (name, name)
 	
 	def getargsCheck(self, name):
-		Output("if (%s__len__ != %s)", name, self.size)
+		Output("if (%s__in_len__ != %s)", name, self.size)
 		OutLbrace()
 		Output('PyErr_SetString(PyExc_TypeError, "buffer length should be %s");',
 		       self.size)
 		Output("goto %s__error__;", name)
 		OutRbrace()
+		Output("%s__len__ = %s__in_len__;", name, name)
 
 	def passOutput(self, name):
 		return "%s__in__, %s__out__" % (name, name)
@@ -76,7 +77,7 @@ class FixedInputOutputBufferType(InputOnlyType):
 		return "s#"
 
 	def mkvalueArgs(self, name):
-		return "%s__out__, %s" % (name, self.size)
+		return "%s__out__, (int)%s" % (name, self.size)
 	
 	def cleanup(self, name):
 		DedentLevel()
@@ -138,7 +139,7 @@ class VarInputBufferType(FixedInputBufferType):
 		FixedInputBufferType.__init__(self, "0", datatype, sizetype, sizeformat)
 	
 	def getargsCheck(self, name):
-		pass
+		Output("%s__len__ = %s__in_len__;", name, name)
 	
 	def passInput(self, name):
 		return "%s__in__, %s__len__" % (name, name)
@@ -161,11 +162,14 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
 	def declareInputBuffer(self, name):
 		Output("%s *%s__in__;", self.type, name)
 	
+	def declareSize(self, name):
+		Output("int %s__in_len__;", name)
+	
 	def declareOutputBuffer(self, name):
 		Output("%s %s__out__;", self.type, name)
 	
 	def getargsArgs(self, name):
-		return "(char **)&%s__in__, &%s__len__" % (name, name)
+		return "(char **)&%s__in__, &%s__in_len__" % (name, name)
 	
 	def passInput(self, name):
 		return "%s__in__" % name
@@ -174,7 +178,7 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
 		return "%s__in__, &%s__out__" % (name, name)
 	
 	def mkvalueArgs(self, name):
-		return "(char *)&%s__out__, %s" % (name, self.size)
+		return "(char *)&%s__out__, (int)%s" % (name, self.size)
 
 
 class StructCombinedInputOutputBufferType(StructInputOutputBufferType):
@@ -211,6 +215,9 @@ class StructOutputBufferType(OutputOnlyBufferMixIn, StructInputOutputBufferType)
 
 	Instantiate with the struct type as parameter.
 	"""
+	
+	def declareSize(self, name):
+		pass
 
 	def passOutput(self, name):
 		return "&%s__out__" % name
@@ -222,6 +229,9 @@ class ArrayOutputBufferType(OutputOnlyBufferMixIn, StructInputOutputBufferType):
 
 	Instantiate with the struct type as parameter.
 	"""
+	
+	def declareSize(self, name):
+		pass
 
 	def passOutput(self, name):
 		return "%s__out__" % name

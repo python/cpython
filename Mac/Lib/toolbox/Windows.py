@@ -1,4 +1,5 @@
 # Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Windows.h'
+
 documentProc = 0
 dBoxProc = 1
 plainDBox = 2

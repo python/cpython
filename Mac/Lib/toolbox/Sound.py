@@ -1,4 +1,5 @@
 # Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Sound.h'
+
 swMode = -1
 ftMode = 1
 ffMode = 0

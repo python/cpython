@@ -50,7 +50,7 @@ typedef struct ResourceObject {
 } ResourceObject;
 
 PyObject *ResObj_New(itself)
-	const Handle itself;
+	Handle itself;
 {
 	ResourceObject *it;
 	if (itself == NULL) return PyMac_Error(resNotFound);

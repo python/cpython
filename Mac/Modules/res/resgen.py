@@ -269,3 +269,4 @@ f = ResMethod(void, 'SetResourceSize',
     (long, 'newSize', InMode),
 )
 resmethods.append(f)
+

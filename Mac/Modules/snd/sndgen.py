@@ -129,3 +129,4 @@ f = SndFunction(void, 'Exp1to6',
     (unsigned_long, 'whichChannel', InMode),
 )
 functions.append(f)
+

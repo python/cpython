@@ -1,4 +1,5 @@
 # Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:AppleEvents.h'
+
 typeBoolean = 'bool'
 typeChar = 'TEXT'
 typeSMInt = 'shor'

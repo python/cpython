@@ -1,4 +1,5 @@
 # Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Events.h'
+
 nullEvent = 0
 mouseDown = 1
 mouseUp = 2

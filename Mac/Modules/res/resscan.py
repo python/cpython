@@ -38,6 +38,9 @@ class ResourcesScanner(Scanner):
 		return [
 			"ReadPartialResource",
 			"WritePartialResource",
+##			"RmveResource",		# RemoveResource
+##			"SizeResource",		# GetResourceSizeOnDisk
+##			"MaxSizeRsrc",		# GetMaxResourceSize
 			]
 
 	def makerepairinstructions(self):

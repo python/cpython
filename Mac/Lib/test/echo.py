@@ -11,6 +11,8 @@ addpack.addpack('Demo')
 addpack.addpack('bgen')
 addpack.addpack('ae')
 addpack.addpack('evt')
+#addpack.addpack('menu')
+addpack.addpack('win')
 
 import sys
 sys.stdout = sys.stderr
@@ -20,18 +22,25 @@ import AE
 from AppleEvents import *
 import Evt
 from Events import *
+import Menu
+import Dlg
+import Win
+from Windows import *
+import Qd
+
 import aetools
+import EasyDialogs
 
 kHighLevelEvent = 23				# Not defined anywhere for Python yet?
 
 
 def main():
 	echo = EchoServer()
-	MacOS.EnableAppswitch(0)		# Disable Python's own "event handling"
+	yield = MacOS.EnableAppswitch(-1)		# Disable Python's own "event handling"
 	try:
-		echo.mainloop()
+		echo.mainloop(everyEvent, 0)
 	finally:
-		MacOS.EnableAppswitch(1)	# Let Python have a go at events
+		MacOS.EnableAppswitch(yield)	# Let Python have a go at events
 		echo.close()
 
 
@@ -44,6 +53,13 @@ class EchoServer:
 		for suite in self.suites:
 			AE.AEInstallEventHandler(suite, typeWildCard, self.aehandler)
 		self.active = 1
+		self.appleid = 1
+		Menu.ClearMenuBar()
+		self.applemenu = applemenu = Menu.NewMenu(self.appleid, "\024")
+		applemenu.AppendMenu("All about echo...;(-")
+		applemenu.AddResMenu('DRVR')
+		applemenu.InsertMenu(0)
+		Menu.DrawMenuBar()
 	
 	def __del__(self):
 		self.close()
@@ -64,22 +80,38 @@ class EchoServer:
 				self.lowlevelhandler(event)
 	
 	def lowlevelhandler(self, event):
-		what, message, when, (h, v), modifiers = event
+		what, message, when, where, modifiers = event
+		h, v = where
 		if what == kHighLevelEvent:
-			print "High Level Event:", `code(message)`, `code(h | (v<<16))`
+			msg = "High Level Event: %s %s" % \
+				(`code(message)`, `code(h | (v<<16))`)
 			try:
 				AE.AEProcessAppleEvent(event)
-			except AE.Error, msg:
-				print "AEProcessAppleEvent error:"
+			except AE.Error, err:
+				EasyDialogs.Message(msg + "\015AEProcessAppleEvent error: %s" % str(err))
 				traceback.print_exc()
+			else:
+				EasyDialogs.Message(msg + "\015OK!")
 		elif what == keyDown:
 			c = chr(message & charCodeMask)
 			if c == '.' and modifiers & cmdKey:
 				raise KeyboardInterrupt, "Command-period"
 			MacOS.HandleEvent(event)
+		elif what == mouseDown:
+			partcode, window = Win.FindWindow(where)
+			if partcode == inMenuBar:
+				result = Menu.MenuSelect(where)
+				id = (result>>16) & 0xffff	# Hi word
+				item = result & 0xffff		# Lo word
+				if id == self.appleid:
+					if item == 1:
+						EasyDialogs.Message("Echo -- echo AppleEvents")
+					elif item > 1:
+						name = self.applemenu.GetItem(item)
+						Qd.OpenDeskAcc(name)
 		elif what <> autoKey:
 			print "Event:", (eventname(what), message, when, (h, v), modifiers)
-			MacOS.HandleEvent(event)
+##			MacOS.HandleEvent(event)
 	
 	def aehandler(self, request, reply):
 		print "Apple Event",
