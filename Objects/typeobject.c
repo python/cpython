@@ -3380,8 +3380,10 @@ static slotdef slotdefs[] = {
 
 	TPSLOT("__str__", tp_str, slot_tp_str, wrap_unaryfunc,
 	       "x.__str__() <==> str(x)"),
+	TPSLOT("__str__", tp_print, NULL, NULL, ""),
 	TPSLOT("__repr__", tp_repr, slot_tp_repr, wrap_unaryfunc,
 	       "x.__repr__() <==> repr(x)"),
+	TPSLOT("__repr__", tp_print, NULL, NULL, ""),
 	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare, wrap_cmpfunc,
 	       "x.__cmp__(y) <==> cmp(x,y)"),
 	TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc,
