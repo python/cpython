@@ -6,7 +6,7 @@ print 'oct'
 if oct(100) != '0144': raise TestFailed, 'oct(100)'
 if oct(100L) != '0144L': raise TestFailed, 'oct(100L)'
 if oct(-100) not in ('037777777634', '01777777777777777777634'):
-    raise TestFailed, 'oct(-100)'
+	raise TestFailed, 'oct(-100)'
 if oct(-100L) != '-0144L': raise TestFailed, 'oct(-100L)'
 
 print 'open'
