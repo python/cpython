@@ -124,6 +124,7 @@ Convert a tuple representing a time as returned by \function{gmtime()}
 or \function{localtime()} to a 24-character string of the following form:
 \code{'Sun Jun 20 23:21:05 1993'}.  If \var{tuple} is not provided, the
 current time as returned by \function{localtime()} is used.
+Locale information is not used by \function{asctime()}.
 \note{Unlike the C function of the same name, there is no trailing
 newline.}
 \versionchanged[Allowed \var{tuple} to be omitted]{2.1}
@@ -149,6 +150,7 @@ Convert a time expressed in seconds since the epoch to a string
 representing local time. If \var{secs} is not provided, the current time
 as returned by \function{time()} is used.  \code{ctime(\var{secs})}
 is equivalent to \code{asctime(localtime(\var{secs}))}.
+Locale information is not used by \function{ctime()}.
 \versionchanged[Allowed \var{secs} to be omitted]{2.1}
 \end{funcdesc}
 
