@@ -116,6 +116,9 @@
 /* Define as the size of the unicode type. */
 #undef Py_UNICODE_SIZE
 
+/* Define if nice() returns success/failure instead of the new priority. */
+#undef HAVE_BROKEN_NICE
+
 /* Define if malloc(0) returns a NULL pointer */
 #undef MALLOC_ZERO_RETURNS_NULL
 
