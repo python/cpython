@@ -110,8 +110,9 @@ object, if it has any.
 \index{attribute}
 \indexii{special}{attribute}
 \indexiii{generic}{special}{attribute}
-\ttindex{__methods__}
-\ttindex{__members__}
+\withsubitem{(built-in object attribute)}{%
+  \ttindex{__methods__}
+  \ttindex{__members__}}
 
 \begin{description}
 
@@ -387,12 +388,13 @@ defines the global namespace of the module in which the function was
 defined.  Additional information about a function's definition can be
 retrieved from its code object; see the description of internal types
 below.
-\ttindex{func_doc}
-\ttindex{__doc__}
-\ttindex{__name__}
-\ttindex{func_defaults}
-\ttindex{func_code}
-\ttindex{func_globals}
+\withsubitem{(function attribute)}{%
+  \ttindex{func_doc}%
+  \ttindex{__doc__}%
+  \ttindex{__name__}%
+  \ttindex{func_defaults}%
+  \ttindex{func_code}%
+  \ttindex{func_globals}}
 \indexii{global}{namespace}
 
 \item[User-defined methods]
@@ -409,6 +411,9 @@ base class of the class of which \member{im_self} is an instance);
 \member{__doc__} is the method's documentation (same as
 \code{im_func.__doc__}); \member{__name__} is the method name (same as
 \code{im_func.__name__}).
+\withsubitem{(method attribute)}{%
+  \ttindex{im_func}%
+  \ttindex{im_self}}
 
 User-defined method objects are created in two ways: when getting an
 attribute of a class that is a user-defined function object, or when
@@ -425,6 +430,10 @@ function \method{f()}, \code{C.f} does not yield the function object
 instance, \code{x.f} yields a bound method object \code{m} where
 \code{m.im_class} is \code{C}, \code{m.im_func} is \method{f()}, and
 \code{m.im_self} is \code{x}.
+\withsubitem{(method attribute)}{%
+  \ttindex{im_class}%
+  \ttindex{im_func}%
+  \ttindex{im_self}}
 
 When an unbound user-defined method object is called, the underlying
 function (\member{im_func}) is called, with the restriction that the
@@ -445,9 +454,6 @@ assign the attribute to a local variable and call that local variable.
 Also notice that this transformation only happens for user-defined
 functions; other callable objects (and all non-callable objects) are
 retrieved without transformation.
-
-\ttindex{im_func}
-\ttindex{im_self}
 
 \item[Built-in functions]
 A built-in function object is a wrapper around a \C{} function.  Examples
@@ -482,7 +488,7 @@ returned.  This implies a call to the class's \method{__init__()} method
 if it has one.  Any arguments are passed on to the \method{__init__()}
 method.  If there is no \method{__init__()} method, the class must be called
 without arguments.
-\ttindex{__init__}
+\withsubitem{(object method)}{\ttindex{__init__()}}
 \obindex{class}
 \obindex{class instance}
 \obindex{instance}
@@ -514,7 +520,7 @@ e.g., \samp{m.x = 1} is equivalent to \samp{m.__dict__["x"] = 1}.
 
 Special read-only attribute: \member{__dict__} is the module's
 namespace as a dictionary object.
-\ttindex{__dict__}
+\withsubitem{(module attribute)}{\ttindex{__dict__}}
 
 Predefined (writable) attributes: \member{__name__}
 is the module's name; \member{__doc__} is the
@@ -525,9 +531,10 @@ The \member{__file__} attribute is not present for C{} modules that are
 statically linked into the interpreter; for extension modules loaded
 dynamically from a shared library, it is the pathname of the shared
 library file.
-\ttindex{__name__}
-\ttindex{__doc__}
-\ttindex{__file__}
+\withsubitem{(module attribute)}{%
+  \ttindex{__name__}%
+  \ttindex{__doc__}%
+  \ttindex{__file__}}
 \indexii{module}{namespace}
 
 \item[Classes]
@@ -569,11 +576,12 @@ Special attributes: \member{__name__} is the class name;
 containing the base classes, in the order of their occurrence in the
 base class list; \member{__doc__} is the class's documentation string,
 or None if undefined.
-\ttindex{__name__}
-\ttindex{__module__}
-\ttindex{__dict__}
-\ttindex{__bases__}
-\ttindex{__doc__}
+\withsubitem{(class attribute)}{%
+  \ttindex{__name__}%
+  \ttindex{__module__}%
+  \ttindex{__dict__}%
+  \ttindex{__bases__}%
+  \ttindex{__doc__}}
 
 \item[Class instances]
 A class instance is created by calling a class object (see above).
@@ -609,8 +617,9 @@ section \ref{specialnames}, ``Special method names.''
 
 Special attributes: \member{__dict__} is the attribute
 dictionary; \member{__class__} is the instance's class.
-\ttindex{__dict__}
-\ttindex{__class__}
+\withsubitem{(instance attribute)}{%
+  \ttindex{__dict__}%
+  \ttindex{__class__}}
 
 \item[Files]
 A file object represents an open file.  File objects are created by the
@@ -626,11 +635,12 @@ Library Reference} for complete documentation of file objects.
 \indexii{C}{language}
 \index{stdio}
 \bifuncindex{open}
-\bifuncindex{popen}
-\bifuncindex{makefile}
-\ttindex{stdin}
-\ttindex{stdout}
-\ttindex{stderr}
+\withsubitem{(in module os)}{\ttindex{popen()}}
+\withsubitem{(socket method)}{\ttindex{makefile()}}
+\withsubitem{(in module sys)}{%
+  \ttindex{stdin}%
+  \ttindex{stdout}%
+  \ttindex{stderr}}
 \ttindex{sys.stdin}
 \ttindex{sys.stdout}
 \ttindex{sys.stderr}
@@ -658,26 +668,35 @@ contain no references (directly or indirectly) to mutable objects.
 \index{bytecode}
 \obindex{code}
 
-Special read-only attributes: \member{co_name}\ttindex{co_name} gives
-the function name; \member{co_argcount}\ttindex{co_argcount}
-is the number of positional arguments (including arguments with
-default values); \member{co_nlocals}\ttindex{co_nlocals} is the number
-of local variables used by the function (including arguments);
-\member{co_varnames}\ttindex{co_varnames} is a tuple containing the
-names of the local variables (starting with the argument names);
-\member{co_code}\ttindex{co_code} is a string representing the sequence
-of bytecode instructions; \member{co_consts}\ttindex{co_consts} is a
-tuple containing the literals used by the bytecode;
-\member{co_names}\ttindex{co_names} is a tuple containing the names used 
-by the bytecode; \member{co_filename}\ttindex{co_filename} is the
-filename from which the code was compiled;
-\member{co_firstlineno}\ttindex{co_firstlineno} is the first line number 
-of the function; \member{co_lnotab}\ttindex{co_lnotab} is a string 
-encoding the mapping from byte code offsets to line numbers (for
-detais see the source code of the interpreter);
-\member{co_stacksize}\ttindex{co_stacksize} is the required stack size
-(including local variables); \member{co_flags}\ttindex{co_flags} is an
-integer encoding a number of flags for the interpreter.
+Special read-only attributes: \member{co_name} gives the function
+name; \member{co_argcount} is the number of positional arguments
+(including arguments with default values); \member{co_nlocals} is the
+number of local variables used by the function (including arguments);
+\member{co_varnames} is a tuple containing the names of the local
+variables (starting with the argument names); \member{co_code} is a
+string representing the sequence of bytecode instructions;
+\member{co_consts} is a tuple containing the literals used by the
+bytecode; \member{co_names} is a tuple containing the names used by
+the bytecode; \member{co_filename} is the filename from which the code
+was compiled; \member{co_firstlineno} is the first line number of the
+function; \member{co_lnotab} is a string encoding the mapping from
+byte code offsets to line numbers (for detais see the source code of
+the interpreter); \member{co_stacksize} is the required stack size
+(including local variables); \member{co_flags} is an integer encoding
+a number of flags for the interpreter.
+\withsubitem{(code object attribute)}{%
+  \ttindex{co_argcount}%
+  \ttindex{co_code}%
+  \ttindex{co_consts}%
+  \ttindex{co_filename}%
+  \ttindex{co_firstlineno}%
+  \ttindex{co_flags}%
+  \ttindex{co_lnotab}%
+  \ttindex{co_name}%
+  \ttindex{co_names}%
+  \ttindex{co_nlocals}%
+  \ttindex{co_stacksize}%
+  \ttindex{co_varnames}}
 
 The following flag bits are defined for \member{co_flags}: bit 2 is set
 if the function uses the \samp{*arguments} syntax to accept an
@@ -687,6 +706,7 @@ arguments; other bits are used internally or reserved for future use.
 If a code object represents a function, the first item in
 \member{co_consts} is the documentation string of the
 function, or \code{None} if undefined.
+\index{documentation string}
 
 \item[Frame objects]
 Frame objects represent execution frames.  They may occur in traceback
@@ -704,24 +724,26 @@ executing in restricted execution mode;
 \member{f_lineno} gives the line number and \member{f_lasti} gives the
 precise instruction (this is an index into the bytecode string of
 the code object).
-\ttindex{f_back}
-\ttindex{f_code}
-\ttindex{f_globals}
-\ttindex{f_locals}
-\ttindex{f_lineno}
-\ttindex{f_lasti}
-\ttindex{f_builtins}
-\ttindex{f_restricted}
+\withsubitem{(frame attribute)}{%
+  \ttindex{f_back}%
+  \ttindex{f_code}%
+  \ttindex{f_globals}%
+  \ttindex{f_locals}%
+  \ttindex{f_lineno}%
+  \ttindex{f_lasti}%
+  \ttindex{f_builtins}%
+  \ttindex{f_restricted}}
 
 Special writable attributes: \member{f_trace}, if not \code{None}, is a
 function called at the start of each source code line (this is used by
 the debugger); \member{f_exc_type}, \member{f_exc_value},
 \member{f_exc_traceback} represent the most recent exception caught in
 this frame.
-\ttindex{f_trace}
-\ttindex{f_exc_type}
-\ttindex{f_exc_value}
-\ttindex{f_exc_traceback}
+\withsubitem{(frame attribute)}{%
+  \ttindex{f_trace}%
+  \ttindex{f_exc_type}%
+  \ttindex{f_exc_value}%
+  \ttindex{f_exc_traceback}}
 
 \item[Traceback objects] \label{traceback}
 Traceback objects represent a stack trace of an exception.  A
@@ -743,9 +765,10 @@ interactive, it is also made available to the user as
 \indexii{stack}{trace}
 \indexii{exception}{handler}
 \indexii{execution}{stack}
-\ttindex{exc_info}
-\ttindex{exc_traceback}
-\ttindex{last_traceback}
+\withsubitem{(in module sys)}{%
+  \ttindex{exc_info}%
+  \ttindex{exc_traceback}%
+  \ttindex{last_traceback}}
 \ttindex{sys.exc_info}
 \ttindex{sys.exc_traceback}
 \ttindex{sys.last_traceback}
@@ -759,10 +782,11 @@ precise instruction.  The line number and last instruction in the
 traceback may differ from the line number of its frame object if the
 exception occurred in a \keyword{try} statement with no matching
 except clause or with a finally clause.
-\ttindex{tb_next}
-\ttindex{tb_frame}
-\ttindex{tb_lineno}
-\ttindex{tb_lasti}
+\withsubitem{(traceback attribute)}{%
+  \ttindex{tb_next}%
+  \ttindex{tb_frame}%
+  \ttindex{tb_lineno}%
+  \ttindex{tb_lasti}}
 \stindex{try}
 
 \item[Slice objects]
@@ -770,11 +794,15 @@ Slice objects are used to represent slices when \emph{extended slice
 syntax} is used.  This is a slice using two colons, or multiple slices
 or ellipses separated by commas, e.g., \code{a[i:j:step]}, \code{a[i:j,
 k:l]}, or \code{a[..., i:j])}.  They are also created by the built-in
-\function{slice()} function.
+\function{slice()}\bifuncindex{slice} function.
 
 Special read-only attributes: \member{start} is the lowerbound;
 \member{stop} is the upperbound; \member{step} is the step value; each is
 \code{None} if omitted. These attributes can have any type.
+\withsubitem{(slice object attribute)}{%
+  \ttindex{start}%
+  \ttindex{stop}%
+  \ttindex{step}}
 
 \end{description} % Internal types
 
@@ -792,24 +820,23 @@ this class, then \code{x[i]} is equivalent to
 a list object, \code{x.__getitem__(i)} is not equivalent to
 \code{x[i]}.)  Except where mentioned, attempts to execute an
 operation raise an exception when no appropriate method is defined.
-\ttindex{__getitem__}
+\withsubitem{(mapping object method)}{\ttindex{__getitem__()}}
 
 
 \subsection{Basic customization\label{customization}}
 
-\begin{methoddescni}{__init__}{self\optional{, args...}}
+\begin{methoddesc}[object]{__init__}{self\optional{, args...}}
 Called when the instance is created.  The arguments are those passed
 to the class constructor expression.  If a base class has an
 \method{__init__()} method the derived class's \method{__init__()} method must
 explicitly call it to ensure proper initialization of the base class
 part of the instance, e.g., \samp{BaseClass.__init__(\var{self},
 [\var{args}...])}.
-\ttindex{__init__}
 \indexii{class}{constructor}
-\end{methoddescni}
+\end{methoddesc}
 
 
-\begin{methoddescni}{__del__}{self}
+\begin{methoddesc}[object]{__del__}{self}
 Called when the instance is about to be destroyed.  This is also
 called a destructor\index{destructor}.  If a base class
 has a \method{__del__()} method, the derived class's \method{__del__()} method
@@ -821,7 +848,6 @@ reference to it.  It may then be called at a later time when this new
 reference is deleted.  It is not guaranteed that
 \method{__del__()} methods are called for objects that still exist when
 the interpreter exits.
-\ttindex{__del__}
 \stindex{del}
 
 \strong{Programmer's note:} \samp{del x} doesn't directly call
@@ -853,9 +879,9 @@ deleted from their module before other globals are deleted; if no
 other references to such globals exist, this may help in assuring that
 imported modules are still available at the time when the
 \method{__del__()} method is called. 
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__repr__}{self}
+\begin{methoddesc}[object]{__repr__}{self}
 Called by the \function{repr()}\bifuncindex{repr} built-in function
 and by string conversions (reverse quotes) to compute the ``official''
 string representation of an object.  This should normally look like a
@@ -864,36 +890,33 @@ the same value.  By convention, objects which cannot be trivially
 converted to strings which can be used to create a similar object
 produce a string of the form \samp{<\var{...some useful
 description...}>}.
-\ttindex{__repr__}
 \indexii{string}{conversion}
 \indexii{reverse}{quotes}
 \indexii{backward}{quotes}
 \index{back-quotes}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__str__}{self}
+\begin{methoddesc}[object]{__str__}{self}
 Called by the \function{str()}\bifuncindex{str} built-in function and
 by the \keyword{print}\stindex{print} statement to compute the
 ``informal'' string representation of an object.  This differs from
 \method{__repr__()} in that it does not have to be a valid Python
 expression: a more convenient or concise representation may be used
 instead.
-\ttindex{__str__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__cmp__}{self, other}
+\begin{methoddesc}[object]{__cmp__}{self, other}
 Called by all comparison operations.  Should return a negative integer if
 \code{self < other},  zero if \code{self == other}, a positive integer if
 \code{self > other}.  If no \method{__cmp__()} operation is defined, class
 instances are compared by object identity (``address'').
 (Note: the restriction that exceptions are not propagated by
 \method{__cmp__()} has been removed in Python 1.5.)
-\ttindex{__cmp__}
 \bifuncindex{cmp}
 \index{comparisons}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__hash__}{self}
+\begin{methoddesc}[object]{__hash__}{self}
 Called for the key object for dictionary\obindex{dictionary}
 operations, and by the built-in function
 \function{hash()}\bifuncindex{hash}.  Should return a 32-bit integer
@@ -910,18 +933,17 @@ implements a \method{__cmp__()} method it should not implement
 \method{__hash__()}, since the dictionary implementation requires that
 a key's hash value is immutable (if the object's hash value changes, it
 will be in the wrong hash bucket).
-\ttindex{__cmp__}
-\ttindex{__hash__}
-\end{methoddescni}
+\withsubitem{(object method)}{\ttindex{__cmp__()}}
+\end{methoddesc}
 
-\begin{methoddescni}{__nonzero__}{self}
+\begin{methoddesc}[object]{__nonzero__}{self}
 Called to implement truth value testing; should return \code{0} or
 \code{1}.  When this method is not defined, \method{__len__()} is
 called, if it is defined (see below).  If a class defines neither
 \method{__len__()} nor \method{__nonzero__()}, all its instances are
 considered true.
-\ttindex{__nonzero__}
-\end{methoddescni}
+\withsubitem{(mapping object method)}{\ttindex{__len__()}}
+\end{methoddesc}
 
 
 \subsection{Customizing attribute access\label{attribute-access}}
@@ -933,13 +955,12 @@ For performance reasons, these methods are cached in the class object
 at class definition time; therefore, they cannot be changed after the
 class definition is executed.
 
-\begin{methoddescni}{__getattr__}{self, name}
+\begin{methoddesc}[object]{__getattr__}{self, name}
 Called when an attribute lookup has not found the attribute in the
 usual places (i.e. it is not an instance attribute nor is it found in
 the class tree for \code{self}).  \code{name} is the attribute name.
 This method should return the (computed) attribute value or raise an
 \exception{AttributeError} exception.
-\ttindex{__getattr__}
 
 Note that if the attribute is found through the normal mechanism,
 \method{__getattr__()} is not called.  (This is an intentional
@@ -950,40 +971,38 @@ the instance.
 Note that at least for instance variables, you can fake
 total control by not inserting any values in the instance
 attribute dictionary (but instead inserting them in another object).
-\ttindex{__setattr__}
-\end{methoddescni}
+\withsubitem{(object method)}{\ttindex{__setattr__()}}
+\end{methoddesc}
 
-\begin{methoddescni}{__setattr__}{self, name, value}
+\begin{methoddesc}[object]{__setattr__}{self, name, value}
 Called when an attribute assignment is attempted.  This is called
 instead of the normal mechanism (i.e.\ store the value in the instance
 dictionary).  \var{name} is the attribute name, \var{value} is the
 value to be assigned to it.
-\ttindex{__setattr__}
 
 If \method{__setattr__()} wants to assign to an instance attribute, it 
 should not simply execute \samp{self.\var{name} = value} --- this
 would cause a recursive call to itself.  Instead, it should insert the
 value in the dictionary of instance attributes, e.g.,
 \samp{self.__dict__[\var{name}] = value}.
-\ttindex{__dict__}
-\end{methoddescni}
+\withsubitem{(instance attribute)}{\ttindex{__dict__}}
+\end{methoddesc}
 
-\begin{methoddescni}{__delattr__}{self, name}
+\begin{methoddesc}[object]{__delattr__}{self, name}
 Like \method{__setattr__()} but for attribute deletion instead of
-assignment.
-\ttindex{__delattr__}
-\end{methoddescni}
+assignment.  This should only be implemented if \samp{del
+obj.\var{name}} is meaningful for the object.
+\end{methoddesc}
 
 
 \subsection{Emulating callable objects\label{callable-types}}
 
-\begin{methoddescni}{__call__}{self\optional{, args...}}
+\begin{methoddesc}[object]{__call__}{self\optional{, args...}}
 Called when the instance is ``called'' as a function; if this method
 is defined, \code{\var{x}(arg1, arg2, ...)} is a shorthand for
 \code{\var{x}.__call__(arg1, arg2, ...)}.
-\ttindex{__call__}
 \indexii{call}{instance}
-\end{methoddescni}
+\end{methoddesc}
 
 
 \subsection{Emulating sequence and mapping types\label{sequence-types}}
@@ -1007,57 +1026,60 @@ multiplication (meaning repetition) by defining the methods
 \method{__add__()}, \method{__radd__()}, \method{__mul__()} and
 \method{__rmul__()} described below; they should not define
 \method{__coerce__()} or other numerical operators.
-\ttindex{keys}
-\ttindex{values}
-\ttindex{items}
-\ttindex{has_key}
-\ttindex{get}
-\ttindex{clear}
-\ttindex{copy}
-\ttindex{update}
-\ttindex{append}
-\ttindex{count}
-\ttindex{index}
-\ttindex{insert}
-\ttindex{pop}
-\ttindex{remove}
-\ttindex{reverse}
-\ttindex{sort}
-\ttindex{__add__}
-\ttindex{__radd__}
-\ttindex{__mul__}
-\ttindex{__rmul__}
-\ttindex{__coerce__}
+\withsubitem{(mapping object method)}{%
+  \ttindex{keys()}%
+  \ttindex{values()}%
+  \ttindex{items()}%
+  \ttindex{has_key()}%
+  \ttindex{get()}%
+  \ttindex{clear()}%
+  \ttindex{copy()}%
+  \ttindex{update()}}
+\withsubitem{(sequence object method)}{%
+  \ttindex{append()}%
+  \ttindex{count()}%
+  \ttindex{index()}%
+  \ttindex{insert()}%
+  \ttindex{pop()}%
+  \ttindex{remove()}%
+  \ttindex{reverse()}%
+  \ttindex{sort()}%
+  \ttindex{__add__()}%
+  \ttindex{__radd__()}%
+  \ttindex{__mul__()}%
+  \ttindex{__rmul__()}}
+\withsubitem{(numberic object method)}{\ttindex{__coerce__()}}
 
-\begin{methoddescni}{__len__}{self}
+\begin{methoddesc}[mapping object]{__len__}{self}
 Called to implement the built-in function
 \function{len()}\bifuncindex{len}.  Should return the length of the
 object, an integer \code{>=} 0.  Also, an object that doesn't define a
 \method{__nonzero__()} method and whose \method{__len__()} method
 returns zero is considered to be false in a Boolean context.
-\ttindex{__len__}
-\ttindex{__nonzero__}
-\end{methoddescni}
+\withsubitem{(object method)}{\ttindex{__nonzero__()}}
+\end{methoddesc}
 
-\begin{methoddescni}{__getitem__}{self, key}
+\begin{methoddesc}[mapping object]{__getitem__}{self, key}
 Called to implement evaluation of \code{\var{self}[\var{key}]}.
 For a sequence types, the accepted keys should be integers.  Note that the
 special interpretation of negative indices (if the class wishes to
 emulate a sequence type) is up to the \method{__getitem__()} method.
-\ttindex{__getitem__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__setitem__}{self, key, value}
+\begin{methoddesc}[mapping object]{__setitem__}{self, key, value}
 Called to implement assignment to \code{\var{self}[\var{key}]}.  Same
-note as for \method{__getitem__()}.
-\ttindex{__setitem__}
-\end{methoddescni}
+note as for \method{__getitem__()}.  This should only be implemented
+for mappings if the objects support changes to the values for keys, or
+if new keys can be added, or for sequences if elements can be
+replaced.
+\end{methoddesc}
 
-\begin{methoddescni}{__delitem__}{self, key}
+\begin{methoddesc}[mapping object]{__delitem__}{self, key}
 Called to implement deletion of \code{\var{self}[\var{key}]}.  Same
-note as for \method{__getitem__()}.
-\ttindex{__delitem__}
-\end{methoddescni}
+note as for \method{__getitem__()}.  This should only be implemented
+for mappings if the objects support removal of keys, or for sequences
+if elements can be removed from the sequence.
+\end{methoddesc}
 
 
 \subsection{Additional methods for emulation of sequence types
@@ -1068,7 +1090,7 @@ objects.  Immutable sequences methods should only define
 \method{__getslice__()}; mutable sequences, should define all three
 three methods.
 
-\begin{methoddescni}{__getslice__}{self, i, j}
+\begin{methoddesc}[sequence object]{__getslice__}{self, i, j}
 Called to implement evaluation of \code{\var{self}[\var{i}:\var{j}]}.
 The returned object should be of the same type as \var{self}.  Note
 that missing \var{i} or \var{j} in the slice expression are replaced
@@ -1076,20 +1098,17 @@ by zero or \code{sys.maxint}, respectively, and no further
 transformations on the indices is performed.  The interpretation of
 negative indices and indices larger than the length of the sequence is
 up to the method.
-\ttindex{__getslice__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__setslice__}{self, i, j, sequence}
+\begin{methoddesc}[sequence object]{__setslice__}{self, i, j, sequence}
 Called to implement assignment to \code{\var{self}[\var{i}:\var{j}]}.
 Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
-\ttindex{__setslice__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__delslice__}{self, i, j}
+\begin{methoddesc}[sequence object]{__delslice__}{self, i, j}
 Called to implement deletion of \code{\var{self}[\var{i}:\var{j}]}.
 Same notes for \var{i} and \var{j} as for \method{__getslice__()}.
-\ttindex{__delslice__}
-\end{methoddescni}
+\end{methoddesc}
 
 Notice that these methods are only invoked when a single slice with a
 single colon is used.  For slice operations involving extended slice
@@ -1103,18 +1122,18 @@ Methods corresponding to operations that are not supported by the
 particular kind of number implemented (e.g., bitwise operations for
 non-integral numbers) should be left undefined.
 
-\begin{methoddescni}{__add__}{self, other}
-\methodlineni{__sub__}{self, other}
-\methodlineni{__mul__}{self, other}
-\methodlineni{__div__}{self, other}
-\methodlineni{__mod__}{self, other}
-\methodlineni{__divmod__}{self, other}
-\methodlineni{__pow__}{self, other\optional{, modulo}}
-\methodlineni{__lshift__}{self, other}
-\methodlineni{__rshift__}{self, other}
-\methodlineni{__and__}{self, other}
-\methodlineni{__xor__}{self, other}
-\methodlineni{__or__}{self, other}
+\begin{methoddesc}[numberic interface]{__add__}{self, other}
+\methodline{__sub__}{self, other}
+\methodline{__mul__}{self, other}
+\methodline{__div__}{self, other}
+\methodline{__mod__}{self, other}
+\methodline{__divmod__}{self, other}
+\methodline{__pow__}{self, other\optional{, modulo}}
+\methodline{__lshift__}{self, other}
+\methodline{__rshift__}{self, other}
+\methodline{__and__}{self, other}
+\methodline{__xor__}{self, other}
+\methodline{__or__}{self, other}
 These functions are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
@@ -1127,32 +1146,20 @@ class that has an \method{__add__()} method,
 \method{__pow__()} should be defined to accept an optional third
 argument if the ternary version of the built-in
 \function{pow()}\bifuncindex{pow} function is to be supported.
-\ttindex{__or__}
-\ttindex{__xor__}
-\ttindex{__and__}
-\ttindex{__rshift__}
-\ttindex{__lshift__}
-\ttindex{__pow__}
-\ttindex{__divmod__}
-\ttindex{__mod__}
-\ttindex{__div__}
-\ttindex{__mul__}
-\ttindex{__sub__}
-\ttindex{__add__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__radd__}{self, other}
-\methodlineni{__rsub__}{self, other}
-\methodlineni{__rmul__}{self, other}
-\methodlineni{__rdiv__}{self, other}
-\methodlineni{__rmod__}{self, other}
-\methodlineni{__rdivmod__}{self, other}
-\methodlineni{__rpow__}{self, other}
-\methodlineni{__rlshift__}{self, other}
-\methodlineni{__rrshift__}{self, other}
-\methodlineni{__rand__}{self, other}
-\methodlineni{__rxor__}{self, other}
-\methodlineni{__ror__}{self, other}
+\begin{methoddesc}[numeric interface]{__radd__}{self, other}
+\methodline{__rsub__}{self, other}
+\methodline{__rmul__}{self, other}
+\methodline{__rdiv__}{self, other}
+\methodline{__rmod__}{self, other}
+\methodline{__rdivmod__}{self, other}
+\methodline{__rpow__}{self, other}
+\methodline{__rlshift__}{self, other}
+\methodline{__rrshift__}{self, other}
+\methodline{__rand__}{self, other}
+\methodline{__rxor__}{self, other}
+\methodline{__ror__}{self, other}
 These functions are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
@@ -1166,55 +1173,33 @@ has an \method{__rsub__()} method, \code{\var{y}.__rsub__(\var{x})} is
 called.  Note that ternary \function{pow()}\bifuncindex{pow} will not
 try calling \method{__rpow__()} (the coercion rules would become too
 complicated).
-\ttindex{__or__}
-\ttindex{__xor__}
-\ttindex{__and__}
-\ttindex{__rshift__}
-\ttindex{__lshift__}
-\ttindex{__pow__}
-\ttindex{__divmod__}
-\ttindex{__mod__}
-\ttindex{__div__}
-\ttindex{__mul__}
-\ttindex{__sub__}
-\ttindex{__add__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__neg__}{self}
-\methodlineni{__pos__}{self}
-\methodlineni{__abs__}{self}
-\methodlineni{__invert__}{self}
+\begin{methoddesc}[numeric interface]{__neg__}{self}
+\methodline{__pos__}{self}
+\methodline{__abs__}{self}
+\methodline{__invert__}{self}
 Called to implement the unary arithmetic operations (\code{-}, \code{+},
 \function{abs()}\bifuncindex{abs} and \code{~}).
-\ttindex{__invert__}
-\ttindex{__abs__}
-\ttindex{__pos__}
-\ttindex{__neg__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__int__}{self}
+\begin{methoddesc}[numeric interface]{__int__}{self}
 \methodlineni{__long__}{self}
 \methodlineni{__float__}{self}
 Called to implement the built-in functions
 \function{int()}\bifuncindex{int}, \function{long()}\bifuncindex{long} 
 and \function{float()}\bifuncindex{float}.  Should return a value of
 the appropriate type.
-\ttindex{__float__}
-\ttindex{__long__}
-\ttindex{__int__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__oct__}{self}
+\begin{methoddesc}[numeric interface]{__oct__}{self}
 \methodlineni{__hex__}{self}
 Called to implement the built-in functions
 \function{oct()}\bifuncindex{oct} and
 \function{hex()}\bifuncindex{hex}.  Should return a string value.
-\ttindex{__hex__}
-\ttindex{__oct__}
-\end{methoddescni}
+\end{methoddesc}
 
-\begin{methoddescni}{__coerce__}{self, other}
-\ttindex{__coerce__}
+\begin{methoddesc}[numeric interface]{__coerce__}{self, other}
 Called to implement ``mixed-mode'' numeric arithmetic.  Should either
 return a 2-tuple containing \var{self} and \var{other} converted to
 a common numeric type, or \code{None} if conversion is possible.  When
@@ -1223,7 +1208,7 @@ return \code{None}, since the interpreter will also ask the other
 object to attempt a coercion (but sometimes, if the implementation of
 the other type cannot be changed, it is useful to do the conversion to
 the other type here).
-\end{methoddescni}
+\end{methoddesc}
 
 \strong{Coercion rules}: to evaluate \var{x} \var{op} \var{y}, the
 following steps are taken (where \method{__op__()} and
