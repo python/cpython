@@ -408,7 +408,8 @@ class EditorWindow:
         text = self.text
         top = self.getlineno("@0,0")
         bot = self.getlineno("@0,65535")
-        if top == bot:
+        if top == bot and text.winfo_height() == 1:
+            # Geometry manager hasn't run yet
             height = int(text['height'])
             bot = top + height - 1
         return top, bot
@@ -429,15 +430,15 @@ class EditorWindow:
         self.top.tkraise()
         reply = self.maybesave()
         if reply != "cancel":
-            if self.color and self.color.colorizing:
-                self.color.close()
-                self.top.bell()
-                return "cancel"
             if self.close_hook:
                 self.close_hook()
+            colorizing = 0
             if self.color:
-                self.color.close()          # Cancel colorization
-            self.top.destroy()
+                colorizing = self.color.colorizing
+                doh = colorizing and self.top
+                self.color.close(doh) # Cancel colorization
+            if not colorizing:
+                self.top.destroy()
         return reply
 
     def load_extensions(self):
