@@ -3,9 +3,7 @@
 #include "structmember.h"
 
 PyDoc_STRVAR(cPickle_module_documentation,
-"C implementation and optimization of the Python pickle module\n"
-"\n"
-"cPickle.c,v 1.71 1999/07/11 13:30:34 jim Exp\n");
+"C implementation and optimization of the Python pickle module.");
 
 #ifndef Py_eval_input
 #include <graminit.h>
