@@ -122,6 +122,12 @@ PyObject_GetItem(o, key)
 	if (o->ob_type->tp_as_sequence) {
 		if (PyInt_Check(key))
 			return PySequence_GetItem(o, PyInt_AsLong(key));
+		else if (PyLong_Check(key)) {
+			long key_value = PyLong_AsLong(key);
+			if (key_value == -1 && PyErr_Occurred())
+				return NULL;
+			return PySequence_GetItem(o, key_value);
+		}
 		return type_error("sequence index must be integer");
 	}
 
@@ -147,6 +153,12 @@ PyObject_SetItem(o, key, value)
 	if (o->ob_type->tp_as_sequence) {
 		if (PyInt_Check(key))
 			return PySequence_SetItem(o, PyInt_AsLong(key), value);
+		else if (PyLong_Check(key)) {
+			long key_value = PyLong_AsLong(key);
+			if (key_value == -1 && PyErr_Occurred())
+				return -1;
+			return PySequence_SetItem(o, key_value, value);
+		}
 		type_error("sequence index must be integer");
 		return -1;
 	}
@@ -173,6 +185,12 @@ PyObject_DelItem(o, key)
 	if (o->ob_type->tp_as_sequence) {
 		if (PyInt_Check(key))
 			return PySequence_DelItem(o, PyInt_AsLong(key));
+		else if (PyLong_Check(key)) {
+			long key_value = PyLong_AsLong(key);
+			if (key_value == -1 && PyErr_Occurred())
+				return -1;
+			return PySequence_DelItem(o, key_value);
+		}
 		type_error("sequence index must be integer");
 		return -1;
 	}
@@ -391,7 +409,7 @@ PyNumber_Multiply(v, w)
 		}
 		else if (PyLong_Check(w)) {
 			mul_value = PyLong_AsLong(w);
-			if (PyErr_Occurred())
+			if (mul_value == -1 && PyErr_Occurred())
                                 return NULL; 
 		}
 		else {
