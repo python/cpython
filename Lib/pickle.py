@@ -330,11 +330,11 @@ class Pickler:
         return None
 
     def save_pers(self, pid):
-        if not self.bin:
-            self.write(PERSID + str(pid) + '\n')
-        else:
+        if self.bin:
             self.save(pid)
             self.write(BINPERSID)
+        else:
+            self.write(PERSID + str(pid) + '\n')
 
     def save_reduce(self, acallable, arg_tup, state = None):
         write = self.write
