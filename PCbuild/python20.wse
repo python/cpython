@@ -1,6 +1,6 @@
 Document Type: WSE
 item: Global
-  Version=8.14
+  Version=9.0
   Title=Python 2.3
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
@@ -18,6 +18,8 @@ item: Global
   Patch Flags=0000000000001001
   Patch Threshold=85
   Patch Memory=4000
+  MIF PDF Version=1.0
+  MIF SMS Version=2.0
   EXE Filename=Python-2.3.exe
   Dialogs Version=8
   Version File=2.3
@@ -28,7 +30,7 @@ item: Global
   Step View=&All
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
-  Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
+  Variable Default1=C:\Programme\Wise Installation System
   Variable Flags1=00001000
   Variable Name2=_TCLDIR_
   Variable Description2=The directory in which the Tcl/Tk installation
@@ -46,6 +48,7 @@ item: Global
   Variable Values4=C:\Windows\System
   Variable Values4=C:\WINNT\System32
   Variable Values4=C:\Code\MSDLLs
+  Variable Values4=C:\Windows\System32
   Variable Flags4=00000010
   Variable Name5=_PYMAJOR_
   Variable Description5=Python major version number; the 2 in 2.3.
@@ -64,6 +67,12 @@ item: Global
   Variable Values7=1
   Variable Values7=0
   Variable Flags7=00001010
+  Variable Name8=_ALIASNAME_
+  Variable Flags8=00001000
+  Variable Name9=_ALIASPATH_
+  Variable Flags9=00001000
+  Variable Name10=_ALIASTYPE_
+  Variable Flags10=00001000
 end
 item: Set Variable
   Variable=PYVER_STRING
