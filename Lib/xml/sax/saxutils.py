@@ -43,10 +43,10 @@ def unescape(data, entities={}):
     """
     data = data.replace("&lt;", "<")
     data = data.replace("&gt;", ">")
-    # must do ampersand last
-    data = data.replace("&amp;", "&")
     if entities:
         data = __dict_replace(data, entities)
+    # must do ampersand last
+    data = data.replace("&amp;", "&")
     return data
 
 def quoteattr(data, entities={}):
