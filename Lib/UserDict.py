@@ -22,7 +22,7 @@ class UserDict:
     def clear(self): self.data.clear()
     def copy(self):
         if self.__class__ is UserDict:
-            return UserDict(self.data)
+            return UserDict(self.data.copy())
         import copy
         data = self.data
         try:
