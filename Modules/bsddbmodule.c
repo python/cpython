@@ -80,6 +80,9 @@ newdbhashobject(file, flags, mode,
     info.hash = NULL; /* XXX should derive from hash argument */
     info.lorder = lorder;
 
+#ifdef O_BINARY
+    flags |= O_BINARY;
+#endif
     if ((dp->di_bsddb = dbopen(file, flags, mode, DB_HASH, &info)) == NULL) {
 	PyErr_SetFromErrno(BsddbError);
 	Py_DECREF(dp);
@@ -116,9 +119,12 @@ newdbbtobject(file, flags, mode,
     info.minkeypage = minkeypage;
     info.psize = psize;
     info.lorder = lorder;
-    info.compare = 0;		/* Use default comparison functions, for now..*/
+    info.compare = 0; /* Use default comparison functions, for now..*/
     info.prefix = 0;
 
+#ifdef O_BINARY
+    flags |= O_BINARY;
+#endif
     if ((dp->di_bsddb = dbopen(file, flags, mode, DB_BTREE, &info)) == NULL) {
 	PyErr_SetFromErrno(BsddbError);
 	Py_DECREF(dp);
@@ -158,6 +164,9 @@ newdbrnobject(file, flags, mode,
     info.bval = bval;
     info.bfname = bfname;
 
+#ifdef O_BINARY
+    flags |= O_BINARY;
+#endif
     if ((dp->di_bsddb = dbopen(file, flags, mode, DB_RECNO, &info)) == NULL) {
 	PyErr_SetFromErrno(BsddbError);
 	Py_DECREF(dp);
