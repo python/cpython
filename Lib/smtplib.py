@@ -35,6 +35,7 @@ SMTP_PORT = 25
 CRLF="\r\n"
 
 # used for exceptions 
+SMTPServerDisconnected="Server not connected"
 SMTPSenderRefused="Sender address refused"
 SMTPRecipientsRefused="All Recipients refused"
 SMTPDataError="Error transmoitting message data"
@@ -89,8 +90,11 @@ class SMTP:
     def send(self, str):
         """Send `str' to the server."""
         if self.debuglevel > 0: print 'send:', `str`
-        self.sock.send(str)
-    
+	if self.sock:
+            self.sock.send(str)
+        else:
+	    raise SMTPServerDisconnected
+ 
     def putcmd(self, cmd, args=""):
         """Send a command to the server.
         """
@@ -104,9 +108,8 @@ class SMTP:
         - server response code (e.g. '250', or such, if all goes well)
           Note: returns -1 if it can't read responce code.
         - server response string corresponding to response code
-		(note : multiline responces converted to a single, multiline 
-                 string)
-
+		(note : multiline responces converted to a single, 
+                 multiline string)
         """
         resp=[]
 	self.file = self.sock.makefile('rb')
@@ -125,7 +128,7 @@ class SMTP:
 
 	errmsg = string.join(resp,"\n")
 	if self.debuglevel > 0: 
-           print 'reply: retcode (%s); Msg: %s' % (errcode,errmsg)
+            print 'reply: retcode (%s); Msg: %s' % (errcode,errmsg)
         return errcode, errmsg
     
     def docmd(self, cmd, args=""):
@@ -148,7 +151,7 @@ class SMTP:
 	return code
 
     def help(self):
-        """ SMTP 'help' command. Returns help text from server """
+	""" SMTP 'help' command. Returns help text from server """
 	self.putcmd("help")
 	(code,msg)=self.getreply()
 	return msg
@@ -180,9 +183,9 @@ class SMTP:
         # ps, I don't know why I have to do it this way... doing: 
 	# quotepat=re.compile(r"^[.]",re.M)
 	# msg=re.sub(quotepat,"..",msg)
-        # should work, but it dosen't (it doubles the number of any   
+        # should work, but it dosen't (it doubles the number of any 
         # contiguous series of .'s at the beginning of a line, 
-        # instead of just adding one. )
+        #instead of just adding one. )
 	quotepat=re.compile(r"^[.]+",re.M)
         def m(pat):
           return "."+pat.group(0)
@@ -207,24 +210,22 @@ class SMTP:
                - to_addrs :  a list of addresses to send this mail to
                - msg : the message to send. 
 
-	This method will return normally if the mail is accepted for at
-        least one recipiant .Otherwise it will throw an exception (either
-        SMTPSenderRefused,SMTPRecipientsRefused, or SMTPDataError)
+	This method will return normally if the mail is accepted for at least 
+        one recipiant.
+        Otherwise it will throw an exception (either SMTPSenderRefused,
+          SMTPRecipientsRefused, or SMTPDataError)
 
-	That is, if this method does not throw an excception, then someone 
+	That is, if this method does not throw an exception, then someone 
         should get your mail.
 
-  	It returns a dictionary , with one entry for each recipient that 
-        was refused. 
+  	It returns a dictionary , with one entry for each recipient that was 
+        refused. 
 
         example:
       
          >>> import smtplib
          >>> s=smtplib.SMTP("localhost")
-         >>> tolist= [ "one@one.org",
-         ...           "two@two.org",
-         ...           "three@three.org",
-         ...           "four@four.org"]
+         >>> tolist=["one@one.org","two@two.org","three@three.org","four@four.org"]
          >>> msg = '''
          ... From: Me@my.org
          ... Subject: testin'...
@@ -234,10 +235,10 @@ class SMTP:
          { "three@three.org" : ( 550 ,"User unknown" ) }
          >>> s.quit()
         
-         In the above example, the message was accepted for delivery to three 
-         of the four addresses, and one was rejected, with the error code 550.
-         If all addresses are accepted, then the method will return an
-         empty dictionary.  
+         In the above example, the message was accepted for delivery to 
+         three of the four addresses, and one was rejected, with the error
+         code 550. If all addresses are accepted, then the method
+         will return an empty dictionary.  
          """
 
 	if not self.helo_resp:
@@ -250,7 +251,7 @@ class SMTP:
         for each in to_addrs:
 	    (code,resp)=self.rcpt(each)
 	    if (code <> 250) and (code <> 251):
-                senderr[each]=(code,resp)
+                senderrs[each]=(code,resp)
         if len(senderrs)==len(to_addrs):
 	    #th' server refused all our recipients
             self.rset()
