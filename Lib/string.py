@@ -14,6 +14,8 @@ letters -- a string containing all characters considered letters
 digits -- a string containing all characters considered decimal digits
 hexdigits -- a string containing all characters considered hexadecimal digits
 octdigits -- a string containing all characters considered octal digits
+punctuation -- a string containing all characters considered punctuation
+printable -- a string containing all characters considered printable
 
 """
 
@@ -25,7 +27,7 @@ letters = lowercase + uppercase
 digits = '0123456789'
 hexdigits = digits + 'abcdef' + 'ABCDEF'
 octdigits = '01234567'
-punctuaction = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~""" 
+punctuation = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~""" 
 printable = digits + letters + punctuation + whitespace
 
 # Case conversion helpers
