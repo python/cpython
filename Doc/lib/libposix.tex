@@ -293,7 +293,8 @@ The \var{bufsize} argument has the same meaning as the corresponding
 argument to the built-in \function{open()} function.  The exit status of
 the command (encoded in the format specified for \function{wait()}) is
 available as the return value of the \method{close()} method of the file
-object.
+object, except that when the exit status is zero (termination without
+errors), \code{None} is returned.
 (Not on MS-DOS.)
 \end{funcdesc}
 
