@@ -1,5 +1,5 @@
 import sys
-sys.path=['.']+sys.path
+sys.path = ['.'] + sys.path
 
 from test_support import verbose, TestFailed
 import re
@@ -270,18 +270,18 @@ else:
 
 for t in tests:
     sys.stdout.flush()
-    pattern=s=outcome=repl=expected=None
-    if len(t)==5:
+    pattern = s = outcome = repl = expected = None
+    if len(t) == 5:
         pattern, s, outcome, repl, expected = t
-    elif len(t)==3:
+    elif len(t) == 3:
         pattern, s, outcome = t
     else:
-        raise ValueError, ('Test tuples should have 3 or 5 fields',t)
+        raise ValueError, ('Test tuples should have 3 or 5 fields', t)
 
     try:
-        obj=re.compile(pattern)
+        obj = re.compile(pattern)
     except re.error:
-        if outcome==SYNTAX_ERROR: pass  # Expected a syntax error
+        if outcome == SYNTAX_ERROR: pass  # Expected a syntax error
         else:
             print '=== Syntax error:', t
     except KeyboardInterrupt: raise KeyboardInterrupt
@@ -291,16 +291,16 @@ for t in tests:
             traceback.print_exc(file=sys.stdout)
     else:
         try:
-            result=obj.search(s)
-        except (re.error), msg:
+            result = obj.search(s)
+        except re.error, msg:
             print '=== Unexpected exception', t, repr(msg)
-        if outcome==SYNTAX_ERROR:
+        if outcome == SYNTAX_ERROR:
             # This should have been a syntax error; forget it.
             pass
-        elif outcome==FAIL:
+        elif outcome == FAIL:
             if result is None: pass   # No match, as expected
             else: print '=== Succeeded incorrectly', t
-        elif outcome==SUCCEED:
+        elif outcome == SUCCEED:
             if result is not None:
                 # Matched, as expected, so now we compute the
                 # result string and compare it to our expected result.
@@ -325,24 +325,24 @@ for t in tests:
                     except IndexError:
                         gi = "Error"
                     vardict[i] = gi
-                repl=eval(repl, vardict)
-                if repl!=expected:
+                repl = eval(repl, vardict)
+                if repl != expected:
                     print '=== grouping error', t,
-                    print repr(repl)+' should be '+repr(expected)
+                    print repr(repl) + ' should be ' + repr(expected)
             else:
                 print '=== Failed incorrectly', t
 
             # Try the match on a unicode string, and check that it
             # still succeeds.
-            result=obj.search(unicode(s, "latin-1"))
-            if result==None:
+            result = obj.search(unicode(s, "latin-1"))
+            if result == None:
                 print '=== Fails on unicode match', t
 
             # Try the match on a unicode pattern, and check that it
             # still succeeds.
             obj=re.compile(unicode(pattern, "latin-1"))
-            result=obj.search(s)
-            if result==None:
+            result = obj.search(s)
+            if result == None:
                 print '=== Fails on unicode pattern match', t
 
             # Try the match with the search area limited to the extent
@@ -350,29 +350,30 @@ for t in tests:
             # break (because it won't match at the end or start of a
             # string), so we'll ignore patterns that feature it.
 
-            if pattern[:2]!='\\B' and pattern[-2:]!='\\B' and result!=None:
-                obj=re.compile(pattern)
-                result=obj.search(s, result.start(0), result.end(0)+1)
-                if result==None:
+            if pattern[:2] != '\\B' and pattern[-2:] != '\\B' \
+			   and result != None:
+                obj = re.compile(pattern)
+                result = obj.search(s, result.start(0), result.end(0) + 1)
+                if result == None:
                     print '=== Failed on range-limited match', t
 
             # Try the match with IGNORECASE enabled, and check that it
             # still succeeds.
-            obj=re.compile(pattern, re.IGNORECASE)
-            result=obj.search(s)
-            if result==None:
+            obj = re.compile(pattern, re.IGNORECASE)
+            result = obj.search(s)
+            if result == None:
                 print '=== Fails on case-insensitive match', t
 
             # Try the match with LOCALE enabled, and check that it
             # still succeeds.
-            obj=re.compile(pattern, re.LOCALE)
-            result=obj.search(s)
-            if result==None:
+            obj = re.compile(pattern, re.LOCALE)
+            result = obj.search(s)
+            if result == None:
                 print '=== Fails on locale-sensitive match', t
 
             # Try the match with UNICODE locale enabled, and check
             # that it still succeeds.
-            obj=re.compile(pattern, re.UNICODE)
-            result=obj.search(s)
-            if result==None:
+            obj = re.compile(pattern, re.UNICODE)
+            result = obj.search(s)
+            if result == None:
                 print '=== Fails on unicode-sensitive match', t
