@@ -22,7 +22,7 @@ __all__ = ['Encoders',
            ]
 
 
-
+
 # Some convenience routines
 from Parser import Parser as _Parser
 from Message import Message as _Message

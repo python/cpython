@@ -21,7 +21,7 @@ COMMASPACE = ', '
 UEMPTYSTRING = u''
 
 
-
+
 # Helpers
 
 def _identity(s):
@@ -42,7 +42,7 @@ def _bdecode(s):
     return value
 
 
-
+
 def getaddresses(fieldvalues):
     """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
     all = COMMASPACE.join(fieldvalues)
@@ -50,7 +50,7 @@ def getaddresses(fieldvalues):
     return a.getaddrlist()
 
 
-
+
 ecre = re.compile(r'''
   =\?                   # literal =?
   (?P<charset>[^?]*?)   # non-greedy up to the next ? is the charset
@@ -92,7 +92,7 @@ def decode(s):
     return UEMPTYSTRING.join(rtn)
 
 
-
+
 def encode(s, charset='iso-8859-1', encoding='q'):
     """Encode a string according to RFC 2047."""
     if encoding.lower() == 'q':

@@ -8,7 +8,7 @@ import Message
 import MIMEBase
 
 
-
+
 class MIMEMessage(MIMEBase.MIMEBase):
     """Class representing message/* MIME documents."""
 
