@@ -348,7 +348,7 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         if type(address) == types.StringType:
-            self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
             self.socket.connect(address)
             self.unixsocket = 1
         else:
