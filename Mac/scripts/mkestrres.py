@@ -25,6 +25,12 @@ ERRORS_PROG="[ \t]*" \
 			"[, \t]*/\*[ \t]*" \
 			"\(.*\)" \
 			"[ \t]*\*/"
+		   
+ERRORS_PROG_2="[ \t]*" \
+			"\([A-Z0-9a-z_]+\)" \
+			"[ \t]*=[ \t]*" \
+			"\([-0-9]+\)" \
+			"[, \t]*"
 
 def Pstring(str):
 	if len(str) > 255:
@@ -68,11 +74,20 @@ def parse_errno_h(fp, dict):
 								
 def parse_errors_h(fp, dict):
 	errno_prog = regex.compile(ERRORS_PROG)
+	errno_prog_2 = regex.compile(ERRORS_PROG_2)
 	for line in fp.readlines():
+		match = 0
 		if errno_prog.match(line) > 0:
 			number = string.atoi(errno_prog.group(2))
 			name = errno_prog.group(1)
 			desc = string.strip(errno_prog.group(3))
+			match=1
+		elif errno_prog_2.match(line) > 0:
+			number = string.atoi(errno_prog_2.group(2))
+			name = errno_prog_2.group(1)
+			desc = name
+			match=1
+		if match:
 			if number > 0: continue
 			
 			if not dict.has_key(number):
@@ -81,6 +96,9 @@ def parse_errors_h(fp, dict):
 				print 'DUPLICATE', number
 				print '\t', dict[number]
 				print '\t', (desc, name)
+				if len(desc) > len(dict[number][0]):
+					print 'Pick second one'
+					dict[number] = desc, name
 			
 def main():
 	dict = {}
