@@ -7,6 +7,31 @@ What's New in IDLEfork 0.9b1?
 
 *Release date: XX-XXX-2003*
 
+- The current working directory of the execution environment (and shell
+  following completion of execution) is now that of the module being run. 
+
+- Added the delete-exitfunc option to config-main.def.  (This option is not
+  included in the Options dialog.)  Setting this to True (the default) will
+  cause IDLE to not run sys.exitfunc/atexit when the subprocess exits.
+
+- IDLE now preserves the line ending codes when editing a file produced on
+  a different platform. SF 661759,  SF 538584
+
+- Reduced default editor font size to 10 point and increased window height
+  to provide a better initial impression on Windows.
+
+- Options / Fonts/Tabs / Set Base Editor Font: List box was not highlighting
+  the default font when first installed on Windows.  SF 661676
+
+- Added Autosave feature: when user runs code from edit window, if the file
+  has been modified IDLE will silently save it if Autosave is enabled.  The
+  option is set in the Options dialog, and the default is to prompt the
+  user to save the file.   SF 661318 Bruce Sherwood patch.
+
+- Improved the RESTART annotation in the shell window when the user restarts
+  the shell while it is generating output.  Also improved annotation when user
+  repeatedly hammers the Ctrl-F6 restart.
+
 - Allow IDLE to run when not installed and cwd is not the IDLE directory
   SF Patch 686254 "Run IDLEfork from any directory without set-up" - Raphael
 
@@ -14,8 +39,10 @@ What's New in IDLEfork 0.9b1?
   sys.path, prepend it.  This allows the module to import other modules in
   the same directory.  Do the same for a script run from the command line.
 
-- Interrupt the subprocess if it is running when the user attempts to 
-  restart the shell, run a module, or exit.
+- Correctly restart the subprocess if it is running user code and the user
+  attempts to run some other module or restarts the shell.  Do the same if
+  the link is broken and it is possible to restart the subprocess and re-
+  connect to the GUI.   SF RFE 661321.
 
 - Improved exception reporting when running commands or scripts from the
   command line.
@@ -30,7 +57,10 @@ What's New in IDLEfork 0.9b1?
   some platforms or configurations.  (Running without the subprocess allows the
   debugger to trace through parts of IDLE itself, which may or may not be
   desirable, depending on your point of view.  In addition, the traditional
-  reload/import tricks must be use if user source code is changed.)
+  reload/import tricks must be use if user source code is changed.)  This is
+  helpful for developing IDLE using IDLE, because one instance can be used to
+  edit the code and a separate instance run to test changes.  (Multiple
+  concurrent IDLE instances with subprocesses is a future feature)
 
 - Improve the error message a user gets when saving a file with non-ASCII
   characters and no source encoding is specified.  Done by adding a dialog
@@ -48,7 +78,8 @@ What's New in IDLEfork 0.9b1?
 
 - Implemented a threaded subprocess which allows interrupting a pass 
   loop in user code using the 'interrupt' extension.  User code runs
-  in MainThread, while the RPCServer is handled by SockThread.
+  in MainThread, while the RPCServer is handled by SockThread.  This is
+  necessary because Windows doesn't support signals.
 
 - Implemented the 'interrupt' extension module, which allows a subthread
   to raise a KeyboardInterrupt in the main thread.
@@ -67,23 +98,13 @@ What's New in IDLEfork 0.9b1?
 
 - Exit IDLE cleanly even when doing subprocess I/O
 
-- Handle subprocess interrupt in Windows with an RPC message.  
-
-- Calling Run will restart the subprocess even if user code is running.
-  SF RFE 661321
+- Handle subprocess interrupt with an RPC message.  
 
 - Restart the subprocess if it terminates itself. (VPython programs do that)
 
 - Support subclassing of exceptions, including in the shell, by moving the 
   exception formatting to the subprocess.
 
-- Known issues:
-
-  + Typing two Control-C in close succession when the subprocess is busy can
-    cause IDLE to lose communication with the subprocess.  Please type one
-    only and wait for the exception to complete.  If you do manage to 
-    interrupt the interrupt, simply restart the shell.
-  + Printing under some versions of Linux may be problematic.
 
 
 What's New in IDLEfork 0.9 Alpha 2?
