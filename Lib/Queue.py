@@ -55,7 +55,7 @@ class Queue:
         elif not self.fsema.acquire(0):
             raise Full
         self.mutex.acquire()
-        release_fsema = True
+        release_fsema = 1
         try:
             was_empty = self._empty()
             self._put(item)
@@ -64,7 +64,7 @@ class Queue:
             if was_empty:
                 self.esema.release()
             # If we fail before here, the queue can not be full, so
-            # release_full_sema remains True
+            # release_full_sema remains true
             release_fsema = not self._full()
         finally:
             # Catching system level exceptions here (RecursionDepth,
@@ -95,7 +95,7 @@ class Queue:
         elif not self.esema.acquire(0):
             raise Empty
         self.mutex.acquire()
-        release_esema = True
+        release_esema = 1
         try:
             was_full = self._full()
             item = self._get()
@@ -104,7 +104,7 @@ class Queue:
             if was_full:
                 self.fsema.release()
             # Failure means empty state also unchanged - release_esema
-            # remains True.
+            # remains true.
             release_esema = not self._empty()
         finally:
             if release_esema:

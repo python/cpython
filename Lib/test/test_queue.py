@@ -41,17 +41,17 @@ class FailingQueueException(Exception):
 
 class FailingQueue(Queue.Queue):
     def __init__(self, *args):
-        self.fail_next_put = False
-        self.fail_next_get = False
+        self.fail_next_put = 0
+        self.fail_next_get = 0
         Queue.Queue.__init__(self, *args)
     def _put(self, item):
         if self.fail_next_put:
-            self.fail_next_put = False
+            self.fail_next_put = 0
             raise FailingQueueException, "You Lose"
         return Queue.Queue._put(self, item)
     def _get(self):
         if self.fail_next_get:
-            self.fail_next_get = False
+            self.fail_next_get = 0
             raise FailingQueueException, "You Lose"
         return Queue.Queue._get(self)
 
@@ -60,7 +60,7 @@ def FailingQueueTest(q):
         raise RuntimeError, "Call this function with an empty queue"
     for i in range(queue_size-1):
         q.put(i)
-    q.fail_next_put = True
+    q.fail_next_put = 1
     # Test a failing non-blocking put.
     try:
         q.put("oops", block=0)
@@ -69,7 +69,7 @@ def FailingQueueTest(q):
         pass
     q.put("last")
     verify(q.full(), "Queue should be full")
-    q.fail_next_put = True
+    q.fail_next_put = 1
     # Test a failing blocking put
     try:
         _doBlockingTest( q.put, ("full",), q.get, ())
@@ -91,7 +91,7 @@ def FailingQueueTest(q):
         q.get()
     verify(q.empty(), "Queue should be empty")
     q.put("first")
-    q.fail_next_get = True
+    q.fail_next_get = 1
     try:
         q.get()
         raise TestFailed("The queue didn't fail when it should have")
@@ -100,7 +100,7 @@ def FailingQueueTest(q):
     verify(not q.empty(), "Queue should not be empty")
     q.get()
     verify(q.empty(), "Queue should be empty")
-    q.fail_next_get = True
+    q.fail_next_get = 1
     try:
         _doBlockingTest( q.get, (), q.put, ('empty',))
         raise TestFailed("The queue didn't fail when it should have")
