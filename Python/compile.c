@@ -1227,10 +1227,8 @@ none_assignment_check(struct compiling *c, char *name, int assigning)
 			msg = "assignment to None";
 		else
 			msg = "deleting None";
-		if (issue_warning(msg, c->c_filename, c->c_lineno) < 0) {
-			c->c_errors++;
-			return -1;
-		}
+		com_error(c, PyExc_SyntaxError, msg);
+		return -1;
 	}
 	return 0;
 }
@@ -1247,7 +1245,6 @@ com_addop_varname(struct compiling *c, int kind, char *name)
 	if (kind != VAR_LOAD &&
 	    none_assignment_check(c, name, kind == VAR_STORE))
 	{
-		c->c_errors++;
 		i = 255;
 		goto done;
 	}
@@ -5483,8 +5480,10 @@ symtable_add_def(struct symtable *st, char *name, int flag)
 	if ((flag & DEF_PARAM) && !(flag & DEF_INTUPLE) &&
 	    *name == 'N' && strcmp(name, "None") == 0)
 	{
-		if (symtable_warn(st, "argument named None"))
-			return -1;
+		PyErr_SetString(PyExc_SyntaxError, 
+			"Invalid syntax.  Assignment to None.");
+		symtable_error(st, 0);
+		return  -1;
 	}
 	if (_Py_Mangle(st->st_private, name, buffer, sizeof(buffer)))
 		name = buffer;
