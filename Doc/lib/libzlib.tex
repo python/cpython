@@ -29,7 +29,9 @@ The available exception and functions in this module are:
    used.  This allows computing a running checksum over the
    concatenation of several input strings.  The algorithm is not
    cryptographically strong, and should not be used for
-   authentication or digital signatures.
+   authentication or digital signatures.  Since the algorithm is
+   designed for use as a checksum algorithm, it is not suitable for
+   use as a general hash algorithm.
 \end{funcdesc}
 
 \begin{funcdesc}{compress}{string\optional{, level}}
@@ -58,7 +60,9 @@ The available exception and functions in this module are:
   checksum; otherwise, a fixed default value is used.  This allows
   computing a running checksum over the concatenation of several
   input strings.  The algorithm is not cryptographically strong, and
-  should not be used for authentication or digital signatures.
+  should not be used for authentication or digital signatures.  Since
+  the algorithm is designed for use as a checksum algorithm, it is not
+  suitable for use as a general hash algorithm.
 \end{funcdesc}
 
 \begin{funcdesc}{decompress}{string\optional{, wbits\optional{, bufsize}}}
