@@ -4,10 +4,17 @@ from itertools import *
 import sys
 
 class TestBasicOps(unittest.TestCase):
+    def test_chain(self):
+        self.assertEqual(list(chain('abc', 'def')), list('abcdef'))
+
     def test_count(self):
         self.assertEqual(zip('abc',count()), [('a', 0), ('b', 1), ('c', 2)])
         self.assertEqual(zip('abc',count(3)), [('a', 3), ('b', 4), ('c', 5)])
         self.assertRaises(TypeError, count, 2, 3)
+
+    def test_cycle(self):
+        self.assertEqual(list(islice(cycle('abc'),10)), list('abcabcabca'))
+        self.assertEqual(list(cycle('')), [])
 
     def test_ifilter(self):
         def isEven(x):
@@ -35,12 +42,8 @@ class TestBasicOps(unittest.TestCase):
     def test_repeat(self):
         self.assertEqual(zip(xrange(3),repeat('a')),
                          [(0, 'a'), (1, 'a'), (2, 'a')])
+        self.assertEqual(list(repeat('a', 3)), ['a', 'a', 'a'])
         self.assertRaises(TypeError, repeat)
-
-    def test_times(self):
-        self.assertEqual(list(times(3)), [None]*3)
-        self.assertEqual(list(times(3, True)), [True]*3)
-        self.assertRaises(ValueError, times, -1)
 
     def test_imap(self):
         import operator
@@ -94,12 +97,6 @@ class TestBasicOps(unittest.TestCase):
 
 libreftest = """ Doctest for examples in the library reference, libitertools.tex
 
->>> for i in times(3):
-...     print "Hello"
-...
-Hello
-Hello
-Hello
 
 >>> amounts = [120.15, 764.05, 823.14]
 >>> for checknum, amount in izip(count(1200), amounts):
@@ -153,6 +150,10 @@ Samuele
 >>> def no(pred, seq):
 ...     "Returns True if pred(x) is False for every element in the iterable"
 ...     return not nth(ifilter(pred, seq), 0)
+
+>>> def pairwise(seq):
+...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+...     return izip(seq, islice(seq,1,len(seq)))
 
 """
 
