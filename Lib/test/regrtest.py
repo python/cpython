@@ -466,6 +466,9 @@ class _Set:
             data.sort()
         return data
 
+# Map sys.platform to a string containing the basenames of tests
+# expected to be skipped on that platform.
+
 _expectations = {
     'win32':
         """
@@ -486,6 +489,7 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_mhlib
+        test_mpz
         test_nis
         test_openpty
         test_poll
@@ -677,7 +681,7 @@ _expectations = {
 class _ExpectedSkips:
     def __init__(self):
         self.valid = 0
-        if _expectations.has_key(sys.platform):
+        if sys.platform in _expectations:
             s = _expectations[sys.platform]
             self.expected = _Set(s.split())
             self.valid = 1
