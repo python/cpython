@@ -305,8 +305,8 @@
 			productName = PythonLauncher;
 			productReference = 1758732AFF379DA111CA2CBB;
 			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist SYSTEM \"file://localhost/System/Library/DTDs/PropertyList.dtd\">
-<plist version=\"0.9\">
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
@@ -410,6 +410,7 @@
 				F5AA9C6C02F8042D0110C447,
 			);
 			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		2A37F4C8FDCFA73011CA2CEA = {
 			fileRef = 2A37F4AEFDCFA73011CA2CEA;
@@ -431,6 +432,7 @@
 				F5449B4C02FB3F7E01000102,
 			);
 			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		2A37F4CEFDCFA73011CA2CEA = {
 			buildActionMask = 2147483647;
@@ -443,6 +445,7 @@
 				F5AAA21E02F8115D0110C447,
 			);
 			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 		2A37F4CFFDCFA73011CA2CEA = {
 			fileRef = 2A37F4ACFDCFA73011CA2CEA;
@@ -467,6 +470,7 @@
 				F5AA9D9B02F807EF0110C447,
 			);
 			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 //2A0
 //2A1
