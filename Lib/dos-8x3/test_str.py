@@ -45,6 +45,12 @@ test('split', 'this is the split function',
      ['this', 'is', 'the', 'split', 'function'])
 test('split', 'a|b|c|d', ['a', 'b', 'c', 'd'], '|')
 test('split', 'a|b|c|d', ['a', 'b', 'c|d'], '|', 2)
+test('split', 'a b c d', ['a', 'b c d'], None, 1)
+test('split', 'a b c d', ['a', 'b', 'c d'], None, 2)
+test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 3)
+test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 4)
+test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 0)
+test('split', 'a  b  c  d', ['a', 'b', 'c  d'], None, 2)
 
 # join now works with any sequence type
 class Sequence:
@@ -66,6 +72,15 @@ test('rstrip', '   hello   ', '   hello')
 
 test('swapcase', 'HeLLo cOmpUteRs', 'hEllO CoMPuTErS')
 test('translate', 'xyzabcdef', 'xyzxyz', transtable, 'def')
+
+test('replace', 'one!two!three!', 'one@two!three!', '!', '@', 1)
+test('replace', 'one!two!three!', 'one@two@three!', '!', '@', 2)
+test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 3)
+test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 4)
+test('replace', 'one!two!three!', 'one@two@three@', '!', '@', 0)
+test('replace', 'one!two!three!', 'one@two@three@', '!', '@')
+test('replace', 'one!two!three!', 'one!two!three!', 'x', '@')
+test('replace', 'one!two!three!', 'one!two!three!', 'x', '@', 2)
 
 strop.whitespace
 strop.lowercase
