@@ -278,8 +278,8 @@ class PyBuildExt(build_ext):
             inc_dirs += ['/system/include', '/atheos/autolnk/include']
             inc_dirs += os.getenv('C_INCLUDE_PATH', '').split(os.pathsep)
 
-        # OSF/1 has some stuff in /usr/ccs/lib (like -ldb)
-        if platform == 'osf1':
+        # OSF/1 and Unixware have some stuff in /usr/ccs/lib (like -ldb)
+        if platform in ['osf1', 'unixware7', 'openunix8']:
             lib_dirs += ['/usr/ccs/lib']
 
         # Check for MacOS X, which doesn't need libm.a at all
@@ -420,7 +420,7 @@ class PyBuildExt(build_ext):
                                    library_dirs=['/usr/lib/termcap'],
                                    libraries=readline_libs) )
         if platform not in ['mac']:
-                # crypt module.
+            # crypt module.
 
             if self.compiler.find_library_file(lib_dirs, 'crypt'):
                 libs = ['crypt']
