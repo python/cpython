@@ -47,4 +47,7 @@ except TypeError:
 	TracebackType = type(sys.exc_traceback)
 	FrameType = type(sys.exc_traceback.tb_frame)
 
+SliceType = type(slice(0))
+EllipsesType = type(Ellipses)
+
 del sys, _f, _C, _x			# Not for export
