@@ -21,51 +21,29 @@
 
 ;; This is a major mode for editing Python programs.  It was developed
 ;; by Tim Peters after an original idea by Michael A. Guravage.  Tim
-;; subsequently left the net; in 1995, Barry Warsaw inherited the
-;; mode and is the current maintainer.
-
-;; COMPATIBILITY:
+;; subsequently left the net; in 1995, Barry Warsaw inherited the mode
+;; and is the current maintainer.
 
 ;; This version of python-mode.el is no longer compatible with Emacs
-;; 18.  For a gabazillion reasons, I highly recommend upgrading to
-;; X/Emacs 19 or X/Emacs 20.  I recommend at least Emacs 19.34 or
-;; XEmacs 19.15.  Any of the v20 X/Emacsen should be fine.
-
-;; NOTE TO FSF EMACS USERS:
-
-;; You may need to acquire the Custom library -- this applies to users
-;; of Emacs 19.34 and NTEmacs based on 19.34, but not to Emacs 20
-;; users.  You must also byte-compile this file before use -- this
-;; applies to FSF's Emacs 19.34, 20.x, and NTEmacs based on 19.34.
-;; None of this applies to XEmacs (although byte compilation is still
-;; recommended).  You will also need to add the following to your
-;; .emacs file so that the .py files come up in python-mode:
-;;
-;;     (autoload 'python-mode "python-mode" "Python editing mode." t)
-;;     (setq auto-mode-alist
-;;	     (cons '("\\.py$" . python-mode) auto-mode-alist))
-;;     (setq interpreter-mode-alist
-;;           (cons '("python" . python-mode) interpreter-mode-alist))
-;;
-;; Assuming python-mode.el is on your load-path, it will be invoked
-;; when you visit a .py file, or a file with a first line that looks
-;; like:
-;;
-;;   #! /usr/bin/env python
-
-;; NOTE TO XEMACS USERS:
-
-;; An older version of this file was distributed with XEmacs 19.15,
-;; 19.16 and 20.3.  By default, in XEmacs when you visit a .py file,
-;; the buffer is put in Python mode.  Likewise for executable scripts
-;; with the word `python' on the first line.  You shouldn't need to do
-;; much except make sure this new version is earlier in your
-;; load-path, and byte-compile this file.
+;; 18.  I am striving to maintain compatibility with the X/Emacs 19
+;; lineage but as time goes on that becomes more and more difficult.
+;; I current recommend that you upgrade to the latest stable released
+;; version of your favorite branch: Emacs 20.2 or better, or XEmacs
+;; 20.4 or better (Emacs 20.3 and XEmacs 21.0 are in beta testing as
+;; of this writing 20-Aug-1998 but both appear to work fine with this
+;; version of python-mode.el).  Even Windows users should be using at
+;; least NTEmacs 20.2, and XEmacs 21.0 will work very nicely on
+;; Windows when it is released.
 
 ;; FOR MORE INFORMATION:
 
-;; Please see <http://www.python.org/emacs/python-mode/> for the
-;; latest information and compatibility notes.
+;; For more information on installing python-mode.el, especially with
+;; respect to compatibility information, please see
+;;
+;;     http://www.python.org/emacs/python-mode/
+;;
+;; This site also contains links to other packages that you might find 
+;; useful, such as pdb interfaces, OO-Browser links, etc.
 
 ;; BUG REPORTING:
 
@@ -77,28 +55,10 @@
 ;; doubtful that a texinfo manual would be very useful, but if you
 ;; want to contribute one, I'll certainly accept it!
 
-;; If you are using XEmacs, you may also want to check out OO-Browser
-;; that comes bundled with it, including documentation in the info
-;; pages.  For GNU Emacs you have to install it yourself.  To read
-;; more about OO-Browser, follow these links:
-
-;; http://www.python.org/workshops/1996-06/papers/h.pasanen/oobr_contents.html
-;; http://www.infodock.com/manuals/alt-oobr-cover.html
-
-;; You may also want to take a look at Harri Pasanen's "Python Library
-;; Reference Hot-Key Help System for XEmacs (or PLRHKHSX for short ;),
-;; version 1.0"
-;;
-;; <http://www.iki.fi/hpa/>
-
 ;; TO DO LIST:
 
 ;; - Better integration with pdb.py and gud-mode for debugging.
 ;; - Rewrite according to GNU Emacs Lisp standards.
-;; - possibly force indent-tabs-mode == nil, and add a
-;;   write-file-hooks that runs untabify on the whole buffer (to work
-;;   around potential tab/space mismatch problems).  In practice this
-;;   hasn't been a problem... yet.
 ;; - have py-execute-region on indented code act as if the region is
 ;;   left justified.  Avoids syntax errors.
 ;; - add a py-goto-block-down, bound to C-c C-d
