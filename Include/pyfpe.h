@@ -131,7 +131,7 @@ extern "C" {
 #include <math.h>
 extern jmp_buf PyFPE_jbuf;
 extern int PyFPE_counter;
-extern double PyFPE_dummy(void);
+extern double PyFPE_dummy();
 
 #define PyFPE_START_PROTECT(err_string, leave_stmt) \
 if (!PyFPE_counter++ && setjmp(PyFPE_jbuf)) { \
@@ -149,12 +149,12 @@ if (!PyFPE_counter++ && setjmp(PyFPE_jbuf)) { \
  * which counts down PyFPE_counter, and thereby monkey wrench the overeager
  * optimizer. Better solutions are welcomed....
  */
-#define PyFPE_END_PROTECT PyFPE_counter -= (int)PyFPE_dummy();
+#define PyFPE_END_PROTECT(v) PyFPE_counter -= (int)PyFPE_dummy(&(v));
 
 #else
 
 #define PyFPE_START_PROTECT(err_string, leave_stmt)
-#define PyFPE_END_PROTECT
+#define PyFPE_END_PROTECT(v)
 
 #endif
 
