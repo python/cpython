@@ -153,13 +153,15 @@ class StripWidget:
                  generator  = None,
                  axis       = None,
                  label      = '',
-                 uwdvar     = None):
+                 uwdvar     = None,
+                 hexvar     = None):
         # instance variables
 	self.__generator = generator
 	self.__axis = axis
         self.__numchips = numchips
 	assert self.__axis in (0, 1, 2)
 	self.__uwd = uwdvar
+        self.__hexp = hexvar
         # the last chip selected
         self.__lastchip = None
         self.__sb = switchboard
@@ -244,7 +246,12 @@ class StripWidget:
         self.__lastchip = chip
 	# get the arrow's text
 	coloraxis = rgbtuple[self.__axis]
-	text = repr(coloraxis)
+        if self.__hexp.get():
+            # hex
+            text = hex(coloraxis)
+        else:
+            # decimal
+            text = repr(coloraxis)
 	# move the arrow, and set it's text
 	if coloraxis <= 128:
 	    # use the left arrow
@@ -294,27 +301,39 @@ class StripViewer:
         self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
         self.__frame.grid(row=1, column=0, columnspan=2, sticky='EW')
         uwd = BooleanVar()
+        hexp = BooleanVar()
         self.__reds = StripWidget(switchboard, self.__frame,
                                   generator=constant_cyan_generator,
                                   axis=0,
                                   label='Red Variations',
-                                  uwdvar=uwd)
+                                  uwdvar=uwd, hexvar=hexp)
 
         self.__greens = StripWidget(switchboard, self.__frame,
                                     generator=constant_magenta_generator,
                                     axis=1,
                                     label='Green Variations',
-                                    uwdvar=uwd)
+                                    uwdvar=uwd, hexvar=hexp)
 
         self.__blues = StripWidget(switchboard, self.__frame,
                                    generator=constant_yellow_generator,
                                    axis=2,
                                    label='Blue Variations',
-                                   uwdvar=uwd)
-        self.__uwd = Checkbutton(self.__frame,
+                                   uwdvar=uwd, hexvar=hexp)
+
+        frame = self.__frame1 = Frame(self.__frame)
+        frame.pack()
+
+        self.__uwd = Checkbutton(frame,
                                  text='Update while dragging',
                                  variable=uwd)
-        self.__uwd.pack()
+        self.__uwd.grid(row=0, column=0, sticky=W)
+
+        self.__hex = Checkbutton(frame,
+                                 text='Hexadecimal',
+                                 variable=hexp,
+                                 command=self.__togglehex)
+        self.__hex.grid(row=1, column=0, sticky=W)
+
         self.__div = Frame(self.__frame,
                            height=2,
                            borderwidth=2,
@@ -325,3 +344,7 @@ class StripViewer:
         self.__reds.update_yourself(red, green, blue)
         self.__greens.update_yourself(red, green, blue)
         self.__blues.update_yourself(red, green, blue)
+
+    def __togglehex(self, event=None):
+        red, green, blue = self.__sb.current_rgb()
+        self.update_yourself(red, green, blue)
