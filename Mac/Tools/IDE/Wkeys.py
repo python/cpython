@@ -4,7 +4,7 @@ tabkey 		= '\t'
 enterkey 		= '\003'
 backspacekey 	= '\010'
 deletekey 		= '\177'
-
+clearkey		= '\033'
 helpkey 		= '\005'
 
 leftarrowkey 	= '\034'
