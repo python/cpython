@@ -66,6 +66,8 @@ typedef struct { char c; void *x; } s_void_p;
 #define DOUBLE_ALIGN (sizeof(s_double) - sizeof(double))
 #define VOID_P_ALIGN (sizeof(s_void_p) - sizeof(void *))
 
+#define STRINGIFY(x)    #x
+
 #ifdef __powerc
 #pragma options align=reset
 #endif
@@ -519,9 +521,10 @@ np_short(char *p, PyObject *v, const formatdef *f)
 	long x;
 	if (get_long(v, &x) < 0)
 		return -1;
-	if (x < -32768 || x > 32767){
+	if (x < SHRT_MIN || x > SHRT_MAX){
 		PyErr_SetString(StructError,
-				"short format requires -32768<=number<=32767");
+				"short format requires " STRINGIFY(SHRT_MIN)
+                                "<=number<=" STRINGIFY(SHRT_MAX));
 		return -1;
 	}
 	* (short *)p = (short)x;
@@ -534,9 +537,9 @@ np_ushort(char *p, PyObject *v, const formatdef *f)
 	long x;
 	if (get_long(v, &x) < 0)
 		return -1;
-	if (x < 0 || x > 65535){
+	if (x < 0 || x > USHRT_MAX){
 		PyErr_SetString(StructError,
-				"short format requires 0<=number<=65535");
+				"short format requires 0<=number<=" STRINGIFY(USHRT_MAX));
 		return -1;
 	}
 	* (unsigned short *)p = (unsigned short)x;
