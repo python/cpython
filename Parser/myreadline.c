@@ -100,6 +100,19 @@ my_fgets(buf, len, fp)
 #endif /* WITH_READLINE */
 
 
+void
+PyOS_ReadlineInit()
+{
+	static int been_here;
+	if (!been_here) {
+		/* Force rebind of TAB to insert-tab */
+		extern int rl_insert();
+		rl_bind_key('\t', rl_insert);
+		been_here++;
+	}
+}
+
+
 char *
 my_readline(prompt)
 	char *prompt;
@@ -108,13 +121,7 @@ my_readline(prompt)
 	char *p;
 #ifdef WITH_READLINE
 	RETSIGTYPE (*old_inthandler)();
-	static int been_here;
-	if (!been_here) {
-		/* Force rebind of TAB to insert-tab */
-		extern int rl_insert();
-		rl_bind_key('\t', rl_insert);
-		been_here++;
-	}
+	PyOS_ReadlineInit();
 	old_inthandler = signal(SIGINT, onintr);
 	if (setjmp(jbuf)) {
 #ifdef HAVE_SIGRELSE
