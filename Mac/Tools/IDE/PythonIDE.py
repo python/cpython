@@ -3,7 +3,7 @@
 # keep this (__main__) as clean as possible, since we are using 
 # it like the "normal" interpreter.
 
-__version__ = '1.0b2'
+__version__ = '1.0b3'
 
 
 def init():
@@ -18,15 +18,15 @@ def init():
 		Res.GetResource('DITL', 468)
 	except Res.Error:
 		# we're not an applet
-		Res.OpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:PythonIDE.rsrc"))
-		Res.OpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:Widgets.rsrc"))
+		Res.FSpOpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:PythonIDE.rsrc"), 1)
+		Res.FSpOpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:Widgets.rsrc"), 1)
 		ide_path = os.path.join(sys.exec_prefix, ":Mac:Tools:IDE")
 	else:
 		# we're an applet
 		try:
 			Res.GetResource('CURS', 468)
 		except Res.Error:
-			Res.OpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:Widgets.rsrc"))
+			Res.FSpOpenResFile(os.path.join(sys.exec_prefix, ":Mac:Tools:IDE:Widgets.rsrc"), 1)
 			ide_path = os.path.join(sys.exec_prefix, ":Mac:Tools:IDE")
 		else:
 			# we're a full blown applet
