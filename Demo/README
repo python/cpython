@@ -1,0 +1,25 @@
+This directory contains various demonstrations of what you can do with
+Python.  The demos are grouped sub(sub*)directories according to
+required optional built-in modules.
+
+scripts		Some useful Python scripts that I put in my bin
+		directory.  No optional built-in modules meeded.
+
+sockets		Examples for the new built-in module 'socket'.
+
+sgi		Demos that only run on Silicon Graphics machines.
+		Require the built-in modules 'audio' and/or 'gl'
+		and/or 'stdwin'.
+		(This is split in corresponding subdirectories.)
+
+stdwin		Demos that use the STDWIN library.  Require the 'stdwin'
+		built-in module.
+
+WARNING: many scripts are executable and have a first line saying
+
+	#! /usr/local/python
+
+This is unlikely to give good results unless you've really installed
+the latest version python there.  Edit the first line before
+installing such scripts; to try them out, you can just say "python
+foo.py" or enter python interactively and say "import foo".
