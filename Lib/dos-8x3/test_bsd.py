@@ -9,12 +9,12 @@ from test_support import verbose
 def test(openmethod, what):
 
     if verbose:
-	print '\nTesting: ', what
-	
+        print '\nTesting: ', what
+        
     fname = tempfile.mktemp()
     f = openmethod(fname, 'c')
     if verbose:
-	print 'creation...'
+        print 'creation...'
     f['0'] = ''
     f['a'] = 'Guido'
     f['b'] = 'van'
@@ -22,47 +22,47 @@ def test(openmethod, what):
     f['d'] = 'invented'
     f['f'] = 'Python'
     if verbose:
-	print '%s %s %s' % (f['a'], f['b'], f['c'])
+        print '%s %s %s' % (f['a'], f['b'], f['c'])
 
     if what == 'BTree' :
-	if verbose:
-	    print 'key ordering...'
-	f.set_location(f.first()[0])
-	while 1:
-	    try:
-		rec = f.next()
-	    except KeyError:
-		if rec <> f.last():
-		    print 'Error, last <> last!'
-		f.previous()
-		break
-	    if verbose:
-		print rec
-	if not f.has_key('a'):
-	    print 'Error, missing key!'
+        if verbose:
+            print 'key ordering...'
+        f.set_location(f.first()[0])
+        while 1:
+            try:
+                rec = f.next()
+            except KeyError:
+                if rec <> f.last():
+                    print 'Error, last <> last!'
+                f.previous()
+                break
+            if verbose:
+                print rec
+        if not f.has_key('a'):
+            print 'Error, missing key!'
 
     f.sync()
     f.close()
     if verbose:
-	print 'modification...'
+        print 'modification...'
     f = openmethod(fname, 'w')
     f['d'] = 'discovered'
 
     if verbose:
-	print 'access...'
+        print 'access...'
     for key in f.keys():
-	word = f[key]
-	if verbose:
-	    print word
+        word = f[key]
+        if verbose:
+            print word
 
     f.close()
 
 types = [(bsddb.btopen, 'BTree'),
-	 (bsddb.hashopen, 'Hash Table'),
-	 # (bsddb.rnopen,'Record Numbers'), 'put' for RECNO for bsddb 1.85
+         (bsddb.hashopen, 'Hash Table'),
+         # (bsddb.rnopen,'Record Numbers'), 'put' for RECNO for bsddb 1.85
          #                                   appears broken... at least on
-	 #                                   Solaris Intel - rmasse 1/97
-	 ]
+         #                                   Solaris Intel - rmasse 1/97
+         ]
 
 for type in types:
     test(type[0], type[1])

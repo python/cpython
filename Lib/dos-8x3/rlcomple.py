@@ -47,60 +47,60 @@ import __main__
 class Completer:
 
     def complete(self, text, state):
-	"""Return the next possible completion for 'text'.
+        """Return the next possible completion for 'text'.
 
-	This is called successively with state == 0, 1, 2, ... until it
-	returns None.  The completion should begin with 'text'.
+        This is called successively with state == 0, 1, 2, ... until it
+        returns None.  The completion should begin with 'text'.
 
-	"""
-	if state == 0:
-	    if "." in text:
-		self.matches = self.attr_matches(text)
-	    else:
-		self.matches = self.global_matches(text)
-	return self.matches[state]
+        """
+        if state == 0:
+            if "." in text:
+                self.matches = self.attr_matches(text)
+            else:
+                self.matches = self.global_matches(text)
+        return self.matches[state]
 
     def global_matches(self, text):
-	"""Compute matches when text is a simple name.
+        """Compute matches when text is a simple name.
 
-	Return a list of all keywords, built-in functions and names
-	currently defines in __main__ that match.
+        Return a list of all keywords, built-in functions and names
+        currently defines in __main__ that match.
 
-	"""
-	import keyword
-	matches = []
-	n = len(text)
-	for list in [keyword.kwlist,
-		     __builtin__.__dict__.keys(),
-		     __main__.__dict__.keys()]:
-	    for word in list:
-		if word[:n] == text:
-		    matches.append(word)
-	return matches
+        """
+        import keyword
+        matches = []
+        n = len(text)
+        for list in [keyword.kwlist,
+                     __builtin__.__dict__.keys(),
+                     __main__.__dict__.keys()]:
+            for word in list:
+                if word[:n] == text:
+                    matches.append(word)
+        return matches
 
     def attr_matches(self, text):
-	"""Compute matches when text contains a dot.
+        """Compute matches when text contains a dot.
 
-	Assuming the text is of the form NAME.NAME....[NAME], and is
-	evaluabable in the globals of __main__, it will be evaluated
-	and its attributes (as revealed by dir()) are used as possible
-	completions.
+        Assuming the text is of the form NAME.NAME....[NAME], and is
+        evaluabable in the globals of __main__, it will be evaluated
+        and its attributes (as revealed by dir()) are used as possible
+        completions.
 
-	WARNING: this can still invoke arbitrary C code, if an object
-	with a __getattr__ hook is evaluated.
+        WARNING: this can still invoke arbitrary C code, if an object
+        with a __getattr__ hook is evaluated.
 
-	"""
-	import re
-	m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
-	if not m:
-	    return
-	expr, attr = m.group(1, 3)
-	words = dir(eval(expr, __main__.__dict__))
-	matches = []
-	n = len(attr)
-	for word in words:
-	    if word[:n] == attr:
-		matches.append("%s.%s" % (expr, word))
-	return matches
+        """
+        import re
+        m = re.match(r"(\w+(\.\w+)*)\.(\w*)", text)
+        if not m:
+            return
+        expr, attr = m.group(1, 3)
+        words = dir(eval(expr, __main__.__dict__))
+        matches = []
+        n = len(attr)
+        for word in words:
+            if word[:n] == attr:
+                matches.append("%s.%s" % (expr, word))
+        return matches
 
 readline.set_completer(Completer().complete)

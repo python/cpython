@@ -44,8 +44,17 @@ class MultiFile:
 			return self.lastpos
 		return self.fp.tell() - self.start
 	#
-	def seek(self, pos):
-		if not 0 <= pos <= self.tell() or \
+	def seek(self, pos, whence=0):
+		here = self.tell()
+		if whence:
+			if whence == 1:
+				pos = pos + here
+			elif whence == 2:
+				if self.level > 0:
+					pos = pos + self.lastpos
+				else:
+					raise Error, "can't use whence=2 yet"
+		if not 0 <= pos <= here or \
 				self.level > 0 and pos > self.lastpos:
 			raise Error, 'bad MultiFile.seek() call'
 		self.fp.seek(pos + self.start)

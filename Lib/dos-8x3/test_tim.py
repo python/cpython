@@ -14,13 +14,13 @@ if long(time.mktime(time.localtime(t))) <> long(t):
 time.sleep(1.2)
 tt = time.gmtime(t)
 for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
-		  'j', 'm', 'M', 'p', 'S',
-		  'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
+                  'j', 'm', 'M', 'p', 'S',
+                  'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
     format = ' %' + directive
     try:
-	time.strftime(format, tt)
+        time.strftime(format, tt)
     except ValueError:
-	print 'conversion specifier:', format, ' failed.'
+        print 'conversion specifier:', format, ' failed.'
 
 time.timezone
 time.tzname
@@ -33,7 +33,7 @@ except TypeError:
 
 try:
     time.mktime((999999, 999999, 999999, 999999,
-		 999999, 999999, 999999, 999999,
-		 999999))
+                 999999, 999999, 999999, 999999,
+                 999999))
 except OverflowError:
     pass

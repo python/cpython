@@ -3,19 +3,19 @@ import strop, sys
 
 def test(name, input, output, *args):
     if verbose:
-	print 'string.%s%s =? %s... ' % (name, (input,) + args, output),
+        print 'string.%s%s =? %s... ' % (name, (input,) + args, output),
     f = getattr(strop, name)
     try:
-	value = apply(f, (input,) + args)
+        value = apply(f, (input,) + args)
     except:
-	 value = sys.exc_type
+         value = sys.exc_type
     if value != output:
-	if verbose:
-	    print 'no'
-	print f, `input`, `output`, `value`
+        if verbose:
+            print 'no'
+        print f, `input`, `output`, `value`
     else:
-	if verbose:
-	    print 'yes'
+        if verbose:
+            print 'yes'
 
 test('atoi', " 1 ", 1)
 test('atoi', " 1x", ValueError)

@@ -89,19 +89,19 @@ DEFAULT_ERROR_MESSAGE = """\
 class HTTPServer(SocketServer.TCPServer):
 
     def server_bind(self):
-	"""Override server_bind to store the server name."""
-	SocketServer.TCPServer.server_bind(self)
-	host, port = self.socket.getsockname()
-	if not host or host == '0.0.0.0':
-	    host = socket.gethostname()
-	hostname, hostnames, hostaddrs = socket.gethostbyaddr(host)
-	if '.' not in hostname:
-	    for host in hostnames:
-		if '.' in host:
-		    hostname = host
-		    break
-	self.server_name = hostname
-	self.server_port = port
+        """Override server_bind to store the server name."""
+        SocketServer.TCPServer.server_bind(self)
+        host, port = self.socket.getsockname()
+        if not host or host == '0.0.0.0':
+            host = socket.gethostname()
+        hostname, hostnames, hostaddrs = socket.gethostbyaddr(host)
+        if '.' not in hostname:
+            for host in hostnames:
+                if '.' in host:
+                    hostname = host
+                    break
+        self.server_name = hostname
+        self.server_port = port
 
 
 class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
@@ -217,196 +217,196 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     server_version = "BaseHTTP/" + __version__
 
     def handle(self):
-	"""Handle a single HTTP request.
+        """Handle a single HTTP request.
 
-	You normally don't need to override this method; see the class
-	__doc__ string for information on how to handle specific HTTP
-	commands such as GET and POST.
+        You normally don't need to override this method; see the class
+        __doc__ string for information on how to handle specific HTTP
+        commands such as GET and POST.
 
-	"""
+        """
 
-	self.raw_requestline = self.rfile.readline()
-	self.request_version = version = "HTTP/0.9" # Default
-	requestline = self.raw_requestline
-	if requestline[-2:] == '\r\n':
-	    requestline = requestline[:-2]
-	elif requestline[-1:] == '\n':
-	    requestline = requestline[:-1]
-	self.requestline = requestline
-	words = string.split(requestline)
-	if len(words) == 3:
-	    [command, path, version] = words
-	    if version[:5] != 'HTTP/':
-		self.send_error(400, "Bad request version (%s)" % `version`)
-		return
-	elif len(words) == 2:
-	    [command, path] = words
-	    if command != 'GET':
-		self.send_error(400,
-				"Bad HTTP/0.9 request type (%s)" % `command`)
-		return
-	else:
-	    self.send_error(400, "Bad request syntax (%s)" % `requestline`)
-	    return
-	self.command, self.path, self.request_version = command, path, version
-	self.headers = self.MessageClass(self.rfile, 0)
-	mname = 'do_' + command
-	if not hasattr(self, mname):
-	    self.send_error(501, "Unsupported method (%s)" % `mname`)
-	    return
-	method = getattr(self, mname)
-	method()
+        self.raw_requestline = self.rfile.readline()
+        self.request_version = version = "HTTP/0.9" # Default
+        requestline = self.raw_requestline
+        if requestline[-2:] == '\r\n':
+            requestline = requestline[:-2]
+        elif requestline[-1:] == '\n':
+            requestline = requestline[:-1]
+        self.requestline = requestline
+        words = string.split(requestline)
+        if len(words) == 3:
+            [command, path, version] = words
+            if version[:5] != 'HTTP/':
+                self.send_error(400, "Bad request version (%s)" % `version`)
+                return
+        elif len(words) == 2:
+            [command, path] = words
+            if command != 'GET':
+                self.send_error(400,
+                                "Bad HTTP/0.9 request type (%s)" % `command`)
+                return
+        else:
+            self.send_error(400, "Bad request syntax (%s)" % `requestline`)
+            return
+        self.command, self.path, self.request_version = command, path, version
+        self.headers = self.MessageClass(self.rfile, 0)
+        mname = 'do_' + command
+        if not hasattr(self, mname):
+            self.send_error(501, "Unsupported method (%s)" % `mname`)
+            return
+        method = getattr(self, mname)
+        method()
 
     def send_error(self, code, message=None):
-	"""Send and log an error reply.
+        """Send and log an error reply.
 
-	Arguments are the error code, and a detailed message.
-	The detailed message defaults to the short entry matching the
-	response code.
+        Arguments are the error code, and a detailed message.
+        The detailed message defaults to the short entry matching the
+        response code.
 
-	This sends an error response (so it must be called before any
-	output has been generated), logs the error, and finally sends
-	a piece of HTML explaining the error to the user.
+        This sends an error response (so it must be called before any
+        output has been generated), logs the error, and finally sends
+        a piece of HTML explaining the error to the user.
 
-	"""
+        """
 
-	try:
-	    short, long = self.responses[code]
-	except KeyError:
-	    short, long = '???', '???'
-	if not message:
-	    message = short
-	explain = long
-	self.log_error("code %d, message %s", code, message)
-	self.send_response(code, message)
-	self.end_headers()
-	self.wfile.write(self.error_message_format %
-			 {'code': code,
-			  'message': message,
-			  'explain': explain})
+        try:
+            short, long = self.responses[code]
+        except KeyError:
+            short, long = '???', '???'
+        if not message:
+            message = short
+        explain = long
+        self.log_error("code %d, message %s", code, message)
+        self.send_response(code, message)
+        self.end_headers()
+        self.wfile.write(self.error_message_format %
+                         {'code': code,
+                          'message': message,
+                          'explain': explain})
 
     error_message_format = DEFAULT_ERROR_MESSAGE
 
     def send_response(self, code, message=None):
-	"""Send the response header and log the response code.
+        """Send the response header and log the response code.
 
-	Also send two standard headers with the server software
-	version and the current date.
+        Also send two standard headers with the server software
+        version and the current date.
 
-	"""
-	self.log_request(code)
-	if message is None:
-	    if self.responses.has_key(code):
-		message = self.responses[code][0]
-	    else:
-		message = ''
-	if self.request_version != 'HTTP/0.9':
-	    self.wfile.write("%s %s %s\r\n" %
-			     (self.protocol_version, str(code), message))
-	self.send_header('Server', self.version_string())
-	self.send_header('Date', self.date_time_string())
+        """
+        self.log_request(code)
+        if message is None:
+            if self.responses.has_key(code):
+                message = self.responses[code][0]
+            else:
+                message = ''
+        if self.request_version != 'HTTP/0.9':
+            self.wfile.write("%s %s %s\r\n" %
+                             (self.protocol_version, str(code), message))
+        self.send_header('Server', self.version_string())
+        self.send_header('Date', self.date_time_string())
 
     def send_header(self, keyword, value):
-	"""Send a MIME header."""
-	if self.request_version != 'HTTP/0.9':
-	    self.wfile.write("%s: %s\r\n" % (keyword, value))
+        """Send a MIME header."""
+        if self.request_version != 'HTTP/0.9':
+            self.wfile.write("%s: %s\r\n" % (keyword, value))
 
     def end_headers(self):
-	"""Send the blank line ending the MIME headers."""
-	if self.request_version != 'HTTP/0.9':
-	    self.wfile.write("\r\n")
+        """Send the blank line ending the MIME headers."""
+        if self.request_version != 'HTTP/0.9':
+            self.wfile.write("\r\n")
 
     def log_request(self, code='-', size='-'):
-	"""Log an accepted request.
+        """Log an accepted request.
 
-	This is called by send_reponse().
+        This is called by send_reponse().
 
-	"""
+        """
 
-	self.log_message('"%s" %s %s',
-			 self.requestline, str(code), str(size))
+        self.log_message('"%s" %s %s',
+                         self.requestline, str(code), str(size))
 
     def log_error(self, *args):
-	"""Log an error.
+        """Log an error.
 
-	This is called when a request cannot be fulfilled.  By
-	default it passes the message on to log_message().
+        This is called when a request cannot be fulfilled.  By
+        default it passes the message on to log_message().
 
-	Arguments are the same as for log_message().
+        Arguments are the same as for log_message().
 
-	XXX This should go to the separate error log.
+        XXX This should go to the separate error log.
 
-	"""
+        """
 
-	apply(self.log_message, args)
+        apply(self.log_message, args)
 
     def log_message(self, format, *args):
-	"""Log an arbitrary message.
+        """Log an arbitrary message.
 
-	This is used by all other logging functions.  Override
-	it if you have specific logging wishes.
+        This is used by all other logging functions.  Override
+        it if you have specific logging wishes.
 
-	The first argument, FORMAT, is a format string for the
-	message to be logged.  If the format string contains
-	any % escapes requiring parameters, they should be
-	specified as subsequent arguments (it's just like
-	printf!).
+        The first argument, FORMAT, is a format string for the
+        message to be logged.  If the format string contains
+        any % escapes requiring parameters, they should be
+        specified as subsequent arguments (it's just like
+        printf!).
 
-	The client host and current date/time are prefixed to
-	every message.
+        The client host and current date/time are prefixed to
+        every message.
 
-	"""
+        """
 
-	sys.stderr.write("%s - - [%s] %s\n" %
-			 (self.address_string(),
-			  self.log_date_time_string(),
-			  format%args))
+        sys.stderr.write("%s - - [%s] %s\n" %
+                         (self.address_string(),
+                          self.log_date_time_string(),
+                          format%args))
 
     def version_string(self):
-	"""Return the server software version string."""
-	return self.server_version + ' ' + self.sys_version
+        """Return the server software version string."""
+        return self.server_version + ' ' + self.sys_version
 
     def date_time_string(self):
-	"""Return the current date and time formatted for a message header."""
-	now = time.time()
-	year, month, day, hh, mm, ss, wd, y, z = time.gmtime(now)
-	s = "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
-		self.weekdayname[wd],
-		day, self.monthname[month], year,
-		hh, mm, ss)
-	return s
+        """Return the current date and time formatted for a message header."""
+        now = time.time()
+        year, month, day, hh, mm, ss, wd, y, z = time.gmtime(now)
+        s = "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
+                self.weekdayname[wd],
+                day, self.monthname[month], year,
+                hh, mm, ss)
+        return s
 
     def log_date_time_string(self):
-	"""Return the current time formatted for logging."""
-	now = time.time()
-	year, month, day, hh, mm, ss, x, y, z = time.localtime(now)
-	s = "%02d/%3s/%04d %02d:%02d:%02d" % (
-		day, self.monthname[month], year, hh, mm, ss)
-	return s
+        """Return the current time formatted for logging."""
+        now = time.time()
+        year, month, day, hh, mm, ss, x, y, z = time.localtime(now)
+        s = "%02d/%3s/%04d %02d:%02d:%02d" % (
+                day, self.monthname[month], year, hh, mm, ss)
+        return s
 
     weekdayname = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
     monthname = [None,
-		 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-		 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
     def address_string(self):
-	"""Return the client address formatted for logging.
+        """Return the client address formatted for logging.
 
-	This version looks up the full hostname using gethostbyaddr(),
-	and tries to find a name that contains at least one dot.
+        This version looks up the full hostname using gethostbyaddr(),
+        and tries to find a name that contains at least one dot.
 
-	"""
+        """
 
-	(host, port) = self.client_address
-	try:
-	    name, names, addresses = socket.gethostbyaddr(host)
-	except socket.error, msg:
-	    return host
-	names.insert(0, name)
-	for name in names:
-	    if '.' in name: return name
-	return names[0]
+        (host, port) = self.client_address
+        try:
+            name, names, addresses = socket.gethostbyaddr(host)
+        except socket.error, msg:
+            return host
+        names.insert(0, name)
+        for name in names:
+            if '.' in name: return name
+        return names[0]
 
 
     # Essentially static class variables
@@ -423,42 +423,42 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     # form {code: (shortmessage, longmessage)}.
     # See http://www.w3.org/hypertext/WWW/Protocols/HTTP/HTRESP.html
     responses = {
-	200: ('OK', 'Request fulfilled, document follows'),
-	201: ('Created', 'Document created, URL follows'),
-	202: ('Accepted',
-	      'Request accepted, processing continues off-line'),
-	203: ('Partial information', 'Request fulfilled from cache'),
-	204: ('No response', 'Request fulfilled, nothing follows'),
-	
-	301: ('Moved', 'Object moved permanently -- see URI list'),
-	302: ('Found', 'Object moved temporarily -- see URI list'),
-	303: ('Method', 'Object moved -- see Method and URL list'),
-	304: ('Not modified',
-	      'Document has not changed singe given time'),
-	
-	400: ('Bad request',
-	      'Bad request syntax or unsupported method'),
-	401: ('Unauthorized',
-	      'No permission -- see authorization schemes'),
-	402: ('Payment required',
-	      'No payment -- see charging schemes'),
-	403: ('Forbidden',
-	      'Request forbidden -- authorization will not help'),
-	404: ('Not found', 'Nothing matches the given URI'),
-	
-	500: ('Internal error', 'Server got itself in trouble'),
-	501: ('Not implemented',
-	      'Server does not support this operation'),
-	502: ('Service temporarily overloaded',
-	      'The server cannot process the request due to a high load'),
-	503: ('Gateway timeout',
-	      'The gateway server did not receive a timely response'),
-	
-	}
+        200: ('OK', 'Request fulfilled, document follows'),
+        201: ('Created', 'Document created, URL follows'),
+        202: ('Accepted',
+              'Request accepted, processing continues off-line'),
+        203: ('Partial information', 'Request fulfilled from cache'),
+        204: ('No response', 'Request fulfilled, nothing follows'),
+        
+        301: ('Moved', 'Object moved permanently -- see URI list'),
+        302: ('Found', 'Object moved temporarily -- see URI list'),
+        303: ('Method', 'Object moved -- see Method and URL list'),
+        304: ('Not modified',
+              'Document has not changed singe given time'),
+        
+        400: ('Bad request',
+              'Bad request syntax or unsupported method'),
+        401: ('Unauthorized',
+              'No permission -- see authorization schemes'),
+        402: ('Payment required',
+              'No payment -- see charging schemes'),
+        403: ('Forbidden',
+              'Request forbidden -- authorization will not help'),
+        404: ('Not found', 'Nothing matches the given URI'),
+        
+        500: ('Internal error', 'Server got itself in trouble'),
+        501: ('Not implemented',
+              'Server does not support this operation'),
+        502: ('Service temporarily overloaded',
+              'The server cannot process the request due to a high load'),
+        503: ('Gateway timeout',
+              'The gateway server did not receive a timely response'),
+        
+        }
 
 
 def test(HandlerClass = BaseHTTPRequestHandler,
-	 ServerClass = HTTPServer):
+         ServerClass = HTTPServer):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the first command line
@@ -467,9 +467,9 @@ def test(HandlerClass = BaseHTTPRequestHandler,
     """
 
     if sys.argv[1:]:
-	port = string.atoi(sys.argv[1])
+        port = string.atoi(sys.argv[1])
     else:
-	port = 8000
+        port = 8000
     server_address = ('', port)
 
     httpd = ServerClass(server_address, HandlerClass)

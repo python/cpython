@@ -41,47 +41,47 @@ class BastionClass:
     """
 
     def __init__(self, get, name):
-	"""Constructor.
+        """Constructor.
 
-	Arguments:
+        Arguments:
 
-	get - a function that gets the attribute value (by name)
-	name - a human-readable name for the original object
-	       (suggestion: use repr(object))
+        get - a function that gets the attribute value (by name)
+        name - a human-readable name for the original object
+               (suggestion: use repr(object))
 
-	"""
-	self._get_ = get
-	self._name_ = name
+        """
+        self._get_ = get
+        self._name_ = name
 
     def __repr__(self):
-	"""Return a representation string.
+        """Return a representation string.
 
-	This includes the name passed in to the constructor, so that
-	if you print the bastion during debugging, at least you have
-	some idea of what it is.
+        This includes the name passed in to the constructor, so that
+        if you print the bastion during debugging, at least you have
+        some idea of what it is.
 
-	"""
-	return "<Bastion for %s>" % self._name_
+        """
+        return "<Bastion for %s>" % self._name_
 
     def __getattr__(self, name):
-	"""Get an as-yet undefined attribute value.
+        """Get an as-yet undefined attribute value.
 
-	This calls the get() function that was passed to the
-	constructor.  The result is stored as an instance variable so
-	that the next time the same attribute is requested,
-	__getattr__() won't be invoked.
+        This calls the get() function that was passed to the
+        constructor.  The result is stored as an instance variable so
+        that the next time the same attribute is requested,
+        __getattr__() won't be invoked.
 
-	If the get() function raises an exception, this is simply
-	passed on -- exceptions are not cached.
+        If the get() function raises an exception, this is simply
+        passed on -- exceptions are not cached.
 
-	"""
-	attribute = self._get_(name)
-	self.__dict__[name] = attribute
-	return attribute
+        """
+        attribute = self._get_(name)
+        self.__dict__[name] = attribute
+        return attribute
 
 
 def Bastion(object, filter = lambda name: name[:1] != '_',
-	    name=None, bastionclass=BastionClass):
+            name=None, bastionclass=BastionClass):
     """Create a bastion for an object, using an optional filter.
 
     See the Bastion module's documentation for background.
@@ -109,33 +109,33 @@ def Bastion(object, filter = lambda name: name[:1] != '_',
     # the user has full access to all instance variables!
 
     def get1(name, object=object, filter=filter):
-	"""Internal function for Bastion().  See source comments."""
-	if filter(name):
-	    attribute = getattr(object, name)
-	    if type(attribute) == MethodType:
-		return attribute
-	raise AttributeError, name
+        """Internal function for Bastion().  See source comments."""
+        if filter(name):
+            attribute = getattr(object, name)
+            if type(attribute) == MethodType:
+                return attribute
+        raise AttributeError, name
 
     def get2(name, get1=get1):
-	"""Internal function for Bastion().  See source comments."""
-	return get1(name)
+        """Internal function for Bastion().  See source comments."""
+        return get1(name)
 
     if name is None:
-	name = `object`
+        name = `object`
     return bastionclass(get2, name)
 
 
 def _test():
     """Test the Bastion() function."""
     class Original:
-	def __init__(self):
-	    self.sum = 0
-	def add(self, n):
-	    self._add(n)
-	def _add(self, n):
-	    self.sum = self.sum + n
-	def total(self):
-	    return self.sum
+        def __init__(self):
+            self.sum = 0
+        def add(self, n):
+            self._add(n)
+        def _add(self, n):
+            self.sum = self.sum + n
+        def total(self):
+            return self.sum
     o = Original()
     b = Bastion(o)
     testcode = """if 1:
@@ -143,23 +143,23 @@ def _test():
     b.add(18)
     print "b.total() =", b.total()
     try:
-	print "b.sum =", b.sum,
+        print "b.sum =", b.sum,
     except:
-	print "inaccessible"
+        print "inaccessible"
     else:
-	print "accessible"
+        print "accessible"
     try:
-	print "b._add =", b._add,
+        print "b._add =", b._add,
     except:
-	print "inaccessible"
+        print "inaccessible"
     else:
-	print "accessible"
+        print "accessible"
     try:
-	print "b._get_.func_defaults =", b._get_.func_defaults,
+        print "b._get_.func_defaults =", b._get_.func_defaults,
     except:
-	print "inaccessible"
+        print "inaccessible"
     else:
-	print "accessible"
+        print "accessible"
     \n"""
     exec testcode
     print '='*20, "Using rexec:", '='*20

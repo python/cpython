@@ -8,9 +8,9 @@ print '5. Built-in exceptions'
 
 def r(thing):
     if type(thing) == ClassType:
-	print thing.__name__
+        print thing.__name__
     else:
-	print thing
+        print thing
 
 r(AttributeError)
 import sys
@@ -24,14 +24,14 @@ fp.close()
 fp = open(TESTFN, 'r')
 savestdin = sys.stdin
 try:
-	try:
-		sys.stdin = fp
-		x = raw_input()
-	except EOFError:
-		pass
+        try:
+                sys.stdin = fp
+                x = raw_input()
+        except EOFError:
+                pass
 finally:
-	sys.stdin = savestdin
-	fp.close()
+        sys.stdin = savestdin
+        fp.close()
 
 r(IOError)
 try: open('this file does not exist', 'r')
@@ -64,7 +64,7 @@ except NameError: pass
 r(OverflowError)
 x = 1
 try:
-	while 1: x = x+x
+        while 1: x = x+x
 except OverflowError: pass
 
 r(RuntimeError)

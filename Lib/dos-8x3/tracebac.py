@@ -87,6 +87,8 @@ def format_exception(etype, value, tb, limit = None):
 	if tb:
 		list = ['Traceback (innermost last):\n']
 		list = list + format_tb(tb, limit)
+	else:
+		list = []
 	list = list + format_exception_only(etype, value)
 	return list
 
@@ -186,9 +188,13 @@ def extract_stack(f=None, limit = None):
 # with -O on).
 # Coded by Marc-Andre Lemburg from the example of PyCode_Addr2Line()
 # in compile.c.
+# Revised version by Jim Hugunin to work with JPython too.
 
 def tb_lineno(tb):
 	c = tb.tb_frame.f_code
+	if not hasattr(c, 'co_lnotab'):
+		return tb.tb_lineno
+
 	tab = c.co_lnotab
 	line = c.co_firstlineno
 	stopat = tb.tb_lasti

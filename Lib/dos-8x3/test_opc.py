@@ -9,18 +9,18 @@ print 'XXX Not yet fully implemented'
 print '2.1 try inside for loop'
 n = 0
 for i in range(10):
-	n = n+i
-	try: 1/0
-	except NameError: pass
-	except ZeroDivisionError: pass
-	except TypeError: pass
-	try: pass
-	except: pass
-	try: pass
-	finally: pass
-	n = n+i
+        n = n+i
+        try: 1/0
+        except NameError: pass
+        except ZeroDivisionError: pass
+        except TypeError: pass
+        try: pass
+        except: pass
+        try: pass
+        finally: pass
+        n = n+i
 if n <> 90:
-	raise TestFailed, 'try inside for'
+        raise TestFailed, 'try inside for'
 
 
 print '2.2 raise class exceptions'
@@ -30,7 +30,7 @@ class BClass(AClass): pass
 class CClass: pass
 class DClass(AClass):
     def __init__(self, ignore):
-	pass
+        pass
 
 try: raise AClass()
 except: pass
@@ -50,12 +50,12 @@ b = BClass()
 
 try: raise AClass, b
 except BClass, v:
-	if v != b: raise TestFailed
+        if v != b: raise TestFailed
 else: raise TestFailed
 
 try: raise b
 except AClass, v:
-	if v != b: raise TestFailed
+        if v != b: raise TestFailed
 
 # not enough arguments
 try:  raise BClass, a
@@ -64,7 +64,7 @@ except TypeError: pass
 try:  raise DClass, a
 except DClass, v:
     if not isinstance(v, DClass):
-	raise TestFailed
+        raise TestFailed
 
 print '2.3 comparing function objects'
 

@@ -11,11 +11,11 @@ from test_support import verbose
 def test():
 
     try:
-	fname1 = tempfile.mktemp()
-	fname2 = tempfile.mktemp()
-	f = open(fname1, 'w')
+        fname1 = tempfile.mktemp()
+        fname2 = tempfile.mktemp()
+        f = open(fname1, 'w')
     except:
-	raise ImportError, "Cannot test binascii without a temp file"
+        raise ImportError, "Cannot test binascii without a temp file"
 
     start = 'Jack is my hero'
     f.write(start)
@@ -23,24 +23,24 @@ def test():
     
     binhex.binhex(fname1, fname2)
     if verbose:
-	print 'binhex'
+        print 'binhex'
 
     binhex.hexbin(fname2, fname1)
     if verbose:
-	print 'hexbin'
+        print 'hexbin'
 
     f = open(fname1, 'r')
     finish = f.readline()
 
     if start <> finish:
-	print 'Error: binhex <> hexbin'
+        print 'Error: binhex <> hexbin'
     elif verbose:
-	print 'binhex == hexbin'
+        print 'binhex == hexbin'
 
     try:
-	import os
-	os.unlink(fname1)
-	os.unlink(fname2)
+        import os
+        os.unlink(fname1)
+        os.unlink(fname2)
     except:
-	pass
+        pass
 test()
