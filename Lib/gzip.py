@@ -9,6 +9,8 @@ import string, struct, sys, time
 import zlib
 import __builtin__
 
+__all__ = ["GzipFile","open"]
+
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
 READ, WRITE = 1, 2

@@ -48,6 +48,9 @@ import sys
 import struct
 from errno import ENOENT
 
+__all__ = ["bindtextdomain","textdomain","gettext","dgettext",
+           "find","translation","install","Catalog"]
+
 _default_localedir = os.path.join(sys.prefix, 'share', 'locale')
 
 

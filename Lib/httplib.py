@@ -74,6 +74,8 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+__all__ = ["HTTP"]
+
 HTTP_PORT = 80
 HTTPS_PORT = 443
 

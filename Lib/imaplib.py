@@ -18,6 +18,9 @@ __version__ = "2.39"
 
 import binascii, re, socket, string, time, random, sys
 
+__all__ = ["IMAP4","error","abort","readonly","Internaldate2tuple",
+           "Int2AP","ParseFlags","Time2InternalDate"]
+
 #       Globals
 
 CRLF = '\r\n'
