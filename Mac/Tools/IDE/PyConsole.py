@@ -167,7 +167,7 @@ class PyConsole(W.Window):
 		# XXX this functionality should be generally available in Wmenus
 		submenuid = self.namespacemenu.menu.menu.GetItemMark(3)
 		menu = self.namespacemenu.menu.bar.menus[submenuid]
-		menu.menu.CheckItem(i + 1, 1)
+		menu.menu.CheckMenuItem(i + 1, 1)
 	
 	def browsenamespace(self):
 		import PyBrowser, W

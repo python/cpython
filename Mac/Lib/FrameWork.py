@@ -478,15 +478,15 @@ class MenuBar:
 					if wid and self.parent._windows.has_key(wid):
 						window = self.parent._windows[wid]
 						if hasattr(window, "domenu_" + callback):
-							menu.menu.EnableItem(i + 1)
+							menu.menu.EnableMenuItem(i + 1)
 						elif hasattr(self.parent, "domenu_" + callback):
-							menu.menu.EnableItem(i + 1)
+							menu.menu.EnableMenuItem(i + 1)
 						else:
-							menu.menu.DisableItem(i + 1)
+							menu.menu.DisableMenuItem(i + 1)
 					elif hasattr(self.parent, "domenu_" + callback):
-						menu.menu.EnableItem(i + 1)
+						menu.menu.EnableMenuItem(i + 1)
 					else:
-						menu.menu.DisableItem(i + 1)
+						menu.menu.DisableMenuItem(i + 1)
 				elif callback:
 					pass
 					
@@ -587,13 +587,13 @@ class Menu:
 
 	def enable(self, onoff):
 		if onoff:
-			self.menu.EnableItem(0)
+			self.menu.EnableMenuItem(0)
 			if self._parent:
-				self._parent.menu.EnableItem(self._parent_item)
+				self._parent.menu.EnableMenuItem(self._parent_item)
 		else:
-			self.menu.DisableItem(0)
+			self.menu.DisableMenuItem(0)
 			if self._parent:
-				self._parent.menu.DisableItem(self._parent_item)
+				self._parent.menu.DisableMenuItem(self._parent_item)
 		if self.bar and self.bar.parent:
 				self.bar.parent.needmenubarredraw = 1
 			
@@ -629,13 +629,13 @@ class MenuItem:
 		del self.item
 		
 	def check(self, onoff):
-		self.menu.menu.CheckItem(self.item, onoff)
+		self.menu.menu.CheckMenuItem(self.item, onoff)
 
 	def enable(self, onoff):
 		if onoff:
-			self.menu.menu.EnableItem(self.item)
+			self.menu.menu.EnableMenuItem(self.item)
 		else:
-			self.menu.menu.DisableItem(self.item)
+			self.menu.menu.DisableMenuItem(self.item)
 			
 	def settext(self, text):
 		self.menu.menu.SetMenuItemText(self.item, text)
