@@ -570,7 +570,7 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertEqual(x.__dict__, y.__dict__)
 
     def test_newobj_generic(self):
-        for proto in [0, 1, 2]:
+        for proto in protocols:
             for C in myclasses:
                 B = C.__base__
                 x = C(C.sample)
