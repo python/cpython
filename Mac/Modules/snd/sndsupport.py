@@ -244,7 +244,7 @@ class SpbObjectDefinition(ObjectDefinition):
 
 	def outputNew(self):
 		Output()
-		Output("%sPyObject *%s_New()", self.static, self.prefix)
+		Output("%sPyObject *%s_New(void)", self.static, self.prefix)
 		OutLbrace()
 		Output("%s *it;", self.objecttype)
 		self.outputCheckNewArg()
