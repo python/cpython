@@ -45,6 +45,12 @@ test('split', 'this is the split function',
      ['this', 'is', 'the', 'split', 'function'])
 test('split', 'a|b|c|d', ['a', 'b', 'c', 'd'], '|')
 test('split', 'a|b|c|d', ['a', 'b', 'c|d'], '|', 2)
+test('split', 'a b c d', ['a', 'b c d'], None, 1)
+test('split', 'a b c d', ['a', 'b', 'c d'], None, 2)
+test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 3)
+test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 4)
+test('split', 'a b c d', ['a', 'b', 'c', 'd'], None, 0)
+test('split', 'a  b  c  d', ['a', 'b', 'c  d'], None, 2)
 
 # join now works with any sequence type
 class Sequence:
