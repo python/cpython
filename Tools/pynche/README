@@ -1,5 +1,8 @@
 Pynche - The PYthonically Natural Color and Hue Editor
-Author: Barry A. Warsaw <bwarsaw@python.org>
+
+Author:  Barry A. Warsaw
+Email:   bwarsaw@python.org
+Version: 0.1
 
 Introduction
 
@@ -54,14 +57,14 @@ Running Standalone
 
     --help
     -h
-	Print the help message.
+        Print the help message.
 
     initialcolor
-	a Tk color name or #rrggbb color spec to be used as the
-	initially selected color.  This overrides any color saved in
-	the persistent init file.  Since `#' needs to be escaped in
-	many shells, it is optional in the spec (e.g. #45dd1f is the
-	same as 45dd1f).
+        a Tk color name or #rrggbb color spec to be used as the
+        initially selected color.  This overrides any color saved in
+        the persistent init file.  Since `#' needs to be escaped in
+        many shells, it is optional in the spec (e.g. #45dd1f is the
+        same as 45dd1f).
 
 Running as a Modal Dialog
 
@@ -81,7 +84,7 @@ Running as a Modal Dialog
 
     When "Okay" is hit, askcolor() returns the tuple
 
-	((r, g, b), "name")
+        ((r, g, b), "name")
 
     where r, g, and b are red, green, and blue color values
     respectively (in the range 0 to 255).  "name" will be a color name
@@ -92,35 +95,35 @@ Running as a Modal Dialog
 
     askcolor() supports the following optional keyword arguments:
 
-	color
-	    the color to set as the initial selected color
+        color
+            the color to set as the initial selected color
 
-	master[*]
-	    the master window to use as the parent of the modal
-	    dialog.  Without this argument, pyColorChooser will create 
-	    it's own Tkinter.Tk instance as the master.  This may not
-	    be what you want.
+        master[*]
+            the master window to use as the parent of the modal
+            dialog.  Without this argument, pyColorChooser will create 
+            it's own Tkinter.Tk instance as the master.  This may not
+            be what you want.
 
-	databasefile[*]
-	    similar to the --database option, the value must be a
-	    file name
+        databasefile[*]
+            similar to the --database option, the value must be a
+            file name
 
-	initfile[*]
-	    similar to the --initfile option, the value must be a
-	    file name
+        initfile[*]
+            similar to the --initfile option, the value must be a
+            file name
 
-	ignore[*]
-	    similar to the --ignore flag, the value is a boolean
+        ignore[*]
+            similar to the --ignore flag, the value is a boolean
 
-	wantspec[*]
-	    When this is true, the "name" field in the return tuple
-	    will always be a color spec of the form "#rrggbb".  It
-	    will not return a color name even if there is a match;
-	    this is so pyColorChooser can exactly match the API of
-	    tkColorChooser.
+        wantspec[*]
+            When this is true, the "name" field in the return tuple
+            will always be a color spec of the form "#rrggbb".  It
+            will not return a color name even if there is a match;
+            this is so pyColorChooser can exactly match the API of
+            tkColorChooser.
 
-	[*] these arguments must be specified the first time
-	askcolor() is used and cannot be changed on subsequent calls.
+        [*] these arguments must be specified the first time
+        askcolor() is used and cannot be changed on subsequent calls.
 
 The Colorstrip Window
 
@@ -330,3 +333,9 @@ To Do
     - Support setting the font in the text view
 
     I'm open to suggestions!
+
+
+
+Local Variables:
+indent-tabs-mode: nil
+End:
