@@ -2616,6 +2616,67 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 }
 
 
+/* Implementation notes for set_exc_info() and reset_exc_info():
+
+- Below, 'exc_ZZZ' stands for 'exc_type', 'exc_value' and
+  'exc_traceback'.  These always travel together.
+
+- tstate->curexc_ZZZ is the "hot" exception that is set by
+  PyErr_SetString(), cleared by PyErr_Clear(), and so on.
+
+- Once an exception is caught by an except clause, it is transferred
+  from tstate->curexc_ZZZ to tstate->exc_ZZZ, from which sys.exc_info()
+  can pick it up.  This is the primary task of set_exc_info().
+
+- Now let me explain the complicated dance with frame->f_exc_ZZZ.
+
+  Long ago, when none of this existed, there were just a few globals:
+  one set corresponding to the "hot" exception, and one set
+  corresponding to sys.exc_ZZZ.  (Actually, the latter weren't C
+  globals; they were simply stored as sys.exc_ZZZ.  For backwards
+  compatibility, they still are!)  The problem was that in code like
+  this:
+
+     try:
+	"something that may fail"
+     except "some exception":
+	"do something else first"
+	"print the exception from sys.exc_ZZZ."
+
+  if "do something else first" invoked something that raised and caught
+  an exception, sys.exc_ZZZ were overwritten.  That was a frequent
+  cause of subtle bugs.  I fixed this by changing the semantics as
+  follows:
+
+    - Within one frame, sys.exc_ZZZ will hold the last exception caught
+      *in that frame*.
+
+    - But initially, and as long as no exception is caught in a given
+      frame, sys.exc_ZZZ will hold the last exception caught in the
+      previous frame (or the frame before that, etc.).
+
+  The first bullet fixed the bug in the above example.  The second
+  bullet was for backwards compatibility: it was (and is) common to
+  have a function that is called when an exception is caught, and to
+  have that function access the caught exception via sys.exc_ZZZ.
+  (Example: traceback.print_exc()).
+
+  At the same time I fixed the problem that sys.exc_ZZZ weren't
+  thread-safe, by introducing sys.exc_info() which gets it from tstate;
+  but that's really a separate improvement.
+
+  The reset_exc_info() function in ceval.c restores the tstate->exc_ZZZ
+  variables to what they were before the current frame was called.  The
+  set_exc_info() function saves them on the frame so that
+  reset_exc_info() can restore them.  The invariant is that
+  frame->f_exc_ZZZ is NULL iff the current frame never caught an
+  exception (where "catching" an exception applies only to successful
+  except clauses); and if the current frame ever caught an exception,
+  frame->f_exc_ZZZ is the exception that was stored in tstate->exc_ZZZ
+  at the start of the current frame.
+
+*/
+
 static void
 set_exc_info(PyThreadState *tstate,
 	     PyObject *type, PyObject *value, PyObject *tb)
