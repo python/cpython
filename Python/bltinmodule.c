@@ -384,39 +384,65 @@ builtin_dir(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	PyObject *v = NULL;
-	PyObject *d;
+	static char *attrlist[] = {"__members__", "__methods__", NULL};
+	PyObject *v = NULL, *l = NULL, *m = NULL;
+	PyObject *d, *x;
+	int i;
+	char **s;
 
 	if (!PyArg_ParseTuple(args, "|O:dir", &v))
 		return NULL;
 	if (v == NULL) {
-		d = PyEval_GetLocals();
-		Py_INCREF(d);
+		x = PyEval_GetLocals();
+		if (x == NULL)
+			goto error;
+		l = PyMapping_Keys(x);
+		if (l == NULL)
+			goto error;
 	}
 	else {
 		d = PyObject_GetAttrString(v, "__dict__");
-		if (d == NULL) {
-			PyErr_SetString(PyExc_TypeError,
-				"dir() argument must have __dict__ attribute");
-			return NULL;
-		}
-	}
-	if (PyDict_Check(d)) {
-		v = PyDict_Keys(d);
-		if (PyList_Sort(v) != 0) {
-			Py_DECREF(v);
-			v = NULL;
-		}
-	}
-	else {
-		v = PyObject_CallMethod(d, "keys", NULL);
-		if (v == NULL) {
+		if (d == NULL)
 			PyErr_Clear();
-			v = PyList_New(0);
+		else {
+			l = PyMapping_Keys(d);
+			if (l == NULL)
+				PyErr_Clear();
+			Py_DECREF(d);
+		}
+		if (l == NULL) {
+			l = PyList_New(0);
+			if (l == NULL)
+				goto error;
+		}
+		for (s = attrlist; *s != NULL; s++) {
+			m = PyObject_GetAttrString(v, *s);
+			if (m == NULL) {
+				PyErr_Clear();
+				continue;
+			}
+			for (i = 0; ; i++) {
+				x = PySequence_GetItem(m, i);
+				if (x == NULL) {
+					PyErr_Clear();
+					break;
+				}
+				if (PyList_Append(l, x) != 0) {
+					Py_DECREF(x);
+					Py_DECREF(m);
+					goto error;
+				}
+				Py_DECREF(x);
+			}
+			Py_DECREF(m);
 		}
 	}
-	Py_DECREF(d);
-	return v;
+	if (PyList_Sort(l) != 0)
+		goto error;
+	return l;
+  error:
+	Py_XDECREF(l);
+	return NULL;
 }
 
 static PyObject *
