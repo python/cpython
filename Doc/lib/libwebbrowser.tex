@@ -15,6 +15,15 @@ browsers will be used if graphical browsers are not available or an X11
 display isn't available.  If text-mode browsers are used, the calling
 process will block until the user exits the browser.
 
+Under \UNIX, if the environment variable \envvar{BROWSER} exists, it
+is interpreted to override the platform default browser, as a
+colon-separated list of browsers to try in order.  When the value of
+a list part contains the string \code{\%s}, then it is interpreted as
+a literal browser command line to be used with the argument URL
+substituted for the \code{\%s}; if the part does not contain,
+\code{\%s}, it is simply interpreted as the name of the browser to
+launch.
+
 For non-\UNIX{} platforms, or when X11 browsers are available on
 \UNIX, the controlling process will not wait for the user to finish
 with the browser, but allow the browser to maintain its own window on
@@ -35,11 +44,14 @@ The following functions are defined:
 
 \begin{funcdesc}{open_new}{url}
   Open \var{url} in a new window of the default browser, if possible,
-  otherwise, open \var{url} in the only browser window.
+  otherwise, open \var{url} in the only browser window.  (This entry
+  point is deprecated and may be removed in 2.1.)
 \end{funcdesc}
 
 \begin{funcdesc}{get}{\optional{name}}
-  Return a controller object for the browser type \var{name}.
+  Return a controller object for the browser type \var{name}.  If
+  \var{name} is empty, return a controller for a default browser
+  appriopriate 
 \end{funcdesc}
 
 \begin{funcdesc}{register}{name, constructor\optional{, instance}}
@@ -49,6 +61,10 @@ The following functions are defined:
   \code{None}, \var{constructor} will be called without parameters to
   create an instance when needed.  If \var{instance} is provided,
   \var{constructor} will never be called, and may be \code{None}.
+
+  This entry point is only useful if you plan to either set the
+  \envvar{BROWSER} variable or call \function{get} with a nonempty
+  argument matching the name of a handler you declare.  
 \end{funcdesc}
 
 Several browser types are defined.  This table gives the type names
@@ -56,12 +72,16 @@ that may be passed to the \function{get()} function and the names of
 the implementation classes, all defined in this module.
 
 \begin{tableiii}{l|l|c}{code}{Type Name}{Class Name}{Notes}
+  \lineiii{'mozilla'}{\class{Mozilla}}{}
   \lineiii{'netscape'}{\class{Netscape}}{}
+  \lineiii{'mosaic'}{\class{Mosaic}}{}
   \lineiii{'kfm'}{\class{Konquerer}}{(1)}
   \lineiii{'grail'}{\class{Grail}}{}
+  \lineiii{'links'}{\class{links}}{}
+  \lineiii{'lynx'}{\class{Lynx}}{}
+  \lineiii{'w3m'}{\class{w3m}}{}
   \lineiii{'windows-default'}{\class{WindowsDefault}}{(2)}
   \lineiii{'internet-config'}{\class{InternetConfig}}{(3)}
-  \lineiii{'command-line'}{\class{CommandLineBrowser}}{}
 \end{tableiii}
 
 \noindent
@@ -98,5 +118,6 @@ module-level convenience functions:
 \begin{funcdesc}{open_new}{url}
   Open \var{url} in a new window of the browser handled by this
   controller, if possible, otherwise, open \var{url} in the only
-  browser window.
+  browser window.  (This method is deprecated and may be removed in
+  2.1.)
 \end{funcdesc}
