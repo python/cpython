@@ -30,9 +30,9 @@
 #################################
 
 %define name python
-%define version 2.3a2
+%define version 2.3b1
 %define libvers 2.3
-%define release 2
+%define release 1pydotorg
 %define __prefix /usr
 
 #  kludge to get around rpm <percent>define weirdness
@@ -122,6 +122,9 @@ Documentation relating to the Python programming language in HTML and info
 formats.
 
 %changelog
+* Mon Feb 24 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3b1-1pydotorg]
+- Updating to 2.3b1 release.
+
 * Mon Feb 17 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3a1-1]
 - Updating to 2.3 release.
 
