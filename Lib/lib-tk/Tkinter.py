@@ -76,6 +76,7 @@ def _exit(code='0'):
 
 _varnum = 0
 class Variable:
+	_default = ""
 	def __init__(self, master=None):
 		global _default_root
 		global _varnum
@@ -85,6 +86,7 @@ class Variable:
 			self._tk = _default_root.tk
 		self._name = 'PY_VAR' + `_varnum`
 		_varnum = _varnum + 1
+		self.set(self._default)
 	def __del__(self):
 		self._tk.globalunsetvar(self._name)
 	def __str__(self):
@@ -93,24 +95,28 @@ class Variable:
 		return self._tk.globalsetvar(self._name, value)
 
 class StringVar(Variable):
+	_default = ""
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
 		return self._tk.globalgetvar(self._name)
 
 class IntVar(Variable):
+	_default = "0"
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
 		return self._tk.getint(self._tk.globalgetvar(self._name))
 
 class DoubleVar(Variable):
+	_default = "0.0"
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
 		return self._tk.getdouble(self._tk.globalgetvar(self._name))
 
 class BooleanVar(Variable):
+	_default = "false"
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
