@@ -54,51 +54,51 @@ uncompress.append('uncompress', '--')
 
 
 class error(Exception):
-        pass
+    pass
 
 def toaiff(filename):
-	temps = []
-	ret = None
-	try:
-		ret = _toaiff(filename, temps)
-	finally:
-		for temp in temps[:]:
-			if temp != ret:
-				try:
-					os.unlink(temp)
-				except os.error:
-					pass
-				temps.remove(temp)
-	return ret
+    temps = []
+    ret = None
+    try:
+        ret = _toaiff(filename, temps)
+    finally:
+        for temp in temps[:]:
+            if temp != ret:
+                try:
+                    os.unlink(temp)
+                except os.error:
+                    pass
+                temps.remove(temp)
+    return ret
 
 def _toaiff(filename, temps):
-	if filename[-2:] == '.Z':
-		fname = tempfile.mktemp()
-		temps.append(fname)
-		sts = uncompress.copy(filename, fname)
-		if sts:
-			raise error, filename + ': uncompress failed'
-	else:
-		fname = filename
-	try:
-		ftype = sndhdr.whathdr(fname)
-		if ftype:
-			ftype = ftype[0] # All we're interested in
-	except IOError:
-		if type(msg) == type(()) and len(msg) == 2 and \
-			type(msg[0]) == type(0) and type(msg[1]) == type(''):
-			msg = msg[1]
-		if type(msg) != type(''):
-			msg = `msg`
-		raise error, filename + ': ' + msg
-	if ftype == 'aiff':
-		return fname
-	if ftype is None or not table.has_key(ftype):
-		raise error, \
-			filename + ': unsupported audio file type ' + `ftype`
-	temp = tempfile.mktemp()
-	temps.append(temp)
-	sts = table[ftype].copy(fname, temp)
-	if sts:
-		raise error, filename + ': conversion to aiff failed'
-	return temp
+    if filename[-2:] == '.Z':
+        fname = tempfile.mktemp()
+        temps.append(fname)
+        sts = uncompress.copy(filename, fname)
+        if sts:
+            raise error, filename + ': uncompress failed'
+    else:
+        fname = filename
+    try:
+        ftype = sndhdr.whathdr(fname)
+        if ftype:
+            ftype = ftype[0] # All we're interested in
+    except IOError:
+        if type(msg) == type(()) and len(msg) == 2 and \
+                type(msg[0]) == type(0) and type(msg[1]) == type(''):
+            msg = msg[1]
+        if type(msg) != type(''):
+            msg = `msg`
+        raise error, filename + ': ' + msg
+    if ftype == 'aiff':
+        return fname
+    if ftype is None or not table.has_key(ftype):
+        raise error, \
+                filename + ': unsupported audio file type ' + `ftype`
+    temp = tempfile.mktemp()
+    temps.append(temp)
+    sts = table[ftype].copy(fname, temp)
+    if sts:
+        raise error, filename + ': conversion to aiff failed'
+    return temp

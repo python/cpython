@@ -11,7 +11,7 @@ Example:
 >>> print tn.read_all()
 Login       Name               TTY         Idle    When    Where
 guido    Guido van Rossum      pts/2        <Dec  2 11:10> snag.cnri.reston..
- 
+
 >>>
 
 Note that read_all() won't read until eof -- it just reads some data
@@ -250,7 +250,7 @@ class Telnet:
 
     def read_very_eager(self):
         """Read everything that's possible without blocking in I/O (eager).
-        
+
         Raise EOFError if connection closed and no cooked data
         available.  Return '' if no cooked data available otherwise.
         Don't block unless in the midst of an IAC sequence.
@@ -278,7 +278,7 @@ class Telnet:
 
     def read_lazy(self):
         """Process and return data that's already in the queues (lazy).
-        
+
         Raise EOFError if connection closed and no data available.
         Return '' if no cooked data available otherwise.  Don't block
         unless in the midst of an IAC sequence.
