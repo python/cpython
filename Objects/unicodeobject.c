@@ -3202,6 +3202,7 @@ int charmaptranslate_lookup(Py_UNICODE c, PyObject *mapping, PyObject **result)
 	/* wrong return value */
 	PyErr_SetString(PyExc_TypeError,
 	      "character mapping must return integer, None or unicode");
+	Py_DECREF(x);
 	return -1;
     }
 }
