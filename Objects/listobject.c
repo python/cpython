@@ -2266,15 +2266,11 @@ list_fill(PyListObject *result, PyObject *v)
 		return -1;
 
 	/* Guess a result list size. */
-	n = -1;	 /* unknown */
-	if (PySequence_Check(v) &&
-	    v->ob_type->tp_as_sequence->sq_length) {
-		n = PySequence_Size(v);
-		if (n < 0)
-			PyErr_Clear();
-	}
-	if (n < 0)
+	n = PyObject_Size(v);
+	if (n < 0) {
+		PyErr_Clear();
 		n = 8;	/* arbitrary */
+	}
 	NRESIZE(result->ob_item, PyObject*, n);
 	if (result->ob_item == NULL) {
 		PyErr_NoMemory();
