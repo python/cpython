@@ -15,7 +15,7 @@ operations are available.
 
 It defines the following public functions:
 
-\begin{funcdesc}{urlopen}{url}
+\begin{funcdesc}{urlopen}{url\optional{, data}}
 Open a network object denoted by a URL for reading.  If the URL does
 not have a scheme identifier, or if it has \file{file:} as its scheme
 identifier, this opens a local file; otherwise it opens a socket to a
@@ -25,7 +25,9 @@ is raised.  If all went well, a file-like object is returned.  This
 supports the following methods: \method{read()}, \method{readline()},
 \method{readlines()}, \method{fileno()}, \method{close()} and
 \method{info()}.
-Except for the last one, these methods have the same interface as for
+
+Except for the \method{info()} method,
+these methods have the same interface as for
 file objects --- see section \ref{bltin-file-objects} in this
 manual.  (It is not a built-in file object, however, so it can't be
 used at those few places where a true built-in file object is
@@ -36,6 +38,13 @@ The \method{info()} method returns an instance of the class
 server, if the protocol uses such headers (currently the only
 supported protocol that uses this is HTTP).  See the description of
 the \module{mimetools}\refstmodindex{mimetools} module.
+
+If the \var{url} uses the \file{http:} scheme identifier, the optional
+\var{data} argument may be given to specify a \code{POST} request
+(normally the request type is \code{GET}).  The \var{data} argument
+must in standard \file{application/x-www-form-urlencoded} format;
+see the \function{urlencode()} function below.
+
 \end{funcdesc}
 
 \begin{funcdesc}{urlretrieve}{url}
@@ -55,18 +64,19 @@ Clear the cache that may have been built up by previous calls to
 \function{urlretrieve()}.
 \end{funcdesc}
 
-\begin{funcdesc}{quote}{string\optional{, addsafe}}
+\begin{funcdesc}{quote}{string\optional{, safe}}
 Replace special characters in \var{string} using the \samp{\%xx} escape.
 Letters, digits, and the characters \character{_,.-} are never quoted.
-The optional \var{addsafe} parameter specifies additional characters
+The optional \var{safe} parameter specifies additional characters
 that should not be quoted --- its default value is \code{'/'}.
 
 Example: \code{quote('/\~connolly/')} yields \code{'/\%7econnolly/'}.
 \end{funcdesc}
 
-\begin{funcdesc}{quote_plus}{string\optional{, addsafe}}
+\begin{funcdesc}{quote_plus}{string\optional{, safe}}
 Like \function{quote()}, but also replaces spaces by plus signs, as
-required for quoting HTML form values.
+required for quoting HTML form values.  Plus signs in the original
+string are escaped unless they are included in \var{safe}.
 \end{funcdesc}
 
 \begin{funcdesc}{unquote}{string}
@@ -78,6 +88,15 @@ Example: \code{unquote('/\%7Econnolly/')} yields \code{'/\~connolly/'}.
 \begin{funcdesc}{unquote_plus}{string}
 Like \function{unquote()}, but also replaces plus signs by spaces, as
 required for unquoting HTML form values.
+\end{funcdesc}
+
+\begin{funcdesc}{urlencode}{dict}
+Convert a dictionary to a ``url-encoded'' string, suitable to pass to
+\function{urlopen()} above as the optional \var{data} argument.  This
+is useful to pass a dictionary of form fields to a \code{POST}
+request.  The resulting string is a series of \var{key}=\var{value}
+pairs separated by \code{&} characters, where both \var{key} and
+\var{value} are quoted using \function{quote_plus()} above.
 \end{funcdesc}
 
 Restrictions:
