@@ -1,18 +1,274 @@
-What's new in this release?
+What's New in Python 2.0b1?
 ===========================
 
 Below is a list of all relevant changes since release 1.6.  Older
-changes are in the file HISTORY.  The most recent changes are listed
-first.
+changes are in the file HISTORY.  If you are making the jump directly
+from Python 1.5.2 to 2.0, make sure to read the section for 1.6 in the
+HISTORY file!  Many important changes listed there.
 
-A note on attributions: while I have sprinkled some names throughout
-here, I'm grateful to many more people who remain unnamed.  You may
-find your name in the ACKS file.  If you believe you deserve more
-credit, let me know and I'll add you to the list!
+Alternatively, a good overview of the changes between 1.5.2 and 2.0 is
+the document "What's New in Python 2.0" by Kuchling and Moshe Zadka:
+http://starship.python.net/crew/amk/python/writing/new-python/.
 
+--Guido van Rossum (home page: http://www.pythonlabs.com/~guido/)
 
 ======================================================================
 
-<To be done>
+Source Incompatibilities
+------------------------
+
+None.  Note that 1.6 introduced several incompatibilities with 1.5.2,
+such as single-argument append(), connect() and bind(), and changes to
+str(long) and repr(float).
+
+
+Binary Incompatibilities
+------------------------
+
+- Third party extensions built for Python 1.5.x or 1.6 cannot be used
+with Python 2.0; these extensions will have to be rebuilt for Python
+2.0.
+
+- On Windows, attempting to import a third party extension built for
+Python 1.5.x or 1.6 results in an immediate crash; there's not much we
+can do about this.  Check your PYTHONPATH environment variable!
+
+- Python bytecode files (*.pyc and *.pyo) are not compatible between
+releases.
+
+
+Overview of Changes Since 1.6
+-----------------------------
+
+There are many new modules (including brand new XML support through
+the xml package, and i18n support through the gettext module); a list
+of all new modules is included below.  Lots of bugs have been fixed.
+
+There are several important syntax enhancements, described in more
+detail below:
+
+  - Augmented assignment, e.g. x += 1
+
+  - List comprehensions, e.g. [x**2 for x in range(10)]
+
+  - Extended import statement, e.g. import Module as Name
+
+  - Extended print statement, e.g. print >> file, "Hello"
+
+Other important changes:
+
+  - Optional collection of cyclical garbage
+
+
+Augmented Assignment
+--------------------
+
+This must have been the most-requested feature of the past years!
+Eleven new assignment operators were added:
+
+    += -+ *= /= %= **= <<= >>= &= ^= |=
+
+For example,
+
+    A += B
+
+is similar to
+
+    A = A + B
+
+except that A is evaluated only once (relevant when A is something
+like dict[index].attr).
+
+However, if A is a mutable object, A may be modified in place.  Thus,
+if A is a number or a string, A += B has the same effect as A = A+B
+(except A is only evaluated once); but if a is a list, A += B has the
+same effect as A.extend(B)!
+
+Classes and built-in object types can override the new operators in
+order to implement the in-place behavior; the not-in-place behavior is
+used automatically as a fallback when an object doesn't implement the
+in-place behavior.  For classes, the method name is derived from the
+method name for the corresponding not-in-place operator by inserting
+an 'i' in front of the name, e.g. __iadd__ implements in-place
+__add__.
+
+Augmented assignment was implemented by Thomas Wouters.
+
+
+List Comprehensions
+-------------------
+
+This is a flexible new notation for lists whose elements are computed
+from another list (or lists).  The simplest form is:
+
+    [<expression> for <variable> in <sequence>]
+
+For example, [x**2 for i in range(4)] yields the list [0, 1, 4, 9].
+This is more efficient than map() with a lambda.
+
+You can also add a condition:
+
+    [<expression> for <variable> in <sequence> if <condition>]
+
+For example, [w for w in words if w == w.lower()] would yield the list
+of words that contain no uppercase characters.  This is more efficient
+than filter() with a lambda.
+
+You can also have nested for loops and more than one 'if' clause.  For
+example, here's a function that flattens a sequence of sequences::
+
+    def flatten(seq):
+        return [x for subseq in seq for x in subseq]
+
+    flatten([[0], [1,2,3], [4,5], [6,7,8,9], []])
+
+This prints
+
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+List comprehensions originated as a patch set from Greg Ewing; Skip
+Montanaro and Thomas Wouters also contributed.
+
+
+Extended Import Statement
+-------------------------
+
+Many people have asked for a way to import a module under a different
+name.  This can be accomplished like this:
+
+    import foo
+    bar = foo
+    del foo
+
+but this common idiom gets old quickly.  A simple extension of the
+import statement now allows this to be written as follows:
+
+    import foo as bar
+
+There's also a variant for 'from ... import':
+
+    from foo import bar as spam
+
+This also works with packages; e.g. you can write this:
+
+    import test.regrtest as regrtest
+
+Note that 'as' is not a new keyword -- it is recognized only in this
+context (this is only possible because the syntax for the import
+statement doesn't involve expressions).
+
+Implemented by Thomas Wouters.
+
+
+Extended Print Statement
+------------------------
+
+Easily the most controversial new feature, this extension to the print
+statement adds an option to make the output go to a different file
+than the default sys.stdout.
+
+For example, to write an error message to sys.stderr, you can now
+write:
+
+    print >> sys.stderr, "Error: bad dog!"
+
+As a special feature, if the expression used to indicate the file
+evaluates to None, the current value of sys.stdout used.  Thus:
+
+    print >> None, "Hello world"
+
+is equivalent to
+
+    print "Hello world"
+
+Design and implementation by Barry Warsaw.
+
+
+Optional Collection of Cyclical Garbage
+---------------------------------------
+
+Python is now equipped with a garbage collector that can hunt down
+cyclical references between Python objects.  It's no replacement for
+reference counting; in fact, it depends on the reference counts being
+correct, and decides that a set of objects belong to a cycle if all
+their reference counts can be accounted for from their references to
+each other.  This devious scheme was first proposed by Eric Tiedemann,
+and brought to implementation by Neil Schemenauer.
+
+There's a module "gc" that lets you control some parameters of the
+garbage collection.  There's also an option to the configure script
+that lets you enable or disable the garbage collection.  In 2.0b1,
+it's on by default, so that we (hopefully) can collect decent user
+experience with this new feature.  There are some questions about its
+performance.  if it proves to be too much of a problem, we'll turn it
+off by default in the final 2.0 release.
+
+
+Smaller Changes
+---------------
+
+A new function zip() was added.  zip(seq1, seq2, ...) is equivalent to
+map(None, seq1, seq2, ...) when the sequences have the same length;
+i.e. zip([1,2,3], [10,20,30]) returns [(1,10), (2,20), (3,30)].  When
+the lists are not all the same length, the shortest list wins:
+zip([1,2,3], [10,20]) returns [(1,10), (2,20)].
+
+sys.version_info is a tuple (major, minor, micro, level, serial).
+
+Dictionaries have an odd new method, setdefault(key, default).
+dict.setdefault(key, default) returns dict[key] if it exists; if not,
+it sets dict[key] to default and returns that value.  Thus:
+
+    dict.setdefault(key, []).append(item)
+
+does the same work as this common idiom:
+
+    if not dict.has_key(key):
+        dict[key] = []
+    dict[key].append(item)
+
+
+New Modules and Packages
+------------------------
+
+atexit - for registering functions to be called when Python exits.
+
+imputil - Greg Stein's alternative API for writing custom import
+hooks.
+
+pyexpat - an interface to the Expat XML parser, contributed by Paul
+Prescod.
+
+xml - a new package with XML support code organized (so far) in three
+subpackages: xml.dom, xml.sax, and xml.parsers.  Describing these
+would fill a volume.  There's a special feature whereby a
+user-installed package named _xmlplus overrides the standard
+xmlpackage; this is intended to give the XML SIG a hook to distribute
+backwards-compatible updates to the standard xml package.
+
+webbrowser - a platform-independent API to launch a web browser.
+
+
+C-level Changes
+---------------
+
+Several cleanup jobs were carried out throughout the source code.
+
+All C code was converted to ANSI C; we got rid of all uses of the
+Py_PROTO() macro, which makes the header files a lot more readable.
+
+Most of the portability hacks were moved to a new header file,
+pyport.h; several other new header files were added and some old
+header files were removed, in an attempt to create a more rational set
+of header files.  (Few of these ever need to be included explicitly;
+they are all included by Python.h.)
+
+Vladimir Marangozov redesigned more rational APIs for allocating
+memory.  See pymem.h.
+
+Trent Mick ensured portability to 64-bit platforms, under both Linux
+and Win64, especially for the new Intel Itanium processor.
+
+Numerous new APIs were added, e.g. 
 
 ======================================================================
