@@ -116,8 +116,12 @@ VarVarOutBuffer = VarVarHeapOutputBufferType('char', 'long', 'l') # (buf, len, &
 
 # Stuff added immediately after the system include files
 includestuff = """
+#ifdef _WIN32
+#include "pywintoolbox.h"
+#else
 #include "macglue.h"
 #include "pymactoolbox.h"
+#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\\
