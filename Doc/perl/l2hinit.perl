@@ -109,6 +109,7 @@ sub custom_driver_hook {
 }
 
 
+# $CUSTOM_BUTTONS is only used for the module index link.
 $CUSTOM_BUTTONS = '';
 
 sub make_nav_sectref($$$) {
@@ -163,7 +164,7 @@ sub unlinkify($) {
 
 sub use_icon($$$) {
     my($rel,$str,$title) = @_;
-    if ($title) {
+    if ($str) {
         my $s = "$str";
         if ($s =~ /\<tex2html_([a-z_]+)_visible_mark\>/) {
             my $r = get_my_icon($1);
