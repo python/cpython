@@ -1,7 +1,7 @@
 #! /usr/local/bin/python
 
 import addpack
-addpack.addpack('/home/guido/pdist')
+addpack.addpack('/home/guido/src/python/Demo/pdist')
 
 import rrcs
 
