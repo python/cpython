@@ -11,22 +11,22 @@ all:	icons l2h
 
 l2h:	l2hapi l2hext l2hlib l2hmac l2href l2htut
 
-l2hapi:
+l2hapi:	icons
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hapi
 
-l2hext:
+l2hext:	icons
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hext
 
-l2hlib:
+l2hlib:	icons
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hlib
 
-l2hmac:
+l2hmac:	icons
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2hmac
 
-l2href:
+l2href:	icons
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2href
 
-l2htut:
+l2htut:	icons
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2htut
 
 icons:
