@@ -386,9 +386,9 @@ verify(u'\ud84d\udc56'.encode('utf-8') == \
        ''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))) )
 # UTF-8 specific decoding tests
 verify(unicode(''.join((chr(0xf0), chr(0xa3), chr(0x91), chr(0x96))),
-               'utf-8') == u'\ud84d\udc56' )
+               'utf-8') == u'\U00023456' )
 verify(unicode(''.join((chr(0xf0), chr(0x90), chr(0x80), chr(0x82))),
-               'utf-8') == u'\ud800\udc02' )
+               'utf-8') == u'\U00010002' )
 verify(unicode(''.join((chr(0xe2), chr(0x82), chr(0xac))),
                'utf-8') == u'\u20ac' )
 

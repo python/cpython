@@ -103,6 +103,18 @@ static PyUnicodeObject *unicode_latin1[256];
 */
 static char unicode_default_encoding[100];
 
+Py_UNICODE
+PyUnicode_GetMax()
+{
+#ifdef USE_UCS4_STORAGE
+	return 0x10FFFF;
+#else
+	/* This is actually an illegal character, so it should
+	   not be passed to unichr. */
+	return 0xFFFF;
+#endif
+}
+
 /* --- Unicode Object ----------------------------------------------------- */
 
 static
@@ -884,12 +896,6 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             cbWritten += 2;
         }
         else if (ch < 0x10000) {
-#if Py_UNICODE_SIZE == 4
-	    *p++ = 0xe0 | (ch>>12);
-            *p++ = 0x80 | ((ch>>6) & 0x3f);
-            *p++ = 0x80 | (ch & 0x3f);
-            cbWritten += 3;
-#else
             /* Check for high surrogate */
             if (0xD800 <= ch && ch <= 0xDBFF) {
                 if (i != size) {
@@ -920,7 +926,6 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
             }
             *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
             *p++ = (char)(0x80 | (ch & 0x3f));
-#endif
         } else {
             *p++ = 0xf0 | (ch>>18);
             *p++ = 0x80 | ((ch>>12) & 0x3f);
