@@ -191,6 +191,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libaifc.tex \
 	lib/libjpeg.tex \
 	lib/librgbimg.tex \
+	lib/libossaudiodev.tex \
 	lib/libcrypto.tex \
 	lib/libmd5.tex \
 	lib/libsha.tex \
