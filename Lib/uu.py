@@ -87,7 +87,7 @@ def decode(in_file, out_file=None, mode=None):
     #
     # Read until a begin is encountered or we've exhausted the file
     #
-    while (1):
+    while 1:
 	hdr = in_file.readline()
 	if not hdr:
 	    raise Error, 'No valid begin line found in input file'
