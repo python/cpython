@@ -388,19 +388,10 @@ class install (Command):
         # Obviously have to build before we can install
         self.run_peer ('build')
 
-        # Install modules in two steps: "platform-shared" files (ie. pure
-        # Python modules) and platform-specific files (compiled C
-        # extensions).  Note that 'install_py' is smart enough to install
-        # pure Python modules in the "platlib" directory if we built any
-        # extensions.
-
-        # XXX this should become one command, 'install_lib', since
-        # all modules are "built" into the same directory now
-
-        if self.distribution.packages or self.distribution.py_modules:
-            self.run_peer ('install_py')
-        #if self.distribution.ext_modules:
-        #    self.run_peer ('install_ext')
+        # Now install all Python modules -- don't bother to make this
+        # conditional; why would someone distribute a Python module
+        # distribution without Python modules?
+        self.run_peer ('install_lib')
 
         if self.path_file:
             self.create_path_file ()
