@@ -369,10 +369,14 @@ AIX:	A complete overhaul of the shared library support is now in
 HP-UX:	When using threading, you may have to add -D_REENTRANT to the
 	OPT variable in the top-level Makefile; reported by Pat Knight,
 	this seems to make a difference (at least for HP-UX 10.20)
-	even though pyconfig.h defines it. There appears to be a problem
-	with HP-UX's interactions with autoconf that causes breakage.
-	The workaround is to edit the generated pyconfig.h after running
-	configure - see http://www.python.org/2.3.1/bugs.html for details.
+	even though pyconfig.h defines it. This seems unnecessary when
+	using HP/UX 11 and later - threading works "out of the box".
+
+HP-UX ia64: When building on the ia64 (Itanium) platform using HP's 
+        compiler, some experience has shown that the compiler's
+        optimiser produces a completely broken version of python
+        (see http://www.python.org/sf/814976). To work around this,
+        edit the Makefile and remove -O from the OPT line.
 
 HP PA-RISC 2.0: A recent bug report (http://www.python.org/sf/546117)
 	suggests that the C compiler in this 64-bit system has bugs
