@@ -211,6 +211,219 @@ PyLong_AsUnsignedLong(PyObject *vv)
 	return x;
 }
 
+PyObject *
+_PyLong_FromByteArray(const unsigned char* bytes, size_t n,
+		      int little_endian, int is_signed)
+{
+	const unsigned char* pstartbyte;/* LSB of bytes */
+	int incr;			/* direction to move pstartbyte */
+	const unsigned char* pendbyte;	/* MSB of bytes */
+	size_t numsignificantbytes;	/* number of bytes that matter */
+	size_t ndigits;			/* number of Python long digits */
+	PyLongObject* v;		/* result */
+	int idigit = 0;  		/* next free index in v->ob_digit */
+
+	if (n == 0)
+		return PyLong_FromLong(0L);
+
+	if (little_endian) {
+		pstartbyte = bytes;
+		pendbyte = bytes + n - 1;
+		incr = 1;
+	}
+	else {
+		pstartbyte = bytes + n - 1;
+		pendbyte = bytes;
+		incr = -1;
+	}
+
+	if (is_signed)
+		is_signed = *pendbyte >= 0x80;
+
+	/* Compute numsignificantbytes.  This consists of finding the most
+	   significant byte.  Leading 0 bytes are insignficant if the number
+	   is positive, and leading 0xff bytes if negative. */
+	{
+		size_t i;
+		const unsigned char* p = pendbyte;
+		const int pincr = -incr;  /* search MSB to LSB */
+		const unsigned char insignficant = is_signed ? 0xff : 0x00;
+
+		for (i = 0; i < n; ++i, p += pincr) {
+			if (*p != insignficant)
+				break;
+		}
+		numsignificantbytes = n - i;
+		/* 2's-comp is a bit tricky here, e.g. 0xff00 == -0x0100, so
+		   actually has 2 significant bytes.  OTOH, 0xff0001 ==
+		   -0x00ffff, so we wouldn't *need* to bump it there; but we
+		   do for 0xffff = -0x0001.  To be safe without bothering to
+		   check every case, bump it regardless. */
+		if (is_signed && numsignificantbytes < n)
+			++numsignificantbytes;
+	}
+
+	/* How many Python long digits do we need?  We have
+	   8*numsignificantbytes bits, and each Python long digit has SHIFT
+	   bits, so it's the ceiling of the quotient. */
+	ndigits = (numsignificantbytes * 8 + SHIFT - 1) / SHIFT;
+	if (ndigits > (size_t)INT_MAX)
+		return PyErr_NoMemory();
+	v = _PyLong_New((int)ndigits);
+	if (v == NULL)
+		return NULL;
+
+	/* Copy the bits over.  The tricky parts are computing 2's-comp on
+	   the fly for signed numbers, and dealing with the mismatch between
+	   8-bit bytes and (probably) 15-bit Python digits.*/
+	{
+		size_t i;
+		unsigned int carry = 1;		/* for 2's-comp calculation */
+		twodigits accum = 0;		/* sliding register */
+		unsigned int accumbits = 0; 	/* number of bits in accum */
+		const unsigned char* p = pstartbyte;
+
+		for (i = 0; i < numsignificantbytes; ++i, p += incr) {
+			unsigned int thisbyte = *p;
+			/* Compute correction for 2's comp, if needed. */
+			if (is_signed) {
+				thisbyte = (0xff ^ thisbyte) + carry;
+				carry = thisbyte >> 8;
+				thisbyte &= 0xff;
+			}
+			/* Because we're going LSB to MSB, thisbyte is
+			   more significant than what's already in accum,
+			   so needs to be prepended to accum. */
+			accum |= thisbyte << accumbits;
+			accumbits += 8;
+			if (accumbits >= SHIFT) {
+				/* There's enough to fill a Python digit. */
+				assert(idigit < (int)ndigits);
+				v->ob_digit[idigit] = (digit)(accum & MASK);
+				++idigit;
+				accum >>= SHIFT;
+				accumbits -= SHIFT;
+				assert(accumbits < SHIFT);
+			}
+		}
+		assert(accumbits < SHIFT);
+		if (accumbits) {
+			assert(idigit < (int)ndigits);
+			v->ob_digit[idigit] = (digit)accum;
+			++idigit;
+		}
+	}
+
+	v->ob_size = is_signed ? -idigit : idigit;
+	return (PyObject *)long_normalize(v);
+}
+
+int
+_PyLong_AsByteArray(PyLongObject* v,
+		    unsigned char* bytes, size_t n,
+		    int little_endian, int is_signed)
+{
+	int i;			/* index into v->ob_digit */
+	int ndigits;		/* |v->ob_size| */
+	twodigits accum;	/* sliding register */
+	unsigned int accumbits; /* # bits in accum */
+	int do_twos_comp;	/* store 2's-comp?  is_signed and v < 0 */
+	twodigits carry;	/* for computing 2's-comp */
+	size_t j;		/* # bytes filled */
+	unsigned char* p;	/* pointer to next byte in bytes */
+	int pincr;		/* direction to move p */
+
+	assert(v != NULL && PyLong_Check(v));
+
+	if (v->ob_size < 0) {
+		ndigits = -(v->ob_size);
+		if (!is_signed) {
+			PyErr_SetString(PyExc_TypeError,
+				"can't convert negative long to unsigned");
+			return -1;
+		}
+		do_twos_comp = 1;
+	}
+	else {
+		ndigits = v->ob_size;
+		do_twos_comp = 0;
+	}
+
+	if (little_endian) {
+		p = bytes;
+		pincr = 1;
+	}
+	else {
+		p = bytes + n - 1;
+		pincr = -1;
+	}
+
+	/* Copy over all the Python digits. */
+	j = 0;
+	accum = 0;
+	accumbits = 0;
+	carry = do_twos_comp ? 1 : 0;
+	for (i = 0; i < ndigits; ++i) {
+		twodigits thisdigit = v->ob_digit[i];
+		if (do_twos_comp) {
+			thisdigit = (thisdigit ^ MASK) + carry;
+			carry = thisdigit >> SHIFT;
+			thisdigit &= MASK;
+		}
+		/* Because we're going LSB to MSB, thisdigit is more
+		   significant than what's already in accum, so needs to be
+		   prepended to accum. */
+		accum |= thisdigit << accumbits;
+		accumbits += SHIFT;
+		/* Store as many bytes as possible. */
+		assert(accumbits >= 8);
+		do {
+			if (j >= n)
+				goto Overflow;
+			++j;
+			*p = (unsigned char)(accum & 0xff);
+			p += pincr;
+			accumbits -= 8;
+			accum >>= 8;
+		} while (accumbits >= 8);
+	}
+
+	/* Store the straggler (if any). */
+	assert(accumbits < 8);
+	assert(carry == 0);  /* else do_twos_comp and *every* digit was 0 */
+	if (accum) {
+		if (j >= n)
+			goto Overflow;
+		++j;
+		if (do_twos_comp) {
+			/* Fill leading bits of the byte with sign bits
+			   (appropriately pretending that the long had an
+			   infinite supply of sign bits). */
+			accum |= (~(twodigits)0) << accumbits;
+		}
+		*p = (unsigned char)(accum & 0xff);
+		p += pincr;
+	}
+
+	/* Fill remaining bytes with copies of the sign bit. */
+	for ( ; j < n; ++j, p += pincr)
+		*p = (unsigned char)(do_twos_comp ? 0xff : 0);
+
+	/* Check for delicate overflow (not enough room for the sign bit). */
+	if (j > 0 && is_signed) {
+		unsigned char msb = *(p - pincr);
+		int sign_bit_set = (msb & 0x80) != 0;
+		if (sign_bit_set != do_twos_comp)
+			goto Overflow;
+	}
+	return 0;
+
+Overflow:
+	PyErr_SetString(PyExc_OverflowError, "long too big to convert");
+	return -1;
+	
+}
+
 /* Get a C double from a long int object. */
 
 double
