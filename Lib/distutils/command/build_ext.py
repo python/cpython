@@ -406,4 +406,4 @@ class build_ext (Command):
             return apply (os.path.join, ext_path) + '_d.lib'
         return apply (os.path.join, ext_path) + '.lib'
 
-# class BuildExt
+# class build_ext

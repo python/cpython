@@ -519,4 +519,4 @@ class install (Command):
                         "installations)") %
                        filename)
 
-# class Install
+# class install

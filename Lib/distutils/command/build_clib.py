@@ -207,4 +207,4 @@ class build_clib (Command):
 
     # build_libraries ()
 
-# class BuildLib
+# class build_lib

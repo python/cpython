@@ -519,7 +519,7 @@ class sdist (Command):
         if not self.keep_tree:
             remove_tree (base_dir, self.verbose, self.dry_run)
 
-# class Dist
+# class sdist
 
 
 # ----------------------------------------------------------------------

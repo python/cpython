@@ -100,4 +100,4 @@ class build (Command):
         if self.distribution.has_ext_modules():
             self.run_peer ('build_ext')
 
-# end class Build
+# class build
