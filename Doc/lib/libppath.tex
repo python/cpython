@@ -5,9 +5,9 @@
 This module implements some useful functions on \POSIX{} pathnames.
 
 \strong{Do not import this module directly.}  Instead, import the
-module \module{os} and use \code{os.path}.
-\refstmodindex{os}
+module \module{os}\refstmodindex{os} and use \code{os.path}.
 
+\index{path!operations}
 
 \begin{funcdesc}{basename}{p}
 Return the base name of pathname
@@ -33,7 +33,8 @@ refers to an existing path.
 \begin{funcdesc}{expanduser}{p}
 Return the argument with an initial component of \samp{\~} or
 \samp{\~\var{user}} replaced by that \var{user}'s home directory.  An
-initial \samp{\~{}} is replaced by the environment variable \code{\${}HOME};
+initial \samp{\~{}} is replaced by the environment variable
+\code{\${}HOME}; % $  <-- bow to font-lock
 an initial \samp{\~\var{user}} is looked up in the password directory through
 the built-in module \module{pwd}\refbimodindex{pwd}.  If the expansion
 fails, or if the path does not begin with a tilde, the path is
