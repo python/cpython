@@ -87,7 +87,6 @@ import tabnanny
 import telnetlib
 import test
 import toaiff
-#import tzparse
 import urllib2
 # Can't test the "user" module -- if the user has a ~/.pythonrc.py, it
 # can screw up all sorts of things (esp. if it prints!).
