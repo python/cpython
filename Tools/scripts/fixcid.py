@@ -47,19 +47,23 @@ dbg = err
 rep = sys.stdout.write
 
 def usage():
-	err('Usage: ' + sys.argv[0] + \
-		  ' [-r] [-s file] ... file-or-directory ...\n')
+	progname = sys.argv[0]
+	err('Usage: ' + progname +
+		  ' [-c] [-r] [-s file] ... file-or-directory ...\n')
 	err('\n')
+	err('-c           : substitute inside comments\n')
 	err('-r           : reverse direction for following -s options\n')
 	err('-s substfile : add a file of substitutions\n')
 	err('\n')
 	err('Each non-empty non-comment line in a substitution file must\n')
 	err('contain exactly two words: an identifier and its replacement.\n')
 	err('Comments start with a # character and end at end of line.\n')
+	err('If an identifier is preceded with a *, it is not substituted\n')
+	err('inside a comment even when -c is specified.\n')
 
 def main():
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'rs:')
+		opts, args = getopt.getopt(sys.argv[1:], 'crs:')
 	except getopt.error, msg:
 		err('Options error: ' + str(msg) + '\n')
 		usage()
@@ -69,6 +73,8 @@ def main():
 		usage()
 		sys.exit(2)
 	for opt, arg in opts:
+		if opt == '-c':
+			setdocomments()
 		if opt == '-r':
 			setreverse()
 		if opt == '-s':
@@ -146,7 +152,7 @@ def fix(filename):
 					g = open(tempname, 'w')
 				except IOError, msg:
 					f.close()
-					err(tempname+': cannot create: '+\
+					err(tempname+': cannot create: '+
 					    str(msg)+'\n')
 					return 1
 				f.seek(0)
@@ -239,13 +245,15 @@ def fixline(line):
 		if Dict.has_key(found):
 			subst = Dict[found]
 			if Program is InsideCommentProgram:
+				if not Docomments:
+					print 'Found in comment:', found
+					continue
 				if NotInComment.has_key(found):
-					pass
 ##					print 'Ignored in comment:',
 ##					print found, '-->', subst
 ##					print 'Line:', line,
 					subst = found
-				else:
+##				else:
 ##					print 'Substituting in comment:',
 ##					print found, '-->', subst
 ##					print 'Line:', line,
@@ -253,6 +261,11 @@ def fixline(line):
 			n = len(subst)
 		i = i + n
 	return line
+
+Docomments = 0
+def setdocomments():
+	global Docomments
+	Docomments = 1
 
 Reverse = 0
 def setreverse():
@@ -279,7 +292,7 @@ def addsubst(substfile):
 		words = string.split(line[:i])
 		if not words: continue
 		if len(words) <> 2:
-			err(substfile + ':' + `lineno` + \
+			err(substfile + ':' + `lineno` +
 				  ': warning: bad line: ' + line)
 			continue
 		if Reverse:
@@ -292,10 +305,10 @@ def addsubst(substfile):
 			key = key[1:]
 			NotInComment[key] = value
 		if Dict.has_key(key):
-			err(substfile + ':' + `lineno` + \
-				  ': warning: overriding: ' + \
+			err(substfile + ':' + `lineno` +
+				  ': warning: overriding: ' +
 				  key + ' ' + value + '\n')
-			err(substfile + ':' + `lineno` + \
+			err(substfile + ':' + `lineno` +
 				  ': warning: previous: ' + Dict[key] + '\n')
 		Dict[key] = value
 	fp.close()
