@@ -18,12 +18,17 @@ else
 fi
 
 EXPLANATION=''
+ANNOUNCE=true
 
 while [ "$#" -gt 0 ] ; do
   case "$1" in
       -m)
           EXPLANATION="$2"
           shift 2
+          ;;
+      -q)
+          ANNOUNCE=false
+          shift 1
           ;;
       -t)
           DOCTYPE="$2"
@@ -66,7 +71,8 @@ PACKAGE="html-$RELEASE.tar.bz2"
 scp "$PACKAGE" tools/update-docs.sh $TARGET/ || exit $?
 ssh python.sourceforge.net tmp/update-docs.sh $DOCTYPE $PACKAGE '&&' rm tmp/update-docs.sh || exit $?
 
-sendmail $ADDRESSES <<EOF
+if $ANNOUNCE ; then
+    sendmail $ADDRESSES <<EOF
 To: $ADDRESSES
 From: "Fred L. Drake" <fdrake@acm.org>
 Subject: [$DOCLABEL doc updates]
@@ -77,4 +83,5 @@ The $DOCLABEL version of the documentation has been updated:
 
 $EXPLANATION
 EOF
-exit $?
+    exit $?
+fi
