@@ -463,9 +463,8 @@ initunicodedata(void)
 {
     PyObject *m, *d, *v;
 
-    m = Py_InitModule4(
-        "unicodedata", unicodedata_functions,
-        unicodedata_docstring, NULL, PYTHON_API_VERSION);
+    m = Py_InitModule3(
+        "unicodedata", unicodedata_functions, unicodedata_docstring);
     if (!m)
         return;
 
@@ -475,7 +474,8 @@ initunicodedata(void)
 
     /* Export C API */
     v = PyCObject_FromVoidPtr((void *) &hashAPI, NULL);
-    PyDict_SetItemString(d, "ucnhash_CAPI", v);
-    Py_XDECREF(v);
-
+    if (v != NULL) {
+        PyDict_SetItemString(d, "ucnhash_CAPI", v);
+        Py_DECREF(v);
+    }
 }
