@@ -416,7 +416,7 @@ Library
   interpreter shutdown with another exception from attempting to handle the
   original exception.
 
-- Added Decimal.py per PEP 327.
+- Added decimal.py per PEP 327.
 
 - Bug #981299: rsync is now a recognized protocol in urlparse that uses a
   "netloc" portion of a URL.
