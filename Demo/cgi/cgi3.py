@@ -111,6 +111,8 @@ class WikiPage:
         try:
             f = open(self.mkfile(), "w")
             f.write(data)
+            if data and not data.endswith('\n'):
+                f.write('\n')
             f.close()
             return ""
         except IOError, err:
