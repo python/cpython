@@ -25,16 +25,16 @@ API documentation.
 
 \begin{funcdesc}{setmode}{fd, flags}
   Set the line-end translation mode for the file descriptor \var{fd}.
-  To set it to text mode, \var{flags} should be \constant{_O_TEXT};
-  for binary, it should be \constant{_O_BINARY}.
+  To set it to text mode, \var{flags} should be \constant{os.O_TEXT};
+  for binary, it should be \constant{os.O_BINARY}.
 \end{funcdesc}
 
 \begin{funcdesc}{open_osfhandle}{handle, flags}
   Create a C runtime file descriptor from the file handle
   \var{handle}.  The \var{flags} parameter should be a bit-wise OR of
-  \constant{_O_APPEND}, \constant{_O_RDONLY}, and \constant{_O_TEXT}.
-  The returned file descriptor may be used as a parameter to
-  \function{os.fdopen()} to create a file object.
+  \constant{os.O_APPEND}, \constant{os.O_RDONLY}, and
+  \constant{os.O_TEXT}.  The returned file descriptor may be used as a
+  parameter to \function{os.fdopen()} to create a file object.
 \end{funcdesc}
 
 \begin{funcdesc}{get_osfhandle}{fd}
