@@ -495,14 +495,10 @@ class PyBuildExt(build_ext):
         if tklib and tcllib:
             # Check for the include files on Debian, where
             # they're put in /usr/include/{tcl,tk}X.Y
-            debian_tcl_include = ( '/usr/include/tcl' + version )
-            debian_tk_include =  ( '/usr/include/tk'  + version )
-            tcl_includes = find_file('tcl.h', inc_dirs,
-                                     [debian_tcl_include]
-                                     )
-            tk_includes = find_file('tk.h', inc_dirs,
-                                     [debian_tk_include]
-                                     )
+            debian_tcl_include = [ '/usr/include/tcl' + version ]
+            debian_tk_include =  [ '/usr/include/tk'  + version ] + debian_tcl_include
+            tcl_includes = find_file('tcl.h', inc_dirs, debian_tcl_include)
+            tk_includes = find_file('tk.h', inc_dirs, debian_tk_include)
 
         if (tcllib is None or tklib is None and
             tcl_includes is None or tk_includes is None):
