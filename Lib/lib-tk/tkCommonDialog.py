@@ -25,7 +25,7 @@ class Dialog:
         if TkVersion < 4.2:
             raise TclError, "this module requires Tk 4.2 or newer"
 
-	self.master  = master
+        self.master  = master
         self.options = options
 
     def _fixoptions(self):
@@ -37,8 +37,8 @@ class Dialog:
     def show(self, **options):
 
         # update instance options
-	for k, v in options.items():
-	    self.options[k] = v
+        for k, v in options.items():
+            self.options[k] = v
 
         self._fixoptions()
 

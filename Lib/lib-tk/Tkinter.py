@@ -51,7 +51,13 @@ def _cnfmerge(cnfs):
 class Event:
 	pass
 
+_support_default_root = 1
 _default_root = None
+
+def NoDefaultRoot():
+	global _support_default_root
+	_support_default_root = 0
+	del _default_root
 
 def _tkerror(err):
 	pass
@@ -536,7 +542,7 @@ class Misc:
 		if needcleanup:
 			if self._tclCommands is None:
 				self._tclCommands = []
-       			self._tclCommands.append(name)
+			self._tclCommands.append(name)
 		#print '+ Tkinter created command', name
 		return name
 	register = _register
@@ -702,6 +708,7 @@ class Misc:
 
 	# Support for the "event" command, new in Tk 4.2.
 	# By Case Roole.
+	# XXX Why is this using the default root?
 
 	def event_add(self,virtual, *sequences):
 		args = ('event', 'add', virtual) + sequences
@@ -795,7 +802,7 @@ class Wm:
 	def positionfrom(self, who=None):
 		return self.tk.call('wm', 'positionfrom', self._w, who)
 	def protocol(self, name=None, func=None):
-	        if callable(func):
+		if callable(func):
 			command = self._register(func)
 		else:
 			command = func
@@ -857,14 +864,14 @@ class Tk(Misc, Wm):
 		self.tk.createcommand('tkerror', _tkerror)
 		self.tk.createcommand('exit', _exit)
 		self.readprofile(baseName, className)
-		if not _default_root:
+		if _support_default_root and not _default_root:
 			_default_root = self
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
 		self.tk.call('destroy', self._w)
 		Misc.destroy(self)
 		global _default_root
-		if _default_root is self:
+		if _support_default_root and _default_root is self:
 			_default_root = None
 	def readprofile(self, baseName, className):
 		import os
@@ -994,13 +1001,14 @@ class Grid:
 
 class BaseWidget(Misc):
 	def _setup(self, master, cnf):
-		global _default_root
-		if not master:
+		if _support_default_root:
+			global _default_root
+			if not master:
+				if not _default_root:
+					_default_root = Tk()
+				master = _default_root
 			if not _default_root:
-				_default_root = Tk()
-			master = _default_root
-		if not _default_root:
-			_default_root = master
+				_default_root = master
 		self.master = master
 		self.tk = master.tk
 		name = None
@@ -1693,10 +1701,12 @@ class OptionMenu(Menubutton):
 		self.__menu = None
 
 class Image:
-	def __init__(self, imgtype, name=None, cnf={}, **kw):
+	def __init__(self, imgtype, name=None, cnf={}, master=None, **kw):
 		self.name = None
-		master = _default_root
-		if not master: raise RuntimeError, 'Too early to create image'
+		if not master:
+			master = _default_root
+			if not master:
+				raise RuntimeError, 'Too early to create image'
 		self.tk = master.tk
 		if not name:
 			name = `id(self)`
@@ -1741,8 +1751,8 @@ class Image:
 			self.tk.call('image', 'width', self.name))
 
 class PhotoImage(Image):
-	def __init__(self, name=None, cnf={}, **kw):
-		apply(Image.__init__, (self, 'photo', name, cnf), kw)
+	def __init__(self, name=None, cnf={}, master=None, **kw):
+		apply(Image.__init__, (self, 'photo', name, cnf, master), kw)
 	def blank(self):
 		self.tk.call(self.name, 'blank')
 	def cget(self, option):
@@ -1784,8 +1794,8 @@ class PhotoImage(Image):
 		apply(self.tk.call, args)
 
 class BitmapImage(Image):
-	def __init__(self, name=None, cnf={}, **kw):
-		apply(Image.__init__, (self, 'bitmap', name, cnf), kw)
+	def __init__(self, name=None, cnf={}, master=None, **kw):
+		apply(Image.__init__, (self, 'bitmap', name, cnf, master), kw)
 
 def image_names(): return _default_root.tk.call('image', 'names')
 def image_types(): return _default_root.tk.call('image', 'types')
