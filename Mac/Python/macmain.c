@@ -635,22 +635,3 @@ PyMac_GetDelayConsoleFlag(void)
 	return (int)PyMac_options.delayconsole;
 }
 
-#ifndef WITHOUT_UNIX_NEWLINES
-/*
-** Experimental feature (for 2.2a2): optionally allow unix newlines
-** as well as Mac newlines on input. We replace a lowlevel
-** MSL routine to accomplish this.
-*/
-void
-__convert_to_newlines(unsigned char * buf, size_t * n_ptr)
-{
-	unsigned char *p;
-	size_t n = *n_ptr;
-	
-	for(p=buf; n > 0; p++, n--)
-		if ( *p == '\r' ) *p = '\n';
-		else if ( *p == '\n' && !PyMac_options.unixnewlines )
-			*p = '\r';
-}
-#endif /* WITHOUT_UNIX_NEWLINES */
-
