@@ -607,6 +607,24 @@ extern DL_IMPORT(PyObject*) PyUnicode_AsEncodedString(
     const char *errors		/* error handling */
     );
 
+/* --- UTF-7 Codecs ------------------------------------------------------- */
+
+extern DL_IMPORT(PyObject*) PyUnicode_DecodeUTF7(
+    const char *string, 	/* UTF-7 encoded string */
+    int length,	 		/* size of string */
+    const char *errors		/* error handling */
+    );
+
+extern DL_IMPORT(PyObject*) PyUnicode_EncodeUTF7(
+    const Py_UNICODE *data, 	/* Unicode char buffer */
+    int length,	 		/* number of Py_UNICODE chars to encode */
+    int encodeSetO,             /* force the encoder to encode characters in
+                                   Set O, as described in RFC2152 */
+    int encodeWhiteSpace,       /* force the encoder to encode space, tab,
+                                   carriage return and linefeed characters */
+    const char *errors		/* error handling */
+    );
+
 /* --- UTF-8 Codecs ------------------------------------------------------- */
 
 extern DL_IMPORT(PyObject*) PyUnicode_DecodeUTF8(

@@ -377,6 +377,32 @@ print 'done.'
 # Test builtin codecs
 print 'Testing builtin codecs...',
 
+# UTF-7 specific encoding tests:
+utfTests = [(u'A\u2262\u0391.', 'A+ImIDkQ.'),  # RFC2152 example
+ (u'Hi Mom -\u263a-!', 'Hi Mom -+Jjo--!'),     # RFC2152 example
+ (u'\u65E5\u672C\u8A9E', '+ZeVnLIqe-'),        # RFC2152 example
+ (u'Item 3 is \u00a31.', 'Item 3 is +AKM-1.'), # RFC2152 example
+ (u'+', '+-'),
+ (u'+-', '+--'),
+ (u'+?', '+-?'),
+ (u'\?', '+AFw?'),
+ (u'+?', '+-?'),
+ (ur'\\?', '+AFwAXA?'),
+ (ur'\\\?', '+AFwAXABc?'),
+ (ur'++--', '+-+---')]
+
+for x,y in utfTests:
+    verify( x.encode('utf-7') == y )
+
+try:        
+    unicode('+3ADYAA-', 'utf-7') # surrogates not supported
+except UnicodeError:
+    pass
+else:
+    raise TestFailed, "unicode('+3ADYAA-', 'utf-7') failed to raise an exception"
+
+verify(unicode('+3ADYAA-', 'utf-7', 'replace') == u'\ufffd')
+
 # UTF-8 specific encoding tests:
 verify(u'\u20ac'.encode('utf-8') == \
        ''.join((chr(0xe2), chr(0x82), chr(0xac))) )
@@ -439,6 +465,7 @@ verify(unicode('Andr\202 x','ascii','ignore') == u"Andr x")
 verify(unicode('Andr\202 x','ascii','replace') == u'Andr\uFFFD x')
 
 verify(u'hello'.encode('ascii') == 'hello')
+verify(u'hello'.encode('utf-7') == 'hello')
 verify(u'hello'.encode('utf-8') == 'hello')
 verify(u'hello'.encode('utf8') == 'hello')
 verify(u'hello'.encode('utf-16-le') == 'h\000e\000l\000l\000o\000')
@@ -447,7 +474,7 @@ verify(u'hello'.encode('latin-1') == 'hello')
 
 # Roundtrip safety for BMP (just the first 1024 chars)
 u = u''.join(map(unichr, range(1024)))
-for encoding in ('utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
+for encoding in ('utf-7', 'utf-8', 'utf-16', 'utf-16-le', 'utf-16-be',
                  'raw_unicode_escape', 'unicode_escape', 'unicode_internal'):
     verify(unicode(u.encode(encoding),encoding) == u)
 

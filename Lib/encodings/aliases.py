@@ -14,6 +14,10 @@ aliases = {
     'latin': 'latin_1',
     'latin1': 'latin_1',
     
+    # UTF-7
+    'utf7': 'utf_7',
+    'u7': 'utf_7',
+    
     # UTF-8
     'utf': 'utf_8',
     'utf8': 'utf_8',
