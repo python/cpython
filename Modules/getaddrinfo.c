@@ -571,12 +571,14 @@ get_addr(hostname, af, res, pai, port0)
 			error = EAI_FAIL;
 			break;
 		}
-		goto bad;
+		goto free;
 	}
 
 	if ((hp->h_name == NULL) || (hp->h_name[0] == 0) ||
-	    (hp->h_addr_list[0] == NULL))
-		ERR(EAI_FAIL);
+	    (hp->h_addr_list[0] == NULL)) {
+		error = EAI_FAIL;
+		goto free;
+	}
 	
 	for (i = 0; (ap = hp->h_addr_list[i]) != NULL; i++) {
 		switch (af) {
@@ -632,7 +634,7 @@ get_addr(hostname, af, res, pai, port0)
 	if (hp)
 		freehostent(hp);
 #endif
- bad:
+/* bad: */
 	*res = NULL;
 	return error;
 }

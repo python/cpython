@@ -606,6 +606,7 @@ setipaddr(char* name, struct sockaddr * addr_ret, int af)
 			return -1;
 		}
 		if (res->ai_next) {
+			freeaddrinfo(res);
 			PyErr_SetString(PySocket_Error,
 				"wildcard resolved to multiple address");
 			return -1;
@@ -2461,7 +2462,8 @@ PySocket_inet_ntoa(PyObject *self, PyObject *args)
 static PyObject *
 PySocket_getaddrinfo(PyObject *self, PyObject *args)
 {
-	struct addrinfo hints, *res0, *res;
+	struct addrinfo hints, *res;
+	struct addrinfo *res0 = NULL;
 	PyObject *pobj = (PyObject *)NULL;
 	char pbuf[30];
 	char *hptr, *pptr;
@@ -2522,6 +2524,8 @@ PySocket_getaddrinfo(PyObject *self, PyObject *args)
  err:
 	Py_XDECREF(single);
 	Py_XDECREF(all);
+	if (res0)
+		freeaddrinfo(res0);
 	return (PyObject *)NULL;
 }
 
