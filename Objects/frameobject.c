@@ -147,7 +147,7 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	frameobject *f;
 	object *builtins;
 	if (builtin_object == NULL) {
-		builtin_object = newstringobject("__builtins__");
+		builtin_object = PyString_InternFromString("__builtins__");
 		if (builtin_object == NULL)
 			return NULL;
 	}
