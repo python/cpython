@@ -15,6 +15,10 @@
 
 # Translated from anonymously contributed C/C++ source.
 
+# Multi-threading note: the random number generator used here is not
+# thread-safe; it is possible that two calls return the same random
+# value.  See whrandom.py for more info.
+
 import whrandom
 from whrandom import random, uniform, randint, choice # Also for export!
 from math import log, exp, pi, e, sqrt, acos, cos, sin
@@ -243,12 +247,18 @@ def gauss(mu, sigma):
 	# (Lambert Meertens)
 	# (corrected version; bug discovered by Mike Miller, fixed by LM)
 
+	# Multithreading note: When two threads call this function
+	# simultaneously, it is possible that they will receive the
+	# same return value.  The window is very small though.  To
+	# avoid this, you have to use a lock around all calls.  (I
+	# didn't want to slow this down in the serial case by using a
+	# lock here.)
+
 	global gauss_next
 
-	if gauss_next != None:
-		z = gauss_next
-		gauss_next = None
-	else:
+	z = gauss_next
+	gauss_next = None
+	if z is None:
 		x2pi = random() * TWOPI
 		g2rad = sqrt(-2.0 * log(1.0 - random()))
 		z = cos(x2pi) * g2rad
