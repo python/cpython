@@ -39,6 +39,7 @@ static longobject *long_normalize PROTO((longobject *));
 static longobject *mul1 PROTO((longobject *, wdigit));
 static longobject *muladd1 PROTO((longobject *, wdigit, wdigit));
 static longobject *divrem1 PROTO((longobject *, wdigit, digit *));
+static object *long_format PROTO((object *aa, int base));
 
 static int ticker;	/* XXX Could be shared with ceval? */
 

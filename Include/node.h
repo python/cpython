@@ -61,7 +61,6 @@ extern void freetree PROTO((node *n));
 #endif
 
 extern void listtree PROTO((node *));
-extern void listnode PROTO((FILE *, node *));
 
 #ifdef __cplusplus
 }

@@ -51,7 +51,14 @@ extern char *getpythonpath();
 
 extern grammar gram; /* From graminit.c */
 
-void initsigs(); /* Forward */
+/* Forward */
+static object *run_err_node PROTO((int err, node *n, char *filename,
+				   object *globals, object *locals));
+static object *run_node PROTO((node *n, char *filename,
+			       object *globals, object *locals));
+static object *eval_node PROTO((node *n, char *filename,
+				object *globals, object *locals));
+void initsigs PROTO(());
 
 int debugging; /* Needed by parser.c */
 int verbose; /* Needed by import.c */
