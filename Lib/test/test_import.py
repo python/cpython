@@ -2,6 +2,9 @@ from test_support import TESTFN
 
 import os
 import random
+import sys
+
+sys.path.insert(0, os.curdir)
 
 source = TESTFN + ".py"
 pyc = TESTFN + ".pyc"
@@ -42,3 +45,5 @@ finally:
         os.unlink(pyo)
     except os.error:
         pass
+
+del sys.path[0]
