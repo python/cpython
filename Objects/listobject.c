@@ -683,8 +683,10 @@ quicksort(array, size, compare)
 		/* If it's a small one, use straight insertion sort */
 		n = hi - lo;
 		if (n < MINSIZE) {
-			if (insertionsort(lo, n, compare) < 0)
-				return -1;
+			/* 
+		         * skip it.  The insertion sort at the end will 
+			 * catch these 
+			 */
 			continue;
 		}
 
@@ -692,52 +694,64 @@ quicksort(array, size, compare)
 		
 		l = lo + (n>>1); /* Middle */
 		r = hi - 1;	/* Last */
-		k = docompare(*lo, *l, compare);
+
+		k = docompare(*l, *lo, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
 			{ tmp = *lo; *lo = *l; *l = tmp; }
+
 		k = docompare(*r, *l, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
 			{ tmp = *r; *r = *l; *l = tmp; }
-		k = docompare(*r, *lo, compare);
+
+		k = docompare(*l, *lo, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
-			{ tmp = *r; *r = *lo; *lo = tmp; }
-		pivot = *lo;
+			{ tmp = *l; *l = *lo; *lo = tmp; }
+		pivot = *l;
 
 		/* Partition the array */
-		l = lo;
-		r = hi;
+		l = lo+1;
+		r = hi-2;
 		for (;;) {
 			/* Move left index to element > pivot */
-			while (++l < hi) {
-				k = docompare(*l, pivot, compare);
+			for (;;) {
+				k = docompare(*l, pivot, compare); 
 				if (k == CMPERROR)
 					return -1;
-				if (k > 0)
+				if (k >= 0)
 					break;
+				l++;
 			}
 			/* Move right index to element < pivot */
-			while (--r > lo) {
-				k = docompare(*r, pivot, compare);
+			for (;;) {
+				k = docompare(pivot, *r, compare);
 				if (k == CMPERROR)
 					return -1;
-				if (k < 0)
+				if (k >= 0)
 					break;
+				r--;
 			}
+
 			/* If they met, we're through */
-			if (r < l)
+			if (l < r) {
+				/* Swap elements and continue */
+				tmp = *l; *l = *r; *r = tmp; 
+				l++; r--;
+			}
+			else if (l == r) {
+				l++; r--;
 				break;
-			/* Swap elements and continue */
-			{ tmp = *l; *l = *r; *r = tmp; }
+			}
+
+			if (l > r)
+				break;
 		}
 
-		/* Move the pivot into the middle */
-		{ tmp = *lo; *lo = *r; *r = tmp; }
 
 		/* We have now reached the following conditions:
 			lo <= r < l <= hi
@@ -752,20 +766,20 @@ quicksort(array, size, compare)
 		n2 = hi - l;
 		if (n > n2) {
 			/* First one is bigger */
-			if (n > 1) {
+			if (n > MINSIZE) {
 				lostack[top] = lo;
 				histack[top++] = r;
-				if (n2 > 1) {
+				if (n2 > MINSIZE) {
 					lostack[top] = l;
 					histack[top++] = hi;
 				}
 			}
 		} else {
 			/* Second one is bigger */
-			if (n2 > 1) {
+			if (n2 > MINSIZE) {
 				lostack[top] = l;
 				histack[top++] = hi;
-				if (n > 1) {
+				if (n > MINSIZE) {
 					lostack[top] = lo;
 					histack[top++] = r;
 				}
@@ -774,6 +788,17 @@ quicksort(array, size, compare)
 
 		/* Should assert top < STACKSIZE-1 */
 	}
+
+	/*
+	 * Ouch - even if I screwed up the quicksort above, the
+	 * insertionsort below will cover up the problem - just a
+	 * performance hit would be noticable.   
+	 */
+
+	/* insertionsort is pretty fast on the partially sorted list */
+
+	if (insertionsort(array, size, compare) < 0)
+		return -1;
 	
 	/* Succes */
 	return 0;
