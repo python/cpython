@@ -881,7 +881,7 @@ PyObject_Free(void *p)
 #undef DEADBYTE
 #undef FORBIDDENBYTE
 #define CLEANBYTE      0xCB    /* clean (newly allocated) memory */
-#define DEADBYTE       0xDB    /* deed (newly freed) memory */
+#define DEADBYTE       0xDB    /* dead (newly freed) memory */
 #define FORBIDDENBYTE  0xFB    /* untouchable bytes at each end of a block */
 
 static ulong serialno = 0;	/* incremented on each debug {m,re}alloc */
