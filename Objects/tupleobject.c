@@ -68,9 +68,8 @@ PyTuple_New(register int size)
 		op = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
 		if (op == NULL)
 			return NULL;
+		memset(op->ob_item, 0, size*sizeof(PyObject*));
 	}
-	for (i=0; i < size; i++)
-		op->ob_item[i] = NULL;
 #if MAXSAVESIZE > 0
 	if (size == 0) {
 		free_tuples[0] = op;
@@ -165,19 +164,27 @@ tupledealloc(register PyTupleObject *op)
 	Py_TRASHCAN_SAFE_BEGIN(op)
 	if (len > 0) {
 		i = len;
-		while (--i >= 0)
-			Py_XDECREF(op->ob_item[i]);
 #if MAXSAVESIZE > 0
 		if (len < MAXSAVESIZE &&
 		    num_free_tuples[len] < MAXSAVEDTUPLES &&
 		    op->ob_type == &PyTuple_Type)
 		{
+			while (--i >= 0) {
+				PyObject* o = op->ob_item[i];
+				if (o != NULL) {
+					op->ob_item[i] = NULL;
+					Py_DECREF(o);
+				}
+			}
 			op->ob_item[0] = (PyObject *) free_tuples[len];
 			num_free_tuples[len]++;
 			free_tuples[len] = op;
 			goto done; /* return */
 		}
+		else
 #endif
+			while (--i >= 0)
+				Py_XDECREF(op->ob_item[i]);
 	}
 	op->ob_type->tp_free((PyObject *)op);
 done:
