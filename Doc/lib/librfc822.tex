@@ -215,11 +215,17 @@ there is no header matching \var{name}, or it is unparsable, return
 In particular: \code{\var{m}[name]} is like
 \code{\var{m}.getheader(name)} but raises \exception{KeyError} if
 there is no matching header; and \code{len(\var{m})},
+\code{\var{m}.get(name\optional{, deafult})},
 \code{\var{m}.has_key(name)}, \code{\var{m}.keys()},
-\code{\var{m}.values()} and \code{\var{m}.items()} act as expected
+\code{\var{m}.values()} \code{\var{m}.items()}, and
+\code{\var{m}.setdefault(name\optional{, default})} act as expected
 (and consistently).  \class{Message} instances also support the
 mapping writable interface \code{\var{m}[name] = value} and \code{del
-\var{m}[name]}.
+\var{m}[name]}.  \class{Message} objects do not support the
+\method{clear()}, \method{copy()}, \method{popitem()}, or
+\method{update()} methods of the mapping interface.  (Support for
+\method{.get()} and \method{.setdefault()} was only added in Python
+2.2.)
 
 Finally, \class{Message} instances have two public instance variables:
 
