@@ -244,7 +244,11 @@ setup_readline()
 	rl_completer_word_break_characters =
 		" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?";
 		/* All nonalphanums except '.' */
-	/* Initialize (allows .inputrc to override) */
+	/* Initialize (allows .inputrc to override)
+	 *
+	 * XXX: A bug in the readline-2.2 library causes a memory leak
+	 * inside this function.  Nothing we can do about it.
+	 */
 	rl_initialize();
 }
 
