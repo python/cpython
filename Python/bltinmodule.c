@@ -85,7 +85,7 @@ builtin_apply(PyObject *self, PyObject *args)
 		if (!PyTuple_Check(alist)) {
 			if (!PySequence_Check(alist)) {
 				PyErr_Format(PyExc_TypeError,
-				     "apply() arg 2 expect sequence, found %s",
+				     "apply() arg 2 expected sequence, found %s",
 					     alist->ob_type->tp_name);
 				return NULL;
 			}
@@ -368,7 +368,7 @@ builtin_compile(PyObject *self, PyObject *args)
 		return NULL;
 	if ((size_t)length != strlen(str)) {
 		PyErr_SetString(PyExc_TypeError,
-				"expected string without null bytes");
+				"compile() expected string without null bytes");
 		return NULL;
 	}
 
@@ -644,7 +644,7 @@ builtin_getattr(PyObject *self, PyObject *args)
 
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
-				"attribute name must be string");
+				"getattr(): attribute name must be string");
 		return NULL;
 	}
 	result = PyObject_GetAttr(v, name);
@@ -700,7 +700,7 @@ builtin_hasattr(PyObject *self, PyObject *args)
 
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
-				"attribute name must be string");
+				"hasattr(): attribute name must be string");
 		return NULL;
 	}
 	v = PyObject_GetAttr(v, name);
@@ -1556,11 +1556,11 @@ builtin_raw_input(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (fin == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
+		PyErr_SetString(PyExc_RuntimeError, "[raw_]input: lost sys.stdin");
 		return NULL;
 	}
 	if (fout == NULL) {
-		PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+		PyErr_SetString(PyExc_RuntimeError, "[raw_]input: lost sys.stdout");
 		return NULL;
 	}
 	if (PyFile_SoftSpace(fout, 0)) {
@@ -1601,7 +1601,7 @@ builtin_raw_input(PyObject *self, PyObject *args)
 			size_t len = strlen(s);
 			if (len > INT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-						"input too long");
+						"[raw_]input: input too long");
 				result = NULL;
 			}
 			else {
@@ -1776,7 +1776,7 @@ builtin_vars(PyObject *self, PyObject *args)
 		if (d == NULL) {
 			if (!PyErr_Occurred())
 				PyErr_SetString(PyExc_SystemError,
-						"no locals!?");
+						"vars(): no locals!?");
 		}
 		else
 			Py_INCREF(d);
@@ -1823,7 +1823,7 @@ builtin_sum(PyObject *self, PyObject *args)
 		/* reject string values for 'start' parameter */
 		if (PyObject_TypeCheck(result, &PyBaseString_Type)) {
 			PyErr_SetString(PyExc_TypeError,
-				"can't sum strings [use ''.join(seq) instead]");
+				"sum() can't sum strings [use ''.join(seq) instead]");
 			Py_DECREF(iter);
 			return NULL;
 		}
@@ -2177,7 +2177,7 @@ filtertuple(PyObject *func, PyObject *tuple)
 		    tuple->ob_type->tp_as_sequence->sq_item) {
 			item = tuple->ob_type->tp_as_sequence->sq_item(tuple, i);
 		} else {
-			PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
+			PyErr_SetString(PyExc_TypeError, "filter(): unsubscriptable tuple");
 			goto Fail_1;
 		}
 		if (func == Py_None) {
