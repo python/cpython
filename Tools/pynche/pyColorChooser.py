@@ -13,13 +13,15 @@ class Chooser:
                  initialcolor = None,
                  databasefile = None,
                  initfile = None,
-                 ignore = None):
+                 ignore = None,
+                 wantspec = None):
         self.__master = master
         self.__initialcolor = initialcolor
         self.__databasefile = databasefile
         self.__initfile = initfile or os.path.expanduser('~/.pynche')
         self.__ignore = ignore
         self.__pw = None
+        self.__wantspec = wantspec
 
     def show(self):
         if not self.__pw:
@@ -38,9 +40,13 @@ class Chooser:
         # try to return the color name from the database if there is an exact
         # match, otherwise use the "#rrggbb" spec.  TBD: Forget about color
         # aliases for now, maybe later we should return these too.
-        try:
-            name = colordb.find_byrgb(rgbtuple)[0]
-        except ColorDB.BadColor:
+        name = None
+        if not self.__wantspec:
+            try:
+                name = colordb.find_byrgb(rgbtuple)[0]
+            except ColorDB.BadColor:
+                pass
+        if name is None:
             name = ColorDB.triplet_to_rrggbb(rgbtuple)
         return rgbtuple, name
 
