@@ -621,13 +621,13 @@ sub do_env_methoddesc{
     my $class_name = next_optional_argument();
     $class_name = $THIS_CLASS
         unless $class_name;
-    my $method_name = next_argument();
+    my $method = next_argument();
     my $arg_list = next_argument();
     my $extra = '';
     if ($class_name) {
 	$extra = " ($class_name method)";
     }
-    my $idx = make_str_index_entry("<tt>$method_name()</tt>$extra");
+    my $idx = make_str_index_entry("<tt>$method()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
@@ -645,7 +645,7 @@ sub do_cmd_methodline{
     if ($class_name) {
 	$extra = " ($class_name method)";
     }
-    my $idx = make_str_index_entry("<tt>$method_name()</tt>$extra");
+    my $idx = make_str_index_entry("<tt>$method()</tt>$extra");
     $idx =~ s/ \(.*\)//;
     $idx =~ s/\(\)//;
     return "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>"
