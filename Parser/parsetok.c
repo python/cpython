@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -34,56 +34,59 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 
 /* Forward */
-static int parsetok PROTO((struct tok_state *, grammar *, int, node **));
-
+static node *parsetok PROTO((struct tok_state *, grammar *, int,
+			     perrdetail *));
 
 /* Parse input coming from a string.  Return error code, print some errors. */
 
-int
-parsestring(s, g, start, n_ret)
+node *
+parsestring(s, g, start, err_ret)
 	char *s;
 	grammar *g;
 	int start;
-	node **n_ret;
+	perrdetail *err_ret;
 {
-	struct tok_state *tok = tok_setups(s);
-	int ret;
-	
-	if (tok == NULL) {
-		fprintf(stderr, "no mem for tok_setups\n");
-		return E_NOMEM;
+	struct tok_state *tok;
+
+	err_ret->error = E_OK;
+	err_ret->filename = NULL;
+	err_ret->lineno = 0;
+	err_ret->offset = 0;
+	err_ret->text = NULL;
+
+	if ((tok = tok_setups(s)) == NULL) {
+		err_ret->error = E_NOMEM;
+		return NULL;
 	}
-	ret = parsetok(tok, g, start, n_ret);
-/*
-XXX Need a more sophisticated way to report the line number.
-	if (ret == E_TOKEN || ret == E_SYNTAX) {
-		fprintf(stderr, "String parsing error at line %d\n",
-			tok->lineno);
-	}
-*/
-	tok_free(tok);
-	return ret;
+
+	return parsetok(tok, g, start, err_ret);
 }
 
 
 /* Parse input coming from a file.  Return error code, print some errors. */
 
-int
-parsefile(fp, filename, g, start, ps1, ps2, n_ret)
+node *
+parsefile(fp, filename, g, start, ps1, ps2, err_ret)
 	FILE *fp;
 	char *filename;
 	grammar *g;
 	int start;
 	char *ps1, *ps2;
-	node **n_ret;
+	perrdetail *err_ret;
 {
-	struct tok_state *tok = tok_setupf(fp, ps1, ps2);
-	int ret;
-	
-	if (tok == NULL) {
-		fprintf(stderr, "no mem for tok_setupf\n");
-		return E_NOMEM;
+	struct tok_state *tok;
+
+	err_ret->error = E_OK;
+	err_ret->filename = filename;
+	err_ret->lineno = 0;
+	err_ret->offset = 0;
+	err_ret->text = NULL;
+
+	if ((tok = tok_setupf(fp, ps1, ps2)) == NULL) {
+		err_ret->error = E_NOMEM;
+		return NULL;
 	}
+
 #ifdef macintosh
 	{
 		int tabsize = guesstabsize(filename);
@@ -91,60 +94,39 @@ parsefile(fp, filename, g, start, ps1, ps2, n_ret)
 			tok->tabsize = tabsize;
 	}
 #endif
-	ret = parsetok(tok, g, start, n_ret);
-	if (ret == E_TOKEN || ret == E_SYNTAX) {
-		char *p;
-		fprintf(stderr, "Parsing error: file %s, line %d:\n",
-						filename, tok->lineno);
-		if (tok->buf == NULL)
-			fprintf(stderr, "(EOF)\n");
-		else {
-			*tok->inp = '\0';
-			if (tok->inp > tok->buf && tok->inp[-1] == '\n')
-				tok->inp[-1] = '\0';
-			fprintf(stderr, "%s\n", tok->buf);
-			for (p = tok->buf; p < tok->cur; p++) {
-				if (*p == '\t')
-					putc('\t', stderr);
-				else
-					putc(' ', stderr);
-			}
-			fprintf(stderr, "^\n");
-		}
-	}
-	tok_free(tok);
-	return ret;
-}
 
+	return parsetok(tok, g, start, err_ret);
+}
 
 /* Parse input coming from the given tokenizer structure.
    Return error code. */
 
-static int
-parsetok(tok, g, start, n_ret)
+static node *
+parsetok(tok, g, start, err_ret)
 	struct tok_state *tok;
 	grammar *g;
 	int start;
-	node **n_ret;
+	perrdetail *err_ret;
 {
 	parser_state *ps;
-	int ret;
+	node *n;
 	int started = 0;
-	
+
 	if ((ps = newparser(g, start)) == NULL) {
 		fprintf(stderr, "no mem for new parser\n");
-		return E_NOMEM;
+		err_ret->error = E_NOMEM;
+		return NULL;
 	}
-	
+
 	for (;;) {
 		char *a, *b;
 		int type;
 		int len;
 		char *str;
-		
+
 		type = tok_get(tok, &a, &b);
 		if (type == ERRORTOKEN) {
-			ret = tok->done;
+			err_ret->error = tok->done;
 			break;
 		}
 		if (type == ENDMARKER && started) {
@@ -153,30 +135,46 @@ parsetok(tok, g, start, n_ret)
 		}
 		else
 			started = 1;
-		len = b - a;
+		len = b - a; /* XXX this may compute NULL - NULL */
 		str = NEW(char, len + 1);
 		if (str == NULL) {
 			fprintf(stderr, "no mem for next token\n");
-			ret = E_NOMEM;
+			err_ret->error = E_NOMEM;
 			break;
 		}
-		strncpy(str, a, len);
+		if (len > 0)
+			strncpy(str, a, len);
 		str[len] = '\0';
-		ret = addtoken(ps, (int)type, str, tok->lineno);
-		if (ret != E_OK) {
-			if (ret == E_DONE) {
-				*n_ret = ps->p_tree;
-				ps->p_tree = NULL;
-			}
-			else {
-				*n_ret = NULL;
-				if (tok->lineno <= 1 && tok->done == E_EOF)
-					ret = E_EOF;
-			}
+		if ((err_ret->error =
+		     addtoken(ps, (int)type, str, tok->lineno)) != E_OK)
 			break;
+	}
+
+	if (err_ret->error == E_DONE) {
+		n = ps->p_tree;
+		ps->p_tree = NULL;
+	}
+	else
+		n = NULL;
+
+	delparser(ps);
+
+	if (n == NULL) {
+		if (tok->lineno <= 1 && tok->done == E_EOF)
+			err_ret->error = E_EOF;
+		err_ret->lineno = tok->lineno;
+		err_ret->offset = tok->cur - tok->buf;
+		if (tok->buf != NULL) {
+			int len = tok->inp - tok->buf;
+			err_ret->text = malloc(len + 1);
+			if (err_ret->text != NULL) {
+				strncpy(err_ret->text, tok->buf, len+1);
+				err_ret->text[len] = '\0';
+			}
 		}
 	}
-	
-	delparser(ps);
-	return ret;
+
+	tok_free(tok);
+
+	return n;
 }
