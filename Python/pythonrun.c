@@ -678,7 +678,7 @@ goaway(sts)
 	if (sts == 0)
 		SIOUXSettings.autocloseonquit = 1;
 	else
-		SIOUXSettings.showstatusline = 1;
+		printf("\n[Terminated]\n");
 #endif
 	exit(sts);
 #endif /* WITH_THREAD */
