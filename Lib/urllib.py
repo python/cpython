@@ -1158,7 +1158,6 @@ def urlencode(query,doseq=0):
         # sequences...
         try:
             # non-sequence items should not work with len()
-            x = len(query)
             # non-empty strings will fail this
             if len(query) and type(query[0]) != types.TupleType:
                 raise TypeError
