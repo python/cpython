@@ -568,12 +568,7 @@ float_pos(PyFloatObject *v)
 static PyObject *
 float_abs(PyFloatObject *v)
 {
-	if (v->ob_fval < 0)
-		return float_neg(v);
-	else if (v->ob_fval > 0)
-		return float_pos(v);
-	else /* ensure abs(-0) is +0 */
-		return PyFloat_FromDouble(+0.0);
+	return PyFloat_FromDouble(fabs(v->ob_fval));
 }
 
 static int
