@@ -1070,18 +1070,6 @@ EXPORTS
 
 ; From python23_s.lib(itertoolsmodule)
 ;  "inititertools"
-;  "cycle_type"
-;  "dropwhile_type"
-;  "takewhile_type"
-;  "islice_type"
-;  "starmap_type"
-;  "imap_type"
-;  "chain_type"
-;  "ifilter_type"
-;  "ifilterfalse_type"
-;  "count_type"
-;  "izip_type"
-;  "repeat_type"
 
 ; From python23_s.lib(_localemodule)
 ;  "init_locale"
