@@ -150,6 +150,9 @@ sub do_cmd_program{
     return use_wrappers(@_[0], '<b class="program">', '</b>'); }
 sub do_cmd_programopt{
     return use_wrappers(@_[0], '<b class="programopt">', '</b>'); }
+sub do_cmd_longprogramopt{
+    # note that the --- will be later converted to -- by LaTeX2HTML
+    return use_wrappers(@_[0], '<b class="programopt">---', '</b>'); }
 sub do_cmd_email{
     return use_wrappers(@_[0], '<span class="email">', '</span>'); }
 sub do_cmd_mimetype{
