@@ -987,7 +987,7 @@ else {
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_AsWriteBuffer}{PyObject *obj,
-                                               const char **buffer,
+                                               char **buffer,
                                                int *buffer_len}
   Returns a pointer to a writeable memory location.  The \var{obj}
   argument must support the single-segment, character buffer
