@@ -16,8 +16,10 @@ from sre_constants import *
 
 MAXCODE = 65535
 
-def _charset(charset, fixup):
+def _charset(charset, fixup=None):
     # internal: optimize character set
+    if not fixup:
+        fixup = lambda x: x
     out = []
     charmap = [0]*256
     try:
