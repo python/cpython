@@ -95,9 +95,6 @@ class or factory function.
 Raises a \exception{LookupError} in case the encoding cannot be found.
 \end{funcdesc}
 
-To simplify working with encoded files or stream, the module
-also defines these utility functions:
-
 \begin{funcdesc}{register_error}{name, error_handler}
 Register the error handling function \var{error_handler} under the
 name \var{name}. \var{error_handler} will be called during encoding
@@ -134,6 +131,9 @@ Implements the \code{xmlcharrefreplace} error handling.
 \begin{funcdesc}{backslashreplace_errors_errors}{exception}
 Implements the \code{backslashreplace} error handling.
 \end{funcdesc}
+
+To simplify working with encoded files or stream, the module
+also defines these utility functions:
 
 \begin{funcdesc}{open}{filename, mode\optional{, encoding\optional{,
                        errors\optional{, buffering}}}}
