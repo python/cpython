@@ -42,6 +42,7 @@ extern DL_IMPORT(PyTypeObject) PyClass_Type, PyInstance_Type, PyMethod_Type;
 extern DL_IMPORT(PyObject *) PyClass_New(PyObject *, PyObject *, PyObject *);
 extern DL_IMPORT(PyObject *) PyInstance_New(PyObject *, PyObject *,
                                             PyObject *);
+extern DL_IMPORT(PyObject *) PyInstance_NewRaw(PyObject *, PyObject *);
 extern DL_IMPORT(PyObject *) PyMethod_New(PyObject *, PyObject *, PyObject *);
 
 extern DL_IMPORT(PyObject *) PyMethod_Function(PyObject *);
