@@ -214,6 +214,7 @@ class Job:
     def setup_texinputs(self):
         texinputs = [self.filedir] + list(self.options.base_texinputs)
         os.environ["TEXINPUTS"] = string.join(texinputs, os.pathsep)
+        self.message("TEXINPUTS=" + os.environ["TEXINPUTS"])
 
     __have_temps = 0
     def build_aux(self, binary=None):
@@ -352,17 +353,22 @@ class Job:
             os.unlink(self.l2h_aux_init_file)
 
     def run(self, command):
-        if not self.options.quiet:
-            print "+++", command
-        fp = open(self.log_filename, "a")
-        fp.write("+++ %s\n" % command)
-        fp.close()
-        rc = os.system("(%s) >>%s 2>&1" % (command, self.log_filename))
+        self.message(command)
+        rc = os.system("(%s) </dev/null >>%s 2>&1"
+                       % (command, self.log_filename))
         if rc:
             sys.stderr.write(
                 "Session transcript and error messages are in %s.\n"
                 % self.log_filename)
             sys.exit(rc)
+
+    def message(self, msg):
+        msg = "+++ " + msg
+        if not self.options.quiet:
+            print msg
+        fp = open(self.log_filename, "a")
+        fp.write(msg + "\n")
+        fp.close()
 
 
 def safe_unlink(path):
