@@ -1031,7 +1031,8 @@ string_join(PyStringObject *self, PyObject *args)
 	return res;
 }
 
-PyObject *_PyString_Join(PyObject *sep, PyObject *x)
+PyObject *
+_PyString_Join(PyObject *sep, PyObject *x)
 {
 	PyObject* args;
 	PyObject* result = NULL;
