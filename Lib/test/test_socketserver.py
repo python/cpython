@@ -94,6 +94,19 @@ def pickaddr(proto):
         return (host, pickport())
     else:
         fn = TESTFN + str(pickport())
+        if os.name == 'os2':
+            # AF_UNIX socket names on OS/2 require a specific prefix
+            # which can't include a drive letter and must also use
+            # backslashes as directory separators
+            if fn[1] == ':':
+                fn = fn[2:]
+            if fn[0] in (os.sep, os.altsep):
+                fn = fn[1:]
+            fn = os.path.join('\socket', fn)
+            if os.sep == '/':
+                fn = fn.replace(os.sep, os.altsep)
+            else:
+                fn = fn.replace(os.altsep, os.sep)
         testfiles.append(fn)
         return fn
 
@@ -135,11 +148,13 @@ if not hasattr(socket, 'AF_UNIX'):
     dgramservers = []
 else:
     class ForkingUnixStreamServer(ForkingMixIn, UnixStreamServer): pass
-    streamservers = [UnixStreamServer, ThreadingUnixStreamServer,
-                     ForkingUnixStreamServer]
+    streamservers = [UnixStreamServer, ThreadingUnixStreamServer]
+    if hasattr(os, 'fork') and os.name not in ('os2',):
+        streamservers.append(ForkingUnixStreamServer)
     class ForkingUnixDatagramServer(ForkingMixIn, UnixDatagramServer): pass
-    dgramservers = [UnixDatagramServer, ThreadingUnixDatagramServer,
-                    ForkingUnixDatagramServer]
+    dgramservers = [UnixDatagramServer, ThreadingUnixDatagramServer]
+    if hasattr(os, 'fork') and os.name not in ('os2',):
+        dgramservers.append(ForkingUnixDatagramServer)
 
 def testall():
     testloop(socket.AF_INET, tcpservers, MyStreamHandler, teststream)
