@@ -57,7 +57,7 @@ def main():
 	folderbar = Scrollbar(right, {'relief': 'sunken', 'bd': 2})
 	folderbar.pack({'fill': 'y', 'side': 'right'})
 
-	folderbox = Listbox(right)
+	folderbox = Listbox(right, {'exportselection': 0})
 	folderbox.pack({'expand': 1, 'fill': 'both', 'side': 'left'})
 
 	foldermenu = Menu(root)
@@ -159,7 +159,7 @@ def scan_unpost(e):
 
 scanparser = regex.compile('^ *\([0-9]+\)')
 
-def open_folder(*e):
+def open_folder(e=None):
 	global folder, mhf
 	sel = folderbox.curselection()
 	if len(sel) != 1:
@@ -174,7 +174,7 @@ def open_folder(*e):
 	mhf = mh.openfolder(folder)
 	rescan()
 
-def open_message(*e):
+def open_message(e=None):
 	global viewer
 	sel = scanbox.curselection()
 	if len(sel) != 1:
@@ -202,7 +202,7 @@ def open_message(*e):
 def interestingheader(header):
 	return header != 'received'
 
-def remove_message():
+def remove_message(e=None):
 	itop = scanbox.nearest(0)
 	sel = scanbox.curselection()
 	if not sel:
@@ -220,7 +220,7 @@ def remove_message():
 
 lastrefile = ''
 tofolder = None
-def refile_message():
+def refile_message(e=None):
 	global lastrefile, tofolder
 	itop = scanbox.nearest(0)
 	sel = scanbox.curselection()
@@ -242,9 +242,7 @@ def refile_message():
 		line = scanbox.get(i)
 		if scanparser.match(line) >= 0:
 			todo.append(string.atoi(scanparser.group(1)))
-	print 'refile', todo, tofolder
 	if lastrefile != refileto or not tofolder:
-		print 'new folder'
 		lastrefile = refileto
 		tofolder = None
 		tofolder = mh.openfolder(lastrefile)
@@ -263,7 +261,6 @@ def fixfocus(near, itop):
 	else:
 		i = 'end'
 	scanbox.select_from(i)
-	print 'yview', `itop`
 	scanbox.yview(itop)
 
 def setfolders():
