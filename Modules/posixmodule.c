@@ -5349,6 +5349,10 @@ posix_read(PyObject *self, PyObject *args)
 	PyObject *buffer;
 	if (!PyArg_ParseTuple(args, "ii:read", &fd, &size))
 		return NULL;
+	if (size < 0) {
+		errno = EINVAL;
+		return posix_error();
+	}
 	buffer = PyString_FromStringAndSize((char *)NULL, size);
 	if (buffer == NULL)
 		return NULL;
