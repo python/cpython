@@ -117,6 +117,10 @@ def get_msvc_paths (path, version='6.0', platform='x86'):
                     if string.upper(p) == path:
                         V = string.split(v,';')
                         for v in V:
+                            try:
+                                v = v.encode("mbcs")
+                            except UnicodeError:
+                                pass
                             if v == '' or v in L: continue
                             L.append(v)
                         break
