@@ -34,22 +34,15 @@ def main():
 	clearhome = posix.popen('clear', 'r').read()
 	#
 	while 1:
-		# Pipe output through cat for extra buffering,
-		# so the output (which overwrites the previous)
-		# appears instantaneous.
-		sys.stdout = posix.popen('exec cat', 'w')
-		sys.stdout.write(clearhome)
+		text = clearhome
 		for name in printers:
-			pipe = posix.popen('lpq -P' + name + ' 2>&1', 'r')
-			showstatus(name, pipe, thisuser)
-			sts = pipe.close()
-			if sts:
-				print name + ': *** lpq exit status', sts
-		sts = sys.stdout.close()
+			text = text + makestatus(name, thisuser) + '\n'
+		print text
 		time.sleep(delay)
 
-def showstatus(name, pipe, thisuser):
-	lines = 0
+def makestatus(name, thisuser):
+	pipe = posix.popen('lpq -P' + name + ' 2>&1', 'r')
+	lines = []
 	users = {}
 	aheadbytes = 0
 	aheadjobs = 0
@@ -83,33 +76,33 @@ def showstatus(name, pipe, thisuser):
 			users[user] = ujobs, ubytes
 		else:
 			if fields and fields[0] <> 'Rank':
-				if line[-1:] = '\n':
-					line = line[:-1]
-				if not lines:
-					print name + ':',
-				else:
-					print
-				print line,
-				lines = lines + 1
+				line = string.strip(line)
+				if line = 'no entries':
+					line = name + ': idle'
+				elif line[-22:] = ' is ready and printing':
+					line = name
+				lines.append(line)
+	#
 	if totaljobs:
-		if lines > 1:
-			print
-			lines = lines+1
-		print (totalbytes+1023)/1024, 'K',
+		line = `(totalbytes+1023)/1024` + ' K'
 		if totaljobs <> len(users):
-			print '(' + `totaljobs` + ' jobs)',
+			line = line + ' (' + `totaljobs` + ' jobs)'
 		if len(users) = 1:
-			print 'for', users.keys()[0],
+			line = line + ' for ' + users.keys()[0]
 		else:
-			print 'for', len(users), 'users',
+			line = line + ' for ' + `len(users)` + ' users'
 			if userseen:
 				if aheadjobs = 0:
-					print '(' + thisuser + ' first)',
+				  line =  line + ' (' + thisuser + ' first)'
 				else:
-					print '(' + `(aheadbytes+1023)/1024`,
-					print 'K before', thisuser + ')'
-	if lines:
-		print
+				  line = line + ' (' + `(aheadbytes+1023)/1024`
+				  line = line + ' K before ' + thisuser + ')'
+		lines.append(line)
+	#
+	sts = pipe.close()
+	if sts:
+		lines.append('lpq exit status ' + `sts`)
+	return string.joinfields(lines, ': ')
 
 try:
 	main()
