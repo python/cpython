@@ -47,7 +47,7 @@ off-line as well.
 For a description of standard objects and modules, see the Library
 Reference document.
 The Language Reference document (XXX not yet existing)
-gives a more formal reference to the language.
+gives a more formal definition of the language.
 
 \end{abstract}
 
@@ -152,18 +152,7 @@ Since the choice of the directory where the interpreter lives is an
 installation option, other places instead of
 {\tt /usr/local}
 are possible; check with your local \Python\ guru or system
-administrator.%
-\footnote{
-	At CWI, at the time of writing, the interpreter can be found in
-	the following places:
-	On the Amoeba Ultrix machines, use the standard path,
-	{\tt /usr/local/python}.
-	On the Sun file servers, use
-	{\tt /ufs/guido/bin/}{\em arch}{\tt /python},
-	where {\em arch} can be {\tt sgi} or {\tt sun4}.
-	On piring, use {\tt /userfs3/amoeba/bin/python}.
-	(If you can't find a binary advertised here, get in touch with me.)
-}
+administrator.
 
 The interpreter operates somewhat like the \UNIX\ shell: when called with
 standard input connected to a tty device, it reads and executes commands
@@ -1351,7 +1340,7 @@ For example:
 ... except RuntimeError, detail:
 ...     print 'Handling run-time error:', detail
 ... 
-Handling run-time error: domain error or zero division
+Handling run-time error: integer division by zero
 >>> 
 \end{verbatim}\ecode
 
@@ -1380,7 +1369,7 @@ For example:
 >>> try:
 ...     raise my_exc, 2*2
 ... except my_exc, val:
-...     print 'My exception occured, value:', val
+...     print 'My exception occurred, value:', val
 ... 
 My exception occured, value: 4
 >>> raise my_exc, 1
