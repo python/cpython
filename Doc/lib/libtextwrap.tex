@@ -10,10 +10,10 @@
 
 The \module{textwrap} module provides two convenience functions,
 \function{wrap()} and \function{fill()}, as well as
-\class{TextWrapper}, the class that does all the work.  If you're just
-wrapping or filling one or two text strings, the convenience functions
-should be good enough; otherwise, you should use an instance of
-\class{TextWrapper} for efficiency.
+\class{TextWrapper}, the class that does all the work, and a utility function 
+\function{dedent()}.  If you're just wrapping or filling one or two 
+text strings, the convenience functions should be good enough; otherwise, 
+you should use an instance of \class{TextWrapper} for efficiency.
 
 \begin{funcdesc}{wrap}{text\optional{, width\optional{, \moreargs}}}
 Wraps the single paragraph in \var{text} (a string) so every line is at
@@ -41,6 +41,31 @@ Both \function{wrap()} and \function{fill()} work by creating a
 instance is not reused, so for applications that wrap/fill many text
 strings, it will be more efficient for you to create your own
 \class{TextWrapper} object.
+
+An additional utility function, \function{dedent()}, is provided to
+remove indentation from strings that have unwanted whitespace to the
+left of the text.
+
+\begin{funcdesc}{dedent}{text} 
+Remove any whitespace than can be uniformly removed from the left
+of every line in \var{text}.
+
+This is typically used to make triple-quoted strings line up with
+the left edge of screen/whatever, while still presenting it in the
+source code in indented form. 
+
+For example:
+\begin{verbatim}
+def test():
+    # end first line with \ to avoid the empty line!
+    s = '''\
+    Hey
+    there
+    '''
+    print repr(s)          # prints '    Hey\n    there\n    '
+    print repr(dedent(s))  # prints 'Hey\nthere\n'
+\end{verbatim}
+\end{funcdesc}
 
 \begin{classdesc}{TextWrapper}{...}
 The \class{TextWrapper} constructor accepts a number of optional
