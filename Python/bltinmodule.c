@@ -48,9 +48,6 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Forward */
 static PyObject *filterstring Py_PROTO((PyObject *, PyObject *));
 static PyObject *filtertuple  Py_PROTO((PyObject *, PyObject *));
-static PyObject *int_from_string Py_PROTO((PyObject *));
-static PyObject *long_from_string Py_PROTO((PyObject *));
-static PyObject *float_from_string Py_PROTO((PyObject *));
 
 static PyObject *
 builtin___import__(self, args)
@@ -75,16 +72,10 @@ builtin_abs(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	PyNumberMethods *nm;
 
 	if (!PyArg_ParseTuple(args, "O:abs", &v))
 		return NULL;
-	if ((nm = v->ob_type->tp_as_number) == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"abs() requires numeric argument");
-		return NULL;
-	}
-	return (*nm->nb_absolute)(v);
+	return PyNumber_Absolute(v);
 }
 
 static PyObject *
@@ -144,7 +135,8 @@ builtin_filter(self, args)
 		return r;
 	}
 
-	if ((sqf = seq->ob_type->tp_as_sequence) == NULL) {
+	sqf = seq->ob_type->tp_as_sequence;
+	if (sqf == NULL || sqf->sq_length == NULL || sqf->sq_item == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 			   "argument 2 to filter() must be a sequence type");
 		goto Fail_2;
@@ -245,14 +237,13 @@ builtin_cmp(self, args)
 	PyObject *args;
 {
 	PyObject *a, *b;
-	long c;
+	int c;
 
 	if (!PyArg_ParseTuple(args, "OO:cmp", &a, &b))
 		return NULL;
-	c = PyObject_Compare(a, b);
-	if (c && PyErr_Occurred())
+	if (PyObject_Cmp(a, b, &c) < 0)
 		return NULL;
-	return PyInt_FromLong(c);
+	return PyInt_FromLong((long)c);
 }
 
 static PyObject *
@@ -451,29 +442,6 @@ builtin_dir(self, args)
 }
 
 static PyObject *
-do_divmod(v, w)
-	PyObject *v, *w;
-{
-	PyObject *res;
-
-	if (PyInstance_Check(v) || PyInstance_Check(w))
-		return PyInstance_DoBinOp(v, w, "__divmod__", "__rdivmod__",
-				     do_divmod);
-	if (v->ob_type->tp_as_number == NULL ||
-				w->ob_type->tp_as_number == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-		    "divmod() requires numeric or class instance arguments");
-		return NULL;
-	}
-	if (PyNumber_Coerce(&v, &w) != 0)
-		return NULL;
-	res = (*v->ob_type->tp_as_number->nb_divmod)(v, w);
-	Py_DECREF(v);
-	Py_DECREF(w);
-	return res;
-}
-
-static PyObject *
 builtin_divmod(self, args)
 	PyObject *self;
 	PyObject *args;
@@ -482,7 +450,7 @@ builtin_divmod(self, args)
 
 	if (!PyArg_ParseTuple(args, "OO:divmod", &v, &w))
 		return NULL;
-	return do_divmod(v, w);
+	return PyNumber_Divmod(v, w);
 }
 
 static PyObject *
@@ -576,19 +544,10 @@ builtin_float(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	PyNumberMethods *nb;
 
 	if (!PyArg_ParseTuple(args, "O:float", &v))
 		return NULL;
-	if (PyString_Check(v))
-		return float_from_string(v);
-	if ((nb = v->ob_type->tp_as_number) == NULL ||
-	    nb->nb_float == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			   "float() argument can't be converted to float");
-		return NULL;
-	}
-	return (*nb->nb_float)(v);
+	return PyNumber_Float(v);
 }
 
 static PyObject *
@@ -631,10 +590,12 @@ builtin_hasattr(self, args)
 	v = PyObject_GetAttr(v, name);
 	if (v == NULL) {
 		PyErr_Clear();
-		return PyInt_FromLong(0L);
+		Py_INCREF(Py_False);
+		return Py_False;
 	}
 	Py_DECREF(v);
-	return PyInt_FromLong(1L);
+	Py_INCREF(Py_True);
+	return Py_True;
 }
 
 static PyObject *
@@ -682,11 +643,16 @@ builtin_map(self, args)
 
 	for (len = 0, i = 0, sqp = seqs; i < n; ++i, ++sqp) {
 		int curlen;
+		PySequenceMethods *sqf;
 	
 		if ((sqp->seq = PyTuple_GetItem(args, i + 1)) == NULL)
 			goto Fail_2;
 
-		if (! (sqp->sqf = sqp->seq->ob_type->tp_as_sequence)) {
+		sqp->sqf = sqf = sqp->seq->ob_type->tp_as_sequence;
+		if (sqf == NULL ||
+		    sqf->sq_length == NULL ||
+		    sqf->sq_item == NULL)
+		{
 			static char errmsg[] =
 			    "argument %d to map() must be a sequence object";
 			char errbuf[sizeof(errmsg) + 25];
@@ -916,15 +882,7 @@ builtin_int(self, args)
 
 	if (!PyArg_ParseTuple(args, "O:int", &v))
 		return NULL;
-	if (PyString_Check(v))
-		return int_from_string(v);
-	if ((nb = v->ob_type->tp_as_number) == NULL ||
-	    nb->nb_int == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			   "int() argument can't be converted to int");
-		return NULL;
-	}
-	return (*nb->nb_int)(v);
+	return PyNumber_Int(v);
 }
 
 static PyObject *
@@ -933,26 +891,10 @@ builtin_len(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	long len;
-	PyTypeObject *tp;
 
 	if (!PyArg_ParseTuple(args, "O:len", &v))
 		return NULL;
-	tp = v->ob_type;
-	if (tp->tp_as_sequence != NULL) {
-		len = (*tp->tp_as_sequence->sq_length)(v);
-	}
-	else if (tp->tp_as_mapping != NULL) {
-		len = (*tp->tp_as_mapping->mp_length)(v);
-	}
-	else {
-		PyErr_SetString(PyExc_TypeError, "len() of unsized object");
-		return NULL;
-	}
-	if (len < 0)
-		return NULL;
-	else
-		return PyInt_FromLong(len);
+	return PyInt_FromLong((long)PyObject_Length(v));
 }
 
 static PyObject *
@@ -961,33 +903,10 @@ builtin_list(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	PySequenceMethods *sqf;
 
 	if (!PyArg_ParseTuple(args, "O:list", &v))
 		return NULL;
-	if ((sqf = v->ob_type->tp_as_sequence) != NULL) {
-		int n = (*sqf->sq_length)(v);
-		int i;
-		PyObject *l;
-		if (n < 0)
-			return NULL;
-		l = PyList_New(n);
-		if (l == NULL)
-			return NULL;
-		for (i = 0; i < n; i++) {
-			PyObject *item = (*sqf->sq_item)(v, i);
-			if (item == NULL) {
-				Py_DECREF(l);
-				l = NULL;
-				break;
-			}
-			PyList_SetItem(l, i, item);
-		}
-		/* XXX Should support indefinite-length sequences */
-		return l;
-	}
-	PyErr_SetString(PyExc_TypeError, "list() argument must be a sequence");
-	return NULL;
+	return PySequence_List(v);
 }
 
 
@@ -996,20 +915,20 @@ builtin_slice(self, args)
      PyObject *self;
      PyObject *args;
 {
-  PyObject *start, *stop, *step;
+	PyObject *start, *stop, *step;
 
-  start = stop = step = NULL;
+	start = stop = step = NULL;
 
-  if (!PyArg_ParseTuple(args, "O|OO:slice", &start, &stop, &step))
-    return NULL;
+	if (!PyArg_ParseTuple(args, "O|OO:slice", &start, &stop, &step))
+		return NULL;
 
-  /*This swapping of stop and start is to maintain compatibility with
-    the range builtin.*/
-  if (stop == NULL) {
-    stop = start;
-    start = NULL;
-  }
-  return PySlice_New(start, stop, step);
+	/* This swapping of stop and start is to maintain similarity with
+	   range(). */
+	if (stop == NULL) {
+		stop = start;
+		start = NULL;
+	}
+	return PySlice_New(start, stop, step);
 }
 
 static PyObject *
@@ -1032,19 +951,10 @@ builtin_long(self, args)
 	PyObject *args;
 {
 	PyObject *v;
-	PyNumberMethods *nb;
 	
 	if (!PyArg_ParseTuple(args, "O:long", &v))
 		return NULL;
-	if (PyString_Check(v))
-		return long_from_string(v);
-	if ((nb = v->ob_type->tp_as_number) == NULL ||
-	    nb->nb_long == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-			   "long() argument can't be converted to long");
-		return NULL;
-	}
-	return (*nb->nb_long)(v);
+	return PyNumber_Long(v);
 }
 
 static PyObject *
@@ -1061,7 +971,7 @@ min_max(args, sign)
 	else if (!PyArg_ParseTuple(args, "O:min/max", &v))
 		return NULL;
 	sq = v->ob_type->tp_as_sequence;
-	if (sq == NULL) {
+	if (sq == NULL || sq->sq_item == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 				"min() or max() of non-sequence");
 		return NULL;
@@ -1166,79 +1076,15 @@ builtin_ord(self, args)
 }
 
 static PyObject *
-do_pow(v, w)
-	PyObject *v, *w;
-{
-	PyObject *res;
-	if (PyInstance_Check(v) || PyInstance_Check(w))
-		return PyInstance_DoBinOp(v, w, "__pow__", "__rpow__", do_pow);
-	if (v->ob_type->tp_as_number == NULL ||
-	    w->ob_type->tp_as_number == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"pow() requires numeric arguments");
-		return NULL;
-	}
-	if (
-#ifndef WITHOUT_COMPLEX
-            !PyComplex_Check(v) && 
-#endif
-            PyFloat_Check(w) && PyFloat_AsDouble(v) < 0.0) {
-		if (!PyErr_Occurred())
-		    PyErr_SetString(PyExc_ValueError,
-				    "negative number to float power");
-		return NULL;
-	}
-	if (PyNumber_Coerce(&v, &w) != 0)
-		return NULL;
-	res = (*v->ob_type->tp_as_number->nb_power)(v, w, Py_None);
-	Py_DECREF(v);
-	Py_DECREF(w);
-	return res;
-}
-
-static PyObject *
 builtin_pow(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	PyObject *v, *w, *z = Py_None, *res;
-	PyObject *v1, *z1, *w2, *z2;
+	PyObject *v, *w, *z = Py_None;
 
 	if (!PyArg_ParseTuple(args, "OO|O:pow", &v, &w, &z))
 		return NULL;
-	if (z == Py_None)
-		return do_pow(v, w);
-	/* XXX The ternary version doesn't do class instance coercions */
-	if (PyInstance_Check(v))
-		return v->ob_type->tp_as_number->nb_power(v, w, z);
-	if (v->ob_type->tp_as_number == NULL ||
-	    z->ob_type->tp_as_number == NULL ||
-	    w->ob_type->tp_as_number == NULL) {
-		PyErr_SetString(PyExc_TypeError,
-				"pow() requires numeric arguments");
-		return NULL;
-	}
-	if (PyNumber_Coerce(&v, &w) != 0)
-		return NULL;
-	res = NULL;
-	v1 = v;
-	z1 = z;
-	if (PyNumber_Coerce(&v1, &z1) != 0)
-		goto error2;
-	w2 = w;
-	z2 = z1;
- 	if (PyNumber_Coerce(&w2, &z2) != 0)
-		goto error1;
-	res = (*v1->ob_type->tp_as_number->nb_power)(v1, w2, z2);
-	Py_DECREF(w2);
-	Py_DECREF(z2);
- error1:
-	Py_DECREF(v1);
-	Py_DECREF(z1);
- error2:
-	Py_DECREF(v);
-	Py_DECREF(w);
-	return res;
+	return PyNumber_Power(v, w, z);
 }
 
 static PyObject *
@@ -1401,7 +1247,8 @@ builtin_reduce(self, args)
 	if (result != NULL)
 		Py_INCREF(result);
 
-	if ((sqf = seq->ob_type->tp_as_sequence) == NULL) {
+	sqf = seq->ob_type->tp_as_sequence;
+	if (sqf == NULL || sqf->sq_item == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 		    "2nd argument to reduce() must be a sequence object");
 		return NULL;
@@ -1528,57 +1375,7 @@ builtin_tuple(self, args)
 
 	if (!PyArg_ParseTuple(args, "O:tuple", &v))
 		return NULL;
-	if (PyTuple_Check(v)) {
-		Py_INCREF(v);
-		return v;
-	}
-	if (PyList_Check(v))
-		return PyList_AsTuple(v);
-	if (PyString_Check(v)) {
-		int n = PyString_Size(v);
-		PyObject *t = PyTuple_New(n);
-		if (t != NULL) {
-			int i;
-			char *p = PyString_AsString(v);
-			for (i = 0; i < n; i++) {
-				PyObject *item =
-					PyString_FromStringAndSize(p+i, 1);
-				if (item == NULL) {
-					Py_DECREF(t);
-					t = NULL;
-					break;
-				}
-				PyTuple_SetItem(t, i, item);
-			}
-		}
-		return t;
-	}
-	/* Generic sequence object */
-	if ((sqf = v->ob_type->tp_as_sequence) != NULL) {
-		int n = (*sqf->sq_length)(v);
-		int i;
-		PyObject *t;
-		if (n < 0)
-			return NULL;
-		t = PyTuple_New(n);
-		if (t == NULL)
-			return NULL;
-		for (i = 0; i < n; i++) {
-			PyObject *item = (*sqf->sq_item)(v, i);
-			if (item == NULL) {
-				Py_DECREF(t);
-				t = NULL;
-				break;
-			}
-			PyTuple_SetItem(t, i, item);
-		}
-		/* XXX Should support indefinite-length sequences */
-		return t;
-	}
-	/* None of the above */
-	PyErr_SetString(PyExc_TypeError,
-			"tuple() argument must be a sequence");
-	return NULL;
+	return PySequence_Tuple(v);
 }
 
 static PyObject *
@@ -1815,6 +1612,7 @@ init_class_exc(dict)
 	if (m == NULL ||
 	    (d = PyModule_GetDict(m)) == NULL)
 	{
+		/* XXX Should use PySys_WriteStderr here */
 		PyObject *f = PySys_GetObject("stderr");
 		if (Py_VerboseFlag) {
 			PyFile_WriteString(
@@ -2092,118 +1890,4 @@ filterstring(func, strobj)
 Fail_1:
 	Py_DECREF(result);
 	return NULL;
-}
-
-/* Copied with modifications from stropmodule.c: atoi,atof.atol */
-
-static PyObject *
-int_from_string(v)
-	PyObject *v;
-{
-	extern long PyOS_strtol Py_PROTO((const char *, char **, int));
-	char *s, *end;
-	long x;
-	char buffer[256]; /* For errors */
-
-	s = PyString_AS_STRING(v);
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for int()");
-		return NULL;
-	}
-	errno = 0;
-	x = PyOS_strtol(s, &end, 10);
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-		sprintf(buffer, "invalid literal for int(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	else if (end-s != PyString_GET_SIZE(v)) {
-		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for int()");
-		return NULL;
-	}
-	else if (errno != 0) {
-		sprintf(buffer, "int() literal too large: %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	return PyInt_FromLong(x);
-}
-
-static PyObject *
-long_from_string(v)
-	PyObject *v;
-{
-	char *s, *end;
-	PyObject *x;
-	char buffer[256]; /* For errors */
-
-	s = PyString_AS_STRING(v);
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for long()");
-		return NULL;
-	}
-	x = PyLong_FromString(s, &end, 10);
-	if (x == NULL)
-		return NULL;
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-		sprintf(buffer, "invalid literal for long(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		Py_DECREF(x);
-		return NULL;
-	}
-	else if (end-s != PyString_GET_SIZE(v)) {
-		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for float()");
-		return NULL;
-	}
-	return x;
-}
-
-static PyObject *
-float_from_string(v)
-	PyObject *v;
-{
-	extern double strtod Py_PROTO((const char *, char **));
-	char *s, *end;
-	double x;
-	char buffer[256]; /* For errors */
-
-	s = PyString_AS_STRING(v);
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	if (s[0] == '\0') {
-		PyErr_SetString(PyExc_ValueError, "empty string for float()");
-		return NULL;
-	}
-	errno = 0;
-	PyFPE_START_PROTECT("float_from_string", return 0)
-	x = strtod(s, &end);
-	PyFPE_END_PROTECT(x)
-	while (*end && isspace(Py_CHARMASK(*end)))
-		end++;
-	if (*end != '\0') {
-		sprintf(buffer, "invalid literal for float(): %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	else if (end-s != PyString_GET_SIZE(v)) {
-		PyErr_SetString(PyExc_ValueError,
-				"null byte in argument for float()");
-		return NULL;
-	}
-	else if (errno != 0) {
-		sprintf(buffer, "float() literal too large: %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
-	}
-	return PyFloat_FromDouble(x);
 }
