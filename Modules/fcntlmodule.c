@@ -199,7 +199,7 @@ PyDoc_STRVAR(ioctl_doc,
 "ioctl(fd, opt[, arg[, mutate_flag]])\n\
 \n\
 Perform the requested operation on file descriptor fd.  The operation is\n\
-defined by op and is operating system dependent.  Typically these codes are\n\
+defined by opt and is operating system dependent.  Typically these codes are\n\
 retrieved from the fcntl or termios library modules.\n\
 \n\
 The argument arg is optional, and defaults to 0; it may be an int or a\n\
