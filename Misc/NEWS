@@ -101,6 +101,8 @@ Tools/Demos
 Build
 -----
 
+- Patch #798202: detect redhat9 Tcl/Tk in configure script.
+
 C API
 -----
 
