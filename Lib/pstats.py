@@ -116,13 +116,10 @@ class Stats:
 			except:  # in case this is not unix
 				pass
 			self.files = [ arg ]
-		elif type(arg) == type(self):
-			try:
-				arg.create_stats()
-				self.stats = arg.stats
-				arg.stats = {}
-			except:
-				pass
+		elif hasattr(arg, 'create_stats'):
+			arg.create_stats()
+			self.stats = arg.stats
+			arg.stats = {}
 		if not self.stats:
 			raise TypeError,  "Cannot create or construct a " \
 				  + `self.__class__` \

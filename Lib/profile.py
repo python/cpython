@@ -43,11 +43,10 @@ import marshal
 # Global variables
 func_norm_dict = {}
 func_norm_counter = 0
-pid_string = `os.getpid()`
-
-
-# Optimized intermodule references
-ostimes = os.times
+if hasattr(os, 'getpid'):
+	pid_string = `os.getpid()`
+else:
+	pid_string = ''
 
 
 # Sample timer for use with 
@@ -137,7 +136,7 @@ def help():
 #**************************************************************************
 class Profile:
 
-	def __init__(self, *arg):
+	def __init__(self, timer=None):
 		self.timings = {}
 		self.cur = None
 		self.cmd = ""
@@ -148,18 +147,22 @@ class Profile:
 			  'exception': self.trace_dispatch_exception, \
 			  }
 
-		if not arg:
-			self.timer = os.times
-			self.dispatcher = self.trace_dispatch
+		if not timer:
+			if hasattr(os, 'times'):
+				self.timer = os.times
+				self.dispatcher = self.trace_dispatch
+			else:
+				self.timer = time.time
+				self.dispatcher = self.trace_dispatch_i
 		else:
-			self.timer = arg[0]
+			self.timer = timer
 			t = self.timer() # test out timer function
 			try:
 				if len(t) == 2:
 					self.dispatcher = self.trace_dispatch
 				else:
-					self.dispatcher = self.trace_dispatch_r
-			except:
+					self.dispatcher = self.trace_dispatch_l
+			except TypeError:
 				self.dispatcher = self.trace_dispatch_i
 		self.t = self.get_time()
 		self.simulate_call('profiler')
@@ -373,9 +376,9 @@ class Profile:
 			return func_norm_dict[func_name]
 		if type(func_name) == type(""):
 			long_name = string.split(func_name)
-			file_name = long_name[6][1:-2]
+			file_name = long_name[-3][1:-2]
 			func = long_name[2]
-			lineno = long_name[8][:-1]
+			lineno = long_name[-1][:-1]
 			if '?' == func:   # Until I find out how to may 'em...
 				file_name = 'python'
 				func_norm_counter = func_norm_counter + 1
@@ -398,7 +401,7 @@ class Profile:
 	
 	def runctx(self, cmd, globals, locals):
 		self.set_cmd(cmd)
-		sys.setprofile(self.trace_dispatch)
+		sys.setprofile(self.dispatcher)
 		try:
 			exec cmd in globals, locals
 		finally:
@@ -407,7 +410,7 @@ class Profile:
 	# This method is more useful to profile a single function call.
 	def runcall(self, func, *args):
 		self.set_cmd(`func`)
-		sys.setprofile(self.trace_dispatch)
+		sys.setprofile(self.dispatcher)
 		try:
 			apply(func, args)
 		finally:
