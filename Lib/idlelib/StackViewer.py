@@ -1,24 +1,27 @@
+import os
+import sys
 import string
-from Tkinter import *
 import linecache
 
 from TreeWidget import TreeNode, TreeItem, ScrolledCanvas
 from ObjectBrowser import ObjectTreeItem, make_objecttreeitem
 from OldStackViewer import StackViewer, NamespaceViewer
 
-def StackBrowser(root, flist=None, stack=None):
-    top = Toplevel(root)
+def StackBrowser(root, flist=None, tb=None, top=None):
+    if top is None:
+        from Tkinter import Toplevel
+        top = Toplevel(root)
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
-    item = StackTreeItem(flist)
+    item = StackTreeItem(flist, tb)
     node = TreeNode(sc.canvas, None, item)
     node.expand()
 
 class StackTreeItem(TreeItem):
 
-    def __init__(self, flist=None):
+    def __init__(self, flist=None, tb=None):
         self.flist = flist
-        self.stack = get_stack()
+        self.stack = get_stack(tb)
         self.text = get_exception()
 
     def GetText(self):
@@ -71,8 +74,8 @@ class FrameTreeItem(TreeItem):
         if self.flist:
             frame, lineno = self.info
             filename = frame.f_code.co_filename
-            edit = self.flist.open(filename)
-            edit.gotoline(lineno)
+            if os.path.isfile(filename):
+                self.flist.gotofileline(filename, lineno)
 
 class VariablesTreeItem(ObjectTreeItem):
 
@@ -129,7 +132,16 @@ def get_exception(type=None, value=None):
         s = s + ": " + str(value)
     return s
 
-if __name__ == "__main__":
+def _test():
+    try:
+        import testcode
+        reload(testcode)
+    except:
+        sys.last_type, sys.last_value, sys.last_traceback = sys.exc_info()
+    from Tkinter import Tk
     root = Tk()
-    root.withdraw()
-    StackBrowser(root)
+    StackBrowser(None, top=root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    _test()
