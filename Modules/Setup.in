@@ -232,11 +232,6 @@ rotor rotormodule.c		# enigma-inspired encryption
 #dl dlmodule.c
 
 
-# Jack Jansen's imgformat module
-
-#imgformat imgformat.c
-
-
 # Anthony Baxter's gdbm module (derived from Jack's dbm module)
 # GNU dbm(3) will require -lgdbm
 
