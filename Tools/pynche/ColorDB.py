@@ -14,6 +14,7 @@ Supporte file types are:
 """
 
 import sys
+import string
 import re
 from types import *
 
@@ -31,10 +32,10 @@ class ColorDB:
 	# for now we only support 8 bit intensities.  At least on OpenWindows, 
 	# all intensities in the /usr/openwin/lib/rgb.txt file are 8-bit
 	#
-	# key is rrggbb, value is (name, [aliases])
-	self.__byrrggbb = {}
+	# key is (red, green, blue) tuple, value is (name, [aliases])
+	self.__byrgb = {}
 	#
-	# key is name, value is (red, green, blue, rrggbb)
+	# key is name, value is (red, green, blue)
 	self.__byname = {}
 	#
 	while 1:
@@ -49,35 +50,34 @@ class ColorDB:
 		continue
 	    #
 	    # extract the red, green, blue, and name
+	    #
 	    red, green, blue = map(int, mo.group('red', 'green', 'blue'))
 	    name = mo.group('name')
-	    #
-	    # calculate the 24 bit representation of the color
-	    rrggbb = (red << 16) + (blue << 8) + green
+	    keyname = string.lower(name)
 	    #
 	    # TBD: for now the `name' is just the first named color with the
 	    # rgb values we find.  Later, we might want to make the two word
 	    # version the `name', or the CapitalizedVersion, etc.
-	    foundname, aliases = self.__byrrggbb.get(rrggbb, (name, []))
+	    #
+	    key = (red, green, blue)
+	    foundname, aliases = self.__byrgb.get(key, (name, []))
 	    if foundname <> name and foundname not in aliases:
 		aliases.append(name)
-	    #
-	    # add to by 24bit value
-	    self.__byrrggbb[rrggbb] = (foundname, aliases)
+	    self.__byrgb[key] = (foundname, aliases)
 	    #
 	    # add to byname lookup
-	    point = (red, green, blue, rrggbb)
-	    self.__byname[name] = point
+	    #
+	    self.__byname[keyname] = key
 	    lineno = lineno + 1
 
-    def find(self, red, green, blue):
-	rrggbb = (red << 16) + (blue << 8) + green
+    def find_byrgb(self, rgbtuple):
 	try:
-	    return self.__byrrggbb[rrggbb]
+	    return self.__byrgb[rgbtuple]
 	except KeyError:
-	    raise BadColor(red, green, blue)
+	    raise BadColor(rgbtuple)
 
     def find_byname(self, name):
+	name = string.lower(name)
 	try:
 	    return self.__byname[name]
 	except KeyError:
@@ -85,13 +85,13 @@ class ColorDB:
 
     def nearest(self, rgbtuple):
 	# TBD: use Voronoi diagrams, Delaunay triangulation, or octree for
-	# speeding up the locating of nearest point.  This is really
-	# inefficient!
+	# speeding up the locating of nearest point.  Exhaustive search is
+	# inefficient, but may be fast enough.
 	red, green, blue = rgbtuple
 	nearest = -1
 	nearest_name = ''
-	for name, aliases in self.__byrrggbb.values():
-	    r, g, b, rrggbb = self.__byname[name]
+	for name, aliases in self.__byrgb.values():
+	    r, g, b = self.__byname[string.lower(name)]
 	    rdelta = red - r
 	    gdelta = green - g
 	    bdelta = blue - b
@@ -175,9 +175,9 @@ if __name__ == '__main__':
     # on my system, this color matches exactly
     target = 'navy'
     target = 'snow'
-    red, green, blue, rrggbb = colordb.find_byname(target)
+    red, green, blue = colordb.find_byname(target)
     print target, ':', red, green, blue, hex(rrggbb)
-    name, aliases = colordb.find(red, green, blue)
+    name, aliases = colordb.find_byrgb((red, green, blue))
     print 'name:', name, 'aliases:', string.join(aliases, ", ")
     target = (1, 1, 128)			  # nearest to navy
     target = (145, 238, 144)			  # nearest to lightgreen
