@@ -41,6 +41,25 @@ class TupleTest(seq_tests.CommonTest):
                 yield i
         self.assertEqual(list(tuple(f())), range(1000))
 
+    def test_hash(self):
+        # See SF bug 942952:  Weakness in tuple hash
+        # The hash should:
+        #      be non-commutative
+        #      should spread-out closely spaced values
+        #      should not exhibit cancellation in tuples like (x,(x,y))
+        #      should be distinct from element hashes:  hash(x)!=hash((x,))
+        # This test exercises those cases.
+        # For a pure random hash and N=50, the expected number of collisions
+        #      is 7.3.  Here we allow twice that number.
+        #      Any worse and the hash function is sorely suspect.
+
+        N=50
+        base = range(N)
+        xp = [(i, j) for i in base for j in base]
+        inps = base + [(i, j) for i in base for j in xp] + \
+                     [(i, j) for i in xp for j in base] + xp + zip(base)
+        collisions = len(inps) - len(set(map(hash, inps)))
+        self.assert_(collisions <= 15)
 
 def test_main():
     test_support.run_unittest(TupleTest)

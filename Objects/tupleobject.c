@@ -262,15 +262,16 @@ tuplehash(PyTupleObject *v)
 	register long x, y;
 	register int len = v->ob_size;
 	register PyObject **p;
+	long mult = 1000003L;
 	x = 0x345678L;
 	p = v->ob_item;
 	while (--len >= 0) {
 		y = PyObject_Hash(*p++);
 		if (y == -1)
 			return -1;
-		x = (1000003*x) ^ y;
+		x = (x ^ y) * mult;
+		mult += 69068L + len + len;
 	}
-	x ^= v->ob_size;
 	if (x == -1)
 		x = -2;
 	return x;
