@@ -568,9 +568,9 @@ a_expr:         m_expr | aexpr "+" m_expr | aexpr "-" m_expr
 
 The \code{*} (multiplication) operator yields the product of its
 arguments.  The arguments must either both be numbers, or one argument
-must be a plain integer and the other must be a sequence.  In the
-former case, the numbers are converted to a common type and then
-multiplied together.  In the latter case, sequence repetition is
+must be an integer (plain or long) and the other must be a sequence.
+In the former case, the numbers are converted to a common type and
+then multiplied together.  In the latter case, sequence repetition is
 performed; a negative repetition factor yields an empty sequence.
 \index{multiplication}
 
