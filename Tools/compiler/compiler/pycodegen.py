@@ -167,8 +167,7 @@ class CodeGenerator:
         self.curStack = 0
         self.maxStack = 0
 
-    def generateFunctionCode(self, func, filename='<?>'):
-        """Generate code for a function body"""
+    def _generateFunctionOrLambdaCode(self, func, filename):
         self.name = func.name
         self.filename = filename
         args = func.argnames
@@ -183,7 +182,15 @@ class CodeGenerator:
         self.locals.push(lnf.getLocals())
 	self.code.setLineNo(func.lineno)
         walk(func.code, self)
+
+    def generateFunctionCode(self, func, filename='<?>'):
+        """Generate code for a function body"""
+        self._generateFunctionOrLambdaCode(func, filename)
         self.code.emit('LOAD_CONST', None)
+        self.code.emit('RETURN_VALUE')
+
+    def generateLambdaCode(self, func, filename='<?>'):
+        self._generateFunctionOrLambdaCode(func, filename)
         self.code.emit('RETURN_VALUE')
 
     def emit(self):
@@ -267,15 +274,26 @@ class CodeGenerator:
             self.code.emit('IMPORT_FROM', name)
         self.code.emit('POP_TOP')
 
-    def visitFunction(self, node):
+    def _visitFuncOrLambda(self, node, kind):
+        """Code common to Function and Lambda nodes"""
         codeBody = CodeGenerator()
-        codeBody.generateFunctionCode(node, filename=self.filename)
+        meth = getattr(codeBody, 'generate%sCode' % kind)
+        meth(node, filename=self.filename)
         self.code.setLineNo(node.lineno)
         for default in node.defaults:
             self.visit(default)
         self.code.emit('LOAD_CONST', codeBody)
         self.code.emit('MAKE_FUNCTION', len(node.defaults))
+
+    def visitFunction(self, node):
+        self._visitFuncOrLambda(node, 'Function')
         self.storeName(node.name)
+        return 1
+
+    def visitLambda(self, node):
+        node.name = '<lambda>'
+        node.varargs = node.kwargs = None
+        self._visitFuncOrLambda(node, 'Lambda')
         return 1
 
     def visitCallFunc(self, node):
@@ -649,6 +667,9 @@ class LocalNameFinder:
         self.names.add(node.name)
 	return 1
 
+    def visitLambda(self, node):
+        return 1
+
     def visitImport(self, node):
 	for name in node.names:
 	    self.names.add(name)
@@ -878,10 +899,9 @@ class PythonVMCode:
         if op == 'LOAD_CONST':
             return self._lookupName(arg, self.consts)
         if op in self.localOps:
-            if arg in self.names:
-                return self._lookupName(arg, self.varnames)
-            else:
-                return self._lookupName(arg, self.varnames, self.names)
+            # make sure it's in self.names, but use the bytecode offset
+            self._lookupName(arg, self.names)
+            return self._lookupName(arg, self.varnames)
         if op in self.globalOps:
             return self._lookupName(arg, self.names)
         if op in self.nameOps:
