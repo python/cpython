@@ -260,6 +260,7 @@ ELLIPSIS = register_optionflag('ELLIPSIS')
 REPORT_UDIFF = register_optionflag('REPORT_UDIFF')
 REPORT_CDIFF = register_optionflag('REPORT_CDIFF')
 REPORT_NDIFF = register_optionflag('REPORT_NDIFF')
+REPORT_ONLY_FIRST_FAILURE = register_optionflag('REPORT_ONLY_FIRST_FAILURE')
 
 # Special string markers for use in `want` strings:
 BLANKLINE_MARKER = '<BLANKLINE>'
@@ -1280,7 +1281,6 @@ class DocTestRunner:
         """
         Report that the given example failed.
         """
-        # Print an error message.
         out(self._failure_header(test, example) +
             self._checker.output_difference(example.want, got,
                                             self.optionflags))
@@ -1331,6 +1331,11 @@ class DocTestRunner:
 
         # Process each example.
         for example in test.examples:
+            # If REPORT_ONLY_FIRST_FAILURE is set, then supress
+            # reporting after the first failure.
+            quiet = (self.optionflags & REPORT_ONLY_FIRST_FAILURE and
+                     failures > 0)
+
             # Merge in the example's options.
             self.optionflags = original_optionflags
             if example.options:
@@ -1342,7 +1347,8 @@ class DocTestRunner:
 
             # Record that we started this example.
             tries += 1
-            self.report_start(out, test, example)
+            if not quiet:
+                self.report_start(out, test, example)
 
             # Run the example in the given context (globs), and record
             # any exception that gets raised.  (But don't intercept
@@ -1365,9 +1371,11 @@ class DocTestRunner:
             if exception is None:
                 if self._checker.check_output(example.want, got,
                                               self.optionflags):
-                    self.report_success(out, test, example, got)
+                    if not quiet:
+                        self.report_success(out, test, example, got)
                 else:
-                    self.report_failure(out, test, example, got)
+                    if not quiet:
+                        self.report_failure(out, test, example, got)
                     failures += 1
 
             # If the example raised an exception, then check if it was
@@ -1379,19 +1387,22 @@ class DocTestRunner:
                 # If `example.exc_msg` is None, then we weren't
                 # expecting an exception.
                 if example.exc_msg is None:
-                    self.report_unexpected_exception(out, test, example,
-                                                     exc_info)
+                    if not quiet:
+                        self.report_unexpected_exception(out, test, example,
+                                                         exc_info)
                     failures += 1
                 # If `example.exc_msg` matches the actual exception
                 # message (`exc_msg`), then the example succeeds.
                 elif (self._checker.check_output(example.exc_msg, exc_msg,
                                                  self.optionflags)):
-                    self.report_success(out, test, example,
-                                        got + _exception_traceback(exc_info))
+                    if not quiet:
+                        got += _exception_traceback(exc_info)
+                        self.report_success(out, test, example, got)
                 # Otherwise, the example fails.
                 else:
-                    self.report_failure(out, test, example,
-                                        got + _exception_traceback(exc_info))
+                    if not quiet:
+                        got += _exception_traceback(exc_info)
+                        self.report_failure(out, test, example, got)
                     failures += 1
 
         # Restore the option flags (in case they were modified)
@@ -1842,6 +1853,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
         REPORT_UDIFF
         REPORT_CDIFF
         REPORT_NDIFF
+        REPORT_ONLY_FIRST_FAILURE
 
     Optional keyword arg "raise_on_error" raises an exception on the
     first unexpected exception or failure. This allows failures to be

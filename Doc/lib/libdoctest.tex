@@ -364,6 +364,17 @@ can also be used in doctest directives (see below).
     positions.
 \end{datadesc}
 
+\begin{datadesc}{REPORT_ONLY_FIRST_FAILURE}
+  When specified, display the first failing example in each doctest,
+  but suppress output for all remaining examples.  This will prevent
+  doctest from reporting correct examples that break because of
+  earlier failures; but it might also hide incorrect examples that
+  fail independently of the first failure.  When
+  \constant{REPORT_ONLY_FIRST_FAILURE} is specified, the remaining
+  examples are still run, and still count towards the total number of
+  failures reported; only the output is suppressed.
+\end{datadesc}
+
 A "doctest directive" is a trailing Python comment on a line of a doctest
 example:
 
@@ -421,8 +432,8 @@ can be useful.
 
 \versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
-    \constant{REPORT_UDIFF}, \constant{REPORT_CDIFF}, and
-    \constant{REPORT_NDIFF}
+    \constant{REPORT_UDIFF}, \constant{REPORT_CDIFF},
+    \constant{REPORT_NDIFF}, and \constant{REPORT_ONLY_FIRST_FAILURE}
     were added; by default \code{<BLANKLINE>} in expected output
     matches an empty line in actual output; and doctest directives
     were added]{2.4}
