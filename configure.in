@@ -1007,7 +1007,6 @@ AC_MSG_RESULT($was_it_defined)
 
 AC_C_CHAR_UNSIGNED
 AC_C_CONST
-AC_C_INLINE
 
 works=no
 AC_MSG_CHECKING(for working volatile)
