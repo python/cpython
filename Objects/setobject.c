@@ -104,7 +104,23 @@ set_len(PySetObject *so)
 static int
 set_contains(PySetObject *so, PyObject *key)
 {
-	return PySequence_Contains(so->data, key);
+	PyObject *olddict;
+	PySetObject *tmp;
+	int result;
+
+	result = PySequence_Contains(so->data, key);
+	if (result == -1 && PyType_IsSubtype(key->ob_type, &PySet_Type)) {
+		PyErr_Clear();
+		tmp = (PySetObject *)make_new_set(&PyFrozenSet_Type, NULL);
+		if (tmp == NULL)
+			return -1;
+		olddict = tmp->data;
+		tmp->data = ((PySetObject *)(key))->data;
+		result = PySequence_Contains(so->data, (PyObject *)tmp);
+		tmp->data = olddict;
+		Py_DECREF(tmp);
+	}
+	return result;
 }
 
 static PyObject *
