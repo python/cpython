@@ -1,4 +1,5 @@
 \section{Standard Module \sectcode{StringIO}}
+\label{module-StringIO}
 
 \stmodindex{StringIO}
 
@@ -10,5 +11,7 @@ When a \code{StringIO} object is created, it can be initialized
 to an existing string by passing the string to the constructor.
 If no string is given, the \code{StringIO} will start empty.
 
-The method \code{getvalue()} can be called to retrieve the
-entire contents of the ``file'' at any time.
+The method \code{getvalue()} can be called to retrieve the entire
+contents of the ``file'' at any time before the \code{StringIO}
+object's \code{close()} method is called.  Calling \code{close()} will
+free the memory buffer.
