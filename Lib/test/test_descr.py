@@ -2374,6 +2374,8 @@ def keywords():
                              "argument to %r" % constructor)
 
 def restricted():
+    # XXX This test is disabled because rexec is not deemed safe
+    return
     import rexec
     if verbose:
         print "Testing interaction with restricted execution ..."
