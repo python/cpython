@@ -220,8 +220,8 @@ TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 TESTPYTHON=	./python$(EXE) -tt
 test:		all platform
 		-rm -f $(srcdir)/Lib/test/*.py[co]
-		-PYTHONPATH=$(srcdir)/build/lib.`cat platform` $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
-		PYTHONPATH=$(srcdir)/build/lib.`cat platform` $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
+		-PYTHONPATH=./build/lib.`cat platform` $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
+		PYTHONPATH=./build/lib.`cat platform` $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 
 # Install everything
 install:	altinstall bininstall maninstall
