@@ -214,9 +214,8 @@ def process(template, filename, output):
 	
 	CloseResFile(output)
 	
-	# Give positive feedback
-	
-	message("Applet %s created." % `destname`)
+	if DEBUG:
+		print "Applet created:", destname
 
 
 # Copy resources between two resource file descriptors.
