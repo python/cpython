@@ -525,19 +525,25 @@ Other constructors, all class methods:
   See also \method{now()}, \method{fromtimestamp()}.
 \end{methoddesc}
 
-\begin{methoddesc}{now}{}
-  Return the current local datetime.  This is like \method{today()},
-  but, if possible, supplies more precision than can be gotten from
-  going through a \function{time.time()} timestamp (for example,
-  this may be possible on platforms that supply the C
+\begin{methoddesc}{now(tz=None)}{}
+  Return the current local date and time.  If optional argument
+  \var{tz} is \code{None} or not specified, this is like
+  \method{today()}, but, if possible, supplies more precision than can
+  be gotten from going through a \function{time.time()} timestamp (for
+  example, this may be possible on platforms supplying the C
   \cfunction{gettimeofday()} function).
+
+  Else \var{tz} must be an instance of a class \class{tzinfo} subclass,
+  and the current date and time are translated to \var{tz}'s time
+  zone.  In this case the result is equivalent to
+  \code{\var{tz}.fromutc(datetime.utcnow().replace(tzinfo=\var{tz})}.
   See also \method{today()}, \method{utcnow()}.
 \end{methoddesc}
 
 \begin{methoddesc}{utcnow}{}
-  Return the current UTC datetime, with \member{tzinfo} \code{None}.
-  This is like \method{now()}, but
-  returns the current UTC date and time.
+  Return the current UTC date and time, with \member{tzinfo} \code{None}.
+  This is like \method{now()}, but  returns the current UTC date and time,
+  as a naive \class{datetime} object.
   See also \method{now()}.
 \end{methoddesc}
 

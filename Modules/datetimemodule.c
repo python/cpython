@@ -3666,15 +3666,25 @@ datetime_best_possible(PyObject *cls, TM_FUNC f, PyObject *tzinfo)
 static PyObject *
 datetime_now(PyObject *cls, PyObject *args, PyObject *kw)
 {
-	PyObject *self = NULL;
+	PyObject *self;
 	PyObject *tzinfo = Py_None;
-	static char *keywords[] = {"tzinfo", NULL};
+	static char *keywords[] = {"tz", NULL};
 
-	if (PyArg_ParseTupleAndKeywords(args, kw, "|O:now", keywords,
-					&tzinfo)) {
-		if (check_tzinfo_subclass(tzinfo) < 0)
-			return NULL;
-		self = datetime_best_possible(cls, localtime, tzinfo);
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "|O:now", keywords,
+					  &tzinfo))
+		return NULL;
+	if (check_tzinfo_subclass(tzinfo) < 0)
+		return NULL;
+
+	self = datetime_best_possible(cls,
+				      tzinfo == Py_None ? localtime : gmtime,
+				      tzinfo);
+	if (self != NULL && tzinfo != Py_None) {
+		/* Convert UTC to tzinfo's zone. */
+		PyObject *temp = self;
+		self = PyObject_CallMethod(tzinfo, "fromutc",
+					   "O", self);
+		Py_DECREF(temp);
 	}
 	return self;
 }
