@@ -1083,13 +1083,14 @@ sub do_env_tableii{
     my $a2 = $col_aligns[1];
     s/\\lineii</\\lineii[$a1|$a2]</g;
     return '<table border align="center" style="border-collapse: collapse">'
-           . "\n  <thead>"
-           . "\n    <tr class=\"tableheader\">"
+	   . "\n  <thead>"
+	   . "\n    <tr class=\"tableheader\">"
 	   . "\n      $th1<b>$h1</b>\&nbsp;</th>"
 	   . "\n      $th2<b>$h2</b>\&nbsp;</th>"
+	   . "\n      </tr>"
 	   . "\n    </thead>"
 	   . "\n  <tbody valign='baseline'>"
-           . $_
+	   . $_
 	   . "\n    </tbody>"
 	   . "\n</table>";
 }
@@ -1130,11 +1131,12 @@ sub do_env_tableiii{
     my $a3 = $col_aligns[2];
     s/\\lineiii</\\lineiii[$a1|$a2|$a3]</g;
     return '<table border align="center" style="border-collapse: collapse">'
-           . "\n  <thead>"
-           . "\n    <tr$TABLE_HEADER_BGCOLOR>"
+	   . "\n  <thead>"
+	   . "\n    <tr class=\"tableheader\">"
 	   . "\n      $th1<b>$h1</b>\&nbsp;</th>"
 	   . "\n      $th2<b>$h2</b>\&nbsp;</th>"
 	   . "\n      $th3<b>$h3</b>\&nbsp;</th>"
+	   . "\n      </tr>"
 	   . "\n    </thead>"
 	   . "\n  <tbody valign='baseline'>"
 	   . $_
@@ -1182,12 +1184,13 @@ sub do_env_tableiv{
     my $a4 = $col_aligns[3];
     s/\\lineiv</\\lineiv[$a1|$a2|$a3|$a4]</g;
     return '<table border align="center" style="border-collapse: collapse">'
-           . "\n  <thead>"
-           . "\n    <tr$TABLE_HEADER_BGCOLOR>"
+	   . "\n  <thead>"
+	   . "\n    <tr class=\"tableheader\">"
 	   . "\n      $th1<b>$h1</b>\&nbsp;</th>"
 	   . "\n      $th2<b>$h2</b>\&nbsp;</th>"
 	   . "\n      $th3<b>$h3</b>\&nbsp;</th>"
 	   . "\n      $th4<b>$h4</b>\&nbsp;</th>"
+	   . "\n      </tr>"
 	   . "\n    </thead>"
 	   . "\n  <tbody valign='baseline'>"
 	   . $_
