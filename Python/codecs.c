@@ -465,9 +465,12 @@ static void wrong_exception_type(PyObject *exc)
 	if (name != NULL) {
 	    PyObject *string = PyObject_Str(name);
 	    Py_DECREF(name);
-	    PyErr_Format(PyExc_TypeError, "don't know how to handle %.400s in error callback",
-		PyString_AS_STRING(string));
-	    Py_DECREF(string);
+	    if (string != NULL) {
+	        PyErr_Format(PyExc_TypeError,
+		    "don't know how to handle %.400s in error callback",
+		    PyString_AS_STRING(string));
+	        Py_DECREF(string);
+	    }
 	}
     }
 }
