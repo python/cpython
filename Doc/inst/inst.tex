@@ -173,12 +173,6 @@ cd c:\Temp\foo-1.0
 python setup.py install
 \end{verbatim}
 
-On Mac OS 9, you double-click the \file{setup.py} script. It will bring
-up a dialog where you can select the \command{install} command. Then
-selecting the \command{run} button will install your distribution.
-The dialog is built dynamically, so all commands and options for this
-specific distribution are listed.
-
 \subsection{Splitting the job up}
 \label{splitting-up}
 
@@ -314,7 +308,7 @@ installation uses for \filevar{prefix} and \filevar{exec-prefix} by
 running Python in interactive mode and typing a few simple commands.
 Under \UNIX, just type \code{python} at the shell prompt.  Under
 Windows, choose \menuselection{Start \sub Programs \sub Python
-2.4 \sub Python (command line)}.  Under Mac OS 9, start \file{PythonInterpreter}.
+2.4 \sub Python (command line)}.  
 Once the interpreter is started, you type Python code at the
 prompt.  For example, on my Linux system, I type the three Python
 statements shown below, and get the output as shown, to find out my
@@ -520,24 +514,6 @@ Files are installed as follows:
               {prefix}{\textbackslash{}Scripts}
               {prefix}{\textbackslash{}Data}
 
-
-\subsection{Alternate installation: Mac OS 9}
-\label{alt-install-macos}
-
-% XXX Mac OS X?
-
-Like Windows, Mac OS has no notion of home directories (or even of
-users), and a fairly simple standard Python installation.  Thus, only a
-\longprogramopt{prefix} option is needed.  It defines the installation
-base, and files are installed under it as follows:
-
-\installscheme{prefix}{:Lib:site-packages}
-              {prefix}{:Lib:site-packages}
-              {prefix}{:Scripts}
-              {prefix}{:Data}
-
-See section~\ref{platform-variations} for information on supplying
-command-line arguments to the setup script with MacPython.
 
 
 \section{Custom Installation}
