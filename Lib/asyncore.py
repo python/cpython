@@ -1,5 +1,5 @@
 # -*- Mode: Python; tab-width: 4 -*-
-#   Id: asyncore.py,v 2.40 1999/05/27 04:08:25 rushing Exp 
+# 	Id: asyncore.py,v 2.51 2000/09/07 22:29:26 rushing Exp 
 #	Author: Sam Rushing <rushing@nightmare.com>
 
 # ======================================================================
@@ -46,6 +46,7 @@ many of the difficult problems for you, making the task of building
 sophisticated high-performance network servers and clients a snap. 
 """
 
+import exceptions
 import select
 import socket
 import string
@@ -62,70 +63,100 @@ if os.name == 'nt':
 else:
 	from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, ENOTCONN, ESHUTDOWN
 
-socket_map = {}
+try:
+	socket_map
+except NameError:
+	socket_map = {}
 
-def poll (timeout=0.0):
-	if socket_map:
+class ExitNow (exceptions.Exception):
+	pass
+
+DEBUG = 0
+
+def poll (timeout=0.0, map=None):
+	global DEBUG
+	if map is None:
+		map = socket_map
+	if map:
 		r = []; w = []; e = []
-		for s in socket_map.keys():
-			if s.readable():
-				r.append (s)
-			if s.writable():
-				w.append (s)
+		for fd, obj in map.items():
+			if obj.readable():
+				r.append (fd)
+			if obj.writable():
+				w.append (fd)
+		r,w,e = select.select (r,w,e, timeout)
 
-		(r,w,e) = select.select (r,w,e, timeout)
+		if DEBUG:
+			print r,w,e
 
-		for x in r:
+		for fd in r:
 			try:
-				x.handle_read_event()
-			except:
-				x.handle_error()
-		for x in w:
-			try:
-				x.handle_write_event()
-			except:
-				x.handle_error()
+				obj = map[fd]
+				try:
+					obj.handle_read_event()
+				except ExitNow:
+					raise ExitNow
+				except:
+					obj.handle_error()
+			except KeyError:
+				pass
 
-def poll2 (timeout=0.0):
+		for fd in w:
+			try:
+				obj = map[fd]
+				try:
+					obj.handle_write_event()
+				except ExitNow:
+					raise ExitNow
+				except:
+					obj.handle_error()
+			except KeyError:
+				pass
+
+def poll2 (timeout=0.0, map=None):
 	import poll
+	if map is None:
+		map=socket_map
 	# timeout is in milliseconds
 	timeout = int(timeout*1000)
-	if socket_map:
-		fd_map = {}
-		for s in socket_map.keys():
-			fd_map[s.fileno()] = s
+	if map:
 		l = []
-		for fd, s in fd_map.items():
+		for fd, obj in map.items():
 			flags = 0
-			if s.readable():
+			if obj.readable():
 				flags = poll.POLLIN
-			if s.writable():
+			if obj.writable():
 				flags = flags | poll.POLLOUT
 			if flags:
 				l.append ((fd, flags))
 		r = poll.poll (l, timeout)
 		for fd, flags in r:
-			s = fd_map[fd]
 			try:
-				if (flags & poll.POLLIN):
-					s.handle_read_event()
-				if (flags & poll.POLLOUT):
-					s.handle_write_event()
-				if (flags & poll.POLLERR):
-					s.handle_expt_event()
-			except:
-				s.handle_error()
+				obj = map[fd]
+				try:
+					if (flags  & poll.POLLIN):
+						obj.handle_read_event()
+					if (flags & poll.POLLOUT):
+						obj.handle_write_event()
+				except ExitNow:
+					raise ExitNow
+				except:
+					obj.handle_error()
+			except KeyError:
+				pass
 
-
-def loop (timeout=30.0, use_poll=0):
+def loop (timeout=30.0, use_poll=0, map=None):
 
 	if use_poll:
 		poll_fun = poll2
 	else:
 		poll_fun = poll
 
-	while socket_map:
-		poll_fun (timeout)
+        if map is None:
+			map=socket_map
+
+	while map:
+		poll_fun (timeout, map)
 
 class dispatcher:
 	debug = 0
@@ -134,9 +165,9 @@ class dispatcher:
 	closing = 0
 	addr = None
 
-	def __init__ (self, sock=None):
+	def __init__ (self, sock=None, map=None):
 		if sock:
-			self.set_socket (sock)
+			self.set_socket (sock, map)
 			# I think it should inherit this anyway
 			self.socket.setblocking (0)
 			self.connected = 1
@@ -163,27 +194,31 @@ class dispatcher:
 				
 			return '<__repr__ (self) failed for object at %x (addr=%s)>' % (id(self),ar)
 
-	def add_channel (self):
-		if __debug__:
-			self.log ('adding channel %s' % self)
-		socket_map [self] = 1
+	def add_channel (self, map=None):
+		#self.log_info ('adding channel %s' % self)
+		if map is None:
+			map=socket_map
+		map [self._fileno] = self
 
-	def del_channel (self):
-		if socket_map.has_key (self):
-			if __debug__:
-				self.log ('closing channel %d:%s' % (self.fileno(), self))
-			del socket_map [self]
+	def del_channel (self, map=None):
+		fd = self._fileno
+		if map is None:
+			map=socket_map
+		if map.has_key (fd):
+			#self.log_info ('closing channel %d:%s' % (fd, self))
+			del map [fd]
 
 	def create_socket (self, family, type):
 		self.family_and_type = family, type
 		self.socket = socket.socket (family, type)
 		self.socket.setblocking(0)
+		self._fileno = self.socket.fileno()
 		self.add_channel()
 
-	def set_socket (self, socket):
-		# This is done so we can be called safely from __init__
-		self.__dict__['socket'] = socket
-		self.add_channel()
+	def set_socket (self, sock, map=None):
+		self.__dict__['socket'] = sock
+		self._fileno = sock.fileno()
+		self.add_channel (map)
 
 	def set_reuse_addr (self):
 		# try to re-use a server port if possible
@@ -284,12 +319,19 @@ class dispatcher:
 
 	# cheap inheritance, used to pass all other attribute
 	# references to the underlying socket object.
-	# NOTE: this may be removed soon for performance reasons.
 	def __getattr__ (self, attr):
 		return getattr (self.socket, attr)
 
+	# log and log_info maybe overriden to provide more sophisitcated
+	# logging and warning methods. In general, log is for 'hit' logging
+	# and 'log_info' is for informational, warning and error logging. 
+
 	def log (self, message):
-		print 'log:', message
+		sys.stderr.write ('log: %s\n' % str(message))
+
+	def log_info (self, message, type='info'):
+		if __debug__ or type != 'info':
+			print '%s: %s' % (type, message)
 
 	def handle_read_event (self):
 		if self.accepting:
@@ -324,39 +366,34 @@ class dispatcher:
 		except:
 			self_repr = '<__repr__ (self) failed for object at %0x>' % id(self)
 
-		print (
+		self.log_info (
 			'uncaptured python exception, closing channel %s (%s:%s %s)' % (
 				self_repr,
 				t,
 				v,
 				tbinfo
-				)
+				),
+			'error'
 			)
 		self.close()
 
 	def handle_expt (self):
-		if __debug__:
-			self.log ('unhandled exception')
+		self.log_info ('unhandled exception', 'warning')
 
 	def handle_read (self):
-		if __debug__:
-			self.log ('unhandled read event')
+		self.log_info ('unhandled read event', 'warning')
 
 	def handle_write (self):
-		if __debug__:
-			self.log ('unhandled write event')
+		self.log_info ('unhandled write event', 'warning')
 
 	def handle_connect (self):
-		if __debug__:
-			self.log ('unhandled connect event')
+		self.log_info ('unhandled connect event', 'warning')
 
 	def handle_accept (self):
-		if __debug__:
-			self.log ('unhandled accept event')
+		self.log_info ('unhandled accept event', 'warning')
 
 	def handle_close (self):
-		if __debug__:
-			self.log ('unhandled close event')
+		self.log_info ('unhandled close event', 'warning')
 		self.close()
 
 # ---------------------------------------------------------------------------
@@ -382,7 +419,7 @@ class dispatcher_with_send (dispatcher):
 
 	def send (self, data):
 		if self.debug:
-			self.log ('sending %s' % repr(data))
+			self.log_info ('sending %s' % repr(data))
 		self.out_buffer = self.out_buffer + data
 		self.initiate_send()
 
@@ -396,7 +433,7 @@ def compact_traceback ():
 	while 1:
 		tbinfo.append ((
 			tb.tb_frame.f_code.co_filename,
-			tb.tb_frame.f_code.co_name,
+			tb.tb_frame.f_code.co_name,				
 			str(tb.tb_lineno)
 			))
 		tb = tb.tb_next
@@ -416,11 +453,12 @@ def compact_traceback ():
 		) + ']'
 	return (file, function, line), t, v, info
 
-def close_all ():
-	global socket_map
-	for x in socket_map.keys():
+def close_all (map=None):
+	if map is None:
+		map=socket_map
+	for x in map.values():
 		x.socket.close()
-	socket_map.clear()
+	map.clear()
 
 # Asynchronous File I/O:
 #
@@ -449,8 +487,11 @@ if os.name == 'posix':
 		def recv (self, *args):
 			return apply (os.read, (self.fd,)+args)
 
-		def write (self, *args):
+		def send (self, *args):
 			return apply (os.write, (self.fd,)+args)
+
+		read = recv
+		write = send
 
 		def close (self):
 			return os.close (self.fd)
@@ -469,6 +510,7 @@ if os.name == 'posix':
 			self.set_file (fd)
 
 		def set_file (self, fd):
+			self._fileno = fd
 			self.socket = file_wrapper (fd)
 			self.add_channel()
 
