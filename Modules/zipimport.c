@@ -250,7 +250,7 @@ make_filename(char *prefix, char *name, char *path)
 	return len;
 }
 
-enum module_info {
+enum zi_module_info {
 	MI_ERROR,
 	MI_NOT_FOUND,
 	MI_MODULE,
@@ -258,7 +258,7 @@ enum module_info {
 };
 
 /* Return some information about a module. */
-static enum module_info
+static enum zi_module_info
 get_module_info(ZipImporter *self, char *fullname)
 {
 	char *subname, path[MAXPATHLEN + 1];
@@ -291,7 +291,7 @@ zipimporter_find_module(PyObject *obj, PyObject *args)
 	ZipImporter *self = (ZipImporter *)obj;
 	PyObject *path = NULL;
 	char *fullname;
-	enum module_info mi;
+	enum zi_module_info mi;
 
 	if (!PyArg_ParseTuple(args, "s|O:zipimporter.find_module",
 			      &fullname, &path))
@@ -379,7 +379,7 @@ zipimporter_is_package(PyObject *obj, PyObject *args)
 {
 	ZipImporter *self = (ZipImporter *)obj;
 	char *fullname;
-	enum module_info mi;
+	enum zi_module_info mi;
 
 	if (!PyArg_ParseTuple(args, "s:zipimporter.is_package",
 			      &fullname))
@@ -457,7 +457,7 @@ zipimporter_get_source(PyObject *obj, PyObject *args)
 	PyObject *toc_entry;
 	char *fullname, *subname, path[MAXPATHLEN+1];
 	int len;
-	enum module_info mi;
+	enum zi_module_info mi;
 
 	if (!PyArg_ParseTuple(args, "s:zipimporter.get_source", &fullname))
 		return NULL;
