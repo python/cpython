@@ -173,7 +173,7 @@ def getfile(object):
             return object.__file__
         raise TypeError, 'arg is a built-in module'
     if isclass(object):
-        object = sys.modules[object.__module__]
+        object = sys.modules.get(object.__module__)
         if hasattr(object, '__file__'):
             return object.__file__
         raise TypeError, 'arg is a built-in class'
