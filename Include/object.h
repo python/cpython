@@ -461,9 +461,8 @@ quickly.  Thus, to retrieve an object and store it again, the caller
 must call Py_INCREF() explicitly.
 
 NOTE: functions that 'consume' a reference count like
-PyDict_SetItemString() even
-consume the reference if the object wasn't stored, to simplify error
-handling.
+PyList_SetItemString() even consume the reference if the object wasn't
+stored, to simplify error handling.
 
 It seems attractive to make other functions that take an object as
 argument consume a reference count; however this may quickly get
