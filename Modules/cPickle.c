@@ -1,5 +1,5 @@
 /*
-     cPickle.c,v 1.46 1997/12/04 00:08:07 jim Exp
+     cPickle.c,v 1.48 1997/12/07 14:37:39 jim Exp
 
      Copyright 
 
@@ -55,7 +55,7 @@
 static char cPickle_module_documentation[] = 
 "C implementation and optimization of the Python pickle module\n"
 "\n"
-"cPickle.c,v 1.46 1997/12/04 00:08:07 jim Exp\n"
+"cPickle.c,v 1.48 1997/12/07 14:37:39 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -132,7 +132,7 @@ static PyObject *empty_tuple;
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
   *write_str, *__safe_for_unpickling___str, *append_str,
-  *read_str, *readline_str, *__main___str,
+  *read_str, *readline_str, *__main___str, *__basicnew___str,
   *copy_reg_str, *dispatch_table_str, *safe_constructors_str;
 
 static int save();
@@ -155,7 +155,7 @@ typedef struct {
      PyObject *class_map;
 } Picklerobject;
 
-static PyTypeObject Picklertype;
+staticforward PyTypeObject Picklertype;
 
 typedef struct {
      PyObject_HEAD
@@ -180,7 +180,7 @@ typedef struct {
      PyObject *class_map;
 } Unpicklerobject;
  
-static PyTypeObject Unpicklertype;
+staticforward PyTypeObject Unpicklertype;
 
 int 
 cPickle_PyMapping_HasKey(PyObject *o, PyObject *key) {
@@ -1659,7 +1659,7 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
             state = PyTuple_GET_ITEM(t, 2);
         }
 
-        UNLESS(PyTuple_Check(arg_tup)) {
+        UNLESS(PyTuple_Check(arg_tup) || arg_tup==Py_None) {
             PyErr_Format(PicklingError, "Second element of tuple "
                 "returned by %s must be a tuple", "O", __reduce__);
             goto finally;
@@ -1931,9 +1931,8 @@ static char Picklertype__doc__[] =
 "Objects that know how to pickle objects\n"
 ;
 
-static PyTypeObject Picklertype_value() {
-  PyTypeObject Picklertype = {
-    PyObject_HEAD_INIT(&PyType_Type)
+static PyTypeObject Picklertype = {
+    PyObject_HEAD_INIT(NULL)
     0,                            /*ob_size*/
     "Pickler",                    /*tp_name*/
     sizeof(Picklerobject),                /*tp_basicsize*/
@@ -1955,9 +1954,7 @@ static PyTypeObject Picklertype_value() {
     /* Space for future expansion */
     0L,0L,0L,0L,
     Picklertype__doc__ /* Documentation string */
-  };
-  return Picklertype;
-}
+};
 
 static PyObject *
 find_class(PyObject *class_map,
@@ -2257,13 +2254,29 @@ finally:
 static int
 load_string(Unpicklerobject *self) {
     PyObject *str = 0;
-    int len, res = -1;
-    char *s;
+    int len, res = -1, nslash;
+    char *s, q, *p;
 
     static PyObject *eval_dict = 0;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
     UNLESS(s=pystrndup(s,len)) return -1;
+
+    /* Check for unquoted quotes (evil strings) */
+    q=*s;
+    if(q != '"' && q != '\'') goto insecure;
+    for(p=s+1, nslash=0; *p; p++)
+      {
+	if(*p==q && nslash%2==0) break;
+	if(*p=='\\') nslash++;
+	else nslash=0;
+      }
+    if(*p==q)
+      {
+	for(p++; *p; p++) if(*p > ' ') goto insecure;
+      }
+    else goto insecure;
+    /********************************************/
 
     UNLESS(eval_dict)
         UNLESS(eval_dict = Py_BuildValue("{s{}}", "__builtins__"))
@@ -2282,6 +2295,11 @@ finally:
     Py_XDECREF(str);
 
     return res;
+    
+insecure:
+    free(s);
+    PyErr_SetString(PyExc_ValueError,"insecure string pickle");
+    return -1;
 } 
 
 
@@ -2554,6 +2572,17 @@ Instance_New(PyObject *cls, PyObject *args) {
       Py_XDECREF(safe);
       return NULL;
   }
+
+  if(args==Py_None)
+    {
+      /* Special case, call cls.__basicnew__() */
+      PyObject *basicnew;
+      
+      UNLESS(basicnew=PyObject_GetAttr(cls, __basicnew___str)) return NULL;
+      r=PyObject_CallObject(basicnew, NULL);
+      Py_DECREF(basicnew);
+      if(r) return r;
+    }
 
   if((r=PyObject_CallObject(cls, args))) return r;
 
@@ -4129,9 +4158,8 @@ finally:
 static char Unpicklertype__doc__[] = 
 "Objects that know how to unpickle";
 
-static PyTypeObject Unpicklertype_value() {
-  PyTypeObject Unpicklertype = {
-    PyObject_HEAD_INIT(&PyType_Type)
+static PyTypeObject Unpicklertype = {
+    PyObject_HEAD_INIT(NULL)
     0,                            /*ob_size*/
     "Unpickler",                  /*tp_name*/
     sizeof(Unpicklerobject),              /*tp_basicsize*/
@@ -4153,9 +4181,7 @@ static PyTypeObject Unpicklertype_value() {
     /* Space for future expansion */
     0L,0L,0L,0L,
     Unpicklertype__doc__ /* Documentation string */
-  };
-  return Unpicklertype;
-}
+};
 
 static struct PyMethodDef cPickle_methods[] = {
   {"dump",         (PyCFunction)cpm_dump,         1,
@@ -4227,6 +4253,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
     INIT_STR(copy_reg);
     INIT_STR(dispatch_table);
     INIT_STR(safe_constructors);
+    INIT_STR(__basicnew__);
 
     UNLESS(copy_reg = PyImport_ImportModule("copy_reg"))
         return -1;
@@ -4280,18 +4307,17 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 void
 initcPickle() {
     PyObject *m, *d, *v;
-    char *rev="1.46";
+    char *rev="1.48";
     PyObject *format_version;
     PyObject *compatible_formats;
 
+    Picklertype.ob_type = &PyType_Type;
+    Unpicklertype.ob_type = &PyType_Type;
 
     /* Create the module and add the functions */
     m = Py_InitModule4("cPickle", cPickle_methods,
                      cPickle_module_documentation,
                      (PyObject*)NULL,PYTHON_API_VERSION);
-
-    Picklertype=Picklertype_value();
-    Unpicklertype=Unpicklertype_value();
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
