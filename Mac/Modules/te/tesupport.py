@@ -23,7 +23,7 @@ from macsupport import *
 # Create the type objects
 TEHandle = OpaqueByValueType("TEHandle", "TEObj")
 CharsHandle = OpaqueByValueType("CharsHandle", "ResObj")
-##Handle = OpaqueByValueType("Handle", "ResObj")
+Handle = OpaqueByValueType("Handle", "ResObj")
 StScrpHandle = OpaqueByValueType("StScrpHandle", "ResObj")
 TEStyleHandle = OpaqueByValueType("TEStyleHandle", "ResObj")
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
@@ -33,6 +33,9 @@ TextStyle_ptr = TextStyle
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+
+#define as_TE(h) ((TEHandle)h)
+#define as_Resource(teh) ((Handle)teh)
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
@@ -142,6 +145,12 @@ Method = TEMethodGenerator
 functions = []
 methods = []
 execfile(INPUTFILE)
+
+# Converter from/to handle
+f = Function(TEHandle, 'as_TE', (Handle, 'h', InMode))
+functions.append(f)
+f = Method(Handle, 'as_Resource', (TEHandle, 'teh', InMode))
+methods.append(f)
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)

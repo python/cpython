@@ -27,10 +27,13 @@ VarOutBufferShortsize = VarHeapOutputBufferType('char', 'short', 's')	# (buf, &l
 InBufferShortsize = VarInputBufferType('char', 'short', 's')		# (buf, len)
 
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
-
+Handle = OpaqueByValueType("Handle", "ResObj")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+
+#define as_List(x) ((ListHandle)x)
+#define as_Resource(lh) ((Handle)lh)
 """
 
 class ListMethodGenerator(MethodGenerator):
@@ -93,7 +96,7 @@ class MyObjectDefinition(GlobalObjectDefinition):
 		
 	def outputSetattr(self):
 		Output(setattrCode)
-
+		
 # From here on it's basically all boiler plate...
 
 # Create the generator groups and link them
@@ -109,6 +112,13 @@ Method = ListMethodGenerator
 functions = []
 methods = []
 execfile(INPUTFILE)
+
+# Function to convert any handle to a list and vv.
+f = Function(ListHandle, 'as_List', (Handle, 'h', InMode))
+functions.append(f)
+
+f = Method(Handle, 'as_Resource', (ListHandle, 'lh', InMode))
+methods.append(f)
 
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)

@@ -3,17 +3,10 @@ f = Function(void, 'OpenDeskAcc',
 )
 functions.append(f)
 
-f = Function(MenuHandle, 'as_Menu',
-	(Handle, 'h', InMode))
+f = Function(MenuHandle, 'as_Menu', (Handle, 'h', InMode))
 functions.append(f)
 
-as_resource_body = """
-return ResObj_New((Handle)_self->ob_itself);
-"""
-
-f = ManualGenerator("as_Resource", as_resource_body)
-f.docstring = lambda : "Return this Menu as a Resource"
-
+f = Method(Handle, 'as_Resource', (MenuHandle, 'h', InMode))
 methods.append(f)
 
 # The following have "Mac" prepended to their names in the include file

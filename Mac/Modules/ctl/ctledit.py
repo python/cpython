@@ -2,13 +2,7 @@ f = Function(ControlHandle, 'as_Control',
 	(Handle, 'h', InMode))
 functions.append(f)
 
-as_resource_body = """
-return ResObj_New((Handle)_self->ob_itself);
-"""
-
-f = ManualGenerator("as_Resource", as_resource_body)
-f.docstring = lambda : "Return this Control as a Resource"
-
+f = Method(Handle, 'as_Resource', (ControlHandle, 'ctl', InMode))
 methods.append(f)
 
 DisposeControl_body = """
