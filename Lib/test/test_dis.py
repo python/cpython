@@ -10,18 +10,18 @@ import unittest
 # placement is crucial!!!  move the start of _f and you have to adjust the
 # line numbers in dis_f
 def _f(a):
-  print a
-  return 1
+    print a
+    return 1
 
 dis_f = """\
  13           0 LOAD_FAST                0 (a)
-              3 PRINT_ITEM          
-              4 PRINT_NEWLINE       
+              3 PRINT_ITEM
+              4 PRINT_NEWLINE
 
  14           5 LOAD_CONST               1 (1)
-              8 RETURN_VALUE        
+              8 RETURN_VALUE
               9 LOAD_CONST               0 (None)
-             12 RETURN_VALUE        
+             12 RETURN_VALUE
 """
 
 class DisTests(unittest.TestCase):
@@ -43,7 +43,12 @@ class DisTests(unittest.TestCase):
         sys.stdout = s
         dis.dis(_f)
         sys.stdout = save_stdout
-        self.assertEqual(dis_f, s.getvalue())
+        got = s.getvalue()
+        # Trim trailing blanks (if any).
+        lines = got.split('\n')
+        lines = [line.rstrip() for line in lines]
+        got = '\n'.join(lines)
+        self.assertEqual(dis_f, got)
 
 def test_main():
     run_unittest(DisTests)
