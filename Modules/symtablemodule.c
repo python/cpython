@@ -32,6 +32,7 @@ symtable_symtable(PyObject *self, PyObject *args)
 	if (st == NULL)
 		return NULL;
 	t = Py_BuildValue("O", st->st_symbols);
+	PyMem_Free((void *)st->st_future);
 	PySymtable_Free(st);
 	return t;
 }
