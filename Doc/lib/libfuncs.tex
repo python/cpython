@@ -707,7 +707,7 @@ class C:
 \begin{funcdesc}{ord}{c}
   Return the \ASCII{} value of a string of one character or a Unicode
   character.  E.g., \code{ord('a')} returns the integer \code{97},
-  \code{ord(u'\\u2020')} returns \code{8224}.  This is the inverse of
+  \code{ord(u'\e u2020')} returns \code{8224}.  This is the inverse of
   \function{chr()} for strings and of \function{unichr()} for Unicode
   characters.
 \end{funcdesc}
