@@ -7,7 +7,7 @@ Python News
 What's New in Python 2.4 alpha 2?
 =================================
 
-*Release date: XX-XXX-2004*
+*Release date: 05-AUG-2004*
 
 Core and builtins
 -----------------
@@ -16,7 +16,7 @@ Core and builtins
   implemented using the Java-style @decorator syntax, like so:
      @staticmethod
      def foo(bar):
-  (The PEP needs to be updated to reflect this XXX before 2.4a2)
+  (The PEP needs to be updated to reflect the current state)
 
 - When importing a module M raises an exception, Python no longer leaves M
   in sys.modules.  Before 2.4a2 it did, and a subsequent import of M would
