@@ -61,10 +61,6 @@ Local naming conventions:
 
 */
 
-#if defined(__sgi) && _COMPILER_VERSION>700 && !_SGIAPI
-#define _BSD_TYPES
-#endif
-
 #include "Python.h"
 
 #undef MAX
@@ -196,17 +192,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 
 /* XXX Using _SGIAPI is the wrong thing, 
    but I don't know what the right thing is. */
-#undef _SGIAPI /* to avoid warning */
 #define _SGIAPI 1
-
-#undef _XOPEN_SOURCE
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#ifdef _SS_ALIGNSIZE
-#define HAVE_GETADDRINFO 1
-#define HAVE_GETNAMEINFO 1
-#endif
 
 #define HAVE_INET_PTON
 #include <netdb.h>
@@ -271,24 +257,7 @@ int h_errno; /* not used */
 # define O_NONBLOCK O_NDELAY
 #endif
 
-#if defined(__sgi) && _COMPILER_VERSION>700 \
- && !defined(_SS_ALIGNSIZE) /* defined in sys/socket.h            */
-                            /* by some newer versions of IRIX     */
-                            /* (e.g. not by 6.5.10 but by 6.5.21) */
 #include "addrinfo.h"
-#endif
-
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-#include "addrinfo.h"
-#endif
-
-#if defined(_MSC_VER) && _MSC_VER == 1200
-#include "addrinfo.h"
-#endif
-
-#if defined(__CYGWIN__)
-#include "addrinfo.h"
-#endif
 
 #ifndef HAVE_INET_PTON
 int inet_pton(int af, const char *src, void *dst);
