@@ -215,7 +215,7 @@ the error checking for now):
 
 \begin{verbatim}
 void
-initspam()
+initspam(void)
 {
     PyObject *m, *d;
 
@@ -308,9 +308,10 @@ table'':
 \begin{verbatim}
 static PyMethodDef SpamMethods[] = {
     ...
-    {"system",  spam_system, METH_VARARGS},
+    {"system",  spam_system, METH_VARARGS,
+     "Execute a shell command."},
     ...
-    {NULL,      NULL}        /* Sentinel */
+    {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 \end{verbatim}
 
@@ -340,7 +341,7 @@ the module file:
 
 \begin{verbatim}
 void
-initspam()
+initspam(void)
 {
     (void) Py_InitModule("spam", SpamMethods);
 }
@@ -992,12 +993,13 @@ static PyMethodDef keywdarg_methods[] = {
      * only take two PyObject* parameters, and keywdarg_parrot() takes
      * three.
      */
-    {"parrot", (PyCFunction)keywdarg_parrot, METH_VARARGS|METH_KEYWORDS},
-    {NULL,  NULL}   /* sentinel */
+    {"parrot", (PyCFunction)keywdarg_parrot, METH_VARARGS|METH_KEYWORDS,
+     "Print a lovely skit to standard output."},
+    {NULL, NULL, 0, NULL}   /* sentinel */
 };
 
 void
-initkeywdarg()
+initkeywdarg(void)
 {
   /* Create the module and add the functions */
   Py_InitModule("keywdarg", keywdarg_methods);
@@ -1590,7 +1592,7 @@ the C API pointer array:
 
 \begin{verbatim}
 void
-initspam()
+initspam(void)
 {
     PyObject *m;
     static void *PySpam_API[PySpam_API_pointers];
@@ -1614,8 +1616,8 @@ initspam()
 }
 \end{verbatim}
 
-Note that \code{PySpam_API} is declared \code{static}; otherwise
-the pointer array would disappear when \code{initspam} terminates!
+Note that \code{PySpam_API} is declared \keyword{static}; otherwise
+the pointer array would disappear when \function{initspam()} terminates!
 
 The bulk of the work is in the header file \file{spammodule.h},
 which looks like this:
@@ -1679,7 +1681,7 @@ function:
 
 \begin{verbatim}
 void
-initclient()
+initclient(void)
 {
     PyObject *m;
 
