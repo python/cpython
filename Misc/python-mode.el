@@ -590,7 +590,7 @@ filter."
     (progn
       (require 'shell)
       (switch-to-buffer-other-window
-       (apply (if (boundp 'make-shell) 'make-shell 'make-comint)
+       (apply (if (fboundp 'make-shell) 'make-shell 'make-comint)
 	      "Python" py-python-command nil))))
   (make-local-variable 'shell-prompt-pattern)
   (setq shell-prompt-pattern "^>>> \\|^\\.\\.\\. ")
