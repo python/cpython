@@ -450,8 +450,7 @@ deque_dealloc(dequeobject *deque)
 	if (deque->weakreflist != NULL)
 		PyObject_ClearWeakRefs((PyObject *) deque);
 	if (deque->leftblock != NULL) {
-		int err = deque_clear(deque);
-		assert(err == 0);
+		deque_clear(deque);
 		assert(deque->leftblock != NULL);
 		PyMem_Free(deque->leftblock);
 	}
