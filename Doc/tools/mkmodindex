@@ -117,9 +117,9 @@ def main():
     html = string.join(parts, '')
     program = os.path.basename(sys.argv[0])
     fp = options.get_output_file()
-    print >>fp, html.rstrip()
+    fp.write(string.rstrip(html) + "\n")
     if options.outputfile == "-":
-        print >>sys.stderr, "%s: %d index nodes" % (program, num_nodes)
+        sys.stderr.write("%s: %d index nodes\n" % (program, num_nodes))
     else:
         print
         print "%s: %d index nodes" % (program, num_nodes)
