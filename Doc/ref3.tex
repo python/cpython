@@ -399,11 +399,14 @@ is done).
 
 Attribute assignment update the module's name space dictionary.
 
-Special read-only attributes: \verb@__dict__@ yields the module's name
-space as a dictionary object; \verb@__name__@ yields the module's name
-as a string object.
+Special read-only attribute: \verb@__dict__@ yields the module's name
+space as a dictionary object.  Predefined attributes: \verb@__name__@
+yields the module's name as a string object; \verb@__doc__@ yields the
+module's documentation string as a string object, or
+\verb@None@ if no documentation string was found.
 \ttindex{__dict__}
 \ttindex{__name__}
+\ttindex{__doc__}
 \indexii{module}{name space}
 
 \item[Classes]
