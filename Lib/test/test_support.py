@@ -20,7 +20,7 @@ class TestSkipped(Error):
     """
 
 verbose = 1              # Flag set to 0 by regrtest.py
-use_resources = []       # Flag set to [] by regrtest.py
+use_resources = None       # Flag set to [] by regrtest.py
 
 def unload(name):
     try:
@@ -38,7 +38,7 @@ def forget(modname):
             pass
 
 def requires(resource, msg=None):
-    if resource not in use_resources:
+    if use_resources is not None and resource not in use_resources:
         if msg is None:
             msg = "Use of the `%s' resource not enabled" % resource
         raise TestSkipped(msg)
