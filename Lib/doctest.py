@@ -367,19 +367,29 @@ class Example:
     A single doctest example, consisting of source code and expected
     output.  `Example` defines the following attributes:
 
-      - source:  A single Python statement, always ending with a newline.
+      - source: A single Python statement, always ending with a newline.
         The constructor adds a newline if needed.
 
-      - want:  The expected output from running the source code (either
+      - want: The expected output from running the source code (either
         from stdout, or a traceback in case of exception).  `want` ends
         with a newline unless it's empty, in which case it's an empty
         string.  The constructor adds a newline if needed.
 
-      - lineno:  The line number within the DocTest string containing
+      - lineno: The line number within the DocTest string containing
         this Example where the Example begins.  This line number is
         zero-based, with respect to the beginning of the DocTest.
+
+      - indent: The example's indentation in the DocTest string.
+        I.e., the number of space characters that preceed the
+        example's first prompt.
+
+      - options: A dictionary mapping from option flags to True or
+        False, which is used to override default options for this
+        example.  Any option flags not contained in this dictionary
+        are left at their default value (as specified by the
+        DocTestRunner's optionflags).  By default, no options are set.
     """
-    def __init__(self, source, want, lineno):
+    def __init__(self, source, want, lineno, indent=0, options=None):
         # Normalize inputs.
         if not source.endswith('\n'):
             source += '\n'
@@ -389,6 +399,9 @@ class Example:
         self.source = source
         self.want = want
         self.lineno = lineno
+        self.indent = indent
+        if options is None: options = {}
+        self.options = options
 
 class DocTest:
     """
@@ -515,13 +528,16 @@ class DocTestParser:
         for m in self._EXAMPLE_RE.finditer(string.expandtabs()):
             # Update lineno (lines before this example)
             lineno += string.count('\n', charno, m.start())
-
             # Extract source/want from the regexp match.
             (source, want) = self._parse_example(m, name, lineno)
+            # Extract extra options from the source.
+            options = self._find_options(source, name, lineno)
+            # If it contains no real source, then ignore it.
             if self._IS_BLANK_OR_COMMENT(source):
                 continue
-            examples.append( Example(source, want, lineno) )
-
+            # Create an Example, and add it to the list.
+            examples.append( Example(source, want, lineno,
+                                     len(m.group('indent')), options) )
             # Update lineno (lines inside this example)
             lineno += string.count('\n', m.start(), m.end())
             # Update charno.
@@ -578,7 +594,7 @@ class DocTestParser:
                 lineno += len(lines)
 
             # Extract source/want from the regexp match.
-            (source, want) = self._parse_example(m, name, lineno, False)
+            (source, want) = self._parse_example(m, name, lineno)
             # Display the source
             output.append(source)
             # Display the expected output, if any
@@ -600,7 +616,17 @@ class DocTestParser:
         # Combine the output, and return it.
         return '\n'.join(output)
 
-    def _parse_example(self, m, name, lineno, add_newlines=True):
+    def _parse_example(self, m, name, lineno):
+        """
+        Given a regular expression match from `_EXAMPLE_RE` (`m`),
+        return a pair `(source, want)`, where `source` is the matched
+        example's source code (with prompts and indentation stripped);
+        and `want` is the example's expected output (with indentation
+        stripped).
+
+        `name` is the string's name, and `lineno` is the line number
+        where the example starts; both are used for error messages.
+        """
         # Get the example's indentation level.
         indent = len(m.group('indent'))
 
@@ -610,8 +636,6 @@ class DocTestParser:
         self._check_prompt_blank(source_lines, indent, name, lineno)
         self._check_prefix(source_lines[1:], ' '*indent+'.', name, lineno)
         source = '\n'.join([sl[indent+4:] for sl in source_lines])
-        if len(source_lines) > 1 and add_newlines:
-            source += '\n'
 
         # Divide want into lines; check that it's properly
         # indented; and then strip the indentation.
@@ -619,12 +643,47 @@ class DocTestParser:
         self._check_prefix(want_lines, ' '*indent, name,
                            lineno+len(source_lines))
         want = '\n'.join([wl[indent:] for wl in want_lines])
-        if len(want) > 0 and add_newlines:
-            want += '\n'
 
         return source, want
 
+    # This regular expression looks for option directives in the
+    # source code of an example.  Option directives are comments
+    # starting with "doctest:".  Warning: this may give false
+    # positives for string-literals that contain the string
+    # "#doctest:".  Eliminating these false positives would require
+    # actually parsing the string; but we limit them by ignoring any
+    # line containing "#doctest:" that is *followed* by a quote mark.
+    _OPTION_DIRECTIVE_RE = re.compile(r'#\s*doctest:\s*([^\n\'"]*)$',
+                                      re.MULTILINE)
+
+    def _find_options(self, source, name, lineno):
+        """
+        Return a dictionary containing option overrides extracted from
+        option directives in the given source string.
+
+        `name` is the string's name, and `lineno` is the line number
+        where the example starts; both are used for error messages.
+        """
+        options = {}
+        # (note: with the current regexp, this will match at most once:)
+        for m in self._OPTION_DIRECTIVE_RE.finditer(source):
+            option_strings = m.group(1).replace(',', ' ').split()
+            for option in option_strings:
+                if (option[0] not in '+-' or
+                    option[1:] not in OPTIONFLAGS_BY_NAME):
+                    raise ValueError('line %r of the doctest for %s '
+                                     'has an invalid option: %r' %
+                                     (lineno+1, name, option))
+                flag = OPTIONFLAGS_BY_NAME[option[1:]]
+                options[flag] = (option[0] == '+')
+        if options and self._IS_BLANK_OR_COMMENT(source):
+            raise ValueError('line %r of the doctest for %s has an option '
+                             'directive on a line with no example: %r' %
+                             (lineno, name, source))
+        return options
+
     def _comment_line(self, line):
+        "Return a commented form of the given line"
         line = line.rstrip()
         if line:
             return '#  '+line
@@ -632,6 +691,12 @@ class DocTestParser:
             return '#'
 
     def _check_prompt_blank(self, lines, indent, name, lineno):
+        """
+        Given the lines of a source string (including prompts and
+        leading indentation), check to make sure that every prompt is
+        followed by a space character.  If any line is not followed by
+        a space character, then raise ValueError.
+        """
         for i, line in enumerate(lines):
             if len(line) >= indent+4 and line[indent+3] != ' ':
                 raise ValueError('line %r of the docstring for %s '
@@ -640,6 +705,10 @@ class DocTestParser:
                                   line[indent:indent+3], line))
 
     def _check_prefix(self, lines, prefix, name, lineno):
+        """
+        Check that every line in the given list starts with the given
+        prefix; if any line does not, then raise a ValueError.
+        """
         for i, line in enumerate(lines):
             if line and not line.startswith(prefix):
                 raise ValueError('line %r of the docstring for %s has '
@@ -1105,32 +1174,6 @@ class DocTestRunner:
                                ('most recent call last', 'innermost last'),
                                re.MULTILINE | re.DOTALL)
 
-    _OPTION_DIRECTIVE_RE = re.compile('\s*doctest:\s*(?P<flags>[^#\n]*)')
-
-    def __handle_directive(self, example):
-        """
-        Check if the given example is actually a directive to doctest
-        (to turn an optionflag on or off); and if it is, then handle
-        the directive.
-
-        Return true iff the example is actually a directive (and so
-        should not be executed).
-
-        """
-        m = self._OPTION_DIRECTIVE_RE.match(example.source)
-        if m is None:
-            return False
-
-        for flag in m.group('flags').upper().split():
-            if (flag[:1] not in '+-' or
-                flag[1:] not in OPTIONFLAGS_BY_NAME):
-                raise ValueError('Bad doctest option directive: '+flag)
-            if flag[0] == '+':
-                self.optionflags |= OPTIONFLAGS_BY_NAME[flag[1:]]
-            else:
-                self.optionflags &= ~OPTIONFLAGS_BY_NAME[flag[1:]]
-        return True
-
     def __run(self, test, compileflags, out):
         """
         Run the examples in `test`.  Write the outcome of each example
@@ -1150,10 +1193,14 @@ class DocTestRunner:
 
         # Process each example.
         for example in test.examples:
-            # Check if it's an option directive.  If it is, then handle
-            # it, and go on to the next example.
-            if self.__handle_directive(example):
-                continue
+            # Merge in the example's options.
+            self.optionflags = original_optionflags
+            if example.options:
+                for (optionflag, val) in example.options.items():
+                    if val:
+                        self.optionflags |= optionflag
+                    else:
+                        self.optionflags &= ~optionflag
 
             # Record that we started this example.
             tries += 1
@@ -1349,12 +1396,13 @@ class OutputChecker:
     """
     def check_output(self, want, got, optionflags):
         """
-        Return True iff the actual output (`got`) matches the expected
-        output (`want`).  These strings are always considered to match
-        if they are identical; but depending on what option flags the
-        test runner is using, several non-exact match types are also
-        possible.  See the documentation for `TestRunner` for more
-        information about option flags.
+        Return True iff the actual output from an example (`got`)
+        matches the expected output (`want`).  These strings are
+        always considered to match if they are identical; but
+        depending on what option flags the test runner is using,
+        several non-exact match types are also possible.  See the
+        documentation for `TestRunner` for more information about
+        option flags.
         """
         # Handle the common case first, for efficiency:
         # if they're string-identical, always return true.
@@ -1411,7 +1459,10 @@ class OutputChecker:
     def output_difference(self, want, got, optionflags):
         """
         Return a string describing the differences between the
-        expected output (`want`) and the actual output (`got`).
+        expected output for an example (`want`) and the actual output
+        (`got`).  `optionflags` is the set of option flags used to
+        compare `want` and `got`.  `indent` is the indentation of the
+        original example.
         """
         # If <BLANKLINE>s are being used, then replace <BLANKLINE>
         # with blank lines in the expected output string.
