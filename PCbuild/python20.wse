@@ -2153,13 +2153,19 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=..\Lib\idlelib\*.def
+  Destination=%MAINDIR%\Lib\idlelib
+  Description=Integrated DeveLopment Environment for Python
+  Flags=0000000000000010
+end
+item: Install File
   Source=..\Lib\idlelib\Icons\*
   Destination=%MAINDIR%\Lib\idlelib\Icons
   Description=Integrated DeveLopment Environment for Python
   Flags=0000000000000010
 end
 item: Install File
-  Source=..\Lib\idlelib\idle.pyw
+  Source=..\Tools\scripts\idle
   Destination=%MAINDIR%\Lib\idlelib\idle.pyw
   Description=IDLE bootstrap script
   Flags=0000000000000010
