@@ -122,7 +122,7 @@ from time import sleep
 [4]
 from math import *
 [5]
-from sys import modules, ps1, ps2
+from sys import modules, path
 [6]
 
 ### compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
@@ -213,7 +213,7 @@ print 'factor' # ('+'|'-') factor | atom trailer*
 x = +1
 x = -1
 x = 1
-c = sys.ps1[0]
+c = sys.path[0]
 x = time.time()
 x = sys.modules['time'].time()
 a = '01234'
@@ -243,7 +243,11 @@ x = 123
 
 ### exprlist: expr (',' expr)* [',']
 ### testlist: test (',' test)* [',']
-# These have been exercised enough above
+# These have been exercised already above, except for trailing comma:
+x = 1, 2, 3,
+x = 1,
+x = (1 and 2, 1 or 2,)
+x = (not 1,)
 
 print 'classdef' # 'class' NAME parameters ['=' baselist] ':' suite
 ### baselist: atom arguments (',' atom arguments)*
