@@ -36,6 +36,7 @@ void err_clear PROTO((void));
 extern object *AttributeError;
 extern object *EOFError;
 extern object *IOError;
+extern object *ImportError;
 extern object *IndexError;
 extern object *KeyError;
 extern object *KeyboardInterrupt;
