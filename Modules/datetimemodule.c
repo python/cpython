@@ -1225,6 +1225,42 @@ diff_to_bool(int diff, int op)
 }
 
 /* ---------------------------------------------------------------------------
+ * Basic object allocation.  These allocate Python objects of the right
+ * size and type, and do the Python object-initialization bit.  If there's
+ * not enough memory, they return NULL after setting MemoryError.  All
+ * data members remain uninitialized trash.
+ */
+static PyDateTime_Time *
+alloc_time(int aware)
+{
+	PyDateTime_Time *self;
+
+	self = (PyDateTime_Time *)
+		PyObject_MALLOC(aware ?
+				sizeof(PyDateTime_Time) :
+				sizeof(_PyDateTime_BaseTime));
+	if (self == NULL)
+		return (PyDateTime_Time *)PyErr_NoMemory();
+	PyObject_INIT(self, &PyDateTime_TimeType);
+	return self;
+}
+
+static PyDateTime_DateTime *
+alloc_datetime(int aware)
+{
+	PyDateTime_DateTime *self;
+
+	self = (PyDateTime_DateTime *)
+		PyObject_MALLOC(aware ?
+				sizeof(PyDateTime_DateTime) :
+				sizeof(_PyDateTime_BaseDateTime));
+	if (self == NULL)
+		return (PyDateTime_DateTime *)PyErr_NoMemory();
+	PyObject_INIT(self, &PyDateTime_DateTimeType);
+	return self;
+}
+
+/* ---------------------------------------------------------------------------
  * Helpers for setting object fields.  These work on pointers to the
  * appropriate base class.
  */
@@ -1263,22 +1299,20 @@ new_datetime(int year, int month, int day, int hour, int minute,
 	PyDateTime_DateTime *self;
 	char aware = tzinfo != Py_None;
 
-	self = (PyDateTime_DateTime *)PyObject_MALLOC(aware ?
-					sizeof(PyDateTime_DateTime) :
-					sizeof(_PyDateTime_BaseDateTime));
-	if (self == NULL)
-		return PyErr_NoMemory();
-	self->hastzinfo = aware;
-	set_date_fields((PyDateTime_Date *)self, year, month, day);
-	DATE_SET_HOUR(self, hour);
-	DATE_SET_MINUTE(self, minute);
-	DATE_SET_SECOND(self, second);
-	DATE_SET_MICROSECOND(self, usecond);
-	if (aware) {
-		Py_INCREF(tzinfo);
-		self->tzinfo = tzinfo;
+	self = alloc_datetime(aware);
+	if (self != NULL) {
+		self->hastzinfo = aware;
+		set_date_fields((PyDateTime_Date *)self, year, month, day);
+		DATE_SET_HOUR(self, hour);
+		DATE_SET_MINUTE(self, minute);
+		DATE_SET_SECOND(self, second);
+		DATE_SET_MICROSECOND(self, usecond);
+		if (aware) {
+			Py_INCREF(tzinfo);
+			self->tzinfo = tzinfo;
+		}
 	}
-	return (PyObject *)PyObject_INIT(self, &PyDateTime_DateTimeType);
+	return (PyObject *)self;
 }
 
 /* Create a time instance with no range checking. */
@@ -1288,22 +1322,20 @@ new_time(int hour, int minute, int second, int usecond, PyObject *tzinfo)
 	PyDateTime_Time *self;
 	char aware = tzinfo != Py_None;
 
-	self = (PyDateTime_Time *)PyObject_MALLOC(aware ?
-				sizeof(PyDateTime_Time) :
-				sizeof(_PyDateTime_BaseTime));
-	if (self == NULL)
-		return PyErr_NoMemory();
-	self->hastzinfo = aware;
-	self->hashcode = -1;
-	TIME_SET_HOUR(self, hour);
-	TIME_SET_MINUTE(self, minute);
-	TIME_SET_SECOND(self, second);
-	TIME_SET_MICROSECOND(self, usecond);
-	if (aware) {
-		Py_INCREF(tzinfo);
-		self->tzinfo = tzinfo;
+	self = alloc_time(aware);
+	if (self != NULL) {
+		self->hastzinfo = aware;
+		self->hashcode = -1;
+		TIME_SET_HOUR(self, hour);
+		TIME_SET_MINUTE(self, minute);
+		TIME_SET_SECOND(self, second);
+		TIME_SET_MICROSECOND(self, usecond);
+		if (aware) {
+			Py_INCREF(tzinfo);
+			self->tzinfo = tzinfo;
+		}
 	}
-	return (PyObject *)PyObject_INIT(self, &PyDateTime_TimeType);
+	return (PyObject *)self;
 }
 
 /* Create a timedelta instance.  Normalize the members iff normalize is
@@ -2108,60 +2140,29 @@ static PyGetSetDef date_getset[] = {
 
 static char *date_kws[] = {"year", "month", "day", NULL};
 
-/* __setstate__ isn't exposed. */
-static PyObject *
-date_setstate(PyDateTime_Date *self, PyObject *arg)
-{
-	PyObject *state;
-	int len;
-	unsigned char *pdata;
-
-	if (!PyTuple_Check(arg) || PyTuple_GET_SIZE(arg) != 1)
-		goto error;
-	state = PyTuple_GET_ITEM(arg, 0);
-	if (!PyString_Check(state))
-		goto error;
-
-	len = PyString_Size(state);
-	if (len != _PyDateTime_DATE_DATASIZE)
-		goto error;
-
-	pdata = (unsigned char*)PyString_AsString(state);
-	memcpy(self->data, pdata, _PyDateTime_DATE_DATASIZE);
-	self->hashcode = -1;
-
-	Py_INCREF(Py_None);
-	return Py_None;
- error:
-	PyErr_SetString(PyExc_TypeError,
-			"bad argument to date.__setstate__");
-	return NULL;
-}
-
 static PyObject *
 date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	PyObject *self = NULL;
+	PyObject *state;
 	int year;
 	int month;
 	int day;
 
 	/* Check for invocation from pickle with __getstate__ state */
 	if (PyTuple_GET_SIZE(args) == 1 &&
-	    PyString_Check(PyTuple_GET_ITEM(args, 0)))
+	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
+	    PyString_GET_SIZE(state) == _PyDateTime_DATE_DATASIZE)
 	{
-		self = new_date(1, 1, 1);
-		if (self != NULL) {
-			PyObject *res = date_setstate(
-				(PyDateTime_Date *)self, args);
-			if (res == Py_None)
-				Py_DECREF(res);
-			else {
-				Py_DECREF(self);
-				self = NULL;
-			}
+	    	PyDateTime_Date *me;
+
+		me = PyObject_New(PyDateTime_Date, &PyDateTime_DateType);
+		if (me != NULL) {
+			char *pdata = PyString_AS_STRING(state);
+			memcpy(me->data, pdata, _PyDateTime_DATE_DATASIZE);
+			me->hashcode = -1;
 		}
-		return self;
+		return (PyObject *)me;
 	}
 
 	if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
@@ -2969,46 +2970,11 @@ static PyGetSetDef time_getset[] = {
 static char *time_kws[] = {"hour", "minute", "second", "microsecond",
 			   "tzinfo", NULL};
 
-/* __setstate__ isn't exposed. */
-static PyObject *
-time_setstate(PyDateTime_Time *self, PyObject *state)
-{
-	PyObject *basestate;
-	PyObject *tzinfo = Py_None;
-
-	if (! PyArg_ParseTuple(state, "O!|O:__setstate__",
-			       &PyString_Type, &basestate,
-			       &tzinfo))
-		return NULL;
-	if (PyString_Size(basestate) !=  _PyDateTime_TIME_DATASIZE ||
-	    check_tzinfo_subclass(tzinfo) < 0) {
-		PyErr_SetString(PyExc_TypeError,
-				"bad argument to time.__setstate__");
-		return NULL;
-	}
-	if (tzinfo != Py_None && ! HASTZINFO(self)) {
-		PyErr_SetString(PyExc_ValueError, "time.__setstate__ can't "
-				"add a non-None tzinfo to a time object that "
-				"doesn't have one already");
-		return NULL;
-	}
-	memcpy((char *)self->data,
-	       PyString_AsString(basestate),
-	       _PyDateTime_TIME_DATASIZE);
-	self->hashcode = -1;
-	if (HASTZINFO(self)) {
-		Py_INCREF(tzinfo);
-		Py_XDECREF(self->tzinfo);
-		self->tzinfo = tzinfo;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 static PyObject *
 time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	PyObject *self = NULL;
+	PyObject *state;
 	int hour = 0;
 	int minute = 0;
 	int second = 0;
@@ -3018,22 +2984,34 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	/* Check for invocation from pickle with __getstate__ state */
 	if (PyTuple_GET_SIZE(args) >= 1 &&
 	    PyTuple_GET_SIZE(args) <= 2 &&
-	    PyString_Check(PyTuple_GET_ITEM(args, 0)))
+	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
+	    PyString_GET_SIZE(state) == _PyDateTime_TIME_DATASIZE)
 	{
-		if (PyTuple_GET_SIZE(args) == 2)
+		PyDateTime_Time *me;
+		char aware;
+
+		if (PyTuple_GET_SIZE(args) == 2) {
 			tzinfo = PyTuple_GET_ITEM(args, 1);
-		self = new_time(0, 0, 0, 0, tzinfo);
-		if (self != NULL) {
-			PyObject *res = time_setstate(
-				(PyDateTime_Time *)self, args);
-			if (res == Py_None)
-				Py_DECREF(res);
-			else {
-				Py_DECREF(self);
-				self = NULL;
+			if (check_tzinfo_subclass(tzinfo) < 0) {
+				PyErr_SetString(PyExc_TypeError, "bad "
+					"tzinfo state arg");
+				return NULL;
 			}
 		}
-		return self;
+		aware = (char)(tzinfo != Py_None);
+		me = alloc_time(aware);
+		if (me != NULL) {
+			char *pdata = PyString_AS_STRING(state);
+
+			memcpy(me->data, pdata, _PyDateTime_TIME_DATASIZE);
+			me->hashcode = -1;
+			me->hastzinfo = aware;
+			if (aware) {
+				Py_INCREF(tzinfo);
+				me->tzinfo = tzinfo;
+			}
+		}
+		return (PyObject *)me;
 	}
 
 	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO", time_kws,
@@ -3508,46 +3486,11 @@ static char *datetime_kws[] = {
 	"microsecond", "tzinfo", NULL
 };
 
-/* __setstate__ isn't exposed. */
-static PyObject *
-datetime_setstate(PyDateTime_DateTime *self, PyObject *state)
-{
-	PyObject *basestate;
-	PyObject *tzinfo = Py_None;
-
-	if (! PyArg_ParseTuple(state, "O!|O:__setstate__",
-			       &PyString_Type, &basestate,
-			       &tzinfo))
-		return NULL;
-	if (PyString_Size(basestate) !=  _PyDateTime_DATETIME_DATASIZE ||
-	    check_tzinfo_subclass(tzinfo) < 0) {
-		PyErr_SetString(PyExc_TypeError,
-				"bad argument to datetime.__setstate__");
-		return NULL;
-	}
-	if (tzinfo != Py_None && ! HASTZINFO(self)) {
-		PyErr_SetString(PyExc_ValueError, "datetime.__setstate__ "
-				"can't add a non-None tzinfo to a datetime "
-				"object that doesn't have one already");
-		return NULL;
-	}
-	memcpy((char *)self->data,
-	       PyString_AsString(basestate),
-	       _PyDateTime_DATETIME_DATASIZE);
-	self->hashcode = -1;
-	if (HASTZINFO(self)) {
-		Py_INCREF(tzinfo);
-		Py_XDECREF(self->tzinfo);
-		self->tzinfo = tzinfo;
-	}
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
 static PyObject *
 datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
 	PyObject *self = NULL;
+	PyObject *state;
 	int year;
 	int month;
 	int day;
@@ -3560,22 +3503,34 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	/* Check for invocation from pickle with __getstate__ state */
 	if (PyTuple_GET_SIZE(args) >= 1 &&
 	    PyTuple_GET_SIZE(args) <= 2 &&
-	    PyString_Check(PyTuple_GET_ITEM(args, 0)))
+	    PyString_Check(state = PyTuple_GET_ITEM(args, 0)) &&
+	    PyString_GET_SIZE(state) == _PyDateTime_DATETIME_DATASIZE)
 	{
-		if (PyTuple_GET_SIZE(args) == 2)
+		PyDateTime_DateTime *me;
+		char aware;
+
+		if (PyTuple_GET_SIZE(args) == 2) {
 			tzinfo = PyTuple_GET_ITEM(args, 1);
-		self = new_datetime(1, 1, 1, 0, 0, 0, 0, tzinfo);
-		if (self != NULL) {
-			PyObject *res = datetime_setstate(
-				(PyDateTime_DateTime *)self, args);
-			if (res == Py_None)
-				Py_DECREF(res);
-			else {
-				Py_DECREF(self);
-				self = NULL;
+			if (check_tzinfo_subclass(tzinfo) < 0) {
+				PyErr_SetString(PyExc_TypeError, "bad "
+					"tzinfo state arg");
+				return NULL;
 			}
 		}
-		return self;
+		aware = (char)(tzinfo != Py_None);
+		me = alloc_datetime(aware);
+		if (me != NULL) {
+			char *pdata = PyString_AS_STRING(state);
+
+			memcpy(me->data, pdata, _PyDateTime_DATETIME_DATASIZE);
+			me->hashcode = -1;
+			me->hastzinfo = aware;
+			if (aware) {
+				Py_INCREF(tzinfo);
+				me->tzinfo = tzinfo;
+			}
+		}
+		return (PyObject *)me;
 	}
 
 	if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO", datetime_kws,
