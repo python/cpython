@@ -43,6 +43,10 @@ Library
 - This release includes the email package version 2.4.3, which fixes
   some minor bugs found in email 2.4.1 since its release.
 
+- In urlparse.py: a one-character fix to urlunsplit() caused breakage
+  when parsing relative URLs, so added a fix for the fix and a test
+  for the fix.  [SF bug 620705]
+
 - In re.py: the finditer() function was accidentally not defined.  [SF
   bug 585882]
 
