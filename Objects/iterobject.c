@@ -192,18 +192,14 @@ calliter_iternext(calliterobject *it)
 				return result; /* Common case, fast path */
 			Py_DECREF(result);
 			if (ok > 0) {
-				Py_DECREF(it->it_callable);
-				it->it_callable = NULL;
-				Py_DECREF(it->it_sentinel);
-				it->it_sentinel = NULL;
+				Py_CLEAR(it->it_callable);
+				Py_CLEAR(it->it_sentinel);
 			}
 		}
 		else if (PyErr_ExceptionMatches(PyExc_StopIteration)) {
 			PyErr_Clear();
-			Py_DECREF(it->it_callable);
-			it->it_callable = NULL;
-			Py_DECREF(it->it_sentinel);
-			it->it_sentinel = NULL;
+			Py_CLEAR(it->it_callable);
+			Py_CLEAR(it->it_sentinel);
 		}
 	}
 	return NULL;
