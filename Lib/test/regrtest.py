@@ -369,7 +369,7 @@ def runtest(test, generate, verbose, quiet, testdir = None):
             sys.stdout = save_stdout
     except (ImportError, test_support.TestSkipped), msg:
         if not quiet:
-            print "test", test, "skipped --", msg
+            print test, "skipped --", msg
             sys.stdout.flush()
         return -1
     except KeyboardInterrupt:
