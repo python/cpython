@@ -3588,6 +3588,70 @@ unicode_isspace(PyUnicodeObject *self, PyObject *args)
     return PyInt_FromLong(1);
 }
 
+static char isalpha__doc__[] =
+"S.isalpha() -> int\n\
+\n\
+Return 1 if  all characters in S are alphabetic\n\
+and there is at least one character in S, 0 otherwise.";
+
+static PyObject*
+unicode_isalpha(PyUnicodeObject *self, PyObject *args)
+{
+    register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
+    register const Py_UNICODE *e;
+
+    if (!PyArg_NoArgs(args))
+        return NULL;
+
+    /* Shortcut for single character strings */
+    if (PyUnicode_GET_SIZE(self) == 1 &&
+	Py_UNICODE_ISALPHA(*p))
+	return PyInt_FromLong(1);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
+    e = p + PyUnicode_GET_SIZE(self);
+    for (; p < e; p++) {
+	if (!Py_UNICODE_ISALPHA(*p))
+	    return PyInt_FromLong(0);
+    }
+    return PyInt_FromLong(1);
+}
+
+static char isalnum__doc__[] =
+"S.isalnum() -> int\n\
+\n\
+Return 1 if  all characters in S are alphanumeric\n\
+and there is at least one character in S, 0 otherwise.";
+
+static PyObject*
+unicode_isalnum(PyUnicodeObject *self, PyObject *args)
+{
+    register const Py_UNICODE *p = PyUnicode_AS_UNICODE(self);
+    register const Py_UNICODE *e;
+
+    if (!PyArg_NoArgs(args))
+        return NULL;
+
+    /* Shortcut for single character strings */
+    if (PyUnicode_GET_SIZE(self) == 1 &&
+	Py_UNICODE_ISALNUM(*p))
+	return PyInt_FromLong(1);
+
+    /* Special case for empty strings */
+    if (PyString_GET_SIZE(self) == 0)
+	return PyInt_FromLong(0);
+
+    e = p + PyUnicode_GET_SIZE(self);
+    for (; p < e; p++) {
+	if (!Py_UNICODE_ISALNUM(*p))
+	    return PyInt_FromLong(0);
+    }
+    return PyInt_FromLong(1);
+}
+
 static char isdecimal__doc__[] =
 "S.isdecimal() -> int\n\
 \n\
@@ -4253,6 +4317,8 @@ static PyMethodDef unicode_methods[] = {
     {"isdecimal", (PyCFunction) unicode_isdecimal, 0, isdecimal__doc__},
     {"isdigit", (PyCFunction) unicode_isdigit, 0, isdigit__doc__},
     {"isnumeric", (PyCFunction) unicode_isnumeric, 0, isnumeric__doc__},
+    {"isalpha", (PyCFunction) unicode_isalpha, 0, isalpha__doc__},
+    {"isalnum", (PyCFunction) unicode_isalnum, 0, isalnum__doc__},
 #if 0
     {"zfill", (PyCFunction) unicode_zfill, 1, zfill__doc__},
     {"capwords", (PyCFunction) unicode_capwords, 0, capwords__doc__},
