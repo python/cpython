@@ -2,15 +2,15 @@ Subject: FAQ: Python -- an object-oriented language
 Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
-Reply-to: guido@cwi.nl (Guido van Rossum)
-Expires: Mon, 1 May 1995 00:00:00 GMT
-Supersedes: <D1sGoJ.Mps@cwi.nl>
+Reply-to: guido@cnri.reston.va.us (Guido van Rossum)
+Expires: Sat, 1 Jul 1995 00:00:00 GMT
+Supersedes: <D6uD1L.BLv@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.23
-Last-modified: 10 April 1995
+Version: 1.24
+Last-modified: 31 May 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -30,7 +30,7 @@ Author's address:
 Email:  <guido@cwi.nl>
 
 The latest version of this FAQ is available by anonymous ftp from
-<URL:ftp://ftp.cwi.nl/pub/python/FAQ>.  It will also be posted
+<URL:ftp://ftp.python.org/pub/python/FAQ>.  It will also be posted
 regularly to the newsgroups comp.answers <URL:news:comp.answers> and
 comp.lang.python <URL:news:comp.lang.python>.
 
@@ -77,6 +77,9 @@ Here's an overview of the questions per chapter:
   1.13. Q. How do I get a beta test version of Python?
   1.14. Q. Are there other ftp sites that carry Python related material?
   1.15. Q. Are there copyright restrictions on the use of Python?
+  1.16. Q. Why was Python created in the first place?
+  1.17. Q. What happened to Tim Peters (the author of python-mode.el, and many
+        entertaining and enlightening pieces of Python email)?
 
  2. Python in the real world
   2.1. Q. How many people are using Python?
@@ -92,21 +95,19 @@ Here's an overview of the questions per chapter:
   3.2. Q. When running the test set, I get complaints about floating point
        operations, but when playing with floating point operations I cannot
        find anything wrong with them.
-  3.3. Q. Link errors building Python with STDWIN 0.9.8. on SGI IRIX.
-  3.4. Q. Link errors building Python with STDWIN 0.9.9.
-  3.5. Q. Link errors after rerunning the configure script.
-  3.6. Q. The python interpreter complains about options passed to a
+  3.3. Q. Link errors after rerunning the configure script.
+  3.4. Q. The python interpreter complains about options passed to a
        script (after the script name).
-  3.7. Q. When building on the SGI, make tries to run python to create
+  3.5. Q. When building on the SGI, make tries to run python to create
        glmodule.c, but python hasn't been built or installed yet.
-  3.8. Q. Python built with gcc for the DEC Alpha doesn't work.
-  3.9. Q. I use VPATH but some targets are built in the source directory.
-  3.10. Q. Trouble building or linking with the GNU readline library.
-  3.11. Q. Trouble building Python on Linux.
-  3.12. Q. Trouble with prototypes on Ultrix.
-  3.13. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
-  3.14. Q. Other trouble building Python on platform X.
-  3.15. Q. How to configure dynamic loading on Lixux.
+  3.6. Q. Python built with gcc for the DEC Alpha doesn't work.
+  3.7. Q. I use VPATH but some targets are built in the source directory.
+  3.8. Q. Trouble building or linking with the GNU readline library.
+  3.9. Q. Trouble building Python on Linux.
+  3.10. Q. Trouble with prototypes on Ultrix.
+  3.11. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
+  3.12. Q. Other trouble building Python on platform X.
+  3.13. Q. How to configure dynamic loading on Lixux.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -154,11 +155,12 @@ Here's an overview of the questions per chapter:
   4.26. Q. How can I find the methods or attributes of an object?
   4.27. Q. I can't seem to use os.read() on a pipe created with os.popen().
   4.28. Q. How can I create a stand-alone binary from a Python script?
-  4.29. Q. Is there a special lib for writing CGI scripts in Python?
-  4.30. Q. What other WWW tools are there for Python?
-  4.31. Q. How do I run a subprocess with pipes connected to both input
+  4.29. Q. What WWW tools are there for Python?
+  4.30. Q. How do I run a subprocess with pipes connected to both input
         and output?
-  4.32. Q. How do I call a function if I have the arguments in a tuple?
+  4.31. Q. How do I call a function if I have the arguments in a tuple?
+  4.32. Q. How do I enable font-lock-mode for Python in Emacs?
+  4.33. Q. Is there an inverse to the format operator (a la C's scanf())?
 
  5. Extending Python
   5.1. Q. Can I create my own functions in C?
@@ -256,7 +258,7 @@ the TV series or of a can of SPAM :-)
 
 A. The latest complete Python source distribution is always available
 by anonymous ftp, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/src/python1.2.tar.gz>.  It is a
+<URL:ftp://ftp.python.org/pub/python/src/python1.2.tar.gz>.  It is a
 gzipped tar file containing the complete C source, LaTeX
 documentation, Python library modules, example programs, and several
 useful pieces of freely distributable software.  This will compile and
@@ -265,19 +267,19 @@ non-UNIX information.)
 
 Occasionally a set of patches is issued which has to be applied using
 the patch program.  These patches are placed in the same directory,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/src/patch1.1.1>.  (At the time
+e.g. <URL:ftp://ftp.python.org/pub/python/src/patch1.1.1>.  (At the time
 of writing, no patches exist for 1.2.)
 
 An index of said ftp directory can be found in the file INDEX.  An
 HTML version of the index can be found in the file index.html,
-<URL:ftp://ftp.cwi.nl/pub/python/index.html>.
+<URL:ftp://ftp.python.org/pub/python/index.html>.
 
 1.4. Q. How do I get documentation on Python?
 
 A. The LaTeX source for the documentation is part of the source
 distribution.  If you don't have LaTeX, the latest Python
 documentation set is always available by anonymous ftp, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/doc/postscript.tar.gz>.  It is a
+<URL:ftp://ftp.python.org/pub/python/doc/postscript.tar.gz>.  It is a
 gzipped tar file containing PostScript files of the reference manual,
 the library manual, and the tutorial.  Note that the library manual is
 the most important one of the set, as much of Python's power stems
@@ -291,6 +293,7 @@ site).
 A. The following anonymous ftp sites keep mirrors of the Python
 distribution:
 
+	<URL:ftp://ftp.cwi.nl/pub/python/>
         <URL:ftp://gatekeeper.dec.com/pub/plan/python/>
         <URL:ftp://ftp.uu.net/languages/python/>
         <URL:ftp://ftp.wustl.edu/graphics/graphics/sgi-stuff/python/>
@@ -313,34 +316,31 @@ everything posted to the mailing list (and thus the newsgroup) are
 available on our WWW server,
 <URL:http://www.cwi.nl/~guido/hypermail/index.html>.  The raw archives
 are also available by ftp, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/mail/mailinglist.gz>.  The
+<URL:ftp://ftp.python.org/pub/python/mail/mailinglist.gz>.  The
 uncompressed versions of these files can be read with the standard
 UNIX Mail program ("Mail -f file") or with nn ("nn file").  To read
 them using MH, you could use "inc -file file".
 
 1.7. Q. Is there a WWW page devoted to Python?
 
-A. Yes, <URL:http://www.cwi.nl/~guido/Python.html> is the official
-Python home page.  Michael McLay at NIST maintains a Python page at
-<URL:http://www.eeel.nist.gov/python/>.  And finally the emerging
-Python Software Association has a preliminary web server at
-<URL:http://www.cminds.com/python/> (eventually to be moved to
-somewhere under python.org).
+A. Yes, <URL:http://www.python.org/> is the official Python home page.
+At the time of writing, this page is not yet completely operational;
+you may have a look at the old Python home page:
+<URL:http://www.cwi.nl/~guido/Python.html> or at the U.S. copy:
+<URL:http://www.python.org/~guido/Python.html>.
 
 1.8. Q. Is the Python documentation available on the WWW?
 
-A. Yes, see <URL:http://www.cwi.nl/~guido/Python.html> (Python's home
-page).  It contains pointers to hypertext versions of the whole
-documentation set (as hypertext, not just PostScript).
+A. Yes, see <URL:http://www.python.org/> (Python's home page).  It
+contains pointers to hypertext versions of the whole documentation set
+(as hypertext, not just PostScript).
 
 If you wish to browse this collection of HTML files on your own
 machine, it is available bundled up by anonymous ftp,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/doc/html.tar.gz>.  (This
-requires some manual patch-up for the references to images,
-unfortunately.)
+e.g. <URL:ftp://ftp.python.org/pub/python/doc/html.tar.gz>.
 
 An Emacs-INFO set containing the library manual is also available by
-ftp, e.g. <URL:ftp://ftp.cwi.nl/pub/python/doc/lib-info.tar.gz>.
+ftp, e.g. <URL:ftp://ftp.python.org/pub/python/doc/lib-info.tar.gz>.
 
 1.9. Q. Is there a book on Python, or will there be one out soon?
 
@@ -370,12 +370,12 @@ A. A recent high-level description of Python is:
 
 PostScript for this paper and for the slides used for the accompanying
 presentation is available by ftp as
-<URL:ftp://ftp.cwi.nl/pub/python/doc/nluug-paper.ps> and
-<URL:ftp://ftp.cwi.nl/pub/python/doc/nluug-slides.ps>, respectively.
+<URL:ftp://ftp.python.org/pub/python/doc/nluug-paper.ps> and
+<URL:ftp://ftp.python.org/pub/python/doc/nluug-slides.ps>, respectively.
 
 Slides for a talk on Python that I gave at the Usenix Symposium on
 Very High Level Languages in Santa Fe, NM, USA in October 1995 are
-available as <URL:ftp://ftp.cwi.nl/pub/python/doc/vhll-slides.ps>.
+available as <URL:ftp://ftp.python.org/pub/python/doc/vhll-slides.ps>.
 
 1.12. Q. How does the Python version numbering scheme work?
 
@@ -423,6 +423,58 @@ for commercial use, to sell copies of Python in source or binary form,
 or to sell products that enhance Python or incorporate Python (or part
 of it) in some form.  I would still like to know about all commercial
 use of Python!
+
+1.16. Q. Why was Python created in the first place?
+
+A. Here's a *very* brief summary of what got me started:
+
+- I had extensive experience with implementing an interpreted language
+in the ABC group at CWI, and from working with this group I had
+learned a lot about language design.  This is the origin of many
+Python features, including the use of indentation for statement
+grouping and the inclusion of very-high-level data types (although the
+details are all different in Python).
+
+- I had a number of gripes about the ABC language, but also liked many
+of its features.  It was impossible to extend the ABC language (or its
+implementation) to remedy my complaints -- in fact its lack of
+extensibility was one of its biggest problems.
+
+- I had some experience with using Modula-2+ and talked with the
+designers of Modula-3 (and read the M3 report).  M3 is the origin of
+the syntax and semantics used for exceptions, and some other Python
+features.
+
+- I was working in the Amoeba distributed operating system group at
+CWI.  We needed a better way to do system administration than by
+writing either C programs or Bourne shell scripts, since Amoeba had
+its own system call interface which wasn't easily accessible from the
+Bourne shell.  My experience with error handling
+
+- It occurred to me that a scripting language with a syntax like ABC
+but with access to the Amoeba system calls would fill the need.  I
+realized that it would be foolish to write an Amoeba-specific
+language, so I decided that I needed a language that was generally
+extensible.
+
+- During the 1989 Christmas holidays, I had a lot of time on my hand,
+so I decided to give it a try.  During the next year, while still
+mostly working on it in my own time, Python was used in the Amoeba
+project with increasing success, and the feedback from colleagues made
+me add many early improvements.
+
+- In February 1991, after just over a year of development, I decided
+to post to USENET.  The rest is in the Misc/HISTORY file.
+
+1.17. Q. What happened to Tim Peters (the author of python-mode.el, and many
+entertaining and enlightening pieces of Python email)?
+
+A. He worked at KSR (Kendall Square Research, a start-up building a
+new kind of massively parallel processor).  When KSR folded down a
+couple of years ago, Tim lost his email access.  He hasn't surfaced
+on the net since then.
+
+	Missing-him-too-ly yours...
 
 
 2. Python in the real world
@@ -512,43 +564,10 @@ of bug fixes (including many fixed memory leaks and thread problems).
 
 2.6. Q. What new developments are expected for Python in the future?
 
-A. There will be better ports to the Mac, DOS, Windows, Windows NT, and
-OS/2.  The Windows ports will support dynamically loaded modules using
-DLLs.
-
-Also planned is improved support for embedding Python in other
-applications, e.g. by renaming most global symbols to have a "Py"
-prefix and providing more documentation and threading support.
-
-Some proposals were discussed at the recent Python workshop:
-
-        - persistent objects
-
-        - safe execution of untrusted Python code
-
-        - extensions to the import statement for managing packages
-        (groups of related modules)
-
-        - automatic generation of C/C++ interface glue
-
-        - interfaces to OMG IDL (== Interface Definition Language by
-        the Object Management Group)
-
-        - a portable GUI API (Graphical User Interface Application
-        Programmers Interface)
-
-        - module customization tools
-
-        - standardized documentation strings on module, class and
-        function objects
-
-        - the formation of a Python Steering Committee
-
-        - another Python Workshop
-
-For more info, have a look at the WWW page for the last Python
-Workshop <URL:http://www.eeel.nist.gov/python/workshop11-94/>.
-
+A. See my Work-In-Progress web page, currently at
+<URL:http://www.python.org:~guido/WIP.html>, and the pages for the
+Second Python Workshop (best reached via the Python home page,
+<URL:http://www.python.org/>).
 
 2.7. Q. Is it reasonable to propose incompatible changes to Python?
 
@@ -583,25 +602,12 @@ semantics of C floating point operations.  Until someone donates a
 better floating point test set, you will have to comment out the
 offending floating point tests and execute similar tests manually.
 
-3.3. Q. Link errors building Python with STDWIN 0.9.8. on SGI IRIX.
-
-A. Get STDWIN 0.9.9 <URL:ftp://ftp.cwi.nl/pub/stdwin/stdwin0.9.9.tar.gz>.
-
-3.4. Q. Link errors building Python with STDWIN 0.9.9.
-
-A. The linker probably complains that it can't find routines like
-'tecreate', 'tenew' etc.  The STDWIN 0.9.9 distribution requires that
-you add TWO libraries from stdwin to the line for stdwin in the
-Setupfile.  Use something like this (all on one line!):
-
-        stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Packs/textedit/libtextedit.a $(STDWIN)/Ports/x11/libstdwin.a -lX11
-
-3.5. Q. Link errors after rerunning the configure script.
+3.3. Q. Link errors after rerunning the configure script.
 
 A. It is generally necessary to run "make clean" after a configuration
 change.
 
-3.6. Q. The python interpreter complains about options passed to a
+3.4. Q. The python interpreter complains about options passed to a
 script (after the script name).
 
 A. You are probably linking with GNU getopt, e.g. through -liberty.
@@ -619,7 +625,7 @@ You can also use this interactively:
 Note that a working getopt implementation is provided in the Python
 distribution (in Python/getopt.c) but not automatically used.
 
-3.7. Q. When building on the SGI, make tries to run python to create
+3.5. Q. When building on the SGI, make tries to run python to create
 glmodule.c, but python hasn't been built or installed yet.
 
 A. Comment out the line mentioning glmodule.c in Setup and build a
@@ -629,21 +635,21 @@ again.  You don't need to do "make clean"; you do need to run "make
 Makefile" in the Modules subdirectory (or just run "make" at the
 toplevel).
 
-3.8. Q. Python built with gcc for the DEC Alpha doesn't work.
+3.6. Q. Python built with gcc for the DEC Alpha doesn't work.
 
 People have reported problems with gcc 2.5.8 up to 2.6.3.  The DEC
 OSF/1 cc compiler does not have these problems so it's likely a gcc
 bug.  The latest news is that this has been fixed in Python 1.2 by a
 source change (I gave up waiting for a fixed gcc).
 
-3.9. Q. I use VPATH but some targets are built in the source directory.
+3.7. Q. I use VPATH but some targets are built in the source directory.
 
 A. On some systems (e.g. Sun), if the target already exists in the
 source directory, it is created there instead of in the build
 directory.  This is usually because you have previously built without
 VPATH.  Try running "make clobber" in the source directory.
 
-3.10. Q. Trouble building or linking with the GNU readline library.
+3.8. Q. Trouble building or linking with the GNU readline library.
 
 A. Consider using readline 2.0.  Some hints:
 
@@ -685,7 +691,7 @@ hack that forces use of the static version of the termcap library.
 specific problems with the readline library (I don't read this group
 but I've been told that it is the place for readline bugs).
 
-3.11. Q. Trouble building Python on Linux.
+3.9. Q. Trouble building Python on Linux.
 
 A. If you're building Python 1.2, Slackware 2.2 has a buggy bash
 (version 1.14.3) which breaks a sed script that is used to build
@@ -701,12 +707,12 @@ from Lib/test/test_b2.py.
 Apart from this, Python builds and runs fine on most Linux versions
 (if you run into trouble on an old Linux version, consider upgrading).
 
-3.12. Q. Trouble with prototypes on Ultrix.
+3.10. Q. Trouble with prototypes on Ultrix.
 
 A. Ultrix cc seems broken -- use gcc, or edit config.h to #undef
 HAVE_PROTOTYPES.
 
-3.13. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
+3.11. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
 
 A.  (This is fixed in 1.2.)  You need to pass "-posix" to the C
 compiler, especially in the link phase -- it uses the correct version
@@ -718,7 +724,7 @@ You also need to remove this NeXT-specific section from import.c:
                 #define USE_RLD
                 #endif
 
-3.14. Q. Other trouble building Python on platform X.
+3.12. Q. Other trouble building Python on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
 Please provide as many details as possible.  In particular, if you
@@ -727,7 +733,7 @@ version) you are using it will be difficult for me to figure out what
 is the matter.  If you get a specific error message, please email it
 to me too.
 
-3.15. Q. How to configure dynamic loading on Lixux.
+3.13. Q. How to configure dynamic loading on Lixux.
 
 A. (Thanks to Andrew Kuchling):
 
@@ -747,8 +753,8 @@ There's also a binary distribution of it:
 <URL:ftp://sunsite.unc.edu/pub/Linux/libs/dld-3.2.5.bin.tar.gz>.
 
 2) Get Jack Jansen's DL library; its location is given in the
-_Extending Python_ manual as ftp://ftp.cwi.nl/pub/dynload/.  Compile
-it and install libdl.a wherever you put libdld.a.
+_Extending Python_ manual as <URL:ftp://ftp.cwi.nl/pub/dynload/>.
+Compile it and install libdl.a wherever you put libdld.a.
 
 3) Run Python's configure script, giving it the --with-dl-dld option,
 which requires a parameter giving the directory where you put the
@@ -973,8 +979,8 @@ sys.path.
 For X-related modules (Xt and Xm) you will have to do more work: they
 are currently not part of the standard Python distribution.  You will
 have to ftp the Extensions tar file, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/src/extensions.tar.gz> and follow the
-instructions there.
+<URL:ftp://ftp.python.org/pub/python/src/extensions.tar.gz> and follow
+the instructions there.
 
 See also the next question.
 
@@ -1023,7 +1029,7 @@ Overmars -- ftp'able from <URL:ftp://ftp.cs.ruu.nl/pub/SGI/FORMS/>).
 - There's an interface to X11, including the Athena and Motif widget
 sets (and a few individual widgets, like Mosaic's HTML widget and
 SGI's GL widget) in the Extensions set, which is separately ftp'able
-<URL:ftp://ftp.cwi.nl/pub/python/src/extensions.tar.gz>.
+<URL:ftp://ftp.python.org/pub/python/src/extensions.tar.gz>.
 
 - There's an interface to SUIT, the U of Virginia's Simple User
 Interface Toolkit; it can be ftp'ed from
@@ -1052,7 +1058,8 @@ the wxPython WWW page at
 home page <URL:http://www.faslab.com/fresco/HomePage.html>.  "Pesto"
 is a Python interface to the CORBA dynamic invocation interface, and
 thus Fresco. A Pesto prototype is running and is currently being
-packaged up for inclusion in the Fresco snapshot.
+packaged up for inclusion in the Fresco snapshot.  See also the Pesto
+web pages: <URL:http://www.faslab.com/fresco/pesto/Index.html>.
 
 4.14. Q. Are there any interfaces to database packages in Python?
 
@@ -1061,14 +1068,14 @@ A. There's an interface to SYBASE by John Redford
 
 There's an interface to metalbase by Lance Ellinghaus
 <lance@markv.com>; it is part of the separate Extensions distribution
-<URL:ftp://ftp.cwi.nl/pub/python/src/extensions.tar.gz>.
+<URL:ftp://ftp.python.org/pub/python/src/extensions.tar.gz>.
 
 Anthony Baxter <anthony.baxter@aaii.oz.au> has written an interface to
 mSQL (mini-SQL).
-<URL:ftp://ftp.cwi.nl/pub/python/contrib/PymSQL.tar.gz>.
+<URL:ftp://ftp.python.org/pub/python/contrib/PymSQL.tar.gz>.
 
-Tom Culliton <culliton@clark.net> has written an Oracle module.  Write
-him to get a copy of the latest version.
+Tom Culliton <culliton@clark.net> has written an Oracle module.  
+See <URL:ftp://ftp.clark.net/pub/culliton/oramod.tgz>.
 
 4.15. Q. Is it possible to write obfuscated one-liners in Python?
 
@@ -1285,25 +1292,14 @@ modules which are actually used in the program.  It then compiles the
 generated C code and links it with the rest of the Python interpreter
 to form a self-contained binary which acts exactly like your script.
 
-4.29. Q. Is there a special lib for writing CGI scripts in Python?
+Hint: the freeze program only works if your script's filename ends in
+".py".
 
-A. There's documentation and code for a cgi.py module by Michael McLay
-<mclay@eeel.nist.gov> available from
-<URL:http://www.eeel.nist.gov/python/>
+4.29. Q. What WWW tools are there for Python?
 
-(For the curious: CGI or Common Gateway Interface is the protocol
-between HTTP servers (WWW servers) and programs/scripts they run to
-perform queries and other tasks that require returning a dynamically
-generated document.)
-
-4.30. Q. What other WWW tools are there for Python?
-
-A. The standard library has a module urllib, which can retrieve most
-commonly used URL types (file, ftp, http, gopher).
-
-The Demo2/www directory (Demo2 has to be retrieved separately from the
-Python ftp sites <URL:ftp://ftp.cwi.nl/pub/python/src/demo2.tar.gz>)
-contains some (really old) code to parse HTML and to display it.
+A. There's a whole lot in the 1.2 release; see the section on
+"Internet and WWW" in the Library Reference Manual.  Highlights: a CGI
+parser, a url retriever, an html parser.
 
 Steve Miale <smiale@cs.indiana.edu> has written a modular WWW browser
 called Dancer.  An alpha version can be FTP'ed from
@@ -1311,7 +1307,7 @@ called Dancer.  An alpha version can be FTP'ed from
 few articles about Dancer in the (hyper)mail archive
 <URL:http://www.cwi.nl/~guido/hypermail/python-1994q3/index.html>.)
 
-4.31. Q. How do I run a subprocess with pipes connected to both input
+4.30. Q. How do I run a subprocess with pipes connected to both input
 and output?
 
 A. This is really a UNIX question.  Also, in general, it is unwise to
@@ -1378,7 +1374,7 @@ code to use these in the library module pty.py -- I'm afraid you're on
 your own here.  What's *really* needed is a Python interface to Don
 Libes' expect library -- any takers?
 
-4.32. Q. How do I call a function if I have the arguments in a tuple?
+4.31. Q. How do I call a function if I have the arguments in a tuple?
 
 A. Use the built-in function apply().  For instance,
 
@@ -1392,6 +1388,31 @@ is equivalent to
 Note that func(args) is not the same -- it calls func() with exactly
 one argument, the tuple args, instead of three arguments, the integers
 1, 2 and 3.
+
+4.32. Q. How do I enable font-lock-mode for Python in Emacs?
+
+A. Assuming you're already using python-mode and font-lock-mode
+separately, all you need to do is put this in your .emacs file:
+
+	(defun my-python-mode-hook ()
+	  (setq font-lock-keywords python-font-lock-keywords)
+	  (font-lock-mode 1))
+	(add-hook 'python-mode-hook 'my-python-mode-hook)
+
+4.33. Q. Is there an inverse to the format operator (a la C's scanf())?
+
+A. Not as such.
+
+For simple input parsing, the easiest approach is usually to split
+the line into whitespace-delimited words using string.split(), and to
+convert decimal strings to numeric values using string.atoi(),
+string.atol() or string.atof().  (Python's atoi() is 32-bit and its
+atol() is arbitrary precision.)  If you want to use another delimiter
+than whitespace, use string.splitfield() (possibly combining it with
+string.strip() which removes surrounding whitespace from a string).
+
+For more complicated input parsing, regular expressions (see module
+regex) are better suited and more powerful than C's scanf().
 
 
 5. Extending Python
@@ -1590,13 +1611,13 @@ remember long ago seeing a C fragment like this:
 and staring a long time at it wondering why y was being decremented
 even for x > y...  (And I wasn't a C newbie then either.)
 
-- Since there are no begin/end brackets there can be no conflicting
-coding styles.  In C there are loads of different ways to place the
-braces (including the choice whether to place braces around single
-statements in certain cases, for consistency).  If you're used to
-reading (and writing) code that uses one style, you will feel at least
-slightly uneasy when reading (or being required to write) another
-style.
+- Since there are no begin/end brackets, Python is much less prone to
+coding-style conflicts.  In C there are loads of different ways to
+place the braces (including the choice whether to place braces around
+single statements in certain cases, for consistency).  If you're used
+to reading (and writing) code that uses one style, you will feel at
+least slightly uneasy when reading (or being required to write)
+another style.
 
 - Many coding styles place begin/end brackets on a line by themself.
 This makes programs considerably longer and wastes valuable screen
@@ -1755,17 +1776,17 @@ surely hit upon it sooner or later.
 7.1. Q. Is there a Mac version of Python?
 
 A. Yes, see the "mac" subdirectory of the distribution sites,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/mac/>.
+e.g. <URL:ftp://ftp.python.org/pub/python/mac/>.
 
 7.2. Q. Is there a DOS version of Python?
 
 A. Yes, see the "pc" subdirectory of the distribution sites,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/pc/>.
+e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
 
 7.3. Q. Is there a Windows 3.1(1) version of Python?
 
 A. Yes, also see the "pc" subdirectory of the distribution sites,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/pc/>.
+e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
 
 7.4. Q. Is there a Windows NT version of Python?
 
@@ -1773,7 +1794,7 @@ A. Yes.  Mark Hammond <MHammond@cmutual.com.au> has built a full NT
 port.  This supports using DLLs for dynamic loading of Python modules,
 and includes an interface to the Microsoft Foundation Classes and a
 Python programming environment using it that's written mostly in
-Python.  See <URL:ftp://ftp.cwi.nl/pub/python/nt/> -- most mirrors
+Python.  See <URL:ftp://ftp.python.org/pub/python/nt/> -- most mirrors
 will also have this.
 
 Sam Rushing <rushing@squirl.oau.org> once announced he knows how to
@@ -1792,7 +1813,7 @@ compatible?).
 7.6. Q. Is there an OS/2 version of Python?
 
 A. Yes, also see the "pc" subdirectory of the distribution sites,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/pc/>.
+e.g. <URL:ftp://ftp.python.org/pub/python/pc/>.
 
 7.7. Q. Is there a VMS version of Python?
 
@@ -1827,7 +1848,7 @@ A. You still need to copy the files from the distribution directory
 "python/Lib" to your system.  If you don't have the full distribution,
 you can get the file lib<version>.tar.gz from most ftp sites carrying
 Python; this is a subset of the distribution containing just those
-files, e.g.  <URL:ftp://ftp.cwi.nl/pub/python/src/lib1.1.tar.gz>.
+files, e.g.  <URL:ftp://ftp.python.org/pub/python/src/lib1.1.tar.gz>.
 
 Once you have installed the library, you need to point sys.path to it.
 Assuming the library is in C:\misc\python\lib, the following commands
