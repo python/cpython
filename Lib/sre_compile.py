@@ -23,9 +23,10 @@ def _compile(code, pattern, flags):
         if op in (LITERAL, NOT_LITERAL):
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
+                emit(_sre.getlower(av, flags))
             else:
                 emit(OPCODES[op])
-            emit(av)
+                emit(av)
         elif op is IN:
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
