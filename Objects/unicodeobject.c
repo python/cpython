@@ -5219,6 +5219,10 @@ int usprintf(register Py_UNICODE *buffer, char *format, ...)
     return len;
 }
 
+/* XXX To save some code duplication, formatfloat/long/int could have been
+   shared with stringobject.c, converting from 8-bit to Unicode after the
+   formatting is done. */
+
 static int
 formatfloat(Py_UNICODE *buf,
 	    size_t buflen,
@@ -5294,6 +5298,12 @@ formatint(Py_UNICODE *buf,
     x = PyInt_AsLong(v);
     if (x == -1 && PyErr_Occurred())
         return -1;
+    if (x < 0 && type != 'd' && type != 'i') {
+	if (PyErr_Warn(PyExc_DeprecationWarning,
+		       "%u/%o/%x/%X of negative int will return "
+		       "a signed string in Python 2.4 and up") < 0)
+	    return -1;
+    }
     if (prec < 0)
         prec = 1;
 
