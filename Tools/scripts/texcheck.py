@@ -8,6 +8,7 @@ Designed to catch common markup errors including:
 * Unbalanced of mismatched \begin and \end blocks.
 * Misspelled or invalid LaTeX commands.
 * Use of forward slashes instead of backslashes for commands.
+* Table line size mismatches (only \lineii used in a tableii).
 
 Command line usage:
     python texcheck.py [-h] [-k keyword] foobar.tex
@@ -137,7 +138,7 @@ def checkit(source, opts, morecmds=[]):
             if '-v' in opts:
                 print '   --> ', openers
 
-        # Check table levels (make sure lineii only inside lineiii)
+        # Check table levels (make sure lineii only inside tableii)
         m = tablestart.search(line)
         if m:
             tablelevel = m.group(1)
@@ -148,9 +149,10 @@ def checkit(source, opts, morecmds=[]):
         if tableend.search(line):
             tablelevel = ''
 
+    lastline = lineno
     for lineno, symbol in openers:
         print "Unmatched open delimiter '%s' on line %d" % (symbol, lineno)
-    print 'Done checking %d lines.' % (lineno,)
+    print 'Done checking %d lines.' % (lastline,)
     return 0
 
 def main(args=None):
