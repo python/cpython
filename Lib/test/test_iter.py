@@ -269,7 +269,7 @@ class TestCase(unittest.TestCase):
         try:
             self.assertEqual(list(f), ["0\n", "1\n", "2\n", "3\n", "4\n"])
             f.seek(0, 0)
-            self.assertEqual(list(f.xreadlines()),
+            self.assertEqual(list(f),
                              ["0\n", "1\n", "2\n", "3\n", "4\n"])
         finally:
             f.close()
@@ -302,7 +302,7 @@ class TestCase(unittest.TestCase):
         try:
             self.assertEqual(tuple(f), ("0\n", "1\n", "2\n", "3\n", "4\n"))
             f.seek(0, 0)
-            self.assertEqual(tuple(f.xreadlines()),
+            self.assertEqual(tuple(f),
                              ("0\n", "1\n", "2\n", "3\n", "4\n"))
         finally:
             f.close()
