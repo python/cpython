@@ -24,13 +24,17 @@ ThreadError = thread.error
 del thread
 
 
-# Debug support (adapted from ihooks.py)
+# Debug support (adapted from ihooks.py).
+# All the major classes here derive from _Verbose.  We force that to
+# be a new-style class so that all the major classes here are new-style.
+# This helps debugging (type(instance) is more revealing for instances
+# of new-style classes).
 
 _VERBOSE = False
 
 if __debug__:
 
-    class _Verbose:
+    class _Verbose(object):
 
         def __init__(self, verbose=None):
             if verbose is None:
@@ -46,7 +50,7 @@ if __debug__:
 
 else:
     # Disable this when using "python -O"
-    class _Verbose:
+    class _Verbose(object):
         def __init__(self, verbose=None):
             pass
         def _note(self, *args):
