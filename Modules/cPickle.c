@@ -1,5 +1,5 @@
 /*
- * cPickle.c,v 1.66 1999/04/13 17:23:48 jim Exp
+ * cPickle.c,v 1.67 1999/05/12 16:09:45 jim Exp
  * 
  * Copyright (c) 1996-1998, Digital Creations, Fredericksburg, VA, USA.  
  * All rights reserved.
@@ -49,7 +49,7 @@
 static char cPickle_module_documentation[] = 
 "C implementation and optimization of the Python pickle module\n"
 "\n"
-"cPickle.c,v 1.66 1999/04/13 17:23:48 jim Exp\n"
+"cPickle.c,v 1.67 1999/05/12 16:09:45 jim Exp\n"
 ;
 
 #include "Python.h"
@@ -115,7 +115,9 @@ static char MARKv = MARK;
 /* atol function from string module */
 static PyObject *atol_func;
 
+static PyObject *PickleError;
 static PyObject *PicklingError;
+static PyObject *UnpickleableError;
 static PyObject *UnpicklingError;
 static PyObject *BadPickleGet;
 
@@ -1838,8 +1840,7 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
         goto finally;
     }
 
-    cPickle_ErrFormat(PicklingError, "Cannot pickle %s objects.", 
-        "O", (PyObject *)type);
+    PyErr_SetObject(UnpickleableError, args);
 
 finally:
     Py_XDECREF(py_ob_id);
@@ -4250,7 +4251,7 @@ if (PyErr_Occurred()) { \
 
 static int
 init_stuff(PyObject *module, PyObject *module_dict) {
-    PyObject *string, *copy_reg;
+    PyObject *string, *copy_reg, *t;
 
 #define INIT_STR(S) UNLESS(S ## _str=PyString_FromString(#S)) return -1;
 
@@ -4301,18 +4302,63 @@ init_stuff(PyObject *module, PyObject *module_dict) {
     UNLESS (empty_tuple = PyTuple_New(0))
         return -1;
 
-    UNLESS (PicklingError = PyString_FromString("cPickle.PicklingError"))
+    /* Ugh */
+    UNLESS (t=PyImport_ImportModule("__builtin__")) return -1;
+    if (PyDict_SetItemString(module_dict, "__builtins__", t) < 0)
+      return -1;
+
+    UNLESS (t=PyDict_New()) return -1;
+    if (PyRun_String("def __init__(self, *args): self.args=args\n\n"
+		     "def __str__(self):\n"
+		     "  return self.args and ('%s' % self.args[0]) or '???'\n",
+		     Py_file_input,
+		     module_dict, t) 
+	< 0) return -1;
+
+    UNLESS (PickleError = PyErr_NewException("cPickle.PickleError", NULL, t))
+      return -1;
+
+    Py_DECREF(t);
+    
+
+    UNLESS (PicklingError = PyErr_NewException("cPickle.PicklingError", 
+					       PickleError, NULL))
+      return -1;
+
+    UNLESS (t=PyDict_New()) return -1;
+    if (PyRun_String("def __init__(self, *args): self.args=args\n\n"
+		     "def __str__(self):\n"
+		     "  a=self.args\n"
+		     "  a=a and type(a[0]) or '(what)'\n"
+		     "  return 'Cannot pickle %s objects' % a\n"
+		     , Py_file_input,
+		     module_dict, t) 
+	< 0) return -1;
+
+    UNLESS (UnpickleableError = PyErr_NewException(
+                "cPickle.UnpickleableError", PicklingError, t))
+      return -1;
+
+    Py_DECREF(t);
+
+    UNLESS (UnpicklingError = PyErr_NewException("cPickle.UnpicklingError", 
+   					         PickleError, NULL))
+      return -1;
+
+    if (PyDict_SetItemString(module_dict, "PickleError", 
+        PickleError) < 0)
         return -1;
 
     if (PyDict_SetItemString(module_dict, "PicklingError", 
         PicklingError) < 0)
         return -1;
 
-    UNLESS (UnpicklingError = PyString_FromString("cPickle.UnpicklingError"))
-        return -1;
-
     if (PyDict_SetItemString(module_dict, "UnpicklingError",
         UnpicklingError) < 0)
+        return -1;
+
+    if (PyDict_SetItemString(module_dict, "UnpickleableError",
+        UnpickleableError) < 0)
         return -1;
 
     UNLESS (BadPickleGet = PyString_FromString("cPickle.BadPickleGet"))
@@ -4333,7 +4379,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 DL_EXPORT(void)
 initcPickle() {
     PyObject *m, *d, *v;
-    char *rev="1.66";
+    char *rev="1.67";
     PyObject *format_version;
     PyObject *compatible_formats;
 
