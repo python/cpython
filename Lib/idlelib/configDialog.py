@@ -1143,6 +1143,9 @@ class ConfigDialog(Toplevel):
                         cfgTypeHasChanges = True
             if cfgTypeHasChanges:
                 idleConf.userCfg[configType].Save()
+        for configType in ['keys', 'highlight']:
+            # save these even if unchanged!
+            idleConf.userCfg[configType].Save()
         self.ResetChangedItems() #clear the changed items dict
 
     def ActivateConfigChanges(self):

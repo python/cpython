@@ -3,6 +3,10 @@ What's New in IDLE 1.0.4?
 
 *Release date: XX-Jan-2005*
 
+- Saving a Keyset w/o making changes (by using the "Save as New Custom Key Set"
+  button) caused IDLE to fail on restart (no new keyset was created in
+  config-keys.cfg).  Also true for Theme/highlights.  Python Bug 1064535.
+
 - checking sys.platform for substring 'win' was breaking IDLE docs on Mac
   (darwin).  Also, Mac Safari browser requires full file:// URIs.  Backport of
   fix for SF 900580.
