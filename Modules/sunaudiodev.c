@@ -315,19 +315,19 @@ sad_close(self, args)
 }
 
 static struct methodlist sad_methods[] = {
-        { "read",	sad_read },
-        { "write",	sad_write },
-        { "ibufcount",	sad_ibufcount },
-        { "obufcount",	sad_obufcount },
+        { "read",	(method)sad_read },
+        { "write",	(method)sad_write },
+        { "ibufcount",	(method)sad_ibufcount },
+        { "obufcount",	(method)sad_obufcount },
 #define CTL_METHODS 4
-        { "getinfo",	sad_getinfo },
-        { "setinfo",	sad_setinfo },
-        { "drain",	sad_drain },
-        { "flush",	sad_flush },
+        { "getinfo",	(method)sad_getinfo },
+        { "setinfo",	(method)sad_setinfo },
+        { "drain",	(method)sad_drain },
+        { "flush",	(method)sad_flush },
 #ifdef SOLARIS
-	{ "getdev",	sad_getdev },
+	{ "getdev",	(method)sad_getdev },
 #endif
-        { "close",	sad_close },
+        { "close",	(method)sad_close },
 	{NULL,		NULL}		/* sentinel */
 };
 
