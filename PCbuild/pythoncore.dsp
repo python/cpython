@@ -258,7 +258,7 @@ SOURCE=..\Python\getargs.c
 # Begin Source File
 
 SOURCE=..\Modules\getbuildinfo.c
-# ADD CPP /D BUILD=52
+# ADD CPP /D BUILD=53
 # End Source File
 # Begin Source File
 
