@@ -4,15 +4,14 @@ Release date: 28-Sep-2100
 
 Type/class unification and new-style classes
 
-- New-style classes are now dynamic by default.  Previous, they were
-  static (meaning class attributes could not be assigned to) and
-  dynamic classes had to be requested by adding __dynamic__ = 1 to the
-  body of the class or to the module.  Static classes are faster than
-  dynamic classes, but dynamic classes are now at most 50% slower than
-  static classes; previously, they could be up to 10x slower.  (This
-  was accomplished by making dynamic classes faster, not by making
-  static classes slower. :-)  Note that according to one benchmark,
-  static classes are about the same speed as classic classes.
+- New-style classes are now always dynamic (except for built-in and
+  extension types).  There was no longer a performance penalty, and I
+  no longer see another reason to keep this baggage around.  One relic
+  remains: the __dict__ or a new-style class is a read-only proxy.
+  You must set the class's attribute to modify.  As a consequence, the
+  __defined__ attribute of new-style types no longer exists, for lack
+  of need: there is once again only one __dict__ (although in the
+  future a __cache__ may be resurrected in its place).
 
 - C.__doc__ now works as expected for new-style classes (in 2.2a4 it
   always returned None, even when there was a class docstring).
