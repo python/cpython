@@ -8,7 +8,8 @@
 
 #define USE_GUSI		/* Stdio implemented with GUSI */
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
-/* #define USE_TOOLBOX		/* Include toolbox modules in core Python */
+#define USE_CORE_TOOLBOX	/* Include core toolbox modules (Dlg,Ctl,Menu,Win,Res,Qd) */
+/* #define USE_TOOLBOX		/* Include all toolbox modules in core Python */
 /* #define USE_QT		/* Include quicktime modules in core Python */
 /* #define USE_WASTE		/* Include waste module in core Python */
 /* #define USE_MACSPEECH	/* Include macspeech module in core Python */
