@@ -419,7 +419,7 @@ string_hash(a)
 	p = (unsigned char *) a->ob_sval;
 	x = *p << 7;
 	while (--len >= 0)
-		x = (3*x) ^ *p++;
+		x = (1000003*x) ^ *p++;
 	x ^= a->ob_size;
 	if (x == -1)
 		x = -2;
