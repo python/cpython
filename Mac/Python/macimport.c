@@ -47,6 +47,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <TextUtils.h>
 #endif
 #include <CodeFragments.h>
+#include <StringCompare.h>
 
 #ifdef USE_GUSI1
 #include "TFileSpec.h"	/* for Path2FSSpec() */
@@ -55,6 +56,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 typedef void (*dl_funcptr)();
 #define FUNCNAME_PATTERN "init%.200s"
 
+static int
+fssequal(FSSpec *fs1, FSSpec *fs2)
+{
+	if ( fs1->vRefNum != fs2->vRefNum || fs1->parID != fs2->parID )
+		return 0;
+	return EqualString(fs1->name, fs2->name, false, true);
+}
 /*
 ** findnamedresource - Common code for the various *ResourceModule functions.
 ** Check whether a file contains a resource of the correct name and type, and
@@ -93,8 +101,19 @@ findnamedresource(
 				return 0;
 	}
 #endif /* INTERN_STRINGS */
-
-	if ( strcmp(filename, PyMac_ApplicationPath) == 0 ) {
+#ifdef USE_GUSI1
+	if ( Path2FSSpec(filename, &fss) != noErr ) {
+#else
+	if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr ) {
+#endif
+#ifdef INTERN_STRINGS
+		if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned )
+			not_a_file[max_not_a_file++] = obj;
+#endif /* INTERN_STRINGS */
+	     	/* doesn't exist or is folder */
+		return 0;
+	}			
+	if ( fssequal(&fss, &PyMac_ApplicationFSSpec) ) {
 		/*
 		** Special case: the application itself. Use a shortcut to
 		** forestall opening and closing the application numerous times
@@ -104,19 +123,14 @@ findnamedresource(
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
-#ifdef USE_GUSI1
-		if ( Path2FSSpec(filename, &fss) != noErr ||
-#else
-		if ( FSMakeFSSpec(0, 0, Pstring(filename), &fss) != noErr ||
-#endif
-		     FSpGetFInfo(&fss, &finfo) != noErr ) {
 #ifdef INTERN_STRINGS
+	     	if ( FSpGetFInfo(&fss, &finfo) != noErr ) {
 			if ( obj && max_not_a_file < MAXPATHCOMPONENTS && obj->ob_sinterned )
 				not_a_file[max_not_a_file++] = obj;
-#endif /* INTERN_STRINGS */
-		     	/* doesn't exist or is folder */
+	     		/* doesn't exist or is folder */
 			return 0;
 		}			
+#endif /* INTERN_STRINGS */
 		oldrh = CurResFile();
 		filerh = FSpOpenResFile(&fss, fsRdPerm);
 		if ( filerh == -1 )
@@ -293,7 +307,14 @@ char *filename;
 	PyObject *m, *co;
 	long num, size;
 	
-	if ( strcmp(filename, PyMac_ApplicationPath) == 0 ) {
+#ifdef USE_GUSI1
+	if ( (err=Path2FSSpec(filename, &fss)) != noErr ||
+	     FSpGetFInfo(&fss, &finfo) != noErr )
+#else
+	if ( (err=FSMakeFSSpec(0, 0, Pstring(filename), &fss)) != noErr )
+#endif
+		goto error;
+	if ( fssequal(&fss, &PyMac_ApplicationFSSpec) ) {
 		/*
 		** Special case: the application itself. Use a shortcut to
 		** forestall opening and closing the application numerous times
@@ -303,13 +324,6 @@ char *filename;
 		UseResFile(PyMac_AppRefNum);
 		filerh = -1;
 	} else {
-#ifdef USE_GUSI1
-		if ( (err=Path2FSSpec(filename, &fss)) != noErr ||
-		     FSpGetFInfo(&fss, &finfo) != noErr )
-#else
-		if ( (err=FSMakeFSSpec(0, 0, Pstring(filename), &fss)) != noErr )
-#endif
-			goto error;
 		if ( (err=FSpGetFInfo(&fss, &finfo)) != noErr )
 			goto error;
 		oldrh = CurResFile();
