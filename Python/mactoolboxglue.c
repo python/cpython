@@ -534,6 +534,7 @@ GLUE_NEW(FSRef *, PyMac_BuildFSRef, "macfs")
 GLUE_CONVERT(FSRef, PyMac_GetFSRef, "macfs")
 
 GLUE_NEW(AppleEvent *, AEDesc_New, "Carbon.AE") /* XXXX Why by address? */
+GLUE_NEW(AppleEvent *, AEDesc_NewBorrowed, "Carbon.AE")
 GLUE_CONVERT(AppleEvent, AEDesc_Convert, "Carbon.AE")
 
 GLUE_NEW(Component, CmpObj_New, "Carbon.Cm")

@@ -97,6 +97,7 @@ extern PyObject *_AEDesc_New(AEDesc *);
 extern int _AEDesc_Convert(PyObject *, AEDesc *);
 
 #define AEDesc_New _AEDesc_New
+#define AEDesc_NewBorrowed _AEDesc_NewBorrowed
 #define AEDesc_Convert _AEDesc_Convert
 #endif
 
@@ -155,12 +156,24 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype ref
 	Py_DECREF(res);
 	return noErr;
 }
+
+PyObject *AEDesc_NewBorrowed(AEDesc *itself)
+{
+	PyObject *it;
+	
+	it = AEDesc_New(itself);
+	if (it)
+		((AEDescObject *)it)->ob_owned = 0;
+	return (PyObject *)it;
+}
+
 """
 
 initstuff = initstuff + """
 	upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
 	upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
 	PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
+	PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_NewBorrowed);
 	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 """
 
@@ -197,8 +210,16 @@ class AEDescDefinition(PEP253Mixin, GlobalObjectDefinition):
 		GlobalObjectDefinition.__init__(self, name, prefix or name, itselftype or name)
 		self.argref = "*"
 
-	def outputFreeIt(self, name):
-		Output("AEDisposeDesc(&%s);", name)
+	def outputStructMembers(self):
+		GlobalObjectDefinition.outputStructMembers(self)
+		Output("int ob_owned;")
+		
+	def outputInitStructMembers(self):
+		GlobalObjectDefinition.outputInitStructMembers(self)
+		Output("it->ob_owned = 1;")
+		
+	def outputCleanupStructMembers(self):
+		Output("if (self->ob_owned) AEDisposeDesc(&self->ob_itself);")
 
 aedescobject = AEDescDefinition('AEDesc')
 module.addobject(aedescobject)
@@ -208,6 +229,20 @@ aedescmethods = []
 
 execfile('aegen.py')
 ##execfile('aedatamodelgen.py')
+
+# Manual generator
+AutoDispose_body = """
+int onoff, old;
+if (!PyArg_ParseTuple(_args, "i", &onoff))
+        return NULL;
+old = _self->ob_owned;
+_self->ob_owned = onoff;
+_res = Py_BuildValue("i", old);
+return _res;
+"""
+f = ManualGenerator("AutoDispose", AutoDispose_body)
+f.docstring = lambda: "(int)->int. Automatically AEDisposeDesc the object on Python object cleanup"
+aedescmethods.append(f)
 
 for f in functions: module.add(f)
 for f in aedescmethods: aedescobject.add(f)
