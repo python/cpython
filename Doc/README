@@ -1,8 +1,9 @@
 Python main documentation -- in LaTeX
 -------------------------------------
 
-This directory contains the LaTeX sources to the Python documentation.
-They now require LaTeX2e (LaTeX 2.09 compatibility is dropped).
+This directory contains the LaTeX sources to the Python documentation
+and tools required to support the formatting process.  The documents
+now require LaTeX2e; LaTeX 2.09 compatibility has been dropped.
 
 If you don't have LaTeX, or if you'd rather not format the
 documentation yourself, you can ftp a tar file containing HTML, PDF,
@@ -16,12 +17,15 @@ The following are the LaTeX source files:
 	api/*.tex	Python/C API Reference Manual
 	ext/*.tex	Extending and Embedding the Python Interpreter
 	lib/*.tex	Python Library Reference
+	mac/*.tex	Macintosh Library Modules
 	ref/*.tex	Python Reference Manual
 	tut/*.tex	Python Tutorial
 
-All use the "manual" document class and "python" package, derived from 
-the old "myformat.sty" style file.  These contains many macro
-definitions useful in documenting Python, and set some style parameters.
+Most use the "manual" document class and "python" package, derived from 
+the old "myformat.sty" style file.  The Macintosh Library Modules
+document uses the "howto" document class instead.  These contains many
+macro definitions useful in documenting Python, and set some style
+parameters.
 
 There's a Makefile to call LaTeX and the other utilities in the right
 order and the right number of times.  This will produce DVI files for
@@ -150,7 +154,7 @@ Making HTML files
 
 The LaTeX documents can be converted to HTML using Nikos Drakos'
 LaTeX2HTML converter.  See the Makefile; after some twiddling, "make
-l2h" should do the trick.
+html" should do the trick.
 
 
 What else is in here?
