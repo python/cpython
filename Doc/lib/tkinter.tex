@@ -10,7 +10,7 @@ and platform independent windowing toolkit, that is available to
 Python programmers using the \refmodule{Tkinter} module, and its
 extension, the \refmodule{Tix} module.
 
-\refmodule{Tkinter} is a thin object--oriented layer on top of
+The \refmodule{Tkinter} module is a thin object--oriented layer on top of
 Tcl/Tk. To use \refmodule{Tkinter}, you don't need to write Tcl code,
 but you will need to consult the Tk documentation, and occasionally
 the Tcl documentation.  \refmodule{Tkinter} is a set of wrappers that
@@ -18,10 +18,10 @@ implement the Tk widgets as Python classes.  In addition, the internal
 module \module{\_tkinter} provides a threadsafe mechanism which allows
 Python and Tcl to interact.
 
-\refmodule{Tkinter} is not the only GUI for Python, but is however the
-most commonly used one; see section~\ref{other-gui-modules},
-``Other User Interface Modules and Packages'' for more information on
-other GUI toolkits for Python.
+Tk is not the only GUI for Python, but is however the most commonly
+used one; see section~\ref{other-gui-modules}, ``Other User Interface
+Modules and Packages,'' for more information on other GUI toolkits for
+Python.
 
 % Other sections I have in mind are
 % Tkinter internals
@@ -69,12 +69,13 @@ as on Windows and Macintosh systems.
 
 \subsection{Tkinter Modules}
 
-\refmodule{Tkinter} consists of a number of modules. The Tk interface
-is located in a binary module named \module{_tkinter}.  This module
-contains the low-level interface to Tk, and should never be used
-directly by application programmers. It is usually a shared library
-(or DLL), but might in some cases be statically linked with the Python
-interpreter.
+Most of the time, the \refmodule{Tkinter} module is all you really
+need, but a number of additional modules are available as well.  The
+Tk interface is located in a binary module named \module{_tkinter}.
+This module contains the low-level interface to Tk, and should never
+be used directly by application programmers. It is usually a shared
+library (or DLL), but might in some cases be statically linked with
+the Python interpreter.
 
 In addition to the Tk interface module, \refmodule{Tkinter} includes a
 number of Python modules. The two most important modules are the
@@ -306,7 +307,7 @@ is called an `abstract class')
 To make use of this reference material, there will be times when you
 will need to know how to read short passages of Tk and how to identify
 the various parts of a Tk command.  
-(See \ref{tkinter-basic-mapping} for the
+(See section~\ref{tkinter-basic-mapping} for the
 \refmodule{Tkinter} equivalents of what's below.)
 
 Tk scripts are Tcl programs.  Like all Tcl programs, Tk scripts are
@@ -392,8 +393,8 @@ The configuration options in Tk are given in lists of hyphened tags
 followed by values.  In Tkinter, options are specified as
 keyword-arguments in the instance constructor, and keyword-args for
 configure calls or as instance indices, in dictionary style, for
-established instances.  See \ref{tkinter-setting-options}
-on setting options. 
+established instances.  See section~\ref{tkinter-setting-options} on
+setting options.
 
 \begin{verbatim}
     button .fred -fg red        =====>  fred = Button(panel, fg = "red")
@@ -425,6 +426,9 @@ information on the Form geometry manager.
 
 
 \subsection{How Tk and Tkinter are Related} % Relationship.html
+
+\note{This was derived from a graphical image; the image will be used
+      more directly in a subsequent version of this document.}
 
 From the top down:
 \begin{description}
@@ -859,18 +863,24 @@ in a Menu widget.
 Entry widgets have options that refer to character positions in the
 text being displayed.  You can use these \refmodule{Tkinter} functions
 to access these special points in text widgets:
+
 \begin{description}
 \item[AtEnd()]
 refers to the last position in the text
+
 \item[AtInsert()]
 refers to the point where the text cursor is
+
 \item[AtSelFirst()]
 indicates the beginning point of the selected text
+
 \item[AtSelLast()]
 denotes the last point of the selected text and finally
-\item[At(x, y=None)]
-refers to the character at pixel location x, y (with y not used
-in the case of a text entry widget, which is one line of text).
+
+\item[At(x\optional{, y})]
+refers to the character at pixel location \var{x}, \var{y} (with
+\var{y} not used in the case of a text entry widget, which contains a
+single line of text).
 \end{description}
 
 \item[\b{Text widget indexes}]
@@ -949,15 +959,15 @@ users.
 
 \subsection{Using Tix}
 
-\begin{classdesc}{Tix}{screenName=None, baseName=None, className='Tix'}
+\begin{classdesc}{Tix}{screenName\optional{, baseName\optional{, className}}}
     Toplevel widget of Tix which represents mostly the main window
     of an application. It has an associated Tcl interpreter.
 
-The \refmodule{Tix} interface module subclasses the \refmodule{Tkinter}
-module. The former imports the latter, so to use \refmodule{Tix} with
-Tkinter, all you need to do is to import one module. In general, you
-can just import Tix, and replace the toplevel call
-to \class{Tkinter.Tk} with \class{Tix.Tk}:
+Classes in the \refmodule{Tix} module subclasses the classes in the
+\refmodule{Tkinter} module. The former imports the latter, so to use
+\refmodule{Tix} with Tkinter, all you need to do is to import one
+module. In general, you can just import \refmodule{Tix}, and replace
+the toplevel call to \class{Tkinter.Tk} with \class{Tix.Tk}:
 \begin{verbatim}
 import Tix
 from Tkconstants import *
@@ -1332,9 +1342,9 @@ The \refmodule{Tix} module adds:
 \begin{itemize}
 \item 
 \ulink{pixmap}
-{http://tix.sourceforge.net/dist/current/man/html/TixCmd/pixmap.htm} capabilities
-to all \refmodule{Tix} and \refmodule{Tkinter} widgets to create color
-images from XPM files.
+{http://tix.sourceforge.net/dist/current/man/html/TixCmd/pixmap.htm}
+capabilities to all \refmodule{Tix} and \refmodule{Tkinter} widgets to
+create color images from XPM files.
 
 % Python Demo of: \ulink{XPM Image In Button}{http://tix.sourceforge.net/dist/current/demos/samples/Xpm.tcl}
 
@@ -1342,41 +1352,44 @@ images from XPM files.
 
 \item
 \ulink{Compound}
-{http://tix.sourceforge.net/dist/current/man/html/TixCmd/compound.html} image
-types can be used to create images that consists of multiple
+{http://tix.sourceforge.net/dist/current/man/html/TixCmd/compound.html}
+image types can be used to create images that consists of multiple
 horizontal lines; each line is composed of a series of items (texts,
 bitmaps, images or spaces) arranged from left to right. For example, a
 compound image can be used to display a bitmap and a text string
 simutaneously in a Tk \class{Button} widget.
 
-% Python Demo of: \ulink{Compound Image In Buttons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg.tcl}
+% Python Demo of:
+% \ulink{Compound Image In Buttons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg.tcl}
 
-% Python Demo of: \ulink{Compound Image In NoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg2.tcl}
+% Python Demo of:
+% \ulink{Compound Image In NoteBook}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg2.tcl}
 
-% Python Demo of: \ulink{Compound Image Notebook Color Tabs}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg4.tcl}
+% Python Demo of:
+% \ulink{Compound Image Notebook Color Tabs}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg4.tcl}
 
-% Python Demo of: \ulink{Compound Image Icons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg3.tcl}
+% Python Demo of:
+% \ulink{Compound Image Icons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg3.tcl}
 \end{itemize}
 
 
 \subsubsection{Miscellaneous Widgets}
 
-\index{InputOnly widget}
 \begin{classdesc}{InputOnly}{}
 The \ulink{InputOnly}
-{http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixInputOnly.htm} widgets are
-to accept inputs from the user, which can be done with the \code{bind}
-command (\UNIX{} only).
+{http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixInputOnly.htm}
+widgets are to accept inputs from the user, which can be done with the
+\code{bind} command (\UNIX{} only).
 \end{classdesc}
 
 \subsubsection{Form Geometry Manager}
 
 In addition, \refmodule{Tix} augments \refmodule{Tkinter} by providing:
-\index{Form widget class}
+
 \begin{classdesc}{Form}{}
 The \ulink{Form}
-{http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixForm.htm} geometry
-manager based on attachment rules for all Tk widgets.
+{http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixForm.htm}
+geometry manager based on attachment rules for all Tk widgets.
 \end{classdesc}
 
 
@@ -1553,10 +1566,10 @@ a \samp{>>>~} prompt
 \end{itemize}
 
 \begin{itemize}
-\item   Alt-p retrieves previous command matching what you have typed
-\item   Alt-n retrieves next
+\item   \kbd{Alt-p} retrieves previous command matching what you have typed
+\item   \kbd{Alt-n} retrieves next
 \item   \kbd{Return} while on any previous command retrieves that command
-\item   Alt-/ (Expand word) is also useful here
+\item   \kbd{Alt-/} (Expand word) is also useful here
 \end{itemize}
 
 \index{indentation}
@@ -1654,7 +1667,7 @@ still in the early stages.
 \end{seealso}
 
 
-\refmodule{Tkinter} is not the only GUI for Python, but is however the
+Tk is not the only GUI for Python, but is however the
 most commonly used one.
 
 \begin{seealso}
