@@ -282,9 +282,7 @@ argument to the built-in \function{open()} function.  The exit status of
 the command (encoded in the format specified for \function{wait()}) is
 available as the return value of the \method{close()} method of the file
 object, except that when the exit status is zero (termination without
-errors), \code{None} is returned.  \strong{Note:} This function
-behaves unreliably under Windows due to the native implementation of
-\cfunction{popen()}.
+errors), \code{None} is returned.
 Availability: \UNIX{}, Windows.
 \end{funcdesc}
 
