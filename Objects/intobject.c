@@ -198,7 +198,7 @@ PyInt_AsLong(op)
 	
 	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
 	    nb->nb_int == NULL) {
-		PyErr_BadArgument();
+		PyErr_SetString(PyExc_TypeError, "an integer is required");
 		return -1;
 	}
 	
