@@ -46,9 +46,9 @@ def compile(file, cfile=None, dfile=None):
     import os, marshal, __builtin__
     f = open(file, 'U')
     try:
-        timestamp = long(os.fstat(f.fileno())[8])
+        timestamp = long(os.fstat(f.fileno()).st_mtime)
     except AttributeError:
-        timestamp = long(os.stat(file)[8])
+        timestamp = long(os.stat(file).st_mtime)
     codestring = f.read()
     # If parsing from a string, line breaks are \n (see parsetok.c:tok_nextc)
     # Replace will return original string if pattern is not found, so

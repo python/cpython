@@ -52,7 +52,7 @@ def encode(in_file, out_file, name=None, mode=None):
             name = os.path.basename(in_file)
         if mode is None:
             try:
-                mode = os.stat(in_file)[0]
+                mode = os.stat(in_file).st_mode
             except AttributeError:
                 pass
         in_file = open(in_file, 'rb')

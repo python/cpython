@@ -100,25 +100,22 @@ def isdir(s):
         st = os.stat(s)
     except os.error:
         return 0
-    return S_ISDIR(st[ST_MODE])
+    return S_ISDIR(st.st_mode)
 
 
 # Get size, mtime, atime of files.
 
 def getsize(filename):
     """Return the size of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[ST_SIZE]
+    return os.stat(filename).st_size
 
 def getmtime(filename):
     """Return the last modification time of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[ST_MTIME]
+    return os.stat(filename).st_mtime
 
 def getatime(filename):
     """Return the last access time of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[ST_ATIME]
+    return os.stat(filename).st_atime
 
 
 def islink(s):
@@ -138,7 +135,7 @@ def isfile(s):
         st = os.stat(s)
     except os.error:
         return False
-    return S_ISREG(st[ST_MODE])
+    return S_ISREG(st.st_mode)
 
 
 def exists(s):

@@ -43,7 +43,7 @@ Mynd you, møøse bites Kan be pretty nasti..."""
 #     the current directory is changed with os.chdir(), an incorrect
 #     path will be displayed.
 
-import sys, imp, os, stat, re, types, inspect
+import sys, imp, os, re, types, inspect
 from repr import Repr
 from string import expandtabs, find, join, lower, split, strip, rfind, rstrip
 
@@ -153,7 +153,7 @@ def ispackage(path):
 
 def synopsis(filename, cache={}):
     """Get the one-line summary out of a module file."""
-    mtime = os.stat(filename)[stat.ST_MTIME]
+    mtime = os.stat(filename).st_mtime
     lastupdate, result = cache.get(filename, (0, None))
     if lastupdate < mtime:
         info = inspect.getmoduleinfo(filename)
@@ -1698,7 +1698,7 @@ class ModuleScanner(Scanner):
     def __init__(self):
         roots = map(lambda dir: (dir, ''), pathdirs())
         Scanner.__init__(self, roots, self.submodules, self.isnewpackage)
-        self.inodes = map(lambda (dir, pkg): os.stat(dir)[1], roots)
+        self.inodes = map(lambda (dir, pkg): os.stat(dir).st_ino, roots)
 
     def submodules(self, (dir, package)):
         children = []
@@ -1712,7 +1712,7 @@ class ModuleScanner(Scanner):
         return children
 
     def isnewpackage(self, (dir, package)):
-        inode = os.path.exists(dir) and os.stat(dir)[1]
+        inode = os.path.exists(dir) and os.stat(dir).st_ino
         if not (os.path.islink(dir) and inode in self.inodes):
             self.inodes.append(inode) # detect circular symbolic links
             return ispackage(dir)

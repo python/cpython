@@ -74,7 +74,6 @@ FOLDER_PROTECT = 0700
 
 import os
 import sys
-from stat import ST_NLINK
 import re
 import mimetools
 import multifile
@@ -155,8 +154,7 @@ class MH:
         fullname = os.path.join(self.path, name)
         # Get the link count so we can avoid listing folders
         # that have no subfolders.
-        st = os.stat(fullname)
-        nlinks = st[ST_NLINK]
+        nlinks = os.stat(fullname).st_nlink
         if nlinks <= 2:
             return []
         subfolders = []
@@ -183,8 +181,7 @@ class MH:
         fullname = os.path.join(self.path, name)
         # Get the link count so we can avoid listing folders
         # that have no subfolders.
-        st = os.stat(fullname)
-        nlinks = st[ST_NLINK]
+        nlinks = os.stat(fullname).st_nlink
         if nlinks <= 2:
             return []
         subfolders = []

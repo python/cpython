@@ -123,19 +123,16 @@ def commonprefix(m):
 
 def getsize(filename):
     """Return the size of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[stat.ST_SIZE]
+    return os.stat(filename).st_size
 
 def getmtime(filename):
     """Return the last modification time of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[stat.ST_MTIME]
+    return os.stat(filename).st_mtime
 
 def getatime(filename):
     """Return the last access time of a file, reported by os.stat()."""
-    st = os.stat(filename)
-    return st[stat.ST_ATIME]
 
+    return os.stat(filename).st_atime
 
 def islink(path):
     """Is a path a symbolic link?
@@ -162,7 +159,7 @@ def isdir(path):
         st = os.stat(path)
     except os.error:
         return False
-    return stat.S_ISDIR(st[stat.ST_MODE])
+    return stat.S_ISDIR(st.st_mode)
 
 
 def isfile(path):
@@ -172,7 +169,7 @@ def isfile(path):
         st = os.stat(path)
     except os.error:
         return False
-    return stat.S_ISREG(st[stat.ST_MODE])
+    return stat.S_ISREG(st.st_mode)
 
 
 def ismount(path):

@@ -484,7 +484,7 @@ def _os_path_isdir(pathname):
         s = _os_stat(pathname)
     except OSError:
         return None
-    return (s[0] & 0170000) == 0040000
+    return (s.st_mode & 0170000) == 0040000
 
 def _timestamp(pathname):
     "Return the file modification time as a Long."
@@ -492,7 +492,7 @@ def _timestamp(pathname):
         s = _os_stat(pathname)
     except OSError:
         return None
-    return long(s[8])
+    return long(s.st_mtime)
 
 
 ######################################################################
