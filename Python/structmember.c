@@ -108,6 +108,24 @@ getmember(addr, mlist, name)
 				else
 					v = newstringobject(*(char**)addr);
 				break;
+			case T_STRING_INPLACE:
+				v = newstringobject((char*)addr);
+				break;
+#ifdef macintosh
+			case T_PSTRING:
+				if (*(char**)addr == NULL) {
+					INCREF(None);
+					v = None;
+				}
+				else
+					v = newsizedstringobject((*(char**)addr)+1,
+											**(unsigned char**)addr);
+				break;
+			case T_PSTRING_INPLACE:
+				v = newsizedstringobject(((char*)addr)+1,
+											*(unsigned char*)addr);
+				break;
+#endif /* macintosh */
 			case T_CHAR:
 				v = newsizedstringobject((char*)addr, 1);
 				break;
@@ -140,7 +158,11 @@ setmember(addr, mlist, name, v)
 	
 	for (l = mlist; l->name != NULL; l++) {
 		if (strcmp(l->name, name) == 0) {
-			if (l->readonly || l->type == T_STRING) {
+#ifdef macintosh
+			if (l->readonly || l->type == T_STRING || l->type == T_PSTRING) {
+#else
+			if (l->readonly || l->type == T_STRING ) {
+#endif /* macintosh */
 				err_setstr(TypeError, "readonly attribute");
 				return -1;
 			}

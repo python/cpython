@@ -74,6 +74,13 @@ struct memberlist {
 #define T_UINT		11
 #define T_ULONG		12
 
+/* Added by Jack: strings contained in the structure */
+#define T_STRING_INPLACE	13
+#ifdef macintosh
+#define T_PSTRING	14	/* macintosh pascal-style counted string */
+#define T_PSTRING_INPLACE	15
+#endif /* macintosh */
+
 /* Readonly flag */
 #define READONLY	1
 #define RO		READONLY		/* Shorthand */
