@@ -103,9 +103,9 @@ after the header of message number \var{which}. Result is in form
 
 \begin{methoddesc}{uidl}{\optional{which}}
 Return message digest (unique id) list.
-If \var{which} is specified, result contains unique id for that
-message, otherwise result is list \code{['response',
-['mesgnum uid', ...], octets]}.
+If \var{which} is specified, result contains the unique id for that
+message in the form \code{'\var{response}\ \var{mesgnum}\ \var{uid}},
+otherwise result is list \code{['response', ['mesgnum uid', ...], octets]}.
 \end{methoddesc}
 
 
