@@ -7,8 +7,10 @@ except NameError:
     def _is_unicode(x):
         return 1==0
 else:
+    # Use UnicodeType instead of built-in unicode for Py2.1 compatibility
+    from types import UnicodeType
     def _is_unicode(x):
-        return isinstance(x, unicode)
+        return isinstance(x, UnicodeType)
     
 from email.Encoders import encode_7or8bit
 import email.base64MIME
