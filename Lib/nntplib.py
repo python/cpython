@@ -180,7 +180,7 @@ class NNTP:
 		resp, list = self.longcmd('LIST')
 		for i in range(len(list)):
 			# Parse lines into "group last first flag"
-			list[i] = string.split(list[i])
+			list[i] = tuple(string.split(list[i]))
 		return resp, list
 
 	# Process a GROUP command.  Argument:
