@@ -21,3 +21,10 @@ MenuObj_Convert
 WinObj_Convert
 GrafObj_New
 GrafObj_Convert
+FMRec_New
+ListObj_New
+ListObj_Convert
+TextStyle_New
+TextStyle_Convert
+TEObj_New
+TEObj_Convert
