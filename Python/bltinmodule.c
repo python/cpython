@@ -2589,7 +2589,6 @@ _PyBuiltin_Init_2(dict)
 	if (!init_class_exc(dict))
 		/* class based exceptions could not be initialized. */
 		Py_FatalError("Standard exceptions could not be initialized.");
-	/* does not return */
 }
 
 
