@@ -127,6 +127,11 @@ formats.
 %endif
 
 %changelog
+* Sat Feb 07 2004 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.3-2pydotorg]
+- Adding code to remove "#!/usr/local/bin/python" from particular files and
+  causing the RPM build to terminate if there are any unexpected files
+  which have that line in them.
+
 * Mon Oct 13 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.2-1pydotorg]
 - Adding code to detect wether documentation is available to build.
 
@@ -260,6 +265,38 @@ mkdir -p "$RPM_BUILD_ROOT"/var/www/html/python
    bunzip2 < %{SOURCE1} | tar x
 )
 %endif
+
+#  fix the #! line in installed files
+for file in \
+      usr/lib/python2.3/Tools/scripts/parseentities.py \
+      usr/lib/python2.3/cgi.py \
+      usr/lib/python2.3/Tools/faqwiz/faqw.py
+do
+   sed 's|^#!.*python|#!/usr/bin/env python'"%{binsuffix}"'|' \
+         "$RPM_BUILD_ROOT"/"$file" >/tmp/fix-python-path.$$
+   cat /tmp/fix-python-path.$$ >"$RPM_BUILD_ROOT"/"$file"
+   rm -f /tmp/fix-python-path.$$
+done
+
+#  check to see if there are any straggling #! lines
+find "$RPM_BUILD_ROOT" -type f | xargs egrep -n '^#! */usr/local/bin/python' \
+      | grep ':1:#!' >/tmp/python-rpm-files.$$ || true
+if [ -s /tmp/python-rpm-files.$$ ]
+then
+   echo '*****************************************************'
+   cat /tmp/python-rpm-files.$$
+   cat <<@EOF
+   *****************************************************
+     There are still files referencing /usr/local/bin/python in the
+     install directory.  They are listed above.  Please fix the .spec
+     file and try again.  If you are an end-user, you probably want
+     to report this to jafo-rpms@tummy.com as well.
+   *****************************************************
+@EOF
+   rm -f /tmp/python-rpm-files.$$
+   exit 1
+fi
+rm -f /tmp/python-rpm-files.$$
 
 ########
 #  CLEAN
