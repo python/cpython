@@ -363,7 +363,7 @@ imageop_dither2grey2(self, args)
     object *rv;
     int i;
     int pos;
-    int sum, nvalue;
+    int sum = 0, nvalue;
    
     
     if ( !getargs(args, "(s#ii)", &cp, &len, &x, &y) )
