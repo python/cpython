@@ -163,16 +163,13 @@ static PyObject *
 mmap_read_byte_method(mmap_object *self,
 		      PyObject *args)
 {
-	char value;
-	char *where;
 	CHECK_VALID(NULL);
         if (!PyArg_ParseTuple(args, ":read_byte"))
 		return NULL;
 	if (self->pos < self->size) {
-	        where = self->data + self->pos;
-		value = (char) *(where);
+	        char value = self->data[self->pos];
 		self->pos += 1;
-		return Py_BuildValue("c", (char) *(where));
+		return Py_BuildValue("c", value);
 	} else {
 		PyErr_SetString (PyExc_ValueError, "read byte out of range");
 		return NULL;
