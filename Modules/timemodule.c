@@ -204,7 +204,7 @@ millitimer()
 #include <sys/types.h>
 #include <sys/time.h>
 
-static long
+long
 millitimer()
 {
 	struct timeval t;
@@ -215,7 +215,6 @@ millitimer()
 	
 }
 
-static
 millisleep(msecs)
 	long msecs;
 {
