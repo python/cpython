@@ -159,7 +159,8 @@ Andrew Kuchling <amk@acm.org>.  The file howto.tex is a commented
 template which may be used an example.  A script to "do the right
 thing" to format a howto document is included as tools/mkhowto.sh.
 Support for this document class is still new, but is expected to
-evolve rapidly.
+evolve rapidly.  Use "mkhowto.sh --help" for information on using the
+formatting tool.
 
 
 Copyright notice
