@@ -60,8 +60,10 @@ EXTFILES= ext/ext.tex $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	ext/building.tex \
 	ext/windows.tex \
 	ext/embedding.tex \
-	ext/cycle-gc.c \
 	ext/noddy.c \
+	ext/noddy2.c \
+	ext/noddy3.c \
+	ext/noddy4.c \
 	ext/run-func.c \
 	texinputs/typestruct.h \
 	texinputs/reportingbugs.tex
