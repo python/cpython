@@ -36,7 +36,7 @@ def main(use_rgbimg=1):
 	print 'tovideo'
     videoimage = imageop.tovideo (image, 4, width, height)
 
-    # Convert an rgb image to an 8 bit rgb (greyscale)
+    # Convert an rgb image to an 8 bit rgb
     if verbose:
 	print 'rgb2rgb8'
     greyimage = imageop.rgb2rgb8(image, width, height)
@@ -45,6 +45,16 @@ def main(use_rgbimg=1):
     if verbose:
 	print 'rgb82rgb'
     image = imageop.rgb82rgb(greyimage, width, height)
+    
+    # Convert an rgb image to an 8 bit greyscale image
+    if verbose:
+	print 'rgb2grey'
+    greyimage = imageop.rgb2grey(image, width, height)
+
+    # Convert an 8 bit greyscale image to a 24 bit rgb image
+    if verbose:
+	print 'grey2rgb'
+    image = imageop.grey2rgb(greyimage, width, height)
     
     # Convert a 8-bit deep greyscale image to a 1-bit deep image by
     # tresholding all the pixels. The resulting image is tightly packed
