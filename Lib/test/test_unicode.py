@@ -438,6 +438,14 @@ class UnicodeTest(
         self.assertEqual(unicode(o), u'unicode(obj) is compatible to str()')
         self.assertEqual(str(o), 'unicode(obj) is compatible to str()')
 
+        # %-formatting and .__unicode__()
+        self.assertEqual(u'%s' %
+                         UnicodeCompat(u"u'%s' % obj uses obj.__unicode__()"),
+                         u"u'%s' % obj uses obj.__unicode__()")
+        self.assertEqual(u'%s' %
+                         UnicodeCompat(u"u'%s' % obj falls back to obj.__str__()"),
+                         u"u'%s' % obj falls back to obj.__str__()")
+
         for obj in (123, 123.45, 123L):
             self.assertEqual(unicode(obj), unicode(str(obj)))
 
