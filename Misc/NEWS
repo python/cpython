@@ -127,7 +127,7 @@ Extension modules
   Subsumed the times() function into repeat().
   Added chain() and cycle().
 
-- The rotor module is now deprecated; the encryption algorithm it uses 
+- The rotor module is now deprecated; the encryption algorithm it uses
   is not believed to be secure, and including crypto code with Python
   has implications for exporting and importing it in various countries.
 
@@ -138,6 +138,11 @@ Extension modules
 
 Library
 -------
+
+- New generator function os.walk() is an easy-to-use alternative to
+  os.path.walk().  See os module docs for details.  os.path.walk()
+  isn't deprecated at this time, but may become deprecated in a
+  future release.
 
 - Added new module "platform" which provides a wide range of tools
   for querying platform dependent features.

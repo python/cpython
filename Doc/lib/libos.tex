@@ -1050,6 +1050,71 @@ which is used to set the access and modified times, respectively.
 Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
+\begin{funcdesc}{walk}{top\optional{, topdown=True}}
+\index{directory!walking}
+\index{directory!traversal}
+
+\function{walk()} generates the file names in a directory tree.
+For each directory in the tree rooted at directory \var{top} (including
+\var{top} itself), it yields a 3-tuple
+\code{(\var{dirpath}, \var{dirnames}, \var{filenames})}.
+
+\var{dirpath} is a string, the path to the directory.  \var{dirnames} is
+a list of the names of the subdirectories in \var{dirpath}
+(excluding \code{'.'} and \code{'..'}).  \var{filenames} is a list of
+the names of the non-directory files in \var{dirpath}.  Note that the
+names in the lists contain no path components.  To get a full
+path (which begins with \var{top)) to a file or directory in
+\var{dirpath}, do \code{os.path.join(\var{dirpath}, \var{name})}.
+
+If optional argument \var{topdown} is true or not specified, the triple
+for a directory is generated before the triples for any of its
+subdirectories (directories are generated top down).  If \var{topdown} is
+false, the triple for a directory is generated after the triples for all
+of its subdirectories (directories are generated bottom up).
+
+When \var{topdown} is true, the caller can modify the \var{dirnames} list
+in-place (e.g., via \keyword{del} or slice assignment), and
+\function{walk()} will only recurse into the subdirectories whose names
+remain in \var{dirnames}; this can be used to prune the search,
+impose a specific order of visiting, or even to inform \function{walk()}
+about directories the caller creates or renames before it resumes
+\function{walk()} again.  Modifying \var{dirnames} when \var{topdown} is
+false is ineffective, because in bottom-up mode the directories in
+\var{dirnames} are generated before \var{dirnames} itself is generated.
+
+\begin{notice}
+If you pass a relative pathname, don't change the current working
+directory between resumptions of \function{walk}.  \function{walk}
+never changes the current directory, and assumes that its caller
+doesn't either.
+\end{notice}
+
+\begin{notice}
+On systems that support symbolic links, links to subdirectories appear
+in \var{dirnames} lists, but \function{walk()} will not visit them
+(infinite loops are hard to avoid when following symbolic links).
+To visit linked directories, you can identify them with
+\code{os.path.islink(\var{path})}, and invoke \function{walk(\var{path})}
+on each directly.
+\end{notice}
+
+This example displays the number of bytes taken by non-directory files
+in each directory under the starting directory, except that it doesn't
+look under any CVS subdirectory:
+
+\begin{verbatim}
+import os
+from os.path import join, getsize
+for root, dirs, files in os.walk('python/Lib/email'):
+    print root, "consumes",
+    print sum([getsize(join(root, name)) for name in files]),
+    print "bytes in", len(files), "non-directory files"
+    if 'CVS' in dirs:
+        dirs.remove('CVS')  # don't visit CVS directories
+\end{verbatim}
+\versionadded{2.3}
+\end{funcdesc}
 
 \subsection{Process Management \label{os-process}}
 
