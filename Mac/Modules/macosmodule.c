@@ -502,6 +502,10 @@ MacOS_splash(PyObject *self, PyObject *args)
 {
 	int resid = -1;
 	static DialogPtr curdialog;
+	WindowRef theWindow;
+	CGrafPtr thePort;
+	short item;
+	short xpos, ypos, width, height, swidth, sheight;
 	
 	if (!PyArg_ParseTuple(args, "|i", &resid))
 		return NULL;
@@ -510,8 +514,19 @@ MacOS_splash(PyObject *self, PyObject *args)
 		
 	if ( resid != -1 ) {
 		curdialog = GetNewDialog(resid, NULL, (WindowPtr)-1);
-		if ( curdialog )
+		if ( curdialog ) {
+			theWindow = GetDialogWindow(curdialog);
+			thePort = GetWindowPort(theWindow);
+			width = thePort->portRect.right - thePort->portRect.left;
+			height = thePort->portRect.bottom - thePort->portRect.top;
+			swidth = qd.screenBits.bounds.right - qd.screenBits.bounds.left;
+			sheight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - LMGetMBarHeight();
+			xpos = (swidth-width)/2;
+			ypos = (sheight-height)/5 + LMGetMBarHeight();
+			MoveWindow(theWindow, xpos, ypos, 0);
+			ShowWindow(theWindow);
 			DrawDialog(curdialog);
+		}
 	}
 	Py_INCREF(Py_None);
 	return Py_None;
