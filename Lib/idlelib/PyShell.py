@@ -28,6 +28,8 @@ import idlever
 import rpc
 import RemoteDebugger
 
+IDENTCHARS = string.ascii_letters + string.digits + "_"
+
 # XX hardwire this for now, remove later  KBK 09Jun02
 use_subprocess = 1 # Set to 1 to spawn subprocess for command execution
 
@@ -312,8 +314,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         lines = source.split("\n")
         linecache.cache[filename] = len(source)+1, 0, lines, filename
         return filename
-    
-    IDENTCHARS = string.ascii_letters + string.digits + "_"
     
     def showsyntaxerror(self, filename=None):
         """Extend base class method: Add Colorizing
