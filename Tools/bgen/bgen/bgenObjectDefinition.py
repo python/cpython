@@ -57,18 +57,22 @@ class ObjectDefinition(GeneratorGroup):
 		OutHeader2("End object type " + self.name)
 
 	def outputNew(self):
-		Output("static %s *%s_New(itself)", self.objecttype, self.prefix)
+		Output("static PyObject *%s_New(itself)", self.prefix)
 		IndentLevel()
 		Output("const %s %sitself;", self.itselftype, self.argref)
 		DedentLevel()
 		OutLbrace()
 		Output("%s *it;", self.objecttype)
+		self.outputCheckNewArg()
 		Output("it = PyObject_NEW(%s, &%s);", self.objecttype, self.typename)
 		Output("if (it == NULL) return NULL;")
 		Output("it->ob_itself = %sitself;", self.argref)
-		Output("return it;")
+		Output("return (PyObject *)it;")
 		OutRbrace()
 		Output()
+	
+	def outputCheckNewArg(self):
+		pass
 
 	def outputConvert(self):
 		Output("""\
