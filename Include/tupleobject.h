@@ -58,7 +58,7 @@ extern int gettuplesize PROTO((object *));
 extern object *gettupleitem PROTO((object *, int));
 extern int settupleitem PROTO((object *, int, object *));
 extern object *gettupleslice PROTO((object *, int, int));
-extern int resizetuple PROTO((object **, int));
+extern int resizetuple PROTO((object **, int, int));
 
 /* Macro, trading safety for speed */
 #define GETTUPLEITEM(op, i) ((op)->ob_item[i])

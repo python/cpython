@@ -34,7 +34,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Entries 1 upto MAXSAVESIZE are free lists, entry 0 is the empty
    tuple () of which at most one instance will be allocated.
 */
-static tupleobject *free_list[MAXSAVESIZE];
+static tupleobject *free_tuples[MAXSAVESIZE];
 #endif
 #ifdef COUNT_ALLOCS
 int fast_tuple_allocs;
@@ -52,16 +52,16 @@ newtupleobject(size)
 		return NULL;
 	}
 #if MAXSAVESIZE > 0
-	if (size == 0 && free_list[0]) {
-		op = free_list[0];
+	if (size == 0 && free_tuples[0]) {
+		op = free_tuples[0];
 		INCREF(op);
 #ifdef COUNT_ALLOCS
 		tuple_zero_allocs++;
 #endif
 		return (object *) op;
 	}
-	if (0 < size && size < MAXSAVESIZE && (op = free_list[size]) != NULL) {
-		free_list[size] = (tupleobject *) op->ob_item[0];
+	if (0 < size && size < MAXSAVESIZE && (op = free_tuples[size]) != NULL) {
+		free_tuples[size] = (tupleobject *) op->ob_item[0];
 #ifdef COUNT_ALLOCS
 		fast_tuple_allocs++;
 #endif
@@ -80,7 +80,7 @@ newtupleobject(size)
 	NEWREF(op);
 #if MAXSAVESIZE > 0
 	if (size == 0) {
-		free_list[0] = op;
+		free_tuples[0] = op;
 		INCREF(op);	/* extra INCREF so that this is never freed */
 	}
 #endif
@@ -149,8 +149,8 @@ tupledealloc(op)
 		XDECREF(op->ob_item[i]);
 #if MAXSAVESIZE > 0
 	if (0 < op->ob_size && op->ob_size < MAXSAVESIZE) {
-		op->ob_item[0] = (object *) free_list[op->ob_size];
-		free_list[op->ob_size] = op;
+		op->ob_item[0] = (object *) free_tuples[op->ob_size];
+		free_tuples[op->ob_size] = op;
 	} else
 #endif
 		free((ANY *)op);
@@ -397,36 +397,67 @@ typeobject Tupletype = {
    is only one module referencing the object.  You can also think of it
    as creating a new tuple object and destroying the old one, only
    more efficiently.  In any case, don't use this if the tuple may
-   already be known to some other part of the code... */
+   already be known to some other part of the code...
+   If last_is_sticky is set, the tuple will grow or shrink at the
+   front, otherwise it will grow or shrink at the end. */
 
 int
-resizetuple(pv, newsize)
+resizetuple(pv, newsize, last_is_sticky)
 	object **pv;
 	int newsize;
+	int last_is_sticky;
 {
-	register object *v;
+	register tupleobject *v;
 	register tupleobject *sv;
-	v = *pv;
+	int i;
+	int sizediff;
+
+	v = (tupleobject *) *pv;
+	sizediff = newsize - v->ob_size;
 	if (!is_tupleobject(v) || v->ob_refcnt != 1) {
 		*pv = 0;
 		DECREF(v);
 		err_badcall();
 		return -1;
 	}
+	if (sizediff == 0)
+		return 0;
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
 #ifdef REF_DEBUG
 	--ref_total;
 #endif
 	UNREF(v);
-	*pv = (object *)
+	if (last_is_sticky && sizediff < 0) {
+		/* shrinking: move entries to the front and zero moved entries */
+		for (i = 0; i < newsize; i++) {
+			XDECREF(v->ob_item[i]);
+			v->ob_item[i] = v->ob_item[i - sizediff];
+			v->ob_item[i - sizediff] = NULL;
+		}
+	}
+	for (i = newsize; i < v->ob_size; i++) {
+		XDECREF(v->ob_item[i]);
+		v->ob_item[i] = NULL;
+	}
+	sv = (tupleobject *)
 		realloc((char *)v,
 			sizeof(tupleobject) + newsize * sizeof(object *));
-	if (*pv == NULL) {
+	*pv = (object *) sv;
+	if (sv == NULL) {
 		DEL(v);
 		err_nomem();
 		return -1;
 	}
-	NEWREF(*pv);
-	((tupleobject *) *pv)->ob_size = newsize;
+	NEWREF(sv);
+	for (i = sv->ob_size; i < newsize; i++)
+		sv->ob_item[i] = NULL;
+	if (last_is_sticky && sizediff > 0) {
+		/* growing: move entries to the end and zero moved entries */
+		for (i = newsize - 1; i >= sizediff; i--) {
+			sv->ob_item[i] = sv->ob_item[i - sizediff];
+			sv->ob_item[i - sizediff] = NULL;
+		}
+	}
+	sv->ob_size = newsize;
 	return 0;
 }

@@ -39,7 +39,9 @@ int null_strings, one_strings;
 #endif
 
 static stringobject *characters[UCHAR_MAX + 1];
+#ifndef DONT_SHARE_SHORT_STRINGS
 static stringobject *nullstring;
+#endif
 
 /*
    Newsizedstringobject() and newstringobject() try in certain cases
@@ -62,6 +64,7 @@ newsizedstringobject(str, size)
 	int size;
 {
 	register stringobject *op;
+#ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
 		null_strings++;
@@ -76,6 +79,7 @@ newsizedstringobject(str, size)
 		INCREF(op);
 		return (object *)op;
 	}
+#endif /* DONT_SHARE_SHORT_STRINGS */
 	op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
 	if (op == NULL)
@@ -89,6 +93,7 @@ newsizedstringobject(str, size)
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
+#ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
 		nullstring = op;
 		INCREF(op);
@@ -96,6 +101,7 @@ newsizedstringobject(str, size)
 		characters[*str & UCHAR_MAX] = op;
 		INCREF(op);
 	}
+#endif
 	return (object *) op;
 }
 
@@ -105,6 +111,7 @@ newstringobject(str)
 {
 	register unsigned int size = strlen(str);
 	register stringobject *op;
+#ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
 		null_strings++;
@@ -119,6 +126,7 @@ newstringobject(str)
 		INCREF(op);
 		return (object *)op;
 	}
+#endif /* DONT_SHARE_SHORT_STRINGS */
 	op = (stringobject *)
 		malloc(sizeof(stringobject) + size * sizeof(char));
 	if (op == NULL)
@@ -130,6 +138,7 @@ newstringobject(str)
 #endif
 	NEWREF(op);
 	strcpy(op->ob_sval, str);
+#ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
 		nullstring = op;
 		INCREF(op);
@@ -137,6 +146,7 @@ newstringobject(str)
 		characters[*str & UCHAR_MAX] = op;
 		INCREF(op);
 	}
+#endif
 	return (object *) op;
 }
 
