@@ -6,6 +6,7 @@ import struct
 import Carbon.Res
 import Carbon.File
 import Nav
+import warnings
 
 # First step: ensure we also emulate the MACFS module, which contained
 # all the constants
@@ -143,6 +144,8 @@ def PromptGetFile(prompt, *typelist):
 	"""Ask for an input file giving the user a prompt message. Optionally you can
 	specifying 4-char file types that are allowable"""
 	import EasyDialogs
+	warnings.warn("macfs.StandardGetFile and friends are deprecated, use EasyDialogs.AskFileForOpen",
+              DeprecationWarning, stacklevel=2)
 	if not typelist:
 		typelist = None
 	fss = EasyDialogs.AskFileForOpen(message=prompt, wanted=FSSpec, 
@@ -153,12 +156,16 @@ def StandardPutFile(prompt, default=None):
 	"""Ask the user for an output file, with a prompt. Optionally you cn supply a
 	default output filename"""
 	import EasyDialogs
+	warnings.warn("macfs.StandardGetFile and friends are deprecated, use EasyDialogs.AskFileForOpen",
+              DeprecationWarning, stacklevel=2)
 	fss = EasyDialogs.AskFileForSave(wanted=FSSpec, message=prompt, 
 	savedFileName=default, defaultLocation=_handleSetFolder())
 	return fss, not fss is None
 	
 def SetFolder(folder):
 	global _curfolder
+	warnings.warn("macfs.StandardGetFile and friends are deprecated, use EasyDialogs.AskFileForOpen",
+              DeprecationWarning, stacklevel=2)
 	if _curfolder:
 		rv = FSSpec(_curfolder)
 	else:
@@ -175,6 +182,8 @@ def _handleSetFolder():
 def GetDirectory(prompt=None):
 	"""Ask the user to select a folder. Optionally you can give a prompt."""
 	import EasyDialogs
+	warnings.warn("macfs.StandardGetFile and friends are deprecated, use EasyDialogs.AskFileForOpen",
+              DeprecationWarning, stacklevel=2)
 	fss = EasyDialogs.AskFolder(message=prompt, wanted=FSSpec, 
 		defaultLocation=_handleSetFolder())
 	return fss, not fss is None
