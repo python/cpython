@@ -1,4 +1,4 @@
-#!/home/bernie/src/python23/dist/src/python
+"""Unit tests for socket timeout feature."""
 
 import unittest
 import test_support
@@ -6,8 +6,10 @@ import test_support
 import time
 import socket
 
+
 class CreationTestCase(unittest.TestCase):
     """Test Case for socket.gettimeout() and socket.settimeout()"""
+
     def setUp(self):
         self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -39,9 +41,57 @@ class CreationTestCase(unittest.TestCase):
         self.assertEqual(type(self.__s.gettimeout()), type(1.0),
             "return type of gettimeout() is not FloatType")
 
+        self.__s.settimeout(None)
+        self.assertEqual(type(self.__s.gettimeout()), type(None),
+            "return type of gettimeout() is not None")
+
+    def testTypeCheck(self):
+        "Test type checking by settimeout"
+        self.__s.settimeout(0)
+        self.__s.settimeout(0L)
+        self.__s.settimeout(0.0)
+        self.__s.settimeout(None)
+        self.assertRaises(TypeError, self.__s.settimeout, "")
+        self.assertRaises(TypeError, self.__s.settimeout, u"")
+        self.assertRaises(TypeError, self.__s.settimeout, ())
+        self.assertRaises(TypeError, self.__s.settimeout, [])
+        self.assertRaises(TypeError, self.__s.settimeout, {})
+        self.assertRaises(TypeError, self.__s.settimeout, 0j)
+
+    def testRangeCheck(self):
+        "Test range checking by settimeout"
+        self.assertRaises(ValueError, self.__s.settimeout, -1)
+        self.assertRaises(ValueError, self.__s.settimeout, -1L)
+        self.assertRaises(ValueError, self.__s.settimeout, -1.0)
+
+    def testTimeoutThenoBlocking(self):
+        "Test settimeout followed by setblocking"
+        self.__s.settimeout(10)
+        self.__s.setblocking(1)
+        self.assertEqual(self.__s.gettimeout(), None)
+        self.__s.setblocking(0)
+        self.assertEqual(self.__s.gettimeout(), None)
+
+        self.__s.settimeout(10)
+        self.__s.setblocking(0)
+        self.assertEqual(self.__s.gettimeout(), None)
+        self.__s.setblocking(1)
+        self.assertEqual(self.__s.gettimeout(), None)
+
+    def testBlockingThenTimeout(self):
+        "Test setblocking followed by settimeout"
+        self.__s.setblocking(0)
+        self.__s.settimeout(1)
+        self.assertEqual(self.__s.gettimeout(), 1)
+
+        self.__s.setblocking(1)
+        self.__s.settimeout(1)
+        self.assertEqual(self.__s.gettimeout(), 1)
+
 
 class TimeoutTestCase(unittest.TestCase):
     """Test Case for socket.socket() timeout functions"""
+
     def setUp(self):
         self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__addr_remote = ('www.google.com', 80)
