@@ -43,7 +43,8 @@ import UserDict
 from StringIO import StringIO
 
 __all__ = ["MiniFieldStorage","FieldStorage","FormContentDict",
-           "SvFormContentDict","InterpFormContentDict","FormContent"]
+           "SvFormContentDict","InterpFormContentDict","FormContent",
+           "escape"]
 
 # Logging support
 # ===============
