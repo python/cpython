@@ -42,18 +42,18 @@ def WriteTestData(root_key):
     int_sub_key = int(sub_key)
     CloseKey(sub_key)
     try:
-    	QueryInfoKey(int_sub_key)
-    	raise RuntimeError, "It appears the CloseKey() function does not close the actual key!"
+        QueryInfoKey(int_sub_key)
+        raise RuntimeError, "It appears the CloseKey() function does not close the actual key!"
     except EnvironmentError:
-    	pass
+        pass
     # ... and close that key that way :-)
     int_key = int(key)
     key.Close()
     try:
-    	QueryInfoKey(int_key)
-    	raise RuntimeError, "It appears the key.Close() function does not close the actual key!"
+        QueryInfoKey(int_key)
+        raise RuntimeError, "It appears the key.Close() function does not close the actual key!"
     except EnvironmentError:
-    	pass
+        pass
 
 def ReadTestData(root_key):
     # Check we can get default value for this key.
