@@ -363,7 +363,7 @@ class CodeGenerator:
         self.visit(node.assign)
         self.visit(node.body)
         self.emit('JUMP_ABSOLUTE', start)
-        self.startBlock(anchor)
+        self.nextBlock(anchor)
         self.emit('POP_BLOCK')
         self.loops.pop()
         if node.else_:
