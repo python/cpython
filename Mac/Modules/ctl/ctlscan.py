@@ -41,6 +41,7 @@ class MyScanner(Scanner):
 			'DisposeControl', # Generated manually
 			'KillControls', # Implied by close of dialog
 			'SetCtlAction',
+			'TrackControl',	# Generated manually
 			'kControlBevelButtonCenterPopupGlyphTag', # Constant with funny definition
 			'kControlProgressBarIndeterminateTag', # ditto
 			# The following are unavailable for static 68k (appearance manager)
@@ -76,11 +77,11 @@ class MyScanner(Scanner):
 			                            ("long", "*", "OutMode")],
 			 [("VarVarOutBuffer", "*", "InOutMode")]),
 			
-			# For TrackControl
-			([("ProcPtr", "actionProc", "InMode")],
-			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
-			([("ControlActionUPP", "actionProc", "InMode")],
-			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
+##			# For TrackControl
+##			([("ProcPtr", "actionProc", "InMode")],
+##			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
+##			([("ControlActionUPP", "actionProc", "InMode")],
+##			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
 			
 			([("ControlHandle", "*", "OutMode")],
 			 [("ExistingControlHandle", "*", "*")]),

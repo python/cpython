@@ -78,6 +78,13 @@ ControlFontStyle_Convert(v, itself)
 		QdRGB_Convert, &itself->backColor);
 }
 
+/* TrackControl callback support */
+static PyObject *tracker;
+static ControlActionUPP mytracker_upp;
+
+extern int settrackfunc(PyObject *); 	/* forward */
+extern void clrtrackfunc(void);	/* forward */
+
 static PyObject *Ctl_Error;
 
 /* ---------------------- Object type Control ----------------------- */
@@ -328,24 +335,6 @@ static PyObject *CtlObj_SetUpControlBackground(_self, _args)
 	return _res;
 }
 
-static PyObject *CtlObj_TrackControl(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	ControlPartCode _rv;
-	Point startPoint;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetPoint, &startPoint))
-		return NULL;
-	_rv = TrackControl(_self->ob_itself,
-	                   startPoint,
-	                   (ControlActionUPP)0);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
 static PyObject *CtlObj_DragControl(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -582,20 +571,6 @@ static PyObject *CtlObj_GetControlVariant(_self, _args)
 	_rv = GetControlVariant(_self->ob_itself);
 	_res = Py_BuildValue("h",
 	                     _rv);
-	return _res;
-}
-
-static PyObject *CtlObj_SetControlAction(_self, _args)
-	ControlObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	SetControlAction(_self->ob_itself,
-	                 (ControlActionUPP)0);
-	Py_INCREF(Py_None);
-	_res = Py_None;
 	return _res;
 }
 
@@ -859,6 +834,38 @@ static PyObject *CtlObj_DisposeControl(_self, _args)
 
 }
 
+static PyObject *CtlObj_TrackControl(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	ControlPartCode _rv;
+	Point startPoint;
+	ControlActionUPP upp = 0;
+	PyObject *callback = 0;
+
+	if (!PyArg_ParseTuple(_args, "O&|O",
+	                      PyMac_GetPoint, &startPoint, &callback))
+		return NULL;
+	if (callback && callback != Py_None) {
+		if (PyInt_Check(callback) && PyInt_AS_LONG(callback) == -1)
+			upp = (ControlActionUPP)-1;
+		else {
+			settrackfunc(callback);
+			upp = mytracker_upp;
+		}
+	}
+	_rv = TrackControl(_self->ob_itself,
+	                   startPoint,
+	                   upp);
+	clrtrackfunc();
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+
+}
+
 static PyMethodDef CtlObj_methods[] = {
 	{"HiliteControl", (PyCFunction)CtlObj_HiliteControl, 1,
 	 "(ControlPartCode hiliteState) -> None"},
@@ -886,8 +893,6 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> None"},
 	{"SetUpControlBackground", (PyCFunction)CtlObj_SetUpControlBackground, 1,
 	 "(SInt16 inDepth, Boolean inIsColorDevice) -> None"},
-	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
-	 "(Point startPoint) -> (ControlPartCode _rv)"},
 	{"DragControl", (PyCFunction)CtlObj_DragControl, 1,
 	 "(Point startPoint, Rect limitRect, Rect slopRect, DragConstraint axis) -> None"},
 	{"TestControl", (PyCFunction)CtlObj_TestControl, 1,
@@ -916,8 +921,6 @@ static PyMethodDef CtlObj_methods[] = {
 	 "(SInt16 newMaximum) -> None"},
 	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
 	 "() -> (ControlVariant _rv)"},
-	{"SetControlAction", (PyCFunction)CtlObj_SetControlAction, 1,
-	 "() -> None"},
 	{"SetControlReference", (PyCFunction)CtlObj_SetControlReference, 1,
 	 "(SInt32 data) -> None"},
 	{"GetControlReference", (PyCFunction)CtlObj_GetControlReference, 1,
@@ -948,6 +951,8 @@ static PyMethodDef CtlObj_methods[] = {
 	 "Return this Control as a Resource"},
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
 	 "() -> None"},
+	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
+	 NULL},
 	{NULL, NULL, 0}
 };
 
@@ -1332,6 +1337,43 @@ CtlObj_WhichControl(ControlHandle c)
 	return it;
 }
 
+static int
+settrackfunc(obj)
+	PyObject *obj;
+{
+	if (tracker) {
+		PyErr_SetString(Ctl_Error, "Tracker function in use");
+		return 0;
+	}
+	tracker = obj;
+	Py_INCREF(tracker);
+}
+
+static void
+clrtrackfunc()
+{
+	Py_XDECREF(tracker);
+	tracker = 0;
+}
+
+static pascal void
+mytracker(ctl, part)
+	ControlHandle ctl;
+	short part;
+{
+	PyObject *args, *rv=0;
+	
+	args = Py_BuildValue("(O&i)", CtlObj_WhichControl, ctl, (int)part);
+	if (args && tracker) {
+		rv = PyEval_CallObject(tracker, args);
+		Py_DECREF(args);
+	}
+	if (rv)
+		Py_DECREF(rv);
+	else
+		fprintf(stderr, "TrackControl: exception in tracker function\n");
+}
+
 
 void initCtl()
 {
@@ -1339,6 +1381,8 @@ void initCtl()
 	PyObject *d;
 
 
+
+	mytracker_upp = NewControlActionProc(mytracker);
 
 
 	m = Py_InitModule("Ctl", Ctl_methods);
