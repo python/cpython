@@ -271,7 +271,7 @@ PyThreadState_Swap(PyThreadState *new)
 
 	_PyThreadState_Current = new;
 	/* It should not be possible for more than one thread state
-	   to be used for a thread.  Check this the best we can in debug 
+	   to be used for a thread.  Check this the best we can in debug
 	   builds.
 	*/
 #if defined(Py_DEBUG) && defined(WITH_THREAD)
@@ -385,8 +385,8 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
 static PyInterpreterState *autoInterpreterState = NULL;
 static int autoTLSkey = 0;
 
-/* Internal initialization/finalization functions called by 
-   Py_Initialize/Py_Finalize 
+/* Internal initialization/finalization functions called by
+   Py_Initialize/Py_Finalize
 */
 void _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
 {
@@ -418,8 +418,8 @@ PyGILState_STATE PyGILState_Ensure(void)
 {
 	int current;
 	PyThreadState *tcur;
-	/* Note that we do not auto-init Python here - apart from 
-	   potential races with 2 threads auto-initializing, pep-311 
+	/* Note that we do not auto-init Python here - apart from
+	   potential races with 2 threads auto-initializing, pep-311
 	   spells out other issues.  Embedders are expected to have
 	   called Py_Initialize() and usually PyEval_InitThreads().
 	*/
@@ -438,7 +438,7 @@ PyGILState_STATE PyGILState_Ensure(void)
 		PyEval_RestoreThread(tcur);
 	/* Update our counter in the thread-state - no need for locks:
 	   - tcur will remain valid as we hold the GIL.
-	   - the counter is safe as we are the only thread "allowed" 
+	   - the counter is safe as we are the only thread "allowed"
 	     to modify this value
 	*/
 	tcur->gilstate_counter++;
@@ -453,7 +453,7 @@ void PyGILState_Release(PyGILState_STATE oldstate)
 		              "but no thread-state for this thread");
 	/* We must hold the GIL and have our thread state current */
 	/* XXX - remove the check - the assert should be fine,
-	   but while this is very new (April 2003), the extra check 
+	   but while this is very new (April 2003), the extra check
 	   by release-only users can't hurt.
 	*/
 	if (!PyThreadState_IsCurrent(tcur))
@@ -462,7 +462,7 @@ void PyGILState_Release(PyGILState_STATE oldstate)
 	tcur->gilstate_counter -= 1;
 	assert (tcur->gilstate_counter >= 0); /* illegal counter value */
 
-	/* If we are about to destroy this thread-state, we must 
+	/* If we are about to destroy this thread-state, we must
 	   clear it while the lock is held, as destructors may run
 	*/
 	if (tcur->gilstate_counter==0) {
