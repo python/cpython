@@ -16,7 +16,10 @@ class TestShutil(unittest.TestCase):
         filename = tempfile.mktemp()
         self.assertRaises(OSError, shutil.rmtree, filename)
 
-    if hasattr(os, 'chmod') and sys.platform[:6] != 'cygwin':
+    # See bug #1071513 for why we don't run this on cygwin
+    # and bug #1076467 for why we don't run this as root.
+    if (hasattr(os, 'chmod') and sys.platform[:6] != 'cygwin'
+        and os.getenv('USER') != 'root'):
         def test_on_error(self):
             self.errorState = 0
             os.mkdir(TESTFN)
@@ -31,7 +34,8 @@ class TestShutil(unittest.TestCase):
 
             shutil.rmtree(TESTFN, onerror=self.check_args_to_onerror)
             # Test whether onerror has actually been called.
-            self.assertEqual(self.errorState, 2)
+            self.assertEqual(self.errorState, 2,
+                             "Expected call to onerror function did not happen.")
 
             # Make writable again.
             os.chmod(TESTFN, old_dir_mode)
