@@ -313,6 +313,13 @@ class TestMessageAPI(TestEmailBase):
         msg = self._msgobj('msg_22.txt')
         self.assertEqual(msg.get_payload(1).get_param('name'), 'wibble.JPG')
 
+    def test_get_param_with_semis_in_quotes(self):
+        msg = email.message_from_string(
+            'Content-Type: image/pjpeg; name="Jim&amp;&amp;Jill"\n')
+        self.assertEqual(msg.get_param('name'), 'Jim&amp;&amp;Jill')
+        self.assertEqual(msg.get_param('name', unquote=False),
+                         '"Jim&amp;&amp;Jill"')
+
     def test_has_key(self):
         msg = email.message_from_string('Header: exists')
         self.failUnless(msg.has_key('header'))
