@@ -9,10 +9,10 @@ uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
 		 'prospero', '']
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'wais',
 	       'prospero', '']
-non_hierarchical = ['gopher', 'mailto', 'news', 'telnet', 'wais']
-uses_params = ['ftp', 'prospero', 'http', '']
+non_hierarchical = ['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais']
+uses_params = ['ftp', 'hdl', 'prospero', 'http', '']
 uses_query = ['http', 'wais', '']
-uses_fragment = ['ftp', 'http', 'gopher', 'news', 'nntp', 'wais',
+uses_fragment = ['ftp', 'hdl', 'http', 'gopher', 'news', 'nntp', 'wais',
 		 'file', 'prospero', '']
 
 # Characters valid in scheme names
