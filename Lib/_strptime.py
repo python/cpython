@@ -306,22 +306,23 @@ class TimeRE(dict):
 
     def __init__(self, locale_time=LocaleTime()):
         """Init inst with non-locale regexes and store LocaleTime object."""
-        # XXX: should 0 be valid for:
-        #          day (d), julian day (j), month (m), and hour12 (I)?
-        super(TimeRE,self).__init__({
+        #XXX: Does 'Y' need to worry about having less or more than 4 digits?
+        base = super(TimeRE, self)
+        base.__init__({
             # The " \d" option is to make %c from ANSI C work
-            'd': r"(?P<d>3[0-1]|[0-2]\d|\d| \d)",
+            'd': r"(?P<d>3[0-1]|[1-2]\d|0[1-9]|[1-9]| [1-9])",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
-            'I': r"(?P<I>0\d|1[0-2]|\d)",
-            'j': r"(?P<j>(?:3[0-5]\d|36[0-6])|[0-2]\d\d|\d\d|\d)",
-            'm': r"(?P<m>0\d|1[0-2]|\d)",
+            'I': r"(?P<I>1[0-2]|0[1-9]|[1-9])",
+            'j': r"(?P<j>36[0-6]|3[0-5]\d|[1-2]\d\d|0[1-9]\d|00[1-9]|[1-9]\d|0[1-9]|[1-9])",
+            'm': r"(?P<m>1[0-2]|0[1-9]|[1-9])",
             'M': r"(?P<M>[0-5]\d|\d)",
             'S': r"(?P<S>6[0-1]|[0-5]\d|\d)",
             'U': r"(?P<U>5[0-3]|[0-4]\d|\d)",
             'w': r"(?P<w>[0-6])",
-            'W': r"(?P<W>5[0-3]|[0-4]\d|\d)",  # Same as U
+            # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
             'Y': r"(?P<Y>\d\d\d\d)"})
+        base.__setitem__('W', base.__getitem__('U'))
         self.locale_time = locale_time
 
     def __getitem__(self, fetch):
