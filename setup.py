@@ -653,6 +653,13 @@ class PyBuildExt(build_ext):
             include_dirs.append('/usr/X11/include')
             added_lib_dirs.append('/usr/X11/lib')
 
+        # If Cygwin, then verify that X is installed before proceeding
+        if platform == 'cygwin':
+            x11_inc = find_file('X11/Xlib.h', [], inc_dirs)
+            if x11_inc is None:
+                # X header files missing, so give up
+                return
+
         # Check for BLT extension
         if self.compiler.find_library_file(lib_dirs + added_lib_dirs, 'BLT8.0'):
             defs.append( ('WITH_BLT', 1) )
