@@ -347,7 +347,7 @@ will implement.
 \index{finalization, of objects}
 
 \begin{verbatim}
-    freefunc tp_dealloc;
+    destructor tp_dealloc;
 \end{verbatim}
 
 This function is called when the reference count of the instance of
@@ -918,7 +918,7 @@ avoiding the exception can yield slightly better performance.  If an
 actual error occurs, it should set an exception and return \NULL.
 
 
-\subsection{Cycle Collector Support
+\subsection{Supporting the Cycle Collector
             \label{example-cycle-support}}
 
 This example shows only enough of the implementation of an extension
