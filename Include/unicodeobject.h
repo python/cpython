@@ -185,6 +185,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 # define PyUnicode_Resize PyUnicodeUCS2_Resize
 # define PyUnicode_SetDefaultEncoding PyUnicodeUCS2_SetDefaultEncoding
 # define PyUnicode_Split PyUnicodeUCS2_Split
+# define PyUnicode_RSplit PyUnicodeUCS2_RSplit
 # define PyUnicode_Splitlines PyUnicodeUCS2_Splitlines
 # define PyUnicode_Tailmatch PyUnicodeUCS2_Tailmatch
 # define PyUnicode_Translate PyUnicodeUCS2_Translate
@@ -957,6 +958,25 @@ PyAPI_FUNC(PyObject*) PyUnicode_Split(
 PyAPI_FUNC(PyObject*) PyUnicode_Splitlines(
     PyObject *s,		/* String to split */
     int keepends		/* If true, line end markers are included */
+    );		
+
+/* Split a string giving a list of Unicode strings.
+
+   If sep is NULL, splitting will be done at all whitespace
+   substrings. Otherwise, splits occur at the given separator.
+
+   At most maxsplit splits will be done. But unlike PyUnicode_Split
+   PyUnicode_RSplit splits from the end of the string. If negative,
+   no limit is set.
+
+   Separators are not included in the resulting list.
+
+*/
+
+PyAPI_FUNC(PyObject*) PyUnicode_RSplit(
+    PyObject *s,		/* String to split */
+    PyObject *sep,		/* String separator */
+    int maxsplit		/* Maxsplit count */
     );		
 
 /* Translate a string by applying a character mapping table to it and

@@ -189,6 +189,26 @@ class CommonTest(unittest.TestCase):
 
         self.checkraises(TypeError, 'hello', 'split', 42, 42, 42)
 
+    def test_rsplit(self):
+        self.checkequal(['this', 'is', 'the', 'rsplit', 'function'],
+                         'this is the rsplit function', 'rsplit')
+        self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|')
+        self.checkequal(['a|b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|', 2)
+        self.checkequal(['a b c', 'd'], 'a b c d', 'rsplit', None, 1)
+        self.checkequal(['a b', 'c', 'd'], 'a b c d', 'rsplit', None, 2)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit', None, 3)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit', None, 4)
+        self.checkequal(['a b c d'], 'a b c d', 'rsplit', None, 0)
+        self.checkequal(['a, b, c', 'd'], 'a, b, c, d', 'rsplit', ', ', 1)
+        self.checkequal(['a, b', 'c', 'd'], 'a, b, c, d', 'rsplit', ', ', 2)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a, b, c, d', 'rsplit', ', ', 3)
+        self.checkequal(['a', 'b', 'c', 'd'], 'a, b, c, d', 'rsplit', ', ', 4)
+        self.checkequal(['a, b, c, d'], 'a, b, c, d', 'rsplit', ', ', 0)
+        self.checkequal(['a  b', 'c', 'd'], 'a  b  c  d', 'rsplit', None, 2)
+        self.checkequal(['a\x00b', 'c'], 'a\x00b\x00c', 'rsplit', '\x00', 1)
+        self.checkequal(['', ''], 'abcd', 'rsplit', 'abcd')
+        self.checkequal([u'a b', u'c', u'd'], 'a b c d', 'rsplit', u' ', 2)
+
     def test_strip(self):
         self.checkequal('hello', '   hello   ', 'strip')
         self.checkequal('hello   ', '   hello   ', 'lstrip')
