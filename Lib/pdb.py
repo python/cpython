@@ -422,26 +422,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			else:
 				print 'Deleted breakpoint %s ' % (i,)
 	do_cl = do_clear # 'c' is already an abbreviation for 'continue'
-
-	def do_clear_break(self, arg):
-		if not arg:
-			self.do_clear("")
-			return
-		arg = string.strip(arg)
-		# First arg is file, second is line, ignore anything else
-		args = string.split(arg)
-		if len(args) < 2:
-			print '*** Specify file and line number.'
-			return
-		try:
-			line = int(args[1])
-		except:
-			print '*** line number must be an integer.'
-			return
-		result =self.clear_break(args[0], line)
-		if result:
-			print result
-	do_clb = do_clear_break
 	
 	def do_where(self, arg):
 		self.print_stack_trace()
