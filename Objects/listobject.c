@@ -94,21 +94,18 @@ setlistitem(op, i, newitem)
 {
 	register object *olditem;
 	if (!is_listobject(op)) {
-		if (newitem != NULL)
-			DECREF(newitem);
+		XDECREF(newitem);
 		err_badcall();
 		return -1;
 	}
 	if (i < 0 || i >= ((listobject *)op) -> ob_size) {
-		if (newitem != NULL)
-			DECREF(newitem);
+		XDECREF(newitem);
 		err_setstr(IndexError, "list assignment index out of range");
 		return -1;
 	}
 	olditem = ((listobject *)op) -> ob_item[i];
 	((listobject *)op) -> ob_item[i] = newitem;
-	if (olditem != NULL)
-		DECREF(olditem);
+	XDECREF(olditem);
 	return 0;
 }
 
@@ -177,8 +174,7 @@ list_dealloc(op)
 {
 	int i;
 	for (i = 0; i < op->ob_size; i++) {
-		if (op->ob_item[i] != NULL)
-			DECREF(op->ob_item[i]);
+		XDECREF(op->ob_item[i]);
 	}
 	if (op->ob_item != NULL)
 		free((ANY *)op->ob_item);
@@ -552,6 +548,25 @@ listindex(self, args)
 }
 
 static object *
+listcount(self, args)
+	listobject *self;
+	object *args;
+{
+	int count = 0;
+	int i;
+	
+	if (args == NULL) {
+		err_badarg();
+		return NULL;
+	}
+	for (i = 0; i < self->ob_size; i++) {
+		if (cmpobject(self->ob_item[i], args) == 0)
+			count++;
+	}
+	return newintobject((long)count);
+}
+
+static object *
 listremove(self, args)
 	listobject *self;
 	object *args;
@@ -577,6 +592,7 @@ listremove(self, args)
 
 static struct methodlist list_methods[] = {
 	{"append",	listappend},
+	{"count",	listcount},
 	{"index",	listindex},
 	{"insert",	listinsert},
 	{"sort",	listsort},
