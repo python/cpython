@@ -425,6 +425,15 @@ PyImport_ExecCodeModule(name, co)
 	char *name;
 	PyObject *co;
 {
+	return PyImport_ExecCodeModuleEx(name, co, (char *)NULL);
+}
+
+PyObject *
+PyImport_ExecCodeModuleEx(name, co, pathname)
+	char *name;
+	PyObject *co;
+	char *pathname;
+{
 	PyObject *modules = PyImport_GetModuleDict();
 	PyObject *m, *d, *v;
 
@@ -438,9 +447,20 @@ PyImport_ExecCodeModule(name, co)
 			return NULL;
 	}
 	/* Remember the filename as the __file__ attribute */
-	if (PyDict_SetItemString(d, "__file__",
-				 ((PyCodeObject *)co)->co_filename) != 0)
+	v = NULL;
+	if (pathname != NULL) {
+		v = PyString_FromString(pathname);
+		if (v == NULL)
+			PyErr_Clear();
+	}
+	if (v == NULL) {
+		v = ((PyCodeObject *)co)->co_filename;
+		Py_INCREF(v);
+	}
+	if (PyDict_SetItemString(d, "__file__", v) != 0)
 		PyErr_Clear(); /* Not important enough to report */
+	Py_DECREF(v);
+
 	v = PyEval_EvalCode((PyCodeObject *)co, d, d);
 	if (v == NULL)
 		return NULL;
@@ -570,7 +590,7 @@ load_compiled_module(name, cpathname, fp)
 	if (Py_VerboseFlag)
 		fprintf(stderr, "import %s # precompiled from %s\n",
 			name, cpathname);
-	m = PyImport_ExecCodeModule(name, (PyObject *)co);
+	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, cpathname);
 	Py_DECREF(co);
 
 	return m;
@@ -679,7 +699,7 @@ load_source_module(name, pathname, fp)
 				name, pathname);
 		write_compiled_module(co, cpathname, mtime);
 	}
-	m = PyImport_ExecCodeModule(name, (PyObject *)co);
+	m = PyImport_ExecCodeModuleEx(name, (PyObject *)co, cpathname);
 	Py_DECREF(co);
 
 	return m;
@@ -1132,7 +1152,7 @@ PyImport_ImportFrozenModule(name)
 			     name);
 		return -1;
 	}
-	m = PyImport_ExecCodeModule(name, co);
+	m = PyImport_ExecCodeModuleEx(name, co, "<frozen>");
 	Py_DECREF(co);
 	if (m == NULL)
 		return -1;
