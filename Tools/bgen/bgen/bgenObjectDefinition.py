@@ -123,7 +123,7 @@ class ObjectDefinition(GeneratorGroup):
 		Output("static void %s_dealloc(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		self.outputCleanupStructMembers()
-		Output("PyMem_DEL(self);")
+		Output("PyObject_Del(self);")
 		OutRbrace()
 
 	def outputCleanupStructMembers(self):
