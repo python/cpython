@@ -46,7 +46,7 @@ warnings.filterwarnings('ignore', '', DeprecationWarning, __name__)
 
 def openfile(filename):
     path = os.path.join(os.path.dirname(landmark), 'data', filename)
-    return open(path)
+    return open(path, 'rb')
 
 
 
@@ -743,7 +743,7 @@ Blah blah blah
 class TestMIMEAudio(unittest.TestCase):
     def setUp(self):
         # In Python, audiotest.au lives in Lib/test not Lib/test/data
-        fp = open(findfile('audiotest.au'))
+        fp = open(findfile('audiotest.au'), 'rb')
         try:
             self._audiodata = fp.read()
         finally:
