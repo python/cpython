@@ -567,13 +567,21 @@ class EditorWindow:
         #print self.flist.inversedict
         #print self.top.instanceDict
         #print self
+        ullist = "1234567890ABCDEFGHIJ"
         if rfList:
             for instance in self.top.instanceDict.keys():
-                instance.menuRecentFiles.delete(1,END)
+                menu = instance.menuRecentFiles
+                menu.delete(1,END)
+                i = 0 ; ul = 0; ullen = len(ullist)                
                 for file in rfList:
                     fileName=file[0:-1]
-                    instance.menuRecentFiles.add_command(label=fileName,
-                            command=instance.__RecentFileCallback(fileName))
+                    callback = instance.__RecentFileCallback(fileName)
+                    if i > ullen: # don't underline menuitems
+                        ul=None
+                    menu.add_command(label=ullist[i] + " " + fileName,
+                                     command=callback,
+                                     underline=ul)
+                    i += 1
                     
     def __CleanRecentFiles(self,rfList):
         origRfList=rfList[:]
