@@ -14,6 +14,65 @@ import sys, os, string, re
 
 class TextFile:
 
+    """Provides a file-like object that takes care of all the things you
+       commonly want to do when processing a text file that has some
+       line-by-line syntax: strip comments (as long as "#" is your comment
+       character), skip blank lines, join adjacent lines by escaping the
+       newline (ie. backslash at end of line), strip leading and/or
+       trailing whitespace, and collapse internal whitespace.  All of these
+       are optional and independently controllable.
+
+       Provides a 'warn()' method so you can generate warning messages that
+       report physical line number, even if the logical line in question
+       spans multiple physical lines.  Also provides 'unreadline()' for
+       implementing line-at-a-time lookahead.
+
+       Constructor is called as:
+
+           TextFile (filename=None, file=None, **options)
+
+       It bombs (RuntimeError) if both 'filename' and 'file' are None;
+       'filename' should be a string, and 'file' a file object (or
+       something that provides 'readline()' and 'close()' methods).  It is
+       recommended that you supply at least 'filename', so that TextFile
+       can include it in warning messages.  If 'file' is not supplied,
+       TextFile creates its own using the 'open()' builtin.
+
+       The options are all boolean, and affect the value returned by
+       'readline()':
+         strip_comments [default: true]
+           strip from "#" to end-of-line, as well as any whitespace
+           leading up to the "#" -- unless it is escaped by a backslash
+         lstrip_ws [default: false]
+           strip leading whitespace from each line before returning it
+         rstrip_ws [default: true]
+           strip trailing whitespace (including line terminator!) from
+           each line before returning it
+         skip_blanks [default: true}
+           skip lines that are empty *after* stripping comments and
+           whitespace.  (If both lstrip_ws and rstrip_ws are true,
+           then some lines may consist of solely whitespace: these will
+           *not* be skipped, even if 'skip_blanks' is true.)
+         join_lines [default: false]
+           if a backslash is the last non-newline character on a line
+           after stripping comments and whitespace, join the following line
+           to it to form one "logical line"; if N consecutive lines end
+           with a backslash, then N+1 physical lines will be joined to
+           form one logical line.
+         collapse_ws [default: false]  
+           after stripping comments and whitespace and joining physical
+           lines into logical lines, all internal whitespace (strings of
+           whitespace surrounded by non-whitespace characters, and not at
+           the beginning or end of the logical line) will be collapsed
+           to a single space.
+
+       Note that since 'rstrip_ws' can strip the trailing newline, the
+       semantics of 'readline()' must differ from those of the builtin file
+       object's 'readline()' method!  In particular, 'readline()' returns
+       None for end-of-file: an empty string might just be a blank line (or
+       an all-whitespace line), if 'rstrip_ws' is true but 'skip_blanks' is
+       not."""
+
     default_options = { 'strip_comments': 1,
                         'skip_blanks':    1,
                         'join_lines':     0,
@@ -23,6 +82,10 @@ class TextFile:
                       }
 
     def __init__ (self, filename=None, file=None, **options):
+        """Construct a new TextFile object.  At least one of 'filename'
+           (a string) and 'file' (a file-like object) must be supplied.
+           They keyword argument options are described above and affect
+           the values returned by 'readline()'."""
 
         if filename is None and file is None:
             raise RuntimeError, \
@@ -56,12 +119,18 @@ class TextFile:
         
 
     def open (self, filename):
+        """Open a new file named 'filename'.  This overrides both the
+           'filename' and 'file' arguments to the constructor."""
+
         self.filename = filename
         self.file = open (self.filename, 'r')
         self.current_line = 0
 
 
     def close (self):
+        """Close the current file and forget everything we know about it
+           (filename, current line number)."""
+
         self.file.close ()
         self.file = None
         self.filename = None
@@ -69,6 +138,14 @@ class TextFile:
 
 
     def warn (self, msg, line=None):
+        """Print (to stderr) a warning message tied to the current logical
+           line in the current file.  If the current logical line in the
+           file spans multiple physical lines, the warning refers to the
+           whole range, eg. "lines 3-5".  If 'line' supplied, it overrides
+           the current line number; it may be a list or tuple to indicate a
+           range of physical lines, or an integer for a single physical
+           line."""
+
         if line is None:
             line = self.current_line
         sys.stderr.write (self.filename + ", ")
@@ -80,6 +157,15 @@ class TextFile:
 
 
     def readline (self):
+        """Read and return a single logical line from the current file (or
+           from an internal buffer if lines have previously been "unread"
+           with 'unreadline()').  If the 'join_lines' option is true, this
+           may involve reading multiple physical lines concatenated into a
+           single string.  Updates the current line number, so calling
+           'warn()' after 'readline()' emits a warning about the physical
+           line(s) just read.  Returns None on end-of-file, since the empty
+           string can occur if 'rstrip_ws' is true but 'strip_blanks' is
+           not."""
 
         # If any "unread" lines waiting in 'linebuf', return the top
         # one.  (We don't actually buffer read-ahead data -- lines only
@@ -111,15 +197,15 @@ class TextFile:
                 if pos == -1:           # no "#" -- no comments
                     pass
                 elif pos == 0 or line[pos-1] != "\\": # it's a comment
-                    # Have to preserve the trailing newline; if
-                    # stripping comments resulted in an empty line, we'd
-                    # have no way to distinguish end-of-file! (NB. this
-                    # means that if the final line is all comment and
-                    # has to trailing newline, we will think that it's
+                    
+                    # Have to preserve the trailing newline, because it's
+                    # the job of a later step (rstrip_ws) to remove it --
+                    # and if rstrip_ws is false, we'd better preserve it!
+                    # (NB. this means that if the final line is all comment
+                    # and has no trailing newline, we will think that it's
                     # EOF; I think that's OK.)
-                    has_newline = (line[-1] == '\n')
-                    line = line[0:pos]
-                    if has_newline: line = line + '\n'
+                    eol = (line[-1] == '\n') and '\n' or ''
+                    line = line[0:pos] + eol
                     
                 else:                   # it's an escaped "#"
                     line = string.replace (line, "\\#", "#")
@@ -156,11 +242,10 @@ class TextFile:
             # trailing, or one or the other, or neither)
             if self.lstrip_ws and self.rstrip_ws:
                 line = string.strip (line)
-            else:
-                if self.lstrip_ws:
-                    line = string.lstrip (line)
-                if self.rstrip_ws:
-                    line = string.rstrip (line)
+            elif self.lstrip_ws:
+                line = string.lstrip (line)
+            elif self.rstrip_ws:
+                line = string.rstrip (line)
 
             # blank line (whether we rstrip'ed or not)? skip to next line
             # if appropriate
@@ -187,6 +272,9 @@ class TextFile:
 
 
     def readlines (self):
+        """Read and return the list of all logical lines remaining in the
+           current file."""
+
         lines = []
         while 1:
             line = self.readline()
@@ -196,6 +284,10 @@ class TextFile:
 
 
     def unreadline (self, line):
+        """Push 'line' (a string) onto an internal buffer that will be
+           checked by future 'readline()' calls.  Handy for implementing
+           a parser with line-at-a-time lookahead."""
+
         self.linebuf.append (line)
 
 
@@ -205,6 +297,7 @@ if __name__ == "__main__":
 line 3 \\
 continues on next line
 """
+
 
     # result 1: no fancy options
     result1 = map (lambda x: x + "\n", string.split (test_data, "\n")[0:-1])
