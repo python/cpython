@@ -411,7 +411,7 @@ class TestLoader:
         The name may resolve either to a module, a test case class, a
         test method within a test case class, or a callable object which
         returns a TestCase or TestSuite instance.
-        
+
         The method optionally resolves the names relative to a given module.
         """
         parts = string.split(name, '.')
