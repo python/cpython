@@ -49,6 +49,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #endif
+#ifdef USE_GUSI
+#include <TFileSpec.h> /* For Path2FSSpec */
+#endif
 
 #ifndef HAVE_UNIVERSAL_HEADERS
 #define GetResourceSizeOnDisk(x) SizeResource(x)
@@ -654,8 +657,21 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 		/* It's a pathname */
 		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
 			return 0;
+#ifdef USE_GUSI
+		{
+			FSSpec curdirfss;
+			
+			if ( Path2FSSpec(":x", &curdirfss) == 0 ) {
+				refnum = curdirfss.vRefNum;
+				parid = curdirfss.parID;
+			} else {
+				return 0;
+			}
+		}
+#else
 		refnum = 0; /* XXXX Should get CurWD here... */
 		parid = 0;
+#endif
 	} else {
 		if( !PyArg_Parse(v, "(hlO&); FSSpec should be fullpath or (vrefnum,dirid,path)",
 							&refnum, &parid, PyMac_GetStr255, &path)) {
