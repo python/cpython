@@ -688,10 +688,8 @@ redirect:
 	 * last chance to serve the request) or when the max memory limit
 	 * has been reached.
 	 */
-#ifdef MALLOC_ZERO_RETURNS_NULL
 	if (nbytes == 0)
 		nbytes = 1;
-#endif
 	return (void *)malloc(nbytes);
 }
 

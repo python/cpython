@@ -184,9 +184,6 @@
 /* Define if nice() returns success/failure instead of the new priority. */
 #undef HAVE_BROKEN_NICE
 
-/* Define if malloc(0) returns a NULL pointer */
-#undef MALLOC_ZERO_RETURNS_NULL
-
 /* Define if you have POSIX threads */
 #undef _POSIX_THREADS
 

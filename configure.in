@@ -2243,35 +2243,6 @@ LIBS="$LIBS $LIBM"
 AC_REPLACE_FUNCS(hypot)
 LIBS=$LIBS_SAVE
 
-# check whether malloc(0) returns NULL or not
-AC_MSG_CHECKING(what malloc(0) returns)
-AC_CACHE_VAL(ac_cv_malloc_zero,
-[AC_TRY_RUN([#include <stdio.h>
-#ifdef HAVE_STDLIB
-#include <stdlib.h>
-#else
-char *malloc(), *realloc();
-int *free();
-#endif
-main() {
-	char *p;
-	p = malloc(0);
-	if (p == NULL) exit(1);
-	p = realloc(p, 0);
-	if (p == NULL) exit(1);
-	free(p);
-	exit(0);
-}],
-ac_cv_malloc_zero=nonnull,
-ac_cv_malloc_zero=null,
-ac_cv_malloc_zero=nonnull)]) # XXX arm cross-compile?
-AC_MSG_RESULT($ac_cv_malloc_zero)
-if test "$ac_cv_malloc_zero" = null
-then
-  AC_DEFINE(MALLOC_ZERO_RETURNS_NULL, 1,
-  [Define if malloc(0) returns a NULL pointer.])
-fi
-
 # check for wchar.h
 AC_CHECK_HEADER(wchar.h, [
   AC_DEFINE(HAVE_WCHAR_H, 1, 
