@@ -174,21 +174,19 @@ def test_saveall():
     gc.collect()
     vereq(gc.garbage, []) # if this fails, someone else created immortal trash
 
-    l = []
-    l.append(l)
-    id_l = id(l)
+    L = []
+    L.append(L)
+    id_L = id(L)
 
     debug = gc.get_debug()
     gc.set_debug(debug | gc.DEBUG_SAVEALL)
-    del l
+    del L
     gc.collect()
     gc.set_debug(debug)
 
     vereq(len(gc.garbage), 1)
-    if id(gc.garbage[0]) == id_l:
-        del gc.garbage[0]
-    else:
-        raise TestFailed, "didn't find obj in garbage (saveall)"
+    obj = gc.garbage.pop()
+    vereq(id(obj), id_L)
 
 def test_del():
     # __del__ methods can trigger collection, make this to happen
@@ -203,7 +201,7 @@ def test_del():
     del a
 
     gc.disable()
-    apply(gc.set_threshold, thresholds)
+    gc.set_threshold(*thresholds)
 
 def test_del_newclass():
     # __del__ methods can trigger collection, make this to happen
@@ -218,7 +216,7 @@ def test_del_newclass():
     del a
 
     gc.disable()
-    apply(gc.set_threshold, thresholds)
+    gc.set_threshold(*thresholds)
 
 class Ouch:
     n = 0
