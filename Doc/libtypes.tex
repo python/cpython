@@ -48,8 +48,9 @@ always true.
 
 Operations and built-in functions that have a Boolean result always
 return \code{0} for false and \code{1} for true, unless otherwise
-stated.  (Important exception: the Boolean operations \samp{or} and
-\samp{and} always return one of their operands.)
+stated.  (Important exception: the Boolean operations
+\samp{or}\opindex{or} and \samp{and}\opindex{and} always return one of
+their operands.)
 
 \subsection{Boolean Operations}
 
@@ -167,9 +168,9 @@ Numbers are created by numeric literals or as the result of built-in
 functions and operators.  Unadorned integer literals (including hex
 and octal numbers) yield plain integers.  Integer literals with an \samp{L}
 or \samp{l} suffix yield long integers
-(\samp{L} is preferred because \code{1l} looks too much like eleven!).
+(\samp{L} is preferred because \samp{1l} looks too much like eleven!).
 Numeric literals containing a decimal point or an exponent sign yield
-floating point numbers.  Appending \code{j} or \code{J} to a numeric
+floating point numbers.  Appending \samp{j} or \samp{J} to a numeric
 literal yields a complex number.
 \indexii{numeric}{literals}
 \indexii{integer}{literals}
@@ -287,7 +288,8 @@ priority (operations in the same box have the same priority):
 \noindent
 Notes:
 \begin{description}
-\item[(1)] Negative shift counts are illegal.
+\item[(1)] Negative shift counts are illegal and cause a
+\exception{ValueError} to be raised.
 \item[(2)] A left shift by \var{n} bits is equivalent to
 multiplication by \code{pow(2, \var{n})} without overflow check.
 \item[(3)] A right shift by \var{n} bits is equivalent to
@@ -299,8 +301,8 @@ division by \code{pow(2, \var{n})} without overflow check.
 There are three sequence types: strings, lists and tuples.
 
 Strings literals are written in single or double quotes:
-\code{'xyzzy'}, \code{"frobozz"}.  See Chapter 2 of the Python
-Reference Manual for more about string literals.  Lists are
+\code{'xyzzy'}, \code{"frobozz"}.  See Chapter 2 of the \emph{Python
+Reference Manual} for more about string literals.  Lists are
 constructed with square brackets, separating items with commas:
 \code{[a, b, c]}.  Tuples are constructed by the comma operator (not
 within square brackets), with or without enclosing parentheses, but an
@@ -377,8 +379,9 @@ Notes:
 
 String objects have one unique built-in operation: the \code{\%}
 operator (modulo) with a string left argument interprets this string
-as a C sprintf format string to be applied to the right argument, and
-returns the string resulting from this formatting operation.
+as a \C{} \cfunction{sprintf()} format string to be applied to the
+right argument, and returns the string resulting from this formatting
+operation.
 
 The right argument should be a tuple with one item for each argument
 required by the format string; if the string requires a single
@@ -506,8 +509,9 @@ almost arbitrary values.  The only types of values not acceptable as
 keys are values containing lists or dictionaries or other mutable
 types that are compared by value rather than by object identity.
 Numeric types used for keys obey the normal rules for numeric
-comparison: if two numbers compare equal (e.g. 1 and 1.0) then they
-can be used interchangeably to index the same dictionary entry.
+comparison: if two numbers compare equal (e.g. \code{1} and
+\code{1.0}) then they can be used interchangeably to index the same
+dictionary entry.
 
 \indexii{mapping}{types}
 \indexii{dictionary}{type}
@@ -584,7 +588,7 @@ Modules are written like this: \code{<module 'sys'>}.
 \subsubsection{Classes and Class Instances}
 \nodename{Classes and Instances}
 
-(See Chapters 3 and 7 of the Python Reference Manual for these.)
+See Chapters 3 and 7 of the \emph{Python Reference Manual} for these.
 
 \subsubsection{Functions}
 
@@ -619,7 +623,7 @@ Calling \code{\var{m}(\var{arg-1}, \var{arg-2}, {\rm \ldots},
 \code{\var{m}.im_func(\var{m}.im_self, \var{arg-1}, \var{arg-2}, {\rm
 \ldots}, \var{arg-n})}.
 
-(See the Python Reference Manual for more info.)
+See the \emph{Python Reference Manual} for more information.
 
 \subsubsection{Code Objects}
 \obindex{code}
@@ -640,7 +644,7 @@ source string) to the \code{exec} statement or the built-in
 \stindex{exec}
 \bifuncindex{eval}
 
-(See the Python Reference Manual for more info.)
+See the \emph{Python Reference Manual} for more information.
 
 \subsubsection{Type Objects}
 
@@ -773,15 +777,41 @@ Write a list of strings to the file.  There is no return value.
 does not add line separators.)
 \end{funcdesc}
 
+File objects also offer the following attributes:
+
+\begin{datadesc}{closed}
+Boolean indicating the current state of the file object.  This is a
+read-only attribute; the \method{close()} method changes the value.
+\end{datadesc}
+
+\begin{datadesc}{mode}
+The I/O mode for the file.  If the file was created using the
+\function{open()} built-in function, this will be the value of the
+\var{mode} parameter.  This is a read-only attribute.
+\end{datadesc}
+
+\begin{datadesc}{name}
+If the file object was created using \function{open()}, the name of
+the file.  Otherwise, some string that indicates the source of the
+file object, of the form \samp{<\mbox{\ldots}>}.  This is a read-only
+attribute.
+\end{datadesc}
+
+\begin{datadesc}{softspace}
+Boolean that indicates whether a space character needs to be printed
+before another value when using the \keyword{print} statement.
 Classes that are trying to simulate a file object should also have a
 writable \code{softspace} attribute, which should be initialized to
-zero.  (\code{softspace} is used by the \code{print} statement.)  This
-will be automatic for classes implemented in Python; types implemented
-in C will have to provide a writable \code{softspace} attribute.
+zero.  This will be automatic for classes implemented in Python; types
+implemented in \C{} will have to provide a writable \code{softspace}
+attribute.
+\end{datadesc}
 
 \subsubsection{Internal Objects}
 
-(See the Python Reference Manual for these.)
+See the \emph{Python Reference Manual} for this information.  It
+describes code objects, stack frame objects, traceback objects, and
+slice objects.
 
 \subsection{Special Attributes}
 
