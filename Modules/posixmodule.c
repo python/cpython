@@ -891,7 +891,7 @@ posix_listdir(self, args)
 
 	if (FindClose(hFindFile) == FALSE) {
 		errno = GetLastError();
-		return posix_error_with_filename(&name);
+		return posix_error_with_filename(name);
 	}
 
 	return d;
