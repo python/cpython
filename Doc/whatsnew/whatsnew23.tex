@@ -1485,10 +1485,8 @@ it immediately.)
 location.
 
 \item Support for more advanced POSIX signal handling was added
-to the \module{signal} module by adding the \function{sigpending},
-\function{sigprocmask} and \function{sigsuspend} functions where supported
-by the platform.  These functions make it possible to avoid some previously
-unavoidable race conditions with signal handling.
+to the \module{signal} but then removed again as it proved impossible
+to make it work reliably across platforms.
 
 \item The \module{socket} module now supports timeouts.  You
 can call the \method{settimeout(\var{t})} method on a socket object to

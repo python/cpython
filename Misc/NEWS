@@ -982,9 +982,6 @@ Extension modules
   of sizeof(int)!=sizeof(long)!=sizeof(void*) is delayed until dl.open
   is called.
 
-- signal.sigpending, signal.sigprocmask and signal.sigsuspend have
-  been added where available.
-
 - The sys module acquired a new attribute, api_version, which evaluates
   to the value of the PYTHON_API_VERSION macro with which the
   interpreter was compiled.
