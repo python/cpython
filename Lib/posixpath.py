@@ -10,6 +10,7 @@ Some of this can actually be useful on non-Posix systems too, e.g.
 for manipulation of the pathname component of URLs.
 """
 
+import sys
 import os
 import stat
 
@@ -416,4 +417,7 @@ symbolic links encountered in the path."""
 
     return filename
 
-supports_unicode_filenames = False
+if sys.platform == "darwin": 
+    supports_unicode_filenames = True
+else:
+    supports_unicode_filenames = False
