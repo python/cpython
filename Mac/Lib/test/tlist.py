@@ -34,7 +34,7 @@ class ListWindow(Window):
 		window.EndUpdate()
 		
 	def do_update(self, *args):
-		self.list.LUpdate()
+		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
 		
 	def do_contentclick(self, local, modifiers, evt):
 		dclick = self.list.LClick(local, modifiers)
@@ -54,7 +54,7 @@ class ListWindow(Window):
 		for i in range(len(contents)):
 			l.LSetCell(contents[i], (0, i))
 		l.LSetDrawingMode(1)
-		l.LUpdate()
+		l.LUpdate(self.wid.GetWindowPort().visRgn)
 
 
 class TestList(Application):
