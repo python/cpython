@@ -61,7 +61,7 @@ extern long PyOS_GetLastModificationTime(); /* In getmtime.c */
 /* New way to come up with the magic number: (YEAR-1995), MONTH, DAY */
 #define MAGIC (20121 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
-PyObject *_PyImport_Modules; /* This becomes sys.modules */
+static PyObject *_PyImport_Modules; /* This becomes sys.modules */
 
 
 /* Initialize things */
@@ -461,7 +461,7 @@ find_module(name, path, buf, buflen, p_fp)
 		if (!PyString_Check(v))
 			continue;
 		len = PyString_Size(v);
-		if (len + 2 + namelen + _PyImport_MaxSuffixSize >= buflen)
+		if (len + 2 + namelen + MAXSUFFIXSIZE >= buflen)
 			continue; /* Too long */
 		strcpy(buf, PyString_AsString(v));
 		if ((int)strlen(buf) != len)

@@ -126,6 +126,7 @@ typedef void (*dl_funcptr)();
 #endif
 
 #ifdef _AIX
+#undef USE_SHLIB /* AIX 4.2 and higher have dlfcn.h but we don't want it */
 #define DYNAMIC_LINK
 #define SHORT_EXT ".so"
 #define LONG_EXT "module.so"
@@ -200,14 +201,6 @@ extern char *Py_GetProgramName();
 #endif /* !SHORT_EXT && !LONG_EXT */
 
 #endif /* DYNAMIC_LINK */
-
-/* Max length of module suffix searched for -- accommodates "module.slb" */
-#ifndef MAXSUFFIXSIZE
-#define MAXSUFFIXSIZE 12
-#endif
-
-/* Pass it on to import.c */
-int _PyImport_MaxSuffixSize = MAXSUFFIXSIZE;
 
 struct filedescr _PyImport_Filetab[] = {
 #ifdef SHORT_EXT
@@ -527,7 +520,7 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 	(*p)();
 	/* XXX Need check for err_occurred() here */
 
-	m = PyDict_GetItemString(_PyImport_Modules, name);
+	m = PyDict_GetItemString(PyImport_GetModuleDict(), name);
 	if (m == NULL) {
 		if (PyErr_Occurred() == NULL)
 			PyErr_SetString(PyExc_SystemError,
