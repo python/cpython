@@ -284,6 +284,18 @@ extern int lstat Py_PROTO((const char *, struct stat *));
 #define USE_TMPNAM_R
 #endif
 
+/* choose the appropriate stat and fstat functions and return structs */
+#ifdef MS_WIN64
+#	define STAT _stati64
+#	define FSTAT _fstati64
+#	define STRUCT_STAT struct _stati64
+#else
+#	define STAT stat
+#	define FSTAT fstat
+#	define STRUCT_STAT struct stat
+#endif
+
+
 /* Return a dictionary corresponding to the POSIX environment table */
 
 #if !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
@@ -539,14 +551,64 @@ posix_strintint(args, format, func)
 	return Py_None;
 }
 
+
+
+/* pack a system stat C structure into the Python stat tuple 
+   (used by posix_stat() and posix_fstat()) */
+static PyObject*
+_pystat_fromstructstat(st)
+	STRUCT_STAT st;
+{
+	PyObject *v = PyTuple_New(10);
+	if (v == NULL)
+		return NULL;
+
+	PyTuple_SetItem(v, 0, PyInt_FromLong((long)st.st_mode));
+#ifdef HAVE_LARGEFILE_SUPPORT
+	PyTuple_SetItem(v, 1, PyLong_FromLongLong((LONG_LONG)st.st_ino));
+#else
+	PyTuple_SetItem(v, 1, PyInt_FromLong((long)st.st_ino));
+#endif
+#if defined(HAVE_LONG_LONG) && !defined(MS_WINDOWS)
+	PyTuple_SetItem(v, 2, PyLong_FromLongLong((LONG_LONG)st.st_dev));
+#else
+	PyTuple_SetItem(v, 2, PyInt_FromLong((long)st.st_dev));
+#endif
+	PyTuple_SetItem(v, 3, PyInt_FromLong((long)st.st_nlink));
+	PyTuple_SetItem(v, 4, PyInt_FromLong((long)st.st_uid));
+	PyTuple_SetItem(v, 5, PyInt_FromLong((long)st.st_gid));
+#ifdef HAVE_LARGEFILE_SUPPORT
+	PyTuple_SetItem(v, 6, PyLong_FromLongLong((LONG_LONG)st.st_size));
+#else
+	PyTuple_SetItem(v, 6, PyInt_FromLong(st.st_size));
+#endif
+#if SIZEOF_TIME_T > SIZEOF_LONG
+	PyTuple_SetItem(v, 7, PyLong_FromLongLong((LONG_LONG)st.st_atime));
+	PyTuple_SetItem(v, 8, PyLong_FromLongLong((LONG_LONG)st.st_mtime));
+	PyTuple_SetItem(v, 9, PyLong_FromLongLong((LONG_LONG)st.st_ctime));
+#else
+	PyTuple_SetItem(v, 7, PyInt_FromLong((long)st.st_atime));
+	PyTuple_SetItem(v, 8, PyInt_FromLong((long)st.st_mtime));
+	PyTuple_SetItem(v, 9, PyInt_FromLong((long)st.st_ctime));
+#endif
+
+	if (PyErr_Occurred()) {
+		Py_DECREF(v);
+		return NULL;
+	}
+
+	return v;
+}
+
+
 static PyObject *
 posix_do_stat(self, args, format, statfunc)
 	PyObject *self;
 	PyObject *args;
         char *format;
-	int (*statfunc) Py_FPROTO((const char *, struct stat *));
+	int (*statfunc) Py_FPROTO((const char *, STRUCT_STAT *));
 {
-	struct stat st;
+	STRUCT_STAT st;
 	char *path;
 	int res;
 
@@ -585,31 +647,8 @@ posix_do_stat(self, args, format, statfunc)
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return posix_error_with_filename(path);
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-	return Py_BuildValue("(llllllllll)",
-			     (long)st.st_mode,
-			     (long)st.st_ino,
-			     (long)st.st_dev,
-			     (long)st.st_nlink,
-			     (long)st.st_uid,
-			     (long)st.st_gid,
-			     (long)st.st_size,
-			     (long)st.st_atime,
-			     (long)st.st_mtime,
-			     (long)st.st_ctime);
-#else
-	return Py_BuildValue("(lLllllLlll)",
-			     (long)st.st_mode,
-			     (LONG_LONG)st.st_ino,
-			     (long)st.st_dev,
-			     (long)st.st_nlink,
-			     (long)st.st_uid,
-			     (long)st.st_gid,
-			     (LONG_LONG)st.st_size,
-			     (long)st.st_atime,
-			     (long)st.st_mtime,
-			     (long)st.st_ctime);
-#endif
+
+	return _pystat_fromstructstat(st);
 }
 
 
@@ -1158,7 +1197,7 @@ posix_stat(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_do_stat(self, args, "s:stat", stat);
+	return posix_do_stat(self, args, "s:stat", STAT);
 }
 
 
@@ -1546,6 +1585,7 @@ posix_spawnv(self, args)
 	PyObject *argv;
 	char **argvlist;
 	int mode, i, argc;
+	intptr_t spawnval;
 	PyObject *(*getitem) Py_PROTO((PyObject *, int));
 
 	/* spawnv has three arguments: (mode, path, argv), where
@@ -1581,14 +1621,18 @@ posix_spawnv(self, args)
 
 	if (mode == _OLD_P_OVERLAY)
 		mode = _P_OVERLAY;
-	i = _spawnv(mode, path, argvlist);
+	spawnval = _spawnv(mode, path, argvlist);
 
 	PyMem_DEL(argvlist);
 
-	if (i == -1)
+	if (spawnval == -1)
 		return posix_error();
 	else
-		return Py_BuildValue("i", i);
+#if SIZEOF_LONG == SIZE_VOID_P
+		return Py_BuildValue("l", spawnval);
+#else
+		return Py_BuildValue("L", spawnval);
+#endif
 }
 
 
@@ -1612,6 +1656,7 @@ posix_spawnve(self, args)
 	char **envlist;
 	PyObject *key, *val, *keys=NULL, *vals=NULL, *res=NULL;
 	int mode, i, pos, argc, envc;
+	intptr_t spawnval;
 	PyObject *(*getitem) Py_PROTO((PyObject *, int));
 
 	/* spawnve has four arguments: (mode, path, argv, env), where
@@ -1689,11 +1734,15 @@ posix_spawnve(self, args)
 
 	if (mode == _OLD_P_OVERLAY)
 		mode = _P_OVERLAY;
-	i = _spawnve(mode, path, argvlist, envlist);
-	if (i == -1)
+	spawnval = _spawnve(mode, path, argvlist, envlist);
+	if (spawnval == -1)
 		(void) posix_error();
 	else
-		res = Py_BuildValue("i", i);
+#if SIZEOF_LONG == SIZE_VOID_P
+		res = Py_BuildValue("l", spawnval);
+#else
+		res = Py_BuildValue("L", spawnval);
+#endif
 
  fail_2:
 	while (--envc >= 0)
@@ -2328,7 +2377,7 @@ posix_lstat(self, args)
 #ifdef HAVE_LSTAT
 	return posix_do_stat(self, args, "s:lstat", lstat);
 #else /* !HAVE_LSTAT */
-	return posix_do_stat(self, args, "s:lstat", stat);
+	return posix_do_stat(self, args, "s:lstat", STAT);
 #endif /* !HAVE_LSTAT */
 }
 
@@ -2652,7 +2701,11 @@ posix_lseek(self, args)
 	PyObject *args;
 {
 	int fd, how;
+#ifdef MS_WIN64
+	LONG_LONG pos, res;
+#else
 	off_t pos, res;
+#endif
 	PyObject *posobj;
 	if (!PyArg_ParseTuple(args, "iOi:lseek", &fd, &posobj, &how))
 		return NULL;
@@ -2675,7 +2728,11 @@ posix_lseek(self, args)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
+#ifdef MS_WIN64
+	res = _lseeki64(fd, pos, how);
+#else
 	res = lseek(fd, pos, how);
+#endif
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return posix_error();
@@ -2749,40 +2806,17 @@ posix_fstat(self, args)
 	PyObject *args;
 {
 	int fd;
-	struct stat st;
+	STRUCT_STAT st;
 	int res;
 	if (!PyArg_ParseTuple(args, "i:fstat", &fd))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	res = fstat(fd, &st);
+	res = FSTAT(fd, &st);
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return posix_error();
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-	return Py_BuildValue("(llllllllll)",
-			     (long)st.st_mode,
-			     (long)st.st_ino,
-			     (long)st.st_dev,
-			     (long)st.st_nlink,
-			     (long)st.st_uid,
-			     (long)st.st_gid,
-			     (long)st.st_size,
-			     (long)st.st_atime,
-			     (long)st.st_mtime,
-			     (long)st.st_ctime);
-#else
-	return Py_BuildValue("(lLllllLlll)",
-			     (long)st.st_mode,
-			     (LONG_LONG)st.st_ino,
-			     (long)st.st_dev,
-			     (long)st.st_nlink,
-			     (long)st.st_uid,
-			     (long)st.st_gid,
-			     (LONG_LONG)st.st_size,
-			     (long)st.st_atime,
-			     (long)st.st_mtime,
-			     (long)st.st_ctime);
-#endif
+	
+	return _pystat_fromstructstat(st);
 }
 
 
@@ -2863,8 +2897,8 @@ posix_pipe(self, args)
 	Py_END_ALLOW_THREADS
 	if (!ok)
 		return posix_error();
-	read_fd = _open_osfhandle((long)read, 0);
-	write_fd = _open_osfhandle((long)write, 1);
+	read_fd = _open_osfhandle((intptr_t)read, 0);
+	write_fd = _open_osfhandle((intptr_t)write, 1);
 	return Py_BuildValue("(ii)", read_fd, write_fd);
 #endif /* MS_WIN32 */
 #endif
@@ -3526,9 +3560,10 @@ conv_confname(arg, valuep, table, tablesize)
     }
     if (PyString_Check(arg)) {
         /* look up the value in the table using a binary search */
-        int lo = 0;
-        int hi = tablesize;
-        int cmp, mid;
+        size_t lo = 0;
+		size_t mid;
+        size_t hi = tablesize;
+        int cmp;
         char *confname = PyString_AS_STRING(arg);
         while (lo < hi) {
             mid = (lo + hi) / 2;
