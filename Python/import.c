@@ -40,6 +40,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SEP ':'
 #endif
 
+#ifdef MSDOS
+#define SEP '\\'
+#endif
+
 #ifndef SEP
 #define SEP '/'
 #endif
