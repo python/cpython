@@ -180,7 +180,7 @@ module_getattro(PyModuleObject *m, PyObject *name)
 		}
 		PyErr_Format(PyExc_AttributeError,
 			     "'%.50s' module has no attribute '%.400s'",
-			     modname, name);
+			     modname, sname);
 	}
 	else
 		Py_INCREF(res);
