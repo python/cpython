@@ -110,26 +110,18 @@ class AbstractFormatter:
 	if not data: return
 	# The following looks a bit convoluted but is a great improvement over
 	# data = regsub.gsub('[' + string.whitespace + ']+', ' ', data)
-	if data[0] in string.whitespace:
-	    head = ' '
-	else:
-	    head = ''
-	if data[-1] in string.whitespace:
-	    tail = ' '
-	else:
-	    tail = ''
-	data = head + string.join(string.split(data))
-	if data != ' ': data = data + tail
-	#
-	if self.nospace and data[0] == ' ':
-	    data = data[1:]
+	prespace = data[0] in string.whitespace
+	postspace = data[-1] in string.whitespace
+	data = string.join(string.split(data))
+	if self.nospace and prespace:
 	    if not data: return
-	elif self.softspace and data[0] != ' ':
-	    data = ' ' + data
+	    prespace = 0
+	elif self.softspace:
+	    prespace = 1
 	self.nospace = self.softspace = 0
-	if data[-1] == ' ':
-	    data = data[:-1]
+	if postspace:
 	    self.softspace = 1
+	if prespace: data = ' ' + data
 	self.writer.send_flowing_data(data)
 
     def add_literal_data(self, data):
