@@ -328,7 +328,7 @@ class Server (Thread):
 
         try:
             self.wellknown = s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.bind('', self.port)
+            s.bind(('', self.port))
             s.listen(3)
         except:
             raise connectionLost
@@ -361,7 +361,7 @@ class Server (Thread):
 def Client(ip='127.0.0.1', port=None):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(ip,port or Server.default_port)
+        s.connect((ip,port or Server.default_port))
     except socket.error, what:
         raise connectionLost(str(what))
     except:
