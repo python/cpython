@@ -527,27 +527,27 @@ the console messages should not. Here's how you can achieve this:
 \begin{verbatim}
 import logging
 
-#set up logging to file - see previous section for more details
+# set up logging to file - see previous section for more details
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
                     filename='/temp/myapp.log',
                     filemode='w')
-#define a Handler which writes INFO messages or higher to the sys.stderr
+# define a Handler which writes INFO messages or higher to the sys.stderr
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
-#set a format which is simpler for console use
+# set a format which is simpler for console use
 formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
-#tell the handler to use this format
+# tell the handler to use this format
 console.setFormatter(formatter)
-#add the handler to the root logger
+# add the handler to the root logger
 logging.getLogger('').addHandler(console)
 
-#Now, we can log to the root logger, or any other logger. First the root...
+# Now, we can log to the root logger, or any other logger. First the root...
 logging.info('Jackdaws love my big sphinx of quartz.')
 
-#Now, define a couple of other loggers which might represent areas in your
-#application:
+# Now, define a couple of other loggers which might represent areas in your
+# application:
 
 logger1 = logging.getLogger('myapp.area1')
 logger2 = logging.getLogger('myapp.area2')
@@ -601,11 +601,11 @@ socketHandler = logging.handlers.SocketHandler('localhost',
 # an unformatted pickle
 rootLogger.addHandler(socketHandler)
 
-#Now, we can log to the root logger, or any other logger. First the root...
+# Now, we can log to the root logger, or any other logger. First the root...
 logging.info('Jackdaws love my big sphinx of quartz.')
 
-#Now, define a couple of other loggers which might represent areas in your
-#application:
+# Now, define a couple of other loggers which might represent areas in your
+# application:
 
 logger1 = logging.getLogger('myapp.area1')
 logger2 = logging.getLogger('myapp.area2')
@@ -620,14 +620,18 @@ At the receiving end, you can set up a receiver using the
 \module{SocketServer} module. Here is a basic working example:
 
 \begin{verbatim}
-import struct, cPickle, logging, logging.handlers
+import cPickle
+import logging
+import logging.handlers
+import SocketServer
+import struct
 
-from SocketServer import ThreadingTCPServer, StreamRequestHandler
 
-class LogRecordStreamHandler(StreamRequestHandler):
-    """
-    Handler for a streaming logging request. It basically logs the record
-    using whatever logging policy is configured locally.
+class LogRecordStreamHandler(SocketServer.StreamRequestHandler):
+    """Handler for a streaming logging request.
+
+    This basically logs the record using whatever logging policy is
+    configured locally.
     """
 
     def handle(self):
@@ -652,31 +656,29 @@ class LogRecordStreamHandler(StreamRequestHandler):
         return cPickle.loads(data)
 
     def handleLogRecord(self, record):
-        #if a name is specified, we use the named logger rather than the one
-        #implied by the record.
+        # if a name is specified, we use the named logger rather than the one
+        # implied by the record.
         if self.server.logname is not None:
             name = self.server.logname
         else:
             name = record.name
         logger = logging.getLogger(name)
-        #N.B. EVERY record gets logged. This is because Logger.handle
-        #is normally called AFTER logger-level filtering. If you want
-        #to do filtering, do it at the client end to save wasting
-        #cycles and network bandwidth!
+        # N.B. EVERY record gets logged. This is because Logger.handle
+        # is normally called AFTER logger-level filtering. If you want
+        # to do filtering, do it at the client end to save wasting
+        # cycles and network bandwidth!
         logger.handle(record)
 
-class LogRecordSocketReceiver(ThreadingTCPServer):
-    """
-    A simple-minded TCP socket-based logging receiver suitable for test
-    purposes.
+class LogRecordSocketReceiver(SocketServer.ThreadingTCPServer):
+    """simple TCP socket-based logging receiver suitable for testing.
     """
 
     allow_reuse_address = 1
 
     def __init__(self, host='localhost',
-            port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
-            handler=LogRecordStreamHandler):
-        ThreadingTCPServer.__init__(self, (host, port), handler)
+                 port=logging.handlers.DEFAULT_TCP_LOGGING_PORT,
+                 handler=LogRecordStreamHandler):
+        SocketServer.ThreadingTCPServer.__init__(self, (host, port), handler)
         self.abort = 0
         self.timeout = 1
         self.logname = None
