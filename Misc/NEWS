@@ -32,10 +32,13 @@ Extension modules
   ValueError is raised if tz.dst(dt) returns None (2.3a1 treated it
   as 0 instead).
 
-  The tzinfo methods utcoffset() and dst() must return a timedelta object 
-  (or None) now.  In 2.3a1 they could also return an int or long, but that 
-  was an unhelpfully redundant leftover from an earlier version wherein 
+  The tzinfo methods utcoffset() and dst() must return a timedelta object
+  (or None) now.  In 2.3a1 they could also return an int or long, but that
+  was an unhelpfully redundant leftover from an earlier version wherein
   they couldn't return a timedelta.  TOOWTDI.
+
+  The example tzinfo class for local time had a bug.  It was replaced
+  by a later example coded by Guido.
 
 Library
 -------
