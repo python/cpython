@@ -28,13 +28,24 @@ icReadOnlyPerm = 1
 icReadWritePerm = 2
 # End of ictypes.h
 
+class ICOpaqueData:
+	"""An unparseable IC entry"""
+	def __init__(self, data):
+		self.data = data
+
+	def __repr__(self):
+		return "ICOpaqueData(%s)"%`self.data`
+
+_ICOpaqueDataType=type(ICOpaqueData(''))
+		
 def _decode_default(data, key):
 	if len(data) == 0:
 		return data
 	if ord(data[0]) == len(data)-1:
 		# Assume Pstring
 		return data[1:]
-	raise error, "Unknown data format for key "+key
+	return ICOpaqueData(data)
+	
 	
 def _decode_multistr(data, key):
 	numstr = ord(data[0]) << 8 | ord(data[1])
@@ -134,6 +145,8 @@ def _decode(data, key):
 	return decoder(data, key)
 
 def _code(data, key):
+	if type(data) == _ICOpaqueDataType:
+		return data.data
 	if '\245' in key:
 		key2 = key[:string.index(key, '\245')+1]
 	else:
