@@ -85,7 +85,7 @@ def main():
 	curdir = os.getcwd()
 	import Res
 	try:
-		Res.OpenResFile('RunLibScript.rsrc')
+		Res.FSpOpenResFile('RunLibScript.rsrc', 1)
 	except:
 		pass # Assume we're an applet already
 	name, argv, stdin, stdout, wdir, pause = interact()

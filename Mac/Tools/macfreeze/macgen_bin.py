@@ -39,7 +39,7 @@ def generate(input, output, module_dict=None, architecture='fat', debug=0):
 	print 'Adding "__main__"'
 	buildtools.process(applettemplatepath, input, output, 0)
 	
-	outputref = Res.OpenResFile(output)
+	outputref = Res.FSpOpenResFile(output, 3)
 	try:
 		Res.UseResFile(outputref)
 		
@@ -171,10 +171,10 @@ def makefilenames(name):
 def copyres(input, output, *args, **kwargs):
 	openedin = openedout = 0
 	if type(input) == types.StringType:
-		input = Res.OpenResFile(input)
+		input = Res.FSpOpenResFile(input, 1)
 		openedin = 1
 	if type(output) == types.StringType:
-		output = Res.OpenResFile(output)
+		output = Res.FSpOpenResFile(output, 3)
 		openedout = 1
 	try:
 		apply(buildtools.copyres, (input, output) + args, kwargs)

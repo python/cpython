@@ -38,7 +38,7 @@ GEN68K_BUTTON = 6
 try:
 	Res.GetResource('DITL', DLG_ID)
 except Res.Error:
-	Res.OpenResFile("BuildApplication.rsrc")
+	Res.FSpOpenResFile("BuildApplication.rsrc", 1)
 else:
 	pass # we're an applet
 

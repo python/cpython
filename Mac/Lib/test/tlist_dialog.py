@@ -71,7 +71,7 @@ def dodialog(items):
 
 def test():
 	import os, sys
-	Res.OpenResFile('tlist_dialog.rsrc')
+	Res.FSpOpenResFile('tlist_dialog.rsrc', 1)
 	dodialog(os.listdir(':'))
 	sys.exit(1)
 
