@@ -178,7 +178,7 @@ class VCR:
 			return
 		if self.testready():
 			if self.cb:
-				apply(self.cb, self.cb_arg)
+				apply(self.cb, (self.cb_arg,))
 
 	def _cmd(self, cmd):
 		if DEBUG:
