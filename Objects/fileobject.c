@@ -38,17 +38,6 @@
 #endif
 
 
-typedef struct {
-	PyObject_HEAD
-	FILE *f_fp;
-	PyObject *f_name;
-	PyObject *f_mode;
-	int (*f_close)(FILE *);
-	int f_softspace; /* Flag used by 'print' command */
-	int f_binary; /* Flag which indicates whether the file is open
-			 open in binary (1) or test (0) mode */
-} PyFileObject;
-
 FILE *
 PyFile_AsFile(PyObject *f)
 {

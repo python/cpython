@@ -7,6 +7,17 @@
 extern "C" {
 #endif
 
+typedef struct {
+	PyObject_HEAD
+	FILE *f_fp;
+	PyObject *f_name;
+	PyObject *f_mode;
+	int (*f_close)(FILE *);
+	int f_softspace; /* Flag used by 'print' command */
+	int f_binary; /* Flag which indicates whether the file is
+			 open in binary (1) or test (0) mode */
+} PyFileObject;
+
 extern DL_IMPORT(PyTypeObject) PyFile_Type;
 
 #define PyFile_Check(op) PyObject_TypeCheck(op, &PyFile_Type)
