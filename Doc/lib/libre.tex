@@ -402,6 +402,13 @@ leftmost such \character{\#} through the end of the line are ignored.
   the old \function{regsub.split()} and \function{regsub.splitx()}.
 \end{funcdesc}
 
+\begin{funcdesc}{findall}{pattern, string}
+Return a list of all non-overlapping matches of \var{pattern} in
+\var{string}.  If one or more groups are present in the pattern,
+return a list of groups; this will be a list of tuples if the pattern
+has more than one group.  Empty matches are included in the result.
+\end{funcdesc}
+
 \begin{funcdesc}{sub}{pattern, repl, string\optional{, count\code{ = 0}}}
 Return the string obtained by replacing the leftmost non-overlapping
 occurrences of \var{pattern} in \var{string} by the replacement
@@ -504,6 +511,10 @@ attributes:
 Identical to the \function{split()} function, using the compiled pattern.
 \end{methoddesc}
 
+\begin{methoddesc}[RegexObject]{findall}{string}
+Identical to the \function{findall()} function, using the compiled pattern.
+\end{methoddesc}
+
 \begin{methoddesc}[RegexObject]{sub}{repl, string\optional{, count\code{ = 0}}}
 Identical to the \function{sub()} function, using the compiled pattern.
 \end{methoddesc}
@@ -566,13 +577,21 @@ After performing this match, \code{m.group(1)} is \code{'3'}, as is
 \code{m.group('int')}, and \code{m.group(2)} is \code{'14'}.
 \end{methoddesc}
 
-\begin{methoddesc}[MatchObject]{groups}{}
+\begin{methoddesc}[MatchObject]{groups}{\optional{default}}
 Return a tuple containing all the subgroups of the match, from 1 up to
-however many groups are in the pattern.  Groups that did not
-participate in the match have values of \code{None}.  (Incompatibility 
-note: in the original Python 1.5 release, if the tuple was one element
-long, a string would be returned instead.  In later versions, a
-singleton tuple is returned in such cases.)
+however many groups are in the pattern.  The \var{default} argument is
+used for groups that did not participate in the match; it defaults to
+\code{None}.  (Incompatibility note: in the original Python 1.5
+release, if the tuple was one element long, a string would be returned
+instead.  In later versions (from 1.5.1 on), a singleton tuple is
+returned in such cases.)
+\end{methoddesc}
+
+\begin{methoddesc}[MatchObject]{groupdict}{\optional{default}}
+Return a dictionary containing all the \emph{named} subgroups of the
+match, keyed by the subgroup name.  The \var{default} argument is
+used for groups that did not participate in the match; it defaults to
+\code{None}.
 \end{methoddesc}
 
 \begin{methoddesc}[MatchObject]{start}{\optional{group}}
