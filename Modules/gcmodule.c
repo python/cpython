@@ -32,9 +32,9 @@
 /*** Global GC state ***/
 
 /* linked lists of container objects */
-PyGC_Head _PyGC_generation0 = {&_PyGC_generation0, &_PyGC_generation0, 0};
-static PyGC_Head generation1 = {&generation1, &generation1, 0};
-static PyGC_Head generation2 = {&generation2, &generation2, 0};
+PyGC_Head _PyGC_generation0 = {{&_PyGC_generation0, &_PyGC_generation0, 0}};
+static PyGC_Head generation1 = {{&generation1, &generation1, 0}};
+static PyGC_Head generation2 = {{&generation2, &generation2, 0}};
 static int generation = 0; /* current generation being collected */
 
 /* collection frequencies, XXX tune these */
