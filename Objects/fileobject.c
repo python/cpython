@@ -151,37 +151,30 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 		return NULL;
 	}
 	errno = 0;
-#ifdef HAVE_FOPENRF
-	if (*mode == '*') {
-		FILE *fopenRF();
-		f->f_fp = fopenRF(name, mode+1);
-	}
-	else
-#endif
-	{
-		if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
-			mode = "rb";
+
+	if (strcmp(mode, "U") == 0 || strcmp(mode, "rU") == 0)
+		mode = "rb";
 #ifdef MS_WINDOWS
-		if (PyUnicode_Check(f->f_name)) {
-			PyObject *wmode;
-			wmode = PyUnicode_DecodeASCII(mode, strlen(mode), NULL);
-			if (f->f_name && wmode) {
-				Py_BEGIN_ALLOW_THREADS
-				/* PyUnicode_AS_UNICODE OK without thread
-				   lock as it is a simple dereference. */
-				f->f_fp = _wfopen(PyUnicode_AS_UNICODE(f->f_name),
-						  PyUnicode_AS_UNICODE(wmode));
-				Py_END_ALLOW_THREADS
-			}
-			Py_XDECREF(wmode);
-		}
-#endif
-		if (NULL == f->f_fp && NULL != name) {
+	if (PyUnicode_Check(f->f_name)) {
+		PyObject *wmode;
+		wmode = PyUnicode_DecodeASCII(mode, strlen(mode), NULL);
+		if (f->f_name && wmode) {
 			Py_BEGIN_ALLOW_THREADS
-			f->f_fp = fopen(name, mode);
+			/* PyUnicode_AS_UNICODE OK without thread
+			   lock as it is a simple dereference. */
+			f->f_fp = _wfopen(PyUnicode_AS_UNICODE(f->f_name),
+					  PyUnicode_AS_UNICODE(wmode));
 			Py_END_ALLOW_THREADS
 		}
+		Py_XDECREF(wmode);
 	}
+#endif
+	if (NULL == f->f_fp && NULL != name) {
+		Py_BEGIN_ALLOW_THREADS
+		f->f_fp = fopen(name, mode);
+		Py_END_ALLOW_THREADS
+	}
+
 	if (f->f_fp == NULL) {
 #ifdef _MSC_VER
 		/* MSVC 6 (Microsoft) leaves errno at 0 for bad mode strings,
