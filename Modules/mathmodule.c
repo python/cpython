@@ -46,7 +46,7 @@ math_1(args, func)
 	errno = 0;
 	x = (*func)(x);
 	if (errno != 0)
-		return NULL;
+		return err_errno(RuntimeError);
 	else
 		return newfloatobject(x);
 }
@@ -62,7 +62,7 @@ math_2(args, func)
 	errno = 0;
 	x = (*func)(x, y);
 	if (errno != 0)
-		return NULL;
+		return err_errno(RuntimeError);
 	else
 		return newfloatobject(x);
 }
@@ -93,7 +93,7 @@ FUNC2(math_fmod, fmod)
 #endif
 FUNC1(math_log, log)
 FUNC1(math_log10, log10)
-#ifdef applec /* MPW */
+#ifdef MPW_3_1 /* This hack is needed for MPW 3.1 but not for 3.2 ... */
 FUNC2(math_pow, power)
 #else
 FUNC2(math_pow, pow)
