@@ -4,8 +4,12 @@
 \declaremodule{standard}{mimify}
 \modulesynopsis{Mimification and unmimification of mail messages.}
 
+\deprecated{2.3}{The \refmodule{email} package should be used in
+                 preference to the \module{mimify} module.  This
+                 module is present only to maintain backward
+                 compatibility.}
 
-The mimify module defines two functions to convert mail messages to
+The \module{mimify} module defines two functions to convert mail messages to
 and from MIME format.  The mail message can be either a simple message
 or a so-called multipart message.  Each part is treated separately.
 Mimifying (a part of) a message entails encoding the message as
