@@ -17,6 +17,9 @@
 #include <errno.h>
 #include <string.h>
 
+/* We may be able to use a std routine in think, don't know */
+unsigned char *Pstring(char *);
+
 /* Macro to find out whether we can do HFS-only calls: */
 #define FSFCBLen (* (short *) 0x3f6)
 #define hfsrunning() (FSFCBLen > 0)

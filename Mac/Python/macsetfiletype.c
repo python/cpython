@@ -14,7 +14,7 @@ long creator, type;
 	FInfo info;
 	unsigned char *pname;
 	
-	pname = (StringPtr) c2pstr(name);
+	pname = (StringPtr) Pstring(name);
 	if ( GetFInfo(pname, 0, &info) < 0 )
 		return -1;
 	info.fdType = type;

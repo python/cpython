@@ -447,6 +447,18 @@ mac_write(self, args)
 }
 #endif /* !__MWERKS__ */
 
+#ifdef MALLOC_DEBUG
+static object *
+mac_mstats(self, args)
+	object*self;
+	object *args;
+{
+	mstats("python");
+	INCREF(None);
+	return None;
+}
+#endif MALLOC_DEBUG
+
 static struct methodlist mac_methods[] = {
 	{"chdir",	mac_chdir},
 #ifndef __MWERKS__
@@ -477,6 +489,9 @@ static struct methodlist mac_methods[] = {
 #ifndef __MWERKS__
 	{"write",	mac_write},
 #endif
+#ifdef MALLOC_DEBUG
+	{"mstats",	mac_mstats},
+#endif
 
 	{NULL,		NULL}		 /* Sentinel */
 };
@@ -485,7 +500,7 @@ static struct methodlist mac_methods[] = {
 void
 initmac()
 {
-	object *m, *d, *v;
+	object *m, *d;
 	
 	m = initmodule("mac", mac_methods);
 	d = getmoduledict(m);
