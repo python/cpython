@@ -23,6 +23,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- _tkinter.{get|set}busywaitinterval was added.
+
 - itertools.islice() now accepts stop=None as documented.
   Fixes SF bug #730685.
 
