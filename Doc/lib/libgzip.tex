@@ -9,39 +9,52 @@ class to read and write \program{gzip}-format files, automatically
 compressing or decompressing the data so it looks like an ordinary
 file object.
 
-\class{GzipFile} objects simulate most of the methods of a file
-object, though it's not possible to use the \method{seek()} and
-\method{tell()} methods to access the file randomly.
-\withsubitem{(class in gzip)}{\ttindex{GzipFile}}
+The module defines the following items:
 
+\begin{classdesc}{GzipFile}{\optional{filename\optional{, mode\optional{,
+                            compresslevel\optional{, fileobj}}}}}
+Constructor for the \class{GzipFile} class, which simulates most of
+the methods of a file object, with the exception of the
+\method{seek()} and \method{tell()} methods.  At least one of
+\var{fileobj} and \var{filename} must be given a non-trivial value.
 
-\begin{funcdesc}{open}{fileobj\optional{, filename\optional{,
-                       mode\optional{, compresslevel}}}}
-  Returns a new \class{GzipFile} object on top of \var{fileobj}, which
-  can be a regular file, a \class{StringIO} object, or any object which
-  simulates a file.
+The new class instance is based on \var{fileobj}, which can be a
+regular file, a \class{StringIO} object, or any other object which
+simulates a file.  It defaults to \code{None}, in which case
+\var{filename} is opened to provide a file object.
 
-  The \program{gzip} file format includes the original filename of the
-  uncompressed file; when opening a \class{GzipFile} object for
-  writing, it can be set by the \var{filename} argument.  The default
-  value is an empty string.
+When \var{fileobj} is not \code{None}, the \var{filename} argument is
+only used to be included in the \program{gzip} file header, which may
+includes the original filename of the uncompressed file.  It defaults
+to the filename of \var{fileobj}, if discernible; otherwise, it
+defaults to the empty string, and in this case the original filename
+is not included in the header.
 
-  \var{mode} can be either \code{'r'} or \code{'w'} depending on
-  whether the file will be read or written.  \var{compresslevel} is an
-  integer from \code{1} to \code{9} controlling the level of
-  compression; \code{1} is fastest and produces the least compression,
-  and \code{9} is slowest and produces the most compression.  The
-  default value of \var{compresslevel} is \code{9}.
+The \var{mode} argument can be either \code{'r'} or \code{'w'},
+depending on whether the file will be read or written.  The default is
+the mode of \var{fileobj} if discernible; otherwise, the default is
+\code{'r'}.
 
-  Calling a \class{GzipFile} object's \method{close()} method does not
-  close \var{fileobj}, since you might wish to append more material
-  after the compressed data.  This also allows you to pass a
-  \class{StringIO} object opened for writing as \var{fileobj}, and
-  retrieve the resulting memory buffer using the \class{StringIO}
-  object's \method{getvalue()} method.
+The \var{compresslevel} argument is an integer from \code{1} to
+\code{9} controlling the level of compression; \code{1} is fastest and
+produces the least compression, and \code{9} is slowest and produces
+the most compression.  The default is \code{9}.
+
+Calling a \class{GzipFile} object's \method{close()} method does not
+close \var{fileobj}, since you might wish to append more material
+after the compressed data.  This also allows you to pass a
+\class{StringIO} object opened for writing as \var{fileobj}, and
+retrieve the resulting memory buffer using the \class{StringIO}
+object's \method{getvalue()} method.
+\end{classdesc}
+
+\begin{funcdesc}{open}{filename\optional{, mode\optional{, compresslevel}}}
+This is a shorthand for \code{GzipFile(\var{filename},}
+\code{\var{mode},} \code{\var{compresslevel})}.  The \var{filename}
+argument is required; \var{mode} defaults to \code{'r'} and
+\var{compresslevel} defaults to \code{9}.
 \end{funcdesc}
 
 \begin{seealso}
 \seemodule{zlib}{the basic data compression module}
 \end{seealso}
-
