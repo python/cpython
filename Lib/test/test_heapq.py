@@ -2,7 +2,7 @@
 
 from test.test_support import verify, vereq, verbose, TestFailed
 
-from heapq import heappush, heappop, heapify, heapreplace
+from heapq import heappush, heappop, heapify, heapreplace, nlargest, nsmallest
 import random
 
 def check_invariant(heap):
@@ -84,6 +84,15 @@ def test_main():
         data.sort()
         sorted = [heappop(heap) for i in range(size)]
         vereq(data, sorted)
+
+    # 7) Check nlargest() and nsmallest()
+    data = [random.randrange(2000) for i in range(1000)]
+    copy = data[:]
+    copy.sort(reverse=True)
+    vereq(nlargest(data, 400), copy[:400])
+    copy.sort()
+    vereq(nsmallest(data, 400), copy[:400])
+
     # Make user happy
     if verbose:
         print "All OK"
