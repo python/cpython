@@ -980,6 +980,7 @@ static PyMethodDef PySocketSock_methods[] = {
 	{"bind",		(PyCFunction)PySocketSock_bind},
 	{"close",		(PyCFunction)PySocketSock_close},
 	{"connect",		(PyCFunction)PySocketSock_connect},
+	{"connect_ex",		(PyCFunction)PySocketSock_connect_ex},
 	{"fileno",		(PyCFunction)PySocketSock_fileno},
 #ifndef NO_DUP
 	{"dup",			(PyCFunction)PySocketSock_dup},
