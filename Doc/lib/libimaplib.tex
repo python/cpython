@@ -68,6 +68,7 @@ The second subclass allows for connections created by a child process:
 \begin{classdesc}{IMAP4_stream}{command}
 This is a subclass derived from \class{IMAP4} that connects
 to the \code{stdin/stdout} file descriptors created by passing \var{command} to \code{os.popen2()}.
+\versionadded{2.3}
 \end{classdesc}
 
 The following utility functions are defined:
@@ -213,6 +214,7 @@ An \class{IMAP4} instance has the following methods:
 \begin{methoddesc}{login_cram_md5}{user, password}
   Force use of \samp{CRAM-MD5} authentication when identifying the client to protect the password.
   Will only work if the server \samp{CAPABILITY} response includes the phrase \samp{AUTH=CRAM-MD5}.
+\versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}{logout}{}
@@ -245,6 +247,7 @@ An \class{IMAP4} instance has the following methods:
 \begin{methoddesc}{proxyauth}{user}
   Assume authentication as \var{user}.
   Allows an authorised administrator to proxy into any user's mailbox.
+\versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}{read}{size}
