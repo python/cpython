@@ -219,6 +219,14 @@ mark_init(SRE_STATE* state)
 static void
 mark_fini(SRE_STATE* state)
 {
+#if 0
+    /* FIXME: debugging */
+    if (state->maxlevel > 0)
+        printf("max %d\n", state->maxlevel);
+    if (state->mark_stack_base > 0)
+        printf("mark stack %d\n", state->mark_stack_base);
+#endif
+
     if (state->mark_stack)
         free(state->mark_stack);
     mark_init(state);
@@ -430,7 +438,7 @@ SRE_MEMBER(SRE_CODE* set, SRE_CODE ch)
 }
 
 LOCAL(int)
-SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
+SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 {
     /* check if string matches the given pattern.  returns -1 for
        error, 0 for failure, and 1 for success */
@@ -443,7 +451,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
     SRE_REPEAT rep; /* FIXME: <fl> allocate in STATE instead */
 
-    TRACE(("%8d: enter\n", PTR(ptr)));
+    TRACE(("%8d: enter %d\n", PTR(ptr), level));
 
     if (pattern[0] == SRE_OP_INFO) {
         /* optimization info block */
@@ -455,6 +463,10 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
         }
         pattern += pattern[1] + 1;
     }
+
+    /* FIXME: debugging */
+    if (level > state->maxlevel)
+        state->maxlevel = level;
 
     for (;;) {
 
@@ -623,7 +635,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
             state->ptr = ptr - pattern[1];
             if (state->ptr < state->beginning)
                 return 0;
-            i = SRE_MATCH(state, pattern + 2);
+            i = SRE_MATCH(state, pattern + 2, level + 1);
             if (i <= 0)
                 return i;
             if (pattern[1] > 0 && state->ptr != ptr)
@@ -638,7 +650,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
             state->ptr = ptr - pattern[1];
             if (state->ptr < state->beginning)
                 return 0;
-            i = SRE_MATCH(state, pattern + 2);
+            i = SRE_MATCH(state, pattern + 2, level + 1);
             if (i < 0)
                 return i;
             if (i)
@@ -656,16 +668,165 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
                 lastmark = state->lastmark;
                 while (pattern[0]) {
                     TRACE(("%8d: try branch\n", PTR(ptr)));
-                    if (pattern[2] != SRE_OP_LITERAL ||
-                        (ptr < end && (SRE_CODE) ptr[0] == pattern[3])) {
+                    if (pattern[1] != SRE_OP_LITERAL ||
+                        (ptr < end && (SRE_CODE) ptr[0] == pattern[2])) {
                         state->ptr = ptr;
-                        i = SRE_MATCH(state, pattern + 1);
+                        i = SRE_MATCH(state, pattern + 1, level + 1);
                         if (i)
                             return i;
                     }
                     while (state->lastmark > lastmark)
                         state->mark[state->lastmark--] = NULL;
                     pattern += pattern[0];
+                }
+            }
+            return 0;
+
+        case SRE_OP_REPEAT_ONE:
+            /* match repeated sequence (maximizing regexp) */
+
+            /* this operator only works if the repeated item is
+               exactly one character wide, and we're not already
+               collecting backtracking points.  for other cases,
+               use the MAX_REPEAT operator instead */
+
+            /* <REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS> tail */
+
+            TRACE(("%8d: max repeat one {%d,%d}\n", PTR(ptr),
+                   pattern[1], pattern[2]));
+
+            count = 0;
+
+            if (pattern[3] == SRE_OP_ANY) {
+                /* repeated wildcard.  skip to the end of the target
+                   string, and backtrack from there */
+                /* FIXME: must look for line endings */
+                if (ptr + pattern[1] > end)
+                    return 0; /* cannot match */
+                count = pattern[2];
+                if (count > end - ptr)
+                    count = end - ptr;
+                ptr += count;
+
+            } else if (pattern[3] == SRE_OP_LITERAL) {
+                /* repeated literal */
+                SRE_CODE chr = pattern[4];
+                while (count < (int) pattern[2]) {
+                    if (ptr >= end || (SRE_CODE) ptr[0] != chr)
+                        break;
+                    ptr++;
+                    count++;
+                }
+
+            } else if (pattern[3] == SRE_OP_LITERAL_IGNORE) {
+                /* repeated literal */
+                SRE_CODE chr = pattern[4];
+                while (count < (int) pattern[2]) {
+                    if (ptr >= end || (SRE_CODE) state->lower(*ptr) != chr)
+                        break;
+                    ptr++;
+                    count++;
+                }
+
+            } else if (pattern[3] == SRE_OP_NOT_LITERAL) {
+                /* repeated non-literal */
+                SRE_CODE chr = pattern[4];
+                while (count < (int) pattern[2]) {
+                    if (ptr >= end || (SRE_CODE) ptr[0] == chr)
+                        break;
+                    ptr++;
+                    count++;
+                }
+
+            } else if (pattern[3] == SRE_OP_NOT_LITERAL_IGNORE) {
+                /* repeated non-literal */
+                SRE_CODE chr = pattern[4];
+                while (count < (int) pattern[2]) {
+                    if (ptr >= end || (SRE_CODE) state->lower(ptr[0]) == chr)
+                        break;
+                    ptr++;
+                    count++;
+                }
+
+            } else if (pattern[3] == SRE_OP_IN) {
+                /* repeated set */
+                while (count < (int) pattern[2]) {
+                    if (ptr >= end || !SRE_MEMBER(pattern + 5, *ptr))
+                        break;
+                    ptr++;
+                    count++;
+                }
+
+            } else {
+                /* repeated single character pattern */
+                state->ptr = ptr;
+                while (count < (int) pattern[2]) {
+                    i = SRE_MATCH(state, pattern + 3, level + 1);
+                    if (i < 0)
+                        return i;
+                    if (!i)
+                        break;
+                    count++;
+                }
+                state->ptr = ptr;
+                ptr += count;
+            }
+
+            /* when we arrive here, count contains the number of
+               matches, and ptr points to the tail of the target
+               string.  check if the rest of the pattern matches,
+               and backtrack if not. */
+
+            TRACE(("%8d: repeat %d found\n", PTR(ptr), count));
+
+            if (count < (int) pattern[1])
+                return 0;
+
+            if (pattern[pattern[0]] == SRE_OP_SUCCESS) {
+                /* tail is empty.  we're finished */
+                TRACE(("%8d: tail is empty\n", PTR(ptr)));
+                state->ptr = ptr;
+                return 1;
+
+            } else if (pattern[pattern[0]] == SRE_OP_LITERAL) {
+                /* tail starts with a literal. skip positions where
+                   the rest of the pattern cannot possibly match */
+                SRE_CODE chr = pattern[pattern[0]+1];
+                TRACE(("%8d: tail is literal %d\n", PTR(ptr), chr));
+                for (;;) {
+                    TRACE(("%8d: scan for tail match\n", PTR(ptr)));
+                    while (count >= (int) pattern[1] &&
+                           (ptr >= end || *ptr != chr)) {
+                        ptr--;
+                        count--;
+                    }
+                    TRACE(("%8d: check tail\n", PTR(ptr)));
+                    if (count < (int) pattern[1])
+                        break;
+                    state->ptr = ptr;
+                    i = SRE_MATCH(state, pattern + pattern[0], level + 1);
+                    if (i > 0) {
+                        TRACE(("%8d: repeat %d picked\n", PTR(ptr), count));
+                        return 1;
+                    }
+                    ptr--;
+                    count--;
+                }
+
+            } else {
+                /* general case */
+                TRACE(("%8d: tail is pattern\n", PTR(ptr)));
+                while (count >= (int) pattern[1]) {
+                    state->ptr = ptr;
+                    i = SRE_MATCH(state, pattern + pattern[0], level + 1);
+                    if (i < 0)
+                        return i;
+                    if (i) {
+                        TRACE(("%8d: repeat %d picked\n", PTR(ptr), count));
+                        return 1;
+                    }
+                    ptr--;
+                    count--;
                 }
             }
             return 0;
@@ -677,8 +838,6 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
             TRACE(("%8d: repeat {%d,%d}\n", PTR(ptr),
                    pattern[1], pattern[2]));
 
-            state->ptr = ptr;
-
             rep.count = -1;
             rep.pattern = pattern;
 
@@ -686,10 +845,10 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
             rep.prev = state->repeat;
             state->repeat = &rep;
 
-            i = SRE_MATCH(state, pattern + pattern[0]);
+            state->ptr = ptr;
+            i = SRE_MATCH(state, pattern + pattern[0], level + 1);
 
             state->repeat = rep.prev;
-            /* free(rp); */
 
             return i;
 
@@ -714,7 +873,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
                 /* not enough matches */
                 TRACE(("%8d: match item (required)\n", PTR(ptr)));
                 rp->count = count;
-                i = SRE_MATCH(state, rp->pattern + 3);
+                i = SRE_MATCH(state, rp->pattern + 3, level + 1);
                 if (i)
                     return i;
                 rp->count = count - 1;
@@ -729,7 +888,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
                 rp->count = count;
                 lastmark = state->lastmark;
                 mark_save(state, 0, lastmark);
-                i = SRE_MATCH(state, rp->pattern + 3);
+                i = SRE_MATCH(state, rp->pattern + 3, level + 1);
                 if (i)
                     return i;
                 mark_restore(state, 0, lastmark);
@@ -741,11 +900,9 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
                tail matches */
             TRACE(("%8d: match tail\n", PTR(ptr)));
             state->repeat = rp->prev;
-            i = SRE_MATCH(state, pattern);
-            if (i) {
-                /* free(rp); */
+            i = SRE_MATCH(state, pattern, level + 1);
+            if (i)
                 return i;
-            }
             state->repeat = rp;
             return 0;
 
@@ -767,7 +924,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
                 /* not enough matches */
                 TRACE(("%8d: match item (required)\n", PTR(ptr)));
                 rp->count = count;
-                i = SRE_MATCH(state, rp->pattern + 3);
+                i = SRE_MATCH(state, rp->pattern + 3, level + 1);
                 if (i)
                     return i;
                 rp->count = count-1;
@@ -778,7 +935,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
             /* see if the tail matches */
             TRACE(("%8d: match tail\n", PTR(ptr)));
             state->repeat = rp->prev;
-            i = SRE_MATCH(state, pattern);
+            i = SRE_MATCH(state, pattern, level + 1);
             if (i) {
                 /* free(rp); */
                 return i;
@@ -790,7 +947,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 
             TRACE(("%8d: match item (optional)\n", PTR(ptr)));
             rp->count = count;
-            i = SRE_MATCH(state, rp->pattern + 3);
+            i = SRE_MATCH(state, rp->pattern + 3, level + 1);
             if (i)
                 return i;
             rp->count = count - 1;
@@ -865,7 +1022,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
                         state->ptr = ptr + 1;
                         if (flags & SRE_INFO_LITERAL)
                             return 1; /* we got all of it */
-                        status = SRE_MATCH(state, pattern + 2*prefix_len);
+                        status = SRE_MATCH(state, pattern + 2*prefix_len, 1);
                         if (status != 0)
                             return status;
                         /* close but no cigar -- try again */
@@ -893,7 +1050,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             TRACE(("%8d: === SEARCH === literal\n", PTR(ptr)));
             state->start = ptr;
             state->ptr = ++ptr;
-            status = SRE_MATCH(state, pattern + 2);
+            status = SRE_MATCH(state, pattern + 2, 1);
             if (status != 0)
                 break;
         }
@@ -907,7 +1064,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
             TRACE(("%8d: === SEARCH === charset\n", PTR(ptr)));
             state->start = ptr;
             state->ptr = ptr;
-            status = SRE_MATCH(state, pattern);
+            status = SRE_MATCH(state, pattern, 1);
             if (status != 0)
                 break;
         }
@@ -916,7 +1073,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
         while (ptr <= end) {
             TRACE(("%8d: === SEARCH ===\n", PTR(ptr))); 
             state->start = state->ptr = ptr++;
-            status = SRE_MATCH(state, pattern);
+            status = SRE_MATCH(state, pattern, 1);
             if (status != 0)
                 break;
         }
@@ -1032,6 +1189,9 @@ state_reset(SRE_STATE* state)
 
     state->repeat = NULL;
 
+    /* FIXME: debugging */
+    state->maxlevel = 0;
+
     mark_fini(state);
 }
 
@@ -1110,6 +1270,7 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
         state->lower = sre_lower;
 
     state->mark_stack = NULL;
+    state->mark_stack_base = 0;
 
     state_reset(state);
 
@@ -1262,10 +1423,10 @@ pattern_match(PatternObject* self, PyObject* args)
     state.ptr = state.start;
 
     if (state.charsize == 1) {
-        status = sre_match(&state, PatternObject_GetCode(self));
+        status = sre_match(&state, PatternObject_GetCode(self), 1);
     } else {
 #if defined(HAVE_UNICODE)
-        status = sre_umatch(&state, PatternObject_GetCode(self));
+        status = sre_umatch(&state, PatternObject_GetCode(self), 1);
 #endif
     }
 
@@ -1941,10 +2102,10 @@ scanner_match(ScannerObject* self, PyObject* args)
     state->ptr = state->start;
 
     if (state->charsize == 1) {
-        status = sre_match(state, PatternObject_GetCode(self->pattern));
+        status = sre_match(state, PatternObject_GetCode(self->pattern), 1);
     } else {
 #if defined(HAVE_UNICODE)
-        status = sre_umatch(state, PatternObject_GetCode(self->pattern));
+        status = sre_umatch(state, PatternObject_GetCode(self->pattern), 1);
 #endif
     }
 

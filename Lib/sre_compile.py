@@ -270,6 +270,7 @@ def _compile_info(code, pattern, flags):
                     table[i+1] = table[table[i+1]-1]+1
             code.extend(table[1:]) # don't store first entry
     elif charset:
+        # FIXME: use charset optimizer!
         for char in charset:
             emit(OPCODES[LITERAL])
             emit(char)
@@ -283,7 +284,7 @@ try:
 except NameError:
     pass
 
-def _compile1(p, flags):
+def _code(p, flags):
 
     flags = p.pattern.flags | flags
     code = []
@@ -308,7 +309,7 @@ def compile(p, flags=0):
     else:
         pattern = None
 
-    code = _compile1(p, flags)
+    code = _code(p, flags)
 
     # print code
 

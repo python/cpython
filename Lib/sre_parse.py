@@ -137,12 +137,12 @@ class SubPattern:
         lo = hi = 0L
         for op, av in self.data:
             if op is BRANCH:
-                l = sys.maxint
-                h = 0
+                i = sys.maxint
+                j = 0
                 for av in av[1]:
-                    i, j = av.getwidth()
-                    l = min(l, i)
-                    h = min(h, j)
+                    l, h = av.getwidth()
+                    i = min(i, l)
+                    j = min(j, h)
                 lo = lo + i
                 hi = hi + j
             elif op is CALL:
