@@ -33,14 +33,14 @@
  * but that neither gives an error nor comes anywhere close to working.  The
  * following comment and #define are output from PCbuild\field3.py:
  *
- * For 2.3.1,
- * PY_MICRO_VERSION = 1
- * PY_RELEASE_LEVEL = 'final' = 0xf
- * PY_RELEASE_SERIAL = 0
+ * For 2.3.2c1,
+ * PY_MICRO_VERSION = 2
+ * PY_RELEASE_LEVEL = 'candidate' = 0xc
+ * PY_RELEASE_SERIAL = 1
  *
- * and 1*1000 + 15*10 + 0 = 1150
+ * and 2*1000 + 12*10 + 1 = 2121
  */
-#define FIELD3 1150
+#define FIELD3 2121
 
 /* e.g., 2.1a2
  * PY_VERSION comes from patchevel.h
