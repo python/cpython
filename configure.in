@@ -945,9 +945,9 @@ then
   fi
   rm -fr conftest*
 fi
+AC_MSG_RESULT($ac_cv_cxx_thread)
 fi
 CXX="$ac_save_cxx"
-AC_MSG_RESULT($ac_cv_cxx_thread)
 
 dnl # check for ANSI or K&R ("traditional") preprocessor
 dnl AC_MSG_CHECKING(for C preprocessor type)
