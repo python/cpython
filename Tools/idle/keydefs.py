@@ -8,7 +8,6 @@ windows_keydefs = \
  '<<close-window>>': ['<Alt-F4>'],
  '<<dump-undo-state>>': ['<Control-backslash>'],
  '<<end-of-file>>': ['<Control-d>'],
- '<<expand-word>>': ['<Alt-slash>'],
  '<<help>>': ['<F1>'],
  '<<history-next>>': ['<Alt-n>'],
  '<<history-previous>>': ['<Alt-p>'],
@@ -25,8 +24,7 @@ windows_keydefs = \
  '<<save-window>>': ['<Control-s>'],
  '<<select-all>>': ['<Alt-a>'],
  '<<toggle-auto-coloring>>': ['<Control-slash>'],
- '<<undo>>': ['<Control-z>'],
-}
+ '<<undo>>': ['<Control-z>']}
 
 unix_keydefs = \
 {'<<Copy>>': ['<Alt-w>', '<Meta-w>'],
@@ -39,7 +37,6 @@ unix_keydefs = \
  '<<do-nothing>>': ['<Control-x>'],
  '<<dump-undo-state>>': ['<Control-backslash>'],
  '<<end-of-file>>': ['<Control-d>'],
- '<<expand-word>>': ['<Alt-slash>', '<Meta-slash>'],
  '<<help>>': ['<F1>'],
  '<<history-next>>': ['<Alt-n>', '<Meta-n>'],
  '<<history-previous>>': ['<Alt-p>', '<Meta-p>'],
@@ -55,5 +52,4 @@ unix_keydefs = \
  '<<save-window>>': ['<Control-x><Control-s>'],
  '<<select-all>>': ['<Alt-a>', '<Meta-a>'],
  '<<toggle-auto-coloring>>': ['<Control-slash>'],
- '<<undo>>': ['<Control-z>'],
-}
+ '<<undo>>': ['<Control-z>']}
