@@ -4991,7 +4991,7 @@ look_for_yield(node *n)
 static void
 symtable_node(struct symtable *st, node *n)
 {
-	int i, start = 0;
+	int i;
 
  loop:
 	switch (TYPE(n)) {
@@ -5105,36 +5105,62 @@ symtable_node(struct symtable *st, node *n)
 			}
 		}
 		goto loop;
-		/* watchout for fall-through logic below */
+	case list_iter:
+		n = CHILD(n, 0);
+		if (TYPE(n) == list_for) {
+			st->st_tmpname++;
+			symtable_list_comprehension(st, n);
+			st->st_tmpname--;
+		} else {
+			REQ(n, list_if);
+			symtable_node(st, CHILD(n, 1));
+			if (NCH(n) == 3) {
+				n = CHILD(n, 2); 
+				goto loop;
+			}
+		}
+		break;
+	case for_stmt:
+		symtable_assign(st, CHILD(n, 1), 0);
+		for (i = 3; i < NCH(n); ++i)
+			if (TYPE(CHILD(n, i)) >= single_input)
+				symtable_node(st, CHILD(n, i));
+		break;
+	/* The remaining cases fall through to default except in
+	   special circumstances.  This requires the individual cases
+	   to be coded with great care, even though they look like
+	   rather innocuous.  Each case must double-check TYPE(n).
+	*/
 	case argument:
-		if (NCH(n) == 3) {
+		if (TYPE(n) == argument && NCH(n) == 3) {
 			n = CHILD(n, 2);
 			goto loop;
 		}
+		/* fall through */
 	case listmaker:
 		if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_for) {
 			st->st_tmpname++;
 			symtable_list_comprehension(st, CHILD(n, 1));
 			symtable_node(st, CHILD(n, 0));
 			st->st_tmpname--;
-			return;
+			break;
 		}
+		/* fall through */
 	case atom:
 		if (TYPE(n) == atom && TYPE(CHILD(n, 0)) == NAME) {
 			symtable_add_use(st, STR(CHILD(n, 0)));
 			break;
 		}
-	case for_stmt:
-		if (TYPE(n) == for_stmt) {
-			symtable_assign(st, CHILD(n, 1), 0);
-			start = 3;
-		}
+		/* fall through */
 	default:
+		/* Walk over every non-token child with a special case
+		   for one child.
+		*/
 		if (NCH(n) == 1) {
 			n = CHILD(n, 0);
 			goto loop;
 		}
-		for (i = start; i < NCH(n); ++i)
+		for (i = 0; i < NCH(n); ++i)
 			if (TYPE(CHILD(n, i)) >= single_input)
 				symtable_node(st, CHILD(n, i));
 	}
@@ -5370,8 +5396,14 @@ symtable_import(struct symtable *st, node *n)
 	}
 }
 
+/* The third argument to symatble_assign() is a flag to be passed to
+   symtable_add_def() if it is eventually called.  The flag is useful
+   to specify the particular type of assignment that should be
+   recorded, e.g. an assignment caused by import.
+ */
+
 static void 
-symtable_assign(struct symtable *st, node *n, int flag)
+symtable_assign(struct symtable *st, node *n, int def_flag)
 {
 	node *tmp;
 	int i;
@@ -5403,7 +5435,7 @@ symtable_assign(struct symtable *st, node *n, int flag)
 			return;
 		} else {
 			for (i = 0; i < NCH(n); i += 2)
-				symtable_assign(st, CHILD(n, i), flag);
+				symtable_assign(st, CHILD(n, i), def_flag);
 		}
 		return;
 	case exprlist:
@@ -5415,7 +5447,7 @@ symtable_assign(struct symtable *st, node *n, int flag)
 		else {
 			int i;
 			for (i = 0; i < NCH(n); i += 2)
-				symtable_assign(st, CHILD(n, i), flag);
+				symtable_assign(st, CHILD(n, i), def_flag);
 			return;
 		}
 	case atom:
@@ -5426,24 +5458,24 @@ symtable_assign(struct symtable *st, node *n, int flag)
 		} else if (TYPE(tmp) == NAME) {
 			if (strcmp(STR(tmp), "__debug__") == 0)
 				symtable_warn(st, ASSIGN_DEBUG);
-			symtable_add_def(st, STR(tmp), DEF_LOCAL | flag);
+			symtable_add_def(st, STR(tmp), DEF_LOCAL | def_flag);
 		}
 		return;
 	case dotted_as_name:
 		if (NCH(n) == 3)
 			symtable_add_def(st, STR(CHILD(n, 2)),
-					 DEF_LOCAL | flag);
+					 DEF_LOCAL | def_flag);
 		else
 			symtable_add_def(st,
 					 STR(CHILD(CHILD(n,
 							 0), 0)),
-					 DEF_LOCAL | flag);
+					 DEF_LOCAL | def_flag);
 		return;
 	case dotted_name:
-		symtable_add_def(st, STR(CHILD(n, 0)), DEF_LOCAL | flag);
+		symtable_add_def(st, STR(CHILD(n, 0)), DEF_LOCAL | def_flag);
 		return;
 	case NAME:
-		symtable_add_def(st, STR(n), DEF_LOCAL | flag);
+		symtable_add_def(st, STR(n), DEF_LOCAL | def_flag);
 		return;
 	default:
 		if (NCH(n) == 0)
@@ -5456,6 +5488,6 @@ symtable_assign(struct symtable *st, node *n, int flag)
 		   which will be caught in the next pass. */
 		for (i = 0; i < NCH(n); ++i)
 			if (TYPE(CHILD(n, i)) >= single_input)
-				symtable_assign(st, CHILD(n, i), flag);
+				symtable_assign(st, CHILD(n, i), def_flag);
 	}
 }
