@@ -115,6 +115,12 @@ count of blocks transferred so far, a block size in bytes, and the
 total size of the file.  The third argument may be \code{-1} on older
 FTP servers which do not return a file size in response to a retrieval 
 request.
+
+If the \var{url} uses the \file{http:} scheme identifier, the optional
+\var{data} argument may be given to specify a \code{POST} request
+(normally the request type is \code{GET}).  The \var{data} argument
+must in standard \file{application/x-www-form-urlencoded} format;
+see the \function{urlencode()} function below.
 \end{funcdesc}
 
 \begin{funcdesc}{urlcleanup}{}
@@ -288,6 +294,12 @@ path component of the input URL.  If \var{reporthook} is given, it must be
 a function accepting three numeric parameters.  It will be called after each
 chunk of data is read from the network.  \var{reporthook} is ignored for
 local URLs.
+
+If the \var{url} uses the \file{http:} scheme identifier, the optional
+\var{data} argument may be given to specify a \code{POST} request
+(normally the request type is \code{GET}).  The \var{data} argument
+must in standard \file{application/x-www-form-urlencoded} format;
+see the \function{urlencode()} function below.
 \end{methoddesc}
 
 
