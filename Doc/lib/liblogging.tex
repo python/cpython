@@ -257,7 +257,7 @@ determined by \method{getEffectiveLevel()}.
 Indicates the effective level for this logger. If a value other than
 \constant{ALL} has been set using \method{setLevel()}, it is returned.
 Otherwise, the hierarchy is traversed towards the root until a value
-other than \constant{ALL} is found,and that value is returned.
+other than \constant{ALL} is found, and that value is returned.
 \end{methoddesc}
 
 \begin{methoddesc}{debug}{msg\optional{, *args\optional{, **kwargs}}}
@@ -432,7 +432,7 @@ raises a \exception{NotImplementedError}.
 The \class{StreamHandler} class sends logging output to streams such as
 \var{sys.stdout}, \var{sys.stderr} or any file-like object (or, more
 precisely, any object which supports \method{write()} and \method{flush()}
-methods.
+methods).
 
 \begin{classdesc}{StreamHandler}{\optional{strm}}
 Returns a new instance of the \class{StreamHandler} class. If \var{strm} is
@@ -549,7 +549,7 @@ it ready for transmission across the socket.
 \end{methoddesc}
 
 \begin{methoddesc}{send}{packet}
-Send a pickled string \var{packe} to the socket. This function allows
+Send a pickled string \var{packet} to the socket. This function allows
 for partial sends which can happen when the network is busy.
 \end{methoddesc}
 
@@ -717,7 +717,7 @@ calls \method{flush()} to process the buffer.
 \end{methoddesc}
 
 \begin{methoddesc}{flush}{}
-You can override this to implement custom flushing behaviour. This version
+You can override this to implement custom flushing behavior. This version
 just zaps the buffer to empty.
 \end{methoddesc}
 
@@ -743,7 +743,7 @@ clears the buffer.
 \begin{methoddesc}{flush}{}
 For a \class{MemoryHandler}, flushing means just sending the buffered
 records to the target, if there is one. Override if you want
-different behaviour.
+different behavior.
 \end{methoddesc}
 
 \begin{methoddesc}{setTarget}{target}
@@ -831,7 +831,7 @@ event time. If there is exception information, it is formatted using
 This method should be called from \method{format()} by a formatter which
 wants to make use of a formatted time. This method can be overridden
 in formatters to provide for any specific requirement, but the
-basic behaviour is as follows: if \var{datefmt} (a string) is specified,
+basic behavior is as follows: if \var{datefmt} (a string) is specified,
 it is used with \method{time.strftime()} to format the creation time of the
 record. Otherwise, the ISO8601 format is used. The resulting
 string is returned.
