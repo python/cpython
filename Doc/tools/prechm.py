@@ -104,6 +104,7 @@ supported_libraries = {
     '2.2':  ### Beta!!!  fix for actual release
     [
         ('.', 'Global Module Index', 'modindex.html', None, None),
+        ('whatsnew', "What's New", 'index.html', 'contents.html', None),
         ('tut','Tutorial','tut.html','node2.html',None),
         ('lib','Library Reference','lib.html','contents.html','genindex.html'),
         ('ref','Language Reference','ref.html','contents.html','genindex.html'),
