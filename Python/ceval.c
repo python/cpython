@@ -2796,6 +2796,7 @@ unpack_iterable(PyObject *v, int argcnt, PyObject **sp)
 		Py_DECREF(it);
 		return 1;
 	}
+	Py_DECREF(w);
 	PyErr_SetString(PyExc_ValueError, "too many values to unpack");
 	/* fall through */
 Error:
