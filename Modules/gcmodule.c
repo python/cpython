@@ -139,6 +139,9 @@ gc_list_is_empty(PyGC_Head *list)
 	return (list->gc.gc_next == list);
 }
 
+#if 0
+/* This became unused after gc_list_move() was introduced. */
+/* Append `node` to `list`. */
 static void
 gc_list_append(PyGC_Head *node, PyGC_Head *list)
 {
@@ -147,7 +150,9 @@ gc_list_append(PyGC_Head *node, PyGC_Head *list)
 	node->gc.gc_prev->gc.gc_next = node;
 	list->gc.gc_prev = node;
 }
+#endif
 
+/* Remove `node` from the gc list it's currently in. */
 static void
 gc_list_remove(PyGC_Head *node)
 {
@@ -156,11 +161,29 @@ gc_list_remove(PyGC_Head *node)
 	node->gc.gc_next = NULL; /* object is not currently tracked */
 }
 
-/* append a list onto another list, from becomes an empty list */
+/* Move `node` from the gc list it's currently in (which is not explicitly
+ * named here) to the end of `list`.  This is semantically the same as
+ * gc_list_remove(node) followed by gc_list_append(node, list).
+ */
+static void
+gc_list_move(PyGC_Head *node, PyGC_Head *list)
+{
+	PyGC_Head *current_prev = node->gc.gc_prev;
+	PyGC_Head *current_next = node->gc.gc_next;
+	PyGC_Head *new_prev = list->gc.gc_prev;
+	current_prev->gc.gc_next = current_next;
+	current_next->gc.gc_prev = current_prev;
+	node->gc.gc_next = list;
+	node->gc.gc_prev = new_prev;
+	new_prev->gc.gc_next = list->gc.gc_prev = node;
+}
+
+/* append list `from` onto list `to`; `from` becomes an empty list */
 static void
 gc_list_merge(PyGC_Head *from, PyGC_Head *to)
 {
 	PyGC_Head *tail;
+	assert(from != to);
 	if (!gc_list_is_empty(from)) {
 		tail = to->gc.gc_prev;
 		tail->gc.gc_next = from->gc.gc_next;
@@ -295,8 +318,7 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
 			 * and move_unreachable will eventually get to it
 			 * again.
 			 */
-			gc_list_remove(gc);
-			gc_list_append(gc, reachable);
+			gc_list_move(gc, reachable);
 			gc->gc.gc_refs = 1;
 		}
 		/* Else there's nothing to do.
@@ -368,8 +390,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
 			 * young if that's so, and we'll see it again.
 			 */
 			next = gc->gc.gc_next;
-			gc_list_remove(gc);
-			gc_list_append(gc, unreachable);
+			gc_list_move(gc, unreachable);
 			gc->gc.gc_refs = GC_TENTATIVELY_UNREACHABLE;
 		}
 		gc = next;
@@ -416,8 +437,7 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 		next = gc->gc.gc_next;
 
 		if (has_finalizer(op)) {
-			gc_list_remove(gc);
-			gc_list_append(gc, finalizers);
+			gc_list_move(gc, finalizers);
 			gc->gc.gc_refs = GC_REACHABLE;
 		}
 	}
@@ -430,8 +450,7 @@ visit_move(PyObject *op, PyGC_Head *tolist)
 	if (PyObject_IS_GC(op)) {
 		if (IS_TENTATIVELY_UNREACHABLE(op)) {
 			PyGC_Head *gc = AS_GC(op);
-			gc_list_remove(gc);
-			gc_list_append(gc, tolist);
+			gc_list_move(gc, tolist);
 			gc->gc.gc_refs = GC_REACHABLE;
 		}
 	}
@@ -559,8 +578,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 			assert(wrasgc != next); /* wrasgc is reachable, but
 			                           next isn't, so they can't
 			                           be the same */
-			gc_list_remove(wrasgc);
-			gc_list_append(wrasgc, &wrcb_to_call);
+			gc_list_move(wrasgc, &wrcb_to_call);
 		}
 	}
 
@@ -600,8 +618,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 		Py_DECREF(op);
 		if (wrcb_to_call.gc.gc_next == gc) {
 			/* object is still alive -- move it */
-			gc_list_remove(gc);
-			gc_list_append(gc, old);
+			gc_list_move(gc, old);
 		}
 		else
 			++num_freed;
@@ -694,8 +711,7 @@ delete_garbage(PyGC_Head *collectable, PyGC_Head *old)
 		}
 		if (collectable->gc.gc_next == gc) {
 			/* object is still alive, move it, it may die later */
-			gc_list_remove(gc);
-			gc_list_append(gc, old);
+			gc_list_move(gc, old);
 			gc->gc.gc_refs = GC_REACHABLE;
 		}
 	}
