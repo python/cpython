@@ -4682,9 +4682,9 @@ quickly demonstrates a modest performance advantage:
 \end{verbatim}
 
 In contrast to \module{timeit}'s fine level of granularity, the
-\ulink{\module{profile}}{../lib/module-profile.html} and \module{pstats}
-modules provide tools for identifying time critical sections in larger
-blocks of code.
+\ulink{\module{profile}}{../lib/module-profile.html} and
+\ulink{\module{pstats}}{../lib/module-pstats.html} modules provide tools for
+identifying time critical sections in larger blocks of code.
 
 
 \section{Quality Control\label{quality-control}}
@@ -4737,32 +4737,30 @@ Python has a ``batteries included'' philosophy.  This is best seen
 through the sophisticated and robust capabilities of its larger
 packages. For example:
 
-* The \ulink{\module{xmlrpclib}}{../lib/module-xmlrpclib.html} and
-\ulink{\module{SimpleXMLRPCServer}}{../lib/module-SimpleXMLRPCServer.html}
-modules make implementing remote procedure calls into an almost trivial
-task.  Despite the names, no direct knowledge or handling of XML is needed.
-
-* The \ulink{\module{email}}{../lib/module-email.html}
-package is a library for managing email messages,
-including MIME and other RFC 2822-based message documents.  Unlike
-\module{smtplib} and \module{poplib} which actually send and receive
-messages, the email package has a complete toolset for building or
-decoding complex message structures (including attachments)
-and for implementing internet encoding and header protocols.
-
-* The \ulink{\module{xml.dom}}{../lib/module-xml.dom.html} and
-\ulink{\module{xml.sax}}{../lib/module-xml.sax.html} packages provide
-robust support for parsing this popular data interchange format.  Likewise,
-the \module{csv} module supports direct reads and writes in a common
-database format.  Together, these modules and packages greatly simplify
-data interchange between python applications and other tools.
-
-* Internationalization is supported by a number of modules including
-\ulink{\module{gettext}}{../lib/module-gettext.html},
-\ulink{\module{locale}}{../lib/module-locale.html}, and the
-\ulink{\module{codecs}}{../lib/module-codecs.html} package.
-
-
+\begin{itemize}
+\item The \ulink{\module{xmlrpclib}}{../lib/module-xmlrpclib.html} and
+  \ulink{\module{SimpleXMLRPCServer}}{../lib/module-SimpleXMLRPCServer.html}
+  modules make implementing remote procedure calls into an almost trivial task.
+  Despite the names, no direct knowledge or handling of XML is needed.
+\item The \ulink{\module{email}}{../lib/module-email.html} package is a library
+  for managing email messages, including MIME and other RFC 2822-based message
+  documents. Unlike \ulink{\module{smptlib}}{../lib/module-smtplib.html} and
+  \ulink{\module{poplib}}{../lib/module-poplib.html} which actually send and
+  receive messages, the email package has a complete toolset for building or
+  decoding complex message structures (including attachments) and for
+  implementing internet encoding and header protocols.
+\item The \ulink{\module{xml.dom}}{../lib/module-xml.dom.html} and
+  \ulink{\module{xml.sax}}{../lib/module-xml.sax.html} packages provide robust
+  support for parsing this popular data interchange format. Likewise, the
+  \ulink{\module{csv}}{../lib/module-csv.html} module supports direct reads and
+  writes in a common database format. Together, these modules and packages
+  greatly simplify data interchange between python applications and other
+  tools.
+\item Internationalization is supported by a number of modules including
+  \ulink{\module{gettext}}{../lib/module-gettext.html},
+  \ulink{\module{locale}}{../lib/module-locale.html}, and the
+  \ulink{\module{codecs}}{../lib/module-codecs.html} package.
+\end{itemize}
 
 \chapter{Brief Tour of the Standard Library -- Part II\label{briefTourTwo}}
 
