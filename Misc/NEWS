@@ -57,6 +57,29 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- There's a new warning category, FutureWarning.  This is used to warn
+  about a number of situations where the value or sign of an integer
+  result will change in Python 2.4 as a result of PEP 237 (integer
+  unification).  The warnings implement stage B0 mentioned in that
+  PEP.  The warnings are about the following situations:
+
+    - Octal and hex literals without 'L' prefix in the inclusive range
+      [0x80000000..0xffffffff]; these are currently negative ints, but
+      in Python 2.4 they will be positive longs with the same bit
+      pattern.
+
+    - Left shifts on integer values that cause the outcome to lose
+      bits or have a different sign than the left operand.  To be
+      precise: x<<n where this currently doesn't yield the same value
+      as long(x)<<n; in Python 2.4, the outcome will be long(x)<<n.
+
+    - Conversions from ints to string that show negative values as
+      unsigned ints in the inclusive range [0x80000000..0xffffffff];
+      this affects the functions hex() and oct(), and the string
+      formatting codes %u, %o, %x, and %X.  In Python 2.4, these will
+      show signed values (e.g. hex(-1) currently returns "0xffffffff";
+      in Python 2.4 it will return "-0x1").
+
 - When multiplying very large integers, a version of the so-called
   Karatsuba algorithm is now used.  This is most effective if the
   inputs have roughly the same size.  If they both have about N digits,
