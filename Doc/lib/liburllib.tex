@@ -26,10 +26,10 @@ server somewhere on the network.  If the connection cannot be made, or
 if the server returns an error code, the \exception{IOError} exception
 is raised.  If all went well, a file-like object is returned.  This
 supports the following methods: \method{read()}, \method{readline()},
-\method{readlines()}, \method{fileno()}, \method{close()} and
-\method{info()}.
+\method{readlines()}, \method{fileno()}, \method{close()},
+\method{info()} and \method{geturl()}.
 
-Except for the \method{info()} method,
+Except for the \method{info()} and \method{geturl()} methods,
 these methods have the same interface as for
 file objects --- see section \ref{bltin-file-objects} in this
 manual.  (It is not a built-in file object, however, so it can't be
@@ -47,7 +47,14 @@ request.  When the method is local-file, returned headers will include
 a Date representing the file's last-modified time, a Content-Length
 giving file size, and a Content-Type containing a guess at the file's
 type. See also the description of the
-\module{mimetools}\refstmodindex{mimetools} module.
+\refmodule{mimetools}\refstmodindex{mimetools} module.
+
+The \method{geturl()} method returns the real URL of the page.  In
+some cases, the HTTP server redirects a client to another URL.  The
+\function{urlopen()} function handles this transparently, but in some
+cases the caller needs to know which URL the client was redirected
+to.  The \method{geturl()} method can be used to get at this
+redirected URL.
 
 If the \var{url} uses the \file{http:} scheme identifier, the optional
 \var{data} argument may be given to specify a \code{POST} request
@@ -57,7 +64,7 @@ see the \function{urlencode()} function below.
 
 \end{funcdesc}
 
-\begin{funcdesc}{urlretrieve}{url\optional{, filename}\optional{, hook}}
+\begin{funcdesc}{urlretrieve}{url\optional{, filename\optional{, hook}}}
 Copy a network object denoted by a URL to a local file, if necessary.
 If the URL points to a local file, or a valid cached copy of the
 object exists, the object is not copied.  Return a tuple
@@ -154,19 +161,17 @@ web client using these functions without using threads.
 \item
 The data returned by \function{urlopen()} or \function{urlretrieve()}
 is the raw data returned by the server.  This may be binary data
-(e.g. an image), plain text or (for example) HTML.  The HTTP protocol
-provides type information in the reply header, which can be inspected
-by looking at the \code{content-type} header.  For the Gopher protocol,
-type information is encoded in the URL; there is currently no easy way
-to extract it.  If the returned data is HTML, you can use the module
-\module{htmllib}\refstmodindex{htmllib} to parse it.
-\index{HTML}
-\indexii{HTTP}{protocol}
-\indexii{Gopher}{protocol}
+(e.g. an image), plain text or (for example) HTML\index{HTML}.  The
+HTTP\indexii{HTTP}{protocol} protocol provides type information in the
+reply header, which can be inspected by looking at the
+\code{content-type} header.  For the Gopher\indexii{Gopher}{protocol}
+protocol, type information is encoded in the URL; there is currently
+no easy way to extract it.  If the returned data is HTML, you can use
+the module \refmodule{htmllib}\refstmodindex{htmllib} to parse it.
 
 \item
 Although the \module{urllib} module contains (undocumented) routines
 to parse and unparse URL strings, the recommended interface for URL
-manipulation is in module \module{urlparse}\refstmodindex{urlparse}.
+manipulation is in module \refmodule{urlparse}\refstmodindex{urlparse}.
 
 \end{itemize}
