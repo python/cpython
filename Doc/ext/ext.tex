@@ -631,7 +631,7 @@ code is not complete: \cfunction{Py_BuildValue()} may run out of
 memory, and this should be checked.
 
 
-\section{Format Strings for \cfunction{PyArg_ParseTuple()}
+\section{Extracting Parameters in Extension Functions
          \label{parseTuple}}
 
 The \cfunction{PyArg_ParseTuple()} function is declared as follows:
@@ -956,7 +956,7 @@ Some example calls:
 \end{verbatim}
 
 
-\section{Keyword Parsing with \cfunction{PyArg_ParseTupleAndKeywords()}
+\section{Keyword Parameters for Extension Functions
          \label{parseTupleAndKeywords}}
 
 The \cfunction{PyArg_ParseTupleAndKeywords()} function is declared as
@@ -1030,7 +1030,7 @@ initkeywdarg()
 \end{verbatim}
 
 
-\section{The \cfunction{Py_BuildValue()} Function
+\section{Building Arbitrary Values
          \label{buildValue}}
 
 This function is the counterpart to \cfunction{PyArg_ParseTuple()}.  It is
