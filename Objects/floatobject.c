@@ -117,16 +117,33 @@ PyFloat_FromDouble(double fval)
 	return (PyObject *) op;
 }
 
+/**************************************************************************
+RED_FLAG 22-Sep-2000 tim
+PyFloat_FromString's pend argument is braindead.  Prior to this RED_FLAG,
+
+1.  If v was a regular string, *pend was set to point to its terminating
+    null byte.  That's useless (the caller can find that without any
+    help from this function!).
+
+2.  If v was a Unicode string, or an object convertible to a character
+    buffer, *pend was set to point into stack trash (the auto temp
+    vector holding the character buffer).  That was downright dangerous.
+
+Since we can't change the interface of a public API function, pend is
+still supported but now *officially* useless:  if pend is not NULL,
+*pend is set to NULL.
+**************************************************************************/
 PyObject *
 PyFloat_FromString(PyObject *v, char **pend)
 {
-	extern double strtod(const char *, char **);
 	const char *s, *last, *end;
 	double x;
-	char buffer[256]; /* For errors */
-	char s_buffer[256];
+	char buffer[256]; /* for errors */
+	char s_buffer[256]; /* for objects convertible to a char buffer */
 	int len;
 
+	if (pend)
+		*pend = NULL;
 	if (PyString_Check(v)) {
 		s = PyString_AS_STRING(v);
 		len = PyString_GET_SIZE(v);
@@ -134,10 +151,10 @@ PyFloat_FromString(PyObject *v, char **pend)
 	else if (PyUnicode_Check(v)) {
 		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
-				 "float() literal too large to convert");
+				"Unicode float() literal too long to convert");
 			return NULL;
 		}
-		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v), 
+		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
 					    s_buffer, 
 					    NULL))
@@ -154,18 +171,30 @@ PyFloat_FromString(PyObject *v, char **pend)
 	last = s + len;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
-	if (s[0] == '\0') {
+	if (*s == '\0') {
 		PyErr_SetString(PyExc_ValueError, "empty string for float()");
 		return NULL;
 	}
+	/* We don't care about overflow or underflow.  If the platform supports
+	 * them, infinities and signed zeroes (on underflow) are fine.
+	 * However, strtod can return 0 for denormalized numbers, where atof
+	 * does not.  So (alas!) we special-case a zero result.  Note that
+	 * whether strtod sets errno on underflow is not defined, so we can't
+	 * key off errno.
+         */
+	x = strtod(s, (char **)&end);
 	errno = 0;
-	PyFPE_START_PROTECT("PyFloat_FromString", return 0)
-	x = strtod((char *)s, (char **)&end);
-	PyFPE_END_PROTECT(x)
 	/* Believe it or not, Solaris 2.6 can move end *beyond* the null
-	   byte at the end of the string, when the input is inf(inity) */
+	   byte at the end of the string, when the input is inf(inity). */
 	if (end > last)
 		end = last;
+	if (end == s) {
+		sprintf(buffer, "invalid literal for float(): %.200s", s);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		return NULL;
+	}
+	/* Since end != s, the platform made *some* kind of sense out
+	   of the input.  Trust it. */
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
@@ -178,13 +207,12 @@ PyFloat_FromString(PyObject *v, char **pend)
 				"null byte in argument for float()");
 		return NULL;
 	}
-	else if (errno != 0) {
-		sprintf(buffer, "float() literal too large: %.200s", s);
-		PyErr_SetString(PyExc_ValueError, buffer);
-		return NULL;
+	if (x == 0.0) {
+		/* See above -- may have been strtod being anal
+		   about denorms. */
+		x = atof(s);
+		errno = 0;    /* whether atof ever set errno is undefined */
 	}
-	if (pend)
-		*pend = (char *)end;
 	return PyFloat_FromDouble(x);
 }
 
