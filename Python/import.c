@@ -570,9 +570,9 @@ init_builtin(name)
 	char *name;
 {
 	int i;
-	for (i = 0; inittab[i].name != NULL; i++) {
-		if (strcmp(name, inittab[i].name) == 0) {
-			if (inittab[i].initfunc == NULL) {
+	for (i = 0; _PyImport_Inittab[i].name != NULL; i++) {
+		if (strcmp(name, _PyImport_Inittab[i].name) == 0) {
+			if (_PyImport_Inittab[i].initfunc == NULL) {
 				PyErr_SetString(PyExc_ImportError,
 					   "Cannot re-init internal module");
 				return -1;
@@ -580,7 +580,7 @@ init_builtin(name)
 			if (Py_VerboseFlag)
 				fprintf(stderr, "import %s # builtin\n",
 					name);
-			(*inittab[i].initfunc)();
+			(*_PyImport_Inittab[i].initfunc)();
 			if (PyErr_Occurred())
 				return -1;
 			return 1;
@@ -880,9 +880,9 @@ imp_is_builtin(self, args)
 	char *name;
 	if (!PyArg_ParseTuple(args, "s", &name))
 		return NULL;
-	for (i = 0; inittab[i].name != NULL; i++) {
-		if (strcmp(name, inittab[i].name) == 0) {
-			if (inittab[i].initfunc == NULL)
+	for (i = 0; _PyImport_Inittab[i].name != NULL; i++) {
+		if (strcmp(name, _PyImport_Inittab[i].name) == 0) {
+			if (_PyImport_Inittab[i].initfunc == NULL)
 				return PyInt_FromLong(-1);
 			else
 				return PyInt_FromLong(1);
