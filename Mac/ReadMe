@@ -154,9 +154,10 @@ Thanks!
 -------
 
 Thanks go to the whole Python community with Guido in the lead, of course.
-Mac-specific thanks go to the pythonmac-sig, Just van Rossum, Corran Webster,
+Mac-specific thanks go to the pythonmac-sig, Just van Rossum, Corran Webster, Tony Ingraldi,
 Erik van Blokland, Bill Bedford, Chris Stern, Gordon Worley, Oliver Steele, M. Papillon,
-Steven Majewski and all the other people who provided feedback, code or both!
+Steven Majewski, David Goodger, Chris Barker and all the other people who provided feedback,
+code or both!
 
 Feedback
 --------

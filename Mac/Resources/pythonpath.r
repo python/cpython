@@ -76,15 +76,17 @@ resource 'Popt' (PYTHONOPTIONS_ID, "Options") {
 resource 'STR#' (PYTHONPATH_ID, "sys.path initialization") {
 	{
 		"$(PYTHON)",
-		"$(PYTHON):Lib",
 		"$(PYTHON):Mac:PlugIns",
 		"$(PYTHON):Mac:Lib",
 		"$(PYTHON):Mac:Lib:lib-toolbox",
-		"$(PYTHON):Mac:Lib:lib-scripting",
+		"$(PYTHON):Mac:Lib:lib-scriptpackages",
+		"$(PYTHON):Lib",
 		"$(PYTHON):Extensions:img:Mac",
 		"$(PYTHON):Extensions:img:Lib",
 		"$(PYTHON):Extensions:Numerical:Lib",
-		"$(PYTHON):Lib:lib-tk"
+		"$(PYTHON):Extensions:Imaging:PIL",
+		"$(PYTHON):Lib:lib-tk",
+		"$(PYTHON):Lib:site-packages",
 	}
 };
 
