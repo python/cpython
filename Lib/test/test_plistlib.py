@@ -3,7 +3,90 @@
 import unittest
 import plistlib
 import os
+import time
+import datetime
 from test import test_support
+
+
+# This test data was generated through Cocoa's NSDictionary class
+TESTDATA = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" \
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>aDate</key>
+        <date>2004-10-26T10:33:33Z</date>
+        <key>aDict</key>
+        <dict>
+                <key>aFalseValue</key>
+                <false/>
+                <key>aTrueValue</key>
+                <true/>
+                <key>aUnicodeValue</key>
+                <string>M\xc3\xa4ssig, Ma\xc3\x9f</string>
+                <key>anotherString</key>
+                <string>&lt;hello &amp; 'hi' there!&gt;</string>
+                <key>deeperDict</key>
+                <dict>
+                        <key>a</key>
+                        <integer>17</integer>
+                        <key>b</key>
+                        <real>32.5</real>
+                        <key>c</key>
+                        <array>
+                                <integer>1</integer>
+                                <integer>2</integer>
+                                <string>text</string>
+                        </array>
+                </dict>
+        </dict>
+        <key>aFloat</key>
+        <real>0.5</real>
+        <key>aList</key>
+        <array>
+                <string>A</string>
+                <string>B</string>
+                <integer>12</integer>
+                <real>32.5</real>
+                <array>
+                        <integer>1</integer>
+                        <integer>2</integer>
+                        <integer>3</integer>
+                </array>
+        </array>
+        <key>aString</key>
+        <string>Doodah</string>
+        <key>anInt</key>
+        <integer>728</integer>
+        <key>nestedData</key>
+        <array>
+                <data>
+                PGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAzxsb3RzIG9mIGJpbmFyeSBndW5r
+                PgABAgM8bG90cyBvZiBiaW5hcnkgZ3Vuaz4AAQIDPGxvdHMgb2YgYmluYXJ5
+                IGd1bms+AAECAzxsb3RzIG9mIGJpbmFyeSBndW5rPgABAgM8bG90cyBvZiBi
+                aW5hcnkgZ3Vuaz4AAQIDPGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAzxsb3Rz
+                IG9mIGJpbmFyeSBndW5rPgABAgM8bG90cyBvZiBiaW5hcnkgZ3Vuaz4AAQID
+                PGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAw==
+                </data>
+        </array>
+        <key>someData</key>
+        <data>
+        PGJpbmFyeSBndW5rPg==
+        </data>
+        <key>someMoreData</key>
+        <data>
+        PGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAzxsb3RzIG9mIGJpbmFyeSBndW5rPgABAgM8
+        bG90cyBvZiBiaW5hcnkgZ3Vuaz4AAQIDPGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAzxs
+        b3RzIG9mIGJpbmFyeSBndW5rPgABAgM8bG90cyBvZiBiaW5hcnkgZ3Vuaz4AAQIDPGxv
+        dHMgb2YgYmluYXJ5IGd1bms+AAECAzxsb3RzIG9mIGJpbmFyeSBndW5rPgABAgM8bG90
+        cyBvZiBiaW5hcnkgZ3Vuaz4AAQIDPGxvdHMgb2YgYmluYXJ5IGd1bms+AAECAw==
+        </data>
+        <key>\xc3\x85benraa</key>
+        <string>That was a unicode key.</string>
+</dict>
+</plist>
+""".replace(" " * 8, "\t")  # Apple as well as plistlib.py output hard tabs
+
 
 class TestPlistlib(unittest.TestCase):
 
@@ -14,28 +97,24 @@ class TestPlistlib(unittest.TestCase):
             pass
 
     def _create(self):
-        pl = plistlib.Dict(
+        pl = dict(
             aString="Doodah",
-            aList=["A", "B", 12, 32.1, [1, 2, 3]],
-            aFloat = 0.1,
+            aList=["A", "B", 12, 32.5, [1, 2, 3]],
+            aFloat = 0.5,
             anInt = 728,
-            aDict=plistlib.Dict(
-                anotherString="<hello & hi there!>",
+            aDict=dict(
+                anotherString="<hello & 'hi' there!>",
                 aUnicodeValue=u'M\xe4ssig, Ma\xdf',
                 aTrueValue=True,
                 aFalseValue=False,
+                deeperDict=dict(a=17, b=32.5, c=[1, 2, "text"]),
             ),
             someData = plistlib.Data("<binary gunk>"),
-            someMoreData = plistlib.Data("<lots of binary gunk>" * 10),
+            someMoreData = plistlib.Data("<lots of binary gunk>\0\1\2\3" * 10),
+            nestedData = [plistlib.Data("<lots of binary gunk>\0\1\2\3" * 10)],
+            aDate = datetime.datetime(2004, 10, 26, 10, 33, 33),
         )
-        pl['anotherInt'] = 42
-        try:
-            from xml.utils.iso8601 import parse
-            import time
-        except ImportError:
-            pass
-        else:
-            pl['aDate'] = plistlib.Date(time.mktime(time.gmtime()))
+        pl[u'\xc5benraa'] = "That was a unicode key."
         return pl
 
     def test_create(self):
@@ -48,6 +127,26 @@ class TestPlistlib(unittest.TestCase):
         plistlib.writePlist(pl, test_support.TESTFN)
         pl2 = plistlib.readPlist(test_support.TESTFN)
         self.assertEqual(dict(pl), dict(pl2))
+
+    def test_string(self):
+        pl = self._create()
+        data = plistlib.writePlistToString(pl)
+        pl2 = plistlib.readPlistFromString(data)
+        self.assertEqual(dict(pl), dict(pl2))
+        data2 = plistlib.writePlistToString(pl2)
+        self.assertEqual(data, data2)
+
+    def test_appleformatting(self):
+        pl = plistlib.readPlistFromString(TESTDATA)
+        data = plistlib.writePlistToString(pl)
+        self.assertEqual(data, TESTDATA,
+                         "generated data was not identical to Apple's output")
+
+    def test_appleformattingfromliteral(self):
+        pl = self._create()
+        pl2 = plistlib.readPlistFromString(TESTDATA)
+        self.assertEqual(dict(pl), dict(pl2),
+                         "generated data was not identical to Apple's output")
 
     def test_stringio(self):
         from StringIO import StringIO
