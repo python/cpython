@@ -29,20 +29,31 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define SYSV
 #endif
 
+#ifdef MSDOS
+#define NO_LSTAT
+#endif
+
 #include <signal.h>
 #include <string.h>
 #include <setjmp.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #ifdef SYSV
+
 #define UTIME_STRUCT
 #include <dirent.h>
 #define direct dirent
 #ifdef i386
 #define mode_t int
 #endif
+
 #else /* !SYSV */
+
+#ifndef MSDOS
 #include <sys/dir.h>
+#endif
+
 #endif /* !SYSV */
 
 #include "allobjects.h"
@@ -209,6 +220,7 @@ posix_getcwd(self, args)
 	return newstringobject(buf);
 }
 
+#ifndef MSDOS
 static object *
 posix_link(self, args)
 	object *self;
@@ -217,6 +229,7 @@ posix_link(self, args)
 	extern int link PROTO((const char *, const char *));
 	return posix_2str(args, link);
 }
+#endif /* !MSDOS */
 
 static object *
 posix_listdir(self, args)
@@ -224,6 +237,33 @@ posix_listdir(self, args)
 	object *args;
 {
 	object *name, *d, *v;
+
+#ifdef MSDOS
+	struct ffblk ep;
+	int rv;
+	if (!getstrarg(args, &name))
+		return NULL;
+
+	if (findfirst((char *) getstringvalue(name), &ep, 0) == -1)
+		return posix_error();
+	if ((d = newlistobject(0)) == NULL)
+		return NULL;
+	do {
+		v = newstringobject(ep.ff_name);
+		if (v == NULL) {
+			DECREF(d);
+			d = NULL;
+			break;
+		}
+		if (addlistitem(d, v) != 0) {
+			DECREF(v);
+			DECREF(d);
+			d = NULL;
+			break;
+		}
+		DECREF(v);
+	} while ((rv = findnext(&ep)) == 0);
+#else /* !MSDOS */
 	DIR *dirp;
 	struct direct *ep;
 	if (!getstrarg(args, &name))
@@ -250,6 +290,8 @@ posix_listdir(self, args)
 		DECREF(v);
 	}
 	closedir(dirp);
+#endif /* !MSDOS */
+
 	return d;
 }
 
@@ -275,7 +317,7 @@ rename(from, to)
 		return status;
 	return unlink(from);
 }
-#endif
+#endif /* i386 */
 
 static object *
 posix_rename(self, args)
@@ -317,6 +359,7 @@ posix_system(self, args)
 	return newintobject((long)sts);
 }
 
+#ifndef MSDOS
 static object *
 posix_umask(self, args)
 	object *self;
@@ -330,6 +373,7 @@ posix_umask(self, args)
 		return posix_error();
 	return newintobject((long)i);
 }
+#endif /* !MSDOS */
 
 static object *
 posix_unlink(self, args)
@@ -380,7 +424,6 @@ posix_utime(self, args)
 #undef MTIME
 }
 
-
 #ifndef NO_LSTAT
 
 static object *
@@ -424,14 +467,18 @@ static struct methodlist posix_methods[] = {
 	{"chdir",	posix_chdir},
 	{"chmod",	posix_chmod},
 	{"getcwd",	posix_getcwd},
+#ifndef MSDOS
 	{"link",	posix_link},
+#endif
 	{"listdir",	posix_listdir},
 	{"mkdir",	posix_mkdir},
 	{"rename",	posix_rename},
 	{"rmdir",	posix_rmdir},
 	{"stat",	posix_stat},
 	{"system",	posix_system},
+#ifndef MSDOS
 	{"umask",	posix_umask},
+#endif
 	{"unlink",	posix_unlink},
 	{"utime",	posix_utime},
 	{"utimes",	posix_utime},	/* XXX for compatibility only */
@@ -463,3 +510,47 @@ initposix()
 	if (PosixError == NULL || dictinsert(d, "error", PosixError) != 0)
 		fatal("can't define posix.error");
 }
+
+#ifdef MSDOS
+
+/* A small "compatibility library" for TurboC under MS-DOS */
+
+#include <sir.h>
+#include <io.h>
+#include <dos.h>
+#include <fcntl.h>
+
+int
+chmod(path, mode)
+	char *path;
+	int mode;
+{
+	return _chmod(path, 1, mode);
+}
+
+int
+utime(path, times)
+	char *path;
+	time_t times[2];
+{
+	struct date dt;
+	struct time tm;
+	struct ftime dft;
+	int	fh;
+	unixtodos(tv[0].tv_sec,&dt,&tm);
+	dft.ft_tsec = tm.ti_sec; dft.ft_min = tm.ti_min;
+	dft.ft_hour = tm.ti_hour; dft.ft_day = dt.da_day;
+	dft.ft_month = dt.da_mon;
+	dft.ft_year = (dt.da_year - 1980);	/* this is for TC library */
+
+	if ((fh = open(getstringvalue(path),O_RDWR)) < 0)
+		return posix_error();	/* can't open file to set time */
+	if (setftime(fh,&dft) < 0)
+	{
+		close(fh);
+		return posix_error();
+	}
+	close(fh);				/* close the temp handle */
+}
+
+#endif /* MSDOS */
