@@ -15,7 +15,7 @@ DialogRef = DialogPtr
 OptHandle = OpaqueByValueType("Handle", "OptResObj")
 
 ModalFilterProcPtr = InputOnlyType("PyObject*", "O")
-ModalFilterProcPtr.passInput = lambda name: "NewModalFilterProc(Dlg_PassFilterProc(%s))" % name
+ModalFilterProcPtr.passInput = lambda name: "Dlg_PassFilterProc(%s)" % name
 ModalFilterUPP = ModalFilterProcPtr
 
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
@@ -79,10 +79,12 @@ static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
 	return rv;
 }
 
-static ModalFilterProcPtr
+static ModalFilterUPP
 Dlg_PassFilterProc(PyObject *callback)
 {
 	PyObject *tmp = Dlg_FilterProc_callback;
+	static ModalFilterUPP UnivFilterUpp = NULL;
+	
 	Dlg_FilterProc_callback = NULL;
 	if (callback == Py_None) {
 		Py_XDECREF(tmp);
@@ -91,7 +93,9 @@ Dlg_PassFilterProc(PyObject *callback)
 	Py_INCREF(callback);
 	Dlg_FilterProc_callback = callback;
 	Py_XDECREF(tmp);
-	return &Dlg_UnivFilterProc;
+	if ( UnivFilterUpp == NULL )
+		UnivFilterUpp = NewModalFilterUPP(&Dlg_UnivFilterProc);
+	return UnivFilterUpp;
 }
 
 static PyObject *Dlg_UserItemProc_callback = NULL;
@@ -267,7 +271,7 @@ setuseritembody = """
 		return NULL;
 	}
 	
-	if (new == Py_None) {
+	if (new == NULL || new == Py_None) {
 		new = NULL;
 		_res = Py_None;
 		Py_INCREF(Py_None);
