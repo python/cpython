@@ -188,12 +188,15 @@ class Header:
     def append(self, s, charset=None):
         """Append string s with Charset charset to the MIME header.
 
-        charset defaults to the one given in the class constructor.  If
-        charset is given, it should be an instance of Charset (not a character
-        set name string!).
+        If charset is given, it should be a Charset instance, or the name of a
+        character set (which will be converted to a Charset instance).  A
+        value of None (the default) means charset is the one given in the
+        class constructor.
         """
         if charset is None:
             charset = self._charset
+        elif not isinstance(charset, Charset):
+            charset = Charset(charset)
         self._chunks.append((s, charset))
 
     def _split(self, s, charset, firstline=0):
