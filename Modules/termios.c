@@ -527,6 +527,335 @@ static struct constant {
 	{"VLNEXT", VLNEXT},
 	{"VEOL2", VEOL2},
 
+
+#ifdef B460800
+	{"B460800", B460800},
+#endif
+#ifdef CBAUD
+	{"CBAUD", CBAUD},
+#endif
+#ifdef CDEL
+	{"CDEL", CDEL},
+#endif
+#ifdef CDSUSP
+	{"CDSUSP", CDSUSP},
+#endif
+#ifdef CEOF
+	{"CEOF", CEOF},
+#endif
+#ifdef CEOL
+	{"CEOL", CEOL},
+#endif
+#ifdef CEOL2
+	{"CEOL2", CEOL2},
+#endif
+#ifdef CEOT
+	{"CEOT", CEOT},
+#endif
+#ifdef CERASE
+	{"CERASE", CERASE},
+#endif
+#ifdef CESC
+	{"CESC", CESC},
+#endif
+#ifdef CFLUSH
+	{"CFLUSH", CFLUSH},
+#endif
+#ifdef CINTR
+	{"CINTR", CINTR},
+#endif
+#ifdef CKILL
+	{"CKILL", CKILL},
+#endif
+#ifdef CLNEXT
+	{"CLNEXT", CLNEXT},
+#endif
+#ifdef CNUL
+	{"CNUL", CNUL},
+#endif
+#ifdef COMMON
+	{"COMMON", COMMON},
+#endif
+#ifdef CQUIT
+	{"CQUIT", CQUIT},
+#endif
+#ifdef CRPRNT
+	{"CRPRNT", CRPRNT},
+#endif
+#ifdef CSTART
+	{"CSTART", CSTART},
+#endif
+#ifdef CSTOP
+	{"CSTOP", CSTOP},
+#endif
+#ifdef CSUSP
+	{"CSUSP", CSUSP},
+#endif
+#ifdef CSWTCH
+	{"CSWTCH", CSWTCH},
+#endif
+#ifdef CWERASE
+	{"CWERASE", CWERASE},
+#endif
+#ifdef EXTA
+	{"EXTA", EXTA},
+#endif
+#ifdef EXTB
+	{"EXTB", EXTB},
+#endif
+#ifdef FIOASYNC
+	{"FIOASYNC", FIOASYNC},
+#endif
+#ifdef FIOCLEX
+	{"FIOCLEX", FIOCLEX},
+#endif
+#ifdef FIONBIO
+	{"FIONBIO", FIONBIO},
+#endif
+#ifdef FIONCLEX
+	{"FIONCLEX", FIONCLEX},
+#endif
+#ifdef FIONREAD
+	{"FIONREAD", FIONREAD},
+#endif
+#ifdef IBSHIFT
+	{"IBSHIFT", IBSHIFT},
+#endif
+#ifdef INIT_C_CC
+	{"INIT_C_CC", INIT_C_CC},
+#endif
+#ifdef IOCSIZE_MASK
+	{"IOCSIZE_MASK", IOCSIZE_MASK},
+#endif
+#ifdef IOCSIZE_SHIFT
+	{"IOCSIZE_SHIFT", IOCSIZE_SHIFT},
+#endif
+#ifdef NCC
+	{"NCC", NCC},
+#endif
+#ifdef NCCS
+	{"NCCS", NCCS},
+#endif
+#ifdef NSWTCH
+	{"NSWTCH", NSWTCH},
+#endif
+#ifdef N_MOUSE
+	{"N_MOUSE", N_MOUSE},
+#endif
+#ifdef N_PPP
+	{"N_PPP", N_PPP},
+#endif
+#ifdef N_SLIP
+	{"N_SLIP", N_SLIP},
+#endif
+#ifdef N_STRIP
+	{"N_STRIP", N_STRIP},
+#endif
+#ifdef N_TTY
+	{"N_TTY", N_TTY},
+#endif
+#ifdef TCFLSH
+	{"TCFLSH", TCFLSH},
+#endif
+#ifdef TCGETA
+	{"TCGETA", TCGETA},
+#endif
+#ifdef TCGETS
+	{"TCGETS", TCGETS},
+#endif
+#ifdef TCSBRK
+	{"TCSBRK", TCSBRK},
+#endif
+#ifdef TCSBRKP
+	{"TCSBRKP", TCSBRKP},
+#endif
+#ifdef TCSETA
+	{"TCSETA", TCSETA},
+#endif
+#ifdef TCSETAF
+	{"TCSETAF", TCSETAF},
+#endif
+#ifdef TCSETAW
+	{"TCSETAW", TCSETAW},
+#endif
+#ifdef TCSETS
+	{"TCSETS", TCSETS},
+#endif
+#ifdef TCSETSF
+	{"TCSETSF", TCSETSF},
+#endif
+#ifdef TCSETSW
+	{"TCSETSW", TCSETSW},
+#endif
+#ifdef TCXONC
+	{"TCXONC", TCXONC},
+#endif
+#ifdef TIOCCONS
+	{"TIOCCONS", TIOCCONS},
+#endif
+#ifdef TIOCEXCL
+	{"TIOCEXCL", TIOCEXCL},
+#endif
+#ifdef TIOCGETD
+	{"TIOCGETD", TIOCGETD},
+#endif
+#ifdef TIOCGICOUNT
+	{"TIOCGICOUNT", TIOCGICOUNT},
+#endif
+#ifdef TIOCGLCKTRMIOS
+	{"TIOCGLCKTRMIOS", TIOCGLCKTRMIOS},
+#endif
+#ifdef TIOCGPGRP
+	{"TIOCGPGRP", TIOCGPGRP},
+#endif
+#ifdef TIOCGSERIAL
+	{"TIOCGSERIAL", TIOCGSERIAL},
+#endif
+#ifdef TIOCGSOFTCAR
+	{"TIOCGSOFTCAR", TIOCGSOFTCAR},
+#endif
+#ifdef TIOCGWINSZ
+	{"TIOCGWINSZ", TIOCGWINSZ},
+#endif
+#ifdef TIOCINQ
+	{"TIOCINQ", TIOCINQ},
+#endif
+#ifdef TIOCLINUX
+	{"TIOCLINUX", TIOCLINUX},
+#endif
+#ifdef TIOCMBIC
+	{"TIOCMBIC", TIOCMBIC},
+#endif
+#ifdef TIOCMBIS
+	{"TIOCMBIS", TIOCMBIS},
+#endif
+#ifdef TIOCMGET
+	{"TIOCMGET", TIOCMGET},
+#endif
+#ifdef TIOCMIWAIT
+	{"TIOCMIWAIT", TIOCMIWAIT},
+#endif
+#ifdef TIOCMSET
+	{"TIOCMSET", TIOCMSET},
+#endif
+#ifdef TIOCM_CAR
+	{"TIOCM_CAR", TIOCM_CAR},
+#endif
+#ifdef TIOCM_CD
+	{"TIOCM_CD", TIOCM_CD},
+#endif
+#ifdef TIOCM_CTS
+	{"TIOCM_CTS", TIOCM_CTS},
+#endif
+#ifdef TIOCM_DSR
+	{"TIOCM_DSR", TIOCM_DSR},
+#endif
+#ifdef TIOCM_DTR
+	{"TIOCM_DTR", TIOCM_DTR},
+#endif
+#ifdef TIOCM_LE
+	{"TIOCM_LE", TIOCM_LE},
+#endif
+#ifdef TIOCM_RI
+	{"TIOCM_RI", TIOCM_RI},
+#endif
+#ifdef TIOCM_RNG
+	{"TIOCM_RNG", TIOCM_RNG},
+#endif
+#ifdef TIOCM_RTS
+	{"TIOCM_RTS", TIOCM_RTS},
+#endif
+#ifdef TIOCM_SR
+	{"TIOCM_SR", TIOCM_SR},
+#endif
+#ifdef TIOCM_ST
+	{"TIOCM_ST", TIOCM_ST},
+#endif
+#ifdef TIOCNOTTY
+	{"TIOCNOTTY", TIOCNOTTY},
+#endif
+#ifdef TIOCNXCL
+	{"TIOCNXCL", TIOCNXCL},
+#endif
+#ifdef TIOCOUTQ
+	{"TIOCOUTQ", TIOCOUTQ},
+#endif
+#ifdef TIOCPKT
+	{"TIOCPKT", TIOCPKT},
+#endif
+#ifdef TIOCPKT_DATA
+	{"TIOCPKT_DATA", TIOCPKT_DATA},
+#endif
+#ifdef TIOCPKT_DOSTOP
+	{"TIOCPKT_DOSTOP", TIOCPKT_DOSTOP},
+#endif
+#ifdef TIOCPKT_FLUSHREAD
+	{"TIOCPKT_FLUSHREAD", TIOCPKT_FLUSHREAD},
+#endif
+#ifdef TIOCPKT_FLUSHWRITE
+	{"TIOCPKT_FLUSHWRITE", TIOCPKT_FLUSHWRITE},
+#endif
+#ifdef TIOCPKT_NOSTOP
+	{"TIOCPKT_NOSTOP", TIOCPKT_NOSTOP},
+#endif
+#ifdef TIOCPKT_START
+	{"TIOCPKT_START", TIOCPKT_START},
+#endif
+#ifdef TIOCPKT_STOP
+	{"TIOCPKT_STOP", TIOCPKT_STOP},
+#endif
+#ifdef TIOCSCTTY
+	{"TIOCSCTTY", TIOCSCTTY},
+#endif
+#ifdef TIOCSERCONFIG
+	{"TIOCSERCONFIG", TIOCSERCONFIG},
+#endif
+#ifdef TIOCSERGETLSR
+	{"TIOCSERGETLSR", TIOCSERGETLSR},
+#endif
+#ifdef TIOCSERGETMULTI
+	{"TIOCSERGETMULTI", TIOCSERGETMULTI},
+#endif
+#ifdef TIOCSERGSTRUCT
+	{"TIOCSERGSTRUCT", TIOCSERGSTRUCT},
+#endif
+#ifdef TIOCSERGWILD
+	{"TIOCSERGWILD", TIOCSERGWILD},
+#endif
+#ifdef TIOCSERSETMULTI
+	{"TIOCSERSETMULTI", TIOCSERSETMULTI},
+#endif
+#ifdef TIOCSERSWILD
+	{"TIOCSERSWILD", TIOCSERSWILD},
+#endif
+#ifdef TIOCSER_TEMT
+	{"TIOCSER_TEMT", TIOCSER_TEMT},
+#endif
+#ifdef TIOCSETD
+	{"TIOCSETD", TIOCSETD},
+#endif
+#ifdef TIOCSLCKTRMIOS
+	{"TIOCSLCKTRMIOS", TIOCSLCKTRMIOS},
+#endif
+#ifdef TIOCSPGRP
+	{"TIOCSPGRP", TIOCSPGRP},
+#endif
+#ifdef TIOCSSERIAL
+	{"TIOCSSERIAL", TIOCSSERIAL},
+#endif
+#ifdef TIOCSSOFTCAR
+	{"TIOCSSOFTCAR", TIOCSSOFTCAR},
+#endif
+#ifdef TIOCSTI
+	{"TIOCSTI", TIOCSTI},
+#endif
+#ifdef TIOCSWINSZ
+	{"TIOCSWINSZ", TIOCSWINSZ},
+#endif
+#ifdef TIOCTTYGSTRUCT
+	{"TIOCTTYGSTRUCT", TIOCTTYGSTRUCT},
+#endif
+
 	/* sentinel */
 	{NULL, 0}
 };
