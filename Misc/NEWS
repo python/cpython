@@ -63,9 +63,10 @@ Core and builtins
   other platforms.  KeyboardInterrupt can now reliably be caught,
   and Ctrl+C at an interative prompt no longer terminates the
   process under NT/2k/XP (it never did under Win9x).  Ctrl+C will
-  interrupt time.sleep() in the main thread, and any child processes
-  created via the popen family are also interrupted (as generally
-  happens on for Linux/Unix). [SF bugs 231273, 439992 and 581232]
+  interrupt time.sleep() in the main thread, and any child processes 
+  created via the popen family (on win2k; we can't make win9x work 
+  reliably) are also interrupted (as generally happens on for Linux/Unix.)
+  [SF bugs 231273, 439992 and 581232]
 
 - Slices and repetitions of buffer objects now consistently return
   a string.  Formerly, strings would be returned most of the time,
