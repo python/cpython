@@ -466,6 +466,28 @@ you must obtain the thread state and access its \member{interp} member;
 this must be done by a thread that is created by Python or by the main
 thread after Python is initialized).
 
+Assuming you have access to an interpreter object, the typical idiom
+for calling into Python from a C thread is
+
+\begin{verbatim}
+    PyThreadState *tstate;
+    PyObject *result;
+
+    /* interp is your reference to an interpreter object. */
+    tstate = PyThreadState_New(interp);
+    PyEval_AcquireThread(tstate);
+
+    /* Perform Python actions here.  */
+    result = CallSomeFunction();
+    /* evaluate result */
+
+    /* Release the thread. No Python API allowed beyond this point. */
+    PyEval_ReleaseThread(tstate);
+
+    /* You can either delete the thread state, or save it
+       until you need it the next time. */
+    PyThreadState_Delete(tstate);
+\end{verbatim}
 
 \begin{ctypedesc}{PyInterpreterState}
   This data structure represents the state shared by a number of
