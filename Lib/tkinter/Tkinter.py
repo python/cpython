@@ -1,27 +1,49 @@
 # Tkinter.py -- Tk/Tcl widget wrappers
+
 import tkinter
 from tkinter import TclError
 
 class _Dummy:
 	def meth(self):	return
 
-def _isfunctype(func):
-	return type(func) in CallableTypes
+def _func():
+	pass
 
-FunctionType = type(_isfunctype)
+FunctionType = type(_func)
 ClassType = type(_Dummy)
 MethodType = type(_Dummy.meth)
 StringType = type('')
 TupleType = type(())
 ListType = type([])
+DictionaryType = type({})
+NoneType = type(None)
 CallableTypes = (FunctionType, MethodType)
+
+def _flatten(tuple):
+	res = ()
+	for item in tuple:
+		if type(item) in (TupleType, ListType):
+			res = res + _flatten(item)
+		else:
+			res = res + (item,)
+	return res
+
+def _cnfmerge(cnfs):
+	if type(cnfs) in (NoneType, DictionaryType, StringType):
+		return cnfs
+	else:
+		cnf = {}
+		for c in _flatten(cnfs):
+			for k, v in c.items():
+				cnf[k] = v
+		return cnf
+
+class Event:
+	pass
 
 _default_root = None
 
 def _tkerror(err):
-	pass
-
-class Event:
 	pass
 
 _varnum = 0
@@ -71,15 +93,27 @@ class BooleanVar(Variable):
 	def get(self):
 		return self._tk.getboolean(self._tk.getvar(self._name))
 
+def mainloop():
+	_default_root.tk.mainloop()
+
+def getint(s):
+	return _default_root.tk.getint(s)
+
+def getdouble(s):
+	return _default_root.tk.getdouble(s)
+
+def getboolean(s):
+	return _default_root.tk.getboolean(s)
+
 class Misc:
 	def tk_strictMotif(self, boolean=None):
-		self.tk.getboolean(self.tk.call(
+		return self.tk.getboolean(self.tk.call(
 			'set', 'tk_strictMotif', boolean))
 	def tk_menuBar(self, *args):
 		apply(self.tk.call, ('tk_menuBar', self._w) + args)
-	def waitvar(self, name='PY_VAR'):
+	def wait_variable(self, name='PY_VAR'):
 		self.tk.call('tkwait', 'variable', name)
-	wait_variable = waitvar
+	waitvar = wait_variable # XXX b/w compat
 	def wait_window(self, window=None):
 		if window == None:
 			window = self
@@ -88,7 +122,6 @@ class Misc:
 		if window == None:
 			window = self
 		self.tk.call('tkwait', 'visibility', window._w)
-
 	def setvar(self, name='PY_VAR', value='1'):
 		self.tk.setvar(name, value)
 	def getvar(self, name='PY_VAR'):
@@ -298,7 +331,6 @@ class Misc:
 		self.tk.mainloop()
 	def quit(self):
 		self.tk.quit()
-	# Utilities
 	def _getints(self, string):
 		if not string: return None
 		res = ()
@@ -308,11 +340,11 @@ class Misc:
 	def _getboolean(self, string):
 		if string:
 			return self.tk.getboolean(string)
-		# else return None
 	def _options(self, cnf):
+		cnf = _cnfmerge(cnf)
 		res = ()
 		for k, v in cnf.items():
-			if _isfunctype(v):
+			if type(v) in CallableTypes:
 				v = self._register(v)
 			res = res + ('-'+k, v)
 		return res
@@ -469,7 +501,7 @@ class Wm:
 	def positionfrom(self, who=None):
 		return self.tk.call('wm', 'positionfrom', self._w, who)
 	def protocol(self, name=None, func=None):
-		if _isfunctype(func):
+		if type(func) in CallableTypes:
 			command = self._register(func)
 		else:
 			command = func
@@ -569,14 +601,16 @@ class Widget(Misc, Pack, Place):
 			self._w = master._w + '.' + name
 		self.children = {}
 		if self.master.children.has_key(self._name):
-			 self.master.children[self._name].destroy()
+			self.master.children[self._name].destroy()
 		self.master.children[self._name] = self
 	def __init__(self, master, widgetName, cnf={}, extra=()):
+		cnf = _cnfmerge(cnf)
 		Widget._setup(self, master, cnf)
 		self.widgetName = widgetName
 		apply(self.tk.call, (widgetName, self._w) + extra)
 		Widget.config(self, cnf)
 	def config(self, cnf=None):
++ 		cnf = _cnfmerge(cnf)
 		if cnf is None:
 			cnf = {}
 			for x in self.tk.split(
@@ -606,7 +640,6 @@ class Widget(Misc, Pack, Place):
 		return self._w
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
-		del self.master.children[self._name]
 		self.tk.call('destroy', self._w)
 	def _do(self, name, args=()):
 		return apply(self.tk.call, (self._w, name) + args) 
@@ -696,14 +729,14 @@ class Canvas(Widget):
 	def _create(self, itemType, args): # Args: (value, value, ..., cnf={})
 		args = _flatten(args)
 		cnf = args[-1]
-		if type(cnf) == type({}):
+		if type(cnf) in (DictionaryType, TupleType):
 			args = args[:-1]
 		else:
 			cnf = {}
-		v = (self._w, 'create', itemType) + args
-		for k in cnf.keys():
-			v = v + ('-' + k, cnf[k])
-		return self.tk.getint(apply(self.tk.call, v))
+		return self.tk.getint(apply(
+			self.tk.call,
+			(self._w, 'create', itemType) 
+			+ args + self._options(cnf)))
 	def create_arc(self, *args):
 		return Canvas._create(self, 'arc', args)
 	def create_bitmap(self, *args):
@@ -796,15 +829,6 @@ class Canvas(Widget):
 	def yview(self, index):
 		self.tk.call(self._w, 'yview', index)
 
-def _flatten(tuple):
-	res = ()
-	for item in tuple:
-		if type(item) in (TupleType, ListType):
-			res = res + _flatten(item)
-		else:
-			res = res + (item,)
-	return res
-
 class Checkbutton(Widget):
 	def __init__(self, master=None, cnf={}):
 		Widget.__init__(self, master, 'checkbutton', cnf)
@@ -856,6 +880,7 @@ class Entry(Widget):
 
 class Frame(Widget):
 	def __init__(self, master=None, cnf={}):
+		cnf = _cnfmerge(cnf)
 		extra = ()
 		if cnf.has_key('class'):
 			extra = ('-class', cnf['class'])
@@ -1050,7 +1075,7 @@ class Text(Widget):
 		apply(self.tk.call, 
 		      (self._w, 'tag', 'configure', tagName) 
 		      + self._options(cnf))
-	def tag_delete(self, tagNames):
+	def tag_delete(self, *tagNames):
 		apply(self.tk.call, (self._w, 'tag', 'delete') 
 		      + tagNames)
 	def tag_lower(self, tagName, belowThis=None):
