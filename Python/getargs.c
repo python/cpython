@@ -1049,7 +1049,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 
 	/* Search the format:
 	   message <- error msg, if any (else NULL).
-	   name <- routine name, if any (else NULL).
+	   fname <- routine name, if any (else NULL).
 	   min <- # of required arguments, or -1 if all are required.
 	   max <- most arguments (required + optional).
 	   Check that kwlist has a non-NULL entry for each arg.
@@ -1064,8 +1064,9 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		if (isalpha(i) && i != 'e') {
 			max++;
 			if (*p == NULL) {
-				/* kwlist is too short */
-				PyErr_BadInternalCall();
+				PyErr_SetString(PyExc_RuntimeError,
+					"more argument specifiers than "
+					"keyword list entries");
 				return 0;
 			}
 			p++;
@@ -1081,15 +1082,17 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 			break;
 		}
 		else if (i == '(') {
-			PyErr_SetString(PyExc_SystemError,
-		      "tuple found in format when using keyword arguments");
+			PyErr_SetString(PyExc_RuntimeError,
+				"tuple found in format when using keyword "
+				"arguments");
 			return 0;
 		}
 	}
 	format = formatsave;
 	if (*p != NULL) {
-		/* kwlist is too long */
-		PyErr_BadInternalCall();
+		PyErr_SetString(PyExc_RuntimeError,
+			"more keyword list entries than "
+			"argument specifiers");
 		return 0;
 	}
 	if (min < 0) {
