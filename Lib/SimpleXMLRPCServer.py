@@ -305,7 +305,8 @@ class SimpleXMLRPCDispatcher:
         if method is None:
             return ""
         else:
-            return pydoc.getdoc(method)
+            import pydoc
+	    return pydoc.getdoc(method)
 
     def system_multicall(self, call_list):
         """system.multicall([{'methodName': 'add', 'params': [2, 2]}, ...]) => \
@@ -485,7 +486,7 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
         print 'Content-Type: text/html'
         print 'Content-Length: %d' % len(response)
         print
-        sys.stdout.write(reponse)
+        sys.stdout.write(response)
 
     def handle_request(self, request_text = None):
         """Handle a single XML-RPC request passed through a CGI post method.
