@@ -307,7 +307,8 @@ r_short(RFILE *p)
 	register short x;
 	x = r_byte(p);
 	x |= r_byte(p) << 8;
-	/* XXX If your short is > 16 bits, add sign-extension here!!! */
+	/* Sign-extension, in case short greater than 16 bits */
+	x |= -(x & 0x8000);
 	return x;
 }
 
@@ -330,8 +331,7 @@ r_long(RFILE *p)
 	}
 #if SIZEOF_LONG > 4
 	/* Sign extension for 64-bit machines */
-	x <<= (8*sizeof(long) - 32);
-	x >>= (8*sizeof(long) - 32);
+	x |= -(x & 0x80000000L);
 #endif
 	return x;
 }
@@ -342,7 +342,7 @@ r_long64(RFILE *p)
 	register long x;
 	x = r_long(p);
 #if SIZEOF_LONG > 4
-	x = (x & 0xFFFFFFFF) | (r_long(p) << 32);
+	x = (x & 0xFFFFFFFFL) | (r_long(p) << 32);
 #else
 	if (r_long(p) != 0) {
 		PyObject *f = PySys_GetObject("stderr");
