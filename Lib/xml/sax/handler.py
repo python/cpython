@@ -144,7 +144,10 @@ class ContentHandler:
         (uri, localname) tuple, the qname parameter the raw XML 1.0
         name used in the source document, and the attrs parameter
         holds an instance of the Attributes class containing the
-        attributes of the element."""
+        attributes of the element.
+
+        The uri part of the name tuple is None for elements which have
+        no namespace."""
 
     def endElementNS(self, name, qname):
         """Signals the end of an element in namespace mode.
@@ -315,7 +318,28 @@ property_xml_string = "http://xml.org/sax/properties/xml-string"
 #              the current event.
 # access: read-only
 
+property_encoding = "http://www.python.org/sax/properties/encoding"
+# data type: String
+# description: The name of the encoding to assume for input data.
+# access: write: set the encoding, e.g. established by a higher-level
+#                protocol. May change during parsing (e.g. after
+#                processing a META tag)
+#         read:  return the current encoding (possibly established through
+#                auto-detection.
+# initial value: UTF-8 
+#
+
+property_interning_dict = "http://www.python.org/sax/properties/interning-dict"
+# data type: Dictionary
+# description: The dictionary used to intern common strings in the document
+# access: write: Request that the parser uses a specific dictionary, to
+#                allow interning across different documents
+#         read:  return the current interning dictionary, or None
+#
+
 all_properties = [property_lexical_handler,
                   property_dom_node,
                   property_declaration_handler,
-                  property_xml_string]
+                  property_xml_string,
+                  property_encoding,
+                  property_interning_dict]
