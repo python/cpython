@@ -11,7 +11,7 @@ from types import StringType
 
 
 def body_line_iterator(msg):
-    """Iterator over the parts, returning the lines in a string payload."""
+    """Iterate over the parts, returning string payloads line-by-line."""
     for subpart in msg.walk():
         payload = subpart.get_payload()
         if type(payload) is StringType:
@@ -20,14 +20,14 @@ def body_line_iterator(msg):
 
 
 
-def typed_subpart_iterator(msg, major='text', minor=None):
-    """Iterator over the subparts with a given MIME type.
+def typed_subpart_iterator(msg, maintype='text', subtype=None):
+    """Iterate over the subparts with a given MIME type.
 
-    Use `major' as the main MIME type to match against; this defaults to
-    "text".  Optional `minor' is the MIME subtype to match against; if
+    Use `maintype' as the main MIME type to match against; this defaults to
+    "text".  Optional `subtype' is the MIME subtype to match against; if
     omitted, only the main type is matched.
     """
     for subpart in msg.walk():
-        if subpart.get_main_type() == major:
-            if minor is None or subpart.get_subtype() == minor:
+        if subpart.get_main_type() == maintype:
+            if subtype is None or subpart.get_subtype() == subtype:
                 yield subpart
