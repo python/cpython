@@ -24,7 +24,7 @@ Here is a resume of the features offered by the bz2 module:
 \item \class{BZ2File} class offers an optimized line iteration using
       the readahead algorithm borrowed from file objects;
 \item \class{BZ2File} class developed inheriting builtin file type
-      (\code{isinstance(BZ2File(), file) == 1});
+      (\code{issubclass(BZ2File, file)} is \code{True});
 \item Sequential (de)compression supported by \class{BZ2Compressor} and
       \class{BZ2Decompressor} classes;
 \item One-shot (de)compression supported by \function{compress()} and
@@ -38,16 +38,18 @@ Here is a resume of the features offered by the bz2 module:
 
 Handling of compressed files is offered by the \class{BZ2File} class.
 
-\begin{classdesc}{BZ2File}{filename \optional{, mode='r'\optional{,
-                           buffering=0\optional{, compresslevel=9}}}}
-Open a bz2 file. Mode can be either \code{'r'} or \code{'w'}, for reading
+\begin{classdesc}{BZ2File}{filename\optional{, mode\optional{,
+                           buffering\optional{, compresslevel}}}}
+Open a bz2 file. Mode can be either \code{'r'} or \code{'w'}, for reading 
 (default) or writing. When opened for writing, the file will be created if
-it doesn't exist, and truncated otherwise. If the buffering argument is given,
-\code{0} means unbuffered, and larger numbers specify the buffer size. If
-compresslevel is given, must be a number between \code{1} and \code{9}.
+it doesn't exist, and truncated otherwise. If \var{buffering} is given,
+\code{0} means unbuffered, and larger numbers specify the buffer size;
+the default is \code{0}. If
+\var{compresslevel} is given, must be a number between \code{1} and
+\code{9}; the default is \code{9}.
 Add a \code{'U'} to mode to open the file for input with universal newline
 support. Any line ending in the input file will be seen as a
-\code{'\textbackslash n'}
+\character{\textbackslash n}
 in Python.  Also, a file so opened gains the attribute \member{newlines};
 the value for this attribute is one of \code{None} (no newline read yet),
 \code{'\textbackslash r'}, \code{'\textbackslash n'},
@@ -89,7 +91,7 @@ Iterate trough the file lines. Iteration optimization is implemented
 using the same readahead algorithm available in \class{file} objects.
 \end{methoddesc}
 
-\begin{methoddesc}[BZ2File]{seek}{offset \optional{, whence}}
+\begin{methoddesc}[BZ2File]{seek}{offset\optional{, whence}}
 Move to new file position. Argument \var{offset} is a byte count. Optional
 argument \var{whence} defaults to \code{0} (offset from start of file,
 offset should be \code{>= 0}); other values are \code{1} (move relative to
@@ -122,11 +124,12 @@ to calling write() for each string.
 Sequential compression and decompression is done using the classes
 \class{BZ2Compressor} and \class{BZ2Decompressor}.
 
-\begin{classdesc}{BZ2Compressor}{\optional{compresslevel=9}}
+\begin{classdesc}{BZ2Compressor}{\optional{compresslevel}}
 Create a new compressor object. This object may be used to compress
 data sequentially. If you want to compress data in one shot, use the
 \function{compress()} function instead. The \var{compresslevel} parameter,
-if given, must be a number between \code{1} and \code{9}.
+if given, must be a number between \code{1} and \code{9}; the default
+is \code{9}.
 \end{classdesc}
 
 \begin{methoddesc}[BZ2Compressor]{compress}{data}
@@ -161,14 +164,14 @@ found after the end of stream, it'll be ignored and saved in
 One-shot compression and decompression is provided trough the
 \function{compress()} and \function{decompress()} functions.
 
-\begin{funcdesc}{compress}{data\optional{, compresslevel=9}}
+\begin{funcdesc}{compress}{data\optional{, compresslevel}}
 Compress \var{data} in one shot. If you want to compress data sequentially,
 use an instance of \class{BZ2Compressor} instead. The \var{compresslevel}
-parameter, if given, must be a number between \code{1} and \code{9}.
+parameter, if given, must be a number between \code{1} and \code{9};
+the default is \code{9}.
 \end{funcdesc}
 
-\begin{funcdesc}{decompress}{}
+\begin{funcdesc}{decompress}{data}
 Decompress \var{data} in one shot. If you want to decompress data
 sequentially, use an instance of \class{BZ2Decompressor} instead.
 \end{funcdesc}
-
