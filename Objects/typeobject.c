@@ -638,13 +638,6 @@ subtype_dealloc(PyObject *self)
 	--_PyTrash_delete_nesting;
 	_PyObject_GC_TRACK(self); /* We'll untrack for real later */
 
-	/* Maybe call finalizer; exit early if resurrected */
-	if (type->tp_del) {
-		type->tp_del(self);
-		if (self->ob_refcnt > 0)
-			goto endlabel;
-	}
-
 	/* Find the nearest base with a different tp_dealloc
 	   and clear slots while we're at it */
 	base = type;
@@ -653,6 +646,18 @@ subtype_dealloc(PyObject *self)
 			clear_slots(base, self);
 		base = base->tp_base;
 		assert(base);
+	}
+
+	/* If we added a weaklist, we clear it.  Do this *before* calling
+	   the finalizer (__del__) or clearing the instance dict. */
+	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
+		PyObject_ClearWeakRefs(self);
+
+	/* Maybe call finalizer; exit early if resurrected */
+	if (type->tp_del) {
+		type->tp_del(self);
+		if (self->ob_refcnt > 0)
+			goto endlabel;
 	}
 
 	/* If we added a dict, DECREF it */
@@ -666,10 +671,6 @@ subtype_dealloc(PyObject *self)
 			}
 		}
 	}
-
-	/* If we added weaklist, we clear it */
-	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
-		PyObject_ClearWeakRefs(self);
 
 	/* Finalize GC if the base doesn't do GC and we do */
 	if (!PyType_IS_GC(base))
