@@ -6,7 +6,7 @@ import __builtin__
 
 # implements a python function that reads and writes a gzipped file
 # the user of the file doesn't have to worry about the compression,
-# but sequential access is not allowed
+# but random access is not allowed
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
@@ -52,7 +52,7 @@ class GzipFile:
 	    fileobj = self.myfileobj = __builtin__.open(filename, mode or 'r')
         if filename is None:
 	    if hasattr(fileobj, 'name'): filename = fileobj.name
-	    else: filename = 'GzippedFile'
+	    else: filename = ''
         if mode is None:
 	    if hasattr(fileobj, 'mode'): mode = fileobj.mode
 	    else: mode = 'r'
@@ -98,11 +98,16 @@ class GzipFile:
     def _write_gzip_header(self):
 	self.fileobj.write('\037\213')             # magic header
 	self.fileobj.write('\010')                 # compression method
-	self.fileobj.write(chr(FNAME))
+	fname = self.filename[:-3]
+	flags = 0
+	if fname:
+	    flags = FNAME
+	self.fileobj.write(chr(flags))
 	write32(self.fileobj, int(time.time()))
 	self.fileobj.write('\002')
 	self.fileobj.write('\377')
-	self.fileobj.write(self.filename[:-3] + '\000')
+	if fname:
+	    self.fileobj.write(fname + '\000')
 
     def _init_read(self):
 	self.crc = zlib.crc32("")
@@ -132,12 +137,12 @@ class GzipFile:
 	    # Read and discard a null-terminated string containing the filename
 	    while (1):
 		s=self.fileobj.read(1)
-		if s=='\000': break
+		if not s or s=='\000': break
 	if flag & FCOMMENT:
 	    # Read and discard a null-terminated string containing a comment
 	    while (1):
 		s=self.fileobj.read(1)
-		if s=='\000': break
+		if not s or s=='\000': break
 	if flag & FHCRC:
 	    self.fileobj.read(2)     # Read & discard the 16-bit header CRC
 
@@ -251,3 +256,46 @@ class GzipFile:
     def writelines(self, L):
 	for line in L:
 	    self.write(line)
+
+
+def _test():
+    # Act like gzip; with -d, act like gunzip.
+    # The input file is not deleted, however, nor are any other gzip
+    # options or features supported.
+    import sys
+    args = sys.argv[1:]
+    decompress = args and args[0] == "-d"
+    if decompress:
+	args = args[1:]
+    if not args:
+	args = ["-"]
+    for arg in args:
+	if decompress:
+	    if arg == "-":
+		f = GzipFile(filename="", mode="rb", fileobj=sys.stdin)
+		g = sys.stdout
+	    else:
+		if arg[-3:] != ".gz":
+		    print "filename doesn't end in .gz:", `arg`
+		    continue
+		f = open(arg, "rb")
+		g = __builtin__.open(arg[:-3], "wb")
+	else:
+	    if arg == "-":
+		f = sys.stdin
+		g = GzipFile(filename="", mode="wb", fileobj=sys.stdout)
+	    else:
+		f = __builtin__.open(arg, "rb")
+		g = open(arg + ".gz", "wb")
+	while 1:
+	    chunk = f.read(1024)
+	    if not chunk:
+		break
+	    g.write(chunk)
+	if g is not sys.stdout:
+	    g.close()
+	if f is not sys.stdin:
+	    f.close()
+
+if __name__ == '__main__':
+    _test()
