@@ -1,7 +1,7 @@
 /* Complex number structure */
 
-#ifndef COMPLEXOBJECT_H
-#define COMPLEXOBJECT_H
+#ifndef Py_COMPLEXOBJECT_H
+#define Py_COMPLEXOBJECT_H
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,4 +55,4 @@ PyAPI_FUNC(Py_complex) PyComplex_AsCComplex(PyObject *op);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !COMPLEXOBJECT_H */
+#endif /* !Py_COMPLEXOBJECT_H */
