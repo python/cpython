@@ -127,7 +127,7 @@ def make_header(decoded_seq, maxlinelen=None, header_name=None,
 
 class Header:
     def __init__(self, s=None, charset=None, maxlinelen=None, header_name=None,
-                 continuation_ws=' '):
+                 continuation_ws=' ', errors='strict'):
         """Create a MIME-compliant header that can contain many character sets.
 
         Optional s is the initial header value.  If None, the initial header
@@ -150,6 +150,8 @@ class Header:
         continuation_ws must be RFC 2822 compliant folding whitespace (usually
         either a space or a hard tab) which will be prepended to continuation
         lines.
+
+        errors is passed through to the .append() call.
         """
         if charset is None:
             charset = USASCII
@@ -161,7 +163,7 @@ class Header:
         # BAW: I believe `chunks' and `maxlinelen' should be non-public.
         self._chunks = []
         if s is not None:
-            self.append(s, charset)
+            self.append(s, charset, errors)
         if maxlinelen is None:
             maxlinelen = MAXLINELEN
         if header_name is None:
@@ -196,7 +198,7 @@ class Header:
     def __ne__(self, other):
         return not self == other
 
-    def append(self, s, charset=None):
+    def append(self, s, charset=None, errors='strict'):
         """Append a string to the MIME header.
 
         Optional charset, if given, should be a Charset instance or the name
@@ -213,6 +215,9 @@ class Header:
         using RFC 2047 rules, the Unicode string will be encoded using the
         following charsets in order: us-ascii, the charset hint, utf-8.  The
         first character set not to provoke a UnicodeError is used.
+
+        Optional `errors' is passed as the third argument to any unicode() or
+        ustr.encode() call.
         """
         if charset is None:
             charset = self._charset
@@ -227,12 +232,12 @@ class Header:
                 # Possibly raise UnicodeError if the byte string can't be
                 # converted to a unicode with the input codec of the charset.
                 incodec = charset.input_codec or 'us-ascii'
-                ustr = unicode(s, incodec)
+                ustr = unicode(s, incodec, errors)
                 # Now make sure that the unicode could be converted back to a
                 # byte string with the output codec, which may be different
                 # than the iput coded.  Still, use the original byte string.
                 outcodec = charset.output_codec or 'us-ascii'
-                ustr.encode(outcodec)
+                ustr.encode(outcodec, errors)
             elif isinstance(s, UnicodeType):
                 # Now we have to be sure the unicode string can be converted
                 # to a byte string with a reasonable output codec.  We want to
@@ -240,7 +245,7 @@ class Header:
                 for charset in USASCII, charset, UTF8:
                     try:
                         outcodec = charset.output_codec or 'us-ascii'
-                        s = s.encode(outcodec)
+                        s = s.encode(outcodec, errors)
                         break
                     except UnicodeError:
                         pass
