@@ -381,7 +381,9 @@ def do_exec(win):
 		except KeyboardInterrupt:
 			print '[Interrupt]'
 		except:
-			msg = sys.exc_type
+			if type(sys.exc_type) == type(''):
+				msg = sys.exc_type
+			else: msg = sys.exc_type.__name__
 			if sys.exc_value <> None:
 				msg = msg + ': ' + `sys.exc_value`
 			if win.insertError:
