@@ -1131,6 +1131,7 @@ int
 PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
 #if TARGET_API_MAC_OS8
+	PyErr_SetString(PyExc_TypeError, "FSRef objects not supported on this platform");
 	return 0;
 #else
 	/* If it's an FSRef we're also okay. */
