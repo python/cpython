@@ -265,8 +265,11 @@ PyFloat_AsStringEx(char *buf, PyFloatObject *v, int precision)
 
 /* Macro and helper that convert PyObject obj to a C double and store
    the value in dbl; this replaces the functionality of the coercion
-   slot function */
-
+   slot function.  If conversion to double raises an exception, obj is
+   set to NULL, and the function invoking this macro returns NULL.  If
+   obj is not of float, int or long type, Py_NotImplemented is incref'ed,
+   stored in obj, and returned from the function invoking this macro.
+*/
 #define CONVERT_TO_DOUBLE(obj, dbl)			\
 	if (PyFloat_Check(obj))				\
 		dbl = PyFloat_AS_DOUBLE(obj);		\
@@ -519,13 +522,13 @@ float_floor_div(PyObject *v, PyObject *w)
 	PyObject *t, *r;
 
 	t = float_divmod(v, w);
-	if (t != NULL) {
-		r = PyTuple_GET_ITEM(t, 0);
-		Py_INCREF(r);
-		Py_DECREF(t);
-		return r;
-	}
-	return NULL;
+	if (t == NULL || t == Py_NotImplemented)
+		return t;
+	assert(PyTuple_CheckExact(t));
+	r = PyTuple_GET_ITEM(t, 0);
+	Py_INCREF(r);
+	Py_DECREF(t);
+	return r;
 }
 
 static PyObject *
