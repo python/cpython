@@ -157,12 +157,12 @@ the error message, respectively.  These attributes default to
 
 \begin{excdesc}{KeyboardInterrupt}
   Raised when the user hits the interrupt key (normally
-  \kbd{Control-C} or
-\key{DEL}).  During execution, a check for interrupts is made regularly.
+  \kbd{Control-C} or \kbd{DEL}).  During execution, a check for
+  interrupts is made regularly.
 % XXXJH xrefs here
-  Interrupts typed when a built-in function \code{input()} or
-  \code{raw_input()}) is waiting for input also raise this exception.  No
-  associated value.
+  Interrupts typed when a built-in function \function{input()} or
+  \function{raw_input()}) is waiting for input also raise this
+  exception.  This exception has no associated value.
 \end{excdesc}
 
 \begin{excdesc}{MemoryError}
