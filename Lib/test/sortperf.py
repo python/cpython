@@ -10,20 +10,21 @@ import time
 import random
 import marshal
 import tempfile
-import operator
 import os
 
 td = tempfile.gettempdir()
 
-def randrange(n):
-    """Return a random shuffle of range(n)."""
+def randfloats(n):
+    """Return a list of n random floats in [0, 1)."""
+    # Generating floats is expensive, so this writes them out to a file in
+    # a temp directory.  If the file already exists, it just reads them
+    # back in and shuffles them a bit.
     fn = os.path.join(td, "rr%06d" % n)
     try:
         fp = open(fn, "rb")
     except IOError:
-        result = []
-        for i in range(n):
-            result.append(random.random())
+        r = random.random
+        result = [r() for i in xrange(n)]
         try:
             try:
                 fp = open(fn, "wb")
@@ -41,18 +42,18 @@ def randrange(n):
     else:
         result = marshal.load(fp)
         fp.close()
-        ##assert len(result) == n
         # Shuffle it a bit...
         for i in range(10):
-            i = random.randrange(0, n)
+            i = random.randrange(n)
             temp = result[:i]
             del result[:i]
             temp.reverse()
-            result[len(result):] = temp
+            result.extend(temp)
             del temp
+    assert len(result) == n
     return result
 
-def fl():
+def flush():
     sys.stdout.flush()
 
 def doit(L):
@@ -60,7 +61,7 @@ def doit(L):
     L.sort()
     t1 = time.clock()
     print "%6.2f" % (t1-t0),
-    fl()
+    flush()
 
 def tabulate(r):
     """Tabulate sort speed for lists of various sizes.
@@ -74,33 +75,50 @@ def tabulate(r):
     \sort: descending data
     /sort: ascending data
     ~sort: many duplicates
-    -sort: all equal
+    =sort: all equal
     !sort: worst case scenario
 
     """
-    cases = ("*sort", "\\sort", "/sort", "~sort", "-sort", "!sort")
-    fmt = ("%2s %6s" + " %6s"*len(cases))
+    cases = ("*sort", "\\sort", "/sort", "~sort", "=sort", "!sort")
+    fmt = ("%2s %7s" + " %6s"*len(cases))
     print fmt % (("i", "2**i") + cases)
     for i in r:
-        n = 1<<i
-        L = randrange(n)
-        ##assert len(L) == n
-        print "%2d %6d" % (i, n),
-        fl()
+        n = 1 << i
+        L = randfloats(n)
+        print "%2d %7d" % (i, n),
+        flush()
         doit(L) # *sort
         L.reverse()
         doit(L) # \sort
         doit(L) # /sort
+
+        # Arrange for lots of duplicates.
         if n > 4:
             del L[4:]
-            L = L*(n/4)
+            L = L * (n // 4)
+            # Force the elements to be distinct objects, else timings can be
+            # artificially low.
             L = map(lambda x: --x, L)
         doit(L) # ~sort
         del L
-        L = map(abs, [-0.5]*n)
-        doit(L) # -sort
-        L = range(n/2-1, -1, -1)
-        L[len(L):] = range(n/2)
+
+        # All equal.  Again, force the elements to be distinct objects.
+        L = map(abs, [-0.5] * n)
+        doit(L) # =sort
+        del L
+
+        # This one looks like [3, 2, 1, 0, 0, 1, 2, 3].  It was a bad case
+        # for an older implementation of quicksort, which used the median
+        # of the first, last and middle elements as the pivot.  It's still
+        # a worse-than-average case for samplesort, but on the order of a
+        # measly 5% worse, not a quadratic-time disaster as it was with
+        # quicksort.
+        half = n // 2
+        L = range(half - 1, -1, -1)
+        L.extend(range(half))
+        # Force to float, so that the timings are comparable.  This is
+        # significantly faster if we leave tham as ints.
+        L = map(float, L)
         doit(L) # !sort
         print
 
@@ -114,7 +132,7 @@ def main():
     """
     # default range (inclusive)
     k1 = 15
-    k2 = 19
+    k2 = 20
     if sys.argv[1:]:
         # one argument: single point
         k1 = k2 = int(sys.argv[1])
@@ -123,17 +141,10 @@ def main():
             k2 = int(sys.argv[2])
             if sys.argv[3:]:
                 # derive random seed from remaining arguments
-                x, y, z = 0, 0, 0
+                x = 1
                 for a in sys.argv[3:]:
-                    h = hash(a)
-                    h, d = divmod(h, 256)
-                    h = h & 0xffffff
-                    x = (x^h^d) & 255
-                    h = h>>8
-                    y = (y^h^d) & 255
-                    h = h>>8
-                    z = (z^h^d) & 255
-                whrandom.seed(x, y, z)
+                    x = 69069 * x + hash(a)
+                random.seed(x)
     r = range(k1, k2+1)                 # include the end point
     tabulate(r)
 
