@@ -1,0 +1,289 @@
+\section{\module{ossaudiodev} ---
+         Access to Open Sound System-compatible audio hardware}
+
+\declaremodule{builtin}{ossaudiodev}
+  \platform{OSS}
+\modulesynopsis{Access to OSS-compatible audio hardware.}
+
+% I know FreeBSD uses OSS - what about Net- and Open-?
+This module allows you to access the Open Sound System audio interface.
+The Open Sound System interface is present on Linux and FreeBSD.
+
+This module provides a very "bare bones" wrapper over the IOCTLs used to
+access the audio hardware. The best - albeit rather daunting - way to
+get a feel for the interface is from the Open Sound System official
+documentation:
+
+\url{http://www.opensound.com/pguide/oss.pdf}
+
+The module defines a number of constants which may be used to program the
+device. These constants are the same as those defined in the C include file
+\code{<sys/soundcard.h>}.
+
+\code{ossaudiodev} defines the following variables and functions:
+
+\begin{excdesc}{error}
+This exception is raised on errors. The argument is a string
+describing what went wrong.
+\end{excdesc}
+
+\begin{funcdesc}{open}{\optional{device, }mode}
+This function opens the audio device and returns an OSS audio device
+object. This object can then be used to do I/O on. The \var{device}
+parameter is the audio device filename to use. If it is not specified, this
+module first looks in the environment variable \code{AUDIODEV} for a device
+to use. If not found, it falls back to \file{/dev/dsp}.
+
+The \var{mode} parameter is one of \code{'r'} for record-only access,
+\code{'w'} for play-only access and \code{'rw'} for both. Since many
+soundcards only allow one process to have the recorder or player open at
+a time it is a good idea to open the device only for the activity
+needed. Further, some soundcards are half-duplex: they can be opened for reading
+or writing, but not both at once.
+\end{funcdesc}
+
+\begin{funcdesc}{openmixer}{\optional{device\optional{, mode}}} This function
+opens the mixer device and returns an OSS mixer device object. The \var{device}
+parameter is the mixer device filename to use. If it is not specified, this
+module first looks in the environment variable \code{MIXERDEV} for a device to
+use. If not found, it falls back to \file{/dev/mixer}. You may specify
+\code{'r'}, \code{'rw'} or \code{'w'} for \var{mode}; the default is \code{'r'}.
+
+\end{funcdesc}
+
+\subsection{Audio Device Objects \label{ossaudio-device-objects}}
+
+Setting up the device
+
+To set up the device, three functions must be called in the correct sequence:
+
+\code{setfmt} to set the output format,
+\code{channels} to set the number of channels, and
+\code{speed} to set the sample rate.
+
+The audio device objects are returned by \function{open()} define the
+following methods:
+
+\begin{methoddesc}[audio device]{close}{}
+This method explicitly closes the device. It is useful in situations
+where deleting the object does not immediately close it since there
+are other references to it. A closed device should not be used again.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{fileno}{}
+Returns the file descriptor associated with the device. 
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{read}{size}
+Reads \var{size} samples from the audio input and returns
+them as a Python string. The function blocks until enough data is available.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{write}{data}
+Writes Python string \var{data} to the audio device and returns the number of
+bytes written. If the audio device is opened in blocking mode, the entire
+string is always written. If the device is opened in nonblocking mode, some data
+may not be written - see \code{writeall}.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{writeall}{data}
+Writes the entire Python string \var{data} to the audio device. If the device
+is opened in blocking mode, behaves identially to \code{write}; in nonblocking
+mode, waits until the device becomes available before feeding it more data.
+Returns None, since the amount of data written is always equal to the amount
+of data supplied.
+\end{methoddesc}
+
+Simple IOCTLs:
+
+\begin{methoddesc}[audio device]{nonblock}{}
+Attempts to put the device into nonblocking mode. Once in nonblocking mode there
+is no way to return to blocking mode.
+
+Raises \exception{IOError} if the IOCTL failed.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{getfmts}{}
+Returns a bitmask of the audio output formats supported by the soundcard.
+On a typical Linux system, these formats are:
+
+AFMT_MU_LAW - a logarithmic encoding. This is the default format on /dev/audio
+and is the format used by Sun .au files.
+AFMT_A_LAW - a logarithmic encoding
+AFMT_IMA_ADPCM - a 4:1 compressed format defined by the Interactive Multimedia
+Association.
+AFMT_U8 - Unsigned, 8-bit audio.
+AFMT_S16_LE - Unsigned, 16-bit audio, little-endian byte order (as used by Intel
+processors)
+AFMT_S16_BE - Unsigned, 16-bit audio, big-endian byte order (as used by 68k,
+PowerPC, Sparc)
+AFMT_S8 - Signed, 8 bit audio.
+AFMT_U16_LE - Signed, 16-bit little-endian audio
+AFMT_U16_BE - Signed, 16-bit big-endian audio
+
+Most systems support only a subset of these formats. Many devices only support
+AFTM_U8; the most common format used today is AFMT_S16_LE.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{setfmt}{format}
+Used to set the current audio format to \var{format} - see \code{getfmts} for a
+list. May also be used to return the current audio format - do this by passing
+an ``audio format'' of \code{AFMT_QUERY}. Returns the audio format that the
+device was set to, which may not be the requested format.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{channels}{num_channels}
+Sets the number of output channels to \var{num_channels}. A value of 1 indicates
+monophonic sound, 2 stereophonic. Some devices may have more than 2 channels,
+and some high-end devices may not support mono. Returns the number of channels
+the device was set to.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{speed}{samplerate}
+Sets the samplerate to \var{samplerate} samples per second and returns the rate
+actually set. Most sound devices don't support arbitrary sample rates. Common
+rates are:
+
+8000 - default rate
+11025 - speech recording
+22050
+44100 - Audio CD-quality (at 16 bits/sample and 2 channels)
+96000 - DVD-quality
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{sync}
+Waits until the sound device has played every byte in its buffer and returns.
+This also occurs when the sound device is closed. The OSS documentation
+recommends simply closing and re-opening the device rather than using
+\code{sync}.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{reset}
+Immediately stops and playing or recording and returns the device to a state
+where it can accept commands. The OSS documentation recommends closing and
+re-opening the device after calling \code{reset}.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{post}
+To be used like a lightweight \code{sync}, the \code{post} IOCTL informs the
+audio device that there is a likely to be a pause in the audio output - ie,
+after playing a spot sound effect, before waiting for user input, or before
+doing disk IO.
+\end{methoddesc}
+
+Convenience methods
+
+\begin{methoddesc}[audio device]{setparameters}{samplerate,num_channels,format,emulate}
+Initialise the sound device in one method. \var{samplerate}, \var{channels} and
+\var{format} should be as specified in the \code{speed}, \code{channels} and
+\code{setfmt} methods. If \var{emulate} is true, attempt to find the closest
+matching format instead, otherwise raise ValueError if the
+device does not support the format. The default is to raise ValueError on
+unsupported formats.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{bufsize}{}
+Returns the size of the hardware buffer, in samples.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{obufcount}{}
+Returns the number of samples that are in the hardware buffer yet to be played.
+\end{methoddesc}
+
+\begin{methoddesc}[audio device]{obuffree}{}
+Returns the number of samples that could be queued into the hardware buffer to
+be played without blocking.
+\end{methoddesc}
+
+\subsection{Mixer Device Objects \label{mixer-device-objects}}
+
+File-like interface
+
+\begin{methoddesc}[mixer device]{close}{}
+This method closes the open mixer device file. Any further attempts to use the
+mixer after this file is closed will raise an IOError.
+\end{methoddesc}
+
+\begin{methoddesc}[mixer device]{fileno}{}
+Returns the file handle number of the open mixer device file.
+\end{methoddesc}
+
+Mixer interface
+
+\begin{methoddesc}[mixer device]{controls}{}
+This method returns a bitmask specifying the available mixer controls
+(``Control'' being a specific mixable ``channel'', such as
+\code{SOUND_MIXER_PCM} or \code{SOUND_MIXER_SYNTH}). This
+bitmask indicates a subset of all available mixer channels - the
+\code{SOUND_MIXER_*} constants defined at module level. To determine if,
+for example, the current mixer object supports a PCM mixer, use the
+following Python code:
+
+\begin{verbatim}
+mixer=ossaudiodev.openmixer()
+if mixer.channels() & (1 << ossaudiodev.SOUND_MIXER_PCM):
+	# PCM is supported
+	<code>
+\end{verbatim}
+
+For most purposes, the \code{SOUND_MIXER_VOLUME} (Master volume) and
+\code{SOUND_MIXER_PCM} channels should suffice - but code that uses the mixer
+should be flexible when it comes to choosing sound channels. On the Gravis
+Ultrasound, for example, \code{SOUND_MIXER_VOLUME} does not exist.
+\end{methoddesc}
+
+\begin{methoddesc}[mixer device]{stereocontrols}{}
+Returns a bitmask indicating stereo mixer channels. If a bit is set, the
+corresponding channel is stereo; if it is unset, the channel is either
+monophonic or not supported by the mixer (use in combination with
+\function{channels} to determine which).
+
+See the code example for the \function{channels} function for an example of
+getting data from a bitmask.
+\end{methoddesc}
+
+\begin{methoddesc}[mixer device]{reccontrols}{}
+Returns a bitmask specifying the mixer controls that may be used to record.
+See the code example for \function{controls} for an example of reading from
+a bitmask.
+\end{methoddesc}
+
+\begin{methoddesc}[mixer device]{get}{channel}
+Returns the volume of a given mixer channel. The returned volume is a
+2-tuple of \code{left volume, right volume}. Volumes are specified as
+numbers from 0 (silent) to 100 (full volume). If the channel is monophonic,
+a 2-tuple is still returned, but both channel volumes are the same.
+
+If an unknown channel is specified, \exception{error} is raised.
+\end{methoddesc}
+
+\begin{methoddesc}[mixer device]{set}{channel, (left, right)}
+Sets the volume for a given mixer channel to \code{(left, right)}.
+\code{left} and \code{right} must be ints and between 0 (silent) and 100
+(full volume). On success, the new volume is returned as a 2-tuple. Note
+that this may not be exactly the same as the volume specified, because of
+the limited resolution of some soundcard's mixers. 
+
+Raises \exception{IOError} if an invalid mixer channel was specified;
+\exception{TypeError} if the argument format was incorrect, and 
+\exception{error} if the specified volumes were out-of-range.
+\end{methoddesc}
+
+\begin{methoddesc}[mixer device]{get_recsrc}{}
+This method returns a bitmask indicating which channel or channels are
+currently being used as a recording source.
+\end{methoddesc}
+
+\begin{methoddesc}[mixer device]{set_recsrc}{bitmask}
+Call this function to specify a recording source. Returns a bitmask
+indicating the new recording source (or sources) if successful; raises
+\exception{IOError} if an invalid source was specified. To set the current
+recording source to the microphone input:
+
+\begin{verbatim}
+mixer.setrecsrc (1 << ossaudiodev.SOUND_MIXER_MIC)
+\end{verbatim}
+\end{methoddesc}
+
+
+
