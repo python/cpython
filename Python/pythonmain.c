@@ -288,6 +288,17 @@ print_error()
 {
 	object *exception, *v;
 	err_get(&exception, &v);
+	if (exception == SystemExit) {
+		if (v == NULL || v == None)
+			goaway(0);
+		if (is_intobject(v))
+			goaway((int)getintvalue(v));
+		else {
+			printobject(v, stderr, PRINT_RAW);
+			fprintf(stderr, "\n");
+			goaway(1);
+		}
+	}
 	fprintf(stderr, "Unhandled exception: ");
 	if (printobject(exception, stderr, PRINT_RAW) != 0)
 		err_clear();
