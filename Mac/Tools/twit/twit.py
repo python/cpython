@@ -12,9 +12,8 @@ Jack Jansen, CWI, August 1996."""
 
 import os
 if os.name == 'mac':
-# Not supported in distributed 1.4b3:
-##	import MacOS
-##	MacOS.splash(515)	# Try to show the splash screen
+	import MacOS
+	MacOS.splash(515)	# Try to show the splash screen
 	import mactwit_app; twit_app = mactwit_app
 else:
 	try:
@@ -32,8 +31,8 @@ import sys
 	
 def main():
 	twit_app.Initialize()
-##	if os.name == 'mac':
-##		MacOS.splash()
+	if os.name == 'mac':
+		MacOS.splash()
 	twit_app.Twit('none', None)
 	
 def run(statement, globals=None, locals=None):
