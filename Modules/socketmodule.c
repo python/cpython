@@ -211,8 +211,8 @@ int h_errno; /* not used */
 # define offsetof(type, member)	((size_t)(&((type *)0)->member))
 #endif
 
-#ifndef O_NDELAY
-# define O_NDELAY O_NONBLOCK	/* For QNX only? */
+#ifndef O_NONBLOCK
+# define O_NONBLOCK O_NDELAY
 #endif
 
 #include "addrinfo.h"
@@ -488,9 +488,9 @@ internal_setblocking(PySocketSockObject *s, int block)
 #else /* !PYOS_OS2 */
 	delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
 	if (block)
-		delay_flag &= (~O_NDELAY);
+		delay_flag &= (~O_NONBLOCK);
 	else
-		delay_flag |= O_NDELAY;
+		delay_flag |= O_NONBLOCK;
 	fcntl(s->sock_fd, F_SETFL, delay_flag);
 #endif /* !PYOS_OS2 */
 #else /* MS_WINDOWS */
