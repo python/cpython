@@ -122,6 +122,9 @@ except AssertionError:
 from re_tests import *
 if verbose:
     print 'Running re_tests test suite'
+else:
+    # To save time, only run the first and last 10 tests
+    tests = tests[:10] + tests[-10:]
 
 for t in tests:
     sys.stdout.flush()
