@@ -222,9 +222,6 @@
 #undef  ulong
 #define ulong			unsigned long	/* assuming >= 32 bits */
 
-#undef  off_t
-#define off_t 			uint	/* 16 bits <= off_t <= 64 bits */
-
 #undef uptr
 #define uptr			Py_uintptr_t
 
