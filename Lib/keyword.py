@@ -14,6 +14,7 @@
 
 kwlist = [
 #--start keywords--
+        '__assert__',
         'and',
         'break',
         'class',
