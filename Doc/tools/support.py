@@ -8,6 +8,7 @@ __version__ = '$Revision$'
 
 
 import getopt
+import string
 import sys
 
 
@@ -37,9 +38,9 @@ class Options:
 
     def add_args(self, short=None, long=None):
         if short:
-            self.__short_args += short
+            self.__short_args = self.__short_args + short
         if long:
-            self.__long_args += long
+            self.__long_args = self.__long_args + long
 
     def parse(self, args):
         try:
@@ -49,10 +50,10 @@ class Options:
             sys.stdout = sys.stderr
             self.usage()
             sys.exit(2)
-        self.args += args
+        self.args = self.args + args
         for opt, val in opts:
             if opt in ("-a", "--address"):
-                val = val.strip()
+                val = string.strip(val)
                 if val:
                     val = "<address>\n%s\n</address>\n" % val
                     self.variables["address"] = val

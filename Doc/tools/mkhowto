@@ -297,7 +297,7 @@ class Job:
             # let the doctype-specific handler do some intermediate work:
             #
             self.run("%s %s" % (binary, self.doc))
-            self.latex_runs += 1
+            self.latex_runs = self.latex_runs + 1
             if os.path.isfile("mod%s.idx" % self.doc):
                 self.run("%s -s %s mod%s.idx"
                          % (MAKEINDEX_BINARY, ISTFILE, self.doc))
@@ -319,7 +319,7 @@ class Job:
         if self.use_bibtex:
             self.run("%s %s" % (BIBTEX_BINARY, self.doc))
         self.run("%s %s" % (binary, self.doc))
-        self.latex_runs += 1
+        self.latex_runs = self.latex_runs + 1
 
     def process_synopsis_files(self):
         synopsis_files = glob.glob(self.doc + "*.syn")
