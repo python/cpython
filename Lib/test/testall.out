@@ -179,5 +179,5 @@ MD5 ("12345678901234567890123456789012345678901234567890123456789012345678901234
 test_cmath
 test_crypt
 Test encryption:  abeTm2pJKypwA
-test_new
+test_dbm
 Passed all tests.
