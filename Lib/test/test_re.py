@@ -59,6 +59,12 @@ try:
     verify(re.sub('a', '\t\n\v\r\f\a', 'a') == (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)))
 
     verify(re.sub('^\s*', 'X', 'test') == 'Xtest')
+
+    # Test for sub() on escaped characters, see SF bug #449000
+    verify(re.sub(r'\r\n', r'\n', 'abc\r\ndef\r\n') == 'abc\ndef\n')
+    verify(re.sub('\r\n', r'\n', 'abc\r\ndef\r\n') == 'abc\ndef\n')
+    verify(re.sub(r'\r\n', '\n', 'abc\r\ndef\r\n') == 'abc\ndef\n')
+    verify(re.sub('\r\n', '\n', 'abc\r\ndef\r\n') == 'abc\ndef\n')
 except AssertionError:
     raise TestFailed, "re.sub"
 
