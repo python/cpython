@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.160 
+# From configure.in Revision: 1.161 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1039,12 +1039,12 @@ esac
 case $ac_sys_system in
 hp*|HP*)
     case $CC in
-    cc|*/cc) CC="$CC -Aa -D_HPUX_SOURCE";;
+    cc|*/cc) CC="$CC -Ae";;
     esac;;
 BeOS*)
-	case $CC in
-	cc) CC=cc;;
-	esac;;
+    case $CC in
+    cc) CC=cc;;
+    esac;;
 Monterey*)
     case $CC in
     cc) CC="$CC -Wl,-Bexport";;
