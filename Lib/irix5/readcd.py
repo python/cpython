@@ -5,21 +5,21 @@ import cd, CD
 Error = 'Readcd.Error'
 _Stop = 'Readcd.Stop'
 
-def _doatime(self, type, data):
+def _doatime(self, cb_type, data):
 	if ((data[0] * 60) + data[1]) * 75 + data[2] > self.end:
 ##		print 'done with list entry',`self.listindex`
 		raise _Stop
-	func, arg = self.callbacks[type]
+	func, arg = self.callbacks[cb_type]
 	if func:
-		func(arg, type, data)
+		func(arg, cb_type, data)
 
-def _dopnum(self, type, data):
+def _dopnum(self, cb_type, data):
 	if data > self.end:
 ##		print 'done with list entry',`self.listindex`
 		raise _Stop
-	func, arg = self.callbacks[type]
+	func, arg = self.callbacks[cb_type]
 	if func:
-		func(arg, type, data)
+		func(arg, cb_type, data)
 
 class Readcd():
 	def init(self, *arg):
@@ -82,7 +82,10 @@ class Readcd():
 			start = 1
 		if not end:
 			end = self.status[6]
-		try:
+		if type(end) == type(0):
+			if end < self.status[5] or end > self.status[6]:
+				raise Error, 'range error'
+		else:
 			l = len(end)
 			if l == 4:
 				prog, min, sec, frame = end
@@ -91,10 +94,16 @@ class Readcd():
 				end = self.pmsf2msf(prog, min, sec, frame)
 			elif l <> 3:
 				raise Error, 'syntax error'
-		except TypeError:
-			if end < self.status[5] or end > self.status[6]:
+		if type(start) == type(0):
+			if start < self.status[5] or start > self.status[6]:
 				raise Error, 'range error'
-		try:
+			if len(self.list) > 0:
+				s, e = self.list[-1]
+				if type(e) == type(0):
+					if start == e+1:
+						start = s
+						del self.list[-1]
+		else:
 			l = len(start)
 			if l == 4:
 				prog, min, sec, frame = start
@@ -103,17 +112,6 @@ class Readcd():
 				start = self.pmsf2msf(prog, min, sec, frame)
 			elif l <> 3:
 				raise Error, 'syntax error'
-		except TypeError:
-			if start < self.status[5] or start > self.status[6]:
-				raise Error, 'range error'
-			if len(self.list) > 0:
-				s, e = self.list[-1]
-				try:
-					l = len(e)
-				except TypeError:
-					if start == e+1:
-						start = s
-						del self.list[-1]
 		self.list.append((start, end))
 
 	def settracks(self, list):
@@ -121,31 +119,31 @@ class Readcd():
 		for track in list:
 			self.appendtrack(track)
 
-	def setcallback(self, type, func, arg):
-		if type < 0 or type >= 8:
+	def setcallback(self, cb_type, func, arg):
+		if cb_type < 0 or cb_type >= 8:
 			raise Error, 'type out of range'
-		self.callbacks[type] = (func, arg)
+		self.callbacks[cb_type] = (func, arg)
 		if self.playing:
-			try:
-				l = len(end)
-				if type <> CD.ATIME:
-					self.parser.setcallback(type, func, arg)
-			except TypeError:
-				if type <> CD.PNUM:
-					self.parser.setcallback(type, func, arg)
+			start, end = self.list[self.listindex]
+			if type(end) == type(0):
+				if cb_type <> CD.PNUM:
+					self.parser.setcallback(cb_type, func, arg)
+			else:
+				if cb_type <> CD.ATIME:
+					self.parser.setcallback(cb_type, func, arg)
 
-	def removecallback(self, type):
-		if type < 0 or type >= 8:
+	def removecallback(self, cb_type):
+		if cb_type < 0 or cb_type >= 8:
 			raise Error, 'type out of range'
-		self.callbacks[type] = (None, None)
+		self.callbacks[cb_type] = (None, None)
 		if self.playing:
-			try:
-				l = len(end)
-				if type <> CD.ATIME:
-					self.parser.removecallback(type)
-			except TypeError:
-				if type <> CD.PNUM:
-					self.parser.removecallback(type)
+			start, end = self.list[self.listindex]
+			if type(end) == type(0):
+				if cb_type <> CD.PNUM:
+					self.parser.removecallback(cb_type)
+			else:
+				if cb_type <> CD.ATIME:
+					self.parser.removecallback(cb_type)
 
 	def gettrackinfo(self, *arg):
 		if not self.status:
@@ -200,12 +198,20 @@ class Readcd():
 					return
 				start, end = self.list[self.listindex]
 ##				print 'starting with',`(start, end)`
-				try:
+				if type(start) == type(0):
+					dummy = self.player.seektrack(start)
+				else:
 					min, sec, frame = start
 					dummy = self.player.seek(min, sec, frame)
-				except TypeError:
-					dummy = self.player.seektrack(start)
-				try:
+				if type(end) == type(0):
+					self.parser.setcallback(CD.PNUM, _dopnum, self)
+					self.end = end
+					func, arg = self.callbacks[CD.ATIME]
+					if func:
+						self.parser.setcallback(CD.ATIME, func, arg)
+					else:
+						self.parser.removecallback(CD.ATIME)
+				else:
 					min, sec, frame = end
 					self.parser.setcallback(CD.ATIME, _doatime, self)
 					self.end = (min * 60 + sec) * 75 + frame
@@ -214,14 +220,6 @@ class Readcd():
 						self.parser.setcallback(CD.PNUM, func, arg)
 					else:
 						self.parser.removecallback(CD.PNUM)
-				except TypeError:
-					self.parser.setcallback(CD.PNUM, _dopnum, self)
-					self.end = end
-					func, arg = self.callbacks[CD.ATIME]
-					if func:
-						self.parser.setcallback(CD.ATIME, func, arg)
-					else:
-						self.parser.removecallback(CD.ATIME)
 				self.playing = 1
 			data = self.player.readda(size)
 			if data == '':
