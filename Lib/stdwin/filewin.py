@@ -1,21 +1,8 @@
 # Module 'filewin'
 # File windows, a subclass of textwin (which is a subclass of gwin)
 
-import stdwin
 import textwin
-import path
-
-builtin_open = open
-
-def readfile(fn): # Return a string containing the file's contents
-	fp = builtin_open(fn, 'r')
-	a = ''
-	n = 8096
-	while 1:
-		b = fp.read(n)
-		if not b: break
-		a = a + b
-	return a
+from util import readfile
 
 
 # FILE WINDOW
