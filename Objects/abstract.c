@@ -2096,4 +2096,3 @@ PyIter_Next(PyObject *iter)
 		PyErr_Clear();
 	return result;
 }
-
