@@ -15,6 +15,16 @@ def tester(fn, wantResult):
         print " returned: " + str(gotResult)
         print ""
         errors = errors + 1
+        
+tester('ntpath.splitext("foo.ext")', ('foo', '.ext'))
+tester('ntpath.splitext("/foo/foo.ext")', ('/foo/foo', '.ext'))
+tester('ntpath.splitext(".ext")', ('', '.ext'))
+tester('ntpath.splitext("\\foo.ext\\foo")', ('\\foo.ext\\foo', ''))
+tester('ntpath.splitext("foo.ext\\")', ('foo.ext\\', ''))
+tester('ntpath.splitext("")', ('', ''))
+tester('ntpath.splitext("foo.bar.ext")', ('foo.bar', '.ext'))
+tester('ntpath.splitext("xx/foo.bar.ext")', ('xx/foo.bar', '.ext'))
+tester('ntpath.splitext("xx\\foo.bar.ext")', ('xx\\foo.bar', '.ext'))
 
 tester('ntpath.splitdrive("c:\\foo\\bar")',
        ('c:', '\\foo\\bar'))

@@ -21,6 +21,11 @@ tester('posixpath.split("foo")', ('', 'foo'))
 
 tester('posixpath.splitext("foo.ext")', ('foo', '.ext'))
 tester('posixpath.splitext("/foo/foo.ext")', ('/foo/foo', '.ext'))
+tester('posixpath.splitext(".ext")', ('', '.ext'))
+tester('posixpath.splitext("/foo.ext/foo")', ('/foo.ext/foo', ''))
+tester('posixpath.splitext("foo.ext/")', ('foo.ext/', ''))
+tester('posixpath.splitext("")', ('', ''))
+tester('posixpath.splitext("foo.bar.ext")', ('foo.bar', '.ext'))
 
 tester('posixpath.isabs("/")', 1)
 tester('posixpath.isabs("/foo")', 1)

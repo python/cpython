@@ -169,20 +169,12 @@ def splitext(p):
 
     Extension is everything from the last dot to the end.
     Return (root, ext), either part may be empty."""
-    root, ext = '', ''
-    for c in p:
-        if c in ['/','\\']:
-            root, ext = root + ext + c, ''
-        elif c == '.':
-            if ext:
-                root, ext = root + ext, c
-            else:
-                ext = c
-        elif ext:
-            ext = ext + c
-        else:
-            root = root + c
-    return root, ext
+
+    i = p.rfind('.')
+    if i<=max(p.rfind('/'), p.rfind('\\')):
+        return p, ''
+    else:
+        return p[:i], p[i:]
 
 
 # Return the tail (basename) part of a path.
