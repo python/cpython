@@ -103,10 +103,9 @@ def main():
 	try:
 	    red, green, blue = ColorDB.rrggbb_to_triplet(initialcolor)
 	except ColorDB.BadColor:
-            print 'Bad initial color, using default: %s' % initialcolor
-            initialcolor = 'grey50'
             try:
-                red, green, blue = ColorDB.rrggbb_to_triplet(initialcolor)
+                red, green, blue = ColorDB.rrggbb_to_triplet('#7f7f7f')
+                print 'Bad initial color, using gray50:', initialcolor
             except ColorDB.BadColor:
                 usage(1, 'Cannot find an initial color to use')
 
