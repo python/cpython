@@ -116,6 +116,9 @@
 
 #include "abstract.h"
 
+#include "compile.h"
+#include "eval.h"
+
 /* _Py_Mangle is defined in compile.c */
 PyAPI_FUNC(int) _Py_Mangle(char *p, char *name, \
 				 char *buffer, size_t maxlen);
