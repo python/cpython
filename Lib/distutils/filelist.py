@@ -11,7 +11,7 @@ and building lists of files.
 
 __revision__ = "$Id$"
 
-import sys, os, string, re
+import os, string, re
 import fnmatch
 from types import *
 from glob import glob

@@ -7,7 +7,6 @@ Implements the Distutils 'bdist_pkgtool' command (create Solaris pkgtool
 distributions)."""
 
 import os, string, sys, pwd, grp
-import glob
 from types import *
 from distutils.core import Command, DEBUG
 from distutils.util import get_platform
@@ -16,7 +15,6 @@ from distutils.errors import *
 from distutils.command import bdist_packager
 from distutils import sysconfig
 from distutils import log
-import compileall
 from commands import getoutput
 
 __revision__ = "$Id: bdist_pkgtool.py,v 0.3 mwa "
