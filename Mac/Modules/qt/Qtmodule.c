@@ -232,6 +232,37 @@ static PyObject *MovieCtlObj_MCIsControllerAttached(_self, _args)
 	return _res;
 }
 
+static PyObject *MovieCtlObj_MCSetControllerPort(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	CGrafPtr gp;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      GrafObj_Convert, &gp))
+		return NULL;
+	_rv = MCSetControllerPort(_self->ob_itself,
+	                          gp);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieCtlObj_MCGetControllerPort(_self, _args)
+	MovieControllerObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CGrafPtr _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = MCGetControllerPort(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     GrafObj_New, _rv);
+	return _res;
+}
+
 static PyObject *MovieCtlObj_MCSetVisible(_self, _args)
 	MovieControllerObject *_self;
 	PyObject *_args;
@@ -761,6 +792,10 @@ static PyMethodDef MovieCtlObj_methods[] = {
 	 "(Boolean attach) -> (ComponentResult _rv)"},
 	{"MCIsControllerAttached", (PyCFunction)MovieCtlObj_MCIsControllerAttached, 1,
 	 "() -> (ComponentResult _rv)"},
+	{"MCSetControllerPort", (PyCFunction)MovieCtlObj_MCSetControllerPort, 1,
+	 "(CGrafPtr gp) -> (ComponentResult _rv)"},
+	{"MCGetControllerPort", (PyCFunction)MovieCtlObj_MCGetControllerPort, 1,
+	 "() -> (CGrafPtr _rv)"},
 	{"MCSetVisible", (PyCFunction)MovieCtlObj_MCSetVisible, 1,
 	 "(Boolean visible) -> (ComponentResult _rv)"},
 	{"MCGetVisible", (PyCFunction)MovieCtlObj_MCGetVisible, 1,
@@ -1429,6 +1464,34 @@ static PyObject *MediaObj_GetMediaTrack(_self, _args)
 	_rv = GetMediaTrack(_self->ob_itself);
 	_res = Py_BuildValue("O&",
 	                     TrackObj_New, _rv);
+	return _res;
+}
+
+static PyObject *MediaObj_GetMediaCreationTime(_self, _args)
+	MediaObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	unsigned long _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMediaCreationTime(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MediaObj_GetMediaModificationTime(_self, _args)
+	MediaObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	unsigned long _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMediaModificationTime(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -2248,6 +2311,10 @@ static PyMethodDef MediaObj_methods[] = {
 	 "(TimeValue time, TimeValue duration, long flags) -> None"},
 	{"GetMediaTrack", (PyCFunction)MediaObj_GetMediaTrack, 1,
 	 "() -> (Track _rv)"},
+	{"GetMediaCreationTime", (PyCFunction)MediaObj_GetMediaCreationTime, 1,
+	 "() -> (unsigned long _rv)"},
+	{"GetMediaModificationTime", (PyCFunction)MediaObj_GetMediaModificationTime, 1,
+	 "() -> (unsigned long _rv)"},
 	{"GetMediaTimeScale", (PyCFunction)MediaObj_GetMediaTimeScale, 1,
 	 "() -> (TimeScale _rv)"},
 	{"SetMediaTimeScale", (PyCFunction)MediaObj_SetMediaTimeScale, 1,
@@ -2568,6 +2635,34 @@ static PyObject *TrackObj_GetTrackMovie(_self, _args)
 	_rv = GetTrackMovie(_self->ob_itself);
 	_res = Py_BuildValue("O&",
 	                     MovieObj_New, _rv);
+	return _res;
+}
+
+static PyObject *TrackObj_GetTrackCreationTime(_self, _args)
+	TrackObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	unsigned long _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetTrackCreationTime(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *TrackObj_GetTrackModificationTime(_self, _args)
+	TrackObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	unsigned long _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetTrackModificationTime(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -3343,6 +3438,10 @@ static PyMethodDef TrackObj_methods[] = {
 	 "() -> (long _rv)"},
 	{"GetTrackMovie", (PyCFunction)TrackObj_GetTrackMovie, 1,
 	 "() -> (Movie _rv)"},
+	{"GetTrackCreationTime", (PyCFunction)TrackObj_GetTrackCreationTime, 1,
+	 "() -> (unsigned long _rv)"},
+	{"GetTrackModificationTime", (PyCFunction)TrackObj_GetTrackModificationTime, 1,
+	 "() -> (unsigned long _rv)"},
 	{"GetTrackEnabled", (PyCFunction)TrackObj_GetTrackEnabled, 1,
 	 "() -> (Boolean _rv)"},
 	{"SetTrackEnabled", (PyCFunction)TrackObj_SetTrackEnabled, 1,
@@ -3711,6 +3810,43 @@ static PyObject *MovieObj_GetMovieTimeBase(_self, _args)
 	return _res;
 }
 
+static PyObject *MovieObj_GetMovieGWorld(_self, _args)
+	MovieObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CGrafPtr port;
+	GDHandle gdh;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetMovieGWorld(_self->ob_itself,
+	               &port,
+	               &gdh);
+	_res = Py_BuildValue("O&O&",
+	                     GrafObj_New, port,
+	                     ResObj_New, gdh);
+	return _res;
+}
+
+static PyObject *MovieObj_SetMovieGWorld(_self, _args)
+	MovieObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	CGrafPtr port;
+	GDHandle gdh;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      GrafObj_Convert, &port,
+	                      ResObj_Convert, &gdh))
+		return NULL;
+	SetMovieGWorld(_self->ob_itself,
+	               port,
+	               gdh);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *MovieObj_GetNextTrackForCompositing(_self, _args)
 	MovieObject *_self;
 	PyObject *_args;
@@ -3949,6 +4085,34 @@ static PyObject *MovieObj_PutMovieIntoDataFork(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MovieObj_GetMovieCreationTime(_self, _args)
+	MovieObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	unsigned long _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMovieCreationTime(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *MovieObj_GetMovieModificationTime(_self, _args)
+	MovieObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	unsigned long _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMovieModificationTime(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
 	return _res;
 }
 
@@ -5152,6 +5316,10 @@ static PyMethodDef MovieObj_methods[] = {
 	 "() -> None"},
 	{"GetMovieTimeBase", (PyCFunction)MovieObj_GetMovieTimeBase, 1,
 	 "() -> (TimeBase _rv)"},
+	{"GetMovieGWorld", (PyCFunction)MovieObj_GetMovieGWorld, 1,
+	 "() -> (CGrafPtr port, GDHandle gdh)"},
+	{"SetMovieGWorld", (PyCFunction)MovieObj_SetMovieGWorld, 1,
+	 "(CGrafPtr port, GDHandle gdh) -> None"},
 	{"GetNextTrackForCompositing", (PyCFunction)MovieObj_GetNextTrackForCompositing, 1,
 	 "(Track theTrack) -> (Track _rv)"},
 	{"GetPrevTrackForCompositing", (PyCFunction)MovieObj_GetPrevTrackForCompositing, 1,
@@ -5182,6 +5350,10 @@ static PyMethodDef MovieObj_methods[] = {
 	 "(Handle publicMovie) -> None"},
 	{"PutMovieIntoDataFork", (PyCFunction)MovieObj_PutMovieIntoDataFork, 1,
 	 "(short fRefNum, long offset, long maxSize) -> None"},
+	{"GetMovieCreationTime", (PyCFunction)MovieObj_GetMovieCreationTime, 1,
+	 "() -> (unsigned long _rv)"},
+	{"GetMovieModificationTime", (PyCFunction)MovieObj_GetMovieModificationTime, 1,
+	 "() -> (unsigned long _rv)"},
 	{"GetMovieTimeScale", (PyCFunction)MovieObj_GetMovieTimeScale, 1,
 	 "() -> (TimeScale _rv)"},
 	{"SetMovieTimeScale", (PyCFunction)MovieObj_SetMovieTimeScale, 1,
@@ -5638,21 +5810,24 @@ static PyObject *Qt_NewMovieFromFile(_self, _args)
 	OSErr _err;
 	Movie theMovie;
 	short resRefNum;
+	short resId;
 	short newMovieFlags;
 	Boolean dataRefWasChanged;
-	if (!PyArg_ParseTuple(_args, "hh",
+	if (!PyArg_ParseTuple(_args, "hhh",
 	                      &resRefNum,
+	                      &resId,
 	                      &newMovieFlags))
 		return NULL;
 	_err = NewMovieFromFile(&theMovie,
 	                        resRefNum,
-	                        (short *)0,
+	                        &resId,
 	                        (StringPtr)0,
 	                        newMovieFlags,
 	                        &dataRefWasChanged);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&b",
+	_res = Py_BuildValue("O&hb",
 	                     MovieObj_New, theMovie,
+	                     resId,
 	                     dataRefWasChanged);
 	return _res;
 }
@@ -5837,7 +6012,7 @@ static PyMethodDef Qt_methods[] = {
 	{"DeleteMovieFile", (PyCFunction)Qt_DeleteMovieFile, 1,
 	 "(FSSpec fileSpec) -> None"},
 	{"NewMovieFromFile", (PyCFunction)Qt_NewMovieFromFile, 1,
-	 "(short resRefNum, short newMovieFlags) -> (Movie theMovie, Boolean dataRefWasChanged)"},
+	 "(short resRefNum, short resId, short newMovieFlags) -> (Movie theMovie, short resId, Boolean dataRefWasChanged)"},
 	{"NewMovieFromHandle", (PyCFunction)Qt_NewMovieFromHandle, 1,
 	 "(Handle h, short newMovieFlags) -> (Movie theMovie, Boolean dataRefWasChanged)"},
 	{"NewMovieFromDataFork", (PyCFunction)Qt_NewMovieFromDataFork, 1,
