@@ -252,7 +252,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
         self.headers = self.MessageClass(self.rfile, 0)
         mname = 'do_' + command
         if not hasattr(self, mname):
-            self.send_error(501, "Unsupported method (%s)" % `mname`)
+            self.send_error(501, "Unsupported method (%s)" % `command`)
             return
         method = getattr(self, mname)
         method()
