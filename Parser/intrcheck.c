@@ -166,7 +166,7 @@ intrcheck()
 
 /* intrpeek() is like intrcheck(), but it doesn't flush the events. The
 ** idea is that you call intrpeek() somewhere in a busy-wait loop, and return
-** None as soon as it returns 0. The mainloop will then pick up the cmd-. soon
+** None as soon as it returns 1. The mainloop will then pick up the cmd-. soon
 ** thereafter.
 */
 int
