@@ -8,7 +8,12 @@ See the file "Misc/COPYRIGHT" for information on usage and
 redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 ******************************************************************/
 
+#ifdef HAVE_LIMITS_H
 #include <limits.h>
+#endif
+#ifndef INT_MAX
+#define INT_MAX 2147483647
+#endif
 
 /* Parse tree node implementation */
 
@@ -39,7 +44,7 @@ PyNode_AddChild(register node *n1, int type, char *str, int lineno)
 	register int nch = n1->n_nchildren;
 	register int nch1 = nch+1;
 	register node *n;
-	if (nch == SHRT_MAX || nch < 0)
+	if (nch == INT_MAX || nch < 0)
 		return E_OVERFLOW;
 	if (XXXROUNDUP(nch) < nch1) {
 		n = n1->n_child;

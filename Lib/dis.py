@@ -56,6 +56,7 @@ def disassemble(co, lasti=-1):
 	labels = findlabels(code)
 	n = len(code)
 	i = 0
+	extended_arg = 0
 	while i < n:
 		c = code[i]
 		op = ord(c)
@@ -68,8 +69,11 @@ def disassemble(co, lasti=-1):
 		print string.ljust(opname[op], 20),
 		i = i+1
 		if op >= HAVE_ARGUMENT:
-			oparg = ord(code[i]) + ord(code[i+1])*256
+			oparg = ord(code[i]) + ord(code[i+1])*256 + extended_arg
+			extended_arg = 0
 			i = i+2
+			if op == EXTENDED_ARG:
+				extended_arg = oparg*65536L
 			print string.rjust(`oparg`, 5),
 			if op in hasconst:
 				print '(' + `co.co_consts[oparg]` + ')',
@@ -258,6 +262,8 @@ def_op('CALL_FUNCTION_VAR', 140)     # #args + (#kwargs << 8)
 def_op('CALL_FUNCTION_KW', 141)      # #args + (#kwargs << 8)
 def_op('CALL_FUNCTION_VAR_KW', 142)  # #args + (#kwargs << 8)
 
+def_op('EXTENDED_ARG', 143) 
+EXTENDED_ARG = 143
 
 def _test():
 	"""Simple test program to disassemble a file."""
