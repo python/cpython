@@ -939,7 +939,7 @@ PyTypeObject PyInt_Type = {
 };
 
 int
-PyInt_Init(void)
+_PyInt_Init(void)
 {
 	PyIntObject *v;
 	int ival;

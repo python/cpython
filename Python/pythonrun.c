@@ -124,10 +124,10 @@ Py_Initialize(void)
 
 	_Py_ReadyTypes();
 
-	if (!PyFrame_Init())
+	if (!_PyFrame_Init())
 		Py_FatalError("Py_Initialize: can't init frames");
 
-	if (!PyInt_Init())
+	if (!_PyInt_Init())
 		Py_FatalError("Py_Initialize: can't init ints");
 
 	interp->modules = PyDict_New();
