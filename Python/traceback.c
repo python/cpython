@@ -132,16 +132,19 @@ PyTraceBack_Here(frame)
 	return 0;
 }
 
-static void
+static int
 tb_displayline(f, filename, lineno, name)
 	PyObject *f;
 	char *filename;
 	int lineno;
 	char *name;
 {
+	int err = 0;
 	FILE *xfp;
 	char linebuf[1000];
 	int i;
+	if (filename == NULL || name == NULL)
+		return -1;
 #ifdef MPW
 	/* This is needed by MPW's File and Line commands */
 #define FMT "  File \"%.900s\"; line %d # in %s\n"
@@ -165,6 +168,10 @@ tb_displayline(f, filename, lineno, name)
 			char namebuf[MAXPATHLEN+1];
 			for (i = 0; i < npath; i++) {
 				PyObject *v = PyList_GetItem(path, i);
+				if (v == NULL) {
+					PyErr_Clear();
+					break;
+				}
 				if (PyString_Check(v)) {
 					int len;
 					len = PyString_Size(v);
@@ -186,9 +193,9 @@ tb_displayline(f, filename, lineno, name)
 		}
 	}
 	sprintf(linebuf, FMT, filename, lineno, name);
-	PyFile_WriteString(linebuf, f);
-	if (xfp == NULL)
-		return;
+	err = PyFile_WriteString(linebuf, f);
+	if (xfp == NULL || err != 0)
+		return err;
 	for (i = 0; i < lineno; i++) {
 		if (fgets(linebuf, sizeof linebuf, xfp) == NULL)
 			break;
@@ -197,32 +204,36 @@ tb_displayline(f, filename, lineno, name)
 		char *p = linebuf;
 		while (*p == ' ' || *p == '\t' || *p == '\014')
 			p++;
-		PyFile_WriteString("    ", f);
-		PyFile_WriteString(p, f);
-		if (strchr(p, '\n') == NULL)
-			PyFile_WriteString("\n", f);
+		err = PyFile_WriteString("    ", f);
+		if (err == 0) {
+			err = PyFile_WriteString(p, f);
+			if (err == 0 && strchr(p, '\n') == NULL)
+				err = PyFile_WriteString("\n", f);
+		}
 	}
 	fclose(xfp);
+	return err;
 }
 
-static void
+static int
 tb_printinternal(tb, f, limit)
 	tracebackobject *tb;
 	PyObject *f;
 	int limit;
 {
+	int err = 0;
 	int depth = 0;
 	tracebackobject *tb1 = tb;
 	while (tb1 != NULL) {
 		depth++;
 		tb1 = tb1->tb_next;
 	}
-	while (tb != NULL && !PyOS_InterruptOccurred()) {
+	while (tb != NULL && err == 0) {
 		if (depth <= limit) {
 			if (Py_OptimizeFlag)
 				tb->tb_lineno = PyCode_Addr2Line(
 					tb->tb_frame->f_code, tb->tb_lasti);
-			tb_displayline(f,
+			err = tb_displayline(f,
 			    PyString_AsString(
 				    tb->tb_frame->f_code->co_filename),
 			    tb->tb_lineno,
@@ -230,7 +241,10 @@ tb_printinternal(tb, f, limit)
 		}
 		depth--;
 		tb = tb->tb_next;
+		if (err == 0)
+			err = PyErr_CheckSignals();
 	}
+	return err;
 }
 
 int
@@ -238,6 +252,7 @@ PyTraceBack_Print(v, f)
 	PyObject *v;
 	PyObject *f;
 {
+	int err;
 	PyObject *limitv;
 	int limit = 1000;
 	if (v == NULL)
@@ -252,7 +267,8 @@ PyTraceBack_Print(v, f)
 		if (limit <= 0)
 			return 0;
 	}
-	PyFile_WriteString("Traceback (innermost last):\n", f);
-	tb_printinternal((tracebackobject *)v, f, limit);
-	return 0;
+	err = PyFile_WriteString("Traceback (innermost last):\n", f);
+	if (!err)
+		err = tb_printinternal((tracebackobject *)v, f, limit);
+	return err;
 }
