@@ -3,26 +3,32 @@
 
 
 % ==== 1. ====
-% Choose one of the following section headers and index entries;
-% \section generates the section header, \declmodule produces the
-% appropriate index entry for this module.  Note that these should
-% only be used for the defining entry for the module.  Other
-% references to the module should use \refbimodindex, \refstmodindex,
-% \refexmodindex or \refmodindex, as appropriate.
+% The section prologue.  Give the section a title and provide some
+% meta-information.  References to the module should use
+% \refbimodindex, \refstmodindex, \refexmodindex or \refmodindex, as
+% appropriate.
 
-\section{Built-in Module \module{spam}}	% If implemented in C, in
-\declaremodule{builtin}{spam}		% standard library
+\section{\module{spam} ---
+         Short one-line descrition, for section title.}
 
-\section{Standard Module \module{spam}}	% If implemented in Python, in
-\declaremodule{standard}{spam}		% standard library
+% Choose one of these to specify the module module name.  If there's
+% an underscore in the name, use
+% \declaremodule[modname]{...}{mod_name} instead.
+%
+\declaremodule{builtin}{spam}		% standard library, in C
+\declaremodule{standard}{spam}		% standard library, in Python
+\declaremodule{extension}{spam}		% not standard, in C
+\declaremodule{}{spam}			% not standard, in Python
 
-\section{Extension Module \module{spam}}% If implemented in C, but not 
-\declaremodule{extension}{spam}		% in standard library
+% These apply to all modules:
 
-\section{Module \module{spam}}		% If implemented in Python, but not 
-\declaremodule{}{spam}			% in standard library
+\moduleauthor{name}{email}		% Author of the module code;
+					% omit if not known.
+\sectionauthor{name}{email}		% Author of the documentation.
 
 
+% Leave at least one blank line after this, to simplify ad-hoc tools
+% that are sometimes used to massage these files.
 \modulesynopsis{This is a one-line descrition, for the chapter header.}
 
 
