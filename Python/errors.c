@@ -622,3 +622,82 @@ PyErr_Warn(PyObject *category, char *message)
 		return 0;
 	}
 }
+
+void
+PyErr_SyntaxLocation(char *filename, int lineno)
+{
+	PyObject *exc, *v, *tb, *tmp;
+
+	/* add attributes for the line number and filename for the error */
+	PyErr_Fetch(&exc, &v, &tb);
+	PyErr_NormalizeException(&exc, &v, &tb);
+	/* XXX check that it is, indeed, a syntax error */
+	tmp = PyInt_FromLong(lineno);
+	if (tmp == NULL)
+		PyErr_Clear();
+	else {
+		if (PyObject_SetAttrString(v, "lineno", tmp))
+			PyErr_Clear();
+		Py_DECREF(tmp);
+	}
+	if (filename != NULL) {
+		tmp = PyString_FromString(filename);
+		if (tmp == NULL)
+			PyErr_Clear();
+		else {
+			if (PyObject_SetAttrString(v, "filename", tmp))
+				PyErr_Clear();
+			Py_DECREF(tmp);
+		}
+
+		tmp = PyErr_ProgramText(filename, lineno);
+		if (tmp) {
+			PyObject_SetAttrString(v, "text", tmp);
+			Py_DECREF(tmp);
+		}
+	}
+	PyErr_Restore(exc, v, tb);
+}
+
+/* com_fetch_program_text will attempt to load the line of text that
+   the exception refers to.  If it fails, it will return NULL but will
+   not set an exception. 
+
+   XXX The functionality of this function is quite similar to the
+   functionality in tb_displayline() in traceback.c.
+*/
+
+PyObject *
+PyErr_ProgramText(char *filename, int lineno)
+{
+	FILE *fp;
+	int i;
+	char linebuf[1000];
+
+	if (filename == NULL || lineno <= 0)
+		return NULL;
+	fp = fopen(filename, "r");
+	if (fp == NULL)
+		return NULL;
+	for (i = 0; i < lineno; i++) {
+		char *pLastChar = &linebuf[sizeof(linebuf) - 2];
+		do {
+			*pLastChar = '\0';
+			if (fgets(linebuf, sizeof linebuf, fp) == NULL)
+				break;
+			/* fgets read *something*; if it didn't get as
+			   far as pLastChar, it must have found a newline
+			   or hit the end of the file;	if pLastChar is \n,
+			   it obviously found a newline; else we haven't
+			   yet seen a newline, so must continue */
+		} while (*pLastChar != '\0' && *pLastChar != '\n');
+	}
+	fclose(fp);
+	if (i == lineno) {
+		char *p = linebuf;
+		while (*p == ' ' || *p == '\t' || *p == '\014')
+			p++;
+		return PyString_FromString(p);
+	}
+	return NULL;
+}

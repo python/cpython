@@ -381,49 +381,6 @@ int is_free(int v)
 	return 0;
 }
 
-/* com_fetch_program_text will attempt to load the line of text that
-   the exception refers to.  If it fails, it will return NULL but will
-   not set an exception. 
-
-   XXX The functionality of this function is quite similar to the
-   functionality in tb_displayline() in traceback.c.
-*/
-
-static PyObject *
-fetch_program_text(char *filename, int lineno)
-{
-	FILE *fp;
-	int i;
-	char linebuf[1000];
-
-	if (filename == NULL || lineno <= 0)
-		return NULL;
-	fp = fopen(filename, "r");
-	if (fp == NULL)
-		return NULL;
-	for (i = 0; i < lineno; i++) {
-		char *pLastChar = &linebuf[sizeof(linebuf) - 2];
-		do {
-			*pLastChar = '\0';
-			if (fgets(linebuf, sizeof linebuf, fp) == NULL)
-				break;
-			/* fgets read *something*; if it didn't get as
-			   far as pLastChar, it must have found a newline
-			   or hit the end of the file;	if pLastChar is \n,
-			   it obviously found a newline; else we haven't
-			   yet seen a newline, so must continue */
-		} while (*pLastChar != '\0' && *pLastChar != '\n');
-	}
-	fclose(fp);
-	if (i == lineno) {
-		char *p = linebuf;
-		while (*p == ' ' || *p == '\t' || *p == '\014')
-			p++;
-		return PyString_FromString(p);
-	}
-	return NULL;
-}
-
 static void
 com_error(struct compiling *c, PyObject *exc, char *msg)
 {
@@ -445,7 +402,7 @@ com_error(struct compiling *c, PyObject *exc, char *msg)
 	if (v == NULL)
 		return; /* MemoryError, too bad */
 
-	line = fetch_program_text(c->c_filename, c->c_lineno);
+	line = PyErr_ProgramText(c->c_filename, c->c_lineno);
 	if (line == NULL) {
 		Py_INCREF(Py_None);
 		line = Py_None;
@@ -4028,41 +3985,6 @@ get_ref_type(struct compiling *c, char *name)
 
 /* Helper function for setting lineno and filename */
 
-static void
-set_error_location(char *filename, int lineno)
-{
-	PyObject *exc, *v, *tb, *tmp;
-
-	/* add attributes for the line number and filename for the error */
-	PyErr_Fetch(&exc, &v, &tb);
-	PyErr_NormalizeException(&exc, &v, &tb);
-	tmp = PyInt_FromLong(lineno);
-	if (tmp == NULL)
-		PyErr_Clear();
-	else {
-		if (PyObject_SetAttrString(v, "lineno", tmp))
-			PyErr_Clear();
-		Py_DECREF(tmp);
-	}
-	if (filename != NULL) {
-		tmp = PyString_FromString(filename);
-		if (tmp == NULL)
-			PyErr_Clear();
-		else {
-			if (PyObject_SetAttrString(v, "filename", tmp))
-				PyErr_Clear();
-			Py_DECREF(tmp);
-		}
-
-		tmp = fetch_program_text(filename, lineno);
-		if (tmp) {
-			PyObject_SetAttrString(v, "text", tmp);
-			Py_DECREF(tmp);
-		}
-	}
-	PyErr_Restore(exc, v, tb);
-}
-
 static int
 symtable_build(struct compiling *c, node *n)
 {
@@ -4198,7 +4120,7 @@ symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
 				PyErr_Format(PyExc_SyntaxError,
 					     ILLEGAL_DYNAMIC_SCOPE, 
 				     PyString_AS_STRING(ste->ste_name));
-				set_error_location(c->c_symtable->st_filename,
+				PyErr_SyntaxLocation(c->c_symtable->st_filename,
 						   ste->ste_lineno);
 				return -1;
 			} else {
@@ -4273,7 +4195,7 @@ symtable_load_symbols(struct compiling *c)
 			if (flags & DEF_PARAM) {
 				PyErr_Format(PyExc_SyntaxError, LOCAL_GLOBAL,
 					     PyString_AS_STRING(name));
-				set_error_location(st->st_filename, 
+				PyErr_SyntaxLocation(st->st_filename, 
 						   ste->ste_lineno);
 				st->st_errors++;
 				goto fail;
@@ -4581,7 +4503,7 @@ symtable_add_def_o(struct symtable *st, PyObject *dict,
 	    if ((flag & DEF_PARAM) && (val & DEF_PARAM)) {
 		    PyErr_Format(PyExc_SyntaxError, DUPLICATE_ARGUMENT,
 				 PyString_AsString(name));
-		    set_error_location(st->st_filename,
+		    PyErr_SyntaxLocation(st->st_filename,
 				       st->st_cur->ste_lineno);
 		    return -1;
 	    }
@@ -4904,7 +4826,7 @@ symtable_global(struct symtable *st, node *n)
 				PyErr_Format(PyExc_SyntaxError,
 				     "name '%.400s' is local and global",
 					     name);
-				set_error_location(st->st_filename,
+				PyErr_SyntaxLocation(st->st_filename,
 						   st->st_cur->ste_lineno);
 				st->st_errors++;
 				return;
@@ -4958,7 +4880,7 @@ symtable_import(struct symtable *st, node *n)
 			if (n->n_lineno >= st->st_future->ff_last_lineno) {
 				PyErr_SetString(PyExc_SyntaxError,
 						LATE_FUTURE);
- 				set_error_location(st->st_filename,
+ 				PyErr_SyntaxLocation(st->st_filename,
 						   n->n_lineno);
 				st->st_errors++;
 				return;

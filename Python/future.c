@@ -6,24 +6,40 @@
 #include "symtable.h"
 
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
+#define FUTURE_IMPORT_STAR "future statement does not support import *"
 
 #define FUTURE_POSSIBLE(FF) ((FF)->ff_last_lineno == -1)
 
 static int
-future_check_features(PyFutureFeatures *ff, node *n)
+future_check_features(PyFutureFeatures *ff, node *n, char *filename)
 {
 	int i;
 	char *feature;
+	node *ch;
 
 	REQ(n, import_stmt); /* must by from __future__ import ... */
 
 	for (i = 3; i < NCH(n); ++i) {
-		feature = STR(CHILD(CHILD(n, i), 0));
+		ch = CHILD(n, i);
+		if (TYPE(ch) == STAR) {
+			PyErr_SetString(PyExc_SyntaxError,
+					FUTURE_IMPORT_STAR);
+			PyErr_SyntaxLocation(filename, ch->n_lineno);
+			return -1;
+		}
+		REQ(ch, import_as_name);
+		feature = STR(CHILD(ch, 0));
 		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
 			ff->ff_nested_scopes = 1;
+		} else if (strcmp(feature, "braces") == 0) {
+			PyErr_SetString(PyExc_SyntaxError,
+					"not a chance");
+			PyErr_SyntaxLocation(filename, CHILD(ch, 0)->n_lineno);
+			return -1;
 		} else {
 			PyErr_Format(PyExc_SyntaxError,
 				     UNDEFINED_FUTURE_FEATURE, feature);
+			PyErr_SyntaxLocation(filename, CHILD(ch, 0)->n_lineno);
 			return -1;
 		}
 	}
@@ -36,6 +52,7 @@ future_error(node *n, char *filename)
 	PyErr_SetString(PyExc_SyntaxError,
 			"from __future__ imports must occur at the "
 			"beginning of the file");
+	PyErr_SyntaxLocation(filename, n->n_lineno);
 	/* XXX set filename and lineno */
 }
 
@@ -45,8 +62,10 @@ single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | exec_stmt | assert_stmt
-import_stmt: 'import' dotted_as_name (',' dotted_as_name)* | 'from' dotted_name 'import' ('*' | import_as_name (',' import_as_name)*)
+small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt 
+    | import_stmt | global_stmt | exec_stmt | assert_stmt
+import_stmt: 'import' dotted_as_name (',' dotted_as_name)* 
+    | 'from' dotted_name 'import' ('*' | import_as_name (',' import_as_name)*)
 import_as_name: NAME [NAME NAME]
 dotted_as_name: dotted_name [NAME NAME]
 dotted_name: NAME ('.' NAME)*
@@ -63,11 +82,6 @@ future_parse(PyFutureFeatures *ff, node *n, char *filename)
 {
 	int i, r;
  loop:
-
-/*	fprintf(stderr, "future_parse(%d, %d, %s, %d)\n",
-		TYPE(n), NCH(n), (n == NULL) ? "NULL" : STR(n),
-		n->n_lineno);
-*/
 
 	switch (TYPE(n)) {
 
@@ -162,7 +176,7 @@ future_parse(PyFutureFeatures *ff, node *n, char *filename)
 		name = CHILD(n, 1);
 		if (strcmp(STR(CHILD(name, 0)), "__future__") != 0)
 			return 0;
-		if (future_check_features(ff, n) < 0)
+		if (future_check_features(ff, n, filename) < 0)
 			return -1;
 		ff->ff_last_lineno = n->n_lineno + 1;
 		return 1;
