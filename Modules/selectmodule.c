@@ -29,11 +29,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "ceval.h"
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/param.h>
-
-/* XXX Maybe you need to define the FD_* macros here when porting this code */
+#include "myselect.h"
 
 static object *SelectError;
 
