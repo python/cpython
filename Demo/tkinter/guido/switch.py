@@ -49,6 +49,7 @@ def main():
     app = App()
     app.addpanel("label", LabelPanel)
     app.addpanel("button", ButtonPanel)
+    app.top.mainloop()
 
 if __name__ == '__main__':
     main()
