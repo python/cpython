@@ -1505,7 +1505,8 @@ class TarFile(object):
                 if tarinfo.issym() and hasattr(os, "lchown"):
                     os.lchown(targetpath, u, g)
                 else:
-                    os.chown(targetpath, u, g)
+                    if sys.platform != "os2emx":
+                        os.chown(targetpath, u, g)
             except EnvironmentError, e:
                 raise ExtractError, "could not change owner"
 
