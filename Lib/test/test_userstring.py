@@ -61,8 +61,8 @@ class MutableStringTest(UserStringTest):
 
     def test_delitem(self):
         s = self.type2test("foo")
-        self.assertRaises(IndexError, s.__setitem__, -1, "bar")
-        self.assertRaises(IndexError, s.__setitem__, 3, "bar")
+        self.assertRaises(IndexError, s.__delitem__, -1)
+        self.assertRaises(IndexError, s.__delitem__, 3)
         del s[0]
         self.assertEqual(s, "oo")
         del s[1]
