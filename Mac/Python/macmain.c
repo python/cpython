@@ -48,6 +48,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <profiler.h>
 #endif
 #endif
+#include <unistd.h>
 
 #ifdef THINK_C
 #include <console.h>
@@ -91,6 +92,8 @@ init_mac_world()
 #ifdef THINK_C
 	printf("\n");
 #else
+#ifndef TARGET_API_MAC_CARBON
+	/* These aren't needed for carbon */
 	MaxApplZone();
 	InitGraf(&qd.thePort);
 	InitFonts();
@@ -98,6 +101,7 @@ init_mac_world()
 	TEInit();
 	InitDialogs((long)0);
 	InitMenus();
+#endif
 	InitCursor();
 	init_appearance();
 #endif
@@ -165,9 +169,11 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 			DisposeDialog(dialog);
 			exit(0);
 		}
+#ifndef TARGET_API_MAC_CARBON
 		if ( item == OPT_HELP ) {
 			HMSetBalloons(!HMGetBalloons());
 		}
+#endif
 		if ( item == OPT_CMDLINE ) {
 			int new_argc, newer_argc;
 			char **new_argv, **newer_argv;
