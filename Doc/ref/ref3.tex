@@ -24,6 +24,12 @@ possible values for objects of that type.  The
 objects can change.  Objects whose value can change are said to be
 \emph{mutable}; objects whose value is unchangeable once they are
 created are called \emph{immutable}.
+(The value of an immutable container object that contains a reference
+to a mutable object can change when the latter's value is changed;
+however the container is still considered immutable, because the
+collection of objects it contains cannot be changed.  So, immutability
+is not strictly the same as having an unchangeable value, it is more
+subtle.)
 An object's mutability is determined by its type; for instance,
 numbers, strings and tuples are immutable, while dictionaries and
 lists are mutable.
@@ -375,7 +381,7 @@ parameter list.
 \obindex{function}
 \obindex{user-defined function}
 
-Special read-only attributes: \member{func_doc} or \member{__doc__} is the
+Special attributes: \member{func_doc} or \member{__doc__} is the
 function's documentation string, or None if unavailable;
 \member{func_name} or \member{__name__} is the function's name;
 \member{func_defaults} is a tuple containing default argument values for
@@ -384,7 +390,11 @@ have a default value; \member{func_code} is the code object representing
 the compiled function body; \member{func_globals} is (a reference to)
 the dictionary that holds the function's global variables --- it
 defines the global namespace of the module in which the function was
-defined.  Additional information about a function's definition can be
+defined.
+Of these, \member{func_code}, \member{func_defaults} and
+\member{func_doc} (and this \member{__doc__}) may be writable; the
+others can never be changed.
+Additional information about a function's definition can be
 retrieved from its code object; see the description of internal types
 below.
 \withsubitem{(function attribute)}{
