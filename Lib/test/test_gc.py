@@ -188,7 +188,7 @@ def test_trashcan():
 
     gc.enable()
     N = 200
-    for i in range(3):
+    for count in range(3):
         t = []
         for i in range(N):
             t = [t, Ouch()]
