@@ -262,6 +262,16 @@ def translate(s, table):
 	res = res + table[ord(c)]
     return res
 
+# Capitalize a string, e.g. "aBc  dEf" -> "Abc  def".
+def capitalize(s):
+    return upper(s[:1]) + lower(s[1:])
+
+# Capitalize the words in a string, e.g. " aBc  dEf " -> "Abc Def".
+# See also regsub.capwords().
+def capwords(s):
+    return join(map(capitalize, split(s)))
+
+
 # Try importing optional built-in module "strop" -- if it exists,
 # it redefines some string operations that are 100-1000 times faster.
 # It also defines values for whitespace, lowercase and uppercase
