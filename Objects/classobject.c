@@ -175,19 +175,30 @@ class_setattr(op, name, v)
 	PyObject *name;
 	PyObject *v;
 {
-	char *sname = PyString_AsString(name);
-	if (sname[0] == '_' && sname[1] == '_') {
-		int n = PyString_Size(name);
-		if (sname[n-1] == '_' && sname[n-2] == '_') {
-			PyErr_SetString(PyExc_TypeError,
-					"read-only special attribute");
-			return -1;
-		}
-	}
+	char *sname;
 	if (PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_RuntimeError,
 			   "classes are read-only in restricted mode");
 		return -1;
+	}
+	sname = PyString_AsString(name);
+	if (sname[0] == '_' && sname[1] == '_') {
+		int n = PyString_Size(name);
+		if (sname[n-1] == '_' && sname[n-2] == '_') {
+			if (strcmp(sname, "__dict__") == 0 ||
+			    strcmp(sname, "__bases__") == 0 ||
+			    strcmp(sname, "__name__") == 0 ||
+			    strcmp(sname, "__getattr__") == 0 ||
+			    strcmp(sname, "__setattr__") == 0 ||
+			    strcmp(sname, "__delattr__") == 0)
+			{
+				/* XXX In unrestricted mode, we should
+				   XXX allow this -- with a type check */
+				PyErr_SetString(PyExc_TypeError,
+						"read-only special attribute");
+				return -1;
+			}
+		}
 	}
 	if (v == NULL) {
 		int rv = PyDict_DelItem(op->cl_dict, name);
@@ -489,16 +500,45 @@ instance_setattr(inst, name, v)
 	PyObject *name;
 	PyObject *v;
 {
-	PyObject *func, *args, *res;
+	PyObject *func, *args, *res, *tmp;
 	char *sname = PyString_AsString(name);
-	if (sname[0] == '_' && sname[1] == '_'
-	    && (strcmp(sname, "__dict__") == 0 ||
-		strcmp(sname, "__class__") == 0)) {
-	        int n = PyString_Size(name);
+	if (sname[0] == '_' && sname[1] == '_') {
+		int n = PyString_Size(name);
 		if (sname[n-1] == '_' && sname[n-2] == '_') {
-			PyErr_SetString(PyExc_TypeError,
-					"read-only special attribute");
-			return -1;
+			if (strcmp(sname, "__dict__") == 0) {
+				if (PyEval_GetRestricted()) {
+					PyErr_SetString(PyExc_RuntimeError,
+				 "__dict__ not accessible in restricted mode");
+					return -1;
+				}
+				if (v == NULL || !PyDict_Check(v)) {
+				    PyErr_SetString(PyExc_TypeError,
+				       "__dict__ must be set to a dictionary");
+				    return -1;
+				}
+				tmp = inst->in_dict;
+				Py_INCREF(v);
+				inst->in_dict = v;
+				Py_DECREF(tmp);
+				return 0;
+			}
+			if (strcmp(sname, "__class__") == 0) {
+				if (PyEval_GetRestricted()) {
+					PyErr_SetString(PyExc_RuntimeError,
+				"__class__ not accessible in restricted mode");
+					return -1;
+				}
+				if (v == NULL || !PyClass_Check(v)) {
+					PyErr_SetString(PyExc_TypeError,
+					   "__class__ must be set to a class");
+					return -1;
+				}
+				tmp = (PyObject *)(inst->in_class);
+				Py_INCREF(v);
+				inst->in_class = (PyClassObject *)v;
+				Py_DECREF(tmp);
+				return 0;
+			}
 		}
 	}
 	if (v == NULL)
