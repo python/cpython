@@ -18,7 +18,10 @@ class CompilerTest(unittest.TestCase):
             for path in os.listdir(dir):
                 if not path.endswith(".py"):
                     continue
-                f = open(os.path.join(dir, path), "r")
+                fpath = os.path.join(dir, path)
+                if test.test_support.verbose:
+                    print "compiling", fpath
+                f = open(fpath)
                 buf = f.read()
                 f.close()
                 compiler.compile(buf, path, "exec")
