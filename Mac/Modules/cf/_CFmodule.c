@@ -5,12 +5,7 @@
 
 
 
-#ifdef _WIN32
-#include "pywintoolbox.h"
-#else
-#include "macglue.h"
 #include "pymactoolbox.h"
-#endif
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
@@ -2001,7 +1996,7 @@ static PyObject *CFStringRefObj_CFStringGetUnicode(CFStringRefObject *_self, PyO
 	range.length = size;
 	if( data == NULL ) return PyErr_NoMemory();
 	CFStringGetCharacters(_self->ob_itself, range, data);
-	_res = (PyObject *)PyUnicode_FromUnicode(data, size);
+	_res = (PyObject *)PyUnicode_FromUnicode(data, size-1);
 	free(data);
 	return _res;
 
