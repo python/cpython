@@ -1008,6 +1008,10 @@ void initDlg()
 	if (Dlg_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Dlg_Error) != 0)
 		Py_FatalError("can't initialize Dlg.Error");
+	Dialog_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Dialog_Type);
+	if (PyDict_SetItemString(d, "DialogType", (PyObject *)&Dialog_Type) != 0)
+		Py_FatalError("can't initialize DialogType");
 }
 
 /* ========================= End module Dlg ========================= */

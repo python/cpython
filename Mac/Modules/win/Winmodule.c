@@ -1402,6 +1402,10 @@ void initWin()
 	if (Win_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Win_Error) != 0)
 		Py_FatalError("can't initialize Win.Error");
+	Window_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Window_Type);
+	if (PyDict_SetItemString(d, "WindowType", (PyObject *)&Window_Type) != 0)
+		Py_FatalError("can't initialize WindowType");
 }
 
 /* ========================= End module Win ========================= */

@@ -6047,6 +6047,30 @@ void initQt()
 	if (Qt_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Qt_Error) != 0)
 		Py_FatalError("can't initialize Qt.Error");
+	MovieController_Type.ob_type = &PyType_Type;
+	Py_INCREF(&MovieController_Type);
+	if (PyDict_SetItemString(d, "MovieControllerType", (PyObject *)&MovieController_Type) != 0)
+		Py_FatalError("can't initialize MovieControllerType");
+	TimeBase_Type.ob_type = &PyType_Type;
+	Py_INCREF(&TimeBase_Type);
+	if (PyDict_SetItemString(d, "TimeBaseType", (PyObject *)&TimeBase_Type) != 0)
+		Py_FatalError("can't initialize TimeBaseType");
+	UserData_Type.ob_type = &PyType_Type;
+	Py_INCREF(&UserData_Type);
+	if (PyDict_SetItemString(d, "UserDataType", (PyObject *)&UserData_Type) != 0)
+		Py_FatalError("can't initialize UserDataType");
+	Media_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Media_Type);
+	if (PyDict_SetItemString(d, "MediaType", (PyObject *)&Media_Type) != 0)
+		Py_FatalError("can't initialize MediaType");
+	Track_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Track_Type);
+	if (PyDict_SetItemString(d, "TrackType", (PyObject *)&Track_Type) != 0)
+		Py_FatalError("can't initialize TrackType");
+	Movie_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Movie_Type);
+	if (PyDict_SetItemString(d, "MovieType", (PyObject *)&Movie_Type) != 0)
+		Py_FatalError("can't initialize MovieType");
 }
 
 /* ========================= End module Qt ========================== */

@@ -278,7 +278,7 @@ static char Rftype__doc__[] =
 static PyTypeObject Rftype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"Resource fork",			/*tp_name*/
+	"ResourceFork",			/*tp_name*/
 	sizeof(rfobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -716,6 +716,10 @@ MacOS_Init()
 	MacOS_Error = PyMac_GetOSErrException();
 	if (MacOS_Error == NULL || PyDict_SetItemString(d, "Error", MacOS_Error) != 0)
 		Py_FatalError("can't define MacOS.Error");
+	Rftype.ob_type = &PyType_Type;
+	Py_INCREF(&Rftype);
+	if (PyDict_SetItemString(d, "ResourceForkType", (PyObject *)&Rftype) != 0)
+		Py_FatalError("can't define MacOS.ResourceForkType");
 	/*
 	** This is a hack: the following constant added to the id() of a string
 	** object gives you the address of the data. Unfortunately, it is needed for

@@ -797,6 +797,10 @@ void initSnd()
 	if (Snd_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Snd_Error) != 0)
 		Py_FatalError("can't initialize Snd.Error");
+	SndChannel_Type.ob_type = &PyType_Type;
+	Py_INCREF(&SndChannel_Type);
+	if (PyDict_SetItemString(d, "SndChannelType", (PyObject *)&SndChannel_Type) != 0)
+		Py_FatalError("can't initialize SndChannelType");
 }
 
 /* ========================= End module Snd ========================= */

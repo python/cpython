@@ -1387,6 +1387,10 @@ void initRes()
 	if (Res_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Res_Error) != 0)
 		Py_FatalError("can't initialize Res.Error");
+	Resource_Type.ob_type = &PyType_Type;
+	Py_INCREF(&Resource_Type);
+	if (PyDict_SetItemString(d, "ResourceType", (PyObject *)&Resource_Type) != 0)
+		Py_FatalError("can't initialize ResourceType");
 }
 
 /* ========================= End module Res ========================= */
