@@ -74,6 +74,17 @@ class bdist_wininst (Command):
 
         install = self.reinitialize_command('install')
         install.root = self.bdist_dir
+        if os.name != 'nt':
+            # must force install to use the 'nt' scheme
+            install.select_scheme ('nt')
+            # change the backslash to the current pathname separator
+            for key in ('purelib', 'platlib', 'headers', 'scripts',
+                        'data'):
+                attrname = 'install_' + key
+                attr = getattr (install, attrname)
+                if attr:
+                    attr = string.replace (attr, '\\', os.sep)
+                    setattr (install, attrname, attr)
 
         install_lib = self.reinitialize_command('install_lib')
         # we do not want to include pyc or pyo files
@@ -99,14 +110,20 @@ class bdist_wininst (Command):
         archive_basename = os.path.join(self.bdist_dir,
                                         "%s.win32" % fullname)
 
-        # XXX hack! Our archive MUST be relative to sys.prefix
-        # XXX What about .install_data, .install_scripts, ...?
-        # [Perhaps require that all installation dirs be under sys.prefix
-        # on Windows?  this will be acceptable until we start dealing
-        # with Python applications, at which point we should zip up
-        # the application directory -- and again everything can be
-        # under one dir --GPW]
-        root_dir = install.install_lib
+        # Our archive MUST be relative to sys.prefix, which is the
+        # same as install_lib in the 'nt' scheme.
+        root_dir = os.path.normpath (install.install_lib)
+
+        # Sanity check: Make sure everything is included
+        for key in ('purelib', 'platlib', 'headers', 'scripts', 'data'):
+            attrname = 'install_' + key
+            install_x = getattr (install, attrname)
+            # (Use normpath so that we can string.find to look for
+            # subdirectories)
+            install_x = os.path.normpath (install_x)
+            if string.find (install_x, root_dir) != 0:
+                raise DistutilsInternalError \
+                      ("'%s' not included in install_lib" % key)
         arcname = self.make_archive (archive_basename, "zip",
                                      root_dir=root_dir)
         self.create_exe (arcname, fullname)
