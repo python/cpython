@@ -416,40 +416,35 @@ O_close(Oobject *self, PyObject *unused) {
         return Py_None;
 }
 
-
 PyDoc_STRVAR(O_writelines__doc__,
-"writelines(sequence_of_strings): write each string");
+"writelines(sequence_of_strings) -> None.  Write the strings to the file.\n"
+"\n"
+"Note that newlines are not added.  The sequence can be any iterable object\n"
+"producing strings. This is equivalent to calling write() for each string.");
 static PyObject *
 O_writelines(Oobject *self, PyObject *args) {
-        PyObject *tmp = 0;
-	static PyObject *joiner = NULL;
-
-	if (!joiner) {
-		PyObject *empty_string = PyString_FromString("");
-		if (empty_string == NULL)
-			return NULL;
-		joiner = PyObject_GetAttrString(empty_string, "join");
-		Py_DECREF(empty_string);
-		if (joiner == NULL)
-			return NULL;
-	}
-
-        if (PyObject_Size(args) < 0) return NULL;
-
-	args = PyTuple_Pack(1, args);
-	if (args == NULL)
+	PyObject *it, *s;
+	
+	it = PyObject_GetIter(args);
+	if (it == NULL)
 		return NULL;
-	tmp = PyObject_Call(joiner, args, NULL);
-	Py_DECREF(args);
-        UNLESS (tmp) return NULL;
-
-        args = PyTuple_Pack(1, tmp);
-        Py_DECREF(tmp);
-        UNLESS (args) return NULL;
-
-        tmp = O_write(self, args);
-        Py_DECREF(args);
-        return tmp;
+	while ((s = PyIter_Next(it)) != NULL) {
+		int n;
+		char *c;
+		if (PyString_AsStringAndSize(s, &c, &n) == -1) {
+			Py_DECREF(it);
+			Py_DECREF(s);
+			return NULL;
+		}
+		if (O_cwrite((PyObject *)self, c, n) == -1) {
+			Py_DECREF(it);
+			Py_DECREF(s);
+			return NULL;
+		}
+		Py_DECREF(s);
+	}
+	Py_DECREF(it);
+	Py_RETURN_NONE;
 }
 
 static struct PyMethodDef O_methods[] = {
