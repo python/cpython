@@ -2591,6 +2591,8 @@ class TestTimezoneConversions(unittest.TestCase):
     dston = datetimetz(2002, 4, 7, 2)
     dstoff = datetimetz(2002, 10, 27, 2)
 
+    theclass = datetimetz
+
     # Check a time that's inside DST.
     def checkinside(self, dt, tz, utc, dston, dstoff):
         self.assertEqual(dt.dst(), HOUR)
@@ -2728,6 +2730,21 @@ class TestTimezoneConversions(unittest.TestCase):
         expected = self.dston.replace(hour=1)
         got = sixutc.astimezone(Eastern).astimezone(None)
         self.assertEqual(expected, got)
+
+    def test_bogus_dst(self):
+        class ok(tzinfo):
+            def utcoffset(self, dt): return HOUR
+            def dst(self, dt): return HOUR
+
+        now = self.theclass.now().replace(tzinfo=utc_real)
+        # Doesn't blow up.
+        now.astimezone(ok())
+
+        # Does blow up.
+        class notok(ok):
+            def dst(self, dt): return None
+        self.assertRaises(ValueError, now.astimezone, notok())
+
 
 def test_suite():
     allsuites = [unittest.makeSuite(klass, 'test')

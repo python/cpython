@@ -893,20 +893,13 @@ implement all of them.
     return CONSTANT                 # fixed-offset class
     return CONSTANT + self.dst(dt)  # daylight-aware class
 \end{verbatim}
+
+    If \method{utcoffset()} does not return \code{None},
+    \method{dst()} should not return \code{None} either.
+
+
 \end{methoddesc}
 
-\begin{methoddesc}{tzname}{self, dt}
-  Return the timezone name corresponding to the \class{datetime} represented
-  by \var{dt}, as a string.  Nothing about string names is defined by the
-  \module{datetime} module, and there's no requirement that it mean anything
-  in particular.  For example, "GMT", "UTC", "-500", "-5:00", "EDT",
-  "US/Eastern", "America/New York" are all valid replies.  Return
-  \code{None} if a string name isn't known.  Note that this is a method
-  rather than a fixed string primarily because some \class{tzinfo} objects
-  will wish to return different names depending on the specific value
-  of \var{dt} passed, especially if the \class{tzinfo} class is
-  accounting for daylight time.
-\end{methoddesc}
 
 \begin{methoddesc}{dst}{self, dt}
   Return the daylight savings time (DST) adjustment, in minutes east of
@@ -936,6 +929,19 @@ implement all of them.
   The implementation of \method{datetimetz.astimezone()} relies on this,
   but cannot detect violations; it's the programmer's responsibility to
   ensure it.
+
+\begin{methoddesc}{tzname}{self, dt}
+  Return the timezone name corresponding to the \class{datetime} represented
+  by \var{dt}, as a string.  Nothing about string names is defined by the
+  \module{datetime} module, and there's no requirement that it mean anything
+  in particular.  For example, "GMT", "UTC", "-500", "-5:00", "EDT",
+  "US/Eastern", "America/New York" are all valid replies.  Return
+  \code{None} if a string name isn't known.  Note that this is a method
+  rather than a fixed string primarily because some \class{tzinfo} objects
+  will wish to return different names depending on the specific value
+  of \var{dt} passed, especially if the \class{tzinfo} class is
+  accounting for daylight time.
+\end{methoddesc}
 
 \end{methoddesc}
 
@@ -1379,7 +1385,7 @@ Instance methods:
 \begin{verbatim}
 >>> from datetime import *
 >>> class TZ(tzinfo):
-...     def utcoffset(self, dt): return -399
+...     def utcoffset(self, dt): return timedelta(minutes=-399)
 ...
 >>> datetimetz(2002, 12, 25, tzinfo=TZ()).isoformat(' ')
 '2002-12-25 00:00:00-06:39'
