@@ -15,7 +15,7 @@ HTML options:
     --address, -a	Specify an address for page footers.
     --link		Specify the number of levels to include on each page.
     --split, -s		Specify a section level for page splitting, default: %(max_split_depth)s.
-    --iconserver, -i	Specify location of icons (default: ../).
+    --iconserver, -i	Specify location of icons (default: ./).
     --image-type	Specify the image type to use in HTML output;
                         values: gif (default), png.
     --numeric           Don't rename the HTML files; just keep node#.html for
@@ -93,7 +93,7 @@ class Options:
     debugging = 0
     discard_temps = 1
     have_temps = 0
-    icon_server = None
+    icon_server = "."
     image_type = "gif"
     logging = 0
     max_link_depth = 3
