@@ -115,7 +115,7 @@ except ImportError:
 # not sure how many of these need to be gotten rid of
 from urllib import unwrap, unquote, splittype, splithost, \
      addinfourl, splitport, splitgophertype, splitquery, \
-     splitattr, ftpwrapper, noheaders
+     splitattr, ftpwrapper, noheaders, splituser, splitpasswd
 
 # support for FileHandler, proxies via environment variables
 from urllib import localhost, url2pathname, getproxies
@@ -1090,21 +1090,30 @@ class FTPHandler(BaseHandler):
         host = req.get_host()
         if not host:
             raise IOError, ('ftp error', 'no host given')
-        # XXX handle custom username & password
+        host, port = splitport(host)
+        if port is None:
+            port = ftplib.FTP_PORT
+
+        # username/password handling
+        user, host = splituser(host)
+        if user:
+            user, passwd = splitpasswd(user)
+        else:
+            passwd = None
+        host = unquote(host)
+        user = unquote(user or '')
+        passwd = unquote(passwd or '')
+
         try:
             host = socket.gethostbyname(host)
         except socket.error, msg:
             raise URLError(msg)
-        host, port = splitport(host)
-        if port is None:
-            port = ftplib.FTP_PORT
         path, attrs = splitattr(req.get_selector())
         dirs = path.split('/')
         dirs = map(unquote, dirs)
         dirs, file = dirs[:-1], dirs[-1]
         if dirs and not dirs[0]:
             dirs = dirs[1:]
-        user = passwd = '' # XXX
         try:
             fw = self.connect_ftp(user, passwd, host, port, dirs)
             type = file and 'I' or 'D'
