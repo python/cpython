@@ -1,6 +1,8 @@
 Welcome to the "PC" subdirectory of the Python distribution!
 ************************************************************
 
+(NOTE: the project files for MS VC++ 5.x are now in the PCbuild
+directory.  See the file readme.txt there for instructions.)
 
 This "PC" subdirectory contains complete project files to make
 several PC ports of Python, as well as all the PC-specific
@@ -68,7 +70,7 @@ Microsoft Visual C++ Version 4.x (32-bit Windows)
 =================================================
 
 (For historic reasons this uses the filename "vc40"; it has been tested
-most recently with VC 4.2.  See below for VC 5.x.)
+most recently with VC 4.2.  See ../PCbuild for VC 5.x.)
 
 NOTE: VC 4.2 support is eroding, as I no longer have a VC 4.2
 installation.  Some newer files need to be added to the project.
@@ -111,22 +113,6 @@ vclibs41.zip which contains the files tcl75.lib and tk41.lib, and place
 those files in the PC subdirectory.  In order to use _tkinter, the
 Tkinter.py module must be on PYTHONPATH.  It is found in the
 Lib\tkinter subdirectory.
-
-Microsoft Visual C++ Version 5.x (Developer Studio)
-===================================================
-
-For Visual C++ 5.x (Developer Studio) the instructions are somewhat
-different again.  Three project files (*.dsp) and a workspace file
-(pcbuild.dsw) are provided in the subdirectory vc5x.  (These are the
-same three subprojects as discussed for VC++ 4.x.)
-
-To use these, copy the files from vc5x to the toplevel PCbuild
-directory.  Then open the pcbuild.dsw workspace file with Developer
-Studio.  Select the Debug configuration (use Set Active
-Configuration... in the Build menu) and build the python15 and python
-projects (in that order).  If you have Tcl/Tk 8.0 installed you can
-also try building the _tkinter project.  If you plan to use the parser
-module, also build that project.
 
 
 Additional files and subdirectories for 32-bit Windows
