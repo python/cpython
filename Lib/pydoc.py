@@ -311,6 +311,8 @@ class HTMLRepr(Repr):
                       r'<font color="#c040c0">\1</font>',
                       self.escape(testrepr))
 
+    repr_str = repr_string
+
     def repr_instance(self, x, level):
         try:
             return self.escape(cram(stripid(repr(x)), self.maxstring))
@@ -859,6 +861,8 @@ class TextRepr(Repr):
             # needed to make any special characters, so show a raw string.
             return 'r' + testrepr[0] + test + testrepr[0]
         return testrepr
+
+    repr_str = repr_string
 
     def repr_instance(self, x, level):
         try:
