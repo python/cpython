@@ -667,7 +667,11 @@ class Tk(Misc, Wm):
 		try:
 			# Disable event scanning except for Command-Period
 			import MacOS
-			MacOS.EnableAppswitch(0)
+			try:
+				MacOS.SchedParams(1, 0)
+			except AttributeError:
+				# pre-1.5, use old routine
+				MacOS.EnableAppswitch(0)
 		except ImportError:
 			pass
 		else:
