@@ -32,7 +32,29 @@
 /*
  * Error return codes from getaddrinfo()
  */
-#ifndef EAI_ADDRFAMILY
+#ifdef EAI_ADDRFAMILY
+/* If this is defined, there is a conflicting implementation
+   in the C library, which can't be used for some reason.
+   Make sure it won't interfere with this emulation. */
+
+#undef EAI_ADDRFAMILY
+#undef EAI_AGAIN
+#undef EAI_BADFLAGS
+#undef EAI_FAIL
+#undef EAI_FAMILY
+#undef EAI_MEMORY
+#undef EAI_NODATA
+#undef EAI_NONAME
+#undef EAI_SERVICE
+#undef EAI_SOCKTYPE
+#undef EAI_SYSTEM
+#undef EAI_BADHINTS
+#undef EAI_PROTOCOL
+#undef EAI_MAX
+#undef getaddrinfo
+#define getaddrinfo fake_getaddrinfo
+#endif
+
 #define	EAI_ADDRFAMILY	 1	/* address family for hostname not supported */
 #define	EAI_AGAIN	 2	/* temporary failure in name resolution */
 #define	EAI_BADFLAGS	 3	/* invalid value for ai_flags */
@@ -47,12 +69,22 @@
 #define EAI_BADHINTS	12
 #define EAI_PROTOCOL	13
 #define EAI_MAX		14
-#endif
 
 /*
  * Flag values for getaddrinfo()
  */
-#ifndef AI_PASSIVE
+#ifdef AI_PASSIVE
+#undef AI_PASSIVE
+#undef AI_CANONNAME
+#undef AI_NUMERICHOST
+#undef AI_MASK
+#undef AI_ALL
+#undef AI_V4MAPPED_CFG
+#undef AI_ADDRCONFIG
+#undef AI_V4MAPPED
+#undef AI_DEFAULT
+#endif
+
 #define	AI_PASSIVE	0x00000001 /* get address to use bind() */
 #define	AI_CANONNAME	0x00000002 /* fill ai_canonname */
 #define	AI_NUMERICHOST	0x00000004 /* prevent name resolution */
@@ -65,7 +97,6 @@
 #define	AI_V4MAPPED	0x00000800 /* accept IPv4-mapped IPv6 address */
 /* special recommended flags for getipnodebyname */
 #define	AI_DEFAULT	(AI_V4MAPPED_CFG | AI_ADDRCONFIG)
-#endif
 
 #endif /* HAVE_GETADDRINFO */
 
