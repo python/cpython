@@ -16,6 +16,8 @@ ScriptCode = Type("ScriptCode", "h")
 Size = Type("Size", "l")
 Style = Type("Style", "b")
 
+UInt8 = Type("UInt8", "b")
+SInt8 = Type("SInt8", "b")
 UInt16 = Type("UInt16", "h")
 SInt16 = Type("SInt16", "h")
 UInt32 = Type("UInt32", "l")
