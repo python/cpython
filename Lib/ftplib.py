@@ -1,6 +1,8 @@
 # An FTP client class.  Based on RFC 959: File Transfer Protocol
 # (FTP), by J. Postel and J. Reynolds
 
+# Changes and improvements suggested by Steve Majewski
+
 
 # Example:
 #
@@ -70,6 +72,8 @@ class FTP:
 
 	# New initialization method (called by class instantiation)
 	# Initialize host to localhost, port to standard ftp port
+	# Optional arguments are host (for connect()),
+	# and user, passwd, acct (for login())
 	def __init__(self, *args):
 		# Initialize the instance to something mostly harmless
 		self.debugging = 0
@@ -79,7 +83,9 @@ class FTP:
 		self.file = None
 		self.welcome = None
 		if args:
-			apply(self.connect, args)
+			self.connect(args[0])
+			if args[1:]:
+				apply(self.login, args[1:])
 
 	# Old init method (explicitly called by caller)
 	def init(self, *args):
@@ -89,7 +95,7 @@ class FTP:
 	# Connect to host.  Arguments:
 	# - host: hostname to connect to (default previous host)
 	# - port: port to connect to (default previous port)
-	def init(self, *args):
+	def connect(self, *args):
 		if args: self.host = args[0]
 		if args[1:]: self.port = args[1]
 		if args[2:]: raise TypeError, 'too many args'
@@ -97,7 +103,6 @@ class FTP:
 		self.sock.connect(self.host, self.port)
 		self.file = self.sock.makefile('r')
 		self.welcome = self.getresp()
-		return self
 
 	# Get the welcome message from the server
 	# (this is read and squirreled away by init())
@@ -276,8 +281,14 @@ class FTP:
 	# Retrieve data in line mode.
 	# The argument is a RETR or LIST command.
 	# The callback function is called for each line, with trailing
-	# CRLF stripped.  This creates a new port for you
-	def retrlines(self, cmd, callback):
+	# CRLF stripped.  This creates a new port for you.
+	# print_lines is the default callback 
+	def retrlines(self, cmd, args):
+		callback = None
+		if args:
+			callback = args[0]
+			if args[1:]: raise TypeError, 'too many args'
+		if not callback: callback = print_line
 		resp = self.sendcmd('TYPE A')
 		conn = self.transfercmd(cmd)
 		fp = conn.makefile('r')
@@ -328,6 +339,20 @@ class FTP:
 		self.retrlines(cmd, files.append)
 		return files
 
+	# List a directory in long form.  By default list current directory
+	# to stdout.  Optional last argument is callback function;
+	# all non-empty arguments before it are concatenated to the
+	# LIST command.  (This *should* only be used for a pathname.)
+	def dir(self, *args):
+		cmd = 'LIST' 
+		func = None
+		if args[-1:] and type(args[-1]) != type(''):
+			args, func = args[:-1], args[-1]
+		for arg in args:
+			if arg:
+				cmd = cmd + (' ' + arg) 
+		self.retrlines(cmd, func)
+
 	# Rename a file
 	def rename(self, fromname, toname):
 		resp = self.sendcmd('RNFR ' + fromname)
@@ -338,9 +363,13 @@ class FTP:
 	# Change to a directory
 	def cwd(self, dirname):
 		if dirname == '..':
-			cmd = 'CDUP'
-		else:
-			cmd = 'CWD ' + dirname
+			try:
+				self.voidcmd('CDUP')
+				return
+			except error_perm, msg:
+				if msg[:3] != '500':
+					raise error_perm, msg
+		cmd = 'CWD ' + dirname
 		self.voidcmd(cmd)
 
 	# Retrieve the size of a file
@@ -390,6 +419,10 @@ def parse257(resp):
 		dirname = dirname + c
 	return dirname
 
+# Default retrlines callback to print a line
+def print_line(line):
+	print line
+
 
 # Test program.
 # Usage: ftp [-d] host [-l[dir]] [-d[dir]] [file] ...
@@ -409,12 +442,9 @@ def test():
 		ftp = FTP(host)
 		ftp.set_debuglevel(debugging)
 		ftp.login()
-		def writeln(line): print line
 		for file in sys.argv[2:]:
 			if file[:2] == '-l':
-				cmd = 'LIST'
-				if file[2:]: cmd = cmd + ' ' + file[2:]
-				ftp.retrlines(cmd, writeln)
+				ftp.dir(file[2:])
 			elif file[:2] == '-d':
 				cmd = 'CWD'
 				if file[2:]: cmd = cmd + ' ' + file[2:]

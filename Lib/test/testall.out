@@ -79,7 +79,6 @@ float
 getattr
 hex
 int
-lambda
 len
 long
 map
