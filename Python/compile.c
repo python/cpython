@@ -345,6 +345,10 @@ optimize_code(PyObject *code, PyObject* consts)
 	codestr = memcpy(codestr, PyString_AS_STRING(code), codelen);
 	assert(PyTuple_Check(consts));
 
+	/* Avoid situations where jump retargeting could overflow */
+	if (codelen > 65000)
+		goto exitUnchanged;
+
 	for (i=0 ; i<codelen-7 ; i += HAS_ARG(codestr[i]) ? 3 : 1) {
 		opcode = codestr[i];
 		switch (opcode) {
