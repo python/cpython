@@ -11,6 +11,12 @@ be used.
 
 \begin{funcdesc}{open}{filename\optional{, flag\optional{, mode}}}
 Open the database file \var{filename} and return a corresponding object.
+
+If the database file already exists, the \module{whichdb} module is
+used to determine its type and the appropriate module is used; if it
+doesn't exist, the first module listed above that can be imported is
+used.
+
 The optional \var{flag} argument can be
 \code{'r'} to open an existing database for reading only,
 \code{'w'} to open an existing database for reading and writing,
@@ -24,8 +30,10 @@ only when the database has to be created.  It defaults to octal
 \end{funcdesc}
 
 \begin{excdesc}{error}
-An alternate name for the \exception{error} exception defined by the
-underlying database implementation.
+A tuple containing the exceptions that can be raised by each of the
+supported modules, with a unique exception \exception{anydbm.error} as
+the first item --- the latter is used when \exception{anydbm.error} is
+raised.
 \end{excdesc}
 
 The object returned by \function{open()} supports most of the same
