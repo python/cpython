@@ -444,6 +444,11 @@ convertsimple(arg, p_format, p_va, msgbuf)
 }
 
 
+/* Internal API needed by convertsimple1(): */
+extern 
+PyObject *_PyUnicode_AsUTF8String(PyObject *unicode,
+				  const char *errors);
+
 /* Convert a non-tuple argument.  Return NULL if conversion went OK,
    or a string representing the expected type if the conversion failed.
    When failing, an exception may or may not have been raised.
@@ -589,7 +594,7 @@ convertsimple1(arg, p_format, p_va)
 			        if (PyString_Check(arg))
 				    *p = PyString_AS_STRING(arg);
 				else if (PyUnicode_Check(arg)) {
-				    arg = PyUnicode_AsUTF8String(arg);
+				    arg = _PyUnicode_AsUTF8String(arg, NULL);
 				    if (arg == NULL)
 					return "unicode conversion error";
 				    *p = PyString_AS_STRING(arg);
@@ -634,7 +639,7 @@ convertsimple1(arg, p_format, p_va)
 				else if (PyString_Check(arg))
 				  *p = PyString_AsString(arg);
 				else if (PyUnicode_Check(arg)) {
-				  arg = PyUnicode_AsUTF8String(arg);
+				  arg = _PyUnicode_AsUTF8String(arg, NULL);
 				  if (arg == NULL)
 				      return "unicode conversion error";
 				  *p = PyString_AS_STRING(arg);
