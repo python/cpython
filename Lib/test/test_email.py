@@ -6,6 +6,7 @@ import os
 import time
 import unittest
 import base64
+import difflib
 from cStringIO import StringIO
 from types import StringType, ListType
 import warnings
@@ -50,6 +51,14 @@ def openfile(filename):
 
 # Base test class
 class TestEmailBase(unittest.TestCase):
+    def ndiffAssertEqual(self, first, second):
+        """Like failUnlessEqual except use ndiff to produce readable output."""
+        if first <> second:
+            diff = difflib.ndiff(first.splitlines(), second.splitlines())
+            fp = StringIO()
+            print >> fp, NL, NL.join(diff)
+            raise self.failureException, fp.getvalue()
+
     def _msgobj(self, filename):
         fp = openfile(findfile(filename))
         try:
@@ -393,8 +402,116 @@ class TestEncoders(unittest.TestCase):
 
 
 # Test long header wrapping
-class TestLongHeaders(unittest.TestCase):
+class TestLongHeaders(TestEmailBase):
+    def test_split_long_continuation(self):
+        eq = self.ndiffAssertEqual
+        msg = email.message_from_string("""\
+Subject: bug demonstration
+\t12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
+\tmore text
+
+test
+""")
+        sfp = StringIO()
+        g = Generator(sfp)
+        g.flatten(msg)
+        eq(sfp.getvalue(), """\
+Subject: bug demonstration
+\t12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
+\tmore text
+
+test
+""")
+
+    def test_another_long_almost_unsplittable_header(self):
+        eq = self.ndiffAssertEqual
+        hstr = """\
+bug demonstration
+\t12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
+\tmore text"""
+        h = Header(hstr, continuation_ws='\t')
+        eq(h.encode(), """\
+bug demonstration
+\t12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
+\tmore text""")
+        h = Header(hstr)
+        eq(h.encode(), """\
+bug demonstration
+ 12345678911234567892123456789312345678941234567895123456789612345678971234567898112345678911234567892123456789112345678911234567892123456789
+ more text""")
+
+    def test_long_nonstring(self):
+        eq = self.ndiffAssertEqual
+        g = Charset("iso-8859-1")
+        cz = Charset("iso-8859-2")
+        utf8 = Charset("utf-8")
+        g_head = "Die Mieter treten hier ein werden mit einem Foerderband komfortabel den Korridor entlang, an s\xfcdl\xfcndischen Wandgem\xe4lden vorbei, gegen die rotierenden Klingen bef\xf6rdert. "
+        cz_head = "Finan\xe8ni metropole se hroutily pod tlakem jejich d\xf9vtipu.. "
+        utf8_head = u"\u6b63\u78ba\u306b\u8a00\u3046\u3068\u7ffb\u8a33\u306f\u3055\u308c\u3066\u3044\u307e\u305b\u3093\u3002\u4e00\u90e8\u306f\u30c9\u30a4\u30c4\u8a9e\u3067\u3059\u304c\u3001\u3042\u3068\u306f\u3067\u305f\u3089\u3081\u3067\u3059\u3002\u5b9f\u969b\u306b\u306f\u300cWenn ist das Nunstuck git und Slotermeyer? Ja! Beiherhund das Oder die Flipperwaldt gersput.\u300d\u3068\u8a00\u3063\u3066\u3044\u307e\u3059\u3002".encode("utf-8")
+        h = Header(g_head, g)
+        h.append(cz_head, cz)
+        h.append(utf8_head, utf8)
+        msg = Message()
+        msg['Subject'] = h
+        sfp = StringIO()
+        g = Generator(sfp)
+        g.flatten(msg)
+        eq(sfp.getvalue(), '''\
+Subject: =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_eine?=
+ =?iso-8859-1?q?m_Foerderband_komfortabel_den_Korridor_ent?=
+ =?iso-8859-1?q?lang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei?=
+ =?iso-8859-1?q?=2C_gegen_die_rotierenden_Klingen_bef=F6rdert=2E_?=
+ =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutil?=
+ =?iso-8859-2?q?y_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
+ =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv?=
+ =?utf-8?b?44GV44KM44Gm44GE44G+44Gb44KT44CC5LiA?=
+ =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM?=
+ =?utf-8?b?44CB44GC44Go44Gv44Gn44Gf44KJ44KB44Gn?=
+ =?utf-8?b?44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGE=?=
+ =?utf-8?b?cyBOdW5zdHVjayBnaXQgdW5k?=
+ =?utf-8?b?IFNsb3Rlcm1leWVyPyBKYSEgQmVpaGVyaHVuZCBkYXMgT2Rl?=
+ =?utf-8?b?ciBkaWUgRmxpcHBlcndhbGR0?=
+ =?utf-8?b?IGdlcnNwdXQu44CN44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=
+
+''')
+        eq(h.encode(), '''\
+=?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_eine?=
+ =?iso-8859-1?q?m_Foerderband_komfortabel_den_Korridor_ent?=
+ =?iso-8859-1?q?lang=2C_an_s=FCdl=FCndischen_Wandgem=E4lden_vorbei?=
+ =?iso-8859-1?q?=2C_gegen_die_rotierenden_Klingen_bef=F6rdert=2E_?=
+ =?iso-8859-2?q?Finan=E8ni_metropole_se_hroutil?=
+ =?iso-8859-2?q?y_pod_tlakem_jejich_d=F9vtipu=2E=2E_?=
+ =?utf-8?b?5q2j56K644Gr6KiA44GG44Go57+76Kiz44Gv?=
+ =?utf-8?b?44GV44KM44Gm44GE44G+44Gb44KT44CC5LiA?=
+ =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM?=
+ =?utf-8?b?44CB44GC44Go44Gv44Gn44Gf44KJ44KB44Gn?=
+ =?utf-8?b?44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGE=?=
+ =?utf-8?b?cyBOdW5zdHVjayBnaXQgdW5k?=
+ =?utf-8?b?IFNsb3Rlcm1leWVyPyBKYSEgQmVpaGVyaHVuZCBkYXMgT2Rl?=
+ =?utf-8?b?ciBkaWUgRmxpcHBlcndhbGR0?=
+ =?utf-8?b?IGdlcnNwdXQu44CN44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=''')
+
+    def test_long_header_encode(self):
+        eq = self.ndiffAssertEqual
+        h = Header('wasnipoop; giraffes="very-long-necked-animals"; '
+                   'spooge="yummy"; hippos="gargantuan"; marshmallows="gooey"',
+                   header_name='X-Foobar-Spoink-Defrobnit')
+        eq(h.encode(), '''\
+wasnipoop; giraffes="very-long-necked-animals";
+ spooge="yummy"; hippos="gargantuan"; marshmallows="gooey"''')
+
+    def test_long_header_encode_with_tab_continuation(self):
+        eq = self.ndiffAssertEqual
+        h = Header('wasnipoop; giraffes="very-long-necked-animals"; '
+                   'spooge="yummy"; hippos="gargantuan"; marshmallows="gooey"',
+                   header_name='X-Foobar-Spoink-Defrobnit',
+                   continuation_ws='\t')
+        eq(h.encode(), '''\
+wasnipoop; giraffes="very-long-necked-animals";
+\tspooge="yummy"; hippos="gargantuan"; marshmallows="gooey"''')
+
     def test_header_splitter(self):
+        eq = self.ndiffAssertEqual
         msg = MIMEText('')
         # It'd be great if we could use add_header() here, but that doesn't
         # guarantee an order of the parameters.
@@ -404,7 +521,7 @@ class TestLongHeaders(unittest.TestCase):
         sfp = StringIO()
         g = Generator(sfp)
         g.flatten(msg)
-        self.assertEqual(sfp.getvalue(), '''\
+        eq(sfp.getvalue(), '''\
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
@@ -414,17 +531,15 @@ X-Foobar-Spoink-Defrobnit: wasnipoop; giraffes="very-long-necked-animals";
 ''')
 
     def test_no_semis_header_splitter(self):
+        eq = self.ndiffAssertEqual
         msg = Message()
         msg['From'] = 'test@dom.ain'
-        refparts = []
-        for i in range(10):
-            refparts.append('<%d@dom.ain>' % i)
-        msg['References'] = SPACE.join(refparts)
+        msg['References'] = SPACE.join(['<%d@dom.ain>' % i for i in range(10)])
         msg.set_payload('Test')
         sfp = StringIO()
         g = Generator(sfp)
         g.flatten(msg)
-        self.assertEqual(sfp.getvalue(), """\
+        eq(sfp.getvalue(), """\
 From: test@dom.ain
 References: <0@dom.ain> <1@dom.ain> <2@dom.ain> <3@dom.ain> <4@dom.ain>
 \t<5@dom.ain> <6@dom.ain> <7@dom.ain> <8@dom.ain> <9@dom.ain>
@@ -432,29 +547,22 @@ References: <0@dom.ain> <1@dom.ain> <2@dom.ain> <3@dom.ain> <4@dom.ain>
 Test""")
 
     def test_no_split_long_header(self):
-        msg = Message()
-        msg['From'] = 'test@dom.ain'
-        refparts = []
-        msg['References'] = 'x' * 80
-        msg.set_payload('Test')
-        sfp = StringIO()
-        g = Generator(sfp)
-        g.flatten(msg)
-        self.assertEqual(sfp.getvalue(), """\
-From: test@dom.ain
-References: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-Test""")
+        eq = self.ndiffAssertEqual
+        hstr = 'References: ' + 'x' * 80
+        h = Header(hstr, continuation_ws='\t')
+        eq(h.encode(), """\
+References: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx""")
 
     def test_splitting_multiple_long_lines(self):
-        msg = Message()
-        msg['Received'] = """\
+        eq = self.ndiffAssertEqual
+        hstr = """\
 from babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81; for <mailman-admin@babylon.socal-raves.org>; Sat, 2 Feb 2002 17:00:06 -0800 (PST)
 \tfrom babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81; for <mailman-admin@babylon.socal-raves.org>; Sat, 2 Feb 2002 17:00:06 -0800 (PST)
 \tfrom babylon.socal-raves.org (localhost [127.0.0.1]); by babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81; for <mailman-admin@babylon.socal-raves.org>; Sat, 2 Feb 2002 17:00:06 -0800 (PST)
 """
-        self.assertEqual(msg.as_string(), """\
-Received: from babylon.socal-raves.org (localhost [127.0.0.1]);
+        h = Header(hstr, continuation_ws='\t')
+        eq(h.encode(), """\
+from babylon.socal-raves.org (localhost [127.0.0.1]);
 \tby babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
 \tfor <mailman-admin@babylon.socal-raves.org>;
 \tSat, 2 Feb 2002 17:00:06 -0800 (PST)
@@ -465,10 +573,7 @@ Received: from babylon.socal-raves.org (localhost [127.0.0.1]);
 \tfrom babylon.socal-raves.org (localhost [127.0.0.1]);
 \tby babylon.socal-raves.org (Postfix) with ESMTP id B570E51B81;
 \tfor <mailman-admin@babylon.socal-raves.org>;
-\tSat, 2 Feb 2002 17:00:06 -0800 (PST)
-
-
-""")
+\tSat, 2 Feb 2002 17:00:06 -0800 (PST)""")
 
 
 
@@ -993,7 +1098,7 @@ Your message cannot be delivered to the following recipients:
 # regenerate the plain text.  The original text and the transformed text
 # should be identical.  Note: that we ignore the Unix-From since that may
 # contain a changed date.
-class TestIdempotent(unittest.TestCase):
+class TestIdempotent(TestEmailBase):
     def _msgobj(self, filename):
         fp = openfile(filename)
         try:
@@ -1004,7 +1109,7 @@ class TestIdempotent(unittest.TestCase):
         return msg, data
 
     def _idempotent(self, msg, text):
-        eq = self.assertEquals
+        eq = self.ndiffAssertEqual
         s = StringIO()
         g = Generator(s, maxheaderlen=0)
         g.flatten(msg)
@@ -1037,6 +1142,10 @@ class TestIdempotent(unittest.TestCase):
     def test_MIME_digest(self):
         msg, text = self._msgobj('msg_02.txt')
         self._idempotent(msg, text)
+
+##    def test_MIME_digest_with_part_headers(self):
+##        msg, text = self._msgobj('msg_28.txt')
+##        self._idempotent(msg, text)
 
     def test_mixed_with_image(self):
         msg, text = self._msgobj('msg_06.txt')
@@ -1370,6 +1479,20 @@ Here's the message body
         part2 = msg.get_payload(1)
         eq(part2.get_type(), 'application/riscos')
 
+##    def test_multipart_digest_with_extra_mime_headers(self):
+##        eq = self.assertEqual
+##        fp = openfile('msg_28.txt')
+##        p = Parser()
+##        msg = p.parse(fp)
+##        self.failUnless(msg.is_multipart())
+##        eq(len(msg.get_payload()), 2)
+##        part1 = msg.get_payload(0)
+##        eq(part1.get_type(), 'text/plain')
+##        eq(part1.get_payload(), 'message 1')
+##        part2 = msg.get_payload(1)
+##        eq(part2.get_type(), 'text/plain')
+##        eq(part2.get_payload(), 'message 2')
+
 
 
 class TestBase64(unittest.TestCase):
@@ -1571,13 +1694,20 @@ class TestCharset(unittest.TestCase):
 
 
 # Test multilingual MIME headers.
-class TestHeader(unittest.TestCase):
+class TestHeader(TestEmailBase):
     def test_simple(self):
-        eq = self.assertEqual
+        eq = self.ndiffAssertEqual
+        h = Header('Hello World!')
+        eq(h.encode(), 'Hello World!')
+        h.append(' Goodbye World!')
+        eq(h.encode(), 'Hello World! Goodbye World!')
+
+    def test_simple_surprise(self):
+        eq = self.ndiffAssertEqual
         h = Header('Hello World!')
         eq(h.encode(), 'Hello World!')
         h.append('Goodbye World!')
-        eq(h.encode(), 'Hello World! Goodbye World!')
+        eq(h.encode(), 'Hello World!Goodbye World!')
 
     def test_header_needs_no_decoding(self):
         h = 'no decoding needed'
@@ -1621,16 +1751,16 @@ class TestHeader(unittest.TestCase):
             (utf8_head, "utf-8")])
 
     def test_explicit_maxlinelen(self):
-        eq = self.assertEqual
+        eq = self.ndiffAssertEqual
         hstr = 'A very long line that must get split to something other than at the 76th character boundary to test the non-default behavior'
         h = Header(hstr)
         eq(h.encode(), '''\
-A very long line that must get split to something other than at the 76th cha
- racter boundary to test the non-default behavior''')
+A very long line that must get split to something other than at the 76th
+ character boundary to test the non-default behavior''')
         h = Header(hstr, header_name='Subject')
         eq(h.encode(), '''\
 A very long line that must get split to something other than at the
-  76th character boundary to test the non-default behavior''')
+ 76th character boundary to test the non-default behavior''')
         h = Header(hstr, maxlinelen=1024, header_name='Subject')
         eq(h.encode(), hstr)
 
