@@ -1149,6 +1149,51 @@ err:
 }
 
 
+/* A copy of PyUnicode_EncodeRawUnicodeEscape() that also translates
+   backslash and newline characters to \uXXXX escapes. */
+static PyObject *
+modified_EncodeRawUnicodeEscape(const Py_UNICODE *s, int size)
+{
+    PyObject *repr;
+    char *p;
+    char *q;
+
+    static const char *hexdigit = "0123456789ABCDEF";
+
+    repr = PyString_FromStringAndSize(NULL, 6 * size);
+    if (repr == NULL)
+        return NULL;
+    if (size == 0)
+	return repr;
+
+    p = q = PyString_AS_STRING(repr);
+    while (size-- > 0) {
+        Py_UNICODE ch = *s++;
+	/* Map 16-bit characters to '\uxxxx' */
+	if (ch >= 256 || ch == '\\' || ch == '\n') {
+            *p++ = '\\';
+            *p++ = 'u';
+            *p++ = hexdigit[(ch >> 12) & 0xf];
+            *p++ = hexdigit[(ch >> 8) & 0xf];
+            *p++ = hexdigit[(ch >> 4) & 0xf];
+            *p++ = hexdigit[ch & 15];
+        }
+	/* Copy everything else as-is */
+	else
+            *p++ = (char) ch;
+    }
+    *p = '\0';
+    if (_PyString_Resize(&repr, p - q))
+	goto onError;
+
+    return repr;
+
+ onError:
+    Py_DECREF(repr);
+    return NULL;
+}
+
+
 static int
 save_unicode(Picklerobject *self, PyObject *args, int doput) {
     int size, len;
@@ -1161,7 +1206,8 @@ save_unicode(Picklerobject *self, PyObject *args, int doput) {
         char *repr_str;
         static char string = UNICODE;
 
-        UNLESS (repr = PyUnicode_AsRawUnicodeEscapeString(args))
+        UNLESS(repr = modified_EncodeRawUnicodeEscape(
+		PyUnicode_AS_UNICODE(args), PyUnicode_GET_SIZE(args)))
             return -1;
 
         if ((len = PyString_Size(repr)) < 0)
@@ -2745,7 +2791,7 @@ load_unicode(Unpicklerobject *self) {
     char *s;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    if (len < 2) return bad_readline();
+    if (len < 1) return bad_readline();
 
     UNLESS (str = PyUnicode_DecodeRawUnicodeEscape(s, len - 1, NULL))
         goto finally;
