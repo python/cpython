@@ -194,20 +194,20 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 			printf( "load_add_on( %s ) failed", fullpath );
 		}
 
-		switch( the_id ) {
-		case B_ERROR:
-			sprintf( buff, "BeOS: Failed to load %.200s", fullpath );
-			break;
-		default:
-			sprintf( buff, "Unknown error loading %.200s", fullpath );
-			break;
-		}
+		if( the_id == B_ERROR )
+			PyOS_snprintf( buff, sizeof(buff),
+				       "BeOS: Failed to load %.200s",
+				       fullpath );
+		else
+			PyOS_snprintf( buff, sizeof(buff), 
+				       "Unknown error loading %.200s", 
+				       fullpath );
 
 		PyErr_SetString( PyExc_ImportError, buff );
 		return NULL;
 	}
 
-	sprintf(funcname, "init%.200s", shortname);
+	PyOs_snprintf(funcname, sizeof(funcname), "init%.200s", shortname);
 	if( Py_VerboseFlag ) {
 		printf( "get_image_symbol( %s )\n", funcname );
 	}
@@ -224,16 +224,19 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 
 		switch( retval ) {
 		case B_BAD_IMAGE_ID:
-			sprintf( buff, "can't load init function for dynamic module: "
-			               "Invalid image ID for %.180s", fullpath );
+			PyOS_snprintf( buff, sizeof(buff),
+			       "can't load init function for dynamic module: "
+		               "Invalid image ID for %.180s", fullpath );
 			break;
 		case B_BAD_INDEX:
-			sprintf( buff, "can't load init function for dynamic module: "
-			               "Bad index for %.180s", funcname );
+			PyOS_snprintf( buff, sizeof(buff),
+			       "can't load init function for dynamic module: "
+		               "Bad index for %.180s", funcname );
 			break;
 		default:
-			sprintf( buff, "can't load init function for dynamic module: "
-			               "Unknown error looking up %.180s", funcname );
+			PyOS_snprintf( buff, sizeof(buf),
+			       "can't load init function for dynamic module: "
+		               "Unknown error looking up %.180s", funcname );
 			break;
 		}
 
