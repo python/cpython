@@ -105,7 +105,7 @@ def strftest(now):
 	except ValueError, result:
 	    if verbose:
 		print "Error for nonstandard '%s' format (%s): %s" % \
-		      (e[0], e[2], str(error))
+		      (e[0], e[2], str(result))
 	    continue
 	if result == e[1]:
 	    if verbose:
