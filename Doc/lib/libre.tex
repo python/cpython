@@ -350,16 +350,23 @@ expression will be used several times in a single program.
   Split \var{string} by the occurrences of \var{pattern}.  If
   capturing parentheses are used in pattern, then occurrences of
   patterns or subpatterns are also returned.
+  If \var{maxsplit} is nonzero, at most \var{maxsplit} splits
+  occur, and the remainder of the string is returned as the final
+  element of the list.  (Incompatibility note: in the original Python
+  1.5 release, \var{maxsplit} was ignored.  This has been fixed in
+  later releases.)
 %
 \bcode\begin{verbatim}
 >>> re.split('[\W]+', 'Words, words, words.')
 ['Words', 'words', 'words', '']
 >>> re.split('([\W]+)', 'Words, words, words.')
 ['Words', ', ', 'words', ', ', 'words', '.', '']
+>>> re.split('[\W]+', 'Words, words, words.', 1)
+['Words', 'words, words.']
 \end{verbatim}\ecode
 %
   This function combines and extends the functionality of
-  the old \code{regex.split()} and \code{regex.splitx()}.
+  the old \code{regsub.split()} and \code{regsub.splitx()}.
 \end{funcdesc}
 
 \begin{funcdesc}{sub}{pattern\, repl\, string\optional{, count=0}}
@@ -499,8 +506,10 @@ After performing this match, \code{m.group(1)} is \code{'3'}, as is \code{m.grou
 \begin{funcdesc}{groups}{}
 Return a tuple containing all the subgroups of the match, from 1 up to
 however many groups are in the pattern.  Groups that did not
-participate in the match have values of \code{None}.  If the tuple
-would only be one element long, a string will be returned instead.  
+participate in the match have values of \code{None}.  (Incompatibility 
+note: in the original Python 1.5 release, if the tuple was one element
+long, a string would be returned instead.  In later versions, a
+singleton tuple is returned in such cases.)
 \end{funcdesc}
 
 \begin{funcdesc}{start}{group}
