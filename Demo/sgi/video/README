@@ -4,6 +4,11 @@ CMIF video tools
 This directory contains Python and C programs to manipulate files
 containing digitized video in the "CMIF video format".
 
+An introduction to using the basic tools is in the file "video.doc".
+
+A description of the video file format is in the file "cmif-film.ms"
+(troff/nroff -ms input).
+
 
 History
 -------
