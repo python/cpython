@@ -58,6 +58,13 @@ class RobotFileParser:
             _debug("parse lines")
             self.parse(lines)
 
+    def _add_entry(self, entry):
+        if "*" in entry.useragents:
+            # the default entry is considered last
+            self.default_entry = entry
+        else:
+            self.entries.append(entry)
+
     def parse(self, lines):
         """parse the input lines from a robot.txt file.
            We allow that a user-agent: line is not preceded by
@@ -76,11 +83,7 @@ class RobotFileParser:
                     entry = Entry()
                     state = 0
                 elif state==2:
-                    if "*" in entry.useragents:
-                        # the default entry is considered last
-                        self.default_entry = entry
-                    else:
-                        self.entries.append(entry)
+                    self._add_entry(entry)
                     entry = Entry()
                     state = 0
             # remove optional comment and strip line
@@ -99,7 +102,7 @@ class RobotFileParser:
                         _debug("line %d: warning: you should insert a blank"
                                " line before any user-agent"
                                " directive" % linenumber)
-                        self.entries.append(entry)
+                        self._add_entry(entry)
                         entry = Entry()
                     entry.useragents.append(line[1])
                     state = 1
