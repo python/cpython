@@ -39,6 +39,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "getapplbycreator.h"
 
+/*
+** The next define uses PBGetCatInfoSync for GetFInfo, allowing you
+** to get FInfo for folders. This works on OSX, but it may result
+** in problems on OS9, hence the define (for the time being).
+*/
+#define USE_CATINFO_FOR_FINFO
+
 #ifndef TARGET_API_MAC_OSX
 #include "pythonresources.h"
 extern PyMac_PrefRecord PyMac_options;
@@ -592,18 +599,33 @@ mfss_GetFInfo(mfssobject *self, PyObject *args)
 {
 	OSErr err;
 	mfsiobject *fip;
-	
-	
+	CInfoPBRec pb;
+	FSSpec*	fss = &self->fsspec;
+
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if ( (fip=newmfsiobject()) == NULL )
 		return NULL;
+#ifdef USE_CATINFO_FOR_FINFO
+	pb.dirInfo.ioNamePtr = fss->name;
+	pb.dirInfo.ioFDirIndex = 0;
+	pb.dirInfo.ioVRefNum = fss->vRefNum;
+	pb.dirInfo.ioDrDirID = fss->parID;
+	err = PBGetCatInfoSync(&pb);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		Py_DECREF(fip);
+		return NULL;
+	}
+	memcpy(&fip->finfo, &pb.hFileInfo.ioFlFndrInfo, sizeof(FileInfo));
+#else
 	err = FSpGetFInfo(&self->fsspec, &fip->finfo);
 	if ( err ) {
 		PyErr_Mac(ErrorObject, err);
 		Py_DECREF(fip);
 		return NULL;
 	}
+#endif
 	return (PyObject *)fip;
 }
 
