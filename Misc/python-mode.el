@@ -715,7 +715,7 @@ package.  Note that the latest X/Emacs releases contain this package.")
    "^[ \t]*"				; newline and maybe whitespace
    "\\(class[ \t]+[a-zA-Z0-9_]+\\)"	; class name
 					; possibly multiple superclasses
-   "\\([ \t]*\\((\\([a-zA-Z0-9_, \t\n]\\)*)\\)?\\)"
+   "\\([ \t]*\\((\\([a-zA-Z0-9_,. \t\n]\\)*)\\)?\\)"
    "[ \t]*:"				; and the final :
    "\\)"				; >>classes<<
    )
