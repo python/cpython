@@ -11,7 +11,8 @@ print 'RGBimg test suite:'
 def findfile(file):
 	if os.path.isabs(file): return file
 	import sys
-	for dn in sys.path:
+	print "__file__ =", __file__
+	for dn in [os.path.dirname(__file__)] + sys.path:
 		fn = os.path.join(dn, file)
 		if os.path.exists(fn): return fn
 	return file
