@@ -1286,9 +1286,8 @@ This example, as usual, demonstrates some new Python features:
 
 \item
 The \keyword{return} statement returns with a value from a function.
-\keyword{return} without an expression argument is used to return from 
-the middle of a procedure (falling off the end also returns from a
-procedure), in which case the \code{None} value is returned.
+\keyword{return} without an expression argument returns \code{None}.
+Falling off the end of a procedure also returns \code{None}.
 
 \item
 The statement \code{result.append(b)} calls a \emph{method} of the list
