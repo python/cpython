@@ -1958,7 +1958,7 @@ int PyUnicode_EncodeDecimal(Py_UNICODE *s,
 	    *output++ = '0' + decimal;
 	    continue;
 	}
-	if (0 < ch < 256) {
+	if (0 < ch && ch < 256) {
 	    *output++ = (char) ch;
 	    continue;
 	}
