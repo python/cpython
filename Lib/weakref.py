@@ -67,12 +67,12 @@ class WeakDictionary(UserDict.UserDict):
                 return o
 
     def items(self):
-        L = self.data.items()
-        for i in range(len(L)):
+        L = []
+        for key, ref in self.data.items():
             key, ref = L[i]
             o = ref()
             if o is not None:
-                L[i] = key, o
+                L.append((key, o))
         return L
 
     def popitem(self):
