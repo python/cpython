@@ -32,13 +32,14 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Compile an expression node to intermediate code */
 
 /* XXX TO DO:
-   XXX Compute maximum needed stack sizes while compiling;
-   XXX   then frame object can be one malloc and no stack checks are needed
-   XXX add __doc__ attribute == co_doc to code object attributes
-   XXX don't execute doc string
+   XXX add __doc__ attribute == co_doc to code object attributes?
+   XXX   (it's currently the first item of the co_const tuple)
    XXX Generate simple jump for break/return outside 'try...finally'
+   XXX Allow 'continue' inside try-finally
    XXX get rid of SET_LINENO instructions, use JAR's table trick
    XXX   (need an option to put them back in, for debugger!)
+   XXX New 1-byte opcode for loading None
+   XXX New opcode for loading the initial index for a for loop
    XXX other JAR tricks?
 */
 
@@ -67,6 +68,7 @@ PERFORMANCE OF THIS SOFTWARE.
 static struct memberlist code_memberlist[] = {
 	{"co_argcount",	T_INT,		OFF(co_argcount),	READONLY},
 	{"co_nlocals",	T_INT,		OFF(co_nlocals),	READONLY},
+	{"co_stacksize",T_INT,		OFF(co_stacksize),	READONLY},
 	{"co_flags",	T_INT,		OFF(co_flags),		READONLY},
 	{"co_code",	T_OBJECT,	OFF(co_code),		READONLY},
 	{"co_consts",	T_OBJECT,	OFF(co_consts),		READONLY},
@@ -177,10 +179,11 @@ typeobject Codetype = {
 };
 
 codeobject *
-newcodeobject(argcount, nlocals, flags,
+newcodeobject(argcount, nlocals, stacksize, flags,
 	      code, consts, names, varnames, filename, name)
 	int argcount;
 	int nlocals;
+	int stacksize;
 	int flags;
 	object *code;
 	object *consts;
@@ -221,6 +224,7 @@ newcodeobject(argcount, nlocals, flags,
 	if (co != NULL) {
 		co->co_argcount = argcount;
 		co->co_nlocals = nlocals;
+		co->co_stacksize = stacksize;
 		co->co_flags = flags;
 		INCREF(code);
 		co->co_code = (stringobject *)code;
@@ -241,8 +245,6 @@ newcodeobject(argcount, nlocals, flags,
 
 /* Data structure used internally */
 
-#define MAXBLOCKS 20 /* Max static block nesting within a function */
-
 struct compiling {
 	object *c_code;		/* string */
 	object *c_consts;	/* list of objects */
@@ -259,11 +261,13 @@ struct compiling {
 	int c_interactive;	/* generating code for interactive command */
 	int c_loops;		/* counts nested loops */
 	int c_begin;		/* begin of current loop, for 'continue' */
-	int c_block[MAXBLOCKS];	/* stack of block types */
+	int c_block[CO_MAXBLOCKS]; /* stack of block types */
 	int c_nblocks;		/* current block stack level */
 	char *c_filename;	/* filename of current node */
 	char *c_name;		/* name of object (e.g. function) */
 	int c_lineno;		/* Current line number */
+	int c_stacklevel;	/* Current stack level */
+	int c_maxstacklevel;	/* Maximum stack level */
 #ifdef PRIVATE_NAME_MANGLING
 	char *c_private;	/* for private name mangling */
 #endif
@@ -307,7 +311,7 @@ block_push(c, type)
 	struct compiling *c;
 	int type;
 {
-	if (c->c_nblocks >= MAXBLOCKS) {
+	if (c->c_nblocks >= CO_MAXBLOCKS) {
 		com_error(c, SystemError, "too many statically nested blocks");
 	}
 	else {
@@ -332,6 +336,8 @@ block_pop(c, type)
 
 static int com_init PROTO((struct compiling *, char *));
 static void com_free PROTO((struct compiling *));
+static void com_push PROTO((struct compiling *, int));
+static void com_pop PROTO((struct compiling *, int));
 static void com_done PROTO((struct compiling *));
 static void com_node PROTO((struct compiling *, struct _node *));
 static void com_factor PROTO((struct compiling *, struct _node *));
@@ -380,6 +386,8 @@ com_init(c, filename)
 	c->c_filename = filename;
 	c->c_name = "?";
 	c->c_lineno = 0;
+	c->c_stacklevel = 0;
+	c->c_maxstacklevel = 0;
 	return 1;
 	
   fail_000:
@@ -406,6 +414,32 @@ com_free(c)
 	XDECREF(c->c_globals);
 	XDECREF(c->c_locals);
 	XDECREF(c->c_varnames);
+}
+
+static void
+com_push(c, n)
+	struct compiling *c;
+	int n;
+{
+	c->c_stacklevel += n;
+	if (c->c_stacklevel > c->c_maxstacklevel)
+		c->c_maxstacklevel = c->c_stacklevel;
+}
+
+static void
+com_pop(c, n)
+	struct compiling *c;
+	int n;
+{
+	if (c->c_stacklevel < n) {
+		fprintf(stderr,
+			"%s:%d: underflow! nexti=%d, level=%d, n=%d\n",
+			c->c_filename, c->c_lineno,
+			c->c_nexti, c->c_stacklevel, n);
+		c->c_stacklevel = 0;
+	}
+	else
+		c->c_stacklevel -= n;
 }
 
 static void
@@ -804,6 +838,7 @@ com_list_constructor(c, n)
 	for (i = 0; i < NCH(n); i += 2)
 		com_node(c, CHILD(n, i));
 	com_addoparg(c, BUILD_LIST, len);
+	com_pop(c, len-1);
 }
 
 static void
@@ -817,10 +852,12 @@ com_dictmaker(c, n)
 		/* We must arrange things just right for STORE_SUBSCR.
 		   It wants the stack to look like (value) (dict) (key) */
 		com_addbyte(c, DUP_TOP);
+		com_push(c, 1);
 		com_node(c, CHILD(n, i+2)); /* value */
 		com_addbyte(c, ROT_TWO);
 		com_node(c, CHILD(n, i)); /* key */
 		com_addbyte(c, STORE_SUBSCR);
+		com_pop(c, 3);
 	}
 }
 
@@ -836,19 +873,24 @@ com_atom(c, n)
 	ch = CHILD(n, 0);
 	switch (TYPE(ch)) {
 	case LPAR:
-		if (TYPE(CHILD(n, 1)) == RPAR)
+		if (TYPE(CHILD(n, 1)) == RPAR) {
 			com_addoparg(c, BUILD_TUPLE, 0);
+			com_push(c, 1);
+		}
 		else
 			com_node(c, CHILD(n, 1));
 		break;
 	case LSQB:
-		if (TYPE(CHILD(n, 1)) == RSQB)
+		if (TYPE(CHILD(n, 1)) == RSQB) {
 			com_addoparg(c, BUILD_LIST, 0);
+			com_push(c, 1);
+		}
 		else
 			com_list_constructor(c, CHILD(n, 1));
 		break;
 	case LBRACE: /* '{' [dictmaker] '}' */
 		com_addoparg(c, BUILD_MAP, 0);
+		com_push(c, 1);
 		if (TYPE(CHILD(n, 1)) != RBRACE)
 			com_dictmaker(c, CHILD(n, 1));
 		break;
@@ -865,6 +907,7 @@ com_atom(c, n)
 			DECREF(v);
 		}
 		com_addoparg(c, LOAD_CONST, i);
+		com_push(c, 1);
 		break;
 	case STRING:
 		v = parsestrplus(n);
@@ -877,12 +920,14 @@ com_atom(c, n)
 			DECREF(v);
 		}
 		com_addoparg(c, LOAD_CONST, i);
+		com_push(c, 1);
 		break;
 	case NAME:
 		com_addopname(c, LOAD_NAME, ch);
+		com_push(c, 1);
 		break;
 	default:
-		fprintf(stderr, "node type %d\n", TYPE(ch));
+		/* XXX fprintf(stderr, "node type %d\n", TYPE(ch)); */
 		com_error(c, SystemError, "com_atom: unexpected node type");
 	}
 }
@@ -905,11 +950,13 @@ com_slice(c, n, op)
 			com_node(c, CHILD(n, 1));
 			com_addbyte(c, op+2);
 		}
+		com_pop(c, 1);
 	}
 	else {
 		com_node(c, CHILD(n, 0));
 		com_node(c, CHILD(n, 2));
 		com_addbyte(c, op+3);
+		com_pop(c, 2);
 	}
 }
 
@@ -920,7 +967,7 @@ com_argument(c, n, pkeywords)
 	object **pkeywords;
 {
 	node *m;
-	REQ(n, argument); /* [test '='] test; really [ keyword '='] keyword */
+	REQ(n, argument); /* [test '='] test; really [keyword '='] test */
 	if (NCH(n) == 1) {
 		if (*pkeywords != NULL) {
 			com_error(c, SyntaxError,
@@ -952,6 +999,7 @@ com_argument(c, n, pkeywords)
 				if (dict2insert(*pkeywords, v, v) != 0)
 					c->c_errors++;
 			com_addoparg(c, LOAD_CONST, com_addconst(c, v));
+			com_push(c, 1);
 			DECREF(v);
 		}
 	}
@@ -984,6 +1032,7 @@ com_call_function(c, n)
 			com_error(c, SyntaxError, "more than 255 arguments");
 		}
 		com_addoparg(c, CALL_FUNCTION, na | (nk << 8));
+		com_pop(c, na + 2*nk);
 	}
 }
 
@@ -1007,6 +1056,7 @@ com_sliceobj(c, n)
 	/* first argument */
 	if (TYPE(CHILD(n,i)) == COLON) {
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_push(c, 1);
 		i++;
 	}
 	else {
@@ -1020,7 +1070,10 @@ com_sliceobj(c, n)
 		com_node(c, CHILD(n,i));
 		i++;
 	}
-	else com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+	else {
+		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_push(c, 1);
+	}
 	/* remaining arguments */
 	for (; i < NCH(n); i++) {
 		ns++;
@@ -1029,11 +1082,13 @@ com_sliceobj(c, n)
 		if (NCH(ch) == 1) {
 			/* right argument of ':' missing */
 			com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+			com_push(c, 1);
 		}
 		else
 			com_node(c, CHILD(ch,1));
 	}
 	com_addoparg(c, BUILD_SLICE, ns);
+	com_pop(c, 1 + (ns == 3));
 }
 
 static void
@@ -1045,8 +1100,10 @@ com_subscript(c, n)
 	REQ(n, subscript);
 	ch = CHILD(n,0);
 	/* check for rubber index */
-	if (TYPE(ch) == DOT && TYPE(CHILD(n,1)) == DOT)
+	if (TYPE(ch) == DOT && TYPE(CHILD(n,1)) == DOT) {
 		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_Ellipsis));
+		com_push(c, 1);
+	}
 	else {
 		/* check for slice */
 		if ((TYPE(ch) == COLON || NCH(n) > 1))
@@ -1070,15 +1127,20 @@ com_subscriptlist(c, n, assigning)
 	if (NCH(n) == 1) {
 		node *sub = CHILD(n, 0); /* subscript */
 		/* Make it is a simple slice.
-           should have exactly one colon. */
+		   Should have exactly one colon. */
         if ((TYPE(CHILD(sub, 0)) == COLON
              || (NCH(sub) > 1 && TYPE(CHILD(sub, 1)) == COLON))
-            && (TYPE(CHILD(sub,NCH(sub)-1)) != sliceop)) {
+            && (TYPE(CHILD(sub,NCH(sub)-1)) != sliceop))
+	{
 			if (assigning == OP_APPLY)
 				op = SLICE;
 			else
 				op = ((assigning == OP_ASSIGN) ? STORE_SLICE : DELETE_SLICE);
 			com_slice(c, sub, op);
+			if (op == STORE_SLICE)
+				com_pop(c, 2);
+			else if (op == DELETE_SLICE)
+				com_pop(c, 1);
 			return;
 		}
 	}
@@ -1086,13 +1148,25 @@ com_subscriptlist(c, n, assigning)
 	for (i = 0; i < NCH(n); i += 2)
 		com_subscript(c, CHILD(n, i));
 	/* Put multiple subscripts into a tuple */
-	if (NCH(n) > 1)
-		com_addoparg(c, BUILD_TUPLE, (NCH(n)+1) / 2);
-	if (assigning == OP_APPLY)
+	if (NCH(n) > 1) {
+		i = (NCH(n)+1) / 2;
+		com_addoparg(c, BUILD_TUPLE, i);
+		com_pop(c, i-1);
+	}
+	if (assigning == OP_APPLY) {
 		op = BINARY_SUBSCR;
-	else
-		op = ((assigning == OP_ASSIGN) ? STORE_SUBSCR : DELETE_SUBSCR);
+		i = 1;
+	}
+	else if (assigning == OP_ASSIGN) {
+		op = STORE_SUBSCR;
+		i = 3;
+	}
+	else {
+		op = DELETE_SUBSCR;
+		i = 2;
+	}
 	com_addbyte(c, op);
+	com_pop(c, i);
 }
 
 static void
@@ -1129,6 +1203,7 @@ com_power(c, n)
 		if (TYPE(CHILD(n, i)) == DOUBLESTAR) {
 			com_factor(c, CHILD(n, i+1));
 			com_addbyte(c, BINARY_POWER);
+			com_pop(c, 1);
 			break;
 		}
 		else
@@ -1186,6 +1261,7 @@ com_term(c, n)
 			op = 255;
 		}
 		com_addbyte(c, op);
+		com_pop(c, 1);
 	}
 }
 
@@ -1213,6 +1289,7 @@ com_arith_expr(c, n)
 			op = 255;
 		}
 		com_addbyte(c, op);
+		com_pop(c, 1);
 	}
 }
 
@@ -1240,6 +1317,7 @@ com_shift_expr(c, n)
 			op = 255;
 		}
 		com_addbyte(c, op);
+		com_pop(c, 1);
 	}
 }
 
@@ -1263,6 +1341,7 @@ com_and_expr(c, n)
 			op = 255;
 		}
 		com_addbyte(c, op);
+		com_pop(c, 1);
 	}
 }
 
@@ -1286,6 +1365,7 @@ com_xor_expr(c, n)
 			op = 255;
 		}
 		com_addbyte(c, op);
+		com_pop(c, 1);
 	}
 }
 
@@ -1309,6 +1389,7 @@ com_expr(c, n)
 			op = 255;
 		}
 		com_addbyte(c, op);
+		com_pop(c, 1);
 	}
 }
 
@@ -1387,7 +1468,7 @@ com_comparison(c, n)
 	   L1:		b, 0		ROT_TWO
 	   		0, b		POP_TOP
 	   		0
-	   L2:
+	   L2:		0-or-1
 	****************************************************************/
 	
 	anchor = 0;
@@ -1396,6 +1477,7 @@ com_comparison(c, n)
 		com_expr(c, CHILD(n, i));
 		if (i+2 < NCH(n)) {
 			com_addbyte(c, DUP_TOP);
+			com_push(c, 1);
 			com_addbyte(c, ROT_THREE);
 		}
 		op = cmp_type(CHILD(n, i-1));
@@ -1404,9 +1486,11 @@ com_comparison(c, n)
 				  "com_comparison: unknown comparison op");
 		}
 		com_addoparg(c, COMPARE_OP, op);
+		com_pop(c, 1);
 		if (i+2 < NCH(n)) {
 			com_addfwref(c, JUMP_IF_FALSE, &anchor);
 			com_addbyte(c, POP_TOP);
+			com_pop(c, 1);
 		}
 	}
 	
@@ -1451,6 +1535,7 @@ com_and_test(c, n)
 			break;
 		com_addfwref(c, JUMP_IF_FALSE, &anchor);
 		com_addbyte(c, POP_TOP);
+		com_pop(c, 1);
 	}
 	if (anchor)
 		com_backpatch(c, anchor);
@@ -1461,7 +1546,7 @@ com_test(c, n)
 	struct compiling *c;
 	node *n;
 {
-	REQ(n, test); /* and_test ('and' and_test)* | lambdef */
+	REQ(n, test); /* and_test ('or' and_test)* | lambdef */
 	if (NCH(n) == 1 && TYPE(CHILD(n, 0)) == lambdef) {
 		object *v;
 		int i;
@@ -1476,7 +1561,9 @@ com_test(c, n)
 			DECREF(v);
 		}
 		com_addoparg(c, LOAD_CONST, i);
+		com_push(c, 1);
 		com_addoparg(c, MAKE_FUNCTION, ndefs);
+		com_pop(c, ndefs);
 	}
 	else {
 		int anchor = 0;
@@ -1487,6 +1574,7 @@ com_test(c, n)
 				break;
 			com_addfwref(c, JUMP_IF_TRUE, &anchor);
 			com_addbyte(c, POP_TOP);
+			com_pop(c, 1);
 		}
 		if (anchor)
 			com_backpatch(c, anchor);
@@ -1510,6 +1598,7 @@ com_list(c, n, toplevel)
 		for (i = 0; i < NCH(n); i += 2)
 			com_node(c, CHILD(n, i));
 		com_addoparg(c, BUILD_TUPLE, len);
+		com_pop(c, len-1);
 	}
 }
 
@@ -1526,6 +1615,7 @@ com_assign_attr(c, n, assigning)
 	int assigning;
 {
 	com_addopname(c, assigning ? STORE_ATTR : DELETE_ATTR, n);
+	com_pop(c, assigning ? 2 : 1);
 }
 
 static void
@@ -1559,8 +1649,11 @@ com_assign_tuple(c, n, assigning)
 	int i;
 	if (TYPE(n) != testlist)
 		REQ(n, exprlist);
-	if (assigning)
-		com_addoparg(c, UNPACK_TUPLE, (NCH(n)+1)/2);
+	if (assigning) {
+		i = (NCH(n)+1)/2;
+		com_addoparg(c, UNPACK_TUPLE, i);
+		com_push(c, i-1);
+	}
 	for (i = 0; i < NCH(n); i += 2)
 		com_assign(c, CHILD(n, i), assigning);
 }
@@ -1572,8 +1665,11 @@ com_assign_list(c, n, assigning)
 	int assigning;
 {
 	int i;
-	if (assigning)
-		com_addoparg(c, UNPACK_LIST, (NCH(n)+1)/2);
+	if (assigning) {
+		i = (NCH(n)+1)/2;
+		com_addoparg(c, UNPACK_LIST, i);
+		com_push(c, i-1);
+	}
 	for (i = 0; i < NCH(n); i += 2)
 		com_assign(c, CHILD(n, i), assigning);
 }
@@ -1586,6 +1682,8 @@ com_assign_name(c, n, assigning)
 {
 	REQ(n, NAME);
 	com_addopname(c, assigning ? STORE_NAME : DELETE_NAME, n);
+	if (assigning)
+		com_pop(c, 1);
 }
 
 static void
@@ -1686,13 +1784,14 @@ com_assign(c, n, assigning)
 			return;
 		
 		default:
-			fprintf(stderr, "node type %d\n", TYPE(n));
+			/* XXX fprintf(stderr, "node type %d\n", TYPE(n)); */
 			com_error(c, SystemError, "com_assign: bad node");
 			return;
 		
 		}
 	}
 }
+/* Forward */ static node *get_rawdocstring PROTO((node *));
 
 static void
 com_expr_stmt(c, n)
@@ -1700,18 +1799,24 @@ com_expr_stmt(c, n)
 	node *n;
 {
 	REQ(n, expr_stmt); /* testlist ('=' testlist)* */
+	/* Forget it if we have just a doc string here */
+	if (NCH(n) == 1 && get_rawdocstring(n) != NULL)
+		return;
 	com_node(c, CHILD(n, NCH(n)-1));
 	if (NCH(n) == 1) {
 		if (c->c_interactive)
 			com_addbyte(c, PRINT_EXPR);
 		else
 			com_addbyte(c, POP_TOP);
+		com_pop(c, 1);
 	}
 	else {
 		int i;
 		for (i = 0; i < NCH(n)-2; i+=2) {
-			if (i+2 < NCH(n)-2)
+			if (i+2 < NCH(n)-2) {
 				com_addbyte(c, DUP_TOP);
+				com_push(c, 1);
+			}
 			com_assign(c, CHILD(n, i), OP_ASSIGN);
 		}
 	}
@@ -1727,6 +1832,7 @@ com_print_stmt(c, n)
 	for (i = 1; i < NCH(n); i += 2) {
 		com_node(c, CHILD(n, i));
 		com_addbyte(c, PRINT_ITEM);
+		com_pop(c, 1);
 	}
 	if (TYPE(CHILD(n, NCH(n)-1)) != COMMA)
 		com_addbyte(c, PRINT_NEWLINE);
@@ -1742,11 +1848,14 @@ com_return_stmt(c, n)
 	if (!c->c_infunction) {
 		com_error(c, SyntaxError, "'return' outside function");
 	}
-	if (NCH(n) < 2)
+	if (NCH(n) < 2) {
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_push(c, 1);
+	}
 	else
 		com_node(c, CHILD(n, 1));
 	com_addbyte(c, RETURN_VALUE);
+	com_pop(c, 1);
 }
 
 static void
@@ -1754,6 +1863,7 @@ com_raise_stmt(c, n)
 	struct compiling *c;
 	node *n;
 {
+	int i;
 	REQ(n, raise_stmt); /* 'raise' test [',' test [',' test]] */
 	com_node(c, CHILD(n, 1));
 	if (NCH(n) > 3) {
@@ -1761,7 +1871,9 @@ com_raise_stmt(c, n)
 		if (NCH(n) > 5)
 			com_node(c, CHILD(n, 5));
 	}
-	com_addoparg(c, RAISE_VARARGS, NCH(n)/2);
+	i = NCH(n)/2;
+	com_addoparg(c, RAISE_VARARGS, i);
+	com_pop(c, i);
 }
 
 static void
@@ -1777,16 +1889,20 @@ com_import_stmt(c, n)
 		/* 'from' dotted_name 'import' ... */
 		REQ(CHILD(n, 1), dotted_name);
 		com_addopname(c, IMPORT_NAME, CHILD(n, 1));
+		com_push(c, 1);
 		for (i = 3; i < NCH(n); i += 2)
 			com_addopname(c, IMPORT_FROM, CHILD(n, i));
 		com_addbyte(c, POP_TOP);
+		com_pop(c, 1);
 	}
 	else {
 		/* 'import' ... */
 		for (i = 1; i < NCH(n); i += 2) {
 			REQ(CHILD(n, i), dotted_name);
 			com_addopname(c, IMPORT_NAME, CHILD(n, i));
+			com_push(c, 1);
 			com_addopname(c, STORE_NAME, CHILD(CHILD(n, i), 0));
+			com_pop(c, 1);
 		}
 	}
 }
@@ -1868,9 +1984,10 @@ com_newlocal(c, name)
 	return i;
 }
 
+#ifdef SUPPORT_OBSOLETE_ACCESS
+
 #define strequ(a, b) (strcmp((a), (b)) == 0)
 
-#ifdef SUPPORT_OBSOLETE_ACCESS
 static void
 com_access_stmt(c, n)
 	struct compiling *c;
@@ -1939,13 +2056,18 @@ com_exec_stmt(c, n)
 	com_node(c, CHILD(n, 1));
 	if (NCH(n) >= 4)
 		com_node(c, CHILD(n, 3));
-	else
+	else {
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_push(c, 1);
+	}
 	if (NCH(n) >= 6)
 		com_node(c, CHILD(n, 5));
-	else
+	else {
 		com_addbyte(c, DUP_TOP);
+		com_push(c, 1);
+	}
 	com_addbyte(c, EXEC_STMT);
+	com_pop(c, 3);
 }
 
 static void
@@ -1965,9 +2087,11 @@ com_if_stmt(c, n)
 		com_node(c, CHILD(n, i+1));
 		com_addfwref(c, JUMP_IF_FALSE, &a);
 		com_addbyte(c, POP_TOP);
+		com_pop(c, 1);
 		com_node(c, CHILD(n, i+3));
 		com_addfwref(c, JUMP_FORWARD, &anchor);
 		com_backpatch(c, a);
+		/* We jump here with an extra entry which we now pop */
 		com_addbyte(c, POP_TOP);
 	}
 	if (i+2 < NCH(n))
@@ -1991,12 +2115,14 @@ com_while_stmt(c, n)
 	com_node(c, CHILD(n, 1));
 	com_addfwref(c, JUMP_IF_FALSE, &anchor);
 	com_addbyte(c, POP_TOP);
+	com_pop(c, 1);
 	c->c_loops++;
 	com_node(c, CHILD(n, 3));
 	c->c_loops--;
 	com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
 	c->c_begin = save_begin;
 	com_backpatch(c, anchor);
+	/* We jump here with one entry more on the stack */
 	com_addbyte(c, POP_TOP);
 	com_addbyte(c, POP_BLOCK);
 	block_pop(c, SETUP_LOOP);
@@ -2023,10 +2149,12 @@ com_for_stmt(c, n)
 	if (v == NULL)
 		c->c_errors++;
 	com_addoparg(c, LOAD_CONST, com_addconst(c, v));
+	com_push(c, 1);
 	XDECREF(v);
 	c->c_begin = c->c_nexti;
 	com_addoparg(c, SET_LINENO, n->n_lineno);
 	com_addfwref(c, FOR_LOOP, &anchor);
+	com_push(c, 1);
 	com_assign(c, CHILD(n, 1), OP_ASSIGN);
 	c->c_loops++;
 	com_node(c, CHILD(n, 5));
@@ -2034,6 +2162,7 @@ com_for_stmt(c, n)
 	com_addoparg(c, JUMP_ABSOLUTE, c->c_begin);
 	c->c_begin = save_begin;
 	com_backpatch(c, anchor);
+	com_pop(c, 2); /* FOR_LOOP has popped these */
 	com_addbyte(c, POP_BLOCK);
 	block_pop(c, SETUP_LOOP);
 	if (NCH(n) > 8)
@@ -2128,34 +2257,49 @@ com_try_except(c, n)
 	for (i = 3;
 	     i < NCH(n) && TYPE(ch = CHILD(n, i)) == except_clause;
 	     i += 3) {
-		/* except_clause: 'except' [expr [',' expr]] */
+		/* except_clause: 'except' [expr [',' var]] */
 		if (except_anchor == 0) {
 			com_error(c, SyntaxError,
 				  "default 'except:' must be last");
 			break;
 		}
 		except_anchor = 0;
+		com_push(c, 3); /* tb, val, exc pushed by exception */
 		com_addoparg(c, SET_LINENO, ch->n_lineno);
 		if (NCH(ch) > 1) {
 			com_addbyte(c, DUP_TOP);
+			com_push(c, 1);
 			com_node(c, CHILD(ch, 1));
 			com_addoparg(c, COMPARE_OP, EXC_MATCH);
+			com_pop(c, 1);
 			com_addfwref(c, JUMP_IF_FALSE, &except_anchor);
 			com_addbyte(c, POP_TOP);
+			com_pop(c, 1);
 		}
 		com_addbyte(c, POP_TOP);
+		com_pop(c, 1);
 		if (NCH(ch) > 3)
 			com_assign(c, CHILD(ch, 3), OP_ASSIGN);
-		else
+		else {
 			com_addbyte(c, POP_TOP);
+			com_pop(c, 1);
+		}
 		com_addbyte(c, POP_TOP);
+		com_pop(c, 1);
 		com_node(c, CHILD(n, i+2));
 		com_addfwref(c, JUMP_FORWARD, &end_anchor);
 		if (except_anchor) {
 			com_backpatch(c, except_anchor);
+			/* We come in with [tb, val, exc, 0] on the
+			   stack; one pop and it's the same as
+			   expected at the start of the loop */
 			com_addbyte(c, POP_TOP);
 		}
 	}
+	/* We actually come in here with [tb, val, exc] but the
+	   END_FINALLY will zap those and jump around.
+	   The c_stacklevel does not reflect them so we need not pop
+	   anything. */
 	com_addbyte(c, END_FINALLY);
 	com_backpatch(c, else_anchor);
 	if (i < NCH(n))
@@ -2178,12 +2322,18 @@ com_try_finally(c, n)
 	block_pop(c, SETUP_FINALLY);
 	block_push(c, END_FINALLY);
 	com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+	/* While the generated code pushes only one item,
+	   the try-finally handling can enter here with
+	   up to three items.  OK, here are the details:
+	   3 for an exception, 2 for RETURN, 1 for BREAK. */
+	com_push(c, 3);
 	com_backpatch(c, finally_anchor);
 	ch = CHILD(n, NCH(n)-1);
 	com_addoparg(c, SET_LINENO, ch->n_lineno);
 	com_node(c, ch);
 	com_addbyte(c, END_FINALLY);
 	block_pop(c, END_FINALLY);
+	com_pop(c, 3); /* Matches the com_push above */
 }
 
 static void
@@ -2200,38 +2350,37 @@ com_try_stmt(c, n)
 		com_try_except(c, n);
 }
 
-static object *
-get_docstring(n)
+static node *
+get_rawdocstring(n)
 	node *n;
 {
 	int i;
 
+  /* Label to avoid tail recursion */
+  next:
 	switch (TYPE(n)) {
 
 	case suite:
-		if (NCH(n) == 1)
-			return get_docstring(CHILD(n, 0));
-		else {
-			for (i = 0; i < NCH(n); i++) {
-				node *ch = CHILD(n, i);
-				if (TYPE(ch) == stmt)
-					return get_docstring(ch);
-			}
+		if (NCH(n) == 1) {
+			n = CHILD(n, 0);
+			goto next;
 		}
-		break;
-
+		/* Fall through */
 	case file_input:
 		for (i = 0; i < NCH(n); i++) {
 			node *ch = CHILD(n, i);
-			if (TYPE(ch) == stmt)
-				return get_docstring(ch);
+			if (TYPE(ch) == stmt) {
+				n = ch;
+				goto next;
+			}
 		}
 		break;
 
 	case stmt:
 	case simple_stmt:
 	case small_stmt:
-		return get_docstring(CHILD(n, 0));
+		n = CHILD(n, 0);
+		goto next;
 
 	case expr_stmt:
 	case testlist:
@@ -2247,17 +2396,29 @@ get_docstring(n)
 	case term:
 	case factor:
 	case power:
-		if (NCH(n) == 1)
-			return get_docstring(CHILD(n, 0));
+		if (NCH(n) == 1) {
+			n = CHILD(n, 0);
+			goto next;
+		}
 		break;
 
 	case atom:
 		if (TYPE(CHILD(n, 0)) == STRING)
-			return parsestrplus(n);
+			return n;
 		break;
 
 	}
 	return NULL;
+}
+
+static object *
+get_docstring(n)
+	node *n;
+{
+	n = get_rawdocstring(n);
+	if (n == NULL)
+		return NULL;
+	return parsestrplus(n);
 }
 
 static void
@@ -2345,6 +2506,7 @@ com_argdefs(c, n)
 			if (ndefs) {
 				com_addoparg(c, LOAD_CONST,
 					     com_addconst(c, None));
+				com_push(c, 1);
 				ndefs++;
 			}
 		}
@@ -2368,8 +2530,11 @@ com_funcdef(c, n)
 		int i = com_addconst(c, v);
 		int ndefs = com_argdefs(c, n);
 		com_addoparg(c, LOAD_CONST, i);
+		com_push(c, 1);
 		com_addoparg(c, MAKE_FUNCTION, ndefs);
+		com_pop(c, ndefs);
 		com_addopname(c, STORE_NAME, CHILD(n, 1));
+		com_pop(c, 1);
 		DECREF(v);
 	}
 }
@@ -2384,7 +2549,9 @@ com_bases(c, n)
 	/* testlist: test (',' test)* [','] */
 	for (i = 0; i < NCH(n); i += 2)
 		com_node(c, CHILD(n, i));
-	com_addoparg(c, BUILD_TUPLE, (NCH(n)+1) / 2);
+	i = (NCH(n)+1) / 2;
+	com_addoparg(c, BUILD_TUPLE, i);
+	com_pop(c, i-1);
 }
 
 static void
@@ -2403,10 +2570,13 @@ com_classdef(c, n)
 	/* Push the class name on the stack */
 	i = com_addconst(c, v);
 	com_addoparg(c, LOAD_CONST, i);
+	com_push(c, 1);
 	DECREF(v);
 	/* Push the tuple of base classes on the stack */
-	if (TYPE(CHILD(n, 2)) != LPAR)
+	if (TYPE(CHILD(n, 2)) != LPAR) {
 		com_addoparg(c, BUILD_TUPLE, 0);
+		com_push(c, 1);
+	}
 	else
 		com_bases(c, CHILD(n, 3));
 	v = (object *)icompile(n, c);
@@ -2415,9 +2585,11 @@ com_classdef(c, n)
 	else {
 		i = com_addconst(c, v);
 		com_addoparg(c, LOAD_CONST, i);
+		com_push(c, 1);
 		com_addoparg(c, MAKE_FUNCTION, 0);
 		com_addoparg(c, CALL_FUNCTION, 0);
 		com_addbyte(c, BUILD_CLASS);
+		com_pop(c, 2);
 		com_addopname(c, STORE_NAME, CHILD(n, 1));
 		DECREF(v);
 	}
@@ -2569,7 +2741,7 @@ com_node(c, n)
 		break;
 	
 	default:
-		fprintf(stderr, "node type %d\n", TYPE(n));
+		/* XXX fprintf(stderr, "node type %d\n", TYPE(n)); */
 		com_error(c, SystemError, "com_node: unexpected node type");
 	}
 }
@@ -2584,8 +2756,10 @@ com_fpdef(c, n)
 	REQ(n, fpdef); /* fpdef: NAME | '(' fplist ')' */
 	if (TYPE(CHILD(n, 0)) == LPAR)
 		com_fplist(c, CHILD(n, 1));
-	else
+	else {
 		com_addoparg(c, STORE_FAST, com_newlocal(c, STR(CHILD(n, 0))));
+		com_pop(c, 1);
+	}
 }
 
 static void
@@ -2598,8 +2772,9 @@ com_fplist(c, n)
 		com_fpdef(c, CHILD(n, 0));
 	}
 	else {
-		int i;
-		com_addoparg(c, UNPACK_TUPLE, (NCH(n)+1)/2);
+		int i = (NCH(n)+1)/2;
+		com_addoparg(c, UNPACK_TUPLE, i);
+		com_push(c, i-1);
 		for (i = 0; i < NCH(n); i += 2)
 			com_fpdef(c, CHILD(n, i));
 	}
@@ -2684,6 +2859,7 @@ com_arglist(c, n)
 			fp = CHILD(ch, 0);
 			if (TYPE(fp) != NAME) {
 				com_addoparg(c, LOAD_FAST, ilocal);
+				com_push(c, 1);
 				com_fpdef(c, ch);
 			}
 			ilocal++;
@@ -2711,7 +2887,9 @@ com_file_input(c, n)
 		int i = com_addconst(c, doc);
 		DECREF(doc);
 		com_addoparg(c, LOAD_CONST, i);
+		com_push(c, 1);
 		com_addopnamestr(c, STORE_NAME, "__doc__");
+		com_pop(c, 1);
 	}
 	for (i = 0; i < NCH(n); i++) {
 		node *ch = CHILD(n, i);
@@ -2746,7 +2924,9 @@ compile_funcdef(c, n)
 	com_node(c, CHILD(n, 4));
 	c->c_infunction = 0;
 	com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+	com_push(c, 1);
 	com_addbyte(c, RETURN_VALUE);
+	com_pop(c, 1);
 }
 
 static void
@@ -2768,6 +2948,7 @@ compile_lambdef(c, n)
 		ch = CHILD(n, 2);
 	com_node(c, ch);
 	com_addbyte(c, RETURN_VALUE);
+	com_pop(c, 1);
 }
 
 static void
@@ -2789,13 +2970,17 @@ compile_classdef(c, n)
 		int i = com_addconst(c, doc);
 		DECREF(doc);
 		com_addoparg(c, LOAD_CONST, i);
+		com_push(c, 1);
 		com_addopnamestr(c, STORE_NAME, "__doc__");
+		com_pop(c, 1);
 	}
 	else
 		(void) com_addconst(c, None);
 	com_node(c, ch);
 	com_addbyte(c, LOAD_LOCALS);
+	com_push(c, 1);
 	com_addbyte(c, RETURN_VALUE);
+	com_pop(c, 1);
 }
 
 static void
@@ -2814,19 +2999,24 @@ compile_node(c, n)
 		if (TYPE(n) != NEWLINE)
 			com_node(c, n);
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_push(c, 1);
 		com_addbyte(c, RETURN_VALUE);
+		com_pop(c, 1);
 		c->c_interactive--;
 		break;
 	
 	case file_input: /* A whole file, or built-in function exec() */
 		com_file_input(c, n);
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
+		com_push(c, 1);
 		com_addbyte(c, RETURN_VALUE);
+		com_pop(c, 1);
 		break;
 	
 	case eval_input: /* Built-in function input() */
 		com_node(c, CHILD(n, 0));
 		com_addbyte(c, RETURN_VALUE);
+		com_pop(c, 1);
 		break;
 	
 	case lambdef: /* anonymous function definition */
@@ -2842,7 +3032,7 @@ compile_node(c, n)
 		break;
 	
 	default:
-		fprintf(stderr, "node type %d\n", TYPE(n));
+		/* XXX fprintf(stderr, "node type %d\n", TYPE(n)); */
 		com_error(c, SystemError,
 			  "compile_node: unexpected node type");
 	}
@@ -3001,6 +3191,7 @@ jcompile(n, filename, base)
 		if (!err_occurred())
 			co = newcodeobject(sc.c_argcount,
 					   sc.c_nlocals,
+					   sc.c_maxstacklevel,
 					   sc.c_flags,
 					   sc.c_code,
 					   consts,
