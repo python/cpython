@@ -171,6 +171,7 @@ class Codec(codecs.Codec):
             labels = dots.split(input)
         else:
             # Must be ASCII string
+            input = str(input)
             unicode(input, "ascii")
             labels = input.split(".")
 
