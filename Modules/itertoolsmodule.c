@@ -1832,9 +1832,9 @@ inititertools(void)
 	for (i=0 ; typelist[i] != NULL ; i++) {
 		if (PyType_Ready(typelist[i]) < 0)
 			return;
-		name = strchr(typelist[i]->tp_name, '.') + 1;
+		name = strchr(typelist[i]->tp_name, '.');
 		assert (name != NULL);
 		Py_INCREF(typelist[i]);
-		PyModule_AddObject(m, name, (PyObject *)typelist[i]);
+		PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
 	}
 }
