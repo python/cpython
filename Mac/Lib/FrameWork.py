@@ -432,6 +432,11 @@ class Menu:
 		if callback:
 			callback(id, item, window, event)
 
+	def enable(self, onoff):
+		if onoff:
+			self.menu.EnableItem(0)
+		else:
+			self.menu.DisableItem(0)
 
 class MenuItem:
 	def __init__(self, menu, title, shortcut=None, callback=None, kind=None):
@@ -440,6 +445,12 @@ class MenuItem:
 		
 	def check(self, onoff):
 		self.menu.menu.CheckItem(self.item, onoff)
+
+	def enable(self, onoff):
+		if onoff:
+			self.menu.menu.EnableItem(self.item)
+		else:
+			self.menu.menu.DisableItem(self.item)
 		
 
 class RadioItem(MenuItem):
