@@ -809,7 +809,7 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 static PyObject *
 dict_repr(dictobject *mp)
 {
-	int i, pos;
+	int i;
 	PyObject *s, *temp, *colon = NULL;
 	PyObject *pieces = NULL, *result = NULL;
 	PyObject *key, *value;
@@ -834,8 +834,8 @@ dict_repr(dictobject *mp)
 
 	/* Do repr() on each key+value pair, and insert ": " between them.
 	   Note that repr may mutate the dict. */
-	pos = 0;
-	while (PyDict_Next((PyObject *)mp, &pos, &key, &value)) {
+	i = 0;
+	while (PyDict_Next((PyObject *)mp, &i, &key, &value)) {
 		int status;
 		/* Prevent repr from deleting value during key format. */
 		Py_INCREF(value);
