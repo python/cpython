@@ -292,12 +292,12 @@ class ConfigParser:
     # of \w, _ is allowed in section header names.
     SECTCRE = re.compile(
         r'\['                                 # [
-        r'(?P<header>[-\w]+)'                 # `-', `_' or any alphanum
+        r'(?P<header>[-\w_.*,(){}]+)'         # `-', `_' or any alphanum
         r'\]'                                 # ]
         )
     OPTCRE = re.compile(
-        r'(?P<option>[-.\w]+)'                # - . _ alphanum
-        r'[ \t]*[:=][ \t]*'                   # any number of space/tab,
+        r'(?P<option>[-\w_.*,(){}]+)'         # - . _ alphanum
+        r'[ \t]*(?P<vi>[:=])[ \t]*'           # any number of space/tab,
                                               # followed by separator
                                               # (either : or =), followed
                                               # by any # space/tab
@@ -327,7 +327,7 @@ class ConfigParser:
             if string.strip(line) == '' or line[0] in '#;':
                 continue
             if string.lower(string.split(line)[0]) == 'rem' \
-               and line[0] == "r":      # no leading whitespace
+               and line[0] in "rR":      # no leading whitespace
                 continue
             # continuation line?
             if line[0] in ' \t' and cursect is not None and optname:
@@ -356,8 +356,14 @@ class ConfigParser:
                 else:
                     mo = self.OPTCRE.match(line)
                     if mo:
-                        optname, optval = mo.group('option', 'value')
+                        optname, vi, optval = mo.group('option', 'vi', 'value')
                         optname = string.lower(optname)
+                        if vi == '=' and ';' in optval:
+                            # ';' is a comment delimiter only if it follows
+                            # a spacing character
+                            pos = string.find(optval, ';')
+                            if pos and optval[pos-1] in string.whitespace:
+                                optval = optval[:pos]
                         optval = string.strip(optval)
                         # allow empty values
                         if optval == '""':
