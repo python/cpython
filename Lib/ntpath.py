@@ -82,6 +82,12 @@ def join(a, *p):
                     path += b
                 else:
                     path += "\\" + b
+            else:
+                # path is not empty and does not end with a backslash,
+                # but b is empty; since, e.g., split('a/') produces
+                # ('a', ''), it's best if join() adds a backslash in
+                # this case.
+                path += '\\'
 
     return path
 
