@@ -10,7 +10,7 @@ from types import StringType
 
 import email
 
-from email.Parser import Parser
+from email.Parser import Parser, HeaderParser
 from email.Generator import Generator, DecodedGenerator
 from email.Message import Message
 from email.MIMEAudio import MIMEAudio
@@ -888,6 +888,21 @@ to reflect upon our own
 
 
 
+class TestParsers(unittest.TestCase):
+    def test_header_parser(self):
+        eq = self.assertEqual
+        # Parse only the headers of a complex multipart MIME document
+        p = HeaderParser()
+        fp = openfile('msg_02.txt')
+        msg = p.parse(fp)
+        eq(msg['from'], 'ppp-request@zzz.org')
+        eq(msg['to'], 'ppp@zzz.org')
+        eq(msg.get_type(), 'multipart/mixed')
+        eq(msg.is_multipart(), 0)
+        self.failUnless(isinstance(msg.get_payload(), StringType))
+
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestMessageAPI))
@@ -904,6 +919,7 @@ def suite():
     suite.addTest(unittest.makeSuite(TestIdempotent))
     suite.addTest(unittest.makeSuite(TestMiscellaneous))
     suite.addTest(unittest.makeSuite(TestIterators))
+    suite.addTest(unittest.makeSuite(TestParsers))
     return suite
 
 
