@@ -190,28 +190,13 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 PyObject *
 PyType_GenericAlloc(PyTypeObject *type, int nitems)
 {
-#define PTRSIZE (sizeof(PyObject *))
-
-	size_t size = (size_t)_PyObject_VAR_SIZE(type, nitems);
-	size_t padding = 0;
 	PyObject *obj;
+	size_t size;
 
-	/* Round up size, if necessary, so that the __dict__ pointer
-	   following the variable part is properly aligned for the platform.
-	   This is needed only for types with a vrbl number of items
-	   before the __dict__ pointer == types that record the dict offset
-	   as a negative offset from the end of the object.  If tp_dictoffset
-	   is 0, there is no __dict__; if positive, tp_dict was declared in a C
-	   struct so the compiler already took care of aligning it. */
-        if (type->tp_dictoffset < 0) {
-		padding = PTRSIZE - size % PTRSIZE;
-		if (padding == PTRSIZE)
-			padding = 0;
-		size += padding;
-	}
+	_PyObject_VAR_SIZE(size, type, nitems);
 
 	if (PyType_IS_GC(type))
-		obj = _PyObject_GC_Malloc(type, nitems, padding);
+		obj = _PyObject_GC_Malloc(type, nitems);
 	else
 		obj = PyObject_MALLOC(size);
 

@@ -127,13 +127,16 @@ _PyObject_New(PyTypeObject *tp)
 }
 
 PyVarObject *
-_PyObject_NewVar(PyTypeObject *tp, int size)
+_PyObject_NewVar(PyTypeObject *tp, int nitems)
 {
 	PyVarObject *op;
-	op = (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size));
+	size_t size;
+
+	_PyObject_VAR_SIZE(size, tp, nitems);
+	op = (PyVarObject *) PyObject_MALLOC(size);
 	if (op == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
-	return PyObject_INIT_VAR(op, tp, size);
+	return PyObject_INIT_VAR(op, tp, nitems);
 }
 
 void
@@ -1146,8 +1149,6 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
-#define PTRSIZE (sizeof(PyObject *))
-
 	long dictoffset;
 	PyTypeObject *tp = obj->ob_type;
 
@@ -1157,19 +1158,11 @@ _PyObject_GetDictPtr(PyObject *obj)
 	if (dictoffset == 0)
 		return NULL;
 	if (dictoffset < 0) {
-		/* dictoffset is positive by the time we're ready to round
-		   it, and compilers can generate faster rounding code if
-		   they know that. */
-		unsigned long udo;  /* unsigned dictoffset */
-		const long nitems = ((PyVarObject *)obj)->ob_size;
-		const long size = _PyObject_VAR_SIZE(tp, nitems);
-
-		dictoffset += size;
-		assert(dictoffset > 0); /* Sanity check */
-		/* Round up to multiple of PTRSIZE. */
-		udo = (unsigned long)dictoffset;
-		udo = ((udo + PTRSIZE-1) / PTRSIZE) * PTRSIZE;
-		dictoffset = (long)udo;
+		size_t size;
+		_PyObject_VAR_SIZE(size, tp, ((PyVarObject *)obj)->ob_size);
+		dictoffset += (long)size;
+		assert(dictoffset > 0);
+		assert(dictoffset % SIZEOF_VOID_P == 0);
 	}
 	return (PyObject **) ((char *)obj + dictoffset);
 }

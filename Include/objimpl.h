@@ -56,14 +56,14 @@ form of memory management you're using).
 Unless you have specific memory management requirements, it is
 recommended to use PyObject_{New, NewVar, Del}. */
 
-/* 
+/*
  * Core object memory allocator
  * ============================
  */
 
 /* The purpose of the object allocator is to make the distinction
    between "object memory" and the rest within the Python heap.
-   
+
    Object memory is the one allocated by PyObject_{New, NewVar}, i.e.
    the one that holds the object's representation defined by its C
    type structure, *excluding* any object-specific memory buffers that
@@ -172,16 +172,41 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 	( (op)->ob_size = (size), PyObject_INIT((op), (typeobj)) )
 
 #define _PyObject_SIZE(typeobj) ( (typeobj)->tp_basicsize )
-#define _PyObject_VAR_SIZE(typeobj, n) \
-	( (typeobj)->tp_basicsize + (n) * (typeobj)->tp_itemsize )
+
+/* _PyObject_VAR_SIZE computes the amount of memory allocated for a vrbl-
+  size object with nitems items, exclusive of gc overhead (if any).  The
+  value is rounded up to the closest multiple of sizeof(void *), in order
+  to ensure that pointer fields at the end of the object are correctly
+  aligned for the platform (this is of special importance for subclasses
+  of, e.g., str or long, so that pointers can be stored after the embedded
+  data).
+
+  Note that there's no memory wastage in doing this, as malloc has to
+  return (at worst) pointer-aligned memory anyway
+
+  However, writing the macro to *return* the result is clumsy due to the
+  calculations needed.  Instead you must pass the result lvalue as the first
+  argument, and it should be of type size_t (both because that's the
+  correct conceptual type, and because using an unsigned type allows the
+  compiler to generate faster code for the mod computation inside the
+  macro).
+*/
+#define _PyObject_VAR_SIZE(result, typeobj, nitems)			\
+	do {								\
+    		size_t mod;						\
+		(result) = (size_t) (typeobj)->tp_basicsize;		\
+		(result) += (size_t) ((nitems)*(typeobj)->tp_itemsize);	\
+		mod = (result) % SIZEOF_VOID_P;				\
+		if (mod)						\
+			(result) += SIZEOF_VOID_P - mod;		\
+    	} while(0)
 
 #define PyObject_NEW(type, typeobj) \
 ( (type *) PyObject_Init( \
 	(PyObject *) PyObject_MALLOC( _PyObject_SIZE(typeobj) ), (typeobj)) )
-#define PyObject_NEW_VAR(type, typeobj, n) \
-( (type *) PyObject_InitVar( \
-	(PyVarObject *) PyObject_MALLOC( _PyObject_VAR_SIZE((typeobj),(n)) ),\
-	(typeobj), (n)) )
+
+#define PyObject_NEW_VAR(type, typeobj, nitems) \
+	((type *) _PyObject_NewVar(typeobj, nitems))
 
 #define PyObject_DEL(op) PyObject_FREE(op)
 
@@ -230,8 +255,7 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 #define PyObject_IS_GC(o) (PyType_IS_GC((o)->ob_type) && \
 	((o)->ob_type->tp_is_gc == NULL || (o)->ob_type->tp_is_gc(o)))
 
-extern DL_IMPORT(PyObject *) _PyObject_GC_Malloc(PyTypeObject *,
-					int nitems, size_t padding);
+extern DL_IMPORT(PyObject *) _PyObject_GC_Malloc(PyTypeObject *, int);
 extern DL_IMPORT(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
 
 #define PyObject_GC_Resize(type, op, n) \
@@ -276,7 +300,7 @@ extern PyGC_Head _PyGC_generation0;
 
 #define PyObject_GC_Track(op) _PyObject_GC_Track((PyObject *)op)
 #define PyObject_GC_UnTrack(op) _PyObject_GC_UnTrack((PyObject *)op)
-	
+
 
 #define PyObject_GC_New(type, typeobj) \
 		( (type *) _PyObject_GC_New(typeobj) )
