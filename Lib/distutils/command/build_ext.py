@@ -259,7 +259,7 @@ class build_ext (Command):
     # get_outputs ()
 
 
-    def build_extensions (self, extensions):
+    def build_extensions (self):
 
         # First, sanity-check the 'extensions' list
         self.check_extensions_list (self.extensions)
