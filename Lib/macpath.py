@@ -179,39 +179,30 @@ def expanduser(path):
 norm_error = 'macpath.norm_error: path cannot be normalized'
 
 def normpath(s):
-    """Normalize a pathname: get rid of '::' sequences by backing up,
-    e.g., 'foo:bar::bletch' becomes 'foo:bletch'.
-    Raise the exception norm_error below if backing up is impossible,
-    e.g., for '::foo'."""
-    # XXX The Unix version doesn't raise an exception but simply
-    # returns an unnormalized path.  Should do so here too.
+    """Normalize a pathname.  Will return the same result for
+    equivalent paths."""
 
-    import string
-    if ':' not in s:
-        return ':' + s
-    f = string.splitfields(s, ':')
-    pre = []
-    post = []
-    if not f[0]:
-        pre = f[:1]
-        f = f[1:]
-    if not f[len(f)-1]:
-        post = f[-1:]
-        f = f[:-1]
-    res = []
-    for seg in f:
-        if seg:
-            res.append(seg)
+    if ":" not in s:
+        return ":"+s
+
+    comps = string.splitfields(s, ":")
+    i = 1
+    while i < len(comps)-1:
+        if comps[i] == "" and comps[i-1] != "":
+            if i > 1:
+                del comps[i-1:i+1]
+                i = i-1
+            else:
+                # best way to handle this is to raise an exception
+                raise norm_error, 'Cannot use :: immedeately after volume name'
         else:
-            if not res: raise norm_error, 'path starts with ::'
-            del res[len(res)-1]
-            if not (pre or res):
-                raise norm_error, 'path starts with volume::'
-    if pre: res = pre + res
-    if post: res = res + post
-    s = res[0]
-    for seg in res[1:]:
-        s = s + ':' + seg
+            i = i + 1
+
+    s = string.join(comps, ":")
+
+    # remove trailing ":" except for ":" and "Volume:"
+    if s[-1] == ":" and len(comps) > 2 and s != ":"*len(s):
+        s = s[:-1]
     return s
 
 
