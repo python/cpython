@@ -1209,7 +1209,7 @@ static PyObject *
 MPZ_divm(PyObject *self, PyObject *args)
 {
 	PyObject *num, *den, *mod;
-	mpzobject *mpznum, *mpzden, *mpzmod = NULL;
+	mpzobject *mpznum, *mpzden = NULL, *mpzmod = NULL;
 	mpzobject *z = NULL;
 
 	
