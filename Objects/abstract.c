@@ -672,6 +672,7 @@ PyNumber_Multiply(PyObject *v, PyObject *w)
 	if (result == Py_NotImplemented) {
 		PySequenceMethods *mv = v->ob_type->tp_as_sequence;
 		PySequenceMethods *mw = w->ob_type->tp_as_sequence;
+		Py_DECREF(result);
 		if  (mv && mv->sq_repeat) {
 			return sequence_repeat(mv->sq_repeat, v, w);
 		}
