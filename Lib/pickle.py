@@ -943,8 +943,7 @@ def whichmodule(func, funcname):
         if module is None:
             continue # skip dummy package entries
         if name != '__main__' and \
-            hasattr(module, funcname) and \
-            getattr(module, funcname) is func:
+            getattr(module, funcname, None) is func:
             break
     else:
         name = '__main__'
