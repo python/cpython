@@ -1801,4 +1801,79 @@ directory to eval().
 
 - Fixed a buffer overrun in PC/getpathp.c.
 
+
+======================================================================
+
+
+From 1.5b2 to 1.5
+=================
+
+- Newly documentated module: BaseHTTPServer.py, thanks to Greg Stein.
+
+- Added doc strings to string.py, stropmodule.c, structmodule.c,
+thanks to Charles Waldman.
+
+- Many nits fixed in the manuals, thanks to Fred Drake and many others
+(especially Rob Hooft and Andrew Kuchling).  The HTML version now uses
+HTML markup instead of inline GIF images for tables; only two images
+are left (for obsure bits of math).  The index of the HTML version has
+also been much improved.  Finally, it is once again possible to
+generate an Emacs info file from the library manual (but I don't
+commit to supporting this in future versions).
+
+- New module: telnetlib.py (a simple telnet client library).
+
+- New tool: Tools/versioncheck/, by Jack Jansen.
+
+- Ported zlibmodule.c and bsddbmodule.c to NT; The project file for MS
+DevStudio 5.0 now includes new subprojects to build the zlib and bsddb
+extension modules.
+
+- Many small changes again to Tkinter.py -- mostly bugfixes and adding
+missing routines.  Thanks to Greg McFarlane for reporting a bunch of
+problems and proofreading my fixes.
+
+- The re module and its documentation are up to date with the latest
+version released to the string-sig (Dec. 22).
+
+- Stop test_grp.py from failing when the /etc/group file is empty
+(yes, this happens!).
+
+- Fix bug in integer conversion (mystrtoul.c) that caused
+4294967296==0 to be true!
+
+- The VC++ 4.2 project file should be complete again.
+
+- In tempfile.py, use a better template on NT, and add a new optional
+argument "suffix" with default "" to specify a specific extension for
+the temporary filename (needed sometimes on NT but perhaps also handy
+elsewhere).
+
+- Fixed some bugs in the FAQ wizard, and converted it to use re
+instead of regex.
+
+- Fixed a mysteriously undetected error in dlmodule.c (it was using a
+totally bogus routine name to raise an exception).
+
+- Fixed bug in import.c which wasn't using the new "dos-8x3" name yet.
+
+- Hopefully harmless changes to the build process to support shared
+libraries on DG/UX.  This adds a target to create
+libpython$(VERSION).so; however this target is *only* for DG/UX.
+
+- Fixed a bug in the new format string error checking in getargs.c.
+
+- A simple fix for infinite recursion when printing __builtins__:
+reset '_' to None before printing and set it to the printed variable
+*after* printing (and only when printing is successful).
+
+- Fixed lib-tk/SimpleDialog.py to keep the dialog visible even if the
+parent window is not (Skip Montanaro).
+
+- Fixed the two most annoying problems with ftp URLs in
+urllib.urlopen(); an empty file now correctly raises an error, and it
+is no longer required to explicitly close the returned "file" object
+before opening another ftp URL to the same host and directory.
+
+
 ======================================================================
