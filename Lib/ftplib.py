@@ -91,30 +91,29 @@ class FTP:
     and PORT or PASV commands.
 '''
 
+    debugging = 0
+    host = ''
+    port = FTP_PORT
+    sock = None
+    file = None
+    welcome = None
+    passiveserver = 1
+
     # Initialization method (called by class instantiation).
     # Initialize host to localhost, port to standard ftp port
     # Optional arguments are host (for connect()),
     # and user, passwd, acct (for login())
-    def __init__(self, host = '', user = '', passwd = '', acct = ''):
-        # Initialize the instance to something mostly harmless
-        self.debugging = 0
-        self.host = ''
-        self.port = FTP_PORT
-        self.sock = None
-        self.file = None
-        self.welcome = None
-        resp = None
+    def __init__(self, host='', user='', passwd='', acct=''):
         if host:
-            resp = self.connect(host)
-            if user: resp = self.login(user, passwd, acct)
+            self.connect(host)
+            if user: self.login(user, passwd, acct)
 
-    def connect(self, host = '', port = 0):
+    def connect(self, host='', port=0):
         '''Connect to host.  Arguments are:
         - host: hostname to connect to (string, default previous host)
         - port: port to connect to (integer, default previous port)'''
         if host: self.host = host
         if port: self.port = port
-        self.passiveserver = 1
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((self.host, self.port))
         self.file = self.sock.makefile('rb')
@@ -480,9 +479,10 @@ class FTP:
 
     def close(self):
         '''Close the connection without assuming anything about it.'''
-        self.file.close()
-        self.sock.close()
-        del self.file, self.sock
+        if self.file:
+            self.file.close()
+            self.sock.close()
+            self.file = self.sock = None
 
 
 _150_re = None
