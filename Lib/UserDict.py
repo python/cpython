@@ -77,7 +77,7 @@ class DictMixin:
     # a minimum dictionary interface including getitem, setitem, delitem,
     # and keys. Without knowledge of the subclass constructor, the mixin
     # does not define __init__() or copy().  In addition to the four base
-    # methods, progessively more efficiency comes with defining
+    # methods, progressively more efficiency comes with defining
     # __contains__(), __iter__(), and iteritems().
 
     # second level definitions support higher levels
