@@ -16,6 +16,9 @@
 
 #  VERSION='$Revision$'
 
+GZIP='gzip -9'
+GZIPEXT=tgz
+
 if [ "$1" = "-t" -o "$1" = "--tools" ] ; then
     shift 1
     TOOLS_ONLY=true
@@ -24,9 +27,14 @@ if [ "$1" = "-z" -o "$1" = "--zip" ] ; then
     shift 1
     USE_ZIP=true
 fi
-if [ "$1" = "-g" -o "$1" = "--targz" ] ; then
+if [ "$1" = "-g" -o "$1" = "--targz" -o "$1" = "--tgz" ] ; then
     shift 1
     USE_ZIP=''
+fi
+if [ "$1" = "-b" -o "$1" = "--bz2" -o "$1" = "--bzip2" ] ; then
+    shift 1
+    GZIP='bzip2 -9'
+    GZIPEXT=tar.bz2
 fi
 
 RELEASE=$1; shift
@@ -57,17 +65,16 @@ if [ "$TOOLS_ONLY" ] ; then
     rm -rf api ext lib mac ref tut
     cd ..
     if [ "$USE_ZIP" ] ; then
-	pwd
 	zip -r9 tools-$RELEASE.zip Doc || exit
     else
-	(tar cf - Doc | gzip -9 >$MYDIR/tools-$RELEASE.tgz) || exit $?
+	(tar cf - Doc | $GZIP >$MYDIR/tools-$RELEASE.$GZIPEXT) || exit $?
     fi
 else
     cd $TEMPDIR
     if [ "$USE_ZIP" ] ; then
 	zip -r9 $MYDIR/latex-$RELEASE.zip Python-$RELEASE || exit $?
     else
-	(tar cf - Python-$RELEASE | gzip -9 >$MYDIR/latex-$RELEASE.tgz) \
+	(tar cf - Python-$RELEASE | $GZIP >$MYDIR/latex-$RELEASE.$GZIPEXT) \
 	 || exit $?
     fi
 fi
