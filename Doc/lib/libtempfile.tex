@@ -11,15 +11,35 @@
 This module generates temporary file names.  It is not \UNIX{} specific,
 but it may require some help on non-\UNIX{} systems.
 
-Note: the modules does not create temporary files, nor does it
-automatically remove them when the current process exits or dies.
+The module defines the following user-callable functions:
 
-The module defines a single user-callable function:
-
-\begin{funcdesc}{mktemp}{}
+\begin{funcdesc}{mktemp}{\optional{suffix}}
 Return a unique temporary filename.  This is an absolute pathname of a
 file that does not exist at the time the call is made.  No two calls
-will return the same filename.
+will return the same filename.  \var{suffix}, if provided, is used as
+the last part of the generated file name.  This can be used to provide
+a filename extension or other identifying information that may be
+useful on some platforms.
+\end{funcdesc}
+
+\begin{funcdesc}{TemporaryFile}{\optional{mode\optional{,
+                                bufsize\optional{, suffix}}}}
+Return a file (or file-like) object that can be used as a temporary
+storage area.  The file is created in the most secure manner available
+in the appporpriate temporary directory for the host platform.  Under
+\UNIX, the directory entry to the file is removed so that it is secure
+against attacks which involve creating symbolic links to the file or
+replacing the file with a symbolic link to some other file.  For other
+platforms, which don't allow removing the directory entry while the
+file is in use, the file is automatically deleted as soon as it is
+closed (including an implicit close when it is garbage-collected).
+
+The \var{mode} parameter defaults to \code{'w+b'} so that the file
+created can be read and written without being closed.  Binary mode is
+used so that it behaves consistently on all platforms without regard
+for the data that is stored.  \var{bufsize} defaults to \code{-1},
+meaning that the operating system default is used.  \var{suffix} is
+passed to \function{mktemp()}.
 \end{funcdesc}
 
 The module uses two global variables that tell it how to construct a
@@ -43,10 +63,3 @@ unique filenames.  The default is either \file{@\var{pid}.} where
 \var{pid} is the current process ID (on \UNIX{}), or \file{tmp} (all
 other systems).
 \end{datadesc}
-
-\strong{Warning:} if a \UNIX{} process uses \code{mktemp()}, then
-calls \function{fork()} and both parent and child continue to use
-\function{mktemp()}, the processes will generate conflicting temporary
-names.  To resolve this, the child process should assign \code{None} to
-\code{template}, to force recomputing the default on the next call
-to \function{mktemp()}.
