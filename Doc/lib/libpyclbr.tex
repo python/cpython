@@ -12,7 +12,9 @@ about the classes and methods defined in a module.  The information
 provided is sufficient to implement a traditional three-pane class
 browser.  The information is extracted from the source code rather
 than from an imported module, so this module is safe to use with
-untrusted source code.
+untrusted source code.  This restriction makes it impossible to use
+this module with modules not implemented in Python, including many
+standard and optional extension modules.
 
 
 \begin{funcdesc}{readmodule}{module\optional{, path}}
