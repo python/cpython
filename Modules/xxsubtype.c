@@ -240,8 +240,10 @@ initxxsubtype(void)
 {
 	PyObject *m, *d;
 
-	/* Fill in the deferred data addresses.  This must be done before
-	   PyType_Ready() is called. */
+	/* Fill in deferred data addresses.  This must be done before
+	   PyType_Ready() is called.  Note that PyType_Ready() automatically
+	   initializes the ob.ob_type field to &PyType_Type if it's NULL,
+	   so it's not necessary to fill in ob_type first. */
 	spamdict_type.tp_base = &PyDict_Type;
 	if (PyType_Ready(&spamdict_type) < 0)
 		return;
