@@ -36,6 +36,12 @@ The module defines the following functions:
   \code{IOCTL}.
 \end{funcdesc}
 
+\begin{funcdesc}{flock}{fd\, op}
+Perform the lock operation \var{op} on file descriptor \var{fd}.
+See the Unix manual for details.  (On some systems, this function is
+emulated using \code{fcntl}.)
+\end{funcdesc}
+
 If the library modules \code{FCNTL} or \code{IOCTL} are missing, you
 can find the opcodes in the C include files \code{sys/fcntl} and
 \code{sys/ioctl}. You can create the modules yourself with the h2py
@@ -57,4 +63,6 @@ rv = fcntl(file.fileno(), FCNTL.F_SETLKW, lockdata)
 
 Note that in the first example the return value variable \code{rv} will
 hold an integer value; in the second example it will hold a string
-value.
+value.  The structure lay-out for the \var{lockadata} variable is
+system dependent -- therefore using the \code{flock()} call may be
+better.
