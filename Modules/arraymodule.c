@@ -801,14 +801,14 @@ array_extend(self, args)
         
 	if (!is_arrayobject(bb)) {
 		PyErr_Format(PyExc_TypeError,
-			     "can only append array (not \"%.200s\") to array",
+			     "can only extend array with array (not \"%.200s\")",
 			     bb->ob_type->tp_name);
 		return NULL;
 	}
 #define b ((arrayobject *)bb)
 	if (self->ob_descr != b->ob_descr) {
 		PyErr_SetString(PyExc_TypeError,
-			     "can only append arrays of same kind");
+			     "can only extend with array of same kind");
 		return NULL;
 	}
 	size = self->ob_size + b->ob_size;
@@ -835,7 +835,7 @@ array_insert(arrayobject *self, PyObject *args)
 {
 	int i;
 	PyObject *v;
-	if (!PyArg_Parse(args, "(iO)", &i, &v))
+        if (!PyArg_ParseTuple(args, "iO:insert", &i, &v))
 		return NULL;
 	return ins(self, i, v);
 }
@@ -869,7 +869,7 @@ static PyObject *
 array_append(arrayobject *self, PyObject *args)
 {
 	PyObject *v;
-	if (!PyArg_Parse(args, "O", &v))
+        if (!PyArg_ParseTuple(args, "O:append", &v))
 		return NULL;
 	return ins(self, (int) self->ob_size, v);
 }
@@ -979,7 +979,7 @@ array_fromfile(arrayobject *self, PyObject *args)
 	PyObject *f;
 	int n;
 	FILE *fp;
-	if (!PyArg_Parse(args, "(Oi)", &f, &n))
+        if (!PyArg_ParseTuple(args, "Oi:fromfile", &f, &n))
 		return NULL;
 	fp = PyFile_AsFile(f);
 	if (fp == NULL) {
@@ -1032,7 +1032,7 @@ array_tofile(arrayobject *self, PyObject *args)
 {
 	PyObject *f;
 	FILE *fp;
-	if (!PyArg_Parse(args, "O", &f))
+        if (!PyArg_ParseTuple(args, "O:tofile", &f))
 		return NULL;
 	fp = PyFile_AsFile(f);
 	if (fp == NULL) {
@@ -1064,7 +1064,7 @@ array_fromlist(arrayobject *self, PyObject *args)
 	int n;
 	PyObject *list;
 	int itemsize = self->ob_descr->itemsize;
-	if (!PyArg_Parse(args, "O", &list))
+        if (!PyArg_ParseTuple(args, "O:fromlist", &list))
 		return NULL;
 	if (!PyList_Check(list)) {
 		PyErr_SetString(PyExc_TypeError, "arg must be list");
@@ -1108,6 +1108,8 @@ array_tolist(arrayobject *self, PyObject *args)
 {
 	PyObject *list = PyList_New(self->ob_size);
 	int i;
+        if (!PyArg_ParseTuple(args, ":tolist"))
+                return NULL;
 	if (list == NULL)
 		return NULL;
 	for (i = 0; i < self->ob_size; i++) {
@@ -1133,7 +1135,7 @@ array_fromstring(arrayobject *self, PyObject *args)
 	char *str;
 	int n;
 	int itemsize = self->ob_descr->itemsize;
-	if (!PyArg_Parse(args, "s#", &str, &n))
+        if (!PyArg_ParseTuple(args, "s#:fromstring", &str, &n))
 		return NULL;
 	if (n % itemsize != 0) {
 		PyErr_SetString(PyExc_ValueError,
@@ -1167,7 +1169,7 @@ values,as if it had been read from a file using the fromfile() method).";
 static PyObject *
 array_tostring(arrayobject *self, PyObject *args)
 {
-	if (!PyArg_Parse(args, ""))
+	if (!PyArg_ParseTuple(args, ":tostring"))
 		return NULL;
 	return PyString_FromStringAndSize(self->ob_item,
 				    self->ob_size * self->ob_descr->itemsize);
@@ -1180,26 +1182,25 @@ Convert the array to an array of machine values and return the string\n\
 representation.";
 
 PyMethodDef array_methods[] = {
-	{"append",	(PyCFunction)array_append, 0, append_doc},
-	{"buffer_info", (PyCFunction)array_buffer_info, 0, buffer_info_doc},
-	{"byteswap",	(PyCFunction)array_byteswap, METH_VARARGS,
-         byteswap_doc},
-	{"count",	(PyCFunction)array_count, 1, count_doc},
-	{"extend",      (PyCFunction)array_extend, 1, extend_doc},
-	{"fromfile",	(PyCFunction)array_fromfile, 0, fromfile_doc},
-	{"fromlist",	(PyCFunction)array_fromlist, 0, fromlist_doc},
-	{"fromstring",	(PyCFunction)array_fromstring, 0, fromstring_doc},
-	{"index",	(PyCFunction)array_index, 1, index_doc},
-	{"insert",	(PyCFunction)array_insert, 0, insert_doc},
-	{"pop",		(PyCFunction)array_pop, 1, pop_doc},
-	{"read",	(PyCFunction)array_fromfile, 0, fromfile_doc},
-	{"remove",	(PyCFunction)array_remove, 1, remove_doc},
-	{"reverse",	(PyCFunction)array_reverse, 0, reverse_doc},
-/*	{"sort",	(PyCFunction)array_sort, 0, sort_doc},*/
-	{"tofile",	(PyCFunction)array_tofile, 0, tofile_doc},
-	{"tolist",	(PyCFunction)array_tolist, 0, tolist_doc},
-	{"tostring",	(PyCFunction)array_tostring, 0, tostring_doc},
-	{"write",	(PyCFunction)array_tofile, 0, tofile_doc},
+	{"append",	(PyCFunction)array_append, METH_VARARGS, append_doc},
+	{"buffer_info", (PyCFunction)array_buffer_info, METH_VARARGS, buffer_info_doc},
+	{"byteswap",	(PyCFunction)array_byteswap, METH_VARARGS, byteswap_doc},
+	{"count",	(PyCFunction)array_count, METH_VARARGS, count_doc},
+	{"extend",      (PyCFunction)array_extend, METH_VARARGS, extend_doc},
+	{"fromfile",	(PyCFunction)array_fromfile, METH_VARARGS, fromfile_doc},
+	{"fromlist",	(PyCFunction)array_fromlist, METH_VARARGS, fromlist_doc},
+	{"fromstring",	(PyCFunction)array_fromstring, METH_VARARGS, fromstring_doc},
+	{"index",	(PyCFunction)array_index, METH_VARARGS, index_doc},
+	{"insert",	(PyCFunction)array_insert, METH_VARARGS, insert_doc},
+	{"pop",		(PyCFunction)array_pop, METH_VARARGS, pop_doc},
+	{"read",	(PyCFunction)array_fromfile, METH_VARARGS, fromfile_doc},
+	{"remove",	(PyCFunction)array_remove, METH_VARARGS, remove_doc},
+	{"reverse",	(PyCFunction)array_reverse, METH_VARARGS, reverse_doc},
+/*	{"sort",	(PyCFunction)array_sort, METH_VARARGS, sort_doc},*/
+	{"tofile",	(PyCFunction)array_tofile, METH_VARARGS, tofile_doc},
+	{"tolist",	(PyCFunction)array_tolist, METH_VARARGS, tolist_doc},
+	{"tostring",	(PyCFunction)array_tostring, METH_VARARGS, tostring_doc},
+	{"write",	(PyCFunction)array_tofile, METH_VARARGS, tofile_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -1235,6 +1236,7 @@ array_print(arrayobject *a, FILE *fp, int flags)
 {
 	int ok = 0;
 	int i, len;
+	PyObject *t_empty = PyTuple_New(0);
 	PyObject *v;
 	len = a->ob_size;
 	if (len == 0) {
@@ -1243,7 +1245,8 @@ array_print(arrayobject *a, FILE *fp, int flags)
 	}
 	if (a->ob_descr->typecode == 'c') {
 		fprintf(fp, "array('c', ");
-		v = array_tostring(a, (PyObject *)NULL);
+		v = array_tostring(a, t_empty);
+		Py_DECREF(t_empty);;
 		ok = PyObject_Print(v, fp, 0);
 		Py_XDECREF(v);
 		fprintf(fp, ")");
@@ -1355,9 +1358,9 @@ a_array(PyObject *self, PyObject *args)
 	char c;
 	PyObject *initial = NULL;
 	struct arraydescr *descr;
-	if (!PyArg_Parse(args, "c", &c)) {
+        if (!PyArg_ParseTuple(args, "c:array", &c)) {
 		PyErr_Clear();
-		if (!PyArg_Parse(args, "(cO)", &c, &initial))
+                if (!PyArg_ParseTuple(args, "cO:array", &c, &initial))
 			return NULL;
 		if (!PyList_Check(initial) && !PyString_Check(initial)) {
 			PyErr_SetString(PyExc_TypeError,
@@ -1388,8 +1391,10 @@ a_array(PyObject *self, PyObject *args)
 				}
 			}
 			if (initial != NULL && PyString_Check(initial)) {
+				PyObject *t_initial = Py_BuildValue("(O)", initial);
 				PyObject *v =
-				  array_fromstring((arrayobject *)a, initial);
+					array_fromstring((arrayobject *)a, t_initial);
+                                Py_DECREF(t_initial);
 				if (v == NULL) {
 					Py_DECREF(a);
 					return NULL;
@@ -1412,7 +1417,7 @@ initialized from the optional initializer value, which must be a list\n\
 or a string.";
 
 static PyMethodDef a_methods[] = {
-	{"array",	a_array, 0, a_array_doc},
+	{"array",	a_array, METH_VARARGS, a_array_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
