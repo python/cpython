@@ -227,6 +227,45 @@ class OperatorTestCase(unittest.TestCase):
         self.failIf(operator.is_not(a, b))
         self.failUnless(operator.is_not(a,c))
 
+    def test_attrgetter(self):
+        class A:
+            pass
+        a = A()
+        a.name = 'arthur'
+        f = operator.attrgetter('name')
+        self.assertEqual(f(a), 'arthur')
+        f = operator.attrgetter('rank')
+        self.assertRaises(AttributeError, f, a)
+        f = operator.attrgetter(2)
+        self.assertRaises(TypeError, f, a)
+        self.assertRaises(TypeError, operator.attrgetter)
+        self.assertRaises(TypeError, operator.attrgetter, 1, 2)
+
+    def test_itemgetter(self):
+        a = 'ABCDE'
+        f = operator.itemgetter(2)
+        self.assertEqual(f(a), 'C')
+        f = operator.itemgetter(10)
+        self.assertRaises(IndexError, f, a)
+
+        f = operator.itemgetter('name')
+        self.assertRaises(TypeError, f, a)
+        self.assertRaises(TypeError, operator.itemgetter)
+        self.assertRaises(TypeError, operator.itemgetter, 1, 2)
+
+        d = dict(key='val')
+        f = operator.itemgetter('key')
+        self.assertEqual(f(d), 'val')
+        f = operator.itemgetter('nonkey')
+        self.assertRaises(KeyError, f, d)
+
+        # example used in the docs
+        inventory = [('apple', 3), ('banana', 2), ('pear', 5), ('orange', 1)]
+        getcount = operator.itemgetter(1)
+        self.assertEqual(map(getcount, inventory), [3, 2, 5, 1])
+        self.assertEqual(list.sorted(inventory, key=getcount),
+            [('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)])
+
 def test_main():
     test_support.run_unittest(OperatorTestCase)
 
