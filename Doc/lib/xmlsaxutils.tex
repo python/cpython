@@ -1,0 +1,48 @@
+\section{\module{xml.sax.saxutils} ---
+         SAX Utilities}
+
+\declaremodule{standard}{xml.sax.saxutils}
+\modulesynopsis{Convenience functions and classes for use with SAX.}
+\sectionauthor{Martin v. L\"owis}{loewis@informatik.hu-berlin.de}
+\moduleauthor{Lars Marius Garshol}{larsga@garshol.priv.no}
+
+\versionadded{2.0}
+
+
+The module \module{xml.sax.saxutils} contains a number of classes and
+functions that are commonly useful when creating SAX applications,
+either in direct use, or as base classes.
+
+\begin{funcdesc}{escape}{data\optional{, entities}}
+  Escape \&, <, and > in a string of data.
+
+  You can escape other strings of data by passing a dictionary as the
+  optional entities parameter.  The keys and values must all be
+  strings; each key will be replaced with its corresponding value.
+\end{funcdesc}
+
+\begin{classdesc}{XMLGenerator}{\optional{out\optional{, encoding}}}
+  This class implements the \class{ContentHandler} interface by
+  writing SAX events back into an XML document. In other words, using
+  an \class{XMLGenerator} as the content handler will reproduce the
+  original document being parsed. \var{out} should be a file-like
+  object which will default to \var{sys.stdout}. \var{encoding} is the
+  encoding of the output stream which defaults to \code{'iso-8859-1'}.
+\end{classdesc}
+
+\begin{classdesc}{XMLFilterBase}{base}
+  This class is designed to sit between an \class{XMLReader} and the
+  client application's event handlers.  By default, it does nothing
+  but pass requests up to the reader and events on to the handlers
+  unmodified, but subclasses can override specific methods to modify
+  the event stream or the configuration requests as they pass through.
+\end{classdesc}
+
+\begin{funcdesc}{prepare_input_source}{source\optional{, base}}
+  This function takes an input source and an optional base URL and
+  returns a fully resolved \class{InputSource} object ready for
+  reading.  The input source can be given as a string, a file-like
+  object, or an \class{InputSource} object; parsers will use this
+  function to implement the polymorphic \var{source} argument to their
+  \method{parse()} method.
+\end{funcdesc}
