@@ -70,7 +70,7 @@ def urlretrieve(url, filename=None, reporthook=None):
 	global _urlopener
 	if not _urlopener:
 		_urlopener = FancyURLopener()
-        return _urlopener.retrieve(url, filename, reporthook)
+	return _urlopener.retrieve(url, filename, reporthook)
 def urlcleanup():
 	if _urlopener:
 		_urlopener.cleanup()
@@ -208,7 +208,7 @@ class URLopener:
 		blocknum = 1
 		if reporthook:
 			if headers.has_key("content-length"):
-                            size = int(headers["Content-Length"])
+				size = int(headers["Content-Length"])
 			reporthook(0, bs, size)
 		block = fp.read(bs)
 		if reporthook:
@@ -305,7 +305,7 @@ class URLopener:
 			else:
 				result = method(url, fp, errcode, errmsg,
 						headers)
- 			if result: return result
+			if result: return result
 		return self.http_error_default(
 			url, fp, errcode, errmsg, headers)
 
@@ -400,14 +400,14 @@ class URLopener:
 				if string.lower(attr) == 'type' and \
 				   value in ('a', 'A', 'i', 'I', 'd', 'D'):
 					type = string.upper(value)
-                        (fp, retrlen) = self.ftpcache[key].retrfile(file, type)
-                        if retrlen is not None and retrlen >= 0:
-                            import mimetools, StringIO
-                            headers = mimetools.Message(StringIO.StringIO(
-                                'Content-Length: %d\n' % retrlen))
-                        else:
-                            headers = noheaders()
-                        return addinfourl(fp, headers, "ftp:" + url)
+			(fp, retrlen) = self.ftpcache[key].retrfile(file, type)
+			if retrlen is not None and retrlen >= 0:
+				import mimetools, StringIO
+				headers = mimetools.Message(StringIO.StringIO(
+					'Content-Length: %d\n' % retrlen))
+			else:
+				headers = noheaders()
+			return addinfourl(fp, headers, "ftp:" + url)
 		except ftperrors(), msg:
 			raise IOError, ('ftp error', msg), sys.exc_info()[2]
 
