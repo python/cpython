@@ -16,6 +16,8 @@ import sys
 # Ench item in an entry is a tuple of:
 #
 #   Section #,  Title String,  Page #,  List of Sub-entries
+#
+# The return value of parse_toc() is such a tuple.
 
 cline_re = r"""^
 \\contentsline\ \{([a-z]*)}             # type of section in $1
