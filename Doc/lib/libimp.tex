@@ -106,6 +106,21 @@ the process of completing its import (and the imports, if any,
 triggered by that).
 \end{funcdesc}
 
+\begin{funcdesc}{set_frozenmodules}{seq_of_tuples}
+Set the global list of frozen modules.  \var{seq_of_tuples} is a sequence
+of tuples of length 3: (\var{modulename}, \var{codedata}, \var{ispkg})
+\var{modulename} is the name of the frozen module (may contain dots).
+\var{codedata} is a marshalled code object. \var{ispkg} is a boolean
+indicating whether the module is a package.
+\versionadded{2.3}
+\end{funcdesc}
+
+\begin{funcdesc}{get_frozenmodules}{}
+Return the global list of frozen modules as a tuple of tuples. See
+\function{set_frozenmodules()} for a description of its contents.
+\versionadded{2.3}
+\end{funcdesc}
+
 The following constants with integer values, defined in this module,
 are used to indicate the search result of \function{find_module()}.
 

@@ -2295,6 +2295,135 @@ imp_init_frozen(PyObject *self, PyObject *args)
 	return m;
 }
 
+/* Keep a reference to the tuple used to build PyImport_FrozenModules,
+   as it points to the raw string data inside the tuple. */
+static PyObject *frozenmodulestuple = NULL;
+
+static PyObject *
+imp_set_frozenmodules(PyObject *self, PyObject *args)
+{
+	PyObject *t, *item, *name, *code, *ispkg;
+	struct _frozen *frozenmodules;
+	int n, i;
+
+	if (!PyArg_ParseTuple(args, "O:set_frozenmodules", &t))
+		return NULL;
+
+	/* turn the argument into a tuple so we're sure our list
+	   isn't being tampered with behind our backs */
+	t = PySequence_Tuple(t);
+	if (t == NULL)
+		return NULL;
+
+	n = PyTuple_Size(t);
+	frozenmodules = PyMem_Malloc((n + 1)* sizeof(struct _frozen));
+	if (frozenmodules == NULL) {
+		PyErr_SetString(PyExc_MemoryError,
+				"no memory to allocate frozen array");
+		goto error;
+	}
+	for (i = 0; i < n; i++) {
+		item = PyTuple_GetItem(t, i);
+		if (item == NULL)
+			goto error;
+		if (!PyTuple_Check(item) || PyTuple_Size(item) != 3)
+			goto typeerror;
+		name = PyTuple_GetItem(item, 0);
+		code = PyTuple_GetItem(item, 1);
+		ispkg = PyTuple_GetItem(item, 2);
+		if (!PyString_Check(name) || (PyObject_IsTrue(code) &&
+				!PyString_Check(code)))
+			goto typeerror;
+		frozenmodules[i].name = PyString_AsString(name);
+		if (PyObject_IsTrue(code)) {
+			frozenmodules[i].code = PyString_AsString(code);
+			frozenmodules[i].size = PyString_Size(code);
+		} else {
+			frozenmodules[i].code = NULL;
+			frozenmodules[i].size = 0;
+		}
+		if (PyObject_IsTrue(ispkg))
+			frozenmodules[i].size = -frozenmodules[i].size;
+	}
+	frozenmodules[n].name = NULL; /* sentinel */
+	frozenmodules[n].code = NULL;
+	frozenmodules[n].size = 0;
+
+	if (frozenmodulestuple != NULL) {
+		Py_DECREF(frozenmodulestuple);
+		PyMem_Free(PyImport_FrozenModules);
+	} /* else we don't know how or if PyImport_FrozenModules were
+	     allocated, so we can't do anything. */
+
+	frozenmodulestuple = t;
+	PyImport_FrozenModules = frozenmodules;
+
+	Py_INCREF(Py_None);
+	return Py_None;
+
+typeerror:
+	PyErr_SetString(PyExc_TypeError,
+			"items must be tuples of length 3, "
+			"containing two strings and a bool");
+error:
+	Py_DECREF(t);
+	PyMem_Free(frozenmodules);
+	return NULL;
+}
+
+static PyObject *
+imp_get_frozenmodules(PyObject *self, PyObject *args)
+{
+	PyObject *t, *item, *ob;
+	int i;
+	struct _frozen *p;
+	if (!PyArg_ParseTuple(args, ":get_frozenmodules"))
+		return NULL;
+
+	/* We could just return frozenmodulestuple if it isn't
+	   NULL, but it's possible a C extension stepped on
+	   PyImport_FrozenModules after us, so we always build
+	   a new tuple. */
+
+	for (p = PyImport_FrozenModules, i = 0; ; p++, i++) {
+		if (p->name == NULL)
+			break;
+	}
+	t = PyTuple_New(i);
+	if (t == NULL)
+		return NULL;
+	for (p = PyImport_FrozenModules, i = 0; ; p++, i++) {
+		if (p->name == NULL)
+			break;
+		item = PyTuple_New(3);
+		if (item == NULL)
+			goto error;
+		ob = PyString_FromString(p->name);
+		if (ob == NULL)
+			goto error;
+		Py_INCREF(ob);
+		PyTuple_SET_ITEM(item, 0, ob);
+		if (p->code != NULL) {
+			ob = PyString_FromStringAndSize(p->code,
+				p->size >= 0 ? p->size : -(p->size));
+			if (ob == NULL)
+				goto error;
+		}
+		else
+			ob = Py_None;
+		Py_INCREF(ob);
+		PyTuple_SET_ITEM(item, 1, ob);
+		ob = p->size >= 0 ? Py_False : Py_True;
+		Py_INCREF(ob);
+		PyTuple_SET_ITEM(item, 2, ob);
+		PyTuple_SET_ITEM(t, i, item);
+	}
+	return t;
+error:
+	Py_DECREF(t);
+	return NULL;
+}
+
 static PyObject *
 imp_get_frozen_object(PyObject *self, PyObject *args)
 {
@@ -2521,6 +2650,20 @@ PyDoc_STRVAR(doc_lock_held,
 Return 1 if the import lock is currently held.\n\
 On platforms without threads, return 0.");
 
+PyDoc_STRVAR(doc_set_frozenmodules,
+"set_frozenmodules(seq_of_tuples) -> None\n\
+Set the global list of frozen modules.\n\
+The single argument is a sequence of tuples of length 3:\n\
+  (modulename, codedata, ispkg)\n\
+'modulename' is the name of the frozen module (may contain dots).\n\
+'codedata' is a marshalled code object. 'ispkg' is a boolean\n\
+indicating whether the module is a package.");
+
+PyDoc_STRVAR(doc_get_frozenmodules,
+"get_frozenmodules() -> tuple_of_tuples\n\
+Return the global list of frozen modules as a tuple of tuples. See\n\
+the set_frozenmodules() doc string for a description of its contents.");
+
 static PyMethodDef imp_methods[] = {
 	{"find_module",		imp_find_module, METH_VARARGS, doc_find_module},
 	{"get_magic",		imp_get_magic,	 METH_VARARGS, doc_get_magic},
@@ -2528,6 +2671,10 @@ static PyMethodDef imp_methods[] = {
 	{"load_module",		imp_load_module, METH_VARARGS, doc_load_module},
 	{"new_module",		imp_new_module,	 METH_VARARGS, doc_new_module},
 	{"lock_held",		imp_lock_held,	 METH_VARARGS, doc_lock_held},
+	{"set_frozenmodules",	imp_set_frozenmodules,	METH_VARARGS,
+							doc_set_frozenmodules},
+	{"get_frozenmodules",	imp_get_frozenmodules,	METH_VARARGS,
+							doc_get_frozenmodules},
 	/* The rest are obsolete */
 	{"get_frozen_object",	imp_get_frozen_object,	METH_VARARGS},
 	{"init_builtin",	imp_init_builtin,	METH_VARARGS},
