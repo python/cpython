@@ -314,4 +314,10 @@ def test_std_qQ():
                     pass
                 test_one_qQ(x)
 
+    # Some error cases.
+    for direction in "<>":
+        for letter in "qQ":
+            for badobject in "a string", 3+42j, randrange:
+                any_err(struct.pack, direction + letter, badobject)
+    
 test_std_qQ()
