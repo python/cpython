@@ -533,8 +533,8 @@ PyObject *PyString_DecodeEscape(const char *s,
 	char *p, *buf;
 	const char *end;
 	PyObject *v;
-	v = PyString_FromStringAndSize((char *)NULL, 
-				       recode_encoding ? 4*len:len);
+	int newlen = recode_encoding ? 4*len:len;
+	v = PyString_FromStringAndSize((char *)NULL, newlen);
 	if (v == NULL)
 		return NULL;
 	p = buf = PyString_AsString(v);
@@ -660,7 +660,8 @@ PyObject *PyString_DecodeEscape(const char *s,
 			break;
 		}
 	}
-	_PyString_Resize(&v, (int)(p - buf));
+	if (p-buf < newlen)
+		_PyString_Resize(&v, (int)(p - buf));
 	return v;
   failed:
 	Py_DECREF(v);

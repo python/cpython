@@ -23,9 +23,16 @@ class UTF16Test(unittest.TestCase):
         f = reader(s)
         self.assertEquals(f.read(), u"spamspam")
 
+class EscapeDecodeTest(unittest.TestCase):
+    def test_empty_escape_decode(self):
+        self.assertEquals(codecs.escape_decode(""), ("", 0))
+
 
 def test_main():
-    test_support.run_unittest(UTF16Test)
+    suite = unittest.TestSuite()
+    suite.addTest(unittest.makeSuite(UTF16Test))
+    suite.addTest(unittest.makeSuite(EscapeDecodeTest))
+    test_support.run_suite(suite)
 
 
 if __name__ == "__main__":
