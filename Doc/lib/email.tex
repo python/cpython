@@ -353,7 +353,7 @@ fp.close()
 
 # me == the sender's email address
 # you == the recipient's email address
-msg['Subject'] = 'The contents of \%s' \% textfile
+msg['Subject'] = 'The contents of %s' % textfile
 msg['From'] = me
 msg['To'] = you
 
@@ -480,7 +480,7 @@ def main():
     
     # Create the enclosing (outer) message
     outer = MIMEBase('multipart', 'mixed')
-    outer['Subject'] = 'Contents of directory \%s' \% os.path.abspath(dir)
+    outer['Subject'] = 'Contents of directory %s' % os.path.abspath(dir)
     outer['To'] = sender
     outer['From'] = COMMASPACE.join(recips)
     outer.preamble = 'You will not see this in a MIME-aware mail reader.\n'
@@ -617,7 +617,7 @@ def main():
             if not ext:
                 # Use a generic bag-of-bits extension
                 ext = '.bin'
-            filename = 'part-\%03d\%s' \% (counter, ext)
+            filename = 'part-%03d%s' % (counter, ext)
         counter += 1
         fp = open(os.path.join(dir, filename), 'wb')
         fp.write(part.get_payload(decode=1))
