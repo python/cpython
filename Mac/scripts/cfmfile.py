@@ -170,6 +170,7 @@ class CfmFile(ResourceCollection, FragmentResource):
 
 def mergecfmfiles(inputs, output):
 	# Convert inputs/outputs to fsspecs
+	inputs = map(None, inputs)
 	for i in range(len(inputs)):
 		if type(inputs[i]) == type(''):
 			inputs[i] = macfs.FSSpec(inputs[i])
