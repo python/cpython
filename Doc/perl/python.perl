@@ -871,7 +871,7 @@ sub do_cmd_maketitle {
     if ($t_email) {
 	$the_title .= "\n<p>$t_email</p>";
     }# else { $the_title .= "</p>" }
-    $the_title . "<hr>\n" . $_ ;
+    $the_title . $_ ;
 }
 
 
