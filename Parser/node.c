@@ -29,10 +29,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+#include <limits.h>
+
 /* Parse tree node implementation */
 
 #include "pgenheaders.h"
 #include "node.h"
+#include "errcode.h"
 
 node *
 PyNode_New(type)
@@ -52,7 +55,7 @@ PyNode_New(type)
 #define XXX 3 /* Node alignment factor to speed up realloc */
 #define XXXROUNDUP(n) ((n) == 1 ? 1 : ((n) + XXX - 1) / XXX * XXX)
 
-node *
+int
 PyNode_AddChild(n1, type, str, lineno)
 	register node *n1;
 	int type;
@@ -62,12 +65,14 @@ PyNode_AddChild(n1, type, str, lineno)
 	register int nch = n1->n_nchildren;
 	register int nch1 = nch+1;
 	register node *n;
+	if (nch == SHRT_MAX || nch < 0)
+		return E_OVERFLOW;
 	if (XXXROUNDUP(nch) < nch1) {
 		n = n1->n_child;
 		nch1 = XXXROUNDUP(nch1);
 		PyMem_RESIZE(n, node, nch1);
 		if (n == NULL)
-			return NULL;
+			return E_NOMEM;
 		n1->n_child = n;
 	}
 	n = &n1->n_child[n1->n_nchildren++];
@@ -76,7 +81,7 @@ PyNode_AddChild(n1, type, str, lineno)
 	n->n_lineno = lineno;
 	n->n_nchildren = 0;
 	n->n_child = NULL;
-	return n;
+	return 0;
 }
 
 /* Forward */

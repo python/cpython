@@ -52,6 +52,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define E_DONE		16	/* Parsing complete */
 #define E_ERROR		17	/* Execution error */
 #define E_INDENT	18	/* Invalid indentation detected */
+#define E_OVERFLOW      19      /* Node had too many children */
 
 #ifdef __cplusplus
 }

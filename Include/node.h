@@ -46,7 +46,7 @@ typedef struct _node {
 } node;
 
 extern DL_IMPORT(node *) PyNode_New Py_PROTO((int type));
-extern DL_IMPORT(node *) PyNode_AddChild Py_PROTO((node *n, int type, char *str, int lineno));
+extern DL_IMPORT(int) PyNode_AddChild Py_PROTO((node *n, int type, char *str, int lineno));
 extern DL_IMPORT(void) PyNode_Free Py_PROTO((node *n));
 
 /* Node access functions */
