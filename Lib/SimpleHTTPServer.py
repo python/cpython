@@ -99,7 +99,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         except os.error:
             self.send_error(404, "No permission to list directory")
             return None
-        list.sort(lambda a, b: cmp(a.lower(), b.lower()))
+        list.sort(key=lambda a: a.lower())
         f = StringIO()
         f.write("<title>Directory listing for %s</title>\n" % self.path)
         f.write("<h2>Directory listing for %s</h2>\n" % self.path)
