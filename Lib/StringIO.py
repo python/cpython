@@ -129,6 +129,8 @@ class StringIO:
 				self.buflist = []
 			self.buflist = [self.buf[:self.pos], s, self.buf[newpos:]]
 			self.buf = ''
+			if newpos > self.len:
+				self.len = newpos
 		else:
 			self.buflist.append(s)
 			self.len = newpos
