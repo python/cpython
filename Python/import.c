@@ -36,6 +36,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "marshal.h"
 #include "compile.h"
 #include "ceval.h"
+#include "osdefs.h"
 
 #ifdef DEBUG
 #define D(x) x
@@ -52,20 +53,6 @@ extern char *argv0;
 /* Magic word to reject pre-0.9.4 .pyc files */
 
 #define MAGIC 0x949494L
-
-/* Define pathname separator used in file names */
-
-#ifdef macintosh
-#define SEP ':'
-#endif
-
-#ifdef MSDOS
-#define SEP '\\'
-#endif
-
-#ifndef SEP
-#define SEP '/'
-#endif
 
 static object *modules;
 
@@ -181,7 +168,7 @@ get_module(m, name, m_ret)
 	FILE *fp, *fpc;
 	node *n;
 	int err;
-	char namebuf[258];
+	char namebuf[MAXPATHLEN+1];
 	int namelen;
 	long mtime;
 	extern long getmtime();
