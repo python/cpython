@@ -21,20 +21,6 @@ class AllTest(unittest.TestCase):
         except ImportError:
             # Silent fail here seems the best route since some modules
             # may not be available in all environments.
-            # Since an ImportError may leave a partial module object in
-            # sys.modules, get rid of that first.  Here's what happens if
-            # you don't:  importing pty fails on Windows because pty tries to
-            # import FCNTL, which doesn't exist.  That raises an ImportError,
-            # caught here.  It also leaves a partial pty module in sys.modules.
-            # So when test_pty is called later, the import of pty succeeds,
-            # but shouldn't.  As a result, test_pty crashes with an
-            # AttributeError instead of an ImportError, and regrtest interprets
-            # the latter as a test failure (ImportError is treated as "test
-            # skipped" -- which is what test_pty should say on Windows).
-            try:
-                del sys.modules[modname]
-            except KeyError:
-                pass
             return
         verify(hasattr(sys.modules[modname], "__all__"),
                "%s has no __all__ attribute" % modname)
