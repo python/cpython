@@ -317,7 +317,7 @@ tarballs:  tarpdf tarps tarhtml tarlatex
 # - useful results: .dvi, .pdf, .ps, .texi, .info
 clean:
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.py[co]
-	rm -f *.bak *.orig lib1.texi *.out @webchecker.pickle
+	rm -f *.bak *.orig lib1.texi *.out @webchecker.pickle *.bkm
 	rm -f html-$(RELEASE).tar.gz info-$(RELEASE).tar.gz
 	rm -f pdf-$(RELEASE).tar.gz postscript-$(RELEASE).tar.gz
 	rm -f latex-$(RELEASE).tar.gz
