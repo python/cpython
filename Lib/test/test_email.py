@@ -921,12 +921,12 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_formatdate(self):
         now = 1005327232.109884
-        time0 = time.ctime(0)
+        epoch = time.gmtime(0)[0]
         # When does the epoch start?
-        if time0 == 'Wed Dec 31 19:00:00 1969':
+        if epoch == 1970:
             # traditional Unix epoch
             matchdate = 'Fri, 09 Nov 2001 17:33:52 -0000'
-        elif time0 == 'Fri Jan  1 00:00:00 1904':
+        elif epoch == 1904:
             # Mac epoch
             matchdate = 'Sat, 09 Nov 1935 16:33:52 -0000'
         else:
@@ -934,20 +934,19 @@ class TestMiscellaneous(unittest.TestCase):
         gdate = Utils.formatdate(now)
         ldate = Utils.formatdate(now, localtime=1)
         self.assertEqual(gdate, matchdate)
-        # It's a little tougher to test for localtime, but we'll try.  Skip if
-        # we don't have strptime().
-        if hasattr(time, 'strptime'):
-            gtime = time.strptime(gdate.split()[4], '%H:%M:%S')
-            ltime = time.strptime(ldate.split()[4], '%H:%M:%S')
-            zone = ldate.split()[5]
-            offset = int(zone[:3]) * -3600 + int(zone[-2:])
-            if time.daylight and time.localtime(now)[-1]:
-                toff = time.altzone
-            else:
-                toff = time.timezone
-            self.assertEqual(offset, toff)
 
-    def test_parsedate(self):
+    def test_formatdate_zoneoffsets(self):
+        now = 1005327232.109884
+        ldate = Utils.formatdate(now, localtime=1)
+        zone = ldate.split()[5]
+        offset = int(zone[:3]) * -3600 + int(zone[-2:]) * -60
+        if time.daylight and time.localtime(now)[-1]:
+            toff = time.altzone
+        else:
+            toff = time.timezone
+        self.assertEqual(offset, toff)
+
+    def test_parsedate_none(self):
         self.assertEqual(Utils.parsedate(''), None)
 
 
