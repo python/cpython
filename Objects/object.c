@@ -1656,12 +1656,15 @@ merge_class_dict(PyObject* dict, PyObject* aclass)
 			PyErr_Clear();
 		else {
 			for (i = 0; i < n; i++) {
+				int status;
 				PyObject *base = PySequence_GetItem(bases, i);
 				if (base == NULL) {
 					Py_DECREF(bases);
 					return -1;
 				}
-				if (merge_class_dict(dict, base) < 0) {
+				status = merge_class_dict(dict, base);
+				Py_DECREF(base);
+				if (status < 0) {
 					Py_DECREF(bases);
 					return -1;
 				}
