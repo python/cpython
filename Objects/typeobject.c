@@ -939,31 +939,6 @@ add_wrappers(PyTypeObject *type, struct wrapperbase *base, void *wrapped)
 }
 
 static int
-add_staticmethodwrappers(PyTypeObject *type, struct wrapperbase *base,
-			void *wrapped)
-{
-	PyObject *dict = type->tp_defined;
-	PyObject *sm;
-
-	for (; base->name != NULL; base++) {
-		PyObject *descr;
-		if (PyDict_GetItemString(dict, base->name))
-			continue;
-		descr = PyDescr_NewWrapper(type->ob_type, base, wrapped);
-		if (descr == NULL)
-			return -1;
-		sm = PyStaticMethod_New(descr);
-		Py_DECREF(descr);
-		if (sm == NULL)
-			return -1;
-		if (PyDict_SetItemString(dict, base->name, sm) < 0)
-			return -1;
-		Py_DECREF(sm);
-	}
-	return 0;
-}
-
-static int
 add_members(PyTypeObject *type, struct memberlist *memb)
 {
 	PyObject *dict = type->tp_defined;
@@ -1197,7 +1172,7 @@ PyType_InitDict(PyTypeObject *type)
 	}
 
 	/* Initialize the base class */
-	if (base) {
+	if (base && base->tp_dict == NULL) {
 		if (PyType_InitDict(base) < 0)
 			return -1;
 	}
@@ -1853,17 +1828,54 @@ static struct wrapperbase tab_init[] = {
 };
 
 static PyObject *
-wrap_new(PyObject *type, PyObject *args, void *wrapped)
+tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	newfunc new = (newfunc)wrapped;
-	return new((PyTypeObject *)type, args, NULL);
+	PyTypeObject *type, *subtype;
+	PyObject *arg0, *res;
+
+	if (self == NULL || !PyType_Check(self))
+		Py_FatalError("__new__() called with non-type 'self'");
+	type = (PyTypeObject *)self;
+	if (!PyTuple_Check(args) || PyTuple_GET_SIZE(args) < 1) {
+		PyErr_SetString(PyExc_TypeError,
+				"T.__new__(): not enough arguments");
+		return NULL;
+	}
+	arg0 = PyTuple_GET_ITEM(args, 0);
+	if (!PyType_Check(arg0)) {
+		PyErr_SetString(PyExc_TypeError,
+				"T.__new__(S): S is not a type object");
+		return NULL;
+	}
+	subtype = (PyTypeObject *)arg0;
+	if (!PyType_IsSubtype(subtype, type)) {
+		PyErr_SetString(PyExc_TypeError,
+				"T.__new__(S): S is not a subtype of T");
+		return NULL;
+	}
+	args = PyTuple_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+	if (args == NULL)
+		return NULL;
+	res = type->tp_new(subtype, args, kwds);
+	Py_DECREF(args);
+	return res;
 }
 
-static struct wrapperbase tab_new[] = {
-	{"__new__", (wrapperfunc)wrap_new,
-	 "T.__new__() -> an object with type T"},
+static struct PyMethodDef tp_new_methoddef[] = {
+	{"__new__", (PyCFunction)tp_new_wrapper, METH_KEYWORDS,
+	 "T.__new__(S, ...) -> a new object with type S, a subtype of T"},
 	{0}
 };
+
+static int
+add_tp_new_wrapper(PyTypeObject *type)
+{
+	PyObject *func = PyCFunction_New(tp_new_methoddef, (PyObject *)type);
+
+	if (func == NULL)
+		return -1;
+	return PyDict_SetItemString(type->tp_defined, "__new__", func);
+}
 
 static int
 add_operators(PyTypeObject *type)
@@ -1955,8 +1967,7 @@ add_operators(PyTypeObject *type)
 	ADD(type->tp_init, tab_init);
 
 	if (type->tp_new != NULL)
-		add_staticmethodwrappers(type, tab_new,
-					 (void *)(type->tp_new));
+		add_tp_new_wrapper(type);
 
 	return 0;
 }
