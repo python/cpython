@@ -759,7 +759,6 @@ for path in sys.path:
             # ImportError, so try the other path hooks
             pass
         else:
-        if importer is not None:
             loader = importer.find_module(fullname)
             <module> = loader.load_module(fullname)
 
