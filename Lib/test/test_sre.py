@@ -35,20 +35,20 @@ if verbose:
 
 try:
     assert sre.sub("(?i)b+", "x", "bbbb BBBB") == 'x x'
-    
+
     def bump_num(matchobj):
         int_value = int(matchobj.group(0))
         return str(int_value + 1)
 
     assert sre.sub(r'\d+', bump_num, '08.2 -2 23x99y') == '9.3 -3 24x100y'
     assert sre.sub(r'\d+', bump_num, '08.2 -2 23x99y', 3) == '9.3 -3 23x99y'
-    
+
     assert sre.sub('.', lambda m: r"\n", 'x') == '\\n'
     assert sre.sub('.', r"\n", 'x') == '\n'
 
     s = r"\1\1"
     assert sre.sub('(.)', s, 'x') == 'xx'
-    assert sre.sub('(.)', sre.escape(s), 'x') == s 
+    assert sre.sub('(.)', sre.escape(s), 'x') == s
     assert sre.sub('(.)', lambda m: s, 'x') == s
 
     assert sre.sub('(?P<a>x)', '\g<a>\g<a>', 'xx') == 'xxxx'
@@ -144,7 +144,7 @@ except AssertionError:
 
 if verbose:
     print 'Running tests on sre.split'
-    
+
 try:
     assert sre.split(":", ":a:b::c") == ['', 'a', 'b', '', 'c']
     assert sre.split(":*", ":a:b::c") == ['', 'a', 'b', 'c']
@@ -164,7 +164,7 @@ try:
     assert sre.split(':', 'a:b:c:d', 2) == ['a', 'b', 'c:d']
 
     assert sre.split("(:)", ":a:b::c", 2) == ['', ':', 'a', ':', 'b::c']
-    assert sre.split("(:*)", ":a:b::c", 2) == ['', ':', 'a', ':', 'b::c']    
+    assert sre.split("(:*)", ":a:b::c", 2) == ['', ':', 'a', ':', 'b::c']
 except AssertionError:
     raise TestFailed, "qualified sre.split"
 
@@ -186,29 +186,29 @@ if verbose:
 
 try:
     # No groups at all
-    m = sre.match('a', 'a') ; assert m.groups() == ()    
+    m = sre.match('a', 'a') ; assert m.groups() == ()
     # A single group
-    m = sre.match('(a)', 'a') ; assert m.groups() == ('a',)      
+    m = sre.match('(a)', 'a') ; assert m.groups() == ('a',)
 
     pat = sre.compile('((a)|(b))(c)?')
-    assert pat.match('a').groups() == ('a', 'a', None, None)    
-    assert pat.match('b').groups() == ('b', None, 'b', None)    
-    assert pat.match('ac').groups() == ('a', 'a', None, 'c')    
-    assert pat.match('bc').groups() == ('b', None, 'b', 'c')    
-    assert pat.match('bc').groups("") == ('b', "", 'b', 'c')    
+    assert pat.match('a').groups() == ('a', 'a', None, None)
+    assert pat.match('b').groups() == ('b', None, 'b', None)
+    assert pat.match('ac').groups() == ('a', 'a', None, 'c')
+    assert pat.match('bc').groups() == ('b', None, 'b', 'c')
+    assert pat.match('bc').groups("") == ('b', "", 'b', 'c')
 except AssertionError:
     raise TestFailed, "match .groups() method"
 
 try:
     # A single group
-    m = sre.match('(a)', 'a') 
-    assert m.group(0) == 'a' ; assert m.group(0) == 'a' 
+    m = sre.match('(a)', 'a')
+    assert m.group(0) == 'a' ; assert m.group(0) == 'a'
     assert m.group(1) == 'a' ; assert m.group(1, 1) == ('a', 'a')
 
     pat = sre.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
-    assert pat.match('a').group(1, 2, 3) == ('a', None, None)   
-    assert pat.match('b').group('a1', 'b2', 'c3') == (None, 'b', None)  
-    assert pat.match('ac').group(1, 'b2', 3) == ('a', None, 'c')        
+    assert pat.match('a').group(1, 2, 3) == ('a', None, None)
+    assert pat.match('b').group('a1', 'b2', 'c3') == (None, 'b', None)
+    assert pat.match('ac').group(1, 'b2', 3) == ('a', None, 'c')
 except AssertionError:
     raise TestFailed, "match .group() method"
 
@@ -252,10 +252,10 @@ try:
     assert sre.I == sre.IGNORECASE
     assert sre.L == sre.LOCALE
     assert sre.M == sre.MULTILINE
-    assert sre.S == sre.DOTALL 
-    assert sre.X == sre.VERBOSE 
-    assert sre.T == sre.TEMPLATE 
-    assert sre.U == sre.UNICODE 
+    assert sre.S == sre.DOTALL
+    assert sre.X == sre.VERBOSE
+    assert sre.T == sre.TEMPLATE
+    assert sre.U == sre.UNICODE
 except AssertionError:
     raise TestFailed, 're module constants'
 
@@ -272,7 +272,7 @@ if verbose:
 else:
     # To save time, only run the first and last 10 tests
     #tests = tests[:10] + tests[-10:]
-    pass 
+    pass
 
 for t in tests:
     sys.stdout.flush()
@@ -280,7 +280,7 @@ for t in tests:
     if len(t)==5:
         pattern, s, outcome, repl, expected = t
     elif len(t)==3:
-        pattern, s, outcome = t 
+        pattern, s, outcome = t
     else:
         raise ValueError, ('Test tuples should have 3 or 5 fields',t)
 
@@ -288,7 +288,7 @@ for t in tests:
         obj=sre.compile(pattern)
     except sre.error:
         if outcome==SYNTAX_ERROR: pass  # Expected a syntax error
-        else: 
+        else:
             print '=== Syntax error:', t
     except KeyboardInterrupt: raise KeyboardInterrupt
     except:
@@ -356,7 +356,7 @@ for t in tests:
             # of the match and see if it still succeeds.  \B will
             # break (because it won't match at the end or start of a
             # string), so we'll ignore patterns that feature it.
-            
+
             if pattern[:2]!='\\B' and pattern[-2:]!='\\B':
                 obj=sre.compile(pattern)
                 result=obj.search(s, result.start(0), result.end(0)+1)
