@@ -26,7 +26,7 @@ Library
   arbitrary shell code can't be executed because a bogus URL was
   passed in.
 
-- gettext.translation has an optional fallback argument, and 
+- gettext.translation has an optional fallback argument, and
   gettext.find an optional all argument. Translations will now fallback
   on a per-message basis.
 
@@ -58,6 +58,29 @@ New platforms
 Tests
 
 Windows
+
+- New tempfile.TemporaryFile implementation for Windows:  this doesn't
+  need a TemproraryFileWrapper wrapper anymore, and should be immune
+  to a nasty problem:  before 2.3, if you got a temp file on Windows, it
+  got wrapped in an object whose close() method first closed the
+  underlying file, then deleted the file.  This usually worked fine.
+  However, the spawn family of functions on Windows create (at a low C
+  level) the same set of open files in the spawned process Q as were
+  open in the spawning process P.  If a temp file f was among them, then
+  doing f.close() in P first closed P's C-level file handle on f, but Q's
+  C-level file handle on f remained open, so the attempt in P to delete f
+  blew up with a "Permission denied" error (Windows doesn't allow
+  deleting open files).  This was surprising, subtle, and difficult to
+  work around.
+
+- The os module now exports all the symbolic constants usable with the
+  low-level os.open() on Windows:  the new constants in 2.3 are
+  O_NOINHERIT, O_SHORT_LIVED, O_TEMPORARY, O_RANDOM and O_SEQUENTIAL.
+  The others were also available in 2.2:  O_APPEND, O_BINARY, O_CREAT,
+  O_EXCL, O_RDONLY, O_RDWR, O_TEXT, O_TRUNC and O_WRONLY.  Contrary
+  to Microsoft docs, O_SHORT_LIVED does not seem to imply O_TEMPORARY
+  (so specify both if you want both; note that neither is useful unless
+  specified with O_CREAT too).
 
 Mac
 
