@@ -200,7 +200,7 @@ class URLopener:
 			auth = None
 		h = httplib.HTTP(host)
 		h.putrequest('GET', selector)
-		if auth: h.putheader('Authorization: Basic %s' % auth)
+		if auth: h.putheader('Authorization', 'Basic %s' % auth)
 		for args in self.addheaders: apply(h.putheader, args)
 		h.endheaders()
 		errcode, errmsg, headers = h.getreply()
