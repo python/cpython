@@ -145,8 +145,7 @@ class Bdb: # Basic Debugger
 		self.stopframe = self.botframe
 		self.returnframe = None
 		self.quitting = 1
-		sys.trace = None
-		del sys.trace
+		sys.settrace(None)
 	
 	# Derived classes and clients can call the following functions
 	# to manipulate breakpoints.  These functions return an
@@ -245,15 +244,14 @@ class Bdb: # Basic Debugger
 	
 	def runctx(self, cmd, globals, locals):
 		self.reset()
-		sys.trace = self.trace_dispatch
+		sys.settrace(self.trace_dispatch)
 		try:
 			exec(cmd + '\n', globals, locals)
 		except BdbQuit:
 			pass
 		finally:
 			self.quitting = 1
-			sys.trace = None
-			del sys.trace
+			sys.settrace(None)
 		# XXX What to do if the command finishes normally?
 
 
