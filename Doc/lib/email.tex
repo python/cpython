@@ -100,6 +100,7 @@ following differences:
 \begin{itemize}
 \item The \module{email.Header} and \module{email.Charset} modules
       have been added.
+
 \item The pickle format for \class{Message} instances has changed.
       Since this was never (and still isn't) formally defined, this
       isn't considered a backward incompatibility.  However if your
@@ -107,11 +108,13 @@ following differences:
       aware that in \module{email} version 2, \class{Message}
       instances now have private variables \var{_charset} and
       \var{_default_type}.
+
 \item Several methods in the \class{Message} class have been
       deprecated, or their signatures changed.  Also, many new methods
       have been added.  See the documentation for the \class{Message}
       class for details.  The changes should be completely backward
       compatible.
+
 \item The object structure has changed in the face of
       \mimetype{message/rfc822} content types.  In \module{email}
       version 1, such a type would be represented by a scalar payload,
@@ -132,29 +135,36 @@ following differences:
       fine.  You just need to make sure your code doesn't do a
       \method{set_payload()} with a \class{Message} instance on a
       container with a content type of \mimetype{message/rfc822}.
+
 \item The \class{Parser} constructor's \var{strict} argument was
       added, and its \method{parse()} and \method{parsestr()} methods
       grew a \var{headersonly} argument.  The \var{strict} flag was
       also added to functions \function{email.message_from_file()}
       and \function{email.message_from_string()}.
+
 \item \method{Generator.__call__()} is deprecated; use
       \method{Generator.flatten()} instead.  The \class{Generator}
       class has also grown the \method{clone()} method.
+
 \item The \class{DecodedGenerator} class in the
       \module{email.Generator} module was added.
+
 \item The intermediate base classes \class{MIMENonMultipart} and
       \class{MIMEMultipart} have been added, and interposed in the
       class hierarchy for most of the other MIME-related derived
       classes.
+
 \item The \var{_encoder} argument to the \class{MIMEText} constructor
       has been deprecated.  Encoding  now happens implicitly based
       on the \var{_charset} argument.
+
 \item The following functions in the \module{email.Utils} module have
       been deprecated: \function{dump_address_pairs()},
       \function{decode()}, and \function{encode()}.  The following
       functions have been added to the module:
       \function{make_msgid()}, \function{decode_rfc2231()},
       \function{encode_rfc2231()}, and \function{decode_params()}.
+
 \item The non-public function \function{email.Iterators._structure()}
       was added.
 \end{itemize}
@@ -184,47 +194,65 @@ addition, the top-level package has the following differences:
 \begin{itemize}
 \item \function{messageFromString()} has been renamed to
       \function{message_from_string()}.
+
 \item \function{messageFromFile()} has been renamed to
       \function{message_from_file()}.
+
 \end{itemize}
 
 The \class{Message} class has the following differences:
 
 \begin{itemize}
 \item The method \method{asString()} was renamed to \method{as_string()}.
+
 \item The method \method{ismultipart()} was renamed to
       \method{is_multipart()}.
+
 \item The \method{get_payload()} method has grown a \var{decode}
       optional argument.
+
 \item The method \method{getall()} was renamed to \method{get_all()}.
+
 \item The method \method{addheader()} was renamed to \method{add_header()}.
+
 \item The method \method{gettype()} was renamed to \method{get_type()}.
+
 \item The method\method{getmaintype()} was renamed to
       \method{get_main_type()}.
+
 \item The method \method{getsubtype()} was renamed to
       \method{get_subtype()}.
+
 \item The method \method{getparams()} was renamed to
       \method{get_params()}.
       Also, whereas \method{getparams()} returned a list of strings,
       \method{get_params()} returns a list of 2-tuples, effectively
       the key/value pairs of the parameters, split on the \character{=}
       sign.
+
 \item The method \method{getparam()} was renamed to \method{get_param()}.
+
 \item The method \method{getcharsets()} was renamed to
       \method{get_charsets()}.
+
 \item The method \method{getfilename()} was renamed to
       \method{get_filename()}.
+
 \item The method \method{getboundary()} was renamed to
       \method{get_boundary()}.
+
 \item The method \method{setboundary()} was renamed to
       \method{set_boundary()}.
+
 \item The method \method{getdecodedpayload()} was removed.  To get
       similar functionality, pass the value 1 to the \var{decode} flag
       of the {get_payload()} method.
+
 \item The method \method{getpayloadastext()} was removed.  Similar
       functionality
       is supported by the \class{DecodedGenerator} class in the
       \refmodule{email.Generator} module.
+
 \item The method \method{getbodyastext()} was removed.  You can get
       similar functionality by creating an iterator with
       \function{typed_subpart_iterator()} in the
@@ -251,12 +279,15 @@ The following modules and classes have been changed:
 \item The \class{MIMEBase} class constructor arguments \var{_major}
       and \var{_minor} have changed to \var{_maintype} and
       \var{_subtype} respectively.
+
 \item The \code{Image} class/module has been renamed to
       \code{MIMEImage}.  The \var{_minor} argument has been renamed to
       \var{_subtype}.
+
 \item The \code{Text} class/module has been renamed to
       \code{MIMEText}.  The \var{_minor} argument has been renamed to
       \var{_subtype}.
+
 \item The \code{MessageRFC822} class/module has been renamed to
       \code{MIMEMessage}.  Note that an earlier version of
       \module{mimelib} called this class/module \code{RFC822}, but
