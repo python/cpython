@@ -3833,6 +3833,36 @@ static PyObject *Qd_CharExtra(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_SetPort(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr thePort;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      WinObj_Convert, &thePort))
+		return NULL;
+	SetPort(thePort);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_OpenDeskAcc(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Str255 name;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetStr255, name))
+		return NULL;
+	OpenDeskAcc(name);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Qd_BitMap(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -4277,6 +4307,10 @@ static PyMethodDef Qd_methods[] = {
 	 "() -> (FontInfo info)"},
 	{"CharExtra", (PyCFunction)Qd_CharExtra, 1,
 	 "(Fixed extra) -> None"},
+	{"SetPort", (PyCFunction)Qd_SetPort, 1,
+	 "(WindowPtr thePort) -> None"},
+	{"OpenDeskAcc", (PyCFunction)Qd_OpenDeskAcc, 1,
+	 "(Str255 name) -> None"},
 	{"BitMap", (PyCFunction)Qd_BitMap, 1,
 	 "Take (string, int, Rect) argument and create BitMap"},
 	{"RawBitMap", (PyCFunction)Qd_RawBitMap, 1,
