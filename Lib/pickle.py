@@ -288,7 +288,7 @@ class Pickler:
                 write(POP_MARK + self.get(memo[d][0]))
                 return
            
-            write(POP * (len(object) + 1) + self.get(mem[d][0]))
+            write(POP * (len(object) + 1) + self.get(memo[d][0]))
             return
 
         memo_len = len(memo)
