@@ -1496,6 +1496,8 @@ PySequence_List(PyObject *v)
 PyObject *
 PySequence_Fast(PyObject *v, const char *m)
 {
+	PyObject *it;
+
 	if (v == NULL)
 		return null_error();
 
@@ -1504,9 +1506,15 @@ PySequence_Fast(PyObject *v, const char *m)
 		return v;
 	}
 
-	v = PySequence_Tuple(v);
-	if (v == NULL && PyErr_ExceptionMatches(PyExc_TypeError))
-		return type_error(m);
+ 	it = PyObject_GetIter(v);
+	if (it == NULL) {
+		if (PyErr_ExceptionMatches(PyExc_TypeError))
+			return type_error(m);
+		return NULL;
+	}
+
+	v = PySequence_Tuple(it);
+	Py_DECREF(it);
 
 	return v;
 }
