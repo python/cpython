@@ -1189,11 +1189,21 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	if (_mfs_GetFSSpecFromFSRef(v, fs))
 		return 1;
 	if ( PyString_Check(v) ) {
+#if TARGET_API_MAC_OSX
+		FSRef fsr;
+		
+		if ( !PyMac_GetFSRef(v, &fsr) )
+			return 0;
+		if ( FSGetCatalogInfo(&fsr, kFSCatInfoNone, NULL, NULL, fs, NULL) == noErr )
+			return 1;
+		return 0;
+#else
 		/* It's a pathname */
 		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
 			return 0;
 		refnum = 0; /* XXXX Should get CurWD here?? */
 		parid = 0;
+#endif
 	} else {
 		if( !PyArg_Parse(v, "(hlO&); FSSpec should be FSSpec, FSRef, fullpath or (vrefnum,dirid,path)",
 							&refnum, &parid, PyMac_GetStr255, &path)) {
