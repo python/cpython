@@ -35,7 +35,7 @@ supported if the module variable \code{accept2dyear} is a non-zero
 integer; this variable is initialized to \code{1} unless the
 environment variable \envvar{PYTHONY2K} is set to a non-empty string,
 in which case it is initialized to \code{0}.  Thus, you can set
-\envvar{PYTHONY2K} in the environment to \code{x} to require 4-digit
+\envvar{PYTHONY2K} to a non-empty string in the environment to require 4-digit
 years for all year input.  When 2-digit years are accepted, they are
 converted according to the \POSIX{} or X/Open standard: values 69-99
 are mapped to 1969-1999, and values 0--68 are mapped to 2000--2068.

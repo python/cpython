@@ -39,7 +39,7 @@ Close the log file.
 \end{funcdesc}
 
 \begin{funcdesc}{setlogmask}{maskpri}
-This function set the priority mask to \var{maskpri} and returns the
+Set the priority mask to \var{maskpri} and return the
 previous mask value.  Calls to \function{syslog()} with a priority
 level not set in \var{maskpri} are ignored.  The default is to log all
 priorities.  The function \code{LOG_MASK(\var{pri})} calculates the
@@ -47,6 +47,7 @@ mask for the individual priority \var{pri}.  The function
 \code{LOG_UPTO(\var{pri})} calculates the mask for all priorities up
 to and including \var{pri}.
 \end{funcdesc}
+
 
 The module defines the following constants:
 
