@@ -55,10 +55,10 @@
 /* CONFIGURATION SECTION */
 
 #ifndef FULL_PATH	/* so that this can be specified from the Makefile */
-/* Uncomment out the following line:
+/* Ccomment out the following line:
 #define FULL_PATH	"/full/path/of/script" 
 * Then comment out the #error line. */
-#error "Must define SCRIPTPATH in the Makefile"
+#error "You must define FULL_PATH somewhere"
 #endif
 #ifndef UMASK
 #define UMASK		077
