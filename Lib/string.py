@@ -203,7 +203,7 @@ def joinfields(words, sep = ' '):
 
 	(joinfields and join are synonymous)
 
-	"""    
+	"""
 	res = ''
 	for w in words:
 		res = res + (sep + w)
@@ -430,7 +430,7 @@ def ljust(s, width):
 
 # Right-justify a string
 def rjust(s, width):
-    	"""rjust(s, width) -> string
+	"""rjust(s, width) -> string
 
 	Return a right-justified version of s, in a field of the
 	specified width, padded with spaces as needed.  The string is
@@ -443,7 +443,7 @@ def rjust(s, width):
 
 # Center a string
 def center(s, width):
-   	"""center(s, width) -> string
+	"""center(s, width) -> string
 
 	Return a center version of s, in a field of the specified
 	width. padded with spaces as needed.  The string is never
@@ -508,7 +508,8 @@ def translate(s, table, deletions=""):
 
 	"""
 	if type(table) != type('') or len(table) != 256:
-	    raise TypeError, "translation table must be 256 characters long"
+		raise TypeError, \
+		      "translation table must be 256 characters long"
 	res = ""
 	for c in s:
 		if c not in deletions:

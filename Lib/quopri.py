@@ -93,43 +93,43 @@ def test():
 	import sys
 	import getopt
 	try:
-	    opts, args = getopt.getopt(sys.argv[1:], 'td')
+		opts, args = getopt.getopt(sys.argv[1:], 'td')
 	except getopt.error, msg:
-	    sys.stdout = sys.stderr
-	    print msg
-	    print "usage: quopri [-t | -d] [file] ..."
-	    print "-t: quote tabs"
-	    print "-d: decode; default encode"
-	    sys.exit(2)
+		sys.stdout = sys.stderr
+		print msg
+		print "usage: quopri [-t | -d] [file] ..."
+		print "-t: quote tabs"
+		print "-d: decode; default encode"
+		sys.exit(2)
 	deco = 0
 	tabs = 0
 	for o, a in opts:
-	    if o == '-t': tabs = 1
-	    if o == '-d': deco = 1
+		if o == '-t': tabs = 1
+		if o == '-d': deco = 1
 	if tabs and deco:
-	    sys.stdout = sys.stderr
-	    print "-t and -d are mutually exclusive"
-	    sys.exit(2)
+		sys.stdout = sys.stderr
+		print "-t and -d are mutually exclusive"
+		sys.exit(2)
 	if not args: args = ['-']
 	sts = 0
 	for file in args:
-	    if file == '-':
-		fp = sys.stdin
-	    else:
-		try:
-		    fp = open(file)
-		except IOError, msg:
-		    sys.stderr.write("%s: can't open (%s)\n" % (file, msg))
-		    sts = 1
-		    continue
-	    if deco:
-		decode(fp, sys.stdout)
-	    else:
-		encode(fp, sys.stdout, tabs)
-	    if fp is not sys.stdin:
-		fp.close()
+		if file == '-':
+			fp = sys.stdin
+		else:
+			try:
+				fp = open(file)
+			except IOError, msg:
+				sys.stderr.write("%s: can't open (%s)\n" % (file, msg))
+				sts = 1
+				continue
+		if deco:
+			decode(fp, sys.stdout)
+		else:
+			encode(fp, sys.stdout, tabs)
+		if fp is not sys.stdin:
+			fp.close()
 	if sts:
-	    sys.exit(sts)
+		sys.exit(sts)
 
 if __name__ == '__main__':
 	test()

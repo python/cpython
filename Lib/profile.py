@@ -438,7 +438,7 @@ class Profile:
 			sys.setprofile(None)
 
 
-        #******************************************************************
+	#******************************************************************
 	# The following calculates the overhead for using a profiler.  The
 	# problem is that it takes a fair amount of time for the profiler
 	# to stop the stopwatch (from the time it recieves an event).
@@ -481,35 +481,36 @@ class Profile:
 	# profiler very much, and the accuracy goes way up.
 	#**************************************************************
 	
-        def calibrate(self, m):
+	def calibrate(self, m):
+		# Modified by Tim Peters
 		n = m
-		s = self.timer()
+		s = self.get_time()
 		while n:
 			self.simple()
 			n = n - 1
-		f = self.timer()
-		my_simple = f[0]+f[1]-s[0]-s[1]
+		f = self.get_time()
+		my_simple = f - s
 		#print "Simple =", my_simple,
 
 		n = m
-		s = self.timer()
+		s = self.get_time()
 		while n:
 			self.instrumented()
 			n = n - 1
-		f = self.timer()
-		my_inst = f[0]+f[1]-s[0]-s[1]
+		f = self.get_time()
+		my_inst = f - s
 		# print "Instrumented =", my_inst
 		avg_cost = (my_inst - my_simple)/m
 		#print "Delta/call =", avg_cost, "(profiler fixup constant)"
 		return avg_cost
 
 	# simulate a program with no profiler activity
-        def simple(self):      
+	def simple(self):
 		a = 1
 		pass
 
 	# simulate a program with call/return event processing
-        def instrumented(self):
+	def instrumented(self):
 		a = 1
 		self.profiler_simulation(a, a, a)
 
