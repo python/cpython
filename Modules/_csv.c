@@ -207,7 +207,7 @@ _set_char(const char *name, char *target, PyObject *src, char dflt)
 	if (src == NULL)
 		*target = dflt;
 	else {
-		if (src == Py_None)
+		if (src == Py_None || PyString_Size(src) == 0)
 			*target = '\0';
 		else if (!PyString_Check(src) || PyString_Size(src) != 1) {
 			PyErr_Format(PyExc_TypeError, 
