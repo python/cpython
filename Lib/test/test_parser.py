@@ -13,7 +13,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         st1 = f(s)
         t = st1.totuple()
         try:
-            st2 = parser.sequence2ast(t)
+            st2 = parser.sequence2st(t)
         except parser.ParserError:
             self.fail("could not roundtrip %r" % s)
 
@@ -140,7 +140,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
 class IllegalSyntaxTestCase(unittest.TestCase):
     def check_bad_tree(self, tree, label):
         try:
-            parser.sequence2ast(tree)
+            parser.sequence2st(tree)
         except parser.ParserError:
             pass
         else:
