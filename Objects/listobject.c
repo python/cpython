@@ -460,6 +460,7 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	   list. :-( */
 	PyObject **recycle, **p;
 	PyObject **item;
+	PyObject **vitem = NULL;
 	PyObject *v_as_SF = NULL; /* PySequence_Fast(v) */
 	int n; /* Size of replacement list */
 	int d; /* Change in size */
@@ -469,7 +470,6 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	if (v == NULL)
 		n = 0;
 	else {
-		char msg[256];
 		if (a == b) {
 			/* Special case "a[i:j] = a" -- copy b first */
 			int ret;
@@ -480,15 +480,16 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 			Py_DECREF(v);
 			return ret;
 		}
-
-		PyOS_snprintf(msg, sizeof(msg),
-			      "must assign sequence"
-			      " (not \"%.200s\") to slice",
-			      v->ob_type->tp_name);
-		v_as_SF = PySequence_Fast(v, msg);
+		v_as_SF = PySequence_Fast(v, "can only assign an iterable");
 		if(v_as_SF == NULL)
 			return -1;
 		n = PySequence_Fast_GET_SIZE(v_as_SF);
+		if (PyList_Check(v_as_SF))
+			vitem = ((PyListObject *)v_as_SF)->ob_item;
+		else {
+			assert (PyTuple_Check(v_as_SF));
+			vitem = ((PyTupleObject *)v_as_SF)->ob_item;
+		}
 	}
 	if (ilow < 0)
 		ilow = 0;
@@ -510,11 +511,11 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 	else
 		p = recycle = NULL;
 	if (d <= 0) { /* Delete -d items; recycle ihigh-ilow items */
-		for (k = ilow; k < ihigh; k++)
-			*p++ = item[k];
+		memmove(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
+		p += ihigh - ilow;
 		if (d < 0) {
-			for (/*k = ihigh*/; k < a->ob_size; k++)
-				item[k+d] = item[k];
+			memmove(&item[ihigh+d], &item[ihigh], 
+				(a->ob_size - ihigh)*sizeof(PyObject *));
 			list_resize(a, a->ob_size + d);
 			item = a->ob_item;
 		}
@@ -527,13 +528,13 @@ list_ass_slice(PyListObject *a, int ilow, int ihigh, PyObject *v)
 			return -1;
 		}
 		item = a->ob_item;
-		for (k = s; --k >= ihigh; )
-			item[k+d] = item[k];
-		for (/*k = ihigh-1*/; k >= ilow; --k)
-			*p++ = item[k];
+		memmove(&item[ihigh+d], &item[ihigh],
+			(s - ihigh)*sizeof(PyObject *));
+		memmove(p, &item[ilow], (ihigh - ilow)*sizeof(PyObject *));
+		p += ihigh - ilow;
 	}
 	for (k = 0; k < n; k++, ilow++) {
-		PyObject *w = PySequence_Fast_GET_ITEM(v_as_SF, k);
+		PyObject *w = vitem[k];
 		Py_XINCREF(w);
 		item[ilow] = w;
 	}
