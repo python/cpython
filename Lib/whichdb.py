@@ -86,11 +86,12 @@ def whichdb(filename):
     if magic == 0x13579ace:
         return "gdbm"
 
-    # Check for BSD hash
+    # Check for old Berkeley db hash file format v2
     if magic in (0x00061561, 0x61150600):
-        return "dbhash"
+        return "bsddb185"
 
-    # BSD hash v2 has a 12-byte NULL pad in front of the file type
+    # Later versions of Berkeley db hash file have a 12-byte pad in
+    # front of the file type
     try:
         (magic,) = struct.unpack("=l", s16[-4:])
     except struct.error:
