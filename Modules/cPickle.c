@@ -2922,20 +2922,12 @@ Instance_New(PyObject *cls, PyObject *args) {
           UNLESS (__getinitargs__=PyObject_GetAttr(cls, __getinitargs___str)) {
               /* We have a class with no __getinitargs__, so bypass usual
                  construction  */
-              PyInstanceObject *inst;
+              PyObject *inst;
 
               PyErr_Clear();
-              UNLESS (inst=PyObject_New(PyInstanceObject, &PyInstance_Type))
+              UNLESS (inst=PyInstance_NewRaw(cls, NULL))
                 goto err;
-              inst->in_class=(PyClassObject*)cls;
-              Py_INCREF(cls);
-              UNLESS (inst->in_dict=PyDict_New()) {
-                inst = (PyInstanceObject *) PyObject_AS_GC(inst);
-                PyObject_DEL(inst);
-                goto err;
-              }
-              PyObject_GC_Init(inst);
-              return (PyObject *)inst;
+              return inst;
             }
           Py_DECREF(__getinitargs__);
         }
