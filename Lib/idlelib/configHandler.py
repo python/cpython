@@ -174,13 +174,48 @@ class IdleConf:
         """
         pass
     
-    def GetKeys(self, name=None):
+    def GetKeys(self, keySetName=None):
         """
-        Gets the requested keybindings or returns a final fallback keybinding 
-        set in case one can't be obtained from either the user or default 
-        config files.
+        returns the requested keybindings, with fallbacks if required.
         """
-        pass
+        #default keybindings.
+        #keybindings loaded from the config file(s) are loaded _over_ these
+        #defaults, so if there is a problem getting any binding there will
+        #be an 'ultimate last resort fallback' to the CUA-ish bindings
+        #defined here.
+        keyBindings={
+            '<<Copy>>': ['<Control-c>', '<Control-C>'],
+            '<<Cut>>': ['<Control-x>', '<Control-X>'],
+            '<<Paste>>': ['<Control-v>', '<Control-V>'],
+            '<<beginning-of-line>>': ['<Control-a>', '<Home>'],
+            '<<center-insert>>': ['<Control-l>'],
+            '<<close-all-windows>>': ['<Control-q>'],
+            '<<close-window>>': ['<Alt-F4>'],
+            '<<dump-undo-state>>': ['<Control-backslash>'],
+            '<<end-of-file>>': ['<Control-d>'],
+            '<<python-docs>>': ['<F1>'],
+            '<<python-context-help>>': ['<Shift-F1>'], 
+            '<<history-next>>': ['<Alt-n>'],
+            '<<history-previous>>': ['<Alt-p>'],
+            '<<interrupt-execution>>': ['<Control-c>'],
+            '<<open-class-browser>>': ['<Alt-c>'],
+            '<<open-module>>': ['<Alt-m>'],
+            '<<open-new-window>>': ['<Control-n>'],
+            '<<open-window-from-file>>': ['<Control-o>'],
+            '<<plain-newline-and-indent>>': ['<Control-j>'],
+            '<<redo>>': ['<Control-y>'],
+            '<<remove-selection>>': ['<Escape>'],
+            '<<save-copy-of-window-as-file>>': ['<Alt-Shift-s>'],
+            '<<save-window-as-file>>': ['<Alt-s>'],
+            '<<save-window>>': ['<Control-s>'],
+            '<<select-all>>': ['<Alt-a>'],
+            '<<toggle-auto-coloring>>': ['<Control-slash>'],
+            '<<undo>>': ['<Control-z>']}
+        if keySetName:
+            pass
+            
+        return keyBindings
+
     
     def LoadCfgFiles(self):
         """ 
