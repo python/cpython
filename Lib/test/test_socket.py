@@ -270,7 +270,7 @@ class BasicTCPTest(SocketConnectedTest):
     def testRecv(self):
         """Testing large receive over TCP."""
         msg = self.cli_conn.recv(1024)
-        self.assertEqual(msg, MSG, "Error performing recv.")
+        self.assertEqual(msg, MSG)
 
     def _testRecv(self):
         self.serv_conn.send(MSG)
@@ -280,7 +280,7 @@ class BasicTCPTest(SocketConnectedTest):
         seg1 = self.cli_conn.recv(len(MSG) - 3)
         seg2 = self.cli_conn.recv(1024)
         msg = ''.join ((seg1, seg2))
-        self.assertEqual(msg, MSG, "Error performing recv in chunks.")
+        self.assertEqual(msg, MSG)
 
     def _testOverFlowRecv(self):
         self.serv_conn.send(MSG)
@@ -289,9 +289,8 @@ class BasicTCPTest(SocketConnectedTest):
         """Testing large recvfrom() over TCP."""
         msg, addr = self.cli_conn.recvfrom(1024)
         hostname, port = addr
-        self.assertEqual (hostname, socket.gethostbyname('localhost'),
-                          "Wrong address from recvfrom.")
-        self.assertEqual(msg, MSG, "Error performing recvfrom.")
+        self.assertEqual(hostname, socket.gethostbyname('localhost'))
+        self.assertEqual(msg, MSG)
 
     def _testRecvFrom(self):
         self.serv_conn.send(MSG)
@@ -302,9 +301,8 @@ class BasicTCPTest(SocketConnectedTest):
         seg2, addr = self.cli_conn.recvfrom(1024)
         msg = ''.join((seg1, seg2))
         hostname, port = addr
-        self.assertEqual(hostname, socket.gethostbyname('localhost'),
-                         "Wrong address from recvfrom.")
-        self.assertEqual(msg, MSG, "Error performing recvfrom in chunks.")
+        self.assertEqual(hostname, socket.gethostbyname('localhost'))
+        self.assertEqual(msg, MSG)
 
     def _testOverFlowRecvFrom(self):
         self.serv_conn.send(MSG)
@@ -328,7 +326,7 @@ class BasicTCPTest(SocketConnectedTest):
         fd = self.cli_conn.fileno()
         sock = socket.fromfd(fd, socket.AF_INET, socket.SOCK_STREAM)
         msg = sock.recv(1024)
-        self.assertEqual(msg, MSG, "Error creating socket using fromfd.")
+        self.assertEqual(msg, MSG)
 
     def _testFromFd(self):
         self.serv_conn.send(MSG)
@@ -336,7 +334,7 @@ class BasicTCPTest(SocketConnectedTest):
     def testShutdown(self):
         """Testing shutdown()."""
         msg = self.cli_conn.recv(1024)
-        self.assertEqual(msg, MSG, "Error testing shutdown.")
+        self.assertEqual(msg, MSG)
 
     def _testShutdown(self):
         self.serv_conn.send(MSG)
@@ -350,7 +348,7 @@ class BasicUDPTest(ThreadedUDPSocketTest):
     def testSendtoAndRecv(self):
         """Testing sendto() and Recv() over UDP."""
         msg = self.serv.recv(len(MSG))
-        self.assertEqual(msg, MSG, "Error performing sendto")
+        self.assertEqual(msg, MSG)
 
     def _testSendtoAndRecv(self):
         self.cli.sendto(MSG, 0, (HOST, PORT))
@@ -359,9 +357,8 @@ class BasicUDPTest(ThreadedUDPSocketTest):
         """Testing recfrom() over UDP."""
         msg, addr = self.serv.recvfrom(len(MSG))
         hostname, port = addr
-        self.assertEqual(hostname, socket.gethostbyname('localhost'),
-                         "Wrong address from recvfrom.")
-        self.assertEqual(msg, MSG, "Error performing recvfrom in chunks.")
+        self.assertEqual(hostname, socket.gethostbyname('localhost'))
+        self.assertEqual(msg, MSG)
 
     def _testRecvfrom(self):
         self.cli.sendto(MSG, 0, (HOST, PORT))
@@ -436,7 +433,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         read, write, err = select.select([conn], [], [])
         if conn in read:
             msg = conn.recv(len(MSG))
-            self.assertEqual(msg, MSG, "Error performing non-blocking recv.")
+            self.assertEqual(msg, MSG)
         else:
             self.fail("Error during select call to non-blocking socket.")
 
@@ -473,7 +470,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
         first_seg = self.serv_file.read(len(MSG)-3)
         second_seg = self.serv_file.read(3)
         msg = ''.join((first_seg, second_seg))
-        self.assertEqual(msg, MSG, "Error performing small read.")
+        self.assertEqual(msg, MSG)
 
     def _testSmallRead(self):
         self.cli_file.write(MSG)
@@ -484,7 +481,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
         buf = ''
         while 1:
             char = self.serv_file.read(1)
-            self.failIf(not char, "Error performing unbuffered read.")
+            self.failIf(not char)
             buf += char
             if buf == MSG:
                 break
@@ -496,7 +493,7 @@ class FileObjectClassTestCase(SocketConnectedTest):
     def testReadline(self):
         """Performing file readline test."""
         line = self.serv_file.readline()
-        self.assertEqual(line, MSG, "Error performing readline.")
+        self.assertEqual(line, MSG)
 
     def _testReadline(self):
         self.cli_file.write(MSG)
