@@ -62,11 +62,17 @@ deleted when the output file is closed.  In-place filtering is
 disabled when standard input is read.  XXX The current implementation
 does not work for MS-DOS 8+3 filesystems.
 
+Performance: this module is unfortunately one of the slower ways of
+processing large numbers of input lines.  Nevertheless, a significant
+speed-up has been obtained by using readlines(bufsize) instead of
+readline().  A new keyword argument, bufsize=N, is present on the
+input() function and the FileInput() class to override the default
+buffer size.
+
 XXX Possible additions:
 
 - optional getopt argument processing
 - specify open mode ('r' or 'rb')
-- specify buffer size
 - fileno()
 - isatty()
 - read(), read(size), even readlines()
@@ -77,11 +83,13 @@ import sys, os, stat
 
 _state = None
 
-def input(files=None, inplace=0, backup=""):
+DEFAULT_BUFSIZE = 8*1024
+
+def input(files=None, inplace=0, backup="", bufsize=0):
     global _state
     if _state and _state._file:
         raise RuntimeError, "input() already active"
-    _state = FileInput(files, inplace, backup)
+    _state = FileInput(files, inplace, backup, bufsize)
     return _state
 
 def close():
@@ -123,7 +131,7 @@ def isstdin():
 
 class FileInput:
 
-    def __init__(self, files=None, inplace=0, backup=""):
+    def __init__(self, files=None, inplace=0, backup="", bufsize=0):
         if type(files) == type(''):
             files = (files,)
         else:
@@ -136,6 +144,7 @@ class FileInput:
         self._files = files
         self._inplace = inplace
         self._backup = backup
+        self._bufsize = bufsize or DEFAULT_BUFSIZE
         self._savestdout = None
         self._output = None
         self._filename = None
@@ -144,6 +153,8 @@ class FileInput:
         self._file = None
         self._isstdin = 0
         self._backupfilename = None
+        self._buffer = []
+        self._bufindex = 0
 
     def __del__(self):
         self.close()
@@ -153,6 +164,15 @@ class FileInput:
         self._files = ()
 
     def __getitem__(self, i):
+        try:
+            line = self._buffer[self._bufindex]
+        except IndexError:
+            pass
+        else:
+            self._bufindex += 1
+            self._lineno += 1
+            self._filelineno += 1
+            return line
         if i != self._lineno:
             raise RuntimeError, "accessing lines out of order"
         line = self.readline()
@@ -183,8 +203,19 @@ class FileInput:
             except: pass
 
         self._isstdin = 0
+        self._buffer = []
+        self._bufindex = 0
 
     def readline(self):
+        try:
+            line = self._buffer[self._bufindex]
+        except IndexError:
+            pass
+        else:
+            self._bufindex += 1
+            self._lineno += 1
+            self._filelineno += 1
+            return line
         if not self._file:
             if not self._files:
                 return ""
@@ -225,12 +256,10 @@ class FileInput:
                 else:
                     # This may raise IOError
                     self._file = open(self._filename, "r")
-        line = self._file.readline()
-        if line:
-            self._lineno = self._lineno + 1
-            self._filelineno = self._filelineno + 1
-            return line
-        self.nextfile()
+        self._buffer = self._file.readlines(self._bufsize)
+        self._bufindex = 0
+        if not self._buffer:
+            self.nextfile()
         # Recursive call
         return self.readline()
 
