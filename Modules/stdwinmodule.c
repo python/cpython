@@ -104,7 +104,9 @@ static type_lock StdwinLock; /* Lock held when interpreter not locked */
 
 static object *StdwinError; /* Exception stdwin.error */
 
-int StdwinIsActive;			/* True as soon as stdwin imported */
+#ifdef macintosh
+#include "macglue.h"
+#endif
 
 /* Window and menu object types declared here because of forward references */
 
@@ -2605,6 +2607,7 @@ initstdwin()
 	if (!inited) {
 #ifdef macintosh
 		winit();
+		PyMac_DoYieldEnabled = 0;
 #else
 		char buf[1000];
 		int argc = 0;
@@ -2633,7 +2636,6 @@ initstdwin()
 		}
 #endif
 		inited = 1;
-		StdwinIsActive = 1;
 	}
 	m = initmodule("stdwin", stdwin_methods);
 	d = getmoduledict(m);
