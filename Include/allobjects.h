@@ -1,8 +1,6 @@
 #ifndef Py_ALLOBJECTS_H
 #define Py_ALLOBJECTS_H
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* Since this is a "meta-include" file, no #ifdef __cplusplus / extern "C" { */
 
 /***********************************************************
 Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
@@ -102,10 +100,6 @@ extern void Py_FatalError Py_PROTO((char *));
 #define Py_CHARMASK(c)		(c)
 #else
 #define Py_CHARMASK(c)		((c) & 0xff)
-#endif
-
-#ifdef __cplusplus
-}
 #endif
 
 #ifndef Py_USE_NEW_NAMES
