@@ -328,6 +328,11 @@ class FTP:
 		conn.close()
 		self.voidresp()
 
+	# Send new account name
+	def acct(self, password):
+		cmd = 'ACCT ' + password
+		self.voidcmd(cmd)
+
 	# Return a list of files in a given directory (default the current)
 	def nlst(self, *args):
 		cmd = 'NLST'
