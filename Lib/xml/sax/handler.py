@@ -326,7 +326,7 @@ property_encoding = "http://www.python.org/sax/properties/encoding"
 #                processing a META tag)
 #         read:  return the current encoding (possibly established through
 #                auto-detection.
-# initial value: UTF-8 
+# initial value: UTF-8
 #
 
 property_interning_dict = "http://www.python.org/sax/properties/interning-dict"

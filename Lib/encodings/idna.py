@@ -19,10 +19,10 @@ def nameprep(label):
             continue
         newlabel.append(stringprep.map_table_b2(c))
     label = u"".join(newlabel)
-    
+
     # Normalize
     label = unicodedata.normalize("NFKC", label)
-    
+
     # Prohibit
     for c in label:
         if stringprep.in_table_c12(c) or \
@@ -139,7 +139,7 @@ def ToUnicode(label):
 
     # Step 8: return the result of step 5
     return result
-        
+
 ### Codec APIs
 
 class Codec(codecs.Codec):
@@ -156,7 +156,7 @@ class Codec(codecs.Codec):
         return ".".join(result), len(input)
 
     def decode(self,input,errors='strict'):
-        
+
         if errors != 'strict':
             raise UnicodeError, "Unsupported error handling "+errors
 

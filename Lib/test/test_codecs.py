@@ -105,7 +105,7 @@ punycode_testcases = [
     #(L) 3<nen>B<gumi><kinpachi><sensei>
     (u"\u0033\u5E74\u0042\u7D44\u91D1\u516B\u5148\u751F",
      "3B-ww4c5e180e575a65lsy2b"),
-    
+
     # (M) <amuro><namie>-with-SUPER-MONKEYS
     (u"\u5B89\u5BA4\u5948\u7F8E\u6075\u002D\u0077\u0069\u0074"
      u"\u0068\u002D\u0053\u0055\u0050\u0045\u0052\u002D\u004D"
@@ -264,7 +264,7 @@ nameprep_tests = [
     ('\xe2\xbf\xb5',
      None),
     # 3.33 Display property character U+0341.
-    ('\xcd\x81', 
+    ('\xcd\x81',
      '\xcc\x81'),
     # 3.34 Left-to-right mark U+200E.
     ('\xe2\x80\x8e',

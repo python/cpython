@@ -236,7 +236,7 @@ class DOMEventStream:
 
     def __iter__(self):
         return self
-    
+
     def expandNode(self, node):
         event = self.getEvent()
         parents = [node]

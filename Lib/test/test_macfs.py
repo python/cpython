@@ -29,7 +29,7 @@ class TestMacfs(unittest.TestCase):
     def test_fsref(self):
         fsr = macfs.FSRef(test_support.TESTFN)
         self.assertEqual(os.path.realpath(test_support.TESTFN), fsr.as_pathname())
-        
+
     def test_fsref_unicode(self):
         if sys.getfilesystemencoding():
             testfn_unicode = unicode(test_support.TESTFN)

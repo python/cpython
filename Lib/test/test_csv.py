@@ -10,7 +10,7 @@ from test.test_support import verbose
 
 class Test_Csv(unittest.TestCase):
     """
-    Test the underlying C csv parser in ways that are not appropriate 
+    Test the underlying C csv parser in ways that are not appropriate
     from the high level interface. Further tests of this nature are done
     in TestDialectRegistry.
     """
@@ -38,7 +38,7 @@ class Test_Csv(unittest.TestCase):
         obj.dialect.delimiter = '\t'
         self.assertEqual(obj.dialect.delimiter, '\t')
         self.assertRaises(TypeError, delattr, obj.dialect, 'delimiter')
-        self.assertRaises(TypeError, setattr, obj.dialect, 
+        self.assertRaises(TypeError, setattr, obj.dialect,
                           'lineterminator', None)
         obj.dialect.escapechar = None
         self.assertEqual(obj.dialect.escapechar, None)
@@ -57,14 +57,14 @@ class Test_Csv(unittest.TestCase):
         fileobj = StringIO()
         writer = csv.writer(fileobj, **kwargs)
         writer.writerow(fields)
-        self.assertEqual(fileobj.getvalue(), 
+        self.assertEqual(fileobj.getvalue(),
                          expect + writer.dialect.lineterminator)
 
     def test_write_arg_valid(self):
         self.assertRaises(csv.Error, self._write_test, None, '')
         self._write_test((), '')
         self._write_test([None], '""')
-        self.assertRaises(csv.Error, self._write_test, 
+        self.assertRaises(csv.Error, self._write_test,
                           [None], None, quoting = csv.QUOTE_NONE)
         # Check that exceptions are passed up the chain
         class BadList:
@@ -87,7 +87,7 @@ class Test_Csv(unittest.TestCase):
 
     def test_write_quoting(self):
         self._write_test(['a','1','p,q'], 'a,1,"p,q"')
-        self.assertRaises(csv.Error, 
+        self.assertRaises(csv.Error,
                           self._write_test,
                           ['a','1','p,q'], 'a,1,"p,q"',
                           quoting = csv.QUOTE_NONE)
@@ -311,15 +311,15 @@ class TestDialectExcel(TestCsvBase):
         self.readerAssertEqual(' "a"', [[' "a"']])
 
     def test_quoted(self):
-        self.readerAssertEqual('1,2,3,"I think, therefore I am",5,6', 
-                               [['1', '2', '3', 
-                                 'I think, therefore I am', 
+        self.readerAssertEqual('1,2,3,"I think, therefore I am",5,6',
+                               [['1', '2', '3',
+                                 'I think, therefore I am',
                                  '5', '6']])
 
     def test_quoted_quote(self):
         self.readerAssertEqual('1,2,3,"""I see,"" said the blind man","as he picked up his hammer and saw"',
-                               [['1', '2', '3', 
-                                 '"I see," said the blind man', 
+                               [['1', '2', '3',
+                                 '"I see," said the blind man',
                                  'as he picked up his hammer and saw']])
 
     def test_quoted_nl(self):
@@ -329,8 +329,8 @@ said the blind man","as he picked up his
 hammer and saw"
 9,8,7,6'''
         self.readerAssertEqual(input,
-                               [['1', '2', '3', 
-                                   '"I see,"\nsaid the blind man', 
+                               [['1', '2', '3',
+                                   '"I see,"\nsaid the blind man',
                                    'as he picked up his\nhammer and saw'],
                                 ['9','8','7','6']])
 

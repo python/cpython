@@ -86,5 +86,3 @@ verify(not in_table_d2(u"\u0040"))
 #     h = sha.sha()
 #     h.update(data)
 #     print p,h.hexdigest()
-      
-    

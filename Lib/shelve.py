@@ -15,7 +15,7 @@ object):
 
         d[key] = data   # store data at key (overwrites old data if
                         # using an existing key)
-        data = d[key]   # retrieve a COPY of the data at key (raise 
+        data = d[key]   # retrieve a COPY of the data at key (raise
                         # KeyError if no such key) -- NOTE that this
                         # access returns a *copy* of the entry!
         del d[key]      # delete data stored at key (raises KeyError

@@ -144,10 +144,10 @@ class SGMLParser(markupbase.ParserBase):
                         break
                     continue
                 if rawdata.startswith("<!--", i):
-                	# Strictly speaking, a comment is --.*-- 
-                	# within a declaration tag <!...>.
-                	# This should be removed, 
-                	# and comments handled only in parse_declaration.
+                        # Strictly speaking, a comment is --.*--
+                        # within a declaration tag <!...>.
+                        # This should be removed,
+                        # and comments handled only in parse_declaration.
                     k = self.parse_comment(i)
                     if k < 0: break
                     i = k

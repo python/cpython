@@ -110,8 +110,8 @@ import sys,string,os,re
 
 _libc_search = re.compile(r'(__libc_init)'
                           '|'
-                          '(GLIBC_([0-9.]+))' 
-                          '|' 
+                          '(GLIBC_([0-9.]+))'
+                          '|'
                           '(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)')
 
 def libc_ver(executable=sys.executable,lib='',version='',
@@ -126,7 +126,7 @@ def libc_ver(executable=sys.executable,lib='',version='',
 
         Note that the function has intimate knowledge of how different
         libc versions add symbols to the executable is probably only
-        useable for executables compiled using gcc. 
+        useable for executables compiled using gcc.
 
         The file is read and scanned in chunks of chunksize bytes.
 
@@ -164,7 +164,7 @@ def libc_ver(executable=sys.executable,lib='',version='',
 
 def _dist_try_harder(distname,version,id):
 
-    """ Tries some special tricks to get the distribution 
+    """ Tries some special tricks to get the distribution
         information in case the default method fails.
 
         Currently supports older SuSE Linux, Caldera OpenLinux and
@@ -376,7 +376,7 @@ def _syscmd_ver(system='',release='',version='',
 
     """ Tries to figure out the OS version used and returns
         a tuple (system,release,version).
-        
+
         It uses the "ver" shell command for this which is known
         to exists on Windows, DOS and OS/2. XXX Others too ?
 
@@ -501,7 +501,7 @@ def win32_ver(release='',version='',csd='',ptype=''):
         RegQueryValueEx(keyCurVer,'SystemRoot')
     except:
         return release,version,csd,ptype
-    
+
     # Parse values
     #subversion = _win32_getvalue(keyCurVer,
     #                            'SubVersionNumber',
@@ -581,7 +581,7 @@ def mac_ver(release='',versioninfo=('','',''),machine=''):
                  0x80:'final'}.get(stage,'')
         versioninfo = (version,stage,nonrel)
     if sysa:
-        machine = {0x1: '68k', 
+        machine = {0x1: '68k',
                    0x2: 'PowerPC'}.get(sysa,'')
     return release,versioninfo,machine
 
@@ -594,7 +594,7 @@ def _java_getprop(self,name,default):
         return default
 
 def java_ver(release='',vendor='',vminfo=('','',''),osinfo=('','','')):
-    
+
     """ Version interface for JPython.
 
         Returns a tuple (release,vendor,vminfo,osinfo) with vminfo being
@@ -623,7 +623,7 @@ def java_ver(release='',vendor='',vminfo=('','',''),osinfo=('','','')):
     os_name = _java_getprop('java.os.name',os_name)
     os_version = _java_getprop('java.os.version',os_version)
     osinfo = os_name,os_version,os_arch
-    
+
     return release,vendor,vminfo,osinfo
 
 ### System name aliasing
@@ -843,14 +843,14 @@ def architecture(executable=sys.executable,bits='',linkage=''):
             # Older installations can only query longs
             size = struct.calcsize('l')
         bits = str(size*8) + 'bit'
-    
+
     # Get data from the 'file' system command
     output = _syscmd_file(executable,'')
 
     if not output and \
        executable == sys.executable:
         # "file" command did not return anything; we'll try to provide
-        # some sensible defaults then... 
+        # some sensible defaults then...
         if _default_architecture.has_key(sys.platform):
             b,l = _default_architecture[sys.platform]
             if b:
@@ -861,7 +861,7 @@ def architecture(executable=sys.executable,bits='',linkage=''):
 
     # Split the output into a list of strings omitting the filename
     fileout = _architecture_split(output)[1:]
-    
+
     if 'executable' not in fileout:
         # Format not supported
         return bits,linkage
@@ -895,7 +895,7 @@ def architecture(executable=sys.executable,bits='',linkage=''):
     return bits,linkage
 
 ### Portable uname() interface
-    
+
 _uname_cache = None
 
 def uname():
@@ -934,7 +934,7 @@ def uname():
             release,version,csd,ptype = win32_ver()
             if release and version:
                 use_syscmd_ver = 0
-        
+
         # Try the 'ver' system command available on some
         # platforms
         if use_syscmd_ver:
@@ -1140,7 +1140,7 @@ def platform(aliased=0, terse=0):
 
     """ Returns a single string identifying the underlying platform
         with as much useful information as possible (but no more :).
-        
+
         The output is intended to be human readable rather than
         machine parseable. It may look different on different
         platforms and this is intended.
@@ -1215,7 +1215,7 @@ def platform(aliased=0, terse=0):
         else:
             bits,linkage = architecture(sys.executable)
             platform = _platform(system,release,machine,processor,bits,linkage)
-    
+
     if aliased:
         _platform_aliased_cache = platform
     elif terse:
@@ -1228,7 +1228,7 @@ def platform(aliased=0, terse=0):
 
 if __name__ == '__main__':
     # Default is to print the aliased verbose platform string
-    terse = ('terse' in sys.argv or '--terse' in sys.argv) 
+    terse = ('terse' in sys.argv or '--terse' in sys.argv)
     aliased = (not 'nonaliased' in sys.argv and not '--nonaliased' in sys.argv)
     print platform(aliased,terse)
     sys.exit(0)

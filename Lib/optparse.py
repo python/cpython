@@ -1380,4 +1380,3 @@ def _match_abbrev (s, wordmap):
 # which will become a factory function when there are many Option
 # classes.
 make_option = Option
-

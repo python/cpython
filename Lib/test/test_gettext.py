@@ -296,7 +296,7 @@ def suite():
     suite.addTest(unittest.makeSuite(PluralFormsTestCase))
     suite.addTest(unittest.makeSuite(UnicodeTranslationsTest))
     return suite
-    
+
 
 def test_main():
     run_suite(suite())

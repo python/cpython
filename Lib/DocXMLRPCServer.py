@@ -22,7 +22,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer,\
 
 class ServerHTMLDoc(pydoc.HTMLDoc):
     """Class used to generate pydoc HTML document for a server"""
-    
+
     def markup(self, text, escape=None, funcs={}, classes={}, methods={}):
         """Mark up some plain text, given a context of symbols to look for.
         Each context dictionary maps object names to anchor names."""
@@ -63,7 +63,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             here = end
         results.append(escape(text[here:]))
         return ''.join(results)
-    
+
     def docroutine(self, object, name=None, mod=None,
                    funcs={}, classes={}, methods={}, cl=None):
         """Produce HTML documentation for a function or method object."""
@@ -72,7 +72,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         note = ''
 
         title = '<a name="%s"><strong>%s</strong></a>' % (anchor, name)
-            
+
         if inspect.ismethod(object):
             args, varargs, varkw, defaults = inspect.getargspec(object.im_func)
             # exclude the argument bound to the instance, it will be
@@ -96,7 +96,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
             docstring = object[1] or ""
         else:
             docstring = pydoc.getdoc(object)
-                
+
         decl = title + argspec + (note and self.grey(
                '<font face="helvetica, arial">%s</font>' % note))
 
@@ -112,10 +112,10 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         for key, value in methods.items():
             fdict[key] = '#-' + key
             fdict[value] = fdict[key]
-            
-        head = '<big><big><strong>%s</strong></big></big>' % server_name            
+
+        head = '<big><big><strong>%s</strong></big></big>' % server_name
         result = self.heading(head, '#ffffff', '#7799ee')
-       
+
         doc = self.markup(package_documentation, self.preformat, fdict)
         doc = doc and '<tt>%s</tt>' % doc
         result = result + '<p>%s</p>\n' % doc
@@ -136,7 +136,7 @@ class XMLRPCDocGenerator:
     This class is designed as mix-in and should not
     be constructed directly.
     """
-    
+
     def __init__(self):
         # setup variables used for HTML documentation
         self.server_name = 'XML-RPC Server Documentation'
@@ -170,7 +170,7 @@ class XMLRPCDocGenerator:
         argument string used in the documentation and the
         _methodHelp(method_name) method to provide the help text used
         in the documentation."""
-        
+
         methods = {}
 
         for method_name in self.system_listMethods():
@@ -208,7 +208,7 @@ class XMLRPCDocGenerator:
                                 self.server_documentation,
                                 methods
                             )
-                                        
+
         return documenter.page(self.server_title, documentation)
 
 class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
@@ -227,7 +227,7 @@ class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
         Interpret all HTTP GET requests as requests for server
         documentation.
         """
-        
+
         response = self.server.generate_html_documentation()
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -251,7 +251,7 @@ class DocXMLRPCServer(  SimpleXMLRPCServer,
                  logRequests=1):
         SimpleXMLRPCServer.__init__(self, addr, requestHandler, logRequests)
         XMLRPCDocGenerator.__init__(self)
-        
+
 class DocCGIXMLRPCRequestHandler(   CGIXMLRPCRequestHandler,
                                     XMLRPCDocGenerator):
     """Handler for XML-RPC data and documentation requests passed through
@@ -281,8 +281,8 @@ if __name__ == '__main__':
 
         Converts an angle in degrees to an angle in radians"""
         import math
-        return deg * math.pi / 180        
-        
+        return deg * math.pi / 180
+
     server = DocXMLRPCServer(("localhost", 8000))
 
     server.set_server_title("Math Server")
@@ -299,4 +299,4 @@ You can use it from Python as follows:
     server.register_function(deg_to_rad)
     server.register_introspection_functions()
 
-    server.serve_forever()        
+    server.serve_forever()

@@ -63,4 +63,3 @@ try:
 except KeyboardInterrupt:
     if verbose:
         print "KeyboardInterrupt (assume the alarm() went off)"
-

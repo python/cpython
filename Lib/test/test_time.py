@@ -58,16 +58,16 @@ class TimeTestCase(unittest.TestCase):
 
         from os import environ
 
-        # Epoch time of midnight Dec 25th 2002. Never DST in northern 
+        # Epoch time of midnight Dec 25th 2002. Never DST in northern
         # hemisphere.
-        xmas2002 = 1040774400.0 
+        xmas2002 = 1040774400.0
 
         # These formats are correct for 2002, and possibly future years
         # This format is the 'standard' as documented at:
         # http://www.opengroup.org/onlinepubs/007904975/basedefs/xbd_chap08.html
         # They are also documented in the tzset(3) man page on most Unix
         # systems.
-        eastern = 'EST+05EDT,M4.1.0,M10.5.0' 
+        eastern = 'EST+05EDT,M4.1.0,M10.5.0'
         victoria = 'AEST-10AEDT-11,M10.5.0,M3.5.0'
         utc='UTC+0'
 
@@ -83,7 +83,7 @@ class TimeTestCase(unittest.TestCase):
             self.failUnlessEqual(
                 time.gmtime(xmas2002), time.localtime(xmas2002)
                 )
-            self.failUnlessEqual(time.daylight, 0) 
+            self.failUnlessEqual(time.daylight, 0)
             self.failUnlessEqual(time.timezone, 0)
             self.failUnlessEqual(time.localtime(xmas2002).tm_isdst, 0)
 
@@ -119,7 +119,7 @@ class TimeTestCase(unittest.TestCase):
             elif environ.has_key('TZ'):
                 del environ['TZ']
             time.tzset()
-            
+
 
 def test_main():
     test_support.run_unittest(TimeTestCase)

@@ -9,7 +9,7 @@ import codecs
 ##################### Encoding #####################################
 
 def segregate(str):
-    """3.1 Basic code point segregation""" 
+    """3.1 Basic code point segregation"""
     base = []
     extended = {}
     for c in str:
@@ -66,7 +66,7 @@ def insertion_unsort(str, extended):
             oldindex = index
             delta = 0
         oldchar = char
-            
+
     return result
 
 def T(j, bias):
@@ -103,7 +103,7 @@ def adapt(delta, first, numchars):
         divisions += 36
     bias = divisions + (36 * delta // (delta + 38))
     return bias
-    
+
 
 def generate_integers(baselen, deltas):
     """3.4 Bias adaptation"""
@@ -155,7 +155,7 @@ def decode_generalized_number(extended, extpos, bias, errors):
             return extpos, result
         w = w * (36 - t)
         j += 1
-        
+
 
 def insertion_sort(base, extended, errors):
     """3.2 Insertion unsort coding"""
@@ -193,7 +193,7 @@ def punycode_decode(text, errors):
     base = unicode(base, "ascii", errors)
     extended = extended.upper()
     return insertion_sort(base, extended, errors)
-        
+
 ### Codec APIs
 
 class Codec(codecs.Codec):

@@ -116,7 +116,7 @@ class DictWriter:
         self.restval = restval          # for writing short dicts
         if extrasaction.lower() not in ("raise", "ignore"):
             raise ValueError, \
-                  ("extrasaction (%s) must be 'raise' or 'ignore'" % 
+                  ("extrasaction (%s) must be 'raise' or 'ignore'" %
                    extrasaction)
         self.extrasaction = extrasaction
         self.writer = writer(f, dialect, *args)
@@ -126,7 +126,7 @@ class DictWriter:
             for k in rowdict.keys():
                 if k not in self.fieldnames:
                     raise ValueError, "dict contains fields not in fieldnames"
-        return [rowdict.get(key, self.restval) for key in self.fieldnames] 
+        return [rowdict.get(key, self.restval) for key in self.fieldnames]
 
     def writerow(self, rowdict):
         return self.writer.writerow(self._dict_to_list(rowdict))

@@ -6,7 +6,7 @@ import os, glob
 from test.test_support import verify, TestSkipped, TESTFN_UNICODE
 from test.test_support import TESTFN_ENCODING
 try:
-    TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)    
+    TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)
 except (UnicodeError, TypeError):
     # Either the file system encoding is None, or the file name
     # cannot be encoded in the file system encoding.
