@@ -28,8 +28,8 @@ class RobotFileParser:
     def __init__(self, url=''):
         self.entries = []
         self.default_entry = None
-        self.disallow_all = 0
-        self.allow_all = 0
+        self.disallow_all = False
+        self.allow_all = False
         self.set_url(url)
         self.last_checked = 0
 
@@ -66,10 +66,10 @@ class RobotFileParser:
             line = f.readline()
         self.errcode = opener.errcode
         if self.errcode == 401 or self.errcode == 403:
-            self.disallow_all = 1
+            self.disallow_all = True
             _debug("disallow all")
         elif self.errcode >= 400:
-            self.allow_all = 1
+            self.allow_all = True
             _debug("allow all")
         elif self.errcode == 200 and lines:
             _debug("parse lines")
@@ -128,14 +128,14 @@ class RobotFileParser:
                         _debug("line %d: error: you must insert a user-agent:"
                                " directive before this line" % linenumber)
                     else:
-                        entry.rulelines.append(RuleLine(line[1], 0))
+                        entry.rulelines.append(RuleLine(line[1], False))
                         state = 2
                 elif line[0] == "allow":
                     if state==0:
                         _debug("line %d: error: you must insert a user-agent:"
                                " directive before this line" % linenumber)
                     else:
-                        entry.rulelines.append(RuleLine(line[1], 1))
+                        entry.rulelines.append(RuleLine(line[1], True))
                 else:
                     _debug("line %d: warning: unknown key %s" % (linenumber,
                                line[0]))
@@ -175,12 +175,12 @@ class RobotFileParser:
 
 
 class RuleLine:
-    """A rule line is a single "Allow:" (allowance==1) or "Disallow:"
-       (allowance==0) followed by a path."""
+    """A rule line is a single "Allow:" (allowance==True) or "Disallow:"
+       (allowance==False) followed by a path."""
     def __init__(self, path, allowance):
         if path == '' and not allowance:
             # an empty value means allow all
-            allowance = 1
+            allowance = True
         self.path = urllib.quote(path)
         self.allowance = allowance
 
@@ -226,7 +226,7 @@ class Entry:
             _debug((filename, str(line), line.allowance))
             if line.applies_to(filename):
                 return line.allowance
-        return 1
+        return True
 
 class URLopener(urllib.FancyURLopener):
     def __init__(self, *args):
