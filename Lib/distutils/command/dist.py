@@ -131,6 +131,8 @@ from distutils.errors import DistutilsExecError
 
 class Dist (Command):
 
+    description = "create a source distribution (tarball, zip file, etc.)"
+
     options = [('formats=', None,
                 "formats for source distribution (tar, ztar, gztar, or zip)"),
                ('manifest=', 'm',

@@ -11,8 +11,6 @@ __rcsid__ = "$Id$"
 import sys, os, string, re
 from types import *
 from distutils.core import Command
-from distutils.ccompiler import new_compiler
-from distutils.sysconfig import INCLUDEPY, SO, exec_prefix
 from distutils.errors import *
 
 
@@ -24,6 +22,8 @@ extension_name_re = re.compile \
 
 class BuildExt (Command):
     
+    description = "build C/C++ extensions (compile/link to build directory)"
+
     # XXX thoughts on how to deal with complex command-line options like
     # these, i.e. how to make it so fancy_getopt can suck them off the
     # command line and make it look like setup.py defined the appropriate
@@ -76,6 +76,8 @@ class BuildExt (Command):
 
 
     def set_final_options (self):
+        from distutils import sysconfig
+
         self.set_undefined_options ('build', ('build_platlib', 'build_dir'))
 
         if self.package is None:
@@ -88,8 +90,8 @@ class BuildExt (Command):
         # etc.) are in the include search path.  We have to roll our own
         # "exec include dir", because the Makefile parsed by sysconfig
         # doesn't have it (sigh).
-        py_include = INCLUDEPY         # prefix + "include" + "python" + ver
-        exec_py_include = os.path.join (exec_prefix, 'include',
+        py_include = sysconfig.INCLUDEPY # prefix + "include" + "python" + ver
+        exec_py_include = os.path.join (sysconfig.exec_prefix, 'include',
                                         'python' + sys.version[0:3])
         if self.include_dirs is None:
             self.include_dirs = self.distribution.include_dirs or []
@@ -103,6 +105,8 @@ class BuildExt (Command):
 
 
     def run (self):
+
+        from distutils.ccompiler import new_compiler
 
         # 'self.extensions', as supplied by setup.py, is a list of 2-tuples.
         # Each tuple is simple:
@@ -246,9 +250,10 @@ class BuildExt (Command):
 
 
     def extension_filename (self, ext_name, package=None):
+        from distutils import sysconfig
         if package:
             ext_name = package + '.' + ext_name
         ext_path = string.split (ext_name, '.')
-        return apply (os.path.join, ext_path) + SO
+        return apply (os.path.join, ext_path) + sysconfig.SO
 
 # class BuildExt

@@ -16,6 +16,8 @@ from distutils.errors import *
 
 class BuildPy (Command):
 
+    description = "\"build\" pure Python modules (copy to build directory)"
+
     options = [('build-dir=', 'd', "directory for platform-shared files"),
               ]
 

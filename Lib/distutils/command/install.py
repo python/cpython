@@ -8,12 +8,13 @@ __rcsid__ = "$Id$"
 
 import sys, os, string
 from types import *
-from distutils import sysconfig
 from distutils.core import Command
 from distutils.util import write_file
 
 
 class Install (Command):
+
+    description = "install everything from build directory"
 
     options = [('prefix=', None, "installation prefix"),
                ('exec-prefix=', None,
@@ -245,6 +246,8 @@ class Install (Command):
            hard-coded in the Makefile and compiled into Python),
            then replace it with the current installation prefix and
            return the "relocated" installation directory."""
+
+        from distutils import sysconfig
 
         if use_exec:
             sys_prefix = os.path.normpath (sys.exec_prefix)
