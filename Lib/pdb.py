@@ -506,6 +506,25 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         return 1
     do_c = do_cont = do_continue
 
+    def do_jump(self, arg):
+        if self.curindex + 1 != len(self.stack):
+            print "*** You can only jump within the bottom frame"
+            return
+        try:
+            arg = int(arg)
+        except ValueError:
+            print "*** The 'jump' command requires a line number."
+        else:
+            try:
+                # Do the jump, fix up our copy of the stack, and display the
+                # new position
+                self.curframe.f_lineno = arg
+                self.stack[self.curindex] = self.stack[self.curindex][0], arg
+                self.print_stack_entry(self.stack[self.curindex])
+            except ValueError, e:
+                print '*** Jump failed:', e
+    do_j = do_jump
+
     def do_quit(self, arg):
         self.set_quit()
         return 1
@@ -804,6 +823,13 @@ Continue execution until the current function returns."""
     def help_c(self):
         print """c(ont(inue))
 Continue execution, only stop when a breakpoint is encountered."""
+
+    def help_jump(self):
+        self.help_j()
+
+    def help_j(self):
+        print """j(ump) lineno
+Set the next line that will be executed."""
 
     def help_list(self):
         self.help_l()
