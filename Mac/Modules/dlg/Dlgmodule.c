@@ -545,17 +545,17 @@ static PyObject *DlgObj_SizeDialogItem(_self, _args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	SInt16 inItemNo;
-	SInt16 inHeight;
 	SInt16 inWidth;
+	SInt16 inHeight;
 	if (!PyArg_ParseTuple(_args, "hhh",
 	                      &inItemNo,
-	                      &inHeight,
-	                      &inWidth))
+	                      &inWidth,
+	                      &inHeight))
 		return NULL;
 	_err = SizeDialogItem(_self->ob_itself,
 	                      inItemNo,
-	                      inHeight,
-	                      inWidth);
+	                      inWidth,
+	                      inHeight);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -677,7 +677,7 @@ static PyMethodDef DlgObj_methods[] = {
 	{"MoveDialogItem", (PyCFunction)DlgObj_MoveDialogItem, 1,
 	 "(SInt16 inItemNo, SInt16 inHoriz, SInt16 inVert) -> None"},
 	{"SizeDialogItem", (PyCFunction)DlgObj_SizeDialogItem, 1,
-	 "(SInt16 inItemNo, SInt16 inHeight, SInt16 inWidth) -> None"},
+	 "(SInt16 inItemNo, SInt16 inWidth, SInt16 inHeight) -> None"},
 	{"GetDialogWindow", (PyCFunction)DlgObj_GetDialogWindow, 1,
 	 "() -> (DialogPtr _rv)"},
 	{"GetDialogDefaultItem", (PyCFunction)DlgObj_GetDialogDefaultItem, 1,

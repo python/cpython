@@ -102,7 +102,7 @@ static PyObject *MenuObj_DisposeMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *MenuObj_AppendMenu(_self, _args)
+static PyObject *MenuObj_MacAppendMenu(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
 {
@@ -111,8 +111,8 @@ static PyObject *MenuObj_AppendMenu(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetStr255, data))
 		return NULL;
-	AppendMenu(_self->ob_itself,
-	           data);
+	MacAppendMenu(_self->ob_itself,
+	              data);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -137,7 +137,7 @@ static PyObject *MenuObj_InsertResMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *MenuObj_InsertMenu(_self, _args)
+static PyObject *MenuObj_MacInsertMenu(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
 {
@@ -146,8 +146,8 @@ static PyObject *MenuObj_InsertMenu(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &beforeID))
 		return NULL;
-	InsertMenu(_self->ob_itself,
-	           beforeID);
+	MacInsertMenu(_self->ob_itself,
+	              beforeID);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -169,7 +169,7 @@ static PyObject *MenuObj_AppendResMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *MenuObj_InsertMenuItem(_self, _args)
+static PyObject *MenuObj_MacInsertMenuItem(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
 {
@@ -180,9 +180,9 @@ static PyObject *MenuObj_InsertMenuItem(_self, _args)
 	                      PyMac_GetStr255, itemString,
 	                      &afterItem))
 		return NULL;
-	InsertMenuItem(_self->ob_itself,
-	               itemString,
-	               afterItem);
+	MacInsertMenuItem(_self->ob_itself,
+	                  itemString,
+	                  afterItem);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -919,15 +919,15 @@ static PyObject *MenuObj_as_Resource(_self, _args)
 static PyMethodDef MenuObj_methods[] = {
 	{"DisposeMenu", (PyCFunction)MenuObj_DisposeMenu, 1,
 	 "() -> None"},
-	{"AppendMenu", (PyCFunction)MenuObj_AppendMenu, 1,
+	{"MacAppendMenu", (PyCFunction)MenuObj_MacAppendMenu, 1,
 	 "(Str255 data) -> None"},
 	{"InsertResMenu", (PyCFunction)MenuObj_InsertResMenu, 1,
 	 "(ResType theType, short afterItem) -> None"},
-	{"InsertMenu", (PyCFunction)MenuObj_InsertMenu, 1,
+	{"MacInsertMenu", (PyCFunction)MenuObj_MacInsertMenu, 1,
 	 "(short beforeID) -> None"},
 	{"AppendResMenu", (PyCFunction)MenuObj_AppendResMenu, 1,
 	 "(ResType theType) -> None"},
-	{"InsertMenuItem", (PyCFunction)MenuObj_InsertMenuItem, 1,
+	{"MacInsertMenuItem", (PyCFunction)MenuObj_MacInsertMenuItem, 1,
 	 "(Str255 itemString, short afterItem) -> None"},
 	{"DeleteMenuItem", (PyCFunction)MenuObj_DeleteMenuItem, 1,
 	 "(short item) -> None"},
@@ -1081,7 +1081,7 @@ static PyObject *Menu_NewMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_GetMenu(_self, _args)
+static PyObject *Menu_MacGetMenu(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1091,13 +1091,13 @@ static PyObject *Menu_GetMenu(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &resourceID))
 		return NULL;
-	_rv = GetMenu(resourceID);
+	_rv = MacGetMenu(resourceID);
 	_res = Py_BuildValue("O&",
 	                     MenuObj_New, _rv);
 	return _res;
 }
 
-static PyObject *Menu_DeleteMenu(_self, _args)
+static PyObject *Menu_MacDeleteMenu(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1106,7 +1106,7 @@ static PyObject *Menu_DeleteMenu(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &menuID))
 		return NULL;
-	DeleteMenu(menuID);
+	MacDeleteMenu(menuID);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1206,14 +1206,14 @@ static PyObject *Menu_DeleteMCEntries(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_DrawMenuBar(_self, _args)
+static PyObject *Menu_MacDrawMenuBar(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	DrawMenuBar();
+	MacDrawMenuBar();
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1405,9 +1405,9 @@ static PyMethodDef Menu_methods[] = {
 	 "() -> None"},
 	{"NewMenu", (PyCFunction)Menu_NewMenu, 1,
 	 "(short menuID, Str255 menuTitle) -> (MenuHandle _rv)"},
-	{"GetMenu", (PyCFunction)Menu_GetMenu, 1,
+	{"MacGetMenu", (PyCFunction)Menu_MacGetMenu, 1,
 	 "(short resourceID) -> (MenuHandle _rv)"},
-	{"DeleteMenu", (PyCFunction)Menu_DeleteMenu, 1,
+	{"MacDeleteMenu", (PyCFunction)Menu_MacDeleteMenu, 1,
 	 "(short menuID) -> None"},
 	{"MenuKey", (PyCFunction)Menu_MenuKey, 1,
 	 "(CharParameter ch) -> (long _rv)"},
@@ -1421,7 +1421,7 @@ static PyMethodDef Menu_methods[] = {
 	 "() -> (long _rv)"},
 	{"DeleteMCEntries", (PyCFunction)Menu_DeleteMCEntries, 1,
 	 "(short menuID, short menuItem) -> None"},
-	{"DrawMenuBar", (PyCFunction)Menu_DrawMenuBar, 1,
+	{"MacDrawMenuBar", (PyCFunction)Menu_MacDrawMenuBar, 1,
 	 "() -> None"},
 	{"InvalMenuBar", (PyCFunction)Menu_InvalMenuBar, 1,
 	 "() -> None"},

@@ -55,6 +55,8 @@ class MyScanner(Scanner):
 			'GetTabContentRect',
 			'SetTabEnabled',
 			'SetDisclosureTriangleLastValue',
+			# Unavailable in CW Pro 3 libraries
+			'SetUpControlTextColor',
 			]
 
 	def makeblacklisttypes(self):

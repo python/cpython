@@ -32,6 +32,8 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
+			"IsShowContextualMenuClick", # Can't find it in the library
+			"InitContextualMenus", # ditto
 			]
 
 	def makeblacklisttypes(self):
@@ -39,6 +41,8 @@ class MyScanner(Scanner):
 			'MCTableHandle',
 			'MCEntryPtr',
 			'MCTablePtr',
+			'AEDesc_ptr', # For now: doable, but not easy
+			'ProcessSerialNumber', # ditto
 			]
 
 	def makerepairinstructions(self):

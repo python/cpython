@@ -102,6 +102,19 @@ static void WinObj_dealloc(self)
 	PyMem_DEL(self);
 }
 
+static PyObject *WinObj_MacCloseWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	MacCloseWindow(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *WinObj_SetWinColor(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -263,6 +276,22 @@ static PyObject *WinObj_SelectWindow(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_HiliteWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean fHilite;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &fHilite))
+		return NULL;
+	HiliteWindow(_self->ob_itself,
+	             fHilite);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *WinObj_GetWindowFeatures(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -413,22 +442,6 @@ static PyObject *WinObj_DrawGrowIcon(_self, _args)
 	return _res;
 }
 
-static PyObject *WinObj_HiliteWindow(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean fHilite;
-	if (!PyArg_ParseTuple(_args, "b",
-	                      &fHilite))
-		return NULL;
-	HiliteWindow(_self->ob_itself,
-	             fHilite);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *WinObj_SetWTitle(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -505,7 +518,7 @@ static PyObject *WinObj_CollapseWindow(_self, _args)
 	return _res;
 }
 
-static PyObject *WinObj_MoveWindow(_self, _args)
+static PyObject *WinObj_MacMoveWindow(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
 {
@@ -518,10 +531,10 @@ static PyObject *WinObj_MoveWindow(_self, _args)
 	                      &vGlobal,
 	                      &front))
 		return NULL;
-	MoveWindow(_self->ob_itself,
-	           hGlobal,
-	           vGlobal,
-	           front);
+	MacMoveWindow(_self->ob_itself,
+	              hGlobal,
+	              vGlobal,
+	              front);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -620,14 +633,14 @@ static PyObject *WinObj_HideWindow(_self, _args)
 	return _res;
 }
 
-static PyObject *WinObj_ShowWindow(_self, _args)
+static PyObject *WinObj_MacShowWindow(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	ShowWindow(_self->ob_itself);
+	MacShowWindow(_self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -955,6 +968,8 @@ static PyObject *WinObj_SetWindowUserState(_self, _args)
 }
 
 static PyMethodDef WinObj_methods[] = {
+	{"MacCloseWindow", (PyCFunction)WinObj_MacCloseWindow, 1,
+	 "() -> None"},
 	{"SetWinColor", (PyCFunction)WinObj_SetWinColor, 1,
 	 "(WCTabHandle newColorTable) -> None"},
 	{"ClipAbove", (PyCFunction)WinObj_ClipAbove, 1,
@@ -977,6 +992,8 @@ static PyMethodDef WinObj_methods[] = {
 	 "(WindowPtr behindWindow) -> None"},
 	{"SelectWindow", (PyCFunction)WinObj_SelectWindow, 1,
 	 "() -> None"},
+	{"HiliteWindow", (PyCFunction)WinObj_HiliteWindow, 1,
+	 "(Boolean fHilite) -> None"},
 	{"GetWindowFeatures", (PyCFunction)WinObj_GetWindowFeatures, 1,
 	 "() -> (OSStatus _rv, UInt32 outFeatures)"},
 	{"GetWindowRegion", (PyCFunction)WinObj_GetWindowRegion, 1,
@@ -997,8 +1014,6 @@ static PyMethodDef WinObj_methods[] = {
 	 "() -> None"},
 	{"DrawGrowIcon", (PyCFunction)WinObj_DrawGrowIcon, 1,
 	 "() -> None"},
-	{"HiliteWindow", (PyCFunction)WinObj_HiliteWindow, 1,
-	 "(Boolean fHilite) -> None"},
 	{"SetWTitle", (PyCFunction)WinObj_SetWTitle, 1,
 	 "(Str255 title) -> None"},
 	{"GetWTitle", (PyCFunction)WinObj_GetWTitle, 1,
@@ -1009,7 +1024,7 @@ static PyMethodDef WinObj_methods[] = {
 	 "() -> (Boolean _rv)"},
 	{"CollapseWindow", (PyCFunction)WinObj_CollapseWindow, 1,
 	 "(Boolean inCollapseIt) -> (OSStatus _rv)"},
-	{"MoveWindow", (PyCFunction)WinObj_MoveWindow, 1,
+	{"MacMoveWindow", (PyCFunction)WinObj_MacMoveWindow, 1,
 	 "(short hGlobal, short vGlobal, Boolean front) -> None"},
 	{"SizeWindow", (PyCFunction)WinObj_SizeWindow, 1,
 	 "(short w, short h, Boolean fUpdate) -> None"},
@@ -1021,7 +1036,7 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Point startPt, Rect boundsRect) -> None"},
 	{"HideWindow", (PyCFunction)WinObj_HideWindow, 1,
 	 "() -> None"},
-	{"ShowWindow", (PyCFunction)WinObj_ShowWindow, 1,
+	{"MacShowWindow", (PyCFunction)WinObj_MacShowWindow, 1,
 	 "() -> None"},
 	{"ShowHide", (PyCFunction)WinObj_ShowHide, 1,
 	 "(Boolean showFlag) -> None"},
@@ -1236,7 +1251,7 @@ static PyObject *Win_CheckUpdate(_self, _args)
 	return _res;
 }
 
-static PyObject *Win_FindWindow(_self, _args)
+static PyObject *Win_MacFindWindow(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -1247,8 +1262,8 @@ static PyObject *Win_FindWindow(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &thePoint))
 		return NULL;
-	_rv = FindWindow(thePoint,
-	                 &theWindow);
+	_rv = MacFindWindow(thePoint,
+	                    &theWindow);
 	_res = Py_BuildValue("hO&",
 	                     _rv,
 	                     WinObj_WhichWindow, theWindow);
@@ -1446,7 +1461,7 @@ static PyMethodDef Win_methods[] = {
 	 "(PixPatHandle deskPixPat) -> None"},
 	{"CheckUpdate", (PyCFunction)Win_CheckUpdate, 1,
 	 "() -> (Boolean _rv, EventRecord theEvent)"},
-	{"FindWindow", (PyCFunction)Win_FindWindow, 1,
+	{"MacFindWindow", (PyCFunction)Win_MacFindWindow, 1,
 	 "(Point thePoint) -> (short _rv, WindowPtr theWindow)"},
 	{"FrontWindow", (PyCFunction)Win_FrontWindow, 1,
 	 "() -> (WindowPtr _rv)"},
