@@ -4,7 +4,7 @@ from test_support import *
 
 print '__import__'
 __import__('sys')
-__import__('strop')
+__import__('time')
 __import__('string')
 try: __import__('spamspam')
 except ImportError: pass

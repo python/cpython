@@ -19,7 +19,7 @@ def test_raise_catch(exc):
 
 def r(thing):
     test_raise_catch(thing)
-    if type(thing) == ClassType:
+    if isinstance(thing, ClassType):
         print thing.__name__
     else:
         print thing

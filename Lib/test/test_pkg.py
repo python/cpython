@@ -42,6 +42,13 @@ def rmdir(x):
     if verbose: print "rmdir", x
     os.rmdir(x)
 
+def fixdir(lst):
+    try:
+        lst.remove('__builtins__')
+    except ValueError:
+        pass
+    return lst
+
 # Helper to run a test
 
 def runtest(hier, code):
@@ -146,9 +153,9 @@ import t5
 from t5 import *
 print dir()
 import t5
-print dir(t5)
-print dir(t5.foo)
-print dir(t5.string)
+print fixdir(dir(t5))
+print fixdir(dir(t5.foo))
+print fixdir(dir(t5.string))
 """),
 
     ("t6", [
@@ -160,9 +167,9 @@ print dir(t5.string)
     ],
 """
 import t6
-print dir(t6)
+print fixdir(dir(t6))
 from t6 import *
-print dir(t6)
+print fixdir(dir(t6))
 print dir()
 """),
     
