@@ -41,6 +41,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <console.h>
 #endif
 
+#ifdef __MWERKS__
+#include <SIOUX.h>
+#endif
+
 char *fileargument;
 
 main(argc, argv)
@@ -63,6 +67,11 @@ main(argc, argv)
 	   SIZE resource or whatever...  Have fun, and let me know if you find
 	   a better way!) */
 	printf("\n");   
+#endif
+#ifdef __MWERKS__
+	SIOUXSettings.asktosaveonclose = 0;
+	SIOUXSettings.showstatusline = 0;
+	SIOUXSettings.tabspaces = 4;
 #endif
 	/* Use STDWIN's wargs() to set argc/argv to list of files to open */
 	wargs(&argc, &argv);
