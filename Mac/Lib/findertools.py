@@ -32,14 +32,24 @@ def Print(file):
 def copy(src, dstdir):
 	"""Copy a file to a folder"""
 	finder = _getfinder()
-	src_fss = macfs.FSSpec(src)
+	if type(src) == type([]):
+		src_fss = []
+		for s in src:
+			src_fss.append(macfs.FSSpec(s))
+	else:
+		src_fss = macfs.FSSpec(src)
 	dst_fss = macfs.FSSpec(dstdir)
 	return finder.duplicate(src_fss, to=dst_fss)
 
 def move(src, dstdir):
 	"""Move a file to a folder"""
 	finder = _getfinder()
-	src_fss = macfs.FSSpec(src)
+	if type(src) == type([]):
+		src_fss = []
+		for s in src:
+			src_fss.append(macfs.FSSpec(s))
+	else:
+		src_fss = macfs.FSSpec(src)
 	dst_fss = macfs.FSSpec(dstdir)
 	return finder.move(src_fss, to=dst_fss)
 	
