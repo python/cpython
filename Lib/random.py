@@ -239,7 +239,7 @@ class Random:
         These must be integers in the range [0, 256).
         """
 
-        if not type(x) == type(y) == type(z) == type(0):
+        if not type(x) == type(y) == type(z) == int:
             raise TypeError('seeds must be integers')
         if not (0 <= x < 256 and 0 <= y < 256 and 0 <= z < 256):
             raise ValueError('seeds must be in range(0, 256)')
@@ -407,8 +407,7 @@ class Random:
         # Previous selections are stored in dictionaries which provide
         # __contains__ for detecting repeat selections.  Discarding repeats
         # is efficient unless most of the population has already been chosen.
-        # So, tracking selections is useful when sample sizes are much
-        # smaller than the total population.
+        # So, tracking selections is fast only with small sample sizes.
 
         n = len(population)
         if not 0 <= k <= n:
@@ -417,19 +416,19 @@ class Random:
             random = self.random
         result = [None] * k
         if n < 6 * k:     # if n len list takes less space than a k len dict
-            pool = list(population)             # track potential selections
-            for i in xrange(k):
-                j = int(random() * (n-i))       # non-selected at [0,n-i)
-                result[i] = pool[j]             # save selected element
-                pool[j] = pool[n-i-1]           # non-selected to head of list
+            pool = list(population)
+            for i in xrange(k):         # invariant:  non-selected at [0,n-i)
+                j = int(random() * (n-i))
+                result[i] = pool[j]
+                pool[j] = pool[n-i-1]
         else:
-            selected = {}                       # track previous selections
+            selected = {}
             for i in xrange(k):
                 j = int(random() * n)
-                while j in selected:            # discard and replace repeats
+                while j in selected:
                     j = int(random() * n)
                 result[i] = selected[j] = population[j]
-        return result       # return selections in the order they were picked
+        return result
 
 ## -------------------- real-valued distributions  -------------------
 
@@ -455,7 +454,7 @@ class Random:
         # Math Software, 3, (1977), pp257-260.
 
         random = self.random
-        while 1:
+        while True:
             u1 = random()
             u2 = random()
             z = NV_MAGICCONST*(u1-0.5)/u2
@@ -548,7 +547,7 @@ class Random:
         b = (a - _sqrt(2.0 * a))/(2.0 * kappa)
         r = (1.0 + b * b)/(2.0 * b)
 
-        while 1:
+        while True:
             u1 = random()
 
             z = _cos(_pi * u1)
@@ -595,7 +594,7 @@ class Random:
             bbb = alpha - LOG4
             ccc = alpha + ainv
 
-            while 1:
+            while True:
                 u1 = random()
                 u2 = random()
                 v = _log(u1/(1.0-u1))/ainv
@@ -616,7 +615,7 @@ class Random:
 
             # Uses ALGORITHM GS of Statistical Computing - Kennedy & Gentle
 
-            while 1:
+            while True:
                 u = random()
                 b = (_e + alpha)/_e
                 p = b*u
