@@ -89,6 +89,9 @@ corresponding Unix manual entries for more information on calls.";
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
 #define HAVE_FORK       1
+#if defined(__USLC__) && defined(__SCO_VERSION__)	/* SCO UDK Compiler */
+#define HAVE_FORK1      1
+#endif
 #define HAVE_GETCWD     1
 #define HAVE_GETEGID    1
 #define HAVE_GETEUID    1
@@ -1652,6 +1655,30 @@ posix_spawnve(PyObject *self, PyObject *args)
 	return res;
 }
 #endif /* HAVE_SPAWNV */
+
+
+#ifdef HAVE_FORK1
+static char posix_fork1__doc__[] =
+"fork1() -> pid\n\
+Fork a child process with a single multiplexed (i.e., not bound) thread.\n\
+\n\
+Return 0 to child process and PID of child to parent process.";
+
+static PyObject *
+posix_fork1(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	int pid;
+	if (!PyArg_ParseTuple(args, ":fork1"))
+		return NULL;
+	pid = fork1();
+	if (pid == -1)
+		return posix_error();
+	PyOS_AfterFork();
+	return PyInt_FromLong((long)pid);
+}
+#endif
 
 
 #ifdef HAVE_FORK
@@ -5261,6 +5288,9 @@ static PyMethodDef posix_methods[] = {
 	{"spawnv",	posix_spawnv, METH_VARARGS, posix_spawnv__doc__},
 	{"spawnve",	posix_spawnve, METH_VARARGS, posix_spawnve__doc__},
 #endif /* HAVE_SPAWNV */
+#ifdef HAVE_FORK1
+	{"fork1",       posix_fork1, METH_VARARGS, posix_fork1__doc__},
+#endif /* HAVE_FORK1 */
 #ifdef HAVE_FORK
 	{"fork",	posix_fork, METH_VARARGS, posix_fork__doc__},
 #endif /* HAVE_FORK */

@@ -324,8 +324,12 @@ static struct constant {
 	{"B9600", B9600},
 	{"B19200", B19200},
 	{"B38400", B38400},
+#ifdef B57600
 	{"B57600", B57600},
+#endif
+#ifdef B115200
 	{"B115200", B115200},
+#endif
 #ifdef B230400
 	{"B230400", B230400},
 #endif

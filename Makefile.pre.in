@@ -309,13 +309,16 @@ $(LIBRARY): $(LIBRARY_OBJS)
 	$(AR) cr $@ $(MODOBJS)
 	$(RANLIB) $@
 
-# This rule is only here for DG/UX and BeOS!!!
+# This rule is only here for DG/UX, UnixWare, and BeOS!!!
 libpython$(VERSION).so:	$(LIBRARY)
 	case `uname -s | tr -d '/ ' | tr '[A-Z]' '[a-z]'` in \
 	*dgux*) \
 	    test -d dgux || mkdir dgux; \
 	    (cd dgux;ar x ../$^;ld -G -o ../$@ * ); \
 	    /bin/rm -rf ./dgux \
+	    ;; \
+	unixware*) \
+	    $(LDSHARED) -o $@ $(LIBRARY_OBJS) \
 	    ;; \
 	beos) \
 	    $(AR) so $(LIBRARY) $@ \
