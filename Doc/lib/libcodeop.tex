@@ -9,20 +9,20 @@
 \modulesynopsis{Compile (possibly incomplete) Python code.}
 
 The \module{codeop} module provides utilities upon which the Python
-read-eval-print loop can be emulated -- as in the \refmodule{code}
-module.  As a result, you probably don't want to use the module
-directly -- if you want to include such a loop in your program you
-probably want to use the \refmodule{code} instead.
+read-eval-print loop can be emulated, as is done in the
+\refmodule{code} module.  As a result, you probably don't want to use
+the module directly; if you want to include such a loop in your
+program you probably want to use the \refmodule{code} module instead.
 
 There are two parts to this job: 
 
-\begin{list}
-\listitem Being able to tell if a line of input completes a Python 
-          statement -- in short telling whether to print ``>>> '' or
-          ``... '' next.
-\listitem Remembering which future statements the user has entered, so 
-          subsequent input can be compiled wiht these in effect.
-\end{list}
+\begin{enumerate}
+  \item Being able to tell if a line of input completes a Python 
+        statement: in short, telling whether to print
+        `\code{>\code{>}>~} or `\code{...~}' next.
+  \item Remembering which future statements the user has entered, so 
+        subsequent input can be compiled with these in effect.
+\end{enumerate}
 
 The \module{codeop} module provides a way of doing each of these
 things, and a way of doing them both.
@@ -58,17 +58,17 @@ for the parser is better.
 \end{funcdesc}
 
 \begin{classdesc}{Compile}{}
-Instances of this class have \method{__call__} methods indentical in
-signature to the built-in function \function{compile}, but with the
+Instances of this class have \method{__call__()} methods indentical in
+signature to the built-in function \function{compile()}, but with the
 difference that if the instance compiles program text containing a
 \module{__future__} statement, the instance 'remembers' and compiles
 all subsequent program texts with the statement in force.
 \end{classdesc}
 
 \begin{classdesc}{CommandCompiler}{}
-Instances of this class have \method{__call__} methods identical in
-signature to \function{compile_command}; the difference is that if the
-instance compiles program text containing a \method{__future__}
+Instances of this class have \method{__call__()} methods identical in
+signature to \function{compile_command()}; the difference is that if
+the instance compiles program text containing a \code{__future__}
 statement, the instance 'remembers' and compiles all subsequent
 program texts with the statement in force.
 \end{classdesc}
