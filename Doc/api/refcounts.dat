@@ -21,6 +21,13 @@
 # always return NULL.  This is used by some of the PyErr_*() functions, in
 # particular.
 
+# XXX NOTE: the 0/+1/-1 refcount information for arguments is
+# confusing!  Much more useful would be to indicate whether the
+# function "steals" a reference to the argument or not.  Take for
+# example PyList_SetItem(list, i, item).  This lists as a 0 change for
+# both the list and the item arguments.  However, in fact it steals a
+# reference to the item argument!
+
 # The parameter names are as they appear in the API manual, not the source
 # code. 
 
@@ -198,6 +205,10 @@ PyErr_Format:PyObject*::null:
 PyErr_Format:PyObject*:exception:+1:
 PyErr_Format:char*:format::
 PyErr_Format::...::
+
+PyErr_Warn:int:::
+PyErr_Warn:PyObject*:category:0 or +1:
+PyErr_Warn:char*:message::
 
 PyEval_AcquireLock:void:::
 
