@@ -83,4 +83,4 @@ EllipsisType = type(Ellipsis)
 
 DictProxyType = type(TypeType.__dict__)
 
-del sys, _f, _C, _x                     # Not for export
+del sys, _f, _C, _x, generators                  # Not for export
