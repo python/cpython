@@ -37,6 +37,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "ceval.h"
 
+#ifdef DEBUG
+#define D(x) x
+#else
+#define D(x)
+#endif
+
+#ifdef USE_DL
+#include "dl.h"
+
+static char *getbinaryname();
+#endif
+
 /* Magic word to reject pre-0.9.4 .pyc files */
 
 #define MAGIC 0x949494L
@@ -93,10 +105,22 @@ add_module(name)
 	return m;
 }
 
+/* Suffixes used by open_module: */
+
+#define PY_SUFFIX	".py"
+#ifdef USE_DL
+#define O_SUFFIX	"module.o"
+#endif
+
+/* Find and open a module file, using sys.path.
+   Return a NULL pointer if no module file is found.
+   When dynamic loading is enabled, the contents of namebuf
+   is important when NULL is returned: if namebuf[0] != '\0'
+   a dl-able object file was found and namebuf is its pathname. */
+
 static FILE *
-open_module(name, suffix, namebuf)
+open_module(name, namebuf)
 	char *name;
-	char *suffix;
 	char *namebuf; /* XXX No buffer overflow checks! */
 {
 	object *path;
@@ -104,8 +128,15 @@ open_module(name, suffix, namebuf)
 	
 	path = sysget("path");
 	if (path == NULL || !is_listobject(path)) {
+		/* No path -- at least try current directory */
+#ifdef USE_DL
 		strcpy(namebuf, name);
-		strcat(namebuf, suffix);
+		strcat(namebuf, O_SUFFIX);
+		if (getmtime(namebuf) > 0)
+			return NULL;
+#endif
+		strcpy(namebuf, name);
+		strcat(namebuf, PY_SUFFIX);
 		fp = fopen(namebuf, "r");
 	}
 	else {
@@ -121,13 +152,21 @@ open_module(name, suffix, namebuf)
 			len = getstringsize(v);
 			if (len > 0 && namebuf[len-1] != SEP)
 				namebuf[len++] = SEP;
+#ifdef USE_DL
 			strcpy(namebuf+len, name);
-			strcat(namebuf, suffix);
+			strcat(namebuf, O_SUFFIX);
+			if (getmtime(namebuf) > 0)
+				return NULL;
+#endif
+			strcpy(namebuf+len, name);
+			strcat(namebuf, PY_SUFFIX);
 			fp = fopen(namebuf, "r");
 			if (fp != NULL)
 				break;
 		}
 	}
+	if (fp == NULL)
+		namebuf[0] = '\0';
 	return fp;
 }
 
@@ -147,8 +186,35 @@ get_module(m, name, m_ret)
 	long mtime;
 	extern long getmtime();
 	
-	fp = open_module(name, ".py", namebuf);
+	fp = open_module(name, namebuf);
 	if (fp == NULL) {
+#ifdef USE_DL
+		if (namebuf[0] != '\0') {
+			char funcname[258];
+			dl_funcptr p;
+			D(fprintf(stderr, "Found %s\n", namebuf));
+			sprintf(funcname, "init%s", name);
+			p =  dl_loadmod(getbinaryname(), namebuf, funcname);
+			if (p == NULL) {
+				D(fprintf(stderr, "dl_loadmod failed\n"));
+			}
+			else {
+				(*p)();
+				*m_ret = m = dictlookup(modules, name);
+				if (m == NULL) {
+					err_setstr(SystemError,
+						   "dynamic module missing");
+					return NULL;
+				}
+				else {
+					D(fprintf(stderr,
+						"module %s loaded!\n", name));
+					INCREF(None);
+					return None;
+				}
+			}
+		}
+#endif
 		if (m == NULL) {
 			sprintf(namebuf, "no module named %.200s", name);
 			err_setstr(ImportError, namebuf);
@@ -338,3 +404,64 @@ init_builtin(name)
 	}
 	return 0;
 }
+
+#ifdef USE_DL
+
+/* A function to find a filename for the currently executing binary.
+   Because this is not directly available, we have to search for argv[0]
+   along $PATH.  But note that if argv[0] contains a slash anywhere,
+   sh(1) doesn't search $PATH -- so neither do we! */
+
+/* XXX This should be moved to a more system-specific file */
+
+#include <sys/types.h>
+#include <sys/stat.h> /* For stat */
+
+extern char *getenv();
+
+extern char *argv0; /* In config.c */
+
+/* Default path from sh(1) in Irix 4.0.1 */
+#define DEF_PATH ":/usr/sbin:/usr/bsd:/bin:/usr/bin:/usr/bin/X11"
+
+static char *
+getbinaryname()
+{
+	char *p, *q;
+	char *path;
+	static char buf[258];
+	int i;
+	struct stat st;
+
+	if (strchr(argv0, '/') != NULL) {
+		D(fprintf(stderr, "binary includes slash: %s\n", argv0));
+		return argv0;
+	}
+	path = getenv("PATH");
+	if (path == NULL)
+		path = DEF_PATH;
+	p = q = path;
+	for (;;) {
+		while (*q && *q != ':')
+			q++;
+		i = q-p;
+		strncpy(buf, p, i);
+		if (q > p && q[-1] != '/')
+			buf[i++] = '/';
+		strcpy(buf+i, argv0);
+		if (stat(buf, &st) >= 0) {
+			if (S_ISREG(st.st_mode) &&
+			    (st.st_mode & 0111)) {
+				D(fprintf(stderr, "found binary: %s\n", buf));
+				return buf;
+			}
+		}
+		if (!*q)
+			break;
+		p = ++q;
+	}
+	D(fprintf(stderr, "can't find binary: %s\n", argv0));
+	return argv0;
+}
+
+#endif
