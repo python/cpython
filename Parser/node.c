@@ -18,15 +18,18 @@ PyNode_New(int type)
 	return n;
 }
 
-/* See comments at XXXROUNDUP below. */
+/* See comments at XXXROUNDUP below.  Returns -1 on overflow. */
 static int
 fancy_roundup(int n)
 {
 	/* Round up to the closest power of 2 >= n. */
 	int result = 256;
 	assert(n > 128);
-	while (result < n)
+	while (result < n) {
 		result <<= 1;
+		if (result <= 0)
+			return -1;
+	}
 	return result;
 }
 
@@ -62,6 +65,8 @@ PyNode_AddChild(register node *n1, int type, char *str, int lineno)
 
 	current_capacity = XXXROUNDUP(nch);
 	required_capacity = XXXROUNDUP(nch + 1);
+	if (current_capacity < 0 || required_capacity < 0)
+		return E_OVERFLOW;
 	if (current_capacity < required_capacity) {
 		n = n1->n_child;
 		PyMem_RESIZE(n, node, required_capacity);
