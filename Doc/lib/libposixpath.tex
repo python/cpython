@@ -215,8 +215,12 @@ avoid visiting certain parts of the tree.  (The object referred to by
 \var{names} must be modified in place, using \keyword{del} or slice
 assignment.)
 
-Note that symbolic links to directories are not treated as subdirectories,
-and that \function{walk} therefore will not visit them. To visit linked
-directories you must identify them with \code{os.path.islink(file)} and
-\code{os.path.isdir(file)}, and invoke \function{walk()} as necessary.
+\begin{notice}
+Symbolic links to directories are not treated as subdirectories, and
+that \function{walk()} therefore will not visit them. To visit linked
+directories you must identify them with
+\code{os.path.islink(\var{file})} and
+\code{os.path.isdir(\var{file})}, and invoke \function{walk()} as
+necessary.
+\end{notice}
 \end{funcdesc}
