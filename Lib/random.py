@@ -43,7 +43,7 @@ from warnings import warn as _warn
 from types import MethodType as _MethodType, BuiltinMethodType as _BuiltinMethodType
 from math import log as _log, exp as _exp, pi as _pi, e as _e
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
-from math import floor as _floor, ldexp as _ldexp
+from math import floor as _floor
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -57,6 +57,7 @@ TWOPI = 2.0*_pi
 LOG4 = _log(4.0)
 SG_MAGICCONST = 1.0 + _log(4.5)
 BPF = 53        # Number of bits in a float
+RECIP_BPF = 2**-BPF
 
 try:
     from os import urandom as _urandom
@@ -759,7 +760,7 @@ class HardwareRandom(Random):
         """Get the next random number in the range [0.0, 1.0)."""
         if _urandom is None:
             raise NotImplementedError('Cannot find hardware entropy source')
-        return _ldexp(long(_hexlify(_urandom(7)), 16) >> 3, -BPF)
+        return (long(_hexlify(_urandom(7)), 16) >> 3) * RECIP_BPF
 
     def getrandbits(self, k):
         """getrandbits(k) -> x.  Generates a long int with k random bits."""
