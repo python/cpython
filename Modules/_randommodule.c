@@ -67,7 +67,7 @@
 /* ---------------------------------------------------------------*/
 
 #include "Python.h"
-#include <time.h>		// for seeding to current time
+#include <time.h>		/* for seeding to current time */
 
 /* Period parameters -- These are all magic.  Don't change. */
 #define N 624
@@ -110,7 +110,7 @@ genrand_int32(RandomObject *self)
 		for (;kk<N-1;kk++) {
 			y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
 			mt[kk] = mt[kk+(M-N)] ^ (y >> 1) ^ mag01[y & 0x1UL];
-	}
+		}
 		y = (mt[N-1]&UPPER_MASK)|(mt[0]&LOWER_MASK);
 		mt[N-1] = mt[M-1] ^ (y >> 1) ^ mag01[y & 0x1UL];
 
