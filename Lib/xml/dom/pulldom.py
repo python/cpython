@@ -227,6 +227,15 @@ class DOMEventStream:
             return rc
         raise IndexError
 
+    def next(self):
+        rc = self.getEvent()
+        if rc:
+            return rc
+        raise StopIteration
+
+    def __iter__(self):
+        return self
+    
     def expandNode(self, node):
         event = self.getEvent()
         parents = [node]
