@@ -153,7 +153,10 @@ fixup_ulcase(void)
         PyDict_SetItemString(string, "letters", ulo);
     Py_DECREF(ulo);
 }
-  
+
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+static int fileencoding_uses_locale = 0;
+#endif
 
 static PyObject*
 PyLocale_setlocale(PyObject* self, PyObject* args)
@@ -203,6 +206,22 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
             fixup_ulcase();
         /* things that got wrong up to here are ignored */
         PyErr_Clear();
+#if defined(HAVE_LANGINFO_H) && defined(CODESET)
+	if (Py_FileSystemDefaultEncoding == NULL)
+	    fileencoding_uses_locale = 1;
+	if (fileencoding_uses_locale) {
+	    char *codeset = nl_langinfo(CODESET);
+	    PyObject *enc = NULL;
+	    if (*codeset && (enc = PyCodec_Encoder(codeset))) {
+		/* Release previous file encoding */
+		if (Py_FileSystemDefaultEncoding)
+		    free (Py_FileSystemDefaultEncoding);
+		Py_FileSystemDefaultEncoding = strdup(codeset);
+		Py_DECREF(enc);
+	    } else
+		PyErr_Clear();
+	}
+#endif
     } else {
         /* get locale */
         /* restore LC_NUMERIC first, if appropriate */
