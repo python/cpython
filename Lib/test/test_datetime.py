@@ -2591,7 +2591,6 @@ class TestTimezoneConversions(unittest.TestCase):
     dston = datetimetz(2002, 4, 7, 2)
     dstoff = datetimetz(2002, 10, 27, 2)
 
-
     # Check a time that's inside DST.
     def checkinside(self, dt, tz, utc, dston, dstoff):
         self.assertEqual(dt.dst(), HOUR)
@@ -2691,9 +2690,18 @@ class TestTimezoneConversions(unittest.TestCase):
         # hours" don't overlap.
         self.convert_between_tz_and_utc(Eastern, Pacific)
         self.convert_between_tz_and_utc(Pacific, Eastern)
-        # XXX These fail!
-        #self.convert_between_tz_and_utc(Eastern, Central)
-        #self.convert_between_tz_and_utc(Central, Eastern)
+        # OTOH, these fail!  Don't enable them.  The difficulty is that
+        # the edge case tests assume that every hour is representable in
+        # the "utc" class.  This is always true for a fixed-offset tzinfo
+        # class (lke utc_real and utc_fake), but not for Eastern or Central.
+        # For these adjacent DST-aware time zones, the range of time offsets
+        # tested ends up creating hours in the one that aren't representable
+        # in the other.  For the same reason, we would see failures in the
+        # Eastern vs Pacific tests too if we added 3*HOUR to the list of
+        # offset deltas in convert_between_tz_and_utc().
+        #
+        # self.convert_between_tz_and_utc(Eastern, Central)  # can't work
+        # self.convert_between_tz_and_utc(Central, Eastern)  # can't work
 
 
 def test_suite():
