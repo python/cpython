@@ -1090,6 +1090,95 @@ long_format(PyObject *aa, int base, int addL)
 	return (PyObject *)str;
 }
 
+/* *str points to the first digit in a string of base base digits.  base
+ * is a power of 2 (2, 4, 8, 16, or 32).  *str is set to point to the first
+ * non-digit (which may be *str!).  A normalized long is returned.
+ * The point to this routine is that it takes time linear in the number of
+ * string characters.
+ */
+static PyLongObject *
+long_from_binary_base(char **str, int base)
+{
+	char *p = *str;
+	char *start = p;
+	int bits_per_char;
+	int n;
+	PyLongObject *z;
+	twodigits accum;
+	int bits_in_accum;
+	digit *pdigit;
+
+	assert(base >= 2 && base <= 32 && (base & (base - 1)) == 0);
+	n = base;
+	for (bits_per_char = -1; n; ++bits_per_char)
+		n >>= 1;
+	/* n <- total # of bits needed, while setting p to end-of-string */
+	n = 0;
+	for (;;) {
+		int k = -1;
+		char ch = *p;
+
+		if (ch <= '9')
+			k = ch - '0';
+		else if (ch >= 'a')
+			k = ch - 'a' + 10;
+		else if (ch >= 'A')
+			k = ch - 'A' + 10;
+		if (k < 0 || k >= base)
+			break;
+		n += bits_per_char;
+		if (n < 0) {
+			PyErr_SetString(PyExc_ValueError,
+					"long string too large to convert");
+			return NULL;
+		}
+		++p;
+	}
+	*str = p;
+	/* n <- # of Python digits needed, = ceiling(n/SHIFT). */
+	n = (n + SHIFT - 1) / SHIFT;
+	z = _PyLong_New(n);
+	if (z == NULL)
+		return NULL;
+	/* Read string from right, and fill in long from left; i.e.,
+	 * from least to most significant in both.
+	 */
+	accum = 0;
+	bits_in_accum = 0;
+	pdigit = z->ob_digit;
+	while (--p >= start) {
+		unsigned char ch = (unsigned char)*p;
+		digit k;
+
+		if (ch <= '9')
+			k = ch - '0';
+		else if (ch >= 'a')
+			k = ch - 'a' + 10;
+		else {
+			assert(ch >= 'A');
+			k = ch - 'A' + 10;
+		}
+		assert(k >= 0 && k <= base);
+		accum |= k << bits_in_accum;
+		bits_in_accum += bits_per_char;
+		if (bits_in_accum >= SHIFT) {
+			*pdigit++ = (digit)(accum & MASK);
+			assert(pdigit - z->ob_digit <= n);
+			accum >>= SHIFT;
+			bits_in_accum -= SHIFT;
+			assert(bits_in_accum < SHIFT);
+		}
+	}
+	if (bits_in_accum) {
+		assert(bits_in_accum <= SHIFT);
+		*pdigit++ = (digit)accum;
+		assert(pdigit - z->ob_digit <= n);
+	}
+	while (pdigit - z->ob_digit < n)
+		*pdigit++ = 0;
+	return long_normalize(z);
+}
+
 PyObject *
 PyLong_FromString(char *str, char **pend, int base)
 {
@@ -1122,23 +1211,27 @@ PyLong_FromString(char *str, char **pend, int base)
 	}
 	if (base == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
 		str += 2;
-	z = _PyLong_New(0);
 	start = str;
-	for ( ; z != NULL; ++str) {
-		int k = -1;
-		PyLongObject *temp;
+	if ((base & (base - 1)) == 0)
+		z = long_from_binary_base(&str, base);
+	else {
+		z = _PyLong_New(0);
+		for ( ; z != NULL; ++str) {
+			int k = -1;
+			PyLongObject *temp;
 
-		if (*str <= '9')
-			k = *str - '0';
-		else if (*str >= 'a')
-			k = *str - 'a' + 10;
-		else if (*str >= 'A')
-			k = *str - 'A' + 10;
-		if (k < 0 || k >= base)
-			break;
-		temp = muladd1(z, (digit)base, (digit)k);
-		Py_DECREF(z);
-		z = temp;
+			if (*str <= '9')
+				k = *str - '0';
+			else if (*str >= 'a')
+				k = *str - 'a' + 10;
+			else if (*str >= 'A')
+				k = *str - 'A' + 10;
+			if (k < 0 || k >= base)
+				break;
+			temp = muladd1(z, (digit)base, (digit)k);
+			Py_DECREF(z);
+			z = temp;
+		}
 	}
 	if (z == NULL)
 		return NULL;

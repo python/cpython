@@ -247,7 +247,7 @@ class AbstractPickleTests(unittest.TestCase):
 
     def test_long(self):
         for proto in protocols:
-            # 256 bytes is where LONG4 begins
+            # 256 bytes is where LONG4 begins.
             for nbits in 1, 8, 8*254, 8*255, 8*256, 8*257:
                 nbase = 1L << nbits
                 for npos in nbase-1, nbase, nbase+1:
@@ -257,20 +257,11 @@ class AbstractPickleTests(unittest.TestCase):
                         self.assertEqual(n, got)
         # Try a monster.  This is quadratic-time in protos 0 & 1, so don't
         # bother with those.
-        # XXX Damn.  pickle.py is still quadratic-time here, due to
-        # XXX long(string, 16).  cPickle runs this in an eyeblink, but I
-        # XXX gave up waiting for pickle.py to get beyond "loading".  Giving
-        # XXX up for now.
-        return
-        print "building long"
         nbase = long("deadbeeffeedface", 16)
         nbase += nbase << 1000000
         for n in nbase, -nbase:
-            print "dumping"
             p = self.dumps(n, 2)
-            print "loading"
             got = self.loads(p)
-            print "checking"
             self.assertEqual(n, got)
 
     def test_reduce(self):
