@@ -52,7 +52,7 @@ FSRef = OpaqueByValueStructType("FSRef", "PyMac_BuildFSRef", "PyMac_GetFSRef")
 
 # OSType and ResType: 4-byte character strings
 def OSTypeType(typename):
-	return OpaqueByValueType(typename, "PyMac_BuildOSType", "PyMac_GetOSType")
+    return OpaqueByValueType(typename, "PyMac_BuildOSType", "PyMac_GetOSType")
 OSType = OSTypeType("OSType")
 ResType = OSTypeType("ResType")
 FourCharCode = OSTypeType("FourCharCode")
@@ -104,35 +104,35 @@ OptionalCFURLRef = OpaqueByValueType("CFURLRef", "OptionalCFURLRefObj")
 # OSErr is special because it is turned into an exception
 # (Could do this with less code using a variant of mkvalue("O&")?)
 class OSErrType(Type):
-	def errorCheck(self, name):
-		Output("if (%s != noErr) return PyMac_Error(%s);", name, name)
-		self.used = 1
+    def errorCheck(self, name):
+        Output("if (%s != noErr) return PyMac_Error(%s);", name, name)
+        self.used = 1
 OSErr = OSErrType("OSErr", 'h')
 OSStatus = OSErrType("OSStatus", 'l')
 
 
 # Various buffer types
 
-InBuffer = VarInputBufferType('char', 'long', 'l')		# (buf, len)
-UcharInBuffer  = VarInputBufferType('unsigned char', 'long', 'l')		# (buf, len)
-OptionalInBuffer = OptionalVarInputBufferType('char', 'long', 'l')		# (buf, len)
+InBuffer = VarInputBufferType('char', 'long', 'l')      # (buf, len)
+UcharInBuffer  = VarInputBufferType('unsigned char', 'long', 'l')       # (buf, len)
+OptionalInBuffer = OptionalVarInputBufferType('char', 'long', 'l')      # (buf, len)
 
-InOutBuffer = HeapInputOutputBufferType('char', 'long', 'l')	# (inbuf, outbuf, len)
+InOutBuffer = HeapInputOutputBufferType('char', 'long', 'l')    # (inbuf, outbuf, len)
 VarInOutBuffer = VarHeapInputOutputBufferType('char', 'long', 'l') # (inbuf, outbuf, &len)
 
-OutBuffer = HeapOutputBufferType('char', 'long', 'l')		# (buf, len)
-VarOutBuffer = VarHeapOutputBufferType('char', 'long', 'l')	# (buf, &len)
+OutBuffer = HeapOutputBufferType('char', 'long', 'l')       # (buf, len)
+VarOutBuffer = VarHeapOutputBufferType('char', 'long', 'l') # (buf, &len)
 VarVarOutBuffer = VarVarHeapOutputBufferType('char', 'long', 'l') # (buf, len, &len)
 
 # Unicode arguments sometimes have reversed len, buffer (don't understand why Apple did this...)
 class VarUnicodeInputBufferType(VarInputBufferType):
 
-	def getargsFormat(self):
-		return "u#"
-		
+    def getargsFormat(self):
+        return "u#"
+        
 class VarUnicodeReverseInputBufferType(ReverseInputBufferMixin, VarUnicodeInputBufferType):
-	pass
-	
+    pass
+    
 UnicodeInBuffer = VarUnicodeInputBufferType('UniChar', 'UniCharCount', 'l')
 UnicodeReverseInBuffer = VarUnicodeReverseInputBufferType('UniChar', 'UniCharCount', 'l')
 UniChar_ptr = InputOnlyType("UniCharPtr", "u")
@@ -151,9 +151,9 @@ includestuff = """
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\\
-    	PyErr_SetString(PyExc_NotImplementedError, \\
-    	"Not available in this shared library/OS version"); \\
-    	return NULL; \\
+        PyErr_SetString(PyExc_NotImplementedError, \\
+        "Not available in this shared library/OS version"); \\
+        return NULL; \\
     }} while(0)
 
 """
@@ -173,23 +173,23 @@ initstuff = """
 # This requires that the OSErr type (defined above) has a non-trivial
 # errorCheck method.
 class OSErrMixIn:
-	"Mix-in class to treat OSErr/OSStatus return values special"
-	def makereturnvar(self):
-		if self.returntype.__class__ == OSErrType:
-			return Variable(self.returntype, "_err", ErrorMode)
-		else:
-			return Variable(self.returntype, "_rv", OutMode)
+    "Mix-in class to treat OSErr/OSStatus return values special"
+    def makereturnvar(self):
+        if self.returntype.__class__ == OSErrType:
+            return Variable(self.returntype, "_err", ErrorMode)
+        else:
+            return Variable(self.returntype, "_rv", OutMode)
 
 class OSErrFunctionGenerator(OSErrMixIn, FunctionGenerator): pass
 class OSErrMethodGenerator(OSErrMixIn, MethodGenerator): pass
 
 class WeakLinkMixIn:
-	"Mix-in to test the function actually exists (!= NULL) before calling"
-	
-	def precheck(self):
-		Output('#ifndef %s', self.name)
-		Output('PyMac_PRECHECK(%s);', self.name)
-		Output('#endif')
+    "Mix-in to test the function actually exists (!= NULL) before calling"
+    
+    def precheck(self):
+        Output('#ifndef %s', self.name)
+        Output('PyMac_PRECHECK(%s);', self.name)
+        Output('#endif')
 
 class WeakLinkFunctionGenerator(WeakLinkMixIn, FunctionGenerator): pass
 class WeakLinkMethodGenerator(WeakLinkMixIn, MethodGenerator): pass
@@ -197,14 +197,14 @@ class OSErrWeakLinkFunctionGenerator(OSErrMixIn, WeakLinkMixIn, FunctionGenerato
 class OSErrWeakLinkMethodGenerator(OSErrMixIn, WeakLinkMixIn, MethodGenerator): pass
 
 class MacModule(Module):
-	"Subclass which gets the exception initializer from macglue.c"
-	def exceptionInitializer(self):
-		return "PyMac_GetOSErrException()"
+    "Subclass which gets the exception initializer from macglue.c"
+    def exceptionInitializer(self):
+        return "PyMac_GetOSErrException()"
 
 _SetOutputFileName = SetOutputFileName # Save original
 def SetOutputFileName(file = None):
-	"Set the output file name and set its creator&type to CWIE&TEXT"
-	_SetOutputFileName(file)
-	if file:
-		import MacOS
-		MacOS.SetCreatorAndType(file, 'CWIE', 'TEXT')
+    "Set the output file name and set its creator&type to CWIE&TEXT"
+    _SetOutputFileName(file)
+    if file:
+        import MacOS
+        MacOS.SetCreatorAndType(file, 'CWIE', 'TEXT')
