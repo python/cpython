@@ -62,6 +62,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_GETUID	1
 #define HAVE_KILL	1
 #define HAVE_WAIT	1
+#define HAVE_OPENDIR	1
+#define HAVE_PIPE	1
 #endif
 
 #ifndef NT
@@ -359,7 +361,7 @@ posix_listdir(self, args)
 	object *self;
 	object *args;
 {
-#ifdef NT
+#if defined(NT) && !defined(HAVE_OPENDIR)
 
 	char *name;
 	int len;
@@ -1057,7 +1059,7 @@ posix_times(self, args)
 		       (double)t.tms_cstime / HZ);
 }
 #endif /* HAVE_TIMES */
-#ifdef NT
+#if defined(NT) && !defined(HAVE_TIMES)
 #define HAVE_TIMES	/* so the method table will pick it up */
 static object *
 posix_times(self, args)
@@ -1337,7 +1339,7 @@ posix_pipe(self, args)
 	object *self;
 	object *args;
 {
-#ifndef NT
+#if !defined(NT) || defined(HAVE_PIPE)
 	int fds[2];
 	int res;
 	if (!getargs(args, ""))
