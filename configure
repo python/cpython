@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.114 
+# From configure.in Revision: 1.115 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -2355,7 +2355,7 @@ then
 		fi;;
 	SunOS/5*) case $CC in
 		  *gcc*)
-		    if $CC -Xlinker -V 2>/dev/null | grep BFD >/dev/null
+		    if $CC -Xlinker -V 2>&1 | grep BFD >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
 		    fi;;
