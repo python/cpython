@@ -620,6 +620,8 @@ from pickle import decode_long
 def read_long1(f):
     r"""
     >>> import StringIO
+    >>> read_long1(StringIO.StringIO("\x00"))
+    0L
     >>> read_long1(StringIO.StringIO("\x02\xff\x00"))
     255L
     >>> read_long1(StringIO.StringIO("\x02\xff\x7f"))
@@ -628,7 +630,6 @@ def read_long1(f):
     -256L
     >>> read_long1(StringIO.StringIO("\x02\x00\x80"))
     -32768L
-    >>>
     """
 
     n = read_uint1(f)
@@ -645,6 +646,7 @@ long1 = ArgumentDescriptor(
 
     This first reads one byte as an unsigned size, then reads that
     many bytes and interprets them as a little-endian 2's-complement long.
+    If the size is 0, that's taken as a shortcut for the long 0L.
     """)
 
 def read_long4(f):
@@ -658,7 +660,8 @@ def read_long4(f):
     -256L
     >>> read_long4(StringIO.StringIO("\x02\x00\x00\x00\x00\x80"))
     -32768L
-    >>>
+    >>> read_long1(StringIO.StringIO("\x00\x00\x00\x00"))
+    0L
     """
 
     n = read_int4(f)
@@ -677,7 +680,9 @@ long4 = ArgumentDescriptor(
 
     This first reads four bytes as a signed size (but requires the
     size to be >= 0), then reads that many bytes and interprets them
-    as a little-endian 2's-complement long.
+    as a little-endian 2's-complement long.  If the size is 0, that's taken
+    as a shortcut for the long 0L, although LONG1 should really be used
+    then instead (and in any case where # of bytes < 256).
     """)
 
 
