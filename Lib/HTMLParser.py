@@ -208,19 +208,6 @@ class HTMLParser(markupbase.ParserBase):
             i = self.updatepos(i, n)
         self.rawdata = rawdata[i:]
 
-    # Internal -- parse comment, return end or -1 if not terminated
-    def parse_comment(self, i, report=1):
-        rawdata = self.rawdata
-        assert rawdata[i:i+4] == '<!--', 'unexpected call to parse_comment()'
-        match = commentclose.search(rawdata, i+4)
-        if not match:
-            return -1
-        if report:
-            j = match.start()
-            self.handle_comment(rawdata[i+4: j])
-        j = match.end()
-        return j
-
     # Internal -- parse processing instr, return end or -1 if not terminated
     def parse_pi(self, i):
         rawdata = self.rawdata
