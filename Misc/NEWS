@@ -12,6 +12,11 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Optimized list.extend() to save memory and no longer create
+  intermediate sequences.  Also, extend() now pre-allocates the
+  needed memory whenever the length of the iterable is known in
+  advance -- this halves the time to extend the list.
+
 - Optimized list resize operations to make fewer calls to the system
   realloc().  Significantly speeds up list appends, list pops,
   list comprehensions, and the list contructor (when the input iterable
