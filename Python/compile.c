@@ -1241,6 +1241,9 @@ decode_utf8(char **sPtr, char *end, char* encoding)
 #endif
 }
 
+/* compiler.transformer.Transformer.decode_literal depends on what 
+   might seem like minor details of this function -- changes here 
+   must be reflected there. */
 static PyObject *
 parsestr(struct compiling *c, char *s)
 {

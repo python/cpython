@@ -6,15 +6,8 @@ import sys
 import types
 
 from compiler import misc
-from compiler.consts import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, \
-     CO_VARKEYWORDS
-
-def xxx_sort(l):
-    l = l[:]
-    def sorter(a, b):
-        return cmp(a.bid, b.bid)
-    l.sort(sorter)
-    return l
+from compiler.consts \
+     import CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS
 
 class FlowGraph:
     def __init__(self):
@@ -77,7 +70,7 @@ class FlowGraph:
     def emit(self, *inst):
         if self._debug:
             print "\t", inst
-        if inst[0] == 'RETURN_VALUE':
+        if inst[0] in ['RETURN_VALUE', 'YIELD_VALUE']:
             self.current.addOutEdge(self.exit)
         if len(inst) == 2 and isinstance(inst[1], Block):
             self.current.addOutEdge(inst[1])
@@ -266,7 +259,7 @@ class Block:
         self.next.append(block)
         assert len(self.next) == 1, map(str, self.next)
 
-    _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS',
+    _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS', 'YIELD_VALUE',
                         'JUMP_ABSOLUTE', 'JUMP_FORWARD', 'CONTINUE_LOOP')
 
     def pruneNext(self):
@@ -443,7 +436,7 @@ class PyFlowGraph(FlowGraph):
                 insts.append(inst)
                 if len(inst) == 1:
                     pc = pc + 1
-                else:
+                elif inst[0] != "SET_LINENO":
                     # arg takes 2 bytes
                     pc = pc + 3
             end[b] = pc
@@ -452,7 +445,7 @@ class PyFlowGraph(FlowGraph):
             inst = insts[i]
             if len(inst) == 1:
                 pc = pc + 1
-            else:
+            elif inst[0] != "SET_LINENO":
                 pc = pc + 3
             opname = inst[0]
             if self.hasjrel.has_elt(opname):
@@ -580,6 +573,7 @@ class PyFlowGraph(FlowGraph):
                 oparg = t[1]
                 if opname == "SET_LINENO":
                     lnotab.nextLine(oparg)
+                    continue
                 hi, lo = twobyte(oparg)
                 try:
                     lnotab.addCode(self.opnum[opname], lo, hi)
@@ -697,7 +691,7 @@ class LineAddrTable:
             # after the loading of "b".  This works with the C Python
             # compiler because it only generates a SET_LINENO instruction
             # for the assignment.
-            if line > 0:
+            if line >= 0:
                 push = self.lnotab.append
                 while addr > 255:
                     push(255); push(0)
@@ -768,6 +762,7 @@ class StackDepthTracker:
         # PRINT_EXPR?
         'PRINT_ITEM': -1,
         'RETURN_VALUE': -1,
+        'YIELD_VALUE': -1,
         'EXEC_STMT': -3,
         'BUILD_CLASS': -2,
         'STORE_NAME': -1,

@@ -249,6 +249,9 @@ class SymbolVisitor:
         scope = ClassScope(node.name, self.module)
         if parent.nested or isinstance(parent, FunctionScope):
             scope.nested = 1
+        if node.doc is not None:
+            scope.add_def('__doc__')
+        scope.add_def('__module__')
         self.scopes[node] = scope
         prev = self.klass
         self.klass = node.name
