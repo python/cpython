@@ -391,7 +391,7 @@ class ConfigParser:
         r'\]'                                 # ]
         )
     OPTCRE = re.compile(
-        r'(?P<option>[-\w_.*,(){}]+)'         # a lot of stuff found by IvL
+        r'(?P<option>[]\-[\w_.*,(){}]+)'      # a lot of stuff found by IvL
         r'[ \t]*(?P<vi>[:=])[ \t]*'           # any number of space/tab,
                                               # followed by separator
                                               # (either : or =), followed
