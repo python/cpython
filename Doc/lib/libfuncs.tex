@@ -308,9 +308,11 @@ module from which it is called).
 \begin{funcdesc}{isinstance}{object, class}
 Return true if the \var{object} argument is an instance of the
 \var{class} argument, or of a (direct or indirect) subclass thereof.
-If \var{object} is not a class instance, the function always returns
-false.  If \var{class} is not a class object, a \code{TypeError}
-exception is raised.
+Also return true if \var{class} is a type object and \var{object} is
+an object of that type.  If \var{object} is not a class instance or a
+object of the given type, the function always returns false.  If
+\var{class} is neither a class object nor a type object, a
+\code{TypeError} exception is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{issubclass}{class1, class2}
