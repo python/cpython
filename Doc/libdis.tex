@@ -35,20 +35,6 @@ The \code{dis} module defines the following functions:
 
 \renewcommand{\indexsubitem}{(in module dis)}
 
-% ---- 3.2. ----
-% For each function, use a ``funcdesc'' block.  This has exactly two
-% parameters (each parameters is contained in a set of curly braces):
-% the first parameter is the function name (this automatically
-% generates an index entry); the second parameter is the function's
-% argument list.  If there are no arguments, use an empty pair of
-% curly braces.  If there is more than one argument, separate the
-% arguments with backslash-comma.  Optional parts of the parameter
-% list are contained in \optional{...} (this generates a set of square
-% brackets around its parameter).  Arguments are automatically set in
-% italics in the parameter list.  Each argument should be mentioned at
-% least once in the description; each usage (even inside \code{...})
-% should be enclosed in \var{...}.
-
 \begin{funcdesc}{dis}{\optional{bytesource}}
 Disassemble the \var{bytesource} object. \var{bytesource} can denote
 either a class, a method, a function, or a code object.  For a class,
@@ -196,27 +182,27 @@ Implements \code{TOS = TOS1 - TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_SUBSCR}{}
-Implements \code{TOS = TOS1[TOS] }.
+Implements \code{TOS = TOS1[TOS]}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_LSHIFT}{}
-Implements \code{TOS = TOS1 << TOS }.
+Implements \code{TOS = TOS1 << TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_RSHIFT}{}
-Implements \code{TOS = TOS1 >> TOS }.
+Implements \code{TOS = TOS1 >> TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_AND}{}
-Implements \code{TOS = TOS1 and TOS }.
+Implements \code{TOS = TOS1 and TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_XOR}{}
-Implements \code{TOS = TOS1 \^{ }TOS }.
+Implements \code{TOS = TOS1 \^{ }TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_OR}{}
-Implements \code{TOS = TOS1 or TOS }.
+Implements \code{TOS = TOS1 or TOS}.
 \end{opcodedesc}
 
 The slice opcodes take up to three parameters.
