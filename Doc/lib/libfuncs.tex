@@ -189,7 +189,12 @@ module from which it is called).
 
 \begin{funcdesc}{hex}{x}
   Convert an integer number (of any size) to a hexadecimal string.
-  The result is a valid Python expression.
+  The result is a valid Python expression.  Note: this always yields
+  an unsigned literal, e.g. on a 32-bit machine, \code{hex(-1)} yields
+  \code{'0xffffffff'}.  When evaluated on a machine with the same
+  word size, this literal is evaluated as -1; at a different word
+  size, it may turn up as a large positive number or raise an
+  \code{OverflowError} exception.
 \end{funcdesc}
 
 \begin{funcdesc}{id}{object}
@@ -256,7 +261,12 @@ any kind of sequence; the result is always a list.
 
 \begin{funcdesc}{oct}{x}
   Convert an integer number (of any size) to an octal string.  The
-  result is a valid Python expression.
+  result is a valid Python expression.  Note: this always yields
+  an unsigned literal, e.g. on a 32-bit machine, \code{oct(-1)} yields
+  \code{'037777777777'}.  When evaluated on a machine with the same
+  word size, this literal is evaluated as -1; at a different word
+  size, it may turn up as a large positive number or raise an
+  \code{OverflowError} exception.
 \end{funcdesc}
 
 \begin{funcdesc}{open}{filename\optional{\, mode\optional{\, bufsize}}}
