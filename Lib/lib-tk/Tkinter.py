@@ -1236,16 +1236,7 @@ class Canvas(Widget):
 	def dchars(self, *args):
 		self.tk.call((self._w, 'dchars') + args)
 	def delete(self, *args):
-		self._delete_bindings(args)
 		self.tk.call((self._w, 'delete') + args)
-	def _delete_bindings(self, args):
-		for tag in args:
-			for a in self.tag_bind(tag):
-				b = self.tag_bind(tag, a)
-				c = _string.split(b, '[')[1]
-				d = _string.split(c)[0]
-				print "deletecommand(%s)" % `d`
-				self.deletecommand(d)
 	def dtag(self, *args):
 		self.tk.call((self._w, 'dtag') + args)
 	def find(self, *args):
