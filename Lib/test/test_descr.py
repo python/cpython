@@ -2625,6 +2625,10 @@ def setclass():
     cant(Int(), int)
     cant(True, int)
     cant(2, bool)
+    o = object()
+    cant(o, type(1))
+    cant(o, type(None))
+    del o
 
 def setdict():
     if verbose: print "Testing __dict__ assignment..."
