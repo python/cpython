@@ -1657,6 +1657,9 @@ listsort(PyListObject *self, PyObject *args)
 		if (!PyArg_UnpackTuple(args, "sort", 0, 1, &compare))
 			return NULL;
 	}
+	if (compare == Py_None)
+		compare = NULL;
+
 	merge_init(&ms, compare);
 
 	/* The list is temporarily made empty, so that mutations performed
@@ -2069,7 +2072,7 @@ PyDoc_STRVAR(count_doc,
 PyDoc_STRVAR(reverse_doc,
 "L.reverse() -- reverse *IN PLACE*");
 PyDoc_STRVAR(sort_doc,
-"L.sort([cmpfunc]) -- stable sort *IN PLACE*; cmpfunc(x, y) -> -1, 0, 1");
+"L.sort(cmpfunc=None) -- stable sort *IN PLACE*; cmpfunc(x, y) -> -1, 0, 1");
 
 static PyMethodDef list_methods[] = {
 	{"append",	(PyCFunction)listappend,  METH_O, append_doc},
