@@ -173,8 +173,7 @@ NAVIGATION = '''\
  src="%(iconserver)s/%(uplinkicon)s.%(imgtype)s"></a></td>
 <td><img width="32" height="32" align="bottom" border="0" alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
-<td align="center" bgcolor="#99CCFF" width="100%%">
- <b class="title">%(title)s</b></td>
+<td align="center" width="100%%">%(title)s</td>
 <td><img width="32" height="32" align="bottom" border="0" alt=""
  src="%(iconserver)s/blank.%(imgtype)s"></td>
 <td><img width="32" height="32" align="bottom" border="0" alt=""
@@ -196,7 +195,7 @@ HEAD = '''\
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
   <link rel="STYLESHEET" href="lib/lib.css">
 </head>
-<body bgcolor=white>
+<body>
 ''' + NAVIGATION + '''\
 <hr>
 
