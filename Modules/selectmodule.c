@@ -22,29 +22,44 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* select - Module containing unix select(2) call */
+/* select - Module containing unix select(2) call.
+Under Unix, the file descriptors are small integers.
+Under Win32, select only exists for sockets, and sockets may
+have any value except INVALID_SOCKET.
+*/
 
 #include "allobjects.h"
 #include "modsupport.h"
 #include "ceval.h"
 
 #include <sys/types.h>
+
+#ifdef _MSC_VER
+#include <winsock.h>
+#else
 #include "myselect.h" /* Also includes mytime.h */
+#define SOCKET int
+#endif
 
 static object *SelectError;
 
-static
+typedef struct {	/* list of Python objects and their file descriptor */
+	object *obj;
+	SOCKET fd;
+} pylist;
+
+static int
 list2set(list, set, fd2obj)
     object *list;
     fd_set *set;
-    object *fd2obj[FD_SETSIZE];
+    pylist fd2obj[FD_SETSIZE + 3];
 {
-    int i, len, v, max = -1;
+    int i, len, index, max = -1;
     object *o, *filenomethod, *fno;
+    SOCKET v;
 
-    for ( i=0;  i<FD_SETSIZE;  i++ ) {
-	fd2obj[i] = (object*)0;
-    }
+    index = 0;
+    fd2obj[0].obj = (object*)0;	/* set list to zero size */
     
     FD_ZERO(set);
     len = getlistsize(list);
@@ -68,47 +83,57 @@ list2set(list, set, fd2obj)
 	    err_badarg();
 	    return -1;
 	}
+#ifdef _MSC_VER
+	max = 0;	/* not used for Win32 */
+#else
 	if ( v < 0 || v >= FD_SETSIZE ) {
 	    err_setstr(ValueError, "filedescriptor out of range in select()");
 	    return -1;
 	}
 	if ( v > max ) max = v;
+#endif
 	FD_SET(v, set);
-	fd2obj[v] = o;
+	/* add object and its file descriptor to the list */
+	if ( index >= FD_SETSIZE ) {
+	    err_setstr(ValueError, "too many file descriptors in select()");
+	    return -1;
+	}
+	fd2obj[index].obj = o;
+	fd2obj[index].fd = v;
+	fd2obj[++index].obj = (object *)0;	/* sentinel */
     }
     return max+1;
 }
 
 static object *
-set2list(set, max, fd2obj)
+set2list(set, fd2obj)
     fd_set *set;
-    int max;
-    object *fd2obj[FD_SETSIZE];
+    pylist fd2obj[FD_SETSIZE + 3];
 {
-    int i, num=0;
+    int j, num=0;
     object *list, *o;
+    SOCKET fd;
 
-    for(i=0; i<max; i++)
-      if ( FD_ISSET(i,set) )
+    for(j=0; fd2obj[j].obj; j++)
+      if ( FD_ISSET(fd2obj[j].fd, set) )
 	num++;
     list = newlistobject(num);
     num = 0;
-    for(i=0; i<max; i++)
-      if ( FD_ISSET(i,set) ) {
-	  if ( i > FD_SETSIZE ) {
+    for(j=0; fd2obj[j].obj; j++) {
+      fd = fd2obj[j].fd;
+      if ( FD_ISSET(fd, set) ) {
+#ifndef _MSC_VER
+	  if ( fd > FD_SETSIZE ) {
 	      err_setstr(SystemError,
 			 "filedescriptor out of range returned in select()");
 	      return NULL;
 	  }
-	  o = fd2obj[i];
-	  if ( o == NULL ) {
-	      err_setstr(SystemError,
-			 "Bad filedescriptor returned from select()");
-	      return NULL;
-	  }
+#endif
+          o = fd2obj[j].obj;
 	  INCREF(o);
 	  setlistitem(list, num, o);
 	  num++;
+      }
     }
     return list;
 }
@@ -118,7 +143,7 @@ select_select(self, args)
     object *self;
     object *args;
 {
-    object *rfd2obj[FD_SETSIZE], *wfd2obj[FD_SETSIZE], *efd2obj[FD_SETSIZE];
+    pylist rfd2obj[FD_SETSIZE + 3], wfd2obj[FD_SETSIZE + 3], efd2obj[FD_SETSIZE + 3];
     object *ifdlist, *ofdlist, *efdlist;
     object *ret, *tout;
     fd_set ifdset, ofdset, efdset;
@@ -175,12 +200,16 @@ select_select(self, args)
 	return 0;
     }
 
-    if ( n == 0 )
-      imax = omax = emax = 0; /* Speedup hack */
+    if ( n == 0 ) { /* Speedup hack */
+      ifdlist = newlistobject(0);
+      ret = mkvalue("OOO", ifdlist, ifdlist, ifdlist);
+      XDECREF(ifdlist);
+      return ret;
+    }
 
-    ifdlist = set2list(&ifdset, imax, rfd2obj);
-    ofdlist = set2list(&ofdset, omax, wfd2obj);
-    efdlist = set2list(&efdset, emax, efd2obj);
+    ifdlist = set2list(&ifdset, rfd2obj);
+    ofdlist = set2list(&ofdset, wfd2obj);
+    efdlist = set2list(&efdset, efd2obj);
     ret = mkvalue("OOO", ifdlist, ofdlist, efdlist);
     XDECREF(ifdlist);
     XDECREF(ofdlist);
