@@ -26,13 +26,16 @@ mainly to support reading and writing the ``pseudo-compiled'' code for
 Python modules of \file{.pyc} files.  Therefore, the Python
 maintainers reserve the right to modify the marshal format in backward
 incompatible ways should the need arise.  If you're serializing and
-de-serializing Python objects, use the \module{pickle} module.  There
-may also be unknown security problems with
-\module{marshal}\footnote{As opposed to the known security issues in
-the \module{pickle} module!}.
+de-serializing Python objects, use the \module{pickle} module instead.  
 \refstmodindex{pickle}
 \refstmodindex{shelve}
 \obindex{code}
+
+\begin{notice}[warning]
+The \module{marshal} module is not intended to be secure against
+erroneous or maliciously constructed data.  Never unmarshal data
+received from an untrusted or unauthenticated source.
+\end{notice}
 
 Not all Python object types are supported; in general, only objects
 whose value is independent from a particular invocation of Python can
