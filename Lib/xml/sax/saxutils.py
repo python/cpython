@@ -1,34 +1,37 @@
-"""
-A library of useful helper classes to the sax classes, for the
+"""\
+A library of useful helper classes to the SAX classes, for the
 convenience of application and driver writers.
-
-$Id$
 """
 
-import types, string, sys
 import handler
 
-def escape(data, entities = {}):
+
+def escape(data, entities={}):
     """Escape &, <, and > in a string of data.
+
     You can escape other strings of data by passing a dictionary as 
     the optional entities parameter.  The keys and values must all be
     strings; each key will be replaced with its corresponding value.
     """
-    data = string.replace(data, "&", "&amp;")
-    data = string.replace(data, "<", "&lt;")
-    data = string.replace(data, ">", "&gt;")
+    data = data.replace("&", "&amp;")
+    data = data.replace("<", "&lt;")
+    data = data.replace(">", "&gt;")
     for chars, entity in entities.items():
-        data = string.replace(data, chars, entity)        
+        data = data.replace(chars, entity)        
     return data
+
 
 class XMLGenerator(handler.ContentHandler):
 
-    def __init__(self, out = sys.stdout):
+    def __init__(self, out=None):
+        if out is None:
+            import sys
+            out = sys.stdout
         handler.ContentHandler.__init__(self)
         self._out = out
 
     # ContentHandler methods
-        
+
     def startDocument(self):
         self._out.write('<?xml version="1.0" encoding="iso-8859-1"?>\n')
 
@@ -39,9 +42,9 @@ class XMLGenerator(handler.ContentHandler):
         pass
 
     def startElement(self, name, attrs):
-        if type(name)==type(()):
-            uri, localname, prefix=name
-            name="%s:%s"%(prefix,localname)
+        if type(name) is type(()):
+            uri, localname, prefix = name
+            name = "%s:%s"%(prefix,localname)
         self._out.write('<' + name)
         for (name, value) in attrs.items():
             self._out.write(' %s="%s"' % (name, escape(value)))
@@ -56,9 +59,10 @@ class XMLGenerator(handler.ContentHandler):
 
     def ignorableWhitespace(self, content):
         self._out.write(content)
-        
+
     def processingInstruction(self, target, data):
         self._out.write('<?%s %s?>' % (target, data))
+
 
 class XMLFilterBase:
     """This class is designed to sit between an XMLReader and the
@@ -80,10 +84,10 @@ class XMLFilterBase:
         self._err_handler.warning(exception)
 
     # ContentHandler methods
-        
+
     def setDocumentLocator(self, locator):
         self._cont_handler.setDocumentLocator(locator)
-        
+
     def startDocument(self):
         self._cont_handler.startDocument()
 
@@ -138,7 +142,7 @@ class XMLFilterBase:
 
     def setLocale(self, locale):
         self._parent.setLocale(locale)
-    
+
     def getFeature(self, name):
         return self._parent.getFeature(name)
 
@@ -150,4 +154,3 @@ class XMLFilterBase:
 
     def setProperty(self, name, value):
         self._parent.setProperty(name, value)
-        
