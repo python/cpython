@@ -210,4 +210,9 @@ class OperatorTestCase(unittest.TestCase):
         self.failUnless(operator.xor(0xb, 0xc) == 0x7)
 
 
-test_support.run_unittest(OperatorTestCase)
+def test_main():
+    test_support.run_unittest(OperatorTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

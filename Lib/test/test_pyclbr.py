@@ -153,4 +153,10 @@ class PyclbrTest(unittest.TestCase):
         # pdb plays too many dynamic games
         # cm('pdb', pdb)
 
-run_unittest(PyclbrTest)
+
+def test_main():
+    run_unittest(PyclbrTest)
+
+
+if __name__ == "__main__":
+    test_main()

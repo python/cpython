@@ -694,4 +694,10 @@ class TestCase(unittest.TestCase):
         (a, b), (c,) = IteratingSequenceClass(2), {42: 24}
         self.assertEqual((a, b, c), (0, 1, 42))
 
-run_unittest(TestCase)
+
+def test_main():
+    run_unittest(TestCase)
+
+
+if __name__ == "__main__":
+    test_main()

@@ -106,4 +106,10 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('?a?', '*F'), map(self.norm, [os.path.join('aaa', 'zzzF'),
                                                    os.path.join('aab', 'F')]))
 
-run_unittest(GlobTests)
+
+def test_main():
+    run_unittest(GlobTests)
+
+
+if __name__ == "__main__":
+    test_main()

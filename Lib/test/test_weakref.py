@@ -2,7 +2,7 @@ import sys
 import unittest
 import weakref
 
-from test_support import run_unittest
+import test_support
 
 
 class C:
@@ -434,5 +434,13 @@ class MappingTestCase(TestBase):
         self.assert_(d.items() == [('something else', o2)])
 
 
-run_unittest(ReferencesTestCase)
-run_unittest(MappingTestCase)
+def test_main():
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    suite.addTest(loader.loadTestsFromTestCase(ReferencesTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(MappingTestCase))
+    test_support.run_suite(suite)
+
+
+if __name__ == "__main__":
+    test_main()

@@ -38,4 +38,9 @@ class FnmatchTestCase(unittest.TestCase):
         check('\\', r'[!\]', 0)
 
 
-test_support.run_unittest(FnmatchTestCase)
+def test_main():
+    test_support.run_unittest(FnmatchTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

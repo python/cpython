@@ -265,6 +265,11 @@ class ClassWithFailingRepr:
         raise Exception("This should be caught by Repr.repr_instance")
 
 
-run_unittest(ReprTests)
-if os.name != 'mac':
-    run_unittest(LongReprTest)
+def test_main():
+    run_unittest(ReprTests)
+    if os.name != 'mac':
+        run_unittest(LongReprTest)
+
+
+if __name__ == "__main__":
+    test_main()

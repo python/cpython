@@ -177,4 +177,10 @@ class MessageTestCase(unittest.TestCase):
         self.check('To: User J. Person <person@dom.ain>\n\n',
                    [('User J. Person', 'person@dom.ain')])
 
-test_support.run_unittest(MessageTestCase)
+
+def test_main():
+    test_support.run_unittest(MessageTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

@@ -37,4 +37,10 @@ class TracebackCases(unittest.TestCase):
         self.assert_(len(err) == 3)
         self.assert_(err[1].strip() == "[x for x in x] = x")
 
-run_unittest(TracebackCases)
+
+def test_main():
+    run_unittest(TracebackCases)
+
+
+if __name__ == "__main__":
+    test_main()

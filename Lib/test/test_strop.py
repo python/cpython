@@ -125,4 +125,9 @@ class Sequence:
     def __getitem__(self, i): return self.seq[i]
 
 
-test_support.run_unittest(StropFunctionTestCase)
+def test_main():
+    test_support.run_unittest(StropFunctionTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

@@ -331,4 +331,10 @@ class MhlibTests(unittest.TestCase):
         msg.fp.close()
         del msg
 
-run_unittest(MhlibTests)
+
+def test_main():
+    run_unittest(MhlibTests)
+
+
+if __name__ == "__main__":
+    test_main()
