@@ -461,7 +461,8 @@ def adaptgetter(name, klass, getter):
     kind, des = getter
     if kind == 1:       # AV happens when stepping from this line to next
         if des == "":
-            des = "_%s__%s" % (klass.__name__, name)
+##            des = "_%s__%s" % (klass.__name__, name)
+            des = "1"
         return lambda obj: getattr(obj, des)
 
 class TestClass:
@@ -471,7 +472,7 @@ sys.settrace(tracer)
 adaptgetter("foo", TestClass, (1, ""))
 sys.settrace(None)
 
-print "20. eval with free variables"
+print "20. eval and exec with free variables"
 
 def f(x):
     return lambda: x + 1
@@ -483,6 +484,13 @@ except TypeError:
     pass
 else:
     print "eval() should have failed, because code contained free vars"
+
+try:
+    exec g.func_code
+except TypeError:
+    pass
+else:
+    print "exec should have failed, because code contained free vars"
 
 warnings.resetwarnings()
 
