@@ -332,6 +332,16 @@ sub add_module_idx {
               . "<tt class='module'>$key</tt>$plat###\n";
     }
     close(MODIDXFILE);
+
+    if ($GLOBAL_MODULE_INDEX) {
+        $prefix = <<MODULE_INDEX_PREFIX;
+
+<p> This index only lists modules documented in this manual.
+  The <em class="citetitle"><a href="$GLOBAL_MODULE_INDEX">Global Module
+     Index</a></em> lists all modules that are documented in this set
+  of manuals.</p>
+MODULE_INDEX_PREFIX
+    }
     if (!$allthesame) {
 	$prefix .= <<PLAT_DISCUSS;
 
