@@ -30,7 +30,7 @@ OBJS=		abstract.o \
 		classobject.o cobject.o complexobject.o \
 		fileobject.o floatobject.o \
 		frameobject.o funcobject.o intobject.o listobject.o \
-		longobject.o mappingobject.o methodobject.o \
+		longobject.o dictobject.o methodobject.o \
 		moduleobject.o object.o rangeobject.o \
 		sliceobject.o stringobject.o \
 		tupleobject.o typeobject.o
@@ -39,7 +39,7 @@ SRCS=		abstract.c \
 		classobject.c cobject.c complexobject.c \
 		fileobject.c floatobject.c \
 		frameobject.c funcobject.c intobject.c listobject.c \
-		longobject.c mappingobject.c methodobject.c \
+		longobject.c dictobject.c methodobject.c \
 		moduleobject.c object.c rangeobject.c \
 		sliceobject.c stringobject.c \
 		tupleobject.c typeobject.c
@@ -83,7 +83,7 @@ funcobject.o: funcobject.c
 intobject.o: intobject.c
 listobject.o: listobject.c
 longobject.o: longobject.c
-mappingobject.o: mappingobject.c
+dictobject.o: dictobject.c
 methodobject.o: methodobject.c
 moduleobject.o: moduleobject.c
 object.o: object.c
