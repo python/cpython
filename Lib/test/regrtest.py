@@ -915,9 +915,10 @@ class _ExpectedSkips:
             if test_socket_ssl.skip_expected:
                 self.expected.add('test_socket_ssl')
 
-            if sys.platform != "mac":
+            if not sys.platform in ("mac", "darwin"):
                 self.expected.add("test_macostools")
                 self.expected.add("test_macfs")
+                self.expected.add("test_aepack")
 
             if sys.platform != "win32":
                 self.expected.add("test_winreg")
