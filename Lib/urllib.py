@@ -101,8 +101,8 @@ class URLopener:
 		self.cleanup()
 
 	def cleanup(self):
-		import os
 		if self.tempcache:
+			import os
 			for url in self.tempcache.keys():
 				try:
 					os.unlink(self.tempcache[url][0])
