@@ -31,7 +31,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d = db.DB()
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
-        for x in string.letters:
+        for x in string.ascii_letters:
             recno = d.append(x * 60)
             assert type(recno) == type(0)
             assert recno >= 1
@@ -228,7 +228,7 @@ class SimpleRecnoTestCase(unittest.TestCase):
         d.set_re_pad(45)  # ...test both int and char
         d.open(self.filename, db.DB_RECNO, db.DB_CREATE)
 
-        for x in string.letters:
+        for x in string.ascii_letters:
             d.append(x * 35)    # These will be padded
 
         d.append('.' * 40)      # this one will be exact
