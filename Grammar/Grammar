@@ -2,6 +2,12 @@
 
 # Change log:
 
+# 06-Apr-92:
+#	Use only '*' for varargs list
+
+# 31-Mar-92:
+#	Tighten syntax for try statements
+
 # 27-Feb-92:
 #	Allow NEWLINE* after eval input
 
