@@ -65,10 +65,10 @@ typedef struct {
     FILE *logfp;
     int lineevents;
     int linetimings;
+    int frametimings;
     /* size_t filled; */
     int active;
     int next_fileno;
-    long callcount;
     hs_time prev_timeofday;
 } ProfilerObject;
 
@@ -78,6 +78,7 @@ typedef struct {
     int filled;
     int index;
     int linetimings;
+    int frametimings;
     unsigned char buffer[BUFFERSIZE];
 } LogReaderObject;
 
@@ -154,6 +155,8 @@ logreader_tp_iter(LogReaderObject *self)
  *       0x13      ADD_INFO     define a key/value pair
  *       0x23   DEFINE_FILE     define an int->filename mapping
  *       0x33    LINE_TIMES     indicates if LINENO events have tdeltas
+ *       0x43   DEFINE_FUNC     define a (fileno,lineno)->funcname mapping
+ *       0x53   FRAME_TIMES     indicates if ENTER/EXIT events have tdeltas
  *
  * Packed Integers
  *
@@ -174,12 +177,13 @@ logreader_tp_iter(LogReaderObject *self)
  * ENTER records:
  *
  *      MPI(2,type)  fileno          -- type is 0x00
- *      PI           tdelta
  *      PI           lineno
+ *      PI           tdelta          -- iff frame times are enabled
  *
  * EXIT records
  *
- *      MPI(2,type)  tdelta          -- type is 0x01
+ *      MPI(2,type)  tdelta          -- type is 0x01; tdelta will be 0
+ *                                      if frame times are disabled
  *
  * LINENO records
  *
@@ -188,7 +192,7 @@ logreader_tp_iter(LogReaderObject *self)
  *
  * ADD_INFO records
  *
- *      BYTE         type            -- always 0x03
+ *      BYTE         type            -- always 0x13
  *      PI           len1            -- length of first string
  *      BYTE         string1[len1]   -- len1 bytes of string data
  *      PI           len2            -- length of second string
@@ -196,14 +200,39 @@ logreader_tp_iter(LogReaderObject *self)
  *
  * DEFINE_FILE records
  *
- *      BYTE         type            -- always 0x13
+ *      BYTE         type            -- always 0x23
  *      PI           fileno
  *      PI           len             -- length of filename
  *      BYTE         filename[len]   -- len bytes of string data
  *
+ * DEFINE_FUNC records
+ *
+ *      BYTE         type            -- always 0x43
+ *      PI           fileno
+ *      PI           lineno
+ *      PI           len             -- length of funcname
+ *      BYTE         funcname[len]   -- len bytes of string data
+ *
  * LINE_TIMES records
- *      BYTE         type            -- always 0x23
+ *
+ * This record can be used only before the start of ENTER/EXIT/LINENO
+ * records.  If have_tdelta is true, LINENO records will include the
+ * tdelta field, otherwise it will be omitted.  If this record is not
+ * given, LINENO records will not contain the tdelta field.
+ *
+ *      BYTE         type            -- always 0x33
  *      BYTE         have_tdelta     -- 0 if LINENO does *not* have
+ *                                      timing information
+ * FRAME_TIMES records
+ *
+ * This record can be used only before the start of ENTER/EXIT/LINENO
+ * records.  If have_tdelta is true, ENTER and EXIT records will
+ * include the tdelta field, otherwise it will be omitted.  If this
+ * record is not given, ENTER and EXIT records will contain the tdelta
+ * field.
+ *
+ *      BYTE         type            -- always 0x53
+ *      BYTE         have_tdelta     -- 0 if ENTER/EXIT do *not* have
  *                                      timing information
  */
 
@@ -214,6 +243,8 @@ logreader_tp_iter(LogReaderObject *self)
 #define WHAT_ADD_INFO     0x13
 #define WHAT_DEFINE_FILE  0x23
 #define WHAT_LINE_TIMES   0x33
+#define WHAT_DEFINE_FUNC  0x43
+#define WHAT_FRAME_TIMES  0x53
 
 #define ERR_NONE          0
 #define ERR_EOF          -1
@@ -338,9 +369,9 @@ logreader_tp_iternext(LogReaderObject *self)
     case WHAT_ENTER:
         err = unpack_packed_int(self, &fileno, 2);
         if (!err) {
-            err = unpack_packed_int(self, &tdelta, 0);
-            if (!err)
-                err = unpack_packed_int(self, &lineno, 0);
+            err = unpack_packed_int(self, &lineno, 0);
+            if (self->frametimings && !err)
+                err = unpack_packed_int(self, &tdelta, 0);
         }
         break;
     case WHAT_EXIT:
@@ -371,11 +402,27 @@ logreader_tp_iternext(LogReaderObject *self)
             }
         }
         break;
+    case WHAT_DEFINE_FUNC:
+        err = unpack_packed_int(self, &fileno, 0);
+        if (!err) {
+            err = unpack_packed_int(self, &lineno, 0);
+            if (!err)
+                err = unpack_string(self, &s1);
+        }
+        break;
     case WHAT_LINE_TIMES:
         if (self->index >= self->filled)
             err = ERR_EOF;
         else {
             self->linetimings = self->buffer[self->index] ? 1 : 0;
+            self->index++;
+            goto restart;
+        }
+    case WHAT_FRAME_TIMES:
+        if (self->index >= self->filled)
+            err = ERR_EOF;
+        else {
+            self->frametimings = self->buffer[self->index] ? 1 : 0;
             self->index++;
             goto restart;
         }
@@ -399,14 +446,14 @@ logreader_tp_iternext(LogReaderObject *self)
         result = PyTuple_New(4);
         PyTuple_SET_ITEM(result, 0, PyInt_FromLong(what));
         PyTuple_SET_ITEM(result, 2, PyInt_FromLong(fileno));
-        if (s1 == NULL) {
+        if (s1 == NULL)
             PyTuple_SET_ITEM(result, 1, PyInt_FromLong(tdelta));
-            PyTuple_SET_ITEM(result, 3, PyInt_FromLong(lineno));
-        }
-        else {
+        else
             PyTuple_SET_ITEM(result, 1, s1);
+        if (s2 == NULL)
+            PyTuple_SET_ITEM(result, 3, PyInt_FromLong(lineno));
+        else
             PyTuple_SET_ITEM(result, 3, s2);
-        }
     }
     /* The only other case is err == ERR_EXCEPTION, in which case the
      * exception is already set.
@@ -550,13 +597,11 @@ pack_modified_packed_int(ProfilerObject *self, int value,
 }
 
 static void
-pack_string(ProfilerObject *self, const char *s)
+pack_string(ProfilerObject *self, const char *s, int len)
 {
-    int len = strlen(s);
-
-    pack_packed_int(self, len);
-    if (len + self->index >= BUFFERSIZE)
+    if (len + PISIZE + self->index >= BUFFERSIZE)
         (void) flush_data(self);
+    pack_packed_int(self, len);
     memcpy(self->buffer + self->index, s, len);
     self->index += len;
 }
@@ -571,8 +616,8 @@ pack_add_info(ProfilerObject *self, const char *s1, const char *s2)
         (void) flush_data(self);
     self->buffer[self->index] = WHAT_ADD_INFO;
     self->index++;
-    pack_string(self, s1);
-    pack_string(self, s2);
+    pack_string(self, s1, len1);
+    pack_string(self, s2, len2);
 }
 
 static void
@@ -585,7 +630,22 @@ pack_define_file(ProfilerObject *self, int fileno, const char *filename)
     self->buffer[self->index] = WHAT_DEFINE_FILE;
     self->index++;
     pack_packed_int(self, fileno);
-    pack_string(self, filename);
+    pack_string(self, filename, len);
+}
+
+static void
+pack_define_func(ProfilerObject *self, int fileno, int lineno,
+                 const char *funcname)
+{
+    int len = strlen(funcname);
+
+    if (len + PISIZE*3 + 1 + self->index >= BUFFERSIZE)
+        (void) flush_data(self);
+    self->buffer[self->index] = WHAT_DEFINE_FUNC;
+    self->index++;
+    pack_packed_int(self, fileno);
+    pack_packed_int(self, lineno);
+    pack_string(self, funcname, len);
 }
 
 static void
@@ -598,14 +658,25 @@ pack_line_times(ProfilerObject *self)
     self->index += 2;
 }
 
+static void
+pack_frame_times(ProfilerObject *self)
+{
+    if (2 + self->index >= BUFFERSIZE)
+        (void) flush_data(self);
+    self->buffer[self->index] = WHAT_FRAME_TIMES;
+    self->buffer[self->index + 1] = self->frametimings ? 1 : 0;
+    self->index += 2;
+}
+
 static inline void
 pack_enter(ProfilerObject *self, int fileno, int tdelta, int lineno)
 {
     if (MPISIZE + PISIZE*2 + self->index >= BUFFERSIZE)
         (void) flush_data(self);
     pack_modified_packed_int(self, fileno, 2, WHAT_ENTER);
-    pack_packed_int(self, tdelta);
     pack_packed_int(self, lineno);
+    if (self->frametimings)
+        pack_packed_int(self, tdelta);
 }
 
 static inline void
@@ -613,7 +684,12 @@ pack_exit(ProfilerObject *self, int tdelta)
 {
     if (MPISIZE + self->index >= BUFFERSIZE)
         (void) flush_data(self);
-    pack_modified_packed_int(self, tdelta, 2, WHAT_EXIT);
+    if (self->frametimings)
+        pack_modified_packed_int(self, tdelta, 2, WHAT_EXIT);
+    else {
+        self->buffer[self->index] = WHAT_EXIT;
+        self->index++;
+    }
 }
 
 static inline void
@@ -636,28 +712,51 @@ pack_lineno_tdelta(ProfilerObject *self, int lineno, int tdelta)
 static inline int
 get_fileno(ProfilerObject *self, PyCodeObject *fcode)
 {
-    PyObject *idobj;
+    /* This is only used for ENTER events. */
+
+    PyObject *obj;
+    PyObject *dict;
     int fileno;
 
-    idobj = PyDict_GetItem(self->filemap, fcode->co_filename);
-    if (idobj == NULL) {
+    obj = PyDict_GetItem(self->filemap, fcode->co_filename);
+    if (obj == NULL) {
         /* first sighting of this file */
-        fileno = self->next_fileno;
-        idobj = PyInt_FromLong(fileno);
-        if (idobj == NULL) {
+        dict = PyDict_New();
+        if (dict == NULL) {
             return -1;
         }
-        if (PyDict_SetItem(self->filemap, fcode->co_filename, idobj)) {
-            Py_DECREF(idobj);
+        fileno = self->next_fileno;
+        obj = Py_BuildValue("iN", fileno, dict);
+        if (obj == NULL) {
+            return -1;
+        }
+        if (PyDict_SetItem(self->filemap, fcode->co_filename, obj)) {
+            Py_DECREF(obj);
             return -1;
         }
         self->next_fileno++;
-        Py_DECREF(idobj);
+        Py_DECREF(obj);
         pack_define_file(self, fileno, PyString_AS_STRING(fcode->co_filename));
     }
     else {
         /* already know this ID */
-        fileno = PyInt_AS_LONG(idobj);
+        fileno = PyInt_AS_LONG(PyTuple_GET_ITEM(obj, 0));
+        dict = PyTuple_GET_ITEM(obj, 1);
+    }
+    /* make sure we save a function name for this (fileno, lineno) */
+    obj = PyInt_FromLong(fcode->co_firstlineno);
+    if (obj == NULL) {
+        /* We just won't have it saved; too bad. */
+        PyErr_Clear();
+    }
+    else {
+        PyObject *name = PyDict_GetItem(dict, obj);
+        if (name == NULL) {
+            pack_define_func(self, fileno, fcode->co_firstlineno,
+                             PyString_AS_STRING(fcode->co_name));
+            if (PyDict_SetItem(dict, obj, fcode->co_name))
+                return -1;
+        }
     }
     return fileno;
 }
@@ -695,10 +794,11 @@ static int
 profiler_callback(ProfilerObject *self, PyFrameObject *frame, int what,
                   PyObject *arg)
 {
-    int tdelta = get_tdelta(self);
+    int tdelta = -1;
     int fileno;
 
-    self->callcount++;
+    if (self->frametimings)
+        tdelta = get_tdelta(self);
     switch (what) {
     case PyTrace_CALL:
         fileno = get_fileno(self, frame->f_code);
@@ -726,13 +826,12 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
 {
     int fileno;
 
-    self->callcount++;
     switch (what) {
     case PyTrace_CALL:
         fileno = get_fileno(self, frame->f_code);
         if (fileno < 0)
             return -1;
-        pack_enter(self, fileno, get_tdelta(self),
+        pack_enter(self, fileno, self->frametimings ? get_tdelta(self) : -1,
                    frame->f_code->co_firstlineno);
         break;
     case PyTrace_RETURN:
@@ -1014,10 +1113,10 @@ static PyMethodDef profiler_methods[] = {
  * __members__ and therefore dir() to work.
  */
 static struct memberlist profiler_members[] = {
-    {"callcount",   T_LONG, offsetof(ProfilerObject, callcount), READONLY},
-    {"closed",      T_INT,  -1, READONLY},
-    {"lineevents",  T_LONG, offsetof(ProfilerObject, lineevents), READONLY},
-    {"linetimings", T_LONG, offsetof(ProfilerObject, linetimings), READONLY},
+    {"closed",       T_INT,  -1, READONLY},
+    {"frametimings", T_LONG, offsetof(ProfilerObject, linetimings), READONLY},
+    {"lineevents",   T_LONG, offsetof(ProfilerObject, lineevents), READONLY},
+    {"linetimings",  T_LONG, offsetof(ProfilerObject, linetimings), READONLY},
     {NULL}
 };
 
@@ -1045,18 +1144,18 @@ static char profiler_object__doc__[] =
 "\n"
 "Methods:\n"
 "\n"
-"close():     Stop the profiler and close the log files.\n"
-"runcall():   Run a single function call with profiling enabled.\n"
-"runcode():   Execute a code object with profiling enabled.\n"
-"start():     Install the profiler and return.\n"
-"stop():      Remove the profiler.\n"
+"close():      Stop the profiler and close the log files.\n"
+"runcall():    Run a single function call with profiling enabled.\n"
+"runcode():    Execute a code object with profiling enabled.\n"
+"start():      Install the profiler and return.\n"
+"stop():       Remove the profiler.\n"
 "\n"
 "Attributes (read-only):\n"
 "\n"
-"callcount:   The number of low-level calls to the profiler.\n"
-"closed:      True if the profiler has already been closed.\n"
-"lineevents:  True if SET_LINENO events are reported to the profiler.\n"
-"linetimings: True if SET_LINENO events collect timing information.";
+"closed:       True if the profiler has already been closed.\n"
+"frametimings: True if ENTER/EXIT events collect timing information.\n"
+"lineevents:   True if SET_LINENO events are reported to the profiler.\n"
+"linetimings:  True if SET_LINENO events collect timing information.";
 
 static PyTypeObject ProfilerType = {
     PyObject_HEAD_INIT(NULL)
@@ -1160,6 +1259,7 @@ hotshot_logreader(PyObject *unused, PyObject *args)
         if (self != NULL) {
             self->filled = 0;
             self->index = 0;
+            self->frametimings = 1;
             self->linetimings = 0;
             self->logfp = fopen(filename, "rb");
             if (self->logfp == NULL) {
@@ -1234,6 +1334,7 @@ write_header(ProfilerObject *self)
     sprintf(cwdbuffer, "%lu", timeofday_diff);
     pack_add_info(self, "Observed-Interval-gettimeofday", cwdbuffer);
 #endif
+    pack_frame_times(self);
     pack_line_times(self);
 
     pack_add_info(self, "Current-Directory",
@@ -1268,7 +1369,7 @@ hotshot_profiler(PyObject *unused, PyObject *args)
         self = PyObject_New(ProfilerObject, &ProfilerType);
         if (self == NULL)
             return NULL;
-        self->callcount = 0;
+        self->frametimings = 1;
         self->lineevents = lineevents ? 1 : 0;
         self->linetimings = (lineevents && linetimings) ? 1 : 0;
         self->index = 0;
@@ -1302,6 +1403,29 @@ hotshot_profiler(PyObject *unused, PyObject *args)
             self = NULL;
     }
     return (PyObject *) self;
+}
+
+static char coverage__doc__[] = "\
+coverage(logfilename) -> profiler\n\
+Returns a profiler that doesn't collect any timing information, which is\n\
+useful in building a coverage analysis tool.";
+
+static PyObject *
+hotshot_coverage(PyObject *unused, PyObject *args)
+{
+    char *logfilename;
+    PyObject *result = NULL;
+
+    if (PyArg_ParseTuple(args, "s:coverage", &logfilename)) {
+        result = hotshot_profiler(unused, args);
+        if (result != NULL) {
+            ProfilerObject *self = (ProfilerObject *) result;
+            self->frametimings = 0;
+            self->linetimings = 0;
+            self->lineevents = 1;
+        }
+    }
+    return result;
 }
 
 static char resolution__doc__[] =
@@ -1338,6 +1462,7 @@ hotshot_resolution(PyObject *unused, PyObject *args)
 
 
 static PyMethodDef functions[] = {
+    {"coverage",   hotshot_coverage,   METH_VARARGS, coverage__doc__},
     {"profiler",   hotshot_profiler,   METH_VARARGS, profiler__doc__},
     {"logreader",  hotshot_logreader,  METH_VARARGS, logreader__doc__},
     {"resolution", hotshot_resolution, METH_VARARGS, resolution__doc__},
@@ -1378,6 +1503,7 @@ init_hotshot(void)
         PyModule_AddIntConstant(module, "WHAT_OTHER", WHAT_OTHER);
         PyModule_AddIntConstant(module, "WHAT_ADD_INFO", WHAT_ADD_INFO);
         PyModule_AddIntConstant(module, "WHAT_DEFINE_FILE", WHAT_DEFINE_FILE);
+        PyModule_AddIntConstant(module, "WHAT_DEFINE_FUNC", WHAT_DEFINE_FUNC);
         PyModule_AddIntConstant(module, "WHAT_LINE_TIMES", WHAT_LINE_TIMES);
     }
 }
