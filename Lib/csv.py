@@ -161,7 +161,6 @@ class Sniffer:
         """
         Takes a file-like object and returns a dialect (or None)
         """
-
         self.fileobj = fileobj
 
         data = fileobj.read(self.sample)
@@ -171,17 +170,17 @@ class Sniffer:
         if delimiter is None:
             delimiter, skipinitialspace = self._guessDelimiter(data)
 
-        class Dialect(csv.Dialect):
+        class SniffedDialect(Dialect):
             _name = "sniffed"
             lineterminator = '\r\n'
-            quoting = csv.QUOTE_MINIMAL
+            quoting = QUOTE_MINIMAL
             # escapechar = ''
             doublequote = False
-        Dialect.delimiter = delimiter
-        Dialect.quotechar = quotechar
-        Dialect.skipinitialspace = skipinitialspace
+        SniffedDialect.delimiter = delimiter
+        SniffedDialect.quotechar = quotechar
+        SniffedDialect.skipinitialspace = skipinitialspace
 
-        self.dialect = Dialect
+        self.dialect = SniffedDialect
         return self.dialect
 
 
@@ -189,8 +188,8 @@ class Sniffer:
         return self._hasHeaders(self.fileobj, self.dialect)
 
 
-    def register_dialect(self, name = 'sniffed'):
-        csv.register_dialect(name, self.dialect)
+    def register_dialect(self, name='sniffed'):
+        register_dialect(name, self.dialect)
 
 
     def _guessQuoteAndDelimiter(self, data):
@@ -378,19 +377,19 @@ class Sniffer:
         # objects...
         fileobj.seek(0)
 
-        reader = csv.reader(fileobj,
-                            delimiter = dialect.delimiter,
-                            quotechar = dialect.quotechar,
-                            skipinitialspace = dialect.skipinitialspace)
+        r = csv.reader(fileobj,
+                       delimiter=dialect.delimiter,
+                       quotechar=dialect.quotechar,
+                       skipinitialspace=dialect.skipinitialspace)
 
-        header = reader.next() # assume first row is header
+        header = r.next() # assume first row is header
 
         columns = len(header)
         columnTypes = {}
         for i in range(columns): columnTypes[i] = None
 
         checked = 0
-        for row in reader:
+        for row in r:
             # arbitrary number of rows to check, to keep it sane
             if checked > 20:
                 break
