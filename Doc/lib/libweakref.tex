@@ -14,10 +14,37 @@
 The \module{weakref} module allows the Python programmer to create
 \dfn{weak references} to objects.
 
-In the discussion which follows, the term \dfn{referent} means the
+In the following, the term \dfn{referent} means the
 object which is referred to by a weak reference.
 
-XXX --- need to say more here!
+A weak reference to an object is not enough to keep the object alive:
+when the only remaining references to a referent are weak references,
+garbage collection is free to destroy the referent and reuse its memory
+for something else.  A primary use for weak references is to implement
+caches or mappings holding large objects, where it's desired that a
+large object not be kept alive solely because it appears in a cache or
+mapping.  For example, if you have a number of large binary image objects,
+you may wish to associate a name with each.  If you used a Python
+dictionary to map names to images, or images to names, the image objects
+would remain alive just because they appeared as values or keys in the
+dictionaries.  The \class{WeakKeyDictionary} and
+\class{WeakValueDictionary} classes supplied by the \module{weakref}
+module are an alternative, using weak references to construct mappings
+that don't keep objects alive solely because they appear in the mapping
+objects.  If, for example, an image object is a value in a
+\class{WeakValueDictionary}, then when the last remaining
+references to that image object are the weak references held by weak
+mappings, garbage collection can reclaim the object, and its corresponding
+entries in weak mappings are simply deleted.
+
+\class{WeakKeyDictionary} and \class{WeakValueDictionary} use weak
+references in their implementation, setting up callback functions on
+the weak references that notify the weak dictionaries when a key or value
+has been reclaimed by garbage collection.  Most programs should find that
+using one of these weak dictionary types is all they need -- it's
+not usually necessary to create your own weak references directly.  The
+low-level machinery used by the weak dictionary implementations is exposed
+by the \module{weakref} module for the benefit of advanced uses.
 
 Not all objects can be weakly referenced; those objects which can
 include class instances, functions written in Python (but not in C),
@@ -44,13 +71,13 @@ be made to support weak references; see section \ref{weakref-extension},
   error output, but cannot be propagated; they are handled in exactly
   the same way as exceptions raised from an object's
   \method{__del__()} method.
-  
+
   Weak references are hashable if the \var{object} is hashable.  They
   will maintain their hash value even after the \var{object} was
   deleted.  If \function{hash()} is called the first time only after
   the \var{object} was deleted, the call will raise
   \exception{TypeError}.
-  
+
   Weak references support tests for equality, but not ordering.  If
   the referents are still alive, two references have the same
   equality relationship as their referents (regardless of the
@@ -89,12 +116,26 @@ be made to support weak references; see section \ref{weakref-extension},
   with an object owned by other parts of an application without adding
   attributes to those objects.  This can be especially useful with
   objects that override attribute accesses.
+
+  \note{Caution:  Because a \class{WeakKeyDictionary} is built on top
+        of a Python dictionary, it must not change size when iterating
+        over it.  This can be difficult to ensure for a
+        \class{WeakKeyDictionary} because actions performed by the
+        program during iteration may cause items in the dictionary
+        to vanish "by magic" (as a side effect of garbage collection).}
 \end{classdesc}
 
 \begin{classdesc}{WeakValueDictionary}{\optional{dict}}
   Mapping class that references values weakly.  Entries in the
   dictionary will be discarded when no strong reference to the value
   exists any more.
+
+  \note{Caution:  Because a \class{WeakValueDictionary} is built on top
+        of a Python dictionary, it must not change size when iterating
+        over it.  This can be difficult to ensure for a
+        \class{WeakValueDictionary} because actions performed by the
+        program during iteration may cause items in the dictionary
+        to vanish "by magic" (as a side effect of garbage collection).}
 \end{classdesc}
 
 \begin{datadesc}{ReferenceType}
@@ -253,14 +294,14 @@ The type constructor is responsible for initializing the weak reference
 list to \NULL{}:
 
 \begin{verbatim}
-static PyObject * 
-instance_new() { 
-    /* Other initialization stuff omitted for brevity */ 
+static PyObject *
+instance_new() {
+    /* Other initialization stuff omitted for brevity */
 
-    self->in_weakreflist = NULL; 
+    self->in_weakreflist = NULL;
 
-    return (PyObject *) self; 
-} 
+    return (PyObject *) self;
+}
 \end{verbatim}
 
 The only further addition is that the destructor needs to call the
