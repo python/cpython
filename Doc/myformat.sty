@@ -215,3 +215,14 @@
 \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}}
 
 \newcommand{\sectcode}[1]{{\tt #1}}
+
+% Cross-referencing (AMK)
+% Sample usage:
+%  \begin{seealso}
+%    \seemodule{rand}{Uniform random number generator}; % Module xref
+%    \seetext{{\em Encyclopedia Britannica}}.                  % Ref to a book
+%  \end{seealso}
+
+\newenvironment{seealso}[0]{{\bf See Also: }}{\par}
+\newcommand{\seemodule}[2]{\ref{module-#1}: {\tt #1} (#2)}
+\newcommand{\seetext}[1]{\par{#1}}
