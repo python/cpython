@@ -25,13 +25,6 @@ DL_IMPORT(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #define NOWAIT_LOCK	0
 DL_IMPORT(void) PyThread_release_lock(PyThread_type_lock);
 
-DL_IMPORT(PyThread_type_sema) PyThread_allocate_sema(int);
-DL_IMPORT(void) PyThread_free_sema(PyThread_type_sema);
-DL_IMPORT(int) PyThread_down_sema(PyThread_type_sema, int);
-#define WAIT_SEMA	1
-#define NOWAIT_SEMA	0
-DL_IMPORT(void) PyThread_up_sema(PyThread_type_sema);
-
 #ifndef NO_EXIT_PROG
 DL_IMPORT(void) PyThread_exit_prog(int);
 DL_IMPORT(void) PyThread__PyThread_exit_prog(int);

@@ -113,37 +113,3 @@ PyThread_release_lock(PyThread_type_lock lock)
 {
 	dprintf(("PyThread_release_lock(%p) called\n", lock));
 }
-
-/*
- * Semaphore support.
- */
-PyThread_type_sema
-PyThread_allocate_sema(int value)
-{
-	dprintf(("PyThread_allocate_sema called\n"));
-	if (!initialized)
-		PyThread_init_thread();
-
-	dprintf(("PyThread_allocate_sema() -> %p\n",  sema));
-	return (PyThread_type_sema) sema;
-}
-
-void
-PyThread_free_sema(PyThread_type_sema sema)
-{
-	dprintf(("PyThread_free_sema(%p) called\n",  sema));
-}
-
-int
-PyThread_down_sema(PyThread_type_sema sema, int waitflag)
-{
-	dprintf(("PyThread_down_sema(%p, %d) called\n",  sema, waitflag));
-	dprintf(("PyThread_down_sema(%p) return\n",  sema));
-	return -1;
-}
-
-void
-PyThread_up_sema(PyThread_type_sema sema)
-{
-	dprintf(("PyThread_up_sema(%p)\n",  sema));
-}

@@ -209,30 +209,3 @@ void PyThread_release_lock(PyThread_type_lock aLock)
   
   DosExitCritSec();
 }
-
-/*
- * Semaphore support.
- */
-PyThread_type_sema 
-PyThread_allocate_sema(int value)
-{
-  return (PyThread_type_sema) 0;
-}
-
-void 
-PyThread_free_sema(PyThread_type_sema aSemaphore)
-{
-
-}
-
-int 
-PyThread_down_sema(PyThread_type_sema aSemaphore, int waitflag)
-{
-  return -1;
-}
-
-void 
-PyThread_up_sema(PyThread_type_sema aSemaphore)
-{
-  dprintf(("%ld: PyThread_up_sema(%p)\n", PyThread_get_thread_ident(), aSemaphore));
-}
