@@ -1,0 +1,351 @@
+<HTML>
+<HEAD>
+<TITLE>Building Mac Python from source</TITLE>
+</HEAD>
+<BODY>
+<H1>Building Mac Python from source</H1>
+<HR>
+This document explains how to build MacPython from source. This is necessary if
+you want to write extension modules for 68K Python, and currently also
+probably the easiest way to build PPC extension modules. Building Python
+is not something to be undertaken lightly, the process is not very streamlined
+so you need a reasonable working knowledge of the CodeWarrior development
+environment, a good net connection and probably quite some time too. <p>
+
+The information density in this file is high, so you should probably print it and
+read it at your leasure. Most things are explained only once (and probably in the
+wrong place:-). <p>
+
+I am very interested in feedback on this document, contact me at
+<A HREF="mailto:jack@cwi.nl">&lt;jack@cwi.nl&gt;</A> or send your comments to the
+<A HREF="http://www.python.org/sigs/pythonmac-sig/">Mac Python Special Interest Group</A>.
+
+<H2>What you need.</H2>
+
+The following things you definitely need:
+
+<UL>
+<LI>
+You need a MacPython source distribution, of course. You can obtain one from
+<A HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">ftp://ftp.cwi.nl/pub/jack/python/mac</A>,
+and possibly also from the standard
+<A HREF="ftp://ftp.python.org/pub/python/mac">python.org ftp site</A>. Everything you
+need is also included in the standard Python source distribution, but the organization
+is different. Look in directory <code>Mac/mwerks/projects</code> for the project files and related
+stuff.
+
+<LI>
+You need MetroWerks CodeWarrior. The current distribution has been built with version 9
+of CodeWarrior. Ordering information is available on the
+<A HREF="http://www.metrowerks.com/">MetroWerks homepage</A>. You might still be
+able to build Python with MPW or Think/Symantec C but you are basically on your own.
+
+<LI>
+You need GUSI, the Grand Unified Socket Interface, by Matthias Neeracher. The
+current distribution has been built with CWGUSI 1.6.4, obtainable from 
+<A HREF="ftp://ftp.switch.ch/software/mac/src/mw_c">ftp://ftp.switch.ch/software/mac/src/mw_c</A>.
+It is possible to build a non-GUSI Python, see below. The correct version of CWGUSI is
+also included in the Tcl/Tk distribution, by the way.
+</UL>
+
+<A NAME="optional">The MacPython project files are configured to include a plethora of optional modules</A>, and
+these modules need a number extra packages. To use the project files as-is you have to
+download these packages too. PPC Python has all such modules as dynamically loaded modules,
+so if you don't need a certain package it suffices to just refrain from builing the
+extension module. For 68K Python things are a bit more complicated: you have to edit the
+interpreter project file to remove the reference to the module (and the libraries it uses).
+Here are the locations for the various things you need:
+
+<UL>
+<LI>
+Tcl and Tk can be obtained from 
+<A HREF="ftp://ftp.smli.com/pub/tcl/mac/">ftp://ftp.smli.com/pub/tcl/mac/</A>. 
+The current distributions, Tcl 7.5 and Tk 4.1, were packaged in a hurry
+and need a bit
+of work, see the section on <A HREF="#tcltk">building Tcl/Tk Python</A> below. Get the "full source"
+distribution, which includes CWGUSI (which Python also needs) and MoreFiles.
+
+<LI>
+Waste, a TextEdit replacement written by Marco Piovanelli, 
+<A HREF="mailto:piovanel@kagi.com">&lt;piovanel@kagi.com&gt;</A>.
+Python was built using version 1.2a5, which you can obtain from
+<A HREF="ftp://ftp.dsi.unimi.it/DSI/piovanel/waste">&lt;ftp://ftp.dsi.unimi.it/DSI/piovanel/waste&gt;</A>.
+
+<LI>
+JPEG library by the Independent JPEG Group. Python is still built using an archaic version
+of the library, version 4. It can be obtained from the <A HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">
+ftp://ftp.cwi.nl/pub/jack/python/mac</A> directory, complete with CW8 projects. If someone manages
+to build Python with the version 6 library I would be grateful if they sent me the changes needed.
+The most recent JPEG library can always be obtained from 
+<A HREF="ftp://ftp.uu.net/graphics/jpeg/">ftp://ftp.uu.net/graphics/jpeg/</A>.
+
+<LI>
+The netpbm/pbmplus and libtiff libraries. The netpbm distribution (which includes libtiff) is generally
+available on Internet ftp servers. For Python pbmplus, an older incarnation of netpbm, is functionally
+identical to netpbm, since Python only uses the library and not the complete applications. A
+distribution with correct projects and library source only is available from, you guessed it,
+<A HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">ftp://ftp.cwi.nl/pub/jack/python/mac</A>.
+</UL>
+
+<H2>Setting Up</H2>
+
+Now that you have collected everything you should start with building the various parts. Everything
+is independent, with the single exception that Tcl and Tk depend on CWGUSI. If you don't want to 
+fix access paths try to set things up as follows:
+<PRE>
+Top-level-folder:
+	CWGUSI 1.6.4
+	imglibs
+		libjpeg
+		pbmplus
+			libtiff
+	MoreFiles 1.4.1 (not needed by Python, only by tcl/tk)
+	Python
+	Tcl 7.5
+	Tk 4.1
+</PRE>
+
+Now build all the libraries. In <code>CWGUSI</code> you build the projects
+<code>GUSI.68K.µ</code> and <code>GUSI.PPC.µ</code>, in <code>MoreFiles</code>,
+<code>libjpeg</code>, <code>pbmplus</code> and<code>libtiff</code> you build all
+projects. Tcl/tk is a special case, see below. Of course, if you are only
+interested in 68K you can skip building the PPC libraries and vice versa.
+
+<H2><A NAME="tcltk">Building Tcl/Tk</H2>
+
+You need to make a minor organizational change to the Tcl/Tk distribution. The current instructions
+are for the <code>tcl7.5</code> and <code>tk4.1</code> distribution:
+<UL>
+<LI> Rename the <code>compat</code> folders to <code>(compat)</code> in both the Tcl and Tk folders.
+
+<LI> In the Tcl folder, move <code>strncasecmp.c</code> from <code>(compat)</code> to the
+main Tcl folder.
+
+<LI> Fix the Tk and Tcl library project access paths: they refer to
+<code>MoreFiles 1.4.2</code>, change this to <code>MoreFiles 1.4.1</code>.
+Alternatively you could get the real MoreFiles 1.4.2, but there seem to be problems with
+this too (undefined references).
+
+<LI> Fix the Tk and Tcl library project header file: it is set to
+<code>MacHeaders.h</code> but should be set to <code>MW_TkHeader.h</code>
+and <code>MW_TclHeader.h</code> respectively.
+
+<LI> You are <em>strongly</em> advised to make a fix to <code>tcl.h</code>. As distributed,
+tcl and tk assume that malloc calls always succeed and use the resulting pointer without
+checking for <code>NULL</code> values. Needless to say, this wreaks havoc on a Macintosh.
+Fortunately a checking malloc is included and easy to enable: look for the
+<code>#define</code>'s for ckalloc, ckfree and ckrealloc and replace them by the
+following code:
+<pre><code>
+#  define ckalloc(x) Tcl_Ckalloc(x)
+#  define ckfree(x)  Tcl_Ckfree(x)
+#  define ckrealloc(x,y) Tcl_Ckrealloc(x,y)
+</code></pre>
+With this fix, out-of-memory situations will still cause a hard abort of the python
+interpreter, but at least they will not crash your system.
+
+<LI> If you want to build <code>SimpleTcl</code> and <code>SimpleTk</code>
+to make sure that the distributions are working you should make the previous
+changes in those projects too. Moreover, you have to replace the MoreFiles
+library reference by the correct one <code>MoreFiles 1.4.1:Libraries:MoreFiles.PPC</code>
+(or 68K).
+</UL>
+
+Build first the GUSI and MoreFiles libraries, then the Tcl library, then SimpleTcl
+(test it by typing <code>ls -l</code> in the window you get) then the Tk library, then SimpleTk
+(which can again be tested with <code>ls -l</code>). If this all worked you are all set to try
+building Python.
+
+<H2>The organization of the Python source tree</H2>
+
+Time for a short break, while we have a look at the organization of the Python source tree.
+At the top level, we find the following folders:
+
+<DL>
+<DT> build.mac68k.stand
+<DD> This is where you will build 68K interpreters.
+
+<DT> build.macppc.shared
+<DD> This is where you build the PPC shared library, interpreter and applet framework.
+
+<DT> build.macppc.stand
+<DD> This is where you build a nonshared PPC interpreter (optional).
+
+<DT> Demo
+<DD> Demo programs that are not Mac-specific. Some of these may not work, the file
+<code>README-Mac</code> has some details.
+
+<DT> Extensions
+<DD> Extensions to the interpreter that are not Mac-specific. Contains only the <code>img</code>
+extension in this distribution. Extensions are <em>not</em> built here, as they are on Unix,
+but incorporated in the core interpreter or built as plugin modules.
+
+<DT> Grammar
+<DD> The Python grammar. Included for reference only, you cannot build the parser on a Mac.
+
+<DT> Include
+<DD> Machine-independent header files.
+
+<DT> Modules
+<DD> Machine-independent optional modules. Not all of these will work on the Mac.
+
+<DT> Objects
+<DD> Machine-independent code for various objects. Most of these are not really optional: the
+interpreter will not function without them.
+
+<DT> Parser
+<DD> The Python parser (machine-independent).
+
+<DT> PlugIns
+<DD> This is where you build the PPC dynamically-loaded plugin modules.
+
+<DT> Python
+<DD> The core interpreter. Most files are machine-independent, some are unix-specific
+and not used on the Mac.
+
+<DT> Tools
+<DD> Tools for python developers. Contains <code>modulator</code> which builds skeleton
+C extension modules and <code>bgen</code> which generates complete interface modules from
+information in C header files. There are some readme files, but more documentation is
+sorely needed.
+</DL>
+
+All the mac-specific stuff lives in the <code>Mac</code> folder:
+<DL>
+
+<DT> Compat
+<DD> Unix-compatability routines. Some of these are not used anymore, since CWGUSI provides
+a rather complete emulation, but you may need these if you are trying to build a non-GUSI
+python.
+
+<DT> Demo
+<DD> Mac-specific demo programs, some of them annotated.
+
+<DT> Include
+<DD> Mac-specific but compiler-independent include files. 
+
+<DT> Lib
+<DD> Mac-specific standard modules. The <code>toolbox</code> folder contains modules
+specifically needed with various MacOS toolbox interface modules.
+
+<DT> Modules
+<DD> Mac-specific builtin modules. Theoretically these are all optional, but some are
+rather essential (like <code>macmodule</code>). A lot of these modules are generated
+with <code>bgen</code>, in which case the bgen input files are included so you can attempt to
+regenerate them or extend them.
+
+<DT> MPW
+<DD> MPW-specific files. These have not been used or kept up-to-date for a long time, so
+use at your own risk.
+
+<DT> mwerks
+<DD> Mwerks-specific sources and headers. Contains glue code for Pythons shared-library
+architecture, a replacement for <code>malloc</code> and a directory with various projects
+for building variations on the Python interpreter. The <code>mwerks_*.h</code> files here
+are the option-setting files for the various interpreters and such, comparable to the unix
+command-line <code>-D</code> options to the compiler. Each project uses the correct option file
+as its "prefix file" in the "C/C++ language" settings. Disabling optional modules (for the 68K
+interpreter), building non-GUSI interpreters and various other things are accomplished by
+modifying these files (and possibly changing the list of files included in the project window, of course).
+
+<DT> Python
+<DD> Mac-specific parts of the core interpreter.
+
+<DT> Resources
+<DD> Resource files needed to build the interpreter.
+
+<DT> Scripts
+<DD> A collection of various mac-specific Python scripts. Some are essential, some are useful but few
+are documented, so you will have to use your imagination to work them out.
+
+<DT> Unsupported
+<DD> Modules that are not supported any longer but may still work with a little effort.
+</DL>
+
+<H2>Building the 68K interpreter</H2>
+
+If you have all the optional libraries mentioned <A HREF="#optional">above</A> loaded buildin Python
+for 68K macs is a breeze: open the project in the folder <code>build.mac68k.stand</code> and build it.
+Do <em>not</em> run it yet, this will possibly result in a garbled preferences file. <p>
+
+First remove the <code>Python preferences</code> file
+from your preference folder, only if you had an older version of Python installed.
+(this is also what you do if you did not heed the last sentence of the
+preceeding paragraph). Next, move the interpreter to the main Python folder (up one level) and run it
+there. This will create a correct initial preferences file. You are now all set, and your tree
+should be completely compatible with a binary-only distribution. Read the release notes
+(<code>Relnotes-somethingorother</code>) and <code>ReadMeOrSuffer</code> in the <code>Mac</code> folder.
+
+<H2>Building the PPC interpreter</H2>
+
+First you build the interpreter, core library and applet skeleton in folder <code>build.macppc.stand</code>.
+The order to build things is the following:
+
+<DL>
+<DT> PythonCoreRuntime
+<DD> A modified version of the MetroWerks runtime library that is suitable for Pythons' shared library
+architecture. The sources all come from the MW distribution.
+
+<DT> PythonCore
+<DD> The shared library that contains the bulk of the interpreter and its resources. It is a good idea to
+immedeately put an alias to this shared library in the <code>Extensions</code> folder of your system folder.
+Do exactly that: put an <em>alias</em> there, copying or moving the file will cause you grief later.
+
+<DT> PythonPPC
+<DD> The interpreter. This is basically a routine to call out to the shared library. Because of the
+organization of GUSI it also contains the Gusi settings resource (together with a ResEdit template,
+so you can change the gusi settings should you feel like doing so).
+Do <em>not</em> run it yet, this will possibly result in a garbled preferences file. <p>
+
+<DT> PythonApplet
+<DD> The applet skeleton application. Very similar to <code>PythonPPC</code>, but it calls to a different
+entrypoint in the core library. The <code>mkapplet</code> script will copy this complete file, and add
+a <code>'PYC '</code> with the module to generate an applet. <p>
+</DL>
+
+After creating the alias to <code>PythonCore</code> you should move <code>PythonPPC</code> to the main
+Python folder. Next you remove any old <code>Python Preferences</code> file from the <code>Preferences</code>
+folder (if you had python installed on your system before) and run the interpreter once to create the
+correct preferences file. You should also make an alias to <code>PythonApplet</code> in the main Python
+folder. (again: making an alias is preferrable to copying or moving the file, since this will cause the
+correct file to be used if you ever rebuild PythonApplet). <p>
+
+Next, you have to build the extension modules in the <code>PlugIns</code> folder. Open each project and
+build it. After all the dynamically loaded modules are built you have to create a number of aliases: some
+modules live together in a single dynamic library. Copy or move the <code>MkPluginAliases.py</code> script
+from <code>Mac:scripts</code> to the main python folder and run it. <p>
+
+Finally, you must build the standard applets: <code>EditPythonPrefs</code>, <code>mkapplet</code>, etc. This
+is easiest done with the <code>fullbuild</code> script from <code>Mac:scripts</code>. Answer <em>no</em> to
+all questions except when it asks whether to build the applets. <p>
+
+<BLOCKQUOTE>
+Actually, the <code>fullbuild</code> script can be used to build everything, but you need a fully-functional
+interpreter before you can use it (and one that isn't rebuilt in the process: you cannot rebuild a running
+program). You could copy the 68K interpreter to a different place and use that to run fullbuild, or use the
+standalone PPC python for this. I tend to keep a standalone interpreter in a safe place for this use only.
+</BLOCKQUOTE>
+
+You are all set now, and should read the release notes and <code>ReadMeOrSuffer</code> file from 
+the <code>Mac</code> folder.
+
+<H2>Odds and ends</H2>
+
+Some remarks that I could not fit in elsewhere:
+
+<UL>
+<LI>
+It may be possible to use the <code>PythonCore</code> shared library to embed Python in
+another program, if your program can live with using GUSI for I/O. Use PythonCore in stead of
+your C library (or, at the very least, link it before the normal C library). Let me know whether this
+works.
+
+<LI>
+It is possible to build PPC extension modules without building a complete Python. Take the binary distribution,
+add folders <code>Include</code>, <code>Mac:Include</code> and <code>Mac:mwerks</code> from the source
+distribution and you should be all set. A template for a dynamic module can be found in <code>xxmodule.µ</code>.
+
+
+<UL>
+</BODY>
+</HTML>
