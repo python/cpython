@@ -99,7 +99,7 @@ def strftest(now):
             print "Standard '%s' format gave error:" % e[0], error
             continue
         if re.match(e[1], result): continue
-        if result[0] == '%':
+        if not result or result[0] == '%':
             print "Does not support standard '%s' format (%s)" % (e[0], e[2])
         else:
             print "Conflict for %s (%s):" % (e[0], e[2])
