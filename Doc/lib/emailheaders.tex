@@ -48,7 +48,8 @@ embedded ISO-8859-1 character.
 Here is the \class{Header} class description:
 
 \begin{classdesc}{Header}{\optional{s\optional{, charset\optional{,
-    maxlinelen\optional{, header_name\optional{, continuation_ws}}}}}}
+    maxlinelen\optional{, header_name\optional{, continuation_ws\optional{,
+    errors}}}}}}}
 Create a MIME-compliant header that can contain strings in different
 character sets.
 
@@ -79,7 +80,10 @@ whitespace, and is usually either a space or a hard tab character.
 This character will be prepended to continuation lines.
 \end{classdesc}
 
-\begin{methoddesc}[Header]{append}{s\optional{, charset}}
+Optional \var{errors} is passed straight through to the
+\method{append()} method.
+
+\begin{methoddesc}[Header]{append}{s\optional{, charset\optional{, errors}}}
 Append the string \var{s} to the MIME header.
 
 Optional \var{charset}, if given, should be a \class{Charset} instance
@@ -100,12 +104,18 @@ case, when producing an \rfc{2822}-compliant header using \rfc{2047}
 rules, the Unicode string will be encoded using the following charsets
 in order: \code{us-ascii}, the \var{charset} hint, \code{utf-8}.  The
 first character set to not provoke a \exception{UnicodeError} is used.
+
+Optional \var{errors} is passed through to any \function{unicode()} or
+\function{ustr.encode()} call, and defaults to ``strict''.
 \end{methoddesc}
 
-\begin{methoddesc}[Header]{encode}{}
+\begin{methoddesc}[Header]{encode}{\optional{splitchars}}
 Encode a message header into an RFC-compliant format, possibly
 wrapping long lines and encapsulating non-\ASCII{} parts in base64 or
-quoted-printable encodings.
+quoted-printable encodings.  Optional \var{splitchars} is a string
+containing characters to split long ASCII lines on, in rough support
+of \rfc{2822}'s \emph{highest level syntactic breaks}.  This doesn't
+affect \rfc{2047} encoded lines.
 \end{methoddesc}
 
 The \class{Header} class also provides a number of methods to support

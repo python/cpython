@@ -151,8 +151,7 @@ used to create MIME objects of major type \mimetype{text}.
 minor type and defaults to \mimetype{plain}.  \var{_charset} is the
 character set of the text and is passed as a parameter to the
 \class{MIMENonMultipart} constructor; it defaults to \code{us-ascii}.  No
-guessing or encoding is performed on the text data, but a newline is
-appended to \var{_text} if it doesn't already end with a newline.
+guessing or encoding is performed on the text data.
 
 \deprecated{2.2.2}{The \var{_encoding} argument has been deprecated.
 Encoding now happens implicitly based on the \var{_charset} argument.}
