@@ -624,6 +624,10 @@ IRIX*) ;;
 *)
 AC_CHECK_LIB(nsl, t_open, [LIBS="-lnsl $LIBS"]) # SVR4
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
+;;
+esac
+case "$ac_sys_system" in
+BeOS*)
 AC_CHECK_LIB(net, socket, [LIBS="-lnet $LIBS"], [], $LIBS) # BeOS
 ;;
 esac
