@@ -481,11 +481,16 @@
 \let\cdata=\code
 
 \newcommand{\mimetype}[1]{{\small\textsf{#1}}}
-\newcommand{\regexp}[1]{$_\lceil$#1$^\rfloor$}
+% The \! is a "negative thin space" in math mode.
+\newcommand{\regexp}[1]{%
+  {\tiny$^{^\lceil}\!\!$%
+   {\normalsize\code{#1}}%
+   $\!\!\rfloor\!$%
+  }}
 \newcommand{\envvar}[1]{%
-  \$#1%
-  \index{#1@{\$#1}}%
-  \index{environment variables!{\$#1}}%
+  \$#1%                                 $ <-- bow to font-lock 3 times!
+  \index{#1@{\$#1}}%                    $
+  \index{environment variables!{\$#1}}% $
 }
 \let\character=\samp
 
