@@ -530,6 +530,34 @@ class FailingUserDict:
 try: d.update(FailingUserDict())
 except ValueError: pass
 else: raise TestFailed, 'dict.update(), __getitem__ expected ValueError'
+# dict.fromkeys()
+if dict.fromkeys('abc') != {'a':None, 'b':None, 'c':None}:
+    raise TestFailed, 'dict.fromkeys did not work as a class method'
+d = {}
+if d.fromkeys('abc') is d:
+    raise TestFailed, 'dict.fromkeys did not return a new dict'
+if d.fromkeys('abc') != {'a':None, 'b':None, 'c':None}:
+    raise TestFailed, 'dict.fromkeys failed with default value'
+if d.fromkeys((4,5),0) != {4:0, 5:0}:
+    raise TestFailed, 'dict.fromkeys failed with specified value'
+if d.fromkeys([]) != {}:
+    raise TestFailed, 'dict.fromkeys failed with null sequence'
+def g():
+    yield 1
+if d.fromkeys(g()) != {1:None}:
+    raise TestFailed, 'dict.fromkeys failed with a generator'
+try: {}.fromkeys(3)
+except TypeError: pass
+else: raise TestFailed, 'dict.fromkeys failed to raise TypeError'
+class dictlike(dict): pass
+if dictlike.fromkeys('a') != {'a':None}:
+    raise TestFailed, 'dictsubclass.fromkeys did not inherit'
+if dictlike().fromkeys('a') != {'a':None}:
+    raise TestFailed, 'dictsubclass.fromkeys did not inherit'
+if type(dictlike.fromkeys('a')) is not dictlike:
+    raise TestFailed, 'dictsubclass.fromkeys created wrong type'
+if type(dictlike().fromkeys('a')) is not dictlike:
+    raise TestFailed, 'dictsubclass.fromkeys created wrong type'
 # dict.copy()
 d = {1:1, 2:2, 3:3}
 if d.copy() != {1:1, 2:2, 3:3}: raise TestFailed, 'dict copy'
