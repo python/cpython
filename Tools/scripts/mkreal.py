@@ -9,7 +9,7 @@ import posix
 import path
 from stat import *
 
-cat = path.cat
+join = path.join
 
 error = 'mkreal error'
 
@@ -37,11 +37,11 @@ def mkrealdir(name):
 	posix.unlink(name)
 	posix.mkdir(name, mode)
 	posix.chmod(name, mode)
-	linkto = cat('..', linkto)
+	linkto = join('..', linkto)
 	#
 	for file in files:
 		if file not in ('.', '..'):
-			posix.symlink(cat(linkto, file), cat(name, file))
+			posix.symlink(join(linkto, file), join(name, file))
 
 def main():
 	sys.stdout = sys.stderr

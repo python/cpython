@@ -16,7 +16,7 @@ sts = 0
 for prog in sys.argv[1:]:
 	ident = ()
 	for dir in pathlist:
-		file = path.cat(dir, prog)
+		file = path.join(dir, prog)
 		try:
 			st = posix.stat(file)
 			if S_ISREG(st[ST_MODE]):

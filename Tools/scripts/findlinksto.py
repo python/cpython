@@ -14,7 +14,7 @@ def visit(pattern, dirname, names):
 		print 'descend into', dirname
 	n = len(pattern)
 	for name in names:
-		name = path.cat(dirname, name)
+		name = path.join(dirname, name)
 		try:
 			linkto = posix.readlink(name)
 			if linkto[:n] = pattern:
