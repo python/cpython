@@ -54,7 +54,7 @@ extension_keywords = ('name', 'sources', 'include_dirs',
                       'define_macros', 'undef_macros',
                       'library_dirs', 'libraries', 'runtime_library_dirs',
                       'extra_objects', 'extra_compile_args', 'extra_link_args',
-                      'export_symbols', 'depends', 'language')
+                      'swig_opts', 'export_symbols', 'depends', 'language')
 
 def setup (**attrs):
     """The gateway to the Distutils: do everything your setup script needs

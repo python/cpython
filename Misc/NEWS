@@ -47,6 +47,11 @@ Extension modules
 Library
 -------
 
+- Patch 1046644: distutils build_ext grew two new options - --swig for
+  specifying the swig executable to use, and --swig-opts to specify 
+  options to pass to swig. --swig-opts="-c++" is the new way to spell
+  --swig-cpp.
+
 - Patch 983206: distutils now obeys environment variable LDSHARED, if
   it is set.
 
