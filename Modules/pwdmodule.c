@@ -128,10 +128,10 @@ pwd_getpwall(PyObject *self, PyObject *args)
 #endif
 
 static PyMethodDef pwd_methods[] = {
-	{"getpwuid",	pwd_getpwuid, 0, pwd_getpwuid__doc__},
-	{"getpwnam",	pwd_getpwnam, 0, pwd_getpwnam__doc__},
+	{"getpwuid",	pwd_getpwuid, METH_OLDARGS, pwd_getpwuid__doc__},
+	{"getpwnam",	pwd_getpwnam, METH_OLDARGS, pwd_getpwnam__doc__},
 #ifdef HAVE_GETPWENT
-	{"getpwall",	pwd_getpwall, 0, pwd_getpwall__doc__},
+	{"getpwall",	pwd_getpwall, METH_OLDARGS, pwd_getpwall__doc__},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };

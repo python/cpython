@@ -280,15 +280,15 @@ anything else -- the callable Python object used as a handler\n\
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
 #ifdef HAVE_ALARM
-	{"alarm",	        signal_alarm, 0, alarm_doc},
+	{"alarm",	        signal_alarm, METH_OLDARGS, alarm_doc},
 #endif
-	{"signal",	        signal_signal, 0, signal_doc},
-	{"getsignal",	        signal_getsignal, 0, getsignal_doc},
+	{"signal",	        signal_signal, METH_OLDARGS, signal_doc},
+	{"getsignal",	        signal_getsignal, METH_OLDARGS, getsignal_doc},
 #ifdef HAVE_PAUSE
-	{"pause",	        signal_pause, 0, pause_doc},
+	{"pause",	        signal_pause, METH_OLDARGS, pause_doc},
 #endif
-	{"default_int_handler", signal_default_int_handler, 0,
-				default_int_handler_doc},
+	{"default_int_handler", signal_default_int_handler, 
+	 METH_OLDARGS, default_int_handler_doc},
 	{NULL,			NULL}		/* sentinel */
 };
 

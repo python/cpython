@@ -324,7 +324,8 @@ Insert text into the command line.\
 static struct PyMethodDef readline_methods[] =
 {
 	{"parse_and_bind", parse_and_bind, METH_VARARGS, doc_parse_and_bind},
-	{"get_line_buffer", get_line_buffer, 0, doc_get_line_buffer},
+	{"get_line_buffer", get_line_buffer, 
+	 METH_OLDARGS, doc_get_line_buffer},
 	{"insert_text", insert_text, METH_VARARGS, doc_insert_text},
 	{"read_init_file", read_init_file, METH_VARARGS, doc_read_init_file},
 	{"read_history_file", read_history_file, 
@@ -336,13 +337,13 @@ static struct PyMethodDef readline_methods[] =
  	{"get_history_length", get_history_length, 
 	 METH_VARARGS, get_history_length_doc},
 	{"set_completer", set_completer, METH_VARARGS, doc_set_completer},
-	{"get_begidx", get_begidx, 0, doc_get_begidx},
-	{"get_endidx", get_endidx, 0, doc_get_endidx},
+	{"get_begidx", get_begidx, METH_OLDARGS, doc_get_begidx},
+	{"get_endidx", get_endidx, METH_OLDARGS, doc_get_endidx},
 
-	{"set_completer_delims", set_completer_delims, METH_VARARGS,
-		doc_set_completer_delims},
-	{"get_completer_delims", get_completer_delims, 0,
-		doc_get_completer_delims},
+	{"set_completer_delims", set_completer_delims, 
+	 METH_VARARGS, doc_set_completer_delims},
+	{"get_completer_delims", get_completer_delims, 
+	 METH_OLDARGS, doc_get_completer_delims},
 	{0, 0}
 };
 

@@ -491,15 +491,15 @@ Convert a time tuple in local time to seconds since the Epoch.";
 #endif /* HAVE_MKTIME */
 
 static PyMethodDef time_methods[] = {
-	{"time",	time_time, 0, time_doc},
+	{"time",	time_time, METH_OLDARGS, time_doc},
 #ifdef HAVE_CLOCK
-	{"clock",	time_clock, 0, clock_doc},
+	{"clock",	time_clock, METH_OLDARGS, clock_doc},
 #endif
-	{"sleep",	time_sleep, 0, sleep_doc},
-	{"gmtime",	time_gmtime, 0, gmtime_doc},
-	{"localtime",	time_localtime, 0, localtime_doc},
+	{"sleep",	time_sleep, METH_OLDARGS, sleep_doc},
+	{"gmtime",	time_gmtime, METH_OLDARGS, gmtime_doc},
+	{"localtime",	time_localtime, METH_OLDARGS, localtime_doc},
 	{"asctime",	time_asctime, METH_VARARGS, asctime_doc},
-	{"ctime",	time_ctime, 0, ctime_doc},
+	{"ctime",	time_ctime, METH_OLDARGS, ctime_doc},
 #ifdef HAVE_MKTIME
 	{"mktime",	time_mktime, METH_VARARGS, mktime_doc},
 #endif
