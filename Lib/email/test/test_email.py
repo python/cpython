@@ -1032,8 +1032,8 @@ class TestMIMEText(unittest.TestCase):
 
 
 
-# Test a more complicated multipart/mixed type message
-class TestMultipartMixed(TestEmailBase):
+# Test complicated multipart/* messages
+class TestMultipart(TestEmailBase):
     def setUp(self):
         fp = openfile('PyBanner048.gif')
         try:
@@ -1304,6 +1304,26 @@ hello world
 --BOUNDARY--
 
 ''')
+
+    def test_message_external_body(self):
+        eq = self.assertEqual
+        msg = self._msgobj('msg_36.txt')
+        eq(len(msg.get_payload()), 2)
+        msg1 = msg.get_payload(1)
+        eq(msg1.get_content_type(), 'multipart/alternative')
+        eq(len(msg1.get_payload()), 2)
+        for subpart in msg1.get_payload():
+            eq(subpart.get_content_type(), 'message/external-body')
+            eq(len(subpart.get_payload()), 1)
+            subsubpart = subpart.get_payload(0)
+            eq(subsubpart.get_content_type(), 'text/plain')
+
+    def test_double_boundary(self):
+        # msg_37.txt is a multipart that contains two dash-boundary's in a
+        # row.  Our interpretation of RFC 2046 calls for ignoring the second
+        # and subsequent boundaries.
+        msg = self._msgobj('msg_37.txt')
+        self.assertEqual(len(msg.get_payload()), 3)
 
 
 
@@ -1861,6 +1881,10 @@ class TestIdempotent(TestEmailBase):
 
     def test_nested_multipart_mixeds(self):
         msg, text = self._msgobj('msg_12a.txt')
+        self._idempotent(msg, text)
+
+    def test_message_external_body_idempotent(self):
+        msg, text = self._msgobj('msg_36.txt')
         self._idempotent(msg, text)
 
     def test_content_type(self):
