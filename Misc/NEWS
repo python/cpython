@@ -226,6 +226,9 @@ Extension modules
 - itertools.izip() with no arguments now returns an empty iterator instead
   of raising a TypeError exception.
 
+- Fixed #853061: allow BZ2Compressor.compress() to receive an empty string
+  as parameter.
+
 Library
 -------
 

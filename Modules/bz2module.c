@@ -1503,6 +1503,9 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "s#", &data, &datasize))
 		return NULL;
 
+	if (datasize == 0)
+		return PyString_FromString("");
+
 	ACQUIRE_LOCK(self);
 	if (!self->running) {
 		PyErr_SetString(PyExc_ValueError,
