@@ -24,7 +24,9 @@ from macsupport import *
 
 #WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
 
-RgnHandle = FakeType("(RgnHandle)0") # XXX
+RgnHandle = FakeType("(RgnHandle)0")
+# XXXX Should be next, but this will break a lot of code...
+# RgnHandle = OpaqueByValueType("RgnHandle", "OptResObj")
 
 KeyMap = ArrayOutputBufferType("KeyMap")
 MacOSEventKind = Type("MacOSEventKind", "h") # Old-style

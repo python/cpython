@@ -28,7 +28,7 @@ ControlHandle = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
 ControlRef = ControlHandle
 ExistingControlHandle = OpaqueByValueType(OBJECTTYPE, "CtlObj_WhichControl", "BUG")
 
-RgnHandle = FakeType("theWindow->visRgn") # XXX
+RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 ControlPartCode = Type("ControlPartCode", "h")
 DragConstraint = Type("DragConstraint", "h")
 

@@ -40,6 +40,9 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
+extern PyObject *PMObj_New(PixMapHandle);
+extern int PMObj_Convert(PyObject *, PixMapHandle *);
+
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Lists.h>
@@ -299,9 +302,11 @@ static PyObject *ListObj_LUpdate(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
+	RgnHandle theRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &theRgn))
 		return NULL;
-	LUpdate((*_self->ob_itself)->port->visRgn,
+	LUpdate(theRgn,
 	        _self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -528,7 +533,7 @@ static PyMethodDef ListObj_methods[] = {
 	{"LAutoScroll", (PyCFunction)ListObj_LAutoScroll, 1,
 	 "() -> None"},
 	{"LUpdate", (PyCFunction)ListObj_LUpdate, 1,
-	 "() -> None"},
+	 "(RgnHandle theRgn) -> None"},
 	{"LActivate", (PyCFunction)ListObj_LActivate, 1,
 	 "(Boolean act) -> None"},
 	{"LCellSize", (PyCFunction)ListObj_LCellSize, 1,
