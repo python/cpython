@@ -667,6 +667,11 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_GT 4
 #define Py_GE 5
 
+/* Maps Py_LT to Py_GT, ..., Py_GE to Py_LE.
+ * Defined in object.c.
+ */
+PyAPI_DATA(int) _Py_SwappedOp[];
+
 /*
 Define staticforward and statichere for source compatibility with old
 C extensions.

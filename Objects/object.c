@@ -476,7 +476,7 @@ adjust_tp_compare(int c)
                          ? (t)->tp_richcompare : NULL)
 
 /* Map rich comparison operators to their swapped version, e.g. LT --> GT */
-static int swapped_op[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
+extern int _Py_SwappedOp[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
 /* Try a genuine rich comparison, returning an object.  Return:
    NULL for exception;
@@ -494,7 +494,7 @@ try_rich_compare(PyObject *v, PyObject *w, int op)
 	if (v->ob_type != w->ob_type &&
 	    PyType_IsSubtype(w->ob_type, v->ob_type) &&
 	    (f = RICHCOMPARE(w->ob_type)) != NULL) {
-		res = (*f)(w, v, swapped_op[op]);
+		res = (*f)(w, v, _Py_SwappedOp[op]);
 		if (res != Py_NotImplemented)
 			return res;
 		Py_DECREF(res);
@@ -506,7 +506,7 @@ try_rich_compare(PyObject *v, PyObject *w, int op)
 		Py_DECREF(res);
 	}
 	if ((f = RICHCOMPARE(w->ob_type)) != NULL) {
-		return (*f)(w, v, swapped_op[op]);
+		return (*f)(w, v, _Py_SwappedOp[op]);
 	}
 	res = Py_NotImplemented;
 	Py_INCREF(res);
@@ -1703,7 +1703,7 @@ PyObject_Dir(PyObject *arg)
 
 	assert(result);
 	if (!PyList_Check(result)) {
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 			"Expected keys() to be a list.");
 		goto error;
 	}
