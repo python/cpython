@@ -112,7 +112,7 @@ module_getattr(m, name)
 		err_setstr(AttributeError, name);
 	else {
 		if (is_accessobject(res))
-			res = getaccessvalue(res, getclass());
+			res = getaccessvalue(res, getglobals());
 		else
 			INCREF(res);
 	}
@@ -135,7 +135,7 @@ module_setattr(m, name, v)
 	}
 	ac = dictlookup(m->md_dict, name);
 	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, getclass(), v);
+		return setaccessvalue(ac, getglobals(), v);
 	if (v == NULL) {
 		int rv = dictremove(m->md_dict, name);
 		if (rv < 0)

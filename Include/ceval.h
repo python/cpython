@@ -28,7 +28,7 @@ object *call_object PROTO((object *, object *));
 
 object *getglobals PROTO((void));
 object *getlocals PROTO((void));
-object *getclass PROTO((void));
+object *getowner PROTO((void));
 void mergelocals PROTO((void));
 
 void printtraceback PROTO((object *));

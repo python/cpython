@@ -38,7 +38,7 @@ static struct memberlist frame_memberlist[] = {
 	{"f_code",	T_OBJECT,	OFF(f_code)},
 	{"f_globals",	T_OBJECT,	OFF(f_globals)},
 	{"f_locals",	T_OBJECT,	OFF(f_locals)},
-	{"f_class",	T_OBJECT,	OFF(f_class)},
+	{"f_owner",	T_OBJECT,	OFF(f_owner)},
 /*	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals)}, /* XXX Unsafe */
 	{"f_localmap",	T_OBJECT,	OFF(f_localmap)},
 	{"f_lasti",	T_INT,		OFF(f_lasti)},
@@ -85,7 +85,7 @@ frame_dealloc(f)
 	XDECREF(f->f_code);
 	XDECREF(f->f_globals);
 	XDECREF(f->f_locals);
-	XDECREF(f->f_class);
+	XDECREF(f->f_owner);
 	XDECREF(f->f_fastlocals);
 	XDECREF(f->f_localmap);
 	f->f_back = free_list;
@@ -110,12 +110,12 @@ typeobject Frametype = {
 };
 
 frameobject *
-newframeobject(back, code, globals, locals, class, nvalues, nblocks)
+newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 	frameobject *back;
 	codeobject *code;
 	object *globals;
 	object *locals;
-	object *class;
+	object *owner;
 	int nvalues;
 	int nblocks;
 {
@@ -124,7 +124,6 @@ newframeobject(back, code, globals, locals, class, nvalues, nblocks)
 		code == NULL || !is_codeobject(code) ||
 		globals == NULL || !is_dictobject(globals) ||
 		locals == NULL || !is_dictobject(locals) ||
-	        (class != NULL && !is_classobject(class)) ||
 		nvalues < 0 || nblocks < 0) {
 		err_badcall();
 		return NULL;
@@ -150,8 +149,8 @@ newframeobject(back, code, globals, locals, class, nvalues, nblocks)
 		f->f_globals = globals;
 		INCREF(locals);
 		f->f_locals = locals;
-		XINCREF(class);
-		f->f_class = class;
+		XINCREF(owner);
+		f->f_owner = owner;
 		f->f_fastlocals = NULL;
 		f->f_localmap = NULL;
 		if (nvalues > f->f_nvalues || f->f_valuestack == NULL) {

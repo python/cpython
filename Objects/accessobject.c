@@ -32,27 +32,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 typedef struct {
 	OB_HEAD
 	object		*ac_value;
-	object		*ac_class;
+	object		*ac_owner;
 	typeobject	*ac_type;
 	int		ac_mode;
 } accessobject;
 
 /* Forward */
 static int typecheck PROTO((object *, typeobject *));
-static int classcheck PROTO((object *, object *, int, int));
+static int ownercheck PROTO((object *, object *, int, int));
 
 object *
-newaccessobject(value, class, type, mode)
+newaccessobject(value, owner, type, mode)
 	object *value;
-	object *class;
+	object *owner;
 	typeobject *type;
 	int mode;
 {
 	accessobject *ap;
-	if (class != NULL && !is_classobject(class)) {
-		err_badcall();
-		return NULL;
-	}
 	if (!typecheck(value, type)) {
 		err_setstr(AccessError,
 		"access: initial value has inappropriate type");
@@ -63,8 +59,8 @@ newaccessobject(value, class, type, mode)
 		return NULL;
 	XINCREF(value);
 	ap->ac_value = value;
-	XINCREF(class);
-	ap->ac_class = class;
+	XINCREF(owner);
+	ap->ac_owner = owner;
 	XINCREF(type);
 	ap->ac_type = (typeobject *)type;
 	ap->ac_mode = mode;
@@ -81,22 +77,22 @@ cloneaccessobject(op)
 		return NULL;
 	}
 	ap = (accessobject *)op;
-	return newaccessobject(ap->ac_value, ap->ac_class,
+	return newaccessobject(ap->ac_value, ap->ac_owner,
 			       ap->ac_type, ap->ac_mode);
 }
 
 void
-setaccessowner(op, class)
+setaccessowner(op, owner)
 	object *op;
-	object *class;
+	object *owner;
 {
 	register accessobject *ap;
-	if (!is_accessobject(op) || class != NULL && !is_classobject(class))
+	if (!is_accessobject(op))
 		return; /* XXX no error */
 	ap = (accessobject *)op;
-	XDECREF(ap->ac_class);
-	XINCREF(class);
-	ap->ac_class = class;
+	XDECREF(ap->ac_owner);
+	XINCREF(owner);
+	ap->ac_owner = owner;
 }
 
 int
@@ -109,9 +105,9 @@ hasaccessvalue(op)
 }
 
 object *
-getaccessvalue(op, class)
+getaccessvalue(op, owner)
 	object *op;
-	object *class;
+	object *owner;
 {
 	register accessobject *ap;
 	if (!is_accessobject(op)) {
@@ -120,7 +116,7 @@ getaccessvalue(op, class)
 	}
 	ap = (accessobject *)op;
 	
-	if (!classcheck(class, ap->ac_class, AC_R, ap->ac_mode)) {
+	if (!ownercheck(owner, ap->ac_owner, AC_R, ap->ac_mode)) {
 		err_setstr(AccessError, "read access denied");
 		return NULL;
 	}
@@ -134,9 +130,9 @@ getaccessvalue(op, class)
 }
 
 int
-setaccessvalue(op, class, value)
+setaccessvalue(op, owner, value)
 	object *op;
-	object *class;
+	object *owner;
 	object *value;
 {
 	register accessobject *ap;
@@ -146,7 +142,7 @@ setaccessvalue(op, class, value)
 	}
 	ap = (accessobject *)op;
 	
-	if (!classcheck(class, ap->ac_class, AC_W, ap->ac_mode)) {
+	if (!ownercheck(owner, ap->ac_owner, AC_W, ap->ac_mode)) {
 		err_setstr(AccessError, "write access denied");
 		return -1;
 	}
@@ -227,17 +223,20 @@ typecheck(value, type)
 }
 
 static int
-classcheck(caller, owner, access, mode)
+ownercheck(caller, owner, access, mode)
 	object *caller;
 	object *owner;
 	int access;
 	int mode;
 {
-	if (caller == owner && owner != NULL)
-		return access & mode & (AC_PRIVATE|AC_PROTECTED|AC_PUBLIC);
-	if (caller != NULL && owner != NULL && issubclass(caller, owner))
-		return access & mode & (AC_PROTECTED|AC_PUBLIC);
-	return access & mode & AC_PUBLIC;
+	int mask = AC_PUBLIC;
+	if (owner != NULL) {
+		if (caller == owner)
+			mask |= AC_PRIVATE | AC_PROTECTED;
+		else if (is_classobject(owner) && issubclass(caller, owner))
+			mask |= AC_PROTECTED;
+	}
+	return access & mode & mask;
 }
 
 /* Access methods */
@@ -247,7 +246,7 @@ access_dealloc(ap)
 	accessobject *ap;
 {
 	XDECREF(ap->ac_value);
-	XDECREF(ap->ac_class);
+	XDECREF(ap->ac_owner);
 	XDECREF(ap->ac_type);
 	DEL(ap);
 }
@@ -256,7 +255,7 @@ access_dealloc(ap)
 
 static struct memberlist access_memberlist[] = {
 	{"ac_value",	T_OBJECT,	OFF(ac_value)},
-	{"ac_class",	T_OBJECT,	OFF(ac_class)},
+	{"ac_owner",	T_OBJECT,	OFF(ac_owner)},
 	{"ac_type",	T_OBJECT,	OFF(ac_type)},
 	{"ac_mode",	T_INT,		OFF(ac_mode)},
 	{NULL}	/* Sentinel */
@@ -275,12 +274,21 @@ access_repr(ap)
 	accessobject *ap;
 {
 	char buf[300];
-	classobject *class = (classobject *)ap->ac_class;
+	char buf2[20];
+	char *ownername;
 	typeobject *type = ap->ac_type;
+	if (is_classobject(ap->ac_owner)) {
+		ownername =
+			getstringvalue(((classobject *)ap->ac_owner)->cl_name);
+	}
+	else {
+		sprintf(buf2, "0x%lx", (long)ap->ac_owner);
+		ownername = buf2;
+	}
 	sprintf(buf,
-	"<access object, value 0x%lx, class %.100s, type %.100s, mode %04o>",
+	"<access object, value 0x%lx, owner %.100s, type %.100s, mode %04o>",
 		(long)(ap->ac_value),
-		class ? getstringvalue(class->cl_name) : "-",
+		ownername,
 		type ? type->tp_name : "-",
 		ap->ac_mode);
 	return newstringobject(buf);
@@ -305,7 +313,8 @@ typeobject Accesstype = {
 	0,			/*tp_hash*/
 };
 
-/* Dummy type objects to indicate classes of types */
+
+/* Pseudo type objects to indicate collections of types */
 
 /* XXX This should be replaced by a more general "subclassing"
    XXX mechanism for type objects... */

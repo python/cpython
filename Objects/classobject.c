@@ -126,7 +126,7 @@ class_getattr(op, name)
 		return NULL;
 	}
 	if (is_accessobject(v)) {
-		v = getaccessvalue(v, getclass());
+		v = getaccessvalue(v, getowner());
 		if (v == NULL)
 			return NULL;
 	}
@@ -157,7 +157,7 @@ class_setattr(op, name, v)
 	}
 	ac = dictlookup(op->cl_dict, name);
 	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, getclass(), v);
+		return setaccessvalue(ac, getowner(), v);
 	if (v == NULL) {
 		int rv = dictremove(op->cl_dict, name);
 		if (rv < 0)
@@ -207,10 +207,10 @@ issubclass(class, base)
 {
 	int i, n;
 	classobject *cp;
-	if (class == NULL || !is_classobject(class))
-		return 0;
 	if (class == base)
 		return 1;
+	if (class == NULL || !is_classobject(class))
+		return 0;
 	cp = (classobject *)class;
 	n = gettuplesize(cp->cl_bases);
 	for (i = 0; i < n; i++) {
@@ -363,6 +363,7 @@ instance_getattr(inst, name)
 		INCREF(inst->in_class);
 		return (object *)inst->in_class;
 	}
+	class = NULL;
 	v = dictlookup(inst->in_dict, name);
 	if (v == NULL) {
 		v = class_lookup(inst->in_class, name, &class);
@@ -372,13 +373,13 @@ instance_getattr(inst, name)
 		}
 	}
 	if (is_accessobject(v)) {
-		v = getaccessvalue(v, getclass());
+		v = getaccessvalue(v, getowner());
 		if (v == NULL)
 			return NULL;
 	}
 	else
 		INCREF(v);
-	if (is_funcobject(v)) {
+	if (is_funcobject(v) && class != NULL) {
 		object *w = newinstancemethodobject(v, (object *)inst,
 						    (object *)class);
 		DECREF(v);
@@ -403,7 +404,7 @@ instance_setattr(inst, name, v)
 	}
 	ac = dictlookup(inst->in_dict, name);
 	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, getclass(), v);
+		return setaccessvalue(ac, getowner(), v);
 	if (v == NULL) {
 		int rv = dictremove(inst->in_dict, name);
 		if (rv < 0)

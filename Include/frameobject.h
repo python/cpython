@@ -36,7 +36,7 @@ typedef struct _frame {
 	codeobject *f_code;	/* code segment */
 	object *f_globals;	/* global symbol table (dictobject) */
 	object *f_locals;	/* local symbol table (dictobject) */
-	object *f_class;	/* class context (classobject or NULL) */
+	object *f_owner;	/* owner (e.g. class or module) or NULL */
 	object *f_fastlocals;	/* fast local variables (listobject) */
 	object *f_localmap;	/* local variable names (dictobject) */
 	object **f_valuestack;	/* malloc'ed array */
