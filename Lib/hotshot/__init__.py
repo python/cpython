@@ -21,6 +21,9 @@ class Profile:
     def stop(self):
         self._prof.stop()
 
+    def addinfo(self, key, value):
+        self._prof.addinfo(key, value)
+
     # These methods offer the same interface as the profile.Profile class,
     # but delegate most of the work to the C implementation underneath.
 
