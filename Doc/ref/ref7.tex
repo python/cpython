@@ -242,9 +242,11 @@ that handled an exception.
 \withsubitem{(in module sys)}{\ttindex{exc_type}
   \ttindex{exc_value}\ttindex{exc_traceback}}
 
-The optional \keyword{else} clause is executed when no exception occurs
-in the \keyword{try} clause.  Exceptions in the \keyword{else} clause are
-not handled by the preceding \keyword{except} clauses.
+The optional \keyword{else} clause is executed when the \keyword{try} clause
+terminates by any means other than an exception or executing a
+\keyword{return}, \keyword{continue} or \keyword{break} statement.  
+Exceptions in the \keyword{else} clause are not handled by the preceding
+\keyword{except} clauses.
 \kwindex{else}
 
 The \keyword{try}...\keyword{finally} form specifies a `cleanup' handler.  The
