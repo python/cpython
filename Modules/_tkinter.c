@@ -433,8 +433,8 @@ Tcl_AppInit(Tcl_Interp *interp)
  * `tkMain.c'.
  */
 
-static void EnableEventHook(); /* Forward */
-static void DisableEventHook(); /* Forward */
+static void EnableEventHook(void); /* Forward */
+static void DisableEventHook(void); /* Forward */
 
 static TkappObject *
 Tkapp_New(char *screenName, char *baseName, char *className, int interactive)

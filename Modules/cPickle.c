@@ -180,7 +180,7 @@ static PyTypeObject PdataType = {
 #define Pdata_Check(O) ((O)->ob_type == &PdataType)
 
 static PyObject *
-Pdata_New() {
+Pdata_New(void) {
     Pdata *self;
 
     UNLESS (self = PyObject_New(Pdata, &PdataType)) return NULL;
@@ -193,7 +193,7 @@ Pdata_New() {
 }
 
 static int 
-stackUnderflow() {
+stackUnderflow(void) {
     PyErr_SetString(UnpicklingError, "unpickling stack underflow");
     return -1;
 }
@@ -2418,7 +2418,7 @@ load_none(Unpicklerobject *self) {
 }
 
 static int
-bad_readline() {
+bad_readline(void) {
     PyErr_SetString(UnpicklingError, "pickle data was truncated");
     return -1;
 }
@@ -4516,7 +4516,7 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 #define DL_EXPORT(RTYPE) RTYPE
 #endif
 DL_EXPORT(void)
-initcPickle() {
+initcPickle(void) {
     PyObject *m, *d, *v;
     char *rev="1.71";
     PyObject *format_version;

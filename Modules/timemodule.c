@@ -91,7 +91,7 @@ extern int ftime(struct timeb *);
 
 /* Forward declarations */
 static int floatsleep(double);
-static double floattime();
+static double floattime(double);
 
 /* For Y2K check */
 static PyObject *moddict;

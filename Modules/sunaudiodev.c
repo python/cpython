@@ -51,7 +51,7 @@ typedef struct {
 
 staticforward PyTypeObject Sadtype;
 staticforward PyTypeObject Sadstatustype;
-static sadstatusobject *sads_alloc();	/* Forward */
+static sadstatusobject *sads_alloc(void);	/* Forward */
 
 static PyObject *SunAudioError;
 
@@ -364,7 +364,7 @@ sad_getattr(sadobject *xp, char *name)
 /* ----------------------------------------------------------------- */
 
 static sadstatusobject *
-sads_alloc() {
+sads_alloc(void) {
 	return PyObject_New(sadstatusobject, &Sadstatustype);
 }
 

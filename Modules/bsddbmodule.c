@@ -786,7 +786,7 @@ static PyMethodDef bsddbmodule_methods[] = {
 };
 
 DL_EXPORT(void)
-initbsddb() {
+initbsddb(void) {
 	PyObject *m, *d;
 
 	Bsddbtype.ob_type = &PyType_Type;
