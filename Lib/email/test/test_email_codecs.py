@@ -8,13 +8,6 @@ from email.test.test_email import TestEmailBase
 from email.Charset import Charset
 from email.Header import Header, decode_header
 
-# See if we have the Japanese codecs package installed
-try:
-    unicode('foo', 'japanese.iso-2022-jp')
-except LookupError:
-    raise TestSkipped, 'Optional Japanese codecs not installed'
-
-
 
 class TestEmailAsianCodecs(TestEmailBase):
     def test_japanese_codecs(self):

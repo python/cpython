@@ -549,6 +549,10 @@ def printlist(x, width=70, indent=4):
 #     test_timeout
 #         Controlled by test_timeout.skip_expected.  Requires the network
 #         resource and a socket module.
+#     test_codecmaps_*
+#         Whether a skip is expected here depends on whether a large test
+#         input file has been downloaded.  test_codecmaps_*.skip_expected
+#         controls that.
 
 _expectations = {
     'win32':
@@ -565,7 +569,6 @@ _expectations = {
         test_curses
         test_dbm
         test_dl
-        test_email_codecs
         test_fcntl
         test_fork1
         test_gdbm
@@ -598,7 +601,6 @@ _expectations = {
         test_cl
         test_curses
         test_dl
-        test_email_codecs
         test_gl
         test_imgfile
         test_largefile
@@ -623,7 +625,6 @@ _expectations = {
         test_curses
         test_dbm
         test_dl
-        test_email_codecs
         test_fcntl
         test_fork1
         test_gl
@@ -778,7 +779,6 @@ _expectations = {
         test_cl
         test_curses
         test_dl
-        test_email_codecs
         test_gdbm
         test_gl
         test_imgfile
@@ -803,7 +803,6 @@ _expectations = {
         test_cl
         test_curses
         test_dbm
-        test_email_codecs
         test_gdbm
         test_gl
         test_gzip
@@ -850,7 +849,6 @@ _expectations = {
         test_cl
         test_curses
         test_dl
-        test_email_codecs
         test_gdbm
         test_gl
         test_imgfile
@@ -876,7 +874,6 @@ _expectations = {
         test_cl
         test_curses
         test_dbm
-        test_email_codecs
         test_gl
         test_imgfile
         test_ioctl
@@ -901,7 +898,6 @@ _expectations = {
         test_commands
         test_curses
         test_dl
-        test_email_codecs
         test_gl
         test_imgfile
         test_largefile
@@ -925,7 +921,6 @@ _expectations = {
         test_bsddb3
         test_cd
         test_cl
-        test_email_codecs
         test_gl
         test_imgfile
         test_linuxaudiodev
@@ -955,6 +950,8 @@ class _ExpectedSkips:
         from test import test_normalization
         from test import test_socket_ssl
         from test import test_timeout
+        from test import test_codecmaps_cn, test_codecmaps_jp
+        from test import test_codecmaps_kr, test_codecmaps_tw
 
         self.valid = False
         if sys.platform in _expectations:
@@ -972,6 +969,10 @@ class _ExpectedSkips:
 
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')
+
+            for cc in ('cn', 'jp', 'kr', 'tw'):
+                if eval('test_codecmaps_' + cc).skip_expected:
+                    self.expected.add('test_codecmaps_' + cc)
 
             if not sys.platform in ("mac", "darwin"):
                 MAC_ONLY = ["test_macostools", "test_macfs", "test_aepack",

@@ -212,15 +212,6 @@ The others represent the BOM in UTF-8 and UTF-32 encodings.
 \end{datadesc}
 
 
-\begin{seealso}
-  \seeurl{http://sourceforge.net/projects/python-codecs/}{A
-          SourceForge project working on additional support for Asian
-          codecs for use with Python.  They are in the early stages of
-          development at the time of this writing --- look in their
-          FTP area for downloadable files.}
-\end{seealso}
-
-
 \subsection{Codec Base Classes}
 
 The \module{codecs} defines a set of base classes which define the
@@ -553,6 +544,10 @@ exist:
         {646, us-ascii}
         {English}
 
+\lineiii{big5}
+        {big5_tw, csbig5}
+        {Traditional Chinese}
+
 \lineiii{cp037}
         {IBM037, IBM039}
         {English}
@@ -633,6 +628,18 @@ exist:
         {}
         {Greek}
 
+\lineiii{cp932}
+        {932, ms932, mskanji, ms_kanji}
+        {Japanese}
+
+\lineiii{cp949}
+        {949, ms949, uhc}
+        {Korean}
+
+\lineiii{cp950}
+        {950, ms950}
+        {Traditional Chinese}
+
 \lineiii{cp1006}
         {}
         {Urdu}
@@ -680,6 +687,59 @@ exist:
 \lineiii{cp1258}
         {windows-1258}
         {Vietnamese}
+
+\lineiii{euc_jp}
+        {eucjp, ujis, u_jis}
+        {Japanese}
+
+\lineiii{euc_jisx0213}
+        {jisx0213, eucjisx0213}
+        {Japanese}
+
+\lineiii{euc_kr}
+        {euckr, korean, ksc5601, ks_c_5601, ks_c_5601_1987, ksx1001, ks_x_1001}
+        {Korean}
+
+\lineiii{gb2312}
+        {chinese, csiso58gb231280, euc_cn, euccn, eucgb2312_cn, gb2312_1980,
+         gb2312_80, iso_ir_58}
+        {Simplified Chinese}
+
+\lineiii{gbk}
+        {936, cp936, ms936}
+        {Unified Chinese}
+
+\lineiii{gb18030}
+        {gb18030_2000}
+        {Unified Chinese}
+
+\lineiii{hz}
+        {hzgb, hz_gb, hz_gb_2312}
+        {Simplified Chinese}
+
+\lineiii{iso2022_jp}
+        {csiso2022jp, iso2022jp, iso_2022_jp}
+        {Japanese}
+
+\lineiii{iso2022_jp_1}
+        {iso2022jp_1, iso_2022_jp_1}
+        {Japanese}
+
+\lineiii{iso2022_jp_2}
+        {iso2022jp_2, iso_2022_jp_2}
+        {Japanese, Korean, Simplified Chinese, Western Europe, Greek}
+
+\lineiii{iso2022_jp_3}
+        {iso2022jp_3, iso_2022_jp_3}
+        {Japanese}
+
+\lineiii{iso2022_jp_ext}
+        {iso2022jp_ext, iso_2022_jp_ext}
+        {Japanese}
+
+\lineiii{iso2022_kr}
+        {csiso2022kr, iso2022kr, iso_2022_kr}
+        {Korean}
 
 \lineiii{latin_1}
         {iso-8859-1, iso8859-1, 8859, cp819, latin, latin1, L1}
@@ -733,6 +793,10 @@ exist:
         {iso-8859-15}
         {Western Europe}
 
+\lineiii{johab}
+        {cp1361, ms1361}
+        {Korean}
+
 \lineiii{koi8_r}
         {}
         {Russian}
@@ -764,6 +828,14 @@ exist:
 \lineiii{mac_turkish}
         {macturkish}
         {Turkish}
+
+\lineiii{shift_jis}
+        {csshiftjis, shiftjis, sjis, s_jis}
+        {Japanese}
+
+\lineiii{shift_jisx0213}
+        {shiftjisx0213, sjisx0213, s_jisx0213}
+        {Japanese}
 
 \lineiii{utf_16}
         {U16, utf16}
