@@ -330,15 +330,16 @@ copy_reg.pickle(_pattern_type, _pickle, _compile)
 # experimental stuff (see python-dev discussions for details)
 
 class Scanner:
-    def __init__(self, lexicon):
+    def __init__(self, lexicon, flags=0):
         from sre_constants import BRANCH, SUBPATTERN
         self.lexicon = lexicon
         # combine phrases into a compound pattern
         p = []
         s = sre_parse.Pattern()
+        s.flags = flags
         for phrase, action in lexicon:
             p.append(sre_parse.SubPattern(s, [
-                (SUBPATTERN, (len(p), sre_parse.parse(phrase))),
+                (SUBPATTERN, (len(p)+1, sre_parse.parse(phrase, flags))),
                 ]))
         p = sre_parse.SubPattern(s, [(BRANCH, (None, p))])
         s.groups = len(p)
@@ -346,16 +347,16 @@ class Scanner:
     def scan(self, string):
         result = []
         append = result.append
-        match = self.scanner.match
+        match = self.scanner.scanner(string).match
         i = 0
         while 1:
-            m = match(string, i)
+            m = match()
             if not m:
                 break
             j = m.end()
             if i == j:
                 break
-            action = self.lexicon[m.lastindex][1]
+            action = self.lexicon[m.lastindex-1][1]
             if callable(action):
                 self.match = m
                 action = action(self, m.group())
