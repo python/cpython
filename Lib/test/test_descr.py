@@ -691,13 +691,13 @@ def metaclass():
     class _instance(object):
         pass
     class M2(object):
+        @staticmethod
         def __new__(cls, name, bases, dict):
             self = object.__new__(cls)
             self.name = name
             self.bases = bases
             self.dict = dict
             return self
-        __new__ = staticmethod(__new__)
         def __call__(self):
             it = _instance()
             # Early binding of methods
@@ -2071,9 +2071,9 @@ def supers():
         aProp = property(lambda self: "foo")
 
     class Sub(Base):
+        @classmethod
         def test(klass):
             return super(Sub,klass).aProp
-        test = classmethod(test)
 
     veris(Sub.test(), Base.aProp)
 
