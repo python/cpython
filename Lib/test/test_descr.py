@@ -183,8 +183,7 @@ def test_dir():
     for arg in 2, 2L, 2j, 2e0, [2], "2", u"2", (2,), {2:2}, type, test_dir:
         dir(arg)
 
-    # Check some details here because classic classes aren't working
-    # reasonably, and I want this to fail (eventually).
+    # Try classic classes.
     class C:
         Cdata = 1
         def Cmethod(self): pass
@@ -202,23 +201,45 @@ def test_dir():
     class A(C):
         Adata = 1
         def Amethod(self): pass
-    astuff = ['Adata', 'Amethod', '__doc__', '__module__']
-    # This isn't finding C's stuff at all.
-    verify(dir(A) == astuff)
-    # But this is!  It's because a.__class__ exists but A.__class__ doesn't.
-    a = A()
-    verify(dir(a) == astuff[:2] + cstuff)
 
-    # The story for new-style classes is quite different.
+    astuff = ['Adata', 'Amethod'] + cstuff
+    verify(dir(A) == astuff)
+    a = A()
+    verify(dir(a) == astuff)
+    a.adata = 42
+    a.amethod = lambda self: 3
+    verify(dir(a) == astuff + ['adata', 'amethod'])
+
+    # The same, but with new-style classes.  Since these have object as a
+    # base class, a lot more gets sucked in.
+    def interesting(strings):
+        return [s for s in strings if not s.startswith('_')]
+
     class C(object):
         Cdata = 1
         def Cmethod(self): pass
+
+    cstuff = ['Cdata', 'Cmethod']
+    verify(interesting(dir(C)) == cstuff)
+
+    c = C()
+    verify(interesting(dir(c)) == cstuff)
+
+    c.cdata = 2
+    c.cmethod = lambda self: 0
+    verify(interesting(dir(c)) == cstuff + ['cdata', 'cmethod'])
+
     class A(C):
         Adata = 1
         def Amethod(self): pass
-    d = dir(A)
-    for expected in 'Cdata', 'Cmethod', 'Adata', 'Amethod':
-        verify(expected in d)
+
+    astuff = ['Adata', 'Amethod'] + cstuff
+    verify(interesting(dir(A)) == astuff)
+    a = A()
+    verify(interesting(dir(a)) == astuff)
+    a.adata = 42
+    a.amethod = lambda self: 3
+    verify(interesting(dir(a)) == astuff + ['adata', 'amethod'])
 
 binops = {
     'add': '+',
