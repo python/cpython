@@ -26,12 +26,7 @@ try:
 except ImportError:
 	MacOS = None
 
-# Default preferences
-#CREATOR = 'KAHL'		# Guido's favorite text editor on the Mac
-#INCLUDEDIR = "D:Development:THINK C:Mac #includes:Apple #includes:"
-CREATOR = 'CWIE'		# Jack's favorite text editor on the Mac
-INCLUDEDIR = "Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:"
-
+from bgenlocations import CREATOR, INCLUDEDIR
 
 Error = "scantools.Error"
 
