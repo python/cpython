@@ -293,6 +293,24 @@ static PyObject *Fm_GetAppFont(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Fm_QDTextBounds(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	char *inText__in__;
+	int inText__len__;
+	int inText__in_len__;
+	Rect bounds;
+	if (!PyArg_ParseTuple(_args, "s#",
+	                      &inText__in__, &inText__in_len__))
+		return NULL;
+	inText__len__ = inText__in_len__;
+	QDTextBounds(inText__len__, inText__in__,
+	             &bounds);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &bounds);
+	return _res;
+}
+
 static PyMethodDef Fm_methods[] = {
 
 #if !TARGET_API_MAC_CARBON
@@ -337,6 +355,8 @@ static PyMethodDef Fm_methods[] = {
 	 "() -> (short _rv)"},
 	{"GetAppFont", (PyCFunction)Fm_GetAppFont, 1,
 	 "() -> (short _rv)"},
+	{"QDTextBounds", (PyCFunction)Fm_QDTextBounds, 1,
+	 "(Buffer inText) -> (Rect bounds)"},
 	{NULL, NULL, 0}
 };
 

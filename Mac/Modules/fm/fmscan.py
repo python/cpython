@@ -54,7 +54,7 @@ class MyScanner(Scanner):
 		return [
 			"FMInput_ptr",	# Not needed for now
 			"FMOutPtr",		# Ditto
-			"void_ptr",		# Don't know how to do this right now
+##			"void_ptr",		# Don't know how to do this right now
 			"FontInfo",		# Ditto
 			]
 
@@ -62,6 +62,8 @@ class MyScanner(Scanner):
 		return [
 			([('Str255', '*', 'InMode')], [('Str255', '*', 'OutMode')]),
 			([('FMetricRecPtr', 'theMetrics', 'InMode')], [('FMetricRecPtr', 'theMetrics', 'OutMode')]),
+			([('short', 'byteCount', 'InMode'), ('void_ptr', 'textAddr', 'InMode'),],
+			 [('TextBuffer', 'inText', 'InMode')]),
 			]
 			
 	def writeinitialdefs(self):
