@@ -1526,11 +1526,6 @@ opcodes = [
       opcode is followed by code to create setstate's argument, and then a
       BUILD opcode to apply  __setstate__ to that argument.
 
-      There are lots of special cases here.  The argtuple can be None, in
-      which case callable.__basicnew__() is called instead to produce the
-      object to be pushed on the stack.  This appears to be a trick unique
-      to ExtensionClasses, and is deprecated regardless.
-
       If type(callable) is not ClassType, REDUCE complains unless the
       callable has been registered with the copy_reg module's
       safe_constructors dict, or the callable has a magic
