@@ -348,6 +348,13 @@ Test passed.
 # 0,9,7    9-Feb-2001
 #    string method conversion
 
+# XXX Until generators are part of the language, examples in doctest'ed
+#     modules will inherit doctest's __future__ settings (see PEP 236 for
+#     more on that).  In the absence of a better working idea, the std
+#     test suite needs generators, while the set of doctest'ed modules that
+#     don't use "yield" in a generator context may well be empty.  So
+#     enable generators here.  This can go away when generators are no
+#     longer optional.
 from __future__ import generators
 
 __version__ = 0, 9, 7
