@@ -1,4 +1,4 @@
-This package will install the second build of
+This package will install the third build of
 the MacPython 2.3 additions for Mac OS X 10.3. 
 
 Installation requires approximately 3.3 MB of disk
@@ -21,6 +21,20 @@ The PythonIDE application has a Help command that gets
 you started quickly with MacPython and contains
 references to other documentation.
 
+Changes since the second build:
+- Package Manager has been updated to version 0.4:
+  - added commands to open database description page
+    and standard experimental database.
+  - the scrollbar had a mind of its own. Fixed.
+  - show all packages in case of an error message.
+  - easier maintainance (mainly important for me:-)
+    in the light of micro-releases of OSX.
+- IDE fixes:
+  - better handling of various end-of-line schemes.
+  - fixed "run with commandline python" to use pythonw.
+  - fixed a crash with very big scripts folders.
+  - fixed the double-scroll problem when you single-clicked.
+  
 Changes since the first build:
 - The startup crash of the IDE some people experienced
   has been fixed. The IDE Scripts folder is now in

@@ -1,6 +1,7 @@
-This package will install MacPython 2.3.2 for Mac OS X
-10.2. Installation on the Panther preview may work, on
-10.1 or earlier will not work.
+This package will install MacPython 2.3.5 for Mac OS X
+10.2. Installation on the Panther (10.3) works but may
+interfere with operation of Apple-installed Python.
+Installation on 10.1 or earlier will not work.
 
 Installation requires approximately 20 MB of disk
 space, ignore the message that it will take zero bytes.

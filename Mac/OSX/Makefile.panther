@@ -3,7 +3,7 @@
 # ommitted from Apple's installation of Python 2.3.
 #
 all: install_waste install_IDE install_PackageManager install_IDLE \
-	install_BuildApplet installextras install_PythonLauncher
+	install_BuildApplet installextras install_PythonLauncher install_pimpupdate
 
 VERSION=2.3
 DESTDIR=
@@ -53,3 +53,6 @@ installextras:
 install_PythonLauncher:
 	ln -fsn $(APPLE_PYTHONLAUNCHER) $(DESTDIR)$(PYTHONAPPSDIR)/PythonLauncher
 	
+install_pimpupdate:
+    cp ../../Lib/plat-mac/pimp.py $(DESTDIR)/Library/Python/2.3/pimp_update.py
+    

@@ -11,13 +11,13 @@
 	<string>PackageManager</string>
 
 	<key>CFBundleGetInfoString</key>
-	<string>2.3.2, (c) 2003 Python Software Foundation.</string>
+	<string>2.3.5, (c) 2004 Python Software Foundation.</string>
 	<key>CFBundleLongVersionString</key>
-	<string>2.3.2, (c) 2003 Python Software Foundation.</string>
+	<string>2.3.5, (c) 2004 Python Software Foundation.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright 2003 Python Software Foundation.</string>
+	<string>Copyright 2004 Python Software Foundation.</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.3.2</string>
+	<string>2.3.5</string>
 
 	<key>CFBundleIconFile</key>
 	<string>PackageManager.icns</string>
@@ -32,7 +32,7 @@
 	<key>CFBundleSignature</key>
 	<string>Pide</string>
 	<key>CFBundleVersion</key>
-	<string>2.3.2</string>
+	<string>2.3.5</string>
 	<key>LSRequiresCarbon</key>
     <true/>
 	<key>CSResourcesFileMapped</key>
