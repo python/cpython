@@ -264,7 +264,7 @@ extern int lstat(const char *, struct stat *);
 
 /* choose the appropriate stat and fstat functions and return structs */
 #undef STAT
-#ifdef MS_WIN64
+#if defined(MS_WIN64) || defined(MS_WIN32)
 #	define STAT _stati64
 #	define FSTAT _fstati64
 #	define STRUCT_STAT struct _stati64
@@ -3491,7 +3491,7 @@ static PyObject *
 posix_lseek(PyObject *self, PyObject *args)
 {
 	int fd, how;
-#ifdef MS_WIN64
+#if defined(MS_WIN64) || defined(MS_WIN32)
 	LONG_LONG pos, res;
 #else
 	off_t pos, res;
@@ -3518,7 +3518,7 @@ posix_lseek(PyObject *self, PyObject *args)
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
-#ifdef MS_WIN64
+#if defined(MS_WIN64) || defined(MS_WIN32)
 	res = _lseeki64(fd, pos, how);
 #else
 	res = lseek(fd, pos, how);

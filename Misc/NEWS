@@ -155,6 +155,12 @@ Tests
 
 Windows
 
+- Large file support is now enabled on Win32 platforms as well as on
+  Win64.  This means that, for example, you can use f.tell() and f.seek()
+  to manipulate files larger than 2 gigabytes (provided you have enough
+  disk space, and are using a Windows filesystem that supports large
+  partitions).
+
 - The w9xpopen hack is now used on Windows NT and 2000 too when COMPSPEC
   points to command.com (patch from Brian Quinlan).
 

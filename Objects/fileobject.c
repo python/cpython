@@ -367,7 +367,7 @@ file_truncate(PyFileObject *f, PyObject *args)
 	} else {
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-		ret = _chsize(fileno(f->f_fp), newsize);
+		ret = _chsize(fileno(f->f_fp), (long)newsize);
 		Py_END_ALLOW_THREADS
 		if (ret != 0) goto onioerror;
 	}

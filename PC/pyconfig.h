@@ -313,6 +313,7 @@ typedef int pid_t;
 #	define HAVE_LARGEFILE_SUPPORT
 #elif defined(MS_WIN32)
 #	define PLATFORM "win32"
+#	define HAVE_LARGEFILE_SUPPORT
 #	ifdef _M_ALPHA
 #		define SIZEOF_VOID_P 8
 #		define SIZEOF_TIME_T 8
