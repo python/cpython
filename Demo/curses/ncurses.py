@@ -6,6 +6,7 @@
 # module. Currently, only the panel demos are ported.
 
 import curses
+from curses import panel
 
 def wGetchar(win = None):
     if win == None: win = stdscr
@@ -30,7 +31,7 @@ def saywhat(text):
 
 def mkpanel(color, rows, cols, tly, tlx):
     win = curses.newwin(rows, cols, tly, tlx)
-    pan = win.new_panel()
+    pan = panel.new_panel(win)
     if curses.has_colors():
         if color == curses.COLOR_BLUE:
             fg = curses.COLOR_WHITE
@@ -45,7 +46,7 @@ def mkpanel(color, rows, cols, tly, tlx):
     return pan
 
 def pflush():
-    curses.update_panels()
+    panel.update_panels()
     curses.doupdate()
 
 def fill_panel(pan):
