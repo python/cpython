@@ -1,0 +1,68 @@
+\section{\module{email.Generator} ---
+         Generating flat text from an email message object tree}
+
+\declaremodule{standard}{email.Generator}
+\modulesynopsis{Generate flat text email messages to from a message
+	        object tree.}
+\sectionauthor{Barry A. Warsaw}{barry@zope.com}
+
+\versionadded{2.2}
+
+The \class{Generator} class is used to render a message object model
+into its flat text representation, including MIME encoding any
+sub-messages, generating the correct \rfc{2822} headers, etc.  Here
+are the public methods of the \class{Generator} class.
+
+\begin{classdesc}{Generator}{outfp\optional{, mangle_from_\optional{,
+    maxheaderlen}}}
+The constructor for the \class{Generator} class takes a file-like
+object called \var{outfp} for an argument.  \var{outfp} must support
+the \method{write()} method and be usable as the output file in a
+Python 2.0 extended print statement.
+
+Optional \var{mangle_from_} is a flag that, when true, puts a ``>''
+character in front of any line in the body that starts exactly as
+\samp{From } (i.e. \code{From} followed by a space at the front of the
+line).  This is the only guaranteed portable way to avoid having such
+lines be mistaken for \emph{Unix-From} headers (see
+\url{http://home.netscape.com/eng/mozilla/2.0/relnotes/demo/content-length.html}
+ for details).
+
+Optional \var{maxheaderlen} specifies the longest length for a
+non-continued header.  When a header line is longer than
+\var{maxheaderlen} (in characters, with tabs expanded to 8 spaces),
+the header will be broken on semicolons and continued as per
+\rfc{2822}.  If no semicolon is found, then the header is left alone.
+Set to zero to disable wrapping headers.  Default is 78, as
+recommended (but not required) by \rfc{2822}.
+\end{classdesc}
+
+The other public \class{Generator} methods are:
+
+\begin{methoddesc}[Generator]{__call__}{msg\optional{, unixfrom}}
+Print the textual representation of the message object tree rooted at
+\var{msg} to the output file specified when the \class{Generator}
+instance was created.  Sub-objects are visited depth-first and the
+resulting text will be properly MIME encoded.
+
+Optional \var{unixfrom} is a flag that forces the printing of the
+\emph{Unix-From} (a.k.a. envelope header or \code{From_} header)
+delimiter before the first \rfc{2822} header of the root message
+object.  If the root object has no \emph{Unix-From} header, a standard
+one is crafted.  By default, this is set to 0 to inhibit the printing
+of the \emph{Unix-From} delimiter.
+
+Note that for sub-objects, no \emph{Unix-From} header is ever printed.
+\end{methoddesc}
+
+\begin{methoddesc}[Generator]{write}{s}
+Write the string \var{s} to the underlying file object,
+i.e. \var{outfp} passed to \class{Generator}'s constructor.  This
+provides just enough file-like API for \class{Generator} instances to
+be used in extended print statements.
+\end{methoddesc}
+
+As a convenience, see the methods \method{Message.as_string()} and
+\code{str(aMessage)}, a.k.a. \method{Message.__str__()}, which
+simplify the generation of a formatted string representation of a
+message object.  For more detail, see \refmodule{email.Message}.

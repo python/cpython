@@ -1,0 +1,53 @@
+\section{\module{email.Errors} ---
+         email package exception classes}
+
+\declaremodule{standard}{email.Exceptions}
+\modulesynopsis{The exception classes used by the email package.}
+\sectionauthor{Barry A. Warsaw}{barry@zope.com}
+
+\versionadded{2.2}
+
+The following exception classes are defined in the
+\module{email.Errors} module:
+
+\begin{excclassdesc}{MessageError}{}
+This is the base class for all exceptions that the \module{email}
+package can raise.  It is derived from the standard
+\exception{Exception} class and defines no additional methods.
+\end{excclassdesc}
+
+\begin{excclassdesc}{MessageParseError}{}
+This is the base class for exceptions thrown by the \class{Parser}
+class.  It is derived from \exception{MessageError}.
+\end{excclassdesc}
+
+\begin{excclassdesc}{HeaderParseError}{}
+Raised under some error conditions when parsing the \rfc{2822} headers of
+a message, this class is derived from \exception{MessageParseError}.
+It can be raised from the \method{Parser.parse()} or
+\method{Parser.parsestr()} methods.
+
+Situations where it can be raised include finding a \emph{Unix-From}
+header after the first \rfc{2822} header of the message, finding a
+continuation line before the first \rfc{2822} header is found, or finding
+a line in the headers which is neither a header or a continuation
+line.
+\end{excclassdesc}
+
+\begin{excclassdesc}{BoundaryError}{}
+Raised under some error conditions when parsing the \rfc{2822} headers of
+a message, this class is derived from \exception{MessageParseError}.
+It can be raised from the \method{Parser.parse()} or
+\method{Parser.parsestr()} methods.
+
+Situations where it can be raised include not being able to find the
+starting or terminating boundary in a \code{multipart/*} message.
+\end{excclassdesc}
+
+\begin{excclassdesc}{MultipartConversionError}{}
+Raised when a payload is added to a \class{Message} object using
+\method{add_payload()}, but the payload is already a scalar and the
+message's \code{Content-Type:} main type is not either \code{multipart}
+or missing.  \exception{MultipartConversionError} multiply inherits
+from \exception{MessageError} and the built-in \exception{TypeError}.
+\end{excclassdesc}

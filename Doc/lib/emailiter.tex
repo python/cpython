@@ -1,0 +1,37 @@
+\section{\module{email.Iterators} ---
+         Message object tree iterators}
+
+\declaremodule{standard}{email.Iterators}
+\modulesynopsis{Iterate over a  message object tree.}
+\sectionauthor{Barry A. Warsaw}{barry@zope.com}
+
+\versionadded{2.2}
+
+Iterating over a message object tree is fairly easy with the
+\method{Message.walk()} method.  The \module{email.Iterators} module
+provides some useful higher level iterations over message object
+trees.
+
+\begin{funcdesc}{body_line_iterator}{msg}
+This iterates over all the payloads in all the subparts of \var{msg},
+returning the string payloads line-by-line.  It skips over all the
+subpart headers, and it skips over any subpart with a payload that
+isn't a Python string.  This is somewhat equivalent to reading the
+flat text representation of the message from a file using
+\method{readline()}, skipping over all the intervening headers.
+\end{funcdesc}
+
+\begin{funcdesc}{typed_subpart_iterator}{msg\optional{,
+    maintype\optional{, subtype}}}
+This iterates over all the subparts of \var{msg}, returning only those
+subparts that match the MIME type specified by \var{maintype} and
+\var{subtype}.
+
+Note that \var{subtype} is optional; if omitted, then subpart MIME
+type matching is done only with the main type.  \var{maintype} is
+optional too; it defaults to \code{text}.
+
+Thus, by default \function{typed_subpart_iterator()} returns each
+subpart that has a MIME type of \code{text/*}.
+\end{funcdesc}
+

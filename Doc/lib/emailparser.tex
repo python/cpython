@@ -1,0 +1,96 @@
+\section{\module{email.Parser} ---
+         Parsing flat text email messages}
+
+\declaremodule{standard}{email.Parser}
+\modulesynopsis{Parse flat text email messages to produce a message
+	        object tree.}
+\sectionauthor{Barry A. Warsaw}{barry@zope.com}
+
+\versionadded{2.2}
+
+The \module{Parser} module provides a single class, the \class{Parser}
+class, which is used to take a message in flat text form and create
+the associated object model.  The resulting object tree can then be
+manipulated using the \class{Message} class interface as described in
+\refmodule{email.Message}, and turned over
+to a generator (as described in \refmodule{emamil.Generator}) to
+return the textual representation of the message.  It is intended that
+the \class{Parser} to \class{Generator} path be idempotent if the
+object model isn't modified in between.
+
+\subsection{Parser class API}
+
+\begin{classdesc}{Parser}{\optional{_class}}
+The constructor for the \class{Parser} class takes a single optional
+argument \var{_class}.  This must be callable factory (i.e. a function
+or a class), and it is used whenever a sub-message object needs to be
+created.  It defaults to \class{Message} (see
+\refmodule{email.Message}).  \var{_class} will be called with zero
+arguments.
+\end{classdesc}
+
+The other public \class{Parser} methods are:
+
+\begin{methoddesc}[Parser]{parse}{fp}
+Read all the data from the file-like object \var{fp}, parse the
+resulting text, and return the root message object.  \var{fp} must
+support both the \method{readline()} and the \method{read()} methods
+on file-like objects.
+
+The text contained in \var{fp} must be formatted as a block of \rfc{2822}
+style headers and header continuation lines, optionally preceeded by a
+\emph{Unix-From} header.  The header block is terminated either by the
+end of the data or by a blank line.  Following the header block is the
+body of the message (which may contain MIME-encoded subparts).
+\end{methoddesc}
+
+\begin{methoddesc}[Parser]{parsestr}{text}
+Similar to the \method{parse()} method, except it takes a string
+object instead of a file-like object.  Calling this method on a string
+is exactly equivalent to wrapping \var{text} in a \class{StringIO}
+instance first and calling \method{parse()}.
+\end{methoddesc}
+
+Since creating a message object tree from a string or a file object is
+such a common task, two functions are provided as a convenience.  They
+are available in the top-level \module{email} package namespace.
+
+\begin{funcdesc}{message_from_string}{s\optional{, _class}}
+Return a message object tree from a string.  This is exactly
+equivalent to \code{Parser().parsestr(s)}.  Optional \var{_class} is
+interpreted as with the \class{Parser} class constructor.
+\end{funcdesc}
+
+\begin{funcdesc}{message_from_file}{fp\optional{, _class}}
+Return a message object tree from an open file object.  This is exactly
+equivalent to \code{Parser().parse(fp)}.  Optional \var{_class} is
+interpreted as with the \class{Parser} class constructor.
+\end{funcdesc}
+
+Here's an example of how you might use this at an interactive Python
+prompt:
+
+\begin{verbatim}
+>>> import email
+>>> msg = email.message_from_string(myString)
+\end{verbatim}
+
+\subsection{Additional notes}
+
+Here are some notes on the parsing semantics:
+
+\begin{itemize}
+\item Most non-\code{multipart} type messages are parsed as a single
+      message object with a string payload.  These objects will return
+      0 for \method{is_multipart()}.
+\item One exception is for \code{message/delivery-status} type
+      messages.  Because such the body of such messages consist of
+      blocks of headers, \class{Parser} will create a non-multipart
+      object containing non-multipart subobjects for each header
+      block.
+\item Another exception is for \code{message/*} types (i.e. more
+      general than \code{message/delivery-status}.  These are
+      typically \code{message/rfc822} type messages, represented as a
+      non-multipart object containing a singleton payload, another
+      non-multipart \class{Message} instance.
+\end{itemize}
