@@ -2954,7 +2954,8 @@ static PyObject *File_FSResolveAliasFileWithMountFlags(PyObject *_self, PyObject
 	Boolean targetIsFolder;
 	Boolean wasAliased;
 	unsigned long mountFlags;
-	if (!PyArg_ParseTuple(_args, "bl",
+	if (!PyArg_ParseTuple(_args, "O&bl",
+	                      FSRef_Convert, &theRef,
 	                      &resolveAliasChains,
 	                      &mountFlags))
 		return NULL;
@@ -2979,7 +2980,8 @@ static PyObject *File_FSResolveAliasFile(PyObject *_self, PyObject *_args)
 	Boolean resolveAliasChains;
 	Boolean targetIsFolder;
 	Boolean wasAliased;
-	if (!PyArg_ParseTuple(_args, "b",
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      FSRef_Convert, &theRef,
 	                      &resolveAliasChains))
 		return NULL;
 	_err = FSResolveAliasFile(&theRef,
@@ -3133,9 +3135,9 @@ static PyMethodDef File_methods[] = {
 	{"FSNewAlias", (PyCFunction)File_FSNewAlias, 1,
 	 PyDoc_STR("(FSRef fromFile, FSRef target) -> (AliasHandle inAlias)")},
 	{"FSResolveAliasFileWithMountFlags", (PyCFunction)File_FSResolveAliasFileWithMountFlags, 1,
-	 PyDoc_STR("(Boolean resolveAliasChains, unsigned long mountFlags) -> (FSRef theRef, Boolean targetIsFolder, Boolean wasAliased)")},
+	 PyDoc_STR("(FSRef theRef, Boolean resolveAliasChains, unsigned long mountFlags) -> (FSRef theRef, Boolean targetIsFolder, Boolean wasAliased)")},
 	{"FSResolveAliasFile", (PyCFunction)File_FSResolveAliasFile, 1,
-	 PyDoc_STR("(Boolean resolveAliasChains) -> (FSRef theRef, Boolean targetIsFolder, Boolean wasAliased)")},
+	 PyDoc_STR("(FSRef theRef, Boolean resolveAliasChains) -> (FSRef theRef, Boolean targetIsFolder, Boolean wasAliased)")},
 	{"FSUpdateAlias", (PyCFunction)File_FSUpdateAlias, 1,
 	 PyDoc_STR("(FSRef fromFile, FSRef target, AliasHandle alias) -> (Boolean wasChanged)")},
 	{"pathname", (PyCFunction)File_pathname, 1,

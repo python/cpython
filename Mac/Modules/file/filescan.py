@@ -172,6 +172,9 @@ class MyScanner(Scanner_OSX):
 			([('FSSpec', 'theSpec', 'OutMode')],
 			 [('FSSpec_ptr', 'theSpec', 'InOutMode')]),
 			 
+			([('FSRef', 'theRef', 'OutMode')],
+			 [('FSRef_ptr', 'theRef', 'InOutMode')]),
+			 
 			# The optional FSSpec to all ResolveAlias and NewAlias methods
 			([('FSSpec_ptr', 'fromFile', 'InMode')],
     		 [('OptFSSpecPtr', 'fromFile', 'InMode')]),
