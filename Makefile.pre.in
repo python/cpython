@@ -297,9 +297,9 @@ buildno: $(PARSER_OBJS) \
 	else echo 1 >buildno; fi
 
 # Build static library
+# avoid long command lines, same as LIBRARY_OBJS
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
-	# avoid long command lines, same as LIBRARY_OBJS
 	$(AR) cr $@ Modules/getbuildinfo.o
 	$(AR) cr $@ $(PARSER_OBJS)
 	$(AR) cr $@ $(OBJECT_OBJS)
