@@ -820,7 +820,7 @@ def compiledataflags(flags):
 illegal_ids = ["and", "elif", "global", "or", "assert", "else", "if", "pass", 
 	"break", "except", "import", "print", "class", "exec", "in", "raise", 
 	"continue", "finally", "is", "return", "def", "for", "lambda", "try", 
-	"del", "from", "not", "while"]
+	"del", "from", "not", "while", "yield"]
 
 def identify(str):
 	"""Turn any string into an identifier:
