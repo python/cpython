@@ -212,7 +212,11 @@ Windows
 Mac
 ---
 
-TBD
+- There are new dialogs EasyDialogs.AskFileForOpen, AskFileForSave
+  and AskFolder. The old macfs.StandardGetFile and friends are deprecated.
+  
+- Type Carbon.File.FSCatalogInfo and supporting methods have been implemented.
+  This also makes macfs.FSSpec.SetDates() work again.
 
 
 What's New in Python 2.3 alpha 1?
