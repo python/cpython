@@ -97,6 +97,7 @@ class MyScanner(Scanner_OSX):
 			"CFStringSetExternalCharactersNoCopy",
 			"CFStringGetCharacterAtIndex", # No format for single unichars yet.
 			"kCFStringEncodingInvalidId", # incompatible constant declaration
+			"CFPropertyListCreateFromXMLData", # Manually generated
 			]
 
 	def makegreylist(self):

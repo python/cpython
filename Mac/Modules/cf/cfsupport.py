@@ -203,7 +203,11 @@ OptionalCFURLRef  = OpaqueByValueType("CFURLRef", "OptionalCFURLRefObj")
 
 class MyGlobalObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):
-		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
+		Output('if (itself == NULL)')
+		OutLbrace()
+		Output('PyErr_SetString(PyExc_RuntimeError, "cannot wrap NULL");')
+		Output('return NULL;')
+		OutRbrace()
 	def outputStructMembers(self):
 		GlobalObjectDefinition.outputStructMembers(self)
 		Output("void (*ob_freeit)(CFTypeRef ptr);")
@@ -501,10 +505,6 @@ f = ManualGenerator("CFStringGetUnicode", getasunicode_body);
 f.docstring = lambda: "() -> (unicode _rv)"
 CFStringRef_object.add(f)
 
-toPython_body = """
-return PyCF_CF2Python(_self->ob_itself);
-"""
-
 # Get data from CFDataRef
 getasdata_body = """
 int size = CFDataGetLength(_self->ob_itself);
@@ -518,7 +518,36 @@ f = ManualGenerator("CFDataGetData", getasdata_body);
 f.docstring = lambda: "() -> (string _rv)"
 CFDataRef_object.add(f)
 
+# Manual generator for CFPropertyListCreateFromXMLData because of funny error return
+fromxml_body = """
+CFTypeRef _rv;
+CFOptionFlags mutabilityOption;
+CFStringRef errorString;
+if (!PyArg_ParseTuple(_args, "l",
+                      &mutabilityOption))
+	return NULL;
+_rv = CFPropertyListCreateFromXMLData((CFAllocatorRef)NULL,
+                                      _self->ob_itself,
+                                      mutabilityOption,
+                                      &errorString);
+if (errorString)
+	CFRelease(errorString);
+if (_rv == NULL) {
+	PyErr_SetString(PyExc_RuntimeError, "Parse error in XML data");
+	return NULL;
+}
+_res = Py_BuildValue("O&",
+                     CFTypeRefObj_New, _rv);
+return _res;
+"""
+f = ManualGenerator("CFPropertyListCreateFromXMLData", fromxml_body)
+f.docstring = lambda: "(CFOptionFlags mutabilityOption) -> (CFTypeRefObj)"
+CFTypeRef_object.add(f)
 
+# Convert CF objects to Python objects
+toPython_body = """
+return PyCF_CF2Python(_self->ob_itself);
+"""
 
 f = ManualGenerator("toPython", toPython_body);
 f.docstring = lambda: "() -> (python_object)"
