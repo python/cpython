@@ -31,6 +31,26 @@ Tests
 
 Windows
 
+- The signal module now supports SIGBREAK on Windows, thanks to Steven
+  Scott.  Note that SIGBREAK is unique to Windows.  The default SIGBREAK
+  action remains to call Win32 ExitProcess().  This can be changed via
+  signal.signal().  For example:
+
+  # Make Ctrl+Break raise KeyboardInterrupt, like Python's default Ctrl+C
+  # (SIGINT) behavior.
+  import signal
+  signal.signal(signal.SIGBREAK,
+                signal.default_int_handler)
+
+  try:
+      while 1:
+          pass
+  except KeyboardInterrupt:
+      # We get here on Ctrl+C or Ctrl+Break now; if we had not changed
+      # SIGBREAK, only on Ctrl+C (and Ctrl+Break would terminate the
+      # program without the possibility for any Python-level cleanup).
+      print "Clean exit"
+
 
 What's New in Python 2.2a4?
 Release date: 28-Sep-2001
