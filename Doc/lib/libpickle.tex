@@ -320,7 +320,7 @@ the same \class{Pickler} instance.  These must then be matched to the
 same number of calls to the \method{load()} method of the
 corresponding \class{Unpickler} instance.  If the same object is
 pickled by multiple \method{dump()} calls, the \method{load()} will
-all yield references to the same object\footnote{\emph{Warning}: this
+all yield references to the same object.\footnote{\emph{Warning}: this
 is intended for pickling multiple objects without intervening
 modifications to the objects or their parts.  If you modify an object
 and then pickle it again using the same \class{Pickler} instance, the
@@ -328,7 +328,7 @@ object is not pickled again --- a reference to it is pickled and the
 \class{Unpickler} will return the old value, not the modified one.
 There are two problems here: (1) detecting changes, and (2)
 marshalling a minimal set of changes.  Garbage Collection may also
-become a problem here.}.
+become a problem here.}
 
 \class{Unpickler} objects are defined as:
 
@@ -402,9 +402,9 @@ function name is pickled, along with the name of module the function
 is defined in.  Neither the function's code, nor any of its function
 attributes are pickled.  Thus the defining module must be importable
 in the unpickling environment, and the module must contain the named
-object, otherwise an exception will be raised\footnote{The exception
+object, otherwise an exception will be raised.\footnote{The exception
 raised will likely be an \exception{ImportError} or an
-\exception{AttributeError} but it could be something else.}.
+\exception{AttributeError} but it could be something else.}
 
 Similarly, classes are pickled by named reference, so the same
 restrictions in the unpickling environment apply.  Note that none of
@@ -472,8 +472,8 @@ pickled.
 
 Upon unpickling, if the class also defines the method
 \method{__setstate__()}, it is called with the unpickled
-state\footnote{These methods can also be used to implement copying
-class instances.}.  If there is no \method{__setstate__()} method, the
+state.\footnote{These methods can also be used to implement copying
+class instances.}  If there is no \method{__setstate__()} method, the
 pickled state must be a dictionary and its items are assigned to the
 new instance's dictionary.  If a class defines both
 \method{__getstate__()} and \method{__setstate__()}, the state object
@@ -552,13 +552,13 @@ data stream.  Such objects are referenced by a ``persistent id'',
 which is just an arbitrary string of printable \ASCII{} characters.
 The resolution of such names is not defined by the \module{pickle}
 module; it will delegate this resolution to user defined functions on
-the pickler and unpickler\footnote{The actual mechanism for
+the pickler and unpickler.\footnote{The actual mechanism for
 associating these user defined functions is slightly different for
 \module{pickle} and \module{cPickle}.  The description given here
 works the same for both implementations.  Users of the \module{pickle}
 module could also use subclassing to effect the same results,
 overriding the \method{persistent_id()} and \method{persistent_load()}
-methods in the derived classes.}.
+methods in the derived classes.}
 
 To define external persistent id resolution, you need to set the
 \member{persistent_id} attribute of the pickler object and the
@@ -632,8 +632,8 @@ list, in which case, when the unpickler reaches a persistent id, the
 persistent id string will simply be appended to this list.  This
 functionality exists so that a pickle data stream can be ``sniffed''
 for object references without actually instantiating all the objects
-in a pickle\footnote{We'll leave you with the image of Guido and Jim
-sitting around sniffing pickles in their living rooms.}.  Setting
+in a pickle.\footnote{We'll leave you with the image of Guido and Jim
+sitting around sniffing pickles in their living rooms.}  Setting
 \member{persistent_load} to a list is usually used in conjunction with
 the \method{noload()} method on the Unpickler.
 
@@ -652,7 +652,7 @@ you do this is different depending on whether you're using
 mechanisms described here use internal attributes and methods, which
 are subject to change in future versions of Python.  We intend to
 someday provide a common interface for controlling this behavior,
-which will work in either \module{pickle} or \module{cPickle}.}.
+which will work in either \module{pickle} or \module{cPickle}.}
 
 In the \module{pickle} module, you need to derive a subclass from
 \class{Unpickler}, overriding the \method{load_global()}
@@ -790,12 +790,12 @@ should benefit from the greatly improved performance of the
 The pickle data stream produced by \module{pickle} and
 \module{cPickle} are identical, so it is possible to use
 \module{pickle} and \module{cPickle} interchangeably with existing
-pickles\footnote{Since the pickle data format is actually a tiny
+pickles.\footnote{Since the pickle data format is actually a tiny
 stack-oriented programming language, and some freedom is taken in the
 encodings of certain objects, it is possible that the two modules
 produce different data streams for the same input objects.  However it
 is guaranteed that they will always be able to read each other's
-data streams.}.
+data streams.}
 
 There are additional minor differences in API between \module{cPickle}
 and \module{pickle}, however for most applications, they are
