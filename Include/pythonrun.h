@@ -84,13 +84,15 @@ const char *Py_GetBuildInfo Py_PROTO((void));
 
 /* Internal -- various one-time initializations */
 
-PyObject *_PyBuiltin_Init Py_PROTO((void));
+PyObject *_PyBuiltin_Init_1 Py_PROTO((void));
+void _PyBuiltin_Init_2 Py_PROTO((PyObject *));
 PyObject *_PySys_Init Py_PROTO((void));
 void _PyImport_Init Py_PROTO((void));
 
 /* Various internal finalizers */
 void _PyImport_Fini Py_PROTO((void));
-void _PyBuiltin_Fini Py_PROTO((void));
+void _PyBuiltin_Fini_1 Py_PROTO((void));
+void _PyBuiltin_Fini_2 Py_PROTO((void));
 void PyMethod_Fini Py_PROTO((void));
 void PyFrame_Fini Py_PROTO((void));
 void PyCFunction_Fini Py_PROTO((void));
