@@ -40,6 +40,9 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
+extern PyObject *PMObj_New(PixMapHandle);
+extern int PMObj_Convert(PyObject *, PixMapHandle *);
+
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Controls.h>
@@ -624,11 +627,13 @@ static PyObject *Ctl_UpdateControls(_self, _args)
 {
 	PyObject *_res = NULL;
 	WindowPtr theWindow;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      WinObj_Convert, &theWindow))
+	RgnHandle updateRegion;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      WinObj_Convert, &theWindow,
+	                      ResObj_Convert, &updateRegion))
 		return NULL;
 	UpdateControls(theWindow,
-	               theWindow->visRgn);
+	               updateRegion);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -666,7 +671,7 @@ static PyMethodDef Ctl_methods[] = {
 	{"DrawControls", (PyCFunction)Ctl_DrawControls, 1,
 	 "(WindowPtr theWindow) -> None"},
 	{"UpdateControls", (PyCFunction)Ctl_UpdateControls, 1,
-	 "(WindowPtr theWindow) -> None"},
+	 "(WindowPtr theWindow, RgnHandle updateRegion) -> None"},
 	{"FindControl", (PyCFunction)Ctl_FindControl, 1,
 	 "(Point thePoint, WindowPtr theWindow) -> (ControlPartCode _rv, ControlHandle theControl)"},
 	{NULL, NULL, 0}

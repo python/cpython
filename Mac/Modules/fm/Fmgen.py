@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Fonts.h'
+# Generated from 'flap:CW8 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Fonts.h'
 
 f = Function(void, 'InitFonts',
 )

@@ -40,6 +40,9 @@ extern int GrafObj_Convert(PyObject *, GrafPtr *);
 extern PyObject *BMObj_New(BitMapPtr);
 extern int BMObj_Convert(PyObject *, BitMapPtr *);
 
+extern PyObject *PMObj_New(PixMapHandle);
+extern int PMObj_Convert(PyObject *, PixMapHandle *);
+
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <Dialogs.h>
@@ -173,10 +176,12 @@ static PyObject *DlgObj_UpdateDialog(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
+	RgnHandle updateRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &updateRgn))
 		return NULL;
 	UpdateDialog(_self->ob_itself,
-	             _self->ob_itself->visRgn);
+	             updateRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -481,7 +486,7 @@ static PyMethodDef DlgObj_methods[] = {
 	{"DrawDialog", (PyCFunction)DlgObj_DrawDialog, 1,
 	 "() -> None"},
 	{"UpdateDialog", (PyCFunction)DlgObj_UpdateDialog, 1,
-	 "() -> None"},
+	 "(RgnHandle updateRgn) -> None"},
 	{"GetDialogItem", (PyCFunction)DlgObj_GetDialogItem, 1,
 	 "(short itemNo) -> (short itemType, Handle item, Rect box)"},
 	{"SetDialogItem", (PyCFunction)DlgObj_SetDialogItem, 1,

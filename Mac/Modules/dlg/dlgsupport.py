@@ -21,7 +21,7 @@ ModalFilterProcPtr = InputOnlyType("PyObject*", "O")
 ModalFilterProcPtr.passInput = lambda name: "NewModalFilterProc(Dlg_PassFilterProc(%s))" % name
 ModalFilterUPP = ModalFilterProcPtr
 
-RgnHandle = FakeType("_self->ob_itself->visRgn") # XXX
+RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 
 DITLMethod = Type("DITLMethod", "h")
 

@@ -26,8 +26,7 @@ Cell = Point
 VarOutBufferShortsize = VarHeapOutputBufferType('char', 'short', 's')	# (buf, &len)
 InBufferShortsize = VarInputBufferType('char', 'short', 's')		# (buf, len)
 
-# For LUpdate, we alsways update the complete visible region.
-RgnHandle = FakeType("(*_self->ob_itself)->port->visRgn")
+RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 
 
 includestuff = includestuff + """
