@@ -312,7 +312,10 @@ then
 	Linux*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*) CCSHARED="-fpic";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
-	IRIX*/6*) CCSHARED="-all";;
+	IRIX*/6*)  case $CC in
+		   *gcc*) CCSHARED="-shared";;
+		   *) CCSHARED="-shared -all";;
+		   esac;;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -328,14 +331,17 @@ then
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
-	IRIX*/6*) LINKFORSHARED="-all";;
-	SunOS/5*) if test "$CC" = "gcc"
-		then
-		    if gcc -Xlinker -V 2>/dev/null | grep BFD >/dev/null
+        IRIX*/6*) case $CC in
+                  *gcc*) LINKFORSHARED="-shared -Xlinker -all";;
+                  *) LINKFORSHARED="-shared -all";;
+                  esac;;
+	SunOS/5*) case $CC in
+		  *gcc*)
+		    if $CC -Xlinker -V 2>/dev/null | grep BFD >/dev/null
 		    then
 			LINKFORSHARED="-Xlinker --export-dynamic"
-		    fi
-		fi;;
+		    fi;;
+		  esac;;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
