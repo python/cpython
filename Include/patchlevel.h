@@ -26,10 +26,10 @@
 #define PY_RELEASE_SERIAL	2
 
 /* Version as a string */
-#define PY_VERSION		"2.1c1"
+#define PY_VERSION		"2.1c2"
 
 /* Historic */
-#define PATCHLEVEL		"2.1c1"
+#define PATCHLEVEL		"2.1c2"
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */
