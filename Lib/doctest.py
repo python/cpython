@@ -362,6 +362,50 @@ class _SpoofOut(StringIO):
         if hasattr(self, "softspace"):
             del self.softspace
 
+# Worst-case linear-time ellipsis matching.
+def ellipsis_match(want, got):
+    if ELLIPSIS_MARKER not in want:
+        return want == got
+    # Remove \n from ...\n, else the newline will be required,
+    # and (for example) ... on a line by itself can't match
+    # nothing gracefully.
+    want = want.replace(ELLIPSIS_MARKER + '\n', ELLIPSIS_MARKER)
+    # Find "the real" strings.
+    ws = want.split(ELLIPSIS_MARKER)
+    assert len(ws) >= 2
+    # Match.  In general, we only need to find the leftmost non-overlapping
+    # match for each piece.  "Real strings" at the start or end of `want`
+    # are special cases.
+    w = ws[0]
+    if w:
+        # An ellipsis didn't start `want`.  We need to match exactly
+        # at the start.
+        if not got.startswith(w):
+            return False
+        pos = len(w)
+        del ws[0]
+    else:
+        pos = 0
+
+    for w in ws:
+        # w may be '' at times, if there are consecutive ellipses, or
+        # due to an ellipsis at the start or end of `want`.  That's OK.
+        # Search for an empty string succeeds, and doesn't change pos.
+        pos = got.find(w, pos)
+        if pos < 0:
+            return False
+        pos += len(w)
+
+    # If `want` ended with an ellipsis, the tail matches anything.
+    if ws[-1] == '':
+        return True
+    # Else `want` ended with a real string.  If the last real match
+    # exhausted `got`, we win.
+    if pos == len(got):
+        return True
+    # Else maybe we matched the last real string too early.
+    return got.endswith(ws[-1])
+
 ######################################################################
 ## 2. Example & DocTest
 ######################################################################
@@ -1475,22 +1519,9 @@ class OutputChecker:
                 return True
 
         # The ELLIPSIS flag says to let the sequence "..." in `want`
-        # match any substring in `got`.  We implement this by
-        # transforming `want` into a regular expression.
+        # match any substring in `got`.
         if optionflags & ELLIPSIS:
-            # Remove \n from ...\n, else the newline will be required,
-            # and (for example) ... on a line by itself can't match
-            # nothing gracefully.
-            want_re = want.replace(ELLIPSIS_MARKER + '\n', ELLIPSIS_MARKER)
-            # Escape any special regexp characters
-            want_re = re.escape(want_re)
-            # Replace escaped ellipsis markers ('\.\.\.') with .*
-            want_re = want_re.replace(re.escape(ELLIPSIS_MARKER), '.*')
-            # Require that it matches the entire string; and set the
-            # re.DOTALL flag (with '(?s)').
-            want_re = '(?s)^%s$' % want_re
-            # Check if the `want_re` regexp matches got.
-            if re.match(want_re, got):
+            if ellipsis_match(want, got):
                 return True
 
         # We didn't find any match; return false.
