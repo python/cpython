@@ -248,6 +248,8 @@ I_APPLETS : (buildapplet, None, [
 		(":Mac:scripts:BuildApplication.py", "BuildApplication"),
 		(":Mac:scripts:ConfigurePython.py", "ConfigurePython"),
 		(":Mac:Tools:IDE:PythonIDE.py", "Python IDE"),
+		(":Mac:Tools:CGI:PythonCGISlave.py", ":Mac:Tools:CGI:PythonCGISlave"),
+		(":Mac:Tools:CGI:BuildCGIApplet.py", ":Mac:Tools:CGI:BuildCGIApplet"),
 	]),
 }
 
