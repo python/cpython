@@ -31,6 +31,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifndef __MWERKS__
 #define ResultUPP ResultProcPtr
 #define NewResultProc(x) (x)
+/* The '2' has move in this name... */
+#define Result2UPP ResultProc2Ptr
+#define NewResult2Proc(x) (x)
 #endif
 
 static object *ErrorObject;
@@ -360,6 +363,7 @@ dnr_HInfo(self, args)
 	OSErr err;
 	char *hostname;
 	dnrrobject *rv;
+	Result2UPP cb_upp = NewResult2Proc(dnrr_done);
 
 	if (!newgetargs(args, "s", &hostname))
 		return NULL;
@@ -367,7 +371,7 @@ dnr_HInfo(self, args)
 		return NULL;
 	if ( (rv=newdnrrobject(DNR_HINFO)) == NULL )
 		return NULL;
-	err = HInfo(hostname, &rv->hinfo, (ResultProc2Ptr)dnrr_done, (char *)rv);
+	err = HInfo(hostname, &rv->hinfo, cb_upp, (char *)rv);
 	if ( err == cacheFault ) {
 		rv->waiting++;
 		INCREF(rv);
@@ -392,6 +396,7 @@ dnr_MXInfo(self, args)
 	OSErr err;
 	char *hostname;
 	dnrrobject *rv;
+	Result2UPP cb_upp = NewResult2Proc(dnrr_done);
 
 	if (!newgetargs(args, "s", &hostname))
 		return NULL;
@@ -399,7 +404,7 @@ dnr_MXInfo(self, args)
 		return NULL;
 	if ( (rv=newdnrrobject(DNR_MX)) == NULL )
 		return NULL;
-	err = MXInfo(hostname, &rv->hinfo, (ResultProc2Ptr)dnrr_done, (char *)rv);
+	err = MXInfo(hostname, &rv->hinfo, cb_upp, (char *)rv);
 	if ( err == cacheFault ) {
 		rv->waiting++;
 		INCREF(rv);
