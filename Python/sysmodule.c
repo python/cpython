@@ -114,15 +114,15 @@ static object *sysin, *sysout, *syserr;
 void
 initsys()
 {
+	extern int fclose PROTO((FILE *));
 	object *m = initmodule("sys", sys_methods);
 	sysdict = getmoduledict(m);
 	INCREF(sysdict);
 	/* NB keep an extra ref to the std files to avoid closing them
 	   when the user deletes them */
-	/* XXX File objects should have a "don't close" flag instead */
-	sysin = newopenfileobject(stdin, "<stdin>", "r");
-	sysout = newopenfileobject(stdout, "<stdout>", "w");
-	syserr = newopenfileobject(stderr, "<stderr>", "w");
+	sysin = newopenfileobject(stdin, "<stdin>", "r", fclose);
+	sysout = newopenfileobject(stdout, "<stdout>", "w", fclose);
+	syserr = newopenfileobject(stderr, "<stderr>", "w", fclose);
 	if (err_occurred())
 		fatal("can't create sys.std* file objects");
 	dictinsert(sysdict, "stdin", sysin);
