@@ -8,6 +8,17 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 from test_support import verify, verbose, TestFailed
 import sys
 
+# Test basic sanity of repr()
+verify(repr(u'abc') == "u'abc'")
+verify(repr(u'ab\\c') == "u'ab\\\\c'")
+verify(repr(u'ab\\') == "u'ab\\\\'")
+verify(repr(u'\\c') == "u'\\\\c'")
+verify(repr(u'\\') == "u'\\\\'")
+verify(repr(u'\n') == "u'\\n'")
+verify(repr(u'\r') == "u'\\r'")
+verify(repr(u'\t') == "u'\\t'")
+verify(repr(u'\b') == "u'\\x08'")
+
 def test(method, input, output, *args):
     if verbose:
         print '%s.%s%s =? %s... ' % (repr(input), method, args, repr(output)),
