@@ -69,7 +69,7 @@ class Packer:
 		self.pack_uint(n)
 		self.pack_fstring(n, s)
 
-	pack_opaque = pack_fopaque
+	pack_opaque = pack_string
 
 	def pack_list(self, list, pack_item):
 		for item in list:
@@ -176,7 +176,7 @@ class Unpacker:
 		n = self.unpack_uint()
 		return self.unpack_fstring(n)
 
-	unpack_opaque = unpack_fopaque
+	unpack_opaque = unpack_string
 
 	def unpack_list(self, unpack_item):
 		list = []
