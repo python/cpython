@@ -544,6 +544,9 @@ class Checker:
     def checkforhtml(self, info, url):
         if info.has_key('content-type'):
             ctype = cgi.parse_header(info['content-type'])[0].lower()
+            if ';' in ctype:
+                # handle content-type: text/html; charset=iso8859-1 :
+                ctype = ctype.split(';', 1)[0].strip()
         else:
             if url[-1:] == "/":
                 return 1
