@@ -1,5 +1,5 @@
 \section{\module{urlparse} ---
-         Parse URLs into components.}
+         Parse URLs into components}
 \declaremodule{standard}{urlparse}
 
 \modulesynopsis{Parse URLs into components.}
@@ -11,10 +11,11 @@
 \indexii{relative}{URL}
 
 
-This module defines a standard interface to break URL strings up in
-components (addressing scheme, network location, path etc.), to combine
-the components back into a URL string, and to convert a ``relative
-URL'' to an absolute URL given a ``base URL.''
+This module defines a standard interface to break Uniform Resource
+Locator (URL) strings up in components (addressing scheme, network
+location, path etc.), to combine the components back into a URL
+string, and to convert a ``relative URL'' to an absolute URL given a
+``base URL.''
 
 The module has been designed to match the Internet RFC on Relative
 Uniform Resource Locators (and discovered a bug in an earlier
@@ -80,7 +81,7 @@ yields the string
 \begin{verbatim}
 'http://www.cwi.nl/%7Eguido/FAQ.html'
 \end{verbatim}
-%
+
 The \var{allow_fragments} argument has the same meaning as for
 \code{urlparse()}.
 \end{funcdesc}
@@ -95,4 +96,8 @@ The \var{allow_fragments} argument has the same meaning as for
         absolute and a relative URL, including a fair normal of
         ``Abnormal Examples'' which govern the treatment of border
         cases.}
+  \seerfc{2396}{Uniform Resource Identifiers (URI): Generic Syntax}{
+        Document describing the generic syntactic requirements for
+        both Uniform Resource Names (URNs) and Uniform Resource
+        Locators (URLs).}
 \end{seealso}
