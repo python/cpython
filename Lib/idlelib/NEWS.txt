@@ -3,6 +3,10 @@ What's New in IDLE 1.0.4?
 
 *Release date: XX-Jan-2005*
 
+- checking sys.platform for substring 'win' was breaking IDLE docs on Mac
+  (darwin).  Also, Mac Safari browser requires full file:// URIs.  Backport of
+  fix for SF 900580.
+
 - rpc.py:SocketIO - Large modules were generating large pickles when downloaded
   to the execution server.  The return of the OK response from the subprocess
   initialization was interfering and causing the sending socket to be not
