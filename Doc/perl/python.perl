@@ -1360,13 +1360,13 @@ sub figure_column_alignment($){
     my $mark = substr($a, 0, 1);
     my $r = '';
     if ($mark eq 'c')
-      { $r = ' align="center"'; }
+      { $r = ' class="center"'; }
     elsif ($mark eq 'r')
-      { $r = ' align="right"'; }
+      { $r = ' class="right" '; }
     elsif ($mark eq 'l')
-      { $r = ' align="left"'; }
+      { $r = ' class="left"  '; }
     elsif ($mark eq 'p')
-      { $r = ' align="left"'; }
+      { $r = ' class="left"  '; }
     return $r;
 }
 
@@ -1410,14 +1410,14 @@ sub do_env_tableii{
     my $a1 = $col_aligns[0];
     my $a2 = $col_aligns[1];
     s/\\lineii</\\lineii[$a1|$a2]</g;
-    return '<table border align="center" style="border-collapse: collapse">'
+    return '<table class="realtable">'
            . "\n  <thead>"
-           . "\n    <tr class=\"tableheader\">"
-           . "\n      $th1<b>$h1</b>\&nbsp;</th>"
-           . "\n      $th2<b>$h2</b>\&nbsp;</th>"
+           . "\n    <tr>"
+           . "\n      $th1$h1</th>"
+           . "\n      $th2$h2</th>"
            . "\n      </tr>"
            . "\n    </thead>"
-           . "\n  <tbody valign=\"baseline\">"
+           . "\n  <tbody>"
            . $_
            . "\n    </tbody>"
            . "\n</table>";
@@ -1434,15 +1434,9 @@ sub do_cmd_lineii{
     my $c2 = next_argument();
     s/[\s\n]+//;
     my($sfont, $efont) = get_table_col1_fonts();
-    $c1 = '&nbsp;' if ($c1 eq '');
-    $c2 = '&nbsp;' if ($c2 eq '');
     my($c1align, $c2align) = split('\|', $aligns);
-    my $padding = '';
-    if ($c1align =~ /align="right"/ || $c1 eq '') {
-        $padding = '&nbsp;';
-    }
-    return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
-           . "        $c2align$c2</td>"
+    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
+           . "        $c2align$c2</td></tr>"
            . $_;
 }
 
@@ -1460,15 +1454,15 @@ sub do_env_tableiii{
     my $a2 = $col_aligns[1];
     my $a3 = $col_aligns[2];
     s/\\lineiii</\\lineiii[$a1|$a2|$a3]</g;
-    return '<table border align="center" style="border-collapse: collapse">'
+    return '<table class="realtable">'
            . "\n  <thead>"
-           . "\n    <tr class=\"tableheader\">"
-           . "\n      $th1<b>$h1</b>\&nbsp;</th>"
-           . "\n      $th2<b>$h2</b>\&nbsp;</th>"
-           . "\n      $th3<b>$h3</b>\&nbsp;</th>"
+           . "\n    <tr>"
+           . "\n      $th1$h1</th>"
+           . "\n      $th2$h2</th>"
+           . "\n      $th3$h3</th>"
            . "\n      </tr>"
            . "\n    </thead>"
-           . "\n  <tbody valign=\"baseline\">"
+           . "\n  <tbody>"
            . $_
            . "\n    </tbody>"
            . "\n</table>";
@@ -1486,17 +1480,10 @@ sub do_cmd_lineiii{
     my $c3 = next_argument();
     s/[\s\n]+//;
     my($sfont, $efont) = get_table_col1_fonts();
-    $c1 = '&nbsp;' if ($c1 eq '');
-    $c2 = '&nbsp;' if ($c2 eq '');
-    $c3 = '&nbsp;' if ($c3 eq '');
     my($c1align, $c2align, $c3align) = split('\|', $aligns);
-    my $padding = '';
-    if ($c1align =~ /align="right"/ || $c1 eq '') {
-        $padding = '&nbsp;';
-    }
-    return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
+    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
            . "        $c2align$c2</td>\n"
-           . "        $c3align$c3</td>"
+           . "        $c3align$c3</td></tr>"
            . $_;
 }
 
@@ -1516,16 +1503,16 @@ sub do_env_tableiv{
     my $a3 = $col_aligns[2];
     my $a4 = $col_aligns[3];
     s/\\lineiv</\\lineiv[$a1|$a2|$a3|$a4]</g;
-    return '<table border align="center" style="border-collapse: collapse">'
+    return '<table class="realtable">'
            . "\n  <thead>"
-           . "\n    <tr class=\"tableheader\">"
-           . "\n      $th1<b>$h1</b>\&nbsp;</th>"
-           . "\n      $th2<b>$h2</b>\&nbsp;</th>"
-           . "\n      $th3<b>$h3</b>\&nbsp;</th>"
-           . "\n      $th4<b>$h4</b>\&nbsp;</th>"
+           . "\n    <tr>"
+           . "\n      $th1$h1</th>"
+           . "\n      $th2$h2</th>"
+           . "\n      $th3$h3</th>"
+           . "\n      $th4$h4</th>"
            . "\n      </tr>"
            . "\n    </thead>"
-           . "\n  <tbody valign=\"baseline\">"
+           . "\n  <tbody>"
            . $_
            . "\n    </tbody>"
            . "\n</table>";
@@ -1544,19 +1531,11 @@ sub do_cmd_lineiv{
     my $c4 = next_argument();
     s/[\s\n]+//;
     my($sfont, $efont) = get_table_col1_fonts();
-    $c1 = '&nbsp;' if ($c1 eq '');
-    $c2 = '&nbsp;' if ($c2 eq '');
-    $c3 = '&nbsp;' if ($c3 eq '');
-    $c4 = '&nbsp;' if ($c4 eq '');
     my($c1align, $c2align, $c3align, $c4align) = split('\|', $aligns);
-    my $padding = '';
-    if ($c1align =~ /align="right"/ || $c1 eq '') {
-        $padding = '&nbsp;';
-    }
-    return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
+    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
            . "        $c2align$c2</td>\n"
            . "        $c3align$c3</td>\n"
-           . "        $c4align$c4</td>"
+           . "        $c4align$c4</td></tr>"
            . $_;
 }
 
@@ -1578,17 +1557,17 @@ sub do_env_tablev{
     my $a4 = $col_aligns[3];
     my $a5 = $col_aligns[4];
     s/\\linev</\\linev[$a1|$a2|$a3|$a4|$a5]</g;
-    return '<table border align="center" style="border-collapse: collapse">'
+    return '<table class="realtable">'
            . "\n  <thead>"
-           . "\n    <tr class=\"tableheader\">"
-           . "\n      $th1<b>$h1</b>\&nbsp;</th>"
-           . "\n      $th2<b>$h2</b>\&nbsp;</th>"
-           . "\n      $th3<b>$h3</b>\&nbsp;</th>"
-           . "\n      $th4<b>$h4</b>\&nbsp;</th>"
-           . "\n      $th5<b>$h5</b>\&nbsp;</th>"
+           . "\n    <tr>"
+           . "\n      $th1$h1</th>"
+           . "\n      $th2$h2</th>"
+           . "\n      $th3$h3</th>"
+           . "\n      $th4$h4</th>"
+           . "\n      $th5$h5</th>"
            . "\n      </tr>"
            . "\n    </thead>"
-           . "\n  <tbody valign=\"baseline\">"
+           . "\n  <tbody>"
            . $_
            . "\n    </tbody>"
            . "\n</table>";
@@ -1608,21 +1587,12 @@ sub do_cmd_linev{
     my $c5 = next_argument();
     s/[\s\n]+//;
     my($sfont, $efont) = get_table_col1_fonts();
-    $c1 = '&nbsp;' if ($c1 eq '');
-    $c2 = '&nbsp;' if ($c2 eq '');
-    $c3 = '&nbsp;' if ($c3 eq '');
-    $c4 = '&nbsp;' if ($c4 eq '');
-    $c5 = '&nbsp;' if ($c5 eq '');
     my($c1align, $c2align, $c3align, $c4align, $c5align) = split('\|',$aligns);
-    my $padding = '';
-    if ($c1align =~ /align="right"/ || $c1 eq '') {
-        $padding = '&nbsp;';
-    }
-    return "\n    <tr>$c1align$sfont$c1$efont$padding</td>\n"
+    return "\n    <tr>$c1align$sfont$c1$efont</td>\n"
            . "        $c2align$c2</td>\n"
            . "        $c3align$c3</td>\n"
            . "        $c4align$c4</td>\n"
-           . "        $c5align$c5</td>"
+           . "        $c5align$c5</td></tr>"
            . $_;
 }
 

@@ -125,8 +125,49 @@ div.note .label         { margin-right: 0.5em;
 .file                   { font-family: avantgarde, sans-serif; }
 .guilabel               { font-family: avantgarde, sans-serif; }
 
-.tableheader            { background-color: #99ccff;
-                          font-family: avantgarde, sans-serif; }
+.realtable              { border-collapse: collapse;
+                          border-color: black;
+                          border-style: solid;
+                          border-width: 0px 0px 2px 0px;
+                          /* This "empty-cells" property should allow us to
+                             avoid having anything for empty cells,
+                             but many browsers don't implement this at
+                             all. */
+                          empty-cells: show;
+                          margin-left: auto;
+                          margin-right: auto;
+                          padding-left: 0.4em;
+                          padding-right: 0.4em;
+                          }
+.realtable tbody        { vertical-align: baseline; }
+.realtable tfoot        { display: table-footer-group; }
+.realtable thead        { background-color: #99ccff;
+                          border-width: 0px 0px 2px 1px;
+                          display: table-header-group;
+                          font-family: avantgarde, sans-serif;
+                          font-weight: bold;
+                          vertical-align: baseline;
+                          }
+.realtable thead :first-child {
+                          border-width: 0px 0px 2px 0px;
+                          }
+.realtable thead th     { border-width: 0px 0px 2px 1px }
+.realtable td,
+.realtable th           { border-color: black;
+                          border-style: solid;
+                          border-width: 0px 0px 1px 1px;
+                          padding-left: 0.4em;
+                          padding-right: 0.4em;
+                          text-align: inherit;
+                          }
+.realtable td:first-child,
+.realtable th:first-child {
+                          border-left-width: 0px;
+                          vertical-align: baseline;
+                          }
+.realtable .center      { text-align: center; }
+.realtable .left        { text-align: left; }
+.realtable .right       { text-align: right; }
 
 .refcount-info          { font-style: italic; }
 .refcount-info .value   { font-weight: bold;
