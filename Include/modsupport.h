@@ -13,6 +13,7 @@ extern DL_IMPORT(int) PyArg_Parse(PyObject *, char *, ...);
 extern DL_IMPORT(int) PyArg_ParseTuple(PyObject *, char *, ...);
 extern DL_IMPORT(int) PyArg_ParseTupleAndKeywords(PyObject *, PyObject *,
                                                   char *, char **, ...);
+extern DL_IMPORT(int) PyArg_UnpackTuple(PyObject *, char *, int, int, ...);
 extern DL_IMPORT(PyObject *) Py_BuildValue(char *, ...);
 
 extern DL_IMPORT(int) PyArg_VaParse(PyObject *, char *, va_list);
