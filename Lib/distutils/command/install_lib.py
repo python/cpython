@@ -6,7 +6,7 @@ import sys, string
 from distutils.core import Command
 from distutils.util import copy_tree
 
-class install_py (Command):
+class install_lib (Command):
 
     description = "install pure Python modules"
 
