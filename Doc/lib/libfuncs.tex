@@ -92,8 +92,8 @@ exactly one argument.)
   \var{expression} argument is parsed and evaluated as a Python
   expression (technically speaking, a condition list) using the
   \var{globals} and \var{locals} dictionaries as global and local name
-  space.  If the \var{globals} dictionary is omitted it defaults to
-  the \var{locals} dictionary.  If both dictionaries are omitted, the
+  space.  If the \var{locals} dictionary is omitted it defaults to
+  the \var{globals} dictionary.  If both dictionaries are omitted, the
   expression is executed in the environment where \code{eval} is
   called.  The return value is the result of the evaluated expression.
   Syntax errors are reported as exceptions.  Example:
@@ -119,20 +119,21 @@ exactly one argument.)
 \end{funcdesc}
 
 \begin{funcdesc}{execfile}{file\optional{\, globals\optional{\, locals}}}
-  This function is similar to the \code{eval()} function or the
+  This function is similar to the
   \code{exec} statement, but parses a file instead of a string.  It is
   different from the \code{import} statement in that it does not use
   the module administration --- it reads the file unconditionally and
-  does not create a new module.
+  does not create a new module.\footnote{It is used relatively rarely
+  so does not warrant being made into a statement.}
 
   The arguments are a file name and two optional dictionaries.  The
   file is parsed and evaluated as a sequence of Python statements
   (similarly to a module) using the \var{globals} and \var{locals}
-  dictionaries as global and local name space.  If the \var{globals}
-  dictionary is omitted it defaults to the \var{locals} dictionary.
+  dictionaries as global and local name space.  If the \var{locals}
+  dictionary is omitted it defaults to the \var{globals} dictionary.
   If both dictionaries are omitted, the expression is executed in the
-  environment where \code{execfile} is called.  The return value is
-  None.
+  environment where \code{execfile()} is called.  The return value is
+  \code{None}.
 \end{funcdesc}
 
 \begin{funcdesc}{filter}{function\, list}
@@ -173,8 +174,8 @@ removed.
 \end{funcdesc}
 
 \begin{funcdesc}{hex}{x}
-  Convert a number to a hexadecimal string.  The result is a valid
-  Python expression.
+  Convert an integer number (of any size) to a hexadecimal string.
+  The result is a valid Python expression.
 \end{funcdesc}
 
 \begin{funcdesc}{id}{object}
@@ -194,7 +195,9 @@ removed.
 
 \begin{funcdesc}{int}{x}
   Convert a number to a plain integer.  The argument may be a plain or
-  long integer or a floating point number.
+  long integer or a floating point number.  Conversion of floating
+  point numbers to integers is defined by the C semantics; normally
+  the conversion truncates towards zero.
 \end{funcdesc}
 
 \begin{funcdesc}{len}{s}
@@ -231,8 +234,8 @@ any kind of sequence; the result is always a list.
 \end{funcdesc}
 
 \begin{funcdesc}{oct}{x}
-  Convert a number to an octal string.  The result is a valid Python
-  expression.
+  Convert an integer number (of any size) to an octal string.  The
+  result is a valid Python expression.
 \end{funcdesc}
 
 \begin{funcdesc}{open}{filename\optional{\, mode\optional{\, bufsize}}}
@@ -290,7 +293,8 @@ there's no reliable way to determine whether this is the case.}
   the last element is the largest \code{\var{start} + \var{i} *
   \var{step}} less than \var{end}; if \var{step} is negative, the last
   element is the largest \code{\var{start} + \var{i} * \var{step}}
-  greater than \var{end}.  \var{step} must not be zero.  Example:
+  greater than \var{end}.  \var{step} must not be zero (or else an
+  exception is raised).  Example:
 
 \bcode\begin{verbatim}
 >>> range(10)
@@ -321,7 +325,7 @@ there's no reliable way to determine whether this is the case.}
 >>> s = raw_input('--> ')
 --> Monty Python's Flying Circus
 >>> s
-'Monty Python\'s Flying Circus'
+"Monty Python's Flying Circus"
 >>> 
 \end{verbatim}\ecode
 \end{funcdesc}
@@ -337,17 +341,48 @@ sequence.
 \end{funcdesc}
 
 \begin{funcdesc}{reload}{module}
-  Re-parse and re-initialize an already imported \var{module}.  The
-  argument must be a module object, so it must have been successfully
-  imported before.  This is useful if you have edited the module source
-  file using an external editor and want to try out the new version
-  without leaving the Python interpreter.  Note that if a module is
-  syntactically correct but its initialization fails, the first
-  \code{import} statement for it does not import the name, but does
-  create a (partially initialized) module object; to reload the module
-  you must first \code{import} it again (this will just make the
-  partially initialized module object available) before you can
-  \code{reload()} it.
+Re-parse and re-initialize an already imported \var{module}.  The
+argument must be a module object, so it must have been successfully
+imported before.  This is useful if you have edited the module source
+file using an external editor and want to try out the new version
+without leaving the Python interpreter.  The return value is the
+module object (i.e.\ the same as the \var{module} argument).
+
+There are a number of caveats:
+
+If a module is syntactically correct but its initialization fails, the
+first \code{import} statement for it does not bind its name locally,
+but does store a (partially initialized) module object in
+\code{sys.modules}.  To reload the module you must first
+\code{import} it again (this will bind the name to the partially
+initialized module object) before you can \code{reload()} it.
+
+When a module is reloaded, its dictionary (containing the module's
+global variables) is retained.  Redefinitions of names will override
+the old definitions, so this is generally not a problem.  If the new
+version of a module does not define a name that was defined by the old
+version, the old definition remains.  This feature can be used to the
+module's advantage if it maintains a global table or cache of objects
+--- with a \code{try} statement it can test for the table's presence
+and skip its initialization if desired.
+
+It is legal though generally not very useful to reload built-in or
+dynamically loaded modules, except for \code{sys}, \code{__main__} and
+\code{__builtin__}.  In certain cases, however, extension modules are
+not designed to be initialized more than once, and may fail in
+arbitrary ways when reloaded.
+
+If a module imports objects from another module using \code{from}
+{\ldots} \code{import} {\ldots}, calling \code{reload()} for the other
+module does not redefine the objects imported from it --- one way
+around this is to re-execute the \code{from} statement, another is to
+use \code{import} and qualified names (\var{module}.\var{name})
+instead.
+
+If a module instantiates instances of a class, reloading the module
+that defines the class does not affect the method definitions of the
+instances --- they continue to use the old class definition.  The same
+is true for derived classes.
 \end{funcdesc}
 
 \begin{funcdesc}{repr}{object}
@@ -385,23 +420,25 @@ always attempt to return a string that is acceptable to \code{eval()};
 its goal is to return a printable string.
 \end{funcdesc}
 
-\begin{funcdesc}{tuple}{object}
+\begin{funcdesc}{tuple}{sequence}
 Return a tuple whose items are the same and in the same order as
-\var{object}'s items.  If \var{object} is alread a tuple, it
+\var{sequence}'s items.  If \var{sequence} is alread a tuple, it
 is returned unchanged.  For instance, \code{tuple('abc')} returns
 returns \code{('a', 'b', 'c')} and \code{tuple([1, 2, 3])} returns
 \code{(1, 2, 3)}.
 \end{funcdesc}
 
 \begin{funcdesc}{type}{object}
-% XXXJH xref to buil-in objects here?
-  Return the type of an \var{object}.  The return value is a type
-  object.  There is not much you can do with type objects except compare
-  them to other type objects; e.g., the following checks if a variable
-  is a string:
+Return the type of an \var{object}.  The return value is a type
+object.  The standard module \code{types} defines names for all
+built-in types.
+\stmodindex{types}
+\obindex{type}
+For instance:
 
 \bcode\begin{verbatim}
->>> if type(x) == type(''): print 'It is a string'
+>>> import types
+>>> if type(x) == types.StringType: print "It's a string"
 \end{verbatim}\ecode
 \end{funcdesc}
 
@@ -424,7 +461,7 @@ which yields the same values as the corresponding list, without
 actually storing them all simultaneously.  The advantage of
 \code{xrange()} over \code{range()} is minimal (since \code{xrange()}
 still has to create the values when asked for them) except when a very
-large range is used on a memory-starved machine (e.g. DOS) or when all
+large range is used on a memory-starved machine (e.g. MS-DOS) or when all
 of the range's elements are never used (e.g. when the loop is usually
 terminated with \code{break}).
 \end{funcdesc}

@@ -21,8 +21,11 @@ Module \code{aifc} defines the following function:
 Open an AIFF or AIFF-C file and return an object instance with
 methods that are described below.  The argument file is either a
 string naming a file or a file object.  The mode is either the string
-'r' when the file must be opened for reading, or 'w' when the file
-must be opened for writing.
+\code{'r'} when the file must be opened for reading, or \code{'w'}
+when the file must be opened for writing.  When used for writing, the
+file object should be seekable, unless you know ahead of time how many
+samples you are going to write in total and use
+\code{writeframesraw()} and \code{setnframes()}.
 \end{funcdesc}
 
 Objects returned by \code{aifc.open()} when a file is opened for

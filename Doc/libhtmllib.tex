@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{htmllib}}
+\section{Standard Module \sectcode{htmllib}}
 \stmodindex{htmllib}
 \index{HTML}
 \index{hypertext}
@@ -27,12 +27,14 @@ The following is a summary of the interface defined by
 \item
 The interface to feed data to an instance is through the \code{feed()}
 method, which takes a string argument.  This can be called with as
-little or as much text at a time as desired.  When the data contains complete
+little or as much text at a time as desired;
+\code{p.feed(a); p.feed(b)} has the same effect as \code{p.feed(a+b)}.
+When the data contains complete
 HTML elements, these are processed immediately; incomplete elements
 are saved in a buffer.  To force processing of all unprocessed data,
 call the \code{close()} method.
 
-Example: to parse the entire contents of a file, do
+Example: to parse the entire contents of a file, do\\
 \code{parser.feed(open(file).read()); parser.close()}.
 
 \item
@@ -142,7 +144,7 @@ sheets are:
 \index{style sheet}
 
 \begin{datadesc}{NullStylesheet}
-A style sheet for use on a dumb output device such as an ASCII
+A style sheet for use on a dumb output device such as an \ASCII{}
 terminal.
 \end{datadesc}
 
@@ -242,9 +244,9 @@ spaces.
 \end{funcdesc}
 
 \begin{datadesc}{nospace}
-If this instance variable is true, empty words are ignored by
-\code{addword}.  It is set to false after a non-empty word has been
-added.
+If this instance variable is true, empty words should be ignored by
+\code{addword}.  It should be set to false after a non-empty word has
+been added.
 \end{datadesc}
 
 \begin{funcdesc}{setjust}{justification}

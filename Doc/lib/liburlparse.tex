@@ -1,7 +1,7 @@
-\section{Built-in module \sectcode{urlparse}}
+\section{Standard Module \sectcode{urlparse}}
 \stmodindex{urlparse}
 \index{WWW}
-\indexii{World-Wide}{Web}
+\index{World-Wide Web}
 \index{URL}
 \indexii{URL}{parsing}
 \indexii{relative}{URL}
@@ -28,14 +28,14 @@ identifier).  This corresponds to the general structure of a URL:
 Each tuple item is a string, possibly empty.
 The components are not broken up in smaller parts (e.g. the network
 location is a single string), and \% escapes are not expanded.
-The delimiters as shown above are not part of the tuple items, {\em
-except} for a leading slash in the \var{path} component, which is
-kept if present.
+The delimiters as shown above are not part of the tuple items,
+except for a leading slash in the \var{path} component, which is
+retained if present.
 
 Example:
 \code{urlparse('http://www.cwi.nl:80/\%7eguido/Python.html')}
 yields the tuple
-\code{('http', 'www.cwi.nl:80', '/\%e7guido/Python.html', '', '', '')}.
+\code{('http', 'www.cwi.nl:80', '/\%7eguido/Python.html', '', '', '')}.
 
 If the \var{default_scheme} argument is specified, it gives the
 default addressing scheme, to be used only if the URL string does not

@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{pickle}}
+\section{Standard Module \sectcode{pickle}}
 \stmodindex{pickle}
 \index{persistency}
 \indexii{persistent}{objects}
@@ -6,6 +6,8 @@
 \indexii{marshalling}{objects}
 \indexii{flattening}{objects}
 \indexii{pickling}{objects}
+
+\renewcommand{\indexsubitem}{(in module pickle)}
 
 The \code{pickle} module implements a basic but powerful algorithm for
 ``pickling'' (a.k.a.\ serializing, marshalling or flattening) nearly
@@ -28,11 +30,11 @@ following correctly:
 
 \begin{itemize}
 
-\item recursive objects
+\item recursive objects (objects containing references to themselves)
 
-\item pointer sharing
+\item object sharing (references to the same object in different places)
 
-\item instances of user-defined classes
+\item user-defined classes and their instances
 
 \end{itemize}
 
@@ -42,13 +44,13 @@ standards such as CORBA (which probably can't represent pointer
 sharing or recursive objects); however it means that non-Python
 programs may not be able to reconstruct pickled Python objects.
 
-The \code{pickle} data format uses a printable ASCII representation.
+The \code{pickle} data format uses a printable \ASCII{} representation.
 This is slightly more voluminous than a binary representation.
 However, small integers actually take {\em less} space when
 represented as minimal-size decimal strings than when represented as
 32-bit binary numbers, and strings are only much longer if they
 contain many control characters or 8-bit characters.  The big
-advantage of using printable ASCII (and of some other characteristics
+advantage of using printable \ASCII{} (and of some other characteristics
 of \code{pickle}'s representation) is that for debugging or recovery
 purposes it is possible for a human to read the pickled file with a
 standard text editor.  (I could have gone a step further and used a
@@ -67,7 +69,7 @@ Trojan horses into a program.
 For the benefit of persistency modules written using \code{pickle}, it
 supports the notion of a reference to an object outside the pickled
 data stream.  Such objects are referenced by a name, which is an
-arbitrary string of printable ASCII characters.  The resolution of
+arbitrary string of printable \ASCII{} characters.  The resolution of
 such names is not defined by the \code{pickle} module --- the
 persistent object module will have to implement a method
 \code{persistent_load}.  To write references to persistent objects,
@@ -78,6 +80,8 @@ There are some restrictions on the pickling of class instances.
 
 First of all, the class must be defined at the top level in a module.
 
+\renewcommand{\indexsubitem}{(pickle protocol)}
+
 Next, it must normally be possible to create class instances by
 calling the class without arguments.  If this is undesirable, the
 class can define a method \code{__getinitargs__()}, which should
@@ -86,7 +90,7 @@ class constructor (\code{__init__()}).
 \ttindex{__getinitargs__}
 \ttindex{__init__}
 
-Classes can further influence how they are pickled --- if the class
+Classes can further influence how their instances are pickled --- if the class
 defines the method \code{__getstate__()}, it is called and the return
 state is pickled as the contents for the instance, and if the class
 defines the method \code{__setstate__()}, it is called with the
@@ -113,6 +117,13 @@ will see many versions of a class, it may be worthwhile to put a version
 number in the objects so that suitable conversions can be made by the
 class's \code{__setstate__()} method.
 
+When a class itself is pickled, only its name is pickled --- the class
+definition is not pickled, but re-imported by the unpickling process.
+Therefore, the restriction that the class must be defined at the top
+level in a module applies to pickled classes as well.
+
+\renewcommand{\indexsubitem}{(in module pickle)}
+
 The interface can be summarized as follows.
 
 To pickle an object \code{x} onto a file \code{f}, open for writing:
@@ -122,6 +133,12 @@ p = pickle.Pickler(f)
 p.dump(x)
 \end{verbatim}
 
+A shorthand for this is:
+
+\begin{verbatim}
+pickle.dump(x, f)
+\end{verbatim}
+
 To unpickle an object \code{x} from a file \code{f}, open for reading:
 
 \begin{verbatim}
@@ -129,11 +146,19 @@ u = pickle.Unpickler(f)
 x = u.load(x)
 \end{verbatim}
 
+A shorthand is:
+
+\begin{verbatim}
+x = pickle.load(f)
+\end{verbatim}
+
 The \code{Pickler} class only calls the method \code{f.write} with a
 string argument.  The \code{Unpickler} calls the methods \code{f.read}
 (with an integer argument) and \code{f.readline} (without argument),
 both returning a string.  It is explicitly allowed to pass non-file
 objects here, as long as they have the right methods.
+\ttindex{Unpickler}
+\ttindex{Pickler}
 
 The following types can be pickled:
 \begin{itemize}
@@ -146,25 +171,56 @@ The following types can be pickled:
 
 \item tuples, lists and dictionaries containing only picklable objects
 
-\item class instances whose \code{__dict__} or \code{__setstate__()}
-is picklable
+\item classes that are defined at the top level in a module
+
+\item instances of such classes whose \code{__dict__} or
+\code{__setstate__()} is picklable
 
 \end{itemize}
 
-Attempts to pickle unpicklable objects will raise an exception; when
-this happens, an unspecified number of bytes may have been written to
-the file argument.
+Attempts to pickle unpicklable objects will raise the
+\code{PicklingError} exception; when this happens, an unspecified
+number of bytes may have been written to the file.
 
-It is possible to make multiple calls to \code{Pickler.dump()} or to
-\code{Unpickler.load()}, as long as there is a one-to-one
-correspondence between \code{Pickler} and \code{Unpickler} objects and
-between \code{dump} and \code{load} calls for any pair of
-corresponding \code{Pickler} and \code{Unpicklers}.  {\em Warning}:
-this is intended for pickling multiple objects without intervening
-modifications to the objects or their parts.  If you modify an object
-and then pickle it again using the same \code{Pickler} instance, the
-object is not pickled again --- a reference to it is pickled and the
-\code{Unpickler} will return the old value, not the modified one.  (There
-are two problems here: (a) detecting changes, and (b) marshalling a
-minimal set of changes.  I have no answers.  Garbage Collection may
-also become a problem here.)
+It is possible to make multiple calls to the \code{dump()} method of
+the same \code{Pickler} instance.  These must then be matched to the
+same number of calls to the \code{load()} instance of the
+corresponding \code{Unpickler} instance.  If the same object is
+pickled by multiple \code{dump()} calls, the \code{load()} will all
+yield references to the same object.  {\em Warning}: this is intended
+for pickling multiple objects without intervening modifications to the
+objects or their parts.  If you modify an object and then pickle it
+again using the same \code{Pickler} instance, the object is not
+pickled again --- a reference to it is pickled and the
+\code{Unpickler} will return the old value, not the modified one.
+(There are two problems here: (a) detecting changes, and (b)
+marshalling a minimal set of changes.  I have no answers.  Garbage
+Collection may also become a problem here.)
+
+Apart from the \code{Pickler} and \code{Unpickler} classes, the
+module defines the following functions, and an exception:
+
+\begin{funcdesc}{dump}{object\, file}
+Write a pickled representation of \var{obect} to the open file object
+\var{file}.  This is equivalent to \code{Pickler(file).dump(object)}.
+\end{funcdesc}
+
+\begin{funcdesc}{load}{file}
+Read a pickled object from the open file object \var{file}.  This is
+equivalent to \code{Unpickler(file).load()}.
+\end{funcdesc}
+
+\begin{funcdesc}{dumps}{object}
+Return the pickled representation of the object as a string, instead
+of writing it to a file.
+\end{funcdesc}
+
+\begin{funcdesc}{loads}{string}
+Read a pickled object from a string instead of a file.  Characters in
+the string past the pickled object's representation are ignored.
+\end{funcdesc}
+
+\begin{excdesc}{PicklingError}
+This exception is raised when an unpicklable object is passed to
+\code{Pickler.dump()}.
+\end{excdesc}

@@ -8,9 +8,10 @@ provide access to the functionality of the Standard Window System
 Interface, STDWIN [CWI report CR-R8817].
 It is available on systems to which STDWIN has been ported (which is
 most systems).
-It is only available if the \code{DISPLAY} environment variable is set
-or an explicit \samp{-display \var{displayname}} argument is passed to
-the interpreter.
+
+On Unix running X11, it can only be used if the \code{DISPLAY}
+environment variable is set or an explicit \samp{-display
+\var{displayname}} argument is passed to the Python interpreter.
 
 Functions have names that usually resemble their C STDWIN counterparts
 with the initial `w' dropped.
@@ -63,6 +64,7 @@ patterns follow the standard X11 font selection syntax (as used e.g.
 in resource definitions), i.e. the wildcard character \code{'*'}
 matches any sequence of characters (including none) and \code{'?'}
 matches any single character.
+On the Macintosh this function currently returns an empty list.
 \end{funcdesc}
 
 \begin{funcdesc}{setdefscrollbars}{hflag\, vflag}
@@ -164,6 +166,7 @@ returned by this call exists.
 \begin{funcdesc}{newbitmap}{width\, height}
 Create a new bitmap object of the given dimensions.
 Methods of bitmap objects are described below.
+Not available on the Macintosh.
 \end{funcdesc}
 
 \begin{funcdesc}{fleep}{}
@@ -294,7 +297,7 @@ a blocking \code{select()} call.
 \ttindex{select}
 \end{funcdesc}
 
-\subsection{Window Object Methods}
+\subsection{Window Objects}
 
 Window objects are created by \code{stdwin.open()}.  They are closed
 by their \code{close()} method or when they are garbage-collected.
@@ -440,7 +443,7 @@ another window in this application became inactive).
 Discard the window object.  It should not be used again.
 \end{funcdesc}
 
-\subsection{Drawing Object Methods}
+\subsection{Drawing Objects}
 
 Drawing objects are created exclusively by the window method
 \code{begindrawing()}.
@@ -560,6 +563,7 @@ the same object as \var{bitmap}, to draw only those bits that are set
 in the bitmap, in the foreground color, or \code{None}, to draw all
 bits (ones are drawn in the foreground color, zeros in the background
 color).
+Not available on the Macintosh.
 \end{funcdesc}
 
 \begin{funcdesc}{cliprect}{rect}
@@ -582,7 +586,7 @@ Reset the clipping region to the entire window.
 Discard the drawing object.  It should not be used again.
 \end{funcdesc}
 
-\subsection{Menu Object Methods}
+\subsection{Menu Objects}
 
 A menu object represents a menu.
 The menu is destroyed when the menu object is deleted.
@@ -617,11 +621,13 @@ for item
 Discard the menu object.  It should not be used again.
 \end{funcdesc}
 
-\subsection{Bitmap Object Methods}
+\subsection{Bitmap Objects}
 
 A bitmap represents a rectangular array of bits.
 The top left bit has coordinate (0, 0).
 A bitmap can be drawn with the \code{bitmap} method of a drawing object.
+Bitmaps are currently not available on the Macintosh.
+
 The following methods are defined:
 
 \renewcommand{\indexsubitem}{(bitmap method)}
@@ -644,7 +650,7 @@ Return the value of the bit indicated by \var{point}.
 Discard the bitmap object.  It should not be used again.
 \end{funcdesc}
 
-\subsection{Text-edit Object Methods}
+\subsection{Text-edit Objects}
 
 A text-edit object represents a text-edit block.
 For semantics, see the STDWIN documentation for C programmers.

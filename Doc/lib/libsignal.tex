@@ -20,7 +20,7 @@ the Python user is concerned, they can only occur between the
 ``atomic'' instructions of the Python interpreter.  This means that
 signals arriving during long calculations implemented purely in C
 (e.g.\ regular expression matches on large bodies of text) may be
-delayed for an arbitrary time.
+delayed for an arbitrary amount of time.
 
 \item
 When a signal arrives during an I/O operation, it is possible that the
@@ -48,8 +48,10 @@ threads simultaneously is:\ always perform \code{signal()} operations
 in the main thread of execution.  Any thread can perform an
 \code{alarm()}, \code{getsignal()}, or \code{pause()}; only the main
 thread can set a new signal handler, and the main thread will be the
-only one to receive signals.  This means that signals can't be used as
-a means of interthread communication.  Use locks instead.
+only one to receive signals (this is enforced by the Python signal
+module, even if the underlying thread implementation supports sending
+signals to individual threads).  This means that signals can't be used
+as a means of interthread communication.  Use locks instead.
 
 \end{itemize}
 
@@ -126,4 +128,9 @@ The signal module defines the following functions:
   When threads are enabled, this function can only be called from the
   main thread; attempting to call it from other threads will cause a
   \code{ValueError} exception to be raised.
+
+  The \var{handler} is called with two arguments: the signal number
+  and the current stack frame (\code{None} or a frame object; see the
+  reference manual for a description of frame objects).
+\obindex{frame}
 \end{funcdesc}

@@ -1,5 +1,6 @@
-\section{Built-in module \sectcode{mactcp}}
+\section{Built-in Module \sectcode{mactcp}}
 \bimodindex{mactcp}
+
 \renewcommand{\indexsubitem}{(in module mactcp)}
 
 This module provides an interface to the Macintosh TCP/IP driver
@@ -37,8 +38,9 @@ on this port). \var{port} is the UDP port number you want to receive
 datagrams on, a value of zero will make MacTCP select a free port.
 \end{funcdesc}
 
-\subsection{TCP stream objects}
-\renewcommand{\indexsubitem}{(TCP stream method)}
+\subsection{TCP Stream Objects}
+
+\renewcommand{\indexsubitem}{(TCP stream attribute)}
 
 \begin{datadesc}{asr}
 When set to a value different than \code{None} this should point to a
@@ -49,6 +51,8 @@ data arrival. In addition, it is called with eventcode
 is a Python addition to the MacTCP semantics.
 It is safe to do further calls from the \code{asr}.
 \end{datadesc}
+
+\renewcommand{\indexsubitem}{(TCP stream method)}
 
 \begin{funcdesc}{PassiveOpen}{port}
 Wait for an incoming connection on TCP port \var{port} (zero makes the
@@ -104,15 +108,17 @@ Forcibly close both sides of a connection, ignoring outstanding data.
 \end{funcdesc}
 
 \begin{funcdesc}{Status}{}
-Return a TCP status object for this stream.
+Return a TCP status object for this stream giving the current status
+(see below).
 \end{funcdesc}
 
-\subsection{TCP status objects}
+\subsection{TCP Status Objects}
 This object has no methods, only some members holding information on
 the connection. A complete description of all fields in this objects
 can be found in the Apple documentation. The most interesting ones are:
 
-\renewcommand{\indexsubitem}{(TCP status method)}
+\renewcommand{\indexsubitem}{(TCP status attribute)}
+
 \begin{datadesc}{localHost}
 \dataline{localPort}
 \dataline{remoteHost}
@@ -137,11 +143,11 @@ without blocking).
 
 
 
-\subsection{UDP stream objects}
+\subsection{UDP Stream Objects}
 Note that, unlike the name suggests, there is nothing stream-like
 about UDP.
 
-\renewcommand{\indexsubitem}{(UDP stream method)}
+\renewcommand{\indexsubitem}{(UDP stream attribute)}
 
 \begin{datadesc}{asr}
 The asynchronous service routine to be called on events such as
@@ -153,9 +159,11 @@ single argument, the event code.
 A read-only member giving the port number of this UDP stream.
 \end{datadesc}
 
+\renewcommand{\indexsubitem}{(UDP stream method)}
+
 \begin{funcdesc}{Read}{timeout}
 Read a datagram, waiting at most \var{timeout} seconds ($-1$ is
-indefinite). Return the data.
+infinite).  Return the data.
 \end{funcdesc}
 
 \begin{funcdesc}{Write}{host\, port\, buf}

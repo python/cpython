@@ -4,7 +4,7 @@ The modules described in this chapter provide interfaces to features
 that are unique to the SunOS operating system (versions 4 and 5; the
 latter is also known as SOLARIS version 2).
 
-\section{Built-in module \sectcode{sunaudiodev}}
+\section{Built-in Module \sectcode{sunaudiodev}}
 \bimodindex{sunaudiodev}
 
 This module allows you to access the sun audio interface. The sun
@@ -30,7 +30,7 @@ or player open at the same time it is a good idea to open the device
 only for the activity needed. See the audio manpage for details.
 \end{funcdesc}
 
-\subsection{Audio device object methods}
+\subsection{Audio Device Objects}
 
 The audio device objects are returned by \code{open} define the
 following methods (except \code{control} objects which only provide
@@ -108,6 +108,5 @@ the constants are the same names as used in the C include file
 \file{<sun/audioio.h>}, with the leading string \samp{AUDIO_} stripped.
 
 Useability of the control device is limited at the moment, since there
-is no way to use the 'wait for something to happen' feature the device
-provides. This is because that feature makes heavy use of signals, and
-these do not map too well onto Python.
+is no way to use the ``wait for something to happen'' feature the
+device provides.

@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{cgi}}
+\section{Standard Module \sectcode{cgi}}
 \stmodindex{cgi}
 \indexii{WWW}{server}
 \indexii{CGI}{protocol}
@@ -134,3 +134,85 @@ The module defines the following variable:
 The shell environment, exactly as received from the http server.  See
 the CGI documentation for a description of the various fields.
 \end{datadesc}
+
+\subsection{Example}
+
+This example assumes that you have a WWW server up and running,
+e.g.\ NCSA's \code{httpd}.
+
+Place the following file in a convenient spot in the WWW server's
+directory tree.  E.g., if you place it in the subdirectory \file{test}
+of the root directory and call it \file{test.html}, its URL will be
+\file{http://\var{yourservername}/test/test.html}.
+
+\begin{verbatim}
+<TITLE>Test Form Input</TITLE>
+<H1>Test Form Input</H1>
+<FORM METHOD="POST" ACTION="/cgi-bin/test.py">
+<INPUT NAME=Name> (Name)<br>
+<INPUT NAME=Address> (Address)<br>
+<INPUT TYPE=SUBMIT>
+</FORM>
+\end{verbatim}
+
+Selecting this file's URL from a forms-capable browser such as Mosaic
+or Netscape will bring up a simple form with two text input fields and
+a ``submit'' button.
+
+But wait.  Before pressing ``submit'', a script that responds to the
+form must also be installed.  The test file as shown assumes that the
+script is called \file{test.py} and lives in the server's
+\code{cgi-bin} directory.  Here's the test script:
+
+\begin{verbatim}
+#!/usr/local/bin/python
+
+import cgi
+
+print "Content-type: text/html"
+print                                   # End of headers!
+print "<TITLE>Test Form Output</TITLE>"
+print "<H1>Test Form Output</H1>"
+
+form = cgi.SvFormContentDict()          # Load the form
+
+name = addr = None                      # Default: no name and address
+
+# Extract name and address from the form, if given
+
+if form.has_key('Name'):
+        name = form['Name']
+if form.has_key('Address'):
+        addr = form['Address']
+        
+# Print an unnumbered list of the name and address, if present
+
+print "<UL>"
+if name is not None:
+        print "<LI>Name:", cgi.escape(name)
+if addr is not None:
+        print "<LI>Address:", cgi.escape(addr)
+print "</UL>"
+\end{verbatim}
+
+The script should be made executable (\samp{chmod +x \var{script}}).
+If the Python interpreter is not located at
+\file{/usr/local/bin/python} but somewhere else, the first line of the
+script should be modified accordingly.
+
+Now that everything is installed correctly, we can try out the form.
+Bring up the test form in your WWW browser, fill in a name and address
+in the form, and press the ``submit'' button.  The script should now
+run and its output is sent back to your browser.  This should roughly
+look as follows:
+
+\strong{Test Form Output}
+
+\begin{itemize}
+\item Name: \var{the name you entered}
+\item Address: \var{the address you entered}
+\end{itemize}
+
+If you didn't enter a name or address, the corresponding line will be
+missing (since the browser doesn't send empty form fields to the
+server).

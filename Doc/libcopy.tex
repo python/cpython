@@ -1,5 +1,6 @@
-\section{Built-in module \sectcode{copy}}
+\section{Standard Module \sectcode{copy}}
 \stmodindex{copy}
+\renewcommand{\indexsubitem}{(copy function)}
 \ttindex{copy}
 \ttindex{deepcopy}
 
@@ -14,7 +15,7 @@ x = copy.copy(y)        # make a shallow copy of y
 x = copy.deepcopy(y)    # make a deep copy of y
 \end{verbatim}
 
-For module specific errors, \code{copy.Error} is raised.
+For module specific errors, \code{copy.error} is raised.
 
 The difference between shallow and deep copying is only relevant for
 compound objects (objects that contain other objects, like lists or
@@ -74,6 +75,7 @@ to control pickling: they can define methods called
 \code{__setstate__()}.  See the description of module \code{pickle}
 for information on these methods.
 \stmodindex{pickle}
+\renewcommand{\indexsubitem}{(copy protocol)}
 \ttindex{__getinitargs__}
 \ttindex{__getstate__}
 \ttindex{__setstate__}

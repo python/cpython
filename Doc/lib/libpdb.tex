@@ -91,7 +91,7 @@ Enter post-mortem debugging of the traceback found in
 \code{sys.last_traceback}.
 \end{funcdesc}
 
-\subsection{Debugger Commands}
+\section{Debugger Commands}
 
 The debugger recognizes the following commands.  Most commands can be
 abbreviated to one or two letters; e.g. ``\code{h(elp)}'' means that
@@ -117,7 +117,7 @@ but the debugger's state is not changed.
 
 \begin{description}
 
-\item[{h(elp) [\var{command}]}]
+\item[h(elp) [\var{command}]]
 
 Without argument, print the list of available commands.
 With a \var{command} as argument, print help about that command.
@@ -127,40 +127,40 @@ through that command instead.  Since the \var{command} argument must be
 an identifier, ``\code{help exec}'' must be entered to get help on the
 ``\code{!}'' command.
 
-\item[{w(here)}]
+\item[w(here)]
 
 Print a stack trace, with the most recent frame at the bottom.
 An arrow indicates the current frame, which determines the
 context of most commands.
 
-\item[{d(own)}]
+\item[d(own)]
 
 Move the current frame one level down in the stack trace
 (to an older frame).
 
-\item[{u(p)}]
+\item[u(p)]
 
 Move the current frame one level up in the stack trace
 (to a newer frame).
 
-\item[{b(reak) [\var{lineno}\code{|}\var{function}]}]
+\item[b(reak) [\var{lineno}\code{|}\var{function}]]
 
 With a \var{lineno} argument, set a break there in the current
 file.  With a \var{function} argument, set a break at the entry of
 that function.  Without argument, list all breaks.
 
-\item[{cl(ear) [\var{lineno}]}]
+\item[cl(ear) [\var{lineno}]]
 
 With a \var{lineno} argument, clear that break in the current file.
 Without argument, clear all breaks (but first ask confirmation).
 
-\item[{s(tep)}]
+\item[s(tep)]
 
 Execute the current line, stop at the first possible occasion
 (either in a function that is called or on the next line in the
 current function).
 
-\item[{n(ext)}]
+\item[n(ext)]
 
 Continue execution until the next line in the current function
 is reached or it returns.  (The difference between \code{next} and
@@ -168,15 +168,15 @@ is reached or it returns.  (The difference between \code{next} and
 \code{next} executes called functions at (nearly) full speed, only
 stopping at the next line in the current function.)
 
-\item[{r(eturn)}]
+\item[r(eturn)]
 
 Continue execution until the current function returns.
 
-\item[{c(ont(inue))}]
+\item[c(ont(inue))]
 
 Continue execution, only stop when a breakpoint is encountered.
 
-\item[{l(ist) [\var{first} [, \var{last}]]}]
+\item[l(ist) [\var{first} [, \var{last}]]]
 
 List source code for the current file.  Without arguments, list 11
 lines around the current line or continue the previous listing.  With
@@ -184,17 +184,17 @@ one argument, list 11 lines around at that line.  With two arguments,
 list the given range; if the second argument is less than the first,
 it is interpreted as a count.
 
-\item[{a(rgs)}]
+\item[a(rgs)]
 
 Print the argument list of the current function.
 
-\item[{p \var{expression}}]
+\item[p \var{expression}]
 
 Evaluate the \var{expression} in the current context and print its
 value.  (Note: \code{print} can also be used, but is not a debugger
 command --- this executes the Python \code{print} statement.)
 
-\item[{[!] \var{statement}}]
+\item[[!] \var{statement}]
 
 Execute the (one-line) \var{statement} in the context of
 the current stack frame.
@@ -207,9 +207,83 @@ command with a ``\code{global}'' command on the same line, e.g.:
 (Pdb)
 \end{verbatim}
 
-\item[{q(uit)}]
+\item[q(uit)]
 
 Quit from the debugger.
 The program being executed is aborted.
 
+\end{description}
+
+\section{How It Works}
+
+Some changes were made to the interpreter:
+
+\begin{itemize}
+\item sys.settrace(func) sets the global trace function
+\item there can also a local trace function (see later)
+\end{itemize}
+
+Trace functions have three arguments: (\var{frame}, \var{event}, \var{arg})
+
+\begin{description}
+
+\item[\var{frame}] is the current stack frame
+
+\item[\var{event}] is a string: \code{'call'}, \code{'line'}, \code{'return'}
+or \code{'exception'}
+
+\item[\var{arg}] is dependent on the event type
+
+\end{description}
+
+A trace function should return a new trace function or None.
+Class methods are accepted (and most useful!) as trace methods.
+
+The events have the following meaning:
+
+\begin{description}
+
+\item[\code{'call'}]
+A function is called (or some other code block entered).  The global
+trace function is called; arg is the argument list to the function;
+the return value specifies the local trace function.
+
+\item[\code{'line'}]
+The interpreter is about to execute a new line of code (sometimes
+multiple line events on one line exist).  The local trace function is
+called; arg in None; the return value specifies the new local trace
+function.
+
+\item[\code{'return'}]
+A function (or other code block) is about to return.  The local trace
+function is called; arg is the value that will be returned.  The trace
+function's return value is ignored.
+
+\item[\code{'exception'}]
+An exception has occurred.  The local trace function is called; arg is
+a triple (exception, value, traceback); the return value specifies the
+new local trace function
+
+\end{description}
+
+Note that as an exception is propagated down the chain of callers, an
+\code{'exception'} event is generated at each level.
+
+Stack frame objects have the following read-only attributes:
+
+\begin{description}
+\item[f_code]      the code object being executed
+\item[f_lineno]    the current line number (\code{-1} for \code{'call'} events)
+\item[f_back]      the stack frame of the caller, or None
+\item[f_locals]    dictionary containing local name bindings
+\item[f_globals]   dictionary containing global name bindings
+\end{description}
+
+Code objects have the following read-only attributes:
+
+\begin{description}
+\item[co_code]     the code string
+\item[co_names]    the list of names used by the code
+\item[co_consts]   the list of (literal) constants used by the code
+\item[co_filename] the filename from which the code was compiled
 \end{description}

@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{imp}}
+\section{Built-in Module \sectcode{imp}}
 \bimodindex{imp}
 \index{import}
 
@@ -9,7 +9,7 @@ functions:
 \renewcommand{\indexsubitem}{(in module struct)}
 
 \begin{funcdesc}{get_magic}{}
-Return the magic string used to recognize value byte-compiled code
+Return the magic string value used to recognize byte-compiled code
 files (``\code{.pyc} files'').
 \end{funcdesc}
 
@@ -22,15 +22,15 @@ string to pass to the built-in \code{open} function to open the file
 (this can be \code{'r'} for text files or \code{'rb'} for binary
 files), and \var{type} is the file type, which has one of the values
 \code{PY_SOURCE}, \code{PY_COMPILED} or \code{C_EXTENSION}, defined
-below.
+below.  (System-dependent values may also be returned.)
 \end{funcdesc}
 
 \begin{funcdesc}{find_module}{name\, \optional{path}}
 Try to find the module \var{name} on the search path \var{path}.  The
 default \var{path} is \code{sys.path}.  The return value is a triple
 \code{(\var{file}, \var{pathname}, \var{description})} where
-\var{file} is an open file object positioned at the beginning
-corresponding to the file found, \var{pathname} is the pathname of the
+\var{file} is an open file object positioned at the beginning,
+\var{pathname} is the pathname of the
 file found, and \var{description} is a triple as contained in the list
 returned by \code{get_suffixes} describing the kind of file found.
 \end{funcdesc}
@@ -134,33 +134,27 @@ The following function emulates the default import statement:
 
 \begin{verbatim}
 import imp
-from sys import modules
+import sys
 
 def __import__(name, globals=None, locals=None, fromlist=None):
-    # Fast path: let's see if it's already in sys.modules.
-    # Two speed optimizations are worth mentioning:
-    # - We use 'modules' instead of 'sys.modules'; this saves a
-    #   dictionary look-up per call.
-    # - It's also faster to use a try-except statement than
-    #   to use modules.has_key(name) to check if it's there.
-    try:
-        return modules[name]
-    except KeyError:
-        pass
+    # Fast path: see if the module has already been imported.
+    if sys.modules.has_key(name):
+        return sys.modules[name]
 
-    # See if it's a built-in module
+    # If any of the following calls raises an exception,
+    # there's a problem we con't handle -- let the caller handle it.
+
+    # See if it's a built-in module.
     m = imp.init_builtin(name)
     if m:
         return m
 
-    # See if it's a frozen module
+    # See if it's a frozen module.
     m = imp.init_frozen(name)
     if m:
         return m
 
     # Search the default path (i.e. sys.path).
-    # If this raises an exception, the module is not found --
-    # let the caller handle the exception.
     fp, pathname, (suffix, mode, type) = imp.find_module(name)
 
     # See what we got.
@@ -170,7 +164,7 @@ def __import__(name, globals=None, locals=None, fromlist=None):
     if type == imp.PY_SOURCE:
         return imp.load_source(name, pathname, fp)
     if type == imp.PY_COMPILED:
-        return imp.load_source(name, pathname, fp)
+        return imp.load_compiled(name, pathname, fp)
 
     # Shouldn't get here at all.
     raise ImportError, '%s: unknown module type (%d)' % (name, type)

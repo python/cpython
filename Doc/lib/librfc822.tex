@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{rfc822}}
+\section{Standard Module \sectcode{rfc822}}
 \stmodindex{rfc822}
 
 \renewcommand{\indexsubitem}{(in module rfc822)}
@@ -60,12 +60,12 @@ returned by \code{getheader(\var{name})}.  If no header matching
 \var{name} exists, return \code{None, None}; otherwise both the full
 name and the address are (possibly empty )strings.
 
-Example: If \code{m}'s first \code{From} header contains the string
-\code{'guido@cwi.nl (Guido van Rossum)'}, then
+Example: If \code{m}'s first \code{From} header contains the string\\
+\code{'jack@cwi.nl (Jack Jansen)'}, then
 \code{m.getaddr('From')} will yield the pair
-\code{('Guido van Rossum', 'guido@cwi.nl')}.
+\code{('Jack Jansen', 'jack@cwi.nl')}.
 If the header contained
-\code{'Guido van Rossum <guido@cwi.nl>'} instead, it would yield the
+\code{'Jack Jansen <jack@cwi.nl>'} instead, it would yield the
 exact same result.
 \end{funcdesc}
 

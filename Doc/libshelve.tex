@@ -1,7 +1,8 @@
-\section{Built-in module \sectcode{shelve}}
+\section{Standard Module \sectcode{shelve}}
 \stmodindex{shelve}
 \stmodindex{pickle}
 \bimodindex{dbm}
+\bimodindex{gdbm}
 
 A ``shelf'' is a persistent, dictionary-like object.  The difference
 with ``dbm'' databases is that the values (not the keys!) in a shelf
@@ -48,8 +49,11 @@ Dependent on the implementation, closing a persistent dictionary may
 or may not be necessary to flush changes to disk.
 
 \item
-The \code{shelve} module does not support {\em concurrent} access to
-shelved objects.  Two programs should not try to simultaneously access
-the same shelf.
+The \code{shelve} module does not support {\em concurrent} read/write
+access to shelved objects.  (Multiple simultaneous read accesses are
+safe.)  When a program has a shelf open for writing, no other program
+should have it open for reading or writing.  \UNIX{} file locking can
+be used to solve this, but this differs across \UNIX{} versions and
+requires knowledge about the database implementation used.
 
 \end{itemize}

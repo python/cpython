@@ -1,4 +1,4 @@
-\section{Built-in module \sectcode{sgmllib}}
+\section{Standard Module \sectcode{sgmllib}}
 \stmodindex{sgmllib}
 \index{SGML}
 
@@ -66,7 +66,7 @@ redefined version should always call \code{SGMLParser.close()}.
 \begin{funcdesc}{handle_charref}{ref}
 This method is called to process a character reference of the form
 ``\code{\&\#\var{ref};}'' where \var{ref} is a decimal number in the
-range 0-255.  It translates the character to ASCII and calls the
+range 0-255.  It translates the character to \ASCII{} and calls the
 method \code{handle_data()} with the character as argument.  If
 \var{ref} is invalid or out of range, the method
 \code{unknown_charref(\var{ref})} is called instead.

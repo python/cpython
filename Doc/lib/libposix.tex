@@ -1,12 +1,20 @@
 \section{Built-in Module \sectcode{posix}}
-
 \bimodindex{posix}
 
 This module provides access to operating system functionality that is
 standardized by the C Standard and the POSIX standard (a thinly disguised
 \UNIX{} interface).
-It is available in all Python versions except on the Macintosh;
-the MS-DOS version does not support certain functions.
+
+\strong{Do not import this module directly.}  Instead, import the
+module \code{os}, which provides a \emph{portable} version of this
+interface.  On \UNIX{}, the \code{os} module provides a superset of
+the \code{posix} interface.  On non-\UNIX{} operating systems the
+\code{posix} module is not available, but a subset is always available
+through the \code{os} interface.  Once \code{os} is imported, there is
+\emph{no} performance penalty in using it instead of
+\code{posix}.
+\stmodindex{os}
+
 The descriptions below are very terse; refer to the
 corresponding \UNIX{} manual entry for more information.
 
@@ -20,13 +28,18 @@ Module \code{posix} defines the following data items:
 \begin{datadesc}{environ}
 A dictionary representing the string environment at the time
 the interpreter was started.
-(Modifying this dictionary does not affect the string environment of the
-interpreter.)
 For example,
 \code{posix.environ['HOME']}
 is the pathname of your home directory, equivalent to
 \code{getenv("HOME")}
 in C.
+Modifying this dictionary does not affect the string environment
+passed on by \code{execv()}, \code{popen()} or \code{system()}; if you
+need to change the environment, pass \code{environ} to \code{execve()}
+or add variable assignments and export statements to the command
+string for \code{system()} or \code{popen()}.%
+\footnote{The problem with automatically passing on \code{environ} is
+that there is no portable way of changing the environment.}
 \end{datadesc}
 
 \renewcommand{\indexsubitem}{(exception in module posix)}

@@ -1,7 +1,7 @@
-\section{Built-in module \sectcode{urllib}}
+\section{Standard Module \sectcode{urllib}}
 \stmodindex{urllib}
 \index{WWW}
-\indexii{World-Wide}{Web}
+\index{World-Wide Web}
 \index{URL}
 
 \renewcommand{\indexsubitem}{(in module urllib)}
@@ -17,7 +17,7 @@ it defines the following public functions:
 
 \begin{funcdesc}{urlopen}{url}
 Open a network object denoted by a URL for reading.  If the URL does
-not have a scheme identifier, or if it has \code{file:} as its scheme
+not have a scheme identifier, or if it has \samp{file:} as its scheme
 identifier, this opens a local file; otherwise it opens a socket to a
 server somewhere on the network.  If the connection cannot be made, or
 if the server returns an error code, the \code{IOError} exception is
@@ -26,7 +26,9 @@ supports the following methods: \code{read()}, \code{readline()},
 \code{readlines()}, \code{fileno()}, \code{close()} and \code{info()}.
 Except for the last one, these methods have the same interface as for
 file objects --- see the section on File Objects earlier in this
-manual.
+manual.  (It's not a built-in file object, however, so it can't be
+used at those few places where a true built-in file object is
+required.)
 
 The \code{info()} method returns an instance of the class
 \code{rfc822.Message} containing the headers received from the server,
