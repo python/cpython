@@ -669,7 +669,6 @@ class CodeGenerator:
             print node
 
     def _visitAssSequence(self, node, op='UNPACK_SEQUENCE'):
-##        print >> sys.stderr, "AssSequence", op, findOp(node), node
         if findOp(node) != 'OP_DELETE':
             self.emit(op, len(node.nodes))
         for child in node.nodes:
@@ -1207,6 +1206,7 @@ class OpFinder:
             self.op = node.flags
         elif self.op != node.flags:
             raise ValueError, "mixed ops in stmt"
+    visitAssAttr = visitAssName
 
 class Delegator:
     """Base class to support delegation for augmented assignment nodes
