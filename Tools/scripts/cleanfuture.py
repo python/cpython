@@ -18,7 +18,7 @@ Overwrites files in place, renaming the originals with a .bak extension. If
 cleanfuture finds nothing to change, the file is left alone.  If cleanfuture
 does change a file, the changed file is a fixed-point (i.e., running
 cleanfuture on the resulting .py file won't change it again, at least not
-until you try it again with a m later Python release).
+until you try it again with a later Python release).
 
 Limitations:  You can do these things, but this tool won't help you then:
 
