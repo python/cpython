@@ -42,6 +42,7 @@ class Play_Audio_mac:
 		import time
 		from Sound import *
 		import struct
+		import MacOS
 		if not self._chan:
 			import Snd
 			self._chan = Snd.SndNewChannel(5, 0, self._callback)
@@ -56,7 +57,7 @@ class Play_Audio_mac:
 			import audioop
 			data = audioop.add(data, '\x80'*len(data), 1)
 		h1 = struct.pack('llhhllbbl',
-			id(data)+12,
+			id(data)+MacOS.string_id_to_data,
 			self._nchannels,
 			self._outrate, 0,
 			0,
