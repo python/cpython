@@ -7,5 +7,3 @@ struct methodlist {
 
 extern object *findmethod PROTO((struct methodlist *, object *, char *));
 extern object *initmodule PROTO((char *, struct methodlist *));
-extern int err_badargs PROTO((void));
-extern object *err_nomem PROTO((void));
