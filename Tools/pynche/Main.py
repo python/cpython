@@ -35,16 +35,13 @@ __version__ = '1.0'
 import sys
 import getopt
 import ColorDB
-from Tkinter import *
 from PyncheWidget import PyncheWidget
 from Switchboard import Switchboard
+from StripViewer import StripViewer
 
 
 
 PROGRAM = sys.argv[0]
-
-# Milliseconds between interrupt checks
-KEEPALIVE_TIMER = 500
 
 # Default locations of rgb.txt or other textual color database
 RGB_TXT = [
@@ -63,21 +60,7 @@ def usage(status, msg=''):
 
 
 
-app = None
-
-def keepalive():
-    # Exercise the Python interpreter regularly so keyboard interrupts get
-    # through.
-    app.tk.createtimerhandler(KEEPALIVE_TIMER, keepalive)
-
-
-def finished(event=None):
-    sys.exit(0)
-
-
 def main():
-    global app
-
     try:
 	opts, args = getopt.getopt(
             sys.argv[1:],
@@ -109,11 +92,9 @@ def main():
     else:
 	raise IOError('No color database file found')
 
-    app = Tk(className='Pynche')
-    app.protocol('WM_DELETE_WINDOW', finished)
-    app.title('Pynche %s' % __version__)
-    app.iconname('Pynche')
-    app.tk.createtimerhandler(KEEPALIVE_TIMER, keepalive)
+    # create the application window decorations
+    app = PyncheWidget(__version__)
+    parent = app.parent()
 
     # get triplet for initial color
     try:
@@ -130,10 +111,13 @@ def main():
             except ColorDB.BadColor:
                 usage(1, 'Cannot find an initial color to use')
 
-    s = Switchboard(app, colordb, red, green, blue)
+    # create all output widgets
+    s = Switchboard()
+    s.add_view(StripViewer(s, parent))
+    s.update_views(red, green, blue)
+
     try:
-	keepalive()
-	app.mainloop()
+	app.start()
     except KeyboardInterrupt:
 	pass
 
