@@ -20,6 +20,11 @@ Library
   cycles created by casual use of sys.exc_info() no longer cause
   permanent memory leaks (provided garbage collection is enabled).
 
+- os.extsep -- a new variable needed by the RISCOS support.  It is the
+  separator used by extensions, and is '.' on all platforms except
+  RISCOS, where it is '/'.  There is no need to use this variable
+  unless you have a masochistic desire to port your code to RISCOS.
+
 Tools/Demos
 
 Build
@@ -27,6 +32,8 @@ Build
 C API
 
 New platforms
+
+- Updated RISCOS port by Dietmar Schwertberger.
 
 Tests
 
@@ -1446,10 +1453,7 @@ New platforms
 - 2.1 contains new files and patches for RISCOS, thanks to Dietmar
   Schwertberger!  See RISCOS/README for more information -- it seems
   that because of the bizarre filename conventions on RISCOS, no port
-  to that platform is easy.  Note that the new variable os.endsep is
-  silently supported in order to make life easier on this platform,
-  but we don't advertise it because it's not worth for most folks to
-  care about RISCOS portability.
+  to that platform is easy.
 
 
 What's New in Python 2.1 alpha 2?
