@@ -34,7 +34,7 @@ OBJS=		\
 		ceval.o cgensupport.o compile.o \
 		errors.o \
 		frozenmain.o \
-		getmtime.o graminit.o \
+		getargs.o getmtime.o graminit.o \
 		import.o \
 		marshal.o modsupport.o mystrtoul.o \
 		pythonmain.o pythonrun.o \
