@@ -31,6 +31,7 @@
 #      Colin Kong, Trent Mick
 #
 #    History:
+#    1.0.2 - fix a bug with caching of value for platform()
 #    1.0.1 - reformatted to make doc.py happy
 #    1.0.0 - reformatted a bit and checked into Python CVS
 #    0.8.0 - added sys.version parser and various new access
@@ -102,7 +103,7 @@ __copyright__ = """
 
 """
 
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 import sys,string,os,re
 
@@ -201,7 +202,7 @@ def _dist_try_harder(distname,version,id):
     if os.path.isdir('/usr/lib/setup'):
         # Check for slackware verson tag file (thanks to Greg Andruk)
         verfiles = os.listdir('/usr/lib/setup')
-        for n in range(len(verfiles)-1, -1, -1):
+        for n in reversed(xrange(len(verfiles))):
             if verfiles[n][:14] != 'slack-version-':
                 del verfiles[n]
         if verfiles:
@@ -1082,7 +1083,6 @@ def _sys_version():
 
     """
     global _sys_version_cache
-    import time
 
     if _sys_version_cache is not None:
         return _sys_version_cache
@@ -1136,8 +1136,10 @@ def python_compiler():
 
 ### The Opus Magnum of platform strings :-)
 
-_platform_cache = {True:None, False:None}
-_platform_aliased_cache = {True:None, False:None}
+_platform_cache_terse = None
+_platform_cache_not_terse = None
+_platform_aliased_cache_terse = None
+_platform_aliased_cache_not_terse = None
 
 def platform(aliased=0, terse=0):
 
@@ -1158,12 +1160,17 @@ def platform(aliased=0, terse=0):
         absolute minimum information needed to identify the platform.
 
     """
-    global _platform_cache,_platform_aliased_cache
+    global _platform_cache_terse, _platform_cache_not_terse
+    global _platform_aliased_cache_terse, _platform_aliased_cache_not_terse
 
-    if not aliased and (_platform_cache[bool(terse)] is not None):
-        return _platform_cache[bool(terse)]
-    elif _platform_aliased_cache[bool(terse)] is not None:
-        return _platform_aliased_cache[bool(terse)]
+    if not aliased and terse and (_platform_cache_terse is not None):
+        return _platform_cache_terse
+    elif not aliased and not terse and (_platform_cache_not_terse is not None):
+        return _platform_cache_not_terse
+    elif terse and _platform_aliased_cache_terse is not None:
+        return _platform_aliased_cache_terse
+    elif not terse and _platform_aliased_cache_not_terse is not None:
+        return _platform_aliased_cache_not_terse
 
     # Get uname information and then apply platform specific cosmetics
     # to it...
@@ -1219,12 +1226,17 @@ def platform(aliased=0, terse=0):
             bits,linkage = architecture(sys.executable)
             platform = _platform(system,release,machine,processor,bits,linkage)
 
-    if aliased:
-        _platform_aliased_cache[bool(terse)] = platform
+    if aliased and terse:
+        _platform_aliased_cache_terse = platform
+    elif aliased and not terse:
+        _platform_aliased_cache_not_terse = platform
     elif terse:
         pass
     else:
-        _platform_cache[bool(terse)] = platform
+        if terse:
+            _platform_cache_terse = platform
+        else:
+            _platform_cache_not_terse = platform
     return platform
 
 ### Command line interface
