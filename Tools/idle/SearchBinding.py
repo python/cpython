@@ -1,3 +1,4 @@
+import string
 import re
 import tkSimpleDialog
 import tkMessageBox
@@ -52,24 +53,27 @@ class SearchBinding:
 			self.text.bell()
 			##print "No program"
 			return "break"
-		self.text.mark_set("find", "insert")
-		while 1:
-			chars = self.text.get("find", "find lineend +1c")
-			##print "Searching", `chars`
-			if not chars:
-				self.text.bell()
-				##print "end of buffer"
-				break
-			m = self.prog.search(chars)
+		line, col = map(int,
+		                string.split(self.text.index("insert"), "."))
+		chars = self.text.get("%d.0" % line, "%d.0" % (line+1))
+		while chars:
+			m = self.prog.search(chars, col)
 			if m:
 				i, j = m.span()
-				self.text.mark_set("insert", "find +%dc" % j)
-				self.text.mark_set("find", "find +%dc" % i)
+				self.text.mark_set("insert",
+				                   "%d.%d" % (line, j))
 				self.text.tag_remove("sel", "1.0", "end")
-				self.text.tag_add("sel", "find", "insert")
+				self.text.tag_add("sel",
+				                  "%d.%d" % (line, i),
+				                  "%d.%d" % (line, j))
 				self.text.see("insert")
 				break
-			self.text.mark_set("find", "find lineend +1c")
+			line = line + 1
+			col = 0
+			chars = self.text.get("%d.0" % line, "%d.0" % (line+1))
+		else:
+			# Not found
+			self.text.bell()
 		return "break"
 	
 	def goto_line_event(self, event):
