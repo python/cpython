@@ -198,10 +198,8 @@ class FTP:
 		self.voidresp()
 
 	# Send a PORT command with the current host and the given port number
-	def sendport(self, port):
-		hostname = socket.gethostname()
-		hostaddr = socket.gethostbyname(hostname)
-		hbytes = string.splitfields(hostaddr, '.')
+	def sendport(self, host, port):
+		hbytes = string.splitfields(host, '.')
 		pbytes = [`port/256`, `port%256`]
 		bytes = hbytes + pbytes
 		cmd = 'PORT ' + string.joinfields(bytes, ',')
@@ -213,8 +211,9 @@ class FTP:
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.bind(('', 0))
 		sock.listen(1)
-		host, port = sock.getsockname()
-		resp = self.sendport(port)
+		dummyhost, port = sock.getsockname() # Get proper port
+		host, dummyport = self.sock.getsockname() # Get proper host
+		resp = self.sendport(host, port)
 		return sock
 
 	# Send a port command and a transfer command, accept the connection
@@ -439,3 +438,7 @@ def test():
 			ftp.retrbinary('RETR ' + file, \
 				       sys.stdout.write, 1024)
 	ftp.quit()
+
+
+if __name__ == '__main__':
+	test()
