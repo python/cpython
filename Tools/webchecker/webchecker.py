@@ -121,7 +121,7 @@ import robotparser
 
 # Tunable parameters
 DEFROOT = "file:/usr/local/etc/httpd/htdocs/"	# Default root URL
-MAXPAGE = 50000				# Ignore files bigger than this
+MAXPAGE = 150000			# Ignore files bigger than this
 ROUNDSIZE = 50				# Number of links processed per round
 DUMPFILE = "@webchecker.pickle"		# Pickled checkpoint
 AGENTNAME = "webchecker"		# Agent name for robots.txt parser
@@ -145,6 +145,7 @@ def main():
     except getopt.error, msg:
 	sys.stdout = sys.stderr
 	print msg
+	print __doc__%globals()
 	sys.exit(2)
     for o, a in opts:
 	if o == '-R':
@@ -314,22 +315,24 @@ class Checker:
 	for url in urls:
 	    if verbose > 0:
 		show("HREF ", url, " from", self.ext[url])
-	    if not checkext:
-		continue
-	    if url[:7] == 'mailto:':
-		if verbose > 2: print "Not checking", url
-		continue
-	    if verbose > 2: print "Checking", url, "..."
-	    try:
-		f = self.urlopener.open(url)
-		safeclose(f)
-		if verbose > 3: print "OK"
-		if self.bad.has_key(url):
-		    self.setgood(url)
-	    except IOError, msg:
-		msg = sanitize(msg)
-		if verbose > 0: print "Error", msg
-		self.setbad(url, msg)
+	    if checkext:
+		self.checkextpage(url)
+
+    def checkextpage(self, url):
+	if url[:7] == 'mailto:' or url[:5] == 'news:':
+	    if verbose > 2: print "Not checking", url
+	    return
+	if verbose > 2: print "Checking", url, "..."
+	try:
+	    f = self.urlopener.open(url)
+	    safeclose(f)
+	    if verbose > 3: print "OK"
+	    if self.bad.has_key(url):
+		self.setgood(url)
+	except IOError, msg:
+	    msg = sanitize(msg)
+	    if verbose > 0: print "Error", msg
+	    self.setbad(url, msg)
 
     def report_errors(self):
 	if not self.bad:
