@@ -4366,7 +4366,6 @@ symtable_init()
 	st->st_nscopes = 0;
 	st->st_errors = 0;
 	st->st_tmpname = 0;
-	st->st_global_star = 0;
 	st->st_private = NULL;
 	return st;
  fail:
@@ -5004,8 +5003,6 @@ symtable_import(struct symtable *st, node *n)
 		}
 		if (TYPE(CHILD(n, 3)) == STAR) {
 			st->st_cur->ste_optimized |= OPT_IMPORT_STAR;
-			if (st->st_nscopes == 1)
-			    st->st_global_star = 1;
 		} else {
 			for (i = 3; i < NCH(n); i += 2) {
 				node *c = CHILD(n, i);
