@@ -11,7 +11,7 @@
 # Of course, no multi-threading is implied -- hence the funny interface
 # for lock, where a function is called once the lock is aquired.
 #
-class mutex():
+class mutex:
 	#
 	# Create a new mutex -- initially unlocked
 	#

@@ -22,7 +22,7 @@ _MASK = 3
 # It does not support any of the triggers or hooks defined by Buttons,
 # but defines its own setval_trigger and setval_hook.
 #
-class DragSliderReactivity() = BaseReactivity():
+class DragSliderReactivity(BaseReactivity):
 	#
 	def mouse_down(self, detail):
 		h, v = hv = detail[_HV]
@@ -43,7 +43,7 @@ class DragSliderReactivity() = BaseReactivity():
 			self.active = 0
 	#
 
-class DragSliderAppearance() = ButtonAppearance():
+class DragSliderAppearance(ButtonAppearance):
 	#
 	# INVARIANTS maintained by the setval method:
 	#
@@ -94,14 +94,14 @@ class DragSliderAppearance() = ButtonAppearance():
 		self.settext(self.pretext + `self.val` + self.postext)
 	#
 
-class DragSlider() = DragSliderReactivity(), DragSliderAppearance(), Define():
+class DragSlider(DragSliderReactivity, DragSliderAppearance, Define):
 	def definetext(self, (parent, text)):
 		raise RuntimeError, 'DragSlider.definetext() not supported'
 
 
 # Auxiliary class for PushButton incorporated in ComplexSlider
 #
-class _StepButton() = PushButton():
+class _StepButton(PushButton):
 	def define(self, parent):
 		self = PushButton.define(self, parent)
 		self.step = 0
@@ -130,7 +130,7 @@ class _StepButton() = PushButton():
 # A complex slider is an HSplit initialized to three buttons:
 # one to step down, a dragslider, and one to step up.
 #
-class ComplexSlider() = HSplit():
+class ComplexSlider(HSplit):
 	#
 	# Override Slider define() method
 	#

@@ -28,7 +28,7 @@
 # XXX instead of having to define a module or class just to hold
 # XXX the global state of your particular time and delay functtions.
 
-class scheduler():
+class scheduler:
 	#
 	# Initialize a new instance, passing the time and delay functions
 	#

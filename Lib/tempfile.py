@@ -13,7 +13,7 @@ template = '@'
 
 # Kludge to hold mutable state
 
-class Struct(): pass
+class Struct: pass
 G = Struct()
 G.i = 0
 

@@ -8,7 +8,7 @@ Error = 'Split.Error'	# Exception
 import rect
 from stdwinevents import *
 
-class Split():
+class Split:
 	#
 	# Calls from creator
 	# NB derived classes may add parameters to create()
