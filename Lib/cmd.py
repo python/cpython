@@ -45,7 +45,7 @@ These interpreters use raw_input; thus, if the readline module is loaded,
 they automatically support Emacs-like command history and editing features.
 """
 
-import string, sys
+import string
 
 __all__ = ["Cmd"]
 
@@ -76,15 +76,26 @@ class Cmd:
     nohelp = "*** No help on %s"
     use_rawinput = 1
 
-    def __init__(self, completekey='tab'):
+    def __init__(self, completekey='tab', stdin=None, stdout=None):
         """Instantiate a line-oriented interpreter framework.
 
-        The optional argument is the readline name of a completion key;
-        it defaults to the Tab key. If completekey is not None and the
-        readline module is available, command completion is done
-        automatically.
+        The optional argument 'completekey' is the readline name of a 
+        completion key; it defaults to the Tab key. If completekey is 
+        not None and the readline module is available, command completion 
+        is done automatically. The optional arguments stdin and stdout
+        specify alternate input and output file objects; if not specified,
+        sys.stdin and sys.stdout are used.
 
         """
+        import sys
+        if stdin is not None:
+            self.stdin = stdin
+        else:
+            self.stdin = sys.stdin
+        if stdout is not None:
+            self.stdout = stdout
+        else:
+            self.stdout = sys.stdout
         self.cmdqueue = []
         self.completekey = completekey
 
@@ -99,7 +110,7 @@ class Cmd:
         if intro is not None:
             self.intro = intro
         if self.intro:
-            print self.intro
+            self.stdout.write(str(self.intro)+"\n")
         stop = None
         while not stop:
             if self.cmdqueue:
@@ -111,9 +122,9 @@ class Cmd:
                     except EOFError:
                         line = 'EOF'
                 else:
-                    sys.stdout.write(self.prompt)
-                    sys.stdout.flush()
-                    line = sys.stdin.readline()
+                    self.stdout.write(self.prompt)
+                    self.stdout.flush()
+                    line = self.stdin.readline()
                     if not len(line):
                         line = 'EOF'
                     else:
@@ -215,7 +226,7 @@ class Cmd:
         returns.
 
         """
-        print '*** Unknown syntax:', line
+        self.stdout.write('*** Unknown syntax: %s\n'%line)
 
     def completedefault(self, *ignored):
         """Method called to complete an input line when no command-specific
@@ -284,11 +295,11 @@ class Cmd:
                 try:
                     doc=getattr(self, 'do_' + arg).__doc__
                     if doc:
-                        print doc
+                        self.stdout.write("%s\n"%str(doc))
                         return
                 except AttributeError:
                     pass
-                print self.nohelp % (arg,)
+                self.stdout.write("%s\n"%str(self.nohelp % (arg,)))
                 return
             func()
         else:
@@ -315,18 +326,18 @@ class Cmd:
                         cmds_doc.append(cmd)
                     else:
                         cmds_undoc.append(cmd)
-            print self.doc_leader
+            self.stdout.write("%s\n"%str(self.doc_leader))
             self.print_topics(self.doc_header,   cmds_doc,   15,80)
             self.print_topics(self.misc_header,  help.keys(),15,80)
             self.print_topics(self.undoc_header, cmds_undoc, 15,80)
 
     def print_topics(self, header, cmds, cmdlen, maxcol):
         if cmds:
-            print header
+            self.stdout.write("%s\n"%str(header))
             if self.ruler:
-                print self.ruler * len(header)
+                self.stdout.write("%s\n"%str(self.ruler * len(header)))
             self.columnize(cmds, maxcol-1)
-            print
+            self.stdout.write("\n")
 
     def columnize(self, list, displaywidth=80):
         """Display a list of strings as a compact set of columns.
@@ -335,7 +346,7 @@ class Cmd:
         Columns are separated by two spaces (one was not legible enough).
         """
         if not list:
-            print "<empty>"
+            self.stdout.write("<empty>\n")
             return
         nonstrings = [i for i in range(len(list))
                         if not isinstance(list[i], str)]
@@ -344,7 +355,7 @@ class Cmd:
                               ", ".join(map(str, nonstrings)))
         size = len(list)
         if size == 1:
-            print list[0]
+            self.stdout.write('%s\n'%str(list[0]))
             return
         # Try every row count from 1 upwards
         for nrows in range(1, len(list)):
@@ -382,4 +393,4 @@ class Cmd:
                 del texts[-1]
             for col in range(len(texts)):
                 texts[col] = texts[col].ljust(colwidths[col])
-            print "  ".join(texts)
+            self.stdout.write("%s\n"%str("  ".join(texts)))
