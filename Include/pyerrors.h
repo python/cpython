@@ -45,6 +45,12 @@ void PyErr_Clear Py_PROTO((void));
 void PyErr_Fetch Py_PROTO((PyObject **, PyObject **, PyObject **));
 void PyErr_Restore Py_PROTO((PyObject *, PyObject *, PyObject *));
 
+/* Error testing and normalization */
+int PyErr_GivenExceptionMatches Py_PROTO((PyObject *, PyObject *));
+int PyErr_ExceptionMatches Py_PROTO((PyObject *));
+void PyErr_NormalizeException Py_PROTO((PyObject**, PyObject**, PyObject**));
+
+
 /* Predefined exceptions */
 
 extern DL_IMPORT(PyObject *) PyExc_AccessError;
