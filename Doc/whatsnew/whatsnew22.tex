@@ -339,33 +339,22 @@ and Tim Peters, with other fixes from the Python Labs crew.}
 \section{Unicode Changes}
 
 Python's Unicode support has been enhanced a bit in 2.2.  Unicode
-strings are usually stored as UTF-16, as 16-bit unsigned integers.
+strings are usually stored as UCS-2, as 16-bit unsigned integers.
 Python 2.2 can also be compiled to use UCS-4, 32-bit unsigned
 integers, as its internal encoding by supplying
 \longprogramopt{enable-unicode=ucs4} to the configure script.  When
 built to use UCS-4 (a ``wide Python''), the interpreter can natively
-handle Unicode characters from U+000000 to U+110000.  The range of
-legal values for the \function{unichr()} function has been expanded;
-it used to only accept values up to 65535, but in 2.2 will accept
-values from 0 to 0x110000.  Using a ``narrow Python'', an interpreter
-compiled to use UTF-16, values greater than 65535 will result in
-\function{unichr()} returning a string of length 2:
-
-\begin{verbatim}
->>> s = unichr(65536)
->>> s
-u'\ud800\udc00'
->>> len(s)
-2
-\end{verbatim}
-
-This possibly-confusing behaviour, breaking the intuitive invariant
-that \function{chr()} and\function{unichr()} always return strings of
-length 1, may be changed later in 2.2 depending on public reaction.
+handle Unicode characters from U+000000 to U+110000, so the range of
+legal values for the \function{unichr()} function is expanded
+accordingly.  Using an interpreter compiled to use UCS-2 (a ``narrow
+Python''), values greater than 65535 will still cause
+\function{unichr()} to raise a \exception{ValueError} exception.
 
 All this is the province of the still-unimplemented PEP 261, ``Support
 for `wide' Unicode characters''; consult it for further details, and
-please offer comments and suggestions on the proposal it describes.
+please offer comments on the PEP and on your experiences with the
+2.2 alpha releases.
+% XXX update previous line once 2.2 reaches beta.
 
 Another change is much simpler to explain. Since their introduction,
 Unicode strings have supported an \method{encode()} method to convert
@@ -576,9 +565,10 @@ See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
   two. (SRE is maintained by Fredrik Lundh.  The BIGCHARSET patch was
   contributed by Martin von L\"owis.)
 
-  \item The \module{imaplib} module now has support for the IMAP
-  NAMESPACE extension defined in \rfc{2342}.  (Contributed by Michel
-  Pelletier.)
+  \item The \module{imaplib} module, maintained by Piers Lauder, has
+  support for several new extensions: the NAMESPACE extension defined
+  in \rfc{2342}, SORT, GETACL and SETACL.  (Contributed by Anthony
+  Baxter and Michel Pelletier.)
 
   \item The \module{rfc822} module's parsing of email addresses is
   now compliant with \rfc{2822}, an update to \rfc{822}.  The module's
