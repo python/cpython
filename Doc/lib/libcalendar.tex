@@ -26,10 +26,12 @@ convenience. For example, to set the first weekday to Sunday:
 import calendar
 calendar.setfirstweekday(calendar.SUNDAY)
 \end{verbatim}
+\versionadded{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{firstweekday}{}
 Returns the current setting for the weekday to start each week.
+\versionadded{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{isleap}{year}
@@ -39,6 +41,8 @@ Returns \code{1} if \var{year} is a leap year, otherwise \code{0}.
 \begin{funcdesc}{leapdays}{y1, y2}
 Returns the number of leap years in the range
 [\var{y1}\ldots\var{y2}), where \var{y1} and \var{y2} are years.
+\versionchanged[This function didn't work for ranges spanning 
+                a century change in Python 1.5.2]{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{weekday}{year, month, day}
@@ -68,6 +72,7 @@ provided, it specifies the width of the date columns, which are
 centered. If \var{l} is given, it specifies the number of lines that
 each week will use. Depends on the first weekday as set by
 \function{setfirstweekday()}.
+\versionadded{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{prcal}{year\optional{, w\optional{, l\optional{c}}}}
@@ -82,6 +87,7 @@ width, lines per week, and number of spaces between month columns,
 respectively. Depends on the first weekday as set by
 \function{setfirstweekday()}.  The earliest year for which a calendar can
 be generated is platform-dependent.
+\versionadded{2.0}
 \end{funcdesc}
 
 \begin{funcdesc}{timegm}{tuple}
@@ -90,6 +96,7 @@ returned by the \function{gmtime()} function in the \refmodule{time}
 module, and returns the corresponding \UNIX{} timestamp value, assuming
 an epoch of 1970, and the POSIX encoding.  In fact,
 \function{time.gmtime()} and \function{timegm()} are each others' inverse.
+\versionadded{2.0}
 \end{funcdesc}
 
 
