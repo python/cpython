@@ -600,7 +600,10 @@ def main():
           cmdclass = {'build_ext':PyBuildExt},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
-          ext_modules=[Extension('struct', ['structmodule.c'])]
+          ext_modules=[Extension('struct', ['structmodule.c'])],
+
+          # Scripts to install
+          scripts = ['Tools/scripts/pydoc']
         )
 
 # --install-platlib
