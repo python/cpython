@@ -1185,7 +1185,6 @@ then
 	BASECFLAGS="$BASECFLAGS -fno-common -dynamic"
 	# -F. is needed to allow linking to the framework while 
 	# in the build location.
-	LDFLAGS="$LDFLAGS -Wl,-F."
 	AC_DEFINE(WITH_NEXT_FRAMEWORK, 1, 
          [Define if you want to produce an OpenStep/Rhapsody framework
          (shared library plus accessory files).])
@@ -1268,7 +1267,8 @@ then
 		LDSHARED='$(CC) $(LDFLAGS) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
-			LDSHARED="$LDSHARED "'-framework $(PYTHONFRAMEWORK)'
+			BLDSHARED="$LDSHARED "'-Wl,-F. -framework $(PYTHONFRAMEWORK)'
+			LDSHARED="$LDSHARED "'-Wl,-F$(PYTHONFRAMEWORKPREFIX) -framework $(PYTHONFRAMEWORK)'
 		else
 			# No framework. Ignore undefined symbols, assuming they come from Python
 			LDSHARED="$LDSHARED -undefined suppress"
@@ -1277,7 +1277,8 @@ then
 		LDSHARED='$(CC) $(LDFLAGS) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
-			LDSHARED="$LDSHARED "'-framework $(PYTHONFRAMEWORK)'
+			BLDSHARED="$LDSHARED "'-Wl,-F. -framework $(PYTHONFRAMEWORK)'
+			LDSHARED="$LDSHARED "'-Wl,-F$(PYTHONFRAMEWORKPREFIX) -framework $(PYTHONFRAMEWORK)'
 		else
 			# No framework, use the Python app as bundle-loader
 			BLDSHARED="$LDSHARED "'-bundle_loader $(BUILDPYTHON)'
@@ -1370,7 +1371,7 @@ then
 		LINKFORSHARED="$extra_undefs -framework System"
 		if test "$enable_framework"
 		then
-			LINKFORSHARED="$LINKFORSHARED -framework Python"
+			LINKFORSHARED="$LINKFORSHARED -Wl,-F. -framework Python"
 		fi
 		LINKFORSHARED="$LINKFORSHARED $extra_frameworks";;
 	OpenUNIX*|UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
