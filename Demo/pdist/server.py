@@ -58,7 +58,7 @@ class Server:
 			if self._verbose > 1: print "Wait for next request ..."
 			ok = self._dorequest(rf, wf)
 	
-	_valid = ['192.16.201.*', '192.16.197.*', '132.151.1.*']
+	_valid = ['192.16.201.*', '192.16.197.*', '132.151.1.*', '129.6.64.*']
 	
 	def _verify(self, conn, address):
 		host, port = address
@@ -121,6 +121,7 @@ class SecureServer(Server, Security):
 		Security.__init__(self)
 
 	def _verify(self, conn, address):
+		import string
 		challenge = self._generate_challenge()
 		conn.send("%d\n" % challenge)
 		response = ""
