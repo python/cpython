@@ -4667,7 +4667,9 @@ symtable_params(struct symtable *st, node *n)
 		for (j = 0; j <= complex; j++) {
 			c = CHILD(n, j);
 			if (TYPE(c) == COMMA)
-			    c = CHILD(n, ++j);
+				c = CHILD(n, ++j);
+			else if (TYPE(c) == EQUAL)
+				c = CHILD(n, j += 3);
 			if (TYPE(CHILD(c, 0)) == LPAR)
 				symtable_params_fplist(st, CHILD(c, 1));
 		} 
