@@ -140,8 +140,8 @@ def teardown():
 
 try:
     setup()
-    test_api_1('.', MOFILE)
-    test_api_2('.', MOFILE)
+    test_api_1(os.curdir, MOFILE)
+    test_api_2(os.curdir, MOFILE)
 finally:
     teardown()
     pass
