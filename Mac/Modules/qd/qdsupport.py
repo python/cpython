@@ -42,12 +42,39 @@ CursHandle = OpaqueByValueType("CursHandle", "ResObj")
 CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 BitMap_ptr = OpaqueByValueType("BitMapPtr", "BMObj")
+RGBColor = OpaqueType('RGBColor', 'QdRGB')
+RGBColor_ptr = RGBColor
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 #include <Desk.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
+
+/*
+** Parse/generate RGB records
+*/
+PyObject *QdRGB_New(itself)
+	RGBColorPtr itself;
+{
+
+	return Py_BuildValue("lll", (long)itself->red, (long)itself->green, (long)itself->blue);
+}
+
+QdRGB_Convert(v, p_itself)
+	PyObject *v;
+	RGBColorPtr p_itself;
+{
+	long red, green, blue;
+	
+	if( !PyArg_ParseTuple(v, "lll", &red, &green, &blue) )
+		return 0;
+	p_itself->red = (unsigned short)red;
+	p_itself->green = (unsigned short)green;
+	p_itself->blue = (unsigned short)blue;
+	return 1;
+}
+
 """
 ## not yet...
 ##

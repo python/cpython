@@ -98,8 +98,6 @@ class MyScanner(Scanner):
 			'PenState_ptr',
 			'Ptr',
 			'QDProcs',
-			'RGBColor',
-			'RGBColor_ptr',
 			'ReqListRec',
 			'void_ptr',
 			]
