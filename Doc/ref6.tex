@@ -190,10 +190,24 @@ target sequence, if the object allows it.
 
 \end{itemize}
 	
-(In the original implementation, the syntax for targets is taken
+(In the current implementation, the syntax for targets is taken
 to be the same as for expressions, and invalid syntax is rejected
 during the code generation phase, causing less detailed error
 messages.)
+
+WARNING: Although the definition of assignment implies that overlaps
+between the left-hand side and the right-hand side are `safe' (e.g.
+\verb@a, b = b, a@ swaps two variables), overlaps within the
+collection of assigned-to variables are not safe!  For instance, the
+following program prints \code@[0, 2]@:
+
+\begin{verbatim}
+x = [0, 1]
+i = 0
+i, x[i] = 1, 2
+print x
+\end{verbatim}
+
 
 \section{The {\tt pass} statement}
 \stindex{pass}
