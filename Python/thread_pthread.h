@@ -167,7 +167,7 @@ int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 
 long get_thread_ident _P0()
 {
-	pthread_t threadid;
+	volatile pthread_t threadid;
 	if (!initialized)
 		init_thread();
 	/* Jump through some hoops for Alpha OSF/1 */
