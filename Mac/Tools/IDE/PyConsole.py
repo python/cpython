@@ -127,10 +127,12 @@ class ConsoleTextWidget(W.EditText):
 		stuff = string.split(self._buf, '\n')
 		stuff = string.join(stuff, '\r')
 		self.setselection_at_end()
-		self.ted.WEInsert(stuff, None, None)
+		try:
+			self.ted.WEInsert(stuff, None, None)
+		finally:
+			self._buf = ""
 		selstart, selend = self.getselection()
 		self._inputstart = selstart
-		self._buf = ""
 		self.ted.WEClearUndo()
 		self.updatescrollbars()
 		if self._parentwindow.wid.GetWindowPort().QDIsPortBuffered():
@@ -329,8 +331,10 @@ class PyOutput:
 		end = self.w.outputtext.ted.WEGetTextLength()
 		self.w.outputtext.setselection(end, end)
 		self.w.outputtext.ted.WEFeatureFlag(WASTEconst.weFReadOnly, 0)
-		self.w.outputtext.ted.WEInsert(stuff, None, None)
-		self._buf = ""
+		try:
+			self.w.outputtext.ted.WEInsert(stuff, None, None)
+		finally:
+			self._buf = ""
 		self.w.outputtext.updatescrollbars()
 		self.w.outputtext.ted.WEFeatureFlag(WASTEconst.weFReadOnly, 1)
 		if self.w.wid.GetWindowPort().QDIsPortBuffered():
