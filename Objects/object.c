@@ -88,7 +88,7 @@ newobject(tp)
 varobject *
 newvarobject(tp, size)
 	typeobject *tp;
-	unsigned int size;
+	int size;
 {
 	varobject *op = (varobject *)
 		malloc(tp->tp_basicsize + size * tp->tp_itemsize);
