@@ -726,18 +726,25 @@ To make the catalog a bit more useful, a new optional
 \function{setup()} function.  A list of
 \citetitle[http://www.tuxedo.org/\%7Eesr/trove/]{Trove}-style strings can be supplied to help classify the software.
 
-Here's an example \file{setup.py} with classifiers:
+Here's an example \file{setup.py} with classifiers, written to be compatible 
+with older versions of the Distutils:
 
 \begin{verbatim}
-setup (name = "Quixote",
-       version = "0.5.1",
-       description = "A highly Pythonic Web application framework",
-       ...
-       classifiers= ['Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-                     'Environment :: No Input/Output (Daemon)',
-                     'Intended Audience :: Developers'],
+from distutils import core
+kw = ('name': "Quixote",
+      'version': "0.5.1",
+      'description': "A highly Pythonic Web application framework",
        ...
     )
+
+if (hasattr(core, 'setup_keywords') and 
+    'classifiers' in core.setup_keywords):
+        kw['classifiers'] = \
+                 ['Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+                  'Environment :: No Input/Output (Daemon)',
+                  'Intended Audience :: Developers'],
+
+core.setup (**kw)
 \end{verbatim}
 
 The full list of classifiers can be obtained by running 
@@ -1279,8 +1286,7 @@ Modifying \file{sample.h} would then cause the module to be recompiled.
 it now checks for the \envvar{CC}, \envvar{CFLAGS}, \envvar{CPP},
 \envvar{LDFLAGS}, and \envvar{CPPFLAGS} environment variables, using
 them to override the settings in Python's configuration (contributed
-by Robert Weber); the \function{get_distutils_options()} method lists
-recently-added extensions to Distutils.
+by Robert Weber).
 
 \item The \module{getopt} module gained a new function,
 \function{gnu_getopt()}, that supports the same arguments as the existing
