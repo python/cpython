@@ -65,6 +65,7 @@ def print_tb(tb, limit=None, file=None):
         name = co.co_name
         _print(file,
                '  File "%s", line %d, in %s' % (filename,lineno,name))
+        linecache.checkcache(filename)
         line = linecache.getline(filename, lineno)
         if line: _print(file, '    ' + line.strip())
         tb = tb.tb_next
@@ -96,6 +97,7 @@ def extract_tb(tb, limit = None):
         co = f.f_code
         filename = co.co_filename
         name = co.co_name
+        linecache.checkcache(filename)
         line = linecache.getline(filename, lineno)
         if line: line = line.strip()
         else: line = None
@@ -277,6 +279,7 @@ def extract_stack(f=None, limit = None):
         co = f.f_code
         filename = co.co_filename
         name = co.co_name
+        linecache.checkcache(filename)
         line = linecache.getline(filename, lineno)
         if line: line = line.strip()
         else: line = None

@@ -40,11 +40,19 @@ def getlines(filename):
         return updatecache(filename)
 
 
-def checkcache():
+def checkcache(filename=None):
     """Discard cache entries that are out of date.
     (This is not checked upon each call!)"""
 
-    for filename in cache.keys():
+    if filename is None:
+        filenames = cache.keys()
+    else:
+        if filename in cache:
+            filenames = [filename]
+        else:
+            return
+
+    for filename in filenames:
         size, mtime, lines, fullname = cache[filename]
         try:
             stat = os.stat(fullname)
