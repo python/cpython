@@ -701,10 +701,10 @@ def AtSelFirst():
 def AtSelLast():
 	return 'sel.last'
 def At(x, y=None):
-	if y:
-		return '@' + `x` + ',' + `y`
+	if y is None:
+		return '@' + `x`		
 	else:
-		return '@' + `x` 
+		return '@' + `x` + ',' + `y`
 
 class Canvas(Widget):
 	def __init__(self, master=None, cnf={}):
