@@ -6,7 +6,6 @@ import time
 import pickle
 import warnings
 from math import log, exp, sqrt, pi
-from sets import Set
 from test import test_support
 
 class TestBasicOps(unittest.TestCase):
@@ -64,9 +63,9 @@ class TestBasicOps(unittest.TestCase):
         for k in xrange(N+1):
             s = self.gen.sample(population, k)
             self.assertEqual(len(s), k)
-            uniq = Set(s)
+            uniq = set(s)
             self.assertEqual(len(uniq), k)
-            self.failUnless(uniq <= Set(population))
+            self.failUnless(uniq <= set(population))
         self.assertEqual(self.gen.sample([], 0), [])  # test edge case N==k==0
 
     def test_sample_distribution(self):
@@ -89,8 +88,7 @@ class TestBasicOps(unittest.TestCase):
 
     def test_sample_inputs(self):
         # SF bug #801342 -- population can be any iterable defining __len__()
-        from sets import Set
-        self.gen.sample(Set(range(20)), 2)
+        self.gen.sample(set(range(20)), 2)
         self.gen.sample(range(20), 2)
         self.gen.sample(xrange(20), 2)
         self.gen.sample(dict.fromkeys('abcdefghijklmnopqrst'), 2)
@@ -256,8 +254,8 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
 
     def test_rangelimits(self):
         for start, stop in [(-2,0), (-(2**60)-2,-(2**60)), (2**60,2**60+2)]:
-            self.assertEqual(Set(range(start,stop)),
-                Set([self.gen.randrange(start,stop) for i in xrange(100)]))
+            self.assertEqual(set(range(start,stop)),
+                set([self.gen.randrange(start,stop) for i in xrange(100)]))
 
     def test_genrandbits(self):
         # Verify cross-platform repeatability
@@ -364,7 +362,7 @@ class TestModule(unittest.TestCase):
 
     def test__all__(self):
         # tests validity but not completeness of the __all__ list
-        self.failUnless(Set(random.__all__) <= Set(dir(random)))
+        self.failUnless(set(random.__all__) <= set(dir(random)))
 
 def test_main(verbose=None):
     testclasses =    (WichmannHill_TestBasicOps,

@@ -467,6 +467,10 @@ SOURCE=..\Modules\rotormodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Objects\setobject.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\shamodule.c
 # End Source File
 # Begin Source File

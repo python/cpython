@@ -86,6 +86,7 @@
 #include "listobject.h"
 #include "dictobject.h"
 #include "enumobject.h"
+#include "setobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
 #include "funcobject.h"

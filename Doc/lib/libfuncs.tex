@@ -477,6 +477,17 @@ class C:
   and is known to vary.}
 \end{funcdesc}
 
+\begin{funcdesc}{frozenset}{\optional{iterable}}
+  Return a frozenset object whose elements are taken from \var{iterable}.
+  Frozensets are sets that have no update methods but can be hashed and
+  used as members of other sets or as dictionary keys.  The elements of
+  a frozenset must be immutable themselves.  To represent sets of sets,
+  the inner sets should also be \class{frozenset} objects.  If
+  \var{iterable} is not specified, returns a new empty set,
+  \code{frozenset([])}.
+  \versionadded{2.4}  
+\end{funcdesc}
+
 \begin{funcdesc}{getattr}{object, name\optional{, default}}
   Return the value of the named attributed of \var{object}.  \var{name}
   must be a string.  If the string is the name of one of the object's
@@ -895,6 +906,14 @@ class C(object):
   closest multiple of 10 to the power minus \var{n}; if two multiples
   are equally close, rounding is done away from 0 (so. for example,
   \code{round(0.5)} is \code{1.0} and \code{round(-0.5)} is \code{-1.0}).
+\end{funcdesc}
+
+\begin{funcdesc}{set}{\optional{iterable}}
+  Return a set whose elements are taken from \var{iterable}.  The elements
+  must be immutable.  To represent sets of sets, the inner sets should
+  be \class{frozenset} objects.  If \var{iterable} is not specified,
+  returns a new empty set, \code{set([])}.
+  \versionadded{2.4}  
 \end{funcdesc}
 
 \begin{funcdesc}{setattr}{object, name, value}
