@@ -1,0 +1,237 @@
+\section{\module{xmlrpclib} --- XML-RPC client access}
+
+\declaremodule{standard}{xmlrpclib}
+\modulesynopsis{XML-RPC client access.}
+\moduleauthor{Fredrik Lundh}{effbot@telia.com}
+\sectionauthor{Eric S. Raymond}{esr@snark.thyrsus.com}
+
+% Not everyting is documented yet.  It might be good to describe 
+% Marshaller, Unmarshaller, getparser, dumps, loads, and Transport.
+
+\versionadded{2.2}
+
+XML-RPC is a Remote Procedure Call method that uses XML passed via
+HTTP as a transport.  With it, a client can call methods with
+parameters on a remote server (the server is named by a URI) and get back
+structured data.  This module supports writing XML-RPC client code; it
+handles all the details of translating between conformable Python
+objects and XML on the wire.
+
+\begin{seealso}
+   \seetitle{http://xmlrpc-c.sourceforge.net/xmlrpc-howto/xmlrpc-howto.html}
+	{XML-RPC HOWTO}{A good description of XML operation and client
+	software in several languages.  Contains pretty much
+	everything an XML-RPC client developer needs to know.}
+   \seetitle{http://xmlrpc-c.sourceforge.net/hacks.php}
+	{XML-RPC-Hacks page}{Extensions for various open-source 
+	libraries to support instrospection and multicall.}
+\end{seealso}
+
+\begin{classdesc}{Server}{\optional{uri\optional{, transport, encoding, verbose}}}
+A \class{Server} instance is a server proxy that manages communication
+with a remote XML-RPC server.  The required first argument is a URI
+(Uniform Resource Indicator), and will normally be the URL of the
+server.  The optional second argument is a transport factory instance;
+by default it is an internal \class{SafeTransport} instance for https:
+URLs and an internal HTTP \class{Transport} instance otherwise.  The
+optional third argument is an encoding, by default UTF-8. The optional
+fourth argument is a debugging flag.
+
+The returned instance is a proxy object with methods that can be used
+to invoke corresponding RPC calls on the remote server.  If the remote
+server supports the introspection API, the proxy can also be used to query
+the remote server for the methods it supports (service discovery) and
+fetch other server-associated metadata.
+
+\class{Server} instance methods take Python basic types and objects as 
+arguments and return Python basic types and classes.  Types that are
+conformable (e.g. that can be marshalled through XML), include the
+following (and except where noted, they are unmarshalled as the same
+Python type):
+
+\begin{tableii}{l|l}{constant}{Name}{Meaning}
+  \lineii{boolean}{The True and False constants that then module supplies}
+  \lineii{integers}{Pass in directly}
+  \lineii{floating-point numbers}{Pass in directly}
+  \lineii{strings}{Pass in directly}
+  \lineii{arrays}{Any Python sequence type containing conformable
+  elements. Arrays are returned as lists}
+  \lineii{structures}{A Python dictionary. Keys must be strings,
+  values may be any conformable type.}
+  \lineii{dates}{in seconds since the epoch; pass in an instance of the
+	\class{DateTime} wrapper class}
+  \lineii{binary data}{pass in an instance of the \class{Binary} wrapper class}
+\end{tableii}
+
+This is the full set of data types supported by XML-RPC.  Method calls
+may also return a special \class{Fault} instance, used to signal XML-RPCserver
+errors, or a \class{ProtocolError} instance used to signal an error in
+the HTTP/HTTPS transport layer.
+
+\end{classdesc}
+
+\subsection{Server Objects \label{server-objects}}
+
+A \class{Server} instance proxy object has a method corresponding to
+each remote procedure call accepted by the XML-RPC server.  Calling
+the method performs an RPC, dispatched by both name and argument
+signature (e.g. the same method name can be overloaded with multiple
+argument signatures).  The RPC finishes by returning a value, which
+may be either returned data in a conformant type or a \class{Fault} or
+\class{ProtocolError} object indicating an error.
+
+Servers that support the XML introspection API support some common
+methods grouped under the reserved \member{system} member:
+
+\begin{methoddesc}{system.listMethods}{}
+This method returns a list of strings, one for each (non-system)
+method supported by the XML-RPC server.
+\end{methoddesc}
+
+\begin{methoddesc}{system.methodHelp}{name}
+This method takes one parameter, the name of a method implemented by
+the XML-RPC server.It returns an array of possible signatures for this
+method. A signature is an array of types. The first of these types is
+the return type of the method, the rest are parameters.
+
+Because multiple signatures (ie. overloading) is permitted, this method
+returns a list of signatures rather than a singleton.
+
+Signatures themselves are restricted to the top level parameters
+expected by a method. For instance if a method expects one array of
+structs as a parameter, and it returns a string, its signature is
+simply "string, array". If it expects three integers and returns a
+string, its signature is "string, int, int, int".
+
+If no signature is defined for the method, a non-array value is
+returned. In Python this means that the type of the returned 
+value will be something other that list.
+\end{methoddesc}
+
+\begin{methoddesc}{system.methodHelp}{name}
+This method takes one parameter, the name of a method implemented by
+the XML-RPC server.  It returns a documentation string describing the
+use of that method. If no such string is available, an empty string is
+returned. The documentation string may contain HTML markup.  
+\end{methoddesc}
+
+Introspection methods are currently supported by servers written in
+PHP, C and Microsoft .NET. Partial introspection support is included
+in recent updates to UserLand Frontier. Introspection support for
+Perl, Python and Java is available at the XML-RPC Hacks page.
+
+\subsection{Boolean Objects \label{boolean-objects}}
+
+This class may be initialized from any Python value; the instance
+returned depends onlyon its truth value.  It supports various Python
+operators through \class{__cmp__}, \class{__repr__}, \class{__int__},
+and \class{__nonzero__} methods, all implemented in the obvious ways.  
+
+It also has the following method, supported mainly for internal use by
+the unmarshalling code:
+
+\begin{methoddesc}{encode}{out}
+Write the XML-RPC encoding of this Boolean item to the out stream object.
+\end{methoddesc}
+
+\subsection{DateTime Objects \label{datetime-objects}}
+
+This class may initialized from date in seconds since the epoch, a
+time tuple, or an ISO 8601 time/date string.  It has the following
+methods, supported mainly for internal use by the
+marshalling/unmarshalling code:
+
+\begin{methoddesc}{decode}{string}
+Accept a string as the instance's new time value.
+\end{methoddesc}
+
+\begin{methoddesc}{encode}{out}
+Write the XML-RPC encoding of this DateTime item to the out stream object.
+\end{methoddesc}
+
+It also supports certain of Python's built-in operators through 
+\method{_cmp__} and \method{__repr__} methods.
+
+\subsection{Binary Objects \label{binary-objects}}
+
+This class may initialized from string data (which may include NULs).
+It has the following methods, supported mainly for internal use by the
+marshalling/unmarshalling code:
+
+\begin{methoddesc}{decode}{string}
+Accept a base64 string and decode it as the instance's new data.
+\end{methoddesc}
+
+\begin{methoddesc}{encode}{out}
+Write the XML-RPC base 64 encoding of this binary item to the out stream object.
+\end{methoddesc}
+
+It also supports certain of Python's built-in operators through a
+\method{_cmp__} method.
+
+\subsection{Fault Objects \label{fault-objects}}
+
+A \class{Fault} object encapsulates the content of an XML-RPC fault tag.
+Fault objects have the following members:
+
+\begin{memberdesc}{faultCode}
+A string indicating the fault type.
+\end{memberdesc}
+
+\begin{memberdesc}{faultString}
+A string containing a diagnostic message associated with the fault.
+\end{memberdesc}
+
+\subsection{ProtocolError Objects \label{protocol-error-objects}}
+
+A \class{ProtocolError} object describes a protocol error in the
+underlying transport layer (such as a 404 `not found' error if the
+server named by the URI does not exist).  It has the following
+members:
+
+\begin{memberdesc}{url}
+The URI or URL that triggered te error.
+\end{memberdesc}
+
+\begin{memberdesc}{errcode}
+The error code.
+\end{memberdesc}
+
+\begin{memberdesc}{errmsg}
+The eror message of diagnostic string.
+\end{memberdesc}
+
+\begin{memberdesc}{headers}
+A string containing the headers of the HTTP/HTTPS request that
+triggered the error.
+\end{memberdesc}
+
+\subsection{Convenience Functions}
+
+\begin{funcdesc}{boolean}{value, \optional{truefals=(False, True)}}
+Convert any Python value to one of the XML-RPC boolean constants.
+The optional second argument supplies a conversion table to be indexed
+by the first argument's Python truth value.
+\end{funcdesc}
+
+\begin{funcdesc}{binary}{data}
+Trivially convert any Python string to a \class{Binary} object.
+\end{funcdesc}
+
+\subsection{Example of Client Usage
+
+\begin{verbatim}
+    # simple test program (from the XML-RPC specification)
+
+    # server = Server("http://localhost:8000") # local server
+    server = Server("http://betty.userland.com")
+
+    print server
+
+    try:
+        print server.examples.getStateName(41)
+    except Error, v:
+        print "ERROR", v
+\end{verbatim}
+
+% End
