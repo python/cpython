@@ -83,16 +83,21 @@ def split(p):
 
 
 # Split a path in root and extension.
-# The extension is everything starting at the first dot in the last
+# The extension is everything starting at the last dot in the last
 # pathname component; the root is everything before that.
 # It is always true that root + ext == p.
 
 def splitext(p):
 	root, ext = '', ''
 	for c in p:
-		if c in '/\\':
+		if c in ['/','\\']:
 			root, ext = root + ext + c, ''
-		elif c == '.' or ext:
+		elif c == '.':
+			if ext:
+				root, ext = root + ext, c
+			else:
+				ext = c
+		elif ext:
 			ext = ext + c
 		else:
 			root = root + c
