@@ -1372,7 +1372,7 @@ def inherits():
     verify(repr(precfloat(1.1)) == "1.1")
     a = precfloat(12345)
     #XXX verify(float(a) == 12345.0)
-    #XXX verify(float(a).__class__ is float)
+    verify(float(a).__class__ is float)
 
     class madtuple(tuple):
         _rev = None

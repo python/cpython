@@ -909,9 +909,13 @@ PyNumber_Float(PyObject *o)
 
 	if (o == NULL)
 		return null_error();
-	if (PyFloat_Check(o)) {
+	if (PyFloat_CheckExact(o)) {
 		Py_INCREF(o);
 		return o;
+	}
+	if (PyFloat_Check(o)) {
+		PyFloatObject *po = (PyFloatObject *)o;
+		return PyFloat_FromDouble(po->ob_fval);
 	}
 	if (!PyString_Check(o)) {
 		m = o->ob_type->tp_as_number;
