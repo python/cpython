@@ -1,1 +1,1 @@
-IDLE_VERSION = "0.6"
+IDLE_VERSION = "0.8"
