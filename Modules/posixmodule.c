@@ -726,7 +726,11 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
 
 static char posix_access__doc__[] =
 "access(path, mode) -> 1 if granted, 0 otherwise\n\
-Test for access to a file.";
+Use the real uid/gid to test for access to a path.  Note that most
+operations will use the effective uid/gid, therefore this routine can
+be used in a suid/sgid environment to test if the invoking user has the
+specified access to the path.  The mode argument can be F_OK to test
+existance, or the inclusive-OR of R_OK, W_OK, and X_OK.";
 
 static PyObject *
 posix_access(PyObject *self, PyObject *args)
