@@ -178,15 +178,25 @@ def dict_constructor():
     vereq(d, {})
     d = dictionary({})
     vereq(d, {})
-    d = dictionary(mapping={})
+    d = dictionary(x={})
     vereq(d, {})
     d = dictionary({1: 2, 'a': 'b'})
     vereq(d, {1: 2, 'a': 'b'})
+    vereq(d, dictionary(d.items()))
+    vereq(d, dictionary(x=d.iteritems()))
     for badarg in 0, 0L, 0j, "0", [0], (0,):
         try:
             dictionary(badarg)
         except TypeError:
             pass
+        except ValueError:
+            if badarg == "0":
+                # It's a sequence, and its elements are also sequences (gotta
+                # love strings <wink>), but they aren't of length 2, so this
+                # one seemed better as a ValueError than a TypeError.
+                pass
+            else:
+                raise TestFailed("no TypeError from dictionary(%r)" % badarg)
         else:
             raise TestFailed("no TypeError from dictionary(%r)" % badarg)
     try:
@@ -194,7 +204,7 @@ def dict_constructor():
     except TypeError:
         pass
     else:
-        raise TestFailed("no TypeError from dictionary(senseless={}")
+        raise TestFailed("no TypeError from dictionary(senseless={})")
 
     try:
         dictionary({}, {})
@@ -204,10 +214,8 @@ def dict_constructor():
         raise TestFailed("no TypeError from dictionary({}, {})")
 
     class Mapping:
+        # Lacks a .keys() method; will be added later.
         dict = {1:2, 3:4, 'a':1j}
-
-        def __getitem__(self, i):
-            return self.dict[i]
 
     try:
         dictionary(Mapping())
@@ -217,8 +225,35 @@ def dict_constructor():
         raise TestFailed("no TypeError from dictionary(incomplete mapping)")
 
     Mapping.keys = lambda self: self.dict.keys()
-    d = dictionary(mapping=Mapping())
+    Mapping.__getitem__ = lambda self, i: self.dict[i]
+    d = dictionary(x=Mapping())
     vereq(d, Mapping.dict)
+
+    # Init from sequence of iterable objects, each producing a 2-sequence.
+    class AddressBookEntry:
+        def __init__(self, first, last):
+            self.first = first
+            self.last = last
+        def __iter__(self):
+            return iter([self.first, self.last])
+
+    d = dictionary([AddressBookEntry('Tim', 'Warsaw'),
+                    AddressBookEntry('Barry', 'Peters'),
+                    AddressBookEntry('Tim', 'Peters'),
+                    AddressBookEntry('Barry', 'Warsaw')])
+    vereq(d, {'Barry': 'Warsaw', 'Tim': 'Peters'})
+
+    d = dictionary(zip(range(4), range(1, 5)))
+    vereq(d, dictionary([(i, i+1) for i in range(4)]))
+
+    # Bad sequence lengths.
+    for bad in ['tooshort'], ['too', 'long', 'by 1']:
+        try:
+            dictionary(bad)
+        except ValueError:
+            pass
+        else:
+            raise TestFailed("no ValueError from dictionary(%r)" % bad)
 
 def test_dir():
     if verbose:
@@ -1830,7 +1865,7 @@ def keywords():
     vereq(unicode(string='abc', errors='strict'), u'abc')
     vereq(tuple(sequence=range(3)), (0, 1, 2))
     vereq(list(sequence=(0, 1, 2)), range(3))
-    vereq(dictionary(mapping={1: 2}), {1: 2})
+    vereq(dictionary(x={1: 2}), {1: 2})
 
     for constructor in (int, float, long, complex, str, unicode,
                         tuple, list, dictionary, file):
@@ -2371,7 +2406,7 @@ def kwdargs():
     vereq(f.__call__(a=42), 42)
     a = []
     list.__init__(a, sequence=[0, 1, 2])
-    vereq(a, [0, 1, 2]) 
+    vereq(a, [0, 1, 2])
 
 def test_main():
     class_docstrings()

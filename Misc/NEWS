@@ -4,6 +4,11 @@ XXX Planned XXX Release date: 14-Nov-2001
 
 Type/class unification and new-style classes
 
+- dictionary() now accepts an iterable object producing 2-sequences.
+  For example, dictionary(d.items()) == d for any dictionary d.  The
+  argument, and the elements of the argument, can be any iterable
+  objects.
+
 - Methods of built-in types now properly check for keyword arguments
   (formerly these were silently ignored).  The only built-in methods
   that take keyword arguments are __call__, __init__ and __new__.
@@ -30,6 +35,10 @@ Tools/Demos
 Build
 
 C API
+
+- New function PySequence_Fast_GET_SIZE() returns the size of a non-
+  NULL result from PySequence_Fast(), more quickly than calling
+  PySequence_Size().
 
 New platforms
 

@@ -125,7 +125,7 @@ for which they do not apply, they will raise a Python exception.
   the Unicode string representation on success, \NULL{} on failure.
   This is the equivalent of the Python expression
   \samp{unistr(\var{o})}.  Called by the
-  \function{unistr()}\bifuncindex{unistr} built-in function. 
+  \function{unistr()}\bifuncindex{unistr} built-in function.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_IsInstance}{PyObject *inst, PyObject *cls}
@@ -715,10 +715,17 @@ determination.
 
 \begin{cfuncdesc}{PyObject*}{PySequence_Fast_GET_ITEM}{PyObject *o, int i}
   Return the \var{i}th element of \var{o}, assuming that \var{o} was
-  returned by \cfunction{PySequence_Fast()}, and that \var{i} is
-  within bounds.  The caller is expected to get the length of the
-  sequence by calling \cfunction{PySequence_Size()} on \var{o}, since
-  lists and tuples are guaranteed to always return their true length.
+  returned by \cfunction{PySequence_Fast()}, \var{o} is not \NULL{},
+  and that \var{i} is within bounds.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PySequence_Fast_GET_SIZE}{PyObject *o}
+  Returns the length of \var{o}, assuming that \var{o} was
+  returned by \cfunction{PySequence_Fast()} and that \var{o} is
+  not \NULL{}.  The size can also be gotten by calling
+  \cfunction{PySequence_Size()} on \var{o}, but
+  \cfunction{PySequence_Fast_GET_SIZE()} is faster because it can
+  assume \var{o} is a list or tuple.
 \end{cfuncdesc}
 
 

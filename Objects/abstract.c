@@ -1278,7 +1278,7 @@ PySequence_Tuple(PyObject *v)
 	/* Get iterator. */
 	it = PyObject_GetIter(v);
 	if (it == NULL)
-		return type_error("tuple() argument must support iteration");
+		return NULL;
 
 	/* Guess result size and allocate space. */
 	n = PySequence_Size(v);
