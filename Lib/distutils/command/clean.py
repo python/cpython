@@ -62,7 +62,7 @@ class clean (Command):
             # built distribution will have its own subdirectory under
             # "build/bdist", but they'll be taken care of by
             # 'remove_tree()'.
-            if os.path.exists (self.build_bdist)
+            if os.path.exists (self.build_bdist):
                 remove_tree (self.build_bdist, self.verbose, self.dry_run)
 
         # just for the heck of it, try to remove the base build directory:
