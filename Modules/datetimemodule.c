@@ -564,22 +564,22 @@ check_tzinfo_subclass(PyObject *p)
 	return -1;
 }
 
-/* Return tzinfo.methname(self), without any checking of results.
+/* Return tzinfo.methname(tzinfoarg), without any checking of results.
  * If tzinfo is None, returns None.
  */
 static PyObject *
-call_tzinfo_method(PyObject *self, PyObject *tzinfo, char *methname)
+call_tzinfo_method(PyObject *tzinfo, char *methname, PyObject *tzinfoarg)
 {
 	PyObject *result;
 
-	assert(self && tzinfo && methname);
+	assert(tzinfo && methname && tzinfoarg);
 	assert(check_tzinfo_subclass(tzinfo) >= 0);
 	if (tzinfo == Py_None) {
 		result = Py_None;
 		Py_INCREF(result);
 	}
 	else
-		result = PyObject_CallMethod(tzinfo, methname, "O", self);
+		result = PyObject_CallMethod(tzinfo, methname, "O", tzinfoarg);
 	return result;
 }
 
@@ -612,8 +612,8 @@ replace_tzinfo(PyObject *self, PyObject *newtzinfo)
 	((PyDateTime_DateTimeTZ *)self)->tzinfo = newtzinfo;
 }
 
-/* Internal helper.
- * Call getattr(tzinfo, name)(tzinfoarg), and extract an int from the
+
+/* Call getattr(tzinfo, name)(tzinfoarg), and extract an int from the
  * result.  tzinfo must be an instance of the tzinfo class.  If the method
  * returns None, this returns 0 and sets *none to 1.  If the method doesn't
  * return a Python int or long or timedelta, TypeError is raised and this
@@ -635,7 +635,7 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 	assert(tzinfoarg != NULL);
 
 	*none = 0;
-	u = call_tzinfo_method(tzinfoarg, tzinfo, name);
+	u = call_tzinfo_method(tzinfo, name, tzinfoarg);
 	if (u == NULL)
 		return -1;
 
@@ -702,18 +702,21 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg, int *none)
 
 static PyObject *new_delta(int d, int sec, int usec, int normalize);
 
-/* Call tzinfo.name(self) and return the offset as a timedelta or None. */
+/* Call tzinfo.name(tzinfoarg), and return the offset as a timedelta or None.
+ */
 static PyObject *
-offset_as_timedelta(PyObject *self, PyObject *tzinfo, char *name) {
+offset_as_timedelta(PyObject *tzinfo, char *name, PyObject *tzinfoarg) {
 	PyObject *result;
 
+	assert(tzinfo && name && tzinfoarg);
 	if (tzinfo == Py_None) {
 		result = Py_None;
 		Py_INCREF(result);
 	}
 	else {
 		int none;
-		int offset = call_utc_tzinfo_method(tzinfo, name, self, &none);
+		int offset = call_utc_tzinfo_method(tzinfo, name, tzinfoarg,
+						    &none);
 		if (offset < 0 && PyErr_Occurred())
 			return NULL;
 		if (none) {
@@ -740,26 +743,26 @@ call_dst(PyObject *tzinfo, PyObject *tzinfoarg, int *none)
 	return call_utc_tzinfo_method(tzinfo, "dst", tzinfoarg, none);
 }
 
-/* Call tzinfo.tzname(self), and return the result.  tzinfo must be
+/* Call tzinfo.tzname(tzinfoarg), and return the result.  tzinfo must be
  * an instance of the tzinfo class or None.  If tzinfo isn't None, and
- * tzname() doesn't return None ora string, TypeError is raised and this
+ * tzname() doesn't return None or a string, TypeError is raised and this
  * returns NULL.
  */
 static PyObject *
-call_tzname(PyObject *self, PyObject *tzinfo)
+call_tzname(PyObject *tzinfo, PyObject *tzinfoarg)
 {
 	PyObject *result;
 
-	assert(self != NULL);
 	assert(tzinfo != NULL);
 	assert(check_tzinfo_subclass(tzinfo) >= 0);
+	assert(tzinfoarg != NULL);
 
 	if (tzinfo == Py_None) {
 		result = Py_None;
 		Py_INCREF(result);
 	}
 	else
-		result = PyObject_CallMethod(tzinfo, "tzname", "O", self);
+		result = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
 
 	if (result != NULL && result != Py_None && ! PyString_Check(result)) {
 		PyErr_Format(PyExc_TypeError, "tzinfo.tzname() must "
@@ -816,7 +819,9 @@ classify_utcoffset(PyObject *op, int *offset)
 		return (PyTime_Check(op) || PyDate_Check(op)) ?
 		       OFFSET_NAIVE : OFFSET_UNKNOWN;
 	}
-	*offset = call_utcoffset(tzinfo, op, &none);
+	*offset = call_utcoffset(tzinfo,
+				 PyTimeTZ_Check(op) ? Py_None : op,
+				 &none);
 	if (*offset == -1 && PyErr_Occurred())
 		return OFFSET_ERROR;
 	return none ? OFFSET_NAIVE : OFFSET_AWARE;
@@ -951,9 +956,12 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
  * so this imports the module and calls it.  All the hair is due to
  * giving special meanings to the %z and %Z format codes via a preprocessing
  * step on the format string.
+ * tzinfoarg is the argument to pass to the object's tzinfo method, if
+ * needed.
  */
 static PyObject *
-wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple)
+wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
+	      PyObject *tzinfoarg)
 {
 	PyObject *result = NULL;	/* guilty until proved innocent */
 
@@ -1031,11 +1039,12 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple)
 				zreplacement = PyString_FromString("");
 				if (zreplacement == NULL) goto Done;
 				if (tzinfo != Py_None && tzinfo != NULL) {
+					assert(tzinfoarg != NULL);
 					if (format_utcoffset(buf,
 							     sizeof(buf),
 							     "",
 							     tzinfo,
-							     object) < 0)
+							     tzinfoarg) < 0)
 						goto Done;
 					Py_DECREF(zreplacement);
 					zreplacement = PyString_FromString(buf);
@@ -1053,8 +1062,9 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple)
 				Zreplacement = PyString_FromString("");
 				if (Zreplacement == NULL) goto Done;
 				if (tzinfo != Py_None && tzinfo != NULL) {
-					PyObject *temp = call_tzname(object,
-								     tzinfo);
+					PyObject *temp;
+					assert(tzinfoarg != NULL);
+					temp = call_tzname(tzinfo, tzinfoarg);
 					if (temp == NULL) goto Done;
 					if (temp != Py_None) {
 						assert(PyString_Check(temp));
@@ -2424,7 +2434,8 @@ date_strftime(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 	tuple = PyObject_CallMethod((PyObject *)self, "timetuple", "()");
 	if (tuple == NULL)
 		return NULL;
-	result = wrap_strftime((PyObject *)self, format, tuple);
+	result = wrap_strftime((PyObject *)self, format, tuple,
+			       (PyObject *)self);
 	Py_DECREF(tuple);
 	return result;
 }
@@ -3652,7 +3663,7 @@ time_strftime(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	if (tuple == NULL)
 		return NULL;
 	assert(PyTuple_Size(tuple) == 9);
-	result = wrap_strftime((PyObject *)self, format, tuple);
+	result = wrap_strftime((PyObject *)self, format, tuple, Py_None);
 	Py_DECREF(tuple);
 	return result;
 }
@@ -4140,18 +4151,17 @@ timetz_dealloc(PyDateTime_TimeTZ *self)
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
 timetz_utcoffset(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return offset_as_timedelta((PyObject *)self, self->tzinfo,
-				   "utcoffset");
+	return offset_as_timedelta(self->tzinfo, "utcoffset", Py_None);
 }
 
 static PyObject *
 timetz_dst(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return offset_as_timedelta((PyObject *)self, self->tzinfo, "dst");
+	return offset_as_timedelta(self->tzinfo, "dst", Py_None);
 }
 
 static PyObject *
 timetz_tzname(PyDateTime_TimeTZ *self, PyObject *unused) {
-	return call_tzname((PyObject *)self, self->tzinfo);
+	return call_tzname(self->tzinfo, Py_None);
 }
 
 /*
@@ -4181,7 +4191,7 @@ timetz_isoformat(PyDateTime_TimeTZ *self)
 
 	/* We need to append the UTC offset. */
 	if (format_utcoffset(buf, sizeof(buf), ":", self->tzinfo,
-			     (PyObject *)self) < 0) {
+			     Py_None) < 0) {
 		Py_DECREF(result);
 		return NULL;
 	}
@@ -4234,7 +4244,7 @@ timetz_nonzero(PyDateTime_TimeTZ *self)
 	}
 	offset = 0;
 	if (self->tzinfo != Py_None) {
-		offset = call_utcoffset(self->tzinfo, (PyObject *)self, &none);
+		offset = call_utcoffset(self->tzinfo, Py_None, &none);
 		if (offset == -1 && PyErr_Occurred())
 			return -1;
 	}
@@ -4543,18 +4553,18 @@ datetimetz_dealloc(PyDateTime_DateTimeTZ *self)
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
 datetimetz_utcoffset(PyDateTime_DateTimeTZ *self, PyObject *unused) {
-	return offset_as_timedelta((PyObject *)self, self->tzinfo,
-				   "utcoffset");
+	return offset_as_timedelta(self->tzinfo, "utcoffset",
+				   (PyObject *)self);
 }
 
 static PyObject *
 datetimetz_dst(PyDateTime_DateTimeTZ *self, PyObject *unused) {
-	return offset_as_timedelta((PyObject *)self, self->tzinfo, "dst");
+	return offset_as_timedelta(self->tzinfo, "dst", (PyObject *)self);
 }
 
 static PyObject *
 datetimetz_tzname(PyDateTime_DateTimeTZ *self, PyObject *unused) {
-	return call_tzname((PyObject *)self, self->tzinfo);
+	return call_tzname(self->tzinfo, (PyObject *)self);
 }
 
 /*

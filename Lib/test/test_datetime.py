@@ -1557,6 +1557,23 @@ class TestTime(unittest.TestCase):
 # must be legit (which is true for timetz and datetimetz).
 class TZInfoBase(unittest.TestCase):
 
+    def test_argument_passing(self):
+        cls = self.theclass
+        # A datetimetz passes itself on, a timetz passes None.
+        class introspective(tzinfo):
+            def tzname(self, dt):    return dt and "real" or "none"
+            def utcoffset(self, dt): return dt and 42 or -42
+            dst = utcoffset
+
+        obj = cls(1, 2, 3, tzinfo=introspective())
+
+        expected = cls is timetz and "none" or "real"
+        self.assertEqual(obj.tzname(), expected)
+
+        expected = timedelta(minutes=(cls is timetz and -42 or 42))
+        self.assertEqual(obj.utcoffset(), expected)
+        self.assertEqual(obj.dst(), expected)
+
     def test_bad_tzinfo_classes(self):
         cls = self.theclass
         self.assertRaises(TypeError, cls, 1, 1, 1, tzinfo=12)
@@ -1677,22 +1694,26 @@ class TZInfoBase(unittest.TestCase):
                 self.assertEqual(got, expected)
 
         # However, if they're different members, uctoffset is not ignored.
-        d0 = base.replace(minute=3, tzinfo=OperandDependentOffset())
-        d1 = base.replace(minute=9, tzinfo=OperandDependentOffset())
-        d2 = base.replace(minute=11, tzinfo=OperandDependentOffset())
-        for x in d0, d1, d2:
-            for y in d0, d1, d2:
-                got = cmp(x, y)
-                if (x is d0 or x is d1) and (y is d0 or y is d1):
-                    expected = 0
-                elif x is y is d2:
-                    expected = 0
-                elif x is d2:
-                    expected = -1
-                else:
-                    assert y is d2
-                    expected = 1
-                self.assertEqual(got, expected)
+        # Note that a timetz can't actually have an operand-depedent offset,
+        # though (and timetz.utcoffset() passes None to tzinfo.utcoffset()),
+        # so skip this test for timetz.
+        if cls is not timetz:
+            d0 = base.replace(minute=3, tzinfo=OperandDependentOffset())
+            d1 = base.replace(minute=9, tzinfo=OperandDependentOffset())
+            d2 = base.replace(minute=11, tzinfo=OperandDependentOffset())
+            for x in d0, d1, d2:
+                for y in d0, d1, d2:
+                    got = cmp(x, y)
+                    if (x is d0 or x is d1) and (y is d0 or y is d1):
+                        expected = 0
+                    elif x is y is d2:
+                        expected = 0
+                    elif x is d2:
+                        expected = -1
+                    else:
+                        assert y is d2
+                        expected = 1
+                    self.assertEqual(got, expected)
 
 
 class TestTimeTZ(TestTime, TZInfoBase):
@@ -2535,7 +2556,7 @@ class USTimeZone(tzinfo):
         return self.stdoffset + self.dst(dt)
 
     def dst(self, dt):
-        if dt is None or isinstance(dt, time) or dt.tzinfo is None:
+        if dt is None or dt.tzinfo is None:
             # An exception instead may be sensible here, in one or more of
             # the cases.
             return ZERO
