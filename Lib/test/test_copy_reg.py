@@ -7,6 +7,27 @@ class C:
     pass
 
 
+class ExtensionSaver:
+    # Remember current registration for code (if any), and remove it (if
+    # there is one).
+    def __init__(self, code):
+        self.code = code
+        if code in copy_reg._inverted_registry:
+            self.pair = copy_reg._inverted_registry[code]
+            copy_reg.remove_extension(self.pair[0], self.pair[1], code)
+        else:
+            self.pair = None
+
+    # Restore previous registration for code.
+    def restore(self):
+        code = self.code
+        curpair = copy_reg._inverted_registry.get(code)
+        if curpair is not None:
+            copy_reg.remove_extension(curpair[0], curpair[1], code)
+        pair = self.pair
+        if pair is not None:
+            copy_reg.add_extension(pair[0], pair[1], code)
+
 class CopyRegTestCase(unittest.TestCase):
 
     def test_class(self):
@@ -25,6 +46,63 @@ class CopyRegTestCase(unittest.TestCase):
         import copy
         self.assertEquals(True, copy.copy(True))
 
+    def test_extension_registry(self):
+        mod, func, code = 'junk1 ', ' junk2', 0xabcd
+        e = ExtensionSaver(code)
+        try:
+            # Shouldn't be in registry now.
+            self.assertRaises(ValueError, copy_reg.remove_extension,
+                              mod, func, code)
+            copy_reg.add_extension(mod, func, code)
+            # Should be in the registry.
+            self.assert_(copy_reg._extension_registry[mod, func] == code)
+            self.assert_(copy_reg._inverted_registry[code] == (mod, func))
+            # Shouldn't be in the cache.
+            self.assert_(code not in copy_reg._extension_cache)
+            # Redundant registration should be OK.
+            copy_reg.add_extension(mod, func, code)  # shouldn't blow up
+            # Conflicting code.
+            self.assertRaises(ValueError, copy_reg.add_extension,
+                              mod, func, code + 1)
+            self.assertRaises(ValueError, copy_reg.remove_extension,
+                              mod, func, code + 1)
+            # Conflicting module name.
+            self.assertRaises(ValueError, copy_reg.add_extension,
+                              mod[1:], func, code )
+            self.assertRaises(ValueError, copy_reg.remove_extension,
+                              mod[1:], func, code )
+            # Conflicting function name.
+            self.assertRaises(ValueError, copy_reg.add_extension,
+                              mod, func[1:], code)
+            self.assertRaises(ValueError, copy_reg.remove_extension,
+                              mod, func[1:], code)
+            # Can't remove one that isn't registered at all.
+            if code + 1 not in copy_reg._inverted_registry:
+                self.assertRaises(ValueError, copy_reg.remove_extension,
+                                  mod[1:], func[1:], code + 1)
+
+        finally:
+            e.restore()
+
+        # Shouldn't be there anymore.
+        self.assert_((mod, func) not in copy_reg._extension_registry)
+        # The code *may* be in copy_reg._extension_registry, though, if
+        # we happened to pick on a registered code.  So don't check for
+        # that.
+
+        # Check valid codes at the limits.
+        for code in 1, 0x7fffffff:
+            e = ExtensionSaver(code)
+            try:
+                copy_reg.add_extension(mod, func, code)
+                copy_reg.remove_extension(mod, func, code)
+            finally:
+                e.restore()
+
+        # Ensure invalid codes blow up.
+        for code in -1, 0, 0x80000000L:
+            self.assertRaises(ValueError, copy_reg.add_extension,
+                              mod, func, code)
 
 def test_main():
     test_support.run_unittest(CopyRegTestCase)
