@@ -1,4 +1,3 @@
-
 /* Compile an expression node to intermediate code */
 
 /* XXX TO DO:
@@ -4818,9 +4817,11 @@ symtable_node(struct symtable *st, node *n)
 		}
 	case listmaker:
 		if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_for) {
+			st->st_tmpname++;
 			symtable_list_comprehension(st, CHILD(n, 1));
-			n = CHILD(n, 0);
-			goto loop;
+			symtable_node(st, CHILD(n, 0));
+			st->st_tmpname--;
+			return;
 		}
 	case atom:
 		if (TYPE(n) == atom && TYPE(CHILD(n, 0)) == NAME) {
@@ -5017,13 +5018,12 @@ symtable_list_comprehension(struct symtable *st, node *n)
 {
 	char tmpname[12];
 
-	sprintf(tmpname, "_[%d]", ++st->st_tmpname);
+	sprintf(tmpname, "_[%d]", st->st_tmpname);
 	symtable_add_def(st, tmpname, DEF_LOCAL);
 	symtable_assign(st, CHILD(n, 1), 0);
 	symtable_node(st, CHILD(n, 3));
 	if (NCH(n) == 5)
 		symtable_node(st, CHILD(n, 4));
-	--st->st_tmpname;
 }
 
 static void
@@ -5095,9 +5095,11 @@ symtable_assign(struct symtable *st, node *n, int flag)
 		}
 		return;
 	case listmaker:
-		if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_for)
-			symtable_list_comprehension(st, CHILD(n, 1));
-		else {
+		if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_for) {
+			/* XXX This is an error, but the next pass
+			   will catch it. */ 
+			return;
+		} else {
 			for (i = 0; i < NCH(n); i += 2)
 				symtable_assign(st, CHILD(n, i), flag);
 		}
