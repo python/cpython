@@ -74,14 +74,14 @@ def swapcase(s):
     return s.swapcase()
 
 # Strip leading and trailing tabs and spaces
-def strip(s):
+def strip(s, chars=None):
     """strip(s) -> string
 
     Return a copy of the string s with leading and trailing
     whitespace removed.
 
     """
-    return s.strip()
+    return s.strip(chars)
 
 # Strip leading tabs and spaces
 def lstrip(s):
