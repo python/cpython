@@ -1312,20 +1312,30 @@ xmlparse_getattr(xmlparseobject *self, char *name)
         Py_INCREF(self->handlers[handlernum]);
         return self->handlers[handlernum];
     }
+
+#define APPEND(list, str)				\
+	do {						\
+		PyObject *o = PyString_FromString(str);	\
+		if (o != NULL)				\
+			PyList_Append(list, o);		\
+		Py_XDECREF(o);				\
+	} while (0)
+
     if (strcmp(name, "__members__") == 0) {
         int i;
         PyObject *rc = PyList_New(0);
-        for(i = 0; handler_info[i].name != NULL; i++) {
-            PyList_Append(rc, PyString_FromString(handler_info[i].name));
+        for (i = 0; handler_info[i].name != NULL; i++) {
+            APPEND(rc, handler_info[i].name);
         }
-        PyList_Append(rc, PyString_FromString("ErrorCode"));
-        PyList_Append(rc, PyString_FromString("ErrorLineNumber"));
-        PyList_Append(rc, PyString_FromString("ErrorColumnNumber"));
-        PyList_Append(rc, PyString_FromString("ErrorByteIndex"));
-        PyList_Append(rc, PyString_FromString("ordered_attributes"));
-        PyList_Append(rc, PyString_FromString("returns_unicode"));
-        PyList_Append(rc, PyString_FromString("specified_attributes"));
+        APPEND(rc, "ErrorCode");
+        APPEND(rc, "ErrorLineNumber");
+        APPEND(rc, "ErrorColumnNumber");
+        APPEND(rc, "ErrorByteIndex");
+        APPEND(rc, "ordered_attributes");
+        APPEND(rc, "returns_unicode");
+        APPEND(rc, "specified_attributes");
 
+#undef APPEND
         return rc;
     }
     return Py_FindMethod(xmlparse_methods, (PyObject *)self, name);
