@@ -47,7 +47,7 @@ Single = any(r"[^'\\]", r'\\.') + "'"
 Double = any(r'[^"\\]', r'\\.') + '"'
 Single3 = any(r"[^'\\]",r'\\.',r"'[^'\\]",r"'\\.",r"''[^'\\]",r"''\\.") + "'''"
 Double3 = any(r'[^"\\]',r'\\.',r'"[^"\\]',r'"\\.',r'""[^"\\]',r'""\\.') + '"""'
-Triple = group("'''", '"""', "r'''", 'r"""')
+Triple = group("[rR]?'''", '[rR]?"""')
 String = group("[rR]?'" + any(r"[^\n'\\]", r'\\.') + "'",
                '[rR]?"' + any(r'[^\n"\\]', r'\\.') + '"')
 
@@ -60,16 +60,17 @@ Funny = group(Operator, Bracket, Special)
 PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
-ContStr = group("r?'" + any(r'\\.', r"[^\n'\\]") + group("'", r'\\\r?\n'),
-                'r?"' + any(r'\\.', r'[^\n"\\]') + group('"', r'\\\r?\n'))
+ContStr = group("[rR]?'" + any(r'\\.', r"[^\n'\\]") + group("'", r'\\\r?\n'),
+                '[rR]?"' + any(r'\\.', r'[^\n"\\]') + group('"', r'\\\r?\n'))
 PseudoExtras = group(r'\\\r?\n', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
 tokenprog, pseudoprog, single3prog, double3prog = map(
     re.compile, (Token, PseudoToken, Single3, Double3))
-endprogs = {"'": re.compile(Single), '"': re.compile(Double), 'r': None,
+endprogs = {"'": re.compile(Single), '"': re.compile(Double),
             "'''": single3prog, '"""': double3prog,
-            "r'''": single3prog, 'r"""': double3prog}
+            "r'''": single3prog, 'r"""': double3prog,
+            "R'''": single3prog, 'R"""': double3prog, 'r': None, 'R': None}
 
 tabsize = 8
 TokenError = 'TokenError'
@@ -148,7 +149,8 @@ def tokenize(readline, tokeneater=printtoken):
                     tokeneater(NEWLINE, token, spos, epos, line)
                 elif initial == '#':
                     tokeneater(COMMENT, token, spos, epos, line)
-                elif token in ("'''",'"""',"r'''",'r"""'): # triple-quoted
+                elif token in ("'''", '"""',               # triple-quoted
+                               "r'''", 'r"""', "R'''", 'R"""'):
                     endprog = endprogs[token]
                     endmatch = endprog.match(line, pos)
                     if endmatch:                           # all on one line
@@ -159,7 +161,8 @@ def tokenize(readline, tokeneater=printtoken):
                         strstart = (lnum, start)           # multiple lines
                         contstr = line[start:]
                         break
-                elif initial in ("'", '"') or token[:2] in ("r'", 'r"'):
+                elif initial in ("'", '"') or \
+                    token[:2] in ("r'", 'r"', "R'", 'R"'):
                     if token[-1] == '\n':                  # continued string
                         strstart = (lnum, start)
                         endprog = endprogs[initial] or endprogs[token[1]]
