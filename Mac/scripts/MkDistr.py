@@ -208,15 +208,12 @@ class Main:
 	
 	def __init__(self):
 		InitUI()
-		fss, ok = macfs.GetDirectory('Source directory:')
-		if not ok:
-			sys.exit(0)
-		os.chdir(fss.as_pathname())
+		os.chdir(sys.prefix)
 		if not os.path.isdir(':Mac:Distributions'):
 			os.mkdir(':Mac:Distributions')
-		typedist = GetType()
-		self.inc = IncMatcher(':Mac:Distributions:%s.include'%typedist)
-		self.exc = ExcMatcher(':Mac:Distributions:%s.exclude'%typedist)
+		self.typedist = GetType()
+		self.inc = IncMatcher(':Mac:Distributions:%s.include'%self.typedist)
+		self.exc = ExcMatcher(':Mac:Distributions:%s.exclude'%self.typedist)
 		self.ui = MkDistrUI(self)
 		self.ui.mainloop()
 		
@@ -259,7 +256,7 @@ class Main:
 			rv = rv + self.checkdir(d, 0)
 		return rv
 		
-	def run(self, destprefix):
+	def run(self):
 		missing = self.inc.checksourcetree()
 		if missing:
 			print '==== Missing source files ===='
@@ -267,6 +264,8 @@ class Main:
 				print i
 			print '==== Fix and retry ===='
 			return
+		destprefix = os.path.join(sys.prefix, ':Mac:Distributions:vise')
+		destprefix = os.path.join(destprefix, '%s Distribution'%self.typedist)
 		if not self.rundir(':', destprefix, 0):
 			return
 		self.rundir(':', destprefix, 1)

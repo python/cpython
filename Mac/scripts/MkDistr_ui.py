@@ -183,14 +183,8 @@ class MainListWindow(ListWindow):
 		if item == MAIN_LIST:
 			self.do_listhit(event)
 		if item == MAIN_MKDISTR:
-## XXXX Why doesn't this work??!?!?
-##			fss, ok = macfs.StandardPutFile('Destination folder?')
-##			if not ok:
-##				return
-##			dest = fss.as_pathname()
-			dest = os.path.join(os.getcwd(), 'Distribution')
 			setwatchcursor()
-			self.cb_run(dest)
+			self.cb_run()
 			setarrowcursor()
 		if item == MAIN_CHECK:
 			setwatchcursor()
