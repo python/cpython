@@ -31,17 +31,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <errno.h>
 
-#ifdef THINK_C
-#include "unix.h"
-#undef S_IFMT
-#undef S_IFDIR
-#undef S_IFCHR
-#undef S_IFBLK
-#undef S_IFREG
-#undef S_ISDIR
-#undef S_ISREG
-#endif /* THINK_C */
-
 #ifndef TARGET_API_MAC_CARBON_NOTYET
 /* XXXX Skip for Carbon, for now */
 #include "macstat.h"
@@ -116,7 +105,7 @@ struct dirent * readdir Py_PROTO((DIR *));
 int rmdir Py_PROTO((const char *path));
 int sync Py_PROTO((void));
 
-#if defined(THINK_C) || defined(__SC__)
+#if defined(__SC__)
 int unlink Py_PROTO((char *));
 #else
 int unlink Py_PROTO((const char *));
