@@ -972,6 +972,17 @@ alternate base class.  The \var{dict} argument can be used to specify
 a dictionary of class variables and methods.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{void}{PyErr_WriteUnraisable}{PyObject *obj}
+This utility function prints a warning message to \var{sys.stderr}
+when an exception has been set but it is impossible for the
+interpreter to actually raise the exception.  It is used, for example,
+when an exception occurs in an \member{__del__} method.
+
+The function is called with a single argument \var{obj} that
+identifies where the context in which the unraisable exception
+occurred.  The repr of \var{obj} will be printed in the warning
+message.
+\end{cfuncdesc}
 
 \section{Standard Exceptions \label{standardExceptions}}
 

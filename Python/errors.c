@@ -450,3 +450,30 @@ PyErr_NewException(char *name, PyObject *base, PyObject *dict)
 	Py_XDECREF(modulename);
 	return result;
 }
+
+/* Call when an exception has occurred but there is no way for Python
+   to handle it.  Examples: exception in __del__ or during GC. */
+void
+PyErr_WriteUnraisable(PyObject *obj)
+{
+	PyObject *f, *t, *v, *tb;
+	PyErr_Fetch(&t, &v, &tb);
+	f = PySys_GetObject("stderr");
+	if (f != NULL) {
+		PyFile_WriteString("Exception ", f);
+		if (t) {
+			PyFile_WriteObject(t, f, Py_PRINT_RAW);
+			if (v && v != Py_None) {
+				PyFile_WriteString(": ", f);
+				PyFile_WriteObject(v, f, 0);
+			}
+		}
+		PyFile_WriteString(" in ", f);
+		PyFile_WriteObject(obj, f, 0);
+		PyFile_WriteString(" ignored\n", f);
+		PyErr_Clear(); /* Just in case */
+	}
+	Py_XDECREF(t);
+	Py_XDECREF(v);
+	Py_XDECREF(tb);
+}
