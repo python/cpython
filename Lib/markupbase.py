@@ -303,4 +303,4 @@ class ParserBase:
             return string.lower(name), m.end()
         else:
             self.updatepos(declstartpos, i)
-            self.error("expected name token", self.getpos())
+            self.error("expected name token")
