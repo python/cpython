@@ -342,7 +342,10 @@ exc_value -- value of exception currently being handled\n\
 exc_traceback -- traceback of exception currently being handled\n\
   The function exc_info() should be used instead of these three,\n\
   because it is thread-safe.\n\
-" /* !!! */ "\n\
+"
+#ifndef MS_WIN16
+/* Concatenating string here */
+"\n\
 Static objects:\n\
 \n\
 maxint -- the largest supported integer (the smallest is -maxint-1)\n\
@@ -368,6 +371,7 @@ setcheckinterval() -- control how often the interpreter checks for events\n\
 setprofile() -- set the global profiling function\n\
 settrace() -- set the global debug tracing function\n\
 ";
+#endif
 
 PyObject *
 _PySys_Init()
