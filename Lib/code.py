@@ -20,7 +20,8 @@ def softspace(file, newvalue):
         pass
     try:
         file.softspace = newvalue
-    except TypeError: # "attribute-less object" or "read-only attributes"
+    except (AttributeError, TypeError):
+        # "attribute-less object" or "read-only attributes"
         pass
     return oldvalue
 
