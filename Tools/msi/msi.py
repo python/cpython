@@ -352,6 +352,7 @@ def add_ui(db):
               ("VerdanaBold10", "Verdana", 10, None, 1),
              ])
 
+    compileargs = r"-Wi [TARGETDIR]Lib\compileall.py -f -x badsyntax [TARGETDIR]Lib"
     # See "CustomAction Table"
     add_data(db, "CustomAction", [
         # msidbCustomActionTypeFirstSequence + msidbCustomActionTypeTextData + msidbCustomActionTypeProperty
@@ -363,8 +364,8 @@ def add_ui(db):
         ("SetDLLDirToSystem32", 307, "DLLDIR", SystemFolderName),
         # msidbCustomActionTypeExe + msidbCustomActionTypeSourceFile
         # See "Custom Action Type 18"
-        ("CompilePyc", 18, "python.exe", r"[TARGETDIR]Lib\compileall.py [TARGETDIR]Lib"),
-        ("CompilePyo", 18, "python.exe", r"-O [TARGETDIR]Lib\compileall.py [TARGETDIR]Lib")
+        ("CompilePyc", 18, "python.exe", compileargs),
+        ("CompilePyo", 18, "python.exe", "-O "+compileargs),
         ])
 
     # UI Sequences, see "InstallUISequence Table", "Using a Sequence Table"
