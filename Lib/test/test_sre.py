@@ -264,6 +264,16 @@ for flags in [sre.I, sre.M, sre.X, sre.S, sre.L, sre.T, sre.U]:
     except:
         print 'Exception raised on flag', flags
 
+if verbose:
+    print 'Test engine limitations'
+
+# Try nasty case that overflows the straightforward recursive
+# implementation of repeated groups.
+try:
+    assert sre.match('(x)*', 50000*'x').span() == (0, 50000)
+except RuntimeError, v:
+    print v
+
 from re_tests import *
 
 if verbose:
