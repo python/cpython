@@ -30,6 +30,8 @@ from TreeWidget import TreeNode, TreeItem, ScrolledCanvas
 class ClassBrowser:
 
     def __init__(self, flist, name, path):
+        # XXX This API should change, if the file doesn't end in ".py"
+        # XXX the code here is bogus!
         self.name = name
         self.file = os.path.join(path[0], self.name + ".py")
         self.init(flist)
