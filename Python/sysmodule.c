@@ -564,10 +564,10 @@ static PyMethodDef sys_methods[] = {
 	{"setdlopenflags", sys_setdlopenflags, METH_VARARGS, 
 	 setdlopenflags_doc},
 #endif
-	{"setprofile",	sys_setprofile, METH_OLDARGS, setprofile_doc},
+	{"setprofile",	sys_setprofile, METH_O, setprofile_doc},
 	{"setrecursionlimit", sys_setrecursionlimit, METH_VARARGS,
 	 setrecursionlimit_doc},
-	{"settrace",	sys_settrace, METH_OLDARGS, settrace_doc},
+	{"settrace",	sys_settrace, METH_O, settrace_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 

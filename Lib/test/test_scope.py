@@ -471,6 +471,10 @@ sys.settrace(tracer)
 adaptgetter("foo", TestClass, (1, ""))
 sys.settrace(None)
 
+try: sys.settrace()
+except TypeError: pass
+else: raise TestFailed, 'sys.settrace() did not raise TypeError'
+
 print "20. eval and exec with free variables"
 
 def f(x):
