@@ -16,6 +16,8 @@ Based upon STDWIN dialogs with the same names and functions.
 from Dlg import GetNewDialog, SetDialogItemText, GetDialogItemText, ModalDialog
 import Qd
 import QuickDraw
+import Dialogs
+import Windows
 import Dlg,Win,Evt,Events # sdm7g
 import MacOS
 import string
@@ -86,6 +88,75 @@ def AskString(prompt, default = "", id=257):
 			return cr2lf(GetDialogItemText(h))
 		if n == 2: return None
 
+def AskPassword(prompt,	 default='', id=257):	
+	"""Display a PROMPT string and a text entry field with a DEFAULT string.
+	The string is displayed as bullets only.
+	
+	Return the contents of the text entry field when the user clicks the
+	OK button or presses Return.
+	Return None when the user clicks the Cancel button.
+	
+	If omitted, DEFAULT is empty.
+	
+	The PROMPT and DEFAULT strings, as well as the return value,
+	can be at most 255 characters long.
+	"""
+	d = GetNewDialog(id, -1)
+	if not d:
+		print "Can't get DLOG resource with id =", id
+		return
+	tp, h, rect = d.GetDialogItem(3)	# STATIC TEXT ITEM <= prompt 
+	SetDialogItemText(h, lf2cr(prompt))	
+	tp, h, rect = d.GetDialogItem(4)	# EDIT TEXT ITEM 
+	bullets = '\245'*len(default)
+	SetDialogItemText(h, bullets )
+	d.SelectDialogItemText(4, 999, 999)
+	d.SetDialogDefaultItem(Dialogs.ok)
+	d.SetDialogCancelItem(Dialogs.cancel)
+	string = default
+	oldschedparams = MacOS.SchedParams(0,0)
+	while 1:
+		ready,ev = Evt.WaitNextEvent( -1, 6 )
+		if not ready: continue
+		what,msg,when,where,mod = ev
+		if what == 0 : Dlg.DialogSelect(ev)	# for blinking caret
+		elif Dlg.IsDialogEvent(ev):
+			if what == Events.keyDown:
+				charcode = msg & Events.charCodeMask
+				if ( mod & Events.cmdKey ):
+					MacOS.SysBeep()
+					continue	# don't do cut & paste commands
+				else:	
+					if charcode == Events.kReturnCharCode:
+						break
+					elif charcode == Events.kEscapeCharCode:
+						string = None
+						break
+					elif charcode in (Events.kLeftArrowCharCode,
+								Events.kBackspaceCharCode):
+						string = string[:-1]
+					else:
+						string = string + chr(charcode)
+						msg =  0245   # Octal code for bullet
+						ev = (what,msg,when,where,mod)
+			rs, win, item = Dlg.DialogSelect(ev)
+			if item == Dialogs.ok :
+				break	
+			elif item == Dialogs.cancel :
+				string = None
+				break
+		elif what == Events.mouseDown:
+			part, win = Win.FindWindow(where)
+			if part == Windows.inDrag and win:
+				win.DragWindow(where, screenbounds)
+			elif part == Windows.inMenuBar:
+				MacOS.HandleEvent(ev)
+			else:
+				MacOS.SysBeep()		# Cannot handle selections, unfortunately
+			
+		elif what == Events.updateEvt: MacOS.HandleEvent(ev)
+	apply(MacOS.SchedParams, oldschedparams)
+	return string
 
 def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=258):
 ##	"""Display a QUESTION string which can be answered with Yes or No.
