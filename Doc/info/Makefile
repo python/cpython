@@ -16,12 +16,21 @@ SCRIPTS=$(TOOLSDIR)/checkargs.pm $(TOOLSDIR)/mkinfo $(TOOLSDIR)/py2texi.el
 VERSION=
 
 all:	check-emacs-version \
-	python$(VERSION)-api.info python$(VERSION)-ext.info \
-	python$(VERSION)-lib.info python$(VERSION)-ref.info \
-	python$(VERSION)-tut.info python$(VERSION)-dist.info \
-	python$(VERSION)-mac.info
+	api dist ext mac ref tut whatsnew \
+	lib
+#	doc inst
 
-#	python$(VERSION)-doc.info python$(VERSION)-inst.info
+api:	python$(VERSION)-api.info
+dist:	python$(VERSION)-dist.info
+doc:	python$(VERSION)-doc.info
+ext:	python$(VERSION)-ext.info
+inst:	python$(VERSION)-inst.info
+lib:	python$(VERSION)-lib.info
+mac:	python$(VERSION)-mac.info
+ref:	python$(VERSION)-ref.info
+tut:	python$(VERSION)-tut.info
+whatsnew:	$(WHATSNEW)
+$(WHATSNEW):	python$(VERSION)-$(WHATSNEW).info
 
 check-emacs-version:
 	@v="`$(EMACS) --version 2>&1 | egrep '^(GNU |X)Emacs [12]*'`"; \
@@ -42,7 +51,6 @@ python$(VERSION)-ext.info:	../ext/ext.tex $(SCRIPTS)
 python$(VERSION)-lib.info:	../lib/lib.tex $(SCRIPTS)
 	EMACS=$(EMACS) $(MKINFO) $< $*.texi $@
 
-# Not built by default; the conversion doesn't really handle it well.
 python$(VERSION)-mac.info:	../mac/mac.tex $(SCRIPTS)
 	EMACS=$(EMACS) $(MKINFO) $< $*.texi $@
 
@@ -52,15 +60,19 @@ python$(VERSION)-ref.info:	../ref/ref.tex $(SCRIPTS)
 python$(VERSION)-tut.info:	../tut/tut.tex $(SCRIPTS)
 	EMACS=$(EMACS) $(MKINFO) $< $*.texi $@
 
-# Not built by default; the conversion doesn't handle it at all.
+# Not built by default; the conversion doesn't handle \p and \op
 python$(VERSION)-doc.info:	../doc/doc.tex $(SCRIPTS)
 	EMACS=$(EMACS) $(MKINFO) $< $*.texi $@
 
 python$(VERSION)-dist.info:	../dist/dist.tex $(SCRIPTS)
 	EMACS=$(EMACS) $(MKINFO) $< $*.texi $@
 
-# Not built by default; the conversion chokes on two @end multitable's
+# Not built by default; the conversion chokes on \installscheme
 python$(VERSION)-inst.info:	../inst/inst.tex $(SCRIPTS)
+	EMACS=$(EMACS) $(MKINFO) $< $*.texi $@
+
+# "whatsnew20" doesn't currently work
+python$(VERSION)-$(WHATSNEW).info:  ../whatsnew/$(WHATSNEW).tex $(SCRIPTS)
 	EMACS=$(EMACS) $(MKINFO) $< $*.texi $@
 
 clean:
