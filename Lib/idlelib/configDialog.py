@@ -58,6 +58,7 @@ class ConfigDialog(Toplevel):
         #self.bind('<Alt-a>',self.Apply) #apply changes, save
         #self.bind('<F1>',self.Help) #context help
         self.LoadConfigs()
+        self.AttachVarCallbacks() #avoid callbacks during LoadConfigs 
         self.wait_window()
         
     def CreateWidgets(self):
@@ -88,10 +89,11 @@ class ConfigDialog(Toplevel):
     def CreatePageFontTab(self):
         #tkVars
         self.fontSize=StringVar(self)
-        self.fontBold=StringVar(self)
+        self.fontBold=BooleanVar(self)
+        self.fontName=StringVar(self)
         self.spaceNum=IntVar(self)
         self.tabCols=IntVar(self)
-        self.indentType=IntVar(self) 
+        self.indentBySpaces=BooleanVar(self) 
         self.editFont=tkFont.Font(self,('courier',12,'normal'))
         ##widget creation
         #body frame
@@ -107,15 +109,15 @@ class ConfigDialog(Toplevel):
                 text='Font :')
         self.listFontName=Listbox(frameFontName,height=5,takefocus=FALSE,
                 exportselection=FALSE)
-        self.listFontName.bind('<<ListboxSelect>>',self.SetFontSampleBinding)
+        self.listFontName.bind('<ButtonRelease-1>',self.OnListFontButtonRelease)
         scrollFont=Scrollbar(frameFontName)
         scrollFont.config(command=self.listFontName.yview)
         self.listFontName.config(yscrollcommand=scrollFont.set)
         labelFontSizeTitle=Label(frameFontParam,text='Size :')
         self.optMenuFontSize=DynOptionMenu(frameFontParam,self.fontSize,None,
-            command=self.SetFontSampleBinding)
+            command=self.SetFontSample)
         checkFontBold=Checkbutton(frameFontParam,variable=self.fontBold,
-            onvalue='Bold',offvalue='',text='Bold')
+            onvalue=1,offvalue=0,text='Bold',command=self.SetFontSample)
         frameFontSample=Frame(frameFont,relief=SOLID,borderwidth=1)
         self.labelFontSample=Label(frameFontSample,
                 text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]',
@@ -126,9 +128,9 @@ class ConfigDialog(Toplevel):
         frameIndentSize=Frame(frameIndent)
         labelIndentTypeTitle=Label(frameIndentType,
                 text='Choose indentation type :')
-        radioUseSpaces=Radiobutton(frameIndentType,variable=self.indentType,
+        radioUseSpaces=Radiobutton(frameIndentType,variable=self.indentBySpaces,
             value=1,text='Tab key inserts spaces')
-        radioUseTabs=Radiobutton(frameIndentType,variable=self.indentType,
+        radioUseTabs=Radiobutton(frameIndentType,variable=self.indentBySpaces,
             value=0,text='Tab key inserts tabs')
         labelIndentSizeTitle=Label(frameIndentSize,
                 text='Choose indentation size :')
@@ -173,12 +175,11 @@ class ConfigDialog(Toplevel):
     def CreatePageHighlight(self):
         self.builtinTheme=StringVar(self)
         self.customTheme=StringVar(self)
-        self.fgHilite=IntVar(self)
+        self.fgHilite=BooleanVar(self)
         self.colour=StringVar(self)
         self.fontName=StringVar(self)
-        self.themeIsBuiltin=IntVar(self) 
+        self.themeIsBuiltin=BooleanVar(self) 
         self.highlightTarget=StringVar(self)
-        self.highlightTarget.trace_variable('w',self.SetHighlightTargetBinding)
         ##widget creation
         #body frame
         frame=self.tabPages.pages['Highlighting']['page']
@@ -264,11 +265,8 @@ class ConfigDialog(Toplevel):
         self.bindingTarget=StringVar(self)
         self.builtinKeys=StringVar(self)
         self.customKeys=StringVar(self)
-        self.keyChars=StringVar(self)
-        self.keyCtrl=StringVar(self)
-        self.keyAlt=StringVar(self)
-        self.keyShift=StringVar(self)
-        self.keysAreDefault=IntVar(self) 
+        self.keysAreDefault=BooleanVar(self) 
+        self.keyBinding=StringVar(self)
         ##widget creation
         #body frame
         frame=self.tabPages.pages['Keys']['page']
@@ -330,10 +328,10 @@ class ConfigDialog(Toplevel):
 
     def CreatePageGeneral(self):
         #tkVars        
-        self.runType=IntVar(self)       
         self.winWidth=StringVar(self)       
         self.winHeight=StringVar(self)
         self.startupEdit=IntVar(self)       
+        self.extEnabled=IntVar(self)       
         #widget creation
         #body
         frame=self.tabPages.pages['General']['page']
@@ -368,9 +366,9 @@ class ConfigDialog(Toplevel):
         self.listExt.config(yscrollcommand=scrollExtList.set)
         self.listExt.bind('<ButtonRelease-1>',self.ExtensionSelected)
         labelExtSetTitle=Label(frameExtSet,text='Settings')
-        self.radioEnableExt=Radiobutton(frameExtSet,variable=self.startupEdit,
+        self.radioEnableExt=Radiobutton(frameExtSet,variable=self.extEnabled,
             value=1,text="enabled",state=DISABLED)
-        self.radioDisableExt=Radiobutton(frameExtSet,variable=self.startupEdit,
+        self.radioDisableExt=Radiobutton(frameExtSet,variable=self.extEnabled,
             value=0,text="disabled",state=DISABLED)
         self.buttonExtConfig=Button(frameExtSet,text='Configure',state=DISABLED)
         #widget packing
@@ -402,6 +400,73 @@ class ConfigDialog(Toplevel):
         self.buttonExtConfig.pack(side=TOP,anchor=W,pady=5)
         return frame
 
+    def AttachVarCallbacks(self):
+        self.fontSize.trace_variable('w',self.VarChanged_fontSize)
+        self.fontName.trace_variable('w',self.VarChanged_fontName)
+        self.fontBold.trace_variable('w',self.VarChanged_fontBold)
+        self.spaceNum.trace_variable('w',self.VarChanged_spaceNum)
+        self.tabCols.trace_variable('w',self.VarChanged_tabCols)
+        self.indentBySpaces.trace_variable('w',self.VarChanged_indentBySpaces)
+        self.colour.trace_variable('w',self.VarChanged_colour)
+        self.keyBinding.trace_variable('w',self.VarChanged_keyBinding)
+        self.winWidth.trace_variable('w',self.VarChanged_winWidth)
+        self.winHeight.trace_variable('w',self.VarChanged_winHeight)
+        self.startupEdit.trace_variable('w',self.VarChanged_startupEdit)
+        self.extEnabled.trace_variable('w',self.VarChanged_extEnabled)
+    
+    def VarChanged_fontSize(self,*params):
+        value=self.fontSize.get()
+        self.AddChangedItem('main','EditorWindow','font-size',value)
+        print 'fontSize:',value
+        
+    def VarChanged_fontName(self,*params):
+        value=self.fontName.get()
+        self.AddChangedItem('main','EditorWindow','font',value)
+        print 'fontName:',value
+
+    def VarChanged_fontBold(self,*params):
+        value=self.fontBold.get()
+        self.AddChangedItem('main','EditorWindow','font-bold',value)
+        print 'fontBold:',value
+
+    def VarChanged_indentBySpaces(self,*params):
+        value=self.indentBySpaces.get()
+        self.AddChangedItem('main','Indent','use-spaces',value)
+        print 'indentBySpaces:',value
+
+    def VarChanged_spaceNum(self,*params):
+        value=self.spaceNum.get()
+        self.AddChangedItem('main','Indent','num-spaces',value)
+        print 'spaceNum:',value
+
+    def VarChanged_tabCols(self,*params):
+        value=self.tabCols.get()
+        self.AddChangedItem('main','Indent','tab-cols',value)
+        print 'tabCols:',value
+
+    def VarChanged_colour(self,*params):
+        print params
+
+    def VarChanged_keyBinding(self,*params):
+        print params
+
+    def VarChanged_winWidth(self,*params):
+        print params
+
+    def VarChanged_winHeight(self,*params):
+        print params
+
+    def VarChanged_startupEdit(self,*params):
+        print params
+
+    def VarChanged_extEnabled(self,*params):
+        print params
+
+    def AddChangedItem(self,type,section,item,value):
+        if not self.changedItems[type].has_key(section):
+            self.changedItems[type][section]={}    
+        self.changedItems[type][section][item]=value
+    
     def GetDefaultItems(self):
         dItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
         for configType in dItems.keys():
@@ -440,18 +505,25 @@ class ConfigDialog(Toplevel):
             title='Pick new colour for : '+target,
             initialcolor=self.frameColourSet.cget('bg'))
         if colourString: #user didn't cancel
+            self.colour.set(colourString)
             self.frameColourSet.config(bg=colourString)#set sample
             if self.fgHilite.get(): plane='foreground'
             else: plane='background'
             apply(self.textHighlightSample.tag_config,
                 (self.themeElements[target][0],),{plane:colourString})
     
-    def SetFontSampleBinding(self,event):
+    def OnListFontButtonRelease(self,event):
+        self.fontName.set(self.listFontName.get(ANCHOR))
         self.SetFontSample()
         
-    def SetFontSample(self):
-        self.editFont.config(size=self.fontSize.get(),weight=NORMAL,
-            family=self.listFontName.get(self.listFontName.curselection()[0]))
+    def SetFontSample(self,event=None):
+        fontName=self.fontName.get()
+        if self.fontBold.get(): 
+            fontWeight=tkFont.BOLD
+        else: 
+            fontWeight=tkFont.NORMAL
+        self.editFont.config(size=self.fontSize.get(),
+                weight=fontWeight,family=fontName)
 
     def SetHighlightTargetBinding(self,*args):
         self.SetHighlightTarget()
@@ -499,14 +571,20 @@ class ConfigDialog(Toplevel):
             self.listFontName.insert(END,font)
         configuredFont=idleConf.GetOption('main','EditorWindow','font',
                 default='courier')
+        self.fontName.set(configuredFont)
         if configuredFont in fonts:
             currentFontIndex=fonts.index(configuredFont)
             self.listFontName.see(currentFontIndex)
             self.listFontName.select_set(currentFontIndex)
+            self.listFontName.select_anchor(currentFontIndex)
         ##font size dropdown
-        fontSize=idleConf.GetOption('main','EditorWindow','font-size',default='12')
+        fontSize=idleConf.GetOption('main','EditorWindow','font-size',
+                default='12')
         self.optMenuFontSize.SetMenu(('10','11','12','13','14',
                 '16','18','20','22'),fontSize )
+        ##fontWeight
+        self.fontBold.set(idleConf.GetOption('main','EditorWindow',
+                'font-bold',default=0,type='bool'))
         ##font sample 
         self.SetFontSample()
     
@@ -514,7 +592,7 @@ class ConfigDialog(Toplevel):
         ##indent type radibuttons
         spaceIndent=idleConf.GetOption('main','Indent','use-spaces',
                 default=1,type='bool')
-        self.indentType.set(spaceIndent)
+        self.indentBySpaces.set(spaceIndent)
         ##indent sizes
         spaceNum=idleConf.GetOption('main','Indent','num-spaces',
                 default=4,type='int')
@@ -526,7 +604,7 @@ class ConfigDialog(Toplevel):
     def LoadThemeCfg(self):
         ##current theme type radiobutton
         self.themeIsBuiltin.set(idleConf.GetOption('main','Theme','default',
-            type='int',default=1))
+            type='bool',default=1))
         ##currently set theme
         currentOption=idleConf.CurrentTheme()
         ##load available theme option menus
@@ -560,7 +638,7 @@ class ConfigDialog(Toplevel):
     def LoadKeyCfg(self):
         ##current keys type radiobutton
         self.keysAreDefault.set(idleConf.GetOption('main','Keys','default',
-            type='int',default=1))
+            type='bool',default=1))
         ##currently set keys
         currentOption=idleConf.CurrentKeys()
         ##load available keyset option menus
@@ -597,6 +675,7 @@ class ConfigDialog(Toplevel):
         if newKeys.result: #new keys were specified
             self.listBindings.delete(listIndex)
             self.listBindings.insert(listIndex,bindName+' - '+newKeys.result)
+            self.keyBinding.set(newKeys.result)
         self.listBindings.select_set(listIndex)
 
     def KeyBindingSelected(self,event):
@@ -618,7 +697,7 @@ class ConfigDialog(Toplevel):
         self.radioDisableExt.config(state=NORMAL)
         self.buttonExtConfig.config(state=NORMAL)
         extn=self.listExt.get(ANCHOR)
-        self.extState.set(idleConf.GetOption('extensions',extn,'enable',
+        self.extEnabled.set(idleConf.GetOption('extensions',extn,'enable',
                 default=1,type='bool'))
     
     def LoadConfigs(self):
@@ -652,9 +731,6 @@ class ConfigDialog(Toplevel):
                     print configType, section, item, value 
                     print self.changedItems
                     
-    def AddChangedItem(self,type,section,item,value):
-        self.changedItems[type][section][item]=value
-    
     def Cancel(self):
         self.destroy()
 
