@@ -131,7 +131,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 #ifdef PTHREAD_SYSTEM_SCHED_SUPPORTED
 	pthread_attr_t attrs;
 #endif
-	dprintf(("PyThread_start_new_thread called\n"));
+        dprintf(("PyThread_start_new_thread called\n"));
 	if (!initialized)
 		PyThread_init_thread();
 #ifdef PTHREAD_SYSTEM_SCHED_SUPPORTED
