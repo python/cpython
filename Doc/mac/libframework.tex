@@ -18,7 +18,20 @@ handling.
 The \module{FrameWork} is still very much work-in-progress, and the
 documentation describes only the most important functionality, and not
 in the most logical manner at that. Examine the source or the examples
-for more details.
+for more details.  The following are some comments posted on the
+MacPython newsgroup about the strengths and limitations of
+\module{FrameWork}:
+
+\begin{quotation}
+The strong point of \module{FrameWork} is that it allows you to break
+into the control-flow at many different places. \refmodule{W}, for
+instance, uses a different way to enable/disable menus and that plugs
+right in leaving the rest intact.  The weak points of
+\module{FrameWork} are that it has no abstract command interface (but
+that shouldn't be difficult), that it's dialog support is minimal and
+that it's control/toolbar support is non-existent.
+\end{quotation}
+
 
 The \module{FrameWork} module defines the following functions:
 
@@ -42,13 +55,13 @@ at the end).
 \end{funcdesc}
 
 \begin{funcdesc}{MenuItem}{menu, title\optional{, shortcut, callback}}
-Create a menu item object. The arguments are the menu to crate the
-item it, the item title string and optionally the keyboard shortcut
+Create a menu item object. The arguments are the menu to create, the
+item item title string and optionally the keyboard shortcut
 and a callback routine. The callback is called with the arguments
 menu-id, item number within menu (1-based), current front window and
 the event record.
 
-In stead of a callable object the callback can also be a string. In
+Instead of a callable object the callback can also be a string. In
 this case menu selection causes the lookup of a method in the topmost
 window and the application. The method name is the callback string
 with \code{'domenu_'} prepended.
@@ -79,8 +92,8 @@ Creates a modeless dialog window.
 Return a \code{(\var{left}, \var{top}, \var{right}, \var{bottom})}
 tuple suitable for creation of a window of given width and height. The
 window will be staggered with respect to previous windows, and an
-attempt is made to keep the whole window on-screen. The window will
-however always be exact the size given, so parts may be offscreen.
+attempt is made to keep the whole window on-screen. However, the window will
+however always be the exact size given, so parts may be offscreen.
 \end{funcdesc}
 
 \begin{funcdesc}{setwatchcursor}{}
@@ -266,7 +279,7 @@ it returns the correct number or \code{None}.
 
 \begin{methoddesc}[ScrolledWindow]{do_activate}{onoff, event}
 Takes care of dimming/highlighting scrollbars when a window becomes
-frontmost vv. If you override this method call this one at the end of
+frontmost. If you override this method, call this one at the end of
 your method.
 \end{methoddesc}
 
