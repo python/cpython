@@ -46,6 +46,14 @@ class sdist (Command):
         ('use-defaults', None,
          "include the default file set in the manifest "
          "[default; disable with --no-defaults]"),
+        ('no-defaults', None,
+         "don't include the default file set"),
+        ('prune', None,
+         "specifically exclude files/directories that should not be "
+         "distributed (build tree, RCS/CVS dirs, etc.) "
+         "[default; disable with --no-prune]"),
+        ('no-prune', None,
+         "don't automatically exclude anything"),
         ('manifest-only', 'o',
          "just regenerate the manifest and then stop "
          "(implies --force-manifest)"),
@@ -64,7 +72,8 @@ class sdist (Command):
          "list available distribution formats", show_formats),
 	]
 
-    negative_opts = {'use-defaults': 'no-defaults'}
+    negative_opt = {'no-defaults': 'use-defaults',
+                    'no-prune': 'prune' }
 
     default_format = { 'posix': 'gztar',
                        'nt': 'zip' }
@@ -78,6 +87,7 @@ class sdist (Command):
         # 'use_defaults': if true, we will include the default file set
         # in the manifest
         self.use_defaults = 1
+        self.prune = 1
 
         self.manifest_only = 0
         self.force_manifest = 0
@@ -217,8 +227,10 @@ class sdist (Command):
             if template_exists:
                 self.read_template ()
 
-            # Prune away the build and source distribution directories
-            self.prune_file_list()
+            # Prune away any directories that don't belong in the source
+            # distribution
+            if self.prune:
+                self.prune_file_list()
 
             # File list now complete -- sort it so that higher-level files
             # come first
@@ -509,18 +521,21 @@ class sdist (Command):
 
     def prune_file_list (self):
         """Prune off branches that might slip into the file list as created
-        by 'read_template()', but really don't belong there: specifically,
-        the build tree (typically "build") and the release tree itself
-        (only an issue if we ran "sdist" previously with --keep-tree, or it
-        aborted).
+        by 'read_template()', but really don't belong there:
+          * the build tree (typically "build")
+          * the release tree itself (only an issue if we ran "sdist"
+            previously with --keep-tree, or it aborted)
+          * any RCS or CVS directories
         """
         build = self.get_finalized_command('build')
         base_dir = self.distribution.get_fullname()
         self.exclude_pattern (self.files, None, prefix=build.build_base)
         self.exclude_pattern (self.files, None, prefix=base_dir)
+        self.exclude_pattern (self.files, r'/(RCS|CVS)/.*', is_regex=1)
 
 
-    def select_pattern (self, files, pattern, anchor=1, prefix=None):
+    def select_pattern (self, files, pattern,
+                        anchor=1, prefix=None, is_regex=0):
         """Select strings (presumably filenames) from 'files' that match
         'pattern', a Unix-style wildcard (glob) pattern.  Patterns are not
         quite the same as implemented by the 'fnmatch' module: '*' and '?'
@@ -536,10 +551,15 @@ class sdist (Command):
         (itself a pattern) and ending with 'pattern', with anything in between
         them, will match.  'anchor' is ignored in this case.
 
+        If 'is_regex' is true, 'anchor' and 'prefix' are ignored, and
+        'pattern' is assumed to be either a string containing a regex or a
+        regex object -- no translation is done, the regex is just compiled
+        and used as-is.
+
         Return the list of matching strings, possibly empty.
         """
         matches = []
-        pattern_re = translate_pattern (pattern, anchor, prefix)
+        pattern_re = translate_pattern (pattern, anchor, prefix, is_regex)
         self.debug_print("select_pattern: applying regex r'%s'" %
                          pattern_re.pattern)
         for name in files:
@@ -552,13 +572,14 @@ class sdist (Command):
     # select_pattern ()
 
 
-    def exclude_pattern (self, files, pattern, anchor=1, prefix=None):
+    def exclude_pattern (self, files, pattern,
+                         anchor=1, prefix=None, is_regex=0):
         """Remove strings (presumably filenames) from 'files' that match
-        'pattern'.  'pattern', 'anchor', 'and 'prefix' are the same
-        as for 'select_pattern()', above.  The list 'files' is modified
-        in place.
+        'pattern'.  Other parameters are the same as for
+        'select_pattern()', above.  The list 'files' is modified in place.
         """
-        pattern_re = translate_pattern (pattern, anchor, prefix)
+
+        pattern_re = translate_pattern (pattern, anchor, prefix, is_regex)
         self.debug_print("exclude_pattern: applying regex r'%s'" %
                          pattern_re.pattern)
         for i in range (len(files)-1, -1, -1):
@@ -674,6 +695,8 @@ def findall (dir = os.curdir):
     """Find all files under 'dir' and return the list of full filenames
     (relative to 'dir').
     """
+    from stat import ST_MODE, S_ISREG, S_ISDIR, S_ISLNK
+
     list = []
     stack = [dir]
     pop = stack.pop
@@ -688,8 +711,13 @@ def findall (dir = os.curdir):
                 fullname = os.path.join (dir, name)
             else:
                 fullname = name
-            list.append (fullname)
-            if os.path.isdir (fullname) and not os.path.islink(fullname):
+
+            # Avoid excess stat calls -- just one will do, thank you!
+            stat = os.stat(fullname)
+            mode = stat[ST_MODE]
+            if S_ISREG(mode):
+                list.append (fullname)
+            elif S_ISDIR(mode) and not S_ISLNK(mode):
                 push (fullname)
 
     return list
@@ -716,10 +744,18 @@ def glob_to_re (pattern):
 # glob_to_re ()
 
 
-def translate_pattern (pattern, anchor=1, prefix=None):
+def translate_pattern (pattern, anchor=1, prefix=None, is_regex=0):
     """Translate a shell-like wildcard pattern to a compiled regular
-    expression.  Return the compiled regex.
+    expression.  Return the compiled regex.  If 'is_regex' true,
+    then 'pattern' is directly compiled to a regex (if it's a string)
+    or just returned as-is (assumes it's a regex object).
     """
+    if is_regex:
+        if type(pattern) is StringType:
+            return re.compile(pattern)
+        else:
+            return pattern
+
     if pattern:
         pattern_re = glob_to_re (pattern)
     else:
