@@ -1,5 +1,7 @@
 # DirList -- Directory Listing widget
 
+# XXX Displays messy paths when following '..'
+
 try:
 	import posix, path
 	os = posix
@@ -20,8 +22,8 @@ class DirList() = VSplit():
 		self = VSplit.create(self, parent)
 		names = os.listdir(dirname)
 		for name in names:
-			if path.isdir(path.cat(dirname, name)):
-				fullname = path.cat(dirname, name)
+			if path.isdir(path.join(dirname, name)):
+				fullname = path.join(dirname, name)
 				btn = SubdirButton().definetext(self, fullname)
 			elif name[-3:] = '.py':
 				btn = ModuleButton().definetext(self, name)
