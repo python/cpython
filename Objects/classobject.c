@@ -2414,19 +2414,29 @@ instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
 }
 
 static PyObject *
-instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *class)
+instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *cls)
 {
 	/* Don't rebind an already bound method, or an unbound method
-	   of a class that's not a base class of class */
-	if (PyMethod_GET_SELF(meth) != NULL ||
-	    (PyMethod_GET_CLASS(meth) != NULL &&
-	     !PyObject_IsSubclass(class,  PyMethod_GET_CLASS(meth)))) {
+	   of a class that's not a base class of cls. */
+
+	if (PyMethod_GET_SELF(meth) != NULL) {
+		/* Already bound */
 		Py_INCREF(meth);
 		return meth;
 	}
-	if (obj == Py_None)
-		obj = NULL;
-	return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj, class);
+	/* No, it is an unbound method */
+	if (PyMethod_GET_CLASS(meth) != NULL && cls != NULL) {
+		/* Do subclass test.  If it fails, return meth unchanged. */
+		int ok = PyObject_IsSubclass(cls, PyMethod_GET_CLASS(meth));
+		if (ok < 0)
+			return NULL;
+		if (!ok) {
+			Py_INCREF(meth);
+			return meth;
+		}
+	}
+	/* Bind it to obj */
+	return PyMethod_New(PyMethod_GET_FUNCTION(meth), obj, cls);
 }
 
 PyTypeObject PyMethod_Type = {
