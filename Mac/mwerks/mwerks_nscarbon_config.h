@@ -10,16 +10,12 @@
 
 #define USE_GUSI2		/* Stdio implemented with GUSI 2 */
 #define USE_GUSI
-/* #define WITH_THREAD		/* Use thread support (needs GUSI 2, not GUSI 1) */
+#define WITH_THREAD		/* Use thread support (needs GUSI 2, not GUSI 1) */
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
 #define USE_TOOLBOX		/* Include toolbox modules in core Python */
 #define USE_QT			/* Include quicktime modules in core Python */
 #define USE_WASTE		/* Include waste module in core Python */
-/* #define USE_MACSPEECH		/* Include macspeech module in core Python */
-#define USE_IMG	       		/* Include img modules in core Python */
-/* #define USE_MACCTB		/* Include ctb module in core Python */
-/* #define USE_TK			/* Include _tkinter module in core Python */
-/* #define MAC_TCL			/* This *must* be on if USE_TK is on */
+/* #define USE_IMG	       		/* Include img modules in core Python */
 /* #define USE_MAC_SHARED_LIBRARY	/* Enable code to add shared-library resources */
 /* #define USE_MAC_APPLET_SUPPORT	/* Enable code to run a PYC resource */
 /* #define HAVE_DYNAMIC_LOADING		/* Enable dynamically loaded modules */
@@ -27,6 +23,10 @@
 #define USE_ZLIB		/* Include the zlib module */
 #define USE_IC			/* Include Internet Config module */
 #define USE_PYEXPAT		/* Include Pyexpat module */
+#define XML_NS 1
+#define XML_DTD 1
+#define BYTEORDER 4321
+#define XML_CONTEXT_BYTES 1024
 #define USE_MSL_MALLOC	/* Disable private malloc. Also disables next two defines */
 #ifndef USE_MSL_MALLOC
 /* #define USE_MALLOC_DEBUG			/* Enable range checking and other malloc debugging */
