@@ -331,6 +331,10 @@ The optional argument \var{strict_parsing} is a flag indicating what
 to do with parsing errors.  If false (the default), errors
 are silently ignored.  If true, errors raise a ValueError
 exception.
+
+Use the \function{\refmodule{urllib}.urlencode()} function to convert
+such dictionaries into query strings.
+
 \end{funcdesc}
 
 \begin{funcdesc}{parse_qsl}{qs\optional{, keep_blank_values\optional{,
@@ -352,7 +356,7 @@ to do with parsing errors.  If false (the default), errors
 are silently ignored.  If true, errors raise a ValueError
 exception.
 
-Use the \function{\refmodule{cgi}.urlencode()} function to convert
+Use the \function{\refmodule{urllib}.urlencode()} function to convert
 such lists of pairs into query strings.
 \end{funcdesc}
 
