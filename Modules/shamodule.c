@@ -459,7 +459,7 @@ SHA_getattr(PyObject *self, char *name)
     if (strcmp(name, "blocksize")==0)
         return PyInt_FromLong(1);
     if (strcmp(name, "digest_size")==0 || strcmp(name, "digestsize")==0)
-    	return PyInt_FromLong(20);
+        return PyInt_FromLong(20);
 
     return Py_FindMethod(SHA_methods, self, name);
 }
@@ -524,9 +524,7 @@ static struct PyMethodDef SHA_functions[] = {
 
 /* Initialize this module. */
 
-#define insint(n,v) { PyObject *o=PyInt_FromLong(v); \
-	if (o!=NULL) PyDict_SetItemString(d,n,o); \
-	Py_XDECREF(o); }
+#define insint(n,v) { PyModule_AddIntConstant(m,n,v); }
 
 DL_EXPORT(void)
 initsha(void)
