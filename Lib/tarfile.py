@@ -1249,7 +1249,7 @@ class TarFile(object):
             if self.posix:
                 prefix = tarinfo.name[:LENGTH_PREFIX + 1]
                 while prefix and prefix[-1] != "/":
-                        prefix = prefix[:-1]
+                    prefix = prefix[:-1]
 
                 name = tarinfo.name[len(prefix):]
                 prefix = prefix[:-1]

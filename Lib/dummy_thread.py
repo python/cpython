@@ -4,7 +4,7 @@ Meant to be used as a brain-dead substitute so that threaded code does
 not need to be rewritten for when the thread module is not present.
 
 Suggested usage is::
-    
+
     try:
         import thread
     except ImportError:
@@ -67,7 +67,7 @@ def allocate_lock():
 
 class LockType(object):
     """Class implementing dummy implementation of thread.LockType.
-    
+
     Compatibility is maintained by maintaining self.locked_status
     which is a boolean that stores the state of the lock.  Pickling of
     the lock, though, should not be done since if the thread module is
@@ -78,7 +78,7 @@ class LockType(object):
 
     def __init__(self):
         self.locked_status = False
-    
+
     def acquire(self, waitflag=None):
         """Dummy implementation of acquire().
 
@@ -92,7 +92,7 @@ class LockType(object):
         """
         if waitflag is None:
             self.locked_status = True
-            return None 
+            return None
         elif not waitflag:
             if not self.locked_status:
                 self.locked_status = True
@@ -101,7 +101,7 @@ class LockType(object):
                 return False
         else:
             self.locked_status = True
-            return True 
+            return True
 
     def release(self):
         """Release the dummy lock."""

@@ -24,24 +24,24 @@ class PyCompileError(Exception):
         raise PyCompileError(exc_type,exc_value,file[,msg])
 
     where
-    
+
         exc_type:   exception type to be used in error message
                     type name can be accesses as class variable
                     'exc_type_name'
-                  
+
         exc_value:  exception value to be used in error message
                     can be accesses as class variable 'exc_value'
-                 
+
         file:       name of file being compiled to be used in error message
                     can be accesses as class variable 'file'
-                 
+
         msg:        string message to be written as error message
                     If no value is given, a default exception message will be given,
                     consistent with 'standard' py_compile output.
                     message (or default) can be accesses as class variable 'msg'
-    
+
     """
-    
+
     def __init__(self, exc_type, exc_value, file, msg=''):
         exc_type_name = exc_type.__name__
         if exc_type is SyntaxError:
@@ -49,7 +49,7 @@ class PyCompileError(Exception):
             errmsg = tbtext.replace('File "<string>"', 'File "%s"' % file)
         else:
             errmsg = "Sorry: %s: %s" % (exc_type_name,exc_value)
-            
+
         Exception.__init__(self,msg or errmsg,exc_type_name,exc_value,file)
 
         self.exc_type_name = exc_type_name
@@ -94,7 +94,7 @@ def compile(file, cfile=None, dfile=None, doraise=False):
              and the function will return to the caller. If an
              exception occurs and this flag is set to True, a
              PyCompileError exception will be raised.
-    
+
     Note that it isn't necessary to byte-compile Python modules for
     execution efficiency -- Python itself byte-compiles a module when
     it is loaded, and if it can, writes out the bytecode to the
@@ -159,6 +159,6 @@ def main(args=None):
             compile(filename, doraise=True)
         except PyCompileError,err:
             sys.stderr.write(err.msg)
-            
+
 if __name__ == "__main__":
     main()

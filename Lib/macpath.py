@@ -85,10 +85,10 @@ def dirname(s): return split(s)[0]
 def basename(s): return split(s)[1]
 
 def ismount(s):
-	if not isabs(s):
-		return False
-	components = split(s)
-	return len(components) == 2 and components[1] == ''
+    if not isabs(s):
+        return False
+    components = split(s)
+    return len(components) == 2 and components[1] == ''
 
 def isdir(s):
     """Return true if the pathname refers to an existing directory."""

@@ -32,7 +32,7 @@ class MyFuncs:
                 ['string.' + method for method in list_public_methods(self.string)]
     def pow(self, x, y): return pow(x, y)
     def add(self, x, y) : return x + y
-    
+
 server = SimpleXMLRPCServer(("localhost", 8000))
 server.register_introspection_functions()
 server.register_instance(MyFuncs())
@@ -137,7 +137,7 @@ def remove_duplicates(lst):
     Returns a copy of a list without duplicates. Every list
     item must be hashable and the order of the items in the
     resulting list is not defined.
-    """    
+    """
     u = {}
     for x in lst:
         u[x] = 1
@@ -151,7 +151,7 @@ class SimpleXMLRPCDispatcher:
     and then to dispatch them. There should never be any
     reason to instantiate this class directly.
     """
-    
+
     def __init__(self):
         self.funcs = {}
         self.instance = None
@@ -195,7 +195,7 @@ class SimpleXMLRPCDispatcher:
 
         see http://xmlrpc.usefulinc.com/doc/reserved.html
         """
-        
+
         self.funcs.update({'system.listMethods' : self.system_listMethods,
                       'system.methodSignature' : self.system_methodSignature,
                       'system.methodHelp' : self.system_methodHelp})
@@ -205,28 +205,28 @@ class SimpleXMLRPCDispatcher:
         namespace.
 
         see http://www.xmlrpc.com/discuss/msgReader$1208"""
-        
+
         self.funcs.update({'system.multicall' : self.system_multicall})
-        
+
     def _marshaled_dispatch(self, data, dispatch_method = None):
         """Dispatches an XML-RPC method from marshalled (XML) data.
-        
+
         XML-RPC methods are dispatched from the marshalled (XML) data
         using the _dispatch method and the result is returned as
         marshalled data. For backwards compatibility, a dispatch
-        function can be provided as an argument (see comment in 
+        function can be provided as an argument (see comment in
         SimpleXMLRPCRequestHandler.do_POST) but overriding the
         existing method through subclassing is the prefered means
         of changing method dispatch behavior.
         """
-        
+
         params, method = xmlrpclib.loads(data)
 
         # generate response
         try:
             if dispatch_method is not None:
                 response = dispatch_method(method, params)
-            else:                
+            else:
                 response = self._dispatch(method, params)
             # wrap response in a singleton tuple
             response = (response,)
@@ -245,7 +245,7 @@ class SimpleXMLRPCDispatcher:
         """system.listMethods() => ['add', 'subtract', 'multiple']
 
         Returns a list of the methods supported by the server."""
-        
+
         methods = self.funcs.keys()
         if self.instance is not None:
             # Instance can implement _listMethod to return a list of
@@ -263,7 +263,7 @@ class SimpleXMLRPCDispatcher:
                     )
         methods.sort()
         return methods
-    
+
     def system_methodSignature(self, method_name):
         """system.methodSignature('add') => [double, int, int]
 
@@ -274,14 +274,14 @@ class SimpleXMLRPCDispatcher:
         This server does NOT support system.methodSignature."""
 
         # See http://xmlrpc.usefulinc.com/doc/sysmethodsig.html
-        
+
         return 'signatures not supported'
 
     def system_methodHelp(self, method_name):
         """system.methodHelp('add') => "Adds two integers together"
 
         Returns a string containing documentation for the specified method."""
-        
+
         method = None
         if self.funcs.has_key(method_name):
             method = self.funcs[method_name]
@@ -314,9 +314,9 @@ class SimpleXMLRPCDispatcher:
         Allows the caller to package multiple XML-RPC calls into a single
         request.
 
-        See http://www.xmlrpc.com/discuss/msgReader$1208        
+        See http://www.xmlrpc.com/discuss/msgReader$1208
         """
-        
+
         results = []
         for call in call_list:
             method_name = call['methodName']
@@ -337,7 +337,7 @@ class SimpleXMLRPCDispatcher:
                      'faultString' : "%s:%s" % (sys.exc_type, sys.exc_value)}
                     )
         return results
-    
+
     def _dispatch(self, method, params):
         """Dispatches the XML-RPC method.
 
@@ -382,7 +382,7 @@ class SimpleXMLRPCDispatcher:
             return func(*params)
         else:
             raise Exception('method "%s" is not supported' % method)
-        
+
 class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     """Simple XML-RPC request handler class.
 
@@ -396,7 +396,7 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         Attempts to interpret all HTTP POST requests as XML-RPC calls,
         which are forwarded to the server's _dispatch method for handling.
         """
-        
+
         try:
             # get arguments
             data = self.rfile.read(int(self.headers["content-length"]))
@@ -423,14 +423,14 @@ class SimpleXMLRPCRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # shut down the connection
             self.wfile.flush()
             self.connection.shutdown(1)
-            
+
     def log_request(self, code='-', size='-'):
         """Selectively log an accepted request."""
 
         if self.server.logRequests:
             BaseHTTPServer.BaseHTTPRequestHandler.log_request(self, code, size)
 
-class SimpleXMLRPCServer(SocketServer.TCPServer, 
+class SimpleXMLRPCServer(SocketServer.TCPServer,
                          SimpleXMLRPCDispatcher):
     """Simple XML-RPC server.
 
@@ -444,21 +444,21 @@ class SimpleXMLRPCServer(SocketServer.TCPServer,
     def __init__(self, addr, requestHandler=SimpleXMLRPCRequestHandler,
                  logRequests=1):
         self.logRequests = logRequests
-        
+
         SimpleXMLRPCDispatcher.__init__(self)
         SocketServer.TCPServer.__init__(self, addr, requestHandler)
-        
+
 class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
     """Simple handler for XML-RPC data passed through CGI."""
-    
+
     def __init__(self):
         SimpleXMLRPCDispatcher.__init__(self)
 
     def handle_xmlrpc(self, request_text):
         """Handle a single XML-RPC request"""
-        
+
         response = self._marshaled_dispatch(request_text)
-    
+
         print 'Content-Type: text/xml'
         print 'Content-Length: %d' % len(response)
         print
@@ -474,11 +474,11 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
         code = 400
         message, explain = \
                  BaseHTTPServer.BaseHTTPRequestHandler.responses[code]
-        
+
         response = BaseHTTPServer.DEFAULT_ERROR_MESSAGE % \
             {
-             'code' : code, 
-             'message' : message, 
+             'code' : code,
+             'message' : message,
              'explain' : explain
             }
         print 'Status: %d %s' % (code, message)
@@ -486,25 +486,25 @@ class CGIXMLRPCRequestHandler(SimpleXMLRPCDispatcher):
         print 'Content-Length: %d' % len(response)
         print
         print response
-                    
+
     def handle_request(self, request_text = None):
         """Handle a single XML-RPC request passed through a CGI post method.
-        
+
         If no XML data is given then it is read from stdin. The resulting
         XML-RPC response is printed to stdout along with the correct HTTP
         headers.
         """
-        
+
         if request_text is None and \
             os.environ.get('REQUEST_METHOD', None) == 'GET':
             self.handle_get()
         else:
             # POST data is normally available through stdin
             if request_text is None:
-                request_text = sys.stdin.read()        
+                request_text = sys.stdin.read()
 
             self.handle_xmlrpc(request_text)
-        
+
 if __name__ == '__main__':
     server = SimpleXMLRPCServer(("localhost", 8000))
     server.register_function(pow)

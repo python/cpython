@@ -92,8 +92,8 @@ def slave_open(tty_name):
     except ImportError:
         return result
     try:
-       ioctl(result, I_PUSH, "ptem")
-       ioctl(result, I_PUSH, "ldterm")
+        ioctl(result, I_PUSH, "ptem")
+        ioctl(result, I_PUSH, "ldterm")
     except IOError:
         pass
     return result

@@ -415,9 +415,9 @@ else:
     environ = _Environ(environ)
 
 def getenv(key, default=None):
-	"""Get an environment variable, return None if it doesn't exist.
-	The optional second argument can specify an alternate default."""
-	return environ.get(key, default)
+    """Get an environment variable, return None if it doesn't exist.
+    The optional second argument can specify an alternate default."""
+    return environ.get(key, default)
 __all__.append("getenv")
 
 def _exists(name):

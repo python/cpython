@@ -499,12 +499,12 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     #populous then just inline calculations.  Also might be able to use
     #``datetime`` and the methods it provides.
     if julian == -1:
-            julian = julianday(year, month, day)
+        julian = julianday(year, month, day)
     else:  # Assuming that if they bothered to include Julian day it will
            #be accurate
-            year, month, day = gregorian(julian, year)
+        year, month, day = gregorian(julian, year)
     if weekday == -1:
-            weekday = dayofweek(year, month, day)
+        weekday = dayofweek(year, month, day)
     return time.struct_time((year, month, day,
                              hour, minute, second,
                              weekday, julian, tz))

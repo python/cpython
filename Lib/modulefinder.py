@@ -514,9 +514,9 @@ class ModuleFinder:
             if isinstance(consts[i], type(co)):
                 consts[i] = self.replace_paths_in_code(consts[i])
 
-        return new.code(co.co_argcount, co.co_nlocals, co.co_stacksize, 
-                         co.co_flags, co.co_code, tuple(consts), co.co_names, 
-                         co.co_varnames, new_filename, co.co_name, 
+        return new.code(co.co_argcount, co.co_nlocals, co.co_stacksize,
+                         co.co_flags, co.co_code, tuple(consts), co.co_names,
+                         co.co_varnames, new_filename, co.co_name,
                          co.co_firstlineno, co.co_lnotab,
                          co.co_freevars, co.co_cellvars)
 
