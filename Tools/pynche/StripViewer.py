@@ -1,6 +1,5 @@
 import string
 from Tkinter import *
-import Pmw
 import ColorDB
 
 # Load this script into the Tcl interpreter and call it in
@@ -88,33 +87,23 @@ class RightArrow(LeftArrow):
 
 
 
-class StripWidget(Pmw.MegaWidget):
+class StripWidget:
     _CHIPHEIGHT = 50
     _CHIPWIDTH = 10
     _NUMCHIPS = 40
 
-    def __init__(self, parent=None, **kw):
+    def __init__(self, switchboard,
+                 parent     = None,
+                 color      = (128, 128, 128),
+                 chipwidth  = self._CHIPWIDTH,
+                 chipheight = self._CHIPHEIGHT,
+                 numchips   = self._NUMCHIPS,
+                 generator  = None,
+                 axis       = None,
+                 label      = ''):
+        # the last chip selected
         self.__lastchip = None
-
-	options = (('color',      (128, 128, 128),  self.__set_color),
-		   ('delegate',   None,             self.__set_delegate),
-		   ('chipwidth',  self._CHIPWIDTH,  Pmw.INITOPT),
-		   ('chipheight', self._CHIPHEIGHT, Pmw.INITOPT),
-		   ('numchips',   self._NUMCHIPS,   Pmw.INITOPT),
-		   ('generator',  None,             Pmw.INITOPT),
-		   ('axis',       None,             Pmw.INITOPT),
-		   ('label',      '',               Pmw.INITOPT),
-		   )
-	self.defineoptions(kw, options)
-
-	Pmw.MegaWidget.__init__(self, parent)
-	interiorarg = (self.interior(),)
-
-	# group component contains a convas containing a bunch of objects
-	# (moveable arrow + text label, relief'd rectangle color chips)
-	chipwidth = self.__chipwidth = self['chipwidth']
-	chipheight = self.__chipheight = self['chipheight']
-	numchips = self.__numchips = self['numchips']
+        self.__sb = switchboard
 
 	canvaswidth = numchips * (chipwidth + 1)
 	canvasheight = chipheight + 43		  # TBD: Kludge
@@ -148,11 +137,10 @@ class StripWidget(Pmw.MegaWidget):
 		x, y, x+chipwidth, y+chipheight,
 		fill=color, outline=color,
 		tags=tags)
-
 	    x = x + chipwidth + 1		  # for outline
 	    chips.append(color)
 
-	# create the string tag
+	# create the strip label
 	self.__label = canvas.create_text(
 	    3, y + chipheight + 8,
 	    text=self['label'],
@@ -165,13 +153,13 @@ class StripWidget(Pmw.MegaWidget):
 	chipx = self.__arrow_x(len(chips) - 1)
 	self.__rightarrow = RightArrow(canvas, chipx)
 
-	self.__generator = self['generator']
-	self.__axis = self['axis']
+	self.__generator = generator
+	self.__axis = axis
 	assert self.__axis in (0, 1, 2)
-	self.initialiseoptions(StripWidget)
-	self.__delegate = self['delegate']
 	self.__update_while_dragging = 0
 
+    # Invoked when one of the chips is clicked.  This should just tell the
+    # switchboard to set the color on all the output components
     def __set_color(self):
 	rgbtuple = self['color']
 	self.set_color(self, rgbtuple)
@@ -210,26 +198,23 @@ class StripWidget(Pmw.MegaWidget):
             color = self.__canvas.itemcget(self.__lastchip, 'fill')
             self.__canvas.itemconfigure(self.__lastchip, outline=color)
         self.__lastchip = chip
-
 	# get the arrow's text
 	coloraxis = rgbtuple[self.__axis]
 	text = repr(coloraxis)
-
 	# move the arrow, and set it's text
 	if coloraxis <= 128:
-	    # use the left chip
+	    # use the left arrow
 	    self.__leftarrow.set_text(text)
 	    self.__leftarrow.move_to(self.__arrow_x(chip-1))
 	    self.__rightarrow.move_to(-100)
 	else:
-	    # use the right chip
+	    # use the right arrow
 	    self.__rightarrow.set_text(text)
 	    self.__rightarrow.move_to(self.__arrow_x(chip-1))
 	    self.__leftarrow.move_to(-100)
 	# and set the chip's outline
-	pmwrgb = ColorDB.triplet_to_pmwrgb(rgbtuple)
-	b = Pmw.Color.rgb2brightness(pmwrgb)
-	if b <= 0.5:
+        brightness = ColorDB.triplet_to_brightness(rgbtuple)
+	if brightness <= 0.5:
 	    outline = 'white'
 	else:
 	    outline = 'black'
@@ -240,15 +225,14 @@ class StripWidget(Pmw.MegaWidget):
     # public interface
     #
 
-    def set_color(self, obj, rgbtuple):
-	red, green, blue = rgbtuple
+    def update_yourself(self, red, green, blue):
 	assert self.__generator
 	i = 1
 	chip = 0
 	chips = self.__chips = []
 	tclcmd = []
 	tk = self.__canvas.tk
-
+        # get the red, green, and blue components for all chips
         for t in self.__generator(self.__numchips, rgbtuple):
             rrggbb = ColorDB.triplet_to_rrggbb(t)
             chips.append(rrggbb)
@@ -259,9 +243,8 @@ class StripWidget(Pmw.MegaWidget):
         # call the raw tcl script
         colors = string.join(chips)
         tk.eval('setcolor %s {%s}' % (self.__canvas._w, colors))
-
         # move the arrows around
-        self.__trackarrow(chip, rgbtuple)
+        self.__trackarrow(chip, (red, green, blue))
 
     def set_update_while_dragging(self, flag):
 	self.__update_while_dragging = flag
