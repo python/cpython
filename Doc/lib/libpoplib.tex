@@ -40,10 +40,12 @@ passed to the constructor as a string.
 
 \begin{seealso}
   \seemodule{imaplib}{The standard Python IMAP module.}
-  \seetitle{http://www.tuxedo.org/~esr/fetchail/fetchmail-FAQ.html}{
-	The FAQ for the fetchmail POP/IMAP client collects information
-	on POP3 server variations and RFC noncompliance that may be
-	useful if you need to write an application based on poplib.} 
+  \seetitle[http://www.tuxedo.org/\~{}esr/fetchmail/fetchmail-FAQ.html]
+        {Frequently Asked Questions About Fetchmail}
+        {The FAQ for the \program{fetchmail} POP/IMAP client collects
+         information on POP3 server variations and RFC noncompliance
+         that may be useful if you need to write an application based
+         on the POP protocol.}
 \end{seealso}
 
 
@@ -105,7 +107,7 @@ Result is in form  \code{(\var{response}, ['line', ...], \var{octets})}.
 \begin{methoddesc}{dele}{which}
 Flag message number \var{which} for deletion.  On most servers
 deletions are not actually performed until QUIT (the major exception is
-Eudora QPOP, which deliberately violates the RFCs by doing pending 
+Eudora QPOP, which deliberately violates the RFCs by doing pending
 deletes on any disconnect).
 \end{methoddesc}
 
@@ -123,7 +125,7 @@ Signoff:  commit changes, unlock mailbox, drop connection.
 
 \begin{methoddesc}{top}{which, howmuch}
 Retrieves the message header plus \var{howmuch} lines of the message
-after the header of message number \var{which}. Result is in form 
+after the header of message number \var{which}. Result is in form
 \code{(\var{response}, ['line', ...], \var{octets})}.
 
 The POP3 TOP command this method uses, unlike the RETR command,
