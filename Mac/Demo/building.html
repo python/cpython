@@ -41,7 +41,7 @@ directory <code>Mac/mwerks/projects</code> for the project files and
 related stuff.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
-been built with version 9 of CodeWarrior. Ordering information is
+been built with version 10 of CodeWarrior. Ordering information is
 available on the <A HREF="http://www.metrowerks.com/">MetroWerks
 homepage</A>. You might still be able to build Python with MPW or
 Think/Symantec C but you are basically on your own.
@@ -123,12 +123,18 @@ Top-level-folder:
 
 First build GUSI. Move the files from the "CWGUSI-mods" to the right
 place in the CWGUSI distribution folder, and build the
-projects <code>GUSI.68K.µ</code>, <code>GUSI.CFM68K.µ</code>
-(note that the Gusi CFM68K project is
-distributed without "far data": you should set this option before building)
-and <code>GUSI.PPC.µ</code>. 
+projects <code>GUSI.68K.µ</code>, <code>GUSI.CFM68K.µ</code> and
+<code>GUSI.PPC.µ</code>.
+Two notes:
+<ul>
+<li> The projects as distributed have a slightly incorrect access path, due
+to which they cannot find their <code>GUSICWFile.???</code> files. Change
+the access path to <code>{project folder}::</code> to fix this.
+<li> The Gusi CFM68K project is
+distributed without "far data": you should set this option before building.
+</ul> 
 If you have a CWGUSI version more recent than
-1.7.2 it could be that the fixes are already included, check it. Alternatively,
+1.8 it could be that the fixes are already included, check it. Alternatively,
 you can forget about the fixes and remove the one reference to GUSILoadPreferences
 in the Python sources. This will disable the "default file creator/type" and
 "Delay Sioux window" preferences in Python.
