@@ -850,6 +850,21 @@ static PyGetSetDef subtype_getsets[] = {
 	{0},
 };
 
+/* bozo: __getstate__ that raises TypeError */
+
+static PyObject *
+bozo_func(PyObject *self, PyObject *args)
+{
+	PyErr_SetString(PyExc_TypeError,
+			"a class that defines __slots__ without "
+			"defining __getstate__ cannot be pickled");
+	return NULL;
+}
+
+static PyMethodDef bozo_ml = {"__getstate__", bozo_func};
+
+static PyObject *bozo_obj = NULL;
+
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
@@ -971,6 +986,27 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 				return NULL;
 			}
 			/* XXX Check against null bytes in name */
+		}
+	}
+	if (slots != NULL) {
+		/* See if *this* class defines __getstate__ */
+		PyObject *getstate = PyDict_GetItemString(dict,
+							  "__getstate__");
+		if (getstate == NULL) {
+			/* If not, provide a bozo that raises TypeError */
+			if (bozo_obj == NULL) {
+				bozo_obj = PyCFunction_New(&bozo_ml, NULL);
+				if (bozo_obj == NULL) {
+					/* XXX decref various things */
+					return NULL;
+				}
+			}
+			if (PyDict_SetItemString(dict,
+						 "__getstate__",
+						 bozo_obj) < 0) {
+				/* XXX decref various things */
+				return NULL;
+			}
 		}
 	}
 	if (slots == NULL && base->tp_dictoffset == 0 &&
@@ -1654,7 +1690,7 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 		descr = PyDescr_NewMethod(type, meth);
 		if (descr == NULL)
 			return -1;
-		if (PyDict_SetItemString(dict,meth->ml_name,descr) < 0)
+		if (PyDict_SetItemString(dict,meth->ml_name, descr) < 0)
 			return -1;
 		Py_DECREF(descr);
 	}
