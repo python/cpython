@@ -981,6 +981,7 @@ dict_fromkeys(PyObject *mp, PyObject *args)
 		return NULL;
 	if (!PyDict_Check(d)) {
 		PyErr_BadInternalCall();
+		Py_DECREF(d);
 		return NULL;
 	}
 
