@@ -189,8 +189,8 @@ PyCurses_ConvertToChtype(PyObject *obj, chtype *ch)
 {
   if (PyInt_Check(obj)) {
     *ch = (chtype) PyInt_AsLong(obj);
-  } else if(PyString_Check(obj) &
-	    (PyString_Size(obj) == 1)) {
+  } else if(PyString_Check(obj) 
+	    && (PyString_Size(obj) == 1)) {
     *ch = (chtype) *PyString_AsString(obj);
   } else {
     return 0;
