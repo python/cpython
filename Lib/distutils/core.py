@@ -188,6 +188,7 @@ class Distribution:
         self.packages = None
         self.package_dir = None
         self.py_modules = None
+        self.libraries = None
         self.ext_modules = None
         self.ext_package = None
         self.include_dirs = None
@@ -314,7 +315,7 @@ class Distribution:
             # known options
             if not (hasattr (cmd_obj, 'options') and
                     type (cmd_obj.options) is ListType):
-                raise DistutilsClasserror, \
+                raise DistutilsClassError, \
                       ("command class %s must provide an 'options' attribute "+
                        "(a list of tuples)") % \
                       cmd_obj.__class__
