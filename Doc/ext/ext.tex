@@ -44,15 +44,16 @@ dynamically (at run time) into the interpreter, if the underlying
 operating system supports this feature.
 
 This document assumes basic knowledge about Python.  For an informal
-introduction to the language, see the Python Tutorial.  The \emph{Python
-Reference Manual} gives a more formal definition of the language.  The
-\emph{Python Library Reference} documents the existing object types,
-functions and modules (both built-in and written in Python) that give
-the language its wide application range.
+introduction to the language, see the
+\citetitle[../tut/tut.html]{Python Tutorial}.  The
+\citetitle[../ref/ref.html]{Python Reference Manual} gives a more
+formal definition of the language.  The
+\citetitle[../lib/lib.html]{Python Library Reference} documents the
+existing object types, functions and modules (both built-in and
+written in Python) that give the language its wide application range.
 
 For a detailed description of the whole Python/C API, see the separate
-\emph{Python/C API Reference Manual}.
-
+\citetitle[../api/api.html]{Python/C API Reference Manual}.
 
 \end{abstract}
 
@@ -179,9 +180,10 @@ argument to \keyword{raise}).  A third variable contains the stack
 traceback in case the error originated in Python code.  These three
 variables are the C equivalents of the Python variables
 \code{sys.exc_type}, \code{sys.exc_value} and \code{sys.exc_traceback} (see
-the section on module \module{sys} in the \emph{Python Library
-Reference}).  It is important to know about them to understand how
-errors are passed around.
+the section on module \module{sys} in the
+\citetitle[../lib/lib.html]{Python Library Reference}).  It is
+important to know about them to understand how errors are passed
+around.
 
 The Python API defines a number of functions to set various types of
 exceptions.
@@ -286,10 +288,11 @@ initspam()
 Note that the Python name for the exception object is
 \exception{spam.error}.  The \cfunction{PyErr_NewException()} function
 may create either a string or class, depending on whether the
-\samp{-X} flag was passed to the interpreter.  If \samp{-X} was used,
-\cdata{SpamError} will be a string object, otherwise it will be a
-class object with the base class being \exception{Exception},
-described in the \emph{Python Library Reference} under ``Built-in
+\programopt{-X} flag was passed to the interpreter.  If
+\programopt{-X} was used, \cdata{SpamError} will be a string object,
+otherwise it will be a class object with the base class being
+\exception{Exception}, described in the
+\citetitle[../lib/lib.html]{Python Library Reference} under ``Built-in
 Exceptions.''
 
 
@@ -462,8 +465,8 @@ Fortunately, the Python interpreter is easily called recursively, and
 there is a standard interface to call a Python function.  (I won't
 dwell on how to call the Python parser with a particular string as
 input --- if you're interested, have a look at the implementation of
-the \samp{-c} command line option in \file{Python/pythonmain.c} from
-the Python source code.)
+the \programopt{-c} command line option in \file{Python/pythonmain.c}
+from the Python source code.)
 
 Calling a Python function is easy.  First, the Python program must
 somehow pass you the Python function object.  You should provide a
@@ -1565,10 +1568,10 @@ exported, so it has to be learned only once.
 Finally it should be mentioned that CObjects offer additional
 functionality, which is especially useful for memory allocation and
 deallocation of the pointer stored in a CObject. The details
-are described in the \emph{Python/C API Reference Manual} in the
-section ``CObjects'' and in the implementation of CObjects (files
-\file{Include/cobject.h} and \file{Objects/cobject.c} in the
-Python source code distribution).
+are described in the \citetitle[../api/api.html]{Python/C API
+Reference Manual} in the section ``CObjects'' and in the
+implementation of CObjects (files \file{Include/cobject.h} and
+\file{Objects/cobject.c} in the Python source code distribution).
 
 
 \chapter{Building C and \Cpp{} Extensions on \UNIX{}
