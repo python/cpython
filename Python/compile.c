@@ -561,6 +561,7 @@ static void symtable_global(struct symtable *, node *);
 static void symtable_import(struct symtable *, node *);
 static void symtable_assign(struct symtable *, node *, int);
 static void symtable_list_comprehension(struct symtable *, node *);
+static void symtable_list_for(struct symtable *, node *);
 
 static int symtable_update_free_vars(struct symtable *);
 static int symtable_undo_free(struct symtable *, PyObject *, PyObject *);
@@ -1381,6 +1382,8 @@ com_list_comprehension(struct compiling *c, node *n)
 {
 	/* listmaker: test list_for */
 	char tmpname[30];
+
+	REQ(n, listmaker);
 	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", ++c->c_tmpname);
 	com_addoparg(c, BUILD_LIST, 0);
 	com_addbyte(c, DUP_TOP); /* leave the result on the stack */
@@ -4389,9 +4392,9 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 			}
 		}
 	}
-	if (list == NULL)	/* There used to be a check here for the size of */
-		return 0;		/* the list being 0, which would have leaked the */
-						/* list if that condition was ever possible. JRH */
+	if (list == NULL)
+		return 0;
+
 	/* There are cellvars that are also arguments.  Create a dict
 	   to replace cellvars and put the args at the front.
 	*/
@@ -4406,6 +4409,7 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 			goto fail;
 		if (PyDict_DelItem(*cellvars, PyList_GET_ITEM(list, i)) < 0)
 			goto fail;
+		Py_DECREF(v);
 	}
 	pos = 0;
 	i = PyList_GET_SIZE(list);
@@ -4416,6 +4420,7 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 			goto fail;
 		if (PyDict_SetItem(d, v, w) < 0) {
 			Py_DECREF(w);
+			v = NULL;
 			goto fail;
 		}
 		Py_DECREF(w);
@@ -4425,6 +4430,7 @@ symtable_cellvar_offsets(PyObject **cellvars, int argcount,
 	return 1;
  fail:
 	Py_DECREF(d);
+	Py_XDECREF(v);
 	return -1;
 }
 
@@ -4688,7 +4694,6 @@ symtable_init()
 	st->st_cur = NULL;
 	st->st_nscopes = 0;
 	st->st_errors = 0;
-	st->st_tmpname = 0;
 	st->st_private = NULL;
 	return st;
  fail:
@@ -4732,15 +4737,9 @@ symtable_update_free_vars(struct symtable *st)
 	for (i = 0; i < PyList_GET_SIZE(ste->ste_children); ++i) {
 		int pos = 0;
 
-		if (list)
-			if (PyList_SetSlice(list, 0, 
-					((PyVarObject*)list)->ob_size, 0) < 0)
+		if (list && PyList_SetSlice(list, 0, 
+					    PyList_GET_SIZE(list), 0) < 0)
 				return -1;
-			/* Yes, the above call CAN fail, even though it's reducing
-			   the size of the list.  The current implementation will
-			   allocate temp memory equal to the size of the list: this
-			   is avoidable in this specific case, but probably not
-			   worth the effort of special-casing it. - JRH */
 		child = (PySymtableEntryObject *)
 			PyList_GET_ITEM(ste->ste_children, i);
 		while (PyDict_Next(child->ste_symbols, &pos, &name, &o)) {
@@ -4890,9 +4889,6 @@ symtable_enter_scope(struct symtable *st, char *name, int type,
 	if (st->st_cur) {
 		prev = st->st_cur;
 		if (PyList_Append(st->st_stack, (PyObject *)st->st_cur) < 0) {
-			/* Py_DECREF(st->st_cur); */
-			/* I believe the previous line would lead to a
-			   double-DECREF when st is disposed - JRH */
 			st->st_errors++;
 			return;
 		}
@@ -5154,12 +5150,12 @@ symtable_node(struct symtable *st, node *n)
 		}
 		goto loop;
 	case list_iter:
+		/* only occurs when there are multiple for loops
+		   in a list comprehension */
 		n = CHILD(n, 0);
-		if (TYPE(n) == list_for) {
-			st->st_tmpname++;
-			symtable_list_comprehension(st, n);
-			st->st_tmpname--;
-		} else {
+		if (TYPE(n) == list_for)
+			symtable_list_for(st, n);
+		else {
 			REQ(n, list_if);
 			symtable_node(st, CHILD(n, 1));
 			if (NCH(n) == 3) {
@@ -5187,10 +5183,7 @@ symtable_node(struct symtable *st, node *n)
 		/* fall through */
 	case listmaker:
 		if (NCH(n) > 1 && TYPE(CHILD(n, 1)) == list_for) {
-			st->st_tmpname++;
-			symtable_list_comprehension(st, CHILD(n, 1));
-			symtable_node(st, CHILD(n, 0));
-			st->st_tmpname--;
+			symtable_list_comprehension(st, n);
 			break;
 		}
 		/* fall through */
@@ -5229,7 +5222,7 @@ symtable_funcdef(struct symtable *st, node *n)
 }
 
 /* The next two functions parse the argument tuple.
-   symtable_default_arg() checks for names in the default arguments,
+   symtable_default_args() checks for names in the default arguments,
    which are references in the defining scope.  symtable_params()
    parses the parameter names, which are defined in the function's
    body. 
@@ -5388,10 +5381,23 @@ symtable_global(struct symtable *st, node *n)
 static void
 symtable_list_comprehension(struct symtable *st, node *n)
 {
+	/* listmaker: test list_for */
 	char tmpname[30];
 
-	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", st->st_tmpname);
+	REQ(n, listmaker);
+	PyOS_snprintf(tmpname, sizeof(tmpname), "_[%d]", 
+		      ++st->st_cur->ste_tmpname);
 	symtable_add_def(st, tmpname, DEF_LOCAL);
+	symtable_list_for(st, CHILD(n, 1));
+	symtable_node(st, CHILD(n, 0));
+	--st->st_cur->ste_tmpname;
+}
+
+static void
+symtable_list_for(struct symtable *st, node *n)
+{
+	REQ(n, list_for);
+	/* list_for: for v in expr [list_iter] */
 	symtable_assign(st, CHILD(n, 1), 0);
 	symtable_node(st, CHILD(n, 3));
 	if (NCH(n) == 5)
