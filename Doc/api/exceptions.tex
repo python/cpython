@@ -208,6 +208,14 @@ for each thread.
   Availability: Windows.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyErr_SetExcFromWindowsErr}{PyObject *type,
+	                                                 int ierr}
+  Similar to \cfunction{PyErr_SetFromWindowsErr()}, with an additional
+  parameter specifying the exception type to be raised.
+  Availability: Windows.
+  \versionadded{2.3}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyErr_SetFromWindowsErrWithFilename}{int ierr,
                                                                 char *filename}
   Similar to \cfunction{PyErr_SetFromWindowsErr()}, with the
@@ -215,6 +223,14 @@ for each thread.
   passed to the constructor of \exception{WindowsError} as a third
   parameter.
   Availability: Windows.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyErr_SetExcFromWindowsErrWithFilename}
+	{PyObject *type, int ierr, char *filename}
+  Similar to \cfunction{PyErr_SetFromWindowsErrWithFilename()}, with
+  an additional parameter specifying the exception type to be raised.
+  Availability: Windows.
+  \versionadded{2.3}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_BadInternalCall}{}

@@ -83,6 +83,9 @@ extern DL_IMPORT(PyObject *) PyErr_Format(PyObject *, const char *, ...)
 #ifdef MS_WINDOWS
 extern DL_IMPORT(PyObject *) PyErr_SetFromWindowsErrWithFilename(int, const char *);
 extern DL_IMPORT(PyObject *) PyErr_SetFromWindowsErr(int);
+extern DL_IMPORT(PyObject *) PyErr_SetExcFromWindowsErrWithFilename(
+	PyObject *,int, const char *);
+extern DL_IMPORT(PyObject *) PyErr_SetExcFromWindowsErr(PyObject *, int);
 #endif
 
 /* Export the old function so that the existing API remains available: */

@@ -337,7 +337,8 @@ PyErr_SetFromErrno(PyObject *exc)
 
 #ifdef MS_WINDOWS 
 /* Windows specific error code handling */
-PyObject *PyErr_SetFromWindowsErrWithFilename(
+PyObject *PyErr_SetExcFromWindowsErrWithFilename(
+	PyObject *exc,
 	int ierr,
 	const char *filename)
 {
@@ -366,16 +367,29 @@ PyObject *PyErr_SetFromWindowsErrWithFilename(
 	else
 		v = Py_BuildValue("(is)", err, s);
 	if (v != NULL) {
-		PyErr_SetObject(PyExc_WindowsError, v);
+		PyErr_SetObject(exc, v);
 		Py_DECREF(v);
 	}
 	LocalFree(s);
 	return NULL;
 }
 
+PyObject *PyErr_SetExcFromWindowsErr(PyObject *exc, int ierr)
+{
+	return PyErr_SetExcFromWindowsErrWithFilename(exc, ierr, NULL);
+}
+
 PyObject *PyErr_SetFromWindowsErr(int ierr)
 {
-	return PyErr_SetFromWindowsErrWithFilename(ierr, NULL);
+	return PyErr_SetExcFromWindowsErrWithFilename(PyExc_WindowsError,
+						      ierr, NULL);
+}
+PyObject *PyErr_SetFromWindowsErrWithFilename(
+	int ierr,
+	const char *filename)
+{
+	return PyErr_SetExcFromWindowsErrWithFilename(PyExc_WindowsError,
+						      ierr, filename);
 }
 #endif /* MS_WINDOWS */
 

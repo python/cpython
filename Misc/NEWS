@@ -380,6 +380,12 @@ Build
 
 C API
 
+- New functions PyErr_SetExcFromWindowsErr() and
+  PyErr_SetExcFromWindowsErrWithFilename(). Similar to
+  PyErr_SetFromWindowsErrWithFilename() and
+  PyErr_SetFromWindowsErr(), but they allow to specify
+  the exception type to raise. Available on Windows.
+
 - Py_FatalError() is now declared as taking a const char* argument.  It
   was previously declared without const.  This should not affect working
   code.
