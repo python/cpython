@@ -277,10 +277,6 @@ Py_Finalize(void)
 #endif
 
 	call_ll_exitfuncs();
-
-#ifdef Py_TRACE_REFS
-	_Py_ResetReferences();
-#endif /* Py_TRACE_REFS */
 }
 
 /* Create and initialize a new interpreter and thread, and return the

@@ -1909,13 +1909,6 @@ _Py_ReadyTypes(void)
 static PyObject refchain = {&refchain, &refchain};
 
 void
-_Py_ResetReferences(void)
-{
-	refchain._ob_prev = refchain._ob_next = &refchain;
-	_Py_RefTotal = 0;
-}
-
-void
 _Py_NewReference(PyObject *op)
 {
 	_Py_INC_REFTOTAL;
