@@ -50,6 +50,25 @@ variable names and references to non-existing variables are left
 unchanged.
 \end{funcdesc}
 
+\begin{funcdesc}{getsize}{filename}
+Return the size, in bytes, of \var{filename}.  Raise
+\exception{os.error} if the file does not exist or is inaccessible.
+\end{funcdesc}
+
+\begin{funcdesc}{getmtime}{filename}
+Return the time of last modification of \var{filename}.  The return
+value is integer giving the number of seconds since the epoch (see the 
+\module{time} module.  Raise \exception{os.error} if the file does not
+exist or is inaccessible.
+\end{funcdesc}
+
+\begin{funcdesc}{getatime}{filename}
+Return the time of last access of \var{filename}.  The return
+value is integer giving the number of seconds since the epoch (see the 
+\module{time} module.  Raise \exception{os.error} if the file does not
+exist or is inaccessible.
+\end{funcdesc}
+
 \begin{funcdesc}{isabs}{p}
 Return true if \var{p} is an absolute pathname (begins with a slash).
 \end{funcdesc}
