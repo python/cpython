@@ -147,6 +147,37 @@ PyTypeObject GWorld_Type = {
 /* --------------------- End object type GWorld --------------------- */
 
 
+static PyObject *Qdoffs_NewGWorld(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	QDErr _err;
+	GWorldPtr offscreenGWorld;
+	short PixelDepth;
+	Rect boundsRect;
+	CTabHandle cTable;
+	GDHandle aGDevice;
+	GWorldFlags flags;
+	if (!PyArg_ParseTuple(_args, "hO&O&O&l",
+	                      &PixelDepth,
+	                      PyMac_GetRect, &boundsRect,
+	                      OptResObj_Convert, &cTable,
+	                      OptResObj_Convert, &aGDevice,
+	                      &flags))
+		return NULL;
+	_err = NewGWorld(&offscreenGWorld,
+	                 PixelDepth,
+	                 &boundsRect,
+	                 cTable,
+	                 aGDevice,
+	                 flags);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     GWorldObj_New, offscreenGWorld);
+	return _res;
+}
+
 static PyObject *Qdoffs_LockPixels(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -175,6 +206,37 @@ static PyObject *Qdoffs_UnlockPixels(_self, _args)
 	UnlockPixels(pm);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qdoffs_UpdateGWorld(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	GWorldFlags _rv;
+	GWorldPtr offscreenGWorld;
+	short pixelDepth;
+	Rect boundsRect;
+	CTabHandle cTable;
+	GDHandle aGDevice;
+	GWorldFlags flags;
+	if (!PyArg_ParseTuple(_args, "hO&O&O&l",
+	                      &pixelDepth,
+	                      PyMac_GetRect, &boundsRect,
+	                      OptResObj_Convert, &cTable,
+	                      OptResObj_Convert, &aGDevice,
+	                      &flags))
+		return NULL;
+	_rv = UpdateGWorld(&offscreenGWorld,
+	                   pixelDepth,
+	                   &boundsRect,
+	                   cTable,
+	                   aGDevice,
+	                   flags);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     GWorldObj_New, offscreenGWorld);
 	return _res;
 }
 
@@ -501,10 +563,14 @@ static PyObject *Qdoffs_PutPixMapBytes(_self, _args)
 }
 
 static PyMethodDef Qdoffs_methods[] = {
+	{"NewGWorld", (PyCFunction)Qdoffs_NewGWorld, 1,
+	 "(short PixelDepth, Rect boundsRect, CTabHandle cTable, GDHandle aGDevice, GWorldFlags flags) -> (GWorldPtr offscreenGWorld)"},
 	{"LockPixels", (PyCFunction)Qdoffs_LockPixels, 1,
 	 "(PixMapHandle pm) -> (Boolean _rv)"},
 	{"UnlockPixels", (PyCFunction)Qdoffs_UnlockPixels, 1,
 	 "(PixMapHandle pm) -> None"},
+	{"UpdateGWorld", (PyCFunction)Qdoffs_UpdateGWorld, 1,
+	 "(short pixelDepth, Rect boundsRect, CTabHandle cTable, GDHandle aGDevice, GWorldFlags flags) -> (GWorldFlags _rv, GWorldPtr offscreenGWorld)"},
 	{"GetGWorld", (PyCFunction)Qdoffs_GetGWorld, 1,
 	 "() -> (CGrafPtr port, GDHandle gdh)"},
 	{"SetGWorld", (PyCFunction)Qdoffs_SetGWorld, 1,
