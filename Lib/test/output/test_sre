@@ -1,5 +1,4 @@
 test_sre
-=== Failed incorrectly ('\\x00ffffffffffffff', '\377', 0, 'found', '\377')
 === Failed incorrectly ('^(.+)?B', 'AB', 0, 'g1', 'A')
 === Failed incorrectly ('(a+)+\\1', 'aa', 0, 'found+"-"+g1', 'aa-a')
 === grouping error ('([^/]*/)*sub1/', 'd:msgs/tdir/sub1/trial/away.cpp', 0, 'found+"-"+g1', 'd:msgs/tdir/sub1/-tdir/') 'd:msgs/tdir/sub1/-trial/' should be 'd:msgs/tdir/sub1/-tdir/'

@@ -39,7 +39,7 @@ def _compile(code, pattern, flags):
                     return _sre.getlower(literal, flags)
             else:
                 emit(OPCODES[op])
-		fixup = lambda x: x
+                fixup = lambda x: x
             skip = len(code); emit(0)
             for op, av in av:
                 emit(OPCODES[op])
