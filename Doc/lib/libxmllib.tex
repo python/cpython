@@ -14,7 +14,28 @@ for parsing text files formatted in XML (eXtended Markup Language).
 The \class{XMLParser} class must be instantiated without arguments.
 \end{classdesc}
 
-This class provides the following interface methods:
+This class provides the following interface methods and instance variables:
+
+\begin{memberdesc}{attributes}
+A mapping of element names to mappings.  The latter mapping maps
+attribute names that are valid for the element to the default value of 
+the attribute, or if there is no default to \code{None}.  The default
+value is the empty dictionary.
+\end{memberdesc}
+
+\begin{memberdesc}{elements} 
+A mapping of element names to tuples.  The tuples contain a function
+for handling the start and end tag respectively of the element, or
+\code{None} if the method \method{unknown_starttag()} or
+\method{unknown_endtag()} is to be called.  The default value is the
+empty dictionary.
+\end{memberdesc}
+
+\begin{memberdesc}{entitydefs}
+A mapping of entitynames to their values.  The default value contains
+definitions for \code{'lt'}, \code{'gt'}, \code{'amp'}, \code{'quot'}, 
+and \code{'apos'}.
+\end{memberdesc}
 
 \begin{methoddesc}{reset}{}
 Reset the instance.  Loses all unprocessed data.  This is called
@@ -33,7 +54,7 @@ when the close tag matching the last unclosed open tag is encountered.
 
 \begin{methoddesc}{feed}{data}
 Feed some text to the parser.  It is processed insofar as it consists
-of complete elements; incomplete data is buffered until more data is
+of complete tags; incomplete data is buffered until more data is
 fed or \method{close()} is called.
 \end{methoddesc}
 
@@ -65,29 +86,29 @@ the root element.
 \end{methoddesc}
 
 \begin{methoddesc}{handle_starttag}{tag, method, attributes}
-This method is called to handle start tags for which a
-\method{start_\var{tag}()} method has been defined.  The \var{tag}
-argument is the name of the tag, and the \var{method} argument is the
-bound method which should be used to support semantic interpretation
-of the start tag.  The \var{attributes} argument is a dictionary of
-attributes, the key being the \var{name} and the value being the
-\var{value} of the attribute found inside the tag's \code{<>} brackets.
-Character and entity references in the \var{value} have
-been interpreted.  For instance, for the tag
+This method is called to handle start tags for which a start tag
+handler is defined in the instance variable \member{elements}.  The
+\var{tag} argument is the name of the tag, and the \var{method}
+argument is the function (method) which should be used to support semantic
+interpretation of the start tag.  The \var{attributes} argument is a
+dictionary of attributes, the key being the \var{name} and the value
+being the \var{value} of the attribute found inside the tag's
+\code{<>} brackets.  Character and entity references in the
+\var{value} have been interpreted.  For instance, for the start tag
 \code{<A HREF="http://www.cwi.nl/">}, this method would be called as
-\code{handle_starttag('A', self.start_A, \{'HREF': 'http://www.cwi.nl/'\})}.
+\code{handle_starttag('A', self.elements['A'][0], \{'HREF': 'http://www.cwi.nl/'\})}.
 The base implementation simply calls \var{method} with \var{attributes}
 as the only argument.
 \end{methoddesc}
 
 \begin{methoddesc}{handle_endtag}{tag, method}
-This method is called to handle endtags for which an
-\method{end_\var{tag}()} method has been defined.  The \var{tag}
-argument is the name of the tag, and the
-\var{method} argument is the bound method which should be used to
-support semantic interpretation of the end tag.  If no
-\method{end_\var{tag}()} method is defined for the closing element, this
-handler is not called.  The base implementation simply calls
+This method is called to handle endtags for which an end tag handler
+is defined in the instance variable \member{elements}.  The \var{tag}
+argument is the name of the tag, and the \var{method} argument is the
+function (method) which should be used to support semantic
+interpretation of the end tag.  For instance, for the endtag
+\code{</A>}, this method would be called as \code{handle_endtag('A',
+self.elements['A'][1])}.  The base implementation simply calls
 \var{method}.
 \end{methoddesc}
 
@@ -149,7 +170,7 @@ closing delimiter, but not the delimiter itself.  For example, the
 instruction \samp{<?XML text?>} will cause this method to be called
 with the arguments \code{'XML'} and \code{'text'}.  The default method
 does nothing.  Note that if a document starts with \samp{<?xml
-...?>}, \method{handle_xml()} is called to handle it.
+..?>}, \method{handle_xml()} is called to handle it.
 \end{methoddesc}
 
 \begin{methoddesc}{handle_special}{data}
@@ -196,32 +217,21 @@ intended to be overridden by a derived class; the base class
 implementation does nothing.
 \end{methoddesc}
 
-Apart from overriding or extending the methods listed above, derived
-classes may also define methods and variables of the following form to
-define processing of specific tags.  Tag names in the input stream are
-case dependent; the \var{tag} occurring in method names must be in the
-correct case:
+\subsection{XML Namespaces}
 
-\begin{methoddescni}{start_\var{tag}}{attributes}
-This method is called to process an opening tag \var{tag}.  The
-\var{attributes} argument has the same meaning as described for
-\method{handle_starttag()} above.  In fact, the base implementation of
-\method{handle_starttag()} calls this method.
-\end{methoddescni}
+This module has support for XML namespaces as defined in the XML
+Namespaces proposed recommendation.
 
-\begin{methoddescni}{end_\var{tag}}{}
-This method is called to process a closing tag \var{tag}.
-\end{methoddescni}
+Tag and attribute names that are defined in an XML namespace are
+handled as if the name of the tag or element consisted of the
+namespace (i.e. the URL that defines the namespace) followed by a
+space and the name of the tag or attribute.  For instance, the tag
+\code{<html xmlns='http://www.w3.org/TR/REC-html40'>} is treated as if 
+the tag name was \code{'http://www.w3.org/TR/REC-html40 html'}, and
+the tag \code{<html:a href='http://frob.com'>} inside the above
+mentioned element is treated as if the tag name were
+\code{'http://www.w3.org/TR/REC-html40 a'} and the attribute name as
+if it were \code{'http://www.w3.org/TR/REC-html40 src'}.
 
-\begin{memberdescni}{\var{tag}_attributes}
-If a class or instance variable \member{\var{tag}_attributes} exists, it 
-should be a list or a dictionary.  If a list, the elements of the list 
-are the valid attributes for the element \var{tag}; if a dictionary,
-the keys are the valid attributes for the element \var{tag}, and the
-values the default values of the attributes, or \code{None} if there
-is no default.
-In addition to the attributes that were present in the tag, the
-attribute dictionary that is passed to \method{handle_starttag()} and
-\method{unknown_starttag()} contains values for all attributes that
-have a default value.
-\end{memberdescni}
+An older draft of the XML Namespaces proposal is also recognized, but
+triggers a warning.
