@@ -62,12 +62,7 @@ class build (Command):
 
     def finalize_options (self):
 
-        # Need this to name platform-specific directories, but sys.platform
-        # is not enough -- it only names the OS and version, not the
-        # hardware architecture!
-        self.plat = get_platform ()
-
-        plat_specifier = sys.version[0:3] + '-' + self.plat
+        plat_specifier = ".%s-%s" % (get_platform(), sys.version[0:3])
 
         # 'build_purelib' and 'build_platlib' just default to 'lib' and
         # 'lib.<plat>' under the base build directory.  We only use one of
@@ -76,7 +71,7 @@ class build (Command):
             self.build_purelib = os.path.join (self.build_base, 'lib')
         if self.build_platlib is None:
             self.build_platlib = os.path.join (self.build_base,
-                                               'lib-' + plat_specifier)
+                                               'lib' + plat_specifier)
 
         # 'build_lib' is the actual directory that we will use for this
         # particular module distribution -- if user didn't supply it, pick
@@ -91,9 +86,10 @@ class build (Command):
         # "build/temp.<plat>"
         if self.build_temp is None:
             self.build_temp = os.path.join (self.build_base,
-                                            'temp-' + plat_specifier)
+                                            'temp' + plat_specifier)
         if self.build_scripts is None:
             self.build_scripts = os.path.join (self.build_base, 'scripts')
+
     # finalize_options ()
 
 
