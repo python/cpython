@@ -28,7 +28,6 @@ import parser
 # 1.5.2 for code branches executed in 1.5.2
 import symbol
 import token
-import string
 import sys
 
 error = 'walker.error'
@@ -111,7 +110,7 @@ class Transformer:
     def parsesuite(self, text):
         """Return a modified parse tree for the given suite text."""
         # Hack for handling non-native line endings on non-DOS like OSs.
-        text = string.replace(text, '\x0d', '')
+        text = text.replace('\x0d', '')
         return self.transform(parser.suite(text))
 
     def parseexpr(self, text):

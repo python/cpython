@@ -2,7 +2,6 @@
 
 import dis
 import new
-import string
 import sys
 import types
 
@@ -246,7 +245,7 @@ class Block:
     def __str__(self):
         insts = map(str, self.insts)
         return "<block %s %d:\n%s>" % (self.label, self.bid,
-                                       string.join(insts, '\n'))
+                                       '\n'.join(insts))
 
     def emit(self, inst):
         op = inst[0]
@@ -713,10 +712,10 @@ class LineAddrTable:
                 self.lastoff = self.codeOffset
 
     def getCode(self):
-        return string.join(self.code, '')
+        return ''.join(self.code)
 
     def getTable(self):
-        return string.join(map(chr, self.lnotab), '')
+        return ''.join(map(chr, self.lnotab))
 
 class StackDepthTracker:
     # XXX 1. need to keep track of stack depth on jumps
