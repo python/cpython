@@ -1807,26 +1807,10 @@ binary format used in low-level network functions.";
 static PyObject*
 BUILD_FUNC_DEF_2(PySocket_inet_aton, PyObject *, self, PyObject *, args)
 {
-#ifndef MS_WINDOWS
-	char *ip_addr;
-	struct in_addr packed_addr;
-	int err;
+#ifndef INADDR_NONE
+#define INADDR_NONE (-1)
+#endif
 
-	if (!PyArg_Parse(args, "s", &ip_addr)) {
-		return NULL;
-	}
-	
-	err = inet_aton(ip_addr, &packed_addr);
-
-	if (err == 0) {		/* invalid address */
-		PyErr_SetString(PySocket_Error,
-			"illegal IP address string passed to inet_aton");
-		return NULL;
-	}
-
-	return PyString_FromStringAndSize((char *) &packed_addr,
-					  sizeof(packed_addr));
-#else /* MS_WINDOWS */
 	/* Have to use inet_addr() instead */
 	char *ip_addr;
 	long packed_addr;
@@ -1845,7 +1829,6 @@ BUILD_FUNC_DEF_2(PySocket_inet_aton, PyObject *, self, PyObject *, args)
 
 	return PyString_FromStringAndSize((char *) &packed_addr,
 					  sizeof(packed_addr));
-#endif /* MS_WINDOWS */
 }
 
 static char inet_ntoa_doc[] = 
