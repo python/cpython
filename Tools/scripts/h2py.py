@@ -135,7 +135,7 @@ def process(fp, outfp, env = {}):
             a, b = regs[1]
             filename = line[a:b]
             if importable.has_key(filename):
-                outfp.write('import %s\n' % importable[filename])
+                outfp.write('from %s import *\n' % importable[filename])
             elif not filedict.has_key(filename):
                 filedict[filename] = None
                 inclfp = None
