@@ -1169,6 +1169,7 @@ PyMac_BuildRect
 PyMac_GetRect
 PyMac_BuildFSSpec
 PyMac_GetFSSpec
+PyMac_BuildOptStr255
 PyMac_BuildStr255
 PyMac_GetStr255
 PyMac_BuildNumVersion
