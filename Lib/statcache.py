@@ -69,7 +69,7 @@ def forget_except_prefix(prefix):
             forget(path)
 
 def isdir(path):
-    """Return 1 if directory, else 0."""
+    """Return True if directory, else False."""
     try:
         st = stat(path)
     except _os.error:
