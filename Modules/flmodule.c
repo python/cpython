@@ -1995,6 +1995,8 @@ forms_set_event_call_back(dummy, args)
 	object *dummy;
 	object *args;
 {
+	if (args == None)
+		args = NULL;
 	my_event_callback = args;
 	XINCREF(args);
 	INCREF(None);
