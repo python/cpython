@@ -33,21 +33,8 @@ class BaseTest(unittest.TestCase):
     else:
         # popen2.Popen3 doesn't exist on Windows, and even if it did, bunzip2
         # isn't available to run.
-
-        # XXX This alternative doesn't work in all tests.  It raises
-        # XXX     ValueError: couldn't find end of stream
-        # XXX in
-        # XXX    testWrite
-        # XXX    testWriteChunks10
-        # XXX    testWriteLines
-        # XXX from BZ2FileTest .
-        # XXX I don't know why.
-
         def decompress(self, data):
             return bz2.decompress(data)
-
-    # XXX See XXX comment above.
-    skip_mystery_test = not has_cmdline_bunzip2
 
 class BZ2FileTest(BaseTest):
     "Test MCRYPT type miscelaneous methods."
@@ -145,20 +132,18 @@ class BZ2FileTest(BaseTest):
         bz2f.close()
 
     def testWrite(self):
-        if self.skip_mystery_test:
-            return
+        #if self.skip_mystery_test:
+        #    return
         # "Test BZ2File.write()"
         bz2f = BZ2File(self.filename, "w")
         bz2f.write(self.TEXT)
         bz2f.close()
-        f = open(self.filename)
+        f = open(self.filename, 'rb')
         self.assertEqual(self.decompress(f.read()), self.TEXT)
         f.close()
 
     def testWriteChunks10(self):
         # "Test BZ2File.write() with chunks of 10 bytes"
-        if self.skip_mystery_test:
-            return
         bz2f = BZ2File(self.filename, "w")
         n = 0
         while 1:
@@ -168,19 +153,17 @@ class BZ2FileTest(BaseTest):
             bz2f.write(str)
             n += 1
         bz2f.close()
-        f = open(self.filename)
+        f = open(self.filename, 'rb')
         self.assertEqual(self.decompress(f.read()), self.TEXT)
         f.close()
 
     def testWriteLines(self):
         # "Test BZ2File.writelines()"
-        if self.skip_mystery_test:
-            return
         bz2f = BZ2File(self.filename, "w")
         sio = StringIO(self.TEXT)
         bz2f.writelines(sio.readlines())
         bz2f.close()
-        f = open(self.filename)
+        f = open(self.filename, 'rb')
         self.assertEqual(self.decompress(f.read()), self.TEXT)
         f.close()
 
