@@ -1182,33 +1182,26 @@ sub do_cmd_memberlineni{
 
 @col_aligns = ('<td>', '<td>', '<td>', '<td>', '<td>');
 
+%FontConversions = ('cdata' => 'tt class="cdata"',
+                    'character' => 'tt class="character"',
+                    'class' => 'tt class="class"',
+                    'command' => 'code',
+                    'constant' => 'tt class="constant"',
+                    'exception' => 'tt class="exception"',
+                    'file' => 'tt class="file"',
+                    'filenq' => 'tt class="file"',
+                    'kbd' => 'kbd',
+                    'member' => 'tt class="member"',
+                    'programopt' => 'b',
+                    'textrm' => '',
+                    );
+
 sub fix_font{
     # do a little magic on a font name to get the right behavior in the first
     # column of the output table
     my $font = @_[0];
-    if ($font eq 'textrm') {
-	$font = '';
-    }
-    elsif ($font eq 'file' || $font eq 'filenq') {
-	$font = 'tt class="file"';
-    }
-    elsif ($font eq 'member') {
-        $font = 'tt class="member"';
-    }
-    elsif ($font eq 'class') {
-        $font = 'tt class="class"';
-    }
-    elsif ($font eq 'constant') {
-        $font = 'tt class="constant"';
-    }
-    elsif ($font eq 'kbd') {
-        $font = 'kbd';
-    }
-    elsif ($font eq 'programopt') {
-        $font = 'b';
-    }
-    elsif ($font eq 'exception') {
-        $font = 'tt class="exception"';
+    if (defined $FontConversions{$font}) {
+        $font = $FontConversions{$font};
     }
     return $font;
 }
