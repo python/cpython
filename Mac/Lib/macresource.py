@@ -95,6 +95,11 @@ def open_pathname(pathname, verbose=0):
 			raise
 	return refno
 	
+def open_error_resource():
+	"""Open the resource file containing the error code to error message
+	mapping."""
+	need('Estr', 1, filename="errors.rsrc", modname=__name__)
+	
 def _decode(pathname, verbose=0):
 	# Decode an AppleSingle resource file, return the new pathname.
 	newpathname = pathname + '.df.rsrc'
