@@ -295,8 +295,11 @@ class Scrollbar(ControlWidget):
 	
 	"""Standard scrollbar."""
 	
-	def __init__(self, possize, callback = None, value = 0, min = 0, max = 0):
-		procID = Controls.scrollBarProc
+	def __init__(self, possize, callback=None, value=0, min=0, max=0, livefeedback=1):
+		if livefeedback:
+			procID = Controls.kControlScrollBarLiveProc
+		else:
+			procID = Controls.scrollBarProc
 		ControlWidget.__init__(self, possize, "", procID, callback, value, min, max)
 	
 	# interface
@@ -373,34 +376,15 @@ class Scrollbar(ControlWidget):
 	def click(self, point, modifiers):
 		if not self._enabled:
 			return
-		# custom TrackControl. A mousedown in a scrollbar arrow or page area should
-		# generate _control hits as long as the mouse is a) down, b) still in the same part
-		part = self._control.TestControl(point)
-		if Controls.inUpButton <= part <= Controls.inPageDown:	
-			self._control.HiliteControl(part)
-			self._hit(part)
-			oldpart = part
-			# slight delay before scrolling at top speed...
-			now = Evt.TickCount()
-			while Evt.StillDown():
-				if (Evt.TickCount() - now) > 18: # 0.3 seconds
-					break
-			while Evt.StillDown():
-				part = self._control.TestControl(point)
-				if part == oldpart:
-					self._control.HiliteControl(part)
-					self._hit(part)
-				else:
-					self._control.HiliteControl(0)
-				self.SetPort()
-				point = Evt.GetMouse()
-			self._control.HiliteControl(0)
-		elif part == Controls.inThumb:
-			part = self._control.TrackControl(point)
+		def hitter(ctl, part, self=self):
 			if part:
 				self._hit(part)
+		part = self._control.TrackControl(point, hitter)
+		if part:
+			self._hit(part)
 	
 	def _hit(self, part):
+		value = None
 		if part == Controls.inThumb:
 			try:
 				value = self._control.GetControl32BitValue()
@@ -416,7 +400,7 @@ class Scrollbar(ControlWidget):
 			value = "++"
 		elif part == Controls.inPageDown:
 			value = "--"
-		if self._callback:
+		if value is not None and self._callback:
 			Wbase.CallbackCall(self._callback, 1, value)
 	
 	def draw(self, visRgn = None):
