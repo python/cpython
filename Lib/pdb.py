@@ -26,11 +26,34 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		bdb.Bdb.__init__(self)
 		cmd.Cmd.__init__(self)
 		self.prompt = '(Pdb) '
+		self.lineinfoCmd = 'egrep -n "def *%s *[(:]" %s /dev/null'
+		self.aliases = {}
 		# Try to load readline if it exists
 		try:
 			import readline
 		except ImportError:
 			pass
+
+		# Read $HOME/.pdbrc and ./.pdbrc
+		self.rcLines = []
+		if os.environ.has_key('HOME'):
+			envHome = os.environ['HOME']
+			try:
+				rcFile = open (envHome + "/.pdbrc")
+			except IOError:
+				pass
+			else:
+				for line in rcFile.readlines():
+					self.rcLines.append (line)
+				rcFile.close()
+		try:
+			rcFile = open ("./.pdbrc")
+		except IOError:
+			pass
+		else:
+			for line in rcFile.readlines():
+				self.rcLines.append (line)
+			rcFile.close()
 	
 	def reset(self):
 		bdb.Bdb.reset(self)
@@ -46,6 +69,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		self.forget()
 		self.stack, self.curindex = self.get_stack(f, t)
 		self.curframe = self.stack[self.curindex][0]
+		self.execRcLines();
+
+	# Can be executed earlier than 'setup' if desired
+	def execRcLines(self):
+		if self.rcLines:
+			# Make local copy because of recursion
+			rcLines = self.rcLines
+			# executed only once
+			self.rcLines = []
+			for line in rcLines:
+				line = line[:-1]
+				if len (line) > 0 and line[0] != '#':
+					self.onecmd (line)
 	
 	# Override Bdb methods (except user_call, for now)
 	
@@ -91,16 +127,49 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			else: exc_type_name = t.__name__
 			print '***', exc_type_name + ':', v
 
+	def precmd(self, line):
+		# Handle alias expansion and ';' separator
+		if not line:
+			return line
+		args = string.split(line)
+		while self.aliases.has_key(args[0]):
+			line = self.aliases[args[0]]
+			ii = 1
+			for tmpArg in args[1:]:
+				line = string.replace(line, "%" + str(ii),
+						      tmpArg)
+				ii = ii + 1
+			line = string.replace (line, "%*",
+					       string.join(args[1:], ' '))
+			args = string.split(line)
+		# split into ';' separated commands
+		# unless it's an alias command
+		if args[0] != 'alias':
+			semicolon = string.find(line, ';')
+			if semicolon >= 0:
+				# queue up everything after semicolon
+				next = string.lstrip(line[semicolon+1:])
+				self.cmdqueue.append(next)
+				line = string.rstrip(line[:semicolon])
+		return line
+
 	# Command definitions, called by cmdloop()
 	# The argument is the remaining string on the command line
 	# Return true to exit from the command loop 
 	
 	do_h = cmd.Cmd.do_help
 
-	def do_break(self, arg):
+	def do_EOF(self, arg):
+		return 0	# Don't die on EOF
+
+	def do_break(self, arg, temporary = 0):
 		# break [ ([filename:]lineno | function) [, "condition"] ]
 		if not arg:
-			print self.get_all_breaks() # XXX
+			if self.breaks:  # There's at least one
+				print "Num Type         Disp Enb   Where"
+				for bp in bdb.Breakpoint.bpbynumber:
+					if bp:
+						bp.bpprint()
 			return
 		# parse arguments; comma has lowest precendence
 		# and cannot occur in filename
@@ -112,19 +181,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			# parse stuff after comma: "condition"
 			cond = string.lstrip(arg[comma+1:])
 			arg = string.rstrip(arg[:comma])
-			try:
-				cond = eval(
-					cond,
-					self.curframe.f_globals,
-					self.curframe.f_locals)
-			except:
-				print '*** Could not eval condition:', cond
-				return
 		# parse stuff before comma: [filename:]lineno | function
 		colon = string.rfind(arg, ':')
 		if colon >= 0:
 			filename = string.rstrip(arg[:colon])
-			filename = self.lookupmodule(filename)
+			f = self.lookupmodule(filename)
+			if not f:
+				print '*** ', `filename`,
+				print 'not found from sys.path'
+				return
+			else:
+				filename = f
 			arg = string.lstrip(arg[colon+1:])
 			try:
 				lineno = int(arg)
@@ -141,29 +208,180 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 						    self.curframe.f_globals,
 						    self.curframe.f_locals)
 				except:
-					print '*** Could not eval argument:',
-					print arg
-					return
+					func = arg
 				try:
 					if hasattr(func, 'im_func'):
 						func = func.im_func
 					code = func.func_code
-				except:
-					print '*** The specified object',
-					print 'is not a function', arg
-					return
-				lineno = code.co_firstlineno
-				if not filename:
+					lineno = code.co_firstlineno
 					filename = code.co_filename
-		# supply default filename if necessary
+				except:
+					# last thing to try
+					(ok, filename, ln) = self.lineinfo(arg)
+					if not ok:
+					    print '*** The specified object',
+					    print `arg`,
+					    print 'is not a function'
+					    print ('or was not found '
+						   'along sys.path.')
+					    return
+					lineno = int(ln)
 		if not filename:
-			filename = self.curframe.f_code.co_filename
-		# now set the break point
-		err = self.set_break(filename, lineno, cond)
-		if err: print '***', err
+			filename = self.defaultFile()
+		# Check for reasonable breakpoint
+		line = self.checkline(filename, lineno)
+		if line:
+			# now set the break point
+			err = self.set_break(filename, line, temporary, cond)
+			if err: print '***', err
+
+	# To be overridden in derived debuggers
+	def defaultFile(self):
+		# Produce a reasonable default
+		filename = self.curframe.f_code.co_filename
+		if filename == '<string>' and mainpyfile:
+			filename = mainpyfile
+		return filename
 
 	do_b = do_break
 	
+	def do_tbreak(self, arg):
+		self.do_break(arg, 1)
+
+	def lineinfo(self, identifier):
+		failed = (None, None, None)
+		# Input is identifier, may be in single quotes
+		idstring = string.split(identifier, "'")
+		if len(idstring) == 1:
+			# not in single quotes
+			id = string.strip(idstring[0])
+		elif len(idstring) == 3:
+			# quoted
+			id = string.strip(idstring[1])
+		else:
+			return failed
+		if id == '': return failed
+		parts = string.split(id, '.')
+		# Protection for derived debuggers
+		if parts[0] == 'self':
+			del parts[0]
+			if len(parts) == 0:
+				return failed
+		# Best first guess at file to look at
+		fname = self.defaultFile()
+		if len(parts) == 1:
+			item = parts[0]
+		else:
+			# More than one part.
+			# First is module, second is method/class
+			f = self.lookupmodule(parts[0])
+			if f:
+				fname = f
+			item = parts[1]
+		grepstring = self.lineinfoCmd % (item, fname)
+		answer = os.popen(grepstring, 'r').readline()
+		if answer:
+			f, line, junk = string.split(answer, ':', 2)
+			return(item, f,line)
+		else:
+			return failed
+		
+	def checkline(self, filename, lineno):
+		"""Return line number of first line at or after input
+		argument such that if the input points to a 'def', the
+		returned line number is the first
+		non-blank/non-comment line to follow.  If the input
+		points to a blank or comment line, return 0.  At end
+		of file, also return 0."""
+
+		line = linecache.getline(filename, lineno)
+		if not line:
+			print 'End of file'
+			return 0
+		line = string.strip(line)
+		# Don't allow setting breakpoint at a blank line
+		if ( not line or (line[0] == '#') or
+		     (line[:3] == '"""') or line[:3] == "'''" ):
+			print '*** Blank or comment'
+			return 0
+		# When a file is read in and a breakpoint is at
+		# the 'def' statement, the system stops there at
+		# code parse time.  We don't want that, so all breakpoints
+		# set at 'def' statements are moved one line onward
+		if line[:3] == 'def':
+			incomment = ''
+			while 1:
+				lineno = lineno+1
+				line = linecache.getline(filename, lineno)
+				if not line:
+					print 'end of file'
+					return 0
+				line = string.strip(line)
+				if incomment:
+					if len(line) < 3: continue
+					if (line[-3:] == incomment):
+						incomment = ''
+					continue
+				if not line: continue	# Blank line
+				if len(line) >= 3:
+					if (line[:3] == '"""'
+					    or line[:3] == "'''"):
+						incomment = line[:3]
+						continue
+				if line[0] != '#': break
+		return lineno
+
+	def do_enable(self, arg):
+		args = string.split(arg)
+		for i in args:
+			bp = bdb.Breakpoint.bpbynumber[int(i)]
+			if bp:
+				bp.enable()
+
+	def do_disable(self, arg):
+		args = string.split(arg)
+		for i in args:
+			bp = bdb.Breakpoint.bpbynumber[int(i)]
+			if bp:
+				bp.disable()
+
+	def do_condition(self, arg):
+		# arg is breakpoint number and condition
+		args = string.split(arg, ' ', 1)
+		bpnum = int(string.strip(args[0]))
+		try:
+			cond = args[1]
+		except:
+			cond = None
+		bp = bdb.Breakpoint.bpbynumber[bpnum]
+		if bp:
+			bp.cond = cond
+			if not cond:
+				print 'Breakpoint', bpnum,
+				print 'is now unconditional.'
+
+	def do_ignore(self,arg):
+		# arg is bp number followed by ignore count
+		args = string.split(arg)
+		bpnum = int(string.strip(args[0]))
+		try:
+			count = int(string.strip(args[1]))
+		except:
+			count = 0
+		bp = bdb.Breakpoint.bpbynumber[bpnum]
+		if bp:
+			bp.ignore = count
+			if (count > 0):
+				reply = 'Will ignore next '
+				if (count > 1):
+					reply = reply + '%d crossings' % count
+				else:
+					reply = reply + '1 crossing'
+				print reply + ' of breakpoint %d.' % bpnum
+			else:
+				print 'Will stop next time breakpoint',
+				print bpnum, 'is reached.'
+
 	def do_clear(self, arg):
 		if not arg:
 			try:
@@ -174,21 +392,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			if reply in ('y', 'yes'):
 				self.clear_all_breaks()
 			return
-		filename = None
-		colon = string.rfind(arg, ':')
-		if colon >= 0:
-			filename = string.rstrip(arg[:colon])
-			filename = self.lookupmodule(filename)
-			arg = string.lstrip(arg[colon+1:])
-		try:
-			lineno = int(arg)
-		except:
-			print '*** Bad lineno:', `arg`
-			return
-		if not filename:
-			filename = self.curframe.f_code.co_filename
-		err = self.clear_break(filename, lineno)
-		if err: print '***', err
+		numberlist = string.split(arg)
+		for i in numberlist:
+			err = self.clear_break(i)
+			if err:
+				print '***'+err
+			else:
+				print 'Deleted breakpoint %s ' % (i,)
 	do_cl = do_clear # 'c' is already an abbreviation for 'continue'
 	
 	def do_where(self, arg):
@@ -263,7 +473,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	
 	def do_p(self, arg):
 		try:
-			value = eval(arg, self.curframe.f_globals, \
+			value = eval(arg, self.curframe.f_globals,
 					self.curframe.f_locals)
 		except:
 			t, v = sys.exc_info()[:2]
@@ -322,7 +532,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
 	def do_whatis(self, arg):
 		try:
-			value = eval(arg, self.curframe.f_globals, \
+			value = eval(arg, self.curframe.f_globals,
 					self.curframe.f_locals)
 		except:
 			t, v = sys.exc_info()[:2]
@@ -346,7 +556,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			return
 		# None of the above...
 		print type(value)
-	
+
+	def do_alias(self, arg):
+		args = string.split (arg)
+		if len(args) == 0:
+			keys = self.aliases.keys()
+			keys.sort()
+			for alias in keys:
+				print "%s = %s" % (alias, self.aliases[alias])
+			return
+		if self.aliases.has_key(args[0]) and len (args) == 1:
+			print "%s = %s" % (args[0], self.aliases[args[0]])
+		else:
+			self.aliases[args[0]] = string.join(args[1:], ' ')
+
+	def do_unalias(self, arg):
+		args = string.split (arg)
+		if len(args) == 0: return
+		if self.aliases.has_key(args[0]):
+			del self.aliases[args[0]]
+
 	# Print a traceback starting at the top stack frame.
 	# The most recently entered frame is printed last;
 	# this is different from dbx and gdb, but consistent with
@@ -414,28 +643,57 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	def help_b(self):
 		print """b(reak) ([file:]lineno | function) [, "condition"]
 	With a line number argument, set a break there in the current
-	file.  With a function name, set a break at the entry of that
-	function.  Without argument, list all breaks.  If a second
+	file.  With a function name, set a break at first executable line
+	of that function.  Without argument, list all breaks.  If a second
 	argument is present, it is a string specifying an expression
 	which must evaluate to true before the breakpoint is honored.
 
 	The line number may be prefixed with a filename and a colon,
 	to specify a breakpoint in another file (probably one that
-	hasn't been loaded yet).  The file is searched on sys.path;
+	hasn't been loaded yet).  The file is searched for on sys.path;
 	the .py suffix may be omitted."""
 
 	def help_clear(self):
 		self.help_cl()
 
 	def help_cl(self):
-		print """cl(ear) [file:][lineno]
-	With a line number argument, clear that break in the current file.
-	Without argument, clear all breaks (but first ask confirmation).
+		print """cl(ear) [bpnumber [bpnumber...]]
+	With a space separated list of breakpoint numbers, clear
+	those breakpoints.  Without argument, clear all breaks (but
+	first ask confirmation).
 
-	The line number may be prefixed with a filename and a colon,
-	to specify a breakpoint in another file (probably one that
-	hasn't been loaded yet).  The file is searched on sys.path;
-	the .py suffix may be omitted."""
+	Note that the argument is different from previous versions of
+	the debugger (in python distributions 1.5.1 and before) where
+	a linenumber was used instead of breakpoint numbers."""
+
+	def help_tbreak(self):
+		print """tbreak  same arguments as break, but breakpoint is
+	removed when first hit."""
+
+	def help_enable(self):
+		print """enable bpnumber [bpnumber ...]
+	Enables the breakpoints given as a space separated list of
+	bp numbers."""
+
+	def help_disable(self):
+		print """disable bpnumber [bpnumber ...]
+	Disables the breakpoints given as a space separated list of
+	bp numbers."""
+
+	def help_ignore(self):
+		print """ignore bpnumber count
+	Sets the ignore count for the given breakpoint number.  A breakpoint
+	becomes active when the ignore count is zero.  When non-zero, the
+	count is decremented each time the breakpoint is reached and the
+	breakpoint is not disabled and any associated condition evaluates
+	to true."""
+
+	def help_condition(self):
+		print """condition bpnumber str_condition
+	str_condition is a string specifying an expression which
+	must evaluate to true before the breakpoint is honored.
+	If str_condition is absent, any existing condition is removed;
+	i.e., the breakpoint is made unconditional."""
 
 	def help_step(self):
 		self.help_s()
@@ -511,26 +769,60 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		print """q(uit)	Quit from the debugger.
 	The program being executed is aborted."""
 
+	def help_whatis(self):
+		print """whatis arg
+	Prints the type of the argument."""
+
+	def help_EOF(self):
+		print """EOF
+	Handles the receipt of EOF as a command."""
+
+	def help_alias(self):
+		print """alias [name [command [parameter parameter ...] ]]
+	Creates an alias called 'name' the executes 'command'.  The command
+	must *not* be enclosed in quotes.  Replaceable parameters are
+	indicated by %1, %2, and so on, while %* is replaced by all the 
+	parameters.  If no command is given, the current alias for name
+	is shown. If no name is given, all aliases are listed.
+	
+	Aliases may be nested and can contain anything that can be
+	legally typed at the pdb prompt.  Note!  You *can* override
+	internal pdb commands with aliases!  Those internal commands
+	are then hidden until the alias is removed.  Aliasing is recursively
+	applied to the first word of the command line; all other words
+	in the line are left alone.
+
+	Some useful aliases (especially when placed in the .pdbrc file) are:
+
+	#Print instance variables (usage "pi classInst")
+	alias pi for k in %1.__dict__.keys(): print "%1.",k,"=",%1.__dict__[k]
+
+	#Print instance variables in self
+	alias ps pi self
+	"""
+
+	def help_unalias(self):
+		print """unalias name
+	Deletes the specified alias."""
+
 	def help_pdb(self):
 		help()
 
 	# Helper function for break/clear parsing -- may be overridden
 
 	def lookupmodule(self, filename):
-		if filename == mainmodule:
-			return mainpyfile
 		root, ext = os.path.splitext(filename)
 		if ext == '':
 			filename = filename + '.py'
 		if os.path.isabs(filename):
 			return filename
 		for dirname in sys.path:
+			while os.path.islink(dirname):
+				dirname = os.readlink(dirname)
 			fullname = os.path.join(dirname, filename)
 			if os.path.exists(fullname):
 				return fullname
-		print 'Warning:', `filename`, 'not found from sys.path'
-		return filename
-
+		return None
 
 # Simplified interface
 
