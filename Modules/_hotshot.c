@@ -14,13 +14,14 @@
 
 /*
  * Which timer to use should be made more configurable, but that should not
- * be difficult.  This will do fo now.
+ * be difficult.  This will do for now.
  */
 #ifdef MS_WIN32
 #include <windows.h>
 #include <largeint.h>
 #include <direct.h>    /* for getcwd() */
 typedef LARGE_INTEGER hs_time;
+
 #else
 #ifndef HAVE_GETTIMEOFDAY
 #error "This module requires gettimeofday() on non-Windows platforms!"
@@ -89,9 +90,9 @@ static PyObject * ProfilerError = NULL;
 
 /* The log reader... */
 
-static char logreader_close__doc__[] = "\
-close()\n\
-Close the log file, preventing additional records from being read.";
+static char logreader_close__doc__[] =
+"close()\n"
+"Close the log file, preventing additional records from being read.";
 
 static PyObject *
 logreader_close(LogReaderObject *self, PyObject *args)
@@ -453,9 +454,9 @@ logreader_sq_item(LogReaderObject *self, int index)
     return result;
 }
 
-static char next__doc__[] = "\
-next() -> event-info\n\
-Return the next event record from the log file.";
+static char next__doc__[] =
+"next() -> event-info\n"
+"Return the next event record from the log file.";
 
 static PyObject *
 logreader_next(LogReaderObject *self, PyObject *args)
@@ -750,7 +751,7 @@ tracer_callback(ProfilerObject *self, PyFrameObject *frame, int what,
 /* A couple of useful helper functions. */
 
 #ifdef MS_WIN32
-static LARGE_INTEGER frequency = {0,0};
+static LARGE_INTEGER frequency = {0, 0};
 #endif
 
 static unsigned long timeofday_diff = 0;
@@ -861,9 +862,9 @@ is_available(ProfilerObject *self)
 
 /* Profiler object interface methods. */
 
-static char close__doc__[] = "\
-close()\n\
-Shut down this profiler and close the log files, even if its active.";
+static char close__doc__[] =
+"close()\n"
+"Shut down this profiler and close the log files, even if its active.";
 
 static PyObject *
 profiler_close(ProfilerObject *self, PyObject *args)
@@ -882,9 +883,9 @@ profiler_close(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char runcall__doc__[] = "\
-runcall(callable[, args[, kw]]) -> callable()\n\
-Profile a specific function call, returning the result of that call.";
+static char runcall__doc__[] =
+"runcall(callable[, args[, kw]]) -> callable()\n"
+"Profile a specific function call, returning the result of that call.";
 
 static PyObject *
 profiler_runcall(ProfilerObject *self, PyObject *args)
@@ -905,10 +906,10 @@ profiler_runcall(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char runcode__doc__[] = "\
-runcode(code, globals[, locals])\n\
-Execute a code object while collecting profile data.  If locals is omitted,\n\
-globals is used for the locals as well.";
+static char runcode__doc__[] =
+"runcode(code, globals[, locals])\n"
+"Execute a code object while collecting profile data.  If locals is\n"
+"omitted, globals is used for the locals as well.";
 
 static PyObject *
 profiler_runcode(ProfilerObject *self, PyObject *args)
@@ -944,9 +945,9 @@ profiler_runcode(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char start__doc__[] = "\
-start()\n\
-Install this profiler for the current thread.";
+static char start__doc__[] =
+"start()\n"
+"Install this profiler for the current thread.";
 
 static PyObject *
 profiler_start(ProfilerObject *self, PyObject *args)
@@ -960,9 +961,9 @@ profiler_start(ProfilerObject *self, PyObject *args)
     return result;
 }
 
-static char stop__doc__[] = "\
-stop()\n\
-Remove this profiler from the current thread.";
+static char stop__doc__[] =
+"stop()\n"
+"Remove this profiler from the current thread.";
 
 static PyObject *
 profiler_stop(ProfilerObject *self, PyObject *args)
@@ -1035,23 +1036,23 @@ profiler_getattr(ProfilerObject *self, char *name)
 }
 
 
-static char profiler_object__doc__[] = "\
-High-performance profiler object.\n\
-\n\
-Methods:\n\
-\n\
-close():     Stop the profiler and close the log files.\n\
-runcall():   Run a single function call with profiling enabled.\n\
-runcode():   Execute a code object with profiling enabled.\n\
-start():     Install the profiler and return.\n\
-stop():      Remove the profiler.\n\
-\n\
-Attributes (read-only):\n\
-\n\
-callcount:   The number of low-level calls to the profiler.\n\
-closed:      True if the profiler has already been closed.\n\
-lineevents:  True if SET_LINENO events are reported to the profiler.\n\
-linetimings: True if SET_LINENO events collect timing information.";
+static char profiler_object__doc__[] =
+"High-performance profiler object.\n"
+"\n"
+"Methods:\n"
+"\n"
+"close():     Stop the profiler and close the log files.\n"
+"runcall():   Run a single function call with profiling enabled.\n"
+"runcode():   Execute a code object with profiling enabled.\n"
+"start():     Install the profiler and return.\n"
+"stop():      Remove the profiler.\n"
+"\n"
+"Attributes (read-only):\n"
+"\n"
+"callcount:   The number of low-level calls to the profiler.\n"
+"closed:      True if the profiler has already been closed.\n"
+"lineevents:  True if SET_LINENO events are reported to the profiler.\n"
+"linetimings: True if SET_LINENO events collect timing information.";
 
 static PyTypeObject ProfilerType = {
     PyObject_HEAD_INIT(NULL)
@@ -1301,14 +1302,14 @@ hotshot_profiler(PyObject *unused, PyObject *args)
 
 static char resolution__doc__[] =
 #ifdef MS_WIN32
-"resolution() -> (performance-counter-ticks, update-frequency)\n\
-Return the resolution of the timer provided by the QueryPerformanceCounter()\n\
-function.  The first value is the smallest observed change, and the second\n\
-if the result of QueryPerformanceFrequency().";
+"resolution() -> (performance-counter-ticks, update-frequency)\n"
+"Return the resolution of the timer provided by the QueryPerformanceCounter()\n"
+"function.  The first value is the smallest observed change, and the second\n"
+"is the result of QueryPerformanceFrequency().";
 #else
-"resolution() -> (gettimeofday-usecs, getrusage-usecs)\n\
-Return the resolution of the timers provided by the gettimeofday() and\n\
-getrusage() system calls, or -1 if the call is not supported.";
+"resolution() -> (gettimeofday-usecs, getrusage-usecs)\n"
+"Return the resolution of the timers provided by the gettimeofday() and\n"
+"getrusage() system calls, or -1 if the call is not supported.";
 #endif
 
 static PyObject *
